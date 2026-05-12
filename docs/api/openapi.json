@@ -1,0 +1,5212 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "KoproGo API",
+    "description": "Belgian Property Management SaaS Platform\n\n# Features\n- 🏢 Building & Unit Management\n- 👥 Multi-owner & Multi-role Support\n- 💰 Financial Management (Belgian PCMN)\n- 🗳️ Meeting & Voting System\n- 📄 Document Management\n- 📊 Budget & État Daté Generation\n- 🔔 Notifications & Payment Recovery\n- 🤝 Community Features (SEL, Notices, Skills)\n- 🎮 Gamification & Achievements\n- 🔐 GDPR Compliant\n\n# Authentication\nAll endpoints (except /health and /public/*) require JWT Bearer token.\nGet token via POST /api/v1/auth/login\n\n# Complete API Documentation\n90 of 511 endpoints annotated with utoipa (Swagger UI live spec).\nFull 495-endpoint OpenAPI 3.0.3 spec available at docs/api/openapi.yaml.\n\nProgressive annotation ongoing — see handlers for pattern.",
+    "contact": {
+      "name": "KoproGo Support",
+      "email": "support@koprogo.com"
+    },
+    "license": {
+      "name": "AGPL-3.0-or-later",
+      "url": "https://www.gnu.org/licenses/agpl-3.0.en.html"
+    },
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8080",
+      "description": "Local development"
+    },
+    {
+      "url": "https://api.koprogo.com",
+      "description": "Production"
+    }
+  ],
+  "paths": {
+    "/api/v1/health": {
+      "get": {
+        "tags": [
+          "Health"
+        ],
+        "summary": "Health check endpoint",
+        "description": "Returns system health status. No authentication required.",
+        "operationId": "health_check",
+        "responses": {
+          "200": {
+            "description": "System is healthy",
+            "content": {
+              "application/json": {
+                "schema": {},
+                "example": {
+                  "service": "koprogo-api",
+                  "status": "ok"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/legal/ag-sequence": {
+      "get": {
+        "tags": [
+          "Legal Reference"
+        ],
+        "summary": "GET /api/v1/legal/ag-sequence\nGet the mandatory sequence of general assembly agenda items",
+        "description": "Returns the full sequence of AG agenda items with their order, mandatory status,\nrequired majority, and legal notes.\n\nReturns:\n* `200 OK` - Array of AG sequence steps\n* `500 Internal Server Error` - JSON parsing error\n\n# Example\n```\nGET /api/v1/legal/ag-sequence\n\nResponse 200 OK:\n[\n  {\n    \"step\": 1,\n    \"point_odj\": \"Ouverture et constitution du bureau\",\n    \"mandatory\": true,\n    \"majority\": null,\n    \"notes\": \"Élection du président (copropriétaire), désignation du secrétaire...\"\n  },\n  {\n    \"step\": 2,\n    \"point_odj\": \"Vérification du quorum et émargement\",\n    \"mandatory\": true,\n    \"majority\": null,\n    \"notes\": \"Signature feuille de présence, calcul quorum (>50% quotes-parts)...\"\n  },\n  ...\n]\n```",
+        "operationId": "get_ag_sequence",
+        "responses": {
+          "200": {
+            "description": "AG sequence steps",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {}
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error"
+          }
+        }
+      }
+    },
+    "/api/v1/legal/majority-for/{decision_type}": {
+      "get": {
+        "tags": [
+          "Legal Reference"
+        ],
+        "summary": "GET /api/v1/legal/majority-for/:decision_type\nGet majority information for a specific decision type",
+        "description": "Path parameters:\n- `decision_type`: Type of decision (ordinary, qualified_two_thirds, qualified_four_fifths, unanimity, proxy_limit)\n\nReturns:\n* `200 OK` - Majority rules and examples\n* `404 Not Found` - Decision type not found\n* `500 Internal Server Error` - JSON parsing error\n\n# Example\n```\nGET /api/v1/legal/majority-for/qualified_two_thirds\n\nResponse 200 OK:\n{\n  \"decision_type\": \"qualified_two_thirds\",\n  \"label\": \"Majorité qualifiée (2/3)\",\n  \"threshold_description\": \"Au moins 2/3 des voix\",\n  \"article\": \"Art. 3.88 §1 1° CC\",\n  \"examples\": [\"Travaux non-conservatoires\", \"Modification statuts\", \"Mise en concurrence\"],\n  \"percentage\": 66.67\n}\n```",
+        "operationId": "get_majority_for",
+        "parameters": [
+          {
+            "name": "decision_type",
+            "in": "path",
+            "description": "Decision type (ordinary, qualified_two_thirds, qualified_four_fifths, unanimity, proxy_limit)",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Majority rules for decision type",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "404": {
+            "description": "Decision type not found"
+          },
+          "500": {
+            "description": "Server error"
+          }
+        }
+      }
+    },
+    "/api/v1/legal/rules": {
+      "get": {
+        "tags": [
+          "Legal Reference"
+        ],
+        "summary": "GET /api/v1/legal/rules\nList all legal rules with optional filtering by role or category",
+        "description": "Query parameters:\n- `role` (optional): Filter by role (syndic, coproprietaire, commissaire, conseil-copropriete, etc.)\n- `category` (optional): Filter by category (assemblee-generale, travaux, coproprietaire, finance, syndic-mandat)\n\nReturns:\n* `200 OK` - Array of legal rules matching filter criteria\n* `500 Internal Server Error` - JSON parsing error (should not happen with static embed)\n\n# Example\n```\nGET /api/v1/legal/rules?role=syndic&category=travaux\n\nResponse 200 OK:\n[\n  {\n    \"code\": \"T01\",\n    \"category\": \"travaux\",\n    \"roles\": [\"syndic\"],\n    \"article\": \"Art. 3.89 §5 2° CC\",\n    \"title\": \"Travaux urgents — syndic seul\",\n    \"content\": \"Le syndic peut exécuter seul les actes conservatoires...\",\n    \"keywords\": [\"urgents\", \"conservatoires\", ...]\n  }\n]\n```",
+        "operationId": "list_legal_rules",
+        "parameters": [
+          {
+            "name": "role",
+            "in": "query",
+            "description": "Filter by role (e.g., syndic, coproprietaire)",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "category",
+            "in": "query",
+            "description": "Filter by category (e.g., assemblee-generale, travaux)",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Array of legal rules",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {}
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error"
+          }
+        }
+      }
+    },
+    "/api/v1/legal/rules/{code}": {
+      "get": {
+        "tags": [
+          "Legal Reference"
+        ],
+        "summary": "GET /api/v1/legal/rules/:code\nGet a specific legal rule by its code",
+        "description": "Path parameters:\n- `code`: Rule code (e.g., AG01, T03, F01)\n\nReturns:\n* `200 OK` - The requested legal rule\n* `404 Not Found` - Rule not found\n* `500 Internal Server Error` - JSON parsing error\n\n# Example\n```\nGET /api/v1/legal/rules/AG01\n\nResponse 200 OK:\n{\n  \"code\": \"AG01\",\n  \"category\": \"assemblee-generale\",\n  \"roles\": [\"syndic\", \"coproprietaire\", \"commissaire\", \"conseil-copropriete\"],\n  \"article\": \"Art. 3.87 §3 CC\",\n  \"title\": \"Convocation AG ordinaire — délai minimum\",\n  \"content\": \"Le syndic convoque l'assemblée générale ordinaire au moins 15 jours avant...\",\n  \"keywords\": [\"convocation\", \"délai\", \"15 jours\", \"ordinaire\", \"ordre du jour\"]\n}\n```",
+        "operationId": "get_legal_rule",
+        "parameters": [
+          {
+            "name": "code",
+            "in": "path",
+            "description": "Legal rule code (e.g., AG01, T03)",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Legal rule details",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "404": {
+            "description": "Rule not found"
+          },
+          "500": {
+            "description": "Server error"
+          }
+        }
+      }
+    },
+    "/auth/login": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Login",
+        "operationId": "login",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Resource created successfully"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "404": {
+            "description": "Not Found"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        }
+      }
+    },
+    "/auth/me": {
+      "get": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Get Current User",
+        "operationId": "get_current_user",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "404": {
+            "description": "Not Found"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        }
+      }
+    },
+    "/auth/refresh": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Refresh Token",
+        "operationId": "refresh_token",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RefreshTokenRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Resource created successfully"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "404": {
+            "description": "Not Found"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        }
+      }
+    },
+    "/auth/register": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Register",
+        "operationId": "register",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Resource created successfully"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "404": {
+            "description": "Not Found"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        }
+      }
+    },
+    "/auth/switch-role": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Switch Role",
+        "operationId": "switch_role",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SwitchRoleRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Resource created successfully"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "404": {
+            "description": "Not Found"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        }
+      }
+    },
+    "/buildings": {
+      "get": {
+        "tags": [
+          "Buildings"
+        ],
+        "summary": "List buildings (paginated)",
+        "operationId": "list_buildings",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "per_page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "sort_by",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          {
+            "name": "order",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/SortOrder"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Paginated list of buildings"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "Buildings"
+        ],
+        "summary": "Create a building",
+        "operationId": "create_building",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateBuildingDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Building created successfully"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "403": {
+            "description": "Forbidden - SuperAdmin only"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/buildings/{building_id}/payments": {
+      "get": {
+        "tags": [
+          "Payments"
+        ],
+        "summary": "List all payments for a building",
+        "operationId": "list_building_payments",
+        "parameters": [
+          {
+            "name": "building_id",
+            "in": "path",
+            "description": "Building ID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of building payments"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/buildings/{building_id}/payments/stats": {
+      "get": {
+        "tags": [
+          "Payments"
+        ],
+        "summary": "Get payment statistics for a building",
+        "operationId": "get_building_payment_stats",
+        "parameters": [
+          {
+            "name": "building_id",
+            "in": "path",
+            "description": "Building ID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Building payment statistics"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/buildings/{building_id}/payments/total": {
+      "get": {
+        "tags": [
+          "Payments"
+        ],
+        "summary": "Get total amount paid for a building",
+        "operationId": "get_building_total_paid",
+        "parameters": [
+          {
+            "name": "building_id",
+            "in": "path",
+            "description": "Building ID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Total paid amount in cents"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/buildings/{building_id}/polls/active": {
+      "get": {
+        "tags": [
+          "Polls"
+        ],
+        "summary": "List active polls for a building",
+        "operationId": "find_active_polls",
+        "parameters": [
+          {
+            "name": "building_id",
+            "in": "path",
+            "description": "Building UUID",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of active polls"
+          },
+          "400": {
+            "description": "Invalid building ID format"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/buildings/{building_id}/polls/statistics": {
+      "get": {
+        "tags": [
+          "Polls"
+        ],
+        "summary": "Get poll statistics for a building",
+        "operationId": "get_poll_building_statistics",
+        "parameters": [
+          {
+            "name": "building_id",
+            "in": "path",
+            "description": "Building UUID",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Poll statistics"
+          },
+          "400": {
+            "description": "Invalid building ID format"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/buildings/{building_id}/tickets": {
+      "get": {
+        "tags": [
+          "Tickets"
+        ],
+        "summary": "List all tickets for a building",
+        "operationId": "list_building_tickets",
+        "parameters": [
+          {
+            "name": "building_id",
+            "in": "path",
+            "description": "Building ID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of tickets"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/buildings/{building_id}/tickets/overdue": {
+      "get": {
+        "tags": [
+          "Tickets"
+        ],
+        "summary": "List overdue tickets for a building",
+        "operationId": "get_overdue_tickets",
+        "parameters": [
+          {
+            "name": "building_id",
+            "in": "path",
+            "description": "Building ID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "max_days",
+            "in": "query",
+            "description": "Maximum overdue days filter (default: 7)",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of overdue tickets"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/buildings/{building_id}/tickets/statistics": {
+      "get": {
+        "tags": [
+          "Tickets"
+        ],
+        "summary": "Get ticket statistics for a building",
+        "operationId": "get_ticket_statistics",
+        "parameters": [
+          {
+            "name": "building_id",
+            "in": "path",
+            "description": "Building ID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Ticket statistics"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/buildings/{building_id}/tickets/status/{status}": {
+      "get": {
+        "tags": [
+          "Tickets"
+        ],
+        "summary": "List tickets by status for a building",
+        "operationId": "list_tickets_by_status",
+        "parameters": [
+          {
+            "name": "building_id",
+            "in": "path",
+            "description": "Building ID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "status",
+            "in": "path",
+            "description": "Ticket status (Open, InProgress, Resolved, Closed, Cancelled)",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of tickets"
+          },
+          "400": {
+            "description": "Invalid status"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/buildings/{id}": {
+      "get": {
+        "tags": [
+          "Buildings"
+        ],
+        "summary": "Get a building by ID",
+        "operationId": "get_building",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Building UUID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Building found"
+          },
+          "404": {
+            "description": "Building not found"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "Buildings"
+        ],
+        "summary": "Update a building",
+        "operationId": "update_building",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Building UUID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateBuildingDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Building updated successfully"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "403": {
+            "description": "Forbidden - SuperAdmin only"
+          },
+          "404": {
+            "description": "Building not found"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "Buildings"
+        ],
+        "summary": "Delete a building",
+        "operationId": "delete_building",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Building UUID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Building deleted successfully"
+          },
+          "403": {
+            "description": "Forbidden - SuperAdmin only"
+          },
+          "404": {
+            "description": "Building not found"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/buildings/{id}/export-annual-report-pdf": {
+      "get": {
+        "tags": [
+          "Buildings"
+        ],
+        "summary": "Export annual financial report as PDF",
+        "operationId": "export_annual_report_pdf",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Building UUID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "year",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "reserve_fund",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          {
+            "name": "total_income",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "PDF generated successfully",
+            "content": {
+              "application/pdf": {}
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Building not found"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/consent": {
+      "post": {
+        "tags": [
+          "GDPR"
+        ],
+        "summary": "Record user consent to privacy policy or terms",
+        "description": "Requires JWT authentication. Records the consent in the database with\naudit trail (IP address, user agent, timestamp) for GDPR Art. 7 / Art. 13-14 compliance.\n\n# Parameters\n* `consent_type` - Type of consent: \"privacy_policy\" or \"terms\"\n* `policy_version` - Optional version of the policy (e.g., \"1.0\")\n\n# Returns\n* `200 OK` - Consent recorded successfully\n* `400 Bad Request` - Invalid consent_type or request body\n* `401 Unauthorized` - Missing or invalid authentication\n* `500 Internal Server Error` - Database error",
+        "operationId": "record_consent",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecordConsentRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Consent recorded",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConsentRecordedResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/consent/status": {
+      "get": {
+        "tags": [
+          "GDPR"
+        ],
+        "summary": "Check user consent status",
+        "description": "Returns which types of consent the user has given (privacy policy and/or terms).\nUseful for conditional display of consent modals in the frontend.\n\n# Returns\n* `200 OK` - Consent status returned\n* `401 Unauthorized` - Missing or invalid authentication\n* `500 Internal Server Error` - Database error",
+        "operationId": "get_consent_status",
+        "responses": {
+          "200": {
+            "description": "Consent status",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConsentStatusResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/expenses/{expense_id}/payments": {
+      "get": {
+        "tags": [
+          "Payments"
+        ],
+        "summary": "List all payments for an expense",
+        "operationId": "list_expense_payments",
+        "parameters": [
+          {
+            "name": "expense_id",
+            "in": "path",
+            "description": "Expense ID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of expense payments"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/expenses/{expense_id}/payments/total": {
+      "get": {
+        "tags": [
+          "Payments"
+        ],
+        "summary": "Get total amount paid for an expense",
+        "operationId": "get_expense_total_paid",
+        "parameters": [
+          {
+            "name": "expense_id",
+            "in": "path",
+            "description": "Expense ID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Total paid amount in cents"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/gdpr/can-erase": {
+      "get": {
+        "tags": [
+          "GDPR"
+        ],
+        "summary": "Check if user data can be erased (no legal holds)",
+        "description": "# Returns\n* `200 OK` - JSON with erasure eligibility status\n* `401 Unauthorized` - Missing or invalid authentication\n* `500 Internal Server Error` - Database or processing error",
+        "operationId": "can_erase_user",
+        "responses": {
+          "200": {
+            "description": "Erasure eligibility status returned"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/gdpr/erase": {
+      "delete": {
+        "tags": [
+          "GDPR"
+        ],
+        "summary": "Erase user data by anonymization (Article 17 - Right to Erasure)",
+        "description": "This endpoint anonymizes the user's account and all linked owner profiles.\nData is not deleted entirely to preserve referential integrity and comply with\nlegal retention requirements (e.g., financial records must be kept for 7 years).\n\n# Returns\n* `200 OK` - JSON confirmation of successful anonymization\n* `401 Unauthorized` - Missing or invalid authentication\n* `403 Forbidden` - User attempting to erase another user's data\n* `409 Conflict` - Legal holds prevent erasure (e.g., unpaid expenses)\n* `410 Gone` - User already anonymized\n* `500 Internal Server Error` - Database or processing error",
+        "operationId": "erase_user_data",
+        "responses": {
+          "200": {
+            "description": "User data anonymized"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "User not found"
+          },
+          "409": {
+            "description": "Legal holds prevent erasure"
+          },
+          "410": {
+            "description": "User already anonymized"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/gdpr/export": {
+      "get": {
+        "tags": [
+          "GDPR"
+        ],
+        "summary": "Export user personal data (Article 15 - Right to Access)",
+        "description": "# Returns\n* `200 OK` - JSON with complete user data export\n* `401 Unauthorized` - Missing or invalid authentication\n* `403 Forbidden` - User attempting to export another user's data\n* `404 Not Found` - User not found\n* `500 Internal Server Error` - Database or processing error",
+        "operationId": "export_user_data",
+        "responses": {
+          "200": {
+            "description": "User data exported"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "User not found"
+          },
+          "410": {
+            "description": "User already anonymized"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/gdpr/marketing-preference": {
+      "put": {
+        "tags": [
+          "GDPR"
+        ],
+        "summary": "Set marketing opt-out preference (Article 21 - Right to Object)",
+        "description": "Allows users to object to marketing communications and profiling.\n\n# Request Body\n```json\n{\n  \"opt_out\": true  // true to opt out, false to opt back in\n}\n```\n\n# Returns\n* `200 OK` - Marketing preference updated\n* `401 Unauthorized` - Missing or invalid authentication\n* `403 Forbidden` - User attempting to change another user's preferences\n* `404 Not Found` - User not found\n* `500 Internal Server Error` - Database or processing error",
+        "operationId": "set_marketing_preference",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GdprMarketingPreferenceRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Marketing preference updated"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "User not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/gdpr/rectify": {
+      "put": {
+        "tags": [
+          "GDPR"
+        ],
+        "summary": "Rectify user personal data (Article 16 - Right to Rectification)",
+        "description": "Allows users to correct inaccurate or incomplete personal data.\n\n# Request Body\n```json\n{\n  \"email\": \"new@example.com\",        // Optional\n  \"first_name\": \"Jane\",              // Optional\n  \"last_name\": \"Doe\"                 // Optional\n}\n```\n\n# Returns\n* `200 OK` - Data successfully rectified\n* `400 Bad Request` - Validation error (e.g., invalid email)\n* `401 Unauthorized` - Missing or invalid authentication\n* `403 Forbidden` - User attempting to rectify another user's data\n* `404 Not Found` - User not found\n* `500 Internal Server Error` - Database or processing error",
+        "operationId": "rectify_user_data",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GdprRectifyRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Data successfully rectified"
+          },
+          "400": {
+            "description": "Validation error"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "User not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/gdpr/restrict-processing": {
+      "put": {
+        "tags": [
+          "GDPR"
+        ],
+        "summary": "Restrict data processing (Article 18 - Right to Restriction)",
+        "description": "Allows users to request temporary limitation of data processing.\nWhen processing is restricted:\n- Data is stored but not processed for certain operations\n- Marketing communications are blocked\n- Profiling/analytics are disabled\n\n# Returns\n* `200 OK` - Processing restriction applied\n* `400 Bad Request` - Processing already restricted\n* `401 Unauthorized` - Missing or invalid authentication\n* `403 Forbidden` - User attempting to restrict another user's processing\n* `404 Not Found` - User not found\n* `500 Internal Server Error` - Database or processing error",
+        "operationId": "restrict_user_processing",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GdprRestrictProcessingRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Processing restriction applied"
+          },
+          "400": {
+            "description": "Processing already restricted"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "User not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/meetings/{meeting_id}/resolutions": {
+      "get": {
+        "tags": [
+          "Resolutions"
+        ],
+        "summary": "List all resolutions for a meeting",
+        "operationId": "list_meeting_resolutions",
+        "parameters": [
+          {
+            "name": "meeting_id",
+            "in": "path",
+            "description": "Meeting UUID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of resolutions"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "Resolutions"
+        ],
+        "summary": "Create a resolution for a meeting",
+        "operationId": "create_resolution",
+        "parameters": [
+          {
+            "name": "meeting_id",
+            "in": "path",
+            "description": "Meeting UUID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateResolutionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Resolution created"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/meetings/{meeting_id}/vote-summary": {
+      "get": {
+        "tags": [
+          "Resolutions"
+        ],
+        "summary": "Get vote summary for a meeting",
+        "operationId": "get_meeting_vote_summary",
+        "parameters": [
+          {
+            "name": "meeting_id",
+            "in": "path",
+            "description": "Meeting UUID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Vote summary for all meeting resolutions"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/notification-preferences": {
+      "get": {
+        "tags": [
+          "Notifications"
+        ],
+        "summary": "Get all notification preferences for current user",
+        "operationId": "get_user_preferences",
+        "responses": {
+          "200": {
+            "description": "Preferences retrieved"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/notification-preferences/{notification_type}": {
+      "get": {
+        "tags": [
+          "Notifications"
+        ],
+        "summary": "Get a specific notification preference by type",
+        "operationId": "get_preference",
+        "parameters": [
+          {
+            "name": "notification_type",
+            "in": "path",
+            "description": "Notification type (e.g. expense_created, meeting_convocation)",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Preference retrieved"
+          },
+          "400": {
+            "description": "Invalid notification type"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Preference not found"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "Notifications"
+        ],
+        "summary": "Update a notification preference by type",
+        "operationId": "update_preference",
+        "parameters": [
+          {
+            "name": "notification_type",
+            "in": "path",
+            "description": "Notification type (e.g. expense_created, meeting_convocation)",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdatePreferenceRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Preference updated"
+          },
+          "400": {
+            "description": "Invalid notification type or request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/notifications": {
+      "post": {
+        "tags": [
+          "Notifications"
+        ],
+        "summary": "Create a notification",
+        "operationId": "create_notification",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateNotificationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Notification created"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/notifications/my": {
+      "get": {
+        "tags": [
+          "Notifications"
+        ],
+        "summary": "List my notifications",
+        "operationId": "list_my_notifications",
+        "responses": {
+          "200": {
+            "description": "Notifications retrieved"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/notifications/read-all": {
+      "put": {
+        "tags": [
+          "Notifications"
+        ],
+        "summary": "Mark all notifications as read",
+        "operationId": "mark_all_notifications_read",
+        "responses": {
+          "200": {
+            "description": "All notifications marked as read"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/notifications/stats": {
+      "get": {
+        "tags": [
+          "Notifications"
+        ],
+        "summary": "Get notification statistics for current user",
+        "operationId": "get_notification_stats",
+        "responses": {
+          "200": {
+            "description": "Statistics retrieved"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/notifications/unread": {
+      "get": {
+        "tags": [
+          "Notifications"
+        ],
+        "summary": "List unread notifications",
+        "operationId": "list_unread_notifications",
+        "responses": {
+          "200": {
+            "description": "Unread notifications retrieved"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/notifications/{id}": {
+      "get": {
+        "tags": [
+          "Notifications"
+        ],
+        "summary": "Get a notification by ID",
+        "operationId": "get_notification",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Notification ID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Notification retrieved"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Notification not found"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "Notifications"
+        ],
+        "summary": "Delete a notification",
+        "operationId": "delete_notification",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Notification ID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Notification deleted"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Notification not found"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/notifications/{id}/read": {
+      "put": {
+        "tags": [
+          "Notifications"
+        ],
+        "summary": "Mark a notification as read",
+        "operationId": "mark_notification_read",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Notification ID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MarkReadRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Notification marked as read"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/organizations/{organization_id}/payments": {
+      "get": {
+        "tags": [
+          "Payments"
+        ],
+        "summary": "List all payments for an organization",
+        "operationId": "list_organization_payments",
+        "parameters": [
+          {
+            "name": "organization_id",
+            "in": "path",
+            "description": "Organization ID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of organization payments"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/organizations/{organization_id}/tickets": {
+      "get": {
+        "tags": [
+          "Tickets"
+        ],
+        "summary": "List all tickets for an organization",
+        "operationId": "list_organization_tickets",
+        "parameters": [
+          {
+            "name": "organization_id",
+            "in": "path",
+            "description": "Organization ID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of tickets"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/owners/{owner_id}/payments": {
+      "get": {
+        "tags": [
+          "Payments"
+        ],
+        "summary": "List all payments for an owner",
+        "operationId": "list_owner_payments",
+        "parameters": [
+          {
+            "name": "owner_id",
+            "in": "path",
+            "description": "Owner ID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of owner payments"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/owners/{owner_id}/payments/stats": {
+      "get": {
+        "tags": [
+          "Payments"
+        ],
+        "summary": "Get payment statistics for an owner",
+        "operationId": "get_owner_payment_stats",
+        "parameters": [
+          {
+            "name": "owner_id",
+            "in": "path",
+            "description": "Owner ID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Owner payment statistics"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/owners/{owner_id}/payments/total": {
+      "get": {
+        "tags": [
+          "Payments"
+        ],
+        "summary": "Get total amount paid by an owner",
+        "operationId": "get_owner_total_paid",
+        "parameters": [
+          {
+            "name": "owner_id",
+            "in": "path",
+            "description": "Owner ID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Total paid amount in cents"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/payments": {
+      "post": {
+        "tags": [
+          "Payments"
+        ],
+        "summary": "Create a payment",
+        "operationId": "create_payment",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePaymentRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Payment created"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/payments/failed": {
+      "get": {
+        "tags": [
+          "Payments"
+        ],
+        "summary": "List all failed payments for the organization",
+        "operationId": "list_failed_payments",
+        "responses": {
+          "200": {
+            "description": "List of failed payments"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/payments/pending": {
+      "get": {
+        "tags": [
+          "Payments"
+        ],
+        "summary": "List all pending payments for the organization",
+        "operationId": "list_pending_payments",
+        "responses": {
+          "200": {
+            "description": "List of pending payments"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/payments/status/{status}": {
+      "get": {
+        "tags": [
+          "Payments"
+        ],
+        "summary": "List payments by transaction status",
+        "operationId": "list_payments_by_status",
+        "parameters": [
+          {
+            "name": "status",
+            "in": "path",
+            "description": "Transaction status (pending, processing, requires_action, succeeded, failed, cancelled, refunded)",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of payments with given status"
+          },
+          "400": {
+            "description": "Invalid status value"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/payments/stripe/{stripe_payment_intent_id}": {
+      "get": {
+        "tags": [
+          "Payments"
+        ],
+        "summary": "Get a payment by Stripe payment intent ID",
+        "operationId": "get_payment_by_stripe_intent",
+        "parameters": [
+          {
+            "name": "stripe_payment_intent_id",
+            "in": "path",
+            "description": "Stripe payment intent ID",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Payment found"
+          },
+          "404": {
+            "description": "Payment not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/payments/{id}": {
+      "get": {
+        "tags": [
+          "Payments"
+        ],
+        "summary": "Get a payment by ID",
+        "operationId": "get_payment",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Payment ID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Payment found"
+          },
+          "404": {
+            "description": "Payment not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "Payments"
+        ],
+        "summary": "Delete a payment",
+        "operationId": "delete_payment",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Payment ID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Payment deleted"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Payment not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/payments/{id}/cancelled": {
+      "put": {
+        "tags": [
+          "Payments"
+        ],
+        "summary": "Mark a payment as cancelled",
+        "operationId": "mark_payment_cancelled",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Payment ID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Payment marked as cancelled"
+          },
+          "400": {
+            "description": "Invalid state transition"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/payments/{id}/failed": {
+      "put": {
+        "tags": [
+          "Payments"
+        ],
+        "summary": "Mark a payment as failed",
+        "operationId": "mark_payment_failed",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Payment ID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {}
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Payment marked as failed"
+          },
+          "400": {
+            "description": "Invalid state transition"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/payments/{id}/processing": {
+      "put": {
+        "tags": [
+          "Payments"
+        ],
+        "summary": "Mark a payment as processing",
+        "operationId": "mark_payment_processing",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Payment ID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Payment marked as processing"
+          },
+          "400": {
+            "description": "Invalid state transition"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/payments/{id}/refund": {
+      "post": {
+        "tags": [
+          "Payments"
+        ],
+        "summary": "Refund a payment (partial or full)",
+        "operationId": "refund_payment",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Payment ID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RefundPaymentRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Payment refunded"
+          },
+          "400": {
+            "description": "Refund not allowed or exceeds payment amount"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/payments/{id}/requires-action": {
+      "put": {
+        "tags": [
+          "Payments"
+        ],
+        "summary": "Mark a payment as requiring action",
+        "operationId": "mark_payment_requires_action",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Payment ID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Payment marked as requires action"
+          },
+          "400": {
+            "description": "Invalid state transition"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/payments/{id}/succeeded": {
+      "put": {
+        "tags": [
+          "Payments"
+        ],
+        "summary": "Mark a payment as succeeded",
+        "operationId": "mark_payment_succeeded",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Payment ID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Payment marked as succeeded"
+          },
+          "400": {
+            "description": "Invalid state transition"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/polls": {
+      "get": {
+        "tags": [
+          "Polls"
+        ],
+        "summary": "List polls with pagination and filters",
+        "operationId": "list_polls",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "description": "Page number",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "per_page",
+            "in": "query",
+            "description": "Items per page",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "building_id",
+            "in": "query",
+            "description": "Filter by building UUID",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "created_by",
+            "in": "query",
+            "description": "Filter by creator UUID",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "ends_before",
+            "in": "query",
+            "description": "Filter polls ending before date",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "ends_after",
+            "in": "query",
+            "description": "Filter polls ending after date",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Paginated list of polls"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "Polls"
+        ],
+        "summary": "Create a new poll",
+        "operationId": "create_poll",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePollDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Poll created"
+          },
+          "400": {
+            "description": "Bad Request"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/polls/vote": {
+      "post": {
+        "tags": [
+          "Polls"
+        ],
+        "summary": "Cast a vote on a poll",
+        "operationId": "cast_poll_vote",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CastVoteDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Vote cast successfully"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "404": {
+            "description": "Poll not found"
+          },
+          "409": {
+            "description": "Already voted"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/polls/{id}": {
+      "get": {
+        "tags": [
+          "Polls"
+        ],
+        "summary": "Get poll by ID",
+        "operationId": "get_poll",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Poll UUID",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Poll found"
+          },
+          "400": {
+            "description": "Invalid ID format"
+          },
+          "404": {
+            "description": "Poll not found"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "Polls"
+        ],
+        "summary": "Update a draft poll",
+        "operationId": "update_poll",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Poll UUID",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdatePollDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Poll updated"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Poll not found"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "Polls"
+        ],
+        "summary": "Delete a draft or cancelled poll",
+        "operationId": "delete_poll",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Poll UUID",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Poll deleted"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Poll not found"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/polls/{id}/cancel": {
+      "post": {
+        "tags": [
+          "Polls"
+        ],
+        "summary": "Cancel a poll",
+        "operationId": "cancel_poll",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Poll UUID",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Poll cancelled"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Poll not found"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/polls/{id}/close": {
+      "post": {
+        "tags": [
+          "Polls"
+        ],
+        "summary": "Close a poll manually",
+        "operationId": "close_poll",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Poll UUID",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Poll closed"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Poll not found"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/polls/{id}/publish": {
+      "post": {
+        "tags": [
+          "Polls"
+        ],
+        "summary": "Publish a draft poll",
+        "operationId": "publish_poll",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Poll UUID",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Poll published"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Poll not found"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/polls/{id}/results": {
+      "get": {
+        "tags": [
+          "Polls"
+        ],
+        "summary": "Get poll results and statistics",
+        "operationId": "get_poll_results",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Poll UUID",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Poll results"
+          },
+          "400": {
+            "description": "Invalid ID format"
+          },
+          "404": {
+            "description": "Poll not found"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/resolutions/{id}": {
+      "get": {
+        "tags": [
+          "Resolutions"
+        ],
+        "summary": "Get resolution by ID",
+        "operationId": "get_resolution",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Resolution UUID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Resolution found"
+          },
+          "404": {
+            "description": "Resolution not found"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "Resolutions"
+        ],
+        "summary": "Delete a resolution",
+        "operationId": "delete_resolution",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Resolution UUID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Resolution deleted"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Resolution not found"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/resolutions/{resolution_id}/close": {
+      "put": {
+        "tags": [
+          "Resolutions"
+        ],
+        "summary": "Close voting on a resolution and calculate result",
+        "operationId": "close_voting",
+        "parameters": [
+          {
+            "name": "resolution_id",
+            "in": "path",
+            "description": "Resolution UUID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CloseVotingRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Voting closed and result calculated"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/resolutions/{resolution_id}/vote": {
+      "post": {
+        "tags": [
+          "Resolutions"
+        ],
+        "summary": "Cast a vote on a resolution",
+        "operationId": "cast_vote",
+        "parameters": [
+          {
+            "name": "resolution_id",
+            "in": "path",
+            "description": "Resolution UUID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CastVoteRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Vote cast"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/resolutions/{resolution_id}/votes": {
+      "get": {
+        "tags": [
+          "Resolutions"
+        ],
+        "summary": "List all votes for a resolution",
+        "operationId": "list_resolution_votes",
+        "parameters": [
+          {
+            "name": "resolution_id",
+            "in": "path",
+            "description": "Resolution UUID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of votes"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/tickets": {
+      "post": {
+        "tags": [
+          "Tickets"
+        ],
+        "summary": "Create a new maintenance ticket",
+        "operationId": "create_ticket",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateTicketRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Ticket created"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/tickets/assigned-to-me": {
+      "get": {
+        "tags": [
+          "Tickets"
+        ],
+        "summary": "List tickets assigned to the authenticated user",
+        "operationId": "list_assigned_tickets",
+        "responses": {
+          "200": {
+            "description": "List of assigned tickets"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/tickets/my": {
+      "get": {
+        "tags": [
+          "Tickets"
+        ],
+        "summary": "List tickets created by the authenticated user",
+        "operationId": "list_my_tickets",
+        "responses": {
+          "200": {
+            "description": "List of tickets"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/tickets/overdue": {
+      "get": {
+        "tags": [
+          "Tickets"
+        ],
+        "summary": "List overdue tickets for the organization",
+        "operationId": "get_overdue_tickets_org",
+        "parameters": [
+          {
+            "name": "max_days",
+            "in": "query",
+            "description": "Maximum overdue days filter (default: 7)",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of overdue tickets"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/tickets/statistics": {
+      "get": {
+        "tags": [
+          "Tickets"
+        ],
+        "summary": "Get ticket statistics for the organization",
+        "operationId": "get_ticket_statistics_org",
+        "responses": {
+          "200": {
+            "description": "Ticket statistics"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/tickets/{id}": {
+      "get": {
+        "tags": [
+          "Tickets"
+        ],
+        "summary": "Get a ticket by ID",
+        "operationId": "get_ticket",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Ticket ID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Ticket found"
+          },
+          "404": {
+            "description": "Ticket not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "Tickets"
+        ],
+        "summary": "Delete a ticket",
+        "operationId": "delete_ticket",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Ticket ID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Ticket deleted"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Ticket not found"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/tickets/{id}/assign": {
+      "put": {
+        "tags": [
+          "Tickets"
+        ],
+        "summary": "Assign a ticket to a contractor",
+        "operationId": "assign_ticket",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Ticket ID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AssignTicketRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Ticket assigned"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/tickets/{id}/cancel": {
+      "put": {
+        "tags": [
+          "Tickets"
+        ],
+        "summary": "Cancel a ticket",
+        "operationId": "cancel_ticket",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Ticket ID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CancelTicketRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Ticket cancelled"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/tickets/{id}/close": {
+      "put": {
+        "tags": [
+          "Tickets"
+        ],
+        "summary": "Close a resolved ticket",
+        "operationId": "close_ticket",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Ticket ID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Ticket closed"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/tickets/{id}/reopen": {
+      "put": {
+        "tags": [
+          "Tickets"
+        ],
+        "summary": "Reopen a closed or cancelled ticket",
+        "operationId": "reopen_ticket",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Ticket ID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReopenTicketRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Ticket reopened"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/tickets/{id}/resolve": {
+      "put": {
+        "tags": [
+          "Tickets"
+        ],
+        "summary": "Mark a ticket as resolved",
+        "operationId": "resolve_ticket",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Ticket ID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResolveTicketRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Ticket resolved"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/tickets/{id}/start-work": {
+      "put": {
+        "tags": [
+          "Tickets"
+        ],
+        "summary": "Start work on an assigned ticket",
+        "operationId": "start_work",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Ticket ID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Work started"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/votes/{vote_id}": {
+      "put": {
+        "tags": [
+          "Resolutions"
+        ],
+        "summary": "Change an existing vote",
+        "operationId": "change_vote",
+        "parameters": [
+          {
+            "name": "vote_id",
+            "in": "path",
+            "description": "Vote UUID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChangeVoteRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Vote changed"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AchievementCategory": {
+        "type": "string",
+        "description": "Achievement category for organizational purposes",
+        "enum": [
+          "Community",
+          "Sel",
+          "Booking",
+          "Sharing",
+          "Skills",
+          "Notice",
+          "Governance",
+          "Milestone"
+        ]
+      },
+      "AchievementTier": {
+        "type": "string",
+        "description": "Achievement tier for progression",
+        "enum": [
+          "Bronze",
+          "Silver",
+          "Gold",
+          "Platinum",
+          "Diamond"
+        ]
+      },
+      "ApprovalStatus": {
+        "type": "string",
+        "description": "Statut d'approbation pour le workflow de validation",
+        "enum": [
+          "draft",
+          "pending_approval",
+          "approved",
+          "rejected"
+        ]
+      },
+      "AssignTicketRequest": {
+        "type": "object",
+        "required": [
+          "assigned_to"
+        ],
+        "properties": {
+          "assigned_to": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
+      "AttendanceStatus": {
+        "type": "string",
+        "description": "Attendance status for recipient",
+        "enum": [
+          "Pending",
+          "WillAttend",
+          "WillNotAttend",
+          "Attended",
+          "DidNotAttend"
+        ]
+      },
+      "BookingStatus": {
+        "type": "string",
+        "description": "Booking status lifecycle",
+        "enum": [
+          "Pending",
+          "Confirmed",
+          "Cancelled",
+          "Completed",
+          "NoShow"
+        ]
+      },
+      "BudgetStatus": {
+        "type": "string",
+        "description": "Statut du budget annuel",
+        "enum": [
+          "Draft",
+          "Submitted",
+          "Approved",
+          "Rejected",
+          "Archived"
+        ]
+      },
+      "CampaignStatus": {
+        "type": "string",
+        "enum": [
+          "Draft",
+          "AwaitingAGVote",
+          "CollectingData",
+          "Negotiating",
+          "AwaitingFinalVote",
+          "Finalized",
+          "Completed",
+          "Cancelled"
+        ]
+      },
+      "CampaignType": {
+        "type": "string",
+        "enum": [
+          "BuyingGroup",
+          "CollectiveSwitch"
+        ]
+      },
+      "CancelTicketRequest": {
+        "type": "object",
+        "required": [
+          "reason"
+        ],
+        "properties": {
+          "reason": {
+            "type": "string"
+          }
+        }
+      },
+      "CastVoteDto": {
+        "type": "object",
+        "description": "Cast a vote on a poll",
+        "required": [
+          "poll_id"
+        ],
+        "properties": {
+          "open_text": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "poll_id": {
+            "type": "string"
+          },
+          "rating_value": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32"
+          },
+          "selected_option_ids": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "CastVoteRequest": {
+        "type": "object",
+        "description": "Request DTO for casting a vote",
+        "required": [
+          "owner_id",
+          "unit_id",
+          "vote_choice",
+          "voting_power"
+        ],
+        "properties": {
+          "owner_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "proxy_owner_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "unit_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "vote_choice": {
+            "$ref": "#/components/schemas/VoteChoice"
+          },
+          "voting_power": {
+            "type": "number",
+            "format": "double"
+          }
+        }
+      },
+      "ChallengeStatus": {
+        "type": "string",
+        "description": "Challenge status lifecycle",
+        "enum": [
+          "Draft",
+          "Active",
+          "Completed",
+          "Cancelled"
+        ]
+      },
+      "ChallengeType": {
+        "type": "string",
+        "description": "Challenge type for different engagement patterns",
+        "enum": [
+          "Individual",
+          "Team",
+          "Building"
+        ]
+      },
+      "ChangeVoteRequest": {
+        "type": "object",
+        "description": "Request DTO for changing a vote",
+        "required": [
+          "vote_choice"
+        ],
+        "properties": {
+          "vote_choice": {
+            "$ref": "#/components/schemas/VoteChoice"
+          }
+        }
+      },
+      "CloseVotingRequest": {
+        "type": "object",
+        "description": "Request DTO for closing voting on a resolution",
+        "required": [
+          "total_voting_power"
+        ],
+        "properties": {
+          "total_voting_power": {
+            "type": "number",
+            "format": "double"
+          }
+        }
+      },
+      "ConsentRecordedResponse": {
+        "type": "object",
+        "description": "Response for successful consent recording",
+        "required": [
+          "message",
+          "consent_type",
+          "accepted_at"
+        ],
+        "properties": {
+          "accepted_at": {
+            "type": "string",
+            "description": "Timestamp when consent was recorded"
+          },
+          "consent_type": {
+            "type": "string",
+            "description": "Consent type that was recorded"
+          },
+          "message": {
+            "type": "string",
+            "description": "Success message"
+          }
+        }
+      },
+      "ConsentStatusResponse": {
+        "type": "object",
+        "description": "Response for consent status check",
+        "required": [
+          "privacy_policy_accepted",
+          "terms_accepted",
+          "user_id"
+        ],
+        "properties": {
+          "privacy_policy_accepted": {
+            "type": "boolean",
+            "description": "Whether the user has given consent to privacy policy"
+          },
+          "privacy_policy_accepted_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Timestamp of latest privacy policy consent (if given)"
+          },
+          "terms_accepted": {
+            "type": "boolean",
+            "description": "Whether the user has given consent to terms"
+          },
+          "terms_accepted_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Timestamp of latest terms consent (if given)"
+          },
+          "user_id": {
+            "type": "string",
+            "description": "User ID"
+          }
+        }
+      },
+      "ContractType": {
+        "type": "string",
+        "enum": [
+          "Fixed",
+          "Variable"
+        ]
+      },
+      "ConvocationStatus": {
+        "type": "string",
+        "description": "Convocation status",
+        "enum": [
+          "Draft",
+          "Scheduled",
+          "Sent",
+          "Cancelled"
+        ]
+      },
+      "ConvocationType": {
+        "type": "string",
+        "description": "Convocation type according to Belgian copropriété law\nArt. 3.87 §3 Code Civil (ex Art. 577-6 §2): minimum 15 days notice for ALL types",
+        "enum": [
+          "Ordinary",
+          "Extraordinary",
+          "SecondConvocation"
+        ]
+      },
+      "CreateBuildingDto": {
+        "type": "object",
+        "required": [
+          "organization_id",
+          "name",
+          "address",
+          "city",
+          "postal_code",
+          "country",
+          "total_units"
+        ],
+        "properties": {
+          "address": {
+            "type": "string"
+          },
+          "city": {
+            "type": "string"
+          },
+          "construction_year": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32"
+          },
+          "country": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "organization_id": {
+            "type": "string"
+          },
+          "postal_code": {
+            "type": "string"
+          },
+          "total_tantiemes": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32"
+          },
+          "total_units": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "CreateNotificationRequest": {
+        "type": "object",
+        "description": "Create Notification Request",
+        "required": [
+          "user_id",
+          "notification_type",
+          "channel",
+          "priority",
+          "title",
+          "message"
+        ],
+        "properties": {
+          "channel": {
+            "$ref": "#/components/schemas/NotificationChannel"
+          },
+          "link_url": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "message": {
+            "type": "string"
+          },
+          "metadata": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "notification_type": {
+            "$ref": "#/components/schemas/NotificationType"
+          },
+          "priority": {
+            "$ref": "#/components/schemas/NotificationPriority"
+          },
+          "title": {
+            "type": "string"
+          },
+          "user_id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
+      "CreatePaymentRequest": {
+        "type": "object",
+        "description": "Create payment request DTO",
+        "required": [
+          "building_id",
+          "owner_id",
+          "amount_cents",
+          "payment_method_type"
+        ],
+        "properties": {
+          "amount_cents": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "building_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "expense_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "metadata": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "owner_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "payment_method_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "payment_method_type": {
+            "$ref": "#/components/schemas/PaymentMethodType"
+          }
+        }
+      },
+      "CreatePollDto": {
+        "type": "object",
+        "description": "Create a new poll",
+        "required": [
+          "building_id",
+          "title",
+          "poll_type",
+          "options",
+          "ends_at"
+        ],
+        "properties": {
+          "allow_multiple_votes": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          },
+          "building_id": {
+            "type": "string"
+          },
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "ends_at": {
+            "type": "string"
+          },
+          "is_anonymous": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          },
+          "options": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CreatePollOptionDto"
+            }
+          },
+          "poll_type": {
+            "type": "string"
+          },
+          "require_all_owners": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          },
+          "title": {
+            "type": "string"
+          }
+        }
+      },
+      "CreatePollOptionDto": {
+        "type": "object",
+        "required": [
+          "option_text",
+          "display_order"
+        ],
+        "properties": {
+          "attachment_url": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "display_order": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "option_text": {
+            "type": "string"
+          }
+        }
+      },
+      "CreateResolutionRequest": {
+        "type": "object",
+        "description": "Request DTO for creating a resolution",
+        "required": [
+          "meeting_id",
+          "title",
+          "description",
+          "resolution_type",
+          "majority_required"
+        ],
+        "properties": {
+          "agenda_item_index": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 0
+          },
+          "description": {
+            "type": "string"
+          },
+          "majority_required": {
+            "$ref": "#/components/schemas/MajorityType"
+          },
+          "meeting_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "resolution_type": {
+            "$ref": "#/components/schemas/ResolutionType"
+          },
+          "title": {
+            "type": "string"
+          }
+        }
+      },
+      "CreateTicketRequest": {
+        "type": "object",
+        "required": [
+          "building_id",
+          "title",
+          "description",
+          "category",
+          "priority"
+        ],
+        "properties": {
+          "building_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "category": {
+            "$ref": "#/components/schemas/TicketCategory"
+          },
+          "description": {
+            "type": "string"
+          },
+          "priority": {
+            "$ref": "#/components/schemas/TicketPriority"
+          },
+          "title": {
+            "type": "string"
+          },
+          "unit_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          }
+        }
+      },
+      "CreditStatus": {
+        "type": "string",
+        "enum": [
+          "Positive",
+          "Balanced",
+          "Negative"
+        ]
+      },
+      "DeliveryMethod": {
+        "type": "string",
+        "description": "Méthode d'envoi de la relance",
+        "enum": [
+          "Email",
+          "RegisteredLetter",
+          "Bailiff"
+        ]
+      },
+      "EnergyType": {
+        "type": "string",
+        "enum": [
+          "Electricity",
+          "Gas",
+          "Both"
+        ]
+      },
+      "EtatDateLanguage": {
+        "type": "string",
+        "description": "Langue de génération du document (Belgique: FR/NL/DE)",
+        "enum": [
+          "fr",
+          "nl",
+          "de"
+        ]
+      },
+      "EtatDateStatus": {
+        "type": "string",
+        "description": "Statut de l'état daté (workflow de génération)",
+        "enum": [
+          "requested",
+          "in_progress",
+          "generated",
+          "delivered",
+          "expired"
+        ]
+      },
+      "ExchangeStatus": {
+        "type": "string",
+        "enum": [
+          "Offered",
+          "Requested",
+          "InProgress",
+          "Completed",
+          "Cancelled"
+        ]
+      },
+      "ExchangeType": {
+        "type": "string",
+        "enum": [
+          "Service",
+          "ObjectLoan",
+          "SharedPurchase"
+        ]
+      },
+      "ExpenseCategory": {
+        "type": "string",
+        "description": "Catégorie de charges",
+        "enum": [
+          "Maintenance",
+          "Repairs",
+          "Insurance",
+          "Utilities",
+          "Cleaning",
+          "Administration",
+          "Works",
+          "Other"
+        ]
+      },
+      "ExpertiseLevel": {
+        "type": "string",
+        "description": "Expertise level for skill proficiency",
+        "enum": [
+          "Beginner",
+          "Intermediate",
+          "Advanced",
+          "Expert"
+        ]
+      },
+      "GdprMarketingPreferenceRequest": {
+        "type": "object",
+        "required": [
+          "opt_out"
+        ],
+        "properties": {
+          "opt_out": {
+            "type": "boolean"
+          }
+        }
+      },
+      "GdprRectifyRequest": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "first_name": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "last_name": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
+      "GdprRestrictProcessingRequest": {
+        "type": "object"
+      },
+      "InspectionStatus": {
+        "type": "string",
+        "enum": [
+          "scheduled",
+          "in_progress",
+          "completed",
+          "failed",
+          "overdue",
+          "cancelled"
+        ]
+      },
+      "InspectionType": {
+        "oneOf": [
+          {
+            "type": "string",
+            "enum": [
+              "elevator"
+            ]
+          },
+          {
+            "type": "string",
+            "enum": [
+              "boiler"
+            ]
+          },
+          {
+            "type": "string",
+            "enum": [
+              "electrical"
+            ]
+          },
+          {
+            "type": "string",
+            "enum": [
+              "fire_extinguisher"
+            ]
+          },
+          {
+            "type": "string",
+            "enum": [
+              "fire_alarm"
+            ]
+          },
+          {
+            "type": "string",
+            "enum": [
+              "gas_installation"
+            ]
+          },
+          {
+            "type": "string",
+            "enum": [
+              "roof_structure"
+            ]
+          },
+          {
+            "type": "string",
+            "enum": [
+              "facade"
+            ]
+          },
+          {
+            "type": "string",
+            "enum": [
+              "water_quality"
+            ]
+          },
+          {
+            "type": "object",
+            "required": [
+              "other"
+            ],
+            "properties": {
+              "other": {
+                "type": "object",
+                "required": [
+                  "name"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        ]
+      },
+      "LoginRequest": {
+        "type": "object",
+        "required": [
+          "email",
+          "password"
+        ],
+        "properties": {
+          "email": {
+            "type": "string"
+          },
+          "password": {
+            "type": "string"
+          }
+        }
+      },
+      "MajorityType": {
+        "type": "string",
+        "description": "Type de majorité requise pour adoption — Art. 3.88 §1 Code Civil belge",
+        "enum": [
+          "absolute",
+          "two_thirds",
+          "four_fifths",
+          "unanimity"
+        ]
+      },
+      "MarkReadRequest": {
+        "type": "object",
+        "description": "Mark Notification as Read Request (for in-app only)"
+      },
+      "MeetingStatus": {
+        "type": "string",
+        "description": "Statut de l'assemblée",
+        "enum": [
+          "Scheduled",
+          "Completed",
+          "Cancelled"
+        ]
+      },
+      "MeetingType": {
+        "type": "string",
+        "description": "Type d'assemblée générale",
+        "enum": [
+          "Ordinary",
+          "Extraordinary"
+        ]
+      },
+      "NoticeCategory": {
+        "type": "string",
+        "description": "Notice category for filtering",
+        "enum": [
+          "General",
+          "Maintenance",
+          "Social",
+          "Security",
+          "Environment",
+          "Parking",
+          "Other"
+        ]
+      },
+      "NoticeStatus": {
+        "type": "string",
+        "description": "Notice status workflow",
+        "enum": [
+          "Draft",
+          "Published",
+          "Archived",
+          "Expired"
+        ]
+      },
+      "NoticeType": {
+        "type": "string",
+        "description": "Notice type for community board",
+        "enum": [
+          "Announcement",
+          "Event",
+          "LostAndFound",
+          "ClassifiedAd"
+        ]
+      },
+      "NotificationChannel": {
+        "type": "string",
+        "description": "Notification Channel - Delivery method",
+        "enum": [
+          "Email",
+          "InApp",
+          "Push"
+        ]
+      },
+      "NotificationPriority": {
+        "type": "string",
+        "description": "Notification Priority",
+        "enum": [
+          "Low",
+          "Medium",
+          "High",
+          "Critical"
+        ]
+      },
+      "NotificationStatus": {
+        "type": "string",
+        "description": "Notification Status",
+        "enum": [
+          "Pending",
+          "Sent",
+          "Failed",
+          "Read"
+        ]
+      },
+      "NotificationType": {
+        "type": "string",
+        "description": "Notification Type - Different categories of notifications",
+        "enum": [
+          "ExpenseCreated",
+          "MeetingConvocation",
+          "PaymentReceived",
+          "TicketResolved",
+          "DocumentAdded",
+          "BoardMessage",
+          "PaymentReminder",
+          "BudgetApproved",
+          "ResolutionVote",
+          "System"
+        ]
+      },
+      "ObjectCondition": {
+        "type": "string",
+        "description": "Condition of shared object",
+        "enum": [
+          "Excellent",
+          "Good",
+          "Fair",
+          "Used"
+        ]
+      },
+      "ParticipationLevel": {
+        "type": "string",
+        "enum": [
+          "New",
+          "Beginner",
+          "Active",
+          "Veteran",
+          "Expert"
+        ]
+      },
+      "PaymentMethodType": {
+        "type": "string",
+        "description": "Payment method type (extensible for future methods)",
+        "enum": [
+          "card",
+          "sepa_debit",
+          "bank_transfer",
+          "cash"
+        ]
+      },
+      "PaymentStatus": {
+        "type": "string",
+        "description": "Statut de paiement",
+        "enum": [
+          "pending",
+          "paid",
+          "overdue",
+          "cancelled"
+        ]
+      },
+      "PollStatus": {
+        "type": "string",
+        "enum": [
+          "draft",
+          "active",
+          "closed",
+          "cancelled"
+        ]
+      },
+      "PollType": {
+        "type": "string",
+        "enum": [
+          "yes_no",
+          "multiple_choice",
+          "rating",
+          "open_ended"
+        ]
+      },
+      "QuoteStatus": {
+        "type": "string",
+        "enum": [
+          "Requested",
+          "Received",
+          "UnderReview",
+          "Accepted",
+          "Rejected",
+          "Expired",
+          "Withdrawn"
+        ]
+      },
+      "RecordConsentRequest": {
+        "type": "object",
+        "description": "Request body for recording user consent",
+        "required": [
+          "consent_type"
+        ],
+        "properties": {
+          "consent_type": {
+            "type": "string",
+            "description": "Type of consent: 'privacy_policy' or 'terms'"
+          },
+          "policy_version": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Optional policy version (e.g., \"1.0\", \"1.1\")"
+          }
+        }
+      },
+      "RecurringPattern": {
+        "type": "string",
+        "description": "Recurring pattern for repeated bookings",
+        "enum": [
+          "None",
+          "Daily",
+          "Weekly",
+          "Monthly"
+        ]
+      },
+      "RefreshTokenRequest": {
+        "type": "object",
+        "required": [
+          "refresh_token"
+        ],
+        "properties": {
+          "refresh_token": {
+            "type": "string"
+          }
+        }
+      },
+      "RefundPaymentRequest": {
+        "type": "object",
+        "description": "Refund payment request DTO",
+        "required": [
+          "amount_cents"
+        ],
+        "properties": {
+          "amount_cents": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "reason": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
+      "RegisterRequest": {
+        "type": "object",
+        "required": [
+          "email",
+          "password",
+          "first_name",
+          "last_name",
+          "role"
+        ],
+        "properties": {
+          "email": {
+            "type": "string"
+          },
+          "first_name": {
+            "type": "string"
+          },
+          "last_name": {
+            "type": "string"
+          },
+          "organization_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "password": {
+            "type": "string"
+          },
+          "role": {
+            "type": "string"
+          }
+        }
+      },
+      "ReminderLevel": {
+        "type": "string",
+        "description": "Niveau de relance de paiement",
+        "enum": [
+          "FirstReminder",
+          "SecondReminder",
+          "FormalNotice"
+        ]
+      },
+      "ReminderStatus": {
+        "type": "string",
+        "description": "Statut d'une relance",
+        "enum": [
+          "Pending",
+          "Sent",
+          "Opened",
+          "Paid",
+          "Escalated",
+          "Cancelled"
+        ]
+      },
+      "ReopenTicketRequest": {
+        "type": "object",
+        "required": [
+          "reason"
+        ],
+        "properties": {
+          "reason": {
+            "type": "string"
+          }
+        }
+      },
+      "ResolutionStatus": {
+        "type": "string",
+        "description": "Statut d'une résolution",
+        "enum": [
+          "pending",
+          "adopted",
+          "rejected"
+        ]
+      },
+      "ResolutionType": {
+        "type": "string",
+        "description": "Type de résolution (ordinaire ou extraordinaire)",
+        "enum": [
+          "ordinary",
+          "extraordinary"
+        ]
+      },
+      "ResolveTicketRequest": {
+        "type": "object",
+        "required": [
+          "resolution_notes"
+        ],
+        "properties": {
+          "resolution_notes": {
+            "type": "string"
+          }
+        }
+      },
+      "ResourceType": {
+        "type": "string",
+        "description": "Resource types available for booking in a building",
+        "enum": [
+          "MeetingRoom",
+          "LaundryRoom",
+          "Gym",
+          "Rooftop",
+          "ParkingSpot",
+          "CommonSpace",
+          "GuestRoom",
+          "BikeStorage",
+          "Other"
+        ]
+      },
+      "SharedObjectCategory": {
+        "type": "string",
+        "description": "Category for shared objects",
+        "enum": [
+          "Tools",
+          "Books",
+          "Electronics",
+          "Sports",
+          "Gardening",
+          "Kitchen",
+          "Baby",
+          "Other"
+        ]
+      },
+      "SkillCategory": {
+        "type": "string",
+        "description": "Skill category for classification",
+        "enum": [
+          "HomeRepair",
+          "Languages",
+          "Technology",
+          "Education",
+          "Arts",
+          "Sports",
+          "Cooking",
+          "Gardening",
+          "Health",
+          "Legal",
+          "Financial",
+          "PetCare",
+          "Other"
+        ]
+      },
+      "SortOrder": {
+        "type": "string",
+        "description": "Sort order for pagination",
+        "enum": [
+          "asc",
+          "desc"
+        ]
+      },
+      "SwitchRoleRequest": {
+        "type": "object",
+        "required": [
+          "role_id"
+        ],
+        "properties": {
+          "role_id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
+      "TicketCategory": {
+        "type": "string",
+        "description": "Ticket Category - Types of maintenance requests",
+        "enum": [
+          "Plumbing",
+          "Electrical",
+          "Heating",
+          "CommonAreas",
+          "Elevator",
+          "Security",
+          "Cleaning",
+          "Landscaping",
+          "Other"
+        ]
+      },
+      "TicketPriority": {
+        "type": "string",
+        "description": "Ticket Priority",
+        "enum": [
+          "Low",
+          "Medium",
+          "High",
+          "Critical"
+        ]
+      },
+      "TicketStatus": {
+        "type": "string",
+        "description": "Ticket Status - Workflow states",
+        "enum": [
+          "Open",
+          "InProgress",
+          "Resolved",
+          "Closed",
+          "Cancelled"
+        ]
+      },
+      "TransactionStatus": {
+        "type": "string",
+        "description": "Payment transaction status following Stripe webhook lifecycle\nNote: This is different from expense::PaymentStatus which tracks expense payment state",
+        "enum": [
+          "pending",
+          "processing",
+          "requires_action",
+          "succeeded",
+          "failed",
+          "cancelled",
+          "refunded"
+        ]
+      },
+      "UpdateBuildingDto": {
+        "type": "object",
+        "required": [
+          "name",
+          "address",
+          "city",
+          "postal_code",
+          "country",
+          "total_units"
+        ],
+        "properties": {
+          "address": {
+            "type": "string"
+          },
+          "city": {
+            "type": "string"
+          },
+          "construction_year": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32"
+          },
+          "country": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "organization_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "postal_code": {
+            "type": "string"
+          },
+          "total_tantiemes": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32"
+          },
+          "total_units": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "UpdatePollDto": {
+        "type": "object",
+        "description": "Update poll (only draft polls can be updated)",
+        "properties": {
+          "allow_multiple_votes": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          },
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "ends_at": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "is_anonymous": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          },
+          "options": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/CreatePollOptionDto"
+            }
+          },
+          "require_all_owners": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          },
+          "title": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
+      "UpdatePreferenceRequest": {
+        "type": "object",
+        "description": "Update Notification Preference Request",
+        "properties": {
+          "email_enabled": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          },
+          "in_app_enabled": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          },
+          "push_enabled": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          }
+        }
+      },
+      "VoteChoice": {
+        "type": "string",
+        "description": "Choix de vote d'un copropriétaire",
+        "enum": [
+          "pour",
+          "contre",
+          "abstention"
+        ]
+      },
+      "WarrantyType": {
+        "oneOf": [
+          {
+            "type": "string",
+            "enum": [
+              "none"
+            ]
+          },
+          {
+            "type": "string",
+            "enum": [
+              "standard"
+            ]
+          },
+          {
+            "type": "string",
+            "enum": [
+              "decennial"
+            ]
+          },
+          {
+            "type": "string",
+            "enum": [
+              "extended"
+            ]
+          },
+          {
+            "type": "object",
+            "required": [
+              "custom"
+            ],
+            "properties": {
+              "custom": {
+                "type": "object",
+                "required": [
+                  "years"
+                ],
+                "properties": {
+                  "years": {
+                    "type": "integer",
+                    "format": "int32"
+                  }
+                }
+              }
+            }
+          }
+        ]
+      },
+      "WorkType": {
+        "type": "string",
+        "enum": [
+          "maintenance",
+          "repair",
+          "renovation",
+          "emergency",
+          "inspection",
+          "installation",
+          "other"
+        ]
+      }
+    },
+    "securitySchemes": {
+      "bearer_auth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "JWT token obtained from /api/v1/auth/login.\n\nExample: `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...`\n\nTo authenticate:\n1. Click 'Authorize' button above\n2. Enter token (with or without 'Bearer ' prefix)\n3. Click 'Authorize' in dialog\n4. Try endpoints"
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "Health",
+      "description": "System health and monitoring"
+    },
+    {
+      "name": "Auth",
+      "description": "Authentication and authorization"
+    },
+    {
+      "name": "Buildings",
+      "description": "Building management"
+    },
+    {
+      "name": "Units",
+      "description": "Unit management"
+    },
+    {
+      "name": "Owners",
+      "description": "Owner management"
+    },
+    {
+      "name": "Expenses",
+      "description": "Expense and invoice management"
+    },
+    {
+      "name": "Meetings",
+      "description": "General assembly management"
+    },
+    {
+      "name": "Budgets",
+      "description": "Annual budget management"
+    },
+    {
+      "name": "Documents",
+      "description": "Document upload/download"
+    },
+    {
+      "name": "GDPR",
+      "description": "Data privacy compliance"
+    },
+    {
+      "name": "Payments",
+      "description": "Payment processing"
+    },
+    {
+      "name": "PaymentMethods",
+      "description": "Stored payment methods"
+    },
+    {
+      "name": "LocalExchanges",
+      "description": "SEL time-based exchange system"
+    },
+    {
+      "name": "Notifications",
+      "description": "Multi-channel notifications"
+    },
+    {
+      "name": "Tickets",
+      "description": "Maintenance request system"
+    },
+    {
+      "name": "Resolutions",
+      "description": "Meeting voting system"
+    },
+    {
+      "name": "BoardMembers",
+      "description": "Board of directors management"
+    },
+    {
+      "name": "Quotes",
+      "description": "Contractor quote management"
+    },
+    {
+      "name": "EtatsDates",
+      "description": "Property sale documentation"
+    },
+    {
+      "name": "PaymentRecovery",
+      "description": "Automated payment reminders"
+    },
+    {
+      "name": "Consent",
+      "description": "User consent management (GDPR Art. 7)"
+    },
+    {
+      "name": "Legal Reference",
+      "description": "Belgian legal reference rules and majority types"
+    }
+  ]
+}

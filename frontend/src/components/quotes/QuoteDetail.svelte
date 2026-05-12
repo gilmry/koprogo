@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { createEventDispatcher } from 'svelte';
+  // Svelte 5 runes mode
   import { _ } from '../../lib/i18n';
   import {
     quotesApi,
@@ -15,20 +15,22 @@
   import { formatDate } from '../../lib/utils/date.utils';
   import { formatAmount } from '../../lib/utils/finance.utils';
 
-  export let quote: Quote;
+  let { quote, onupdated, ondeleted }: {
+    quote: Quote;
+    onupdated?: (updated: Quote) => void;
+    ondeleted?: () => void;
+  } = $props();
 
-  const dispatch = createEventDispatcher<{ updated: Quote; deleted: void }>();
+  let actionLoading = $state(false);
+  let showSubmitForm = $state(false);
 
-  let actionLoading = false;
-  let showSubmitForm = false;
+  let amountExclVat = $state('');
+  let vatRate = $state('21');
+  let validityDate = $state('');
+  let estimatedDays = $state('');
+  let warrantyYears = $state('2');
 
-  let amountExclVat = '';
-  let vatRate = '21';
-  let validityDate = '';
-  let estimatedDays = '';
-  let warrantyYears = '2';
-
-  $: isAdmin = $authStore.user?.role === UserRole.SYNDIC || $authStore.user?.role === UserRole.SUPERADMIN;
+  let isAdmin = $derived($authStore.user?.role === UserRole.SYNDIC || $authStore.user?.role === UserRole.SUPERADMIN);
 
   function formatQuoteAmount(amountCents: number | undefined): string {
     if (!amountCents) return '-';
@@ -52,24 +54,24 @@
         };
         return quotesApi.submit(quote.id, data);
       },
-      setLoading: (v) => actionLoading = v,
+      setLoading: (v: boolean) => actionLoading = v,
       successMessage: $_("quotes.detail.submitSuccess"),
       errorMessage: $_("quotes.detail.submitError"),
     });
     if (updated) {
       showSubmitForm = false;
-      dispatch('updated', updated);
+      onupdated?.(updated);
     }
   }
 
   async function handleStartReview() {
     const updated = await withErrorHandling({
       action: () => quotesApi.startReview(quote.id),
-      setLoading: (v) => actionLoading = v,
+      setLoading: (v: boolean) => actionLoading = v,
       successMessage: $_("quotes.detail.reviewSuccess"),
       errorMessage: $_("common.error"),
     });
-    if (updated) dispatch('updated', updated);
+    if (updated) onupdated?.(updated);
   }
 
   async function handleAccept() {
@@ -79,11 +81,11 @@
         decision_by: $authStore.user?.id || '',
         decision_notes: notes || undefined,
       }),
-      setLoading: (v) => actionLoading = v,
+      setLoading: (v: boolean) => actionLoading = v,
       successMessage: $_("quotes.detail.acceptSuccess"),
       errorMessage: $_("common.error"),
     });
-    if (updated) dispatch('updated', updated);
+    if (updated) onupdated?.(updated);
   }
 
   async function handleReject() {
@@ -94,32 +96,32 @@
         decision_by: $authStore.user?.id || '',
         decision_notes: notes,
       }),
-      setLoading: (v) => actionLoading = v,
+      setLoading: (v: boolean) => actionLoading = v,
       successMessage: $_("quotes.detail.rejectSuccess"),
       errorMessage: $_("common.error"),
     });
-    if (updated) dispatch('updated', updated);
+    if (updated) onupdated?.(updated);
   }
 
   async function handleWithdraw() {
     if (!confirm($_("quotes.detail.withdrawConfirm"))) return;
     const updated = await withErrorHandling({
       action: () => quotesApi.withdraw(quote.id),
-      setLoading: (v) => actionLoading = v,
+      setLoading: (v: boolean) => actionLoading = v,
       successMessage: $_("quotes.detail.withdrawSuccess"),
       errorMessage: $_("common.error"),
     });
-    if (updated) dispatch('updated', updated);
+    if (updated) onupdated?.(updated);
   }
 
   async function handleDelete() {
     if (!confirm($_("quotes.detail.deleteConfirm"))) return;
     await withErrorHandling({
       action: () => quotesApi.delete(quote.id),
-      setLoading: (v) => actionLoading = v,
+      setLoading: (v: boolean) => actionLoading = v,
       successMessage: $_("quotes.detail.deleteSuccess"),
       errorMessage: $_("quotes.detail.deleteError"),
-      onSuccess: () => dispatch('deleted'),
+      onSuccess: () => ondeleted?.(),
     });
   }
 </script>
@@ -234,11 +236,11 @@
         </div>
       </div>
       <div class="flex gap-2">
-        <button on:click={handleSubmitQuote} disabled={actionLoading}
+        <button onclick={handleSubmitQuote} disabled={actionLoading}
           class="px-3 py-1.5 bg-amber-600 text-white rounded-lg text-sm font-medium hover:bg-amber-700 disabled:opacity-50 transition-colors">
           {actionLoading ? $_("quotes.detail.submitting") : $_("quotes.detail.submit")}
         </button>
-        <button on:click={() => showSubmitForm = false}
+        <button onclick={() => showSubmitForm = false}
           class="px-3 py-1.5 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors">
           {$_("common.cancel")}
         </button>
@@ -249,40 +251,40 @@
   <!-- Actions -->
   <div class="flex flex-wrap gap-2 pt-2 border-t border-gray-100" data-testid="quote-actions">
     {#if quote.status === QuoteStatus.Requested}
-      <button on:click={() => showSubmitForm = !showSubmitForm} disabled={actionLoading}
+      <button onclick={() => showSubmitForm = !showSubmitForm} disabled={actionLoading}
         data-testid="submit-quote-button"
         class="px-3 py-1.5 bg-amber-600 text-white rounded-lg text-sm font-medium hover:bg-amber-700 disabled:opacity-50 transition-colors">
         {$_("quotes.detail.submitQuote")}
       </button>
-      <button on:click={handleDelete} disabled={actionLoading}
+      <button onclick={handleDelete} disabled={actionLoading}
         data-testid="delete-quote-button"
         class="px-3 py-1.5 bg-red-100 text-red-700 rounded-lg text-sm font-medium hover:bg-red-200 disabled:opacity-50 transition-colors">
         {$_("common.delete")}
       </button>
     {:else if quote.status === QuoteStatus.Received && isAdmin}
-      <button on:click={handleStartReview} disabled={actionLoading}
+      <button onclick={handleStartReview} disabled={actionLoading}
         data-testid="review-quote-button"
         class="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors">
         {$_("quotes.detail.review")}
       </button>
-      <button on:click={handleWithdraw} disabled={actionLoading}
+      <button onclick={handleWithdraw} disabled={actionLoading}
         data-testid="withdraw-quote-button"
         class="px-3 py-1.5 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200 disabled:opacity-50 transition-colors">
         {$_("quotes.detail.withdraw")}
       </button>
     {:else if quote.status === QuoteStatus.UnderReview && isAdmin}
-      <button on:click={handleAccept} disabled={actionLoading}
+      <button onclick={handleAccept} disabled={actionLoading}
         data-testid="accept-quote-button"
         class="px-3 py-1.5 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 disabled:opacity-50 transition-colors">
         {$_("quotes.detail.accept")}
       </button>
-      <button on:click={handleReject} disabled={actionLoading}
+      <button onclick={handleReject} disabled={actionLoading}
         data-testid="reject-quote-button"
         class="px-3 py-1.5 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 disabled:opacity-50 transition-colors">
         {$_("quotes.detail.reject")}
       </button>
-    {:else if quote.status === QuoteStatus.Received || quote.status === QuoteStatus.Requested}
-      <button on:click={handleWithdraw} disabled={actionLoading}
+    {:else if quote.status === QuoteStatus.UnderReview}
+      <button onclick={handleWithdraw} disabled={actionLoading}
         data-testid="withdraw-quote-button"
         class="px-3 py-1.5 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200 disabled:opacity-50 transition-colors">
         {$_("quotes.detail.withdraw")}

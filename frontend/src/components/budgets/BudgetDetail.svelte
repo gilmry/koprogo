@@ -32,7 +32,7 @@
       action: async () => {
         const b = await budgetsApi.getById(budgetId);
         let v: BudgetVariance | null = null;
-        if (b?.status === 'approved') {
+        if (b?.status === 'Approved') {
           try { v = await budgetsApi.getVariance(budgetId); } catch { /* not available */ }
         }
         return { b, v };
@@ -245,7 +245,7 @@
     <div class="bg-white rounded-lg shadow p-6">
       <h2 class="text-lg font-semibold text-gray-900 mb-4">{$_('common.actions')}</h2>
       <div class="flex flex-wrap gap-3">
-        {#if budget.status === 'draft' || budget.status === 'rejected'}
+        {#if budget.status === 'Draft' || budget.status === 'Rejected'}
           <button
             on:click={submitBudget}
             disabled={actionLoading}
@@ -256,7 +256,7 @@
           </button>
         {/if}
 
-        {#if budget.status === 'submitted'}
+        {#if budget.status === 'Submitted'}
           <button
             on:click={() => showApproveModal = true}
             disabled={actionLoading}
@@ -275,7 +275,7 @@
           </button>
         {/if}
 
-        {#if budget.status === 'approved'}
+        {#if budget.status === 'Approved'}
           <button
             on:click={archiveBudget}
             disabled={actionLoading}
@@ -286,7 +286,7 @@
           </button>
         {/if}
 
-        {#if budget.status === 'draft'}
+        {#if budget.status === 'Draft'}
           <button
             on:click={deleteBudget}
             data-testid="delete-budget-button"

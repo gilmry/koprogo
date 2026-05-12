@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  // Svelte 5 runes mode
   import { _ } from '../../lib/i18n';
   import {
     convocationsApi,
@@ -15,21 +15,27 @@
   import ConvocationTrackingSummary from './ConvocationTrackingSummary.svelte';
   import ConvocationRecipientList from './ConvocationRecipientList.svelte';
 
-  export let convocation: Convocation;
+  let {
+    convocation,
+  }: {
+    convocation: Convocation;
+  } = $props();
 
-  let tracking: TrackingSummary | null = null;
-  let showRecipients = false;
-  let actionLoading = false;
+  let tracking = $state<TrackingSummary | null>(null);
+  let showRecipients = $state(false);
+  let actionLoading = $state(false);
 
-  $: isAdmin = $authStore.user?.role === UserRole.SYNDIC || $authStore.user?.role === UserRole.SUPERADMIN;
+  let isAdmin = $derived($authStore.user?.role === UserRole.SYNDIC || $authStore.user?.role === UserRole.SUPERADMIN);
 
-  onMount(async () => {
+  $effect(() => {
     if (convocation.status === ConvocationStatus.Sent) {
-      try {
-        tracking = await convocationsApi.getTrackingSummary(convocation.id);
-      } catch {
-        // Non-critical
-      }
+      (async () => {
+        try {
+          tracking = await convocationsApi.getTrackingSummary(convocation.id);
+        } catch {
+          // Non-critical
+        }
+      })();
     }
   });
 
@@ -66,7 +72,7 @@
     if (!sendDate) return;
     const result = await withErrorHandling({
       action: () => convocationsApi.schedule(convocation.id, sendDate),
-      setLoading: (v) => actionLoading = v,
+      setLoading: (v: boolean) => actionLoading = v,
       successMessage: $_('convocations.messages.scheduled'),
       errorMessage: $_('convocations.errors.schedulingFailed'),
     });
@@ -77,7 +83,7 @@
     if (!confirm($_('convocations.confirms.sendToAll'))) return;
     const result = await withErrorHandling({
       action: () => convocationsApi.send(convocation.id),
-      setLoading: (v) => actionLoading = v,
+      setLoading: (v: boolean) => actionLoading = v,
       successMessage: $_('convocations.messages.sent'),
       errorMessage: $_('convocations.errors.sendingFailed'),
     });
@@ -88,7 +94,7 @@
     if (!confirm($_('convocations.confirms.cancelConvocation'))) return;
     const result = await withErrorHandling({
       action: () => convocationsApi.cancel(convocation.id),
-      setLoading: (v) => actionLoading = v,
+      setLoading: (v: boolean) => actionLoading = v,
       successMessage: $_('convocations.messages.cancelled'),
       errorMessage: $_('convocations.errors.cancellationFailed'),
     });
@@ -99,7 +105,7 @@
     if (!confirm($_('convocations.confirms.sendReminders'))) return;
     await withErrorHandling({
       action: () => convocationsApi.sendReminders(convocation.id),
-      setLoading: (v) => actionLoading = v,
+      setLoading: (v: boolean) => actionLoading = v,
       successMessage: $_('convocations.messages.remindersEntered'),
       errorMessage: $_('convocations.errors.remindersSendingFailed'),
     });
@@ -109,7 +115,7 @@
     if (!confirm($_('convocations.confirms.deleteConvocation'))) return;
     await withErrorHandling({
       action: () => convocationsApi.delete(convocation.id),
-      setLoading: (v) => actionLoading = v,
+      setLoading: (v: boolean) => actionLoading = v,
       successMessage: $_('convocations.messages.deleted'),
       errorMessage: $_('convocations.errors.deletionFailed'),
       onSuccess: () => { window.location.href = '/convocations'; },
@@ -171,7 +177,7 @@
   {#if convocation.status === ConvocationStatus.Sent && tracking}
     <div class="bg-white shadow-md rounded-lg p-6">
       <h3 class="text-lg font-medium text-gray-900 mb-4">{$_('convocations.trackingTitle')}</h3>
-      <ConvocationTrackingSummary summary={tracking} />
+      <ConvocationTrackingSummary convocationId={convocation.id} />
     </div>
   {/if}
 
@@ -180,7 +186,7 @@
       <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
         <h3 class="text-lg font-medium text-gray-900">{$_('convocations.recipients')}</h3>
         <button
-          on:click={() => showRecipients = !showRecipients}
+          onclick={() => showRecipients = !showRecipients}
           data-testid="convocation-detail-btn-toggle-recipients"
           class="text-sm text-blue-600 hover:text-blue-800"
         >
@@ -201,7 +207,7 @@
       <div class="flex flex-wrap gap-3">
         {#if convocation.status === ConvocationStatus.Draft}
           <button
-            on:click={handleSchedule}
+            onclick={handleSchedule}
             disabled={actionLoading}
             data-testid="convocation-detail-btn-schedule"
             class="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 disabled:opacity-50"
@@ -209,7 +215,7 @@
             {$_('convocations.actions.scheduleSend')}
           </button>
           <button
-            on:click={handleSend}
+            onclick={handleSend}
             disabled={actionLoading}
             data-testid="convocation-detail-btn-send"
             class="px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700 disabled:opacity-50"
@@ -217,7 +223,7 @@
             {$_('convocations.actions.sendNow')}
           </button>
           <button
-            on:click={handleDelete}
+            onclick={handleDelete}
             disabled={actionLoading}
             data-testid="convocation-detail-btn-delete"
             class="px-4 py-2 bg-red-100 text-red-700 text-sm font-medium rounded-md hover:bg-red-200 disabled:opacity-50"
@@ -228,7 +234,7 @@
 
         {#if convocation.status === ConvocationStatus.Scheduled}
           <button
-            on:click={handleSend}
+            onclick={handleSend}
             disabled={actionLoading}
             data-testid="convocation-detail-btn-send"
             class="px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700 disabled:opacity-50"
@@ -236,7 +242,7 @@
             {$_('convocations.actions.sendNow')}
           </button>
           <button
-            on:click={handleCancel}
+            onclick={handleCancel}
             disabled={actionLoading}
             data-testid="convocation-detail-btn-cancel"
             class="px-4 py-2 bg-red-100 text-red-700 text-sm font-medium rounded-md hover:bg-red-200 disabled:opacity-50"
@@ -247,7 +253,7 @@
 
         {#if convocation.status === ConvocationStatus.Sent}
           <button
-            on:click={handleSendReminders}
+            onclick={handleSendReminders}
             disabled={actionLoading}
             data-testid="convocation-detail-btn-send-reminders"
             class="px-4 py-2 bg-amber-600 text-white text-sm font-medium rounded-md hover:bg-amber-700 disabled:opacity-50"

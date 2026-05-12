@@ -565,7 +565,7 @@ mod tests {
             building_id: building_id.to_string(),
             category: ExpenseCategory::Maintenance,
             description: "Elevator maintenance Q1".to_string(),
-            amount: 1500.0,
+            amount: rust_decimal_macros::dec!(1500),
             expense_date: "2026-01-15T10:00:00Z".to_string(),
             supplier: Some("Schindler SA".to_string()),
             invoice_number: Some("INV-2026-001".to_string()),
@@ -579,8 +579,8 @@ mod tests {
             building_id: building_id.to_string(),
             category: ExpenseCategory::Utilities,
             description: "Electricity bill January".to_string(),
-            amount_excl_vat: 1000.0,
-            vat_rate: 21.0,
+            amount_excl_vat: rust_decimal_macros::dec!(1000),
+            vat_rate: rust_decimal_macros::dec!(21),
             invoice_date: "2026-01-31T10:00:00Z".to_string(),
             due_date: Some("2026-02-28T10:00:00Z".to_string()),
             supplier: Some("Engie Electrabel".to_string()),
@@ -605,7 +605,7 @@ mod tests {
         let dto = result.unwrap();
         assert_eq!(dto.building_id, building_id.to_string());
         assert_eq!(dto.description, "Elevator maintenance Q1");
-        assert_eq!(dto.amount, 1500.0);
+        assert_eq!(dto.amount, rust_decimal_macros::dec!(1500));
         assert_eq!(dto.payment_status, PaymentStatus::Pending);
         assert_eq!(dto.approval_status, ApprovalStatus::Draft);
         assert_eq!(dto.supplier, Some("Schindler SA".to_string()));
@@ -869,12 +869,18 @@ mod tests {
         let invoice = result.unwrap();
 
         // 1000 * 21% = 210 VAT, total = 1210
-        assert_eq!(invoice.amount_excl_vat, Some(1000.0));
-        assert_eq!(invoice.vat_rate, Some(21.0));
-        assert_eq!(invoice.vat_amount, Some(210.0));
-        assert_eq!(invoice.amount_incl_vat, Some(1210.0));
+        assert_eq!(
+            invoice.amount_excl_vat,
+            Some(rust_decimal_macros::dec!(1000))
+        );
+        assert_eq!(invoice.vat_rate, Some(rust_decimal_macros::dec!(21)));
+        assert_eq!(invoice.vat_amount, Some(rust_decimal_macros::dec!(210.00)));
+        assert_eq!(
+            invoice.amount_incl_vat,
+            Some(rust_decimal_macros::dec!(1210.00))
+        );
         // backward compat: amount field = TTC
-        assert_eq!(invoice.amount, 1210.0);
+        assert_eq!(invoice.amount, rust_decimal_macros::dec!(1210.00));
     }
 
     #[tokio::test]

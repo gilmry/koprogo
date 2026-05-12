@@ -53,11 +53,8 @@ impl PostgresOwnerContributionRepository {
             })
             .transpose()?;
 
+        // amount stored as NUMERIC in DB; map directly to Decimal (cf. ADR-0007/0008)
         let amount: sqlx::types::Decimal = row.get("amount");
-        let amount = amount
-            .to_string()
-            .parse::<f64>()
-            .map_err(|e| format!("Failed to parse amount: {}", e))?;
 
         Ok(OwnerContribution {
             id: row.get("id"),

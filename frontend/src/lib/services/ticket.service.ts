@@ -21,16 +21,15 @@ export function getAvailableActions(
 ): TicketAction[] {
   const actions: TicketAction[] = [];
 
+  // Backend domain has 5 statuses (no Assigned).
+  // Assigning a ticket auto-transitions Open → InProgress.
   switch (ticket.status) {
     case TicketStatus.Open:
       if (canManage) actions.push("assign", "cancel");
       break;
-    case TicketStatus.Assigned:
-      if (isContractor) actions.push("start");
-      if (canManage) actions.push("cancel");
-      break;
     case TicketStatus.InProgress:
-      if (isContractor) actions.push("resolve");
+      if (isContractor || canManage) actions.push("resolve");
+      if (canManage) actions.push("cancel");
       break;
     case TicketStatus.Resolved:
       if (canManage) actions.push("close");

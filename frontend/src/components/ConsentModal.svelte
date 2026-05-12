@@ -47,7 +47,7 @@
 </script>
 
 {#if isOpen}
-  <div class="fixed inset-0 bg-black bg-opacity-50 z-40" on:click={() => {}} />
+  <div class="fixed inset-0 bg-black bg-opacity-50 z-40" aria-hidden="true"></div>
   <div class="fixed bottom-0 left-0 right-0 bg-white rounded-t-lg shadow-2xl z-50 p-6 sm:rounded-lg sm:bottom-auto sm:left-1/2 sm:-translate-x-1/2 sm:top-1/2 sm:-translate-y-1/2 sm:max-w-lg sm:mx-auto">
     <div class="space-y-4">
       <h2 class="text-xl font-bold text-gray-900">

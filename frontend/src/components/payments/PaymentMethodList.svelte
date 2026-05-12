@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount } from "svelte";
+  // Svelte 5 runes mode
   import { _ } from '../../lib/i18n';
   import {
     paymentMethodsApi,
@@ -10,23 +10,25 @@
   import PaymentMethodAddModal from "./PaymentMethodAddModal.svelte";
   import Button from "../ui/Button.svelte";
 
-  export let ownerId: string;
-  export let canManage = true;
+  let { ownerId, canManage = true }: {
+    ownerId: string;
+    canManage?: boolean;
+  } = $props();
 
-  let paymentMethods: PaymentMethod[] = [];
-  let loading = true;
-  let error = "";
-  let showAddModal = false;
+  let paymentMethods: PaymentMethod[] = $state([]);
+  let loading = $state(true);
+  let error = $state("");
+  let showAddModal = $state(false);
 
-  onMount(async () => {
-    await loadPaymentMethods();
+  $effect(() => {
+    loadPaymentMethods();
   });
 
   async function loadPaymentMethods() {
     await withLoadingState({
       action: () => paymentMethodsApi.listByOwner(ownerId),
-      setLoading: (v) => loading = v,
-      setError: (v) => error = v,
+      setLoading: (v: boolean) => loading = v,
+      setError: (v: string) => error = v,
       onSuccess: (data) => paymentMethods = data,
       errorMessage: $_('payments.loadMethodsError'),
     });
@@ -49,7 +51,7 @@
         </p>
       </div>
       {#if canManage}
-        <Button on:click={() => (showAddModal = true)} data-testid="add-payment-method-btn">
+        <Button onclick={() => (showAddModal = true)} data-testid="add-payment-method-btn">
           {$_('payments.addMethod')}
         </Button>
       {/if}
@@ -88,7 +90,7 @@
         </p>
         {#if canManage}
           <div class="mt-6">
-            <Button on:click={() => (showAddModal = true)}>
+            <Button onclick={() => (showAddModal = true)}>
               {$_('payments.addFirstMethod')}
             </Button>
           </div>
@@ -100,8 +102,8 @@
           <PaymentMethodCard
             {paymentMethod}
             {canManage}
-            on:updated={loadPaymentMethods}
-            on:deleted={loadPaymentMethods}
+            onupdated={loadPaymentMethods}
+            ondeleted={loadPaymentMethods}
           />
         {/each}
       </div>
@@ -142,5 +144,5 @@
 <PaymentMethodAddModal
   bind:open={showAddModal}
   {ownerId}
-  on:added={handleAdded}
+  onadded={handleAdded}
 />

@@ -5,6 +5,8 @@ use fake::faker::address::en::*;
 use fake::faker::name::en::*;
 use fake::Fake;
 use rand::RngExt;
+use rust_decimal::prelude::FromPrimitive;
+use rust_decimal::Decimal;
 use serde::Serialize;
 use sqlx::{PgPool, Row};
 use uuid::Uuid;
@@ -592,9 +594,9 @@ impl DatabaseSeeder {
         self.create_demo_unit_owner(
             unit1_id,
             owner1_db_id,
-            1.0,  // 100%
-            true, // primary contact
-            None, // no end_date (active)
+            rust_decimal_macros::dec!(1), // 100%
+            true,                         // primary contact
+            None,                         // no end_date (active)
         )
         .await?;
 
@@ -602,8 +604,8 @@ impl DatabaseSeeder {
         self.create_demo_unit_owner(
             unit2_id,
             owner2_db_id,
-            0.6,  // 60%
-            true, // primary contact
+            rust_decimal_macros::dec!(0.6), // 60%
+            true,                           // primary contact
             None,
         )
         .await?;
@@ -611,8 +613,8 @@ impl DatabaseSeeder {
         self.create_demo_unit_owner(
             unit2_id,
             owner3_db_id,
-            0.4,   // 40%
-            false, // not primary contact
+            rust_decimal_macros::dec!(0.4), // 40%
+            false,                          // not primary contact
             None,
         )
         .await?;
@@ -621,8 +623,8 @@ impl DatabaseSeeder {
         self.create_demo_unit_owner(
             unit3_id,
             owner1_db_id,
-            0.5,  // 50%
-            true, // primary contact
+            rust_decimal_macros::dec!(0.5), // 50%
+            true,                           // primary contact
             None,
         )
         .await?;
@@ -630,7 +632,7 @@ impl DatabaseSeeder {
         self.create_demo_unit_owner(
             unit3_id,
             owner2_db_id,
-            0.3, // 30%
+            rust_decimal_macros::dec!(0.3), // 30%
             false,
             None,
         )
@@ -639,7 +641,7 @@ impl DatabaseSeeder {
         self.create_demo_unit_owner(
             unit3_id,
             owner3_db_id,
-            0.2, // 20%
+            rust_decimal_macros::dec!(0.2), // 20%
             false,
             None,
         )
@@ -649,8 +651,8 @@ impl DatabaseSeeder {
         self.create_demo_unit_owner(
             unit4_id,
             owner3_db_id,
-            1.0,  // 100%
-            true, // primary contact
+            rust_decimal_macros::dec!(1), // 100%
+            true,                         // primary contact
             None,
         )
         .await?;
@@ -1470,7 +1472,7 @@ impl DatabaseSeeder {
         &self,
         unit_id: Uuid,
         owner_id: Uuid,
-        ownership_percentage: f64,
+        ownership_percentage: rust_decimal::Decimal,
         is_primary_contact: bool,
         end_date: Option<chrono::DateTime<Utc>>,
     ) -> Result<Uuid, String> {
@@ -2472,7 +2474,7 @@ impl DatabaseSeeder {
         .map_err(|e| format!("Failed to fetch expense: {}", e))?;
 
         let building_id = expense_row.building_id;
-        let total_amount = expense_row.amount;
+        let total_amount: Decimal = expense_row.amount;
 
         // Get all units with their quotas (NOT unit_owners - one record per unit)
         let units = sqlx::query!(
@@ -2526,10 +2528,11 @@ impl DatabaseSeeder {
                 0.0
             };
 
-            let amount_due = if total_quota > 0.0 {
-                (quota_percentage * total_amount * 100.0).round() / 100.0
+            let amount_due: Decimal = if total_quota > 0.0 {
+                let qp = Decimal::from_f64(quota_percentage).unwrap_or(Decimal::ZERO);
+                (qp * total_amount).round_dp(2)
             } else {
-                0.0
+                Decimal::ZERO
             };
 
             sqlx::query(
@@ -2770,18 +2773,18 @@ impl DatabaseSeeder {
         .await
         .map_err(|e| format!("Failed to fetch expense: {}", e))?;
 
-        let amount_owed = expense.amount;
+        let amount_owed: Decimal = expense.amount;
         let due_date = expense
             .due_date
             .expect("Due date required for payment reminder");
 
         // Calculate penalty (8% annual rate)
-        let penalty_amount = if days_overdue > 0 {
-            let yearly_penalty = amount_owed * 0.08;
-            let daily_penalty = yearly_penalty / 365.0;
-            ((daily_penalty * days_overdue as f64) * 100.0).round() / 100.0
+        let penalty_amount: Decimal = if days_overdue > 0 {
+            let yearly_penalty = amount_owed * Decimal::new(8, 2); // 0.08
+            let daily_penalty = yearly_penalty / Decimal::from(365);
+            (daily_penalty * Decimal::from(days_overdue)).round_dp(2)
         } else {
-            0.0
+            Decimal::ZERO
         };
 
         let total_amount = amount_owed + penalty_amount;
@@ -3248,9 +3251,11 @@ impl DatabaseSeeder {
                     .await?;
 
                 self.create_demo_unit_owner(
-                    unit_id, owner_id, 1.0,  // 100% ownership per unit
-                    true, // primary contact
-                    None, // active (no end_date)
+                    unit_id,
+                    owner_id,
+                    rust_decimal_macros::dec!(1), // 100% ownership per unit
+                    true,                         // primary contact
+                    None,                         // active (no end_date)
                 )
                 .await?;
 
@@ -3310,6 +3315,67 @@ impl DatabaseSeeder {
             last_name: "Vandenberghe".to_string(),
         });
 
+        // Marc Dubois - Contractor (Plombier)
+        let marc_user_id = self
+            .create_demo_user(
+                "marc@plomberie-dubois.be",
+                "marc123",
+                "Marc",
+                "Dubois",
+                "contractor",
+                Some(org_id),
+            )
+            .await?;
+        users_result.push(ScenarioUserResult {
+            user_id: marc_user_id,
+            email: "marc@plomberie-dubois.be".to_string(),
+            password: "marc123".to_string(),
+            role: "contractor".to_string(),
+            first_name: "Marc".to_string(),
+            last_name: "Dubois".to_string(),
+        });
+        // Create contractor profile
+        sqlx::query(
+            r#"INSERT INTO contractor_profiles (user_id, organization_id, profession, siren_or_vat, specialties)
+               VALUES ($1, $2, 'Plombier', 'BE0123456789', ARRAY['plumbing', 'heating'])
+               ON CONFLICT (user_id) DO NOTHING"#,
+        )
+        .bind(marc_user_id)
+        .bind(org_id)
+        .execute(&self.pool)
+        .await
+        .map_err(|e| format!("Failed to create contractor profile for Marc: {}", e))?;
+
+        // Sophie Leroux - Contractor (Électricienne)
+        let sophie_user_id = self
+            .create_demo_user(
+                "sophie@elec-leroux.be",
+                "sophie123",
+                "Sophie",
+                "Leroux",
+                "contractor",
+                Some(org_id),
+            )
+            .await?;
+        users_result.push(ScenarioUserResult {
+            user_id: sophie_user_id,
+            email: "sophie@elec-leroux.be".to_string(),
+            password: "sophie123".to_string(),
+            role: "contractor".to_string(),
+            first_name: "Sophie".to_string(),
+            last_name: "Leroux".to_string(),
+        });
+        sqlx::query(
+            r#"INSERT INTO contractor_profiles (user_id, organization_id, profession, siren_or_vat, specialties)
+               VALUES ($1, $2, 'Électricienne', 'BE0987654321', ARRAY['electrical', 'security'])
+               ON CONFLICT (user_id) DO NOTHING"#,
+        )
+        .bind(sophie_user_id)
+        .bind(org_id)
+        .execute(&self.pool)
+        .await
+        .map_err(|e| format!("Failed to create contractor profile for Sophie: {}", e))?;
+
         // Admin (already exists globally, just reference it)
         users_result.push(ScenarioUserResult {
             user_id: Uuid::parse_str("00000000-0000-0000-0000-000000000001")
@@ -3321,7 +3387,7 @@ impl DatabaseSeeder {
             last_name: "Admin".to_string(),
         });
 
-        log::info!("✅ 3 professionals created (syndic, accountant, admin)");
+        log::info!("✅ 5 professionals created (syndic, accountant, 2 contractors, admin)");
 
         // --- 4 community members (users only, role=owner, no units) ---
         struct CommunityPersona {
@@ -3524,9 +3590,11 @@ impl DatabaseSeeder {
 
             // Create unit_owner relationship
             self.create_demo_unit_owner(
-                unit_id, owner_id, 1.0,  // 100% ownership
-                true, // primary contact
-                None, // active (no end_date)
+                unit_id,
+                owner_id,
+                rust_decimal_macros::dec!(1), // 100% ownership
+                true,                         // primary contact
+                None,                         // active (no end_date)
             )
             .await?;
 
@@ -3694,9 +3762,11 @@ impl DatabaseSeeder {
 
             // Create unit_owner relationship
             self.create_demo_unit_owner(
-                unit_id, owner_id, 1.0,  // 100% ownership
-                true, // primary contact
-                None, // active (no end_date)
+                unit_id,
+                owner_id,
+                rust_decimal_macros::dec!(1), // 100% ownership
+                true,                         // primary contact
+                None,                         // active (no end_date)
             )
             .await?;
 

@@ -52,5 +52,62 @@ backend/uploads/*
 
 podcasts
 
-# Méthode Maury (livrables internes)
-Maury/
+# Maury method is intentionally tracked and published under AGPL-3.0.
+# It is the canonical entry document a virgin Claude agent reads first.
+
+# Terraform state — managed by remote backend, never committed
+*.tfstate
+*.tfstate.*
+.terraform/
+.terraform.lock.hcl
+crash.log
+
+# Secrets and keys
+**/age.key
+**/age.txt
+**/.vault_pass
+**/.vault_pass.txt
+**/.ansible-vault-password
+**/*.pem
+**/*.key
+!**/*.pub.key
+**/id_rsa
+**/id_ed25519
+**/id_ecdsa
+**/kubeconfig
+**/.kube/config
+
+# .env files (real ones; .env.example is tracked)
+.env
+.env.local
+.env.production
+.env.staging
+.env.integration
+.env.loadtest
+backend/.env
+backend/.env.loadtest
+frontend/.env
+frontend/.env.local
+# Leaked artifact from `docker compose cp` to regenerate api.d.ts —
+# the source of truth lives at docs/api/openapi.json
+frontend/openapi.json
+infrastructure/monosite/local/*/.env
+infrastructure/monosite/vps/*/.env
+
+# Claude Code local state
+.claude/worktrees/
+.claude/settings.local.json
+.claude/_drafts/
+.claude/scheduled_tasks.lock
+
+# Audit reports / temporary scan outputs
+gitleaks-report.json
+trivy-report.json
+tfsec-report.json
+*.sarif
+
+# Office binaries (archive in GitHub Releases instead — see issue #426)
+*.docx
+*.pdf
+!docs/exports/**/*.pdf
+!docs/whitepapers/**/*.pdf

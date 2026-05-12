@@ -1,0 +1,205 @@
+name: CI Infra
+
+# Per RFC 0001 (alternative F — hybrid symmetric app/infra), this workflow
+# validates infrastructure changes (kustomize, helm, ApplicationSet) without
+# triggering the full Rust + Playwright CI suite.
+#
+# Triggers:
+#   - PR to main / production / infra-* / staging / integration / dev
+#     when the diff touches infrastructure/**
+#   - Push on infra/** or main / infra-* branches with infrastructure/** changes
+#   - Manual workflow_dispatch
+#
+# Steps:
+#   1. kubectl kustomize × 4 envs
+#   2. helm template × (4 envs × 3 cluster-profiles = 12 combos)
+#   3. kubeconform validation of the rendered manifests against K8s schemas
+#   4. ApplicationSet template render check (envsubst + kubectl apply --dry-run)
+
+on:
+  push:
+    branches:
+      - main
+      - "infra-*"
+      - "infra/**"
+    paths:
+      - "infrastructure/**"
+      - ".github/workflows/ci-infra.yml"
+  pull_request:
+    branches:
+      - main
+      - "infra-*"
+      - dev
+      - integration
+      - staging
+      - production
+    paths:
+      - "infrastructure/**"
+      - ".github/workflows/ci-infra.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  KUBECTL_VERSION: "v1.34.1"
+  HELM_VERSION: "v3.16.4"
+  KUBECONFORM_VERSION: "0.6.7"
+
+jobs:
+  kustomize-build:
+    name: Kustomize build (${{ matrix.env }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        env: [dev, integration, staging, production]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Setup kubectl (with embedded kustomize v5)
+        uses: azure/setup-kubectl@v5
+        with:
+          version: ${{ env.KUBECTL_VERSION }}
+
+      - name: Run kubectl kustomize for ${{ matrix.env }}
+        run: |
+          set -euo pipefail
+          OUT=$(mktemp)
+          kubectl kustomize "infrastructure/monosite/k3s/${{ matrix.env }}/kustomize/" > "$OUT"
+          echo "::group::Rendered manifests (head)"
+          head -100 "$OUT"
+          echo "::endgroup::"
+          # Sanity checks
+          grep -q "namespace: koprogo-${{ matrix.env }}" "$OUT" \
+            || (echo "::error::missing expected namespace koprogo-${{ matrix.env }}" && exit 1)
+          grep -q "kind: Ingress" "$OUT" \
+            || (echo "::error::missing Ingress in rendered output" && exit 1)
+          echo "::notice::kustomize build OK for ${{ matrix.env }}"
+
+      - name: Upload rendered manifests
+        uses: actions/upload-artifact@v4
+        with:
+          name: kustomize-${{ matrix.env }}
+          path: ${{ runner.temp }}
+          retention-days: 7
+
+  helm-template:
+    name: Helm template (${{ matrix.env }} × ${{ matrix.profile }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        env: [dev, integration, staging, production]
+        profile: [docker-desktop, k3s-self-hosted, k8s-managed]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Setup Helm
+        uses: azure/setup-helm@v5
+        with:
+          version: ${{ env.HELM_VERSION }}
+
+      - name: Run helm template for ${{ matrix.env }} × ${{ matrix.profile }}
+        run: |
+          set -euo pipefail
+          PROFILE="infrastructure/_shared/cluster-profiles/${{ matrix.profile }}.yaml"
+          ENV_VALUES="infrastructure/monosite/k3s/${{ matrix.env }}/helm-values.yaml"
+
+          if [ ! -f "$PROFILE" ]; then
+            echo "::warning::cluster-profile $PROFILE not found, skipping"
+            exit 0
+          fi
+          if [ ! -f "$ENV_VALUES" ]; then
+            echo "::warning::env values $ENV_VALUES not found, skipping"
+            exit 0
+          fi
+
+          helm template koprogo-app-${{ matrix.env }} \
+            infrastructure/_shared/helm/koprogo \
+            --namespace "koprogo-${{ matrix.env }}" \
+            --values "$PROFILE" \
+            --values "$ENV_VALUES" \
+            > /tmp/helm-${{ matrix.env }}-${{ matrix.profile }}.yaml
+
+          echo "::notice::helm template OK for ${{ matrix.env }} × ${{ matrix.profile }}"
+          wc -l /tmp/helm-${{ matrix.env }}-${{ matrix.profile }}.yaml
+
+  kubeconform:
+    name: Kubeconform schema validation
+    runs-on: ubuntu-latest
+    needs: [kustomize-build, helm-template]
+    strategy:
+      fail-fast: false
+      matrix:
+        env: [dev, integration, staging, production]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Setup kubectl
+        uses: azure/setup-kubectl@v5
+        with:
+          version: ${{ env.KUBECTL_VERSION }}
+
+      - name: Install kubeconform
+        run: |
+          curl -L "https://github.com/yannh/kubeconform/releases/download/v${{ env.KUBECONFORM_VERSION }}/kubeconform-linux-amd64.tar.gz" \
+            | tar -xz
+          sudo mv kubeconform /usr/local/bin/
+          kubeconform -v
+
+      - name: Validate kustomize output for ${{ matrix.env }}
+        run: |
+          set -euo pipefail
+          kubectl kustomize "infrastructure/monosite/k3s/${{ matrix.env }}/kustomize/" \
+            | kubeconform \
+                -strict \
+                -ignore-missing-schemas \
+                -kubernetes-version 1.34.0 \
+                -summary
+          echo "::notice::kubeconform OK for ${{ matrix.env }}"
+
+  applicationset-render:
+    name: ApplicationSet template render check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Render ApplicationSet template (× 3 cluster types)
+        run: |
+          set -euo pipefail
+          for cluster_type in docker-desktop k3s-self-hosted k8s-managed; do
+            echo "::group::Rendering for $cluster_type"
+            CLUSTER_TYPE="$cluster_type" envsubst '${CLUSTER_TYPE}' \
+              < infrastructure/_shared/argocd/applicationset.yaml.tpl \
+              > "/tmp/appset-${cluster_type}.yaml"
+            # Basic YAML validity check — Python is preinstalled on ubuntu-latest
+            python3 -c "import yaml; list(yaml.safe_load_all(open('/tmp/appset-${cluster_type}.yaml')))"
+            grep -q "branch: infra-prod" "/tmp/appset-${cluster_type}.yaml" \
+              || (echo "::error::missing infra-prod branch in render" && exit 1)
+            grep -q "branch: production" "/tmp/appset-${cluster_type}.yaml" \
+              || (echo "::error::missing production branch in render" && exit 1)
+            echo "::endgroup::"
+          done
+          echo "::notice::ApplicationSet template renders cleanly for all 3 cluster types"
+
+  summary:
+    name: ✅ CI Infra summary
+    runs-on: ubuntu-latest
+    needs: [kustomize-build, helm-template, kubeconform, applicationset-render]
+    if: always()
+    steps:
+      - name: Verdict
+        run: |
+          if [ "${{ needs.kustomize-build.result }}" != "success" ] \
+             || [ "${{ needs.helm-template.result }}" != "success" ] \
+             || [ "${{ needs.kubeconform.result }}" != "success" ] \
+             || [ "${{ needs.applicationset-render.result }}" != "success" ]; then
+            echo "::error::ci-infra failed (one or more jobs not green)"
+            exit 1
+          fi
+          echo "::notice::ci-infra all green ✅"

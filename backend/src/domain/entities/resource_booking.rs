@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 /// Resource types available for booking in a building
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, utoipa::ToSchema)]
 pub enum ResourceType {
     MeetingRoom,
     LaundryRoom,
@@ -17,7 +17,7 @@ pub enum ResourceType {
 }
 
 /// Booking status lifecycle
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, utoipa::ToSchema)]
 pub enum BookingStatus {
     Pending,   // Awaiting confirmation (if approval required)
     Confirmed, // Booking confirmed
@@ -27,7 +27,7 @@ pub enum BookingStatus {
 }
 
 /// Recurring pattern for repeated bookings
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Default)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Default, utoipa::ToSchema)]
 pub enum RecurringPattern {
     #[default]
     None,

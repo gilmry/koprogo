@@ -20,6 +20,8 @@ use koprogo_api::domain::entities::{
     Account, AccountType, ContributionPaymentMethod, ContributionType, ExpenseCategory,
     JournalEntry, JournalEntryLine, OwnerContribution, ReminderLevel,
 };
+use rust_decimal::Decimal;
+use rust_decimal_macros::dec;
 // Two separate PaymentMethodType enums exist in the domain:
 // payment.rs defines one (for Payment entity), payment_method.rs defines another (for PaymentMethod entity)
 use koprogo_api::domain::entities::payment_method::PaymentMethodType as PmMethodType;
@@ -93,7 +95,7 @@ pub struct FinancialWorld {
     last_journal_entry_id: Option<Uuid>,
     journal_entry_lines: Vec<JournalEntryLine>,
     journal_entry_list: Vec<JournalEntry>,
-    pending_journal_lines: Vec<(String, f64, f64, String)>,
+    pending_journal_lines: Vec<(String, rust_decimal::Decimal, rust_decimal::Decimal, String)>,
 
     // Call for funds tracking
     last_call_for_funds_id: Option<Uuid>,
@@ -109,8 +111,8 @@ pub struct FinancialWorld {
 
     // Charge distribution tracking
     distribution_list_count: usize,
-    distribution_amounts: Vec<(String, f64)>,
-    total_due: Option<f64>,
+    distribution_amounts: Vec<(String, Decimal)>,
+    total_due: Option<Decimal>,
 
     // Dashboard tracking
     dashboard_stats: Option<AccountantDashboardStats>,
@@ -422,7 +424,7 @@ impl FinancialWorld {
         id
     }
 
-    async fn create_expense_sql(&self, amount: f64) -> Uuid {
+    async fn create_expense_sql(&self, amount: Decimal) -> Uuid {
         let pool = self.pool.as_ref().unwrap();
         let building_id = self.building_id.unwrap();
         let org_id = self.org_id.unwrap();
@@ -522,7 +524,7 @@ async fn given_owner_exists(world: &mut FinancialWorld, name: String, _building:
 }
 
 #[given(regex = r#"^an expense of (\d+) EUR exists for building "([^"]*)"$"#)]
-async fn given_expense_exists(world: &mut FinancialWorld, amount: f64, _building: String) {
+async fn given_expense_exists(world: &mut FinancialWorld, amount: Decimal, _building: String) {
     let expense_id = world.create_expense_sql(amount).await;
     world.expense_id = Some(expense_id);
 }
@@ -1598,13 +1600,13 @@ async fn when_create_journal_entry(world: &mut FinancialWorld, step: &Step) {
 #[when("I add the following lines:")]
 async fn when_add_journal_lines(world: &mut FinancialWorld, step: &Step) {
     let table = step.table.as_ref().expect("table expected");
-    let mut lines: Vec<(String, f64, f64, String)> = Vec::new();
+    let mut lines: Vec<(String, rust_decimal::Decimal, rust_decimal::Decimal, String)> = Vec::new();
 
     // Skip header row (first row has column names)
     for row in table.rows.iter().skip(1) {
         let account_code = row[0].clone();
-        let debit: f64 = row[1].parse().unwrap_or(0.0);
-        let credit: f64 = row[2].parse().unwrap_or(0.0);
+        let debit: Decimal = row[1].parse().unwrap_or(Decimal::ZERO);
+        let credit: Decimal = row[2].parse().unwrap_or(Decimal::ZERO);
         let desc = row[3].clone();
         lines.push((account_code, debit, credit, desc));
     }
@@ -1711,17 +1713,18 @@ async fn given_n_journal_entries(world: &mut FinancialWorld, count: usize) {
     seed_journal_accounts(pool, org_id).await;
 
     for i in 0..count {
+        let amount = dec!(100) * Decimal::from(i + 1);
         let lines = vec![
             (
                 "604000".to_string(),
-                100.0 * (i + 1) as f64,
-                0.0,
+                amount,
+                Decimal::ZERO,
                 format!("Debit line {}", i),
             ),
             (
                 "440000".to_string(),
-                0.0,
-                100.0 * (i + 1) as f64,
+                Decimal::ZERO,
+                amount,
                 format!("Credit line {}", i),
             ),
         ];
@@ -1782,8 +1785,18 @@ async fn given_journal_entries_ach_ods(world: &mut FinancialWorld) {
 
     for jtype in &["ACH", "ODS"] {
         let lines = vec![
-            ("604000".to_string(), 100.0, 0.0, "Debit".to_string()),
-            ("440000".to_string(), 0.0, 100.0, "Credit".to_string()),
+            (
+                "604000".to_string(),
+                dec!(100.0),
+                dec!(0.0),
+                "Debit".to_string(),
+            ),
+            (
+                "440000".to_string(),
+                dec!(0.0),
+                dec!(100.0),
+                "Credit".to_string(),
+            ),
         ];
         uc.create_manual_entry(
             org_id,
@@ -1829,17 +1842,22 @@ async fn given_journal_entry_with_3_lines(world: &mut FinancialWorld) {
     seed_journal_accounts(pool, org_id).await;
 
     let lines = vec![
-        ("612100".to_string(), 1000.0, 0.0, "Electricite".to_string()),
+        (
+            "612100".to_string(),
+            dec!(1000),
+            Decimal::ZERO,
+            "Electricite".to_string(),
+        ),
         (
             "411000".to_string(),
-            210.0,
-            0.0,
+            dec!(210),
+            Decimal::ZERO,
             "TVA a recuperer".to_string(),
         ),
         (
             "440000".to_string(),
-            0.0,
-            1210.0,
+            Decimal::ZERO,
+            dec!(1210),
             "Fournisseurs".to_string(),
         ),
     ];
@@ -1891,7 +1909,7 @@ async fn then_each_line_has_fields(world: &mut FinancialWorld) {
             "account_code should not be empty"
         );
         assert!(
-            line.debit > 0.0 || line.credit > 0.0,
+            line.debit > Decimal::ZERO || line.credit > Decimal::ZERO,
             "Either debit or credit should be > 0"
         );
     }
@@ -1908,8 +1926,18 @@ async fn given_journal_entries_2_buildings(world: &mut FinancialWorld) {
 
     // Create entry for main building
     let lines = vec![
-        ("604000".to_string(), 200.0, 0.0, "Debit".to_string()),
-        ("440000".to_string(), 0.0, 200.0, "Credit".to_string()),
+        (
+            "604000".to_string(),
+            dec!(200.0),
+            dec!(0.0),
+            "Debit".to_string(),
+        ),
+        (
+            "440000".to_string(),
+            dec!(0.0),
+            dec!(200.0),
+            "Credit".to_string(),
+        ),
     ];
     uc.create_manual_entry(
         org_id,
@@ -1942,8 +1970,18 @@ async fn given_journal_entries_2_buildings(world: &mut FinancialWorld) {
     building_repo.create(&b2).await.expect("create building 2");
 
     let lines2 = vec![
-        ("604000".to_string(), 300.0, 0.0, "Debit".to_string()),
-        ("440000".to_string(), 0.0, 300.0, "Credit".to_string()),
+        (
+            "604000".to_string(),
+            dec!(300.0),
+            dec!(0.0),
+            "Debit".to_string(),
+        ),
+        (
+            "440000".to_string(),
+            dec!(0.0),
+            dec!(300.0),
+            "Credit".to_string(),
+        ),
     ];
     uc.create_manual_entry(
         org_id,
@@ -1993,8 +2031,18 @@ async fn given_journal_entry_exists(world: &mut FinancialWorld) {
     let building_id = world.building_id;
 
     let lines = vec![
-        ("604000".to_string(), 50.0, 0.0, "Debit".to_string()),
-        ("440000".to_string(), 0.0, 50.0, "Credit".to_string()),
+        (
+            "604000".to_string(),
+            dec!(50.0),
+            dec!(0.0),
+            "Debit".to_string(),
+        ),
+        (
+            "440000".to_string(),
+            dec!(0.0),
+            dec!(50.0),
+            "Credit".to_string(),
+        ),
     ];
     let entry = uc
         .create_manual_entry(
@@ -2117,7 +2165,7 @@ async fn given_n_owners_with_percentages(world: &mut FinancialWorld, count: usiz
 async fn when_create_call_for_funds(world: &mut FinancialWorld, step: &Step) {
     let table = step.table.as_ref().expect("table expected");
     let mut title = "BDD Call".to_string();
-    let mut total_amount = 0.0;
+    let mut total_amount = Decimal::ZERO;
     let mut contribution_type = ContributionType::Regular;
     let mut due_date = Utc::now() + ChronoDuration::days(30);
     let mut account_code: Option<String> = None;
@@ -2127,7 +2175,7 @@ async fn when_create_call_for_funds(world: &mut FinancialWorld, step: &Step) {
         let val = row[1].as_str();
         match key {
             "title" => title = val.to_string(),
-            "total_amount" => total_amount = val.parse().unwrap_or(0.0),
+            "total_amount" => total_amount = val.parse().unwrap_or(Decimal::ZERO),
             "contribution_type" => contribution_type = parse_contribution_type(val),
             "due_date" => {
                 due_date = val.parse::<DateTime<Utc>>().unwrap_or_else(|_| {
@@ -2191,7 +2239,7 @@ async fn then_call_created_with_status(world: &mut FinancialWorld, expected: Str
 }
 
 #[given(regex = r#"^a draft call for funds of (\d+) EUR exists$"#)]
-async fn given_draft_call_for_funds(world: &mut FinancialWorld, amount: f64) {
+async fn given_draft_call_for_funds(world: &mut FinancialWorld, amount: Decimal) {
     let uc = world.call_for_funds_use_cases.as_ref().unwrap().clone();
     let org_id = world.org_id.unwrap();
     let building_id = world.building_id.unwrap();
@@ -2279,7 +2327,7 @@ async fn given_n_calls_for_funds(world: &mut FinancialWorld, count: usize) {
             building_id,
             format!("Call {}", i + 1),
             format!("Description {}", i + 1),
-            1000.0 * (i + 1) as f64,
+            dec!(1000) * Decimal::from(i + 1),
             ContributionType::Regular,
             Utc::now(),
             Utc::now() + ChronoDuration::days(30),
@@ -2320,7 +2368,7 @@ async fn given_sent_overdue_call(world: &mut FinancialWorld) {
             building_id,
             "Overdue Call".to_string(),
             "Past due".to_string(),
-            500.0,
+            dec!(500),
             ContributionType::Regular,
             Utc::now() - ChronoDuration::days(60),
             Utc::now() - ChronoDuration::days(30),
@@ -2362,7 +2410,7 @@ async fn given_draft_call_exists(world: &mut FinancialWorld) {
             building_id,
             "Draft Call".to_string(),
             "To be acted on".to_string(),
-            1000.0,
+            dec!(1000),
             ContributionType::Regular,
             Utc::now(),
             Utc::now() + ChronoDuration::days(30),
@@ -2427,7 +2475,7 @@ async fn given_sent_call_exists(world: &mut FinancialWorld) {
             building_id,
             "Sent Call".to_string(),
             "Already sent".to_string(),
-            2000.0,
+            dec!(2000),
             ContributionType::Regular,
             Utc::now(),
             Utc::now() + ChronoDuration::days(30),
@@ -2552,7 +2600,7 @@ async fn given_2_owners_with_pcts(world: &mut FinancialWorld, pct1: f64, pct2: f
 }
 
 #[given(regex = r#"^a call for funds of (\d+) EUR is sent$"#)]
-async fn given_call_of_amount_sent(world: &mut FinancialWorld, amount: f64) {
+async fn given_call_of_amount_sent(world: &mut FinancialWorld, amount: Decimal) {
     let uc = world.call_for_funds_use_cases.as_ref().unwrap().clone();
     let org_id = world.org_id.unwrap();
     let building_id = world.building_id.unwrap();
@@ -2577,7 +2625,11 @@ async fn given_call_of_amount_sent(world: &mut FinancialWorld, amount: f64) {
 }
 
 #[then(regex = r#"^owner with (\d+)% should have contribution of (\d+) EUR$"#)]
-async fn then_owner_pct_contribution(world: &mut FinancialWorld, _pct: f64, expected_amount: f64) {
+async fn then_owner_pct_contribution(
+    world: &mut FinancialWorld,
+    _pct: Decimal,
+    expected_amount: Decimal,
+) {
     let uc = world.owner_contribution_use_cases.as_ref().unwrap().clone();
     // Find the owner with matching percentage
     for (_name, owner_id) in &world.owner_by_name {
@@ -2587,7 +2639,7 @@ async fn then_owner_pct_contribution(world: &mut FinancialWorld, _pct: f64, expe
             .unwrap_or_default();
         for contrib in &contribs {
             let diff = (contrib.amount - expected_amount).abs();
-            if diff < 1.0 {
+            if diff < dec!(1) {
                 return; // Found matching contribution
             }
         }
@@ -2651,7 +2703,7 @@ async fn given_sent_call_with_contributions(world: &mut FinancialWorld) {
             building_id,
             "Sent Call With Contribs".to_string(),
             "For payment test".to_string(),
-            1000.0,
+            dec!(1000),
             ContributionType::Regular,
             Utc::now(),
             Utc::now() + ChronoDuration::days(30),
@@ -2759,7 +2811,7 @@ async fn given_owner_with_unit(world: &mut FinancialWorld, name: String) {
 async fn when_create_contribution(world: &mut FinancialWorld, name: String, step: &Step) {
     let table = step.table.as_ref().expect("table expected");
     let mut description = "BDD contribution".to_string();
-    let mut amount = 0.0;
+    let mut amount = Decimal::ZERO;
     let mut contribution_type = ContributionType::Regular;
     let mut account_code: Option<String> = None;
 
@@ -2768,7 +2820,7 @@ async fn when_create_contribution(world: &mut FinancialWorld, name: String, step
         let val = row[1].as_str();
         match key {
             "description" => description = val.to_string(),
-            "amount" => amount = val.parse().unwrap_or(0.0),
+            "amount" => amount = val.parse().unwrap_or(Decimal::ZERO),
             "contribution_type" => contribution_type = parse_contribution_type(val),
             "account_code" => account_code = Some(val.to_string()),
             _ => {}
@@ -2839,7 +2891,7 @@ async fn given_contribution_exists(world: &mut FinancialWorld, name: String) {
             owner_id,
             world.unit_ids.first().copied(),
             "Existing contribution".to_string(),
-            250.0,
+            dec!(250),
             ContributionType::Regular,
             Utc::now(),
             Some("701000".to_string()),
@@ -2868,7 +2920,7 @@ async fn then_contribution_details(world: &mut FinancialWorld) {
 #[then("the amount should be correct")]
 async fn then_amount_correct(world: &mut FinancialWorld) {
     let c = world.last_contribution.as_ref().expect("contribution");
-    assert!(c.amount > 0.0, "Amount should be positive");
+    assert!(c.amount > Decimal::ZERO, "Amount should be positive");
 }
 
 #[given(regex = r#"^(\d+) contributions exist for "([^"]*)"$"#)]
@@ -2890,7 +2942,7 @@ async fn given_n_contributions(world: &mut FinancialWorld, count: usize, name: S
                 owner_id,
                 world.unit_ids.first().copied(),
                 format!("Contribution {}", i + 1),
-                100.0 * (i + 1) as f64,
+                dec!(100) * Decimal::from(i + 1),
                 ContributionType::Regular,
                 Utc::now(),
                 None,
@@ -2952,7 +3004,7 @@ async fn given_mixed_contributions(
             owner_id,
             world.unit_ids.first().copied(),
             format!("Unpaid {}", i + 1),
-            100.0,
+            dec!(100),
             ContributionType::Regular,
             Utc::now(),
             None,
@@ -2969,7 +3021,7 @@ async fn given_mixed_contributions(
                 owner_id,
                 world.unit_ids.first().copied(),
                 format!("Paid {}", i + 1),
-                200.0,
+                dec!(200),
                 ContributionType::Regular,
                 Utc::now(),
                 None,
@@ -3019,7 +3071,7 @@ async fn then_all_have_status(world: &mut FinancialWorld, expected: String) {
 }
 
 #[given(regex = r#"^an unpaid contribution of (\d+) EUR exists$"#)]
-async fn given_unpaid_contribution(world: &mut FinancialWorld, amount: f64) {
+async fn given_unpaid_contribution(world: &mut FinancialWorld, amount: Decimal) {
     let uc = world.owner_contribution_use_cases.as_ref().unwrap().clone();
     let org_id = world.org_id.unwrap();
     let owner_id = world
@@ -3095,7 +3147,7 @@ async fn given_paid_contribution(world: &mut FinancialWorld) {
             owner_id,
             world.unit_ids.first().copied(),
             "Already paid".to_string(),
-            300.0,
+            dec!(300),
             ContributionType::Regular,
             Utc::now(),
             None,
@@ -3175,7 +3227,7 @@ async fn given_contributions_multiple_owners(world: &mut FinancialWorld) {
             *owner_id,
             world.unit_ids.first().copied(),
             "Multi owner contrib".to_string(),
-            150.0,
+            dec!(150),
             ContributionType::Regular,
             Utc::now(),
             None,
@@ -3221,7 +3273,7 @@ async fn given_contribution_with_account_code(world: &mut FinancialWorld, code: 
             owner_id,
             world.unit_ids.first().copied(),
             "Contrib with account code".to_string(),
-            500.0,
+            dec!(500),
             ContributionType::Regular,
             Utc::now(),
             Some(code),
@@ -3309,7 +3361,7 @@ async fn given_unit_owned_by(world: &mut FinancialWorld, unit_num: usize, name: 
 }
 
 #[given(regex = r#"^an expense of (\d+) EUR exists for the building$"#)]
-async fn given_expense_for_building(world: &mut FinancialWorld, amount: f64) {
+async fn given_expense_for_building(world: &mut FinancialWorld, amount: Decimal) {
     let pool = world.pool.as_ref().unwrap();
     let building_id = world.building_id.unwrap();
     let org_id = world.org_id.unwrap();
@@ -3378,7 +3430,12 @@ async fn then_distributions_for_n_owners(world: &mut FinancialWorld, count: usiz
 }
 
 #[then(regex = r#"^"([^"]*)" should owe (\d+(?:\.\d+)?) EUR \((\d+)%\)$"#)]
-async fn then_owner_should_owe(world: &mut FinancialWorld, name: String, expected: f64, _pct: f64) {
+async fn then_owner_should_owe(
+    world: &mut FinancialWorld,
+    name: String,
+    expected: Decimal,
+    _pct: Decimal,
+) {
     let found = world
         .distribution_amounts
         .iter()
@@ -3390,9 +3447,9 @@ async fn then_owner_should_owe(world: &mut FinancialWorld, name: String, expecte
         world.distribution_amounts
     );
     let (_, amount) = found.unwrap();
-    let diff = (amount - expected).abs();
+    let diff = (*amount - expected).abs();
     assert!(
-        diff < 0.02,
+        diff < dec!(0.02),
         "Expected {} to owe {}, got {} (diff: {})",
         name,
         expected,
@@ -3555,11 +3612,16 @@ async fn when_get_total_due(world: &mut FinancialWorld, name: String, _pct: f64)
 }
 
 #[then(regex = r#"^the total due should be (\d+(?:\.\d+)?) EUR \((\d+)% of (\d+) EUR\)$"#)]
-async fn then_total_due_amount(world: &mut FinancialWorld, expected: f64, _pct: f64, _total: f64) {
+async fn then_total_due_amount(
+    world: &mut FinancialWorld,
+    expected: Decimal,
+    _pct: Decimal,
+    _total: Decimal,
+) {
     let total = world.total_due.expect("total due");
     let diff = (total - expected).abs();
     assert!(
-        diff < 1.0,
+        diff < dec!(1),
         "Expected total due {}, got {} (diff: {})",
         expected,
         total,
@@ -3568,7 +3630,7 @@ async fn then_total_due_amount(world: &mut FinancialWorld, expected: f64, _pct: 
 }
 
 #[given(regex = r#"^an expense of (\d+) EUR exists$"#)]
-async fn given_expense_amount(world: &mut FinancialWorld, amount: f64) {
+async fn given_expense_amount(world: &mut FinancialWorld, amount: Decimal) {
     given_expense_for_building(world, amount).await;
 }
 
@@ -3705,7 +3767,7 @@ async fn then_stats_include_expenses(world: &mut FinancialWorld) {
     let stats = world.dashboard_stats.as_ref().expect("stats");
     // Total expenses should be >= 0
     assert!(
-        stats.total_expenses_current_month >= 0.0,
+        stats.total_expenses_current_month >= Decimal::ZERO,
         "Expense total should be >= 0"
     );
 }
@@ -3713,13 +3775,19 @@ async fn then_stats_include_expenses(world: &mut FinancialWorld) {
 #[then("the stats should include payment totals")]
 async fn then_stats_include_payments(world: &mut FinancialWorld) {
     let stats = world.dashboard_stats.as_ref().expect("stats");
-    assert!(stats.total_paid >= 0.0, "Paid total should be >= 0");
+    assert!(
+        stats.total_paid >= Decimal::ZERO,
+        "Paid total should be >= 0"
+    );
 }
 
 #[then("the stats should include outstanding amounts")]
 async fn then_stats_include_outstanding(world: &mut FinancialWorld) {
     let stats = world.dashboard_stats.as_ref().expect("stats");
-    assert!(stats.total_pending >= 0.0, "Pending total should be >= 0");
+    assert!(
+        stats.total_pending >= Decimal::ZERO,
+        "Pending total should be >= 0"
+    );
 }
 
 #[given(regex = r#"^(\d+) transactions exist$"#)]
@@ -3808,7 +3876,7 @@ async fn given_owner_contributions_exist(world: &mut FinancialWorld) {
         owner_id,
         None,
         "Dashboard contrib".to_string(),
-        500.0,
+        dec!(500),
         ContributionType::Regular,
         Utc::now(),
         None,
@@ -3822,7 +3890,7 @@ async fn then_stats_include_contributions(world: &mut FinancialWorld) {
     // Dashboard stats don't directly show contributions, but total_pending should account for them
     let stats = world.dashboard_stats.as_ref().expect("stats");
     // Just verify we have valid stats
-    assert!(stats.paid_percentage >= 0.0);
+    assert!(stats.paid_percentage >= Decimal::ZERO);
 }
 
 #[given("no financial data exists")]
@@ -3844,9 +3912,9 @@ async fn given_no_financial_data(world: &mut FinancialWorld) {
 #[then("all totals should be zero")]
 async fn then_all_totals_zero(world: &mut FinancialWorld) {
     let stats = world.dashboard_stats.as_ref().expect("stats");
-    assert_eq!(stats.total_expenses_current_month, 0.0);
-    assert_eq!(stats.total_paid, 0.0);
-    assert_eq!(stats.total_pending, 0.0);
+    assert_eq!(stats.total_expenses_current_month, Decimal::ZERO);
+    assert_eq!(stats.total_paid, Decimal::ZERO);
+    assert_eq!(stats.total_pending, Decimal::ZERO);
 }
 
 // ==================== PARSE HELPERS ====================
@@ -4022,11 +4090,11 @@ async fn when_create_invoice_draft(world: &mut FinancialWorld, step: &Step) {
     let building_id = world.building_id.unwrap();
 
     let description = get_invoice_table_value(step, "description").unwrap_or_default();
-    let amount_excl_vat: f64 = get_invoice_table_value(step, "amount_excl_vat")
+    let amount_excl_vat: Decimal = get_invoice_table_value(step, "amount_excl_vat")
         .unwrap_or("1000.0".to_string())
         .parse()
         .unwrap();
-    let vat_rate: f64 = get_invoice_table_value(step, "vat_rate")
+    let vat_rate: Decimal = get_invoice_table_value(step, "vat_rate")
         .unwrap_or("21.0".to_string())
         .parse()
         .unwrap();
@@ -4095,11 +4163,11 @@ async fn then_invoice_status(world: &mut FinancialWorld, expected: String) {
 }
 
 #[then(regex = r#"^the invoice VAT amount should be ([0-9.]+)$"#)]
-async fn then_invoice_vat_amount(world: &mut FinancialWorld, expected: f64) {
+async fn then_invoice_vat_amount(world: &mut FinancialWorld, expected: Decimal) {
     let inv = world.last_invoice.as_ref().expect("no invoice");
-    let vat = inv.vat_amount.unwrap_or(0.0);
+    let vat = inv.vat_amount.unwrap_or(Decimal::ZERO);
     assert!(
-        (vat - expected).abs() < 0.01,
+        (vat - expected).abs() < dec!(0.01),
         "Expected VAT {}, got {}",
         expected,
         vat
@@ -4107,11 +4175,11 @@ async fn then_invoice_vat_amount(world: &mut FinancialWorld, expected: f64) {
 }
 
 #[then(regex = r#"^the invoice total \(TTC\) should be ([0-9.]+)$"#)]
-async fn then_invoice_total_ttc(world: &mut FinancialWorld, expected: f64) {
+async fn then_invoice_total_ttc(world: &mut FinancialWorld, expected: Decimal) {
     let inv = world.last_invoice.as_ref().expect("no invoice");
     let ttc = inv.amount_incl_vat.unwrap_or(inv.amount);
     assert!(
-        (ttc - expected).abs() < 0.01,
+        (ttc - expected).abs() < dec!(0.01),
         "Expected TTC {}, got {}",
         expected,
         ttc
@@ -4149,8 +4217,8 @@ async fn given_draft_invoice(world: &mut FinancialWorld) {
         building_id: building_id.to_string(),
         category: ExpenseCategory::Maintenance,
         description: "Test draft invoice".to_string(),
-        amount_excl_vat: 1000.0,
-        vat_rate: 21.0,
+        amount_excl_vat: dec!(1000),
+        vat_rate: dec!(21),
         invoice_date: "2025-01-15T00:00:00Z".to_string(),
         due_date: None,
         supplier: None,
@@ -4212,8 +4280,8 @@ async fn given_approved_invoice(world: &mut FinancialWorld) {
         building_id: building_id.to_string(),
         category: ExpenseCategory::Maintenance,
         description: "Approved invoice".to_string(),
-        amount_excl_vat: 1000.0,
-        vat_rate: 21.0,
+        amount_excl_vat: dec!(1000),
+        vat_rate: dec!(21),
         invoice_date: "2025-01-15T00:00:00Z".to_string(),
         due_date: None,
         supplier: None,
@@ -4255,8 +4323,8 @@ async fn given_rejected_invoice(world: &mut FinancialWorld) {
         building_id: building_id.to_string(),
         category: ExpenseCategory::Maintenance,
         description: "Rejected invoice".to_string(),
-        amount_excl_vat: 1000.0,
-        vat_rate: 21.0,
+        amount_excl_vat: dec!(1000),
+        vat_rate: dec!(21),
         invoice_date: "2025-01-15T00:00:00Z".to_string(),
         due_date: None,
         supplier: None,
@@ -4331,8 +4399,8 @@ async fn given_pending_invoice(world: &mut FinancialWorld) {
         building_id: building_id.to_string(),
         category: ExpenseCategory::Maintenance,
         description: "Pending invoice".to_string(),
-        amount_excl_vat: 1000.0,
-        vat_rate: 21.0,
+        amount_excl_vat: dec!(1000),
+        vat_rate: dec!(21),
         invoice_date: "2025-01-15T00:00:00Z".to_string(),
         due_date: None,
         supplier: None,
@@ -4594,8 +4662,8 @@ async fn given_n_pending_invoices(world: &mut FinancialWorld, count: usize) {
             building_id: building_id.to_string(),
             category: ExpenseCategory::Maintenance,
             description: format!("Pending invoice {}", i + 1),
-            amount_excl_vat: 1000.0,
-            vat_rate: 21.0,
+            amount_excl_vat: dec!(1000),
+            vat_rate: dec!(21),
             invoice_date: "2025-01-15T00:00:00Z".to_string(),
             due_date: None,
             supplier: None,
@@ -4624,8 +4692,8 @@ async fn given_n_approved_invoices(world: &mut FinancialWorld, count: usize) {
             building_id: building_id.to_string(),
             category: ExpenseCategory::Maintenance,
             description: format!("Approved invoice {}", i + 1),
-            amount_excl_vat: 1000.0,
-            vat_rate: 21.0,
+            amount_excl_vat: dec!(1000),
+            vat_rate: dec!(21),
             invoice_date: "2025-01-15T00:00:00Z".to_string(),
             due_date: None,
             supplier: None,
@@ -4694,7 +4762,7 @@ async fn then_request_forbidden(world: &mut FinancialWorld) {
 
 // Charge distribution steps (simplified for invoices feature)
 #[given(regex = r#"^a pending invoice with total ([0-9.]+) EUR$"#)]
-async fn given_pending_invoice_amount(world: &mut FinancialWorld, _amount: f64) {
+async fn given_pending_invoice_amount(world: &mut FinancialWorld, _amount: Decimal) {
     given_pending_invoice(world).await;
 }
 
@@ -4732,7 +4800,7 @@ async fn then_n_distributions(world: &mut FinancialWorld, expected: usize) {
 
 // Remaining invoice scenarios use simplified assertions
 #[given(regex = r#"^the accountant creates an invoice draft with (\d+) EUR HT and (\d+)% VAT$"#)]
-async fn given_create_invoice_ht_vat(world: &mut FinancialWorld, amount: f64, vat: f64) {
+async fn given_create_invoice_ht_vat(world: &mut FinancialWorld, amount: Decimal, vat: Decimal) {
     if world.pool.is_none() {
         world.setup_database().await;
     }
@@ -4791,8 +4859,8 @@ async fn given_create_and_submit(world: &mut FinancialWorld) {
         building_id: world.building_id.unwrap().to_string(),
         category: ExpenseCategory::Maintenance,
         description: "Workflow test invoice".to_string(),
-        amount_excl_vat: 1000.0,
-        vat_rate: 21.0,
+        amount_excl_vat: dec!(1000),
+        vat_rate: dec!(21),
         invoice_date: "2025-01-15T00:00:00Z".to_string(),
         due_date: None,
         supplier: None,
@@ -4816,7 +4884,7 @@ async fn when_update_rejected(world: &mut FinancialWorld) {
     let dto = UpdateInvoiceDraftDto {
         description: Some("Corrected invoice".to_string()),
         category: None,
-        amount_excl_vat: Some(900.0),
+        amount_excl_vat: Some(dec!(900)),
         vat_rate: None,
         invoice_date: None,
         due_date: None,
@@ -4881,14 +4949,14 @@ async fn given_3_with_amounts(world: &mut FinancialWorld) {
 #[when("requesting total due for Owner 1")]
 async fn when_request_total_due(world: &mut FinancialWorld) {
     world.operation_success = true;
-    world.total_due = Some(952.50);
+    world.total_due = Some(dec!(952.50));
 }
 
 #[then(regex = r#"^the total amount due should be ([0-9.]+) EUR$"#)]
-async fn then_total_due(world: &mut FinancialWorld, expected: f64) {
-    let total = world.total_due.unwrap_or(0.0);
+async fn then_total_due(world: &mut FinancialWorld, expected: Decimal) {
+    let total = world.total_due.unwrap_or(Decimal::ZERO);
     assert!(
-        (total - expected).abs() < 0.01,
+        (total - expected).abs() < dec!(0.01),
         "Expected {}, got {}",
         expected,
         total
@@ -4896,12 +4964,12 @@ async fn then_total_due(world: &mut FinancialWorld, expected: f64) {
 }
 
 #[then(regex = r#"^Owner (\d+) amount due should be ([0-9.]+) EUR$"#)]
-async fn then_owner_amount_due(_world: &mut FinancialWorld, _owner_num: usize, _expected: f64) {
+async fn then_owner_amount_due(_world: &mut FinancialWorld, _owner_num: usize, _expected: Decimal) {
     // Distribution amounts verified through charge_distribution use cases
 }
 
 #[then(regex = r#"^the total distributed should be ([0-9.]+) EUR$"#)]
-async fn then_total_distributed(_world: &mut FinancialWorld, _expected: f64) {
+async fn then_total_distributed(_world: &mut FinancialWorld, _expected: Decimal) {
     // Verified by sum of distributions
 }
 
@@ -4929,7 +4997,7 @@ async fn given_owner_recovery(world: &mut FinancialWorld, name: String, email: S
 }
 
 #[given(regex = r#"^an overdue expense of (\d+) EUR due (\d+) days ago$"#)]
-async fn given_overdue_expense(world: &mut FinancialWorld, amount: f64, days_ago: i64) {
+async fn given_overdue_expense(world: &mut FinancialWorld, amount: Decimal, days_ago: i64) {
     let pool = world.pool.as_ref().unwrap();
     let building_id = world.building_id.unwrap();
     let org_id = world.org_id.unwrap();
@@ -5050,10 +5118,12 @@ async fn when_calculate_penalty(world: &mut FinancialWorld) {
 }
 
 #[then(regex = r#"^the penalty should be (\d+) EUR$"#)]
-async fn then_penalty_amount(world: &mut FinancialWorld, expected: f64) {
-    let penalty = world.last_reminder_penalty.unwrap_or(0.0);
+async fn then_penalty_amount(world: &mut FinancialWorld, expected: Decimal) {
+    use rust_decimal::prelude::FromPrimitive;
+    let penalty_f64 = world.last_reminder_penalty.unwrap_or(0.0);
+    let penalty = Decimal::from_f64(penalty_f64).unwrap_or(Decimal::ZERO);
     assert!(
-        (penalty - expected).abs() < 1.0,
+        (penalty - expected).abs() < dec!(1),
         "Expected {} EUR, got {}",
         expected,
         penalty
@@ -5076,7 +5146,7 @@ async fn given_pending_first_reminder(world: &mut FinancialWorld) {
         world.setup_database().await;
     }
     if world.expense_id.is_none() {
-        given_overdue_expense(world, 100.0, 20).await;
+        given_overdue_expense(world, dec!(100), 20).await;
     }
     if world.owner_by_name.is_empty() {
         let owner_id = world
@@ -5210,7 +5280,7 @@ async fn then_can_add_tracking(world: &mut FinancialWorld) {
 #[given(regex = r#"^(\d+) overdue expenses in the organization$"#)]
 async fn given_n_overdue(world: &mut FinancialWorld, count: usize) {
     for _ in 0..count {
-        given_overdue_expense(world, 100.0, 20).await;
+        given_overdue_expense(world, dec!(100), 20).await;
     }
 }
 
@@ -5240,10 +5310,10 @@ async fn given_active_reminders(world: &mut FinancialWorld, _count: usize) {
 }
 
 #[given(regex = r#"^total owed amount is (\d+) EUR$"#)]
-async fn given_total_owed(_world: &mut FinancialWorld, _amount: f64) {}
+async fn given_total_owed(_world: &mut FinancialWorld, _amount: Decimal) {}
 
 #[given(regex = r#"^total penalties amount is (\d+) EUR$"#)]
-async fn given_total_penalties(_world: &mut FinancialWorld, _amount: f64) {}
+async fn given_total_penalties(_world: &mut FinancialWorld, _amount: Decimal) {}
 
 #[when("I request recovery statistics")]
 async fn when_request_stats(world: &mut FinancialWorld) {
@@ -5251,10 +5321,10 @@ async fn when_request_stats(world: &mut FinancialWorld) {
 }
 
 #[then(regex = r#"^the stats should show (\d+) EUR total owed$"#)]
-async fn then_stats_owed(_world: &mut FinancialWorld, _amount: f64) {}
+async fn then_stats_owed(_world: &mut FinancialWorld, _amount: Decimal) {}
 
 #[then(regex = r#"^the stats should show (\d+) EUR total penalties$"#)]
-async fn then_stats_penalties(_world: &mut FinancialWorld, _amount: f64) {}
+async fn then_stats_penalties(_world: &mut FinancialWorld, _amount: Decimal) {}
 
 #[then("the stats should show reminder count by level")]
 async fn then_stats_by_level(_world: &mut FinancialWorld) {}
@@ -5263,7 +5333,7 @@ async fn then_stats_by_level(_world: &mut FinancialWorld) {}
 #[given(regex = r#"^(\d+) overdue expenses without reminders$"#)]
 async fn given_overdue_without_reminders(world: &mut FinancialWorld, count: usize) {
     for _ in 0..count {
-        given_overdue_expense(world, 100.0, 20).await;
+        given_overdue_expense(world, dec!(100), 20).await;
     }
 }
 
@@ -5358,7 +5428,7 @@ async fn then_request_forbidden_2(world: &mut FinancialWorld) {
 #[when("I create a payment reminder")]
 async fn when_create_reminder(world: &mut FinancialWorld) {
     if world.expense_id.is_none() {
-        given_overdue_expense(world, 100.0, 20).await;
+        given_overdue_expense(world, dec!(100), 20).await;
     }
     if world.owner_by_name.is_empty() {
         let owner_id = world
@@ -5406,7 +5476,7 @@ async fn given_formal_notice(world: &mut FinancialWorld) {
         world.setup_database().await;
     }
     // Always create a 65-day expense: FormalNotice requires >= 60 days overdue
-    given_overdue_expense(world, 100.0, 65).await;
+    given_overdue_expense(world, dec!(100), 65).await;
     if world.owner_by_name.is_empty() {
         let owner_id = world
             .create_owner_sql("Formal", "Notice", "formal@test.be")
@@ -6470,11 +6540,16 @@ async fn given_account_with_journal_lines(world: &mut FinancialWorld) {
     let journal_uc = world.journal_entry_use_cases.as_ref().unwrap().clone();
     let building_id = world.building_id;
     let lines = vec![
-        ("604000".to_string(), 100.0, 0.0, "Debit linked".to_string()),
+        (
+            "604000".to_string(),
+            dec!(100),
+            Decimal::ZERO,
+            "Debit linked".to_string(),
+        ),
         (
             "440000".to_string(),
-            0.0,
-            100.0,
+            Decimal::ZERO,
+            dec!(100),
             "Credit linked".to_string(),
         ),
     ];
@@ -6599,7 +6674,7 @@ async fn given_user_with_role(world: &mut FinancialWorld, name: String, role: St
 async fn when_create_simple_expense(world: &mut FinancialWorld, step: &Step) {
     let table = step.table.as_ref().expect("table expected");
     let mut description = "BDD Expense".to_string();
-    let mut amount = 0.0f64;
+    let mut amount = Decimal::ZERO;
     let mut _category = "maintenance".to_string();
 
     for row in &table.rows {
@@ -6607,7 +6682,7 @@ async fn when_create_simple_expense(world: &mut FinancialWorld, step: &Step) {
         let val = row[1].trim();
         match key {
             "description" => description = val.to_string(),
-            "amount" => amount = val.parse().unwrap_or(0.0),
+            "amount" => amount = val.parse().unwrap_or(Decimal::ZERO),
             "category" => _category = val.to_string(),
             _ => {}
         }
@@ -6662,7 +6737,7 @@ async fn then_expense_created_with_status(world: &mut FinancialWorld, expected: 
 }
 
 #[then(regex = r#"^the amount should be (\d+(?:\.\d+)?)$"#)]
-async fn then_expense_amount(world: &mut FinancialWorld, expected: f64) {
+async fn then_expense_amount(world: &mut FinancialWorld, expected: Decimal) {
     // Amount verified through creation success
     assert!(
         world.operation_success,
@@ -6675,16 +6750,16 @@ async fn then_expense_amount(world: &mut FinancialWorld, expected: f64) {
 async fn when_create_expense_with_tva(world: &mut FinancialWorld, step: &Step) {
     let table = step.table.as_ref().expect("table expected");
     let mut description = "BDD Expense TVA".to_string();
-    let mut amount_excl_vat = 0.0f64;
-    let mut vat_rate = 21.0f64;
+    let mut amount_excl_vat = Decimal::ZERO;
+    let mut vat_rate = dec!(21);
 
     for row in &table.rows {
         let key = row[0].trim();
         let val = row[1].trim();
         match key {
             "description" => description = val.to_string(),
-            "amount_excl_vat" => amount_excl_vat = val.parse().unwrap_or(0.0),
-            "vat_rate" => vat_rate = val.parse().unwrap_or(21.0),
+            "amount_excl_vat" => amount_excl_vat = val.parse().unwrap_or(Decimal::ZERO),
+            "vat_rate" => vat_rate = val.parse().unwrap_or(dec!(21)),
             _ => {}
         }
     }
@@ -6731,11 +6806,11 @@ async fn then_expense_created(world: &mut FinancialWorld) {
 }
 
 #[then(regex = r#"^the amount_incl_vat should be (\d+(?:\.\d+)?)$"#)]
-async fn then_amount_incl_vat(world: &mut FinancialWorld, expected: f64) {
+async fn then_amount_incl_vat(world: &mut FinancialWorld, expected: Decimal) {
     if let Some(ref inv) = world.last_invoice {
         let ttc = inv.amount_incl_vat.unwrap_or(inv.amount);
         assert!(
-            (ttc - expected).abs() < 0.01,
+            (ttc - expected).abs() < dec!(0.01),
             "Expected amount_incl_vat {}, got {}",
             expected,
             ttc
@@ -6746,7 +6821,7 @@ async fn then_amount_incl_vat(world: &mut FinancialWorld, expected: f64) {
 }
 
 #[when(regex = r#"^I try to create an expense with amount (-?\d+)$"#)]
-async fn when_create_expense_bad_amount(world: &mut FinancialWorld, amount: f64) {
+async fn when_create_expense_bad_amount(world: &mut FinancialWorld, amount: Decimal) {
     let uc = world.expense_use_cases.as_ref().unwrap().clone();
     let org_id = world.org_id.unwrap();
     let building_id = world.building_id.unwrap();
@@ -6788,8 +6863,8 @@ async fn given_draft_expense(world: &mut FinancialWorld) {
         building_id: building_id.to_string(),
         category: ExpenseCategory::Maintenance,
         description: "Draft expense for BDD".to_string(),
-        amount_excl_vat: 500.0,
-        vat_rate: 21.0,
+        amount_excl_vat: dec!(500),
+        vat_rate: dec!(21),
         invoice_date: chrono::Utc::now().to_rfc3339(),
         due_date: None,
         supplier: None,
@@ -6945,7 +7020,7 @@ async fn given_approved_expense(world: &mut FinancialWorld) {
 }
 
 #[when(regex = r#"^I try to update the expense amount to (\d+(?:\.\d+)?)$"#)]
-async fn when_try_update_expense_amount(world: &mut FinancialWorld, _new_amount: f64) {
+async fn when_try_update_expense_amount(world: &mut FinancialWorld, _new_amount: Decimal) {
     let uc = world.expense_use_cases.as_ref().unwrap().clone();
     let id = world.last_invoice_id.expect("no expense id");
     let dto = UpdateInvoiceDraftDto {
@@ -7017,7 +7092,7 @@ async fn given_n_expenses_for_building(world: &mut FinancialWorld, count: usize)
             building_id: building_id.to_string(),
             category: ExpenseCategory::Maintenance,
             description: format!("Expense {} for building list test", i + 1),
-            amount: 100.0 * (i + 1) as f64,
+            amount: dec!(100) * Decimal::from(i + 1),
             expense_date: chrono::Utc::now().to_rfc3339(),
             supplier: None,
             invoice_number: None,
@@ -7071,8 +7146,8 @@ async fn given_n_expenses_with_status(world: &mut FinancialWorld, count: usize, 
             building_id: building_id.to_string(),
             category: ExpenseCategory::Maintenance,
             description: format!("Filtered expense {} status {}", i + 1, status),
-            amount_excl_vat: 200.0,
-            vat_rate: 21.0,
+            amount_excl_vat: dec!(200),
+            vat_rate: dec!(21),
             invoice_date: chrono::Utc::now().to_rfc3339(),
             due_date: None,
             supplier: None,
@@ -7162,8 +7237,8 @@ async fn then_all_expenses_have_status(world: &mut FinancialWorld, _expected: St
 async fn when_create_expense_with_lines(world: &mut FinancialWorld, step: &Step) {
     let table = step.table.as_ref().expect("table expected");
     // Parse line items to compute total amount
-    let mut total_excl_vat = 0.0f64;
-    let mut vat_total = 0.0f64;
+    let mut total_excl_vat = Decimal::ZERO;
+    let mut vat_total = Decimal::ZERO;
     let mut headers_skipped = false;
 
     for row in &table.rows {
@@ -7172,12 +7247,12 @@ async fn when_create_expense_with_lines(world: &mut FinancialWorld, step: &Step)
             continue;
         }
         if row.len() >= 4 {
-            let qty: f64 = row[1].trim().parse().unwrap_or(1.0);
-            let unit_price: f64 = row[2].trim().parse().unwrap_or(0.0);
-            let vat_rate: f64 = row[3].trim().parse().unwrap_or(21.0);
+            let qty: Decimal = row[1].trim().parse().unwrap_or(dec!(1));
+            let unit_price: Decimal = row[2].trim().parse().unwrap_or(Decimal::ZERO);
+            let vat_rate: Decimal = row[3].trim().parse().unwrap_or(dec!(21));
             let line_excl = qty * unit_price;
             total_excl_vat += line_excl;
-            vat_total += line_excl * vat_rate / 100.0;
+            vat_total += line_excl * vat_rate / dec!(100);
         }
     }
 
@@ -7190,10 +7265,10 @@ async fn when_create_expense_with_lines(world: &mut FinancialWorld, step: &Step)
         category: ExpenseCategory::Maintenance,
         description: "Multi-line invoice expense".to_string(),
         amount_excl_vat: total_excl_vat,
-        vat_rate: if total_excl_vat > 0.0 {
-            vat_total / total_excl_vat * 100.0
+        vat_rate: if total_excl_vat > Decimal::ZERO {
+            vat_total / total_excl_vat * dec!(100)
         } else {
-            21.0
+            dec!(21)
         },
         invoice_date: chrono::Utc::now().to_rfc3339(),
         due_date: None,

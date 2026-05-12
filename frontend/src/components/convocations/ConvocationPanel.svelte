@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  // Svelte 5 runes mode
   import { _ } from '../../lib/i18n';
   import {
     convocationsApi,
@@ -14,22 +14,30 @@
   import ConvocationTrackingSummary from './ConvocationTrackingSummary.svelte';
   import ConvocationRecipientList from './ConvocationRecipientList.svelte';
 
-  export let meetingId: string;
-  export let meetingStatus: string = 'Scheduled';
-  export let buildingId: string = '';
-  export let meetingDate: string = '';
-  export let meetingType: string = 'Ordinary';
+  let {
+    meetingId,
+    meetingStatus = 'Scheduled',
+    buildingId = '',
+    meetingDate = '',
+    meetingType = 'Ordinary',
+  }: {
+    meetingId: string;
+    meetingStatus?: string;
+    buildingId?: string;
+    meetingDate?: string;
+    meetingType?: string;
+  } = $props();
 
-  let convocation: Convocation | null = null;
-  let loading = true;
-  let error = '';
-  let showRecipients = false;
-  let actionLoading = false;
+  let convocation = $state<Convocation | null>(null);
+  let loading = $state(true);
+  let error = $state('');
+  let showRecipients = $state(false);
+  let actionLoading = $state(false);
 
-  $: isAdmin = $authStore.user?.role === UserRole.SYNDIC || $authStore.user?.role === UserRole.SUPERADMIN;
+  let isAdmin = $derived($authStore.user?.role === UserRole.SYNDIC || $authStore.user?.role === UserRole.SUPERADMIN);
 
-  onMount(async () => {
-    await loadConvocation();
+  $effect(() => {
+    loadConvocation();
   });
 
   async function loadConvocation() {
@@ -57,7 +65,7 @@
         meeting_date: meetingDate || new Date().toISOString(),
         language: 'fr',
       }),
-      setLoading: (v) => actionLoading = v,
+      setLoading: (v: boolean) => actionLoading = v,
       successMessage: $_('convocations.messages.created'),
       errorMessage: $_('convocations.errors.creationFailed'),
     });
@@ -69,7 +77,7 @@
     if (!confirm($_('convocations.confirms.sendToAll'))) return;
     const result = await withErrorHandling({
       action: () => convocationsApi.send(convocation!.id),
-      setLoading: (v) => actionLoading = v,
+      setLoading: (v: boolean) => actionLoading = v,
       successMessage: $_('convocations.messages.sent'),
       errorMessage: $_('convocations.errors.sendingFailed'),
     });
@@ -81,7 +89,7 @@
     if (!confirm($_('convocations.confirms.cancelConvocation'))) return;
     const result = await withErrorHandling({
       action: () => convocationsApi.cancel(convocation!.id),
-      setLoading: (v) => actionLoading = v,
+      setLoading: (v: boolean) => actionLoading = v,
       successMessage: $_('convocations.messages.cancelled'),
       errorMessage: $_('convocations.errors.cancellationFailed'),
     });
@@ -92,7 +100,7 @@
     if (!convocation) return;
     await withErrorHandling({
       action: () => convocationsApi.sendReminders(convocation!.id),
-      setLoading: (v) => actionLoading = v,
+      setLoading: (v: boolean) => actionLoading = v,
       successMessage: $_('convocations.messages.remindersEntered'),
       errorMessage: $_('convocations.errors.remindersSendingFailed'),
       onSuccess: () => { loadConvocation(); },
@@ -104,7 +112,7 @@
     if (!confirm($_('convocations.confirms.deleteConvocation'))) return;
     await withErrorHandling({
       action: () => convocationsApi.delete(convocation!.id),
-      setLoading: (v) => actionLoading = v,
+      setLoading: (v: boolean) => actionLoading = v,
       successMessage: $_('convocations.messages.deleted'),
       errorMessage: $_('convocations.errors.deletionFailed'),
       onSuccess: () => { convocation = null; },
@@ -155,7 +163,7 @@
     {:else if error}
       <div class="p-4 bg-red-50 border border-red-200 rounded-md">
         <p class="text-sm text-red-800">{error}</p>
-        <button on:click={loadConvocation} class="mt-2 text-sm text-red-600 hover:text-red-800 underline">
+        <button onclick={loadConvocation} class="mt-2 text-sm text-red-600 hover:text-red-800 underline">
           {$_('common.retry')}
         </button>
       </div>
@@ -165,7 +173,7 @@
         <p class="text-gray-500 mb-2">{$_('convocations.noConvocationCreated')}</p>
         {#if isAdmin && meetingStatus === 'Scheduled'}
           <button
-            on:click={handleCreate}
+            onclick={handleCreate}
             disabled={actionLoading}
             data-testid="convocation-btn-create"
             class="inline-flex items-center px-4 py-2 bg-amber-600 text-white rounded-lg text-sm font-medium hover:bg-amber-700 disabled:opacity-50 transition-colors"
@@ -203,7 +211,7 @@
               </span>
             {:else}
               <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800">
-                ⚠️ {$_('common.notRespected')}
+                {$_('common.notRespected')}
               </span>
             {/if}
           </div>
@@ -227,7 +235,7 @@
           <div class="flex flex-wrap gap-2 pt-2 border-t border-gray-100">
             {#if convocation.status === ConvocationStatus.Draft}
               <button
-                on:click={handleSend}
+                onclick={handleSend}
                 disabled={actionLoading}
                 data-testid="convocation-btn-send"
                 class="px-3 py-1.5 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 disabled:opacity-50 transition-colors"
@@ -235,7 +243,7 @@
                 📨 {$_('common.send')}
               </button>
               <button
-                on:click={handleDelete}
+                onclick={handleDelete}
                 disabled={actionLoading}
                 data-testid="convocation-btn-delete"
                 class="px-3 py-1.5 bg-red-100 text-red-700 rounded-lg text-sm font-medium hover:bg-red-200 disabled:opacity-50 transition-colors"
@@ -244,7 +252,7 @@
               </button>
             {:else if convocation.status === ConvocationStatus.Scheduled}
               <button
-                on:click={handleSend}
+                onclick={handleSend}
                 disabled={actionLoading}
                 data-testid="convocation-btn-send"
                 class="px-3 py-1.5 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 disabled:opacity-50 transition-colors"
@@ -252,7 +260,7 @@
                 📨 {$_('convocations.actions.sendNow')}
               </button>
               <button
-                on:click={handleCancel}
+                onclick={handleCancel}
                 disabled={actionLoading}
                 data-testid="convocation-btn-cancel"
                 class="px-3 py-1.5 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200 disabled:opacity-50 transition-colors"
@@ -261,7 +269,7 @@
               </button>
             {:else if convocation.status === ConvocationStatus.Sent}
               <button
-                on:click={handleSendReminders}
+                onclick={handleSendReminders}
                 disabled={actionLoading}
                 data-testid="convocation-btn-send-reminders"
                 class="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors"
@@ -272,7 +280,7 @@
 
             {#if convocation.status === ConvocationStatus.Sent || convocation.total_recipients > 0}
               <button
-                on:click={() => showRecipients = !showRecipients}
+                onclick={() => showRecipients = !showRecipients}
                 data-testid="convocation-btn-toggle-recipients"
                 class="px-3 py-1.5 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors"
               >

@@ -1,21 +1,29 @@
+//! Domain service: ExpenseCalculator
+//!
+//! MONETARY: All sums and shares use rust_decimal::Decimal (cf. ADR-0007).
+
 use crate::domain::entities::{Expense, Unit};
+use rust_decimal::Decimal;
+use rust_decimal_macros::dec;
+
+const QUOTA_DIVISOR: Decimal = dec!(1000);
 
 /// Service de domaine pour calculer la répartition des charges
 pub struct ExpenseCalculator;
 
 impl ExpenseCalculator {
-    /// Calcule le montant dû par un lot selon sa quote-part
-    pub fn calculate_unit_share(expense: &Expense, unit: &Unit) -> f64 {
-        expense.amount * (unit.quota / 1000.0)
+    /// Calcule le montant dû par un lot selon sa quote-part (quote-part / 1000)
+    pub fn calculate_unit_share(expense: &Expense, unit: &Unit) -> Decimal {
+        expense.amount * (unit.quota / QUOTA_DIVISOR)
     }
 
     /// Calcule le total des charges pour un ensemble de dépenses
-    pub fn calculate_total_expenses(expenses: &[Expense]) -> f64 {
+    pub fn calculate_total_expenses(expenses: &[Expense]) -> Decimal {
         expenses.iter().map(|e| e.amount).sum()
     }
 
     /// Calcule le montant total payé
-    pub fn calculate_paid_expenses(expenses: &[Expense]) -> f64 {
+    pub fn calculate_paid_expenses(expenses: &[Expense]) -> Decimal {
         expenses
             .iter()
             .filter(|e| e.is_paid())
@@ -24,7 +32,7 @@ impl ExpenseCalculator {
     }
 
     /// Calcule le montant total impayé
-    pub fn calculate_unpaid_expenses(expenses: &[Expense]) -> f64 {
+    pub fn calculate_unpaid_expenses(expenses: &[Expense]) -> Decimal {
         expenses
             .iter()
             .filter(|e| !e.is_paid())
@@ -50,7 +58,7 @@ mod tests {
             building_id,
             ExpenseCategory::Maintenance,
             "Test".to_string(),
-            1000.0,
+            dec!(1000),
             Utc::now(),
             None,
             None,
@@ -65,12 +73,12 @@ mod tests {
             UnitType::Apartment,
             Some(1),
             75.0,
-            50.0, // 50/1000 = 5%
+            dec!(50), // 50/1000 = 5%
         )
         .unwrap();
 
         let share = ExpenseCalculator::calculate_unit_share(&expense, &unit);
-        assert_eq!(share, 50.0); // 5% de 1000€ = 50€
+        assert_eq!(share, dec!(50)); // 5% de 1000€ = 50€
     }
 
     #[test]
@@ -84,7 +92,7 @@ mod tests {
                 building_id,
                 ExpenseCategory::Maintenance,
                 "Test 1".to_string(),
-                100.0,
+                dec!(100),
                 Utc::now(),
                 None,
                 None,
@@ -96,7 +104,7 @@ mod tests {
                 building_id,
                 ExpenseCategory::Repairs,
                 "Test 2".to_string(),
-                200.0,
+                dec!(200),
                 Utc::now(),
                 None,
                 None,
@@ -106,7 +114,7 @@ mod tests {
         ];
 
         let total = ExpenseCalculator::calculate_total_expenses(&expenses);
-        assert_eq!(total, 300.0);
+        assert_eq!(total, dec!(300));
     }
 
     #[test]
@@ -120,7 +128,7 @@ mod tests {
             building_id,
             ExpenseCategory::Maintenance,
             "Test 1".to_string(),
-            100.0,
+            dec!(100),
             Utc::now(),
             None,
             None,
@@ -137,7 +145,7 @@ mod tests {
             building_id,
             ExpenseCategory::Repairs,
             "Test 2".to_string(),
-            200.0,
+            dec!(200),
             Utc::now(),
             None,
             None,
@@ -150,7 +158,7 @@ mod tests {
         let paid = ExpenseCalculator::calculate_paid_expenses(&expenses);
         let unpaid = ExpenseCalculator::calculate_unpaid_expenses(&expenses);
 
-        assert_eq!(paid, 100.0);
-        assert_eq!(unpaid, 200.0);
+        assert_eq!(paid, dec!(100));
+        assert_eq!(unpaid, dec!(200));
     }
 }

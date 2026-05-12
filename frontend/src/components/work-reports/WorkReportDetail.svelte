@@ -1,6 +1,6 @@
 <script lang="ts">
+  // Svelte 5 runes mode
   import { _ } from '../../lib/i18n';
-  import { createEventDispatcher } from "svelte";
   import {
     workReportsApi,
     workTypeLabels,
@@ -15,13 +15,16 @@
   import { formatCurrency } from "../../lib/utils/finance.utils";
   import { withErrorHandling } from "../../lib/utils/error.utils";
 
-  export let isOpen = false;
-  export let report: WorkReport;
+  let { isOpen = false, report, onupdated, ondeleted, onclose }: {
+    isOpen?: boolean;
+    report: WorkReport;
+    onupdated?: (updated: WorkReport) => void;
+    ondeleted?: (id: string) => void;
+    onclose?: () => void;
+  } = $props();
 
-  const dispatch = createEventDispatcher();
-
-  let editMode = false;
-  let submitting = false;
+  let editMode = $state(false);
+  let submitting = $state(false);
 
   interface WorkReportEditForm {
     title: string;
@@ -37,7 +40,7 @@
     notes: string;
   }
 
-  let form: WorkReportEditForm = resetForm();
+  let form: WorkReportEditForm = $state(resetForm());
 
   function resetForm(): WorkReportEditForm {
     return {
@@ -83,14 +86,14 @@
         warranty_type: form.warranty_type,
         notes: form.notes || undefined,
       }),
-      setLoading: (v) => submitting = v,
+      setLoading: (v: boolean) => submitting = v,
       successMessage: $_("workReports.updateSuccess"),
       errorMessage: $_("common.updateError"),
     });
     if (updated) {
       report = updated;
       editMode = false;
-      dispatch("updated", updated);
+      onupdated?.(updated);
     }
   }
 
@@ -102,20 +105,18 @@
       errorMessage: $_("workReports.deleteError"),
     });
     if (result !== undefined) {
-      dispatch("deleted", report.id);
+      ondeleted?.(report.id);
       handleClose();
     }
   }
 
   function handleClose() {
     editMode = false;
-    dispatch("close");
+    onclose?.();
   }
-
-
 </script>
 
-<Modal {isOpen} title={editMode ? $_("workReports.editTitle") : $_("workReports.detailTitle")} size="lg" on:close={handleClose}>
+<Modal {isOpen} title={editMode ? $_("workReports.editTitle") : $_("workReports.detailTitle")} size="lg" onclose={handleClose}>
   {#if report}
     {#if !editMode}
       <!-- Vue lecture -->
@@ -135,14 +136,14 @@
           </div>
           <div class="flex gap-2 shrink-0">
             <button
-              on:click={enterEditMode}
+              onclick={enterEditMode}
               class="px-3 py-1.5 text-sm text-blue-600 border border-blue-300 rounded-lg hover:bg-blue-50 transition"
               data-testid="edit-work-report-button"
             >
               {$_("common.edit")}
             </button>
             <button
-              on:click={handleDelete}
+              onclick={handleDelete}
               class="px-3 py-1.5 text-sm text-red-600 border border-red-300 rounded-lg hover:bg-red-50 transition"
               data-testid="delete-work-report-button"
             >
@@ -177,7 +178,9 @@
           <div>
             <p class="text-gray-500">{$_("workReports.warranty")}</p>
             <p class="font-medium {report.is_warranty_valid ? 'text-green-700' : 'text-red-700'}">
-              {warrantyTypeLabels[report.warranty_type] || report.warranty_type}
+              {typeof report.warranty_type === "string"
+                ? (warrantyTypeLabels[report.warranty_type] || report.warranty_type)
+                : "Personnalisé (" + report.warranty_type.custom.years + " ans)"}
             </p>
             {#if report.warranty_type !== 'none'}
               <p class="text-xs {report.is_warranty_valid ? 'text-green-600' : 'text-red-600'} mt-0.5">
@@ -214,32 +217,20 @@
       </div>
 
     {:else}
-      <!-- Vue édition -->
+      <!-- Vue edition -->
       <div class="space-y-3">
         <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div>
             <label for="wr-title" class="block text-sm text-gray-600 mb-1">{$_("common.title")} *</label>
-            <input
-              id="wr-title"
-              bind:value={form.title}
-              class="w-full border rounded px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            />
+            <input id="wr-title" bind:value={form.title} class="w-full border rounded px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
           </div>
           <div>
             <label for="wr-contractor" class="block text-sm text-gray-600 mb-1">{$_("workReports.contractor")} *</label>
-            <input
-              id="wr-contractor"
-              bind:value={form.contractor_name}
-              class="w-full border rounded px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            />
+            <input id="wr-contractor" bind:value={form.contractor_name} class="w-full border rounded px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
           </div>
           <div>
             <label for="wr-type" class="block text-sm text-gray-600 mb-1">{$_("workReports.workType")}</label>
-            <select
-              id="wr-type"
-              bind:value={form.work_type}
-              class="w-full border rounded px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            >
+            <select id="wr-type" bind:value={form.work_type} class="w-full border rounded px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
               {#each Object.entries(workTypeLabels) as [val, label]}
                 <option value={val}>{label}</option>
               {/each}
@@ -247,40 +238,19 @@
           </div>
           <div>
             <label for="wr-date" class="block text-sm text-gray-600 mb-1">{$_("workReports.workDate")}</label>
-            <input
-              id="wr-date"
-              type="date"
-              bind:value={form.work_date_str}
-              class="w-full border rounded px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            />
+            <input id="wr-date" type="date" bind:value={form.work_date_str} class="w-full border rounded px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
           </div>
           <div>
             <label for="wr-completion" class="block text-sm text-gray-600 mb-1">{$_("workReports.completionDate")}</label>
-            <input
-              id="wr-completion"
-              type="date"
-              bind:value={form.completion_date_str}
-              class="w-full border rounded px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            />
+            <input id="wr-completion" type="date" bind:value={form.completion_date_str} class="w-full border rounded px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
           </div>
           <div>
             <label for="wr-cost" class="block text-sm text-gray-600 mb-1">{$_("workReports.cost")}</label>
-            <input
-              id="wr-cost"
-              type="number"
-              bind:value={form.cost}
-              min="0"
-              step="0.01"
-              class="w-full border rounded px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            />
+            <input id="wr-cost" type="number" bind:value={form.cost} min="0" step="0.01" class="w-full border rounded px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
           </div>
           <div>
             <label for="wr-warranty" class="block text-sm text-gray-600 mb-1">{$_("workReports.warranty")}</label>
-            <select
-              id="wr-warranty"
-              bind:value={form.warranty_type}
-              class="w-full border rounded px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            >
+            <select id="wr-warranty" bind:value={form.warranty_type} class="w-full border rounded px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
               {#each Object.entries(warrantyTypeLabels) as [val, label]}
                 <option value={val}>{label}</option>
               {/each}
@@ -288,54 +258,27 @@
           </div>
           <div>
             <label for="wr-invoice" class="block text-sm text-gray-600 mb-1">{$_("workReports.invoiceNumber")}</label>
-            <input
-              id="wr-invoice"
-              bind:value={form.invoice_number}
-              placeholder={$_("common.optional")}
-              class="w-full border rounded px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            />
+            <input id="wr-invoice" bind:value={form.invoice_number} placeholder={$_("common.optional")} class="w-full border rounded px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
           </div>
           <div>
             <label for="wr-contact" class="block text-sm text-gray-600 mb-1">{$_("workReports.contactContractor")}</label>
-            <input
-              id="wr-contact"
-              bind:value={form.contractor_contact}
-              placeholder={$_("workReports.phoneOrEmail")}
-              class="w-full border rounded px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            />
+            <input id="wr-contact" bind:value={form.contractor_contact} placeholder={$_("workReports.phoneOrEmail")} class="w-full border rounded px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
           </div>
           <div class="md:col-span-2">
             <label for="wr-description" class="block text-sm text-gray-600 mb-1">{$_("common.description")}</label>
-            <textarea
-              id="wr-description"
-              bind:value={form.description}
-              rows="3"
-              class="w-full border rounded px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            ></textarea>
+            <textarea id="wr-description" bind:value={form.description} rows="3" class="w-full border rounded px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"></textarea>
           </div>
           <div class="md:col-span-2">
             <label for="wr-notes" class="block text-sm text-gray-600 mb-1">{$_("common.notes")}</label>
-            <textarea
-              id="wr-notes"
-              bind:value={form.notes}
-              rows="2"
-              class="w-full border rounded px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            ></textarea>
+            <textarea id="wr-notes" bind:value={form.notes} rows="2" class="w-full border rounded px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"></textarea>
           </div>
         </div>
 
         <div class="flex gap-2 pt-2">
-          <button
-            on:click={saveEdit}
-            disabled={submitting}
-            class="px-4 py-1.5 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 disabled:opacity-50 transition"
-          >
+          <button onclick={saveEdit} disabled={submitting} class="px-4 py-1.5 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 disabled:opacity-50 transition">
             {submitting ? $_("common.saving") : $_("common.save")}
           </button>
-          <button
-            on:click={cancelEdit}
-            class="px-4 py-1.5 bg-gray-200 text-gray-700 text-sm rounded hover:bg-gray-300 transition"
-          >
+          <button onclick={cancelEdit} class="px-4 py-1.5 bg-gray-200 text-gray-700 text-sm rounded hover:bg-gray-300 transition">
             {$_("common.cancel")}
           </button>
         </div>

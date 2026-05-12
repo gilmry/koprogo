@@ -1,8 +1,14 @@
 import { api } from "../api";
+import type { components } from "../../types/api";
 
 /**
  * Object Sharing Library API Client
  * Community tool/object lending system
+ *
+ * `ObjectCategory` and `ObjectCondition` are re-exported from the
+ * auto-generated api.d.ts (STORY-P7-704). `ObjectCategory` maps to the
+ * backend schema `SharedObjectCategory`. `AvailabilityStatus` and
+ * `LoanStatus` have no backend counterpart yet — they remain hand-written.
  */
 
 export interface SharedObject {
@@ -26,26 +32,28 @@ export interface SharedObject {
   updated_at: string;
 }
 
-export enum ObjectCategory {
-  Tools = "Tools",
-  GardenEquipment = "GardenEquipment",
-  KitchenAppliances = "KitchenAppliances",
-  Electronics = "Electronics",
-  Sports = "Sports",
-  Books = "Books",
-  ChildrenEquipment = "ChildrenEquipment",
-  PartySupplies = "PartySupplies",
-  Other = "Other",
-}
+// Backend schema is named `SharedObjectCategory`.
+export type ObjectCategory = components["schemas"]["SharedObjectCategory"];
+export const ObjectCategory = {
+  Tools: "Tools" as const,
+  Books: "Books" as const,
+  Electronics: "Electronics" as const,
+  Sports: "Sports" as const,
+  Gardening: "Gardening" as const,
+  Kitchen: "Kitchen" as const,
+  Baby: "Baby" as const,
+  Other: "Other" as const,
+} satisfies Record<string, ObjectCategory>;
 
-export enum ObjectCondition {
-  New = "New",
-  LikeNew = "LikeNew",
-  Good = "Good",
-  Fair = "Fair",
-  Poor = "Poor",
-}
+export type ObjectCondition = components["schemas"]["ObjectCondition"];
+export const ObjectCondition = {
+  Excellent: "Excellent" as const,
+  Good: "Good" as const,
+  Fair: "Fair" as const,
+  Used: "Used" as const,
+} satisfies Record<string, ObjectCondition>;
 
+// No backend counterpart — hand-written enum.
 export enum AvailabilityStatus {
   Available = "Available",
   OnLoan = "OnLoan",

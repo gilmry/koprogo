@@ -1,5 +1,9 @@
 <script lang="ts">
-  import { createEventDispatcher } from "svelte";
+  // Svelte 5 runes mode — migrated from legacy (STORY-P7-602)
+  // The legacy version had a defensive guard for building_id because
+  // `let formData = { building_id: buildingId }` captured the prop BEFORE
+  // Svelte 5 mount() assigned it. With $props(), the prop value is always
+  // current — no guard needed.
   import { _ } from '../../lib/i18n';
   import {
     ticketsApi,
@@ -18,38 +22,58 @@
   import FormSelect from "../ui/FormSelect.svelte";
   import Button from "../ui/Button.svelte";
 
-  export let open = false;
-  export let buildingId: string = "";
-  export let requesterId: string;
-  export let unitId: string | undefined = undefined;
+  let {
+    open = $bindable(false),
+    buildingId = '',
+    requesterId,
+    unitId = undefined,
+    onCreated = undefined,
+    onClose = undefined,
+  }: {
+    open?: boolean;
+    buildingId?: string;
+    requesterId: string;
+    unitId?: string;
+    onCreated?: (ticket: any) => void;
+    onClose?: () => void;
+  } = $props();
 
-  const dispatch = createEventDispatcher();
+  let buildings = $state<Building[]>([]);
+  let loadingBuildings = $state(false);
 
-  let buildings: Building[] = [];
-  let loadingBuildings = false;
-
-  let formData: CreateTicketDto = {
-    building_id: buildingId,
+  let formData = $state<CreateTicketDto>({
+    building_id: "",
     title: "",
     description: "",
     priority: TicketPriority.Medium,
-    category: TicketCategory.General,
-    requester_id: requesterId,
-    unit_id: unitId || undefined,
-  };
+    category: TicketCategory.Other,
+    requester_id: "",
+    unit_id: undefined,
+  });
 
-  let submitting = false;
-  let errors: Record<string, string> = {};
+  let submitting = $state(false);
+  let errors = $state<Record<string, string>>({});
 
-  $: if (open && buildings.length === 0) {
-    loadBuildings();
-  }
+  // Sync formData fields with props (live values via $effect, not stale initial capture)
+  $effect(() => {
+    if (buildingId && !formData.building_id) {
+      formData.building_id = buildingId;
+    }
+  });
+  $effect(() => { if (requesterId && !formData.requester_id) formData.requester_id = requesterId; });
+  $effect(() => { if (unitId && !formData.unit_id) formData.unit_id = unitId; });
+
+  $effect(() => {
+    if (open && buildings.length === 0) {
+      loadBuildings();
+    }
+  });
 
   async function loadBuildings() {
     await withErrorHandling({
       action: () => api.get<PageResponse<Building>>('/buildings?per_page=100'),
-      setLoading: (v) => loadingBuildings = v,
-      onSuccess: (response) => {
+      setLoading: (v: boolean) => loadingBuildings = v,
+      onSuccess: (response: PageResponse<Building>) => {
         buildings = response.data;
         if (!formData.building_id && buildings.length === 1) {
           formData.building_id = buildings[0].id;
@@ -76,15 +100,16 @@
     const result = await withErrorHandling({
       action: () => ticketsApi.create({
         ...formData,
+        building_id: formData.building_id || buildingId,
         requester_id: requesterId,
         unit_id: formData.unit_id || undefined,
       }),
-      setLoading: (v) => submitting = v,
+      setLoading: (v: boolean) => submitting = v,
       successMessage: $_('tickets.createSuccess'),
       errorMessage: $_('tickets.createError'),
     });
     if (result) {
-      dispatch("created", result);
+      onCreated?.(result);
       handleClose();
     }
   }
@@ -96,18 +121,18 @@
       title: "",
       description: "",
       priority: TicketPriority.Medium,
-      category: TicketCategory.General,
+      category: TicketCategory.Other,
       requester_id: requesterId,
       unit_id: unitId || undefined,
     };
     errors = {};
-    dispatch("close");
+    onClose?.();
   }
 </script>
 
-<Modal isOpen={open} on:close={handleClose} title={$_('tickets.createTitle')}>
-  <form on:submit|preventDefault={handleSubmit} data-testid="ticket-create-form">
-    <div class="space-y-4">
+<Modal isOpen={open} onclose={handleClose} title={$_('tickets.createTitle')}>
+  <form onsubmit={(e) => { e.preventDefault(); handleSubmit(); }} data-testid="ticket-create-form" class="-m-6">
+    <div class="space-y-4 p-6 pb-4">
       <!-- Sélecteur d'immeuble -->
       {#if !buildingId}
         <div>
@@ -174,7 +199,6 @@
           { value: TicketPriority.Low, label: $_('tickets.priorities.low') },
           { value: TicketPriority.Medium, label: $_('tickets.priorities.medium') },
           { value: TicketPriority.High, label: $_('tickets.priorities.high') },
-          { value: TicketPriority.Urgent, label: $_('tickets.priorities.urgent') },
           { value: TicketPriority.Critical, label: $_('tickets.priorities.critical') },
         ]}
       />
@@ -187,13 +211,15 @@
         required
         data-testid="ticket-category-select"
         options={[
-          { value: TicketCategory.General, label: $_('tickets.categories.general') },
           { value: TicketCategory.Plumbing, label: $_('tickets.categories.plumbing') },
           { value: TicketCategory.Electrical, label: $_('tickets.categories.electrical') },
           { value: TicketCategory.Heating, label: $_('tickets.categories.heating') },
-          { value: TicketCategory.Cleaning, label: $_('tickets.categories.cleaning') },
+          { value: TicketCategory.CommonAreas, label: $_('tickets.categories.commonAreas') },
+          { value: TicketCategory.Elevator, label: $_('tickets.categories.elevator') },
           { value: TicketCategory.Security, label: $_('tickets.categories.security') },
-          { value: TicketCategory.Emergency, label: $_('tickets.categories.emergency') },
+          { value: TicketCategory.Cleaning, label: $_('tickets.categories.cleaning') },
+          { value: TicketCategory.Landscaping, label: $_('tickets.categories.landscaping') },
+          { value: TicketCategory.Other, label: $_('tickets.categories.other') },
         ]}
       />
 
@@ -209,9 +235,8 @@
       {/if}
     </div>
 
-    <!-- Actions -->
-    <div class="mt-6 flex justify-end space-x-3">
-      <Button type="button" variant="outline" on:click={handleClose} data-testid="ticket-cancel-btn">
+    <div class="sticky bottom-0 bg-gray-50 border-t border-gray-200 p-4 flex justify-end space-x-3">
+      <Button type="button" variant="outline" onclick={handleClose} data-testid="ticket-cancel-btn">
         {$_('common.cancel')}
       </Button>
       <Button type="submit" loading={submitting} data-testid="ticket-submit-btn">

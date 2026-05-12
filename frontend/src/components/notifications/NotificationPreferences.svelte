@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount } from "svelte";
+  // Svelte 5 runes mode
   import { _ } from '../../lib/i18n';
   import {
     notificationsApi,
@@ -9,39 +9,31 @@
   import { toast } from "../../stores/toast";
   import { withErrorHandling } from "../../lib/utils/error.utils";
 
-  export let userId: string;
+  let {
+    userId,
+  }: {
+    userId: string;
+  } = $props();
 
-  let preferences: NotificationPreference[] = [];
-  let loading = true;
-  let saving = false;
+  let preferences = $state<NotificationPreference[]>([]);
+  let loading = $state(true);
+  let saving = $state(false);
 
   const notificationTypeLabels: Record<NotificationType, string> = {
-    [NotificationType.MeetingReminder]: $_("notifications.type_meeting_reminders"),
-    [NotificationType.PaymentDue]: $_("notifications.type_payment_due"),
-    [NotificationType.DocumentShared]: $_("notifications.type_document_sharing"),
-    [NotificationType.TicketUpdate]: $_("notifications.type_ticket_updates"),
-    [NotificationType.TicketAssigned]: $_("notifications.type_ticket_assigned"),
+    [NotificationType.ExpenseCreated]: $_("notifications.type_expense_created"),
+    [NotificationType.MeetingConvocation]: $_("notifications.type_meeting_convocation"),
+    [NotificationType.PaymentReceived]: $_("notifications.type_payment_received"),
     [NotificationType.TicketResolved]: $_("notifications.type_ticket_resolved"),
-    [NotificationType.SystemAlert]: $_("notifications.type_system_alerts"),
-    [NotificationType.AccountUpdate]: $_("notifications.type_account_updates"),
-    [NotificationType.NewMessage]: $_("notifications.type_new_messages"),
-    [NotificationType.ConvocationSent]: $_("notifications.type_convocation_sent"),
-    [NotificationType.ResolutionVoting]: $_("notifications.type_resolution_voting"),
-    [NotificationType.QuoteReceived]: $_("notifications.type_quote_received"),
-    [NotificationType.QuoteAccepted]: $_("notifications.type_quote_accepted"),
-    [NotificationType.PaymentSuccess]: $_("notifications.type_payment_success"),
-    [NotificationType.PaymentFailed]: $_("notifications.type_payment_failed"),
+    [NotificationType.DocumentAdded]: $_("notifications.type_document_added"),
+    [NotificationType.BoardMessage]: $_("notifications.type_board_message"),
+    [NotificationType.PaymentReminder]: $_("notifications.type_payment_reminder"),
     [NotificationType.BudgetApproved]: $_("notifications.type_budget_approved"),
-    [NotificationType.EtatDateReady]: $_("notifications.type_etat_date_ready"),
-    [NotificationType.ExchangeRequested]: $_("notifications.type_exchange_requested"),
-    [NotificationType.ExchangeCompleted]: $_("notifications.type_exchange_completed"),
-    [NotificationType.AchievementEarned]: $_("notifications.type_achievement_earned"),
-    [NotificationType.ChallengeStarted]: $_("notifications.type_challenge_started"),
-    [NotificationType.ChallengeCompleted]: $_("notifications.type_challenge_completed"),
+    [NotificationType.ResolutionVote]: $_("notifications.type_resolution_vote"),
+    [NotificationType.System]: $_("notifications.type_system"),
   };
 
-  onMount(async () => {
-    await loadPreferences();
+  $effect(() => {
+    loadPreferences();
   });
 
   async function loadPreferences() {
@@ -64,7 +56,7 @@
         preference.notification_type,
         { [field]: !(preference as any)[field] },
       ),
-      setLoading: (v) => saving = v,
+      setLoading: (v: boolean) => saving = v,
       successMessage: $_("notifications.preference_updated"),
       errorMessage: $_("notifications.update_preference_failed"),
     });
@@ -132,7 +124,7 @@
                 <input
                   type="checkbox"
                   checked={preference.enabled}
-                  on:change={() => handleToggle(preference, "enabled")}
+                  onchange={() => handleToggle(preference, "enabled")}
                   disabled={saving}
                   class="sr-only peer"
                 />
@@ -148,7 +140,7 @@
                 <input
                   type="checkbox"
                   checked={preference.email_enabled}
-                  on:change={() => handleToggle(preference, "email_enabled")}
+                  onchange={() => handleToggle(preference, "email_enabled")}
                   disabled={!preference.enabled || saving}
                   class="sr-only peer"
                 />
@@ -164,7 +156,7 @@
                 <input
                   type="checkbox"
                   checked={preference.sms_enabled}
-                  on:change={() => handleToggle(preference, "sms_enabled")}
+                  onchange={() => handleToggle(preference, "sms_enabled")}
                   disabled={!preference.enabled || saving}
                   class="sr-only peer"
                 />
@@ -180,7 +172,7 @@
                 <input
                   type="checkbox"
                   checked={preference.push_enabled}
-                  on:change={() => handleToggle(preference, "push_enabled")}
+                  onchange={() => handleToggle(preference, "push_enabled")}
                   disabled={!preference.enabled || saving}
                   class="sr-only peer"
                 />

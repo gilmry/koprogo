@@ -32,7 +32,28 @@ Canaux de notification
 Types de notifications (22)
 ---------------------------
 
-MeetingReminder, PaymentDue, DocumentShared, TicketUpdate, SystemAlert, ExpenseApproved, ExpenseRejected, MaintenanceScheduled, VoteReminder, NewResolution, BoardDecision, BudgetApproved, ConvocationSent, QuoteReceived, ContractorAssigned, PaymentReceived, OwnershipTransfer, InsuranceExpiry, LegalNotice, EmergencyAlert, CommunityEvent, GeneralAnnouncement.
+Les 22 types sont organises par categorie metier :
+
+.. list-table::
+   :header-rows: 1
+   :widths: 25 75
+
+   * - Categorie
+     - Types
+   * - Reunions / AG
+     - MeetingReminder, ConvocationSent, VoteReminder, NewResolution, BoardDecision
+   * - Finances
+     - PaymentDue, PaymentReceived, ExpenseApproved, ExpenseRejected, BudgetApproved
+   * - Documents
+     - DocumentShared
+   * - Tickets / Maintenance
+     - TicketUpdate, MaintenanceScheduled, QuoteReceived, ContractorAssigned
+   * - Proprietes
+     - OwnershipTransfer, InsuranceExpiry, LegalNotice
+   * - Communaute
+     - CommunityEvent, GeneralAnnouncement
+   * - Systeme
+     - SystemAlert, EmergencyAlert
 
 Architecture
 ============

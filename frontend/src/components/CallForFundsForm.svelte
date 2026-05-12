@@ -1,30 +1,34 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  // Svelte 5 runes mode
   import { _ } from '../lib/i18n';
   import { api, callForFundsApi } from '../lib/api';
   import { toast } from '../stores/toast';
   import { withErrorHandling } from "../lib/utils/error.utils";
 
-  export let buildingId: string | undefined = undefined;
-  export let onSuccess: () => void = () => {};
-  export let onCancel: () => void = () => {};
+  let { buildingId = undefined, onSuccess = () => {}, onCancel = () => {} }: {
+    buildingId?: string | undefined;
+    onSuccess?: () => void;
+    onCancel?: () => void;
+  } = $props();
 
-  let buildings: any[] = [];
-  let loading = false;
-  let submitting = false;
+  let buildings = $state<any[]>([]);
+  let loading = $state(false);
+  let submitting = $state(false);
 
   // Form fields
-  let selectedBuildingId = buildingId || '';
-  let title = '';
-  let description = '';
-  let totalAmount = 0;
-  let contributionType = 'regular';
-  let callDate = new Date().toISOString().split('T')[0];
-  let dueDate = '';
-  let accountCode = '';
+  let selectedBuildingId = $state('');
+  // Sync with prop (live value via $effect, not stale initial capture)
+  $effect(() => { if (buildingId && !selectedBuildingId) selectedBuildingId = buildingId; });
+  let title = $state('');
+  let description = $state('');
+  let totalAmount = $state(0);
+  let contributionType = $state('regular');
+  let callDate = $state(new Date().toISOString().split('T')[0]);
+  let dueDate = $state('');
+  let accountCode = $state('');
 
-  onMount(async () => {
-    await loadBuildings();
+  $effect(() => {
+    loadBuildings();
     // Set default due date to 30 days from call date
     const defaultDueDate = new Date();
     defaultDueDate.setDate(defaultDueDate.getDate() + 30);
@@ -75,7 +79,7 @@
         due_date: new Date(dueDate).toISOString(),
         account_code: accountCode || undefined,
       }),
-      setLoading: (v) => submitting = v,
+      setLoading: (v: boolean) => submitting = v,
       successMessage: $_('callForFunds.createSuccess'),
       errorMessage: $_('callForFunds.createError'),
     });
@@ -83,7 +87,7 @@
   }
 </script>
 
-<form on:submit={handleSubmit} class="space-y-6" data-testid="call-for-funds-form">
+<form onsubmit={handleSubmit} class="space-y-6" data-testid="call-for-funds-form">
   <!-- Building Selection -->
   {#if !buildingId}
     <div>
@@ -256,7 +260,7 @@
   <div class="flex justify-end space-x-3 pt-4 border-t border-gray-200">
     <button
       type="button"
-      on:click={onCancel}
+      onclick={onCancel}
       disabled={submitting}
       class="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
     >

@@ -1,8 +1,9 @@
 <script lang="ts">
+  // Svelte 5 runes mode
   import { _ } from '../../lib/i18n';
   import { CampaignStatus } from "../../lib/api/energy-campaigns";
 
-  export let status: CampaignStatus;
+  let { status }: { status: CampaignStatus } = $props();
 
   function getStatusConfig() {
     const statusConfig: Record<
@@ -14,6 +15,12 @@
         text: "text-gray-800",
         label: $_("energy.campaign.status.draft"),
         icon: "📝",
+      },
+      [CampaignStatus.AwaitingAGVote]: {
+        bg: "bg-yellow-100",
+        text: "text-yellow-800",
+        label: "Vote AG attendu",
+        icon: "⏳",
       },
       [CampaignStatus.CollectingData]: {
         bg: "bg-blue-100",
@@ -45,11 +52,17 @@
         label: $_("energy.campaign.status.completed"),
         icon: "🎉",
       },
+      [CampaignStatus.Cancelled]: {
+        bg: "bg-red-100",
+        text: "text-red-800",
+        label: "Annulé",
+        icon: "❌",
+      },
     };
     return statusConfig[status] || statusConfig[CampaignStatus.Draft];
   }
 
-  $: config = getStatusConfig();
+  let config = $derived(getStatusConfig());
 </script>
 
 <span

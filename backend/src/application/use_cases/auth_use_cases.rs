@@ -2,6 +2,7 @@ use crate::application::dto::{
     Claims, LoginRequest, LoginResponse, RefreshTokenRequest, RegisterRequest, UserResponse,
     UserRoleSummary,
 };
+use crate::application::error::AppError;
 use crate::application::ports::{RefreshTokenRepository, UserRepository, UserRoleRepository};
 use crate::domain::entities::{RefreshToken, User, UserRole, UserRoleAssignment};
 use crate::infrastructure::audit::{log_audit_event, AuditEventType};
@@ -33,7 +34,7 @@ impl AuthUseCases {
         }
     }
 
-    pub async fn login(&self, request: LoginRequest) -> Result<LoginResponse, String> {
+    pub async fn login(&self, request: LoginRequest) -> Result<LoginResponse, AppError> {
         let user = self
             .user_repo
             .find_by_email(&request.email)
@@ -50,7 +51,8 @@ impl AuthUseCases {
                     )
                     .await;
                 });
-                "Invalid email or password".to_string()
+                // Uniform InvalidCredentials prevents username enumeration.
+                AppError::InvalidCredentials
             })?;
 
         if !user.is_active {
@@ -66,11 +68,10 @@ impl AuthUseCases {
                 )
                 .await;
             });
-            return Err("User account is deactivated".to_string());
+            return Err(AppError::AccountDeactivated);
         }
 
-        let is_valid = verify(&request.password, &user.password_hash)
-            .map_err(|e| format!("Password verification failed: {}", e))?;
+        let is_valid = verify(&request.password, &user.password_hash)?;
 
         if !is_valid {
             // Audit failed password verification
@@ -85,7 +86,7 @@ impl AuthUseCases {
                 )
                 .await;
             });
-            return Err("Invalid email or password".to_string());
+            return Err(AppError::InvalidCredentials);
         }
 
         let (roles, active_role) = self.ensure_role_assignments(&user).await?;
@@ -234,26 +235,25 @@ impl AuthUseCases {
         })
     }
 
-    pub async fn get_user_by_id(&self, user_id: uuid::Uuid) -> Result<UserResponse, String> {
+    pub async fn get_user_by_id(&self, user_id: uuid::Uuid) -> Result<UserResponse, AppError> {
         let user = self
             .user_repo
             .find_by_id(user_id)
             .await?
-            .ok_or("User not found")?;
+            .ok_or_else(|| AppError::NotFound(format!("user {}", user_id)))?;
 
         let (roles, active_role) = self.ensure_role_assignments(&user).await?;
         Ok(self.build_user_response(&user, &roles, &active_role))
     }
 
-    pub fn verify_token(&self, token: &str) -> Result<Claims, String> {
+    pub fn verify_token(&self, token: &str) -> Result<Claims, AppError> {
         use jsonwebtoken::{decode, DecodingKey, Validation};
 
         let token_data = decode::<Claims>(
             token,
             &DecodingKey::from_secret(self.jwt_secret.as_bytes()),
             &Validation::default(),
-        )
-        .map_err(|e| format!("Invalid token: {}", e))?;
+        )?;
 
         Ok(token_data.claims)
     }
@@ -261,7 +261,7 @@ impl AuthUseCases {
     pub async fn refresh_token(
         &self,
         request: RefreshTokenRequest,
-    ) -> Result<LoginResponse, String> {
+    ) -> Result<LoginResponse, AppError> {
         let refresh_token = self
             .refresh_token_repo
             .find_by_token(&request.refresh_token)
@@ -278,7 +278,7 @@ impl AuthUseCases {
                     )
                     .await;
                 });
-                "Invalid refresh token".to_string()
+                AppError::TokenError("invalid refresh token".to_string())
             })?;
 
         if !refresh_token.is_valid() {
@@ -299,14 +299,16 @@ impl AuthUseCases {
                 )
                 .await;
             });
-            return Err("Refresh token expired or revoked".to_string());
+            return Err(AppError::TokenError(
+                "refresh token expired or revoked".to_string(),
+            ));
         }
 
         let user = self
             .user_repo
             .find_by_id(refresh_token.user_id)
             .await?
-            .ok_or("User not found")?;
+            .ok_or_else(|| AppError::NotFound("user for refresh token".to_string()))?;
 
         if !user.is_active {
             // Audit refresh attempt on deactivated account
@@ -321,7 +323,7 @@ impl AuthUseCases {
                 )
                 .await;
             });
-            return Err("User account is deactivated".to_string());
+            return Err(AppError::AccountDeactivated);
         }
 
         let (roles, active_role) = self.ensure_role_assignments(&user).await?;
@@ -623,8 +625,13 @@ mod tests {
             })
             .await;
 
-        assert!(result.is_err());
-        assert_eq!(result.unwrap_err(), "Invalid email or password");
+        // @security : doit être InvalidCredentials (uniforme avec wrong password
+        // pour ne pas leaker l'existence du compte).
+        assert!(
+            matches!(result, Err(AppError::InvalidCredentials)),
+            "expected AppError::InvalidCredentials, got {:?}",
+            result
+        );
     }
 
     // ── 3. login — wrong password ───────────────────────────────────────
@@ -652,8 +659,12 @@ mod tests {
             })
             .await;
 
-        assert!(result.is_err());
-        assert_eq!(result.unwrap_err(), "Invalid email or password");
+        // @security : InvalidCredentials uniforme (anti-énumération).
+        assert!(
+            matches!(result, Err(AppError::InvalidCredentials)),
+            "expected AppError::InvalidCredentials, got {:?}",
+            result
+        );
     }
 
     // ── 4. login — deactivated account ──────────────────────────────────
@@ -682,8 +693,14 @@ mod tests {
             })
             .await;
 
-        assert!(result.is_err());
-        assert_eq!(result.unwrap_err(), "User account is deactivated");
+        // @security : AccountDeactivated → 403 Forbidden (cf. AppError::status_code).
+        // Note: déballer cette info VS uniforme InvalidCredentials est un trade-off
+        // sécurité (énumération potentielle). À reconsidérer en RFC dédié.
+        assert!(
+            matches!(result, Err(AppError::AccountDeactivated)),
+            "expected AppError::AccountDeactivated, got {:?}",
+            result
+        );
     }
 
     // ── 5. register success ─────────────────────────────────────────────
@@ -871,8 +888,12 @@ mod tests {
         );
 
         let result = uc.verify_token("this.is.not.a.valid.jwt");
-        assert!(result.is_err());
-        assert!(result.unwrap_err().starts_with("Invalid token:"));
+        // @negative : token invalide → AppError::TokenError (mappé 401 par ResponseError).
+        assert!(
+            matches!(result, Err(AppError::TokenError(_))),
+            "expected AppError::TokenError, got {:?}",
+            result
+        );
     }
 
     // ── 11. revoke_all_refresh_tokens ───────────────────────────────────

@@ -3,7 +3,18 @@ kind: Kustomization
 namespace: koprogo-dev
 resources:
   - ../../../../_shared/kustomize/base
-commonLabels:
-  environment: dev
+labels:
+  - pairs:
+      environment: dev
+# Explicit target: required because the base sets `namespace: koprogo` on the
+# Ingress, while this kustomization rewrites the namespace to koprogo-dev. With
+# only `metadata.name` in the patch (no namespace), kustomize matches by full
+# resource ID (kind+name+namespace) and rejects the patch as "[noNs]". The
+# `target:` selector matches purely by GVK+name, ignoring namespace.
 patches:
   - path: patches/ingress.yaml
+    target:
+      group: networking.k8s.io
+      version: v1
+      kind: Ingress
+      name: koprogo-ingress

@@ -1,8 +1,12 @@
 import { api } from "../api";
+import type { components } from "../../types/api";
 
 /**
  * Notification API Client
  * Wraps all 11 backend endpoints for notification management
+ *
+ * Enums are re-exported from auto-generated api.d.ts (STORY-P7-704) —
+ * TypeScript will refuse any value that doesn't exist in the Rust enum.
  */
 
 export interface Notification {
@@ -22,44 +26,34 @@ export interface Notification {
   updated_at: string;
 }
 
-export enum NotificationType {
-  MeetingReminder = "MeetingReminder",
-  PaymentDue = "PaymentDue",
-  DocumentShared = "DocumentShared",
-  TicketUpdate = "TicketUpdate",
-  TicketAssigned = "TicketAssigned",
-  TicketResolved = "TicketResolved",
-  SystemAlert = "SystemAlert",
-  AccountUpdate = "AccountUpdate",
-  NewMessage = "NewMessage",
-  ConvocationSent = "ConvocationSent",
-  ResolutionVoting = "ResolutionVoting",
-  QuoteReceived = "QuoteReceived",
-  QuoteAccepted = "QuoteAccepted",
-  PaymentSuccess = "PaymentSuccess",
-  PaymentFailed = "PaymentFailed",
-  BudgetApproved = "BudgetApproved",
-  EtatDateReady = "EtatDateReady",
-  ExchangeRequested = "ExchangeRequested",
-  ExchangeCompleted = "ExchangeCompleted",
-  AchievementEarned = "AchievementEarned",
-  ChallengeStarted = "ChallengeStarted",
-  ChallengeCompleted = "ChallengeCompleted",
-}
+export type NotificationType = components["schemas"]["NotificationType"];
+export const NotificationType = {
+  ExpenseCreated: "ExpenseCreated" as const,
+  MeetingConvocation: "MeetingConvocation" as const,
+  PaymentReceived: "PaymentReceived" as const,
+  TicketResolved: "TicketResolved" as const,
+  DocumentAdded: "DocumentAdded" as const,
+  BoardMessage: "BoardMessage" as const,
+  PaymentReminder: "PaymentReminder" as const,
+  BudgetApproved: "BudgetApproved" as const,
+  ResolutionVote: "ResolutionVote" as const,
+  System: "System" as const,
+} satisfies Record<string, NotificationType>;
 
-export enum NotificationChannel {
-  Email = "Email",
-  Sms = "Sms",
-  Push = "Push",
-  InApp = "InApp",
-}
+export type NotificationChannel = components["schemas"]["NotificationChannel"];
+export const NotificationChannel = {
+  Email: "Email" as const,
+  InApp: "InApp" as const,
+  Push: "Push" as const,
+} satisfies Record<string, NotificationChannel>;
 
-export enum NotificationStatus {
-  Pending = "Pending",
-  Sent = "Sent",
-  Delivered = "Delivered",
-  Failed = "Failed",
-}
+export type NotificationStatus = components["schemas"]["NotificationStatus"];
+export const NotificationStatus = {
+  Pending: "Pending" as const,
+  Sent: "Sent" as const,
+  Failed: "Failed" as const,
+  Read: "Read" as const,
+} satisfies Record<string, NotificationStatus>;
 
 export interface NotificationPreference {
   id: string;

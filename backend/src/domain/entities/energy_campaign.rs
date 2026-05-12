@@ -41,7 +41,7 @@ pub struct EnergyCampaign {
     pub updated_at: DateTime<Utc>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, utoipa::ToSchema)]
 pub enum CampaignType {
     BuyingGroup,      // Achat groupé classique
     CollectiveSwitch, // Switch collectif
@@ -68,7 +68,7 @@ impl std::str::FromStr for CampaignType {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, utoipa::ToSchema)]
 pub enum CampaignStatus {
     Draft,             // En préparation
     AwaitingAGVote,    // En attente vote AG
@@ -113,7 +113,7 @@ impl std::str::FromStr for CampaignStatus {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, utoipa::ToSchema)]
 pub enum EnergyType {
     Electricity,
     Gas,
@@ -143,7 +143,7 @@ impl std::str::FromStr for EnergyType {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, utoipa::ToSchema)]
 pub enum ContractType {
     Fixed,    // Prix fixe
     Variable, // Prix variable (indexé)

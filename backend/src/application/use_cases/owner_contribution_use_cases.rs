@@ -1,6 +1,7 @@
 use crate::application::ports::OwnerContributionRepository;
 use crate::domain::entities::{ContributionPaymentMethod, ContributionType, OwnerContribution};
 use chrono::{DateTime, Utc};
+use rust_decimal::Decimal;
 use std::sync::Arc;
 use uuid::Uuid;
 
@@ -21,7 +22,7 @@ impl OwnerContributionUseCases {
         owner_id: Uuid,
         unit_id: Option<Uuid>,
         description: String,
-        amount: f64,
+        amount: Decimal,
         contribution_type: ContributionType,
         contribution_date: DateTime<Utc>,
         account_code: Option<String>,
@@ -119,7 +120,7 @@ impl OwnerContributionUseCases {
     }
 
     /// Get total outstanding amount for an owner
-    pub async fn get_outstanding_amount(&self, owner_id: Uuid) -> Result<f64, String> {
+    pub async fn get_outstanding_amount(&self, owner_id: Uuid) -> Result<Decimal, String> {
         let outstanding = self.get_outstanding_contributions(owner_id).await?;
         Ok(outstanding.iter().map(|c| c.amount).sum())
     }
@@ -209,7 +210,7 @@ mod tests {
                 owner_id,
                 Some(unit_id),
                 "Appel de fonds Q1 2026".to_string(),
-                750.0,
+                rust_decimal_macros::dec!(750),
                 ContributionType::Regular,
                 Utc::now(),
                 Some("7000".to_string()),
@@ -221,7 +222,7 @@ mod tests {
         assert_eq!(contrib.organization_id, org_id);
         assert_eq!(contrib.owner_id, owner_id);
         assert_eq!(contrib.unit_id, Some(unit_id));
-        assert_eq!(contrib.amount, 750.0);
+        assert_eq!(contrib.amount, rust_decimal_macros::dec!(750));
         assert_eq!(contrib.contribution_type, ContributionType::Regular);
         assert!(!contrib.is_paid());
     }
@@ -238,7 +239,7 @@ mod tests {
             owner_id,
             None,
             "Charges Q2".to_string(),
-            500.0,
+            rust_decimal_macros::dec!(500),
             ContributionType::Regular,
             Utc::now(),
             None,
@@ -280,7 +281,7 @@ mod tests {
             owner_id,
             None,
             "Charges Q3".to_string(),
-            300.0,
+            rust_decimal_macros::dec!(300),
             ContributionType::Regular,
             Utc::now(),
             None,
@@ -316,7 +317,7 @@ mod tests {
             owner_id,
             None,
             "Charges Q1 - paid".to_string(),
-            200.0,
+            rust_decimal_macros::dec!(200),
             ContributionType::Regular,
             Utc::now(),
             None,
@@ -329,7 +330,7 @@ mod tests {
             owner_id,
             None,
             "Charges Q2 - unpaid".to_string(),
-            300.0,
+            rust_decimal_macros::dec!(300),
             ContributionType::Regular,
             Utc::now(),
             None,
@@ -341,7 +342,7 @@ mod tests {
             owner_id,
             None,
             "Travaux extraordinaires".to_string(),
-            1500.0,
+            rust_decimal_macros::dec!(1500),
             ContributionType::Extraordinary,
             Utc::now(),
             None,
@@ -376,7 +377,7 @@ mod tests {
             owner_id,
             None,
             "Paid contribution".to_string(),
-            100.0,
+            rust_decimal_macros::dec!(100),
             ContributionType::Regular,
             Utc::now(),
             None,
@@ -389,7 +390,7 @@ mod tests {
             owner_id,
             None,
             "Unpaid 1".to_string(),
-            250.0,
+            rust_decimal_macros::dec!(250),
             ContributionType::Regular,
             Utc::now(),
             None,
@@ -401,7 +402,7 @@ mod tests {
             owner_id,
             None,
             "Unpaid 2".to_string(),
-            400.0,
+            rust_decimal_macros::dec!(400),
             ContributionType::Extraordinary,
             Utc::now(),
             None,
@@ -420,6 +421,6 @@ mod tests {
 
         assert!(result.is_ok());
         let amount = result.unwrap();
-        assert!((amount - 650.0).abs() < f64::EPSILON);
+        assert_eq!(amount, rust_decimal_macros::dec!(650));
     }
 }

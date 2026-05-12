@@ -1,9 +1,13 @@
 import { api } from "../api";
+import type { components } from "../../types/api";
 
 /**
  * SEL (Système d'Échange Local) API Client
  * Time-based currency: 1 hour = 1 credit
  * Belgian legal: non-taxable if non-commercial
+ *
+ * Enums are re-exported from auto-generated api.d.ts (STORY-P7-704) —
+ * TypeScript will refuse any value that doesn't exist in the Rust enum.
  */
 
 export interface LocalExchange {
@@ -25,19 +29,21 @@ export interface LocalExchange {
   updated_at: string;
 }
 
-export enum ExchangeType {
-  Service = "Service",
-  ObjectLoan = "ObjectLoan",
-  SharedPurchase = "SharedPurchase",
-}
+export type ExchangeType = components["schemas"]["ExchangeType"];
+export const ExchangeType = {
+  Service: "Service" as const,
+  ObjectLoan: "ObjectLoan" as const,
+  SharedPurchase: "SharedPurchase" as const,
+} satisfies Record<string, ExchangeType>;
 
-export enum ExchangeStatus {
-  Offered = "Offered",
-  Requested = "Requested",
-  InProgress = "InProgress",
-  Completed = "Completed",
-  Cancelled = "Cancelled",
-}
+export type ExchangeStatus = components["schemas"]["ExchangeStatus"];
+export const ExchangeStatus = {
+  Offered: "Offered" as const,
+  Requested: "Requested" as const,
+  InProgress: "InProgress" as const,
+  Completed: "Completed" as const,
+  Cancelled: "Cancelled" as const,
+} satisfies Record<string, ExchangeStatus>;
 
 export interface OwnerCreditBalance {
   owner_id: string;

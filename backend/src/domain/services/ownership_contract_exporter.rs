@@ -24,7 +24,7 @@ impl OwnershipContractExporter {
         building: &Building,
         unit: &Unit,
         owner: &Owner,
-        ownership_percentage: f64, // 0.0 to 1.0
+        ownership_percentage: rust_decimal::Decimal, // 0.0 to 1.0
         ownership_start_date: DateTime<Utc>,
     ) -> Result<Vec<u8>, String> {
         // Create PDF document (A4: 210mm x 297mm)
@@ -155,7 +155,10 @@ impl OwnershipContractExporter {
         );
         y -= 6.0;
 
-        let tantiemes = (ownership_percentage * building.total_tantiemes as f64) as i32;
+        use rust_decimal::prelude::ToPrimitive;
+        let tantiemes_dec =
+            ownership_percentage * rust_decimal::Decimal::from(building.total_tantiemes);
+        let tantiemes = tantiemes_dec.trunc().to_i32().unwrap_or(0);
         current_layer.use_text(
             format!("Tantièmes: {} sur {}", tantiemes, building.total_tantiemes),
             10.0,
@@ -166,7 +169,10 @@ impl OwnershipContractExporter {
         y -= 6.0;
 
         current_layer.use_text(
-            format!("Quote-part: {:.2}%", ownership_percentage * 100.0),
+            format!(
+                "Quote-part: {:.2}%",
+                ownership_percentage * rust_decimal_macros::dec!(100)
+            ),
             10.0,
             Mm(20.0),
             Mm(y),
@@ -267,7 +273,7 @@ impl OwnershipContractExporter {
         current_layer.use_text(
             format!(
                 "Les charges communes sont réparties selon la quote-part de {:.2}%",
-                ownership_percentage * 100.0
+                ownership_percentage * rust_decimal_macros::dec!(100)
             ),
             10.0,
             Mm(20.0),
@@ -372,7 +378,7 @@ mod tests {
             unit_type: crate::domain::entities::UnitType::Apartment,
             floor: Some(1),
             surface_area: 75.5,
-            quota: 150.0,
+            quota: rust_decimal_macros::dec!(150),
             owner_id: None,
             created_at: Utc::now(),
             updated_at: Utc::now(),
@@ -398,7 +404,7 @@ mod tests {
             &building,
             &unit,
             &owner,
-            0.15,                                     // 15% ownership
+            rust_decimal_macros::dec!(0.15),          // 15% ownership
             Utc::now() - chrono::Duration::days(365), // Started 1 year ago
         );
 

@@ -1,30 +1,33 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  // Svelte 5 runes mode
   import { _ } from '../lib/i18n';
   import { api } from '../lib/api';
-  import { toast } from '../stores/toast';
   import type { BoardDashboardResponse, DeadlineUrgency } from '../lib/types';
   import { formatDate } from "../lib/utils/date.utils";
   import { withErrorHandling } from "../lib/utils/error.utils";
 
-  export let buildingId: string = '';
+  let { buildingId = '' }: {
+    buildingId?: string;
+  } = $props();
 
-  let dashboard: BoardDashboardResponse | null = null;
-  let loading = true;
-  let error = '';
+  let dashboard = $state<BoardDashboardResponse | null>(null);
+  let loading = $state(true);
+  let error = $state('');
 
-  onMount(() => {
+  $effect(() => {
     // If buildingId is not provided as prop, try to get it from URL
-    if (!buildingId) {
+    let bid = buildingId;
+    if (!bid) {
       const urlParams = new URLSearchParams(window.location.search);
-      buildingId = urlParams.get('building_id') || '';
+      bid = urlParams.get('building_id') || '';
     }
 
-    if (!buildingId) {
+    if (!bid) {
       error = $_('board.error.buildingIdMissing');
       loading = false;
       return;
     }
+    buildingId = bid;
     loadDashboard();
   });
 

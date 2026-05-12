@@ -52,7 +52,7 @@ pub struct UnitOwnershipDataDto {
     pub building_address: String,
     pub unit_number: String,
     pub floor: Option<i32>,
-    pub ownership_percentage: f64,
+    pub ownership_percentage: rust_decimal::Decimal,
     pub start_date: String,
     pub end_date: Option<String>,
     pub is_primary_contact: bool,
@@ -61,7 +61,8 @@ pub struct UnitOwnershipDataDto {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, utoipa::ToSchema)]
 pub struct ExpenseDataDto {
     pub description: String,
-    pub amount: f64,
+    #[schema(value_type = String, example = "100.00")]
+    pub amount: rust_decimal::Decimal,
     pub due_date: String,
     pub paid: bool,
     pub building_name: String,

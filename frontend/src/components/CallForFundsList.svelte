@@ -1,34 +1,33 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  // Svelte 5 runes mode
   import { _ } from '../lib/i18n';
   import { callForFundsApi } from '../lib/api';
-  import { toast } from '../stores/toast';
   import { formatDate } from "../lib/utils/date.utils";
   import { formatCurrency } from "../lib/utils/finance.utils";
   import { withErrorHandling } from "../lib/utils/error.utils";
 
-  export let buildingId: string | undefined = undefined;
-  export let statusFilter: string | undefined = undefined;
-  export let onCreate: () => void = () => {};
+  let { buildingId = undefined, statusFilter = undefined, onCreate = () => {} }: {
+    buildingId?: string | undefined;
+    statusFilter?: string | undefined;
+    onCreate?: () => void;
+  } = $props();
 
-  let calls: any[] = [];
-  let filteredCalls: any[] = [];
-  let loading = true;
+  let calls = $state<any[]>([]);
+  let loading = $state(true);
 
-  $: {
+  let filteredCalls = $derived.by(() => {
     if (statusFilter && statusFilter !== 'all') {
       if (statusFilter === 'overdue') {
-        filteredCalls = calls.filter(c => c.is_overdue);
+        return calls.filter(c => c.is_overdue);
       } else {
-        filteredCalls = calls.filter(c => c.status === statusFilter);
+        return calls.filter(c => c.status === statusFilter);
       }
-    } else {
-      filteredCalls = calls;
     }
-  }
+    return calls;
+  });
 
-  onMount(async () => {
-    await loadCalls();
+  $effect(() => {
+    loadCalls();
   });
 
   async function loadCalls() {
@@ -108,7 +107,7 @@
   <div class="flex justify-between items-center">
     <h2 class="text-2xl font-bold text-gray-900">{$_('callForFunds.title')}</h2>
     <button
-      on:click={onCreate}
+      onclick={onCreate}
       class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
     >
       + {$_('callForFunds.new')}
@@ -137,7 +136,7 @@
       </svg>
       <p class="mt-2 text-gray-600">{$_('callForFunds.none')}</p>
       <button
-        on:click={onCreate}
+        onclick={onCreate}
         class="mt-4 text-blue-600 hover:text-blue-800"
       >
         {$_('callForFunds.createFirst')}
@@ -203,23 +202,26 @@
               <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
                 {#if call.status === 'draft'}
                   <button
-                    on:click={() => handleSend(call.id)}
+                    onclick={() => handleSend(call.id)}
                     class="text-blue-600 hover:text-blue-900"
+                    aria-label={$_('callForFunds.sendTitle')}
                     title={$_('callForFunds.sendTitle')}
                   >
                     {$_('callForFunds.send')}
                   </button>
                   <button
-                    on:click={() => handleDelete(call.id)}
+                    onclick={() => handleDelete(call.id)}
                     class="text-red-600 hover:text-red-900"
+                    aria-label={$_('callForFunds.deleteTitle')}
                     title={$_('callForFunds.deleteTitle')}
                   >
                     {$_('common.delete')}
                   </button>
                 {:else if call.status === 'sent' || call.status === 'partial'}
                   <button
-                    on:click={() => handleCancel(call.id)}
+                    onclick={() => handleCancel(call.id)}
                     class="text-orange-600 hover:text-orange-900"
+                    aria-label={$_('callForFunds.cancelTitle')}
                     title={$_('callForFunds.cancelTitle')}
                   >
                     {$_('common.cancel')}
@@ -227,6 +229,7 @@
                   <a
                     href="/owner-contributions?call_for_funds_id={call.id}"
                     class="text-green-600 hover:text-green-900"
+                    aria-label={$_('callForFunds.viewContributions')}
                     title={$_('callForFunds.viewContributions')}
                   >
                     {$_('callForFunds.contributions')}

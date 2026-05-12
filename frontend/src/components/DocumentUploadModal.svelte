@@ -1,39 +1,46 @@
 <script lang="ts">
-  import { createEventDispatcher, onMount } from 'svelte';
+  // Svelte 5 runes mode
   import { _ } from '../lib/i18n';
   import type { Building, DocumentType, DocumentUploadPayload, User } from '../lib/types';
   import { DOCUMENT_TYPE_OPTIONS as DOCUMENT_TYPES } from '../lib/types';
   import { api } from '../lib/api';
 
-  const dispatch = createEventDispatcher();
+  let {
+    open = $bindable(false),
+    buildings = [],
+    user = null,
+    loadingBuildings = false,
+    onclose = () => {},
+    onuploaded = () => {},
+  }: {
+    open?: boolean;
+    buildings?: Building[];
+    user?: User | null;
+    loadingBuildings?: boolean;
+    onclose?: () => void;
+    onuploaded?: () => void;
+  } = $props();
 
-  export let open = false;
-  export let buildings: Building[] = [];
-  export let user: User | null = null;
-  export let loadingBuildings = false;
+  let buildingId = $state('');
+  let documentType = $state<DocumentType>(DOCUMENT_TYPES[0].value);
+  let title = $state('');
+  let description = $state('');
+  let file = $state<File | null>(null);
+  let error = $state<string | null>(null);
+  let submitting = $state(false);
+  let fileInput = $state<HTMLInputElement | null>(null);
 
-  let buildingId = '';
-  let documentType: DocumentType = DOCUMENT_TYPES[0].value;
-  let title = '';
-  let description = '';
-  let file: File | null = null;
-  let error: string | null = null;
-  let submitting = false;
-  let fileInput: HTMLInputElement | null = null;
-
-  onMount(() => {
-    if (buildings.length > 0) {
+  $effect(() => {
+    if (open && buildings.length > 0 && !buildingId) {
       buildingId = buildings[0].id;
     }
   });
 
-  $: if (open && buildings.length > 0 && !buildingId) {
-    buildingId = buildings[0].id;
-  }
-
-  $: if (buildings.length > 0 && buildingId && !buildings.some((b) => b.id === buildingId)) {
-    buildingId = buildings[0].id;
-  }
+  $effect(() => {
+    if (buildings.length > 0 && buildingId && !buildings.some((b) => b.id === buildingId)) {
+      buildingId = buildings[0].id;
+    }
+  });
 
   function resetForm() {
     title = '';
@@ -49,7 +56,7 @@
   function handleClose() {
     open = false;
     resetForm();
-    dispatch('close');
+    onclose();
   }
 
   function handleFileChange(event: Event) {
@@ -93,8 +100,8 @@
     };
 
     try {
-      const document = await api.uploadDocument(payload);
-      dispatch('uploaded', { document });
+      await api.uploadDocument(payload);
+      onuploaded();
       handleClose();
     } catch (err) {
       console.error('Upload failed', err);
@@ -108,7 +115,7 @@
 {#if open}
   <div class="fixed inset-0 z-50 flex items-center justify-center bg-gray-900 bg-opacity-40 p-4">
     <div class="bg-white rounded-2xl shadow-xl max-w-xl w-full">
-      <form on:submit|preventDefault={submit} class="flex flex-col">
+      <form onsubmit={(e: Event) => { e.preventDefault(); submit(e); }} class="flex flex-col">
         <div class="px-6 py-4 border-b border-gray-200">
           <div class="flex items-start justify-between">
             <div>
@@ -118,7 +125,7 @@
             <button
               type="button"
               class="text-gray-400 hover:text-gray-600"
-              on:click={handleClose}
+              onclick={handleClose}
               aria-label={$_('common.close')}
             >
               ✕
@@ -128,13 +135,14 @@
 
         <div class="px-6 py-4 space-y-4">
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">{$_('documents.building')}</label>
+            <label for="doc-upload-building" class="block text-sm font-medium text-gray-700 mb-1">{$_('documents.building')}</label>
             {#if loadingBuildings}
               <p class="text-sm text-gray-500">{$_('documents.loadingBuildings')}</p>
             {:else if buildings.length === 0}
               <p class="text-sm text-red-500">{$_('documents.noBuildings')}</p>
             {:else}
               <select
+                id="doc-upload-building"
                 class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500"
                 bind:value={buildingId}
               >
@@ -146,8 +154,9 @@
           </div>
 
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">{$_('documents.documentType')}</label>
+            <label for="doc-upload-type" class="block text-sm font-medium text-gray-700 mb-1">{$_('documents.documentType')}</label>
             <select
+              id="doc-upload-type"
               class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500"
               bind:value={documentType}
             >
@@ -158,8 +167,9 @@
           </div>
 
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">{$_('documents.title')}</label>
+            <label for="doc-upload-title" class="block text-sm font-medium text-gray-700 mb-1">{$_('documents.title')}</label>
             <input
+              id="doc-upload-title"
               type="text"
               class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500"
               bind:value={title}
@@ -169,29 +179,30 @@
           </div>
 
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">{$_('documents.description')}</label>
+            <label for="doc-upload-description" class="block text-sm font-medium text-gray-700 mb-1">{$_('documents.description')}</label>
             <textarea
+              id="doc-upload-description"
               class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500"
               rows={3}
               bind:value={description}
               placeholder="Informations supplémentaires sur le document"
-            />
+            ></textarea>
           </div>
 
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">{$_('documents.file')}</label>
+            <span class="block text-sm font-medium text-gray-700 mb-1">{$_('documents.file')}</span>
             <div class="flex items-center gap-3">
               <input
                 type="file"
                 class="hidden"
                 bind:this={fileInput}
                 accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg,.txt"
-                on:change={handleFileChange}
+                onchange={handleFileChange}
               />
               <button
                 type="button"
                 class="px-3 py-2 rounded-lg border border-gray-300 text-sm font-medium text-gray-700 hover:bg-gray-100 transition"
-                on:click={() => fileInput?.click()}
+                onclick={() => fileInput?.click()}
                 disabled={submitting}
               >
                 {$_('documents.selectFile')}
@@ -214,7 +225,7 @@
           <button
             type="button"
             class="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-100 transition"
-            on:click={handleClose}
+            onclick={handleClose}
             disabled={submitting}
           >
             {$_('common.cancel')}

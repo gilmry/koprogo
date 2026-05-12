@@ -1,36 +1,37 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  // Svelte 5 runes mode
   import { _ } from '../lib/i18n';
   import { api } from '../lib/api';
   import { formatDate } from '../lib/utils/date.utils';
   import { formatCurrency } from '../lib/utils/finance.utils';
   import { withLoadingState } from '../lib/utils/error.utils';
 
-  export let buildingId: string | null = null;
-  export let onInvoiceSelected: ((invoice: any) => void) | null = null;
-  export let filterByStatus: string | null = null; // 'pending', 'approved', 'rejected', 'draft'
-  export let showPendingOnly = false; // Special mode for syndic dashboard
+  let { buildingId = null, onInvoiceSelected = null, filterByStatus = null, showPendingOnly = false }: {
+    buildingId?: string | null;
+    onInvoiceSelected?: ((invoice: any) => void) | null;
+    filterByStatus?: string | null;
+    showPendingOnly?: boolean;
+  } = $props();
 
-  // Invoice list
-  let invoices: any[] = [];
-  let filteredInvoices: any[] = [];
-  let loading = false;
-  let error = '';
+  let invoices = $state<any[]>([]);
+  let filteredInvoices = $state<any[]>([]);
+  let loading = $state(false);
+  let error = $state('');
 
-  // Filters
-  let statusFilter = filterByStatus || '';
-  let searchQuery = '';
-  let dateFrom = '';
-  let dateTo = '';
+  let statusFilter = $state('');
+  // Sync with prop (live value via $effect, not stale initial capture)
+  $effect(() => { if (filterByStatus) statusFilter = filterByStatus; });
+  let searchQuery = $state('');
+  let dateFrom = $state('');
+  let dateTo = $state('');
 
-  // Pagination
-  let currentPage = 1;
-  let pageSize = 10;
-  let totalPages = 1;
-  let paginatedInvoices: any[] = [];
+  let currentPage = $state(1);
+  let pageSize = $state(10);
+  let totalPages = $state(1);
+  let paginatedInvoices = $state<any[]>([]);
 
-  onMount(async () => {
-    await loadInvoices();
+  $effect(() => {
+    loadInvoices();
   });
 
   async function loadInvoices() {
@@ -63,8 +64,8 @@
 
         return await api.get(url);
       },
-      setLoading: (v) => loading = v,
-      setError: (v) => error = v,
+      setLoading: (v: boolean) => loading = v,
+      setError: (v: string) => error = v,
       errorMessage: $_('invoices.load_error'),
       onSuccess: (data: any) => {
         invoices = data;
@@ -75,7 +76,6 @@
 
   function applyFilters() {
     filteredInvoices = invoices.filter((invoice) => {
-      // Search filter
       if (searchQuery) {
         const query = searchQuery.toLowerCase();
         const matchesDescription = invoice.description?.toLowerCase().includes(query);
@@ -85,11 +85,9 @@
           return false;
         }
       }
-
       return true;
     });
 
-    // Calculate pagination
     totalPages = Math.ceil(filteredInvoices.length / pageSize);
     currentPage = Math.min(currentPage, totalPages || 1);
     updatePagination();
@@ -150,14 +148,14 @@
     return formatCurrency(amount);
   }
 
-  // Reactive statements
-  $: if (searchQuery !== undefined) {
-    handleSearchChange();
-  }
+  $effect(() => {
+    if (searchQuery !== undefined) {
+      handleSearchChange();
+    }
+  });
 </script>
 
 <div class="invoice-list">
-  <!-- Header -->
   <div class="list-header">
     <h2>
       {#if showPendingOnly}
@@ -166,12 +164,11 @@
         {$_('invoices.list_title')}
       {/if}
     </h2>
-    <button class="btn btn-primary" on:click={loadInvoices} disabled={loading} data-testid="refresh-button">
+    <button class="btn btn-primary" onclick={loadInvoices} disabled={loading} data-testid="refresh-button">
       🔄 {$_('common.refresh')}
     </button>
   </div>
 
-  <!-- Filters -->
   {#if !showPendingOnly}
     <div class="filters">
       <div class="filter-group">
@@ -179,7 +176,7 @@
         <select
           id="status-filter"
           bind:value={statusFilter}
-          on:change={handleStatusFilterChange}
+          onchange={handleStatusFilterChange}
           disabled={loading}
           data-testid="status-filter"
         >
@@ -209,7 +206,7 @@
           id="date-from"
           type="date"
           bind:value={dateFrom}
-          on:change={handleDateFilterChange}
+          onchange={handleDateFilterChange}
           disabled={loading}
           data-testid="date-from-input"
         />
@@ -221,7 +218,7 @@
           id="date-to"
           type="date"
           bind:value={dateTo}
-          on:change={handleDateFilterChange}
+          onchange={handleDateFilterChange}
           disabled={loading}
           data-testid="date-to-input"
         />
@@ -229,7 +226,6 @@
     </div>
   {/if}
 
-  <!-- Loading/Error States -->
   {#if loading}
     <p class="loading" data-testid="loading-spinner">{$_('common.loading')}</p>
   {:else if error}
@@ -239,7 +235,6 @@
       <p>{$_('invoices.no_invoices')}</p>
     </div>
   {:else}
-    <!-- Invoice Table -->
     <div class="table-container">
       <table class="invoice-table">
         <thead>
@@ -258,7 +253,7 @@
         </thead>
         <tbody>
           {#each paginatedInvoices as invoice}
-            <tr class="invoice-row" on:click={() => selectInvoice(invoice)} data-testid="invoice-row">
+            <tr class="invoice-row" onclick={() => selectInvoice(invoice)} data-testid="invoice-row">
               <td>{formatDate(invoice.invoice_date, 'short')}</td>
               <td class="description-cell">{invoice.description}</td>
               <td>{invoice.supplier || '-'}</td>
@@ -277,7 +272,7 @@
               <td>
                 <button
                   class="btn btn-sm btn-secondary"
-                  on:click|stopPropagation={() => selectInvoice(invoice)}
+                  onclick={(e: MouseEvent) => { e.stopPropagation(); selectInvoice(invoice); }}
                 >
                   {$_('common.view')}
                 </button>
@@ -288,12 +283,11 @@
       </table>
     </div>
 
-    <!-- Pagination -->
     {#if totalPages > 1}
       <div class="pagination">
         <button
           class="btn btn-sm"
-          on:click={() => handlePageChange(currentPage - 1)}
+          onclick={() => handlePageChange(currentPage - 1)}
           disabled={currentPage === 1}
         >
           ← {$_('common.previous')}
@@ -305,7 +299,7 @@
 
         <button
           class="btn btn-sm"
-          on:click={() => handlePageChange(currentPage + 1)}
+          onclick={() => handlePageChange(currentPage + 1)}
           disabled={currentPage === totalPages}
         >
           {$_('common.next')} →
@@ -313,7 +307,6 @@
       </div>
     {/if}
 
-    <!-- Summary -->
     <div class="summary">
       <p>
         <strong>{$_('invoices.total_displayed')}:</strong>
@@ -324,262 +317,43 @@
 </div>
 
 <style>
-  .invoice-list {
-    background: white;
-    padding: 2rem;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  }
-
-  .list-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 1.5rem;
-  }
-
-  .list-header h2 {
-    margin: 0;
-    color: #333;
-  }
-
-  .filters {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 1rem;
-    margin-bottom: 1.5rem;
-    padding: 1rem;
-    background: #f9f9f9;
-    border-radius: 4px;
-  }
-
-  .filter-group {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-  }
-
-  .filter-group label {
-    font-weight: 600;
-    font-size: 0.9rem;
-    color: #555;
-  }
-
-  .filter-group select,
-  .filter-group input {
-    padding: 0.5rem;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    font-size: 0.95rem;
-  }
-
-  .filter-group select:focus,
-  .filter-group input:focus {
-    outline: none;
-    border-color: #4a90e2;
-    box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.1);
-  }
-
-  .loading {
-    text-align: center;
-    padding: 2rem;
-    color: #666;
-  }
-
-  .alert {
-    padding: 1rem;
-    border-radius: 4px;
-    margin-bottom: 1rem;
-  }
-
-  .alert-error {
-    background-color: #fee;
-    border: 1px solid #fcc;
-    color: #c33;
-  }
-
-  .empty-state {
-    text-align: center;
-    padding: 3rem;
-    color: #999;
-  }
-
-  .table-container {
-    overflow-x: auto;
-    margin-bottom: 1rem;
-  }
-
-  .invoice-table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 0.9rem;
-  }
-
-  .invoice-table thead {
-    background: #f5f5f5;
-    border-bottom: 2px solid #ddd;
-  }
-
-  .invoice-table th {
-    padding: 0.75rem;
-    text-align: left;
-    font-weight: 600;
-    color: #555;
-  }
-
-  .invoice-table td {
-    padding: 0.75rem;
-    border-bottom: 1px solid #eee;
-  }
-
-  .invoice-row {
-    cursor: pointer;
-    transition: background-color 0.2s;
-  }
-
-  .invoice-row:hover {
-    background-color: #f9f9f9;
-  }
-
-  .description-cell {
-    max-width: 200px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .amount-cell {
-    text-align: right;
-    font-family: 'Courier New', monospace;
-  }
-
-  .amount-cell.total {
-    font-weight: 600;
-  }
-
-  .badge {
-    display: inline-block;
-    padding: 0.25rem 0.75rem;
-    border-radius: 12px;
-    font-weight: 600;
-    font-size: 0.8rem;
-    white-space: nowrap;
-  }
-
-  .badge-draft {
-    background-color: #e0e0e0;
-    color: #666;
-  }
-
-  .badge-pending {
-    background-color: #fff3cd;
-    color: #856404;
-    border: 1px solid #ffc107;
-  }
-
-  .badge-approved {
-    background-color: #d4edda;
-    color: #155724;
-    border: 1px solid #28a745;
-  }
-
-  .badge-rejected {
-    background-color: #f8d7da;
-    color: #721c24;
-    border: 1px solid #dc3545;
-  }
-
-  .btn {
-    padding: 0.5rem 1rem;
-    border: none;
-    border-radius: 4px;
-    font-size: 0.95rem;
-    cursor: pointer;
-    transition: all 0.2s;
-    font-weight: 500;
-  }
-
-  .btn:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-
-  .btn-primary {
-    background-color: #4a90e2;
-    color: white;
-  }
-
-  .btn-primary:hover:not(:disabled) {
-    background-color: #357abd;
-  }
-
-  .btn-secondary {
-    background-color: #e0e0e0;
-    color: #333;
-  }
-
-  .btn-secondary:hover:not(:disabled) {
-    background-color: #d0d0d0;
-  }
-
-  .btn-sm {
-    padding: 0.4rem 0.8rem;
-    font-size: 0.85rem;
-  }
-
-  .pagination {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 1rem;
-    margin-top: 1.5rem;
-    padding: 1rem;
-    border-top: 1px solid #eee;
-  }
-
-  .page-info {
-    color: #666;
-    font-size: 0.9rem;
-  }
-
-  .summary {
-    margin-top: 1rem;
-    padding: 1rem;
-    background: #f9f9f9;
-    border-radius: 4px;
-    text-align: right;
-  }
-
-  .summary p {
-    margin: 0;
-    color: #555;
-  }
-
-  /* Responsive */
-  @media (max-width: 768px) {
-    .invoice-list {
-      padding: 1rem;
-    }
-
-    .filters {
-      grid-template-columns: 1fr;
-    }
-
-    .table-container {
-      overflow-x: scroll;
-    }
-
-    .invoice-table {
-      font-size: 0.8rem;
-    }
-
-    .invoice-table th,
-    .invoice-table td {
-      padding: 0.5rem;
-    }
-
-    .description-cell {
-      max-width: 120px;
-    }
-  }
+  .invoice-list { background: white; padding: 2rem; border-radius: 8px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); }
+  .list-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
+  .list-header h2 { margin: 0; color: #333; }
+  .filters { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; padding: 1rem; background: #f9f9f9; border-radius: 4px; }
+  .filter-group { display: flex; flex-direction: column; gap: 0.5rem; }
+  .filter-group label { font-weight: 600; font-size: 0.9rem; color: #555; }
+  .filter-group select, .filter-group input { padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px; font-size: 0.95rem; }
+  .filter-group select:focus, .filter-group input:focus { outline: none; border-color: #4a90e2; box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.1); }
+  .loading { text-align: center; padding: 2rem; color: #666; }
+  .alert { padding: 1rem; border-radius: 4px; margin-bottom: 1rem; }
+  .alert-error { background-color: #fee; border: 1px solid #fcc; color: #c33; }
+  .empty-state { text-align: center; padding: 3rem; color: #999; }
+  .table-container { overflow-x: auto; margin-bottom: 1rem; }
+  .invoice-table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+  .invoice-table thead { background: #f5f5f5; border-bottom: 2px solid #ddd; }
+  .invoice-table th { padding: 0.75rem; text-align: left; font-weight: 600; color: #555; }
+  .invoice-table td { padding: 0.75rem; border-bottom: 1px solid #eee; }
+  .invoice-row { cursor: pointer; transition: background-color 0.2s; }
+  .invoice-row:hover { background-color: #f9f9f9; }
+  .description-cell { max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .amount-cell { text-align: right; font-family: 'Courier New', monospace; }
+  .amount-cell.total { font-weight: 600; }
+  .badge { display: inline-block; padding: 0.25rem 0.75rem; border-radius: 12px; font-weight: 600; font-size: 0.8rem; white-space: nowrap; }
+  .badge-draft { background-color: #e0e0e0; color: #666; }
+  .badge-pending { background-color: #fff3cd; color: #856404; border: 1px solid #ffc107; }
+  .badge-approved { background-color: #d4edda; color: #155724; border: 1px solid #28a745; }
+  .badge-rejected { background-color: #f8d7da; color: #721c24; border: 1px solid #dc3545; }
+  .btn { padding: 0.5rem 1rem; border: none; border-radius: 4px; font-size: 0.95rem; cursor: pointer; transition: all 0.2s; font-weight: 500; }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn-primary { background-color: #4a90e2; color: white; }
+  .btn-primary:hover:not(:disabled) { background-color: #357abd; }
+  .btn-secondary { background-color: #e0e0e0; color: #333; }
+  .btn-secondary:hover:not(:disabled) { background-color: #d0d0d0; }
+  .btn-sm { padding: 0.4rem 0.8rem; font-size: 0.85rem; }
+  .pagination { display: flex; justify-content: center; align-items: center; gap: 1rem; margin-top: 1.5rem; padding: 1rem; border-top: 1px solid #eee; }
+  .page-info { color: #666; font-size: 0.9rem; }
+  .summary { margin-top: 1rem; padding: 1rem; background: #f9f9f9; border-radius: 4px; text-align: right; }
+  .summary p { margin: 0; color: #555; }
+  @media (max-width: 768px) { .invoice-list { padding: 1rem; } .filters { grid-template-columns: 1fr; } .table-container { overflow-x: scroll; } .invoice-table { font-size: 0.8rem; } .invoice-table th, .invoice-table td { padding: 0.5rem; } .description-cell { max-width: 120px; } }
 </style>

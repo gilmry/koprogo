@@ -1,27 +1,28 @@
 <script lang="ts">
-  import { onMount } from "svelte";
+  // Svelte 5 runes mode
   import {
     skillsApi,
     type SkillOffer,
     SkillCategory,
     ExpertiseLevel,
   } from "../../lib/api/skills";
-  import { toast } from "../../stores/toast";
   import SkillOfferCard from "./SkillOfferCard.svelte";
   import { withErrorHandling } from "../../lib/utils/error.utils";
 
-  export let buildingId: string;
-  export let showFilters = true;
+  let { buildingId, showFilters = true }: {
+    buildingId: string;
+    showFilters?: boolean;
+  } = $props();
 
-  let offers: SkillOffer[] = [];
-  let filteredOffers: SkillOffer[] = [];
-  let loading = true;
-  let searchQuery = "";
-  let selectedCategory: SkillCategory | "all" = "all";
-  let selectedExpertise: ExpertiseLevel | "all" = "all";
+  let offers = $state<SkillOffer[]>([]);
+  let filteredOffers = $state<SkillOffer[]>([]);
+  let loading = $state(true);
+  let searchQuery = $state("");
+  let selectedCategory = $state<SkillCategory | "all">("all");
+  let selectedExpertise = $state<ExpertiseLevel | "all">("all");
 
-  onMount(async () => {
-    await loadOffers();
+  $effect(() => {
+    loadOffers();
   });
 
   async function loadOffers() {
@@ -55,12 +56,12 @@
     });
   }
 
-  $: {
+  $effect(() => {
     searchQuery;
     selectedCategory;
     selectedExpertise;
     applyFilters();
-  }
+  });
 
   function handleOfferClick(offerId: string) {
     window.location.href = `/skill-detail?id=${offerId}`;

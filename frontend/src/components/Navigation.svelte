@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  // Svelte 5 runes mode
   import { get } from 'svelte/store';
   import { _ } from '../lib/i18n';
   import { fly, fade } from 'svelte/transition';
@@ -9,15 +9,15 @@
   import NotificationBell from './notifications/NotificationBell.svelte';
 
   // --- State ---
-  let switchingRole = false;
-  let selectedRoleId: string | null = null;
-  let drawerOpen = false;
-  let currentPath = '';
-  let hamburgerButton: HTMLButtonElement;
-  let drawerCloseButton: HTMLButtonElement;
+  let switchingRole = $state(false);
+  let selectedRoleId = $state<string | null>(null);
+  let drawerOpen = $state(false);
+  let currentPath = $state('');
+  let hamburgerButton = $state<HTMLButtonElement | undefined>(undefined);
+  let drawerCloseButton = $state<HTMLButtonElement | undefined>(undefined);
 
-  $: user = $authStore.user;
-  $: isAuthenticated = $authStore.isAuthenticated;
+  let user = $derived($authStore.user);
+  let isAuthenticated = $derived($authStore.isAuthenticated);
 
   // --- Types ---
   interface NavItem {
@@ -101,8 +101,8 @@
   };
 
   // --- Lifecycle ---
-  onMount(async () => {
-    await authStore.init();
+  $effect(() => {
+    authStore.init();
     currentPath = window.location.pathname;
   });
 
@@ -122,16 +122,16 @@
 
     const communityGroup: NavGroup = {
       id: 'communaute',
-      label: 'Communauté',
+      label: t('navigation.community'),
       items: [
-        { href: '/exchanges', label: 'SEL', icon: '🔄' },
-        { href: '/polls', label: 'Sondages', icon: '📊' },
-        { href: '/notices', label: 'Annonces', icon: '📌' },
-        { href: '/bookings', label: 'Réservations', icon: '📅' },
-        { href: '/sharing', label: 'Partage', icon: '🎁' },
-        { href: '/skills', label: 'Compétences', icon: '🎓' },
-        { href: '/energy-campaigns', label: 'Énergie', icon: '⚡' },
-        { href: '/gamification', label: 'Gamification', icon: '🏆' },
+        { href: '/exchanges', label: t('navigation.sel'), icon: '🔄' },
+        { href: '/polls', label: t('navigation.polls'), icon: '📊' },
+        { href: '/notices', label: t('navigation.notices'), icon: '📌' },
+        { href: '/bookings', label: t('navigation.bookings'), icon: '📅' },
+        { href: '/sharing', label: t('navigation.sharing_short'), icon: '🎁' },
+        { href: '/skills', label: t('navigation.skills'), icon: '🎓' },
+        { href: '/energy-campaigns', label: t('navigation.energy'), icon: '⚡' },
+        { href: '/gamification', label: t('navigation.gamification'), icon: '🏆' },
       ],
     };
 
@@ -140,7 +140,7 @@
       return [
         {
           id: 'principal',
-          label: 'Principal',
+          label: t('navigation.main'),
           items: [
             { href: '/admin', label: t('navigation.admin'), icon: '⚙️' },
             { href: '/admin/monitoring', label: t('navigation.monitoring'), icon: '📈' },
@@ -149,13 +149,13 @@
         },
         {
           id: 'gestion',
-          label: 'Gestion',
+          label: t('navigation.management'),
           items: [
-            { href: '/admin/organizations', label: 'Organisations', icon: '🏛️' },
-            { href: '/admin/users', label: 'Utilisateurs', icon: '👥' },
-            { href: '/admin/board-members', label: 'Conseil', icon: '👑' },
-            { href: '/admin/gdpr', label: 'RGPD', icon: '🔒' },
-            { href: '/admin/gamification', label: 'Gamification', icon: '🏆' },
+            { href: '/admin/organizations', label: t('navigation.organizations'), icon: '🏛️' },
+            { href: '/admin/users', label: t('navigation.users'), icon: '👥' },
+            { href: '/admin/board-members', label: t('navigation.council'), icon: '👑' },
+            { href: '/admin/gdpr', label: t('navigation.gdpr'), icon: '🔒' },
+            { href: '/admin/gamification', label: t('navigation.gamification'), icon: '🏆' },
           ],
         },
         communityGroup,
@@ -167,7 +167,7 @@
       return [
         {
           id: 'principal',
-          label: 'Principal',
+          label: t('navigation.main'),
           items: [
             { href: '/syndic', label: t('navigation.dashboard'), icon: '📊' },
             { href: '/buildings', label: t('navigation.buildings'), icon: '🏢' },
@@ -175,31 +175,31 @@
         },
         {
           id: 'gestion',
-          label: 'Gestion',
+          label: t('navigation.management'),
           items: [
             { href: '/owners', label: t('navigation.owners'), icon: '👤' },
             { href: '/units', label: t('navigation.units'), icon: '🚪' },
             { href: '/expenses', label: t('navigation.expenses'), icon: '💰' },
-            { href: '/invoice-workflow', label: 'Workflow factures', icon: '✅' },
-            { href: '/call-for-funds', label: 'Appels de fonds', icon: '📢' },
-            { href: '/owner-contributions', label: 'Contributions', icon: '💶' },
-            { href: '/payment-reminders', label: 'Relances', icon: '📧' },
-            { href: '/budgets', label: 'Budgets', icon: '📊' },
-            { href: '/etats-dates', label: 'Etats dates', icon: '📋' },
-            { href: '/gamification', label: 'Gamification', icon: '🏆' },
+            { href: '/invoice-workflow', label: t('navigation.invoiceWorkflow'), icon: '✅' },
+            { href: '/call-for-funds', label: t('navigation.callForFunds'), icon: '📢' },
+            { href: '/owner-contributions', label: t('navigation.contributions'), icon: '💶' },
+            { href: '/payment-reminders', label: t('navigation.reminders'), icon: '📧' },
+            { href: '/budgets', label: t('navigation.budgets'), icon: '📊' },
+            { href: '/etats-dates', label: t('navigation.etatsDates'), icon: '📋' },
+            { href: '/gamification', label: t('navigation.gamification'), icon: '🏆' },
           ],
         },
         {
           id: 'gouvernance',
-          label: 'Gouvernance',
+          label: t('navigation.governance'),
           items: [
             { href: '/meetings', label: t('navigation.meetings'), icon: '📅' },
-            { href: '/convocations', label: 'Convocations', icon: '📨' },
-            { href: '/tickets', label: 'Tickets', icon: '🎫' },
-            { href: '/quotes', label: 'Devis', icon: '📋' },
-            { href: '/work-reports', label: 'Travaux', icon: '🔧' },
-            { href: '/inspections', label: 'Inspections', icon: '🔍' },
-            { href: '/syndic/board-members', label: 'Conseil', icon: '👑' },
+            { href: '/convocations', label: t('navigation.convocations'), icon: '📨' },
+            { href: '/tickets', label: t('navigation.tickets'), icon: '🎫' },
+            { href: '/quotes', label: t('navigation.quotes'), icon: '📋' },
+            { href: '/work-reports', label: t('navigation.works'), icon: '🔧' },
+            { href: '/inspections', label: t('navigation.inspections'), icon: '🔍' },
+            { href: '/syndic/board-members', label: t('navigation.council'), icon: '👑' },
             { href: '/documents', label: t('navigation.documents'), icon: '📄' },
           ],
         },
@@ -212,7 +212,7 @@
       return [
         {
           id: 'principal',
-          label: 'Principal',
+          label: t('navigation.main'),
           items: [
             { href: '/accountant', label: t('navigation.dashboard'), icon: '📊' },
             { href: '/buildings', label: t('navigation.buildings'), icon: '🏢' },
@@ -220,17 +220,17 @@
         },
         {
           id: 'comptabilite',
-          label: 'Comptabilité',
+          label: t('navigation.accounting'),
           items: [
             { href: '/expenses', label: t('navigation.expenses'), icon: '💰' },
-            { href: '/invoice-workflow', label: 'Workflow factures', icon: '✅' },
-            { href: '/call-for-funds', label: 'Appels de fonds', icon: '📢' },
-            { href: '/owner-contributions', label: 'Contributions', icon: '💶' },
-            { href: '/payment-reminders', label: 'Relances', icon: '📧' },
-            { href: '/budgets', label: 'Budgets', icon: '📊' },
-            { href: '/etats-dates', label: 'Etats dates', icon: '📋' },
-            { href: '/journal-entries', label: 'Ecritures comptables', icon: '📒' },
-            { href: '/reports', label: 'Rapports PCMN', icon: '📈' },
+            { href: '/invoice-workflow', label: t('navigation.invoiceWorkflow'), icon: '✅' },
+            { href: '/call-for-funds', label: t('navigation.callForFunds'), icon: '📢' },
+            { href: '/owner-contributions', label: t('navigation.contributions'), icon: '💶' },
+            { href: '/payment-reminders', label: t('navigation.reminders'), icon: '📧' },
+            { href: '/budgets', label: t('navigation.budgets'), icon: '📊' },
+            { href: '/etats-dates', label: t('navigation.etatsDates'), icon: '📋' },
+            { href: '/journal-entries', label: t('navigation.journalEntries'), icon: '📒' },
+            { href: '/reports', label: t('navigation.reportsPcmn'), icon: '📈' },
           ],
         },
         communityGroup,
@@ -242,7 +242,7 @@
       return [
         {
           id: 'principal',
-          label: 'Principal',
+          label: t('navigation.main'),
           items: [
             { href: '/owner', label: t('navigation.dashboard'), icon: '🏠' },
             { href: '/owner/units', label: t('navigation.units'), icon: '🚪' },
@@ -250,14 +250,14 @@
         },
         {
           id: 'espace',
-          label: 'Mon espace',
+          label: t('navigation.mySpace'),
           items: [
             { href: '/owner/expenses', label: t('navigation.expenses'), icon: '💰' },
-            { href: '/owner/payments', label: 'Paiements', icon: '💳' },
-            { href: '/owner/payment-methods', label: 'Moyens paiement', icon: '🏦' },
-            { href: '/owner/tickets', label: 'Mes tickets', icon: '🎫' },
+            { href: '/owner/payments', label: t('navigation.payments'), icon: '💳' },
+            { href: '/owner/payment-methods', label: t('navigation.paymentMethods'), icon: '🏦' },
+            { href: '/owner/tickets', label: t('navigation.myTickets'), icon: '🎫' },
             { href: '/owner/documents', label: t('navigation.documents'), icon: '📄' },
-            { href: '/owner/profile', label: 'Profil', icon: '👤' },
+            { href: '/owner/profile', label: t('navigation.profile'), icon: '👤' },
           ],
         },
         communityGroup,
@@ -267,15 +267,17 @@
     // Fallback for any unmapped roles - return minimal navigation
     return [{
       id: 'principal',
-      label: 'Principal',
+      label: t('navigation.main'),
       items: [{ href: '/buildings', label: t('navigation.buildings'), icon: '🏢' }],
     }];
   };
 
-  $: navGroups = getNavGroups(user?.role, $_);
-  $: if (user?.activeRole?.id && user.activeRole.id !== selectedRoleId) {
-    selectedRoleId = user.activeRole.id;
-  }
+  let navGroups = $derived(getNavGroups(user?.role, $_));
+  $effect(() => {
+    if (user?.activeRole?.id && user.activeRole.id !== selectedRoleId) {
+      selectedRoleId = user.activeRole.id;
+    }
+  });
 </script>
 
 <!-- ============================================================ -->
@@ -333,7 +335,7 @@
           <select
             id="sidebar-role-selector"
             class="w-full px-2 py-1 border border-gray-300 rounded-lg text-xs focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-            on:change={handleRoleChange}
+            onchange={handleRoleChange}
             disabled={switchingRole}
             bind:value={selectedRoleId}
             data-testid="role-selector"
@@ -368,7 +370,7 @@
           🔒 Données RGPD
         </a>
         <button
-          on:click={logout}
+          onclick={logout}
           class="w-full flex items-center gap-2 px-2 py-1 text-xs text-red-600 hover:bg-red-50 rounded-lg transition-colors"
           data-testid="user-menu-logout"
         >
@@ -390,7 +392,7 @@
     <!-- Left: Hamburger -->
     <button
       bind:this={hamburgerButton}
-      on:click={openDrawer}
+      onclick={openDrawer}
       class="p-2 -ml-1 rounded-lg text-gray-600 hover:bg-gray-100"
       aria-label="Ouvrir le menu"
       aria-expanded={drawerOpen}
@@ -445,8 +447,8 @@
   <div
     class="fixed inset-0 bg-black/40 z-40 lg:hidden"
     transition:fade={{ duration: 200 }}
-    on:click={closeDrawer}
-    on:keydown={(e) => e.key === 'Escape' && closeDrawer()}
+    onclick={closeDrawer}
+    onkeydown={(e) => e.key === 'Escape' && closeDrawer()}
     role="button"
     tabindex="-1"
     aria-label="Fermer le menu"
@@ -462,12 +464,12 @@
   >
     <!-- Header: logo + close -->
     <div class="flex items-center justify-between h-14 px-4 border-b border-gray-200 shrink-0">
-      <a href={`/${user?.role}`} class="text-xl font-bold text-primary-600" on:click={handleNavClick}>
+      <a href={`/${user?.role}`} class="text-xl font-bold text-primary-600" onclick={handleNavClick}>
         KoproGo
       </a>
       <button
         bind:this={drawerCloseButton}
-        on:click={closeDrawer}
+        onclick={closeDrawer}
         class="p-2 rounded-lg text-gray-500 hover:bg-gray-100"
         aria-label="Fermer le menu"
       >
@@ -489,7 +491,7 @@
               <li>
                 <a
                   href={item.href}
-                  on:click={handleNavClick}
+                  onclick={handleNavClick}
                   class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-colors
                     {isActive(item.href)
                       ? 'bg-primary-50 text-primary-700 font-semibold'
@@ -515,7 +517,7 @@
           <select
             id="drawer-role-selector"
             class="w-full px-2 py-1.5 border border-gray-300 rounded-lg text-xs focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-            on:change={handleRoleChange}
+            onchange={handleRoleChange}
             disabled={switchingRole}
             bind:value={selectedRoleId}
           >
@@ -539,17 +541,17 @@
       </div>
 
       <div class="space-y-0.5">
-        <a href="/profile" on:click={handleNavClick} class="flex items-center gap-2 px-2 py-1.5 text-xs text-gray-600 hover:bg-gray-50 rounded-lg transition-colors">
+        <a href="/profile" onclick={handleNavClick} class="flex items-center gap-2 px-2 py-1.5 text-xs text-gray-600 hover:bg-gray-50 rounded-lg transition-colors">
           👤 {$_('navigation.profile')}
         </a>
-        <a href="/settings" on:click={handleNavClick} class="flex items-center gap-2 px-2 py-1.5 text-xs text-gray-600 hover:bg-gray-50 rounded-lg transition-colors">
+        <a href="/settings" onclick={handleNavClick} class="flex items-center gap-2 px-2 py-1.5 text-xs text-gray-600 hover:bg-gray-50 rounded-lg transition-colors">
           ⚙️ Paramètres
         </a>
-        <a href="/settings/gdpr" on:click={handleNavClick} class="flex items-center gap-2 px-2 py-1.5 text-xs text-gray-600 hover:bg-gray-50 rounded-lg transition-colors">
+        <a href="/settings/gdpr" onclick={handleNavClick} class="flex items-center gap-2 px-2 py-1.5 text-xs text-gray-600 hover:bg-gray-50 rounded-lg transition-colors">
           🔒 Données RGPD
         </a>
         <button
-          on:click={logout}
+          onclick={logout}
           class="w-full flex items-center gap-2 px-2 py-1.5 text-xs text-red-600 hover:bg-red-50 rounded-lg transition-colors"
           data-testid="mobile-drawer-logout"
         >
@@ -561,4 +563,4 @@
 {/if}
 
 <!-- Global keyboard handler -->
-<svelte:window on:keydown={(e) => e.key === 'Escape' && drawerOpen && closeDrawer()} />
+<svelte:window onkeydown={(e) => e.key === 'Escape' && drawerOpen && closeDrawer()} />

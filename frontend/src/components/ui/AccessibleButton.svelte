@@ -1,19 +1,36 @@
 <script lang="ts">
+  // Svelte 5 runes mode
   /**
    * Accessible Button Component - WCAG 2.1 AA Compliant
    * Provides proper ARIA attributes, keyboard support, and visual feedback
    */
 
   import { _ } from '../../lib/i18n';
+  import type { Snippet } from 'svelte';
 
-  export let type: 'button' | 'submit' | 'reset' = 'button';
-  export let variant: 'primary' | 'secondary' | 'danger' | 'success' = 'primary';
-  export let disabled: boolean = false;
-  export let ariaLabel: string | undefined = undefined;
-  export let ariaPressed: boolean | undefined = undefined;
-  export let ariaExpanded: boolean | undefined = undefined;
-  export let loading: boolean = false;
-  export let size: 'sm' | 'md' | 'lg' = 'md';
+  let {
+    type = 'button',
+    variant = 'primary',
+    disabled = false,
+    ariaLabel = undefined,
+    ariaPressed = undefined,
+    ariaExpanded = undefined,
+    loading = false,
+    size = 'md',
+    children,
+    ...restProps
+  }: {
+    type?: 'button' | 'submit' | 'reset';
+    variant?: 'primary' | 'secondary' | 'danger' | 'success';
+    disabled?: boolean;
+    ariaLabel?: string | undefined;
+    ariaPressed?: boolean | undefined;
+    ariaExpanded?: boolean | undefined;
+    loading?: boolean;
+    size?: 'sm' | 'md' | 'lg';
+    children?: Snippet;
+    [key: string]: any;
+  } = $props();
 
   const variantClasses = {
     primary: 'bg-green-600 hover:bg-green-700 text-white focus:ring-green-500',
@@ -31,7 +48,7 @@
   const baseClasses =
     'rounded font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed';
 
-  $: classes = `${baseClasses} ${variantClasses[variant]} ${sizeClasses[size]}`;
+  let classes = $derived(`${baseClasses} ${variantClasses[variant]} ${sizeClasses[size]}`);
 </script>
 
 <button
@@ -42,11 +59,7 @@
   aria-pressed={ariaPressed}
   aria-expanded={ariaExpanded}
   aria-busy={loading}
-  on:click
-  on:keydown
-  on:keyup
-  on:focus
-  on:blur
+  {...restProps}
 >
   {#if loading}
     <span class="flex items-center gap-2">
@@ -72,10 +85,10 @@
         ></path>
       </svg>
       <span class="sr-only">{$_('common.loading')}</span>
-      <slot />
+      {#if children}{@render children()}{/if}
     </span>
   {:else}
-    <slot />
+    {#if children}{@render children()}{/if}
   {/if}
 </button>
 

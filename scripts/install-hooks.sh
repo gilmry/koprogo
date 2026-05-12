@@ -52,9 +52,72 @@ echo "  → Installing pre-push hook..."
 cat > "$HOOKS_DIR/pre-push" << 'EOF'
 #!/bin/bash
 # Git pre-push hook for KoproGo
-# Runs comprehensive CI checks before pushing to remote
+# Runs comprehensive CI checks before pushing to remote.
+#
+# Skips `make ci` when the push contains no genuinely new code:
+#   - snapshot branch creation (e.g., `infra-dev` pointing at `main`)
+#   - branch deletion
+#   - no-op push
+#   - propagating commits already pushed elsewhere (e.g., merging
+#     feature/dev into env branches after PR merge — the commits are
+#     already reachable from origin/feature/dev, no need to re-test)
+# This avoids the heavy CI suite running unchanged code multiple times
+# during admin / propagation operations.
 
 set -e
+
+# Detect "no new commits" pushes via the git push hook stdin protocol
+# (each line: <local_ref> <local_sha> <remote_ref> <remote_sha>).
+ZERO_SHA="0000000000000000000000000000000000000000"
+SKIP_CI=true
+while read -r local_ref local_sha remote_ref remote_sha; do
+    if [ "$local_sha" = "$ZERO_SHA" ]; then
+        # Branch deletion — no CI to run
+        continue
+    fi
+    if [ "$remote_sha" = "$ZERO_SHA" ]; then
+        # New ref creation — skip CI iff local_sha is already reachable from
+        # any origin/* ref (e.g., creating infra-dev that points to main).
+        if ! git branch -r --contains "$local_sha" 2>/dev/null | grep -q "origin/"; then
+            SKIP_CI=false
+            break
+        fi
+    else
+        # Update of an existing ref — skip CI iff:
+        #   (a) no commits between sha pair, OR
+        #   (b) all commits being pushed are already reachable from another
+        #       origin/* ref (= we're propagating commits already CI-validated
+        #       elsewhere, e.g., merging feature/dev into env branches after
+        #       PR merge).
+        new_commits=$(git rev-list "${remote_sha}..${local_sha}" 2>/dev/null || echo "unknown")
+        if [ "$new_commits" = "unknown" ]; then
+            SKIP_CI=false
+            break
+        fi
+        if [ -z "$new_commits" ]; then
+            # No new commits — fast path (a)
+            continue
+        fi
+        # (b) Check each commit is on some origin/* ref
+        all_already_pushed=true
+        for sha in $new_commits; do
+            if ! git branch -r --contains "$sha" 2>/dev/null | grep -q "origin/"; then
+                all_already_pushed=false
+                break
+            fi
+        done
+        if [ "$all_already_pushed" = "false" ]; then
+            SKIP_CI=false
+            break
+        fi
+    fi
+done
+
+if [ "$SKIP_CI" = "true" ]; then
+    echo "🟢 No new commits vs origin — skipping make ci (snapshot branch, deletion, or no-op)."
+    echo "✅ Pre-push OK (fast path)."
+    exit 0
+fi
 
 echo "🚀 Running pre-push checks..."
 

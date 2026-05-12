@@ -1,6 +1,6 @@
 <script lang="ts">
+  // Svelte 5 runes mode
   import { _ } from '../../lib/i18n';
-  import { onMount } from "svelte";
   import {
     localExchangesApi,
     type LocalExchange,
@@ -15,28 +15,35 @@
   import { formatDateShort } from "../../lib/utils/date.utils";
   import { withLoadingState, withErrorHandling } from "../../lib/utils/error.utils";
 
-  export let buildingId: string;
-  export let currentOwnerId: string;
-  export let showOnlyAvailable: boolean = false;
-  export let showFilters: boolean = true;
+  let {
+    buildingId,
+    currentOwnerId,
+    showOnlyAvailable = false,
+    showFilters = true,
+  }: {
+    buildingId: string;
+    currentOwnerId: string;
+    showOnlyAvailable?: boolean;
+    showFilters?: boolean;
+  } = $props();
 
-  let exchanges: LocalExchange[] = [];
-  let filteredExchanges: LocalExchange[] = [];
-  let loading: boolean = true;
-  let error: string | null = null;
+  let exchanges: LocalExchange[] = $state([]);
+  let filteredExchanges: LocalExchange[] = $state([]);
+  let loading: boolean = $state(true);
+  let error: string | null = $state(null);
 
   // Filters
-  let filterType: ExchangeType | "all" = "all";
-  let filterStatus: ExchangeStatus | "all" = "all";
-  let searchQuery: string = "";
+  let filterType: ExchangeType | "all" = $state("all");
+  let filterStatus: ExchangeStatus | "all" = $state("all");
+  let searchQuery: string = $state("");
 
   async function loadExchanges() {
     await withLoadingState({
       action: () => showOnlyAvailable
         ? localExchangesApi.listAvailable(buildingId)
         : localExchangesApi.listByBuilding(buildingId),
-      setLoading: (v) => loading = v,
-      setError: (v) => error = v,
+      setLoading: (v: boolean) => loading = v,
+      setError: (v: string | null) => error = v,
       onSuccess: (data) => { exchanges = data; applyFilters(); },
       errorMessage: $_('exchanges.load_error'),
     });
@@ -92,7 +99,7 @@
     });
   }
 
-  onMount(() => {
+  $effect(() => {
     loadExchanges();
   });
 </script>
@@ -114,7 +121,7 @@
             id="search"
             type="text"
             bind:value={searchQuery}
-            on:input={handleFilterChange}
+            oninput={handleFilterChange}
             placeholder={$_('exchanges.search_placeholder')}
             data-testid="exchange-search-input"
             class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
@@ -132,7 +139,7 @@
           <select
             id="filter-type"
             bind:value={filterType}
-            on:change={handleFilterChange}
+            onchange={handleFilterChange}
             data-testid="exchange-filter-type"
             class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
           >
@@ -156,7 +163,7 @@
           <select
             id="filter-status"
             bind:value={filterStatus}
-            on:change={handleFilterChange}
+            onchange={handleFilterChange}
             data-testid="exchange-filter-status"
             class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
           >
@@ -274,7 +281,7 @@
                 {#if canRequest(exchange)}
                   <button
                     type="button"
-                    on:click={() => handleRequest(exchange.id)}
+                    onclick={() => handleRequest(exchange.id)}
                     data-testid="exchange-request-btn"
                     class="w-full px-4 py-2 border border-transparent rounded-md text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >

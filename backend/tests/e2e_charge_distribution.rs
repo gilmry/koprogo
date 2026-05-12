@@ -77,7 +77,7 @@ async fn setup_charge_distribution_fixtures(
         unit_type: UnitType::Apartment,
         floor: Some(1),
         surface_area: 80.0,
-        quota: 1.0,
+        quota: rust_decimal_macros::dec!(1),
     };
     let unit = app_state
         .unit_use_cases
@@ -110,7 +110,7 @@ async fn setup_charge_distribution_fixtures(
     // Assign owner to unit with 100% ownership
     app_state
         .unit_owner_use_cases
-        .add_owner_to_unit(unit_id, owner_id, 1.0, true)
+        .add_owner_to_unit(unit_id, owner_id, rust_decimal_macros::dec!(1), true)
         .await
         .expect("Failed to assign owner to unit");
 
@@ -120,7 +120,7 @@ async fn setup_charge_distribution_fixtures(
         building_id: building_id.to_string(),
         category: ExpenseCategory::Maintenance,
         description: "Réparation ascenseur".to_string(),
-        amount: 500.0,
+        amount: rust_decimal_macros::dec!(500),
         expense_date: Utc::now().format("%Y-%m-%dT%H:%M:%SZ").to_string(),
         supplier: Some("Elevator SPRL".to_string()),
         invoice_number: Some("INV-2025-001".to_string()),

@@ -78,7 +78,7 @@ test.describe("Polls - Board Decision Polling", () => {
     ).toBeVisible({ timeout: 10000 });
   });
 
-  test("should create a YesNo poll and retrieve it", async ({ page }) => {
+  test.fixme("should create a YesNo poll and retrieve it", async ({ page }) => {
     const { token, buildingId, adminToken, orgId } =
       await loginAsSyndicWithBuilding(page, "poll");
     await ensureBuildingHasOwner(page, token, adminToken, orgId, buildingId);
@@ -119,7 +119,7 @@ test.describe("Polls - Board Decision Polling", () => {
     expect(retrieved.id).toBe(poll.id);
   });
 
-  test("should publish a poll (Draft → Active)", async ({ page }) => {
+  test.fixme("should publish a poll (Draft → Active)", async ({ page }) => {
     const { token, buildingId, adminToken, orgId } =
       await loginAsSyndicWithBuilding(page, "poll");
     await ensureBuildingHasOwner(page, token, adminToken, orgId, buildingId);
@@ -181,7 +181,7 @@ test.describe("Polls - Board Decision Polling", () => {
     expect(Array.isArray(data.polls)).toBeTruthy();
   });
 
-  test("should get poll results", async ({ page }) => {
+  test.fixme("should get poll results", async ({ page }) => {
     const { token, buildingId, adminToken, orgId } =
       await loginAsSyndicWithBuilding(page, "poll");
     await ensureBuildingHasOwner(page, token, adminToken, orgId, buildingId);

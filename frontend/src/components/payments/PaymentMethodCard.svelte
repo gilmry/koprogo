@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { createEventDispatcher } from "svelte";
+  // Svelte 5 runes mode
   import { _ } from '../../lib/i18n';
   import {
     paymentMethodsApi,
@@ -9,13 +9,15 @@
   import { withErrorHandling } from "../../lib/utils/error.utils";
   import ConfirmDialog from "../ui/ConfirmDialog.svelte";
 
-  export let paymentMethod: PaymentMethod;
-  export let canManage = true;
+  let { paymentMethod, canManage = true, onupdated, ondeleted }: {
+    paymentMethod: PaymentMethod;
+    canManage?: boolean;
+    onupdated?: () => void;
+    ondeleted?: () => void;
+  } = $props();
 
-  const dispatch = createEventDispatcher();
-
-  let showDeleteConfirm = false;
-  let actionLoading = false;
+  let showDeleteConfirm = $state(false);
+  let actionLoading = $state(false);
 
   const methodIcons: Record<PaymentMethodType, string> = {
     [PaymentMethodType.Card]: "💳",
@@ -39,11 +41,11 @@
   async function handleSetDefault() {
     const result = await withErrorHandling({
       action: () => paymentMethodsApi.setAsDefault(paymentMethod.id),
-      setLoading: (v) => actionLoading = v,
+      setLoading: (v: boolean) => actionLoading = v,
       successMessage: $_('payments.setDefault'),
       errorMessage: $_('payments.failedSetDefault'),
     });
-    if (result !== undefined) dispatch("updated");
+    if (result !== undefined) onupdated?.();
   }
 
   async function handleToggleActive() {
@@ -51,23 +53,23 @@
       action: () => paymentMethod.is_active
         ? paymentMethodsApi.deactivate(paymentMethod.id)
         : paymentMethodsApi.reactivate(paymentMethod.id),
-      setLoading: (v) => actionLoading = v,
+      setLoading: (v: boolean) => actionLoading = v,
       successMessage: paymentMethod.is_active ? $_('payments.deactivated') : $_('payments.reactivated'),
       errorMessage: $_('payments.failedUpdate'),
     });
-    if (result !== undefined) dispatch("updated");
+    if (result !== undefined) onupdated?.();
   }
 
   async function handleDelete() {
     const result = await withErrorHandling({
       action: () => paymentMethodsApi.delete(paymentMethod.id),
-      setLoading: (v) => actionLoading = v,
+      setLoading: (v: boolean) => actionLoading = v,
       successMessage: $_('payments.deleted'),
       errorMessage: $_('payments.failedDelete'),
     });
     if (result !== undefined) {
       showDeleteConfirm = false;
-      dispatch("deleted");
+      ondeleted?.();
     } else {
       showDeleteConfirm = false;
     }
@@ -128,7 +130,7 @@
         <div class="mt-3 flex flex-wrap gap-2">
           {#if !paymentMethod.is_default && paymentMethod.is_active}
             <button
-              on:click={handleSetDefault}
+              onclick={handleSetDefault}
               disabled={actionLoading}
               data-testid="set-default-btn"
               class="text-sm text-blue-600 hover:text-blue-700 font-medium disabled:opacity-50"
@@ -138,7 +140,7 @@
           {/if}
 
           <button
-            on:click={handleToggleActive}
+            onclick={handleToggleActive}
             disabled={actionLoading}
             data-testid="toggle-active-btn"
             class="text-sm text-gray-600 hover:text-gray-700 font-medium disabled:opacity-50"
@@ -148,7 +150,7 @@
 
           {#if !paymentMethod.is_default}
             <button
-              on:click={() => (showDeleteConfirm = true)}
+              onclick={() => (showDeleteConfirm = true)}
               disabled={actionLoading}
               data-testid="delete-method-btn"
               class="text-sm text-red-600 hover:text-red-700 font-medium disabled:opacity-50"
@@ -164,11 +166,11 @@
 
 <!-- Delete Confirmation -->
 <ConfirmDialog
-  open={showDeleteConfirm}
+  isOpen={showDeleteConfirm}
   title={$_('payments.deleteTitle')}
   message={$_('payments.deleteConfirm')}
   confirmText={$_('common.delete')}
-  confirmVariant="danger"
-  on:confirm={handleDelete}
-  on:cancel={() => (showDeleteConfirm = false)}
+  variant="danger"
+  onconfirm={handleDelete}
+  oncancel={() => (showDeleteConfirm = false)}
 />

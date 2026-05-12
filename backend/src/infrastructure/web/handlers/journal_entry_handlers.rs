@@ -28,8 +28,8 @@ pub struct CreateJournalEntryRequest {
 #[derive(Debug, Deserialize)]
 pub struct JournalEntryLineRequest {
     pub account_code: String,
-    pub debit: f64,
-    pub credit: f64,
+    pub debit: rust_decimal::Decimal,
+    pub credit: rust_decimal::Decimal,
     pub description: String,
 }
 
@@ -53,8 +53,8 @@ pub struct JournalEntryLineResponse {
     pub id: String,
     pub journal_entry_id: String,
     pub account_code: String,
-    pub debit: f64,
-    pub credit: f64,
+    pub debit: rust_decimal::Decimal,
+    pub credit: rust_decimal::Decimal,
     pub description: Option<String>,
     pub created_at: String,
 }
@@ -132,7 +132,7 @@ pub async fn create_journal_entry(
     };
 
     // Convert lines to tuple format
-    let lines: Vec<(String, f64, f64, String)> = req
+    let lines: Vec<(String, rust_decimal::Decimal, rust_decimal::Decimal, String)> = req
         .lines
         .iter()
         .map(|l| {

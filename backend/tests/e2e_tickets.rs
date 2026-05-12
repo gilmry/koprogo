@@ -69,7 +69,7 @@ async fn create_test_fixtures(
         unit_type: UnitType::Apartment,
         floor: Some(1),
         surface_area: 75.0,
-        quota: 0.5,
+        quota: rust_decimal_macros::dec!(0.5),
     };
 
     let unit = app_state

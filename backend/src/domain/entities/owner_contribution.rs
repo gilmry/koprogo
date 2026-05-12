@@ -6,6 +6,7 @@
 // Maps to PCMN classe 7 (Produits/Revenue)
 
 use chrono::{DateTime, Utc};
+use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -64,7 +65,7 @@ pub struct OwnerContribution {
 
     // Financial details
     pub description: String,
-    pub amount: f64,
+    pub amount: Decimal,
 
     // Accounting
     /// PCMN code (classe 7 - Produits)
@@ -102,13 +103,13 @@ impl OwnerContribution {
         owner_id: Uuid,
         unit_id: Option<Uuid>,
         description: String,
-        amount: f64,
+        amount: Decimal,
         contribution_type: ContributionType,
         contribution_date: DateTime<Utc>,
         account_code: Option<String>,
     ) -> Result<Self, String> {
         // Validate amount is positive (revenue = money coming IN)
-        if amount < 0.0 {
+        if amount < Decimal::ZERO {
             return Err(
                 "Contribution amount must be positive (revenue = money coming IN)".to_string(),
             );
@@ -177,7 +178,7 @@ mod tests {
             Uuid::new_v4(),
             Some(Uuid::new_v4()),
             "Appel de fonds Q1 2025".to_string(),
-            500.0,
+            rust_decimal_macros::dec!(500),
             ContributionType::Regular,
             Utc::now(),
             Some("7000".to_string()),
@@ -185,7 +186,7 @@ mod tests {
 
         assert!(contrib.is_ok());
         let contrib = contrib.unwrap();
-        assert_eq!(contrib.amount, 500.0);
+        assert_eq!(contrib.amount, rust_decimal_macros::dec!(500));
         assert_eq!(contrib.payment_status, ContributionPaymentStatus::Pending);
         assert!(!contrib.is_paid());
     }
@@ -197,7 +198,7 @@ mod tests {
             Uuid::new_v4(),
             None,
             "Test".to_string(),
-            -100.0, // Negative amount
+            rust_decimal_macros::dec!(-100), // Negative amount
             ContributionType::Regular,
             Utc::now(),
             None,
@@ -214,7 +215,7 @@ mod tests {
             Uuid::new_v4(),
             None,
             "   ".to_string(), // Empty description
-            100.0,
+            rust_decimal_macros::dec!(100),
             ContributionType::Regular,
             Utc::now(),
             None,
@@ -231,7 +232,7 @@ mod tests {
             Uuid::new_v4(),
             None,
             "Test payment".to_string(),
-            100.0,
+            rust_decimal_macros::dec!(100),
             ContributionType::Regular,
             Utc::now(),
             None,
@@ -264,7 +265,7 @@ mod tests {
             Uuid::new_v4(),
             None,
             "Overdue contribution".to_string(),
-            100.0,
+            rust_decimal_macros::dec!(100),
             ContributionType::Regular,
             past_date,
             None,

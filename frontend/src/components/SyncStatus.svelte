@@ -58,6 +58,7 @@
       on:click={handleSync}
       disabled={syncing}
       class="flex items-center gap-2 px-3 py-1.5 text-sm bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition disabled:opacity-50 disabled:cursor-not-allowed"
+      aria-label="Synchroniser les données"
       title="Synchroniser les données"
     >
       <svg

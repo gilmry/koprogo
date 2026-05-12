@@ -20,31 +20,40 @@ ignore = [
     # See: SECURITY.md for full assessment
     "RUSTSEC-2025-0111",
 
-    # RUSTSEC-2026-0049: rustls-webpki 0.101.7 - CRL Distribution Point matching
-    # Status: Accepted Risk (Upstream Blocker)
-    # Reason: rustls-webpki 0.101.7 is pulled by aws-smithy-http-client 1.1.12 (latest)
-    #         which unconditionally bundles hyper-rustls 0.24.2 / rustls 0.21.x as a
-    #         legacy transport layer regardless of feature flags. No newer 0.101.x fix
-    #         exists (fix requires >=0.103.10, incompatible semver). aws-smithy-http-client
-    #         1.1.12 is the latest release; cannot upgrade further.
-    # Impact: Low — AWS SDK TLS does not use CRL Distribution Points for certificate
-    #         revocation. AWS infrastructure relies on OCSP/stapling, not CRL-based
-    #         revocation, so the faulty matching logic is not exercised in practice.
-    # Mitigation: Monitor aws-smithy-http-client releases for a version that drops the
-    #             legacy rustls 0.21 dependency. Pin to fixed version once available.
-    # Tracked: See GitHub issue tracker for upstream fix.
-    "RUSTSEC-2026-0049",
+    # RUSTSEC-2025-0134: rustls-pemfile 2.2.0 - unmaintained
+    # Status: Accepted Risk (Test Only)
+    # Reason: Pulled by testcontainers/bollard for test infrastructure. No production code path.
+    # Mitigation: Monitor testcontainers for migration to a maintained alternative.
+    "RUSTSEC-2025-0134",
+
+    # rustls-webpki 0.101.7 family — all from the AWS SDK transitive chain
+    # (aws-config → aws-smithy-http-client 1.1.12 → hyper-rustls 0.24.2 → rustls 0.21
+    #  → rustls-webpki 0.101.7). aws-smithy-http-client 1.1.12 is the LATEST release;
+    # there is no upgrade path until upstream drops legacy rustls 0.21. No 0.101.x patch
+    # exists (fixes require >=0.103.x, semver-incompatible).
+    # Impact: Low — AWS SDK TLS does not exercise these code paths in practice
+    # (OCSP stapling instead of CRL; no wildcard/URI constraint cases in AWS PKI).
+    # Mitigation: Track aws-smithy-http-client releases; bump as soon as legacy
+    # rustls is dropped.
+    "RUSTSEC-2026-0049",  # CRL Distribution Point matching
+    "RUSTSEC-2026-0098",  # cert URI names constraint
+    "RUSTSEC-2026-0099",  # cert wildcard name constraint
+    "RUSTSEC-2026-0104",  # reachable panic in CRL parsing
 
     # RUSTSEC-2026-0002: lru 0.12.5 - IterMut violates Stacked Borrows (unsound)
     # Status: Accepted Risk (Transitive / No Direct Usage)
-    # Reason: lru 0.12.5 is a transitive dep of aws-sdk-s3 1.119.0 (latest). No newer
-    #         0.12.x version resolves this (cargo update confirms 0.12.5 is latest in range).
-    #         koprogo never calls lru directly; it is used internally by aws-sdk-s3 for
-    #         connection pooling where IterMut is not exercised.
-    # Impact: Theoretical soundness issue with Stacked Borrows model; no known practical
-    #         exploit path through aws-sdk-s3 usage patterns.
-    # Mitigation: Monitor aws-sdk-s3 for update to lru 0.13+ which resolves the issue.
+    # Reason: Transitive of aws-sdk-s3 (latest); no newer 0.12.x. koprogo never calls
+    #         lru directly; used internally by aws-sdk-s3 for connection pooling.
+    # Impact: Theoretical soundness; no known exploit through aws-sdk-s3 usage.
+    # Mitigation: Monitor aws-sdk-s3 for update to lru 0.13+.
     "RUSTSEC-2026-0002",
+
+    # astral-tokio-tar 0.6.0 — both advisories from testcontainers dev-dependency only
+    # Status: Accepted Risk (Test Only)
+    # Reason: testcontainers 0.27.x pulls 0.6.0; fix would require testcontainers > 0.27.2.
+    # Mitigation: Bump testcontainers when next minor is available.
+    "RUSTSEC-2026-0112",  # PAX header desynchronization
+    "RUSTSEC-2026-0113",  # `unpack_in` chmod via symlinks
 ]
 
 # Optionally set a threshold for advisory severity

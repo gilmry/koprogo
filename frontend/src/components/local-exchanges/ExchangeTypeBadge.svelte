@@ -1,14 +1,15 @@
 <script lang="ts">
+  // Svelte 5 runes mode
   import {
     ExchangeType,
     exchangeTypeLabels,
     exchangeTypeIcons,
   } from "../../lib/api/local-exchanges";
 
-  export let type: ExchangeType;
+  let { type }: { type: ExchangeType } = $props();
 
-  $: label = exchangeTypeLabels[type];
-  $: icon = exchangeTypeIcons[type];
+  let label = $derived(exchangeTypeLabels[type]);
+  let icon = $derived(exchangeTypeIcons[type]);
 
   const typeColors: Record<ExchangeType, { bg: string; text: string }> = {
     [ExchangeType.Service]: {
@@ -25,7 +26,7 @@
     },
   };
 
-  $: config = typeColors[type];
+  let config = $derived(typeColors[type]);
 </script>
 
 <span

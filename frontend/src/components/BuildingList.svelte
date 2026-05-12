@@ -184,6 +184,7 @@
                   <button
                     on:click={() => handleEdit(building)}
                     class="text-primary-600 hover:text-primary-900"
+                    aria-label={$_('common.edit')}
                     title={$_('common.edit')}
                     disabled={actionLoading}
                     data-testid="edit-building-button"
@@ -193,6 +194,7 @@
                   <button
                     on:click={() => handleDeleteClick(building)}
                     class="text-red-600 hover:text-red-900"
+                    aria-label={$_('common.delete')}
                     title={$_('common.delete')}
                     disabled={actionLoading}
                     data-testid="delete-building-button"
@@ -237,11 +239,11 @@
 
 <!-- Building Form Modal -->
 <BuildingForm
-  bind:isOpen={showFormModal}
+  isOpen={showFormModal}
   building={selectedBuilding}
   mode={formMode}
-  on:success={handleFormSuccess}
-  on:close={() => {
+  onsuccess={handleFormSuccess}
+  onclose={() => {
     showFormModal = false;
     selectedBuilding = null;
   }}
@@ -249,15 +251,15 @@
 
 <!-- Delete Confirmation Dialog -->
 <ConfirmDialog
-  bind:isOpen={showConfirmDialog}
+  isOpen={showConfirmDialog}
   title={$_('buildings.confirmDeleteTitle')}
   message={`${$_('buildings.confirmDeleteMessage', { values: { name: selectedBuilding?.name || '' } })}`}
   confirmText={$_('common.delete')}
   cancelText={$_('common.cancel')}
   variant="danger"
   loading={actionLoading}
-  on:confirm={handleDeleteConfirm}
-  on:cancel={() => {
+  onconfirm={handleDeleteConfirm}
+  oncancel={() => {
     showConfirmDialog = false;
     selectedBuilding = null;
   }}

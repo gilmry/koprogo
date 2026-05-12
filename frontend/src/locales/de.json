@@ -231,7 +231,27 @@
     "seedData": "Testdaten",
     "subscriptions": "Abonnements",
     "userOwnerLinks": "Benutzer-Eigentümer-Verknüpfungen",
-    "workReports": "Arbeitsberichte"
+    "workReports": "Arbeitsberichte",
+    "main": "Hauptmenü",
+    "community": "Gemeinschaft",
+    "management": "Verwaltung",
+    "governance": "Governance",
+    "accounting": "Buchhaltung",
+    "mySpace": "Mein Bereich",
+    "gdpr": "DSGVO",
+    "invoiceWorkflow": "Rechnungsworkflow",
+    "callForFunds": "Kapitalabrufe",
+    "contributions": "Beiträge",
+    "reminders": "Mahnungen",
+    "etatsDates": "Stichtagsstatus",
+    "works": "Arbeiten",
+    "journalEntries": "Buchungen",
+    "reportsPcmn": "PCMN-Berichte",
+    "myTickets": "Meine Tickets",
+    "paymentMethods": "Zahlungsmethoden",
+    "sel": "Tauschring",
+    "sharing_short": "Teilen",
+    "myDashboard": "Mein Dashboard"
   },
   "auth": {
     "login": "Anmelden",
@@ -477,6 +497,7 @@
   },
   "owners": {
     "title": "Miteigentümer",
+    "count": "{count, plural, one {# Miteigentümer} other {# Miteigentümer}}",
     "create": "Miteigentümer erstellen",
     "firstName": "Vorname",
     "lastName": "Nachname",
@@ -715,6 +736,24 @@
     "workflow_title": "Rechnungsworkflow"
   },
   "meetings": {
+    "quorum": {
+      "title": "Quorum / Anwesenheit",
+      "presentQuotas": "Anwesende oder vertretene Anteile",
+      "totalQuotas": "Gesamtanteile",
+      "validate": "Quorum validieren",
+      "validating": "Validierung...",
+      "validated": "Quorum validiert",
+      "validated_success": "Quorum erfolgreich validiert",
+      "validation_failed": "Quorum-Validierung fehlgeschlagen",
+      "second_convocation_scheduled": "Zweite Einberufung automatisch geplant (Art. 3.87 §5 CC)",
+      "invalidValues": "Ungültige Werte: anwesende und gesamte Anteile müssen strikt positiv sein",
+      "legal_notice": "Geben Sie die Summe der anwesenden oder durch Vollmacht vertretenen Anteile ein, um das Quorum gemäß Artikel 3.87 §5 des belgischen Zivilgesetzbuchs zu validieren.",
+      "readonly": "Quorum wartet auf Syndikus-Validierung.",
+      "preview": "Vorschau",
+      "quorum_ok": "Quorum erreicht (> 50%)",
+      "quorum_not_reached": "Quorum nicht erreicht (< 50%)",
+      "thousandths": "Tausendstel"
+    },
     "add_document": "Dokument hinzufügen",
     "add_documents_help": "Verwenden Sie die Schaltfläche oben, um Dokumente zu dieser Versammlung hinzuzufügen.",
     "agenda": "Tagesordnung",
@@ -767,7 +806,6 @@
     "participants_count": "{count, plural, one {# Teilnehmer} other {# Teilnehmer}}",
     "prompt_attendees": "Anzahl der anwesenden Teilnehmer:",
     "prompt_new_date": "Neues Datum (Format JJJJ-MM-TT):",
-    "quorum": "Quorum",
     "reschedule": "Verschieben",
     "rescheduled_success": "Versammlung erfolgreich verschoben",
     "scheduled": "Geplant",
@@ -1010,13 +1048,15 @@
       "critical": "Kritisch (1 Stunde)"
     },
     "categories": {
-      "general": "Allgemein",
       "plumbing": "Sanitär",
       "electrical": "Elektrik",
       "heating": "Heizung",
-      "cleaning": "Reinigung",
+      "commonAreas": "Gemeinschaftsbereiche",
+      "elevator": "Aufzug",
       "security": "Sicherheit",
-      "emergency": "Notfall"
+      "cleaning": "Reinigung",
+      "landscaping": "Grünanlagen",
+      "other": "Sonstiges"
     },
     "assign_ticket": "Ticket zuweisen",
     "assign_description": "Dieses Ticket einem Auftragnehmer zuweisen",
@@ -1108,6 +1148,12 @@
     "try_adjusting_filters": "Versuchen Sie, Ihre Filter anzupassen."
   },
   "polls": {
+    "status": {
+      "draft": "Entwurf",
+      "active": "Aktiv",
+      "closed": "Geschlossen",
+      "cancelled": "Abgebrochen"
+    },
     "title": "Umfragen",
     "create": "Umfrage erstellen",
     "question": "Frage",
@@ -1636,6 +1682,7 @@
     "title": "Benachrichtigungen",
     "markRead": "Als gelesen markieren",
     "markAllRead": "Alle als gelesen markieren",
+    "viewAll": "Alle Benachrichtigungen anzeigen",
     "unread": "Ungelesen",
     "noNotifications": "Keine Benachrichtigungen.",
     "preferences": "Benachrichtigungseinstellungen",
@@ -2581,20 +2628,18 @@
       "descriptionPlaceholder": "Detaillierte Beschreibung des Beschlusses...",
       "error": "Fehler beim Erstellen des Beschlusses",
       "legalText": "Die erforderlichen Mehrheiten sind durch die Artikel 577-7 ff. des belgischen Zivilgesetzbuches festgelegt.",
-      "majorityAbsolute": "Absolute Mehrheit (50%+1 aller Stimmen)",
-      "majorityQualified": "Qualifizierte Mehrheit (benutzerdefinierte Schwelle)",
+      "majorityAbsolute": "Absolute Mehrheit (>50% der Anwesenden, Enthaltungen ausgeschlossen)",
+      "majorityTwoThirds": "Zweidrittelmehrheit (≥2/3 der Anwesenden)",
+      "majorityFourFifths": "Vierfünftelmehrheit (≥4/5 der Anwesenden)",
+      "majorityUnanimity": "Einstimmigkeit (100% aller Quoten)",
       "majorityRequired": "Erforderliche Mehrheit",
-      "majoritySimple": "Einfache Mehrheit (50%+1 der abgegebenen Stimmen)",
       "submit": "Beschluss erstellen",
       "success": "Beschluss erfolgreich erstellt",
       "title": "Beschluss erstellen",
       "titlePlaceholder": "Titel des Beschlusses...",
       "titleRequired": "Der Titel des Beschlusses ist erforderlich",
-      "typeBudget": "Budget",
-      "typeElection": "Wahl",
-      "typeRules": "Hausordnung",
-      "typeStandard": "Standard",
-      "typeWorks": "Arbeiten"
+      "typeOrdinary": "Ordentlich",
+      "typeExtraordinary": "Außerordentlich"
     },
     "list": {
       "adopted": "{count, plural, one {angenommen} other {angenommen}}",
@@ -2645,7 +2690,9 @@
       "voter": "Abstimmender",
       "votes": "{count, plural, one {Stimme} other {Stimmen}}",
       "votingPower": "Stimmrecht",
-      "votingPowerLabel": "Anteile (Tausendstel)"
+      "votingPowerLabel": "Anteile (Tausendstel)",
+      "unitLabel": "Für Einheit abstimmen",
+      "needOwnerAndUnit": "Sie müssen Eigentümer einer Einheit sein, um abzustimmen."
     },
     "adopted": "Angenommen",
     "abstain": "Enthaltung",

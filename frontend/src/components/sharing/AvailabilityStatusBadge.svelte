@@ -1,7 +1,8 @@
 <script lang="ts">
+  // Svelte 5 runes mode
   import { AvailabilityStatus } from "../../lib/api/sharing";
 
-  export let status: AvailabilityStatus;
+  let { status }: { status: AvailabilityStatus } = $props();
 
   const statusConfig: Record<
     AvailabilityStatus,
@@ -34,7 +35,7 @@
     },
   };
 
-  $: config = statusConfig[status];
+  let config = $derived(statusConfig[status]);
 </script>
 
 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {config.class}">

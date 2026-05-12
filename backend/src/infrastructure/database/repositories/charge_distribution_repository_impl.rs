@@ -2,6 +2,7 @@ use crate::application::ports::ChargeDistributionRepository;
 use crate::domain::entities::ChargeDistribution;
 use async_trait::async_trait;
 use chrono::{DateTime, Utc};
+use rust_decimal::Decimal;
 use sqlx::PgPool;
 use uuid::Uuid;
 
@@ -9,6 +10,8 @@ use uuid::Uuid;
 ///
 /// Handles automatic charge distribution calculation based on ownership percentages.
 /// Part of Issue #73 - Invoice Workflow with charge distribution.
+///
+/// MONETARY: amount_due/quota_percentage use rust_decimal::Decimal (cf. ADR-0007/0008).
 pub struct PostgresChargeDistributionRepository {
     pool: PgPool,
 }
@@ -38,14 +41,8 @@ impl ChargeDistributionRepository for PostgresChargeDistributionRepository {
         .bind(distribution.expense_id)
         .bind(distribution.unit_id)
         .bind(distribution.owner_id)
-        .bind(
-            rust_decimal::Decimal::from_f64_retain(distribution.quota_percentage)
-                .unwrap_or(rust_decimal::Decimal::ZERO),
-        )
-        .bind(
-            rust_decimal::Decimal::from_f64_retain(distribution.amount_due)
-                .unwrap_or(rust_decimal::Decimal::ZERO),
-        )
+        .bind(distribution.quota_percentage)
+        .bind(distribution.amount_due)
         .bind(distribution.created_at)
         .fetch_one(&self.pool)
         .await
@@ -85,8 +82,8 @@ impl ChargeDistributionRepository for PostgresChargeDistributionRepository {
             .bind(dist.expense_id)
             .bind(dist.unit_id)
             .bind(dist.owner_id)
-            .bind(rust_decimal::Decimal::from_f64_retain(dist.quota_percentage).unwrap_or(rust_decimal::Decimal::ZERO))
-            .bind(rust_decimal::Decimal::from_f64_retain(dist.amount_due).unwrap_or(rust_decimal::Decimal::ZERO))
+            .bind(dist.quota_percentage)
+            .bind(dist.amount_due)
             .bind(dist.created_at)
             .fetch_one(&mut *tx)
             .await
@@ -184,8 +181,8 @@ impl ChargeDistributionRepository for PostgresChargeDistributionRepository {
         Ok(())
     }
 
-    async fn get_total_due_by_owner(&self, owner_id: Uuid) -> Result<f64, String> {
-        let result: (rust_decimal::Decimal,) = sqlx::query_as(
+    async fn get_total_due_by_owner(&self, owner_id: Uuid) -> Result<Decimal, String> {
+        let result: (Decimal,) = sqlx::query_as(
             r#"
             SELECT COALESCE(SUM(amount_due), 0)
             FROM charge_distributions
@@ -197,7 +194,7 @@ impl ChargeDistributionRepository for PostgresChargeDistributionRepository {
         .await
         .map_err(|e| format!("Failed to get total due by owner: {}", e))?;
 
-        Ok(result.0.to_string().parse().unwrap_or(0.0))
+        Ok(result.0)
     }
 }
 
@@ -208,8 +205,8 @@ struct ChargeDistributionRow {
     expense_id: Uuid,
     unit_id: Uuid,
     owner_id: Uuid,
-    quota_percentage: rust_decimal::Decimal,
-    amount_due: rust_decimal::Decimal,
+    quota_percentage: Decimal,
+    amount_due: Decimal,
     created_at: DateTime<Utc>,
 }
 
@@ -220,8 +217,8 @@ impl ChargeDistributionRow {
             expense_id: self.expense_id,
             unit_id: self.unit_id,
             owner_id: self.owner_id,
-            quota_percentage: self.quota_percentage.to_string().parse().unwrap_or(0.0),
-            amount_due: self.amount_due.to_string().parse().unwrap_or(0.0),
+            quota_percentage: self.quota_percentage,
+            amount_due: self.amount_due,
             created_at: self.created_at,
         }
     }
@@ -230,11 +227,10 @@ impl ChargeDistributionRow {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use rust_decimal_macros::dec;
 
     #[test]
     fn test_charge_distribution_row_to_entity() {
-        use rust_decimal::Decimal;
-
         let row = ChargeDistributionRow {
             id: Uuid::new_v4(),
             expense_id: Uuid::new_v4(),
@@ -246,14 +242,12 @@ mod tests {
         };
 
         let entity = row.into_entity();
-        assert_eq!(entity.quota_percentage, 0.25);
-        assert_eq!(entity.amount_due, 500.0);
+        assert_eq!(entity.quota_percentage, dec!(0.2500));
+        assert_eq!(entity.amount_due, dec!(500.00));
     }
 
     #[test]
     fn test_charge_distribution_row_to_entity_edge_cases() {
-        use rust_decimal::Decimal;
-
         let row = ChargeDistributionRow {
             id: Uuid::new_v4(),
             expense_id: Uuid::new_v4(),
@@ -265,7 +259,7 @@ mod tests {
         };
 
         let entity = row.into_entity();
-        assert_eq!(entity.quota_percentage, 1.0);
-        assert_eq!(entity.amount_due, 0.0);
+        assert_eq!(entity.quota_percentage, dec!(1.0000));
+        assert_eq!(entity.amount_due, dec!(0.00));
     }
 }

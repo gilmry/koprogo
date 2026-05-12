@@ -1,6 +1,6 @@
 <script lang="ts">
+  // Svelte 5 runes mode
   import { _ } from '../../lib/i18n';
-  import { onMount } from "svelte";
   import { inspectionsApi, inspectionTypeLabels, inspectionStatusLabels, inspectionFrequencyLabels } from "../../lib/api/inspections";
   import type { TechnicalInspection, CreateInspectionDto } from "../../lib/api/inspections";
   import { InspectionType, InspectionStatus } from "../../lib/api/inspections";
@@ -10,19 +10,20 @@
   import { formatCurrency } from "../../lib/utils/finance.utils";
   import { withErrorHandling } from "../../lib/utils/error.utils";
 
-  export let buildingId: string;
-  export let organizationId: string = "";
+  let { buildingId, organizationId = "" }: {
+    buildingId: string;
+    organizationId?: string;
+  } = $props();
 
-  let inspections: TechnicalInspection[] = [];
-  let loading = true;
-  let error = "";
-  let showCreateForm = false;
-  let activeTab: "all" | "overdue" | "upcoming" = "all";
-  let selectedInspection: TechnicalInspection | null = null;
-  let detailOpen = false;
+  let inspections: TechnicalInspection[] = $state([]);
+  let loading = $state(true);
+  let error = $state("");
+  let showCreateForm = $state(false);
+  let activeTab: "all" | "overdue" | "upcoming" = $state("all");
+  let selectedInspection: TechnicalInspection | null = $state(null);
+  let detailOpen = $state(false);
 
-  // Create form
-  let form: Partial<CreateInspectionDto> = resetForm();
+  let form: Partial<CreateInspectionDto> = $state(resetForm());
 
   function resetForm(): Partial<CreateInspectionDto> {
     return {
@@ -104,13 +105,12 @@
     detailOpen = true;
   }
 
-  function handleDetailUpdated(event: CustomEvent<TechnicalInspection>) {
-    const updated = event.detail;
+  function handleDetailUpdated(updated: TechnicalInspection) {
     inspections = inspections.map((i) => (i.id === updated.id ? updated : i));
   }
 
-  function handleDetailDeleted(event: CustomEvent<string>) {
-    inspections = inspections.filter((i) => i.id !== event.detail);
+  function handleDetailDeleted(id: string) {
+    inspections = inspections.filter((i) => i.id !== id);
     detailOpen = false;
   }
 
@@ -128,17 +128,18 @@
     loadInspections();
   }
 
-  $: overdueCount = inspections.filter((i) => i.is_overdue).length;
+  let overdueCount = $derived(inspections.filter((i) => i.is_overdue).length);
 
-  onMount(loadInspections);
+  $effect(() => {
+    loadInspections();
+  });
 </script>
 
 <div class="space-y-4" data-testid="inspection-list">
-  <!-- Header -->
   <div class="flex items-center justify-between">
     <h2 class="text-lg font-semibold text-gray-800">{$_("inspections.title")}</h2>
     <button
-      on:click={() => (showCreateForm = !showCreateForm)}
+      onclick={() => (showCreateForm = !showCreateForm)}
       class="px-3 py-1.5 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700"
       data-testid="create-inspection-button"
     >
@@ -146,7 +147,6 @@
     </button>
   </div>
 
-  <!-- Create Form -->
   {#if showCreateForm}
     <div class="bg-white shadow rounded-lg p-4 border border-blue-200">
       <h3 class="font-medium text-gray-800 mb-3">{$_("inspections.schedule")}</h3>
@@ -159,7 +159,7 @@
           <label for="insp-new-type" class="block text-sm text-gray-600 mb-1">{$_("inspections.type")}</label>
           <select id="insp-new-type" bind:value={form.inspection_type} class="w-full border rounded px-3 py-1.5 text-sm">
             {#each Object.entries(inspectionTypeLabels) as [val, label]}
-              <option value={val}>{label} ({inspectionFrequencyLabels[val] || ""})</option>
+              <option value={val}>{label} ({(inspectionFrequencyLabels as Record<string, string>)[val] || ""})</option>
             {/each}
           </select>
         </div>
@@ -185,29 +185,28 @@
         </div>
       </div>
       <div class="mt-3 flex gap-2">
-        <button on:click={createInspection} class="px-4 py-1.5 bg-green-600 text-white text-sm rounded hover:bg-green-700" data-testid="submit-inspection-button">{$_("common.create")}</button>
-        <button on:click={() => (showCreateForm = false)} class="px-4 py-1.5 bg-gray-200 text-gray-700 text-sm rounded hover:bg-gray-300">{$_("common.cancel")}</button>
+        <button onclick={createInspection} class="px-4 py-1.5 bg-green-600 text-white text-sm rounded hover:bg-green-700" data-testid="submit-inspection-button">{$_("common.create")}</button>
+        <button onclick={() => (showCreateForm = false)} class="px-4 py-1.5 bg-gray-200 text-gray-700 text-sm rounded hover:bg-gray-300">{$_("common.cancel")}</button>
       </div>
     </div>
   {/if}
 
   <!-- Tabs -->
   <div class="flex gap-2 border-b border-gray-200">
-    <button on:click={() => switchTab("all")}
+    <button onclick={() => switchTab("all")}
       class="px-3 py-2 text-sm border-b-2 {activeTab === 'all' ? 'border-blue-500 text-blue-600 font-medium' : 'border-transparent text-gray-500 hover:text-gray-700'}">
       {$_("inspections.all")} ({inspections.length})
     </button>
-    <button on:click={() => switchTab("overdue")}
+    <button onclick={() => switchTab("overdue")}
       class="px-3 py-2 text-sm border-b-2 {activeTab === 'overdue' ? 'border-red-500 text-red-600 font-medium' : 'border-transparent text-gray-500 hover:text-gray-700'}">
       {$_("inspections.overdue")} {#if overdueCount > 0}<span class="ml-1 bg-red-100 text-red-800 px-1.5 py-0.5 rounded-full text-xs">{overdueCount}</span>{/if}
     </button>
-    <button on:click={() => switchTab("upcoming")}
+    <button onclick={() => switchTab("upcoming")}
       class="px-3 py-2 text-sm border-b-2 {activeTab === 'upcoming' ? 'border-yellow-500 text-yellow-600 font-medium' : 'border-transparent text-gray-500 hover:text-gray-700'}">
       {$_("inspections.upcoming")}
     </button>
   </div>
 
-  <!-- Loading / Error / Empty -->
   {#if loading}
     <div class="text-center py-8 text-gray-500">
       <div class="animate-spin inline-block w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full" data-testid="inspection-list-spinner"></div>
@@ -216,7 +215,7 @@
   {:else if error}
     <div class="bg-red-50 border border-red-200 rounded-lg p-4 text-sm text-red-700">
       {error}
-      <button on:click={loadInspections} class="ml-2 underline">{$_("common.retry")}</button>
+      <button onclick={loadInspections} class="ml-2 underline">{$_("common.retry")}</button>
     </div>
   {:else if inspections.length === 0}
     <div class="text-center py-8 text-gray-400 text-sm">
@@ -225,14 +224,13 @@
        $_("inspections.none")}
     </div>
   {:else}
-    <!-- Inspections list -->
     <div class="space-y-3">
       {#each inspections as inspection}
         <div
           class="bg-white shadow-sm rounded-lg p-4 border border-gray-200 hover:border-blue-300 transition-colors cursor-pointer {inspection.is_overdue ? 'border-l-4 border-l-red-500' : ''}"
           data-testid="inspection-row"
-          on:click={() => openDetail(inspection)}
-          on:keydown={(e) => e.key === "Enter" && openDetail(inspection)}
+          onclick={() => openDetail(inspection)}
+          onkeydown={(e) => e.key === "Enter" && openDetail(inspection)}
           role="button"
           tabindex="0"
         >
@@ -279,8 +277,9 @@
               {/if}
             </div>
             <button
-              on:click|stopPropagation={() => deleteInspection(inspection.id)}
+              onclick={(e) => { e.stopPropagation(); deleteInspection(inspection.id); }}
               class="text-red-400 hover:text-red-600 p-1"
+              aria-label={$_("common.delete")}
               title={$_("common.delete")}
               data-testid="delete-inspection-button"
             >
@@ -297,8 +296,8 @@
   <InspectionDetail
     isOpen={detailOpen}
     inspection={selectedInspection}
-    on:close={() => (detailOpen = false)}
-    on:updated={handleDetailUpdated}
-    on:deleted={handleDetailDeleted}
+    onclose={() => (detailOpen = false)}
+    onupdated={(updated) => handleDetailUpdated(updated)}
+    ondeleted={(id) => handleDetailDeleted(id)}
   />
 {/if}

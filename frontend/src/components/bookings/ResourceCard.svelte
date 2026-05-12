@@ -1,9 +1,12 @@
 <script lang="ts">
+  // Svelte 5 runes mode
   import { type BookableResource } from "../../lib/api/bookings";
   import ResourceTypeBadge from "./ResourceTypeBadge.svelte";
 
-  export let resource: BookableResource;
-  export let onClick: (() => void) | undefined = undefined;
+  let { resource, onClick }: {
+    resource: BookableResource;
+    onClick?: () => void;
+  } = $props();
 
   function formatCost(credits?: number): string {
     if (!credits) return "FREE";
@@ -18,8 +21,8 @@
 
 <div
   class="bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-lg transition-shadow duration-200 cursor-pointer"
-  on:click={onClick}
-  on:keydown={(e) => e.key === "Enter" && onClick?.()}
+  onclick={onClick}
+  onkeydown={(e) => e.key === "Enter" && onClick?.()}
   role="button"
   tabindex="0"
 >

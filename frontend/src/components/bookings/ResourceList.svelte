@@ -1,23 +1,24 @@
 <script lang="ts">
-  import { onMount } from "svelte";
+  // Svelte 5 runes mode
   import { bookingsApi, type BookableResource, ResourceType } from "../../lib/api/bookings";
-  import { toast } from "../../stores/toast";
   import { _ } from "../../lib/i18n";
   import ResourceCard from "./ResourceCard.svelte";
   import { withErrorHandling } from "../../lib/utils/error.utils";
 
-  export let buildingId: string;
-  export let showFilters = true;
+  let { buildingId, showFilters = true }: {
+    buildingId: string;
+    showFilters?: boolean;
+  } = $props();
 
-  let resources: BookableResource[] = [];
-  let filteredResources: BookableResource[] = [];
-  let loading = true;
-  let searchQuery = "";
-  let selectedType: ResourceType | "all" = "all";
-  let selectedAvailability: "available-only" | "all" = "available-only";
+  let resources = $state<BookableResource[]>([]);
+  let filteredResources = $state<BookableResource[]>([]);
+  let loading = $state(true);
+  let searchQuery = $state("");
+  let selectedType = $state<ResourceType | "all">("all");
+  let selectedAvailability = $state<"available-only" | "all">("available-only");
 
-  onMount(async () => {
-    await loadResources();
+  $effect(() => {
+    loadResources();
   });
 
   async function loadResources() {
@@ -49,12 +50,12 @@
     });
   }
 
-  $: {
+  $effect(() => {
     searchQuery;
     selectedType;
     selectedAvailability;
     applyFilters();
-  }
+  });
 
   function handleResourceClick(resourceId: string) {
     window.location.href = `/booking-detail?id=${resourceId}`;
@@ -105,7 +106,7 @@
           <select
             id="availability"
             bind:value={selectedAvailability}
-            on:change={loadResources}
+            onchange={loadResources}
             class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
           >
             <option value="available-only">{$_('bookings.resources')}</option>

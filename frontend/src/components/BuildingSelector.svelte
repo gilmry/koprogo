@@ -1,16 +1,25 @@
 <script lang="ts">
-  import { onMount } from "svelte";
+  // Svelte 5 runes mode
   import { _ } from '../lib/i18n';
   import { api } from "../lib/api";
   import { withLoadingState } from "../lib/utils/error.utils";
   import { extractArray } from "../lib/utils/response.utils";
 
-  export let selectedBuildingId = "";
-  export let label = "Immeuble";
-  export let required = true;
-  export let disabled = false;
-  export let onSelect: ((buildingId: string) => void) | undefined = undefined;
-  export let onSelectBuilding: ((building: Building) => void) | undefined = undefined;
+  let {
+    selectedBuildingId = $bindable(""),
+    label = "Immeuble",
+    required = true,
+    disabled = false,
+    onSelect,
+    onSelectBuilding,
+  }: {
+    selectedBuildingId?: string;
+    label?: string;
+    required?: boolean;
+    disabled?: boolean;
+    onSelect?: (buildingId: string) => void;
+    onSelectBuilding?: (building: Building) => void;
+  } = $props();
 
   interface Building {
     id: string;
@@ -21,19 +30,19 @@
     organization_id?: string;
   }
 
-  let buildings: Building[] = [];
-  let loading = true;
-  let error = "";
+  let buildings = $state<Building[]>([]);
+  let loading = $state(true);
+  let error = $state("");
 
-  onMount(async () => {
-    await loadBuildings();
+  $effect(() => {
+    loadBuildings();
   });
 
   async function loadBuildings() {
     await withLoadingState({
       action: () => api.get("/buildings?per_page=100"),
-      setLoading: (v) => loading = v,
-      setError: (v) => error = v,
+      setLoading: (v: boolean) => loading = v,
+      setError: (v: string) => error = v,
       errorMessage: $_('buildings.loadError'),
       onSuccess: (response) => {
         buildings = extractArray<Building>(response, 'buildings');
@@ -63,7 +72,7 @@
   <div class="p-3 bg-red-50 border border-red-200 rounded-md" data-testid="building-selector-error">
     <p class="text-sm text-red-800">{error}</p>
     <button
-      on:click={loadBuildings}
+      onclick={loadBuildings}
       class="mt-2 text-sm text-red-700 underline hover:text-red-900"
       data-testid="building-selector-retry"
     >
@@ -78,7 +87,7 @@
   </div>
 {:else if buildings.length === 1}
   <div data-testid="building-selected">
-    <label class="block text-sm font-medium text-gray-700">{label}</label>
+    <span class="block text-sm font-medium text-gray-700">{label}</span>
     <div class="mt-1 px-3 py-2 bg-gray-50 border border-gray-200 rounded-md text-sm text-gray-700">
       {buildings[0].name} — {buildings[0].address}{#if buildings[0].city}, {buildings[0].postal_code} {buildings[0].city}{/if}
     </div>
@@ -92,7 +101,7 @@
       id="building-selector"
       bind:value={selectedBuildingId}
       data-testid="building-selector"
-      on:change={() => {
+      onchange={() => {
         if (selectedBuildingId) {
           if (onSelect) onSelect(selectedBuildingId);
           const selected = buildings.find(b => b.id === selectedBuildingId);

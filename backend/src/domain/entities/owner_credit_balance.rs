@@ -118,14 +118,14 @@ impl OwnerCreditBalance {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, utoipa::ToSchema)]
 pub enum CreditStatus {
     Positive, // Balance > 0 (net provider)
     Balanced, // Balance = 0
     Negative, // Balance < 0 (net receiver)
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, utoipa::ToSchema)]
 pub enum ParticipationLevel {
     New,      // 0 exchanges
     Beginner, // 1-5 exchanges

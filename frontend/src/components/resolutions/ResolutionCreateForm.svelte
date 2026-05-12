@@ -1,23 +1,28 @@
 <script lang="ts">
-  import { createEventDispatcher } from 'svelte';
+  // Svelte 5 runes mode — migrated from legacy (STORY-P7-604)
   import { _ } from '../../lib/i18n';
   import {
     resolutionsApi,
     type Resolution,
     MajorityType,
+    ResolutionType,
   } from '../../lib/api/resolutions';
   import { toast } from '../../stores/toast';
   import { withErrorHandling } from '../../lib/utils/error.utils';
 
-  export let meetingId: string;
+  let {
+    meetingId,
+    oncreated,
+  }: {
+    meetingId: string;
+    oncreated?: (resolution: Resolution | null) => void;
+  } = $props();
 
-  const dispatch = createEventDispatcher<{ created: Resolution }>();
-
-  let title = '';
-  let description = '';
-  let resolutionType = 'standard';
-  let majorityRequired: MajorityType = MajorityType.Simple;
-  let loading = false;
+  let title = $state('');
+  let description = $state('');
+  let resolutionType = $state<string>(ResolutionType.Ordinary);
+  let majorityRequired = $state<string>(MajorityType.Absolute);
+  let loading = $state(false);
 
   async function handleSubmit() {
     if (!title.trim()) {
@@ -31,23 +36,23 @@
         title: title.trim(),
         description: description.trim(),
         resolution_type: resolutionType,
-        majority_required: majorityRequired,
+        majority_required: majorityRequired as any,
       }),
-      setLoading: (v) => loading = v,
+      setLoading: (v: boolean) => loading = v,
       successMessage: $_("resolutions.create.success"),
       errorMessage: $_("resolutions.create.error"),
-      onSuccess: (resolution) => {
-        dispatch('created', resolution);
+      onSuccess: (resolution: Resolution) => {
+        oncreated?.(resolution);
         title = '';
         description = '';
-        resolutionType = 'standard';
-        majorityRequired = MajorityType.Simple;
+        resolutionType = ResolutionType.Ordinary;
+        majorityRequired = MajorityType.Absolute;
       },
     });
   }
 </script>
 
-<form on:submit|preventDefault={handleSubmit} class="bg-gray-50 border border-gray-200 rounded-lg p-4">
+<form onsubmit={(e) => { e.preventDefault(); handleSubmit(); }} class="bg-gray-50 border border-gray-200 rounded-lg p-4">
   <h4 class="text-sm font-semibold text-gray-900 mb-3">{$_("resolutions.create.title")}</h4>
 
   <div class="space-y-3">
@@ -91,12 +96,8 @@
           class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
           data-testid="resolution-type-select"
         >
-          <option value="standard">{$_("resolutions.create.typeStandard")}</option>
-          <option value="budget">{$_("resolutions.create.typeBudget")}</option>
-          <option value="works">{$_("resolutions.create.typeWorks")}</option>
-          <option value="rules">{$_("resolutions.create.typeRules")}</option>
-          <option value="election">{$_("resolutions.create.typeElection")}</option>
-          <option value="other">{$_("common.other")}</option>
+          <option value={ResolutionType.Ordinary}>{$_("resolutions.create.typeOrdinary")}</option>
+          <option value={ResolutionType.Extraordinary}>{$_("resolutions.create.typeExtraordinary")}</option>
         </select>
       </div>
 
@@ -110,9 +111,10 @@
           class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
           data-testid="resolution-majority-select"
         >
-          <option value={MajorityType.Simple}>{$_("resolutions.create.majoritySimple")}</option>
           <option value={MajorityType.Absolute}>{$_("resolutions.create.majorityAbsolute")}</option>
-          <option value={MajorityType.Qualified}>{$_("resolutions.create.majorityQualified")}</option>
+          <option value={MajorityType.TwoThirds}>{$_("resolutions.create.majorityTwoThirds")}</option>
+          <option value={MajorityType.FourFifths}>{$_("resolutions.create.majorityFourFifths")}</option>
+          <option value={MajorityType.Unanimity}>{$_("resolutions.create.majorityUnanimity")}</option>
         </select>
       </div>
     </div>
@@ -125,7 +127,7 @@
   <div class="flex justify-end gap-2 mt-4">
     <button
       type="button"
-      on:click={() => dispatch('created', null)}
+      onclick={() => oncreated?.(null)}
       class="px-4 py-2 text-sm text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
       data-testid="resolution-cancel-btn"
     >

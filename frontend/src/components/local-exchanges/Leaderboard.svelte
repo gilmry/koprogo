@@ -1,6 +1,6 @@
 <script lang="ts">
+  // Svelte 5 runes mode
   import { _ } from '../../lib/i18n';
-  import { onMount } from "svelte";
   import {
     localExchangesApi,
     type OwnerCreditBalance,
@@ -10,12 +10,11 @@
   } from "../../lib/api/local-exchanges";
   import { withLoadingState } from "../../lib/utils/error.utils";
 
-  export let buildingId: string;
-  export let limit: number = 10;
+  let { buildingId, limit = 10 }: { buildingId: string; limit?: number } = $props();
 
-  let leaderboard: OwnerCreditBalance[] = [];
-  let loading: boolean = true;
-  let error: string | null = null;
+  let leaderboard = $state<OwnerCreditBalance[]>([]);
+  let loading = $state(true);
+  let error = $state<string | null>(null);
 
   async function loadLeaderboard() {
     await withLoadingState({
@@ -27,7 +26,7 @@
     });
   }
 
-  onMount(() => {
+  $effect(() => {
     loadLeaderboard();
   });
 </script>

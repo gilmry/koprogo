@@ -1,13 +1,20 @@
 <script lang="ts">
-  import { createEventDispatcher } from "svelte";
+  // Svelte 5 runes mode
   import { _ } from '../../lib/i18n';
   import { notificationStore } from "../../stores/notifications";
   import type { Notification, NotificationType } from "../../lib/api/notifications";
 
-  export let notification: Notification;
-  export let clickable = true;
-
-  const dispatch = createEventDispatcher();
+  let {
+    notification,
+    clickable = true,
+    onclick,
+    ondeleted,
+  }: {
+    notification: Notification;
+    clickable?: boolean;
+    onclick?: () => void;
+    ondeleted?: (id: string) => void;
+  } = $props();
 
   const notificationIcons: Record<string, string> = {
     MeetingReminder: "📅",
@@ -77,20 +84,23 @@
       }
     }
 
-    dispatch("click");
+    onclick?.();
   }
 
   async function handleDelete(event: MouseEvent) {
     event.stopPropagation();
     await notificationStore.delete(notification.id);
+    ondeleted?.(notification.id);
   }
 </script>
 
+<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
 <div
   class="px-4 py-3 hover:bg-gray-50 transition-colors {clickable
     ? 'cursor-pointer'
     : ''} {!notification.is_read ? 'bg-blue-50' : ''}"
-  on:click={handleClick}
+  onclick={handleClick}
+  onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleClick(); }}
   role={clickable ? "button" : "article"}
   tabindex={clickable ? 0 : -1}
 >
@@ -118,7 +128,7 @@
 
         <!-- Delete button -->
         <button
-          on:click={handleDelete}
+          onclick={handleDelete}
           class="ml-2 text-gray-400 hover:text-red-600 transition-colors"
           aria-label={$_("notifications.delete_notification")}
         >
@@ -154,6 +164,7 @@
   .line-clamp-2 {
     display: -webkit-box;
     -webkit-line-clamp: 2;
+    line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
   }

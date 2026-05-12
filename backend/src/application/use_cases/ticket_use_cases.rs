@@ -232,6 +232,9 @@ impl TicketUseCases {
             .count_by_status(building_id, TicketStatus::Open)
             .await?;
 
+        // Domain has no separate Assigned state; surfaced as 0 for frontend display.
+        let assigned: i64 = 0;
+
         let in_progress = self
             .ticket_repository
             .count_by_status(building_id, TicketStatus::InProgress)
@@ -252,13 +255,23 @@ impl TicketUseCases {
             .count_by_status(building_id, TicketStatus::Cancelled)
             .await?;
 
+        let overdue_tickets = self
+            .ticket_repository
+            .find_by_building(building_id)
+            .await?
+            .iter()
+            .filter(|t| t.is_overdue(7))
+            .count() as i64;
+
         Ok(TicketStatistics {
             total,
             open,
+            assigned,
             in_progress,
             resolved,
             closed,
             cancelled,
+            overdue_tickets,
         })
     }
 
@@ -294,6 +307,8 @@ impl TicketUseCases {
             .count_by_organization_and_status(organization_id, TicketStatus::Open)
             .await?;
 
+        let assigned: i64 = 0;
+
         let in_progress = self
             .ticket_repository
             .count_by_organization_and_status(organization_id, TicketStatus::InProgress)
@@ -314,13 +329,23 @@ impl TicketUseCases {
             .count_by_organization_and_status(organization_id, TicketStatus::Cancelled)
             .await?;
 
+        let overdue_tickets = self
+            .ticket_repository
+            .find_by_organization(organization_id)
+            .await?
+            .iter()
+            .filter(|t| t.is_overdue(7))
+            .count() as i64;
+
         Ok(TicketStatistics {
             total,
             open,
+            assigned,
             in_progress,
             resolved,
             closed,
             cancelled,
+            overdue_tickets,
         })
     }
 
@@ -363,12 +388,21 @@ impl TicketUseCases {
 /// Ticket statistics for a building
 #[derive(Debug, serde::Serialize)]
 pub struct TicketStatistics {
+    #[serde(rename = "total_tickets")]
     pub total: i64,
+    #[serde(rename = "open_tickets")]
     pub open: i64,
+    #[serde(rename = "assigned_tickets")]
+    pub assigned: i64,
+    #[serde(rename = "in_progress_tickets")]
     pub in_progress: i64,
+    #[serde(rename = "resolved_tickets")]
     pub resolved: i64,
+    #[serde(rename = "closed_tickets")]
     pub closed: i64,
+    #[serde(rename = "cancelled_tickets")]
     pub cancelled: i64,
+    pub overdue_tickets: i64,
 }
 
 #[cfg(test)]

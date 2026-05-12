@@ -131,7 +131,7 @@
       </div>
     {:else}
       {#each notifications as notification (notification.id)}
-        <NotificationItem {notification} on:deleted={loadNotifications} />
+        <NotificationItem {notification} ondeleted={() => loadNotifications()} />
       {/each}
     {/if}
   </div>

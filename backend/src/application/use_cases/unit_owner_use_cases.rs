@@ -1,6 +1,8 @@
 use crate::application::ports::{OwnerRepository, UnitOwnerRepository, UnitRepository};
 use crate::domain::entities::UnitOwner;
 use chrono::Utc;
+use rust_decimal::Decimal;
+use rust_decimal_macros::dec;
 use std::sync::Arc;
 use uuid::Uuid;
 
@@ -32,7 +34,7 @@ impl UnitOwnerUseCases {
         &self,
         unit_id: Uuid,
         owner_id: Uuid,
-        ownership_percentage: f64,
+        ownership_percentage: Decimal,
         is_primary_contact: bool,
     ) -> Result<UnitOwner, String> {
         // Validate that unit exists
@@ -63,13 +65,13 @@ impl UnitOwnerUseCases {
             .await?;
 
         // CRITICAL: This validation MUST block if total > 100.0% (Belgian legal requirement)
-        if current_total + ownership_percentage > 1.0 {
+        if current_total + ownership_percentage > Decimal::ONE {
             return Err(format!(
                 "Total ownership would exceed 100% (Art. 577-2 §4 CC). \
-                 Current: {:.2}%, adding: {:.2}%, total would be: {:.2}%",
-                current_total * 100.0,
-                ownership_percentage * 100.0,
-                (current_total + ownership_percentage) * 100.0
+                 Current: {}%, adding: {}%, total would be: {}%",
+                current_total * dec!(100),
+                ownership_percentage * dec!(100),
+                (current_total + ownership_percentage) * dec!(100)
             ));
         }
 
@@ -108,7 +110,7 @@ impl UnitOwnerUseCases {
     pub async fn update_ownership_percentage(
         &self,
         unit_owner_id: Uuid,
-        new_percentage: f64,
+        new_percentage: Decimal,
     ) -> Result<UnitOwner, String> {
         // Find the unit-owner relationship
         let mut unit_owner = self
@@ -131,13 +133,13 @@ impl UnitOwnerUseCases {
         let new_total = current_total - old_percentage + new_percentage;
 
         // CRITICAL: This validation MUST block if total > 100.0% (Art. 577-2 §4 CC)
-        if new_total > 1.0 {
+        if new_total > Decimal::ONE {
             return Err(format!(
                 "Total ownership would exceed 100% (Art. 577-2 §4 CC). \
-                 Current without this owner: {:.2}%, new percentage: {:.2}%, total would be: {:.2}%",
-                (current_total - old_percentage) * 100.0,
-                new_percentage * 100.0,
-                new_total * 100.0
+                 Current without this owner: {}%, new percentage: {}%, total would be: {}%",
+                (current_total - old_percentage) * dec!(100),
+                new_percentage * dec!(100),
+                new_total * dec!(100)
             ));
         }
 
@@ -295,7 +297,7 @@ impl UnitOwnerUseCases {
     }
 
     /// Get the total ownership percentage for a unit
-    pub async fn get_total_ownership_percentage(&self, unit_id: Uuid) -> Result<f64, String> {
+    pub async fn get_total_ownership_percentage(&self, unit_id: Uuid) -> Result<Decimal, String> {
         self.unit_owner_repository
             .get_total_ownership_percentage(unit_id)
             .await

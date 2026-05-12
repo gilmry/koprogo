@@ -3,10 +3,12 @@
   import { _ } from '../lib/i18n';
   import { api } from '../lib/api';
   import type { Meeting, Building } from '../lib/types';
+  import { authStore } from '../stores/auth';
   import Button from './ui/Button.svelte';
   import MeetingDocuments from './MeetingDocuments.svelte';
   import ResolutionList from './resolutions/ResolutionList.svelte';
   import ConvocationPanel from './convocations/ConvocationPanel.svelte';
+  import QuorumPanel from './meetings/QuorumPanel.svelte';
   import { toast } from '../stores/toast';
   import { formatDateTime } from '../lib/utils/date.utils';
   import { withErrorHandling, withLoadingState } from '../lib/utils/error.utils';
@@ -16,6 +18,10 @@
   let loading = true;
   let error = '';
   let meetingId: string = '';
+
+  // STORY-P7-301: canManage gating — syndic/superadmin only can act.
+  $: userRole = $authStore.user?.activeRole?.role || $authStore.user?.role || '';
+  $: canManage = userRole === 'syndic' || userRole === 'superadmin';
 
   onMount(() => {
     const urlParams = new URLSearchParams(window.location.search);
@@ -127,7 +133,7 @@
       'ordinary': $_('meetings.type_ordinary'),
       'extraordinary': $_('meetings.type_extraordinary')
     };
-    return labels[type] || type;
+    return labels[type?.toLowerCase()] || type;
   }
 
   function isUpcoming(date: string): boolean {
@@ -165,7 +171,7 @@
           <h1 class="text-3xl font-bold text-gray-900">{meeting.title}</h1>
         </div>
         <div class="flex gap-2">
-          {#if meeting.status === 'Scheduled'}
+          {#if canManage && meeting.status === 'Scheduled'}
             <Button variant="primary" on:click={handleComplete} data-testid="meeting-complete-btn">
               {$_('meetings.mark_completed')}
             </Button>
@@ -175,7 +181,7 @@
             <Button variant="outline" on:click={handleReschedule} data-testid="meeting-reschedule-btn">
               {$_('meetings.reschedule')}
             </Button>
-          {:else if meeting.status === 'Cancelled'}
+          {:else if canManage && meeting.status === 'Cancelled'}
             <Button variant="primary" on:click={handleReschedule} data-testid="meeting-reschedule-btn">
               {$_('meetings.reschedule')}
             </Button>
@@ -259,6 +265,10 @@
 
     <div class="mb-8">
       <ConvocationPanel meetingId={meetingId} meetingStatus={meeting.status} buildingId={meeting.building_id} meetingDate={meeting.scheduled_date} meetingType={meeting.meeting_type} />
+    </div>
+
+    <div class="mb-8">
+      <QuorumPanel {meeting} {canManage} />
     </div>
 
     <div class="mb-8">

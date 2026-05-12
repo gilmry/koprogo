@@ -1,9 +1,15 @@
+//! Expense entity — monetary fields use `rust_decimal::Decimal` (cf. ADR-0007).
+//!
+//! Migration story EXP-003. PCMN belge exactness (Arrêté Royal du 12 juillet 2012).
+
 use chrono::{DateTime, Utc};
+use rust_decimal::Decimal;
+use rust_decimal_macros::dec;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 /// Catégorie de charges
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, utoipa::ToSchema)]
 pub enum ExpenseCategory {
     Maintenance,    // Entretien
     Repairs,        // Réparations
@@ -16,7 +22,7 @@ pub enum ExpenseCategory {
 }
 
 /// Statut de paiement
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, utoipa::ToSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum PaymentStatus {
     Pending,
@@ -26,7 +32,7 @@ pub enum PaymentStatus {
 }
 
 /// Statut d'approbation pour le workflow de validation
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, utoipa::ToSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum ApprovalStatus {
     Draft,           // Brouillon - en cours d'édition
@@ -39,7 +45,7 @@ pub enum ApprovalStatus {
 ///
 /// Conforme au PCMN belge (Plan Comptable Minimum Normalisé).
 /// Chaque charge peut être liée à un compte comptable via account_code.
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, utoipa::ToSchema)]
 pub struct Expense {
     pub id: Uuid,
     pub organization_id: Uuid,
@@ -47,12 +53,12 @@ pub struct Expense {
     pub category: ExpenseCategory,
     pub description: String,
 
-    // Montants et TVA
-    pub amount: f64,                  // Montant TTC (backward compatibility)
-    pub amount_excl_vat: Option<f64>, // Montant HT
-    pub vat_rate: Option<f64>,        // Taux TVA (ex: 21.0 pour 21%)
-    pub vat_amount: Option<f64>,      // Montant TVA
-    pub amount_incl_vat: Option<f64>, // Montant TTC (explicite)
+    // Montants et TVA — exact decimal arithmetic (no IEEE 754 drift)
+    pub amount: Decimal,                  // Montant TTC (backward compatibility)
+    pub amount_excl_vat: Option<Decimal>, // Montant HT
+    pub vat_rate: Option<Decimal>,        // Taux TVA (ex: 21.0 pour 21%)
+    pub vat_amount: Option<Decimal>,      // Montant TVA
+    pub amount_incl_vat: Option<Decimal>, // Montant TTC (explicite)
 
     // Dates multiples
     pub expense_date: DateTime<Utc>, // Date originale (backward compatibility)
@@ -88,7 +94,7 @@ impl Expense {
         building_id: Uuid,
         category: ExpenseCategory,
         description: String,
-        amount: f64,
+        amount: Decimal,
         expense_date: DateTime<Utc>,
         supplier: Option<String>,
         invoice_number: Option<String>,
@@ -97,7 +103,7 @@ impl Expense {
         if description.is_empty() {
             return Err("Description cannot be empty".to_string());
         }
-        if amount <= 0.0 {
+        if amount <= Decimal::ZERO {
             return Err("Amount must be greater than 0".to_string());
         }
 
@@ -143,15 +149,15 @@ impl Expense {
         })
     }
 
-    /// Crée une facture avec gestion complète de la TVA
+    /// Crée une facture avec gestion complète de la TVA (exact decimal arithmetic).
     #[allow(clippy::too_many_arguments)]
     pub fn new_with_vat(
         organization_id: Uuid,
         building_id: Uuid,
         category: ExpenseCategory,
         description: String,
-        amount_excl_vat: f64,
-        vat_rate: f64,
+        amount_excl_vat: Decimal,
+        vat_rate: Decimal,
         invoice_date: DateTime<Utc>,
         due_date: Option<DateTime<Utc>>,
         supplier: Option<String>,
@@ -161,15 +167,15 @@ impl Expense {
         if description.is_empty() {
             return Err("Description cannot be empty".to_string());
         }
-        if amount_excl_vat <= 0.0 {
+        if amount_excl_vat <= Decimal::ZERO {
             return Err("Amount (excl. VAT) must be greater than 0".to_string());
         }
-        if !(0.0..=100.0).contains(&vat_rate) {
+        if vat_rate < Decimal::ZERO || vat_rate > dec!(100) {
             return Err("VAT rate must be between 0 and 100".to_string());
         }
 
-        // Calcul automatique de la TVA
-        let vat_amount = (amount_excl_vat * vat_rate) / 100.0;
+        // Calcul automatique de la TVA — exact decimal arithmetic
+        let vat_amount = (amount_excl_vat * vat_rate) / dec!(100);
         let amount_incl_vat = amount_excl_vat + vat_amount;
 
         let now = Utc::now();
@@ -203,17 +209,17 @@ impl Expense {
         })
     }
 
-    /// Recalcule la TVA si le montant HT ou le taux change
+    /// Recalcule la TVA si le montant HT ou le taux change (exact decimal).
     pub fn recalculate_vat(&mut self) -> Result<(), String> {
         if let (Some(amount_excl_vat), Some(vat_rate)) = (self.amount_excl_vat, self.vat_rate) {
-            if amount_excl_vat <= 0.0 {
+            if amount_excl_vat <= Decimal::ZERO {
                 return Err("Amount (excl. VAT) must be greater than 0".to_string());
             }
-            if !(0.0..=100.0).contains(&vat_rate) {
+            if vat_rate < Decimal::ZERO || vat_rate > dec!(100) {
                 return Err("VAT rate must be between 0 and 100".to_string());
             }
 
-            let vat_amount = (amount_excl_vat * vat_rate) / 100.0;
+            let vat_amount = (amount_excl_vat * vat_rate) / dec!(100);
             let amount_incl_vat = amount_excl_vat + vat_amount;
 
             self.vat_amount = Some(vat_amount);
@@ -414,7 +420,7 @@ mod tests {
             building_id,
             ExpenseCategory::Maintenance,
             "Entretien ascenseur".to_string(),
-            500.0,
+            dec!(500),
             Utc::now(),
             Some("ACME Elevators".to_string()),
             Some("INV-2024-001".to_string()),
@@ -424,7 +430,7 @@ mod tests {
         assert!(expense.is_ok());
         let expense = expense.unwrap();
         assert_eq!(expense.organization_id, org_id);
-        assert_eq!(expense.amount, 500.0);
+        assert_eq!(expense.amount, dec!(500));
         assert_eq!(expense.payment_status, PaymentStatus::Pending);
         assert_eq!(expense.account_code, Some("611002".to_string()));
     }
@@ -438,7 +444,7 @@ mod tests {
             building_id,
             ExpenseCategory::Other,
             "Miscellaneous expense".to_string(),
-            100.0,
+            dec!(100),
             Utc::now(),
             None,
             None,
@@ -459,7 +465,7 @@ mod tests {
             building_id,
             ExpenseCategory::Maintenance,
             "Test".to_string(),
-            100.0,
+            dec!(100),
             Utc::now(),
             None,
             None,
@@ -482,7 +488,7 @@ mod tests {
             building_id,
             ExpenseCategory::Maintenance,
             "Test".to_string(),
-            100.0,
+            dec!(100),
             Utc::now(),
             None,
             None,
@@ -504,7 +510,7 @@ mod tests {
             building_id,
             ExpenseCategory::Maintenance,
             "Test".to_string(),
-            -100.0,
+            dec!(-100),
             Utc::now(),
             None,
             None,
@@ -524,7 +530,7 @@ mod tests {
             building_id,
             ExpenseCategory::Maintenance,
             "Test".to_string(),
-            100.0,
+            dec!(100),
             Utc::now(),
             None,
             None,
@@ -552,7 +558,7 @@ mod tests {
             building_id,
             ExpenseCategory::Maintenance,
             "Test".to_string(),
-            100.0,
+            dec!(100),
             Utc::now(),
             None,
             None,
@@ -578,7 +584,7 @@ mod tests {
             building_id,
             ExpenseCategory::Maintenance,
             "Test".to_string(),
-            100.0,
+            dec!(100),
             Utc::now(),
             None,
             None,
@@ -600,7 +606,7 @@ mod tests {
             building_id,
             ExpenseCategory::Maintenance,
             "Test".to_string(),
-            100.0,
+            dec!(100),
             Utc::now(),
             None,
             None,
@@ -628,8 +634,8 @@ mod tests {
             building_id,
             ExpenseCategory::Maintenance,
             "Réparation toiture".to_string(),
-            1000.0, // HT
-            21.0,   // TVA 21%
+            dec!(1000), // HT
+            dec!(21),   // TVA 21%
             invoice_date,
             Some(due_date),
             Some("BatiPro SPRL".to_string()),
@@ -639,11 +645,11 @@ mod tests {
 
         assert!(invoice.is_ok());
         let invoice = invoice.unwrap();
-        assert_eq!(invoice.amount_excl_vat, Some(1000.0));
-        assert_eq!(invoice.vat_rate, Some(21.0));
-        assert_eq!(invoice.vat_amount, Some(210.0));
-        assert_eq!(invoice.amount_incl_vat, Some(1210.0));
-        assert_eq!(invoice.amount, 1210.0); // Backward compatibility
+        assert_eq!(invoice.amount_excl_vat, Some(dec!(1000)));
+        assert_eq!(invoice.vat_rate, Some(dec!(21)));
+        assert_eq!(invoice.vat_amount, Some(dec!(210)));
+        assert_eq!(invoice.amount_incl_vat, Some(dec!(1210)));
+        assert_eq!(invoice.amount, dec!(1210)); // Backward compatibility
         assert_eq!(invoice.approval_status, ApprovalStatus::Draft);
     }
 
@@ -657,8 +663,8 @@ mod tests {
             building_id,
             ExpenseCategory::Works,
             "Rénovation énergétique".to_string(),
-            5000.0, // HT
-            6.0,    // TVA réduite 6%
+            dec!(5000), // HT
+            dec!(6),    // TVA réduite 6%
             Utc::now(),
             None,
             None,
@@ -667,8 +673,8 @@ mod tests {
         )
         .unwrap();
 
-        assert_eq!(invoice.vat_amount, Some(300.0));
-        assert_eq!(invoice.amount_incl_vat, Some(5300.0));
+        assert_eq!(invoice.vat_amount, Some(dec!(300)));
+        assert_eq!(invoice.amount_incl_vat, Some(dec!(5300)));
     }
 
     #[test]
@@ -681,8 +687,8 @@ mod tests {
             building_id,
             ExpenseCategory::Maintenance,
             "Test".to_string(),
-            100.0,
-            -5.0, // Taux négatif invalide
+            dec!(100),
+            dec!(-5), // Taux négatif invalide
             Utc::now(),
             None,
             None,
@@ -704,8 +710,8 @@ mod tests {
             building_id,
             ExpenseCategory::Maintenance,
             "Test".to_string(),
-            100.0,
-            150.0, // Taux > 100% invalide
+            dec!(100),
+            dec!(150), // Taux > 100% invalide
             Utc::now(),
             None,
             None,
@@ -726,8 +732,8 @@ mod tests {
             building_id,
             ExpenseCategory::Maintenance,
             "Test".to_string(),
-            1000.0,
-            21.0,
+            dec!(1000),
+            dec!(21),
             Utc::now(),
             None,
             None,
@@ -737,12 +743,12 @@ mod tests {
         .unwrap();
 
         // Modifier le montant HT
-        invoice.amount_excl_vat = Some(1500.0);
+        invoice.amount_excl_vat = Some(dec!(1500));
         let result = invoice.recalculate_vat();
 
         assert!(result.is_ok());
-        assert_eq!(invoice.vat_amount, Some(315.0)); // 1500 * 21% = 315
-        assert_eq!(invoice.amount_incl_vat, Some(1815.0));
+        assert_eq!(invoice.vat_amount, Some(dec!(315))); // 1500 * 21% = 315
+        assert_eq!(invoice.amount_incl_vat, Some(dec!(1815)));
     }
 
     #[test]
@@ -756,7 +762,7 @@ mod tests {
             building_id,
             ExpenseCategory::Maintenance,
             "Test".to_string(),
-            100.0,
+            dec!(100),
             Utc::now(),
             None,
             None,
@@ -780,8 +786,8 @@ mod tests {
             building_id,
             ExpenseCategory::Maintenance,
             "Test".to_string(),
-            1000.0,
-            21.0,
+            dec!(1000),
+            dec!(21),
             Utc::now(),
             None,
             None,
@@ -809,8 +815,8 @@ mod tests {
             building_id,
             ExpenseCategory::Maintenance,
             "Test".to_string(),
-            1000.0,
-            21.0,
+            dec!(1000),
+            dec!(21),
             Utc::now(),
             None,
             None,
@@ -837,8 +843,8 @@ mod tests {
             building_id,
             ExpenseCategory::Maintenance,
             "Test".to_string(),
-            1000.0,
-            21.0,
+            dec!(1000),
+            dec!(21),
             Utc::now(),
             None,
             None,
@@ -871,8 +877,8 @@ mod tests {
             building_id,
             ExpenseCategory::Maintenance,
             "Test".to_string(),
-            1000.0,
-            21.0,
+            dec!(1000),
+            dec!(21),
             Utc::now(),
             None,
             None,
@@ -902,8 +908,8 @@ mod tests {
             building_id,
             ExpenseCategory::Maintenance,
             "Test".to_string(),
-            1000.0,
-            21.0,
+            dec!(1000),
+            dec!(21),
             Utc::now(),
             None,
             None,
@@ -930,8 +936,8 @@ mod tests {
             building_id,
             ExpenseCategory::Maintenance,
             "Test".to_string(),
-            1000.0,
-            21.0,
+            dec!(1000),
+            dec!(21),
             Utc::now(),
             None,
             None,
@@ -966,8 +972,8 @@ mod tests {
             building_id,
             ExpenseCategory::Maintenance,
             "Test".to_string(),
-            1000.0,
-            21.0,
+            dec!(1000),
+            dec!(21),
             Utc::now(),
             None,
             None,
@@ -993,8 +999,8 @@ mod tests {
             building_id,
             ExpenseCategory::Maintenance,
             "Test".to_string(),
-            1000.0,
-            21.0,
+            dec!(1000),
+            dec!(21),
             Utc::now(),
             None,
             None,
@@ -1017,8 +1023,8 @@ mod tests {
             building_id,
             ExpenseCategory::Maintenance,
             "Test".to_string(),
-            1000.0,
-            21.0,
+            dec!(1000),
+            dec!(21),
             Utc::now(),
             None,
             None,
@@ -1044,8 +1050,8 @@ mod tests {
             building_id,
             ExpenseCategory::Maintenance,
             "Test".to_string(),
-            1000.0,
-            21.0,
+            dec!(1000),
+            dec!(21),
             Utc::now(),
             None,
             None,
@@ -1071,7 +1077,7 @@ mod tests {
             building_id,
             ExpenseCategory::Maintenance,
             "Test".to_string(),
-            100.0,
+            dec!(100),
             Utc::now(),
             None,
             None,
@@ -1101,8 +1107,8 @@ mod tests {
             building_id,
             ExpenseCategory::Maintenance,
             "Entretien annuel".to_string(),
-            2000.0,
-            21.0,
+            dec!(2000),
+            dec!(21),
             Utc::now(),
             Some(Utc::now() + chrono::Duration::days(30)),
             Some("MaintenancePro".to_string()),
@@ -1143,7 +1149,7 @@ mod tests {
             building_id,
             ExpenseCategory::Works,
             "Réparation toiture".to_string(),
-            5000.0,
+            dec!(5000),
             Utc::now(),
             Some("Construction SPRL".to_string()),
             Some("DV-2025-001".to_string()),
@@ -1171,7 +1177,7 @@ mod tests {
             building_id,
             ExpenseCategory::Works,
             "Réparation toiture".to_string(),
-            5000.0,
+            dec!(5000),
             Utc::now(),
             Some("Construction SPRL".to_string()),
             Some("DV-2025-001".to_string()),
@@ -1197,7 +1203,7 @@ mod tests {
             building_id,
             ExpenseCategory::Maintenance,
             "Maintenance".to_string(),
-            1000.0,
+            dec!(1000),
             Utc::now(),
             None,
             None,
@@ -1224,7 +1230,7 @@ mod tests {
             building_id,
             ExpenseCategory::Works,
             "Réparation toiture".to_string(),
-            5000.0,
+            dec!(5000),
             Utc::now(),
             Some("Construction SPRL".to_string()),
             Some("DV-2025-001".to_string()),

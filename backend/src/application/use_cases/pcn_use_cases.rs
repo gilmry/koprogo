@@ -45,7 +45,7 @@ impl PcnUseCases {
         let report_lines = PcnMapper::generate_report(&expenses);
 
         // Calculate totals
-        let total_amount: f64 = report_lines.iter().map(|l| l.total_amount).sum();
+        let total_amount: rust_decimal::Decimal = report_lines.iter().map(|l| l.total_amount).sum();
         let total_entries: usize = report_lines.iter().map(|l| l.entry_count).sum();
 
         // Convert to DTOs
@@ -178,7 +178,7 @@ mod tests {
         organization_id: Uuid,
         building_id: Uuid,
         category: ExpenseCategory,
-        amount: f64,
+        amount: rust_decimal::Decimal,
     ) -> Expense {
         Expense::new(
             organization_id,
@@ -199,9 +199,24 @@ mod tests {
         let org_id = Uuid::new_v4();
         let building_id = Uuid::new_v4();
         let expenses = vec![
-            create_test_expense(org_id, building_id, ExpenseCategory::Maintenance, 100.0),
-            create_test_expense(org_id, building_id, ExpenseCategory::Maintenance, 150.0),
-            create_test_expense(org_id, building_id, ExpenseCategory::Utilities, 50.0),
+            create_test_expense(
+                org_id,
+                building_id,
+                ExpenseCategory::Maintenance,
+                rust_decimal_macros::dec!(100),
+            ),
+            create_test_expense(
+                org_id,
+                building_id,
+                ExpenseCategory::Maintenance,
+                rust_decimal_macros::dec!(150),
+            ),
+            create_test_expense(
+                org_id,
+                building_id,
+                ExpenseCategory::Utilities,
+                rust_decimal_macros::dec!(50),
+            ),
         ];
 
         let repo = Arc::new(MockExpenseRepository { expenses });
@@ -219,7 +234,7 @@ mod tests {
         let response = result.unwrap();
         assert_eq!(response.building_id, building_id);
         assert_eq!(response.lines.len(), 2); // Maintenance + Utilities
-        assert_eq!(response.total_amount, 300.0);
+        assert_eq!(response.total_amount, rust_decimal_macros::dec!(300));
         assert_eq!(response.total_entries, 3);
 
         // Verify Maintenance account (611)
@@ -228,7 +243,7 @@ mod tests {
             .iter()
             .find(|l| l.account_code == "611")
             .unwrap();
-        assert_eq!(maintenance.total_amount, 250.0);
+        assert_eq!(maintenance.total_amount, rust_decimal_macros::dec!(250));
         assert_eq!(maintenance.entry_count, 2);
     }
 
@@ -249,7 +264,7 @@ mod tests {
 
         let response = result.unwrap();
         assert_eq!(response.lines.len(), 0);
-        assert_eq!(response.total_amount, 0.0);
+        assert_eq!(response.total_amount, rust_decimal::Decimal::ZERO);
         assert_eq!(response.total_entries, 0);
     }
 }

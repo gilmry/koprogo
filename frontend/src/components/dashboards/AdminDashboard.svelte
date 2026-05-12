@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  // Svelte 5 runes mode
   import { _ } from '../../lib/i18n';
   import { authStore } from '../../stores/auth';
   import { apiEndpoint } from '../../lib/config';
@@ -17,7 +17,7 @@
     totalMeetings: number;
   }
 
-  let stats: Stats = {
+  let stats = $state<Stats>({
     totalOrganizations: 0,
     totalUsers: 0,
     totalBuildings: 0,
@@ -26,18 +26,18 @@
     totalUnits: 0,
     totalExpenses: 0,
     totalMeetings: 0,
-  };
-  let loading = true;
-  let statsError = '';
-  let seedLoading = false;
-  let clearLoading = false;
-  let seedMessage = '';
-  let seedError = '';
+  });
+  let loading = $state(true);
+  let statsError = $state('');
+  let seedLoading = $state(false);
+  let clearLoading = $state(false);
+  let seedMessage = $state('');
+  let seedError = $state('');
 
-  $: user = $authStore.user;
+  let user = $derived($authStore.user);
 
-  onMount(async () => {
-    await loadStats();
+  $effect(() => {
+    loadStats();
   });
 
   async function loadStats() {
@@ -341,7 +341,7 @@
             </li>
           </ul>
           <button
-            on:click={handleSeedDemoData}
+            onclick={handleSeedDemoData}
             disabled={seedLoading || clearLoading}
             class="w-full bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 transition font-semibold disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
           >
@@ -373,7 +373,7 @@
             </li>
           </ul>
           <button
-            on:click={handleClearDemoData}
+            onclick={handleClearDemoData}
             disabled={seedLoading || clearLoading}
             class="w-full bg-red-600 text-white py-3 rounded-lg hover:bg-red-700 transition font-semibold disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
           >

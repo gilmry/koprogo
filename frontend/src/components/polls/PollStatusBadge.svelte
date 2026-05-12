@@ -1,40 +1,18 @@
 <script lang="ts">
+  // Svelte 5 runes mode — migrated from legacy (STORY-P7-604)
   import { _ } from '../../lib/i18n';
   import { PollStatus } from "../../lib/api/polls";
 
-  export let status: PollStatus;
+  let { status }: { status: PollStatus } = $props();
 
-  const statusConfig: Record<
-    PollStatus,
-    { bg: string; text: string; labelKey: string; icon: string }
-  > = {
-    [PollStatus.Draft]: {
-      bg: "bg-gray-100",
-      text: "text-gray-800",
-      labelKey: "polls.status.draft",
-      icon: "📝",
-    },
-    [PollStatus.Active]: {
-      bg: "bg-green-100",
-      text: "text-green-800",
-      labelKey: "polls.status.active",
-      icon: "🗳️",
-    },
-    [PollStatus.Closed]: {
-      bg: "bg-blue-100",
-      text: "text-blue-800",
-      labelKey: "polls.status.closed",
-      icon: "✅",
-    },
-    [PollStatus.Cancelled]: {
-      bg: "bg-red-100",
-      text: "text-red-800",
-      labelKey: "polls.status.cancelled",
-      icon: "❌",
-    },
+  const statusConfig: Record<PollStatus, { bg: string; text: string; labelKey: string; icon: string }> = {
+    [PollStatus.Draft]: { bg: "bg-gray-100", text: "text-gray-800", labelKey: "polls.status.draft", icon: "📝" },
+    [PollStatus.Active]: { bg: "bg-green-100", text: "text-green-800", labelKey: "polls.status.active", icon: "🗳️" },
+    [PollStatus.Closed]: { bg: "bg-blue-100", text: "text-blue-800", labelKey: "polls.status.closed", icon: "✅" },
+    [PollStatus.Cancelled]: { bg: "bg-red-100", text: "text-red-800", labelKey: "polls.status.cancelled", icon: "❌" },
   };
 
-  $: config = statusConfig[status] || statusConfig[PollStatus.Draft];
+  let config = $derived(statusConfig[status] || statusConfig[PollStatus.Draft]);
 </script>
 
 <span

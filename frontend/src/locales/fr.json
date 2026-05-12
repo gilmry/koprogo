@@ -231,7 +231,27 @@
     "seedData": "Données de test",
     "subscriptions": "Abonnements",
     "userOwnerLinks": "Liens utilisateur-propriétaire",
-    "workReports": "Rapports de travaux"
+    "workReports": "Rapports de travaux",
+    "main": "Principal",
+    "community": "Communauté",
+    "management": "Gestion",
+    "governance": "Gouvernance",
+    "accounting": "Comptabilité",
+    "mySpace": "Mon espace",
+    "gdpr": "RGPD",
+    "invoiceWorkflow": "Workflow factures",
+    "callForFunds": "Appels de fonds",
+    "contributions": "Contributions",
+    "reminders": "Relances",
+    "etatsDates": "États datés",
+    "works": "Travaux",
+    "journalEntries": "Écritures comptables",
+    "reportsPcmn": "Rapports PCMN",
+    "myTickets": "Mes tickets",
+    "paymentMethods": "Moyens paiement",
+    "sel": "SEL",
+    "sharing_short": "Partage",
+    "myDashboard": "Mon tableau de bord"
   },
   "auth": {
     "login": "Se connecter",
@@ -477,6 +497,7 @@
   },
   "owners": {
     "title": "Copropriétaires",
+    "count": "{count, plural, one {# copropriétaire} other {# copropriétaires}}",
     "create": "Créer un copropriétaire",
     "firstName": "Prénom",
     "lastName": "Nom",
@@ -715,6 +736,24 @@
     "workflow_title": "Workflow des factures"
   },
   "meetings": {
+    "quorum": {
+      "title": "Quorum / Présences",
+      "presentQuotas": "Tantièmes présents ou représentés",
+      "totalQuotas": "Tantièmes totaux",
+      "validate": "Valider le quorum",
+      "validating": "Validation...",
+      "validated": "Quorum validé",
+      "validated_success": "Quorum validé avec succès",
+      "validation_failed": "Échec de la validation du quorum",
+      "second_convocation_scheduled": "Seconde convocation auto-planifiée (Art. 3.87 §5 CC)",
+      "invalidValues": "Valeurs invalides : tantièmes présents et totaux doivent être strictement positifs",
+      "legal_notice": "Saisissez le total des tantièmes présents ou représentés par procuration pour valider le quorum conformément à l'Article 3.87 §5 du Code civil belge.",
+      "readonly": "Quorum en attente de validation par le syndic.",
+      "preview": "Aperçu",
+      "quorum_ok": "Quorum atteint (> 50%)",
+      "quorum_not_reached": "Quorum non atteint (< 50%)",
+      "thousandths": "millièmes"
+    },
     "add_document": "Ajouter un document",
     "add_documents_help": "Utilisez le bouton ci-dessus pour ajouter des documents à cette assemblée.",
     "agenda": "Ordre du jour",
@@ -767,7 +806,6 @@
     "participants_count": "{count, plural, one {# participant} other {# participants}}",
     "prompt_attendees": "Nombre de participants présents :",
     "prompt_new_date": "Nouvelle date (format AAAA-MM-JJ) :",
-    "quorum": "Quorum",
     "reschedule": "Reporter",
     "rescheduled_success": "Assemblée reportée avec succès",
     "scheduled": "Planifiée",
@@ -1010,20 +1048,32 @@
       "critical": "Critique (1 heure)"
     },
     "categories": {
-      "general": "Général",
       "plumbing": "Plomberie",
       "electrical": "Électricité",
       "heating": "Chauffage",
-      "cleaning": "Nettoyage",
+      "commonAreas": "Parties communes",
+      "elevator": "Ascenseur",
       "security": "Sécurité",
-      "emergency": "Urgence"
+      "cleaning": "Nettoyage",
+      "landscaping": "Espaces verts",
+      "other": "Autre"
     },
     "assign_ticket": "Assigner le ticket",
-    "assign_description": "Assigner ce ticket à un prestataire",
-    "assign_tip": "Entrez l'identifiant du prestataire",
-    "contractor_id": "ID du prestataire",
-    "contractor_id_placeholder": "Ex: 550e8400-e29b...",
-    "enter_contractor_id": "Entrez l'ID du prestataire"
+    "assign_description": "Sélectionnez la personne à qui assigner ce ticket de maintenance.",
+    "assign": {
+      "selectAssignee": "Personne à assigner",
+      "choosePerson": "Choisir un prestataire...",
+      "loadFailed": "Impossible de charger la liste des prestataires.",
+      "noAssignableUsers": "Aucun prestataire disponible dans cette organisation."
+    }
+  },
+  "roles": {
+    "syndic": "Syndic",
+    "board_member": "Membre du conseil",
+    "contractor": "Prestataire",
+    "owner": "Copropriétaire",
+    "accountant": "Comptable",
+    "superadmin": "Administrateur"
   },
   "notices": {
     "title": "Annonces",
@@ -1108,6 +1158,12 @@
     "try_adjusting_filters": "Essayez d'ajuster vos filtres."
   },
   "polls": {
+    "status": {
+      "draft": "Brouillon",
+      "active": "Actif",
+      "closed": "Clôturé",
+      "cancelled": "Annulé"
+    },
     "title": "Sondages",
     "create": "Créer un sondage",
     "question": "Question",
@@ -1636,6 +1692,7 @@
     "title": "Notifications",
     "markRead": "Marquer comme lu",
     "markAllRead": "Tout marquer comme lu",
+    "viewAll": "Voir toutes les notifications",
     "unread": "Non lues",
     "noNotifications": "Aucune notification.",
     "preferences": "Préférences de notification",
@@ -2580,21 +2637,19 @@
       "creating": "Création...",
       "descriptionPlaceholder": "Description détaillée de la résolution...",
       "error": "Erreur lors de la création de la résolution",
-      "legalText": "Les majorités requises sont définies par les articles 577-7 et suivants du Code Civil belge.",
-      "majorityAbsolute": "Majorité absolue (50%+1 de tous les votes)",
-      "majorityQualified": "Majorité qualifiée (seuil personnalisé)",
+      "legalText": "Les majorités requises sont définies par les articles 3.88 et suivants du Code Civil belge.",
+      "majorityAbsolute": "Majorité absolue (>50% des présents, abstentions exclues)",
+      "majorityTwoThirds": "Majorité 2/3 (≥2/3 des présents)",
+      "majorityFourFifths": "Majorité 4/5 (≥4/5 des présents)",
+      "majorityUnanimity": "Unanimité (100% de tous les tantièmes)",
       "majorityRequired": "Majorité requise",
-      "majoritySimple": "Majorité simple (50%+1 des votes exprimés)",
       "submit": "Créer la résolution",
       "success": "Résolution créée avec succès",
       "title": "Créer une résolution",
       "titlePlaceholder": "Intitulé de la résolution...",
       "titleRequired": "Le titre de la résolution est obligatoire",
-      "typeBudget": "Budget",
-      "typeElection": "Élection",
-      "typeRules": "Règlement",
-      "typeStandard": "Standard",
-      "typeWorks": "Travaux"
+      "typeOrdinary": "Ordinaire",
+      "typeExtraordinary": "Extraordinaire"
     },
     "list": {
       "adopted": "{count, plural, one {adoptée} other {adoptées}}",
@@ -2645,7 +2700,9 @@
       "voter": "Votant",
       "votes": "{count, plural, one {vote} other {votes}}",
       "votingPower": "Pouvoir de vote",
-      "votingPowerLabel": "Tantièmes (millièmes)"
+      "votingPowerLabel": "Tantièmes (millièmes)",
+      "unitLabel": "Voter au nom du lot",
+      "needOwnerAndUnit": "Vous devez être copropriétaire d'un lot pour voter."
     },
     "adopted": "Adoptée",
     "abstain": "Abstention",

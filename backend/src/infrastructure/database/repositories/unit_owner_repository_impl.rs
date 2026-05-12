@@ -1,6 +1,12 @@
+//! PostgreSQL impl du UnitOwnerRepository.
+//!
+//! ADR-0007/0008 : `ownership_percentage` est `Decimal` end-to-end
+//! (domain + SQL NUMERIC(6,5) depuis migration `20260501000000`).
+
 use crate::application::ports::UnitOwnerRepository;
 use crate::domain::entities::UnitOwner;
 use async_trait::async_trait;
+use rust_decimal::Decimal;
 use sqlx::PgPool;
 use uuid::Uuid;
 
@@ -256,7 +262,7 @@ impl UnitOwnerRepository for PostgresUnitOwnerRepository {
         Ok(result.exists)
     }
 
-    async fn get_total_ownership_percentage(&self, unit_id: Uuid) -> Result<f64, String> {
+    async fn get_total_ownership_percentage(&self, unit_id: Uuid) -> Result<Decimal, String> {
         let result = sqlx::query!(
             r#"
             SELECT COALESCE(SUM(ownership_percentage), 0) as "total!"
@@ -305,7 +311,7 @@ impl UnitOwnerRepository for PostgresUnitOwnerRepository {
     async fn find_active_by_building(
         &self,
         building_id: Uuid,
-    ) -> Result<Vec<(Uuid, Uuid, f64)>, String> {
+    ) -> Result<Vec<(Uuid, Uuid, Decimal)>, String> {
         let results = sqlx::query!(
             r#"
             SELECT uo.unit_id, uo.owner_id, uo.ownership_percentage

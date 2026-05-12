@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount } from "svelte";
+  // Svelte 5 runes mode
   import { _ } from '../../lib/i18n';
   import {
     TicketStatus,
@@ -15,37 +15,42 @@
   import TicketStatusBadge from "./TicketStatusBadge.svelte";
   import TicketPriorityBadge from "./TicketPriorityBadge.svelte";
 
-  export let buildingId: string | undefined = undefined;
-  export let view: "all" | "my" | "assigned" = "all";
+  let {
+    buildingId = undefined,
+    view = "all",
+  }: {
+    buildingId?: string | undefined;
+    view?: "all" | "my" | "assigned";
+  } = $props();
 
-  let tickets: Ticket[] = [];
-  let loading = true;
-  let error = "";
+  let tickets = $state<Ticket[]>([]);
+  let loading = $state(true);
+  let error = $state("");
 
-  let statusFilter: TicketStatus | "all" = "all";
-  let priorityFilter: TicketPriority | "all" = "all";
-  let categoryFilter: TicketCategory | "all" = "all";
-  let searchQuery = "";
+  let statusFilter = $state<TicketStatus | "all">("all");
+  let priorityFilter = $state<TicketPriority | "all">("all");
+  let categoryFilter = $state<TicketCategory | "all">("all");
+  let searchQuery = $state("");
 
-  onMount(async () => {
-    await doLoadTickets();
+  $effect(() => {
+    doLoadTickets();
   });
 
   async function doLoadTickets() {
     await withLoadingState({
       action: () => loadTicketsService(view, buildingId),
-      setLoading: (v) => loading = v,
-      setError: (v) => error = v,
-      onSuccess: (data) => tickets = data,
+      setLoading: (v: boolean) => loading = v,
+      setError: (v: string) => error = v,
+      onSuccess: (data: Ticket[]) => tickets = data,
       errorMessage: $_("tickets.load_failed"),
     });
   }
 
-  $: filteredTickets = filterAndSearch(tickets, searchQuery, ['title', 'description', 'requester_name', 'assigned_contractor_name'], {
+  let filteredTickets = $derived(filterAndSearch(tickets, searchQuery, ['title', 'description', 'requester_name', 'assigned_to_name'], {
     status: statusFilter,
     priority: priorityFilter,
     category: categoryFilter,
-  });
+  }));
 
   function getTicketUrl(ticketId: string): string {
     return `/ticket-detail?id=${ticketId}`;
@@ -69,7 +74,7 @@
         </span>
       </h2>
       <button
-        on:click={doLoadTickets}
+        onclick={doLoadTickets}
         data-testid="ticket-refresh-btn"
         class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
       >
@@ -94,14 +99,15 @@
 
       <!-- Status filter -->
       <div>
+        <label for="ticket-status-filter" class="sr-only">{$_("tickets.all_statuses")}</label>
         <select
+          id="ticket-status-filter"
           bind:value={statusFilter}
           data-testid="ticket-status-filter"
           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
         >
           <option value="all">{$_("tickets.all_statuses")}</option>
           <option value={TicketStatus.Open}>{$_("tickets.status_open")}</option>
-          <option value={TicketStatus.Assigned}>{$_("tickets.status_assigned")}</option>
           <option value={TicketStatus.InProgress}>{$_("tickets.status_in_progress")}</option>
           <option value={TicketStatus.Resolved}>{$_("tickets.status_resolved")}</option>
           <option value={TicketStatus.Closed}>{$_("tickets.status_closed")}</option>
@@ -110,14 +116,15 @@
 
       <!-- Priority filter -->
       <div>
+        <label for="ticket-priority-filter" class="sr-only">{$_("tickets.all_priorities")}</label>
         <select
+          id="ticket-priority-filter"
           bind:value={priorityFilter}
           data-testid="ticket-priority-filter"
           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
         >
           <option value="all">{$_("tickets.all_priorities")}</option>
           <option value={TicketPriority.Critical}>{$_("tickets.priority_critical")}</option>
-          <option value={TicketPriority.Urgent}>{$_("tickets.priority_urgent")}</option>
           <option value={TicketPriority.High}>{$_("tickets.priority_high")}</option>
           <option value={TicketPriority.Medium}>{$_("tickets.priority_medium")}</option>
           <option value={TicketPriority.Low}>{$_("tickets.priority_low")}</option>
@@ -126,19 +133,23 @@
 
       <!-- Category filter -->
       <div>
+        <label for="ticket-category-filter" class="sr-only">{$_("tickets.all_categories")}</label>
         <select
+          id="ticket-category-filter"
           bind:value={categoryFilter}
           data-testid="ticket-category-filter"
           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
         >
           <option value="all">{$_("tickets.all_categories")}</option>
-          <option value={TicketCategory.Plumbing}>{$_("tickets.category_plumbing")}</option>
-          <option value={TicketCategory.Electrical}>{$_("tickets.category_electrical")}</option>
-          <option value={TicketCategory.Heating}>{$_("tickets.category_heating")}</option>
-          <option value={TicketCategory.Cleaning}>{$_("tickets.category_cleaning")}</option>
-          <option value={TicketCategory.Security}>{$_("tickets.category_security")}</option>
-          <option value={TicketCategory.General}>{$_("tickets.category_general")}</option>
-          <option value={TicketCategory.Emergency}>{$_("tickets.category_emergency")}</option>
+          <option value={TicketCategory.Plumbing}>{$_("tickets.categories.plumbing")}</option>
+          <option value={TicketCategory.Electrical}>{$_("tickets.categories.electrical")}</option>
+          <option value={TicketCategory.Heating}>{$_("tickets.categories.heating")}</option>
+          <option value={TicketCategory.CommonAreas}>{$_("tickets.categories.commonAreas")}</option>
+          <option value={TicketCategory.Elevator}>{$_("tickets.categories.elevator")}</option>
+          <option value={TicketCategory.Security}>{$_("tickets.categories.security")}</option>
+          <option value={TicketCategory.Cleaning}>{$_("tickets.categories.cleaning")}</option>
+          <option value={TicketCategory.Landscaping}>{$_("tickets.categories.landscaping")}</option>
+          <option value={TicketCategory.Other}>{$_("tickets.categories.other")}</option>
         </select>
       </div>
     </div>
@@ -172,7 +183,7 @@
                     class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800"
                     data-testid="ticket-overdue-badge"
                   >
-                    ⚠️ {$_("tickets.overdue")}
+                    {$_("tickets.overdue")}
                   </span>
                 {/if}
               </div>
@@ -184,15 +195,15 @@
               <div class="flex items-center space-x-4 text-sm text-gray-500">
                 <span>#{ticket.id.slice(0, 8)}</span>
                 <span>{$_("tickets.requester")}: {ticket.requester_name || $_("common.unknown")}</span>
-                {#if ticket.assigned_contractor_name}
+                {#if ticket.assigned_to_name}
                   <span>
-                    {$_("tickets.assigned_to")}: {ticket.assigned_contractor_name}
+                    {$_("tickets.assigned_to")}: {ticket.assigned_to_name}
                   </span>
                 {/if}
                 {#if ticket.unit_number}
                   <span>{$_("tickets.unit")}: {ticket.unit_number}</span>
                 {/if}
-                <span>{$_("tickets.category")}: {ticket.category}</span>
+                <span>{$_("tickets.category")}: {$_(`tickets.categories.${ticket.category.charAt(0).toLowerCase() + ticket.category.slice(1)}`)}</span>
                 {#if ticket.due_date}
                   <span>{$_("tickets.due")}: {formatDateTime(ticket.due_date)}</span>
                 {/if}
@@ -217,6 +228,7 @@
   .line-clamp-2 {
     display: -webkit-box;
     -webkit-line-clamp: 2;
+    line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
   }

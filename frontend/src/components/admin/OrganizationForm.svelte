@@ -1,36 +1,44 @@
 <script lang="ts">
-  import { createEventDispatcher } from 'svelte';
+  // Svelte 5 runes mode
   import { _ } from '../../lib/i18n';
   import { toast } from '../../stores/toast';
   import { api } from '../../lib/api';
-  import type { Organization, SubscriptionPlan } from '../../lib/types';
+  import { SubscriptionPlan, type Organization } from '../../lib/types';
   import Modal from '../ui/Modal.svelte';
   import FormInput from '../ui/FormInput.svelte';
   import FormSelect from '../ui/FormSelect.svelte';
   import Button from '../ui/Button.svelte';
 
-  export let isOpen = false;
-  export let organization: Organization | null = null;
-  export let mode: 'create' | 'edit' = 'create';
+  let {
+    isOpen = false,
+    organization = null,
+    mode = 'create',
+    onclose,
+    onsuccess,
+  }: {
+    isOpen?: boolean;
+    organization?: Organization | null;
+    mode?: 'create' | 'edit';
+    onclose?: () => void;
+    onsuccess?: () => void;
+  } = $props();
 
-  const dispatch = createEventDispatcher();
-
-  let formData = {
+  let formData = $state({
     name: '',
     slug: '',
     contact_email: '',
     contact_phone: '',
-    subscription_plan: 'free' as SubscriptionPlan,
-  };
+    subscription_plan: SubscriptionPlan.FREE,
+  });
 
-  let errors = {
+  let errors = $state({
     name: '',
     slug: '',
     contact_email: '',
     contact_phone: '',
-  };
+  });
 
-  let loading = false;
+  let loading = $state(false);
 
   const subscriptionOptions = [
     { value: 'free', label: $_('admin.organization.planFree') },
@@ -40,15 +48,17 @@
   ];
 
   // Initialize form with organization data if editing
-  $: if (organization && mode === 'edit') {
-    formData = {
-      name: organization.name,
-      slug: organization.slug,
-      contact_email: organization.contact_email,
-      contact_phone: organization.contact_phone || '',
-      subscription_plan: organization.subscription_plan,
-    };
-  }
+  $effect(() => {
+    if (organization && mode === 'edit') {
+      formData = {
+        name: organization.name,
+        slug: organization.slug,
+        contact_email: organization.contact_email,
+        contact_phone: organization.contact_phone || '',
+        subscription_plan: organization.subscription_plan,
+      };
+    }
+  });
 
   // Auto-generate slug from name
   const generateSlug = () => {
@@ -137,7 +147,7 @@
 
       loading = false;
       handleClose();
-      dispatch('success');
+      onsuccess?.();
     } catch (e) {
       const errorMessage = e instanceof Error ? e.message : 'Une erreur est survenue';
 
@@ -154,14 +164,13 @@
 
   const handleClose = () => {
     if (!loading) {
-      isOpen = false;
       // Reset form
       formData = {
         name: '',
         slug: '',
         contact_email: '',
         contact_phone: '',
-        subscription_plan: 'free',
+        subscription_plan: SubscriptionPlan.FREE,
       };
       errors = {
         name: '',
@@ -169,7 +178,7 @@
         contact_email: '',
         contact_phone: '',
       };
-      dispatch('close');
+      onclose?.();
     }
   };
 </script>
@@ -178,18 +187,18 @@
   {isOpen}
   title={mode === 'create' ? $_('admin.organization.newOrganization') : $_('admin.organization.editOrganization')}
   size="md"
-  on:close={handleClose}
+  onclose={handleClose}
 >
-  <form on:submit|preventDefault={handleSubmit} class="space-y-4" data-testid="organization-form">
+  <form onsubmit={(e) => { e.preventDefault(); handleSubmit(); }} class="space-y-4" data-testid="organization-form">
     <FormInput
       id="org-name"
       label={$_('admin.organization.name')}
       type="text"
       bind:value={formData.name}
-      on:blur={generateSlug}
+      onblur={generateSlug}
       error={errors.name}
       required
-      placeholder="Résidence Grand Place SPRL"
+      placeholder="Residence Grand Place SPRL"
       data-testid="organization-name-input"
     />
 
@@ -254,14 +263,14 @@
     </div>
   </form>
 
-  <svelte:fragment slot="footer">
+  {#snippet footer()}
     <div class="flex justify-end space-x-3">
-      <Button variant="outline" on:click={handleClose} disabled={loading} data-testid="organization-cancel-button">
+      <Button variant="outline" onclick={handleClose} disabled={loading} data-testid="organization-cancel-button">
         {$_('common.cancel')}
       </Button>
-      <Button variant="primary" on:click={handleSubmit} {loading} data-testid="organization-submit-button">
+      <Button variant="primary" onclick={handleSubmit} {loading} data-testid="organization-submit-button">
         {mode === 'create' ? $_('admin.organization.createOrganization') : $_('common.saveChanges')}
       </Button>
     </div>
-  </svelte:fragment>
+  {/snippet}
 </Modal>

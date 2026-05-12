@@ -1,4 +1,5 @@
 <script lang="ts">
+  // Svelte 5 runes mode
   // Journal Entry Form Component (Noalyss-inspired)
   //
   // CREDITS & ATTRIBUTION:
@@ -6,55 +7,40 @@
   // Noalyss is a free accounting software for Belgian and French accounting
   // License: GPL-2.0-or-later (GNU General Public License version 2 or later)
   // Copyright: Dany De Bontridder <dany@alchimerys.eu>
-  //
-  // Noalyss-inspired features:
-  // - Journal type selector (ACH, VEN, FIN, ODS)
-  // - Debit/Credit column layout
-  // - Real-time balance validation
-  // - Multi-line entry with dynamic addition
-  // - Quick account code entry
 
-  import { onMount } from 'svelte';
   import { _ } from '../lib/i18n';
 
   const API_URL = import.meta.env.PUBLIC_API_URL || 'http://localhost:8080/api/v1';
 
-  // Props
-  export let buildingId: string | null = null;
-  export let onSuccess: (() => void) | null = null;
+  let { buildingId = null, onSuccess = null }: {
+    buildingId?: string | null;
+    onSuccess?: (() => void) | null;
+  } = $props();
 
-  // Journal types (Noalyss-inspired)
-  $: journalTypes = [
+  let journalTypes = $derived([
     { code: 'ACH', label: $_('journal.types.ach'), description: $_('journal.types.achDesc') },
     { code: 'VEN', label: $_('journal.types.ven'), description: $_('journal.types.venDesc') },
     { code: 'FIN', label: $_('journal.types.fin'), description: $_('journal.types.finDesc') },
     { code: 'ODS', label: $_('journal.types.ods'), description: $_('journal.types.odsDesc') },
-  ];
+  ]);
 
-  // Form state
-  let journalType = 'ODS';
-  let entryDate = new Date().toISOString().split('T')[0];
-  let description = '';
-  let documentRef = '';
-  let lines: Array<{
-    accountCode: string;
-    debit: string;
-    credit: string;
-    description: string;
-  }> = [
+  let journalType = $state('ODS');
+  let entryDate = $state(new Date().toISOString().split('T')[0]);
+  let description = $state('');
+  let documentRef = $state('');
+  let lines = $state<Array<{ accountCode: string; debit: string; credit: string; description: string }>>([
     { accountCode: '', debit: '', credit: '', description: '' },
     { accountCode: '', debit: '', credit: '', description: '' },
-  ];
+  ]);
 
-  let loading = false;
-  let error = '';
-  let success = false;
+  let loading = $state(false);
+  let error = $state('');
+  let success = $state(false);
 
-  // Calculated balances
-  $: totalDebits = lines.reduce((sum, line) => sum + (parseFloat(line.debit) || 0), 0);
-  $: totalCredits = lines.reduce((sum, line) => sum + (parseFloat(line.credit) || 0), 0);
-  $: difference = Math.abs(totalDebits - totalCredits);
-  $: isBalanced = difference < 0.01 && totalDebits > 0;
+  let totalDebits = $derived(lines.reduce((sum, line) => sum + (parseFloat(line.debit) || 0), 0));
+  let totalCredits = $derived(lines.reduce((sum, line) => sum + (parseFloat(line.credit) || 0), 0));
+  let difference = $derived(Math.abs(totalDebits - totalCredits));
+  let isBalanced = $derived(difference < 0.01 && totalDebits > 0);
 
   function addLine() {
     lines = [...lines, { accountCode: '', debit: '', credit: '', description: '' }];
@@ -70,7 +56,6 @@
     error = '';
     success = false;
 
-    // Validation
     if (!description.trim()) {
       error = $_('journal.error.descriptionRequired');
       return;
@@ -143,13 +128,13 @@
 
   function handleDebitInput(index: number) {
     if (lines[index].debit) {
-      lines[index].credit = ''; // Clear credit if debit is entered
+      lines[index].credit = '';
     }
   }
 
   function handleCreditInput(index: number) {
     if (lines[index].credit) {
-      lines[index].debit = ''; // Clear debit if credit is entered
+      lines[index].debit = '';
     }
   }
 </script>
@@ -172,17 +157,14 @@
     </div>
   {/if}
 
-  <form on:submit|preventDefault={handleSubmit}>
-    <!-- Header section -->
+  <form onsubmit={(e: Event) => { e.preventDefault(); handleSubmit(); }}>
     <div class="form-section">
       <div class="grid grid-cols-2 gap-4">
         <div class="form-group">
           <label for="journal-type">{$_('journal.journalType')} *</label>
           <select id="journal-type" bind:value={journalType} class="form-control" required>
             {#each journalTypes as type}
-              <option value={type.code}>
-                {type.label}
-              </option>
+              <option value={type.code}>{type.label}</option>
             {/each}
           </select>
           <small class="text-gray-600">
@@ -192,45 +174,25 @@
 
         <div class="form-group">
           <label for="entry-date">{$_('journal.operationDate')} *</label>
-          <input
-            type="date"
-            id="entry-date"
-            bind:value={entryDate}
-            class="form-control"
-            required
-          />
+          <input type="date" id="entry-date" bind:value={entryDate} class="form-control" required />
         </div>
       </div>
 
       <div class="form-group">
         <label for="description">{$_('journal.description')} *</label>
-        <input
-          type="text"
-          id="description"
-          bind:value={description}
-          class="form-control"
-          placeholder="Ex: Facture eau janvier 2025"
-          required
-        />
+        <input type="text" id="description" bind:value={description} class="form-control" placeholder="Ex: Facture eau janvier 2025" required />
       </div>
 
       <div class="form-group">
         <label for="document-ref">{$_('journal.documentRef')}</label>
-        <input
-          type="text"
-          id="document-ref"
-          bind:value={documentRef}
-          class="form-control"
-          placeholder="Ex: FA-2025-001"
-        />
+        <input type="text" id="document-ref" bind:value={documentRef} class="form-control" placeholder="Ex: FA-2025-001" />
       </div>
     </div>
 
-    <!-- Lines section (Noalyss-inspired layout) -->
     <div class="form-section">
       <div class="flex justify-between items-center mb-3">
         <h4 class="text-lg font-semibold">{$_('journal.accountingLines')}</h4>
-        <button type="button" class="btn btn-secondary btn-sm" on:click={addLine}>
+        <button type="button" class="btn btn-secondary btn-sm" onclick={addLine}>
           ➕ {$_('journal.addLine')}
         </button>
       </div>
@@ -250,52 +212,24 @@
             {#each lines as line, index}
               <tr class="journal-line">
                 <td>
-                  <input
-                    type="text"
-                    bind:value={line.accountCode}
-                    class="form-control form-control-sm"
-                    placeholder="Ex: 6100"
-                    maxlength="10"
-                  />
+                  <label for={`journal-line-${index}-account-code`} class="sr-only">{$_('journal.account')}</label>
+                  <input id={`journal-line-${index}-account-code`} type="text" bind:value={line.accountCode} class="form-control form-control-sm" placeholder="Ex: 6100" maxlength="10" />
                 </td>
                 <td>
-                  <input
-                    type="text"
-                    bind:value={line.description}
-                    class="form-control form-control-sm"
-                    placeholder="Libellé de la ligne"
-                  />
+                  <label for={`journal-line-${index}-description`} class="sr-only">{$_('journal.description')}</label>
+                  <input id={`journal-line-${index}-description`} type="text" bind:value={line.description} class="form-control form-control-sm" placeholder="Libellé de la ligne" />
                 </td>
                 <td>
-                  <input
-                    type="number"
-                    bind:value={line.debit}
-                    on:input={() => handleDebitInput(index)}
-                    class="form-control form-control-sm text-right"
-                    placeholder="0.00"
-                    step="0.01"
-                    min="0"
-                  />
+                  <label for={`journal-line-${index}-debit`} class="sr-only">{$_('journal.debit')}</label>
+                  <input id={`journal-line-${index}-debit`} type="number" bind:value={line.debit} oninput={() => handleDebitInput(index)} class="form-control form-control-sm text-right" placeholder="0.00" step="0.01" min="0" />
                 </td>
                 <td>
-                  <input
-                    type="number"
-                    bind:value={line.credit}
-                    on:input={() => handleCreditInput(index)}
-                    class="form-control form-control-sm text-right"
-                    placeholder="0.00"
-                    step="0.01"
-                    min="0"
-                  />
+                  <label for={`journal-line-${index}-credit`} class="sr-only">{$_('journal.credit')}</label>
+                  <input id={`journal-line-${index}-credit`} type="number" bind:value={line.credit} oninput={() => handleCreditInput(index)} class="form-control form-control-sm text-right" placeholder="0.00" step="0.01" min="0" />
                 </td>
                 <td class="text-center">
                   {#if lines.length > 2}
-                    <button
-                      type="button"
-                      class="btn-icon-danger"
-                      on:click={() => removeLine(index)}
-                      title="Supprimer cette ligne"
-                    >
+                    <button type="button" class="btn-icon-danger" onclick={() => removeLine(index)} aria-label="Supprimer cette ligne" title="Supprimer cette ligne">
                       🗑️
                     </button>
                   {/if}
@@ -306,12 +240,8 @@
           <tfoot>
             <tr class="totals-row">
               <td colspan="2" class="text-right font-bold">{$_('journal.totals')}:</td>
-              <td class="text-right font-bold text-blue-600">
-                {totalDebits.toFixed(2)} €
-              </td>
-              <td class="text-right font-bold text-green-600">
-                {totalCredits.toFixed(2)} €
-              </td>
+              <td class="text-right font-bold text-blue-600">{totalDebits.toFixed(2)} €</td>
+              <td class="text-right font-bold text-green-600">{totalCredits.toFixed(2)} €</td>
               <td></td>
             </tr>
             <tr class="balance-row">
@@ -336,9 +266,8 @@
       </div>
     </div>
 
-    <!-- Actions -->
     <div class="form-actions">
-      <button type="button" class="btn btn-secondary" on:click={resetForm} disabled={loading}>
+      <button type="button" class="btn btn-secondary" onclick={resetForm} disabled={loading}>
         🔄 {$_('journal.reset')}
       </button>
       <button type="submit" class="btn btn-primary" disabled={loading || !isBalanced} data-testid="submit-journal-entry-button">
@@ -353,265 +282,56 @@
 </div>
 
 <style>
-  .journal-entry-form {
-    background: white;
-    border-radius: 8px;
-    padding: 1.5rem;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  }
-
-  .form-header {
-    margin-bottom: 1.5rem;
-    border-bottom: 2px solid #e5e7eb;
-    padding-bottom: 1rem;
-  }
-
-  .form-header h3 {
-    margin: 0 0 0.5rem 0;
-    color: #1f2937;
-    font-size: 1.5rem;
-  }
-
-  .form-section {
-    margin-bottom: 2rem;
-  }
-
-  .form-group {
-    margin-bottom: 1rem;
-  }
-
-  .form-group label {
-    display: block;
-    margin-bottom: 0.5rem;
-    font-weight: 600;
-    color: #374151;
-    font-size: 0.875rem;
-  }
-
-  .form-control {
-    width: 100%;
-    padding: 0.5rem 0.75rem;
-    border: 1px solid #d1d5db;
-    border-radius: 4px;
-    font-size: 1rem;
-  }
-
-  .form-control:focus {
-    outline: none;
-    border-color: #3b82f6;
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-  }
-
-  .form-control-sm {
-    padding: 0.25rem 0.5rem;
-    font-size: 0.875rem;
-  }
-
-  .journal-lines-container {
-    overflow-x: auto;
-    border: 1px solid #e5e7eb;
-    border-radius: 4px;
-  }
-
-  .journal-lines-table {
-    width: 100%;
-    border-collapse: collapse;
-  }
-
-  .journal-lines-table thead {
-    background: #f9fafb;
-    border-bottom: 2px solid #e5e7eb;
-  }
-
-  .journal-lines-table th {
-    padding: 0.75rem;
-    text-align: left;
-    font-weight: 600;
-    color: #374151;
-    font-size: 0.875rem;
-  }
-
-  .journal-lines-table td {
-    padding: 0.5rem;
-    border-bottom: 1px solid #f3f4f6;
-  }
-
-  .journal-line:hover {
-    background: #f9fafb;
-  }
-
-  .totals-row {
-    background: #f0f9ff;
-    border-top: 2px solid #3b82f6;
-  }
-
-  .totals-row td {
-    padding: 0.75rem;
-    font-size: 1rem;
-  }
-
-  .balance-row {
-    background: #ecfdf5;
-  }
-
-  .balance-row td {
-    padding: 0.75rem;
-    font-size: 1rem;
-  }
-
-  .btn-icon-danger {
-    background: transparent;
-    border: none;
-    cursor: pointer;
-    font-size: 1.25rem;
-    padding: 0.25rem;
-  }
-
-  .btn-icon-danger:hover {
-    opacity: 0.7;
-  }
-
-  .form-actions {
-    display: flex;
-    justify-content: flex-end;
-    gap: 1rem;
-    padding-top: 1rem;
-    border-top: 1px solid #e5e7eb;
-  }
-
-  .btn {
-    padding: 0.625rem 1.25rem;
-    border-radius: 4px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s;
-    border: none;
-    font-size: 1rem;
-  }
-
-  .btn:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-
-  .btn-primary {
-    background: #3b82f6;
-    color: white;
-  }
-
-  .btn-primary:hover:not(:disabled) {
-    background: #2563eb;
-  }
-
-  .btn-secondary {
-    background: #f3f4f6;
-    color: #374151;
-  }
-
-  .btn-secondary:hover:not(:disabled) {
-    background: #e5e7eb;
-  }
-
-  .btn-sm {
-    padding: 0.375rem 0.75rem;
-    font-size: 0.875rem;
-  }
-
-  .alert {
-    padding: 1rem;
-    border-radius: 4px;
-    margin-bottom: 1rem;
-  }
-
-  .alert-error {
-    background: #fee2e2;
-    color: #991b1b;
-    border: 1px solid #fecaca;
-  }
-
-  .alert-success {
-    background: #d1fae5;
-    color: #065f46;
-    border: 1px solid #a7f3d0;
-  }
-
-  .grid {
-    display: grid;
-  }
-
-  .grid-cols-2 {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
-  .gap-4 {
-    gap: 1rem;
-  }
-
-  .text-sm {
-    font-size: 0.875rem;
-  }
-
-  .text-lg {
-    font-size: 1.125rem;
-  }
-
-  .text-right {
-    text-align: right;
-  }
-
-  .text-center {
-    text-align: center;
-  }
-
-  .text-gray-600 {
-    color: #4b5563;
-  }
-
-  .text-blue-600 {
-    color: #2563eb;
-  }
-
-  .text-green-600 {
-    color: #059669;
-  }
-
-  .text-red-600 {
-    color: #dc2626;
-  }
-
-  .font-semibold {
-    font-weight: 600;
-  }
-
-  .font-bold {
-    font-weight: 700;
-  }
-
-  .flex {
-    display: flex;
-  }
-
-  .flex-1 {
-    flex: 1;
-  }
-
-  .justify-between {
-    justify-content: space-between;
-  }
-
-  .items-center {
-    align-items: center;
-  }
-
-  .mb-3 {
-    margin-bottom: 0.75rem;
-  }
-
-  .w-20 {
-    width: 5rem;
-  }
-
-  .w-32 {
-    width: 8rem;
-  }
+  .journal-entry-form { background: white; border-radius: 8px; padding: 1.5rem; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); }
+  .form-header { margin-bottom: 1.5rem; border-bottom: 2px solid #e5e7eb; padding-bottom: 1rem; }
+  .form-header h3 { margin: 0 0 0.5rem 0; color: #1f2937; font-size: 1.5rem; }
+  .form-section { margin-bottom: 2rem; }
+  .form-group { margin-bottom: 1rem; }
+  .form-group label { display: block; margin-bottom: 0.5rem; font-weight: 600; color: #374151; font-size: 0.875rem; }
+  .form-control { width: 100%; padding: 0.5rem 0.75rem; border: 1px solid #d1d5db; border-radius: 4px; font-size: 1rem; }
+  .form-control:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1); }
+  .form-control-sm { padding: 0.25rem 0.5rem; font-size: 0.875rem; }
+  .journal-lines-container { overflow-x: auto; border: 1px solid #e5e7eb; border-radius: 4px; }
+  .journal-lines-table { width: 100%; border-collapse: collapse; }
+  .journal-lines-table thead { background: #f9fafb; border-bottom: 2px solid #e5e7eb; }
+  .journal-lines-table th { padding: 0.75rem; text-align: left; font-weight: 600; color: #374151; font-size: 0.875rem; }
+  .journal-lines-table td { padding: 0.5rem; border-bottom: 1px solid #f3f4f6; }
+  .journal-line:hover { background: #f9fafb; }
+  .totals-row { background: #f0f9ff; border-top: 2px solid #3b82f6; }
+  .totals-row td { padding: 0.75rem; font-size: 1rem; }
+  .balance-row { background: #ecfdf5; }
+  .balance-row td { padding: 0.75rem; font-size: 1rem; }
+  .btn-icon-danger { background: transparent; border: none; cursor: pointer; font-size: 1.25rem; padding: 0.25rem; }
+  .btn-icon-danger:hover { opacity: 0.7; }
+  .form-actions { display: flex; justify-content: flex-end; gap: 1rem; padding-top: 1rem; border-top: 1px solid #e5e7eb; }
+  .btn { padding: 0.625rem 1.25rem; border-radius: 4px; font-weight: 600; cursor: pointer; transition: all 0.2s; border: none; font-size: 1rem; }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn-primary { background: #3b82f6; color: white; }
+  .btn-primary:hover:not(:disabled) { background: #2563eb; }
+  .btn-secondary { background: #f3f4f6; color: #374151; }
+  .btn-secondary:hover:not(:disabled) { background: #e5e7eb; }
+  .btn-sm { padding: 0.375rem 0.75rem; font-size: 0.875rem; }
+  .alert { padding: 1rem; border-radius: 4px; margin-bottom: 1rem; }
+  .alert-error { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
+  .alert-success { background: #d1fae5; color: #065f46; border: 1px solid #a7f3d0; }
+  .grid { display: grid; }
+  .grid-cols-2 { grid-template-columns: repeat(2, 1fr); }
+  .gap-4 { gap: 1rem; }
+  .text-sm { font-size: 0.875rem; }
+  .text-lg { font-size: 1.125rem; }
+  .text-right { text-align: right; }
+  .text-center { text-align: center; }
+  .text-gray-600 { color: #4b5563; }
+  .text-blue-600 { color: #2563eb; }
+  .text-green-600 { color: #059669; }
+  .text-red-600 { color: #dc2626; }
+  .font-semibold { font-weight: 600; }
+  .font-bold { font-weight: 700; }
+  .flex { display: flex; }
+  .flex-1 { flex: 1; }
+  .justify-between { justify-content: space-between; }
+  .items-center { align-items: center; }
+  .mb-3 { margin-bottom: 0.75rem; }
+  .w-20 { width: 5rem; }
+  .w-32 { width: 8rem; }
 </style>

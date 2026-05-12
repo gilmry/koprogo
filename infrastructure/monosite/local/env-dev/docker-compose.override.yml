@@ -1,0 +1,75 @@
+# Local env-dev overrides — supervisor's machine running the GitOps cron poller.
+#
+# Use case: the supervisor wants `git push origin dev` to redeploy a docker-compose
+# stack on their own machine, in parallel with `make dev` (which is for hand-coding
+# on feature/dev). This override keeps env-dev physically isolated from `make dev`
+# by using different ports + container names + volumes.
+#
+# Trigger:
+#   gitops-deploy.sh watch (TOPOLOGY=local ENV_NAME=env-dev BRANCH=dev)
+#
+# Deliberately:
+#   - Different ports (8082 traefik / 5433 postgres / 9002 minio) to avoid clash with `make dev` (80/5432/9000)
+#   - Container names suffixed -envdev
+#   - Independent volumes (envdev_*) — preserved across redeploys
+#   - RUST_LOG=debug + accesslog ON for inspection
+#   - No TLS (we want raw HTTP for fast curl-based testing)
+
+services:
+  traefik:
+    container_name: koprogo-traefik-envdev
+    command:
+      - "--api.dashboard=true"
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+      - "--log.level=DEBUG"
+      - "--accesslog=true"
+      - "--metrics.prometheus=true"
+    ports:
+      - "8082:80"     # 8082 to avoid clash with make dev (80) AND VPS dev override (80)
+      - "8083:8080"   # traefik dashboard
+
+  backend:
+    container_name: koprogo-backend-envdev
+    environment:
+      RUST_LOG: debug
+      RUST_BACKTRACE: "1"
+      CORS_ALLOWED_ORIGINS: "*"
+      ENABLE_RATE_LIMITING: "false"
+    deploy:
+      resources:
+        limits:
+          memory: 384M
+          cpus: '0.75'
+        reservations:
+          memory: 192M
+          cpus: '0.15'
+
+  frontend:
+    container_name: koprogo-frontend-envdev
+
+  postgres:
+    container_name: koprogo-postgres-envdev
+    ports:
+      - "5433:5432"   # 5433 to avoid clash with make dev (5432)
+    volumes:
+      - envdev_postgres_data:/var/lib/postgresql/data
+
+  minio:
+    container_name: koprogo-minio-envdev
+    ports:
+      - "9002:9000"
+      - "9003:9001"
+    volumes:
+      - envdev_minio_data:/data
+
+  minio-bootstrap:
+    container_name: koprogo-minio-bootstrap-envdev
+
+volumes:
+  envdev_postgres_data:
+    name: koprogo_envdev_postgres_data
+  envdev_minio_data:
+    name: koprogo_envdev_minio_data

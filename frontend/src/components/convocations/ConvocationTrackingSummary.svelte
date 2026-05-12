@@ -1,25 +1,29 @@
 <script lang="ts">
-  import { onMount } from "svelte";
+  // Svelte 5 runes mode
   import { _ } from '../../lib/i18n';
   import { convocationsApi, type TrackingSummary } from "../../lib/api/convocations";
   import { withLoadingState } from '../../lib/utils/error.utils';
 
-  export let convocationId: string;
+  let {
+    convocationId,
+  }: {
+    convocationId: string;
+  } = $props();
 
-  let summary: TrackingSummary | null = null;
-  let loading = true;
-  let error = '';
+  let summary = $state<TrackingSummary | null>(null);
+  let loading = $state(true);
+  let error = $state('');
 
-  onMount(async () => {
-    await loadSummary();
+  $effect(() => {
+    loadSummary();
   });
 
   async function loadSummary() {
     await withLoadingState({
       action: () => convocationsApi.getTrackingSummary(convocationId),
-      setLoading: (v) => loading = v,
-      setError: (v) => error = v,
-      onSuccess: (data) => { summary = data; },
+      setLoading: (v: boolean) => loading = v,
+      setError: (v: string) => error = v,
+      onSuccess: (data: TrackingSummary) => { summary = data; },
       errorMessage: $_('convocations.errors.trackingSummaryFailed'),
     });
   }
@@ -62,7 +66,7 @@
 
       {#if summary.email_failed > 0}
         <div class="bg-red-50 rounded-lg p-4" data-testid="tracking-stat-failed">
-          <dt class="text-sm font-medium text-red-700 mb-1">❌ {$_('common.failed')}</dt>
+          <dt class="text-sm font-medium text-red-700 mb-1">{$_('common.failed')}</dt>
           <dd class="text-2xl font-bold text-red-900">{summary.email_failed}</dd>
         </div>
       {/if}

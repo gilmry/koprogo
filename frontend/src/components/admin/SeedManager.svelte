@@ -96,7 +96,8 @@
 				messageType = 'error';
 			}
 		} catch (error) {
-			message = `Error: ${error.message}`;
+			const errMsg = error instanceof Error ? error.message : String(error);
+			message = `Error: ${errMsg}`;
 			messageType = 'error';
 		} finally {
 			loading = false;
@@ -122,7 +123,8 @@
 			}
 		} catch (error) {
 			console.error('Seed error:', error);
-			message = `Error: ${error.message}`;
+			const errMsg = error instanceof Error ? error.message : String(error);
+			message = `Error: ${errMsg}`;
 			messageType = 'error';
 		} finally {
 			loading = false;
@@ -345,12 +347,13 @@
 							</div>
 							<div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
 								<div>
-									<label class="text-gray-600 text-xs font-medium block mb-1">Email:</label>
+									<span class="text-gray-600 text-xs font-medium block mb-1">Email:</span>
 									<div class="flex items-center gap-2">
 										<code class="bg-gray-50 px-3 py-1.5 rounded border border-gray-200 flex-1 text-xs">{account.email}</code>
 										<button
 											on:click={() => copyToClipboard(account.email)}
 											class="text-blue-600 hover:text-blue-800 transition"
+											aria-label="Copier l'email"
 											title="Copier l'email"
 										>
 											📋
@@ -358,12 +361,13 @@
 									</div>
 								</div>
 								<div>
-									<label class="text-gray-600 text-xs font-medium block mb-1">Mot de passe:</label>
+									<span class="text-gray-600 text-xs font-medium block mb-1">Mot de passe:</span>
 									<div class="flex items-center gap-2">
 										<code class="bg-gray-50 px-3 py-1.5 rounded border border-gray-200 flex-1 text-xs">{account.password}</code>
 										<button
 											on:click={() => copyToClipboard(account.password)}
 											class="text-blue-600 hover:text-blue-800 transition"
+											aria-label="Copier le mot de passe"
 											title="Copier le mot de passe"
 										>
 											📋

@@ -1,8 +1,14 @@
 import { api } from "../api";
+import type { components } from "../../types/api";
 
 /**
  * Resolution & Voting API Client
  * Belgian copropriété law compliance (tantièmes/millièmes voting)
+ *
+ * Types are re-exported from auto-generated api.d.ts (STORY-P7-103).
+ * TypeScript will refuse any enum value that doesn't exist in the Rust
+ * backend — preventing the class of "invented variant" bugs flagged by
+ * audits v1→v7 (e.g. `MajorityType.Simple` or `TicketPriority.Urgent`).
  */
 
 export interface Resolution {
@@ -10,7 +16,7 @@ export interface Resolution {
   meeting_id: string;
   title: string;
   description: string;
-  resolution_type: string;
+  resolution_type: ResolutionType;
   majority_required: MajorityType;
   threshold?: number;
   // Backend field names (snake_case)
@@ -36,23 +42,34 @@ export interface Resolution {
   updated_at?: string;
 }
 
-export enum MajorityType {
-  Simple = "simple",
-  Absolute = "absolute",
-  Qualified = "qualified",
-}
+// Re-exported from the generated OpenAPI spec — single source of truth.
+export type MajorityType = components["schemas"]["MajorityType"];
+export const MajorityType = {
+  Absolute: "absolute" as const,
+  TwoThirds: "two_thirds" as const,
+  FourFifths: "four_fifths" as const,
+  Unanimity: "unanimity" as const,
+} satisfies Record<string, MajorityType>;
 
-export enum ResolutionStatus {
-  Pending = "pending",
-  Adopted = "adopted",
-  Rejected = "rejected",
-}
+export type ResolutionType = components["schemas"]["ResolutionType"];
+export const ResolutionType = {
+  Ordinary: "ordinary" as const,
+  Extraordinary: "extraordinary" as const,
+} satisfies Record<string, ResolutionType>;
 
-export enum VoteChoice {
-  Pour = "pour",
-  Contre = "contre",
-  Abstention = "abstention",
-}
+export type ResolutionStatus = components["schemas"]["ResolutionStatus"];
+export const ResolutionStatus = {
+  Pending: "pending" as const,
+  Adopted: "adopted" as const,
+  Rejected: "rejected" as const,
+} satisfies Record<string, ResolutionStatus>;
+
+export type VoteChoice = components["schemas"]["VoteChoice"];
+export const VoteChoice = {
+  Pour: "pour" as const,
+  Contre: "contre" as const,
+  Abstention: "abstention" as const,
+} satisfies Record<string, VoteChoice>;
 
 export interface Vote {
   id: string;

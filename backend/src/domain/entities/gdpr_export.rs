@@ -59,7 +59,7 @@ pub struct UnitOwnershipData {
     pub building_address: String,
     pub unit_number: String,
     pub floor: Option<i32>,
-    pub ownership_percentage: f64,
+    pub ownership_percentage: rust_decimal::Decimal,
     pub start_date: DateTime<Utc>,
     pub end_date: Option<DateTime<Utc>>,
     pub is_primary_contact: bool,
@@ -68,7 +68,7 @@ pub struct UnitOwnershipData {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct ExpenseData {
     pub description: String,
-    pub amount: f64,
+    pub amount: rust_decimal::Decimal,
     pub due_date: DateTime<Utc>,
     pub paid: bool,
     pub building_name: String,
@@ -210,7 +210,7 @@ mod tests {
             building_address: "123 Main St".to_string(),
             unit_number: "101".to_string(),
             floor: Some(1),
-            ownership_percentage: 50.0,
+            ownership_percentage: rust_decimal_macros::dec!(50),
             start_date: Utc::now(),
             end_date: None,
             is_primary_contact: true,
@@ -228,7 +228,7 @@ mod tests {
         let mut export = GdprExport::new(user_data);
         let expense = ExpenseData {
             description: "Monthly maintenance".to_string(),
-            amount: 100.0,
+            amount: rust_decimal_macros::dec!(100.00),
             due_date: Utc::now(),
             paid: true,
             building_name: "Building A".to_string(),
@@ -299,7 +299,7 @@ mod tests {
             building_address: "123 Main St".to_string(),
             unit_number: "101".to_string(),
             floor: Some(1),
-            ownership_percentage: 50.0,
+            ownership_percentage: rust_decimal_macros::dec!(50),
             start_date: Utc::now(),
             end_date: None,
             is_primary_contact: true,

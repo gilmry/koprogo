@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  // Svelte 5 runes mode
   import { _ } from '../../lib/i18n';
   import { authStore } from '../../stores/auth';
   import { api } from '../../lib/api';
@@ -10,7 +10,7 @@
   import { formatDateShort, formatDate } from "../../lib/utils/date.utils";
   import { formatCurrency } from "../../lib/utils/finance.utils";
 
-  $: user = $authStore.user;
+  let user = $derived($authStore.user);
 
   interface OwnerTicket {
     id: string;
@@ -55,32 +55,40 @@
     expires_soon: boolean;
   }
 
-  let stats: OwnerStats | null = null;
-  let recentBuildings: Building[] = [];
-  let recentUnits: Unit[] = [];
-  let boardMandates: BoardMandate[] = [];
-  let myTickets: OwnerTicket[] = [];
-  let unreadNotifications: OwnerNotification[] = [];
-  let loading = true;
-  let error: string | null = null;
+  let stats = $state<OwnerStats | null>(null);
+  let recentBuildings = $state<Building[]>([]);
+  let recentUnits = $state<Unit[]>([]);
+  let boardMandates = $state<BoardMandate[]>([]);
+  let myTickets = $state<OwnerTicket[]>([]);
+  let unreadNotifications = $state<OwnerNotification[]>([]);
+  let loading = $state(true);
+  let error = $state<string | null>(null);
 
-  onMount(async () => {
-    await loadDashboardData();
+  $effect(() => {
+    loadDashboardData();
   });
 
   async function loadDashboardData() {
     try {
       loading = true;
-      const [statsData, buildingsData, unitsData, mandatesData] = await Promise.all([
+      const [statsData, buildingsData, mandatesData] = await Promise.all([
         api.get<OwnerStats>('/stats/owner'),
         api.get<{ data: Building[] }>('/buildings?page=1&per_page=3'),
-        api.get<{ data: Unit[] }>('/units?page=1&per_page=5'),
         api.get<{ mandates: BoardMandate[] }>('/board-members/my-mandates'),
       ]);
       stats = statsData;
       recentBuildings = buildingsData.data;
-      recentUnits = unitsData.data;
       boardMandates = mandatesData.mandates;
+
+      // Load this owner's actual units (not all org units)
+      try {
+        const me = await api.get<{ id: string }>('/owners/me');
+        const ownerships = await api.get<Array<{ unit_id: string }>>(`/owners/${me.id}/units`);
+        const ids = (Array.isArray(ownerships) ? ownerships : []).slice(0, 5).map(o => o.unit_id);
+        recentUnits = await Promise.all(ids.map(id => api.get<Unit>(`/units/${id}`)));
+      } catch {
+        recentUnits = [];
+      }
 
       // Load tickets and notifications (non-blocking)
       try {
@@ -102,7 +110,7 @@
     }
   }
 
-  $: openTicketsCount = myTickets.filter(t => t.status !== 'Closed' && t.status !== 'Cancelled' && t.status !== 'Resolved').length;
+  let openTicketsCount = $derived(myTickets.filter(t => t.status !== 'Closed' && t.status !== 'Cancelled' && t.status !== 'Resolved').length);
 
   function getUnitTypeIcon(type: string): string {
     const icons: Record<string, string> = {

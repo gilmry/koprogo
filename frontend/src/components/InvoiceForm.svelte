@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  // Svelte 5 runes mode
   import { _ } from '../lib/i18n';
   import { api } from '../lib/api';
   import { authStore } from '../stores/auth';
@@ -8,44 +8,48 @@
   import { calculateVAT as calcVAT, formatCurrency, aggregateLineItems } from '../lib/utils/finance.utils';
   import { withLoadingState, withErrorHandling } from '../lib/utils/error.utils';
 
-  export let buildingId: string = '';
-  export let organizationId: string = ''; // Organization ID for multi-tenant
-  export let invoiceId: string | null = null; // null for create, UUID for edit
-  export let onSaved: ((invoice: any) => void) | null = null;
-  export let onCancel: (() => void) | null = null;
+  let { buildingId = '', organizationId = '', invoiceId = null, onSaved = null, onCancel = null }: {
+    buildingId?: string;
+    organizationId?: string;
+    invoiceId?: string | null;
+    onSaved?: ((invoice: any) => void) | null;
+    onCancel?: (() => void) | null;
+  } = $props();
 
   // Form mode: 'simple' for single amount, 'detailed' for line items
-  let mode: 'simple' | 'detailed' = 'simple';
+  let mode = $state<'simple' | 'detailed'>('simple');
 
   // Form fields
-  let description = '';
-  let category = 'Maintenance';
-  let amountExclVat = '';
-  let vatRate = '21.00';
-  let invoiceDate = '';
-  let dueDate = '';
-  let supplier = '';
-  let invoiceNumber = '';
-  let accountCode = ''; // Code compte PCMN
+  let description = $state('');
+  let category = $state('Maintenance');
+  let amountExclVat = $state('');
+  let vatRate = $state('21.00');
+  let invoiceDate = $state('');
+  let dueDate = $state('');
+  let supplier = $state('');
+  let invoiceNumber = $state('');
+  let accountCode = $state('');
 
   // Line items for detailed mode
-  let lineItems: any[] = [];
+  let lineItems = $state<any[]>([]);
 
   // Liste des comptes PCMN
-  let accounts: any[] = [];
+  let accounts = $state<any[]>([]);
 
   // Liste des bâtiments (si buildingId n'est pas fourni)
-  let buildings: any[] = [];
-  let selectedBuildingId = buildingId;
+  let buildings = $state<any[]>([]);
+  let selectedBuildingId = $state('');
+  // Sync with prop (live value via $effect, not stale initial capture)
+  $effect(() => { if (buildingId && !selectedBuildingId) selectedBuildingId = buildingId; });
 
   // Calculated fields
-  let vatAmount = 0;
-  let amountInclVat = 0;
+  let vatAmount = $state(0);
+  let amountInclVat = $state(0);
 
   // State
-  let loading = false;
-  let error = '';
-  let isEditMode = false;
+  let loading = $state(false);
+  let error = $state('');
+  let isEditMode = $state(false);
 
   const categories = [
     { value: 'Maintenance', label: $_('invoices.category_maintenance') },
@@ -65,22 +69,19 @@
     { value: '21.00', label: $_('invoices.vat_21') }
   ];
 
-  onMount(async () => {
+  $effect(() => {
     invoiceDate = todayISO();
     dueDate = defaultDueDate();
 
-    // Load buildings if no buildingId provided
     if (!buildingId || buildingId === '') {
-      await loadBuildings();
+      loadBuildings();
     }
 
-    // Load accounts list
-    await loadAccounts();
+    loadAccounts();
 
-    // Load invoice if editing
     if (invoiceId) {
       isEditMode = true;
-      await loadInvoice();
+      loadInvoice();
     }
   });
 
@@ -114,8 +115,8 @@
   async function loadInvoice() {
     await withLoadingState({
       action: () => api.get(`/invoices/${invoiceId}`),
-      setLoading: (v) => loading = v,
-      setError: (v) => error = v,
+      setLoading: (v: boolean) => loading = v,
+      setError: (v: string) => error = v,
       errorMessage: $_('invoices.load_error'),
       onSuccess: (invoice: any) => {
         description = invoice.description;
@@ -141,14 +142,14 @@
   }
 
   // Recalculate VAT when amount or rate changes
-  $: {
+  $effect(() => {
     if (amountExclVat || vatRate) {
       recalculateVAT();
     }
-  }
+  });
 
-  function handleLineItemsChange(event: CustomEvent) {
-    lineItems = event.detail;
+  function handleLineItemsChange(items: any[]) {
+    lineItems = items;
   }
 
   function toggleMode() {
@@ -163,6 +164,19 @@
   async function handleSubmit() {
     loading = true;
     error = '';
+
+    if (!selectedBuildingId && buildingId) {
+      selectedBuildingId = buildingId;
+    }
+    if (!selectedBuildingId) {
+      if (buildings.length === 0) {
+        error = $_('invoices.select_building') || 'Veuillez sélectionner un immeuble.';
+      } else {
+        error = $_('invoices.select_building') || 'Veuillez sélectionner un immeuble dans la liste.';
+      }
+      loading = false;
+      return;
+    }
 
     // Validation
     if (mode === 'simple') {
@@ -191,7 +205,6 @@
       }
     }
 
-    // Get organization_id from authStore if not provided
     const orgId = organizationId || $authStore.user?.activeRole?.organizationId || '';
 
     if (!orgId) {
@@ -241,7 +254,7 @@
           if (onSaved) onSaved(created);
         }
       },
-      setLoading: (v) => loading = v,
+      setLoading: (v: boolean) => loading = v,
       errorMessage: $_('invoices.save_error'),
     });
   }
@@ -251,7 +264,7 @@
   <div class="form-header">
     <h2>{isEditMode ? $_('invoices.edit') : $_('invoices.create')} {$_('invoices.invoice')}</h2>
     {#if !isEditMode}
-      <button type="button" class="btn-mode-toggle" on:click={toggleMode} disabled={loading} data-testid="mode-toggle">
+      <button type="button" class="btn-mode-toggle" onclick={toggleMode} disabled={loading} data-testid="mode-toggle">
         {mode === 'simple' ? $_('invoices.detailed_mode') : $_('invoices.simple_mode')}
       </button>
     {/if}
@@ -261,11 +274,10 @@
     <div class="alert alert-error">{error}</div>
   {/if}
 
-  <form on:submit|preventDefault={handleSubmit}>
+  <form onsubmit={(e: Event) => { e.preventDefault(); handleSubmit(); }}>
     {#if mode === 'simple'}
       <!-- Simple Mode: Single Amount -->
-      <!-- Building Selector (if no buildingId provided) -->
-      {#if (!buildingId || buildingId === '') && buildings.length > 0}
+      {#if buildings.length > 0 && !buildingId}
       <div class="form-group">
         <label for="buildingSelect">{$_('common.building')} *</label>
         <select id="buildingSelect" bind:value={selectedBuildingId} disabled={loading} required data-testid="building-select">
@@ -277,7 +289,6 @@
       </div>
       {/if}
 
-      <!-- Description -->
       <div class="form-group">
         <label for="description">{$_('common.description')} *</label>
         <input
@@ -291,7 +302,6 @@
         />
       </div>
 
-      <!-- Category -->
       <div class="form-group">
         <label for="category">{$_('common.category')}</label>
         <select id="category" bind:value={category} disabled={loading} data-testid="category-select">
@@ -301,7 +311,6 @@
         </select>
       </div>
 
-      <!-- Account Code (PCMN) -->
       <div class="form-group">
         <label for="accountCode">{$_('invoices.account_code')}</label>
         <select id="accountCode" bind:value={accountCode} disabled={loading}>
@@ -315,7 +324,6 @@
         <small class="form-help">{$_('invoices.account_help')}</small>
       </div>
 
-      <!-- Amount HT and VAT -->
       <div class="form-row">
         <div class="form-group">
           <label for="amountExclVat">{$_('invoices.amount_excl_vat')} *</label>
@@ -342,7 +350,6 @@
         </div>
       </div>
 
-      <!-- Calculated VAT -->
       <div class="calculated-amounts">
         <div class="amount-row">
           <span>{$_('invoices.amount_excl_vat')}:</span>
@@ -359,7 +366,6 @@
       </div>
     {:else}
       <!-- Detailed Mode: Line Items -->
-      <!-- Category -->
       <div class="form-group">
         <label for="category">{$_('common.category')}</label>
         <select id="category" bind:value={category} disabled={loading} data-testid="category-select">
@@ -369,7 +375,6 @@
         </select>
       </div>
 
-      <!-- Account Code (PCMN) -->
       <div class="form-group">
         <label for="accountCode">{$_('invoices.account_code')}</label>
         <select id="accountCode" bind:value={accountCode} disabled={loading}>
@@ -386,7 +391,7 @@
       <InvoiceLineItems
         bind:lineItems={lineItems}
         disabled={loading}
-        on:change={handleLineItemsChange}
+        onchange={handleLineItemsChange}
       />
     {/if}
 
@@ -444,7 +449,7 @@
     <!-- Actions -->
     <div class="form-actions">
       {#if onCancel}
-        <button type="button" class="btn btn-secondary" on:click={onCancel} disabled={loading} data-testid="cancel-button">
+        <button type="button" class="btn btn-secondary" onclick={onCancel} disabled={loading} data-testid="cancel-button">
           {$_('common.cancel')}
         </button>
       {/if}

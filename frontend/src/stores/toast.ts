@@ -16,6 +16,20 @@ function createToastStore() {
   return {
     subscribe,
     show: (message: string, type: ToastType = "info", duration = 5000) => {
+      // STORY-P7-402: dedupe identical toasts (same message + type) to avoid
+      // cascades when several parallel API calls fail with the same error.
+      let reusedId: number | null = null;
+      update((toasts) => {
+        const existing = toasts.find(
+          (t) => t.message === message && t.type === type,
+        );
+        if (existing) {
+          reusedId = existing.id;
+        }
+        return toasts;
+      });
+      if (reusedId !== null) return reusedId;
+
       const id = nextId++;
       const toast: ToastMessage = { id, message, type, duration };
 

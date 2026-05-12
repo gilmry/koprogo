@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { createEventDispatcher } from "svelte";
+  // Svelte 5 runes mode
   import { _ } from '../../lib/i18n';
   import {
     localExchangesApi,
@@ -11,23 +11,31 @@
   import BuildingSelector from "../BuildingSelector.svelte";
   import { withErrorHandling } from "../../lib/utils/error.utils";
 
-  const dispatch = createEventDispatcher();
+  let {
+    onsuccess,
+    oncancel,
+  }: {
+    onsuccess?: (exchange: any) => void;
+    oncancel?: () => void;
+  } = $props();
 
-  let selectedBuildingId = "";
+  let selectedBuildingId = $state("");
 
-  let formData: CreateLocalExchangeDto = {
+  let formData: CreateLocalExchangeDto = $state({
     building_id: "",
     exchange_type: ExchangeType.Service,
     title: "",
     description: "",
     credits: 1,
-  };
+  });
 
-  $: formData.building_id = selectedBuildingId;
+  $effect(() => {
+    formData.building_id = selectedBuildingId;
+  });
 
-  let loading: boolean = false;
-  let error: string | null = null;
-  let success: boolean = false;
+  let loading: boolean = $state(false);
+  let error: string | null = $state(null);
+  let success: boolean = $state(false);
 
   async function handleSubmit(e: Event) {
     e.preventDefault();
@@ -54,12 +62,12 @@
 
     const result = await withErrorHandling({
       action: () => localExchangesApi.create(formData),
-      setLoading: (v) => loading = v,
+      setLoading: (v: boolean) => loading = v,
       errorMessage: $_("exchanges.createError"),
       onSuccess: (exchange) => {
         error = null;
         success = true;
-        dispatch("success", exchange);
+        onsuccess?.(exchange);
         setTimeout(() => {
           window.location.href = `/exchange-detail?id=${exchange.id}`;
         }, 1500);
@@ -68,7 +76,7 @@
   }
 </script>
 
-<form on:submit={handleSubmit} class="space-y-6" data-testid="create-exchange-form">
+<form onsubmit={handleSubmit} class="space-y-6" data-testid="create-exchange-form">
   <!-- Success Message -->
   {#if success}
     <div
@@ -221,7 +229,7 @@
   <div class="flex justify-end gap-3">
     <button
       type="button"
-      on:click={() => dispatch("cancel")}
+      onclick={() => oncancel?.()}
       class="px-6 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
     >
       {$_("common.cancel")}

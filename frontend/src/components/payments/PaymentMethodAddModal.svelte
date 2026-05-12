@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { createEventDispatcher } from "svelte";
+  // Svelte 5 runes mode
   import { _ } from '../../lib/i18n';
   import {
     paymentMethodsApi,
@@ -14,22 +14,25 @@
   import FormSelect from "../ui/FormSelect.svelte";
   import Button from "../ui/Button.svelte";
 
-  export let open = false;
-  export let ownerId: string;
+  let { open = $bindable(false), ownerId, onadded }: {
+    open?: boolean;
+    ownerId: string;
+    onadded?: () => void;
+  } = $props();
 
-  const dispatch = createEventDispatcher();
-
-  let formData: CreatePaymentMethodDto = {
-    owner_id: ownerId,
+  let formData: CreatePaymentMethodDto = $state({
+    owner_id: "",
     method_type: PaymentMethodType.Card,
     display_label: "",
     stripe_payment_method_id: "",
     last4: "",
     brand: "",
-  };
+  });
+  // Sync with prop (live value via $effect, not stale initial capture)
+  $effect(() => { if (ownerId && !formData.owner_id) formData.owner_id = ownerId; });
 
-  let submitting = false;
-  let errors: Record<string, string> = {};
+  let submitting = $state(false);
+  let errors: Record<string, string> = $state({});
 
   async function handleSubmit() {
     errors = validatePaymentMethod(formData, {
@@ -47,13 +50,13 @@
         ...formData,
         owner_id: ownerId,
       }),
-      setLoading: (v) => submitting = v,
+      setLoading: (v: boolean) => submitting = v,
       successMessage: $_('payments.methodAdded'),
       errorMessage: $_('payments.failedAddMethod'),
     });
 
     if (result !== undefined) {
-      dispatch("added");
+      onadded?.();
       handleClose();
     }
   }
@@ -69,7 +72,6 @@
       brand: "",
     };
     errors = {};
-    dispatch("close");
   }
 
   function handleMethodTypeChange() {
@@ -79,8 +81,8 @@
   }
 </script>
 
-<Modal isOpen={open} on:close={handleClose} title={$_('payments.addMethodTitle')}>
-  <form on:submit|preventDefault={handleSubmit}>
+<Modal isOpen={open} onclose={handleClose} title={$_('payments.addMethodTitle')}>
+  <form onsubmit={(e) => { e.preventDefault(); handleSubmit(); }}>
     <div class="space-y-4">
       <!-- Info Banner -->
       <div class="bg-blue-50 border border-blue-200 rounded-lg p-3">
@@ -94,7 +96,7 @@
         id="method-type"
         label={$_('payments.methodType')}
         bind:value={formData.method_type}
-        on:change={handleMethodTypeChange}
+        onchange={handleMethodTypeChange}
         required
         data-testid="method-type-select"
       >
@@ -173,7 +175,7 @@
 
     <!-- Actions -->
     <div class="mt-6 flex justify-end space-x-3">
-      <Button type="button" variant="outline" on:click={handleClose} data-testid="cancel-btn">
+      <Button type="button" variant="outline" onclick={handleClose} data-testid="cancel-btn">
         {$_('common.cancel')}
       </Button>
       <Button type="submit" loading={submitting} data-testid="submit-btn">

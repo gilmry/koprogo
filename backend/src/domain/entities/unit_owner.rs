@@ -1,4 +1,5 @@
 use chrono::{DateTime, Utc};
+use rust_decimal::Decimal;
 use uuid::Uuid;
 
 /// UnitOwner represents the ownership relationship between a Unit and an Owner
@@ -7,15 +8,18 @@ use uuid::Uuid;
 /// - Multiple units per owner (owner in multiple buildings)
 /// - Ownership percentage tracking
 /// - Historical ownership tracking (start_date, end_date)
+///
+/// MONETARY-ADJACENT: ownership_percentage uses rust_decimal::Decimal (cf. ADR-0007).
+/// Quote-parts drive charge distribution; rounding errors propagate to invoices.
 #[derive(Debug, Clone)]
 pub struct UnitOwner {
     pub id: Uuid,
     pub unit_id: Uuid,
     pub owner_id: Uuid,
 
-    /// Ownership percentage (0.0 to 1.0)
-    /// Example: 0.5 = 50%, 1.0 = 100%
-    pub ownership_percentage: f64,
+    /// Ownership percentage (0.0 to 1.0). Decimal exact (cf. ADR-0007).
+    /// Example: dec!(0.5) = 50%, dec!(1.0) = 100%
+    pub ownership_percentage: Decimal,
 
     /// Date when ownership started
     pub start_date: DateTime<Utc>,
@@ -35,11 +39,11 @@ impl UnitOwner {
     pub fn new(
         unit_id: Uuid,
         owner_id: Uuid,
-        ownership_percentage: f64,
+        ownership_percentage: Decimal,
         is_primary_contact: bool,
     ) -> Result<Self, String> {
         // Validate ownership percentage
-        if ownership_percentage <= 0.0 || ownership_percentage > 1.0 {
+        if ownership_percentage <= Decimal::ZERO || ownership_percentage > Decimal::ONE {
             return Err("Ownership percentage must be between 0 and 1".to_string());
         }
 
@@ -60,11 +64,11 @@ impl UnitOwner {
     pub fn new_with_start_date(
         unit_id: Uuid,
         owner_id: Uuid,
-        ownership_percentage: f64,
+        ownership_percentage: Decimal,
         is_primary_contact: bool,
         start_date: DateTime<Utc>,
     ) -> Result<Self, String> {
-        if ownership_percentage <= 0.0 || ownership_percentage > 1.0 {
+        if ownership_percentage <= Decimal::ZERO || ownership_percentage > Decimal::ONE {
             return Err("Ownership percentage must be between 0 and 1".to_string());
         }
 
@@ -98,8 +102,8 @@ impl UnitOwner {
     }
 
     /// Update ownership percentage
-    pub fn update_percentage(&mut self, new_percentage: f64) -> Result<(), String> {
-        if new_percentage <= 0.0 || new_percentage > 1.0 {
+    pub fn update_percentage(&mut self, new_percentage: Decimal) -> Result<(), String> {
+        if new_percentage <= Decimal::ZERO || new_percentage > Decimal::ONE {
             return Err("Ownership percentage must be between 0 and 1".to_string());
         }
 
@@ -118,17 +122,18 @@ impl UnitOwner {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use rust_decimal_macros::dec;
 
     #[test]
     fn test_create_unit_owner() {
         let unit_id = Uuid::new_v4();
         let owner_id = Uuid::new_v4();
 
-        let unit_owner = UnitOwner::new(unit_id, owner_id, 0.5, true).unwrap();
+        let unit_owner = UnitOwner::new(unit_id, owner_id, dec!(0.5), true).unwrap();
 
         assert_eq!(unit_owner.unit_id, unit_id);
         assert_eq!(unit_owner.owner_id, owner_id);
-        assert_eq!(unit_owner.ownership_percentage, 0.5);
+        assert_eq!(unit_owner.ownership_percentage, dec!(0.5));
         assert!(unit_owner.is_primary_contact);
         assert!(unit_owner.is_active());
     }
@@ -139,14 +144,14 @@ mod tests {
         let owner_id = Uuid::new_v4();
 
         // Test percentage > 1.0
-        let result = UnitOwner::new(unit_id, owner_id, 1.5, false);
+        let result = UnitOwner::new(unit_id, owner_id, dec!(1.5), false);
         assert!(result.is_err());
 
         // Test percentage <= 0
-        let result = UnitOwner::new(unit_id, owner_id, 0.0, false);
+        let result = UnitOwner::new(unit_id, owner_id, Decimal::ZERO, false);
         assert!(result.is_err());
 
-        let result = UnitOwner::new(unit_id, owner_id, -0.5, false);
+        let result = UnitOwner::new(unit_id, owner_id, dec!(-0.5), false);
         assert!(result.is_err());
     }
 
@@ -155,7 +160,7 @@ mod tests {
         let unit_id = Uuid::new_v4();
         let owner_id = Uuid::new_v4();
 
-        let mut unit_owner = UnitOwner::new(unit_id, owner_id, 1.0, true).unwrap();
+        let mut unit_owner = UnitOwner::new(unit_id, owner_id, Decimal::ONE, true).unwrap();
 
         assert!(unit_owner.is_active());
 
@@ -171,7 +176,7 @@ mod tests {
         let unit_id = Uuid::new_v4();
         let owner_id = Uuid::new_v4();
 
-        let mut unit_owner = UnitOwner::new(unit_id, owner_id, 1.0, true).unwrap();
+        let mut unit_owner = UnitOwner::new(unit_id, owner_id, Decimal::ONE, true).unwrap();
 
         // End date before start date should fail
         let invalid_end_date = unit_owner.start_date - chrono::Duration::days(1);
@@ -185,13 +190,13 @@ mod tests {
         let unit_id = Uuid::new_v4();
         let owner_id = Uuid::new_v4();
 
-        let mut unit_owner = UnitOwner::new(unit_id, owner_id, 0.5, true).unwrap();
+        let mut unit_owner = UnitOwner::new(unit_id, owner_id, dec!(0.5), true).unwrap();
 
-        unit_owner.update_percentage(0.75).unwrap();
-        assert_eq!(unit_owner.ownership_percentage, 0.75);
+        unit_owner.update_percentage(dec!(0.75)).unwrap();
+        assert_eq!(unit_owner.ownership_percentage, dec!(0.75));
 
         // Invalid percentage
-        let result = unit_owner.update_percentage(1.5);
+        let result = unit_owner.update_percentage(dec!(1.5));
         assert!(result.is_err());
     }
 
@@ -200,24 +205,24 @@ mod tests {
         let unit_id = Uuid::new_v4();
         let owner_id = Uuid::new_v4();
 
-        let mut unit_owner = UnitOwner::new(unit_id, owner_id, 0.5, false).unwrap();
+        let mut unit_owner = UnitOwner::new(unit_id, owner_id, dec!(0.5), false).unwrap();
 
         // Test boundary: exactly 1.0 (100%) is valid
-        assert!(unit_owner.update_percentage(1.0).is_ok());
-        assert_eq!(unit_owner.ownership_percentage, 1.0);
+        assert!(unit_owner.update_percentage(Decimal::ONE).is_ok());
+        assert_eq!(unit_owner.ownership_percentage, Decimal::ONE);
 
         // Test boundary: 0.0 is invalid
-        assert!(unit_owner.update_percentage(0.0).is_err());
+        assert!(unit_owner.update_percentage(Decimal::ZERO).is_err());
 
         // Test boundary: 0.0001 (0.01%) is valid
-        assert!(unit_owner.update_percentage(0.0001).is_ok());
-        assert_eq!(unit_owner.ownership_percentage, 0.0001);
+        assert!(unit_owner.update_percentage(dec!(0.0001)).is_ok());
+        assert_eq!(unit_owner.ownership_percentage, dec!(0.0001));
 
         // Test boundary: 1.0001 is invalid
-        assert!(unit_owner.update_percentage(1.0001).is_err());
+        assert!(unit_owner.update_percentage(dec!(1.0001)).is_err());
 
         // Test negative values
-        assert!(unit_owner.update_percentage(-0.5).is_err());
+        assert!(unit_owner.update_percentage(dec!(-0.5)).is_err());
     }
 
     #[test]
@@ -225,7 +230,7 @@ mod tests {
         let unit_id = Uuid::new_v4();
         let owner_id = Uuid::new_v4();
 
-        let mut unit_owner = UnitOwner::new(unit_id, owner_id, 0.5, false).unwrap();
+        let mut unit_owner = UnitOwner::new(unit_id, owner_id, dec!(0.5), false).unwrap();
 
         assert!(!unit_owner.is_primary_contact);
 
@@ -242,12 +247,12 @@ mod tests {
         let owner_id = Uuid::new_v4();
 
         // Test with 4 decimal places (common for co-ownership)
-        let unit_owner = UnitOwner::new(unit_id, owner_id, 0.3333, false).unwrap();
-        assert_eq!(unit_owner.ownership_percentage, 0.3333);
+        let unit_owner = UnitOwner::new(unit_id, owner_id, dec!(0.3333), false).unwrap();
+        assert_eq!(unit_owner.ownership_percentage, dec!(0.3333));
 
         // Test with very small percentage
-        let unit_owner = UnitOwner::new(unit_id, owner_id, 0.0001, false).unwrap();
-        assert_eq!(unit_owner.ownership_percentage, 0.0001);
+        let unit_owner = UnitOwner::new(unit_id, owner_id, dec!(0.0001), false).unwrap();
+        assert_eq!(unit_owner.ownership_percentage, dec!(0.0001));
     }
 
     #[test]
@@ -255,7 +260,7 @@ mod tests {
         let unit_id = Uuid::new_v4();
         let owner_id = Uuid::new_v4();
 
-        let mut unit_owner = UnitOwner::new(unit_id, owner_id, 1.0, true).unwrap();
+        let mut unit_owner = UnitOwner::new(unit_id, owner_id, Decimal::ONE, true).unwrap();
 
         assert!(unit_owner.end_date.is_none());
 
@@ -271,7 +276,7 @@ mod tests {
         let unit_id = Uuid::new_v4();
         let owner_id = Uuid::new_v4();
 
-        let mut unit_owner = UnitOwner::new(unit_id, owner_id, 1.0, true).unwrap();
+        let mut unit_owner = UnitOwner::new(unit_id, owner_id, Decimal::ONE, true).unwrap();
 
         let first_end = Utc::now() + chrono::Duration::days(1);
         unit_owner.end_ownership(first_end).unwrap();
@@ -289,7 +294,7 @@ mod tests {
         let owner_id = Uuid::new_v4();
 
         let before = Utc::now();
-        let unit_owner = UnitOwner::new(unit_id, owner_id, 0.5, false).unwrap();
+        let unit_owner = UnitOwner::new(unit_id, owner_id, dec!(0.5), false).unwrap();
         let after = Utc::now();
 
         // created_at should be between before and after
@@ -308,13 +313,13 @@ mod tests {
         let unit_id = Uuid::new_v4();
         let owner_id = Uuid::new_v4();
 
-        let mut unit_owner = UnitOwner::new(unit_id, owner_id, 0.5, false).unwrap();
+        let mut unit_owner = UnitOwner::new(unit_id, owner_id, dec!(0.5), false).unwrap();
         let original_updated_at = unit_owner.updated_at;
 
         // Wait a tiny bit to ensure timestamp changes
         std::thread::sleep(std::time::Duration::from_millis(10));
 
-        unit_owner.update_percentage(0.6).unwrap();
+        unit_owner.update_percentage(dec!(0.6)).unwrap();
         assert!(unit_owner.updated_at > original_updated_at);
 
         let previous_updated = unit_owner.updated_at;
@@ -329,8 +334,8 @@ mod tests {
         let unit_id = Uuid::new_v4();
         let owner_id = Uuid::new_v4();
 
-        let unit_owner = UnitOwner::new(unit_id, owner_id, 1.0, true).unwrap();
-        assert_eq!(unit_owner.ownership_percentage, 1.0);
+        let unit_owner = UnitOwner::new(unit_id, owner_id, Decimal::ONE, true).unwrap();
+        assert_eq!(unit_owner.ownership_percentage, Decimal::ONE);
     }
 
     #[test]
@@ -341,17 +346,17 @@ mod tests {
         let owner3_id = Uuid::new_v4();
 
         // Scenario: 3 co-owners with 50%, 30%, 20%
-        let owner1 = UnitOwner::new(unit_id, owner1_id, 0.5, true).unwrap();
-        let owner2 = UnitOwner::new(unit_id, owner2_id, 0.3, false).unwrap();
-        let owner3 = UnitOwner::new(unit_id, owner3_id, 0.2, false).unwrap();
+        let owner1 = UnitOwner::new(unit_id, owner1_id, dec!(0.5), true).unwrap();
+        let owner2 = UnitOwner::new(unit_id, owner2_id, dec!(0.3), false).unwrap();
+        let owner3 = UnitOwner::new(unit_id, owner3_id, dec!(0.2), false).unwrap();
 
-        assert_eq!(owner1.ownership_percentage, 0.5);
-        assert_eq!(owner2.ownership_percentage, 0.3);
-        assert_eq!(owner3.ownership_percentage, 0.2);
+        assert_eq!(owner1.ownership_percentage, dec!(0.5));
+        assert_eq!(owner2.ownership_percentage, dec!(0.3));
+        assert_eq!(owner3.ownership_percentage, dec!(0.2));
 
-        // Total should be 1.0
+        // Total should be 1.0 EXACTLY (Decimal — pas IEEE 754).
         let total =
             owner1.ownership_percentage + owner2.ownership_percentage + owner3.ownership_percentage;
-        assert!((total - 1.0).abs() < f64::EPSILON);
+        assert_eq!(total, Decimal::ONE);
     }
 }

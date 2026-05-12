@@ -231,7 +231,27 @@
     "seedData": "Test data",
     "subscriptions": "Subscriptions",
     "userOwnerLinks": "User-owner links",
-    "workReports": "Work reports"
+    "workReports": "Work reports",
+    "main": "Main",
+    "community": "Community",
+    "management": "Management",
+    "governance": "Governance",
+    "accounting": "Accounting",
+    "mySpace": "My space",
+    "gdpr": "GDPR",
+    "invoiceWorkflow": "Invoice workflow",
+    "callForFunds": "Calls for funds",
+    "contributions": "Contributions",
+    "reminders": "Reminders",
+    "etatsDates": "Property statements",
+    "works": "Works",
+    "journalEntries": "Journal entries",
+    "reportsPcmn": "PCMN reports",
+    "myTickets": "My tickets",
+    "paymentMethods": "Payment methods",
+    "sel": "LETS",
+    "sharing_short": "Sharing",
+    "myDashboard": "My dashboard"
   },
   "auth": {
     "login": "Log in",
@@ -477,6 +497,7 @@
   },
   "owners": {
     "title": "Co-owners",
+    "count": "{count, plural, one {# co-owner} other {# co-owners}}",
     "create": "Create Co-owner",
     "firstName": "First Name",
     "lastName": "Last Name",
@@ -715,6 +736,24 @@
     "workflow_title": "Invoice workflow"
   },
   "meetings": {
+    "quorum": {
+      "title": "Quorum / Attendance",
+      "presentQuotas": "Quotas present or represented",
+      "totalQuotas": "Total quotas",
+      "validate": "Validate quorum",
+      "validating": "Validating...",
+      "validated": "Quorum validated",
+      "validated_success": "Quorum validated successfully",
+      "validation_failed": "Quorum validation failed",
+      "second_convocation_scheduled": "Second convocation auto-scheduled (Art. 3.87 §5 CC)",
+      "invalidValues": "Invalid values: present and total quotas must be strictly positive",
+      "legal_notice": "Enter the total quotas present or represented by proxy to validate the quorum per Article 3.87 §5 of the Belgian Civil Code.",
+      "readonly": "Quorum pending syndic validation.",
+      "preview": "Preview",
+      "quorum_ok": "Quorum reached (> 50%)",
+      "quorum_not_reached": "Quorum not reached (< 50%)",
+      "thousandths": "thousandths"
+    },
     "add_document": "Add document",
     "add_documents_help": "Use the button above to add documents to this meeting.",
     "agenda": "Agenda",
@@ -767,7 +806,6 @@
     "participants_count": "{count, plural, one {# participant} other {# participants}}",
     "prompt_attendees": "Number of attendees present:",
     "prompt_new_date": "New date (format YYYY-MM-DD):",
-    "quorum": "Quorum",
     "reschedule": "Reschedule",
     "rescheduled_success": "Meeting rescheduled successfully",
     "scheduled": "Scheduled",
@@ -1010,13 +1048,15 @@
       "critical": "Critical (1 hour)"
     },
     "categories": {
-      "general": "General",
       "plumbing": "Plumbing",
       "electrical": "Electrical",
       "heating": "Heating",
-      "cleaning": "Cleaning",
+      "commonAreas": "Common areas",
+      "elevator": "Elevator",
       "security": "Security",
-      "emergency": "Emergency"
+      "cleaning": "Cleaning",
+      "landscaping": "Landscaping",
+      "other": "Other"
     },
     "assign_ticket": "Assign ticket",
     "assign_description": "Assign this ticket to a contractor",
@@ -1108,6 +1148,12 @@
     "try_adjusting_filters": "Try adjusting your filters."
   },
   "polls": {
+    "status": {
+      "draft": "Draft",
+      "active": "Active",
+      "closed": "Closed",
+      "cancelled": "Cancelled"
+    },
     "title": "Polls",
     "create": "Create Poll",
     "question": "Question",
@@ -1636,6 +1682,7 @@
     "title": "Notifications",
     "markRead": "Mark as read",
     "markAllRead": "Mark all as read",
+    "viewAll": "View all notifications",
     "unread": "Unread",
     "noNotifications": "No notifications.",
     "preferences": "Notification preferences",
@@ -2580,21 +2627,19 @@
       "creating": "Creating...",
       "descriptionPlaceholder": "Detailed description of the resolution...",
       "error": "Error creating resolution",
-      "legalText": "Required majorities are defined by Articles 577-7 et seq. of the Belgian Civil Code.",
-      "majorityAbsolute": "Absolute majority (50%+1 of all votes)",
-      "majorityQualified": "Qualified majority (custom threshold)",
+      "legalText": "Required majorities are defined by Articles 3.88 et seq. of the Belgian Civil Code.",
+      "majorityAbsolute": "Absolute majority (>50% of attendees, abstentions excluded)",
+      "majorityTwoThirds": "Two-thirds majority (≥2/3 of attendees)",
+      "majorityFourFifths": "Four-fifths majority (≥4/5 of attendees)",
+      "majorityUnanimity": "Unanimity (100% of all quotas)",
       "majorityRequired": "Required majority",
-      "majoritySimple": "Simple majority (50%+1 of votes cast)",
       "submit": "Create resolution",
       "success": "Resolution created successfully",
       "title": "Create a resolution",
       "titlePlaceholder": "Resolution title...",
       "titleRequired": "Resolution title is required",
-      "typeBudget": "Budget",
-      "typeElection": "Election",
-      "typeRules": "Rules",
-      "typeStandard": "Standard",
-      "typeWorks": "Works"
+      "typeOrdinary": "Ordinary",
+      "typeExtraordinary": "Extraordinary"
     },
     "list": {
       "adopted": "{count, plural, one {adopted} other {adopted}}",
@@ -2645,7 +2690,9 @@
       "voter": "Voter",
       "votes": "{count, plural, one {vote} other {votes}}",
       "votingPower": "Voting power",
-      "votingPowerLabel": "Shares (thousandths)"
+      "votingPowerLabel": "Shares (thousandths)",
+      "unitLabel": "Vote on behalf of unit",
+      "needOwnerAndUnit": "You must be an owner of a unit to vote."
     },
     "adopted": "Adopted",
     "abstain": "Abstain",

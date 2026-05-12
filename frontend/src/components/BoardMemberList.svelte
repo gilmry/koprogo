@@ -1,20 +1,21 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  // Svelte 5 runes mode
   import { _ } from '../lib/i18n';
   import { api } from '../lib/api';
-  import { toast } from '../stores/toast';
   import type { BoardMemberResponse } from '../lib/types';
   import { formatDate } from "../lib/utils/date.utils";
   import { withErrorHandling } from "../lib/utils/error.utils";
 
-  export let buildingId: string = '';
-  export let showInactive: boolean = false;
+  let { buildingId = '', showInactive = false }: {
+    buildingId?: string;
+    showInactive?: boolean;
+  } = $props();
 
-  let members: BoardMemberResponse[] = [];
-  let loading = true;
-  let error = '';
+  let members = $state<BoardMemberResponse[]>([]);
+  let loading = $state(true);
+  let error = $state('');
 
-  onMount(() => {
+  $effect(() => {
     if (!buildingId) {
       error = $_('board.error.buildingIdMissing');
       loading = false;
@@ -120,7 +121,7 @@
               <div class="flex-1">
                 <div class="flex items-center">
                   <h3 class="text-lg font-medium text-gray-900">
-                    {member.owner_name}
+                    {(member as any).owner_name ?? "Inconnu"}
                   </h3>
                   <span class="ml-3 inline-flex items-center px-3 py-0.5 rounded-full text-sm font-medium bg-primary-100 text-primary-800">
                     {getPositionLabel(member.position)}
@@ -132,7 +133,7 @@
                     {formatDate(member.mandate_start)} → {formatDate(member.mandate_end)}
                   </p>
                   <p>
-                    <strong>{$_('board.electedAt')}:</strong> AG du {formatDate(member.elected_at)}
+                    <strong>{$_('board.electedAt')}:</strong> AG du {formatDate((member as any).elected_at ?? member.mandate_start)}
                   </p>
                 </div>
               </div>
@@ -165,7 +166,7 @@
         <strong>{$_('board.legalNote')}:</strong> {$_('board.legalRequirement')}
       </p>
       <button
-        on:click={() => { showInactive = !showInactive; loadMembers(); }}
+        onclick={() => { showInactive = !showInactive; loadMembers(); }}
         class="text-sm text-primary-600 hover:text-primary-800 font-medium"
       >
         {showInactive ? $_('board.hideMembers') : $_('board.showMembers')}

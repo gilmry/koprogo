@@ -1,7 +1,8 @@
 <script lang="ts">
+  // Svelte 5 runes mode
   import { ExpertiseLevel } from "../../lib/api/skills";
 
-  export let level: ExpertiseLevel;
+  let { level }: { level: ExpertiseLevel } = $props();
 
   const levelConfig: Record<
     ExpertiseLevel,
@@ -29,7 +30,7 @@
     },
   };
 
-  $: config = levelConfig[level] || levelConfig[ExpertiseLevel.Beginner];
+  let config = $derived(levelConfig[level] || levelConfig[ExpertiseLevel.Beginner]);
 </script>
 
 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {config.class}">

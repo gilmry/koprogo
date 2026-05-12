@@ -101,7 +101,8 @@
   <div class="chatbot-header">
     <h2>🤖 {$_('mcp.title')}</h2>
     <div class="header-controls">
-      <select bind:value={selectedModel} class="model-select">
+      <label for="mcp-model-select" class="sr-only">{$_('mcp.title')}</label>
+      <select id="mcp-model-select" bind:value={selectedModel} class="model-select">
         {#each models as model}
           <option value={model.id}>
             {model.name} {model.edge_compatible ? '🍓' : '☁️'}
@@ -180,7 +181,9 @@
   </div>
 
   <div class="input-container">
+    <label for="mcp-input-message" class="sr-only">{$_('mcp.inputPlaceholder')}</label>
     <textarea
+      id="mcp-input-message"
       bind:value={inputMessage}
       on:keydown={handleKeydown}
       placeholder={$_('mcp.inputPlaceholder')}

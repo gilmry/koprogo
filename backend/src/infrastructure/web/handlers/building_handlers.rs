@@ -388,9 +388,9 @@ pub async fn delete_building(
 pub struct ExportAnnualReportQuery {
     pub year: i32,
     #[serde(default)]
-    pub reserve_fund: Option<f64>, // Optional reserve fund balance
+    pub reserve_fund: Option<rust_decimal::Decimal>, // Optional reserve fund balance
     #[serde(default)]
-    pub total_income: Option<f64>, // Optional total income (calculated if not provided)
+    pub total_income: Option<rust_decimal::Decimal>, // Optional total income (calculated if not provided)
 }
 
 #[utoipa::path(
@@ -483,7 +483,7 @@ pub async fn export_annual_report_pdf(
     });
 
     // Reserve fund (default to 0.0 if not provided)
-    let reserve_fund = query.reserve_fund.unwrap_or(0.0);
+    let reserve_fund = query.reserve_fund.unwrap_or(rust_decimal::Decimal::ZERO);
 
     // Convert DTOs to domain entities
     let building_org_id = Uuid::parse_str(&building_dto.organization_id).unwrap_or(organization_id);

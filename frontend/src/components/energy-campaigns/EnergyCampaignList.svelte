@@ -1,6 +1,6 @@
 <script lang="ts">
+  // Svelte 5 runes mode
   import { _ } from '../../lib/i18n';
-  import { onMount } from "svelte";
   import {
     energyCampaignsApi,
     type EnergyCampaign,
@@ -10,21 +10,23 @@
   import { formatDateShort } from "../../lib/utils/date.utils";
   import { withLoadingState } from "../../lib/utils/error.utils";
 
-  export let organizationId: string | undefined = undefined;
+  let { organizationId = undefined }: {
+    organizationId?: string | undefined;
+  } = $props();
 
-  let campaigns: EnergyCampaign[] = [];
-  let loading = true;
-  let error = "";
+  let campaigns: EnergyCampaign[] = $state([]);
+  let loading = $state(true);
+  let error = $state("");
 
-  onMount(async () => {
-    await loadCampaigns();
+  $effect(() => {
+    loadCampaigns();
   });
 
   async function loadCampaigns() {
     await withLoadingState({
       action: () => energyCampaignsApi.list(organizationId),
-      setLoading: (v) => loading = v,
-      setError: (v) => error = v,
+      setLoading: (v: boolean) => loading = v,
+      setError: (v: string) => error = v,
       onSuccess: (data) => campaigns = data,
       errorMessage: $_("energy.campaign.loadError"),
     });
@@ -40,13 +42,15 @@
   }
 
   function getCampaignProgress(campaign: EnergyCampaign): number {
-    const statuses = [
+    const statuses: CampaignStatus[] = [
       CampaignStatus.Draft,
+      CampaignStatus.AwaitingAGVote,
       CampaignStatus.CollectingData,
       CampaignStatus.Negotiating,
       CampaignStatus.AwaitingFinalVote,
       CampaignStatus.Finalized,
       CampaignStatus.Completed,
+      CampaignStatus.Cancelled,
     ];
     const currentIndex = statuses.indexOf(campaign.status);
     return ((currentIndex + 1) / statuses.length) * 100;
@@ -81,7 +85,7 @@
     <div class="p-4 m-4 bg-red-50 border border-red-200 rounded-md">
       <p class="text-sm text-red-800">❌ {error}</p>
       <button
-        on:click={loadCampaigns}
+        onclick={loadCampaigns}
         class="mt-2 text-sm text-red-600 hover:text-red-800 underline"
       >
         {$_("common.retry")}

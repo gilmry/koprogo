@@ -1,0 +1,81 @@
+name: Daily Standup Template
+
+# Architecture: Claude Desktop primary runtime (cf. .claude/AGENT_GUARDRAILS.md).
+# Ce workflow n'invoque PAS Claude. Il ouvre une issue vide avec template ;
+# les personas Scrum la commentent depuis Claude Desktop chargé avec leur profile.
+
+on:
+  schedule:
+    - cron: "0 9 * * 1-5" # weekdays 09:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  open:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Open daily standup issue
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          DATE=$(date +%Y-%m-%d)
+          TITLE="daily-standup-${DATE}"
+          # Skip if already exists today (idempotency)
+          if gh issue list --search "in:title $TITLE" --state open --json number --jq 'length' | grep -q '^[1-9]'; then
+            echo "Issue $TITLE already exists, skipping."
+            exit 0
+          fi
+          {
+            echo "---"
+            echo "ceremony: daily-standup"
+            echo "date: ${DATE}"
+            echo "status: open"
+            echo "---"
+            echo
+            echo "# Daily Standup ${DATE}"
+            echo
+            echo "## Format de réponse pour chaque persona"
+            echo
+            echo "Commenter ci-dessous avec :"
+            echo "- **Hier** : ce que j'ai fait"
+            echo "- **Aujourd'hui** : ce que je vais faire"
+            echo "- **Impediments** : ce qui me bloque (si rien : 'aucun')"
+            echo
+            echo "## Personas Scrum attendus"
+            echo
+            echo "Team A (Backend) :"
+            echo "- \`scrum-master-A\`"
+            echo "- \`product-owner-A\`"
+            echo "- \`dev-A\`"
+            echo "- \`qa-A\`"
+            echo
+            echo "Team B (Frontend) :"
+            echo "- \`scrum-master-B\`"
+            echo "- \`product-owner-B\`"
+            echo "- \`dev-B\`"
+            echo "- \`qa-B\`"
+            echo
+            echo "## Comment invoquer un persona"
+            echo
+            echo "Ouvre Claude Desktop sur ton ordi et lance :"
+            echo '```'
+            echo "Charge le persona <role> :"
+            echo "  - lis .claude/agents/<role>.md"
+            echo "  - lis .claude/agents/<role>.memory.md"
+            echo "Puis poste ton standup pour aujourd'hui dans l'issue daily-standup-${DATE}."
+            echo '```'
+            echo
+            echo "## Référence"
+            echo
+            echo "- Matrice personas × cérémonies : [#428 commentaire](https://github.com/gilmry/koprogo/issues/428#issuecomment-4347406461)"
+            echo "- Modèle Tier 2 (logué) : commentaires dans cette issue = activité tracée."
+            echo
+            echo "🤖 Auto-opened by \`daily-standup-template.yml\` (Claude Desktop primary runtime)."
+          } > /tmp/standup.md
+          gh issue create \
+            --title "$TITLE" \
+            --label "ceremony,track:software" \
+            --body-file /tmp/standup.md

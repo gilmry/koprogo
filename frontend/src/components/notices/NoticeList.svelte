@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount } from "svelte";
+  // Svelte 5 runes mode
   import { _ } from '../../lib/i18n';
   import { noticesApi, type Notice, NoticeType, NoticeStatus } from "../../lib/api/notices";
   import { toast } from "../../stores/toast";
@@ -8,18 +8,23 @@
   import { formatDateShort } from "../../lib/utils/date.utils";
   import { withLoadingState } from "../../lib/utils/error.utils";
 
-  export let buildingId: string;
-  export let showFilters = true;
+  let {
+    buildingId,
+    showFilters = true,
+  }: {
+    buildingId: string;
+    showFilters?: boolean;
+  } = $props();
 
-  let notices: Notice[] = [];
-  let filteredNotices: Notice[] = [];
-  let loading = true;
-  let searchQuery = "";
-  let selectedType: NoticeType | "all" = "all";
-  let selectedStatus: NoticeStatus | "active-only" = "active-only";
+  let notices: Notice[] = $state([]);
+  let filteredNotices: Notice[] = $state([]);
+  let loading = $state(true);
+  let searchQuery = $state("");
+  let selectedType: NoticeType | "all" = $state("all");
+  let selectedStatus: NoticeStatus | "active-only" = $state("active-only");
 
-  onMount(async () => {
-    await loadNotices();
+  $effect(() => {
+    loadNotices();
   });
 
   async function loadNotices() {
@@ -27,7 +32,7 @@
       action: () => selectedStatus === "active-only"
         ? noticesApi.listActive(buildingId)
         : noticesApi.listByBuilding(buildingId),
-      setLoading: (v) => loading = v,
+      setLoading: (v: boolean) => loading = v,
       setError: () => {},
       onSuccess: (data) => { notices = data; applyFilters(); },
       errorMessage: $_("notices.load_failed"),
@@ -52,12 +57,12 @@
     });
   }
 
-  $: {
+  $effect(() => {
     searchQuery;
     selectedType;
     selectedStatus;
     applyFilters();
-  }
+  });
 
   function truncate(text: string, maxLength: number): string {
     if (text.length <= maxLength) return text;

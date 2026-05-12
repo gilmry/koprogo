@@ -1,19 +1,19 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  // Svelte 5 runes mode
   import { _, isLoading } from '../lib/i18n';
   import { authStore, mapUserFromBackend } from '../stores/auth';
   import { UserRole } from '../lib/types';
   import type { User } from '../lib/types';
   import { apiEndpoint } from '../lib/config';
 
-  let email = '';
-  let password = '';
-  let error = '';
-  let loading = false;
+  let email = $state('');
+  let password = $state('');
+  let error = $state('');
+  let loading = $state(false);
 
-  onMount(async () => {
+  $effect(() => {
     // Ensure auth store is initialized before any login attempt
-    await authStore.init();
+    authStore.init();
   });
 
   const handleLogin = async (e: Event) => {
@@ -76,7 +76,7 @@
     <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
   </div>
 {:else}
-<form on:submit={handleLogin} class="space-y-6" data-testid="login-form">
+<form onsubmit={handleLogin} class="space-y-6" data-testid="login-form">
   {#if error}
     <div
       class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg"

@@ -291,8 +291,9 @@
 
       <form on:submit|preventDefault={handleElect} class="space-y-4">
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">{$_('admin.board.owner')}</label>
+          <label for="board-elect-owner" class="block text-sm font-medium text-gray-700 mb-1">{$_('admin.board.owner')}</label>
           <select
+            id="board-elect-owner"
             bind:value={electForm.owner_id}
             required
             class="w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500"
@@ -305,8 +306,9 @@
         </div>
 
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">{$_('admin.board.position')}</label>
+          <label for="board-elect-position" class="block text-sm font-medium text-gray-700 mb-1">{$_('admin.board.position')}</label>
           <select
+            id="board-elect-position"
             bind:value={electForm.position}
             class="w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500"
           >
@@ -317,8 +319,9 @@
         </div>
 
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">{$_('admin.board.meeting')}</label>
+          <label for="board-elect-meeting" class="block text-sm font-medium text-gray-700 mb-1">{$_('admin.board.meeting')}</label>
           <select
+            id="board-elect-meeting"
             bind:value={electForm.meeting_id}
             required
             class="w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500"
@@ -344,8 +347,9 @@
 
         <div class="grid grid-cols-2 gap-4">
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">{$_('admin.board.mandateStart')}</label>
+            <label for="board-elect-mandate-start" class="block text-sm font-medium text-gray-700 mb-1">{$_('admin.board.mandateStart')}</label>
             <input
+              id="board-elect-mandate-start"
               type="date"
               bind:value={electForm.mandate_start}
               required
@@ -353,8 +357,9 @@
             />
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">{$_('admin.board.mandateEnd')}</label>
+            <label for="board-elect-mandate-end" class="block text-sm font-medium text-gray-700 mb-1">{$_('admin.board.mandateEnd')}</label>
             <input
+              id="board-elect-mandate-end"
               type="date"
               bind:value={electForm.mandate_end}
               required

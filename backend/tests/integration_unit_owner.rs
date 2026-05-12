@@ -4,6 +4,7 @@ use koprogo_api::domain::entities::{Owner, Unit, UnitOwner};
 use koprogo_api::infrastructure::database::{
     create_pool, PostgresOwnerRepository, PostgresUnitOwnerRepository, PostgresUnitRepository,
 };
+use rust_decimal_macros::dec;
 use serial_test::serial;
 use testcontainers_modules::postgres::Postgres;
 use testcontainers_modules::testcontainers::{runners::AsyncRunner, ContainerAsync};
@@ -91,7 +92,7 @@ async fn create_test_unit(
         UnitType::Apartment,
         Some(1),
         75.5,
-        100.0,
+        dec!(100),
     )
     .unwrap();
 
@@ -124,7 +125,7 @@ async fn test_create_unit_owner() {
     let unit = create_test_unit(&unit_repo, org_id, building_id, "A101").await;
     let owner = create_test_owner(&owner_repo, org_id).await;
 
-    let unit_owner = UnitOwner::new(unit.id, owner.id, 1.0, true).unwrap();
+    let unit_owner = UnitOwner::new(unit.id, owner.id, dec!(1), true).unwrap();
 
     let result = repo.create(&unit_owner).await;
     assert!(result.is_ok());
@@ -132,7 +133,7 @@ async fn test_create_unit_owner() {
     let created = result.unwrap();
     assert_eq!(created.unit_id, unit.id);
     assert_eq!(created.owner_id, owner.id);
-    assert_eq!(created.ownership_percentage, 1.0);
+    assert_eq!(created.ownership_percentage, dec!(1));
     assert!(created.is_primary_contact);
 }
 
@@ -144,7 +145,7 @@ async fn test_find_by_id() {
     let unit = create_test_unit(&unit_repo, org_id, building_id, "A102").await;
     let owner = create_test_owner(&owner_repo, org_id).await;
 
-    let unit_owner = UnitOwner::new(unit.id, owner.id, 0.5, false).unwrap();
+    let unit_owner = UnitOwner::new(unit.id, owner.id, dec!(0.5), false).unwrap();
     let created = repo.create(&unit_owner).await.unwrap();
 
     let found = repo.find_by_id(created.id).await.unwrap();
@@ -152,7 +153,7 @@ async fn test_find_by_id() {
 
     let found = found.unwrap();
     assert_eq!(found.id, created.id);
-    assert_eq!(found.ownership_percentage, 0.5);
+    assert_eq!(found.ownership_percentage, dec!(0.5));
 }
 
 #[tokio::test]
@@ -165,8 +166,8 @@ async fn test_find_current_owners_by_unit() {
     let owner2 = create_test_owner(&owner_repo, org_id).await;
 
     // Add two active owners
-    let uo1 = UnitOwner::new(unit.id, owner1.id, 0.6, true).unwrap();
-    let uo2 = UnitOwner::new(unit.id, owner2.id, 0.4, false).unwrap();
+    let uo1 = UnitOwner::new(unit.id, owner1.id, dec!(0.6), true).unwrap();
+    let uo2 = UnitOwner::new(unit.id, owner2.id, dec!(0.4), false).unwrap();
 
     repo.create(&uo1).await.unwrap();
     repo.create(&uo2).await.unwrap();
@@ -189,8 +190,8 @@ async fn test_find_current_units_by_owner() {
     let owner = create_test_owner(&owner_repo, org_id).await;
 
     // Owner owns two units
-    let uo1 = UnitOwner::new(unit1.id, owner.id, 1.0, true).unwrap();
-    let uo2 = UnitOwner::new(unit2.id, owner.id, 1.0, true).unwrap();
+    let uo1 = UnitOwner::new(unit1.id, owner.id, dec!(1), true).unwrap();
+    let uo2 = UnitOwner::new(unit2.id, owner.id, dec!(1), true).unwrap();
 
     repo.create(&uo1).await.unwrap();
     repo.create(&uo2).await.unwrap();
@@ -207,19 +208,19 @@ async fn test_update_unit_owner() {
     let unit = create_test_unit(&unit_repo, org_id, building_id, "A106").await;
     let owner = create_test_owner(&owner_repo, org_id).await;
 
-    let mut unit_owner = UnitOwner::new(unit.id, owner.id, 0.5, false).unwrap();
+    let mut unit_owner = UnitOwner::new(unit.id, owner.id, dec!(0.5), false).unwrap();
     let created = repo.create(&unit_owner).await.unwrap();
 
     // Update percentage
     unit_owner.id = created.id;
-    unit_owner.update_percentage(0.75).unwrap();
+    unit_owner.update_percentage(dec!(0.75)).unwrap();
 
     let updated = repo.update(&unit_owner).await.unwrap();
-    assert_eq!(updated.ownership_percentage, 0.75);
+    assert_eq!(updated.ownership_percentage, dec!(0.75));
 
     // Verify in DB
     let found = repo.find_by_id(created.id).await.unwrap().unwrap();
-    assert_eq!(found.ownership_percentage, 0.75);
+    assert_eq!(found.ownership_percentage, dec!(0.75));
 }
 
 #[tokio::test]
@@ -230,7 +231,7 @@ async fn test_end_ownership() {
     let unit = create_test_unit(&unit_repo, org_id, building_id, "A107").await;
     let owner = create_test_owner(&owner_repo, org_id).await;
 
-    let mut unit_owner = UnitOwner::new(unit.id, owner.id, 1.0, true).unwrap();
+    let mut unit_owner = UnitOwner::new(unit.id, owner.id, dec!(1), true).unwrap();
     let created = repo.create(&unit_owner).await.unwrap();
 
     // End ownership
@@ -257,7 +258,7 @@ async fn test_delete_unit_owner() {
     let unit = create_test_unit(&unit_repo, org_id, building_id, "A108").await;
     let owner = create_test_owner(&owner_repo, org_id).await;
 
-    let unit_owner = UnitOwner::new(unit.id, owner.id, 1.0, true).unwrap();
+    let unit_owner = UnitOwner::new(unit.id, owner.id, dec!(1), true).unwrap();
     let created = repo.create(&unit_owner).await.unwrap();
 
     // Delete
@@ -282,7 +283,7 @@ async fn test_has_active_owners() {
 
     // Add an owner
     let owner = create_test_owner(&owner_repo, org_id).await;
-    let unit_owner = UnitOwner::new(unit.id, owner.id, 1.0, true).unwrap();
+    let unit_owner = UnitOwner::new(unit.id, owner.id, dec!(1), true).unwrap();
     repo.create(&unit_owner).await.unwrap();
 
     // Now should have active owners
@@ -300,14 +301,14 @@ async fn test_get_total_ownership_percentage() {
     let owner2 = create_test_owner(&owner_repo, org_id).await;
 
     // Add two owners: 60% + 40%
-    let uo1 = UnitOwner::new(unit.id, owner1.id, 0.6, true).unwrap();
-    let uo2 = UnitOwner::new(unit.id, owner2.id, 0.4, false).unwrap();
+    let uo1 = UnitOwner::new(unit.id, owner1.id, dec!(0.6), true).unwrap();
+    let uo2 = UnitOwner::new(unit.id, owner2.id, dec!(0.4), false).unwrap();
 
     repo.create(&uo1).await.unwrap();
     repo.create(&uo2).await.unwrap();
 
     let total = repo.get_total_ownership_percentage(unit.id).await.unwrap();
-    assert!((total - 1.0).abs() < 0.0001);
+    assert_eq!(total, dec!(1));
 }
 
 #[tokio::test]
@@ -318,7 +319,7 @@ async fn test_find_active_by_unit_and_owner() {
     let unit = create_test_unit(&unit_repo, org_id, building_id, "A111").await;
     let owner = create_test_owner(&owner_repo, org_id).await;
 
-    let unit_owner = UnitOwner::new(unit.id, owner.id, 1.0, true).unwrap();
+    let unit_owner = UnitOwner::new(unit.id, owner.id, dec!(1), true).unwrap();
     repo.create(&unit_owner).await.unwrap();
 
     let found = repo
@@ -342,7 +343,7 @@ async fn test_ownership_history_tracking() {
     let owner2 = create_test_owner(&owner_repo, org_id).await;
 
     // First owner
-    let mut uo1 = UnitOwner::new(unit.id, owner1.id, 1.0, true).unwrap();
+    let mut uo1 = UnitOwner::new(unit.id, owner1.id, dec!(1), true).unwrap();
     let created1 = repo.create(&uo1).await.unwrap();
 
     // End first ownership
@@ -351,7 +352,7 @@ async fn test_ownership_history_tracking() {
     repo.update(&uo1).await.unwrap();
 
     // Second owner
-    let uo2 = UnitOwner::new(unit.id, owner2.id, 1.0, true).unwrap();
+    let uo2 = UnitOwner::new(unit.id, owner2.id, dec!(1), true).unwrap();
     repo.create(&uo2).await.unwrap();
 
     // Check history
@@ -377,9 +378,9 @@ async fn test_multiple_units_same_owner() {
     let owner = create_test_owner(&owner_repo, org_id).await;
 
     // Owner owns 3 different units
-    let uo1 = UnitOwner::new(unit1.id, owner.id, 1.0, true).unwrap();
-    let uo2 = UnitOwner::new(unit2.id, owner.id, 1.0, true).unwrap();
-    let uo3 = UnitOwner::new(unit3.id, owner.id, 1.0, true).unwrap();
+    let uo1 = UnitOwner::new(unit1.id, owner.id, dec!(1), true).unwrap();
+    let uo2 = UnitOwner::new(unit2.id, owner.id, dec!(1), true).unwrap();
+    let uo3 = UnitOwner::new(unit3.id, owner.id, dec!(1), true).unwrap();
 
     repo.create(&uo1).await.unwrap();
     repo.create(&uo2).await.unwrap();
@@ -404,9 +405,9 @@ async fn test_co_ownership_scenario() {
     let owner3 = create_test_owner(&owner_repo, org_id).await;
 
     // Three co-owners: 50%, 30%, 20%
-    let uo1 = UnitOwner::new(unit.id, owner1.id, 0.5, true).unwrap();
-    let uo2 = UnitOwner::new(unit.id, owner2.id, 0.3, false).unwrap();
-    let uo3 = UnitOwner::new(unit.id, owner3.id, 0.2, false).unwrap();
+    let uo1 = UnitOwner::new(unit.id, owner1.id, dec!(0.5), true).unwrap();
+    let uo2 = UnitOwner::new(unit.id, owner2.id, dec!(0.3), false).unwrap();
+    let uo3 = UnitOwner::new(unit.id, owner3.id, dec!(0.2), false).unwrap();
 
     repo.create(&uo1).await.unwrap();
     repo.create(&uo2).await.unwrap();
@@ -417,7 +418,7 @@ async fn test_co_ownership_scenario() {
 
     // Verify percentages
     let total = repo.get_total_ownership_percentage(unit.id).await.unwrap();
-    assert!((total - 1.0).abs() < 0.0001);
+    assert_eq!(total, dec!(1));
 
     // Verify primary contact is first
     assert!(owners[0].is_primary_contact);

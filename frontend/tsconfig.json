@@ -4,5 +4,6 @@
     "jsx": "react-jsx",
     "jsxImportSource": "svelte",
     "types": ["node"]
-  }
+  },
+  "exclude": ["node_modules", "dist", "playwright-report", "test-results"]
 }

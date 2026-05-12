@@ -28,7 +28,7 @@ pub struct PcnReportResponse {
     /// PCN report lines (one per account with expenses)
     pub lines: Vec<PcnReportLineDto>,
     /// Total amount across all accounts
-    pub total_amount: f64,
+    pub total_amount: rust_decimal::Decimal,
     /// Total number of expense entries
     pub total_entries: usize,
 }
@@ -47,7 +47,7 @@ pub struct PcnReportLineDto {
     /// Account label in English (International)
     pub account_label_en: String,
     /// Total amount for this account
-    pub total_amount: f64,
+    pub total_amount: rust_decimal::Decimal,
     /// Number of expense entries for this account
     pub entry_count: usize,
 }

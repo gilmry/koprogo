@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  // Svelte 5 runes mode
   import { _ } from '../../lib/i18n';
   import {
     convocationsApi,
@@ -11,27 +11,28 @@
   import { withLoadingState } from '../../lib/utils/error.utils';
   import { extractArray } from '../../lib/utils/response.utils';
 
-  export let buildingId: string;
+  let {
+    buildingId,
+  }: {
+    buildingId: string;
+  } = $props();
 
-  let convocations: Convocation[] = [];
-  let filteredConvocations: Convocation[] = [];
-  let loading = true;
-  let error = '';
-  let statusFilter: ConvocationStatus | 'all' = 'all';
+  let convocations = $state<Convocation[]>([]);
+  let filteredConvocations = $state<Convocation[]>([]);
+  let loading = $state(true);
+  let error = $state('');
+  let statusFilter = $state<ConvocationStatus | 'all'>('all');
 
-  onMount(async () => {
-    if (buildingId) await loadConvocations();
+  $effect(() => {
+    if (buildingId) loadConvocations();
   });
-
-  // Recharger quand le buildingId change
-  $: if (buildingId) loadConvocations();
 
   async function loadConvocations() {
     await withLoadingState({
       action: () => convocationsApi.listByBuilding(buildingId),
-      setLoading: (v) => loading = v,
-      setError: (v) => error = v,
-      onSuccess: (data) => { convocations = extractArray<Convocation>(data, 'convocations'); applyFilters(); },
+      setLoading: (v: boolean) => loading = v,
+      setError: (v: string) => error = v,
+      onSuccess: (data: any) => { convocations = extractArray<Convocation>(data, 'convocations'); applyFilters(); },
       errorMessage: $_('convocations.errors.loadingFailed'),
     });
   }
@@ -43,7 +44,10 @@
     });
   }
 
-  $: if (statusFilter) applyFilters();
+  $effect(() => {
+    statusFilter;
+    applyFilters();
+  });
 
   function getStatusConfig(status: ConvocationStatus): { bg: string; text: string; label: string; icon: string } {
     const config: Record<ConvocationStatus, { bg: string; text: string; label: string; icon: string }> = {
@@ -78,8 +82,9 @@
   <!-- Filters -->
   <div class="px-4 py-3 bg-gray-50 border-b border-gray-200">
     <div class="flex items-center space-x-4">
-      <label class="text-sm font-medium text-gray-700">{$_('common.status')}:</label>
+      <label for="convocation-status-filter" class="text-sm font-medium text-gray-700">{$_('common.status')}:</label>
       <select
+        id="convocation-status-filter"
         bind:value={statusFilter}
         class="text-sm rounded-md border-gray-300 focus:border-amber-500 focus:ring-amber-500"
       >
@@ -100,7 +105,7 @@
   {:else if error}
     <div class="p-4 m-4 bg-red-50 border border-red-200 rounded-md">
       <p class="text-sm text-red-800">{error}</p>
-      <button on:click={loadConvocations} class="mt-2 text-sm text-red-600 hover:text-red-800 underline">
+      <button onclick={loadConvocations} class="mt-2 text-sm text-red-600 hover:text-red-800 underline">
         {$_('common.retry')}
       </button>
     </div>
@@ -129,7 +134,7 @@
                   </span>
                   {#if !convocation.respects_legal_deadline}
                     <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-700">
-                      ⚠️ {$_('convocations.legalDeadlineNotRespected')}
+                      {$_('convocations.legalDeadlineNotRespected')}
                     </span>
                   {/if}
                 </div>

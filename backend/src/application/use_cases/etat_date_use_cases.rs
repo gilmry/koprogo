@@ -6,7 +6,9 @@ use crate::application::ports::{
     BuildingRepository, EtatDateRepository, UnitOwnerRepository, UnitRepository,
 };
 use crate::domain::entities::{EtatDate, EtatDateStatus};
-use f64;
+use rust_decimal::prelude::ToPrimitive;
+use rust_decimal::Decimal;
+use rust_decimal_macros::dec;
 use std::sync::Arc;
 use uuid::Uuid;
 
@@ -61,12 +63,14 @@ impl EtatDateUseCases {
             return Err("Unit has no active owners".to_string());
         }
 
-        // Calculate total quote-parts (should be 100% or close)
-        let total_quota: f64 = unit_owners.iter().map(|uo| uo.ownership_percentage).sum();
+        // Calculate total quote-parts (should be 100% or close).
+        // ownership_percentage est Decimal (exact); EtatDate::new attend f64 actuellement
+        // (entité non encore migrée — cf. EXP-003 follow-up).
+        let total_quota: Decimal = unit_owners.iter().map(|uo| uo.ownership_percentage).sum();
 
         // For simplicity, use total quota as both ordinary and extraordinary
         // In a real system, these might be stored separately per unit
-        let ordinary_charges_quota = total_quota * 100.0; // Convert to ownership_percentage
+        let ordinary_charges_quota = (total_quota * dec!(100)).to_f64().unwrap_or(0.0);
         let extraordinary_charges_quota = ordinary_charges_quota;
 
         // Create état daté
@@ -351,9 +355,9 @@ mod tests {
             async fn update(&self, unit_owner: &UnitOwner) -> Result<UnitOwner, String>;
             async fn delete(&self, id: Uuid) -> Result<(), String>;
             async fn has_active_owners(&self, unit_id: Uuid) -> Result<bool, String>;
-            async fn get_total_ownership_percentage(&self, unit_id: Uuid) -> Result<f64, String>;
+            async fn get_total_ownership_percentage(&self, unit_id: Uuid) -> Result<rust_decimal::Decimal, String>;
             async fn find_active_by_unit_and_owner(&self, unit_id: Uuid, owner_id: Uuid) -> Result<Option<UnitOwner>, String>;
-            async fn find_active_by_building(&self, building_id: Uuid) -> Result<Vec<(Uuid, Uuid, f64)>, String>;
+            async fn find_active_by_building(&self, building_id: Uuid) -> Result<Vec<(Uuid, Uuid, rust_decimal::Decimal)>, String>;
         }
     }
 
@@ -382,13 +386,19 @@ mod tests {
             UnitType::Apartment,
             Some(1),
             85.0,
-            50.0,
+            rust_decimal_macros::dec!(50),
         )
         .unwrap()
     }
 
     fn make_unit_owner(unit_id: Uuid) -> UnitOwner {
-        UnitOwner::new(unit_id, Uuid::new_v4(), 0.5, true).unwrap()
+        UnitOwner::new(
+            unit_id,
+            Uuid::new_v4(),
+            rust_decimal_macros::dec!(0.5),
+            true,
+        )
+        .unwrap()
     }
 
     fn make_etat_date(org_id: Uuid, building_id: Uuid, unit_id: Uuid) -> EtatDate {
