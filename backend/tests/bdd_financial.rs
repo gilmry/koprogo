@@ -7376,6 +7376,9 @@ async fn main() {
         .run("tests/features/dashboard.feature")
         .await;
     FinancialWorld::cucumber()
+        .run("tests/features/stats_urgent_tasks.feature")
+        .await;
+    FinancialWorld::cucumber()
         .run("tests/features/invoices.feature")
         .await;
     FinancialWorld::cucumber()
