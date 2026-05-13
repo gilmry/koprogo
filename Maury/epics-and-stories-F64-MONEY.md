@@ -20,7 +20,7 @@
 
 | Phase | Story | Type | Effort | Débloque |
 |---|---|---|---|---|
-| A | Fix 3 panics latents (stats/budget/payment-reminder) | Bugfix | M (~1j) | `/stats/syndic/urgent-tasks` opérationnel |
+| A | Fix 3 panics latents (stats/budget/payment-reminder) + migration `Result<_, String>` → `AppError` aux 3 niveaux (port/use_case/impl) | Bugfix + Refactor | L (2-3j) | `/stats/syndic/urgent-tasks` opérationnel |
 | B | Audit & classification des 30 f64 restants | Audit | S (~0.5j) | Scope clair pour Story C |
 | C | Migration backlog f64 → Decimal | Refactor | L (dépend B) | Conformité `no-f64-in-money` complète |
 
@@ -30,8 +30,9 @@
 
 ## Story A : Fix panics latents f64 sur colonnes NUMERIC (3 endpoints)
 
-- **ID** : STORY-521-A | **Type** : Bugfix | **Taille** : M
+- **ID** : STORY-521-A | **Type** : Bugfix + Refactor | **Taille** : L (2-3j)
 - **Issue parent** : #521
+- **Scope élargi (audit 2026-05-13)** : la violation `Result<_, String>` (CRITICAL.md §4) existe AUSSI au niveau trait port et use case, pas seulement repository impl. Donc 9 signatures à migrer (3 niveaux × 3 features : stats / budget / payment_reminder) en plus du f64 → Decimal.
 - **Endpoints touchés** :
   - `GET /api/v1/stats/syndic/urgent-tasks` (panic confirmé en local)
   - Endpoint(s) consommant `BudgetRepository::get_budget_summary` (panic latent ligne 439)
@@ -90,13 +91,19 @@ Note BDD step "le worker Actix n'a généré aucun panic" : à implémenter via 
   3. [ ] Idem [budget_repository_impl.rs:439](../backend/src/infrastructure/database/repositories/budget_repository_impl.rs#L439) (`total_amount`).
   4. [ ] Idem [payment_reminder_repository_impl.rs:492](../backend/src/infrastructure/database/repositories/payment_reminder_repository_impl.rs#L492) (`amount`).
   5. [ ] Vérifier que `UrgentTask` (DTO) et `BudgetSummary` / DTOs payment reminder sérialisent Decimal correctement (string ou number ?). Si number → risque perte précision en JSON → utiliser `serialize_with` rust_decimal::serde::str ou `arbitrary_precision`. Logger choix dans PR.
-  6. [ ] Si signature de fonction change (e.g. `Result<_, String>` → `Result<_, AppError>`) propager dans les use cases / handlers appelants.
-  7. [ ] **GREEN** : `make ci` doit passer ; BDD `@bug521` doit virer rouge → vert.
-  8. [ ] Vérif manuelle browser : reload `/syndic` dashboard, aucun 502.
-  9. [ ] Commit + PR vers `dev` avec body référençant `Refs #521` et le scénario BDD.
+  6. [ ] **Migrer `Result<_, String>` → `Result<_, AppError>`** sur les 9 signatures (3 features × 3 niveaux) :
+     - Trait port : `stats_repository.rs`, `budget_repository.rs`, `payment_reminder_repository.rs`
+     - Use case : `stats_use_cases.rs`, `budget_use_cases.rs`, `payment_reminder_use_cases.rs` (+ mocks dans tests in-module)
+     - Impl : 3 fichiers `*_repository_impl.rs`
+     - Handlers REST appelants : mettre à jour le mapping `AppError → HTTP` si pas déjà via `ResponseError`
+  7. [ ] Vérifier que les mocks `#[cfg(test)] mod tests` dans les 3 use_cases (lignes ~120 dans stats_use_cases.rs) sont mis à jour avec la nouvelle signature.
+  8. [ ] **GREEN** : `make ci` doit passer ; BDD `@bug521` doit virer rouge → vert.
+  9. [ ] Vérif manuelle browser : reload `/syndic` dashboard, aucun 502.
+  10. [ ] Commit + PR vers `feature/dev` (per GitFlow buffer, memory `project_gitflow-feature-dev-buffer.md`) avec body référençant `Refs #521` et le scénario BDD.
 
 - **Critères d'acceptation** :
   - [ ] `grep "let.*: f64 = .*\.get(" backend/src/infrastructure/database/repositories/{stats,budget,payment_reminder}_repository_impl.rs` → 0 résultat
+  - [ ] `grep "Result<.*,\s*String>" backend/src/application/{ports,use_cases}/{stats,budget,payment_reminder}*` → 0 résultat
   - [ ] BDD `@bug521 @negative` vert (rouge avant fix)
   - [ ] `@happy @edge @security` verts
   - [ ] Aucun nouvel `unwrap()` ni `Result<_, String>` introduit
