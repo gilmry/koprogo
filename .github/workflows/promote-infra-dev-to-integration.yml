@@ -1,0 +1,69 @@
+name: Promote infra-dev → infra-integration
+
+# Decision: RFC #466 (Alternative D — release train + back-sync).
+# Trigger: after ci-infra.yml completes successfully on infra-dev, open a PR
+# from infra-dev to infra-integration. If no diff, no PR. If a promotion PR
+# is already open for the same head→base, do nothing (avoid duplicates).
+# Auto-merge enabled — branch protection on infra-integration enforces required
+# checks before the actual merge happens.
+
+on:
+  workflow_run:
+    workflows: ["CI Infra"]
+    types: [completed]
+    branches: [infra-dev]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  promote:
+    name: Open PR infra-dev → infra-integration
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Verify diff exists infra-dev vs infra-integration
+        id: diff
+        run: |
+          set -euo pipefail
+          git fetch origin infra-dev infra-integration
+          if git diff --quiet origin/infra-integration..origin/infra-dev; then
+            echo "::notice::No diff — nothing to promote"
+            echo "has_diff=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_diff=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Open or update promotion PR
+        if: steps.diff.outputs.has_diff == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          existing=$(gh pr list --base infra-integration --head infra-dev --state open --json number --jq '.[0].number' 2>/dev/null || true)
+          if [ -n "$existing" ]; then
+            echo "::notice::Existing PR #$existing — head moves automatically; no action needed"
+            exit 0
+          fi
+          head_sha=$(git rev-parse origin/infra-dev)
+          gh pr create \
+            --base infra-integration \
+            --head infra-dev \
+            --title "promote: infra-dev → infra-integration (auto, ci green)" \
+            --body "$(cat <<EOF
+Automated promotion — ci-infra green on \`infra-dev\` @ \`${head_sha:0:7}\`.
+
+Per RFC #466 (Alternative D), this PR is auto-opened on every green ci-infra
+on infra-dev. Auto-merge enabled — branch protection on infra-integration
+gates the actual merge.
+EOF
+)"
+          new_pr=$(gh pr list --base infra-integration --head infra-dev --state open --json number --jq '.[0].number')
+          gh pr merge "$new_pr" --auto --merge || echo "::warning::auto-merge could not be enabled (likely branch protection blocks it; PR remains open for manual review)"
