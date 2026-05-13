@@ -296,10 +296,15 @@ jobs:
         run: |
           set -euo pipefail
           # Test only dev (autoSync=false on infra-dev; manually sync once).
+          # Manual sync via `operation.sync` does NOT inherit syncOptions from
+          # the Application spec — must be passed explicitly here, otherwise
+          # `CreateNamespace=true` is dropped and sync fails with
+          # `namespaces "koprogo-dev" not found`. (PR #516 follow-up.)
+          SYNC_PATCH='{"operation":{"sync":{"syncOptions":["CreateNamespace=true","PrunePropagationPolicy=foreground"]}}}'
           kubectl -n argocd patch application koprogo-infra-dev \
-            --type merge -p '{"operation":{"sync":{}}}' || true
+            --type merge -p "$SYNC_PATCH" || true
           kubectl -n argocd patch application koprogo-app-dev \
-            --type merge -p '{"operation":{"sync":{}}}' || true
+            --type merge -p "$SYNC_PATCH" || true
           for i in $(seq 1 90); do
             infra_sync=$(kubectl get application koprogo-infra-dev -n argocd -o jsonpath='{.status.sync.status}' 2>/dev/null || echo "")
             infra_health=$(kubectl get application koprogo-infra-dev -n argocd -o jsonpath='{.status.health.status}' 2>/dev/null || echo "")
