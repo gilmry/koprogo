@@ -81,6 +81,11 @@ spec:
         syncOptions:
           - CreateNamespace=true
           - PrunePropagationPolicy=foreground
+          # ServerSideApply reduces 3-way-merge drift on cluster-managed fields
+          # (e.g. CreateNamespace=true adds annotations to the namespace that
+          # kustomize doesn't track — without SSA, ArgoCD oscillates Synced ↔
+          # OutOfSync on the namespace alone — Issue #515 Gap 8).
+          - ServerSideApply=true
         retry:
           limit: 5
           backoff:
@@ -170,6 +175,7 @@ spec:
       syncPolicy:
         syncOptions:
           - CreateNamespace=true
+          - ServerSideApply=true
         retry:
           limit: 5
           backoff:

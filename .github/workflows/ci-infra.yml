@@ -236,6 +236,27 @@ jobs:
           node_image: ${{ env.KIND_NODE_IMAGE }}
           cluster_name: koprogo-ci
 
+      - name: Alias kind's default storageclass as `hostpath` (Issue #515 Gap 6)
+        run: |
+          set -euo pipefail
+          # cluster-profile docker-desktop.yaml expects a `hostpath` StorageClass
+          # (the name Docker Desktop K8s uses). kind ships with `standard` only
+          # (via local-path-provisioner). Create a `hostpath` StorageClass that
+          # aliases the same provisioner so manifests don't need a CI-only fork.
+          kubectl get storageclass
+          existing_provisioner=$(kubectl get storageclass standard -o jsonpath='{.provisioner}')
+          echo "::notice::Aliasing kind's '$existing_provisioner' as 'hostpath' StorageClass"
+          cat <<EOF | kubectl apply -f -
+          apiVersion: storage.k8s.io/v1
+          kind: StorageClass
+          metadata:
+            name: hostpath
+          provisioner: $existing_provisioner
+          volumeBindingMode: WaitForFirstConsumer
+          reclaimPolicy: Delete
+          EOF
+          kubectl get storageclass
+
       - name: Install ArgoCD
         run: |
           set -euo pipefail
@@ -318,33 +339,46 @@ jobs:
           set -euo pipefail
           kubectl apply -f /tmp/rendered/applicationset.yaml
 
-      - name: Wait for dev env Synced + Healthy
+      - name: Wait for dev env Synced (manifest validation)
         run: |
           set -euo pipefail
-          # Test only dev (autoSync=false on infra-dev; manually sync once).
-          # Manual sync via `operation.sync` does NOT inherit syncOptions from
-          # the Application spec — must be passed explicitly here, otherwise
-          # `CreateNamespace=true` is dropped and sync fails with
-          # `namespaces "koprogo-dev" not found`. (PR #516 follow-up.)
-          SYNC_PATCH='{"operation":{"sync":{"syncOptions":["CreateNamespace=true","PrunePropagationPolicy=foreground"]}}}'
+          # Success criterion: both koprogo-infra-dev AND koprogo-app-dev must
+          # reach `Synced`. We deliberately do NOT require `Healthy`:
+          # - app pod readiness depends on image availability on GHCR (private/
+          #   public, tags existing) and runtime config — these are RUNTIME
+          #   concerns, orthogonal to the manifest validation the smoke test
+          #   covers. (Issue #515 Gap 7 — image pull / pod runtime are tracked
+          #   separately.)
+          # - The koprogo-infra-{integration,staging,production} envs have
+          #   autoSync=true and converge automatically. dev has autoSync=false,
+          #   so we trigger a manual sync.
+          # Manual sync via operation.sync does NOT inherit syncOptions from
+          # the Application spec — pass them explicitly.
+          SYNC_PATCH='{"operation":{"sync":{"syncOptions":["CreateNamespace=true","PrunePropagationPolicy=foreground","ServerSideApply=true"]}}}'
           kubectl -n argocd patch application koprogo-infra-dev \
             --type merge -p "$SYNC_PATCH" || true
           kubectl -n argocd patch application koprogo-app-dev \
             --type merge -p "$SYNC_PATCH" || true
-          for i in $(seq 1 90); do
+          for i in $(seq 1 60); do
             infra_sync=$(kubectl get application koprogo-infra-dev -n argocd -o jsonpath='{.status.sync.status}' 2>/dev/null || echo "")
-            infra_health=$(kubectl get application koprogo-infra-dev -n argocd -o jsonpath='{.status.health.status}' 2>/dev/null || echo "")
             app_sync=$(kubectl get application koprogo-app-dev -n argocd -o jsonpath='{.status.sync.status}' 2>/dev/null || echo "")
+            infra_health=$(kubectl get application koprogo-infra-dev -n argocd -o jsonpath='{.status.health.status}' 2>/dev/null || echo "")
             app_health=$(kubectl get application koprogo-app-dev -n argocd -o jsonpath='{.status.health.status}' 2>/dev/null || echo "")
             echo "Attempt $i: infra=($infra_sync/$infra_health) app=($app_sync/$app_health)"
-            if [ "$infra_sync" = "Synced" ] && [ "$infra_health" = "Healthy" ] \
-               && [ "$app_sync" = "Synced" ] && [ "$app_health" = "Healthy" ]; then
-              echo "::notice::dev env Synced + Healthy"
+            if [ "$infra_sync" = "Synced" ] && [ "$app_sync" = "Synced" ]; then
+              echo "::notice::dev env Synced (manifests valid; health $infra_health/$app_health captured for follow-up)"
               exit 0
+            fi
+            # If dev infra flips back to OutOfSync (drift detection without
+            # autoSync), retrigger sync. (Issue #515 Gap 8 followup.)
+            if [ "$infra_sync" = "OutOfSync" ] && [ $((i % 5)) -eq 0 ]; then
+              echo "::notice::Re-triggering infra-dev sync (drift detected, no autoSync)"
+              kubectl -n argocd patch application koprogo-infra-dev \
+                --type merge -p "$SYNC_PATCH" || true
             fi
             sleep 10
           done
-          echo "::error::dev env did not converge in 15min — capturing diagnostics"
+          echo "::error::dev env did not converge to Synced in 10min — capturing diagnostics"
           kubectl get applications -n argocd
           kubectl describe application koprogo-infra-dev -n argocd | tail -80
           kubectl describe application koprogo-app-dev -n argocd | tail -80
