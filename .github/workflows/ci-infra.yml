@@ -263,6 +263,32 @@ jobs:
             > /tmp/rendered/applicationset.yaml
           cp infrastructure/_shared/argocd/appproject.yaml /tmp/rendered/
 
+          # CI-specific branch override: the ApplicationSet's generators target
+          # the long-lived `infra-*` and env branches (dev/integration/staging/
+          # production), but on a PR build those branches don't contain the
+          # PR's changes yet — testing them would validate stale code. Override
+          # all branch refs to the PR's HEAD ref so the smoke test actually
+          # exercises the PR's manifests.
+          PR_BRANCH="${GITHUB_HEAD_REF:-${GITHUB_REF_NAME}}"
+          echo "::notice::Overriding ApplicationSet branch refs to PR_BRANCH=$PR_BRANCH"
+          # Infra generator branches: infra-{dev,integration,staging,prod}
+          sed -i \
+            -e "s|branch: infra-prod\\b|branch: $PR_BRANCH|g" \
+            -e "s|branch: infra-staging\\b|branch: $PR_BRANCH|g" \
+            -e "s|branch: infra-integration\\b|branch: $PR_BRANCH|g" \
+            -e "s|branch: infra-dev\\b|branch: $PR_BRANCH|g" \
+            /tmp/rendered/applicationset.yaml
+          # App generator branches: bare {dev,integration,staging,production}
+          sed -i \
+            -e "s|branch: production\\b|branch: $PR_BRANCH|g" \
+            -e "s|branch: staging\\b|branch: $PR_BRANCH|g" \
+            -e "s|branch: integration\\b|branch: $PR_BRANCH|g" \
+            -e "s|branch: dev\\b|branch: $PR_BRANCH|g" \
+            /tmp/rendered/applicationset.yaml
+          echo "::group::Effective branch refs after override"
+          grep -n "branch:" /tmp/rendered/applicationset.yaml
+          echo "::endgroup::"
+
       - name: Apply AppProject + prerequisites ApplicationSet
         run: |
           set -euo pipefail
