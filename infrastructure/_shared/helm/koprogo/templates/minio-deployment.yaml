@@ -20,7 +20,11 @@ spec:
       containers:
         - name: minio
           image: {{ .Values.minio.image }}
-          command: ["server", "/data", "--console-address", ":9001"]
+          # `args:` (not `command:`) so the image entrypoint
+          # /usr/bin/docker-entrypoint.sh is preserved — overriding `command:`
+          # bypasses it and tries to exec "server" directly, which is not
+          # a binary in $PATH (it's a minio subcommand).
+          args: ["server", "/data", "--console-address", ":9001"]
           ports:
             - containerPort: 9000
             - containerPort: 9001

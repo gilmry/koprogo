@@ -1,0 +1,102 @@
+name: Back-sync infra-prod → staging, integration, main
+
+# Decision: RFC #466 (Alternative D — release train + back-sync).
+# Trigger: any push (i.e. merge) on infra-prod. Opens 3 PRs:
+#   - infra-prod → infra-staging
+#   - infra-prod → infra-integration
+#   - infra-prod → main
+# Conflict handling: PRs are opened in merge mode. If a PR becomes
+# CONFLICTING, the `needs-resolution` label is applied — a human resolves it.
+# No destructive override.
+
+on:
+  push:
+    branches:
+      - infra-prod
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  backsync:
+    name: Open back-sync PR to ${{ matrix.target }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        target: [infra-staging, infra-integration, main]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Verify diff exists infra-prod vs ${{ matrix.target }}
+        id: diff
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          git fetch origin infra-prod "${{ matrix.target }}"
+          if git diff --quiet "origin/${{ matrix.target }}..origin/infra-prod"; then
+            echo "::notice::No diff between infra-prod and ${{ matrix.target }} — back-sync already in sync"
+            echo "has_diff=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_diff=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Open or update back-sync PR
+        if: steps.diff.outputs.has_diff == 'true'
+        id: pr
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          existing=$(gh pr list --base "${{ matrix.target }}" --head infra-prod --state open --json number --jq '.[0].number' 2>/dev/null || true)
+          if [ -n "$existing" ]; then
+            pr_number="$existing"
+            echo "::notice::Existing PR #$pr_number — head moves automatically"
+          else
+            head_sha=$(git rev-parse origin/infra-prod)
+            gh pr create \
+              --base "${{ matrix.target }}" \
+              --head infra-prod \
+              --title "backsync: infra-prod → ${{ matrix.target }} (auto)" \
+              --body "$(cat <<EOF
+Automated back-sync — propagates the new infra-prod state to ${{ matrix.target }}.
+
+Per RFC #466 (Alternative D), every push to infra-prod triggers this workflow
+to keep lower envs aligned with prod and avoid drift.
+
+If this PR is labelled \`needs-resolution\`, a conflict was detected:
+a human must rebase or merge manually. No destructive override.
+EOF
+)"
+            pr_number=$(gh pr list --base "${{ matrix.target }}" --head infra-prod --state open --json number --jq '.[0].number')
+          fi
+          echo "pr_number=$pr_number" >> "$GITHUB_OUTPUT"
+
+      - name: Detect conflict and label
+        if: steps.diff.outputs.has_diff == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          pr="${{ steps.pr.outputs.pr_number }}"
+          # gh may report CONFLICTING, MERGEABLE, or UNKNOWN (mergeability not
+          # computed yet). Poll briefly to give GitHub time to compute.
+          for i in 1 2 3 4 5; do
+            state=$(gh pr view "$pr" --json mergeable --jq .mergeable)
+            if [ "$state" != "UNKNOWN" ]; then break; fi
+            sleep 3
+          done
+          echo "::notice::PR #$pr mergeable state = $state"
+          if [ "$state" = "CONFLICTING" ]; then
+            gh pr edit "$pr" --add-label "needs-resolution" || \
+              echo "::warning::could not apply needs-resolution label (does it exist? create it on the repo)"
+          else
+            # Conflict resolved or never present — remove the label if any
+            gh pr edit "$pr" --remove-label "needs-resolution" 2>/dev/null || true
+          fi
