@@ -4,12 +4,12 @@
 
 use chrono::{DateTime, Datelike, Duration as ChronoDuration, Utc};
 use cucumber::{gherkin::Step, given, then, when, World};
+use futures_util::FutureExt;
 use koprogo_api::application::dto::{
     AccountantDashboardStats, ApproveInvoiceDto, CreateBudgetRequest, CreateInvoiceDraftDto,
     CreatePaymentMethodRequest, CreatePaymentRequest, InvoiceResponseDto, PaymentMethodResponse,
     PaymentResponse, PaymentStatsResponse, RecentTransaction, RefundPaymentRequest,
-    RejectInvoiceDto, SubmitForApprovalDto, UpdateBudgetRequest, UpdateInvoiceDraftDto,
-    UrgentTask,
+    RejectInvoiceDto, SubmitForApprovalDto, UpdateBudgetRequest, UpdateInvoiceDraftDto, UrgentTask,
 };
 use koprogo_api::application::ports::BuildingRepository;
 use koprogo_api::application::use_cases::{
@@ -17,7 +17,6 @@ use koprogo_api::application::use_cases::{
     DashboardUseCases, ExpenseUseCases, JournalEntryUseCases, OwnerContributionUseCases,
     PaymentMethodUseCases, PaymentReminderUseCases, PaymentUseCases, StatsUseCases,
 };
-use futures_util::FutureExt;
 use koprogo_api::domain::entities::{
     Account, AccountType, ContributionPaymentMethod, ContributionType, ExpenseCategory,
     JournalEntry, JournalEntryLine, OwnerContribution, ReminderLevel,
@@ -7482,9 +7481,7 @@ async fn given_stats_expense(
     let pool = world.pool.as_ref().expect("pool").clone();
     let building_id = world.building_id.expect("building_id");
     let org_id = world.org_id.expect("org_id");
-    let amount: Decimal = amount_str
-        .parse()
-        .expect("parse expense amount as Decimal");
+    let amount: Decimal = amount_str.parse().expect("parse expense amount as Decimal");
     let id = Uuid::new_v4();
     sqlx::query(
         r#"INSERT INTO expenses (id, building_id, organization_id, category, description, amount, expense_date, payment_status, created_at, updated_at)
@@ -7569,11 +7566,7 @@ async fn then_urgent_tasks_no_panic(world: &mut FinancialWorld) {
         .as_ref()
         .expect("operation ran");
     if let Err(e) = result {
-        assert!(
-            !e.starts_with("PANIC:"),
-            "urgent_tasks panicked: {}",
-            e
-        );
+        assert!(!e.starts_with("PANIC:"), "urgent_tasks panicked: {}", e);
     }
 }
 
@@ -7630,8 +7623,9 @@ async fn then_task_list_excludes(world: &mut FinancialWorld, needle: String) {
         .as_ref()
         .expect("operation ok");
     assert!(
-        !tasks.iter().any(|t| t.title.contains(&needle)
-            || t.description.contains(&needle)),
+        !tasks
+            .iter()
+            .any(|t| t.title.contains(&needle) || t.description.contains(&needle)),
         "found task referencing {:?}: {:?}",
         needle,
         tasks
