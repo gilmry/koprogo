@@ -9,13 +9,15 @@ use koprogo_api::application::dto::{
     CreatePaymentMethodRequest, CreatePaymentRequest, InvoiceResponseDto, PaymentMethodResponse,
     PaymentResponse, PaymentStatsResponse, RecentTransaction, RefundPaymentRequest,
     RejectInvoiceDto, SubmitForApprovalDto, UpdateBudgetRequest, UpdateInvoiceDraftDto,
+    UrgentTask,
 };
 use koprogo_api::application::ports::BuildingRepository;
 use koprogo_api::application::use_cases::{
     AccountUseCases, BudgetUseCases, CallForFundsUseCases, ChargeDistributionUseCases,
     DashboardUseCases, ExpenseUseCases, JournalEntryUseCases, OwnerContributionUseCases,
-    PaymentMethodUseCases, PaymentReminderUseCases, PaymentUseCases,
+    PaymentMethodUseCases, PaymentReminderUseCases, PaymentUseCases, StatsUseCases,
 };
+use futures_util::FutureExt;
 use koprogo_api::domain::entities::{
     Account, AccountType, ContributionPaymentMethod, ContributionType, ExpenseCategory,
     JournalEntry, JournalEntryLine, OwnerContribution, ReminderLevel,
@@ -31,7 +33,7 @@ use koprogo_api::infrastructure::database::{
     PostgresCallForFundsRepository, PostgresChargeDistributionRepository,
     PostgresExpenseRepository, PostgresJournalEntryRepository, PostgresOwnerContributionRepository,
     PostgresOwnerRepository, PostgresPaymentMethodRepository, PostgresPaymentReminderRepository,
-    PostgresPaymentRepository, PostgresUnitOwnerRepository,
+    PostgresPaymentRepository, PostgresStatsRepository, PostgresUnitOwnerRepository,
 };
 use koprogo_api::infrastructure::pool::DbPool;
 use std::sync::Arc;
@@ -158,6 +160,11 @@ pub struct FinancialWorld {
     // Operation result
     operation_success: bool,
     operation_error: Option<String>,
+
+    // Stats tracking (#521 Story A)
+    stats_use_cases: Option<Arc<StatsUseCases>>,
+    other_org_id: Option<Uuid>,
+    last_urgent_tasks_result: Option<Result<Vec<UrgentTask>, String>>,
 }
 
 impl std::fmt::Debug for FinancialWorld {
@@ -250,6 +257,9 @@ impl FinancialWorld {
             expense_list_count: 0,
             operation_success: false,
             operation_error: None,
+            stats_use_cases: None,
+            other_org_id: None,
+            last_urgent_tasks_result: None,
         }
     }
 
@@ -356,6 +366,8 @@ impl FinancialWorld {
         );
         let dashboard_use_cases =
             DashboardUseCases::new(expense_repo, owner_contribution_repo, payment_reminder_repo);
+        let stats_repo = Arc::new(PostgresStatsRepository::new(pool.clone()));
+        let stats_use_cases = StatsUseCases::new(stats_repo);
 
         self.account_use_cases = Some(Arc::new(account_use_cases));
         self.expense_use_cases = Some(Arc::new(expense_use_cases));
@@ -368,6 +380,7 @@ impl FinancialWorld {
         self.owner_contribution_use_cases = Some(Arc::new(owner_contribution_use_cases));
         self.charge_distribution_use_cases = Some(Arc::new(charge_distribution_use_cases));
         self.dashboard_use_cases = Some(Arc::new(dashboard_use_cases));
+        self.stats_use_cases = Some(Arc::new(stats_use_cases));
         self._container = Some(postgres_container);
         self.org_id = Some(org_id);
 
@@ -7349,6 +7362,281 @@ async fn when_try_delete_approved_expense(world: &mut FinancialWorld) {
 }
 
 // Note: "the deletion should fail" step is defined above in the accounts section
+
+// ============================================================
+// STATS URGENT TASKS STEPS (#521 Story A)
+// ============================================================
+
+// Tracking for stats steps: building_by_name lookup, last expense.
+// Reuse world.expense_id for "the expense payment status is X".
+
+#[given(regex = r#"^an organization "([^"]*)" exists with slug "([^"]*)"$"#)]
+async fn given_stats_org_exists(world: &mut FinancialWorld, name: String, slug: String) {
+    let pool = world.pool.as_ref().expect("pool initialized").clone();
+    // Try to find existing org by slug
+    let row: Option<(Uuid,)> =
+        sqlx::query_as("SELECT id FROM organizations WHERE slug = $1 LIMIT 1")
+            .bind(&slug)
+            .fetch_optional(&pool)
+            .await
+            .expect("select org");
+    let org_id = if let Some((id,)) = row {
+        id
+    } else {
+        let new_id = Uuid::new_v4();
+        sqlx::query(
+            r#"INSERT INTO organizations (id, name, slug, contact_email, subscription_plan, max_buildings, max_users, is_active, created_at, updated_at)
+               VALUES ($1, $2, $3, $4, 'starter', 10, 10, true, NOW(), NOW())
+               ON CONFLICT (slug) DO NOTHING"#,
+        )
+        .bind(new_id)
+        .bind(&name)
+        .bind(&slug)
+        .bind(format!("contact+{}@bdd.be", slug))
+        .execute(&pool)
+        .await
+        .expect("insert org");
+        // Re-select in case ON CONFLICT skipped insertion
+        let row: (Uuid,) = sqlx::query_as("SELECT id FROM organizations WHERE slug = $1 LIMIT 1")
+            .bind(&slug)
+            .fetch_one(&pool)
+            .await
+            .expect("re-select org");
+        row.0
+    };
+    // First named org call overrides the default org_id from setup_database
+    // (Background creates "Test Org" first). Subsequent named orgs (e.g. "Other Org")
+    // populate other_org_id so security scenarios can test cross-tenant isolation.
+    if slug == "test-org" {
+        world.org_id = Some(org_id);
+    } else {
+        world.other_org_id = Some(org_id);
+    }
+}
+
+#[given(regex = r#"^a syndic user "([^"]*)" exists in "([^"]*)"$"#)]
+async fn given_stats_syndic_user(world: &mut FinancialWorld, name: String, _org_name: String) {
+    let pool = world.pool.as_ref().expect("pool").clone();
+    let org_id = world.org_id.expect("org_id set by org step");
+    let user_id = Uuid::new_v4();
+    let email = format!("{}+syndic@bdd.be", name.to_lowercase());
+    sqlx::query(
+        r#"INSERT INTO users (id, email, password_hash, first_name, last_name, role, organization_id, is_active, created_at, updated_at)
+           VALUES ($1, $2, '$argon2id$v=19$m=16,t=2,p=1$dGVzdA$test', $3, 'Syndic', 'syndic', $4, true, NOW(), NOW())"#,
+    )
+    .bind(user_id)
+    .bind(&email)
+    .bind(&name)
+    .bind(org_id)
+    .execute(&pool)
+    .await
+    .expect("insert syndic user");
+    world.syndic_user_id = Some(user_id);
+}
+
+#[given(regex = r#"^an owner user "([^"]*)" exists in "([^"]*)"$"#)]
+async fn given_stats_owner_user(world: &mut FinancialWorld, name: String, _org_name: String) {
+    let pool = world.pool.as_ref().expect("pool").clone();
+    // Use the most recently created org (other_org_id if set, else org_id)
+    let target_org = world.other_org_id.or(world.org_id).expect("org_id");
+    let user_id = Uuid::new_v4();
+    let email = format!("{}+owner@bdd.be", name.to_lowercase());
+    sqlx::query(
+        r#"INSERT INTO users (id, email, password_hash, first_name, last_name, role, organization_id, is_active, created_at, updated_at)
+           VALUES ($1, $2, '$argon2id$v=19$m=16,t=2,p=1$dGVzdA$test', $3, 'Owner', 'owner', $4, true, NOW(), NOW())"#,
+    )
+    .bind(user_id)
+    .bind(&email)
+    .bind(&name)
+    .bind(target_org)
+    .execute(&pool)
+    .await
+    .expect("insert owner user");
+}
+
+#[given(regex = r#"^a building "([^"]*)" exists in "([^"]*)"$"#)]
+async fn given_stats_building(world: &mut FinancialWorld, name: String, _org_name: String) {
+    let pool = world.pool.as_ref().expect("pool").clone();
+    let org_id = world.org_id.expect("org_id");
+    let building_id = Uuid::new_v4();
+    sqlx::query(
+        r#"INSERT INTO buildings (id, organization_id, name, address, city, postal_code, country, total_units, construction_year, created_at, updated_at)
+           VALUES ($1, $2, $3, '1 Rue du Soleil', 'Bruxelles', '1000', 'Belgique', 10, 2000, NOW(), NOW())"#,
+    )
+    .bind(building_id)
+    .bind(org_id)
+    .bind(&name)
+    .execute(&pool)
+    .await
+    .expect("insert building");
+    world.building_id = Some(building_id);
+}
+
+#[given(regex = r#"^an expense "([^"]*)" of "([^"]*)" EUR exists for "([^"]*)"$"#)]
+async fn given_stats_expense(
+    world: &mut FinancialWorld,
+    description: String,
+    amount_str: String,
+    _building_name: String,
+) {
+    let pool = world.pool.as_ref().expect("pool").clone();
+    let building_id = world.building_id.expect("building_id");
+    let org_id = world.org_id.expect("org_id");
+    let amount: Decimal = amount_str
+        .parse()
+        .expect("parse expense amount as Decimal");
+    let id = Uuid::new_v4();
+    sqlx::query(
+        r#"INSERT INTO expenses (id, building_id, organization_id, category, description, amount, expense_date, payment_status, created_at, updated_at)
+           VALUES ($1, $2, $3, 'maintenance', $4, $5, NOW(), 'pending', NOW(), NOW())"#,
+    )
+    .bind(id)
+    .bind(building_id)
+    .bind(org_id)
+    .bind(&description)
+    .bind(amount)
+    .execute(&pool)
+    .await
+    .expect("insert expense");
+    world.expense_id = Some(id);
+}
+
+#[given(regex = r#"^the expense payment status is "([^"]*)"$"#)]
+async fn given_stats_expense_status(world: &mut FinancialWorld, status: String) {
+    let pool = world.pool.as_ref().expect("pool").clone();
+    let expense_id = world.expense_id.expect("expense_id");
+    sqlx::query("UPDATE expenses SET payment_status = $1, updated_at = NOW() WHERE id = $2")
+        .bind(&status)
+        .bind(expense_id)
+        .execute(&pool)
+        .await
+        .expect("update payment status");
+}
+
+async fn run_urgent_tasks_catching_panic(
+    uc: Arc<StatsUseCases>,
+    org_id: Uuid,
+) -> Result<Vec<UrgentTask>, String> {
+    let fut = async move { uc.get_syndic_urgent_tasks(org_id).await };
+    match std::panic::AssertUnwindSafe(fut).catch_unwind().await {
+        Ok(result) => result,
+        Err(panic_payload) => {
+            let msg = if let Some(s) = panic_payload.downcast_ref::<&'static str>() {
+                (*s).to_string()
+            } else if let Some(s) = panic_payload.downcast_ref::<String>() {
+                s.clone()
+            } else {
+                "<non-string panic payload>".to_string()
+            };
+            Err(format!("PANIC: {}", msg))
+        }
+    }
+}
+
+#[when(regex = r#"^Marc requests GET /api/v1/stats/syndic/urgent-tasks$"#)]
+async fn when_marc_requests_urgent_tasks(world: &mut FinancialWorld) {
+    let uc = world.stats_use_cases.as_ref().expect("stats uc").clone();
+    let org_id = world.org_id.expect("org_id");
+    let result = run_urgent_tasks_catching_panic(uc, org_id).await;
+    world.last_urgent_tasks_result = Some(result);
+}
+
+#[when(regex = r#"^Bob requests GET /api/v1/stats/syndic/urgent-tasks$"#)]
+async fn when_bob_requests_urgent_tasks(world: &mut FinancialWorld) {
+    let uc = world.stats_use_cases.as_ref().expect("stats uc").clone();
+    let org_id = world.other_org_id.expect("other_org_id");
+    let result = run_urgent_tasks_catching_panic(uc, org_id).await;
+    world.last_urgent_tasks_result = Some(result);
+}
+
+#[then(regex = r#"^the urgent tasks operation succeeds$"#)]
+async fn then_urgent_tasks_ok(world: &mut FinancialWorld) {
+    let result = world
+        .last_urgent_tasks_result
+        .as_ref()
+        .expect("operation ran");
+    assert!(
+        result.is_ok(),
+        "expected urgent_tasks Ok, got Err: {:?}",
+        result.as_ref().err()
+    );
+}
+
+#[then(regex = r#"^the urgent tasks operation does not panic$"#)]
+async fn then_urgent_tasks_no_panic(world: &mut FinancialWorld) {
+    let result = world
+        .last_urgent_tasks_result
+        .as_ref()
+        .expect("operation ran");
+    if let Err(e) = result {
+        assert!(
+            !e.starts_with("PANIC:"),
+            "urgent_tasks panicked: {}",
+            e
+        );
+    }
+}
+
+#[then(regex = r#"^the returned task list contains a task of type "([^"]*)"$"#)]
+async fn then_task_list_has_type(world: &mut FinancialWorld, task_type: String) {
+    let tasks = world
+        .last_urgent_tasks_result
+        .as_ref()
+        .expect("operation ran")
+        .as_ref()
+        .expect("operation ok");
+    assert!(
+        tasks.iter().any(|t| t.task_type == task_type),
+        "no task with task_type {:?} in {:?}",
+        task_type,
+        tasks
+    );
+}
+
+#[then(regex = r#"^the task title displays the amount as "([^"]*)"$"#)]
+async fn then_task_title_has_amount(world: &mut FinancialWorld, expected: String) {
+    let tasks = world
+        .last_urgent_tasks_result
+        .as_ref()
+        .expect("operation ran")
+        .as_ref()
+        .expect("operation ok");
+    assert!(
+        tasks.iter().any(|t| t.title.contains(&expected)),
+        "no task title contains {:?}; titles = {:?}",
+        expected,
+        tasks.iter().map(|t| &t.title).collect::<Vec<_>>()
+    );
+}
+
+#[then(regex = r#"^the task title is "([^"]*)"$"#)]
+async fn then_task_title_exact(world: &mut FinancialWorld, expected: String) {
+    let tasks = world
+        .last_urgent_tasks_result
+        .as_ref()
+        .expect("operation ran")
+        .as_ref()
+        .expect("operation ok");
+    let first = tasks.first().expect("at least one task");
+    assert_eq!(first.title, expected, "title mismatch");
+}
+
+#[then(regex = r#"^the returned task list does NOT contain a task referencing "([^"]*)"$"#)]
+async fn then_task_list_excludes(world: &mut FinancialWorld, needle: String) {
+    let tasks = world
+        .last_urgent_tasks_result
+        .as_ref()
+        .expect("operation ran")
+        .as_ref()
+        .expect("operation ok");
+    assert!(
+        !tasks.iter().any(|t| t.title.contains(&needle)
+            || t.description.contains(&needle)),
+        "found task referencing {:?}: {:?}",
+        needle,
+        tasks
+    );
+}
 
 // ==================== MAIN ====================
 
