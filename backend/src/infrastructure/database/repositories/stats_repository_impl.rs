@@ -1,6 +1,7 @@
 use crate::application::dto::{
     AdminDashboardStats, NextMeetingInfo, SeedDataStats, SyndicDashboardStats, UrgentTask,
 };
+use crate::application::error::AppError;
 use crate::application::ports::StatsRepository;
 use crate::infrastructure::pool::DbPool;
 use async_trait::async_trait;
@@ -20,7 +21,7 @@ impl PostgresStatsRepository {
 
 #[async_trait]
 impl StatsRepository for PostgresStatsRepository {
-    async fn get_admin_dashboard_stats(&self) -> Result<AdminDashboardStats, String> {
+    async fn get_admin_dashboard_stats(&self) -> Result<AdminDashboardStats, AppError> {
         let total_organizations =
             sqlx::query_scalar::<_, i64>("SELECT COUNT(*) FROM organizations")
                 .fetch_one(&self.pool)
@@ -76,7 +77,7 @@ impl StatsRepository for PostgresStatsRepository {
         })
     }
 
-    async fn get_seed_data_stats(&self) -> Result<SeedDataStats, String> {
+    async fn get_seed_data_stats(&self) -> Result<SeedDataStats, AppError> {
         let seed_organizations = sqlx::query_scalar::<_, i64>(
             "SELECT COUNT(*) FROM organizations WHERE is_seed_data = true",
         )
@@ -178,7 +179,7 @@ impl StatsRepository for PostgresStatsRepository {
     async fn get_syndic_stats(
         &self,
         organization_id: Uuid,
-    ) -> Result<SyndicDashboardStats, String> {
+    ) -> Result<SyndicDashboardStats, AppError> {
         let total_buildings = sqlx::query_scalar::<_, i64>(
             "SELECT COUNT(*) FROM buildings WHERE organization_id = $1",
         )
@@ -249,7 +250,7 @@ impl StatsRepository for PostgresStatsRepository {
         })
     }
 
-    async fn get_owner_stats(&self, owner_id: Uuid) -> Result<SyndicDashboardStats, String> {
+    async fn get_owner_stats(&self, owner_id: Uuid) -> Result<SyndicDashboardStats, AppError> {
         let total_buildings = sqlx::query_scalar::<_, i64>(
             "SELECT COUNT(DISTINCT b.id) FROM buildings b
              INNER JOIN units u ON b.id = u.building_id
@@ -331,7 +332,7 @@ impl StatsRepository for PostgresStatsRepository {
         })
     }
 
-    async fn find_owner_id_by_user_id(&self, user_id: Uuid) -> Result<Option<Uuid>, String> {
+    async fn find_owner_id_by_user_id(&self, user_id: Uuid) -> Result<Option<Uuid>, AppError> {
         let row = sqlx::query("SELECT id FROM owners WHERE user_id = $1")
             .bind(user_id)
             .fetch_optional(&self.pool)
@@ -343,7 +344,7 @@ impl StatsRepository for PostgresStatsRepository {
     async fn get_syndic_urgent_tasks(
         &self,
         organization_id: Uuid,
-    ) -> Result<Vec<UrgentTask>, String> {
+    ) -> Result<Vec<UrgentTask>, AppError> {
         let mut tasks: Vec<UrgentTask> = Vec::new();
 
         let overdue_expenses = sqlx::query(
@@ -361,11 +362,11 @@ impl StatsRepository for PostgresStatsRepository {
         .map_err(|e| e.to_string())?;
 
         for expense in overdue_expenses {
-            let amount: f64 = expense.get("amount");
+            let amount: rust_decimal::Decimal = expense.try_get("amount")?;
             let id: Uuid = expense.get("id");
             tasks.push(UrgentTask {
                 task_type: "expense".to_string(),
-                title: format!("Charge en retard - {:.2}€", amount),
+                title: format!("Charge en retard - {}€", amount.round_dp(2)),
                 description: expense.get("description"),
                 priority: "urgent".to_string(),
                 building_name: Some(expense.get("building_name")),

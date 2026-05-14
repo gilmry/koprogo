@@ -1,3 +1,4 @@
+use crate::application::error::AppError;
 use crate::application::ports::PaymentReminderRepository;
 use crate::domain::entities::{DeliveryMethod, PaymentReminder, ReminderLevel, ReminderStatus};
 use crate::infrastructure::database::pool::DbPool;
@@ -107,7 +108,7 @@ impl PostgresPaymentReminderRepository {
 
 #[async_trait]
 impl PaymentReminderRepository for PostgresPaymentReminderRepository {
-    async fn create(&self, reminder: &PaymentReminder) -> Result<PaymentReminder, String> {
+    async fn create(&self, reminder: &PaymentReminder) -> Result<PaymentReminder, AppError> {
         sqlx::query(
             r#"
             INSERT INTO payment_reminders (
@@ -150,7 +151,7 @@ impl PaymentReminderRepository for PostgresPaymentReminderRepository {
         Ok(reminder.clone())
     }
 
-    async fn find_by_id(&self, id: Uuid) -> Result<Option<PaymentReminder>, String> {
+    async fn find_by_id(&self, id: Uuid) -> Result<Option<PaymentReminder>, AppError> {
         let row = sqlx::query(
             r#"
             SELECT id, organization_id, expense_id, owner_id,
@@ -171,7 +172,7 @@ impl PaymentReminderRepository for PostgresPaymentReminderRepository {
         Ok(row.as_ref().map(|r| self.row_to_reminder(r)))
     }
 
-    async fn find_by_expense(&self, expense_id: Uuid) -> Result<Vec<PaymentReminder>, String> {
+    async fn find_by_expense(&self, expense_id: Uuid) -> Result<Vec<PaymentReminder>, AppError> {
         let rows = sqlx::query(
             r#"
             SELECT id, organization_id, expense_id, owner_id,
@@ -193,7 +194,7 @@ impl PaymentReminderRepository for PostgresPaymentReminderRepository {
         Ok(rows.iter().map(|r| self.row_to_reminder(r)).collect())
     }
 
-    async fn find_by_owner(&self, owner_id: Uuid) -> Result<Vec<PaymentReminder>, String> {
+    async fn find_by_owner(&self, owner_id: Uuid) -> Result<Vec<PaymentReminder>, AppError> {
         let rows = sqlx::query(
             r#"
             SELECT id, organization_id, expense_id, owner_id,
@@ -218,7 +219,7 @@ impl PaymentReminderRepository for PostgresPaymentReminderRepository {
     async fn find_by_organization(
         &self,
         organization_id: Uuid,
-    ) -> Result<Vec<PaymentReminder>, String> {
+    ) -> Result<Vec<PaymentReminder>, AppError> {
         let rows = sqlx::query(
             r#"
             SELECT id, organization_id, expense_id, owner_id,
@@ -240,7 +241,10 @@ impl PaymentReminderRepository for PostgresPaymentReminderRepository {
         Ok(rows.iter().map(|r| self.row_to_reminder(r)).collect())
     }
 
-    async fn find_by_status(&self, status: ReminderStatus) -> Result<Vec<PaymentReminder>, String> {
+    async fn find_by_status(
+        &self,
+        status: ReminderStatus,
+    ) -> Result<Vec<PaymentReminder>, AppError> {
         let rows = sqlx::query(
             r#"
             SELECT id, organization_id, expense_id, owner_id,
@@ -266,7 +270,7 @@ impl PaymentReminderRepository for PostgresPaymentReminderRepository {
         &self,
         organization_id: Uuid,
         status: ReminderStatus,
-    ) -> Result<Vec<PaymentReminder>, String> {
+    ) -> Result<Vec<PaymentReminder>, AppError> {
         let rows = sqlx::query(
             r#"
             SELECT id, organization_id, expense_id, owner_id,
@@ -289,7 +293,7 @@ impl PaymentReminderRepository for PostgresPaymentReminderRepository {
         Ok(rows.iter().map(|r| self.row_to_reminder(r)).collect())
     }
 
-    async fn find_pending_reminders(&self) -> Result<Vec<PaymentReminder>, String> {
+    async fn find_pending_reminders(&self) -> Result<Vec<PaymentReminder>, AppError> {
         let rows = sqlx::query(
             r#"
             SELECT id, organization_id, expense_id, owner_id,
@@ -313,7 +317,7 @@ impl PaymentReminderRepository for PostgresPaymentReminderRepository {
     async fn find_reminders_needing_escalation(
         &self,
         cutoff_date: DateTime<Utc>,
-    ) -> Result<Vec<PaymentReminder>, String> {
+    ) -> Result<Vec<PaymentReminder>, AppError> {
         let rows = sqlx::query(
             r#"
             SELECT id, organization_id, expense_id, owner_id,
@@ -340,7 +344,7 @@ impl PaymentReminderRepository for PostgresPaymentReminderRepository {
     async fn find_latest_by_expense(
         &self,
         expense_id: Uuid,
-    ) -> Result<Option<PaymentReminder>, String> {
+    ) -> Result<Option<PaymentReminder>, AppError> {
         let row = sqlx::query(
             r#"
             SELECT id, organization_id, expense_id, owner_id,
@@ -363,7 +367,7 @@ impl PaymentReminderRepository for PostgresPaymentReminderRepository {
         Ok(row.as_ref().map(|r| self.row_to_reminder(r)))
     }
 
-    async fn find_active_by_owner(&self, owner_id: Uuid) -> Result<Vec<PaymentReminder>, String> {
+    async fn find_active_by_owner(&self, owner_id: Uuid) -> Result<Vec<PaymentReminder>, AppError> {
         let rows = sqlx::query(
             r#"
             SELECT id, organization_id, expense_id, owner_id,
@@ -389,7 +393,7 @@ impl PaymentReminderRepository for PostgresPaymentReminderRepository {
     async fn count_by_status(
         &self,
         organization_id: Uuid,
-    ) -> Result<Vec<(ReminderStatus, i64)>, String> {
+    ) -> Result<Vec<(ReminderStatus, i64)>, AppError> {
         let rows = sqlx::query(
             r#"
             SELECT status::text AS status, COUNT(*) as count
@@ -413,7 +417,7 @@ impl PaymentReminderRepository for PostgresPaymentReminderRepository {
             .collect())
     }
 
-    async fn get_total_owed_by_organization(&self, organization_id: Uuid) -> Result<f64, String> {
+    async fn get_total_owed_by_organization(&self, organization_id: Uuid) -> Result<f64, AppError> {
         let row = sqlx::query(
             r#"
             SELECT COALESCE(SUM(amount_owed), 0.0)::FLOAT8 as total
@@ -433,7 +437,7 @@ impl PaymentReminderRepository for PostgresPaymentReminderRepository {
     async fn get_total_penalties_by_organization(
         &self,
         organization_id: Uuid,
-    ) -> Result<f64, String> {
+    ) -> Result<f64, AppError> {
         let row = sqlx::query(
             r#"
             SELECT COALESCE(SUM(penalty_amount), 0.0)::FLOAT8 as total
@@ -454,7 +458,7 @@ impl PaymentReminderRepository for PostgresPaymentReminderRepository {
         &self,
         organization_id: Uuid,
         min_days_overdue: i64,
-    ) -> Result<Vec<(Uuid, Uuid, i64, f64)>, String> {
+    ) -> Result<Vec<(Uuid, Uuid, i64, f64)>, AppError> {
         let rows = sqlx::query(
             r#"
             SELECT
@@ -483,19 +487,22 @@ impl PaymentReminderRepository for PostgresPaymentReminderRepository {
         .await
         .map_err(|e| format!("Database error finding overdue expenses: {}", e))?;
 
-        Ok(rows
-            .iter()
-            .map(|row| {
-                let expense_id: Uuid = row.get("expense_id");
-                let owner_id: Uuid = row.get("owner_id");
-                let days_overdue: i64 = row.get("days_overdue");
-                let amount: f64 = row.get("amount");
-                (expense_id, owner_id, days_overdue, amount)
+        rows.iter()
+            .map(|row| -> Result<(Uuid, Uuid, i64, f64), AppError> {
+                let expense_id: Uuid = row.try_get("expense_id")?;
+                let owner_id: Uuid = row.try_get("owner_id")?;
+                let days_overdue: i64 = row.try_get("days_overdue")?;
+                let amount_dec: rust_decimal::Decimal = row.try_get("amount")?;
+                let amount: f64 = {
+                    use rust_decimal::prelude::ToPrimitive;
+                    amount_dec.to_f64().unwrap_or(0.0)
+                };
+                Ok((expense_id, owner_id, days_overdue, amount))
             })
-            .collect())
+            .collect()
     }
 
-    async fn update(&self, reminder: &PaymentReminder) -> Result<PaymentReminder, String> {
+    async fn update(&self, reminder: &PaymentReminder) -> Result<PaymentReminder, AppError> {
         sqlx::query(
             r#"
             UPDATE payment_reminders
@@ -532,7 +539,7 @@ impl PaymentReminderRepository for PostgresPaymentReminderRepository {
         Ok(reminder.clone())
     }
 
-    async fn delete(&self, id: Uuid) -> Result<bool, String> {
+    async fn delete(&self, id: Uuid) -> Result<bool, AppError> {
         let result = sqlx::query("DELETE FROM payment_reminders WHERE id = $1")
             .bind(id)
             .execute(&self.pool)
@@ -545,7 +552,7 @@ impl PaymentReminderRepository for PostgresPaymentReminderRepository {
     async fn get_dashboard_stats(
         &self,
         organization_id: Uuid,
-    ) -> Result<(f64, f64, Vec<(ReminderLevel, i64)>), String> {
+    ) -> Result<(f64, f64, Vec<(ReminderLevel, i64)>), AppError> {
         let total_owed = self.get_total_owed_by_organization(organization_id).await?;
         let total_penalties = self
             .get_total_penalties_by_organization(organization_id)

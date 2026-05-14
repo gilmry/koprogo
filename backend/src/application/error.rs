@@ -167,6 +167,15 @@ impl From<jsonwebtoken::errors::Error> for AppError {
     }
 }
 
+impl From<sqlx::Error> for AppError {
+    fn from(e: sqlx::Error) -> Self {
+        match &e {
+            sqlx::Error::RowNotFound => AppError::NotFound("row not found".to_string()),
+            _ => AppError::Database(e.to_string()),
+        }
+    }
+}
+
 // ============================================================================
 // Tests — taxonomie 4 catégories obligatoire (cf. CRITICAL.md règle #3, #427)
 // ============================================================================

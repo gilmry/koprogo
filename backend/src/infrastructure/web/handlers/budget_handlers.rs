@@ -1,4 +1,4 @@
-use crate::application::dto::{
+﻿use crate::application::dto::{
     CreateBudgetRequest, PageRequest, PageResponse, UpdateBudgetRequest,
 };
 use crate::domain::entities::BudgetStatus;
@@ -47,11 +47,11 @@ pub async fn create_budget(
                 Some(user.user_id),
                 Some(organization_id),
             )
-            .with_error(err.clone())
+            .with_error(err.to_string())
             .log();
 
             HttpResponse::BadRequest().json(serde_json::json!({
-                "error": err
+                "error": err.to_string()
             }))
         }
     }
@@ -76,7 +76,7 @@ pub async fn get_budget(
             "error": "Budget not found"
         })),
         Err(err) => HttpResponse::InternalServerError().json(serde_json::json!({
-            "error": err
+            "error": err.to_string()
         })),
     }
 }
@@ -106,7 +106,7 @@ pub async fn get_budget_by_building_and_fiscal_year(
         }
         Err(err) => {
             return HttpResponse::InternalServerError().json(serde_json::json!({
-                "error": err
+                "error": err.to_string()
             }));
         }
     }
@@ -121,7 +121,7 @@ pub async fn get_budget_by_building_and_fiscal_year(
             "error": "Budget not found"
         })),
         Err(err) => HttpResponse::InternalServerError().json(serde_json::json!({
-            "error": err
+            "error": err.to_string()
         })),
     }
 }
@@ -149,7 +149,7 @@ pub async fn get_active_budget(
         }
         Err(err) => {
             return HttpResponse::InternalServerError().json(serde_json::json!({
-                "error": err
+                "error": err.to_string()
             }));
         }
     }
@@ -160,7 +160,7 @@ pub async fn get_active_budget(
             "error": "No active budget found for this building"
         })),
         Err(err) => HttpResponse::InternalServerError().json(serde_json::json!({
-            "error": err
+            "error": err.to_string()
         })),
     }
 }
@@ -188,7 +188,7 @@ pub async fn list_budgets_by_building(
         }
         Err(err) => {
             return HttpResponse::InternalServerError().json(serde_json::json!({
-                "error": err
+                "error": err.to_string()
             }));
         }
     }
@@ -196,7 +196,7 @@ pub async fn list_budgets_by_building(
     match state.budget_use_cases.list_by_building(*building_id).await {
         Ok(budgets) => HttpResponse::Ok().json(budgets),
         Err(err) => HttpResponse::InternalServerError().json(serde_json::json!({
-            "error": err
+            "error": err.to_string()
         })),
     }
 }
@@ -224,7 +224,7 @@ pub async fn list_budgets_by_fiscal_year(
     {
         Ok(budgets) => HttpResponse::Ok().json(budgets),
         Err(err) => HttpResponse::InternalServerError().json(serde_json::json!({
-            "error": err
+            "error": err.to_string()
         })),
     }
 }
@@ -265,7 +265,7 @@ pub async fn list_budgets_by_status(
     {
         Ok(budgets) => HttpResponse::Ok().json(budgets),
         Err(err) => HttpResponse::InternalServerError().json(serde_json::json!({
-            "error": err
+            "error": err.to_string()
         })),
     }
 }
@@ -309,7 +309,7 @@ pub async fn list_budgets(
             HttpResponse::Ok().json(response)
         }
         Err(err) => HttpResponse::InternalServerError().json(serde_json::json!({
-            "error": err
+            "error": err.to_string()
         })),
     }
 }
@@ -339,7 +339,7 @@ pub async fn update_budget(
             HttpResponse::Ok().json(budget)
         }
         Err(err) => HttpResponse::BadRequest().json(serde_json::json!({
-            "error": err
+            "error": err.to_string()
         })),
     }
 }
@@ -364,7 +364,7 @@ pub async fn submit_budget(
             HttpResponse::Ok().json(budget)
         }
         Err(err) => HttpResponse::BadRequest().json(serde_json::json!({
-            "error": err
+            "error": err.to_string()
         })),
     }
 }
@@ -407,7 +407,7 @@ pub async fn approve_budget(
             HttpResponse::Ok().json(budget)
         }
         Err(err) => HttpResponse::BadRequest().json(serde_json::json!({
-            "error": err
+            "error": err.to_string()
         })),
     }
 }
@@ -438,7 +438,7 @@ pub async fn reject_budget(
             HttpResponse::Ok().json(budget)
         }
         Err(err) => HttpResponse::BadRequest().json(serde_json::json!({
-            "error": err
+            "error": err.to_string()
         })),
     }
 }
@@ -463,7 +463,7 @@ pub async fn archive_budget(
             HttpResponse::Ok().json(budget)
         }
         Err(err) => HttpResponse::BadRequest().json(serde_json::json!({
-            "error": err
+            "error": err.to_string()
         })),
     }
 }
@@ -486,7 +486,7 @@ pub async fn get_budget_stats(
     match state.budget_use_cases.get_stats(organization_id).await {
         Ok(stats) => HttpResponse::Ok().json(stats),
         Err(err) => HttpResponse::InternalServerError().json(serde_json::json!({
-            "error": err
+            "error": err.to_string()
         })),
     }
 }
@@ -512,7 +512,7 @@ pub async fn get_budget_variance(
         }
         Err(err) => {
             return HttpResponse::InternalServerError().json(serde_json::json!({
-                "error": err
+                "error": err.to_string()
             }));
         }
     }
@@ -523,7 +523,7 @@ pub async fn get_budget_variance(
             "error": "Budget not found"
         })),
         Err(err) => HttpResponse::InternalServerError().json(serde_json::json!({
-            "error": err
+            "error": err.to_string()
         })),
     }
 }
@@ -551,7 +551,7 @@ pub async fn delete_budget(
             "error": "Budget not found"
         })),
         Err(err) => HttpResponse::InternalServerError().json(serde_json::json!({
-            "error": err
+            "error": err.to_string()
         })),
     }
 }

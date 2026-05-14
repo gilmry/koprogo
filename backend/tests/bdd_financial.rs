@@ -1,4 +1,4 @@
-// BDD tests for Financial domain: payments, payment_methods, journal_entries,
+﻿// BDD tests for Financial domain: payments, payment_methods, journal_entries,
 // call_for_funds, owner_contributions, charge_distribution, dashboard
 // Phase 2: payments + payment_methods step definitions
 
@@ -397,7 +397,7 @@ impl FinancialWorld {
             }
             Err(e) => {
                 self.operation_success = false;
-                self.operation_error = Some(e);
+                self.operation_error = Some(e.to_string());
             }
         }
     }
@@ -412,7 +412,7 @@ impl FinancialWorld {
             }
             Err(e) => {
                 self.operation_success = false;
-                self.operation_error = Some(e);
+                self.operation_error = Some(e.to_string());
             }
         }
     }
@@ -1043,7 +1043,7 @@ async fn when_list_owner_payments(world: &mut FinancialWorld, _name: String) {
         }
         Err(e) => {
             world.operation_success = false;
-            world.operation_error = Some(e);
+            world.operation_error = Some(e.to_string());
         }
     }
 }
@@ -1060,7 +1060,7 @@ async fn when_list_by_status(world: &mut FinancialWorld, status: String) {
         }
         Err(e) => {
             world.operation_success = false;
-            world.operation_error = Some(e);
+            world.operation_error = Some(e.to_string());
         }
     }
 }
@@ -1076,7 +1076,7 @@ async fn when_get_owner_stats(world: &mut FinancialWorld, _name: String) {
         }
         Err(e) => {
             world.operation_success = false;
-            world.operation_error = Some(e);
+            world.operation_error = Some(e.to_string());
         }
     }
 }
@@ -1092,7 +1092,7 @@ async fn when_get_total_paid_expense(world: &mut FinancialWorld) {
         }
         Err(e) => {
             world.operation_success = false;
-            world.operation_error = Some(e);
+            world.operation_error = Some(e.to_string());
         }
     }
 }
@@ -1110,7 +1110,7 @@ async fn when_delete_payment(world: &mut FinancialWorld) {
         }
         Err(e) => {
             world.operation_success = false;
-            world.operation_error = Some(e);
+            world.operation_error = Some(e.to_string());
         }
     }
 }
@@ -1203,7 +1203,7 @@ async fn when_list_active_pms(world: &mut FinancialWorld, _name: String) {
         }
         Err(e) => {
             world.operation_success = false;
-            world.operation_error = Some(e);
+            world.operation_error = Some(e.to_string());
         }
     }
 }
@@ -1219,7 +1219,7 @@ async fn when_check_has_active(world: &mut FinancialWorld, _name: String) {
         }
         Err(e) => {
             world.operation_success = false;
-            world.operation_error = Some(e);
+            world.operation_error = Some(e.to_string());
         }
     }
 }
@@ -1235,7 +1235,7 @@ async fn when_count_active_pms(world: &mut FinancialWorld, _name: String) {
         }
         Err(e) => {
             world.operation_success = false;
-            world.operation_error = Some(e);
+            world.operation_error = Some(e.to_string());
         }
     }
 }
@@ -1250,7 +1250,7 @@ async fn when_delete_pm(world: &mut FinancialWorld) {
         }
         Err(e) => {
             world.operation_success = false;
-            world.operation_error = Some(e);
+            world.operation_error = Some(e.to_string());
         }
     }
 }
@@ -1664,7 +1664,7 @@ async fn when_add_journal_lines(world: &mut FinancialWorld, step: &Step) {
         }
         Err(e) => {
             world.operation_success = false;
-            world.operation_error = Some(e);
+            world.operation_error = Some(e.to_string());
         }
     }
 }
@@ -2084,7 +2084,7 @@ async fn when_delete_journal_entry(world: &mut FinancialWorld) {
         }
         Err(e) => {
             world.operation_success = false;
-            world.operation_error = Some(e);
+            world.operation_error = Some(e.to_string());
         }
     }
 }
@@ -2229,7 +2229,7 @@ async fn when_create_call_for_funds(world: &mut FinancialWorld, step: &Step) {
         }
         Err(e) => {
             world.operation_success = false;
-            world.operation_error = Some(e);
+            world.operation_error = Some(e.to_string());
         }
     }
 }
@@ -2287,7 +2287,7 @@ async fn when_send_call_for_funds(world: &mut FinancialWorld) {
         }
         Err(e) => {
             world.operation_success = false;
-            world.operation_error = Some(e);
+            world.operation_error = Some(e.to_string());
         }
     }
 }
@@ -2445,7 +2445,7 @@ async fn when_cancel_call_for_funds(world: &mut FinancialWorld) {
         }
         Err(e) => {
             world.operation_success = false;
-            world.operation_error = Some(e);
+            world.operation_error = Some(e.to_string());
         }
     }
 }
@@ -2461,7 +2461,7 @@ async fn when_delete_call_for_funds(world: &mut FinancialWorld) {
         }
         Err(e) => {
             world.operation_success = false;
-            world.operation_error = Some(e);
+            world.operation_error = Some(e.to_string());
         }
     }
 }
@@ -2511,7 +2511,7 @@ async fn when_try_delete_sent_call(world: &mut FinancialWorld) {
         }
         Err(e) => {
             world.operation_success = false;
-            world.operation_error = Some(e);
+            world.operation_error = Some(e.to_string());
         }
     }
 }
@@ -2760,7 +2760,7 @@ async fn when_owner_pays_contribution(world: &mut FinancialWorld) {
         }
         Err(e) => {
             world.operation_success = false;
-            world.operation_error = Some(e);
+            world.operation_error = Some(e.to_string());
         }
     }
 }
@@ -2871,7 +2871,7 @@ async fn when_create_contribution(world: &mut FinancialWorld, name: String, step
         }
         Err(e) => {
             world.operation_success = false;
-            world.operation_error = Some(e);
+            world.operation_error = Some(e.to_string());
         }
     }
 }
@@ -3132,7 +3132,7 @@ async fn when_mark_paid(world: &mut FinancialWorld) {
         }
         Err(e) => {
             world.operation_success = false;
-            world.operation_error = Some(e);
+            world.operation_error = Some(e.to_string());
         }
     }
 }
@@ -3196,7 +3196,7 @@ async fn when_try_pay_again(world: &mut FinancialWorld) {
         }
         Err(e) => {
             world.operation_success = false;
-            world.operation_error = Some(e);
+            world.operation_error = Some(e.to_string());
         }
     }
 }
@@ -3422,7 +3422,7 @@ async fn when_calculate_distribution(world: &mut FinancialWorld) {
         }
         Err(e) => {
             world.operation_success = false;
-            world.operation_error = Some(e);
+            world.operation_error = Some(e.to_string());
         }
     }
 }
@@ -3704,7 +3704,7 @@ async fn when_recalculate_distribution(world: &mut FinancialWorld) {
         }
         Err(e) => {
             world.operation_success = false;
-            world.operation_error = Some(e);
+            world.operation_error = Some(e.to_string());
         }
     }
 }
@@ -3759,7 +3759,7 @@ async fn when_request_dashboard_stats(world: &mut FinancialWorld) {
         }
         Err(e) => {
             world.operation_success = false;
-            world.operation_error = Some(e);
+            world.operation_error = Some(e.to_string());
         }
     }
 }
@@ -3836,7 +3836,7 @@ async fn when_request_recent_transactions(world: &mut FinancialWorld, limit: usi
         }
         Err(e) => {
             world.operation_success = false;
-            world.operation_error = Some(e);
+            world.operation_error = Some(e.to_string());
         }
     }
 }
@@ -4147,7 +4147,7 @@ async fn when_create_invoice_draft(world: &mut FinancialWorld, step: &Step) {
         }
         Err(e) => {
             world.operation_success = false;
-            world.operation_error = Some(e);
+            world.operation_error = Some(e.to_string());
         }
     }
 }
@@ -4265,7 +4265,7 @@ async fn when_update_invoice(world: &mut FinancialWorld, step: &Step) {
         }
         Err(e) => {
             world.operation_success = false;
-            world.operation_error = Some(e);
+            world.operation_error = Some(e.to_string());
         }
     }
 }
@@ -4388,7 +4388,7 @@ async fn when_try_update_approved(world: &mut FinancialWorld) {
         }
         Err(e) => {
             world.operation_success = false;
-            world.operation_error = Some(e);
+            world.operation_error = Some(e.to_string());
         }
     }
 }
@@ -4441,7 +4441,7 @@ async fn when_submit_invoice(world: &mut FinancialWorld) {
         }
         Err(e) => {
             world.operation_success = false;
-            world.operation_error = Some(e);
+            world.operation_error = Some(e.to_string());
         }
     }
 }
@@ -4466,7 +4466,7 @@ async fn when_try_resubmit(world: &mut FinancialWorld) {
         }
         Err(e) => {
             world.operation_success = false;
-            world.operation_error = Some(e);
+            world.operation_error = Some(e.to_string());
         }
     }
 }
@@ -4509,7 +4509,7 @@ async fn when_syndic_approves(world: &mut FinancialWorld) {
         }
         Err(e) => {
             world.operation_success = false;
-            world.operation_error = Some(e);
+            world.operation_error = Some(e.to_string());
         }
     }
 }
@@ -4563,7 +4563,7 @@ async fn when_syndic_rejects(world: &mut FinancialWorld, reason: String) {
         }
         Err(e) => {
             world.operation_success = false;
-            world.operation_error = Some(e);
+            world.operation_error = Some(e.to_string());
         }
     }
 }
@@ -4609,7 +4609,7 @@ async fn when_reject_empty_reason(world: &mut FinancialWorld) {
         }
         Err(e) => {
             world.operation_success = false;
-            world.operation_error = Some(e);
+            world.operation_error = Some(e.to_string());
         }
     }
 }
@@ -4738,7 +4738,7 @@ async fn when_syndic_requests_pending(world: &mut FinancialWorld) {
         }
         Err(e) => {
             world.operation_success = false;
-            world.operation_error = Some(e);
+            world.operation_error = Some(e.to_string());
         }
     }
 }
@@ -4800,7 +4800,7 @@ async fn when_calculate_invoice_charge_distribution(world: &mut FinancialWorld) 
         }
         Err(e) => {
             world.operation_success = false;
-            world.operation_error = Some(e);
+            world.operation_error = Some(e.to_string());
         }
     }
 }
@@ -4845,7 +4845,7 @@ async fn when_mark_invoice_paid(world: &mut FinancialWorld) {
         }
         Err(e) => {
             world.operation_success = false;
-            world.operation_error = Some(e);
+            world.operation_error = Some(e.to_string());
         }
     }
 }
@@ -4910,7 +4910,7 @@ async fn when_update_rejected(world: &mut FinancialWorld) {
         }
         Err(e) => {
             world.operation_success = false;
-            world.operation_error = Some(e);
+            world.operation_error = Some(e.to_string());
         }
     }
 }
@@ -5073,7 +5073,7 @@ async fn when_create_reminder_level(world: &mut FinancialWorld, level: String) {
         }
         Err(e) => {
             world.operation_success = false;
-            world.operation_error = Some(e);
+            world.operation_error = Some(e.to_string());
         }
     }
 }
@@ -5191,7 +5191,7 @@ async fn when_mark_sent_pdf(world: &mut FinancialWorld, pdf_path: String) {
         }
         Err(e) => {
             world.operation_success = false;
-            world.operation_error = Some(e);
+            world.operation_error = Some(e.to_string());
         }
     }
 }
@@ -5262,7 +5262,7 @@ async fn when_escalate_reminder(world: &mut FinancialWorld) {
         }
         Err(e) => {
             world.operation_success = false;
-            world.operation_error = Some(e);
+            world.operation_error = Some(e.to_string());
         }
     }
 }
@@ -5380,7 +5380,7 @@ async fn when_cancel_reminder(world: &mut FinancialWorld, reason: String) {
         }
         Err(e) => {
             world.operation_success = false;
-            world.operation_error = Some(e);
+            world.operation_error = Some(e.to_string());
         }
     }
 }
@@ -5407,7 +5407,7 @@ async fn when_mark_reminder_paid(world: &mut FinancialWorld) {
         }
         Err(e) => {
             world.operation_success = false;
-            world.operation_error = Some(e);
+            world.operation_error = Some(e.to_string());
         }
     }
 }
@@ -5592,7 +5592,7 @@ async fn when_create_budget(world: &mut FinancialWorld, step: &Step) {
         }
         Err(e) => {
             world.operation_success = false;
-            world.operation_error = Some(e);
+            world.operation_error = Some(e.to_string());
         }
     }
 }
@@ -5686,7 +5686,7 @@ async fn when_submit_budget(world: &mut FinancialWorld) {
         }
         Err(e) => {
             world.operation_success = false;
-            world.operation_error = Some(e);
+            world.operation_error = Some(e.to_string());
         }
     }
 }
@@ -5736,7 +5736,7 @@ async fn when_approve_budget(world: &mut FinancialWorld, _meeting_id: String) {
         }
         Err(e) => {
             world.operation_success = false;
-            world.operation_error = Some(e);
+            world.operation_error = Some(e.to_string());
         }
     }
 }
@@ -5758,7 +5758,7 @@ async fn when_reject_budget(world: &mut FinancialWorld, _reason: String) {
         }
         Err(e) => {
             world.operation_success = false;
-            world.operation_error = Some(e);
+            world.operation_error = Some(e.to_string());
         }
     }
 }
@@ -5804,7 +5804,7 @@ async fn when_update_budget(world: &mut FinancialWorld, step: &Step) {
         }
         Err(e) => {
             world.operation_success = false;
-            world.operation_error = Some(e);
+            world.operation_error = Some(e.to_string());
         }
     }
 }
@@ -5918,7 +5918,7 @@ async fn when_try_duplicate_budget(world: &mut FinancialWorld) {
         Ok(_) => world.operation_success = true,
         Err(e) => {
             world.operation_success = false;
-            world.operation_error = Some(e);
+            world.operation_error = Some(e.to_string());
         }
     }
 }
@@ -5973,7 +5973,7 @@ async fn when_request_budgets_2026(world: &mut FinancialWorld) {
         }
         Err(e) => {
             world.operation_success = false;
-            world.operation_error = Some(e);
+            world.operation_error = Some(e.to_string());
         }
     }
 }
@@ -6020,7 +6020,7 @@ async fn when_budget_stats(world: &mut FinancialWorld) {
         Ok(_) => world.operation_success = true,
         Err(e) => {
             world.operation_success = false;
-            world.operation_error = Some(e);
+            world.operation_error = Some(e.to_string());
         }
     }
 }
@@ -6074,7 +6074,7 @@ async fn when_seed_belgian_pcmn(world: &mut FinancialWorld) {
         }
         Err(e) => {
             world.operation_success = false;
-            world.operation_error = Some(e);
+            world.operation_error = Some(e.to_string());
         }
     }
 }
@@ -6172,7 +6172,7 @@ async fn when_create_account(world: &mut FinancialWorld, step: &Step) {
         }
         Err(e) => {
             world.operation_success = false;
-            world.operation_error = Some(e);
+            world.operation_error = Some(e.to_string());
         }
     }
 }
@@ -6209,7 +6209,7 @@ async fn when_create_duplicate_account(world: &mut FinancialWorld, code: String)
         }
         Err(e) => {
             world.operation_success = false;
-            world.operation_error = Some(e);
+            world.operation_error = Some(e.to_string());
         }
     }
 }
@@ -6236,7 +6236,7 @@ async fn when_create_empty_code(world: &mut FinancialWorld) {
         }
         Err(e) => {
             world.operation_success = false;
-            world.operation_error = Some(e);
+            world.operation_error = Some(e.to_string());
         }
     }
 }
@@ -6272,7 +6272,7 @@ async fn when_retrieve_account_by_code(world: &mut FinancialWorld, code: String)
         }
         Err(e) => {
             world.operation_success = false;
-            world.operation_error = Some(e);
+            world.operation_error = Some(e.to_string());
         }
     }
 }
@@ -6332,7 +6332,7 @@ async fn when_list_all_accounts(world: &mut FinancialWorld) {
         }
         Err(e) => {
             world.operation_success = false;
-            world.operation_error = Some(e);
+            world.operation_error = Some(e.to_string());
         }
     }
 }
@@ -6361,7 +6361,7 @@ async fn when_list_accounts_by_type(world: &mut FinancialWorld, type_str: String
         }
         Err(e) => {
             world.operation_success = false;
-            world.operation_error = Some(e);
+            world.operation_error = Some(e.to_string());
         }
     }
 }
@@ -6400,7 +6400,7 @@ async fn when_list_child_accounts(world: &mut FinancialWorld, parent_code: Strin
         }
         Err(e) => {
             world.operation_success = false;
-            world.operation_error = Some(e);
+            world.operation_error = Some(e.to_string());
         }
     }
 }
@@ -6430,7 +6430,7 @@ async fn when_update_account(world: &mut FinancialWorld, code: String, step: &St
         }
         Err(e) => {
             world.operation_success = false;
-            world.operation_error = Some(e);
+            world.operation_error = Some(e.to_string());
             return;
         }
     };
@@ -6454,7 +6454,7 @@ async fn when_update_account(world: &mut FinancialWorld, code: String, step: &St
         }
         Err(e) => {
             world.operation_success = false;
-            world.operation_error = Some(e);
+            world.operation_error = Some(e.to_string());
         }
     }
 }
@@ -6505,7 +6505,7 @@ async fn when_delete_account(world: &mut FinancialWorld) {
         }
         Err(e) => {
             world.operation_success = false;
-            world.operation_error = Some(e);
+            world.operation_error = Some(e.to_string());
         }
     }
 }
@@ -6627,7 +6627,7 @@ async fn when_count_accounts(world: &mut FinancialWorld) {
         }
         Err(e) => {
             world.operation_success = false;
-            world.operation_error = Some(e);
+            world.operation_error = Some(e.to_string());
         }
     }
 }
@@ -6724,7 +6724,7 @@ async fn when_create_simple_expense(world: &mut FinancialWorld, step: &Step) {
         }
         Err(e) => {
             world.operation_success = false;
-            world.operation_error = Some(e);
+            world.operation_error = Some(e.to_string());
         }
     }
 }
@@ -6803,7 +6803,7 @@ async fn when_create_expense_with_tva(world: &mut FinancialWorld, step: &Step) {
         }
         Err(e) => {
             world.operation_success = false;
-            world.operation_error = Some(e);
+            world.operation_error = Some(e.to_string());
         }
     }
 }
@@ -6857,7 +6857,7 @@ async fn when_create_expense_bad_amount(world: &mut FinancialWorld, amount: Deci
         }
         Err(e) => {
             world.operation_success = false;
-            world.operation_error = Some(e);
+            world.operation_error = Some(e.to_string());
         }
     }
 }
@@ -6910,7 +6910,7 @@ async fn when_submit_expense_for_approval(world: &mut FinancialWorld) {
         }
         Err(e) => {
             world.operation_success = false;
-            world.operation_error = Some(e);
+            world.operation_error = Some(e.to_string());
         }
     }
 }
@@ -6969,7 +6969,7 @@ async fn when_syndic_approves_expense(world: &mut FinancialWorld) {
         }
         Err(e) => {
             world.operation_success = false;
-            world.operation_error = Some(e);
+            world.operation_error = Some(e.to_string());
         }
     }
 }
@@ -7000,7 +7000,7 @@ async fn when_syndic_rejects_expense(world: &mut FinancialWorld, reason: String)
         }
         Err(e) => {
             world.operation_success = false;
-            world.operation_error = Some(e);
+            world.operation_error = Some(e.to_string());
         }
     }
 }
@@ -7053,7 +7053,7 @@ async fn when_try_update_expense_amount(world: &mut FinancialWorld, _new_amount:
         }
         Err(e) => {
             world.operation_success = false;
-            world.operation_error = Some(e);
+            world.operation_error = Some(e.to_string());
         }
     }
 }
@@ -7075,7 +7075,7 @@ async fn when_mark_expense_paid(world: &mut FinancialWorld) {
         }
         Err(e) => {
             world.operation_success = false;
-            world.operation_error = Some(e);
+            world.operation_error = Some(e.to_string());
         }
     }
 }
@@ -7125,7 +7125,7 @@ async fn when_list_expenses_for_building(world: &mut FinancialWorld) {
         }
         Err(e) => {
             world.operation_success = false;
-            world.operation_error = Some(e);
+            world.operation_error = Some(e.to_string());
         }
     }
 }
@@ -7210,7 +7210,7 @@ async fn when_list_expenses_by_status(world: &mut FinancialWorld, status: String
             }
             Err(e) => {
                 world.operation_success = false;
-                world.operation_error = Some(e);
+                world.operation_error = Some(e.to_string());
             }
         }
     } else {
@@ -7233,7 +7233,7 @@ async fn when_list_expenses_by_status(world: &mut FinancialWorld, status: String
             }
             Err(e) => {
                 world.operation_success = false;
-                world.operation_error = Some(e);
+                world.operation_error = Some(e.to_string());
             }
         }
     }
@@ -7298,7 +7298,7 @@ async fn when_create_expense_with_lines(world: &mut FinancialWorld, step: &Step)
         }
         Err(e) => {
             world.operation_success = false;
-            world.operation_error = Some(e);
+            world.operation_error = Some(e.to_string());
         }
     }
 }
@@ -7457,7 +7457,7 @@ async fn when_marc_requests_urgent_tasks(world: &mut FinancialWorld) {
     use futures_util::FutureExt;
     let outcome = result.catch_unwind().await;
     let typed: Result<Vec<UrgentTask>, String> = match outcome {
-        Ok(inner) => inner,
+        Ok(inner) => inner.map_err(|e| e.to_string()),
         Err(panic_payload) => {
             let msg = if let Some(s) = panic_payload.downcast_ref::<&'static str>() {
                 (*s).to_string()
@@ -7486,7 +7486,7 @@ async fn when_bob_requests_urgent_tasks(world: &mut FinancialWorld) {
     use futures_util::FutureExt;
     let outcome = result.catch_unwind().await;
     let typed: Result<Vec<UrgentTask>, String> = match outcome {
-        Ok(inner) => inner,
+        Ok(inner) => inner.map_err(|e| e.to_string()),
         Err(_) => Err("PANIC".to_string()),
     };
     world.last_urgent_tasks_result = Some(typed);
