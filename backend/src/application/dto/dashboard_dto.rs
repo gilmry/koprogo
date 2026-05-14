@@ -119,7 +119,11 @@ mod tests {
     #[test]
     fn monetary_fields_remain_json_strings() {
         let json: Value = serde_json::to_value(sample(dec!(50), dec!(50))).unwrap();
-        for field in ["total_expenses_current_month", "total_paid", "total_pending"] {
+        for field in [
+            "total_expenses_current_month",
+            "total_paid",
+            "total_pending",
+        ] {
             assert!(
                 json[field].is_string(),
                 "{} must stay JSON string (Decimal exact), got {:?}",
