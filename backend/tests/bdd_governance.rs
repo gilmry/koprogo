@@ -8068,34 +8068,29 @@ async fn then_shares_pct_missing(world: &mut GovernanceWorld, expected: f64) {
 
 #[tokio::main]
 async fn main() {
-    GovernanceWorld::cucumber()
-        .run("tests/features/resolutions.feature")
-        .await;
-    GovernanceWorld::cucumber()
-        .run("tests/features/convocations.feature")
-        .await;
-    GovernanceWorld::cucumber()
-        .run("tests/features/quotes.feature")
-        .await;
-    GovernanceWorld::cucumber()
-        .run("tests/features/two_factor.feature")
-        .await;
-    GovernanceWorld::cucumber()
-        .run("tests/features/organizations.feature")
-        .await;
-    GovernanceWorld::cucumber()
-        .run("tests/features/public_syndic.feature")
-        .await;
-    GovernanceWorld::cucumber()
-        .run("tests/features/polls.feature")
-        .await;
-    GovernanceWorld::cucumber()
-        .run("tests/features/etat_date.feature")
-        .await;
-    GovernanceWorld::cucumber()
-        .run("tests/features/ag_sessions.feature")
-        .await;
-    GovernanceWorld::cucumber()
-        .run_and_exit("tests/features/age_requests.feature")
-        .await;
+    // Issue #524: aggregate failures across all features so CI exit code
+    // reflects ANY failed scenario, not just the last `.run_and_exit()`.
+    use cucumber::writer::Stats as _;
+    let features = [
+        "tests/features/resolutions.feature",
+        "tests/features/convocations.feature",
+        "tests/features/quotes.feature",
+        "tests/features/two_factor.feature",
+        "tests/features/organizations.feature",
+        "tests/features/public_syndic.feature",
+        "tests/features/polls.feature",
+        "tests/features/etat_date.feature",
+        "tests/features/ag_sessions.feature",
+        "tests/features/age_requests.feature",
+    ];
+    let mut had_failures = false;
+    for f in features {
+        let writer = GovernanceWorld::cucumber().run(f).await;
+        if writer.execution_has_failed() {
+            had_failures = true;
+        }
+    }
+    if had_failures {
+        std::process::exit(1);
+    }
 }

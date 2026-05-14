@@ -7479,7 +7479,9 @@ async fn when_bob_requests_urgent_tasks(world: &mut FinancialWorld) {
         .as_ref()
         .expect("stats_use_cases initialized")
         .clone();
-    let other_org_id = world.other_org_id.expect("other_org_id (security scenario)");
+    let other_org_id = world
+        .other_org_id
+        .expect("other_org_id (security scenario)");
     let result = std::panic::AssertUnwindSafe(uc.get_syndic_urgent_tasks(other_org_id));
     use futures_util::FutureExt;
     let outcome = result.catch_unwind().await;
@@ -7510,11 +7512,7 @@ async fn then_urgent_tasks_no_panic(world: &mut FinancialWorld) {
         .as_ref()
         .expect("when step ran");
     if let Err(msg) = result {
-        assert!(
-            !msg.starts_with("PANIC"),
-            "urgent tasks panicked: {}",
-            msg
-        );
+        assert!(!msg.starts_with("PANIC"), "urgent tasks panicked: {}", msg);
     }
 }
 
@@ -7559,8 +7557,12 @@ async fn then_task_title_is(world: &mut FinancialWorld, expected: String) {
         .as_ref()
         .expect("Ok result");
     let first = tasks.first().expect("at least one task");
-    assert_eq!(first.title, expected, "title mismatch; titles: {:?}",
-        tasks.iter().map(|t| &t.title).collect::<Vec<_>>());
+    assert_eq!(
+        first.title,
+        expected,
+        "title mismatch; titles: {:?}",
+        tasks.iter().map(|t| &t.title).collect::<Vec<_>>()
+    );
 }
 
 #[then(regex = r#"^the returned task list does NOT contain a task referencing "([^"]*)"$"#)]
@@ -7585,43 +7587,32 @@ async fn then_task_list_excludes(world: &mut FinancialWorld, needle: String) {
 
 #[tokio::main]
 async fn main() {
-    FinancialWorld::cucumber()
-        .run("tests/features/payments.feature")
-        .await;
-    FinancialWorld::cucumber()
-        .run("tests/features/payment_methods.feature")
-        .await;
-    FinancialWorld::cucumber()
-        .run("tests/features/journal_entries.feature")
-        .await;
-    FinancialWorld::cucumber()
-        .run("tests/features/call_for_funds.feature")
-        .await;
-    FinancialWorld::cucumber()
-        .run("tests/features/owner_contributions.feature")
-        .await;
-    FinancialWorld::cucumber()
-        .run("tests/features/charge_distribution.feature")
-        .await;
-    FinancialWorld::cucumber()
-        .run("tests/features/dashboard.feature")
-        .await;
-    FinancialWorld::cucumber()
-        .run("tests/features/stats_urgent_tasks.feature")
-        .await;
-    FinancialWorld::cucumber()
-        .run("tests/features/invoices.feature")
-        .await;
-    FinancialWorld::cucumber()
-        .run("tests/features/payment_recovery.feature")
-        .await;
-    FinancialWorld::cucumber()
-        .run("tests/features/budget.feature")
-        .await;
-    FinancialWorld::cucumber()
-        .run("tests/features/accounts.feature")
-        .await;
-    FinancialWorld::cucumber()
-        .run_and_exit("tests/features/expenses.feature")
-        .await;
+    // Issue #524: aggregate failures across all features so CI exit code
+    // reflects ANY failed scenario, not just the last `.run_and_exit()`.
+    use cucumber::writer::Stats as _;
+    let features = [
+        "tests/features/payments.feature",
+        "tests/features/payment_methods.feature",
+        "tests/features/journal_entries.feature",
+        "tests/features/call_for_funds.feature",
+        "tests/features/owner_contributions.feature",
+        "tests/features/charge_distribution.feature",
+        "tests/features/dashboard.feature",
+        "tests/features/stats_urgent_tasks.feature",
+        "tests/features/invoices.feature",
+        "tests/features/payment_recovery.feature",
+        "tests/features/budget.feature",
+        "tests/features/accounts.feature",
+        "tests/features/expenses.feature",
+    ];
+    let mut had_failures = false;
+    for f in features {
+        let writer = FinancialWorld::cucumber().run(f).await;
+        if writer.execution_has_failed() {
+            had_failures = true;
+        }
+    }
+    if had_failures {
+        std::process::exit(1);
+    }
 }
