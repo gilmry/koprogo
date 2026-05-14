@@ -19,13 +19,15 @@ pub struct AccountantDashboardStats {
     /// Total paid expenses
     pub total_paid: Decimal,
 
-    /// Percentage of expenses paid
+    /// Percentage of expenses paid (serialized as JSON number for frontend display)
+    #[serde(with = "rust_decimal::serde::float")]
     pub paid_percentage: Decimal,
 
     /// Total unpaid/pending expenses
     pub total_pending: Decimal,
 
-    /// Percentage of expenses pending
+    /// Percentage of expenses pending (serialized as JSON number for frontend display)
+    #[serde(with = "rust_decimal::serde::float")]
     pub pending_percentage: Decimal,
 
     /// Number of owners with overdue payments
@@ -69,4 +71,71 @@ pub struct RecentTransaction {
 
     /// Transaction date
     pub date: DateTime<Utc>,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use rust_decimal_macros::dec;
+    use serde_json::Value;
+
+    fn sample(paid_pct: Decimal, pending_pct: Decimal) -> AccountantDashboardStats {
+        AccountantDashboardStats {
+            total_expenses_current_month: dec!(1000.00),
+            total_paid: dec!(425.50),
+            paid_percentage: paid_pct,
+            total_pending: dec!(574.50),
+            pending_percentage: pending_pct,
+            owners_with_overdue: 3,
+        }
+    }
+
+    // @happy — percentages serialize as JSON numbers (not strings)
+    #[test]
+    fn paid_and_pending_percentage_serialize_as_json_number() {
+        let json: Value = serde_json::to_value(sample(dec!(42.5), dec!(57.5))).unwrap();
+        assert!(
+            json["paid_percentage"].is_number(),
+            "paid_percentage must be JSON number, got {:?}",
+            json["paid_percentage"]
+        );
+        assert!(
+            json["pending_percentage"].is_number(),
+            "pending_percentage must be JSON number, got {:?}",
+            json["pending_percentage"]
+        );
+        assert_eq!(json["paid_percentage"].as_f64().unwrap(), 42.5);
+    }
+
+    // @edge — 0 and 100 boundaries
+    #[test]
+    fn percentage_zero_and_hundred_serialize_as_number() {
+        let json: Value = serde_json::to_value(sample(dec!(0), dec!(100))).unwrap();
+        assert_eq!(json["paid_percentage"].as_f64().unwrap(), 0.0);
+        assert_eq!(json["pending_percentage"].as_f64().unwrap(), 100.0);
+    }
+
+    // @security — anti-regression: monetary fields stay JSON strings (no f64 on money rule)
+    #[test]
+    fn monetary_fields_remain_json_strings() {
+        let json: Value = serde_json::to_value(sample(dec!(50), dec!(50))).unwrap();
+        for field in ["total_expenses_current_month", "total_paid", "total_pending"] {
+            assert!(
+                json[field].is_string(),
+                "{} must stay JSON string (Decimal exact), got {:?}",
+                field,
+                json[field]
+            );
+        }
+    }
+
+    // @negative — round-trip stays consistent (no precision drift breaking the contract)
+    #[test]
+    fn percentage_roundtrip_preserves_value() {
+        let original = sample(dec!(33.33), dec!(66.67));
+        let json = serde_json::to_string(&original).unwrap();
+        let parsed: AccountantDashboardStats = serde_json::from_str(&json).unwrap();
+        assert_eq!(parsed.paid_percentage, dec!(33.33));
+        assert_eq!(parsed.pending_percentage, dec!(66.67));
+    }
 }
