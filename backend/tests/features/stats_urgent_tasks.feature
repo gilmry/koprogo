@@ -20,7 +20,7 @@ Feature: Stats syndic urgent tasks robustness vs NUMERIC columns
     And a building "Résidence Soleil" exists in "Test Org"
 
   @negative @bug521 @story521-A
-  Scenario: Urgent-tasks endpoint does not panic with an overdue expense (regression #521)
+  Scenario: Urgent-tasks endpoint does not panic with an overdue expense (regression issue 521)
     Given an expense "Facture chauffage 2025-Q4" of "1234.5678" EUR exists for "Résidence Soleil"
     And the expense payment status is "overdue"
     When Marc requests GET /api/v1/stats/syndic/urgent-tasks
