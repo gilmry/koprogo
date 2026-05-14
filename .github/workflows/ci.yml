@@ -162,7 +162,10 @@ jobs:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/koprogo_test
         run: |
           cd backend
-          cargo test --test bdd --test bdd_governance --test bdd_financial --test bdd_operations --test bdd_community
+          # --no-fail-fast: run ALL bdd*.rs binaries even if some panic, so the
+          # full BDD picture surfaces in one CI run instead of one binary at a
+          # time. Aligns with #524 (aggregate failures).
+          cargo test --no-fail-fast --test bdd --test bdd_governance --test bdd_financial --test bdd_operations --test bdd_community
 
   test-e2e:
     name: E2E Tests
