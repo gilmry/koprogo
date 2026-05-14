@@ -5145,22 +5145,25 @@ async fn then_all_of_type(world: &mut CommunityWorld, expected: String) {
 
 #[tokio::main]
 async fn main() {
-    CommunityWorld::cucumber()
-        .run("tests/features/notices.feature")
-        .await;
-    CommunityWorld::cucumber()
-        .run("tests/features/skills.feature")
-        .await;
-    CommunityWorld::cucumber()
-        .run("tests/features/shared_objects.feature")
-        .await;
-    CommunityWorld::cucumber()
-        .run("tests/features/resource_bookings.feature")
-        .await;
-    CommunityWorld::cucumber()
-        .run("tests/features/gamification.feature")
-        .await;
-    CommunityWorld::cucumber()
-        .run_and_exit("tests/features/local_exchange.feature")
-        .await;
+    // Issue #524: aggregate failures across all features so CI exit code
+    // reflects ANY failed scenario, not just the last `.run_and_exit()`.
+    use cucumber::writer::Stats as _;
+    let features = [
+        "tests/features/notices.feature",
+        "tests/features/skills.feature",
+        "tests/features/shared_objects.feature",
+        "tests/features/resource_bookings.feature",
+        "tests/features/gamification.feature",
+        "tests/features/local_exchange.feature",
+    ];
+    let mut had_failures = false;
+    for f in features {
+        let writer = CommunityWorld::cucumber().run(f).await;
+        if writer.execution_has_failed() {
+            had_failures = true;
+        }
+    }
+    if had_failures {
+        std::process::exit(1);
+    }
 }

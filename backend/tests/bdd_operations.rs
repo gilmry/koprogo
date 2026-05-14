@@ -4815,25 +4815,26 @@ async fn then_deletion_fails(world: &mut OperationsWorld) {
 
 #[tokio::main]
 async fn main() {
-    OperationsWorld::cucumber()
-        .run("tests/features/tickets.feature")
-        .await;
-    OperationsWorld::cucumber()
-        .run("tests/features/notifications.feature")
-        .await;
-    OperationsWorld::cucumber()
-        .run("tests/features/energy_campaigns.feature")
-        .await;
-    OperationsWorld::cucumber()
-        .run("tests/features/iot.feature")
-        .await;
-    OperationsWorld::cucumber()
-        .run("tests/features/work_reports.feature")
-        .await;
-    OperationsWorld::cucumber()
-        .run("tests/features/technical_inspections.feature")
-        .await;
-    OperationsWorld::cucumber()
-        .run_and_exit("tests/features/contractor_reports.feature")
-        .await;
+    // Issue #524: aggregate failures across all features so CI exit code
+    // reflects ANY failed scenario, not just the last `.run_and_exit()`.
+    use cucumber::writer::Stats as _;
+    let features = [
+        "tests/features/tickets.feature",
+        "tests/features/notifications.feature",
+        "tests/features/energy_campaigns.feature",
+        "tests/features/iot.feature",
+        "tests/features/work_reports.feature",
+        "tests/features/technical_inspections.feature",
+        "tests/features/contractor_reports.feature",
+    ];
+    let mut had_failures = false;
+    for f in features {
+        let writer = OperationsWorld::cucumber().run(f).await;
+        if writer.execution_has_failed() {
+            had_failures = true;
+        }
+    }
+    if had_failures {
+        std::process::exit(1);
+    }
 }

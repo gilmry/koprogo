@@ -384,66 +384,45 @@ async fn then_building_in_city(world: &mut BuildingWorld, city: String) {
 
 #[tokio::main]
 async fn main() {
-    // Only load features that have step definitions in THIS file.
-    // Features migrated to bdd_governance/bdd_financial/bdd_operations/bdd_community
+    // Issue #524: aggregate failures across all features so CI exit code
+    // reflects ANY failed scenario, not just the last `.run_and_exit()`.
+    // Only loads features that have step definitions in THIS file — features
+    // migrated to bdd_governance/bdd_financial/bdd_operations/bdd_community
     // are excluded to avoid skip noise.
-    BuildingWorld::cucumber()
-        .run("tests/features/auth.feature")
-        .await;
-    BuildingWorld::cucumber()
-        .run("tests/features/building.feature")
-        .await;
-    BuildingWorld::cucumber()
-        .run("tests/features/meetings.feature")
-        .await;
-    BuildingWorld::cucumber()
-        .run("tests/features/meetings_manage.feature")
-        .await;
-    BuildingWorld::cucumber()
-        .run("tests/features/documents.feature")
-        .await;
-    BuildingWorld::cucumber()
-        .run("tests/features/documents_delete.feature")
-        .await;
-    BuildingWorld::cucumber()
-        .run("tests/features/documents_linking.feature")
-        .await;
-    BuildingWorld::cucumber()
-        .run("tests/features/documents_expenses.feature")
-        .await;
-    // invoices: No step definitions in this file — pending migration
-    BuildingWorld::cucumber()
-        .run("tests/features/expenses_pagination.feature")
-        .await;
-    BuildingWorld::cucumber()
-        .run("tests/features/expenses_pcn.feature")
-        .await;
-    BuildingWorld::cucumber()
-        .run("tests/features/gdpr.feature")
-        .await;
-    BuildingWorld::cucumber()
-        .run("tests/features/i18n.feature")
-        .await;
-    BuildingWorld::cucumber()
-        .run("tests/features/multitenancy.feature")
-        .await;
-    BuildingWorld::cucumber()
-        .run("tests/features/pagination_filtering.feature")
-        .await;
-    // payment_recovery, local_exchange, polls, budget, etat_date:
-    // No step definitions in this file — covered by bdd_financial/bdd_governance or pending migration
-    BuildingWorld::cucumber()
-        .run("tests/features/board.feature")
-        .await;
-    BuildingWorld::cucumber()
-        .run("tests/features/board_members.feature")
-        .await;
-    BuildingWorld::cucumber()
-        .run("tests/features/board_decisions.feature")
-        .await;
-    BuildingWorld::cucumber()
-        .run_and_exit("tests/features/board_dashboard.feature")
-        .await;
+    use cucumber::writer::Stats as _;
+    let features = [
+        "tests/features/auth.feature",
+        "tests/features/building.feature",
+        "tests/features/meetings.feature",
+        "tests/features/meetings_manage.feature",
+        "tests/features/documents.feature",
+        "tests/features/documents_delete.feature",
+        "tests/features/documents_linking.feature",
+        "tests/features/documents_expenses.feature",
+        // invoices: no step definitions in this file — pending migration
+        "tests/features/expenses_pagination.feature",
+        "tests/features/expenses_pcn.feature",
+        "tests/features/gdpr.feature",
+        "tests/features/i18n.feature",
+        "tests/features/multitenancy.feature",
+        "tests/features/pagination_filtering.feature",
+        // payment_recovery, local_exchange, polls, budget, etat_date:
+        // no step definitions in this file — covered elsewhere or pending migration
+        "tests/features/board.feature",
+        "tests/features/board_members.feature",
+        "tests/features/board_decisions.feature",
+        "tests/features/board_dashboard.feature",
+    ];
+    let mut had_failures = false;
+    for f in features {
+        let writer = BuildingWorld::cucumber().run(f).await;
+        if writer.execution_has_failed() {
+            had_failures = true;
+        }
+    }
+    if had_failures {
+        std::process::exit(1);
+    }
 }
 
 // Meetings BDD
