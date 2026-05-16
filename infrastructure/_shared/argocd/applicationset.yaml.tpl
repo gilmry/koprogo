@@ -61,6 +61,13 @@ spec:
         app.kubernetes.io/name: koprogo
         component: infrastructure
         environment: "{{ .environment }}"
+      annotations:
+        # Sync wave 0 — infrastructure layer (namespace, RBAC, ingress, middlewares)
+        # must converge before app layer (wave 1). Note: cross-Application sync-wave
+        # ordering only takes effect under an App-of-Apps parent. Without one, the
+        # annotation is a soft hint — Applications still auto-sync in parallel, and
+        # the app layer relies on retry/backoff to wait for SAs to exist.
+        argocd.argoproj.io/sync-wave: "0"
     spec:
       project: koprogo
       source:
@@ -74,6 +81,11 @@ spec:
         syncOptions:
           - CreateNamespace=true
           - PrunePropagationPolicy=foreground
+          # ServerSideApply reduces 3-way-merge drift on cluster-managed fields
+          # (e.g. CreateNamespace=true adds annotations to the namespace that
+          # kustomize doesn't track — without SSA, ArgoCD oscillates Synced ↔
+          # OutOfSync on the namespace alone — Issue #515 Gap 8).
+          - ServerSideApply=true
         retry:
           limit: 5
           backoff:
@@ -138,6 +150,10 @@ spec:
         component: application
         environment: "{{ .environment }}"
         cluster-type: "${CLUSTER_TYPE}"
+      annotations:
+        # Sync wave 1 — application layer depends on SAs from infra layer (wave 0)
+        # and Traefik CRDs from prerequisites (wave -1). See sister AppSet comment.
+        argocd.argoproj.io/sync-wave: "1"
     spec:
       project: koprogo
       sources:
@@ -159,6 +175,7 @@ spec:
       syncPolicy:
         syncOptions:
           - CreateNamespace=true
+          - ServerSideApply=true
         retry:
           limit: 5
           backoff:
