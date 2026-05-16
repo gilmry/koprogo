@@ -155,48 +155,106 @@ Note BDD step "le worker Actix n'a généré aucun panic" : à implémenter via 
 
 ---
 
-## Story C : Migration backlog f64 → Decimal
+## Story C : Migration backlog f64 → Decimal (3 grappes)
 
-- **ID** : STORY-521-C | **Type** : Refactor | **Taille** : L (à raffiner après B)
-- **Issue parent** : #521
-- **Dépend de** : Story B (output = scope)
+Story B (audit, [commentaire #521](https://github.com/gilmry/koprogo/issues/521)) a découpé C en **3 sous-stories par grappe sémantique**. Aucune n'est une décision : ADR-0007/0008/0009 (Accepted) tranchent déjà. C = remédiation de non-conformité, pas itération de directive.
 
-- **User Story** : En tant que codebase KoproGo, je veux que toutes les colonnes monétaires soient décodées en `rust_decimal::Decimal` (pas `f64`), afin que :
-  - La règle `project_no-f64-in-money.md` soit appliquée à 100 %
-  - Aucun panic latent type `ColumnDecode f64 vs NUMERIC` ne subsiste
-  - La précision PCMN (4 décimales) soit préservée bout en bout
+| Sous-story | Grappe | Issue tracking | Priorité |
+|---|---|---|---|
+| C1 | Gouvernance (quota/voting power/AGE shares/quorum) | **#534** (non-conformité ADR-0008), ferme **#525** | Haute (panic actif + enjeu légal) |
+| C2 | Monétaire calc (payment_reminder/budget/stats) | (à ouvrir) | Haute (perte précision PCMN) |
+| C3 | Évaluations (contract_evaluation/service_provider) | (à ouvrir) | Moyenne |
 
-- **Scenarios BDD** (4 catégories par domaine touché — à détailler après B) :
-  - `@happy` : montant round-trip Decimal exact pour chaque endpoint REST touché
-  - `@edge` : montants aux bornes (0, max, 4 décimales)
-  - `@security` : RBAC inchangé
-  - `@negative` : DB renvoie NULL ou type incohérent → `AppError` typée propre, pas de panic
+---
 
-- **Tâches techniques** : À détailler après Story B. Squelette :
-  1. [ ] Migration code par grappe sémantique (ex: budgets, votes, IoT energy, etc. selon découpe B)
-  2. [ ] Refactor DTOs JSON impactés (Decimal → String sérialisation cohérente)
-  3. [ ] Tests RED-first 4 catégories par endpoint
-  4. [ ] Vérif frontend : aucun `parseFloat` sur amount → si présent, ouvrir story complémentaire frontend
+### Story C1 : Remédiation ADR-0008 — Gouvernance
+
+- **ID** : STORY-521-C1 | **Type** : Refactor + Migration SQL | **Taille** : L (2-3j)
+- **Issue parent** : #521 · **Tracking** : #534 · **Ferme** : #525
+- **Directive source (déjà signée, pas de re-décision)** : [ADR-0008](../docs/adr/0008-numeric-vs-double-precision-postgresql.md) « Pourcentages (quotités, taux, voting power) → `NUMERIC(7,4)` » + [ADR-0007](../docs/adr/0007-decimal-vs-f64-for-money.md) (f64 interdit hors IoT/énergie [ADR-0009](../docs/adr/0009-iot-energy-keep-f64.md)).
+
+- **User Story** : En tant que syndic clôturant une AG, je veux que le calcul de quorum et de majorité (Art. 3.87 §5 CC) repose sur une arithmétique décimale exacte, afin qu'un arrondi IEEE754 ne rende pas une délibération juridiquement contestable.
+
+- **Scenarios BDD** (4 catégories — `@security`/`@edge` **juridiquement critiques**) :
+
+```gherkin
+@negative @adr8 @story521-C1
+Scenario: voting_power decodé en Decimal ne panique pas (regression #525)
+  Given une résolution avec des votes de puissance "12.3456" et "7.8900"
+  When le syndic agrège les puissances de vote
+  Then l'opération réussit sans panic ColumnDecode
+  And la somme est exactement "20.2356" (pas d'arrondi binaire)
+
+@security @adr8 @story521-C1
+Scenario: quorum à la borne légale exacte n'est pas faussé par arrondi
+  Given un immeuble de total quotas "1000.0000"
+  And des présents cumulant "500.0001" quotas
+  When le syndic vérifie le quorum (seuil 50% Art. 3.87 §5 CC)
+  Then le quorum est ATTEINT (500.0001 > 500.0000 exact, pas 500.0 == 500.0)
+
+@edge @adr8 @story521-C1
+Scenario Outline: quotités aux bornes PCMN préservées
+  Given une quotité "<q>" sur units.quota
+  When l'unité est relue depuis la DB
+  Then la quotité vaut exactement "<q>"
+  Examples:
+    | q          |
+    | 0.0001     |
+    | 999.9999   |
+    | 333.3333   |
+
+@happy @adr8 @story521-C1
+Scenario: AGE request shares_pct exact
+  Given une AGE request avec shares_pct "0.250000"
+  When elle est relue
+  Then shares_pct vaut exactement "0.250000"
+```
+
+- **Tâches techniques** (suivre § Migration pattern d'ADR-0008) :
+  1. [ ] **RED** : écrire les 4 scénarios ci-dessus (feature `governance_decimal.feature` ou extension existante), vérifier rouge contre `feature/dev` (panic #525 sur @negative).
+  2. [ ] Migration SQL `migrations/2026..._alter_governance_to_numeric.sql` : `units.quota`, `meetings.total_quotas`, `meetings.present_quotas` `DOUBLE PRECISION → NUMERIC(10,4)` (idempotent, `USING col::NUMERIC(10,4)`).
+  3. [ ] Entités `f64 → rust_decimal::Decimal` : `AgeRequestSignature.shares_pct`, `EtatDate.ordinary_charges_quota`/`extraordinary_charges_quota` (+ invariants `::new()`).
+  4. [ ] Repos : `unit_repository_impl` (lecture Decimal — ferme #525), `age_request_repository_impl:31,32,52` (retirer `row.get::<f64>`), `etat_date_repository_impl:541,542`, `vote_repository_impl` (retirer casts `::FLOAT8`, lecture Decimal), `resolution_repository_impl:323-325` (params `Decimal`).
+  5. [ ] Cascade : use_cases + handlers + DTOs gouvernance (sérialisation Decimal→String JSON cohérente, cf. Story A).
+  6. [ ] **GREEN** : `make ci` + BDD 4 catégories vertes ; @negative #525 rouge→vert.
+  7. [ ] Vérif `sqlx migrate run` propre sur DB neuve (la migration ALTER ne casse pas le schéma).
 
 - **Critères d'acceptation** :
-  - [ ] `grep "f64" backend/src/infrastructure/database/repositories/ | grep -v ratio_non_monetaire_whitelist` → 0
-  - [ ] Tous les endpoints touchés ont leurs 4 catégories BDD vertes
-  - [ ] PR(s) référencent `Refs #521 / Closes after C completes`
+  - [ ] `grep -rn "DOUBLE PRECISION" backend/migrations/` → 0 sur colonnes gouvernance
+  - [ ] `grep -rnE "::FLOAT8|get::<f64" backend/src/infrastructure/database/repositories/{unit,age_request,vote,resolution,etat_date}_repository_impl.rs` → 0
+  - [ ] 0 `f64` sur champ entité à poids légal (gouvernance)
+  - [ ] BDD `@adr8 @story521-C1` 4 catégories vertes (dont @security quorum borne exacte)
+  - [ ] #525 fermé ; #534 critères cochés
+  - [ ] `sqlx migrate run` clean sur base vierge
 
 - **Risques** :
-  - DTO serialization JSON Decimal → side-effect frontend (string vs number)
-  - Tests existants peuvent attendre `f64` en assertion (à mettre à jour)
-  - Possible besoin migration SQL si une colonne s'avère FLOAT8 et doit devenir NUMERIC (rare attendu, mais à valider)
+  - ALTER COLUMN sur données existantes : v0.1.0 sans prod (memory `project_koprogo-current-state.md`) → pas de perte réelle, mais tester migration neuve + rollback mental.
+  - Enjeu légal : un test @security faux donnerait fausse confiance sur quorum. Le scénario borne exacte (500.0001 > 500.0000) est le garde-fou — ne pas l'affaiblir pour faire passer.
+  - DTO JSON Decimal→String : même précaution que Story A (frontend ne doit pas `parseFloat`).
 
-- **Dépendances** : Story B signée.
+- **Dépendances** : ADR-0008 (signé ✅). Indépendant de C2/C3.
+
+---
+
+### Story C2 : Monétaire calc (payment_reminder / budget / stats)
+
+- **ID** : STORY-521-C2 | **Taille** : M-L | **Issue** : à ouvrir
+- Scope : ~10 occ. 🟠 MON-CALC — supprimer downcast `.to_f64()`, retours `f64`→`Decimal` end-to-end (`get_total_owed_by_organization`, `budget` projection, `stats pending_total`). Pas de panic actif (try_get/unwrap_or) mais viole ADR-0007.
+- À détailler quand C1 mergée (réutilise le pattern Story A/C1).
+
+### Story C3 : Évaluations (contract_evaluation / service_provider)
+
+- **ID** : STORY-521-C3 | **Taille** : S-M | **Issue** : à ouvrir
+- Scope : `avg_score`/`global_score`/`rating_avg` NUMERIC(3,2) lus en f64 → Decimal. Panic risk mais non-légal → priorité moyenne.
 
 ---
 
 ## Tracking
 
-- Issue racine : #521
-- Stories : STORY-521-A / -B / -C
-- PRs (à venir) : 1 PR par story (A et B en parallèle, C séquentiel)
+- Issue racine : #521 · Non-conformité ADR-0008 : #534 · Panic quota : #525
+- Stories : STORY-521-A ✅ (PR #532 merged) / -B ✅ (audit #521) / -C1 (this) / -C2 / -C3
+- Effets de bord : #524 ✅ (BDD harness) · #526 (amount=0, domaine)
+- PRs : A=#532 ✅ · C1/C2/C3 = 1 PR chacune vers `feature/dev`
 
 ## Refs
 
