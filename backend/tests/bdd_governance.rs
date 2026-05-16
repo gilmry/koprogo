@@ -180,6 +180,18 @@ pub struct GovernanceWorld {
     // name, owner_id, shares_pct
     age_request_owner_ids: Vec<(String, Uuid, f64)>,
     age_request_prev_total_shares: f64,
+
+    // Story 521-C1 — governance decimal exactness probes
+    gd_vote_powers: Vec<Decimal>,
+    gd_vote_sum: Option<Decimal>,
+    gd_aggregation_ok: bool,
+    gd_quorum_total: Option<Decimal>,
+    gd_quorum_present: Option<Decimal>,
+    gd_quorum_reached: Option<bool>,
+    gd_unit_id: Option<Uuid>,
+    gd_unit_read_quota: Option<Decimal>,
+    gd_age_request_id: Option<Uuid>,
+    gd_cosignatory_read_shares: Option<Decimal>,
 }
 
 impl std::fmt::Debug for GovernanceWorld {
@@ -293,6 +305,16 @@ impl GovernanceWorld {
             age_request_list: Vec::new(),
             age_request_owner_ids: Vec::new(),
             age_request_prev_total_shares: 0.0,
+            gd_vote_powers: Vec::new(),
+            gd_vote_sum: None,
+            gd_aggregation_ok: false,
+            gd_quorum_total: None,
+            gd_quorum_present: None,
+            gd_quorum_reached: None,
+            gd_unit_id: None,
+            gd_unit_read_quota: None,
+            gd_age_request_id: None,
+            gd_cosignatory_read_shares: None,
         }
     }
 
@@ -8063,6 +8085,302 @@ async fn then_shares_pct_missing(world: &mut GovernanceWorld, expected: f64) {
 }
 
 // ============================================================
+// === STORY 521-C1: GOVERNANCE DECIMAL EXACTNESS (ADR-0008) ===
+// ============================================================
+
+#[given("the governance decimal system is initialized")]
+async fn given_gd_initialized(world: &mut GovernanceWorld) {
+    if world.pool.is_none() {
+        world.setup_database().await;
+    }
+}
+
+// --- @negative @bug525 : voting power aggregation exact, no ColumnDecode panic ---
+
+#[given(regex = r#"^a resolution with votes of power "([^"]*)" and "([^"]*)"$"#)]
+async fn given_gd_resolution_with_votes(world: &mut GovernanceWorld, p1: String, p2: String) {
+    let pool = world.pool.as_ref().unwrap().clone();
+    let building_id = world.building_id.unwrap();
+    let org_id = world.org_id.unwrap();
+
+    // Meeting
+    let meeting_id = Uuid::new_v4();
+    sqlx::query(
+        r#"INSERT INTO meetings (id, organization_id, building_id, meeting_type, title, scheduled_date, location, status, created_at, updated_at)
+           VALUES ($1, $2, $3, 'ordinary', 'GD vote meeting', NOW() + interval '30 days', 'Salle', 'scheduled', NOW(), NOW())"#,
+    )
+    .bind(meeting_id)
+    .bind(org_id)
+    .bind(building_id)
+    .execute(&pool)
+    .await
+    .expect("insert meeting");
+
+    // Resolution
+    let resolution_id = Uuid::new_v4();
+    sqlx::query(
+        r#"INSERT INTO resolutions (id, meeting_id, title, description, resolution_type, majority_required, status, created_at, updated_at)
+           VALUES ($1, $2, 'GD resolution', 'desc', 'ordinary', 'simple', 'draft', NOW(), NOW())"#,
+    )
+    .bind(resolution_id)
+    .bind(meeting_id)
+    .execute(&pool)
+    .await
+    .expect("insert resolution");
+
+    world.last_resolution_id = Some(resolution_id);
+    world.meeting_id = Some(meeting_id);
+
+    // Two owners + units + votes carrying the requested decimal voting powers.
+    for (idx, power_str) in [p1, p2].iter().enumerate() {
+        let owner_id = Uuid::new_v4();
+        let unit_id = Uuid::new_v4();
+        let power = Decimal::from_str(power_str).expect("valid decimal power");
+        world.gd_vote_powers.push(power);
+
+        sqlx::query(
+            r#"INSERT INTO owners (id, organization_id, first_name, last_name, email, phone, address, city, postal_code, country, created_at, updated_at)
+               VALUES ($1, $2, $3, 'GD', $4, '+32100000000', 'Rue 1', 'Bruxelles', '1000', 'Belgique', NOW(), NOW())"#,
+        )
+        .bind(owner_id)
+        .bind(org_id)
+        .bind(format!("GdOwner{}", idx))
+        .bind(format!("gd-owner-{}@bdd.be", idx))
+        .execute(&pool)
+        .await
+        .expect("insert owner");
+
+        sqlx::query(
+            r#"INSERT INTO units (id, building_id, organization_id, unit_number, unit_type, floor, surface_area, quota, created_at, updated_at)
+               VALUES ($1, $2, $3, $4, 'apartment', 1, 75.0, $5, NOW(), NOW())"#,
+        )
+        .bind(unit_id)
+        .bind(building_id)
+        .bind(org_id)
+        .bind(format!("GD-Unit-{}", idx))
+        .bind(power)
+        .execute(&pool)
+        .await
+        .expect("insert unit");
+
+        sqlx::query(
+            r#"INSERT INTO votes (id, resolution_id, owner_id, unit_id, vote_choice, voting_power, proxy_owner_id, voted_at)
+               VALUES ($1, $2, $3, $4, 'Pour', $5, NULL, NOW())"#,
+        )
+        .bind(Uuid::new_v4())
+        .bind(resolution_id)
+        .bind(owner_id)
+        .bind(unit_id)
+        .bind(power)
+        .execute(&pool)
+        .await
+        .expect("insert vote");
+    }
+}
+
+#[when("the syndic aggregates the voting powers")]
+async fn when_gd_aggregate_votes(world: &mut GovernanceWorld) {
+    use koprogo_api::application::ports::VoteRepository;
+    let pool = world.pool.as_ref().unwrap().clone();
+    let resolution_id = world.last_resolution_id.unwrap();
+    let vote_repo = PostgresVoteRepository::new(pool);
+
+    // Exercise the production code path (sum_voting_power_by_resolution).
+    match vote_repo
+        .sum_voting_power_by_resolution(resolution_id)
+        .await
+    {
+        Ok((pour, _contre, _abstention)) => {
+            world.gd_aggregation_ok = true;
+            world.gd_vote_sum = Some(pour);
+        }
+        Err(e) => {
+            world.gd_aggregation_ok = false;
+            world.operation_error = Some(e);
+        }
+    }
+}
+
+#[then("the aggregation succeeds without ColumnDecode panic")]
+async fn then_gd_aggregation_ok(world: &mut GovernanceWorld) {
+    assert!(
+        world.gd_aggregation_ok,
+        "Voting power aggregation failed: {:?}",
+        world.operation_error
+    );
+}
+
+#[then(regex = r#"^the sum is exactly "([^"]*)"$"#)]
+async fn then_gd_sum_exact(world: &mut GovernanceWorld, expected: String) {
+    let expected = Decimal::from_str(&expected).expect("valid expected decimal");
+    let actual = world.gd_vote_sum.expect("no aggregated sum");
+    assert_eq!(
+        actual, expected,
+        "Sum {} != expected {} (exact Decimal comparison)",
+        actual, expected
+    );
+}
+
+// --- @security : quorum at exact legal boundary ---
+
+#[given(regex = r#"^a building with total quotas "([^"]*)"$"#)]
+async fn given_gd_quorum_total(world: &mut GovernanceWorld, total: String) {
+    world.gd_quorum_total = Some(Decimal::from_str(&total).expect("valid total quotas"));
+}
+
+#[given(regex = r#"^present owners cumulating "([^"]*)" quotas$"#)]
+async fn given_gd_quorum_present(world: &mut GovernanceWorld, present: String) {
+    world.gd_quorum_present = Some(Decimal::from_str(&present).expect("valid present quotas"));
+}
+
+#[when(regex = r#"^the syndic checks the quorum at threshold (\d+) percent$"#)]
+async fn when_gd_check_quorum(world: &mut GovernanceWorld, _threshold: u32) {
+    use koprogo_api::domain::entities::Meeting;
+    let total = world.gd_quorum_total.unwrap();
+    let present = world.gd_quorum_present.unwrap();
+
+    let mut meeting = Meeting::new(
+        world.org_id.unwrap(),
+        world.building_id.unwrap(),
+        koprogo_api::domain::entities::MeetingType::Ordinary,
+        "GD quorum meeting".to_string(),
+        None,
+        Utc::now() + ChronoDuration::days(30),
+        "Salle".to_string(),
+    )
+    .expect("create meeting");
+
+    // Exercise the production quorum logic (Art. 3.87 §5 CC).
+    match meeting.validate_quorum(present, total) {
+        Ok(reached) => world.gd_quorum_reached = Some(reached),
+        Err(e) => {
+            world.gd_quorum_reached = None;
+            world.operation_error = Some(e);
+        }
+    }
+}
+
+#[then("the quorum is REACHED with exact comparison")]
+async fn then_gd_quorum_reached(world: &mut GovernanceWorld) {
+    assert_eq!(
+        world.gd_quorum_reached,
+        Some(true),
+        "Quorum should be REACHED at the exact boundary (500.0001 > 500.0000). error={:?}",
+        world.operation_error
+    );
+}
+
+// --- @edge : units.quota round-trip exact ---
+
+#[given(regex = r#"^a unit with quota "([^"]*)" stored in the database$"#)]
+async fn given_gd_unit_quota(world: &mut GovernanceWorld, q: String) {
+    let pool = world.pool.as_ref().unwrap().clone();
+    let building_id = world.building_id.unwrap();
+    let org_id = world.org_id.unwrap();
+    let quota = Decimal::from_str(&q).expect("valid quota decimal");
+    let unit_id = Uuid::new_v4();
+
+    sqlx::query(
+        r#"INSERT INTO units (id, building_id, organization_id, unit_number, unit_type, floor, surface_area, quota, created_at, updated_at)
+           VALUES ($1, $2, $3, $4, 'apartment', 1, 75.0, $5, NOW(), NOW())"#,
+    )
+    .bind(unit_id)
+    .bind(building_id)
+    .bind(org_id)
+    .bind(format!("GD-Q-{}", &unit_id.to_string()[..8]))
+    .bind(quota)
+    .execute(&pool)
+    .await
+    .expect("insert unit");
+
+    world.gd_unit_id = Some(unit_id);
+}
+
+#[when("the unit is read back from the database")]
+async fn when_gd_read_unit(world: &mut GovernanceWorld) {
+    use koprogo_api::application::ports::UnitRepository;
+    let pool = world.pool.as_ref().unwrap().clone();
+    let unit_repo = PostgresUnitRepository::new(pool);
+    let unit_id = world.gd_unit_id.unwrap();
+
+    // Exercise the production read path (bug #525 ColumnDecode panic site).
+    let unit = unit_repo
+        .find_by_id(unit_id)
+        .await
+        .expect("find_by_id should not error")
+        .expect("unit exists");
+    world.gd_unit_read_quota = Some(unit.quota);
+}
+
+#[then(regex = r#"^the unit quota is exactly "([^"]*)"$"#)]
+async fn then_gd_unit_quota_exact(world: &mut GovernanceWorld, expected: String) {
+    let expected = Decimal::from_str(&expected).expect("valid expected decimal");
+    let actual = world.gd_unit_read_quota.expect("no quota read");
+    assert_eq!(
+        actual, expected,
+        "unit.quota {} != expected {} (exact Decimal round-trip)",
+        actual, expected
+    );
+}
+
+// --- @happy : AGE request shares_pct round-trip exact ---
+
+#[given(regex = r#"^an AGE request with a cosignatory shares_pct "([^"]*)"$"#)]
+async fn given_gd_age_request(world: &mut GovernanceWorld, shares: String) {
+    use koprogo_api::application::ports::age_request_repository::AgeRequestRepository;
+    use koprogo_api::domain::entities::age_request::{AgeRequest, AgeRequestCosignatory};
+    let pool = world.pool.as_ref().unwrap().clone();
+    let repo = PostgresAgeRequestRepository::new(pool);
+
+    let shares_dec = Decimal::from_str(&shares).expect("valid shares_pct");
+
+    let req = AgeRequest::new(
+        world.org_id.unwrap(),
+        world.building_id.unwrap(),
+        "GD AGE request".to_string(),
+        Some("decimal round-trip".to_string()),
+        Uuid::new_v4(),
+    )
+    .expect("create age request");
+    repo.create(&req).await.expect("persist age request");
+
+    let cosignatory =
+        AgeRequestCosignatory::new(req.id, Uuid::new_v4(), shares_dec).expect("cosignatory");
+    repo.add_cosignatory(&cosignatory)
+        .await
+        .expect("add cosignatory");
+
+    world.gd_age_request_id = Some(req.id);
+}
+
+#[when("the AGE request is read back")]
+async fn when_gd_read_age_request(world: &mut GovernanceWorld) {
+    use koprogo_api::application::ports::age_request_repository::AgeRequestRepository;
+    let pool = world.pool.as_ref().unwrap().clone();
+    let repo = PostgresAgeRequestRepository::new(pool);
+    let id = world.gd_age_request_id.unwrap();
+
+    let req = repo
+        .find_by_id(id)
+        .await
+        .expect("find_by_id ok")
+        .expect("age request exists");
+    let cosig = req.cosignatories.first().expect("at least one cosignatory");
+    world.gd_cosignatory_read_shares = Some(cosig.shares_pct);
+}
+
+#[then(regex = r#"^the cosignatory shares_pct is exactly "([^"]*)"$"#)]
+async fn then_gd_shares_exact(world: &mut GovernanceWorld, expected: String) {
+    let expected = Decimal::from_str(&expected).expect("valid expected decimal");
+    let actual = world.gd_cosignatory_read_shares.expect("no shares read");
+    assert_eq!(
+        actual, expected,
+        "cosignatory.shares_pct {} != expected {} (exact Decimal round-trip)",
+        actual, expected
+    );
+}
+
+// ============================================================
 // === MAIN ===
 // ============================================================
 
@@ -8082,6 +8400,7 @@ async fn main() {
         "tests/features/etat_date.feature",
         "tests/features/ag_sessions.feature",
         "tests/features/age_requests.feature",
+        "tests/features/governance_decimal.feature",
     ];
     let mut had_failures = false;
     for f in features {
