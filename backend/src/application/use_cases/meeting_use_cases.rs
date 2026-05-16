@@ -216,8 +216,8 @@ impl MeetingUseCases {
     pub async fn validate_quorum(
         &self,
         meeting_id: Uuid,
-        present_quotas: f64,
-        total_quotas: f64,
+        present_quotas: rust_decimal::Decimal,
+        total_quotas: rust_decimal::Decimal,
     ) -> Result<(bool, MeetingResponse), String> {
         let mut meeting = self
             .repository
@@ -568,7 +568,13 @@ mod tests {
         let use_cases = MeetingUseCases::new(Arc::new(mock_repo));
 
         // 600/1000 = 60% → quorum reached
-        let result = use_cases.validate_quorum(meeting_id, 600.0, 1000.0).await;
+        let result = use_cases
+            .validate_quorum(
+                meeting_id,
+                rust_decimal_macros::dec!(600),
+                rust_decimal_macros::dec!(1000),
+            )
+            .await;
         assert!(result.is_ok());
         let (reached, response) = result.unwrap();
         assert!(reached);
@@ -599,7 +605,13 @@ mod tests {
         let use_cases = MeetingUseCases::new(Arc::new(mock_repo));
 
         // 400/1000 = 40% → quorum NOT reached
-        let result = use_cases.validate_quorum(meeting_id, 400.0, 1000.0).await;
+        let result = use_cases
+            .validate_quorum(
+                meeting_id,
+                rust_decimal_macros::dec!(400),
+                rust_decimal_macros::dec!(1000),
+            )
+            .await;
         assert!(result.is_ok());
         let (reached, response) = result.unwrap();
         assert!(!reached);
@@ -618,7 +630,11 @@ mod tests {
         let use_cases = MeetingUseCases::new(Arc::new(mock_repo));
 
         let result = use_cases
-            .validate_quorum(Uuid::new_v4(), 600.0, 1000.0)
+            .validate_quorum(
+                Uuid::new_v4(),
+                rust_decimal_macros::dec!(600),
+                rust_decimal_macros::dec!(1000),
+            )
             .await;
         assert!(result.is_err());
         assert!(result.unwrap_err().contains("Meeting not found"));
@@ -734,7 +750,13 @@ mod tests {
         let use_cases = MeetingUseCases::new(Arc::new(mock_repo));
 
         // 500/1000 = exactly 50% → quorum NOT reached (Art. 3.87 §5: strictly >50%)
-        let result = use_cases.validate_quorum(meeting_id, 500.0, 1000.0).await;
+        let result = use_cases
+            .validate_quorum(
+                meeting_id,
+                rust_decimal_macros::dec!(500),
+                rust_decimal_macros::dec!(1000),
+            )
+            .await;
         assert!(result.is_ok());
         let (reached, response) = result.unwrap();
         assert!(!reached);

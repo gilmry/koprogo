@@ -1,4 +1,6 @@
 use chrono::{DateTime, Duration, Utc};
+use rust_decimal::Decimal;
+use rust_decimal_macros::dec;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -70,14 +72,14 @@ pub struct AgeRequestCosignatory {
     pub id: Uuid,
     pub age_request_id: Uuid,
     pub owner_id: Uuid,
-    /// Quote-part de ce copropriétaire (0.0 à 1.0, ex: 0.10 = 10%)
-    pub shares_pct: f64,
+    /// Quote-part de ce copropriétaire (0.0 à 1.0, ex: 0.10 = 10%) — Decimal exact (ADR-0008)
+    pub shares_pct: Decimal,
     pub signed_at: DateTime<Utc>,
 }
 
 impl AgeRequestCosignatory {
-    pub fn new(age_request_id: Uuid, owner_id: Uuid, shares_pct: f64) -> Result<Self, String> {
-        if shares_pct <= 0.0 || shares_pct > 1.0 {
+    pub fn new(age_request_id: Uuid, owner_id: Uuid, shares_pct: Decimal) -> Result<Self, String> {
+        if shares_pct <= Decimal::ZERO || shares_pct > Decimal::ONE {
             return Err(format!(
                 "shares_pct doit être entre 0 et 1, reçu: {}",
                 shares_pct
@@ -124,11 +126,11 @@ pub struct AgeRequest {
     /// Liste des cosignataires
     pub cosignatories: Vec<AgeRequestCosignatory>,
 
-    /// Total des quotes-parts des cosignataires (0.0 à 1.0)
-    pub total_shares_pct: f64,
+    /// Total des quotes-parts des cosignataires (0.0 à 1.0) — Decimal exact (ADR-0008)
+    pub total_shares_pct: Decimal,
 
-    /// Seuil légal à atteindre (0.2 = 20% = 1/5, Art. 3.87 §2)
-    pub threshold_pct: f64,
+    /// Seuil légal à atteindre (0.2 = 20% = 1/5, Art. 3.87 §2) — Decimal exact (ADR-0008)
+    pub threshold_pct: Decimal,
 
     /// Seuil atteint ?
     pub threshold_reached: bool,
@@ -166,7 +168,7 @@ impl AgeRequest {
     pub const SYNDIC_DEADLINE_DAYS: i64 = 15;
 
     /// Seuil légal : 1/5 des quotes-parts (Art. 3.87 §2 CC)
-    pub const DEFAULT_THRESHOLD_PCT: f64 = 0.20;
+    pub const DEFAULT_THRESHOLD_PCT: Decimal = dec!(0.20);
 
     /// Crée une nouvelle demande d'AGE
     pub fn new(
@@ -193,7 +195,7 @@ impl AgeRequest {
             status: AgeRequestStatus::Draft,
             created_by,
             cosignatories: Vec::new(),
-            total_shares_pct: 0.0,
+            total_shares_pct: Decimal::ZERO,
             threshold_pct: Self::DEFAULT_THRESHOLD_PCT,
             threshold_reached: false,
             threshold_reached_at: None,
@@ -224,7 +226,7 @@ impl AgeRequest {
 
     /// Ajoute un cosignataire et recalcule le total des quotes-parts
     /// Retourne true si le seuil 1/5 vient d'être atteint
-    pub fn add_cosignatory(&mut self, owner_id: Uuid, shares_pct: f64) -> Result<bool, String> {
+    pub fn add_cosignatory(&mut self, owner_id: Uuid, shares_pct: Decimal) -> Result<bool, String> {
         if self.status != AgeRequestStatus::Draft && self.status != AgeRequestStatus::Open {
             return Err(format!(
                 "Impossible d'ajouter un cosignataire en statut {:?}",
@@ -404,11 +406,11 @@ impl AgeRequest {
     }
 
     /// Retourne le pourcentage manquant pour atteindre le seuil (0.0 si déjà atteint)
-    pub fn shares_pct_missing(&self) -> f64 {
+    pub fn shares_pct_missing(&self) -> Decimal {
         if self.threshold_reached {
-            0.0
+            Decimal::ZERO
         } else {
-            (self.threshold_pct - self.total_shares_pct).max(0.0)
+            (self.threshold_pct - self.total_shares_pct).max(Decimal::ZERO)
         }
     }
 
@@ -423,9 +425,14 @@ impl AgeRequest {
     /// # Returns
     /// Pourcentage de progression : 0.0 (0%) à 100.0 (seuil atteint ou dépassé)
     pub fn calculate_progress_percentage(&self, _building_total_shares: f64) -> f64 {
-        // Calcul : (current / threshold) * 100, capped at 100%
-        let progress = (self.total_shares_pct / self.threshold_pct) * 100.0;
-        progress.min(100.0) // Ne jamais dépasser 100%
+        use rust_decimal::prelude::ToPrimitive;
+        // Calcul exact en Decimal : (current / threshold) * 100, capped at 100%
+        // (valeur d'affichage uniquement — la décision de seuil reste en Decimal exact)
+        if self.threshold_pct == Decimal::ZERO {
+            return 0.0;
+        }
+        let progress = (self.total_shares_pct / self.threshold_pct) * dec!(100);
+        progress.min(dec!(100)).to_f64().unwrap_or(0.0)
     }
 }
 
@@ -448,7 +455,7 @@ mod tests {
     fn test_new_age_request_is_draft() {
         let req = make_request();
         assert_eq!(req.status, AgeRequestStatus::Draft);
-        assert_eq!(req.total_shares_pct, 0.0);
+        assert_eq!(req.total_shares_pct, Decimal::ZERO);
         assert!(!req.threshold_reached);
         assert_eq!(req.threshold_pct, AgeRequest::DEFAULT_THRESHOLD_PCT);
         assert!(req.cosignatories.is_empty());
@@ -486,9 +493,9 @@ mod tests {
         req.open().unwrap();
 
         let owner1 = Uuid::new_v4();
-        let newly_reached = req.add_cosignatory(owner1, 0.10).unwrap();
+        let newly_reached = req.add_cosignatory(owner1, dec!(0.10)).unwrap();
         assert!(!newly_reached);
-        assert!((req.total_shares_pct - 0.10).abs() < 1e-9);
+        assert_eq!(req.total_shares_pct, dec!(0.10));
         assert_eq!(req.status, AgeRequestStatus::Open);
     }
 
@@ -499,18 +506,18 @@ mod tests {
 
         // Premier signataire : 10%
         let o1 = Uuid::new_v4();
-        let reached = req.add_cosignatory(o1, 0.10).unwrap();
+        let reached = req.add_cosignatory(o1, dec!(0.10)).unwrap();
         assert!(!reached);
         assert_eq!(req.status, AgeRequestStatus::Open);
 
         // Deuxième signataire : 12% → total 22% ≥ 20%
         let o2 = Uuid::new_v4();
-        let reached = req.add_cosignatory(o2, 0.12).unwrap();
+        let reached = req.add_cosignatory(o2, dec!(0.12)).unwrap();
         assert!(reached);
         assert_eq!(req.status, AgeRequestStatus::Reached);
         assert!(req.threshold_reached);
         assert!(req.threshold_reached_at.is_some());
-        assert!((req.total_shares_pct - 0.22).abs() < 1e-9);
+        assert_eq!(req.total_shares_pct, dec!(0.22));
     }
 
     #[test]
@@ -518,8 +525,8 @@ mod tests {
         let mut req = make_request();
         req.open().unwrap();
         let owner = Uuid::new_v4();
-        req.add_cosignatory(owner, 0.10).unwrap();
-        let result = req.add_cosignatory(owner, 0.05);
+        req.add_cosignatory(owner, dec!(0.10)).unwrap();
+        let result = req.add_cosignatory(owner, dec!(0.05));
         assert!(result.is_err());
     }
 
@@ -530,8 +537,8 @@ mod tests {
 
         let o1 = Uuid::new_v4();
         let o2 = Uuid::new_v4();
-        req.add_cosignatory(o1, 0.15).unwrap();
-        req.add_cosignatory(o2, 0.10).unwrap(); // total 25% → Reached
+        req.add_cosignatory(o1, dec!(0.15)).unwrap();
+        req.add_cosignatory(o2, dec!(0.10)).unwrap(); // total 25% → Reached
 
         assert_eq!(req.status, AgeRequestStatus::Reached);
 
@@ -546,7 +553,7 @@ mod tests {
         let mut req = make_request();
         req.open().unwrap();
         let o1 = Uuid::new_v4();
-        req.add_cosignatory(o1, 0.25).unwrap(); // Reached
+        req.add_cosignatory(o1, dec!(0.25)).unwrap(); // Reached
 
         req.submit_to_syndic().unwrap();
         assert_eq!(req.status, AgeRequestStatus::Submitted);
@@ -570,7 +577,7 @@ mod tests {
     fn test_accept_by_syndic() {
         let mut req = make_request();
         req.open().unwrap();
-        req.add_cosignatory(Uuid::new_v4(), 0.25).unwrap();
+        req.add_cosignatory(Uuid::new_v4(), dec!(0.25)).unwrap();
         req.submit_to_syndic().unwrap();
         req.accept_by_syndic(Some("Convocation dans 3 semaines".to_string()))
             .unwrap();
@@ -582,7 +589,7 @@ mod tests {
     fn test_reject_requires_reason() {
         let mut req = make_request();
         req.open().unwrap();
-        req.add_cosignatory(Uuid::new_v4(), 0.25).unwrap();
+        req.add_cosignatory(Uuid::new_v4(), dec!(0.25)).unwrap();
         req.submit_to_syndic().unwrap();
         assert!(req.reject_by_syndic("  ".to_string()).is_err());
         req.reject_by_syndic("Demande insuffisamment motivée".to_string())
@@ -609,15 +616,15 @@ mod tests {
         req.open().unwrap();
 
         // 0 signatures → 20% manquants
-        assert!((req.shares_pct_missing() - 0.20).abs() < 1e-9);
+        assert_eq!(req.shares_pct_missing(), dec!(0.20));
 
-        req.add_cosignatory(Uuid::new_v4(), 0.12).unwrap();
+        req.add_cosignatory(Uuid::new_v4(), dec!(0.12)).unwrap();
         // 12% → 8% manquants
-        assert!((req.shares_pct_missing() - 0.08).abs() < 1e-9);
+        assert_eq!(req.shares_pct_missing(), dec!(0.08));
 
-        req.add_cosignatory(Uuid::new_v4(), 0.10).unwrap();
+        req.add_cosignatory(Uuid::new_v4(), dec!(0.10)).unwrap();
         // Reached → 0% manquants
-        assert_eq!(req.shares_pct_missing(), 0.0);
+        assert_eq!(req.shares_pct_missing(), Decimal::ZERO);
     }
 
     #[test]
@@ -641,15 +648,15 @@ mod tests {
         assert_eq!(req.calculate_progress_percentage(1.0), 0.0);
 
         // 5% des quotes-parts : 5% / 20% = 25% progress
-        req.add_cosignatory(Uuid::new_v4(), 0.05).unwrap();
+        req.add_cosignatory(Uuid::new_v4(), dec!(0.05)).unwrap();
         assert!((req.calculate_progress_percentage(1.0) - 25.0).abs() < 1e-9);
 
         // 10% des quotes-parts : 10% / 20% = 50% progress
-        req.add_cosignatory(Uuid::new_v4(), 0.05).unwrap();
+        req.add_cosignatory(Uuid::new_v4(), dec!(0.05)).unwrap();
         assert!((req.calculate_progress_percentage(1.0) - 50.0).abs() < 1e-9);
 
         // 20% des quotes-parts : 20% / 20% = 100% progress (seuil atteint)
-        req.add_cosignatory(Uuid::new_v4(), 0.10).unwrap();
+        req.add_cosignatory(Uuid::new_v4(), dec!(0.10)).unwrap();
         assert_eq!(req.calculate_progress_percentage(1.0), 100.0);
     }
 }

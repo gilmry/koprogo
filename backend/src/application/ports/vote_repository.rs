@@ -1,5 +1,6 @@
 use crate::domain::entities::Vote;
 use async_trait::async_trait;
+use rust_decimal::Decimal;
 use uuid::Uuid;
 
 /// Port (trait) for Vote repository operations
@@ -43,7 +44,7 @@ pub trait VoteRepository: Send + Sync {
     async fn sum_voting_power_by_resolution(
         &self,
         resolution_id: Uuid,
-    ) -> Result<(f64, f64, f64), String>; // (pour, contre, abstention)
+    ) -> Result<(Decimal, Decimal, Decimal), String>; // (pour, contre, abstention)
 
     /// Count proxy votes held by a mandataire on a given resolution (Art. 3.87 §7 CC).
     /// Returns (count_proxies, total_proxy_voting_power).
@@ -51,5 +52,5 @@ pub trait VoteRepository: Send + Sync {
         &self,
         resolution_id: Uuid,
         proxy_owner_id: Uuid,
-    ) -> Result<(i64, f64), String>;
+    ) -> Result<(i64, Decimal), String>;
 }

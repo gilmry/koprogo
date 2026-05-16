@@ -71,9 +71,9 @@ pub struct GovernanceWorld {
     unit_alice_id: Option<Uuid>,
     unit_bob_id: Option<Uuid>,
     unit_charlie_id: Option<Uuid>,
-    alice_voting_power: f64,
-    bob_voting_power: f64,
-    charlie_voting_power: f64,
+    alice_voting_power: Decimal,
+    bob_voting_power: Decimal,
+    charlie_voting_power: Decimal,
 
     // Resolution tracking
     last_resolution_id: Option<Uuid>,
@@ -83,7 +83,7 @@ pub struct GovernanceWorld {
     // Vote tracking
     last_vote_id: Option<Uuid>,
     last_vote_choice: Option<VoteChoice>,
-    last_vote_power: Option<f64>,
+    last_vote_power: Option<Decimal>,
     last_vote_proxy_id: Option<Uuid>,
 
     // Operation results
@@ -178,8 +178,8 @@ pub struct GovernanceWorld {
     last_age_request_response: Option<AgeRequestResponseDto>,
     age_request_list: Vec<AgeRequestResponseDto>,
     // name, owner_id, shares_pct
-    age_request_owner_ids: Vec<(String, Uuid, f64)>,
-    age_request_prev_total_shares: f64,
+    age_request_owner_ids: Vec<(String, Uuid, Decimal)>,
+    age_request_prev_total_shares: Decimal,
 
     // Story 521-C1 — governance decimal exactness probes
     gd_vote_powers: Vec<Decimal>,
@@ -223,9 +223,9 @@ impl GovernanceWorld {
             unit_alice_id: None,
             unit_bob_id: None,
             unit_charlie_id: None,
-            alice_voting_power: 0.0,
-            bob_voting_power: 0.0,
-            charlie_voting_power: 0.0,
+            alice_voting_power: Decimal::ZERO,
+            bob_voting_power: Decimal::ZERO,
+            charlie_voting_power: Decimal::ZERO,
             last_resolution_id: None,
             last_resolution_status: None,
             last_resolution_majority: None,
@@ -304,7 +304,7 @@ impl GovernanceWorld {
             last_age_request_response: None,
             age_request_list: Vec::new(),
             age_request_owner_ids: Vec::new(),
-            age_request_prev_total_shares: 0.0,
+            age_request_prev_total_shares: Decimal::ZERO,
             gd_vote_powers: Vec::new(),
             gd_vote_sum: None,
             gd_aggregation_ok: false,
@@ -499,7 +499,7 @@ impl GovernanceWorld {
         }
     }
 
-    fn get_voting_power(&self, name: &str) -> f64 {
+    fn get_voting_power(&self, name: &str) -> Decimal {
         match name {
             "Alice" => self.alice_voting_power,
             "Bob" => self.bob_voting_power,
@@ -698,17 +698,17 @@ async fn given_owner_with_voting_power(
         "Alice" => {
             world.owner_alice_id = Some(owner_id);
             world.unit_alice_id = Some(unit_id);
-            world.alice_voting_power = voting_power as f64;
+            world.alice_voting_power = Decimal::from(voting_power);
         }
         "Bob" => {
             world.owner_bob_id = Some(owner_id);
             world.unit_bob_id = Some(unit_id);
-            world.bob_voting_power = voting_power as f64;
+            world.bob_voting_power = Decimal::from(voting_power);
         }
         "Charlie" => {
             world.owner_charlie_id = Some(owner_id);
             world.unit_charlie_id = Some(unit_id);
-            world.charlie_voting_power = voting_power as f64;
+            world.charlie_voting_power = Decimal::from(voting_power);
         }
         _ => {}
     }
@@ -1123,8 +1123,9 @@ async fn then_vote_choice(world: &mut GovernanceWorld, expected: String) {
 #[then(regex = r#"^the voting power should be (\d+)$"#)]
 async fn then_voting_power(world: &mut GovernanceWorld, expected_power: i32) {
     let actual = world.last_vote_power.unwrap();
-    assert!(
-        (actual - expected_power as f64).abs() < 0.01,
+    assert_eq!(
+        actual,
+        Decimal::from(expected_power),
         "Expected voting power {} but got {}",
         expected_power,
         actual
@@ -1157,12 +1158,10 @@ async fn then_proxy_owner(world: &mut GovernanceWorld, expected_name: String) {
 async fn then_voting_power_of_owner(world: &mut GovernanceWorld, owner_name: String) {
     let expected_power = world.get_voting_power(&owner_name);
     let actual = world.last_vote_power.unwrap();
-    assert!(
-        (actual - expected_power).abs() < 0.01,
+    assert_eq!(
+        actual, expected_power,
         "Expected {}'s tantiemes ({}) but got {}",
-        owner_name,
-        expected_power,
-        actual
+        owner_name, expected_power, actual
     );
 }
 
@@ -7294,7 +7293,7 @@ async fn given_owners_with_shares(world: &mut GovernanceWorld, step: &Step) {
 
     for row in table.rows.iter().skip(1) {
         let name = row[0].trim().to_string();
-        let shares_pct: f64 = row[1].trim().parse().expect("Invalid shares_pct");
+        let shares_pct: Decimal = Decimal::from_str(row[1].trim()).expect("Invalid shares_pct");
         let owner_id = Uuid::new_v4();
 
         // Split name into first/last
@@ -7325,7 +7324,7 @@ async fn given_owners_with_shares(world: &mut GovernanceWorld, step: &Step) {
         .bind(unit_id)
         .bind(building_id)
         .bind(format!("AGE-Unit-{}", name.replace(' ', "-")))
-        .bind(shares_pct * 1000.0)
+        .bind(shares_pct * rust_decimal_macros::dec!(1000))
         .execute(pool)
         .await
         .expect("insert unit for age request owner");
@@ -7455,13 +7454,13 @@ async fn then_age_request_created_with_status(world: &mut GovernanceWorld, expec
 }
 
 #[then(regex = r#"^the threshold_pct should be ([\d.]+)$"#)]
-async fn then_threshold_pct(world: &mut GovernanceWorld, expected: f64) {
+async fn then_threshold_pct(world: &mut GovernanceWorld, expected: Decimal) {
     let resp = world
         .last_age_request_response
         .as_ref()
         .expect("No AGE request response");
     assert!(
-        (resp.threshold_pct - expected).abs() < 0.01,
+        (resp.threshold_pct - expected).abs() < rust_decimal_macros::dec!(0.01),
         "threshold_pct {} != expected {}",
         resp.threshold_pct,
         expected
@@ -7469,13 +7468,13 @@ async fn then_threshold_pct(world: &mut GovernanceWorld, expected: f64) {
 }
 
 #[then(regex = r#"^the total_shares_pct should be ([\d.]+)$"#)]
-async fn then_total_shares_pct(world: &mut GovernanceWorld, expected: f64) {
+async fn then_total_shares_pct(world: &mut GovernanceWorld, expected: Decimal) {
     let resp = world
         .last_age_request_response
         .as_ref()
         .expect("No AGE request response");
     assert!(
-        (resp.total_shares_pct - expected).abs() < 0.01,
+        (resp.total_shares_pct - expected).abs() < rust_decimal_macros::dec!(0.01),
         "total_shares_pct {} != expected {}",
         resp.total_shares_pct,
         expected
@@ -7560,7 +7559,7 @@ async fn given_open_age_request_by(world: &mut GovernanceWorld, owner_name: Stri
 }
 
 #[when(regex = r#"^owner "([^"]*)" cosigns with shares ([\d.]+)$"#)]
-async fn when_owner_cosigns(world: &mut GovernanceWorld, owner_name: String, shares: f64) {
+async fn when_owner_cosigns(world: &mut GovernanceWorld, owner_name: String, shares: Decimal) {
     let uc = world.age_request_use_cases.as_ref().unwrap().clone();
     let org_id = world.org_id.unwrap();
     let id = world.last_age_request_id.unwrap();
@@ -7590,13 +7589,13 @@ async fn when_owner_cosigns(world: &mut GovernanceWorld, owner_name: String, sha
 }
 
 #[then(regex = r#"^the AGE request total_shares_pct should be ([\d.]+)$"#)]
-async fn then_age_request_total_shares_pct(world: &mut GovernanceWorld, expected: f64) {
+async fn then_age_request_total_shares_pct(world: &mut GovernanceWorld, expected: Decimal) {
     let resp = world
         .last_age_request_response
         .as_ref()
         .expect("No AGE request response");
     assert!(
-        (resp.total_shares_pct - expected).abs() < 0.01,
+        (resp.total_shares_pct - expected).abs() < rust_decimal_macros::dec!(0.01),
         "total_shares_pct {} != expected {}",
         resp.total_shares_pct,
         expected
@@ -7604,13 +7603,13 @@ async fn then_age_request_total_shares_pct(world: &mut GovernanceWorld, expected
 }
 
 #[then(regex = r#"^the total_shares_pct should be at least ([\d.]+)$"#)]
-async fn then_total_shares_at_least(world: &mut GovernanceWorld, min: f64) {
+async fn then_total_shares_at_least(world: &mut GovernanceWorld, min: Decimal) {
     let resp = world
         .last_age_request_response
         .as_ref()
         .expect("No AGE request response");
     assert!(
-        resp.total_shares_pct >= min - 0.01,
+        resp.total_shares_pct >= min - rust_decimal_macros::dec!(0.01),
         "total_shares_pct {} < expected min {}",
         resp.total_shares_pct,
         min
@@ -7619,19 +7618,19 @@ async fn then_total_shares_at_least(world: &mut GovernanceWorld, min: f64) {
 
 #[given(regex = r#"^owner "([^"]*)" has already cosigned$"#)]
 async fn given_owner_has_already_cosigned(world: &mut GovernanceWorld, owner_name: String) {
-    when_owner_cosigns(world, owner_name, 0.25).await;
+    when_owner_cosigns(world, owner_name, rust_decimal_macros::dec!(0.25)).await;
     assert!(world.operation_success, "Failed to cosign for setup");
 }
 
 #[given(regex = r#"^owner "([^"]*)" has cosigned$"#)]
 async fn given_owner_has_cosigned(world: &mut GovernanceWorld, owner_name: String) {
-    when_owner_cosigns(world, owner_name, 0.25).await;
+    when_owner_cosigns(world, owner_name, rust_decimal_macros::dec!(0.25)).await;
     assert!(world.operation_success, "Failed to cosign");
 }
 
 #[when(regex = r#"^owner "([^"]*)" tries to cosign again$"#)]
 async fn when_owner_tries_to_cosign_again(world: &mut GovernanceWorld, owner_name: String) {
-    when_owner_cosigns(world, owner_name, 0.25).await;
+    when_owner_cosigns(world, owner_name, rust_decimal_macros::dec!(0.25)).await;
 }
 
 #[then("the cosigning should fail")]
@@ -8071,13 +8070,13 @@ async fn then_request_includes_cosignatories(world: &mut GovernanceWorld) {
 }
 
 #[then(regex = r#"^shares_pct_missing should be ([\d.]+)$"#)]
-async fn then_shares_pct_missing(world: &mut GovernanceWorld, expected: f64) {
+async fn then_shares_pct_missing(world: &mut GovernanceWorld, expected: Decimal) {
     let resp = world
         .last_age_request_response
         .as_ref()
         .expect("No AGE request response");
     assert!(
-        (resp.shares_pct_missing - expected).abs() < 0.01,
+        (resp.shares_pct_missing - expected).abs() < rust_decimal_macros::dec!(0.01),
         "shares_pct_missing {} != expected {}",
         resp.shares_pct_missing,
         expected

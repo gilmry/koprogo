@@ -2,6 +2,7 @@ use crate::application::ports::VoteRepository;
 use crate::domain::entities::{Vote, VoteChoice};
 use crate::infrastructure::database::pool::DbPool;
 use async_trait::async_trait;
+use rust_decimal::Decimal;
 use sqlx::Row;
 use uuid::Uuid;
 
@@ -52,7 +53,7 @@ impl VoteRepository for PostgresVoteRepository {
         let row = sqlx::query(
             r#"
             SELECT id, resolution_id, owner_id, unit_id, vote_choice,
-                   voting_power::FLOAT8, proxy_owner_id, voted_at
+                   voting_power, proxy_owner_id, voted_at
             FROM votes
             WHERE id = $1
             "#,
@@ -87,7 +88,7 @@ impl VoteRepository for PostgresVoteRepository {
         let rows = sqlx::query(
             r#"
             SELECT id, resolution_id, owner_id, unit_id, vote_choice,
-                   voting_power::FLOAT8, proxy_owner_id, voted_at
+                   voting_power, proxy_owner_id, voted_at
             FROM votes
             WHERE resolution_id = $1
             ORDER BY voted_at ASC
@@ -126,7 +127,7 @@ impl VoteRepository for PostgresVoteRepository {
         let rows = sqlx::query(
             r#"
             SELECT id, resolution_id, owner_id, unit_id, vote_choice,
-                   voting_power::FLOAT8, proxy_owner_id, voted_at
+                   voting_power, proxy_owner_id, voted_at
             FROM votes
             WHERE owner_id = $1
             ORDER BY voted_at DESC
@@ -169,7 +170,7 @@ impl VoteRepository for PostgresVoteRepository {
         let row = sqlx::query(
             r#"
             SELECT id, resolution_id, owner_id, unit_id, vote_choice,
-                   voting_power::FLOAT8, proxy_owner_id, voted_at
+                   voting_power, proxy_owner_id, voted_at
             FROM votes
             WHERE resolution_id = $1 AND unit_id = $2
             "#,
@@ -293,13 +294,13 @@ impl VoteRepository for PostgresVoteRepository {
     async fn sum_voting_power_by_resolution(
         &self,
         resolution_id: Uuid,
-    ) -> Result<(f64, f64, f64), String> {
+    ) -> Result<(Decimal, Decimal, Decimal), String> {
         let row = sqlx::query(
             r#"
             SELECT
-                COALESCE(SUM(voting_power) FILTER (WHERE vote_choice = 'Pour'), 0)::FLOAT8 AS pour_power,
-                COALESCE(SUM(voting_power) FILTER (WHERE vote_choice = 'Contre'), 0)::FLOAT8 AS contre_power,
-                COALESCE(SUM(voting_power) FILTER (WHERE vote_choice = 'Abstention'), 0)::FLOAT8 AS abstention_power
+                COALESCE(SUM(voting_power) FILTER (WHERE vote_choice = 'Pour'), 0)::NUMERIC(10,4) AS pour_power,
+                COALESCE(SUM(voting_power) FILTER (WHERE vote_choice = 'Contre'), 0)::NUMERIC(10,4) AS contre_power,
+                COALESCE(SUM(voting_power) FILTER (WHERE vote_choice = 'Abstention'), 0)::NUMERIC(10,4) AS abstention_power
             FROM votes
             WHERE resolution_id = $1
             "#,
@@ -309,11 +310,11 @@ impl VoteRepository for PostgresVoteRepository {
         .await
         .map_err(|e| format!("Database error summing voting power: {}", e))?;
 
-        // Get voting power sums as f64 (sqlx handles DECIMAL conversion)
+        // NUMERIC -> Decimal direct (ADR-0008, exact — no IEEE754 round-trip)
         Ok((
-            row.get::<f64, _>("pour_power"),
-            row.get::<f64, _>("contre_power"),
-            row.get::<f64, _>("abstention_power"),
+            row.get::<Decimal, _>("pour_power"),
+            row.get::<Decimal, _>("contre_power"),
+            row.get::<Decimal, _>("abstention_power"),
         ))
     }
 
@@ -322,12 +323,12 @@ impl VoteRepository for PostgresVoteRepository {
         &self,
         resolution_id: Uuid,
         proxy_owner_id: Uuid,
-    ) -> Result<(i64, f64), String> {
+    ) -> Result<(i64, Decimal), String> {
         let row = sqlx::query(
             r#"
             SELECT
                 COUNT(*)::BIGINT AS proxy_count,
-                COALESCE(SUM(voting_power), 0)::FLOAT8 AS total_proxy_power
+                COALESCE(SUM(voting_power), 0)::NUMERIC(10,4) AS total_proxy_power
             FROM votes
             WHERE resolution_id = $1
               AND proxy_owner_id = $2
@@ -341,7 +342,7 @@ impl VoteRepository for PostgresVoteRepository {
 
         Ok((
             row.get::<i64, _>("proxy_count"),
-            row.get::<f64, _>("total_proxy_power"),
+            row.get::<Decimal, _>("total_proxy_power"),
         ))
     }
 }
