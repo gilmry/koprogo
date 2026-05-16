@@ -5,7 +5,6 @@ use fake::faker::address::en::*;
 use fake::faker::name::en::*;
 use fake::Fake;
 use rand::RngExt;
-use rust_decimal::prelude::FromPrimitive;
 use rust_decimal::Decimal;
 use serde::Serialize;
 use sqlx::{PgPool, Row};
@@ -2493,8 +2492,10 @@ impl DatabaseSeeder {
             return Ok(()); // No units to distribute to
         }
 
-        // Calculate total quotas for the building
-        let total_quota: f64 = units.iter().map(|u| u.quota).sum();
+        // Calculate total quotas for the building.
+        // Decimal end-to-end (ADR-0007/0008): quota is NUMERIC since #534 C1,
+        // and this feeds a monetary charge distribution (amount_due) — no f64.
+        let total_quota: Decimal = units.iter().map(|u| u.quota).sum();
 
         let now = Utc::now();
 
@@ -2522,15 +2523,14 @@ impl DatabaseSeeder {
                 None => continue, // Skip this unit if no owner
             };
 
-            let quota_percentage = if total_quota > 0.0 {
+            let quota_percentage: Decimal = if total_quota > Decimal::ZERO {
                 unit.quota / total_quota
             } else {
-                0.0
+                Decimal::ZERO
             };
 
-            let amount_due: Decimal = if total_quota > 0.0 {
-                let qp = Decimal::from_f64(quota_percentage).unwrap_or(Decimal::ZERO);
-                (qp * total_amount).round_dp(2)
+            let amount_due: Decimal = if total_quota > Decimal::ZERO {
+                (quota_percentage * total_amount).round_dp(2)
             } else {
                 Decimal::ZERO
             };
