@@ -1,5 +1,7 @@
 use chrono::{DateTime, Utc};
 use f64;
+use rust_decimal::Decimal;
+use rust_decimal_macros::dec;
 use serde::{Deserialize, Serialize};
 use std::sync::atomic::{AtomicU64, Ordering};
 use uuid::Uuid;
@@ -78,10 +80,10 @@ pub struct EtatDate {
     pub unit_area: Option<f64>,
 
     // === Section 2: Quote-parts ===
-    /// Quote-part charges ordinaires (en %)
-    pub ordinary_charges_quota: f64,
-    /// Quote-part charges extraordinaires (en %)
-    pub extraordinary_charges_quota: f64,
+    /// Quote-part charges ordinaires (en %) — Decimal exact (ADR-0008)
+    pub ordinary_charges_quota: Decimal,
+    /// Quote-part charges extraordinaires (en %) — Decimal exact (ADR-0008)
+    pub extraordinary_charges_quota: Decimal,
 
     // === Section 3: Situation financière du propriétaire ===
     /// Solde du propriétaire (positif = crédit, négatif = débit)
@@ -140,8 +142,8 @@ impl EtatDate {
         unit_number: String,
         unit_floor: Option<String>,
         unit_area: Option<f64>,
-        ordinary_charges_quota: f64,
-        extraordinary_charges_quota: f64,
+        ordinary_charges_quota: Decimal,
+        extraordinary_charges_quota: Decimal,
     ) -> Result<Self, String> {
         // Validations
         if notary_name.trim().is_empty() {
@@ -164,10 +166,10 @@ impl EtatDate {
         }
 
         // Quote-parts doivent être entre 0 et 100%
-        if ordinary_charges_quota < 0.0 || ordinary_charges_quota > 100.0 {
+        if ordinary_charges_quota < Decimal::ZERO || ordinary_charges_quota > dec!(100) {
             return Err("Ordinary charges quota must be between 0 and 100%".to_string());
         }
-        if extraordinary_charges_quota < 0.0 || extraordinary_charges_quota > 100.0 {
+        if extraordinary_charges_quota < Decimal::ZERO || extraordinary_charges_quota > dec!(100) {
             return Err("Extraordinary charges quota must be between 0 and 100%".to_string());
         }
 
@@ -380,8 +382,8 @@ mod tests {
             "101".to_string(),
             Some("1".to_string()),
             Some(100.0),
-            100.0, // 5%
-            100.0, // 10%
+            dec!(100), // 5%
+            dec!(100), // 10%
         );
 
         assert!(etat_date.is_ok());
@@ -412,8 +414,8 @@ mod tests {
             "101".to_string(),
             None,
             None,
-            100.0,
-            100.0,
+            dec!(100),
+            dec!(100),
         );
 
         assert!(result.is_err());
@@ -441,8 +443,8 @@ mod tests {
             "101".to_string(),
             None,
             None,
-            150.0, // 150% - invalide
-            100.0,
+            dec!(150), // 150% - invalide
+            dec!(100),
         );
 
         assert!(result.is_err());
@@ -470,8 +472,8 @@ mod tests {
             "101".to_string(),
             None,
             None,
-            100.0,
-            100.0,
+            dec!(100),
+            dec!(100),
         )
         .unwrap();
 
@@ -514,8 +516,8 @@ mod tests {
             "101".to_string(),
             None,
             None,
-            100.0,
-            100.0,
+            dec!(100),
+            dec!(100),
         )
         .unwrap();
 
@@ -545,8 +547,8 @@ mod tests {
             "101".to_string(),
             None,
             None,
-            100.0,
-            100.0,
+            dec!(100),
+            dec!(100),
         )
         .unwrap();
 
@@ -584,8 +586,8 @@ mod tests {
             "101".to_string(),
             None,
             None,
-            100.0,
-            100.0,
+            dec!(100),
+            dec!(100),
         )
         .unwrap();
 
@@ -616,8 +618,8 @@ mod tests {
             "101".to_string(),
             None,
             None,
-            100.0,
-            100.0,
+            dec!(100),
+            dec!(100),
         )
         .unwrap();
 
