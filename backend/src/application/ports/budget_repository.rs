@@ -1,4 +1,5 @@
 use crate::application::dto::PageRequest;
+use crate::application::error::AppError;
 use crate::domain::entities::{Budget, BudgetStatus};
 use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
@@ -8,37 +9,37 @@ use uuid::Uuid;
 #[async_trait]
 pub trait BudgetRepository: Send + Sync {
     /// Create a new budget
-    async fn create(&self, budget: &Budget) -> Result<Budget, String>;
+    async fn create(&self, budget: &Budget) -> Result<Budget, AppError>;
 
     /// Find budget by ID
-    async fn find_by_id(&self, id: Uuid) -> Result<Option<Budget>, String>;
+    async fn find_by_id(&self, id: Uuid) -> Result<Option<Budget>, AppError>;
 
     /// Find budget by building and fiscal year (should be unique)
     async fn find_by_building_and_fiscal_year(
         &self,
         building_id: Uuid,
         fiscal_year: i32,
-    ) -> Result<Option<Budget>, String>;
+    ) -> Result<Option<Budget>, AppError>;
 
     /// Find all budgets for a building
-    async fn find_by_building(&self, building_id: Uuid) -> Result<Vec<Budget>, String>;
+    async fn find_by_building(&self, building_id: Uuid) -> Result<Vec<Budget>, AppError>;
 
     /// Find active budget for a building (status = Approved, most recent fiscal year)
-    async fn find_active_by_building(&self, building_id: Uuid) -> Result<Option<Budget>, String>;
+    async fn find_active_by_building(&self, building_id: Uuid) -> Result<Option<Budget>, AppError>;
 
     /// Find budgets by fiscal year across all buildings in organization
     async fn find_by_fiscal_year(
         &self,
         organization_id: Uuid,
         fiscal_year: i32,
-    ) -> Result<Vec<Budget>, String>;
+    ) -> Result<Vec<Budget>, AppError>;
 
     /// Find budgets by status
     async fn find_by_status(
         &self,
         organization_id: Uuid,
         status: BudgetStatus,
-    ) -> Result<Vec<Budget>, String>;
+    ) -> Result<Vec<Budget>, AppError>;
 
     /// Find all budgets paginated
     async fn find_all_paginated(
@@ -47,20 +48,22 @@ pub trait BudgetRepository: Send + Sync {
         organization_id: Option<Uuid>,
         building_id: Option<Uuid>,
         status: Option<BudgetStatus>,
-    ) -> Result<(Vec<Budget>, i64), String>;
+    ) -> Result<(Vec<Budget>, i64), AppError>;
 
     /// Update existing budget
-    async fn update(&self, budget: &Budget) -> Result<Budget, String>;
+    async fn update(&self, budget: &Budget) -> Result<Budget, AppError>;
 
     /// Delete budget by ID
-    async fn delete(&self, id: Uuid) -> Result<bool, String>;
+    async fn delete(&self, id: Uuid) -> Result<bool, AppError>;
 
     /// Get budget statistics for dashboard
-    async fn get_stats(&self, organization_id: Uuid) -> Result<BudgetStatsResponse, String>;
+    async fn get_stats(&self, organization_id: Uuid) -> Result<BudgetStatsResponse, AppError>;
 
     /// Get budget variance analysis (budget vs actual expenses)
-    async fn get_variance(&self, budget_id: Uuid)
-        -> Result<Option<BudgetVarianceResponse>, String>;
+    async fn get_variance(
+        &self,
+        budget_id: Uuid,
+    ) -> Result<Option<BudgetVarianceResponse>, AppError>;
 }
 
 /// Statistics response for budgets

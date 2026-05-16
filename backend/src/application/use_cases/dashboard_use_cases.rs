@@ -5,6 +5,7 @@
 use crate::application::dto::{
     AccountantDashboardStats, ExpenseFilters, PageRequest, RecentTransaction, TransactionType,
 };
+use crate::application::error::AppError;
 use crate::application::ports::{
     ExpenseRepository, OwnerContributionRepository, PaymentReminderRepository,
 };
@@ -39,7 +40,7 @@ impl DashboardUseCases {
     pub async fn get_accountant_stats(
         &self,
         organization_id: Uuid,
-    ) -> Result<AccountantDashboardStats, String> {
+    ) -> Result<AccountantDashboardStats, AppError> {
         // Get all expenses for the organization
         let filters = ExpenseFilters {
             organization_id: Some(organization_id),
@@ -148,7 +149,7 @@ impl DashboardUseCases {
         &self,
         organization_id: Uuid,
         limit: usize,
-    ) -> Result<Vec<RecentTransaction>, String> {
+    ) -> Result<Vec<RecentTransaction>, AppError> {
         // Get all expenses for the organization
         let filters = ExpenseFilters {
             organization_id: Some(organization_id),
