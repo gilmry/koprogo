@@ -278,9 +278,21 @@ impl FinancialWorld {
             .get_host_port_ipv4(5432)
             .await
             .expect("Failed to get host port");
+
+        // Use the testcontainers-resolved host (honors TESTCONTAINERS_HOST_OVERRIDE)
+        // instead of a hardcoded 127.0.0.1. On CI (cargo on the runner host) this
+        // resolves to localhost — unchanged. Inside the dev backend container the
+        // testcontainers Postgres is a *sibling* (docker.sock mounted), reachable
+        // via host.docker.internal, not the container's own 127.0.0.1 — this is
+        // what was causing PoolTimedOut for local docker BDD runs. Mirrors the
+        // identical fix already applied to bdd_governance.rs setup_database.
+        let host = postgres_container
+            .get_host()
+            .await
+            .expect("Failed to get container host");
         let connection_string = format!(
-            "postgres://postgres:postgres@127.0.0.1:{}/postgres",
-            host_port
+            "postgres://postgres:postgres@{}:{}/postgres",
+            host, host_port
         );
         let pool = create_pool(&connection_string)
             .await
