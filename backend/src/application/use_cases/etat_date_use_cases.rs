@@ -6,7 +6,6 @@ use crate::application::ports::{
     BuildingRepository, EtatDateRepository, UnitOwnerRepository, UnitRepository,
 };
 use crate::domain::entities::{EtatDate, EtatDateStatus};
-use rust_decimal::prelude::ToPrimitive;
 use rust_decimal::Decimal;
 use rust_decimal_macros::dec;
 use std::sync::Arc;
@@ -64,13 +63,12 @@ impl EtatDateUseCases {
         }
 
         // Calculate total quote-parts (should be 100% or close).
-        // ownership_percentage est Decimal (exact); EtatDate::new attend f64 actuellement
-        // (entité non encore migrée — cf. EXP-003 follow-up).
+        // ownership_percentage et EtatDate quotas sont Decimal exact (ADR-0008).
         let total_quota: Decimal = unit_owners.iter().map(|uo| uo.ownership_percentage).sum();
 
         // For simplicity, use total quota as both ordinary and extraordinary
         // In a real system, these might be stored separately per unit
-        let ordinary_charges_quota = (total_quota * dec!(100)).to_f64().unwrap_or(0.0);
+        let ordinary_charges_quota = total_quota * dec!(100);
         let extraordinary_charges_quota = ordinary_charges_quota;
 
         // Create état daté
@@ -416,8 +414,8 @@ mod tests {
             "101".to_string(),
             Some("1".to_string()),
             Some(85.0),
-            50.0,
-            50.0,
+            dec!(50),
+            dec!(50),
         )
         .unwrap()
     }

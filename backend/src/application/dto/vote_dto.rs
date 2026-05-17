@@ -1,5 +1,6 @@
 use crate::domain::entities::{Vote, VoteChoice};
 use chrono::{DateTime, Utc};
+use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -11,7 +12,8 @@ pub struct VoteResponse {
     pub owner_id: Uuid,
     pub unit_id: Uuid,
     pub vote_choice: VoteChoice,
-    pub voting_power: f64,
+    /// Tantièmes/millièmes — Decimal exact (ADR-0008), sérialisé en string JSON.
+    pub voting_power: Decimal,
     pub proxy_owner_id: Option<Uuid>,
     pub voted_at: DateTime<Utc>,
     pub is_proxy_vote: bool,
@@ -39,7 +41,8 @@ pub struct CastVoteRequest {
     pub owner_id: Uuid,
     pub unit_id: Uuid,
     pub vote_choice: VoteChoice,
-    pub voting_power: f64,
+    /// Tantièmes/millièmes — Decimal exact (ADR-0008), sérialisé en string JSON.
+    pub voting_power: Decimal,
     pub proxy_owner_id: Option<Uuid>,
 }
 

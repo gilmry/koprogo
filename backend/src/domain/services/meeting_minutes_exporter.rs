@@ -1,5 +1,8 @@
 use crate::domain::entities::{Building, Meeting, MeetingType, Resolution, Vote};
 use printpdf::*;
+use rust_decimal::prelude::ToPrimitive;
+use rust_decimal::Decimal;
+use rust_decimal_macros::dec;
 use std::io::BufWriter;
 use uuid::Uuid;
 
@@ -13,7 +16,7 @@ pub struct AttendeeInfo {
     pub owner_id: Uuid,
     pub name: String,
     pub email: String,
-    pub voting_power: f64, // Millièmes/tantièmes
+    pub voting_power: Decimal, // Millièmes/tantièmes (Decimal exact — ADR-0008)
     pub is_proxy: bool,
     pub proxy_for: Option<String>, // Name of owner being represented
 }
@@ -130,10 +133,16 @@ impl MeetingMinutesExporter {
         );
         y -= 8.0;
 
-        // Calculate total voting power
-        let total_voting_power: f64 = attendees.iter().map(|a| a.voting_power).sum();
-        let total_millimes = building.total_units as f64 * 1000.0; // Assuming 1000 millièmes per unit
-        let quorum_percentage = (total_voting_power / total_millimes) * 100.0;
+        // Calculate total voting power (Decimal exact — ADR-0008)
+        let total_voting_power: Decimal = attendees.iter().map(|a| a.voting_power).sum();
+        let total_millimes = Decimal::from(building.total_units) * dec!(1000); // 1000 millièmes/unit
+        let quorum_percentage = if total_millimes > Decimal::ZERO {
+            (total_voting_power / total_millimes * dec!(100))
+                .to_f64()
+                .unwrap_or(0.0)
+        } else {
+            0.0
+        };
 
         current_layer.use_text(
             format!(
@@ -386,7 +395,7 @@ mod tests {
                 owner_id: Uuid::new_v4(),
                 name: "Jean Dupont".to_string(),
                 email: "jean@example.com".to_string(),
-                voting_power: 150.0,
+                voting_power: dec!(150),
                 is_proxy: false,
                 proxy_for: None,
             },
@@ -394,7 +403,7 @@ mod tests {
                 owner_id: Uuid::new_v4(),
                 name: "Marie Martin".to_string(),
                 email: "marie@example.com".to_string(),
-                voting_power: 120.0,
+                voting_power: dec!(120),
                 is_proxy: true,
                 proxy_for: Some("Pierre Durant".to_string()),
             },
@@ -410,9 +419,9 @@ mod tests {
             vote_count_pour: 2,
             vote_count_contre: 0,
             vote_count_abstention: 0,
-            total_voting_power_pour: 270.0,
-            total_voting_power_contre: 0.0,
-            total_voting_power_abstention: 0.0,
+            total_voting_power_pour: dec!(270),
+            total_voting_power_contre: dec!(0),
+            total_voting_power_abstention: dec!(0),
             status: ResolutionStatus::Adopted,
             agenda_item_index: None,
             voted_at: Some(Utc::now()),

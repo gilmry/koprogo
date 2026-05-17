@@ -1,4 +1,6 @@
 use chrono::{DateTime, Utc};
+use rust_decimal::Decimal;
+use rust_decimal_macros::dec;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -49,9 +51,9 @@ pub struct Resolution {
     pub vote_count_pour: i32,
     pub vote_count_contre: i32,
     pub vote_count_abstention: i32,
-    pub total_voting_power_pour: f64,
-    pub total_voting_power_contre: f64,
-    pub total_voting_power_abstention: f64,
+    pub total_voting_power_pour: Decimal,
+    pub total_voting_power_contre: Decimal,
+    pub total_voting_power_abstention: Decimal,
     pub status: ResolutionStatus,
     // Issue #310: Link resolution to agenda item
     pub agenda_item_index: Option<usize>, // Index into meeting.agenda Vec
@@ -88,9 +90,9 @@ impl Resolution {
             vote_count_pour: 0,
             vote_count_contre: 0,
             vote_count_abstention: 0,
-            total_voting_power_pour: 0.0,
-            total_voting_power_contre: 0.0,
-            total_voting_power_abstention: 0.0,
+            total_voting_power_pour: Decimal::ZERO,
+            total_voting_power_contre: Decimal::ZERO,
+            total_voting_power_abstention: Decimal::ZERO,
             status: ResolutionStatus::Pending,
             agenda_item_index,
             created_at: now,
@@ -99,31 +101,31 @@ impl Resolution {
     }
 
     /// Enregistre un vote "Pour" et met à jour les compteurs
-    pub fn record_vote_pour(&mut self, voting_power: f64) {
+    pub fn record_vote_pour(&mut self, voting_power: Decimal) {
         self.vote_count_pour += 1;
         self.total_voting_power_pour += voting_power;
     }
 
     /// Enregistre un vote "Contre" et met à jour les compteurs
-    pub fn record_vote_contre(&mut self, voting_power: f64) {
+    pub fn record_vote_contre(&mut self, voting_power: Decimal) {
         self.vote_count_contre += 1;
         self.total_voting_power_contre += voting_power;
     }
 
     /// Enregistre une abstention et met à jour les compteurs
-    pub fn record_abstention(&mut self, voting_power: f64) {
+    pub fn record_abstention(&mut self, voting_power: Decimal) {
         self.vote_count_abstention += 1;
         self.total_voting_power_abstention += voting_power;
     }
 
     /// Calcule le résultat du vote en fonction du type de majorité — Art. 3.88 §1 Code Civil belge
-    pub fn calculate_result(&self, total_voting_power: f64) -> ResolutionStatus {
+    pub fn calculate_result(&self, total_voting_power: Decimal) -> ResolutionStatus {
         let expressed = self.total_voting_power_pour + self.total_voting_power_contre;
 
         match &self.majority_required {
             MajorityType::Absolute => {
                 // Art. 3.88 §1: >50% des voix exprimées (hors abstentions)
-                if expressed > 0.0 && self.total_voting_power_pour > expressed / 2.0 {
+                if expressed > Decimal::ZERO && self.total_voting_power_pour > expressed / dec!(2) {
                     ResolutionStatus::Adopted
                 } else {
                     ResolutionStatus::Rejected
@@ -131,7 +133,9 @@ impl Resolution {
             }
             MajorityType::TwoThirds => {
                 // Art. 3.88 §1, 1°: ≥2/3 des voix exprimées
-                if expressed > 0.0 && self.total_voting_power_pour / expressed >= 2.0 / 3.0 {
+                if expressed > Decimal::ZERO
+                    && self.total_voting_power_pour / expressed >= dec!(2) / dec!(3)
+                {
                     ResolutionStatus::Adopted
                 } else {
                     ResolutionStatus::Rejected
@@ -139,7 +143,9 @@ impl Resolution {
             }
             MajorityType::FourFifths => {
                 // Art. 3.88 §1, 2°: ≥4/5 des voix exprimées
-                if expressed > 0.0 && self.total_voting_power_pour / expressed >= 4.0 / 5.0 {
+                if expressed > Decimal::ZERO
+                    && self.total_voting_power_pour / expressed >= dec!(4) / dec!(5)
+                {
                     ResolutionStatus::Adopted
                 } else {
                     ResolutionStatus::Rejected
@@ -148,8 +154,8 @@ impl Resolution {
             MajorityType::Unanimity => {
                 // Art. 3.88 §1, 3°: 100% de TOUS les tantièmes (pas juste les présents)
                 // total_voting_power = total building tantièmes (e.g. 10000)
-                if total_voting_power > 0.0
-                    && (self.total_voting_power_pour - total_voting_power).abs() < 0.01
+                if total_voting_power > Decimal::ZERO
+                    && (self.total_voting_power_pour - total_voting_power).abs() < dec!(0.01)
                 {
                     ResolutionStatus::Adopted
                 } else {
@@ -160,7 +166,7 @@ impl Resolution {
     }
 
     /// Clôture le vote et finalise le statut
-    pub fn close_voting(&mut self, total_voting_power: f64) -> Result<(), String> {
+    pub fn close_voting(&mut self, total_voting_power: Decimal) -> Result<(), String> {
         if self.status != ResolutionStatus::Pending {
             return Err("Voting already closed for this resolution".to_string());
         }
@@ -276,17 +282,17 @@ mod tests {
         )
         .unwrap();
 
-        resolution.record_vote_pour(100.0);
-        resolution.record_vote_pour(150.0);
-        resolution.record_vote_contre(200.0);
-        resolution.record_abstention(50.0);
+        resolution.record_vote_pour(dec!(100));
+        resolution.record_vote_pour(dec!(150));
+        resolution.record_vote_contre(dec!(200));
+        resolution.record_abstention(dec!(50));
 
         assert_eq!(resolution.vote_count_pour, 2);
         assert_eq!(resolution.vote_count_contre, 1);
         assert_eq!(resolution.vote_count_abstention, 1);
-        assert_eq!(resolution.total_voting_power_pour, 250.0);
-        assert_eq!(resolution.total_voting_power_contre, 200.0);
-        assert_eq!(resolution.total_voting_power_abstention, 50.0);
+        assert_eq!(resolution.total_voting_power_pour, dec!(250));
+        assert_eq!(resolution.total_voting_power_contre, dec!(200));
+        assert_eq!(resolution.total_voting_power_abstention, dec!(50));
         assert_eq!(resolution.total_votes(), 4);
     }
 
@@ -306,11 +312,11 @@ mod tests {
         .unwrap();
 
         // Pour=300, Contre=150 → expressed=450, 300 > 225 → Adopted
-        resolution.record_vote_pour(300.0);
-        resolution.record_vote_contre(150.0);
-        resolution.record_abstention(50.0);
+        resolution.record_vote_pour(dec!(300));
+        resolution.record_vote_contre(dec!(150));
+        resolution.record_abstention(dec!(50));
 
-        let result = resolution.calculate_result(1000.0);
+        let result = resolution.calculate_result(dec!(1000));
         assert_eq!(result, ResolutionStatus::Adopted);
     }
 
@@ -328,11 +334,11 @@ mod tests {
         .unwrap();
 
         // Pour=150, Contre=300 → expressed=450, 150 < 225 → Rejected
-        resolution.record_vote_pour(150.0);
-        resolution.record_vote_contre(300.0);
-        resolution.record_abstention(50.0);
+        resolution.record_vote_pour(dec!(150));
+        resolution.record_vote_contre(dec!(300));
+        resolution.record_abstention(dec!(50));
 
-        let result = resolution.calculate_result(1000.0);
+        let result = resolution.calculate_result(dec!(1000));
         assert_eq!(result, ResolutionStatus::Rejected);
     }
 
@@ -351,11 +357,11 @@ mod tests {
 
         // Pour=300, Contre=200, Abstention=500 → expressed=500, 300 > 250 → Adopted
         // Abstentions are excluded: 300 is more than half of (300+200)
-        resolution.record_vote_pour(300.0);
-        resolution.record_vote_contre(200.0);
-        resolution.record_abstention(500.0);
+        resolution.record_vote_pour(dec!(300));
+        resolution.record_vote_contre(dec!(200));
+        resolution.record_abstention(dec!(500));
 
-        let result = resolution.calculate_result(1000.0);
+        let result = resolution.calculate_result(dec!(1000));
         assert_eq!(result, ResolutionStatus::Adopted);
     }
 
@@ -375,11 +381,11 @@ mod tests {
         .unwrap();
 
         // Pour=700, Contre=200 → expressed=900, 700/900 = 77.8% >= 66.7% → Adopted
-        resolution.record_vote_pour(700.0);
-        resolution.record_vote_contre(200.0);
-        resolution.record_abstention(100.0);
+        resolution.record_vote_pour(dec!(700));
+        resolution.record_vote_contre(dec!(200));
+        resolution.record_abstention(dec!(100));
 
-        let result = resolution.calculate_result(1000.0);
+        let result = resolution.calculate_result(dec!(1000));
         assert_eq!(result, ResolutionStatus::Adopted);
     }
 
@@ -398,11 +404,11 @@ mod tests {
 
         // Pour=600, Contre=300 → expressed=900, 600/900 = 66.7% >= 66.7% → Adopted (boundary)
         // Actually 600/900 = 0.6667 which is >= 2/3 = 0.6667 → Adopted
-        resolution.record_vote_pour(600.0);
-        resolution.record_vote_contre(300.0);
-        resolution.record_abstention(100.0);
+        resolution.record_vote_pour(dec!(600));
+        resolution.record_vote_contre(dec!(300));
+        resolution.record_abstention(dec!(100));
 
-        let result = resolution.calculate_result(1000.0);
+        let result = resolution.calculate_result(dec!(1000));
         assert_eq!(result, ResolutionStatus::Adopted);
     }
 
@@ -420,11 +426,11 @@ mod tests {
         .unwrap();
 
         // Pour=500, Contre=300 → expressed=800, 500/800 = 62.5% < 66.7% → Rejected
-        resolution.record_vote_pour(500.0);
-        resolution.record_vote_contre(300.0);
-        resolution.record_abstention(200.0);
+        resolution.record_vote_pour(dec!(500));
+        resolution.record_vote_contre(dec!(300));
+        resolution.record_abstention(dec!(200));
 
-        let result = resolution.calculate_result(1000.0);
+        let result = resolution.calculate_result(dec!(1000));
         assert_eq!(result, ResolutionStatus::Rejected);
     }
 
@@ -442,11 +448,11 @@ mod tests {
         .unwrap();
 
         // Pour=400, Contre=100, Abstention=500 → expressed=500, 400/500 = 80% >= 66.7% → Adopted
-        resolution.record_vote_pour(400.0);
-        resolution.record_vote_contre(100.0);
-        resolution.record_abstention(500.0);
+        resolution.record_vote_pour(dec!(400));
+        resolution.record_vote_contre(dec!(100));
+        resolution.record_abstention(dec!(500));
 
-        let result = resolution.calculate_result(1000.0);
+        let result = resolution.calculate_result(dec!(1000));
         assert_eq!(result, ResolutionStatus::Adopted);
     }
 
@@ -466,11 +472,11 @@ mod tests {
         .unwrap();
 
         // Pour=800, Contre=100 → expressed=900, 800/900 = 88.9% >= 80% → Adopted
-        resolution.record_vote_pour(800.0);
-        resolution.record_vote_contre(100.0);
-        resolution.record_abstention(100.0);
+        resolution.record_vote_pour(dec!(800));
+        resolution.record_vote_contre(dec!(100));
+        resolution.record_abstention(dec!(100));
 
-        let result = resolution.calculate_result(1000.0);
+        let result = resolution.calculate_result(dec!(1000));
         assert_eq!(result, ResolutionStatus::Adopted);
     }
 
@@ -488,11 +494,11 @@ mod tests {
         .unwrap();
 
         // Pour=700, Contre=200 → expressed=900, 700/900 = 77.8% < 80% → Rejected
-        resolution.record_vote_pour(700.0);
-        resolution.record_vote_contre(200.0);
-        resolution.record_abstention(100.0);
+        resolution.record_vote_pour(dec!(700));
+        resolution.record_vote_contre(dec!(200));
+        resolution.record_abstention(dec!(100));
 
-        let result = resolution.calculate_result(1000.0);
+        let result = resolution.calculate_result(dec!(1000));
         assert_eq!(result, ResolutionStatus::Rejected);
     }
 
@@ -510,11 +516,11 @@ mod tests {
         .unwrap();
 
         // Pour=400, Contre=50, Abstention=550 → expressed=450, 400/450 = 88.9% >= 80% → Adopted
-        resolution.record_vote_pour(400.0);
-        resolution.record_vote_contre(50.0);
-        resolution.record_abstention(550.0);
+        resolution.record_vote_pour(dec!(400));
+        resolution.record_vote_contre(dec!(50));
+        resolution.record_abstention(dec!(550));
 
-        let result = resolution.calculate_result(1000.0);
+        let result = resolution.calculate_result(dec!(1000));
         assert_eq!(result, ResolutionStatus::Adopted);
     }
 
@@ -534,9 +540,9 @@ mod tests {
         .unwrap();
 
         // Pour=10000 == total_voting_power → Adopted
-        resolution.record_vote_pour(10000.0);
+        resolution.record_vote_pour(dec!(10000));
 
-        let result = resolution.calculate_result(10000.0);
+        let result = resolution.calculate_result(dec!(10000));
         assert_eq!(result, ResolutionStatus::Adopted);
     }
 
@@ -554,9 +560,9 @@ mod tests {
         .unwrap();
 
         // Pour=9000 < total_voting_power=10000 (absent owners not accounted for) → Rejected
-        resolution.record_vote_pour(9000.0);
+        resolution.record_vote_pour(dec!(9000));
 
-        let result = resolution.calculate_result(10000.0);
+        let result = resolution.calculate_result(dec!(10000));
         assert_eq!(result, ResolutionStatus::Rejected);
     }
 
@@ -575,9 +581,9 @@ mod tests {
 
         // All present vote Pour but some owners are absent
         // Pour=8000, Contre=0, Abstention=0, but total building = 10000 → Rejected
-        resolution.record_vote_pour(8000.0);
+        resolution.record_vote_pour(dec!(8000));
 
-        let result = resolution.calculate_result(10000.0);
+        let result = resolution.calculate_result(dec!(10000));
         assert_eq!(result, ResolutionStatus::Rejected);
     }
 
@@ -595,10 +601,10 @@ mod tests {
         .unwrap();
 
         // Pour=9500, Abstention=500 → Pour != total → Rejected (abstentions count as NOT pour)
-        resolution.record_vote_pour(9500.0);
-        resolution.record_abstention(500.0);
+        resolution.record_vote_pour(dec!(9500));
+        resolution.record_abstention(dec!(500));
 
-        let result = resolution.calculate_result(10000.0);
+        let result = resolution.calculate_result(dec!(10000));
         assert_eq!(result, ResolutionStatus::Rejected);
     }
 
@@ -617,10 +623,10 @@ mod tests {
         )
         .unwrap();
 
-        resolution.record_vote_pour(300.0);
-        resolution.record_vote_contre(150.0);
+        resolution.record_vote_pour(dec!(300));
+        resolution.record_vote_contre(dec!(150));
 
-        let result = resolution.close_voting(1000.0);
+        let result = resolution.close_voting(dec!(1000));
         assert!(result.is_ok());
         assert_eq!(resolution.status, ResolutionStatus::Adopted);
         assert!(resolution.voted_at.is_some());
@@ -639,10 +645,10 @@ mod tests {
         )
         .unwrap();
 
-        resolution.record_vote_pour(300.0);
-        resolution.close_voting(1000.0).unwrap();
+        resolution.record_vote_pour(dec!(300));
+        resolution.close_voting(dec!(1000)).unwrap();
 
-        let result = resolution.close_voting(1000.0);
+        let result = resolution.close_voting(dec!(1000));
         assert!(result.is_err());
         assert_eq!(
             result.unwrap_err(),
@@ -663,10 +669,10 @@ mod tests {
         )
         .unwrap();
 
-        resolution.record_vote_pour(100.0);
-        resolution.record_vote_pour(100.0); // 2 votes pour
-        resolution.record_vote_contre(100.0); // 1 vote contre
-        resolution.record_abstention(100.0); // 1 abstention
+        resolution.record_vote_pour(dec!(100));
+        resolution.record_vote_pour(dec!(100)); // 2 votes pour
+        resolution.record_vote_contre(dec!(100)); // 1 vote contre
+        resolution.record_abstention(dec!(100)); // 1 abstention
 
         assert_eq!(resolution.pour_percentage(), 50.0); // 2/4 = 50%
         assert_eq!(resolution.contre_percentage(), 25.0); // 1/4 = 25%

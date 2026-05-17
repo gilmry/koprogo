@@ -505,7 +505,7 @@ mod tests {
             org_id(),
             AddCosignatoryDto {
                 owner_id: owner1,
-                shares_pct: 0.12,
+                shares_pct: rust_decimal_macros::dec!(0.12),
             },
         )
         .await
@@ -515,7 +515,7 @@ mod tests {
             org_id(),
             AddCosignatoryDto {
                 owner_id: owner2,
-                shares_pct: 0.10,
+                shares_pct: rust_decimal_macros::dec!(0.10),
             },
         )
         .await
@@ -562,7 +562,7 @@ mod tests {
         assert_eq!(resp.organization_id, org_id());
         assert_eq!(resp.building_id, building_id());
         assert_eq!(resp.created_by, creator_id());
-        assert_eq!(resp.total_shares_pct, 0.0);
+        assert_eq!(resp.total_shares_pct, rust_decimal::Decimal::ZERO);
         assert!(!resp.threshold_reached);
         assert_eq!(resp.threshold_pct, AgeRequest::DEFAULT_THRESHOLD_PCT);
         assert!(resp.cosignatories.is_empty());
@@ -588,14 +588,14 @@ mod tests {
                 org_id(),
                 AddCosignatoryDto {
                     owner_id: owner1,
-                    shares_pct: 0.10,
+                    shares_pct: rust_decimal_macros::dec!(0.10),
                 },
             )
             .await
             .unwrap();
         assert_eq!(resp.status, "open");
         assert!(!resp.threshold_reached);
-        assert!((resp.total_shares_pct - 0.10).abs() < 1e-9);
+        assert_eq!(resp.total_shares_pct, rust_decimal_macros::dec!(0.10));
 
         // Second cosignatory: 12% -- total 22% >= 20% threshold
         let owner2 = Uuid::new_v4();
@@ -605,7 +605,7 @@ mod tests {
                 org_id(),
                 AddCosignatoryDto {
                     owner_id: owner2,
-                    shares_pct: 0.12,
+                    shares_pct: rust_decimal_macros::dec!(0.12),
                 },
             )
             .await
@@ -613,8 +613,8 @@ mod tests {
         assert_eq!(resp.status, "reached");
         assert!(resp.threshold_reached);
         assert!(resp.threshold_reached_at.is_some());
-        assert!((resp.total_shares_pct - 0.22).abs() < 1e-9);
-        assert_eq!(resp.shares_pct_missing, 0.0);
+        assert_eq!(resp.total_shares_pct, rust_decimal_macros::dec!(0.22));
+        assert_eq!(resp.shares_pct_missing, rust_decimal::Decimal::ZERO);
     }
 
     #[tokio::test]
@@ -654,7 +654,7 @@ mod tests {
             org_id(),
             AddCosignatoryDto {
                 owner_id: Uuid::new_v4(),
-                shares_pct: 0.05,
+                shares_pct: rust_decimal_macros::dec!(0.05),
             },
         )
         .await
@@ -790,7 +790,8 @@ mod tests {
         )
         .unwrap();
         req.open().unwrap();
-        req.add_cosignatory(Uuid::new_v4(), 0.25).unwrap();
+        req.add_cosignatory(Uuid::new_v4(), rust_decimal_macros::dec!(0.25))
+            .unwrap();
         req.submit_to_syndic().unwrap();
 
         // Manually set the deadline to 16 days in the past (expired)

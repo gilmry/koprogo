@@ -1,5 +1,6 @@
 use crate::domain::entities::{Resolution, ResolutionStatus};
 use async_trait::async_trait;
+use rust_decimal::Decimal;
 use uuid::Uuid;
 
 /// Port (trait) for Resolution repository operations
@@ -30,9 +31,9 @@ pub trait ResolutionRepository: Send + Sync {
         vote_count_pour: i32,
         vote_count_contre: i32,
         vote_count_abstention: i32,
-        total_voting_power_pour: f64,
-        total_voting_power_contre: f64,
-        total_voting_power_abstention: f64,
+        total_voting_power_pour: Decimal,
+        total_voting_power_contre: Decimal,
+        total_voting_power_abstention: Decimal,
     ) -> Result<(), String>;
 
     /// Close voting on a resolution and set final status

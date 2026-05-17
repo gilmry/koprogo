@@ -1749,8 +1749,8 @@ export interface components {
       /** Format: uuid */
       unit_id: string;
       vote_choice: components["schemas"]["VoteChoice"];
-      /** Format: double */
-      voting_power: number;
+      /** @description Tantièmes/millièmes — Decimal exact (ADR-0008), sérialisé en string JSON. */
+      voting_power: string;
     };
     /**
      * @description Challenge status lifecycle
@@ -1768,8 +1768,8 @@ export interface components {
     };
     /** @description Request DTO for closing voting on a resolution */
     CloseVotingRequest: {
-      /** Format: double */
-      total_voting_power: number;
+      /** @description Total tantièmes du bâtiment — Decimal exact (ADR-0008), string JSON. */
+      total_voting_power: string;
     };
     /** @description Response for successful consent recording */
     ConsentRecordedResponse: {

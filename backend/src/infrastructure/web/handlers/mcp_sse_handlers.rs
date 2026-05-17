@@ -921,8 +921,12 @@ async fn dispatch_tool(
                 Ok(Some(meeting)) => {
                     let quorum_ok = meeting.quorum_validated;
                     let pct = meeting.quorum_percentage.unwrap_or(0.0);
-                    let total = meeting.total_quotas.unwrap_or(1000.0);
-                    let present = meeting.present_quotas.unwrap_or(0.0);
+                    let total = meeting
+                        .total_quotas
+                        .unwrap_or_else(|| rust_decimal_macros::dec!(1000));
+                    let present = meeting
+                        .present_quotas
+                        .unwrap_or(rust_decimal::Decimal::ZERO);
 
                     let result = json!({
                         "meeting_id": meeting_id,
