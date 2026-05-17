@@ -63,8 +63,11 @@ Légende : Tier 1 = humain exécute (agent diagnostique/propose). Taille S≤0.5
 - **WP-B1 — Re-vérifier bugs revue humaine** · BUG-WF*/#523 · T2 · M (L si WF14-2 réel) · *J1*
   Re-jouer `HUMAN_REVIEW_REPORT_v0.1.0.md` comme checklist vs `feature/dev` courant : **BUG-WF14-2 fuite bâtiments cross-org (Alice voit 3 bâtiments) = bloquant sécurité bêta si reproductible** — tracer scoping `organization_id` repo buildings ; BUG-WF2-1 `voting_power≤1000` vs seed>1280 (vérifier `20260401000000_fix_voting_power_constraint.sql`) ; BUG-WF7-1 ticket 400 ; NaN% compteurs (probablement corrigé par #523 `7c2d664` — vérifier). Repro RED par bug confirmé. Deps : aucune.
 
-- **WP-B2 — Gate sécurité dependabot #432** · #432 · T2 · S-M · *parallèle*
-  Trier 14 vulns (5H/3M/6L) ; patcher tous HIGH + MOD atteignables (`cargo update -p`) ; documenter résiduel accepté. Fichiers : `backend/Cargo.{toml,lock}`, `security.yml`. Deps : aucune.
+- **WP-B2 — Gate sécurité dependabot #432** · #432 · T2 · S-M · *parallèle* · **FAIT** (PR #538)
+  Réalité : #432 = 100% npm/frontend (le "14 vulns" était périmé). `svelte 5.55.7` + `devalue 5.8.1` → 5 alertes résolues, `npm audit --omit=dev` = 0, build vert. Résiduel 1 HIGH `@babel/plugin-transform-modules-systemjs` (devDependency build-only, `audit fix --force` breaking → accepté/documenté). `cargo audit` (RustSec) exit 0 modulo ignores `.cargo/audit.toml`. Fichiers : `frontend/package-lock.json`. Deps : aucune.
+
+- **WP-B3 — Triage BDD pré-existants révélés par #524** · #524/#443/#526/#534 · T2 · L · *débruite le gate*
+  Le fix #524 a rendu le harness honnête → ~27 scénarios BDD pré-existants rouges sur 8 groupes (CI run `25982956110`) bruitent **toute** PR : « Meeting Resolutions » 14/14 (quorum Art. 3.87 §5 ordre workflow), Board CdC mandat ×5 (Art. 3.89 assertion vs règle), Energy/Notice/CallForFunds/Gamification ×6 (seeds/asserts), Stats ×2 (= #526). Issue de tracking consolidée à créer (draft `docs/agent-activity/2026-05-17-bdd-tracking-issue-draft.md`) + un sous-fix RED-first 4-cat par groupe (P1 = Meeting Resolutions + Board mandat, légalement sensibles ; P2 = seeds/asserts ; Stats = #526 séparé). Aucun fix « comme ça » — comprendre la cause (test faux / prod faux / spec obsolète). Deps : aucune (parallèle). **Prérequis du jugement BDD propre en G1.**
 
 ### Track C — Frontend sécurité (refacto #343 / SSR client:load DIFFÉRÉS post-bêta)
 
@@ -118,7 +121,8 @@ WP-A1 (C1 + ADR-0008) ─┬─► A3 (EXP-006) ─┐
 WP-A2 (#443 LONG POLE) ─├─► A6 (EXP-008) ─┘             │
                         └────────────────────────────────┤
 B1 (bugs revue; WF14-2 fuite) ─────────────────────────  ├─► make ci ─► G1 ─► G2
-B2 (#432 deps) ─────────────────────────────────────────  ┤   VERT    (humain)(TAG)
+B2 (#432 deps, FAIT #538) ──────────────────────────────  ┤   VERT    (humain)(TAG)
+B3 (triage BDD pré-existants #524) ─────────────────────  ┤  (débruite le jugement BDD de G1)
 FE1 (JWT→cookie SEC) ─► FE2 ─► D1 ─► D2 ────────────────  ┤    ▲
 E1 (lint IaC) ─► F1 (TF/Ansible,T1) ─► F2 (TLS,T1) ─► F3 (poller,T1) ─► F4 ──┘
         └──────────────── concurrent Track A ────────────────┘
@@ -141,6 +145,7 @@ E1 (lint IaC) ─► F1 (TF/Ansible,T1) ─► F2 (TLS,T1) ─► F3 (poller,T1)
 - [ ] Refresh token PAS en localStorage ; cookie HttpOnly+Secure+SameSite ; @security VERT (FE1)
 - [ ] BUG-WF1-1/2/3 re-vérifiés corrigés (FE2)
 - [ ] `make ci` VERT en local avant push ; BDD jugé par-scénario, zéro régression @security/@negative
+- [ ] BDD pré-existants (#524-révélés) triagés : chaque groupe rouge fixé OU accepté-différé tracé ; CI BDD = 0 rouge non-tracé (B3)
 - [ ] Plancher Playwright smoke ≈219/240 ; specs skippés un-skippés ou documentés (D1) ; vitest VERT composants critiques (D2)
 - [ ] Lint IaC VERT : terraform fmt/validate, ansible-lint, yamllint, shellcheck(`gitops-deploy.sh`) (E1)
 - [ ] Terraform appliqué + état distant (F1/F4) ; rôles Ansible convergés (F1)
