@@ -340,9 +340,19 @@ impl GovernanceWorld {
             .await
             .expect("Failed to get host port");
 
+        // Use the testcontainers-resolved host (honors TESTCONTAINERS_HOST_OVERRIDE)
+        // instead of a hardcoded 127.0.0.1. On CI (cargo on the runner host) this
+        // resolves to localhost — unchanged. Inside the dev backend container the
+        // testcontainers Postgres is a *sibling* (docker.sock mounted), reachable
+        // via host.docker.internal, not the container's own 127.0.0.1 — this is
+        // what was causing PoolTimedOut for local docker BDD runs.
+        let host = postgres_container
+            .get_host()
+            .await
+            .expect("Failed to get container host");
         let connection_string = format!(
-            "postgres://postgres:postgres@127.0.0.1:{}/postgres",
-            host_port
+            "postgres://postgres:postgres@{}:{}/postgres",
+            host, host_port
         );
 
         let pool = create_pool(&connection_string)
@@ -8119,7 +8129,7 @@ async fn given_gd_resolution_with_votes(world: &mut GovernanceWorld, p1: String,
     let resolution_id = Uuid::new_v4();
     sqlx::query(
         r#"INSERT INTO resolutions (id, meeting_id, title, description, resolution_type, majority_required, status, created_at)
-           VALUES ($1, $2, 'GD resolution', 'desc', 'ordinary', 'simple', 'Pending', NOW())"#,
+           VALUES ($1, $2, 'GD resolution', 'desc', 'Ordinary', 'Simple', 'Pending', NOW())"#,
     )
     .bind(resolution_id)
     .bind(meeting_id)
