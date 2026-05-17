@@ -8118,8 +8118,8 @@ async fn given_gd_resolution_with_votes(world: &mut GovernanceWorld, p1: String,
     // Resolution
     let resolution_id = Uuid::new_v4();
     sqlx::query(
-        r#"INSERT INTO resolutions (id, meeting_id, title, description, resolution_type, majority_required, status, created_at, updated_at)
-           VALUES ($1, $2, 'GD resolution', 'desc', 'ordinary', 'simple', 'draft', NOW(), NOW())"#,
+        r#"INSERT INTO resolutions (id, meeting_id, title, description, resolution_type, majority_required, status, created_at)
+           VALUES ($1, $2, 'GD resolution', 'desc', 'ordinary', 'simple', 'draft', NOW())"#,
     )
     .bind(resolution_id)
     .bind(meeting_id)

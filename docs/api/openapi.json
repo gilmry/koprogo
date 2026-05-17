@@ -3799,8 +3799,8 @@
             "$ref": "#/components/schemas/VoteChoice"
           },
           "voting_power": {
-            "type": "number",
-            "format": "double"
+            "type": "string",
+            "description": "Tantièmes/millièmes — Decimal exact (ADR-0008), sérialisé en string JSON."
           }
         }
       },
@@ -3843,8 +3843,8 @@
         ],
         "properties": {
           "total_voting_power": {
-            "type": "number",
-            "format": "double"
+            "type": "string",
+            "description": "Total tantièmes du bâtiment — Decimal exact (ADR-0008), string JSON."
           }
         }
       },
