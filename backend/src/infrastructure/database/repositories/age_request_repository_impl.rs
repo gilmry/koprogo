@@ -2,6 +2,7 @@ use crate::application::ports::age_request_repository::AgeRequestRepository;
 use crate::domain::entities::age_request::{AgeRequest, AgeRequestCosignatory, AgeRequestStatus};
 use crate::infrastructure::database::pool::DbPool;
 use async_trait::async_trait;
+use rust_decimal::Decimal;
 use sqlx::Row;
 use uuid::Uuid;
 
@@ -28,8 +29,8 @@ fn row_to_age_request(row: &sqlx::postgres::PgRow) -> AgeRequest {
         status,
         created_by: row.get("created_by"),
         cosignatories: Vec::new(), // Chargé séparément
-        total_shares_pct: row.get::<f64, _>("total_shares_pct"),
-        threshold_pct: row.get::<f64, _>("threshold_pct"),
+        total_shares_pct: row.get::<Decimal, _>("total_shares_pct"),
+        threshold_pct: row.get::<Decimal, _>("threshold_pct"),
         threshold_reached: row.get("threshold_reached"),
         threshold_reached_at: row.get("threshold_reached_at"),
         submitted_to_syndic_at: row.get("submitted_to_syndic_at"),
@@ -49,7 +50,7 @@ fn row_to_cosignatory(row: &sqlx::postgres::PgRow) -> AgeRequestCosignatory {
         id: row.get("id"),
         age_request_id: row.get("age_request_id"),
         owner_id: row.get("owner_id"),
-        shares_pct: row.get::<f64, _>("shares_pct"),
+        shares_pct: row.get::<Decimal, _>("shares_pct"),
         signed_at: row.get("signed_at"),
     }
 }
@@ -108,7 +109,7 @@ impl AgeRequestRepository for PostgresAgeRequestRepository {
             r#"
             SELECT id, organization_id, building_id, title, description,
                    status::TEXT, created_by,
-                   total_shares_pct::FLOAT8, threshold_pct::FLOAT8,
+                   total_shares_pct::NUMERIC(8,6), threshold_pct::NUMERIC(8,6),
                    threshold_reached, threshold_reached_at,
                    submitted_to_syndic_at, syndic_deadline_at, syndic_response_at, syndic_notes,
                    auto_convocation_triggered, meeting_id, concertation_poll_id,
@@ -136,7 +137,7 @@ impl AgeRequestRepository for PostgresAgeRequestRepository {
             r#"
             SELECT id, organization_id, building_id, title, description,
                    status::TEXT, created_by,
-                   total_shares_pct::FLOAT8, threshold_pct::FLOAT8,
+                   total_shares_pct::NUMERIC(8,6), threshold_pct::NUMERIC(8,6),
                    threshold_reached, threshold_reached_at,
                    submitted_to_syndic_at, syndic_deadline_at, syndic_response_at, syndic_notes,
                    auto_convocation_triggered, meeting_id, concertation_poll_id,
@@ -165,7 +166,7 @@ impl AgeRequestRepository for PostgresAgeRequestRepository {
             r#"
             SELECT id, organization_id, building_id, title, description,
                    status::TEXT, created_by,
-                   total_shares_pct::FLOAT8, threshold_pct::FLOAT8,
+                   total_shares_pct::NUMERIC(8,6), threshold_pct::NUMERIC(8,6),
                    threshold_reached, threshold_reached_at,
                    submitted_to_syndic_at, syndic_deadline_at, syndic_response_at, syndic_notes,
                    auto_convocation_triggered, meeting_id, concertation_poll_id,
@@ -287,7 +288,7 @@ impl AgeRequestRepository for PostgresAgeRequestRepository {
     ) -> Result<Vec<AgeRequestCosignatory>, String> {
         let rows = sqlx::query(
             r#"
-            SELECT id, age_request_id, owner_id, shares_pct::FLOAT8, signed_at
+            SELECT id, age_request_id, owner_id, shares_pct::NUMERIC(8,6), signed_at
             FROM age_request_cosignatories
             WHERE age_request_id = $1
             ORDER BY signed_at ASC
@@ -306,7 +307,7 @@ impl AgeRequestRepository for PostgresAgeRequestRepository {
             r#"
             SELECT id, organization_id, building_id, title, description,
                    status::TEXT, created_by,
-                   total_shares_pct::FLOAT8, threshold_pct::FLOAT8,
+                   total_shares_pct::NUMERIC(8,6), threshold_pct::NUMERIC(8,6),
                    threshold_reached, threshold_reached_at,
                    submitted_to_syndic_at, syndic_deadline_at, syndic_response_at, syndic_notes,
                    auto_convocation_triggered, meeting_id, concertation_poll_id,

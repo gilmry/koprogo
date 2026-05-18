@@ -2,6 +2,7 @@ use crate::application::ports::ResolutionRepository;
 use crate::domain::entities::{MajorityType, Resolution, ResolutionStatus, ResolutionType};
 use crate::infrastructure::database::pool::DbPool;
 use async_trait::async_trait;
+use rust_decimal::Decimal;
 use sqlx::Row;
 use uuid::Uuid;
 
@@ -90,7 +91,7 @@ impl ResolutionRepository for PostgresResolutionRepository {
             r#"
             SELECT id, meeting_id, title, description, resolution_type, majority_required,
                    vote_count_pour, vote_count_contre, vote_count_abstention,
-                   total_voting_power_pour::FLOAT8, total_voting_power_contre::FLOAT8, total_voting_power_abstention::FLOAT8,
+                   total_voting_power_pour, total_voting_power_contre, total_voting_power_abstention,
                    status, created_at, voted_at
             FROM resolutions
             WHERE id = $1
@@ -144,7 +145,7 @@ impl ResolutionRepository for PostgresResolutionRepository {
             r#"
             SELECT id, meeting_id, title, description, resolution_type, majority_required,
                    vote_count_pour, vote_count_contre, vote_count_abstention,
-                   total_voting_power_pour::FLOAT8, total_voting_power_contre::FLOAT8, total_voting_power_abstention::FLOAT8,
+                   total_voting_power_pour, total_voting_power_contre, total_voting_power_abstention,
                    status, created_at, voted_at
             FROM resolutions
             WHERE meeting_id = $1
@@ -208,7 +209,7 @@ impl ResolutionRepository for PostgresResolutionRepository {
             r#"
             SELECT id, meeting_id, title, description, resolution_type, majority_required,
                    vote_count_pour, vote_count_contre, vote_count_abstention,
-                   total_voting_power_pour::FLOAT8, total_voting_power_contre::FLOAT8, total_voting_power_abstention::FLOAT8,
+                   total_voting_power_pour, total_voting_power_contre, total_voting_power_abstention,
                    status, created_at, voted_at
             FROM resolutions
             WHERE status = $1
@@ -320,9 +321,9 @@ impl ResolutionRepository for PostgresResolutionRepository {
         vote_count_pour: i32,
         vote_count_contre: i32,
         vote_count_abstention: i32,
-        total_voting_power_pour: f64,
-        total_voting_power_contre: f64,
-        total_voting_power_abstention: f64,
+        total_voting_power_pour: Decimal,
+        total_voting_power_contre: Decimal,
+        total_voting_power_abstention: Decimal,
     ) -> Result<(), String> {
         sqlx::query(
             r#"

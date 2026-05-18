@@ -1,4 +1,7 @@
 use chrono::{DateTime, Duration, Utc};
+use rust_decimal::prelude::ToPrimitive;
+use rust_decimal::Decimal;
+use rust_decimal_macros::dec;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -33,9 +36,9 @@ pub struct Meeting {
     pub attendees_count: Option<i32>,
     // Quorum — Art. 3.87 §5 CC : AG valide si >50% des quotes-parts présentes/représentées
     pub quorum_validated: bool,
-    pub quorum_percentage: Option<f64>, // % des quotes-parts présentes/représentées (0.0-100.0)
-    pub total_quotas: Option<f64>,      // Total millièmes du bâtiment (généralement 1000)
-    pub present_quotas: Option<f64>,    // Millièmes présents + représentés par procuration
+    pub quorum_percentage: Option<f64>, // % présentes/représentées (0.0-100.0, dérivé/affichage)
+    pub total_quotas: Option<Decimal>,  // Total millièmes du bâtiment (Decimal exact — ADR-0008)
+    pub present_quotas: Option<Decimal>, // Millièmes présents + représentés (Decimal exact — ADR-0008)
     // Second Convocation — Issue #311 (Art. 3.87 §5 CC: No quorum required for 2nd convocation)
     pub is_second_convocation: bool, // true = 2e convocation (no quorum check needed)
     // PV Distribution — Issue #313: Track when AG minutes are sent to owners
@@ -142,22 +145,28 @@ impl Meeting {
     /// Retourne Ok(true) si quorum atteint, Ok(false) si insuffisant (2e convocation requise).
     pub fn validate_quorum(
         &mut self,
-        present_quotas: f64,
-        total_quotas: f64,
+        present_quotas: Decimal,
+        total_quotas: Decimal,
     ) -> Result<bool, String> {
-        if total_quotas <= 0.0 {
+        if total_quotas <= Decimal::ZERO {
             return Err("Total quotas must be positive".to_string());
         }
-        if present_quotas < 0.0 {
+        if present_quotas < Decimal::ZERO {
             return Err("Present quotas cannot be negative".to_string());
         }
         if present_quotas > total_quotas {
             return Err("Present quotas cannot exceed total quotas".to_string());
         }
 
-        let percentage = (present_quotas / total_quotas) * 100.0;
-        // Quorum : >50% des quotes-parts (Art. 3.87 §5 — majorité stricte)
-        let quorum_reached = percentage > 50.0;
+        // Quorum : >50% des quotes-parts (Art. 3.87 §5 — majorité stricte).
+        // Décision LÉGALE en comparaison décimale EXACTE (pas d'arrondi IEEE754) :
+        // 500.0001 > 500.0000 (= 1000.0000 / 2) ⇒ quorum atteint.
+        let quorum_reached = present_quotas > total_quotas / dec!(2);
+
+        // Pourcentage dérivé pour l'affichage uniquement (non utilisé pour la décision).
+        let percentage = (present_quotas / total_quotas * dec!(100))
+            .to_f64()
+            .unwrap_or(0.0);
 
         self.present_quotas = Some(present_quotas);
         self.total_quotas = Some(total_quotas);
@@ -357,7 +366,7 @@ mod tests {
         .unwrap();
 
         // 600 millièmes présents sur 1000 = 60% → quorum atteint
-        let result = meeting.validate_quorum(600.0, 1000.0);
+        let result = meeting.validate_quorum(dec!(600), dec!(1000));
         assert!(result.is_ok());
         assert!(result.unwrap());
         assert!(meeting.quorum_validated);
@@ -382,7 +391,7 @@ mod tests {
         .unwrap();
 
         // 500 millièmes sur 1000 = exactement 50% → quorum NON atteint (Art. 3.87 §5 : >50% requis)
-        let result = meeting.validate_quorum(500.0, 1000.0);
+        let result = meeting.validate_quorum(dec!(500), dec!(1000));
         assert!(result.is_ok());
         assert!(!result.unwrap());
         assert!(!meeting.quorum_validated);
@@ -406,7 +415,7 @@ mod tests {
         .unwrap();
 
         // 400 millièmes sur 1000 = 40% → quorum non atteint
-        let result = meeting.validate_quorum(400.0, 1000.0);
+        let result = meeting.validate_quorum(dec!(400), dec!(1000));
         assert!(result.is_ok());
         assert!(!result.unwrap());
         assert!(!meeting.quorum_validated);
@@ -477,7 +486,7 @@ mod tests {
         )
         .unwrap();
 
-        meeting.validate_quorum(400.0, 1000.0).unwrap();
+        meeting.validate_quorum(dec!(400), dec!(1000)).unwrap();
         let result = meeting.check_quorum_for_voting();
         assert!(result.is_err());
         assert!(result.unwrap_err().contains("second convocation"));
@@ -500,7 +509,7 @@ mod tests {
         )
         .unwrap();
 
-        let result = meeting.validate_quorum(100.0, 0.0);
+        let result = meeting.validate_quorum(dec!(100), dec!(0));
         assert!(result.is_err());
     }
 

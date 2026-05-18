@@ -1,5 +1,6 @@
 use crate::domain::entities::{Meeting, MeetingStatus, MeetingType};
 use chrono::{DateTime, Utc};
+use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -19,8 +20,8 @@ pub struct MeetingResponse {
     // Quorum — Art. 3.87 §5 CC
     pub quorum_validated: bool,
     pub quorum_percentage: Option<f64>,
-    pub total_quotas: Option<f64>,
-    pub present_quotas: Option<f64>,
+    pub total_quotas: Option<Decimal>,
+    pub present_quotas: Option<Decimal>,
     pub is_second_convocation: bool,
     pub minutes_document_id: Option<Uuid>,
     pub minutes_sent_at: Option<DateTime<Utc>>,
@@ -57,10 +58,10 @@ impl From<Meeting> for MeetingResponse {
 /// Request DTO for validating quorum (Art. 3.87 §5 CC)
 #[derive(Debug, Deserialize)]
 pub struct ValidateQuorumRequest {
-    /// Millièmes présents + représentés par procuration
-    pub present_quotas: f64,
-    /// Total millièmes du bâtiment (généralement 1000)
-    pub total_quotas: f64,
+    /// Millièmes présents + représentés par procuration (Decimal exact — ADR-0008)
+    pub present_quotas: Decimal,
+    /// Total millièmes du bâtiment (généralement 1000, Decimal exact — ADR-0008)
+    pub total_quotas: Decimal,
 }
 
 /// Request DTO for creating a meeting

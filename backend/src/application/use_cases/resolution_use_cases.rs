@@ -121,7 +121,7 @@ impl ResolutionUseCases {
         owner_id: Uuid,
         unit_id: Uuid,
         vote_choice: VoteChoice,
-        voting_power: f64,
+        voting_power: rust_decimal::Decimal,
         proxy_owner_id: Option<Uuid>,
     ) -> Result<Vote, String> {
         // Check if resolution exists and is pending
@@ -215,7 +215,7 @@ impl ResolutionUseCases {
     pub async fn close_voting(
         &self,
         resolution_id: Uuid,
-        total_voting_power: f64,
+        total_voting_power: rust_decimal::Decimal,
     ) -> Result<Resolution, String> {
         let mut resolution = self
             .resolution_repository
@@ -297,7 +297,7 @@ impl ResolutionUseCases {
         &self,
         resolution_id: Uuid,
         proxy_owner_id: Uuid,
-        new_voting_power: f64,
+        new_voting_power: rust_decimal::Decimal,
     ) -> Result<(), String> {
         let (existing_count, existing_power) = self
             .vote_repository
@@ -324,7 +324,9 @@ impl ResolutionUseCases {
             + new_voting_power; // inclure ce qu'on est en train d'ajouter
 
         // Exception: si total procurations < 10% du total général → pas de limite
-        if total_all_votes > 0.0 && (total_proxy_power / total_all_votes) < 0.10 {
+        if total_all_votes > rust_decimal::Decimal::ZERO
+            && (total_proxy_power / total_all_votes) < rust_decimal_macros::dec!(0.10)
+        {
             return Ok(()); // Exception 10% s'applique
         }
 
@@ -334,10 +336,10 @@ impl ResolutionUseCases {
                 "Le mandataire détient déjà {} procurations. Maximum autorisé : 3 (Art. 3.87 §7 CC). \
                  Exception 10% non applicable (procurations représentent >{:.1}% des votes).",
                 existing_count,
-                if total_all_votes > 0.0 {
-                    (total_proxy_power / total_all_votes) * 100.0
+                if total_all_votes > rust_decimal::Decimal::ZERO {
+                    (total_proxy_power / total_all_votes) * rust_decimal_macros::dec!(100)
                 } else {
-                    0.0
+                    rust_decimal::Decimal::ZERO
                 }
             ));
         }
@@ -376,9 +378,9 @@ pub struct VoteStatistics {
     pub vote_count_pour: i32,
     pub vote_count_contre: i32,
     pub vote_count_abstention: i32,
-    pub total_voting_power_pour: f64,
-    pub total_voting_power_contre: f64,
-    pub total_voting_power_abstention: f64,
+    pub total_voting_power_pour: rust_decimal::Decimal,
+    pub total_voting_power_contre: rust_decimal::Decimal,
+    pub total_voting_power_abstention: rust_decimal::Decimal,
     pub pour_percentage: f64,
     pub contre_percentage: f64,
     pub abstention_percentage: f64,
@@ -526,9 +528,9 @@ mod tests {
             vote_count_pour: i32,
             vote_count_contre: i32,
             vote_count_abstention: i32,
-            total_voting_power_pour: f64,
-            total_voting_power_contre: f64,
-            total_voting_power_abstention: f64,
+            total_voting_power_pour: rust_decimal::Decimal,
+            total_voting_power_contre: rust_decimal::Decimal,
+            total_voting_power_abstention: rust_decimal::Decimal,
         ) -> Result<(), String> {
             if let Some(resolution) = self.resolutions.lock().unwrap().get_mut(&resolution_id) {
                 resolution.vote_count_pour = vote_count_pour;
@@ -659,19 +661,26 @@ mod tests {
         async fn sum_voting_power_by_resolution(
             &self,
             resolution_id: Uuid,
-        ) -> Result<(f64, f64, f64), String> {
+        ) -> Result<
+            (
+                rust_decimal::Decimal,
+                rust_decimal::Decimal,
+                rust_decimal::Decimal,
+            ),
+            String,
+        > {
             let votes = self.find_by_resolution_id(resolution_id).await?;
-            let pour: f64 = votes
+            let pour: rust_decimal::Decimal = votes
                 .iter()
                 .filter(|v| v.vote_choice == VoteChoice::Pour)
                 .map(|v| v.voting_power)
                 .sum();
-            let contre: f64 = votes
+            let contre: rust_decimal::Decimal = votes
                 .iter()
                 .filter(|v| v.vote_choice == VoteChoice::Contre)
                 .map(|v| v.voting_power)
                 .sum();
-            let abstention: f64 = votes
+            let abstention: rust_decimal::Decimal = votes
                 .iter()
                 .filter(|v| v.vote_choice == VoteChoice::Abstention)
                 .map(|v| v.voting_power)
@@ -683,14 +692,14 @@ mod tests {
             &self,
             resolution_id: Uuid,
             proxy_owner_id: Uuid,
-        ) -> Result<(i64, f64), String> {
+        ) -> Result<(i64, rust_decimal::Decimal), String> {
             let votes = self.find_by_resolution_id(resolution_id).await?;
             let proxy_votes: Vec<_> = votes
                 .iter()
                 .filter(|v| v.proxy_owner_id == Some(proxy_owner_id))
                 .collect();
             let count = proxy_votes.len() as i64;
-            let power: f64 = proxy_votes.iter().map(|v| v.voting_power).sum();
+            let power: rust_decimal::Decimal = proxy_votes.iter().map(|v| v.voting_power).sum();
             Ok((count, power))
         }
     }
@@ -720,7 +729,12 @@ mod tests {
         .unwrap();
         meeting.id = meeting_id;
         // Validate quorum (600/1000 = 60% > 50%)
-        meeting.validate_quorum(600.0, 1000.0).unwrap();
+        meeting
+            .validate_quorum(
+                rust_decimal_macros::dec!(600),
+                rust_decimal_macros::dec!(1000),
+            )
+            .unwrap();
         meeting_repo.create(&meeting).await.unwrap();
 
         let result = use_cases
@@ -765,7 +779,12 @@ mod tests {
         .unwrap();
         meeting.id = meeting_id;
         // Validate quorum (400/1000 = 40% < 50%) — quorum NOT reached
-        meeting.validate_quorum(400.0, 1000.0).unwrap();
+        meeting
+            .validate_quorum(
+                rust_decimal_macros::dec!(400),
+                rust_decimal_macros::dec!(1000),
+            )
+            .unwrap();
         meeting_repo.create(&meeting).await.unwrap();
 
         let result = use_cases
@@ -812,7 +831,12 @@ mod tests {
         )
         .unwrap();
         meeting.id = meeting_id;
-        meeting.validate_quorum(600.0, 1000.0).unwrap();
+        meeting
+            .validate_quorum(
+                rust_decimal_macros::dec!(600),
+                rust_decimal_macros::dec!(1000),
+            )
+            .unwrap();
         meeting_repo.create(&meeting).await.unwrap();
 
         let resolution = use_cases
@@ -836,7 +860,7 @@ mod tests {
                 owner_id,
                 unit_id,
                 VoteChoice::Pour,
-                100.0,
+                rust_decimal_macros::dec!(100),
                 None,
             )
             .await;
@@ -850,7 +874,10 @@ mod tests {
             .unwrap()
             .unwrap();
         assert_eq!(updated_resolution.vote_count_pour, 1);
-        assert_eq!(updated_resolution.total_voting_power_pour, 100.0);
+        assert_eq!(
+            updated_resolution.total_voting_power_pour,
+            rust_decimal_macros::dec!(100)
+        );
     }
 
     #[tokio::test]
@@ -878,7 +905,12 @@ mod tests {
         )
         .unwrap();
         meeting.id = meeting_id;
-        meeting.validate_quorum(600.0, 1000.0).unwrap();
+        meeting
+            .validate_quorum(
+                rust_decimal_macros::dec!(600),
+                rust_decimal_macros::dec!(1000),
+            )
+            .unwrap();
         meeting_repo.create(&meeting).await.unwrap();
 
         let resolution = use_cases
@@ -903,7 +935,7 @@ mod tests {
                 owner_id,
                 unit_id,
                 VoteChoice::Pour,
-                100.0,
+                rust_decimal_macros::dec!(100),
                 None,
             )
             .await;
@@ -916,7 +948,7 @@ mod tests {
                 owner_id,
                 unit_id,
                 VoteChoice::Contre,
-                100.0,
+                rust_decimal_macros::dec!(100),
                 None,
             )
             .await;
@@ -952,7 +984,12 @@ mod tests {
         )
         .unwrap();
         meeting.id = meeting_id;
-        meeting.validate_quorum(600.0, 1000.0).unwrap();
+        meeting
+            .validate_quorum(
+                rust_decimal_macros::dec!(600),
+                rust_decimal_macros::dec!(1000),
+            )
+            .unwrap();
         meeting_repo.create(&meeting).await.unwrap();
 
         let resolution = use_cases
@@ -979,7 +1016,7 @@ mod tests {
                     owner_id,
                     unit_id,
                     VoteChoice::Pour,
-                    100.0, // 100 millièmes chacun = 300 total
+                    rust_decimal_macros::dec!(100), // 100 millièmes chacun = 300 total
                     Some(mandataire_id),
                 )
                 .await;
@@ -1000,7 +1037,7 @@ mod tests {
                 owner_id_4,
                 unit_id_4,
                 VoteChoice::Pour,
-                100.0,
+                rust_decimal_macros::dec!(100),
                 Some(mandataire_id),
             )
             .await;
@@ -1039,7 +1076,12 @@ mod tests {
         )
         .unwrap();
         meeting.id = meeting_id;
-        meeting.validate_quorum(600.0, 1000.0).unwrap();
+        meeting
+            .validate_quorum(
+                rust_decimal_macros::dec!(600),
+                rust_decimal_macros::dec!(1000),
+            )
+            .unwrap();
         meeting_repo.create(&meeting).await.unwrap();
 
         let resolution = use_cases
@@ -1064,7 +1106,7 @@ mod tests {
                     Uuid::new_v4(),
                     Uuid::new_v4(),
                     VoteChoice::Pour,
-                    100.0, // 100 millièmes each, 9 × 100 = 900 total direct
+                    rust_decimal_macros::dec!(100), // 100 millièmes each, 9 × 100 = 900 total direct
                     None,
                 )
                 .await;
@@ -1079,7 +1121,7 @@ mod tests {
                     Uuid::new_v4(),
                     Uuid::new_v4(),
                     VoteChoice::Pour,
-                    5.0, // 5 millièmes chacun
+                    rust_decimal_macros::dec!(5), // 5 millièmes chacun
                     Some(mandataire_id),
                 )
                 .await;

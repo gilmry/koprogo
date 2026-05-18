@@ -1,5 +1,6 @@
 use crate::domain::entities::{MajorityType, Resolution, ResolutionStatus, ResolutionType};
 use chrono::{DateTime, Utc};
+use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -15,9 +16,9 @@ pub struct ResolutionResponse {
     pub vote_count_pour: i32,
     pub vote_count_contre: i32,
     pub vote_count_abstention: i32,
-    pub total_voting_power_pour: f64,
-    pub total_voting_power_contre: f64,
-    pub total_voting_power_abstention: f64,
+    pub total_voting_power_pour: Decimal,
+    pub total_voting_power_contre: Decimal,
+    pub total_voting_power_abstention: Decimal,
     pub status: ResolutionStatus,
     pub agenda_item_index: Option<usize>, // Issue #310: Link to agenda item
     pub created_at: DateTime<Utc>,
@@ -80,5 +81,6 @@ pub struct UpdateResolutionRequest {
 /// Request DTO for closing voting on a resolution
 #[derive(Debug, Deserialize, utoipa::ToSchema)]
 pub struct CloseVotingRequest {
-    pub total_voting_power: f64,
+    /// Total tantièmes du bâtiment — Decimal exact (ADR-0008), string JSON.
+    pub total_voting_power: Decimal,
 }

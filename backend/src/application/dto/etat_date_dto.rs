@@ -56,8 +56,10 @@ pub struct EtatDateResponse {
     pub unit_number: String,
     pub unit_floor: Option<String>,
     pub unit_area: Option<f64>,
-    pub ordinary_charges_quota: f64,
-    pub extraordinary_charges_quota: f64,
+    /// Quote-part charges ordinaires — Decimal exact (ADR-0008), string JSON.
+    pub ordinary_charges_quota: rust_decimal::Decimal,
+    /// Quote-part charges extraordinaires — Decimal exact (ADR-0008), string JSON.
+    pub extraordinary_charges_quota: rust_decimal::Decimal,
     pub owner_balance: f64,
     pub arrears_amount: f64,
     pub monthly_provision_amount: f64,
