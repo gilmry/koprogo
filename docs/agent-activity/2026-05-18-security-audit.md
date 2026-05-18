@@ -28,3 +28,11 @@ Persona : security triage. Lecture seule via `gh api` (dependabot/code-scanning/
 2. **Dismiss annoté** : `gh api ... code-scanning/alerts/{n} -f state=dismissed -f dismissed_reason=used_in_tests` + commentaire « known demo seed, bcrypt-hashed, demo org only ». Rapide, mais garde le pattern.
 **Reco** : Option 1 (élimine la cause, conforme CRITICAL.md #1) si la story le justifie ; sinon Option 2 documentée le temps de la bêta.
 **Hors-scope** : Dependabot npm (résolu par #538 au merge) ; rust/lru (accepté audit.toml).
+
+## Décision & action (Tier-1, autorisée par l'humain : « option 2 »)
+
+CodeQL #61 (`seed.rs:3322`) et #62 (`seed.rs:3353`) **dismissed** via `gh api PATCH` :
+`state=dismissed`, `dismissed_reason="won't fix"`, commentaire d'audit (demo-seed
+fixture, bcrypt-hashed, demo org, v0.1.0 non-prod, revisit before prod via
+`DEMO_SEED_PASSWORD`, ref ce log). **Code-scanning open = 0.** Reste à
+reconsidérer (Option 1, randomisation) avant tout passage en prod — non bloquant bêta.
