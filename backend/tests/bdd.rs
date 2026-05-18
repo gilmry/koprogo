@@ -1084,6 +1084,161 @@ async fn when_list_buildings_for_first_org(world: &mut BuildingWorld) {
 async fn then_no_cross_org(_world: &mut BuildingWorld) {}
 
 // ============================================================================
+// BUG-WF14-2 — owner-level building isolation (Human Review v0.1.0).
+// An owner must only see buildings where they own a unit, even when other
+// buildings exist in the SAME organization. Exercises the production path
+// `list_buildings_paginated_for_user(.., owner_user_id)` used by the handler
+// for role == "owner". Fixed by commit dddde26 — this is the regression guard.
+// ============================================================================
+
+#[given("an organization with three buildings")]
+async fn given_org_three_buildings(world: &mut BuildingWorld) {
+    if world.pool.is_none() {
+        world.setup_database().await;
+    }
+    let org_id = world.org_id.expect("org_id");
+    let pool = world.pool.as_ref().expect("pool").clone();
+    let building_repo = PostgresBuildingRepository::new(pool);
+    use koprogo_api::domain::entities::Building as DomBuilding;
+
+    // setup_database already created one building (world.building_id) for this
+    // org; treat it as building #1 (the one Alice will own a unit in).
+    // Add two more buildings in the SAME org that Alice must NOT see.
+    for (name, city) in [("Iso Building 2", "Liège"), ("Iso Building 3", "Gent")] {
+        let b = DomBuilding::new(
+            org_id,
+            name.to_string(),
+            "X Test St".to_string(),
+            city.to_string(),
+            "4000".to_string(),
+            "Belgique".to_string(),
+            4,
+            1000,
+            Some(2010),
+        )
+        .expect("build extra building");
+        building_repo
+            .create(&b)
+            .await
+            .expect("create extra org building");
+    }
+}
+
+#[given("an owner Alice who owns a unit only in the first building")]
+async fn given_alice_owns_unit_first_building(world: &mut BuildingWorld) {
+    let org_id = world.org_id.expect("org_id");
+    let first_building_id = world.building_id.expect("building_id");
+    let pool = world.pool.as_ref().expect("pool").clone();
+    let owner_repo = world.owner_repo.as_ref().expect("owner repo").clone();
+
+    // 1. Create a user (Alice) and link an Owner record to that user_id.
+    let alice_email = format!("alice+{}@iso.test", Uuid::new_v4());
+    let reg = RegisterRequest {
+        email: alice_email.clone(),
+        password: "Passw0rd!".to_string(),
+        first_name: "Alice".to_string(),
+        last_name: "Owner".to_string(),
+        role: "owner".to_string(),
+        organization_id: Some(org_id),
+    };
+    let auth_uc = world.auth_use_cases.as_ref().expect("auth uc");
+    auth_uc.register(reg).await.expect("register Alice");
+    let login = LoginRequest {
+        email: alice_email.clone(),
+        password: "Passw0rd!".to_string(),
+    };
+    let login_resp = auth_uc.login(login).await.expect("login Alice");
+    let alice_user_id = login_resp.user.id;
+    world.last_user_id = Some(alice_user_id);
+
+    let mut owner = koprogo_api::domain::entities::Owner::new(
+        org_id,
+        "Alice".to_string(),
+        "Owner".to_string(),
+        alice_email,
+        Some("+32123456789".to_string()),
+        "1 Iso St".to_string(),
+        "Bruxelles".to_string(),
+        "1000".to_string(),
+        "Belgium".to_string(),
+    )
+    .expect("create Alice owner");
+    owner.user_id = Some(alice_user_id);
+    let created_owner = owner_repo.create(&owner).await.expect("save Alice owner");
+    world.current_owner_id = Some(created_owner.id);
+
+    // 2. Create a unit in the FIRST building and link Alice as active owner.
+    let unit_id = Uuid::new_v4();
+    sqlx::query(
+        "INSERT INTO units (id, building_id, organization_id, unit_number, unit_type, floor, surface_area, quota, created_at, updated_at)
+         VALUES ($1, $2, $3, 'ISO-2A', 'apartment', 0, 50.0, 100.0, NOW(), NOW())",
+    )
+    .bind(unit_id)
+    .bind(first_building_id)
+    .bind(org_id)
+    .execute(&pool)
+    .await
+    .expect("create Alice unit");
+
+    let uo_id = Uuid::new_v4();
+    sqlx::query(
+        "INSERT INTO unit_owners (id, unit_id, owner_id, ownership_percentage, start_date, is_primary_contact, created_at, updated_at)
+         VALUES ($1, $2, $3, 1.0, NOW(), true, NOW(), NOW())",
+    )
+    .bind(uo_id)
+    .bind(unit_id)
+    .bind(created_owner.id)
+    .execute(&pool)
+    .await
+    .expect("link Alice to unit (active, end_date NULL)");
+}
+
+#[when("Alice lists buildings scoped to her ownership")]
+async fn when_alice_lists_scoped_buildings(world: &mut BuildingWorld) {
+    let org_id = world.org_id;
+    let alice_user_id = world.last_user_id.expect("alice user id");
+    let page_req = PageRequest {
+        page: 1,
+        per_page: 50,
+        sort_by: Some("created_at".to_string()),
+        order: SortOrder::Desc,
+    };
+    let uc = world.use_cases.as_ref().expect("building use cases");
+    // Same call the handler makes for role == "owner".
+    let (items, total) = uc
+        .list_buildings_paginated_for_user(&page_req, org_id, Some(alice_user_id))
+        .await
+        .expect("owner-scoped building list");
+    assert_eq!(
+        total,
+        items.len() as i64,
+        "paginated total must match returned rows"
+    );
+    world.last_count = Some(items.len());
+}
+
+#[then("Alice sees exactly 1 building")]
+async fn then_alice_sees_one_building(world: &mut BuildingWorld) {
+    assert_eq!(
+        world.last_count,
+        Some(1),
+        "BUG-WF14-2: owner must see exactly the 1 building where she owns a unit, \
+         not the 3 buildings of her organization"
+    );
+}
+
+#[then("Alice does not see the other two buildings")]
+async fn then_alice_no_other_buildings(world: &mut BuildingWorld) {
+    // last_count == 1 already proves the other two same-org buildings are
+    // filtered out; assert again for an explicit, readable failure message.
+    assert_eq!(
+        world.last_count,
+        Some(1),
+        "BUG-WF14-2: cross-owner leak — Alice can see buildings she has no unit in"
+    );
+}
+
+// ============================================================================
 // GDPR BDD Steps (Articles 15 & 17)
 // ============================================================================
 
