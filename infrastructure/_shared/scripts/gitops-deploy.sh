@@ -5,7 +5,7 @@
 # Usage: BRANCH=<branch> COMPOSE_DIR=<path> ./gitops-deploy.sh [watch|deploy|status|logs]
 ################################################################################
 
-set -e
+set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_DIR="${REPO_DIR:-$(cd "$SCRIPT_DIR/../.." && pwd)}"
@@ -36,15 +36,18 @@ function log_error()   { echo -e "${RED}[$(date +'%Y-%m-%d %H:%M:%S')] ERROR:${N
 function log_warning() { echo -e "${YELLOW}[$(date +'%Y-%m-%d %H:%M:%S')] WARNING:${NC} $1" | tee -a "$LOG_FILE"; }
 function log_info()    { echo -e "${BLUE}[$(date +'%Y-%m-%d %H:%M:%S')] INFO:${NC} $1" | tee -a "$LOG_FILE"; }
 
-function compose_cmd() {
-    local cmd="docker compose -f ${COMPOSE_BASE}"
+# Populate the global COMPOSE_ARGS array with the docker compose invocation.
+# Using an array (not a string) keeps paths-with-spaces safe and avoids the
+# shellcheck SC2046/SC2086 word-splitting hazard of `$(compose_cmd) ...`.
+COMPOSE_ARGS=()
+function build_compose_args() {
+    COMPOSE_ARGS=(docker compose -f "${COMPOSE_BASE}")
     if [ -f "$COMPOSE_OVERRIDE" ]; then
-        cmd="$cmd -f ${COMPOSE_OVERRIDE}"
+        COMPOSE_ARGS+=(-f "${COMPOSE_OVERRIDE}")
     fi
     if [ -f "$ENV_FILE" ]; then
-        cmd="$cmd --env-file ${ENV_FILE}"
+        COMPOSE_ARGS+=(--env-file "${ENV_FILE}")
     fi
-    echo "$cmd"
 }
 
 function check_prerequisites() {
@@ -58,10 +61,11 @@ function check_prerequisites() {
 function pull_latest() {
     cd "$REPO_DIR"
     git fetch origin "$BRANCH" 2>&1 | tee -a "$LOG_FILE"
-    LOCAL=$(git rev-parse HEAD)
-    REMOTE=$(git rev-parse origin/$BRANCH)
-    [ "$LOCAL" = "$REMOTE" ] && return 1
-    log_info "New commits: $LOCAL -> $REMOTE"
+    local local_sha remote_sha
+    local_sha=$(git rev-parse HEAD)
+    remote_sha=$(git rev-parse "origin/$BRANCH")
+    [ "$local_sha" = "$remote_sha" ] && return 1
+    log_info "New commits: $local_sha -> $remote_sha"
     git pull origin "$BRANCH" 2>&1 | tee -a "$LOG_FILE"
     return 0
 }
@@ -70,27 +74,39 @@ function deploy() {
     log "Starting deployment (env=${ENV_NAME})..."
     cd "$REPO_DIR"
 
-    local current_sha=$(git rev-parse --short=7 HEAD)
-    local image_tag="${BRANCH}-${current_sha}"
+    local current_sha image_tag
+    current_sha=$(git rev-parse --short=7 HEAD)
+    image_tag="${BRANCH}-${current_sha}"
     export IMAGE_TAG="$image_tag"
 
     log_info "Commit: $current_sha | Image tag: $image_tag"
 
+    build_compose_args
+
     # Pull images with retry
-    local max_retries=10 retry_delay=90 retry_count=0
-    while [ $retry_count -lt $max_retries ]; do
-        pull_output=$($(compose_cmd) pull 2>&1 | tee -a "$LOG_FILE")
+    local max_retries=10 retry_delay=90 retry_count=0 pull_output
+    while [ "$retry_count" -lt "$max_retries" ]; do
+        pull_output=$("${COMPOSE_ARGS[@]}" pull 2>&1 | tee -a "$LOG_FILE")
         if echo "$pull_output" | grep -q "manifest unknown"; then
             retry_count=$((retry_count + 1))
-            [ $retry_count -lt $max_retries ] && { log_warning "Image not ready (attempt $retry_count/$max_retries). Waiting ${retry_delay}s..."; sleep $retry_delay; } || { log_warning "Falling back to '${BRANCH}-latest'"; export IMAGE_TAG="${BRANCH}-latest"; $(compose_cmd) pull 2>&1 | tee -a "$LOG_FILE"; break; }
+            if [ "$retry_count" -lt "$max_retries" ]; then
+                log_warning "Image not ready (attempt $retry_count/$max_retries). Waiting ${retry_delay}s..."
+                sleep "$retry_delay"
+            else
+                log_warning "Falling back to '${BRANCH}-latest'"
+                export IMAGE_TAG="${BRANCH}-latest"
+                "${COMPOSE_ARGS[@]}" pull 2>&1 | tee -a "$LOG_FILE"
+                break
+            fi
         else
-            log "Images pulled successfully"; break
+            log "Images pulled successfully"
+            break
         fi
     done
 
-    $(compose_cmd) up -d 2>&1 | tee -a "$LOG_FILE"
+    "${COMPOSE_ARGS[@]}" up -d 2>&1 | tee -a "$LOG_FILE"
     sleep 10
-    $(compose_cmd) ps 2>&1 | tee -a "$LOG_FILE"
+    "${COMPOSE_ARGS[@]}" ps 2>&1 | tee -a "$LOG_FILE"
     log "Deployment complete!"
 }
 
@@ -100,7 +116,12 @@ function watch_mode() {
         log_info "Checking for updates..."
         if pull_latest; then
             log "New version detected!"
-            deploy && { log "Auto-deployment successful"; docker image prune -f 2>&1 | tee -a "$LOG_FILE"; } || log_error "Deployment failed!"
+            if deploy; then
+                log "Auto-deployment successful"
+                docker image prune -f 2>&1 | tee -a "$LOG_FILE"
+            else
+                log_error "Deployment failed!"
+            fi
         else
             log_info "No changes"
         fi
@@ -110,6 +131,7 @@ function watch_mode() {
 
 function show_status() {
     cd "$REPO_DIR"
+    build_compose_args
     echo "========================================="
     echo "GitOps Status: ${ENV_NAME}"
     echo "========================================="
@@ -117,7 +139,7 @@ function show_status() {
     echo "Commit: $(git rev-parse --short HEAD)"
     echo "Message: $(git log -1 --pretty=%B)"
     echo ""
-    $(compose_cmd) ps
+    "${COMPOSE_ARGS[@]}" ps
 }
 
 case "${1:-help}" in

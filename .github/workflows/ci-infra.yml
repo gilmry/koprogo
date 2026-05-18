@@ -15,6 +15,12 @@ name: CI Infra
 #   2. helm template × (4 envs × 3 cluster-profiles = 12 combos)
 #   3. kubeconform validation of the rendered manifests against K8s schemas
 #   4. ApplicationSet template render check (envsubst + kubectl apply --dry-run)
+#   5. iac-lint — minimal viable IaC lint for the VPS go-live subset (#354):
+#      terraform fmt/validate (ovh-vps module + prod vps) + ansible-lint
+#      (prod playbook + shared roles) + yamllint (prod vps yaml) +
+#      shellcheck HARD gate on gitops-deploy.sh (it executes the prod deploy).
+#      OUT of scope (Phase 2): conftest / OPA, molecule, terratest, full
+#      ansible-lint `production` profile, multisite/k3s/k8s terraform & ansible.
 
 on:
   push:
@@ -45,6 +51,7 @@ env:
   KUBECTL_VERSION: "v1.34.1"
   HELM_VERSION: "v3.16.4"
   KUBECONFORM_VERSION: "0.6.7"
+  TERRAFORM_VERSION: "1.9.8"
 
 jobs:
   kustomize-build:
@@ -187,10 +194,90 @@ jobs:
           done
           echo "::notice::ApplicationSet template renders cleanly for all 3 cluster types"
 
+  iac-lint:
+    name: IaC lint (VPS go-live subset, #354)
+    runs-on: ubuntu-latest
+    # WP-E1 minimal viable gate. Phase 2 (OUT here): conftest/OPA, molecule,
+    # terratest, full ansible-lint `production` profile, multisite/k3s/k8s.
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TERRAFORM_VERSION }}
+          terraform_wrapper: false
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install ansible-lint + yamllint
+        run: |
+          set -euo pipefail
+          python -m pip install --upgrade pip
+          pip install "ansible-lint==24.*" "yamllint==1.*" ansible-core
+          ansible-lint --version
+          yamllint --version
+
+      - name: Install shellcheck
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y shellcheck
+          shellcheck --version
+
+      # --- Terraform: fmt -check + validate (VPS subset only) ---
+      - name: Terraform fmt -check (ovh-vps module + prod vps)
+        run: |
+          set -euo pipefail
+          terraform fmt -check -recursive infrastructure/_shared/terraform/modules/ovh-vps
+          terraform fmt -check -recursive infrastructure/monosite/vps/production/terraform
+          echo "::notice::terraform fmt OK (ovh-vps module + prod vps)"
+
+      - name: Terraform validate (ovh-vps module)
+        run: |
+          set -euo pipefail
+          terraform -chdir=infrastructure/_shared/terraform/modules/ovh-vps init -backend=false -input=false
+          terraform -chdir=infrastructure/_shared/terraform/modules/ovh-vps validate
+          echo "::notice::terraform validate OK (ovh-vps module)"
+
+      - name: Terraform validate (prod vps)
+        run: |
+          set -euo pipefail
+          terraform -chdir=infrastructure/monosite/vps/production/terraform init -backend=false -input=false
+          terraform -chdir=infrastructure/monosite/vps/production/terraform validate
+          echo "::notice::terraform validate OK (prod vps)"
+
+      # --- yamllint: prod VPS yaml subset (scoped .yamllint config) ---
+      - name: yamllint (prod vps)
+        run: |
+          set -euo pipefail
+          yamllint -c .yamllint -s infrastructure/monosite/vps/production
+          echo "::notice::yamllint OK (prod vps)"
+
+      # --- ansible-lint: prod playbook + shared roles (scoped .ansible-lint, profile=min) ---
+      - name: ansible-lint (prod playbook + 14 shared roles)
+        run: |
+          set -euo pipefail
+          ansible-lint -c .ansible-lint \
+            infrastructure/monosite/vps/production/ansible/playbook.yml \
+            infrastructure/_shared/ansible/roles
+          echo "::notice::ansible-lint OK (prod playbook + shared roles)"
+
+      # --- shellcheck: HARD GATE on the prod deployment script ---
+      - name: shellcheck gitops-deploy.sh (HARD gate — executes prod deploy)
+        run: |
+          set -euo pipefail
+          shellcheck infrastructure/_shared/scripts/gitops-deploy.sh
+          echo "::notice::shellcheck OK (gitops-deploy.sh — clean, hard gate passed)"
+
   summary:
     name: ✅ CI Infra summary
     runs-on: ubuntu-latest
-    needs: [kustomize-build, helm-template, kubeconform, applicationset-render]
+    needs: [kustomize-build, helm-template, kubeconform, applicationset-render, iac-lint]
     if: always()
     steps:
       - name: Verdict
@@ -198,7 +285,8 @@ jobs:
           if [ "${{ needs.kustomize-build.result }}" != "success" ] \
              || [ "${{ needs.helm-template.result }}" != "success" ] \
              || [ "${{ needs.kubeconform.result }}" != "success" ] \
-             || [ "${{ needs.applicationset-render.result }}" != "success" ]; then
+             || [ "${{ needs.applicationset-render.result }}" != "success" ] \
+             || [ "${{ needs.iac-lint.result }}" != "success" ]; then
             echo "::error::ci-infra failed (one or more jobs not green)"
             exit 1
           fi

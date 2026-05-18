@@ -1,0 +1,28 @@
+# yamllint config — WP-E1 minimal viable IaC lint (#354)
+#
+# Rationale: this gate exists to catch *structural* YAML breakage in the
+# production VPS go-live assets (parse errors, duplicate keys, bad indentation,
+# tabs, trailing spaces) — NOT to bikeshed line length or comment spacing on
+# infra manifests that render correctly. Stricter rules (line-length as error,
+# document-start everywhere) are deferred to Phase 2 alongside conftest/molecule.
+#
+# Scope in CI: invoked explicitly on infrastructure/monosite/vps/production only.
+extends: default
+
+rules:
+  # Long Traefik command flags / labels in docker-compose are unavoidable and
+  # not a defect — warn, don't fail the go-live gate.
+  line-length:
+    max: 160
+    level: warning
+  # docker-compose.override.yml conventionally omits the `---` document start.
+  document-start:
+    present: false
+  # Allow the common 2-space comment style used across the infra YAML.
+  comments:
+    min-spaces-from-content: 1
+  comments-indentation: disable
+  # `true/false/yes/no` style is enforced by ansible-lint where it matters;
+  # don't double-flag here on the small VPS YAML subset.
+  truthy:
+    level: warning
