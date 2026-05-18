@@ -275,9 +275,18 @@ impl OperationsWorld {
             .get_host_port_ipv4(5432)
             .await
             .expect("Failed to get host port");
+        // testcontainers-resolved host (honors TESTCONTAINERS_HOST_OVERRIDE) vs
+        // hardcoded 127.0.0.1 — CI resolves to localhost (unchanged); inside the
+        // dev backend container the Postgres sibling is reached via
+        // host.docker.internal. Same fix as bdd_governance #535 / bdd_financial
+        // #539 (WP-B3 debruit, idempotent, neutral on CI).
+        let host = postgres_container
+            .get_host()
+            .await
+            .expect("Failed to get container host");
         let connection_string = format!(
-            "postgres://postgres:postgres@127.0.0.1:{}/postgres",
-            host_port
+            "postgres://postgres:postgres@{}:{}/postgres",
+            host, host_port
         );
         let pool = create_pool(&connection_string)
             .await
@@ -463,6 +472,35 @@ impl OperationsWorld {
         let result = uc.create_notification(org_id, request).await;
         self.store_notification_result(result);
     }
+}
+
+/// Parse a BDD seed date that may be absolute (RFC3339 or `YYYY-MM-DD`) or
+/// relative (`+90d`, `-30d`, `+6m`, `+1y`). Relative tokens resolve against
+/// `Utc::now()` at run time so seeds never become stale time-bombs — the
+/// recurring cause of pre-existing BDD reds (WP-B3 / #540).
+fn parse_seed_date(s: &str) -> DateTime<Utc> {
+    let s = s.trim();
+    if let Some(rest) = s.strip_prefix(['+', '-']) {
+        let sign: i64 = if s.starts_with('-') { -1 } else { 1 };
+        if let (Some(num), Some(unit)) = (rest.get(..rest.len() - 1), rest.chars().last()) {
+            if let Ok(n) = num.parse::<i64>() {
+                let days = match unit {
+                    'w' => n * 7,
+                    'm' => n * 30,
+                    'y' => n * 365,
+                    _ => n, // 'd' or default
+                };
+                return Utc::now() + ChronoDuration::days(sign * days);
+            }
+        }
+    }
+    if let Ok(dt) = s.parse::<DateTime<Utc>>() {
+        return dt;
+    }
+    if let Ok(dt) = format!("{}T00:00:00Z", s).parse::<DateTime<Utc>>() {
+        return dt;
+    }
+    Utc::now() + ChronoDuration::days(30)
 }
 
 fn parse_ticket_category(s: &str) -> TicketCategory {
@@ -1857,9 +1895,7 @@ async fn when_create_campaign(world: &mut OperationsWorld, step: &Step) {
         _ => EnergyType::Electricity,
     }];
     let deadline_str = get_table_value(step, "deadline_participation");
-    let deadline = deadline_str
-        .parse::<DateTime<Utc>>()
-        .expect("parse deadline");
+    let deadline = parse_seed_date(&deadline_str);
 
     let user_id = world.authenticated_user_id.unwrap_or(Uuid::new_v4());
     let campaign = EnergyCampaign::new(org_id, building_id, name, deadline, energy_types, user_id)
@@ -2038,6 +2074,10 @@ async fn given_2_uploads(world: &mut OperationsWorld) {
         }
     }
     let uploader_id = world.authenticated_user_id.unwrap_or_else(Uuid::new_v4);
+    // Persist the uploader so `when_list_my_uploads` queries the SAME id.
+    // get_my_uploads filters by uploaded_by (a user id); the listing step
+    // previously passed unit_ids → 0 matches (WP-B3 / #540 test-id bug).
+    world.authenticated_user_id = Some(uploader_id);
     for i in 0..2 {
         let unit_id = world.unit_ids[i];
         let upload = EnergyBillUpload::new(
@@ -2066,13 +2106,17 @@ async fn given_2_uploads(world: &mut OperationsWorld) {
 #[when("I list my uploads")]
 async fn when_list_my_uploads(world: &mut OperationsWorld) {
     let bill_uc = world.energy_bill_use_cases.as_ref().unwrap().clone();
-    // Count uploads across all units owned by this user
-    let mut total = 0;
-    for &unit_id in &world.unit_ids {
-        if let Ok(list) = bill_uc.get_my_uploads(unit_id).await {
-            total += list.len();
-        }
-    }
+    // get_my_uploads filters by uploaded_by (a *user* id), not unit_id.
+    // Query the uploader persisted by the seed (WP-B3 / #540 test-id bug:
+    // the loop previously passed unit_ids → always 0).
+    let uploader_id = world
+        .authenticated_user_id
+        .expect("uploader set by upload seed");
+    let total = bill_uc
+        .get_my_uploads(uploader_id)
+        .await
+        .map(|l| l.len())
+        .unwrap_or(0);
     world.upload_list_count = total;
     world.operation_success = true;
 }

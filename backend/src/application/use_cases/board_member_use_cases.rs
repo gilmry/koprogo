@@ -531,7 +531,7 @@ mod tests {
 
         let dto = RenewMandateDto {
             new_elected_by_meeting_id: Uuid::new_v4().to_string(),
-            mandate_duration_days: 1095,
+            mandate_duration_days: 365, // ≈ 1 an (Art. 3.90 CC, conseil)
         };
 
         // Act

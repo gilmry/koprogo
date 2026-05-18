@@ -2201,13 +2201,7 @@ async fn when_create_call_for_funds(world: &mut FinancialWorld, step: &Step) {
             "title" => title = val.to_string(),
             "total_amount" => total_amount = val.parse().unwrap_or(Decimal::ZERO),
             "contribution_type" => contribution_type = parse_contribution_type(val),
-            "due_date" => {
-                due_date = val.parse::<DateTime<Utc>>().unwrap_or_else(|_| {
-                    format!("{}T00:00:00Z", val)
-                        .parse()
-                        .unwrap_or(Utc::now() + ChronoDuration::days(30))
-                });
-            }
+            "due_date" => due_date = parse_seed_date(val),
             "account_code" => account_code = Some(val.to_string()),
             _ => {}
         }
@@ -3942,6 +3936,35 @@ async fn then_all_totals_zero(world: &mut FinancialWorld) {
 }
 
 // ==================== PARSE HELPERS ====================
+
+/// Parse a BDD seed date that may be absolute (RFC3339 or `YYYY-MM-DD`) or
+/// relative (`+90d`, `-30d`, `+6m`, `+1y`). Relative tokens resolve against
+/// `Utc::now()` at run time so seeds never become stale time-bombs — the
+/// recurring cause of pre-existing BDD reds (WP-B3 / #540).
+fn parse_seed_date(s: &str) -> DateTime<Utc> {
+    let s = s.trim();
+    if let Some(rest) = s.strip_prefix(['+', '-']) {
+        let sign: i64 = if s.starts_with('-') { -1 } else { 1 };
+        if let (Some(num), Some(unit)) = (rest.get(..rest.len() - 1), rest.chars().last()) {
+            if let Ok(n) = num.parse::<i64>() {
+                let days = match unit {
+                    'w' => n * 7,
+                    'm' => n * 30,
+                    'y' => n * 365,
+                    _ => n, // 'd' or default
+                };
+                return Utc::now() + ChronoDuration::days(sign * days);
+            }
+        }
+    }
+    if let Ok(dt) = s.parse::<DateTime<Utc>>() {
+        return dt;
+    }
+    if let Ok(dt) = format!("{}T00:00:00Z", s).parse::<DateTime<Utc>>() {
+        return dt;
+    }
+    Utc::now() + ChronoDuration::days(30)
+}
 
 fn parse_contribution_type(s: &str) -> ContributionType {
     match s {

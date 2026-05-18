@@ -186,9 +186,18 @@ impl CommunityWorld {
             .get_host_port_ipv4(5432)
             .await
             .expect("Failed to get host port");
+        // testcontainers-resolved host (honors TESTCONTAINERS_HOST_OVERRIDE) vs
+        // hardcoded 127.0.0.1 — CI resolves to localhost (unchanged); inside the
+        // dev backend container the Postgres sibling is reached via
+        // host.docker.internal. Same fix as bdd_governance #535 / bdd_financial
+        // #539 (WP-B3 debruit, idempotent, neutral on CI).
+        let host = postgres_container
+            .get_host()
+            .await
+            .expect("Failed to get container host");
         let connection_string = format!(
-            "postgres://postgres:postgres@127.0.0.1:{}/postgres",
-            host_port
+            "postgres://postgres:postgres@{}:{}/postgres",
+            host, host_port
         );
         let pool = create_pool(&connection_string)
             .await
@@ -379,6 +388,35 @@ impl CommunityWorld {
     }
 }
 
+/// Parse a BDD seed date that may be absolute (RFC3339 or `YYYY-MM-DD`) or
+/// relative (`+90d`, `-30d`, `+6m`, `+1y`). Relative tokens resolve against
+/// `Utc::now()` at run time so seeds never become stale time-bombs — the
+/// recurring cause of pre-existing BDD reds (WP-B3 / #540).
+fn parse_seed_date(s: &str) -> DateTime<Utc> {
+    let s = s.trim();
+    if let Some(rest) = s.strip_prefix(['+', '-']) {
+        let sign: i64 = if s.starts_with('-') { -1 } else { 1 };
+        if let (Some(num), Some(unit)) = (rest.get(..rest.len() - 1), rest.chars().last()) {
+            if let Ok(n) = num.parse::<i64>() {
+                let days = match unit {
+                    'w' => n * 7,
+                    'm' => n * 30,
+                    'y' => n * 365,
+                    _ => n, // 'd' or default
+                };
+                return Utc::now() + chrono::Duration::days(sign * days);
+            }
+        }
+    }
+    if let Ok(dt) = s.parse::<DateTime<Utc>>() {
+        return dt;
+    }
+    if let Ok(dt) = format!("{}T00:00:00Z", s).parse::<DateTime<Utc>>() {
+        return dt;
+    }
+    Utc::now() + chrono::Duration::days(30)
+}
+
 fn parse_notice_type(s: &str) -> NoticeType {
     match s {
         "Announcement" => NoticeType::Announcement,
@@ -558,8 +596,7 @@ async fn when_create_notice_with_expiration(world: &mut CommunityWorld, step: &S
 
     let title = get_table_value(step, "title").unwrap_or_default();
     let content = get_table_value(step, "content").unwrap_or_default();
-    let expires_at =
-        get_table_value(step, "expires_at").and_then(|s| s.parse::<DateTime<Utc>>().ok());
+    let expires_at = get_table_value(step, "expires_at").map(|s| parse_seed_date(&s));
 
     let dto = CreateNoticeDto {
         building_id,
@@ -960,10 +997,14 @@ async fn when_list_notices_by_category(world: &mut CommunityWorld, category: Str
 
 #[when(regex = r#"^I list notices by author "([^"]*)"$"#)]
 async fn when_list_notices_by_author(world: &mut CommunityWorld, name: String) {
-    let (owner_id, _) = world.get_owner_ids(&name);
+    // Notices.author_id references users.id (create_notice stores the user_id),
+    // and the seed `"<name>" has created N notices` authors them with the
+    // user_id (tuple .1). Query by the same user_id, not owner_id (.0) —
+    // previously a tuple mismatch returned 0 (WP-B3 / #540).
+    let (_, user_id) = world.get_owner_ids(&name);
     let uc = world.notice_use_cases.as_ref().unwrap().clone();
     world.notice_list = uc
-        .list_author_notices(owner_id)
+        .list_author_notices(user_id)
         .await
         .expect("list by author");
 }
@@ -3646,10 +3687,10 @@ async fn when_create_challenge(world: &mut CommunityWorld, step: &Step) {
         .and_then(|s| s.parse::<i32>().ok())
         .unwrap_or(100);
     let start_date = get_table_value(step, "start_date")
-        .and_then(|s| s.parse::<DateTime<Utc>>().ok())
+        .map(|s| parse_seed_date(&s))
         .unwrap_or_else(|| Utc::now() + chrono::Duration::hours(1));
     let end_date = get_table_value(step, "end_date")
-        .and_then(|s| s.parse::<DateTime<Utc>>().ok())
+        .map(|s| parse_seed_date(&s))
         .unwrap_or_else(|| Utc::now() + chrono::Duration::days(30));
 
     let dto = CreateChallengeDto {

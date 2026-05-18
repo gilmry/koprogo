@@ -724,6 +724,38 @@ async fn given_owner_with_voting_power(
     }
 }
 
+/// Models a validly-constituted general assembly (Art. 3.87 §5 CC).
+///
+/// `resolutions.feature` (Issue #46) predates the quorum-on-create rule
+/// introduced by #310/#323: `create_resolution` now enforces
+/// `Meeting::check_quorum_for_voting()` — a resolution (= agenda item put to
+/// the vote at an AG) can only be created once quorum is validated (or on a
+/// 2nd convocation). The stale Background never expressed this legal
+/// precondition, so all 14 scenarios failed at the quorum gate (WP-B3 / #540).
+///
+/// The 3 owners total 1000 tantièmes (Alice 300 + Bob 200 + Charlie 500); all
+/// present/represented ⇒ 1000/1000 = 100 % > 50 % ⇒ quorum reached. We persist
+/// the legal state directly (the quorum *computation* itself — `validate_quorum`
+/// — is exercised by governance_decimal.feature and vote_ag_workflow.feature;
+/// this feature's job is the voting *mechanics* on a validly-constituted AG).
+/// Satisfies chk_quorum_percentage_range (0–100) and
+/// chk_quorum_validated_consistency (validated ⇒ pct > 50.0).
+#[given("the AG is validly constituted (quorum reached)")]
+async fn given_ag_validly_constituted(world: &mut GovernanceWorld) {
+    let pool = world.pool.as_ref().unwrap();
+    let meeting_id = world.meeting_id.expect("meeting must exist before quorum");
+
+    sqlx::query(
+        r#"UPDATE meetings
+           SET quorum_validated = true, quorum_percentage = 100.0, updated_at = NOW()
+           WHERE id = $1"#,
+    )
+    .bind(meeting_id)
+    .execute(pool)
+    .await
+    .expect("validate AG quorum");
+}
+
 // ============================================================
 // === RESOLUTION GIVEN STEPS ===
 // ============================================================
@@ -1093,19 +1125,20 @@ async fn then_resolution_status(world: &mut GovernanceWorld, expected_status: St
     );
 }
 
-#[then(regex = r#"^the majority type should be "(Simple|Absolute|Qualified)"$"#)]
+// Belgian named majority model (Art. 3.88 CC): Absolute / TwoThirds /
+// FourFifths / Unanimity. The legacy "Simple"/"Qualified" labels predate the
+// #310/#323 migration to the named `MajorityType` enum and were never removed
+// from this assertion — `MajorityType`'s Debug never yields "Simple"/"Qualified"
+// so those arms were dead (WP-B3 / #540, same stale-spec cause as the quorum
+// gap). Assertion now matches the canonical enum Debug exactly.
+#[then(regex = r#"^the majority type should be "(Absolute|TwoThirds|FourFifths|Unanimity)"$"#)]
 async fn then_majority_type(world: &mut GovernanceWorld, expected: String) {
     let majority_str = world.last_resolution_majority.as_ref().unwrap();
-    match expected.as_str() {
-        "Simple" => assert_eq!(majority_str, "Simple"),
-        "Absolute" => assert_eq!(majority_str, "Absolute"),
-        "Qualified" => assert!(
-            majority_str.starts_with("Qualified"),
-            "Expected Qualified but got {}",
-            majority_str
-        ),
-        _ => panic!("Unknown majority: {}", expected),
-    }
+    assert_eq!(
+        majority_str, &expected,
+        "Expected majority {} but got {}",
+        expected, majority_str
+    );
 }
 
 #[then("the vote should be recorded")]
