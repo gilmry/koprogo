@@ -397,3 +397,186 @@ async fn test_create_api_key_empty_name_fails() {
     let resp = test::call_service(&app, req).await;
     assert_eq!(resp.status(), 400, "Should reject empty API key name");
 }
+
+// ==================== Rotate API Key Tests (#339 / WP-A7) ====================
+// Taxonomie 4 catégories RED-first (CRITICAL.md #3). Exécutés en CI
+// (testcontainers) ; local = compile-check (daemon Docker absent, même
+// limite infra que WP-B1/A4/A5, tracée).
+
+async fn create_api_key_returning_id(
+    app_state: &actix_web::web::Data<AppState>,
+    token: &str,
+) -> Uuid {
+    let app = test::init_service(
+        App::new()
+            .app_data(app_state.clone())
+            .configure(configure_routes),
+    )
+    .await;
+    let req = test::TestRequest::post()
+        .uri("/api/v1/api-keys")
+        .insert_header((header::AUTHORIZATION, format!("Bearer {}", token)))
+        .set_json(json!({
+            "name": "Rotatable Key",
+            "description": "to be rotated",
+            "permissions": ["read:buildings"],
+            "rate_limit": 250
+        }))
+        .to_request();
+    let resp = test::call_service(&app, req).await;
+    assert_eq!(resp.status(), 201, "precondition: key created");
+    let body: serde_json::Value = test::read_body_json(resp).await;
+    Uuid::parse_str(body["id"].as_str().expect("id")).expect("uuid")
+}
+
+#[actix_web::test]
+#[serial]
+async fn happy_rotate_api_key_issues_new_secret() {
+    let (app_state, _container, org_id) = common::setup_test_db().await;
+    let token = create_superadmin_token(&app_state, org_id).await;
+    let app = test::init_service(
+        App::new()
+            .app_data(app_state.clone())
+            .configure(configure_routes),
+    )
+    .await;
+
+    let key_id = create_api_key_returning_id(&app_state, &token).await;
+
+    let req = test::TestRequest::post()
+        .uri(&format!("/api/v1/api-keys/{}/rotate", key_id))
+        .insert_header((header::AUTHORIZATION, format!("Bearer {}", token)))
+        .to_request();
+    let resp = test::call_service(&app, req).await;
+    assert_eq!(resp.status(), 200, "rotate should succeed");
+
+    let body: serde_json::Value = test::read_body_json(resp).await;
+    let new_key = body["key"].as_str().expect("new key");
+    assert!(new_key.starts_with("kpg_live_"), "fresh secret issued");
+    assert_eq!(body["name"], "Rotatable Key", "metadata inherited");
+    assert_eq!(body["rate_limit"], 250, "rate limit inherited");
+    assert_ne!(
+        body["id"].as_str().unwrap(),
+        key_id.to_string(),
+        "rotation yields a new key id"
+    );
+}
+
+#[actix_web::test]
+#[serial]
+async fn security_old_key_is_invalid_after_rotation() {
+    let (app_state, _container, org_id) = common::setup_test_db().await;
+    let token = create_superadmin_token(&app_state, org_id).await;
+    let app = test::init_service(
+        App::new()
+            .app_data(app_state.clone())
+            .configure(configure_routes),
+    )
+    .await;
+
+    let key_id = create_api_key_returning_id(&app_state, &token).await;
+
+    let req = test::TestRequest::post()
+        .uri(&format!("/api/v1/api-keys/{}/rotate", key_id))
+        .insert_header((header::AUTHORIZATION, format!("Bearer {}", token)))
+        .to_request();
+    assert_eq!(test::call_service(&app, req).await.status(), 200);
+
+    // The rotated key MUST be deactivated immediately (replay protection).
+    let row = sqlx::query("SELECT is_active FROM api_keys WHERE id = $1")
+        .bind(key_id)
+        .fetch_one(&app_state.pool)
+        .await
+        .expect("old key row");
+    let is_active: bool = sqlx::Row::get(&row, "is_active");
+    assert!(!is_active, "old API key must be inactive post-rotation");
+
+    // A fresh active key exists for the org (the replacement).
+    let active: i64 = sqlx::Row::get(
+        &sqlx::query(
+            "SELECT COUNT(*) AS c FROM api_keys WHERE organization_id = $1 AND is_active = TRUE",
+        )
+        .bind(org_id)
+        .fetch_one(&app_state.pool)
+        .await
+        .expect("count"),
+        "c",
+    );
+    assert_eq!(active, 1, "exactly one active key (the replacement)");
+}
+
+#[actix_web::test]
+#[serial]
+async fn negative_rotate_requires_privileged_role() {
+    let (app_state, _container, org_id) = common::setup_test_db().await;
+    let admin = create_superadmin_token(&app_state, org_id).await;
+
+    // Create a key as admin first.
+    let app = test::init_service(
+        App::new()
+            .app_data(app_state.clone())
+            .configure(configure_routes),
+    )
+    .await;
+    let key_id = create_api_key_returning_id(&app_state, &admin).await;
+
+    // Owner role (non-syndic / non-superadmin) must be refused (403).
+    let email = format!("owner+{}@test.com", Uuid::new_v4());
+    let reg = koprogo_api::application::dto::RegisterRequest {
+        email: email.clone(),
+        password: "Passw0rd!".to_string(),
+        first_name: "Owner".to_string(),
+        last_name: "Tester".to_string(),
+        role: "owner".to_string(),
+        organization_id: Some(org_id),
+    };
+    app_state
+        .auth_use_cases
+        .register(reg)
+        .await
+        .expect("register owner");
+    let owner_token = app_state
+        .auth_use_cases
+        .login(koprogo_api::application::dto::LoginRequest {
+            email,
+            password: "Passw0rd!".to_string(),
+        })
+        .await
+        .expect("login owner")
+        .token;
+
+    let req = test::TestRequest::post()
+        .uri(&format!("/api/v1/api-keys/{}/rotate", key_id))
+        .insert_header((header::AUTHORIZATION, format!("Bearer {}", owner_token)))
+        .to_request();
+    let resp = test::call_service(&app, req).await;
+    assert_eq!(
+        resp.status(),
+        403,
+        "owners must not be able to rotate API keys"
+    );
+}
+
+#[actix_web::test]
+#[serial]
+async fn edge_rotate_unknown_key_is_404() {
+    let (app_state, _container, org_id) = common::setup_test_db().await;
+    let token = create_superadmin_token(&app_state, org_id).await;
+    let app = test::init_service(
+        App::new()
+            .app_data(app_state.clone())
+            .configure(configure_routes),
+    )
+    .await;
+
+    let req = test::TestRequest::post()
+        .uri(&format!("/api/v1/api-keys/{}/rotate", Uuid::new_v4()))
+        .insert_header((header::AUTHORIZATION, format!("Bearer {}", token)))
+        .to_request();
+    let resp = test::call_service(&app, req).await;
+    assert_eq!(
+        resp.status(),
+        404,
+        "rotating an unknown/cross-org key must be 404 (no existence leak)"
+    );
+}

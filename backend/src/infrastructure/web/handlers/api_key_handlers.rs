@@ -6,6 +6,7 @@
 use actix_web::{delete, get, post, put, web, HttpResponse};
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
+use sqlx::Row;
 use uuid::Uuid;
 
 use crate::infrastructure::web::middleware::AuthenticatedUser;
@@ -480,16 +481,27 @@ pub async fn revoke_api_key(
     }
 }
 
-/// Rotate an API key (generate a new one, disable old one)
-/// Note: This is a placeholder for future implementation
+/// Rotate an API key: deactivate the old one and issue a replacement that
+/// inherits name/description/permissions/rate-limit/expiry. The new secret
+/// is returned **once** (#339 / WP-A7). The old key is invalid immediately.
+///
+/// `sqlx::query` (non-macro) is used intentionally: no offline query-cache
+/// regeneration needed (works without a live DB at compile time).
 #[post("/api-keys/{id}/rotate")]
 pub async fn rotate_api_key(
     claims: AuthenticatedUser,
-    _state: web::Data<AppState>,
+    state: web::Data<AppState>,
     path: web::Path<Uuid>,
 ) -> HttpResponse {
-    let _key_id = path.into_inner();
-    let _org_id = match claims.organization_id {
+    // Rotation mints fresh credentials → same privilege gate as creation.
+    if claims.role != "SYNDIC" && claims.role != "SUPERADMIN" {
+        return HttpResponse::Forbidden().json(serde_json::json!({
+            "error": "Only syndics and admins can rotate API keys"
+        }));
+    }
+
+    let key_id = path.into_inner();
+    let org_id = match claims.organization_id {
         Some(id) => id,
         None => {
             return HttpResponse::BadRequest().json(serde_json::json!({
@@ -498,14 +510,133 @@ pub async fn rotate_api_key(
         }
     };
 
-    // TODO: Implement key rotation
-    // 1. Generate new key
-    // 2. Mark old key as rotated
-    // 3. Return new key (only shown once)
+    let mut tx = match state.pool.begin().await {
+        Ok(t) => t,
+        Err(e) => {
+            eprintln!("Database error (rotate begin): {}", e);
+            return HttpResponse::InternalServerError().json(serde_json::json!({
+                "error": "Failed to rotate API key"
+            }));
+        }
+    };
 
-    HttpResponse::NotImplemented().json(serde_json::json!({
-        "error": "Key rotation not yet implemented"
-    }))
+    // Tenant-scoped: a key from another organization is invisible (404),
+    // never a 403 that would confirm its existence (cross-org isolation).
+    let old = sqlx::query(
+        r#"
+        SELECT name, description, permissions, rate_limit, expires_at
+        FROM api_keys
+        WHERE id = $1 AND organization_id = $2 AND is_active = TRUE
+        "#,
+    )
+    .bind(key_id)
+    .bind(org_id)
+    .fetch_optional(&mut *tx)
+    .await;
+
+    let row = match old {
+        Ok(Some(r)) => r,
+        Ok(None) => {
+            return HttpResponse::NotFound().json(serde_json::json!({
+                "error": "API key not found"
+            }))
+        }
+        Err(e) => {
+            eprintln!("Database error (rotate fetch): {}", e);
+            return HttpResponse::InternalServerError().json(serde_json::json!({
+                "error": "Failed to rotate API key"
+            }));
+        }
+    };
+
+    let name: String = row.get("name");
+    let description: Option<String> = row.get("description");
+    let permissions: Vec<String> = row.get("permissions");
+    let rate_limit: i32 = row.get("rate_limit");
+    let expires_at: Option<DateTime<Utc>> = row.get("expires_at");
+
+    // Old key is immediately invalid.
+    if let Err(e) = sqlx::query(
+        r#"UPDATE api_keys SET is_active = FALSE, updated_at = NOW()
+           WHERE id = $1 AND organization_id = $2"#,
+    )
+    .bind(key_id)
+    .bind(org_id)
+    .execute(&mut *tx)
+    .await
+    {
+        eprintln!("Database error (rotate deactivate): {}", e);
+        return HttpResponse::InternalServerError().json(serde_json::json!({
+            "error": "Failed to rotate API key"
+        }));
+    }
+
+    // Issue the replacement (metadata inherited from the rotated key).
+    let (full_key, prefix, hash) = generate_api_key();
+    let new_id = Uuid::new_v4();
+    let inserted = sqlx::query(
+        r#"
+        INSERT INTO api_keys (id, organization_id, created_by, key_prefix, key_hash, name, description, permissions, rate_limit, expires_at)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+        RETURNING created_at
+        "#,
+    )
+    .bind(new_id)
+    .bind(org_id)
+    .bind(claims.user_id)
+    .bind(&prefix)
+    .bind(&hash)
+    .bind(&name)
+    .bind(&description)
+    .bind(&permissions)
+    .bind(rate_limit)
+    .bind(expires_at)
+    .fetch_one(&mut *tx)
+    .await;
+
+    let created_at: DateTime<Utc> = match inserted {
+        Ok(r) => r.get("created_at"),
+        Err(e) => {
+            eprintln!("Database error (rotate insert): {}", e);
+            return HttpResponse::InternalServerError().json(serde_json::json!({
+                "error": "Failed to rotate API key"
+            }));
+        }
+    };
+
+    // Audit trail (best effort, same transaction).
+    let _ = sqlx::query(
+        r#"INSERT INTO api_key_audit (api_key_id, action, actor_id, reason)
+           VALUES ($1, $2, $3, $4)"#,
+    )
+    .bind(key_id)
+    .bind("rotated")
+    .bind(claims.user_id)
+    .bind(format!(
+        "Rotated by {} — replacement key {}",
+        claims.user_id, new_id
+    ))
+    .execute(&mut *tx)
+    .await;
+
+    if let Err(e) = tx.commit().await {
+        eprintln!("Database error (rotate commit): {}", e);
+        return HttpResponse::InternalServerError().json(serde_json::json!({
+            "error": "Failed to rotate API key"
+        }));
+    }
+
+    HttpResponse::Ok().json(ApiKeyCreatedResponse {
+        id: new_id,
+        name,
+        key: full_key,
+        key_prefix: prefix,
+        permissions,
+        rate_limit,
+        expires_at,
+        created_at,
+        warning: "This key will never be displayed again. Store it securely.",
+    })
 }
 
 #[cfg(test)]

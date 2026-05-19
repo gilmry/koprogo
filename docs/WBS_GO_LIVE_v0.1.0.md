@@ -2,7 +2,7 @@
 
 `WBS-v0.1.0-beta-r1` · 2026-05-16 · base : `feature/dev` + branche `story/521-C1-governance-decimal` (HEAD `98c1651`, 1 commit devant `origin/feature/dev`).
 
-> **Provenance & portée** : artefact de planification (Tier 2, logué). Aucune issue/milestone GitHub créée (forme « document WBS versionné unique » choisie pour éviter le gate Tier-1). Les numéros d'issues sont *référencés*, pas créés.
+> **Provenance & portée** : artefact de planification (Tier 2, logué). Aucune issue/milestone GitHub créée (forme « document WBS versionné unique » choisie pour éviter le gate Tier-1). Les numéros d'issues sont _référencés_, pas créés.
 >
 > **Supersession** : ce document remplace, pour le go-live, les WBS périmés du 2026-04-01 — [`WBS_RELEASE_0_1_0.md`](WBS_RELEASE_0_1_0.md), [`WBS_BUGFIX_UI_v0.1.0.md`](WBS_BUGFIX_UI_v0.1.0.md), [`WBS_CORRECTIONS_v0.1.0.md`](WBS_CORRECTIONS_v0.1.0.md) — qui restent valables comme contexte historique mais ne reflètent plus l'état du code (Story A Decimal mergée, #515 mergé, TLS déjà câblé).
 
@@ -11,6 +11,7 @@
 KoproGo v0.1.0 n'a jamais été taggé ni mis en ligne (aucun tag git, aucune release). Le besoin : **mettre v0.1.0 en ligne en bêta privée fermée (5-10 copropriétés)** avec une infrastructure opérationnelle réelle et tous les tests requis (4 catégories `@happy/@edge/@security/@negative`, RED-first). Le rapport de revue humaine `docs/HUMAN_REVIEW_REPORT_v0.1.0.md` date du **2026-04-01 (~6 semaines, périmé)** et concluait NO-GO public / GO-conditionnel bêta — il doit être **re-rejoué** sur le code courant, pas pris pour argent comptant (plusieurs bugs sont probablement déjà corrigés : #523 dashboard %, #521 Story A mergée).
 
 Décisions produit verrouillées :
+
 1. **Déploiement : VPS d'abord, puis k3s en Phase 2.** Phase 1 = OVH VPS + docker-compose (`infrastructure/monosite/vps/production`, poller systemd `gitops-deploy.sh`). k3s/ArgoCD = Phase 2 post-v0.1.0.
 2. **Périmètre : bêta privée fermée.** Gate = bloquants critiques (sécurité réelle mais allégée vs gate public #427).
 3. **Decimal : umbrella #433 COMPLÈTE** (EXP-003..008 + gouvernance C1 #521/#534/#525). Exactitude PCMN obligatoire même en bêta.
@@ -18,16 +19,16 @@ Décisions produit verrouillées :
 
 ## Faits vérifiés (corrigent le chemin critique — ne pas re-dériver)
 
-| Hypothèse initiale | Réalité vérifiée (code) | Impact |
-|---|---|---|
-| EXP-006 `journal_entry` = gros chantier PRIORITÉ MAX | **Déjà `Decimal`** : `journal_entry.rs:69-78` debit/credit `Decimal`, `BALANCE_TOLERANCE=dec!(0.011)`, validation débit==crédit exacte ; SQL déjà `DECIMAL(12,2)` + trigger DB | Long pole se réduit : reste `Result<_,String>`→`AppError` + BDD 4-cat. Pas de migration SQL. |
-| EXP-005 `charge_distribution` à faire | Déjà `Decimal` (tolérances `dec!(1.0001)`/`dec!(0.01)`) | `Result→AppError` + BDD 4-cat seulement |
-| #453 TLS = bloquant go-live | `infrastructure/monosite/vps/production/docker-compose.override.yml:10-40` **câble déjà Traefik + Let's Encrypt ACME HTTP-01** (443, redirect http→https, certresolver backend+frontend) ; `ACME_EMAIL` dans `.env.example` + ansible group_vars | **TLS PAS bloquant.** Go-live n'exige que : DNS A→IP VPS, ports 80/443 ouverts, `ACME_EMAIL` set. #453 (DNS-01 non-prod + SOPS/age) = Phase 2 |
-| #515 5 gaps ArgoCD bloquants | **Mergés sur `origin/main`** (PR #516, `645b3cb`/`badb049`) — concernent k3s | Phase 2 |
-| Migration gouvernance large | `20260516000000_alter_governance_to_numeric.sql` minimale/correcte : `units.quota` + `meetings.total/present_quotas`→`NUMERIC(10,4)`, idempotente, no-down, no prod data | DDL petite/sûre ; risque = call-sites + #525 ColumnDecode |
-| EXP-007 `etat_date` mineur | `etat_date.rs` = **17 occ. f64** (plus gros résidu umbrella, doc légal Art. 577 CC) | WP-A5 = item le plus long de Track A |
-| #443 cascade énorme | `bdd_financial.rs` ~23 occ. f64 (pas 120) + e2e_*.rs | Cascade réelle mais bornée |
-| JWT stockage | `frontend/src/stores/auth.ts:139-141` (read) / `233-235` (write) / `169-192` (refresh) en `localStorage` | **Bloquant sécurité bêta fermée** confirmé |
+| Hypothèse initiale                                   | Réalité vérifiée (code)                                                                                                                                                                                                                          | Impact                                                                                                                                        |
+| ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| EXP-006 `journal_entry` = gros chantier PRIORITÉ MAX | **Déjà `Decimal`** : `journal_entry.rs:69-78` debit/credit `Decimal`, `BALANCE_TOLERANCE=dec!(0.011)`, validation débit==crédit exacte ; SQL déjà `DECIMAL(12,2)` + trigger DB                                                                   | Long pole se réduit : reste `Result<_,String>`→`AppError` + BDD 4-cat. Pas de migration SQL.                                                  |
+| EXP-005 `charge_distribution` à faire                | Déjà `Decimal` (tolérances `dec!(1.0001)`/`dec!(0.01)`)                                                                                                                                                                                          | `Result→AppError` + BDD 4-cat seulement                                                                                                       |
+| #453 TLS = bloquant go-live                          | `infrastructure/monosite/vps/production/docker-compose.override.yml:10-40` **câble déjà Traefik + Let's Encrypt ACME HTTP-01** (443, redirect http→https, certresolver backend+frontend) ; `ACME_EMAIL` dans `.env.example` + ansible group_vars | **TLS PAS bloquant.** Go-live n'exige que : DNS A→IP VPS, ports 80/443 ouverts, `ACME_EMAIL` set. #453 (DNS-01 non-prod + SOPS/age) = Phase 2 |
+| #515 5 gaps ArgoCD bloquants                         | **Mergés sur `origin/main`** (PR #516, `645b3cb`/`badb049`) — concernent k3s                                                                                                                                                                     | Phase 2                                                                                                                                       |
+| Migration gouvernance large                          | `20260516000000_alter_governance_to_numeric.sql` minimale/correcte : `units.quota` + `meetings.total/present_quotas`→`NUMERIC(10,4)`, idempotente, no-down, no prod data                                                                         | DDL petite/sûre ; risque = call-sites + #525 ColumnDecode                                                                                     |
+| EXP-007 `etat_date` mineur                           | `etat_date.rs` = **17 occ. f64** (plus gros résidu umbrella, doc légal Art. 577 CC)                                                                                                                                                              | WP-A5 = item le plus long de Track A                                                                                                          |
+| #443 cascade énorme                                  | `bdd_financial.rs` ~23 occ. f64 (pas 120) + e2e\_\*.rs                                                                                                                                                                                           | Cascade réelle mais bornée                                                                                                                    |
+| JWT stockage                                         | `frontend/src/stores/auth.ts:139-141` (read) / `233-235` (write) / `169-192` (refresh) en `localStorage`                                                                                                                                         | **Bloquant sécurité bêta fermée** confirmé                                                                                                    |
 
 **Vrai long pole = WP-A2 (#443 cascade tests) → WP-A5 (EXP-007 etat_date)**, à paralléliser avec la chaîne Ops-VPS (latence Tier-1 humaine).
 
@@ -37,17 +38,17 @@ Légende : Tier 1 = humain exécute (agent diagnostique/propose). Taille S≤0.5
 
 ### Track A — Backend Decimal
 
-- **WP-A1 — Clôture C1 gouvernance** · #534/#521-C1 ferme #525 · T2 · M · *critique, premier*
+- **WP-A1 — Clôture C1 gouvernance** · #534/#521-C1 ferme #525 · T2 · M · _critique, premier_
   Appliquer `backend/migrations/20260516000000_alter_governance_to_numeric.sql` (DB test) ; `bdd_governance` 4 scénarios VERTS ; tuer le panic #525 ColumnDecode `units.quota`. Décisions bloquantes : (a) **ADR-0008 ratio** pour proxy validation `vote.rs:~312-342` (draft `docs/agent-activity/2026-05-16-adr8-noncompliance-body.md`) ; (b) **politique f64 d'affichage** — `resolution.rs:185-212` `pour/contre/abstention_percentage()` renvoient `f64` depuis comptes entiers : **reco = carve-out ADR-0008 explicite (affichage seul, jamais seuil légal)** + assertion que le chemin quorum/majorité légal n'a aucun aller-retour Decimal→f64→Decimal. Fichiers : la migration, `tests/bdd_governance.rs`, `features/governance_decimal.feature`, `entities/{vote,resolution,meeting,age_request}.rs`, repos impl correspondants. Deps : aucune.
 
-- **WP-A2 — Cascade tests #443 (LONG POLE)** · #443 · T2 · L · *critique* · **FAIT** (#539 + reconfirmé 2026-05-18)
+- **WP-A2 — Cascade tests #443 (LONG POLE)** · #443 · T2 · L · _critique_ · **FAIT** (#539 + reconfirmé 2026-05-18)
   `docker compose run --rm backend cargo check --tests` propre (`--lib` déjà propre). Literals f64→`dec!()` aux call-sites, assertions Decimal-equality, zéro régression scénario @security/@negative. Fichiers : `tests/bdd_financial.rs` (~23 occ.), `tests/e2e_*.rs`, glue `features/*.feature`. Deps : conventions WP-A1. **Concurrent Track F.**
   **Reconfirmé** (post-merge 5 PR + WP-B3 + #526) : `cargo check --tests` **CHECK_EXIT=0**, 0 erreur, aucune cascade f64/Decimal résiduelle (1 warning amont `proc-macro-error2`, non-bloquant). Suite BDD 100% verte (G1/G2/OPS/COM/FIN=0) ⇒ zéro régression @security/@negative confirmée. **Critère GO « `cargo check --tests` propre » atteint.**
 
 - **WP-A3 — EXP-006 journal_entry (réduit)** · #433 · T2 · M
   `Result<_,String>`→`AppError` sur `JournalEntry/JournalEntryLine`. `features/journal_entries.feature` 4-cat RED-first : @negative **débit≠crédit rejeté**, @edge 0.1+0.2=0.3, @security isolation cross-org, @happy écriture équilibrée. Pas de SQL. Deps : A1, A2.
 
-- **WP-A4 — EXP-005 charge_distribution** · #433 · T2 · M · *parallèle A3*
+- **WP-A4 — EXP-005 charge_distribution** · #433 · T2 · M · _parallèle A3_
   `Result→AppError` ; 4-cat : @security somme quotas==100% à `dec!(1.0001)`, @negative quota>1/négatif rejeté. Deps : A1.
 
 - **WP-A5 — EXP-007 quote/etat_date (Art. 577 CC, plus gros résidu)** · #433 · T2 · L
@@ -56,24 +57,25 @@ Légende : Tier 1 = humain exécute (agent diagnostique/propose). Taille S≤0.5
 - **WP-A6 — EXP-008 owner_contribution/call_for_funds/gamification** · #433 · T2 · M
   Monétaire→Decimal+AppError+4-cat. Gamification/ratings = scores non-PCMN → carve-out ADR-0008, f64 conservé (@happy+@negative légers). Deps : A1, A2.
 
-- **WP-A7 — Finaliser ADR-0008 + politique #526/#339** · #526/#339/ADR-0008 · T2 (accept=humain) · M
+- **WP-A7 — Finaliser ADR-0008 + politique #526/#339** · #526/#339/ADR-0008 · T2 (accept=humain) · M · **FAIT (Tier-2)** — acceptation ADR pendante humain (2026-05-19, branche `story/wbs-a7-adr8-rotate`)
   (a) ADR-0008 finalisé (ratio + %-affichage + carve-out gamification). (b) #526 : garder `expenses_amount_check > 0`, modéliser les annulations en contre-écritures journal (pas de relâche schéma), documenter. (c) #339 rotate 501 `api_key_handlers.rs:506` : **reco = implémenter rotate minimal** derrière 4-cat (@security ancienne clé invalide post-rotate, @negative rotate non-propriétaire→403) ; alternative = retirer la route + documenter pour qu'aucun 501 ne parte en bêta.
+  **Réalisé** (choix humain « draft ADR + rotate, accept humain ») : (a) `docs/adr/0008-…md` — **Amendment 2026-05-19 statut `Proposed`** (décision d'origine inchangée `Accepted`) : liste **fermée** carve-outs f64 (résolution %-affichage seul / ratio proxy vote.rs seuil-Decimal / gamification challenge.rs non-PCMN / surfaces m² / IoT ADR-0009) + invariant ratio testable. Acceptation = @gilmry au merge. (b) #526 documenté §C (CHECK > 0 conservé, annulations = contre-écritures journal ; déjà vert #526/WP-B3 `086c953`). (c) `rotate_api_key` implémenté : gate SYNDIC/SUPERADMIN, txn (désactive ancienne + insère remplaçante héritée), isolation cross-org 404, audit, secret une fois ; **`sqlx::query` non-macro** (offline-safe). 4-cat RED-first `e2e_api_keys.rs` (happy 200+nouveau secret / security ancienne clé inactive+1 active / negative owner→403 / edge inconnu→404). `cargo check --lib --tests` propre, `cargo test --lib api_key` 3/3, fmt propre (fallback hôte — daemon Docker absent). **⇒ aucun `501` ne part en bêta.** Log `docs/agent-activity/2026-05-19-wbs-a7.md`. **Tier-1 pendant** : acceptation amendement ADR-0008 par @gilmry au merge.
 
 ### Track B — Backend autre
 
-- **WP-B1 — Re-vérifier bugs revue humaine** · BUG-WF*/#523 · T2 · M (L si WF14-2 réel) · *J1*
+- **WP-B1 — Re-vérifier bugs revue humaine** · BUG-WF*/#523 · T2 · M (L si WF14-2 réel) · *J1\*
   Re-jouer `HUMAN_REVIEW_REPORT_v0.1.0.md` comme checklist vs `feature/dev` courant : **BUG-WF14-2 fuite bâtiments cross-org (Alice voit 3 bâtiments) = bloquant sécurité bêta si reproductible** — tracer scoping `organization_id` repo buildings ; BUG-WF2-1 `voting_power≤1000` vs seed>1280 (vérifier `20260401000000_fix_voting_power_constraint.sql`) ; BUG-WF7-1 ticket 400 ; NaN% compteurs (probablement corrigé par #523 `7c2d664` — vérifier). Repro RED par bug confirmé. Deps : aucune.
 
-- **WP-B2 — Gate sécurité dependabot #432** · #432 · T2 · S-M · *parallèle* · **FAIT** (PR #538)
+- **WP-B2 — Gate sécurité dependabot #432** · #432 · T2 · S-M · _parallèle_ · **FAIT** (PR #538)
   Réalité : #432 = 100% npm/frontend (le "14 vulns" était périmé). `svelte 5.55.7` + `devalue 5.8.1` → 5 alertes résolues, `npm audit --omit=dev` = 0, build vert. Résiduel 1 HIGH `@babel/plugin-transform-modules-systemjs` (devDependency build-only, `audit fix --force` breaking → accepté/documenté). `cargo audit` (RustSec) exit 0 modulo ignores `.cargo/audit.toml`. Fichiers : `frontend/package-lock.json`. Deps : aucune.
 
-- **WP-B3 — Triage BDD pré-existants révélés par #524** · **#540** /#524/#443/#526/#534 · T2 · L · *débruite le gate* · **FAIT** (PR #541)
+- **WP-B3 — Triage BDD pré-existants révélés par #524** · **#540** /#524/#443/#526/#534 · T2 · L · _débruite le gate_ · **FAIT** (PR #541)
   Le fix #524 a rendu le harness honnête → ~27 scénarios BDD pré-existants rouges sur 8 groupes (CI run `25982956110`) bruitent **toute** PR : « Meeting Resolutions » 14/14 (quorum Art. 3.87 §5 ordre workflow), Board CdC mandat ×5 (Art. 3.89 assertion vs règle), Energy/Notice/CallForFunds/Gamification ×6 (seeds/asserts), Stats ×2 (= #526). **Issue de tracking consolidée = #540** (inventaire complet + critères) ; un sous-fix RED-first 4-cat par groupe (P1 = Meeting Resolutions + Board mandat, légalement sensibles ; P2 = seeds/asserts ; Stats = #526 séparé). Aucun fix « comme ça » — comprendre la cause (test faux / prod faux / spec obsolète). Deps : aucune (parallèle). **Prérequis du jugement BDD propre en G1.**
-  **Réalisé** (commit `73e4651`, validé local les 5 binaires BDD) : **P1-G1** = spec obsolète (resolutions.feature pré-#310/#323 : create_resolution exige quorum Art. 3.87 §5 ; + labels legacy Simple/Qualified jamais migrés vers l'enum belge) → Background quorum + alignement Absolute/TwoThirds + scénario @security ; `bdd_governance` 15/15. **P1-G2** = **bug prod** (board_member.rs appliquait la règle *syndic* Art. 3.89 1–3 ans au *conseil de copropriété*, qui relève d'Art. 3.90 ~1 an ; DB+tests+legal_compliance.feature unanimes) → Full Option A (entité 330–395, DTO défaut 1095→365, use-cases, 17 tests 4-cat, 3 steps renew, réf Art.3.90) ; `bdd` board 23/23+13/13. **⚠ Suivi : la durée mandat conseil « ~1 an » est un choix de modélisation projet — Art. 3.90 réel laisse la durée à l'AG → ADR à signer (tracé sur #540).** **P2 ×6** = 6 bugs test (4 time-bomb dates hardcodées → helper `parse_seed_date` relatif ×3 binaires + 4 features en tokens `+Nd` ; 2 test-id : Notices author owner_id↔user_id, Energy uploads unit_id↔uploaded_by) ; ops/community/CallForFunds verts. **Infra** : `get_host()` ajouté à bdd/operations/community (pattern #535/#539) → 5 binaires BDD exécutables en local. **Critère #540 atteint** : seul rouge restant = #526 (Zero/Tiny, hors-scope, tracé). Zéro régression.
+  **Réalisé** (commit `73e4651`, validé local les 5 binaires BDD) : **P1-G1** = spec obsolète (resolutions.feature pré-#310/#323 : create_resolution exige quorum Art. 3.87 §5 ; + labels legacy Simple/Qualified jamais migrés vers l'enum belge) → Background quorum + alignement Absolute/TwoThirds + scénario @security ; `bdd_governance` 15/15. **P1-G2** = **bug prod** (board_member.rs appliquait la règle _syndic_ Art. 3.89 1–3 ans au _conseil de copropriété_, qui relève d'Art. 3.90 ~1 an ; DB+tests+legal_compliance.feature unanimes) → Full Option A (entité 330–395, DTO défaut 1095→365, use-cases, 17 tests 4-cat, 3 steps renew, réf Art.3.90) ; `bdd` board 23/23+13/13. **⚠ Suivi : la durée mandat conseil « ~1 an » est un choix de modélisation projet — Art. 3.90 réel laisse la durée à l'AG → ADR à signer (tracé sur #540).** **P2 ×6** = 6 bugs test (4 time-bomb dates hardcodées → helper `parse_seed_date` relatif ×3 binaires + 4 features en tokens `+Nd` ; 2 test-id : Notices author owner_id↔user_id, Energy uploads unit_id↔uploaded_by) ; ops/community/CallForFunds verts. **Infra** : `get_host()` ajouté à bdd/operations/community (pattern #535/#539) → 5 binaires BDD exécutables en local. **Critère #540 atteint** : seul rouge restant = #526 (Zero/Tiny, hors-scope, tracé). Zéro régression.
 
 ### Track C — Frontend sécurité (refacto #343 / SSR client:load DIFFÉRÉS post-bêta)
 
-- **WP-FE1 — JWT hors localStorage (vol session XSS)** · BLOQUANT SÉCURITÉ · T2 · L · *critique*
+- **WP-FE1 — JWT hors localStorage (vol session XSS)** · BLOQUANT SÉCURITÉ · T2 · L · _critique_
   `auth.ts:128-235` : refresh token → cookie backend `HttpOnly; Secure; SameSite=Strict` ; access token en mémoire seule + silent-refresh au load. Backend login/refresh : set-cookie + read-cookie + CORS credentials. 4-cat RED-first : @security token illisible JS/`document.cookie` & absent localStorage ; @negative cookie forgé/expiré→401 ; @happy login→refresh→protégé ; @edge refresh à la borne d'expiration. Deps : coordination WP-B1 ; moitié backend nourrit moitié FE.
 
 - **WP-FE2 — Corriger bugs FE revue (WF1-1/2/3)** · T2 · M
@@ -89,7 +91,7 @@ Légende : Tier 1 = humain exécute (agent diagnostique/propose). Taille S≤0.5
 
 ### Track E — Tests IaC (sous-ensemble VPS de #354)
 
-- **WP-E1 — Lint IaC minimal viable** · #354 · T2 · M · *100% parallèle*
+- **WP-E1 — Lint IaC minimal viable** · #354 · T2 · M · _100% parallèle_
   Job lint dans `ci-infra.yml`, assets VPS seulement : `terraform fmt -check`/`validate` (modules OVH + `monosite/vps/production/terraform`), `ansible-lint` (14 rôles + playbook prod), `yamllint`, `shellcheck` (**gate dur sur `gitops-deploy.sh`** — il exécute le déploiement prod). conftest/molecule/terratest = Phase 2. Deps : aucune.
 
 ### Track F — Ops VPS (concurrent Track A — aucun fichier partagé)
@@ -160,6 +162,7 @@ E1 (lint IaC) ─► F1 (TF/Ansible,T1) ─► F2 (TLS,T1) ─► F3 (poller,T1)
 ## Vérification — commandes exactes & gate humain
 
 Backend (agent) :
+
 ```
 docker compose run --rm backend cargo check --lib
 docker compose run --rm backend cargo check --tests        # propre post WP-A2
@@ -170,7 +173,9 @@ docker compose run --rm backend cargo test --no-fail-fast --test bdd --test bdd_
 docker compose run --rm backend cargo test --test e2e
 docker compose run --rm backend cargo audit                 # #432
 ```
+
 Frontend :
+
 ```
 docker compose run --rm frontend npm run build
 docker compose run --rm frontend npx svelte-check --threshold warning
@@ -179,13 +184,17 @@ docker compose run --rm frontend npx playwright test --project=chromium    # pla
 docker compose run --rm frontend npx playwright test --project=scenarios   # par-scénario
 docker compose run --rm frontend npx prettier --check .
 ```
+
 Gate push / contrat :
+
 ```
 make ci                # VERT obligatoire avant tout push
 make openapi-check     # si DTOs touchés
 make types-sync        # si spec changée
 ```
+
 IaC (post WP-E1) :
+
 ```
 terraform -chdir=infrastructure/monosite/vps/production/terraform fmt -check
 terraform -chdir=infrastructure/monosite/vps/production/terraform validate
@@ -193,7 +202,9 @@ ansible-lint infrastructure/monosite/vps/production/ansible/playbook.yml
 yamllint infrastructure/monosite/vps/production
 shellcheck infrastructure/_shared/scripts/gitops-deploy.sh
 ```
+
 Gate humain (Tier 1 — agent diagnostique/propose seulement) :
+
 1. `terraform apply` (agent fournit plan revu) — F1
 2. `ansible-playbook -i ansible/inventory.ini ansible/playbook.yml` prod — F1
 3. DNS A→IP VPS, ouvrir 80/443, `ACME_EMAIL` dans `.env` prod — F2
