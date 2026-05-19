@@ -77,6 +77,86 @@ pub struct JournalEntryLine {
 /// Tolerance for double-entry balance check (1 centime + epsilon).
 const BALANCE_TOLERANCE: Decimal = dec!(0.011);
 
+/// Domain-typed validation error for journal entries (double-entry bookkeeping).
+///
+/// Pure domain type — no infrastructure/application dependency (hexagonal
+/// purity). Follows the codebase precedent `ProxyValidationError` (vote.rs):
+/// the entity returns its own typed error; the application layer maps it to
+/// `AppError` (see `impl From<JournalEntryError> for AppError`) so a malformed
+/// entry surfaces as a 400 validation error, not a 500 Internal (#433 / WP-A3).
+#[derive(Debug, Clone, PartialEq)]
+pub enum JournalEntryError {
+    /// Entry has no lines.
+    NoLines,
+    /// Sum of debits ≠ sum of credits beyond tolerance (double-entry rule).
+    Unbalanced {
+        debits: Decimal,
+        credits: Decimal,
+        difference: Decimal,
+        tolerance: Decimal,
+    },
+    /// A line carries both a debit and a credit amount.
+    LineHasBothDebitAndCredit,
+    /// A line carries neither a debit nor a credit amount.
+    LineHasNeitherDebitNorCredit,
+    /// A line has a negative debit or credit amount.
+    NegativeAmount,
+    /// A line is missing its PCMN account code.
+    MissingAccountCode,
+    /// Journal type is not one of ACH / VEN / FIN / ODS.
+    InvalidJournalType(String),
+    /// Debit line amount is not strictly positive.
+    NonPositiveDebit,
+    /// Credit line amount is not strictly positive.
+    NonPositiveCredit,
+}
+
+impl std::fmt::Display for JournalEntryError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::NoLines => write!(f, "Journal entry must have at least one line"),
+            Self::Unbalanced {
+                debits,
+                credits,
+                difference,
+                tolerance,
+            } => write!(
+                f,
+                "Journal entry is unbalanced: debits={}€, credits={}€, difference={}€ (tolerance: {}€)",
+                debits, credits, difference, tolerance
+            ),
+            Self::LineHasBothDebitAndCredit => {
+                write!(f, "Line cannot have both debit and credit")
+            }
+            Self::LineHasNeitherDebitNorCredit => {
+                write!(f, "Line must have either debit or credit")
+            }
+            Self::NegativeAmount => {
+                write!(f, "Debit and credit amounts must be non-negative")
+            }
+            Self::MissingAccountCode => write!(f, "Account code is required"),
+            Self::InvalidJournalType(jtype) => write!(
+                f,
+                "Invalid journal type: {}. Must be one of: ACH (Purchases), VEN (Sales), FIN (Financial), ODS (Miscellaneous)",
+                jtype
+            ),
+            Self::NonPositiveDebit => write!(f, "Debit amount must be positive"),
+            Self::NonPositiveCredit => write!(f, "Credit amount must be positive"),
+        }
+    }
+}
+
+impl std::error::Error for JournalEntryError {}
+
+/// Bridge so existing `Result<_, String>` use-cases keep compiling while the
+/// entity is typed (the use-case/port String→AppError cascade is a distinct,
+/// broader slice — out of WP-A3 scope). Pure, std-only.
+impl From<JournalEntryError> for String {
+    fn from(e: JournalEntryError) -> String {
+        e.to_string()
+    }
+}
+
 impl JournalEntry {
     /// Create a new journal entry with validation
     ///
@@ -101,7 +181,7 @@ impl JournalEntry {
         contribution_id: Option<Uuid>,
         lines: Vec<JournalEntryLine>,
         created_by: Option<Uuid>,
-    ) -> Result<Self, String> {
+    ) -> Result<Self, JournalEntryError> {
         // Validate lines balance
         Self::validate_lines_balance(&lines)?;
 
@@ -113,10 +193,7 @@ impl JournalEntry {
         // Validate journal_type if provided (Noalyss-inspired)
         if let Some(ref jtype) = journal_type {
             if !["ACH", "VEN", "FIN", "ODS"].contains(&jtype.as_str()) {
-                return Err(format!(
-                    "Invalid journal type: {}. Must be one of: ACH (Purchases), VEN (Sales), FIN (Financial), ODS (Miscellaneous)",
-                    jtype
-                ));
+                return Err(JournalEntryError::InvalidJournalType(jtype.clone()));
             }
         }
 
@@ -139,9 +216,9 @@ impl JournalEntry {
     }
 
     /// Validate that debits equal credits (with small rounding tolerance)
-    fn validate_lines_balance(lines: &[JournalEntryLine]) -> Result<(), String> {
+    fn validate_lines_balance(lines: &[JournalEntryLine]) -> Result<(), JournalEntryError> {
         if lines.is_empty() {
-            return Err("Journal entry must have at least one line".to_string());
+            return Err(JournalEntryError::NoLines);
         }
 
         let total_debits: Decimal = lines.iter().map(|l| l.debit).sum();
@@ -149,34 +226,36 @@ impl JournalEntry {
 
         let difference = (total_debits - total_credits).abs();
         if difference > BALANCE_TOLERANCE {
-            return Err(format!(
-                "Journal entry is unbalanced: debits={}€, credits={}€, difference={}€ (tolerance: {}€)",
-                total_debits, total_credits, difference, BALANCE_TOLERANCE
-            ));
+            return Err(JournalEntryError::Unbalanced {
+                debits: total_debits,
+                credits: total_credits,
+                difference,
+                tolerance: BALANCE_TOLERANCE,
+            });
         }
 
         Ok(())
     }
 
     /// Validate an individual line
-    fn validate_line(line: &JournalEntryLine) -> Result<(), String> {
+    fn validate_line(line: &JournalEntryLine) -> Result<(), JournalEntryError> {
         // Must be EITHER debit OR credit (not both, not neither)
         if line.debit > Decimal::ZERO && line.credit > Decimal::ZERO {
-            return Err("Line cannot have both debit and credit".to_string());
+            return Err(JournalEntryError::LineHasBothDebitAndCredit);
         }
 
         if line.debit == Decimal::ZERO && line.credit == Decimal::ZERO {
-            return Err("Line must have either debit or credit".to_string());
+            return Err(JournalEntryError::LineHasNeitherDebitNorCredit);
         }
 
         // Amounts must be non-negative
         if line.debit < Decimal::ZERO || line.credit < Decimal::ZERO {
-            return Err("Debit and credit amounts must be non-negative".to_string());
+            return Err(JournalEntryError::NegativeAmount);
         }
 
         // Account code required
         if line.account_code.trim().is_empty() {
-            return Err("Account code is required".to_string());
+            return Err(JournalEntryError::MissingAccountCode);
         }
 
         Ok(())
@@ -206,9 +285,9 @@ impl JournalEntryLine {
         account_code: String,
         amount: Decimal,
         description: Option<String>,
-    ) -> Result<Self, String> {
+    ) -> Result<Self, JournalEntryError> {
         if amount <= Decimal::ZERO {
-            return Err("Debit amount must be positive".to_string());
+            return Err(JournalEntryError::NonPositiveDebit);
         }
 
         Ok(Self {
@@ -230,9 +309,9 @@ impl JournalEntryLine {
         account_code: String,
         amount: Decimal,
         description: Option<String>,
-    ) -> Result<Self, String> {
+    ) -> Result<Self, JournalEntryError> {
         if amount <= Decimal::ZERO {
-            return Err("Credit amount must be positive".to_string());
+            return Err(JournalEntryError::NonPositiveCredit);
         }
 
         Ok(Self {
@@ -351,7 +430,10 @@ mod tests {
         );
 
         assert!(entry.is_err());
-        assert!(entry.unwrap_err().contains("unbalanced"));
+        assert!(matches!(
+            entry.unwrap_err(),
+            JournalEntryError::Unbalanced { .. }
+        ));
     }
 
     #[test]
@@ -385,7 +467,10 @@ mod tests {
         );
 
         assert!(entry.is_err());
-        assert!(entry.unwrap_err().contains("both debit and credit"));
+        assert!(matches!(
+            entry.unwrap_err(),
+            JournalEntryError::LineHasBothDebitAndCredit
+        ));
     }
 
     #[test]
@@ -419,7 +504,10 @@ mod tests {
         );
 
         assert!(entry.is_err());
-        assert!(entry.unwrap_err().contains("either debit or credit"));
+        assert!(matches!(
+            entry.unwrap_err(),
+            JournalEntryError::LineHasNeitherDebitNorCredit
+        ));
     }
 
     #[test]
@@ -507,6 +595,9 @@ mod tests {
             None,
         );
         assert!(result.is_err());
-        assert!(result.unwrap_err().contains("must be positive"));
+        assert!(matches!(
+            result.unwrap_err(),
+            JournalEntryError::NonPositiveDebit
+        ));
     }
 }
