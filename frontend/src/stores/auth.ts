@@ -303,8 +303,20 @@ const createAuthStore = () => {
 
           if (typeof window !== "undefined") {
             localStorage.setItem("koprogo_user", JSON.stringify(mappedUser));
-            await syncService.setToken(newToken);
-            await localDB.saveUser(mappedUser);
+            // Cache local best-effort : NE DOIT JAMAIS faire échouer le
+            // refresh. `init()` appelle refreshAccessToken() AVANT
+            // `localDB.init()` ; la persistance locale est rattrapée juste
+            // après (init → localDB.init → syncService.initialize). Auth ≠
+            // couche de cache. (#548 / WP-D1 — ripple FE1 JWT→cookie.)
+            try {
+              await syncService.setToken(newToken);
+              await localDB.saveUser(mappedUser);
+            } catch (cacheErr) {
+              console.warn(
+                "Local cache not ready during token refresh (non-fatal):",
+                cacheErr,
+              );
+            }
           }
 
           update((state) => ({
