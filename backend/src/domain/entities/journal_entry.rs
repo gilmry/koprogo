@@ -109,6 +109,9 @@ pub enum JournalEntryError {
     NonPositiveDebit,
     /// Credit line amount is not strictly positive.
     NonPositiveCredit,
+    /// A line belongs to a different organization than the entry
+    /// (cross-org line injection — tenant isolation breach).
+    CrossOrgLine,
 }
 
 impl std::fmt::Display for JournalEntryError {
@@ -142,6 +145,10 @@ impl std::fmt::Display for JournalEntryError {
             ),
             Self::NonPositiveDebit => write!(f, "Debit amount must be positive"),
             Self::NonPositiveCredit => write!(f, "Credit amount must be positive"),
+            Self::CrossOrgLine => write!(
+                f,
+                "Journal entry line belongs to a different organization than the entry (cross-org isolation)"
+            ),
         }
     }
 }
@@ -185,9 +192,14 @@ impl JournalEntry {
         // Validate lines balance
         Self::validate_lines_balance(&lines)?;
 
-        // Validate each line
+        // Validate each line + tenant isolation: a line must belong to the
+        // same organization as the entry (prevents cross-org line injection
+        // into another tenant's books — @security invariant, #433/WP-A3).
         for line in &lines {
             Self::validate_line(line)?;
+            if line.organization_id != organization_id {
+                return Err(JournalEntryError::CrossOrgLine);
+            }
         }
 
         // Validate journal_type if provided (Noalyss-inspired)
@@ -598,6 +610,49 @@ mod tests {
         assert!(matches!(
             result.unwrap_err(),
             JournalEntryError::NonPositiveDebit
+        ));
+    }
+
+    /// @security — A line belonging to another organization must be rejected
+    /// (cross-org line injection into another tenant's books, #433/WP-A3).
+    #[test]
+    fn security_cross_org_line_rejected() {
+        let org_id = Uuid::new_v4();
+        let other_org_id = Uuid::new_v4();
+        let entry_id = Uuid::new_v4();
+
+        // Balanced pair (100 = 100) — the ONLY defect is the credit line
+        // belonging to a different organization than the entry.
+        let lines = vec![
+            JournalEntryLine::new_debit(entry_id, org_id, "6100".to_string(), dec!(100), None)
+                .unwrap(),
+            JournalEntryLine::new_credit(
+                entry_id,
+                other_org_id,
+                "4400".to_string(),
+                dec!(100),
+                None,
+            )
+            .unwrap(),
+        ];
+
+        let result = JournalEntry::new(
+            org_id,
+            None,
+            Utc::now(),
+            None,
+            None,
+            None,
+            None,
+            None,
+            lines,
+            None,
+        );
+
+        assert!(result.is_err());
+        assert!(matches!(
+            result.unwrap_err(),
+            JournalEntryError::CrossOrgLine
         ));
     }
 }

@@ -12,6 +12,13 @@ Feature: Journal Entries (Double-Entry Bookkeeping)
     And an organization "Compta Copro ASBL" exists with id "org-compta"
     And a building "Residence Comptable" exists in organization "org-compta"
 
+  # 4 catégories (#433/WP-A3). @security (isolation cross-org : une ligne
+  # d'une autre organisation rejetée) est un invariant de l'entité domaine,
+  # vérifié par le test unitaire `security_cross_org_line_rejected`
+  # (journal_entry.rs) — le glue BDD construit les lignes avec l'org de
+  # l'entrée et ne peut donc pas l'exercer comportementalement ici.
+
+  @happy
   Scenario: Create a balanced journal entry
     When I create a journal entry:
       | journal_type  | ODS                           |
@@ -24,6 +31,21 @@ Feature: Journal Entries (Double-Entry Bookkeeping)
     Then the journal entry should be created
     And the total debits should equal total credits
 
+  @edge
+  Scenario: Decimal exactness preserved (0.10 + 0.20 = 0.30)
+    # IEEE 754 f64 fails 0.1 + 0.2 == 0.3 ; rust_decimal is exact (ADR-0007).
+    When I create a journal entry:
+      | journal_type  | ODS                           |
+      | description   | Exactitude Decimal            |
+    And I add the following lines:
+      | account_code | debit | credit | description  |
+      | 604000       | 0.10  | 0.00   | Part A       |
+      | 604000       | 0.20  | 0.00   | Part B       |
+      | 440000       | 0.00  | 0.30   | Contrepartie |
+    Then the journal entry should be created
+    And the total debits should equal total credits
+
+  @negative
   Scenario: Reject unbalanced journal entry
     When I create a journal entry:
       | journal_type  | ACH                           |
