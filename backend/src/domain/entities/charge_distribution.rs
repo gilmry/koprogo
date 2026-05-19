@@ -30,6 +30,53 @@ const DISTRIBUTION_TOLERANCE: Decimal = dec!(0.01);
 /// Tolerance for total quota sum to allow rounding errors (1.0001 = 100.01%).
 const QUOTA_SUM_TOLERANCE: Decimal = dec!(1.0001);
 
+/// Domain-typed validation error for charge distribution (quote-part exactness).
+///
+/// Pure domain type — no infrastructure/application dependency (hexagonal
+/// purity). Follows the codebase precedent `JournalEntryError`
+/// (journal_entry.rs) / `ProxyValidationError` (vote.rs): the entity returns
+/// its own typed error; the application layer maps it to `AppError`
+/// (see `impl From<ChargeDistributionError> for AppError`) so a malformed
+/// distribution surfaces as a 400 validation error, not a 500 Internal
+/// (#433 / WP-A4 — EXP-005).
+#[derive(Debug, Clone, PartialEq)]
+pub enum ChargeDistributionError {
+    /// Quota percentage is outside the valid [0, 1] range.
+    QuotaOutOfRange(Decimal),
+    /// Total amount to distribute is negative.
+    NegativeTotalAmount,
+    /// Sum of all quotas exceeds 100% beyond the rounding tolerance.
+    /// Over-distribution would over-charge owners — financial integrity guard.
+    QuotaSumExceeds { total_quota: Decimal },
+}
+
+impl std::fmt::Display for ChargeDistributionError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::QuotaOutOfRange(q) => {
+                write!(f, "Quota percentage must be between 0 and 1 (got: {})", q)
+            }
+            Self::NegativeTotalAmount => write!(f, "Total amount cannot be negative"),
+            Self::QuotaSumExceeds { total_quota } => write!(
+                f,
+                "Total quota percentage exceeds 100% (got: {})",
+                total_quota * dec!(100)
+            ),
+        }
+    }
+}
+
+impl std::error::Error for ChargeDistributionError {}
+
+/// Bridge so existing `Result<_, String>` use-cases keep compiling while the
+/// entity is typed (the use-case/port String→AppError cascade is a distinct,
+/// broader slice — out of WP-A4 scope, mirrors WP-A3). Pure, std-only.
+impl From<ChargeDistributionError> for String {
+    fn from(e: ChargeDistributionError) -> String {
+        e.to_string()
+    }
+}
+
 impl ChargeDistribution {
     pub fn new(
         expense_id: Uuid,
@@ -37,16 +84,13 @@ impl ChargeDistribution {
         owner_id: Uuid,
         quota_percentage: Decimal,
         total_amount: Decimal,
-    ) -> Result<Self, String> {
+    ) -> Result<Self, ChargeDistributionError> {
         // Validations
         if quota_percentage < Decimal::ZERO || quota_percentage > Decimal::ONE {
-            return Err(format!(
-                "Quota percentage must be between 0 and 1 (got: {})",
-                quota_percentage
-            ));
+            return Err(ChargeDistributionError::QuotaOutOfRange(quota_percentage));
         }
         if total_amount < Decimal::ZERO {
-            return Err("Total amount cannot be negative".to_string());
+            return Err(ChargeDistributionError::NegativeTotalAmount);
         }
 
         // Calcul du montant dû
@@ -64,12 +108,14 @@ impl ChargeDistribution {
     }
 
     /// Recalcule le montant dû si la quote-part ou le total change
-    pub fn recalculate(&mut self, total_amount: Decimal) -> Result<(), String> {
+    pub fn recalculate(&mut self, total_amount: Decimal) -> Result<(), ChargeDistributionError> {
         if self.quota_percentage < Decimal::ZERO || self.quota_percentage > Decimal::ONE {
-            return Err("Quota percentage must be between 0 and 1".to_string());
+            return Err(ChargeDistributionError::QuotaOutOfRange(
+                self.quota_percentage,
+            ));
         }
         if total_amount < Decimal::ZERO {
-            return Err("Total amount cannot be negative".to_string());
+            return Err(ChargeDistributionError::NegativeTotalAmount);
         }
 
         self.amount_due = total_amount * self.quota_percentage;
@@ -82,19 +128,16 @@ impl ChargeDistribution {
         expense_id: Uuid,
         total_amount: Decimal,
         unit_ownerships: Vec<(Uuid, Uuid, Decimal)>, // (unit_id, owner_id, quota_percentage)
-    ) -> Result<Vec<ChargeDistribution>, String> {
+    ) -> Result<Vec<ChargeDistribution>, ChargeDistributionError> {
         if total_amount < Decimal::ZERO {
-            return Err("Total amount cannot be negative".to_string());
+            return Err(ChargeDistributionError::NegativeTotalAmount);
         }
 
         // Vérifier que la somme des quotes-parts ne dépasse pas 100%
         let total_quota: Decimal = unit_ownerships.iter().map(|(_, _, q)| *q).sum();
         if total_quota > QUOTA_SUM_TOLERANCE {
             // Tolérance pour arrondi
-            return Err(format!(
-                "Total quota percentage exceeds 100% (got: {})",
-                total_quota * dec!(100)
-            ));
+            return Err(ChargeDistributionError::QuotaSumExceeds { total_quota });
         }
 
         let mut distributions = Vec::new();
@@ -154,9 +197,10 @@ mod tests {
             ChargeDistribution::new(expense_id, unit_id, owner_id, dec!(-0.1), dec!(1000));
 
         assert!(distribution.is_err());
-        assert!(distribution
-            .unwrap_err()
-            .contains("Quota percentage must be between 0 and 1"));
+        assert!(matches!(
+            distribution.unwrap_err(),
+            ChargeDistributionError::QuotaOutOfRange(_)
+        ));
     }
 
     #[test]
@@ -237,9 +281,10 @@ mod tests {
             ChargeDistribution::calculate_distributions(expense_id, dec!(1000), unit_ownerships);
 
         assert!(distributions.is_err());
-        assert!(distributions
-            .unwrap_err()
-            .contains("Total quota percentage exceeds 100%"));
+        assert!(matches!(
+            distributions.unwrap_err(),
+            ChargeDistributionError::QuotaSumExceeds { .. }
+        ));
     }
 
     #[test]
@@ -394,5 +439,126 @@ mod tests {
 
         let dists = vec![dist1, dist2, dist3];
         assert_eq!(ChargeDistribution::total_distributed(&dists), dec!(0.3));
+    }
+
+    // ------------------------------------------------------------------------
+    // 4 catégories #433/WP-A4 — taxonomie typée (CRITICAL.md #3). Le glue BDD
+    // (charge_distribution.feature) fixe une répartition valide à 100% via le
+    // Background et ne peut donc pas exercer comportementalement les chemins de
+    // rejet : ces invariants de l'entité domaine sont vérifiés ici en unitaire,
+    // sur l'erreur typée `ChargeDistributionError` (précédent WP-A3
+    // journal_entry.rs / commentaire journal_entries.feature).
+    // ------------------------------------------------------------------------
+
+    /// @happy — Nominal distribution: quotes-parts somment à 100%, total réparti
+    /// exactement, équilibre vérifié à 1 centime.
+    #[test]
+    fn happy_distribution_balances_to_total() {
+        let expense_id = Uuid::new_v4();
+        let ownerships = vec![
+            (Uuid::new_v4(), Uuid::new_v4(), dec!(0.40)),
+            (Uuid::new_v4(), Uuid::new_v4(), dec!(0.35)),
+            (Uuid::new_v4(), Uuid::new_v4(), dec!(0.25)),
+        ];
+
+        let dists = ChargeDistribution::calculate_distributions(expense_id, dec!(1000), ownerships)
+            .unwrap();
+
+        assert_eq!(dists.len(), 3);
+        assert_eq!(ChargeDistribution::total_distributed(&dists), dec!(1000.00));
+        assert!(ChargeDistribution::verify_distribution(&dists, dec!(1000)));
+    }
+
+    /// @edge — Borne exacte de la tolérance de somme des quotités :
+    /// 100.01% (= QUOTA_SUM_TOLERANCE) passe, 100.011% est rejeté.
+    #[test]
+    fn edge_quota_sum_at_tolerance_boundary() {
+        let expense_id = Uuid::new_v4();
+
+        // Exactement 1.0001 (100.01%) — accepté (borne stricte `>`).
+        let at_boundary = vec![
+            (Uuid::new_v4(), Uuid::new_v4(), dec!(0.5000)),
+            (Uuid::new_v4(), Uuid::new_v4(), dec!(0.5001)),
+        ];
+        assert!(
+            ChargeDistribution::calculate_distributions(expense_id, dec!(1000), at_boundary)
+                .is_ok(),
+            "Σ quotités == 1.0001 doit passer (borne de tolérance)"
+        );
+
+        // 1.00011 (100.011%) — au-delà de la tolérance, rejeté.
+        let over_boundary = vec![
+            (Uuid::new_v4(), Uuid::new_v4(), dec!(0.50000)),
+            (Uuid::new_v4(), Uuid::new_v4(), dec!(0.50011)),
+        ];
+        assert!(matches!(
+            ChargeDistribution::calculate_distributions(expense_id, dec!(1000), over_boundary)
+                .unwrap_err(),
+            ChargeDistributionError::QuotaSumExceeds { .. }
+        ));
+    }
+
+    /// @negative — Quote-part > 1 ou négative rejetée (erreur typée, pas de panic).
+    #[test]
+    fn negative_quota_out_of_range_rejected() {
+        let above = ChargeDistribution::new(
+            Uuid::new_v4(),
+            Uuid::new_v4(),
+            Uuid::new_v4(),
+            dec!(1.5),
+            dec!(1000),
+        );
+        assert!(matches!(
+            above.unwrap_err(),
+            ChargeDistributionError::QuotaOutOfRange(_)
+        ));
+
+        let negative = ChargeDistribution::new(
+            Uuid::new_v4(),
+            Uuid::new_v4(),
+            Uuid::new_v4(),
+            dec!(-0.1),
+            dec!(1000),
+        );
+        assert!(matches!(
+            negative.unwrap_err(),
+            ChargeDistributionError::QuotaOutOfRange(_)
+        ));
+    }
+
+    /// @negative — Montant total négatif rejeté (erreur typée).
+    #[test]
+    fn negative_total_amount_rejected() {
+        let result = ChargeDistribution::new(
+            Uuid::new_v4(),
+            Uuid::new_v4(),
+            Uuid::new_v4(),
+            dec!(0.25),
+            dec!(-1000),
+        );
+        assert!(matches!(
+            result.unwrap_err(),
+            ChargeDistributionError::NegativeTotalAmount
+        ));
+    }
+
+    /// @security — Une table de quotités falsifiée sommant à > 100% ne doit
+    /// jamais permettre de sur-répartir une charge (sur-facturation des
+    /// copropriétaires) : invariant d'intégrité financière (#433/WP-A4).
+    #[test]
+    fn security_quota_sum_overflow_prevents_overcharge() {
+        let expense_id = Uuid::new_v4();
+        // Σ = 130% — tentative de sur-distribution.
+        let tampered = vec![
+            (Uuid::new_v4(), Uuid::new_v4(), dec!(0.70)),
+            (Uuid::new_v4(), Uuid::new_v4(), dec!(0.60)),
+        ];
+
+        let result = ChargeDistribution::calculate_distributions(expense_id, dec!(10000), tampered);
+
+        assert!(matches!(
+            result.unwrap_err(),
+            ChargeDistributionError::QuotaSumExceeds { .. }
+        ));
     }
 }

@@ -70,7 +70,7 @@ pub use budget::{Budget, BudgetStatus};
 pub use building::Building;
 pub use call_for_funds::{CallForFunds, CallForFundsStatus};
 pub use challenge::{Challenge, ChallengeProgress, ChallengeStatus, ChallengeType};
-pub use charge_distribution::ChargeDistribution;
+pub use charge_distribution::{ChargeDistribution, ChargeDistributionError};
 pub use consent::{ConsentRecord, ConsentStatus};
 pub use contract_evaluation::ContractEvaluation;
 pub use contractor_report::{ContractorReport, ContractorReportStatus, ReplacedPart};

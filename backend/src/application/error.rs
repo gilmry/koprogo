@@ -191,6 +191,16 @@ impl From<crate::domain::entities::JournalEntryError> for AppError {
     }
 }
 
+impl From<crate::domain::entities::ChargeDistributionError> for AppError {
+    /// Une répartition de charges malformée est une erreur d'entrée client
+    /// (quote-part hors [0,1], total négatif, somme des quotités > 100%) →
+    /// 400 validation, **jamais** 500 Internal (le `From<String>` générique
+    /// mappait à tort vers Internal) — #433 / WP-A4 EXP-005.
+    fn from(e: crate::domain::entities::ChargeDistributionError) -> Self {
+        AppError::Validation(e.to_string())
+    }
+}
+
 // ============================================================================
 // Tests — taxonomie 4 catégories obligatoire (cf. CRITICAL.md règle #3, #427)
 // ============================================================================
