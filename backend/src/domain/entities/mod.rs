@@ -81,7 +81,7 @@ pub use energy_bill_upload::EnergyBillUpload;
 pub use energy_campaign::{
     CampaignStatus, CampaignType, ContractType, EnergyCampaign, EnergyType, ProviderOffer,
 };
-pub use etat_date::{EtatDate, EtatDateLanguage, EtatDateStatus};
+pub use etat_date::{EtatDate, EtatDateError, EtatDateLanguage, EtatDateStatus};
 pub use expense::{ApprovalStatus, Expense, ExpenseCategory, PaymentStatus};
 pub use gdpr_art30::{ProcessingActivity, ProcessorAgreement};
 pub use gdpr_export::{

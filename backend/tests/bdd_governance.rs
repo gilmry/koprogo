@@ -6067,30 +6067,32 @@ async fn when_update_financial_data(world: &mut GovernanceWorld, step: &Step) {
     let id = world.last_etat_date_id.unwrap();
     let table = step.table.as_ref().expect("table");
 
-    let mut owner_balance = 0.0;
-    let mut arrears = 0.0;
-    let mut monthly_provision = 0.0;
-    let mut total_balance = 0.0;
-    let mut approved_works = 0.0;
+    // WP-A5 : montants Decimal exacts (cents/100 sans dérive f64).
+    let cents = |v: &str| Decimal::from_str(v).unwrap_or(Decimal::ZERO) / Decimal::from(100);
+    let mut owner_balance = Decimal::ZERO;
+    let mut arrears = Decimal::ZERO;
+    let mut monthly_provision = Decimal::ZERO;
+    let mut total_balance = Decimal::ZERO;
+    let mut approved_works = Decimal::ZERO;
 
     for row in &table.rows {
         let key = row[0].trim();
         let val = row[1].trim();
         match key {
             "provisions_paid_amount_cents" => {
-                owner_balance = val.parse::<f64>().unwrap_or(0.0) / 100.0;
+                owner_balance = cents(val);
             }
             "outstanding_amount_cents" => {
-                arrears = val.parse::<f64>().unwrap_or(0.0) / 100.0;
+                arrears = cents(val);
             }
             "quota_ordinary" => {
-                monthly_provision = val.parse::<f64>().unwrap_or(0.0);
+                monthly_provision = Decimal::from_str(val).unwrap_or(Decimal::ZERO);
             }
             "pending_works_amount_cents" => {
-                approved_works = val.parse::<f64>().unwrap_or(0.0) / 100.0;
+                approved_works = cents(val);
             }
             "reserve_fund_amount_cents" => {
-                total_balance = val.parse::<f64>().unwrap_or(0.0) / 100.0;
+                total_balance = cents(val);
             }
             _ => {}
         }
@@ -6170,11 +6172,11 @@ async fn given_etat_date_with_sections(world: &mut GovernanceWorld) {
     let uc = world.etat_date_use_cases.as_ref().unwrap().clone();
     let id = world.last_etat_date_id.unwrap();
     let fin_req = UpdateEtatDateFinancialRequest {
-        owner_balance: 1500.0,
-        arrears_amount: 0.0,
-        monthly_provision_amount: 250.0,
-        total_balance: 50000.0,
-        approved_works_unpaid: 5000.0,
+        owner_balance: Decimal::from(1500),
+        arrears_amount: Decimal::ZERO,
+        monthly_provision_amount: Decimal::from(250),
+        total_balance: Decimal::from(50000),
+        approved_works_unpaid: Decimal::from(5000),
     };
     uc.update_financial_data(id, fin_req)
         .await

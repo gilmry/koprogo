@@ -773,21 +773,21 @@ mod tests {
         );
 
         let request = UpdateEtatDateFinancialRequest {
-            owner_balance: -1250.50,
-            arrears_amount: 800.0,
-            monthly_provision_amount: 150.0,
-            total_balance: -1250.50,
-            approved_works_unpaid: 3500.0,
+            owner_balance: dec!(-1250.50),
+            arrears_amount: dec!(800.0),
+            monthly_provision_amount: dec!(150.0),
+            total_balance: dec!(-1250.50),
+            approved_works_unpaid: dec!(3500.0),
         };
 
         let result = use_cases.update_financial_data(etat_id, request).await;
         assert!(result.is_ok());
         let response = result.unwrap();
-        assert_eq!(response.owner_balance, -1250.50);
-        assert_eq!(response.arrears_amount, 800.0);
-        assert_eq!(response.monthly_provision_amount, 150.0);
-        assert_eq!(response.total_balance, -1250.50);
-        assert_eq!(response.approved_works_unpaid, 3500.0);
+        assert_eq!(response.owner_balance, dec!(-1250.50));
+        assert_eq!(response.arrears_amount, dec!(800.0));
+        assert_eq!(response.monthly_provision_amount, dec!(150.0));
+        assert_eq!(response.total_balance, dec!(-1250.50));
+        assert_eq!(response.approved_works_unpaid, dec!(3500.0));
     }
 
     #[tokio::test]
