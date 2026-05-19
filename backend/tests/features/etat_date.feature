@@ -15,6 +15,18 @@ Feature: État Daté Generation
     And a user "Syndic Vente" exists with email "syndic@vente.be" in organization "org-789"
     And the user is authenticated as Syndic
 
+  # 4 catégories (#433/WP-A5 EXP-007). Montants Decimal exact (ADR-0007/0008),
+  # acte légal Art. 577-2 CC. @negative (montant négatif interdit, transition
+  # workflow invalide, champ obligatoire vide) et @security (quote-part
+  # falsifiée hors [0,100] % ⇒ document opposable invalidé) sont des invariants
+  # de l'entité domaine, vérifiés par les tests unitaires typés
+  # `negative_amount_and_transition_rejected`,
+  # `security_tampered_quota_rejected`, `edge_decimal_exactness_and_quota_boundary`
+  # (etat_date.rs) — le glue BDD remplit des données valides et ne peut donc
+  # pas exercer comportementalement ces chemins de rejet ici (précédent
+  # journal_entries.feature / WP-A3, charge_distribution.feature / WP-A4).
+
+  @happy
   Scenario: Notary requests État Daté for property sale
     When I request an État Daté for unit "Apartment 101" with:
       | reference_date    | 2026-02-15                |
@@ -32,7 +44,9 @@ Feature: État Daté Generation
     Then the status should be "InProgress"
     And the in_progress_at timestamp should be set
 
+  @edge
   Scenario: Syndic fills 16 mandatory legal sections
+    # Montants en centimes → Decimal exact (cents/100 sans dérive f64).
     Given an État Daté in status "InProgress" exists
     When I update financial data with:
       | quota_ordinary              | 0.0250   |

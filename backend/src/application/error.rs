@@ -191,6 +191,17 @@ impl From<crate::domain::entities::JournalEntryError> for AppError {
     }
 }
 
+impl From<crate::domain::entities::EtatDateError> for AppError {
+    /// Un état daté malformé (quote-part hors bornes, montant négatif
+    /// interdit, transition workflow invalide, champ obligatoire vide) est
+    /// une erreur d'entrée client → 400 validation, **jamais** 500 Internal
+    /// (le `From<String>` générique mappait à tort vers Internal) —
+    /// #433 / WP-A5 EXP-007.
+    fn from(e: crate::domain::entities::EtatDateError) -> Self {
+        AppError::Validation(e.to_string())
+    }
+}
+
 // ============================================================================
 // Tests — taxonomie 4 catégories obligatoire (cf. CRITICAL.md règle #3, #427)
 // ============================================================================

@@ -1,5 +1,4 @@
 use chrono::{DateTime, Utc};
-use f64;
 use rust_decimal::Decimal;
 use rust_decimal_macros::dec;
 use serde::{Deserialize, Serialize};
@@ -86,22 +85,25 @@ pub struct EtatDate {
     pub extraordinary_charges_quota: Decimal,
 
     // === Section 3: Situation financière du propriétaire ===
+    // MONÉTAIRE : Decimal exact (ADR-0007/0008). Document légal Art. 577-2
+    // CC — toute dérive d'arrondi f64 vicie l'état daté. Colonnes DB déjà
+    // `DECIMAL(12,2)` (#433 / WP-A5 EXP-007).
     /// Solde du propriétaire (positif = crédit, négatif = débit)
-    pub owner_balance: f64,
+    pub owner_balance: Decimal,
     /// Montant des arriérés (dettes)
-    pub arrears_amount: f64,
+    pub arrears_amount: Decimal,
 
     // === Section 4: Provisions pour charges ===
     /// Montant mensuel des provisions
-    pub monthly_provision_amount: f64,
+    pub monthly_provision_amount: Decimal,
 
     // === Section 5: Solde créditeur/débiteur ===
     /// Solde total (somme de tous les comptes)
-    pub total_balance: f64,
+    pub total_balance: Decimal,
 
     // === Section 6: Travaux votés non payés ===
     /// Montant total des travaux votés mais non encore payés
-    pub approved_works_unpaid: f64,
+    pub approved_works_unpaid: Decimal,
 
     // === Section 7-16: Données JSONB ===
     /// Données structurées pour les sections complexes
@@ -126,6 +128,65 @@ pub struct EtatDate {
     pub updated_at: DateTime<Utc>,
 }
 
+/// Domain-typed validation error for États Datés (Art. 577-2 CC).
+///
+/// Pure domain type — no infra/application dependency (hexagonal purity).
+/// Suit le précédent `JournalEntryError` (journal_entry.rs) : l'entité
+/// renvoie son erreur typée, l'application la mappe vers `AppError`
+/// (#433 / WP-A5 EXP-007) → 400 validation, jamais 500 Internal.
+#[derive(Debug, Clone, PartialEq)]
+pub enum EtatDateError {
+    /// Un champ texte obligatoire est vide (nom/email notaire, immeuble…).
+    EmptyField(&'static str),
+    /// Email notaire syntaxiquement invalide.
+    InvalidNotaryEmail,
+    /// Quote-part hors bornes [0, 100] %.
+    QuotaOutOfRange(&'static str),
+    /// Montant monétaire négatif là où c'est interdit (arriérés, provisions,
+    /// travaux non payés ≥ 0).
+    NegativeAmount(&'static str),
+    /// Transition de workflow interdite depuis le statut courant.
+    InvalidTransition {
+        from: EtatDateStatus,
+        to: &'static str,
+    },
+    /// Chemin du PDF généré vide.
+    EmptyPdfPath,
+    /// `additional_data` n'est pas un objet JSON.
+    AdditionalDataNotObject,
+}
+
+impl std::fmt::Display for EtatDateError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::EmptyField(name) => write!(f, "{} cannot be empty", name),
+            Self::InvalidNotaryEmail => write!(f, "Invalid notary email"),
+            Self::QuotaOutOfRange(name) => {
+                write!(f, "{} must be between 0 and 100%", name)
+            }
+            Self::NegativeAmount(name) => write!(f, "{} cannot be negative", name),
+            Self::InvalidTransition { from, to } => {
+                write!(f, "Cannot mark as {}: current status is {:?}", to, from)
+            }
+            Self::EmptyPdfPath => write!(f, "PDF file path cannot be empty"),
+            Self::AdditionalDataNotObject => {
+                write!(f, "Additional data must be a JSON object")
+            }
+        }
+    }
+}
+
+impl std::error::Error for EtatDateError {}
+
+/// Bridge : les use-cases/ports `Result<_, String>` compilent inchangés
+/// pendant que l'entité est typée (cascade String→AppError = slice plus
+/// large, hors scope WP-A5 — précédent WP-A3/A4). Pur, std-only.
+impl From<EtatDateError> for String {
+    fn from(e: EtatDateError) -> String {
+        e.to_string()
+    }
+}
+
 impl EtatDate {
     #[allow(clippy::too_many_arguments)]
     pub fn new(
@@ -144,33 +205,35 @@ impl EtatDate {
         unit_area: Option<f64>,
         ordinary_charges_quota: Decimal,
         extraordinary_charges_quota: Decimal,
-    ) -> Result<Self, String> {
+    ) -> Result<Self, EtatDateError> {
         // Validations
         if notary_name.trim().is_empty() {
-            return Err("Notary name cannot be empty".to_string());
+            return Err(EtatDateError::EmptyField("Notary name"));
         }
         if notary_email.trim().is_empty() {
-            return Err("Notary email cannot be empty".to_string());
+            return Err(EtatDateError::EmptyField("Notary email"));
         }
         if !notary_email.contains('@') {
-            return Err("Invalid notary email".to_string());
+            return Err(EtatDateError::InvalidNotaryEmail);
         }
         if building_name.trim().is_empty() {
-            return Err("Building name cannot be empty".to_string());
+            return Err(EtatDateError::EmptyField("Building name"));
         }
         if building_address.trim().is_empty() {
-            return Err("Building address cannot be empty".to_string());
+            return Err(EtatDateError::EmptyField("Building address"));
         }
         if unit_number.trim().is_empty() {
-            return Err("Unit number cannot be empty".to_string());
+            return Err(EtatDateError::EmptyField("Unit number"));
         }
 
         // Quote-parts doivent être entre 0 et 100%
         if ordinary_charges_quota < Decimal::ZERO || ordinary_charges_quota > dec!(100) {
-            return Err("Ordinary charges quota must be between 0 and 100%".to_string());
+            return Err(EtatDateError::QuotaOutOfRange("Ordinary charges quota"));
         }
         if extraordinary_charges_quota < Decimal::ZERO || extraordinary_charges_quota > dec!(100) {
-            return Err("Extraordinary charges quota must be between 0 and 100%".to_string());
+            return Err(EtatDateError::QuotaOutOfRange(
+                "Extraordinary charges quota",
+            ));
         }
 
         let now = Utc::now();
@@ -198,11 +261,11 @@ impl EtatDate {
             unit_area,
             ordinary_charges_quota,
             extraordinary_charges_quota,
-            owner_balance: 0.0,
-            arrears_amount: 0.0,
-            monthly_provision_amount: 0.0,
-            total_balance: 0.0,
-            approved_works_unpaid: 0.0,
+            owner_balance: Decimal::ZERO,
+            arrears_amount: Decimal::ZERO,
+            monthly_provision_amount: Decimal::ZERO,
+            total_balance: Decimal::ZERO,
+            approved_works_unpaid: Decimal::ZERO,
             additional_data: serde_json::json!({}),
             pdf_file_path: None,
             created_at: now,
@@ -236,24 +299,24 @@ impl EtatDate {
     }
 
     /// Marque l'état daté comme en cours de génération
-    pub fn mark_in_progress(&mut self) -> Result<(), String> {
+    pub fn mark_in_progress(&mut self) -> Result<(), EtatDateError> {
         match self.status {
             EtatDateStatus::Requested => {
                 self.status = EtatDateStatus::InProgress;
                 self.updated_at = Utc::now();
                 Ok(())
             }
-            _ => Err(format!(
-                "Cannot mark as in progress: current status is {:?}",
-                self.status
-            )),
+            _ => Err(EtatDateError::InvalidTransition {
+                from: self.status.clone(),
+                to: "in progress",
+            }),
         }
     }
 
     /// Marque l'état daté comme généré
-    pub fn mark_generated(&mut self, pdf_file_path: String) -> Result<(), String> {
+    pub fn mark_generated(&mut self, pdf_file_path: String) -> Result<(), EtatDateError> {
         if pdf_file_path.trim().is_empty() {
-            return Err("PDF file path cannot be empty".to_string());
+            return Err(EtatDateError::EmptyPdfPath);
         }
 
         match self.status {
@@ -264,15 +327,15 @@ impl EtatDate {
                 self.updated_at = Utc::now();
                 Ok(())
             }
-            _ => Err(format!(
-                "Cannot mark as generated: current status is {:?}",
-                self.status
-            )),
+            _ => Err(EtatDateError::InvalidTransition {
+                from: self.status.clone(),
+                to: "generated",
+            }),
         }
     }
 
     /// Marque l'état daté comme délivré au notaire
-    pub fn mark_delivered(&mut self) -> Result<(), String> {
+    pub fn mark_delivered(&mut self) -> Result<(), EtatDateError> {
         match self.status {
             EtatDateStatus::Generated => {
                 self.status = EtatDateStatus::Delivered;
@@ -280,10 +343,10 @@ impl EtatDate {
                 self.updated_at = Utc::now();
                 Ok(())
             }
-            _ => Err(format!(
-                "Cannot mark as delivered: current status is {:?}",
-                self.status
-            )),
+            _ => Err(EtatDateError::InvalidTransition {
+                from: self.status.clone(),
+                to: "delivered",
+            }),
         }
     }
 
@@ -318,21 +381,21 @@ impl EtatDate {
     /// Met à jour les données financières
     pub fn update_financial_data(
         &mut self,
-        owner_balance: f64,
-        arrears_amount: f64,
-        monthly_provision_amount: f64,
-        total_balance: f64,
-        approved_works_unpaid: f64,
-    ) -> Result<(), String> {
+        owner_balance: Decimal,
+        arrears_amount: Decimal,
+        monthly_provision_amount: Decimal,
+        total_balance: Decimal,
+        approved_works_unpaid: Decimal,
+    ) -> Result<(), EtatDateError> {
         // Validation: les arriérés ne peuvent pas être négatifs
-        if arrears_amount < 0.0 {
-            return Err("Arrears amount cannot be negative".to_string());
+        if arrears_amount < Decimal::ZERO {
+            return Err(EtatDateError::NegativeAmount("Arrears amount"));
         }
-        if monthly_provision_amount < 0.0 {
-            return Err("Monthly provision amount cannot be negative".to_string());
+        if monthly_provision_amount < Decimal::ZERO {
+            return Err(EtatDateError::NegativeAmount("Monthly provision amount"));
         }
-        if approved_works_unpaid < 0.0 {
-            return Err("Approved works unpaid cannot be negative".to_string());
+        if approved_works_unpaid < Decimal::ZERO {
+            return Err(EtatDateError::NegativeAmount("Approved works unpaid"));
         }
 
         self.owner_balance = owner_balance;
@@ -346,9 +409,9 @@ impl EtatDate {
     }
 
     /// Met à jour les données additionnelles (sections 7-16)
-    pub fn update_additional_data(&mut self, data: serde_json::Value) -> Result<(), String> {
+    pub fn update_additional_data(&mut self, data: serde_json::Value) -> Result<(), EtatDateError> {
         if !data.is_object() {
-            return Err("Additional data must be a JSON object".to_string());
+            return Err(EtatDateError::AdditionalDataNotObject);
         }
 
         self.additional_data = data;
@@ -418,8 +481,10 @@ mod tests {
             dec!(100),
         );
 
-        assert!(result.is_err());
-        assert_eq!(result.unwrap_err(), "Invalid notary email");
+        assert!(matches!(
+            result.unwrap_err(),
+            EtatDateError::InvalidNotaryEmail
+        ));
     }
 
     #[test]
@@ -447,8 +512,10 @@ mod tests {
             dec!(100),
         );
 
-        assert!(result.is_err());
-        assert!(result.unwrap_err().contains("between 0 and 100%"));
+        assert!(matches!(
+            result.unwrap_err(),
+            EtatDateError::QuotaOutOfRange(_)
+        ));
     }
 
     #[test]
@@ -553,16 +620,16 @@ mod tests {
         .unwrap();
 
         let result = ed.update_financial_data(
-            -500.00, // -500.00 EUR (débit)
-            100.0,   // 500.00 EUR arriérés
-            100.0,   // 150.00 EUR/mois
-            -500.00, // -500.00 EUR total
-            100.0,   // 2000.00 EUR travaux votés
+            dec!(-500.00), // débit
+            dec!(100.0),   // arriérés
+            dec!(100.0),   // provision/mois
+            dec!(-500.00), // total
+            dec!(100.0),   // travaux votés non payés
         );
 
         assert!(result.is_ok());
-        assert_eq!(ed.owner_balance, -500.00);
-        assert_eq!(ed.arrears_amount, 100.0);
+        assert_eq!(ed.owner_balance, dec!(-500.00));
+        assert_eq!(ed.arrears_amount, dec!(100.0));
     }
 
     #[test]
@@ -627,5 +694,136 @@ mod tests {
         ed.requested_date = Utc::now() - chrono::Duration::days(5);
 
         assert_eq!(ed.days_since_request(), 5);
+    }
+
+    // ------------------------------------------------------------------------
+    // 4 catégories #433/WP-A5 EXP-007 — erreur typée + exactitude Decimal
+    // (CRITICAL.md #3). Document légal Art. 577-2 CC : zéro dérive d'arrondi.
+    // ------------------------------------------------------------------------
+
+    fn sample() -> EtatDate {
+        EtatDate::new(
+            Uuid::new_v4(),
+            Uuid::new_v4(),
+            Uuid::new_v4(),
+            Utc::now(),
+            EtatDateLanguage::Fr,
+            "Maître Dupont".to_string(),
+            "dupont@notaire.be".to_string(),
+            None,
+            "Résidence Les Jardins".to_string(),
+            "Rue de la Loi 123".to_string(),
+            "101".to_string(),
+            None,
+            None,
+            dec!(50),
+            dec!(50),
+        )
+        .unwrap()
+    }
+
+    /// @happy — màj financière nominale : montants Decimal stockés exacts.
+    #[test]
+    fn happy_update_financial_data_decimal_exact() {
+        let mut ed = sample();
+        ed.update_financial_data(
+            dec!(-1234.56),
+            dec!(789.01),
+            dec!(150.00),
+            dec!(-445.55),
+            dec!(2000.00),
+        )
+        .unwrap();
+        assert_eq!(ed.owner_balance, dec!(-1234.56));
+        assert_eq!(ed.total_balance, dec!(-445.55));
+    }
+
+    /// @edge — exactitude Decimal sur cumul (0.1+0.2=0.3 ; f64 échoue) +
+    /// borne quota exactement 100% acceptée.
+    #[test]
+    fn edge_decimal_exactness_and_quota_boundary() {
+        let mut ed = sample();
+        ed.update_financial_data(
+            dec!(0.1) + dec!(0.2),
+            Decimal::ZERO,
+            Decimal::ZERO,
+            dec!(0.3),
+            Decimal::ZERO,
+        )
+        .unwrap();
+        assert_eq!(ed.owner_balance, dec!(0.3));
+        assert_eq!(ed.owner_balance, ed.total_balance);
+
+        // Quota exactement 100% (borne incluse) accepté.
+        let ok = EtatDate::new(
+            Uuid::new_v4(),
+            Uuid::new_v4(),
+            Uuid::new_v4(),
+            Utc::now(),
+            EtatDateLanguage::Nl,
+            "N".to_string(),
+            "n@x.be".to_string(),
+            None,
+            "B".to_string(),
+            "A".to_string(),
+            "1".to_string(),
+            None,
+            None,
+            dec!(100),
+            dec!(0),
+        );
+        assert!(ok.is_ok());
+    }
+
+    /// @negative — montant interdit négatif & transition invalide rejetés
+    /// (erreur typée, pas de panic).
+    #[test]
+    fn negative_amount_and_transition_rejected() {
+        let mut ed = sample();
+        assert!(matches!(
+            ed.update_financial_data(
+                Decimal::ZERO,
+                dec!(-1), // arriérés négatifs interdits
+                Decimal::ZERO,
+                Decimal::ZERO,
+                Decimal::ZERO,
+            )
+            .unwrap_err(),
+            EtatDateError::NegativeAmount(_)
+        ));
+
+        // Requested -> Delivered direct interdit.
+        assert!(matches!(
+            ed.mark_delivered().unwrap_err(),
+            EtatDateError::InvalidTransition { .. }
+        ));
+    }
+
+    /// @security — un état daté (acte légal Art. 577-2 CC) ne peut être créé
+    /// avec une quote-part falsifiée hors [0,100] % : intégrité du document
+    /// opposable au notaire/acquéreur.
+    #[test]
+    fn security_tampered_quota_rejected() {
+        let result = EtatDate::new(
+            Uuid::new_v4(),
+            Uuid::new_v4(),
+            Uuid::new_v4(),
+            Utc::now(),
+            EtatDateLanguage::Fr,
+            "Maître Dupont".to_string(),
+            "dupont@notaire.be".to_string(),
+            None,
+            "Résidence".to_string(),
+            "Rue".to_string(),
+            "101".to_string(),
+            None,
+            None,
+            dec!(250), // falsifié > 100%
+            dec!(50),
+        );
+        assert!(matches!(
+            result.unwrap_err(),
+            EtatDateError::QuotaOutOfRange(_)
+        ));
     }
 }
