@@ -13,6 +13,16 @@ Feature: Call for Funds
     And a building "Residence Appel" with 4 units exists in organization "org-appel"
     And 4 owners with ownership percentages exist
 
+  # 4 catégories (#433/WP-A6 EXP-008). total_amount Decimal exact (ADR-0007).
+  # @edge (montant minimal / exactitude Decimal), @negative (total ≤ 0,
+  # titre/description vide, échéance ≤ appel) et @security (appel falsifié
+  # à montant ≤ 0 rejeté) sont des invariants de l'entité domaine, vérifiés
+  # par les tests unitaires typés `edge_min_positive_and_decimal_exactness`,
+  # `negative_invalid_inputs_rejected`,
+  # `security_tampered_nonpositive_amount_rejected` (call_for_funds.rs) — le
+  # glue BDD utilise des données valides (précédent WP-A3/A4/A5).
+
+  @happy
   Scenario: Create a call for funds
     When I create a call for funds:
       | title              | Charges Q1 2026           |
@@ -49,6 +59,7 @@ Feature: Call for Funds
     When I delete the call for funds
     Then the call should be deleted
 
+  @edge
   Scenario: Cannot delete a sent call for funds
     Given a sent call for funds exists
     When I try to delete the sent call for funds

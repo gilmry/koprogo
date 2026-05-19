@@ -68,7 +68,7 @@ pub use board_decision::{BoardDecision, DecisionStatus};
 pub use board_member::{BoardMember, BoardPosition};
 pub use budget::{Budget, BudgetStatus};
 pub use building::Building;
-pub use call_for_funds::{CallForFunds, CallForFundsStatus};
+pub use call_for_funds::{CallForFunds, CallForFundsError, CallForFundsStatus};
 pub use challenge::{Challenge, ChallengeProgress, ChallengeStatus, ChallengeType};
 pub use charge_distribution::ChargeDistribution;
 pub use consent::{ConsentRecord, ConsentStatus};
@@ -107,6 +107,7 @@ pub use organization::{Organization, SubscriptionPlan};
 pub use owner::Owner;
 pub use owner_contribution::{
     ContributionPaymentMethod, ContributionPaymentStatus, ContributionType, OwnerContribution,
+    OwnerContributionError,
 };
 pub use owner_credit_balance::{CreditStatus, OwnerCreditBalance, ParticipationLevel};
 pub use payment::{Payment, PaymentMethodType, TransactionStatus};

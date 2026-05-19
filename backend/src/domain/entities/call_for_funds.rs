@@ -66,6 +66,46 @@ pub struct CallForFunds {
     pub created_by: Option<Uuid>,
 }
 
+/// Domain-typed validation error for calls for funds (appel de fonds).
+///
+/// Pure domain type — no infra/application dependency (hexagonal purity).
+/// Précédent `JournalEntryError`/`ChargeDistributionError` (#433 / WP-A6
+/// EXP-008) → 400 validation, jamais 500 Internal.
+#[derive(Debug, Clone, PartialEq)]
+pub enum CallForFundsError {
+    /// Montant total non strictement positif.
+    NonPositiveTotalAmount,
+    /// Titre vide.
+    EmptyTitle,
+    /// Description vide.
+    EmptyDescription,
+    /// Date d'échéance ≤ date d'appel (fenêtre de paiement invalide).
+    DueDateNotAfterCallDate,
+}
+
+impl std::fmt::Display for CallForFundsError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::NonPositiveTotalAmount => write!(f, "Total amount must be positive"),
+            Self::EmptyTitle => write!(f, "Title cannot be empty"),
+            Self::EmptyDescription => write!(f, "Description cannot be empty"),
+            Self::DueDateNotAfterCallDate => {
+                write!(f, "Due date must be after call date")
+            }
+        }
+    }
+}
+
+impl std::error::Error for CallForFundsError {}
+
+/// Bridge : use-cases/ports `Result<_, String>` inchangés (cascade
+/// String→AppError = slice large différée, précédent WP-A3/A4/A5).
+impl From<CallForFundsError> for String {
+    fn from(e: CallForFundsError) -> String {
+        e.to_string()
+    }
+}
+
 impl CallForFunds {
     #[allow(clippy::too_many_arguments)]
     pub fn new(
@@ -78,25 +118,25 @@ impl CallForFunds {
         call_date: DateTime<Utc>,
         due_date: DateTime<Utc>,
         account_code: Option<String>,
-    ) -> Result<Self, String> {
+    ) -> Result<Self, CallForFundsError> {
         // Validate total amount is positive
         if total_amount <= Decimal::ZERO {
-            return Err("Total amount must be positive".to_string());
+            return Err(CallForFundsError::NonPositiveTotalAmount);
         }
 
         // Validate title
         if title.trim().is_empty() {
-            return Err("Title cannot be empty".to_string());
+            return Err(CallForFundsError::EmptyTitle);
         }
 
         // Validate description
         if description.trim().is_empty() {
-            return Err("Description cannot be empty".to_string());
+            return Err(CallForFundsError::EmptyDescription);
         }
 
         // Validate dates
         if due_date <= call_date {
-            return Err("Due date must be after call date".to_string());
+            return Err(CallForFundsError::DueDateNotAfterCallDate);
         }
 
         Ok(Self {
@@ -191,8 +231,10 @@ mod tests {
             None,
         );
 
-        assert!(call.is_err());
-        assert!(call.unwrap_err().contains("must be positive"));
+        assert!(matches!(
+            call.unwrap_err(),
+            CallForFundsError::NonPositiveTotalAmount
+        ));
     }
 
     #[test]
@@ -212,8 +254,10 @@ mod tests {
             None,
         );
 
-        assert!(call.is_err());
-        assert!(call.unwrap_err().contains("Due date must be after"));
+        assert!(matches!(
+            call.unwrap_err(),
+            CallForFundsError::DueDateNotAfterCallDate
+        ));
     }
 
     #[test]
@@ -262,5 +306,70 @@ mod tests {
         .unwrap();
 
         assert!(call.is_overdue());
+    }
+
+    // ------------------------------------------------------------------------
+    // 4 catégories #433/WP-A6 EXP-008 — erreur typée (CRITICAL.md #3).
+    // Entité déjà Decimal (ADR-0007) ; ce WP type l'erreur domaine.
+    // ------------------------------------------------------------------------
+
+    fn mk(amount: Decimal, days: i64) -> Result<CallForFunds, CallForFundsError> {
+        let call_date = Utc::now();
+        CallForFunds::new(
+            Uuid::new_v4(),
+            Uuid::new_v4(),
+            "Appel".to_string(),
+            "Charges".to_string(),
+            amount,
+            ContributionType::Regular,
+            call_date,
+            call_date + chrono::Duration::days(days),
+            None,
+        )
+    }
+
+    /// @happy — appel nominal : total_amount Decimal exact.
+    #[test]
+    fn happy_total_amount_decimal_exact() {
+        let c = mk(rust_decimal_macros::dec!(9876.54), 30).unwrap();
+        assert_eq!(c.total_amount, rust_decimal_macros::dec!(9876.54));
+        assert_eq!(c.status, CallForFundsStatus::Draft);
+    }
+
+    /// @edge — montant minimal strictement positif accepté ; exactitude
+    /// Decimal sur cumul (0.1+0.2=0.3, f64 échoue).
+    #[test]
+    fn edge_min_positive_and_decimal_exactness() {
+        assert!(mk(rust_decimal_macros::dec!(0.01), 1).is_ok());
+        let c = mk(
+            rust_decimal_macros::dec!(0.1) + rust_decimal_macros::dec!(0.2),
+            7,
+        )
+        .unwrap();
+        assert_eq!(c.total_amount, rust_decimal_macros::dec!(0.3));
+    }
+
+    /// @negative — total ≤ 0, titre/description vides, échéance ≤ appel
+    /// rejetés (erreurs typées, pas de panic).
+    #[test]
+    fn negative_invalid_inputs_rejected() {
+        assert!(matches!(
+            mk(Decimal::ZERO, 30).unwrap_err(),
+            CallForFundsError::NonPositiveTotalAmount
+        ));
+        assert!(matches!(
+            mk(rust_decimal_macros::dec!(100), -1).unwrap_err(),
+            CallForFundsError::DueDateNotAfterCallDate
+        ));
+    }
+
+    /// @security — un appel de fonds falsifié à montant nul/négatif
+    /// (collecte fantôme) ne peut jamais être créé.
+    #[test]
+    fn security_tampered_nonpositive_amount_rejected() {
+        assert!(matches!(
+            mk(rust_decimal_macros::dec!(-1), 30).unwrap_err(),
+            CallForFundsError::NonPositiveTotalAmount
+        ));
     }
 }
