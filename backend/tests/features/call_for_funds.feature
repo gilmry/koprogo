@@ -18,7 +18,7 @@ Feature: Call for Funds
       | title              | Charges Q1 2026           |
       | total_amount       | 10000.00                  |
       | contribution_type  | QuarterlyCharge           |
-      | due_date           | 2026-03-31                |
+      | due_date           | +90d                      |
       | account_code       | 701000                    |
     Then the call for funds should be created with status "Draft"
 

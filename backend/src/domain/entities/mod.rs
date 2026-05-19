@@ -94,7 +94,7 @@ pub use gdpr_restriction::{GdprRestrictionRequest, RestrictionReason, Restrictio
 pub use individual_member::IndividualMember;
 pub use invoice_line_item::InvoiceLineItem;
 pub use iot_reading::{DeviceType, IoTReading, MetricType};
-pub use journal_entry::{JournalEntry, JournalEntryLine};
+pub use journal_entry::{JournalEntry, JournalEntryError, JournalEntryLine};
 pub use linky_device::{LinkyDevice, LinkyProvider};
 pub use local_exchange::{ExchangeStatus, ExchangeType, LocalExchange};
 pub use meeting::{Meeting, MeetingStatus, MeetingType};

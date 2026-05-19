@@ -176,6 +176,21 @@ impl From<sqlx::Error> for AppError {
     }
 }
 
+// Domain typed-error → AppError mappings (#433 / WP-A* — pureté hexagonale :
+// le domaine expose un enum d'erreur pur, l'application le mappe ici).
+// NB : un bloc `impl From` par WP, ajoutés en fin de section pour minimiser
+// les conflits de merge entre WP concurrents (A3/A4/A5).
+
+impl From<crate::domain::entities::JournalEntryError> for AppError {
+    /// Une écriture comptable malformée est une erreur d'entrée client
+    /// (débit≠crédit, ligne invalide, type journal inconnu…) → 400
+    /// validation, **jamais** 500 Internal (le `From<String>` générique
+    /// mappait à tort vers Internal).
+    fn from(e: crate::domain::entities::JournalEntryError) -> Self {
+        AppError::Validation(e.to_string())
+    }
+}
+
 // ============================================================================
 // Tests — taxonomie 4 catégories obligatoire (cf. CRITICAL.md règle #3, #427)
 // ============================================================================

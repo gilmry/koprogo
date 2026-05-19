@@ -2201,13 +2201,7 @@ async fn when_create_call_for_funds(world: &mut FinancialWorld, step: &Step) {
             "title" => title = val.to_string(),
             "total_amount" => total_amount = val.parse().unwrap_or(Decimal::ZERO),
             "contribution_type" => contribution_type = parse_contribution_type(val),
-            "due_date" => {
-                due_date = val.parse::<DateTime<Utc>>().unwrap_or_else(|_| {
-                    format!("{}T00:00:00Z", val)
-                        .parse()
-                        .unwrap_or(Utc::now() + ChronoDuration::days(30))
-                });
-            }
+            "due_date" => due_date = parse_seed_date(val),
             "account_code" => account_code = Some(val.to_string()),
             _ => {}
         }
@@ -3942,6 +3936,35 @@ async fn then_all_totals_zero(world: &mut FinancialWorld) {
 }
 
 // ==================== PARSE HELPERS ====================
+
+/// Parse a BDD seed date that may be absolute (RFC3339 or `YYYY-MM-DD`) or
+/// relative (`+90d`, `-30d`, `+6m`, `+1y`). Relative tokens resolve against
+/// `Utc::now()` at run time so seeds never become stale time-bombs — the
+/// recurring cause of pre-existing BDD reds (WP-B3 / #540).
+fn parse_seed_date(s: &str) -> DateTime<Utc> {
+    let s = s.trim();
+    if let Some(rest) = s.strip_prefix(['+', '-']) {
+        let sign: i64 = if s.starts_with('-') { -1 } else { 1 };
+        if let (Some(num), Some(unit)) = (rest.get(..rest.len() - 1), rest.chars().last()) {
+            if let Ok(n) = num.parse::<i64>() {
+                let days = match unit {
+                    'w' => n * 7,
+                    'm' => n * 30,
+                    'y' => n * 365,
+                    _ => n, // 'd' or default
+                };
+                return Utc::now() + ChronoDuration::days(sign * days);
+            }
+        }
+    }
+    if let Ok(dt) = s.parse::<DateTime<Utc>>() {
+        return dt;
+    }
+    if let Ok(dt) = format!("{}T00:00:00Z", s).parse::<DateTime<Utc>>() {
+        return dt;
+    }
+    Utc::now() + ChronoDuration::days(30)
+}
 
 fn parse_contribution_type(s: &str) -> ContributionType {
     match s {
@@ -7442,6 +7465,59 @@ async fn given_named_expense_exists_for_building(
     .await
     .expect("insert named expense");
     world.expense_id = Some(id);
+}
+
+/// #526 @negative — attempts an expense insert and captures (not panics on)
+/// the outcome, so a scenario can assert the `expenses_amount_check > 0`
+/// domain rule rejects amount = 0 (a cancellation is a journal counter-entry,
+/// not a zero expense — WBS WP-A7b signed decision).
+#[when(regex = r#"^creating an expense "([^"]*)" of "([^"]*)" EUR is attempted for "([^"]*)"$"#)]
+async fn when_create_expense_attempted(
+    world: &mut FinancialWorld,
+    description: String,
+    amount: Decimal,
+    _building: String,
+) {
+    let pool = world.pool.as_ref().expect("pool").clone();
+    let building_id = world.building_id.expect("building_id");
+    let org_id = world.org_id.expect("org_id");
+    let id = Uuid::new_v4();
+    let res = sqlx::query(
+        r#"INSERT INTO expenses (id, building_id, organization_id, category, description, amount, expense_date, payment_status, created_at, updated_at)
+           VALUES ($1, $2, $3, 'maintenance', $4, $5, NOW(), 'pending', NOW(), NOW())"#,
+    )
+    .bind(id)
+    .bind(building_id)
+    .bind(org_id)
+    .bind(&description)
+    .bind(amount)
+    .execute(&pool)
+    .await;
+    match res {
+        Ok(_) => {
+            world.operation_success = true;
+            world.operation_error = None;
+            world.expense_id = Some(id);
+        }
+        Err(e) => {
+            world.operation_success = false;
+            world.operation_error = Some(e.to_string());
+        }
+    }
+}
+
+#[then("the expense creation is rejected by the amount constraint")]
+async fn then_expense_rejected_amount(world: &mut FinancialWorld) {
+    assert!(
+        !world.operation_success,
+        "Expected expense creation to be rejected by expenses_amount_check (#526)"
+    );
+    let err = world.operation_error.as_deref().unwrap_or("");
+    assert!(
+        err.contains("expenses_amount_check"),
+        "Expected expenses_amount_check violation, got: {}",
+        err
+    );
 }
 
 #[given(regex = r#"^the expense payment status is "([^"]*)"$"#)]

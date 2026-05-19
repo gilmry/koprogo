@@ -208,9 +208,20 @@ impl BuildingWorld {
             .await
             .expect("Failed to get host port");
 
+        // Use the testcontainers-resolved host (honors TESTCONTAINERS_HOST_OVERRIDE)
+        // instead of a hardcoded 127.0.0.1. On CI (cargo on the runner host) this
+        // resolves to localhost — unchanged. Inside the dev backend container the
+        // testcontainers Postgres is a *sibling* (docker.sock mounted), reachable
+        // via host.docker.internal, not the container's own 127.0.0.1 — this is
+        // what was causing PoolTimedOut for local docker BDD runs (same fix as
+        // bdd_governance #535 / bdd_financial #539; WP-B3 debruit, idempotent).
+        let host = postgres_container
+            .get_host()
+            .await
+            .expect("Failed to get container host");
         let connection_string = format!(
-            "postgres://postgres:postgres@127.0.0.1:{}/postgres",
-            host_port
+            "postgres://postgres:postgres@{}:{}/postgres",
+            host, host_port
         );
 
         let pool = create_pool(&connection_string)
@@ -2899,7 +2910,7 @@ async fn when_renew_board_mandate(world: &mut BuildingWorld) {
     let use_cases = world.board_member_use_cases.as_ref().unwrap();
     let dto = RenewMandateDto {
         new_elected_by_meeting_id: meeting_id.to_string(),
-        mandate_duration_days: 1095,
+        mandate_duration_days: 365, // ≈ 1 an (Art. 3.90 CC, conseil)
     };
     match use_cases.renew_mandate(member_id, dto).await {
         Ok(m) => {
@@ -3955,7 +3966,7 @@ async fn when_renew_mandate_of_owner(
     let use_cases = world.board_member_use_cases.as_ref().unwrap();
     let dto = RenewMandateDto {
         new_elected_by_meeting_id: meeting_id.to_string(),
-        mandate_duration_days: 1095,
+        mandate_duration_days: 365, // ≈ 1 an (Art. 3.90 CC, conseil)
     };
     match use_cases.renew_mandate(member_id, dto).await {
         Ok(m) => {
@@ -3988,7 +3999,7 @@ async fn when_try_renew_mandate(world: &mut BuildingWorld) {
     let use_cases = world.board_member_use_cases.as_ref().unwrap();
     let dto = RenewMandateDto {
         new_elected_by_meeting_id: meeting_id.to_string(),
-        mandate_duration_days: 1095,
+        mandate_duration_days: 365, // ≈ 1 an (Art. 3.90 CC, conseil)
     };
     match use_cases.renew_mandate(member_id, dto).await {
         Ok(m) => {

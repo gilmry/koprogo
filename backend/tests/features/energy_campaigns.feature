@@ -19,7 +19,7 @@ Feature: Energy Buying Groups
     When I create an energy campaign:
       | campaign_name        | Electricity 2026              |
       | energy_types         | electricity                   |
-      | deadline_participation | 2026-04-30T23:59:59Z       |
+      | deadline_participation | +60d                       |
     Then the campaign should be created
     And the status should be "Open"
 
