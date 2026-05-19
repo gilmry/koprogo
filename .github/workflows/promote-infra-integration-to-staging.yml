@@ -1,0 +1,82 @@
+name: Promote infra-integration → infra-staging
+
+# Decision: RFC #466 (Alternative D — release train + back-sync).
+# Trigger: push of a release-candidate tag matching `infra-rc-v*` (e.g.
+# `infra-rc-v0.1.0`). Opens a PR from infra-integration to infra-staging.
+# This is the gate where human testing on infra-staging begins.
+
+on:
+  push:
+    tags:
+      - "infra-rc-v*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Existing infra-rc-v* tag to promote'
+        required: true
+        type: string
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  promote:
+    name: Open PR infra-integration → infra-staging
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Resolve tag
+        id: tag
+        run: |
+          set -euo pipefail
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            tag="${{ inputs.tag }}"
+          else
+            tag="${GITHUB_REF#refs/tags/}"
+          fi
+          if [[ ! "$tag" =~ ^infra-rc-v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::Tag '$tag' does not match infra-rc-vX.Y.Z"
+            exit 1
+          fi
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+
+      - name: Verify diff exists infra-integration vs infra-staging
+        id: diff
+        run: |
+          set -euo pipefail
+          git fetch origin infra-integration infra-staging
+          if git diff --quiet origin/infra-staging..origin/infra-integration; then
+            echo "::notice::No diff — nothing to promote"
+            echo "has_diff=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_diff=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Open promotion PR
+        if: steps.diff.outputs.has_diff == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          existing=$(gh pr list --base infra-staging --head infra-integration --state open --json number --jq '.[0].number' 2>/dev/null || true)
+          if [ -n "$existing" ]; then
+            echo "::notice::Existing PR #$existing — head moves automatically; updating title with new tag"
+            gh pr edit "$existing" --title "promote: infra-integration → infra-staging (${{ steps.tag.outputs.tag }})"
+            exit 0
+          fi
+          gh pr create \
+            --base infra-staging \
+            --head infra-integration \
+            --title "promote: infra-integration → infra-staging (${{ steps.tag.outputs.tag }})" \
+            --body "$(cat <<EOF
+Release-candidate tagged: \`${{ steps.tag.outputs.tag }}\`.
+
+Per RFC #466 (Alternative D), this PR opens the human-test window on
+infra-staging. Merge only after manual validation on the staging cluster.
+EOF
+)"
