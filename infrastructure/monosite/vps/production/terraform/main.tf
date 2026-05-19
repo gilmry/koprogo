@@ -1,6 +1,6 @@
 # KoproGo VPS - Production Environment
 module "vps" {
-  source = "../../../_shared/terraform/modules/ovh-vps"
+  source = "../../../../_shared/terraform/modules/ovh-vps"
 
   providers = {
     openstack.ovh = openstack.ovh
