@@ -48,12 +48,25 @@ Feature: Stats syndic urgent tasks robustness vs NUMERIC columns
     Then the urgent tasks operation succeeds
     And the task title displays the amount as "<displayed>"
 
+    # #526 (décision domaine signée WBS WP-A7b) : `expenses_amount_check > 0`.
+    # Une charge à 0 € n'existe pas (une annulation = contre-écriture journal,
+    # pas une charge nulle). Les bornes @edge testent le roundtrip NUMERIC sur
+    # des montants *valides* uniquement ; le rejet de amount=0 a son propre
+    # scénario @negative ci-dessous.
     Examples:
       | desc       | input             | displayed       |
-      | Zero       | 0.0000            | 0.00            |
+      | Min-legal  | 0.01              | 0.01            |
       | Four-dec   | 12.3456           | 12.35           |
       | Max-usuel  | 999999999.9999    | 1000000000.00   |
-      | Tiny       | 0.0001            | 0.00            |
+
+  # #526 — la règle domaine `amount > 0` (contrainte expenses_amount_check)
+  # est intentionnelle : une charge nulle n'a pas de sens comptable (PCMN) ;
+  # une annulation se modélise en contre-écriture journal. Ce @negative
+  # verrouille la décision et documente le pourquoi dans la suite de tests.
+  @negative @story521-A
+  Scenario: An expense with amount 0 is rejected (cancellations are journal counter-entries, #526)
+    When creating an expense "Annulation chauffage" of "0.00" EUR is attempted for "Residence Soleil"
+    Then the expense creation is rejected by the amount constraint
 
   @security @story521-A
   Scenario: Querying urgent tasks for another organization does not return Marc's overdue expenses

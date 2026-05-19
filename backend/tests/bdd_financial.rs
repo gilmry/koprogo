@@ -7467,6 +7467,59 @@ async fn given_named_expense_exists_for_building(
     world.expense_id = Some(id);
 }
 
+/// #526 @negative — attempts an expense insert and captures (not panics on)
+/// the outcome, so a scenario can assert the `expenses_amount_check > 0`
+/// domain rule rejects amount = 0 (a cancellation is a journal counter-entry,
+/// not a zero expense — WBS WP-A7b signed decision).
+#[when(regex = r#"^creating an expense "([^"]*)" of "([^"]*)" EUR is attempted for "([^"]*)"$"#)]
+async fn when_create_expense_attempted(
+    world: &mut FinancialWorld,
+    description: String,
+    amount: Decimal,
+    _building: String,
+) {
+    let pool = world.pool.as_ref().expect("pool").clone();
+    let building_id = world.building_id.expect("building_id");
+    let org_id = world.org_id.expect("org_id");
+    let id = Uuid::new_v4();
+    let res = sqlx::query(
+        r#"INSERT INTO expenses (id, building_id, organization_id, category, description, amount, expense_date, payment_status, created_at, updated_at)
+           VALUES ($1, $2, $3, 'maintenance', $4, $5, NOW(), 'pending', NOW(), NOW())"#,
+    )
+    .bind(id)
+    .bind(building_id)
+    .bind(org_id)
+    .bind(&description)
+    .bind(amount)
+    .execute(&pool)
+    .await;
+    match res {
+        Ok(_) => {
+            world.operation_success = true;
+            world.operation_error = None;
+            world.expense_id = Some(id);
+        }
+        Err(e) => {
+            world.operation_success = false;
+            world.operation_error = Some(e.to_string());
+        }
+    }
+}
+
+#[then("the expense creation is rejected by the amount constraint")]
+async fn then_expense_rejected_amount(world: &mut FinancialWorld) {
+    assert!(
+        !world.operation_success,
+        "Expected expense creation to be rejected by expenses_amount_check (#526)"
+    );
+    let err = world.operation_error.as_deref().unwrap_or("");
+    assert!(
+        err.contains("expenses_amount_check"),
+        "Expected expenses_amount_check violation, got: {}",
+        err
+    );
+}
+
 #[given(regex = r#"^the expense payment status is "([^"]*)"$"#)]
 async fn given_expense_payment_status(world: &mut FinancialWorld, status: String) {
     let pool = world.pool.as_ref().expect("pool").clone();
