@@ -307,7 +307,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v6
         with:
-          node-version: '22'
+          node-version: "22"
 
       - name: Install frontend dependencies
         run: |
@@ -409,7 +409,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v6
         with:
-          node-version: '22'
+          node-version: "22"
 
       - name: Install frontend dependencies
         run: |
@@ -431,7 +431,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v6
         with:
-          node-version: '22'
+          node-version: "22"
 
       - name: Install dependencies
         run: |
@@ -474,7 +474,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v6
         with:
-          node-version: '22'
+          node-version: "22"
 
       - name: Install frontend dependencies
         run: |
@@ -508,6 +508,11 @@ jobs:
           LOGIN_RATE_LIMIT_MAX: 1000
           SMTP_ENABLED: false
           RUST_LOG: warn
+          # WP-FE1 : ce job lance le backend en HTTP direct (cargo run, pas
+          # docker-compose). Le défaut sûr COOKIE_SECURE=true poserait le
+          # cookie refresh `Secure`, rejeté par le navigateur sur http://
+          # → silent-refresh 401 → toute la suite auth E2E échoue.
+          COOKIE_SECURE: "false"
         run: |
           cd backend
           cargo install sqlx-cli --no-default-features --features postgres
@@ -599,7 +604,16 @@ jobs:
   build:
     name: Build
     runs-on: ubuntu-latest
-    needs: [lint, test-unit, test-bdd, test-e2e, frontend-check, contract-types, vitest]
+    needs:
+      [
+        lint,
+        test-unit,
+        test-bdd,
+        test-e2e,
+        frontend-check,
+        contract-types,
+        vitest,
+      ]
     steps:
       - name: Checkout code
         uses: actions/checkout@v6

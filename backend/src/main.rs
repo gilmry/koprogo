@@ -522,6 +522,11 @@ async fn main() -> std::io::Result<()> {
             cors = cors.allowed_origin(origin);
         }
         let cors = cors
+            // WP-FE1 : le cookie refresh HttpOnly exige des requêtes
+            // crédentialisées (fetch `credentials:"include"`). Origines
+            // explicites obligatoires (jamais `*`) — `validate_cors_origins`
+            // rejette déjà le wildcard, contrat compatible credentials.
+            .supports_credentials()
             .allowed_methods(vec!["GET", "POST", "PUT", "DELETE", "OPTIONS"])
             .allowed_headers(vec![
                 actix_web::http::header::AUTHORIZATION,

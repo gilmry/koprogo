@@ -43,51 +43,70 @@ interface OwnerContext extends SyndicContext {
 }
 
 /**
- * Inject auth token into browser localStorage without UI login.
- * Navigates to a page first (needed for localStorage domain), then injects.
+ * Establish an authenticated browser session WITHOUT UI login (WP-FE1).
+ *
+ * Plus de token en localStorage : l'access token vit en mémoire, le
+ * refresh token est un cookie `HttpOnly` posé par le backend lors du
+ * `register`/`login` réel effectué par l'appelant via `page.request`
+ * (le cookie jar est partagé avec le contexte navigateur). En naviguant
+ * vers le dashboard, `authStore.init()` fait un silent-refresh via ce
+ * cookie et obtient un access token frais — exactement le flux prod.
+ *
+ * `koprogo_user` reste injecté : cache d'AFFICHAGE non sensible (peinture
+ * instantanée), jamais une preuve d'authentification.
+ *
+ * **Anti-course de rotation** : on ne visite PAS `/login` au préalable
+ * (LoginForm déclenche son propre `authStore.init()` ⇒ refresh #1 qui
+ * **rote** le cookie ; une 2ᵉ nav vers le dashboard ⇒ refresh #2 avec le
+ * cookie déjà révoqué → 401 → /login). `koprogo_user` est posé via
+ * `addInitScript` (avant tout script de page) et une **unique** navigation
+ * dashboard déclenche **un seul** silent-refresh (RouteGuard).
+ *
+ * Pré-requis env (E2E sur http://localhost) : `COOKIE_SECURE=false`
+ * (sinon le navigateur refuse le cookie sur une origine non https).
  */
 async function injectAuth(
   page: Page,
-  token: string,
+  _token: string,
   user: { email: string; first_name: string; last_name: string; role: string },
 ) {
-  // Navigate to base URL to set localStorage on the right domain
-  await page.goto("/login", { waitUntil: "domcontentloaded" });
+  const roleObj = {
+    id: "injected-role-1",
+    role: user.role,
+    organization_id: null,
+    is_primary: true,
+  };
+  const cachedUser = JSON.stringify({
+    id: "injected-user",
+    email: user.email,
+    first_name: user.first_name,
+    last_name: user.last_name,
+    role: user.role,
+    roles: [roleObj],
+    active_role: roleObj,
+  });
 
-  await page.evaluate(
-    ({ token, user }) => {
-      localStorage.setItem("koprogo_token", token);
-      const roleObj = {
-        id: "injected-role-1",
-        role: user.role,
-        organization_id: null,
-        is_primary: true,
-      };
-      localStorage.setItem(
-        "koprogo_user",
-        JSON.stringify({
-          id: "injected-user",
-          email: user.email,
-          first_name: user.first_name,
-          last_name: user.last_name,
-          role: user.role,
-          roles: [roleObj],
-          active_role: roleObj,
-        }),
-      );
-      localStorage.setItem("koprogo_refresh_token", token);
-    },
-    { token, user },
-  );
+  // Posé AVANT tout script de page, sur chaque document du contexte —
+  // évite la pré-visite de /login (et son refresh prématuré).
+  await page.addInitScript((value) => {
+    try {
+      localStorage.setItem("koprogo_user", value);
+    } catch {
+      /* localStorage indisponible avant origine — ignoré */
+    }
+  }, cachedUser);
 
-  // Navigate to syndic dashboard to complete "login"
+  // UNE seule navigation dashboard → RouteGuard `authStore.init()` →
+  // un seul silent-refresh via le cookie HttpOnly (déjà dans le contexte
+  // via le register/login réel de l'appelant). networkidle laisse le
+  // refresh résoudre l'access token en mémoire avant les assertions.
   const dashboardPath =
     user.role === "owner"
       ? "/owner"
       : user.role === "superadmin"
         ? "/admin"
         : "/syndic";
-  await page.goto(dashboardPath, { waitUntil: "domcontentloaded" });
+  await page.goto(dashboardPath, { waitUntil: "networkidle" });
 }
 
 /**

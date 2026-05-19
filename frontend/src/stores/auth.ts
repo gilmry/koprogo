@@ -4,14 +4,21 @@ import { UserRole } from "../lib/types";
 import { syncService } from "../lib/sync";
 import { localDB } from "../lib/db";
 import { apiEndpoint } from "../lib/config";
+import {
+  getAccessToken,
+  setAccessToken,
+  clearAccessToken,
+} from "../lib/accessToken";
 
 // Auth store
 interface AuthState {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
+  // Access token reflété ici pour la réactivité UI. Source de vérité =
+  // mémoire (`lib/accessToken`). JAMAIS persisté (WP-FE1). Le refresh
+  // token n'est plus côté JS : cookie HttpOnly géré par le backend.
   token: string | null;
-  refreshToken: string | null;
 }
 
 // Refresh token 5 minutes before expiry (access token expires in 15 minutes)
@@ -132,29 +139,22 @@ const createAuthStore = () => {
     isAuthenticated: false,
     isLoading: true,
     token: null,
-    refreshToken: null,
   };
 
+  // WP-FE1 : aucun token en localStorage. `koprogo_user` est un cache
+  // d'affichage NON sensible (peinture instantanée), jamais une preuve
+  // d'authentification : `init()` fait un silent-refresh via le cookie
+  // HttpOnly pour obtenir un access token frais et confirmer la session.
   if (typeof window !== "undefined") {
     const storedUser = localStorage.getItem("koprogo_user");
-    const storedToken = localStorage.getItem("koprogo_token");
-    const storedRefreshToken = localStorage.getItem("koprogo_refresh_token");
-
-    if (storedUser && storedToken && storedRefreshToken) {
+    if (storedUser) {
       try {
-        const user = ensureUserShape(JSON.parse(storedUser));
-        initialState = {
-          user,
-          isAuthenticated: true,
-          isLoading: true, // still loading until init() completes async ops
-          token: storedToken,
-          refreshToken: storedRefreshToken,
-        };
+        initialState.user = ensureUserShape(JSON.parse(storedUser));
+        // isAuthenticated reste false tant que le silent-refresh n'a pas
+        // (re)produit un access token : pas de session sans token.
       } catch {
-        // Invalid stored data, keep defaults
+        // Invalid cached user, ignore
       }
-    } else {
-      initialState.isLoading = false;
     }
   }
 
@@ -166,9 +166,10 @@ const createAuthStore = () => {
     }
 
     refreshTimer = window.setInterval(async () => {
-      const refreshToken = localStorage.getItem("koprogo_refresh_token");
-      if (refreshToken) {
-        await authStore.refreshAccessToken(refreshToken);
+      // Silent-refresh périodique via le cookie HttpOnly (aucun token JS).
+      const ok = await authStore.refreshAccessToken();
+      if (!ok && typeof window !== "undefined") {
+        window.location.href = "/login";
       }
     }, TOKEN_REFRESH_INTERVAL);
   };
@@ -183,67 +184,44 @@ const createAuthStore = () => {
   const authStore = {
     subscribe,
 
-    // Initialize async operations (localDB, sync, token refresh).
-    // User data is already pre-populated from localStorage at store creation.
+    // Initialize: silent-refresh via le cookie HttpOnly pour (re)produire
+    // un access token en mémoire après un reload (aucun token persisté).
     init: async () => {
-      if (typeof window !== "undefined") {
-        const storedToken = localStorage.getItem("koprogo_token");
-        const storedRefreshToken = localStorage.getItem(
-          "koprogo_refresh_token",
-        );
+      if (typeof window === "undefined") {
+        return;
+      }
 
-        if (initialState.user && storedToken && storedRefreshToken) {
-          try {
-            // Initialize local database
-            await localDB.init();
-
-            // Initialize sync service with token
-            await syncService.initialize(storedToken);
-
-            // Mark loading complete
-            update((state) => ({ ...state, isLoading: false }));
-
-            // Start auto-refresh
-            startTokenRefresh();
-          } catch (error) {
-            console.error("Failed to initialize auth:", error);
-            set({
-              user: null,
-              isAuthenticated: false,
-              isLoading: false,
-              token: null,
-              refreshToken: null,
-            });
+      const refreshed = await authStore.refreshAccessToken();
+      if (refreshed) {
+        try {
+          await localDB.init();
+          const token = getAccessToken();
+          if (token) {
+            await syncService.initialize(token);
           }
-        } else {
-          set({
-            user: null,
-            isAuthenticated: false,
-            isLoading: false,
-            token: null,
-            refreshToken: null,
-          });
+          startTokenRefresh();
+          update((state) => ({ ...state, isLoading: false }));
+        } catch (error) {
+          console.error("Failed to initialize auth:", error);
+          await authStore.clearSession();
         }
+      } else {
+        // Pas de cookie valide → session absente (pas une erreur).
+        await authStore.clearSession();
       }
     },
 
-    // Login
-    login: async (user: User, token: string, refreshToken: string) => {
+    // Login: access token en mémoire ; le refresh token est déjà posé
+    // par le backend dans un cookie HttpOnly (réponse de /auth/login).
+    login: async (user: User, token: string) => {
+      setAccessToken(token);
+
       if (typeof window !== "undefined") {
+        // Cache d'affichage non sensible uniquement (pas de credential).
         localStorage.setItem("koprogo_user", JSON.stringify(user));
-        localStorage.setItem("koprogo_token", token);
-        localStorage.setItem("koprogo_refresh_token", refreshToken);
-
-        // Initialize local database
         await localDB.init();
-
-        // Save user to local DB
         await localDB.saveUser(user);
-
-        // Initialize sync service
         await syncService.initialize(token);
-
-        // Start auto-refresh
         startTokenRefresh();
       }
 
@@ -252,30 +230,42 @@ const createAuthStore = () => {
         isAuthenticated: true,
         isLoading: false,
         token,
-        refreshToken,
       });
     },
 
-    // Logout
-    logout: async () => {
+    // Clear session côté client (mémoire + cache user + sync + state).
+    // N'appelle PAS le backend (utilisé quand le cookie est déjà invalide).
+    clearSession: async () => {
       stopTokenRefresh();
-
+      clearAccessToken();
       if (typeof window !== "undefined") {
         localStorage.removeItem("koprogo_user");
-        localStorage.removeItem("koprogo_token");
-        localStorage.removeItem("koprogo_refresh_token");
-
-        // Clear local data
         await syncService.clearLocalData();
       }
-
       set({
         user: null,
         isAuthenticated: false,
         isLoading: false,
         token: null,
-        refreshToken: null,
       });
+    },
+
+    // Logout: révocation serveur (expire le cookie + invalide les refresh)
+    // puis nettoyage client. Best-effort sur le réseau.
+    logout: async () => {
+      const token = getAccessToken();
+      if (typeof window !== "undefined" && token) {
+        try {
+          await fetch(apiEndpoint("/auth/logout"), {
+            method: "POST",
+            credentials: "include",
+            headers: { Authorization: `Bearer ${token}` },
+          });
+        } catch {
+          // best-effort : on nettoie le client quoi qu'il arrive
+        }
+      }
+      await authStore.clearSession();
     },
 
     // Update user
@@ -288,70 +278,52 @@ const createAuthStore = () => {
     },
 
     // Get token
-    getToken: () => {
-      if (typeof window !== "undefined") {
-        return localStorage.getItem("koprogo_token");
-      }
-      return null;
-    },
+    // Access token courant (mémoire seule, WP-FE1).
+    getToken: () => getAccessToken(),
 
-    // Refresh access token
-    refreshAccessToken: async (refreshToken: string): Promise<boolean> => {
+    // Silent-refresh : POST /auth/refresh sans corps ; le refresh token
+    // est lu côté serveur dans le cookie HttpOnly (credentials:"include").
+    // Aucun token n'est jamais lu/écrit en localStorage.
+    refreshAccessToken: async (): Promise<boolean> => {
       try {
         const response = await fetch(apiEndpoint("/auth/refresh"), {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ refresh_token: refreshToken }),
+          credentials: "include",
         });
 
         if (response.ok) {
           const data = await response.json();
-          const {
-            token: newToken,
-            refresh_token: newRefreshToken,
-            user: userPayload,
-          } = data;
+          // WP-FE1 : la réponse ne contient PLUS de refresh_token (cookie
+          // roté côté backend). Seul l'access token revient au JS.
+          const { token: newToken, user: userPayload } = data;
 
-          // Update stored tokens
-          if (typeof window !== "undefined") {
-            localStorage.setItem("koprogo_token", newToken);
-            localStorage.setItem("koprogo_refresh_token", newRefreshToken);
+          setAccessToken(newToken);
 
-            // Update sync service token
-            await syncService.setToken(newToken);
-          }
-
-          // Map backend user format to frontend format
           const mappedUser: User = mapBackendUser(userPayload);
 
           if (typeof window !== "undefined") {
             localStorage.setItem("koprogo_user", JSON.stringify(mappedUser));
+            await syncService.setToken(newToken);
+            await localDB.saveUser(mappedUser);
           }
-          await localDB.saveUser(mappedUser);
 
           update((state) => ({
             ...state,
             token: newToken,
-            refreshToken: newRefreshToken,
             user: mappedUser,
+            isAuthenticated: true,
           }));
 
           return true;
-        } else {
-          // Token refresh failed, logout user
-          console.error("Token refresh failed");
-          await authStore.logout();
-          if (typeof window !== "undefined") {
-            window.location.href = "/login";
-          }
-          return false;
         }
+
+        // Cookie absent/expiré/révoqué → session client nettoyée.
+        // (Pas d'appel backend logout : le cookie est déjà invalide.)
+        await authStore.clearSession();
+        return false;
       } catch (error) {
         console.error("Token refresh error:", error);
-        await authStore.logout();
-        if (typeof window !== "undefined") {
-          window.location.href = "/login";
-        }
+        await authStore.clearSession();
         return false;
       }
     },
@@ -371,6 +343,8 @@ const createAuthStore = () => {
       try {
         const response = await fetch(apiEndpoint("/auth/switch-role"), {
           method: "POST",
+          // credentials:"include" → le cookie refresh roté est stocké.
+          credentials: "include",
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
@@ -385,17 +359,14 @@ const createAuthStore = () => {
         }
 
         const data = await response.json();
-        const {
-          token: newToken,
-          refresh_token: newRefreshToken,
-          user: userPayload,
-        } = data;
+        // WP-FE1 : pas de refresh_token dans le corps (cookie HttpOnly).
+        const { token: newToken, user: userPayload } = data;
+
+        setAccessToken(newToken);
 
         const mappedUser: User = mapBackendUser(userPayload);
 
         if (typeof window !== "undefined") {
-          localStorage.setItem("koprogo_token", newToken);
-          localStorage.setItem("koprogo_refresh_token", newRefreshToken);
           localStorage.setItem("koprogo_user", JSON.stringify(mappedUser));
         }
 
@@ -407,7 +378,6 @@ const createAuthStore = () => {
         update((state) => ({
           ...state,
           token: newToken,
-          refreshToken: newRefreshToken,
           user: mappedUser,
         }));
 
@@ -420,9 +390,18 @@ const createAuthStore = () => {
 
     // Validate current session
     validateSession: async (): Promise<boolean> => {
-      const token = authStore.getToken();
+      let token = authStore.getToken();
       if (!token) {
-        return false;
+        // Pas d'access token en mémoire (reload) : tenter le silent-refresh
+        // via le cookie HttpOnly avant de conclure à l'absence de session.
+        const refreshed = await authStore.refreshAccessToken();
+        if (!refreshed) {
+          return false;
+        }
+        token = authStore.getToken();
+        if (!token) {
+          return false;
+        }
       }
 
       try {
@@ -464,15 +443,13 @@ const createAuthStore = () => {
         }
 
         if (response.status === 401) {
-          const refreshToken = localStorage.getItem("koprogo_refresh_token");
-          if (refreshToken) {
-            const refreshed = await authStore.refreshAccessToken(refreshToken);
-            if (refreshed) {
-              return true;
-            }
+          // Access token expiré : tenter un silent-refresh via le cookie.
+          const refreshed = await authStore.refreshAccessToken();
+          if (refreshed) {
+            return true;
           }
 
-          await authStore.logout();
+          await authStore.clearSession();
           return false;
         }
 

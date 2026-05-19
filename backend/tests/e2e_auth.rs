@@ -2,7 +2,7 @@ mod common;
 
 use actix_web::http::header;
 use actix_web::{test, App};
-use koprogo_api::infrastructure::web::configure_routes;
+use koprogo_api::infrastructure::web::{configure_routes, AppState};
 use serde_json::json;
 use serial_test::serial;
 use uuid::Uuid;
@@ -409,5 +409,216 @@ async fn admin_can_manage_user_roles_via_http() {
             .as_str()
             .expect("active role in list"),
         "accountant"
+    );
+}
+
+// ============================================================================
+// WP-FE1 — Refresh token hors localStorage : cookie HttpOnly + corps sans
+// refresh_token. Taxonomie 4 catégories RED-first (CRITICAL.md #3, #427).
+// Exécutés en CI (testcontainers) ; localement compile-check (daemon Docker
+// indisponible — même limite infra que WP-B1, tracée).
+// ============================================================================
+
+async fn register_user(
+    app_state: &actix_web::web::Data<AppState>,
+    org_id: Uuid,
+) -> (String, String) {
+    let email = format!("fe1+{}@test.com", Uuid::new_v4());
+    let password = "Passw0rd!".to_string();
+    let reg = koprogo_api::application::dto::RegisterRequest {
+        email: email.clone(),
+        password: password.clone(),
+        first_name: "Fe1".to_string(),
+        last_name: "Cookie".to_string(),
+        role: "superadmin".to_string(),
+        organization_id: Some(org_id),
+    };
+    app_state
+        .auth_use_cases
+        .register(reg)
+        .await
+        .expect("register");
+    (email, password)
+}
+
+fn set_cookie_header(resp: &actix_web::dev::ServiceResponse) -> String {
+    resp.headers()
+        .get_all(header::SET_COOKIE)
+        .map(|h| h.to_str().unwrap_or_default().to_string())
+        .find(|c| c.starts_with("koprogo_refresh="))
+        .unwrap_or_default()
+}
+
+fn refresh_cookie_value(set_cookie: &str) -> String {
+    set_cookie
+        .strip_prefix("koprogo_refresh=")
+        .and_then(|s| s.split(';').next())
+        .unwrap_or_default()
+        .to_string()
+}
+
+#[actix_web::test]
+#[serial]
+async fn fe1_happy_login_sets_httponly_cookie_and_strips_body() {
+    let (app_state, _container, org_id) = common::setup_test_db().await;
+    let (email, password) = register_user(&app_state, org_id).await;
+
+    let app = test::init_service(
+        App::new()
+            .app_data(app_state.clone())
+            .configure(configure_routes),
+    )
+    .await;
+
+    let req = test::TestRequest::post()
+        .uri("/api/v1/auth/login")
+        .set_json(json!({ "email": email, "password": password }))
+        .to_request();
+    let resp = test::call_service(&app, req).await;
+    assert!(resp.status().is_success());
+
+    let set_cookie = set_cookie_header(&resp);
+    assert!(
+        set_cookie.contains("HttpOnly"),
+        "refresh cookie must be HttpOnly: {set_cookie}"
+    );
+    assert!(
+        set_cookie.contains("SameSite=Strict"),
+        "refresh cookie must be SameSite=Strict: {set_cookie}"
+    );
+    assert!(
+        set_cookie.contains("Path=/api/v1/auth"),
+        "refresh cookie must be path-scoped: {set_cookie}"
+    );
+
+    let body: serde_json::Value = test::read_body_json(resp).await;
+    assert!(body.get("token").is_some(), "access token in body");
+    assert!(
+        body.get("refresh_token").is_none(),
+        "refresh_token MUST NOT be in the JSON body (WP-FE1)"
+    );
+}
+
+#[actix_web::test]
+#[serial]
+async fn fe1_security_refresh_via_cookie_rotates_and_body_has_no_refresh() {
+    let (app_state, _container, org_id) = common::setup_test_db().await;
+    let (email, password) = register_user(&app_state, org_id).await;
+
+    let app = test::init_service(
+        App::new()
+            .app_data(app_state.clone())
+            .configure(configure_routes),
+    )
+    .await;
+
+    let login = test::TestRequest::post()
+        .uri("/api/v1/auth/login")
+        .set_json(json!({ "email": email, "password": password }))
+        .to_request();
+    let login_resp = test::call_service(&app, login).await;
+    let old_cookie = refresh_cookie_value(&set_cookie_header(&login_resp));
+    assert!(!old_cookie.is_empty());
+
+    let refresh = test::TestRequest::post()
+        .uri("/api/v1/auth/refresh")
+        .cookie(actix_web::cookie::Cookie::new(
+            "koprogo_refresh",
+            old_cookie.clone(),
+        ))
+        .to_request();
+    let refresh_resp = test::call_service(&app, refresh).await;
+    assert!(refresh_resp.status().is_success());
+
+    let new_set_cookie = set_cookie_header(&refresh_resp);
+    assert!(new_set_cookie.contains("HttpOnly"));
+    let new_cookie = refresh_cookie_value(&new_set_cookie);
+    assert_ne!(
+        old_cookie, new_cookie,
+        "refresh token must rotate on /auth/refresh"
+    );
+
+    let body: serde_json::Value = test::read_body_json(refresh_resp).await;
+    assert!(body.get("token").is_some());
+    assert!(
+        body.get("refresh_token").is_none(),
+        "refresh_token MUST NOT leak in /auth/refresh body"
+    );
+}
+
+#[actix_web::test]
+#[serial]
+async fn fe1_negative_refresh_without_or_forged_cookie_is_401() {
+    let (app_state, _container, _org_id) = common::setup_test_db().await;
+
+    let app = test::init_service(
+        App::new()
+            .app_data(app_state.clone())
+            .configure(configure_routes),
+    )
+    .await;
+
+    // No cookie at all → 401
+    let no_cookie = test::TestRequest::post()
+        .uri("/api/v1/auth/refresh")
+        .to_request();
+    let resp = test::call_service(&app, no_cookie).await;
+    assert_eq!(resp.status(), 401, "missing refresh cookie must be 401");
+
+    // Forged cookie → 401 (token not found / invalid)
+    let forged = test::TestRequest::post()
+        .uri("/api/v1/auth/refresh")
+        .cookie(actix_web::cookie::Cookie::new(
+            "koprogo_refresh",
+            "forged-not-a-real-token",
+        ))
+        .to_request();
+    let resp = test::call_service(&app, forged).await;
+    assert_eq!(resp.status(), 401, "forged refresh cookie must be 401");
+}
+
+#[actix_web::test]
+#[serial]
+async fn fe1_edge_old_refresh_cookie_revoked_after_rotation() {
+    let (app_state, _container, org_id) = common::setup_test_db().await;
+    let (email, password) = register_user(&app_state, org_id).await;
+
+    let app = test::init_service(
+        App::new()
+            .app_data(app_state.clone())
+            .configure(configure_routes),
+    )
+    .await;
+
+    let login = test::TestRequest::post()
+        .uri("/api/v1/auth/login")
+        .set_json(json!({ "email": email, "password": password }))
+        .to_request();
+    let login_resp = test::call_service(&app, login).await;
+    let old_cookie = refresh_cookie_value(&set_cookie_header(&login_resp));
+
+    // First refresh succeeds and rotates.
+    let r1 = test::TestRequest::post()
+        .uri("/api/v1/auth/refresh")
+        .cookie(actix_web::cookie::Cookie::new(
+            "koprogo_refresh",
+            old_cookie.clone(),
+        ))
+        .to_request();
+    assert!(test::call_service(&app, r1).await.status().is_success());
+
+    // Reusing the OLD (now revoked) cookie must fail — replay protection.
+    let r2 = test::TestRequest::post()
+        .uri("/api/v1/auth/refresh")
+        .cookie(actix_web::cookie::Cookie::new(
+            "koprogo_refresh",
+            old_cookie,
+        ))
+        .to_request();
+    let resp = test::call_service(&app, r2).await;
+    assert_eq!(
+        resp.status(),
+        401,
+        "reused/rotated refresh token must be rejected (replay)"
     );
 }

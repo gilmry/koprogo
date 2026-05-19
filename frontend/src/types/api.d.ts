@@ -247,7 +247,10 @@ export interface paths {
     };
     get?: never;
     put?: never;
-    /** Refresh Token */
+    /**
+     * Refresh Token
+     * @description Le refresh token est lu depuis le cookie HttpOnly `koprogo_refresh` (WP-FE1) — aucun corps de requête. La réponse rote le cookie et ne contient pas de refresh_token.
+     */
     post: operations["refresh_token"];
     delete?: never;
     options?: never;
@@ -2085,9 +2088,6 @@ export interface components {
      * @enum {string}
      */
     RecurringPattern: "None" | "Daily" | "Weekly" | "Monthly";
-    RefreshTokenRequest: {
-      refresh_token: string;
-    };
     /** @description Refund payment request DTO */
     RefundPaymentRequest: {
       /** Format: int64 */
@@ -2538,28 +2538,17 @@ export interface operations {
       path?: never;
       cookie?: never;
     };
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["RefreshTokenRequest"];
-      };
-    };
+    requestBody?: never;
     responses: {
-      /** @description Resource created successfully */
-      201: {
+      /** @description Access token rafraîchi */
+      200: {
         headers: {
           [name: string]: unknown;
         };
         content?: never;
       };
-      /** @description Bad Request */
-      400: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content?: never;
-      };
-      /** @description Not Found */
-      404: {
+      /** @description Cookie refresh absent, expiré ou révoqué */
+      401: {
         headers: {
           [name: string]: unknown;
         };
