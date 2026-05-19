@@ -256,26 +256,14 @@
           "Auth"
         ],
         "summary": "Refresh Token",
+        "description": "Le refresh token est lu depuis le cookie HttpOnly `koprogo_refresh` (WP-FE1) — aucun corps de requête. La réponse rote le cookie et ne contient pas de refresh_token.",
         "operationId": "refresh_token",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/RefreshTokenRequest"
-              }
-            }
-          },
-          "required": true
-        },
         "responses": {
-          "201": {
-            "description": "Resource created successfully"
+          "200": {
+            "description": "Access token rafraîchi"
           },
-          "400": {
-            "description": "Bad Request"
-          },
-          "404": {
-            "description": "Not Found"
+          "401": {
+            "description": "Cookie refresh absent, expiré ou révoqué"
           },
           "500": {
             "description": "Internal Server Error"
@@ -4671,17 +4659,6 @@
           "Weekly",
           "Monthly"
         ]
-      },
-      "RefreshTokenRequest": {
-        "type": "object",
-        "required": [
-          "refresh_token"
-        ],
-        "properties": {
-          "refresh_token": {
-            "type": "string"
-          }
-        }
       },
       "RefundPaymentRequest": {
         "type": "object",

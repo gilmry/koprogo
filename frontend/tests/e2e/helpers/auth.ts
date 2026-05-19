@@ -43,20 +43,31 @@ interface OwnerContext extends SyndicContext {
 }
 
 /**
- * Inject auth token into browser localStorage without UI login.
- * Navigates to a page first (needed for localStorage domain), then injects.
+ * Establish an authenticated browser session WITHOUT UI login (WP-FE1).
+ *
+ * Plus de token en localStorage : l'access token vit en mémoire, le
+ * refresh token est un cookie `HttpOnly` posé par le backend lors du
+ * `register`/`login` réel effectué par l'appelant via `page.request`
+ * (le cookie jar est partagé avec le contexte navigateur). En naviguant
+ * vers le dashboard, `authStore.init()` fait un silent-refresh via ce
+ * cookie et obtient un access token frais — exactement le flux prod.
+ *
+ * `koprogo_user` reste injecté : cache d'AFFICHAGE non sensible (peinture
+ * instantanée), jamais une preuve d'authentification.
+ *
+ * Pré-requis env (E2E sur http://localhost) : `COOKIE_SECURE=false`
+ * (sinon le navigateur refuse le cookie sur une origine non https).
  */
 async function injectAuth(
   page: Page,
-  token: string,
+  _token: string,
   user: { email: string; first_name: string; last_name: string; role: string },
 ) {
-  // Navigate to base URL to set localStorage on the right domain
+  // Origine établie pour localStorage (cache d'affichage seulement).
   await page.goto("/login", { waitUntil: "domcontentloaded" });
 
   await page.evaluate(
-    ({ token, user }) => {
-      localStorage.setItem("koprogo_token", token);
+    ({ user }) => {
       const roleObj = {
         id: "injected-role-1",
         role: user.role,
@@ -75,19 +86,20 @@ async function injectAuth(
           active_role: roleObj,
         }),
       );
-      localStorage.setItem("koprogo_refresh_token", token);
     },
-    { token, user },
+    { user },
   );
 
-  // Navigate to syndic dashboard to complete "login"
+  // Navigation dashboard → authStore.init() silent-refresh via le cookie
+  // HttpOnly (déjà dans le contexte). networkidle laisse le refresh
+  // résoudre l'access token en mémoire avant les assertions du test.
   const dashboardPath =
     user.role === "owner"
       ? "/owner"
       : user.role === "superadmin"
         ? "/admin"
         : "/syndic";
-  await page.goto(dashboardPath, { waitUntil: "domcontentloaded" });
+  await page.goto(dashboardPath, { waitUntil: "networkidle" });
 }
 
 /**

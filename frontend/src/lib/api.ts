@@ -1,6 +1,7 @@
 import { get } from "svelte/store";
 import { locale } from "svelte-i18n";
 import { toast } from "../stores/toast";
+import { getAccessToken, clearAccessToken } from "./accessToken";
 import type { Document, DocumentUploadPayload } from "./types";
 
 /**
@@ -32,10 +33,8 @@ function buildHeaders(
 
   headers.set("Accept-Language", getCurrentLanguage());
 
-  const token =
-    typeof window !== "undefined"
-      ? localStorage.getItem("koprogo_token")
-      : null;
+  // WP-FE1 : access token en mémoire (jamais localStorage).
+  const token = getAccessToken();
 
   if (token) {
     headers.set("Authorization", `Bearer ${token}`);
@@ -120,8 +119,8 @@ export async function apiFetch<T = any>(
     } else if (response.status === 401) {
       // Clear stale token and dedupe toast across parallel 401s
       if (typeof window !== "undefined") {
-        const hadToken = localStorage.getItem("koprogo_token");
-        localStorage.removeItem("koprogo_token");
+        const hadToken = getAccessToken() !== null;
+        clearAccessToken();
         if (hadToken && !(window as any).__koprogo_session_expired_shown__) {
           (window as any).__koprogo_session_expired_shown__ = true;
           toast.warning("Session expirée. Veuillez vous reconnecter.");
