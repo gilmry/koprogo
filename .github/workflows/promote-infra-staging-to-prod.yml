@@ -1,0 +1,69 @@
+name: Promote infra-staging → infra-prod
+
+# Decision: RFC #466 (Alternative D — release train + back-sync).
+# Trigger: workflow_dispatch only (manual after human validation on staging).
+# Opens a PR from infra-staging to infra-prod. Merging this PR triggers
+# backsync-infra-prod.yml which propagates the new prod state backward.
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: 'Release tag being promoted (for traceability, e.g. infra-rc-v0.1.0)'
+        required: false
+        type: string
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  promote:
+    name: Open PR infra-staging → infra-prod
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Verify diff exists infra-staging vs infra-prod
+        id: diff
+        run: |
+          set -euo pipefail
+          git fetch origin infra-staging infra-prod
+          if git diff --quiet origin/infra-prod..origin/infra-staging; then
+            echo "::error::No diff between infra-staging and infra-prod — nothing to promote"
+            exit 1
+          fi
+
+      - name: Open promotion PR
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          tag="${{ inputs.release_tag }}"
+          title_suffix=""
+          if [ -n "$tag" ]; then
+            title_suffix=" ($tag)"
+          fi
+          existing=$(gh pr list --base infra-prod --head infra-staging --state open --json number --jq '.[0].number' 2>/dev/null || true)
+          if [ -n "$existing" ]; then
+            echo "::notice::Existing PR #$existing already open — refusing to duplicate. Resolve it first."
+            exit 1
+          fi
+          gh pr create \
+            --base infra-prod \
+            --head infra-staging \
+            --title "promote: infra-staging → infra-prod$title_suffix" \
+            --body "$(cat <<EOF
+**Tier 1 promotion** — manually triggered after human validation on the
+staging cluster.
+
+Per RFC #466 (Alternative D), merging this PR triggers the back-sync workflow
+which propagates the new infra-prod state to infra-staging, infra-integration,
+and main.
+
+Release tag: \`${tag:-<not specified>}\`
+EOF
+)"
