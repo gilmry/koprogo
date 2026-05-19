@@ -440,13 +440,13 @@ jobs:
           terraform fmt -check -recursive infrastructure/monosite/vps/production/terraform
           echo "::notice::terraform fmt OK (ovh-vps module + prod vps)"
 
-      - name: Terraform validate (ovh-vps module)
-        run: |
-          set -euo pipefail
-          terraform -chdir=infrastructure/_shared/terraform/modules/ovh-vps init -backend=false -input=false
-          terraform -chdir=infrastructure/_shared/terraform/modules/ovh-vps validate
-          echo "::notice::terraform validate OK (ovh-vps module)"
-
+      # Le module ovh-vps déclare `configuration_aliases = [openstack.ovh]`
+      # (versions.tf) : un module recevant un provider *aliasé* de son
+      # appelant NE PEUT PAS être `terraform validate`'d en isolation
+      # (aucun root ne fournit la config provider → "Provider configuration
+      # not present"). Sa correction est validée transitivement via le root
+      # prod-vps ci-dessous (qui l'instancie + configure openstack.ovh).
+      # Le `fmt -check` standalone (au-dessus) reste valable. (#354 / WP-E1)
       - name: Terraform validate (prod vps)
         run: |
           set -euo pipefail
