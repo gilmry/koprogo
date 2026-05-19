@@ -81,8 +81,9 @@ Légende : Tier 1 = humain exécute (agent diagnostique/propose). Taille S≤0.5
 - **WP-FE1 — JWT hors localStorage (vol session XSS)** · BLOQUANT SÉCURITÉ · T2 · L · _critique_
   `auth.ts:128-235` : refresh token → cookie backend `HttpOnly; Secure; SameSite=Strict` ; access token en mémoire seule + silent-refresh au load. Backend login/refresh : set-cookie + read-cookie + CORS credentials. 4-cat RED-first : @security token illisible JS/`document.cookie` & absent localStorage ; @negative cookie forgé/expiré→401 ; @happy login→refresh→protégé ; @edge refresh à la borne d'expiration. Deps : coordination WP-B1 ; moitié backend nourrit moitié FE.
 
-- **WP-FE2 — Corriger bugs FE revue (WF1-1/2/3)** · T2 · M
+- **WP-FE2 — Corriger bugs FE revue (WF1-1/2/3)** · T2 · M · **FAIT** (2026-05-19, branche `story/wbs-fe2-fe-bugs`)
   Bouton "Nouvelle réunion" `/meetings` (syndic) ; POST `/convocations` envoie `building_id` ; lister convocations créées via API. Re-vérifier vs courant. 4-cat Playwright (@happy créer+envoyer via UI, @negative building_id manquant → erreur visible pas 400 silencieux). Deps : WP-B1.
+  **Réalisé** : re-vérification vs `feature/dev` courant → **les 3 bugs ALREADY-FIXED** (rapport 2026-04-01 périmé, même cas que WP-B1). WF1-1 `MeetingList.svelte:128` bouton `btn-new-meeting` gated `canCreate` syndic/superadmin + `MeetingCreateModal`. WF1-2 `ConvocationPanel.svelte:61` envoie `building_id` (prop `MeetingDetail:267`), erreurs via `withErrorHandling` (pas de 400 muet) ; `CreateConvocationDto` type-impose `building_id`. WF1-3 page `/convocations` (`BuildingSelector`→`ConvocationList`→`listByBuilding`) + panel par-réunion `getByMeetingId`. Livrable = garde-fou non-régression `frontend/tests/e2e/smoke/MeetingConvocation.spec.ts` 4-cat RED-first (@happy création réunion+convocation via UI / @edge /convocations sans crash / @security sans auth→/login & bouton non exposé / @negative erreur convocation visible). `astro check` 0 erreur, prettier propre (fallback hôte — daemon Docker absent ; specs exécutés en CI). Aucun code applicatif modifié (rien à corriger). Log `docs/agent-activity/2026-05-19-wbs-fe2.md`.
 
 ### Track D — E2E/QA
 
