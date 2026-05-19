@@ -212,6 +212,24 @@ impl From<crate::domain::entities::EtatDateError> for AppError {
     }
 }
 
+impl From<crate::domain::entities::OwnerContributionError> for AppError {
+    /// Une contribution malformée (montant négatif, description vide) est
+    /// une erreur d'entrée client → 400 validation, **jamais** 500 Internal
+    /// (#433 / WP-A6 EXP-008).
+    fn from(e: crate::domain::entities::OwnerContributionError) -> Self {
+        AppError::Validation(e.to_string())
+    }
+}
+
+impl From<crate::domain::entities::CallForFundsError> for AppError {
+    /// Un appel de fonds malformé (montant ≤ 0, titre/description vide,
+    /// échéance ≤ appel) est une erreur d'entrée client → 400 validation,
+    /// **jamais** 500 Internal (#433 / WP-A6 EXP-008).
+    fn from(e: crate::domain::entities::CallForFundsError) -> Self {
+        AppError::Validation(e.to_string())
+    }
+}
+
 // ============================================================================
 // Tests — taxonomie 4 catégories obligatoire (cf. CRITICAL.md règle #3, #427)
 // ============================================================================
