@@ -256,12 +256,19 @@ jobs:
           PR_SPEC="pr/docs/api/openapi.json"
           [ -f "$BASE_SPEC" ] || BASE_SPEC="base/docs/api/openapi.yaml"
           [ -f "$PR_SPEC" ] || PR_SPEC="pr/docs/api/openapi.yaml"
+          # Intentional, documented contract changes (v0.1.0 pre-release, no
+          # live clients) are declared in .github/oasdiff-err-ignore.txt.
+          # Any OTHER breaking change still hard-fails (--fail-on ERR).
+          IGNORE_OPT=""
+          [ -f "pr/.github/oasdiff-err-ignore.txt" ] \
+            && IGNORE_OPT="--err-ignore pr/.github/oasdiff-err-ignore.txt"
           oasdiff breaking "$BASE_SPEC" "$PR_SPEC" \
             --fail-on ERR \
+            $IGNORE_OPT \
             --format text || {
             echo ""
-            echo "❌ Breaking API changes detected!"
-            echo "   If intentional, document the migration in the PR description."
+            echo "❌ Breaking API changes detected (non déclarés dans oasdiff-err-ignore.txt) !"
+            echo "   If intentional, add a narrow rule to .github/oasdiff-err-ignore.txt + document in the PR."
             echo "   See: https://www.oasdiff.com/breaking-changes"
             exit 1
           }

@@ -48,12 +48,13 @@ ignore = [
     # Mitigation: Monitor aws-sdk-s3 for update to lru 0.13+.
     "RUSTSEC-2026-0002",
 
-    # astral-tokio-tar 0.6.0 — both advisories from testcontainers dev-dependency only
+    # astral-tokio-tar 0.6.0 — advisories from testcontainers dev-dependency only
     # Status: Accepted Risk (Test Only)
     # Reason: testcontainers 0.27.x pulls 0.6.0; fix would require testcontainers > 0.27.2.
     # Mitigation: Bump testcontainers when next minor is available.
     "RUSTSEC-2026-0112",  # PAX header desynchronization
     "RUSTSEC-2026-0113",  # `unpack_in` chmod via symlinks
+    "RUSTSEC-2026-0145",  # astral-tokio-tar — même crate/chemin (testcontainers dev-only, no prod path)
 ]
 
 # Optionally set a threshold for advisory severity

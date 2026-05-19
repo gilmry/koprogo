@@ -1,0 +1,18 @@
+# oasdiff --err-ignore — changements de contrat API INTENTIONNELS v0.1.0.
+#
+# Chaque ligne = regex matchée (insensible casse) contre le texte d'un
+# breaking change oasdiff. N'ignore QUE des changements voulus + tracés ;
+# tout autre breaking reste un échec dur (--fail-on ERR). v0.1.0 = pré-release,
+# aucun client live (CRITICAL.md #10) — évolution de contrat assumée et documentée.
+#
+# --- WP-FE1 (#343 / #548) : refresh token déplacé en cookie HttpOnly ---
+# POST /auth/refresh ne prend plus de request body (lit le cookie) et ne
+# renvoie plus 201 (rotation cookie côté serveur). Décision sécurité (vol XSS).
+request-body-removed.*/auth/refresh
+response-success-status-removed.*/auth/refresh
+#
+# --- Umbrella Decimal (#433 / ADR-0007) : exactitude PCMN ---
+# Les montants/quotités sont sérialisés en string (rust_decimal) et non plus
+# en number/double f64. Changement de type voulu (number -> string).
+request-property-type-changed.*total_voting_power
+request-property-type-changed.*voting_power

@@ -418,7 +418,10 @@ jobs:
         run: |
           set -euo pipefail
           python -m pip install --upgrade pip
-          pip install "ansible-lint==24.*" "yamllint==1.*" ansible-core
+          # ansible-core épinglé < 2.21 : ansible-lint 24.x importe
+          # `ansible.parsing.yaml.constructor`, déplacé/retiré en core 2.21
+          # (sinon ModuleNotFoundError au runtime). Cf. #354 / WP-E1.
+          pip install "ansible-lint==24.*" "yamllint==1.*" "ansible-core>=2.16,<2.19"
           ansible-lint --version
           yamllint --version
 
