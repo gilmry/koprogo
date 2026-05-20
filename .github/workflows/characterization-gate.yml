@@ -1,0 +1,211 @@
+name: Characterization E2E Gate
+
+# Story Tx.1 - refonte UX Maury, ref #593
+#
+# Purpose: regression safety net during the multi-slice frontend refactor
+# (slices 1-5 of docs/maury/refonte-ux-multi-role-acp/). Every PR targeting
+# `dev` or `main` must keep the characterization suite GREEN. If RED:
+# block merge, investigate - DO NOT edit the characterization specs to make
+# them pass. They encode current behavior on purpose (story 0.1).
+#
+# Triggers: pull_request only against dev / main. NOT on push, NOT on
+# feature/dev - the latter is intentionally a CI-free integration buffer
+# (project memory `gitflow-feature-dev-buffer`). The full pipeline starts
+# at `dev`.
+#
+# Marked `required` in branch protection (set manually by maintainer,
+# Tier 1 action). The job key (`characterization-tests`) AND the display
+# name (`Characterization E2E Gate`) must stay stable so the protection
+# rule keeps matching after future edits.
+#
+# Removal plan: see docs/ci/CHARACTERIZATION_GATE.md (retire when all
+# slices 1-5 merged + recettes de validation signed).
+
+on:
+  pull_request:
+    branches:
+      - main
+      - dev
+  workflow_dispatch:
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
+
+permissions:
+  contents: read
+  actions: write
+
+jobs:
+  characterization-tests:
+    name: Characterization E2E Gate
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: koprogo_test
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+
+      - name: Install frontend dependencies
+        run: |
+          cd frontend
+          npm ci
+
+      - name: Install Playwright browsers
+        run: |
+          cd frontend
+          npx playwright install chromium --with-deps
+
+      - name: Setup Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo registry
+        uses: actions/cache@v5
+        with:
+          path: ~/.cargo/registry
+          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Cache cargo index
+        uses: actions/cache@v5
+        with:
+          path: ~/.cargo/git
+          key: ${{ runner.os }}-cargo-index-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Cache cargo build
+        uses: actions/cache@v5
+        with:
+          path: backend/target
+          key: ${{ runner.os }}-cargo-build-target-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Build and start backend
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/koprogo_test
+          JWT_SECRET: ci-test-jwt-secret-for-characterization-minimum-32-chars
+          TOTP_ENCRYPTION_KEY: 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+          SERVER_HOST: 127.0.0.1
+          SERVER_PORT: 8080
+          UPLOAD_DIR: ./uploads
+          CORS_ALLOWED_ORIGINS: http://localhost:3000
+          ENABLE_RATE_LIMITING: false
+          LOGIN_RATE_LIMIT_MAX: 1000
+          SMTP_ENABLED: false
+          RUST_LOG: warn
+          # Same reason as the playwright job in ci.yml: HTTP-only backend,
+          # refresh cookie must NOT be flagged Secure or browsers will drop
+          # it and silent-refresh will 401, breaking every authenticated
+          # scenario.
+          COOKIE_SECURE: "false"
+        run: |
+          cd backend
+          cargo install sqlx-cli --no-default-features --features postgres
+          sqlx migrate run
+          cargo build
+          cargo run &
+          echo "Waiting for backend to start..."
+          for i in $(seq 1 60); do
+            if curl -sf http://localhost:8080/api/v1/health > /dev/null 2>&1; then
+              echo "Backend is ready after ${i}s"
+              break
+            fi
+            if [ "$i" -eq 60 ]; then
+              echo "Backend failed to start within 60s"
+              exit 1
+            fi
+            sleep 5
+          done
+
+      - name: Start frontend dev server
+        env:
+          PUBLIC_API_URL: http://localhost:8080/api/v1
+        run: |
+          cd frontend
+          node scripts/generate-config.js
+          npx astro dev --port 3000 &
+          echo "Waiting for frontend to start..."
+          for i in $(seq 1 30); do
+            if curl -sf http://localhost:3000 > /dev/null 2>&1; then
+              echo "Frontend is ready after ${i}s"
+              break
+            fi
+            if [ "$i" -eq 30 ]; then
+              echo "Frontend failed to start within 30s"
+              exit 1
+            fi
+            sleep 2
+          done
+
+      - name: Seed scenario world (shared fixtures for characterization)
+        env:
+          PLAYWRIGHT_API_BASE: http://localhost:8080/api/v1
+        run: |
+          TOKEN=$(curl -s http://localhost:8080/api/v1/auth/login \
+            -H 'Content-Type: application/json' \
+            -d '{"email":"admin@koprogo.com","password":"admin123"}' \
+            | jq -r '.token')
+          curl -s -X POST http://localhost:8080/api/v1/seed/scenario/world \
+            -H "Authorization: Bearer $TOKEN" \
+            -H 'Content-Type: application/json' || echo "Seed already exists"
+
+      # Hard gate: exit code MUST propagate. No bypass with `|| true` or
+      # `|| echo`. Per project memory `bdd-ci-exit-code-gotcha`: exit 0
+      # alone is not proof of success, but a non-zero Playwright exit IS a
+      # hard fail - which is exactly what we want here.
+      #
+      # `npm run test:characterization` is added by Story 0.1 (Agent B) in
+      # frontend/package.json and runs the `characterization` Playwright
+      # project defined in frontend/playwright.config.ts.
+      - name: Run characterization E2E suite
+        env:
+          PLAYWRIGHT_BASE_URL: http://localhost:3000
+          PLAYWRIGHT_API_BASE: http://localhost:8080/api/v1
+        run: |
+          cd frontend
+          npm run test:characterization
+
+      - name: Cleanup scenario world
+        if: always()
+        run: |
+          TOKEN=$(curl -s http://localhost:8080/api/v1/auth/login \
+            -H 'Content-Type: application/json' \
+            -d '{"email":"admin@koprogo.com","password":"admin123"}' \
+            | jq -r '.token') || true
+          curl -s -X DELETE http://localhost:8080/api/v1/seed/scenario/world \
+            -H "Authorization: Bearer $TOKEN" || true
+
+      # Failure artifacts: screenshots, videos and traces are the FIRST
+      # thing humans look at when investigating a RED characterization run.
+      # Retention is short (7 days) - the signal is "investigate now", not
+      # "archive forever".
+      - name: Upload characterization Playwright report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: characterization-playwright-report
+          path: frontend/playwright-report/
+          retention-days: 7
+
+      - name: Upload characterization test results (screenshots, videos, traces)
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: characterization-test-results
+          path: frontend/test-results/
+          retention-days: 7
