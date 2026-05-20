@@ -32,7 +32,7 @@ Conformité priorisation et budget tokens vis-à-vis :
 - **Brief Phase 1** ([brief.md](brief.md)) v1.0 signé 2026-05-20 — 13 personas, 22 capacités, 27 invariants, 19 SC
 - **PRD Phase 2** ([prd.md](prd.md)) v1.0 signé 2026-05-20 — 45 FRs en 8 modules, 16 O, 7 NFRs, 5 slices release
 - **Architecture Phase 3** ([architecture.md](architecture.md)) v1.0 signée 2026-05-20 — 8 BC DDD, 6 ADRs inline, 9 migrations SQL, 18 endpoints, 7 composants Svelte 5
-- **Stories Phase 4** ([stories.md](stories.md)) v1.0 signées 2026-05-20 — 31 stories en 6 slices, 1 story = 1 PR
+- **Stories Phase 4** ([stories.md](stories.md)) v1.0 signées 2026-05-20 — 39 stories en 7 slices (0+5+Tx), 1 story = 1 PR
 
 ---
 
@@ -77,7 +77,7 @@ PO confirme la convention **« 1 PR par use-case = 2 migrations atomiques »** p
 PO confirme que **l'investissement upstream Maury (briefing → PRD → architecture → stories) est rentable** :
 
 - 4 documents signés = ~95 pages de directives explicites
-- 31 stories avec AC 4-cat + data-testid + files + ADR refs = 0 ambiguïté à l'exécution
+- 39 stories avec AC 4-cat + data-testid + files + ADR refs = 0 ambiguïté à l'exécution
 - Économie attendue : 1 cycle TDD propre par story (RED test → GREEN code → BLUE refactor) sans aller-retour de clarification
 
 ### 2.5 Risques résiduels acceptés (cf. PRD §9)
@@ -101,7 +101,7 @@ PO confirme que **l'investissement upstream Maury (briefing → PRD → architec
 Conformément à la décision 2026-05-20, PO autorise la création de :
 
 - **1 Epic GitHub** « Refonte UX multi-rôle + modèle ACP — pipeline Maury » avec frontmatter Maury + liens vers les 4 docs signés
-- **31 sous-issues** (1 par story), labellées :
+- **39 sous-issues** (1 par story), labellées :
   - `epic-refonte-ux-multi-role-acp` (commun)
   - `slice-N` (N=0..5 + Tx)
   - `cluster-coord` si applicable (5 stories Decimal + 6 Result)
@@ -157,7 +157,7 @@ PO autorise le démarrage de Phase 6 (Exécution) **dans l'ordre des slices** (c
 
 Phase 6 (Exécution — dev / qa / release-manager) débloquée. Première action :
 
-1. **Création issues GitHub** (Tier 1 — humain ou workflow_dispatch) : 1 Epic + 31 sous-issues
+1. **Création issues GitHub** (Tier 1 — humain ou workflow_dispatch) : 1 Epic + 39 sous-issues
 2. **Mise à jour WBS** Track H (slices 1+2 déjà préparées, ajouter WPs H2/H3/H4 pour slices 3-5)
 3. **Démarrage slice 0** (caractérisation FE) — story 0.1 en branche `story/0.1-characterization-suite`
 4. **Tx.1/Tx.2** démarrent en parallèle (continuous gate CI + helpers shared)

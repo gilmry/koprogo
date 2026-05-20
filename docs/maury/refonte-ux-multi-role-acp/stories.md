@@ -12,17 +12,17 @@ signed_by: "@gilmry"
 brief_source: brief.md (Mary, v1.0 signé 2026-05-20)
 prd_source: prd.md (John, v1.0 signé 2026-05-20)
 architecture_source: architecture.md (Winston, v1.0 signé 2026-05-20)
-total_stories: 31
-total_slices: 6
+total_stories: 39
+total_slices: 7
 changelog:
-  - "1.0 (2026-05-20) — SIGNÉES par @gilmry. Phase 4 verrouillée, Phase 5 (Validation PO) débloquée. 31 stories en 6 slices (incl. slice 0 caractérisation + slice transversal), 1 story = 1 PR cible, AC 4-cat Gherkin condensé, data-testid listés, files à toucher, dépendances inter-stories, coordination #433/#555 par story."
+  - "1.0 (2026-05-20) — SIGNÉES par @gilmry. Phase 4 verrouillée, Phase 5 (Validation PO) débloquée. 39 stories en 7 slices (incl. slice 0 caractérisation + slice transversal), 1 story = 1 PR cible, AC 4-cat Gherkin condensé, data-testid listés, files à toucher, dépendances inter-stories, coordination #433/#555 par story."
 ---
 
 # Stories — Refonte UX multi-rôle + modèle ACP
 
 ## Méthode Maury — Phase TOGAF E (Opportunities & Solutions)
 
-> ✅ **Stories SIGNÉES par @gilmry le 2026-05-20** — Phase 4 verrouillée, Phase 5 (Validation PO) débloquée. 31 stories en 6 slices. Voir [`validation.md`](validation.md) pour le sign-off PO et la priorisation finale.
+> ✅ **Stories SIGNÉES par @gilmry le 2026-05-20** — Phase 4 verrouillée, Phase 5 (Validation PO) débloquée. 39 stories en 7 slices. Voir [`validation.md`](validation.md) pour le sign-off PO et la priorisation finale.
 
 ---
 
@@ -40,7 +40,7 @@ changelog:
 | **5** | Modularité + onboarding + RBAC Communauté Moderator | 8 | FR26-FR30, FR39-FR42, FR45 | M |
 | **Tx** | Transversal continu (FR43-FR45 enforcement) | 3 | FR45 + observabilité | M |
 
-**Total** : **31 stories** en **6 slices** (5 fonctionnelles + 1 transversal continu + slice 0 caractérisation).
+**Total** : **39 stories** en **7 entités de découpage** (slice 0 caractérisation + slices 1-5 fonctionnelles + slice transversal Tx continu).
 
 ### 1.2 Convention de naming
 
@@ -949,7 +949,7 @@ Tx.3 (log Tier 2 continu, indépendant)
 > ✅ **Stories SIGNÉES par @gilmry le 2026-05-20** — Phase 4 verrouillée, Phase 5 (Validation PO) débloquée.
 
 - [x] Découpage 6 slices validé (5 fonctionnelles + 1 transversal + slice 0 caractérisation)
-- [x] 31 stories validées (1 story = 1 PR, sauf `[cluster-coord]` ex 4.9)
+- [x] 39 stories validées (1 story = 1 PR, sauf `[cluster-coord]` ex 4.9)
 - [x] Convention naming `<slice>.<n>-<entity>-<action>` + template story acceptés
 - [x] AC 4-cat condensés validés (Gherkin complet à produire en ticket GH)
 - [x] data-testid listés cohérents avec ADR-0012
@@ -966,7 +966,7 @@ Tx.3 (log Tier 2 continu, indépendant)
 
 Phase 5 (Validation Product Owner) débloquée par sign-off Phase 4. Le PO valide la priorisation slice/story vs valeur métier et budget tokens. Une fois Phase 5 signée :
 
-1. **Création issues GitHub** : 1 Epic + 31 sous-issues (1 par story), avec frontmatter Maury, AC 4-cat, ADR refs, cluster coord, data-testid, files
+1. **Création issues GitHub** : 1 Epic + 39 sous-issues (1 par story), avec frontmatter Maury, AC 4-cat, ADR refs, cluster coord, data-testid, files
 2. **Intégration WBS go-live v0.1.0** : ajout stories slice 1 (refacto ACP) comme bloqueurs Track H Conformité, stories slice 2 (sélecteur+banner+#553) au WP-D1/E1 enrichis (déjà en place via commit `7c24150`)
 3. **Phase 6 (Exécution dev/qa/release-manager)** : 1 story = 1 branche `story/<slice>.<n>-<entity>-<action>` = 1 PR. Gate caractérisation VERT + 4-cat + a11y + testid CI obligatoires.
 

@@ -11,7 +11,7 @@
 | **1 — Brief** | [`brief.md`](brief.md) | Mary (Analyste TOGAF) | ✅ **SIGNÉ par @gilmry 2026-05-20** (v1.0) | ✔ Franchi |
 | **2 — PRD** | [`prd.md`](prd.md) | John (PM) | ✅ **SIGNÉ par @gilmry 2026-05-20** (v1.0) | ✔ Franchi |
 | **3 — Architecture** | [`architecture.md`](architecture.md) | Winston (Architecte hexagonal) | ✅ **SIGNÉE par @gilmry 2026-05-20** (v1.0) | ✔ Franchi |
-| **4 — Stories** | [`stories.md`](stories.md) | Bob (Scrum Master) | ✅ **SIGNÉES par @gilmry 2026-05-20** (v1.0 — 31 stories en 6 slices) | ✔ Franchi |
+| **4 — Stories** | [`stories.md`](stories.md) | Bob (Scrum Master) | ✅ **SIGNÉES par @gilmry 2026-05-20** (v1.0 — 39 stories en 7 slices) | ✔ Franchi |
 | **5 — Validation** | [`validation.md`](validation.md) | Product Owner (@gilmry) | ✅ **VALIDÉE par @gilmry 2026-05-20** (v1.0) | ✔ Franchi |
 | **6 — Exécution** | (PRs + commits) | dev / qa / release-manager | 🟢 **Ready to start** — création issues GH + WBS Track H | ⏳ Démarrage à programmer |
 
