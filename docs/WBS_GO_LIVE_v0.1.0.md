@@ -144,6 +144,34 @@ Légende : Tier 1 = humain exécute (agent diagnostique/propose). Taille S≤0.5
 - **WP-H3 — `Meeting.assert_can_complete()` invariants** · #554 Bug 1 · T2 · M · _BLOQUEUR LÉGAL Art. 3.87 §3-5 CC_
   Entité `Meeting.complete()` refuse la transition `Scheduled → Completed` si : (a) aucune convocation envoyée, (b) quorum non validé (Art. 3.87 §5), (c) aucune résolution avec statut terminal, (d) aucun document type `MeetingMinutes` attaché. Erreur typée `MeetingNotReadyToComplete { missing: Vec<MissingPiece> }`. API → 422 avec liste pièces manquantes. FE → bouton « Marquer terminée » désactivé + checklist visuelle 4 pré-conditions. **Migrer aussi `meeting_use_cases.rs:complete_meeting` de `Result<_,String>` vers `AppError` (couvre simultanément un slice de l'epic #555 — coordination cluster #555/#433).** Deps : aucune.
 
+#### WPs Maury refonte-ux-multi-role-acp (ajoutés 2026-05-20 — pipeline Maury Phases 1-5 signées)
+
+> Issus du pipeline Maury [`docs/maury/refonte-ux-multi-role-acp/`](maury/refonte-ux-multi-role-acp/) (Brief + PRD + Architecture + Stories + Validation tous v1.0 signés 2026-05-20 par @gilmry). Slices 1+2 cartographient les WPs Track H existants ; slices 3-5 ajoutent WP-H4/H5/H6 pour extension produit.
+
+- **WP-H0 — Slice 0 caractérisation FE (régression safety net)** · Maury story 0.1 · T2 · M · _PRÉ-REQUIS TRANSVERSE_
+  Suite 6 specs Playwright `frontend/tests/e2e/characterization/` qui fige les flows existants HEAD `feature/dev` avant toute refonte. Reste VERTE sur toutes les slices ultérieures (gate CI inter-slice Tx.1). Deps : aucune.
+
+- **WP-H4 — Slice 3 sous-rôles + Magic Link + Mandates + Ticketing** · Maury stories 3.1-3.9 · T2 · L · _ARBITRAGE v0.1.0 vs v0.2.0_
+  Sous-rôles métier (accountant.encodeur/emetteur, community.moderator, lawyer/notary/amo/architect/bet/warden) + entité MagicLink + PWA Contractor (3 écrans) + Mandate (avocat/notaire/AMO/architect/BET) + délégation temporaire UserRoleAssignment.valid_until + Ticket.kind=complaint avec severity/evidence/witnesses + SyndicResponse SLA + escalade CdC + TechnicalSpec versionnable + ContractorEvaluation (refus 422 sans TechnicalSpec). 9 stories `story/3.1-*` à `story/3.9-*`. Deps : WP-H1 (acp_id) + WP-H4 ne bloque PAS v0.1.0 sauf décision contraire PO.
+
+- **WP-H5 — Slice 4 Governance hybride + signatures eIDAS** · Maury stories 4.1-4.9 · T2 · L · _ARBITRAGE v0.1.0 vs v0.2.0 — Art. 3.87 §4 CC + eIDAS UE 910/2014_
+  Meeting.mode (in_person|remote|hybrid) + quorum agrégé Decimal + vote distant auth_method (#48 itsme/eID promu in-scope) + Minutes 2 signatures eIDAS qualifiées + Port `ElectronicSignatureProvider` + 3 adapters (eID belge/itsme/Universign — ADR-0014) + CdC élu + CommissaireAuxComptes + VerificationCertificate. Couvre WP-H3 existant via story 4.5 (Meeting.assert_can_complete reprise #554) + WP-H2 existant via story 4.9 (validate-before-compute méga `[cluster-coord]` 4 use-cases). 9 stories `story/4.1-*` à `story/4.9-*`. Deps : WP-H1.
+
+- **WP-H6 — Slice 5 modularité + onboarding + RBAC Communauté Moderator** · Maury stories 5.1-5.8 · T2 · M · _ARBITRAGE v0.1.0 vs v0.2.0_
+  Table `acp_enabled_modules` + middleware `ModuleGuard` + `ModuleDisabledError` + UI `ModuleGate.svelte` + Syndic = `community.moderator` (RBAC SEL/Poll/Notice/SharedObject sans participation perso, INV-4 brief) + Reservation.on_behalf_of_acp + Comptable 403 sur /community/* + activation/désactivation auditée + archivage (jamais delete) + onboarding wizard ≤ 5min + CI gate axe-core ≥ 90 + data-testid lint. 8 stories `story/5.1-*` à `story/5.8-*`. Deps : WP-H1 + WP-H4 (sous-rôles).
+
+- **WP-HTx — Slice transversal continu** · Maury stories Tx.1-Tx.3 · T2 · S · _CONTINUOUS_
+  Tx.1 job CI `test:characterization` bloque merge si ROUGE + Tx.2 helpers shared multi-rôle complets (`loginAsContractorMagicLink`, etc.) + Tx.3 log Tier 2 `docs/agent-activity/YYYY-MM-DD-bob-slice-N.md` par session. Démarrage **immédiat** dès slice 0. Deps : WP-H0.
+
+> **Cartographie Maury ↔ WPs Track H existants** :
+> - WP-H1 ⇔ Story 1.4 (Building.is_conformant + #553 fix) + 1.1-1.3 (refacto ACP)
+> - WP-H2 ⇔ Story 4.9 méga `[cluster-coord]` (validate-before-compute 4 use-cases)
+> - WP-H3 ⇔ Story 4.5 (Meeting.assert_can_complete reprise #554)
+> - WP-B4 ⇔ Story 1.4 + 2.5 E2E (BuildingDetail refacto + multi-rôle test)
+> - WP-D1/E1 enrichis ⇔ slice 2 stories 2.1-2.5 (sélecteur+banner+Portfolio)
+>
+> **Arbitrage v0.1.0** : seuls WP-H0/H1/H2/H3/HTx sont **bloqueurs légaux** pour go-live bêta fermée (Art. 3.84-3.89 CC, fiche bâtiment conforme, AG terminable). WP-H4/H5/H6 sont **extension produit** — décision PO à confirmer sur leur inclusion v0.1.0 vs report v0.2.0.
+
 ### Track G — Gate de release
 
 - **WP-G1 — Revue humaine fraîche** · T1 · M
