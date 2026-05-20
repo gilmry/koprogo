@@ -44,7 +44,9 @@ Actions Concrètes
 
 **Prix de départ** (validé à la création ASBL):
 
-* **Cloud géré**: **5€/mois** par copropriété
+* **Cloud géré**: **5€/mois** par copropriété — cible Jalon 2+ (production
+  ouverte). **Bêta fermée v0.1.0 : gratuit** (5-10 copropriétés pilotes,
+  sans facturation).
 * **Self-hosted**: **Gratuit** (toujours)
 
 **Évolution du prix**: Uniquement par **vote en Assemblée Générale** (ASBL → Coopérative)
