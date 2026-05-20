@@ -5,9 +5,10 @@ phase_togaf: A (Vision)
 agent_bmad: Mary (Analyste TOGAF)
 authors: [Gilles Maury, Farah Maury]
 date: 2026-05-20
-version: 0.4
+version: 0.5
 status: Draft awaiting human sign-off
 changelog:
+  - "0.5 (2026-05-20) — Modularité (boîte à outils par ACP). Dialectique « gardez ce qui marche, prenez ce qui vous manque ». Modules activables par ACP : Communauté seule / Ticketing seul / Compta seule / AG seule / Gestion complète / à la carte. +C20-C22 ; +INV-25/26/27 ; +SC17/18/19 ; section Vision enrichie ; mémoire `project_koprogo-modular-toolbox.md`"
   - "0.4 (2026-05-20) — Ticketing enrichi : plaintes documentées (preuves+SLA), réponses syndic tracées, cahier des charges technique encodé AVANT évaluation Contractor, point AGO obligatoire évaluation intervenants (génération auto Resolution + dossier preuve). +C16-C19 ; +INV-21 à INV-24 ; +SC14/SC15/SC16 ; BC Maintenance & Operations enrichi"
   - "0.3 (2026-05-20) — +C14 PWA Contractor magic link (électricien/jardinier/poubelles) ; +C15 AG distance/hybride Art. 3.87 §4 CC (modes in_person/remote/hybrid, quorum agrégé, auth forte #48 promu in-scope, 2 signatures électroniques PV) ; +INV-18 à INV-20 ; +SC11/SC12/SC13 ; BC Maintenance & Operations + External Mandates ajoutés ; hors-scope mis à jour"
   - "0.2 (2026-05-20) — +9 personas/rôles (Contractor, CdC Art. 3.88 CC, Commissaire aux comptes Art. 3.89 CC, split Comptable Émetteur/Encodeur, Avocat, Notaire mutations, Gardien/concierge, AMO+Architecte+BET) ; +C9-C13 capacités ; +INV-10..INV-17 ; +SC9/SC10"
@@ -23,6 +24,7 @@ memories_applied:
   - fe-refactor-test-driven
   - multirole-narrative-scenarios
   - no-f64-in-money
+  - koprogo-modular-toolbox
 ---
 
 # Brief — Refonte UX multi-rôle + modèle ACP
@@ -35,9 +37,13 @@ memories_applied:
 
 ## 1. Vision
 
-Aligner l'expérience utilisateur de KoproGo sur le modèle juridique réel de la copropriété belge (Association des Copropriétaires — Art. 3.84 CC) et sur les rôles métier distincts (admin SaaS / syndic / comptable / copropriétaire). Éliminer les ambiguïtés actuelles qui produisent des bugs de conformité et des conflits d'intérêt (cf. session live testing 2026-05-20).
+Aligner l'expérience utilisateur de KoproGo sur le modèle juridique réel de la copropriété belge (Association des Copropriétaires — Art. 3.84 CC) et sur les rôles métier distincts (admin SaaS / syndic / comptable / copropriétaire / +9 rôles complémentaires). Éliminer les ambiguïtés actuelles qui produisent des bugs de conformité et des conflits d'intérêt (cf. session live testing 2026-05-20).
 
-**Promesse utilisateur** : *« Je sais toujours sur quel immeuble, quelle ACP et quel cabinet syndic j'agis, et je ne peux pas accidentellement franchir une frontière juridique. »*
+**KoproGo n'est pas un monolithe « tout ou rien » mais une boîte à outils modulaire par ACP** (cf. mémoire [[koprogo-modular-toolbox]]) : chaque ACP active uniquement les modules dont elle a besoin — Communauté seule, Ticketing seul, Compta seule, AG seule, Gestion complète, ou à la carte. La dialectique produit est **« gardez ce qui marche, prenez ce qui vous manque »** : aucune ACP n'est forcée d'abandonner ses outils existants pour adopter KoproGo, elle prend juste les modules manquants. Maximise le taux d'adoption et respecte la diversité des ACPs (auto-gérées vs cabinets professionnels).
+
+**Promesse utilisateur** :
+- *« Je sais toujours sur quel immeuble, quelle ACP et quel cabinet syndic j'agis, et je ne peux pas accidentellement franchir une frontière juridique. »*
+- *« Mon ACP n'utilise QUE ce dont elle a besoin — je n'ai pas à apprendre/payer/configurer les modules qui ne nous servent pas. Et je peux ajouter un module quand le besoin arrive, sans tout casser. »*
 
 ## 2. Problème observé (cas d'usage en panne)
 
@@ -109,6 +115,9 @@ Repris du brief parent (`Maury/product-brief.md`) avec affinage spécifique. **1
 | **C17 — Plaintes documentées avec preuves + SLA réponse** | Copropriétaire/CdC/Gardien dépose plainte avec photos/dates/témoins ; syndic répond dans un SLA borné | Partiel (Ticket existe mais sans formalisme plainte/réponse) | Sub-type `Ticket.kind = complaint` avec champs : `evidence_attachments[]`, `witnesses[]`, `incident_date`, `severity`. Entité `SyndicResponse` (responder_user_id, response_text, action_proposed, response_date) avec SLA configurable par sévérité. Trail audit immuable. |
 | **C18 — Évaluation Contractor référencée au CdC technique** | Évaluation formelle d'un Contractor après mission, référencée au cahier des charges initial + plaintes éventuelles + qualité livraison | Absent | Entité `ContractorEvaluation` (contractor_id, technical_spec_id, mission_id, scores{quality, deadline, communication, price_respect}, comments, evaluator_role, plaintes_linked[]). Refuse de créer si pas de `TechnicalSpec` préalable (INV-21). |
 | **C19 — Point AGO obligatoire évaluation intervenants** | Chaque AGO génère automatiquement le point « Évaluation des intervenants externes de l'année écoulée » avec dossier preuve | Absent | Use-case `generate_ago_resolutions(meeting_id)` ajoute automatiquement résolution `EvaluationContractors` si `ContractorEvaluation.count(date BETWEEN previous_ago AND now) > 0`. Dossier preuve auto-attaché (PDF synthèse + évaluations + plaintes + réponses). Décision AGO = vote sur reconduction/exclusion contractors. |
+| **C20 — Modularité par ACP (boîte à outils)** | Chaque ACP active uniquement les modules dont elle a besoin (Communauté / Ticketing / Compta / AG / Gestion complète / à la carte) | Absent (tout activé partout) | Table `acp_enabled_modules` (acp_id, module_name, enabled_at, enabled_by, plan). Module registry : `Community`, `Ticketing`, `Accounting`, `Governance`, `Maintenance`, `Portfolio`. UI conditionnelle (menus cachés si module désactivé). API 403/404 typée si module désactivé. |
+| **C21 — Intégration externe (« gardez ce qui marche »)** | ACPs ont déjà des outils (Excel, Dropbox, mails) ; KoproGo s'intègre sans imposer migration totale | Partiel (#111 Public API v2 — Phase ecosystem) | MVP léger : exports CSV/JSON par module + webhooks sortants standard + import factures CSV/PDF (OCR). API ouverte complète = Phase 2 (#111). |
+| **C22 — Onboarding modulaire** | Assistant de choix de modules lors de l'inscription d'une ACP, max 5 min | Absent | Workflow guidé : (1) Profil ACP (auto-gérée / cabinet pro / mixte) → recommandation modules ; (2) Activation initiale ; (3) Aperçu/démo de chaque module activé ; (4) Re-configuration possible à tout moment (workflow audité INV-26). |
 
 ## 5. Bounded Contexts DDD affectés
 
@@ -162,6 +171,9 @@ Repris du brief parent (`Maury/product-brief.md`) avec affinage spécifique. **1
 | **INV-22** | Toute AGO génère **automatiquement** une `Resolution` type `EvaluationContractors` si au moins 1 `ContractorEvaluation` existe entre l'AGO précédente et la nouvelle. Cette résolution ne peut PAS être retirée de l'ordre du jour par le syndic. | Point AGO obligatoire contourné, manquement légal. |
 | **INV-23** | Chaque `Ticket.kind = complaint` doit recevoir au moins 1 `SyndicResponse` dans le `sla_deadline` configuré (par défaut : low=15j, medium=7j, high=48h, critical=24h). Au-delà : audit + notification escalade au CdC. | SLA non tenu, exposition juridique syndic. |
 | **INV-24** | Audit immuable obligatoire sur `Ticket.kind = complaint`, `SyndicResponse`, `TechnicalSpec`, `ContractorEvaluation` : aucune édition/suppression possible après création (uniquement ajout de révisions/réponses successives). | Réécriture historique, plaintes effacées, preuve compromise. |
+| **INV-25** | Une ACP ne peut interagir avec un module désactivé. UI cachée (menus / pages) + API 403/404 typée (`ModuleDisabledError { module, acp_id }`). Tentative directe via URL → page « Module non activé pour cette ACP ». | Confusion utilisateur, accès non sollicité, "module fantôme". |
+| **INV-26** | Activation/désactivation d'un module = **workflow audité** : (admin SaaS pour activation commerciale) OU (vote AG pour modules à impact juridique : Compta, Gouvernance). Trace immuable `module_activation_audit`. | Activation non tracée, désactivation accidentelle. |
+| **INV-27** | Désactivation d'un module avec données existantes → **archivage** (flag `archived_at`), **jamais suppression**. Réactivation = restauration des données archivées. Période d'archivage minimale = délai légal du module (5 ans Compta, 10 ans AG, etc.). | Perte de données légales (PV AG, écritures PCMN), non-conformité. |
 
 ## 8. Stratégie tests (intégrée Maury — cf. mémoire [[fe-refactor-test-driven]])
 
@@ -241,6 +253,9 @@ Scénarios narratifs avec acteurs corrects (cf. [[multirole-narrative-scenarios]
 | **SC14** | Plaintes documentées avec preuves + réponses syndic dans SLA | Test `@happy` flow (Marie poste plainte → Sylvie répond <SLA) + `@negative` (SLA dépassé → escalade CdC + audit) + `@security` (édition plainte → 403 immutabilité INV-24) | Phase 4 stories |
 | **SC15** | Évaluation Contractor refusée sans cahier des charges préalable | Test `@negative` (créer `ContractorEvaluation` sans `TechnicalSpec` → 422 INV-21) + `@happy` (CdC technique signé → évaluation créable + scoring complet) | Phase 4 stories |
 | **SC16** | Point AGO « Évaluation intervenants » généré automatiquement avec dossier preuve | Test `@happy` création AGO → résolution `EvaluationContractors` présente + PDF dossier (synthèse + évaluations + plaintes + réponses) + `@security` (syndic tente retrait du point → 403 INV-22) | Phase 4 stories |
+| **SC17** | Onboarding modulaire complet en ≤ 5 min pour une ACP « 1 module seul » | Mesure temps assistant onboarding ACP « Communauté seule » de l'inscription au 1er usage. Cible ≤ 5 min, mesuré sur 5 utilisateurs test naïfs. | Phase 5 validation |
+| **SC18** | Taux d'adoption modulaire mesurable | Analytics produit : % ACPs utilisant 1 / 2 / 3+ / all modules. Cible : ≥ 20% ACPs sur 1 module seul à 3 mois post-release (indicateur d'adoption « light entry point »). | Post-release (KPI continu) |
+| **SC19** | Zéro fuite cross-module sur module désactivé | Tests `@security` : ACP avec Compta désactivée tente accès `/expenses` → 403 + UI redirige vers page « Module non activé » (INV-25). Couvre les 6 modules. | Phase 4 stories |
 
 ## 11. Dépendances / contraintes
 
@@ -263,9 +278,10 @@ Sign-off humain (@gilmry) requis avant ouverture de Phase 2 (PRD) :
 - [ ] **C15 — AG distance/hybride** (mode `in_person`/`remote`/`hybrid`, quorum agrégé, auth forte distante #48 promu in-scope, 2 signatures électroniques PV) validée
 - [ ] Stratégie test-driven 3-niveaux acceptée
 - [ ] **C16-C19 ticketing enrichi** (cahier des charges TechnicalSpec, plaintes documentées avec SLA, évaluation Contractor référencée, point AGO obligatoire) validées
-- [ ] **24 invariants** validés (INV-1 à INV-24)
+- [ ] **C20-C22 modularité boîte à outils** (modules activables par ACP, intégration externe légère, onboarding modulaire ≤5min) + dialectique « gardez ce qui marche, prenez ce qui vous manque » validée
+- [ ] **27 invariants** validés (INV-1 à INV-27)
 - [ ] Périmètre hors-scope validé (incl. déprécession #48 hors-scope)
-- [ ] **16 critères de succès SC1-SC16** validés
+- [ ] **19 critères de succès SC1-SC19** validés
 - [ ] Coordination identifiée : cluster #433 Decimal + epic #555 Result<_, String> + WBS Track H
 
 **Date signature** : _à compléter_
