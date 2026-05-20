@@ -88,16 +88,31 @@ Légende : Tier 1 = humain exécute (agent diagnostique/propose). Taille S≤0.5
 
 ### Track D — E2E/QA
 
-- **WP-D1 — Réparer specs Playwright skippés** · #331 · T2 · M
+- **WP-D1 — Réparer specs Playwright skippés** · #331/#548/#550 · T2 · M · **PARTIEL FAIT** (2026-05-20)
   Un-skip 21 ApiKeys/SecurityIncidents : normaliser case rôle `SYNDIC`↔`syndic` + `building_id` dans `global-setup.ts`/TestWorld ; câbler/justifier 32 specs hors-CI. Plancher smoke ≈219/240 sans régression, jugement par-scénario. Fichiers : `frontend/tests/e2e/global-setup.ts`, `*.scenario.ts` (dont `meeting-vote.scenario.ts`), `{api-keys,security-incidents}*.spec.ts`, job playwright `ci.yml`. Deps : WP-FE1 (auth ripple global-setup), WP-B1.
+  **Réalisé** (race auth race-condition résolue, observée en live console) :
+  - `9a55c1a` #548 — `frontend/src/lib/db.ts` lazy-init central → élimine `Database not initialized` qui ripple-cassait 59 specs.
+  - `d988a57` #550 strate 1 — `authStore.refreshAccessToken` dedup in-flight (1 POST partagé entre N callers concurrents) + 5 tests Vitest TDD 4-cat.
+  - `0cacd83` #550 strate 1 (refactor helpers) — `Meetings/Expenses/Buildings.spec.ts` passent du UI-login local au `loginAsSyndic[WithBuilding]` partagé (injectAuth), élimine la course `/login → dashboard` (refresh #1 rote cookie → refresh #2 sur cookie révoqué).
+  - `5d2a7ae` #550 strate 2 v3 — `apiFetch` attend le refresh in-flight si pas de token (composants `client:load` qui mountent et appellent `api.get` avant `init()` complet). Validé en live console (0 erreur 401 cascade).
+  **Différé** : strate 3 (Resolutions/Invoices/Notifications/AdminDashBoard tests qui passent shared helper mais échouent encore — issue #550 garde la trace). Plancher smoke à confirmer en CI post-merge feature/dev→dev.
 
 - **WP-D2 — Câbler vitest au gate** · #343 · T2 · S-M
   Job `vitest` existe (`ci.yml:402`) ; couvrir auth store (WP-FE1) + composants convocation/réunion @happy/@negative ; cible = composants critiques bêta (pas 181/181). Deps : WP-FE1, WP-FE2.
 
 ### Track E — Tests IaC (sous-ensemble VPS de #354)
 
-- **WP-E1 — Lint IaC minimal viable** · #354 · T2 · M · _100% parallèle_
+- **WP-E1 — Lint IaC minimal viable** · #354 · T2 · M · _100% parallèle_ · **FAIT** (2026-05-20, 7 sous-fixes successifs)
   Job lint dans `ci-infra.yml`, assets VPS seulement : `terraform fmt -check`/`validate` (modules OVH + `monosite/vps/production/terraform`), `ansible-lint` (14 rôles + playbook prod), `yamllint`, `shellcheck` (**gate dur sur `gitops-deploy.sh`** — il exécute le déploiement prod). conftest/molecule/terratest = Phase 2. Deps : aucune.
+  **Réalisé** (7 couches successives découvertes en réajustant le gate sur `feature/dev`) :
+  - `9d081c7` oasdiff — format `--err-ignore` substring + retrait validate module aliasé non standalone.
+  - `be87351` terraform — off-by-one paths modules ovh-vps sur les 4 envs vps (`../../../` → `../../../../_shared/...`).
+  - `cc659e3` vars.yml — ajout newline final manquant (yamllint EOL strict).
+  - `13336ac` — retrait `---` en tête `vars.yml` + `playbook.yml` (yamllint `document-start: present:false`).
+  - `bdad9ff` — `become: yes` → `become: true` (yamllint `-s` strict promeut truthy en erreur).
+  - `e52afd8` — paths ansible roles 4 niveaux dans `playbook.yml` (même off-by-one que terraform).
+  - `0a951f9` — install `community.general:>=8.0.0,<11.0.0` dans CI step (module `ufw` n'est pas dans ansible-core).
+  Tooling host installé en parallèle (terraform 1.9.8, yamllint 1.38, shellcheck, gitleaks 8.30, oasdiff 1.15.3, kubeconform 0.6.7, pre-commit) pour reproduire localement (mémoire `feedback_use-docker-compose-for-tooling.md` complétée).
 
 ### Track F — Ops VPS (concurrent Track A — aucun fichier partagé)
 
@@ -113,10 +128,26 @@ Légende : Tier 1 = humain exécute (agent diagnostique/propose). Taille S≤0.5
 - **WP-F4 — État Terraform distant + RUNBOOK VPS** · T2 (doc) + T1 (state) · M
   Configurer/vérifier `backend.tf` état distant (pas d'état prod local). Rédiger `docs/RUNBOOK_VPS_PRODUCTION.md` (absent vérifié) : deploy, rollback (revert commit→poller redéploie), restore GPG+S3, endpoints santé, logs `/var/log/koprogo-gitops-production.log`. Deps : WP-F1.
 
+### Track H — Conformité métier (ajouté 2026-05-20 — bloqueurs légaux bêta fermée)
+
+> Bloqueurs identifiés en live testing 2026-05-20 (cf. issues #553/#554 et règles d'agent `admin-publishes-conform-buildings` / `validate-before-compute` / `world-model-seed`). Sans ces WP, un syndic peut lancer une AG, voter, calculer des charges sur un immeuble dont les quotas sont faux → décisions invalides juridiquement (Art. 3.87 §3-5 CC).
+
+- **WP-B4 — Bouton « Modifier » immeuble admin fonctionnel** · #553 Bug 1 · T2 · S
+  `BuildingDetail.svelte:67-69` `handleEdit` ouvre `showEditModal=true` mais le modal n'apparaît pas en live (admin bloqué pour éditer la fiche). Diagnostiquer (binding modal / Svelte 5 `on:click` vs `onclick` / props manquantes). 4-cat Playwright `@happy` (clic→modal→submit→update→reload), `@negative` (validation form). Deps : aucune.
+
+- **WP-H1 — `Building.is_conformant()` + filtrage role-based** · #553 règle admin-conform · T2 · M · _BLOQUEUR LÉGAL_
+  Entité domaine `Building` expose `is_conformant() -> bool` ssi `COUNT(units WHERE building_id) == total_units` ET `SUM(units.quota) == 1000` (millièmes belges). Use-case `list_buildings_for_syndic()` filtre par `is_conformant()` ; admin voit tout + badge `draft`/`conformant`. FE : `BuildingDetail` affiche count réel + somme réelle des quotas + badge + delta (« il vous manque X lots, Y millièmes »). 4-cat BDD `@happy`/`@negative`/`@security` (syndic NE PEUT PAS obtenir un building non-conform via API directe). Deps : aucune (mais coordonne avec cluster #433 Decimal pour les quotas).
+
+- **WP-H2 — `validate-before-compute` sur use-cases calcul** · #553/#554 règle validate-before-compute · T2 · M · _BLOQUEUR LÉGAL_
+  Tout use-case produisant un chiffre opérationnel (charges, quorum, répartition tantièmes, appels de fonds, génération PV/convocation) commence par `building.assert_conformant()?`. Erreur typée `BuildingNotConformantError { building_id, deltas }`. API → 422 avec détail. FE → banner « immeuble non conforme » + désactivation boutons calcul. Audit toute tentative de calcul sur non-conform. 4-cat BDD pour chaque use-case touché. Deps : WP-H1.
+
+- **WP-H3 — `Meeting.assert_can_complete()` invariants** · #554 Bug 1 · T2 · M · _BLOQUEUR LÉGAL Art. 3.87 §3-5 CC_
+  Entité `Meeting.complete()` refuse la transition `Scheduled → Completed` si : (a) aucune convocation envoyée, (b) quorum non validé (Art. 3.87 §5), (c) aucune résolution avec statut terminal, (d) aucun document type `MeetingMinutes` attaché. Erreur typée `MeetingNotReadyToComplete { missing: Vec<MissingPiece> }`. API → 422 avec liste pièces manquantes. FE → bouton « Marquer terminée » désactivé + checklist visuelle 4 pré-conditions. **Migrer aussi `meeting_use_cases.rs:complete_meeting` de `Result<_,String>` vers `AppError` (couvre simultanément un slice de l'epic #555 — coordination cluster #555/#433).** Deps : aucune.
+
 ### Track G — Gate de release
 
 - **WP-G1 — Revue humaine fraîche** · T1 · M
-  Nouvelle revue vs branche release sur host provisionné ; rapport périmé 2026-04-01 = checklist re-vérification (WF1-1..4, WF2-1, WF7-1, WF14-2, NaN%). Produire successeur daté `docs/HUMAN_REVIEW_REPORT_v0.1.0_<date>.md` : ✔/✘ par bug + GO/NO-GO signé. **HUMAIN exécute & signe.** Deps : A1-A6, B1, FE1, FE2, D1 VERTS + VPS up (F3).
+  Nouvelle revue vs branche release sur host provisionné ; rapport périmé 2026-04-01 = checklist re-vérification (WF1-1..4, WF2-1, WF7-1, WF14-2, NaN%). Produire successeur daté `docs/HUMAN_REVIEW_REPORT_v0.1.0_<date>.md` : ✔/✘ par bug + GO/NO-GO signé. **HUMAIN exécute & signe.** Deps : A1-A6, B1, B4, H1-H3, FE1, FE2, D1 VERTS + VPS up (F3).
 
 - **WP-G2 — Tag git v0.1.0** · T1 · S
   HUMAIN tagge `v0.1.0` + déclenche `release-tag.yml`, seulement après WP-G1 GO signé + checklist GO verte.
@@ -137,7 +168,7 @@ E1 (lint IaC) ─► F1 (TF/Ansible,T1) ─► F2 (TLS,T1) ─► F3 (poller,T1)
         └──────────────── concurrent Track A ────────────────┘
 ```
 
-**Chemin critique** : `A1(M) → A2(L) → A5(L etat_date) → #433 VERT → make ci VERT → G1(T1) → G2(T1)`, convergeant avec `FE1(L)→FE2→D1` et `E1→F1(T1)→F2(T1)→F3(T1)`.
+**Chemin critique** : `A1(M) → A2(L) → A5(L etat_date) → #433 VERT → make ci VERT → G1(T1) → G2(T1)`, convergeant avec `FE1(L)→FE2→D1` et `E1→F1(T1)→F2(T1)→F3(T1)` et `H1→H2 / H3 / B4` (Track H Conformité métier — bloqueurs légaux Art. 3.87 §3-5 CC, ajoutés 2026-05-20 cf. #553/#554).
 **Démarrages J1 sans inter-dép** : A1, B1, B2, FE1(moitié backend), E1, F1(terraform plan). Ops est court en effort mais borné par la latence Tier-1 humaine → **lancer F1-prep + E1 dès J1** pour que Ops finisse en parallèle du long pole A2→A5, pas après.
 
 ## Critères GO (Definition of Done — bêta fermée)
@@ -157,6 +188,11 @@ E1 (lint IaC) ─► F1 (TF/Ansible,T1) ─► F2 (TLS,T1) ─► F3 (poller,T1)
 - [ ] BDD pré-existants (#524-révélés) triagés : chaque groupe rouge fixé OU accepté-différé tracé ; CI BDD = 0 rouge non-tracé (B3)
 - [ ] Plancher Playwright smoke ≈219/240 ; specs skippés un-skippés ou documentés (D1) ; vitest VERT composants critiques (D2)
 - [ ] Lint IaC VERT : terraform fmt/validate, ansible-lint, yamllint, shellcheck(`gitops-deploy.sh`) (E1)
+- [ ] Bouton « Modifier » immeuble admin fonctionnel (WP-B4 — #553 Bug 1)
+- [ ] `Building.is_conformant()` exposé domaine + filtrage role-based (admin voit tout/badge, syndic ne voit QUE les conformes) + UI badge + delta visible (WP-H1 — #553 admin-conform)
+- [ ] Total tantièmes affiche somme RÉELLE depuis `SUM(units.quota)` (jamais NaN, jamais hardcodé 1000) (WP-H1 — #553 Bug 3/4)
+- [ ] `validate-before-compute` : charges/quorum/répartition/appels de fonds refusent 422 sur building non-conform + banner FE clair (WP-H2 — #553/#554)
+- [ ] `Meeting.assert_can_complete()` refuse si convocations / quorum / résolutions / PV absents — Art. 3.87 §3-5 CC (WP-H3 — #554)
 - [ ] Terraform appliqué + état distant (F1/F4) ; rôles Ansible convergés (F1)
 - [ ] Cert Let's Encrypt valide sur 443, http→https OK (F2)
 - [ ] `gitops-deploy.sh watch` systemd actif ; drill deploy+rollback + drill restore GPG+S3 faits (F3/F4)
