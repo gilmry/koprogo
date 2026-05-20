@@ -424,6 +424,11 @@ jobs:
           pip install "ansible-lint==24.*" "yamllint==1.*" "ansible-core>=2.16,<2.19"
           ansible-lint --version
           yamllint --version
+          # `ufw` (utilisé par le rôle common pour le firewall VPS) vit dans
+          # la collection community.general, pas dans ansible-core. Sans cette
+          # install, ansible-lint échoue avec "couldn't resolve module/action
+          # 'ufw'". Pinned pour reproductibilité. Cf. issue #354/WP-E1.
+          ansible-galaxy collection install community.general:>=8.0.0,<11.0.0 --force
 
       - name: Install shellcheck
         run: |
