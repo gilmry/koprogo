@@ -3,8 +3,14 @@ Roadmap KoproGo 2025-2030
 ====================================
 
 :Version: 1.0
-:Date: 2025-01-19
+:Date: 2025-01-19 (snapshot original) — màj 2026-05 (post-bêta v0.1.0)
 :Modèle: Progression par capacités et métriques
+
+.. note::
+   **Snapshot 2026-05** : Jalon 1 (Sécurité & GDPR) complété — cf.
+   ``jalons-atteints``. Phase 1 "2025-2026" toujours valable côté
+   chronologie. Le statut ASBL/coopérative reste à formaliser (Tier-1
+   humain hors-scope code).
 
 .. contents:: Table des matières
    :depth: 3
