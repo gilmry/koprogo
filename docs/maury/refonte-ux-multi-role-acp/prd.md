@@ -6,21 +6,21 @@ agent_bmad: John (Product Manager)
 authors: [Gilles Maury, Farah Maury]
 date: 2026-05-20
 version: 1.0
-status: Draft awaiting human sign-off
+status: Signed by @gilmry 2026-05-20
+signed_at: 2026-05-20
+signed_by: "@gilmry"
 brief_source: brief.md (Mary, v1.0 signé 2026-05-20)
 total_frs: 45
 modules_covered: 8 (Identity+ACP, Property, Governance, Accounting, Community, Maintenance, Portfolio, Cross-cutting)
 changelog:
-  - "1.0 (2026-05-20) — PRD initial transformant brief v1.0 signé en 45 FRs numérotées avec matrice 4-cat BDD condensée"
+  - "1.0 (2026-05-20) — SIGNÉ par @gilmry. PRD verrouillé, Phase 3 (Architecture Winston) débloquée. 45 FRs en 8 modules, matrice 4-cat condensée, 16 objectifs O1-O16, 7 NFRs, plan release 5 slices, 7 risques."
 ---
 
 # PRD — Refonte UX multi-rôle + modèle ACP
 
 ## Methode Maury — Phase TOGAF B-C (Business + SI)
 
-> 🟢 **Phase 2 Draft** — Brief Phase 1 signé par @gilmry le 2026-05-20 (v1.0). Ce PRD transforme les 22 capacités + 27 invariants + 19 critères succès du brief en **45 FRs numérotées avec matrice 4-cat BDD Gherkin condensée**.
->
-> **GATE Phase 2 = sign-off humain** avant ouverture Phase 3 (Architecture, Winston).
+> ✅ **PRD SIGNÉ par @gilmry le 2026-05-20** — Phase 2 verrouillée, Phase 3 (Architecture, Winston) débloquée. 45 FRs numérotées avec matrice 4-cat BDD Gherkin condensée, 8 modules, 16 objectifs, 7 NFRs, 5 slices de release.
 
 ---
 
@@ -320,17 +320,17 @@ Chaque slice = 1 ou plusieurs PRs avec gate CI VERT + tests caractérisation VER
 
 ## 10. Gate de validation Phase 2 — sign-off humain
 
-Sign-off @gilmry requis avant ouverture Phase 3 (Architecture, Winston) :
+> ✅ **PRD SIGNÉ par @gilmry le 2026-05-20** — Phase 2 verrouillée, Phase 3 (Architecture, Winston) débloquée.
 
-- [ ] Objectifs O1-O16 mesurables et traçables vers brief
-- [ ] Périmètre In/Out scope validé (incl. #48 promu in-scope)
-- [ ] 45 FRs validées (numérotation + matrice 4-cat condensée)
-- [ ] NFRs validées (perf P99 < 500ms, WCAG AA, i18n, Decimal/Result typed)
-- [ ] Stratégie tests caractérisation validée (6 specs prioritaires)
-- [ ] Dépendances cross-stories (#433/#555/#553/#554/#550/#48) acceptées
-- [ ] Plan de release 5 slices validé (ordre + critères go par slice)
-- [ ] Risques 7 + mitigations acceptés
-- [ ] Coordination Phase 3 (Architecture) → ADRs à produire identifiés :
+- [x] Objectifs O1-O16 mesurables et traçables vers brief
+- [x] Périmètre In/Out scope validé (incl. #48 promu in-scope)
+- [x] 45 FRs validées (numérotation + matrice 4-cat condensée)
+- [x] NFRs validées (perf P99 < 500ms, WCAG AA, i18n, Decimal/Result typed)
+- [x] Stratégie tests caractérisation validée (6 specs prioritaires)
+- [x] Dépendances cross-stories (#433/#555/#553/#554/#550/#48) acceptées
+- [x] Plan de release 5 slices validé (ordre + critères go par slice)
+- [x] Risques 7 + mitigations acceptés
+- [x] Coordination Phase 3 (Architecture) → ADRs à produire identifiés :
   - ADR ACP comme racine d'agrégat
   - ADR Portefeuille entité backend
   - ADR Convention data-testid
@@ -338,11 +338,11 @@ Sign-off @gilmry requis avant ouverture Phase 3 (Architecture, Winston) :
   - ADR Signature électronique eIDAS prestataire
   - ADR Modularité par ACP (table + module registry)
 
-**Date signature** : _à compléter_
-**Signature** : _@gilmry_
+**Date signature** : **2026-05-20**
+**Signature** : **@gilmry** ✅
 
 ---
 
 ## 11. Phase suivante
 
-Phase 3 (Architecture — Winston) **bloquée tant que Phase 2 non signée**. Au sign-off : Winston produit `architecture.md` avec diagrammes d'agrégat, ports/adapters, ADRs ci-dessus, migrations SQL, impact frontend détaillé.
+Phase 3 (Architecture — Winston) **débloquée** par sign-off Phase 2 (2026-05-20). Winston produira `architecture.md` avec diagrammes d'agrégat, ports/adapters, 6 ADRs listés au §10, migrations SQL détaillées, impact frontend détaillé (composants Svelte 5 à créer/refacto).

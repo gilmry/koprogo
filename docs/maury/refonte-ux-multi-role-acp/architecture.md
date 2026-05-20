@@ -4,17 +4,17 @@ phase: architecture
 phase_togaf: D (Technology)
 agent_bmad: Winston (Architecte hexagonal)
 authors: [Gilles Maury, Farah Maury]
-date: à compléter
+date: à compléter (Phase 3 démarrera après accord humain)
 version: 0.0
-status: Blocked — waiting Phase 2 (PRD) sign-off
-prd_source: prd.md (John, v0.0)
+status: Ready to start — Phase 2 PRD signé 2026-05-20 v1.0
+prd_source: prd.md (John, v1.0 signé 2026-05-20)
 ---
 
 # Architecture — Refonte UX multi-rôle + modèle ACP
 
 ## Methode Maury — Phase TOGAF D (Technology)
 
-> ⛔ **Phase Blocked** — ce document ne peut être démarré qu'après signature du `prd.md` par @gilmry.
+> 🟢 **Phase 3 Ready to start** — PRD Phase 2 signé par @gilmry le 2026-05-20 (v1.0). En attente d'OK exécution pour démarrer la rédaction de l'architecture (diagrammes d'agrégat, ports/adapters, 6 ADRs, migrations SQL, composants Svelte 5).
 
 ---
 

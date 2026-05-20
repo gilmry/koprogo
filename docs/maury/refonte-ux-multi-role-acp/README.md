@@ -9,8 +9,8 @@
 | Phase | Document | Agent | Statut | GATE |
 |---|---|---|---|---|
 | **1 — Brief** | [`brief.md`](brief.md) | Mary (Analyste TOGAF) | ✅ **SIGNÉ par @gilmry 2026-05-20** (v1.0) | ✔ Franchi |
-| **2 — PRD** | [`prd.md`](prd.md) | John (PM) | 🟢 **Ready to start** | ⏳ Démarrage à programmer |
-| **3 — Architecture** | [`architecture.md`](architecture.md) | Winston (Architecte hexagonal) | ⛔ Blocked phase 2 | — |
+| **2 — PRD** | [`prd.md`](prd.md) | John (PM) | ✅ **SIGNÉ par @gilmry 2026-05-20** (v1.0) | ✔ Franchi |
+| **3 — Architecture** | [`architecture.md`](architecture.md) | Winston (Architecte hexagonal) | 🟢 **Ready to start** | ⏳ Démarrage à programmer |
 | **4 — Stories** | [`stories.md`](stories.md) | Bob (Scrum Master) | ⛔ Blocked phase 3 | — |
 | **5 — Validation** | _à créer_ | Product Owner | ⛔ Blocked phase 4 | — |
 | **6 — Exécution** | (PRs + commits) | dev / qa / release-manager | ⛔ Blocked phase 5 | — |
