@@ -4,17 +4,17 @@ phase: prd
 phase_togaf: B-C (Business + SI)
 agent_bmad: John (Product Manager)
 authors: [Gilles Maury, Farah Maury]
-date: à compléter
+date: à compléter (Phase 2 démarrera après accord humain)
 version: 0.0
-status: Blocked — waiting Phase 1 (Brief) sign-off
-brief_source: brief.md (Mary, v0.1, 2026-05-20)
+status: Ready to start — Phase 1 Brief signé 2026-05-20 v1.0
+brief_source: brief.md (Mary, v1.0 signé 2026-05-20)
 ---
 
 # PRD — Refonte UX multi-rôle + modèle ACP
 
 ## Methode Maury — Phase TOGAF B-C (Business + SI)
 
-> ⛔ **Phase Blocked** — ce document ne peut être démarré qu'après signature du `brief.md` par @gilmry.
+> 🟢 **Phase 2 Ready to start** — brief Phase 1 signé par @gilmry le 2026-05-20 (v1.0). En attente d'OK exécution pour démarrer la rédaction du PRD (transformation des 22 capacités + 27 invariants en FRs numérotées + matrice 4×N BDD Gherkin).
 
 ---
 

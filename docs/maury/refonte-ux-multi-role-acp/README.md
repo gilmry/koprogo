@@ -8,8 +8,8 @@
 
 | Phase | Document | Agent | Statut | GATE |
 |---|---|---|---|---|
-| **1 — Brief** | [`brief.md`](brief.md) | Mary (Analyste TOGAF) | ✅ Draft posé 2026-05-20 | ⏳ **Sign-off humain @gilmry attendu** |
-| **2 — PRD** | [`prd.md`](prd.md) | John (PM) | ⛔ Blocked phase 1 | — |
+| **1 — Brief** | [`brief.md`](brief.md) | Mary (Analyste TOGAF) | ✅ **SIGNÉ par @gilmry 2026-05-20** (v1.0) | ✔ Franchi |
+| **2 — PRD** | [`prd.md`](prd.md) | John (PM) | 🟢 **Ready to start** | ⏳ Démarrage à programmer |
 | **3 — Architecture** | [`architecture.md`](architecture.md) | Winston (Architecte hexagonal) | ⛔ Blocked phase 2 | — |
 | **4 — Stories** | [`stories.md`](stories.md) | Bob (Scrum Master) | ⛔ Blocked phase 3 | — |
 | **5 — Validation** | _à créer_ | Product Owner | ⛔ Blocked phase 4 | — |

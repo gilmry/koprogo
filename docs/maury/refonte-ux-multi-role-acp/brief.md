@@ -5,9 +5,12 @@ phase_togaf: A (Vision)
 agent_bmad: Mary (Analyste TOGAF)
 authors: [Gilles Maury, Farah Maury]
 date: 2026-05-20
-version: 0.5
-status: Draft awaiting human sign-off
+version: 1.0
+status: Signed by @gilmry 2026-05-20
+signed_at: 2026-05-20
+signed_by: "@gilmry"
 changelog:
+  - "1.0 (2026-05-20) — SIGNÉ par @gilmry. Phase 1 verrouillée, Phase 2 (PRD John) débloquée. 13 personas, 22 capacités (C1-C22), 8 BC, 27 invariants (INV-1 à INV-27), 19 critères succès (SC1-SC19), 9 mémoires d'agent appliquées."
   - "0.5 (2026-05-20) — Modularité (boîte à outils par ACP). Dialectique « gardez ce qui marche, prenez ce qui vous manque ». Modules activables par ACP : Communauté seule / Ticketing seul / Compta seule / AG seule / Gestion complète / à la carte. +C20-C22 ; +INV-25/26/27 ; +SC17/18/19 ; section Vision enrichie ; mémoire `project_koprogo-modular-toolbox.md`"
   - "0.4 (2026-05-20) — Ticketing enrichi : plaintes documentées (preuves+SLA), réponses syndic tracées, cahier des charges technique encodé AVANT évaluation Contractor, point AGO obligatoire évaluation intervenants (génération auto Resolution + dossier preuve). +C16-C19 ; +INV-21 à INV-24 ; +SC14/SC15/SC16 ; BC Maintenance & Operations enrichi"
   - "0.3 (2026-05-20) — +C14 PWA Contractor magic link (électricien/jardinier/poubelles) ; +C15 AG distance/hybride Art. 3.87 §4 CC (modes in_person/remote/hybrid, quorum agrégé, auth forte #48 promu in-scope, 2 signatures électroniques PV) ; +INV-18 à INV-20 ; +SC11/SC12/SC13 ; BC Maintenance & Operations + External Mandates ajoutés ; hors-scope mis à jour"
@@ -266,23 +269,27 @@ Scénarios narratifs avec acteurs corrects (cf. [[multirole-narrative-scenarios]
 
 ## 12. Signature & GATE
 
-Ce brief est **DRAFT** en attente de signature humaine.
+> ✅ **Brief SIGNÉ par @gilmry le 2026-05-20** — Phase 1 verrouillée, Phase 2 (PRD) débloquée.
 
-Sign-off humain (@gilmry) requis avant ouverture de Phase 2 (PRD) :
+- [x] Vision validée
+- [x] **13 personas** validés (incl. Contractor PWA magic link, CdC Art. 3.88 CC, Commissaire Art. 3.89 CC, split Comptable Émetteur/Encodeur, Avocat/Notaire/AMO mandatés, Gardien employé ACP)
+- [x] Modèle ACP `0..1 Org → 1..N ACP → 1..N Building` validé
+- [x] Matrice rôles/modules + sous-rôles métier (syndic modérateur, comptable split, mandats bornés) validée
+- [x] **C14 — PWA Contractor + magic link** (3 écrans, expirable, scope=1 ticket) validée
+- [x] **C15 — AG distance/hybride** (mode `in_person`/`remote`/`hybrid`, quorum agrégé, auth forte distante #48 promu in-scope, 2 signatures électroniques PV) validée
+- [x] Stratégie test-driven 3-niveaux acceptée
+- [x] **C16-C19 ticketing enrichi** (cahier des charges TechnicalSpec, plaintes documentées avec SLA, évaluation Contractor référencée, point AGO obligatoire) validées
+- [x] **C20-C22 modularité boîte à outils** (modules activables par ACP, intégration externe légère, onboarding modulaire ≤5min) + dialectique « gardez ce qui marche, prenez ce qui vous manque » validée
+- [x] **27 invariants** validés (INV-1 à INV-27)
+- [x] Périmètre hors-scope validé (incl. déprécession #48 hors-scope)
+- [x] **19 critères de succès SC1-SC19** validés
+- [x] Coordination identifiée : cluster #433 Decimal + epic #555 Result<_, String> + WBS Track H
 
-- [ ] Vision validée
-- [ ] **13 personas** validés (incl. Contractor PWA magic link, CdC Art. 3.88 CC, Commissaire Art. 3.89 CC, split Comptable Émetteur/Encodeur, Avocat/Notaire/AMO mandatés, Gardien employé ACP)
-- [ ] Modèle ACP `0..1 Org → 1..N ACP → 1..N Building` validé
-- [ ] Matrice rôles/modules + sous-rôles métier (syndic modérateur, comptable split, mandats bornés) validée
-- [ ] **C14 — PWA Contractor + magic link** (3 écrans, expirable, scope=1 ticket) validée
-- [ ] **C15 — AG distance/hybride** (mode `in_person`/`remote`/`hybrid`, quorum agrégé, auth forte distante #48 promu in-scope, 2 signatures électroniques PV) validée
-- [ ] Stratégie test-driven 3-niveaux acceptée
-- [ ] **C16-C19 ticketing enrichi** (cahier des charges TechnicalSpec, plaintes documentées avec SLA, évaluation Contractor référencée, point AGO obligatoire) validées
-- [ ] **C20-C22 modularité boîte à outils** (modules activables par ACP, intégration externe légère, onboarding modulaire ≤5min) + dialectique « gardez ce qui marche, prenez ce qui vous manque » validée
-- [ ] **27 invariants** validés (INV-1 à INV-27)
-- [ ] Périmètre hors-scope validé (incl. déprécession #48 hors-scope)
-- [ ] **19 critères de succès SC1-SC19** validés
-- [ ] Coordination identifiée : cluster #433 Decimal + epic #555 Result<_, String> + WBS Track H
+**Date signature** : **2026-05-20**
+**Signature** : **@gilmry** ✅
 
-**Date signature** : _à compléter_
-**Signature** : _@gilmry_
+---
+
+## Phase suivante
+
+Phase 2 (PRD — John, PM) **débloquée**. À démarrer dès que tu donnes l'OK pour l'exécution Maury (le PRD nécessite de transformer les 22 capacités + 27 invariants en **FRs numérotées avec matrice 4×N BDD Gherkin** — c'est un travail conséquent, mieux vaut le faire en sous-step dédié).
