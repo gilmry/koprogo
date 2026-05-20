@@ -5,9 +5,10 @@ phase_togaf: A (Vision)
 agent_bmad: Mary (Analyste TOGAF)
 authors: [Gilles Maury, Farah Maury]
 date: 2026-05-20
-version: 0.3
+version: 0.4
 status: Draft awaiting human sign-off
 changelog:
+  - "0.4 (2026-05-20) — Ticketing enrichi : plaintes documentées (preuves+SLA), réponses syndic tracées, cahier des charges technique encodé AVANT évaluation Contractor, point AGO obligatoire évaluation intervenants (génération auto Resolution + dossier preuve). +C16-C19 ; +INV-21 à INV-24 ; +SC14/SC15/SC16 ; BC Maintenance & Operations enrichi"
   - "0.3 (2026-05-20) — +C14 PWA Contractor magic link (électricien/jardinier/poubelles) ; +C15 AG distance/hybride Art. 3.87 §4 CC (modes in_person/remote/hybrid, quorum agrégé, auth forte #48 promu in-scope, 2 signatures électroniques PV) ; +INV-18 à INV-20 ; +SC11/SC12/SC13 ; BC Maintenance & Operations + External Mandates ajoutés ; hors-scope mis à jour"
   - "0.2 (2026-05-20) — +9 personas/rôles (Contractor, CdC Art. 3.88 CC, Commissaire aux comptes Art. 3.89 CC, split Comptable Émetteur/Encodeur, Avocat, Notaire mutations, Gardien/concierge, AMO+Architecte+BET) ; +C9-C13 capacités ; +INV-10..INV-17 ; +SC9/SC10"
   - "0.1 (2026-05-20) — Brief initial (4 personas, 8 capacités, 9 invariants, 8 critères succès)"
@@ -104,6 +105,10 @@ Repris du brief parent (`Maury/product-brief.md`) avec affinage spécifique. **1
 | **C13 — Conseil de Copropriété droit de regard** | CdC supervise syndic, droit d'alerter AG (Art. 3.88 CC) | Absent | Vue lecture étendue + action `create_alert` visible AG + audit. |
 | **C14 — PWA ultra-simplifiée + magic link pour Contractor** | Électricien/jardinier/poubelles ne créent pas de compte ; reçoivent un lien magique par email/SMS, ouvrent une PWA ultra-épurée pour leur intervention. | Absent | PWA dédiée `/c/<token>` (token signé, single-use ou borné dans le temps). 3 écrans max : voir la demande, déclarer intervention, soumettre photo + facture. **Hors design system principal** (mobile-first, gros boutons, sans menus). Magic link via email/SMS, expirable, scope = 1 ticket/devis. |
 | **C15 — AG à distance + hybride (Art. 3.87 §4 CC)** | AG 100% virtuelle OU mix présentiel + distance, avec vote distant légal (procuration ou vote direct), quorum agrégé. | Absent | Workflow AG enrichi : mode `in_person` / `remote` / `hybrid` ; intégration visio (renvoi vers Jitsi/Whereby ou équivalent souverain) ; vote distant authentifié (cf. #48 itsme/eID promu in-scope pour distant) ; quorum agrégé `attendees_in_person + attendees_remote + represented_by_proxy`. Signatures électroniques pour PV. |
+| **C16 — Cahier des charges technique formel** | Cahier des charges (CdC technique) saisi AVANT tout devis Contractor, opposable juridiquement | Absent | Entité `TechnicalSpec` (issued_by_acp, scope, deliverables, deadlines, criteria, attachments). Versionning + signature ACP/syndic/AMO. Pré-requis légal pour évaluation Contractor (INV-21). |
+| **C17 — Plaintes documentées avec preuves + SLA réponse** | Copropriétaire/CdC/Gardien dépose plainte avec photos/dates/témoins ; syndic répond dans un SLA borné | Partiel (Ticket existe mais sans formalisme plainte/réponse) | Sub-type `Ticket.kind = complaint` avec champs : `evidence_attachments[]`, `witnesses[]`, `incident_date`, `severity`. Entité `SyndicResponse` (responder_user_id, response_text, action_proposed, response_date) avec SLA configurable par sévérité. Trail audit immuable. |
+| **C18 — Évaluation Contractor référencée au CdC technique** | Évaluation formelle d'un Contractor après mission, référencée au cahier des charges initial + plaintes éventuelles + qualité livraison | Absent | Entité `ContractorEvaluation` (contractor_id, technical_spec_id, mission_id, scores{quality, deadline, communication, price_respect}, comments, evaluator_role, plaintes_linked[]). Refuse de créer si pas de `TechnicalSpec` préalable (INV-21). |
+| **C19 — Point AGO obligatoire évaluation intervenants** | Chaque AGO génère automatiquement le point « Évaluation des intervenants externes de l'année écoulée » avec dossier preuve | Absent | Use-case `generate_ago_resolutions(meeting_id)` ajoute automatiquement résolution `EvaluationContractors` si `ContractorEvaluation.count(date BETWEEN previous_ago AND now) > 0`. Dossier preuve auto-attaché (PDF synthèse + évaluations + plaintes + réponses). Décision AGO = vote sur reconduction/exclusion contractors. |
 
 ## 5. Bounded Contexts DDD affectés
 
@@ -114,7 +119,7 @@ Repris du brief parent (`Maury/product-brief.md`) avec affinage spécifique. **1
 | **Governance** | `Meeting`, `Resolution`, `Vote`, `Convocation` | RBAC strict par ACP : un syndic A ne voit JAMAIS les AG d'une ACP du cabinet B. + **AG mode** : `in_person` / `remote` / `hybrid` ; quorum agrégé `present + remote + proxy` ; vote distant authentifié (lien #48 itsme/eID) ; signatures électroniques PV ; intégration visio (Jitsi/Whereby/équiv. souverain). + `CdC` (élus par AG, droit d'alerter) + `CommissaireAuxComptes` (vérification PCMN signée). |
 | **Accounting (PCMN)** | `JournalEntry`, `Expense`, `ChargeDistribution`, `CallForFunds` | Split permissions Encodeur (`invoice.create` only) vs Émetteur (`expense.issue` + `call_for_funds.create`). Commissaire = `read-only` global + `commissaire.sign_certificate`. |
 | **Community** | `SEL`, `Reservation`, `SharedObject`, `Notice`, `Poll` | Nouveau rôle `Moderator` (CRUD admin sans participation) ; sauf `Reservation` qui autorise "au nom de l'ACP" pour syndic. CdC = participant normal copropriétaire. |
-| **Maintenance & Operations** | `Ticket`, `WorkReport`, `TechnicalInspection` | Contractor accède via magic link à 1 ticket/devis spécifique uniquement ; PWA ultra-simplifiée (`/c/<token>`). Gardien = accès opérationnel ACP (CRUD tickets/réservations). AMO+Architecte+BET = lecture étendue + propositions chiffrées (vote AG décide). |
+| **Maintenance & Operations** | `Ticket`, `WorkReport`, `TechnicalInspection` | Contractor accède via magic link à 1 ticket/devis spécifique uniquement ; PWA ultra-simplifiée (`/c/<token>`). Gardien = accès opérationnel ACP (CRUD tickets/réservations). AMO+Architecte+BET = lecture étendue + propositions chiffrées (vote AG décide). + Sub-type `Ticket.kind = complaint` (plaintes documentées avec evidence_attachments/witnesses/incident_date/severity). + Entité `SyndicResponse` (réponse tracée + SLA). + Entité `TechnicalSpec` (cahier des charges encodé AVANT évaluation Contractor). + Entité `ContractorEvaluation` (référence TechnicalSpec + scores + plaintes liées). Use-case `generate_ago_resolutions(meeting_id)` génère auto le point AGO obligatoire. |
 | **Portfolio** (nouveau BC) | — | Entité `Portfolio` (table `portfolios`) : N favoris immeubles + partage équipe gestionnaires |
 | **External Mandates** (nouveau BC transverse) | — | Entité `Mandate` (issued_by_acp, role_type=avocat/notaire/amo, valid_from, valid_until, scope, motif, audit). Workflow : ACP mandate → token magique → accès lecture borné. |
 
@@ -153,6 +158,10 @@ Repris du brief parent (`Maury/product-brief.md`) avec affinage spécifique. **1
 | **INV-18** | Une AG en mode `remote` ou `hybrid` exige authentification forte pour le vote distant (cf. #48 itsme/eID) — pas de vote distant sans auth forte. | Vote frauduleux, AG invalide juridiquement. |
 | **INV-19** | Quorum d'une AG hybride = `attendees_in_person + attendees_remote + represented_by_proxy_quotas` (Art. 3.87 §4 CC). Aucun double-comptage. | Quorum calculé faux, décisions AG invalides. |
 | **INV-20** | Un PV d'AG distance/hybride DOIT avoir au moins 2 signatures électroniques qualifiées (président + secrétaire) avant clôture. | PV non opposable juridiquement. |
+| **INV-21** | Aucune `ContractorEvaluation` ne peut être créée sans une `TechnicalSpec` (cahier des charges) **antérieure** (par mission Contractor). Refus 422 sinon. | Évaluation sans base contractuelle opposable, biais subjectif. |
+| **INV-22** | Toute AGO génère **automatiquement** une `Resolution` type `EvaluationContractors` si au moins 1 `ContractorEvaluation` existe entre l'AGO précédente et la nouvelle. Cette résolution ne peut PAS être retirée de l'ordre du jour par le syndic. | Point AGO obligatoire contourné, manquement légal. |
+| **INV-23** | Chaque `Ticket.kind = complaint` doit recevoir au moins 1 `SyndicResponse` dans le `sla_deadline` configuré (par défaut : low=15j, medium=7j, high=48h, critical=24h). Au-delà : audit + notification escalade au CdC. | SLA non tenu, exposition juridique syndic. |
+| **INV-24** | Audit immuable obligatoire sur `Ticket.kind = complaint`, `SyndicResponse`, `TechnicalSpec`, `ContractorEvaluation` : aucune édition/suppression possible après création (uniquement ajout de révisions/réponses successives). | Réécriture historique, plaintes effacées, preuve compromise. |
 
 ## 8. Stratégie tests (intégrée Maury — cf. mémoire [[fe-refactor-test-driven]])
 
@@ -229,6 +238,9 @@ Scénarios narratifs avec acteurs corrects (cf. [[multirole-narrative-scenarios]
 | **SC11** | PWA Contractor magic link fonctionnelle de bout-en-bout | Test E2E mobile (Playwright `--device "Pixel 7"`) : magic link → 3 écrans → soumission OK. Expiration → 403 | Phase 4 stories |
 | **SC12** | AG hybride : quorum agrégé correct + auth forte distante + 2 signatures PV | Tests BDD scénarios INV-18/19/20 verts + flow E2E complet AG hybride avec rôles multi-acteurs (président + secrétaire + 1 présentiel + 1 distant + 1 proxy) | Phase 4 stories |
 | **SC13** | Mandats externes (Avocat/Notaire/AMO) bornés `valid_until` + scope respecté | Test `@negative` accès après expiration → 403 + audit ; test scope (notaire ne lit que SA unit) | Phase 4 stories |
+| **SC14** | Plaintes documentées avec preuves + réponses syndic dans SLA | Test `@happy` flow (Marie poste plainte → Sylvie répond <SLA) + `@negative` (SLA dépassé → escalade CdC + audit) + `@security` (édition plainte → 403 immutabilité INV-24) | Phase 4 stories |
+| **SC15** | Évaluation Contractor refusée sans cahier des charges préalable | Test `@negative` (créer `ContractorEvaluation` sans `TechnicalSpec` → 422 INV-21) + `@happy` (CdC technique signé → évaluation créable + scoring complet) | Phase 4 stories |
+| **SC16** | Point AGO « Évaluation intervenants » généré automatiquement avec dossier preuve | Test `@happy` création AGO → résolution `EvaluationContractors` présente + PDF dossier (synthèse + évaluations + plaintes + réponses) + `@security` (syndic tente retrait du point → 403 INV-22) | Phase 4 stories |
 
 ## 11. Dépendances / contraintes
 
@@ -250,9 +262,10 @@ Sign-off humain (@gilmry) requis avant ouverture de Phase 2 (PRD) :
 - [ ] **C14 — PWA Contractor + magic link** (3 écrans, expirable, scope=1 ticket) validée
 - [ ] **C15 — AG distance/hybride** (mode `in_person`/`remote`/`hybrid`, quorum agrégé, auth forte distante #48 promu in-scope, 2 signatures électroniques PV) validée
 - [ ] Stratégie test-driven 3-niveaux acceptée
-- [ ] **20 invariants** validés (INV-1 à INV-20)
+- [ ] **C16-C19 ticketing enrichi** (cahier des charges TechnicalSpec, plaintes documentées avec SLA, évaluation Contractor référencée, point AGO obligatoire) validées
+- [ ] **24 invariants** validés (INV-1 à INV-24)
 - [ ] Périmètre hors-scope validé (incl. déprécession #48 hors-scope)
-- [ ] **13 critères de succès SC1-SC13** validés
+- [ ] **16 critères de succès SC1-SC16** validés
 - [ ] Coordination identifiée : cluster #433 Decimal + epic #555 Result<_, String> + WBS Track H
 
 **Date signature** : _à compléter_
