@@ -1,5 +1,5 @@
-import { get } from "svelte/store";
 import { locale } from "svelte-i18n";
+import { get } from "svelte/store";
 import { toast } from "../stores/toast";
 import { authStore } from "../stores/auth";
 import { getAccessToken, clearAccessToken } from "./accessToken";
@@ -69,23 +69,17 @@ export async function apiFetch<T = any>(
   // #550 strate 2 : course init() vs onMount des composants.
   //
   // Symptôme observé en live console : composants (NotificationBell,
-  // listes diverses) mountent et appellent `api.get()` AVANT que
-  // `authStore.init()` n'ait fini son silent-refresh → pas de token en
-  // mémoire → "Missing authorization header" 401.
+  // listes diverses, AdminDashboard) mountent et appellent `api.get()`
+  // AVANT que `authStore.init()` n'ait fini son silent-refresh → pas de
+  // token en mémoire → "Missing authorization header" 401.
   //
-  // Si l'utilisateur ÉTAIT logué (cache `koprogo_user` présent) mais
-  // qu'on n'a pas encore le token en RAM, on attend le refresh in-flight
-  // (mémoïsé via `inflightRefresh` dans authStore — un seul POST
-  // /auth/refresh partagé entre tous les callers concurrents).
-  //
-  // On évite de déclencher un refresh pendant les flows non-authentifiés
-  // (login/register/refresh eux-mêmes) en vérifiant le cache d'affichage.
-  if (
-    !getAccessToken() &&
-    typeof window !== "undefined" &&
-    localStorage.getItem("koprogo_user") &&
-    !endpoint.startsWith("/auth/")
-  ) {
+  // Si pas de token + pas un endpoint /auth/*, on attend le refresh
+  // in-flight (mémoïsé via `inflightRefresh` dans authStore — un seul
+  // POST /auth/refresh partagé entre tous les callers concurrents).
+  // Coût : 1 extra round trip pour visiteurs vraiment unauth (refresh
+  // fail rapide). Au pire : 1 POST 401, puis clearSession ; rien de
+  // cassant.
+  if (!getAccessToken() && !endpoint.startsWith("/auth/")) {
     await authStore.refreshAccessToken();
   }
 

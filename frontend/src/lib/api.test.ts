@@ -133,4 +133,33 @@ describe("apiFetch awaits refresh when cached user exists but no token (#550 str
     expect(mockFetch).toHaveBeenCalledTimes(1);
     expect(mockFetch.mock.calls[0][0] as string).toContain("/auth/logout");
   });
+
+  it("@edge — isLoading=true (init en cours) sans cache user → déclenche refresh quand même", async () => {
+    // Cas réel observé après "Clear site data" du navigateur :
+    // localStorage vide MAIS cookie HttpOnly refresh encore présent côté
+    // browser → silent-refresh peut réussir → API call doit attendre.
+    // authStore.isLoading=true au moment du 1er appel (état initial).
+
+    const mockFetch = vi.fn().mockImplementation(async (url: string) => {
+      if (url.includes("/auth/refresh")) return okRefreshResponse();
+      return okDataResponse();
+    });
+    global.fetch = mockFetch as unknown as typeof fetch;
+
+    const { api } = await import("./api");
+    // Note : pas de localStorage.setItem("koprogo_user", ...) avant l'appel.
+    // authStore.isLoading=true par défaut (état initial) → my fix declenche
+    // refreshAccessToken() même sans cache. Le refresh peuple le cache et
+    // le token → la requête cible part avec Authorization.
+    await api.get("/notification-preferences/u-1");
+
+    // 2 fetchs : 1 pour refresh (déclenché par isLoading=true), 1 pour la cible
+    expect(mockFetch).toHaveBeenCalledTimes(2);
+    expect(mockFetch.mock.calls[0][0] as string).toContain("/auth/refresh");
+    const dataCallHeaders = (mockFetch.mock.calls[1][1] as RequestInit)
+      .headers as Headers;
+    expect(dataCallHeaders.get("Authorization")).toBe(
+      "Bearer fresh-token-from-refresh",
+    );
+  });
 });
