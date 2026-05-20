@@ -2,9 +2,10 @@
 Nouvelles Fonctionnalités 2025 - KoproGo
 ============================================
 
-:Date: 2025-11-18
-:Version: 1.0
+:Date: 2025-11-18 (snapshot original) — v0.1.0 jamais livrée en prod
+:Version: 1.0 (snapshot historique)
 :Statut: Implémenté
+:Note: Pour l'état courant, voir ``WBS_GO_LIVE_v0.1.0`` (go-live bêta) et ``roadmap/jalons-atteints`` (Jalon 1 complété mai 2026). Ce fichier devrait être auto-régénéré à chaque release (cf. #428 §8bis).
 
 Ce document centralise toutes les nouvelles fonctionnalités implémentées en 2025, organisées par jalon et par domaine fonctionnel.
 
