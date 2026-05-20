@@ -25,6 +25,15 @@ interface AuthState {
 const TOKEN_REFRESH_INTERVAL = 10 * 60 * 1000; // 10 minutes
 let refreshTimer: number | null = null;
 
+// In-flight dedup pour `refreshAccessToken()`. Plusieurs composants
+// `client:load` (RouteGuard + Navigation + page) mountent en parallèle et
+// appellent chacun `authStore.init()` → sans dedup, N POST /auth/refresh
+// concurrents réutilisent le même cookie single-use → le backend rote sur
+// le 1er et rejette les suivants → clearSession() → access token vidé →
+// les api.get() suivants tombent en 401 (h1 caché, listes vides, etc.).
+// Cf. issue #550 (≥ 12 Playwright fails sur ce pattern API-create→UI-list).
+let inflightRefresh: Promise<boolean> | null = null;
+
 const normalizeRole = (role: string | undefined | null): UserRole => {
   switch (role) {
     case UserRole.SUPERADMIN:
@@ -285,59 +294,68 @@ const createAuthStore = () => {
     // est lu côté serveur dans le cookie HttpOnly (credentials:"include").
     // Aucun token n'est jamais lu/écrit en localStorage.
     refreshAccessToken: async (): Promise<boolean> => {
-      try {
-        const response = await fetch(apiEndpoint("/auth/refresh"), {
-          method: "POST",
-          credentials: "include",
-        });
+      // Dedup in-flight : un seul POST /auth/refresh à la fois (#550).
+      if (inflightRefresh) return inflightRefresh;
 
-        if (response.ok) {
-          const data = await response.json();
-          // WP-FE1 : la réponse ne contient PLUS de refresh_token (cookie
-          // roté côté backend). Seul l'access token revient au JS.
-          const { token: newToken, user: userPayload } = data;
+      inflightRefresh = (async (): Promise<boolean> => {
+        try {
+          const response = await fetch(apiEndpoint("/auth/refresh"), {
+            method: "POST",
+            credentials: "include",
+          });
 
-          setAccessToken(newToken);
+          if (response.ok) {
+            const data = await response.json();
+            // WP-FE1 : la réponse ne contient PLUS de refresh_token (cookie
+            // roté côté backend). Seul l'access token revient au JS.
+            const { token: newToken, user: userPayload } = data;
 
-          const mappedUser: User = mapBackendUser(userPayload);
+            setAccessToken(newToken);
 
-          if (typeof window !== "undefined") {
-            localStorage.setItem("koprogo_user", JSON.stringify(mappedUser));
-            // Cache local best-effort : NE DOIT JAMAIS faire échouer le
-            // refresh. `init()` appelle refreshAccessToken() AVANT
-            // `localDB.init()` ; la persistance locale est rattrapée juste
-            // après (init → localDB.init → syncService.initialize). Auth ≠
-            // couche de cache. (#548 / WP-D1 — ripple FE1 JWT→cookie.)
-            try {
-              await syncService.setToken(newToken);
-              await localDB.saveUser(mappedUser);
-            } catch (cacheErr) {
-              console.warn(
-                "Local cache not ready during token refresh (non-fatal):",
-                cacheErr,
-              );
+            const mappedUser: User = mapBackendUser(userPayload);
+
+            if (typeof window !== "undefined") {
+              localStorage.setItem("koprogo_user", JSON.stringify(mappedUser));
+              // Cache local best-effort : NE DOIT JAMAIS faire échouer le
+              // refresh. `init()` appelle refreshAccessToken() AVANT
+              // `localDB.init()` ; la persistance locale est rattrapée juste
+              // après (init → localDB.init → syncService.initialize). Auth ≠
+              // couche de cache. (#548 / WP-D1 — ripple FE1 JWT→cookie.)
+              try {
+                await syncService.setToken(newToken);
+                await localDB.saveUser(mappedUser);
+              } catch (cacheErr) {
+                console.warn(
+                  "Local cache not ready during token refresh (non-fatal):",
+                  cacheErr,
+                );
+              }
             }
+
+            update((state) => ({
+              ...state,
+              token: newToken,
+              user: mappedUser,
+              isAuthenticated: true,
+            }));
+
+            return true;
           }
 
-          update((state) => ({
-            ...state,
-            token: newToken,
-            user: mappedUser,
-            isAuthenticated: true,
-          }));
-
-          return true;
+          // Cookie absent/expiré/révoqué → session client nettoyée.
+          // (Pas d'appel backend logout : le cookie est déjà invalide.)
+          await authStore.clearSession();
+          return false;
+        } catch (error) {
+          console.error("Token refresh error:", error);
+          await authStore.clearSession();
+          return false;
+        } finally {
+          inflightRefresh = null;
         }
+      })();
 
-        // Cookie absent/expiré/révoqué → session client nettoyée.
-        // (Pas d'appel backend logout : le cookie est déjà invalide.)
-        await authStore.clearSession();
-        return false;
-      } catch (error) {
-        console.error("Token refresh error:", error);
-        await authStore.clearSession();
-        return false;
-      }
+      return inflightRefresh;
     },
 
     switchRole: async (roleId: string): Promise<boolean> => {
