@@ -2,10 +2,10 @@
 Convocations AG Automatiques (Issue #88)
 =====================================================
 
-:Date: Mars 2026
+:Date: 2026-03 (initial) — màj 2026-05 (snapshot)
 :Version: 1.0.0
 :Issue GitHub: #88
-:Statut: Production-ready (Backend complet)
+:Statut: Production-ready (Backend + Frontend complets — #88 fermée)
 
 Vue d'ensemble
 ==============

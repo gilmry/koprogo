@@ -144,7 +144,7 @@ Principe Fondamental: Progression Organique
 Point de Départ Ultra-Réaliste (Aujourd'hui)
 ---------------------------------------------
 
-**Configuration actuelle (Nov 2025)**:
+**Configuration actuelle (Mai 2026)**:
 
 .. code-block:: text
 
@@ -487,12 +487,12 @@ Jalon 0: Fondations Techniques ✅
 * Identifier les besoins réels
 * Construire une base solide pour la suite
 
-Jalon 1: Sécurité & GDPR ⏳ (~83%)
-------------------------------------
+Jalon 1: Sécurité & GDPR ✅ (100% — Mai 2026)
+---------------------------------------------
 
 **Débloque**: 50-100 copropriétés (beta publique possible)
 
-**État**: En cours - 83% complété (Mars 2026) — 15 fermées, 3 ouvertes
+**État**: Complété (Mai 2026) — 18 issues fermées
 
 **Issues**:
 
@@ -503,9 +503,12 @@ Jalon 1: Sécurité & GDPR ⏳ (~83%)
 * ✅ #43 : Security hardening avancé - fail2ban, WAF/CrowdSec, IDS Suricata
 * ✅ #78 : 2FA TOTP + rate limiting + JWT refresh tokens
 * ✅ #90 : GDPR complémentaire - Articles 16, 18, 21
-* ⏳ #271 : **CRITIQUE** — Quorum 50%+ validation AG (Art. 3.87 §5 CC)
-* ⏳ #272 : **CRITIQUE** — 2e convocation si quorum non atteint (Art. 3.87 §5 CC)
-* ⏳ #273 : Réduction vote mandataire (Art. 3.87 §7 CC) — ✅ done, à fermer
+* ✅ #271 : Quorum 50%+ validation AG (Art. 3.87 §5 CC) — `validate_meeting_quorum` handler
+* ✅ #272 : 2e convocation si quorum non atteint (Art. 3.87 §5 CC) — `schedule_second_convocation`
+* ✅ #273 : Réduction vote mandataire (Art. 3.87 §7 CC)
+* ✅ #343 (WP-FE1) : JWT hors localStorage — refresh = cookie HttpOnly ; access en mémoire + silent-refresh single-flight
+* ✅ #339 (WP-A7) : Rotation clés API (endpoint `POST /api-keys/{id}/rotate`, gate SYNDIC/SUPERADMIN, anti-rejeu)
+* ✅ #525 (WP-A1/C1) : Governance Decimal — gouvernance/quotas/voting power exacts
 
 **Livrables complétés**:
 
@@ -637,12 +640,12 @@ Jalon 3: Features Différenciantes ⏳ (~56%)
 
 **Effort restant estimé**: ~90h (voir `WBS_RELEASE_0_1_0.md <WBS_RELEASE_0_1_0.md>`_)
 
-Jalon 4: Automation & Intégrations ⏳ (~50%)
+Jalon 4: Automation & Intégrations ⏳ (~54%)
 ----------------------------------------------
 
 **Débloque**: 1.000-2.000 copropriétés (scalabilité)
 
-**État**: En cours - 50% (Mars 2026) — 14 fermées, 14 ouvertes
+**État**: En cours - 54% (Mai 2026) — 15 fermées, 13 ouvertes
 
 **Release cible**: v0.2.0
 
@@ -660,6 +663,7 @@ Jalon 4: Automation & Intégrations ⏳ (~50%)
 * ✅ #67 : Documentation GDPR
 * ✅ #71, #72 : Rôles étendus + RBAC (étude)
 * ✅ #93 : Accessibilité WCAG 2.1 AA
+* ✅ #339 (WP-A7, Mai 2026) : Rotation clés API — endpoint `POST /api-keys/{id}/rotate` (gate SYNDIC/SUPERADMIN, transaction, anti-rejeu, secret rendu une fois). **Aucun 501 ne part en bêta.**
 
 **Issues ouvertes** (scope release 0.2.0):
 

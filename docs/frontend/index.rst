@@ -5,8 +5,8 @@ Vue d'ensemble du frontend KoproGo, développé avec Astro (SSG) et Svelte (Isla
 
 **Stack Technique** :
 
-- **Framework SSG** : Astro 4.x (Static Site Generation)
-- **Composants Interactifs** : Svelte 4.x (Islands Architecture)
+- **Framework SSG** : Astro 5.x (Static Site Generation, Islands)
+- **Composants Interactifs** : Svelte 5 (runes — ``$state``, ``$derived``, ``$effect``)
 - **Styling** : Tailwind CSS 3.x
 - **Internationalisation** : svelte-i18n (nl, fr, de, en)
 - **Tests E2E** : Playwright
@@ -112,17 +112,29 @@ Le frontend supporte 4 langues avec fallback sur le néerlandais :
 
 Les traductions sont dans ``frontend/src/locales/`` et chargées via ``svelte-i18n``.
 
-**Authentification** :
+**Authentification** (depuis WP-FE1 #343, 2026-05) :
 
-Le frontend utilise JWT Bearer tokens stockés dans ``localStorage`` :
+- **Access token (JWT court, 15 min)** : en **mémoire JS uniquement**
+  (``frontend/src/lib/accessToken.ts``). Jamais ``localStorage`` ni
+  ``sessionStorage`` ni cookie JS-lisible.
+- **Refresh token (7 jours)** : cookie ``HttpOnly; Secure;
+  SameSite=Strict; Path=/api/v1/auth`` posé par le backend. Illisible
+  par JavaScript.
+- **Silent-refresh single-flight** (``frontend/src/stores/auth.ts``
+  ``inflightRefresh``) : dédoublonne les ``POST /auth/refresh``
+  concurrents (RouteGuard + Navigation hydratent en parallèle ; sans
+  dédoublonnage, deux refresh concurrents rejouaient le même cookie →
+  rotation backend en révoquait un → 401 → logout cascade, cf. #550).
 
 .. code-block:: typescript
 
-   // Stockage du token
-   localStorage.setItem("koprogo_token", token);
+   // api.ts — Bearer depuis la mémoire (jamais localStorage)
+   import { getAccessToken } from "./accessToken";
+   headers.set("Authorization", `Bearer ${getAccessToken()}`);
 
-   // Headers automatiques dans api.ts
-   headers["Authorization"] = `Bearer ${token}`;
+Voir ``docs/JWT_REFRESH_TOKENS.md`` §"Amendment 2026-05-19" pour le
+détail backend + tests 4-cat (``backend/tests/e2e_auth.rs`` +
+``frontend/tests/e2e/smoke/AuthCookie.spec.ts``).
 
 **Rôles Utilisateurs** :
 
@@ -150,6 +162,6 @@ Le service ``sync.ts`` implémente une stratégie offline-first avec IndexedDB :
 **GDPR & Sécurité** :
 
 - Pas de cookies tiers
-- Token JWT httpOnly recommandé (actuellement localStorage)
+- Refresh token en cookie ``HttpOnly`` (livré WP-FE1 #343) ; access en mémoire seule
 - Pas de tracking analytics par défaut
 - Headers Accept-Language pour i18n côté serveur

@@ -2,7 +2,16 @@
 Déploiement KoproGo
 ===================
 
+:Snapshot: 2026-05 (post-bêta v0.1.0, infra VPS-first)
+
 Guide complet pour déployer KoproGo sur OVH Public Cloud avec Terraform, Ansible et GitOps automatique.
+
+.. note::
+   **v0.1.0 = bêta privée fermée, VPS-first.** k3s/ArgoCD = Phase 2
+   post-v0.1.0 (cf. ``WBS_GO_LIVE_v0.1.0`` Track F). Pré-requis env
+   actuels : ``COOKIE_SECURE=true`` en prod (HTTPS obligatoire pour le
+   cookie refresh HttpOnly post-FE1), ``CORS_ALLOWED_ORIGINS`` explicites
+   (``*`` rejeté par ``validate_cors_origins``).
 
 .. toctree::
    :maxdepth: 2

@@ -193,3 +193,77 @@ backend/src/
 - Original article: Alistair Cockburn (2005) - https://alistair.cockburn.us/hexagonal-architecture/
 - Rust implementation: https://github.com/rust-lang/api-guidelines
 - KoproGo codebase: `backend/src/`
+
+---
+
+## Amendment 2026-05-19 — Domain-typed error pattern (#433 umbrella)
+
+Pattern formalisé via 5 entités domaine livrées dans l'umbrella `#433`
+(`JournalEntryError`, `ChargeDistributionError`, `EtatDateError`,
+`OwnerContributionError`, `CallForFundsError`).
+
+### Règle
+
+Chaque entité de domaine qui retourne une erreur **expose son propre enum
+typé pur** (zéro dépendance `actix_web`/`sqlx`/`AppError`), pas
+`Result<_, String>`. L'application mappe vers `AppError` à la frontière.
+
+### Mécanique
+
+Domaine (`backend/src/domain/entities/<x>.rs`) :
+
+```rust
+#[derive(Debug, Clone, PartialEq)]
+pub enum ChargeDistributionError {
+    QuotaOutOfRange(Decimal),
+    NegativeTotalAmount,
+    QuotaSumExceeds { total_quota: Decimal },
+}
+
+impl std::fmt::Display for ChargeDistributionError { /* ... */ }
+impl std::error::Error for ChargeDistributionError {}
+
+// Pont : les use-cases qui restent en `Result<_, String>` compilent
+// inchangés via `e?` (cascade String→AppError = slice large différée).
+impl From<ChargeDistributionError> for String {
+    fn from(e: ChargeDistributionError) -> String { e.to_string() }
+}
+```
+
+Application (`backend/src/application/error.rs`) :
+
+```rust
+impl From<crate::domain::entities::ChargeDistributionError> for AppError {
+    fn from(e: crate::domain::entities::ChargeDistributionError) -> Self {
+        AppError::Validation(e.to_string())  // 400, jamais 500
+    }
+}
+```
+
+### Garanties
+
+- **Pureté domaine** : le `domain/` n'importe rien d'`actix_web`/`sqlx`/
+  `AppError`. Conserve les invariants hexagonaux (cf. décision principale
+  ci-dessus).
+- **400, jamais 500** : une donnée d'entrée invalide (quote-part hors
+  bornes, montant négatif, transition workflow interdite) renvoie
+  `AppError::Validation` (HTTP 400) — pas `Internal` (500). L'utilisateur
+  voit un message actionnable, le log SRE ne contient pas un faux 500.
+- **`From<_> for String` = pont temporaire** : permet de typer les
+  entités sans casser la cascade port/use-case/handler en `Result<_,
+  String>`. La migration de cette cascade vers `AppError` est une slice
+  séparée (différée, tracée dans les agent-activity WBS-A4/A5/A6).
+- **Tests 4-cat RED-first in-module** : `happy_*`, `edge_*`, `negative_*`,
+  `security_*` testent l'erreur typée via `matches!(err, …)`, pas via
+  `.contains("…")` (les messages peuvent évoluer sans casser les tests).
+
+### Exemple complet d'application
+
+Voir `backend/src/domain/entities/charge_distribution.rs` (entité avec les
+3 variantes ci-dessus + tests 4-cat) et `backend/src/application/error.rs`
+§"Domain typed-error → AppError mappings" (bloc `From` par WP, ajouté en
+fin de section pour minimiser les conflits de merge inter-WP concurrents).
+
+Cf. également ADR-0008 §Amendment 2026-05-19 pour la liste fermée des
+carve-outs `f64` autorisés malgré la règle Decimal (interaction entre
+typage erreur et typage monétaire).

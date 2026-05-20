@@ -1,3 +1,12 @@
+> ⚠️ **Plan historique 2026-04-01.** Référence `WBS_RELEASE_0_1_0.md`
+> (lui-même supersédé). Les étapes manuelles (flow auth localStorage,
+> bugs WF1-1/2/3 à reproduire, etc.) ne reflètent plus le code courant
+> (FE1 cookie HttpOnly livré, bugs ALREADY-FIXED — cf. WP-B1 PR #536,
+> WP-FE2 PR #547). Pour une future revue go-live, utiliser les critères
+> GO de [`../WBS_GO_LIVE_v0.1.0.md`](../WBS_GO_LIVE_v0.1.0.md) (§"Critères
+> GO" et §"Vérification — commandes exactes & gate humain"). Conservé
+> comme trace ; **plus une vérité courante**.
+
 # Plan de Revue Humaine — KoproGo v0.1.0
 
 **Pour** : Cowork (review manuel)
@@ -30,21 +39,21 @@ POST /api/v1/seed/scenario/world
 
 ### Comptes de test
 
-| Prénom        | Email                         | Mot de passe | Rôle          | Lot  | Tantièmes |
-|---------------|-------------------------------|--------------|---------------|------|-----------|
-| Alice Dubois  | alice@residence-parc.be       | alice123     | Copropriétaire (Présidente CdC) | 2A | 450 |
-| Bob Janssen   | bob@residence-parc.be         | bob123       | Commissaire aux comptes | 2B | 430 |
-| Charlie Martin| charlie@residence-parc.be     | charlie123   | Copropriétaire | 3B  | 660 |
-| Diane Peeters | diane@residence-parc.be       | diane123     | Membre CdC    | 3A  | 580 |
-| Emmanuel Claes| emmanuel@residence-parc.be    | emmanuel123  | Copropriétaire (investisseur) | 5A | 1 280 |
-| Philippe V.   | philippe@residence-parc.be    | philippe123  | Copropriétaire (investisseur 3 lots) | 6A-C | 1 800 |
-| Marcel Dupont | marcel@residence-parc.be      | marcel123    | Copropriétaire | 4B  | 450 |
-| Nadia Benali  | nadia@residence-parc.be       | nadia123     | Copropriétaire | 4A  | 320 |
-| Marguerite L. | marguerite@residence-parc.be  | marguerite123| Copropriétaire | 1A  | 380 |
-| Jeanne Devos  | jeanne@residence-parc.be      | jeanne123    | Copropriétaire | 1B  | 290 |
-| François Leroy| francois@syndic-leroy.be      | francois123  | Syndic        | —   | — |
-| Gisèle V.     | gisele@cabinet-vdb.be         | gisele123    | Comptable     | —   | — |
-| Admin         | admin@koprogo.com             | admin123     | SuperAdmin    | —   | — |
+| Prénom         | Email                        | Mot de passe  | Rôle                                 | Lot  | Tantièmes |
+| -------------- | ---------------------------- | ------------- | ------------------------------------ | ---- | --------- |
+| Alice Dubois   | alice@residence-parc.be      | alice123      | Copropriétaire (Présidente CdC)      | 2A   | 450       |
+| Bob Janssen    | bob@residence-parc.be        | bob123        | Commissaire aux comptes              | 2B   | 430       |
+| Charlie Martin | charlie@residence-parc.be    | charlie123    | Copropriétaire                       | 3B   | 660       |
+| Diane Peeters  | diane@residence-parc.be      | diane123      | Membre CdC                           | 3A   | 580       |
+| Emmanuel Claes | emmanuel@residence-parc.be   | emmanuel123   | Copropriétaire (investisseur)        | 5A   | 1 280     |
+| Philippe V.    | philippe@residence-parc.be   | philippe123   | Copropriétaire (investisseur 3 lots) | 6A-C | 1 800     |
+| Marcel Dupont  | marcel@residence-parc.be     | marcel123     | Copropriétaire                       | 4B   | 450       |
+| Nadia Benali   | nadia@residence-parc.be      | nadia123      | Copropriétaire                       | 4A   | 320       |
+| Marguerite L.  | marguerite@residence-parc.be | marguerite123 | Copropriétaire                       | 1A   | 380       |
+| Jeanne Devos   | jeanne@residence-parc.be     | jeanne123     | Copropriétaire                       | 1B   | 290       |
+| François Leroy | francois@syndic-leroy.be     | francois123   | Syndic                               | —    | —         |
+| Gisèle V.      | gisele@cabinet-vdb.be        | gisele123     | Comptable                            | —    | —         |
+| Admin          | admin@koprogo.com            | admin123      | SuperAdmin                           | —    | —         |
 
 **Total tantiemes présents** : 6 640 / 10 000 (66.4%)
 **Bloc investisseurs** : Philippe (1 800) + Emmanuel (1 280) = 3 080 = 46.4%
@@ -66,7 +75,7 @@ POST /api/v1/seed/scenario/world
 - [ ] → `/meetings` → "Nouvelle réunion"
 - [ ] Créer une AG ordinaire avec date = dans **13 jours**
   - `✓ Attendu :` Le bouton "Envoyer la convocation" est **désactivé** ou affiche une erreur "Délai légal non respecté (15 jours minimum)"
-  - `✗ Bug :` ___________
+  - `✗ Bug :` ****\_\_\_****
 - [ ] Changer la date à dans **16 jours**
   - `✓ Attendu :` Le bouton "Envoyer la convocation" est disponible
 - [ ] Envoyer la convocation → `/convocations`
@@ -132,7 +141,7 @@ POST /api/v1/seed/scenario/world
 
 - [ ] `✓ Attendu :` POUR = 5 330 / 6 640 = **80.3% → ADOPTÉ**
 - [ ] `✓ Attendu :` Le bloc Emmanuel (1 280) seul ne peut pas bloquer la majorité absolue
-- `✗ Bug :` ___________
+- `✗ Bug :` ****\_\_\_****
 
 #### Test 2.2 — Majorité 2/3 (travaux façade)
 
@@ -151,7 +160,7 @@ POST /api/v1/seed/scenario/world
 **[SYNDIC]** → clôturer
 
 - [ ] `✓ Attendu :` POUR = 5 360 / 6 640 = **80.7% → ADOPTÉ** (> 66,67%)
-- `✗ Bug :` ___________
+- `✗ Bug :` ****\_\_\_****
 
 #### Test 2.3 — Blocage par le bloc investisseurs (majorité 2/3)
 
@@ -172,7 +181,7 @@ POST /api/v1/seed/scenario/world
 
 - [ ] `✓ Attendu :` POUR = 3 560 / 6 640 = **53.6% → REJETÉ** (< 66,67%)
 - [ ] `✓ Attendu :` Affichage mention "Bloc investisseurs" ou simplement le résultat par tantièmes
-- `✗ Bug :` ___________
+- `✗ Bug :` ****\_\_\_****
 
 #### Test 2.4 — Vote 4/5 (modification affectation)
 
@@ -183,7 +192,7 @@ POST /api/v1/seed/scenario/world
 **[SYNDIC]** → clôturer
 
 - [ ] `✓ Attendu :` POUR = 3 560 / 6 640 = **53.6% → REJETÉ** (< 80%)
-- `✗ Bug :` ___________
+- `✗ Bug :` ****\_\_\_****
 
 #### Test 2.5 — Règle des abstentions (exclues du calcul sauf unanimité)
 
@@ -198,7 +207,7 @@ POST /api/v1/seed/scenario/world
 
 - [ ] `✓ Attendu :` Base = POUR + CONTRE uniquement = 450 + 660 + 1 280 = 2 390 (Bob exclu)
 - [ ] `✓ Attendu :` POUR = 1 110 / 2 390 = **46.4% → REJETÉ** (Bob retiré de la base)
-- [ ] `✗ Bug si` Bob compte dans la base : ___________
+- [ ] `✗ Bug si` Bob compte dans la base : ****\_\_\_****
 
 #### Test 2.6 — Capping 50% (Art. 3.87 §6)
 
@@ -374,7 +383,7 @@ POST /api/v1/seed/scenario/world
 
 - [ ] → voir sa contribution : €290
   - `✓ Attendu :` Montant clairement lisible (police suffisamment grande ?)
-  - Noter tout problème d'affichage : ___________
+  - Noter tout problème d'affichage : ****\_\_\_****
 
 **[MARGUERITE]** (380/10 000 = 3.8% = €380)
 
@@ -489,7 +498,7 @@ POST /api/v1/seed/scenario/world
 - [ ] → résultats
   - `✓ Attendu :` "100% des répondants — Oui" ET "Taux de participation : 50%"
   - `✓ Attendu :` L'absentéisme est documenté (non ignoré)
-  - `✗ Bug si` le taux de participation n'est pas affiché : ___________
+  - `✗ Bug si` le taux de participation n'est pas affiché : ****\_\_\_****
 
 ---
 
@@ -595,27 +604,27 @@ POST /api/v1/seed/scenario/world
 
 Cocher ✅ Conforme | ⚠️ Partiel | ❌ Non conforme
 
-| Article CC | Exigence | Vérifié par | Résultat |
-|------------|----------|-------------|----------|
-| Art. 3.87 §3 | Convocation ≥ 15 jours avant AG | WF-1 | `[ ]` |
-| Art. 3.87 §5 | Quorum 50% à la 1re convocation | WF-3 | `[ ]` |
-| Art. 3.87 §5 | 2e convocation sans quorum minimum | WF-3 | `[ ]` |
-| Art. 3.87 §6 | Capping vote 50% tantièmes | WF-2.6 | `[ ]` |
-| Art. 3.87 §7 | Max 3 procurations/mandataire | WF-4 | `[ ]` |
-| Art. 3.87 §7 | Syndic ne peut être mandataire | WF-4 | `[ ]` |
-| Art. 3.87 §12 | PV distribué dans les 30 jours | WF-5 | `[ ]` |
-| Art. 3.88 abs. | Majorité absolue > 50% votes exprimés | WF-2.1 | `[ ]` |
-| Art. 3.88 abs. | Abstentions exclues de la base | WF-2.5 | `[ ]` |
-| Art. 3.88 2/3 | Seuil ≥ 66,67% votes exprimés | WF-2.2 | `[ ]` |
-| Art. 3.88 4/5 | Seuil ≥ 80% votes exprimés | WF-2.4 | `[ ]` |
-| Art. 3.88 unanim. | 100% de TOUS les tantièmes | WF-2 note | `[ ]` |
-| Art. 3.87 §2 | AGE pétition seuil 1/5 tantièmes | WF-6 | `[ ]` |
-| Art. 3.87 §2 | Syndic doit répondre dans 15 jours | WF-6 | `[ ]` |
-| RGPD Art. 15 | Export données sur demande | WF-13 | `[ ]` |
-| RGPD Art. 17 | Anonymisation disponible | WF-13 | `[ ]` |
-| RGPD Art. 16 | Rectification données | WF-13 | `[ ]` |
-| RGPD Art. 18 | Restriction de traitement | WF-13 | `[ ]` |
-| RGPD Art. 30 | Registre des traitements | WF-13 | `[ ]` |
+| Article CC        | Exigence                              | Vérifié par | Résultat |
+| ----------------- | ------------------------------------- | ----------- | -------- |
+| Art. 3.87 §3      | Convocation ≥ 15 jours avant AG       | WF-1        | `[ ]`    |
+| Art. 3.87 §5      | Quorum 50% à la 1re convocation       | WF-3        | `[ ]`    |
+| Art. 3.87 §5      | 2e convocation sans quorum minimum    | WF-3        | `[ ]`    |
+| Art. 3.87 §6      | Capping vote 50% tantièmes            | WF-2.6      | `[ ]`    |
+| Art. 3.87 §7      | Max 3 procurations/mandataire         | WF-4        | `[ ]`    |
+| Art. 3.87 §7      | Syndic ne peut être mandataire        | WF-4        | `[ ]`    |
+| Art. 3.87 §12     | PV distribué dans les 30 jours        | WF-5        | `[ ]`    |
+| Art. 3.88 abs.    | Majorité absolue > 50% votes exprimés | WF-2.1      | `[ ]`    |
+| Art. 3.88 abs.    | Abstentions exclues de la base        | WF-2.5      | `[ ]`    |
+| Art. 3.88 2/3     | Seuil ≥ 66,67% votes exprimés         | WF-2.2      | `[ ]`    |
+| Art. 3.88 4/5     | Seuil ≥ 80% votes exprimés            | WF-2.4      | `[ ]`    |
+| Art. 3.88 unanim. | 100% de TOUS les tantièmes            | WF-2 note   | `[ ]`    |
+| Art. 3.87 §2      | AGE pétition seuil 1/5 tantièmes      | WF-6        | `[ ]`    |
+| Art. 3.87 §2      | Syndic doit répondre dans 15 jours    | WF-6        | `[ ]`    |
+| RGPD Art. 15      | Export données sur demande            | WF-13       | `[ ]`    |
+| RGPD Art. 17      | Anonymisation disponible              | WF-13       | `[ ]`    |
+| RGPD Art. 16      | Rectification données                 | WF-13       | `[ ]`    |
+| RGPD Art. 18      | Restriction de traitement             | WF-13       | `[ ]`    |
+| RGPD Art. 30      | Registre des traitements              | WF-13       | `[ ]`    |
 
 **Score cible avant GO release** : 18/19 ≥ 95%
 
@@ -623,13 +632,13 @@ Cocher ✅ Conforme | ⚠️ Partiel | ❌ Non conforme
 
 ## BUGS À NOTER
 
-| # | Workflow | Description | Gravité (Bloquant/Majeur/Mineur) |
-|---|----------|-------------|----------------------------------|
-| 1 | | | |
-| 2 | | | |
-| 3 | | | |
-| 4 | | | |
-| 5 | | | |
+| #   | Workflow | Description | Gravité (Bloquant/Majeur/Mineur) |
+| --- | -------- | ----------- | -------------------------------- |
+| 1   |          |             |                                  |
+| 2   |          |             |                                  |
+| 3   |          |             |                                  |
+| 4   |          |             |                                  |
+| 5   |          |             |                                  |
 
 ---
 
@@ -643,9 +652,9 @@ Cocher ✅ Conforme | ⚠️ Partiel | ❌ Non conforme
 
 **Décision** : `[ ] GO` `[ ] NO-GO — raison : ________________________`
 
-**Signé** : _________________________ **Date** : _____________
+**Signé** : ************\_************ **Date** : ******\_******
 
 ---
 
-*Document généré pour la release KoproGo v0.1.0 — Phase 8 WBS*
-*Référence : `docs/WBS_RELEASE_0_1_0.md` Phase 8*
+_Document généré pour la release KoproGo v0.1.0 — Phase 8 WBS_
+_Référence : `docs/WBS_RELEASE_0_1_0.md` Phase 8_

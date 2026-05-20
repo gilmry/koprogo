@@ -2,10 +2,10 @@
 Tickets & Maintenance Requests (Issue #85)
 =====================================================
 
-:Date: Mars 2026
+:Date: 2026-03 (initial) — màj 2026-05 (snapshot)
 :Version: 1.0.0
 :Issue GitHub: #85
-:Statut: Production-ready (Backend complet)
+:Statut: Production-ready (Backend + Frontend complets — #85 fermée)
 
 Vue d'ensemble
 ==============

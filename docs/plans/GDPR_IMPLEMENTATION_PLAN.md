@@ -1,8 +1,14 @@
+> ⚠️ **Plan historique 2025-10-30, livré et archivé.** Issue #42 et les
+> compléments GDPR (Articles 15, 16, 17, 18, 21, 30) sont **fermés et
+> opérationnels** sur `feature/dev` — cf. `docs/roadmap/jalons-atteints`
+> §"GDPR Complet (#42, #90, #64, #65, #67)". Conservé comme trace de la
+> planification TDD initiale. **Plus une vérité courante**.
+
 # Plan d'implémentation GDPR (Issue #42) - TDD Strict
 
 **Date**: 2025-10-30
 **Issue**: #42 - feat: Implement GDPR data export & deletion (Right to be forgotten)
-**Status**: En cours
+**Status**: ✅ Livré (Mai 2026)
 **Méthodologie**: TDD Red-Green-Refactor avec commits atomiques thématiques
 
 ## Méthodologie
@@ -10,6 +16,7 @@
 **TDD Red-Green-Refactor** avec commits atomiques thématiques et mise à jour du changelog à chaque étape.
 
 ### Cycle TDD pour chaque fonctionnalité
+
 1. 🔴 **RED**: Écrire le test qui échoue
 2. 🟢 **GREEN**: Écrire le code minimal pour passer le test
 3. 🔵 **REFACTOR**: Améliorer le code sans casser les tests
@@ -21,6 +28,7 @@
 ## Phase 1: Migration BDD + Domain Entities
 
 ### 1.1 Migration GDPR (RED → GREEN)
+
 - 🔴 Créer test d'intégration vérifiant colonnes manquantes
 - 🟢 Créer `backend/migrations/20251030XXXXXX_add_gdpr_anonymization_fields.sql`
 - 🟢 Exécuter `make migrate`
@@ -29,6 +37,7 @@
 - 📝 **Changelog**: Ajout section `[Unreleased] - Database`
 
 ### 1.2 Domain Entity GdprExport (RED → GREEN → REFACTOR)
+
 - 🔴 Créer tests unitaires `gdpr_export.rs` (construction, validation)
 - 🟢 Implémenter structs `GdprExport`, `UserData`, `OwnerData`
 - 🔵 Refactor: Builder pattern si nécessaire
@@ -41,6 +50,7 @@
 ## Phase 2: Application Layer - Export de données
 
 ### 2.1 Port GdprRepository (RED → GREEN)
+
 - 🔴 Créer tests mock vérifiant contrat du trait
 - 🟢 Créer `backend/src/application/ports/gdpr_repository.rs`
   - Trait avec méthodes: `aggregate_user_data()`, `find_user_exports()`
@@ -49,6 +59,7 @@
 - 📝 **Changelog**: `[Unreleased] - Architecture`
 
 ### 2.2 DTO GDPR Export (RED → GREEN)
+
 - 🔴 Tests de sérialisation/désérialisation JSON
 - 🟢 Créer `backend/src/application/dto/gdpr_dto.rs`
   - `GdprExportResponseDto`, validation
@@ -57,6 +68,7 @@
 - 📝 **Changelog**: `[Unreleased] - Features`
 
 ### 2.3 Use Case Export (RED → GREEN → REFACTOR)
+
 - 🔴 Tests unitaires avec mock repository:
   - Test: export_user_data réussit avec données complètes
   - Test: export_user_data échoue si utilisateur inexistant
@@ -73,6 +85,7 @@
 ## Phase 3: Infrastructure - Repository Implementation Export
 
 ### 3.1 Repository Implementation (RED → GREEN → REFACTOR)
+
 - 🔴 Tests d'intégration avec testcontainers PostgreSQL:
   - Test: aggregate_user_data retourne données complètes
   - Test: agrégation multi-tables (users, owners, units, expenses, documents)
@@ -89,6 +102,7 @@
 ## Phase 4: Infrastructure - Web Handler Export
 
 ### 4.1 Handler Export Endpoint (RED → GREEN → REFACTOR)
+
 - 🔴 Tests E2E avec Actix test:
   - Test: GET /api/v1/gdpr/export retourne 200 + JSON complet
   - Test: Retourne 401 sans token JWT
@@ -104,6 +118,7 @@
 - 📝 **Changelog**: `[Unreleased] - API`
 
 ### 4.2 Audit Logging Export (RED → GREEN)
+
 - 🔴 Test: Vérifier événement `GdprDataExported` loggé
 - 🟢 Modifier `backend/src/infrastructure/audit.rs`
   - Ajouter `GdprDataExported`, `GdprExportFailed`
@@ -117,6 +132,7 @@
 ## Phase 5: Application Layer - Suppression de données
 
 ### 5.1 Port Anonymization (RED → GREEN)
+
 - 🔴 Tests mock pour méthodes d'anonymisation
 - 🟢 Étendre `gdpr_repository.rs`
   - Ajouter: `anonymize_user()`, `anonymize_owner()`, `check_legal_holds()`
@@ -125,6 +141,7 @@
 - 📝 **Changelog**: `[Unreleased] - Architecture`
 
 ### 5.2 DTO GDPR Erase (RED → GREEN)
+
 - 🔴 Tests validation DTO
 - 🟢 Ajouter `GdprEraseRequestDto`, `GdprEraseResponseDto` dans `gdpr_dto.rs`
 - 🔍 `make test`
@@ -132,6 +149,7 @@
 - 📝 **Changelog**: `[Unreleased] - Features`
 
 ### 5.3 Use Case Erase (RED → GREEN → REFACTOR)
+
 - 🔴 Tests unitaires avec mocks:
   - Test: erase_user_data anonymise user et owners
   - Test: échoue si utilisateur déjà anonymisé
@@ -148,6 +166,7 @@
 ## Phase 6: Infrastructure - Repository Implementation Erase
 
 ### 6.1 Repository Anonymization (RED → GREEN → REFACTOR)
+
 - 🔴 Tests d'intégration:
   - Test: anonymize_user remplace PII par [ANONYMIZED-{uuid}]
   - Test: anonymize_owner idem
@@ -165,6 +184,7 @@
 ## Phase 7: Infrastructure - Web Handler Erase
 
 ### 7.1 Handler Erase Endpoint (RED → GREEN → REFACTOR)
+
 - 🔴 Tests E2E:
   - Test: DELETE /api/v1/gdpr/erase retourne 200
   - Test: Données anonymisées en BDD après appel
@@ -179,6 +199,7 @@
 - 📝 **Changelog**: `[Unreleased] - API`
 
 ### 7.2 Audit Logging Erase (RED → GREEN)
+
 - 🔴 Test: Événement `GdprDataErased` loggé
 - 🟢 Ajouter `GdprDataErased`, `GdprErasureFailed` dans `audit.rs`
 - 🟢 Logger dans handler
@@ -191,6 +212,7 @@
 ## Phase 8: Infrastructure - Admin Endpoints
 
 ### 8.1 Admin Export List (RED → GREEN)
+
 - 🔴 Tests E2E:
   - Test: GET /api/v1/admin/gdpr/exports retourne liste
   - Test: 403 si non-SuperAdmin
@@ -201,6 +223,7 @@
 - 📝 **Changelog**: `[Unreleased] - API`
 
 ### 8.2 Admin Manual Erase (RED → GREEN)
+
 - 🔴 Tests E2E:
   - Test: POST /admin/gdpr/erase/:user_id réussit (SuperAdmin)
   - Test: 403 si non-SuperAdmin
@@ -215,6 +238,7 @@
 ## Phase 9: Tests BDD (Cucumber/Gherkin)
 
 ### 9.1 Feature GDPR (RED → GREEN)
+
 - 🔴 Créer `backend/tests/features/gdpr.feature`
   - Scénarios: Export réussi, Erase réussi, Admin operations, Unauthorized access
 - 🟢 Implémenter steps dans `backend/tests/bdd.rs`
@@ -227,6 +251,7 @@
 ## Phase 10: Frontend - Privacy Page Utilisateur
 
 ### 10.1 Privacy Settings Component (RED → GREEN → REFACTOR)
+
 - 🔴 Tests composant Svelte (si framework test configuré)
 - 🟢 Créer `frontend/src/components/PrivacySettings.svelte`
   - Bouton export, bouton suppression, affichage statut
@@ -237,6 +262,7 @@
 - 📝 **Changelog**: `[Unreleased] - Frontend`
 
 ### 10.2 GDPR Export Modal (RED → GREEN)
+
 - 🔴 Tests interaction modal
 - 🟢 Créer `frontend/src/components/GdprExportModal.svelte`
   - API call, download JSON, loading states
@@ -245,6 +271,7 @@
 - 📝 **Changelog**: `[Unreleased] - Frontend`
 
 ### 10.3 GDPR Erase Modal (RED → GREEN)
+
 - 🔴 Tests confirmation double-check
 - 🟢 Créer `frontend/src/components/GdprEraseModal.svelte`
   - Confirmation, API call, redirect
@@ -257,6 +284,7 @@
 ## Phase 11: Frontend - Admin Dashboard
 
 ### 11.1 Admin GDPR Dashboard (RED → GREEN → REFACTOR)
+
 - 🔴 Tests composant admin
 - 🟢 Créer `frontend/src/components/admin/GdprDashboard.svelte`
   - Liste exports, stats, boutons actions
@@ -271,6 +299,7 @@
 ## Phase 12: Tests End-to-End Frontend (Playwright)
 
 ### 12.1 E2E User Journey (RED → GREEN)
+
 - 🔴 Créer `frontend/tests/e2e/gdpr-user.spec.ts`
   - Scénario: Login → Privacy page → Export data → Delete account
 - 🟢 Implémenter tests avec data-testid
@@ -279,6 +308,7 @@
 - 📝 **Changelog**: `[Unreleased] - Tests`
 
 ### 12.2 E2E Admin Journey (RED → GREEN)
+
 - 🔴 Créer `frontend/tests/e2e/gdpr-admin.spec.ts`
   - Scénario: Login SuperAdmin → GDPR dashboard → Manual erase
 - 🟢 Implémenter tests
@@ -291,6 +321,7 @@
 ## Phase 13: Documentation
 
 ### 13.1 Documentation Technique (GREEN)
+
 - 🟢 Créer `docs/GDPR_COMPLIANCE.md`
   - Procédures, conformité légale, retention policies
 - 🟢 Modifier `CLAUDE.md`
@@ -299,6 +330,7 @@
 - 📝 **Changelog**: `[Unreleased] - Documentation`
 
 ### 13.2 Update Roadmap (GREEN)
+
 - 🟢 Modifier `docs/ROADMAP.md`
   - Marquer issue #42 complétée
 - ✅ **Commit**: `docs(roadmap): mark GDPR implementation as completed`
@@ -309,22 +341,26 @@
 ## Phase 14: Quality Gates & Final Review
 
 ### 14.1 Quality Checks
+
 ```bash
 make format      # Formatting auto
 make lint        # Clippy warnings = 0
 make test        # Tous tests passent (unit + integration + e2e + bdd)
 make coverage    # Coverage > 80%
 ```
+
 - ✅ **Commit**: `chore: run quality checks and fix linting`
 - 📝 **Changelog**: `[Unreleased] - Chore`
 
 ### 14.2 Changelog Consolidation
+
 - 🟢 Finaliser `docs/CHANGELOG.md`
   - Regrouper tous les ajouts sous version `[Unreleased]`
   - Catégories: Features, API, Security, Frontend, Tests, Documentation
 - ✅ **Commit**: `docs(changelog): consolidate GDPR implementation entries`
 
 ### 14.3 Final Integration Test
+
 - 🔍 Test manuel complet du workflow utilisateur et admin
 - 🔍 Vérifier audit logs en BDD
 - 🔍 Valider JSON export conforme GDPR
@@ -347,22 +383,26 @@ make coverage    # Coverage > 80%
 ## [Unreleased]
 
 ### Features
+
 - GDPR data export API endpoint
 - GDPR data erasure with anonymization
 - User privacy settings page
 - Admin GDPR management dashboard
 
 ### API
+
 - GET /api/v1/gdpr/export
 - DELETE /api/v1/gdpr/erase
 - GET /api/v1/admin/gdpr/exports
 - POST /api/v1/admin/gdpr/erase/:user_id
 
 ### Security
+
 - GDPR audit logging for all data operations
 - Anonymization preserving referential integrity
 
 ### Tests
+
 - Unit tests for GDPR use cases (100% coverage)
 - Integration tests with PostgreSQL testcontainers
 - E2E API tests for GDPR endpoints
@@ -370,6 +410,7 @@ make coverage    # Coverage > 80%
 - Playwright E2E tests for user/admin workflows
 
 ### Documentation
+
 - GDPR compliance procedures
 - Data retention policies
 - API documentation updates
@@ -386,7 +427,9 @@ make coverage    # Coverage > 80%
 ## Fichiers à créer/modifier
 
 ### Backend (15 fichiers)
+
 **Nouveaux**:
+
 - `backend/migrations/20251030XXXXXX_add_gdpr_anonymization_fields.sql`
 - `backend/src/domain/entities/gdpr_export.rs`
 - `backend/src/application/ports/gdpr_repository.rs`
@@ -396,6 +439,7 @@ make coverage    # Coverage > 80%
 - `backend/src/infrastructure/web/handlers/gdpr_handlers.rs`
 
 **Modifiés**:
+
 - `backend/src/domain/entities/mod.rs`
 - `backend/src/application/ports/mod.rs`
 - `backend/src/application/dto/mod.rs`
@@ -407,6 +451,7 @@ make coverage    # Coverage > 80%
 - `backend/src/infrastructure/web/handlers/mod.rs`
 
 ### Frontend (7 fichiers nouveaux)
+
 - `frontend/src/pages/privacy.astro`
 - `frontend/src/pages/admin/gdpr.astro`
 - `frontend/src/components/PrivacySettings.svelte`
@@ -415,12 +460,14 @@ make coverage    # Coverage > 80%
 - `frontend/src/components/admin/GdprDashboard.svelte`
 
 ### Tests (4 fichiers nouveaux)
+
 - `backend/tests/integration_gdpr.rs`
 - `backend/tests/features/gdpr.feature`
 - `frontend/tests/e2e/gdpr-user.spec.ts`
 - `frontend/tests/e2e/gdpr-admin.spec.ts`
 
 ### Documentation (3 fichiers)
+
 - `docs/GDPR_COMPLIANCE.md` (nouveau)
 - `CLAUDE.md` (modifié)
 - `docs/ROADMAP.md` (modifié)
@@ -431,21 +478,25 @@ make coverage    # Coverage > 80%
 ## Notes de conformité GDPR
 
 ### Article 15 - Right to Access
+
 ✓ User peut demander copie de toutes ses données
 ✓ Format machine-readable (JSON)
 ✓ Délai: 30 jours max (synchrone pour MVP)
 
 ### Article 17 - Right to Erasure
+
 ✓ User peut demander suppression
 ✓ Anonymisation (pas suppression totale)
 ✓ Exceptions: Obligations légales, audit logs
 ✓ Conservation audit logs (7 ans Belgique)
 
 ### Article 30 - Records of Processing
+
 ✓ Audit logs enregistrent toutes opérations GDPR
 ✓ Include: user_id, timestamp, operation type, success/failure
 
 ### Article 20 - Right to Data Portability
+
 ✓ Export format structuré JSON
 ✓ Transférable à autre service
 
