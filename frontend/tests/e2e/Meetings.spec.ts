@@ -1,85 +1,25 @@
 import { test, expect } from "@playwright/test";
-import type { Page } from "@playwright/test";
+import { loginAsSyndicWithBuilding } from "./helpers/auth";
 
 /**
  * Meetings E2E Test Suite - General Assembly Management
  *
  * Tests meeting listing, creation, and detail pages.
  * Covers AG convocations and resolution viewing.
+ *
+ * WP-FE1/#550 : utilise le helper partagé `loginAsSyndicWithBuilding` qui
+ * passe par injectAuth (set localStorage cache + UNE seule nav dashboard +
+ * UN seul silent-refresh via cookie HttpOnly). Évite la course de rotation
+ * cookie refresh-token causée par l'ancien UI-login (visite /login →
+ * refresh #1 rote le cookie → 2ᵉ nav dashboard → refresh #2 sur cookie
+ * déjà révoqué → 401 → cascade page rouge / h1 caché).
  */
 
 const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
 
-async function setupSyndicWithBuilding(page: Page): Promise<{
-  token: string;
-  buildingId: string;
-}> {
-  const timestamp = Date.now();
-  const email = `meeting-test-${timestamp}@example.com`;
-
-  // Create organization first (required for syndic to create buildings/meetings)
-  const adminLoginResp = await page.request.post(`${API_BASE}/auth/login`, {
-    data: { email: "admin@koprogo.com", password: "admin123" },
-  });
-  const adminData = await adminLoginResp.json();
-  const adminToken = adminData.token;
-
-  const orgResp = await page.request.post(`${API_BASE}/organizations`, {
-    data: {
-      name: `Meeting Test Org ${timestamp}`,
-      slug: `meeting-test-${timestamp}`,
-      contact_email: email,
-      subscription_plan: "professional",
-    },
-    headers: { Authorization: `Bearer ${adminToken}` },
-  });
-  const org = await orgResp.json();
-  const orgId = org.id;
-
-  const regResponse = await page.request.post(`${API_BASE}/auth/register`, {
-    data: {
-      email,
-      password: "test123456",
-      first_name: "Meeting",
-      last_name: `Test${timestamp}`,
-      role: "syndic",
-      organization_id: orgId,
-    },
-  });
-  expect(regResponse.ok()).toBeTruthy();
-  const userData = await regResponse.json();
-  const token = userData.token;
-
-  // Create building (only SuperAdmin can create buildings)
-  const buildingResponse = await page.request.post(`${API_BASE}/buildings`, {
-    data: {
-      name: `Meeting Building ${timestamp}`,
-      address: `${timestamp} Rue AG`,
-      city: "Brussels",
-      postal_code: "1000",
-      country: "Belgium",
-      total_units: 10,
-      construction_year: 2020,
-      organization_id: orgId,
-    },
-    headers: { Authorization: `Bearer ${adminToken}` },
-  });
-  expect(buildingResponse.ok()).toBeTruthy();
-  const building = await buildingResponse.json();
-
-  // Login via UI
-  await page.goto("/login");
-  await page.getByTestId("login-email").fill(email);
-  await page.getByTestId("login-password").fill("test123456");
-  await page.getByTestId("login-submit").click();
-  await page.waitForURL(/\/(syndic|admin|owner)/, { timeout: 15000 });
-
-  return { token, buildingId: building.id };
-}
-
 test.describe("Meetings - General Assembly", () => {
   test("should display meetings list page", async ({ page }) => {
-    await setupSyndicWithBuilding(page);
+    await loginAsSyndicWithBuilding(page, "meeting");
     await page.goto("/meetings");
 
     await expect(page.locator("body")).toBeVisible();
@@ -91,7 +31,10 @@ test.describe("Meetings - General Assembly", () => {
   test("should create a meeting via API and see it in the list", async ({
     page,
   }) => {
-    const { token, buildingId } = await setupSyndicWithBuilding(page);
+    const { token, buildingId } = await loginAsSyndicWithBuilding(
+      page,
+      "meeting",
+    );
     const timestamp = Date.now();
     const meetingDate = "2026-06-15T14:00:00Z";
 
@@ -115,7 +58,10 @@ test.describe("Meetings - General Assembly", () => {
   });
 
   test("should navigate to meeting detail page", async ({ page }) => {
-    const { token, buildingId } = await setupSyndicWithBuilding(page);
+    const { token, buildingId } = await loginAsSyndicWithBuilding(
+      page,
+      "meeting",
+    );
     const timestamp = Date.now();
 
     const meetingResponse = await page.request.post(`${API_BASE}/meetings`, {
@@ -139,7 +85,7 @@ test.describe("Meetings - General Assembly", () => {
   });
 
   test("should display convocations page", async ({ page }) => {
-    await setupSyndicWithBuilding(page);
+    await loginAsSyndicWithBuilding(page, "meeting");
     await page.goto("/convocations");
 
     await expect(page.locator("body")).toBeVisible();
@@ -151,7 +97,7 @@ test.describe("Meetings - General Assembly", () => {
   });
 
   test("should display polls page", async ({ page }) => {
-    await setupSyndicWithBuilding(page);
+    await loginAsSyndicWithBuilding(page, "meeting");
     await page.goto("/polls");
 
     await expect(page.locator("body")).toBeVisible();
