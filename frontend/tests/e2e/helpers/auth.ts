@@ -373,3 +373,206 @@ export async function loginAsAdmin(
 
   return { token: data.token, adminToken: data.token };
 }
+
+// ---------------------------------------------------------------------------
+// Multi-role helpers (Story Tx.2 — refonte UX multi-role/ACP)
+// ---------------------------------------------------------------------------
+//
+// These helpers expose a consistent signature for every business role used in
+// the refonte UX. They follow the same pattern as `loginAsSyndic` /
+// `loginAsOwner`-like helpers above: admin login → org create → register a
+// scoped user with the target role → inject auth via localStorage (no UI
+// login). Returns an `AuthContext` so call sites can chain API calls.
+//
+// Backend sub-role status (story 3.1):
+//   - `accountant.encodeur` / `accountant.emetteur` / `cdc` / `commissaire` /
+//     `warden` / `notary` / `lawyer` / `amo` are NOT yet first-class roles in
+//     the backend `users.role` enum (only `syndic` / `owner` / `accountant` /
+//     `contractor` / `superadmin` / `admin` exist today). Until story 3.1
+//     lands the sub-role taxonomy in `domain/entities/user_role_assignment`,
+//     we register users with the closest existing base role and tag the
+//     intended sub-role through `first_name` / cached-user payload. The
+//     helper signatures are stable so call sites won't break when story 3.1
+//     swaps the role string.
+// ---------------------------------------------------------------------------
+
+/**
+ * Register an extra user with an arbitrary role under the admin's default org.
+ * Internal — used by the multi-role helpers below.
+ */
+async function registerScopedUser(
+  page: Page,
+  prefix: string,
+  role: string,
+): Promise<AuthContext> {
+  const timestamp = Date.now();
+  const email = `${prefix}-${timestamp}@example.com`;
+
+  const adminLoginResp = await page.request.post(`${API_BASE}/auth/login`, {
+    data: { email: "admin@koprogo.com", password: "admin123" },
+  });
+  const adminData = await adminLoginResp.json();
+  const adminToken = adminData.token;
+
+  const orgResp = await page.request.post(`${API_BASE}/organizations`, {
+    data: {
+      name: `${prefix} Org ${timestamp}`,
+      slug: `${prefix}-${timestamp}`,
+      contact_email: email,
+      subscription_plan: "professional",
+    },
+    headers: { Authorization: `Bearer ${adminToken}` },
+  });
+  const org = await orgResp.json();
+
+  const regResp = await page.request.post(`${API_BASE}/auth/register`, {
+    data: {
+      email,
+      password: process.env.PLAYWRIGHT_TEST_PASSWORD || "test123456",
+      first_name: prefix.charAt(0).toUpperCase() + prefix.slice(1),
+      last_name: `Test${timestamp}`,
+      role,
+      organization_id: org.id,
+    },
+  });
+  const userData = await regResp.json();
+
+  await injectAuth(page, userData.token, {
+    email,
+    first_name: prefix.charAt(0).toUpperCase() + prefix.slice(1),
+    last_name: `Test${timestamp}`,
+    role,
+  });
+
+  return {
+    token: userData.token,
+    adminToken,
+    orgId: org.id,
+    email,
+    userId: userData.user?.id || userData.id || userData.user_id || "",
+  };
+}
+
+/**
+ * Login as a Contractor authenticated through a magic-link token.
+ *
+ * Story 3.2 will introduce `POST /magic-links` issuing a short-lived JWT
+ * scoped to a `subjectUserId` + `scope` (e.g. a single building or quote).
+ * Today the endpoint does not exist yet, so this helper:
+ *   1. navigates to `/c/<token>` (the planned magic-link landing route),
+ *   2. lets the frontend exchange the token for an access token (cookie),
+ *   3. then waits for `networkidle` so the redirected dashboard is ready.
+ *
+ * @param page  Playwright Page in the browser context
+ * @param token Magic-link token (UUID/JWT), see `issueMagicLink` in
+ *              `helpers/magic-link.ts`
+ *
+ * NB: Never log `token` — it grants access.
+ */
+export async function loginAsContractorMagicLink(
+  page: Page,
+  token: string,
+): Promise<void> {
+  // TODO: replace with `/magic-links/exchange` API call when story 3.2 lands.
+  if (!token) {
+    throw new Error("loginAsContractorMagicLink: empty token");
+  }
+  await page.goto(`/c/${encodeURIComponent(token)}`, {
+    waitUntil: "networkidle",
+  });
+}
+
+/**
+ * Login as Accountant — sub-role `encodeur` (data entry only, no posting).
+ * TODO: replace base "accountant" with "accountant.encodeur" when story 3.1
+ *       lands the sub-role taxonomy.
+ */
+export async function loginAsAccountantEncodeur(
+  page: Page,
+  prefix: string = "accountant-encodeur",
+): Promise<AuthContext> {
+  return registerScopedUser(page, prefix, "accountant");
+}
+
+/**
+ * Login as Accountant — sub-role `emetteur` (validates + posts journal entries).
+ * TODO: replace base "accountant" with "accountant.emetteur" when story 3.1
+ *       lands the sub-role taxonomy.
+ */
+export async function loginAsAccountantEmetteur(
+  page: Page,
+  prefix: string = "accountant-emetteur",
+): Promise<AuthContext> {
+  return registerScopedUser(page, prefix, "accountant");
+}
+
+/**
+ * Login as a member of the Conseil de copropriété (CdC).
+ * TODO: replace "owner" with "cdc" when story 3.1 lands; today CdC members
+ *       are owners with an elected mandate, which is the closest analogue.
+ */
+export async function loginAsCdC(
+  page: Page,
+  prefix: string = "cdc",
+): Promise<AuthContext> {
+  return registerScopedUser(page, prefix, "owner");
+}
+
+/**
+ * Login as the Commissaire aux comptes (audits accountant emetteur output).
+ * TODO: replace "owner" with "commissaire" when story 3.1 lands. Commissaire
+ *       is typically a co-owner with a specific mandate, so "owner" is the
+ *       closest base role today.
+ */
+export async function loginAsCommissaire(
+  page: Page,
+  prefix: string = "commissaire",
+): Promise<AuthContext> {
+  return registerScopedUser(page, prefix, "owner");
+}
+
+/**
+ * Login as a Notary (mandataire — read-only legal access scope).
+ * TODO: replace "syndic" with "notary" when story 3.1 lands. Until then we
+ *       reuse syndic as the closest analogue (manages legal documents).
+ */
+export async function loginAsNotary(
+  page: Page,
+  prefix: string = "notary",
+): Promise<AuthContext> {
+  return registerScopedUser(page, prefix, "syndic");
+}
+
+/**
+ * Login as a Lawyer (mandataire — litigation scope).
+ * TODO: replace "syndic" with "lawyer" when story 3.1 lands.
+ */
+export async function loginAsLawyer(
+  page: Page,
+  prefix: string = "lawyer",
+): Promise<AuthContext> {
+  return registerScopedUser(page, prefix, "syndic");
+}
+
+/**
+ * Login as an AMO (Assistance à Maîtrise d'Ouvrage — project management).
+ * TODO: replace "syndic" with "amo" when story 3.1 lands.
+ */
+export async function loginAsAMO(
+  page: Page,
+  prefix: string = "amo",
+): Promise<AuthContext> {
+  return registerScopedUser(page, prefix, "syndic");
+}
+
+/**
+ * Login as a Warden (gardien — on-site staff, ticket triage only).
+ * TODO: replace "contractor" with "warden" when story 3.1 lands. Contractor
+ *       is the closest base role: external/limited-scope user.
+ */
+export async function loginAsWarden(
+  page: Page,
+  prefix: string = "warden",
+): Promise<AuthContext> {
+  return registerScopedUser(page, prefix, "contractor");
+}
