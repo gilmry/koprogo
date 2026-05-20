@@ -1,4 +1,3 @@
----
 koprogo_branch: production
 enable_ssl: true
 enable_monitoring: true

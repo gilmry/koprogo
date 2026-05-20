@@ -1,4 +1,3 @@
----
 - name: Configure KoproGo VPS (Production)
   hosts: koprogo
   become: yes
