@@ -36,8 +36,8 @@
     "@astrojs/svelte": "^8.1.1",
     "@tailwindcss/typography": "^0.5.19",
     "@tailwindcss/vite": "^4.3.0",
-    "astro": "^6.3.2",
-    "svelte": "^5.55.5",
+    "astro": "^6.3.6",
+    "svelte": "^5.55.9",
     "svelte-i18n": "^4.0.1",
     "tailwindcss": "^4.2.2",
     "typescript": "^5.9.3",
@@ -55,7 +55,7 @@
     "prettier": "^3.8.3",
     "prettier-plugin-astro": "^0.14.1",
     "prettier-plugin-svelte": "^3.5.2",
-    "vitest": "^4.1.6",
+    "vitest": "^4.1.7",
     "workbox-window": "^7.4.1"
   },
   "overrides": {
