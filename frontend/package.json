@@ -54,7 +54,7 @@
     "openapi-typescript": "^7.13.0",
     "prettier": "^3.8.3",
     "prettier-plugin-astro": "^0.14.1",
-    "prettier-plugin-svelte": "^3.5.2",
+    "prettier-plugin-svelte": "^4.0.0",
     "vitest": "^4.1.7",
     "workbox-window": "^7.4.1"
   },
