@@ -20,11 +20,15 @@ impl BuildingUseCases {
         &self,
         dto: CreateBuildingDto,
     ) -> Result<BuildingResponseDto, String> {
-        let organization_id = Uuid::parse_str(&dto.organization_id)
-            .map_err(|_| "Invalid organization_id format".to_string())?;
+        // Story 1.2 — Building::acp_id (FK vers acps.id, anciennement
+        // organization_id). Le DTO expose désormais `acp_id` (renommé) ;
+        // le handler résout l'ACP à partir de l'organisation du JWT pour
+        // les non-superadmins (cf. building_handlers::create_building).
+        let acp_id =
+            Uuid::parse_str(&dto.acp_id).map_err(|_| "Invalid acp_id format".to_string())?;
 
         let building = Building::new(
-            organization_id,
+            acp_id,
             dto.name,
             dto.address,
             dto.city,
@@ -119,11 +123,11 @@ impl BuildingUseCases {
             .await?
             .ok_or_else(|| "Building not found".to_string())?;
 
-        // Update organization if provided (SuperAdmin feature)
-        if let Some(org_id_str) = dto.organization_id {
-            let org_id = Uuid::parse_str(&org_id_str)
-                .map_err(|_| "Invalid organization_id format".to_string())?;
-            building.organization_id = org_id;
+        // Story 1.2 — Réaffectation ACP (SuperAdmin uniquement).
+        if let Some(acp_id_str) = dto.acp_id {
+            let acp_id =
+                Uuid::parse_str(&acp_id_str).map_err(|_| "Invalid acp_id format".to_string())?;
+            building.acp_id = acp_id;
         }
 
         building.update_info(
@@ -171,7 +175,7 @@ impl BuildingUseCases {
         let delta = Building::quota_delta(metrics);
         BuildingResponseDto {
             id: building.id.to_string(),
-            organization_id: building.organization_id.to_string(),
+            acp_id: building.acp_id.to_string(),
             name: building.name.clone(),
             address: building.address.clone(),
             city: building.city.clone(),
@@ -229,7 +233,7 @@ mod tests {
         let use_cases = BuildingUseCases::new(Arc::new(mock_repo));
 
         let dto = CreateBuildingDto {
-            organization_id: Uuid::new_v4().to_string(),
+            acp_id: Uuid::new_v4().to_string(),
             name: "Test Building".to_string(),
             address: "123 Test St".to_string(),
             city: "Paris".to_string(),
@@ -250,7 +254,7 @@ mod tests {
         let use_cases = BuildingUseCases::new(Arc::new(mock_repo));
 
         let dto = CreateBuildingDto {
-            organization_id: Uuid::new_v4().to_string(),
+            acp_id: Uuid::new_v4().to_string(),
             name: "".to_string(), // Invalid: empty name
             address: "123 Test St".to_string(),
             city: "Paris".to_string(),

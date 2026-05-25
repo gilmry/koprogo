@@ -153,7 +153,7 @@ impl ListBuildingsUseCase {
         //  full metrics are exposed via GET /buildings/:id detail endpoint).
         BuildingResponseDto {
             id: b.id.to_string(),
-            organization_id: b.organization_id.to_string(),
+            acp_id: b.acp_id.to_string(),
             name: b.name.clone(),
             address: b.address.clone(),
             city: b.city.clone(),

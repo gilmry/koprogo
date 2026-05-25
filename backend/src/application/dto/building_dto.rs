@@ -3,7 +3,10 @@ use validator::Validate;
 
 #[derive(Debug, Serialize, Deserialize, Validate, Clone, utoipa::ToSchema)]
 pub struct CreateBuildingDto {
-    pub organization_id: String,
+    /// Story 1.2 — FK vers `acps.id` (anciennement `organization_id`).
+    /// La migration 040000 a DROP la colonne ; le scoping org se fait
+    /// désormais via `acps.organization_id`.
+    pub acp_id: String,
 
     #[validate(length(min = 1, message = "Name cannot be empty"))]
     pub name: String,
@@ -31,7 +34,8 @@ pub struct CreateBuildingDto {
 
 #[derive(Debug, Serialize, Deserialize, Validate, Clone, utoipa::ToSchema)]
 pub struct UpdateBuildingDto {
-    pub organization_id: Option<String>, // SuperAdmin can change organization
+    /// Story 1.2 — Réaffectation de l'ACP parente (SuperAdmin uniquement).
+    pub acp_id: Option<String>,
 
     #[validate(length(min = 1))]
     pub name: String,
@@ -60,7 +64,8 @@ pub struct UpdateBuildingDto {
 #[derive(Debug, Serialize, utoipa::ToSchema)]
 pub struct BuildingResponseDto {
     pub id: String,
-    pub organization_id: String,
+    /// Story 1.2 — FK vers `acps.id` (anciennement `organization_id`).
+    pub acp_id: String,
     pub name: String,
     pub address: String,
     pub city: String,

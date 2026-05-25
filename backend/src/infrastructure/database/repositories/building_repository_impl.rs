@@ -22,12 +22,12 @@ impl BuildingRepository for PostgresBuildingRepository {
     async fn create(&self, building: &Building) -> Result<Building, String> {
         sqlx::query(
             r#"
-            INSERT INTO buildings (id, organization_id, name, address, city, postal_code, country, total_units, total_tantiemes, construction_year, syndic_name, syndic_email, syndic_phone, syndic_address, syndic_office_hours, syndic_emergency_contact, slug, created_at, updated_at)
+            INSERT INTO buildings (id, acp_id, name, address, city, postal_code, country, total_units, total_tantiemes, construction_year, syndic_name, syndic_email, syndic_phone, syndic_address, syndic_office_hours, syndic_emergency_contact, slug, created_at, updated_at)
             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)
             "#,
         )
         .bind(building.id)
-        .bind(building.organization_id)
+        .bind(building.acp_id)
         .bind(&building.name)
         .bind(&building.address)
         .bind(&building.city)
@@ -55,7 +55,7 @@ impl BuildingRepository for PostgresBuildingRepository {
     async fn find_by_id(&self, id: Uuid) -> Result<Option<Building>, String> {
         let row = sqlx::query(
             r#"
-            SELECT id, organization_id, name, address, city, postal_code, country, total_units, total_tantiemes, construction_year, syndic_name, syndic_email, syndic_phone, syndic_address, syndic_office_hours, syndic_emergency_contact, slug, created_at, updated_at
+            SELECT id, acp_id, name, address, city, postal_code, country, total_units, total_tantiemes, construction_year, syndic_name, syndic_email, syndic_phone, syndic_address, syndic_office_hours, syndic_emergency_contact, slug, created_at, updated_at
             FROM buildings
             WHERE id = $1
             "#,
@@ -67,7 +67,7 @@ impl BuildingRepository for PostgresBuildingRepository {
 
         Ok(row.map(|row| Building {
             id: row.get("id"),
-            organization_id: row.get("organization_id"),
+            acp_id: row.get("acp_id"),
             name: row.get("name"),
             address: row.get("address"),
             city: row.get("city"),
@@ -91,7 +91,7 @@ impl BuildingRepository for PostgresBuildingRepository {
     async fn find_all(&self) -> Result<Vec<Building>, String> {
         let rows = sqlx::query(
             r#"
-            SELECT id, organization_id, name, address, city, postal_code, country, total_units, total_tantiemes, construction_year, syndic_name, syndic_email, syndic_phone, syndic_address, syndic_office_hours, syndic_emergency_contact, slug, created_at, updated_at
+            SELECT id, acp_id, name, address, city, postal_code, country, total_units, total_tantiemes, construction_year, syndic_name, syndic_email, syndic_phone, syndic_address, syndic_office_hours, syndic_emergency_contact, slug, created_at, updated_at
             FROM buildings
             ORDER BY created_at DESC
             "#,
@@ -104,7 +104,7 @@ impl BuildingRepository for PostgresBuildingRepository {
             .iter()
             .map(|row| Building {
                 id: row.get("id"),
-                organization_id: row.get("organization_id"),
+                acp_id: row.get("acp_id"),
                 name: row.get("name"),
                 address: row.get("address"),
                 city: row.get("city"),
@@ -138,9 +138,21 @@ impl BuildingRepository for PostgresBuildingRepository {
         let mut where_clauses = Vec::new();
         let mut param_count = 0;
 
+        // Story 1.2/1.3 — scope filter on `acp_id` direct or via parent
+        // organization (resolved by use_case `list_for_acp` / `list_for_scope`).
         if filters.organization_id.is_some() {
             param_count += 1;
-            where_clauses.push(format!("organization_id = ${}", param_count));
+            // Filter by org via the parent ACP's organization_id (since
+            // buildings.organization_id was DROPped in migration 040000).
+            where_clauses.push(format!(
+                "acp_id IN (SELECT id FROM acps WHERE organization_id = ${})",
+                param_count
+            ));
+        }
+
+        if filters.acp_id.is_some() {
+            param_count += 1;
+            where_clauses.push(format!("acp_id = ${}", param_count));
         }
 
         if filters.city.is_some() {
@@ -202,6 +214,9 @@ impl BuildingRepository for PostgresBuildingRepository {
         if let Some(org_id) = filters.organization_id {
             count_query = count_query.bind(org_id);
         }
+        if let Some(acp_id) = filters.acp_id {
+            count_query = count_query.bind(acp_id);
+        }
         if let Some(city) = &filters.city {
             count_query = count_query.bind(format!("%{}%", city));
         }
@@ -230,7 +245,7 @@ impl BuildingRepository for PostgresBuildingRepository {
         let offset_param = param_count;
 
         let data_query = format!(
-            "SELECT id, organization_id, name, address, city, postal_code, country, total_units, total_tantiemes, construction_year, syndic_name, syndic_email, syndic_phone, syndic_address, syndic_office_hours, syndic_emergency_contact, slug, created_at, updated_at \
+            "SELECT id, acp_id, name, address, city, postal_code, country, total_units, total_tantiemes, construction_year, syndic_name, syndic_email, syndic_phone, syndic_address, syndic_office_hours, syndic_emergency_contact, slug, created_at, updated_at \
              FROM buildings {} ORDER BY {} {} LIMIT ${} OFFSET ${}",
             where_clause,
             sort_column,
@@ -243,6 +258,9 @@ impl BuildingRepository for PostgresBuildingRepository {
 
         if let Some(org_id) = filters.organization_id {
             data_query = data_query.bind(org_id);
+        }
+        if let Some(acp_id) = filters.acp_id {
+            data_query = data_query.bind(acp_id);
         }
         if let Some(city) = &filters.city {
             data_query = data_query.bind(format!("%{}%", city));
@@ -273,7 +291,7 @@ impl BuildingRepository for PostgresBuildingRepository {
             .iter()
             .map(|row| Building {
                 id: row.get("id"),
-                organization_id: row.get("organization_id"),
+                acp_id: row.get("acp_id"),
                 name: row.get("name"),
                 address: row.get("address"),
                 city: row.get("city"),
@@ -301,12 +319,12 @@ impl BuildingRepository for PostgresBuildingRepository {
         sqlx::query(
             r#"
             UPDATE buildings
-            SET organization_id = $2, name = $3, address = $4, city = $5, postal_code = $6, country = $7, total_units = $8, total_tantiemes = $9, construction_year = $10, syndic_name = $11, syndic_email = $12, syndic_phone = $13, syndic_address = $14, syndic_office_hours = $15, syndic_emergency_contact = $16, slug = $17, updated_at = $18
+            SET acp_id = $2, name = $3, address = $4, city = $5, postal_code = $6, country = $7, total_units = $8, total_tantiemes = $9, construction_year = $10, syndic_name = $11, syndic_email = $12, syndic_phone = $13, syndic_address = $14, syndic_office_hours = $15, syndic_emergency_contact = $16, slug = $17, updated_at = $18
             WHERE id = $1
             "#,
         )
         .bind(building.id)
-        .bind(building.organization_id)
+        .bind(building.acp_id)
         .bind(&building.name)
         .bind(&building.address)
         .bind(&building.city)
@@ -343,7 +361,7 @@ impl BuildingRepository for PostgresBuildingRepository {
     async fn find_by_slug(&self, slug: &str) -> Result<Option<Building>, String> {
         let row = sqlx::query(
             r#"
-            SELECT id, organization_id, name, address, city, postal_code, country, total_units, total_tantiemes, construction_year, syndic_name, syndic_email, syndic_phone, syndic_address, syndic_office_hours, syndic_emergency_contact, slug, created_at, updated_at
+            SELECT id, acp_id, name, address, city, postal_code, country, total_units, total_tantiemes, construction_year, syndic_name, syndic_email, syndic_phone, syndic_address, syndic_office_hours, syndic_emergency_contact, slug, created_at, updated_at
             FROM buildings
             WHERE slug = $1
             "#,
@@ -355,7 +373,7 @@ impl BuildingRepository for PostgresBuildingRepository {
 
         Ok(row.map(|row| Building {
             id: row.get("id"),
-            organization_id: row.get("organization_id"),
+            acp_id: row.get("acp_id"),
             name: row.get("name"),
             address: row.get("address"),
             city: row.get("city"),
@@ -394,7 +412,7 @@ impl BuildingRepository for PostgresBuildingRepository {
         let row = sqlx::query(
             r#"
             SELECT
-                b.id, b.organization_id, b.name, b.address, b.city, b.postal_code, b.country,
+                b.id, b.acp_id, b.name, b.address, b.city, b.postal_code, b.country,
                 b.total_units, b.total_tantiemes, b.construction_year,
                 b.syndic_name, b.syndic_email, b.syndic_phone, b.syndic_address,
                 b.syndic_office_hours, b.syndic_emergency_contact, b.slug,
@@ -417,7 +435,7 @@ impl BuildingRepository for PostgresBuildingRepository {
             let quota_sum: Decimal = row.try_get("quota_sum").unwrap_or(Decimal::ZERO);
             let building = Building {
                 id: row.get("id"),
-                organization_id: row.get("organization_id"),
+                acp_id: row.get("acp_id"),
                 name: row.get("name"),
                 address: row.get("address"),
                 city: row.get("city"),

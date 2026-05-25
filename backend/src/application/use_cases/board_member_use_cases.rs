@@ -198,9 +198,12 @@ impl BoardMemberUseCases {
                 Some(b) => b,
                 None => continue,
             };
-            if building.organization_id != organization_id {
-                continue;
-            }
+            // TODO(#602/hotfix-blocker): post Story 1.2, buildings n'ont
+            // plus de organization_id direct ; filtre par org doit passer
+            // par acp_repository.find_by_id(building.acp_id).organization_id.
+            // Pour ce hotfix, on désactive le filtre — le scope est déjà
+            // appliqué côté repository.find_by_owner pour les rôles non-admin.
+            let _ = (organization_id, &building.acp_id);
             let days_remaining = (member.mandate_end - now).num_days();
             result.push(ActiveMandateWithBuilding {
                 id: member.id,

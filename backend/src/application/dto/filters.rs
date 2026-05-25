@@ -7,7 +7,13 @@ use uuid::Uuid;
 /// Filters for building list queries
 #[derive(Debug, Deserialize, Default, Clone)]
 pub struct BuildingFilters {
+    /// Story 1.3 — Scope organisation : filtre les buildings dont
+    /// l'ACP parente appartient à cette organisation. Le repository
+    /// traduit en `acp_id IN (SELECT id FROM acps WHERE organization_id = $)`
+    /// (la colonne `buildings.organization_id` a été DROP en migration 040000).
     pub organization_id: Option<Uuid>,
+    /// Story 1.2 — Scope ACP direct (filtre `buildings.acp_id = $`).
+    pub acp_id: Option<Uuid>,
     pub city: Option<String>,
     pub construction_year: Option<i32>,
     pub min_units: Option<i32>,
