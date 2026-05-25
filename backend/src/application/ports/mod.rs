@@ -1,5 +1,6 @@
 pub mod account_repository;
 pub mod achievement_repository;
+pub mod acp_repository;
 pub mod ag_session_repository;
 pub mod age_request_repository;
 pub mod audit_log_repository;
@@ -63,6 +64,7 @@ pub mod work_report_repository;
 
 pub use account_repository::AccountRepository;
 pub use achievement_repository::{AchievementRepository, UserAchievementRepository};
+pub use acp_repository::{AcpRepository, ListScope};
 pub use ag_session_repository::AgSessionRepository;
 pub use age_request_repository::AgeRequestRepository;
 pub use audit_log_repository::{AuditLogFilters, AuditLogRepository};

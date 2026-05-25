@@ -1,4 +1,5 @@
 pub mod account_dto;
+pub mod acp_dto;
 pub mod ag_session_dto;
 pub mod age_request_dto;
 pub mod auth_dto;
@@ -50,6 +51,7 @@ pub mod vote_dto;
 pub mod work_report_dto;
 
 pub use account_dto::*;
+pub use acp_dto::*;
 pub use ag_session_dto::*;
 pub use age_request_dto::*;
 pub use auth_dto::*;
