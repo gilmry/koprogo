@@ -240,6 +240,23 @@ impl AcpUseCases {
         self.repository.archive(id).await
     }
 
+    /// Public scope-check used by Story 1.3 `scope_guard` middleware.
+    /// Loads the ACP by id then delegates to `assert_scope`.
+    /// Refuses with `AcpNotInScope` if the ACP does not exist (no
+    /// resource-existence leak across cabinets).
+    pub async fn assert_can_see_acp(
+        &self,
+        caller: &AcpCaller,
+        acp_id: Uuid,
+    ) -> Result<(), AppError> {
+        let acp = self
+            .repository
+            .find_by_id(acp_id)
+            .await?
+            .ok_or(AppError::AcpNotInScope { acp_id })?;
+        Self::assert_scope(caller, &acp)
+    }
+
     /// Vérifie que l'appelant a le droit de voir cette ACP précise.
     /// Centralise la logique pour `get` / `update` / `archive` — un seul
     /// chemin = un seul test à maintenir (cf. mémoire `audit-to-issue-first`).
