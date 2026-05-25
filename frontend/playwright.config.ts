@@ -65,7 +65,38 @@ export default defineConfig({
         locale: "fr-BE",
         trace: "on",
       },
-      testIgnore: [/scenarios\//, /smoke\//],
+      testIgnore: [/scenarios\//, /smoke\//, /characterization\//],
+    },
+
+    /**
+     * Characterization suite (Story 0.1) — gel comportement HEAD pré-refonte.
+     *
+     * Ces specs DOIVENT rester VERTES sur toutes les slices ultérieures
+     * de la refonte UX multi-rôle ACP. Tournent sur CHAQUE PR slices 1-5
+     * et bloquent le merge si ROUGE (gate Tx.1).
+     *
+     * Run: npx playwright test --project=characterization
+     * Source: docs/maury/refonte-ux-multi-role-acp/stories.md §2 Story 0.1
+     */
+    {
+      name: "characterization",
+      testDir: "./tests/e2e/characterization",
+      fullyParallel: false,
+      // Single worker pour éviter les conflits (helpers réutilisent admin login,
+      // state DB partagé). Suite caractérisation = ordre déterministe pour gel.
+      workers: 1,
+      // Retry sur HMR/dev server hiccups (ERR_ABORTED). Cible : zero-flake gate Tx.1.
+      retries: 2,
+      use: {
+        ...devices["Desktop Chrome"],
+        viewport: { width: 1280, height: 720 },
+        locale: "fr-BE",
+        trace: "on",
+        video: {
+          mode: "on",
+          size: { width: 1280, height: 720 },
+        },
+      },
     },
 
     /**

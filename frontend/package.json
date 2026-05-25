@@ -18,6 +18,7 @@
     "test:e2e:headed": "playwright test --project=chromium --headed",
     "test:e2e:debug": "playwright test --project=chromium --debug",
     "test:e2e:report": "playwright show-report",
+    "test:characterization": "playwright test --project=characterization",
     "test:scenarios": "playwright test --project=scenarios",
     "test:scenarios:headed": "playwright test --project=scenarios --headed",
     "test:scenarios:debug": "playwright test --project=scenarios --debug",
