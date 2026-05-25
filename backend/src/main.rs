@@ -336,6 +336,14 @@ async fn main() -> std::io::Result<()> {
     // ACP (Story 1.1 — Refonte UX multi-rôle, ADR-0010)
     let acp_repo = Arc::new(PostgresAcpRepository::new(pool.clone()));
     let acp_use_cases = AcpUseCases::new(acp_repo.clone(), organization_repo.clone());
+
+    // Portfolio (Story 2.1 — Slice 2 Refonte UX multi-rôle, ADR-0011)
+    let portfolio_repo = Arc::new(PostgresPortfolioRepository::new(pool.clone()));
+    let portfolio_use_cases = PortfolioUseCases::new(
+        portfolio_repo.clone(),
+        building_repo.clone(),
+        user_repo.clone(),
+    );
     let financial_report_use_cases = FinancialReportUseCases::new(
         account_repo.clone(),
         expense_repo.clone(),
@@ -429,6 +437,7 @@ async fn main() -> std::io::Result<()> {
         payment_use_cases_arc,
         payment_method_use_cases,
         poll_use_cases,
+        portfolio_use_cases,
         quote_use_cases,
         local_exchange_use_cases,
         notice_use_cases,

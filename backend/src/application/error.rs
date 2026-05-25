@@ -247,6 +247,15 @@ impl From<crate::domain::entities::AcpError> for AppError {
     }
 }
 
+impl From<crate::domain::entities::PortfolioError> for AppError {
+    /// Un portefeuille malformé (nom vide, trop court, trop long,
+    /// description trop longue) est une erreur d'entrée client → 400
+    /// validation, **jamais** 500 Internal (Story 2.1 — ADR-0011).
+    fn from(e: crate::domain::entities::PortfolioError) -> Self {
+        AppError::Validation(e.to_string())
+    }
+}
+
 // ============================================================================
 // Tests — taxonomie 4 catégories obligatoire (cf. CRITICAL.md règle #3, #427)
 // ============================================================================

@@ -278,6 +278,15 @@ pub enum AuditEventType {
 
     // Financial reporting events
     ReportGenerated,
+
+    // Portfolio events (Story 2.1 — ADR-0011, Slice 2 Refonte UX multi-rôle ACP)
+    PortfolioCreated,
+    PortfolioUpdated,
+    PortfolioDeleted,
+    PortfolioBuildingAdded,
+    PortfolioBuildingRemoved,
+    PortfolioShared,
+    PortfolioUnshared,
 }
 
 /// Audit log entry

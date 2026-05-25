@@ -24,7 +24,12 @@ RUN cargo install cargo-watch && \
 COPY Cargo.toml Cargo.lock ./
 
 # Create dummy main and test files to cache dependencies
-RUN mkdir -p src tests benches && \
+# IMPORTANT: every [[test]] entry in Cargo.toml needs a placeholder file here
+# (or Cargo fails to parse the manifest before `cargo build`). When adding a
+# new harness, add its placeholder line below — slice 1 (Story 1.1+) added
+# bdd_acp, bdd_list_buildings_role_based, bdd_building_conformity ;
+# slice 2 (Story 2.1) adds bdd_portfolio.
+RUN mkdir -p src tests tests/integration benches && \
     echo "fn main() {}" > src/main.rs && \
     echo "fn main() {}" > tests/bdd.rs && \
     echo "fn main() {}" > tests/bdd_governance.rs && \
@@ -32,6 +37,12 @@ RUN mkdir -p src tests benches && \
     echo "fn main() {}" > tests/bdd_operations.rs && \
     echo "fn main() {}" > tests/bdd_community.rs && \
     echo "fn main() {}" > tests/bdd_iot.rs && \
+    echo "fn main() {}" > tests/bdd_acp.rs && \
+    echo "fn main() {}" > tests/bdd_list_buildings_role_based.rs && \
+    echo "fn main() {}" > tests/bdd_building_conformity.rs && \
+    echo "fn main() {}" > tests/bdd_portfolio.rs && \
+    echo "fn main() {}" > tests/integration/acp_test.rs && \
+    echo "fn main() {}" > tests/integration/migration_acp_backfill_test.rs && \
     echo "fn main() {}" > benches/load_tests.rs && \
     cargo build && \
     rm -rf src tests benches

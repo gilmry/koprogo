@@ -170,3 +170,8 @@ harness = false
 [[test]]
 name = "bdd_building_conformity"
 harness = false
+
+# Story 2.1 - Portfolio BDD harness (Cucumber) — Slice 2 Refonte UX multi-rôle
+[[test]]
+name = "bdd_portfolio"
+harness = false
