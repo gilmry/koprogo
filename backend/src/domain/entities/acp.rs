@@ -1,0 +1,557 @@
+//! `Acp` — Association des Copropriétaires (Art. 3.84-3.89 Code Civil belge).
+//!
+//! Story 1.1 — première brique de la refacto domaine
+//! `Organization(0..1) → ACP(1..N) → Building(1..N)`
+//! (cf. `docs/maury/refonte-ux-multi-role-acp/architecture.md` §2.1, ADR-0010).
+//!
+//! Une ACP est la **personne juridique** propriétaire collective de l'immeuble en
+//! copropriété. Elle est distincte du cabinet syndic (`Organization`) qui la
+//! gère : un cabinet peut gérer plusieurs ACPs, et une ACP peut être
+//! auto-gérée (aucun cabinet).
+//!
+//! # Invariants
+//!
+//! - `name` non vide après trim, longueur ≥ 2 caractères (PRD FR1, FR3, INV-1).
+//! - `slug` kebab-case dérivé du `name` (unicité scope = repository).
+//! - `address_street`, `address_postal_code`, `address_city` non vides.
+//! - `organization_id` est `Option<Uuid>` (NULL = ACP auto-gérée — ADR-0010).
+//! - `legal_status` par défaut `"copropriete_belge"`.
+//!
+//! # Hexagonal
+//!
+//! Aucune dépendance `sqlx` / `actix_web`. Les erreurs de domaine
+//! retournent `AcpError` (enum dédié), mappé vers `AppError::Validation`
+//! côté application (cf. `application/error.rs`, pattern WP-A* #433).
+
+use chrono::{DateTime, Utc};
+use serde::{Deserialize, Serialize};
+use thiserror::Error;
+use uuid::Uuid;
+
+/// Statut juridique d'une ACP. `Copropriete` correspond à
+/// "copropriete_belge" en DB (encodage stable v0.1.0).
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, utoipa::ToSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum AcpLegalStatus {
+    /// Copropriété belge ordinaire (Art. 3.84 CC).
+    CoproprieteBelge,
+}
+
+impl Default for AcpLegalStatus {
+    fn default() -> Self {
+        Self::CoproprieteBelge
+    }
+}
+
+impl AcpLegalStatus {
+    /// Encodage DB stable.
+    pub fn as_db_str(&self) -> &'static str {
+        match self {
+            Self::CoproprieteBelge => "copropriete_belge",
+        }
+    }
+
+    /// Décodage depuis la chaîne DB. Toute valeur inconnue est mappée
+    /// volontairement vers `CoproprieteBelge` (mode `lenient`) plutôt que
+    /// panic — un `legal_status` exotique en DB n'est pas une raison de
+    /// faire crasher la lecture (audit + corrigé hors-bande).
+    pub fn from_db_str(s: &str) -> Self {
+        match s {
+            "copropriete_belge" => Self::CoproprieteBelge,
+            _ => Self::CoproprieteBelge,
+        }
+    }
+}
+
+/// Erreurs métier produites par le domaine `Acp`.
+///
+/// Mappées vers `AppError::Validation` (HTTP 400/422) côté application via un
+/// `impl From<AcpError> for AppError` (cf. `application/error.rs`).
+#[derive(Error, Debug, Clone, PartialEq, Eq)]
+pub enum AcpError {
+    #[error("ACP name cannot be empty")]
+    NameEmpty,
+    #[error("ACP name must be at least 2 characters long, got {0}")]
+    NameTooShort(usize),
+    #[error("ACP name must be at most 160 characters long, got {0}")]
+    NameTooLong(usize),
+    #[error("ACP address street cannot be empty")]
+    AddressStreetEmpty,
+    #[error("ACP postal code cannot be empty")]
+    PostalCodeEmpty,
+    #[error("ACP city cannot be empty")]
+    CityEmpty,
+}
+
+/// Représente une Association des Copropriétaires (ACP) — racine d'agrégat.
+///
+/// Cf. ADR-0010 (`docs/maury/refonte-ux-multi-role-acp/architecture.md` §4).
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, utoipa::ToSchema)]
+pub struct Acp {
+    pub id: Uuid,
+    /// Cabinet syndic gestionnaire. `None` = ACP auto-gérée (ADR-0010).
+    pub organization_id: Option<Uuid>,
+    pub name: String,
+    pub slug: String,
+    pub legal_status: AcpLegalStatus,
+    /// Numéro BCE belge (optionnel — toutes les ACPs ne sont pas immatriculées).
+    pub bce_number: Option<String>,
+    pub address_street: String,
+    pub address_postal_code: String,
+    pub address_city: String,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+}
+
+impl Acp {
+    /// Constructeur validé.
+    ///
+    /// Invariants vérifiés :
+    /// 1. `name.trim()` ≥ 2 chars, ≤ 160 chars
+    /// 2. `address_street.trim()` non vide
+    /// 3. `address_postal_code.trim()` non vide
+    /// 4. `address_city.trim()` non vide
+    ///
+    /// Le `slug` est dérivé du `name` (kebab-case ASCII).
+    pub fn new(
+        organization_id: Option<Uuid>,
+        name: String,
+        address_street: String,
+        address_postal_code: String,
+        address_city: String,
+        bce_number: Option<String>,
+    ) -> Result<Self, AcpError> {
+        let name = name.trim().to_string();
+        if name.is_empty() {
+            return Err(AcpError::NameEmpty);
+        }
+        let name_len = name.chars().count();
+        if name_len < 2 {
+            return Err(AcpError::NameTooShort(name_len));
+        }
+        if name_len > 160 {
+            return Err(AcpError::NameTooLong(name_len));
+        }
+
+        let address_street = address_street.trim().to_string();
+        if address_street.is_empty() {
+            return Err(AcpError::AddressStreetEmpty);
+        }
+        let address_postal_code = address_postal_code.trim().to_string();
+        if address_postal_code.is_empty() {
+            return Err(AcpError::PostalCodeEmpty);
+        }
+        let address_city = address_city.trim().to_string();
+        if address_city.is_empty() {
+            return Err(AcpError::CityEmpty);
+        }
+
+        let slug = generate_slug(&name);
+        let now = Utc::now();
+
+        Ok(Self {
+            id: Uuid::new_v4(),
+            organization_id,
+            name,
+            slug,
+            legal_status: AcpLegalStatus::default(),
+            bce_number,
+            address_street,
+            address_postal_code,
+            address_city,
+            created_at: now,
+            updated_at: now,
+        })
+    }
+
+    /// Rattache (ou détache, avec `None`) l'ACP à un cabinet syndic.
+    /// Le sens "promote/demote" est interprété par l'application : ici on se
+    /// limite à mettre à jour le champ + `updated_at`.
+    pub fn set_organization(&mut self, organization_id: Option<Uuid>) {
+        self.organization_id = organization_id;
+        self.updated_at = Utc::now();
+    }
+
+    /// Mise à jour de l'identité de l'ACP (avec re-validation des invariants).
+    pub fn update_info(
+        &mut self,
+        name: String,
+        address_street: String,
+        address_postal_code: String,
+        address_city: String,
+        bce_number: Option<String>,
+    ) -> Result<(), AcpError> {
+        let name = name.trim().to_string();
+        if name.is_empty() {
+            return Err(AcpError::NameEmpty);
+        }
+        let name_len = name.chars().count();
+        if name_len < 2 {
+            return Err(AcpError::NameTooShort(name_len));
+        }
+        if name_len > 160 {
+            return Err(AcpError::NameTooLong(name_len));
+        }
+        let address_street = address_street.trim().to_string();
+        if address_street.is_empty() {
+            return Err(AcpError::AddressStreetEmpty);
+        }
+        let address_postal_code = address_postal_code.trim().to_string();
+        if address_postal_code.is_empty() {
+            return Err(AcpError::PostalCodeEmpty);
+        }
+        let address_city = address_city.trim().to_string();
+        if address_city.is_empty() {
+            return Err(AcpError::CityEmpty);
+        }
+
+        self.slug = generate_slug(&name);
+        self.name = name;
+        self.address_street = address_street;
+        self.address_postal_code = address_postal_code;
+        self.address_city = address_city;
+        self.bce_number = bce_number;
+        self.updated_at = Utc::now();
+        Ok(())
+    }
+
+    /// L'ACP est-elle auto-gérée (sans cabinet syndic) ?
+    pub fn is_self_managed(&self) -> bool {
+        self.organization_id.is_none()
+    }
+}
+
+/// Génération du slug kebab-case (déaccentué, alphanum + tirets).
+///
+/// Exemple : `"Résidence Les Tilleuls"` → `"residence-les-tilleuls"`.
+fn generate_slug(name: &str) -> String {
+    name.chars()
+        .map(|c| match c {
+            'À' | 'Á' | 'Â' | 'Ã' | 'Ä' | 'à' | 'á' | 'â' | 'ã' | 'ä' => 'a',
+            'È' | 'É' | 'Ê' | 'Ë' | 'è' | 'é' | 'ê' | 'ë' => 'e',
+            'Ì' | 'Í' | 'Î' | 'Ï' | 'ì' | 'í' | 'î' | 'ï' => 'i',
+            'Ò' | 'Ó' | 'Ô' | 'Õ' | 'Ö' | 'ò' | 'ó' | 'ô' | 'õ' | 'ö' => 'o',
+            'Ù' | 'Ú' | 'Û' | 'Ü' | 'ù' | 'ú' | 'û' | 'ü' => 'u',
+            'Ç' | 'ç' => 'c',
+            'Ñ' | 'ñ' => 'n',
+            _ if c.is_alphanumeric() => c.to_ascii_lowercase(),
+            _ if c.is_whitespace() || c == '-' => '-',
+            _ => '-',
+        })
+        .collect::<String>()
+        .split('-')
+        .filter(|s| !s.is_empty())
+        .collect::<Vec<_>>()
+        .join("-")
+}
+
+// ============================================================================
+// Tests — taxonomie 4 catégories (CRITICAL.md règle #3, #427).
+// ============================================================================
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // ----- @happy --------------------------------------------------------------
+
+    #[test]
+    fn happy_new_acp_with_organization_succeeds() {
+        let org_id = Uuid::new_v4();
+        let acp = Acp::new(
+            Some(org_id),
+            "Residence Les Tilleuls".to_string(),
+            "Rue de la Paix 12".to_string(),
+            "1000".to_string(),
+            "Bruxelles".to_string(),
+            None,
+        )
+        .expect("constructor must accept valid inputs");
+
+        assert_eq!(acp.organization_id, Some(org_id));
+        assert_eq!(acp.name, "Residence Les Tilleuls");
+        assert_eq!(acp.slug, "residence-les-tilleuls");
+        assert_eq!(acp.legal_status, AcpLegalStatus::CoproprieteBelge);
+        assert_eq!(acp.address_city, "Bruxelles");
+        assert!(!acp.is_self_managed());
+    }
+
+    #[test]
+    fn happy_new_acp_without_organization_is_self_managed() {
+        let acp = Acp::new(
+            None,
+            "Copro Autogeree".to_string(),
+            "Rue X 1".to_string(),
+            "1000".to_string(),
+            "Bruxelles".to_string(),
+            None,
+        )
+        .unwrap();
+
+        assert!(acp.is_self_managed());
+        assert_eq!(acp.organization_id, None);
+    }
+
+    #[test]
+    fn happy_set_organization_attaches_and_detaches() {
+        let mut acp = Acp::new(
+            None,
+            "Test".to_string(),
+            "Rue X".to_string(),
+            "1000".to_string(),
+            "Bruxelles".to_string(),
+            None,
+        )
+        .unwrap();
+        let original_updated = acp.updated_at;
+
+        let org_id = Uuid::new_v4();
+        acp.set_organization(Some(org_id));
+        assert_eq!(acp.organization_id, Some(org_id));
+        assert!(acp.updated_at >= original_updated);
+
+        acp.set_organization(None);
+        assert_eq!(acp.organization_id, None);
+        assert!(acp.is_self_managed());
+    }
+
+    #[test]
+    fn happy_update_info_regenerates_slug() {
+        let mut acp = Acp::new(
+            None,
+            "Old Name".to_string(),
+            "Rue X".to_string(),
+            "1000".to_string(),
+            "Bruxelles".to_string(),
+            None,
+        )
+        .unwrap();
+        assert_eq!(acp.slug, "old-name");
+
+        acp.update_info(
+            "New Name".to_string(),
+            "Rue X".to_string(),
+            "1000".to_string(),
+            "Bruxelles".to_string(),
+            None,
+        )
+        .unwrap();
+        assert_eq!(acp.name, "New Name");
+        assert_eq!(acp.slug, "new-name");
+    }
+
+    // ----- @edge ---------------------------------------------------------------
+
+    #[test]
+    fn edge_minimum_name_length_2_accepted() {
+        let acp = Acp::new(
+            None,
+            "Ab".to_string(),
+            "Rue X 1".to_string(),
+            "1000".to_string(),
+            "Bruxelles".to_string(),
+            None,
+        );
+        assert!(acp.is_ok());
+    }
+
+    #[test]
+    fn edge_name_is_trimmed_before_validation() {
+        let acp = Acp::new(
+            None,
+            "   Trimmed Acp   ".to_string(),
+            "Rue X 1".to_string(),
+            "1000".to_string(),
+            "Bruxelles".to_string(),
+            None,
+        )
+        .unwrap();
+        assert_eq!(acp.name, "Trimmed Acp");
+        assert_eq!(acp.slug, "trimmed-acp");
+    }
+
+    #[test]
+    fn edge_address_fields_are_trimmed() {
+        let acp = Acp::new(
+            None,
+            "Some Name".to_string(),
+            "  Rue X 1  ".to_string(),
+            "  1000  ".to_string(),
+            "  Bruxelles  ".to_string(),
+            None,
+        )
+        .unwrap();
+        assert_eq!(acp.address_street, "Rue X 1");
+        assert_eq!(acp.address_postal_code, "1000");
+        assert_eq!(acp.address_city, "Bruxelles");
+    }
+
+    #[test]
+    fn edge_legal_status_default_is_copropriete_belge() {
+        let acp = Acp::new(
+            None,
+            "Some Name".to_string(),
+            "Rue X 1".to_string(),
+            "1000".to_string(),
+            "Bruxelles".to_string(),
+            None,
+        )
+        .unwrap();
+        assert_eq!(acp.legal_status.as_db_str(), "copropriete_belge");
+    }
+
+    #[test]
+    fn edge_unknown_legal_status_db_string_decodes_to_default() {
+        assert_eq!(
+            AcpLegalStatus::from_db_str("totally_unknown_value"),
+            AcpLegalStatus::CoproprieteBelge
+        );
+    }
+
+    // ----- @security ----------------------------------------------------------
+
+    // L'agrégat lui-même ne porte pas la logique RBAC (qui vit dans les use-cases
+    // — `acp_use_cases.rs`). Mais on s'assure que les invariants empêchent au
+    // moins l'invariant structurel : `organization_id` est explicitement
+    // optionnel et NE peut PAS être inféré silencieusement.
+
+    #[test]
+    fn security_organization_id_is_required_to_be_explicit() {
+        // Compile-time guarantee : la signature impose `Option<Uuid>`,
+        // pas de fallback "current org" implicite.
+        let _: fn(
+            Option<Uuid>,
+            String,
+            String,
+            String,
+            String,
+            Option<String>,
+        ) -> Result<Acp, AcpError> = Acp::new;
+    }
+
+    // ----- @negative ----------------------------------------------------------
+
+    #[test]
+    fn negative_empty_name_is_rejected() {
+        let err = Acp::new(
+            None,
+            "".to_string(),
+            "Rue X 1".to_string(),
+            "1000".to_string(),
+            "Bruxelles".to_string(),
+            None,
+        )
+        .unwrap_err();
+        assert_eq!(err, AcpError::NameEmpty);
+    }
+
+    #[test]
+    fn negative_whitespace_only_name_is_rejected_as_empty() {
+        let err = Acp::new(
+            None,
+            "    ".to_string(),
+            "Rue X 1".to_string(),
+            "1000".to_string(),
+            "Bruxelles".to_string(),
+            None,
+        )
+        .unwrap_err();
+        assert_eq!(err, AcpError::NameEmpty);
+    }
+
+    #[test]
+    fn negative_single_char_name_is_too_short() {
+        let err = Acp::new(
+            None,
+            "A".to_string(),
+            "Rue X 1".to_string(),
+            "1000".to_string(),
+            "Bruxelles".to_string(),
+            None,
+        )
+        .unwrap_err();
+        assert_eq!(err, AcpError::NameTooShort(1));
+    }
+
+    #[test]
+    fn negative_name_too_long_is_rejected() {
+        let long_name = "A".repeat(161);
+        let err = Acp::new(
+            None,
+            long_name,
+            "Rue X 1".to_string(),
+            "1000".to_string(),
+            "Bruxelles".to_string(),
+            None,
+        )
+        .unwrap_err();
+        assert_eq!(err, AcpError::NameTooLong(161));
+    }
+
+    #[test]
+    fn negative_empty_street_is_rejected() {
+        let err = Acp::new(
+            None,
+            "Some Name".to_string(),
+            "".to_string(),
+            "1000".to_string(),
+            "Bruxelles".to_string(),
+            None,
+        )
+        .unwrap_err();
+        assert_eq!(err, AcpError::AddressStreetEmpty);
+    }
+
+    #[test]
+    fn negative_empty_postal_code_is_rejected() {
+        let err = Acp::new(
+            None,
+            "Some Name".to_string(),
+            "Rue X 1".to_string(),
+            "".to_string(),
+            "Bruxelles".to_string(),
+            None,
+        )
+        .unwrap_err();
+        assert_eq!(err, AcpError::PostalCodeEmpty);
+    }
+
+    #[test]
+    fn negative_empty_city_is_rejected() {
+        let err = Acp::new(
+            None,
+            "Some Name".to_string(),
+            "Rue X 1".to_string(),
+            "1000".to_string(),
+            "".to_string(),
+            None,
+        )
+        .unwrap_err();
+        assert_eq!(err, AcpError::CityEmpty);
+    }
+
+    #[test]
+    fn negative_update_info_re_validates_invariants() {
+        let mut acp = Acp::new(
+            None,
+            "Valid".to_string(),
+            "Rue X 1".to_string(),
+            "1000".to_string(),
+            "Bruxelles".to_string(),
+            None,
+        )
+        .unwrap();
+        let err = acp
+            .update_info(
+                "".to_string(),
+                "Rue X 1".to_string(),
+                "1000".to_string(),
+                "Bruxelles".to_string(),
+                None,
+            )
+            .unwrap_err();
+        assert_eq!(err, AcpError::NameEmpty);
+        // Name unchanged because update failed.
+        assert_eq!(acp.name, "Valid");
+    }
+}

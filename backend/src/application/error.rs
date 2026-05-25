@@ -68,6 +68,11 @@ pub enum AppError {
     #[error("Conflict: {0}")]
     Conflict(String),
 
+    /// ACP accessed by a user out of scope (different cabinet, no role
+    /// assignment). 403 typé — Story 1.1 / ADR-0010 architecture §6.3.
+    #[error("ACP {acp_id} not found or out of scope")]
+    AcpNotInScope { acp_id: uuid::Uuid },
+
     /// Rate limit exceeded.
     #[error("Rate limit exceeded")]
     RateLimited,
@@ -99,6 +104,7 @@ impl AppError {
             AppError::AccountDeactivated => "account_deactivated",
             AppError::NotFound(_) => "not_found",
             AppError::Conflict(_) => "conflict",
+            AppError::AcpNotInScope { .. } => "acp_not_in_scope",
             AppError::RateLimited => "rate_limited",
             AppError::Database(_) => "database",
             AppError::Crypto(_) => "crypto",
@@ -114,7 +120,9 @@ impl ResponseError for AppError {
             AppError::Unauthorized | AppError::InvalidCredentials | AppError::TokenError(_) => {
                 StatusCode::UNAUTHORIZED
             }
-            AppError::Forbidden(_) | AppError::AccountDeactivated => StatusCode::FORBIDDEN,
+            AppError::Forbidden(_)
+            | AppError::AccountDeactivated
+            | AppError::AcpNotInScope { .. } => StatusCode::FORBIDDEN,
             AppError::NotFound(_) => StatusCode::NOT_FOUND,
             AppError::Conflict(_) => StatusCode::CONFLICT,
             AppError::RateLimited => StatusCode::TOO_MANY_REQUESTS,
@@ -230,6 +238,15 @@ impl From<crate::domain::entities::CallForFundsError> for AppError {
     }
 }
 
+impl From<crate::domain::entities::AcpError> for AppError {
+    /// Une ACP malformée (nom vide / trop court / trop long, adresse vide)
+    /// est une erreur d'entrée client → 400 validation, **jamais** 500
+    /// Internal (Story 1.1 — ADR-0010).
+    fn from(e: crate::domain::entities::AcpError) -> Self {
+        AppError::Validation(e.to_string())
+    }
+}
+
 // ============================================================================
 // Tests — taxonomie 4 catégories obligatoire (cf. CRITICAL.md règle #3, #427)
 // ============================================================================
@@ -309,6 +326,9 @@ mod tests {
             AppError::AccountDeactivated,
             AppError::NotFound("".into()),
             AppError::Conflict("".into()),
+            AppError::AcpNotInScope {
+                acp_id: uuid::Uuid::nil(),
+            },
             AppError::RateLimited,
             AppError::Database("".into()),
             AppError::Crypto("".into()),
@@ -322,6 +342,19 @@ mod tests {
     // ------------------------------------------------------------------------
     // @security — RBAC, auth, leakage
     // ------------------------------------------------------------------------
+
+    #[test]
+    fn security_acp_not_in_scope_maps_to_403() {
+        // Story 1.1 / ADR-0010 — un syndic d'un autre cabinet doit recevoir
+        // 403 (pas 404 — l'existence n'est pas un secret côté admin) quand
+        // il tente d'accéder à une ACP hors de son scope.
+        let e = AppError::AcpNotInScope {
+            acp_id: uuid::Uuid::new_v4(),
+        };
+        assert_eq!(e.status_code(), StatusCode::FORBIDDEN);
+        assert_eq!(e.kind(), "acp_not_in_scope");
+        assert!(format!("{}", e).contains("out of scope"));
+    }
 
     #[test]
     fn security_rate_limited_maps_to_429() {
