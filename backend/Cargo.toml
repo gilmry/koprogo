@@ -155,3 +155,8 @@ path = "tests/integration/acp_test.rs"
 [[test]]
 name = "bdd_acp"
 harness = false
+
+# Story 1.2 - Migration buildings.organization_id → acp_id (testcontainers)
+[[test]]
+name = "migration_acp_backfill_test"
+path = "tests/integration/migration_acp_backfill_test.rs"
