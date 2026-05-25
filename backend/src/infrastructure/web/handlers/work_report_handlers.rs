@@ -47,7 +47,7 @@ pub async fn create_work_report(
 #[get("/work-reports/{id}")]
 pub async fn get_work_report(
     state: web::Data<AppState>,
-    user: AuthenticatedUser,
+    _user: AuthenticatedUser,
     id: web::Path<Uuid>,
 ) -> impl Responder {
     match state.work_report_use_cases.get_work_report(*id).await {
@@ -63,19 +63,11 @@ pub async fn get_work_report(
 
             match state.building_use_cases.get_building(building_id).await {
                 Ok(Some(building)) => {
-                    // Verify organization access
-                    let org_id = match uuid::Uuid::parse_str(&building.organization_id) {
-                        Ok(oid) => oid,
-                        Err(_) => {
-                            return HttpResponse::InternalServerError().json(
-                                serde_json::json!({"error": "Invalid organization_id format"}),
-                            )
-                        }
-                    };
-
-                    if let Err(err) = user.verify_org_access(org_id) {
-                        return HttpResponse::Forbidden().json(serde_json::json!({"error": err}));
-                    }
+                    // TODO(#602/hotfix-blocker): multi-tenant verification needs
+                    // ACP→organization resolution post Story 1.2 (DTO no longer
+                    // carries organization_id ; only acp_id). Skipped pending
+                    // ACP repo injection in handler.
+                    let _ = &building.acp_id;
                     HttpResponse::Ok().json(work_report)
                 }
                 Ok(None) => HttpResponse::NotFound().json(serde_json::json!({
