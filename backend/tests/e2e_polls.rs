@@ -24,7 +24,7 @@ async fn create_test_building_for_polls(
     org_id: Uuid,
 ) -> String {
     let dto = CreateBuildingDto {
-        organization_id: org_id.to_string(),
+        acp_id: org_id.to_string(),
         name: format!("Polls Test Building {}", Uuid::new_v4()),
         address: "789 Poll Street".to_string(),
         city: "Brussels".to_string(),
@@ -381,7 +381,7 @@ async fn test_polls_cast_vote() {
 
     // Create building with a unit
     let dto = koprogo_api::application::dto::CreateBuildingDto {
-        organization_id: org_id.to_string(),
+        acp_id: org_id.to_string(),
         name: format!("Polls Vote Building {}", Uuid::new_v4()),
         address: "1 Vote Street".to_string(),
         city: "Brussels".to_string(),

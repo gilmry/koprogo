@@ -41,7 +41,7 @@ async fn create_age_test_building(
 ) -> Uuid {
     use koprogo_api::application::dto::CreateBuildingDto;
     let dto = CreateBuildingDto {
-        organization_id: org_id.to_string(),
+        acp_id: org_id.to_string(),
         name: format!("AGE Request Test Building {}", Uuid::new_v4()),
         address: "5 Avenue du Parlement".to_string(),
         city: "Liège".to_string(),

@@ -24,7 +24,7 @@ async fn create_test_fixtures(
 
     // Create building using DTO
     let building_dto = CreateBuildingDto {
-        organization_id: org_id.to_string(),
+        acp_id: org_id.to_string(),
         name: "Test Building".to_string(),
         address: "123 Main St".to_string(),
         city: "Brussels".to_string(),

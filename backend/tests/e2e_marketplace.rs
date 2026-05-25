@@ -20,7 +20,7 @@ async fn create_test_building_for_marketplace(
     org_id: Uuid,
 ) -> String {
     let dto = CreateBuildingDto {
-        organization_id: org_id.to_string(),
+        acp_id: org_id.to_string(),
         name: format!("Marketplace Test Building {}", Uuid::new_v4()),
         address: "100 Marketplace Ave".to_string(),
         city: "Brussels".to_string(),

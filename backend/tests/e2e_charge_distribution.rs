@@ -52,7 +52,7 @@ async fn setup_charge_distribution_fixtures(
 
     // Create building
     let building_dto = CreateBuildingDto {
-        organization_id: org_id.to_string(),
+        acp_id: org_id.to_string(),
         name: format!("Charge Distribution Building {}", Uuid::new_v4()),
         address: "10 Distribution Ave".to_string(),
         city: "Liège".to_string(),

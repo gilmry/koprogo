@@ -39,7 +39,7 @@ async fn create_contribution_fixtures(
 
     // 2. Create building
     let building_dto = CreateBuildingDto {
-        organization_id: org_id.to_string(),
+        acp_id: org_id.to_string(),
         name: format!("Contrib Building {}", Uuid::new_v4()),
         address: "15 Avenue Louise".to_string(),
         city: "Brussels".to_string(),

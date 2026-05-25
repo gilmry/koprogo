@@ -40,7 +40,7 @@ async fn test_board_dashboard_returns_complete_data() {
 
     // Create building (>20 units for board requirement)
     let building_dto = CreateBuildingDto {
-        organization_id: org_id.to_string(),
+        acp_id: org_id.to_string(),
         name: "Test Building Dashboard".to_string(),
         address: "123 Dashboard St".to_string(),
         city: "Brussels".to_string(),
@@ -300,7 +300,7 @@ async fn test_superadmin_has_global_dashboard_access() {
 
     // Create Building A (>20 units)
     let building_a_dto = CreateBuildingDto {
-        organization_id: org_id.to_string(),
+        acp_id: org_id.to_string(),
         name: "Building A".to_string(),
         address: "123 A St".to_string(),
         city: "Brussels".to_string(),
@@ -327,7 +327,7 @@ async fn test_superadmin_has_global_dashboard_access() {
 
     // Create Building B (>20 units)
     let building_b_dto = CreateBuildingDto {
-        organization_id: org_id.to_string(),
+        acp_id: org_id.to_string(),
         name: "Building B".to_string(),
         address: "456 B St".to_string(),
         city: "Brussels".to_string(),
@@ -491,7 +491,7 @@ async fn test_regular_board_member_cannot_access_other_building() {
     // Create Building A and Building B
     let building_a_id = {
         let dto = CreateBuildingDto {
-            organization_id: org_id.to_string(),
+            acp_id: org_id.to_string(),
             name: "Building A".to_string(),
             address: "123 A Street".to_string(),
             city: "Brussels".to_string(),
@@ -511,7 +511,7 @@ async fn test_regular_board_member_cannot_access_other_building() {
 
     let building_b_id = {
         let dto = CreateBuildingDto {
-            organization_id: org_id.to_string(),
+            acp_id: org_id.to_string(),
             name: "Building B".to_string(),
             address: "456 B Avenue".to_string(),
             city: "Brussels".to_string(),

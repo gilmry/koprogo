@@ -597,7 +597,7 @@ impl BuildingRepository for SqlxBuildingExistenceRepo {
             use sqlx::Row;
             Building {
                 id: r.get("id"),
-                organization_id: Uuid::nil(), // unused for portfolio AC
+                acp_id: Uuid::nil(), // unused for portfolio AC
                 name: r.get("name"),
                 address: String::new(),
                 city: String::new(),

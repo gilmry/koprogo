@@ -505,7 +505,7 @@ async fn test_create_building_endpoint() {
         .token;
 
     let dto = CreateBuildingDto {
-        organization_id: org_id.to_string(),
+        acp_id: org_id.to_string(),
         name: "Test Building".to_string(),
         address: "123 Test St".to_string(),
         city: "Paris".to_string(),
@@ -606,7 +606,7 @@ async fn test_create_building_validation_fails() {
         .token;
 
     let dto = CreateBuildingDto {
-        organization_id: org_id.to_string(),
+        acp_id: org_id.to_string(),
         name: "".to_string(), // Invalid: empty name
         address: "123 Test St".to_string(),
         city: "Paris".to_string(),

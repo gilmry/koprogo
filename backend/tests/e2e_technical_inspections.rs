@@ -41,7 +41,7 @@ async fn create_inspection_test_building(
 ) -> Uuid {
     use koprogo_api::application::dto::CreateBuildingDto;
     let dto = CreateBuildingDto {
-        organization_id: org_id.to_string(),
+        acp_id: org_id.to_string(),
         name: format!("Technical Inspection Test Building {}", Uuid::new_v4()),
         address: "15 Rue de l'Inspection".to_string(),
         city: "Charleroi".to_string(),

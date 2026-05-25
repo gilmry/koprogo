@@ -42,7 +42,7 @@ async fn create_test_user(app_state: &web::Data<AppState>, org_id: Uuid) -> (Uui
 async fn create_test_building(app_state: &web::Data<AppState>, organization_id: Uuid) -> Uuid {
     let building_name = format!("Test Building {}", Uuid::new_v4());
     let dto = CreateBuildingDto {
-        organization_id: organization_id.to_string(),
+        acp_id: organization_id.to_string(),
         name: building_name,
         address: "123 Test Street".to_string(),
         city: "Test City".to_string(),

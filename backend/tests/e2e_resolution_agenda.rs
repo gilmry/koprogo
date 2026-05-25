@@ -37,7 +37,7 @@ async fn create_meeting_fixtures(
 
     // Create building
     let building_dto = CreateBuildingDto {
-        organization_id: org_id.to_string(),
+        acp_id: org_id.to_string(),
         name: format!("Agenda Test Building {}", Uuid::new_v4()),
         address: "789 Agenda Blvd".to_string(),
         city: "Brussels".to_string(),

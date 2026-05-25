@@ -62,7 +62,7 @@ async fn create_building_for_shared_objects(
 ) -> String {
     use koprogo_api::application::dto::CreateBuildingDto;
     let dto = CreateBuildingDto {
-        organization_id: org_id.to_string(),
+        acp_id: org_id.to_string(),
         name: format!("{} {}", name, uuid::Uuid::new_v4()),
         address: "30 Object Street".to_string(),
         city: "Brussels".to_string(),

@@ -28,7 +28,7 @@ async fn setup_app() -> (
 /// Helper: Create a building for ticket tests
 async fn create_test_building(app_state: &actix_web::web::Data<AppState>, org_id: Uuid) -> Uuid {
     let building_dto = CreateBuildingDto {
-        organization_id: org_id.to_string(),
+        acp_id: org_id.to_string(),
         name: format!("Test Building WorkOrder {}", Uuid::new_v4()),
         address: "123 Work Order St".to_string(),
         city: "Brussels".to_string(),

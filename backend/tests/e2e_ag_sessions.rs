@@ -18,7 +18,7 @@ use uuid::Uuid;
 /// Helper: Create a building via use cases and return its ID
 async fn create_ag_test_building(app_state: &actix_web::web::Data<AppState>, org_id: Uuid) -> Uuid {
     let dto = CreateBuildingDto {
-        organization_id: org_id.to_string(),
+        acp_id: org_id.to_string(),
         name: format!("AG Session Test Building {}", Uuid::new_v4()),
         address: "10 Rue des Sessions".to_string(),
         city: "Brussels".to_string(),

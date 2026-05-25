@@ -65,7 +65,7 @@ async fn create_test_fixtures(
 
     // 2. Create building
     let building_dto = CreateBuildingDto {
-        organization_id: org_id.to_string(),
+        acp_id: org_id.to_string(),
         name: format!("Test Building Resolution {}", Uuid::new_v4()),
         address: "456 Vote Ave".to_string(),
         city: "Brussels".to_string(),

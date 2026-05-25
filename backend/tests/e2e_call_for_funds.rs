@@ -38,7 +38,7 @@ async fn create_call_for_funds_fixtures(
 
     // 2. Create building
     let building_dto = CreateBuildingDto {
-        organization_id: org_id.to_string(),
+        acp_id: org_id.to_string(),
         name: format!("CFF Building {}", Uuid::new_v4()),
         address: "10 Rue de la Loi".to_string(),
         city: "Brussels".to_string(),

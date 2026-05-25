@@ -84,7 +84,7 @@ async fn test_public_syndic_with_valid_building() {
     let unique_suffix = Uuid::new_v4().to_string().replace('-', "")[..8].to_lowercase();
     let building_name = format!("Residence Test {}", unique_suffix);
     let dto = CreateBuildingDto {
-        organization_id: org_id.to_string(),
+        acp_id: org_id.to_string(),
         name: building_name.clone(),
         address: "12 Rue de la Source".to_string(),
         city: "Namur".to_string(),

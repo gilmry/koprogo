@@ -362,7 +362,7 @@ async fn given_system(world: &mut BuildingWorld) {
 #[when(regex = r#"^I create a building named "([^"]*)" in "([^"]*)"$"#)]
 async fn when_create_building(world: &mut BuildingWorld, name: String, city: String) {
     let dto = CreateBuildingDto {
-        organization_id: world.org_id.unwrap().to_string(),
+        acp_id: world.org_id.unwrap().to_string(),
         name: name.clone(),
         address: "123 Test St".to_string(),
         city: city.clone(),

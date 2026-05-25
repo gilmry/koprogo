@@ -22,7 +22,7 @@ async fn test_board_member_lifecycle() {
 
     // Create building
     let building_dto = CreateBuildingDto {
-        organization_id: org_id.to_string(),
+        acp_id: org_id.to_string(),
         name: "Test Building Board".to_string(),
         address: "123 Board Street".to_string(),
         city: "Brussels".to_string(),
@@ -236,7 +236,7 @@ async fn test_board_decision_lifecycle() {
 
     // Create building
     let building_dto = CreateBuildingDto {
-        organization_id: org_id.to_string(),
+        acp_id: org_id.to_string(),
         name: "Test Building Board".to_string(),
         address: "123 Board Street".to_string(),
         city: "Brussels".to_string(),
@@ -439,7 +439,7 @@ async fn test_overdue_decisions() {
 
     // Create building
     let building_dto = CreateBuildingDto {
-        organization_id: org_id.to_string(),
+        acp_id: org_id.to_string(),
         name: "Test Building Board".to_string(),
         address: "123 Board Street".to_string(),
         city: "Brussels".to_string(),

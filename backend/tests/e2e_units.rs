@@ -20,7 +20,7 @@ async fn create_test_building_for_units(
     org_id: Uuid,
 ) -> BuildingResponseDto {
     let dto = CreateBuildingDto {
-        organization_id: org_id.to_string(),
+        acp_id: org_id.to_string(),
         name: format!("Unit Test Building {}", Uuid::new_v4()),
         address: "10 Rue du Test".to_string(),
         city: "Ghent".to_string(),

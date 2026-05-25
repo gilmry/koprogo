@@ -16,7 +16,7 @@ async fn create_building(
 ) -> String {
     use koprogo_api::application::dto::CreateBuildingDto;
     let dto = CreateBuildingDto {
-        organization_id: org_id.to_string(),
+        acp_id: org_id.to_string(),
         name: format!("Energy Building {}", uuid::Uuid::new_v4()),
         address: "1 Rue Energie".to_string(),
         city: "Brussels".to_string(),

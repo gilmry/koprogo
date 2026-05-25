@@ -42,7 +42,7 @@ async fn create_iot_test_building(
 ) -> Uuid {
     use koprogo_api::application::dto::CreateBuildingDto;
     let dto = CreateBuildingDto {
-        organization_id: org_id.to_string(),
+        acp_id: org_id.to_string(),
         name: format!("IoT Smart Meter Test Building {}", Uuid::new_v4()),
         address: "99 Boulevard de l'Énergie".to_string(),
         city: "Namur".to_string(),

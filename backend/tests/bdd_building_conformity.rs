@@ -15,7 +15,8 @@ use koprogo_api::domain::entities::{
     Building, BuildingMetrics, Organization, SubscriptionPlan, Unit, UnitType,
 };
 use koprogo_api::infrastructure::database::{
-    create_pool, PostgresBuildingRepository, PostgresOrganizationRepository, PostgresUnitRepository,
+    create_pool, DbPool, PostgresBuildingRepository, PostgresOrganizationRepository,
+    PostgresUnitRepository,
 };
 use rust_decimal::Decimal;
 use std::collections::HashMap;
@@ -34,8 +35,13 @@ pub struct ConformityWorld {
     building_repo: Option<Arc<PostgresBuildingRepository>>,
     unit_repo: Option<Arc<PostgresUnitRepository>>,
     org_repo: Option<Arc<PostgresOrganizationRepository>>,
+    // Story 1.2 — pool DB exposé pour seed ACP miroir avant building (FK).
+    pool: Option<DbPool>,
     _container: Option<ContainerAsync<Postgres>>,
     orgs: HashMap<String, Uuid>,
+    // Story 1.2 — chaque org a son ACP miroir séédée à la création du
+    // premier building (cf. given_org_building).
+    acps_for_orgs: HashMap<Uuid, Uuid>,
     buildings: HashMap<String, Uuid>,
     last_response: Option<koprogo_api::application::dto::BuildingResponseDto>,
     last_error: Option<AppError>,
@@ -61,8 +67,10 @@ impl ConformityWorld {
             building_repo: None,
             unit_repo: None,
             org_repo: None,
+            pool: None,
             _container: None,
             orgs: HashMap::new(),
+            acps_for_orgs: HashMap::new(),
             buildings: HashMap::new(),
             last_response: None,
             last_error: None,
@@ -98,12 +106,13 @@ impl ConformityWorld {
 
         let building_repo = Arc::new(PostgresBuildingRepository::new(pool.clone()));
         let unit_repo = Arc::new(PostgresUnitRepository::new(pool.clone()));
-        let org_repo = Arc::new(PostgresOrganizationRepository::new(pool));
+        let org_repo = Arc::new(PostgresOrganizationRepository::new(pool.clone()));
         let uc = BuildingUseCases::new(building_repo.clone());
         self.use_cases = Some(Arc::new(uc));
         self.building_repo = Some(building_repo);
         self.unit_repo = Some(unit_repo);
         self.org_repo = Some(org_repo);
+        self.pool = Some(pool);
         self._container = Some(container);
     }
 
@@ -154,8 +163,33 @@ async fn given_org_building(
         created.id
     };
 
+    // Story 1.2 — Building::acp_id (FK acps.id). Crée (ou réutilise) une
+    // ACP miroir pour l'organisation (raw SQL pour éviter d'introduire
+    // AcpRepository dans ce harness Story 1.4).
+    let acp_id = if let Some(&existing) = world.acps_for_orgs.get(&org_id) {
+        existing
+    } else {
+        let new_acp_id = Uuid::new_v4();
+        let pool_ref = world.pool.as_ref().expect("pool ready");
+        sqlx::query(
+            "INSERT INTO acps (id, organization_id, name, slug, legal_status, \
+             address_street, address_postal_code, address_city, created_at, updated_at) \
+             VALUES ($1, $2, $3, $4, 'copropriete_belge', 'Rue Test 1', '1000', \
+             'Bruxelles', now(), now())",
+        )
+        .bind(new_acp_id)
+        .bind(org_id)
+        .bind(format!("ACP miroir {}", org_name))
+        .bind(format!("acp-{}", new_acp_id.simple()))
+        .execute(pool_ref)
+        .await
+        .expect("seed acp miroir");
+        world.acps_for_orgs.insert(org_id, new_acp_id);
+        new_acp_id
+    };
+
     let dto = CreateBuildingDto {
-        organization_id: org_id.to_string(),
+        acp_id: acp_id.to_string(),
         name: building_name.clone(),
         address: "Rue Test 1".to_string(),
         city: "Bruxelles".to_string(),
