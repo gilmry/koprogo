@@ -8,6 +8,7 @@ import LanguageSelector from '../components/LanguageSelector.svelte';
 import SyncStatus from '../components/SyncStatus.svelte';
 import PWAInstallPrompt from '../components/PWAInstallPrompt.svelte';
 import RouteGuard from '../components/RouteGuard.svelte';
+import BuildingSelectorBar from '../components/global/BuildingSelectorBar.svelte';
 
 interface Props {
 	title: string;
@@ -131,6 +132,9 @@ const { title, showNav = true, requireAuth = false, showFooter = true } = Astro.
 
 		<!-- Route Guard - Check access before rendering page -->
 		<RouteGuard client:load />
+
+		<!-- Story 2.2 — Building selector global top-left (visible si syndic/admin/accountant) -->
+		{showNav && <BuildingSelectorBar client:load />}
 
 		{showNav && <Navigation client:load />}
 		{requireAuth && <SessionManager client:load />}

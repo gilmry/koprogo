@@ -56,11 +56,9 @@ import {
   searchBuildings,
   listBuildings,
 } from "../../../lib/api/buildings";
-import { toggleFavorite } from "../../../lib/api/portfolios";
 
 const mockedSearchBuildings = vi.mocked(searchBuildings);
 const mockedListBuildings = vi.mocked(listBuildings);
-const mockedToggleFavorite = vi.mocked(toggleFavorite);
 
 // ---------------------------------------------------------------------------
 // Fixtures
