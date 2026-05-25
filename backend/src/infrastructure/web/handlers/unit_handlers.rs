@@ -1,7 +1,8 @@
 use crate::application::dto::{CreateUnitDto, PageRequest, PageResponse, UpdateUnitDto};
 use crate::infrastructure::audit::{AuditEventType, AuditLogEntry};
+use crate::infrastructure::web::middleware::scope_guard::verify_acp_org_access;
 use crate::infrastructure::web::{AppState, AuthenticatedUser};
-use actix_web::{delete, get, post, put, web, HttpResponse, Responder};
+use actix_web::{delete, get, post, put, web, HttpResponse, Responder, ResponseError};
 use uuid::Uuid;
 use validator::Validate;
 
@@ -82,18 +83,28 @@ pub async fn create_unit(
 #[get("/units/{id}")]
 pub async fn get_unit(
     state: web::Data<AppState>,
-    _user: AuthenticatedUser,
+    user: AuthenticatedUser,
     id: web::Path<Uuid>,
 ) -> impl Responder {
     match state.unit_use_cases.get_unit(*id).await {
         Ok(Some(unit)) => {
-            // Multi-tenant isolation: verify building belongs to user's organization
+            // Hotfix #603 — multi-tenant isolation via ACP→organization resolution.
             if let Ok(building_id) = Uuid::parse_str(&unit.building_id) {
                 if let Ok(Some(building)) = state.building_use_cases.get_building(building_id).await
                 {
-                    // TODO(#602/hotfix-blocker): multi-tenant verification
-                    // needs ACP→organization resolution post Story 1.2.
-                    let _ = &building.acp_id;
+                    let acp_id = match Uuid::parse_str(&building.acp_id) {
+                        Ok(id) => id,
+                        Err(_) => {
+                            return HttpResponse::InternalServerError().json(serde_json::json!({
+                                "error": "Invalid building.acp_id format"
+                            }));
+                        }
+                    };
+                    if let Err(err) =
+                        verify_acp_org_access(&user, acp_id, &state.acp_use_cases).await
+                    {
+                        return err.error_response();
+                    }
                 }
             }
             HttpResponse::Ok().json(unit)
@@ -134,15 +145,23 @@ pub async fn list_units(
 #[get("/buildings/{building_id}/units")]
 pub async fn list_units_by_building(
     state: web::Data<AppState>,
-    _user: AuthenticatedUser,
+    user: AuthenticatedUser,
     building_id: web::Path<Uuid>,
 ) -> impl Responder {
-    // Multi-tenant isolation: verify building belongs to user's organization
+    // Hotfix #603 — multi-tenant isolation via ACP→organization resolution.
     match state.building_use_cases.get_building(*building_id).await {
         Ok(Some(building)) => {
-            // TODO(#602/hotfix-blocker): multi-tenant verification needs
-            // ACP→organization resolution post Story 1.2.
-            let _ = &building.acp_id;
+            let acp_id = match Uuid::parse_str(&building.acp_id) {
+                Ok(id) => id,
+                Err(_) => {
+                    return HttpResponse::InternalServerError().json(serde_json::json!({
+                        "error": "Invalid building.acp_id format"
+                    }));
+                }
+            };
+            if let Err(err) = verify_acp_org_access(&user, acp_id, &state.acp_use_cases).await {
+                return err.error_response();
+            }
         }
         Ok(None) => {
             return HttpResponse::NotFound().json(serde_json::json!({
@@ -205,23 +224,23 @@ pub async fn update_unit(
 
                 match state.building_use_cases.get_building(building_id).await {
                     Ok(Some(building)) => {
-                        // TODO(#602/hotfix-blocker): post Story 1.2, multi-tenant
-                        // check needs ACP→organization resolution. Branch is
-                        // unreachable (superadmin-only guard above) — defensive.
-                        let _ = &building.acp_id;
-                        let _user_org_id = match user.require_organization() {
+                        // Hotfix #603 — branch is unreachable (superadmin-only guard
+                        // above) but defensive verify_acp_org_access in case the
+                        // guard is relaxed in the future.
+                        let acp_id = match Uuid::parse_str(&building.acp_id) {
                             Ok(id) => id,
-                            Err(e) => {
-                                return HttpResponse::Unauthorized().json(serde_json::json!({
-                                    "error": e.to_string()
-                                }));
+                            Err(_) => {
+                                return HttpResponse::InternalServerError().json(
+                                    serde_json::json!({
+                                        "error": "Invalid building.acp_id format"
+                                    }),
+                                );
                             }
                         };
-
-                        if false {
-                            return HttpResponse::Forbidden().json(serde_json::json!({
-                                "error": "You can only update units in your own organization"
-                            }));
+                        if let Err(err) =
+                            verify_acp_org_access(&user, acp_id, &state.acp_use_cases).await
+                        {
+                            return err.error_response();
                         }
                     }
                     Ok(None) => {

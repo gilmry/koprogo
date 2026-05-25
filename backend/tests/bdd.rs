@@ -19,11 +19,11 @@ use koprogo_api::application::use_cases::{
 use koprogo_api::domain::entities::{ExpenseCategory, UserRole, UserRoleAssignment};
 use koprogo_api::domain::i18n::{I18n, Language, TranslationKey};
 use koprogo_api::infrastructure::database::{
-    create_pool, PostgresAuditLogRepository, PostgresBoardDecisionRepository,
-    PostgresBoardMemberRepository, PostgresBuildingRepository, PostgresDocumentRepository,
-    PostgresExpenseRepository, PostgresGdprRepository, PostgresMeetingRepository,
-    PostgresOwnerRepository, PostgresRefreshTokenRepository, PostgresUserRepository,
-    PostgresUserRoleRepository,
+    create_pool, PostgresAcpRepository, PostgresAuditLogRepository,
+    PostgresBoardDecisionRepository, PostgresBoardMemberRepository, PostgresBuildingRepository,
+    PostgresDocumentRepository, PostgresExpenseRepository, PostgresGdprRepository,
+    PostgresMeetingRepository, PostgresOwnerRepository, PostgresRefreshTokenRepository,
+    PostgresUserRepository, PostgresUserRoleRepository,
 };
 use koprogo_api::infrastructure::pool::DbPool;
 use koprogo_api::infrastructure::storage::{FileStorage, StorageProvider};
@@ -266,8 +266,14 @@ impl BuildingWorld {
 
         let building_use_cases = BuildingUseCases::new(building_repo.clone());
         let meeting_use_cases = MeetingUseCases::new(meeting_repo.clone());
-        let board_member_use_cases =
-            BoardMemberUseCases::new(board_member_repo.clone(), building_repo.clone());
+        // Hotfix #603 — BoardMemberUseCases needs acp_repository
+        let acp_repo_for_board: std::sync::Arc<dyn koprogo_api::application::ports::AcpRepository> =
+            Arc::new(PostgresAcpRepository::new(pool.clone()));
+        let board_member_use_cases = BoardMemberUseCases::new(
+            board_member_repo.clone(),
+            building_repo.clone(),
+            acp_repo_for_board,
+        );
         let board_decision_use_cases = BoardDecisionUseCases::new(
             board_decision_repo.clone(),
             building_repo.clone(),

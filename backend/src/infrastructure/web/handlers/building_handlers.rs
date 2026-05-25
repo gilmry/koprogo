@@ -1,5 +1,6 @@
 use crate::application::dto::{CreateBuildingDto, PageRequest, PageResponse, UpdateBuildingDto};
 use crate::infrastructure::audit::{AuditEventType, AuditLogEntry};
+use crate::infrastructure::web::middleware::scope_guard::verify_acp_org_access;
 use crate::infrastructure::web::{AppState, AuthenticatedUser};
 use actix_web::{delete, get, post, put, web, HttpResponse, Responder, ResponseError};
 use chrono::{DateTime, Datelike, Utc};
@@ -160,7 +161,7 @@ pub async fn list_buildings(
 #[get("/buildings/{id}")]
 pub async fn get_building(
     state: web::Data<AppState>,
-    _user: AuthenticatedUser,
+    user: AuthenticatedUser,
     id: web::Path<Uuid>,
 ) -> impl Responder {
     // Story 1.4 — use `get_building_with_metrics` so units_count, quota_sum,
@@ -171,15 +172,18 @@ pub async fn get_building(
         .await
     {
         Ok(Some(building)) => {
-            // TODO(#602/hotfix-blocker): Multi-tenant isolation must be
-            // re-implemented via ACP→organization resolution. The DTO field
-            // `organization_id` was renamed to `acp_id` (Story 1.2 migration
-            // DROP buildings.organization_id) ; verifying the user's org
-            // access now requires `acp_repo.find_by_id(building.acp_id)`
-            // to retrieve the parent organization_id. Skipped for the
-            // minimal runtime hotfix — the use_case-level scope filter
-            // (list_buildings) already enforces tenant isolation.
-            let _building_acp_id = &building.acp_id;
+            // Hotfix #603 — multi-tenant isolation via ACP→organization resolution.
+            let acp_id = match Uuid::parse_str(&building.acp_id) {
+                Ok(id) => id,
+                Err(_) => {
+                    return HttpResponse::InternalServerError().json(serde_json::json!({
+                        "error": "Invalid building.acp_id format"
+                    }));
+                }
+            };
+            if let Err(err) = verify_acp_org_access(&user, acp_id, &state.acp_use_cases).await {
+                return err.error_response();
+            }
             HttpResponse::Ok().json(building)
         }
         Ok(None) => HttpResponse::NotFound().json(serde_json::json!({
@@ -235,12 +239,9 @@ pub async fn update_building(
         }));
     }
 
-    // TODO(#602/hotfix-blocker): Non-SuperAdmins multi-tenant ownership
-    // verification needs ACP→organization resolution (DTO no longer
-    // carries organization_id). Branch unreachable here because the
-    // superadmin-only guard above (line `if user.role != "superadmin"`)
-    // already returns 403 — kept as defensive no-op while we wait for
-    // the proper acp_repo dependency injection in this handler.
+    // Hotfix #603 — defensive duplicate guard (branch unreachable as
+    // superadmin-only guard above already returns 403, but kept in case
+    // the upstream guard is relaxed in the future).
     if user.role != "superadmin" {
         return HttpResponse::Forbidden().json(serde_json::json!({
             "error": "Only SuperAdmin can update buildings (structural data)"

@@ -3,8 +3,9 @@ use crate::application::dto::{
     RejectInvoiceDto, SubmitForApprovalDto, UpdateInvoiceDraftDto,
 };
 use crate::infrastructure::audit::{AuditEventType, AuditLogEntry};
+use crate::infrastructure::web::middleware::scope_guard::verify_acp_org_access;
 use crate::infrastructure::web::{AppState, AuthenticatedUser};
-use actix_web::{get, post, put, web, HttpResponse, Responder};
+use actix_web::{get, post, put, web, HttpResponse, Responder, ResponseError};
 use chrono::{DateTime, Utc};
 use serde::Deserialize;
 use uuid::Uuid;
@@ -110,20 +111,28 @@ pub async fn create_expense(
 #[get("/expenses/{id}")]
 pub async fn get_expense(
     state: web::Data<AppState>,
-    _user: AuthenticatedUser,
+    user: AuthenticatedUser,
     id: web::Path<Uuid>,
 ) -> impl Responder {
     match state.expense_use_cases.get_expense(*id).await {
         Ok(Some(expense)) => {
-            // Multi-tenant isolation: verify expense's building belongs to user's organization
+            // Hotfix #603 — multi-tenant isolation via ACP→organization resolution.
             if let Ok(building_id) = Uuid::parse_str(&expense.building_id) {
                 if let Ok(Some(building)) = state.building_use_cases.get_building(building_id).await
                 {
-                    // TODO(#602/hotfix-blocker): multi-tenant verification
-                    // needs ACP→organization resolution (DTO no longer
-                    // carries organization_id post Story 1.2). Skipped —
-                    // expense_use_cases scope filter enforces isolation.
-                    let _ = &building.acp_id;
+                    let acp_id = match Uuid::parse_str(&building.acp_id) {
+                        Ok(id) => id,
+                        Err(_) => {
+                            return HttpResponse::InternalServerError().json(serde_json::json!({
+                                "error": "Invalid building.acp_id format"
+                            }));
+                        }
+                    };
+                    if let Err(err) =
+                        verify_acp_org_access(&user, acp_id, &state.acp_use_cases).await
+                    {
+                        return err.error_response();
+                    }
                 }
             }
             HttpResponse::Ok().json(expense)
@@ -164,17 +173,23 @@ pub async fn list_expenses(
 #[get("/buildings/{building_id}/expenses")]
 pub async fn list_expenses_by_building(
     state: web::Data<AppState>,
-    _user: AuthenticatedUser,
+    user: AuthenticatedUser,
     building_id: web::Path<Uuid>,
 ) -> impl Responder {
-    // Multi-tenant isolation: verify building belongs to user's organization
+    // Hotfix #603 — multi-tenant isolation via ACP→organization resolution.
     match state.building_use_cases.get_building(*building_id).await {
         Ok(Some(building)) => {
-            // TODO(#602/hotfix-blocker): multi-tenant verification needs
-            // ACP→organization resolution (DTO no longer carries
-            // organization_id post Story 1.2). Skipped — expense scope
-            // filter at use_case level enforces tenant isolation.
-            let _ = &building.acp_id;
+            let acp_id = match Uuid::parse_str(&building.acp_id) {
+                Ok(id) => id,
+                Err(_) => {
+                    return HttpResponse::InternalServerError().json(serde_json::json!({
+                        "error": "Invalid building.acp_id format"
+                    }));
+                }
+            };
+            if let Err(err) = verify_acp_org_access(&user, acp_id, &state.acp_use_cases).await {
+                return err.error_response();
+            }
         }
         Ok(None) => {
             return HttpResponse::NotFound().json(serde_json::json!({
@@ -589,20 +604,28 @@ pub async fn get_pending_invoices(
 #[get("/invoices/{id}")]
 pub async fn get_invoice(
     state: web::Data<AppState>,
-    _user: AuthenticatedUser,
+    user: AuthenticatedUser,
     id: web::Path<Uuid>,
 ) -> impl Responder {
     match state.expense_use_cases.get_invoice(*id).await {
         Ok(Some(invoice)) => {
-            // Multi-tenant isolation: verify invoice's building belongs to user's organization
+            // Hotfix #603 — multi-tenant isolation via ACP→organization resolution.
             if let Ok(building_id) = Uuid::parse_str(&invoice.building_id) {
                 if let Ok(Some(building)) = state.building_use_cases.get_building(building_id).await
                 {
-                    // TODO(#602/hotfix-blocker): multi-tenant verification
-                    // needs ACP→organization resolution (DTO no longer
-                    // carries organization_id post Story 1.2). Skipped —
-                    // expense_use_cases scope filter enforces isolation.
-                    let _ = &building.acp_id;
+                    let acp_id = match Uuid::parse_str(&building.acp_id) {
+                        Ok(id) => id,
+                        Err(_) => {
+                            return HttpResponse::InternalServerError().json(serde_json::json!({
+                                "error": "Invalid building.acp_id format"
+                            }));
+                        }
+                    };
+                    if let Err(err) =
+                        verify_acp_org_access(&user, acp_id, &state.acp_use_cases).await
+                    {
+                        return err.error_response();
+                    }
                 }
             }
             HttpResponse::Ok().json(invoice)

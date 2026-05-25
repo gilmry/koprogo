@@ -3,6 +3,7 @@ use actix_governor::{Governor, GovernorConfigBuilder};
 use actix_web::{middleware, web, App, HttpServer};
 use dotenvy::dotenv;
 use koprogo_api::application::ports::mqtt_energy_port::MqttEnergyPort;
+use koprogo_api::application::ports::AcpRepository;
 use koprogo_api::application::services::ExpenseAccountingService;
 use koprogo_api::application::use_cases::*;
 use koprogo_api::infrastructure::audit_logger::AuditLogger;
@@ -316,8 +317,15 @@ async fn main() -> std::io::Result<()> {
         owner_repo.clone(),
     );
     let gdpr_use_cases = GdprUseCases::new(gdpr_repo, user_repo.clone());
-    let board_member_use_cases =
-        BoardMemberUseCases::new(board_member_repo.clone(), building_repo.clone());
+    // Hotfix #603 — BoardMemberUseCases needs acp_repository for org filter.
+    // acp_repo is defined below at line ~337 ; we hoist its creation here so
+    // both BoardMemberUseCases and AcpUseCases can share the same Arc.
+    let acp_repo: Arc<dyn AcpRepository> = Arc::new(PostgresAcpRepository::new(pool.clone()));
+    let board_member_use_cases = BoardMemberUseCases::new(
+        board_member_repo.clone(),
+        building_repo.clone(),
+        acp_repo.clone(),
+    );
     let board_decision_use_cases = BoardDecisionUseCases::new(
         board_decision_repo.clone(),
         building_repo.clone(),
@@ -333,8 +341,8 @@ async fn main() -> std::io::Result<()> {
     let organization_repo = Arc::new(PostgresOrganizationRepository::new(pool.clone()));
     let organization_use_cases = OrganizationUseCases::new(organization_repo.clone());
 
-    // ACP (Story 1.1 — Refonte UX multi-rôle, ADR-0010)
-    let acp_repo = Arc::new(PostgresAcpRepository::new(pool.clone()));
+    // ACP (Story 1.1 — Refonte UX multi-rôle, ADR-0010) — acp_repo hoisted
+    // above (Hotfix #603) to share with BoardMemberUseCases.
     let acp_use_cases = AcpUseCases::new(acp_repo.clone(), organization_repo.clone());
 
     // Portfolio (Story 2.1 — Slice 2 Refonte UX multi-rôle, ADR-0011)

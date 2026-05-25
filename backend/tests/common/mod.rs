@@ -226,8 +226,15 @@ pub async fn setup_test_db() -> (
 
     let board_member_repo = Arc::new(PostgresBoardMemberRepository::new(pool.clone()));
     let board_decision_repo = Arc::new(PostgresBoardDecisionRepository::new(pool.clone()));
-    let board_member_use_cases =
-        BoardMemberUseCases::new(board_member_repo.clone(), building_repo.clone());
+    // Hotfix #603 — BoardMemberUseCases needs acp_repository. We hoist its
+    // creation up here to share the same Arc with AcpUseCases below.
+    let acp_repo_for_board: std::sync::Arc<dyn koprogo_api::application::ports::AcpRepository> =
+        Arc::new(PostgresAcpRepository::new(pool.clone()));
+    let board_member_use_cases = BoardMemberUseCases::new(
+        board_member_repo.clone(),
+        building_repo.clone(),
+        acp_repo_for_board,
+    );
     let board_decision_use_cases = BoardDecisionUseCases::new(
         board_decision_repo.clone(),
         building_repo.clone(),

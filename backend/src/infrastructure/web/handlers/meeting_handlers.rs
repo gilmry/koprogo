@@ -4,8 +4,9 @@ use crate::application::dto::{
     ValidateQuorumRequest,
 };
 use crate::infrastructure::audit::{AuditEventType, AuditLogEntry};
+use crate::infrastructure::web::middleware::scope_guard::verify_acp_org_access;
 use crate::infrastructure::web::{AppState, AuthenticatedUser};
-use actix_web::{delete, get, post, put, web, HttpResponse, Responder};
+use actix_web::{delete, get, post, put, web, HttpResponse, Responder, ResponseError};
 use uuid::Uuid;
 
 /// POST /meetings/{id}/validate-quorum — Art. 3.87 §5 CC
@@ -113,20 +114,28 @@ pub async fn create_meeting(
 #[get("/meetings/{id}")]
 pub async fn get_meeting(
     state: web::Data<AppState>,
-    _user: AuthenticatedUser,
+    user: AuthenticatedUser,
     id: web::Path<Uuid>,
 ) -> impl Responder {
     match state.meeting_use_cases.get_meeting(*id).await {
         Ok(Some(meeting)) => {
-            // Multi-tenant isolation: verify meeting's building belongs to user's organization
+            // Hotfix #603 — multi-tenant isolation via ACP→organization resolution.
             if let Ok(Some(building)) = state
                 .building_use_cases
                 .get_building(meeting.building_id)
                 .await
             {
-                // TODO(#602/hotfix-blocker): multi-tenant verification needs
-                // ACP→organization resolution post Story 1.2 migration.
-                let _ = &building.acp_id;
+                let acp_id = match Uuid::parse_str(&building.acp_id) {
+                    Ok(id) => id,
+                    Err(_) => {
+                        return HttpResponse::InternalServerError().json(serde_json::json!({
+                            "error": "Invalid building.acp_id format"
+                        }));
+                    }
+                };
+                if let Err(err) = verify_acp_org_access(&user, acp_id, &state.acp_use_cases).await {
+                    return err.error_response();
+                }
             }
             HttpResponse::Ok().json(meeting)
         }
@@ -166,15 +175,23 @@ pub async fn list_meetings(
 #[get("/buildings/{building_id}/meetings")]
 pub async fn list_meetings_by_building(
     state: web::Data<AppState>,
-    _user: AuthenticatedUser,
+    user: AuthenticatedUser,
     building_id: web::Path<Uuid>,
 ) -> impl Responder {
-    // Multi-tenant isolation: verify building belongs to user's organization
+    // Hotfix #603 — multi-tenant isolation via ACP→organization resolution.
     match state.building_use_cases.get_building(*building_id).await {
         Ok(Some(building)) => {
-            // TODO(#602/hotfix-blocker): multi-tenant verification needs
-            // ACP→organization resolution post Story 1.2 migration.
-            let _ = &building.acp_id;
+            let acp_id = match Uuid::parse_str(&building.acp_id) {
+                Ok(id) => id,
+                Err(_) => {
+                    return HttpResponse::InternalServerError().json(serde_json::json!({
+                        "error": "Invalid building.acp_id format"
+                    }));
+                }
+            };
+            if let Err(err) = verify_acp_org_access(&user, acp_id, &state.acp_use_cases).await {
+                return err.error_response();
+            }
         }
         Ok(None) => {
             return HttpResponse::NotFound().json(serde_json::json!({

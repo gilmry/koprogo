@@ -134,6 +134,12 @@ impl AcpUseCases {
         Ok(Self::to_response_dto(&created))
     }
 
+    /// Récupère une ACP sans scope check (usage interne — scope_guard helper #603).
+    /// Retourne `Ok(None)` si l'ACP n'existe pas.
+    pub async fn find_acp(&self, acp_id: Uuid) -> Result<Option<Acp>, AppError> {
+        self.repository.find_by_id(acp_id).await
+    }
+
     /// Récupère une ACP par id, avec scope guard.
     pub async fn get_acp(&self, caller: &AcpCaller, id: Uuid) -> Result<AcpResponseDto, AppError> {
         let acp = self

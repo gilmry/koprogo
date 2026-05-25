@@ -38,8 +38,9 @@ use thiserror::Error;
 use uuid::Uuid;
 
 use crate::application::error::AppError;
-use crate::application::use_cases::acp_use_cases::AcpCaller;
+use crate::application::use_cases::acp_use_cases::{AcpCaller, AcpUseCases};
 use crate::infrastructure::web::app_state::AppState;
+use crate::infrastructure::web::AuthenticatedUser;
 
 /// Header name accepted as a scope hint. Case-insensitive per HTTP RFC.
 pub const SCOPE_ACP_HEADER: &str = "X-Scope-AcpId";
@@ -190,6 +191,43 @@ pub fn requires_repository_check(
         // until story 3.5 wires user_role_assignments.scope/scope_id).
         (AcpCaller::Owner { .. }, req) => Ok(req),
     }
+}
+
+/// Hotfix #603 — résout `building.acp_id -> acp.organization_id` et applique
+/// l'isolation multi-tenant sur les GET-by-id (building, budget, expense,
+/// meeting, resolution, unit, work_report).
+///
+/// Après #602 (`Building.organization_id -> acp_id`), `BuildingResponseDto`
+/// ne porte plus `organization_id` ; les 7 handlers ci-dessus ont perdu leur
+/// `user.verify_org_access(...)`. Ce helper recâble la chaîne en lookup ACP.
+///
+/// Sémantique :
+/// - SuperAdmin : toujours autorisé (bypass).
+/// - Sinon : `acp.organization_id` MUST == `user.organization_id`. Sinon
+///   `AppError::AcpNotInScope` (HTTP 403 via `ResponseError`).
+/// - ACP introuvable OU `acp.organization_id IS NULL` (auto-gérée) :
+///   refuse pour non-superadmin (conservateur — gouvernance ACP auto-gérée
+///   en story 4.x).
+pub async fn verify_acp_org_access(
+    user: &AuthenticatedUser,
+    acp_id: Uuid,
+    acp_use_cases: &AcpUseCases,
+) -> Result<(), AppError> {
+    if user.is_superadmin() {
+        return Ok(());
+    }
+
+    let acp = acp_use_cases
+        .find_acp(acp_id)
+        .await?
+        .ok_or(AppError::AcpNotInScope { acp_id })?;
+
+    let acp_org_id = acp
+        .organization_id
+        .ok_or(AppError::AcpNotInScope { acp_id })?;
+
+    user.verify_org_access(acp_org_id)
+        .map_err(|_| AppError::AcpNotInScope { acp_id })
 }
 
 // ============================================================================

@@ -3,8 +3,9 @@ use crate::application::dto::{
     WorkReportFilters,
 };
 use crate::infrastructure::audit::{AuditEventType, AuditLogEntry};
+use crate::infrastructure::web::middleware::scope_guard::verify_acp_org_access;
 use crate::infrastructure::web::{AppState, AuthenticatedUser};
-use actix_web::{delete, get, post, put, web, HttpResponse, Responder};
+use actix_web::{delete, get, post, put, web, HttpResponse, Responder, ResponseError};
 use uuid::Uuid;
 
 // ==================== Work Report CRUD Endpoints ====================
@@ -47,7 +48,7 @@ pub async fn create_work_report(
 #[get("/work-reports/{id}")]
 pub async fn get_work_report(
     state: web::Data<AppState>,
-    _user: AuthenticatedUser,
+    user: AuthenticatedUser,
     id: web::Path<Uuid>,
 ) -> impl Responder {
     match state.work_report_use_cases.get_work_report(*id).await {
@@ -63,11 +64,20 @@ pub async fn get_work_report(
 
             match state.building_use_cases.get_building(building_id).await {
                 Ok(Some(building)) => {
-                    // TODO(#602/hotfix-blocker): multi-tenant verification needs
-                    // ACP→organization resolution post Story 1.2 (DTO no longer
-                    // carries organization_id ; only acp_id). Skipped pending
-                    // ACP repo injection in handler.
-                    let _ = &building.acp_id;
+                    // Hotfix #603 — multi-tenant isolation via ACP→organization resolution.
+                    let acp_id = match Uuid::parse_str(&building.acp_id) {
+                        Ok(id) => id,
+                        Err(_) => {
+                            return HttpResponse::InternalServerError().json(serde_json::json!({
+                                "error": "Invalid building.acp_id format"
+                            }));
+                        }
+                    };
+                    if let Err(err) =
+                        verify_acp_org_access(&user, acp_id, &state.acp_use_cases).await
+                    {
+                        return err.error_response();
+                    }
                     HttpResponse::Ok().json(work_report)
                 }
                 Ok(None) => HttpResponse::NotFound().json(serde_json::json!({
