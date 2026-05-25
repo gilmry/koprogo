@@ -1,8 +1,9 @@
 use crate::application::dto::{BuildingFilters, PageRequest};
 use crate::application::ports::BuildingRepository;
-use crate::domain::entities::Building;
+use crate::domain::entities::{Building, BuildingMetrics};
 use crate::infrastructure::database::pool::DbPool;
 use async_trait::async_trait;
+use rust_decimal::Decimal;
 use sqlx::Row;
 use uuid::Uuid;
 
@@ -372,6 +373,74 @@ impl BuildingRepository for PostgresBuildingRepository {
             slug: row.get("slug"),
             created_at: row.get("created_at"),
             updated_at: row.get("updated_at"),
+        }))
+    }
+
+    /// Story 1.4 — Building + metrics via LEFT JOIN units agrégé.
+    ///
+    /// `SUM(quota::NUMERIC)` cast en NUMERIC pour rester Decimal strict (cf.
+    /// ADR-0007/0008 + mémoire `no-f64-in-money`). Lorsqu'aucune unit
+    /// n'existe, `SUM` renvoie NULL côté SQL → `COALESCE(..., 0)` ramène à
+    /// `Decimal::ZERO` (jamais NaN, jamais panic).
+    ///
+    /// Cluster #433 : la colonne `units.quota` reste `DOUBLE PRECISION` côté
+    /// schéma (migration territoire 1.2), mais le `::NUMERIC` côté SELECT
+    /// produit un Decimal exact sur la somme — c'est la cible #433 sur la
+    /// frontière infra↔domain pour cette story.
+    async fn find_by_id_with_metrics(
+        &self,
+        id: Uuid,
+    ) -> Result<Option<(Building, BuildingMetrics)>, String> {
+        let row = sqlx::query(
+            r#"
+            SELECT
+                b.id, b.organization_id, b.name, b.address, b.city, b.postal_code, b.country,
+                b.total_units, b.total_tantiemes, b.construction_year,
+                b.syndic_name, b.syndic_email, b.syndic_phone, b.syndic_address,
+                b.syndic_office_hours, b.syndic_emergency_contact, b.slug,
+                b.created_at, b.updated_at,
+                COALESCE(COUNT(u.id)::INT, 0)                              AS units_count,
+                COALESCE(SUM(u.quota::NUMERIC), 0::NUMERIC)                AS quota_sum
+            FROM buildings b
+            LEFT JOIN units u ON u.building_id = b.id
+            WHERE b.id = $1
+            GROUP BY b.id
+            "#,
+        )
+        .bind(id)
+        .fetch_optional(&self.pool)
+        .await
+        .map_err(|e| format!("Database error: {}", e))?;
+
+        Ok(row.map(|row| {
+            let units_count: i32 = row.try_get("units_count").unwrap_or(0);
+            let quota_sum: Decimal = row.try_get("quota_sum").unwrap_or(Decimal::ZERO);
+            let building = Building {
+                id: row.get("id"),
+                organization_id: row.get("organization_id"),
+                name: row.get("name"),
+                address: row.get("address"),
+                city: row.get("city"),
+                postal_code: row.get("postal_code"),
+                country: row.get("country"),
+                total_units: row.get("total_units"),
+                total_tantiemes: row.get("total_tantiemes"),
+                construction_year: row.get("construction_year"),
+                syndic_name: row.get("syndic_name"),
+                syndic_email: row.get("syndic_email"),
+                syndic_phone: row.get("syndic_phone"),
+                syndic_address: row.get("syndic_address"),
+                syndic_office_hours: row.get("syndic_office_hours"),
+                syndic_emergency_contact: row.get("syndic_emergency_contact"),
+                slug: row.get("slug"),
+                created_at: row.get("created_at"),
+                updated_at: row.get("updated_at"),
+            };
+            let metrics = BuildingMetrics {
+                units_count,
+                quota_sum,
+            };
+            (building, metrics)
         }))
     }
 }

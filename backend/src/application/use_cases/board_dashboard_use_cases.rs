@@ -578,6 +578,19 @@ mod tests {
         ) -> Result<Option<crate::domain::entities::Building>, String> {
             unimplemented!()
         }
+
+        async fn find_by_id_with_metrics(
+            &self,
+            _id: Uuid,
+        ) -> Result<
+            Option<(
+                crate::domain::entities::Building,
+                crate::domain::entities::BuildingMetrics,
+            )>,
+            String,
+        > {
+            unimplemented!()
+        }
     }
 
     #[tokio::test]

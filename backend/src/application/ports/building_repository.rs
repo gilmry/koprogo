@@ -1,5 +1,5 @@
 use crate::application::dto::{BuildingFilters, PageRequest};
-use crate::domain::entities::Building;
+use crate::domain::entities::{Building, BuildingMetrics};
 use async_trait::async_trait;
 use uuid::Uuid;
 
@@ -23,4 +23,16 @@ pub trait BuildingRepository: Send + Sync {
 
     /// Find building by URL slug (for public pages - Issue #92)
     async fn find_by_slug(&self, slug: &str) -> Result<Option<Building>, String>;
+
+    /// Story 1.4 — Find building + aggregate metrics in a single query
+    /// (LEFT JOIN units + COUNT(*) + SUM(quota::NUMERIC)).
+    ///
+    /// Decimal strict (cf. ADR-0007 + mémoire `no-f64-in-money`) — SUM est
+    /// cast en NUMERIC côté SQL pour éviter toute conversion float.
+    /// Renvoie `Ok(None)` si l'id n'existe pas (le use-case mappera en
+    /// `AppError::NotFound`).
+    async fn find_by_id_with_metrics(
+        &self,
+        id: Uuid,
+    ) -> Result<Option<(Building, BuildingMetrics)>, String>;
 }

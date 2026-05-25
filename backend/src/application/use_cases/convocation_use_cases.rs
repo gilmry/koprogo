@@ -582,6 +582,10 @@ mod tests {
             async fn update(&self, building: &Building) -> Result<Building, String>;
             async fn delete(&self, id: Uuid) -> Result<bool, String>;
             async fn find_by_slug(&self, slug: &str) -> Result<Option<Building>, String>;
+            async fn find_by_id_with_metrics(
+                &self,
+                id: Uuid,
+            ) -> Result<Option<(Building, crate::domain::entities::BuildingMetrics)>, String>;
         }
     }
 

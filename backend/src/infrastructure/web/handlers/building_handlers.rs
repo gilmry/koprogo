@@ -1,7 +1,7 @@
 use crate::application::dto::{CreateBuildingDto, PageRequest, PageResponse, UpdateBuildingDto};
 use crate::infrastructure::audit::{AuditEventType, AuditLogEntry};
 use crate::infrastructure::web::{AppState, AuthenticatedUser};
-use actix_web::{delete, get, post, put, web, HttpResponse, Responder};
+use actix_web::{delete, get, post, put, web, HttpResponse, Responder, ResponseError};
 use chrono::{DateTime, Datelike, Utc};
 use serde::Deserialize;
 use uuid::Uuid;
@@ -176,7 +176,13 @@ pub async fn get_building(
     user: AuthenticatedUser,
     id: web::Path<Uuid>,
 ) -> impl Responder {
-    match state.building_use_cases.get_building(*id).await {
+    // Story 1.4 — use `get_building_with_metrics` so units_count, quota_sum,
+    // is_conformant and quota_delta are exposed (#553 Bugs 1/3/4 + FR11/FR12/FR23).
+    match state
+        .building_use_cases
+        .get_building_with_metrics(*id)
+        .await
+    {
         Ok(Some(building)) => {
             // Multi-tenant isolation: verify building belongs to user's organization
             if let Ok(building_org) = Uuid::parse_str(&building.organization_id) {
@@ -189,9 +195,7 @@ pub async fn get_building(
         Ok(None) => HttpResponse::NotFound().json(serde_json::json!({
             "error": "Building not found"
         })),
-        Err(err) => HttpResponse::InternalServerError().json(serde_json::json!({
-            "error": err
-        })),
+        Err(err) => err.error_response(),
     }
 }
 

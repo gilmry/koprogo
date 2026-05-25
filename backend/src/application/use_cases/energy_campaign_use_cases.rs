@@ -635,6 +635,17 @@ mod tests {
                 .find(|b| b.slug.as_deref() == Some(slug))
                 .cloned())
         }
+
+        async fn find_by_id_with_metrics(
+            &self,
+            id: Uuid,
+        ) -> Result<Option<(Building, crate::domain::entities::BuildingMetrics)>, String> {
+            let store = self.buildings.lock().unwrap();
+            Ok(store
+                .get(&id)
+                .cloned()
+                .map(|b| (b, crate::domain::entities::BuildingMetrics::empty())))
+        }
     }
 
     // ─── Helpers ────────────────────────────────────────────────────────
