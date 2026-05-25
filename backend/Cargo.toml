@@ -165,3 +165,8 @@ path = "tests/integration/migration_acp_backfill_test.rs"
 [[test]]
 name = "bdd_list_buildings_role_based"
 harness = false
+
+# Story 1.4 - Building conformity BDD harness (Cucumber)
+[[test]]
+name = "bdd_building_conformity"
+harness = false
