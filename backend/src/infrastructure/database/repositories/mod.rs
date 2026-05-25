@@ -1,5 +1,6 @@
 pub mod account_repository_impl;
 pub mod achievement_repository_impl;
+pub mod acp_repository_impl;
 pub mod ag_session_repository_impl;
 pub mod age_request_repository_impl;
 pub mod audit_log_repository_impl;
@@ -62,6 +63,7 @@ pub use account_repository_impl::PostgresAccountRepository;
 pub use achievement_repository_impl::{
     PostgresAchievementRepository, PostgresUserAchievementRepository,
 };
+pub use acp_repository_impl::PostgresAcpRepository;
 pub use ag_session_repository_impl::PostgresAgSessionRepository;
 pub use age_request_repository_impl::PostgresAgeRequestRepository;
 pub use audit_log_repository_impl::PostgresAuditLogRepository;

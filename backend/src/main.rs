@@ -331,7 +331,11 @@ async fn main() -> std::io::Result<()> {
     let account_use_cases = AccountUseCases::new(account_repo.clone());
     let audit_log_use_cases = AuditLogUseCases::new(audit_log_repo.clone());
     let organization_repo = Arc::new(PostgresOrganizationRepository::new(pool.clone()));
-    let organization_use_cases = OrganizationUseCases::new(organization_repo);
+    let organization_use_cases = OrganizationUseCases::new(organization_repo.clone());
+
+    // ACP (Story 1.1 — Refonte UX multi-rôle, ADR-0010)
+    let acp_repo = Arc::new(PostgresAcpRepository::new(pool.clone()));
+    let acp_use_cases = AcpUseCases::new(acp_repo.clone(), organization_repo.clone());
     let financial_report_use_cases = FinancialReportUseCases::new(
         account_repo.clone(),
         expense_repo.clone(),
@@ -406,6 +410,7 @@ async fn main() -> std::io::Result<()> {
 
     let app_state = web::Data::new(AppState::new(
         account_use_cases,
+        acp_use_cases,
         audit_log_use_cases,
         auth_use_cases,
         building_use_cases,

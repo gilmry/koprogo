@@ -145,3 +145,13 @@ harness = false
 opt-level = 3
 lto = true
 codegen-units = 1
+
+# Story 1.1 - ACP integration tests (testcontainers Postgres)
+[[test]]
+name = "acp_integration"
+path = "tests/integration/acp_test.rs"
+
+# Story 1.1 - ACP BDD harness (Cucumber)
+[[test]]
+name = "bdd_acp"
+harness = false

@@ -5,7 +5,7 @@ use koprogo_api::application::ports::{MqttEnergyPort, MqttError};
 use koprogo_api::application::use_cases::*;
 use koprogo_api::infrastructure::audit_logger::AuditLogger;
 use koprogo_api::infrastructure::database::{
-    create_pool, PostgresAccountRepository, PostgresAchievementRepository,
+    create_pool, PostgresAccountRepository, PostgresAchievementRepository, PostgresAcpRepository,
     PostgresAgSessionRepository, PostgresAgeRequestRepository, PostgresAuditLogRepository,
     PostgresBoardDecisionRepository, PostgresBoardMemberRepository, PostgresBudgetRepository,
     PostgresBuildingRepository, PostgresCallForFundsRepository,
@@ -259,7 +259,11 @@ async fn setup_test_db() -> (
     );
     let notice_use_cases = NoticeUseCases::new(notice_repo, user_repo.clone());
     let organization_repo = Arc::new(PostgresOrganizationRepository::new(pool.clone()));
-    let organization_use_cases = OrganizationUseCases::new(organization_repo);
+    let organization_use_cases = OrganizationUseCases::new(organization_repo.clone());
+
+    // ACP (Story 1.1 — ADR-0010)
+    let acp_repo = Arc::new(PostgresAcpRepository::new(pool.clone()));
+    let acp_use_cases = AcpUseCases::new(acp_repo, organization_repo.clone());
     let resource_booking_use_cases =
         ResourceBookingUseCases::new(resource_booking_repo, owner_repo.clone());
     let shared_object_use_cases = SharedObjectUseCases::new(
@@ -363,6 +367,7 @@ async fn setup_test_db() -> (
 
     let app_state = actix_web::web::Data::new(AppState::new(
         account_use_cases,
+        acp_use_cases,
         audit_log_use_cases,
         auth_use_cases,
         building_use_cases,

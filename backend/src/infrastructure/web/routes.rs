@@ -34,6 +34,12 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig) {
             .service(switch_role)
             .service(logout)
             .service(get_current_user)
+            // ACPs (Story 1.1 — Association des Copropriétaires, ADR-0010)
+            .service(create_acp)
+            .service(list_acps)
+            .service(get_acp)
+            .service(update_acp)
+            .service(archive_acp)
             // Buildings
             .service(create_building)
             .service(list_buildings)

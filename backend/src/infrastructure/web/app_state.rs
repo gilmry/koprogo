@@ -2,9 +2,9 @@ use crate::application::ports::mqtt_energy_port::MqttEnergyPort;
 use crate::application::use_cases::boinc_use_cases::BoincUseCases;
 use crate::application::use_cases::consent_use_cases::ConsentUseCases;
 use crate::application::use_cases::{
-    AccountUseCases, AchievementUseCases, AgSessionUseCases, AgeRequestUseCases, AuditLogUseCases,
-    AuthUseCases, BoardDashboardUseCases, BoardDecisionUseCases, BoardMemberUseCases,
-    BudgetUseCases, BuildingUseCases, CallForFundsUseCases, ChallengeUseCases,
+    AccountUseCases, AchievementUseCases, AcpUseCases, AgSessionUseCases, AgeRequestUseCases,
+    AuditLogUseCases, AuthUseCases, BoardDashboardUseCases, BoardDecisionUseCases,
+    BoardMemberUseCases, BudgetUseCases, BuildingUseCases, CallForFundsUseCases, ChallengeUseCases,
     ChargeDistributionUseCases, ContractorReportUseCases, ConvocationUseCases, DashboardUseCases,
     DocumentUseCases, EnergyBillUploadUseCases, EnergyCampaignUseCases, EtatDateUseCases,
     ExpenseUseCases, FinancialReportUseCases, GamificationStatsUseCases, GdprArt30UseCases,
@@ -24,6 +24,7 @@ use std::sync::Arc;
 
 pub struct AppState {
     pub account_use_cases: Arc<AccountUseCases>,
+    pub acp_use_cases: Arc<AcpUseCases>,
     pub audit_log_use_cases: Arc<AuditLogUseCases>,
     pub auth_use_cases: Arc<AuthUseCases>,
     pub building_use_cases: Arc<BuildingUseCases>,
@@ -93,6 +94,7 @@ impl AppState {
     #[allow(clippy::too_many_arguments)]
     pub fn new(
         account_use_cases: AccountUseCases,
+        acp_use_cases: AcpUseCases,
         audit_log_use_cases: AuditLogUseCases,
         auth_use_cases: AuthUseCases,
         building_use_cases: BuildingUseCases,
@@ -158,6 +160,7 @@ impl AppState {
     ) -> Self {
         Self {
             account_use_cases: Arc::new(account_use_cases),
+            acp_use_cases: Arc::new(acp_use_cases),
             audit_log_use_cases: Arc::new(audit_log_use_cases),
             auth_use_cases: Arc::new(auth_use_cases),
             building_use_cases: Arc::new(building_use_cases),
