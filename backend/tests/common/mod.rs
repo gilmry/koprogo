@@ -311,6 +311,16 @@ pub async fn setup_test_db() -> (
     // ACP (Story 1.1 — ADR-0010)
     let acp_repo = Arc::new(PostgresAcpRepository::new(pool.clone()));
     let acp_use_cases = AcpUseCases::new(acp_repo, organization_repo.clone());
+
+    // Portfolio (Story 2.1 — ADR-0011)
+    let portfolio_repo = Arc::new(
+        koprogo_api::infrastructure::database::PostgresPortfolioRepository::new(pool.clone()),
+    );
+    let portfolio_use_cases = koprogo_api::application::use_cases::PortfolioUseCases::new(
+        portfolio_repo,
+        building_repo.clone(),
+        user_repo.clone(),
+    );
     let resource_booking_use_cases =
         ResourceBookingUseCases::new(resource_booking_repo, owner_repo.clone());
     let shared_object_use_cases = SharedObjectUseCases::new(
@@ -430,6 +440,7 @@ pub async fn setup_test_db() -> (
         Arc::new(payment_use_cases),
         payment_method_use_cases,
         poll_use_cases,
+        portfolio_use_cases,
         quote_use_cases,
         local_exchange_use_cases,
         notice_use_cases,

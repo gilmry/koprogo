@@ -663,7 +663,7 @@ mod tests {
     #[tokio::test]
     async fn negative_add_unknown_building_returns_not_found() {
         let owner = Uuid::new_v4();
-        let portfolio = make_portfolio(owner, "P");
+        let portfolio = make_portfolio(owner, "Portfolio");
         let portfolio_id = portfolio.id;
 
         let mut pr = MockPortfolioRepo::new();

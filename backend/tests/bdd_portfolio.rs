@@ -11,12 +11,17 @@
 //! qui réfère encore `organization_id` — la story 1.3 du refacto building
 //! traitera ça séparément).
 
+use async_trait::async_trait;
 use cucumber::{given, then, when, World};
-use koprogo_api::application::dto::{AddBuildingDto, CreatePortfolioDto, SharePortfolioDto};
+use koprogo_api::application::dto::{
+    AddBuildingDto, BuildingFilters, CreatePortfolioDto, PageRequest, SharePortfolioDto,
+};
 use koprogo_api::application::error::AppError;
+use koprogo_api::application::ports::BuildingRepository;
 use koprogo_api::application::use_cases::{PortfolioCaller, PortfolioUseCases};
+use koprogo_api::domain::entities::{Building, BuildingMetrics};
 use koprogo_api::infrastructure::database::{
-    create_pool, PostgresBuildingRepository, PostgresPortfolioRepository, PostgresUserRepository,
+    create_pool, PostgresPortfolioRepository, PostgresUserRepository,
 };
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -96,7 +101,13 @@ impl PortfolioWorld {
             .expect("migrate");
 
         let portfolio_repo = Arc::new(PostgresPortfolioRepository::new(pool.clone()));
-        let building_repo = Arc::new(PostgresBuildingRepository::new(pool.clone()));
+        // BuildingRepository stub : `PostgresBuildingRepository` actuel
+        // référence `organization_id` (column DROP par migration 040000).
+        // Story 1.3 du refacto building s'en charge ; ici on n'a besoin que
+        // de `find_by_id` pour AC @negative. On utilise un adapter local
+        // qui parle SQL minimaliste (uniquement les colonnes communes
+        // pré/post migration).
+        let building_repo = Arc::new(SqlxBuildingExistenceRepo::new(pool.clone()));
         let user_repo = Arc::new(PostgresUserRepository::new(pool.clone()));
         let uc = PortfolioUseCases::new(portfolio_repo, building_repo, user_repo);
         self.use_cases = Some(Arc::new(uc));
@@ -545,6 +556,98 @@ async fn then_not_found(world: &mut PortfolioWorld) {
     match world.last_error.as_ref() {
         Some(AppError::NotFound(_)) => {}
         other => panic!("expected NotFound, got {:?}", other),
+    }
+}
+
+// ============================================================================
+// SqlxBuildingExistenceRepo : adapter local pour ce harness BDD seulement.
+// Le `PostgresBuildingRepository` actuel utilise du SQL qui réfère encore
+// `organization_id` (dropped par 040000) — incompatible tant que Story 1.3
+// (refacto building → acp_id) n'est pas fait. Pour ne pas bloquer Story 2.1
+// sur une dette de slice 1, on implémente le strict minimum (`find_by_id`)
+// avec un SELECT sur les colonnes communes pré/post migration.
+// ============================================================================
+
+struct SqlxBuildingExistenceRepo {
+    pool: sqlx::PgPool,
+}
+
+impl SqlxBuildingExistenceRepo {
+    fn new(pool: sqlx::PgPool) -> Self {
+        Self { pool }
+    }
+}
+
+#[async_trait]
+impl BuildingRepository for SqlxBuildingExistenceRepo {
+    async fn create(&self, _: &Building) -> Result<Building, String> {
+        Err("not implemented for portfolio BDD harness".to_string())
+    }
+
+    async fn find_by_id(&self, id: Uuid) -> Result<Option<Building>, String> {
+        // Strict minimum : on vérifie l'existence + on retourne un Building
+        // squelettique (les use-cases Portfolio n'utilisent QUE l'absence /
+        // présence — aucun champ n'est lu).
+        let row = sqlx::query("SELECT id, name FROM buildings WHERE id = $1")
+            .bind(id)
+            .fetch_optional(&self.pool)
+            .await
+            .map_err(|e| e.to_string())?;
+        Ok(row.map(|r| {
+            use sqlx::Row;
+            Building {
+                id: r.get("id"),
+                organization_id: Uuid::nil(), // unused for portfolio AC
+                name: r.get("name"),
+                address: String::new(),
+                city: String::new(),
+                postal_code: String::new(),
+                country: String::new(),
+                total_units: 1,
+                total_tantiemes: 1000,
+                construction_year: None,
+                syndic_name: None,
+                syndic_email: None,
+                syndic_phone: None,
+                syndic_address: None,
+                syndic_office_hours: None,
+                syndic_emergency_contact: None,
+                slug: None,
+                created_at: chrono::Utc::now(),
+                updated_at: chrono::Utc::now(),
+            }
+        }))
+    }
+
+    async fn find_all(&self) -> Result<Vec<Building>, String> {
+        Ok(Vec::new())
+    }
+
+    async fn find_all_paginated(
+        &self,
+        _page_request: &PageRequest,
+        _filters: &BuildingFilters,
+    ) -> Result<(Vec<Building>, i64), String> {
+        Ok((Vec::new(), 0))
+    }
+
+    async fn update(&self, _: &Building) -> Result<Building, String> {
+        Err("not implemented for portfolio BDD harness".to_string())
+    }
+
+    async fn delete(&self, _: Uuid) -> Result<bool, String> {
+        Ok(false)
+    }
+
+    async fn find_by_slug(&self, _: &str) -> Result<Option<Building>, String> {
+        Ok(None)
+    }
+
+    async fn find_by_id_with_metrics(
+        &self,
+        _: Uuid,
+    ) -> Result<Option<(Building, BuildingMetrics)>, String> {
+        Ok(None)
     }
 }
 
