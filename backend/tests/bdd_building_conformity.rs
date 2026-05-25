@@ -9,7 +9,7 @@
 use cucumber::{given, then, when, World};
 use koprogo_api::application::dto::CreateBuildingDto;
 use koprogo_api::application::error::AppError;
-use koprogo_api::application::ports::UnitRepository;
+use koprogo_api::application::ports::{OrganizationRepository, UnitRepository};
 use koprogo_api::application::use_cases::BuildingUseCases;
 use koprogo_api::domain::entities::{
     Building, BuildingMetrics, Organization, SubscriptionPlan, Unit, UnitType,
