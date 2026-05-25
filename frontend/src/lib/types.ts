@@ -65,6 +65,13 @@ export interface Building {
   construction_year?: number;
   created_at?: string;
   updated_at?: string;
+
+  // Story 1.4 — FR11/FR12/FR23 : conformity metrics exposed by GET /buildings/{id}.
+  // `quota_sum` and `quota_delta` are Decimal-as-string (NEVER parseFloat).
+  units_count?: number;
+  quota_sum?: string;
+  is_conformant?: boolean;
+  quota_delta?: string;
 }
 
 // Owner interface

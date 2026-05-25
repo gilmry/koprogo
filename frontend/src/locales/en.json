@@ -401,7 +401,15 @@
     "totalRevenue": "Total Revenue",
     "unitCount": "Number of units",
     "units": "Units",
-    "workReports": "Work Reports"
+    "workReports": "Work Reports",
+    "conformity": {
+      "conformant": "Building conformant",
+      "nonConformant": "Building NOT conformant",
+      "unitsCount": "Declared units",
+      "quotaSum": "Quotas sum",
+      "quotaDelta": "Delta",
+      "expected1000": " / 1000"
+    }
   },
   "units": {
     "title": "Units",

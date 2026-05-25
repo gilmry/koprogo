@@ -13,6 +13,8 @@
   import BuildingFinancialReports from './BuildingFinancialReports.svelte';
   import WorkReportList from './work-reports/WorkReportList.svelte';
   import InspectionList from './inspections/InspectionList.svelte';
+  // Story 1.4 — badge conformité (#553 Bugs 1/3/4 + FR11)
+  import ConformityBadge from './buildings/ConformityBadge.svelte';
 
   let building: Building | null = null;
   let loading = true;
@@ -108,11 +110,24 @@
           </button>
           <h1 class="text-3xl font-bold text-gray-900">{building.name}</h1>
         </div>
-        <Button variant="primary" on:click={handleEdit}>
+        <Button variant="primary" on:click={handleEdit} data-testid="building-edit-submit">
           ✏️ {$_('common.edit')}
         </Button>
       </div>
     </div>
+
+    <!-- Story 1.4 — Badge conformité immeuble (#553 Bugs 1/3/4 + FR11/FR12/FR23) -->
+    {#if building.is_conformant !== undefined}
+      <div class="mb-6">
+        <ConformityBadge
+          isConformant={building.is_conformant}
+          unitsCount={building.units_count ?? 0}
+          totalUnits={building.total_units}
+          quotaSum={building.quota_sum ?? '0'}
+          quotaDelta={building.quota_delta ?? '0'}
+        />
+      </div>
+    {/if}
 
     <!-- Building Info Card -->
     <div class="bg-white rounded-lg shadow-lg overflow-hidden mb-8">
@@ -138,11 +153,26 @@
               {/if}
               <div class="flex items-center">
                 <span class="text-gray-600">🏢 {$_('buildings.unitCount')}:</span>
-                <span class="ml-2 font-semibold text-gray-900">{building.total_units}</span>
+                <!-- Story 1.4 — count RÉEL depuis API (units_count), fallback total_units si pas encore peuplé -->
+                <span class="ml-2 font-semibold text-gray-900" data-testid="building-units-count-detail">
+                  {#if building.units_count !== undefined}
+                    {building.units_count} / {building.total_units}
+                  {:else}
+                    {building.total_units}
+                  {/if}
+                </span>
               </div>
               <div class="flex items-center">
                 <span class="text-gray-600">📊 {$_('buildings.totalTantiemes')}:</span>
-                <span class="ml-2 font-semibold text-gray-900">{building.total_tantiemes} {$_('buildings.millioths')}</span>
+                <!-- Story 1.4 — somme RÉELLE (Decimal-as-string), jamais parseFloat. Fallback total_tantiemes legacy. -->
+                <span class="ml-2 font-semibold text-gray-900" data-testid="building-quota-sum-detail">
+                  {#if building.quota_sum !== undefined && building.quota_sum !== ''}
+                    {building.quota_sum.replace('.', ',')}
+                  {:else}
+                    {building.total_tantiemes}
+                  {/if}
+                  {$_('buildings.millioths')}
+                </span>
               </div>
               {#if building.construction_year}
                 <div class="flex items-center">

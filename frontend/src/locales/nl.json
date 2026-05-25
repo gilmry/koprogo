@@ -401,7 +401,15 @@
     "totalRevenue": "Totaal opbrengsten",
     "unitCount": "Aantal kavels",
     "units": "Kavels",
-    "workReports": "Werkrapporten"
+    "workReports": "Werkrapporten",
+    "conformity": {
+      "conformant": "Gebouw conform",
+      "nonConformant": "Gebouw niet conform",
+      "unitsCount": "Aangegeven kavels",
+      "quotaSum": "Som quota's",
+      "quotaDelta": "Verschil",
+      "expected1000": " / 1000"
+    }
   },
   "units": {
     "title": "Kavels",

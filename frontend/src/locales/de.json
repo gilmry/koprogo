@@ -401,7 +401,15 @@
     "totalRevenue": "Gesamterträge",
     "unitCount": "Anzahl Einheiten",
     "units": "Einheiten",
-    "workReports": "Arbeitsberichte"
+    "workReports": "Arbeitsberichte",
+    "conformity": {
+      "conformant": "Gebäude konform",
+      "nonConformant": "Gebäude nicht konform",
+      "unitsCount": "Erklärte Einheiten",
+      "quotaSum": "Quoten-Summe",
+      "quotaDelta": "Abweichung",
+      "expected1000": " / 1000"
+    }
   },
   "units": {
     "title": "Einheiten",

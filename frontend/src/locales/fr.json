@@ -401,7 +401,15 @@
     "totalRevenue": "Total produits",
     "unitCount": "Nombre de lots",
     "units": "Lots",
-    "workReports": "Rapports de travaux"
+    "workReports": "Rapports de travaux",
+    "conformity": {
+      "conformant": "Immeuble conforme",
+      "nonConformant": "Immeuble non-conforme",
+      "unitsCount": "Lots déclarés",
+      "quotaSum": "Somme quotas",
+      "quotaDelta": "Écart",
+      "expected1000": " / 1000"
+    }
   },
   "units": {
     "title": "Lots",
