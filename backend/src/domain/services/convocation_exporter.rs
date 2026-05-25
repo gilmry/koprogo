@@ -473,7 +473,7 @@ mod tests {
     fn create_test_building() -> Building {
         Building {
             id: Uuid::new_v4(),
-            organization_id: Uuid::new_v4(),
+            acp_id: Uuid::new_v4(),
             name: "Résidence Les Lilas".to_string(),
             address: "Avenue Louise 123".to_string(),
             city: "Bruxelles".to_string(),

@@ -323,6 +323,7 @@ mod tests {
 
     #[test]
     fn test_export_work_quote_pdf() {
+        let test_org_id = Uuid::new_v4();
         let building = Building {
             id: Uuid::new_v4(),
             name: "Les Jardins de Bruxelles".to_string(),
@@ -340,7 +341,7 @@ mod tests {
             syndic_office_hours: None,
             syndic_emergency_contact: None,
             slug: None,
-            organization_id: Uuid::new_v4(),
+            acp_id: Uuid::new_v4(),
             created_at: Utc::now(),
             updated_at: Utc::now(),
         };
@@ -348,7 +349,7 @@ mod tests {
         let expense = Expense {
             id: Uuid::new_v4(),
             building_id: building.id,
-            organization_id: building.organization_id,
+            organization_id: test_org_id,
             description: "Rénovation de la façade principale".to_string(),
             amount: rust_decimal_macros::dec!(15000),
             amount_excl_vat: Some(rust_decimal_macros::dec!(12396.69)),

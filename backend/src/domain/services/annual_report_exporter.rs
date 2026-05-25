@@ -360,6 +360,7 @@ mod tests {
 
     #[test]
     fn test_export_annual_report_pdf() {
+        let test_org_id = Uuid::new_v4();
         let building = Building {
             id: Uuid::new_v4(),
             name: "Les Jardins de Bruxelles".to_string(),
@@ -377,7 +378,7 @@ mod tests {
             syndic_office_hours: None,
             syndic_emergency_contact: None,
             slug: None,
-            organization_id: Uuid::new_v4(),
+            acp_id: Uuid::new_v4(),
             created_at: Utc::now(),
             updated_at: Utc::now(),
         };
@@ -386,7 +387,7 @@ mod tests {
             Expense {
                 id: Uuid::new_v4(),
                 building_id: building.id,
-                organization_id: building.organization_id,
+                organization_id: test_org_id,
                 description: "Entretien ascenseur".to_string(),
                 amount: dec!(1500),
                 amount_excl_vat: Some(dec!(1239.67)),
@@ -414,7 +415,7 @@ mod tests {
             Expense {
                 id: Uuid::new_v4(),
                 building_id: building.id,
-                organization_id: building.organization_id,
+                organization_id: test_org_id,
                 description: "Électricité parties communes".to_string(),
                 amount: dec!(800),
                 amount_excl_vat: Some(dec!(661.16)),

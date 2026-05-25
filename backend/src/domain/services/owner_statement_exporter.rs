@@ -359,14 +359,14 @@ mod tests {
             syndic_office_hours: None,
             syndic_emergency_contact: None,
             slug: None,
-            organization_id: owner.organization_id,
+            acp_id: Uuid::new_v4(),
             created_at: Utc::now(),
             updated_at: Utc::now(),
         };
 
         let unit = Unit {
             id: Uuid::new_v4(),
-            organization_id: building.organization_id,
+            organization_id: owner.organization_id,
             building_id: building.id,
             unit_number: "A1".to_string(),
             unit_type: crate::domain::entities::UnitType::Apartment,
@@ -386,7 +386,7 @@ mod tests {
         let expenses = vec![Expense {
             id: Uuid::new_v4(),
             building_id: building.id,
-            organization_id: building.organization_id,
+            organization_id: owner.organization_id,
             description: "Entretien ascenseur".to_string(),
             amount: rust_decimal_macros::dec!(150),
             amount_excl_vat: Some(rust_decimal_macros::dec!(123.97)),

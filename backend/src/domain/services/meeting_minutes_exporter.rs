@@ -359,14 +359,15 @@ mod tests {
             syndic_office_hours: None,
             syndic_emergency_contact: None,
             slug: None,
-            organization_id: Uuid::new_v4(),
+            acp_id: Uuid::new_v4(),
             created_at: Utc::now(),
             updated_at: Utc::now(),
         };
+        let test_org_id = Uuid::new_v4();
 
         let meeting = Meeting {
             id: Uuid::new_v4(),
-            organization_id: building.organization_id,
+            organization_id: test_org_id,
             building_id: building.id,
             meeting_type: MeetingType::Ordinary,
             title: "Assemblée Générale Ordinaire".to_string(),

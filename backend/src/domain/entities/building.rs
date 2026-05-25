@@ -38,7 +38,10 @@ impl BuildingMetrics {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, utoipa::ToSchema)]
 pub struct Building {
     pub id: Uuid,
-    pub organization_id: Uuid,
+    /// Story 1.2 — FK vers `acps.id` (anciennement `organization_id`).
+    /// La migration 20260601040000 a DROP la colonne `organization_id` ;
+    /// le scoping org se fait désormais via `acps.organization_id`.
+    pub acp_id: Uuid,
     pub name: String,
     pub address: String,
     pub city: String,
@@ -64,7 +67,7 @@ pub struct Building {
 impl Building {
     #[allow(clippy::too_many_arguments)]
     pub fn new(
-        organization_id: Uuid,
+        acp_id: Uuid,
         name: String,
         address: String,
         city: String,
@@ -89,7 +92,7 @@ impl Building {
 
         Ok(Self {
             id: Uuid::new_v4(),
-            organization_id,
+            acp_id,
             name,
             address,
             city,
@@ -258,9 +261,9 @@ mod tests {
 
     #[test]
     fn test_create_building_success() {
-        let org_id = Uuid::new_v4();
+        let acp_id = Uuid::new_v4();
         let building = Building::new(
-            org_id,
+            acp_id,
             "Résidence Les Jardins".to_string(),
             "123 Rue de la Paix".to_string(),
             "Paris".to_string(),
@@ -273,7 +276,7 @@ mod tests {
 
         assert!(building.is_ok());
         let building = building.unwrap();
-        assert_eq!(building.organization_id, org_id);
+        assert_eq!(building.acp_id, acp_id);
         assert_eq!(building.name, "Résidence Les Jardins");
         assert_eq!(building.total_units, 50);
         assert_eq!(building.total_tantiemes, 1000);
@@ -281,9 +284,9 @@ mod tests {
 
     #[test]
     fn test_create_building_empty_name_fails() {
-        let org_id = Uuid::new_v4();
+        let acp_id = Uuid::new_v4();
         let building = Building::new(
-            org_id,
+            acp_id,
             "".to_string(),
             "123 Rue de la Paix".to_string(),
             "Paris".to_string(),
@@ -300,9 +303,9 @@ mod tests {
 
     #[test]
     fn test_create_building_zero_units_fails() {
-        let org_id = Uuid::new_v4();
+        let acp_id = Uuid::new_v4();
         let building = Building::new(
-            org_id,
+            acp_id,
             "Résidence Les Jardins".to_string(),
             "123 Rue de la Paix".to_string(),
             "Paris".to_string(),
@@ -417,9 +420,9 @@ mod tests {
 
     #[test]
     fn test_update_building_info() {
-        let org_id = Uuid::new_v4();
+        let acp_id = Uuid::new_v4();
         let mut building = Building::new(
-            org_id,
+            acp_id,
             "Old Name".to_string(),
             "Old Address".to_string(),
             "Old City".to_string(),

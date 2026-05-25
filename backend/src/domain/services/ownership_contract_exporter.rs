@@ -365,14 +365,15 @@ mod tests {
             syndic_office_hours: None,
             syndic_emergency_contact: None,
             slug: None,
-            organization_id: Uuid::new_v4(),
+            acp_id: Uuid::new_v4(),
             created_at: Utc::now(),
             updated_at: Utc::now(),
         };
+        let test_org_id = Uuid::new_v4();
 
         let unit = Unit {
             id: Uuid::new_v4(),
-            organization_id: building.organization_id,
+            organization_id: test_org_id,
             building_id: building.id,
             unit_number: "A1".to_string(),
             unit_type: crate::domain::entities::UnitType::Apartment,
@@ -386,7 +387,7 @@ mod tests {
 
         let owner = Owner {
             id: Uuid::new_v4(),
-            organization_id: building.organization_id,
+            organization_id: test_org_id,
             user_id: None,
             first_name: "Jean".to_string(),
             last_name: "Dupont".to_string(),
