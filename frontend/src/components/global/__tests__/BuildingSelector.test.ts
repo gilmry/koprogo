@@ -23,7 +23,11 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, screen, fireEvent, waitFor } from "../../../test-helpers";
 import BuildingSelector from "../BuildingSelector.svelte";
-import { resetScope, getScope, setScopeError } from "../../../stores/scope.svelte";
+import {
+  resetScope,
+  getScope,
+  setScopeError,
+} from "../../../stores/scope.svelte";
 import { UserRole } from "../../../lib/types";
 import type { Building } from "../../../lib/types";
 
@@ -52,10 +56,7 @@ vi.mock("../../../lib/i18n", () => ({
   },
 }));
 
-import {
-  searchBuildings,
-  listBuildings,
-} from "../../../lib/api/buildings";
+import { searchBuildings, listBuildings } from "../../../lib/api/buildings";
 
 const mockedSearchBuildings = vi.mocked(searchBuildings);
 const mockedListBuildings = vi.mocked(listBuildings);
@@ -150,14 +151,22 @@ describe("BuildingSelector @happy", () => {
 
     await waitFor(
       () => {
-        expect(screen.queryByTestId("building-selector-result-b-1")).toBeTruthy();
+        expect(
+          screen.queryByTestId("building-selector-result-b-1"),
+        ).toBeTruthy();
       },
       { timeout: 1000 },
     );
 
-    expect(screen.getByTestId("building-selector-result-b-1")).toBeInTheDocument();
-    expect(screen.getByTestId("building-selector-result-b-2")).toBeInTheDocument();
-    expect(screen.getByTestId("building-selector-result-b-3")).toBeInTheDocument();
+    expect(
+      screen.getByTestId("building-selector-result-b-1"),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByTestId("building-selector-result-b-2"),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByTestId("building-selector-result-b-3"),
+    ).toBeInTheDocument();
   });
 
   it("updates scope store on result click", async () => {
@@ -173,7 +182,9 @@ describe("BuildingSelector @happy", () => {
     const input = await screen.findByTestId("building-selector-input");
     await fireEvent.input(input, { target: { value: "cli" } });
 
-    const result = await screen.findByTestId("building-selector-result-b-click");
+    const result = await screen.findByTestId(
+      "building-selector-result-b-click",
+    );
     await fireEvent.click(result);
 
     await waitFor(() => {
@@ -194,7 +205,9 @@ describe("BuildingSelector @happy", () => {
 
     const input = await screen.findByTestId("building-selector-input");
     await fireEvent.input(input, { target: { value: "imm" } });
-    const result = await screen.findByTestId("building-selector-result-b-clear");
+    const result = await screen.findByTestId(
+      "building-selector-result-b-clear",
+    );
     await fireEvent.click(result);
 
     await waitFor(() => {
@@ -231,7 +244,9 @@ describe("BuildingSelector @edge", () => {
     });
 
     // 20 visible max — `b-20` ne doit PAS être rendu.
-    expect(screen.queryByTestId("building-selector-result-b-19")).toBeInTheDocument();
+    expect(
+      screen.queryByTestId("building-selector-result-b-19"),
+    ).toBeInTheDocument();
     expect(screen.queryByTestId("building-selector-result-b-20")).toBeNull();
   });
 

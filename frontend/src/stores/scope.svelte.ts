@@ -125,9 +125,7 @@ export function setAcp(acpId: string | null): void {
  * 1. Afficher le testid `building-selector-403`.
  * 2. Reset la sélection (pour ne pas laisser une UI incohérente).
  */
-export function setScopeError(
-  error: null | "forbidden" | "not_found",
-): void {
+export function setScopeError(error: null | "forbidden" | "not_found"): void {
   _state.scopeError = error;
   if (error !== null) {
     // Reset selection — évite que le banner Story 2.3 affiche un building

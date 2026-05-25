@@ -42,7 +42,9 @@ test.describe("Story 2.2 — BuildingSelector (top-left)", () => {
     await input.fill("sel-happy");
 
     // Wait for the result to render (autocomplete after debounce 150ms).
-    const result = page.getByTestId(`building-selector-result-${ctx.buildingId}`);
+    const result = page.getByTestId(
+      `building-selector-result-${ctx.buildingId}`,
+    );
     await expect(result).toBeVisible({ timeout: 5_000 });
 
     // Click → store mis a jour → aria-selected="true" sur la ligne.
