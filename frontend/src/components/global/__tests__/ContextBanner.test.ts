@@ -93,7 +93,13 @@ function makeBuildingDetail(overrides: Partial<Building> = {}): Building {
   });
 }
 
-function makeAcp(overrides: Partial<{ id: string; name: string; organization_id: string | null }> = {}) {
+function makeAcp(
+  overrides: Partial<{
+    id: string;
+    name: string;
+    organization_id: string | null;
+  }> = {},
+) {
   return {
     id: "acp-1111-1111-1111-1111-111111111111",
     organization_id: "org-2222-2222-2222-2222-222222222222",
