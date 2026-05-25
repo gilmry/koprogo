@@ -1,3 +1,7 @@
+// Story 1.3 — middleware scope_guard (ListScope + AcpNotInScope enforcement).
+pub mod scope_guard;
+pub use scope_guard::{AcpScope, ScopeGuard, ScopeGuardError};
+
 use crate::infrastructure::web::app_state::AppState;
 // Note: Rate limiting is configured in main.rs using actix_governor
 // The actix_governor imports are kept in main.rs, not here
