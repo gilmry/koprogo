@@ -148,6 +148,9 @@ impl ListBuildingsUseCase {
     }
 
     fn to_response_dto(b: &Building) -> BuildingResponseDto {
+        // Story 1.4 metrics fields default to 0/empty/false on list endpoint
+        // (per-row metrics aggregate would be expensive on paginated list ;
+        //  full metrics are exposed via GET /buildings/:id detail endpoint).
         BuildingResponseDto {
             id: b.id.to_string(),
             organization_id: b.organization_id.to_string(),
@@ -161,6 +164,10 @@ impl ListBuildingsUseCase {
             construction_year: b.construction_year,
             created_at: b.created_at.to_rfc3339(),
             updated_at: b.updated_at.to_rfc3339(),
+            units_count: 0,
+            quota_sum: String::from("0"),
+            is_conformant: false,
+            quota_delta: String::from("-1000"),
         }
     }
 }
