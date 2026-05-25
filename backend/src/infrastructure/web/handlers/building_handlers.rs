@@ -127,11 +127,12 @@ pub async fn list_buildings(
     user: AuthenticatedUser,
     page_request: web::Query<PageRequest>,
 ) -> impl Responder {
-    // Extract organization_id from authenticated user (secure!)
-    let organization_id = user.organization_id;
+    // Story 1.3 — role-based scope derivation (ADR-0010 §3.3) :
+    // - superadmin / admin without org : ListScope::All  -> no FK filter
+    // - admin / syndic / accountant : ListScope::Organization -> filter by org
+    // - owner : ListScope::Owner -> filter via unit_owners (BUG-WF14-2)
+    let organization_id = user.effective_org_filter();
 
-    // BUG-WF14-2: Pour les Owners, filtrer par les immeubles où ils possèdent un lot
-    // via la table unit_owners → units → buildings
     let owner_user_id = if user.role == "owner" {
         Some(user.user_id)
     } else {
