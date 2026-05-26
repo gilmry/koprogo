@@ -9,6 +9,7 @@
  */
 import { test, expect } from "@playwright/test";
 import { setupContainerApiUrl } from "../helpers/video-pace";
+import { ensureAcp } from "../helpers/auth";
 
 const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
 
@@ -43,6 +44,7 @@ async function registerOwnerWithBuilding(
   });
   const org = await orgResp.json();
 
+  const acpId = await ensureAcp(page, org.id, adminToken, prefix);
   const buildingResp = await page.request.post(`${API_BASE}/buildings`, {
     data: {
       name: `${prefix} Building ${timestamp}`,
@@ -52,7 +54,7 @@ async function registerOwnerWithBuilding(
       country: "Belgium",
       total_units: 5,
       construction_year: 2018,
-      organization_id: org.id,
+      acp_id: acpId,
     },
     headers: { Authorization: `Bearer ${adminToken}` },
   });

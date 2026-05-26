@@ -9,6 +9,7 @@
  */
 import { test, expect } from "@playwright/test";
 import { setupContainerApiUrl } from "../helpers/video-pace";
+import { ensureAcp } from "../helpers/auth";
 
 const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
 
@@ -44,7 +45,8 @@ test.describe("Characterization 01 — Building Creation Flow", () => {
     expect(orgResp.status()).toBe(201);
     const org = await orgResp.json();
 
-    // 3) Admin creates building assigned to org
+    // 3) Admin creates building assigned to org (via ACP post-#602)
+    const acpId = await ensureAcp(page, org.id, adminToken, "char-bld");
     const buildingName = `Char Building ${timestamp}`;
     const buildingResp = await page.request.post(`${API_BASE}/buildings`, {
       data: {
@@ -55,14 +57,14 @@ test.describe("Characterization 01 — Building Creation Flow", () => {
         country: "Belgium",
         total_units: 10,
         construction_year: 2020,
-        organization_id: org.id,
+        acp_id: acpId,
       },
       headers: { Authorization: `Bearer ${adminToken}` },
     });
     expect(buildingResp.ok()).toBeTruthy();
     const building = await buildingResp.json();
     expect(building.id).toBeTruthy();
-    expect(building.organization_id).toBe(org.id);
+    expect(building.acp_id).toBe(acpId);
 
     // 4) Register syndic for that organization
     const regResp = await page.request.post(`${API_BASE}/auth/register`, {
@@ -135,6 +137,7 @@ test.describe("Characterization 01 — Building Creation Flow", () => {
     });
     const org = await orgResp.json();
 
+    const acpId = await ensureAcp(page, org.id, adminToken, "char-bld-det");
     const buildingResp = await page.request.post(`${API_BASE}/buildings`, {
       data: {
         name: `Char Detail Building ${timestamp}`,
@@ -144,7 +147,7 @@ test.describe("Characterization 01 — Building Creation Flow", () => {
         country: "Belgium",
         total_units: 5,
         construction_year: 2018,
-        organization_id: org.id,
+        acp_id: acpId,
       },
       headers: { Authorization: `Bearer ${adminToken}` },
     });

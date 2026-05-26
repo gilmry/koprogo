@@ -170,7 +170,55 @@ export async function loginAsSyndic(
 }
 
 /**
+ * Resolve an `acp_id` for the given organization.
+ * Lookups the first ACP attached to `orgId` ; creates one on demand if none.
+ * Post-#602 helper : tests that used to POST `/buildings { organization_id }`
+ * must now POST `/buildings { acp_id }` — call this first to obtain the id.
+ */
+export async function ensureAcp(
+  page: Page,
+  orgId: string,
+  adminToken: string,
+  prefix: string = "test",
+): Promise<string> {
+  const listResp = await page.request.get(`${API_BASE}/acps`, {
+    headers: { Authorization: `Bearer ${adminToken}` },
+  });
+  if (listResp.ok()) {
+    const acps = (await listResp.json()) as Array<{
+      id: string;
+      organization_id?: string | null;
+    }>;
+    const existing = acps.find((a) => a.organization_id === orgId);
+    if (existing) {
+      return existing.id;
+    }
+  }
+
+  const timestamp = Date.now();
+  const createResp = await page.request.post(`${API_BASE}/acps`, {
+    data: {
+      organization_id: orgId,
+      name: `${prefix} ACP ${timestamp}`,
+      address_street: `${timestamp} Rue Test`,
+      address_postal_code: "1000",
+      address_city: "Brussels",
+    },
+    headers: { Authorization: `Bearer ${adminToken}` },
+  });
+  if (!createResp.ok()) {
+    const body = await createResp.text();
+    throw new Error(
+      `ensureAcp: POST /acps failed ${createResp.status()} : ${body}`,
+    );
+  }
+  const acp = await createResp.json();
+  return acp.id;
+}
+
+/**
  * Login as syndic + create a building.
+ * Post-#602 : creates an ACP first (buildings.acp_id required, FK to acps).
  */
 export async function loginAsSyndicWithBuilding(
   page: Page,
@@ -178,6 +226,9 @@ export async function loginAsSyndicWithBuilding(
 ): Promise<SyndicContext> {
   const auth = await loginAsSyndic(page, prefix);
   const timestamp = Date.now();
+
+  // Create ACP first (buildings.acp_id is required FK post-#602 migration)
+  const acpId = await ensureAcp(page, auth.orgId, auth.adminToken, prefix);
 
   const buildingResp = await page.request.post(`${API_BASE}/buildings`, {
     data: {
@@ -188,7 +239,7 @@ export async function loginAsSyndicWithBuilding(
       country: "Belgium",
       total_units: 12,
       construction_year: 2010,
-      organization_id: auth.orgId,
+      acp_id: acpId,
     },
     headers: { Authorization: `Bearer ${auth.adminToken}` },
   });
