@@ -53,17 +53,18 @@ jobs:
             exit 0
           fi
           head_sha=$(git rev-parse origin/infra-dev)
+          body_file=$(mktemp)
+          {
+            printf 'Automated promotion — ci-infra green on `infra-dev` @ `%s`.\n\n' "${head_sha:0:7}"
+            printf 'Per RFC #466 (Alternative D), this PR is auto-opened on every green ci-infra\n'
+            printf 'on infra-dev. Auto-merge enabled — branch protection on infra-integration\n'
+            printf 'gates the actual merge.\n'
+          } > "$body_file"
           gh pr create \
             --base infra-integration \
             --head infra-dev \
             --title "promote: infra-dev → infra-integration (auto, ci green)" \
-            --body "$(cat <<EOF
-Automated promotion — ci-infra green on \`infra-dev\` @ \`${head_sha:0:7}\`.
-
-Per RFC #466 (Alternative D), this PR is auto-opened on every green ci-infra
-on infra-dev. Auto-merge enabled — branch protection on infra-integration
-gates the actual merge.
-EOF
-)"
+            --body-file "$body_file"
+          rm -f "$body_file"
           new_pr=$(gh pr list --base infra-integration --head infra-dev --state open --json number --jq '.[0].number')
           gh pr merge "$new_pr" --auto --merge || echo "::warning::auto-merge could not be enabled (likely branch protection blocks it; PR remains open for manual review)"

@@ -69,14 +69,15 @@ jobs:
             gh pr edit "$existing" --title "promote: infra-integration → infra-staging (${{ steps.tag.outputs.tag }})"
             exit 0
           fi
+          body_file=$(mktemp)
+          {
+            printf 'Release-candidate tagged: `%s`.\n\n' "${{ steps.tag.outputs.tag }}"
+            printf 'Per RFC #466 (Alternative D), this PR opens the human-test window on\n'
+            printf 'infra-staging. Merge only after manual validation on the staging cluster.\n'
+          } > "$body_file"
           gh pr create \
             --base infra-staging \
             --head infra-integration \
             --title "promote: infra-integration → infra-staging (${{ steps.tag.outputs.tag }})" \
-            --body "$(cat <<EOF
-Release-candidate tagged: \`${{ steps.tag.outputs.tag }}\`.
-
-Per RFC #466 (Alternative D), this PR opens the human-test window on
-infra-staging. Merge only after manual validation on the staging cluster.
-EOF
-)"
+            --body-file "$body_file"
+          rm -f "$body_file"
