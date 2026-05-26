@@ -428,7 +428,7 @@ jobs:
           # la collection community.general, pas dans ansible-core. Sans cette
           # install, ansible-lint échoue avec "couldn't resolve module/action
           # 'ufw'". Pinned pour reproductibilité. Cf. issue #354/WP-E1.
-          ansible-galaxy collection install community.general:>=8.0.0,<11.0.0 --force
+          ansible-galaxy collection install 'community.general:>=8.0.0,<11.0.0' --force
 
       - name: Install shellcheck
         run: |
