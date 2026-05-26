@@ -72,19 +72,16 @@ test.describe("Characterization 02 — AG Full Cycle (multi-rôle)", () => {
     const building = await buildingResp.json();
 
     // Register syndic + owner accounts
-    const syndicRegResp = await page.request.post(
-      `${API_BASE}/auth/register`,
-      {
-        data: {
-          email: syndicEmail,
-          password,
-          first_name: "AG",
-          last_name: `Syndic${timestamp}`,
-          role: "syndic",
-          organization_id: org.id,
-        },
+    const syndicRegResp = await page.request.post(`${API_BASE}/auth/register`, {
+      data: {
+        email: syndicEmail,
+        password,
+        first_name: "AG",
+        last_name: `Syndic${timestamp}`,
+        role: "syndic",
+        organization_id: org.id,
       },
-    );
+    });
     const { token: syndicToken } = await syndicRegResp.json();
 
     await page.request.post(`${API_BASE}/auth/register`, {

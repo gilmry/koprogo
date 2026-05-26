@@ -30,17 +30,12 @@ use uuid::Uuid;
 
 /// Statut juridique d'une ACP. `Copropriete` correspond à
 /// "copropriete_belge" en DB (encodage stable v0.1.0).
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, utoipa::ToSchema)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Default, utoipa::ToSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum AcpLegalStatus {
     /// Copropriété belge ordinaire (Art. 3.84 CC).
+    #[default]
     CoproprieteBelge,
-}
-
-impl Default for AcpLegalStatus {
-    fn default() -> Self {
-        Self::CoproprieteBelge
-    }
 }
 
 impl AcpLegalStatus {
@@ -419,6 +414,7 @@ mod tests {
     fn security_organization_id_is_required_to_be_explicit() {
         // Compile-time guarantee : la signature impose `Option<Uuid>`,
         // pas de fallback "current org" implicite.
+        #[allow(clippy::type_complexity)]
         let _: fn(
             Option<Uuid>,
             String,

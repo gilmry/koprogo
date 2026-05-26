@@ -41,7 +41,12 @@
  *   Quand le trigger sera fixé, remplacer `loginSuperadminInContext` par
  *   `registerSyndic` dans phase 2 du @happy — zéro autre changement requis.
  */
-import { test, expect, type APIRequestContext, type Page } from "@playwright/test";
+import {
+  test,
+  expect,
+  type APIRequestContext,
+  type Page,
+} from "@playwright/test";
 import { setupContainerApiUrl } from "../../helpers/video-pace";
 
 const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
@@ -564,18 +569,15 @@ test.describe("Story 2.5 — slice 2 multi-role narratif", () => {
     // Admin/superadmin voit le building non-conformant (gouvernance +
     // audit — pattern admin publishes conform but admin sees all).
     // per_page=500 pour éviter la pagination écraser le building cible.
-    const listAdmin = await request.get(
-      `${API_BASE}/buildings?per_page=500`,
-      { headers: { Authorization: `Bearer ${adminToken}` } },
-    );
+    const listAdmin = await request.get(`${API_BASE}/buildings?per_page=500`, {
+      headers: { Authorization: `Bearer ${adminToken}` },
+    });
     expect(listAdmin.status()).toBe(200);
     const bodyAdmin = await listAdmin.json();
     const itemsAdmin: Array<{ id: string }> = Array.isArray(bodyAdmin)
       ? bodyAdmin
       : (bodyAdmin.data ?? bodyAdmin.items ?? []);
-    const adminSeesIt = itemsAdmin.some(
-      (b) => b.id === buildingNonConform.id,
-    );
+    const adminSeesIt = itemsAdmin.some((b) => b.id === buildingNonConform.id);
     expect(
       adminSeesIt,
       "admin doit voir le building non-conformant (governance + audit)",
@@ -588,10 +590,9 @@ test.describe("Story 2.5 — slice 2 multi-role narratif", () => {
     // documenter le comportement actuel — ce qui révèle si le filtrage
     // s'applique au scope organisation ou seulement au rôle.
     const owner = await registerOwner(request, cabinet.id, "owner-neg");
-    const listOwner = await request.get(
-      `${API_BASE}/buildings?per_page=500`,
-      { headers: { Authorization: `Bearer ${owner.token}` } },
-    );
+    const listOwner = await request.get(`${API_BASE}/buildings?per_page=500`, {
+      headers: { Authorization: `Bearer ${owner.token}` },
+    });
     expect(
       [200, 403].includes(listOwner.status()),
       `owner list_buildings status: ${listOwner.status()} (200 si filtré, 403 si interdit)`,

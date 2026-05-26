@@ -3925,7 +3925,7 @@
       "CreateBuildingDto": {
         "type": "object",
         "required": [
-          "organization_id",
+          "acp_id",
           "name",
           "address",
           "city",
@@ -3934,6 +3934,10 @@
           "total_units"
         ],
         "properties": {
+          "acp_id": {
+            "type": "string",
+            "description": "Story 1.2 — FK vers `acps.id` (anciennement `organization_id`).\nLa migration 040000 a DROP la colonne ; le scoping org se fait\ndésormais via `acps.organization_id`."
+          },
           "address": {
             "type": "string"
           },
@@ -3951,9 +3955,6 @@
             "type": "string"
           },
           "name": {
-            "type": "string"
-          },
-          "organization_id": {
             "type": "string"
           },
           "postal_code": {
@@ -4901,6 +4902,13 @@
           "total_units"
         ],
         "properties": {
+          "acp_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Story 1.2 — Réaffectation de l'ACP parente (SuperAdmin uniquement)."
+          },
           "address": {
             "type": "string"
           },
@@ -4919,12 +4927,6 @@
           },
           "name": {
             "type": "string"
-          },
-          "organization_id": {
-            "type": [
-              "string",
-              "null"
-            ]
           },
           "postal_code": {
             "type": "string"

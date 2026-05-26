@@ -12,10 +12,7 @@
  * `frontend/tests/e2e/helpers/auth.ts`).
  */
 import { test, expect } from "@playwright/test";
-import {
-  loginAsAdmin,
-  loginAsSyndicWithBuilding,
-} from "../../helpers/auth";
+import { loginAsAdmin, loginAsSyndicWithBuilding } from "../../helpers/auth";
 
 const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
 

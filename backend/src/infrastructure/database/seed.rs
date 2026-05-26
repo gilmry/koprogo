@@ -66,6 +66,52 @@ impl DatabaseSeeder {
         Self { pool }
     }
 
+    /// Hotfix #602 follow-up — resolves `acp_id` from `org_id` for seed flows.
+    /// Looks up the default ACP for the org, creates one on demand if absent.
+    /// Post-#602, `buildings.organization_id` was dropped ; seeds must go
+    /// through `acps` to associate a building with an organization.
+    async fn ensure_default_acp_for_org(&self, org_id: Uuid) -> Result<Uuid, String> {
+        let existing: Option<(Uuid,)> = sqlx::query_as(
+            "SELECT id FROM acps WHERE organization_id = $1 ORDER BY created_at ASC LIMIT 1",
+        )
+        .bind(org_id)
+        .fetch_optional(&self.pool)
+        .await
+        .map_err(|e| format!("Failed to lookup acp for org {}: {}", org_id, e))?;
+
+        if let Some((id,)) = existing {
+            return Ok(id);
+        }
+
+        let acp_id = Uuid::new_v4();
+        let now = Utc::now();
+        let short = org_id.simple().to_string();
+        let short_prefix = &short[..8];
+        let acp_name = format!("ACP par defaut ({})", short_prefix);
+        let acp_slug = format!("acp-seed-{}", short_prefix);
+
+        sqlx::query(
+            r#"INSERT INTO acps (id, organization_id, name, slug, legal_status,
+                address_street, address_postal_code, address_city, created_at, updated_at)
+               VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)"#,
+        )
+        .bind(acp_id)
+        .bind(org_id)
+        .bind(&acp_name)
+        .bind(&acp_slug)
+        .bind("copropriete_belge")
+        .bind("Adresse a completer")
+        .bind("0000")
+        .bind("A completer")
+        .bind(now)
+        .bind(now)
+        .execute(&self.pool)
+        .await
+        .map_err(|e| format!("Failed to create default acp for org {}: {}", org_id, e))?;
+
+        Ok(acp_id)
+    }
+
     /// Create or update the default superadmin user
     pub async fn seed_superadmin(&self) -> Result<User, String> {
         let superadmin_email = "admin@koprogo.com";
@@ -1362,14 +1408,16 @@ impl DatabaseSeeder {
     ) -> Result<Uuid, String> {
         let building_id = Uuid::new_v4();
         let now = Utc::now();
+        // Hotfix #602 follow-up : resolve acp_id from org_id
+        let acp_id = self.ensure_default_acp_for_org(org_id).await?;
 
         sqlx::query!(
             r#"
-            INSERT INTO buildings (id, organization_id, name, address, city, postal_code, country, total_units, construction_year, created_at, updated_at)
+            INSERT INTO buildings (id, acp_id, name, address, city, postal_code, country, total_units, construction_year, created_at, updated_at)
             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
             "#,
             building_id,
-            org_id,
+            acp_id,
             name,
             address,
             city,
@@ -1947,6 +1995,8 @@ impl DatabaseSeeder {
             // Create buildings for this org
             let units_per_building = target_units / num_buildings;
             let mut org_units = 0;
+            // Hotfix #602 follow-up : resolve acp_id once for all buildings of this org
+            let acp_id = self.ensure_default_acp_for_org(org_id).await?;
 
             for b in 0..*num_buildings {
                 let building_id = Uuid::new_v4();
@@ -1956,11 +2006,11 @@ impl DatabaseSeeder {
                 let building_name = format!("Résidence {}", street_name);
 
                 sqlx::query(
-                    "INSERT INTO buildings (id, organization_id, name, address, city, postal_code, country, total_units, construction_year, created_at, updated_at)
+                    "INSERT INTO buildings (id, acp_id, name, address, city, postal_code, country, total_units, construction_year, created_at, updated_at)
                      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)"
                 )
                 .bind(building_id)
-                .bind(org_id)
+                .bind(acp_id)
                 .bind(&building_name)
                 .bind(format!("{} {} {}", street_type, street_name, rng.random_range(1..200)))
                 .bind(city)
@@ -2967,9 +3017,9 @@ impl DatabaseSeeder {
         .await
         .map_err(|e| format!("Failed to delete owners: {}", e))?;
 
-        // Buildings
+        // Buildings (Hotfix #602 : via acps since buildings.organization_id was dropped)
         sqlx::query!(
-            "DELETE FROM buildings WHERE organization_id = ANY($1)",
+            "DELETE FROM buildings WHERE acp_id IN (SELECT id FROM acps WHERE organization_id = ANY($1))",
             &seed_org_ids
         )
         .execute(&self.pool)
@@ -3069,13 +3119,15 @@ impl DatabaseSeeder {
 
         // 2. Create building: 42 Avenue Louise, 182 lots, 10000 tantièmes, 1965
         let building_id = Uuid::new_v4();
+        // Hotfix #602 follow-up : resolve acp_id from org_id
+        let acp_id = self.ensure_default_acp_for_org(org_id).await?;
         sqlx::query!(
             r#"
-            INSERT INTO buildings (id, organization_id, name, address, city, postal_code, country, total_units, construction_year, slug, created_at, updated_at)
+            INSERT INTO buildings (id, acp_id, name, address, city, postal_code, country, total_units, construction_year, slug, created_at, updated_at)
             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
             "#,
             building_id,
-            org_id,
+            acp_id,
             "Résidence du Parc Royal",
             "Avenue Louise 42",
             "Bruxelles",
@@ -3452,13 +3504,14 @@ impl DatabaseSeeder {
         // Building 2: Le Clos des Hirondelles (small, NO CdC, < 20 lots)
         // =====================================================================
         let building2_id = Uuid::new_v4();
+        // acp_id already resolved above for building 1 (same org)
         sqlx::query!(
             r#"
-            INSERT INTO buildings (id, organization_id, name, address, city, postal_code, country, total_units, construction_year, slug, created_at, updated_at)
+            INSERT INTO buildings (id, acp_id, name, address, city, postal_code, country, total_units, construction_year, slug, created_at, updated_at)
             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
             "#,
             building2_id,
-            org_id,
+            acp_id,
             "Le Clos des Hirondelles",
             "8 Rue de la Station",
             "Ixelles",
@@ -3616,13 +3669,14 @@ impl DatabaseSeeder {
         // Building 3: Les Terrasses de Flagey (medium, CdC obligatoire, >= 20 lots)
         // =====================================================================
         let building3_id = Uuid::new_v4();
+        // acp_id already resolved above for building 1 (same org)
         sqlx::query!(
             r#"
-            INSERT INTO buildings (id, organization_id, name, address, city, postal_code, country, total_units, construction_year, slug, created_at, updated_at)
+            INSERT INTO buildings (id, acp_id, name, address, city, postal_code, country, total_units, construction_year, slug, created_at, updated_at)
             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
             "#,
             building3_id,
-            org_id,
+            acp_id,
             "Les Terrasses de Flagey",
             "25 Place Flagey",
             "Ixelles",
@@ -3967,17 +4021,17 @@ impl DatabaseSeeder {
             .await
             .map_err(|e| format!("Failed to delete owners: {}", e))?;
 
-        // 11. Documents
+        // 11. Documents (Hotfix #602 : via acps since buildings.organization_id was dropped)
         sqlx::query(
-            "DELETE FROM documents WHERE building_id IN (SELECT id FROM buildings WHERE organization_id = $1)",
+            "DELETE FROM documents WHERE building_id IN (SELECT b.id FROM buildings b JOIN acps a ON a.id = b.acp_id WHERE a.organization_id = $1)",
         )
         .bind(org_id)
         .execute(&self.pool)
         .await
         .map_err(|e| format!("Failed to delete documents: {}", e))?;
 
-        // 12. Buildings
-        sqlx::query("DELETE FROM buildings WHERE organization_id = $1")
+        // 12. Buildings (Hotfix #602 : via acps)
+        sqlx::query("DELETE FROM buildings WHERE acp_id IN (SELECT id FROM acps WHERE organization_id = $1)")
             .bind(org_id)
             .execute(&self.pool)
             .await

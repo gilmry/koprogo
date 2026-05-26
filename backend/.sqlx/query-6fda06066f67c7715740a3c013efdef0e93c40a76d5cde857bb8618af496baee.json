@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n            SELECT COUNT(*) as count\n            FROM buildings\n            WHERE organization_id = $1\n            ",
+  "query": "\n            SELECT COUNT(*) as count\n            FROM buildings b\n            JOIN acps a ON a.id = b.acp_id\n            WHERE a.organization_id = $1\n            ",
   "describe": {
     "columns": [
       {
@@ -18,5 +18,5 @@
       null
     ]
   },
-  "hash": "17a83aade92ef233420a0d333d0d3283f310488f9a40320e119349f6cada5868"
+  "hash": "6fda06066f67c7715740a3c013efdef0e93c40a76d5cde857bb8618af496baee"
 }

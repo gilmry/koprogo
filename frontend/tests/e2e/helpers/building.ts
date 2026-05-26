@@ -217,16 +217,19 @@ export async function seedBuildingWithUnitsViaPage(
   const api = createApiClient(page, adminToken);
 
   const timestamp = Date.now();
-  const buildingRes = await api.post("/buildings" as never, {
-    organization_id: organizationId,
-    name: `Seeded Building ${timestamp}`,
-    address: `${timestamp} Rue Seed`,
-    city: "Brussels",
-    postal_code: "1000",
-    country: "Belgium",
-    total_units: unitsCount,
-    construction_year: 2020,
-  } as never);
+  const buildingRes = await api.post(
+    "/buildings" as never,
+    {
+      organization_id: organizationId,
+      name: `Seeded Building ${timestamp}`,
+      address: `${timestamp} Rue Seed`,
+      city: "Brussels",
+      postal_code: "1000",
+      country: "Belgium",
+      total_units: unitsCount,
+      construction_year: 2020,
+    } as never,
+  );
   if (!buildingRes.ok) {
     throw new Error(
       `seedBuildingWithUnitsViaPage: POST /buildings -> ${buildingRes.status}`,
@@ -241,15 +244,18 @@ export async function seedBuildingWithUnitsViaPage(
   const unitIds: string[] = [];
   for (let i = 0; i < unitsCount; i++) {
     const quota = i === unitsCount - 1 ? lastQuota : baseQuota;
-    const unitRes = await api.post("/units" as never, {
-      organization_id: organizationId,
-      building_id: buildingId,
-      unit_number: `${i + 1}A`,
-      floor: Math.floor(i / 2),
-      surface_area: 60 + i * 5,
-      unit_type: "Apartment",
-      quota,
-    } as never);
+    const unitRes = await api.post(
+      "/units" as never,
+      {
+        organization_id: organizationId,
+        building_id: buildingId,
+        unit_number: `${i + 1}A`,
+        floor: Math.floor(i / 2),
+        surface_area: 60 + i * 5,
+        unit_type: "Apartment",
+        quota,
+      } as never,
+    );
     if (!unitRes.ok) {
       throw new Error(
         `seedBuildingWithUnitsViaPage: POST /units #${i + 1} -> ${unitRes.status}`,

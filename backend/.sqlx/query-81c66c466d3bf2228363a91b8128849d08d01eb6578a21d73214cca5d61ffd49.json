@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n            INSERT INTO buildings (id, organization_id, name, address, city, postal_code, country, total_units, construction_year, slug, created_at, updated_at)\n            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)\n            ",
+  "query": "\n            INSERT INTO buildings (id, acp_id, name, address, city, postal_code, country, total_units, construction_year, slug, created_at, updated_at)\n            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)\n            ",
   "describe": {
     "columns": [],
     "parameters": {
@@ -21,5 +21,5 @@
     },
     "nullable": []
   },
-  "hash": "f791dd5650b20240156d45ce8b669f87456a75420c6a9d5094885ad86e5b4094"
+  "hash": "81c66c466d3bf2228363a91b8128849d08d01eb6578a21d73214cca5d61ffd49"
 }

@@ -195,11 +195,13 @@ impl OrganizationRepository for PostgresOrganizationRepository {
     }
 
     async fn count_buildings(&self, org_id: Uuid) -> Result<i64, String> {
+        // Post-#602 : buildings.organization_id was dropped ; resolve via acps.
         let result = sqlx::query!(
             r#"
             SELECT COUNT(*) as count
-            FROM buildings
-            WHERE organization_id = $1
+            FROM buildings b
+            JOIN acps a ON a.id = b.acp_id
+            WHERE a.organization_id = $1
             "#,
             org_id
         )
