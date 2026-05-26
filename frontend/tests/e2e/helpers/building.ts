@@ -8,7 +8,7 @@
  * `admin-publishes-conform-buildings`.
  */
 import type { Page } from "@playwright/test";
-import { loginAsSyndic } from "./auth";
+import { loginAsSyndic, ensureAcp } from "./auth";
 import { createApiClient } from "./api-client";
 
 const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
@@ -255,7 +255,6 @@ export async function seedBuildingWithUnitsViaPage(
   const timestamp = Date.now();
 
   // Hotfix #602 — buildings.acp_id (FK acps.id) replaced organization_id.
-  const { ensureAcp } = await import("./auth");
   const acpId = await ensureAcp(page, organizationId, adminToken, "seed-page");
 
   const buildingRes = await api.post(
