@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { loginAsSyndic } from "./helpers/auth";
+import { loginAsSyndic, ensureAcp } from "./helpers/auth";
 
 /**
  * Buildings E2E Test Suite - Building Management
@@ -33,6 +33,8 @@ test.describe("Buildings - List and Detail", () => {
     const { adminToken, orgId } = await loginAsSyndic(page, "building");
     const timestamp = Date.now();
     const buildingName = `Test Building ${timestamp}`;
+    // Hotfix #602 — buildings.acp_id (FK acps.id) replaced organization_id.
+    const acpId = await ensureAcp(page, orgId, adminToken, "building");
 
     // Create building via API (only SuperAdmin can create buildings)
     const createResponse = await page.request.post(`${API_BASE}/buildings`, {
@@ -44,7 +46,7 @@ test.describe("Buildings - List and Detail", () => {
         country: "Belgium",
         total_units: 10,
         construction_year: 2020,
-        organization_id: orgId,
+        acp_id: acpId,
       },
       headers: { Authorization: `Bearer ${adminToken}` },
     });
@@ -63,6 +65,8 @@ test.describe("Buildings - List and Detail", () => {
     const { adminToken, orgId } = await loginAsSyndic(page, "building");
     const timestamp = Date.now();
     const buildingName = `Detail Building ${timestamp}`;
+    // Hotfix #602 — buildings.acp_id (FK acps.id) replaced organization_id.
+    const acpId = await ensureAcp(page, orgId, adminToken, "building");
 
     // Create building via API (only SuperAdmin can create buildings)
     const createResponse = await page.request.post(`${API_BASE}/buildings`, {
@@ -74,7 +78,7 @@ test.describe("Buildings - List and Detail", () => {
         country: "Belgium",
         total_units: 5,
         construction_year: 2015,
-        organization_id: orgId,
+        acp_id: acpId,
       },
       headers: { Authorization: `Bearer ${adminToken}` },
     });
@@ -93,6 +97,8 @@ test.describe("Buildings - List and Detail", () => {
   test("should display building units section", async ({ page }) => {
     const { adminToken, orgId } = await loginAsSyndic(page, "building");
     const timestamp = Date.now();
+    // Hotfix #602 — buildings.acp_id (FK acps.id) replaced organization_id.
+    const acpId = await ensureAcp(page, orgId, adminToken, "building");
 
     // Create building via API (only SuperAdmin can create buildings)
     const createResponse = await page.request.post(`${API_BASE}/buildings`, {
@@ -104,7 +110,7 @@ test.describe("Buildings - List and Detail", () => {
         country: "Belgium",
         total_units: 3,
         construction_year: 2018,
-        organization_id: orgId,
+        acp_id: acpId,
       },
       headers: { Authorization: `Bearer ${adminToken}` },
     });

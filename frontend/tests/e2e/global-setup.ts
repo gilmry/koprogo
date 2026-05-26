@@ -70,7 +70,27 @@ export default async function globalSetup() {
   });
   const ownerData = await ownerRegResp.json();
 
-  // 5. Create building
+  // 5. Create ACP first (post-#602 — buildings.acp_id is FK to acps.id).
+  //    Inline (not using ensureAcp helper) because globalSetup runs without
+  //    a Page context — only an APIRequestContext is available.
+  const acpResp = await ctx.post(`${API_BASE}/acps`, {
+    data: {
+      organization_id: org.id,
+      name: `E2E ACP ${ts}`,
+      address_street: `${ts} Rue Test`,
+      address_postal_code: "1000",
+      address_city: "Brussels",
+    },
+    headers: adminHeaders,
+  });
+  if (!acpResp.ok()) {
+    throw new Error(
+      `globalSetup: POST /acps failed ${acpResp.status()} : ${await acpResp.text()}`,
+    );
+  }
+  const acp = await acpResp.json();
+
+  // 6. Create building
   const buildingResp = await ctx.post(`${API_BASE}/buildings`, {
     data: {
       name: `Résidence E2E ${ts}`,
@@ -80,7 +100,7 @@ export default async function globalSetup() {
       country: "Belgium",
       total_units: 3,
       construction_year: 2010,
-      organization_id: org.id,
+      acp_id: acp.id,
     },
     headers: adminHeaders,
   });

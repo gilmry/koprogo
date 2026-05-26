@@ -12,7 +12,11 @@
  * `frontend/tests/e2e/helpers/auth.ts`).
  */
 import { test, expect } from "@playwright/test";
-import { loginAsAdmin, loginAsSyndicWithBuilding } from "../../helpers/auth";
+import {
+  loginAsAdmin,
+  loginAsSyndicWithBuilding,
+  ensureAcp,
+} from "../../helpers/auth";
 
 const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
 
@@ -36,6 +40,9 @@ test.describe("Building Conformity (Story 1.4)", () => {
     });
     const org = await orgResp.json();
 
+    // Hotfix #602 — buildings.acp_id (FK acps.id) replaced organization_id.
+    const acpId = await ensureAcp(page, org.id, adminToken, "conformity");
+
     // Create the building (declared 50 units, NO units inserted = non-conformant).
     const buildingResp = await page.request.post(`${API_BASE}/buildings`, {
       data: {
@@ -46,7 +53,7 @@ test.describe("Building Conformity (Story 1.4)", () => {
         country: "Belgium",
         total_units: 50,
         construction_year: 2010,
-        organization_id: org.id,
+        acp_id: acpId,
       },
       headers: { Authorization: `Bearer ${adminToken}` },
     });

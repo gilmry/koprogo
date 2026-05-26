@@ -144,11 +144,47 @@ export async function seedBuildingWithUnits(
   };
 
   const timestamp = Date.now();
+
+  // Hotfix #602 — buildings.acp_id (FK acps.id) replaced organization_id.
+  // Inline ACP creation : caller is outside a Page context so we can't reuse
+  // ensureAcp(page, ...) — we keep the same shape (lookup then create).
+  const listAcpResp = await fetch(`${API_BASE}/acps`, {
+    method: "GET",
+    headers,
+  });
+  let acpId: string | undefined;
+  if (listAcpResp.ok) {
+    const acps = (await listAcpResp.json()) as Array<{
+      id: string;
+      organization_id?: string | null;
+    }>;
+    acpId = acps.find((a) => a.organization_id === organizationId)?.id;
+  }
+  if (!acpId) {
+    const createAcpResp = await fetch(`${API_BASE}/acps`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({
+        organization_id: organizationId,
+        name: `Seed ACP ${timestamp}`,
+        address_street: `${timestamp} Rue Seed`,
+        address_postal_code: "1000",
+        address_city: "Brussels",
+      }),
+    });
+    if (!createAcpResp.ok) {
+      throw new Error(
+        `seedBuildingWithUnits: POST /acps -> ${createAcpResp.status}`,
+      );
+    }
+    acpId = ((await createAcpResp.json()) as { id: string }).id;
+  }
+
   const buildingResp = await fetch(`${API_BASE}/buildings`, {
     method: "POST",
     headers,
     body: JSON.stringify({
-      organization_id: organizationId,
+      acp_id: acpId,
       name: `Seeded Building ${timestamp}`,
       address: `${timestamp} Rue Seed`,
       city: "Brussels",
@@ -217,10 +253,15 @@ export async function seedBuildingWithUnitsViaPage(
   const api = createApiClient(page, adminToken);
 
   const timestamp = Date.now();
+
+  // Hotfix #602 — buildings.acp_id (FK acps.id) replaced organization_id.
+  const { ensureAcp } = await import("./auth");
+  const acpId = await ensureAcp(page, organizationId, adminToken, "seed-page");
+
   const buildingRes = await api.post(
     "/buildings" as never,
     {
-      organization_id: organizationId,
+      acp_id: acpId,
       name: `Seeded Building ${timestamp}`,
       address: `${timestamp} Rue Seed`,
       city: "Brussels",

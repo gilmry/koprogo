@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { loginAsSyndicWithOwner } from "../helpers/auth";
+import { loginAsSyndicWithOwner, ensureAcp } from "../helpers/auth";
 
 /**
  * Board Management E2E Test Suite - Conseil de Copropriété
@@ -27,6 +27,8 @@ test.describe("Board Management - Conseil de Copropriété", () => {
     const mandateEnd = new Date();
     mandateEnd.setDate(mandateEnd.getDate() + 365);
 
+    // Hotfix #602 — buildings.acp_id (FK acps.id) replaced organization_id.
+    const acpId = await ensureAcp(page, orgId, adminToken, "boardmgmt");
     // Create a building with >20 units (required by Belgian law for conseil)
     const lgBuildingResp = await page.request.post(`${API_BASE}/buildings`, {
       data: {
@@ -37,7 +39,7 @@ test.describe("Board Management - Conseil de Copropriété", () => {
         country: "Belgium",
         total_units: 25,
         construction_year: 2010,
-        organization_id: orgId,
+        acp_id: acpId,
       },
       headers: { Authorization: `Bearer ${adminToken}` },
     });
