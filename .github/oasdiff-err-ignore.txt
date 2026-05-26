@@ -2,3 +2,4 @@ POST /auth/refresh removed the request body
 POST /auth/refresh removed the success response with the status `201`
 PUT /resolutions/{resolution_id}/close the `total_voting_power` request property type/format changed from `number`/`double` to `string`/``
 POST /resolutions/{resolution_id}/vote the `voting_power` request property type/format changed from `number`/`double` to `string`/``
+POST /buildings added the new required request property `acp_id`
