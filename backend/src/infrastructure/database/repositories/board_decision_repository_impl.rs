@@ -20,13 +20,14 @@ impl BoardDecisionRepository for PostgresBoardDecisionRepository {
     async fn create(&self, decision: &BoardDecision) -> Result<BoardDecision, String> {
         let status_str = decision.status.to_string();
 
-        // Get organization_id from building
-        let organization_id: Uuid =
-            sqlx::query_scalar("SELECT organization_id FROM buildings WHERE id = $1")
-                .bind(decision.building_id)
-                .fetch_one(&self.pool)
-                .await
-                .map_err(|e| format!("Failed to get building organization: {}", e))?;
+        // Get organization_id from building via acps (post-#602 migration)
+        let organization_id: Uuid = sqlx::query_scalar(
+            "SELECT a.organization_id FROM buildings b JOIN acps a ON a.id = b.acp_id WHERE b.id = $1",
+        )
+        .bind(decision.building_id)
+        .fetch_one(&self.pool)
+        .await
+        .map_err(|e| format!("Failed to get building organization: {}", e))?;
 
         sqlx::query(
             r#"

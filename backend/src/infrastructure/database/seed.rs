@@ -2893,7 +2893,7 @@ impl DatabaseSeeder {
         // Delete in correct order due to foreign key constraints
         // 1. Board decisions (reference board_members and meetings)
         sqlx::query!(
-            "DELETE FROM board_decisions WHERE building_id IN (SELECT id FROM buildings WHERE organization_id = ANY($1))",
+            "DELETE FROM board_decisions WHERE building_id IN (SELECT b.id FROM buildings b JOIN acps a ON a.id = b.acp_id WHERE a.organization_id = ANY($1))",
             &seed_org_ids
         )
         .execute(&self.pool)
@@ -2902,7 +2902,7 @@ impl DatabaseSeeder {
 
         // 2. Board members (reference meetings)
         sqlx::query!(
-            "DELETE FROM board_members WHERE building_id IN (SELECT id FROM buildings WHERE organization_id = ANY($1))",
+            "DELETE FROM board_members WHERE building_id IN (SELECT b.id FROM buildings b JOIN acps a ON a.id = b.acp_id WHERE a.organization_id = ANY($1))",
             &seed_org_ids
         )
         .execute(&self.pool)
@@ -2929,7 +2929,7 @@ impl DatabaseSeeder {
 
         // 4. Charge distributions (reference expenses)
         sqlx::query(
-            "DELETE FROM charge_distributions WHERE expense_id IN (SELECT id FROM expenses WHERE building_id IN (SELECT id FROM buildings WHERE organization_id = ANY($1)))"
+            "DELETE FROM charge_distributions WHERE expense_id IN (SELECT id FROM expenses WHERE building_id IN (SELECT b.id FROM buildings b JOIN acps a ON a.id = b.acp_id WHERE a.organization_id = ANY($1)))"
         )
         .bind(&seed_org_ids)
         .execute(&self.pool)
@@ -2938,7 +2938,7 @@ impl DatabaseSeeder {
 
         // 5. Invoice line items (reference expenses)
         sqlx::query(
-            "DELETE FROM invoice_line_items WHERE expense_id IN (SELECT id FROM expenses WHERE building_id IN (SELECT id FROM buildings WHERE organization_id = ANY($1)))"
+            "DELETE FROM invoice_line_items WHERE expense_id IN (SELECT id FROM expenses WHERE building_id IN (SELECT b.id FROM buildings b JOIN acps a ON a.id = b.acp_id WHERE a.organization_id = ANY($1)))"
         )
         .bind(&seed_org_ids)
         .execute(&self.pool)
@@ -2947,7 +2947,7 @@ impl DatabaseSeeder {
 
         // 6. Documents linked to buildings or expenses
         sqlx::query!(
-            "DELETE FROM documents WHERE building_id IN (SELECT id FROM buildings WHERE organization_id = ANY($1))",
+            "DELETE FROM documents WHERE building_id IN (SELECT b.id FROM buildings b JOIN acps a ON a.id = b.acp_id WHERE a.organization_id = ANY($1))",
             &seed_org_ids
         )
         .execute(&self.pool)
@@ -2956,7 +2956,7 @@ impl DatabaseSeeder {
 
         // 7. Meetings (now safe to delete after board members)
         sqlx::query!(
-            "DELETE FROM meetings WHERE building_id IN (SELECT id FROM buildings WHERE organization_id = ANY($1))",
+            "DELETE FROM meetings WHERE building_id IN (SELECT b.id FROM buildings b JOIN acps a ON a.id = b.acp_id WHERE a.organization_id = ANY($1))",
             &seed_org_ids
         )
         .execute(&self.pool)
@@ -2983,7 +2983,7 @@ impl DatabaseSeeder {
 
         // 10. Expenses (now safe to delete after distributions, line items, and journal entries)
         sqlx::query!(
-            "DELETE FROM expenses WHERE building_id IN (SELECT id FROM buildings WHERE organization_id = ANY($1))",
+            "DELETE FROM expenses WHERE building_id IN (SELECT b.id FROM buildings b JOIN acps a ON a.id = b.acp_id WHERE a.organization_id = ANY($1))",
             &seed_org_ids
         )
         .execute(&self.pool)
@@ -2992,7 +2992,7 @@ impl DatabaseSeeder {
 
         // Unit owners (junction table)
         sqlx::query(
-            "DELETE FROM unit_owners WHERE unit_id IN (SELECT u.id FROM units u INNER JOIN buildings b ON u.building_id = b.id WHERE b.organization_id = ANY($1))"
+            "DELETE FROM unit_owners WHERE unit_id IN (SELECT u.id FROM units u INNER JOIN buildings b ON u.building_id = b.id INNER JOIN acps a ON a.id = b.acp_id WHERE a.organization_id = ANY($1))"
         )
         .bind(&seed_org_ids)
         .execute(&self.pool)
@@ -3001,7 +3001,7 @@ impl DatabaseSeeder {
 
         // Units
         sqlx::query!(
-            "DELETE FROM units WHERE building_id IN (SELECT id FROM buildings WHERE organization_id = ANY($1))",
+            "DELETE FROM units WHERE building_id IN (SELECT b.id FROM buildings b JOIN acps a ON a.id = b.acp_id WHERE a.organization_id = ANY($1))",
             &seed_org_ids
         )
         .execute(&self.pool)
@@ -3971,7 +3971,7 @@ impl DatabaseSeeder {
 
         // 5. Board decisions (reference meetings)
         sqlx::query(
-            "DELETE FROM board_decisions WHERE building_id IN (SELECT id FROM buildings WHERE organization_id = $1)",
+            "DELETE FROM board_decisions WHERE building_id IN (SELECT b.id FROM buildings b JOIN acps a ON a.id = b.acp_id WHERE a.organization_id = $1)",
         )
         .bind(org_id)
         .execute(&self.pool)
@@ -3980,7 +3980,7 @@ impl DatabaseSeeder {
 
         // 6. Board members (reference meetings)
         sqlx::query(
-            "DELETE FROM board_members WHERE building_id IN (SELECT id FROM buildings WHERE organization_id = $1)",
+            "DELETE FROM board_members WHERE building_id IN (SELECT b.id FROM buildings b JOIN acps a ON a.id = b.acp_id WHERE a.organization_id = $1)",
         )
         .bind(org_id)
         .execute(&self.pool)
@@ -3989,7 +3989,7 @@ impl DatabaseSeeder {
 
         // 7. Meetings
         sqlx::query(
-            "DELETE FROM meetings WHERE building_id IN (SELECT id FROM buildings WHERE organization_id = $1)",
+            "DELETE FROM meetings WHERE building_id IN (SELECT b.id FROM buildings b JOIN acps a ON a.id = b.acp_id WHERE a.organization_id = $1)",
         )
         .bind(org_id)
         .execute(&self.pool)
@@ -3998,7 +3998,7 @@ impl DatabaseSeeder {
 
         // 8. Unit owners (junction table)
         sqlx::query(
-            "DELETE FROM unit_owners WHERE unit_id IN (SELECT u.id FROM units u INNER JOIN buildings b ON u.building_id = b.id WHERE b.organization_id = $1)",
+            "DELETE FROM unit_owners WHERE unit_id IN (SELECT u.id FROM units u INNER JOIN buildings b ON u.building_id = b.id INNER JOIN acps a ON a.id = b.acp_id WHERE a.organization_id = $1)",
         )
         .bind(org_id)
         .execute(&self.pool)
@@ -4007,7 +4007,7 @@ impl DatabaseSeeder {
 
         // 9. Units
         sqlx::query(
-            "DELETE FROM units WHERE building_id IN (SELECT id FROM buildings WHERE organization_id = $1)",
+            "DELETE FROM units WHERE building_id IN (SELECT b.id FROM buildings b JOIN acps a ON a.id = b.acp_id WHERE a.organization_id = $1)",
         )
         .bind(org_id)
         .execute(&self.pool)
