@@ -500,6 +500,56 @@ pub async fn setup_test_db() -> (
     (app_state, container, org_id)
 }
 
+/// Hotfix #602 follow-up — ensure an ACP exists for `org_id` so tests can
+/// create a building bound to that organization without violating the
+/// `buildings_acp_id_fkey` constraint introduced by migration
+/// `20260601020000_add_buildings_acp_id.sql`.
+///
+/// Returns the `acp.id` ready to be passed as `Building::new(acp_id, ...)`.
+/// Idempotent: re-uses the first existing ACP for the org if any.
+#[allow(dead_code)]
+pub async fn ensure_default_acp_for_org(pool: &sqlx::PgPool, org_id: Uuid) -> Uuid {
+    let existing: Option<(Uuid,)> = sqlx::query_as(
+        "SELECT id FROM acps WHERE organization_id = $1 ORDER BY created_at ASC LIMIT 1",
+    )
+    .bind(org_id)
+    .fetch_optional(pool)
+    .await
+    .expect("lookup acp for org");
+
+    if let Some((id,)) = existing {
+        return id;
+    }
+
+    let acp_id = Uuid::new_v4();
+    let now = chrono::Utc::now();
+    let short = org_id.simple().to_string();
+    let short_prefix = &short[..8];
+    let acp_name = format!("BDD ACP ({})", short_prefix);
+    let acp_slug = format!("bdd-acp-{}", short_prefix);
+
+    sqlx::query(
+        r#"INSERT INTO acps (id, organization_id, name, slug, legal_status,
+            address_street, address_postal_code, address_city, created_at, updated_at)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)"#,
+    )
+    .bind(acp_id)
+    .bind(org_id)
+    .bind(&acp_name)
+    .bind(&acp_slug)
+    .bind("copropriete_belge")
+    .bind("Adresse a completer")
+    .bind("0000")
+    .bind("A completer")
+    .bind(now)
+    .bind(now)
+    .execute(pool)
+    .await
+    .expect("create default acp for org");
+
+    acp_id
+}
+
 /// Helper to register a user and get a JWT token
 #[allow(dead_code)]
 pub async fn register_and_login(
