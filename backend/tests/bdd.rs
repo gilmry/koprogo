@@ -1123,7 +1123,7 @@ async fn given_org_three_buildings(world: &mut BuildingWorld) {
     }
     let org_id = world.org_id.expect("org_id");
     let pool = world.pool.as_ref().expect("pool").clone();
-    let building_repo = PostgresBuildingRepository::new(pool);
+    let building_repo = PostgresBuildingRepository::new(pool.clone());
     use koprogo_api::domain::entities::Building as DomBuilding;
 
     // setup_database already created one building (world.building_id) for this
