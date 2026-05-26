@@ -167,9 +167,9 @@ describe("canSee @security", () => {
   it("community-moderator est traité comme un owner pour le menu communaute", () => {
     // Sub-rôle pas encore en BE — story 3.1 raffinera. Pour 2.4, on accepte
     // le fallback : community-moderator voit communaute (comme owner).
-    expect(canSee("community-moderator", "communaute", SCOPE_WITH_BUILDING)).toBe(
-      true,
-    );
+    expect(
+      canSee("community-moderator", "communaute", SCOPE_WITH_BUILDING),
+    ).toBe(true);
     expect(canSee("community-moderator", "gestion", SCOPE_WITH_BUILDING)).toBe(
       false,
     );

@@ -143,10 +143,16 @@ describe("Navigation @happy", () => {
 
     render(Navigation);
 
-    expect(await screen.findByTestId("navigation-menu-gestion")).toBeInTheDocument();
+    expect(
+      await screen.findByTestId("navigation-menu-gestion"),
+    ).toBeInTheDocument();
     expect(screen.getByTestId("navigation-menu-compta")).toBeInTheDocument();
-    expect(screen.getByTestId("navigation-menu-gouvernance")).toBeInTheDocument();
-    expect(screen.getByTestId("navigation-menu-communaute")).toBeInTheDocument();
+    expect(
+      screen.getByTestId("navigation-menu-gouvernance"),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByTestId("navigation-menu-communaute"),
+    ).toBeInTheDocument();
     expect(screen.getByTestId("navigation-menu-ticketing")).toBeInTheDocument();
     // Le menu admin ne doit pas apparaitre pour le syndic
     expect(screen.queryByTestId("navigation-menu-admin")).toBeNull();
@@ -158,7 +164,9 @@ describe("Navigation @happy", () => {
 
     render(Navigation);
 
-    expect(await screen.findByTestId("navigation-menu-communaute")).toBeInTheDocument();
+    expect(
+      await screen.findByTestId("navigation-menu-communaute"),
+    ).toBeInTheDocument();
     expect(screen.getByTestId("navigation-menu-mes-lots")).toBeInTheDocument();
     // Aucun menu business pro pour l'owner
     expect(screen.queryByTestId("navigation-menu-gestion")).toBeNull();
@@ -179,7 +187,9 @@ describe("Navigation @edge", () => {
 
     render(Navigation);
 
-    expect(await screen.findByTestId("navigation-menu-admin")).toBeInTheDocument();
+    expect(
+      await screen.findByTestId("navigation-menu-admin"),
+    ).toBeInTheDocument();
     // Pas de menus business sans selection
     expect(screen.queryByTestId("navigation-menu-gestion")).toBeNull();
     expect(screen.queryByTestId("navigation-menu-compta")).toBeNull();
@@ -194,10 +204,16 @@ describe("Navigation @edge", () => {
 
     render(Navigation);
 
-    expect(await screen.findByTestId("navigation-menu-gestion")).toBeInTheDocument();
+    expect(
+      await screen.findByTestId("navigation-menu-gestion"),
+    ).toBeInTheDocument();
     expect(screen.getByTestId("navigation-menu-compta")).toBeInTheDocument();
-    expect(screen.getByTestId("navigation-menu-gouvernance")).toBeInTheDocument();
-    expect(screen.getByTestId("navigation-menu-communaute")).toBeInTheDocument();
+    expect(
+      screen.getByTestId("navigation-menu-gouvernance"),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByTestId("navigation-menu-communaute"),
+    ).toBeInTheDocument();
     expect(screen.getByTestId("navigation-menu-ticketing")).toBeInTheDocument();
     // Mode in-context : le menu admin est masqué
     expect(screen.queryByTestId("navigation-menu-admin")).toBeNull();
@@ -215,7 +231,9 @@ describe("Navigation @security", () => {
 
     render(Navigation);
 
-    expect(await screen.findByTestId("navigation-menu-compta")).toBeInTheDocument();
+    expect(
+      await screen.findByTestId("navigation-menu-compta"),
+    ).toBeInTheDocument();
     // Accountant n'a JAMAIS communaute
     expect(screen.queryByTestId("navigation-menu-communaute")).toBeNull();
     // Ni les autres menus
@@ -231,7 +249,9 @@ describe("Navigation @security", () => {
 
     render(Navigation);
 
-    expect(await screen.findByTestId("navigation-menu-communaute")).toBeInTheDocument();
+    expect(
+      await screen.findByTestId("navigation-menu-communaute"),
+    ).toBeInTheDocument();
     expect(screen.queryByTestId("navigation-menu-gestion")).toBeNull();
     expect(screen.queryByTestId("navigation-menu-compta")).toBeNull();
     expect(screen.queryByTestId("navigation-menu-gouvernance")).toBeNull();
@@ -262,7 +282,9 @@ describe("Navigation @negative", () => {
 
     render(Navigation);
 
-    expect(await screen.findByTestId("navigation-empty-no-role")).toBeInTheDocument();
+    expect(
+      await screen.findByTestId("navigation-empty-no-role"),
+    ).toBeInTheDocument();
     // Aucun menu rendu en parallele
     expect(screen.queryByTestId("navigation-menu-gestion")).toBeNull();
     expect(screen.queryByTestId("navigation-menu-communaute")).toBeNull();
