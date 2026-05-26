@@ -1,6 +1,10 @@
 // BDD tests for IoT Phase 1: MQTT Home Assistant + BOINC Grid Computing
 // Feature: backend/tests/features/iot_mqtt_boinc.feature
 
+#[path = "common/acp_test_helper.rs"]
+mod acp_test_helper;
+use acp_test_helper::ensure_default_acp_for_org;
+
 use cucumber::{given, then, when, World};
 use koprogo_api::application::ports::{
     grid_participation_port::{BoincConsent, GridTaskStatus},
@@ -146,8 +150,10 @@ impl IotWorld {
         use koprogo_api::application::ports::BuildingRepository;
         let building_repo = Arc::new(PostgresBuildingRepository::new(pool.clone()));
         use koprogo_api::domain::entities::Building;
+        // Hotfix #602 — Building.acp_id (FK acps.id) replaces organization_id.
+        let acp_id = ensure_default_acp_for_org(&pool, org_id).await;
         let b = Building::new(
-            org_id,
+            acp_id,
             "Residence IoT Test".to_string(),
             "42 Rue des Capteurs".to_string(),
             "Brussels".to_string(),

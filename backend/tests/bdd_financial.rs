@@ -2,6 +2,10 @@
 // call_for_funds, owner_contributions, charge_distribution, dashboard
 // Phase 2: payments + payment_methods step definitions
 
+#[path = "common/acp_test_helper.rs"]
+mod acp_test_helper;
+use acp_test_helper::ensure_default_acp_for_org;
+
 use chrono::{DateTime, Datelike, Duration as ChronoDuration, Utc};
 use cucumber::{gherkin::Step, given, then, when, World};
 use koprogo_api::application::dto::{
@@ -318,8 +322,10 @@ impl FinancialWorld {
             Arc::new(PostgresBuildingRepository::new(pool.clone()));
         {
             use koprogo_api::domain::entities::Building;
+            // Hotfix #602 — Building.acp_id (FK acps.id) replaces organization_id.
+            let acp_id = ensure_default_acp_for_org(&pool, org_id).await;
             let b = Building::new(
-                org_id,
+                acp_id,
                 "Residence Financiere".to_string(),
                 "1 Rue de la Bourse".to_string(),
                 "Bruxelles".to_string(),
@@ -1979,8 +1985,10 @@ async fn given_journal_entries_2_buildings(world: &mut FinancialWorld) {
     let pool = world.pool.as_ref().unwrap();
     let building_repo: Arc<dyn BuildingRepository> =
         Arc::new(PostgresBuildingRepository::new(pool.clone()));
+    // Hotfix #602 — Building.acp_id (FK acps.id) replaces organization_id.
+    let acp_id = ensure_default_acp_for_org(pool, org_id).await;
     let b2 = koprogo_api::domain::entities::Building::new(
-        org_id,
+        acp_id,
         "Autre Residence".to_string(),
         "2 Rue Test".to_string(),
         "Liege".to_string(),

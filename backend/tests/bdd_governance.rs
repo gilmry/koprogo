@@ -1,6 +1,10 @@
 // BDD tests for Governance domain: resolutions, convocations, quotes, organizations, two_factor, public_syndic
 // Phase 2 Tier 1: Resolution step definitions (14 scenarios)
 
+#[path = "common/acp_test_helper.rs"]
+mod acp_test_helper;
+use acp_test_helper::ensure_default_acp_for_org;
+
 use chrono::{Duration as ChronoDuration, Utc};
 use cucumber::{gherkin::Step, given, then, when, World};
 use koprogo_api::application::dto::{
@@ -382,8 +386,10 @@ impl GovernanceWorld {
             Arc::new(PostgresBuildingRepository::new(pool.clone()));
         {
             use koprogo_api::domain::entities::Building;
+            // Hotfix #602 — Building.acp_id (FK acps.id) replaces organization_id.
+            let acp_id = ensure_default_acp_for_org(&pool, org_id).await;
             let b = Building::new(
-                org_id,
+                acp_id,
                 "Residence Governance".to_string(),
                 "1 Rue du Parlement".to_string(),
                 "Bruxelles".to_string(),
@@ -3942,8 +3948,10 @@ async fn given_building_no_syndic(world: &mut GovernanceWorld, name: String) {
     let org_id = world.org_id.unwrap();
 
     use koprogo_api::domain::entities::Building;
+    // Hotfix #602 — Building.acp_id (FK acps.id) replaces organization_id.
+    let acp_id = ensure_default_acp_for_org(pool, org_id).await;
     let b = Building::new(
-        org_id,
+        acp_id,
         name,
         "10 Rue Vide".to_string(),
         "Namur".to_string(),
@@ -4009,8 +4017,10 @@ async fn given_building_named_in_city(world: &mut GovernanceWorld, name: String,
     let org_id = world.org_id.unwrap();
 
     use koprogo_api::domain::entities::Building;
+    // Hotfix #602 — Building.acp_id (FK acps.id) replaces organization_id.
+    let acp_id = ensure_default_acp_for_org(pool, org_id).await;
     let b = Building::new(
-        org_id,
+        acp_id,
         name,
         "1 Rue Test".to_string(),
         city,

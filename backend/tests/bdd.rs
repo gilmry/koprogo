@@ -1,3 +1,7 @@
+#[path = "common/acp_test_helper.rs"]
+mod acp_test_helper;
+use acp_test_helper::ensure_default_acp_for_org;
+
 use cucumber::{given, then, when, World};
 use koprogo_api::application::dto::{
     AddDecisionNotesDto, BoardDecisionResponseDto, BoardMemberResponseDto, BoardStatsDto, Claims,
@@ -301,8 +305,10 @@ impl BuildingWorld {
         // Create one building for meeting/doc scenarios
         let building_id = {
             use koprogo_api::domain::entities::Building as DomBuilding;
+            // Hotfix #602 — Building.acp_id (FK acps.id) replaces organization_id.
+            let acp_id = ensure_default_acp_for_org(&pool, org_id).await;
             let b = DomBuilding::new(
-                org_id,
+                acp_id,
                 "BDD Building".to_string(),
                 "1 Test St".to_string(),
                 "Bruxelles".to_string(),
@@ -1058,8 +1064,10 @@ async fn given_two_orgs(world: &mut BuildingWorld) {
     // Create a building for second org
     let building_repo = PostgresBuildingRepository::new(pool.clone());
     use koprogo_api::domain::entities::Building as DomBuilding;
+    // Hotfix #602 — Building.acp_id (FK acps.id) replaces organization_id.
+    let acp_id = ensure_default_acp_for_org(&pool, second_org_id).await;
     let b = DomBuilding::new(
-        second_org_id,
+        acp_id,
         "Second Org Building".to_string(),
         "2 Test St".to_string(),
         "Namur".to_string(),
@@ -1121,9 +1129,11 @@ async fn given_org_three_buildings(world: &mut BuildingWorld) {
     // setup_database already created one building (world.building_id) for this
     // org; treat it as building #1 (the one Alice will own a unit in).
     // Add two more buildings in the SAME org that Alice must NOT see.
+    // Hotfix #602 — Building.acp_id (FK acps.id) replaces organization_id.
+    let acp_id = ensure_default_acp_for_org(&pool, org_id).await;
     for (name, city) in [("Iso Building 2", "Liège"), ("Iso Building 3", "Gent")] {
         let b = DomBuilding::new(
-            org_id,
+            acp_id,
             name.to_string(),
             "X Test St".to_string(),
             city.to_string(),
@@ -1791,8 +1801,10 @@ async fn given_building_with_many_units(world: &mut BuildingWorld) {
 
     // Create building with 25 units
     use koprogo_api::domain::entities::Building as DomBuilding;
+    // Hotfix #602 — Building.acp_id (FK acps.id) replaces organization_id.
+    let acp_id = ensure_default_acp_for_org(&pool, org_id).await;
     let b = DomBuilding::new(
-        org_id,
+        acp_id,
         "Large Building".to_string(),
         "100 Main St".to_string(),
         "Brussels".to_string(),
@@ -1917,8 +1929,10 @@ async fn given_building_with_20_units(world: &mut BuildingWorld) {
 
     // Create building with exactly 20 units
     use koprogo_api::domain::entities::Building as DomBuilding;
+    // Hotfix #602 — Building.acp_id (FK acps.id) replaces organization_id.
+    let acp_id = ensure_default_acp_for_org(&pool, org_id).await;
     let b = DomBuilding::new(
-        org_id,
+        acp_id,
         "Small Building".to_string(),
         "50 Main St".to_string(),
         "Brussels".to_string(),
@@ -1951,8 +1965,10 @@ async fn given_building_with_25_units(world: &mut BuildingWorld) {
 
     // Create building with exactly 25 units
     use koprogo_api::domain::entities::Building as DomBuilding;
+    // Hotfix #602 — Building.acp_id (FK acps.id) replaces organization_id.
+    let acp_id = ensure_default_acp_for_org(&pool, org_id).await;
     let b = DomBuilding::new(
-        org_id,
+        acp_id,
         "Medium Building".to_string(),
         "75 Board Ave".to_string(),
         "Brussels".to_string(),
@@ -2312,8 +2328,10 @@ async fn given_building_with_units(world: &mut BuildingWorld, name: String, unit
     let org_id = world.org_id.expect("org_id");
 
     use koprogo_api::domain::entities::Building as DomBuilding;
+    // Hotfix #602 — Building.acp_id (FK acps.id) replaces organization_id.
+    let acp_id = ensure_default_acp_for_org(&pool, org_id).await;
     let building = DomBuilding::new(
-        org_id,
+        acp_id,
         name,
         "1 Main St".to_string(),
         "Brussels".to_string(),

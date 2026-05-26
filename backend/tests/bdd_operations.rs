@@ -2,6 +2,10 @@
 // technical_inspections, iot, energy_campaigns
 // Phase 2 Tier 1: Ticket step definitions (17 scenarios)
 
+#[path = "common/acp_test_helper.rs"]
+mod acp_test_helper;
+use acp_test_helper::ensure_default_acp_for_org;
+
 use chrono::{DateTime, Duration as ChronoDuration, Utc};
 use cucumber::{gherkin::Step, given, then, when, World};
 use koprogo_api::application::dto::{
@@ -312,8 +316,10 @@ impl OperationsWorld {
             Arc::new(PostgresBuildingRepository::new(pool.clone()));
         {
             use koprogo_api::domain::entities::Building;
+            // Hotfix #602 — Building.acp_id (FK acps.id) replaces organization_id.
+            let acp_id = ensure_default_acp_for_org(&pool, org_id).await;
             let b = Building::new(
-                org_id,
+                acp_id,
                 "Residence Operations".to_string(),
                 "1 Rue des Travaux".to_string(),
                 "Liege".to_string(),

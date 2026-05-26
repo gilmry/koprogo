@@ -1,5 +1,9 @@
 // BDD tests for Community domain: notices, skills, shared_objects, resource_bookings, gamification
 
+#[path = "common/acp_test_helper.rs"]
+mod acp_test_helper;
+use acp_test_helper::ensure_default_acp_for_org;
+
 use chrono::{DateTime, Utc};
 use cucumber::gherkin::Step;
 use cucumber::{given, then, when, World};
@@ -223,8 +227,10 @@ impl CommunityWorld {
             Arc::new(PostgresBuildingRepository::new(pool.clone()));
         {
             use koprogo_api::domain::entities::Building;
+            // Hotfix #602 — Building.acp_id (FK acps.id) replaces organization_id.
+            let acp_id = ensure_default_acp_for_org(&pool, org_id).await;
             let b = Building::new(
-                org_id,
+                acp_id,
                 "Residence Communautaire".to_string(),
                 "1 Place du Village".to_string(),
                 "Namur".to_string(),
