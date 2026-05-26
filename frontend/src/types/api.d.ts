@@ -1810,13 +1810,18 @@ export interface components {
      */
     ConvocationType: "Ordinary" | "Extraordinary" | "SecondConvocation";
     CreateBuildingDto: {
+      /**
+       * @description Story 1.2 — FK vers `acps.id` (anciennement `organization_id`).
+       *     La migration 040000 a DROP la colonne ; le scoping org se fait
+       *     désormais via `acps.organization_id`.
+       */
+      acp_id: string;
       address: string;
       city: string;
       /** Format: int32 */
       construction_year?: number | null;
       country: string;
       name: string;
-      organization_id: string;
       postal_code: string;
       /** Format: int32 */
       total_tantiemes?: number | null;
@@ -2227,13 +2232,14 @@ export interface components {
       | "cancelled"
       | "refunded";
     UpdateBuildingDto: {
+      /** @description Story 1.2 — Réaffectation de l'ACP parente (SuperAdmin uniquement). */
+      acp_id?: string | null;
       address: string;
       city: string;
       /** Format: int32 */
       construction_year?: number | null;
       country: string;
       name: string;
-      organization_id?: string | null;
       postal_code: string;
       /** Format: int32 */
       total_tantiemes?: number | null;
