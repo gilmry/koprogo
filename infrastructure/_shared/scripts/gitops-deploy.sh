@@ -38,7 +38,7 @@ function log_info()    { echo -e "${BLUE}[$(date +'%Y-%m-%d %H:%M:%S')] INFO:${N
 
 # Populate the global COMPOSE_ARGS array with the docker compose invocation.
 # Using an array (not a string) keeps paths-with-spaces safe and avoids the
-# shellcheck SC2046/SC2086 word-splitting hazard of `$(compose_cmd) ...`.
+# SC2046/SC2086 word-splitting hazard of `$(compose_cmd) ...` (shellcheck).
 COMPOSE_ARGS=()
 function build_compose_args() {
     COMPOSE_ARGS=(docker compose -f "${COMPOSE_BASE}")
