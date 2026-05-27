@@ -59,23 +59,10 @@ test.describe("Building Conformity (Story 1.4)", () => {
     });
     const building = await buildingResp.json();
 
-    // Navigate to admin building detail page.
-    await page.goto(`/admin/buildings?id=${building.id}`, {
+    // Navigate to building detail page (admin shares the route with syndic).
+    await page.goto(`/building-detail?id=${building.id}`, {
       waitUntil: "networkidle",
     });
-
-    // Fallback: try the syndic-side route if admin route doesn't exist yet.
-    if (
-      !(await page
-        .getByTestId("building-conformity-badge")
-        .first()
-        .isVisible()
-        .catch(() => false))
-    ) {
-      await page.goto(`/buildings/detail?id=${building.id}`, {
-        waitUntil: "networkidle",
-      });
-    }
 
     // Badge MUST be present (FR11/FR12 + ADR-0012 data-testid).
     const badge = page.getByTestId("building-conformity-badge").first();
@@ -112,7 +99,7 @@ test.describe("Building Conformity (Story 1.4)", () => {
     // Helper créé building via admin token, login syndic page → /buildings detail.
     const ctx = await loginAsSyndicWithBuilding(page, "conf-syndic");
 
-    await page.goto(`/buildings/detail?id=${ctx.buildingId}`, {
+    await page.goto(`/building-detail?id=${ctx.buildingId}`, {
       waitUntil: "networkidle",
     });
 
