@@ -373,8 +373,13 @@ async fn given_system(world: &mut BuildingWorld) {
 
 #[when(regex = r#"^I create a building named "([^"]*)" in "([^"]*)"$"#)]
 async fn when_create_building(world: &mut BuildingWorld, name: String, city: String) {
+    // Hotfix #602 : resolve acp_id from org_id (was passing org_id as acp_id)
+    let org_id = world.org_id.unwrap();
+    let pool = world.pool.as_ref().expect("pool").clone();
+    let acp_id = ensure_default_acp_for_org(&pool, org_id).await;
+
     let dto = CreateBuildingDto {
-        acp_id: world.org_id.unwrap().to_string(),
+        acp_id: acp_id.to_string(),
         name: name.clone(),
         address: "123 Test St".to_string(),
         city: city.clone(),
