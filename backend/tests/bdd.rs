@@ -1562,14 +1562,15 @@ async fn given_active_legal_holds(world: &mut BuildingWorld) {
         .expect("find owner for legal holds");
     let owner_id: Uuid = sqlx::Row::get(&owner_row, "id");
 
-    // Create a building
+    // Create a building (Hotfix #602 : via acp_id)
+    let acp_id = ensure_default_acp_for_org(pool, org_id).await;
     let building_id = Uuid::new_v4();
     sqlx::query(
-        "INSERT INTO buildings (id, organization_id, name, address, city, postal_code, country, total_units, created_at, updated_at)
+        "INSERT INTO buildings (id, acp_id, name, address, city, postal_code, country, total_units, created_at, updated_at)
          VALUES ($1, $2, 'Legal Hold Building', '789 Hold Ave', 'Brussels', '1000', 'Belgium', 1, NOW(), NOW())",
     )
     .bind(building_id)
-    .bind(org_id)
+    .bind(acp_id)
     .execute(pool)
     .await
     .expect("create building for legal holds");
@@ -2236,13 +2237,14 @@ async fn given_n_overdue_decisions(world: &mut BuildingWorld, count: usize) {
     let meeting_id = world.last_meeting_id.expect("meeting_id");
     let pool = world.pool.as_ref().expect("pool");
 
-    // Get organization_id from building
-    let organization_id: Uuid =
-        sqlx::query_scalar("SELECT organization_id FROM buildings WHERE id = $1")
-            .bind(building_id)
-            .fetch_one(pool)
-            .await
-            .expect("get organization_id from building");
+    // Get organization_id from building via acps (post-#602 migration)
+    let organization_id: Uuid = sqlx::query_scalar(
+        "SELECT a.organization_id FROM buildings b JOIN acps a ON a.id = b.acp_id WHERE b.id = $1",
+    )
+    .bind(building_id)
+    .fetch_one(pool)
+    .await
+    .expect("get organization_id from building");
 
     // Create overdue decisions directly in DB to bypass validation
     for i in 0..count {

@@ -3449,13 +3449,14 @@ async fn given_work_reports_2_orgs(world: &mut OperationsWorld) {
            VALUES ($1, 'Other Org', 'other-org', 'other@org.com', 'starter', 10, 10, true, NOW(), NOW())"#
     )
     .bind(other_org_id).execute(pool).await.expect("insert other org");
-    // Insert a work report for other org directly
+    // Insert a work report for other org directly (Hotfix #602 : via acp_id)
+    let other_acp_id = ensure_default_acp_for_org(pool, other_org_id).await;
     let building_id = Uuid::new_v4();
     sqlx::query(
-        r#"INSERT INTO buildings (id, organization_id, name, address, city, postal_code, country, total_units, created_at, updated_at)
+        r#"INSERT INTO buildings (id, acp_id, name, address, city, postal_code, country, total_units, created_at, updated_at)
            VALUES ($1, $2, 'Other Building', '1 Other St', 'Brussels', '1000', 'Belgique', 5, NOW(), NOW())"#
     )
-    .bind(building_id).bind(other_org_id).execute(pool).await.expect("insert other building");
+    .bind(building_id).bind(other_acp_id).execute(pool).await.expect("insert other building");
 }
 
 #[when("I list work reports for our organization")]

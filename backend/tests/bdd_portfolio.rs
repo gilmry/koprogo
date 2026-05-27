@@ -189,10 +189,8 @@ impl PortfolioWorld {
         .execute(pool)
         .await;
 
-        // Insertion building "minimaliste" : on tente le shape post-040000
-        // (acp_id NOT NULL, no organization_id) puis fallback sur l'ancien
-        // shape pre-040000 si la colonne organization_id existe encore.
-        let res = sqlx::query(
+        // Insertion building post-#602 : acp_id NOT NULL, organization_id dropped.
+        sqlx::query(
             r#"
             INSERT INTO buildings (id, acp_id, name, address, city, postal_code, country, total_units, created_at, updated_at)
             VALUES ($1, $2, $3, 'Rue X 1', 'Bruxelles', '1000', 'BE', 10, NOW(), NOW())
@@ -202,24 +200,8 @@ impl PortfolioWorld {
         .bind(acp_id)
         .bind(name)
         .execute(pool)
-        .await;
-        if res.is_ok() {
-            return bid;
-        }
-        // Fallback : ancien shape (organization_id encore présent, acp_id
-        // existe ou pas).
-        let res2 = sqlx::query(
-            r#"
-            INSERT INTO buildings (id, organization_id, name, address, city, postal_code, country, total_units, created_at, updated_at)
-            VALUES ($1, $2, $3, 'Rue X 1', 'Bruxelles', '1000', 'BE', 10, NOW(), NOW())
-            "#,
-        )
-        .bind(bid)
-        .bind(org_id)
-        .bind(name)
-        .execute(pool)
-        .await;
-        res2.expect("insert building (fallback shape)");
+        .await
+        .expect("insert building");
         bid
     }
 }

@@ -53,13 +53,27 @@ async fn setup_test_db() -> (
     .await
     .expect("Failed to insert organization");
 
+    // Hotfix #602 : buildings.acp_id replaces organization_id (FK acps).
+    let acp_id = Uuid::new_v4();
+    sqlx::query(
+        r#"INSERT INTO acps (id, organization_id, name, slug, legal_status,
+            address_street, address_postal_code, address_city, created_at, updated_at)
+           VALUES ($1, $2, 'Test ACP', 'test-acp', 'copropriete_belge',
+            'Rue Test 1', '1000', 'Brussels', NOW(), NOW())"#,
+    )
+    .bind(acp_id)
+    .bind(org_id)
+    .execute(&pool)
+    .await
+    .expect("Failed to insert ACP");
+
     let building_id = Uuid::new_v4();
     sqlx::query(
-        r#"INSERT INTO buildings (id, organization_id, name, address, city, postal_code, country, total_units, construction_year, created_at, updated_at)
+        r#"INSERT INTO buildings (id, acp_id, name, address, city, postal_code, country, total_units, construction_year, created_at, updated_at)
            VALUES ($1, $2, 'Test Building', '123 Main St', 'Brussels', '1000', 'Belgium', 10, 2020, NOW(), NOW())"#
     )
     .bind(building_id)
-    .bind(org_id)
+    .bind(acp_id)
     .execute(&pool)
     .await
     .expect("Failed to insert building");
