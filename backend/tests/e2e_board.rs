@@ -21,8 +21,9 @@ async fn test_board_member_lifecycle() {
     let token = common::register_and_login(&state, org_id).await;
 
     // Create building
+    let acp_id = common::create_test_acp(&state, org_id).await;
     let building_dto = CreateBuildingDto {
-        acp_id: org_id.to_string(),
+        acp_id,
         name: "Test Building Board".to_string(),
         address: "123 Board Street".to_string(),
         city: "Brussels".to_string(),
@@ -235,8 +236,9 @@ async fn test_board_decision_lifecycle() {
     let token = common::register_and_login(&state, org_id).await;
 
     // Create building
+    let acp_id = common::create_test_acp(&state, org_id).await;
     let building_dto = CreateBuildingDto {
-        acp_id: org_id.to_string(),
+        acp_id,
         name: "Test Building Board".to_string(),
         address: "123 Board Street".to_string(),
         city: "Brussels".to_string(),
@@ -438,8 +440,9 @@ async fn test_overdue_decisions() {
     let token = common::register_and_login(&state, org_id).await;
 
     // Create building
+    let acp_id = common::create_test_acp(&state, org_id).await;
     let building_dto = CreateBuildingDto {
-        acp_id: org_id.to_string(),
+        acp_id,
         name: "Test Building Board".to_string(),
         address: "123 Board Street".to_string(),
         city: "Brussels".to_string(),

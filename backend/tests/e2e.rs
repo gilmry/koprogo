@@ -630,8 +630,28 @@ async fn test_create_building_validation_fails() {
         .expect("login")
         .token;
 
+    // Hotfix #602 — even validation-fail tests must use a real ACP id so
+    // we exercise the post-acp_id rename pipeline end-to-end. The empty
+    // `name` below still triggers a 400 before any FK check.
+    let acp_dto = koprogo_api::application::dto::CreateAcpDto {
+        organization_id: Some(org_id.to_string()),
+        name: format!("E2E Validation ACP {}", Uuid::new_v4().simple()),
+        address_street: "Rue E2E 1".to_string(),
+        address_postal_code: "1000".to_string(),
+        address_city: "Bruxelles".to_string(),
+        bce_number: None,
+    };
+    let acp = state
+        .acp_use_cases
+        .create_acp(
+            &koprogo_api::application::use_cases::acp_use_cases::AcpCaller::SuperAdmin,
+            acp_dto,
+        )
+        .await
+        .expect("create acp");
+
     let dto = CreateBuildingDto {
-        acp_id: org_id.to_string(),
+        acp_id: acp.id.clone(),
         name: "".to_string(), // Invalid: empty name
         address: "123 Test St".to_string(),
         city: "Paris".to_string(),

@@ -30,8 +30,9 @@ async fn setup_app() -> (
 
 /// Helper: Create a building
 async fn create_test_building(app_state: &actix_web::web::Data<AppState>, org_id: Uuid) -> Uuid {
+    let acp_id = common::create_test_acp(app_state, org_id).await;
     let building_dto = CreateBuildingDto {
-        acp_id: org_id.to_string(),
+        acp_id,
         name: format!("Test Building SecondConv {}", Uuid::new_v4()),
         address: "42 Rue du Quorum".to_string(),
         city: "Brussels".to_string(),

@@ -19,8 +19,9 @@ async fn create_test_building_for_units(
     app_state: &actix_web::web::Data<AppState>,
     org_id: Uuid,
 ) -> BuildingResponseDto {
+    let acp_id = common::create_test_acp(app_state, org_id).await;
     let dto = CreateBuildingDto {
-        acp_id: org_id.to_string(),
+        acp_id,
         name: format!("Unit Test Building {}", Uuid::new_v4()),
         address: "10 Rue du Test".to_string(),
         city: "Ghent".to_string(),

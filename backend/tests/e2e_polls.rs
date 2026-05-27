@@ -23,8 +23,9 @@ async fn create_test_building_for_polls(
     app_state: &actix_web::web::Data<AppState>,
     org_id: Uuid,
 ) -> String {
+    let acp_id = common::create_test_acp(app_state, org_id).await;
     let dto = CreateBuildingDto {
-        acp_id: org_id.to_string(),
+        acp_id,
         name: format!("Polls Test Building {}", Uuid::new_v4()),
         address: "789 Poll Street".to_string(),
         city: "Brussels".to_string(),
@@ -380,8 +381,9 @@ async fn test_polls_cast_vote() {
     let user_id = login_resp.user.id;
 
     // Create building with a unit
+    let acp_id = common::create_test_acp(&app_state, org_id).await;
     let dto = koprogo_api::application::dto::CreateBuildingDto {
-        acp_id: org_id.to_string(),
+        acp_id,
         name: format!("Polls Vote Building {}", Uuid::new_v4()),
         address: "1 Vote Street".to_string(),
         city: "Brussels".to_string(),

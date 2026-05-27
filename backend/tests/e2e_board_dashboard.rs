@@ -39,8 +39,9 @@ async fn test_board_dashboard_returns_complete_data() {
     let token = login_response.token;
 
     // Create building (>20 units for board requirement)
+    let acp_id = common::create_test_acp(&state, org_id).await;
     let building_dto = CreateBuildingDto {
-        acp_id: org_id.to_string(),
+        acp_id,
         name: "Test Building Dashboard".to_string(),
         address: "123 Dashboard St".to_string(),
         city: "Brussels".to_string(),
@@ -299,8 +300,9 @@ async fn test_superadmin_has_global_dashboard_access() {
     let token = login_response.token;
 
     // Create Building A (>20 units)
+    let acp_id_a = common::create_test_acp(&state, org_id).await;
     let building_a_dto = CreateBuildingDto {
-        acp_id: org_id.to_string(),
+        acp_id: acp_id_a,
         name: "Building A".to_string(),
         address: "123 A St".to_string(),
         city: "Brussels".to_string(),
@@ -326,8 +328,9 @@ async fn test_superadmin_has_global_dashboard_access() {
     let building_a_id = building_a["id"].as_str().unwrap();
 
     // Create Building B (>20 units)
+    let acp_id_b = common::create_test_acp(&state, org_id).await;
     let building_b_dto = CreateBuildingDto {
-        acp_id: org_id.to_string(),
+        acp_id: acp_id_b,
         name: "Building B".to_string(),
         address: "456 B St".to_string(),
         city: "Brussels".to_string(),
@@ -489,9 +492,11 @@ async fn test_regular_board_member_cannot_access_other_building() {
     .await;
 
     // Create Building A and Building B
+    let acp_id_a = common::create_test_acp(&state, org_id).await;
+    let acp_id_b = common::create_test_acp(&state, org_id).await;
     let building_a_id = {
         let dto = CreateBuildingDto {
-            acp_id: org_id.to_string(),
+            acp_id: acp_id_a,
             name: "Building A".to_string(),
             address: "123 A Street".to_string(),
             city: "Brussels".to_string(),
@@ -511,7 +516,7 @@ async fn test_regular_board_member_cannot_access_other_building() {
 
     let building_b_id = {
         let dto = CreateBuildingDto {
-            acp_id: org_id.to_string(),
+            acp_id: acp_id_b,
             name: "Building B".to_string(),
             address: "456 B Avenue".to_string(),
             city: "Brussels".to_string(),

@@ -36,8 +36,9 @@ async fn create_meeting_fixtures(
     let token = common::register_and_login(app_state, org_id).await;
 
     // Create building
+    let acp_id = common::create_test_acp(app_state, org_id).await;
     let building_dto = CreateBuildingDto {
-        acp_id: org_id.to_string(),
+        acp_id,
         name: format!("Agenda Test Building {}", Uuid::new_v4()),
         address: "789 Agenda Blvd".to_string(),
         city: "Brussels".to_string(),

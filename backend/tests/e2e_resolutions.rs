@@ -64,8 +64,9 @@ async fn create_test_fixtures(
     let token = login.token;
 
     // 2. Create building
+    let acp_id = common::create_test_acp(&app_state, org_id).await;
     let building_dto = CreateBuildingDto {
-        acp_id: org_id.to_string(),
+        acp_id,
         name: format!("Test Building Resolution {}", Uuid::new_v4()),
         address: "456 Vote Ave".to_string(),
         city: "Brussels".to_string(),
