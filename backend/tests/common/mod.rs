@@ -550,6 +550,35 @@ pub async fn ensure_default_acp_for_org(pool: &sqlx::PgPool, org_id: Uuid) -> Uu
     acp_id
 }
 
+/// Hotfix #602 — create an ACP bound to `org_id` via the use-case layer and
+/// return its id as `String`, ready to be assigned to `CreateBuildingDto.acp_id`.
+///
+/// Each call materialises a fresh ACP (UUID-suffixed name/slug) so tests that
+/// share an `org_id` across multiple buildings never collide on the unique
+/// `(organization_id, slug)` constraint. Use this in any `create_*_test_building`
+/// helper or inline `CreateBuildingDto { ... }` literal that previously passed
+/// `org_id.to_string()` as `acp_id` (FK violation on `buildings_acp_id_fkey`).
+#[allow(dead_code)]
+pub async fn create_test_acp(app_state: &actix_web::web::Data<AppState>, org_id: Uuid) -> String {
+    let dto = koprogo_api::application::dto::CreateAcpDto {
+        organization_id: Some(org_id.to_string()),
+        name: format!("E2E Test ACP {}", Uuid::new_v4().simple()),
+        address_street: "Rue E2E 1".to_string(),
+        address_postal_code: "1000".to_string(),
+        address_city: "Bruxelles".to_string(),
+        bce_number: None,
+    };
+    let acp = app_state
+        .acp_use_cases
+        .create_acp(
+            &koprogo_api::application::use_cases::acp_use_cases::AcpCaller::SuperAdmin,
+            dto,
+        )
+        .await
+        .expect("create_test_acp: create_acp use case failed");
+    acp.id
+}
+
 /// Helper to register a user and get a JWT token
 #[allow(dead_code)]
 pub async fn register_and_login(
