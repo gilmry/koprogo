@@ -51,7 +51,7 @@ async fn setup_charge_distribution_fixtures(
     let user_id = login_response.user.id;
 
     // Create building
-    let acp_id = common::create_test_acp(&app_state, org_id).await;
+    let acp_id = common::create_test_acp(app_state, org_id).await;
     let building_dto = CreateBuildingDto {
         acp_id,
         name: format!("Charge Distribution Building {}", Uuid::new_v4()),

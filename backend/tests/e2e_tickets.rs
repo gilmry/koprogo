@@ -41,7 +41,7 @@ async fn create_test_fixtures(
     let token = login_response.token;
 
     // 2. Create building (org already created by setup_test_db)
-    let acp_id = common::create_test_acp(&app_state, org_id).await;
+    let acp_id = common::create_test_acp(app_state, org_id).await;
     let building_dto = CreateBuildingDto {
         acp_id,
         name: format!("Test Building Ticket {}", Uuid::new_v4()),

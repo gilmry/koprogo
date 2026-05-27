@@ -38,7 +38,7 @@ async fn create_contribution_fixtures(
     let token = login_response.token;
 
     // 2. Create building
-    let acp_id = common::create_test_acp(&app_state, org_id).await;
+    let acp_id = common::create_test_acp(app_state, org_id).await;
     let building_dto = CreateBuildingDto {
         acp_id,
         name: format!("Contrib Building {}", Uuid::new_v4()),

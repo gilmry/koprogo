@@ -49,7 +49,7 @@ async fn create_test_fixtures(
     let token = login_result.token;
 
     // Create building using DTO
-    let acp_id = common::create_test_acp(&app_state, org_id).await;
+    let acp_id = common::create_test_acp(app_state, org_id).await;
     let building_dto = CreateBuildingDto {
         acp_id,
         name: "Test Building".to_string(),
