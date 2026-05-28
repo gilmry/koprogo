@@ -2,47 +2,79 @@ use crate::application::dto::{
     ApproveInvoiceDto, CreateExpenseDto, CreateInvoiceDraftDto, PageRequest, PageResponse,
     RejectInvoiceDto, SubmitForApprovalDto, UpdateInvoiceDraftDto,
 };
+use crate::domain::entities::UserRole;
 use crate::infrastructure::audit::{AuditEventType, AuditLogEntry};
 use crate::infrastructure::web::middleware::scope_guard::verify_acp_org_access;
 use crate::infrastructure::web::{AppState, AuthenticatedUser};
 use actix_web::{get, post, put, web, HttpResponse, Responder, ResponseError};
 use chrono::{DateTime, Utc};
 use serde::Deserialize;
+use std::str::FromStr;
 use uuid::Uuid;
 use validator::Validate;
 
-/// Helper function to check if owner role is trying to modify data
-/// Note: Accountant CAN create expenses and mark them as paid
+/// Story 3.1 — Resolve the typed `UserRole` from the JWT string.
+///
+/// Returns `None` when the JWT carries an unknown / malformed role (treated as
+/// no privilege — caller emits 403 `invalid_role`).
+fn user_role(user: &AuthenticatedUser) -> Option<UserRole> {
+    UserRole::from_str(&user.role).ok()
+}
+
+/// Helper function to check if owner role is trying to modify data.
+/// Note: Accountant CAN create expenses and mark them as paid.
 fn check_owner_readonly(user: &AuthenticatedUser) -> Option<HttpResponse> {
     if user.role == "owner" {
         Some(HttpResponse::Forbidden().json(serde_json::json!({
-            "error": "Owner role has read-only access"
+            "error": "Owner role has read-only access",
+            "code": "invalid_role",
         })))
     } else {
         None
     }
 }
 
-/// Helper function to check if user has syndic role (for approval workflow)
+/// Helper function to check if user has syndic role (for approval workflow).
 fn check_syndic_role(user: &AuthenticatedUser) -> Option<HttpResponse> {
-    if user.role != "syndic" && user.role != "superadmin" {
-        Some(HttpResponse::Forbidden().json(serde_json::json!({
-            "error": "Only syndic or superadmin can approve/reject invoices"
-        })))
-    } else {
-        None
+    match user_role(user) {
+        Some(UserRole::Syndic) | Some(UserRole::SuperAdmin) => None,
+        _ => Some(HttpResponse::Forbidden().json(serde_json::json!({
+            "error": "Only syndic or superadmin can approve/reject invoices",
+            "code": "invalid_role",
+        }))),
     }
 }
 
-/// Helper function to check if user has accountant role (for creating/editing invoices)
-fn check_accountant_role(user: &AuthenticatedUser) -> Option<HttpResponse> {
-    if user.role != "accountant" && user.role != "syndic" && user.role != "superadmin" {
-        Some(HttpResponse::Forbidden().json(serde_json::json!({
-            "error": "Only accountant, syndic, or superadmin can create/edit invoices"
-        })))
-    } else {
-        None
+/// Story 3.1 — Authorise *emitting* expenses / call-for-funds (sortie financière).
+/// INV-10 séparation des pouvoirs : un encodeur seul est rejeté ici.
+fn check_can_emit_expenses(user: &AuthenticatedUser) -> Option<HttpResponse> {
+    match user_role(user) {
+        Some(role) if role.can_emit_expenses() => None,
+        _ => Some(HttpResponse::Forbidden().json(serde_json::json!({
+            "error":
+                "Only syndic, superadmin, or accountant émetteur can create/pay expenses",
+            "code": "invalid_role",
+        }))),
     }
+}
+
+/// Story 3.1 — Authorise *encoding* invoices / drafts (entrée comptable amont).
+fn check_can_encode_invoices(user: &AuthenticatedUser) -> Option<HttpResponse> {
+    match user_role(user) {
+        Some(role) if role.can_encode_invoices() => None,
+        _ => Some(HttpResponse::Forbidden().json(serde_json::json!({
+            "error":
+                "Only syndic, superadmin, or accountant encodeur can create/edit invoices",
+            "code": "invalid_role",
+        }))),
+    }
+}
+
+/// Helper function to check if user has accountant role (for creating/editing invoices).
+///
+/// Story 3.1: alias kept for backwards-compat — delegates to `check_can_encode_invoices`.
+fn check_accountant_role(user: &AuthenticatedUser) -> Option<HttpResponse> {
+    check_can_encode_invoices(user)
 }
 
 #[post("/expenses")]
@@ -52,6 +84,12 @@ pub async fn create_expense(
     mut dto: web::Json<CreateExpenseDto>,
 ) -> impl Responder {
     if let Some(response) = check_owner_readonly(&user) {
+        return response;
+    }
+    // Story 3.1 INV-10 : un encodeur ne peut PAS émettre. POST /expenses est une
+    // sortie financière, donc réservé aux émetteurs (syndic/superadmin/accountant
+    // générique/accountant.emetteur).
+    if let Some(response) = check_can_emit_expenses(&user) {
         return response;
     }
 
@@ -222,6 +260,10 @@ pub async fn mark_expense_paid(
     id: web::Path<Uuid>,
 ) -> impl Responder {
     if let Some(response) = check_owner_readonly(&user) {
+        return response;
+    }
+    // Story 3.1 INV-10 : marquage payé = mouvement financier sortant.
+    if let Some(response) = check_can_emit_expenses(&user) {
         return response;
     }
 
