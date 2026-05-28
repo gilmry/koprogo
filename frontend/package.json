@@ -37,7 +37,7 @@
     "@astrojs/svelte": "^8.1.1",
     "@tailwindcss/typography": "^0.5.19",
     "@tailwindcss/vite": "^4.3.0",
-    "astro": "^6.3.6",
+    "astro": "^6.4.1",
     "svelte": "^5.55.9",
     "svelte-i18n": "^4.0.1",
     "tailwindcss": "^4.2.2",
