@@ -42,8 +42,13 @@ export async function tryGetOrganizationName(
   organizationId: string,
 ): Promise<string | null> {
   try {
+    // `silent: true` → pas de toast "Accès refusé" pour les non-superadmin :
+    // c'est un endpoint best-effort utilisé par ContextBanner pour enrichir
+    // l'affichage en niveau Cabinet. Un 403 est attendu et déclenche juste
+    // la dégradation à 2 niveaux côté composant.
     const response = await api.get<OrganizationListResponse>(
       "/organizations?per_page=1000",
+      { silent: true },
     );
     const org = response.data.find((o) => o.id === organizationId);
     return org ? org.name : null;

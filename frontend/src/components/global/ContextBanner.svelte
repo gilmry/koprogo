@@ -88,10 +88,13 @@
           acpDetail = acp;
 
           // Cabinet : seulement si l'ACP a un organization_id (cf. @edge).
+          // tryGetOrganizationName est conçu pour catcher 403 silencieusement
+          // (option `silent: true` dans api.get → pas de toast "Accès refusé"
+          // pour cet appel optionnel non-admin).
           if (acp.organization_id) {
             const name = await tryGetOrganizationName(acp.organization_id);
             if (scope.selectedBuildingId !== buildingId) return;
-            cabinetName = name; // null si 403 ou non résolvable → masque
+            cabinetName = name; // null si non résolvable → masque
           } else {
             cabinetName = null;
           }

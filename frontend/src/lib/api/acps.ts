@@ -34,3 +34,26 @@ export interface AcpResponseDto {
 export async function getAcp(id: string): Promise<AcpResponseDto> {
   return api.get<AcpResponseDto>(`/acps/${encodeURIComponent(id)}`);
 }
+
+/**
+ * Liste les ACPs visibles pour l'utilisateur connecté (filtré par rôle).
+ */
+export async function listAcps(): Promise<AcpResponseDto[]> {
+  return api.get<AcpResponseDto[]>("/acps");
+}
+
+export interface CreateAcpDto {
+  organization_id: string | null;
+  name: string;
+  address_street: string;
+  address_postal_code: string;
+  address_city: string;
+  bce_number?: string | null;
+}
+
+/**
+ * Crée une ACP (admin seulement).
+ */
+export async function createAcp(dto: CreateAcpDto): Promise<AcpResponseDto> {
+  return api.post<AcpResponseDto>("/acps", dto);
+}

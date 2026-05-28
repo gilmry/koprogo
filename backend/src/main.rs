@@ -519,8 +519,18 @@ async fn main() -> std::io::Result<()> {
         .finish()
         .unwrap();
 
-    // GDPR-specific rate limiting (10 requests/hour per user for GDPR endpoints)
-    let gdpr_rate_limit = GdprRateLimit::new(GdprRateLimitConfig::default());
+    // GDPR-specific rate limiting (10 requests/hour per user for GDPR endpoints).
+    // Honors ENABLE_RATE_LIMITING flag : when false (dev/CI), use a very high
+    // ceiling so the test suite + dev loops don't hit 429 from prior runs.
+    let gdpr_rate_limit_config = if enable_rate_limiting {
+        GdprRateLimitConfig::default()
+    } else {
+        GdprRateLimitConfig {
+            max_requests: 100_000,
+            window_duration: std::time::Duration::from_secs(60),
+        }
+    };
+    let gdpr_rate_limit = GdprRateLimit::new(gdpr_rate_limit_config);
 
     // Login rate limiting (anti-brute-force)
     // Configurable via LOGIN_RATE_LIMIT_MAX (default: 5) and LOGIN_RATE_LIMIT_WINDOW_SECS (default: 900)
