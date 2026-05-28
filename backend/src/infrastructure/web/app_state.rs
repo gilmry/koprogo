@@ -9,13 +9,13 @@ use crate::application::use_cases::{
     DocumentUseCases, EnergyBillUploadUseCases, EnergyCampaignUseCases, EtatDateUseCases,
     ExpenseUseCases, FinancialReportUseCases, GamificationStatsUseCases, GdprArt30UseCases,
     GdprUseCases, IndividualMemberUseCases, IoTUseCases, JournalEntryUseCases, LinkyUseCases,
-    LocalExchangeUseCases, MeetingUseCases, NoticeUseCases, NotificationUseCases,
-    OrganizationUseCases, OwnerContributionUseCases, OwnerUseCases, PaymentMethodUseCases,
-    PaymentReminderUseCases, PaymentUseCases, PcnUseCases, PollUseCases, PortfolioUseCases,
-    QuoteUseCases, ResolutionUseCases, ResourceBookingUseCases, SecurityIncidentUseCases,
-    ServiceProviderUseCases, SharedObjectUseCases, SkillUseCases, StatsUseCases,
-    TechnicalInspectionUseCases, TicketUseCases, TwoFactorUseCases, UnitOwnerUseCases,
-    UnitUseCases, UserUseCases, WorkReportUseCases,
+    LocalExchangeUseCases, MagicLinkUseCases, MeetingUseCases, NoticeUseCases,
+    NotificationUseCases, OrganizationUseCases, OwnerContributionUseCases, OwnerUseCases,
+    PaymentMethodUseCases, PaymentReminderUseCases, PaymentUseCases, PcnUseCases, PollUseCases,
+    PortfolioUseCases, QuoteUseCases, ResolutionUseCases, ResourceBookingUseCases,
+    SecurityIncidentUseCases, ServiceProviderUseCases, SharedObjectUseCases, SkillUseCases,
+    StatsUseCases, TechnicalInspectionUseCases, TicketUseCases, TwoFactorUseCases,
+    UnitOwnerUseCases, UnitUseCases, UserUseCases, WorkReportUseCases,
 };
 use crate::infrastructure::audit_logger::AuditLogger;
 use crate::infrastructure::email::EmailService;
@@ -89,6 +89,8 @@ pub struct AppState {
     pub mqtt_energy_adapter: Arc<dyn MqttEnergyPort>,
     pub boinc_use_cases: Arc<BoincUseCases>,
     pub user_use_cases: Arc<UserUseCases>,
+    /// Story 3.2 — generic MagicLink (public-access tokens for contractors / tiers).
+    pub magic_link_use_cases: Arc<MagicLinkUseCases>,
 }
 
 impl AppState {
@@ -159,6 +161,7 @@ impl AppState {
         mqtt_energy_adapter: Arc<dyn MqttEnergyPort>,
         boinc_use_cases: BoincUseCases,
         user_use_cases: UserUseCases,
+        magic_link_use_cases: MagicLinkUseCases,
     ) -> Self {
         Self {
             account_use_cases: Arc::new(account_use_cases),
@@ -226,6 +229,7 @@ impl AppState {
             mqtt_energy_adapter,
             boinc_use_cases: Arc::new(boinc_use_cases),
             user_use_cases: Arc::new(user_use_cases),
+            magic_link_use_cases: Arc::new(magic_link_use_cases),
         }
     }
 }

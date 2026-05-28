@@ -89,6 +89,21 @@ pub enum AppError {
     /// Should be reduced over time as repositories migrate.
     #[error("Internal server error: {0}")]
     Internal(String),
+
+    /// MagicLink token does not match any record (forged / unknown / malformed).
+    /// Returns 403 Forbidden. Story 3.2 (FR6).
+    #[error("Lien invalide")]
+    MagicLinkInvalid,
+
+    /// MagicLink TTL elapsed. FR message guides the user to request a new link.
+    /// Returns 403 Forbidden. Story 3.2 (FR6).
+    #[error("Lien expiré, demandez-en un nouveau au syndic")]
+    MagicLinkExpired,
+
+    /// MagicLink already used (single-use enforcement / replay protection).
+    /// Returns 403 Forbidden. Story 3.2 (FR6).
+    #[error("Lien déjà utilisé")]
+    MagicLinkAlreadyConsumed,
 }
 
 impl AppError {
@@ -109,6 +124,9 @@ impl AppError {
             AppError::Database(_) => "database",
             AppError::Crypto(_) => "crypto",
             AppError::Internal(_) => "internal",
+            AppError::MagicLinkInvalid => "magic_link_invalid",
+            AppError::MagicLinkExpired => "magic_link_expired",
+            AppError::MagicLinkAlreadyConsumed => "magic_link_consumed",
         }
     }
 }
@@ -122,7 +140,10 @@ impl ResponseError for AppError {
             }
             AppError::Forbidden(_)
             | AppError::AccountDeactivated
-            | AppError::AcpNotInScope { .. } => StatusCode::FORBIDDEN,
+            | AppError::AcpNotInScope { .. }
+            | AppError::MagicLinkInvalid
+            | AppError::MagicLinkExpired
+            | AppError::MagicLinkAlreadyConsumed => StatusCode::FORBIDDEN,
             AppError::NotFound(_) => StatusCode::NOT_FOUND,
             AppError::Conflict(_) => StatusCode::CONFLICT,
             AppError::RateLimited => StatusCode::TOO_MANY_REQUESTS,
@@ -342,6 +363,9 @@ mod tests {
             AppError::Database("".into()),
             AppError::Crypto("".into()),
             AppError::Internal("".into()),
+            AppError::MagicLinkInvalid,
+            AppError::MagicLinkExpired,
+            AppError::MagicLinkAlreadyConsumed,
         ];
         for v in variants {
             assert!(!v.kind().is_empty(), "kind() empty for {:?}", v);

@@ -680,6 +680,11 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig) {
             .service(reject_contractor_report) // PUT /contractor-reports/{id}/reject
             .service(update_contractor_report) // PUT /contractor-reports/{id}
             .service(delete_contractor_report) // DELETE /contractor-reports/{id}
-            .service(get_contractor_report), // GET /contractor-reports/{id} — LAST (parameterized)
+            .service(get_contractor_report) // GET /contractor-reports/{id} — LAST (parameterized)
+            // Generic MagicLinks (Story 3.2 — FR6 INV-13 INV-17)
+            // POST /magic-links : syndic/superadmin issues a link
+            // GET  /c/{token}   : PUBLIC (no auth) — validate + consume + resolve scope
+            .service(issue_magic_link)
+            .service(consume_magic_link),
     );
 }

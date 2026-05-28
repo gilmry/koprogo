@@ -1,0 +1,144 @@
+---
+// Story 3.2 — Public consumption page for a MagicLink (/c/<token>).
+//
+// Server-side fetch: GET /api/v1/c/<token> which atomically validates +
+// consumes the token and returns the resolved scope payload. If the token
+// is invalid / expired / already consumed, the backend returns 403 with the
+// FR error message — we render an error card.
+//
+// Intentionally a Layout-less public page (no admin nav, no auth required).
+
+import { apiEndpoint } from "../../lib/config";
+
+export const prerender = false;
+
+const { token } = Astro.params;
+
+type ScopePayload = {
+  scope_kind: "ticket" | "quote" | "invoice" | "contractor_evaluation";
+  scope_id: string;
+  scope: Record<string, unknown>;
+};
+
+let payload: ScopePayload | null = null;
+let errorMessage: string | null = null;
+let errorKind: string | null = null;
+
+if (!token || typeof token !== "string") {
+  errorMessage = "Lien invalide";
+  errorKind = "magic_link_invalid";
+} else {
+  try {
+    const res = await fetch(apiEndpoint(`/c/${encodeURIComponent(token)}`));
+    if (res.ok) {
+      payload = (await res.json()) as ScopePayload;
+    } else {
+      const body = await res.json().catch(() => ({}));
+      errorMessage = (body?.error as string) ?? "Lien invalide";
+      errorKind = (body?.kind as string) ?? "magic_link_invalid";
+    }
+  } catch (_err) {
+    errorMessage = "Service indisponible";
+    errorKind = "network_error";
+  }
+}
+---
+
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>KoproGo — Accès partagé</title>
+  </head>
+  <body class="bg-gray-50 min-h-screen">
+    <main class="max-w-2xl mx-auto px-4 py-10">
+      <header class="mb-6">
+        <h1 class="text-2xl font-semibold text-gray-900">Accès partagé</h1>
+        <p class="text-sm text-gray-500 mt-1">
+          Vous consultez cette ressource via un lien magique sécurisé.
+        </p>
+      </header>
+
+      {errorMessage && (
+        <div
+          class="rounded-lg border border-red-200 bg-red-50 p-4 text-red-800"
+          data-testid="c-page-error"
+          data-error-kind={errorKind}
+        >
+          <p class="font-medium">{errorMessage}</p>
+        </div>
+      )}
+
+      {payload && payload.scope_kind === "ticket" && (
+        <section
+          class="rounded-lg border border-gray-200 bg-white p-6 shadow-sm"
+          data-testid="c-page-ticket-content"
+        >
+          <h2 class="text-lg font-semibold mb-2">Ticket</h2>
+          <pre class="text-sm whitespace-pre-wrap text-gray-700">
+            {JSON.stringify(payload.scope, null, 2)}
+          </pre>
+          <form
+            method="post"
+            action={apiEndpoint(`/c/${token}/respond`)}
+            class="mt-6"
+          >
+            <button
+              type="submit"
+              class="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700"
+              data-testid="c-page-respond-submit"
+              disabled
+              title="Endpoint /respond — follow-up Story 3.2"
+            >
+              Répondre (à venir)
+            </button>
+          </form>
+        </section>
+      )}
+
+      {payload && payload.scope_kind === "quote" && (
+        <section
+          class="rounded-lg border border-gray-200 bg-white p-6 shadow-sm"
+          data-testid="c-page-quote-content"
+        >
+          <h2 class="text-lg font-semibold mb-2">Devis</h2>
+          <pre class="text-sm whitespace-pre-wrap text-gray-700">
+            {JSON.stringify(payload.scope, null, 2)}
+          </pre>
+        </section>
+      )}
+
+      {payload && payload.scope_kind === "invoice" && (
+        <section
+          class="rounded-lg border border-gray-200 bg-white p-6 shadow-sm"
+          data-testid="c-page-invoice-content"
+        >
+          <h2 class="text-lg font-semibold mb-2">Facture</h2>
+          <pre class="text-sm whitespace-pre-wrap text-gray-700">
+            {JSON.stringify(payload.scope, null, 2)}
+          </pre>
+        </section>
+      )}
+
+      {payload && payload.scope_kind === "contractor_evaluation" && (
+        <section
+          class="rounded-lg border border-gray-200 bg-white p-6 shadow-sm"
+          data-testid="c-page-evaluation-content"
+        >
+          <h2 class="text-lg font-semibold mb-2">Évaluation prestataire</h2>
+          <pre class="text-sm whitespace-pre-wrap text-gray-700">
+            {JSON.stringify(payload.scope, null, 2)}
+          </pre>
+        </section>
+      )}
+
+      <footer class="mt-8 text-xs text-gray-400 text-center">
+        <p>
+          Ce lien est à usage unique et sera marqué comme consommé après cette
+          consultation.
+        </p>
+      </footer>
+    </main>
+  </body>
+</html>

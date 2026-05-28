@@ -212,6 +212,9 @@ async fn main() -> std::io::Result<()> {
     let ag_session_repo = Arc::new(PostgresAgSessionRepository::new(pool.clone()));
     let age_request_repo = Arc::new(PostgresAgeRequestRepository::new(pool.clone()));
     let contractor_report_repo = Arc::new(PostgresContractorReportRepository::new(pool.clone()));
+    // Story 3.2 — generic MagicLink for public-access tokens (contractor / tiers).
+    let magic_link_repo: Arc<dyn koprogo_api::application::ports::MagicLinkRepository> =
+        Arc::new(PostgresMagicLinkRepository::new(pool.clone()));
 
     // Initialize audit logger with database persistence
     let audit_logger = AuditLogger::new(Some(audit_log_repo.clone()));
@@ -395,6 +398,8 @@ async fn main() -> std::io::Result<()> {
     let age_request_use_cases = AgeRequestUseCases::new(age_request_repo.clone());
     let contractor_report_use_cases = ContractorReportUseCases::new(contractor_report_repo.clone())
         .with_payment_support(quote_repo.clone(), payment_use_cases_arc.clone());
+    // Story 3.2 — MagicLink use cases (public-access tokens for contractors/tiers).
+    let magic_link_use_cases = MagicLinkUseCases::new(magic_link_repo.clone());
 
     // Marketplace (Issue #276)
     let service_provider_repo = Arc::new(PostgresServiceProviderRepository::new(pool.clone()));
@@ -490,6 +495,7 @@ async fn main() -> std::io::Result<()> {
         mqtt_energy_adapter,
         boinc_use_cases,
         user_use_cases,
+        magic_link_use_cases,
     ));
 
     log::info!(
