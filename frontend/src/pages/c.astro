@@ -1,0 +1,87 @@
+---
+// Story 3.2 — Public consumption page for a MagicLink.
+// Story 3.3 — Wrap into an installable PWA (manifest + SW + 3-screen UX).
+//
+// URL: `/c?t=<token>` (query param, not path param).
+//
+// Pourquoi query param et pas `/c/<token>` :
+//   Astro est en mode `output: "static"` (cf. astro.config.mjs) sans adapter
+//   SSR. Les dynamic routes (`/c/[token].astro`) exigeraient soit
+//   `getStaticPaths()` (impossible — les tokens sont émis à la volée par
+//   le syndic), soit un adapter SSR (changement deploiement majeur).
+//   La page statique `/c.astro` lit le token côté client depuis
+//   `window.location.search` puis le composant Svelte fait le fetch.
+//
+// Story 3.3 specifics conservés :
+//   - `<link rel="manifest">` points at `/manifest.webmanifest` (scope /).
+//   - Inline SW registration with `?v=<sw-version>` cache-bust.
+
+import MagicLinkContractorPage from "../lib/components/pwa/MagicLinkContractorPage.svelte";
+
+// Keep in sync with `frontend/public/sw.js` SW_VERSION constant. Bumped at
+// each release to invalidate stale caches (cf. apprentissage #549).
+const SW_VERSION = "2026-06-07-1";
+---
+
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#0ea5e9" />
+    <title>KoproGo — Accès partagé</title>
+
+    <!-- Story 3.3: installable PWA scoped to /c/. The manifest declares
+         `scope: "/c/"`, so installing this page from another route would
+         fail — that's intentional (PWA contractor isolated from syndic UI). -->
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="/icons/pwa-192.png" />
+  </head>
+  <body class="bg-gray-50 min-h-screen">
+    <main class="max-w-2xl mx-auto px-4 py-10">
+      <header class="mb-6">
+        <h1 class="text-2xl font-semibold text-gray-900">Accès partagé</h1>
+        <p class="text-sm text-gray-500 mt-1">
+          Vous consultez cette ressource via un lien magique sécurisé.
+        </p>
+      </header>
+
+      <MagicLinkContractorPage client:only="svelte" />
+
+      <noscript>
+        <div
+          class="rounded-lg border border-amber-200 bg-amber-50 p-4 text-amber-800"
+          data-testid="c-page-noscript"
+        >
+          <p class="font-medium">
+            Cette page nécessite JavaScript pour afficher la ressource partagée.
+          </p>
+        </div>
+      </noscript>
+
+      <footer class="mt-8 text-xs text-gray-400 text-center">
+        <p>
+          Ce lien est à usage unique et sera marqué comme consommé après cette
+          consultation.
+        </p>
+      </footer>
+    </main>
+
+    <!-- Story 3.3 — register the contractor-scoped Service Worker. The
+         `?v=<SW_VERSION>` query forces the browser HTTP cache to revalidate
+         on a new release; once installed, `clients.claim()` activates the
+         new SW immediately for open tabs. -->
+    <script is:inline define:vars={{ SW_VERSION }}>
+      if ("serviceWorker" in navigator) {
+        window.addEventListener("load", () => {
+          navigator.serviceWorker
+            .register(`/sw.js?v=${SW_VERSION}`, { scope: "/c/" })
+            .catch(() => {
+              // SW registration failure is non-fatal — the page still works
+              // without offline support. Logged silently in production.
+            });
+        });
+      }
+    </script>
+  </body>
+</html>

@@ -34,15 +34,54 @@
   type ScopeKind = "ticket" | "quote" | "invoice" | "contractor_evaluation";
 
   type Props = {
-    /** Opaque magic-link token. Used as the IDB key and the POST URL path. */
-    token: string;
-    /** Scope discriminator returned by `GET /api/v1/c/<token>`. */
-    scopeKind: ScopeKind;
-    /** Server-resolved scope payload (already consumed). */
-    scope: Record<string, unknown>;
+    /**
+     * Opaque magic-link token. Optional in production — when omitted, the
+     * component reads `?t=<token>` from `window.location.search` on mount
+     * (`/c?t=<token>` URL, cf. `src/pages/c.astro`). Tests pass it directly.
+     */
+    token?: string;
+    /**
+     * Scope discriminator. Optional — when omitted, the component fetches
+     * `GET /api/v1/c/<token>` client-side on mount (static-build path, cf.
+     * Astro page `/c.astro` mounted with `client:only`).
+     * Tests can short-circuit the fetch by passing both `scopeKind` and `scope`.
+     */
+    scopeKind?: ScopeKind;
+    /** Pre-resolved scope payload (skips fetch when provided alongside `scopeKind`). */
+    scope?: Record<string, unknown>;
   };
 
-  let { token, scopeKind, scope }: Props = $props();
+  let {
+    token: tokenProp,
+    scopeKind: scopeKindProp,
+    scope: scopeProp,
+  }: Props = $props();
+
+  /**
+   * Token résolu : prop > query string `?t=...`. Lu côté client uniquement
+   * (le composant est mount `client:only` donc `window` est disponible au
+   * moment où le code tourne).
+   */
+  let token = $derived<string>(
+    tokenProp ??
+      (typeof window !== "undefined"
+        ? (new URLSearchParams(window.location.search).get("t") ?? "")
+        : ""),
+  );
+
+  // Internal state populated by the client-side fetch when props are absent.
+  let fetchedScopeKind = $state<ScopeKind | null>(null);
+  let fetchedScope = $state<Record<string, unknown> | null>(null);
+  let fetchLoading = $state(false);
+  let fetchError = $state<{ message: string; kind: string } | null>(null);
+
+  // Effective values used downstream — props take precedence over fetch.
+  let scopeKind = $derived<ScopeKind | null>(
+    scopeKindProp ?? fetchedScopeKind,
+  );
+  let scope = $derived<Record<string, unknown> | null>(
+    scopeProp ?? fetchedScope,
+  );
 
   // -------------------------------------------------------------------------
   // Local state — runes only
@@ -92,6 +131,8 @@
         return "Facture";
       case "contractor_evaluation":
         return "Évaluation prestataire";
+      default:
+        return "Ressource";
     }
   });
 
@@ -105,6 +146,8 @@
         return "Confirmer la facture";
       case "contractor_evaluation":
         return "Envoyer l'évaluation";
+      default:
+        return "Continuer";
     }
   });
 
@@ -186,11 +229,53 @@
   // Effects — IDB sync + online/offline + install prompt
   // -------------------------------------------------------------------------
 
+  // -------------------------------------------------------------------------
+  // Client-side fetch (only when props are absent — tests skip this branch)
+  // -------------------------------------------------------------------------
+
+  type ScopePayload = {
+    scope_kind: ScopeKind;
+    scope_id: string;
+    scope: Record<string, unknown>;
+  };
+
+  async function loadScopeFromApi(): Promise<void> {
+    fetchLoading = true;
+    fetchError = null;
+    try {
+      const res = await fetch(apiEndpoint(`/c/${encodeURIComponent(token)}`));
+      if (res.ok) {
+        const body = (await res.json()) as ScopePayload;
+        fetchedScopeKind = body.scope_kind;
+        fetchedScope = body.scope;
+      } else {
+        const body = await res.json().catch(() => ({}));
+        fetchError = {
+          message: (body?.error as string) ?? "Lien invalide",
+          kind: (body?.kind as string) ?? "magic_link_invalid",
+        };
+      }
+    } catch (_err) {
+      fetchError = {
+        message: "Service indisponible",
+        kind: "network_error",
+      };
+    } finally {
+      fetchLoading = false;
+    }
+  }
+
   onMount(() => {
     online =
       typeof navigator !== "undefined" && typeof navigator.onLine === "boolean"
         ? navigator.onLine
         : true;
+
+    // If the parent didn't pre-resolve the scope (production static-build
+    // path), fetch it now client-side.
+    if (scopeProp === undefined && scopeKindProp === undefined) {
+      void loadScopeFromApi();
+    }
 
     const onOnline = () => {
       online = true;
@@ -327,11 +412,34 @@
     </button>
   {/if}
 
-  <!-- ===================================================================== -->
-  <!-- Screen 1 — Résumé                                                     -->
-  <!-- ===================================================================== -->
-
-  {#if screen === 1}
+  <!-- Loading / fetch-error states (only when scope wasn't pre-resolved). -->
+  {#if fetchLoading}
+    <div
+      class="rounded-lg border border-gray-200 bg-white p-6 text-gray-600"
+      data-testid="pwa-loading"
+      role="status"
+      aria-live="polite"
+    >
+      <p class="text-sm">Chargement de la ressource partagée…</p>
+    </div>
+  {:else if fetchError}
+    <div
+      class="rounded-lg border border-red-200 bg-red-50 p-4 text-red-800"
+      data-testid="c-page-error"
+      data-error-kind={fetchError.kind}
+      role="alert"
+    >
+      <p class="font-medium">{fetchError.message}</p>
+    </div>
+  {:else if !scope || !scopeKind}
+    <!-- Mounted but no fetch in flight and no props passed — degraded state. -->
+    <div
+      class="rounded-lg border border-gray-200 bg-white p-4 text-gray-700"
+      data-testid="pwa-no-scope"
+    >
+      <p class="text-sm">Aucune ressource à afficher.</p>
+    </div>
+  {:else if screen === 1}
     <section
       data-testid="pwa-screen-1-summary"
       aria-labelledby="pwa-summary-heading"

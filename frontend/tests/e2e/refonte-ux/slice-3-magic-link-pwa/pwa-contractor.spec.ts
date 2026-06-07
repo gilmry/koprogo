@@ -180,7 +180,7 @@ test.describe("Story 3.3 — PWA Contractor (slice 3)", () => {
       await route.fallback();
     });
 
-    await page.goto(`/c/${encodeURIComponent(seed.magicLinkToken)}`);
+    await page.goto(`/c?t=${encodeURIComponent(seed.magicLinkToken)}`);
 
     // Screen 1 visible (server-rendered + client-mount).
     await expect(page.getByTestId("pwa-screen-1-summary")).toBeVisible({
@@ -216,13 +216,13 @@ test.describe("Story 3.3 — PWA Contractor (slice 3)", () => {
     const seed = await seedSyndicWithTicket(request);
 
     // First visit consumes the token (single-use semantics, Story 3.2).
-    await page.goto(`/c/${encodeURIComponent(seed.magicLinkToken)}`);
+    await page.goto(`/c?t=${encodeURIComponent(seed.magicLinkToken)}`);
     await expect(page.getByTestId("pwa-screen-1-summary")).toBeVisible({
       timeout: 15_000,
     });
 
     // Second visit (new context) must show the FR error card.
-    await page.goto(`/c/${encodeURIComponent(seed.magicLinkToken)}`);
+    await page.goto(`/c?t=${encodeURIComponent(seed.magicLinkToken)}`);
     await expect(page.getByTestId("c-page-error")).toBeVisible({
       timeout: 10_000,
     });
@@ -231,7 +231,7 @@ test.describe("Story 3.3 — PWA Contractor (slice 3)", () => {
   test("@negative invalid token shows error card without leaking scope", async ({
     page,
   }) => {
-    await page.goto("/c/this-token-does-not-exist");
+    await page.goto("/c?t=this-token-does-not-exist");
 
     const err = page.getByTestId("c-page-error");
     await expect(err).toBeVisible({ timeout: 10_000 });
