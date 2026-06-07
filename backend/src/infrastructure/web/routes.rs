@@ -720,6 +720,13 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig) {
             .service(submit_technical_spec)
             .service(sign_technical_spec)
             .service(list_technical_specs)
-            .service(get_technical_spec),
+            .service(get_technical_spec)
+            // ContractorEvaluation (Story 3.9 — FR34 FR35 INV-21 INV-24) — append-only.
+            // POST /contractor-evaluations                       : record an evaluation
+            // GET  /contractor-evaluations/{id}                  : details
+            // GET  /contractors/{contractor_user_id}/evaluations : list for a contractor
+            .service(create_contractor_evaluation)
+            .service(get_contractor_evaluation)
+            .service(list_contractor_evaluations),
     );
 }

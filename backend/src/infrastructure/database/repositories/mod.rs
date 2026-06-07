@@ -13,6 +13,7 @@ pub mod challenge_repository_impl;
 pub mod charge_distribution_repository_impl;
 pub mod consent_repository_impl;
 pub mod contract_evaluation_repository_impl;
+pub mod contractor_evaluation_repository_impl;
 pub mod contractor_report_repository_impl;
 pub mod convocation_recipient_repository_impl;
 pub mod convocation_repository_impl;
@@ -84,6 +85,7 @@ pub use challenge_repository_impl::{
 pub use charge_distribution_repository_impl::PostgresChargeDistributionRepository;
 pub use consent_repository_impl::PostgresConsentRepository;
 pub use contract_evaluation_repository_impl::PostgresContractEvaluationRepository;
+pub use contractor_evaluation_repository_impl::PostgresContractorEvaluationRepository;
 pub use contractor_report_repository_impl::PostgresContractorReportRepository;
 pub use convocation_recipient_repository_impl::PostgresConvocationRecipientRepository;
 pub use convocation_repository_impl::PostgresConvocationRepository;

@@ -428,8 +428,23 @@ async fn setup_test_db() -> (
             pool.clone(),
         ),
     );
-    let technical_spec_use_cases =
-        koprogo_api::application::use_cases::TechnicalSpecUseCases::new(technical_spec_repo);
+    let technical_spec_use_cases = koprogo_api::application::use_cases::TechnicalSpecUseCases::new(
+        technical_spec_repo.clone(),
+    );
+
+    // Story 3.9 — ContractorEvaluation use-cases (FR34 FR35 INV-21 INV-24).
+    let contractor_evaluation_repo: Arc<
+        dyn koprogo_api::application::ports::ContractorEvaluationRepository,
+    > = Arc::new(
+        koprogo_api::infrastructure::database::repositories::PostgresContractorEvaluationRepository::new(
+            pool.clone(),
+        ),
+    );
+    let contractor_evaluation_use_cases =
+        koprogo_api::application::use_cases::ContractorEvaluationUseCases::new(
+            contractor_evaluation_repo,
+            technical_spec_repo,
+        );
 
     let app_state = actix_web::web::Data::new(AppState::new(
         account_use_cases,
@@ -505,6 +520,7 @@ async fn setup_test_db() -> (
         role_delegation_use_cases,
         syndic_response_use_cases,
         technical_spec_use_cases,
+        contractor_evaluation_use_cases,
     ));
 
     (app_state, postgres_container, org_id)

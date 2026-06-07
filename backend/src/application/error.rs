@@ -170,6 +170,20 @@ pub enum AppError {
     /// Returns 409 Conflict. Story 3.8 (FR33).
     #[error("Signature déjà enregistrée pour ce signataire et ce rôle")]
     SignatureAlreadyExists,
+
+    /// A ContractorEvaluation requires the referenced TechnicalSpec to be in
+    /// status `Approved` (Story 3.9 — FR34). A spec in Draft /
+    /// PendingSignatures / Superseded does not legitimise an evaluation:
+    /// the prestation either has not been signed off yet, or the spec it
+    /// signed off has been replaced. Returns 422 Unprocessable Entity.
+    #[error("Une fiche technique signée est requise avant d'évaluer un prestataire")]
+    TechnicalSpecRequired,
+
+    /// A user attempts to evaluate themselves as a contractor (i.e.
+    /// `evaluator_user_id == contractor_user_id`). Returns 422 Unprocessable
+    /// Entity. Story 3.9 (FR34 INV-21).
+    #[error("Un prestataire ne peut pas s'auto-évaluer")]
+    EvaluatorIsContractor,
 }
 
 impl AppError {
@@ -205,6 +219,8 @@ impl AppError {
             AppError::TechnicalSpecResignatureRequired => "tech_spec_resignature_required",
             AppError::SignatoryNotAuthorized => "signatory_not_authorized",
             AppError::SignatureAlreadyExists => "signature_already_exists",
+            AppError::TechnicalSpecRequired => "technical_spec_required",
+            AppError::EvaluatorIsContractor => "evaluator_is_contractor",
         }
     }
 }
@@ -234,7 +250,9 @@ impl ResponseError for AppError {
             | AppError::RoleAlreadyAssigned { .. }
             | AppError::TechnicalSpecAlreadyApproved
             | AppError::SignatureAlreadyExists => StatusCode::CONFLICT,
-            AppError::TechnicalSpecResignatureRequired => StatusCode::UNPROCESSABLE_ENTITY,
+            AppError::TechnicalSpecResignatureRequired
+            | AppError::TechnicalSpecRequired
+            | AppError::EvaluatorIsContractor => StatusCode::UNPROCESSABLE_ENTITY,
             AppError::RateLimited => StatusCode::TOO_MANY_REQUESTS,
             AppError::Database(_) | AppError::Crypto(_) | AppError::Internal(_) => {
                 StatusCode::INTERNAL_SERVER_ERROR
@@ -541,6 +559,26 @@ mod tests {
         let e = AppError::SignatureAlreadyExists;
         assert_eq!(e.status_code(), StatusCode::CONFLICT);
         assert_eq!(e.kind(), "signature_already_exists");
+    }
+
+    // ------------------------------------------------------------------------
+    // Story 3.9 — ContractorEvaluation error variants (FR34 INV-21)
+    // ------------------------------------------------------------------------
+
+    #[test]
+    fn happy_technical_spec_required_maps_to_422() {
+        let e = AppError::TechnicalSpecRequired;
+        assert_eq!(e.status_code(), StatusCode::UNPROCESSABLE_ENTITY);
+        assert_eq!(e.kind(), "technical_spec_required");
+        assert!(format!("{}", e).contains("fiche technique"));
+    }
+
+    #[test]
+    fn security_evaluator_is_contractor_maps_to_422() {
+        let e = AppError::EvaluatorIsContractor;
+        assert_eq!(e.status_code(), StatusCode::UNPROCESSABLE_ENTITY);
+        assert_eq!(e.kind(), "evaluator_is_contractor");
+        assert!(format!("{}", e).contains("s'auto-évaluer"));
     }
 
     // ------------------------------------------------------------------------

@@ -5,18 +5,18 @@ use crate::application::use_cases::{
     AccountUseCases, AchievementUseCases, AcpUseCases, AgSessionUseCases, AgeRequestUseCases,
     AuditLogUseCases, AuthUseCases, BoardDashboardUseCases, BoardDecisionUseCases,
     BoardMemberUseCases, BudgetUseCases, BuildingUseCases, CallForFundsUseCases, ChallengeUseCases,
-    ChargeDistributionUseCases, ContractorReportUseCases, ConvocationUseCases, DashboardUseCases,
-    DocumentUseCases, EnergyBillUploadUseCases, EnergyCampaignUseCases, EtatDateUseCases,
-    ExpenseUseCases, FinancialReportUseCases, GamificationStatsUseCases, GdprArt30UseCases,
-    GdprUseCases, IndividualMemberUseCases, IoTUseCases, JournalEntryUseCases, LinkyUseCases,
-    LocalExchangeUseCases, MagicLinkUseCases, MandateUseCases, MeetingUseCases, NoticeUseCases,
-    NotificationUseCases, OrganizationUseCases, OwnerContributionUseCases, OwnerUseCases,
-    PaymentMethodUseCases, PaymentReminderUseCases, PaymentUseCases, PcnUseCases, PollUseCases,
-    PortfolioUseCases, QuoteUseCases, ResolutionUseCases, ResourceBookingUseCases,
-    RoleDelegationUseCases, SecurityIncidentUseCases, ServiceProviderUseCases,
-    SharedObjectUseCases, SkillUseCases, StatsUseCases, SyndicResponseUseCases,
-    TechnicalInspectionUseCases, TechnicalSpecUseCases, TicketUseCases, TwoFactorUseCases,
-    UnitOwnerUseCases, UnitUseCases, UserUseCases, WorkReportUseCases,
+    ChargeDistributionUseCases, ContractorEvaluationUseCases, ContractorReportUseCases,
+    ConvocationUseCases, DashboardUseCases, DocumentUseCases, EnergyBillUploadUseCases,
+    EnergyCampaignUseCases, EtatDateUseCases, ExpenseUseCases, FinancialReportUseCases,
+    GamificationStatsUseCases, GdprArt30UseCases, GdprUseCases, IndividualMemberUseCases,
+    IoTUseCases, JournalEntryUseCases, LinkyUseCases, LocalExchangeUseCases, MagicLinkUseCases,
+    MandateUseCases, MeetingUseCases, NoticeUseCases, NotificationUseCases, OrganizationUseCases,
+    OwnerContributionUseCases, OwnerUseCases, PaymentMethodUseCases, PaymentReminderUseCases,
+    PaymentUseCases, PcnUseCases, PollUseCases, PortfolioUseCases, QuoteUseCases,
+    ResolutionUseCases, ResourceBookingUseCases, RoleDelegationUseCases, SecurityIncidentUseCases,
+    ServiceProviderUseCases, SharedObjectUseCases, SkillUseCases, StatsUseCases,
+    SyndicResponseUseCases, TechnicalInspectionUseCases, TechnicalSpecUseCases, TicketUseCases,
+    TwoFactorUseCases, UnitOwnerUseCases, UnitUseCases, UserUseCases, WorkReportUseCases,
 };
 use crate::infrastructure::audit_logger::AuditLogger;
 use crate::infrastructure::database::repositories::{
@@ -108,6 +108,9 @@ pub struct AppState {
         Arc<SyndicResponseUseCases<PostgresSyndicResponseRepository, PostgresTicketRepository>>,
     /// Story 3.8 — TechnicalSpec (versionable + signatures multi-parties).
     pub technical_spec_use_cases: Arc<TechnicalSpecUseCases>,
+    /// Story 3.9 — ContractorEvaluation (append-only, gated by an approved
+    /// TechnicalSpec) (FR34 FR35 INV-21 INV-24).
+    pub contractor_evaluation_use_cases: Arc<ContractorEvaluationUseCases>,
 }
 
 impl AppState {
@@ -186,6 +189,7 @@ impl AppState {
             PostgresTicketRepository,
         >,
         technical_spec_use_cases: TechnicalSpecUseCases,
+        contractor_evaluation_use_cases: ContractorEvaluationUseCases,
     ) -> Self {
         Self {
             account_use_cases: Arc::new(account_use_cases),
@@ -258,6 +262,7 @@ impl AppState {
             role_delegation_use_cases: Arc::new(role_delegation_use_cases),
             syndic_response_use_cases: Arc::new(syndic_response_use_cases),
             technical_spec_use_cases: Arc::new(technical_spec_use_cases),
+            contractor_evaluation_use_cases: Arc::new(contractor_evaluation_use_cases),
         }
     }
 }

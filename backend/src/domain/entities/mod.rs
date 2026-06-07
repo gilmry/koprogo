@@ -12,6 +12,7 @@ pub mod challenge;
 pub mod charge_distribution;
 pub mod consent;
 pub mod contract_evaluation;
+pub mod contractor_evaluation;
 pub mod contractor_report;
 pub mod convocation;
 pub mod convocation_recipient;
@@ -80,6 +81,12 @@ pub use challenge::{Challenge, ChallengeProgress, ChallengeStatus, ChallengeType
 pub use charge_distribution::{ChargeDistribution, ChargeDistributionError};
 pub use consent::{ConsentRecord, ConsentStatus};
 pub use contract_evaluation::ContractEvaluation;
+pub use contractor_evaluation::{
+    ContractorEvaluation, EvaluationScores, MAX_COMMENT_LEN as CONTRACTOR_EVAL_MAX_COMMENT_LEN,
+    MAX_LINKED_TICKETS as CONTRACTOR_EVAL_MAX_LINKED_TICKETS,
+    MAX_SCORE as CONTRACTOR_EVAL_MAX_SCORE, MIN_COMMENT_LEN as CONTRACTOR_EVAL_MIN_COMMENT_LEN,
+    MIN_SCORE as CONTRACTOR_EVAL_MIN_SCORE,
+};
 pub use contractor_report::{ContractorReport, ContractorReportStatus, ReplacedPart};
 pub use convocation::{Convocation, ConvocationStatus, ConvocationType};
 pub use convocation_recipient::{AttendanceStatus, ConvocationRecipient};
