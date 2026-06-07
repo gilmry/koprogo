@@ -130,10 +130,28 @@ async function seedSyndicWithTicket(request: APIRequestContext): Promise<{
   });
   const ticket = await ticketResp.json();
 
-  // Magic link issued by the syndic for that ticket.
+  // Contractor user (subject of the magic link). MUST be distinct from the
+  // syndic (issuer) — invariant Story 3.2 entity `MagicLink::issue()` rejects
+  // `subject_user_id == issued_by` with 400 Validation.
+  const contractorEmail = `pwa-contractor-${ts}@example.com`;
+  const contractorResp = await request.post(`${API_BASE}/auth/register`, {
+    data: {
+      email: contractorEmail,
+      password: TEST_PASSWORD,
+      first_name: "PwaContractor",
+      last_name: `Ext${ts}`,
+      role: "contractor",
+      organization_id: org.id,
+    },
+  });
+  const contractor = await contractorResp.json();
+  const contractorUserId =
+    contractor.user?.id || contractor.id || contractor.user_id || "";
+
+  // Magic link issued by the syndic FOR the contractor.
   const linkResp = await request.post(`${API_BASE}/magic-links`, {
     data: {
-      subject_user_id: syndicUserId, // For now the contractor sub is the syndic itself; story 3.4 will register external contractors.
+      subject_user_id: contractorUserId,
       scope_kind: "ticket",
       scope_id: ticket.id,
       expires_in_seconds: 60 * 60, // 1 hour
