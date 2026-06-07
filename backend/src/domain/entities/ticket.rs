@@ -1,6 +1,102 @@
+use crate::application::error::AppError;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
+use std::collections::HashSet;
 use uuid::Uuid;
+
+/// Story 3.6 (INV-24) — Ticket is locked to direct edits beyond this window
+/// after creation. Subsequent changes go through workflow endpoints (assign,
+/// resolve, …) which carry their own typed errors.
+pub const TICKET_EDIT_WINDOW_MINUTES: i64 = 5;
+
+/// Story 3.6 (FR31) — Hard cap on the number of evidence URLs accepted on a
+/// single ticket (anti-abuse + UI sanity).
+pub const MAX_EVIDENCE_ATTACHMENTS: usize = 10;
+
+/// Story 3.6 (FR31) — Hard cap on the number of witnesses on a single ticket.
+pub const MAX_WITNESSES: usize = 10;
+
+/// Story 3.6 (FR31) — Distinguishes a maintenance request (default) from a
+/// formal complaint (incident report → triage / mediation workflow).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, utoipa::ToSchema)]
+#[serde(rename_all = "lowercase")]
+pub enum TicketKind {
+    /// Standard maintenance request (backward-compat default).
+    Request,
+    /// Formal complaint / incident report (community moderation workflow).
+    Complaint,
+}
+
+impl Default for TicketKind {
+    fn default() -> Self {
+        Self::Request
+    }
+}
+
+impl std::fmt::Display for TicketKind {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            TicketKind::Request => write!(f, "request"),
+            TicketKind::Complaint => write!(f, "complaint"),
+        }
+    }
+}
+
+impl std::str::FromStr for TicketKind {
+    type Err = AppError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s.trim().to_lowercase().as_str() {
+            "request" => Ok(TicketKind::Request),
+            "complaint" => Ok(TicketKind::Complaint),
+            other => Err(AppError::Validation(format!(
+                "Invalid ticket kind: {}",
+                other
+            ))),
+        }
+    }
+}
+
+/// Story 3.6 (FR31) — Severity tier for ticket triage. Ordered so callers
+/// can compare (e.g. `>= High`) when deciding alerting / SLA targets.
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize, utoipa::ToSchema,
+)]
+#[serde(rename_all = "lowercase")]
+pub enum TicketSeverity {
+    Low,
+    Normal,
+    High,
+    Critical,
+}
+
+impl std::fmt::Display for TicketSeverity {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            TicketSeverity::Low => write!(f, "low"),
+            TicketSeverity::Normal => write!(f, "normal"),
+            TicketSeverity::High => write!(f, "high"),
+            TicketSeverity::Critical => write!(f, "critical"),
+        }
+    }
+}
+
+impl std::str::FromStr for TicketSeverity {
+    type Err = AppError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s.trim().to_lowercase().as_str() {
+            "low" => Ok(TicketSeverity::Low),
+            "normal" => Ok(TicketSeverity::Normal),
+            "high" => Ok(TicketSeverity::High),
+            "critical" => Ok(TicketSeverity::Critical),
+            other => Err(AppError::Validation(format!(
+                "Invalid ticket severity: {}",
+                other
+            ))),
+        }
+    }
+}
 
 /// Ticket Category - Types of maintenance requests
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, utoipa::ToSchema)]
@@ -54,6 +150,27 @@ pub struct Ticket {
     pub status: TicketStatus,
     pub resolution_notes: Option<String>, // Notes from resolver
     pub work_order_sent_at: Option<DateTime<Utc>>, // When magic link PWA was sent to contractor (Issue #309)
+    /// Story 3.6 (FR31) — Request (default) vs Complaint. Drives triage UI and
+    /// (for Complaint) the severity invariant.
+    #[serde(default)]
+    pub kind: TicketKind,
+    /// Story 3.6 (FR31) — Triage tier. MUST be `Some` when `kind == Complaint`
+    /// (enforced by `validate_invariants`).
+    #[serde(default)]
+    pub severity: Option<TicketSeverity>,
+    /// Story 3.6 (FR31) — Optional incident timestamp (legal evidence). Free
+    /// of an upper bound here; the use-case layer may compare against
+    /// `created_at` if needed.
+    #[serde(default)]
+    pub incident_date: Option<DateTime<Utc>>,
+    /// Story 3.6 (FR31) — Up to [`MAX_EVIDENCE_ATTACHMENTS`] URLs / object-
+    /// store references attached as proof.
+    #[serde(default)]
+    pub evidence_attachments: Vec<String>,
+    /// Story 3.6 (FR31) — Up to [`MAX_WITNESSES`] user_ids witnesses. No
+    /// duplicates (enforced by `validate_invariants`).
+    #[serde(default)]
+    pub witnesses: Vec<Uuid>,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
     pub resolved_at: Option<DateTime<Utc>>,
@@ -105,11 +222,135 @@ impl Ticket {
             status: TicketStatus::Open,
             resolution_notes: None,
             work_order_sent_at: None,
+            kind: TicketKind::Request,
+            severity: None,
+            incident_date: None,
+            evidence_attachments: Vec::new(),
+            witnesses: Vec::new(),
             created_at: now,
             updated_at: now,
             resolved_at: None,
             closed_at: None,
         })
+    }
+
+    /// Story 3.6 (FR31) — Constructor supporting the full Story 3.6 surface
+    /// (kind / severity / incident_date / evidence / witnesses). Returns
+    /// `AppError` natively so the use-case layer doesn't have to bridge a
+    /// legacy `String` error.
+    ///
+    /// Invariants enforced here in addition to the legacy `new()` checks:
+    /// - `kind == Complaint` → `severity.is_some()`
+    /// - `evidence_attachments.len() <= MAX_EVIDENCE_ATTACHMENTS`
+    /// - `witnesses.len() <= MAX_WITNESSES`
+    /// - no duplicate witnesses
+    /// - `created_by` not in `witnesses` (self-witnessing is incoherent)
+    #[allow(clippy::too_many_arguments)]
+    pub fn new_with_kind(
+        organization_id: Uuid,
+        building_id: Uuid,
+        unit_id: Option<Uuid>,
+        created_by: Uuid,
+        title: String,
+        description: String,
+        category: TicketCategory,
+        priority: TicketPriority,
+        kind: TicketKind,
+        severity: Option<TicketSeverity>,
+        incident_date: Option<DateTime<Utc>>,
+        evidence_attachments: Vec<String>,
+        witnesses: Vec<Uuid>,
+    ) -> Result<Self, AppError> {
+        // Reuse the legacy validation surface (title/description) to stay DRY.
+        // Bridge its `String` errors into `AppError::Validation` so the caller
+        // sees a 400, not a 500.
+        let mut t = Ticket::new(
+            organization_id,
+            building_id,
+            unit_id,
+            created_by,
+            title,
+            description,
+            category,
+            priority,
+        )
+        .map_err(AppError::Validation)?;
+
+        t.kind = kind;
+        t.severity = severity;
+        t.incident_date = incident_date;
+        t.evidence_attachments = evidence_attachments;
+        t.witnesses = witnesses;
+
+        t.validate_invariants()?;
+        Ok(t)
+    }
+
+    // ------------------------------------------------------------------
+    // Story 3.6 (INV-24) — Immutability window.
+    // ------------------------------------------------------------------
+
+    /// Returns `true` when `t` falls strictly within the
+    /// [`TICKET_EDIT_WINDOW_MINUTES`] window after `created_at`.
+    pub fn is_editable_at(&self, t: DateTime<Utc>) -> bool {
+        let window = chrono::Duration::minutes(TICKET_EDIT_WINDOW_MINUTES);
+        t - self.created_at < window
+    }
+
+    /// Convenience wrapper using `Utc::now()` — see [`Self::is_editable_at`].
+    pub fn is_currently_editable(&self) -> bool {
+        self.is_editable_at(Utc::now())
+    }
+
+    /// Story 3.6 (FR31) — Validate every Complaint/evidence/witness invariant
+    /// at once. Used by both constructors and the PATCH use-case (after the
+    /// caller mutates fields) so the entity never escapes in an inconsistent
+    /// state.
+    ///
+    /// Returns `AppError::Validation` with a self-describing message on the
+    /// first violation found.
+    pub fn validate_invariants(&self) -> Result<(), AppError> {
+        if self.kind == TicketKind::Complaint && self.severity.is_none() {
+            return Err(AppError::Validation(
+                "Complaint tickets require an explicit severity".to_string(),
+            ));
+        }
+        if self.evidence_attachments.len() > MAX_EVIDENCE_ATTACHMENTS {
+            return Err(AppError::Validation(format!(
+                "Too many evidence attachments (max {})",
+                MAX_EVIDENCE_ATTACHMENTS
+            )));
+        }
+        if self.witnesses.len() > MAX_WITNESSES {
+            return Err(AppError::Validation(format!(
+                "Too many witnesses (max {})",
+                MAX_WITNESSES
+            )));
+        }
+        if self.witnesses.iter().any(|w| *w == self.created_by) {
+            return Err(AppError::Validation(
+                "Ticket creator cannot also be listed as a witness".to_string(),
+            ));
+        }
+        let mut seen: HashSet<Uuid> = HashSet::with_capacity(self.witnesses.len());
+        for w in &self.witnesses {
+            if !seen.insert(*w) {
+                return Err(AppError::Validation(
+                    "Duplicate witness in ticket".to_string(),
+                ));
+            }
+        }
+        // Evidence URLs: trim sanity (empty strings forbidden).
+        if self
+            .evidence_attachments
+            .iter()
+            .any(|a| a.trim().is_empty())
+        {
+            return Err(AppError::Validation(
+                "Evidence attachment URL cannot be empty".to_string(),
+            ));
+        }
+        Ok(())
     }
 
     /// Assign ticket to a user (syndic or contractor)
@@ -532,5 +773,342 @@ mod tests {
         let result = ticket.send_work_order_to_contractor();
         assert!(result.is_err());
         assert!(result.unwrap_err().contains("InProgress status"));
+    }
+
+    // ========================================================================
+    // Story 3.6 — Complaint / evidence / witnesses / INV-24 (FR31)
+    // 4-cat taxonomy: @happy / @edge / @security / @negative
+    // ========================================================================
+
+    fn make_request_ticket() -> Ticket {
+        Ticket::new(
+            Uuid::new_v4(),
+            Uuid::new_v4(),
+            None,
+            Uuid::new_v4(),
+            "Title".to_string(),
+            "Description".to_string(),
+            TicketCategory::Plumbing,
+            TicketPriority::Medium,
+        )
+        .unwrap()
+    }
+
+    // ---- @happy -------------------------------------------------------------
+
+    #[test]
+    fn happy_legacy_new_defaults_kind_to_request_and_empty_complaint_fields() {
+        let t = make_request_ticket();
+        assert_eq!(t.kind, TicketKind::Request);
+        assert!(t.severity.is_none());
+        assert!(t.incident_date.is_none());
+        assert!(t.evidence_attachments.is_empty());
+        assert!(t.witnesses.is_empty());
+        assert!(t.validate_invariants().is_ok());
+    }
+
+    #[test]
+    fn happy_new_with_kind_complaint_critical_with_evidence_and_witnesses() {
+        let org = Uuid::new_v4();
+        let bld = Uuid::new_v4();
+        let creator = Uuid::new_v4();
+        let evidence = vec![
+            "https://obj.store/a.jpg".to_string(),
+            "https://obj.store/b.jpg".to_string(),
+            "https://obj.store/c.jpg".to_string(),
+        ];
+        let witnesses = vec![Uuid::new_v4(), Uuid::new_v4()];
+
+        let t = Ticket::new_with_kind(
+            org,
+            bld,
+            None,
+            creator,
+            "Bruit nocturne récurrent".to_string(),
+            "Tapage du 3e étage, plaintes répétées".to_string(),
+            TicketCategory::Other,
+            TicketPriority::High,
+            TicketKind::Complaint,
+            Some(TicketSeverity::Critical),
+            Some(Utc::now() - chrono::Duration::hours(2)),
+            evidence.clone(),
+            witnesses.clone(),
+        )
+        .expect("Complaint with severity + ≤10 evidence + ≤10 witnesses must succeed");
+
+        assert_eq!(t.kind, TicketKind::Complaint);
+        assert_eq!(t.severity, Some(TicketSeverity::Critical));
+        assert_eq!(t.evidence_attachments, evidence);
+        assert_eq!(t.witnesses, witnesses);
+        assert!(t.incident_date.is_some());
+    }
+
+    #[test]
+    fn happy_kind_severity_display_and_from_str_roundtrip() {
+        use std::str::FromStr;
+        for k in [TicketKind::Request, TicketKind::Complaint] {
+            assert_eq!(TicketKind::from_str(&k.to_string()).unwrap(), k);
+        }
+        for s in [
+            TicketSeverity::Low,
+            TicketSeverity::Normal,
+            TicketSeverity::High,
+            TicketSeverity::Critical,
+        ] {
+            assert_eq!(TicketSeverity::from_str(&s.to_string()).unwrap(), s);
+        }
+    }
+
+    #[test]
+    fn happy_severity_ordering_supports_high_alerting_threshold() {
+        // Ordering used by triage code: alert if `severity >= High`.
+        assert!(TicketSeverity::Critical > TicketSeverity::High);
+        assert!(TicketSeverity::High > TicketSeverity::Normal);
+        assert!(TicketSeverity::Normal > TicketSeverity::Low);
+    }
+
+    // ---- @edge --------------------------------------------------------------
+
+    #[test]
+    fn edge_complaint_with_no_evidence_is_allowed_text_only_path() {
+        // The UI flags "no evidence attached" but the entity accepts it.
+        let creator = Uuid::new_v4();
+        let t = Ticket::new_with_kind(
+            Uuid::new_v4(),
+            Uuid::new_v4(),
+            None,
+            creator,
+            "Plainte textuelle".to_string(),
+            "Aucune photo dispo".to_string(),
+            TicketCategory::Security,
+            TicketPriority::Medium,
+            TicketKind::Complaint,
+            Some(TicketSeverity::Normal),
+            None,
+            Vec::new(),
+            Vec::new(),
+        )
+        .expect("Complaint without evidence/witnesses must be allowed (text-only)");
+        assert!(t.evidence_attachments.is_empty());
+    }
+
+    #[test]
+    fn edge_exactly_max_evidence_attachments_is_accepted() {
+        let evidence: Vec<String> = (0..MAX_EVIDENCE_ATTACHMENTS)
+            .map(|i| format!("https://e.test/{i}"))
+            .collect();
+        let t = Ticket::new_with_kind(
+            Uuid::new_v4(),
+            Uuid::new_v4(),
+            None,
+            Uuid::new_v4(),
+            "T".to_string(),
+            "D".to_string(),
+            TicketCategory::Other,
+            TicketPriority::Low,
+            TicketKind::Complaint,
+            Some(TicketSeverity::Low),
+            None,
+            evidence,
+            Vec::new(),
+        );
+        assert!(
+            t.is_ok(),
+            "exactly {} evidence URLs is on-bound",
+            MAX_EVIDENCE_ATTACHMENTS
+        );
+    }
+
+    #[test]
+    fn edge_one_over_max_evidence_attachments_is_rejected() {
+        let evidence: Vec<String> = (0..(MAX_EVIDENCE_ATTACHMENTS + 1))
+            .map(|i| format!("https://e.test/{i}"))
+            .collect();
+        let err = Ticket::new_with_kind(
+            Uuid::new_v4(),
+            Uuid::new_v4(),
+            None,
+            Uuid::new_v4(),
+            "T".to_string(),
+            "D".to_string(),
+            TicketCategory::Other,
+            TicketPriority::Low,
+            TicketKind::Complaint,
+            Some(TicketSeverity::Low),
+            None,
+            evidence,
+            Vec::new(),
+        )
+        .unwrap_err();
+        assert!(matches!(err, AppError::Validation(_)));
+    }
+
+    #[test]
+    fn edge_is_editable_at_just_under_window_returns_true() {
+        let mut t = make_request_ticket();
+        let now = Utc::now();
+        t.created_at = now;
+        // 4m59s
+        let probe = now + chrono::Duration::seconds(4 * 60 + 59);
+        assert!(t.is_editable_at(probe));
+    }
+
+    #[test]
+    fn edge_is_editable_at_just_past_window_returns_false() {
+        let mut t = make_request_ticket();
+        let now = Utc::now();
+        t.created_at = now;
+        // 5m1s — INV-24 locks the ticket
+        let probe = now + chrono::Duration::seconds(5 * 60 + 1);
+        assert!(!t.is_editable_at(probe));
+    }
+
+    // ---- @security ----------------------------------------------------------
+
+    #[test]
+    fn security_duplicate_witnesses_are_rejected() {
+        let dup = Uuid::new_v4();
+        let err = Ticket::new_with_kind(
+            Uuid::new_v4(),
+            Uuid::new_v4(),
+            None,
+            Uuid::new_v4(),
+            "T".to_string(),
+            "D".to_string(),
+            TicketCategory::Other,
+            TicketPriority::Low,
+            TicketKind::Complaint,
+            Some(TicketSeverity::Normal),
+            None,
+            Vec::new(),
+            vec![dup, dup],
+        )
+        .unwrap_err();
+        assert!(matches!(err, AppError::Validation(_)));
+    }
+
+    #[test]
+    fn security_request_with_severity_is_allowed_severity_not_exclusive_to_complaint() {
+        // FR31 — severity may decorate a Request too (e.g. internal triage).
+        let t = Ticket::new_with_kind(
+            Uuid::new_v4(),
+            Uuid::new_v4(),
+            None,
+            Uuid::new_v4(),
+            "T".to_string(),
+            "D".to_string(),
+            TicketCategory::Heating,
+            TicketPriority::Medium,
+            TicketKind::Request,
+            Some(TicketSeverity::High),
+            None,
+            Vec::new(),
+            Vec::new(),
+        )
+        .expect("Request + severity must be accepted (severity not exclusive)");
+        assert_eq!(t.kind, TicketKind::Request);
+        assert_eq!(t.severity, Some(TicketSeverity::High));
+    }
+
+    #[test]
+    fn security_creator_listed_as_witness_is_rejected() {
+        let creator = Uuid::new_v4();
+        let err = Ticket::new_with_kind(
+            Uuid::new_v4(),
+            Uuid::new_v4(),
+            None,
+            creator,
+            "T".to_string(),
+            "D".to_string(),
+            TicketCategory::Other,
+            TicketPriority::Low,
+            TicketKind::Complaint,
+            Some(TicketSeverity::Normal),
+            None,
+            Vec::new(),
+            vec![creator],
+        )
+        .unwrap_err();
+        assert!(matches!(err, AppError::Validation(_)));
+    }
+
+    // ---- @negative ----------------------------------------------------------
+
+    #[test]
+    fn negative_complaint_without_severity_is_rejected() {
+        let err = Ticket::new_with_kind(
+            Uuid::new_v4(),
+            Uuid::new_v4(),
+            None,
+            Uuid::new_v4(),
+            "T".to_string(),
+            "D".to_string(),
+            TicketCategory::Other,
+            TicketPriority::Low,
+            TicketKind::Complaint,
+            None, // ← missing
+            None,
+            Vec::new(),
+            Vec::new(),
+        )
+        .unwrap_err();
+        assert!(matches!(err, AppError::Validation(_)));
+    }
+
+    #[test]
+    fn negative_eleven_witnesses_is_rejected() {
+        let witnesses: Vec<Uuid> = (0..(MAX_WITNESSES + 1)).map(|_| Uuid::new_v4()).collect();
+        let err = Ticket::new_with_kind(
+            Uuid::new_v4(),
+            Uuid::new_v4(),
+            None,
+            Uuid::new_v4(),
+            "T".to_string(),
+            "D".to_string(),
+            TicketCategory::Other,
+            TicketPriority::Low,
+            TicketKind::Complaint,
+            Some(TicketSeverity::Low),
+            None,
+            Vec::new(),
+            witnesses,
+        )
+        .unwrap_err();
+        assert!(matches!(err, AppError::Validation(_)));
+    }
+
+    #[test]
+    fn negative_empty_evidence_url_is_rejected() {
+        let err = Ticket::new_with_kind(
+            Uuid::new_v4(),
+            Uuid::new_v4(),
+            None,
+            Uuid::new_v4(),
+            "T".to_string(),
+            "D".to_string(),
+            TicketCategory::Other,
+            TicketPriority::Low,
+            TicketKind::Complaint,
+            Some(TicketSeverity::Low),
+            None,
+            vec!["   ".to_string()],
+            Vec::new(),
+        )
+        .unwrap_err();
+        assert!(matches!(err, AppError::Validation(_)));
+    }
+
+    #[test]
+    fn negative_invalid_kind_string_is_rejected() {
+        use std::str::FromStr;
+        let err = TicketKind::from_str("incident").unwrap_err();
+        assert!(matches!(err, AppError::Validation(_)));
+    }
+
+    #[test]
+    fn negative_invalid_severity_string_is_rejected() {
+        use std::str::FromStr;
+        let err = TicketSeverity::from_str("urgent").unwrap_err();
+        assert!(matches!(err, AppError::Validation(_)));
     }
 }

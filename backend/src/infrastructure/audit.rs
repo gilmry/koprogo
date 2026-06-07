@@ -69,6 +69,8 @@ pub enum AuditEventType {
     TicketReopened,
     TicketDeleted,
     TicketWorkOrderSent,
+    /// Story 3.6 (FR31 / INV-24) — PATCH field edit within the 5-min window.
+    TicketUpdated,
 
     // Notification events (Issue #86 - Phase 2)
     NotificationCreated,

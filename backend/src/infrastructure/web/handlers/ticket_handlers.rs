@@ -1,11 +1,11 @@
 use crate::application::dto::{
     AssignTicketRequest, CancelTicketRequest, CreateTicketRequest, ReopenTicketRequest,
-    ResolveTicketRequest, TicketResponse,
+    ResolveTicketRequest, TicketResponse, UpdateTicketRequest,
 };
 use crate::domain::entities::TicketStatus;
 use crate::infrastructure::audit::{AuditEventType, AuditLogEntry};
 use crate::infrastructure::web::{AppState, AuthenticatedUser};
-use actix_web::{delete, get, post, put, web, HttpResponse, Responder};
+use actix_web::{delete, get, patch, post, put, web, HttpResponse, Responder, ResponseError};
 use std::collections::HashMap;
 use uuid::Uuid;
 
@@ -369,6 +369,106 @@ pub async fn delete_ticket(
             .log();
 
             HttpResponse::BadRequest().json(serde_json::json!({"error": err}))
+        }
+    }
+}
+
+// ==================== Ticket Field Update (Story 3.6 — INV-24) ====================
+
+/// PATCH `/tickets/{id}` — Story 3.6 (FR31) / INV-24.
+///
+/// Edits the editable fields of a ticket (title / description / category /
+/// priority / severity / incident_date / evidence_attachments / witnesses).
+/// Returns:
+/// - 200 OK on success;
+/// - 403 (`kind = ticket_immutable`) if the 5-minute editability window
+///   has elapsed;
+/// - 404 if the ticket does not exist;
+/// - 400 (`kind = validation`) on invariant violations;
+/// - 403 (multi-tenant isolation) if the ticket belongs to a different org.
+///
+/// Workflow transitions (assign/resolve/close/cancel/reopen) keep their
+/// own dedicated PUT endpoints — this PATCH is for content corrections
+/// inside the 5-minute window only.
+#[utoipa::path(
+    patch,
+    path = "/tickets/{id}",
+    tag = "Tickets",
+    summary = "Update editable fields of a ticket (Story 3.6 INV-24, within 5-min window)",
+    params(
+        ("id" = Uuid, Path, description = "Ticket ID")
+    ),
+    request_body = UpdateTicketRequest,
+    responses(
+        (status = 200, description = "Ticket updated"),
+        (status = 400, description = "Validation error (e.g. complaint without severity)"),
+        (status = 401, description = "Unauthorized"),
+        (status = 403, description = "Ticket immutable (INV-24) or out of scope"),
+        (status = 404, description = "Ticket not found"),
+    ),
+    security(("bearer_auth" = []))
+)]
+#[patch("/tickets/{id}")]
+pub async fn update_ticket_fields(
+    state: web::Data<AppState>,
+    user: AuthenticatedUser,
+    id: web::Path<Uuid>,
+    request: web::Json<UpdateTicketRequest>,
+) -> impl Responder {
+    let organization_id = match user.require_organization() {
+        Ok(org_id) => org_id,
+        Err(e) => {
+            return HttpResponse::Unauthorized().json(serde_json::json!({"error": e.to_string()}))
+        }
+    };
+
+    // Multi-tenant isolation — pre-check existence + org-membership before
+    // hitting the use-case (which only deals with the temporal invariant).
+    match state.ticket_use_cases.get_ticket(*id).await {
+        Ok(Some(existing)) => {
+            if let Err(e) = user.verify_org_access(existing.organization_id) {
+                return HttpResponse::Forbidden().json(serde_json::json!({ "error": e }));
+            }
+        }
+        Ok(None) => {
+            return HttpResponse::NotFound()
+                .json(serde_json::json!({ "error": "Ticket not found" }));
+        }
+        Err(err) => {
+            return HttpResponse::InternalServerError().json(serde_json::json!({ "error": err }));
+        }
+    }
+
+    match state
+        .ticket_use_cases
+        .update_ticket_fields(*id, request.into_inner())
+        .await
+    {
+        Ok(ticket) => {
+            AuditLogEntry::new(
+                AuditEventType::TicketUpdated,
+                Some(user.user_id),
+                Some(organization_id),
+            )
+            .with_resource("Ticket", ticket.id)
+            .log();
+
+            let enriched = enrich_ticket(&state, ticket).await;
+            HttpResponse::Ok().json(enriched)
+        }
+        Err(err) => {
+            AuditLogEntry::new(
+                AuditEventType::TicketUpdated,
+                Some(user.user_id),
+                Some(organization_id),
+            )
+            .with_error(err.to_string())
+            .log();
+
+            // Delegate to AppError's ResponseError impl — preserves typed
+            // status + JSON shape (`{error, kind}`) consistently across
+            // all 3.x stories.
+            err.error_response()
         }
     }
 }

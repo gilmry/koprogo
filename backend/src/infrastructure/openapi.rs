@@ -89,6 +89,7 @@ use utoipa_swagger_ui::SwaggerUi;
         // Tickets
         crate::infrastructure::web::handlers::ticket_handlers::create_ticket,
         crate::infrastructure::web::handlers::ticket_handlers::get_ticket,
+        crate::infrastructure::web::handlers::ticket_handlers::update_ticket_fields,
         crate::infrastructure::web::handlers::ticket_handlers::delete_ticket,
         crate::infrastructure::web::handlers::ticket_handlers::list_my_tickets,
         crate::infrastructure::web::handlers::ticket_handlers::list_assigned_tickets,

@@ -135,6 +135,13 @@ pub enum AppError {
     /// to them. Returns 403 — Story 3.5 (FR8 INV-8) anti-bypass.
     #[error("Re-délégation interdite : ce rôle vous a déjà été délégué")]
     DelegationChainNotAllowed,
+
+    /// Ticket is locked from further edits — INV-24 enforces a 5-minute
+    /// editability window after creation. Subsequent edits MUST go through
+    /// dedicated workflow endpoints (assign / resolve / cancel …).
+    /// Returns 403 Forbidden. Story 3.6 (FR31).
+    #[error("Ce ticket est verrouillé (créé il y a plus de 5 minutes)")]
+    TicketImmutable,
 }
 
 impl AppError {
@@ -164,6 +171,7 @@ impl AppError {
             AppError::MandateNotFound => "mandate_not_found",
             AppError::RoleAlreadyAssigned { .. } => "role_already_assigned",
             AppError::DelegationChainNotAllowed => "delegation_chain_not_allowed",
+            AppError::TicketImmutable => "ticket_immutable",
         }
     }
 }
@@ -184,7 +192,8 @@ impl ResponseError for AppError {
             | AppError::MandateExpired
             | AppError::MandateRevoked
             | AppError::MandateInvalidScope
-            | AppError::DelegationChainNotAllowed => StatusCode::FORBIDDEN,
+            | AppError::DelegationChainNotAllowed
+            | AppError::TicketImmutable => StatusCode::FORBIDDEN,
             AppError::NotFound(_) | AppError::MandateNotFound => StatusCode::NOT_FOUND,
             AppError::Conflict(_) | AppError::RoleAlreadyAssigned { .. } => StatusCode::CONFLICT,
             AppError::RateLimited => StatusCode::TOO_MANY_REQUESTS,
@@ -437,6 +446,18 @@ mod tests {
         let e = AppError::DelegationChainNotAllowed;
         assert_eq!(e.status_code(), StatusCode::FORBIDDEN);
         assert_eq!(e.kind(), "delegation_chain_not_allowed");
+    }
+
+    // ------------------------------------------------------------------------
+    // Story 3.6 — TicketImmutable (INV-24)
+    // ------------------------------------------------------------------------
+
+    #[test]
+    fn security_ticket_immutable_maps_to_403() {
+        let e = AppError::TicketImmutable;
+        assert_eq!(e.status_code(), StatusCode::FORBIDDEN);
+        assert_eq!(e.kind(), "ticket_immutable");
+        assert!(format!("{}", e).contains("verrouillé"));
     }
 
     // ------------------------------------------------------------------------

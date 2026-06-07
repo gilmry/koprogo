@@ -132,7 +132,10 @@ pub use service_provider::{ServiceProvider, TradeCategory};
 pub use shared_object::{ObjectCondition, SharedObject, SharedObjectCategory};
 pub use skill::{ExpertiseLevel, Skill, SkillCategory};
 pub use technical_inspection::{InspectionStatus, InspectionType, TechnicalInspection};
-pub use ticket::{Ticket, TicketCategory, TicketPriority, TicketStatus};
+pub use ticket::{
+    Ticket, TicketCategory, TicketKind, TicketPriority, TicketSeverity, TicketStatus,
+    MAX_EVIDENCE_ATTACHMENTS, MAX_WITNESSES, TICKET_EDIT_WINDOW_MINUTES,
+};
 pub use two_factor_secret::TwoFactorSecret;
 pub use unit::{Unit, UnitType};
 pub use unit_owner::UnitOwner;

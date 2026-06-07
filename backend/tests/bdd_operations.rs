@@ -400,6 +400,12 @@ impl OperationsWorld {
             description: description.to_string(),
             category,
             priority,
+            // Story 3.6 — backward-compat defaults.
+            kind: None,
+            severity: None,
+            incident_date: None,
+            evidence_attachments: Vec::new(),
+            witnesses: Vec::new(),
         };
 
         let result = uc.create_ticket(org_id, created_by, request).await;
@@ -4180,6 +4186,12 @@ async fn given_ticket_exists_in_building(world: &mut OperationsWorld, title: Str
         description: "Auto-created for contractor report BDD".to_string(),
         category: TicketCategory::Other,
         priority: TicketPriority::Medium,
+        // Story 3.6 — backward-compat defaults.
+        kind: None,
+        severity: None,
+        incident_date: None,
+        evidence_attachments: Vec::new(),
+        witnesses: Vec::new(),
     };
 
     match uc.create_ticket(org_id, created_by, request).await {

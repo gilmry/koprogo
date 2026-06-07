@@ -196,6 +196,7 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig) {
             .service(list_building_tickets)
             .service(list_organization_tickets)
             .service(get_ticket)
+            .service(update_ticket_fields)
             .service(delete_ticket)
             .service(assign_ticket)
             .service(start_work)

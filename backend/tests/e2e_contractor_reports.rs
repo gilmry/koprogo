@@ -60,6 +60,12 @@ async fn create_contractor_test_ticket(
         description: "Maintenance work required".to_string(),
         category: TicketCategory::Other,
         priority: TicketPriority::Medium,
+        // Story 3.6 defaults — preserves pre-3.6 Request behavior.
+        kind: None,
+        severity: None,
+        incident_date: None,
+        evidence_attachments: Vec::new(),
+        witnesses: Vec::new(),
     };
     let ticket = app_state
         .ticket_use_cases
