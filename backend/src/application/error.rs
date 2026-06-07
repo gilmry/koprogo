@@ -125,6 +125,16 @@ pub enum AppError {
     /// Story 3.4 (FR7 INV-14).
     #[error("Mandat introuvable")]
     MandateNotFound,
+
+    /// The target user already holds the requested role actively. Returns 409.
+    /// Story 3.5 (FR8 INV-8) — anti-double-grant.
+    #[error("Rôle déjà attribué à cet utilisateur")]
+    RoleAlreadyAssigned { user_id: uuid::Uuid, role: String },
+
+    /// The delegator tries to re-delegate a role that was itself delegated
+    /// to them. Returns 403 — Story 3.5 (FR8 INV-8) anti-bypass.
+    #[error("Re-délégation interdite : ce rôle vous a déjà été délégué")]
+    DelegationChainNotAllowed,
 }
 
 impl AppError {
@@ -152,6 +162,8 @@ impl AppError {
             AppError::MandateRevoked => "mandate_revoked",
             AppError::MandateInvalidScope => "mandate_invalid_scope",
             AppError::MandateNotFound => "mandate_not_found",
+            AppError::RoleAlreadyAssigned { .. } => "role_already_assigned",
+            AppError::DelegationChainNotAllowed => "delegation_chain_not_allowed",
         }
     }
 }
@@ -171,9 +183,10 @@ impl ResponseError for AppError {
             | AppError::MagicLinkAlreadyConsumed
             | AppError::MandateExpired
             | AppError::MandateRevoked
-            | AppError::MandateInvalidScope => StatusCode::FORBIDDEN,
+            | AppError::MandateInvalidScope
+            | AppError::DelegationChainNotAllowed => StatusCode::FORBIDDEN,
             AppError::NotFound(_) | AppError::MandateNotFound => StatusCode::NOT_FOUND,
-            AppError::Conflict(_) => StatusCode::CONFLICT,
+            AppError::Conflict(_) | AppError::RoleAlreadyAssigned { .. } => StatusCode::CONFLICT,
             AppError::RateLimited => StatusCode::TOO_MANY_REQUESTS,
             AppError::Database(_) | AppError::Crypto(_) | AppError::Internal(_) => {
                 StatusCode::INTERNAL_SERVER_ERROR
@@ -394,10 +407,36 @@ mod tests {
             AppError::MagicLinkInvalid,
             AppError::MagicLinkExpired,
             AppError::MagicLinkAlreadyConsumed,
+            AppError::RoleAlreadyAssigned {
+                user_id: uuid::Uuid::nil(),
+                role: "syndic".into(),
+            },
+            AppError::DelegationChainNotAllowed,
         ];
         for v in variants {
             assert!(!v.kind().is_empty(), "kind() empty for {:?}", v);
         }
+    }
+
+    // ------------------------------------------------------------------------
+    // Story 3.5 — RoleAlreadyAssigned / DelegationChainNotAllowed
+    // ------------------------------------------------------------------------
+
+    #[test]
+    fn happy_role_already_assigned_maps_to_409() {
+        let e = AppError::RoleAlreadyAssigned {
+            user_id: uuid::Uuid::nil(),
+            role: "syndic".into(),
+        };
+        assert_eq!(e.status_code(), StatusCode::CONFLICT);
+        assert_eq!(e.kind(), "role_already_assigned");
+    }
+
+    #[test]
+    fn security_delegation_chain_not_allowed_maps_to_403() {
+        let e = AppError::DelegationChainNotAllowed;
+        assert_eq!(e.status_code(), StatusCode::FORBIDDEN);
+        assert_eq!(e.kind(), "delegation_chain_not_allowed");
     }
 
     // ------------------------------------------------------------------------

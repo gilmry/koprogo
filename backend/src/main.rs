@@ -221,6 +221,14 @@ async fn main() -> std::io::Result<()> {
             pool.clone(),
         ),
     );
+    // Story 3.5 — Temporary role delegation (syndic → owner, bounded).
+    let role_delegation_repo: Arc<
+        dyn koprogo_api::application::ports::RoleDelegationRepository,
+    > = Arc::new(
+        koprogo_api::infrastructure::database::repositories::PostgresRoleDelegationRepository::new(
+            pool.clone(),
+        ),
+    );
 
     // Initialize audit logger with database persistence
     let audit_logger = AuditLogger::new(Some(audit_log_repo.clone()));
@@ -409,6 +417,11 @@ async fn main() -> std::io::Result<()> {
     // Story 3.4 — Mandate use cases (juridical delegation tracker).
     let mandate_use_cases =
         koprogo_api::application::use_cases::MandateUseCases::new(mandate_repo.clone());
+    // Story 3.5 — Role delegation use cases (FR8 INV-8).
+    let role_delegation_use_cases =
+        koprogo_api::application::use_cases::RoleDelegationUseCases::new(
+            role_delegation_repo.clone(),
+        );
 
     // Marketplace (Issue #276)
     let service_provider_repo = Arc::new(PostgresServiceProviderRepository::new(pool.clone()));
@@ -506,6 +519,7 @@ async fn main() -> std::io::Result<()> {
         user_use_cases,
         magic_link_use_cases,
         mandate_use_cases,
+        role_delegation_use_cases,
     ));
 
     log::info!(

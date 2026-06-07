@@ -441,6 +441,16 @@ pub async fn setup_test_db() -> (
     );
     let mandate_use_cases = koprogo_api::application::use_cases::MandateUseCases::new(mandate_repo);
 
+    let role_delegation_repo: Arc<
+        dyn koprogo_api::application::ports::RoleDelegationRepository,
+    > = Arc::new(
+        koprogo_api::infrastructure::database::repositories::PostgresRoleDelegationRepository::new(
+            pool.clone(),
+        ),
+    );
+    let role_delegation_use_cases =
+        koprogo_api::application::use_cases::RoleDelegationUseCases::new(role_delegation_repo);
+
     let app_state = actix_web::web::Data::new(AppState::new(
         account_use_cases,
         acp_use_cases,
@@ -512,6 +522,7 @@ pub async fn setup_test_db() -> (
         user_use_cases,
         magic_link_use_cases,
         mandate_use_cases,
+        role_delegation_use_cases,
     ));
 
     (app_state, container, org_id)

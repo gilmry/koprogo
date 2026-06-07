@@ -22,6 +22,12 @@ impl PostgresUserRoleRepository {
             .parse()
             .map_err(|e| format!("Invalid role: {}", e))?;
 
+        // Story 3.5 — `valid_until` / `delegated_from_user_id` are best-effort
+        // reads: legacy SELECT queries that do not yet project these columns
+        // simply default to `None`, preserving native (permanent) semantics.
+        let valid_until = row.try_get("valid_until").ok();
+        let delegated_from_user_id = row.try_get("delegated_from_user_id").ok();
+
         Ok(UserRoleAssignment {
             id: row
                 .try_get("id")
@@ -36,6 +42,8 @@ impl PostgresUserRoleRepository {
             is_primary: row
                 .try_get("is_primary")
                 .map_err(|e| format!("Failed to read is_primary: {}", e))?,
+            valid_until,
+            delegated_from_user_id,
             created_at: row
                 .try_get("created_at")
                 .map_err(|e| format!("Failed to read created_at: {}", e))?,

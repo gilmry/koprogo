@@ -694,6 +694,13 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig) {
             .service(issue_mandate)
             .service(list_mandates)
             .service(revoke_mandate)
-            .service(get_mandate),
+            .service(get_mandate)
+            // Role Delegations (Story 3.5 — FR8 INV-8)
+            // POST   /role-delegations              : delegate role to another user (bounded)
+            // DELETE /role-delegations/{id}         : revoke a delegation
+            // GET    /role-delegations?subject=<u>  : list delegations of a subject
+            .service(create_role_delegation)
+            .service(revoke_role_delegation)
+            .service(list_role_delegations),
     );
 }

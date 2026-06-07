@@ -13,9 +13,10 @@ use crate::application::use_cases::{
     NotificationUseCases, OrganizationUseCases, OwnerContributionUseCases, OwnerUseCases,
     PaymentMethodUseCases, PaymentReminderUseCases, PaymentUseCases, PcnUseCases, PollUseCases,
     PortfolioUseCases, QuoteUseCases, ResolutionUseCases, ResourceBookingUseCases,
-    SecurityIncidentUseCases, ServiceProviderUseCases, SharedObjectUseCases, SkillUseCases,
-    StatsUseCases, TechnicalInspectionUseCases, TicketUseCases, TwoFactorUseCases,
-    UnitOwnerUseCases, UnitUseCases, UserUseCases, WorkReportUseCases,
+    RoleDelegationUseCases, SecurityIncidentUseCases, ServiceProviderUseCases,
+    SharedObjectUseCases, SkillUseCases, StatsUseCases, TechnicalInspectionUseCases,
+    TicketUseCases, TwoFactorUseCases, UnitOwnerUseCases, UnitUseCases, UserUseCases,
+    WorkReportUseCases,
 };
 use crate::infrastructure::audit_logger::AuditLogger;
 use crate::infrastructure::email::EmailService;
@@ -94,6 +95,8 @@ pub struct AppState {
     /// Story 3.4 — Mandate (delegation to external professionals: notaire,
     /// avocat, AMO, architecte, BET, gardien) with bounded validity.
     pub mandate_use_cases: Arc<MandateUseCases>,
+    /// Story 3.5 — Temporary role delegation (syndic → owner, bounded).
+    pub role_delegation_use_cases: Arc<RoleDelegationUseCases>,
 }
 
 impl AppState {
@@ -166,6 +169,7 @@ impl AppState {
         user_use_cases: UserUseCases,
         magic_link_use_cases: MagicLinkUseCases,
         mandate_use_cases: MandateUseCases,
+        role_delegation_use_cases: RoleDelegationUseCases,
     ) -> Self {
         Self {
             account_use_cases: Arc::new(account_use_cases),
@@ -235,6 +239,7 @@ impl AppState {
             user_use_cases: Arc::new(user_use_cases),
             magic_link_use_cases: Arc::new(magic_link_use_cases),
             mandate_use_cases: Arc::new(mandate_use_cases),
+            role_delegation_use_cases: Arc::new(role_delegation_use_cases),
         }
     }
 }
