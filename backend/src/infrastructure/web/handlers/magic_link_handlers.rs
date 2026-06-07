@@ -19,7 +19,7 @@ use uuid::Uuid;
 // DTOs
 // ---------------------------------------------------------------------------
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, utoipa::ToSchema)]
 pub struct IssueMagicLinkRequest {
     pub subject_user_id: Uuid,
     pub scope_kind: String,
@@ -27,7 +27,7 @@ pub struct IssueMagicLinkRequest {
     pub expires_in_seconds: i64,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, utoipa::ToSchema)]
 pub struct IssueMagicLinkResponse {
     pub id: Uuid,
     pub token: String,
@@ -36,10 +36,11 @@ pub struct IssueMagicLinkResponse {
     pub scope_id: Uuid,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, utoipa::ToSchema)]
 pub struct PublicScopePayload {
     pub scope_kind: String,
     pub scope_id: Uuid,
+    #[schema(value_type = serde_json::Value)]
     pub scope: serde_json::Value,
 }
 

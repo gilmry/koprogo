@@ -426,6 +426,14 @@ pub async fn setup_test_db() -> (
     let boinc_grid_adapter = Arc::new(BoincGridAdapter::new(pool.clone()));
     let boinc_use_cases = BoincUseCases::new(boinc_grid_adapter, boinc_iot_repo);
 
+    let magic_link_repo: Arc<dyn koprogo_api::application::ports::MagicLinkRepository> = Arc::new(
+        koprogo_api::infrastructure::database::repositories::PostgresMagicLinkRepository::new(
+            pool.clone(),
+        ),
+    );
+    let magic_link_use_cases =
+        koprogo_api::application::use_cases::MagicLinkUseCases::new(magic_link_repo);
+
     let app_state = actix_web::web::Data::new(AppState::new(
         account_use_cases,
         acp_use_cases,
@@ -495,6 +503,7 @@ pub async fn setup_test_db() -> (
         mqtt_energy_adapter,
         boinc_use_cases,
         user_use_cases,
+        magic_link_use_cases,
     ));
 
     (app_state, container, org_id)
