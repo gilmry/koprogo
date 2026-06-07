@@ -253,6 +253,9 @@ pub async fn setup_test_db() -> (
     let resolution_repo = Arc::new(PostgresResolutionRepository::new(pool.clone()));
     let vote_repo = Arc::new(PostgresVoteRepository::new(pool.clone()));
     let ticket_repo = Arc::new(PostgresTicketRepository::new(pool.clone()));
+    // Story 3.7 — concrete clone used downstream by SyndicResponseUseCases
+    // (generic over concrete repo types).
+    let ticket_repo_for_syndic_response = ticket_repo.clone();
     let two_factor_repo = Arc::new(PostgresTwoFactorRepository::new(pool.clone()));
     let notification_repo = Arc::new(PostgresNotificationRepository::new(pool.clone()));
     let notification_preference_repo =
@@ -451,6 +454,18 @@ pub async fn setup_test_db() -> (
     let role_delegation_use_cases =
         koprogo_api::application::use_cases::RoleDelegationUseCases::new(role_delegation_repo);
 
+    // Story 3.7 — SyndicResponse use-cases (generic over concrete types).
+    let syndic_response_repo = Arc::new(
+        koprogo_api::infrastructure::database::repositories::PostgresSyndicResponseRepository::new(
+            pool.clone(),
+        ),
+    );
+    let syndic_response_use_cases =
+        koprogo_api::application::use_cases::SyndicResponseUseCases::new(
+            syndic_response_repo,
+            ticket_repo_for_syndic_response,
+        );
+
     let app_state = actix_web::web::Data::new(AppState::new(
         account_use_cases,
         acp_use_cases,
@@ -523,6 +538,7 @@ pub async fn setup_test_db() -> (
         magic_link_use_cases,
         mandate_use_cases,
         role_delegation_use_cases,
+        syndic_response_use_cases,
     ));
 
     (app_state, container, org_id)

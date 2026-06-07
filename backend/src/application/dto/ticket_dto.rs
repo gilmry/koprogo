@@ -35,6 +35,13 @@ pub struct TicketResponse {
     /// Story 3.6 (FR31) — user_ids témoins.
     #[serde(default)]
     pub witnesses: Vec<Uuid>,
+    /// Story 3.7 (FR32) — Syndic SLA deadline (computed from `severity`).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub sla_due_at: Option<DateTime<Utc>>,
+    /// Story 3.7 (FR32) — Timestamp at which SLA was consumed (response in
+    /// time or cron escalation).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub sla_escalated_at: Option<DateTime<Utc>>,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
     pub resolved_at: Option<DateTime<Utc>>,
@@ -66,6 +73,8 @@ impl From<Ticket> for TicketResponse {
             incident_date: ticket.incident_date,
             evidence_attachments: ticket.evidence_attachments,
             witnesses: ticket.witnesses,
+            sla_due_at: ticket.sla_due_at,
+            sla_escalated_at: ticket.sla_escalated_at,
             created_at: ticket.created_at,
             updated_at: ticket.updated_at,
             resolved_at: ticket.resolved_at,

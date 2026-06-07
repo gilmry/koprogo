@@ -4,6 +4,7 @@ pub mod database;
 pub mod email;
 pub mod external;
 pub mod grid;
+pub mod jobs;
 pub mod mqtt;
 pub mod openapi;
 pub mod storage;

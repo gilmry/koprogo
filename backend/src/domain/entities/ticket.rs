@@ -171,6 +171,18 @@ pub struct Ticket {
     /// duplicates (enforced by `validate_invariants`).
     #[serde(default)]
     pub witnesses: Vec<Uuid>,
+    /// Story 3.7 (FR32) — Deadline before which the syndic must respond to
+    /// the ticket. Computed by [`Ticket::new_with_kind`] from `severity` via
+    /// [`crate::domain::entities::sla_window_for_severity`]. `None` for
+    /// pre-3.7 tickets and for tickets without a severity tier.
+    #[serde(default)]
+    pub sla_due_at: Option<DateTime<Utc>>,
+    /// Story 3.7 (FR32) — Timestamp at which the SLA was "consumed": either
+    /// because a syndic responded in time (pre-empts escalation) or because
+    /// the cron job marked the ticket as overdue. `None` while the SLA is
+    /// still open.
+    #[serde(default)]
+    pub sla_escalated_at: Option<DateTime<Utc>>,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
     pub resolved_at: Option<DateTime<Utc>>,
@@ -227,6 +239,9 @@ impl Ticket {
             incident_date: None,
             evidence_attachments: Vec::new(),
             witnesses: Vec::new(),
+            // Story 3.7 — legacy `new()` has no severity → no SLA.
+            sla_due_at: None,
+            sla_escalated_at: None,
             created_at: now,
             updated_at: now,
             resolved_at: None,
@@ -281,6 +296,13 @@ impl Ticket {
         t.incident_date = incident_date;
         t.evidence_attachments = evidence_attachments;
         t.witnesses = witnesses;
+
+        // Story 3.7 — derive `sla_due_at` from severity at create-time. We
+        // compute it on every ticket carrying a severity (Request or
+        // Complaint), since the brief allows severity on Request too.
+        t.sla_due_at = severity.map(|s| {
+            t.created_at + crate::domain::entities::syndic_response::sla_window_for_severity(s)
+        });
 
         t.validate_invariants()?;
         Ok(t)
@@ -805,6 +827,58 @@ mod tests {
         assert!(t.evidence_attachments.is_empty());
         assert!(t.witnesses.is_empty());
         assert!(t.validate_invariants().is_ok());
+        // Story 3.7 — no severity → no SLA.
+        assert!(t.sla_due_at.is_none());
+        assert!(t.sla_escalated_at.is_none());
+    }
+
+    // ---- Story 3.7 — SLA computation at create-time -------------------------
+
+    #[test]
+    fn happy_new_with_kind_critical_sets_sla_due_at_24h_after_created_at() {
+        let t = Ticket::new_with_kind(
+            Uuid::new_v4(),
+            Uuid::new_v4(),
+            None,
+            Uuid::new_v4(),
+            "T".to_string(),
+            "D".to_string(),
+            TicketCategory::Other,
+            TicketPriority::High,
+            TicketKind::Complaint,
+            Some(TicketSeverity::Critical),
+            None,
+            Vec::new(),
+            Vec::new(),
+        )
+        .expect("complaint critical must succeed");
+
+        let sla = t.sla_due_at.expect("Critical severity must produce a SLA");
+        // 24h window for Critical (cf. sla_window_for_severity).
+        assert_eq!(sla - t.created_at, chrono::Duration::hours(24));
+        assert!(t.sla_escalated_at.is_none());
+    }
+
+    #[test]
+    fn happy_new_with_kind_no_severity_leaves_sla_due_at_none() {
+        // Request without severity — pre-3.7 retro-compat path.
+        let t = Ticket::new_with_kind(
+            Uuid::new_v4(),
+            Uuid::new_v4(),
+            None,
+            Uuid::new_v4(),
+            "T".to_string(),
+            "D".to_string(),
+            TicketCategory::Other,
+            TicketPriority::Low,
+            TicketKind::Request,
+            None,
+            None,
+            Vec::new(),
+            Vec::new(),
+        )
+        .expect("Request without severity must succeed");
+        assert!(t.sla_due_at.is_none());
     }
 
     #[test]

@@ -159,6 +159,10 @@ impl TicketRepository for PostgresTicketRepository {
             incident_date: None,
             evidence_attachments: Vec::new(),
             witnesses: Vec::new(),
+            // Story 3.7 — SLA columns added in 20260605050000; repo refresh
+            // tracked in #555. Read-back uses None until then.
+            sla_due_at: None,
+            sla_escalated_at: None,
         })
     }
 
@@ -205,6 +209,9 @@ impl TicketRepository for PostgresTicketRepository {
                 incident_date: None,
                 evidence_attachments: Vec::new(),
                 witnesses: Vec::new(),
+                // Story 3.7 — SLA defaults; repo refresh tracked in #555.
+                sla_due_at: None,
+                sla_escalated_at: None,
             })),
             None => Ok(None),
         }
@@ -252,6 +259,9 @@ impl TicketRepository for PostgresTicketRepository {
                     incident_date: None,
                     evidence_attachments: Vec::new(),
                     witnesses: Vec::new(),
+                    // Story 3.7 — SLA defaults; repo refresh tracked in #555.
+                    sla_due_at: None,
+                    sla_escalated_at: None,
                 })
             })
             .collect()
@@ -299,6 +309,9 @@ impl TicketRepository for PostgresTicketRepository {
                     incident_date: None,
                     evidence_attachments: Vec::new(),
                     witnesses: Vec::new(),
+                    // Story 3.7 — SLA defaults; repo refresh tracked in #555.
+                    sla_due_at: None,
+                    sla_escalated_at: None,
                 })
             })
             .collect()
@@ -346,6 +359,9 @@ impl TicketRepository for PostgresTicketRepository {
                     incident_date: None,
                     evidence_attachments: Vec::new(),
                     witnesses: Vec::new(),
+                    // Story 3.7 — SLA defaults; repo refresh tracked in #555.
+                    sla_due_at: None,
+                    sla_escalated_at: None,
                 })
             })
             .collect()
@@ -393,6 +409,9 @@ impl TicketRepository for PostgresTicketRepository {
                     incident_date: None,
                     evidence_attachments: Vec::new(),
                     witnesses: Vec::new(),
+                    // Story 3.7 — SLA defaults; repo refresh tracked in #555.
+                    sla_due_at: None,
+                    sla_escalated_at: None,
                 })
             })
             .collect()
@@ -447,6 +466,9 @@ impl TicketRepository for PostgresTicketRepository {
                     incident_date: None,
                     evidence_attachments: Vec::new(),
                     witnesses: Vec::new(),
+                    // Story 3.7 — SLA defaults; repo refresh tracked in #555.
+                    sla_due_at: None,
+                    sla_escalated_at: None,
                 })
             })
             .collect()
@@ -528,6 +550,10 @@ impl TicketRepository for PostgresTicketRepository {
             incident_date: None,
             evidence_attachments: Vec::new(),
             witnesses: Vec::new(),
+            // Story 3.7 — SLA columns added in 20260605050000; repo refresh
+            // tracked in #555. Read-back uses None until then.
+            sla_due_at: None,
+            sla_escalated_at: None,
         })
     }
 

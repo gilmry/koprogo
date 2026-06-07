@@ -702,6 +702,11 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig) {
             // GET    /role-delegations?subject=<u>  : list delegations of a subject
             .service(create_role_delegation)
             .service(revoke_role_delegation)
-            .service(list_role_delegations),
+            .service(list_role_delegations)
+            // SyndicResponse (Story 3.7 — FR32 INV-23) — append-only.
+            // POST /tickets/{id}/syndic-responses : syndic/superadmin posts a reply
+            // GET  /tickets/{id}/syndic-responses : list responses for a ticket
+            .service(create_syndic_response)
+            .service(list_syndic_responses),
     );
 }

@@ -54,6 +54,7 @@ pub mod security_incident;
 pub mod service_provider;
 pub mod shared_object;
 pub mod skill;
+pub mod syndic_response;
 pub mod technical_inspection;
 pub mod ticket;
 pub mod two_factor_secret;
@@ -131,6 +132,10 @@ pub use security_incident::{IncidentSeverity, IncidentStatus, SecurityIncident};
 pub use service_provider::{ServiceProvider, TradeCategory};
 pub use shared_object::{ObjectCondition, SharedObject, SharedObjectCategory};
 pub use skill::{ExpertiseLevel, Skill, SkillCategory};
+pub use syndic_response::{
+    sla_window_for_severity, SyndicResponse, ALLOWED_ACTIONS, MAX_RESPONSE_BODY_LEN,
+    MIN_RESPONSE_BODY_LEN,
+};
 pub use technical_inspection::{InspectionStatus, InspectionType, TechnicalInspection};
 pub use ticket::{
     Ticket, TicketCategory, TicketKind, TicketPriority, TicketSeverity, TicketStatus,

@@ -142,6 +142,12 @@ pub enum AppError {
     /// Returns 403 Forbidden. Story 3.6 (FR31).
     #[error("Ce ticket est verrouillé (créé il y a plus de 5 minutes)")]
     TicketImmutable,
+
+    /// SyndicResponse is append-only (INV-23). Any attempt to mutate an
+    /// existing response (edit / delete) MUST surface here, never as a
+    /// generic Conflict / Internal. Returns 403 Forbidden. Story 3.7 (FR32).
+    #[error("Une réponse syndic ne peut pas être modifiée (audit immuable)")]
+    ResponseImmutable,
 }
 
 impl AppError {
@@ -172,6 +178,7 @@ impl AppError {
             AppError::RoleAlreadyAssigned { .. } => "role_already_assigned",
             AppError::DelegationChainNotAllowed => "delegation_chain_not_allowed",
             AppError::TicketImmutable => "ticket_immutable",
+            AppError::ResponseImmutable => "response_immutable",
         }
     }
 }
@@ -193,7 +200,8 @@ impl ResponseError for AppError {
             | AppError::MandateRevoked
             | AppError::MandateInvalidScope
             | AppError::DelegationChainNotAllowed
-            | AppError::TicketImmutable => StatusCode::FORBIDDEN,
+            | AppError::TicketImmutable
+            | AppError::ResponseImmutable => StatusCode::FORBIDDEN,
             AppError::NotFound(_) | AppError::MandateNotFound => StatusCode::NOT_FOUND,
             AppError::Conflict(_) | AppError::RoleAlreadyAssigned { .. } => StatusCode::CONFLICT,
             AppError::RateLimited => StatusCode::TOO_MANY_REQUESTS,
@@ -458,6 +466,18 @@ mod tests {
         assert_eq!(e.status_code(), StatusCode::FORBIDDEN);
         assert_eq!(e.kind(), "ticket_immutable");
         assert!(format!("{}", e).contains("verrouillé"));
+    }
+
+    // ------------------------------------------------------------------------
+    // Story 3.7 — ResponseImmutable (INV-23)
+    // ------------------------------------------------------------------------
+
+    #[test]
+    fn security_response_immutable_maps_to_403() {
+        let e = AppError::ResponseImmutable;
+        assert_eq!(e.status_code(), StatusCode::FORBIDDEN);
+        assert_eq!(e.kind(), "response_immutable");
+        assert!(format!("{}", e).contains("ne peut pas"));
     }
 
     // ------------------------------------------------------------------------

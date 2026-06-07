@@ -166,7 +166,10 @@ async fn main() -> std::io::Result<()> {
     let call_for_funds_repo = Arc::new(PostgresCallForFundsRepository::new(pool.clone()));
     let resolution_repo = Arc::new(PostgresResolutionRepository::new(pool.clone()));
     let vote_repo = Arc::new(PostgresVoteRepository::new(pool.clone()));
+    // ticket_repo is cloned below for Story 3.7 SyndicResponseUseCases
+    // (concrete type required because the use-case is generic).
     let ticket_repo = Arc::new(PostgresTicketRepository::new(pool.clone()));
+    let ticket_repo_for_syndic_response = ticket_repo.clone();
     let notification_repo = Arc::new(PostgresNotificationRepository::new(pool.clone()));
     let notification_preference_repo =
         Arc::new(PostgresNotificationPreferenceRepository::new(pool.clone()));
@@ -422,6 +425,17 @@ async fn main() -> std::io::Result<()> {
         koprogo_api::application::use_cases::RoleDelegationUseCases::new(
             role_delegation_repo.clone(),
         );
+    // Story 3.7 — SyndicResponse + SLA escalation use cases (FR32 INV-23).
+    let syndic_response_repo = Arc::new(
+        koprogo_api::infrastructure::database::repositories::PostgresSyndicResponseRepository::new(
+            pool.clone(),
+        ),
+    );
+    let syndic_response_use_cases =
+        koprogo_api::application::use_cases::SyndicResponseUseCases::new(
+            syndic_response_repo,
+            ticket_repo_for_syndic_response,
+        );
 
     // Marketplace (Issue #276)
     let service_provider_repo = Arc::new(PostgresServiceProviderRepository::new(pool.clone()));
@@ -520,6 +534,7 @@ async fn main() -> std::io::Result<()> {
         magic_link_use_cases,
         mandate_use_cases,
         role_delegation_use_cases,
+        syndic_response_use_cases,
     ));
 
     log::info!(

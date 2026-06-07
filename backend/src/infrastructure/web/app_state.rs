@@ -14,11 +14,14 @@ use crate::application::use_cases::{
     PaymentMethodUseCases, PaymentReminderUseCases, PaymentUseCases, PcnUseCases, PollUseCases,
     PortfolioUseCases, QuoteUseCases, ResolutionUseCases, ResourceBookingUseCases,
     RoleDelegationUseCases, SecurityIncidentUseCases, ServiceProviderUseCases,
-    SharedObjectUseCases, SkillUseCases, StatsUseCases, TechnicalInspectionUseCases,
-    TicketUseCases, TwoFactorUseCases, UnitOwnerUseCases, UnitUseCases, UserUseCases,
-    WorkReportUseCases,
+    SharedObjectUseCases, SkillUseCases, StatsUseCases, SyndicResponseUseCases,
+    TechnicalInspectionUseCases, TicketUseCases, TwoFactorUseCases, UnitOwnerUseCases,
+    UnitUseCases, UserUseCases, WorkReportUseCases,
 };
 use crate::infrastructure::audit_logger::AuditLogger;
+use crate::infrastructure::database::repositories::{
+    PostgresSyndicResponseRepository, PostgresTicketRepository,
+};
 use crate::infrastructure::email::EmailService;
 use crate::infrastructure::pool::DbPool;
 use std::sync::Arc;
@@ -97,6 +100,12 @@ pub struct AppState {
     pub mandate_use_cases: Arc<MandateUseCases>,
     /// Story 3.5 — Temporary role delegation (syndic → owner, bounded).
     pub role_delegation_use_cases: Arc<RoleDelegationUseCases>,
+    /// Story 3.7 — SyndicResponse (append-only) + SLA escalation use-cases.
+    /// Concrete types because the use-case struct is generic over the two
+    /// repository traits; we use the production Postgres implementations
+    /// here and a single concrete alias in handlers / tests.
+    pub syndic_response_use_cases:
+        Arc<SyndicResponseUseCases<PostgresSyndicResponseRepository, PostgresTicketRepository>>,
 }
 
 impl AppState {
@@ -170,6 +179,10 @@ impl AppState {
         magic_link_use_cases: MagicLinkUseCases,
         mandate_use_cases: MandateUseCases,
         role_delegation_use_cases: RoleDelegationUseCases,
+        syndic_response_use_cases: SyndicResponseUseCases<
+            PostgresSyndicResponseRepository,
+            PostgresTicketRepository,
+        >,
     ) -> Self {
         Self {
             account_use_cases: Arc::new(account_use_cases),
@@ -240,6 +253,7 @@ impl AppState {
             magic_link_use_cases: Arc::new(magic_link_use_cases),
             mandate_use_cases: Arc::new(mandate_use_cases),
             role_delegation_use_cases: Arc::new(role_delegation_use_cases),
+            syndic_response_use_cases: Arc::new(syndic_response_use_cases),
         }
     }
 }
