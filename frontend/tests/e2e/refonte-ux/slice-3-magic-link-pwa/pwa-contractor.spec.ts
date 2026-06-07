@@ -25,6 +25,11 @@
 import { test, expect, type APIRequestContext } from "@playwright/test";
 import { devices } from "@playwright/test";
 
+// Pixel 7 viewport pour la PWA contractor — proxy raisonnable pour la cible
+// (Android Chrome milieu de gamme). `test.use(...)` DOIT rester au top-level :
+// dans un `test.describe()` il forcerait un nouveau worker (erreur Playwright).
+test.use({ ...devices["Pixel 7"] });
+
 const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
 const ADMIN_EMAIL = "admin@koprogo.com";
 const ADMIN_PASSWORD = "admin123";
@@ -156,10 +161,6 @@ async function seedSyndicWithTicket(request: APIRequestContext): Promise<{
 // ---------------------------------------------------------------------------
 
 test.describe("Story 3.3 — PWA Contractor (slice 3)", () => {
-  // Pixel 7 viewport for the contractor PWA — closest reasonable proxy for
-  // the production target (Android Chrome on a mid-range phone).
-  test.use({ ...devices["Pixel 7"] });
-
   test("@happy syndic issues link → contractor PWA flows through 3 screens", async ({
     page,
     request,
