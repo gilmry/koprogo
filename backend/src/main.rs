@@ -215,6 +215,12 @@ async fn main() -> std::io::Result<()> {
     // Story 3.2 — generic MagicLink for public-access tokens (contractor / tiers).
     let magic_link_repo: Arc<dyn koprogo_api::application::ports::MagicLinkRepository> =
         Arc::new(PostgresMagicLinkRepository::new(pool.clone()));
+    // Story 3.4 — Mandate (delegation to external professionals).
+    let mandate_repo: Arc<dyn koprogo_api::application::ports::MandateRepository> = Arc::new(
+        koprogo_api::infrastructure::database::repositories::PostgresMandateRepository::new(
+            pool.clone(),
+        ),
+    );
 
     // Initialize audit logger with database persistence
     let audit_logger = AuditLogger::new(Some(audit_log_repo.clone()));
@@ -400,6 +406,9 @@ async fn main() -> std::io::Result<()> {
         .with_payment_support(quote_repo.clone(), payment_use_cases_arc.clone());
     // Story 3.2 — MagicLink use cases (public-access tokens for contractors/tiers).
     let magic_link_use_cases = MagicLinkUseCases::new(magic_link_repo.clone());
+    // Story 3.4 — Mandate use cases (juridical delegation tracker).
+    let mandate_use_cases =
+        koprogo_api::application::use_cases::MandateUseCases::new(mandate_repo.clone());
 
     // Marketplace (Issue #276)
     let service_provider_repo = Arc::new(PostgresServiceProviderRepository::new(pool.clone()));
@@ -496,6 +505,7 @@ async fn main() -> std::io::Result<()> {
         boinc_use_cases,
         user_use_cases,
         magic_link_use_cases,
+        mandate_use_cases,
     ));
 
     log::info!(

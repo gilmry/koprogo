@@ -685,6 +685,15 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig) {
             // POST /magic-links : syndic/superadmin issues a link
             // GET  /c/{token}   : PUBLIC (no auth) — validate + consume + resolve scope
             .service(issue_magic_link)
-            .service(consume_magic_link),
+            .service(consume_magic_link)
+            // Mandates (Story 3.4 — FR7 INV-14)
+            // POST   /mandates              : syndic/superadmin issues a mandate
+            // GET    /mandates?subject=<u>  : list active mandates for a subject
+            // GET    /mandates/{id}         : mandate details
+            // POST   /mandates/{id}/revoke  : early revocation
+            .service(issue_mandate)
+            .service(list_mandates)
+            .service(revoke_mandate)
+            .service(get_mandate),
     );
 }

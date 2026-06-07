@@ -9,7 +9,7 @@ use crate::application::use_cases::{
     DocumentUseCases, EnergyBillUploadUseCases, EnergyCampaignUseCases, EtatDateUseCases,
     ExpenseUseCases, FinancialReportUseCases, GamificationStatsUseCases, GdprArt30UseCases,
     GdprUseCases, IndividualMemberUseCases, IoTUseCases, JournalEntryUseCases, LinkyUseCases,
-    LocalExchangeUseCases, MagicLinkUseCases, MeetingUseCases, NoticeUseCases,
+    LocalExchangeUseCases, MagicLinkUseCases, MandateUseCases, MeetingUseCases, NoticeUseCases,
     NotificationUseCases, OrganizationUseCases, OwnerContributionUseCases, OwnerUseCases,
     PaymentMethodUseCases, PaymentReminderUseCases, PaymentUseCases, PcnUseCases, PollUseCases,
     PortfolioUseCases, QuoteUseCases, ResolutionUseCases, ResourceBookingUseCases,
@@ -91,6 +91,9 @@ pub struct AppState {
     pub user_use_cases: Arc<UserUseCases>,
     /// Story 3.2 — generic MagicLink (public-access tokens for contractors / tiers).
     pub magic_link_use_cases: Arc<MagicLinkUseCases>,
+    /// Story 3.4 — Mandate (delegation to external professionals: notaire,
+    /// avocat, AMO, architecte, BET, gardien) with bounded validity.
+    pub mandate_use_cases: Arc<MandateUseCases>,
 }
 
 impl AppState {
@@ -162,6 +165,7 @@ impl AppState {
         boinc_use_cases: BoincUseCases,
         user_use_cases: UserUseCases,
         magic_link_use_cases: MagicLinkUseCases,
+        mandate_use_cases: MandateUseCases,
     ) -> Self {
         Self {
             account_use_cases: Arc::new(account_use_cases),
@@ -230,6 +234,7 @@ impl AppState {
             boinc_use_cases: Arc::new(boinc_use_cases),
             user_use_cases: Arc::new(user_use_cases),
             magic_link_use_cases: Arc::new(magic_link_use_cases),
+            mandate_use_cases: Arc::new(mandate_use_cases),
         }
     }
 }

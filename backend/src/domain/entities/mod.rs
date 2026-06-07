@@ -32,6 +32,7 @@ pub mod journal_entry;
 pub mod linky_device;
 pub mod local_exchange;
 pub mod magic_link;
+pub mod mandate;
 pub mod meeting;
 pub mod notice;
 pub mod notification;
@@ -102,6 +103,7 @@ pub use journal_entry::{JournalEntry, JournalEntryError, JournalEntryLine};
 pub use linky_device::{LinkyDevice, LinkyProvider};
 pub use local_exchange::{ExchangeStatus, ExchangeType, LocalExchange};
 pub use magic_link::{MagicLink, MagicLinkScopeKind};
+pub use mandate::{Mandate, MandateKind, MandateScope, MAX_MANDATE_DURATION_DAYS};
 pub use meeting::{Meeting, MeetingStatus, MeetingType};
 pub use notice::{Notice, NoticeCategory, NoticeStatus, NoticeType};
 pub use notification::{

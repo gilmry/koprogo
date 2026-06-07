@@ -389,6 +389,13 @@ async fn setup_test_db() -> (
     let magic_link_use_cases =
         koprogo_api::application::use_cases::MagicLinkUseCases::new(magic_link_repo);
 
+    let mandate_repo: Arc<dyn koprogo_api::application::ports::MandateRepository> = Arc::new(
+        koprogo_api::infrastructure::database::repositories::PostgresMandateRepository::new(
+            pool.clone(),
+        ),
+    );
+    let mandate_use_cases = koprogo_api::application::use_cases::MandateUseCases::new(mandate_repo);
+
     let app_state = actix_web::web::Data::new(AppState::new(
         account_use_cases,
         acp_use_cases,
@@ -459,6 +466,7 @@ async fn setup_test_db() -> (
         boinc_use_cases,
         user_use_cases,
         magic_link_use_cases,
+        mandate_use_cases,
     ));
 
     (app_state, postgres_container, org_id)

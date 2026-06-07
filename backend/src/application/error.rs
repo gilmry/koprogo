@@ -104,6 +104,27 @@ pub enum AppError {
     /// Returns 403 Forbidden. Story 3.2 (FR6).
     #[error("Lien déjà utilisé")]
     MagicLinkAlreadyConsumed,
+
+    /// Mandate is past its `valid_until` boundary. Returns 403 Forbidden.
+    /// Story 3.4 (FR7 INV-14).
+    #[error("Mandat expiré, contactez le syndic")]
+    MandateExpired,
+
+    /// Mandate has been revoked before its natural expiry. Returns 403 Forbidden.
+    /// Story 3.4 (FR7 INV-14).
+    #[error("Mandat révoqué")]
+    MandateRevoked,
+
+    /// Mandate exists but does not authorise the requested scope (e.g. notary
+    /// mandated on Building X tries to act on Building Y). Returns 403 Forbidden.
+    /// Story 3.4 (FR7 INV-14).
+    #[error("Mandat hors périmètre autorisé")]
+    MandateInvalidScope,
+
+    /// No mandate matches the (subject, kind, scope) tuple. Returns 404.
+    /// Story 3.4 (FR7 INV-14).
+    #[error("Mandat introuvable")]
+    MandateNotFound,
 }
 
 impl AppError {
@@ -127,6 +148,10 @@ impl AppError {
             AppError::MagicLinkInvalid => "magic_link_invalid",
             AppError::MagicLinkExpired => "magic_link_expired",
             AppError::MagicLinkAlreadyConsumed => "magic_link_consumed",
+            AppError::MandateExpired => "mandate_expired",
+            AppError::MandateRevoked => "mandate_revoked",
+            AppError::MandateInvalidScope => "mandate_invalid_scope",
+            AppError::MandateNotFound => "mandate_not_found",
         }
     }
 }
@@ -143,8 +168,11 @@ impl ResponseError for AppError {
             | AppError::AcpNotInScope { .. }
             | AppError::MagicLinkInvalid
             | AppError::MagicLinkExpired
-            | AppError::MagicLinkAlreadyConsumed => StatusCode::FORBIDDEN,
-            AppError::NotFound(_) => StatusCode::NOT_FOUND,
+            | AppError::MagicLinkAlreadyConsumed
+            | AppError::MandateExpired
+            | AppError::MandateRevoked
+            | AppError::MandateInvalidScope => StatusCode::FORBIDDEN,
+            AppError::NotFound(_) | AppError::MandateNotFound => StatusCode::NOT_FOUND,
             AppError::Conflict(_) => StatusCode::CONFLICT,
             AppError::RateLimited => StatusCode::TOO_MANY_REQUESTS,
             AppError::Database(_) | AppError::Crypto(_) | AppError::Internal(_) => {
