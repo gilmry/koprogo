@@ -148,6 +148,28 @@ pub enum AppError {
     /// generic Conflict / Internal. Returns 403 Forbidden. Story 3.7 (FR32).
     #[error("Une réponse syndic ne peut pas être modifiée (audit immuable)")]
     ResponseImmutable,
+
+    /// TechnicalSpec already approved — cannot be edited in place. Returns
+    /// 409 Conflict. The caller must `bump_version` instead. Story 3.8 (FR33).
+    #[error("Cahier des charges déjà approuvé (créer une nouvelle version)")]
+    TechnicalSpecAlreadyApproved,
+
+    /// A new major version of a TechnicalSpec was issued and requires fresh
+    /// signatures from every required signatory. Returns 422 Unprocessable
+    /// Entity. Story 3.8 (FR33).
+    #[error("Re-signature requise (bump majeur de la version)")]
+    TechnicalSpecResignatureRequired,
+
+    /// The user's role does not match any `required_signatures` slot on the
+    /// TechnicalSpec, or no active Mandate authorises them. Returns 403.
+    /// Story 3.8 (FR33).
+    #[error("Signataire non autorisé pour ce rôle sur ce cahier des charges")]
+    SignatoryNotAuthorized,
+
+    /// The (signatory, role) pair has already signed this TechnicalSpec.
+    /// Returns 409 Conflict. Story 3.8 (FR33).
+    #[error("Signature déjà enregistrée pour ce signataire et ce rôle")]
+    SignatureAlreadyExists,
 }
 
 impl AppError {
@@ -179,6 +201,10 @@ impl AppError {
             AppError::DelegationChainNotAllowed => "delegation_chain_not_allowed",
             AppError::TicketImmutable => "ticket_immutable",
             AppError::ResponseImmutable => "response_immutable",
+            AppError::TechnicalSpecAlreadyApproved => "tech_spec_approved",
+            AppError::TechnicalSpecResignatureRequired => "tech_spec_resignature_required",
+            AppError::SignatoryNotAuthorized => "signatory_not_authorized",
+            AppError::SignatureAlreadyExists => "signature_already_exists",
         }
     }
 }
@@ -201,9 +227,14 @@ impl ResponseError for AppError {
             | AppError::MandateInvalidScope
             | AppError::DelegationChainNotAllowed
             | AppError::TicketImmutable
-            | AppError::ResponseImmutable => StatusCode::FORBIDDEN,
+            | AppError::ResponseImmutable
+            | AppError::SignatoryNotAuthorized => StatusCode::FORBIDDEN,
             AppError::NotFound(_) | AppError::MandateNotFound => StatusCode::NOT_FOUND,
-            AppError::Conflict(_) | AppError::RoleAlreadyAssigned { .. } => StatusCode::CONFLICT,
+            AppError::Conflict(_)
+            | AppError::RoleAlreadyAssigned { .. }
+            | AppError::TechnicalSpecAlreadyApproved
+            | AppError::SignatureAlreadyExists => StatusCode::CONFLICT,
+            AppError::TechnicalSpecResignatureRequired => StatusCode::UNPROCESSABLE_ENTITY,
             AppError::RateLimited => StatusCode::TOO_MANY_REQUESTS,
             AppError::Database(_) | AppError::Crypto(_) | AppError::Internal(_) => {
                 StatusCode::INTERNAL_SERVER_ERROR
@@ -478,6 +509,38 @@ mod tests {
         assert_eq!(e.status_code(), StatusCode::FORBIDDEN);
         assert_eq!(e.kind(), "response_immutable");
         assert!(format!("{}", e).contains("ne peut pas"));
+    }
+
+    // ------------------------------------------------------------------------
+    // Story 3.8 — TechnicalSpec error variants (FR33)
+    // ------------------------------------------------------------------------
+
+    #[test]
+    fn happy_tech_spec_already_approved_maps_to_409() {
+        let e = AppError::TechnicalSpecAlreadyApproved;
+        assert_eq!(e.status_code(), StatusCode::CONFLICT);
+        assert_eq!(e.kind(), "tech_spec_approved");
+    }
+
+    #[test]
+    fn edge_tech_spec_resignature_required_maps_to_422() {
+        let e = AppError::TechnicalSpecResignatureRequired;
+        assert_eq!(e.status_code(), StatusCode::UNPROCESSABLE_ENTITY);
+        assert_eq!(e.kind(), "tech_spec_resignature_required");
+    }
+
+    #[test]
+    fn security_signatory_not_authorized_maps_to_403() {
+        let e = AppError::SignatoryNotAuthorized;
+        assert_eq!(e.status_code(), StatusCode::FORBIDDEN);
+        assert_eq!(e.kind(), "signatory_not_authorized");
+    }
+
+    #[test]
+    fn negative_signature_already_exists_maps_to_409() {
+        let e = AppError::SignatureAlreadyExists;
+        assert_eq!(e.status_code(), StatusCode::CONFLICT);
+        assert_eq!(e.kind(), "signature_already_exists");
     }
 
     // ------------------------------------------------------------------------

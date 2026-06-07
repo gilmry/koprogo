@@ -420,6 +420,17 @@ async fn setup_test_db() -> (
             ticket_repo_for_syndic_response,
         );
 
+    // Story 3.8 — TechnicalSpec use-cases (FR33).
+    let technical_spec_repo: Arc<
+        dyn koprogo_api::application::ports::TechnicalSpecRepository,
+    > = Arc::new(
+        koprogo_api::infrastructure::database::repositories::PostgresTechnicalSpecRepository::new(
+            pool.clone(),
+        ),
+    );
+    let technical_spec_use_cases =
+        koprogo_api::application::use_cases::TechnicalSpecUseCases::new(technical_spec_repo);
+
     let app_state = actix_web::web::Data::new(AppState::new(
         account_use_cases,
         acp_use_cases,
@@ -493,6 +504,7 @@ async fn setup_test_db() -> (
         mandate_use_cases,
         role_delegation_use_cases,
         syndic_response_use_cases,
+        technical_spec_use_cases,
     ));
 
     (app_state, postgres_container, org_id)

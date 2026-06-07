@@ -15,8 +15,8 @@ use crate::application::use_cases::{
     PortfolioUseCases, QuoteUseCases, ResolutionUseCases, ResourceBookingUseCases,
     RoleDelegationUseCases, SecurityIncidentUseCases, ServiceProviderUseCases,
     SharedObjectUseCases, SkillUseCases, StatsUseCases, SyndicResponseUseCases,
-    TechnicalInspectionUseCases, TicketUseCases, TwoFactorUseCases, UnitOwnerUseCases,
-    UnitUseCases, UserUseCases, WorkReportUseCases,
+    TechnicalInspectionUseCases, TechnicalSpecUseCases, TicketUseCases, TwoFactorUseCases,
+    UnitOwnerUseCases, UnitUseCases, UserUseCases, WorkReportUseCases,
 };
 use crate::infrastructure::audit_logger::AuditLogger;
 use crate::infrastructure::database::repositories::{
@@ -106,6 +106,8 @@ pub struct AppState {
     /// here and a single concrete alias in handlers / tests.
     pub syndic_response_use_cases:
         Arc<SyndicResponseUseCases<PostgresSyndicResponseRepository, PostgresTicketRepository>>,
+    /// Story 3.8 — TechnicalSpec (versionable + signatures multi-parties).
+    pub technical_spec_use_cases: Arc<TechnicalSpecUseCases>,
 }
 
 impl AppState {
@@ -183,6 +185,7 @@ impl AppState {
             PostgresSyndicResponseRepository,
             PostgresTicketRepository,
         >,
+        technical_spec_use_cases: TechnicalSpecUseCases,
     ) -> Self {
         Self {
             account_use_cases: Arc::new(account_use_cases),
@@ -254,6 +257,7 @@ impl AppState {
             mandate_use_cases: Arc::new(mandate_use_cases),
             role_delegation_use_cases: Arc::new(role_delegation_use_cases),
             syndic_response_use_cases: Arc::new(syndic_response_use_cases),
+            technical_spec_use_cases: Arc::new(technical_spec_use_cases),
         }
     }
 }

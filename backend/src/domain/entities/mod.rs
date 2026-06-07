@@ -56,6 +56,7 @@ pub mod shared_object;
 pub mod skill;
 pub mod syndic_response;
 pub mod technical_inspection;
+pub mod technical_spec;
 pub mod ticket;
 pub mod two_factor_secret;
 pub mod unit;
@@ -137,6 +138,14 @@ pub use syndic_response::{
     MIN_RESPONSE_BODY_LEN,
 };
 pub use technical_inspection::{InspectionStatus, InspectionType, TechnicalInspection};
+pub use technical_spec::{
+    SemVer, SignatoryRole, TechnicalSpec, TechnicalSpecSignature, TechnicalSpecStatus,
+    MAX_ATTACHMENTS as TECH_SPEC_MAX_ATTACHMENTS, MAX_DELIVERABLES as TECH_SPEC_MAX_DELIVERABLES,
+    MAX_DESCRIPTION_LEN as TECH_SPEC_MAX_DESCRIPTION_LEN,
+    MAX_REQUIRED_SIGNATURES as TECH_SPEC_MAX_REQUIRED_SIGNATURES,
+    MAX_TITLE_LEN as TECH_SPEC_MAX_TITLE_LEN, MIN_DESCRIPTION_LEN as TECH_SPEC_MIN_DESCRIPTION_LEN,
+    MIN_TITLE_LEN as TECH_SPEC_MIN_TITLE_LEN,
+};
 pub use ticket::{
     Ticket, TicketCategory, TicketKind, TicketPriority, TicketSeverity, TicketStatus,
     MAX_EVIDENCE_ATTACHMENTS, MAX_WITNESSES, TICKET_EDIT_WINDOW_MINUTES,

@@ -437,6 +437,17 @@ async fn main() -> std::io::Result<()> {
             ticket_repo_for_syndic_response,
         );
 
+    // Story 3.8 — TechnicalSpec (versionable + signatures multi-parties) (FR33).
+    let technical_spec_repo: Arc<
+        dyn koprogo_api::application::ports::TechnicalSpecRepository,
+    > = Arc::new(
+        koprogo_api::infrastructure::database::repositories::PostgresTechnicalSpecRepository::new(
+            pool.clone(),
+        ),
+    );
+    let technical_spec_use_cases =
+        koprogo_api::application::use_cases::TechnicalSpecUseCases::new(technical_spec_repo);
+
     // Marketplace (Issue #276)
     let service_provider_repo = Arc::new(PostgresServiceProviderRepository::new(pool.clone()));
     let service_provider_use_cases = ServiceProviderUseCases::new(service_provider_repo);
@@ -535,6 +546,7 @@ async fn main() -> std::io::Result<()> {
         mandate_use_cases,
         role_delegation_use_cases,
         syndic_response_use_cases,
+        technical_spec_use_cases,
     ));
 
     log::info!(

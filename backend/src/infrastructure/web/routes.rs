@@ -707,6 +707,19 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig) {
             // POST /tickets/{id}/syndic-responses : syndic/superadmin posts a reply
             // GET  /tickets/{id}/syndic-responses : list responses for a ticket
             .service(create_syndic_response)
-            .service(list_syndic_responses),
+            .service(list_syndic_responses)
+            // TechnicalSpec (Story 3.8 — FR33) — versionnable + signatures multi-parties.
+            // POST /technical-specs              : create Draft (syndic/superadmin)
+            // POST /technical-specs/{id}/bump    : new version (syndic/superadmin)
+            // POST /technical-specs/{id}/submit  : Draft -> PendingSignatures
+            // POST /technical-specs/{id}/signatures : record a signature
+            // GET  /technical-specs/{id}         : details
+            // GET  /technical-specs?acp_id=      : list for an ACP
+            .service(create_technical_spec)
+            .service(bump_technical_spec)
+            .service(submit_technical_spec)
+            .service(sign_technical_spec)
+            .service(list_technical_specs)
+            .service(get_technical_spec),
     );
 }
