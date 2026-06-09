@@ -3299,6 +3299,58 @@
             "bearer_auth": []
           }
         ]
+      },
+      "patch": {
+        "tags": [
+          "Tickets"
+        ],
+        "summary": "Update editable fields of a ticket (Story 3.6 INV-24, within 5-min window)",
+        "description": "Edits the editable fields of a ticket (title / description / category /\npriority / severity / incident_date / evidence_attachments / witnesses).\nReturns:\n- 200 OK on success;\n- 403 (`kind = ticket_immutable`) if the 5-minute editability window\n  has elapsed;\n- 404 if the ticket does not exist;\n- 400 (`kind = validation`) on invariant violations;\n- 403 (multi-tenant isolation) if the ticket belongs to a different org.\n\nWorkflow transitions (assign/resolve/close/cancel/reopen) keep their\nown dedicated PUT endpoints — this PATCH is for content corrections\ninside the 5-minute window only.",
+        "operationId": "update_ticket_fields",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Ticket ID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateTicketRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Ticket updated"
+          },
+          "400": {
+            "description": "Validation error (e.g. complaint without severity)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Ticket immutable (INV-24) or out of scope"
+          },
+          "404": {
+            "description": "Ticket not found"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
       }
     },
     "/tickets/{id}/assign": {
@@ -4210,8 +4262,45 @@
           "description": {
             "type": "string"
           },
+          "evidence_attachments": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Story 3.6 (FR31) — URL / S3-MinIO references. Up to 10."
+          },
+          "incident_date": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "description": "Story 3.6 (FR31) — Optional incident timestamp."
+          },
+          "kind": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/TicketKind",
+                "description": "Story 3.6 (FR31) — Request (default) vs Complaint. Optional for\nbackward compatibility with pre-3.6 clients (defaults to Request)."
+              }
+            ]
+          },
           "priority": {
             "$ref": "#/components/schemas/TicketPriority"
+          },
+          "severity": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/TicketSeverity",
+                "description": "Story 3.6 (FR31) — REQUIRED when `kind = Complaint`."
+              }
+            ]
           },
           "title": {
             "type": "string"
@@ -4222,6 +4311,14 @@
               "null"
             ],
             "format": "uuid"
+          },
+          "witnesses": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Story 3.6 (FR31) — Up to 10 witness user_ids (no duplicates)."
           }
         }
       },
@@ -4857,6 +4954,14 @@
           "Other"
         ]
       },
+      "TicketKind": {
+        "type": "string",
+        "description": "Story 3.6 (FR31) — Distinguishes a maintenance request (default) from a\nformal complaint (incident report → triage / mediation workflow).",
+        "enum": [
+          "request",
+          "complaint"
+        ]
+      },
       "TicketPriority": {
         "type": "string",
         "description": "Ticket Priority",
@@ -4865,6 +4970,16 @@
           "Medium",
           "High",
           "Critical"
+        ]
+      },
+      "TicketSeverity": {
+        "type": "string",
+        "description": "Story 3.6 (FR31) — Severity tier for ticket triage. Ordered so callers\ncan compare (e.g. `>= High`) when deciding alerting / SLA targets.",
+        "enum": [
+          "low",
+          "normal",
+          "high",
+          "critical"
         ]
       },
       "TicketStatus": {
@@ -5016,6 +5131,80 @@
               "boolean",
               "null"
             ]
+          }
+        }
+      },
+      "UpdateTicketRequest": {
+        "type": "object",
+        "description": "Story 3.6 (FR31 / INV-24) — Partial update applicable only inside the\n5-minute editability window. After that, the use-case returns\n`AppError::TicketImmutable` (403).",
+        "properties": {
+          "category": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/TicketCategory"
+              }
+            ]
+          },
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "evidence_attachments": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "type": "string"
+            }
+          },
+          "incident_date": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "priority": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/TicketPriority"
+              }
+            ]
+          },
+          "severity": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/TicketSeverity"
+              }
+            ]
+          },
+          "title": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "witnesses": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
         }
       },
