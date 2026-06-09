@@ -4,16 +4,16 @@
 //! One operation exposed to handlers:
 //!
 //! 1. [`ContractorEvaluationUseCases::create_evaluation`] — a syndic (or a
-//!    mandated owner) records an evaluation against a contractor. Guards
-//!    enforced here:
-//!    a. the referenced [`TechnicalSpec`] MUST exist (else
-//!       [`AppError::NotFound`]);
-//!    b. it MUST be in [`TechnicalSpecStatus::Approved`] — a Draft /
-//!       PendingSignatures / Superseded spec does not legitimise an
-//!       evaluation (else [`AppError::TechnicalSpecRequired`] → 422);
-//!    c. [`ContractorEvaluation::new`] validates every structural invariant
-//!       (scores in `[1, 5]`, comment length, no self-evaluation, no
-//!       duplicate linked tickets, no nil UUIDs).
+//!   mandated owner) records an evaluation against a contractor. Guards
+//!   enforced here:
+//!   a. the referenced [`TechnicalSpec`] MUST exist (else
+//!      [`AppError::NotFound`]);
+//!   b. it MUST be in [`TechnicalSpecStatus::Approved`] — a Draft /
+//!      PendingSignatures / Superseded spec does not legitimise an
+//!      evaluation (else [`AppError::TechnicalSpecRequired`] → 422);
+//!   c. [`ContractorEvaluation::new`] validates every structural invariant
+//!      (scores in `[1, 5]`, comment length, no self-evaluation, no
+//!      duplicate linked tickets, no nil UUIDs).
 //!
 //! Append-only behaviour is enforced at the DB trigger level — the use case
 //! exposes no update / delete; the repo trait has no such methods either.
