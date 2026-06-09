@@ -2,23 +2,24 @@
 //!
 //! Three operations exposed to handlers:
 //!
-//! 1. [`SyndicResponseUseCases::respond`] — a syndic posts a response to a
-//!   ticket. The caller (handler) MUST already have enforced the syndic /
-//!   superadmin role check. The use case:
-//!   a. checks the target ticket exists (else `AppError::NotFound`);
-//!   b. mints a [`SyndicResponse`] (entity-level validation);
-//!   c. persists it (append-only — repo MUST NOT `UPDATE`);
-//!   d. if the response is posted BEFORE the ticket's `sla_due_at`, marks
-//!      the ticket as escalated (idempotent) to pre-empt the future cron
-//!      escalation. This is the SLA-satisfied path: the SLA window is
-//!      "consumed" by a timely response.
+//! `SyndicResponseUseCases::respond` — a syndic posts a response to a ticket.
+//! The caller (handler) MUST already have enforced the syndic / superadmin
+//! role check. The use case:
 //!
-//! 2. [`SyndicResponseUseCases::list_for_ticket`] — read-only listing for
-//!    the ticket detail view.
+//! - checks the target ticket exists (else `AppError::NotFound`);
+//! - mints a `SyndicResponse` (entity-level validation);
+//! - persists it (append-only — repo MUST NOT `UPDATE`);
+//! - if the response is posted BEFORE the ticket's `sla_due_at`, marks the
+//!   ticket as escalated (idempotent) to pre-empt the future cron
+//!   escalation. This is the SLA-satisfied path: the SLA window is
+//!   "consumed" by a timely response.
 //!
-//! 3. [`SyndicResponseUseCases::escalate_overdue`] — cron entry point.
-//!    Returns the list of ticket ids that were just escalated by this pass.
-//!    Idempotent across calls.
+//! `SyndicResponseUseCases::list_for_ticket` — read-only listing for the
+//! ticket detail view.
+//!
+//! `SyndicResponseUseCases::escalate_overdue` — cron entry point. Returns
+//! the list of ticket ids that were just escalated by this pass. Idempotent
+//! across calls.
 
 use crate::application::error::AppError;
 use crate::application::ports::{SyndicResponseRepository, TicketRepository};

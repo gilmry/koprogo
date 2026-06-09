@@ -18,19 +18,14 @@ pub const MAX_WITNESSES: usize = 10;
 
 /// Story 3.6 (FR31) — Distinguishes a maintenance request (default) from a
 /// formal complaint (incident report → triage / mediation workflow).
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, utoipa::ToSchema)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize, utoipa::ToSchema)]
 #[serde(rename_all = "lowercase")]
 pub enum TicketKind {
     /// Standard maintenance request (backward-compat default).
+    #[default]
     Request,
     /// Formal complaint / incident report (community moderation workflow).
     Complaint,
-}
-
-impl Default for TicketKind {
-    fn default() -> Self {
-        Self::Request
-    }
 }
 
 impl std::fmt::Display for TicketKind {
@@ -349,7 +344,7 @@ impl Ticket {
                 MAX_WITNESSES
             )));
         }
-        if self.witnesses.iter().any(|w| *w == self.created_by) {
+        if self.witnesses.contains(&self.created_by) {
             return Err(AppError::Validation(
                 "Ticket creator cannot also be listed as a witness".to_string(),
             ));

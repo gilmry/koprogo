@@ -1542,7 +1542,23 @@ export interface paths {
     delete: operations["delete_ticket"];
     options?: never;
     head?: never;
-    patch?: never;
+    /**
+     * Update editable fields of a ticket (Story 3.6 INV-24, within 5-min window)
+     * @description Edits the editable fields of a ticket (title / description / category /
+     *     priority / severity / incident_date / evidence_attachments / witnesses).
+     *     Returns:
+     *     - 200 OK on success;
+     *     - 403 (`kind = ticket_immutable`) if the 5-minute editability window
+     *       has elapsed;
+     *     - 404 if the ticket does not exist;
+     *     - 400 (`kind = validation`) on invariant violations;
+     *     - 403 (multi-tenant isolation) if the ticket belongs to a different org.
+     *
+     *     Workflow transitions (assign/resolve/close/cancel/reopen) keep their
+     *     own dedicated PUT endpoints — this PATCH is for content corrections
+     *     inside the 5-minute window only.
+     */
+    patch: operations["update_ticket_fields"];
     trace?: never;
   };
   "/tickets/{id}/assign": {
@@ -1890,10 +1906,21 @@ export interface components {
       building_id: string;
       category: components["schemas"]["TicketCategory"];
       description: string;
+      /** @description Story 3.6 (FR31) — URL / S3-MinIO references. Up to 10. */
+      evidence_attachments?: string[];
+      /**
+       * Format: date-time
+       * @description Story 3.6 (FR31) — Optional incident timestamp.
+       */
+      incident_date?: string | null;
+      kind?: null | components["schemas"]["TicketKind"];
       priority: components["schemas"]["TicketPriority"];
+      severity?: null | components["schemas"]["TicketSeverity"];
       title: string;
       /** Format: uuid */
       unit_id?: string | null;
+      /** @description Story 3.6 (FR31) — Up to 10 witness user_ids (no duplicates). */
+      witnesses?: string[];
     };
     /** @enum {string} */
     CreditStatus: "Positive" | "Balanced" | "Negative";
@@ -2209,10 +2236,22 @@ export interface components {
       | "Landscaping"
       | "Other";
     /**
+     * @description Story 3.6 (FR31) — Distinguishes a maintenance request (default) from a
+     *     formal complaint (incident report → triage / mediation workflow).
+     * @enum {string}
+     */
+    TicketKind: "request" | "complaint";
+    /**
      * @description Ticket Priority
      * @enum {string}
      */
     TicketPriority: "Low" | "Medium" | "High" | "Critical";
+    /**
+     * @description Story 3.6 (FR31) — Severity tier for ticket triage. Ordered so callers
+     *     can compare (e.g. `>= High`) when deciding alerting / SLA targets.
+     * @enum {string}
+     */
+    TicketSeverity: "low" | "normal" | "high" | "critical";
     /**
      * @description Ticket Status - Workflow states
      * @enum {string}
@@ -2261,6 +2300,22 @@ export interface components {
       email_enabled?: boolean | null;
       in_app_enabled?: boolean | null;
       push_enabled?: boolean | null;
+    };
+    /**
+     * @description Story 3.6 (FR31 / INV-24) — Partial update applicable only inside the
+     *     5-minute editability window. After that, the use-case returns
+     *     `AppError::TicketImmutable` (403).
+     */
+    UpdateTicketRequest: {
+      category?: null | components["schemas"]["TicketCategory"];
+      description?: string | null;
+      evidence_attachments?: string[] | null;
+      /** Format: date-time */
+      incident_date?: string | null;
+      priority?: null | components["schemas"]["TicketPriority"];
+      severity?: null | components["schemas"]["TicketSeverity"];
+      title?: string | null;
+      witnesses?: string[] | null;
     };
     /**
      * @description Choix de vote d'un copropriétaire
@@ -5507,6 +5562,59 @@ export interface operations {
       };
       /** @description Unauthorized */
       401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Ticket not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  update_ticket_fields: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Ticket ID */
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["UpdateTicketRequest"];
+      };
+    };
+    responses: {
+      /** @description Ticket updated */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Validation error (e.g. complaint without severity) */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Ticket immutable (INV-24) or out of scope */
+      403: {
         headers: {
           [name: string]: unknown;
         };
