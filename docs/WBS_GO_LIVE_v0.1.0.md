@@ -176,7 +176,7 @@ Légende : Tier 1 = humain exécute (agent diagnostique/propose). Taille S≤0.5
 
 > **Contexte** : suite à la livraison de slice 3 BE (Stories 3.1 → 3.9 mergées 2026-06-09, commits 9598298 → cf41ef4), les UIs syndic/owner correspondantes manquent. **Documentation Vivante e2e** casse silencieusement (workflow `continue-on-error: true` a698f6d) car le DOM ciblé n'existe pas. **Dette UX intégrée au WBS** plutôt que renvoyée à une Phase B post-mortem (cf. mémoire `feedback_maury-fullstack-first.md` : Maury doit penser FE+BE dès le brief pour full-stack découplé).
 >
-> **Drafts BMAD détaillés** (sources de vérité techniques) : `docs/maury/refonte-ux-multi-role-acp/phase-b-fe/{brief,prd,architecture,stories}.md` — non commités (Tier 1 doc publique en attente d'arbitrage).
+> **Drafts BMAD détaillés Maury-grade v0.2** (sources de vérité techniques, 1762 lignes total) : `docs/maury/refonte-ux-multi-role-acp/phase-b-fe/{brief,prd,architecture,stories}.md`. Chaque story est self-contained briefable agent (Goal + parent BE + user journey narratif + AC 4-cat détaillées + data-testid exhaustifs + Files exhaustifs + a11y checklist + wireframe ASCII + notes anti-pattern). Index `phase-b-fe/README.md`. Statut : non commités, Tier 1 doc publique en attente d'arbitrage @gilmry (commit individuel par fichier après signatures gate Maury).
 >
 > **Gantt par passe agent estimé** : 4 vagues V1→V4, critical path ≈ 3h wall-clock si docker stable, 5h pessimiste. Pattern docker-parallelism : 1 BE + 3 FE concurrent OK (cf. mémoire `feedback_docker-parallelism-bottleneck.md`).
 
