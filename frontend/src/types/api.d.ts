@@ -1576,6 +1576,23 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/role-assignments": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List role assignments filtered by organization and/or role (superadmin only) */
+    get: operations["list_role_assignments_admin"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/role-delegations": {
     parameters: {
       query?: never;
@@ -1930,6 +1947,41 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/users/{user_id}/role-assignments": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List role assignments for a user */
+    get: operations["list_role_assignments_for_user"];
+    put?: never;
+    /** Assign a sub-role to a user (Story B0bis — gap Story 3.1) */
+    post: operations["assign_role"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/users/{user_id}/role-assignments/{assignment_id}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    /** Revoke a role assignment */
+    delete: operations["revoke_role_assignment"];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/votes/{vote_id}": {
     parameters: {
       query?: never;
@@ -1974,6 +2026,21 @@ export interface components {
      * @enum {string}
      */
     ApprovalStatus: "draft" | "pending_approval" | "approved" | "rejected";
+    AssignRoleRequest: {
+      /**
+       * Format: uuid
+       * @description Organization scope (None = role global).
+       */
+      organization_id?: string | null;
+      /** @description Role canonique (ex. "accountant.encodeur", "community.moderator"). */
+      role: string;
+      /**
+       * Format: date-time
+       * @description Si Some, assignment temporaire (delegated) qui expire à cette date.
+       *     Si None, assignment native permanente.
+       */
+      valid_until?: string | null;
+    };
     AssignTicketRequest: {
       /** Format: uuid */
       assigned_to: string;
@@ -2809,6 +2876,24 @@ export interface components {
       severity?: null | components["schemas"]["TicketSeverity"];
       title?: string | null;
       witnesses?: string[] | null;
+    };
+    UserRoleAssignmentResponse: {
+      /** Format: date-time */
+      created_at: string;
+      /** Format: uuid */
+      delegated_from_user_id?: string | null;
+      /** Format: uuid */
+      id: string;
+      is_primary: boolean;
+      /** Format: uuid */
+      organization_id?: string | null;
+      role: string;
+      /** Format: date-time */
+      updated_at: string;
+      /** Format: uuid */
+      user_id: string;
+      /** Format: date-time */
+      valid_until?: string | null;
     };
     /**
      * @description Choix de vote d'un copropriétaire
@@ -6136,6 +6221,38 @@ export interface operations {
       };
     };
   };
+  list_role_assignments_admin: {
+    parameters: {
+      query?: {
+        /** @description Filter by organization */
+        organization_id?: string;
+        /** @description Filter by role string (whitelist) */
+        role?: string;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Filtered role assignments */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["UserRoleAssignmentResponse"][];
+        };
+      };
+      /** @description Forbidden — superadmin only */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
   list_role_delegations: {
     parameters: {
       query?: {
@@ -7056,6 +7173,128 @@ export interface operations {
         content?: never;
       };
       /** @description Ticket not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  list_role_assignments_for_user: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Target user UUID */
+        user_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Role assignments */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["UserRoleAssignmentResponse"][];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  assign_role: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Target user UUID */
+        user_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["AssignRoleRequest"];
+      };
+    };
+    responses: {
+      /** @description Role assigned */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["UserRoleAssignmentResponse"];
+        };
+      };
+      /** @description Validation error (unknown role, past valid_until) */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Forbidden — not superadmin/syndic */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Target user not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Role already actively assigned to this user */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  revoke_role_assignment: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Target user UUID */
+        user_id: string;
+        /** @description Assignment UUID to revoke */
+        assignment_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Assignment revoked */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Forbidden */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Assignment not found */
       404: {
         headers: {
           [name: string]: unknown;

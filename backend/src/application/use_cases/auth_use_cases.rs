@@ -524,6 +524,7 @@ mod tests {
             async fn replace_all(&self, user_id: Uuid, assignments: &[UserRoleAssignment]) -> Result<(), String>;
             async fn find_by_id(&self, id: Uuid) -> Result<Option<UserRoleAssignment>, String>;
             async fn set_primary_role(&self, user_id: Uuid, role_id: Uuid) -> Result<UserRoleAssignment, String>;
+            async fn delete_by_id(&self, id: Uuid) -> Result<bool, String>;
         }
     }
 

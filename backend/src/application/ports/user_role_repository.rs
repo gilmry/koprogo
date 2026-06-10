@@ -22,6 +22,13 @@ pub trait UserRoleRepository: Send + Sync {
         user_id: Uuid,
         role_id: Uuid,
     ) -> Result<UserRoleAssignment, String>;
+    /// Delete a single role assignment by id.
+    ///
+    /// Story B0bis — gap fill for Story 3.1: the CRUD REST endpoint
+    /// `DELETE /users/{user_id}/role-assignments/{id}` revokes a single row
+    /// without rewriting the whole set. Returns `true` if a row was deleted,
+    /// `false` if no row matched.
+    async fn delete_by_id(&self, id: Uuid) -> Result<bool, String>;
 }
 
 #[cfg(test)]
@@ -54,6 +61,7 @@ mod tests {
                 user_id: Uuid,
                 role_id: Uuid,
             ) -> Result<UserRoleAssignment, String>;
+            async fn delete_by_id(&self, id: Uuid) -> Result<bool, String>;
         }
     }
 }

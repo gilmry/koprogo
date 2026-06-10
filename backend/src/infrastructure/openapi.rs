@@ -168,6 +168,11 @@ use utoipa_swagger_ui::SwaggerUi;
         crate::infrastructure::web::handlers::mandate_handlers::list_mandates,
         crate::infrastructure::web::handlers::mandate_handlers::get_mandate,
         crate::infrastructure::web::handlers::mandate_handlers::revoke_mandate,
+        // RoleAssignment — CRUD REST (Story B0bis — gap Story 3.1)
+        crate::infrastructure::web::handlers::role_assignment_handlers::assign_role,
+        crate::infrastructure::web::handlers::role_assignment_handlers::list_role_assignments_for_user,
+        crate::infrastructure::web::handlers::role_assignment_handlers::revoke_role_assignment,
+        crate::infrastructure::web::handlers::role_assignment_handlers::list_role_assignments_admin,
         // RoleDelegation (Story 3.5 — FR8 INV-8)
         crate::infrastructure::web::handlers::role_delegation_handlers::create_role_delegation,
         crate::infrastructure::web::handlers::role_delegation_handlers::revoke_role_delegation,
@@ -269,6 +274,7 @@ use utoipa_swagger_ui::SwaggerUi;
         (name = "ContractorEvaluation", description = "Contractor performance evaluations (Story 3.9 — FR34 FR35 INV-21 INV-24)"),
         (name = "MagicLink", description = "Single-use scoped magic links for public access (Story 3.2 — FR6 INV-13 INV-17)"),
         (name = "Mandate", description = "Time-bounded mandates for mandataire delegation (Story 3.4 — FR7 INV-14)"),
+        (name = "RoleAssignment", description = "CRUD REST on user_role_assignments (Story B0bis — gap fill Story 3.1)"),
         (name = "RoleDelegation", description = "Temporary role delegation between users (Story 3.5 — FR8 INV-8)"),
         (name = "SyndicResponse", description = "Append-only syndic replies to tickets (Story 3.7 — FR32 INV-23)"),
         (name = "TechnicalSpec", description = "Versionable technical specifications with multi-party signatures (Story 3.8 — FR33)"),

@@ -228,4 +228,16 @@ impl UserRoleRepository for PostgresUserRoleRepository {
 
         Self::map_row(row)
     }
+
+    async fn delete_by_id(&self, id: Uuid) -> Result<bool, String> {
+        // Story B0bis — gap fill for Story 3.1.
+        // The CRUD endpoint `DELETE /users/{user_id}/role-assignments/{id}`
+        // revokes a single row without rewriting the whole set.
+        let result = sqlx::query("DELETE FROM user_roles WHERE id = $1")
+            .bind(id)
+            .execute(&self.pool)
+            .await
+            .map_err(|e| format!("Failed to delete user role: {}", e))?;
+        Ok(result.rows_affected() > 0)
+    }
 }

@@ -3392,6 +3392,54 @@
         ]
       }
     },
+    "/role-assignments": {
+      "get": {
+        "tags": [
+          "RoleAssignment"
+        ],
+        "summary": "List role assignments filtered by organization and/or role (superadmin only)",
+        "operationId": "list_role_assignments_admin",
+        "parameters": [
+          {
+            "name": "organization_id",
+            "in": "query",
+            "description": "Filter by organization",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "role",
+            "in": "query",
+            "description": "Filter by role string (whitelist)",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Filtered role assignments",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/UserRoleAssignmentResponse"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden — superadmin only"
+          }
+        }
+      }
+    },
     "/role-delegations": {
       "get": {
         "tags": [
@@ -4363,6 +4411,140 @@
         }
       }
     },
+    "/users/{user_id}/role-assignments": {
+      "get": {
+        "tags": [
+          "RoleAssignment"
+        ],
+        "summary": "List role assignments for a user",
+        "operationId": "list_role_assignments_for_user",
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "description": "Target user UUID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Role assignments",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/UserRoleAssignmentResponse"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "RoleAssignment"
+        ],
+        "summary": "Assign a sub-role to a user (Story B0bis — gap Story 3.1)",
+        "operationId": "assign_role",
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "description": "Target user UUID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AssignRoleRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Role assigned",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserRoleAssignmentResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error (unknown role, past valid_until)"
+          },
+          "403": {
+            "description": "Forbidden — not superadmin/syndic"
+          },
+          "404": {
+            "description": "Target user not found"
+          },
+          "409": {
+            "description": "Role already actively assigned to this user"
+          }
+        }
+      }
+    },
+    "/users/{user_id}/role-assignments/{assignment_id}": {
+      "delete": {
+        "tags": [
+          "RoleAssignment"
+        ],
+        "summary": "Revoke a role assignment",
+        "operationId": "revoke_role_assignment",
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "description": "Target user UUID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "assignment_id",
+            "in": "path",
+            "description": "Assignment UUID to revoke",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Assignment revoked"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Assignment not found"
+          }
+        }
+      }
+    },
     "/votes/{vote_id}": {
       "put": {
         "tags": [
@@ -4447,6 +4629,34 @@
           "approved",
           "rejected"
         ]
+      },
+      "AssignRoleRequest": {
+        "type": "object",
+        "required": [
+          "role"
+        ],
+        "properties": {
+          "organization_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid",
+            "description": "Organization scope (None = role global)."
+          },
+          "role": {
+            "type": "string",
+            "description": "Role canonique (ex. \"accountant.encodeur\", \"community.moderator\")."
+          },
+          "valid_until": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "description": "Si Some, assignment temporaire (delegated) qui expire à cette date.\nSi None, assignment native permanente."
+          }
+        }
       },
       "AssignTicketRequest": {
         "type": "object",
@@ -6631,6 +6841,62 @@
           }
         }
       },
+      "UserRoleAssignmentResponse": {
+        "type": "object",
+        "required": [
+          "id",
+          "user_id",
+          "role",
+          "is_primary",
+          "created_at",
+          "updated_at"
+        ],
+        "properties": {
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "delegated_from_user_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "is_primary": {
+            "type": "boolean"
+          },
+          "organization_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "role": {
+            "type": "string"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "user_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "valid_until": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          }
+        }
+      },
       "VoteChoice": {
         "type": "string",
         "description": "Choix de vote d'un copropriétaire",
@@ -6810,6 +7076,10 @@
     {
       "name": "Mandate",
       "description": "Time-bounded mandates for mandataire delegation (Story 3.4 — FR7 INV-14)"
+    },
+    {
+      "name": "RoleAssignment",
+      "description": "CRUD REST on user_role_assignments (Story B0bis — gap fill Story 3.1)"
     },
     {
       "name": "RoleDelegation",

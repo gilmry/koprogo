@@ -703,6 +703,15 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig) {
             .service(create_role_delegation)
             .service(revoke_role_delegation)
             .service(list_role_delegations)
+            // Role Assignments — CRUD REST (Story B0bis — gap Story 3.1)
+            // POST   /users/{user_id}/role-assignments              : assign sub-role
+            // GET    /users/{user_id}/role-assignments              : list user's assignments
+            // DELETE /users/{user_id}/role-assignments/{id}         : revoke assignment
+            // GET    /role-assignments?organization_id=&role=       : superadmin filtered list
+            .service(assign_role)
+            .service(list_role_assignments_for_user)
+            .service(revoke_role_assignment)
+            .service(list_role_assignments_admin)
             // SyndicResponse (Story 3.7 — FR32 INV-23) — append-only.
             // POST /tickets/{id}/syndic-responses : syndic/superadmin posts a reply
             // GET  /tickets/{id}/syndic-responses : list responses for a ticket
