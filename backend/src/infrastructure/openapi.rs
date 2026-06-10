@@ -156,6 +156,32 @@ use utoipa_swagger_ui::SwaggerUi;
         crate::infrastructure::web::handlers::legal_handlers::get_legal_rule,
         crate::infrastructure::web::handlers::legal_handlers::get_ag_sequence,
         crate::infrastructure::web::handlers::legal_handlers::get_majority_for,
+        // ContractorEvaluation (Story 3.9 — FR34 FR35 INV-21 INV-24)
+        crate::infrastructure::web::handlers::contractor_evaluation_handlers::create_contractor_evaluation,
+        crate::infrastructure::web::handlers::contractor_evaluation_handlers::get_contractor_evaluation,
+        crate::infrastructure::web::handlers::contractor_evaluation_handlers::list_contractor_evaluations,
+        // MagicLink (Story 3.2 — FR6 INV-13 INV-17)
+        crate::infrastructure::web::handlers::magic_link_handlers::issue_magic_link,
+        crate::infrastructure::web::handlers::magic_link_handlers::consume_magic_link,
+        // Mandate (Story 3.4 — FR7 INV-14)
+        crate::infrastructure::web::handlers::mandate_handlers::issue_mandate,
+        crate::infrastructure::web::handlers::mandate_handlers::list_mandates,
+        crate::infrastructure::web::handlers::mandate_handlers::get_mandate,
+        crate::infrastructure::web::handlers::mandate_handlers::revoke_mandate,
+        // RoleDelegation (Story 3.5 — FR8 INV-8)
+        crate::infrastructure::web::handlers::role_delegation_handlers::create_role_delegation,
+        crate::infrastructure::web::handlers::role_delegation_handlers::revoke_role_delegation,
+        crate::infrastructure::web::handlers::role_delegation_handlers::list_role_delegations,
+        // SyndicResponse (Story 3.7 — FR32 INV-23)
+        crate::infrastructure::web::handlers::syndic_response_handlers::create_syndic_response,
+        crate::infrastructure::web::handlers::syndic_response_handlers::list_syndic_responses,
+        // TechnicalSpec (Story 3.8 — FR33)
+        crate::infrastructure::web::handlers::technical_spec_handlers::create_technical_spec,
+        crate::infrastructure::web::handlers::technical_spec_handlers::bump_technical_spec,
+        crate::infrastructure::web::handlers::technical_spec_handlers::submit_technical_spec,
+        crate::infrastructure::web::handlers::technical_spec_handlers::sign_technical_spec,
+        crate::infrastructure::web::handlers::technical_spec_handlers::get_technical_spec,
+        crate::infrastructure::web::handlers::technical_spec_handlers::list_technical_specs,
     ),
     components(schemas(
         // Pagination primitives — referenced by query params on list endpoints
@@ -240,6 +266,12 @@ use utoipa_swagger_ui::SwaggerUi;
         (name = "PaymentRecovery", description = "Automated payment reminders"),
         (name = "Consent", description = "User consent management (GDPR Art. 7)"),
         (name = "Legal Reference", description = "Belgian legal reference rules and majority types"),
+        (name = "ContractorEvaluation", description = "Contractor performance evaluations (Story 3.9 — FR34 FR35 INV-21 INV-24)"),
+        (name = "MagicLink", description = "Single-use scoped magic links for public access (Story 3.2 — FR6 INV-13 INV-17)"),
+        (name = "Mandate", description = "Time-bounded mandates for mandataire delegation (Story 3.4 — FR7 INV-14)"),
+        (name = "RoleDelegation", description = "Temporary role delegation between users (Story 3.5 — FR8 INV-8)"),
+        (name = "SyndicResponse", description = "Append-only syndic replies to tickets (Story 3.7 — FR32 INV-23)"),
+        (name = "TechnicalSpec", description = "Versionable technical specifications with multi-party signatures (Story 3.8 — FR33)"),
     )
 )]
 pub struct ApiDoc;

@@ -499,6 +499,23 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/c/{token}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Public access via magic link */
+    get: operations["consume_magic_link"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/consent": {
     parameters: {
       query?: never;
@@ -548,6 +565,54 @@ export interface paths {
      *     * `500 Internal Server Error` - Database error
      */
     get: operations["get_consent_status"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/contractor-evaluations": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: operations["create_contractor_evaluation"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/contractor-evaluations/{id}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: operations["get_contractor_evaluation"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/contractors/{contractor_user_id}/evaluations": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: operations["list_contractor_evaluations"];
     put?: never;
     post?: never;
     delete?: never;
@@ -765,6 +830,75 @@ export interface paths {
      */
     put: operations["restrict_user_processing"];
     post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/magic-links": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Issue a magic link (syndic / superadmin only) */
+    post: operations["issue_magic_link"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/mandates": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List active mandates for a subject user */
+    get: operations["list_mandates"];
+    put?: never;
+    /** Issue a mandate (syndic / superadmin only) */
+    post: operations["issue_mandate"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/mandates/{id}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get mandate details */
+    get: operations["get_mandate"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/mandates/{id}/revoke": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Revoke a mandate before its natural expiry (syndic / superadmin) */
+    post: operations["revoke_mandate"];
     delete?: never;
     options?: never;
     head?: never;
@@ -1442,6 +1576,121 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/role-delegations": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List active delegations involving a subject user */
+    get: operations["list_role_delegations"];
+    put?: never;
+    /** Delegate a role to another user for a bounded duration */
+    post: operations["create_role_delegation"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/role-delegations/{id}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    /** Revoke a delegation before its natural expiry */
+    delete: operations["revoke_role_delegation"];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/technical-specs": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: operations["list_technical_specs"];
+    put?: never;
+    post: operations["create_technical_spec"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/technical-specs/{id}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: operations["get_technical_spec"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/technical-specs/{id}/bump": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: operations["bump_technical_spec"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/technical-specs/{id}/signatures": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: operations["sign_technical_spec"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/technical-specs/{id}/submit": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: operations["submit_technical_spec"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/tickets": {
     parameters: {
       query?: never;
@@ -1663,6 +1912,24 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/tickets/{id}/syndic-responses": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List syndic responses for a ticket (oldest first) */
+    get: operations["list_syndic_responses"];
+    put?: never;
+    /** Post a structured syndic response to a ticket (append-only) */
+    post: operations["create_syndic_response"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/votes/{vote_id}": {
     parameters: {
       query?: never;
@@ -1736,6 +2003,15 @@ export interface components {
      * @enum {string}
      */
     BudgetStatus: "Draft" | "Submitted" | "Approved" | "Rejected" | "Archived";
+    BumpTechnicalSpecRequest: {
+      attachments?: string[] | null;
+      deliverables?: string[] | null;
+      description?: string | null;
+      required_signatures?: string[] | null;
+      title?: string | null;
+      /** @description New SemVer. Must be strictly greater than the previous one. */
+      version: string;
+    };
     /** @enum {string} */
     CampaignStatus:
       | "Draft"
@@ -1814,6 +2090,23 @@ export interface components {
     };
     /** @enum {string} */
     ContractType: "Fixed" | "Variable";
+    ContractorEvaluationDto: {
+      /** Format: double */
+      average_score: number;
+      comment: string;
+      /** Format: uuid */
+      contractor_user_id: string;
+      /** Format: date-time */
+      created_at: string;
+      /** Format: uuid */
+      evaluator_user_id: string;
+      /** Format: uuid */
+      id: string;
+      linked_ticket_ids: string[];
+      scores: components["schemas"]["EvaluationScoresOutDto"];
+      /** Format: uuid */
+      technical_spec_id: string;
+    };
     /**
      * @description Convocation status
      * @enum {string}
@@ -1843,6 +2136,15 @@ export interface components {
       total_tantiemes?: number | null;
       /** Format: int32 */
       total_units: number;
+    };
+    CreateContractorEvaluationRequest: {
+      comment: string;
+      /** Format: uuid */
+      contractor_user_id: string;
+      linked_ticket_ids?: string[];
+      scores: components["schemas"]["EvaluationScoresDto"];
+      /** Format: uuid */
+      technical_spec_id: string;
     };
     /** @description Create Notification Request */
     CreateNotificationRequest: {
@@ -1901,6 +2203,35 @@ export interface components {
       resolution_type: components["schemas"]["ResolutionType"];
       title: string;
     };
+    CreateSyndicResponseRequest: {
+      /**
+       * @description One of: `schedule_inspection`, `request_quote`, `closed_no_action`,
+       *     `escalated_board`, `other`. Optional.
+       */
+      action_proposed?: string | null;
+      /** @description Free text — 10..=5000 chars after trim. */
+      body: string;
+    };
+    CreateTechnicalSpecRequest: {
+      /** Format: uuid */
+      acp_id: string;
+      attachments?: string[];
+      /** Format: uuid */
+      building_id?: string | null;
+      deliverables: string[];
+      description: string;
+      /**
+       * @description Roles required to sign: `syndic`, `amo`, `lawyer`, `architect`,
+       *     `acp_representative`.
+       */
+      required_signatures: string[];
+      title: string;
+      /**
+       * @description SemVer string (`major.minor.patch`, e.g. `1.0.0`). Strict — no
+       *     `v`-prefix, no pre-release / build metadata.
+       */
+      version: string;
+    };
     CreateTicketRequest: {
       /** Format: uuid */
       building_id: string;
@@ -1924,6 +2255,15 @@ export interface components {
     };
     /** @enum {string} */
     CreditStatus: "Positive" | "Balanced" | "Negative";
+    DelegateRoleRequest: {
+      /** Format: uuid */
+      organization_id?: string | null;
+      role: string;
+      /** Format: uuid */
+      target_user_id: string;
+      /** Format: date-time */
+      valid_until: string;
+    };
     /**
      * @description Méthode d'envoi de la relance
      * @enum {string}
@@ -1946,6 +2286,30 @@ export interface components {
       | "generated"
       | "delivered"
       | "expired";
+    EvaluationScoresDto: {
+      /** Format: int32 */
+      communication: number;
+      /** Format: int32 */
+      cost_compliance: number;
+      /** Format: int32 */
+      overall: number;
+      /** Format: int32 */
+      quality: number;
+      /** Format: int32 */
+      timeliness: number;
+    };
+    EvaluationScoresOutDto: {
+      /** Format: int32 */
+      communication: number;
+      /** Format: int32 */
+      cost_compliance: number;
+      /** Format: int32 */
+      overall: number;
+      /** Format: int32 */
+      quality: number;
+      /** Format: int32 */
+      timeliness: number;
+    };
     /** @enum {string} */
     ExchangeStatus:
       | "Offered"
@@ -2005,6 +2369,34 @@ export interface components {
             name: string;
           };
         };
+    IssueMagicLinkRequest: {
+      /** Format: int64 */
+      expires_in_seconds: number;
+      /** Format: uuid */
+      scope_id: string;
+      scope_kind: string;
+      /** Format: uuid */
+      subject_user_id: string;
+    };
+    IssueMandateRequest: {
+      kind: string;
+      reason: string;
+      /** Format: uuid */
+      scope_id: string;
+      scope_kind: string;
+      /** Format: uuid */
+      subject_user_id: string;
+      /**
+       * Format: date-time
+       * @description Optional — defaults to `now()` server-side.
+       */
+      valid_from?: string | null;
+      /**
+       * Format: date-time
+       * @description Mandatory. Returning 422-like validation if missing.
+       */
+      valid_until: string;
+    };
     LoginRequest: {
       email: string;
       password: string;
@@ -2014,6 +2406,29 @@ export interface components {
      * @enum {string}
      */
     MajorityType: "absolute" | "two_thirds" | "four_fifths" | "unanimity";
+    MandateResponse: {
+      /** Format: date-time */
+      created_at: string;
+      /** Format: uuid */
+      id: string;
+      /** Format: uuid */
+      issued_by: string;
+      kind: string;
+      reason: string;
+      /** Format: date-time */
+      revoked_at?: string | null;
+      /** Format: uuid */
+      scope_id: string;
+      scope_kind: string;
+      /** Format: uuid */
+      subject_user_id: string;
+      /** Format: date-time */
+      updated_at: string;
+      /** Format: date-time */
+      valid_from: string;
+      /** Format: date-time */
+      valid_until: string;
+    };
     /** @description Mark Notification as Read Request (for in-app only) */
     MarkReadRequest: Record<string, never>;
     /**
@@ -2181,6 +2596,23 @@ export interface components {
       | "GuestRoom"
       | "BikeStorage"
       | "Other";
+    RoleDelegationResponse: {
+      /** Format: date-time */
+      created_at: string;
+      /** Format: uuid */
+      delegated_from_user_id?: string | null;
+      /** Format: uuid */
+      id: string;
+      /** Format: uuid */
+      organization_id?: string | null;
+      role: string;
+      /** Format: date-time */
+      updated_at: string;
+      /** Format: uuid */
+      user_id: string;
+      /** Format: date-time */
+      valid_until?: string | null;
+    };
     /**
      * @description Category for shared objects
      * @enum {string}
@@ -2194,6 +2626,19 @@ export interface components {
       | "Kitchen"
       | "Baby"
       | "Other";
+    SignTechnicalSpecRequest: {
+      /**
+       * Format: uuid
+       * @description Optional Mandate id. REQUIRED for mandataire roles (amo / lawyer /
+       *     architect) — Story 3.4 chain.
+       */
+      mandate_id?: string | null;
+      /**
+       * @description Role under which the caller signs. Must be in the spec's
+       *     `required_signatures` list.
+       */
+      role: string;
+    };
     /**
      * @description Skill category for classification
      * @enum {string}
@@ -2220,6 +2665,54 @@ export interface components {
     SwitchRoleRequest: {
       /** Format: uuid */
       role_id: string;
+    };
+    SyndicResponseDto: {
+      action_proposed?: string | null;
+      body: string;
+      /** Format: date-time */
+      created_at: string;
+      /** Format: uuid */
+      id: string;
+      /** Format: uuid */
+      syndic_user_id: string;
+      /** Format: uuid */
+      ticket_id: string;
+    };
+    TechnicalSpecDto: {
+      /** Format: uuid */
+      acp_id: string;
+      attachments: string[];
+      /** Format: uuid */
+      building_id?: string | null;
+      /** Format: date-time */
+      created_at: string;
+      /** Format: uuid */
+      created_by: string;
+      deliverables: string[];
+      description: string;
+      /** Format: uuid */
+      id: string;
+      /** Format: uuid */
+      previous_version_id?: string | null;
+      required_signatures: string[];
+      status: string;
+      title: string;
+      /** Format: date-time */
+      updated_at: string;
+      version: string;
+    };
+    TechnicalSpecSignatureDto: {
+      /** Format: uuid */
+      id: string;
+      /** Format: uuid */
+      mandate_id?: string | null;
+      role: string;
+      /** Format: uuid */
+      signatory_user_id: string;
+      /** Format: date-time */
+      signed_at: string;
+      /** Format: uuid */
+      technical_spec_id: string;
     };
     /**
      * @description Ticket Category - Types of maintenance requests
@@ -3239,6 +3732,33 @@ export interface operations {
       };
     };
   };
+  consume_magic_link: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        token: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Scope payload */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Invalid / expired / already consumed */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
   record_consent: {
     parameters: {
       query?: never;
@@ -3315,6 +3835,109 @@ export interface operations {
           [name: string]: unknown;
         };
         content?: never;
+      };
+    };
+  };
+  create_contractor_evaluation: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["CreateContractorEvaluationRequest"];
+      };
+    };
+    responses: {
+      /** @description Evaluation created */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ContractorEvaluationDto"];
+        };
+      };
+      /** @description Validation error */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Forbidden — only syndic / superadmin */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description TechnicalSpec not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description TechnicalSpec not Approved, or self-evaluation */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  get_contractor_evaluation: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Evaluation details */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ContractorEvaluationDto"];
+        };
+      };
+      /** @description Evaluation not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  list_contractor_evaluations: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        contractor_user_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description List of evaluations (newest first) */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ContractorEvaluationDto"][];
+        };
       };
     };
   };
@@ -3676,6 +4299,180 @@ export interface operations {
       };
       /** @description Internal server error */
       500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  issue_magic_link: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["IssueMagicLinkRequest"];
+      };
+    };
+    responses: {
+      /** @description MagicLink issued */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Validation error */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Forbidden — only syndic or superadmin */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  list_mandates: {
+    parameters: {
+      query?: {
+        /** @description Subject user id. Defaults to the caller. */
+        subject?: string;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Active mandates */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["MandateResponse"][];
+        };
+      };
+      /** @description Forbidden — caller cannot view this subject's mandates */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  issue_mandate: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["IssueMandateRequest"];
+      };
+    };
+    responses: {
+      /** @description Mandate issued */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["MandateResponse"];
+        };
+      };
+      /** @description Validation error */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Forbidden — only syndic or superadmin */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  get_mandate: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Mandate details */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["MandateResponse"];
+        };
+      };
+      /** @description Forbidden — not allowed to view this mandate */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Mandate not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  revoke_mandate: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Mandate revoked */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Forbidden */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Mandate not found */
+      404: {
         headers: {
           [name: string]: unknown;
         };
@@ -5339,6 +6136,349 @@ export interface operations {
       };
     };
   };
+  list_role_delegations: {
+    parameters: {
+      query?: {
+        /** @description Subject user id. Defaults to the caller. */
+        subject?: string;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Active delegations */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["RoleDelegationResponse"][];
+        };
+      };
+      /** @description Forbidden — caller cannot view this subject's delegations */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  create_role_delegation: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["DelegateRoleRequest"];
+      };
+    };
+    responses: {
+      /** @description Delegation created */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["RoleDelegationResponse"];
+        };
+      };
+      /** @description Validation error */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Forbidden — caller cannot delegate this role */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Target already holds the role */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  revoke_role_delegation: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Delegation revoked */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Forbidden */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Delegation not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  list_technical_specs: {
+    parameters: {
+      query: {
+        /** @description ACP id to list specs for */
+        acp_id: string;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description List of specs */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TechnicalSpecDto"][];
+        };
+      };
+    };
+  };
+  create_technical_spec: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["CreateTechnicalSpecRequest"];
+      };
+    };
+    responses: {
+      /** @description Spec created (Draft) */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TechnicalSpecDto"];
+        };
+      };
+      /** @description Validation error */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Forbidden — only syndic / superadmin */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  get_technical_spec: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Spec details */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TechnicalSpecDto"];
+        };
+      };
+      /** @description Spec not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  bump_technical_spec: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["BumpTechnicalSpecRequest"];
+      };
+    };
+    responses: {
+      /** @description New version created (Draft) */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TechnicalSpecDto"];
+        };
+      };
+      /** @description Validation error */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Forbidden — only syndic / superadmin */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Previous spec not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  sign_technical_spec: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["SignTechnicalSpecRequest"];
+      };
+    };
+    responses: {
+      /** @description Signature recorded */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TechnicalSpecSignatureDto"];
+        };
+      };
+      /** @description Spec not in PendingSignatures state */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Signatory role not authorised */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Spec not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Signature already exists for (user, role) */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  submit_technical_spec: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Spec submitted (PendingSignatures) */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TechnicalSpecDto"];
+        };
+      };
+      /** @description Forbidden — only syndic / superadmin */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Spec not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Spec already approved */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
   create_ticket: {
     parameters: {
       query?: never;
@@ -5848,6 +6988,75 @@ export interface operations {
       };
       /** @description Unauthorized */
       401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  list_syndic_responses: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Responses list */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["SyndicResponseDto"][];
+        };
+      };
+    };
+  };
+  create_syndic_response: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["CreateSyndicResponseRequest"];
+      };
+    };
+    responses: {
+      /** @description Response saved */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["SyndicResponseDto"];
+        };
+      };
+      /** @description Validation error (body too short/long, invalid action) */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Forbidden — only syndic / superadmin */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Ticket not found */
+      404: {
         headers: {
           [name: string]: unknown;
         };
