@@ -172,6 +172,47 @@ Légende : Tier 1 = humain exécute (agent diagnostique/propose). Taille S≤0.5
 >
 > **Arbitrage v0.1.0** : seuls WP-H0/H1/H2/H3/HTx sont **bloqueurs légaux** pour go-live bêta fermée (Art. 3.84-3.89 CC, fiche bâtiment conforme, AG terminable). WP-H4/H5/H6 sont **extension produit** — décision PO à confirmer sur leur inclusion v0.1.0 vs report v0.2.0.
 
+### Track I — Frontend refonte UX multi-rôle ACP (slice 3 FE catch-up)
+
+> **Contexte** : suite à la livraison de slice 3 BE (Stories 3.1 → 3.9 mergées 2026-06-09, commits 9598298 → cf41ef4), les UIs syndic/owner correspondantes manquent. **Documentation Vivante e2e** casse silencieusement (workflow `continue-on-error: true` a698f6d) car le DOM ciblé n'existe pas. **Dette UX intégrée au WBS** plutôt que renvoyée à une Phase B post-mortem (cf. mémoire `feedback_maury-fullstack-first.md` : Maury doit penser FE+BE dès le brief pour full-stack découplé).
+>
+> **Drafts BMAD détaillés** (sources de vérité techniques) : `docs/maury/refonte-ux-multi-role-acp/phase-b-fe/{brief,prd,architecture,stories}.md` — non commités (Tier 1 doc publique en attente d'arbitrage).
+>
+> **Gantt par passe agent estimé** : 4 vagues V1→V4, critical path ≈ 3h wall-clock si docker stable, 5h pessimiste. Pattern docker-parallelism : 1 BE + 3 FE concurrent OK (cf. mémoire `feedback_docker-parallelism-bottleneck.md`).
+
+- **WP-I0 — utoipa::path registrations BE (préalable Track I)** · T2 · M
+  Ajouter `#[utoipa::path(...)]` sur tous les handlers Stories 3.4/3.5/3.7/3.8/3.9 + register dans `infrastructure/openapi.rs::ApiDoc::paths(...)` ; regen `openapi.json` + `frontend/src/types/api.d.ts`. Critère : CI Contract Types Check vert avec endpoints mandates/role-delegations/syndic-responses/technical-specs/contractor-evaluations exposés. Deps : aucune (Phase A mergée).
+
+- **WP-I1 — UI sous-rôles : RoleAssignmentForm + List** · T2 · M · _wave V1_
+  Composants Svelte 5 runes admin pour assigner/lister sous-rôles `accountant.{encodeur,emetteur}` + community.moderator + mandataires. Route `/admin/role-assignments`. data-testid : `role-assignment-{user-select,role-select,org-select,submit,row-<id>,revoke-<id>}`. AC 4-cat : @happy assignment OK / @edge expire today / @security cross-org 403 / @negative invalid role. Vitest 4-cat + Playwright multi-rôle. Deps : WP-I0.
+
+- **WP-I2 — UI MagicLinkIssueForm** · T2 · S · _wave V1_
+  Form syndic émet MagicLink contractor + bouton copier URL `/c?t=<token>`. Route `/syndic/magic-links`. data-testid : `magic-link-{target-input,scope-select,scope-id-select,expires-in-input,issue-submit,issued-url-copy}`. AC 4-cat : invariant subject != self (cf. fix CI 709f649). Deps : WP-I0.
+
+- **WP-I3 — UI MandateIssueForm + List + ExpirationBadge** · T2 · M · _wave V1_
+  Form émission mandate notaire/avocat/AMO/architecte/BET/gardien + table liste + countdown badges. Route `/syndic/mandates`. data-testid : `mandate-{kind-select,subject-select,scope-select,reason-textarea,valid-until-input,issue-submit,row-<id>,revoke-<id>,expiration-badge-<id>}`. AC 4-cat (reason 10-500 chars, max 5 ans). Deps : WP-I0.
+
+- **WP-I4 — UI RoleDelegationForm + List** · T2 · S · _wave V2_
+  Form délégation rôle temporaire ; message clair non-transitivité (DelegationChainNotAllowed). data-testid : `role-delegate-{target-input,role-select,until-input,submit,row-<id>}`. AC 4-cat : @security re-delegation refusée + message UI. Deps : V1 (réutilise ExpirationBadge de I3).
+
+- **WP-I5 — UI TicketCreate refacto complaint (kind+severity+evidence+witnesses)** · T2 · L · _wave V3_ · _bigger piece_
+  Refacto composant existant + 3 nouveaux sous-composants `EvidenceUpload.svelte`, `WitnessSelector.svelte`, `SeveritySelector.svelte`. data-testid : `ticket-{create-kind-select,severity-select,incident-date-input,evidence-upload,witness-add,description-textarea,submit}`. AC 4-cat : badge "preuves manquantes" si text-only / max 10 evidence / witnesses ≠ self. Deps : WP-I0.
+
+- **WP-I6 — UI SyndicResponseForm + TicketSlaBadge** · T2 · M · _wave V2_
+  Form append-only (pas d'édition) + badge SLA couleur selon time-to-due. Route enrichit ticket-detail. data-testid : `syndic-response-{body-textarea,action-proposed-select,submit,row-<id>}`, `ticket-sla-badge`. AC 4-cat : badge passe rouge si overdue. Deps : V1 (pattern).
+
+- **WP-I7 — UI TechnicalSpec full flow** · T2 · L · _wave V3_ · _bigger piece_
+  4 composants : `TechnicalSpecCreate`, `TechnicalSpecDetail`, `TechnicalSpecSignatureForm`, `TechnicalSpecVersionTimeline`. Routes `/syndic/technical-specs` + `/syndic/technical-spec?id=` (path-param évité, cf. fix Astro static fed175d). data-testid : `tech-spec-{title-input,version-input,deliverable-add,required-sig-select,attach-upload,create-submit,submit-for-sign,sign-submit,bump-submit,version-row-<version>}`. AC 4-cat : major bump → re-signature requise ; non-mandataire bouton signer absent. Deps : WP-I0.
+
+- **WP-I8 — UI ContractorEvaluationForm + Reputation** · T2 · M · _wave V4_
+  Form évaluation gated by approved TechnicalSpec ; page reputation contractor (5 scores 1-5, moyenne). data-testid : `contractor-eval-{contractor-select,spec-select,tickets-link,scores-{quality,timeliness,communication,cost,overall},comment-textarea,submit}`. AC 4-cat : spec Draft → 422 toast + redirect. Deps : WP-I7 (spec doit exister pour gater).
+
+- **WP-I9 — Documentation Vivante refresh + retire continue-on-error** · T2 · S · _wave V4_
+  Retirer `continue-on-error: true` du step "Run Documentation Vivante scenarios" dans `.github/workflows/ci.yml` (commit a698f6d) → vérifier CI passe verte sans bypass + axe-core violations = 0 sur tous composants I1-I8. AC : CI green sans bypass ; vidéos générées montrent les nouveaux flows. Deps : WP-I1..I8 mergés.
+
+> **Critères DoD Track I (intégrés au gate G1)** :
+> - svelte-check 0/0 erreur/warning ; axe-core violations = 0 par composant ; Vitest 4-cat + Playwright multi-rôle par WP ; data-testid sur 100% éléments interactifs ; pas de stockage JWT en localStorage ; bundle Phase I ≤ +50 KB gzip (baseline mesurée 2026-06-07 = 4,3 MB total / 0,6 MB gzip JS).
+
 ### Track G — Gate de release
 
 - **WP-G1 — Revue humaine fraîche** · T1 · M
@@ -182,21 +223,132 @@ Légende : Tier 1 = humain exécute (agent diagnostique/propose). Taille S≤0.5
 
 ## Graphe de dépendances / chemin critique
 
-```
-WP-A1 (C1 + ADR-0008) ─┬─► A3 (EXP-006) ─┐
-   └─► A7 (ADR/#526/#339)├─► A4 (EXP-005) │
-        ▼               ├─► A5 (EXP-007)──┼─► #433 VERT ─┐
-WP-A2 (#443 LONG POLE) ─├─► A6 (EXP-008) ─┘             │
-                        └────────────────────────────────┤
-B1 (bugs revue; WF14-2 fuite) ─────────────────────────  ├─► make ci ─► G1 ─► G2
-B2 (#432 deps, FAIT #538) ──────────────────────────────  ┤   VERT    (humain)(TAG)
-B3 (triage BDD pré-existants #524) ─────────────────────  ┤  (débruite le jugement BDD de G1)
-FE1 (JWT→cookie SEC) ─► FE2 ─► D1 ─► D2 ────────────────  ┤    ▲
-E1 (lint IaC) ─► F1 (TF/Ansible,T1) ─► F2 (TLS,T1) ─► F3 (poller,T1) ─► F4 ──┘
-        └──────────────── concurrent Track A ────────────────┘
+```mermaid
+graph LR
+    %% Track A — Backend Decimal
+    A1[WP-A1<br/>C1+ADR-0008<br/>M] --> A3[A3<br/>EXP-006<br/>M]
+    A1 --> A4[A4<br/>EXP-005<br/>M ✅]
+    A1 --> A5[A5<br/>EXP-007<br/>L ✅]
+    A1 --> A6[A6<br/>EXP-008<br/>M ✅]
+    A1 --> A7[A7<br/>ADR/526/339<br/>M ✅]
+    A2[WP-A2<br/>#443 LONG POLE<br/>L ✅] --> A3
+    A2 --> A4
+    A2 --> A5
+    A2 --> A6
+    A3 --> CASCADE[#433 VERT]
+    A4 --> CASCADE
+    A5 --> CASCADE
+    A6 --> CASCADE
+
+    %% Track B — Backend autre
+    B1[B1<br/>bugs revue<br/>M] --> CI[make ci VERT]
+    B2[B2<br/>#432 FAIT #538<br/>S ✅] --> CI
+    B3[B3<br/>triage BDD #524<br/>L ✅] --> CI
+    CASCADE --> CI
+
+    %% Track C — Frontend sécurité
+    FE1[FE1<br/>JWT cookie ✅<br/>L] --> FE2[FE2<br/>bugs FE ✅<br/>M]
+    FE2 --> D1[D1<br/>Playwright<br/>M PARTIEL]
+    D1 --> D2[D2<br/>vitest<br/>S-M]
+
+    %% Track E/F — Ops
+    E1[E1<br/>lint IaC<br/>S T2] --> F1[F1<br/>TF/Ansible<br/>M T1]
+    F1 --> F2[F2<br/>TLS<br/>S T1]
+    F2 --> F3[F3<br/>poller<br/>M T1]
+    F3 --> F4[F4<br/>audit<br/>S]
+
+    %% Track H — Conformité métier
+    H1[H1<br/>conformité<br/>M] --> H2[H2<br/>convocation 15j<br/>M]
+    H1 --> H3[H3<br/>AG terminable<br/>M]
+    H1 --> B4[B4<br/>Building/ACP<br/>M]
+
+    %% Track I — Frontend refonte UX (NEW 2026-06-09)
+    I0[I0<br/>utoipa BE<br/>M] --> I1[I1<br/>RoleAssign<br/>M]
+    I0 --> I2[I2<br/>MagicLink<br/>S]
+    I0 --> I3[I3<br/>Mandate<br/>M]
+    I0 --> I5[I5<br/>TicketCreate<br/>L]
+    I0 --> I7[I7<br/>TechSpec<br/>L]
+    I1 --> I4[I4<br/>RoleDelegation<br/>S]
+    I3 --> I6[I6<br/>SyndicResponse<br/>M]
+    I7 --> I8[I8<br/>ContractorEval<br/>M]
+    I1 --> I9[I9<br/>DocVivante refresh<br/>S]
+    I2 --> I9
+    I4 --> I9
+    I5 --> I9
+    I6 --> I9
+    I8 --> I9
+
+    %% Gate
+    CI --> G1[G1<br/>revue humaine<br/>M T1]
+    D2 --> G1
+    F4 --> G1
+    H2 --> G1
+    H3 --> G1
+    B4 --> G1
+    I9 --> G1
+    G1 --> G2[G2<br/>tag v0.1.0<br/>S T1]
+
+    classDef tier1 fill:#fdd,stroke:#f00,stroke-width:2px
+    classDef critical stroke:#f00,stroke-width:3px
+    classDef done fill:#dfd
+    class G1,G2,F1,F2,F3 tier1
+    class A2,A5,I5,I7 critical
+    class A2,A4,A5,A6,A7,B2,B3,FE1,FE2 done
 ```
 
-**Chemin critique** : `A1(M) → A2(L) → A5(L etat_date) → #433 VERT → make ci VERT → G1(T1) → G2(T1)`, convergeant avec `FE1(L)→FE2→D1` et `E1→F1(T1)→F2(T1)→F3(T1)` et `H1→H2 / H3 / B4` (Track H Conformité métier — bloqueurs légaux Art. 3.87 §3-5 CC, ajoutés 2026-05-20 cf. #553/#554).
+**Chemin critique** : `A1(M) → A2(L) → A5(L etat_date) → #433 VERT → make ci VERT → G1(T1) → G2(T1)`, convergeant avec `FE1(L)→FE2→D1` et `E1→F1(T1)→F2(T1)→F3(T1)` et `H1→H2 / H3 / B4` (Track H Conformité métier — bloqueurs légaux Art. 3.87 §3-5 CC, ajoutés 2026-05-20 cf. #553/#554) **et** `I0→I7→I8→I9` (Track I FE refonte UX ajouté 2026-06-09 — convergence intégrée à G1).
+
+## Gantt Track I — Phase B FE par passe d'agent
+
+> **Unité de mesure** : 1 passe d'agent = 1 cycle complet **RED → GREEN → REFACTOR → REVIEW**.
+> - RED : agent écrit les tests `@happy/@edge/@security/@negative` qui échouent.
+> - GREEN : agent implémente jusqu'à faire passer les tests.
+> - REFACTOR : agent nettoie (rustfmt/prettier, supprime duplicates, simplifie).
+> - REVIEW : agent ou orchestrateur relit (clippy + svelte-check + axe-core + bundle-size).
+>
+> **Mapping wall-clock** : 1 cycle RGRR = `S=0.5j` (≈ 4h) / `M=1j` (≈ 8h) / `L=2j` (≈ 16h).
+> Hypothèse : agent en isolation worktree, docker stable, brief signé par @gilmry.
+
+```mermaid
+gantt
+    title Track I — Gantt par passe d'agent (1 passe = 1 cycle RED-GREEN-REFACTOR-REVIEW)
+    dateFormat  YYYY-MM-DD
+    axisFormat  J%d
+    section V1 — 4 agents //
+      WP-I0 utoipa BE [M=1j]            :crit, i0, 2026-06-10, 1d
+      WP-I1 RoleAssignment [M=1j]       :i1, 2026-06-10, 1d
+      WP-I2 MagicLinkForm [S=0.5j]      :i2, 2026-06-10, 12h
+      WP-I3 Mandate [M=1j]              :i3, 2026-06-10, 1d
+    section V2 — 2 agents //
+      WP-I4 RoleDelegation [S=0.5j]     :i4, after i1, 12h
+      WP-I6 SyndicResponse [M=1j]       :i6, after i3, 1d
+    section V3 — 2 agents //
+      WP-I5 TicketCreate complaint [L=2j] :crit, i5, after i6, 2d
+      WP-I7 TechnicalSpec flow [L=2j]     :crit, i7, after i4, 2d
+    section V4 — 2 agents //
+      WP-I8 ContractorEval [M=1j]       :i8, after i7, 1d
+      WP-I9 DocVivante refresh [S=0.5j] :i9, after i8, 12h
+    section Gate
+      G1 Revue humaine [T1=M]           :crit, g1, after i9, 1d
+      G2 Tag v0.1.0 [T1=S]              :crit, g2, after g1, 12h
+```
+
+**Lecture du Gantt** :
+- **Chemin critique Track I** (rouge) : `I0 → I7 → I8 → I9 → G1 → G2` = 1+2+1+0.5+1+0.5 = **6 jours wall-clock minimum**.
+- **Vague la plus chargée** : V1 lance 4 agents en parallèle (1 BE + 3 FE). Pattern docker-parallelism vérifié (cf. mémoire `feedback_docker-parallelism-bottleneck.md`).
+- **Couplage Track I ↔ G1** : I9 (DocVivante refresh) doit être vert avant G1 (revue humaine), sinon la dette UX casse le gate de release.
+
+### Budget tokens estimé Track I
+
+| Vague | Stories | Cycles RGRR | Tokens estimés (modèle Opus 4.7) |
+|---|---|---|---|
+| V1 | I0, I1, I2, I3 | 4 cycles parallèles | ~ 800 K tokens (4 × 200 K subagent) |
+| V2 | I4, I6 | 2 cycles parallèles | ~ 400 K tokens |
+| V3 | I5, I7 | 2 cycles longs (L) | ~ 600 K tokens |
+| V4 | I8, I9 | 2 cycles courts | ~ 300 K tokens |
+| **Total Track I** | 9 + 1 gate | 10 passes | **~ 2,1 M tokens** |
+
+Baseline observée Phase A (slice 3 BE = 9 stories, ~ 1,8 M tokens consommés session 2026-06-09). Track I sera comparable.
 **Démarrages J1 sans inter-dép** : A1, B1, B2, FE1(moitié backend), E1, F1(terraform plan). Ops est court en effort mais borné par la latence Tier-1 humaine → **lancer F1-prep + E1 dès J1** pour que Ops finisse en parallèle du long pole A2→A5, pas après.
 
 ## Critères GO (Definition of Done — bêta fermée)
