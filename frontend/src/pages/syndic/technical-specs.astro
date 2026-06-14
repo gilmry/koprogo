@@ -1,0 +1,18 @@
+---
+// Story B7 (Phase B FE) — Page syndic des fiches techniques (liste).
+//
+// Monte le wrapper `TechnicalSpecsPage.svelte` (lib/components/syndic) qui
+// orchestre `<TechnicalSpecCreate>` (modal) + liste/table.
+//
+// Route : /syndic/technical-specs (accès gated côté frontend RouteGuard + côté
+// backend RBAC — superadmin / syndic only).
+
+import Layout from '../../layouts/Layout.astro';
+import TechnicalSpecsPage from '../../lib/components/syndic/TechnicalSpecsPage.svelte';
+---
+
+<Layout title="Fiches techniques — KoproGo">
+  <main class="container mx-auto px-4 py-8">
+    <TechnicalSpecsPage client:load />
+  </main>
+</Layout>

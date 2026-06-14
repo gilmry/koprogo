@@ -1,0 +1,25 @@
+---
+// Story B7 (Phase B FE) — Page syndic détail d'une fiche technique.
+//
+// Route : /syndic/technical-spec?id=<UUID> (query param, PAS path param).
+//
+// Pourquoi query param et pas `/syndic/technical-spec/[id].astro` :
+//   Astro est en mode `output: "static"` (cf. astro.config.mjs) sans adapter
+//   SSR. Les dynamic routes exigeraient soit `getStaticPaths()` (impossible —
+//   les specs sont créées dynamiquement par les syndics), soit un adapter
+//   SSR (changement déploiement majeur).
+//   Pattern frère : `/c?t=<token>` (cf. Gotcha #1 stories.md §B7 + fix CI
+//   `fed175d`).
+//
+// Le wrapper Svelte `TechnicalSpecPage.svelte` lit l'id depuis
+// `window.location.search` côté client puis fetch.
+
+import Layout from '../../layouts/Layout.astro';
+import TechnicalSpecPage from '../../lib/components/syndic/TechnicalSpecPage.svelte';
+---
+
+<Layout title="Fiche technique — KoproGo">
+  <main class="container mx-auto px-4 py-8">
+    <TechnicalSpecPage client:only="svelte" />
+  </main>
+</Layout>
