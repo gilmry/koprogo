@@ -111,17 +111,14 @@ describe("TechnicalSpecSignatureForm — Story B7 (4-cat)", () => {
 
   it("@security rôle mandataire (amo) SANS activeMandate → warning + bouton signer disabled", async () => {
     const onSign = vi.fn();
-    const { getByTestId, queryByTestId } = render(
-      TechnicalSpecSignatureForm,
-      {
-        props: {
-          specId: SPEC_ID,
-          role: "amo",
-          activeMandate: null,
-          onSign,
-        },
+    const { getByTestId, queryByTestId } = render(TechnicalSpecSignatureForm, {
+      props: {
+        specId: SPEC_ID,
+        role: "amo",
+        activeMandate: null,
+        onSign,
       },
-    );
+    });
 
     // Warning visible.
     const warn = queryByTestId("tech-spec-sign-no-mandate-warning");
@@ -150,19 +147,18 @@ describe("TechnicalSpecSignatureForm — Story B7 (4-cat)", () => {
   it("@negative onSign rejette (409) → message inline via SignatureForm enfant", async () => {
     const onSign = vi
       .fn()
-      .mockRejectedValue(new Error("Signature déjà présente pour (user, role)"));
+      .mockRejectedValue(
+        new Error("Signature déjà présente pour (user, role)"),
+      );
 
-    const { getByTestId, queryByTestId } = render(
-      TechnicalSpecSignatureForm,
-      {
-        props: {
-          specId: SPEC_ID,
-          role: "syndic",
-          activeMandate: null,
-          onSign,
-        },
+    const { getByTestId, queryByTestId } = render(TechnicalSpecSignatureForm, {
+      props: {
+        specId: SPEC_ID,
+        role: "syndic",
+        activeMandate: null,
+        onSign,
       },
-    );
+    });
 
     const cb = getByTestId(
       "tech-spec-sign-confirm-checkbox",

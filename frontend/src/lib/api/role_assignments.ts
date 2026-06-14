@@ -25,7 +25,8 @@ import type { components } from "../../types/api";
 // -----------------------------------------------------------------------------
 
 /** Réponse d'un assignment (cf. backend `UserRoleAssignmentResponse`). */
-export type RoleAssignment = components["schemas"]["UserRoleAssignmentResponse"];
+export type RoleAssignment =
+  components["schemas"]["UserRoleAssignmentResponse"];
 
 /** Payload de création d'assignment (cf. backend `AssignRoleRequest`). */
 export type AssignRoleRequest = components["schemas"]["AssignRoleRequest"];

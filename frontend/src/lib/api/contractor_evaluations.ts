@@ -42,8 +42,7 @@ export type ContractorEvaluationDto =
   components["schemas"]["ContractorEvaluationDto"];
 export type CreateContractorEvaluationRequest =
   components["schemas"]["CreateContractorEvaluationRequest"];
-export type EvaluationScoresDto =
-  components["schemas"]["EvaluationScoresDto"];
+export type EvaluationScoresDto = components["schemas"]["EvaluationScoresDto"];
 export type EvaluationScoresOutDto =
   components["schemas"]["EvaluationScoresOutDto"];
 

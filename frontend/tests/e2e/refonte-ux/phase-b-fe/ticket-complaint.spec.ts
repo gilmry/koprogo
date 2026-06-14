@@ -193,12 +193,7 @@ test.describe("Story B5 — Ticket Complaint (multi-rôle)", () => {
     const acp = await createAcp(request, adminToken, org.id);
     const building = await createBuilding(request, adminToken, acp.id);
     const syndic = await registerUser(request, org.id, "syndic", "B5");
-    const ownerPlaignant = await registerUser(
-      request,
-      org.id,
-      "owner",
-      "B5p",
-    );
+    const ownerPlaignant = await registerUser(request, org.id, "owner", "B5p");
     // owner-temoin déclaré pour la séquence narrative (le witness selector
     // peut afficher 0 candidat selon l'endpoint owners — on tolère).
     await registerUser(request, org.id, "owner", "B5t").catch(() => null);
@@ -219,18 +214,14 @@ test.describe("Story B5 — Ticket Complaint (multi-rôle)", () => {
       .getByTestId("ticket-create-kind-select")
       .selectOption("complaint");
 
-    await expect(
-      page.getByTestId("ticket-severity-radio-high"),
-    ).toBeVisible({ timeout: 5_000 });
+    await expect(page.getByTestId("ticket-severity-radio-high")).toBeVisible({
+      timeout: 5_000,
+    });
     await expect(
       page.getByTestId("ticket-create-incident-date-input"),
     ).toBeVisible();
-    await expect(
-      page.getByTestId("ticket-evidence-upload"),
-    ).toBeVisible();
-    await expect(
-      page.getByTestId("ticket-witness-search"),
-    ).toBeVisible();
+    await expect(page.getByTestId("ticket-evidence-upload")).toBeVisible();
+    await expect(page.getByTestId("ticket-witness-search")).toBeVisible();
 
     // Remplit le form.
     await page
@@ -247,9 +238,7 @@ test.describe("Story B5 — Ticket Complaint (multi-rôle)", () => {
     const yesterday = new Date();
     yesterday.setDate(yesterday.getDate() - 1);
     const yIso = yesterday.toISOString().slice(0, 10);
-    await page
-      .getByTestId("ticket-create-incident-date-input")
-      .fill(yIso);
+    await page.getByTestId("ticket-create-incident-date-input").fill(yIso);
 
     // Submit → 201 → redirect /ticket-detail.
     const submit = page.getByTestId("ticket-create-submit");

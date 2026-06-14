@@ -132,7 +132,9 @@ describe("TechnicalSpecVersionTimeline — Story B7 (4-cat)", () => {
       props: { versions: [old, recent] },
     });
     const list = getByTestId("tech-spec-timeline");
-    const rows = list.querySelectorAll('[data-testid^="tech-spec-version-row-"]');
+    const rows = list.querySelectorAll(
+      '[data-testid^="tech-spec-version-row-"]',
+    );
     expect(rows[0].getAttribute("data-testid")).toBe(
       "tech-spec-version-row-2.0.0",
     );

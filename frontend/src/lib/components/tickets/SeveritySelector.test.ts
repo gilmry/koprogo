@@ -61,14 +61,19 @@ describe("SeveritySelector — Story B5 (4-cat)", () => {
       props: { value: "" },
     });
 
-    expect((getByTestId("ticket-severity-radio-low") as HTMLInputElement).checked)
-      .toBe(false);
-    expect((getByTestId("ticket-severity-radio-normal") as HTMLInputElement).checked)
-      .toBe(false);
-    expect((getByTestId("ticket-severity-radio-high") as HTMLInputElement).checked)
-      .toBe(false);
-    expect((getByTestId("ticket-severity-radio-critical") as HTMLInputElement).checked)
-      .toBe(false);
+    expect(
+      (getByTestId("ticket-severity-radio-low") as HTMLInputElement).checked,
+    ).toBe(false);
+    expect(
+      (getByTestId("ticket-severity-radio-normal") as HTMLInputElement).checked,
+    ).toBe(false);
+    expect(
+      (getByTestId("ticket-severity-radio-high") as HTMLInputElement).checked,
+    ).toBe(false);
+    expect(
+      (getByTestId("ticket-severity-radio-critical") as HTMLInputElement)
+        .checked,
+    ).toBe(false);
   });
 
   it("@edge value=critical initial → seul critical est coché", () => {
@@ -76,14 +81,19 @@ describe("SeveritySelector — Story B5 (4-cat)", () => {
       props: { value: "critical" },
     });
 
-    expect((getByTestId("ticket-severity-radio-low") as HTMLInputElement).checked)
-      .toBe(false);
-    expect((getByTestId("ticket-severity-radio-normal") as HTMLInputElement).checked)
-      .toBe(false);
-    expect((getByTestId("ticket-severity-radio-high") as HTMLInputElement).checked)
-      .toBe(false);
-    expect((getByTestId("ticket-severity-radio-critical") as HTMLInputElement).checked)
-      .toBe(true);
+    expect(
+      (getByTestId("ticket-severity-radio-low") as HTMLInputElement).checked,
+    ).toBe(false);
+    expect(
+      (getByTestId("ticket-severity-radio-normal") as HTMLInputElement).checked,
+    ).toBe(false);
+    expect(
+      (getByTestId("ticket-severity-radio-high") as HTMLInputElement).checked,
+    ).toBe(false);
+    expect(
+      (getByTestId("ticket-severity-radio-critical") as HTMLInputElement)
+        .checked,
+    ).toBe(true);
   });
 
   it("@security set fermé — aucun radio hors {low,normal,high,critical}", () => {

@@ -168,7 +168,9 @@ describe("SyndicResponseForm — Story B6 (4-cat)", () => {
     // Aucun bouton qui contient "Modifier" ou "Supprimer".
     const buttons = Array.from(container.querySelectorAll("button"));
     for (const b of buttons) {
-      expect(b.textContent ?? "").not.toMatch(/modifier|supprimer|delete|edit/i);
+      expect(b.textContent ?? "").not.toMatch(
+        /modifier|supprimer|delete|edit/i,
+      );
     }
   });
 

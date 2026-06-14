@@ -98,17 +98,13 @@ describe("TicketCreate — Story B5 (4-cat)", () => {
       "Fuite couloir étage 2",
     );
     fillTextarea(
-      getByTestId(
-        "ticket-create-description-textarea",
-      ) as HTMLTextAreaElement,
+      getByTestId("ticket-create-description-textarea") as HTMLTextAreaElement,
       "Une fuite d'eau est apparue ce matin dans le couloir commun du 2ème étage près de l'ascenseur.",
     );
 
     // Kind par défaut = Request → la section Complaint n'apparaît PAS.
     expect(queryByTestId("ticket-create-incident-date-input")).toBeNull();
-    expect(
-      queryByTestId("ticket-severity-radio-low"),
-    ).toBeNull();
+    expect(queryByTestId("ticket-severity-radio-low")).toBeNull();
     expect(queryByTestId("ticket-evidence-upload")).toBeNull();
     expect(queryByTestId("ticket-witness-search")).toBeNull();
 
@@ -159,9 +155,7 @@ describe("TicketCreate — Story B5 (4-cat)", () => {
       "Tapage nocturne récurrent",
     );
     fillTextarea(
-      getByTestId(
-        "ticket-create-description-textarea",
-      ) as HTMLTextAreaElement,
+      getByTestId("ticket-create-description-textarea") as HTMLTextAreaElement,
       "Bruit insupportable chaque nuit du voisin du dessus depuis 3 semaines.",
     );
     // Sélectionner severity=High.
@@ -212,9 +206,7 @@ describe("TicketCreate — Story B5 (4-cat)", () => {
       "Plainte texte seule",
     );
     fillTextarea(
-      getByTestId(
-        "ticket-create-description-textarea",
-      ) as HTMLTextAreaElement,
+      getByTestId("ticket-create-description-textarea") as HTMLTextAreaElement,
       "Je dépose cette plainte sans pouvoir fournir de preuves matérielles pour l'instant.",
     );
     (getByTestId("ticket-severity-radio-normal") as HTMLInputElement).click();
@@ -251,9 +243,7 @@ describe("TicketCreate — Story B5 (4-cat)", () => {
       "Titre valide",
     );
     fillTextarea(
-      getByTestId(
-        "ticket-create-description-textarea",
-      ) as HTMLTextAreaElement,
+      getByTestId("ticket-create-description-textarea") as HTMLTextAreaElement,
       "Court", // 5 chars
     );
 
@@ -290,9 +280,7 @@ describe("TicketCreate — Story B5 (4-cat)", () => {
       "Plainte sans severity",
     );
     fillTextarea(
-      getByTestId(
-        "ticket-create-description-textarea",
-      ) as HTMLTextAreaElement,
+      getByTestId("ticket-create-description-textarea") as HTMLTextAreaElement,
       "Description suffisamment longue pour passer la validation minimale.",
     );
     fillInput(
@@ -330,9 +318,7 @@ describe("TicketCreate — Story B5 (4-cat)", () => {
       "Plainte avec date future",
     );
     fillTextarea(
-      getByTestId(
-        "ticket-create-description-textarea",
-      ) as HTMLTextAreaElement,
+      getByTestId("ticket-create-description-textarea") as HTMLTextAreaElement,
       "Description suffisamment longue pour passer la validation minimale.",
     );
     (getByTestId("ticket-severity-radio-high") as HTMLInputElement).click();
@@ -348,9 +334,7 @@ describe("TicketCreate — Story B5 (4-cat)", () => {
 
     // Message d'erreur inline visible.
     await waitFor(() =>
-      expect(
-        queryByTestId("ticket-create-incident-date-error"),
-      ).not.toBeNull(),
+      expect(queryByTestId("ticket-create-incident-date-error")).not.toBeNull(),
     );
 
     // Submit disabled.
@@ -363,7 +347,9 @@ describe("TicketCreate — Story B5 (4-cat)", () => {
   it("@negative backend 422 → message inline + onCreated PAS appelé", async () => {
     const onCreate = vi
       .fn()
-      .mockRejectedValue(new Error("ValidationError: severity required for complaint"));
+      .mockRejectedValue(
+        new Error("ValidationError: severity required for complaint"),
+      );
     const onCreated = vi.fn();
     const { getByTestId, queryByTestId } = render(TicketCreate, {
       props: {
@@ -379,9 +365,7 @@ describe("TicketCreate — Story B5 (4-cat)", () => {
       "Titre valide",
     );
     fillTextarea(
-      getByTestId(
-        "ticket-create-description-textarea",
-      ) as HTMLTextAreaElement,
+      getByTestId("ticket-create-description-textarea") as HTMLTextAreaElement,
       "Description suffisamment longue pour passer la validation minimale.",
     );
 

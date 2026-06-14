@@ -139,9 +139,7 @@ describe("WitnessSelector — Story B5 (4-cat)", () => {
     expect(queryByTestId("ticket-witness-option-user-1")).toBeNull();
 
     // Click remove.
-    (
-      getByTestId("ticket-witness-remove-user-1") as HTMLButtonElement
-    ).click();
+    (getByTestId("ticket-witness-remove-user-1") as HTMLButtonElement).click();
 
     await waitFor(() => {
       expect(queryByTestId("ticket-witness-chip-user-1")).toBeNull();

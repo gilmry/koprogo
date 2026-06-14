@@ -175,13 +175,17 @@ describe("MandateList — Story B3 (4-cat)", () => {
     await waitFor(() => expect(getByTestId("mandate-list")).toBeTruthy());
 
     expect(
-      getByTestId("expiration-badge-mandate-m-urgent").getAttribute("data-level"),
+      getByTestId("expiration-badge-mandate-m-urgent").getAttribute(
+        "data-level",
+      ),
     ).toBe("urgent");
     expect(
       getByTestId("expiration-badge-mandate-m-soon").getAttribute("data-level"),
     ).toBe("soon");
     expect(
-      getByTestId("expiration-badge-mandate-m-fresh").getAttribute("data-level"),
+      getByTestId("expiration-badge-mandate-m-fresh").getAttribute(
+        "data-level",
+      ),
     ).toBe("fresh");
   });
 

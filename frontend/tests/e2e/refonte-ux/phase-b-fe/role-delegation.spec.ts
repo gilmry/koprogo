@@ -205,8 +205,9 @@ test.describe("Story B4 — RoleDelegation non-transitivité INV-8", () => {
     const pierre = await registerUser(request, cabinet.id, "Pierre", "owner");
 
     // Sophie crée une délégation à Pierre via API directement (raccourci E2E)
-    const validUntilIso = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
-      .toISOString();
+    const validUntilIso = new Date(
+      Date.now() + 7 * 24 * 60 * 60 * 1000,
+    ).toISOString();
     const createResp = await request.post(`${API_BASE}/role-delegations`, {
       data: {
         target_user_id: pierre.userId,
@@ -238,9 +239,7 @@ test.describe("Story B4 — RoleDelegation non-transitivité INV-8", () => {
     await expect(banner).toContainText(/reçu|délégation/i);
 
     // CTA "Nouvelle délégation" ABSENT du DOM (pas juste hidden/disabled).
-    await expect(
-      page.getByTestId("role-delegate-new-button"),
-    ).toHaveCount(0);
+    await expect(page.getByTestId("role-delegate-new-button")).toHaveCount(0);
 
     // ─── Phase 4 : tentative POST direct (bypass DevTools) → 403 ──────────
     const bypassResp = await request.post(`${API_BASE}/role-delegations`, {

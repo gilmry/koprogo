@@ -82,7 +82,8 @@ function makeFixture(
       overall: 4,
     },
     average_score: 4.2,
-    comment: "Très professionnel, travail soigné conforme au cahier des charges.",
+    comment:
+      "Très professionnel, travail soigné conforme au cahier des charges.",
     created_at: new Date().toISOString(),
     ...over,
   };
@@ -138,10 +139,14 @@ describe("ContractorEvaluationForm — Story B8 (4-cat)", () => {
     );
     // Lie 2 tickets
     (
-      getByTestId(`contractor-eval-ticket-option-${TICKET_42}`) as HTMLInputElement
+      getByTestId(
+        `contractor-eval-ticket-option-${TICKET_42}`,
+      ) as HTMLInputElement
     ).click();
     (
-      getByTestId(`contractor-eval-ticket-option-${TICKET_43}`) as HTMLInputElement
+      getByTestId(
+        `contractor-eval-ticket-option-${TICKET_43}`,
+      ) as HTMLInputElement
     ).click();
     // 5 scores
     clickScore(container as HTMLElement, "quality", 4);
@@ -155,9 +160,7 @@ describe("ContractorEvaluationForm — Story B8 (4-cat)", () => {
       "Très professionnel, travail soigné conforme au cahier des charges.",
     );
 
-    const submit = getByTestId(
-      "contractor-eval-submit",
-    ) as HTMLButtonElement;
+    const submit = getByTestId("contractor-eval-submit") as HTMLButtonElement;
     await waitFor(() => expect(submit.disabled).toBe(false));
     submit.click();
 
@@ -179,7 +182,9 @@ describe("ContractorEvaluationForm — Story B8 (4-cat)", () => {
   });
 
   it("@edge 0 tickets liés → autorisé (multi-select non requis)", async () => {
-    const onSubmit = vi.fn().mockResolvedValue(makeFixture({ linked_ticket_ids: [] }));
+    const onSubmit = vi
+      .fn()
+      .mockResolvedValue(makeFixture({ linked_ticket_ids: [] }));
     const { getByTestId, container } = render(ContractorEvaluationForm, {
       props: { ...baseProps(), onSubmit },
     });
@@ -202,9 +207,7 @@ describe("ContractorEvaluationForm — Story B8 (4-cat)", () => {
       "Comment minimum 10 chars OK.",
     );
 
-    const submit = getByTestId(
-      "contractor-eval-submit",
-    ) as HTMLButtonElement;
+    const submit = getByTestId("contractor-eval-submit") as HTMLButtonElement;
     await waitFor(() => expect(submit.disabled).toBe(false));
     submit.click();
 
@@ -238,9 +241,7 @@ describe("ContractorEvaluationForm — Story B8 (4-cat)", () => {
       "0123456789",
     );
 
-    const submit = getByTestId(
-      "contractor-eval-submit",
-    ) as HTMLButtonElement;
+    const submit = getByTestId("contractor-eval-submit") as HTMLButtonElement;
     await waitFor(() => expect(submit.disabled).toBe(false));
   });
 
@@ -306,9 +307,7 @@ describe("ContractorEvaluationForm — Story B8 (4-cat)", () => {
     });
 
     // Submit DISABLED même si tout le reste est ok.
-    const submit = getByTestId(
-      "contractor-eval-submit",
-    ) as HTMLButtonElement;
+    const submit = getByTestId("contractor-eval-submit") as HTMLButtonElement;
     expect(submit.disabled).toBe(true);
 
     // Click forcé → onSubmit pas appelé (defense en profondeur).
@@ -347,7 +346,7 @@ describe("ContractorEvaluationForm — Story B8 (4-cat)", () => {
     // 9 chars (< 10 minimum).
     fillTextarea(
       getByTestId("contractor-eval-comment-textarea") as HTMLTextAreaElement,
-      "trop court",  // 10 chars (exact) — on force 9.
+      "trop court", // 10 chars (exact) — on force 9.
     );
     fillTextarea(
       getByTestId("contractor-eval-comment-textarea") as HTMLTextAreaElement,
@@ -357,9 +356,7 @@ describe("ContractorEvaluationForm — Story B8 (4-cat)", () => {
     const counter = getByTestId("contractor-eval-comment-counter");
     expect(counter.className).toMatch(/text-red-600/);
 
-    const submit = getByTestId(
-      "contractor-eval-submit",
-    ) as HTMLButtonElement;
+    const submit = getByTestId("contractor-eval-submit") as HTMLButtonElement;
     await waitFor(() => expect(submit.disabled).toBe(true));
   });
 
@@ -385,9 +382,7 @@ describe("ContractorEvaluationForm — Story B8 (4-cat)", () => {
       "Comment suffisamment long pour passer le check.",
     );
 
-    const submit = getByTestId(
-      "contractor-eval-submit",
-    ) as HTMLButtonElement;
+    const submit = getByTestId("contractor-eval-submit") as HTMLButtonElement;
     await waitFor(() => expect(submit.disabled).toBe(true));
   });
 

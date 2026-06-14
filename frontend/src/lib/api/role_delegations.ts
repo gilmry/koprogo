@@ -93,7 +93,5 @@ export async function listDelegationsOf(
  * @throws 403 (pas le droit) / 404 (délégation inconnue).
  */
 export async function revokeDelegation(id: string): Promise<void> {
-  await api.delete<void>(
-    `/role-delegations/${encodeURIComponent(id)}`,
-  );
+  await api.delete<void>(`/role-delegations/${encodeURIComponent(id)}`);
 }

@@ -104,9 +104,7 @@ describe("TechnicalSpecCreate — Story B7 (4-cat)", () => {
     amoCb.click();
     amoCb.dispatchEvent(new Event("change", { bubbles: true }));
 
-    const submit = getByTestId(
-      "tech-spec-create-submit",
-    ) as HTMLButtonElement;
+    const submit = getByTestId("tech-spec-create-submit") as HTMLButtonElement;
     await waitFor(() => expect(submit.disabled).toBe(false));
     submit.click();
 
@@ -165,9 +163,7 @@ describe("TechnicalSpecCreate — Story B7 (4-cat)", () => {
       "0",
     );
 
-    const submit = getByTestId(
-      "tech-spec-create-submit",
-    ) as HTMLButtonElement;
+    const submit = getByTestId("tech-spec-create-submit") as HTMLButtonElement;
     await waitFor(() => expect(submit.disabled).toBe(true));
 
     // L'erreur version est visible.
@@ -221,9 +217,7 @@ describe("TechnicalSpecCreate — Story B7 (4-cat)", () => {
     );
     // Le deliverable 0 par défaut est vide → on laisse tel quel.
 
-    const submit = getByTestId(
-      "tech-spec-create-submit",
-    ) as HTMLButtonElement;
+    const submit = getByTestId("tech-spec-create-submit") as HTMLButtonElement;
     await waitFor(() => expect(submit.disabled).toBe(true));
 
     const err = queryByTestId("tech-spec-create-error-deliverables");
@@ -255,9 +249,7 @@ describe("TechnicalSpecCreate — Story B7 (4-cat)", () => {
     expect(counter.className).toMatch(/text-red-600/);
     expect(counter.textContent).toMatch(/min\.\s+50/i);
 
-    const submit = getByTestId(
-      "tech-spec-create-submit",
-    ) as HTMLButtonElement;
+    const submit = getByTestId("tech-spec-create-submit") as HTMLButtonElement;
     await waitFor(() => expect(submit.disabled).toBe(true));
   });
 

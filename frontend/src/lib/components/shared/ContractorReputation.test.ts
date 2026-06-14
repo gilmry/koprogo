@@ -74,9 +74,7 @@ describe("ContractorReputation — Story B8 (4-cat)", () => {
     expect(getByTestId("contractor-reputation-name").textContent).toMatch(
       /Entreprise Toiture SA/,
     );
-    expect(getByTestId("contractor-reputation-count").textContent).toMatch(
-      /3/,
-    );
+    expect(getByTestId("contractor-reputation-count").textContent).toMatch(/3/);
 
     // Moyennes : quality = (5+4+3)/3 = 4.0 → "4.0/5"
     expect(
@@ -91,9 +89,9 @@ describe("ContractorReputation — Story B8 (4-cat)", () => {
       getByTestId("contractor-reputation-avg-communication").textContent,
     ).toMatch(/4\.0\/5/);
     // cost = (5+5+5)/3 = 5.0
-    expect(
-      getByTestId("contractor-reputation-avg-cost").textContent,
-    ).toMatch(/5\.0\/5/);
+    expect(getByTestId("contractor-reputation-avg-cost").textContent).toMatch(
+      /5\.0\/5/,
+    );
     // overall = (4+4+4)/3 = 4.0
     expect(
       getByTestId("contractor-reputation-avg-overall").textContent,
@@ -110,13 +108,11 @@ describe("ContractorReputation — Story B8 (4-cat)", () => {
       props: { contractorName: "Plomberie X", evaluations: [] },
     });
 
-    expect(getByTestId("contractor-reputation-count").textContent).toMatch(
-      /0/,
-    );
+    expect(getByTestId("contractor-reputation-count").textContent).toMatch(/0/);
     expect(getByTestId("contractor-reputation-empty")).not.toBeNull();
-    expect(
-      getByTestId("contractor-reputation-empty").textContent,
-    ).toMatch(/aucune évaluation/i);
+    expect(getByTestId("contractor-reputation-empty").textContent).toMatch(
+      /aucune évaluation/i,
+    );
 
     // Table absente.
     expect(queryByTestId("contractor-reputation-list")).toBeNull();
@@ -143,9 +139,7 @@ describe("ContractorReputation — Story B8 (4-cat)", () => {
     const { getByTestId } = render(ContractorReputation, {
       props: { contractorName: "Solo Inc", evaluations },
     });
-    expect(getByTestId("contractor-reputation-count").textContent).toMatch(
-      /1/,
-    );
+    expect(getByTestId("contractor-reputation-count").textContent).toMatch(/1/);
     expect(
       getByTestId("contractor-reputation-avg-quality").textContent,
     ).toMatch(/5\.0\/5/);
@@ -164,9 +158,7 @@ describe("ContractorReputation — Story B8 (4-cat)", () => {
     });
 
     // Aucun bouton Edit / Delete / Modifier / Supprimer.
-    expect(
-      queryByTestId("contractor-reputation-eval-row-e1-edit"),
-    ).toBeNull();
+    expect(queryByTestId("contractor-reputation-eval-row-e1-edit")).toBeNull();
     expect(
       queryByTestId("contractor-reputation-eval-row-e1-delete"),
     ).toBeNull();
@@ -228,9 +220,7 @@ describe("ContractorReputation — Story B8 (4-cat)", () => {
       },
     });
     expect(getByTestId("contractor-reputation-name-widget-1")).not.toBeNull();
-    expect(
-      getByTestId("contractor-reputation-count-widget-1"),
-    ).not.toBeNull();
+    expect(getByTestId("contractor-reputation-count-widget-1")).not.toBeNull();
     expect(
       getByTestId("contractor-reputation-avg-quality-widget-1"),
     ).not.toBeNull();

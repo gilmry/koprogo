@@ -31,10 +31,9 @@ import RoleDelegationForm from "./RoleDelegationForm.svelte";
 vi.mock("../../api/role_delegations", async () => {
   // On re-importe le module réel pour garder `DELEGABLE_ROLES` (utilisé pour
   // l'AC @security : on force un rôle HORS de cette liste).
-  const actual =
-    await vi.importActual<typeof import("../../api/role_delegations")>(
-      "../../api/role_delegations",
-    );
+  const actual = await vi.importActual<
+    typeof import("../../api/role_delegations")
+  >("../../api/role_delegations");
   return {
     ...actual,
     delegateRole: vi.fn(),
@@ -102,16 +101,18 @@ afterEach(() => {
 describe("RoleDelegationForm — Story B4 (4-cat)", () => {
   it("@happy submit appelle delegateRole avec payload typé + onSuccess", async () => {
     const { delegateRole } = await import("../../api/role_delegations");
-    (delegateRole as unknown as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
-      id: "delegation-new-1",
-      user_id: "user-pierre-1",
-      delegated_from_user_id: "issuer-uuid",
-      role: "syndic",
-      organization_id: "org-cabinet-1",
-      valid_until: `${plusDaysISODate(7)}T23:59:59Z`,
-      created_at: NOW_FIXED.toISOString(),
-      updated_at: NOW_FIXED.toISOString(),
-    });
+    (delegateRole as unknown as ReturnType<typeof vi.fn>).mockResolvedValueOnce(
+      {
+        id: "delegation-new-1",
+        user_id: "user-pierre-1",
+        delegated_from_user_id: "issuer-uuid",
+        role: "syndic",
+        organization_id: "org-cabinet-1",
+        valid_until: `${plusDaysISODate(7)}T23:59:59Z`,
+        created_at: NOW_FIXED.toISOString(),
+        updated_at: NOW_FIXED.toISOString(),
+      },
+    );
 
     const onSuccess = vi.fn();
     const { getByTestId } = render(RoleDelegationForm, {

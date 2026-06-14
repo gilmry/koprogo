@@ -55,8 +55,12 @@ export interface ExpirationStatus {
  *
  * @internal exposé pour testabilité — préférer `expirationStatus`.
  */
-export function daysBetween(validUntil: Date | string, now: Date = new Date()): number {
-  const target = typeof validUntil === "string" ? new Date(validUntil) : validUntil;
+export function daysBetween(
+  validUntil: Date | string,
+  now: Date = new Date(),
+): number {
+  const target =
+    typeof validUntil === "string" ? new Date(validUntil) : validUntil;
   const deltaMs = target.getTime() - now.getTime();
   return Math.ceil(deltaMs / (1000 * 60 * 60 * 24));
 }
@@ -225,7 +229,10 @@ export function slaStatus(
     };
   }
 
-  const remainingHours = Math.max(1, Math.round(remainingMs / (1000 * 60 * 60)));
+  const remainingHours = Math.max(
+    1,
+    Math.round(remainingMs / (1000 * 60 * 60)),
+  );
   const remainingLabel =
     remainingHours < 24
       ? `${remainingHours}h`

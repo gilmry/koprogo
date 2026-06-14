@@ -269,9 +269,7 @@ test.describe("Story B7 — TechnicalSpec full flow (multi-rôle 3 acteurs)", ()
     );
 
     // Le bouton "Soumettre pour signatures" est ABSENT (déjà soumis).
-    await expect(
-      page.getByTestId("tech-spec-submit-for-sign"),
-    ).toHaveCount(0);
+    await expect(page.getByTestId("tech-spec-submit-for-sign")).toHaveCount(0);
 
     // Le bouton "Signer" est PRÉSENT pour admin (rôle syndic-emulé dans
     // required_signatures=[syndic, amo]).

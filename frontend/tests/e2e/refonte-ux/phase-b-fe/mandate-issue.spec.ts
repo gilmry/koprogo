@@ -221,7 +221,9 @@ test.describe("Story B3 — MandateIssueForm + List (multi-rôle 3 acteurs)", ()
       .selectOption({ value: notary.userId });
 
     // Kind = notary (sélectionné par défaut, mais on confirme via setvalue)
-    await page.getByTestId("mandate-kind-select").selectOption({ value: "notary" });
+    await page
+      .getByTestId("mandate-kind-select")
+      .selectOption({ value: "notary" });
 
     // Scope = building (radio par défaut)
     await expect(

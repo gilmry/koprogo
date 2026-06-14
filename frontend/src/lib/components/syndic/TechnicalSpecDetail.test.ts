@@ -194,7 +194,11 @@ describe("TechnicalSpecDetail — Story B7 (4-cat)", () => {
       props: {
         spec: s,
         signatures: [
-          sig({ id: "s-existing", signatory_user_id: "u-syndic", role: "syndic" }),
+          sig({
+            id: "s-existing",
+            signatory_user_id: "u-syndic",
+            role: "syndic",
+          }),
         ],
         currentUserRole: "syndic",
         activeMandate: null,
@@ -238,9 +242,7 @@ describe("TechnicalSpecDetail — Story B7 (4-cat)", () => {
     expect(modal.textContent).toMatch(/invalidées/i);
 
     // Confirm → onBump appelé avec la spec source.
-    (
-      getByTestId("tech-spec-bump-confirm") as HTMLButtonElement
-    ).click();
+    (getByTestId("tech-spec-bump-confirm") as HTMLButtonElement).click();
     await waitFor(() => expect(onBump).toHaveBeenCalledWith(s));
   });
 
@@ -253,7 +255,11 @@ describe("TechnicalSpecDetail — Story B7 (4-cat)", () => {
       props: {
         spec: s,
         signatures: [
-          sig({ id: "s-syndic", signatory_user_id: "u-syndic", role: "syndic" }),
+          sig({
+            id: "s-syndic",
+            signatory_user_id: "u-syndic",
+            role: "syndic",
+          }),
         ],
         currentUserRole: null, // observer — pas de signature box
         activeMandate: null,

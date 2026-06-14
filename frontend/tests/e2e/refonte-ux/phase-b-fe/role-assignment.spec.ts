@@ -271,8 +271,8 @@ test.describe("Story B1 — Role assignment admin UI", () => {
     await page.getByTestId("role-assignment-submit").click();
 
     // Message inline rouge sous le champ role (validation FE pré-réseau).
-    await expect(
-      page.getByTestId("role-assignment-error-role"),
-    ).toBeVisible({ timeout: 5_000 });
+    await expect(page.getByTestId("role-assignment-error-role")).toBeVisible({
+      timeout: 5_000,
+    });
   });
 });

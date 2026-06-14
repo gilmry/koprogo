@@ -33,8 +33,7 @@ export const EVIDENCE_ACCEPTED_MIME_PREFIXES = [
   "application/pdf",
 ] as const;
 /** Attribut `accept` HTML pour le file input — pattern stories.md §B5. */
-export const EVIDENCE_ACCEPT_ATTR =
-  "image/*,video/*,application/pdf";
+export const EVIDENCE_ACCEPT_ATTR = "image/*,video/*,application/pdf";
 
 export interface PresignResponse {
   /** URL HTTP PUT signée pour upload direct. */
@@ -114,11 +113,7 @@ export async function uploadEvidence(
   file: File,
   options?: {
     presignFn?: (f: File) => Promise<PresignResponse>;
-    putFn?: (
-      uploadUrl: string,
-      f: File,
-      publicUrl: string,
-    ) => Promise<string>;
+    putFn?: (uploadUrl: string, f: File, publicUrl: string) => Promise<string>;
   },
 ): Promise<string> {
   if (!isAcceptedMime(file.type)) {

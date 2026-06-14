@@ -126,20 +126,22 @@ afterEach(() => {
 describe("MandateIssueForm — Story B3 (4-cat)", () => {
   it("@happy submit appelle issueMandate avec payload typé + onSuccess", async () => {
     const { issueMandate } = await import("../../api/mandates");
-    (issueMandate as unknown as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
-      id: "mandate-new-1",
-      subject_user_id: "user-notary-1",
-      kind: "notary",
-      scope_kind: "building",
-      scope_id: "b-42",
-      reason: "Mandat de notaire pour la transaction Lot 12 (vente)",
-      valid_from: NOW_FIXED.toISOString(),
-      valid_until: `${plusDaysISODate(365)}T23:59:59Z`,
-      issued_by: ISSUER_ID,
-      created_at: NOW_FIXED.toISOString(),
-      updated_at: NOW_FIXED.toISOString(),
-      revoked_at: null,
-    });
+    (issueMandate as unknown as ReturnType<typeof vi.fn>).mockResolvedValueOnce(
+      {
+        id: "mandate-new-1",
+        subject_user_id: "user-notary-1",
+        kind: "notary",
+        scope_kind: "building",
+        scope_id: "b-42",
+        reason: "Mandat de notaire pour la transaction Lot 12 (vente)",
+        valid_from: NOW_FIXED.toISOString(),
+        valid_until: `${plusDaysISODate(365)}T23:59:59Z`,
+        issued_by: ISSUER_ID,
+        created_at: NOW_FIXED.toISOString(),
+        updated_at: NOW_FIXED.toISOString(),
+        revoked_at: null,
+      },
+    );
 
     const onSuccess = vi.fn();
     const { getByTestId } = render(MandateIssueForm, {
@@ -152,7 +154,9 @@ describe("MandateIssueForm — Story B3 (4-cat)", () => {
     });
 
     // Subject
-    const subjectSel = getByTestId("mandate-subject-select") as HTMLSelectElement;
+    const subjectSel = getByTestId(
+      "mandate-subject-select",
+    ) as HTMLSelectElement;
     subjectSel.value = "user-notary-1";
     await fireEvent.change(subjectSel);
 
@@ -161,12 +165,16 @@ describe("MandateIssueForm — Story B3 (4-cat)", () => {
 
     // Scope kind reste "building" (default) — pas besoin de cliquer.
     // Scope id
-    const scopeSel = getByTestId("mandate-scope-id-select") as HTMLSelectElement;
+    const scopeSel = getByTestId(
+      "mandate-scope-id-select",
+    ) as HTMLSelectElement;
     scopeSel.value = "b-42";
     await fireEvent.change(scopeSel);
 
     // Reason (50 chars)
-    const reasonTa = getByTestId("mandate-reason-textarea") as HTMLTextAreaElement;
+    const reasonTa = getByTestId(
+      "mandate-reason-textarea",
+    ) as HTMLTextAreaElement;
     const reasonText = "Mandat de notaire pour la transaction Lot 12 (vente)";
     reasonTa.value = reasonText;
     await fireEvent.input(reasonTa);
@@ -184,8 +192,8 @@ describe("MandateIssueForm — Story B3 (4-cat)", () => {
     submit.click();
 
     await waitFor(() => expect(issueMandate).toHaveBeenCalledTimes(1));
-    const [calledReq] = (issueMandate as unknown as ReturnType<typeof vi.fn>).mock
-      .calls[0];
+    const [calledReq] = (issueMandate as unknown as ReturnType<typeof vi.fn>)
+      .mock.calls[0];
     expect(calledReq).toMatchObject({
       subject_user_id: "user-notary-1",
       kind: "notary",
@@ -203,15 +211,21 @@ describe("MandateIssueForm — Story B3 (4-cat)", () => {
     });
 
     // Complete form sauf valid_until
-    const subjectSel = getByTestId("mandate-subject-select") as HTMLSelectElement;
+    const subjectSel = getByTestId(
+      "mandate-subject-select",
+    ) as HTMLSelectElement;
     subjectSel.value = "user-notary-1";
     await fireEvent.change(subjectSel);
 
-    const scopeSel = getByTestId("mandate-scope-id-select") as HTMLSelectElement;
+    const scopeSel = getByTestId(
+      "mandate-scope-id-select",
+    ) as HTMLSelectElement;
     scopeSel.value = "b-42";
     await fireEvent.change(scopeSel);
 
-    const reasonTa = getByTestId("mandate-reason-textarea") as HTMLTextAreaElement;
+    const reasonTa = getByTestId(
+      "mandate-reason-textarea",
+    ) as HTMLTextAreaElement;
     reasonTa.value = "Motif valide de plus de 10 chars";
     await fireEvent.input(reasonTa);
 
@@ -249,16 +263,22 @@ describe("MandateIssueForm — Story B3 (4-cat)", () => {
 
     // Si on FORCE quand même la valeur (DevTools manipulation) → on doit
     // afficher l'erreur d'INV-15 + submit disabled.
-    const subjectSel = getByTestId("mandate-subject-select") as HTMLSelectElement;
+    const subjectSel = getByTestId(
+      "mandate-subject-select",
+    ) as HTMLSelectElement;
     subjectSel.value = ISSUER_ID;
     await fireEvent.change(subjectSel);
 
     // Remplir le reste pour isoler l'erreur subject
-    const scopeSel = getByTestId("mandate-scope-id-select") as HTMLSelectElement;
+    const scopeSel = getByTestId(
+      "mandate-scope-id-select",
+    ) as HTMLSelectElement;
     scopeSel.value = "b-42";
     await fireEvent.change(scopeSel);
 
-    const reasonTa = getByTestId("mandate-reason-textarea") as HTMLTextAreaElement;
+    const reasonTa = getByTestId(
+      "mandate-reason-textarea",
+    ) as HTMLTextAreaElement;
     reasonTa.value = "Motif valide pour test self-mandate";
     await fireEvent.input(reasonTa);
 
@@ -280,10 +300,14 @@ describe("MandateIssueForm — Story B3 (4-cat)", () => {
     });
 
     // Setup subject + scope + date valides
-    const subjectSel = getByTestId("mandate-subject-select") as HTMLSelectElement;
+    const subjectSel = getByTestId(
+      "mandate-subject-select",
+    ) as HTMLSelectElement;
     subjectSel.value = "user-notary-1";
     await fireEvent.change(subjectSel);
-    const scopeSel = getByTestId("mandate-scope-id-select") as HTMLSelectElement;
+    const scopeSel = getByTestId(
+      "mandate-scope-id-select",
+    ) as HTMLSelectElement;
     scopeSel.value = "b-42";
     await fireEvent.change(scopeSel);
     const validUntilInp = getByTestId(
@@ -293,7 +317,9 @@ describe("MandateIssueForm — Story B3 (4-cat)", () => {
     await fireEvent.input(validUntilInp);
 
     // Reason = 5 chars (< 10 minimum)
-    const reasonTa = getByTestId("mandate-reason-textarea") as HTMLTextAreaElement;
+    const reasonTa = getByTestId(
+      "mandate-reason-textarea",
+    ) as HTMLTextAreaElement;
     reasonTa.value = "court";
     await fireEvent.input(reasonTa);
 
@@ -316,7 +342,9 @@ describe("MandateIssueForm — Story B3 (4-cat)", () => {
       props: { subjects: SUBJECTS, scopes: SCOPES, nowOverride: NOW_FIXED },
     });
 
-    const reasonTa = getByTestId("mandate-reason-textarea") as HTMLTextAreaElement;
+    const reasonTa = getByTestId(
+      "mandate-reason-textarea",
+    ) as HTMLTextAreaElement;
     // Retire maxlength pour pouvoir injecter 600 chars via .value (jsdom
     // respecte maxlength=500 sur input mais tolère .value direct).
     reasonTa.removeAttribute("maxlength");

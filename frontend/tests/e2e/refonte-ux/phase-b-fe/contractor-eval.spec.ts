@@ -197,10 +197,9 @@ async function createAndApproveSpec(
   }
 
   // 4. Refetch pour récupérer le status final.
-  const getResp = await request.get(
-    `${API_BASE}/technical-specs/${spec.id}`,
-    { headers: { Authorization: `Bearer ${adminToken}` } },
-  );
+  const getResp = await request.get(`${API_BASE}/technical-specs/${spec.id}`, {
+    headers: { Authorization: `Bearer ${adminToken}` },
+  });
   if (getResp.status() >= 400) {
     return { id: spec.id, version: spec.version, status: "Approved" };
   }
@@ -335,9 +334,9 @@ test.describe("Story B8 — ContractorEvaluation multi-rôle (Syndic A évalue, 
         );
 
       // Submit doit être activé (formValid + pas self-eval).
-      await expect(
-        page.getByTestId("contractor-eval-submit"),
-      ).toBeEnabled({ timeout: 5_000 });
+      await expect(page.getByTestId("contractor-eval-submit")).toBeEnabled({
+        timeout: 5_000,
+      });
 
       await page.getByTestId("contractor-eval-submit").click();
 
@@ -367,12 +366,10 @@ test.describe("Story B8 — ContractorEvaluation multi-rôle (Syndic A évalue, 
     );
 
     // La page reputation se charge : nom + count visibles.
-    await expect(
-      page.getByTestId("contractor-reputation-name"),
-    ).toBeVisible({ timeout: 10_000 });
-    await expect(
-      page.getByTestId("contractor-reputation-count"),
-    ).toBeVisible();
+    await expect(page.getByTestId("contractor-reputation-name")).toBeVisible({
+      timeout: 10_000,
+    });
+    await expect(page.getByTestId("contractor-reputation-count")).toBeVisible();
 
     // Moyennes affichées (au minimum les 5 cellules — valeur "—" si 0 éval).
     await expect(

@@ -23,10 +23,7 @@ vi.mock("../../api/role_assignments", () => ({
 }));
 
 import RoleAssignmentList from "./RoleAssignmentList.svelte";
-import {
-  listAssignments,
-  revokeAssignment,
-} from "../../api/role_assignments";
+import { listAssignments, revokeAssignment } from "../../api/role_assignments";
 
 const mockedList = vi.mocked(listAssignments);
 const mockedRevoke = vi.mocked(revokeAssignment);

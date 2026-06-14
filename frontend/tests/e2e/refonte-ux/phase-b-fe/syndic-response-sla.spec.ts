@@ -224,11 +224,7 @@ test.describe("Story B6 — SyndicResponse + SlaBadge (multi-rôle)", () => {
 
     // ─── Phase 2 : Owner crée le ticket via API (raccourci — l'UI de
     //              création n'est pas le focus de cette story) ────────────
-    const ticket = await createTicketAsOwner(
-      request,
-      owner.token,
-      building.id,
-    );
+    const ticket = await createTicketAsOwner(request, owner.token, building.id);
 
     // ─── Phase 3 : Owner login UI → /ticket-detail?id=…  ─────────────────
     await uiLogin(page, owner.email, TEST_PASSWORD);
@@ -253,12 +249,10 @@ test.describe("Story B6 — SyndicResponse + SlaBadge (multi-rôle)", () => {
     // AC @security — Owner NE voit PAS le form SyndicResponseForm.
     // (INV-FE8 + AC @security stories.md §B6 : "Owner ne voit PAS bouton
     // 'Répondre'").
-    await expect(
-      page.getByTestId("syndic-response-submit"),
-    ).toHaveCount(0);
-    await expect(
-      page.getByTestId("syndic-response-body-textarea"),
-    ).toHaveCount(0);
+    await expect(page.getByTestId("syndic-response-submit")).toHaveCount(0);
+    await expect(page.getByTestId("syndic-response-body-textarea")).toHaveCount(
+      0,
+    );
 
     // Liste initiale : 0 réponse — message empty visible.
     const empty = page.getByTestId("syndic-response-list-empty");
@@ -305,9 +299,7 @@ test.describe("Story B6 — SyndicResponse + SlaBadge (multi-rôle)", () => {
       page.locator('[data-testid^="syndic-response-row-body-"]').first(),
     ).toContainText("plombier");
     await expect(
-      page
-        .locator('[data-testid^="syndic-response-row-action-"]')
-        .first(),
+      page.locator('[data-testid^="syndic-response-row-action-"]').first(),
     ).toContainText(/Planifier inspection|schedule_inspection/);
 
     // INV-FE8 : aucun bouton Edit/Delete sur les responses listées.
@@ -330,8 +322,6 @@ test.describe("Story B6 — SyndicResponse + SlaBadge (multi-rôle)", () => {
     ).toContainText("plombier");
 
     // Owner NE voit TOUJOURS PAS le form (rôle owner ≠ syndic).
-    await expect(
-      page.getByTestId("syndic-response-submit"),
-    ).toHaveCount(0);
+    await expect(page.getByTestId("syndic-response-submit")).toHaveCount(0);
   });
 });

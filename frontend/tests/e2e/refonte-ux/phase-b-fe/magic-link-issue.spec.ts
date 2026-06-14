@@ -280,9 +280,9 @@ test.describe("Story B2 — Magic Link issue (Phase B FE)", () => {
     });
     const contractorPage = await contractorCtx.newPage();
     await contractorPage.goto(`/c?t=${encodeURIComponent(token)}`);
-    await expect(contractorPage.getByTestId("pwa-screen-1-summary")).toBeVisible(
-      { timeout: 15_000 },
-    );
+    await expect(
+      contractorPage.getByTestId("pwa-screen-1-summary"),
+    ).toBeVisible({ timeout: 15_000 });
     await contractorCtx.close();
   });
 

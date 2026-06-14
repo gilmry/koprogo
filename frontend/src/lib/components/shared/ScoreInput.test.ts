@@ -175,12 +175,8 @@ describe("ScoreInput — Story B8 (4-cat)", () => {
         onChange: vi.fn(),
       },
     });
-    expect(
-      container.querySelector('[data-testid="score-input-0"]'),
-    ).toBeNull();
-    expect(
-      container.querySelector('[data-testid="score-input-6"]'),
-    ).toBeNull();
+    expect(container.querySelector('[data-testid="score-input-0"]')).toBeNull();
+    expect(container.querySelector('[data-testid="score-input-6"]')).toBeNull();
     // Total = 5 radios exactement.
     const radios = container.querySelectorAll('input[type="radio"]');
     expect(radios.length).toBe(5);

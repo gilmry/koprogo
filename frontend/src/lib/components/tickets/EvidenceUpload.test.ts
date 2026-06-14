@@ -29,10 +29,12 @@ const revokeObjectURLSpy = vi.fn();
 
 beforeEach(() => {
   // jsdom n'expose pas createObjectURL/revokeObjectURL — on patch global.
-  (global.URL as unknown as { createObjectURL: typeof createObjectURLSpy }).createObjectURL =
-    createObjectURLSpy;
-  (global.URL as unknown as { revokeObjectURL: typeof revokeObjectURLSpy }).revokeObjectURL =
-    revokeObjectURLSpy;
+  (
+    global.URL as unknown as { createObjectURL: typeof createObjectURLSpy }
+  ).createObjectURL = createObjectURLSpy;
+  (
+    global.URL as unknown as { revokeObjectURL: typeof revokeObjectURLSpy }
+  ).revokeObjectURL = revokeObjectURLSpy;
   createObjectURLSpy.mockClear();
   revokeObjectURLSpy.mockClear();
 });
@@ -41,11 +43,7 @@ beforeEach(() => {
 // Helpers
 // -----------------------------------------------------------------------------
 
-function makeFile(
-  name: string,
-  mime: string,
-  sizeBytes: number,
-): File {
+function makeFile(name: string, mime: string, sizeBytes: number): File {
   // jsdom : File hérite de Blob. On construit avec un contenu fictif puis
   // override `size` si besoin (peut différer en fonction du contenu).
   const blob = new Blob(["x"], { type: mime });
@@ -54,10 +52,7 @@ function makeFile(
   return f;
 }
 
-function fireFileInputChange(
-  input: HTMLInputElement,
-  files: File[],
-): void {
+function fireFileInputChange(input: HTMLInputElement, files: File[]): void {
   Object.defineProperty(input, "files", {
     value: files,
     configurable: true,
@@ -76,12 +71,8 @@ describe("EvidenceUpload — Story B5 (4-cat)", () => {
       props: { value: [], onUpload },
     });
 
-    const input = getByTestId(
-      "ticket-evidence-file-input",
-    ) as HTMLInputElement;
-    fireFileInputChange(input, [
-      makeFile("photo.png", "image/png", 1024),
-    ]);
+    const input = getByTestId("ticket-evidence-file-input") as HTMLInputElement;
+    fireFileInputChange(input, [makeFile("photo.png", "image/png", 1024)]);
 
     await waitFor(() => expect(onUpload).toHaveBeenCalledTimes(1));
 
@@ -108,9 +99,7 @@ describe("EvidenceUpload — Story B5 (4-cat)", () => {
       props: { value: [], onUpload },
     });
 
-    const input = getByTestId(
-      "ticket-evidence-file-input",
-    ) as HTMLInputElement;
+    const input = getByTestId("ticket-evidence-file-input") as HTMLInputElement;
 
     // 10 fichiers → tous acceptés.
     const tenFiles = Array.from({ length: 10 }, (_, i) =>
@@ -129,9 +118,7 @@ describe("EvidenceUpload — Story B5 (4-cat)", () => {
 
     // 11e fichier → refusé.
     onUpload.mockClear();
-    fireFileInputChange(input, [
-      makeFile("p11.png", "image/png", 100),
-    ]);
+    fireFileInputChange(input, [makeFile("p11.png", "image/png", 100)]);
 
     await waitFor(() => {
       const err = queryByTestId("ticket-evidence-error");
@@ -147,9 +134,7 @@ describe("EvidenceUpload — Story B5 (4-cat)", () => {
       props: { value: [], onUpload },
     });
 
-    const input = getByTestId(
-      "ticket-evidence-file-input",
-    ) as HTMLInputElement;
+    const input = getByTestId("ticket-evidence-file-input") as HTMLInputElement;
 
     // 11 MB.
     fireFileInputChange(input, [
@@ -170,9 +155,7 @@ describe("EvidenceUpload — Story B5 (4-cat)", () => {
       props: { value: [], onUpload },
     });
 
-    const input = getByTestId(
-      "ticket-evidence-file-input",
-    ) as HTMLInputElement;
+    const input = getByTestId("ticket-evidence-file-input") as HTMLInputElement;
 
     fireFileInputChange(input, [
       makeFile("evil.exe", "application/x-msdownload", 1024),
@@ -190,9 +173,7 @@ describe("EvidenceUpload — Story B5 (4-cat)", () => {
     const { getByTestId } = render(EvidenceUpload, {
       props: { value: [], onUpload: vi.fn() },
     });
-    const input = getByTestId(
-      "ticket-evidence-file-input",
-    ) as HTMLInputElement;
+    const input = getByTestId("ticket-evidence-file-input") as HTMLInputElement;
     const accept = input.getAttribute("accept") ?? "";
     expect(accept).toMatch(/image/);
     expect(accept).toMatch(/video/);
@@ -204,20 +185,14 @@ describe("EvidenceUpload — Story B5 (4-cat)", () => {
   it("@negative upload qui throw → status=error + onError callback", async () => {
     const onUpload = vi
       .fn()
-      .mockRejectedValue(
-        new UploadError("upload-failed", "S3 returned 500"),
-      );
+      .mockRejectedValue(new UploadError("upload-failed", "S3 returned 500"));
     const onError = vi.fn();
     const { getByTestId, container } = render(EvidenceUpload, {
       props: { value: [], onUpload, onError },
     });
 
-    const input = getByTestId(
-      "ticket-evidence-file-input",
-    ) as HTMLInputElement;
-    fireFileInputChange(input, [
-      makeFile("photo.png", "image/png", 1024),
-    ]);
+    const input = getByTestId("ticket-evidence-file-input") as HTMLInputElement;
+    fireFileInputChange(input, [makeFile("photo.png", "image/png", 1024)]);
 
     await waitFor(() => expect(onUpload).toHaveBeenCalled());
     await waitFor(() => expect(onError).toHaveBeenCalledTimes(1));
@@ -236,15 +211,13 @@ describe("EvidenceUpload — Story B5 (4-cat)", () => {
       props: { value: [], onUpload },
     });
 
-    const input = getByTestId(
-      "ticket-evidence-file-input",
-    ) as HTMLInputElement;
-    fireFileInputChange(input, [
-      makeFile("p.png", "image/png", 1024),
-    ]);
+    const input = getByTestId("ticket-evidence-file-input") as HTMLInputElement;
+    fireFileInputChange(input, [makeFile("p.png", "image/png", 1024)]);
 
     await waitFor(() => expect(onUpload).toHaveBeenCalled());
-    await waitFor(() => expect(getByTestId("ticket-evidence-preview-0")).not.toBeNull());
+    await waitFor(() =>
+      expect(getByTestId("ticket-evidence-preview-0")).not.toBeNull(),
+    );
 
     const removeBtn = getByTestId(
       "ticket-evidence-remove-0",

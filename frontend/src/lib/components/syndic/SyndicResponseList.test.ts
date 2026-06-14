@@ -99,7 +99,9 @@ describe("SyndicResponseList — Story B6 (4-cat)", () => {
       },
     });
 
-    await waitFor(() => expect(getByTestId("syndic-response-list")).toBeTruthy());
+    await waitFor(() =>
+      expect(getByTestId("syndic-response-list")).toBeTruthy(),
+    );
 
     // Row 1
     expect(getByTestId("syndic-response-row-r-1")).toBeTruthy();
@@ -146,9 +148,9 @@ describe("SyndicResponseList — Story B6 (4-cat)", () => {
       props: { ticketId: TICKET_ID, initialResponses: responses },
     });
     await waitFor(() =>
-      expect(getByTestId("syndic-response-row-author-r-fb").textContent).toMatch(
-        /^20000000$/,
-      ),
+      expect(
+        getByTestId("syndic-response-row-author-r-fb").textContent,
+      ).toMatch(/^20000000$/),
     );
   });
 
@@ -164,9 +166,9 @@ describe("SyndicResponseList — Story B6 (4-cat)", () => {
       props: { ticketId: TICKET_ID, initialResponses: responses },
     });
     await waitFor(() =>
-      expect(getByTestId("syndic-response-row-action-r-other").textContent).toMatch(
-        /Autre/,
-      ),
+      expect(
+        getByTestId("syndic-response-row-action-r-other").textContent,
+      ).toMatch(/Autre/),
     );
   });
 
@@ -179,9 +181,7 @@ describe("SyndicResponseList — Story B6 (4-cat)", () => {
       props: { ticketId: TICKET_ID, initialResponses: responses },
     });
 
-    await waitFor(() =>
-      expect(container.querySelector("ol")).not.toBeNull(),
-    );
+    await waitFor(() => expect(container.querySelector("ol")).not.toBeNull());
 
     // Pas de bouton edit/delete pour aucune row.
     expect(queryByTestId("syndic-response-edit-r-1")).toBeNull();

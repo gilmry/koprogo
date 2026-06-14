@@ -121,7 +121,9 @@ describe("MagicLinkIssueForm — Story B2", () => {
     );
     // L'effect a vidé scope_id après changement de kind — on remplit après.
     await waitFor(() => {
-      const sid = getByTestId("magic-link-scope-id-select") as HTMLSelectElement;
+      const sid = getByTestId(
+        "magic-link-scope-id-select",
+      ) as HTMLSelectElement;
       expect(sid.disabled).toBe(false);
     });
     fillSelect(

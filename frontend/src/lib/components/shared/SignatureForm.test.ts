@@ -49,9 +49,7 @@ describe("SignatureForm — Story B7 (4-cat atomique)", () => {
 
     // Reset checkbox après succès.
     await waitFor(() => {
-      const cb2 = getByTestId(
-        "signature-confirm-checkbox",
-      ) as HTMLInputElement;
+      const cb2 = getByTestId("signature-confirm-checkbox") as HTMLInputElement;
       expect(cb2.checked).toBe(false);
     });
   });
@@ -90,7 +88,9 @@ describe("SignatureForm — Story B7 (4-cat atomique)", () => {
   it("@negative onSign rejette → message inline visible + checkbox reste cochée", async () => {
     const onSign = vi
       .fn()
-      .mockRejectedValue(new Error("Signature déjà présente pour (user, role)"));
+      .mockRejectedValue(
+        new Error("Signature déjà présente pour (user, role)"),
+      );
     const { getByTestId, queryByTestId } = render(SignatureForm, {
       props: { onSign },
     });
@@ -123,9 +123,7 @@ describe("SignatureForm — Story B7 (4-cat atomique)", () => {
     });
 
     // Les testids sont suffixés avec idSuffix.
-    expect(
-      getByTestId("signature-confirm-checkbox-spec-uuid-42"),
-    ).toBeTruthy();
+    expect(getByTestId("signature-confirm-checkbox-spec-uuid-42")).toBeTruthy();
     expect(getByTestId("signature-sign-button-spec-uuid-42")).toBeTruthy();
   });
 });

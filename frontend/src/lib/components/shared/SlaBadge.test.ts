@@ -217,9 +217,7 @@ describe("SlaBadge — composant Svelte 5 (4-cat)", () => {
     const createdAt = plusHours(NOW_FIXED, -14);
 
     // - 1s
-    let respondedAt = new Date(
-      new Date(dueAt).getTime() - 1000,
-    ).toISOString();
+    let respondedAt = new Date(new Date(dueAt).getTime() - 1000).toISOString();
     let { container } = render(SlaBadge, {
       props: { dueAt, respondedAt, createdAt, nowOverride: NOW_FIXED },
     });
