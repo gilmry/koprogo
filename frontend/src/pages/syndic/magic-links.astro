@@ -1,0 +1,50 @@
+---
+// Story B2 (Phase B FE) — page Astro émission MagicLink.
+//
+// Route : /syndic/magic-links (réservée syndic + superadmin via middleware
+// existant + backend RBAC).
+//
+// Le composant est mount client-only (`client:load`) car il a un $state
+// sensible (token brut) qui ne doit JAMAIS être SSR-leak côté HTML.
+import Layout from "../../layouts/Layout.astro";
+import MagicLinkIssueForm from "../../lib/components/syndic/MagicLinkIssueForm.svelte";
+---
+
+<Layout title="Liens magiques — Syndic — KoproGo">
+  <main class="container mx-auto px-4 py-8">
+    <div class="max-w-3xl">
+      <h1 class="mb-2 text-2xl font-bold text-gray-900">
+        Liens magiques
+      </h1>
+      <p class="mb-6 text-sm text-gray-600">
+        Émettez un lien d'accès temporaire (sans création de compte) pour
+        un contractor, à coller dans un email ou un SMS. Le lien est
+        single-use et expire à la date choisie.
+      </p>
+
+      <MagicLinkIssueForm client:load />
+
+      <div class="mt-6">
+        <a
+          href="/syndic"
+          class="inline-flex items-center text-blue-600 hover:text-blue-700"
+        >
+          <svg
+            class="mr-2 h-5 w-5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M10 19l-7-7m0 0l7-7m-7 7h18"
+            ></path>
+          </svg>
+          Retour au tableau de bord
+        </a>
+      </div>
+    </div>
+  </main>
+</Layout>
