@@ -1,0 +1,19 @@
+---
+// Story B3 (Phase B FE) — Page syndic des mandats.
+//
+// Monte le wrapper `MandatesPage.svelte` (lib/components/syndic) qui orchestre
+// `<MandateList>` + `<MandateIssueForm>` (modal). Le wrapper porte le state
+// (Astro ne porte que du content côté serveur).
+//
+// Route : /syndic/mandates (accès gated côté frontend RouteGuard + côté
+// backend RBAC — superadmin / syndic only).
+
+import Layout from '../../layouts/Layout.astro';
+import MandatesPage from '../../lib/components/syndic/MandatesPage.svelte';
+---
+
+<Layout title="Mandats — KoproGo">
+  <main class="container mx-auto px-4 py-8">
+    <MandatesPage client:load />
+  </main>
+</Layout>
