@@ -15,16 +15,41 @@
   import Button from "../ui/Button.svelte";
   import ConfirmDialog from "../ui/ConfirmDialog.svelte";
 
+  // Story B6 (Phase B FE) — SLA badge + syndic responses (conversation
+  // chronologique + form append-only). Affichés conditionnellement :
+  //   - SlaBadge si `slaDueAt` est connu (champ remonté par le backend si
+  //     story 3.7 mergée ; sinon badge omis sans crash).
+  //   - SyndicResponseList : visible par tous les rôles authentifiés
+  //     (owner, syndic, contractor) → chacun voit la même conversation.
+  //   - SyndicResponseForm : visible UNIQUEMENT si `canRespond` (rôle syndic
+  //     /superadmin). INV-FE8 append-only — l'owner ne voit PAS le form.
+  import SlaBadge from "../../lib/components/shared/SlaBadge.svelte";
+  import SyndicResponseList from "../../lib/components/syndic/SyndicResponseList.svelte";
+  import SyndicResponseForm from "../../lib/components/syndic/SyndicResponseForm.svelte";
+  import type { SyndicResponseDto } from "../../lib/api/syndic_responses";
+
   let {
     ticket,
     canManage = false,
     isContractor = false,
+    /** Story B6 — true pour syndic/superadmin (peut poster une réponse). */
+    canRespond = false,
+    /** Story B6 — `sla_due_at` du ticket (optionnel — peut ne pas exister). */
+    slaDueAt = undefined as string | undefined,
+    /** Story B6 — `first_response_at` (premier SyndicResponse). null si aucune. */
+    firstResponseAt = null as string | null,
+    /** Story B6 — initial fetch des responses (SSR/test). */
+    initialResponses = undefined as SyndicResponseDto[] | undefined,
     onupdated,
     ondeleted,
   }: {
     ticket: Ticket;
     canManage?: boolean;
     isContractor?: boolean;
+    canRespond?: boolean;
+    slaDueAt?: string;
+    firstResponseAt?: string | null;
+    initialResponses?: SyndicResponseDto[];
     onupdated?: (ticket: Ticket) => void;
     ondeleted?: (ticketId: string) => void;
   } = $props();
@@ -32,6 +57,18 @@
   let showAssignModal = $state(false);
   let showDeleteConfirm = $state(false);
   let actionLoading = $state(false);
+  /** Story B6 — bump pour forcer un re-fetch de SyndicResponseList après POST. */
+  let responsesRefreshKey = $state(0);
+  let firstResponseAtLocal = $state<string | null>(firstResponseAt);
+
+  function handleResponseCreated(r: SyndicResponseDto): void {
+    // 1re réponse → on note le timestamp pour basculer SlaBadge en "met"/"breached".
+    if (firstResponseAtLocal === null) {
+      firstResponseAtLocal = r.created_at;
+    }
+    // Trigger re-fetch (initialResponses=undefined côté SyndicResponseList ré-instancié).
+    responsesRefreshKey += 1;
+  }
 
   async function handleAssign(detail: { contractorId: string }) {
     const contractorId = detail.contractorId;
@@ -115,6 +152,15 @@
         <div class="flex items-center space-x-3">
           <TicketStatusBadge status={ticket.status} />
           <TicketPriorityBadge priority={ticket.priority} />
+          {#if slaDueAt}
+            <SlaBadge
+              dueAt={slaDueAt}
+              respondedAt={firstResponseAtLocal}
+              createdAt={ticket.created_at}
+              idSuffix={ticket.id}
+              dueTooltip={`SLA dû le ${formatDateTime(slaDueAt)}`}
+            />
+          {/if}
           <span class="text-sm text-gray-500">
             ID: {ticket.id.slice(0, 8)}
           </span>
@@ -264,6 +310,30 @@
           </dd>
         </div>
       </div>
+    </div>
+
+    <!-- Story B6 (Phase B FE) — Conversation syndic ↔ copropriétaire -->
+    <div
+      class="mt-6 border-t border-gray-200 pt-6"
+      data-testid="ticket-syndic-responses-section"
+    >
+      {#key responsesRefreshKey}
+        <SyndicResponseList
+          ticketId={ticket.id}
+          initialResponses={responsesRefreshKey === 0
+            ? initialResponses
+            : undefined}
+        />
+      {/key}
+
+      {#if canRespond}
+        <div class="mt-4">
+          <SyndicResponseForm
+            ticketId={ticket.id}
+            onCreated={handleResponseCreated}
+          />
+        </div>
+      {/if}
     </div>
   </div>
 </div>

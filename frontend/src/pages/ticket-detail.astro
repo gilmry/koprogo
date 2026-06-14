@@ -77,6 +77,15 @@ import Layout from "../layouts/Layout.astro";
       const userRole = auth.user?.activeRole?.role || auth.user?.role;
       const canManage = userRole === UserRole.SYNDIC || userRole === UserRole.SUPERADMIN;
       const isContractor = ticket.assigned_to === auth.user?.id;
+      // Story B6 — only syndic / superadmin peut poster une SyndicResponse.
+      // INV-FE8 + AC @security stories.md §B6 : Owner ne voit PAS le bouton.
+      const canRespond = canManage;
+      // Story B6 — sla_due_at / first_response_at remontés par le backend si
+      // disponibles (cf. ticket DTO post-3.7). On lit dynamiquement, fallback
+      // undefined / null si absents (rétro-compatible avec ancien DTO).
+      const slaDueAt = (ticket as any).sla_due_at as string | undefined;
+      const firstResponseAt =
+        ((ticket as any).first_response_at as string | undefined) ?? null;
 
       // Hide loading
       if (loadingEl) loadingEl.style.display = "none";
@@ -94,6 +103,10 @@ import Layout from "../layouts/Layout.astro";
             ticket: ticketData,
             canManage,
             isContractor,
+            // Story B6 (FR-B6)
+            canRespond,
+            slaDueAt,
+            firstResponseAt,
             onUpdated: (updatedTicket: any) => {
               mountDetail(updatedTicket);
             },
