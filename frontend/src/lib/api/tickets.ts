@@ -9,6 +9,19 @@ import type { components } from "../../types/api";
  * TypeScript will refuse any value that doesn't exist in the Rust enum.
  */
 
+/**
+ * CreateTicketDto — superset des champs FE.
+ *
+ * Story B5 (FR31 / Phase B FE) — extensions optionnelles pour Complaint :
+ *   - kind                  : "request" (par défaut) | "complaint"
+ *   - severity              : low|normal|high|critical (requis si Complaint)
+ *   - incident_date         : ISO 8601 (date passée typiquement)
+ *   - evidence_attachments  : URLs publiques S3/MinIO (max 10)
+ *   - witnesses             : user_ids des copropriétaires témoins (max 10)
+ *
+ * Rétro-compat : tous ces champs sont optionnels — un appel "Request" reste
+ * strictement identique à avant (cf. mission : tests existants verts).
+ */
 export interface CreateTicketDto {
   building_id: string;
   title: string;
@@ -17,6 +30,12 @@ export interface CreateTicketDto {
   category: TicketCategory;
   requester_id?: string; // Ignoré par le backend (utilise le JWT), gardé pour compat frontend
   unit_id?: string;
+  // Story B5 extensions (optionnels — rétro-compat Request)
+  kind?: TicketKind;
+  severity?: TicketSeverity;
+  incident_date?: string;
+  evidence_attachments?: string[];
+  witnesses?: string[];
 }
 
 export interface Ticket {
@@ -74,6 +93,22 @@ export const TicketCategory = {
   Other: "Other" as const,
 } satisfies Record<string, TicketCategory>;
 
+// Story B5 (Phase B FE) — TicketKind / TicketSeverity re-exports.
+// Source de vérité = api.d.ts généré depuis OpenAPI (Story B0).
+export type TicketKind = components["schemas"]["TicketKind"];
+export const TicketKind = {
+  Request: "request" as const,
+  Complaint: "complaint" as const,
+} satisfies Record<string, TicketKind>;
+
+export type TicketSeverity = components["schemas"]["TicketSeverity"];
+export const TicketSeverity = {
+  Low: "low" as const,
+  Normal: "normal" as const,
+  High: "high" as const,
+  Critical: "critical" as const,
+} satisfies Record<string, TicketSeverity>;
+
 export interface TicketStatistics {
   total_tickets: number;
   open_tickets: number;
@@ -106,6 +141,16 @@ export const ticketsApi = {
     // unit_id seulement si c'est un UUID valide (pas vide)
     if (data.unit_id && data.unit_id.trim() !== "") {
       payload.unit_id = data.unit_id;
+    }
+    // Story B5 — Complaint extensions (optionnels, rétro-compat Request).
+    if (data.kind) payload.kind = data.kind;
+    if (data.severity) payload.severity = data.severity;
+    if (data.incident_date) payload.incident_date = data.incident_date;
+    if (data.evidence_attachments && data.evidence_attachments.length > 0) {
+      payload.evidence_attachments = data.evidence_attachments;
+    }
+    if (data.witnesses && data.witnesses.length > 0) {
+      payload.witnesses = data.witnesses;
     }
     return api.post("/tickets", payload);
   },

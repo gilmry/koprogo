@@ -1,0 +1,29 @@
+---
+// Story B5 (Phase B FE) — Page Owner-facing : créer un ticket / déposer plainte.
+//
+// Monte `lib/components/tickets/TicketCreate.svelte` qui supporte Request ET
+// Complaint dans un seul form avec sections conditionnelles.
+//
+// Récupération des paramètres :
+//   - buildingId via Astro.url.searchParams.get('buildingId') — pattern static
+//     fix #fed175d (pas de [id].astro car Astro static).
+//   - currentUserId et witnessCandidates sont fetchés côté Svelte (le wrapper
+//     a accès à authStore + ownersOfBuilding API).
+//
+// Note : par cohérence avec /syndic/mandates (Story B3), la page Astro reste
+// minimale — toute la logique vit côté Svelte 5 (state, fetch, validation).
+
+import Layout from '../../layouts/Layout.astro';
+import TicketCreatePageWrapper from '../../lib/components/tickets/TicketCreatePageWrapper.svelte';
+---
+
+<Layout title="Nouveau ticket — KoproGo">
+  <main class="container mx-auto px-4 py-8">
+    <div class="mx-auto max-w-2xl">
+      <h1 class="mb-6 text-3xl font-bold text-gray-900">
+        Nouveau ticket
+      </h1>
+      <TicketCreatePageWrapper client:load />
+    </div>
+  </main>
+</Layout>
