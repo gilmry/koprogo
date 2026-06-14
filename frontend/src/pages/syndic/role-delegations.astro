@@ -1,0 +1,21 @@
+---
+// Story B4 (Phase B FE) — Page syndic des délégations de rôle.
+//
+// Monte le wrapper `RoleDelegationsPage.svelte` (lib/components/syndic) qui
+// orchestre `<RoleDelegationList>` + `<RoleDelegationForm>` (modal). Le
+// wrapper porte le state (Astro ne porte que du content côté serveur).
+//
+// Route : /syndic/role-delegations (accès gated côté frontend RouteGuard +
+// côté backend RBAC — superadmin / syndic only). La détection
+// non-transitivité INV-8 est intégrée à la List (banner persistant + CTA
+// conditionnel — cf. AC @security stories.md §B4).
+
+import Layout from '../../layouts/Layout.astro';
+import RoleDelegationsPage from '../../lib/components/syndic/RoleDelegationsPage.svelte';
+---
+
+<Layout title="Délégations de rôle — KoproGo">
+  <main class="container mx-auto px-4 py-8">
+    <RoleDelegationsPage client:load />
+  </main>
+</Layout>
