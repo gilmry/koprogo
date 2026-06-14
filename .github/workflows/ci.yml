@@ -583,18 +583,17 @@ jobs:
             -H 'Content-Type: application/json' || echo "Seed already exists or failed"
 
       - name: Run Documentation Vivante scenarios (video generation)
-        # Phase A (backend pyramid first) / Phase B (FE composants + data-testid +
-        # doc vivante refresh). Tant que les UIs syndic pour les Stories 3.1/3.2/3.4
-        # ne sont pas livrées (Phase B), certains scénarios Documentation Vivante
-        # peuvent casser car le DOM ciblé n'existe pas encore. Volontairement
-        # non-bloquant : on garde le signal en jaune sans casser la CI backend.
-        continue-on-error: true
+        # Phase B FE (Story B9) terminée : retrait du `continue-on-error: true`
+        # ajouté en Phase A via commit a698f6d pour décorréler la dette FE des
+        # Stories 3.1/3.2/3.4. Les UIs syndic des Stories B1→B8 sont désormais
+        # livrées ; un scénario Documentation Vivante rouge est un signal réel
+        # qui bloque la CI au même titre que les autres steps Playwright.
         env:
           PLAYWRIGHT_BASE_URL: http://localhost:3000
           PLAYWRIGHT_API_BASE: http://localhost:8080/api/v1
         run: |
           cd frontend
-          npx playwright test --project=scenarios || echo "Some scenarios failed (Phase A — UI catch-up in Phase B)"
+          npx playwright test --project=scenarios
 
       - name: Cleanup scenario world
         if: always()
