@@ -172,7 +172,9 @@ impl BuildingUseCases {
         metrics: &BuildingMetrics,
     ) -> BuildingResponseDto {
         let is_conformant = building.is_conformant(metrics);
-        let delta = Building::quota_delta(metrics);
+        // Track H Story H1 — `quota_delta` est désormais méthode d'instance
+        // (acte de base lu sur `self.total_tantiemes`).
+        let delta = building.quota_delta(metrics);
         BuildingResponseDto {
             id: building.id.to_string(),
             acp_id: building.acp_id.to_string(),

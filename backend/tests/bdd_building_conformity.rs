@@ -374,7 +374,11 @@ async fn then_entity_is_conformant_true(world: &mut ConformityWorld) {
         .last_domain_metrics
         .as_ref()
         .expect("domain metrics set");
-    let result = Building::compute_is_conformant(world.declared_units, metrics);
+    // Track H Story H1 — signature change : `total_tantiemes` est désormais
+    // un paramètre (plus de constante hard-codée). Tous les buildings seedés
+    // par ce harness utilisent `total_tantiemes=1000` (cf. given_org_building,
+    // `total_tantiemes: Some(1000)`).
+    let result = Building::compute_is_conformant(world.declared_units, 1000, metrics);
     assert!(
         result,
         "entity is_conformant should be true for declared={} metrics={:?}",

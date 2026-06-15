@@ -1,4 +1,13 @@
 {
+  "conformity": {
+    "banner_title": "⚠️ {name} n'est pas conforme",
+    "units_missing": "{n} lot(s) manquant(s)",
+    "units_extra": "{n} lot(s) en surplus",
+    "quota_off": "Somme des quotas en deçà de {delta} / {basis} (acte de base)",
+    "contact_admin": "Contactez l'admin pour corriger.",
+    "toast_title": "Calcul bloqué — Immeuble non conforme",
+    "toast_message": "{units_delta} lot(s) manquant(s), Σ quotas = {sum} / {basis}"
+  },
   "common": {
     "save": "Enregistrer",
     "cancel": "Annuler",

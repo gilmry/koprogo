@@ -1,4 +1,13 @@
 {
+  "conformity": {
+    "banner_title": "⚠️ {name} ist nicht konform",
+    "units_missing": "{n} Einheit(en) fehlen",
+    "units_extra": "{n} Einheit(en) überzählig",
+    "quota_off": "Summe der Anteile unter {delta} / {basis} (Teilungserklärung)",
+    "contact_admin": "Wenden Sie sich an den Administrator zur Korrektur.",
+    "toast_title": "Berechnung gesperrt — Gebäude nicht konform",
+    "toast_message": "{units_delta} Einheit(en) fehlen, Σ Anteile = {sum} / {basis}"
+  },
   "common": {
     "save": "Speichern",
     "cancel": "Abbrechen",

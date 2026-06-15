@@ -1,4 +1,13 @@
 {
+  "conformity": {
+    "banner_title": "⚠️ {name} is not conformant",
+    "units_missing": "{n} unit(s) missing",
+    "units_extra": "{n} unit(s) in surplus",
+    "quota_off": "Sum of shares short by {delta} / {basis} (base deed)",
+    "contact_admin": "Contact the admin to fix.",
+    "toast_title": "Computation blocked — Building not conformant",
+    "toast_message": "{units_delta} unit(s) missing, Σ shares = {sum} / {basis}"
+  },
   "common": {
     "save": "Save",
     "cancel": "Cancel",

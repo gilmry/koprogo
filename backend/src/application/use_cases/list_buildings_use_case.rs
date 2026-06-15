@@ -151,6 +151,11 @@ impl ListBuildingsUseCase {
         // Story 1.4 metrics fields default to 0/empty/false on list endpoint
         // (per-row metrics aggregate would be expensive on paginated list ;
         //  full metrics are exposed via GET /buildings/:id detail endpoint).
+        //
+        // Track H Story H1 — `quota_delta` fallback = `total_tantiemes`
+        // (positif = manque) au lieu de la constante hard-codée "-1000"
+        // qui était incohérente avec la convention `total - sum` et avec
+        // les actes de base ≠ 1000.
         BuildingResponseDto {
             id: b.id.to_string(),
             acp_id: b.acp_id.to_string(),
@@ -167,7 +172,7 @@ impl ListBuildingsUseCase {
             units_count: 0,
             quota_sum: String::from("0"),
             is_conformant: false,
-            quota_delta: String::from("-1000"),
+            quota_delta: b.total_tantiemes.to_string(),
         }
     }
 }

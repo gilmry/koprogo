@@ -33,6 +33,8 @@ Feature: Building Conformity (Story 1.4 — Refonte UX multi-rôle ACP)
 
   @edge
   Scenario: Building short by 1 millième is NOT conformant (no rounding tolerance)
+    # Track H Story H1 — convention quota_delta = total_tantiemes - quota_sum
+    # (positif = manque). Building basis 1000 sum 999 → delta +1.
     Given an existing organization "Cabinet Maury" with a building "Almost There" of declared 2 units
     And the building "Almost There" has a unit "A1" with quota 500
     And the building "Almost There" has a unit "A2" with quota 499
@@ -40,16 +42,17 @@ Feature: Building Conformity (Story 1.4 — Refonte UX multi-rôle ACP)
     Then the building units_count should be 2
     And the building quota_sum should be "999"
     And the building is_conformant should be false
-    And the building quota_delta should be "-1"
+    And the building quota_delta should be "1"
 
   @edge
   Scenario: Building with 0 units returns quota_sum 0 (no NaN, no panic)
+    # Track H Story H1 — basis 1000, sum 0 → delta +1000 (manque total).
     Given an existing organization "Cabinet Maury" with a building "Empty Shell" of declared 1 units
     When admin gets building "Empty Shell" by id
     Then the building units_count should be 0
     And the building quota_sum should be "0"
     And the building is_conformant should be false
-    And the building quota_delta should be "-1000"
+    And the building quota_delta should be "1000"
 
   @edge
   Scenario: Building with declared_units mismatch is not conformant even with quota_sum 1000

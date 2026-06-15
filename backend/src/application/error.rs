@@ -184,6 +184,24 @@ pub enum AppError {
     /// Entity. Story 3.9 (FR34 INV-21).
     #[error("Un prestataire ne peut pas s'auto-évaluer")]
     EvaluatorIsContractor,
+
+    /// Track H Story H1 — `Building::assert_conformant()` a échoué.
+    /// L'immeuble n'est pas conforme à son acte de base : le pre-check
+    /// validate-before-compute bloque toute mutation/calcul (charges,
+    /// appels de fonds, états datés…). Code 422 + payload
+    /// `BUILDING_NOT_CONFORMANT` exploitable côté frontend (toast +
+    /// banner narratif). Mémoire `validate-before-compute`.
+    ///
+    /// **N'expose pas d'info sensible** (pas d'user_id, pas d'org_id) :
+    /// uniquement `building_id` + deltas + `quota_basis` — payload requis
+    /// par l'admin pour corriger.
+    #[error("L'immeuble n'est pas conforme à son acte de base")]
+    BuildingNotConformant {
+        building_id: uuid::Uuid,
+        units_delta: i32,
+        quota_delta: rust_decimal::Decimal,
+        quota_basis: i32,
+    },
 }
 
 impl AppError {
@@ -221,6 +239,7 @@ impl AppError {
             AppError::SignatureAlreadyExists => "signature_already_exists",
             AppError::TechnicalSpecRequired => "technical_spec_required",
             AppError::EvaluatorIsContractor => "evaluator_is_contractor",
+            AppError::BuildingNotConformant { .. } => "building_not_conformant",
         }
     }
 }
@@ -252,7 +271,8 @@ impl ResponseError for AppError {
             | AppError::SignatureAlreadyExists => StatusCode::CONFLICT,
             AppError::TechnicalSpecResignatureRequired
             | AppError::TechnicalSpecRequired
-            | AppError::EvaluatorIsContractor => StatusCode::UNPROCESSABLE_ENTITY,
+            | AppError::EvaluatorIsContractor
+            | AppError::BuildingNotConformant { .. } => StatusCode::UNPROCESSABLE_ENTITY,
             AppError::RateLimited => StatusCode::TOO_MANY_REQUESTS,
             AppError::Database(_) | AppError::Crypto(_) | AppError::Internal(_) => {
                 StatusCode::INTERNAL_SERVER_ERROR
@@ -269,10 +289,36 @@ impl ResponseError for AppError {
             other => other.to_string(),
         };
 
-        HttpResponse::build(self.status_code()).json(json!({
+        // Track H Story H1 — payload narratif pour `BuildingNotConformant`
+        // (422) : le FE consomme `details.code == "BUILDING_NOT_CONFORMANT"`
+        // pour rendre `<ConformityToast>` + `<ConformityBanner>` (cf.
+        // mémoire `validate-before-compute` + DoD-H1).
+        let details = match self {
+            AppError::BuildingNotConformant {
+                building_id,
+                units_delta,
+                quota_delta,
+                quota_basis,
+            } => Some(json!({
+                "code": "BUILDING_NOT_CONFORMANT",
+                "building_id": building_id,
+                "units_delta": units_delta,
+                // Decimal-as-string (mémoire `no-f64-in-money` + ADR-0007).
+                "quota_delta": quota_delta.to_string(),
+                "quota_basis": quota_basis,
+            })),
+            _ => None,
+        };
+
+        let mut body = json!({
             "error": public_message,
             "kind": self.kind(),
-        }))
+        });
+        if let Some(d) = details {
+            body["details"] = d;
+        }
+
+        HttpResponse::build(self.status_code()).json(body)
     }
 }
 
@@ -381,6 +427,33 @@ impl From<crate::domain::entities::PortfolioError> for AppError {
     /// validation, **jamais** 500 Internal (Story 2.1 — ADR-0011).
     fn from(e: crate::domain::entities::PortfolioError) -> Self {
         AppError::Validation(e.to_string())
+    }
+}
+
+impl From<crate::domain::entities::BuildingNotConformantError> for AppError {
+    /// Track H Story H1 — pre-check validate-before-compute. L'immeuble
+    /// n'est pas conforme à son acte de base → 422 + payload narratif
+    /// `BUILDING_NOT_CONFORMANT` (FE rend banner + toast).
+    fn from(err: crate::domain::entities::BuildingNotConformantError) -> Self {
+        AppError::BuildingNotConformant {
+            building_id: err.building_id,
+            units_delta: err.units_delta,
+            quota_delta: err.quota_delta,
+            quota_basis: err.quota_basis,
+        }
+    }
+}
+
+impl From<crate::domain::entities::BuildingNotConformantError> for String {
+    /// Track H Story H1 — bridge legacy `Result<_, String>` pour les
+    /// use-cases qui n'ont pas encore migré vers `AppError` (call_for_funds,
+    /// etat_date…). Mémoire `validate-before-compute` : pas de refacto en
+    /// cascade dans cette story, le bridge permet l'opérateur `?`.
+    fn from(err: crate::domain::entities::BuildingNotConformantError) -> Self {
+        format!(
+            "BUILDING_NOT_CONFORMANT: building {} units_delta={} quota_delta={} quota_basis={}",
+            err.building_id, err.units_delta, err.quota_delta, err.quota_basis
+        )
     }
 }
 
@@ -579,6 +652,101 @@ mod tests {
         assert_eq!(e.status_code(), StatusCode::UNPROCESSABLE_ENTITY);
         assert_eq!(e.kind(), "evaluator_is_contractor");
         assert!(format!("{}", e).contains("s'auto-évaluer"));
+    }
+
+    // ------------------------------------------------------------------------
+    // Track H Story H1 — BuildingNotConformant 4-cat
+    // ------------------------------------------------------------------------
+
+    fn sample_not_conformant_error(quota_basis: i32, quota_delta: &str) -> AppError {
+        use rust_decimal::Decimal;
+        use std::str::FromStr;
+        AppError::BuildingNotConformant {
+            building_id: uuid::Uuid::nil(),
+            units_delta: 1,
+            quota_delta: Decimal::from_str(quota_delta).unwrap(),
+            quota_basis,
+        }
+    }
+
+    #[test]
+    fn happy_building_not_conformant_maps_to_422() {
+        let e = sample_not_conformant_error(1000, "2.5");
+        assert_eq!(e.status_code(), StatusCode::UNPROCESSABLE_ENTITY);
+        assert_eq!(e.kind(), "building_not_conformant");
+    }
+
+    #[test]
+    fn happy_from_domain_error_preserves_fields() {
+        // From<BuildingNotConformantError> for AppError doit propager
+        // building_id, units_delta, quota_delta et quota_basis SANS perte.
+        use crate::domain::entities::BuildingNotConformantError;
+        use rust_decimal::Decimal;
+        use std::str::FromStr;
+
+        let bid = uuid::Uuid::new_v4();
+        let domain_err = BuildingNotConformantError {
+            building_id: bid,
+            units_delta: 2,
+            quota_delta: Decimal::from_str("25.5").unwrap(),
+            quota_basis: 10000,
+        };
+        let app_err: AppError = domain_err.into();
+        match app_err {
+            AppError::BuildingNotConformant {
+                building_id,
+                units_delta,
+                quota_delta,
+                quota_basis,
+            } => {
+                assert_eq!(building_id, bid);
+                assert_eq!(units_delta, 2);
+                assert_eq!(quota_delta, Decimal::from_str("25.5").unwrap());
+                assert_eq!(quota_basis, 10000);
+            }
+            other => panic!("expected BuildingNotConformant, got {:?}", other),
+        }
+    }
+
+    #[test]
+    fn edge_building_not_conformant_basis_10000() {
+        // AC-H1.h3 — quota_basis exposé dans le payload pour acte ≠ 1000.
+        let e = sample_not_conformant_error(10000, "25");
+        let body = e.error_response();
+        // Le body est un HttpResponse, status doit être 422.
+        assert_eq!(body.status(), StatusCode::UNPROCESSABLE_ENTITY);
+    }
+
+    #[test]
+    fn security_building_not_conformant_does_not_expose_user_id() {
+        // AC-H1.s2 — pas d'info sensible (pas d'user_id, pas d'org_id).
+        let e = sample_not_conformant_error(1000, "2.5");
+        let s = format!("{}", e);
+        // Message public n'expose que la sémantique générique.
+        assert!(s.contains("conforme"));
+        assert!(!s.contains("user_id"));
+        assert!(!s.contains("org_id"));
+    }
+
+    #[test]
+    fn negative_string_bridge_includes_quota_basis() {
+        // AC-H1.h4 — `From<BuildingNotConformantError> for String` legacy
+        // doit inclure `quota_basis` pour permettre l'introspection des
+        // logs des use-cases legacy `Result<_, String>`.
+        use crate::domain::entities::BuildingNotConformantError;
+        use rust_decimal::Decimal;
+        use std::str::FromStr;
+
+        let domain_err = BuildingNotConformantError {
+            building_id: uuid::Uuid::nil(),
+            units_delta: 1,
+            quota_delta: Decimal::from_str("25").unwrap(),
+            quota_basis: 10000,
+        };
+        let s: String = domain_err.into();
+        assert!(s.contains("BUILDING_NOT_CONFORMANT"));
+        assert!(s.contains("10000"), "quota_basis must be present: {}", s);
+        assert!(s.contains("25"), "quota_delta must be present: {}", s);
     }
 
     // ------------------------------------------------------------------------

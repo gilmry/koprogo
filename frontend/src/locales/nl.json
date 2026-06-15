@@ -1,4 +1,13 @@
 {
+  "conformity": {
+    "banner_title": "⚠️ {name} is niet conform",
+    "units_missing": "{n} kavel(s) ontbreken",
+    "units_extra": "{n} kavel(s) te veel",
+    "quota_off": "Som van de quota onder {delta} / {basis} (basisakte)",
+    "contact_admin": "Neem contact op met de beheerder om dit te corrigeren.",
+    "toast_title": "Berekening geblokkeerd — Gebouw niet conform",
+    "toast_message": "{units_delta} kavel(s) ontbreken, Σ quota = {sum} / {basis}"
+  },
   "common": {
     "save": "Opslaan",
     "cancel": "Annuleren",

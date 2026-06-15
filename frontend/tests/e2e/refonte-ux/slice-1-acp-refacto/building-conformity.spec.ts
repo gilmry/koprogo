@@ -86,11 +86,13 @@ test.describe("Building Conformity (Story 1.4)", () => {
     expect(quotaSumText).not.toContain("NaN");
     expect(quotaSumText).toMatch(/0/);
 
-    // Quota delta must include "-1000" (Decimal strict).
+    // Quota delta must include "1000" (Decimal strict).
+    // Track H Story H1 convention : `quota_delta = total_tantiemes - quota_sum`.
+    // Building avec total_tantiemes=1000 et 0 units → delta = +1000 (manque).
     const quotaDelta = page.getByTestId("building-quota-delta").first();
     await expect(quotaDelta).toBeVisible();
     const quotaDeltaText = await quotaDelta.textContent();
-    expect(quotaDeltaText).toMatch(/-1000|−1000/);
+    expect(quotaDeltaText).toMatch(/1000/);
   });
 
   test("syndic sees conformity metrics on building detail (count + quotas reflect reality)", async ({

@@ -75,7 +75,7 @@ pub use age_request::{AgeRequest, AgeRequestCosignatory, AgeRequestStatus};
 pub use board_decision::{BoardDecision, DecisionStatus};
 pub use board_member::{BoardMember, BoardPosition};
 pub use budget::{Budget, BudgetStatus};
-pub use building::{Building, BuildingMetrics, CONFORMANT_QUOTA_TOTAL};
+pub use building::{Building, BuildingMetrics, BuildingNotConformantError};
 pub use call_for_funds::{CallForFunds, CallForFundsError, CallForFundsStatus};
 pub use challenge::{Challenge, ChallengeProgress, ChallengeStatus, ChallengeType};
 pub use charge_distribution::{ChargeDistribution, ChargeDistributionError};
