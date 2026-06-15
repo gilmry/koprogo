@@ -132,11 +132,11 @@ Légende : Tier 1 = humain exécute (agent diagnostique/propose). Taille S≤0.5
 
 > Bloqueurs identifiés en live testing 2026-05-20 (cf. issues #553/#554 et règles d'agent `admin-publishes-conform-buildings` / `validate-before-compute` / `world-model-seed`). Sans ces WP, un syndic peut lancer une AG, voter, calculer des charges sur un immeuble dont les quotas sont faux → décisions invalides juridiquement (Art. 3.87 §3-5 CC).
 
-- **WP-B4 — Bouton « Modifier » immeuble admin fonctionnel** · #553 Bug 1 · T2 · S
-  `BuildingDetail.svelte:67-69` `handleEdit` ouvre `showEditModal=true` mais le modal n'apparaît pas en live (admin bloqué pour éditer la fiche). Diagnostiquer (binding modal / Svelte 5 `on:click` vs `onclick` / props manquantes). 4-cat Playwright `@happy` (clic→modal→submit→update→reload), `@negative` (validation form). Deps : aucune.
+- **WP-B4 — Bouton « Modifier » immeuble admin fonctionnel** · #553 Bug 1 · T2 · S · **FAIT** (cartographie 2026-06-15)
+  Cartographie 2026-06-15 confirme code OK (`BuildingDetail.svelte:113-114` bouton + handler, backend `PUT /buildings/{id}` use-case+handler en place, binding Svelte 5 correct). **Aucun fix code requis** ; regression spec Playwright Story B4 (`frontend/tests/e2e/refonte-ux/track-h/building-edit-modal.spec.ts`) à livrer pour garde-fou non-régression. Cf. `docs/maury/refonte-ux-multi-role-acp/track-h-bloqueurs/stories.md §Story B4`.
 
-- **WP-H1 — `Building.is_conformant()` + filtrage role-based** · #553 règle admin-conform · T2 · M · _BLOQUEUR LÉGAL_
-  Entité domaine `Building` expose `is_conformant() -> bool` ssi `COUNT(units WHERE building_id) == total_units` ET `SUM(units.quota) == 1000` (millièmes belges). Use-case `list_buildings_for_syndic()` filtre par `is_conformant()` ; admin voit tout + badge `draft`/`conformant`. FE : `BuildingDetail` affiche count réel + somme réelle des quotas + badge + delta (« il vous manque X lots, Y millièmes »). 4-cat BDD `@happy`/`@negative`/`@security` (syndic NE PEUT PAS obtenir un building non-conform via API directe). Deps : aucune (mais coordonne avec cluster #433 Decimal pour les quotas).
+- **WP-H1 — `Building.is_conformant()` + filtrage role-based + bug fix `quota_basis`** · #553 règle admin-conform · T2 · M · _BLOQUEUR LÉGAL_ · **FAIT** (commit `6a053a1` Story H1, 2026-06-15)
+  **BUG FIX critique** : ancien code (`building.rs:12` jusqu'à 2026-06-15) hard-codait constante `CONFORMANT_QUOTA_TOTAL = dec!(1000)` → tous les immeubles avec acte de base ≠ 1000 (10000 millièmes par ex., immeuble @gilmry à 182 lots) étaient mal classifiés non-conformes. Story H1 (Track H Maury kit signé) supprime la constante : `is_conformant(&self, metrics)` utilise `self.total_tantiemes` (acte de base lu sur l'instance). **Livré** : `BuildingNotConformantError { building_id, units_delta, quota_delta, quota_basis }` typée + `AppError::BuildingNotConformant` 422 + 2 bridges `From<>` (AppError + String legacy) + FE `<ConformityBanner>` Svelte 5 atomique + `conformity.ts` utils + i18n FR/NL/EN/DE + BuildingDetail.svelte intégration + Playwright `conformity-banner-display.spec.ts` (project chromium pas testIgnore). Tests 4-cat verts (cargo lib building 64/64, application::error 32/32, Vitest 34/34). Cf. `docs/maury/refonte-ux-multi-role-acp/track-h-bloqueurs/`.
 
 - **WP-H2 — `validate-before-compute` sur use-cases calcul** · #553/#554 règle validate-before-compute · T2 · M · _BLOQUEUR LÉGAL_
   Tout use-case produisant un chiffre opérationnel (charges, quorum, répartition tantièmes, appels de fonds, génération PV/convocation) commence par `building.assert_conformant()?`. Erreur typée `BuildingNotConformantError { building_id, deltas }`. API → 422 avec détail. FE → banner « immeuble non conforme » + désactivation boutons calcul. Audit toute tentative de calcul sur non-conform. 4-cat BDD pour chaque use-case touché. Deps : WP-H1.
@@ -164,13 +164,28 @@ Légende : Tier 1 = humain exécute (agent diagnostique/propose). Taille S≤0.5
   Tx.1 job CI `test:characterization` bloque merge si ROUGE + Tx.2 helpers shared multi-rôle complets (`loginAsContractorMagicLink`, etc.) + Tx.3 log Tier 2 `docs/agent-activity/YYYY-MM-DD-bob-slice-N.md` par session. Démarrage **immédiat** dès slice 0. Deps : WP-H0.
 
 > **Cartographie Maury ↔ WPs Track H existants** :
-> - WP-H1 ⇔ Story 1.4 (Building.is_conformant + #553 fix) + 1.1-1.3 (refacto ACP)
-> - WP-H2 ⇔ Story 4.9 méga `[cluster-coord]` (validate-before-compute 4 use-cases)
-> - WP-H3 ⇔ Story 4.5 (Meeting.assert_can_complete reprise #554)
-> - WP-B4 ⇔ Story 1.4 + 2.5 E2E (BuildingDetail refacto + multi-rôle test)
+> - WP-H1 ⇔ Story 1.4 (Building.is_conformant + #553 fix) + 1.1-1.3 (refacto ACP) — Maury Track H Story H1 FAIT (commit `6a053a1`)
+> - WP-H2 ⇔ Story 4.9 méga `[cluster-coord]` (validate-before-compute 4 use-cases) — Maury Track H Story H2 EN COURS (wave V2)
+> - WP-H3 ⇔ Story 4.5 (Meeting.assert_can_complete reprise #554) — Maury Track H Story H3 EN COURS (wave V2)
+> - WP-B4 ⇔ Story 1.4 + 2.5 E2E (BuildingDetail refacto + multi-rôle test) — Maury Track H Story B4 FAIT cartographie + regression spec V3
 > - WP-D1/E1 enrichis ⇔ slice 2 stories 2.1-2.5 (sélecteur+banner+Portfolio)
 >
 > **Arbitrage v0.1.0** : seuls WP-H0/H1/H2/H3/HTx sont **bloqueurs légaux** pour go-live bêta fermée (Art. 3.84-3.89 CC, fiche bâtiment conforme, AG terminable). WP-H4/H5/H6 sont **extension produit** — décision PO à confirmer sur leur inclusion v0.1.0 vs report v0.2.0.
+
+#### Sous-pipeline Maury Track H bloqueurs légaux (kit signé 2026-06-15)
+
+> Voir `docs/maury/refonte-ux-multi-role-acp/track-h-bloqueurs/` (5 docs Maury-grade signés v1.0 @gilmry 2026-06-15, commit `50f3c43`) :
+> - `README.md` — index BMAD
+> - `brief.md` — Vision (3 personas, CB-H1-9, INV-H1-9 avec bug fix `quota_basis`, 9 SCB)
+> - `prd.md` — FR-H1/H2/H3/B4 user journeys couvrant acte 1000 ET 10000
+> - `architecture.md` — types Rust + ports/adapters + FE patterns + BDD scenario outline
+> - `stories.md` — 4 stories Maury-grade self-contained (Gantt RGRR ~3.5j critical path)
+> - `validation.md` — Phase F PO acceptation signée @gilmry 2026-06-15
+>
+> **Statut waves d'exécution** :
+> - **V1 (atomique H1, 0.5j)** : FAIT (commit `6a053a1`).
+> - **V2 // (H2 + H3 BE puis FE, 1.5j+1j)** : à lancer.
+> - **V3 (B4 spec, 0.25j)** : à lancer après V2.
 
 ### Track I — Frontend refonte UX multi-rôle ACP (slice 3 FE catch-up)
 
@@ -180,38 +195,31 @@ Légende : Tier 1 = humain exécute (agent diagnostique/propose). Taille S≤0.5
 >
 > **Gantt par passe agent estimé** : 4 vagues V1→V4, critical path ≈ 3h wall-clock si docker stable, 5h pessimiste. Pattern docker-parallelism : 1 BE + 3 FE concurrent OK (cf. mémoire `feedback_docker-parallelism-bottleneck.md`).
 
-- **WP-I0 — utoipa::path registrations BE (préalable Track I)** · T2 · M
-  Ajouter `#[utoipa::path(...)]` sur tous les handlers Stories 3.4/3.5/3.7/3.8/3.9 + register dans `infrastructure/openapi.rs::ApiDoc::paths(...)` ; regen `openapi.json` + `frontend/src/types/api.d.ts`. Critère : CI Contract Types Check vert avec endpoints mandates/role-delegations/syndic-responses/technical-specs/contractor-evaluations exposés. Deps : aucune (Phase A mergée).
+- **WP-I0 — utoipa::path registrations BE (préalable Track I)** · T2 · M · **FAIT** (commits `8cab49f` Story B0 + `8ac5a83` Story B0bis)
+  utoipa::path sur handlers 3.4/3.5/3.7/3.8/3.9 + role-assignments CRUD REST endpoints (gap Story 3.1) + register openapi.rs + regen openapi.json + api.d.ts. Critère : CI Contract Types Check vert.
 
-- **WP-I1 — UI sous-rôles : RoleAssignmentForm + List** · T2 · M · _wave V1_
-  Composants Svelte 5 runes admin pour assigner/lister sous-rôles `accountant.{encodeur,emetteur}` + community.moderator + mandataires. Route `/admin/role-assignments`. data-testid : `role-assignment-{user-select,role-select,org-select,submit,row-<id>,revoke-<id>}`. AC 4-cat : @happy assignment OK / @edge expire today / @security cross-org 403 / @negative invalid role. Vitest 4-cat + Playwright multi-rôle. Deps : WP-I0.
+- **WP-I1 — UI sous-rôles : RoleAssignmentForm + List** · T2 · M · _wave V1_ · **FAIT** (commit `455490a` Story B1)
 
-- **WP-I2 — UI MagicLinkIssueForm** · T2 · S · _wave V1_
-  Form syndic émet MagicLink contractor + bouton copier URL `/c?t=<token>`. Route `/syndic/magic-links`. data-testid : `magic-link-{target-input,scope-select,scope-id-select,expires-in-input,issue-submit,issued-url-copy}`. AC 4-cat : invariant subject != self (cf. fix CI 709f649). Deps : WP-I0.
+- **WP-I2 — UI MagicLinkIssueForm** · T2 · S · _wave V1_ · **FAIT** (commit `b9ab206` Story B2)
 
-- **WP-I3 — UI MandateIssueForm + List + ExpirationBadge** · T2 · M · _wave V1_
-  Form émission mandate notaire/avocat/AMO/architecte/BET/gardien + table liste + countdown badges. Route `/syndic/mandates`. data-testid : `mandate-{kind-select,subject-select,scope-select,reason-textarea,valid-until-input,issue-submit,row-<id>,revoke-<id>,expiration-badge-<id>}`. AC 4-cat (reason 10-500 chars, max 5 ans). Deps : WP-I0.
+- **WP-I3 — UI MandateIssueForm + List + ExpirationBadge** · T2 · M · _wave V1_ · **FAIT** (commit `6f4c1a4` Story B3)
 
-- **WP-I4 — UI RoleDelegationForm + List** · T2 · S · _wave V2_
-  Form délégation rôle temporaire ; message clair non-transitivité (DelegationChainNotAllowed). data-testid : `role-delegate-{target-input,role-select,until-input,submit,row-<id>}`. AC 4-cat : @security re-delegation refusée + message UI. Deps : V1 (réutilise ExpirationBadge de I3).
+- **WP-I4 — UI RoleDelegationForm + List** · T2 · S · _wave V2_ · **FAIT** (commit `0bfd0ce` Story B4)
 
-- **WP-I5 — UI TicketCreate refacto complaint (kind+severity+evidence+witnesses)** · T2 · L · _wave V3_ · _bigger piece_
-  Refacto composant existant + 3 nouveaux sous-composants `EvidenceUpload.svelte`, `WitnessSelector.svelte`, `SeveritySelector.svelte`. data-testid : `ticket-{create-kind-select,severity-select,incident-date-input,evidence-upload,witness-add,description-textarea,submit}`. AC 4-cat : badge "preuves manquantes" si text-only / max 10 evidence / witnesses ≠ self. Deps : WP-I0.
+- **WP-I5 — UI TicketCreate refacto complaint (kind+severity+evidence+witnesses)** · T2 · L · _wave V3_ · **FAIT** (commit `f1c871d` Story B5)
 
-- **WP-I6 — UI SyndicResponseForm + TicketSlaBadge** · T2 · M · _wave V2_
-  Form append-only (pas d'édition) + badge SLA couleur selon time-to-due. Route enrichit ticket-detail. data-testid : `syndic-response-{body-textarea,action-proposed-select,submit,row-<id>}`, `ticket-sla-badge`. AC 4-cat : badge passe rouge si overdue. Deps : V1 (pattern).
+- **WP-I6 — UI SyndicResponseForm + TicketSlaBadge** · T2 · M · _wave V2_ · **FAIT** (commit `89e9afd` Story B6)
 
-- **WP-I7 — UI TechnicalSpec full flow** · T2 · L · _wave V3_ · _bigger piece_
-  4 composants : `TechnicalSpecCreate`, `TechnicalSpecDetail`, `TechnicalSpecSignatureForm`, `TechnicalSpecVersionTimeline`. Routes `/syndic/technical-specs` + `/syndic/technical-spec?id=` (path-param évité, cf. fix Astro static fed175d). data-testid : `tech-spec-{title-input,version-input,deliverable-add,required-sig-select,attach-upload,create-submit,submit-for-sign,sign-submit,bump-submit,version-row-<version>}`. AC 4-cat : major bump → re-signature requise ; non-mandataire bouton signer absent. Deps : WP-I0.
+- **WP-I7 — UI TechnicalSpec full flow** · T2 · L · _wave V3_ · **FAIT** (commit `cf2219f` Story B7)
 
-- **WP-I8 — UI ContractorEvaluationForm + Reputation** · T2 · M · _wave V4_
-  Form évaluation gated by approved TechnicalSpec ; page reputation contractor (5 scores 1-5, moyenne). data-testid : `contractor-eval-{contractor-select,spec-select,tickets-link,scores-{quality,timeliness,communication,cost,overall},comment-textarea,submit}`. AC 4-cat : spec Draft → 422 toast + redirect. Deps : WP-I7 (spec doit exister pour gater).
+- **WP-I8 — UI ContractorEvaluationForm + Reputation** · T2 · M · _wave V4_ · **FAIT** (commit `caa6315` Story B8)
 
-- **WP-I9 — Documentation Vivante refresh + retire continue-on-error** · T2 · S · _wave V4_
-  Retirer `continue-on-error: true` du step "Run Documentation Vivante scenarios" dans `.github/workflows/ci.yml` (commit a698f6d) → vérifier CI passe verte sans bypass + axe-core violations = 0 sur tous composants I1-I8. AC : CI green sans bypass ; vidéos générées montrent les nouveaux flows. Deps : WP-I1..I8 mergés.
+- **WP-I9 — Documentation Vivante refresh + retire continue-on-error** · T2 · S · _wave V4_ · **PARTIEL** (Story B9 commit `3de6530` a retiré le bypass ; CI a révélé 8 specs Phase B FE + scenarios Documentation Vivante cassés → **Phase C ouverte #617** : testIgnore `refonte-ux/phase-b-fe/` (commit `83985e4`) + `continue-on-error: true` restauré sur step Doc Vivante (commit `4fedde7`) le temps de stabiliser dans Phase C).
 
 > **Critères DoD Track I (intégrés au gate G1)** :
 > - svelte-check 0/0 erreur/warning ; axe-core violations = 0 par composant ; Vitest 4-cat + Playwright multi-rôle par WP ; data-testid sur 100% éléments interactifs ; pas de stockage JWT en localStorage ; bundle Phase I ≤ +50 KB gzip (baseline mesurée 2026-06-07 = 4,3 MB total / 0,6 MB gzip JS).
+>
+> **Statut Track I global (2026-06-15)** : WP-I0 → WP-I8 **FAIT** (10 commits Phase B FE B0-B8 + B0bis sur feature/dev). WP-I9 **PARTIEL** — Documentation Vivante e2e tombée dans Phase C #617 (8 specs + N scenarios à stabiliser avant retrait définitif des bypasses CI). Voir mémoires `project_phase-c-reactivate-e2e-specs.md` et `feedback_maury-fullstack-first.md`.
 
 ### Track G — Gate de release
 
