@@ -1,5 +1,4 @@
 use chrono::{DateTime, Duration, Utc};
-use rust_decimal::prelude::ToPrimitive;
 use rust_decimal::Decimal;
 use rust_decimal_macros::dec;
 use serde::{Deserialize, Serialize};
@@ -36,7 +35,7 @@ pub struct Meeting {
     pub attendees_count: Option<i32>,
     // Quorum — Art. 3.87 §5 CC : AG valide si >50% des quotes-parts présentes/représentées
     pub quorum_validated: bool,
-    pub quorum_percentage: Option<f64>, // % présentes/représentées (0.0-100.0, dérivé/affichage)
+    pub quorum_percentage: Option<f64>, // % des quotes-parts présentes/représentées (0.0-100.0)
     pub total_quotas: Option<Decimal>,  // Total millièmes du bâtiment (Decimal exact — ADR-0008)
     pub present_quotas: Option<Decimal>, // Millièmes présents + représentés (Decimal exact — ADR-0008)
     // Second Convocation — Issue #311 (Art. 3.87 §5 CC: No quorum required for 2nd convocation)
@@ -99,16 +98,110 @@ impl Meeting {
         Ok(())
     }
 
-    pub fn complete(&mut self, attendees_count: i32) -> Result<(), String> {
+    /// Transition d'état pure : `Scheduled → Completed`.
+    ///
+    /// **Track H Story H3** : ancien `complete(attendees_count)` renommé en
+    /// `complete_internal()`. La validation des invariants Art. 3.87 §3-5 CC
+    /// (convocations envoyées, votes clôturés, présences enregistrées,
+    /// quorum, minutes draft) est gérée par
+    /// `assert_can_complete(&checklist)` (cf. story H3).
+    ///
+    /// Le use-case `complete_meeting()` enchaîne :
+    /// 1. `completion_checker.build_checklist(meeting_id)` (port DB)
+    /// 2. `meeting.assert_can_complete(&checklist)?` (gate métier — 422 narratif)
+    /// 3. `meeting.complete_internal()?` (state machine — cette méthode)
+    /// 4. `repository.update(&meeting)`
+    ///
+    /// `attendees_count` (legacy param) reste accepté par le handler pour
+    /// compat backward ; depuis Track H Story H3 la source de vérité est
+    /// `checklist.attended_quotas` (présents + représentés agrégés DB-side).
+    pub fn complete_internal(&mut self) -> Result<(), String> {
         match self.status {
             MeetingStatus::Scheduled => {
                 self.status = MeetingStatus::Completed;
-                self.attendees_count = Some(attendees_count);
                 self.updated_at = Utc::now();
                 Ok(())
             }
             MeetingStatus::Completed => Err("Meeting is already completed".to_string()),
             MeetingStatus::Cancelled => Err("Cannot complete a cancelled meeting".to_string()),
+        }
+    }
+
+    /// **DEPRECATED** — préservé pour la compatibilité backward des tests
+    /// internes au domain qui historiquement passaient `attendees_count` à
+    /// `complete()`. Délègue à `complete_internal()` puis stocke
+    /// `attendees_count` sur l'entité.
+    ///
+    /// Nouveaux call-sites : utiliser `complete_internal()` après
+    /// `assert_can_complete(&checklist)` — la valeur d'attendance est
+    /// dérivée de la checklist (Art. 3.87 §5 CC, present_quotas DB-side).
+    #[deprecated(
+        note = "Use complete_internal() after assert_can_complete(&checklist) — Track H Story H3"
+    )]
+    pub fn complete(&mut self, attendees_count: i32) -> Result<(), String> {
+        self.complete_internal()?;
+        self.attendees_count = Some(attendees_count);
+        Ok(())
+    }
+
+    /// Track H Story H3 — Vérifie que toutes les conditions Art. 3.87 §3-5 CC
+    /// sont réunies pour clôturer la réunion. Retourne `Err` avec la liste
+    /// exhaustive des invariants manquants pour permettre au FE de guider
+    /// le syndic (cf. composant `<MissingInvariantsList>`).
+    ///
+    /// **Logique métier** :
+    /// - `convocations_sent` (Art. 3.87 §3 CC — convocations envoyées en amont)
+    /// - `open_resolutions == 0` (Art. 3.87 §4 CC — tous votes clôturés)
+    /// - `attendance_recorded` (Art. 3.87 §5 CC — présences enregistrées)
+    /// - Quorum strict `> 50%` (Art. 3.87 §5 — majorité simple
+    ///   présents+représentés). `total_quotas == 0` → `QuorumNotReached`
+    ///   (cas exotic : building soft-delete entre création AG et clôture —
+    ///   pas de div by zero).
+    /// - `minutes_draft_exists` (PV draft sauvegardé avant clôture)
+    ///
+    /// **Pureté** : aucune I/O, aucune dépendance infra. La checklist est
+    /// construite par le port `MeetingCompletionCheckerPort` (DB-side).
+    pub fn assert_can_complete(
+        &self,
+        checklist: &MeetingCompletionChecklist,
+    ) -> Result<(), MeetingNotCompletableError> {
+        let mut missing: Vec<MissingInvariant> = Vec::new();
+
+        if !checklist.convocations_sent {
+            missing.push(MissingInvariant::ConvocationsNotSent);
+        }
+        if checklist.open_resolutions > 0 {
+            missing.push(MissingInvariant::VotesNotClosed {
+                open_resolutions: checklist.open_resolutions,
+            });
+        }
+        if !checklist.attendance_recorded {
+            missing.push(MissingInvariant::AttendanceNotRecorded);
+        }
+
+        // Quorum > 50% strict (Art. 3.87 §4 majorité simple).
+        // Cas `total_quotas <= 0` → KO quorum systématique : on ne calcule
+        // pas `total_quotas / 2` (évite division par zéro et cas négatif).
+        let quorum_ok = checklist.total_quotas > Decimal::ZERO
+            && checklist.attended_quotas > checklist.total_quotas / dec!(2);
+        if !quorum_ok {
+            missing.push(MissingInvariant::QuorumNotReached {
+                attended_quotas: checklist.attended_quotas,
+                total_quotas: checklist.total_quotas,
+            });
+        }
+
+        if !checklist.minutes_draft_exists {
+            missing.push(MissingInvariant::MinutesDraftMissing);
+        }
+
+        if missing.is_empty() {
+            Ok(())
+        } else {
+            Err(MeetingNotCompletableError {
+                meeting_id: self.id,
+                missing,
+            })
         }
     }
 
@@ -143,11 +236,16 @@ impl Meeting {
     /// Valide le quorum de l'AG (Art. 3.87 §5 CC).
     /// Quorum atteint si les quotes-parts présentes/représentées dépassent 50% du total.
     /// Retourne Ok(true) si quorum atteint, Ok(false) si insuffisant (2e convocation requise).
+    ///
+    /// Decimal exact — ADR-0008. `quorum_percentage` reste en f64 pour compat
+    /// affichage (mémoire `no-f64-in-money` : f64 OK pour pourcentage display, pas pour
+    /// montants/quotas).
     pub fn validate_quorum(
         &mut self,
         present_quotas: Decimal,
         total_quotas: Decimal,
     ) -> Result<bool, String> {
+        use rust_decimal::prelude::ToPrimitive;
         if total_quotas <= Decimal::ZERO {
             return Err("Total quotas must be positive".to_string());
         }
@@ -158,19 +256,13 @@ impl Meeting {
             return Err("Present quotas cannot exceed total quotas".to_string());
         }
 
-        // Quorum : >50% des quotes-parts (Art. 3.87 §5 — majorité stricte).
-        // Décision LÉGALE en comparaison décimale EXACTE (pas d'arrondi IEEE754) :
-        // 500.0001 > 500.0000 (= 1000.0000 / 2) ⇒ quorum atteint.
-        let quorum_reached = present_quotas > total_quotas / dec!(2);
-
-        // Pourcentage dérivé pour l'affichage uniquement (non utilisé pour la décision).
-        let percentage = (present_quotas / total_quotas * dec!(100))
-            .to_f64()
-            .unwrap_or(0.0);
+        let percentage = (present_quotas / total_quotas) * dec!(100);
+        // Quorum : >50% des quotes-parts (Art. 3.87 §5 — majorité stricte)
+        let quorum_reached = percentage > dec!(50);
 
         self.present_quotas = Some(present_quotas);
         self.total_quotas = Some(total_quotas);
-        self.quorum_percentage = Some(percentage);
+        self.quorum_percentage = percentage.to_f64();
         self.quorum_validated = quorum_reached;
         self.updated_at = Utc::now();
 
@@ -229,7 +321,90 @@ impl Meeting {
     }
 }
 
+/// Track H Story H3 — Invariant légal manquant pour clôturer une AG.
+///
+/// Énuméré au lieu d'un simple message string : le frontend rend une liste
+/// `<MissingInvariantsList>` typée par variant (label i18n distinct par
+/// invariant) et conserve les métadonnées (open_resolutions, quotas).
+///
+/// **Pourquoi enum + struct fields** : permet au FE de localiser sans
+/// parser de message, et de proposer la bonne action de correction (ex:
+/// router vers panel résolutions si `VotesNotClosed`).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[serde(tag = "type")]
+pub enum MissingInvariant {
+    /// Art. 3.87 §3 CC — Convocations pas envoyées (au moins une non `sent`).
+    ConvocationsNotSent,
+    /// Art. 3.87 §4 CC — Au moins une résolution est encore `Pending`.
+    VotesNotClosed { open_resolutions: i32 },
+    /// Art. 3.87 §5 CC — `present_quotas` non renseigné côté meeting.
+    AttendanceNotRecorded,
+    /// Art. 3.87 §5 CC — Quorum `> 50%` non atteint (majorité simple).
+    /// `total_quotas == 0` est mappé ici (pas de div by zero).
+    QuorumNotReached {
+        attended_quotas: Decimal,
+        total_quotas: Decimal,
+    },
+    /// PV draft (minutes) pas encore enregistré (cf. `minutes_document_id`).
+    MinutesDraftMissing,
+}
+
+/// Track H Story H3 — Snapshot des conditions Art. 3.87 §3-5 CC pour
+/// décider de la clôturabilité d'une AG.
+///
+/// **Pureté** : struct de données, agrégée par
+/// `MeetingCompletionCheckerPort::build_checklist()` (1 query SQL agrégée).
+/// `Meeting::assert_can_complete(&checklist)` consomme cette struct sans
+/// faire d'I/O — propriété hexagonale.
+///
+/// **Decimal exact** (mémoire `no-f64-in-money`) : `attended_quotas` et
+/// `total_quotas` sont en `Decimal` (millièmes / dix-millièmes selon acte
+/// de base). Convention : `total_quotas = SUM(units.quota)` du building.
+#[derive(Debug, Clone, PartialEq)]
+pub struct MeetingCompletionChecklist {
+    pub convocations_sent: bool,
+    /// 0 = toutes résolutions clôturées (status != 'Pending').
+    pub open_resolutions: i32,
+    pub attendance_recorded: bool,
+    /// Somme des quotas présents+représentés (cf. `meetings.present_quotas`).
+    pub attended_quotas: Decimal,
+    /// Somme des quotas du building (SUM units.quota).
+    pub total_quotas: Decimal,
+    /// `meetings.minutes_document_id IS NOT NULL`.
+    pub minutes_draft_exists: bool,
+}
+
+/// Track H Story H3 — Erreur typée signalant que l'AG ne peut pas être
+/// clôturée. Liste exhaustive des invariants manquants pour permettre au
+/// FE de rendre `<MissingInvariantsList>` actionnable.
+///
+/// Mappée vers HTTP 422 `MEETING_NOT_COMPLETABLE` via `From<>` dans
+/// `application/error.rs`. Le bridge `From<>` vers `String` permet aux
+/// use-cases legacy `Result<_, String>` (cf. `complete_meeting()` qui n'a
+/// pas encore migré vers `AppError`) de propager l'erreur via `?` ; le
+/// handler décode le préfixe `MEETING_NOT_COMPLETABLE:` pour répondre 422
+/// + payload structuré.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct MeetingNotCompletableError {
+    pub meeting_id: Uuid,
+    pub missing: Vec<MissingInvariant>,
+}
+
+impl std::fmt::Display for MeetingNotCompletableError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "Meeting {} not completable: {} missing invariant(s)",
+            self.meeting_id,
+            self.missing.len()
+        )
+    }
+}
+
+impl std::error::Error for MeetingNotCompletableError {}
+
 #[cfg(test)]
+#[allow(deprecated)] // tests legacy `complete()` — Track H Story H3
 mod tests {
     use super::*;
     use chrono::Duration;
@@ -693,5 +868,290 @@ mod tests {
 
         // Assert
         assert!(!meeting.is_minutes_overdue()); // Within 30 days
+    }
+}
+
+// ============================================================================
+// Track H Story H3 — Tests `assert_can_complete` taxonomie 4-cat (CRITICAL #3).
+// ============================================================================
+
+#[cfg(test)]
+#[allow(deprecated)] // ancien `complete()` reste testé pour la compat backward
+mod assert_can_complete_tests {
+    use super::*;
+    use chrono::Duration;
+
+    /// Construit un meeting standard (Scheduled, AGO).
+    fn make_meeting() -> Meeting {
+        let org_id = Uuid::new_v4();
+        let building_id = Uuid::new_v4();
+        Meeting::new(
+            org_id,
+            building_id,
+            MeetingType::Ordinary,
+            "AGO Track H Story H3".to_string(),
+            None,
+            Utc::now() + Duration::days(30),
+            "Salle des fêtes".to_string(),
+        )
+        .unwrap()
+    }
+
+    /// Checklist 100% conforme : tous invariants présents, quorum atteint.
+    fn checklist_all_ok() -> MeetingCompletionChecklist {
+        MeetingCompletionChecklist {
+            convocations_sent: true,
+            open_resolutions: 0,
+            attendance_recorded: true,
+            attended_quotas: dec!(600),
+            total_quotas: dec!(1000),
+            minutes_draft_exists: true,
+        }
+    }
+
+    // ------------------------------------------------------------------------
+    // @happy — chemin nominal
+    // ------------------------------------------------------------------------
+
+    #[test]
+    fn happy_all_invariants_ok_returns_ok() {
+        // AC-H3.h1
+        let m = make_meeting();
+        let c = checklist_all_ok();
+        assert!(m.assert_can_complete(&c).is_ok());
+    }
+
+    #[test]
+    fn happy_then_complete_internal_transitions_to_completed() {
+        // AC-H3.h2 — chaînage assert + complete_internal.
+        let mut m = make_meeting();
+        let c = checklist_all_ok();
+        m.assert_can_complete(&c).unwrap();
+        m.complete_internal().unwrap();
+        assert_eq!(m.status, MeetingStatus::Completed);
+    }
+
+    // ------------------------------------------------------------------------
+    // @edge — bornes quorum, résolutions, quotas
+    // ------------------------------------------------------------------------
+
+    #[test]
+    fn edge_quorum_exact_50_percent_is_rejected() {
+        // AC-H3.e1 — Art. 3.87 §4 = > 50% strict (pas ≥). 500/1000 KO.
+        let m = make_meeting();
+        let c = MeetingCompletionChecklist {
+            attended_quotas: dec!(500),
+            total_quotas: dec!(1000),
+            ..checklist_all_ok()
+        };
+        let err = m.assert_can_complete(&c).unwrap_err();
+        assert!(err
+            .missing
+            .iter()
+            .any(|m| matches!(m, MissingInvariant::QuorumNotReached { .. })));
+    }
+
+    #[test]
+    fn edge_quorum_just_above_50_percent_is_accepted() {
+        // AC-H3.e2 — 500.0001/1000 OK.
+        let m = make_meeting();
+        let c = MeetingCompletionChecklist {
+            attended_quotas: dec!(500.0001),
+            total_quotas: dec!(1000),
+            ..checklist_all_ok()
+        };
+        assert!(m.assert_can_complete(&c).is_ok());
+    }
+
+    #[test]
+    fn edge_quorum_basis_10000_just_above_50_percent_is_accepted() {
+        // Cas acte de base 10000 (cf. Story H1 fix building).
+        let m = make_meeting();
+        let c = MeetingCompletionChecklist {
+            attended_quotas: dec!(5000.5),
+            total_quotas: dec!(10000),
+            ..checklist_all_ok()
+        };
+        assert!(m.assert_can_complete(&c).is_ok());
+    }
+
+    #[test]
+    fn edge_open_resolution_count_one_is_blocking() {
+        // AC-H3.e4 — 1 résolution Pending bloque (cancelled/Adopted/Rejected
+        // ne comptent pas dans `open_resolutions` — c'est la query qui filtre
+        // `status='Pending'`).
+        let m = make_meeting();
+        let c = MeetingCompletionChecklist {
+            open_resolutions: 1,
+            ..checklist_all_ok()
+        };
+        let err = m.assert_can_complete(&c).unwrap_err();
+        assert!(err.missing.iter().any(|m| matches!(
+            m,
+            MissingInvariant::VotesNotClosed {
+                open_resolutions: 1
+            }
+        )));
+    }
+
+    #[test]
+    fn edge_total_quotas_zero_returns_quorum_not_reached_not_panic() {
+        // AC-H3.n3 — building soft-deleted ou cas exotic : pas de div by zero.
+        let m = make_meeting();
+        let c = MeetingCompletionChecklist {
+            attended_quotas: dec!(0),
+            total_quotas: dec!(0),
+            ..checklist_all_ok()
+        };
+        let err = m.assert_can_complete(&c).unwrap_err();
+        assert!(err.missing.iter().any(|m| matches!(
+            m,
+            MissingInvariant::QuorumNotReached { attended_quotas, total_quotas }
+                if *attended_quotas == dec!(0) && *total_quotas == dec!(0)
+        )));
+    }
+
+    // ------------------------------------------------------------------------
+    // @security — pas de tampering, payload sain
+    // ------------------------------------------------------------------------
+
+    #[test]
+    fn security_assert_is_pure_no_state_mutation() {
+        // assert_can_complete ne mute pas l'entité. Vérifie qu'après un appel
+        // (Ok ou Err) le meeting reste Scheduled (state machine non touchée).
+        let m = make_meeting();
+        let scheduled_status_before = m.status.clone();
+        let _ = m.assert_can_complete(&checklist_all_ok());
+        assert_eq!(m.status, scheduled_status_before);
+
+        // Même chose sur un Err.
+        let c = MeetingCompletionChecklist {
+            convocations_sent: false,
+            ..checklist_all_ok()
+        };
+        let _ = m.assert_can_complete(&c);
+        assert_eq!(m.status, scheduled_status_before);
+    }
+
+    #[test]
+    fn security_attendees_count_param_is_ignored_source_of_truth_is_checklist() {
+        // AC-H3.s1 — attendees_count (legacy) n'influence pas assert.
+        // Démonstration : `complete_internal()` ne touche pas attendees_count,
+        // et `assert_can_complete()` calcule depuis checklist.attended_quotas.
+        // Un attaquant qui forge attendees_count via le handler ne peut pas
+        // bypasser le quorum.
+        let mut m = make_meeting();
+        m.attendees_count = Some(99_999); // forged
+        let c = MeetingCompletionChecklist {
+            attended_quotas: dec!(100), // réel : insuffisant
+            total_quotas: dec!(1000),
+            ..checklist_all_ok()
+        };
+        let err = m.assert_can_complete(&c).unwrap_err();
+        assert!(err
+            .missing
+            .iter()
+            .any(|m| matches!(m, MissingInvariant::QuorumNotReached { .. })));
+    }
+
+    // ------------------------------------------------------------------------
+    // @negative — défaillance correcte (toutes conditions absentes)
+    // ------------------------------------------------------------------------
+
+    #[test]
+    fn negative_all_invariants_missing_returns_all_five() {
+        // AC-H3.n — toutes conditions falsy → 5 MissingInvariant exhaustifs.
+        let m = make_meeting();
+        let c = MeetingCompletionChecklist {
+            convocations_sent: false,
+            open_resolutions: 3,
+            attendance_recorded: false,
+            attended_quotas: dec!(0),
+            total_quotas: dec!(1000),
+            minutes_draft_exists: false,
+        };
+        let err = m.assert_can_complete(&c).unwrap_err();
+        // 5 conditions : ConvocationsNotSent + VotesNotClosed + AttendanceNotRecorded
+        // + QuorumNotReached + MinutesDraftMissing
+        assert_eq!(err.missing.len(), 5);
+        assert!(matches!(
+            err.missing[0],
+            MissingInvariant::ConvocationsNotSent
+        ));
+        assert!(matches!(
+            err.missing[1],
+            MissingInvariant::VotesNotClosed {
+                open_resolutions: 3
+            }
+        ));
+        assert!(matches!(
+            err.missing[2],
+            MissingInvariant::AttendanceNotRecorded
+        ));
+        assert!(matches!(
+            err.missing[3],
+            MissingInvariant::QuorumNotReached { .. }
+        ));
+        assert!(matches!(
+            err.missing[4],
+            MissingInvariant::MinutesDraftMissing
+        ));
+    }
+
+    #[test]
+    fn negative_only_convocations_missing_returns_one_invariant() {
+        let m = make_meeting();
+        let c = MeetingCompletionChecklist {
+            convocations_sent: false,
+            ..checklist_all_ok()
+        };
+        let err = m.assert_can_complete(&c).unwrap_err();
+        assert_eq!(err.missing.len(), 1);
+        assert_eq!(err.missing[0], MissingInvariant::ConvocationsNotSent);
+        assert_eq!(err.meeting_id, m.id);
+    }
+
+    #[test]
+    fn negative_only_minutes_missing_returns_one_invariant() {
+        let m = make_meeting();
+        let c = MeetingCompletionChecklist {
+            minutes_draft_exists: false,
+            ..checklist_all_ok()
+        };
+        let err = m.assert_can_complete(&c).unwrap_err();
+        assert_eq!(err.missing.len(), 1);
+        assert_eq!(err.missing[0], MissingInvariant::MinutesDraftMissing);
+    }
+
+    #[test]
+    fn negative_display_does_not_leak_business_internals() {
+        // Display = "Meeting X not completable: N missing invariant(s)". Pas
+        // de fuite de quotas / IDs sensibles dans le Display public (le
+        // détail vit dans le payload structuré JSON 422, pas en clair).
+        let err = MeetingNotCompletableError {
+            meeting_id: Uuid::new_v4(),
+            missing: vec![MissingInvariant::QuorumNotReached {
+                attended_quotas: dec!(400),
+                total_quotas: dec!(1000),
+            }],
+        };
+        let s = format!("{}", err);
+        assert!(s.contains("not completable"));
+        // Display ne contient PAS la valeur des quotas (réservé au JSON).
+        assert!(!s.contains("400"));
+        assert!(!s.contains("1000"));
+    }
+
+    #[test]
+    fn negative_complete_internal_on_completed_meeting_fails() {
+        // AC-H3.n2 — déjà Completed → complete_internal Err, sans toucher au
+        // status.
+        let mut m = make_meeting();
+        m.assert_can_complete(&checklist_all_ok()).unwrap();
+        m.complete_internal().unwrap();
+        // Re-tente : déjà Completed.
+        let res = m.complete_internal();
+        assert!(res.is_err());
+        assert_eq!(m.status, MeetingStatus::Completed);
     }
 }

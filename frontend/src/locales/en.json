@@ -3417,5 +3417,15 @@
   "polls.results.winner": "Winning option",
   "gamification.category": "Category",
   "gamification.tier": "Tier",
+  "meeting.missing.ConvocationsNotSent": "Convocations not sent (Art. 3.87 §3 Civil Code)",
+  "meeting.missing.VotesNotClosed": "{open_resolutions, plural, =1 {1 open resolution} other {{open_resolutions} open resolutions}} (Art. 3.87 §4)",
+  "meeting.missing.AttendanceNotRecorded": "Attendance not recorded (Art. 3.87 §5 Civil Code)",
+  "meeting.missing.QuorumNotReached": "Quorum not reached ({attended_quotas}/{total_quotas}) — Art. 3.87 §5: simple majority > 50%",
+  "meeting.missing.MinutesDraftMissing": "Minutes draft missing",
+  "meeting.complete.disabled_reason": "{n, plural, =1 {1 missing condition} other {{n} missing conditions}}",
+  "meeting.complete.missing_aria_label": "Conditions required to close the meeting",
+  "meeting.complete.blockers_title": "To close this AG, complete the conditions:",
+  "meeting.complete.toast_title": "Cannot close meeting",
+  "meeting.complete.toast_message": "{n, plural, =1 {1 missing condition} other {{n} missing conditions}} (see details on the meeting page)",
   "_i18n_version": "2026-03-26"
 }

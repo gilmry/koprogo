@@ -253,6 +253,38 @@ pub async fn add_agenda_item(
     }
 }
 
+/// GET /meetings/{id}/completion-checklist — Track H Story H3
+/// Retourne la checklist d'invariants Art. 3.87 §3-5 CC + liste des invariants
+/// manquants, consommé côté FE par `<MissingInvariantsList>`.
+#[get("/meetings/{id}/completion-checklist")]
+pub async fn get_meeting_completion_checklist(
+    state: web::Data<AppState>,
+    _user: AuthenticatedUser,
+    id: web::Path<Uuid>,
+) -> impl Responder {
+    let meeting_id = id.into_inner();
+    match state
+        .meeting_use_cases
+        .build_completion_checklist(meeting_id)
+        .await
+    {
+        Ok((checklist, missing_json)) => HttpResponse::Ok().json(serde_json::json!({
+            "meeting_id": meeting_id,
+            "convocations_sent": checklist.convocations_sent,
+            "open_resolutions": checklist.open_resolutions,
+            "attendance_recorded": checklist.attendance_recorded,
+            "attended_quotas": checklist.attended_quotas.to_string(),
+            "total_quotas": checklist.total_quotas.to_string(),
+            "minutes_draft_exists": checklist.minutes_draft_exists,
+            "missing": missing_json,
+        })),
+        Err(err) if err.contains("not found") || err.contains("not configured") => {
+            HttpResponse::NotFound().json(serde_json::json!({ "error": err }))
+        }
+        Err(err) => HttpResponse::BadRequest().json(serde_json::json!({ "error": err })),
+    }
+}
+
 #[post("/meetings/{id}/complete")]
 pub async fn complete_meeting(
     state: web::Data<AppState>,

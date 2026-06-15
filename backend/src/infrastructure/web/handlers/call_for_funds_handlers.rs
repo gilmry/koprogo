@@ -3,6 +3,7 @@ use crate::application::dto::{
     SendCallForFundsResponse,
 };
 use crate::domain::entities::{ContributionType, UserRole};
+use crate::infrastructure::web::handlers::conformity_response::try_build_conformity_response;
 use crate::infrastructure::web::{AppState, AuthenticatedUser};
 use actix_web::{delete, get, post, put, web, HttpResponse};
 use std::str::FromStr;
@@ -71,7 +72,13 @@ pub async fn create_call_for_funds(
             let response = CallForFundsResponse::from(call);
             HttpResponse::Created().json(response)
         }
-        Err(e) => HttpResponse::BadRequest().body(e),
+        Err(e) => {
+            // Track H Story H2 — pre-check validate-before-compute → 422 narratif
+            if let Some(resp) = try_build_conformity_response(&e) {
+                return resp;
+            }
+            HttpResponse::BadRequest().body(e)
+        }
     }
 }
 
@@ -192,7 +199,13 @@ pub async fn send_call_for_funds(
             };
             HttpResponse::Ok().json(response)
         }
-        Err(e) => HttpResponse::BadRequest().body(e),
+        Err(e) => {
+            // Track H Story H2 — pre-check validate-before-compute → 422 narratif
+            if let Some(resp) = try_build_conformity_response(&e) {
+                return resp;
+            }
+            HttpResponse::BadRequest().body(e)
+        }
     }
 }
 

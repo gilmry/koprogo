@@ -2,15 +2,22 @@ use crate::application::dto::{
     AddAgendaItemRequest, CompleteMeetingRequest, CreateMeetingRequest, MeetingResponse,
     PageRequest, UpdateMeetingRequest,
 };
-use crate::application::ports::MeetingRepository;
+use crate::application::ports::{MeetingCompletionCheckerPort, MeetingRepository};
 use crate::domain::entities::Meeting;
 use chrono::Duration;
+use rust_decimal::Decimal;
+#[cfg(test)]
+use rust_decimal_macros::dec;
 use std::sync::Arc;
 use uuid::Uuid;
 
 pub struct MeetingUseCases {
     repository: Arc<dyn MeetingRepository>,
     convocation_use_cases: Option<Arc<crate::application::use_cases::ConvocationUseCases>>,
+    /// Track H Story H3 — Port DB pour construire la checklist Art. 3.87
+    /// §3-5 CC avant `complete_meeting`. `None` signifie : pas de gate
+    /// activée (tests legacy / fallback compat backward).
+    completion_checker: Option<Arc<dyn MeetingCompletionCheckerPort>>,
 }
 
 impl MeetingUseCases {
@@ -18,6 +25,7 @@ impl MeetingUseCases {
         Self {
             repository,
             convocation_use_cases: None,
+            completion_checker: None,
         }
     }
 
@@ -29,7 +37,91 @@ impl MeetingUseCases {
         Self {
             repository,
             convocation_use_cases: Some(convocation_use_cases),
+            completion_checker: None,
         }
+    }
+
+    /// Track H Story H3 — Configure le gate `assert_can_complete()` sur
+    /// `complete_meeting()`. Builder pattern fluide pour ne pas multiplier
+    /// les constructeurs et préserver la compat backward des tests existants.
+    pub fn with_completion_checker(
+        mut self,
+        checker: Arc<dyn MeetingCompletionCheckerPort>,
+    ) -> Self {
+        self.completion_checker = Some(checker);
+        self
+    }
+
+    /// Track H Story H3 — Construit la checklist Art. 3.87 §3-5 CC et liste
+    /// les invariants manquants pour le FE (composant
+    /// `<MissingInvariantsList>` + désactivation bouton « Clôturer »).
+    ///
+    /// Retourne `(checklist, missing[])` où `missing[]` est déjà sérialisé
+    /// en `serde_json::Value` au format attendu par le frontend (i18n keys
+    /// = `meeting.missing.<type>`).
+    ///
+    /// Erreurs :
+    /// - `"Meeting not found"` → 404.
+    /// - `"Completion checker not configured"` → 404 (état non câblé).
+    pub async fn build_completion_checklist(
+        &self,
+        meeting_id: Uuid,
+    ) -> Result<
+        (
+            crate::domain::entities::MeetingCompletionChecklist,
+            Vec<serde_json::Value>,
+        ),
+        String,
+    > {
+        let meeting = self
+            .repository
+            .find_by_id(meeting_id)
+            .await?
+            .ok_or_else(|| "Meeting not found".to_string())?;
+
+        let checker = self
+            .completion_checker
+            .as_ref()
+            .ok_or_else(|| "Completion checker not configured".to_string())?;
+
+        let checklist = checker.build_checklist(meeting_id).await?;
+
+        // Calcule les invariants manquants côté domain (pas d'I/O).
+        let missing_invariants = match meeting.assert_can_complete(&checklist) {
+            Ok(()) => Vec::new(),
+            Err(err) => err.missing,
+        };
+
+        // Sérialisation manuelle Decimal-as-string (mémoire `no-f64-in-money`).
+        use crate::domain::entities::MissingInvariant;
+        let missing_json: Vec<serde_json::Value> = missing_invariants
+            .iter()
+            .map(|m| match m {
+                MissingInvariant::ConvocationsNotSent => {
+                    serde_json::json!({"type": "ConvocationsNotSent"})
+                }
+                MissingInvariant::VotesNotClosed { open_resolutions } => serde_json::json!({
+                    "type": "VotesNotClosed",
+                    "open_resolutions": open_resolutions,
+                }),
+                MissingInvariant::AttendanceNotRecorded => {
+                    serde_json::json!({"type": "AttendanceNotRecorded"})
+                }
+                MissingInvariant::QuorumNotReached {
+                    attended_quotas,
+                    total_quotas,
+                } => serde_json::json!({
+                    "type": "QuorumNotReached",
+                    "attended_quotas": attended_quotas.to_string(),
+                    "total_quotas": total_quotas.to_string(),
+                }),
+                MissingInvariant::MinutesDraftMissing => {
+                    serde_json::json!({"type": "MinutesDraftMissing"})
+                }
+            })
+            .collect();
+
+        Ok((checklist, missing_json))
     }
 
     pub async fn create_meeting(
@@ -139,6 +231,23 @@ impl MeetingUseCases {
         Ok(MeetingResponse::from(updated))
     }
 
+    /// Track H Story H3 — Clôture une AG après vérification stricte des
+    /// invariants Art. 3.87 §3-5 CC :
+    ///   1. Charge le meeting (404 si absent).
+    ///   2. Charge la checklist via `completion_checker.build_checklist`.
+    ///   3. `meeting.assert_can_complete(&checklist)?` — propage l'erreur
+    ///      typée via `From<MeetingNotCompletableError> for String` (préfixe
+    ///      `MEETING_NOT_COMPLETABLE:` reconnu par le handler → 422).
+    ///   4. `meeting.complete_internal()?` — state machine.
+    ///   5. Persistance.
+    ///
+    /// **DEPRECATED param** : `request.attendees_count` est conservé pour
+    /// la compat backward de l'API ; la **source de vérité** depuis Story H3
+    /// est `checklist.attended_quotas` (DB agrégat present_quotas). Si le
+    /// checker n'est pas branché (`completion_checker = None`, cas legacy
+    /// tests / hors-prod), on retombe sur l'ancien comportement
+    /// `Meeting::complete(attendees_count)` pour ne pas casser la suite
+    /// existante.
     pub async fn complete_meeting(
         &self,
         id: Uuid,
@@ -150,7 +259,32 @@ impl MeetingUseCases {
             .await?
             .ok_or_else(|| "Meeting not found".to_string())?;
 
-        meeting.complete(request.attendees_count)?;
+        if let Some(checker) = &self.completion_checker {
+            // Gate Art. 3.87 §3-5 CC — branché en prod via `with_completion_checker`.
+            let checklist = checker.build_checklist(id).await?;
+            // `?` invoque `From<MeetingNotCompletableError> for String` qui
+            // produit le payload préfixé reconnaissable par le handler 422.
+            meeting.assert_can_complete(&checklist)?;
+            meeting.complete_internal()?;
+            // `attendees_count` reste exposé sur le DTO pour compat — on le
+            // dérive de la checklist (présents+représentés agrégés). Le param
+            // entrant n'est PAS utilisé (defense-in-depth contre tampering).
+            let _ = request.attendees_count; // explicitement ignoré
+                                             // Pour préserver le retour DTO existant, on stocke un proxy
+                                             // entier sur `attendees_count` quand il est dérivable. À défaut
+                                             // on garde None.
+                                             // NB : la perte de précision Decimal→i32 est acceptable ici car
+                                             // c'est juste pour rétro-compat affichage — la vraie présence
+                                             // vit dans `present_quotas` (Decimal, déjà sur l'entité Meeting).
+            use rust_decimal::prelude::ToPrimitive;
+            meeting.attendees_count = checklist.attended_quotas.to_i32();
+        } else {
+            // Path legacy (tests, environnements non câblés). Equivalent à
+            // l'ancien `Meeting::complete(n)` — pour permettre une migration
+            // progressive sans rupture de l'API publique.
+            #[allow(deprecated)]
+            meeting.complete(request.attendees_count)?;
+        }
 
         let updated = self.repository.update(&meeting).await?;
         Ok(MeetingResponse::from(updated))
@@ -216,8 +350,8 @@ impl MeetingUseCases {
     pub async fn validate_quorum(
         &self,
         meeting_id: Uuid,
-        present_quotas: rust_decimal::Decimal,
-        total_quotas: rust_decimal::Decimal,
+        present_quotas: Decimal,
+        total_quotas: Decimal,
     ) -> Result<(bool, MeetingResponse), String> {
         let mut meeting = self
             .repository
@@ -569,11 +703,7 @@ mod tests {
 
         // 600/1000 = 60% → quorum reached
         let result = use_cases
-            .validate_quorum(
-                meeting_id,
-                rust_decimal_macros::dec!(600),
-                rust_decimal_macros::dec!(1000),
-            )
+            .validate_quorum(meeting_id, dec!(600), dec!(1000))
             .await;
         assert!(result.is_ok());
         let (reached, response) = result.unwrap();
@@ -606,11 +736,7 @@ mod tests {
 
         // 400/1000 = 40% → quorum NOT reached
         let result = use_cases
-            .validate_quorum(
-                meeting_id,
-                rust_decimal_macros::dec!(400),
-                rust_decimal_macros::dec!(1000),
-            )
+            .validate_quorum(meeting_id, dec!(400), dec!(1000))
             .await;
         assert!(result.is_ok());
         let (reached, response) = result.unwrap();
@@ -630,11 +756,7 @@ mod tests {
         let use_cases = MeetingUseCases::new(Arc::new(mock_repo));
 
         let result = use_cases
-            .validate_quorum(
-                Uuid::new_v4(),
-                rust_decimal_macros::dec!(600),
-                rust_decimal_macros::dec!(1000),
-            )
+            .validate_quorum(Uuid::new_v4(), dec!(600), dec!(1000))
             .await;
         assert!(result.is_err());
         assert!(result.unwrap_err().contains("Meeting not found"));
@@ -751,11 +873,7 @@ mod tests {
 
         // 500/1000 = exactly 50% → quorum NOT reached (Art. 3.87 §5: strictly >50%)
         let result = use_cases
-            .validate_quorum(
-                meeting_id,
-                rust_decimal_macros::dec!(500),
-                rust_decimal_macros::dec!(1000),
-            )
+            .validate_quorum(meeting_id, dec!(500), dec!(1000))
             .await;
         assert!(result.is_ok());
         let (reached, response) = result.unwrap();

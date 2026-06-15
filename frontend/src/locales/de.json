@@ -3417,5 +3417,15 @@
   "polls.results.winner": "Gewinneroption",
   "gamification.category": "Kategorie",
   "gamification.tier": "Stufe",
+  "meeting.missing.ConvocationsNotSent": "Einberufungen nicht versendet (Art. 3.87 §3 BGB)",
+  "meeting.missing.VotesNotClosed": "{open_resolutions, plural, =1 {1 offene Beschluss} other {{open_resolutions} offene Beschlüsse}} (Art. 3.87 §4)",
+  "meeting.missing.AttendanceNotRecorded": "Anwesenheit nicht erfasst (Art. 3.87 §5 BGB)",
+  "meeting.missing.QuorumNotReached": "Quorum nicht erreicht ({attended_quotas}/{total_quotas}) — Art. 3.87 §5: einfache Mehrheit > 50%",
+  "meeting.missing.MinutesDraftMissing": "Protokollentwurf fehlt",
+  "meeting.complete.disabled_reason": "{n, plural, =1 {1 fehlende Bedingung} other {{n} fehlende Bedingungen}}",
+  "meeting.complete.missing_aria_label": "Bedingungen zum Abschluss der Sitzung",
+  "meeting.complete.blockers_title": "Um diese Versammlung zu schließen, erfüllen Sie die Bedingungen:",
+  "meeting.complete.toast_title": "Abschluss nicht möglich",
+  "meeting.complete.toast_message": "{n, plural, =1 {1 fehlende Bedingung} other {{n} fehlende Bedingungen}} (siehe Details auf der Sitzungsseite)",
   "_i18n_version": "2026-03-26"
 }

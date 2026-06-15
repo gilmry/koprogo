@@ -45,12 +45,16 @@ impl EtatDateUseCases {
             .await?
             .ok_or_else(|| "Unit not found".to_string())?;
 
-        // Verify building exists
-        let building = self
+        // Verify building exists + Track H Story H2 validate-before-compute
+        // gate (Art. 3.89 CC — transparence chiffres syndic). L'état daté
+        // ne peut être généré que sur immeuble conforme (sinon quotes-parts
+        // erronées dans le doc remis au notaire).
+        let (building, metrics) = self
             .building_repository
-            .find_by_id(request.building_id)
+            .find_by_id_with_metrics(request.building_id)
             .await?
             .ok_or_else(|| "Building not found".to_string())?;
+        building.assert_conformant(&metrics)?; // bridge String (H1)
 
         // Get unit ownership info (quotes-parts)
         let unit_owners = self
@@ -476,13 +480,20 @@ mod tests {
             .times(1)
             .returning(move |_| Ok(Some(unit.clone())));
 
-        // Mock building exists
+        // Mock building exists + Track H Story H2 metrics
+        // (find_by_id_with_metrics utilisé pour le pre-check assert_conformant).
+        // Building default : total_units=10, total_tantiemes=1000.
+        // Pour rester conformant on retourne metrics matching.
         let building = make_building(org_id);
+        let metrics = crate::domain::entities::BuildingMetrics {
+            units_count: building.total_units,
+            quota_sum: rust_decimal::Decimal::from(building.total_tantiemes),
+        };
         building_repo
-            .expect_find_by_id()
+            .expect_find_by_id_with_metrics()
             .with(eq(building_id))
             .times(1)
-            .returning(move |_| Ok(Some(building.clone())));
+            .returning(move |_| Ok(Some((building.clone(), metrics.clone()))));
 
         // Mock unit owners exist with 50% ownership
         let uo = make_unit_owner(unit_id);
@@ -555,11 +566,16 @@ mod tests {
             .returning(move |_| Ok(Some(unit.clone())));
 
         let building = make_building(org_id);
+        // Track H Story H2 — pre-check load building + metrics conformes.
+        let metrics = crate::domain::entities::BuildingMetrics {
+            units_count: building.total_units,
+            quota_sum: rust_decimal::Decimal::from(building.total_tantiemes),
+        };
         building_repo
-            .expect_find_by_id()
+            .expect_find_by_id_with_metrics()
             .with(eq(building_id))
             .times(1)
-            .returning(move |_| Ok(Some(building.clone())));
+            .returning(move |_| Ok(Some((building.clone(), metrics.clone()))));
 
         // No active owners
         uo_repo

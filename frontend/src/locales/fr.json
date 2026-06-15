@@ -3427,5 +3427,15 @@
   "polls.results.winner": "Option gagnante",
   "gamification.category": "Catégorie",
   "gamification.tier": "Niveau",
+  "meeting.missing.ConvocationsNotSent": "Convocations non envoyées (Art. 3.87 §3 CC)",
+  "meeting.missing.VotesNotClosed": "{open_resolutions, plural, =1 {1 résolution en cours} other {{open_resolutions} résolutions en cours}} (Art. 3.87 §4 CC)",
+  "meeting.missing.AttendanceNotRecorded": "Présences pas enregistrées (Art. 3.87 §5 CC)",
+  "meeting.missing.QuorumNotReached": "Quorum non atteint ({attended_quotas}/{total_quotas}) — Art. 3.87 §5 CC : majorité simple > 50%",
+  "meeting.missing.MinutesDraftMissing": "PV draft manquant",
+  "meeting.complete.disabled_reason": "{n, plural, =1 {1 condition manquante} other {{n} conditions manquantes}}",
+  "meeting.complete.missing_aria_label": "Conditions manquantes pour clôturer la réunion",
+  "meeting.complete.blockers_title": "Pour clôturer cette AG, complétez les conditions :",
+  "meeting.complete.toast_title": "Clôture impossible",
+  "meeting.complete.toast_message": "{n, plural, =1 {1 condition manquante} other {{n} conditions manquantes}} (voir détail sur la fiche réunion)",
   "_i18n_version": "2026-03-26"
 }

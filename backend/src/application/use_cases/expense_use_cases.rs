@@ -3,7 +3,7 @@ use crate::application::dto::{
     InvoiceResponseDto, PageRequest, PendingInvoicesListDto, RejectInvoiceDto, SortOrder,
     SubmitForApprovalDto, UpdateInvoiceDraftDto,
 };
-use crate::application::ports::ExpenseRepository;
+use crate::application::ports::{BuildingRepository, ExpenseRepository};
 use crate::application::services::expense_accounting_service::ExpenseAccountingService;
 use crate::domain::entities::{ApprovalStatus, Expense};
 use chrono::DateTime;
@@ -13,6 +13,12 @@ use uuid::Uuid;
 pub struct ExpenseUseCases {
     repository: Arc<dyn ExpenseRepository>,
     accounting_service: Option<Arc<ExpenseAccountingService>>,
+    /// Track H Story H2 — validate-before-compute (FR-H2). Optional pour
+    /// préserver les constructeurs utilisés par les tests unitaires (mocks
+    /// expense uniquement). Quand présent (wiring `main.rs`), le pre-check
+    /// `Building::assert_conformant(metrics)?` s'exécute avant
+    /// `create_expense` / `create_invoice_draft`.
+    building_repository: Option<Arc<dyn BuildingRepository>>,
 }
 
 impl ExpenseUseCases {
@@ -20,6 +26,7 @@ impl ExpenseUseCases {
         Self {
             repository,
             accounting_service: None,
+            building_repository: None,
         }
     }
 
@@ -30,7 +37,43 @@ impl ExpenseUseCases {
         Self {
             repository,
             accounting_service: Some(accounting_service),
+            building_repository: None,
         }
+    }
+
+    /// Track H Story H2 — wiring complet (mutations gated par
+    /// validate-before-compute). Utilisé par `main.rs`. Les tests unitaires
+    /// continuent d'utiliser `new()` / `with_accounting_service()` sans
+    /// building repo (pre-check no-op).
+    pub fn with_full_wiring(
+        repository: Arc<dyn ExpenseRepository>,
+        accounting_service: Arc<ExpenseAccountingService>,
+        building_repository: Arc<dyn BuildingRepository>,
+    ) -> Self {
+        Self {
+            repository,
+            accounting_service: Some(accounting_service),
+            building_repository: Some(building_repository),
+        }
+    }
+
+    /// Track H Story H2 — pre-check conformité immeuble. Si aucun
+    /// `building_repository` n'est injecté (mode test sans mocks Building),
+    /// no-op. Sinon charge `(building, metrics)` puis appelle
+    /// `Building::assert_conformant`. Le `?` convertit
+    /// `BuildingNotConformantError` en `String` via le bridge livré par
+    /// Story H1 (préfixe `BUILDING_NOT_CONFORMANT:` parsé en 422 par le
+    /// handler Actix). Cf. mémoire `validate-before-compute`.
+    async fn assert_building_conformant(&self, building_id: Uuid) -> Result<(), String> {
+        let Some(ref repo) = self.building_repository else {
+            return Ok(());
+        };
+        let (building, metrics) = repo
+            .find_by_id_with_metrics(building_id)
+            .await?
+            .ok_or_else(|| "Building not found".to_string())?;
+        building.assert_conformant(&metrics)?; // From<BuildingNotConformantError> for String
+        Ok(())
     }
 
     pub async fn create_expense(
@@ -41,6 +84,10 @@ impl ExpenseUseCases {
             .map_err(|_| "Invalid organization_id format".to_string())?;
         let building_id = Uuid::parse_str(&dto.building_id)
             .map_err(|_| "Invalid building ID format".to_string())?;
+
+        // Track H Story H2 — validate-before-compute gate (Art. 3.85 CC).
+        // No-op si building_repository absent (tests unitaires).
+        self.assert_building_conformant(building_id).await?;
 
         let expense_date = DateTime::parse_from_rfc3339(&dto.expense_date)
             .map_err(|_| "Invalid date format".to_string())?
@@ -190,6 +237,9 @@ impl ExpenseUseCases {
             .map_err(|_| "Invalid organization_id format".to_string())?;
         let building_id = Uuid::parse_str(&dto.building_id)
             .map_err(|_| "Invalid building ID format".to_string())?;
+
+        // Track H Story H2 — validate-before-compute gate (Art. 3.85 CC).
+        self.assert_building_conformant(building_id).await?;
 
         let invoice_date = DateTime::parse_from_rfc3339(&dto.invoice_date)
             .map_err(|_| "Invalid invoice_date format".to_string())?

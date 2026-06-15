@@ -202,6 +202,17 @@ pub enum AppError {
         quota_delta: rust_decimal::Decimal,
         quota_basis: i32,
     },
+
+    /// Track H Story H3 — `Meeting::assert_can_complete()` invariants Art. 3.87 §3-5 CC.
+    ///
+    /// Erreur 422 typée avec liste des invariants manquants pour bloquer la
+    /// transition `Scheduled → Completed`. Permet au FE d'afficher
+    /// `<MissingInvariantsList>` avec narratif par invariant.
+    #[error("L'AG n'est pas prête à être clôturée")]
+    MeetingNotCompletable {
+        meeting_id: uuid::Uuid,
+        missing: Vec<crate::domain::entities::MissingInvariant>,
+    },
 }
 
 impl AppError {
@@ -218,6 +229,7 @@ impl AppError {
             AppError::NotFound(_) => "not_found",
             AppError::Conflict(_) => "conflict",
             AppError::AcpNotInScope { .. } => "acp_not_in_scope",
+            AppError::MeetingNotCompletable { .. } => "meeting_not_completable",
             AppError::RateLimited => "rate_limited",
             AppError::Database(_) => "database",
             AppError::Crypto(_) => "crypto",
@@ -272,7 +284,8 @@ impl ResponseError for AppError {
             AppError::TechnicalSpecResignatureRequired
             | AppError::TechnicalSpecRequired
             | AppError::EvaluatorIsContractor
-            | AppError::BuildingNotConformant { .. } => StatusCode::UNPROCESSABLE_ENTITY,
+            | AppError::BuildingNotConformant { .. }
+            | AppError::MeetingNotCompletable { .. } => StatusCode::UNPROCESSABLE_ENTITY,
             AppError::RateLimited => StatusCode::TOO_MANY_REQUESTS,
             AppError::Database(_) | AppError::Crypto(_) | AppError::Internal(_) => {
                 StatusCode::INTERNAL_SERVER_ERROR
@@ -307,6 +320,46 @@ impl ResponseError for AppError {
                 "quota_delta": quota_delta.to_string(),
                 "quota_basis": quota_basis,
             })),
+            // Track H Story H3 — payload narratif pour `MeetingNotCompletable`
+            // (422) : le FE consomme `details.code == "MEETING_NOT_COMPLETABLE"`
+            // pour rendre `<MissingInvariantsList>` + toast i18n par invariant.
+            AppError::MeetingNotCompletable {
+                meeting_id,
+                missing,
+            } => {
+                use crate::domain::entities::MissingInvariant;
+                let missing_json: Vec<serde_json::Value> = missing
+                    .iter()
+                    .map(|m| match m {
+                        MissingInvariant::ConvocationsNotSent => {
+                            json!({ "type": "ConvocationsNotSent" })
+                        }
+                        MissingInvariant::VotesNotClosed { open_resolutions } => json!({
+                            "type": "VotesNotClosed",
+                            "open_resolutions": open_resolutions,
+                        }),
+                        MissingInvariant::AttendanceNotRecorded => {
+                            json!({ "type": "AttendanceNotRecorded" })
+                        }
+                        MissingInvariant::QuorumNotReached {
+                            attended_quotas,
+                            total_quotas,
+                        } => json!({
+                            "type": "QuorumNotReached",
+                            "attended_quotas": attended_quotas.to_string(),
+                            "total_quotas": total_quotas.to_string(),
+                        }),
+                        MissingInvariant::MinutesDraftMissing => {
+                            json!({ "type": "MinutesDraftMissing" })
+                        }
+                    })
+                    .collect();
+                Some(json!({
+                    "code": "MEETING_NOT_COMPLETABLE",
+                    "meeting_id": meeting_id,
+                    "missing": missing_json,
+                }))
+            }
             _ => None,
         };
 
@@ -453,6 +506,66 @@ impl From<crate::domain::entities::BuildingNotConformantError> for String {
         format!(
             "BUILDING_NOT_CONFORMANT: building {} units_delta={} quota_delta={} quota_basis={}",
             err.building_id, err.units_delta, err.quota_delta, err.quota_basis
+        )
+    }
+}
+
+// ============================================================================
+// Track H Story H3 — bridges From<MeetingNotCompletableError>
+// ============================================================================
+
+impl From<crate::domain::entities::MeetingNotCompletableError> for AppError {
+    /// Track H Story H3 — convertit l'erreur domain typée vers `AppError` 422
+    /// avec liste structurée des invariants manquants. Le FE consomme
+    /// `details.missing[]` pour rendre `<MissingInvariantsList>` + toast i18n.
+    fn from(err: crate::domain::entities::MeetingNotCompletableError) -> Self {
+        AppError::MeetingNotCompletable {
+            meeting_id: err.meeting_id,
+            missing: err.missing,
+        }
+    }
+}
+
+impl From<crate::domain::entities::MeetingNotCompletableError> for String {
+    /// Track H Story H3 — bridge legacy `Result<_, String>` pour
+    /// `meeting_use_cases::complete_meeting` (signature historique).
+    /// Le handler parse le préfixe `MEETING_NOT_COMPLETABLE:` pour reconstruire
+    /// le 422 narratif (cf. pattern Track H Story H2 `conformity_response.rs`).
+    fn from(err: crate::domain::entities::MeetingNotCompletableError) -> Self {
+        let missing_json: Vec<serde_json::Value> = err
+            .missing
+            .iter()
+            .map(|m| {
+                use crate::domain::entities::MissingInvariant;
+                match m {
+                    MissingInvariant::ConvocationsNotSent => {
+                        json!({ "type": "ConvocationsNotSent" })
+                    }
+                    MissingInvariant::VotesNotClosed { open_resolutions } => json!({
+                        "type": "VotesNotClosed",
+                        "open_resolutions": open_resolutions,
+                    }),
+                    MissingInvariant::AttendanceNotRecorded => {
+                        json!({ "type": "AttendanceNotRecorded" })
+                    }
+                    MissingInvariant::QuorumNotReached {
+                        attended_quotas,
+                        total_quotas,
+                    } => json!({
+                        "type": "QuorumNotReached",
+                        "attended_quotas": attended_quotas.to_string(),
+                        "total_quotas": total_quotas.to_string(),
+                    }),
+                    MissingInvariant::MinutesDraftMissing => {
+                        json!({ "type": "MinutesDraftMissing" })
+                    }
+                }
+            })
+            .collect();
+        format!(
+            "MEETING_NOT_COMPLETABLE:{}:{}",
+            err.meeting_id,
+            serde_json::to_string(&missing_json).unwrap_or_else(|_| "[]".to_string())
         )
     }
 }

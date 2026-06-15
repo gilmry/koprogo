@@ -32,6 +32,7 @@ pub mod linky_api_client;
 pub mod local_exchange_repository;
 pub mod magic_link_repository;
 pub mod mandate_repository;
+pub mod meeting_completion_checker;
 pub mod meeting_repository;
 pub mod mqtt_energy_port;
 pub mod notice_repository;
@@ -109,6 +110,7 @@ pub use linky_api_client::{
 pub use local_exchange_repository::LocalExchangeRepository;
 pub use magic_link_repository::MagicLinkRepository;
 pub use mandate_repository::MandateRepository;
+pub use meeting_completion_checker::MeetingCompletionCheckerPort;
 pub use meeting_repository::MeetingRepository;
 pub use mqtt_energy_port::{MqttEnergyPort, MqttError, MqttIncomingReadingDto};
 pub use notice_repository::NoticeRepository;

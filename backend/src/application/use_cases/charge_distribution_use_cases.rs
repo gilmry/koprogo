@@ -1,6 +1,6 @@
 use crate::application::dto::ChargeDistributionResponseDto;
 use crate::application::ports::{
-    ChargeDistributionRepository, ExpenseRepository, UnitOwnerRepository,
+    BuildingRepository, ChargeDistributionRepository, ExpenseRepository, UnitOwnerRepository,
 };
 use crate::domain::entities::{ApprovalStatus, ChargeDistribution};
 use rust_decimal::Decimal;
@@ -11,6 +11,11 @@ pub struct ChargeDistributionUseCases {
     distribution_repository: Arc<dyn ChargeDistributionRepository>,
     expense_repository: Arc<dyn ExpenseRepository>,
     unit_owner_repository: Arc<dyn UnitOwnerRepository>,
+    /// Track H Story H2 — validate-before-compute (FR-H2). Optional pour
+    /// préserver les tests unitaires existants. Quand présent (wiring
+    /// `main.rs`), le pre-check `Building::assert_conformant?` s'exécute
+    /// avant la répartition des charges (calcul interdit sur drift).
+    building_repository: Option<Arc<dyn BuildingRepository>>,
 }
 
 impl ChargeDistributionUseCases {
@@ -23,7 +28,37 @@ impl ChargeDistributionUseCases {
             distribution_repository,
             expense_repository,
             unit_owner_repository,
+            building_repository: None,
         }
+    }
+
+    /// Track H Story H2 — wiring complet (mutations gated par
+    /// validate-before-compute). Utilisé par `main.rs`.
+    pub fn with_full_wiring(
+        distribution_repository: Arc<dyn ChargeDistributionRepository>,
+        expense_repository: Arc<dyn ExpenseRepository>,
+        unit_owner_repository: Arc<dyn UnitOwnerRepository>,
+        building_repository: Arc<dyn BuildingRepository>,
+    ) -> Self {
+        Self {
+            distribution_repository,
+            expense_repository,
+            unit_owner_repository,
+            building_repository: Some(building_repository),
+        }
+    }
+
+    /// Track H Story H2 — pre-check conformité immeuble (cf. expense_use_cases).
+    async fn assert_building_conformant(&self, building_id: Uuid) -> Result<(), String> {
+        let Some(ref repo) = self.building_repository else {
+            return Ok(());
+        };
+        let (building, metrics) = repo
+            .find_by_id_with_metrics(building_id)
+            .await?
+            .ok_or_else(|| "Building not found".to_string())?;
+        building.assert_conformant(&metrics)?; // bridge String (H1)
+        Ok(())
     }
 
     /// Calculer et sauvegarder la répartition des charges pour une facture approuvée
@@ -45,6 +80,11 @@ impl ChargeDistributionUseCases {
                 expense.approval_status
             ));
         }
+
+        // 2bis. Track H Story H2 — validate-before-compute gate (Art. 3.85 CC).
+        // L'immeuble doit être conforme pour répartir : sinon delta sur quotas
+        // → distribution erronée. Pre-check bloque AVANT le calcul.
+        self.assert_building_conformant(expense.building_id).await?;
 
         // 3. Récupérer le montant TTC à répartir
         let total_amount = expense.amount_incl_vat.unwrap_or(expense.amount);

@@ -4,6 +4,7 @@ use crate::application::dto::{
 };
 use crate::domain::entities::UserRole;
 use crate::infrastructure::audit::{AuditEventType, AuditLogEntry};
+use crate::infrastructure::web::handlers::conformity_response::try_build_conformity_response;
 use crate::infrastructure::web::middleware::scope_guard::verify_acp_org_access;
 use crate::infrastructure::web::{AppState, AuthenticatedUser};
 use actix_web::{get, post, put, web, HttpResponse, Responder, ResponseError};
@@ -139,6 +140,10 @@ pub async fn create_expense(
             .with_error(err.clone())
             .log();
 
+            // Track H Story H2 — pre-check validate-before-compute → 422 narratif
+            if let Some(resp) = try_build_conformity_response(&err) {
+                return resp;
+            }
             HttpResponse::BadRequest().json(serde_json::json!({
                 "error": err
             }))
@@ -450,6 +455,10 @@ pub async fn create_invoice_draft(
             .with_error(err.clone())
             .log();
 
+            // Track H Story H2 — pre-check validate-before-compute → 422 narratif
+            if let Some(resp) = try_build_conformity_response(&err) {
+                return resp;
+            }
             HttpResponse::BadRequest().json(serde_json::json!({
                 "error": err
             }))

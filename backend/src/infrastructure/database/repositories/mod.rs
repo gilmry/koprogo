@@ -30,6 +30,7 @@ pub mod journal_entry_repository_impl;
 pub mod local_exchange_repository_impl;
 pub mod magic_link_repository_impl;
 pub mod mandate_repository_impl;
+pub mod meeting_completion_checker_impl;
 pub mod meeting_repository_impl;
 pub mod notice_repository_impl;
 pub mod notification_preference_repository_impl;

@@ -176,6 +176,16 @@ harness = false
 name = "bdd_building_conformity"
 harness = false
 
+# Track H Story H2 - Validate-before-compute on 4 use-cases (FR-H2)
+[[test]]
+name = "bdd_validate_before_compute"
+harness = false
+
+# Track H Story H3 - Meeting.assert_can_complete() Art. 3.87 §3-5 CC (FR-H3)
+[[test]]
+name = "bdd_meeting_complete"
+harness = false
+
 # Story 2.1 - Portfolio BDD harness (Cucumber) — Slice 2 Refonte UX multi-rôle
 [[test]]
 name = "bdd_portfolio"

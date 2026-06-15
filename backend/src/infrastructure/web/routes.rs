@@ -135,6 +135,7 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig) {
             .service(update_meeting)
             .service(add_agenda_item)
             .service(complete_meeting)
+            .service(get_meeting_completion_checklist) // GET /meetings/{id}/completion-checklist (Track H Story H3)
             .service(cancel_meeting)
             .service(reschedule_meeting)
             .service(delete_meeting)

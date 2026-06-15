@@ -256,16 +256,29 @@ async fn main() -> std::io::Result<()> {
     let expense_accounting_service =
         Arc::new(ExpenseAccountingService::new(journal_entry_repo.clone()));
 
-    let expense_use_cases = ExpenseUseCases::with_accounting_service(
+    // Track H Story H2 — validate-before-compute wiring.
+    // `with_full_wiring` injecte `building_repo` pour le pre-check
+    // `Building::assert_conformant?` avant toute mutation/calcul.
+    let expense_use_cases = ExpenseUseCases::with_full_wiring(
         expense_repo.clone(),
         expense_accounting_service.clone(),
+        building_repo.clone(),
     );
-    let charge_distribution_use_cases = ChargeDistributionUseCases::new(
+    let charge_distribution_use_cases = ChargeDistributionUseCases::with_full_wiring(
         charge_distribution_repo,
         expense_repo.clone(),
         unit_owner_repo.clone(),
+        building_repo.clone(),
     );
-    let meeting_use_cases = MeetingUseCases::new(meeting_repo.clone());
+    // Track H Story H3 — Meeting.assert_can_complete() Art. 3.87 §3-5 CC.
+    // Inject completion_checker pour permettre au use-case `complete_meeting`
+    // de charger la checklist (convocations / votes / présences / quorum / PV)
+    // avant la transition Scheduled → Completed.
+    let meeting_completion_checker = Arc::new(
+        koprogo_api::infrastructure::database::repositories::meeting_completion_checker_impl::PostgresMeetingCompletionChecker::new(pool.clone()),
+    );
+    let meeting_use_cases = MeetingUseCases::new(meeting_repo.clone())
+        .with_completion_checker(meeting_completion_checker);
     let convocation_use_cases = ConvocationUseCases::new(
         convocation_repo,
         convocation_recipient_repo,
@@ -384,10 +397,12 @@ async fn main() -> std::io::Result<()> {
     );
     let owner_contribution_use_cases =
         OwnerContributionUseCases::new(owner_contribution_repo.clone());
-    let call_for_funds_use_cases = CallForFundsUseCases::new(
+    // Track H Story H2 — validate-before-compute wiring.
+    let call_for_funds_use_cases = CallForFundsUseCases::with_full_wiring(
         call_for_funds_repo,
         owner_contribution_repo,
         unit_owner_repo.clone(),
+        building_repo.clone(),
     );
     let journal_entry_use_cases = JournalEntryUseCases::new(journal_entry_repo.clone());
     let poll_use_cases = PollUseCases::new(

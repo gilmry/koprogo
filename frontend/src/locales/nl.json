@@ -3417,5 +3417,15 @@
   "polls.results.winner": "Winnende optie",
   "gamification.category": "Categorie",
   "gamification.tier": "Niveau",
+  "meeting.missing.ConvocationsNotSent": "Oproepingen niet verzonden (Art. 3.87 §3 BW)",
+  "meeting.missing.VotesNotClosed": "{open_resolutions, plural, =1 {1 lopende beslissing} other {{open_resolutions} lopende beslissingen}} (Art. 3.87 §4 BW)",
+  "meeting.missing.AttendanceNotRecorded": "Aanwezigheden niet geregistreerd (Art. 3.87 §5 BW)",
+  "meeting.missing.QuorumNotReached": "Quorum niet bereikt ({attended_quotas}/{total_quotas}) — Art. 3.87 §5 BW: gewone meerderheid > 50%",
+  "meeting.missing.MinutesDraftMissing": "Ontwerp van de notulen ontbreekt",
+  "meeting.complete.disabled_reason": "{n, plural, =1 {1 ontbrekende voorwaarde} other {{n} ontbrekende voorwaarden}}",
+  "meeting.complete.missing_aria_label": "Voorwaarden om de vergadering af te sluiten",
+  "meeting.complete.blockers_title": "Om deze AV af te sluiten, vervul de voorwaarden:",
+  "meeting.complete.toast_title": "Afsluiten onmogelijk",
+  "meeting.complete.toast_message": "{n, plural, =1 {1 ontbrekende voorwaarde} other {{n} ontbrekende voorwaarden}} (zie details op de vergaderingsfiche)",
   "_i18n_version": "2026-03-26"
 }

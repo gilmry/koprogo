@@ -11,6 +11,7 @@ pub mod budget_handlers;
 pub mod building_handlers;
 pub mod call_for_funds_handlers;
 pub mod charge_distribution_handlers;
+pub mod conformity_response;
 pub mod consent_handlers;
 pub mod contractor_evaluation_handlers;
 pub mod contractor_report_handlers;

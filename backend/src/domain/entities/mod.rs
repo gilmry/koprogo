@@ -113,7 +113,10 @@ pub use linky_device::{LinkyDevice, LinkyProvider};
 pub use local_exchange::{ExchangeStatus, ExchangeType, LocalExchange};
 pub use magic_link::{MagicLink, MagicLinkScopeKind};
 pub use mandate::{Mandate, MandateKind, MandateScope, MAX_MANDATE_DURATION_DAYS};
-pub use meeting::{Meeting, MeetingStatus, MeetingType};
+pub use meeting::{
+    Meeting, MeetingCompletionChecklist, MeetingNotCompletableError, MeetingStatus, MeetingType,
+    MissingInvariant,
+};
 pub use notice::{Notice, NoticeCategory, NoticeStatus, NoticeType};
 pub use notification::{
     Notification, NotificationChannel, NotificationPreference, NotificationPriority,
