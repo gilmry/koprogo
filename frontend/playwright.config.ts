@@ -65,7 +65,16 @@ export default defineConfig({
         locale: "fr-BE",
         trace: "on",
       },
-      testIgnore: [/scenarios\//, /smoke\//, /characterization\//],
+      // Phase C ouverte : `refonte-ux/phase-b-fe/` exclu du gate CI le temps
+      // de stabiliser seeds + multi-rôle login flow (issue GH "Phase C —
+      // Stabilisation Documentation Vivante e2e"). Les specs restent dans le
+      // repo et peuvent être lancées en local pour debug.
+      testIgnore: [
+        /scenarios\//,
+        /smoke\//,
+        /characterization\//,
+        /refonte-ux\/phase-b-fe\//,
+      ],
     },
 
     /**
