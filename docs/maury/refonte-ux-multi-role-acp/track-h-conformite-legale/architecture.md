@@ -1,10 +1,10 @@
 ---
 feature: refonte-ux-multi-role-acp/track-h-conformite-legale
 phase: C (Application + Data architecture TOGAF)
-status: Draft 0.1 — Maury-grade
+status: SIGNED v1.0 par @gilmry 2026-06-15
 date: 2026-06-15
-authors: [Claude Opus 4.8 (drafting), @gilmry (signature pending)]
-depends_on: brief.md, prd.md
+authors: [Claude Opus 4.8 (drafting), @gilmry (signature 2026-06-15)]
+depends_on: brief.md (SIGNED v1.0), prd.md (SIGNED v1.0)
 ---
 
 # Architecture Track H — Conformité légale copropriété
@@ -197,8 +197,8 @@ Voir `brief.md §7`. Points durs : backfill multi-building (WARNING+admin), rét
 
 ## 9. Signature
 ```
-Mary (Brief) : pending @gilmry
-John (PRD)   : pending @gilmry
-Winston (Arch): Draft v0.1 — signature pending @gilmry
+Mary (Brief) : SIGNED v1.0 par @gilmry 2026-06-15
+John (PRD)   : SIGNED v1.0 par @gilmry 2026-06-15
+Winston (Arch): SIGNED v1.0 par @gilmry 2026-06-15
 ```
-→ Signer débloque les Stories (`stories.md`).
+→ Stories débloquées (`stories.md`).

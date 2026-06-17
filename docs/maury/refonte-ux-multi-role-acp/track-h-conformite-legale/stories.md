@@ -1,10 +1,10 @@
 ---
 feature: refonte-ux-multi-role-acp/track-h-conformite-legale
 phase: D (Stories TOGAF)
-status: Draft 0.1 — Maury-grade
+status: SIGNED v1.0 par @gilmry 2026-06-15 — Phase 6 exécution débloquée
 date: 2026-06-15
-authors: [Claude Opus 4.8 (drafting), @gilmry (signature pending)]
-depends_on: brief.md, prd.md, architecture.md
+authors: [Claude Opus 4.8 (drafting), @gilmry (signature 2026-06-15)]
+depends_on: brief.md (SIGNED v1.0), prd.md (SIGNED v1.0), architecture.md (SIGNED v1.0)
 ---
 
 # Stories Track H — Conformité légale copropriété
@@ -185,7 +185,7 @@ Unité = **1 passe** : PLAN → Story → BDD 4-cat → TDD 4-cat → exéc (ROU
 
 ## Signature
 ```
-Mary/John/Winston : pending @gilmry
-Bob (Stories)     : Draft v0.1 — signature pending @gilmry
+Mary/John/Winston : SIGNED v1.0 par @gilmry 2026-06-15
+Bob (Stories)     : SIGNED v1.0 par @gilmry 2026-06-15
 ```
-→ Signer débloque la Validation (`validation.md`).
+→ Validation signée (`validation.md`). Passes d'agent CL0→CL7 autorisées.

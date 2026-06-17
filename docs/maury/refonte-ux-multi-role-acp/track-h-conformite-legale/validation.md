@@ -5,12 +5,14 @@ phase_togaf: F (Migration Planning)
 agent_bmad: Product Owner (@gilmry)
 authors: [Gilles Maury]
 date: 2026-06-15
-version: 0.1
-status: Draft 0.1 — signature pending @gilmry
-brief_source: brief.md (Draft v0.1)
-prd_source: prd.md (Draft v0.1)
-architecture_source: architecture.md (Draft v0.1)
-stories_source: stories.md (Draft v0.1)
+version: 1.0
+status: SIGNED v1.0 par @gilmry 2026-06-15 — Phase 6 exécution débloquée
+signed_at: 2026-06-15
+signed_by: "@gilmry"
+brief_source: brief.md (SIGNED v1.0)
+prd_source: prd.md (SIGNED v1.0)
+architecture_source: architecture.md (SIGNED v1.0)
+stories_source: stories.md (SIGNED v1.0)
 parent_feature: docs/maury/refonte-ux-multi-role-acp/validation.md (v1.0 signée 2026-05-20)
 ---
 
@@ -63,14 +65,14 @@ Migration multi-building (mitigée WARNING+admin) ; rétro-compat seeds (stash r
 ## 6. Signature
 
 ```
-Mary (Brief)        : Draft v0.1 — pending @gilmry
-John (PRD)          : Draft v0.1 — pending @gilmry
-Winston (Arch)      : Draft v0.1 — pending @gilmry
-Bob (Stories)       : Draft v0.1 — pending @gilmry
-PO (Validation)     : Draft v0.1 — pending @gilmry
+Mary (Brief)        : SIGNED v1.0 par @gilmry 2026-06-15
+John (PRD)          : SIGNED v1.0 par @gilmry 2026-06-15
+Winston (Arch)      : SIGNED v1.0 par @gilmry 2026-06-15
+Bob (Stories)       : SIGNED v1.0 par @gilmry 2026-06-15
+PO (Validation)     : SIGNED v1.0 par @gilmry 2026-06-15
 ```
 
-**→ À la signature des 5 docs + arbitrage D6 : passe d'agent CL0 (ADR) autorisée.**
+**→ 5 docs signés + D6 tranché (H16 différé v0.2.0). Phase 6 débloquée : passe d'agent CL0 (ADR) autorisée, puis CL1.**
 
 ## 7. Refs
 - Issue [#618](https://github.com/gilmry/koprogo/issues/618) · WBS `docs/WBS_GO_LIVE_v0.1.0.md` Track H WP-CL (commit `34537ad`).

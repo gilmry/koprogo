@@ -1,10 +1,10 @@
 ---
 feature: refonte-ux-multi-role-acp/track-h-conformite-legale
 phase: B (Business architecture TOGAF)
-status: Draft 0.1 — Maury-grade
+status: SIGNED v1.0 par @gilmry 2026-06-15
 date: 2026-06-15
-authors: [Claude Opus 4.8 (drafting), @gilmry (signature pending)]
-depends_on: brief.md (Draft v0.1)
+authors: [Claude Opus 4.8 (drafting), @gilmry (signature 2026-06-15)]
+depends_on: brief.md (SIGNED v1.0)
 ---
 
 # PRD Track H — Conformité légale copropriété
@@ -133,7 +133,7 @@ Corriger `CONVOCATIONS_AG.rst` : **15 j minimum pour toutes les AG**, urgence sa
 ## Signature
 
 ```
-Mary (Brief) : signature pending @gilmry
-John (PRD)   : Draft v0.1 — signature pending @gilmry
+Mary (Brief) : SIGNED v1.0 par @gilmry 2026-06-15
+John (PRD)   : SIGNED v1.0 par @gilmry 2026-06-15
 ```
-→ Signer débloque l'Architecture (`architecture.md`).
+→ Architecture débloquée (`architecture.md`).

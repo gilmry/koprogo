@@ -1,9 +1,9 @@
 ---
 feature: refonte-ux-multi-role-acp/track-h-conformite-legale
 phase: index
-status: Draft 0.1 — Maury-grade
+status: SIGNED v1.0 par @gilmry 2026-06-15 — Phase 6 exécution débloquée
 date: 2026-06-15
-authors: [Claude Opus 4.8 (drafting), @gilmry (signature pending)]
+authors: [Claude Opus 4.8 (drafting), @gilmry (signature 2026-06-15)]
 related_issues: [553, 554, 561, 580, 584, 618]
 parent_maury: refonte-ux-multi-role-acp (validation v1.0 signée 2026-05-20)
 wbs: docs/WBS_GO_LIVE_v0.1.0.md Track H — WP-CL0 à WP-CL7 (commit 34537ad)
@@ -83,12 +83,13 @@ agents Track H conformité briefés selon Gantt par passe d'agent (WBS + stories
 ## Statut de signature
 
 ```
-brief.md          : Draft v0.1 — pending @gilmry
-prd.md            : Draft v0.1 — pending @gilmry
-architecture.md   : Draft v0.1 — pending @gilmry
-stories.md        : Draft v0.1 — pending @gilmry
-validation.md     : Draft v0.1 — pending @gilmry
+brief.md          : SIGNED v1.0 par @gilmry 2026-06-15
+prd.md            : SIGNED v1.0 par @gilmry 2026-06-15
+architecture.md   : SIGNED v1.0 par @gilmry 2026-06-15
+stories.md        : SIGNED v1.0 par @gilmry 2026-06-15
+validation.md     : SIGNED v1.0 par @gilmry 2026-06-15
 WBS Track H WP-CL : intégré (commit 34537ad)
+D6 (assoc. partielles) : différé v0.2.0
 ```
 
-**→ Aucune passe d'agent (CL0/CL1…) tant que `validation.md` n'est pas signé.**
+**→ Phase 6 débloquée. Passe d'agent CL0 (ADR) autorisée, puis CL1 (socle conformité ACP). Périmètre v0.1.0 : CL0/CL1/CL2/CL3/CL4/CL6/CL7.**

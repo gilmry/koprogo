@@ -1,9 +1,9 @@
 ---
 feature: refonte-ux-multi-role-acp/track-h-conformite-legale
 phase: A (Vision TOGAF)
-status: Draft 0.1 — Maury-grade
+status: SIGNED v1.0 par @gilmry 2026-06-15
 date: 2026-06-15
-authors: [Claude Opus 4.8 (drafting), @gilmry (signature pending)]
+authors: [Claude Opus 4.8 (drafting), @gilmry (signature 2026-06-15)]
 related_issues: [553, 554, 561, 580, 584, 618]
 ---
 
@@ -112,6 +112,6 @@ Cette refonte établit le **modèle hybride** : l'acte de base (dénominateur de
 ## 9. Signature
 
 ```
-Mary (Brief) : Draft v0.1 — signature pending @gilmry
+Mary (Brief) : SIGNED v1.0 par @gilmry 2026-06-15
 ```
-→ Signer débloque le PRD (`prd.md`).
+→ PRD débloqué (`prd.md`).
