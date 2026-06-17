@@ -74,7 +74,9 @@ Budget exact (Decimal), répartition des charges selon le critère de l'acte (va
 - `@security` — pas de répartition sur critère non voté ; pas de contournement du seuil 5%.
 - `@negative` — `total_budget` négatif rejeté typé.
 
-## FR-CL5 — Associations partielles (Art. 3.86) · story H16
+## FR-CL5 — Associations partielles (Art. 3.86) · story H16 · ⛔ DIFFÉRÉ v0.2.0 (D6 @gilmry)
+
+> NON inclus dans v0.1.0 (décision PO 2026-06-15). Spécifié ci-dessous pour mémoire v0.2.0. Les migrations `partial_associations` / `units.particular_quota` ne sont pas exécutées en v0.1.0.
 
 ### Goal métier
 Un groupe d'immeubles peut avoir des **associations partielles** (par bloc) gérant les parties communes particulières (ascenseur/toiture d'un bloc), avec leur **propre personnalité juridique** (si l'ACP principale en a) ou non (vote AG 4/5), et leurs **propres quotités** (dénominateur particulier).

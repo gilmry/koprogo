@@ -31,9 +31,11 @@ Unité = **1 passe** : PLAN → Story → BDD 4-cat → TDD 4-cat → exéc (ROU
 | H13 fonds réserve/roulement | CL4 | L | 2 | H4 | — |
 | H14 doc CONVOCATIONS | CL7 | S (doc) | 1 | — | — |
 | H15 units acp_id | CL6 | L | 2 | H4 | — |
-| H16 associations partielles | CL5 | L | 2 | H4,H5,H7 | — |
+| ~~H16 associations partielles~~ | ~~CL5~~ | — | — | — | **DIFFÉRÉ v0.2.0 (D6 @gilmry)** |
 
-**Chemin critique** ≈ 9 passes (H0→H4→H5→H6→H7→H12→H16). Cf. Gantt WBS.
+**Chemin critique** ≈ **7 passes** (H0→H4→H5→H6→H7→H12) après report de H16. Branche gouvernance H0→H9→H10→H17 ≈ 6 passes en parallèle. Total ≈ **20 passes**. Cf. Gantt WBS.
+
+> **H16 / CL5 (associations partielles à personnalité juridique propre + quotités à 2 niveaux) : DIFFÉRÉ v0.2.0** par décision PO @gilmry 2026-06-15 (D6). Le modèle hybride v0.1.0 conserve ACP (dénominateur acte de base) + building (sous-total bloc) ; pas de `units.particular_quota`, pas de table `partial_associations`. La conception reste en §H16 ci-dessous pour mémoire v0.2.0.
 
 ---
 
@@ -167,7 +169,9 @@ Unité = **1 passe** : PLAN → Story → BDD 4-cat → TDD 4-cat → exéc (ROU
 
 ---
 
-## H16 — Associations partielles (CL5) · 2 passes
+## H16 — Associations partielles (CL5) · 2 passes · ⛔ DIFFÉRÉ v0.2.0 (D6 @gilmry)
+
+> Conservé pour mémoire v0.2.0. NON inclus dans le périmètre v0.1.0 (décision PO 2026-06-15). Les migrations associées (`partial_associations`, `buildings.partial_association_id`, `units.particular_quota`) ne sont PAS exécutées en v0.1.0.
 
 **Goal/parent** : Art. 3.86 / INV-L12 / FR-CL5.
 **AC 4-cat** : `@happy` AP + quotités particulières conformes + charges PA scopées ; `@edge` AP sans personnalité (4/5) / lot hors AP ; `@security` `has_legal_personality` interdit si ACP parent sans personnalité ; `@negative` quotités particulières incohérentes → conformité PA KO.

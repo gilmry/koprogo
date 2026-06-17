@@ -208,8 +208,8 @@ Légende : Tier 1 = humain exécute (agent diagnostique/propose). Taille S≤0.5
 - **WP-CL4 — Finances conformes** · #618 H11-H12-H13 · T2 · L · _Art. 3.86 / loi 2019_
   Budget f64→Decimal (ADR-0007) ; `DistributionCriteria {value|utility|mixed}` ; **fonds de réserve (≥ 5% charges ordinaires N-1) + fonds de roulement** (comptes distincts au nom de l'ACP, réserve renonçable à 4/5). Deps : WP-CL1.
 
-- **WP-CL5 — Associations partielles** · #618 H16 · T2 · L · _Art. 3.86_
-  Entité `partial_associations` (personnalité juridique propre optionnelle) + rattachement building + **quotités à 2 niveaux par lot** (communs généraux ACP + communs particuliers PA) + AG/charges scopées PA. Deps : WP-CL1 + WP-CL3.
+- **WP-CL5 — Associations partielles** · #618 H16 · T2 · L · _Art. 3.86_ · **⛔ DIFFÉRÉ v0.2.0 (décision D6 @gilmry 2026-06-15)**
+  Entité `partial_associations` (personnalité juridique propre) + **quotités à 2 niveaux par lot** (généraux ACP + particuliers PA). **Hors périmètre v0.1.0** : le modèle hybride v0.1.0 conserve ACP (acte de base) + building (sous-total bloc). Conception conservée dans `track-h-conformite-legale/` pour v0.2.0.
 
 - **WP-CL6 — Migration `units.organization_id`→`acp_id`** · #618 H15 · T2 · M
   3 étapes (add nullable → backfill depuis `building.acp_id` → NOT NULL + drop `organization_id`) + maj entité/DTO/use-cases/handlers (cohérence post-#602, comme buildings). Deps : WP-CL1.
@@ -217,7 +217,7 @@ Légende : Tier 1 = humain exécute (agent diagnostique/propose). Taille S≤0.5
 - **WP-CL7 — Doc `CONVOCATIONS_AG.rst`** · #618 H14 · T2 · S
   Corriger : **15 j minimum pour TOUTES les AG** (Art. 3.87 §3), urgence sans seuil chiffré (supprimer le « 8 j AGE » erroné). Deps : aucune.
 
-> **Mapping WP-CL ↔ stories #618** : CL0=H0-ADR · CL1=H4+H5+H6+H7 · CL2=H8 · CL3=H9+H10+H17 · CL4=H11+H12+H13 · CL5=H16 · CL6=H15 · CL7=H14.
+> **Mapping WP-CL ↔ stories #618** : CL0=H0-ADR · CL1=H4+H5+H6+H7 · CL2=H8 · CL3=H9+H10+H17 · CL4=H11+H12+H13 · ~~CL5=H16 (différé v0.2.0)~~ · CL6=H15 · CL7=H14.
 
 ```mermaid
 graph LR
@@ -232,8 +232,11 @@ graph LR
     ADR --> H11[CL4·H11 budget Decimal]
     ADR --> H14[CL7·H14 doc convocation]
     H4 --> H15[CL6·H15 units acp_id]
-    H7 --> H12[CL4·H12 DistributionCriteria] --> H16[CL5·H16 assoc partielles]:::crit
+    H7 --> H12[CL4·H12 DistributionCriteria]:::crit
     H4 --> H13[CL4·H13 fonds réserve]
+    H16[CL5·H16 assoc partielles<br/>⛔ DIFFÉRÉ v0.2.0]:::deferred
+    H7 -. v0.2.0 .-> H16
+    classDef deferred fill:#eee,stroke:#999,stroke-dasharray: 4 4
     H1 --> ADR
     H2 -. retravaillé .-> H7
     H3 -. étendu .-> H9
@@ -287,13 +290,13 @@ gantt
     CL3·H10 gates votes quorum+proxy (1)      :h10, after h9, 1d
     CL3·H17 représentant vote/suspension (2)  :h17, after h10, 2d
     section Charges & fonds
-    CL4·H12 DistributionCriteria (1)          :h12, after h7, 1d
+    CL4·H12 DistributionCriteria (1)          :crit, h12, after h7, 1d
     CL4·H13 fonds réserve/roulement (2)       :h13, after h4, 2d
-    section Associations partielles
-    CL5·H16 partial associations (2)          :crit, h16, after h12, 2d
+    section Différé v0.2.0
+    CL5·H16 associations partielles (différé) :milestone, h16, after h12, 0d
 ```
 
-> **Chemin critique** : `CL0(1) → H4(1) → H5(1) → H6(1) → H7(2) → H12(1) → H16(2)` ≈ **9 passes d'agent**. Branche gouvernance (`CL0 → H9(2) → H10(1) → H17(2)` = 5 passes) en parallèle. **Total ≈ 22 passes** si séquentiel ; compressible avec parallélisme docker (1 BE + 1 FE, cf. mémoire `docker-parallelism-bottleneck`). Stories doc (CL0, H14) = passes allégées (pas de cycle BDD/TDD).
+> **Chemin critique** : `CL0(1) → H4(1) → H5(1) → H6(1) → H7(2) → H12(1)` ≈ **7 passes d'agent** (après report de H16/CL5 en v0.2.0, décision D6). Branche gouvernance (`CL0 → H9(2) → H10(1) → H17(2)` = 6 passes) en parallèle. **Total ≈ 20 passes** si séquentiel ; compressible avec parallélisme docker (1 BE + 1 FE, cf. mémoire `docker-parallelism-bottleneck`). Stories doc (CL0, H14) = passes allégées (pas de cycle BDD/TDD).
 
 ### Track I — Frontend refonte UX multi-rôle ACP (slice 3 FE catch-up)
 

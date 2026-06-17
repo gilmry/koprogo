@@ -56,7 +56,7 @@ Sources : [Code civil ejustice](https://www.ejustice.just.fgov.be/img_l/pdf/2020
 | WP-CL2 | H8 | — (bug 10000) |
 | WP-CL3 | H9+H10+H17 | Art. 3.87 §1/§5/§7 (BLOQUEUR) |
 | WP-CL4 | H11+H12+H13 | Art. 3.86 / loi 2019 |
-| WP-CL5 | H16 | Art. 3.86 |
+| ~~WP-CL5~~ | ~~H16~~ | **DIFFÉRÉ v0.2.0** (D6 @gilmry) |
 | WP-CL6 | H15 | — (cohérence #602) |
 | WP-CL7 | H14 | Art. 3.87 §3 (doc) |
 

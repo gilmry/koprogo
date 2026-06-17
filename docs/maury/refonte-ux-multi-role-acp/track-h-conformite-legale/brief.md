@@ -46,7 +46,7 @@ Cette refonte établit le **modèle hybride** : l'acte de base (dénominateur de
 | **CB-L8** | Fonds de réserve (≥5%) + fonds de roulement modélisés, comptes distincts. | CL4 |
 | **CB-L9** | Répartition des charges paramétrable (valeur / utilité / mixte). | CL4 |
 | **CB-L10** | Budget en Decimal exact (pas f64). | CL4 |
-| **CB-L11** | Associations partielles (personnalité juridique propre optionnelle, quotités 2 niveaux). | CL5 |
+| ~~CB-L11~~ | ~~Associations partielles (personnalité juridique propre, quotités 2 niveaux).~~ **DIFFÉRÉ v0.2.0 (D6).** | ~~CL5~~ |
 | **CB-L12** | Units rattachées à l'ACP (`acp_id`) en cohérence post-#602. | CL6 |
 | **CB-L13** | Délai de convocation correct (15 j toutes AG). | CL7 |
 
@@ -65,7 +65,7 @@ Cette refonte établit le **modèle hybride** : l'acte de base (dénominateur de
 | **INV-L9** | Fonds : `acps.reserve_fund_balance ≥ 0.05 × charges_ordinaires_n1` sauf `reserve_fund_waived` (vote 4/5) ; réserve + roulement comptes distincts. | 3.86 §3 / loi 2019 |
 | **INV-L10** | `DistributionCriteria {value|utility|mixed}` ; répartition par quotité du lot, puis pondérée par `ownership_percentage` multi-propriétaires. | 3.86 |
 | **INV-L11** | Tout montant monétaire/quota en `rust_decimal::Decimal` (jamais f64). | ADR-0007 |
-| **INV-L12** | `partial_associations.has_legal_personality=true` interdit si ACP parent sans personnalité ; quotités 2 niveaux (générale ACP + particulière PA). | 3.86 |
+| ~~INV-L12~~ | ~~`partial_associations`… quotités 2 niveaux.~~ **DIFFÉRÉ v0.2.0 (D6).** | 3.86 |
 | **INV-L13** | Convocation ≥ 15 j toutes AG (ordinaire ET extraordinaire), urgence sans seuil chiffré. | 3.87 §3 |
 | **INV-L14** | Tests 4-cat (`@happy`+`@edge`+`@security`+`@negative`) RED-first par invariant et par use-case impacté. | CRITICAL #3 |
 
@@ -86,6 +86,7 @@ Cette refonte établit le **modèle hybride** : l'acte de base (dénominateur de
 
 ## 6. Hors-scope explicite
 
+- **Associations partielles à personnalité juridique propre + quotités à 2 niveaux (H16/CL5)** — DIFFÉRÉ v0.2.0 (décision D6 @gilmry 2026-06-15). Le modèle hybride v0.1.0 conserve ACP + building uniquement.
 - Moteur comptable complet (régularisations annuelles, ventilation analytique fine) — v0.2.0.
 - Signatures eIDAS / governance hybride distanciel (autres stories Maury slice 4).
 - Vote électronique distant (#48) — autre story.

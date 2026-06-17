@@ -31,10 +31,10 @@ parent_feature: docs/maury/refonte-ux-multi-role-acp/validation.md (v1.0 signée
 |---|---|
 | **D1 placement acte de base** | Hybride : `acps.total_tantiemes` + sous-totaux blocs ✅ |
 | **D2 périmètre** | Full conformité maintenant ✅ |
-| **D3 associations partielles** | In-scope (H16) ✅ |
+| **D3 associations partielles (H16/CL5)** | **DIFFÉRÉ v0.2.0** (décision D6 ci-dessous) |
 | **D4 migration units.acp_id** | In-scope (H15) ✅ |
 | **D5 multi-titulaires/suspension** | In-scope (H17) ✅ |
-| **D6 schéma quotités 2 niveaux** | À trancher en H0-ADR (`units.particular_quota` nullable vs table `unit_quotas`) — **décision PO attendue** |
+| **D6 schéma quotités 2 niveaux** | **Tranché @gilmry 2026-06-15 : reporter H16 (associations partielles + quotités 2 niveaux) hors v0.1.0.** Le modèle hybride v0.1.0 = ACP (acte de base) + building (sous-total bloc), sans `partial_associations` ni `units.particular_quota`. |
 | **D7 backfill multi-building** | SUM des sous-totaux + WARNING + validation admin manuelle |
 
 ## 3. Risques résiduels acceptés (cf. brief §7)
@@ -52,10 +52,13 @@ Migration multi-building (mitigée WARNING+admin) ; rétro-compat seeds (stash r
 
 ## 5. Gate de validation — critères
 
-- [ ] D6 (schéma quotités 2 niveaux) tranchée par @gilmry.
+- [x] D6 (schéma quotités 2 niveaux) tranchée par @gilmry → **H16/CL5 reporté v0.2.0**.
+- [ ] @gilmry relit les 5 docs (Draft v0.1) avant signature.
 - [ ] Sources légales vérifiables (liens README).
-- [ ] Cohérence WBS (WP-CL0-7) ↔ stories (H4-H17) ↔ #618.
+- [ ] Cohérence WBS (WP-CL0-4/6-7, CL5 différé) ↔ stories (H4-H15, H17) ↔ #618.
 - [ ] Track H bloqueurs déjà mergé pris en compte (H1 conservé, H2/H3 retravaillés).
+
+**Périmètre v0.1.0 confirmé** : CL0, CL1, CL2, CL3, CL4, CL6, CL7. **CL5 (associations partielles) → v0.2.0.**
 
 ## 6. Signature
 

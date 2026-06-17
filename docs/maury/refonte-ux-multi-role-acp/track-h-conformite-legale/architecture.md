@@ -27,8 +27,8 @@ graph TD
 - **`..._add_acps_total_tantiemes.sql`** : `ALTER TABLE acps ADD COLUMN total_tantiemes INTEGER NOT NULL DEFAULT 1000 CHECK (total_tantiemes > 0)`.
 - **`..._backfill_acps_total_tantiemes.sql`** : mono-building → `acps.total_tantiemes = building.total_tantiemes` ; multi-building → `SUM(buildings.total_tantiemes)` + `DO $$ ... RAISE WARNING` listant les ACPs multi-blocs à valider (pas d'EXCEPTION). `buildings.total_tantiemes` **conservé** = sous-total bloc (commentaire SQL redéfini).
 - **`..._add_acps_funds.sql`** : `reserve_fund_balance DECIMAL(14,2) DEFAULT 0`, `working_capital_balance DECIMAL(14,2) DEFAULT 0`, `reserve_fund_waived BOOLEAN DEFAULT false`.
-- **`..._create_partial_associations.sql`** : table `partial_associations(id, acp_id FK, name, has_legal_personality bool, bce_number null, total_tantiemes int CHECK>0, created/updated)` + `buildings.partial_association_id UUID NULL FK`.
-- **`..._add_units_particular_quota.sql`** : `units.particular_quota DECIMAL(10,4) NULL` (quotité dans les communs particuliers de la PA).
+- ~~**`..._create_partial_associations.sql`**~~ — **DIFFÉRÉ v0.2.0 (D6)**.
+- ~~**`..._add_units_particular_quota.sql`**~~ — **DIFFÉRÉ v0.2.0 (D6)**.
 - **`..._units_organization_to_acp.sql`** (3 étapes, story H15) : add `units.acp_id` nullable → backfill `building.acp_id` → NOT NULL + drop `organization_id`.
 - **`..._add_distribution_criteria.sql`** : `charge_distributions.distribution_criteria VARCHAR DEFAULT 'value' CHECK IN ('value','utility','mixed')` (ou sur `expenses`).
 - **`..._add_meeting_owner_counts.sql`** : `meetings.present_owners_count INT NULL`, `meetings.total_owners_count INT NULL`.
@@ -164,7 +164,9 @@ impl Acp {
 ```
 `call_for_funds.fund_type ∈ {ordinary, working_capital, reserve}` ; comptes distincts (Art. 3.86 §3).
 
-## 5. Associations partielles (CL5)
+## 5. Associations partielles (CL5) · ⛔ DIFFÉRÉ v0.2.0 (D6 @gilmry)
+
+> NON implémenté en v0.1.0 (décision PO 2026-06-15). Les migrations `partial_associations`, `buildings.partial_association_id`, `units.particular_quota` (cf. §1.1) sont **différées**. Conception conservée pour v0.2.0.
 
 - Entité `PartialAssociation { id, acp_id, name, has_legal_personality, bce_number, total_tantiemes }` ; `building.partial_association_id`.
 - **Quotités 2 niveaux** : `unit.quota` = quotité générale (dénominateur ACP) ; `unit.particular_quota` (nullable) = quotité dans les communs particuliers de la PA (dénominateur PA).
