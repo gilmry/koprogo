@@ -187,6 +187,114 @@ Légende : Tier 1 = humain exécute (agent diagnostique/propose). Taille S≤0.5
 > - **V2 // (H2 + H3 BE puis FE, 1.5j+1j)** : à lancer.
 > - **V3 (B4 spec, 0.25j)** : à lancer après V2.
 
+#### Sous-pipeline Conformité légale copropriété (acte de base ACP hybride) — issue #618
+
+> Suite à la **revue domain complète vs droit belge** (Code civil Livre 3 Art. 3.84-3.88 + loi 18/06/2018, sources sourcées dans #618), décisions PO @gilmry 2026-06-15 : **(D1) modèle hybride** — acte de base / dénominateur des quotités porté par l'**ACP** (`acps.total_tantiemes`) + sous-totaux par building (bloc / association partielle), **conformité à 2 niveaux** (ACP agrégat + building) ; **(D2) full conformité maintenant**. Plan complet + 16 stories (H4-H17 + H0-ADR) → **issue [#618](https://github.com/gilmry/koprogo/issues/618)**. **Gate** : dossier Maury BMAD `docs/maury/refonte-ux-multi-role-acp/track-h-conformite-legale/` signé AVANT code.
+
+> **Déjà fait (réutilisé / retravaillé)** : Story H1 ✅ (`6a053a1`, conservée = sous-total bloc) ; H2 ✅ (`3ede509`, **retravaillée** par WP-CL1 — gate building→ACP) ; H3 ✅ (`3ede509`, **étendue** par WP-CL3 — quorum simple→double).
+
+- **WP-CL0 — ADR(s) + dossier Maury BMAD** · #618 H0-ADR · T2 · M · _gate signature avant code_
+  ADR(s) `docs/adr/` (acte de base & conformité hybride + associations partielles + quorum double + fonds réserve + représentant de vote) + brief/prd/architecture/stories/validation dans `track-h-conformite-legale/`. Deps : aucune.
+
+- **WP-CL1 — Socle conformité ACP hybride** · #618 H4-H7 · T2 · L · _BLOQUEUR LÉGAL Art. 3.84_
+  Migration `acps.total_tantiemes` + backfill (mono = building ; multi = SUM + `RAISE WARNING`) ; `Acp::is_conformant/assert_conformant` + `AcpMetrics` + `AcpNotConformantError` + `From<>` 422 `ACP_NOT_CONFORMANT` ; port+adapter `AcpRepository::find_by_id_with_metrics` (JOIN units multi-building) ; **bascule des 4 gates validate-before-compute building→ACP** (expense / call_for_funds / charge_distribution / etat_date). Deps : WP-CL0. **Retravaille WP-H2.**
+
+- **WP-CL2 — Bug `Unit::MAX_QUOTA` base 10000** · #618 H8 · T2 · S
+  Retrait constante `MAX_QUOTA=dec!(1000)` (`unit.rs:7,54,81`) → borne dérivée de l'acte de base ACP (même classe de bug que H1). Deps : WP-CL1.
+
+- **WP-CL3 — Gouvernance AG conforme** · #618 H9-H10-H17 · T2 · L · _BLOQUEUR LÉGAL Art. 3.87 §1/§5/§7_
+  Quorum **double** (moitié des têtes ET moitié des quotités — le code ne testait que les quotités) ; gates votes (`check_quorum_for_voting` + `validate_proxy_mandate` 3/10%) ; **multi-titulaires + représentant de vote désigné + suspension du droit de vote** (lot démembré/indivis sans représentant → vote suspendu, Art. 3.87 §1). **Étend WP-H3.** Deps : WP-CL0.
+
+- **WP-CL4 — Finances conformes** · #618 H11-H12-H13 · T2 · L · _Art. 3.86 / loi 2019_
+  Budget f64→Decimal (ADR-0007) ; `DistributionCriteria {value|utility|mixed}` ; **fonds de réserve (≥ 5% charges ordinaires N-1) + fonds de roulement** (comptes distincts au nom de l'ACP, réserve renonçable à 4/5). Deps : WP-CL1.
+
+- **WP-CL5 — Associations partielles** · #618 H16 · T2 · L · _Art. 3.86_
+  Entité `partial_associations` (personnalité juridique propre optionnelle) + rattachement building + **quotités à 2 niveaux par lot** (communs généraux ACP + communs particuliers PA) + AG/charges scopées PA. Deps : WP-CL1 + WP-CL3.
+
+- **WP-CL6 — Migration `units.organization_id`→`acp_id`** · #618 H15 · T2 · M
+  3 étapes (add nullable → backfill depuis `building.acp_id` → NOT NULL + drop `organization_id`) + maj entité/DTO/use-cases/handlers (cohérence post-#602, comme buildings). Deps : WP-CL1.
+
+- **WP-CL7 — Doc `CONVOCATIONS_AG.rst`** · #618 H14 · T2 · S
+  Corriger : **15 j minimum pour TOUTES les AG** (Art. 3.87 §3), urgence sans seuil chiffré (supprimer le « 8 j AGE » erroné). Deps : aucune.
+
+> **Mapping WP-CL ↔ stories #618** : CL0=H0-ADR · CL1=H4+H5+H6+H7 · CL2=H8 · CL3=H9+H10+H17 · CL4=H11+H12+H13 · CL5=H16 · CL6=H15 · CL7=H14.
+
+```mermaid
+graph LR
+    H1[H1 BuildingNotConformant<br/>✅ 6a053a1]:::done
+    H2[H2 gates building<br/>✅ 3ede509]:::done
+    H3[H3 quorum simple<br/>✅ 3ede509]:::done
+    ADR[CL0 ADR + Maury BMAD]
+    H4[CL1·H4 acps.total_tantiemes] --> H5[CL1·H5 Acp.assert_conformant] --> H6[CL1·H6 AcpRepo metrics] --> H7[CL1·H7 gates building→ACP]:::crit
+    ADR --> H4
+    H5 --> H8[CL2·H8 Unit MAX_QUOTA]
+    ADR --> H9[CL3·H9 quorum double]:::crit --> H10[CL3·H10 gates votes] --> H17[CL3·H17 représentant vote/suspension]
+    ADR --> H11[CL4·H11 budget Decimal]
+    ADR --> H14[CL7·H14 doc convocation]
+    H4 --> H15[CL6·H15 units acp_id]
+    H7 --> H12[CL4·H12 DistributionCriteria] --> H16[CL5·H16 assoc partielles]:::crit
+    H4 --> H13[CL4·H13 fonds réserve]
+    H1 --> ADR
+    H2 -. retravaillé .-> H7
+    H3 -. étendu .-> H9
+    classDef done fill:#9f9,stroke:#070
+    classDef crit fill:#f99,stroke:#900
+```
+
+##### Anatomie d'une passe d'agent (unité de mesure de l'axe du Gantt)
+
+> Une **passe d'agent** = un cycle complet RGRR étendu livrant une story. C'est l'unité de l'axe du Gantt ci-dessous.
+
+```mermaid
+flowchart LR
+    PLAN[PLAN] --> STORY[Story]
+    STORY --> BDD["BDD 4-cat<br/>happy · negative<br/>edge · security"]
+    BDD --> TDD["TDD 4-cat<br/>happy · negative<br/>edge · security"]
+    TDD --> RED["▶ exéc tests<br/>= ROUGE"]:::red
+    RED --> GREEN["rédaction code<br/>= VERT"]:::green
+    GREEN --> BLUE["phase BLEUE<br/>refactor + tests continus<br/>anti-régression à chaque étape"]:::blue
+    BLUE --> E2E["construction<br/>tests e2e"]
+    E2E --> QUAL[qualité]
+    QUAL --> SEC[sécurité]
+    SEC --> COMMIT([commit])
+    classDef red fill:#f99,stroke:#900
+    classDef green fill:#9f9,stroke:#070
+    classDef blue fill:#9cf,stroke:#039
+```
+
+##### Gantt par passe d'agent (axe relatif — 1 graduation `P0n` = 1 passe complète PLAN→commit)
+
+> Durée de chaque story exprimée en **passes** (S=1 passe · M=1 passe · L=2 passes). Pas de calendrier : l'axe est purement relatif au nombre de passes. `(n)` dans le libellé = nombre de passes.
+
+```mermaid
+gantt
+    title Conformité légale copropriété — Gantt par passe d'agent (axe = nº de passe)
+    dateFormat YYYY-MM-DD
+    axisFormat P%d
+    section Socle conformité ACP (critique)
+    CL0 ADR + Maury BMAD (1 doc)              :adr, 2026-01-01, 1d
+    CL1·H4 migration acps.total_tantiemes (1) :h4, after adr, 1d
+    CL1·H5 Acp.assert_conformant (1)          :h5, after h4, 1d
+    CL1·H6 AcpRepo metrics (1)                :h6, after h5, 1d
+    CL1·H7 bascule 4 gates building→ACP (2)   :crit, h7, after h6, 2d
+    section Bugs conformité (parallèle)
+    CL2·H8 Unit MAX_QUOTA base 10000 (1)      :h8, after h5, 1d
+    CL4·H11 budget f64→Decimal (1)            :h11, after adr, 1d
+    CL7·H14 doc convocation 15j (1 doc)       :h14, after adr, 1d
+    CL6·H15 units org_id→acp_id (2)           :h15, after h4, 2d
+    section Gouvernance AG (parallèle)
+    CL3·H9 quorum double tête+quotité (2)     :crit, h9, after adr, 2d
+    CL3·H10 gates votes quorum+proxy (1)      :h10, after h9, 1d
+    CL3·H17 représentant vote/suspension (2)  :h17, after h10, 2d
+    section Charges & fonds
+    CL4·H12 DistributionCriteria (1)          :h12, after h7, 1d
+    CL4·H13 fonds réserve/roulement (2)       :h13, after h4, 2d
+    section Associations partielles
+    CL5·H16 partial associations (2)          :crit, h16, after h12, 2d
+```
+
+> **Chemin critique** : `CL0(1) → H4(1) → H5(1) → H6(1) → H7(2) → H12(1) → H16(2)` ≈ **9 passes d'agent**. Branche gouvernance (`CL0 → H9(2) → H10(1) → H17(2)` = 5 passes) en parallèle. **Total ≈ 22 passes** si séquentiel ; compressible avec parallélisme docker (1 BE + 1 FE, cf. mémoire `docker-parallelism-bottleneck`). Stories doc (CL0, H14) = passes allégées (pas de cycle BDD/TDD).
+
 ### Track I — Frontend refonte UX multi-rôle ACP (slice 3 FE catch-up)
 
 > **Contexte** : suite à la livraison de slice 3 BE (Stories 3.1 → 3.9 mergées 2026-06-09, commits 9598298 → cf41ef4), les UIs syndic/owner correspondantes manquent. **Documentation Vivante e2e** casse silencieusement (workflow `continue-on-error: true` a698f6d) car le DOM ciblé n'existe pas. **Dette UX intégrée au WBS** plutôt que renvoyée à une Phase B post-mortem (cf. mémoire `feedback_maury-fullstack-first.md` : Maury doit penser FE+BE dès le brief pour full-stack découplé).
