@@ -24,6 +24,7 @@
 //! côté application (cf. `application/error.rs`, pattern WP-A* #433).
 
 use chrono::{DateTime, Utc};
+use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 use uuid::Uuid;
@@ -33,6 +34,36 @@ use uuid::Uuid;
 /// cf. Art. 3.84 CC + ADR-0010. Jamais hard-codé ailleurs : toute logique de
 /// conformité lit `Acp::total_tantiemes`.
 pub const DEFAULT_TOTAL_TANTIEMES: i32 = 1000;
+
+/// Métriques agrégées d'une ACP (calculées par le repository via JOIN sur
+/// tous les buildings de l'ACP — Story H6). Pureté : aucun I/O ici.
+///
+/// La conformité (Art. 3.84 CC, ADR-0010) s'évalue au **niveau ACP** :
+/// `Σ units == Σ buildings.total_units` ET `Σ quota == acps.total_tantiemes`.
+/// Volontairement non stockées (avoid stale state) — recalculées à la lecture.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct AcpMetrics {
+    /// Nombre réel de units de tous les blocs de l'ACP (`COUNT(units)`).
+    pub units_count: i32,
+    /// Somme des `buildings.total_units` (lots déclarés) de tous les blocs.
+    pub declared_units_total: i32,
+    /// Somme exacte des quotités générales (`SUM(units.quota::NUMERIC)`).
+    pub quota_sum: Decimal,
+    /// Nombre de buildings (blocs) rattachés à l'ACP.
+    pub buildings_count: i32,
+}
+
+impl AcpMetrics {
+    /// Métriques vides (ACP sans bloc / sans lot).
+    pub fn empty() -> Self {
+        Self {
+            units_count: 0,
+            declared_units_total: 0,
+            quota_sum: Decimal::ZERO,
+            buildings_count: 0,
+        }
+    }
+}
 
 /// Statut juridique d'une ACP. `Copropriete` correspond à
 /// "copropriete_belge" en DB (encodage stable v0.1.0).
@@ -250,7 +281,75 @@ impl Acp {
         self.updated_at = Utc::now();
         Ok(())
     }
+
+    // ========================================================================
+    // Story H5 (CL1) — Conformité de la copropriété au niveau ACP (Art. 3.84 CC).
+    //
+    // Règle (ADR-0010, mémoires `admin-publishes-conform-buildings` +
+    // `validate-before-compute`) : l'acte de base est porté par l'ACP. La
+    // conformité s'évalue sur l'agrégat de TOUS les blocs :
+    //   `Σ units_count == Σ buildings.total_units` ET
+    //   `Σ units.quota == acps.total_tantiemes`
+    // Decimal strict (ADR-0007) — aucune tolérance d'arrondi.
+    //
+    // Pureté hexagonale : reçoit `AcpMetrics` (calculé par le repository),
+    // aucun I/O.
+    // ========================================================================
+
+    /// L'ACP est-elle conformante, étant données ses métriques agrégées ?
+    pub fn is_conformant(&self, metrics: &AcpMetrics) -> bool {
+        metrics.units_count == metrics.declared_units_total
+            && metrics.quota_sum == Decimal::from(self.total_tantiemes)
+    }
+
+    /// Écart de quotités vs l'acte de base : `total_tantiemes - quota_sum`.
+    /// Positif si l'ACP manque de quotités (drift), négatif si surplus.
+    pub fn quota_delta(&self, metrics: &AcpMetrics) -> Decimal {
+        Decimal::from(self.total_tantiemes) - metrics.quota_sum
+    }
+
+    /// Retourne `Err(AcpNotConformantError)` typée si l'ACP n'est pas conforme.
+    /// Consommée par les use-cases (validate-before-compute, Story H7) et le
+    /// frontend (banner/toast 422 narratif).
+    pub fn assert_conformant(&self, metrics: &AcpMetrics) -> Result<(), AcpNotConformantError> {
+        if !self.is_conformant(metrics) {
+            return Err(AcpNotConformantError {
+                acp_id: self.id,
+                units_delta: metrics.declared_units_total - metrics.units_count,
+                quota_delta: self.quota_delta(metrics),
+                quota_basis: self.total_tantiemes,
+            });
+        }
+        Ok(())
+    }
 }
+
+/// Story H5 — Erreur typée de non-conformité d'une ACP (Art. 3.84 CC, INV-L3).
+///
+/// Exposée par `Acp::assert_conformant()`. Mappée vers
+/// `AppError::AcpNotConformant` (HTTP 422 + payload `ACP_NOT_CONFORMANT`) par
+/// `From<>` dans `application/error.rs`. Même convention que
+/// `BuildingNotConformantError` (Story H1) : `quota_delta = total_tantiemes -
+/// quota_sum`, `quota_basis` = acte de base (1000/10000/autre).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct AcpNotConformantError {
+    pub acp_id: Uuid,
+    pub units_delta: i32,
+    pub quota_delta: Decimal,
+    pub quota_basis: i32,
+}
+
+impl std::fmt::Display for AcpNotConformantError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "ACP {} not conformant: {} units missing, quota delta {} / {} (acte de base)",
+            self.acp_id, self.units_delta, self.quota_delta, self.quota_basis
+        )
+    }
+}
+
+impl std::error::Error for AcpNotConformantError {}
 
 /// Génération du slug kebab-case (déaccentué, alphanum + tirets).
 ///
@@ -437,6 +536,87 @@ mod tests {
         let err = acp.set_total_tantiemes(0).unwrap_err();
         assert_eq!(err, AcpError::TotalTantiemesInvalid(0));
         assert_eq!(acp.total_tantiemes, 10000); // inchangé
+    }
+
+    // ----- assert_conformant (Story H5, ADR-0010) — 4-cat --------------------
+
+    fn metrics(units: i32, declared: i32, quota: Decimal, blocs: i32) -> AcpMetrics {
+        AcpMetrics {
+            units_count: units,
+            declared_units_total: declared,
+            quota_sum: quota,
+            buildings_count: blocs,
+        }
+    }
+
+    #[test]
+    fn happy_acp_conformant_base_1000_mono_bloc() {
+        let acp = sample_acp(); // total_tantiemes = 1000
+        let m = metrics(10, 10, Decimal::from(1000), 1);
+        assert!(acp.is_conformant(&m));
+        assert!(acp.assert_conformant(&m).is_ok());
+    }
+
+    #[test]
+    fn happy_acp_conformant_base_10000_multi_blocs() {
+        let acp = sample_acp().with_total_tantiemes(10000).unwrap();
+        // 3 blocs, 182 lots au total, Σ quotités = 10000.
+        let m = metrics(182, 182, Decimal::from(10000), 3);
+        assert!(acp.assert_conformant(&m).is_ok());
+    }
+
+    #[test]
+    fn edge_acp_quota_drift_one_tenth_base_10000() {
+        let acp = sample_acp().with_total_tantiemes(10000).unwrap();
+        let m = metrics(182, 182, Decimal::from(9999) + Decimal::new(9, 1), 3); // 9999.9
+        let err = acp.assert_conformant(&m).unwrap_err();
+        assert_eq!(err.acp_id, acp.id);
+        assert_eq!(err.quota_delta, Decimal::new(1, 1)); // 0.1
+        assert_eq!(err.quota_basis, 10000);
+        assert_eq!(err.units_delta, 0);
+    }
+
+    #[test]
+    fn edge_acp_units_drift_quota_ok() {
+        let acp = sample_acp(); // 1000
+                                // 9 lots réels mais 10 déclarés ; quotités OK à 1000.
+        let m = metrics(9, 10, Decimal::from(1000), 1);
+        let err = acp.assert_conformant(&m).unwrap_err();
+        assert_eq!(err.units_delta, 1);
+        assert_eq!(err.quota_delta, Decimal::ZERO);
+    }
+
+    #[test]
+    fn security_acp_metrics_tampering_detected() {
+        // Métriques forgées « conformes-mais-fausses » : le domaine reflète
+        // fidèlement les metrics reçues (la source de vérité = la query SQL,
+        // testée séparément). Ici un quota_sum tronqué est bien détecté.
+        let acp = sample_acp().with_total_tantiemes(10000).unwrap();
+        let m = metrics(182, 182, Decimal::from(5000), 3); // moitié manquante
+        let err = acp.assert_conformant(&m).unwrap_err();
+        assert_eq!(err.quota_delta, Decimal::from(5000));
+        assert_eq!(err.quota_basis, 10000);
+    }
+
+    #[test]
+    fn negative_acp_empty_metrics_is_not_conformant() {
+        let acp = sample_acp(); // 1000
+        let m = AcpMetrics::empty();
+        let err = acp.assert_conformant(&m).unwrap_err();
+        assert_eq!(err.quota_delta, Decimal::from(1000));
+        assert_eq!(err.quota_basis, 1000);
+        assert_eq!(err.units_delta, 0);
+    }
+
+    #[test]
+    fn negative_acp_not_conformant_error_display_is_narrative() {
+        let acp = sample_acp().with_total_tantiemes(10000).unwrap();
+        let err = acp
+            .assert_conformant(&metrics(181, 182, Decimal::from(9975), 3))
+            .unwrap_err();
+        let s = format!("{}", err);
+        assert!(s.contains("not conformant"));
+        assert!(s.contains("10000"));
     }
 
     // ----- @edge ---------------------------------------------------------------

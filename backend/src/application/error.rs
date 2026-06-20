@@ -213,6 +213,20 @@ pub enum AppError {
         meeting_id: uuid::Uuid,
         missing: Vec<crate::domain::entities::MissingInvariant>,
     },
+
+    /// Track H Story H5 (CL1) — `Acp::assert_conformant()` (Art. 3.84 CC, ADR-0010).
+    ///
+    /// La copropriété (ACP) n'est pas conforme à son acte de base (Σ quotités
+    /// de tous les blocs ≠ `acps.total_tantiemes`). 422 + payload
+    /// `ACP_NOT_CONFORMANT` (acp_id + deltas + quota_basis), même format que
+    /// `BuildingNotConformant`. N'expose pas d'info sensible.
+    #[error("La copropriété n'est pas conforme à son acte de base")]
+    AcpNotConformant {
+        acp_id: uuid::Uuid,
+        units_delta: i32,
+        quota_delta: rust_decimal::Decimal,
+        quota_basis: i32,
+    },
 }
 
 impl AppError {
@@ -230,6 +244,7 @@ impl AppError {
             AppError::Conflict(_) => "conflict",
             AppError::AcpNotInScope { .. } => "acp_not_in_scope",
             AppError::MeetingNotCompletable { .. } => "meeting_not_completable",
+            AppError::AcpNotConformant { .. } => "acp_not_conformant",
             AppError::RateLimited => "rate_limited",
             AppError::Database(_) => "database",
             AppError::Crypto(_) => "crypto",
@@ -285,7 +300,8 @@ impl ResponseError for AppError {
             | AppError::TechnicalSpecRequired
             | AppError::EvaluatorIsContractor
             | AppError::BuildingNotConformant { .. }
-            | AppError::MeetingNotCompletable { .. } => StatusCode::UNPROCESSABLE_ENTITY,
+            | AppError::MeetingNotCompletable { .. }
+            | AppError::AcpNotConformant { .. } => StatusCode::UNPROCESSABLE_ENTITY,
             AppError::RateLimited => StatusCode::TOO_MANY_REQUESTS,
             AppError::Database(_) | AppError::Crypto(_) | AppError::Internal(_) => {
                 StatusCode::INTERNAL_SERVER_ERROR
@@ -317,6 +333,21 @@ impl ResponseError for AppError {
                 "building_id": building_id,
                 "units_delta": units_delta,
                 // Decimal-as-string (mémoire `no-f64-in-money` + ADR-0007).
+                "quota_delta": quota_delta.to_string(),
+                "quota_basis": quota_basis,
+            })),
+            // Track H Story H5 — payload narratif pour `AcpNotConformant` (422).
+            // FE consomme `details.code == "ACP_NOT_CONFORMANT"` (banner/toast
+            // au niveau copropriété). Même format que BUILDING_NOT_CONFORMANT.
+            AppError::AcpNotConformant {
+                acp_id,
+                units_delta,
+                quota_delta,
+                quota_basis,
+            } => Some(json!({
+                "code": "ACP_NOT_CONFORMANT",
+                "acp_id": acp_id,
+                "units_delta": units_delta,
                 "quota_delta": quota_delta.to_string(),
                 "quota_basis": quota_basis,
             })),
@@ -506,6 +537,37 @@ impl From<crate::domain::entities::BuildingNotConformantError> for String {
         format!(
             "BUILDING_NOT_CONFORMANT: building {} units_delta={} quota_delta={} quota_basis={}",
             err.building_id, err.units_delta, err.quota_delta, err.quota_basis
+        )
+    }
+}
+
+// ============================================================================
+// Track H Story H5 — bridges From<AcpNotConformantError> (conformité ACP)
+// ============================================================================
+
+impl From<crate::domain::entities::AcpNotConformantError> for AppError {
+    /// Track H Story H5 — la copropriété (ACP) n'est pas conforme à son acte
+    /// de base → 422 + payload `ACP_NOT_CONFORMANT`. Utilisé par les gates
+    /// validate-before-compute ACP-level (Story H7).
+    fn from(err: crate::domain::entities::AcpNotConformantError) -> Self {
+        AppError::AcpNotConformant {
+            acp_id: err.acp_id,
+            units_delta: err.units_delta,
+            quota_delta: err.quota_delta,
+            quota_basis: err.quota_basis,
+        }
+    }
+}
+
+impl From<crate::domain::entities::AcpNotConformantError> for String {
+    /// Track H Story H5 — bridge legacy `Result<_, String>` (use-cases
+    /// call_for_funds / etat_date). Le handler parse le préfixe
+    /// `ACP_NOT_CONFORMANT:` pour reconstruire le 422 narratif (cf.
+    /// `conformity_response.rs`, Story H7).
+    fn from(err: crate::domain::entities::AcpNotConformantError) -> Self {
+        format!(
+            "ACP_NOT_CONFORMANT: acp {} units_delta={} quota_delta={} quota_basis={}",
+            err.acp_id, err.units_delta, err.quota_delta, err.quota_basis
         )
     }
 }
@@ -860,6 +922,80 @@ mod tests {
         assert!(s.contains("BUILDING_NOT_CONFORMANT"));
         assert!(s.contains("10000"), "quota_basis must be present: {}", s);
         assert!(s.contains("25"), "quota_delta must be present: {}", s);
+    }
+
+    // ----- Story H5 — AcpNotConformant mapping (4-cat) -----------------------
+
+    #[test]
+    fn happy_acp_not_conformant_maps_to_422() {
+        let e = AppError::AcpNotConformant {
+            acp_id: uuid::Uuid::new_v4(),
+            units_delta: 1,
+            quota_delta: rust_decimal::Decimal::new(25, 1),
+            quota_basis: 10000,
+        };
+        assert_eq!(e.status_code(), StatusCode::UNPROCESSABLE_ENTITY);
+        assert_eq!(e.kind(), "acp_not_conformant");
+    }
+
+    #[test]
+    fn happy_from_acp_domain_error_preserves_fields() {
+        use crate::domain::entities::AcpNotConformantError;
+        use rust_decimal::Decimal;
+        use std::str::FromStr;
+
+        let aid = uuid::Uuid::new_v4();
+        let app_err: AppError = AcpNotConformantError {
+            acp_id: aid,
+            units_delta: 3,
+            quota_delta: Decimal::from_str("25.5").unwrap(),
+            quota_basis: 10000,
+        }
+        .into();
+        match app_err {
+            AppError::AcpNotConformant {
+                acp_id,
+                units_delta,
+                quota_delta,
+                quota_basis,
+            } => {
+                assert_eq!(acp_id, aid);
+                assert_eq!(units_delta, 3);
+                assert_eq!(quota_delta, Decimal::from_str("25.5").unwrap());
+                assert_eq!(quota_basis, 10000);
+            }
+            other => panic!("expected AcpNotConformant, got {:?}", other),
+        }
+    }
+
+    #[test]
+    fn security_acp_not_conformant_does_not_expose_sensitive_info() {
+        let e = AppError::AcpNotConformant {
+            acp_id: uuid::Uuid::new_v4(),
+            units_delta: 1,
+            quota_delta: rust_decimal::Decimal::new(25, 1),
+            quota_basis: 10000,
+        };
+        let s = format!("{}", e);
+        assert!(s.contains("conforme"));
+        assert!(!s.contains("user_id"));
+        assert!(!s.contains("org_id"));
+    }
+
+    #[test]
+    fn negative_acp_string_bridge_includes_quota_basis() {
+        use crate::domain::entities::AcpNotConformantError;
+        use rust_decimal::Decimal;
+
+        let s: String = AcpNotConformantError {
+            acp_id: uuid::Uuid::nil(),
+            units_delta: 1,
+            quota_delta: Decimal::from(25),
+            quota_basis: 10000,
+        }
+        .into();
+        assert!(s.contains("ACP_NOT_CONFORMANT"));
+        assert!(s.contains("10000"));
     }
 
     // ------------------------------------------------------------------------
