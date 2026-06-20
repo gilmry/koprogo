@@ -371,11 +371,18 @@ impl VbcWorld {
                 journal_repo,
             ),
         );
+        // Track H Story H7 — gate ACP-level : injecte le repo ACP réel.
+        let acp_repo: Arc<dyn koprogo_api::application::ports::AcpRepository> = Arc::new(
+            koprogo_api::infrastructure::database::repositories::acp_repository_impl::PostgresAcpRepository::new(
+                pool.clone(),
+            ),
+        );
         let expense_uc = Arc::new(
             koprogo_api::application::use_cases::ExpenseUseCases::with_full_wiring(
                 expense_mock.clone(),
                 accounting_svc,
                 building_repo.clone(),
+                acp_repo.clone(),
             ),
         );
         let cff_uc = Arc::new(CallForFundsUseCases::with_full_wiring(
@@ -383,6 +390,7 @@ impl VbcWorld {
             contrib_repo,
             unit_owner_mock.clone(),
             building_repo.clone(),
+            acp_repo.clone(),
         ));
 
         self.pool = Some(pool);
@@ -411,8 +419,29 @@ impl VbcWorld {
         total_tantiemes: i32,
         unit_quotas: Vec<Decimal>,
     ) -> Uuid {
+        // Track H Story H7 — un ACP par building (mono-bloc), avec
+        // `total_tantiemes` = base de ce building. La conformité ACP-level
+        // reflète alors la conformité du bloc (Σ units == total_units ET
+        // Σ quota == total_tantiemes). ADR-0010.
+        let pool = self.pool.as_ref().unwrap().clone();
+        let acp_id = Uuid::new_v4();
+        sqlx::query(
+            "INSERT INTO acps (id, organization_id, name, slug, legal_status, total_tantiemes, \
+             address_street, address_postal_code, address_city, created_at, updated_at) \
+             VALUES ($1, $2, $3, $4, 'copropriete_belge', $5, 'Rue Test 1', '1000', \
+             'Bruxelles', now(), now())",
+        )
+        .bind(acp_id)
+        .bind(self.org_id.unwrap())
+        .bind(format!("ACP {}", name))
+        .bind(format!("acp-vbc-{}", acp_id.simple()))
+        .bind(total_tantiemes)
+        .execute(&pool)
+        .await
+        .expect("seed per-building acp");
+
         let dto = CreateBuildingDto {
-            acp_id: self.acp_id.unwrap().to_string(),
+            acp_id: acp_id.to_string(),
             name: name.to_string(),
             address: "Rue Test 1".to_string(),
             city: "Bruxelles".to_string(),
@@ -691,13 +720,13 @@ async fn then_ok(world: &mut VbcWorld) {
     );
 }
 
-#[then("the use-case fails with BUILDING_NOT_CONFORMANT")]
+#[then("the use-case fails with ACP_NOT_CONFORMANT")]
 async fn then_fails_conformity(world: &mut VbcWorld) {
     assert!(!world.last_result_ok, "expected Err, got Ok");
     let err = world.last_error.as_ref().expect("error present");
     assert!(
-        err.contains("BUILDING_NOT_CONFORMANT"),
-        "error must mention BUILDING_NOT_CONFORMANT, got: {}",
+        err.contains("ACP_NOT_CONFORMANT"),
+        "error must mention ACP_NOT_CONFORMANT, got: {}",
         err
     );
 }

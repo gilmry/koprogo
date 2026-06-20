@@ -1,5 +1,6 @@
 use crate::application::ports::{
-    BuildingRepository, CallForFundsRepository, OwnerContributionRepository, UnitOwnerRepository,
+    AcpRepository, BuildingRepository, CallForFundsRepository, OwnerContributionRepository,
+    UnitOwnerRepository,
 };
 use crate::domain::entities::{CallForFunds, ContributionType, OwnerContribution};
 use chrono::{DateTime, Utc};
@@ -10,11 +11,11 @@ pub struct CallForFundsUseCases {
     call_for_funds_repository: Arc<dyn CallForFundsRepository>,
     owner_contribution_repository: Arc<dyn OwnerContributionRepository>,
     unit_owner_repository: Arc<dyn UnitOwnerRepository>,
-    /// Track H Story H2 — validate-before-compute (FR-H2). Optional pour
-    /// préserver les tests unitaires. Quand présent (wiring `main.rs`),
-    /// le pre-check `Building::assert_conformant?` s'exécute avant
-    /// `create_call_for_funds` / `send_call_for_funds`.
+    /// Track H Story H7 — validate-before-compute ACP-level (FR-CL1). Optional.
+    /// Quand présents (wiring `main.rs`), le pre-check `Acp::assert_conformant?`
+    /// s'exécute avant `create_call_for_funds` / `send_call_for_funds`.
     building_repository: Option<Arc<dyn BuildingRepository>>,
+    acp_repository: Option<Arc<dyn AcpRepository>>,
 }
 
 impl CallForFundsUseCases {
@@ -28,35 +29,45 @@ impl CallForFundsUseCases {
             owner_contribution_repository,
             unit_owner_repository,
             building_repository: None,
+            acp_repository: None,
         }
     }
 
-    /// Track H Story H2 — wiring complet (mutations gated par
-    /// validate-before-compute). Utilisé par `main.rs`.
+    /// Track H Story H7 — wiring complet (validate-before-compute ACP-level).
     pub fn with_full_wiring(
         call_for_funds_repository: Arc<dyn CallForFundsRepository>,
         owner_contribution_repository: Arc<dyn OwnerContributionRepository>,
         unit_owner_repository: Arc<dyn UnitOwnerRepository>,
         building_repository: Arc<dyn BuildingRepository>,
+        acp_repository: Arc<dyn AcpRepository>,
     ) -> Self {
         Self {
             call_for_funds_repository,
             owner_contribution_repository,
             unit_owner_repository,
             building_repository: Some(building_repository),
+            acp_repository: Some(acp_repository),
         }
     }
 
-    /// Track H Story H2 — pre-check conformité immeuble.
-    async fn assert_building_conformant(&self, building_id: Uuid) -> Result<(), String> {
-        let Some(ref repo) = self.building_repository else {
+    /// Track H Story H7 — pre-check conformité copropriété (ACP). Résout
+    /// `building.acp_id` puis agrège les métriques de tous les blocs.
+    async fn assert_acp_conformant(&self, building_id: Uuid) -> Result<(), String> {
+        let (Some(building_repo), Some(acp_repo)) =
+            (&self.building_repository, &self.acp_repository)
+        else {
             return Ok(());
         };
-        let (building, metrics) = repo
-            .find_by_id_with_metrics(building_id)
+        let building = building_repo
+            .find_by_id(building_id)
             .await?
             .ok_or_else(|| "Building not found".to_string())?;
-        building.assert_conformant(&metrics)?; // bridge String livré par H1
+        let (acp, metrics) = acp_repo
+            .find_by_id_with_metrics(building.acp_id)
+            .await
+            .map_err(|e| e.to_string())?
+            .ok_or_else(|| "ACP not found".to_string())?;
+        acp.assert_conformant(&metrics)?; // bridge String livré par H5
         Ok(())
     }
 
@@ -76,7 +87,7 @@ impl CallForFundsUseCases {
         created_by: Option<Uuid>,
     ) -> Result<CallForFunds, String> {
         // Track H Story H2 — validate-before-compute gate (Art. 3.85 CC).
-        self.assert_building_conformant(building_id).await?;
+        self.assert_acp_conformant(building_id).await?;
 
         // Create the call for funds entity
         let mut call_for_funds = CallForFunds::new(
@@ -131,7 +142,7 @@ impl CallForFundsUseCases {
 
         // Track H Story H2 — validate-before-compute gate (Art. 3.85 CC).
         // Le send génère les contributions — calcul interdit sur immeuble drift.
-        self.assert_building_conformant(call_for_funds.building_id)
+        self.assert_acp_conformant(call_for_funds.building_id)
             .await?;
 
         // Mark as sent

@@ -3,7 +3,7 @@ use crate::application::dto::{
     UpdateEtatDateAdditionalDataRequest, UpdateEtatDateFinancialRequest,
 };
 use crate::application::ports::{
-    BuildingRepository, EtatDateRepository, UnitOwnerRepository, UnitRepository,
+    AcpRepository, BuildingRepository, EtatDateRepository, UnitOwnerRepository, UnitRepository,
 };
 use crate::domain::entities::{EtatDate, EtatDateStatus};
 use rust_decimal::Decimal;
@@ -16,6 +16,9 @@ pub struct EtatDateUseCases {
     unit_repository: Arc<dyn UnitRepository>,
     building_repository: Arc<dyn BuildingRepository>,
     unit_owner_repository: Arc<dyn UnitOwnerRepository>,
+    /// Track H Story H7 — validate-before-compute ACP-level. Optional : no-op
+    /// si absent (tests unitaires). Wiré en prod via `with_acp_repository`.
+    acp_repository: Option<Arc<dyn AcpRepository>>,
 }
 
 impl EtatDateUseCases {
@@ -30,7 +33,16 @@ impl EtatDateUseCases {
             unit_repository,
             building_repository,
             unit_owner_repository,
+            acp_repository: None,
         }
+    }
+
+    /// Track H Story H7 — injecte le repo ACP pour activer le gate
+    /// validate-before-compute au niveau copropriété (ADR-0010). Utilisé par
+    /// `main.rs`.
+    pub fn with_acp_repository(mut self, acp_repository: Arc<dyn AcpRepository>) -> Self {
+        self.acp_repository = Some(acp_repository);
+        self
     }
 
     /// Create a new état daté request
@@ -45,16 +57,23 @@ impl EtatDateUseCases {
             .await?
             .ok_or_else(|| "Unit not found".to_string())?;
 
-        // Verify building exists + Track H Story H2 validate-before-compute
-        // gate (Art. 3.89 CC — transparence chiffres syndic). L'état daté
-        // ne peut être généré que sur immeuble conforme (sinon quotes-parts
-        // erronées dans le doc remis au notaire).
-        let (building, metrics) = self
+        // Verify building exists (name/address pour le doc) + Track H Story H7
+        // validate-before-compute gate **ACP-level** (Art. 3.89 CC — transparence
+        // chiffres syndic). L'état daté ne peut être généré que sur une
+        // copropriété conforme (sinon quotes-parts erronées dans le doc notaire).
+        let (building, _building_metrics) = self
             .building_repository
             .find_by_id_with_metrics(request.building_id)
             .await?
             .ok_or_else(|| "Building not found".to_string())?;
-        building.assert_conformant(&metrics)?; // bridge String (H1)
+        if let Some(acp_repo) = &self.acp_repository {
+            let (acp, acp_metrics) = acp_repo
+                .find_by_id_with_metrics(building.acp_id)
+                .await
+                .map_err(|e| e.to_string())?
+                .ok_or_else(|| "ACP not found".to_string())?;
+            acp.assert_conformant(&acp_metrics)?; // bridge String (H5)
+        }
 
         // Get unit ownership info (quotes-parts)
         let unit_owners = self

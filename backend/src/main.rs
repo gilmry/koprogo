@@ -256,19 +256,23 @@ async fn main() -> std::io::Result<()> {
     let expense_accounting_service =
         Arc::new(ExpenseAccountingService::new(journal_entry_repo.clone()));
 
-    // Track H Story H2 — validate-before-compute wiring.
-    // `with_full_wiring` injecte `building_repo` pour le pre-check
-    // `Building::assert_conformant?` avant toute mutation/calcul.
+    // Track H Story H7 — validate-before-compute wiring **ACP-level** (ADR-0010).
+    // `with_full_wiring` injecte `building_repo` (résolution acp_id) + `acp_repo`
+    // (métriques agrégées) pour le pre-check `Acp::assert_conformant?` avant
+    // toute mutation/calcul. `acp_repo` hoisté ici (partagé avec BoardMember/Acp).
+    let acp_repo: Arc<dyn AcpRepository> = Arc::new(PostgresAcpRepository::new(pool.clone()));
     let expense_use_cases = ExpenseUseCases::with_full_wiring(
         expense_repo.clone(),
         expense_accounting_service.clone(),
         building_repo.clone(),
+        acp_repo.clone(),
     );
     let charge_distribution_use_cases = ChargeDistributionUseCases::with_full_wiring(
         charge_distribution_repo,
         expense_repo.clone(),
         unit_owner_repo.clone(),
         building_repo.clone(),
+        acp_repo.clone(),
     );
     // Track H Story H3 — Meeting.assert_can_complete() Art. 3.87 §3-5 CC.
     // Inject completion_checker pour permettre au use-case `complete_meeting`
@@ -340,7 +344,8 @@ async fn main() -> std::io::Result<()> {
         unit_repo.clone(),
         building_repo.clone(),
         unit_owner_repo.clone(),
-    );
+    )
+    .with_acp_repository(acp_repo.clone());
     let budget_use_cases =
         BudgetUseCases::new(budget_repo, building_repo.clone(), expense_repo.clone());
     let pcn_use_cases = PcnUseCases::new(expense_repo.clone());
@@ -350,10 +355,8 @@ async fn main() -> std::io::Result<()> {
         owner_repo.clone(),
     );
     let gdpr_use_cases = GdprUseCases::new(gdpr_repo, user_repo.clone());
-    // Hotfix #603 — BoardMemberUseCases needs acp_repository for org filter.
-    // acp_repo is defined below at line ~337 ; we hoist its creation here so
-    // both BoardMemberUseCases and AcpUseCases can share the same Arc.
-    let acp_repo: Arc<dyn AcpRepository> = Arc::new(PostgresAcpRepository::new(pool.clone()));
+    // `acp_repo` est désormais hoisté plus haut (Track H Story H7 wiring) et
+    // partagé par BoardMemberUseCases / AcpUseCases / les 4 gates conformité.
     let board_member_use_cases = BoardMemberUseCases::new(
         board_member_repo.clone(),
         building_repo.clone(),
@@ -397,12 +400,13 @@ async fn main() -> std::io::Result<()> {
     );
     let owner_contribution_use_cases =
         OwnerContributionUseCases::new(owner_contribution_repo.clone());
-    // Track H Story H2 — validate-before-compute wiring.
+    // Track H Story H7 — validate-before-compute wiring ACP-level.
     let call_for_funds_use_cases = CallForFundsUseCases::with_full_wiring(
         call_for_funds_repo,
         owner_contribution_repo,
         unit_owner_repo.clone(),
         building_repo.clone(),
+        acp_repo.clone(),
     );
     let journal_entry_use_cases = JournalEntryUseCases::new(journal_entry_repo.clone());
     let poll_use_cases = PollUseCases::new(

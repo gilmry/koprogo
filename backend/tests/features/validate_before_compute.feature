@@ -32,21 +32,21 @@ Feature: Validate-before-compute on use-cases (Track H Story H2 FR-H2)
     Then the use-case succeeds
 
   # ============================================================================
-  # @security — bypass tenté sur immeuble non-conforme → BUILDING_NOT_CONFORMANT
+  # @security — bypass tenté sur immeuble non-conforme → ACP_NOT_CONFORMANT
   # ============================================================================
 
   @security
   Scenario: create_expense blocked on non-conformant building (Drift Manor)
     Given a non-conformant building "Drift Manor" with 1 unit summing to 997.5
     When syndic submits a new expense on building "Drift Manor"
-    Then the use-case fails with BUILDING_NOT_CONFORMANT
+    Then the use-case fails with ACP_NOT_CONFORMANT
     And the error mentions quota_delta "2.5" and quota_basis 1000
 
   @security
   Scenario: create_call_for_funds blocked on non-conformant building
     Given a non-conformant building "Drift Manor" with 1 unit summing to 997.5
     When syndic creates a call for funds on building "Drift Manor"
-    Then the use-case fails with BUILDING_NOT_CONFORMANT
+    Then the use-case fails with ACP_NOT_CONFORMANT
     And the error mentions quota_delta "2.5" and quota_basis 1000
 
   # ============================================================================

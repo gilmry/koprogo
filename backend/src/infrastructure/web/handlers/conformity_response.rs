@@ -35,16 +35,26 @@ use serde_json::json;
 /// Préfix marqueur émis par `From<BuildingNotConformantError> for String`
 /// (cf. `backend/src/application/error.rs` lignes 447-458).
 const PREFIX: &str = "BUILDING_NOT_CONFORMANT:";
+/// Track H Story H7 — préfixe émis par `From<AcpNotConformantError> for String`.
+const ACP_PREFIX: &str = "ACP_NOT_CONFORMANT:";
 
-/// Si l'erreur use-case correspond à `"BUILDING_NOT_CONFORMANT: ..."`, retourne
-/// un `HttpResponse` 422 avec le payload narratif. Sinon, `None` → caller
-/// continue son code path (400/500).
+/// Si l'erreur use-case correspond à `"BUILDING_NOT_CONFORMANT: ..."` ou
+/// `"ACP_NOT_CONFORMANT: ..."`, retourne un `HttpResponse` 422 avec le payload
+/// narratif. Sinon, `None` → caller continue son code path (400/500).
 ///
 /// Le payload émis est **structurellement identique** à celui produit par
-/// `AppError::BuildingNotConformant` (cf. `application/error.rs::error_response`)
-/// pour que le frontend consomme un seul format quel que soit le use-case.
+/// `AppError::BuildingNotConformant` / `AppError::AcpNotConformant` (cf.
+/// `application/error.rs::error_response`) pour que le frontend consomme un
+/// seul format quel que soit le use-case.
 pub fn try_build_conformity_response(err: &str) -> Option<HttpResponse> {
     let trimmed = err.trim();
+
+    // Track H Story H7 — gate ACP-level prioritaire (les 4 use-cases émettent
+    // désormais `ACP_NOT_CONFORMANT:`).
+    if let Some(rest) = trimmed.strip_prefix(ACP_PREFIX) {
+        return Some(build_acp_response(rest.trim()));
+    }
+
     if !trimmed.starts_with(PREFIX) {
         return None;
     }
@@ -93,6 +103,50 @@ pub fn try_build_conformity_response(err: &str) -> Option<HttpResponse> {
         }
     });
     Some(HttpResponse::UnprocessableEntity().json(body))
+}
+
+/// Track H Story H7 — construit le 422 narratif `ACP_NOT_CONFORMANT` depuis le
+/// reste de la string bridge :
+/// `"acp <uuid> units_delta=<i32> quota_delta=<dec> quota_basis=<i32>"`.
+fn build_acp_response(rest: &str) -> HttpResponse {
+    let mut acp_id: Option<String> = None;
+    let mut units_delta: Option<i32> = None;
+    let mut quota_delta: Option<String> = None;
+    let mut quota_basis: Option<i32> = None;
+
+    let tokens: Vec<&str> = rest.split_whitespace().collect();
+    let mut i = 0;
+    while i < tokens.len() {
+        let t = tokens[i];
+        if t == "acp" && i + 1 < tokens.len() {
+            acp_id = Some(tokens[i + 1].to_string());
+            i += 2;
+        } else if let Some(v) = t.strip_prefix("units_delta=") {
+            units_delta = v.parse().ok();
+            i += 1;
+        } else if let Some(v) = t.strip_prefix("quota_delta=") {
+            quota_delta = Some(v.to_string());
+            i += 1;
+        } else if let Some(v) = t.strip_prefix("quota_basis=") {
+            quota_basis = v.parse().ok();
+            i += 1;
+        } else {
+            i += 1;
+        }
+    }
+
+    let body = json!({
+        "error": "La copropriété n'est pas conforme à son acte de base",
+        "kind": "acp_not_conformant",
+        "details": {
+            "code": "ACP_NOT_CONFORMANT",
+            "acp_id": acp_id.unwrap_or_default(),
+            "units_delta": units_delta.unwrap_or(0),
+            "quota_delta": quota_delta.unwrap_or_else(|| "0".to_string()),
+            "quota_basis": quota_basis.unwrap_or(1000),
+        }
+    });
+    HttpResponse::UnprocessableEntity().json(body)
 }
 
 #[cfg(test)]
