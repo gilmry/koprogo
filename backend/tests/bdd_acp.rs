@@ -114,6 +114,7 @@ impl AcpWorld {
             address_postal_code: "1000".to_string(),
             address_city: "Bruxelles".to_string(),
             bce_number: None,
+            total_tantiemes: None,
         }
     }
 }
@@ -296,6 +297,7 @@ async fn when_owner_lists(world: &mut AcpWorld) {
                     name,
                     slug: String::new(),
                     legal_status: "copropriete_belge".to_string(),
+                    total_tantiemes: 1000,
                     bce_number: None,
                     address_street: String::new(),
                     address_postal_code: String::new(),
@@ -342,6 +344,7 @@ async fn when_admin_updates_last_name(world: &mut AcpWorld, new_name: String) {
         address_postal_code: "1000".to_string(),
         address_city: "Bruxelles".to_string(),
         bce_number: None,
+        total_tantiemes: None,
     };
     match uc.update_acp(&AcpCaller::SuperAdmin, id, upd).await {
         Ok(r) => {
@@ -363,6 +366,7 @@ async fn when_admin_updates_unknown(world: &mut AcpWorld) {
         address_postal_code: "1000".to_string(),
         address_city: "Bruxelles".to_string(),
         bce_number: None,
+        total_tantiemes: None,
     };
     match uc
         .update_acp(&AcpCaller::SuperAdmin, Uuid::new_v4(), upd)

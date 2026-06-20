@@ -97,6 +97,7 @@ impl ListAcpsUseCase {
             name: acp.name.clone(),
             slug: acp.slug.clone(),
             legal_status: acp.legal_status.as_db_str().to_string(),
+            total_tantiemes: acp.total_tantiemes,
             bce_number: acp.bce_number.clone(),
             address_street: acp.address_street.clone(),
             address_postal_code: acp.address_postal_code.clone(),

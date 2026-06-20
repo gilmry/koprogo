@@ -168,8 +168,12 @@ impl OwnerContributionRepository for MockContribRepo {
     }
 }
 
+/// (unit_id, owner_id, ownership_percentage) — triplet de propriété d'un lot,
+/// tel que retourné par `UnitOwnerRepository::find_active_by_building`.
+type OwnerTriple = (Uuid, Uuid, Decimal);
+
 struct MockUnitOwnerRepo {
-    by_building: Mutex<HashMap<Uuid, Vec<(Uuid, Uuid, Decimal)>>>,
+    by_building: Mutex<HashMap<Uuid, Vec<OwnerTriple>>>,
 }
 
 impl MockUnitOwnerRepo {
@@ -178,7 +182,7 @@ impl MockUnitOwnerRepo {
             by_building: Mutex::new(HashMap::new()),
         }
     }
-    fn seed_building(&self, bid: Uuid, owners: Vec<(Uuid, Uuid, Decimal)>) {
+    fn seed_building(&self, bid: Uuid, owners: Vec<OwnerTriple>) {
         self.by_building.lock().unwrap().insert(bid, owners);
     }
 }
@@ -222,10 +226,7 @@ impl UnitOwnerRepository for MockUnitOwnerRepo {
     ) -> Result<Option<UnitOwner>, String> {
         Ok(None)
     }
-    async fn find_active_by_building(
-        &self,
-        bid: Uuid,
-    ) -> Result<Vec<(Uuid, Uuid, Decimal)>, String> {
+    async fn find_active_by_building(&self, bid: Uuid) -> Result<Vec<OwnerTriple>, String> {
         Ok(self
             .by_building
             .lock()

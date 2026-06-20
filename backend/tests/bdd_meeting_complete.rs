@@ -178,13 +178,21 @@ fn then_contains_type(world: &mut MeetingCompleteWorld, type_name: String) {
         .expect("result must exist")
         .as_ref()
         .expect_err("expected Err");
-    let found = err.missing.iter().any(|m| match (m, type_name.as_str()) {
-        (MissingInvariant::ConvocationsNotSent, "ConvocationsNotSent") => true,
-        (MissingInvariant::VotesNotClosed { .. }, "VotesNotClosed") => true,
-        (MissingInvariant::AttendanceNotRecorded, "AttendanceNotRecorded") => true,
-        (MissingInvariant::QuorumNotReached { .. }, "QuorumNotReached") => true,
-        (MissingInvariant::MinutesDraftMissing, "MinutesDraftMissing") => true,
-        _ => false,
+    let found = err.missing.iter().any(|m| {
+        matches!(
+            (m, type_name.as_str()),
+            (MissingInvariant::ConvocationsNotSent, "ConvocationsNotSent")
+                | (MissingInvariant::VotesNotClosed { .. }, "VotesNotClosed")
+                | (
+                    MissingInvariant::AttendanceNotRecorded,
+                    "AttendanceNotRecorded"
+                )
+                | (
+                    MissingInvariant::QuorumNotReached { .. },
+                    "QuorumNotReached"
+                )
+                | (MissingInvariant::MinutesDraftMissing, "MinutesDraftMissing")
+        )
     });
     assert!(
         found,

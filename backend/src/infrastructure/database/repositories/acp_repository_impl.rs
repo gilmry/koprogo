@@ -30,6 +30,7 @@ impl PostgresAcpRepository {
             name: row.get("name"),
             slug: row.get("slug"),
             legal_status: AcpLegalStatus::from_db_str(&legal_status_str),
+            total_tantiemes: row.get("total_tantiemes"),
             bce_number: row.get("bce_number"),
             address_street: row.get("address_street"),
             address_postal_code: row.get("address_postal_code"),
@@ -48,9 +49,9 @@ impl AcpRepository for PostgresAcpRepository {
             INSERT INTO acps (
                 id, organization_id, name, slug, legal_status, bce_number,
                 address_street, address_postal_code, address_city,
-                created_at, updated_at
+                total_tantiemes, created_at, updated_at
             )
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
             "#,
         )
         .bind(acp.id)
@@ -62,6 +63,7 @@ impl AcpRepository for PostgresAcpRepository {
         .bind(&acp.address_street)
         .bind(&acp.address_postal_code)
         .bind(&acp.address_city)
+        .bind(acp.total_tantiemes)
         .bind(acp.created_at)
         .bind(acp.updated_at)
         .execute(&self.pool)
@@ -84,7 +86,7 @@ impl AcpRepository for PostgresAcpRepository {
             r#"
             SELECT id, organization_id, name, slug, legal_status, bce_number,
                    address_street, address_postal_code, address_city,
-                   created_at, updated_at
+                   total_tantiemes, created_at, updated_at
             FROM acps
             WHERE id = $1
             "#,
@@ -135,7 +137,7 @@ impl AcpRepository for PostgresAcpRepository {
                     r#"
                     SELECT a.id, a.organization_id, a.name, a.slug, a.legal_status,
                            a.bce_number, a.address_street, a.address_postal_code,
-                           a.address_city, a.created_at, a.updated_at
+                           a.address_city, a.total_tantiemes, a.created_at, a.updated_at
                     FROM acps a
                     INNER JOIN user_role_assignments ura
                         ON ura.scope = 'acp'
@@ -178,7 +180,8 @@ impl AcpRepository for PostgresAcpRepository {
                 address_street = $7,
                 address_postal_code = $8,
                 address_city = $9,
-                updated_at = $10
+                total_tantiemes = $10,
+                updated_at = $11
             WHERE id = $1
             "#,
         )
@@ -191,6 +194,7 @@ impl AcpRepository for PostgresAcpRepository {
         .bind(&acp.address_street)
         .bind(&acp.address_postal_code)
         .bind(&acp.address_city)
+        .bind(acp.total_tantiemes)
         .bind(acp.updated_at)
         .execute(&self.pool)
         .await

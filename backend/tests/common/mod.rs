@@ -639,6 +639,7 @@ pub async fn create_test_acp(app_state: &actix_web::web::Data<AppState>, org_id:
         address_postal_code: "1000".to_string(),
         address_city: "Bruxelles".to_string(),
         bce_number: None,
+        total_tantiemes: None,
     };
     let acp = app_state
         .acp_use_cases

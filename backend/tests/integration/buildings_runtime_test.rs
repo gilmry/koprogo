@@ -97,6 +97,7 @@ fn create_acp_dto(org_id: Uuid, name: &str) -> CreateAcpDto {
         address_postal_code: "1000".to_string(),
         address_city: "Bruxelles".to_string(),
         bce_number: None,
+        total_tantiemes: None,
     }
 }
 

@@ -590,6 +590,7 @@ async fn test_create_building_endpoint() {
         address_postal_code: "1000".to_string(),
         address_city: "Bruxelles".to_string(),
         bce_number: None,
+        total_tantiemes: None,
     };
     let acp = state
         .acp_use_cases
@@ -711,6 +712,7 @@ async fn test_create_building_validation_fails() {
         address_postal_code: "1000".to_string(),
         address_city: "Bruxelles".to_string(),
         bce_number: None,
+        total_tantiemes: None,
     };
     let acp = state
         .acp_use_cases

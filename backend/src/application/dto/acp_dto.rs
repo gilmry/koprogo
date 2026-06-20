@@ -36,6 +36,11 @@ pub struct CreateAcpDto {
 
     #[validate(length(max = 20, message = "bce_number too long"))]
     pub bce_number: Option<String>,
+
+    /// Dénominateur de l'acte de base (quotités) — défaut 1000 si absent.
+    /// 1000 millièmes / 10000 dix-millièmes / autre (Art. 3.84 CC, ADR-0010).
+    #[validate(range(min = 1, message = "total_tantiemes must be > 0"))]
+    pub total_tantiemes: Option<i32>,
 }
 
 /// Mise à jour d'une ACP (PATCH-like : tous les champs identitaires sont requis,
@@ -66,6 +71,10 @@ pub struct UpdateAcpDto {
 
     #[validate(length(max = 20, message = "bce_number too long"))]
     pub bce_number: Option<String>,
+
+    /// Dénominateur de l'acte de base (quotités) — défaut 1000 si absent.
+    #[validate(range(min = 1, message = "total_tantiemes must be > 0"))]
+    pub total_tantiemes: Option<i32>,
 }
 
 /// Réponse JSON pour une ACP.
@@ -79,6 +88,7 @@ pub struct AcpResponseDto {
     pub name: String,
     pub slug: String,
     pub legal_status: String,
+    pub total_tantiemes: i32,
     pub bce_number: Option<String>,
     pub address_street: String,
     pub address_postal_code: String,
@@ -101,6 +111,7 @@ mod tests {
             address_postal_code: "1000".to_string(),
             address_city: "Bruxelles".to_string(),
             bce_number: None,
+            total_tantiemes: None,
         };
         assert!(dto.validate().is_ok());
     }
@@ -114,6 +125,7 @@ mod tests {
             address_postal_code: "1000".to_string(),
             address_city: "Bruxelles".to_string(),
             bce_number: None,
+            total_tantiemes: None,
         };
         assert!(dto.validate().is_err());
     }
@@ -127,6 +139,7 @@ mod tests {
             address_postal_code: "1000".to_string(),
             address_city: "Bruxelles".to_string(),
             bce_number: None,
+            total_tantiemes: None,
         };
         assert!(dto.validate().is_err());
     }

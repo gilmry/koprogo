@@ -130,6 +130,12 @@ impl AcpUseCases {
             dto.bce_number,
         )?; // AcpError -> AppError::Validation via From impl
 
+        // Track H CL1 — acte de base (défaut 1000 si non fourni). ADR-0010.
+        let acp = match dto.total_tantiemes {
+            Some(tt) => acp.with_total_tantiemes(tt)?,
+            None => acp,
+        };
+
         let created = self.repository.create(&acp).await?;
         Ok(Self::to_response_dto(&created))
     }
@@ -226,6 +232,11 @@ impl AcpUseCases {
             dto.bce_number,
         )?;
 
+        // Track H CL1 — acte de base modifiable (si fourni). ADR-0010.
+        if let Some(tt) = dto.total_tantiemes {
+            acp.set_total_tantiemes(tt)?;
+        }
+
         let updated = self.repository.update(&acp).await?;
         Ok(Self::to_response_dto(&updated))
     }
@@ -291,6 +302,7 @@ impl AcpUseCases {
             name: acp.name.clone(),
             slug: acp.slug.clone(),
             legal_status: acp.legal_status.as_db_str().to_string(),
+            total_tantiemes: acp.total_tantiemes,
             bce_number: acp.bce_number.clone(),
             address_street: acp.address_street.clone(),
             address_postal_code: acp.address_postal_code.clone(),
@@ -350,6 +362,7 @@ mod tests {
             address_postal_code: "1000".to_string(),
             address_city: "Bruxelles".to_string(),
             bce_number: None,
+            total_tantiemes: None,
         }
     }
 
@@ -419,6 +432,7 @@ mod tests {
             address_postal_code: "1000".to_string(),
             address_city: "Bruxelles".to_string(),
             bce_number: None,
+            total_tantiemes: None,
         };
         let resp = uc.create_acp(&AcpCaller::SuperAdmin, dto).await.unwrap();
         assert!(resp.organization_id.is_none());
@@ -565,6 +579,7 @@ mod tests {
             address_postal_code: "1000".to_string(),
             address_city: "Bruxelles".to_string(),
             bce_number: None,
+            total_tantiemes: None,
         };
         let err = uc
             .update_acp(&AcpCaller::SuperAdmin, Uuid::new_v4(), dto)

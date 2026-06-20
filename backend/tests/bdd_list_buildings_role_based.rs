@@ -150,6 +150,7 @@ impl ListWorld {
             address_postal_code: "1000".to_string(),
             address_city: "Bruxelles".to_string(),
             bce_number: None,
+            total_tantiemes: None,
         };
         let resp = uc
             .create_acp(&AcpCaller::SuperAdmin, dto)

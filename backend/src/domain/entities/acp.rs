@@ -28,6 +28,12 @@ use serde::{Deserialize, Serialize};
 use thiserror::Error;
 use uuid::Uuid;
 
+/// Dénominateur par défaut de l'acte de base (millièmes belges classiques).
+/// L'acte authentique peut fixer 10000 (dix-millièmes) ou une autre base —
+/// cf. Art. 3.84 CC + ADR-0010. Jamais hard-codé ailleurs : toute logique de
+/// conformité lit `Acp::total_tantiemes`.
+pub const DEFAULT_TOTAL_TANTIEMES: i32 = 1000;
+
 /// Statut juridique d'une ACP. `Copropriete` correspond à
 /// "copropriete_belge" en DB (encodage stable v0.1.0).
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Default, utoipa::ToSchema)]
@@ -76,6 +82,8 @@ pub enum AcpError {
     PostalCodeEmpty,
     #[error("ACP city cannot be empty")]
     CityEmpty,
+    #[error("ACP total_tantiemes (acte de base) must be greater than 0, got {0}")]
+    TotalTantiemesInvalid(i32),
 }
 
 /// Représente une Association des Copropriétaires (ACP) — racine d'agrégat.
@@ -89,6 +97,10 @@ pub struct Acp {
     pub name: String,
     pub slug: String,
     pub legal_status: AcpLegalStatus,
+    /// Dénominateur de l'acte de base (quotités). Source de vérité de la
+    /// copropriété (Art. 3.84 CC, ADR-0010). 1000/10000/autre. Défaut
+    /// `DEFAULT_TOTAL_TANTIEMES` ; modifiable via `with_total_tantiemes`.
+    pub total_tantiemes: i32,
     /// Numéro BCE belge (optionnel — toutes les ACPs ne sont pas immatriculées).
     pub bce_number: Option<String>,
     pub address_street: String,
@@ -150,6 +162,7 @@ impl Acp {
             name,
             slug,
             legal_status: AcpLegalStatus::default(),
+            total_tantiemes: DEFAULT_TOTAL_TANTIEMES,
             bce_number,
             address_street,
             address_postal_code,
@@ -213,6 +226,29 @@ impl Acp {
     /// L'ACP est-elle auto-gérée (sans cabinet syndic) ?
     pub fn is_self_managed(&self) -> bool {
         self.organization_id.is_none()
+    }
+
+    /// Builder consommant : fixe le dénominateur de l'acte de base.
+    ///
+    /// Garde `new()` stable (les appelants existants conservent le défaut
+    /// `DEFAULT_TOTAL_TANTIEMES`). Valide `value > 0` (Art. 3.84 CC — un acte
+    /// de base sans tantièmes n'a pas de sens). Cf. ADR-0010.
+    pub fn with_total_tantiemes(mut self, value: i32) -> Result<Self, AcpError> {
+        if value <= 0 {
+            return Err(AcpError::TotalTantiemesInvalid(value));
+        }
+        self.total_tantiemes = value;
+        Ok(self)
+    }
+
+    /// Mise à jour du dénominateur de l'acte de base (re-validation).
+    pub fn set_total_tantiemes(&mut self, value: i32) -> Result<(), AcpError> {
+        if value <= 0 {
+            return Err(AcpError::TotalTantiemesInvalid(value));
+        }
+        self.total_tantiemes = value;
+        self.updated_at = Utc::now();
+        Ok(())
     }
 }
 
@@ -333,6 +369,74 @@ mod tests {
         .unwrap();
         assert_eq!(acp.name, "New Name");
         assert_eq!(acp.slug, "new-name");
+    }
+
+    // ----- total_tantiemes (acte de base, ADR-0010) — 4-cat ------------------
+
+    fn sample_acp() -> Acp {
+        Acp::new(
+            None,
+            "Acte Base Test".to_string(),
+            "Rue X 1".to_string(),
+            "1000".to_string(),
+            "Bruxelles".to_string(),
+            None,
+        )
+        .unwrap()
+    }
+
+    #[test]
+    fn happy_total_tantiemes_defaults_to_1000() {
+        assert_eq!(sample_acp().total_tantiemes, DEFAULT_TOTAL_TANTIEMES);
+        assert_eq!(sample_acp().total_tantiemes, 1000);
+    }
+
+    #[test]
+    fn happy_with_total_tantiemes_10000_acte_dix_millemes() {
+        let acp = sample_acp().with_total_tantiemes(10000).unwrap();
+        assert_eq!(acp.total_tantiemes, 10000);
+    }
+
+    #[test]
+    fn edge_with_total_tantiemes_1_accepted() {
+        let acp = sample_acp().with_total_tantiemes(1).unwrap();
+        assert_eq!(acp.total_tantiemes, 1);
+    }
+
+    #[test]
+    fn edge_set_total_tantiemes_updates_timestamp() {
+        let mut acp = sample_acp();
+        let before = acp.updated_at;
+        acp.set_total_tantiemes(10000).unwrap();
+        assert_eq!(acp.total_tantiemes, 10000);
+        assert!(acp.updated_at >= before);
+    }
+
+    #[test]
+    fn security_total_tantiemes_must_be_explicit_to_change() {
+        // Le défaut ne peut PAS être 0 ou négatif silencieusement : seul
+        // `with_total_tantiemes`/`set_total_tantiemes` (validés) le modifient.
+        assert!(sample_acp().total_tantiemes > 0);
+    }
+
+    #[test]
+    fn negative_with_total_tantiemes_zero_rejected() {
+        let err = sample_acp().with_total_tantiemes(0).unwrap_err();
+        assert_eq!(err, AcpError::TotalTantiemesInvalid(0));
+    }
+
+    #[test]
+    fn negative_with_total_tantiemes_negative_rejected() {
+        let err = sample_acp().with_total_tantiemes(-5).unwrap_err();
+        assert_eq!(err, AcpError::TotalTantiemesInvalid(-5));
+    }
+
+    #[test]
+    fn negative_set_total_tantiemes_zero_rejected_and_unchanged() {
+        let mut acp = sample_acp().with_total_tantiemes(10000).unwrap();
+        let err = acp.set_total_tantiemes(0).unwrap_err();
+        assert_eq!(err, AcpError::TotalTantiemesInvalid(0));
+        assert_eq!(acp.total_tantiemes, 10000); // inchangé
     }
 
     // ----- @edge ---------------------------------------------------------------

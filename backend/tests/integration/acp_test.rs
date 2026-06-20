@@ -74,6 +74,7 @@ fn create_dto(name: &str, org_id: Option<Uuid>) -> CreateAcpDto {
         address_postal_code: "1000".to_string(),
         address_city: "Bruxelles".to_string(),
         bce_number: None,
+        total_tantiemes: None,
     }
 }
 
@@ -163,6 +164,7 @@ async fn happy_update_acp_name_persists() {
         address_postal_code: "1050".to_string(),
         address_city: "Ixelles".to_string(),
         bce_number: Some("BE0123456789".to_string()),
+        total_tantiemes: None,
     };
     let updated = uc
         .update_acp(&AcpCaller::SuperAdmin, id, upd)
@@ -345,6 +347,7 @@ async fn negative_update_inexistent_acp_returns_not_found() {
         address_postal_code: "1000".to_string(),
         address_city: "Bruxelles".to_string(),
         bce_number: None,
+        total_tantiemes: None,
     };
     let err = uc
         .update_acp(&AcpCaller::SuperAdmin, Uuid::new_v4(), upd)
