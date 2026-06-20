@@ -220,10 +220,66 @@ export async function ensureAcp(
  * Login as syndic + create a building.
  * Post-#602 : creates an ACP first (buildings.acp_id required, FK to acps).
  */
+/**
+ * Seed `totalUnits` units on `buildingId` whose quotas sum exactly to
+ * `quotaSum` (default 1000 = backend default `total_tantiemes`). Makes the
+ * building **conformant** per `admin-publishes-conform-buildings` :
+ *   count(units) == total_units  &&  SUM(quota) == total_tantiemes
+ *
+ * Required since Track H Story H2 (`validate-before-compute`) : any
+ * operational computation (expenses, charges, états datés, call-for-funds)
+ * is now blocked with HTTP 422 BUILDING_NOT_CONFORMANT on a non-conformant
+ * building. Rounding error (if any) is balanced on the last unit so the sum
+ * is exact.
+ */
+async function seedConformantUnits(
+  page: Page,
+  adminToken: string,
+  orgId: string,
+  buildingId: string,
+  totalUnits: number,
+  quotaSum: number = 1000,
+): Promise<string[]> {
+  const baseQuota = Math.floor((quotaSum / totalUnits) * 100) / 100;
+  const lastQuota =
+    Math.round((quotaSum - baseQuota * (totalUnits - 1)) * 100) / 100;
+
+  const unitIds: string[] = [];
+  for (let i = 0; i < totalUnits; i++) {
+    const quota = i === totalUnits - 1 ? lastQuota : baseQuota;
+    const unitResp = await page.request.post(`${API_BASE}/units`, {
+      data: {
+        organization_id: orgId,
+        building_id: buildingId,
+        unit_number: `${i + 1}A`,
+        floor: Math.floor(i / 2),
+        surface_area: 60 + i * 5,
+        unit_type: "Apartment",
+        quota,
+      },
+      headers: { Authorization: `Bearer ${adminToken}` },
+    });
+    const unit = await unitResp.json();
+    unitIds.push(unit.id);
+  }
+  return unitIds;
+}
+
 export async function loginAsSyndicWithBuilding(
   page: Page,
   prefix: string = "test",
+  opts: {
+    totalUnits?: number;
+    totalTantiemes?: number;
+    seedUnits?: boolean;
+  } = {},
 ): Promise<SyndicContext> {
+  // `totalTantiemes` = base de l'acte de base de la copropriété
+  // (1000 millièmes par défaut, 10000 fréquent pour lots fractionnés
+  // finement). La conformité exige SUM(quota) == total_tantiemes, donc on
+  // l'explicite ici plutôt que de dépendre du défaut backend — cf. mémoire
+  // `quota-basis-acte-de-base`.
+  const { totalUnits = 12, totalTantiemes = 1000, seedUnits = true } = opts;
   const auth = await loginAsSyndic(page, prefix);
   const timestamp = Date.now();
 
@@ -237,13 +293,28 @@ export async function loginAsSyndicWithBuilding(
       city: "Brussels",
       postal_code: "1000",
       country: "Belgium",
-      total_units: 12,
+      total_units: totalUnits,
+      total_tantiemes: totalTantiemes,
       construction_year: 2010,
       acp_id: acpId,
     },
     headers: { Authorization: `Bearer ${auth.adminToken}` },
   });
   const building = await buildingResp.json();
+
+  // Track H Story H2 — seed conformant units by default so operational
+  // computations (expenses/charges/états datés) are not blocked with 422.
+  // Units sum exactly to total_tantiemes (the acte de base).
+  if (seedUnits) {
+    await seedConformantUnits(
+      page,
+      auth.adminToken,
+      auth.orgId,
+      building.id,
+      totalUnits,
+      totalTantiemes,
+    );
+  }
 
   return { ...auth, buildingId: building.id };
 }
@@ -255,7 +326,14 @@ export async function loginAsSyndicWithUnit(
   page: Page,
   prefix: string = "test",
 ): Promise<SyndicWithUnitContext> {
-  const ctx = await loginAsSyndicWithBuilding(page, prefix);
+  // Building total_units=1 + 1 unit quota 1000 = conformant
+  // (count(units)==1==total_units, SUM(quota)==1000==total_tantiemes).
+  // seedUnits:false so we add exactly the single unit we return below.
+  const ctx = await loginAsSyndicWithBuilding(page, prefix, {
+    totalUnits: 1,
+    totalTantiemes: 1000,
+    seedUnits: false,
+  });
 
   const unitResp = await page.request.post(`${API_BASE}/units`, {
     data: {
@@ -265,7 +343,7 @@ export async function loginAsSyndicWithUnit(
       floor: 1,
       surface_area: 85.0,
       unit_type: "Apartment",
-      quota: 100.0,
+      quota: 1000.0,
     },
     headers: { Authorization: `Bearer ${ctx.adminToken}` },
   });

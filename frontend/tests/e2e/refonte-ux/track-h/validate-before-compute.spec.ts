@@ -61,7 +61,9 @@ test.describe("Track H Story H2 — validate-before-compute", () => {
       data: {
         organization_id: org.id,
         building_id: building.id,
-        category: "maintenance",
+        // PascalCase : doit matcher l'enum ExpenseCategory (sinon 400 deser
+        // AVANT le gate — c'était la cause du 400-vs-422, Story H7).
+        category: "Maintenance",
         description: "Forced bypass attempt",
         amount: 1000,
         expense_date: new Date().toISOString(),
@@ -71,16 +73,16 @@ test.describe("Track H Story H2 — validate-before-compute", () => {
       headers: { Authorization: `Bearer ${adminToken}` },
     });
 
-    // BE 422 (pre-check Story H2) avec payload narratif (Story H1 + H2 helper).
+    // BE 422 (pre-check validate-before-compute ACP-level, Story H7).
     expect(expenseResp.status()).toBe(422);
     const body = await expenseResp.json();
-    expect(body.kind).toBe("building_not_conformant");
+    expect(body.kind).toBe("acp_not_conformant");
     expect(body.details).toBeDefined();
-    expect(body.details.code).toBe("BUILDING_NOT_CONFORMANT");
-    expect(body.details.building_id).toBe(building.id);
-    // 10 units declared, 0 inserted → units_delta=10
+    expect(body.details.code).toBe("ACP_NOT_CONFORMANT");
+    expect(body.details.acp_id).toBe(acpId);
+    // ACP mono-bloc : 10 lots déclarés, 0 insérés → units_delta=10.
     expect(body.details.units_delta).toBe(10);
-    // quota_basis=1000 (acte de base), quota_delta="1000" (manque tout).
+    // quota_basis=1000 (acte de base ACP), quota_delta="1000" (manque tout).
     expect(body.details.quota_basis).toBe(1000);
     expect(body.details.quota_delta).toBe("1000");
   });
@@ -134,7 +136,8 @@ test.describe("Track H Story H2 — validate-before-compute", () => {
 
     expect(cffResp.status()).toBe(422);
     const body = await cffResp.json();
-    expect(body.kind).toBe("building_not_conformant");
-    expect(body.details.code).toBe("BUILDING_NOT_CONFORMANT");
+    expect(body.kind).toBe("acp_not_conformant");
+    expect(body.details.code).toBe("ACP_NOT_CONFORMANT");
+    expect(body.details.acp_id).toBe(acpId);
   });
 });
