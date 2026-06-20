@@ -317,6 +317,7 @@ mod tests {
         impl AcpRepository for AcpRepo {
             async fn create(&self, acp: &crate::domain::entities::Acp) -> Result<crate::domain::entities::Acp, crate::application::error::AppError>;
             async fn find_by_id(&self, id: Uuid) -> Result<Option<crate::domain::entities::Acp>, crate::application::error::AppError>;
+            async fn find_by_id_with_metrics(&self, id: Uuid) -> Result<Option<(crate::domain::entities::Acp, crate::domain::entities::AcpMetrics)>, crate::application::error::AppError>;
             async fn list(&self, scope: crate::application::ports::ListScope) -> Result<Vec<crate::domain::entities::Acp>, crate::application::error::AppError>;
             async fn update(&self, acp: &crate::domain::entities::Acp) -> Result<crate::domain::entities::Acp, crate::application::error::AppError>;
             async fn archive(&self, id: Uuid) -> Result<(), crate::application::error::AppError>;

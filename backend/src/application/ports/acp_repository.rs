@@ -7,7 +7,7 @@
 //! pas de `Result<_, String>` pour les NEW use-cases).
 
 use crate::application::error::AppError;
-use crate::domain::entities::Acp;
+use crate::domain::entities::{Acp, AcpMetrics};
 use async_trait::async_trait;
 use uuid::Uuid;
 
@@ -35,6 +35,15 @@ pub trait AcpRepository: Send + Sync {
 
     /// Récupère par id. `None` si absent (pas une erreur).
     async fn find_by_id(&self, id: Uuid) -> Result<Option<Acp>, AppError>;
+
+    /// Story H6 (CL1) — récupère l'ACP **avec ses métriques agrégées** (Σ units,
+    /// Σ lots déclarés, Σ quotités, nb blocs) sur TOUS ses buildings. Source
+    /// de vérité de la conformité ACP-level (`Acp::assert_conformant`, ADR-0010).
+    /// `None` si l'ACP n'existe pas.
+    async fn find_by_id_with_metrics(
+        &self,
+        id: Uuid,
+    ) -> Result<Option<(Acp, AcpMetrics)>, AppError>;
 
     /// Liste filtrée par scope. Tri implémentation : `created_at DESC`.
     async fn list(&self, scope: ListScope) -> Result<Vec<Acp>, AppError>;

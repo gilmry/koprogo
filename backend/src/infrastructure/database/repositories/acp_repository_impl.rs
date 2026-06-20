@@ -7,9 +7,10 @@
 
 use crate::application::error::AppError;
 use crate::application::ports::{AcpRepository, ListScope};
-use crate::domain::entities::{Acp, AcpLegalStatus};
+use crate::domain::entities::{Acp, AcpLegalStatus, AcpMetrics};
 use crate::infrastructure::database::pool::DbPool;
 use async_trait::async_trait;
+use rust_decimal::Decimal;
 use sqlx::Row;
 use uuid::Uuid;
 
@@ -97,6 +98,51 @@ impl AcpRepository for PostgresAcpRepository {
         .map_err(|e| AppError::Database(e.to_string()))?;
 
         Ok(row.as_ref().map(Self::row_to_acp))
+    }
+
+    async fn find_by_id_with_metrics(
+        &self,
+        id: Uuid,
+    ) -> Result<Option<(Acp, AcpMetrics)>, AppError> {
+        // Sous-requêtes indépendantes : évite le fan-out du JOIN
+        // (buildings × units multiplierait `total_units`). Chaque agrégat est
+        // calculé séparément sur le périmètre de l'ACP. `SUM(quota::NUMERIC)`
+        // reste Decimal exact (ADR-0007/0008). Story H6 — ADR-0010.
+        let row = sqlx::query(
+            r#"
+            SELECT
+                a.id, a.organization_id, a.name, a.slug, a.legal_status, a.bce_number,
+                a.address_street, a.address_postal_code, a.address_city,
+                a.total_tantiemes, a.created_at, a.updated_at,
+                (SELECT COALESCE(COUNT(u.id), 0)::INT
+                   FROM buildings b JOIN units u ON u.building_id = b.id
+                   WHERE b.acp_id = a.id)                                   AS units_count,
+                (SELECT COALESCE(SUM(u.quota::NUMERIC), 0::NUMERIC)
+                   FROM buildings b JOIN units u ON u.building_id = b.id
+                   WHERE b.acp_id = a.id)                                   AS quota_sum,
+                (SELECT COALESCE(SUM(b.total_units), 0)::INT
+                   FROM buildings b WHERE b.acp_id = a.id)                  AS declared_units_total,
+                (SELECT COALESCE(COUNT(*), 0)::INT
+                   FROM buildings b WHERE b.acp_id = a.id)                  AS buildings_count
+            FROM acps a
+            WHERE a.id = $1
+            "#,
+        )
+        .bind(id)
+        .fetch_optional(&self.pool)
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?;
+
+        Ok(row.map(|row| {
+            let acp = Self::row_to_acp(&row);
+            let metrics = AcpMetrics {
+                units_count: row.try_get("units_count").unwrap_or(0),
+                declared_units_total: row.try_get("declared_units_total").unwrap_or(0),
+                quota_sum: row.try_get("quota_sum").unwrap_or(Decimal::ZERO),
+                buildings_count: row.try_get("buildings_count").unwrap_or(0),
+            };
+            (acp, metrics)
+        }))
     }
 
     async fn list(&self, scope: ListScope) -> Result<Vec<Acp>, AppError> {
