@@ -1,10 +1,7 @@
 use chrono::{DateTime, Utc};
 use rust_decimal::Decimal;
-use rust_decimal_macros::dec;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
-
-const MAX_QUOTA: Decimal = dec!(1000);
 
 /// Type de lot (appartement, cave, parking, etc.)
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -48,11 +45,16 @@ impl Unit {
         if surface_area <= 0.0 {
             return Err("Surface area must be greater than 0".to_string());
         }
-        // Validate shares (tantièmes) according to Art. 577-2 §4 Code Civil belge
-        // Shares must be positive and typically don't exceed 1000 (building tantiemes)
-        // Individual unit shares must sum to building.total_shares (usually 1000)
-        if quota <= Decimal::ZERO || quota > MAX_QUOTA {
-            return Err("Quota (shares) must be between 0 (exclusive) and 1000 (inclusive), representing building tantièmes".to_string());
+        // Validate shares (tantièmes) — Art. 3.84 CC.
+        // Story H8 (CL2) : plus de borne supérieure hard-codée à 1000. L'acte de
+        // base peut être 1000 / 10000 / autre (cf. ADR-0010). La borne haute
+        // (Σ quotités ≤ acte de base) est vérifiée à l'AGRÉGAT par
+        // `Building::validate_unit_shares_distribution(units, total_tantiemes)`
+        // et `Acp::assert_conformant` — pas au niveau d'un lot isolé qui ignore
+        // l'acte de base de sa copropriété. Ici on garde l'invariant unitaire
+        // minimal : une quote-part est strictement positive.
+        if quota <= Decimal::ZERO {
+            return Err("Quota (shares) must be strictly positive (Art. 3.84 CC)".to_string());
         }
 
         let now = Utc::now();
@@ -78,8 +80,8 @@ impl Unit {
         if self.surface_area <= 0.0 {
             return Err("Surface area must be greater than 0".to_string());
         }
-        if self.quota <= Decimal::ZERO || self.quota > MAX_QUOTA {
-            return Err("Quota must be between 0 and 1000".to_string());
+        if self.quota <= Decimal::ZERO {
+            return Err("Quota must be strictly positive (Art. 3.84 CC)".to_string());
         }
         Ok(())
     }
@@ -98,6 +100,73 @@ impl Unit {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use rust_decimal_macros::dec;
+
+    // ----- Story H8 (CL2) — borne quotité = acte de base (4-cat) -------------
+
+    #[test]
+    fn happy_unit_quota_5000_on_acte_10000_accepted() {
+        // Avant H8 : rejeté par le cap unitaire 1000. Après : accepté — la borne
+        // supérieure est l'acte de base (10000 ici), vérifiée à l'agrégat.
+        let u = Unit::new(
+            Uuid::new_v4(),
+            Uuid::new_v4(),
+            "B12".to_string(),
+            UnitType::Apartment,
+            Some(2),
+            120.0,
+            dec!(5000),
+        );
+        assert!(
+            u.is_ok(),
+            "quota 5000 doit être accepté (acte de base 10000)"
+        );
+    }
+
+    #[test]
+    fn edge_unit_quota_just_above_1000_accepted() {
+        let u = Unit::new(
+            Uuid::new_v4(),
+            Uuid::new_v4(),
+            "B13".to_string(),
+            UnitType::Apartment,
+            Some(2),
+            60.0,
+            dec!(1001),
+        );
+        assert!(
+            u.is_ok(),
+            "1001 ne doit plus être rejeté (plus de cap 1000)"
+        );
+    }
+
+    #[test]
+    fn security_unit_quota_zero_rejected() {
+        let u = Unit::new(
+            Uuid::new_v4(),
+            Uuid::new_v4(),
+            "B14".to_string(),
+            UnitType::Apartment,
+            None,
+            50.0,
+            Decimal::ZERO,
+        );
+        assert!(u.is_err(), "quota nul rejeté (invariant unitaire minimal)");
+    }
+
+    #[test]
+    fn negative_unit_quota_negative_rejected() {
+        let u = Unit::new(
+            Uuid::new_v4(),
+            Uuid::new_v4(),
+            "B15".to_string(),
+            UnitType::Apartment,
+            None,
+            50.0,
+            dec!(-1),
+        );
+        assert!(u.is_err());
+    }
 
     #[test]
     fn test_create_unit_success() {
