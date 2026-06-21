@@ -12,15 +12,16 @@ pub struct PostgresBudgetRepository {
     pool: PgPool,
 }
 
-/// Budget SELECT columns with casts for enums and decimals
+/// Budget SELECT columns. Monetary columns are NUMERIC → lus directement en
+/// `Decimal` (cf. ADR-0007, Story H11). Seul l'enum statut est casté en texte.
 const BUDGET_COLUMNS: &str = r#"
     id, organization_id, building_id, fiscal_year,
-    ordinary_budget::float8 as ordinary_budget,
-    extraordinary_budget::float8 as extraordinary_budget,
-    total_budget::float8 as total_budget,
+    ordinary_budget,
+    extraordinary_budget,
+    total_budget,
     status::text as status_text,
     submitted_date, approved_date, approved_by_meeting_id,
-    monthly_provision_amount::float8 as monthly_provision_amount,
+    monthly_provision_amount,
     notes, created_at, updated_at
 "#;
 
@@ -85,12 +86,12 @@ impl BudgetRepository for PostgresBudgetRepository {
                 $9, $10, $11, $12, $13, $14, $15
             )
             RETURNING id, organization_id, building_id, fiscal_year,
-                ordinary_budget::float8 as ordinary_budget,
-                extraordinary_budget::float8 as extraordinary_budget,
-                total_budget::float8 as total_budget,
+                ordinary_budget,
+                extraordinary_budget,
+                total_budget,
                 status::text as status_text,
                 submitted_date, approved_date, approved_by_meeting_id,
-                monthly_provision_amount::float8 as monthly_provision_amount,
+                monthly_provision_amount,
                 notes, created_at, updated_at
             "#,
         )
@@ -327,12 +328,12 @@ impl BudgetRepository for PostgresBudgetRepository {
                 updated_at = $11
             WHERE id = $1
             RETURNING id, organization_id, building_id, fiscal_year,
-                ordinary_budget::float8 as ordinary_budget,
-                extraordinary_budget::float8 as extraordinary_budget,
-                total_budget::float8 as total_budget,
+                ordinary_budget,
+                extraordinary_budget,
+                total_budget,
                 status::text as status_text,
                 submitted_date, approved_date, approved_by_meeting_id,
-                monthly_provision_amount::float8 as monthly_provision_amount,
+                monthly_provision_amount,
                 notes, created_at, updated_at
             "#,
         )
@@ -407,6 +408,14 @@ impl BudgetRepository for PostgresBudgetRepository {
             None => return Ok(None),
         };
 
+        // L'analyse de variance (reporting) reste en f64 : la source de vérité
+        // monétaire (entité Budget) est en Decimal (Story H11, ADR-0007) ; on
+        // convertit uniquement ici, à la frontière du reporting analytique.
+        use rust_decimal::prelude::ToPrimitive;
+        let budget_ordinary = budget.ordinary_budget.to_f64().unwrap_or(0.0);
+        let budget_extraordinary = budget.extraordinary_budget.to_f64().unwrap_or(0.0);
+        let budget_total = budget.total_budget.to_f64().unwrap_or(0.0);
+
         // Get actual expenses for this budget's fiscal year and building
         let fiscal_year_start = format!("{}-01-01", budget.fiscal_year);
         let fiscal_year_end = format!("{}-12-31", budget.fiscal_year);
@@ -438,10 +447,7 @@ impl BudgetRepository for PostgresBudgetRepository {
         for row in expense_rows {
             let category_str: String = row.get("category");
             let amount_dec: rust_decimal::Decimal = row.try_get("total_amount")?;
-            let amount: f64 = {
-                use rust_decimal::prelude::ToPrimitive;
-                amount_dec.to_f64().unwrap_or(0.0)
-            };
+            let amount: f64 = amount_dec.to_f64().unwrap_or(0.0);
 
             let category = match category_str.as_str() {
                 "utilities" => ExpenseCategory::Utilities,
@@ -463,25 +469,25 @@ impl BudgetRepository for PostgresBudgetRepository {
         let actual_total = actual_ordinary + actual_extraordinary;
 
         // Calculate variances
-        let variance_ordinary = budget.ordinary_budget - actual_ordinary;
-        let variance_extraordinary = budget.extraordinary_budget - actual_extraordinary;
-        let variance_total = budget.total_budget - actual_total;
+        let variance_ordinary = budget_ordinary - actual_ordinary;
+        let variance_extraordinary = budget_extraordinary - actual_extraordinary;
+        let variance_total = budget_total - actual_total;
 
         // Calculate variance percentages
-        let variance_ordinary_pct = if budget.ordinary_budget > 0.0 {
-            (variance_ordinary / budget.ordinary_budget) * 100.0
+        let variance_ordinary_pct = if budget_ordinary > 0.0 {
+            (variance_ordinary / budget_ordinary) * 100.0
         } else {
             0.0
         };
 
-        let variance_extraordinary_pct = if budget.extraordinary_budget > 0.0 {
-            (variance_extraordinary / budget.extraordinary_budget) * 100.0
+        let variance_extraordinary_pct = if budget_extraordinary > 0.0 {
+            (variance_extraordinary / budget_extraordinary) * 100.0
         } else {
             0.0
         };
 
-        let variance_total_pct = if budget.total_budget > 0.0 {
-            (variance_total / budget.total_budget) * 100.0
+        let variance_total_pct = if budget_total > 0.0 {
+            (variance_total / budget_total) * 100.0
         } else {
             0.0
         };
@@ -519,9 +525,9 @@ impl BudgetRepository for PostgresBudgetRepository {
             budget_id: budget.id,
             fiscal_year: budget.fiscal_year,
             building_id: budget.building_id,
-            budgeted_ordinary: budget.ordinary_budget,
-            budgeted_extraordinary: budget.extraordinary_budget,
-            budgeted_total: budget.total_budget,
+            budgeted_ordinary: budget_ordinary,
+            budgeted_extraordinary: budget_extraordinary,
+            budgeted_total: budget_total,
             actual_ordinary,
             actual_extraordinary,
             actual_total,

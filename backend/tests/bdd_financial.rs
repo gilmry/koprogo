@@ -132,9 +132,9 @@ pub struct FinancialWorld {
     // Budget tracking
     last_budget_id: Option<Uuid>,
     last_budget_status: Option<String>,
-    last_budget_ordinary: Option<f64>,
-    last_budget_extraordinary: Option<f64>,
-    last_budget_total: Option<f64>,
+    last_budget_ordinary: Option<Decimal>,
+    last_budget_extraordinary: Option<Decimal>,
+    last_budget_total: Option<Decimal>,
     budget_list_count: usize,
     meeting_id: Option<Uuid>,
 
@@ -5603,16 +5603,16 @@ async fn when_create_budget(world: &mut FinancialWorld, step: &Step) {
         .unwrap_or("2026".to_string())
         .parse()
         .unwrap();
-    let ordinary: f64 = get_invoice_table_value(step, "ordinary_budget_cents")
+    let ordinary: Decimal = get_invoice_table_value(step, "ordinary_budget_cents")
         .unwrap_or("5000000".to_string())
-        .parse::<f64>()
+        .parse::<Decimal>()
         .unwrap()
-        / 100.0;
-    let extraordinary: f64 = get_invoice_table_value(step, "extraordinary_budget_cents")
+        / Decimal::from(100);
+    let extraordinary: Decimal = get_invoice_table_value(step, "extraordinary_budget_cents")
         .unwrap_or("0".to_string())
-        .parse::<f64>()
+        .parse::<Decimal>()
         .unwrap()
-        / 100.0;
+        / Decimal::from(100);
     let notes = get_invoice_table_value(step, "notes");
 
     let dto = CreateBudgetRequest {
@@ -5668,14 +5668,14 @@ async fn then_budget_status(world: &mut FinancialWorld, expected: String) {
 
 #[then(regex = r#"^the ordinary budget should be "([^"]*)"$"#)]
 async fn then_ordinary_budget(world: &mut FinancialWorld, expected: String) {
-    let val = world.last_budget_ordinary.unwrap_or(0.0);
-    let expected_val: f64 = expected
+    let val = world.last_budget_ordinary.unwrap_or(Decimal::ZERO);
+    let expected_val: Decimal = expected
         .replace(" EUR", "")
         .replace(',', "")
         .parse()
-        .unwrap_or(0.0);
+        .unwrap_or(Decimal::ZERO);
     assert!(
-        (val - expected_val).abs() < 0.01,
+        (val - expected_val).abs() < dec!(0.01),
         "Expected {}, got {}",
         expected_val,
         val
@@ -5684,14 +5684,14 @@ async fn then_ordinary_budget(world: &mut FinancialWorld, expected: String) {
 
 #[then(regex = r#"^the extraordinary budget should be "([^"]*)"$"#)]
 async fn then_extraordinary_budget(world: &mut FinancialWorld, expected: String) {
-    let val = world.last_budget_extraordinary.unwrap_or(0.0);
-    let expected_val: f64 = expected
+    let val = world.last_budget_extraordinary.unwrap_or(Decimal::ZERO);
+    let expected_val: Decimal = expected
         .replace(" EUR", "")
         .replace(',', "")
         .parse()
-        .unwrap_or(0.0);
+        .unwrap_or(Decimal::ZERO);
     assert!(
-        (val - expected_val).abs() < 0.01,
+        (val - expected_val).abs() < dec!(0.01),
         "Expected {}, got {}",
         expected_val,
         val
@@ -5708,8 +5708,8 @@ async fn given_draft_budget(world: &mut FinancialWorld) {
         organization_id: world.org_id.unwrap(),
         building_id: world.building_id.unwrap(),
         fiscal_year: 2026,
-        ordinary_budget: 50000.0,
-        extraordinary_budget: 20000.0,
+        ordinary_budget: dec!(50000),
+        extraordinary_budget: dec!(20000),
         notes: Some("Test budget".to_string()),
     };
     let resp = uc.create_budget(dto).await.expect("create budget");
@@ -5827,11 +5827,11 @@ async fn when_update_budget(world: &mut FinancialWorld, step: &Step) {
     let uc = world.budget_use_cases.as_ref().unwrap().clone();
     let id = world.last_budget_id.expect("no budget id");
     let ordinary = get_invoice_table_value(step, "ordinary_budget_cents")
-        .and_then(|v| v.parse::<f64>().ok())
-        .map(|v| v / 100.0);
+        .and_then(|v| v.parse::<Decimal>().ok())
+        .map(|v| v / Decimal::from(100));
     let extraordinary = get_invoice_table_value(step, "extraordinary_budget_cents")
-        .and_then(|v| v.parse::<f64>().ok())
-        .map(|v| v / 100.0);
+        .and_then(|v| v.parse::<Decimal>().ok())
+        .map(|v| v / Decimal::from(100));
     let dto = UpdateBudgetRequest {
         ordinary_budget: ordinary,
         extraordinary_budget: extraordinary,
@@ -5860,11 +5860,11 @@ async fn given_approved_budget_with(world: &mut FinancialWorld, _year: i32, step
     let id = world.last_budget_id.unwrap();
 
     let ordinary = get_invoice_table_value(step, "ordinary_budget_cents")
-        .and_then(|v| v.parse::<f64>().ok())
-        .map(|v| v / 100.0);
+        .and_then(|v| v.parse::<Decimal>().ok())
+        .map(|v| v / Decimal::from(100));
     let extraordinary = get_invoice_table_value(step, "extraordinary_budget_cents")
-        .and_then(|v| v.parse::<f64>().ok())
-        .map(|v| v / 100.0);
+        .and_then(|v| v.parse::<Decimal>().ok())
+        .map(|v| v / Decimal::from(100));
     if ordinary.is_some() || extraordinary.is_some() {
         let dto = UpdateBudgetRequest {
             ordinary_budget: ordinary,
@@ -5953,8 +5953,8 @@ async fn when_try_duplicate_budget(world: &mut FinancialWorld) {
         organization_id: world.org_id.unwrap(),
         building_id: world.building_id.unwrap(),
         fiscal_year: 2026,
-        ordinary_budget: 50000.0,
-        extraordinary_budget: 20000.0,
+        ordinary_budget: dec!(50000),
+        extraordinary_budget: dec!(20000),
         notes: None,
     };
     match uc.create_budget(dto).await {
@@ -5997,8 +5997,8 @@ async fn given_budgets_3_years(world: &mut FinancialWorld) {
             organization_id: world.org_id.unwrap(),
             building_id: world.building_id.unwrap(),
             fiscal_year: year,
-            ordinary_budget: 50000.0,
-            extraordinary_budget: 20000.0,
+            ordinary_budget: dec!(50000),
+            extraordinary_budget: dec!(20000),
             notes: None,
         };
         uc.create_budget(dto).await.expect("create budget");

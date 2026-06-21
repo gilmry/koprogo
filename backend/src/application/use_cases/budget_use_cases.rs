@@ -287,6 +287,7 @@ mod tests {
     use crate::domain::entities::{Building, Expense};
     use mockall::mock;
     use mockall::predicate::*;
+    use rust_decimal_macros::dec;
 
     // Mock BudgetRepository
     mock! {
@@ -388,7 +389,7 @@ mod tests {
 
     /// Helper: create a Draft budget ready for use in tests
     fn make_draft_budget(org_id: Uuid, building_id: Uuid) -> Budget {
-        Budget::new(org_id, building_id, 2025, 60000.0, 15000.0).unwrap()
+        Budget::new(org_id, building_id, 2025, dec!(60000), dec!(15000)).unwrap()
     }
 
     /// Helper: build the BudgetUseCases from three mock repos
@@ -443,8 +444,8 @@ mod tests {
             organization_id: org_id,
             building_id,
             fiscal_year: 2025,
-            ordinary_budget: 60000.0,
-            extraordinary_budget: 15000.0,
+            ordinary_budget: dec!(60000),
+            extraordinary_budget: dec!(15000),
             notes: Some("Budget prévisionnel toiture".to_string()),
         };
 
@@ -452,9 +453,9 @@ mod tests {
         assert!(result.is_ok());
         let resp = result.unwrap();
         assert_eq!(resp.fiscal_year, 2025);
-        assert_eq!(resp.ordinary_budget, 60000.0);
-        assert_eq!(resp.extraordinary_budget, 15000.0);
-        assert_eq!(resp.total_budget, 75000.0);
+        assert_eq!(resp.ordinary_budget, dec!(60000));
+        assert_eq!(resp.extraordinary_budget, dec!(15000));
+        assert_eq!(resp.total_budget, dec!(75000));
         assert_eq!(resp.status, BudgetStatus::Draft);
         assert!(resp.is_editable);
         assert!(!resp.is_active);
@@ -494,8 +495,8 @@ mod tests {
             organization_id: org_id,
             building_id,
             fiscal_year: 2025,
-            ordinary_budget: 60000.0,
-            extraordinary_budget: 15000.0,
+            ordinary_budget: dec!(60000),
+            extraordinary_budget: dec!(15000),
             notes: None,
         };
 
