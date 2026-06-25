@@ -199,6 +199,8 @@ pub struct ChargeDistributionResponseDto {
     /// Quote-part (e.g., dec!(0.25) pour 25%). Decimal exact (cf. ADR-0007).
     pub quota_percentage: Decimal,
     pub amount_due: Decimal,
+    /// Story H12 — critère légal de répartition (value / utility / mixed).
+    pub distribution_criteria: String,
     pub created_at: String,
 }
 

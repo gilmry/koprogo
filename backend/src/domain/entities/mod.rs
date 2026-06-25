@@ -78,7 +78,7 @@ pub use budget::{Budget, BudgetStatus};
 pub use building::{Building, BuildingMetrics, BuildingNotConformantError};
 pub use call_for_funds::{CallForFunds, CallForFundsError, CallForFundsStatus};
 pub use challenge::{Challenge, ChallengeProgress, ChallengeStatus, ChallengeType};
-pub use charge_distribution::{ChargeDistribution, ChargeDistributionError};
+pub use charge_distribution::{ChargeDistribution, ChargeDistributionError, DistributionCriteria};
 pub use consent::{ConsentRecord, ConsentStatus};
 pub use contract_evaluation::ContractEvaluation;
 pub use contractor_evaluation::{

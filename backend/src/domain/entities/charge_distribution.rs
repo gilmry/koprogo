@@ -22,6 +22,11 @@ pub struct ChargeDistribution {
     pub quota_percentage: Decimal, // Quote-part (ex: dec!(0.15) pour 15%)
     pub amount_due: Decimal,       // Montant à payer par ce propriétaire
 
+    /// Story H12 — critère légal sous lequel cette ligne a été calculée
+    /// (valeur / utilité / mixte, Art. 3.84/3.86). Défaut : `Value`.
+    #[serde(default)]
+    pub distribution_criteria: DistributionCriteria,
+
     pub created_at: DateTime<Utc>,
 }
 
@@ -48,6 +53,13 @@ pub enum ChargeDistributionError {
     /// Sum of all quotas exceeds 100% beyond the rounding tolerance.
     /// Over-distribution would over-charge owners — financial integrity guard.
     QuotaSumExceeds { total_quota: Decimal },
+    /// Story H12 — base de tantièmes invalide (acte de base ≤ 0) : impossible de
+    /// calculer une quote-part de lot (division par zéro / base négative).
+    InvalidTotalTantiemes(Decimal),
+    /// Story H12 — critère de répartition non reconnu (≠ value/utility/mixed).
+    /// Garde @security : un critère non prévu par la loi (Art. 3.84/3.86) est
+    /// refusé, pas appliqué silencieusement.
+    UnknownCriteria(String),
 }
 
 impl std::fmt::Display for ChargeDistributionError {
@@ -61,6 +73,16 @@ impl std::fmt::Display for ChargeDistributionError {
                 f,
                 "Total quota percentage exceeds 100% (got: {})",
                 total_quota * dec!(100)
+            ),
+            Self::InvalidTotalTantiemes(t) => write!(
+                f,
+                "Total tantièmes (acte de base) must be strictly positive (got: {})",
+                t
+            ),
+            Self::UnknownCriteria(c) => write!(
+                f,
+                "Unknown distribution criteria '{}' (expected value|utility|mixed)",
+                c
             ),
         }
     }
@@ -77,6 +99,56 @@ impl From<ChargeDistributionError> for String {
     }
 }
 
+/// Critère légal de répartition des charges communes (Story H12, Art. 3.84 /
+/// 3.86 CC).
+///
+/// - `Value` (valeur) : répartition selon la quote-part / valeur respective du
+///   lot, c.-à-d. les tantièmes de l'acte de base. **Critère par défaut.**
+/// - `Utility` (utilité) : base alternative selon l'utilité de la partie commune
+///   pour chaque lot (ex. ascenseur réparti selon l'étage) — Art. 3.86.
+/// - `Mixed` (mixte) : combinaison valeur + utilité.
+///
+/// Pur domaine : sérialisé/persisté en texte (`value`/`utility`/`mixed`).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
+#[serde(rename_all = "lowercase")]
+pub enum DistributionCriteria {
+    #[default]
+    Value,
+    Utility,
+    Mixed,
+}
+
+impl DistributionCriteria {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::Value => "value",
+            Self::Utility => "utility",
+            Self::Mixed => "mixed",
+        }
+    }
+}
+
+impl std::fmt::Display for DistributionCriteria {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl std::str::FromStr for DistributionCriteria {
+    type Err = ChargeDistributionError;
+
+    /// Strict : un critère non reconnu est REFUSÉ (garde @security H12), jamais
+    /// rabattu silencieusement sur une valeur par défaut.
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s.trim().to_lowercase().as_str() {
+            "value" => Ok(Self::Value),
+            "utility" => Ok(Self::Utility),
+            "mixed" => Ok(Self::Mixed),
+            other => Err(ChargeDistributionError::UnknownCriteria(other.to_string())),
+        }
+    }
+}
+
 impl ChargeDistribution {
     pub fn new(
         expense_id: Uuid,
@@ -84,6 +156,25 @@ impl ChargeDistribution {
         owner_id: Uuid,
         quota_percentage: Decimal,
         total_amount: Decimal,
+    ) -> Result<Self, ChargeDistributionError> {
+        Self::new_with_criteria(
+            expense_id,
+            unit_id,
+            owner_id,
+            quota_percentage,
+            total_amount,
+            DistributionCriteria::default(),
+        )
+    }
+
+    /// Story H12 — constructeur avec critère de répartition explicite.
+    pub fn new_with_criteria(
+        expense_id: Uuid,
+        unit_id: Uuid,
+        owner_id: Uuid,
+        quota_percentage: Decimal,
+        total_amount: Decimal,
+        distribution_criteria: DistributionCriteria,
     ) -> Result<Self, ChargeDistributionError> {
         // Validations
         if quota_percentage < Decimal::ZERO || quota_percentage > Decimal::ONE {
@@ -103,8 +194,39 @@ impl ChargeDistribution {
             owner_id,
             quota_percentage,
             amount_due,
+            distribution_criteria,
             created_at: Utc::now(),
         })
+    }
+
+    /// Story H12 — quote-part effective d'un copropriétaire pour une charge.
+    ///
+    /// Clarifie les DEUX niveaux de répartition (DoD H12) :
+    /// - `unit_quota / total_tantiemes` = part du **lot** dans les communs
+    ///   (valeur respective, acte de base — Art. 3.84) ;
+    /// - `× ownership_percentage` = part du **copropriétaire** dans le lot
+    ///   (indivision / démembrement — `unit_owners`).
+    ///
+    /// Retourne la fraction [0,1] à appliquer au montant total de la charge.
+    pub fn resolve_owner_quota(
+        unit_quota: Decimal,
+        total_tantiemes: Decimal,
+        ownership_percentage: Decimal,
+    ) -> Result<Decimal, ChargeDistributionError> {
+        if total_tantiemes <= Decimal::ZERO {
+            return Err(ChargeDistributionError::InvalidTotalTantiemes(
+                total_tantiemes,
+            ));
+        }
+        if unit_quota < Decimal::ZERO {
+            return Err(ChargeDistributionError::QuotaOutOfRange(unit_quota));
+        }
+        if ownership_percentage < Decimal::ZERO || ownership_percentage > Decimal::ONE {
+            return Err(ChargeDistributionError::QuotaOutOfRange(
+                ownership_percentage,
+            ));
+        }
+        Ok((unit_quota / total_tantiemes) * ownership_percentage)
     }
 
     /// Recalcule le montant dû si la quote-part ou le total change
@@ -129,6 +251,24 @@ impl ChargeDistribution {
         total_amount: Decimal,
         unit_ownerships: Vec<(Uuid, Uuid, Decimal)>, // (unit_id, owner_id, quota_percentage)
     ) -> Result<Vec<ChargeDistribution>, ChargeDistributionError> {
+        Self::calculate_distributions_with_criteria(
+            expense_id,
+            total_amount,
+            unit_ownerships,
+            DistributionCriteria::default(),
+        )
+    }
+
+    /// Story H12 — répartition avec critère explicite (valeur / utilité / mixte).
+    /// Sous `Value`, les quotités proviennent de l'acte de base ; sous `Utility`,
+    /// elles proviennent d'une base d'utilité (coefficients alternatifs). Le
+    /// critère est enregistré sur chaque ligne pour la traçabilité.
+    pub fn calculate_distributions_with_criteria(
+        expense_id: Uuid,
+        total_amount: Decimal,
+        unit_ownerships: Vec<(Uuid, Uuid, Decimal)>, // (unit_id, owner_id, quota_percentage)
+        criteria: DistributionCriteria,
+    ) -> Result<Vec<ChargeDistribution>, ChargeDistributionError> {
         if total_amount < Decimal::ZERO {
             return Err(ChargeDistributionError::NegativeTotalAmount);
         }
@@ -142,8 +282,14 @@ impl ChargeDistribution {
 
         let mut distributions = Vec::new();
         for (unit_id, owner_id, quota) in unit_ownerships {
-            let distribution =
-                ChargeDistribution::new(expense_id, unit_id, owner_id, quota, total_amount)?;
+            let distribution = ChargeDistribution::new_with_criteria(
+                expense_id,
+                unit_id,
+                owner_id,
+                quota,
+                total_amount,
+                criteria,
+            )?;
             distributions.push(distribution);
         }
 
@@ -559,6 +705,101 @@ mod tests {
         assert!(matches!(
             result.unwrap_err(),
             ChargeDistributionError::QuotaSumExceeds { .. }
+        ));
+    }
+
+    // ------------------------------------------------------------------------
+    // Story H12 (CL4) — DistributionCriteria + formule deux niveaux (4-cat).
+    // ------------------------------------------------------------------------
+
+    /// @happy — Critère `value` : quote-part effective d'un copropriétaire =
+    /// (quotité du lot / total tantièmes acte de base) × part dans le lot.
+    #[test]
+    fn happy_resolve_owner_quota_by_value() {
+        // Lot 250/1000 (acte de base 1000), copropriétaire unique (100%).
+        let q =
+            ChargeDistribution::resolve_owner_quota(dec!(250), dec!(1000), Decimal::ONE).unwrap();
+        assert_eq!(q, dec!(0.25));
+        // Même lot sur base 10000 (acte de base à 10000) : 2500/10000 = 0.25.
+        let q10000 =
+            ChargeDistribution::resolve_owner_quota(dec!(2500), dec!(10000), Decimal::ONE).unwrap();
+        assert_eq!(q10000, dec!(0.25));
+        // Indivision 50/50 : 0.25 × 0.5 = 0.125.
+        let half =
+            ChargeDistribution::resolve_owner_quota(dec!(250), dec!(1000), dec!(0.5)).unwrap();
+        assert_eq!(half, dec!(0.125));
+    }
+
+    /// @edge — Critère `utility` (base alternative) enregistré distinctement de
+    /// `value` ; le défaut reste `value`.
+    #[test]
+    fn edge_utility_criteria_is_recorded() {
+        let expense_id = Uuid::new_v4();
+        let ownerships = vec![
+            (Uuid::new_v4(), Uuid::new_v4(), dec!(0.70)), // utilité (ex. ascenseur)
+            (Uuid::new_v4(), Uuid::new_v4(), dec!(0.30)),
+        ];
+        let dists = ChargeDistribution::calculate_distributions_with_criteria(
+            expense_id,
+            dec!(1000),
+            ownerships,
+            DistributionCriteria::Utility,
+        )
+        .unwrap();
+        assert_eq!(dists.len(), 2);
+        assert!(dists
+            .iter()
+            .all(|d| d.distribution_criteria == DistributionCriteria::Utility));
+
+        let dflt = ChargeDistribution::new(
+            expense_id,
+            Uuid::new_v4(),
+            Uuid::new_v4(),
+            dec!(0.5),
+            dec!(1000),
+        )
+        .unwrap();
+        assert_eq!(dflt.distribution_criteria, DistributionCriteria::Value);
+    }
+
+    /// @security — Un critère non prévu par la loi (≠ value/utility/mixed) est
+    /// refusé (erreur typée), jamais rabattu silencieusement.
+    #[test]
+    fn security_unknown_criteria_rejected() {
+        use std::str::FromStr;
+        assert_eq!(
+            DistributionCriteria::from_str("value").unwrap(),
+            DistributionCriteria::Value
+        );
+        assert_eq!(
+            DistributionCriteria::from_str("UTILITY").unwrap(),
+            DistributionCriteria::Utility
+        );
+        let err = DistributionCriteria::from_str("au_pif").unwrap_err();
+        assert!(matches!(err, ChargeDistributionError::UnknownCriteria(_)));
+    }
+
+    /// @negative — Somme des lignes ≠ total → distribution non équilibrée
+    /// détectée ; base de tantièmes nulle → erreur typée (pas de division par 0).
+    #[test]
+    fn negative_sum_mismatch_and_zero_tantiemes() {
+        let expense_id = Uuid::new_v4();
+        // Σ quotités = 80% sur 1000 → total réparti 800 ≠ 1000.
+        let ownerships = vec![
+            (Uuid::new_v4(), Uuid::new_v4(), dec!(0.40)),
+            (Uuid::new_v4(), Uuid::new_v4(), dec!(0.40)),
+        ];
+        let dists = ChargeDistribution::calculate_distributions(expense_id, dec!(1000), ownerships)
+            .unwrap();
+        assert_eq!(ChargeDistribution::total_distributed(&dists), dec!(800.00));
+        assert!(!ChargeDistribution::verify_distribution(&dists, dec!(1000)));
+
+        // Base de tantièmes 0 → erreur typée (acte de base invalide, pas de div/0).
+        let err = ChargeDistribution::resolve_owner_quota(dec!(250), Decimal::ZERO, Decimal::ONE)
+            .unwrap_err();
+        assert!(matches!(
+            err,
+            ChargeDistributionError::InvalidTotalTantiemes(_)
         ));
     }
 }

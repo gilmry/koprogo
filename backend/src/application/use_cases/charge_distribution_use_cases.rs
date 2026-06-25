@@ -177,6 +177,7 @@ impl ChargeDistributionUseCases {
             owner_id: distribution.owner_id.to_string(),
             quota_percentage: distribution.quota_percentage,
             amount_due: distribution.amount_due,
+            distribution_criteria: distribution.distribution_criteria.to_string(),
             created_at: distribution.created_at.to_rfc3339(),
         }
     }
