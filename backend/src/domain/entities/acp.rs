@@ -25,6 +25,7 @@
 
 use chrono::{DateTime, Utc};
 use rust_decimal::Decimal;
+use rust_decimal_macros::dec;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 use uuid::Uuid;
@@ -34,6 +35,12 @@ use uuid::Uuid;
 /// cf. Art. 3.84 CC + ADR-0010. Jamais hard-codé ailleurs : toute logique de
 /// conformité lit `Acp::total_tantiemes`.
 pub const DEFAULT_TOTAL_TANTIEMES: i32 = 1000;
+
+/// Story H13 — Taux minimal légal du fonds de réserve : **5 % des charges
+/// ordinaires de l'exercice N-1** (Art. 3.86 §3 Code civil, loi du 18/06/2018
+/// en vigueur depuis 2019). Obligatoire ; l'AG peut y renoncer à la majorité
+/// des **4/5** (`reserve_fund_waived`). Cf. ADR-0012.
+pub const RESERVE_FUND_RATE: Decimal = dec!(0.05);
 
 /// Métriques agrégées d'une ACP (calculées par le repository via JOIN sur
 /// tous les buildings de l'ACP — Story H6). Pureté : aucun I/O ici.
@@ -115,6 +122,8 @@ pub enum AcpError {
     CityEmpty,
     #[error("ACP total_tantiemes (acte de base) must be greater than 0, got {0}")]
     TotalTantiemesInvalid(i32),
+    #[error("ACP fund balance cannot be negative, got {0}")]
+    NegativeFundBalance(Decimal),
 }
 
 /// Représente une Association des Copropriétaires (ACP) — racine d'agrégat.
@@ -137,6 +146,19 @@ pub struct Acp {
     pub address_street: String,
     pub address_postal_code: String,
     pub address_city: String,
+    /// Story H13 — solde du **fonds de réserve** (compte distinct au nom de
+    /// l'ACP, Art. 3.86 §3). Doit couvrir ≥ 5 % des charges ordinaires N-1
+    /// sauf renonciation 4/5. Decimal exact (ADR-0007).
+    #[serde(default)]
+    pub reserve_fund_balance: Decimal,
+    /// Story H13 — solde du **fonds de roulement** (compte distinct, dépenses
+    /// courantes récurrentes — loi 2019).
+    #[serde(default)]
+    pub working_capital_balance: Decimal,
+    /// Story H13 — l'AG a-t-elle renoncé au fonds de réserve obligatoire
+    /// (vote 4/5, Art. 3.86 §3) ? Si `true`, la conformité réserve est levée.
+    #[serde(default)]
+    pub reserve_fund_waived: bool,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
 }
@@ -198,6 +220,9 @@ impl Acp {
             address_street,
             address_postal_code,
             address_city,
+            reserve_fund_balance: Decimal::ZERO,
+            working_capital_balance: Decimal::ZERO,
+            reserve_fund_waived: false,
             created_at: now,
             updated_at: now,
         })
@@ -322,6 +347,76 @@ impl Acp {
         }
         Ok(())
     }
+
+    // ========================================================================
+    // Story H13 (CL4) — Fonds de réserve & de roulement (Art. 3.86 §3, loi 2019).
+    //
+    // Le fonds de réserve doit représenter ≥ 5 % des charges ordinaires de
+    // l'exercice N-1 (`RESERVE_FUND_RATE`), sauf renonciation 4/5 de l'AG
+    // (`reserve_fund_waived`). Comptes distincts au nom de l'ACP (modélisés par
+    // `reserve_fund_balance` + `working_capital_balance`). Decimal strict
+    // (ADR-0007) — pas de tolérance d'arrondi. Cf. ADR-0012.
+    // ========================================================================
+
+    /// Fixe le solde du fonds de réserve (validé ≥ 0).
+    pub fn set_reserve_fund_balance(&mut self, balance: Decimal) -> Result<(), AcpError> {
+        if balance < Decimal::ZERO {
+            return Err(AcpError::NegativeFundBalance(balance));
+        }
+        self.reserve_fund_balance = balance;
+        self.updated_at = Utc::now();
+        Ok(())
+    }
+
+    /// Fixe le solde du fonds de roulement (validé ≥ 0).
+    pub fn set_working_capital_balance(&mut self, balance: Decimal) -> Result<(), AcpError> {
+        if balance < Decimal::ZERO {
+            return Err(AcpError::NegativeFundBalance(balance));
+        }
+        self.working_capital_balance = balance;
+        self.updated_at = Utc::now();
+        Ok(())
+    }
+
+    /// Enregistre la décision d'AG de renoncer (ou non) au fonds de réserve
+    /// obligatoire (vote 4/5, Art. 3.86 §3). Le vote lui-même (quorum/majorité)
+    /// relève de la gouvernance (CL3) ; ici on consigne l'issue.
+    pub fn set_reserve_fund_waived(&mut self, waived: bool) {
+        self.reserve_fund_waived = waived;
+        self.updated_at = Utc::now();
+    }
+
+    /// Montant minimal légal du fonds de réserve = 5 % des charges ordinaires
+    /// N-1 (`RESERVE_FUND_RATE`). Exact (Decimal).
+    pub fn required_reserve_fund(&self, ordinary_charges_n1: Decimal) -> Decimal {
+        ordinary_charges_n1 * RESERVE_FUND_RATE
+    }
+
+    /// La réserve est-elle conforme ? Vrai si renoncée (4/5) OU si le solde
+    /// couvre le minimum légal (≥ 5 % charges N-1). Borne inclusive : exactement
+    /// 5 % passe.
+    pub fn is_reserve_fund_compliant(&self, ordinary_charges_n1: Decimal) -> bool {
+        self.reserve_fund_waived
+            || self.reserve_fund_balance >= self.required_reserve_fund(ordinary_charges_n1)
+    }
+
+    /// Retourne `Err(ReserveFundInsufficientError)` typée si la réserve est
+    /// sous le seuil légal et non renoncée. Consommée par les gates de
+    /// conformité (CL4) et le frontend (`<ReserveFundIndicator>`, différé #634).
+    pub fn assert_reserve_fund_compliant(
+        &self,
+        ordinary_charges_n1: Decimal,
+    ) -> Result<(), ReserveFundInsufficientError> {
+        if self.is_reserve_fund_compliant(ordinary_charges_n1) {
+            return Ok(());
+        }
+        Err(ReserveFundInsufficientError {
+            acp_id: self.id,
+            required: self.required_reserve_fund(ordinary_charges_n1),
+            actual: self.reserve_fund_balance,
+            ordinary_charges_n1,
+        })
+    }
 }
 
 /// Story H5 — Erreur typée de non-conformité d'une ACP (Art. 3.84 CC, INV-L3).
@@ -350,6 +445,33 @@ impl std::fmt::Display for AcpNotConformantError {
 }
 
 impl std::error::Error for AcpNotConformantError {}
+
+/// Story H13 — Erreur typée : fonds de réserve sous le seuil légal des 5 %
+/// (Art. 3.86 §3, loi 2019) et non renoncé par l'AG (4/5). Mappée vers
+/// `AppError::ReserveFundInsufficient` (HTTP 422 + `RESERVE_FUND_INSUFFICIENT`)
+/// par `From<>` dans `application/error.rs`. Cf. ADR-0012.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ReserveFundInsufficientError {
+    pub acp_id: Uuid,
+    /// Minimum légal = 5 % des charges ordinaires N-1.
+    pub required: Decimal,
+    /// Solde actuel du fonds de réserve.
+    pub actual: Decimal,
+    /// Base de calcul : charges ordinaires de l'exercice N-1.
+    pub ordinary_charges_n1: Decimal,
+}
+
+impl std::fmt::Display for ReserveFundInsufficientError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "ACP {} reserve fund insufficient: {} < required {} (5% of {} ordinary charges N-1)",
+            self.acp_id, self.actual, self.required, self.ordinary_charges_n1
+        )
+    }
+}
+
+impl std::error::Error for ReserveFundInsufficientError {}
 
 /// Génération du slug kebab-case (déaccentué, alphanum + tirets).
 ///
@@ -617,6 +739,71 @@ mod tests {
         let s = format!("{}", err);
         assert!(s.contains("not conformant"));
         assert!(s.contains("10000"));
+    }
+
+    // ----- Fonds de réserve (Story H13, Art. 3.86 §3, loi 2019) — 4-cat ------
+
+    #[test]
+    fn happy_reserve_fund_meets_5pct_threshold() {
+        // Charges ordinaires N-1 = 100 000 € → réserve requise = 5 000 €.
+        let charges = Decimal::from(100_000);
+        let mut acp = sample_acp();
+        acp.set_reserve_fund_balance(Decimal::from(5000)).unwrap();
+        assert_eq!(acp.required_reserve_fund(charges), Decimal::from(5000));
+        assert!(acp.is_reserve_fund_compliant(charges));
+        assert!(acp.assert_reserve_fund_compliant(charges).is_ok());
+        // Un solde supérieur reste conforme.
+        acp.set_reserve_fund_balance(Decimal::from(8000)).unwrap();
+        assert!(acp.assert_reserve_fund_compliant(charges).is_ok());
+    }
+
+    #[test]
+    fn edge_reserve_fund_exactly_5pct_ok_below_ko_waived_ok() {
+        let charges = Decimal::from(100_000); // requis = 5000
+        let mut acp = sample_acp();
+        // Exactement 5 % → OK (borne inclusive).
+        acp.set_reserve_fund_balance(Decimal::from(5000)).unwrap();
+        assert!(acp.is_reserve_fund_compliant(charges));
+        // 4 990 (< 5 %) → KO.
+        acp.set_reserve_fund_balance(Decimal::from(4990)).unwrap();
+        assert!(!acp.is_reserve_fund_compliant(charges));
+        // Renonciation 4/5 → conforme même sous le seuil.
+        acp.set_reserve_fund_waived(true);
+        assert!(acp.is_reserve_fund_compliant(charges));
+        assert!(acp.assert_reserve_fund_compliant(charges).is_ok());
+    }
+
+    #[test]
+    fn security_reserve_fund_threshold_not_bypassable() {
+        // Sans renonciation, un solde sous le seuil ne peut être déclaré
+        // conforme (pas de contournement silencieux).
+        let charges = Decimal::from(200_000); // requis = 10000
+        let mut acp = sample_acp();
+        acp.set_reserve_fund_balance(Decimal::from(9999)).unwrap();
+        assert!(!acp.reserve_fund_waived);
+        assert!(!acp.is_reserve_fund_compliant(charges));
+        let err = acp.assert_reserve_fund_compliant(charges).unwrap_err();
+        assert_eq!(err.required, Decimal::from(10000));
+        assert_eq!(err.actual, Decimal::from(9999));
+    }
+
+    #[test]
+    fn negative_reserve_fund_insufficient_typed_and_negative_balance_rejected() {
+        let charges = Decimal::from(100_000);
+        let acp = sample_acp(); // réserve = 0
+        let err = acp.assert_reserve_fund_compliant(charges).unwrap_err();
+        assert_eq!(err.acp_id, acp.id);
+        assert_eq!(err.required, Decimal::from(5000));
+        assert_eq!(err.actual, Decimal::ZERO);
+        assert_eq!(err.ordinary_charges_n1, charges);
+        assert!(format!("{}", err).contains("reserve fund insufficient"));
+        // Solde négatif rejeté (erreur typée, état inchangé).
+        let mut acp2 = sample_acp();
+        let e2 = acp2
+            .set_reserve_fund_balance(Decimal::from(-1))
+            .unwrap_err();
+        assert_eq!(e2, AcpError::NegativeFundBalance(Decimal::from(-1)));
+        assert_eq!(acp2.reserve_fund_balance, Decimal::ZERO);
     }
 
     // ----- @edge ---------------------------------------------------------------

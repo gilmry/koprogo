@@ -227,6 +227,18 @@ pub enum AppError {
         quota_delta: rust_decimal::Decimal,
         quota_basis: i32,
     },
+
+    /// Track H Story H13 (CL4) — `Acp::assert_reserve_fund_compliant()`
+    /// (Art. 3.86 §3 CC, loi 2019). Le fonds de réserve est sous le seuil légal
+    /// des 5 % des charges ordinaires N-1 et non renoncé (vote 4/5). 422 +
+    /// payload `RESERVE_FUND_INSUFFICIENT` (acp_id + required/actual + base).
+    #[error("Le fonds de réserve est insuffisant (minimum légal 5% des charges N-1)")]
+    ReserveFundInsufficient {
+        acp_id: uuid::Uuid,
+        required: rust_decimal::Decimal,
+        actual: rust_decimal::Decimal,
+        ordinary_charges_n1: rust_decimal::Decimal,
+    },
 }
 
 impl AppError {
@@ -245,6 +257,7 @@ impl AppError {
             AppError::AcpNotInScope { .. } => "acp_not_in_scope",
             AppError::MeetingNotCompletable { .. } => "meeting_not_completable",
             AppError::AcpNotConformant { .. } => "acp_not_conformant",
+            AppError::ReserveFundInsufficient { .. } => "reserve_fund_insufficient",
             AppError::RateLimited => "rate_limited",
             AppError::Database(_) => "database",
             AppError::Crypto(_) => "crypto",
@@ -301,7 +314,8 @@ impl ResponseError for AppError {
             | AppError::EvaluatorIsContractor
             | AppError::BuildingNotConformant { .. }
             | AppError::MeetingNotCompletable { .. }
-            | AppError::AcpNotConformant { .. } => StatusCode::UNPROCESSABLE_ENTITY,
+            | AppError::AcpNotConformant { .. }
+            | AppError::ReserveFundInsufficient { .. } => StatusCode::UNPROCESSABLE_ENTITY,
             AppError::RateLimited => StatusCode::TOO_MANY_REQUESTS,
             AppError::Database(_) | AppError::Crypto(_) | AppError::Internal(_) => {
                 StatusCode::INTERNAL_SERVER_ERROR
@@ -350,6 +364,21 @@ impl ResponseError for AppError {
                 "units_delta": units_delta,
                 "quota_delta": quota_delta.to_string(),
                 "quota_basis": quota_basis,
+            })),
+            // Track H Story H13 — payload narratif `RESERVE_FUND_INSUFFICIENT`
+            // (422). Le FE (`<ReserveFundIndicator>`, différé #634) consomme
+            // `details.code` + required/actual. Decimal-as-string (ADR-0007).
+            AppError::ReserveFundInsufficient {
+                acp_id,
+                required,
+                actual,
+                ordinary_charges_n1,
+            } => Some(json!({
+                "code": "RESERVE_FUND_INSUFFICIENT",
+                "acp_id": acp_id,
+                "required": required.to_string(),
+                "actual": actual.to_string(),
+                "ordinary_charges_n1": ordinary_charges_n1.to_string(),
             })),
             // Track H Story H3 — payload narratif pour `MeetingNotCompletable`
             // (422) : le FE consomme `details.code == "MEETING_NOT_COMPLETABLE"`
@@ -568,6 +597,34 @@ impl From<crate::domain::entities::AcpNotConformantError> for String {
         format!(
             "ACP_NOT_CONFORMANT: acp {} units_delta={} quota_delta={} quota_basis={}",
             err.acp_id, err.units_delta, err.quota_delta, err.quota_basis
+        )
+    }
+}
+
+// ============================================================================
+// Track H Story H13 — bridges From<ReserveFundInsufficientError> (fonds réserve)
+// ============================================================================
+
+impl From<crate::domain::entities::ReserveFundInsufficientError> for AppError {
+    /// Track H Story H13 — fonds de réserve sous le seuil légal des 5 %
+    /// (Art. 3.86 §3, loi 2019) → 422 + payload `RESERVE_FUND_INSUFFICIENT`.
+    fn from(err: crate::domain::entities::ReserveFundInsufficientError) -> Self {
+        AppError::ReserveFundInsufficient {
+            acp_id: err.acp_id,
+            required: err.required,
+            actual: err.actual,
+            ordinary_charges_n1: err.ordinary_charges_n1,
+        }
+    }
+}
+
+impl From<crate::domain::entities::ReserveFundInsufficientError> for String {
+    /// Bridge legacy `Result<_, String>` (cohérence avec les autres erreurs
+    /// Track H). Préfixe `RESERVE_FUND_INSUFFICIENT:` parsable par un handler.
+    fn from(err: crate::domain::entities::ReserveFundInsufficientError) -> Self {
+        format!(
+            "RESERVE_FUND_INSUFFICIENT: acp {} required={} actual={} charges_n1={}",
+            err.acp_id, err.required, err.actual, err.ordinary_charges_n1
         )
     }
 }

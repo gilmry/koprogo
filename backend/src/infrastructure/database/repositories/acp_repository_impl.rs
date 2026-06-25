@@ -36,6 +36,14 @@ impl PostgresAcpRepository {
             address_street: row.get("address_street"),
             address_postal_code: row.get("address_postal_code"),
             address_city: row.get("address_city"),
+            // Story H13 — fonds réserve/roulement. `try_get` + défaut : robuste
+            // aux SELECT qui n'incluent pas (encore) ces colonnes (ex. branches
+            // list() All/Organization), pas de panic.
+            reserve_fund_balance: row.try_get("reserve_fund_balance").unwrap_or(Decimal::ZERO),
+            working_capital_balance: row
+                .try_get("working_capital_balance")
+                .unwrap_or(Decimal::ZERO),
+            reserve_fund_waived: row.try_get("reserve_fund_waived").unwrap_or(false),
             created_at: row.get("created_at"),
             updated_at: row.get("updated_at"),
         }
@@ -50,9 +58,10 @@ impl AcpRepository for PostgresAcpRepository {
             INSERT INTO acps (
                 id, organization_id, name, slug, legal_status, bce_number,
                 address_street, address_postal_code, address_city,
-                total_tantiemes, created_at, updated_at
+                total_tantiemes, created_at, updated_at,
+                reserve_fund_balance, working_capital_balance, reserve_fund_waived
             )
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
             "#,
         )
         .bind(acp.id)
@@ -67,6 +76,9 @@ impl AcpRepository for PostgresAcpRepository {
         .bind(acp.total_tantiemes)
         .bind(acp.created_at)
         .bind(acp.updated_at)
+        .bind(acp.reserve_fund_balance)
+        .bind(acp.working_capital_balance)
+        .bind(acp.reserve_fund_waived)
         .execute(&self.pool)
         .await
         .map_err(|e| {
@@ -87,7 +99,8 @@ impl AcpRepository for PostgresAcpRepository {
             r#"
             SELECT id, organization_id, name, slug, legal_status, bce_number,
                    address_street, address_postal_code, address_city,
-                   total_tantiemes, created_at, updated_at
+                   total_tantiemes, created_at, updated_at,
+                   reserve_fund_balance, working_capital_balance, reserve_fund_waived
             FROM acps
             WHERE id = $1
             "#,
@@ -114,6 +127,7 @@ impl AcpRepository for PostgresAcpRepository {
                 a.id, a.organization_id, a.name, a.slug, a.legal_status, a.bce_number,
                 a.address_street, a.address_postal_code, a.address_city,
                 a.total_tantiemes, a.created_at, a.updated_at,
+                a.reserve_fund_balance, a.working_capital_balance, a.reserve_fund_waived,
                 (SELECT COALESCE(COUNT(u.id), 0)::INT
                    FROM buildings b JOIN units u ON u.building_id = b.id
                    WHERE b.acp_id = a.id)                                   AS units_count,
@@ -227,7 +241,10 @@ impl AcpRepository for PostgresAcpRepository {
                 address_postal_code = $8,
                 address_city = $9,
                 total_tantiemes = $10,
-                updated_at = $11
+                updated_at = $11,
+                reserve_fund_balance = $12,
+                working_capital_balance = $13,
+                reserve_fund_waived = $14
             WHERE id = $1
             "#,
         )
@@ -242,6 +259,9 @@ impl AcpRepository for PostgresAcpRepository {
         .bind(&acp.address_city)
         .bind(acp.total_tantiemes)
         .bind(acp.updated_at)
+        .bind(acp.reserve_fund_balance)
+        .bind(acp.working_capital_balance)
+        .bind(acp.reserve_fund_waived)
         .execute(&self.pool)
         .await
         .map_err(|e| {

@@ -69,7 +69,9 @@ pub mod work_report;
 
 pub use account::{Account, AccountType};
 pub use achievement::{Achievement, AchievementCategory, AchievementTier, UserAchievement};
-pub use acp::{Acp, AcpError, AcpLegalStatus, AcpMetrics, AcpNotConformantError};
+pub use acp::{
+    Acp, AcpError, AcpLegalStatus, AcpMetrics, AcpNotConformantError, ReserveFundInsufficientError,
+};
 pub use ag_session::{AgSession, AgSessionStatus, VideoPlatform};
 pub use age_request::{AgeRequest, AgeRequestCosignatory, AgeRequestStatus};
 pub use board_decision::{BoardDecision, DecisionStatus};
