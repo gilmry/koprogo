@@ -38,7 +38,7 @@
     "@tailwindcss/typography": "^0.5.20",
     "@tailwindcss/vite": "^4.3.1",
     "astro": "^6.4.8",
-    "svelte": "^5.56.3",
+    "svelte": "^5.56.4",
     "svelte-i18n": "^4.0.1",
     "tailwindcss": "^4.2.2",
     "typescript": "^5.9.3",
@@ -46,7 +46,7 @@
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.11.3",
-    "@playwright/test": "^1.61.0",
+    "@playwright/test": "^1.61.1",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/svelte": "^5.3.1",
     "@types/node": "^25.9.3",
