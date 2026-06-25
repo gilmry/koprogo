@@ -45,10 +45,10 @@
     "vite": "^7.3.2"
   },
   "devDependencies": {
-    "@axe-core/playwright": "^4.11.3",
+    "@axe-core/playwright": "^4.12.1",
     "@playwright/test": "^1.61.1",
     "@testing-library/jest-dom": "^6.9.1",
-    "@testing-library/svelte": "^5.3.1",
+    "@testing-library/svelte": "^5.4.2",
     "@types/node": "^26.0.1",
     "@vite-pwa/astro": "^1.2.0",
     "jsdom": "^29.0.2",
