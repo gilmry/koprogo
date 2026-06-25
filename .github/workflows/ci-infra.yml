@@ -61,7 +61,7 @@ jobs:
         env: [dev, integration, staging, production]
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Setup kubectl (with embedded kustomize v5)
         uses: azure/setup-kubectl@v5
@@ -100,7 +100,7 @@ jobs:
         profile: [docker-desktop, k3s-self-hosted, k8s-managed]
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Setup Helm
         uses: azure/setup-helm@v5
@@ -142,7 +142,7 @@ jobs:
         env: [dev, integration, staging, production]
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Setup kubectl
         uses: azure/setup-kubectl@v5
@@ -172,7 +172,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Render ApplicationSet templates (× 3 cluster types)
         run: |
@@ -218,7 +218,7 @@ jobs:
       ARGOCD_CHART_VERSION: "7.7.7"
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Setup kubectl
         uses: azure/setup-kubectl@v5
@@ -401,7 +401,7 @@ jobs:
     # terratest, full ansible-lint `production` profile, multisite/k3s/k8s.
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v4
