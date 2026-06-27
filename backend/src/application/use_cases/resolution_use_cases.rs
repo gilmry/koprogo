@@ -135,6 +135,17 @@ impl ResolutionUseCases {
             return Err("Cannot vote on a resolution that is not pending".to_string());
         }
 
+        // Story H10 — Art. 3.87 §5 CC : un vote n'est valable que si le quorum de
+        // l'AG est atteint (sauf 2e convocation). Gate défense-en-profondeur sur
+        // le chemin VOTE (en plus du gate à la création de résolution, l.47) :
+        // résout la réunion via `resolution.meeting_id` puis `check_quorum_for_voting`.
+        let meeting = self
+            .meeting_repository
+            .find_by_id(resolution.meeting_id)
+            .await?
+            .ok_or_else(|| format!("Meeting not found: {}", resolution.meeting_id))?;
+        meeting.check_quorum_for_voting()?;
+
         // Check if unit has already voted
         if self
             .vote_repository
@@ -1132,5 +1143,104 @@ mod tests {
                 result.err()
             );
         }
+    }
+
+    // ------------------------------------------------------------------------
+    // Story H10 (CL3) — Gate quorum sur le chemin VOTE (Art. 3.87 §5).
+    // ------------------------------------------------------------------------
+
+    /// @security — voter sur une AG sans quorum validé est rejeté (gate
+    /// défense-en-profondeur sur `cast_vote`). On insère une résolution Pending
+    /// directement (bypass `create_resolution`) avec une réunion SANS quorum.
+    #[tokio::test]
+    async fn security_cast_vote_rejected_without_quorum() {
+        let resolution_repo = Arc::new(MockResolutionRepository::new());
+        let vote_repo = Arc::new(MockVoteRepository::new());
+        let meeting_repo = Arc::new(MockMeetingRepository::new());
+        let use_cases =
+            ResolutionUseCases::new(resolution_repo.clone(), vote_repo, meeting_repo.clone());
+
+        let meeting_id = Uuid::new_v4();
+        let mut meeting = Meeting::new(
+            Uuid::new_v4(),
+            Uuid::new_v4(),
+            MeetingType::Ordinary,
+            "AGO sans quorum".to_string(),
+            None,
+            Utc::now() + chrono::Duration::days(30),
+            "Salle".to_string(),
+        )
+        .unwrap();
+        meeting.id = meeting_id;
+        // PAS de validate_quorum → quorum_percentage = None.
+        meeting_repo.create(&meeting).await.unwrap();
+
+        let mut resolution = Resolution::new(
+            meeting_id,
+            "R".to_string(),
+            "D".to_string(),
+            ResolutionType::Ordinary,
+            MajorityType::Absolute,
+            None,
+        )
+        .unwrap();
+        resolution.status = ResolutionStatus::Pending;
+        resolution_repo.create(&resolution).await.unwrap();
+
+        let err = use_cases
+            .cast_vote(
+                resolution.id,
+                Uuid::new_v4(),
+                Uuid::new_v4(),
+                VoteChoice::Pour,
+                rust_decimal_macros::dec!(100),
+                None,
+            )
+            .await
+            .unwrap_err();
+        assert!(
+            err.contains("Quorum"),
+            "le vote sans quorum doit être rejeté, got: {}",
+            err
+        );
+    }
+
+    /// @negative — résolution dont la réunion n'existe plus (drift data) →
+    /// vote rejeté proprement (pas de panic).
+    #[tokio::test]
+    async fn negative_cast_vote_meeting_not_found() {
+        let resolution_repo = Arc::new(MockResolutionRepository::new());
+        let vote_repo = Arc::new(MockVoteRepository::new());
+        let meeting_repo = Arc::new(MockMeetingRepository::new()); // vide
+        let use_cases = ResolutionUseCases::new(resolution_repo.clone(), vote_repo, meeting_repo);
+
+        let mut resolution = Resolution::new(
+            Uuid::new_v4(), // meeting_id absent du repo
+            "R".to_string(),
+            "D".to_string(),
+            ResolutionType::Ordinary,
+            MajorityType::Absolute,
+            None,
+        )
+        .unwrap();
+        resolution.status = ResolutionStatus::Pending;
+        resolution_repo.create(&resolution).await.unwrap();
+
+        let err = use_cases
+            .cast_vote(
+                resolution.id,
+                Uuid::new_v4(),
+                Uuid::new_v4(),
+                VoteChoice::Pour,
+                rust_decimal_macros::dec!(100),
+                None,
+            )
+            .await
+            .unwrap_err();
+        assert!(
+            err.contains("Meeting not found"),
+            "réunion absente → erreur typée, got: {}",
+            err
+        );
     }
 }
