@@ -56,7 +56,7 @@ impl MeetingCompletionCheckerPort for PostgresMeetingCompletionChecker {
         let row = sqlx::query(
             r#"
             WITH m AS (
-                SELECT id, building_id, present_quotas, minutes_document_id
+                SELECT id, building_id, present_quotas, present_owners_count, minutes_document_id
                 FROM meetings
                 WHERE id = $1
             )
@@ -81,6 +81,17 @@ impl MeetingCompletionCheckerPort for PostgresMeetingCompletionChecker {
                      JOIN m ON m.building_id = u.building_id),
                     0
                 ) AS total_quotas,
+                -- Story H9 — volet têtes du quorum double (Art. 3.87 §5).
+                -- présents : saisi par le syndic (meetings.present_owners_count).
+                COALESCE((SELECT present_owners_count FROM m), 0)::int AS present_owners_count,
+                -- total : COUNT DISTINCT copropriétaires actifs du building.
+                COALESCE((
+                    SELECT COUNT(DISTINCT uo.owner_id)
+                    FROM unit_owners uo
+                    JOIN units u ON uo.unit_id = u.id
+                    JOIN m ON m.building_id = u.building_id
+                    WHERE uo.end_date IS NULL
+                ), 0)::int AS total_owners_count,
                 (SELECT minutes_document_id IS NOT NULL FROM m) AS minutes_draft_exists
             "#,
         )
@@ -107,6 +118,9 @@ impl MeetingCompletionCheckerPort for PostgresMeetingCompletionChecker {
             attendance_recorded: row.try_get("attendance_recorded").unwrap_or(false),
             attended_quotas,
             total_quotas,
+            // Story H9 — volet têtes du quorum double (Art. 3.87 §5).
+            present_owners_count: row.try_get("present_owners_count").unwrap_or(0),
+            total_owners_count: row.try_get("total_owners_count").unwrap_or(0),
             minutes_draft_exists: row.try_get("minutes_draft_exists").unwrap_or(false),
         })
     }

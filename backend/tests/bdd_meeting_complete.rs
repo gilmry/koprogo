@@ -106,12 +106,38 @@ fn parse_checklist(spec: &str) -> MeetingCompletionChecklist {
         }
     };
 
+    // Story H9 — parse "heads P of T" (têtes présentes / total copropriétaires).
+    // Défaut : têtes OK (10/10) quand non spécifié, pour que les scénarios
+    // « quotités seules » exercent le volet quotités du quorum double.
+    let (present_heads, total_heads) = {
+        let parts: Vec<&str> = spec.split("heads ").collect();
+        if parts.len() >= 2 {
+            let after = parts[1];
+            let nums: Vec<&str> = after
+                .split(',')
+                .next()
+                .unwrap_or("")
+                .split_whitespace()
+                .collect();
+            let p = nums
+                .first()
+                .and_then(|s| s.parse::<i32>().ok())
+                .unwrap_or(0);
+            let t = nums.get(2).and_then(|s| s.parse::<i32>().ok()).unwrap_or(0);
+            (p, t)
+        } else {
+            (10, 10) // défaut : volet têtes satisfait
+        }
+    };
+
     MeetingCompletionChecklist {
         convocations_sent,
         open_resolutions,
         attendance_recorded,
         attended_quotas: attended,
         total_quotas: total,
+        present_owners_count: present_heads,
+        total_owners_count: total_heads,
         minutes_draft_exists,
     }
 }
@@ -190,6 +216,10 @@ fn then_contains_type(world: &mut MeetingCompleteWorld, type_name: String) {
                 | (
                     MissingInvariant::QuorumNotReached { .. },
                     "QuorumNotReached"
+                )
+                | (
+                    MissingInvariant::HeadCountQuorumNotReached { .. },
+                    "HeadCountQuorumNotReached"
                 )
                 | (MissingInvariant::MinutesDraftMissing, "MinutesDraftMissing")
         )

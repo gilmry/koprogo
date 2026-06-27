@@ -153,10 +153,10 @@ impl Meeting {
     /// - `convocations_sent` (Art. 3.87 §3 CC — convocations envoyées en amont)
     /// - `open_resolutions == 0` (Art. 3.87 §4 CC — tous votes clôturés)
     /// - `attendance_recorded` (Art. 3.87 §5 CC — présences enregistrées)
-    /// - Quorum strict `> 50%` (Art. 3.87 §5 — majorité simple
-    ///   présents+représentés). `total_quotas == 0` → `QuorumNotReached`
-    ///   (cas exotic : building soft-delete entre création AG et clôture —
-    ///   pas de div by zero).
+    /// - **Quorum double** (Art. 3.87 §5, Story H9) : (A) têtes > 50 % strict
+    ///   ET quotités ≥ 50 % inclusif, OU (B) alternative quotités > 3/4 strict.
+    ///   Volet quotités KO → `QuorumNotReached` ; volet têtes KO →
+    ///   `HeadCountQuorumNotReached`. `total_* == 0` → volet KO (pas de div/0).
     /// - `minutes_draft_exists` (PV draft sauvegardé avant clôture)
     ///
     /// **Pureté** : aucune I/O, aucune dépendance infra. La checklist est
@@ -179,16 +179,33 @@ impl Meeting {
             missing.push(MissingInvariant::AttendanceNotRecorded);
         }
 
-        // Quorum > 50% strict (Art. 3.87 §4 majorité simple).
-        // Cas `total_quotas <= 0` → KO quorum systématique : on ne calcule
-        // pas `total_quotas / 2` (évite division par zéro et cas négatif).
-        let quorum_ok = checklist.total_quotas > Decimal::ZERO
-            && checklist.attended_quotas > checklist.total_quotas / dec!(2);
-        if !quorum_ok {
-            missing.push(MissingInvariant::QuorumNotReached {
-                attended_quotas: checklist.attended_quotas,
-                total_quotas: checklist.total_quotas,
-            });
+        // Story H9 — Quorum DOUBLE (Art. 3.87 §5 CC) :
+        //   (A) primaire   : têtes > 50% (strict) ET quotités ≥ 50% (inclusif)
+        //   (B) alternative: quotités > 3/4 (strict), quelles que soient les têtes
+        //   sinon → 2e convocation (gérée ailleurs : `is_second_convocation`).
+        // Comparaisons par multiplication croisée : exact (Decimal), pas de
+        // division ⇒ pas de div/0 ni d'arrondi. `total_* <= 0` → volet KO.
+        let quotas_alternative_ok = checklist.total_quotas > Decimal::ZERO
+            && checklist.attended_quotas * dec!(4) > checklist.total_quotas * dec!(3);
+        if !quotas_alternative_ok {
+            // Volet quotités ≥ 50% (inclusif — « au moins la moitié »).
+            let quotas_half_ok = checklist.total_quotas > Decimal::ZERO
+                && checklist.attended_quotas * dec!(2) >= checklist.total_quotas;
+            if !quotas_half_ok {
+                missing.push(MissingInvariant::QuorumNotReached {
+                    attended_quotas: checklist.attended_quotas,
+                    total_quotas: checklist.total_quotas,
+                });
+            }
+            // Volet têtes > 50% (strict — « plus de la moitié des copropriétaires »).
+            let heads_ok = checklist.total_owners_count > 0
+                && checklist.present_owners_count * 2 > checklist.total_owners_count;
+            if !heads_ok {
+                missing.push(MissingInvariant::HeadCountQuorumNotReached {
+                    present_owners_count: checklist.present_owners_count,
+                    total_owners_count: checklist.total_owners_count,
+                });
+            }
         }
 
         if !checklist.minutes_draft_exists {
@@ -339,11 +356,20 @@ pub enum MissingInvariant {
     VotesNotClosed { open_resolutions: i32 },
     /// Art. 3.87 §5 CC — `present_quotas` non renseigné côté meeting.
     AttendanceNotRecorded,
-    /// Art. 3.87 §5 CC — Quorum `> 50%` non atteint (majorité simple).
-    /// `total_quotas == 0` est mappé ici (pas de div by zero).
+    /// Art. 3.87 §5 CC — Volet **quotités** du quorum double non atteint :
+    /// quotités présentes < 50 % (inclusif) ET < 3/4 (alternative). `total_quotas
+    /// == 0` est mappé ici (pas de div by zero).
     QuorumNotReached {
         attended_quotas: Decimal,
         total_quotas: Decimal,
+    },
+    /// Story H9 — Art. 3.87 §5 CC — Volet **têtes** du quorum double non
+    /// atteint : ≤ 50 % des copropriétaires présents/représentés (« plus de la
+    /// moitié » requis, strict), et l'alternative > 3/4 des quotités n'est pas
+    /// remplie. `total_owners_count == 0` est mappé ici.
+    HeadCountQuorumNotReached {
+        present_owners_count: i32,
+        total_owners_count: i32,
     },
     /// PV draft (minutes) pas encore enregistré (cf. `minutes_document_id`).
     MinutesDraftMissing,
@@ -370,6 +396,13 @@ pub struct MeetingCompletionChecklist {
     pub attended_quotas: Decimal,
     /// Somme des quotas du building (SUM units.quota).
     pub total_quotas: Decimal,
+    /// Story H9 — Nombre de copropriétaires présents OU représentés (têtes).
+    /// Source : `meetings.present_owners_count` (saisi par le syndic, comme
+    /// `present_quotas`). Volet « têtes » du quorum double (Art. 3.87 §5).
+    pub present_owners_count: i32,
+    /// Story H9 — Nombre total de copropriétaires du building (têtes).
+    /// Source : `COUNT(DISTINCT owner)` du building (calculé DB-side).
+    pub total_owners_count: i32,
     /// `meetings.minutes_document_id IS NOT NULL`.
     pub minutes_draft_exists: bool,
 }
@@ -905,6 +938,9 @@ mod assert_can_complete_tests {
             attendance_recorded: true,
             attended_quotas: dec!(600),
             total_quotas: dec!(1000),
+            // Story H9 — têtes 6/10 = 60% > 50% (volet têtes du quorum double OK).
+            present_owners_count: 6,
+            total_owners_count: 10,
             minutes_draft_exists: true,
         }
     }
@@ -936,19 +972,17 @@ mod assert_can_complete_tests {
     // ------------------------------------------------------------------------
 
     #[test]
-    fn edge_quorum_exact_50_percent_is_rejected() {
-        // AC-H3.e1 — Art. 3.87 §4 = > 50% strict (pas ≥). 500/1000 KO.
+    fn edge_quorum_quotas_exact_50_percent_accepted_with_heads_ok() {
+        // Story H9 (corrige H3) — Art. 3.87 §5 : quotités « au moins la moitié »
+        // = ≥ 50% INCLUSIF. 500/1000 = exactement 50% → volet quotités OK ;
+        // têtes 6/10 (checklist_all_ok) OK → quorum double atteint.
         let m = make_meeting();
         let c = MeetingCompletionChecklist {
             attended_quotas: dec!(500),
             total_quotas: dec!(1000),
             ..checklist_all_ok()
         };
-        let err = m.assert_can_complete(&c).unwrap_err();
-        assert!(err
-            .missing
-            .iter()
-            .any(|m| matches!(m, MissingInvariant::QuorumNotReached { .. })));
+        assert!(m.assert_can_complete(&c).is_ok());
     }
 
     #[test]
@@ -1059,8 +1093,9 @@ mod assert_can_complete_tests {
     // ------------------------------------------------------------------------
 
     #[test]
-    fn negative_all_invariants_missing_returns_all_five() {
-        // AC-H3.n — toutes conditions falsy → 5 MissingInvariant exhaustifs.
+    fn negative_all_invariants_missing_returns_all_six() {
+        // Story H9 — toutes conditions falsy → 6 MissingInvariant exhaustifs
+        // (le quorum double ajoute HeadCountQuorumNotReached au volet têtes).
         let m = make_meeting();
         let c = MeetingCompletionChecklist {
             convocations_sent: false,
@@ -1068,12 +1103,15 @@ mod assert_can_complete_tests {
             attendance_recorded: false,
             attended_quotas: dec!(0),
             total_quotas: dec!(1000),
+            present_owners_count: 0,
+            total_owners_count: 10,
             minutes_draft_exists: false,
         };
         let err = m.assert_can_complete(&c).unwrap_err();
-        // 5 conditions : ConvocationsNotSent + VotesNotClosed + AttendanceNotRecorded
-        // + QuorumNotReached + MinutesDraftMissing
-        assert_eq!(err.missing.len(), 5);
+        // 6 : ConvocationsNotSent + VotesNotClosed + AttendanceNotRecorded
+        // + QuorumNotReached (quotités) + HeadCountQuorumNotReached (têtes)
+        // + MinutesDraftMissing
+        assert_eq!(err.missing.len(), 6);
         assert!(matches!(
             err.missing[0],
             MissingInvariant::ConvocationsNotSent
@@ -1094,6 +1132,10 @@ mod assert_can_complete_tests {
         ));
         assert!(matches!(
             err.missing[4],
+            MissingInvariant::HeadCountQuorumNotReached { .. }
+        ));
+        assert!(matches!(
+            err.missing[5],
             MissingInvariant::MinutesDraftMissing
         ));
     }
@@ -1153,5 +1195,144 @@ mod assert_can_complete_tests {
         let res = m.complete_internal();
         assert!(res.is_err());
         assert_eq!(m.status, MeetingStatus::Completed);
+    }
+
+    // ------------------------------------------------------------------------
+    // Story H9 (CL3) — Quorum DOUBLE têtes + quotités (Art. 3.87 §5) — 4-cat.
+    // ------------------------------------------------------------------------
+
+    /// @happy — primaire : têtes > 50% ET quotités ≥ 50% → clôture OK.
+    #[test]
+    fn happy_double_quorum_primary_heads_and_quotas() {
+        let m = make_meeting();
+        let c = MeetingCompletionChecklist {
+            attended_quotas: dec!(500), // 50% exact → inclusif OK
+            total_quotas: dec!(1000),
+            present_owners_count: 6, // 60% têtes OK
+            total_owners_count: 10,
+            ..checklist_all_ok()
+        };
+        assert!(m.assert_can_complete(&c).is_ok());
+    }
+
+    /// @happy — alternative : quotités > 3/4 suffit même si têtes ≤ 50%.
+    #[test]
+    fn happy_double_quorum_alternative_three_quarters() {
+        let m = make_meeting();
+        let c = MeetingCompletionChecklist {
+            attended_quotas: dec!(760), // 76% > 3/4
+            total_quotas: dec!(1000),
+            present_owners_count: 2, // 20% têtes (insuffisant en primaire)
+            total_owners_count: 10,
+            ..checklist_all_ok()
+        };
+        assert!(m.assert_can_complete(&c).is_ok());
+    }
+
+    /// @edge — têtes exactement 50% (strict requis) → volet têtes KO,
+    /// volet quotités OK (pas de QuorumNotReached).
+    #[test]
+    fn edge_heads_exactly_50_percent_rejected() {
+        let m = make_meeting();
+        let c = MeetingCompletionChecklist {
+            attended_quotas: dec!(600),
+            total_quotas: dec!(1000),
+            present_owners_count: 5, // 5/10 = 50% exact → KO (strict)
+            total_owners_count: 10,
+            ..checklist_all_ok()
+        };
+        let err = m.assert_can_complete(&c).unwrap_err();
+        assert!(err
+            .missing
+            .iter()
+            .any(|x| matches!(x, MissingInvariant::HeadCountQuorumNotReached { .. })));
+        assert!(!err
+            .missing
+            .iter()
+            .any(|x| matches!(x, MissingInvariant::QuorumNotReached { .. })));
+    }
+
+    /// @edge — quotités exactement 75% (pas > 3/4) + têtes faibles → KO ;
+    /// juste au-dessus de 75% → OK (alternative).
+    #[test]
+    fn edge_three_quarters_boundary() {
+        let m = make_meeting();
+        let exactly = MeetingCompletionChecklist {
+            attended_quotas: dec!(750), // 75% pile, pas strict > 3/4
+            total_quotas: dec!(1000),
+            present_owners_count: 3, // 30% têtes
+            total_owners_count: 10,
+            ..checklist_all_ok()
+        };
+        assert!(m.assert_can_complete(&exactly).is_err());
+
+        let above = MeetingCompletionChecklist {
+            attended_quotas: dec!(750.001), // > 3/4 → alternative OK
+            total_quotas: dec!(1000),
+            present_owners_count: 3,
+            total_owners_count: 10,
+            ..checklist_all_ok()
+        };
+        assert!(m.assert_can_complete(&above).is_ok());
+    }
+
+    /// @security — têtes forgées via `attendees_count` (legacy) sans effet :
+    /// la source est la checklist (DB COUNT DISTINCT owners).
+    #[test]
+    fn security_head_count_source_is_checklist_not_forged_field() {
+        let mut m = make_meeting();
+        m.attendees_count = Some(99_999); // forgé
+        let c = MeetingCompletionChecklist {
+            attended_quotas: dec!(600), // quotités OK
+            total_quotas: dec!(1000),
+            present_owners_count: 1, // réel : 1/10 têtes → KO
+            total_owners_count: 10,
+            ..checklist_all_ok()
+        };
+        let err = m.assert_can_complete(&c).unwrap_err();
+        assert!(err
+            .missing
+            .iter()
+            .any(|x| matches!(x, MissingInvariant::HeadCountQuorumNotReached { .. })));
+    }
+
+    /// @negative — têtes KO seules (quotités OK) → uniquement HeadCount.
+    #[test]
+    fn negative_only_head_count_quorum_missing() {
+        let m = make_meeting();
+        let c = MeetingCompletionChecklist {
+            attended_quotas: dec!(600),
+            total_quotas: dec!(1000),
+            present_owners_count: 4, // 40% têtes KO
+            total_owners_count: 10,
+            ..checklist_all_ok()
+        };
+        let err = m.assert_can_complete(&c).unwrap_err();
+        assert_eq!(err.missing.len(), 1);
+        assert!(matches!(
+            err.missing[0],
+            MissingInvariant::HeadCountQuorumNotReached {
+                present_owners_count: 4,
+                total_owners_count: 10
+            }
+        ));
+    }
+
+    /// @negative — total_owners_count == 0 → HeadCountQuorumNotReached (pas de div).
+    #[test]
+    fn negative_zero_total_owners_is_head_quorum_not_reached() {
+        let m = make_meeting();
+        let c = MeetingCompletionChecklist {
+            attended_quotas: dec!(600),
+            total_quotas: dec!(1000),
+            present_owners_count: 0,
+            total_owners_count: 0,
+            ..checklist_all_ok()
+        };
+        let err = m.assert_can_complete(&c).unwrap_err();
+        assert!(err
+            .missing
+            .iter()
+            .any(|x| matches!(x, MissingInvariant::HeadCountQuorumNotReached { .. })));
     }
 }

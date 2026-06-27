@@ -115,6 +115,15 @@ impl MeetingUseCases {
                     "attended_quotas": attended_quotas.to_string(),
                     "total_quotas": total_quotas.to_string(),
                 }),
+                // Story H9 — volet têtes du quorum double (Art. 3.87 §5).
+                MissingInvariant::HeadCountQuorumNotReached {
+                    present_owners_count,
+                    total_owners_count,
+                } => serde_json::json!({
+                    "type": "HeadCountQuorumNotReached",
+                    "present_owners_count": present_owners_count,
+                    "total_owners_count": total_owners_count,
+                }),
                 MissingInvariant::MinutesDraftMissing => {
                     serde_json::json!({"type": "MinutesDraftMissing"})
                 }
