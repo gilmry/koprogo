@@ -98,15 +98,38 @@ Unité = **1 passe** : PLAN → Story → BDD 4-cat → TDD 4-cat → exéc (ROU
 
 ## H9 — Quorum double (CL3, étend WP-H3) · 2 passes
 
+> **Amendement légal 2026-06-25 (@gilmry — décision « corriger les specs d'abord »)** :
+> l'AC initiale contredisait l'Art. 3.87 §5 (quotités `>50%` strict + pas d'alternative).
+> Règle légale exacte ci-dessous ; à re-valider à la reprise de CL3.
+
 **Goal/parent** : Art. 3.87 §5 / INV-L6 / FR-CL3.
-**AC 4-cat** : `@happy` têtes>50% ET quotités>50% → Ok ; `@edge` exactement 50% têtes OU quotités → KO (strict) ; `@security` `attendees_count` falsifié ignoré ; `@negative` checklist tous faux → missing complet.
-**Files** : `meeting.rs` (`validate_quorum` signature + têtes ; `MeetingCompletionChecklist`+têtes ; `MissingInvariant::HeadCountQuorumNotReached`) ; `error.rs` ; migration `meetings.present_owners_count/total_owners_count` ; `meeting_completion_checker_impl` (COUNT DISTINCT owners) ; BDD `quorum_double.feature`.
+
+**Règle légale exacte (Art. 3.87 §5)** — quorum atteint à l'ouverture de l'AG si :
+- **(A) primaire** : têtes **> 50 %** (strict, « plus de la moitié des copropriétaires ») **ET** quotités **≥ 50 %** (**inclusif**, « au moins la moitié des quotités ») ;
+- **OU (B) alternative** : quotités **> 3/4 (75 %)** (strict), quel que soit le nombre de têtes ;
+- sinon → 2e convocation (15 j) délibère sans quorum (déjà géré : `is_second_convocation`).
+
+⚠️ **Code H3 actuel** (`meeting.rs:185`) = quorum **simple**, quotités **strict > 50 %** (commentaire cite à tort « §4 »). H9 doit : (1) quotités → **≥ 50 %** inclusif ; (2) ajouter critère **têtes > 50 %** ; (3) ajouter **alternative > 3/4**.
+
+**AC 4-cat (corrigée)** :
+- `@happy` têtes>50% ET quotités≥50% → Ok ; OU quotités>75% (têtes quelconque) → Ok.
+- `@edge` exactement 50% têtes (quotités≥50%) → KO (têtes strict) ; **exactement 50% quotités (têtes>50%) → Ok** (quotités inclusif) ; exactement 75% quotités sans têtes>50% → KO (alternative strict >3/4) ; >75% quotités seul → Ok.
+- `@security` `present_owners_count` / `attendees_count` falsifié ignoré (source = COUNT DISTINCT DB-side).
+- `@negative` checklist tous faux → missing complet (têtes + quotités).
+**Files** : `meeting.rs` (`validate_quorum` signature + têtes + alternative 3/4 ; `MeetingCompletionChecklist`+têtes ; `MissingInvariant::HeadCountQuorumNotReached`) ; `error.rs` ; migration `meetings.present_owners_count/total_owners_count` ; `meeting_completion_checker_impl` (COUNT DISTINCT owners) ; BDD `quorum_double.feature`.
 **Stash** : adapter le match `MissingInvariant` (`bdd_meeting_complete.rs`) au nouveau variant.
-**DoD** : domaine 4-cat + BDD verts ; rétrocompat tests meeting existants.
+**DoD** : domaine 4-cat + BDD verts ; rétrocompat tests meeting existants — ⚠️ seuil quotités `>50%` → `≥50%` : adapter seeds/tests asseyant un rejet à exactement 50% quotités.
 
 ---
 
 ## H10 — Gates votes quorum + procuration (CL3)
+
+> **⚠️ À vérifier vs loi avant impl (note 2026-06-25)** — Art. 3.87 §7 a **deux** règles
+> distinctes : (a) **procurations** : max **3** mandats, **OU** plus si le total des voix du
+> mandataire (siennes + mandats) **≤ 10 %** du total des voix de l'AG (10 % **inclusif**) ;
+> (b) **réduction de vote** : nul ne peut prendre part au vote pour un nombre de voix
+> supérieur à la somme des voix des **autres** copropriétaires présents/représentés (cap
+> ~50 %). L'AC ci-dessous ne couvre que (a) ; confirmer si (b) est in-scope H10.
 
 **Goal/parent** : Art. 3.87 §5/§7 / INV-L7 / FR-CL3.
 **AC 4-cat** : `@happy` vote enregistré si quorum + proxy OK ; `@edge` proxy exactement 3/10% OK ; `@security` proxy >3 et >10% rejeté `PROXY_LIMIT_EXCEEDED` / vote sans quorum rejeté ; `@negative` meeting inexistant.
@@ -116,6 +139,13 @@ Unité = **1 passe** : PLAN → Story → BDD 4-cat → TDD 4-cat → exéc (ROU
 ---
 
 ## H17 — Représentant de vote / suspension (CL3) · 2 passes
+
+> **⚠️ À confirmer vs loi avant impl (note 2026-06-25)** — Art. 3.87 §1 : lot en
+> indivision OU démembré (usufruit/nue-propriété, emphytéose, superficie) → les
+> titulaires désignent **un mandataire unique** ; à défaut, **droit de vote suspendu**.
+> AC alignée. **Point quorum à trancher** : un lot suspendu doit être exclu **et des
+> têtes ET des quotités présentes** (cohérence avec H9) — préciser le recalcul.
+> Lien avec H9 (quorum) et H10 (gate vote) : ordonner **après** H9+H10.
 
 **Goal/parent** : Art. 3.87 §1 / INV-L8 / FR-CL3.
 **AC 4-cat** : `@happy` lot mono-plein OU représentant désigné → vote OK ; `@edge` lot usufruit avec représentant désigné → actif ; `@security` lot indivis/démembré sans représentant → vote rejeté `VOTING_RIGHT_SUSPENDED` + non compté au quorum ; `@negative` désignation de 2 représentants → rejet (un seul).
