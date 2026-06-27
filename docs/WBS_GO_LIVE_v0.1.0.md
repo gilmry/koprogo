@@ -193,6 +193,17 @@ Légende : Tier 1 = humain exécute (agent diagnostique/propose). Taille S≤0.5
 
 > **Déjà fait (réutilisé / retravaillé)** : Story H1 ✅ (`6a053a1`, conservée = sous-total bloc) ; H2 ✅ (`3ede509`, **retravaillée** par WP-CL1 — gate building→ACP) ; H3 ✅ (`3ede509`, **étendue** par WP-CL3 — quorum simple→double).
 
+> **📊 Statut d'exécution #618 (màj 2026-06-27, branche `feature/dev`)** — CI **backend** verte par story (Unit/BDD/oasdiff/Lint) ; les rouges CI sont **pré-existants et tracés** (cf. « Blocages » ci-dessous), pas des régressions Track H.
+> - **WP-CL0** ✅ — ADR-0010/0011/0012 + dossier BMAD `track-h-conformite-legale/` (5 docs signés).
+> - **WP-CL1** ✅ — H4 (`acps.total_tantiemes` + migration/backfill) → H5 (`Acp::assert_conformant` + `AcpNotConformantError` 422) → H6 (`find_by_id_with_metrics`) → H7 (bascule des 4 gates building→ACP). Commit `a11577e`.
+> - **WP-CL2** ✅ — H8 retrait `Unit::MAX_QUOTA` (borne = acte de base). Commit `918d251`.
+> - **WP-CL7** ✅ — H14 doc `CONVOCATIONS_AG.rst` 15 j toutes AG (`c3d021a`) ; code `convocation.rs` déjà conforme (aucune dette).
+> - **WP-CL4** 🔄 **partiel** — H11 Budget f64→Decimal ✅ · H12 `DistributionCriteria {value|utility|mixed}` + formule 2 niveaux ✅ · **H13a** fonds de réserve 5 % sur l'ACP (`assert_reserve_fund_compliant`, renonçable 4/5, 422) ✅ (`58f1731`). **Différés v0.2.0 → [#635](https://github.com/gilmry/koprogo/issues/635)** : H13b `call_for_funds.fund_type` + H13c FE `<ReserveFundIndicator>` (bloqué #634) + **modèle `Fund` (thésaurisation / fonds affectés, réaffectation par décision d'AG)**.
+> - **WP-CL3** 🔄 **en cours** — specs H9/H10/H17 **amendées** (Art. 3.87 §1/§5/§7, `29bdda1`, à re-valider à la reprise) ; **H9 quorum double** à la clôture (têtes > 50 % ET quotités ≥ 50 % OU > 3/4) ✅ (`006030e`). Reste **H10** (gates votes : `check_quorum_for_voting` têtes + `validate_proxy_mandate` 3/10 % §7) + **H17** (représentant de vote / suspension §1).
+> - **WP-CL6** ⏳ — H15 migration `units.organization_id`→`acp_id` (cohérence post-#602).
+>
+> **🔴 Blocages go-live tracés (hors Track H, à clore avant tag v0.1.0)** : **[#634](https://github.com/gilmry/koprogo/issues/634)** (frontend Dependabot — build/vitest/contract/docker-frontend + NPM audit, même ERESOLVE astro 7 ⊥ `@vite-pwa/astro`) · **[#636](https://github.com/gilmry/koprogo/issues/636)** (Rust audit : `lopdf` RUSTSEC-2026-0187 + `quinn-proto` RUSTSEC-2026-0185, 2× high ; recoupe #432) · **[#604](https://github.com/gilmry/koprogo/issues/604)** [BLOCKER] trigger `buildings.organization_id` supprimé · **[#603](https://github.com/gilmry/koprogo/issues/603)** [SECURITY] `verify_org_access` skip 7 handlers · **[#617](https://github.com/gilmry/koprogo/issues/617)**/#605 Playwright E2E.
+
 - **WP-CL0 — ADR(s) + dossier Maury BMAD** · #618 H0-ADR · T2 · M · _gate signature avant code_
   ADR(s) `docs/adr/` (acte de base & conformité hybride + associations partielles + quorum double + fonds réserve + représentant de vote) + brief/prd/architecture/stories/validation dans `track-h-conformite-legale/`. Deps : aucune.
 
