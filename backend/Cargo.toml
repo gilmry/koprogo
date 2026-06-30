@@ -186,6 +186,11 @@ harness = false
 name = "bdd_meeting_complete"
 harness = false
 
+# Track H Story H17 - voting_right_status() Art. 3.87 §1 CC (suspension du vote)
+[[test]]
+name = "bdd_voting_right"
+harness = false
+
 # Story 2.1 - Portfolio BDD harness (Cucumber) — Slice 2 Refonte UX multi-rôle
 [[test]]
 name = "bdd_portfolio"
