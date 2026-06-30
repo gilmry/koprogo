@@ -482,6 +482,13 @@ mod tests {
         ) -> Result<Vec<(Uuid, Uuid, rust_decimal::Decimal)>, String> {
             Ok(self.active_by_building.lock().unwrap().clone())
         }
+
+        async fn find_voting_holders_by_unit(
+            &self,
+            _unit_id: Uuid,
+        ) -> Result<Vec<crate::domain::entities::LotHolder>, String> {
+            Ok(vec![])
+        }
     }
 
     // ── Helpers ───────────────────────────────────────────────────────

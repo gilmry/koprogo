@@ -4,10 +4,11 @@
 //! (domain + SQL NUMERIC(6,5) depuis migration `20260501000000`).
 
 use crate::application::ports::UnitOwnerRepository;
-use crate::domain::entities::UnitOwner;
+use crate::domain::entities::{LotHolder, OwnershipType, UnitOwner};
 use async_trait::async_trait;
 use rust_decimal::Decimal;
-use sqlx::PgPool;
+use sqlx::{PgPool, Row};
+use std::str::FromStr;
 use uuid::Uuid;
 
 pub struct PostgresUnitOwnerRepository {
@@ -329,5 +330,37 @@ impl UnitOwnerRepository for PostgresUnitOwnerRepository {
             .into_iter()
             .map(|row| (row.unit_id, row.owner_id, row.ownership_percentage))
             .collect())
+    }
+
+    async fn find_voting_holders_by_unit(&self, unit_id: Uuid) -> Result<Vec<LotHolder>, String> {
+        // Story H17 — runtime query (`sqlx::query`, pas la macro `query!`) :
+        // évite de régénérer le cache `.sqlx` pour les colonnes ajoutées par la
+        // migration 20260621000000. On ne lit que les titulaires actifs.
+        let rows = sqlx::query(
+            r#"
+            SELECT ownership_type, is_voting_representative
+            FROM unit_owners
+            WHERE unit_id = $1 AND end_date IS NULL
+            "#,
+        )
+        .bind(unit_id)
+        .fetch_all(&self.pool)
+        .await
+        .map_err(|e| format!("Failed to find voting holders by unit: {}", e))?;
+
+        rows.into_iter()
+            .map(|row| {
+                let raw: String = row
+                    .try_get("ownership_type")
+                    .map_err(|e| format!("ownership_type read error: {}", e))?;
+                // Parse strict (mémoire `validate-before-compute`) : une valeur
+                // hors enum remonte une erreur typée, jamais un fallback muet.
+                let ownership_type = OwnershipType::from_str(&raw).map_err(|e| e.to_string())?;
+                let is_voting_representative: bool = row
+                    .try_get("is_voting_representative")
+                    .map_err(|e| format!("is_voting_representative read error: {}", e))?;
+                Ok(LotHolder::new(ownership_type, is_voting_representative))
+            })
+            .collect()
     }
 }

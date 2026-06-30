@@ -235,6 +235,12 @@ impl UnitOwnerRepository for MockUnitOwnerRepo {
             .cloned()
             .unwrap_or_default())
     }
+    async fn find_voting_holders_by_unit(
+        &self,
+        _unit_id: Uuid,
+    ) -> Result<Vec<koprogo_api::domain::entities::LotHolder>, String> {
+        Ok(vec![])
+    }
 }
 
 // ============================================================================

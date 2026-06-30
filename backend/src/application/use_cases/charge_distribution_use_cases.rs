@@ -448,6 +448,13 @@ mod tests {
             let ownerships = self.building_ownerships.lock().unwrap();
             Ok(ownerships.get(&building_id).cloned().unwrap_or_default())
         }
+
+        async fn find_voting_holders_by_unit(
+            &self,
+            _unit_id: Uuid,
+        ) -> Result<Vec<crate::domain::entities::LotHolder>, String> {
+            Ok(vec![])
+        }
     }
 
     // ========== Helpers ==========
