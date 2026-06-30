@@ -164,7 +164,11 @@ pub use ticket::{
 };
 pub use two_factor_secret::TwoFactorSecret;
 pub use unit::{Unit, UnitType};
-pub use unit_owner::UnitOwner;
+pub use unit_owner::{
+    assert_single_voting_representative, assert_voting_right_active, voting_right_status,
+    LotHolder, OwnershipType, UnitOwner, VotingRightError, VotingRightStatus,
+    VotingRightSuspendedError,
+};
 pub use user::{User, UserRole};
 pub use user_role_assignment::UserRoleAssignment;
 pub use vote::{Vote, VoteChoice};

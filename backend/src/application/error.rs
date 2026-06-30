@@ -239,6 +239,15 @@ pub enum AppError {
         actual: rust_decimal::Decimal,
         ordinary_charges_n1: rust_decimal::Decimal,
     },
+
+    /// Track H Story H17 (CL3) — `assert_voting_right_active()` (Art. 3.87 §1
+    /// CC). Le lot est démembré (usufruit/nue-propriété, emphytéose, superficie)
+    /// ou en indivision sans représentant unique désigné : son droit de vote est
+    /// suspendu. 422 + payload `VOTING_RIGHT_SUSPENDED` (unit_id).
+    #[error(
+        "Droit de vote suspendu : lot démembré/indivis sans représentant unique (Art. 3.87 §1 CC)"
+    )]
+    VotingRightSuspended { unit_id: uuid::Uuid },
 }
 
 impl AppError {
@@ -258,6 +267,7 @@ impl AppError {
             AppError::MeetingNotCompletable { .. } => "meeting_not_completable",
             AppError::AcpNotConformant { .. } => "acp_not_conformant",
             AppError::ReserveFundInsufficient { .. } => "reserve_fund_insufficient",
+            AppError::VotingRightSuspended { .. } => "voting_right_suspended",
             AppError::RateLimited => "rate_limited",
             AppError::Database(_) => "database",
             AppError::Crypto(_) => "crypto",
@@ -315,7 +325,8 @@ impl ResponseError for AppError {
             | AppError::BuildingNotConformant { .. }
             | AppError::MeetingNotCompletable { .. }
             | AppError::AcpNotConformant { .. }
-            | AppError::ReserveFundInsufficient { .. } => StatusCode::UNPROCESSABLE_ENTITY,
+            | AppError::ReserveFundInsufficient { .. }
+            | AppError::VotingRightSuspended { .. } => StatusCode::UNPROCESSABLE_ENTITY,
             AppError::RateLimited => StatusCode::TOO_MANY_REQUESTS,
             AppError::Database(_) | AppError::Crypto(_) | AppError::Internal(_) => {
                 StatusCode::INTERNAL_SERVER_ERROR
@@ -379,6 +390,14 @@ impl ResponseError for AppError {
                 "required": required.to_string(),
                 "actual": actual.to_string(),
                 "ordinary_charges_n1": ordinary_charges_n1.to_string(),
+            })),
+            // Track H Story H17 — payload narratif `VOTING_RIGHT_SUSPENDED`
+            // (422). Le FE (`<VotingSuspendedBadge>`, différé #634) consomme
+            // `details.code` + unit_id pour signaler le lot dont le vote est
+            // suspendu (Art. 3.87 §1 — désigner un représentant unique).
+            AppError::VotingRightSuspended { unit_id } => Some(json!({
+                "code": "VOTING_RIGHT_SUSPENDED",
+                "unit_id": unit_id,
             })),
             // Track H Story H3 — payload narratif pour `MeetingNotCompletable`
             // (422) : le FE consomme `details.code == "MEETING_NOT_COMPLETABLE"`
@@ -635,6 +654,28 @@ impl From<crate::domain::entities::ReserveFundInsufficientError> for String {
             "RESERVE_FUND_INSUFFICIENT: acp {} required={} actual={} charges_n1={}",
             err.acp_id, err.required, err.actual, err.ordinary_charges_n1
         )
+    }
+}
+
+// ============================================================================
+// Track H Story H17 — bridges From<VotingRightSuspendedError> (droit de vote)
+// ============================================================================
+
+impl From<crate::domain::entities::VotingRightSuspendedError> for AppError {
+    /// Track H Story H17 — lot démembré/indivis sans représentant unique
+    /// (Art. 3.87 §1) → 422 + payload `VOTING_RIGHT_SUSPENDED`.
+    fn from(err: crate::domain::entities::VotingRightSuspendedError) -> Self {
+        AppError::VotingRightSuspended {
+            unit_id: err.unit_id,
+        }
+    }
+}
+
+impl From<crate::domain::entities::VotingRightSuspendedError> for String {
+    /// Bridge legacy `Result<_, String>` (cohérence Track H). Préfixe
+    /// `VOTING_RIGHT_SUSPENDED:` parsable par le gate vote (`cast_vote`).
+    fn from(err: crate::domain::entities::VotingRightSuspendedError) -> Self {
+        format!("VOTING_RIGHT_SUSPENDED: unit {}", err.unit_id)
     }
 }
 
