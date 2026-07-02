@@ -95,7 +95,7 @@ utoipa-swagger-ui = { version = "9.0", features = ["actix-web"] }
 
 [dev-dependencies]
 # Unit & Integration tests
-mockall = "0.14"
+mockall = "0.15"
 tokio-test = "0.4"
 testcontainers = "0.27"
 testcontainers-modules = { version = "0.15", features = ["postgres", "minio"] }
