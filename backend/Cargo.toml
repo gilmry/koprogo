@@ -50,7 +50,7 @@ totp-lite = "2.0"
 qrcode = "0.14"
 image = { version = "0.25", default-features = false, features = ["png"] }
 base64 = "0.22"
-aes-gcm = "0.10"
+aes-gcm = "0.11"
 urlencoding = "2.1"
 
 # Async trait support
