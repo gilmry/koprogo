@@ -40,7 +40,13 @@ pub struct ExpenseFilters {
 /// Filters for unit list queries
 #[derive(Debug, Deserialize, Default, Clone)]
 pub struct UnitFilters {
+    /// Story H15 — Scope organisation : filtre les lots dont l'ACP appartient
+    /// à cette organisation. Le repository traduit en
+    /// `acp_id IN (SELECT id FROM acps WHERE organization_id = $)` (la colonne
+    /// `units.organization_id` a été DROP en migration 20260630030000).
     pub organization_id: Option<Uuid>,
+    /// Story H15 — Scope ACP direct (filtre `units.acp_id = $`).
+    pub acp_id: Option<Uuid>,
     pub building_id: Option<Uuid>,
     pub unit_type: Option<String>,
     pub has_owner: Option<bool>,

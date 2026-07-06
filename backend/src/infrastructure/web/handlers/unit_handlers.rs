@@ -19,11 +19,11 @@ pub async fn create_unit(
         }));
     }
 
-    // SuperAdmin must specify organization_id and building_id in the request body
-    // Validate that both are provided
-    if dto.organization_id.is_empty() {
+    // Story H15 — SuperAdmin must specify acp_id (ex-organization_id) and
+    // building_id in the request body. Validate that both are provided.
+    if dto.acp_id.is_empty() {
         return HttpResponse::BadRequest().json(serde_json::json!({
-            "error": "SuperAdmin must specify organization_id"
+            "error": "SuperAdmin must specify acp_id"
         }));
     }
 
@@ -33,15 +33,16 @@ pub async fn create_unit(
         }));
     }
 
-    // Parse organization_id for audit logging
-    let organization_id = match Uuid::parse_str(&dto.organization_id) {
-        Ok(org_id) => org_id,
-        Err(_) => {
-            return HttpResponse::BadRequest().json(serde_json::json!({
-                "error": "Invalid organization_id format"
-            }))
-        }
-    };
+    // Validate acp_id format up-front (the use-case re-parses it).
+    if Uuid::parse_str(&dto.acp_id).is_err() {
+        return HttpResponse::BadRequest().json(serde_json::json!({
+            "error": "Invalid acp_id format"
+        }));
+    }
+
+    // Story H15 — audit org context : units.organization_id ayant été DROP,
+    // le scope org de l'audit vient du contexte utilisateur (cf. buildings).
+    let organization_id = user.organization_id;
 
     if let Err(errors) = dto.validate() {
         return HttpResponse::BadRequest().json(serde_json::json!({
@@ -56,7 +57,7 @@ pub async fn create_unit(
             AuditLogEntry::new(
                 AuditEventType::UnitCreated,
                 Some(user.user_id),
-                Some(organization_id),
+                organization_id,
             )
             .with_resource("Unit", Uuid::parse_str(&unit.id).unwrap())
             .log();
@@ -68,7 +69,7 @@ pub async fn create_unit(
             AuditLogEntry::new(
                 AuditEventType::UnitCreated,
                 Some(user.user_id),
-                Some(organization_id),
+                organization_id,
             )
             .with_error(err.clone())
             .log();

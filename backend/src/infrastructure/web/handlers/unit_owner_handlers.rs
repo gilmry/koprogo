@@ -643,7 +643,7 @@ pub async fn export_ownership_contract_pdf(
 
     let unit_entity = Unit {
         id: Uuid::parse_str(&unit_dto.id).unwrap_or(unit_owner.unit_id),
-        organization_id,
+        acp_id: building_acp_id,
         building_id: building_uuid,
         unit_number: unit_dto.unit_number,
         floor: unit_dto.floor,

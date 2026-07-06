@@ -1479,7 +1479,10 @@ impl DatabaseSeeder {
     #[allow(clippy::too_many_arguments)]
     async fn create_demo_unit(
         &self,
-        organization_id: Uuid,
+        // Story H15 — units.organization_id a été DROP ; le lot dérive son
+        // acp_id de son building parent (sous-requête ci-dessous). Param
+        // conservé pour la signature des appelants (scope org du seed).
+        _organization_id: Uuid,
         building_id: Uuid,
         owner_id: Option<Uuid>,
         unit_number: &str,
@@ -1493,12 +1496,11 @@ impl DatabaseSeeder {
 
         sqlx::query(
             r#"
-            INSERT INTO units (id, organization_id, building_id, owner_id, unit_number, unit_type, floor, surface_area, quota, created_at, updated_at)
-            VALUES ($1, $2, $3, $4, $5, $6::unit_type, $7, $8, $9, $10, $11)
+            INSERT INTO units (id, acp_id, building_id, owner_id, unit_number, unit_type, floor, surface_area, quota, created_at, updated_at)
+            VALUES ($1, (SELECT acp_id FROM buildings WHERE id = $2), $2, $3, $4, $5::unit_type, $6, $7, $8, $9, $10)
             "#
         )
         .bind(unit_id)
-        .bind(organization_id)
         .bind(building_id)
         .bind(owner_id)
         .bind(unit_number)
@@ -2048,11 +2050,11 @@ impl DatabaseSeeder {
                     let unit_type = unit_types[rng.random_range(0..unit_types.len())];
 
                     sqlx::query(
-                        "INSERT INTO units (id, organization_id, building_id, unit_number, unit_type, floor, surface_area, quota, owner_id, created_at, updated_at)
-                         VALUES ($1, $2, $3, $4, $5::unit_type, $6, $7, $8, $9, $10, $11)"
+                        // Story H15 — acp_id dérivé du building parent (units.organization_id DROP).
+                        "INSERT INTO units (id, acp_id, building_id, unit_number, unit_type, floor, surface_area, quota, owner_id, created_at, updated_at)
+                         VALUES ($1, (SELECT acp_id FROM buildings WHERE id = $2), $2, $3, $4::unit_type, $5, $6, $7, $8, $9, $10)"
                     )
                     .bind(Uuid::new_v4())
-                    .bind(org_id)
                     .bind(building_id)
                     .bind(&unit_number)
                     .bind(unit_type)

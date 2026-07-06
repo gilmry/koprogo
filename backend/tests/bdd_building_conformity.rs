@@ -218,9 +218,14 @@ async fn given_unit_with_quota(
         .expect("building must exist");
     // Find the org_id for this building (we know any of the seeded orgs)
     let org_id = *world.orgs.values().next().expect("an org must exist");
+    // Story H15 — le lot porte l'acp_id de son ACP (FK acps), pas l'org_id.
+    let acp_id = *world
+        .acps_for_orgs
+        .get(&org_id)
+        .expect("acp must exist for org");
 
     let unit = Unit::new(
-        org_id,
+        acp_id,
         bid,
         unit_number,
         UnitType::Apartment,

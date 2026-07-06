@@ -17,7 +17,11 @@ pub enum UnitType {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct Unit {
     pub id: Uuid,
-    pub organization_id: Uuid,
+    /// Story H15 — FK vers `acps.id` (anciennement `organization_id`).
+    /// La migration 20260630030000 a DROP la colonne `units.organization_id` ;
+    /// le scoping org se fait désormais via `acps.organization_id` (le lot
+    /// dérive son ACP de son building parent, cf. #602).
+    pub acp_id: Uuid,
     pub building_id: Uuid,
     pub unit_number: String,
     pub unit_type: UnitType,
@@ -31,7 +35,7 @@ pub struct Unit {
 
 impl Unit {
     pub fn new(
-        organization_id: Uuid,
+        acp_id: Uuid,
         building_id: Uuid,
         unit_number: String,
         unit_type: UnitType,
@@ -60,7 +64,7 @@ impl Unit {
         let now = Utc::now();
         Ok(Self {
             id: Uuid::new_v4(),
-            organization_id,
+            acp_id,
             building_id,
             unit_number,
             unit_type,
@@ -170,10 +174,10 @@ mod tests {
 
     #[test]
     fn test_create_unit_success() {
-        let org_id = Uuid::new_v4();
+        let acp_id = Uuid::new_v4();
         let building_id = Uuid::new_v4();
         let unit = Unit::new(
-            org_id,
+            acp_id,
             building_id,
             "A101".to_string(),
             UnitType::Apartment,
@@ -184,7 +188,7 @@ mod tests {
 
         assert!(unit.is_ok());
         let unit = unit.unwrap();
-        assert_eq!(unit.organization_id, org_id);
+        assert_eq!(unit.acp_id, acp_id);
         assert_eq!(unit.unit_number, "A101");
         assert_eq!(unit.surface_area, 75.5);
     }

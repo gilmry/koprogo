@@ -41,11 +41,11 @@ async fn create_test_building_for_units(
 /// Helper: Create a unit via AppState directly
 async fn create_test_unit(
     app_state: &actix_web::web::Data<AppState>,
-    org_id: Uuid,
+    acp_id: &str,
     building_id: &str,
 ) -> UnitResponseDto {
     let dto = CreateUnitDto {
-        organization_id: org_id.to_string(),
+        acp_id: acp_id.to_string(),
         building_id: building_id.to_string(),
         unit_number: format!("A{}", Uuid::new_v4().to_string()[..4].to_uppercase()),
         unit_type: UnitType::Apartment,
@@ -80,7 +80,7 @@ async fn test_unit_create_success() {
         .uri("/api/v1/units")
         .insert_header((header::AUTHORIZATION, format!("Bearer {}", token)))
         .set_json(json!({
-            "organization_id": org_id.to_string(),
+            "acp_id": building.acp_id.clone(),
             "building_id": building.id,
             "unit_number": "B101",
             "unit_type": "Apartment",
@@ -118,7 +118,7 @@ async fn test_unit_create_invalid_quota_zero() {
         .uri("/api/v1/units")
         .insert_header((header::AUTHORIZATION, format!("Bearer {}", token)))
         .set_json(json!({
-            "organization_id": org_id.to_string(),
+            "acp_id": building.acp_id.clone(),
             "building_id": building.id,
             "unit_number": "C001",
             "unit_type": "Parking",
@@ -142,7 +142,7 @@ async fn test_unit_get_success() {
     let (app_state, _container, org_id) = common::setup_test_db().await;
     let token = common::register_and_login(&app_state, org_id).await;
     let building = create_test_building_for_units(&app_state, org_id).await;
-    let unit = create_test_unit(&app_state, org_id, &building.id).await;
+    let unit = create_test_unit(&app_state, &building.acp_id, &building.id).await;
 
     let app = test::init_service(
         App::new()
@@ -172,8 +172,8 @@ async fn test_unit_list_by_building() {
     let building = create_test_building_for_units(&app_state, org_id).await;
 
     // Create two units in the building
-    create_test_unit(&app_state, org_id, &building.id).await;
-    create_test_unit(&app_state, org_id, &building.id).await;
+    create_test_unit(&app_state, &building.acp_id, &building.id).await;
+    create_test_unit(&app_state, &building.acp_id, &building.id).await;
 
     let app = test::init_service(
         App::new()
@@ -204,7 +204,7 @@ async fn test_unit_update_success() {
     let (app_state, _container, org_id) = common::setup_test_db().await;
     let token = common::register_and_login(&app_state, org_id).await;
     let building = create_test_building_for_units(&app_state, org_id).await;
-    let unit = create_test_unit(&app_state, org_id, &building.id).await;
+    let unit = create_test_unit(&app_state, &building.acp_id, &building.id).await;
 
     let app = test::init_service(
         App::new()
@@ -249,7 +249,7 @@ async fn test_unit_create_requires_auth() {
     let req = test::TestRequest::post()
         .uri("/api/v1/units")
         .set_json(json!({
-            "organization_id": org_id.to_string(),
+            "acp_id": building.acp_id.clone(),
             "building_id": building.id,
             "unit_number": "E303",
             "unit_type": "Apartment",

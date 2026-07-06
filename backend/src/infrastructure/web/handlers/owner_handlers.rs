@@ -599,7 +599,7 @@ pub async fn export_owner_statement_pdf(
     for (uo, unit_dto) in building_unit_owners {
         let unit_entity = Unit {
             id: Uuid::parse_str(&unit_dto.id).unwrap_or(uo.unit_id),
-            organization_id,
+            acp_id: building_acp_id,
             building_id: Uuid::parse_str(&unit_dto.building_id).unwrap_or(building_id),
             unit_number: unit_dto.unit_number,
             floor: unit_dto.floor,

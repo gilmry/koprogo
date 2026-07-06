@@ -16,13 +16,13 @@ impl UnitUseCases {
     }
 
     pub async fn create_unit(&self, dto: CreateUnitDto) -> Result<UnitResponseDto, String> {
-        let organization_id = Uuid::parse_str(&dto.organization_id)
-            .map_err(|_| "Invalid organization_id format".to_string())?;
+        let acp_id =
+            Uuid::parse_str(&dto.acp_id).map_err(|_| "Invalid acp_id format".to_string())?;
         let building_id = Uuid::parse_str(&dto.building_id)
             .map_err(|_| "Invalid building ID format".to_string())?;
 
         let unit = Unit::new(
-            organization_id,
+            acp_id,
             building_id,
             dto.unit_number,
             dto.unit_type,
@@ -219,9 +219,9 @@ mod tests {
         UnitUseCases::new(Arc::new(repo))
     }
 
-    fn make_create_dto(org_id: Uuid, building_id: Uuid) -> CreateUnitDto {
+    fn make_create_dto(acp_id: Uuid, building_id: Uuid) -> CreateUnitDto {
         CreateUnitDto {
-            organization_id: org_id.to_string(),
+            acp_id: acp_id.to_string(),
             building_id: building_id.to_string(),
             unit_number: "A101".to_string(),
             unit_type: UnitType::Apartment,
@@ -235,11 +235,11 @@ mod tests {
     async fn test_create_unit_success() {
         let repo = MockUnitRepository::new();
         let use_cases = make_use_cases(repo);
-        let org_id = Uuid::new_v4();
+        let acp_id = Uuid::new_v4();
         let building_id = Uuid::new_v4();
 
         let result = use_cases
-            .create_unit(make_create_dto(org_id, building_id))
+            .create_unit(make_create_dto(acp_id, building_id))
             .await;
 
         assert!(result.is_ok());
@@ -255,10 +255,12 @@ mod tests {
     async fn test_create_unit_invalid_building_id() {
         let repo = MockUnitRepository::new();
         let use_cases = make_use_cases(repo);
-        let org_id = Uuid::new_v4();
+        // UUID valide quelconque : sert juste à faire passer le parse de `acp_id`
+        // pour que l'erreur testée porte bien sur le `building_id` invalide.
+        let acp_id = Uuid::new_v4();
 
         let dto = CreateUnitDto {
-            organization_id: org_id.to_string(),
+            acp_id: acp_id.to_string(),
             building_id: "not-a-valid-uuid".to_string(),
             unit_number: "A101".to_string(),
             unit_type: UnitType::Apartment,
@@ -276,10 +278,10 @@ mod tests {
     #[tokio::test]
     async fn test_get_unit() {
         let repo = MockUnitRepository::new();
-        let org_id = Uuid::new_v4();
+        let acp_id = Uuid::new_v4();
         let building_id = Uuid::new_v4();
         let unit = Unit::new(
-            org_id,
+            acp_id,
             building_id,
             "B202".to_string(),
             UnitType::Parking,
@@ -305,12 +307,12 @@ mod tests {
     #[tokio::test]
     async fn test_list_units_by_building() {
         let repo = MockUnitRepository::new();
-        let org_id = Uuid::new_v4();
+        let acp_id = Uuid::new_v4();
         let building_a = Uuid::new_v4();
         let building_b = Uuid::new_v4();
 
         let unit1 = Unit::new(
-            org_id,
+            acp_id,
             building_a,
             "A101".to_string(),
             UnitType::Apartment,
@@ -320,7 +322,7 @@ mod tests {
         )
         .unwrap();
         let unit2 = Unit::new(
-            org_id,
+            acp_id,
             building_a,
             "A102".to_string(),
             UnitType::Apartment,
@@ -330,7 +332,7 @@ mod tests {
         )
         .unwrap();
         let unit3 = Unit::new(
-            org_id,
+            acp_id,
             building_b,
             "B101".to_string(),
             UnitType::Commercial,
@@ -361,10 +363,10 @@ mod tests {
     #[tokio::test]
     async fn test_delete_unit() {
         let repo = MockUnitRepository::new();
-        let org_id = Uuid::new_v4();
+        let acp_id = Uuid::new_v4();
         let building_id = Uuid::new_v4();
         let unit = Unit::new(
-            org_id,
+            acp_id,
             building_id,
             "A101".to_string(),
             UnitType::Apartment,
@@ -391,10 +393,10 @@ mod tests {
     #[tokio::test]
     async fn test_assign_owner() {
         let repo = MockUnitRepository::new();
-        let org_id = Uuid::new_v4();
+        let acp_id = Uuid::new_v4();
         let building_id = Uuid::new_v4();
         let unit = Unit::new(
-            org_id,
+            acp_id,
             building_id,
             "A101".to_string(),
             UnitType::Apartment,

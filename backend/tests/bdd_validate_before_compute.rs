@@ -462,12 +462,12 @@ impl VbcWorld {
         let bid = Uuid::parse_str(&resp.id).unwrap();
         self.buildings.insert(name.to_string(), bid);
 
-        let org_id = self.org_id.unwrap();
         let unit_repo = self.unit_repo.as_ref().unwrap().clone();
         let mut first_unit_id: Option<Uuid> = None;
         for (i, quota) in unit_quotas.iter().enumerate() {
+            // Story H15 — le lot porte l'acp_id (FK acps), pas l'org_id.
             let unit = Unit::new(
-                org_id,
+                acp_id,
                 bid,
                 format!("U{}", i + 1),
                 UnitType::Apartment,
@@ -693,10 +693,18 @@ async fn when_create_etat(world: &mut VbcWorld, _name: String) {
 #[when(regex = r#"^admin adds the missing unit on "([^"]+)" with quota (\d+(?:\.\d+)?)$"#)]
 async fn when_admin_adds_unit(world: &mut VbcWorld, name: String, quota_str: String) {
     let bid = *world.buildings.get(&name).expect("building exists");
-    let org_id = world.org_id.unwrap();
     let quota = Decimal::from_str(&quota_str).expect("decimal");
+    // Story H15 — le lot porte l'acp_id de son building (FK acps). Chaque
+    // building a son propre ACP (cf. seed_building_with_units), donc on le
+    // résout depuis la DB plutôt que d'utiliser un org_id.
+    let pool = world.pool.as_ref().unwrap().clone();
+    let acp_id: Uuid = sqlx::query_scalar("SELECT acp_id FROM buildings WHERE id = $1")
+        .bind(bid)
+        .fetch_one(&pool)
+        .await
+        .expect("fetch building acp_id");
     let unit = Unit::new(
-        org_id,
+        acp_id,
         bid,
         "U-fix".to_string(),
         UnitType::Apartment,

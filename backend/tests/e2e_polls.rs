@@ -46,7 +46,7 @@ async fn create_test_building_for_polls(
     let unit = app_state
         .unit_use_cases
         .create_unit(CreateUnitDto {
-            organization_id: org_id.to_string(),
+            acp_id: building.acp_id.clone(),
             building_id: building.id.clone(),
             unit_number: "A1".to_string(),
             unit_type: UnitType::Apartment,
@@ -403,7 +403,7 @@ async fn test_polls_cast_vote() {
     let unit = app_state
         .unit_use_cases
         .create_unit(koprogo_api::application::dto::CreateUnitDto {
-            organization_id: org_id.to_string(),
+            acp_id: building.acp_id.clone(),
             building_id: building_id.clone(),
             unit_number: "V1".to_string(),
             unit_type: UnitType::Apartment,

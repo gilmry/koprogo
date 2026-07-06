@@ -72,7 +72,7 @@ async fn setup_charge_distribution_fixtures(
 
     // Create unit
     let unit_dto = CreateUnitDto {
-        organization_id: org_id.to_string(),
+        acp_id: building.acp_id.clone(),
         building_id: building_id.to_string(),
         unit_number: "A1".to_string(),
         unit_type: UnitType::Apartment,

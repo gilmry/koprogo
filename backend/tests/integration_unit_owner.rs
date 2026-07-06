@@ -17,6 +17,7 @@ async fn setup_test_db() -> (
     ContainerAsync<Postgres>,
     Uuid, // org_id
     Uuid, // building_id
+    Uuid, // acp_id (Story H15 — units.acp_id)
 ) {
     let postgres_container = Postgres::default()
         .start()
@@ -27,10 +28,17 @@ async fn setup_test_db() -> (
         .get_host_port_ipv4(5432)
         .await
         .expect("Failed to get host port");
+    // Test-infra — joindre le testcontainer via get_host() (et non 127.0.0.1),
+    // requis en exécution docker-sibling (socket mount) comme les BDD ; sinon
+    // PoolTimedOut car le port du sibling n'est pas sur le localhost du runner.
+    let host = postgres_container
+        .get_host()
+        .await
+        .expect("Failed to get host");
 
     let connection_string = format!(
-        "postgres://postgres:postgres@127.0.0.1:{}/postgres",
-        host_port
+        "postgres://postgres:postgres@{}:{}/postgres",
+        host, host_port
     );
 
     let pool = create_pool(&connection_string)
@@ -89,18 +97,19 @@ async fn setup_test_db() -> (
         postgres_container,
         org_id,
         building_id,
+        acp_id,
     )
 }
 
 // Helper to create test unit
 async fn create_test_unit(
     unit_repo: &PostgresUnitRepository,
-    org_id: Uuid,
+    acp_id: Uuid,
     building_id: Uuid,
     number: &str,
 ) -> Unit {
     let unit = Unit::new(
-        org_id,
+        acp_id,
         building_id,
         number.to_string(),
         UnitType::Apartment,
@@ -134,9 +143,10 @@ async fn create_test_owner(owner_repo: &PostgresOwnerRepository, org_id: Uuid) -
 #[tokio::test]
 #[serial]
 async fn test_create_unit_owner() {
-    let (repo, unit_repo, owner_repo, _container, org_id, building_id) = setup_test_db().await;
+    let (repo, unit_repo, owner_repo, _container, org_id, building_id, acp_id) =
+        setup_test_db().await;
 
-    let unit = create_test_unit(&unit_repo, org_id, building_id, "A101").await;
+    let unit = create_test_unit(&unit_repo, acp_id, building_id, "A101").await;
     let owner = create_test_owner(&owner_repo, org_id).await;
 
     let unit_owner = UnitOwner::new(unit.id, owner.id, dec!(1), true).unwrap();
@@ -154,9 +164,10 @@ async fn test_create_unit_owner() {
 #[tokio::test]
 #[serial]
 async fn test_find_by_id() {
-    let (repo, unit_repo, owner_repo, _container, org_id, building_id) = setup_test_db().await;
+    let (repo, unit_repo, owner_repo, _container, org_id, building_id, acp_id) =
+        setup_test_db().await;
 
-    let unit = create_test_unit(&unit_repo, org_id, building_id, "A102").await;
+    let unit = create_test_unit(&unit_repo, acp_id, building_id, "A102").await;
     let owner = create_test_owner(&owner_repo, org_id).await;
 
     let unit_owner = UnitOwner::new(unit.id, owner.id, dec!(0.5), false).unwrap();
@@ -173,9 +184,10 @@ async fn test_find_by_id() {
 #[tokio::test]
 #[serial]
 async fn test_find_current_owners_by_unit() {
-    let (repo, unit_repo, owner_repo, _container, org_id, building_id) = setup_test_db().await;
+    let (repo, unit_repo, owner_repo, _container, org_id, building_id, acp_id) =
+        setup_test_db().await;
 
-    let unit = create_test_unit(&unit_repo, org_id, building_id, "A103").await;
+    let unit = create_test_unit(&unit_repo, acp_id, building_id, "A103").await;
     let owner1 = create_test_owner(&owner_repo, org_id).await;
     let owner2 = create_test_owner(&owner_repo, org_id).await;
 
@@ -197,10 +209,11 @@ async fn test_find_current_owners_by_unit() {
 #[tokio::test]
 #[serial]
 async fn test_find_current_units_by_owner() {
-    let (repo, unit_repo, owner_repo, _container, org_id, building_id) = setup_test_db().await;
+    let (repo, unit_repo, owner_repo, _container, org_id, building_id, acp_id) =
+        setup_test_db().await;
 
-    let unit1 = create_test_unit(&unit_repo, org_id, building_id, "A104").await;
-    let unit2 = create_test_unit(&unit_repo, org_id, building_id, "A105").await;
+    let unit1 = create_test_unit(&unit_repo, acp_id, building_id, "A104").await;
+    let unit2 = create_test_unit(&unit_repo, acp_id, building_id, "A105").await;
     let owner = create_test_owner(&owner_repo, org_id).await;
 
     // Owner owns two units
@@ -217,9 +230,10 @@ async fn test_find_current_units_by_owner() {
 #[tokio::test]
 #[serial]
 async fn test_update_unit_owner() {
-    let (repo, unit_repo, owner_repo, _container, org_id, building_id) = setup_test_db().await;
+    let (repo, unit_repo, owner_repo, _container, org_id, building_id, acp_id) =
+        setup_test_db().await;
 
-    let unit = create_test_unit(&unit_repo, org_id, building_id, "A106").await;
+    let unit = create_test_unit(&unit_repo, acp_id, building_id, "A106").await;
     let owner = create_test_owner(&owner_repo, org_id).await;
 
     let mut unit_owner = UnitOwner::new(unit.id, owner.id, dec!(0.5), false).unwrap();
@@ -240,9 +254,10 @@ async fn test_update_unit_owner() {
 #[tokio::test]
 #[serial]
 async fn test_end_ownership() {
-    let (repo, unit_repo, owner_repo, _container, org_id, building_id) = setup_test_db().await;
+    let (repo, unit_repo, owner_repo, _container, org_id, building_id, acp_id) =
+        setup_test_db().await;
 
-    let unit = create_test_unit(&unit_repo, org_id, building_id, "A107").await;
+    let unit = create_test_unit(&unit_repo, acp_id, building_id, "A107").await;
     let owner = create_test_owner(&owner_repo, org_id).await;
 
     let mut unit_owner = UnitOwner::new(unit.id, owner.id, dec!(1), true).unwrap();
@@ -267,9 +282,10 @@ async fn test_end_ownership() {
 #[tokio::test]
 #[serial]
 async fn test_delete_unit_owner() {
-    let (repo, unit_repo, owner_repo, _container, org_id, building_id) = setup_test_db().await;
+    let (repo, unit_repo, owner_repo, _container, org_id, building_id, acp_id) =
+        setup_test_db().await;
 
-    let unit = create_test_unit(&unit_repo, org_id, building_id, "A108").await;
+    let unit = create_test_unit(&unit_repo, acp_id, building_id, "A108").await;
     let owner = create_test_owner(&owner_repo, org_id).await;
 
     let unit_owner = UnitOwner::new(unit.id, owner.id, dec!(1), true).unwrap();
@@ -287,9 +303,10 @@ async fn test_delete_unit_owner() {
 #[tokio::test]
 #[serial]
 async fn test_has_active_owners() {
-    let (repo, unit_repo, owner_repo, _container, org_id, building_id) = setup_test_db().await;
+    let (repo, unit_repo, owner_repo, _container, org_id, building_id, acp_id) =
+        setup_test_db().await;
 
-    let unit = create_test_unit(&unit_repo, org_id, building_id, "A109").await;
+    let unit = create_test_unit(&unit_repo, acp_id, building_id, "A109").await;
 
     // Initially no active owners
     let has_owners = repo.has_active_owners(unit.id).await.unwrap();
@@ -308,9 +325,10 @@ async fn test_has_active_owners() {
 #[tokio::test]
 #[serial]
 async fn test_get_total_ownership_percentage() {
-    let (repo, unit_repo, owner_repo, _container, org_id, building_id) = setup_test_db().await;
+    let (repo, unit_repo, owner_repo, _container, org_id, building_id, acp_id) =
+        setup_test_db().await;
 
-    let unit = create_test_unit(&unit_repo, org_id, building_id, "A110").await;
+    let unit = create_test_unit(&unit_repo, acp_id, building_id, "A110").await;
     let owner1 = create_test_owner(&owner_repo, org_id).await;
     let owner2 = create_test_owner(&owner_repo, org_id).await;
 
@@ -328,9 +346,10 @@ async fn test_get_total_ownership_percentage() {
 #[tokio::test]
 #[serial]
 async fn test_find_active_by_unit_and_owner() {
-    let (repo, unit_repo, owner_repo, _container, org_id, building_id) = setup_test_db().await;
+    let (repo, unit_repo, owner_repo, _container, org_id, building_id, acp_id) =
+        setup_test_db().await;
 
-    let unit = create_test_unit(&unit_repo, org_id, building_id, "A111").await;
+    let unit = create_test_unit(&unit_repo, acp_id, building_id, "A111").await;
     let owner = create_test_owner(&owner_repo, org_id).await;
 
     let unit_owner = UnitOwner::new(unit.id, owner.id, dec!(1), true).unwrap();
@@ -350,9 +369,10 @@ async fn test_find_active_by_unit_and_owner() {
 #[tokio::test]
 #[serial]
 async fn test_ownership_history_tracking() {
-    let (repo, unit_repo, owner_repo, _container, org_id, building_id) = setup_test_db().await;
+    let (repo, unit_repo, owner_repo, _container, org_id, building_id, acp_id) =
+        setup_test_db().await;
 
-    let unit = create_test_unit(&unit_repo, org_id, building_id, "A112").await;
+    let unit = create_test_unit(&unit_repo, acp_id, building_id, "A112").await;
     let owner1 = create_test_owner(&owner_repo, org_id).await;
     let owner2 = create_test_owner(&owner_repo, org_id).await;
 
@@ -384,11 +404,12 @@ async fn test_ownership_history_tracking() {
 #[tokio::test]
 #[serial]
 async fn test_multiple_units_same_owner() {
-    let (repo, unit_repo, owner_repo, _container, org_id, building_id) = setup_test_db().await;
+    let (repo, unit_repo, owner_repo, _container, org_id, building_id, acp_id) =
+        setup_test_db().await;
 
-    let unit1 = create_test_unit(&unit_repo, org_id, building_id, "A113").await;
-    let unit2 = create_test_unit(&unit_repo, org_id, building_id, "B201").await;
-    let unit3 = create_test_unit(&unit_repo, org_id, building_id, "C305").await;
+    let unit1 = create_test_unit(&unit_repo, acp_id, building_id, "A113").await;
+    let unit2 = create_test_unit(&unit_repo, acp_id, building_id, "B201").await;
+    let unit3 = create_test_unit(&unit_repo, acp_id, building_id, "C305").await;
     let owner = create_test_owner(&owner_repo, org_id).await;
 
     // Owner owns 3 different units
@@ -411,9 +432,10 @@ async fn test_multiple_units_same_owner() {
 #[tokio::test]
 #[serial]
 async fn test_co_ownership_scenario() {
-    let (repo, unit_repo, owner_repo, _container, org_id, building_id) = setup_test_db().await;
+    let (repo, unit_repo, owner_repo, _container, org_id, building_id, acp_id) =
+        setup_test_db().await;
 
-    let unit = create_test_unit(&unit_repo, org_id, building_id, "A114").await;
+    let unit = create_test_unit(&unit_repo, acp_id, building_id, "A114").await;
     let owner1 = create_test_owner(&owner_repo, org_id).await;
     let owner2 = create_test_owner(&owner_repo, org_id).await;
     let owner3 = create_test_owner(&owner_repo, org_id).await;

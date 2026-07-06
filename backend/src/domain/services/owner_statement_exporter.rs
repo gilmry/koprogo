@@ -366,7 +366,7 @@ mod tests {
 
         let unit = Unit {
             id: Uuid::new_v4(),
-            organization_id: owner.organization_id,
+            acp_id: building.acp_id,
             building_id: building.id,
             unit_number: "A1".to_string(),
             unit_type: crate::domain::entities::UnitType::Apartment,
