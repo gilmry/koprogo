@@ -4,7 +4,16 @@ FROM rustlang/rust:nightly-bookworm-slim
 
 WORKDIR /app
 
-# Install rustfmt and clippy for the nightly toolchain
+# Pin the nightly toolchain to a known-good date. The floating `nightly` tag
+# pulled by the base image is a moving target: `nightly-2026-07-24` shipped a
+# codegen ICE (`internal compiler error: not immediate: OperandRef(Uninit ...)`)
+# that crashes compiling `tokio` during `cargo install sqlx-cli` below, making
+# the whole dev image un-buildable. `nightly-2026-07-20` compiles tokio cleanly.
+# Bump this date deliberately (and rebuild to verify) rather than floating.
+RUN rustup toolchain install nightly-2026-07-20 --profile minimal && \
+    rustup default nightly-2026-07-20
+
+# Install rustfmt and clippy for the pinned nightly toolchain
 RUN rustup component add rustfmt clippy
 
 # Install system dependencies FIRST (needed for sqlx-cli build)
@@ -28,7 +37,8 @@ COPY Cargo.toml Cargo.lock ./
 # (or Cargo fails to parse the manifest before `cargo build`). When adding a
 # new harness, add its placeholder line below — slice 1 (Story 1.1+) added
 # bdd_acp, bdd_list_buildings_role_based, bdd_building_conformity ;
-# slice 2 (Story 2.1) adds bdd_portfolio.
+# slice 2 (Story 2.1) adds bdd_portfolio ; Track H adds bdd_validate_before_compute,
+# bdd_meeting_complete, bdd_voting_right + integration buildings_runtime_test.
 RUN mkdir -p src tests tests/integration benches && \
     echo "fn main() {}" > src/main.rs && \
     echo "fn main() {}" > tests/bdd.rs && \
@@ -41,8 +51,12 @@ RUN mkdir -p src tests tests/integration benches && \
     echo "fn main() {}" > tests/bdd_list_buildings_role_based.rs && \
     echo "fn main() {}" > tests/bdd_building_conformity.rs && \
     echo "fn main() {}" > tests/bdd_portfolio.rs && \
+    echo "fn main() {}" > tests/bdd_validate_before_compute.rs && \
+    echo "fn main() {}" > tests/bdd_meeting_complete.rs && \
+    echo "fn main() {}" > tests/bdd_voting_right.rs && \
     echo "fn main() {}" > tests/integration/acp_test.rs && \
     echo "fn main() {}" > tests/integration/migration_acp_backfill_test.rs && \
+    echo "fn main() {}" > tests/integration/buildings_runtime_test.rs && \
     echo "fn main() {}" > benches/load_tests.rs && \
     cargo build && \
     rm -rf src tests benches
