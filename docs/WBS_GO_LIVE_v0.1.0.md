@@ -165,8 +165,8 @@ Légende : Tier 1 = humain exécute (agent diagnostique/propose). Taille S≤0.5
 
 > **Cartographie Maury ↔ WPs Track H existants** :
 > - WP-H1 ⇔ Story 1.4 (Building.is_conformant + #553 fix) + 1.1-1.3 (refacto ACP) — Maury Track H Story H1 FAIT (commit `6a053a1`)
-> - WP-H2 ⇔ Story 4.9 méga `[cluster-coord]` (validate-before-compute 4 use-cases) — Maury Track H Story H2 EN COURS (wave V2)
-> - WP-H3 ⇔ Story 4.5 (Meeting.assert_can_complete reprise #554) — Maury Track H Story H3 EN COURS (wave V2)
+> - WP-H2 ⇔ Story 4.9 méga `[cluster-coord]` (validate-before-compute 4 use-cases) — Maury Track H Story H2 **FAIT** (`3ede509`, retravaillé en gate ACP par WP-CL1)
+> - WP-H3 ⇔ Story 4.5 (Meeting.assert_can_complete reprise #554) — Maury Track H Story H3 **FAIT** (`3ede509`, étendu quorum double par WP-CL3/H9)
 > - WP-B4 ⇔ Story 1.4 + 2.5 E2E (BuildingDetail refacto + multi-rôle test) — Maury Track H Story B4 FAIT cartographie + regression spec V3
 > - WP-D1/E1 enrichis ⇔ slice 2 stories 2.1-2.5 (sélecteur+banner+Portfolio)
 >
@@ -184,8 +184,8 @@ Légende : Tier 1 = humain exécute (agent diagnostique/propose). Taille S≤0.5
 >
 > **Statut waves d'exécution** :
 > - **V1 (atomique H1, 0.5j)** : FAIT (commit `6a053a1`).
-> - **V2 // (H2 + H3 BE puis FE, 1.5j+1j)** : à lancer.
-> - **V3 (B4 spec, 0.25j)** : à lancer après V2.
+> - **V2 // (H2 + H3 BE puis FE, 1.5j+1j)** : FAIT (commit `3ede509`).
+> - **V3 (B4 spec, 0.25j)** : regression spec Playwright à livrer (non bloquant — code B4 OK).
 
 #### Sous-pipeline Conformité légale copropriété (acte de base ACP hybride) — issue #618
 
@@ -193,14 +193,14 @@ Légende : Tier 1 = humain exécute (agent diagnostique/propose). Taille S≤0.5
 
 > **Déjà fait (réutilisé / retravaillé)** : Story H1 ✅ (`6a053a1`, conservée = sous-total bloc) ; H2 ✅ (`3ede509`, **retravaillée** par WP-CL1 — gate building→ACP) ; H3 ✅ (`3ede509`, **étendue** par WP-CL3 — quorum simple→double).
 
-> **📊 Statut d'exécution #618 (màj 2026-06-27, branche `feature/dev`)** — CI **backend** verte par story (Unit/BDD/oasdiff/Lint) ; les rouges CI sont **pré-existants et tracés** (cf. « Blocages » ci-dessous), pas des régressions Track H.
+> **📊 Statut d'exécution #618 (màj 2026-07-24, branche `feature/dev`, HEAD `b9fa9d6`)** — CI **backend** verte par story (Unit/BDD/oasdiff/Lint) ; les rouges CI sont **pré-existants et tracés** (cf. « Blocages » ci-dessous), pas des régressions Track H. **✅ Track H #618 COMPLET pour v0.1.0** (tous clusters livrés/poussés sauf reports explicites v0.2.0 : H13b/c #635, H16 CL5).
 > - **WP-CL0** ✅ — ADR-0010/0011/0012 + dossier BMAD `track-h-conformite-legale/` (5 docs signés).
 > - **WP-CL1** ✅ — H4 (`acps.total_tantiemes` + migration/backfill) → H5 (`Acp::assert_conformant` + `AcpNotConformantError` 422) → H6 (`find_by_id_with_metrics`) → H7 (bascule des 4 gates building→ACP). Commit `a11577e`.
 > - **WP-CL2** ✅ — H8 retrait `Unit::MAX_QUOTA` (borne = acte de base). Commit `918d251`.
 > - **WP-CL7** ✅ — H14 doc `CONVOCATIONS_AG.rst` 15 j toutes AG (`c3d021a`) ; code `convocation.rs` déjà conforme (aucune dette).
 > - **WP-CL4** 🔄 **partiel** — H11 Budget f64→Decimal ✅ · H12 `DistributionCriteria {value|utility|mixed}` + formule 2 niveaux ✅ · **H13a** fonds de réserve 5 % sur l'ACP (`assert_reserve_fund_compliant`, renonçable 4/5, 422) ✅ (`58f1731`). **Différés v0.2.0 → [#635](https://github.com/gilmry/koprogo/issues/635)** : H13b `call_for_funds.fund_type` + H13c FE `<ReserveFundIndicator>` (bloqué #634) + **modèle `Fund` (thésaurisation / fonds affectés, réaffectation par décision d'AG)**.
-> - **WP-CL3** 🔄 **en cours** — specs H9/H10/H17 **amendées** (Art. 3.87 §1/§5/§7, `29bdda1`, à re-valider à la reprise) ; **H9 quorum double** à la clôture (têtes > 50 % ET quotités ≥ 50 % OU > 3/4) ✅ (`006030e`). Reste **H10** (gates votes : `check_quorum_for_voting` têtes + `validate_proxy_mandate` 3/10 % §7) + **H17** (représentant de vote / suspension §1).
-> - **WP-CL6** ⏳ — H15 migration `units.organization_id`→`acp_id` (cohérence post-#602).
+> - **WP-CL3** ✅ — specs H9/H10/H17 amendées (Art. 3.87 §1/§5/§7, `29bdda1`). **H9 quorum double** à la clôture (têtes > 50 % ET quotités ≥ 50 % OU > 3/4, `006030e`) → **H10** gate `check_quorum_for_voting` sur `cast_vote` (§5, `e9b97d1` ; proxy §7 déjà câblé via `validate_proxy_limit` Decimal) → **H17** représentant de vote / suspension §1 (domaine + gate `cast_vote` `VOTING_RIGHT_SUSPENDED` 422 + BDD `voting_right_suspension`, `4570c27`/`9e8a037`/`aecf92c`). *Note : `validate_proxy_mandate` domaine (f64, §7 en AND) reste mort/non câblé — à supprimer ou aligner si on retouche au vote.*
+> - **WP-CL6** ✅ — H15 migration `units.organization_id`→`acp_id` (`b9fa9d6`) : trio réversible (add nullable → backfill `building.acp_id` → NOT NULL + drop org + policy/index) + domaine/DTO/repo runtime SQL/handlers scope_guard #603/seed. Validé testcontainers (e2e_units 6/6, integration_unit_owner 13/13, bdd_building_conformity 9/9, bdd_validate_before_compute). Cohérence post-#602 (comme buildings).
 >
 > **🔴 Blocages go-live tracés (hors Track H, à clore avant tag v0.1.0)** : **[#634](https://github.com/gilmry/koprogo/issues/634)** (frontend Dependabot — build/vitest/contract/docker-frontend + NPM audit, même ERESOLVE astro 7 ⊥ `@vite-pwa/astro`) · **[#636](https://github.com/gilmry/koprogo/issues/636)** (Rust audit : `lopdf` RUSTSEC-2026-0187 + `quinn-proto` RUSTSEC-2026-0185, 2× high ; recoupe #432) · **[#604](https://github.com/gilmry/koprogo/issues/604)** [BLOCKER] trigger `buildings.organization_id` supprimé · **[#603](https://github.com/gilmry/koprogo/issues/603)** [SECURITY] `verify_org_access` skip 7 handlers · **[#617](https://github.com/gilmry/koprogo/issues/617)**/#605 Playwright E2E.
 
@@ -239,10 +239,10 @@ graph LR
     H4[CL1·H4 acps.total_tantiemes] --> H5[CL1·H5 Acp.assert_conformant] --> H6[CL1·H6 AcpRepo metrics] --> H7[CL1·H7 gates building→ACP]:::crit
     ADR --> H4
     H5 --> H8[CL2·H8 Unit MAX_QUOTA]
-    ADR --> H9[CL3·H9 quorum double]:::crit --> H10[CL3·H10 gates votes] --> H17[CL3·H17 représentant vote/suspension]
+    ADR --> H9[CL3·H9 quorum double<br/>✅ 006030e]:::done --> H10[CL3·H10 gates votes<br/>✅ e9b97d1]:::done --> H17[CL3·H17 représentant vote/suspension<br/>✅ aecf92c]:::done
     ADR --> H11[CL4·H11 budget Decimal]
     ADR --> H14[CL7·H14 doc convocation]
-    H4 --> H15[CL6·H15 units acp_id]
+    H4 --> H15[CL6·H15 units acp_id<br/>✅ b9fa9d6]:::done
     H7 --> H12[CL4·H12 DistributionCriteria]:::crit
     H4 --> H13[CL4·H13 fonds réserve]
     H16[CL5·H16 assoc partielles<br/>⛔ DIFFÉRÉ v0.2.0]:::deferred
