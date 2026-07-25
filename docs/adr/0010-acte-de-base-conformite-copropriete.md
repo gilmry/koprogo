@@ -1,6 +1,6 @@
 # ADR 0010: Acte de base au niveau ACP & conformité copropriété à deux niveaux (modèle hybride)
 
-- **Status**: Proposed (acceptation @gilmry au merge)
+- **Status**: Accepted (validé @gilmry 2026-07-25)
 - **Date**: 2026-06-15
 - **Track**: Software / Legal-compliance / Governance
 - **Authors**: Claude Opus 4.8 (drafting) + @gilmry sign-off

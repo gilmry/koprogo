@@ -1,6 +1,6 @@
 # ADR 0012: Fonds de réserve (≥ 5%) & fonds de roulement obligatoires
 
-- **Status**: Proposed (acceptation @gilmry au merge)
+- **Status**: Accepted (validé @gilmry 2026-07-25)
 - **Date**: 2026-06-15
 - **Track**: Software / Legal-compliance / Finance
 - **Authors**: Claude Opus 4.8 (drafting) + @gilmry sign-off

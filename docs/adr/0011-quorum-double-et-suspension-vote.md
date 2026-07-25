@@ -1,6 +1,6 @@
 # ADR 0011: Quorum double (têtes + quotités) & suspension du droit de vote des lots démembrés/indivis
 
-- **Status**: Proposed (acceptation @gilmry au merge)
+- **Status**: Accepted (validé @gilmry 2026-07-25)
 - **Date**: 2026-06-15
 - **Track**: Software / Legal-compliance / Governance
 - **Authors**: Claude Opus 4.8 (drafting) + @gilmry sign-off
