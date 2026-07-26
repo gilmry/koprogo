@@ -1074,9 +1074,9 @@ dependencies = [
 
 [[package]]
 name = "azul-core"
-version = "0.0.9"
+version = "0.0.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "00984ed4bdcc94d6a7ad9de6b3583591d0b1c4c4775ac5f1321bb70c58e81bb0"
+checksum = "9922e02dbcb4b648c04f7a880d6a73b4d628187905cfc9de8dfe80f8de90ebb7"
 dependencies = [
  "azul-css",
  "gl-context-loader",
@@ -1086,9 +1086,9 @@ dependencies = [
 
 [[package]]
 name = "azul-css"
-version = "0.0.9"
+version = "0.0.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "110b4414b61c9628abe8336e908f82c684064528c8ae73de940f68dc19d2554f"
+checksum = "5403f56264a7b6da84b05f557d55ebe936e19d300c07e71d090aa0c232e946d0"
 dependencies = [
  "azul-simplecss",
  "libm",
@@ -1096,9 +1096,9 @@ dependencies = [
 
 [[package]]
 name = "azul-layout"
-version = "0.0.10"
+version = "0.0.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "05683a24e5e5c1cfb78b08d7c407180bb622523258df03c1500c54c7edf58825"
+checksum = "f19d95c1b4ab80cd85c7c1e199c6343ed74227d7d30e7e07bd72aa26c9d32b95"
 dependencies = [
  "allsorts-azul",
  "azul-core",
@@ -3730,8 +3730,7 @@ dependencies = [
  "sha2 0.11.0",
  "stringprep",
  "thiserror 2.0.19",
- "time",
- "weezl 0.2.1",
+ "weezl",
 ]
 
 [[package]]
@@ -4462,9 +4461,9 @@ dependencies = [
 
 [[package]]
 name = "printpdf"
-version = "0.11.1"
+version = "0.12.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3d60130b4b17973f5f5887e4a9e5a73810baf1184d0ad2725632f3536c4682df"
+checksum = "786c149ceafdafb45fedb7538a796bc8f6caebe5bf455160d82fddd6f40380e7"
 dependencies = [
  "allsorts-azul",
  "azul-core",
@@ -4472,7 +4471,6 @@ dependencies = [
  "azul-layout",
  "base64",
  "flate2",
- "getrandom 0.3.4",
  "getrandom 0.4.2",
  "lopdf",
  "rust-fontconfig",
@@ -4483,7 +4481,7 @@ dependencies = [
  "time",
  "wasm-bindgen",
  "wasm-bindgen-futures",
- "weezl 0.1.12",
+ "weezl",
  "xmlparser",
 ]
 
@@ -5125,9 +5123,9 @@ dependencies = [
 
 [[package]]
 name = "rust-fontconfig"
-version = "4.4.5"
+version = "4.4.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bc208ba5149efc7241c54497f6a38343b510c67f24b876236d0c995bbeba0bbe"
+checksum = "a83df0c47410e28febe95e19096298103a4188aa29d2083219e207d24b357ec3"
 dependencies = [
  "allsorts-azul",
  "mmapio",
@@ -7143,12 +7141,6 @@ checksum = "f31141ce3fc3e300ae89b78c0dd67f9708061d1d2eda54b8209346fd6be9a92c"
 dependencies = [
  "rustls-pki-types",
 ]
-
-[[package]]
-name = "weezl"
-version = "0.1.12"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a28ac98ddc8b9274cb41bb4d9d4d5c425b6020c50c46f25559911905610b4a88"
 
 [[package]]
 name = "weezl"
