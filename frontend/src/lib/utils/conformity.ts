@@ -37,8 +37,7 @@ export function isConformityError(
   const wrapped =
     (direct.body as Record<string, unknown> | undefined) ??
     ((direct.response as Record<string, unknown> | undefined)?.data as
-      | Record<string, unknown>
-      | undefined);
+      Record<string, unknown> | undefined);
   return !!wrapped && looksLikeBody(wrapped);
 }
 

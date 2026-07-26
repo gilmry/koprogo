@@ -3427,5 +3427,15 @@
   "meeting.complete.blockers_title": "To close this AG, complete the conditions:",
   "meeting.complete.toast_title": "Cannot close meeting",
   "meeting.complete.toast_message": "{n, plural, =1 {1 missing condition} other {{n} missing conditions}} (see details on the meeting page)",
-  "_i18n_version": "2026-03-26"
+  "_i18n_version": "2026-03-26",
+  "scope": {
+    "searchPlaceholder": "Search for a building…",
+    "selectBuilding": "Select a building",
+    "forbidden": "Access denied",
+    "clear": "Clear selection",
+    "noBuildings": "No building in your scope",
+    "favorite": "Add to favorites",
+    "unfavorite": "Remove from favorites",
+    "portfolios": "portfolios"
+  }
 }

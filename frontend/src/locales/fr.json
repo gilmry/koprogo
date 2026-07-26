@@ -1085,12 +1085,11 @@
     }
   },
   "roles": {
+    "superadmin": "Super Administrateur",
     "syndic": "Syndic",
-    "board_member": "Membre du conseil",
-    "contractor": "Prestataire",
-    "owner": "Copropriétaire",
     "accountant": "Comptable",
-    "superadmin": "Administrateur"
+    "owner": "Copropriétaire",
+    "user": "Utilisateur"
   },
   "notices": {
     "title": "Annonces",
@@ -3301,13 +3300,6 @@
       "venDesc": "Journal des ventes (clients)"
     }
   },
-  "roles": {
-    "superadmin": "Super Administrateur",
-    "syndic": "Syndic",
-    "accountant": "Comptable",
-    "owner": "Copropriétaire",
-    "user": "Utilisateur"
-  },
   "settings": {
     "profile": {
       "title": "Profil",
@@ -3437,5 +3429,15 @@
   "meeting.complete.blockers_title": "Pour clôturer cette AG, complétez les conditions :",
   "meeting.complete.toast_title": "Clôture impossible",
   "meeting.complete.toast_message": "{n, plural, =1 {1 condition manquante} other {{n} conditions manquantes}} (voir détail sur la fiche réunion)",
-  "_i18n_version": "2026-03-26"
+  "_i18n_version": "2026-03-26",
+  "scope": {
+    "searchPlaceholder": "Rechercher un immeuble…",
+    "selectBuilding": "Sélectionner un immeuble",
+    "forbidden": "Accès refusé",
+    "clear": "Effacer la sélection",
+    "noBuildings": "Aucun immeuble dans votre périmètre",
+    "favorite": "Ajouter aux favoris",
+    "unfavorite": "Retirer des favoris",
+    "portfolios": "portefeuilles"
+  }
 }

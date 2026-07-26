@@ -15,15 +15,17 @@
 {#if user}
   <!--
     Positioning rationale :
-    - Mobile (< lg) : top-2 RIGHT-14 leaves room for KoproGo logo (left) +
-      hamburger button (left:3) + the bell/notifications area. Doesn't
-      overlap the mobile header logo at top-left.
-    - Desktop (>= lg) : top-3 LEFT-64 (= sidebar width 60 + 4 padding) so
-      the selector sits in the content area RIGHT of the sidebar, not on
-      top of the sidebar's KoproGo logo.
+    - Mobile (< lg) : overlay `fixed` top-2 RIGHT-14 laisse la place au logo
+      KoproGo (gauche) + bouton hamburger (left:3) + zone cloche/notifs.
+      Ne chevauche pas le header mobile.
+    - Desktop (>= lg) : plus de `fixed` — la barre est rendue EN FLUX NORMAL
+      par `Layout.astro` (juste avant `ContextBanner`, dans le wrapper de
+      contenu décalé par la sidebar). Corrige le chevauchement avec le titre
+      de page (ex. `<h1>Organisations</h1>`) observé quand le sélecteur était
+      `fixed top-3 left-64` par-dessus le contenu sans espace réservé.
   -->
   <div
-    class="fixed top-2 right-14 z-40 lg:top-3 lg:right-auto lg:left-64"
+    class="fixed top-2 right-14 z-40 lg:static lg:top-auto lg:right-auto lg:left-auto lg:z-auto lg:flex lg:w-full lg:justify-start lg:border-b lg:border-gray-200 lg:bg-white lg:px-6 lg:py-3"
     data-testid="building-selector-bar"
   >
     <BuildingSelector {user} />

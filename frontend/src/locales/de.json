@@ -3427,5 +3427,15 @@
   "meeting.complete.blockers_title": "Um diese Versammlung zu schließen, erfüllen Sie die Bedingungen:",
   "meeting.complete.toast_title": "Abschluss nicht möglich",
   "meeting.complete.toast_message": "{n, plural, =1 {1 fehlende Bedingung} other {{n} fehlende Bedingungen}} (siehe Details auf der Sitzungsseite)",
-  "_i18n_version": "2026-03-26"
+  "_i18n_version": "2026-03-26",
+  "scope": {
+    "searchPlaceholder": "Gebäude suchen…",
+    "selectBuilding": "Gebäude auswählen",
+    "forbidden": "Zugriff verweigert",
+    "clear": "Auswahl löschen",
+    "noBuildings": "Kein Gebäude in Ihrem Bereich",
+    "favorite": "Zu Favoriten hinzufügen",
+    "unfavorite": "Aus Favoriten entfernen",
+    "portfolios": "Portfolios"
+  }
 }

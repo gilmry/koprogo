@@ -2,13 +2,7 @@ import { ticketsApi, TicketStatus, type Ticket } from "../api/tickets";
 
 /** Actions that can be performed on a ticket */
 export type TicketAction =
-  | "assign"
-  | "start"
-  | "resolve"
-  | "close"
-  | "cancel"
-  | "reopen"
-  | "delete";
+  "assign" | "start" | "resolve" | "close" | "cancel" | "reopen" | "delete";
 
 /**
  * Determine which actions are available for a ticket based on its status and user role.
