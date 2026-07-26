@@ -139,11 +139,7 @@ export interface Expense {
     | "Other";
   payment_status: "Pending" | "Paid" | "Overdue" | "Cancelled";
   approval_status?:
-    | "draft"
-    | "pending_approval"
-    | "approved"
-    | "rejected"
-    | null;
+    "draft" | "pending_approval" | "approved" | "rejected" | null;
   paid_date?: string;
   supplier?: string;
   invoice_number?: string;

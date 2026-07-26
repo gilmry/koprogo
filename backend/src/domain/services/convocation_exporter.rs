@@ -1,6 +1,8 @@
 use crate::domain::entities::{Building, Convocation, ConvocationType, Meeting};
-use printpdf::*;
-use std::io::BufWriter;
+use crate::domain::services::pdf_writer::{
+    builtin_font, new_document, save_document, PdfPageBuilder,
+};
+use printpdf::{BuiltinFont, PdfFontHandle};
 
 /// Convocation Exporter - Generates PDF for Convocations d'Assemblée Générale
 ///
@@ -26,39 +28,30 @@ impl ConvocationExporter {
         convocation: &Convocation,
     ) -> Result<Vec<u8>, String> {
         // Create PDF document (A4: 210mm x 297mm)
-        let (doc, page1, layer1) = PdfDocument::new(
-            "Convocation Assemblée Générale",
-            Mm(210.0),
-            Mm(297.0),
-            "Layer 1",
-        );
-        let current_layer = doc.get_page(page1).get_layer(layer1);
+        let doc = new_document("Convocation Assemblée Générale");
+        let mut current_layer = PdfPageBuilder::new();
 
         // Load fonts
-        let font_bold = doc
-            .add_builtin_font(BuiltinFont::HelveticaBold)
-            .map_err(|e| format!("Failed to load bold font: {}", e))?;
-        let font_regular = doc
-            .add_builtin_font(BuiltinFont::Helvetica)
-            .map_err(|e| format!("Failed to load regular font: {}", e))?;
+        let font_bold = builtin_font(BuiltinFont::HelveticaBold);
+        let font_regular = builtin_font(BuiltinFont::Helvetica);
 
         let mut y_position = 277.0; // Start from top (A4 = 297mm height, 20mm margin)
 
         // Helper to add text line
-        let add_text = |layer: &PdfLayerReference,
+        let add_text = |layer: &mut PdfPageBuilder,
                         text: &str,
-                        font: &IndirectFontRef,
+                        font: &PdfFontHandle,
                         size: f64,
                         x: f64,
                         y: &mut f64,
                         _bold: bool| {
-            layer.use_text(text, size as f32, Mm(x as f32), Mm(*y as f32), font);
+            layer.text(text.to_string(), size as f32, x as f32, *y as f32, font);
             *y -= size * 0.5; // Line spacing (approx 1.5x font size)
         };
 
         // HEADER: Building name and type of meeting
         add_text(
-            &current_layer,
+            &mut current_layer,
             &building.name,
             &font_bold,
             16.0,
@@ -73,7 +66,7 @@ impl ConvocationExporter {
             building.address, building.postal_code, building.city
         );
         add_text(
-            &current_layer,
+            &mut current_layer,
             &address_line,
             &font_regular,
             10.0,
@@ -122,7 +115,7 @@ impl ConvocationExporter {
         };
 
         add_text(
-            &current_layer,
+            &mut current_layer,
             meeting_type_label,
             &font_bold,
             14.0,
@@ -158,7 +151,7 @@ impl ConvocationExporter {
         };
 
         add_text(
-            &current_layer,
+            &mut current_layer,
             &legal_notice,
             &font_regular,
             9.0,
@@ -181,7 +174,7 @@ impl ConvocationExporter {
         };
 
         add_text(
-            &current_layer,
+            &mut current_layer,
             details_label,
             &font_bold,
             12.0,
@@ -192,7 +185,7 @@ impl ConvocationExporter {
 
         // Title
         add_text(
-            &current_layer,
+            &mut current_layer,
             &format!("📋 {}", meeting.title),
             &font_regular,
             10.0,
@@ -208,7 +201,7 @@ impl ConvocationExporter {
             "📅 Datum" // NL, DE, EN all use "Datum"
         };
         add_text(
-            &current_layer,
+            &mut current_layer,
             &format!(
                 "{}: {}",
                 date_label,
@@ -232,7 +225,7 @@ impl ConvocationExporter {
             "📍 Location"
         };
         add_text(
-            &current_layer,
+            &mut current_layer,
             &format!("{}: {}", location_label, meeting.location),
             &font_regular,
             10.0,
@@ -255,7 +248,7 @@ impl ConvocationExporter {
         };
 
         add_text(
-            &current_layer,
+            &mut current_layer,
             agenda_label,
             &font_bold,
             12.0,
@@ -266,7 +259,7 @@ impl ConvocationExporter {
 
         for (index, item) in meeting.agenda.iter().enumerate() {
             add_text(
-                &current_layer,
+                &mut current_layer,
                 &format!("{}. {}", index + 1, item),
                 &font_regular,
                 10.0,
@@ -290,7 +283,7 @@ impl ConvocationExporter {
         };
 
         add_text(
-            &current_layer,
+            &mut current_layer,
             attendance_label,
             &font_bold,
             12.0,
@@ -319,7 +312,7 @@ impl ConvocationExporter {
 
         for line in attendance_text.lines() {
             add_text(
-                &current_layer,
+                &mut current_layer,
                 line,
                 &font_regular,
                 9.0,
@@ -344,7 +337,7 @@ impl ConvocationExporter {
             };
 
             add_text(
-                &current_layer,
+                &mut current_layer,
                 contact_label,
                 &font_bold,
                 12.0,
@@ -354,7 +347,7 @@ impl ConvocationExporter {
             );
 
             add_text(
-                &current_layer,
+                &mut current_layer,
                 syndic_name,
                 &font_regular,
                 10.0,
@@ -365,7 +358,7 @@ impl ConvocationExporter {
 
             if let Some(email) = &building.syndic_email {
                 add_text(
-                    &current_layer,
+                    &mut current_layer,
                     &format!("📧 {}", email),
                     &font_regular,
                     10.0,
@@ -377,7 +370,7 @@ impl ConvocationExporter {
 
             if let Some(phone) = &building.syndic_phone {
                 add_text(
-                    &current_layer,
+                    &mut current_layer,
                     &format!("📞 {}", phone),
                     &font_regular,
                     10.0,
@@ -398,7 +391,7 @@ impl ConvocationExporter {
                     "Office hours"
                 };
                 add_text(
-                    &current_layer,
+                    &mut current_layer,
                     &format!("🕒 {}: {}", hours_label, office_hours),
                     &font_regular,
                     10.0,
@@ -423,7 +416,7 @@ impl ConvocationExporter {
         };
 
         add_text(
-            &current_layer,
+            &mut current_layer,
             footer_text,
             &font_regular,
             8.0,
@@ -433,11 +426,8 @@ impl ConvocationExporter {
         );
 
         // Save PDF to bytes
-        let mut buffer = BufWriter::new(Vec::new());
-        doc.save(&mut buffer)
-            .map_err(|e| format!("Failed to save PDF: {}", e))?;
-
-        buffer.into_inner().map_err(|e| e.to_string())
+        let page = current_layer.into_page(210.0, 297.0);
+        Ok(save_document(doc, page))
     }
 
     /// Save PDF bytes to file

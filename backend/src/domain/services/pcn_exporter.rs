@@ -1,8 +1,10 @@
+use crate::domain::services::pdf_writer::{
+    builtin_font, new_document, save_document, PdfPageBuilder,
+};
 use crate::domain::services::PcnReportLine;
-use printpdf::*;
+use printpdf::BuiltinFont;
 use rust_decimal::prelude::ToPrimitive;
 use rust_decimal::Decimal;
-use std::io::BufWriter;
 
 /// PCN Exporter - Generates PDF and Excel reports
 pub struct PcnExporter;
@@ -16,81 +18,56 @@ impl PcnExporter {
         total_amount: Decimal,
     ) -> Result<Vec<u8>, String> {
         // Create PDF document
-        let (doc, page1, layer1) = PdfDocument::new("Rapport PCN", Mm(210.0), Mm(297.0), "Layer 1");
-        let current_layer = doc.get_page(page1).get_layer(layer1);
+        let doc = new_document("Rapport PCN");
+        let mut current_layer = PdfPageBuilder::new();
 
         // Load built-in font
-        let font = doc
-            .add_builtin_font(BuiltinFont::Helvetica)
-            .map_err(|e| e.to_string())?;
-        let font_bold = doc
-            .add_builtin_font(BuiltinFont::HelveticaBold)
-            .map_err(|e| e.to_string())?;
+        let font = builtin_font(BuiltinFont::Helvetica);
+        let font_bold = builtin_font(BuiltinFont::HelveticaBold);
 
         // Title
-        current_layer.use_text(
+        current_layer.text(
             "Rapport PCN - Plan Comptable Normalisé".to_string(),
             24.0,
-            Mm(20.0),
-            Mm(270.0),
+            20.0,
+            270.0,
             &font_bold,
         );
 
         // Building name
-        current_layer.use_text(
+        current_layer.text(
             format!("Immeuble: {}", building_name),
             14.0,
-            Mm(20.0),
-            Mm(260.0),
+            20.0,
+            260.0,
             &font,
         );
 
         // Table header
         let mut y = 245.0;
-        current_layer.use_text("Code", 12.0, Mm(20.0), Mm(y), &font_bold);
-        current_layer.use_text("Libellé", 12.0, Mm(50.0), Mm(y), &font_bold);
-        current_layer.use_text("Montant (€)", 12.0, Mm(140.0), Mm(y), &font_bold);
-        current_layer.use_text("Nb", 12.0, Mm(180.0), Mm(y), &font_bold);
+        current_layer.text("Code", 12.0, 20.0, y, &font_bold);
+        current_layer.text("Libellé", 12.0, 50.0, y, &font_bold);
+        current_layer.text("Montant (€)", 12.0, 140.0, y, &font_bold);
+        current_layer.text("Nb", 12.0, 180.0, y, &font_bold);
 
         // Table rows
         y -= 10.0;
         for line in report_lines {
-            current_layer.use_text(&line.account.code, 10.0, Mm(20.0), Mm(y), &font);
-            current_layer.use_text(&line.account.label_fr, 10.0, Mm(50.0), Mm(y), &font);
-            current_layer.use_text(
-                format!("{:.2}", line.total_amount),
-                10.0,
-                Mm(140.0),
-                Mm(y),
-                &font,
-            );
-            current_layer.use_text(
-                format!("{}", line.entry_count),
-                10.0,
-                Mm(180.0),
-                Mm(y),
-                &font,
-            );
+            current_layer.text(line.account.code.as_str(), 10.0, 20.0, y, &font);
+            current_layer.text(line.account.label_fr.as_str(), 10.0, 50.0, y, &font);
+            current_layer.text(format!("{:.2}", line.total_amount), 10.0, 140.0, y, &font);
+            current_layer.text(format!("{}", line.entry_count), 10.0, 180.0, y, &font);
             y -= 7.0;
         }
 
         // Total
         y -= 5.0;
-        current_layer.use_text("TOTAL:", 12.0, Mm(50.0), Mm(y), &font_bold);
-        current_layer.use_text(
-            format!("{:.2} €", total_amount),
-            12.0,
-            Mm(140.0),
-            Mm(y),
-            &font_bold,
-        );
+        current_layer.text("TOTAL:", 12.0, 50.0, y, &font_bold);
+        current_layer.text(format!("{:.2} €", total_amount), 12.0, 140.0, y, &font_bold);
 
         // Save to bytes
-        let mut buffer = Vec::new();
-        doc.save(&mut BufWriter::new(&mut buffer))
-            .map_err(|e| e.to_string())?;
-
-        Ok(buffer)
+        let page = current_layer.into_page(210.0, 297.0);
+        Ok(save_document(doc, page))
     }
 
     /// Export PCN report to Excel bytes

@@ -58,11 +58,7 @@ export function isAcceptedSize(sizeBytes: number): boolean {
 }
 
 export type UploadErrorCode =
-  | "max-files"
-  | "too-large"
-  | "bad-mime"
-  | "presign-failed"
-  | "upload-failed";
+  "max-files" | "too-large" | "bad-mime" | "presign-failed" | "upload-failed";
 
 export class UploadError extends Error {
   code: UploadErrorCode;

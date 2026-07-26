@@ -6,11 +6,7 @@ export default defineConfig({
   // "$state rune outside svelte" that fire when bind:value compiled
   // output is accessed from .test.ts files.
   mode: "production",
-  plugins: [
-    svelte({
-      hot: false,
-    }),
-  ],
+  plugins: [svelte()],
   resolve: {
     conditions: ["browser"],
   },

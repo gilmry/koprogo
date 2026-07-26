@@ -95,7 +95,7 @@ Légende : Tier 1 = humain exécute (agent diagnostique/propose). Taille S≤0.5
   - `d988a57` #550 strate 1 — `authStore.refreshAccessToken` dedup in-flight (1 POST partagé entre N callers concurrents) + 5 tests Vitest TDD 4-cat.
   - `0cacd83` #550 strate 1 (refactor helpers) — `Meetings/Expenses/Buildings.spec.ts` passent du UI-login local au `loginAsSyndic[WithBuilding]` partagé (injectAuth), élimine la course `/login → dashboard` (refresh #1 rote cookie → refresh #2 sur cookie révoqué).
   - `5d2a7ae` #550 strate 2 v3 — `apiFetch` attend le refresh in-flight si pas de token (composants `client:load` qui mountent et appellent `api.get` avant `init()` complet). Validé en live console (0 erreur 401 cascade).
-  **Différé** : strate 3 (Resolutions/Invoices/Notifications/AdminDashBoard tests qui passent shared helper mais échouent encore — issue #550 garde la trace). Plancher smoke à confirmer en CI post-merge feature/dev→dev.
+    **Différé** : strate 3 (Resolutions/Invoices/Notifications/AdminDashBoard tests qui passent shared helper mais échouent encore — issue #550 garde la trace). Plancher smoke à confirmer en CI post-merge feature/dev→dev.
 
 - **WP-D2 — Câbler vitest au gate** · #343 · T2 · S-M
   Job `vitest` existe (`ci.yml:402`) ; couvrir auth store (WP-FE1) + composants convocation/réunion @happy/@negative ; cible = composants critiques bêta (pas 181/181). Deps : WP-FE1, WP-FE2.
@@ -112,7 +112,7 @@ Légende : Tier 1 = humain exécute (agent diagnostique/propose). Taille S≤0.5
   - `bdad9ff` — `become: yes` → `become: true` (yamllint `-s` strict promeut truthy en erreur).
   - `e52afd8` — paths ansible roles 4 niveaux dans `playbook.yml` (même off-by-one que terraform).
   - `0a951f9` — install `community.general:>=8.0.0,<11.0.0` dans CI step (module `ufw` n'est pas dans ansible-core).
-  Tooling host installé en parallèle (terraform 1.9.8, yamllint 1.38, shellcheck, gitleaks 8.30, oasdiff 1.15.3, kubeconform 0.6.7, pre-commit) pour reproduire localement (mémoire `feedback_use-docker-compose-for-tooling.md` complétée).
+    Tooling host installé en parallèle (terraform 1.9.8, yamllint 1.38, shellcheck, gitleaks 8.30, oasdiff 1.15.3, kubeconform 0.6.7, pre-commit) pour reproduire localement (mémoire `feedback_use-docker-compose-for-tooling.md` complétée).
 
 ### Track F — Ops VPS (concurrent Track A — aucun fichier partagé)
 
@@ -164,6 +164,7 @@ Légende : Tier 1 = humain exécute (agent diagnostique/propose). Taille S≤0.5
   Tx.1 job CI `test:characterization` bloque merge si ROUGE + Tx.2 helpers shared multi-rôle complets (`loginAsContractorMagicLink`, etc.) + Tx.3 log Tier 2 `docs/agent-activity/YYYY-MM-DD-bob-slice-N.md` par session. Démarrage **immédiat** dès slice 0. Deps : WP-H0.
 
 > **Cartographie Maury ↔ WPs Track H existants** :
+>
 > - WP-H1 ⇔ Story 1.4 (Building.is_conformant + #553 fix) + 1.1-1.3 (refacto ACP) — Maury Track H Story H1 FAIT (commit `6a053a1`)
 > - WP-H2 ⇔ Story 4.9 méga `[cluster-coord]` (validate-before-compute 4 use-cases) — Maury Track H Story H2 **FAIT** (`3ede509`, retravaillé en gate ACP par WP-CL1)
 > - WP-H3 ⇔ Story 4.5 (Meeting.assert_can_complete reprise #554) — Maury Track H Story H3 **FAIT** (`3ede509`, étendu quorum double par WP-CL3/H9)
@@ -175,6 +176,7 @@ Légende : Tier 1 = humain exécute (agent diagnostique/propose). Taille S≤0.5
 #### Sous-pipeline Maury Track H bloqueurs légaux (kit signé 2026-06-15)
 
 > Voir `docs/maury/refonte-ux-multi-role-acp/track-h-bloqueurs/` (5 docs Maury-grade signés v1.0 @gilmry 2026-06-15, commit `50f3c43`) :
+>
 > - `README.md` — index BMAD
 > - `brief.md` — Vision (3 personas, CB-H1-9, INV-H1-9 avec bug fix `quota_basis`, 9 SCB)
 > - `prd.md` — FR-H1/H2/H3/B4 user journeys couvrant acte 1000 ET 10000
@@ -183,6 +185,7 @@ Légende : Tier 1 = humain exécute (agent diagnostique/propose). Taille S≤0.5
 > - `validation.md` — Phase F PO acceptation signée @gilmry 2026-06-15
 >
 > **Statut waves d'exécution** :
+>
 > - **V1 (atomique H1, 0.5j)** : FAIT (commit `6a053a1`).
 > - **V2 // (H2 + H3 BE puis FE, 1.5j+1j)** : FAIT (commit `3ede509`).
 > - **V3 (B4 spec, 0.25j)** : regression spec Playwright à livrer (non bloquant — code B4 OK).
@@ -193,13 +196,16 @@ Légende : Tier 1 = humain exécute (agent diagnostique/propose). Taille S≤0.5
 
 > **Déjà fait (réutilisé / retravaillé)** : Story H1 ✅ (`6a053a1`, conservée = sous-total bloc) ; H2 ✅ (`3ede509`, **retravaillée** par WP-CL1 — gate building→ACP) ; H3 ✅ (`3ede509`, **étendue** par WP-CL3 — quorum simple→double).
 
-> **📊 Statut d'exécution #618 (màj 2026-07-24, branche `feature/dev`, HEAD `b9fa9d6`)** — CI **backend** verte par story (Unit/BDD/oasdiff/Lint) ; les rouges CI sont **pré-existants et tracés** (cf. « Blocages » ci-dessous), pas des régressions Track H. **✅ Track H #618 COMPLET pour v0.1.0** (tous clusters livrés/poussés sauf reports explicites v0.2.0 : H13b/c #635, H16 CL5).
+> **📊 Statut d'exécution #618 (màj 2026-07-24, branche `feature/dev`, HEAD `b9fa9d6`)** — CI **backend** verte par story (Unit/BDD/oasdiff/Lint) ; les rouges CI sont **pré-existants et tracés** (cf. « Blocages » ci-dessous), pas des régressions Track H. **✅ Track H #618 COMPLET côté code pour v0.1.0** (tous clusters livrés/poussés sauf reports explicites v0.2.0 : H13b/c #635, H16 CL5).
+>
+> **Correction 2026-07-26 (audit sync `feature/dev`, `docs/agent-activity/2026-07-26-sync-audit-feature-dev.md`)** : la mention "COMPLET" ci-dessus décrit l'état du **code** — elle ne signifiait pas que les issues satellites étaient administrativement closes. Sur 34 références réelles à des issues dans ce WBS, 30 (88 %) étaient encore ouvertes au 2026-07-26, dont les 23 stories des slices 0-3 déjà mergées (#557-#575, #580, #584, #593, #594) : fermées le même jour avec le SHA d'implémentation en justification. Un résidu de non-conformité (second chemin de calcul du quorum en `f64` dans `AgSession`, parallèle au chemin conforme `Meeting`/H9) a par ailleurs été signalé par @gilmry le 2026-07-25 sur #618 → tracé séparément en [#661](https://github.com/gilmry/koprogo/issues/661), non couvert par le "COMPLET" ci-dessus.
+>
 > - **WP-CL0** ✅ — ADR-0010/0011/0012 + dossier BMAD `track-h-conformite-legale/` (5 docs signés).
 > - **WP-CL1** ✅ — H4 (`acps.total_tantiemes` + migration/backfill) → H5 (`Acp::assert_conformant` + `AcpNotConformantError` 422) → H6 (`find_by_id_with_metrics`) → H7 (bascule des 4 gates building→ACP). Commit `a11577e`.
 > - **WP-CL2** ✅ — H8 retrait `Unit::MAX_QUOTA` (borne = acte de base). Commit `918d251`.
 > - **WP-CL7** ✅ — H14 doc `CONVOCATIONS_AG.rst` 15 j toutes AG (`c3d021a`) ; code `convocation.rs` déjà conforme (aucune dette).
 > - **WP-CL4** 🔄 **partiel** — H11 Budget f64→Decimal ✅ · H12 `DistributionCriteria {value|utility|mixed}` + formule 2 niveaux ✅ · **H13a** fonds de réserve 5 % sur l'ACP (`assert_reserve_fund_compliant`, renonçable 4/5, 422) ✅ (`58f1731`). **Différés v0.2.0 → [#635](https://github.com/gilmry/koprogo/issues/635)** : H13b `call_for_funds.fund_type` + H13c FE `<ReserveFundIndicator>` (bloqué #634) + **modèle `Fund` (thésaurisation / fonds affectés, réaffectation par décision d'AG)**.
-> - **WP-CL3** ✅ — specs H9/H10/H17 amendées (Art. 3.87 §1/§5/§7, `29bdda1`). **H9 quorum double** à la clôture (têtes > 50 % ET quotités ≥ 50 % OU > 3/4, `006030e`) → **H10** gate `check_quorum_for_voting` sur `cast_vote` (§5, `e9b97d1` ; proxy §7 déjà câblé via `validate_proxy_limit` Decimal) → **H17** représentant de vote / suspension §1 (domaine + gate `cast_vote` `VOTING_RIGHT_SUSPENDED` 422 + BDD `voting_right_suspension`, `4570c27`/`9e8a037`/`aecf92c`). *Note : `validate_proxy_mandate` domaine (f64, §7 en AND) reste mort/non câblé — à supprimer ou aligner si on retouche au vote.*
+> - **WP-CL3** ✅ — specs H9/H10/H17 amendées (Art. 3.87 §1/§5/§7, `29bdda1`). **H9 quorum double** à la clôture (têtes > 50 % ET quotités ≥ 50 % OU > 3/4, `006030e`) → **H10** gate `check_quorum_for_voting` sur `cast_vote` (§5, `e9b97d1` ; proxy §7 déjà câblé via `validate_proxy_limit` Decimal) → **H17** représentant de vote / suspension §1 (domaine + gate `cast_vote` `VOTING_RIGHT_SUSPENDED` 422 + BDD `voting_right_suspension`, `4570c27`/`9e8a037`/`aecf92c`). _Note : `validate_proxy_mandate` domaine (f64, §7 en AND) reste mort/non câblé — à supprimer ou aligner si on retouche au vote._
 > - **WP-CL6** ✅ — H15 migration `units.organization_id`→`acp_id` (`b9fa9d6`) : trio réversible (add nullable → backfill `building.acp_id` → NOT NULL + drop org + policy/index) + domaine/DTO/repo runtime SQL/handlers scope_guard #603/seed. Validé testcontainers (e2e_units 6/6, integration_unit_owner 13/13, bdd_building_conformity 9/9, bdd_validate_before_compute). Cohérence post-#602 (comme buildings).
 >
 > **🔴 Blocages go-live tracés (hors Track H, à clore avant tag v0.1.0)** : **[#634](https://github.com/gilmry/koprogo/issues/634)** (frontend Dependabot — build/vitest/contract/docker-frontend + NPM audit, même ERESOLVE astro 7 ⊥ `@vite-pwa/astro`) · **[#636](https://github.com/gilmry/koprogo/issues/636)** (Rust audit : `lopdf` RUSTSEC-2026-0187 + `quinn-proto` RUSTSEC-2026-0185, 2× high ; recoupe #432) · **[#604](https://github.com/gilmry/koprogo/issues/604)** [BLOCKER] trigger `buildings.organization_id` supprimé · **[#603](https://github.com/gilmry/koprogo/issues/603)** [SECURITY] `verify_org_access` skip 7 handlers · **[#617](https://github.com/gilmry/koprogo/issues/617)**/#605 Playwright E2E.
@@ -339,6 +345,7 @@ gantt
 - **WP-I9 — Documentation Vivante refresh + retire continue-on-error** · T2 · S · _wave V4_ · **PARTIEL** (Story B9 commit `3de6530` a retiré le bypass ; CI a révélé 8 specs Phase B FE + scenarios Documentation Vivante cassés → **Phase C ouverte #617** : testIgnore `refonte-ux/phase-b-fe/` (commit `83985e4`) + `continue-on-error: true` restauré sur step Doc Vivante (commit `4fedde7`) le temps de stabiliser dans Phase C).
 
 > **Critères DoD Track I (intégrés au gate G1)** :
+>
 > - svelte-check 0/0 erreur/warning ; axe-core violations = 0 par composant ; Vitest 4-cat + Playwright multi-rôle par WP ; data-testid sur 100% éléments interactifs ; pas de stockage JWT en localStorage ; bundle Phase I ≤ +50 KB gzip (baseline mesurée 2026-06-07 = 4,3 MB total / 0,6 MB gzip JS).
 >
 > **Statut Track I global (2026-06-15)** : WP-I0 → WP-I8 **FAIT** (10 commits Phase B FE B0-B8 + B0bis sur feature/dev). WP-I9 **PARTIEL** — Documentation Vivante e2e tombée dans Phase C #617 (8 specs + N scenarios à stabiliser avant retrait définitif des bypasses CI). Voir mémoires `project_phase-c-reactivate-e2e-specs.md` et `feedback_maury-fullstack-first.md`.
@@ -431,6 +438,7 @@ graph LR
 ## Gantt Track I — Phase B FE par passe d'agent
 
 > **Unité de mesure** : 1 passe d'agent = 1 cycle complet **RED → GREEN → REFACTOR → REVIEW**.
+>
 > - RED : agent écrit les tests `@happy/@edge/@security/@negative` qui échouent.
 > - GREEN : agent implémente jusqu'à faire passer les tests.
 > - REFACTOR : agent nettoie (rustfmt/prettier, supprime duplicates, simplifie).
@@ -464,19 +472,20 @@ gantt
 ```
 
 **Lecture du Gantt** :
+
 - **Chemin critique Track I** (rouge) : `I0 → I7 → I8 → I9 → G1 → G2` = 1+2+1+0.5+1+0.5 = **6 jours wall-clock minimum**.
 - **Vague la plus chargée** : V1 lance 4 agents en parallèle (1 BE + 3 FE). Pattern docker-parallelism vérifié (cf. mémoire `feedback_docker-parallelism-bottleneck.md`).
 - **Couplage Track I ↔ G1** : I9 (DocVivante refresh) doit être vert avant G1 (revue humaine), sinon la dette UX casse le gate de release.
 
 ### Budget tokens estimé Track I
 
-| Vague | Stories | Cycles RGRR | Tokens estimés (modèle Opus 4.7) |
-|---|---|---|---|
-| V1 | I0, I1, I2, I3 | 4 cycles parallèles | ~ 800 K tokens (4 × 200 K subagent) |
-| V2 | I4, I6 | 2 cycles parallèles | ~ 400 K tokens |
-| V3 | I5, I7 | 2 cycles longs (L) | ~ 600 K tokens |
-| V4 | I8, I9 | 2 cycles courts | ~ 300 K tokens |
-| **Total Track I** | 9 + 1 gate | 10 passes | **~ 2,1 M tokens** |
+| Vague             | Stories        | Cycles RGRR         | Tokens estimés (modèle Opus 4.7)    |
+| ----------------- | -------------- | ------------------- | ----------------------------------- |
+| V1                | I0, I1, I2, I3 | 4 cycles parallèles | ~ 800 K tokens (4 × 200 K subagent) |
+| V2                | I4, I6         | 2 cycles parallèles | ~ 400 K tokens                      |
+| V3                | I5, I7         | 2 cycles longs (L)  | ~ 600 K tokens                      |
+| V4                | I8, I9         | 2 cycles courts     | ~ 300 K tokens                      |
+| **Total Track I** | 9 + 1 gate     | 10 passes           | **~ 2,1 M tokens**                  |
 
 Baseline observée Phase A (slice 3 BE = 9 stories, ~ 1,8 M tokens consommés session 2026-06-09). Track I sera comparable.
 **Démarrages J1 sans inter-dép** : A1, B1, B2, FE1(moitié backend), E1, F1(terraform plan). Ops est court en effort mais borné par la latence Tier-1 humaine → **lancer F1-prep + E1 dès J1** pour que Ops finisse en parallèle du long pole A2→A5, pas après.

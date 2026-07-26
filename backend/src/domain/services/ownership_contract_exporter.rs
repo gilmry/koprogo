@@ -1,7 +1,9 @@
 use crate::domain::entities::{Building, Owner, Unit};
+use crate::domain::services::pdf_writer::{
+    builtin_font, new_document, save_document, PdfPageBuilder,
+};
 use chrono::{DateTime, Utc};
-use printpdf::*;
-use std::io::BufWriter;
+use printpdf::BuiltinFont;
 
 /// Ownership Contract Exporter - Generates PDF for Contrat de Copropriété
 ///
@@ -28,85 +30,80 @@ impl OwnershipContractExporter {
         ownership_start_date: DateTime<Utc>,
     ) -> Result<Vec<u8>, String> {
         // Create PDF document (A4: 210mm x 297mm)
-        let (doc, page1, layer1) =
-            PdfDocument::new("Contrat de Copropriété", Mm(210.0), Mm(297.0), "Layer 1");
-        let current_layer = doc.get_page(page1).get_layer(layer1);
+        let doc = new_document("Contrat de Copropriété");
+        let mut current_layer = PdfPageBuilder::new();
 
         // Load fonts
-        let font = doc
-            .add_builtin_font(BuiltinFont::Helvetica)
-            .map_err(|e| e.to_string())?;
-        let font_bold = doc
-            .add_builtin_font(BuiltinFont::HelveticaBold)
-            .map_err(|e| e.to_string())?;
+        let font = builtin_font(BuiltinFont::Helvetica);
+        let font_bold = builtin_font(BuiltinFont::HelveticaBold);
 
         let mut y = 270.0; // Start from top
 
         // === HEADER ===
-        current_layer.use_text(
+        current_layer.text(
             "CONTRAT DE COPROPRIÉTÉ".to_string(),
             18.0,
-            Mm(20.0),
-            Mm(y),
+            20.0,
+            y,
             &font_bold,
         );
         y -= 15.0;
 
-        current_layer.use_text(
+        current_layer.text(
             format!("Date d'établissement: {}", Utc::now().format("%d/%m/%Y")),
             10.0,
-            Mm(20.0),
-            Mm(y),
+            20.0,
+            y,
             &font,
         );
         y -= 15.0;
 
         // === ARTICLE 1: BUILDING INFORMATION ===
-        current_layer.use_text(
+        current_layer.text(
             "ARTICLE 1 - IMMEUBLE CONCERNÉ".to_string(),
             12.0,
-            Mm(20.0),
-            Mm(y),
+            20.0,
+            y,
             &font_bold,
         );
         y -= 8.0;
 
-        current_layer.use_text(
+        current_layer.text(
             format!("Dénomination: {}", building.name),
             10.0,
-            Mm(20.0),
-            Mm(y),
+            20.0,
+            y,
             &font,
         );
         y -= 6.0;
 
-        current_layer.use_text(
+        current_layer.text(
             format!(
                 "Adresse: {}, {} {}, {}",
                 building.address, building.postal_code, building.city, building.country
             ),
             10.0,
-            Mm(20.0),
-            Mm(y),
+            20.0,
+            y,
             &font,
         );
         y -= 6.0;
 
-        current_layer.use_text(
+        current_layer.text(
             format!("Nombre total de lots: {}", building.total_units),
             10.0,
-            Mm(20.0),
-            Mm(y),
+            20.0,
+            y,
             &font,
         );
         y -= 6.0;
 
         if let Some(year) = building.construction_year {
-            current_layer.use_text(
+            current_layer.text(
                 format!("Année de construction: {}", year),
                 10.0,
-                Mm(20.0),
-                Mm(y),
+                20.0,
+                y,
                 &font,
             );
             y -= 6.0;
@@ -114,125 +111,107 @@ impl OwnershipContractExporter {
         y -= 8.0;
 
         // === ARTICLE 2: UNIT DETAILS ===
-        current_layer.use_text(
+        current_layer.text(
             "ARTICLE 2 - DESCRIPTION DU LOT".to_string(),
             12.0,
-            Mm(20.0),
-            Mm(y),
+            20.0,
+            y,
             &font_bold,
         );
         y -= 8.0;
 
-        current_layer.use_text(
+        current_layer.text(
             format!("Numéro de lot: {}", unit.unit_number),
             10.0,
-            Mm(20.0),
-            Mm(y),
+            20.0,
+            y,
             &font,
         );
         y -= 6.0;
 
         if let Some(floor) = unit.floor {
-            current_layer.use_text(format!("Étage: {}", floor), 10.0, Mm(20.0), Mm(y), &font);
+            current_layer.text(format!("Étage: {}", floor), 10.0, 20.0, y, &font);
             y -= 6.0;
         }
 
-        current_layer.use_text(
+        current_layer.text(
             format!("Superficie: {:.2} m²", unit.surface_area),
             10.0,
-            Mm(20.0),
-            Mm(y),
+            20.0,
+            y,
             &font,
         );
         y -= 6.0;
 
-        current_layer.use_text(
-            format!("Type: {:?}", unit.unit_type),
-            10.0,
-            Mm(20.0),
-            Mm(y),
-            &font,
-        );
+        current_layer.text(format!("Type: {:?}", unit.unit_type), 10.0, 20.0, y, &font);
         y -= 6.0;
 
         use rust_decimal::prelude::ToPrimitive;
         let tantiemes_dec =
             ownership_percentage * rust_decimal::Decimal::from(building.total_tantiemes);
         let tantiemes = tantiemes_dec.trunc().to_i32().unwrap_or(0);
-        current_layer.use_text(
+        current_layer.text(
             format!("Tantièmes: {} sur {}", tantiemes, building.total_tantiemes),
             10.0,
-            Mm(20.0),
-            Mm(y),
+            20.0,
+            y,
             &font_bold,
         );
         y -= 6.0;
 
-        current_layer.use_text(
+        current_layer.text(
             format!(
                 "Quote-part: {:.2}%",
                 ownership_percentage * rust_decimal_macros::dec!(100)
             ),
             10.0,
-            Mm(20.0),
-            Mm(y),
+            20.0,
+            y,
             &font_bold,
         );
         y -= 8.0;
 
         // === ARTICLE 3: OWNER INFORMATION ===
-        current_layer.use_text(
+        current_layer.text(
             "ARTICLE 3 - COPROPRIÉTAIRE".to_string(),
             12.0,
-            Mm(20.0),
-            Mm(y),
+            20.0,
+            y,
             &font_bold,
         );
         y -= 8.0;
 
         let owner_name = format!("{} {}", owner.first_name, owner.last_name);
 
-        current_layer.use_text(format!("Nom: {}", owner_name), 10.0, Mm(20.0), Mm(y), &font);
+        current_layer.text(format!("Nom: {}", owner_name), 10.0, 20.0, y, &font);
         y -= 6.0;
 
-        current_layer.use_text(
-            format!("Email: {}", owner.email),
-            10.0,
-            Mm(20.0),
-            Mm(y),
-            &font,
-        );
+        current_layer.text(format!("Email: {}", owner.email), 10.0, 20.0, y, &font);
         y -= 6.0;
 
         if let Some(ref phone) = owner.phone {
-            current_layer.use_text(
-                format!("Téléphone: {}", phone),
-                10.0,
-                Mm(20.0),
-                Mm(y),
-                &font,
-            );
+            current_layer.text(format!("Téléphone: {}", phone), 10.0, 20.0, y, &font);
             y -= 6.0;
         }
 
-        current_layer.use_text(
+        current_layer.text(
             format!(
                 "Date d'entrée en copropriété: {}",
                 ownership_start_date.format("%d/%m/%Y")
             ),
             10.0,
-            Mm(20.0),
-            Mm(y),
+            20.0,
+            y,
             &font,
         );
         y -= 8.0;
 
         // === ARTICLE 4: RIGHTS AND OBLIGATIONS ===
-        current_layer.use_text(
+        current_layer.text(
             "ARTICLE 4 - DROITS ET OBLIGATIONS".to_string(),
             12.0,
-            Mm(20.0),
-            Mm(y),
+            20.0,
+            y,
             &font_bold,
         );
         y -= 8.0;
@@ -255,38 +234,38 @@ impl OwnershipContractExporter {
             if y < 80.0 {
                 break;
             }
-            current_layer.use_text(line.to_string(), 9.0, Mm(20.0), Mm(y), &font);
+            current_layer.text(line.to_string(), 9.0, 20.0, y, &font);
             y -= 5.0;
         }
         y -= 5.0;
 
         // === ARTICLE 5: EXPENSES ===
-        current_layer.use_text(
+        current_layer.text(
             "ARTICLE 5 - RÉPARTITION DES CHARGES".to_string(),
             12.0,
-            Mm(20.0),
-            Mm(y),
+            20.0,
+            y,
             &font_bold,
         );
         y -= 8.0;
 
-        current_layer.use_text(
+        current_layer.text(
             format!(
                 "Les charges communes sont réparties selon la quote-part de {:.2}%",
                 ownership_percentage * rust_decimal_macros::dec!(100)
             ),
             10.0,
-            Mm(20.0),
-            Mm(y),
+            20.0,
+            y,
             &font,
         );
         y -= 6.0;
 
-        current_layer.use_text(
+        current_layer.text(
             "correspondant aux tantièmes du lot.".to_string(),
             10.0,
-            Mm(20.0),
-            Mm(y),
+            20.0,
+            y,
             &font,
         );
         y -= 10.0;
@@ -296,48 +275,33 @@ impl OwnershipContractExporter {
             y = 40.0;
         }
 
-        current_layer.use_text("SIGNATURES".to_string(), 12.0, Mm(20.0), Mm(y), &font_bold);
+        current_layer.text("SIGNATURES".to_string(), 12.0, 20.0, y, &font_bold);
         y -= 10.0;
 
-        current_layer.use_text(
+        current_layer.text(
             "Le Syndic: ________________".to_string(),
             10.0,
-            Mm(20.0),
-            Mm(y),
+            20.0,
+            y,
             &font,
         );
 
-        current_layer.use_text(
+        current_layer.text(
             "Le Copropriétaire: ________________".to_string(),
             10.0,
-            Mm(120.0),
-            Mm(y),
+            120.0,
+            y,
             &font,
         );
         y -= 6.0;
 
-        current_layer.use_text(
-            "Date: ________________".to_string(),
-            10.0,
-            Mm(20.0),
-            Mm(y),
-            &font,
-        );
+        current_layer.text("Date: ________________".to_string(), 10.0, 20.0, y, &font);
 
-        current_layer.use_text(
-            "Date: ________________".to_string(),
-            10.0,
-            Mm(120.0),
-            Mm(y),
-            &font,
-        );
+        current_layer.text("Date: ________________".to_string(), 10.0, 120.0, y, &font);
 
         // Save to bytes
-        let mut buffer = Vec::new();
-        doc.save(&mut BufWriter::new(&mut buffer))
-            .map_err(|e| e.to_string())?;
-
-        Ok(buffer)
+        let page = current_layer.into_page(210.0, 297.0);
+        Ok(save_document(doc, page))
     }
 }
 
