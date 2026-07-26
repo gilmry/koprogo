@@ -1,8 +1,10 @@
 use crate::domain::entities::{Building, Expense, Owner, Unit};
+use crate::domain::services::pdf_writer::{
+    builtin_font, new_document, save_document, PdfPageBuilder,
+};
 use chrono::{DateTime, Utc};
-use printpdf::*;
+use printpdf::BuiltinFont;
 use rust_decimal::Decimal;
-use std::io::BufWriter;
 
 /// Owner Financial Statement Exporter - Generates PDF for Relevé de Charges
 ///
@@ -36,45 +38,34 @@ impl OwnerStatementExporter {
         end_date: DateTime<Utc>,
     ) -> Result<Vec<u8>, String> {
         // Create PDF document (A4: 210mm x 297mm)
-        let (doc, page1, layer1) =
-            PdfDocument::new("Relevé de Charges", Mm(210.0), Mm(297.0), "Layer 1");
-        let current_layer = doc.get_page(page1).get_layer(layer1);
+        let doc = new_document("Relevé de Charges");
+        let mut current_layer = PdfPageBuilder::new();
 
         // Load fonts
-        let font = doc
-            .add_builtin_font(BuiltinFont::Helvetica)
-            .map_err(|e| e.to_string())?;
-        let font_bold = doc
-            .add_builtin_font(BuiltinFont::HelveticaBold)
-            .map_err(|e| e.to_string())?;
+        let font = builtin_font(BuiltinFont::Helvetica);
+        let font_bold = builtin_font(BuiltinFont::HelveticaBold);
 
         let mut y = 270.0; // Start from top
 
         // === HEADER ===
-        current_layer.use_text(
-            "RELEVÉ DE CHARGES".to_string(),
-            18.0,
-            Mm(20.0),
-            Mm(y),
-            &font_bold,
-        );
+        current_layer.text("RELEVÉ DE CHARGES".to_string(), 18.0, 20.0, y, &font_bold);
         y -= 15.0;
 
         // Building information
-        current_layer.use_text(
+        current_layer.text(
             format!("Copropriété: {}", building.name),
             12.0,
-            Mm(20.0),
-            Mm(y),
+            20.0,
+            y,
             &font_bold,
         );
         y -= 7.0;
 
-        current_layer.use_text(
+        current_layer.text(
             format!("Adresse: {}", building.address),
             10.0,
-            Mm(20.0),
-            Mm(y),
+            20.0,
+            y,
             &font,
         );
         y -= 10.0;
@@ -85,63 +76,39 @@ impl OwnerStatementExporter {
             start_date.format("%d/%m/%Y"),
             end_date.format("%d/%m/%Y")
         );
-        current_layer.use_text(period, 10.0, Mm(20.0), Mm(y), &font);
+        current_layer.text(period, 10.0, 20.0, y, &font);
         y -= 10.0;
 
         // Owner information
-        current_layer.use_text(
-            "COPROPRIÉTAIRE".to_string(),
-            14.0,
-            Mm(20.0),
-            Mm(y),
-            &font_bold,
-        );
+        current_layer.text("COPROPRIÉTAIRE".to_string(), 14.0, 20.0, y, &font_bold);
         y -= 8.0;
 
-        current_layer.use_text(
+        current_layer.text(
             format!("{} {}", owner.first_name, owner.last_name),
             11.0,
-            Mm(20.0),
-            Mm(y),
+            20.0,
+            y,
             &font,
         );
         y -= 6.0;
 
-        current_layer.use_text(
-            format!("Email: {}", owner.email),
-            10.0,
-            Mm(20.0),
-            Mm(y),
-            &font,
-        );
+        current_layer.text(format!("Email: {}", owner.email), 10.0, 20.0, y, &font);
         y -= 6.0;
 
         if let Some(ref phone) = owner.phone {
-            current_layer.use_text(
-                format!("Téléphone: {}", phone),
-                10.0,
-                Mm(20.0),
-                Mm(y),
-                &font,
-            );
+            current_layer.text(format!("Téléphone: {}", phone), 10.0, 20.0, y, &font);
             y -= 6.0;
         }
         y -= 5.0;
 
         // === UNITS OWNED ===
-        current_layer.use_text(
-            "LOTS DÉTENUS".to_string(),
-            14.0,
-            Mm(20.0),
-            Mm(y),
-            &font_bold,
-        );
+        current_layer.text("LOTS DÉTENUS".to_string(), 14.0, 20.0, y, &font_bold);
         y -= 8.0;
 
-        current_layer.use_text("Lot", 10.0, Mm(20.0), Mm(y), &font_bold);
-        current_layer.use_text("Étage", 10.0, Mm(60.0), Mm(y), &font_bold);
-        current_layer.use_text("Surface", 10.0, Mm(90.0), Mm(y), &font_bold);
-        current_layer.use_text("Quote-part", 10.0, Mm(130.0), Mm(y), &font_bold);
+        current_layer.text("Lot", 10.0, 20.0, y, &font_bold);
+        current_layer.text("Étage", 10.0, 60.0, y, &font_bold);
+        current_layer.text("Surface", 10.0, 90.0, y, &font_bold);
+        current_layer.text("Quote-part", 10.0, 130.0, y, &font_bold);
         y -= 6.0;
 
         for unit_info in units {
@@ -150,28 +117,28 @@ impl OwnerStatementExporter {
                 break;
             }
 
-            current_layer.use_text(&unit_info.unit.unit_number, 9.0, Mm(20.0), Mm(y), &font);
+            current_layer.text(unit_info.unit.unit_number.as_str(), 9.0, 20.0, y, &font);
 
             if let Some(floor) = unit_info.unit.floor {
-                current_layer.use_text(floor.to_string(), 9.0, Mm(60.0), Mm(y), &font);
+                current_layer.text(floor.to_string(), 9.0, 60.0, y, &font);
             }
 
-            current_layer.use_text(
+            current_layer.text(
                 format!("{:.2} m²", unit_info.unit.surface_area),
                 9.0,
-                Mm(90.0),
-                Mm(y),
+                90.0,
+                y,
                 &font,
             );
 
-            current_layer.use_text(
+            current_layer.text(
                 format!(
                     "{:.2}%",
                     unit_info.ownership_percentage * rust_decimal_macros::dec!(100)
                 ),
                 9.0,
-                Mm(130.0),
-                Mm(y),
+                130.0,
+                y,
                 &font,
             );
             y -= 5.0;
@@ -179,19 +146,13 @@ impl OwnerStatementExporter {
         y -= 8.0;
 
         // === EXPENSES ===
-        current_layer.use_text(
-            "DÉTAIL DES CHARGES".to_string(),
-            14.0,
-            Mm(20.0),
-            Mm(y),
-            &font_bold,
-        );
+        current_layer.text("DÉTAIL DES CHARGES".to_string(), 14.0, 20.0, y, &font_bold);
         y -= 8.0;
 
-        current_layer.use_text("Date", 10.0, Mm(20.0), Mm(y), &font_bold);
-        current_layer.use_text("Description", 10.0, Mm(50.0), Mm(y), &font_bold);
-        current_layer.use_text("Montant", 10.0, Mm(140.0), Mm(y), &font_bold);
-        current_layer.use_text("Statut", 10.0, Mm(170.0), Mm(y), &font_bold);
+        current_layer.text("Date", 10.0, 20.0, y, &font_bold);
+        current_layer.text("Description", 10.0, 50.0, y, &font_bold);
+        current_layer.text("Montant", 10.0, 140.0, y, &font_bold);
+        current_layer.text("Statut", 10.0, 170.0, y, &font_bold);
         y -= 6.0;
 
         let mut total_amount = Decimal::ZERO;
@@ -203,11 +164,11 @@ impl OwnerStatementExporter {
                 break;
             }
 
-            current_layer.use_text(
+            current_layer.text(
                 expense.expense_date.format("%d/%m/%Y").to_string(),
                 9.0,
-                Mm(20.0),
-                Mm(y),
+                20.0,
+                y,
                 &font,
             );
 
@@ -216,22 +177,16 @@ impl OwnerStatementExporter {
             } else {
                 expense.description.clone()
             };
-            current_layer.use_text(description, 9.0, Mm(50.0), Mm(y), &font);
+            current_layer.text(description, 9.0, 50.0, y, &font);
 
-            current_layer.use_text(
-                format!("{:.2} €", expense.amount),
-                9.0,
-                Mm(140.0),
-                Mm(y),
-                &font,
-            );
+            current_layer.text(format!("{:.2} €", expense.amount), 9.0, 140.0, y, &font);
 
             let status = if expense.is_paid() {
                 "Payée"
             } else {
                 "En attente"
             };
-            current_layer.use_text(status.to_string(), 9.0, Mm(170.0), Mm(y), &font);
+            current_layer.text(status.to_string(), 9.0, 170.0, y, &font);
 
             total_amount += expense.amount;
             if expense.is_paid() {
@@ -243,78 +198,69 @@ impl OwnerStatementExporter {
         y -= 10.0;
 
         // === SUMMARY ===
-        current_layer.use_text(
-            "RÉCAPITULATIF".to_string(),
-            14.0,
-            Mm(20.0),
-            Mm(y),
-            &font_bold,
-        );
+        current_layer.text("RÉCAPITULATIF".to_string(), 14.0, 20.0, y, &font_bold);
         y -= 8.0;
 
-        current_layer.use_text(
+        current_layer.text(
             format!("Total des charges: {:.2} €", total_amount),
             11.0,
-            Mm(20.0),
-            Mm(y),
+            20.0,
+            y,
             &font,
         );
         y -= 6.0;
 
-        current_layer.use_text(
+        current_layer.text(
             format!("Montant payé: {:.2} €", total_paid),
             11.0,
-            Mm(20.0),
-            Mm(y),
+            20.0,
+            y,
             &font,
         );
         y -= 6.0;
 
         let amount_due = total_amount - total_paid;
-        current_layer.use_text(
+        current_layer.text(
             format!("Montant dû: {:.2} €", amount_due),
             12.0,
-            Mm(20.0),
-            Mm(y),
+            20.0,
+            y,
             &font_bold,
         );
         y -= 10.0;
 
         // Payment instructions
         if amount_due > Decimal::ZERO {
-            current_layer.use_text(
+            current_layer.text(
                 "Modalités de paiement:".to_string(),
                 10.0,
-                Mm(20.0),
-                Mm(y),
+                20.0,
+                y,
                 &font_bold,
             );
             y -= 6.0;
 
-            current_layer.use_text(
+            current_layer.text(
                 "Merci d'effectuer votre paiement par virement bancaire".to_string(),
                 9.0,
-                Mm(20.0),
-                Mm(y),
+                20.0,
+                y,
                 &font,
             );
             y -= 5.0;
 
-            current_layer.use_text(
+            current_layer.text(
                 "avec la référence suivante en communication.".to_string(),
                 9.0,
-                Mm(20.0),
-                Mm(y),
+                20.0,
+                y,
                 &font,
             );
         }
 
         // Save to bytes
-        let mut buffer = Vec::new();
-        doc.save(&mut BufWriter::new(&mut buffer))
-            .map_err(|e| e.to_string())?;
-
-        Ok(buffer)
+        let page = current_layer.into_page(210.0, 297.0);
+        Ok(save_document(doc, page))
     }
 }
 

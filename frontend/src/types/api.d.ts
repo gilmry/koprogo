@@ -2050,21 +2050,13 @@ export interface components {
      * @enum {string}
      */
     AttendanceStatus:
-      | "Pending"
-      | "WillAttend"
-      | "WillNotAttend"
-      | "Attended"
-      | "DidNotAttend";
+      "Pending" | "WillAttend" | "WillNotAttend" | "Attended" | "DidNotAttend";
     /**
      * @description Booking status lifecycle
      * @enum {string}
      */
     BookingStatus:
-      | "Pending"
-      | "Confirmed"
-      | "Cancelled"
-      | "Completed"
-      | "NoShow";
+      "Pending" | "Confirmed" | "Cancelled" | "Completed" | "NoShow";
     /**
      * @description Statut du budget annuel
      * @enum {string}
@@ -2348,11 +2340,7 @@ export interface components {
      * @enum {string}
      */
     EtatDateStatus:
-      | "requested"
-      | "in_progress"
-      | "generated"
-      | "delivered"
-      | "expired";
+      "requested" | "in_progress" | "generated" | "delivered" | "expired";
     EvaluationScoresDto: {
       /** Format: int32 */
       communication: number;
@@ -2379,11 +2367,7 @@ export interface components {
     };
     /** @enum {string} */
     ExchangeStatus:
-      | "Offered"
-      | "Requested"
-      | "InProgress"
-      | "Completed"
-      | "Cancelled";
+      "Offered" | "Requested" | "InProgress" | "Completed" | "Cancelled";
     /** @enum {string} */
     ExchangeType: "Service" | "ObjectLoan" | "SharedPurchase";
     /**
@@ -2627,12 +2611,7 @@ export interface components {
      * @enum {string}
      */
     ReminderStatus:
-      | "Pending"
-      | "Sent"
-      | "Opened"
-      | "Paid"
-      | "Escalated"
-      | "Cancelled";
+      "Pending" | "Sent" | "Opened" | "Paid" | "Escalated" | "Cancelled";
     ReopenTicketRequest: {
       reason: string;
     };
