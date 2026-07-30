@@ -40,7 +40,7 @@ uuid = { version = "1.23", features = ["serde", "v4"] }
 chrono = { version = "0.4", features = ["serde"] }
 validator = { version = "0.20", features = ["derive"] }
 bcrypt = "0.19"
-jsonwebtoken = { version = "10.4", default-features = false, features = ["aws_lc_rs"] }
+jsonwebtoken = { version = "11.0", default-features = false, features = ["aws_lc_rs"] }
 hex = "0.4"
 sha2 = "0.10"
 md5 = "0.8"
