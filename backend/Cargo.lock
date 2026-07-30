@@ -3535,7 +3535,7 @@ dependencies = [
  "aws-credential-types",
  "aws-sdk-s3",
  "aws-types",
- "base64 0.22.1",
+ "base64 0.23.0",
  "bcrypt",
  "chrono",
  "criterion",
