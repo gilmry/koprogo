@@ -38,7 +38,7 @@ log = "0.4" # Keep for compatibility with existing log! macros
 # Utilities
 uuid = { version = "1.23", features = ["serde", "v4"] }
 chrono = { version = "0.4", features = ["serde"] }
-validator = { version = "0.20", features = ["derive"] }
+validator = { version = "0.21", features = ["derive"] }
 bcrypt = "0.19"
 jsonwebtoken = { version = "10.4", default-features = false, features = ["aws_lc_rs"] }
 hex = "0.4"
