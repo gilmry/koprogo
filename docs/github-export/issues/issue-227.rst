@@ -1,13 +1,13 @@
-=============================================================================
+============================================================================
 Issue #227: R&D: Architecture IoT - Intégration capteurs et base time-series
-=============================================================================
+============================================================================
 
-:State: **OPEN**
+:State: **CLOSED**
 :Milestone: No milestone
-:Labels: priority:medium,proptech:iot R&D
+:Labels: priority:medium,proptech:iot R&D
 :Assignees: Unassigned
 :Created: 2026-03-07
-:Updated: 2026-03-07
+:Updated: 2026-03-24
 :URL: `View on GitHub <https://github.com/gilmry/koprogo/issues/227>`_
 
 Description

@@ -4,7 +4,7 @@ Issue #90: feat: GDPR Complementary Articles (16, 18, 21)
 
 :State: **CLOSED**
 :Milestone: Jalon 1: Sécurité & GDPR 🔒
-:Labels: enhancement,phase:k3s track:software,priority:high legal-compliance,gdpr
+:Labels: enhancement,phase:k3s track:software,priority:high legal-compliance,gdpr
 :Assignees: Unassigned
 :Created: 2025-11-01
 :Updated: 2026-03-21

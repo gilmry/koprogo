@@ -4,7 +4,7 @@ Issue #203: feat: Internationalization (i18n) - 4 Belgian Languages
 
 :State: **CLOSED**
 :Milestone: Jalon 5: Mobile & API Publique 📱
-:Labels: enhancement,phase:vps track:software,priority:high
+:Labels: enhancement,phase:vps track:software,priority:high
 :Assignees: Unassigned
 :Created: 2026-02-18
 :Updated: 2026-02-18

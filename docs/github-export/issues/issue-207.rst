@@ -4,7 +4,7 @@ Issue #207: Release 0.5.0 - Test Pyramid & Documentation Umbrella
 
 :State: **CLOSED**
 :Milestone: Jalon 1: Sécurité & GDPR 🔒
-:Labels: documentation,priority:critical release:v0.5.0,testing
+:Labels: documentation,priority:critical release:v0.5.0,testing
 :Assignees: Unassigned
 :Created: 2026-02-26
 :Updated: 2026-03-07

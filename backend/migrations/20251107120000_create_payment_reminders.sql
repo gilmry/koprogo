@@ -68,7 +68,7 @@ CREATE INDEX idx_payment_reminders_overdue_org ON payment_reminders(organization
 -- Comments for documentation
 COMMENT ON TABLE payment_reminders IS 'Automated payment reminder system for overdue expenses (Belgian legal compliance)';
 COMMENT ON COLUMN payment_reminders.level IS 'Escalation level: FirstReminder (J+15), SecondReminder (J+30), FormalNotice (J+60)';
-COMMENT ON COLUMN payment_reminders.penalty_amount IS 'Late payment penalties calculated at Belgian legal rate (8% annual)';
+COMMENT ON COLUMN payment_reminders.penalty_amount IS 'Late payment penalties calculated at Belgian legal rate (4.5% annual, cf. BELGIAN_PENALTY_RATE in payment_reminder.rs)';
 COMMENT ON COLUMN payment_reminders.days_overdue IS 'Number of days since due_date';
 COMMENT ON COLUMN payment_reminders.tracking_number IS 'Postal tracking number for registered letters (mise en demeure)';
 

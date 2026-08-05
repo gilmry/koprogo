@@ -1,12 +1,12 @@
-=====================================================
+==================================================
 Jalon 6: Intelligence & Expansion (PropTech 2.0) 🤖
-=====================================================
+==================================================
 
 :Number: 11
 :State: open
 :Due Date: No due date
-:Open Issues: 4
-:Closed Issues: 1
+:Open Issues: 2
+:Closed Issues: 3
 :Total Issues: 5
 :URL: `View on GitHub <https://github.com/gilmry/koprogo/milestone/11>`_
 
@@ -46,16 +46,16 @@ Issues (5)
 :State: OPEN
 :Link: `#94 <../issues/issue-94.rst>`_
 
-🔵 Issue #95: feat: Service Provider Marketplace with Ratings
+✅ Issue #95: feat: Service Provider Marketplace with Ratings
 -------------------------------------------------------------------
 
-:State: OPEN
+:State: CLOSED
 :Link: `#95 <../issues/issue-95.rst>`_
 
-🔵 Issue #96: feat: Sustainability & Ecology Tracking (Carbon footprint, DPE)
+✅ Issue #96: feat: Sustainability & Ecology Tracking (Carbon footprint, DPE)
 -----------------------------------------------------------------------------------
 
-:State: OPEN
+:State: CLOSED
 :Link: `#96 <../issues/issue-96.rst>`_
 
 🔵 Issue #109: feat: IoT Integration Platform (MQTT Broker + TimescaleDB)
@@ -65,7 +65,7 @@ Issues (5)
 :Link: `#109 <../issues/issue-109.rst>`_
 
 ✅ Issue #110: feat: Energy Buying Groups Platform (Groupements d'Achat Énergie)
---------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------------
 
 :State: CLOSED
 :Link: `#110 <../issues/issue-110.rst>`_

@@ -4,7 +4,7 @@ Issue #209: feat(tests): Playwright expansion - 7 new frontend E2E spec files
 
 :State: **CLOSED**
 :Milestone: Jalon 1: Sécurité & GDPR 🔒
-:Labels: priority:medium,release:v0.5.0 testing,playwright
+:Labels: priority:medium,release:v0.5.0 testing,playwright
 :Assignees: Unassigned
 :Created: 2026-02-26
 :Updated: 2026-03-07

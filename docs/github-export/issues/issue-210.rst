@@ -4,7 +4,7 @@ Issue #210: docs: Create missing feature documentation (6 docs + 2 READMEs)
 
 :State: **CLOSED**
 :Milestone: Jalon 1: Sécurité & GDPR 🔒
-:Labels: documentation,priority:medium release:v0.5.0
+:Labels: documentation,priority:medium release:v0.5.0
 :Assignees: Unassigned
 :Created: 2026-02-26
 :Updated: 2026-03-07

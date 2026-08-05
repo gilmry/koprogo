@@ -4,7 +4,7 @@ Issue #266: feat(infra): Provisionning cluster K3s sur OVH avec Terraform + Open
 
 :State: **OPEN**
 :Milestone: Jalon 5: Mobile & API Publique 📱
-:Labels: phase:k3s,track:infrastructure priority:low
+:Labels: phase:k3s,track:infrastructure priority:low
 :Assignees: Unassigned
 :Created: 2026-03-10
 :Updated: 2026-03-15

@@ -1,13 +1,13 @@
-===================================================================
+==================================================================
 Issue #314: [Conformité] Syndic : Mandat max 3 ans avec validation
-===================================================================
+==================================================================
 
-:State: **OPEN**
+:State: **CLOSED**
 :Milestone: Jalon 2: Conformité Légale Belge 📋
 :Labels: conformité
 :Assignees: Unassigned
 :Created: 2026-03-22
-:Updated: 2026-03-22
+:Updated: 2026-03-24
 :URL: `View on GitHub <https://github.com/gilmry/koprogo/issues/314>`_
 
 Description

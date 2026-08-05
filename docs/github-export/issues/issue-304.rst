@@ -1,13 +1,13 @@
-=====================================================================================
+====================================================================================
 Issue #304: [Bug] Pages non traduites en français : Tickets, Announcements, Bookings
-=====================================================================================
+====================================================================================
 
-:State: **OPEN**
+:State: **CLOSED**
 :Milestone: No milestone
-:Labels: bug:mineur,test:e2e
+:Labels: bug:mineur,test:e2e
 :Assignees: Unassigned
 :Created: 2026-03-22
-:Updated: 2026-03-22
+:Updated: 2026-03-24
 :URL: `View on GitHub <https://github.com/gilmry/koprogo/issues/304>`_
 
 Description

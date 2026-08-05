@@ -1,12 +1,12 @@
-===================================
+================================
 Jalon 5: Mobile & API Publique 📱
-===================================
+================================
 
 :Number: 10
 :State: open
 :Due Date: No due date
-:Open Issues: 10
-:Closed Issues: 2
+:Open Issues: 9
+:Closed Issues: 3
 :Total Issues: 12
 :URL: `View on GitHub <https://github.com/gilmry/koprogo/milestone/10>`_
 
@@ -46,10 +46,10 @@ Issues (12)
 :State: CLOSED
 :Link: `#87 <../issues/issue-87.rst>`_
 
-🔵 Issue #97: feat: Business Intelligence & Analytics Dashboard
+✅ Issue #97: feat: Business Intelligence & Analytics Dashboard
 ---------------------------------------------------------------------
 
-:State: OPEN
+:State: CLOSED
 :Link: `#97 <../issues/issue-97.rst>`_
 
 🔵 Issue #98: feat: Native Mobile App (iOS/Android) with Biometric Auth
@@ -95,19 +95,19 @@ Issues (12)
 :Link: `#296 <../issues/issue-296.rst>`_
 
 🔵 Issue #297: Adapters SQLite: Implémentation Repository traits pour mode local
---------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------------
 
 :State: OPEN
 :Link: `#297 <../issues/issue-297.rst>`_
 
 🔵 Issue #298: Sync bidirectionnelle SQLite ↔ PostgreSQL (mode offline/online)
--------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------
 
 :State: OPEN
 :Link: `#298 <../issues/issue-298.rst>`_
 
 🔵 Issue #299: Workspace Cargo: Extraire crate partagé koprogo-core (Domain + Application)
-------------------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------------
 
 :State: OPEN
 :Link: `#299 <../issues/issue-299.rst>`_

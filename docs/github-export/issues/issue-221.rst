@@ -1,13 +1,13 @@
-===============================================================================
+=============================================================================
 Issue #221: R&D: Rôles Tenant & Guest - Modèle de participation communautaire
-===============================================================================
+=============================================================================
 
-:State: **OPEN**
+:State: **CLOSED**
 :Milestone: No milestone
-:Labels: enhancement,priority:medium community,R&D
+:Labels: enhancement,priority:medium community,R&D
 :Assignees: Unassigned
 :Created: 2026-03-07
-:Updated: 2026-03-07
+:Updated: 2026-03-24
 :URL: `View on GitHub <https://github.com/gilmry/koprogo/issues/221>`_
 
 Description

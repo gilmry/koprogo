@@ -1,13 +1,13 @@
-==============================================================================
+============================================================================
 Issue #311: [Conformité] AG : Quorum 50%+50% et 2ème convocation automatique
-==============================================================================
+============================================================================
 
-:State: **OPEN**
+:State: **CLOSED**
 :Milestone: Jalon 2: Conformité Légale Belge 📋
 :Labels: conformité
 :Assignees: Unassigned
 :Created: 2026-03-22
-:Updated: 2026-03-22
+:Updated: 2026-03-24
 :URL: `View on GitHub <https://github.com/gilmry/koprogo/issues/311>`_
 
 Description

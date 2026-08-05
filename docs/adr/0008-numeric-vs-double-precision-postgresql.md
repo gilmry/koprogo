@@ -123,9 +123,8 @@ Considered. Acceptable for legacy modules (`payment.amount_cents`). New code pre
 
 ## Amendment 2026-05-19 — f64 carve-outs & accounting-integrity policy (WP-A7)
 
-- **Status of this amendment**: **Proposed** — pending @gilmry sign-off
-  (acceptance = merge of the PR carrying this amendment; the original
-  decision above remains _Accepted_ and unchanged).
+- **Status of this amendment**: **Accepted** (validé @gilmry 2026-07-31,
+  cf. audit `docs/agent-activity/2026-07-31-audit-433.md`).
 - **Scope**: clarifies the **exhaustive, closed list** of places where
   `f64` (Rust) / `DOUBLE PRECISION` (SQL) remains acceptable _despite_ the
   Decimal rule, plus the `#526` expenses-positivity policy. Emerged from
@@ -188,3 +187,23 @@ en bêta** (critère GO #429/#427).
 
 🤖 Amendment drafted by backend agent (Tier 2 **proposal**) — acceptance =
 @gilmry merge. Traçé : `docs/agent-activity/2026-05-19-wbs-a7.md`.
+
+## Amendment 2026-07-31 — extension du carve-out fermé (audit #433)
+
+- **Status of this amendment**: **Accepted** (validé @gilmry 2026-07-31,
+  cf. audit `docs/agent-activity/2026-07-31-audit-433.md`).
+- **Scope**: l'audit de clôture de l'umbrella #433 a identifié deux sites
+  `f64` résiduels non couverts par la liste fermée §A. Ni l'un ni l'autre
+  n'est un montant ou une quotité opposable à un seuil légal — extension
+  de la liste plutôt que migration Decimal.
+
+| Site                                                                                           | Valeur                                              | Pourquoi `f64` est acceptable                                                                                                                                                                                                                 |
+| ---------------------------------------------------------------------------------------------- | --------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `quote.rs` (`total_score`, `price_score`, `delay_score`, `warranty_score`, `reputation_score`) | Score de classement 0-100 pour comparaison de devis | **Heuristique de tri, jamais un montant ni une quotité.** N'alimente aucun calcul PCMN ni seuil légal — sert uniquement au tri d'affichage des devis entre eux.                                                                               |
+| `age_request.rs::calculate_progress_percentage`                                                | % de progression d'une pétition AGE (demande 1/5)   | Calcul interne en `Decimal` (`Decimal::from(...)`, comparaisons exactes) ; conversion `f64` uniquement sur la **valeur de retour affichée**, jamais réutilisée pour une comparaison de seuil ultérieure. Même pattern que `resolution.rs` §A. |
+
+Cette liste étendue reste **fermée** : toute nouvelle exception nécessite
+un nouvel amendement signé, comme ci-dessus.
+
+🤖 Amendment drafted by backend agent (Tier 2 **proposal**) — acceptance =
+@gilmry en session. Traçé : `docs/agent-activity/2026-07-31-audit-433.md`.

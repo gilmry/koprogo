@@ -2,12 +2,12 @@
 Issue #308: [Bug] Sondages : label 'Building' au lieu de 'Immeuble'
 ===================================================================
 
-:State: **OPEN**
+:State: **CLOSED**
 :Milestone: No milestone
-:Labels: bug:mineur,test:e2e
+:Labels: bug:mineur,test:e2e
 :Assignees: Unassigned
 :Created: 2026-03-22
-:Updated: 2026-03-22
+:Updated: 2026-03-24
 :URL: `View on GitHub <https://github.com/gilmry/koprogo/issues/308>`_
 
 Description

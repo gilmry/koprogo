@@ -1,13 +1,13 @@
-================================================================================================
+==========================================================================================
 Issue #274: feat: AG Visioconférence — entité AgSession + quorum combiné (Art. 3.87 §1 CC)
-================================================================================================
+==========================================================================================
 
-:State: **OPEN**
+:State: **CLOSED**
 :Milestone: Jalon 3: Features Différenciantes 🎯
-:Labels: enhancement,track:software legal-compliance,governance release:0.1.0
+:Labels: enhancement,track:software legal-compliance,governance release:0.1.0
 :Assignees: Unassigned
 :Created: 2026-03-11
-:Updated: 2026-03-14
+:Updated: 2026-03-24
 :URL: `View on GitHub <https://github.com/gilmry/koprogo/issues/274>`_
 
 Description

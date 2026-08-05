@@ -4,7 +4,7 @@ Issue #85: feat: Ticketing System for Maintenance Requests
 
 :State: **CLOSED**
 :Milestone: Jalon 3: Features Différenciantes 🎯
-:Labels: enhancement,phase:vps track:software,priority:high maintenance
+:Labels: enhancement,phase:vps track:software,priority:high maintenance
 :Assignees: Unassigned
 :Created: 2025-11-01
 :Updated: 2026-03-21

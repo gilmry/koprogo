@@ -1,13 +1,13 @@
-=========================================================================================
+========================================================================================
 Issue #220: R&D: Implémentation RBAC - Choix architectural (Hybrid vs Dynamic vs Casbin)
-=========================================================================================
+========================================================================================
 
-:State: **OPEN**
+:State: **CLOSED**
 :Milestone: No milestone
-:Labels: enhancement,priority:high R&D
+:Labels: enhancement,priority:high R&D
 :Assignees: Unassigned
 :Created: 2026-03-07
-:Updated: 2026-03-07
+:Updated: 2026-03-24
 :URL: `View on GitHub <https://github.com/gilmry/koprogo/issues/220>`_
 
 Description

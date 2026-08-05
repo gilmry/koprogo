@@ -1,10 +1,10 @@
-==============================================================================
+=============================================================================
 Issue #110: feat: Energy Buying Groups Platform (Groupements d'Achat Énergie)
-==============================================================================
+=============================================================================
 
 :State: **CLOSED**
 :Milestone: Jalon 6: Intelligence & Expansion (PropTech 2.0) 🤖
-:Labels: enhancement,phase:k8s track:software,priority:medium finance,automation community,proptech:energy
+:Labels: enhancement,phase:k8s track:software,priority:medium finance,automation community,proptech:energy
 :Assignees: Unassigned
 :Created: 2025-11-07
 :Updated: 2025-12-02

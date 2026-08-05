@@ -2,7 +2,7 @@
 Labels
 ======
 
-Total: 60 labels
+Total: 78 labels
 
 .. list-table::
    :header-rows: 1
@@ -13,16 +13,16 @@ Total: 60 labels
      - Issues Count
    * - **bug**
      - Something isn't working
-     - 4
+     - 28
    * - **documentation**
      - Improvements or additions to documentation
-     - 8
+     - 22
    * - **duplicate**
      - This issue or pull request already exists
      - 0
    * - **enhancement**
      - New feature or request
-     - 77
+     - 112
    * - **good first issue**
      - Good for newcomers
      - 0
@@ -34,61 +34,61 @@ Total: 60 labels
      - 0
    * - **question**
      - Further information is requested
-     - 0
+     - 1
    * - **wontfix**
      - This will not be worked on
      - 0
    * - **dependencies**
      - Pull requests that update a dependency file
-     - 0
+     - 1
    * - **github_actions**
      - Pull requests that update GitHub Actions code
      - 0
    * - **javascript**
      - Pull requests that update javascript code
-     - 1
+     - 19
    * - **phase:vps**
      - Phase VPS (Q4 2025 - Q2 2026) - Docker Compose deployment
      - 37
    * - **phase:k3s**
      - Phase K3s (Q3 2026 - Q1 2027) - Kubernetes lightweight
-     - 11
+     - 12
    * - **phase:k8s**
      - Phase K8s (Q2 2027+) - Kubernetes production
      - 9
    * - **track:software**
      - Software development track (features, API, frontend)
-     - 63
+     - 147
    * - **track:infrastructure**
      - Infrastructure track (IaC, CI/CD, deployment)
-     - 10
+     - 20
    * - **priority:critical**
      - Critical priority - blocking issue
-     - 21
+     - 25
    * - **priority:high**
      - High priority - important for next release
-     - 28
+     - 62
    * - **priority:medium**
      - Medium priority - planned work
-     - 17
+     - 25
    * - **priority:low**
      - Low priority - nice to have
      - 15
    * - **rust**
      - Pull requests that update rust code
-     - 1
+     - 37
    * - **security**
      - Security-related issues
-     - 3
+     - 24
    * - **finance**
      - Financial and accounting features
-     - 11
+     - 18
    * - **legal-compliance**
      - Legal compliance (Belgian law)
-     - 21
+     - 41
    * - **governance**
      - Governance and board features
-     - 7
+     - 23
    * - **automation**
      - Automation workflows
      - 7
@@ -97,16 +97,16 @@ Total: 60 labels
      - 3
    * - **gdpr**
      - GDPR compliance features
-     - 5
+     - 8
    * - **maintenance**
      - Maintenance and repair tracking
-     - 3
+     - 7
    * - **accessibility**
      - Accessibility (WCAG)
-     - 1
+     - 14
    * - **community**
      - Community features (ASBL mission)
-     - 5
+     - 8
    * - **proptech:ai**
      - PropTech 2.0 - IA/ML features (OCR, chatbot, forecasting)
      - 2
@@ -136,19 +136,19 @@ Total: 60 labels
      - 5
    * - **testing**
      - Test coverage and infrastructure
-     - 5
+     - 15
    * - **bdd**
      - BDD Cucumber/Gherkin tests
      - 1
    * - **e2e**
      - End-to-end tests
-     - 2
+     - 8
    * - **playwright**
      - Playwright frontend E2E tests
-     - 2
+     - 8
    * - **R&D**
      - Research & Development - Technical study/investigation
-     - 18
+     - 20
    * - **track:mcp**
      - MCP Server track (AI assistant, tools, legal reference)
      - 13
@@ -175,22 +175,76 @@ Total: 60 labels
      - 2
    * - **bug:majeur**
      - Bug majeur - fonctionnel
-     - 4
+     - 10
    * - **bug:mineur**
      - Bug mineur
-     - 2
+     - 3
    * - **conformité**
      - Conformité légale belge
      - 8
    * - **test:e2e**
      - Tests E2E manuels
-     - 8
+     - 10
    * - **architecture**
      - Architecture/Design
      - 1
    * - **rgpd**
      - RGPD/GDPR compliance
      - 0
+   * - **RFC**
+     - Request For Comments - Architecture proposals
+     - 1
+   * - **specs**
+     - Specifications and business rules
+     - 2
+   * - **audit-2026-04**
+     - Issues from the 2026-04-12/13 UI audit
+     - 21
+   * - **svelte5-runes**
+     - Svelte 5 runes migration
+     - 11
+   * - **type-safety**
+     - Frontend↔backend type alignment
+     - 5
+   * - **test-coverage**
+     - Test infrastructure and coverage
+     - 2
+   * - **needs-resolution**
+     - PR has merge conflicts requiring human resolution (used by back-sync workflow)
+     - 0
+   * - **epic**
+     - Umbrella epic issue tracking multi-story initiative
+     - 1
+   * - **maury**
+     - Méthode Maury — phased Brief→PRD→Architecture→Stories→Validation→Execution
+     - 49
+   * - **track-h-conformite**
+     - WBS Track H — Conformité métier (bloqueurs légaux Art. 3.84-3.89 CC)
+     - 40
+   * - **slice-0**
+     - Maury Slice 0 — Caractérisation FE (régression safety net)
+     - 1
+   * - **cluster-coord**
+     - Coordination cluster — 1 PR = 2+ migrations atomiques (#433 Decimal + #555 Result + refonte)
+     - 6
+   * - **slice-1**
+     - Maury Slice 1 — Refacto domaine ACP + migration data + conformité
+     - 4
+   * - **slice-2**
+     - Maury Slice 2 — Sélecteur global + bannière + Portfolio + #553 fix
+     - 5
+   * - **slice-3**
+     - Maury Slice 3 — Sous-rôles + Magic Link + PWA + Mandates + Ticketing
+     - 18
+   * - **slice-4**
+     - Maury Slice 4 — Governance hybride + Commissaire + CdC + signatures eIDAS
+     - 9
+   * - **slice-5**
+     - Maury Slice 5 — Modularité + onboarding + RBAC Communauté Moderator
+     - 8
+   * - **slice-Tx**
+     - Maury Slice Transversal — CI gate caractérisation + helpers shared + log Tier 2
+     - 3
 
 Label Categories
 ================
@@ -209,7 +263,7 @@ Phase Labels
      - 37
    * - **phase:k3s**
      - Phase K3s (Q3 2026 - Q1 2027) - Kubernetes lightweight
-     - 11
+     - 12
    * - **phase:k8s**
      - Phase K8s (Q2 2027+) - Kubernetes production
      - 9
@@ -225,13 +279,13 @@ Priority Labels
      - Count
    * - **priority:critical**
      - Critical priority - blocking issue
-     - 21
+     - 25
    * - **priority:high**
      - High priority - important for next release
-     - 28
+     - 62
    * - **priority:medium**
      - Medium priority - planned work
-     - 17
+     - 25
    * - **priority:low**
      - Low priority - nice to have
      - 15

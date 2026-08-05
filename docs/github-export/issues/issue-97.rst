@@ -2,12 +2,12 @@
 Issue #97: feat: Business Intelligence & Analytics Dashboard
 =============================================================
 
-:State: **OPEN**
+:State: **CLOSED**
 :Milestone: Jalon 5: Mobile & API Publique 📱
-:Labels: enhancement,phase:k8s track:software,priority:low
+:Labels: enhancement,phase:k8s track:software,priority:low
 :Assignees: Unassigned
 :Created: 2025-11-01
-:Updated: 2025-11-13
+:Updated: 2026-03-25
 :URL: `View on GitHub <https://github.com/gilmry/koprogo/issues/97>`_
 
 Description

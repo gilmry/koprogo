@@ -1,10 +1,10 @@
-=======================================================================
+======================================================================
 Issue #205: feat: Charge Distribution System (Répartition des Charges)
-=======================================================================
+======================================================================
 
 :State: **CLOSED**
 :Milestone: Jalon 2: Conformité Légale Belge 📋
-:Labels: enhancement,phase:vps track:software,priority:critical finance,legal-compliance
+:Labels: enhancement,phase:vps track:software,priority:critical finance,legal-compliance
 :Assignees: Unassigned
 :Created: 2026-02-18
 :Updated: 2026-02-18

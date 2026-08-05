@@ -1,10 +1,10 @@
-========================================================================================
+=======================================================================================
 Issue #299: Workspace Cargo: Extraire crate partagé koprogo-core (Domain + Application)
-========================================================================================
+=======================================================================================
 
 :State: **OPEN**
 :Milestone: Jalon 5: Mobile & API Publique 📱
-:Labels: enhancement,track:software tauri
+:Labels: enhancement,track:software tauri
 :Assignees: Unassigned
 :Created: 2026-03-21
 :Updated: 2026-03-21

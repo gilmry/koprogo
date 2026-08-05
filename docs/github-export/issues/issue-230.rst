@@ -1,13 +1,13 @@
-==================================================================================
+=================================================================================
 Issue #230: R&D: Vote blockchain - Architecture smart contract et conformité GDPR
-==================================================================================
+=================================================================================
 
-:State: **OPEN**
+:State: **CLOSED**
 :Milestone: No milestone
-:Labels: priority:low,proptech:blockchain R&D
+:Labels: priority:low,proptech:blockchain R&D
 :Assignees: Unassigned
 :Created: 2026-03-07
-:Updated: 2026-03-07
+:Updated: 2026-03-24
 :URL: `View on GitHub <https://github.com/gilmry/koprogo/issues/230>`_
 
 Description

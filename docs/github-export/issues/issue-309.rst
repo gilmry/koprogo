@@ -1,13 +1,13 @@
-============================================================================================================================
+===================================================================================================================
 Issue #309: [Architecture] Connecter la chaîne d'approbation des dépenses (Ticket → Rapport → Validation → Dépense)
-============================================================================================================================
+===================================================================================================================
 
-:State: **OPEN**
+:State: **CLOSED**
 :Milestone: Jalon 3: Features Différenciantes 🎯
-:Labels: conformité,architecture
+:Labels: conformité,architecture
 :Assignees: Unassigned
 :Created: 2026-03-22
-:Updated: 2026-03-22
+:Updated: 2026-03-24
 :URL: `View on GitHub <https://github.com/gilmry/koprogo/issues/309>`_
 
 Description

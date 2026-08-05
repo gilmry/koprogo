@@ -4,7 +4,7 @@ Issue #69: Add Playwright E2E tests for unit management and document features
 
 :State: **CLOSED**
 :Milestone: Jalon 1: Sécurité & GDPR 🔒
-:Labels: release:v0.5.0,playwright
+:Labels: release:v0.5.0,playwright
 :Assignees: Unassigned
 :Created: 2025-10-31
 :Updated: 2026-03-07

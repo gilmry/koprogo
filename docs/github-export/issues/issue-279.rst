@@ -1,13 +1,13 @@
-===================================================================================================================================
+===============================================================================================================================
 Issue #279: feat: AGE agile — demande 1/5 quotités + concertation officielle + convocation auto distance (Art. 3.87 §2 al.2 CC)
-===================================================================================================================================
+===============================================================================================================================
 
-:State: **OPEN**
+:State: **CLOSED**
 :Milestone: Jalon 3: Features Différenciantes 🎯
-:Labels: enhancement,track:software legal-compliance,governance release:0.1.0
+:Labels: enhancement,track:software legal-compliance,governance release:0.1.0
 :Assignees: Unassigned
 :Created: 2026-03-11
-:Updated: 2026-03-14
+:Updated: 2026-03-24
 :URL: `View on GitHub <https://github.com/gilmry/koprogo/issues/279>`_
 
 Description

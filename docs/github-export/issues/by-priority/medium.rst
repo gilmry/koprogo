@@ -2,7 +2,7 @@
 Priority: MEDIUM
 ====================
 
-Total: 17 issues
+Total: 25 issues
 
 .. toctree::
    :maxdepth: 1
@@ -24,3 +24,11 @@ Total: 17 issues
    ../issue-232
    ../issue-234
    ../issue-273
+   ../issue-339
+   ../issue-341
+   ../issue-430
+   ../issue-438
+   ../issue-443
+   ../issue-453
+   ../issue-555
+   ../issue-617

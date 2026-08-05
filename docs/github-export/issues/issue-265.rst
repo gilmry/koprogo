@@ -1,13 +1,13 @@
-=========================================================================================
+========================================================================================
 Issue #265: MCP Tool: énergie (campagne_list, inscrire, offre, comparer_tarif, ag_point)
-=========================================================================================
+========================================================================================
 
-:State: **OPEN**
+:State: **CLOSED**
 :Milestone: Jalon 4: Automation & Intégrations 📅
-:Labels: enhancement,track:mcp release:0.2.0
+:Labels: enhancement,track:mcp release:0.2.0
 :Assignees: Unassigned
 :Created: 2026-03-10
-:Updated: 2026-03-15
+:Updated: 2026-03-24
 :URL: `View on GitHub <https://github.com/gilmry/koprogo/issues/265>`_
 
 Description

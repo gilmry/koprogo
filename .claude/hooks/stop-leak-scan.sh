@@ -30,11 +30,20 @@ if command -v gitleaks >/dev/null 2>&1; then
     leak_msg+="$(cat /tmp/gitleaks-wt.log 2>/dev/null || true)"$'\n'
   fi
 else
-  # Minimal fallback: scan diff for AWS keys, GitHub PATs, PEM blocks
+  # Minimal fallback: scan diff for AWS keys, GitHub PATs, PEM blocks.
+  # Only scan ADDED lines (^+, excluding the +++ file header) — grepping the
+  # full diff also matches unchanged context lines pulled into a hunk by an
+  # unrelated nearby edit, which false-positives on any file that documents
+  # these patterns as literal text (e.g. AGENT_GUARDRAILS.md describing the
+  # pretool-deny-secret-write.sh regexes, or AWS's canonical docs example
+  # access key, deliberately not spelled out here to avoid self-matching
+  # this very scanner). Confirmed false positive + fix authorized by
+  # @gilmry 2026-07-31 (AskUserQuestion), cf. docs/agent-activity/2026-07-31-fix-stop-leak-scan.md.
   diff_content="$(git diff HEAD 2>/dev/null; git diff --cached 2>/dev/null)"
-  if printf '%s' "$diff_content" | grep -qE 'AKIA[0-9A-Z]{16}|ghp_[A-Za-z0-9]{36}|BEGIN (RSA |OPENSSH |EC )?PRIVATE KEY'; then
+  added_lines="$(printf '%s' "$diff_content" | grep -E '^\+' | grep -vE '^\+\+\+')"
+  if printf '%s' "$added_lines" | grep -qE 'AKIA[0-9A-Z]{16}|ghp_[A-Za-z0-9]{36}|BEGIN (RSA |OPENSSH |EC )?PRIVATE KEY'; then
     leak_found=1
-    leak_msg="Pattern secret detected in diff (gitleaks not installed; fallback grep)."
+    leak_msg="Pattern secret detected in added lines (gitleaks not installed; fallback grep)."
   fi
 fi
 

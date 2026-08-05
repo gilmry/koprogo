@@ -4,7 +4,7 @@ Issue #158: E2E tests have 200+ compilation errors after API changes
 
 :State: **CLOSED**
 :Milestone: Jalon 1: Sécurité & GDPR 🔒
-:Labels: bug,priority:high release:v0.5.0,testing e2e
+:Labels: bug,priority:high release:v0.5.0,testing e2e
 :Assignees: Unassigned
 :Created: 2025-12-06
 :Updated: 2026-03-07

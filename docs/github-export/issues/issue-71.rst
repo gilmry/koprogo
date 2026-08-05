@@ -1,10 +1,10 @@
-==============================================================================
+============================================================================
 Issue #71: Étudier l'ajout des rôles Organization Admin et Building Manager
-==============================================================================
+============================================================================
 
 :State: **CLOSED**
 :Milestone: Jalon 4: Automation & Intégrations 📅
-:Labels: enhancement,release:v0.7.0
+:Labels: enhancement,release:v0.7.0
 :Assignees: Unassigned
 :Created: 2025-10-31
 :Updated: 2026-03-10

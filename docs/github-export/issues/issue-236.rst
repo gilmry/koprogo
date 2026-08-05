@@ -1,13 +1,13 @@
-==================================================================================================
+===============================================================================================
 Issue #236: R&D: Orchestration achats groupés d'énergie - Workflow courtier et intégration CREG
-==================================================================================================
+===============================================================================================
 
-:State: **OPEN**
+:State: **CLOSED**
 :Milestone: No milestone
 :Labels: R&D
 :Assignees: Unassigned
 :Created: 2026-03-07
-:Updated: 2026-03-07
+:Updated: 2026-03-24
 :URL: `View on GitHub <https://github.com/gilmry/koprogo/issues/236>`_
 
 Description
