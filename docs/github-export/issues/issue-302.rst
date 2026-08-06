@@ -1,13 +1,13 @@
-==================================================================================================
+==============================================================================================
 Issue #302: [Bug] CRITIQUE : Isolation multi-tenant — données non filtrées par organization_id
-==================================================================================================
+==============================================================================================
 
-:State: **OPEN**
+:State: **CLOSED**
 :Milestone: Jalon 1: Sécurité & GDPR 🔒
-:Labels: bug:critique,test:e2e
+:Labels: bug:critique,test:e2e
 :Assignees: Unassigned
 :Created: 2026-03-22
-:Updated: 2026-03-22
+:Updated: 2026-03-24
 :URL: `View on GitHub <https://github.com/gilmry/koprogo/issues/302>`_
 
 Description

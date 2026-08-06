@@ -2,12 +2,12 @@
 Issue #255: MCP Tool: copropriete_info + list_coproprietaires
 =============================================================
 
-:State: **OPEN**
+:State: **CLOSED**
 :Milestone: Jalon 4: Automation & Intégrations 📅
-:Labels: enhancement,track:mcp release:0.2.0
+:Labels: enhancement,track:mcp release:0.2.0
 :Assignees: Unassigned
 :Created: 2026-03-10
-:Updated: 2026-03-15
+:Updated: 2026-03-24
 :URL: `View on GitHub <https://github.com/gilmry/koprogo/issues/255>`_
 
 Description

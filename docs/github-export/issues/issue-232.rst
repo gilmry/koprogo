@@ -1,13 +1,13 @@
-====================================================================================
+==================================================================================
 Issue #232: R&D: API Publique v1 - Design OpenAPI et stratégie d'intégration tiers
-====================================================================================
+==================================================================================
 
-:State: **OPEN**
+:State: **CLOSED**
 :Milestone: No milestone
-:Labels: enhancement,priority:medium R&D
+:Labels: enhancement,priority:medium R&D
 :Assignees: Unassigned
 :Created: 2026-03-07
-:Updated: 2026-03-07
+:Updated: 2026-03-24
 :URL: `View on GitHub <https://github.com/gilmry/koprogo/issues/232>`_
 
 Description

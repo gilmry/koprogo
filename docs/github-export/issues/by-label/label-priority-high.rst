@@ -2,7 +2,7 @@
 Label: priority:high
 =====================
 
-Total: 28 issues
+Total: 62 issues
 
 .. toctree::
    :maxdepth: 1
@@ -35,3 +35,37 @@ Total: 28 issues
    ../issue-220
    ../issue-222
    ../issue-223
+   ../issue-335
+   ../issue-336
+   ../issue-337
+   ../issue-338
+   ../issue-340
+   ../issue-345
+   ../issue-346
+   ../issue-347
+   ../issue-348
+   ../issue-349
+   ../issue-350
+   ../issue-351
+   ../issue-354
+   ../issue-355
+   ../issue-426
+   ../issue-432
+   ../issue-433
+   ../issue-439
+   ../issue-455
+   ../issue-515
+   ../issue-521
+   ../issue-524
+   ../issue-525
+   ../issue-534
+   ../issue-540
+   ../issue-548
+   ../issue-553
+   ../issue-554
+   ../issue-556
+   ../issue-558
+   ../issue-559
+   ../issue-561
+   ../issue-584
+   ../issue-618

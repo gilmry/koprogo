@@ -2,12 +2,12 @@
 Issue #235: R&D: Backoffice prestataires PWA - Magic link, ordres de service et compte-rendu
 ============================================================================================
 
-:State: **OPEN**
+:State: **CLOSED**
 :Milestone: No milestone
 :Labels: R&D
 :Assignees: Unassigned
 :Created: 2026-03-07
-:Updated: 2026-03-07
+:Updated: 2026-03-24
 :URL: `View on GitHub <https://github.com/gilmry/koprogo/issues/235>`_
 
 Description

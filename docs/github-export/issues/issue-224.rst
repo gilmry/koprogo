@@ -1,13 +1,13 @@
-===============================================================================
+=============================================================================
 Issue #224: R&D: Architecture BI Dashboard - Pipeline d'agrégation de données
-===============================================================================
+=============================================================================
 
-:State: **OPEN**
+:State: **CLOSED**
 :Milestone: No milestone
-:Labels: enhancement,priority:medium R&D
+:Labels: enhancement,priority:medium R&D
 :Assignees: Unassigned
 :Created: 2026-03-07
-:Updated: 2026-03-07
+:Updated: 2026-03-24
 :URL: `View on GitHub <https://github.com/gilmry/koprogo/issues/224>`_
 
 Description

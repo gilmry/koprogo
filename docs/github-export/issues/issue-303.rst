@@ -1,13 +1,13 @@
-=========================================================================================
+=====================================================================================
 Issue #303: [Bug] Calcul tantièmes : total des lots ≠ total immeuble (1000 millièmes)
-=========================================================================================
+=====================================================================================
 
-:State: **OPEN**
+:State: **CLOSED**
 :Milestone: Jalon 2: Conformité Légale Belge 📋
-:Labels: bug:majeur,conformité test:e2e
+:Labels: bug:majeur,conformité test:e2e
 :Assignees: Unassigned
 :Created: 2026-03-22
-:Updated: 2026-03-22
+:Updated: 2026-03-24
 :URL: `View on GitHub <https://github.com/gilmry/koprogo/issues/303>`_
 
 Description

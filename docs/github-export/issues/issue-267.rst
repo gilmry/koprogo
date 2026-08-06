@@ -4,7 +4,7 @@ Issue #267: feat(infra): Provisionning K3s avec Ansible (installation + hardenin
 
 :State: **OPEN**
 :Milestone: Jalon 5: Mobile & API Publique 📱
-:Labels: phase:k3s,track:infrastructure priority:low
+:Labels: phase:k3s,track:infrastructure priority:low
 :Assignees: Unassigned
 :Created: 2026-03-10
 :Updated: 2026-03-15

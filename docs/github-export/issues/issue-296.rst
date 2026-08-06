@@ -4,7 +4,7 @@ Issue #296: Tauri Mobile: Application iOS & Android
 
 :State: **OPEN**
 :Milestone: Jalon 5: Mobile & API Publique 📱
-:Labels: enhancement,track:software tauri,mobile
+:Labels: enhancement,track:software tauri,mobile
 :Assignees: Unassigned
 :Created: 2026-03-21
 :Updated: 2026-03-21

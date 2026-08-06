@@ -1,13 +1,13 @@
-==================================================================================
+==============================================================================
 Issue #310: [Conformité] AG : Lien agenda-résolutions — bloquer votes hors ODJ
-==================================================================================
+==============================================================================
 
-:State: **OPEN**
+:State: **CLOSED**
 :Milestone: Jalon 2: Conformité Légale Belge 📋
 :Labels: conformité
 :Assignees: Unassigned
 :Created: 2026-03-22
-:Updated: 2026-03-22
+:Updated: 2026-03-24
 :URL: `View on GitHub <https://github.com/gilmry/koprogo/issues/310>`_
 
 Description

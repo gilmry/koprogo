@@ -4,7 +4,7 @@ Issue #134: feat: Complete Work Reports & Technical Inspections REST API
 
 :State: **CLOSED**
 :Milestone: Jalon 3: Features Différenciantes 🎯
-:Labels: enhancement,phase:vps track:software,priority:high
+:Labels: enhancement,phase:vps track:software,priority:high
 :Assignees: Unassigned
 :Created: 2025-11-18
 :Updated: 2026-02-17

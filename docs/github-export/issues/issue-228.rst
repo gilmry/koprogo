@@ -1,13 +1,13 @@
-=============================================================================
+===========================================================================
 Issue #228: R&D: Marketplace prestataires - Modèle business et vérification
-=============================================================================
+===========================================================================
 
-:State: **OPEN**
+:State: **CLOSED**
 :Milestone: No milestone
-:Labels: enhancement,priority:low R&D
+:Labels: enhancement,priority:low R&D
 :Assignees: Unassigned
 :Created: 2026-03-07
-:Updated: 2026-03-07
+:Updated: 2026-03-24
 :URL: `View on GitHub <https://github.com/gilmry/koprogo/issues/228>`_
 
 Description

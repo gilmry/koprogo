@@ -1,13 +1,13 @@
-=======================================================================================
+=====================================================================================
 Issue #233: R&D: Stratégies de test avancées (property-based, contract, load testing)
-=======================================================================================
+=====================================================================================
 
-:State: **OPEN**
+:State: **CLOSED**
 :Milestone: No milestone
-:Labels: priority:low,testing R&D
+:Labels: priority:low,testing R&D
 :Assignees: Unassigned
 :Created: 2026-03-07
-:Updated: 2026-03-16
+:Updated: 2026-03-24
 :URL: `View on GitHub <https://github.com/gilmry/koprogo/issues/233>`_
 
 Description

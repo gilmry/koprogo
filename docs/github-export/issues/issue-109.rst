@@ -4,7 +4,7 @@ Issue #109: feat: IoT Integration Platform (MQTT Broker + TimescaleDB)
 
 :State: **OPEN**
 :Milestone: Jalon 6: Intelligence & Expansion (PropTech 2.0) 🤖
-:Labels: enhancement,phase:k8s track:software,track:infrastructure priority:medium,automation proptech:iot
+:Labels: enhancement,phase:k8s track:software,track:infrastructure priority:medium,automation proptech:iot
 :Assignees: Unassigned
 :Created: 2025-11-07
 :Updated: 2026-02-18

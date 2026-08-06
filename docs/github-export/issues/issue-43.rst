@@ -4,7 +4,7 @@ Issue #43: feat(infra): Advanced security hardening (fail2ban, WAF, IDS)
 
 :State: **CLOSED**
 :Milestone: Jalon 1: Sécurité & GDPR 🔒
-:Labels: phase:vps,track:infrastructure priority:high
+:Labels: phase:vps,track:infrastructure priority:high
 :Assignees: Unassigned
 :Created: 2025-10-27
 :Updated: 2025-12-02

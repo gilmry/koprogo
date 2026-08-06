@@ -1,13 +1,13 @@
-=================================================================
+================================================================
 Issue #223: R&D: Authentification forte eID/itsme® pour votes AG
-=================================================================
+================================================================
 
-:State: **OPEN**
+:State: **CLOSED**
 :Milestone: No milestone
-:Labels: enhancement,priority:high security,legal-compliance R&D
+:Labels: enhancement,priority:high security,legal-compliance R&D
 :Assignees: Unassigned
 :Created: 2026-03-07
-:Updated: 2026-03-07
+:Updated: 2026-03-24
 :URL: `View on GitHub <https://github.com/gilmry/koprogo/issues/223>`_
 
 Description

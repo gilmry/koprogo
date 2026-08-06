@@ -2,12 +2,12 @@
 Issue #316: [RGPD] Art. 28 : DPA avec sous-traitants (Stripe, AWS S3, email)
 ============================================================================
 
-:State: **OPEN**
+:State: **CLOSED**
 :Milestone: Jalon 1: Sécurité & GDPR 🔒
 :Labels: gdpr
 :Assignees: Unassigned
 :Created: 2026-03-22
-:Updated: 2026-03-22
+:Updated: 2026-03-24
 :URL: `View on GitHub <https://github.com/gilmry/koprogo/issues/316>`_
 
 Description

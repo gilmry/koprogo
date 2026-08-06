@@ -1,13 +1,13 @@
-============================================================================
+===========================================================================
 Issue #301: [Bug] Permissions rôles : boutons admin visibles pour le syndic
-============================================================================
+===========================================================================
 
-:State: **OPEN**
+:State: **CLOSED**
 :Milestone: Jalon 1: Sécurité & GDPR 🔒
-:Labels: bug:majeur,test:e2e
+:Labels: bug:majeur,test:e2e
 :Assignees: Unassigned
 :Created: 2026-03-22
-:Updated: 2026-03-22
+:Updated: 2026-03-24
 :URL: `View on GitHub <https://github.com/gilmry/koprogo/issues/301>`_
 
 Description

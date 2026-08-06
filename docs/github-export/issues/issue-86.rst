@@ -4,7 +4,7 @@ Issue #86: feat: Multi-Channel Notifications System (Email + Push + In-app)
 
 :State: **CLOSED**
 :Milestone: Jalon 3: Features Différenciantes 🎯
-:Labels: enhancement,phase:vps track:software,priority:high automation
+:Labels: enhancement,phase:vps track:software,priority:high automation
 :Assignees: Unassigned
 :Created: 2025-11-01
 :Updated: 2026-03-21

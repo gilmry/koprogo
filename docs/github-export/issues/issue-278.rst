@@ -1,13 +1,13 @@
-==========================================================================================================
+==================================================================================================
 Issue #278: content(blog): Série 'Bâtiment & Copropriété' — 18 articles RST (5 séries thématiques)
-==========================================================================================================
+==================================================================================================
 
-:State: **OPEN**
+:State: **CLOSED**
 :Milestone: Jalon 3: Features Différenciantes 🎯
-:Labels: documentation,legal-compliance release:0.1.0
+:Labels: documentation,legal-compliance release:0.1.0
 :Assignees: Unassigned
 :Created: 2026-03-11
-:Updated: 2026-03-14
+:Updated: 2026-03-24
 :URL: `View on GitHub <https://github.com/gilmry/koprogo/issues/278>`_
 
 Description

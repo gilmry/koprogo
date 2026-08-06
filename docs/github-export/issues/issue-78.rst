@@ -4,7 +4,7 @@ Issue #78: feat: Security Hardening for Production (Rate limiting, 2FA, audit lo
 
 :State: **CLOSED**
 :Milestone: Jalon 1: Sécurité & GDPR 🔒
-:Labels: enhancement,phase:vps track:software,priority:critical security
+:Labels: enhancement,phase:vps track:software,priority:critical security
 :Assignees: Unassigned
 :Created: 2025-11-01
 :Updated: 2026-02-18

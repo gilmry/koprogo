@@ -4,7 +4,7 @@ Issue #66: E2E: Admin login timeouts after user logout in GDPR tests
 
 :State: **CLOSED**
 :Milestone: Jalon 1: Sécurité & GDPR 🔒
-:Labels: release:v0.5.0,e2e
+:Labels: release:v0.5.0,e2e
 :Assignees: Unassigned
 :Created: 2025-10-30
 :Updated: 2026-03-07

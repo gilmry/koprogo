@@ -4,7 +4,7 @@ Issue #206: feat(frontend): Complete UI action wiring for Community & Contractor
 
 :State: **CLOSED**
 :Milestone: Jalon 3: Features Différenciantes 🎯
-:Labels: enhancement,phase:vps track:software,priority:high release:v0.5.0
+:Labels: enhancement,phase:vps track:software,priority:high release:v0.5.0
 :Assignees: Unassigned
 :Created: 2026-02-19
 :Updated: 2026-03-07

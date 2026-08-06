@@ -4,7 +4,7 @@ Issue #204: feat: Statistics & Analytics Dashboard (Multi-role)
 
 :State: **CLOSED**
 :Milestone: Jalon 4: Automation & Intégrations 📅
-:Labels: enhancement,phase:vps track:software,priority:high
+:Labels: enhancement,phase:vps track:software,priority:high
 :Assignees: Unassigned
 :Created: 2026-02-18
 :Updated: 2026-02-18

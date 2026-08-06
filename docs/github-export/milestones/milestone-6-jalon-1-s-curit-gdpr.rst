@@ -1,13 +1,13 @@
-===============================
+==========================
 Jalon 1: Sécurité & GDPR 🔒
-===============================
+==========================
 
 :Number: 6
 :State: open
 :Due Date: No due date
-:Open Issues: 7
-:Closed Issues: 17
-:Total Issues: 24
+:Open Issues: 3
+:Closed Issues: 31
+:Total Issues: 34
 :URL: `View on GitHub <https://github.com/gilmry/koprogo/milestone/6>`_
 
 Description
@@ -30,7 +30,7 @@ Description
 
 **Effort estimé**: Solo dev (10-20h/sem) = 2-3 mois | Duo (40-60h/sem) = 6-8 semaines
 
-Issues (24)
+Issues (34)
 ========
 
 ✅ Issue #32: Rewrite E2E tests for unit_owner endpoints
@@ -129,51 +129,111 @@ Issues (24)
 :State: CLOSED
 :Link: `#210 <../issues/issue-210.rst>`_
 
-🔵 Issue #271: fix(legal): Quorum 50%+ validation AG (Art. 3.87 §5 CC)
-----------------------------------------------------------------------------
+✅ Issue #271: fix(legal): Quorum 50%+ validation AG (Art. 3.87 §5 CC)
+---------------------------------------------------------------------------
 
-:State: OPEN
+:State: CLOSED
 :Link: `#271 <../issues/issue-271.rst>`_
 
-🔵 Issue #272: fix(legal): Workflow 2e convocation si quorum non atteint (Art. 3.87 §5 CC)
-------------------------------------------------------------------------------------------------
+✅ Issue #272: fix(legal): Workflow 2e convocation si quorum non atteint (Art. 3.87 §5 CC)
+-----------------------------------------------------------------------------------------------
 
-:State: OPEN
+:State: CLOSED
 :Link: `#272 <../issues/issue-272.rst>`_
 
 ✅ Issue #273: fix(legal): Réduction de vote mandataire (Art. 3.87 §7 CC) — limite procurations ✅ done
------------------------------------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------------------------
 
 :State: CLOSED
 :Link: `#273 <../issues/issue-273.rst>`_
 
-🔵 Issue #301: [Bug] Permissions rôles : boutons admin visibles pour le syndic
-------------------------------------------------------------------------------------
+✅ Issue #301: [Bug] Permissions rôles : boutons admin visibles pour le syndic
+-----------------------------------------------------------------------------------
 
-:State: OPEN
+:State: CLOSED
 :Link: `#301 <../issues/issue-301.rst>`_
 
-🔵 Issue #302: [Bug] CRITIQUE : Isolation multi-tenant — données non filtrées par organization_id
-----------------------------------------------------------------------------------------------------------
+✅ Issue #302: [Bug] CRITIQUE : Isolation multi-tenant — données non filtrées par organization_id
+------------------------------------------------------------------------------------------------------
 
-:State: OPEN
+:State: CLOSED
 :Link: `#302 <../issues/issue-302.rst>`_
 
-🔵 Issue #315: [RGPD] Art. 13-14 : Publier politique de confidentialité
------------------------------------------------------------------------------
+✅ Issue #315: [RGPD] Art. 13-14 : Publier politique de confidentialité
+----------------------------------------------------------------------------
 
-:State: OPEN
+:State: CLOSED
 :Link: `#315 <../issues/issue-315.rst>`_
 
-🔵 Issue #316: [RGPD] Art. 28 : DPA avec sous-traitants (Stripe, AWS S3, email)
+✅ Issue #316: [RGPD] Art. 28 : DPA avec sous-traitants (Stripe, AWS S3, email)
 ------------------------------------------------------------------------------------
 
-:State: OPEN
+:State: CLOSED
 :Link: `#316 <../issues/issue-316.rst>`_
 
-🔵 Issue #317: [RGPD] Art. 33 : Procédure notification violation de données (72h)
-----------------------------------------------------------------------------------------
+✅ Issue #317: [RGPD] Art. 33 : Procédure notification violation de données (72h)
+--------------------------------------------------------------------------------------
+
+:State: CLOSED
+:Link: `#317 <../issues/issue-317.rst>`_
+
+✅ Issue #326: feat(gdpr): Gestion du consentement utilisateur (GDPR Art. 7)
+---------------------------------------------------------------------------------
+
+:State: CLOSED
+:Link: `#326 <../issues/issue-326.rst>`_
+
+✅ Issue #327: feat(security): Gestion des incidents de sécurité (GDPR Art. 33 registre)
+---------------------------------------------------------------------------------------------
+
+:State: CLOSED
+:Link: `#327 <../issues/issue-327.rst>`_
+
+✅ Issue #328: feat(security): Gestion des clés API (API Keys CRUD + hashing SHA-256)
+------------------------------------------------------------------------------------------
+
+:State: CLOSED
+:Link: `#328 <../issues/issue-328.rst>`_
+
+✅ Issue #329: feat(gdpr): Registre des traitements GDPR Art. 30
+---------------------------------------------------------------------
+
+:State: CLOSED
+:Link: `#329 <../issues/issue-329.rst>`_
+
+🔵 Issue #331: test(playwright): 48 fichiers E2E Playwright frontend couvrant tous les modules
+---------------------------------------------------------------------------------------------------
 
 :State: OPEN
-:Link: `#317 <../issues/issue-317.rst>`_
+:Link: `#331 <../issues/issue-331.rst>`_
+
+✅ Issue #337: fix: Consent handlers 100% stub — #326 fermée mais aucune persistance DB
+--------------------------------------------------------------------------------------------
+
+:State: CLOSED
+:Link: `#337 <../issues/issue-337.rst>`_
+
+✅ Issue #340: fix: RBAC manquant sur 9 endpoints gamification (TODO: Check admin role)
+--------------------------------------------------------------------------------------------
+
+:State: CLOSED
+:Link: `#340 <../issues/issue-340.rst>`_
+
+✅ Issue #351: docs: harmoniser documentation avec état réel du code (mars 2026)
+-------------------------------------------------------------------------------------
+
+:State: CLOSED
+:Link: `#351 <../issues/issue-351.rst>`_
+
+🔵 Issue #354: refactor(infra): Tests IaC manquants — terraform validate, ansible-lint, molecule, conftest ISO 27001
+-------------------------------------------------------------------------------------------------------------------------
+
+:State: OPEN
+:Link: `#354 <../issues/issue-354.rst>`_
+
+🔵 Issue #355: refactor(infra): Restructuration IaC — repo séparé, tests, policy-as-code
+---------------------------------------------------------------------------------------------
+
+:State: OPEN
+:Link: `#355 <../issues/issue-355.rst>`_
 

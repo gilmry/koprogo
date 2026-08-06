@@ -1,13 +1,13 @@
-=======================================
+===================================
 Jalon 3: Features Différenciantes 🎯
-=======================================
+===================================
 
 :Number: 8
 :State: open
 :Due Date: No due date
-:Open Issues: 9
-:Closed Issues: 15
-:Total Issues: 24
+:Open Issues: 0
+:Closed Issues: 28
+:Total Issues: 28
 :URL: `View on GitHub <https://github.com/gilmry/koprogo/milestone/8>`_
 
 Description
@@ -39,11 +39,11 @@ Description
 
 **Effort estimé**: Solo = 5-8 mois | Duo = 10-14 sem | Équipe = 5-7 sem
 
-Issues (24)
+Issues (28)
 ========
 
 ✅ Issue #46: feat: Implement meeting voting system (Résolutions & votes)
---------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
 
 :State: CLOSED
 :Link: `#46 <../issues/issue-46.rst>`_
@@ -132,57 +132,81 @@ Issues (24)
 :State: CLOSED
 :Link: `#206 <../issues/issue-206.rst>`_
 
-🔵 Issue #274: feat: AG Visioconférence — entité AgSession + quorum combiné (Art. 3.87 §1 CC)
---------------------------------------------------------------------------------------------------------
+✅ Issue #274: feat: AG Visioconférence — entité AgSession + quorum combiné (Art. 3.87 §1 CC)
+--------------------------------------------------------------------------------------------------
 
-:State: OPEN
+:State: CLOSED
 :Link: `#274 <../issues/issue-274.rst>`_
 
-🔵 Issue #275: feat: Backoffice prestataires PWA — photo + compte-rendu + validation CdC → paiement
-------------------------------------------------------------------------------------------------------------
+✅ Issue #275: feat: Backoffice prestataires PWA — photo + compte-rendu + validation CdC → paiement
+--------------------------------------------------------------------------------------------------------
 
-:State: OPEN
+:State: CLOSED
 :Link: `#275 <../issues/issue-275.rst>`_
 
-🔵 Issue #276: feat: Marketplace corps de métier + enquêtes satisfaction (ancre L13 Art. 3.89 §5 12° CC)
------------------------------------------------------------------------------------------------------------------
+✅ Issue #276: feat: Marketplace corps de métier + enquêtes satisfaction (ancre L13 Art. 3.89 §5 12° CC)
+-------------------------------------------------------------------------------------------------------------
 
-:State: OPEN
+:State: CLOSED
 :Link: `#276 <../issues/issue-276.rst>`_
 
-🔵 Issue #277: feat: Guide légal contextuel UI — LegalHelper + AG Wizard (docs/legal/ source de vérité)
------------------------------------------------------------------------------------------------------------------
+✅ Issue #277: feat: Guide légal contextuel UI — LegalHelper + AG Wizard (docs/legal/ source de vérité)
+------------------------------------------------------------------------------------------------------------
 
-:State: OPEN
+:State: CLOSED
 :Link: `#277 <../issues/issue-277.rst>`_
 
-🔵 Issue #278: content(blog): Série 'Bâtiment & Copropriété' — 18 articles RST (5 séries thématiques)
-------------------------------------------------------------------------------------------------------------------
+✅ Issue #278: content(blog): Série 'Bâtiment & Copropriété' — 18 articles RST (5 séries thématiques)
+----------------------------------------------------------------------------------------------------------
 
-:State: OPEN
+:State: CLOSED
 :Link: `#278 <../issues/issue-278.rst>`_
 
-🔵 Issue #279: feat: AGE agile — demande 1/5 quotités + concertation officielle + convocation auto distance (Art. 3.87 §2 al.2 CC)
--------------------------------------------------------------------------------------------------------------------------------------------
+✅ Issue #279: feat: AGE agile — demande 1/5 quotités + concertation officielle + convocation auto distance (Art. 3.87 §2 al.2 CC)
+---------------------------------------------------------------------------------------------------------------------------------------
 
-:State: OPEN
+:State: CLOSED
 :Link: `#279 <../issues/issue-279.rst>`_
 
-🔵 Issue #280: feat: Orchestrateur neutre achat groupé énergie — zéro commission + maisons individuelles + CER (extension BC8)
-----------------------------------------------------------------------------------------------------------------------------------------
+✅ Issue #280: feat: Orchestrateur neutre achat groupé énergie — zéro commission + maisons individuelles + CER (extension BC8)
+-----------------------------------------------------------------------------------------------------------------------------------
 
-:State: OPEN
+:State: CLOSED
 :Link: `#280 <../issues/issue-280.rst>`_
 
-🔵 Issue #300: feat(iot): MQTT Home Assistant + BOINC Grid Computing (IoT Phase 1)
+✅ Issue #300: feat(iot): MQTT Home Assistant + BOINC Grid Computing (IoT Phase 1)
 ---------------------------------------------------------------------------------------
 
-:State: OPEN
+:State: CLOSED
 :Link: `#300 <../issues/issue-300.rst>`_
 
-🔵 Issue #309: [Architecture] Connecter la chaîne d'approbation des dépenses (Ticket → Rapport → Validation → Dépense)
-------------------------------------------------------------------------------------------------------------------------------------
+✅ Issue #309: [Architecture] Connecter la chaîne d'approbation des dépenses (Ticket → Rapport → Validation → Dépense)
+---------------------------------------------------------------------------------------------------------------------------
 
-:State: OPEN
+:State: CLOSED
 :Link: `#309 <../issues/issue-309.rst>`_
+
+✅ Issue #335: fix: Marketplace handlers 100% stub — #276 fermée mais aucune implémentation DB
+---------------------------------------------------------------------------------------------------
+
+:State: CLOSED
+:Link: `#335 <../issues/issue-335.rst>`_
+
+✅ Issue #336: fix: Individual member handlers 100% stub — #280 fermée mais aucune implémentation DB
+---------------------------------------------------------------------------------------------------------
+
+:State: CLOSED
+:Link: `#336 <../issues/issue-336.rst>`_
+
+✅ Issue #338: bug: energy_bill_upload — Uuid::nil() hardcodé pour unit_id casse get_my_uploads()
+------------------------------------------------------------------------------------------------------
+
+:State: CLOSED
+:Link: `#338 <../issues/issue-338.rst>`_
+
+✅ Issue #341: fix: Paiement auto contractor post-validation non implémenté (TODO B16-6)
+---------------------------------------------------------------------------------------------
+
+:State: CLOSED
+:Link: `#341 <../issues/issue-341.rst>`_
 

@@ -2,7 +2,7 @@
 Label: track:software
 ======================
 
-Total: 63 issues
+Total: 147 issues
 
 .. toctree::
    :maxdepth: 1
@@ -70,3 +70,87 @@ Total: 63 issues
    ../issue-298
    ../issue-299
    ../issue-300
+   ../issue-335
+   ../issue-336
+   ../issue-337
+   ../issue-338
+   ../issue-339
+   ../issue-340
+   ../issue-341
+   ../issue-354
+   ../issue-355
+   ../issue-378
+   ../issue-379
+   ../issue-380
+   ../issue-381
+   ../issue-382
+   ../issue-383
+   ../issue-384
+   ../issue-385
+   ../issue-388
+   ../issue-389
+   ../issue-390
+   ../issue-391
+   ../issue-392
+   ../issue-393
+   ../issue-395
+   ../issue-396
+   ../issue-397
+   ../issue-398
+   ../issue-399
+   ../issue-400
+   ../issue-401
+   ../issue-402
+   ../issue-430
+   ../issue-433
+   ../issue-438
+   ../issue-439
+   ../issue-443
+   ../issue-455
+   ../issue-550
+   ../issue-552
+   ../issue-553
+   ../issue-554
+   ../issue-555
+   ../issue-556
+   ../issue-557
+   ../issue-558
+   ../issue-559
+   ../issue-560
+   ../issue-561
+   ../issue-562
+   ../issue-563
+   ../issue-564
+   ../issue-565
+   ../issue-566
+   ../issue-567
+   ../issue-568
+   ../issue-569
+   ../issue-570
+   ../issue-571
+   ../issue-572
+   ../issue-573
+   ../issue-574
+   ../issue-575
+   ../issue-576
+   ../issue-577
+   ../issue-578
+   ../issue-579
+   ../issue-580
+   ../issue-581
+   ../issue-582
+   ../issue-583
+   ../issue-584
+   ../issue-585
+   ../issue-586
+   ../issue-587
+   ../issue-588
+   ../issue-589
+   ../issue-590
+   ../issue-591
+   ../issue-592
+   ../issue-593
+   ../issue-594
+   ../issue-595
+   ../issue-617
+   ../issue-618

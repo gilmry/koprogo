@@ -1,13 +1,13 @@
-====================================================================================================
+================================================================================================
 Issue #275: feat: Backoffice prestataires PWA — photo + compte-rendu + validation CdC → paiement
-====================================================================================================
+================================================================================================
 
-:State: **OPEN**
+:State: **CLOSED**
 :Milestone: Jalon 3: Features Différenciantes 🎯
-:Labels: enhancement,track:software maintenance,release:0.1.0
+:Labels: enhancement,track:software maintenance,release:0.1.0
 :Assignees: Unassigned
 :Created: 2026-03-11
-:Updated: 2026-03-14
+:Updated: 2026-03-24
 :URL: `View on GitHub <https://github.com/gilmry/koprogo/issues/275>`_
 
 Description

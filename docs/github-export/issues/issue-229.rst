@@ -1,13 +1,13 @@
-===============================================================
+==============================================================
 Issue #229: R&D: Empreinte carbone et reporting ESG/durabilité
-===============================================================
+==============================================================
 
-:State: **OPEN**
+:State: **CLOSED**
 :Milestone: No milestone
-:Labels: priority:low,proptech:energy R&D
+:Labels: priority:low,proptech:energy R&D
 :Assignees: Unassigned
 :Created: 2026-03-07
-:Updated: 2026-03-07
+:Updated: 2026-03-24
 :URL: `View on GitHub <https://github.com/gilmry/koprogo/issues/229>`_
 
 Description

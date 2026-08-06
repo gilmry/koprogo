@@ -4,7 +4,7 @@ Issue #67: Phase 13-14: Final GDPR Documentation and QA Review
 
 :State: **CLOSED**
 :Milestone: Jalon 4: Automation & Intégrations 📅
-:Labels: documentation,release:v0.7.0
+:Labels: documentation,release:v0.7.0
 :Assignees: Unassigned
 :Created: 2025-10-30
 :Updated: 2026-03-10

@@ -4,7 +4,7 @@ Issue #200: feat: Double-Entry Bookkeeping (Journal Entries)
 
 :State: **CLOSED**
 :Milestone: Jalon 2: Conformité Légale Belge 📋
-:Labels: enhancement,phase:vps track:software,priority:critical finance,legal-compliance
+:Labels: enhancement,phase:vps track:software,priority:critical finance,legal-compliance
 :Assignees: Unassigned
 :Created: 2026-02-18
 :Updated: 2026-02-18

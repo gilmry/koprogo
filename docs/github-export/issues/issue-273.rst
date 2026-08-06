@@ -1,10 +1,10 @@
-=========================================================================================================
+===================================================================================================
 Issue #273: fix(legal): Réduction de vote mandataire (Art. 3.87 §7 CC) — limite procurations ✅ done
-=========================================================================================================
+===================================================================================================
 
 :State: **CLOSED**
 :Milestone: Jalon 1: Sécurité & GDPR 🔒
-:Labels: bug,priority:medium legal-compliance,governance release:0.1.0
+:Labels: bug,priority:medium legal-compliance,governance release:0.1.0
 :Assignees: Unassigned
 :Created: 2026-03-11
 :Updated: 2026-03-21

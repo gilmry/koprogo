@@ -1,13 +1,13 @@
-========================================================================================
+=======================================================================================
 Issue #231: R&D: Stratégie de scaling infrastructure - K8s timing et partitionnement DB
-========================================================================================
+=======================================================================================
 
-:State: **OPEN**
+:State: **CLOSED**
 :Milestone: No milestone
-:Labels: track:infrastructure,priority:medium R&D
+:Labels: track:infrastructure,priority:medium R&D
 :Assignees: Unassigned
 :Created: 2026-03-07
-:Updated: 2026-03-22
+:Updated: 2026-03-24
 :URL: `View on GitHub <https://github.com/gilmry/koprogo/issues/231>`_
 
 Description
