@@ -22,9 +22,10 @@ impl PostgresUserRoleRepository {
             .parse()
             .map_err(|e| format!("Invalid role: {}", e))?;
 
-        // Story 3.5 — `valid_until` / `delegated_from_user_id` are best-effort
-        // reads: legacy SELECT queries that do not yet project these columns
-        // simply default to `None`, preserving native (permanent) semantics.
+        // Story 3.5 — `valid_until` / `delegated_from_user_id`. `.ok()` kept
+        // defensive (all queries now project both columns) rather than
+        // `.map_err(...)?`, so a future query that forgets them degrades to
+        // `None` (permanent) instead of hard-failing.
         let valid_until = row.try_get("valid_until").ok();
         let delegated_from_user_id = row.try_get("delegated_from_user_id").ok();
 
@@ -59,9 +60,9 @@ impl UserRoleRepository for PostgresUserRoleRepository {
     async fn create(&self, assignment: &UserRoleAssignment) -> Result<UserRoleAssignment, String> {
         let row = sqlx::query(
             r#"
-            INSERT INTO user_roles (id, user_id, role, organization_id, is_primary, created_at, updated_at)
-            VALUES ($1, $2, $3, $4, $5, $6, $7)
-            RETURNING id, user_id, role, organization_id, is_primary, created_at, updated_at
+            INSERT INTO user_roles (id, user_id, role, organization_id, is_primary, valid_until, delegated_from_user_id, created_at, updated_at)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+            RETURNING id, user_id, role, organization_id, is_primary, valid_until, delegated_from_user_id, created_at, updated_at
             "#,
         )
         .bind(assignment.id)
@@ -69,6 +70,8 @@ impl UserRoleRepository for PostgresUserRoleRepository {
         .bind(assignment.role.to_string())
         .bind(assignment.organization_id)
         .bind(assignment.is_primary)
+        .bind(assignment.valid_until)
+        .bind(assignment.delegated_from_user_id)
         .bind(assignment.created_at)
         .bind(assignment.updated_at)
         .fetch_one(&self.pool)
@@ -81,7 +84,7 @@ impl UserRoleRepository for PostgresUserRoleRepository {
     async fn list_for_user(&self, user_id: Uuid) -> Result<Vec<UserRoleAssignment>, String> {
         let rows = sqlx::query(
             r#"
-            SELECT id, user_id, role, organization_id, is_primary, created_at, updated_at
+            SELECT id, user_id, role, organization_id, is_primary, valid_until, delegated_from_user_id, created_at, updated_at
             FROM user_roles
             WHERE user_id = $1
             ORDER BY is_primary DESC, created_at ASC
@@ -107,7 +110,7 @@ impl UserRoleRepository for PostgresUserRoleRepository {
 
         let rows = sqlx::query(
             r#"
-            SELECT id, user_id, role, organization_id, is_primary, created_at, updated_at
+            SELECT id, user_id, role, organization_id, is_primary, valid_until, delegated_from_user_id, created_at, updated_at
             FROM user_roles
             WHERE user_id = ANY($1)
             ORDER BY user_id, is_primary DESC, created_at ASC
@@ -146,8 +149,8 @@ impl UserRoleRepository for PostgresUserRoleRepository {
         for a in assignments {
             sqlx::query(
                 r#"
-                INSERT INTO user_roles (id, user_id, role, organization_id, is_primary, created_at, updated_at)
-                VALUES ($1, $2, $3, $4, $5, NOW(), NOW())
+                INSERT INTO user_roles (id, user_id, role, organization_id, is_primary, valid_until, delegated_from_user_id, created_at, updated_at)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), NOW())
                 "#,
             )
             .bind(a.id)
@@ -155,6 +158,8 @@ impl UserRoleRepository for PostgresUserRoleRepository {
             .bind(a.role.to_string())
             .bind(a.organization_id)
             .bind(a.is_primary)
+            .bind(a.valid_until)
+            .bind(a.delegated_from_user_id)
             .execute(&mut *tx)
             .await
             .map_err(|e| format!("Failed to insert role: {}", e))?;
@@ -169,7 +174,7 @@ impl UserRoleRepository for PostgresUserRoleRepository {
     async fn find_by_id(&self, id: Uuid) -> Result<Option<UserRoleAssignment>, String> {
         let row = sqlx::query(
             r#"
-            SELECT id, user_id, role, organization_id, is_primary, created_at, updated_at
+            SELECT id, user_id, role, organization_id, is_primary, valid_until, delegated_from_user_id, created_at, updated_at
             FROM user_roles
             WHERE id = $1
             "#,
@@ -213,7 +218,7 @@ impl UserRoleRepository for PostgresUserRoleRepository {
             UPDATE user_roles
             SET is_primary = true, updated_at = NOW()
             WHERE id = $1 AND user_id = $2
-            RETURNING id, user_id, role, organization_id, is_primary, created_at, updated_at
+            RETURNING id, user_id, role, organization_id, is_primary, valid_until, delegated_from_user_id, created_at, updated_at
             "#,
         )
         .bind(role_id)
