@@ -3427,5 +3427,15 @@
   "meeting.complete.blockers_title": "Om deze AV af te sluiten, vervul de voorwaarden:",
   "meeting.complete.toast_title": "Afsluiten onmogelijk",
   "meeting.complete.toast_message": "{n, plural, =1 {1 ontbrekende voorwaarde} other {{n} ontbrekende voorwaarden}} (zie details op de vergaderingsfiche)",
-  "_i18n_version": "2026-03-26"
+  "_i18n_version": "2026-03-26",
+  "scope": {
+    "searchPlaceholder": "Een gebouw zoeken…",
+    "selectBuilding": "Een gebouw selecteren",
+    "forbidden": "Toegang geweigerd",
+    "clear": "Selectie wissen",
+    "noBuildings": "Geen gebouw binnen uw bereik",
+    "favorite": "Toevoegen aan favorieten",
+    "unfavorite": "Verwijderen uit favorieten",
+    "portfolios": "portefeuilles"
+  }
 }

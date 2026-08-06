@@ -134,15 +134,15 @@ const { title, showNav = true, requireAuth = false, showFooter = true } = Astro.
 		<!-- Route Guard - Check access before rendering page -->
 		<RouteGuard client:load />
 
-		<!-- Story 2.2 — Building selector global top-left (visible si syndic/admin/accountant) -->
-		{showNav && <BuildingSelectorBar client:load />}
-
 		{showNav && <Navigation client:load />}
 		{requireAuth && <SessionManager client:load />}
 
 		<!-- Content wrapper: offset by sidebar on desktop, spacer for mobile header -->
 		<div class:list={['min-h-screen flex flex-col', showNav && 'lg:ml-60']}>
 			{showNav && <div class="h-14 lg:hidden" aria-hidden="true"></div>}
+			<!-- Story 2.2 — Building selector : overlay top-right en mobile, barre en flux normal
+			     en desktop (évite le chevauchement avec le contenu de page, cf. issue organisations) -->
+			{showNav && <BuildingSelectorBar client:load />}
 			{showNav && <ContextBanner client:load />}
 			<main id="main-content" class="flex-1" role="main" tabindex="-1">
 				<slot />

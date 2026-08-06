@@ -209,6 +209,13 @@
         >
           ×
         </button>
+      {:else}
+        <span
+          aria-hidden="true"
+          class="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-xs text-gray-400"
+        >
+          ▾
+        </span>
       {/if}
     </div>
 
