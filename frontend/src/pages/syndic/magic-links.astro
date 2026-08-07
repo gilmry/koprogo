@@ -7,7 +7,7 @@
 // Le composant est mount client-only (`client:load`) car il a un $state
 // sensible (token brut) qui ne doit JAMAIS être SSR-leak côté HTML.
 import Layout from "../../layouts/Layout.astro";
-import MagicLinkIssueForm from "../../lib/components/syndic/MagicLinkIssueForm.svelte";
+import MagicLinksPage from "../../lib/components/syndic/MagicLinksPage.svelte";
 ---
 
 <Layout title="Liens magiques — Syndic — KoproGo">
@@ -22,7 +22,7 @@ import MagicLinkIssueForm from "../../lib/components/syndic/MagicLinkIssueForm.s
         single-use et expire à la date choisie.
       </p>
 
-      <MagicLinkIssueForm client:load />
+      <MagicLinksPage client:load />
 
       <div class="mt-6">
         <a

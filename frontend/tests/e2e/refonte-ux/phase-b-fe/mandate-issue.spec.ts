@@ -118,14 +118,14 @@ async function createBuilding(
 }
 
 /**
- * Register un user notaire (rôle `notary` — Story 3.1).
+ * Register un user notaire (rôle `notary` — Story 3.1, `UserRole::Notary`
+ * accepté directement par `/auth/register`, cf. `user.rs` FromStr).
  *
- * NOTE : selon l'état du backend, le rôle `notary` peut être assigné via
- * un endpoint `/role-assignments` (Story B0bis) plutôt que `/auth/register`.
- * Pour éviter une dépendance dure à cet endpoint, on register `owner` puis
- * on tente l'upgrade rôle via /role-assignments (best-effort — si l'endpoint
- * 404, l'AC @happy reste valide car le mandat backend lui-même ne contrôle
- * que `subject_user_id` existe).
+ * Registré avec le rôle `notary` directement : `MandatesPage.svelte`
+ * (Story S2, docs/maury/syndic-org-users-endpoint) ne propose comme
+ * destinataires de mandat que les rôles `ELIGIBLE_ROLES` (lawyer, notary,
+ * amo, architect, bet, warden) — un user en `owner` n'apparaîtrait jamais
+ * dans le sélecteur.
  */
 async function registerNotary(
   request: APIRequestContext,
@@ -140,11 +140,43 @@ async function registerNotary(
       password: TEST_PASSWORD,
       first_name: "Notaire",
       last_name: `Test${ts}`,
-      role: "owner",
+      role: "notary",
       organization_id: cabinetId,
     },
   });
   expect(resp.status(), `register notary`).toBeLessThan(400);
+  const body = await resp.json();
+  return {
+    token: body.token,
+    email,
+    userId: body.user?.id || body.id || body.user_id || "",
+  };
+}
+
+/**
+ * Register un user syndic — acteur réel de la page `/syndic/mandates`
+ * (cf. règle CRITICAL.md #9, corrige le contournement admin=syndic-proxy
+ * identifié par l'investigation C3, docs/agent-activity/
+ * 2026-08-06-issue617-c3-investigation.md).
+ */
+async function registerSyndic(
+  request: APIRequestContext,
+  cabinetId: string,
+  prefix: string,
+): Promise<{ token: string; email: string; userId: string }> {
+  const ts = Date.now();
+  const email = `syndic-${prefix}-${ts}@example.com`;
+  const resp = await request.post(`${API_BASE}/auth/register`, {
+    data: {
+      email,
+      password: TEST_PASSWORD,
+      first_name: "Syndic",
+      last_name: `Test${ts}`,
+      role: "syndic",
+      organization_id: cabinetId,
+    },
+  });
+  expect(resp.status(), `register syndic`).toBeLessThan(400);
   const body = await resp.json();
   return {
     token: body.token,
@@ -202,9 +234,10 @@ test.describe("Story B3 — MandateIssueForm + List (multi-rôle 3 acteurs)", ()
     const acp = await createAcp(request, adminToken, cabinet.id, "B3");
     const building = await createBuilding(request, adminToken, acp.id, "B3");
     const notary = await registerNotary(request, cabinet.id, "B3");
+    const syndic = await registerSyndic(request, cabinet.id, "B3");
 
-    // ─── Phase 2 : login admin (= role syndic-like superadmin in-context) ─
-    await uiLogin(page, ADMIN_EMAIL, ADMIN_PASSWORD);
+    // ─── Phase 2 : login syndic réel (acteur métier de /syndic/mandates) ──
+    await uiLogin(page, syndic.email, TEST_PASSWORD);
 
     // ─── Phase 3 : naviguer vers /syndic/mandates ────────────────────────
     await page.goto("/syndic/mandates", { waitUntil: "networkidle" });
@@ -266,7 +299,7 @@ test.describe("Story B3 — MandateIssueForm + List (multi-rôle 3 acteurs)", ()
       .first();
     await expect(freshBadge).toBeVisible({ timeout: 10_000 });
 
-    // ─── Phase 6 : logout admin → login notaire ──────────────────────────
+    // ─── Phase 6 : logout syndic → login notaire ─────────────────────────
     await logoutUi(page);
     await uiLogin(page, notary.email, TEST_PASSWORD);
 

@@ -72,18 +72,20 @@ export default defineConfig({
       // ✅ (bug de test), C6 syndic-response-sla.spec.ts ✅ (débloqué par le
       // fix casse email de C4), C7 technical-spec-flow.spec.ts ✅ (bug
       // produit réel : status snake_case du backend comparé en PascalCase
-      // côté FE) et C8 contractor-eval.spec.ts ✅ (acteur admin→syndic, la
-      // branche création reste vacuously skip tant que #691 n'est pas
-      // implémenté — GET /users toujours 403 pour un syndic). Les autres
-      // restent exclus tant que non stabilisés (cf. docs/agent-activity/
-      // 2026-08-06-issue617-c*.md et PR #690/#691).
+      // côté FE) et C8 contractor-eval.spec.ts ✅. 2026-08-07 (Story S2,
+      // docs/maury/syndic-org-users-endpoint) : magic-link-issue.spec.ts et
+      // mandate-issue.spec.ts ✅ — débloqués par l'endpoint org-scopé
+      // `GET /organizations/{id}/users` (Story S1, #691), la branche de
+      // création (précédemment vacuously skip faute de sélecteur peuplé)
+      // s'exécute désormais réellement. role-assignment (C1) reste exclu
+      // (fix distinct, cf. PR #690, pas encore intégré sur cette branche) ;
+      // role-delegation (C4) reste exclu volontairement — hors scope PRD §4
+      // (cf. docs/agent-activity/2026-08-06-issue617-c*.md).
       testIgnore: [
         /scenarios\//,
         /smoke\//,
         /characterization\//,
         /refonte-ux\/phase-b-fe\/role-assignment\.spec\.ts/,
-        /refonte-ux\/phase-b-fe\/magic-link-issue\.spec\.ts/,
-        /refonte-ux\/phase-b-fe\/mandate-issue\.spec\.ts/,
         /refonte-ux\/phase-b-fe\/role-delegation\.spec\.ts/,
       ],
     },

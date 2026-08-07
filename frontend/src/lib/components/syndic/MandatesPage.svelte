@@ -13,11 +13,13 @@
   // composant `client:load`. Ce wrapper joue ce rôle d'« entry component ».
 
   import { onMount } from "svelte";
+  import { get } from "svelte/store";
   import { _ } from "../../i18n";
   import { listMandates, type MandateResponse } from "../../api/mandates";
   import { listBuildings } from "../../api/buildings";
   import { listAcps } from "../../api/acps";
-  import { api } from "../../api";
+  import { listOrganizationUsers } from "../../api/organizations";
+  import { authStore } from "../../../stores/auth";
   import MandateList from "./MandateList.svelte";
   import MandateIssueForm from "./MandateIssueForm.svelte";
 
@@ -31,24 +33,25 @@
   let showForm = $state<boolean>(false);
   let loading = $state<boolean>(true);
 
-  type UserLike = {
-    id: string;
-    email: string;
-    first_name?: string;
-    last_name?: string;
-    role: string;
-  };
-
   async function loadInitial(): Promise<void> {
     loading = true;
     try {
+      // organizationId du syndic connecté (endpoint org-scopé — cf. Story S1
+      // docs/maury/syndic-org-users-endpoint). `organization_id` en fallback
+      // pour rester tolérant à la forme brute stockée par authStore.
+      const authUser = get(authStore).user as
+        | { organizationId?: string; organization_id?: string }
+        | undefined;
+      const organizationId =
+        authUser?.organizationId ?? authUser?.organization_id ?? "";
+
       const [m, b, a, users] = await Promise.all([
         listMandates().catch(() => [] as MandateResponse[]),
         listBuildings(1, 100).catch(() => ({ data: [], pagination: {} as never })),
         listAcps().catch(() => []),
-        api
-          .get<{ data: UserLike[] }>("/users")
-          .catch(() => ({ data: [] as UserLike[] })),
+        organizationId
+          ? listOrganizationUsers(organizationId).catch(() => ({ data: [] }))
+          : Promise.resolve({ data: [] }),
       ]);
 
       mandates = m;

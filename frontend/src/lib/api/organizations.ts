@@ -56,3 +56,32 @@ export async function tryGetOrganizationName(
     return null;
   }
 }
+
+// Story S2 (docs/maury/syndic-org-users-endpoint) — client de
+// `GET /organizations/{id}/users`, org-scopé (syndic/accountant sur leur
+// propre org, superadmin sur n'importe laquelle). Remplace les appels
+// `GET /users` (superadmin-only, 403 pour un syndic réel) dans les 3
+// wrappers `MagicLinksPage`/`MandatesPage`/`ContractorEvaluationsPage`.
+
+/** Subset de `UserResponse` requis par les sélecteurs syndic (mandataire,
+ *  contractor, destinataire magic link). Dupliqué localement dans les 3
+ *  wrappers avant cette story — factorisé ici. */
+export interface OrganizationUserSummary {
+  id: string;
+  email: string;
+  first_name?: string;
+  last_name?: string;
+  role: string;
+}
+
+interface OrganizationUsersResponse {
+  data: OrganizationUserSummary[];
+}
+
+export async function listOrganizationUsers(
+  organizationId: string,
+): Promise<OrganizationUsersResponse> {
+  return api.get<OrganizationUsersResponse>(
+    `/organizations/${encodeURIComponent(organizationId)}/users`,
+  );
+}
