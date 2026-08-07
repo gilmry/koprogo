@@ -118,12 +118,16 @@
   // Dérivations & validation
   // ---------------------------------------------------------------------------
 
-  /** Filtre côté FE : seules les Approved sont sélectionnables (INV-21 BE).
+  /** Filtre côté FE : seules les approved sont sélectionnables (INV-21 BE).
    *  Gotcha stories.md §B8 — backend pourrait fournir un query param dédié,
-   *  on fait le filter ici de manière défensive. */
-  let approvedSpecs = $derived(
-    specs.filter((s) => s.status === "Approved"),
-  );
+   *  on fait le filter ici de manière défensive.
+   *
+   *  Casse : le backend sérialise `TechnicalSpecStatus` en snake_case via
+   *  son impl `Display` ("approved", pas "Approved" — cf. #617 C7,
+   *  TechnicalSpecDetail.svelte avait le même bug). Comparer en PascalCase
+   *  ici rendait ce sélecteur TOUJOURS vide/disabled en production, quel
+   *  que soit le nombre de specs réellement approuvées. */
+  let approvedSpecs = $derived(specs.filter((s) => s.status === "approved"));
 
   /** Tous les scores fournis (pas null) → on peut construire EvaluationScoresDto. */
   let scoresProvided = $derived(

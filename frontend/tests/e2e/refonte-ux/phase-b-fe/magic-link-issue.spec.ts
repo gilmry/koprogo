@@ -167,24 +167,24 @@ async function seedSyndicWithTicketAndContractor(
   };
 }
 
-// Inject Bearer dans le store FE pour bypass UI login (perf + déterminisme).
-async function injectSyndicAuth(
+// Login UI réel — remplace un ancien bypass par injection localStorage
+// (`koprogo_auth`) devenu incompatible avec WP-FE1 (access token en
+// mémoire uniquement, jamais en localStorage) : l'injection laissait la
+// session invalide, l'app redirigeait vers /login en cours de test
+// ("element was detached from the DOM"). Le syndic est déjà seedé via API
+// (`seedSyndicWithTicketAndContractor`) avec un organization_id réel —
+// nécessaire pour que `listOrganizationUsers()` (Story S1,
+// docs/maury/syndic-org-users-endpoint) résolve un org id valide.
+async function uiLoginSyndic(
   page: import("@playwright/test").Page,
-  syndicToken: string,
   syndicEmail: string,
 ): Promise<void> {
-  await page.addInitScript(
-    (arg: string[]) => {
-      const [t, e] = arg;
-      // Pattern existant — cf. helpers/auth.ts `injectAuth`.
-      const auth = {
-        token: t,
-        user: { email: e, role: "syndic" },
-      };
-      window.localStorage.setItem("koprogo_auth", JSON.stringify(auth));
-    },
-    [syndicToken, syndicEmail],
-  );
+  await page.goto("/login", { waitUntil: "networkidle" });
+  await page.getByTestId("login-email").fill(syndicEmail);
+  await page.getByTestId("login-password").fill(TEST_PASSWORD);
+  await page.getByTestId("login-submit").click();
+  await page.waitForURL(/\/syndic/, { timeout: 15_000 });
+  await page.waitForLoadState("networkidle");
 }
 
 // ---------------------------------------------------------------------------
@@ -198,33 +198,11 @@ test.describe("Story B2 — Magic Link issue (Phase B FE)", () => {
     browser,
   }) => {
     const seed = await seedSyndicWithTicketAndContractor(request);
-    await injectSyndicAuth(page, seed.syndicToken, seed.syndicEmail);
+    await uiLoginSyndic(page, seed.syndicEmail);
 
-    // Mock GET /users — le form charge la liste des destinataires.
-    // (Si non implémenté côté backend → on stubbe au niveau du chargement
-    // côté composant via une route mock minimal.)
-    await page.route(/\/users(\?|$)/, async (route) => {
-      if (route.request().method() === "GET") {
-        await route.fulfill({
-          status: 200,
-          contentType: "application/json",
-          body: JSON.stringify({
-            data: [
-              {
-                id: seed.contractorUserId,
-                email: seed.contractorEmail,
-                first_name: "B2Contractor",
-                last_name: "Ext",
-                role: "contractor",
-              },
-            ],
-          }),
-        });
-        return;
-      }
-      await route.fallback();
-    });
-
+    // Le contractor destinataire vient du vrai endpoint org-scopé (Story S1,
+    // docs/maury/syndic-org-users-endpoint) — pas de mock, données réelles
+    // seedées via API ci-dessus.
     await page.goto("/syndic/magic-links");
 
     // Form initialement visible.
@@ -335,28 +313,16 @@ test.describe("Story B2 — Magic Link issue (Phase B FE)", () => {
     request,
   }) => {
     const seed = await seedSyndicWithTicketAndContractor(request);
-    await injectSyndicAuth(page, seed.syndicToken, seed.syndicEmail);
+    await uiLoginSyndic(page, seed.syndicEmail);
 
-    // Stub /users avec contractor mais on stubbe /buildings/.../tickets
-    // pour renvoyer vide → autocomplete scope_id vide.
-    await page.route(/\/users(\?|$)/, async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        body: JSON.stringify({
-          data: [
-            {
-              id: seed.contractorUserId,
-              email: seed.contractorEmail,
-              first_name: "B2Contractor",
-              last_name: "Ext",
-              role: "contractor",
-            },
-          ],
-        }),
-      });
-    });
-    await page.route(/\/tickets/, async (route) => {
+    // Contractor résolu via le vrai endpoint org-scopé (pas de mock) ;
+    // on stubbe uniquement /organizations/{id}/tickets pour renvoyer vide
+    // → autocomplete scope_id vide (le seed crée un ticket réel, on doit
+    // le masquer pour exercer cette branche @negative). Regex précis :
+    // un pattern générique `/tickets/` interceptait aussi
+    // `/tickets/statistics` (widget dashboard syndic monté sur toutes les
+    // pages syndic) et cassait le rendu de la page entière.
+    await page.route(/\/organizations\/[^/]+\/tickets(\?|$)/, async (route) => {
       await route.fulfill({
         status: 200,
         contentType: "application/json",

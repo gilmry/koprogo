@@ -16,6 +16,7 @@
   import { authStore } from "../../../stores/auth";
   import { api } from "../../api";
   import { listSpecs } from "../../api/technical_specs";
+  import { listAcps } from "../../api/acps";
   import { listOrganizationUsers } from "../../api/organizations";
   import {
     createEvaluation,
@@ -66,12 +67,20 @@
         currentUserId = null;
       }
 
-      const [specsResp, usersResp] = await Promise.all([
-        listSpecs().catch(() => [] as SpecLike[]),
+      // listSpecs() exige acp_id côté backend (ListTechnicalSpecsQuery.acp_id
+      // n'est PAS optionnel, cf. #617 C7/C8) — pas de listing org-wide direct.
+      // On agrège donc les specs de toutes les ACP du syndic.
+      const [acpsResp, usersResp] = await Promise.all([
+        listAcps().catch(() => []),
         organizationId
           ? listOrganizationUsers(organizationId).catch(() => ({ data: [] }))
           : Promise.resolve({ data: [] }),
       ]);
+
+      const specsByAcp = await Promise.all(
+        acpsResp.map((acp) => listSpecs(acp.id).catch(() => [] as SpecLike[])),
+      );
+      const specsResp = specsByAcp.flat();
 
       specs = specsResp.map((s) => ({
         id: s.id,
