@@ -1,7 +1,7 @@
 ---
 feature: syndic-org-users-endpoint
 phase: A (Vision TOGAF)
-status: DRAFT — en attente signature @gilmry
+status: SIGNED v1.0 par @gilmry 2026-08-07
 date: 2026-08-06
 authors: [Claude Sonnet 5 (drafting)]
 related_issues: [617]
@@ -67,6 +67,15 @@ Un seul fix d'autorisation débloque potentiellement les 3.
 - Filtrage par rôle côté backend (`?role=contractor`) — le FE filtre déjà côté client (pattern `RoleAssignmentForm.svelte` / `MandatesPage.svelte` `ELIGIBLE_ROLES`). Ajouter un filtre serveur = optimisation future, pas nécessaire pour débloquer C2/C3/C8.
 - Pagination — les orgs bêta fermée sont petites (5-10 copropriétés, cf. WBS go-live). `per_page` existant sur `GET /users` peut être ignoré/simplifié ici.
 - Toute autre page/composant syndic-facing non listée en §1 (audit exhaustif de tous les appels `/users` hors scope de ce brief).
+- **Scoping par ACP** (discuté avec @gilmry 2026-08-07, cf. §7bis) — le endpoint reste scopé à l'organisation entière, pas à une ACP précise gérée par cette organisation.
+
+## 7bis. Constat annexe — pas de scoping user↔ACP dans le modèle actuel
+
+Question posée par @gilmry avant signature : un syndic ou un comptable peuvent-ils être filtrés par ACP rattachée à l'organisation (un cabinet gère souvent plusieurs ACPs, pas forcément avec le même staff sur chacune) ?
+
+**Vérifié** : non, impossible aujourd'hui. `users.organization_id` est le seul rattachement d'un user — à l'organisation, jamais à une ACP précise. Aucune table d'association user↔ACP n'existe. `user_building_access` (accès granulaire par immeuble) existe dans le schéma (`20250102000000_create_auth_and_multi_tenancy.sql`) mais **n'est référencée nulle part dans le code backend** — vestige inutilisé.
+
+**Décision @gilmry 2026-08-07** : signer ce brief tel quel (scope organisation, suffisant pour débloquer C2/C3/C8) ; le scoping ACP est un chantier de fond distinct, à ouvrir séparément si le besoin se confirme (nouvelle table d'association, migration, révision de l'autorisation — hors scope de cet endpoint). Noté ici pour ne pas perdre l'info ; pas de ticket GitHub ouvert à ce stade.
 
 ## 7. Risques et mitigations
 
@@ -79,7 +88,9 @@ Un seul fix d'autorisation débloque potentiellement les 3.
 ## 8. Signature
 
 ```
-Mary (Brief) : DRAFT — en attente signature @gilmry
+Mary (Brief) : SIGNED v1.0 par @gilmry 2026-08-07
 ```
 
-→ Une fois signé, PRD + Architecture + Story (format court, scope réduit) avant code.
+Scope confirmé org-only (pas d'ACP) après discussion — cf. §7bis.
+
+→ PRD + Architecture + Story (format court, scope réduit) avant code.
