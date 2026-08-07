@@ -75,7 +75,7 @@ Question posée par @gilmry avant signature : un syndic ou un comptable peuvent-
 
 **Vérifié** : non, impossible aujourd'hui. `users.organization_id` est le seul rattachement d'un user — à l'organisation, jamais à une ACP précise. Aucune table d'association user↔ACP n'existe. `user_building_access` (accès granulaire par immeuble) existe dans le schéma (`20250102000000_create_auth_and_multi_tenancy.sql`) mais **n'est référencée nulle part dans le code backend** — vestige inutilisé.
 
-**Décision @gilmry 2026-08-07** : signer ce brief tel quel (scope organisation, suffisant pour débloquer C2/C3/C8) ; le scoping ACP est un chantier de fond distinct, à ouvrir séparément si le besoin se confirme (nouvelle table d'association, migration, révision de l'autorisation — hors scope de cet endpoint). Noté ici pour ne pas perdre l'info ; pas de ticket GitHub ouvert à ce stade.
+**Décision @gilmry 2026-08-07** : signer ce brief tel quel (scope organisation, suffisant pour débloquer C2/C3/C8) ; le scoping ACP est un chantier de fond distinct, à ouvrir séparément (nouvelle table d'association, migration, révision de l'autorisation — hors scope de cet endpoint). Tracé dans [#694](https://github.com/gilmry/koprogo/issues/694).
 
 ## 7. Risques et mitigations
 
