@@ -1,10 +1,10 @@
 ---
 feature: syndic-org-users-endpoint
 phase: C (Information systems architecture TOGAF)
-status: DRAFT — en attente signature @gilmry
+status: SIGNED v1.0 par @gilmry 2026-08-07
 date: 2026-08-07
 authors: [Claude Sonnet 5 (drafting)]
-depends_on: brief.md (SIGNED v1.0), prd.md (DRAFT)
+depends_on: brief.md (SIGNED v1.0), prd.md (SIGNED v1.0)
 ---
 
 # Architecture — Endpoint de listing des users pour le syndic (org-scopé)
@@ -153,9 +153,9 @@ Pattern `cargo test --lib` (unit sur use-case avec mock repo) + `cargo test --te
 ## 7. Signature
 
 ```
-Mary (Brief)         : SIGNED v1.0 par @gilmry 2026-08-07
-John (PRD)            : DRAFT — en attente signature @gilmry
-Winston (Architecture) : DRAFT — en attente signature @gilmry
+Mary (Brief)          : SIGNED v1.0 par @gilmry 2026-08-07
+John (PRD)             : SIGNED v1.0 par @gilmry 2026-08-07
+Winston (Architecture) : SIGNED v1.0 par @gilmry 2026-08-07
 ```
 
 → Une fois signé, Stories débloquées (`stories.md`).

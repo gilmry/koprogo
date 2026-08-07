@@ -1,7 +1,7 @@
 ---
 feature: syndic-org-users-endpoint
 phase: B (Business architecture TOGAF)
-status: DRAFT — en attente signature @gilmry
+status: SIGNED v1.0 par @gilmry 2026-08-07
 date: 2026-08-07
 authors: [Claude Sonnet 5 (drafting)]
 depends_on: brief.md (SIGNED v1.0 2026-08-07)
@@ -88,7 +88,7 @@ Les 3 formulaires identifiés en investiguant #617 (C2, C3, C8) doivent effectiv
 
 ```
 Mary (Brief) : SIGNED v1.0 par @gilmry 2026-08-07
-John (PRD)   : DRAFT — en attente signature @gilmry
+John (PRD)   : SIGNED v1.0 par @gilmry 2026-08-07
 ```
 
 → Une fois signé, Architecture débloquée (`architecture.md`).

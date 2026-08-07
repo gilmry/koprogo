@@ -1,10 +1,10 @@
 ---
 feature: syndic-org-users-endpoint
 phase: D (Stories TOGAF)
-status: DRAFT — en attente signature @gilmry
+status: SIGNED v1.0 par @gilmry 2026-08-07
 date: 2026-08-07
 authors: [Claude Sonnet 5 (drafting)]
-depends_on: brief.md (SIGNED v1.0), prd.md (DRAFT), architecture.md (DRAFT)
+depends_on: brief.md (SIGNED v1.0), prd.md (SIGNED v1.0), architecture.md (SIGNED v1.0)
 ---
 
 # Stories — Endpoint de listing des users pour le syndic (org-scopé)
@@ -174,9 +174,9 @@ Aucun nouveau — les composants purs (`MagicLinkIssueForm`, `MandateIssueForm`,
 
 ```
 Mary (Brief)          : SIGNED v1.0 par @gilmry 2026-08-07
-John (PRD)             : DRAFT — en attente signature @gilmry
-Winston (Architecture) : DRAFT — en attente signature @gilmry
-Bob (Stories)          : DRAFT — en attente signature @gilmry
+John (PRD)             : SIGNED v1.0 par @gilmry 2026-08-07
+Winston (Architecture) : SIGNED v1.0 par @gilmry 2026-08-07
+Bob (Stories)          : SIGNED v1.0 par @gilmry 2026-08-07
 ```
 
-→ Une fois signé, exécution (S1 puis S2).
+→ Exécution débloquée (S1 puis S2).
