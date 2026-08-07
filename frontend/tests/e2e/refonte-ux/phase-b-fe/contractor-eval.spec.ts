@@ -272,8 +272,16 @@ test.describe("Story B8 — ContractorEvaluation multi-rôle (Syndic A évalue, 
       "B8",
     );
 
-    // ─── Phase 2 : login admin (acte Syndic A) → page contractor-evaluations
-    await uiLogin(page, ADMIN_EMAIL, ADMIN_PASSWORD);
+    // Syndic A + Syndic B réels — `/syndic/*` est gated côté FE
+    // (RouteGuard, guards.ts) au seul rôle SYNDIC, superadmin non inclus.
+    // Utiliser admin comme proxy des 2 syndics (comme avant ce fix) redirige
+    // silencieusement vers /admin — trouvé en investiguant #617 C8, même
+    // classe de bug que C3/C7.
+    const syndicA = await registerUser(request, cabinet.id, "syndic", "B8-a");
+    const syndicB = await registerUser(request, cabinet.id, "syndic", "B8-b");
+
+    // ─── Phase 2 : login Syndic A → page contractor-evaluations ──────────
+    await uiLogin(page, syndicA.email, TEST_PASSWORD);
     await page.goto("/syndic/contractor-evaluations", {
       waitUntil: "networkidle",
     });
@@ -291,7 +299,10 @@ test.describe("Story B8 — ContractorEvaluation multi-rôle (Syndic A évalue, 
     const newBtn = page.getByTestId("contractor-eval-new-button");
     const newBtnEnabled = await newBtn.isEnabled().catch(() => false);
 
-    if (newBtnEnabled && spec.status === "Approved") {
+    // Le backend sérialise le status en snake_case ("approved"), pas le nom
+    // d'enum Rust PascalCase — cf. #617 C7 (même bug, ici dans une
+    // comparaison de test plutôt que dans un composant).
+    if (newBtnEnabled && spec.status === "approved") {
       await newBtn.click();
 
       // Form visible.
@@ -346,17 +357,11 @@ test.describe("Story B8 — ContractorEvaluation multi-rôle (Syndic A évalue, 
       await page.waitForTimeout(1000);
     }
 
-    // ─── Phase 3 : Syndic B (admin re-login = même session pour simplifier
-    //     le test infra, mais le scenario business est de consulter la page
-    //     reputation depuis une autre identité — admin est déjà un proxy de
-    //     "consulter cross-syndic" puisqu'il voit toute l'org).
-    //
-    // Pour respecter l'esprit multi-rôle B8 (Syndic A ≠ Syndic B), on
-    // logout admin et on tente un second syndic via register.
+    // ─── Phase 3 : Syndic A logout ────────────────────────────────────────
     await logoutUi(page);
 
-    // ─── Phase 4 : Syndic B (consulte reputation read-only INV-24)
-    await uiLogin(page, ADMIN_EMAIL, ADMIN_PASSWORD);
+    // ─── Phase 4 : Syndic B (consulte reputation read-only INV-24) ───────
+    await uiLogin(page, syndicB.email, TEST_PASSWORD);
 
     await page.goto(
       `/contractor-reputation?contractorId=${encodeURIComponent(

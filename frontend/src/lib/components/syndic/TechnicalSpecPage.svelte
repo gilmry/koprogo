@@ -76,7 +76,7 @@
 
       // Charge l'historique des versions (filtre client side sur title/acp).
       try {
-        const all = await listSpecs();
+        const all = await listSpecs(s.acp_id);
         historyVersions = all.filter(
           (x) =>
             x.title === s.title &&

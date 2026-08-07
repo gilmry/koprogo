@@ -248,20 +248,27 @@ test.describe("Story B5 — Ticket Complaint (multi-rôle)", () => {
     // On attend la redirection vers le détail (peut tarder si l'API est lente).
     await page.waitForURL(/\/ticket-detail/, { timeout: 15_000 });
 
+    // Capturer l'URL (donc l'id du ticket) AVANT le logout — une fois
+    // reconnecté en syndic, `page.url()` pointe vers son dashboard
+    // (/syndic), pas vers le ticket-detail de l'owner (bug trouvé en
+    // investiguant #617 C5 : l'URL était lue APRÈS le re-login syndic,
+    // donc le regex `id=` ne matchait jamais et le test restait
+    // silencieusement sur /syndic).
+    const ticketUrl = page.url();
+    const ticketIdMatch = ticketUrl.match(/[?&]id=([^&]+)/);
+    expect(
+      ticketIdMatch,
+      `ticket id introuvable dans l'URL ${ticketUrl}`,
+    ).not.toBeNull();
+
     // ─── Phase 3 : Owner-plaignant logout → Syndic login ─────────────────
     await logoutUi(page);
     await uiLogin(page, syndic.email, TEST_PASSWORD);
 
-    // Le syndic ouvre la même URL ticket-detail (on récupère l'ID depuis URL).
-    const ticketUrl = page.url();
-    // Anti-flake : si l'URL syndic ne contient pas l'id (dashboards diffèrent),
-    // on construit l'URL manuellement via le param.
-    const ticketIdMatch = ticketUrl.match(/[?&]id=([^&]+)/);
-    if (ticketIdMatch) {
-      await page.goto(`/ticket-detail?id=${ticketIdMatch[1]}`, {
-        waitUntil: "networkidle",
-      });
-    }
+    // Le syndic ouvre la même URL ticket-detail (id capturé avant logout).
+    await page.goto(`/ticket-detail?id=${ticketIdMatch![1]}`, {
+      waitUntil: "networkidle",
+    });
 
     // Le syndic voit le titre (intégration FE-BE OK).
     await expect(page.getByTestId("ticket-detail-title")).toContainText(
