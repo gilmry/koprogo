@@ -67,13 +67,24 @@ export default defineConfig({
       },
       // Phase C ouverte : `refonte-ux/phase-b-fe/` exclu du gate CI le temps
       // de stabiliser seeds + multi-rôle login flow (issue GH "Phase C —
-      // Stabilisation Documentation Vivante e2e"). Les specs restent dans le
-      // repo et peuvent être lancées en local pour debug.
+      // Stabilisation Documentation Vivante e2e"). Réactivation au fur et à
+      // mesure par spec stabilisé — 2026-08-06 : C5 ticket-complaint.spec.ts
+      // ✅ (bug de test), C6 syndic-response-sla.spec.ts ✅ (débloqué par le
+      // fix casse email de C4), C7 technical-spec-flow.spec.ts ✅ (bug
+      // produit réel : status snake_case du backend comparé en PascalCase
+      // côté FE) et C8 contractor-eval.spec.ts ✅ (acteur admin→syndic, la
+      // branche création reste vacuously skip tant que #691 n'est pas
+      // implémenté — GET /users toujours 403 pour un syndic). Les autres
+      // restent exclus tant que non stabilisés (cf. docs/agent-activity/
+      // 2026-08-06-issue617-c*.md et PR #690/#691).
       testIgnore: [
         /scenarios\//,
         /smoke\//,
         /characterization\//,
-        /refonte-ux\/phase-b-fe\//,
+        /refonte-ux\/phase-b-fe\/role-assignment\.spec\.ts/,
+        /refonte-ux\/phase-b-fe\/magic-link-issue\.spec\.ts/,
+        /refonte-ux\/phase-b-fe\/mandate-issue\.spec\.ts/,
+        /refonte-ux\/phase-b-fe\/role-delegation\.spec\.ts/,
       ],
     },
 

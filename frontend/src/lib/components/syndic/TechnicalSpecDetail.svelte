@@ -83,10 +83,16 @@
   // Dérivations — gating signature + status + actions
   // ---------------------------------------------------------------------------
 
-  let isDraft = $derived(spec.status === "Draft");
-  let isPendingSignatures = $derived(spec.status === "PendingSignatures");
-  let isApproved = $derived(spec.status === "Approved");
-  let isSuperseded = $derived(spec.status === "Superseded");
+  // Le backend sérialise `TechnicalSpecStatus` via son `Display` (snake_case
+  // : "draft"/"pending_signatures"/"approved"/"superseded"), pas le nom
+  // d'enum Rust PascalCase — comparer contre la mauvaise casse rendait ces
+  // 4 dérivations TOUJOURS fausses, donc les boutons Signer/Soumettre/Bump
+  // ne s'affichaient jamais pour aucun status, en production (trouvé en
+  // investiguant #617 C7).
+  let isDraft = $derived(spec.status === "draft");
+  let isPendingSignatures = $derived(spec.status === "pending_signatures");
+  let isApproved = $derived(spec.status === "approved");
+  let isSuperseded = $derived(spec.status === "superseded");
 
   /** Le user a-t-il un rôle parmi les required_signatures de la spec ? */
   let userHasRequiredRole = $derived(
@@ -171,13 +177,15 @@
   // Helpers display
   // ---------------------------------------------------------------------------
 
+  // Clés en snake_case — cf. commentaire sur `isDraft`/etc. ci-dessus
+  // (Display du backend, pas le nom d'enum Rust).
   function statusBadgeClasses(s: string): string {
     return (
       {
-        Draft: "bg-gray-100 text-gray-700 border-gray-300",
-        PendingSignatures: "bg-orange-100 text-orange-800 border-orange-300",
-        Approved: "bg-green-100 text-green-800 border-green-300",
-        Superseded: "bg-gray-200 text-gray-500 border-gray-300",
+        draft: "bg-gray-100 text-gray-700 border-gray-300",
+        pending_signatures: "bg-orange-100 text-orange-800 border-orange-300",
+        approved: "bg-green-100 text-green-800 border-green-300",
+        superseded: "bg-gray-200 text-gray-500 border-gray-300",
       }[s] ?? "bg-gray-100 text-gray-700 border-gray-300"
     );
   }
@@ -185,10 +193,10 @@
   function statusLabel(s: string): string {
     return (
       {
-        Draft: "Brouillon",
-        PendingSignatures: "En attente de signatures",
-        Approved: "Approuvée",
-        Superseded: "Remplacée",
+        draft: "Brouillon",
+        pending_signatures: "En attente de signatures",
+        approved: "Approuvée",
+        superseded: "Remplacée",
       }[s] ?? s
     );
   }

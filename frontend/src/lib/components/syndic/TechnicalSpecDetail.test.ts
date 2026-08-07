@@ -40,7 +40,7 @@ function spec(over: Partial<TechnicalSpecDto> = {}): TechnicalSpecDto {
     deliverables: ["Démontage", "Pose voligeage"],
     required_signatures: ["syndic", "amo"],
     attachments: [],
-    status: "PendingSignatures",
+    status: "pending_signatures",
     created_by: "syndic-uuid",
     previous_version_id: null,
     created_at: "2026-06-09T10:00:00Z",
@@ -69,7 +69,7 @@ beforeEach(() => {
 
 describe("TechnicalSpecDetail — Story B7 (4-cat)", () => {
   it("@happy PendingSignatures + user a rôle requis → bouton Signer RENDU + status badge", () => {
-    const s = spec({ status: "PendingSignatures" });
+    const s = spec({ status: "pending_signatures" });
     const { getByTestId, queryByTestId } = render(TechnicalSpecDetail, {
       props: {
         spec: s,
@@ -90,7 +90,7 @@ describe("TechnicalSpecDetail — Story B7 (4-cat)", () => {
       /1\.0\.0/,
     );
     const badge = getByTestId("tech-spec-detail-status-badge");
-    expect(badge.getAttribute("data-status")).toBe("PendingSignatures");
+    expect(badge.getAttribute("data-status")).toBe("pending_signatures");
     expect(badge.textContent).toMatch(/attente/i);
 
     // Bouton Signer présent.
@@ -101,7 +101,7 @@ describe("TechnicalSpecDetail — Story B7 (4-cat)", () => {
   });
 
   it("@edge status Draft → bouton 'Soumettre pour signatures' présent + Bump présent + Signer absent", async () => {
-    const s = spec({ status: "Draft" });
+    const s = spec({ status: "draft" });
     const onSubmitForSign = vi.fn().mockResolvedValue(undefined);
     const { getByTestId, queryByTestId } = render(TechnicalSpecDetail, {
       props: {
@@ -127,7 +127,7 @@ describe("TechnicalSpecDetail — Story B7 (4-cat)", () => {
   });
 
   it("@edge status Approved → bouton Bump présent, Soumettre absent, Signer absent", () => {
-    const s = spec({ status: "Approved" });
+    const s = spec({ status: "approved" });
     const { queryByTestId } = render(TechnicalSpecDetail, {
       props: {
         spec: s,
@@ -150,7 +150,7 @@ describe("TechnicalSpecDetail — Story B7 (4-cat)", () => {
   });
 
   it("@security Owner sans rôle requis → bouton Signer ABSENT du DOM", () => {
-    const s = spec({ status: "PendingSignatures" });
+    const s = spec({ status: "pending_signatures" });
     const { queryByTestId } = render(TechnicalSpecDetail, {
       props: {
         spec: s,
@@ -171,7 +171,7 @@ describe("TechnicalSpecDetail — Story B7 (4-cat)", () => {
 
   it("@security mandataire amo sans activeMandate → bouton Signer ABSENT (mandatePrereq KO)", () => {
     const s = spec({
-      status: "PendingSignatures",
+      status: "pending_signatures",
       required_signatures: ["syndic", "amo"],
     });
     const { queryByTestId } = render(TechnicalSpecDetail, {
@@ -189,7 +189,7 @@ describe("TechnicalSpecDetail — Story B7 (4-cat)", () => {
   });
 
   it("@security user a déjà signé sous son rôle → bouton Signer ABSENT (INV unique)", () => {
-    const s = spec({ status: "PendingSignatures" });
+    const s = spec({ status: "pending_signatures" });
     const { queryByTestId } = render(TechnicalSpecDetail, {
       props: {
         spec: s,
@@ -213,7 +213,7 @@ describe("TechnicalSpecDetail — Story B7 (4-cat)", () => {
 
   it("@negative bump button → modal warning visible avec aria-modal='true' + autofocus", async () => {
     const onBump = vi.fn();
-    const s = spec({ status: "Approved" });
+    const s = spec({ status: "approved" });
     const { getByTestId, queryByTestId } = render(TechnicalSpecDetail, {
       props: {
         spec: s,
@@ -248,7 +248,7 @@ describe("TechnicalSpecDetail — Story B7 (4-cat)", () => {
 
   it("liste des signatures + missing — render correct", () => {
     const s = spec({
-      status: "PendingSignatures",
+      status: "pending_signatures",
       required_signatures: ["syndic", "amo"],
     });
     const { getByTestId, queryByTestId } = render(TechnicalSpecDetail, {
