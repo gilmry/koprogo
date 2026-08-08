@@ -92,16 +92,22 @@ async function humanLogin(
   email: string,
   password: string,
 ): Promise<void> {
-  await page.goto("/login");
+  await page.goto("/login", { waitUntil: "networkidle" });
   await page.getByLabel(/email|courriel/i).fill(email);
   await page.getByLabel(/mot de passe|password/i).fill(password);
   await page
     .getByRole("button", { name: /connecter|sign\s*in|se\s*connecter/i })
     .click();
-  // Attente best-effort — selon le RouteGuard la page peut rediriger.
-  await page
-    .waitForLoadState("networkidle", { timeout: 10_000 })
-    .catch(() => undefined);
+  // `LoginForm.svelte` fait `authStore.login()` puis `window.location.href`
+  // (navigation complète, pas un goto SPA) — on attend explicitement d'avoir
+  // quitté /login avant de continuer, sinon un `page.goto()` immédiat après
+  // ce helper peut racer la navigation et retomber sur /login (cookie de
+  // refresh pas encore posé) — cf. échecs intermittents `@happy`/`@edge`/
+  // `@negative` post-migration WP-FE1.
+  await page.waitForURL((url) => !url.pathname.startsWith("/login"), {
+    timeout: 15_000,
+  });
+  await page.waitForLoadState("networkidle").catch(() => undefined);
 }
 
 // ---------------------------------------------------------------------------
