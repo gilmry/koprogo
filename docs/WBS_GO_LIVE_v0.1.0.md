@@ -211,7 +211,15 @@ Légende : Tier 1 = humain exécute (agent diagnostique/propose). Taille S≤0.5
 > - **WP-CL3** ✅ — specs H9/H10/H17 amendées (Art. 3.87 §1/§5/§7, `29bdda1`). **H9 quorum double** à la clôture (têtes > 50 % ET quotités ≥ 50 % OU > 3/4, `006030e`) → **H10** gate `check_quorum_for_voting` sur `cast_vote` (§5, `e9b97d1` ; proxy §7 déjà câblé via `validate_proxy_limit` Decimal) → **H17** représentant de vote / suspension §1 (domaine + gate `cast_vote` `VOTING_RIGHT_SUSPENDED` 422 + BDD `voting_right_suspension`, `4570c27`/`9e8a037`/`aecf92c`). _Note : `validate_proxy_mandate` domaine (f64, §7 en AND) reste mort/non câblé — à supprimer ou aligner si on retouche au vote._
 > - **WP-CL6** ✅ — H15 migration `units.organization_id`→`acp_id` (`b9fa9d6`) : trio réversible (add nullable → backfill `building.acp_id` → NOT NULL + drop org + policy/index) + domaine/DTO/repo runtime SQL/handlers scope_guard #603/seed. Validé testcontainers (e2e_units 6/6, integration_unit_owner 13/13, bdd_building_conformity 9/9, bdd_validate_before_compute). Cohérence post-#602 (comme buildings).
 >
-> **🔴 Blocages go-live tracés (hors Track H, à clore avant tag v0.1.0)** : **[#634](https://github.com/gilmry/koprogo/issues/634)** (frontend Dependabot — build/vitest/contract/docker-frontend + NPM audit, même ERESOLVE astro 7 ⊥ `@vite-pwa/astro`) · **[#636](https://github.com/gilmry/koprogo/issues/636)** (Rust audit : `lopdf` RUSTSEC-2026-0187 + `quinn-proto` RUSTSEC-2026-0185, 2× high ; recoupe #432) · **[#604](https://github.com/gilmry/koprogo/issues/604)** [BLOCKER] trigger `buildings.organization_id` supprimé · **[#603](https://github.com/gilmry/koprogo/issues/603)** [SECURITY] `verify_org_access` skip 7 handlers · **[#617](https://github.com/gilmry/koprogo/issues/617)**/#605 Playwright E2E.
+> **🔴 Blocages go-live tracés (hors Track H, à clore avant tag v0.1.0)** — **resync 2026-08-08** : sur les 6 items suivis ici, 5/6 **FAIT**, 1 réellement ouvert.
+> - **[#634](https://github.com/gilmry/koprogo/issues/634)** ✅ **FAIT** (`3291f1b1`, bump vite 7.3.2→8.0.13, débloque l'ERESOLVE astro 7 ⊥ `@vite-pwa/astro`) — vérifié vert en CI réelle (`Frontend Check & Build` + `Docker Build and Push to GHCR`), fermé 2026-08-08.
+> - **[#636](https://github.com/gilmry/koprogo/issues/636)** ✅ **FAIT** (Rust audit `lopdf`/`quinn-proto`) — déjà fermé.
+> - **[#604](https://github.com/gilmry/koprogo/issues/604)** ✅ **FAIT** [BLOCKER] trigger `buildings.organization_id` supprimé — déjà fermé.
+> - **[#603](https://github.com/gilmry/koprogo/issues/603)** ✅ **FAIT** [SECURITY] `verify_org_access` skip 7 handlers — déjà fermé.
+> - **[#617](https://github.com/gilmry/koprogo/issues/617)** ✅ **FAIT** (Story S3, `387128c4`) — Phase C 8/8 sub-tasks, 12/12 tests `phase-b-fe/` verts en CI réelle, `testIgnore` retiré, fermé 2026-08-08.
+> - **[#605](https://github.com/gilmry/koprogo/issues/605)** 🔴 **OUVERT** — 3 tests Gdpr Playwright flaky (timing/race), distinct de #617, non traité.
+>
+> **Bonus hors-scope initial, même chantier admin** — **[#697](https://github.com/gilmry/koprogo/issues/697)** ✅ (`7bfb3b56`, 13 boutons `<Button on:click>` morts Svelte5 + casse `payment_status`) et **[#698](https://github.com/gilmry/koprogo/issues/698)** ✅ (`a046de40`, ACP↔organisation dans BuildingForm/AcpList + `UnitCreateModal` cassé en prod + boucle infinie `$effect`) — trouvés en testant l'admin au navigateur (clic réel), fermés 2026-08-08. Détail : `docs/maury/fix-admin-buttons-acp/`.
 
 - **WP-CL0 — ADR(s) + dossier Maury BMAD** · #618 H0-ADR · T2 · M · _gate signature avant code_
   ADR(s) `docs/adr/` (acte de base & conformité hybride + associations partielles + quorum double + fonds réserve + représentant de vote) + brief/prd/architecture/stories/validation dans `track-h-conformite-legale/`. Deps : aucune.
@@ -345,13 +353,13 @@ gantt
 
 - **WP-I8 — UI ContractorEvaluationForm + Reputation** · T2 · M · _wave V4_ · **FAIT** (commit `caa6315` Story B8)
 
-- **WP-I9 — Documentation Vivante refresh + retire continue-on-error** · T2 · S · _wave V4_ · **PARTIEL** (Story B9 commit `3de6530` a retiré le bypass ; CI a révélé 8 specs Phase B FE + scenarios Documentation Vivante cassés → **Phase C ouverte #617** : testIgnore `refonte-ux/phase-b-fe/` (commit `83985e4`) + `continue-on-error: true` restauré sur step Doc Vivante (commit `4fedde7`) le temps de stabiliser dans Phase C).
+- **WP-I9 — Documentation Vivante refresh + retire continue-on-error** · T2 · S · _wave V4_ · **FAIT** (Story B9 commit `3de6530` a retiré le bypass ; CI a révélé 8 specs Phase B FE + scenarios Documentation Vivante cassés → Phase C ouverte #617 : testIgnore `refonte-ux/phase-b-fe/` (commit `83985e4`) + `continue-on-error: true` restauré sur step Doc Vivante (commit `4fedde7`) le temps de stabiliser → **Phase C fermée 8/8 par Story S3 (`387128c4`), 12/12 tests verts en CI réelle, testIgnore retiré, #617 fermé 2026-08-08**).
 
 > **Critères DoD Track I (intégrés au gate G1)** :
 >
 > - svelte-check 0/0 erreur/warning ; axe-core violations = 0 par composant ; Vitest 4-cat + Playwright multi-rôle par WP ; data-testid sur 100% éléments interactifs ; pas de stockage JWT en localStorage ; bundle Phase I ≤ +50 KB gzip (baseline mesurée 2026-06-07 = 4,3 MB total / 0,6 MB gzip JS).
 >
-> **Statut Track I global (2026-06-15)** : WP-I0 → WP-I8 **FAIT** (10 commits Phase B FE B0-B8 + B0bis sur feature/dev). WP-I9 **PARTIEL** — Documentation Vivante e2e tombée dans Phase C #617 (8 specs + N scenarios à stabiliser avant retrait définitif des bypasses CI). Voir mémoires `project_phase-c-reactivate-e2e-specs.md` et `feedback_maury-fullstack-first.md`.
+> **Statut Track I global (2026-08-08)** : WP-I0 → WP-I9 **FAIT** (10 commits Phase B FE B0-B8 + B0bis sur feature/dev ; Phase C #617 fermée 8/8, Story S3 `387128c4`, 12/12 tests verts en CI réelle). Voir mémoires `project_phase-c-reactivate-e2e-specs.md` et `feedback_maury-fullstack-first.md`.
 
 ### Track G — Gate de release
 
@@ -433,7 +441,7 @@ graph LR
     classDef done fill:#dfd
     class G1,G2,F1,F2,F3 tier1
     class A2,A5,I5,I7 critical
-    class A1,A2,A3,A4,A5,A6,A7,B1,B2,B3,FE1,FE2 done
+    class A1,A2,A3,A4,A5,A6,A7,B1,B2,B3,FE1,FE2,I0,I1,I2,I3,I4,I6,I8,I9 done
 ```
 
 **Chemin critique** : `A1(M) → A2(L) → A5(L etat_date) → #433 VERT → make ci VERT → G1(T1) → G2(T1)`, convergeant avec `FE1(L)→FE2→D1` et `E1→F1(T1)→F2(T1)→F3(T1)` et `H1→H2 / H3 / B4` (Track H Conformité métier — bloqueurs légaux Art. 3.87 §3-5 CC, ajoutés 2026-05-20 cf. #553/#554) **et** `I0→I7→I8→I9` (Track I FE refonte UX ajouté 2026-06-09 — convergence intégrée à G1).
