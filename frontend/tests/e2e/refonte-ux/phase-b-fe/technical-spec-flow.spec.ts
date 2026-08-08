@@ -236,24 +236,36 @@ test.describe("Story B7 — TechnicalSpec full flow (multi-rôle 3 acteurs)", ()
     const acp = await createAcp(request, adminToken, cabinet.id, "B7");
     const building = await createBuilding(request, adminToken, acp.id, "B7");
 
+    // Acteur syndic réel — `/syndic/*` est gated côté FE (RouteGuard,
+    // guards.ts) au seul rôle SYNDIC, superadmin non inclus malgré
+    // `require_syndic_or_superadmin` côté backend. Utiliser admin comme
+    // "syndic-emulé" (comme avant ce fix) redirige silencieusement vers
+    // /admin — trouvé en investiguant #617 C7, même classe de bug que C3.
+    const syndic = await registerUser(
+      request,
+      cabinet.id,
+      "syndic",
+      "B7-syndic",
+    );
+
     // Acteur 3 : Owner observer (rôle copropriétaire — ne devrait PAS voir
     // le bouton "Signer").
     const owner = await registerUser(request, cabinet.id, "owner", "B7-owner");
 
-    // ─── Phase 2 : Admin / syndic-emulé crée la spec via API ──────────────
+    // ─── Phase 2 : Syndic crée la spec via API ───────────────────────────
     const spec = await createSpec(
       request,
-      adminToken,
+      syndic.token,
       acp.id,
       building.id,
       "B7",
     );
 
     // Submit la spec → PendingSignatures
-    await submitSpec(request, adminToken, spec.id);
+    await submitSpec(request, syndic.token, spec.id);
 
-    // ─── Phase 3 : login admin → page détail → vérifie status badge ───────
-    await uiLogin(page, ADMIN_EMAIL, ADMIN_PASSWORD);
+    // ─── Phase 3 : login syndic → page détail → vérifie status badge ─────
+    await uiLogin(page, syndic.email, TEST_PASSWORD);
     await page.goto(`/syndic/technical-spec?id=${spec.id}`, {
       waitUntil: "networkidle",
     });
@@ -263,9 +275,12 @@ test.describe("Story B7 — TechnicalSpec full flow (multi-rôle 3 acteurs)", ()
     await expect(titleEl).toContainText("Travaux toiture");
 
     const statusBadge = page.getByTestId("tech-spec-detail-status-badge");
+    // `data-status` reflète le statut backend en snake_case (cf. badge
+    // rendu réel), pas le nom d'enum Rust PascalCase — trouvé en
+    // investiguant #617 C7.
     await expect(statusBadge).toHaveAttribute(
       "data-status",
-      "PendingSignatures",
+      "pending_signatures",
     );
 
     // Le bouton "Soumettre pour signatures" est ABSENT (déjà soumis).

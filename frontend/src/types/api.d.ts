@@ -1129,6 +1129,23 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/organizations/{organization_id}/users": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List users for an organization (syndic/accountant own org, superadmin any org) */
+    get: operations["list_organization_users"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/owners/{owner_id}/payments": {
     parameters: {
       query?: never;
@@ -5046,6 +5063,34 @@ export interface operations {
       };
       /** @description Internal server error */
       500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  list_organization_users: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Organization ID */
+        organization_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description List of users */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Access denied — resource belongs to another organization */
+      403: {
         headers: {
           [name: string]: unknown;
         };

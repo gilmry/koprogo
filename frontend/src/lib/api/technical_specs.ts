@@ -142,13 +142,24 @@ export function isMajorBump(prev: string, next: string): boolean {
 // -----------------------------------------------------------------------------
 
 /**
- * Liste les TechnicalSpecs accessibles à l'utilisateur courant.
+ * Liste les TechnicalSpecs d'une ACP.
+ *
+ * ⚠️ Backend : `acp_id` est un paramètre obligatoire côté handler
+ * (`ListTechnicalSpecsQuery.acp_id: Uuid`, non-Option) — appeler cette
+ * fonction SANS `acpId` échoue toujours en "missing field `acp_id`" (trouvé
+ * en investiguant #617 C7, corrigé ici pour `TechnicalSpecPage.svelte` qui
+ * connaît déjà l'acp_id de la spec affichée). `TechnicalSpecsPage.svelte`
+ * et `ContractorEvaluationsPage.svelte` appellent encore cette fonction sans
+ * argument pour lister au travers de plusieurs ACPs — ce cas reste cassé,
+ * hors scope de ce fix (nécessiterait un endpoint cross-ACP ou une
+ * itération multi-appels côté FE).
  *
  * Backend filtre par RBAC (syndic / superadmin / mandataires des ACPs).
  * Hors scope → 403 (toast automatique).
  */
-export async function listSpecs(): Promise<TechnicalSpecDto[]> {
-  return api.get<TechnicalSpecDto[]>("/technical-specs");
+export async function listSpecs(acpId?: string): Promise<TechnicalSpecDto[]> {
+  const qs = acpId ? `?acp_id=${encodeURIComponent(acpId)}` : "";
+  return api.get<TechnicalSpecDto[]>(`/technical-specs${qs}`);
 }
 
 /**

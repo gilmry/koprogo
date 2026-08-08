@@ -16,20 +16,14 @@
   import { authStore } from "../../../stores/auth";
   import { api } from "../../api";
   import { listSpecs } from "../../api/technical_specs";
+  import { listAcps } from "../../api/acps";
+  import { listOrganizationUsers } from "../../api/organizations";
   import {
     createEvaluation,
     type ContractorEvaluationDto,
     type CreateContractorEvaluationRequest,
   } from "../../api/contractor_evaluations";
   import ContractorEvaluationForm from "./ContractorEvaluationForm.svelte";
-
-  type UserLike = {
-    id: string;
-    email: string;
-    first_name?: string;
-    last_name?: string;
-    role: string;
-  };
 
   type SpecLike = {
     id: string;
@@ -57,20 +51,36 @@
   async function loadInitial(): Promise<void> {
     loading = true;
     try {
-      // currentUserId via authStore (cohérent B3 MandateIssueForm pattern).
+      // currentUserId + organizationId via authStore (cohérent B3
+      // MandateIssueForm pattern). Endpoint org-scopé — cf. Story S1
+      // docs/maury/syndic-org-users-endpoint.
+      let organizationId = "";
       try {
         const state = get(authStore);
         currentUserId = state.user?.id ?? null;
+        const authUser = state.user as
+          | { organizationId?: string; organization_id?: string }
+          | undefined;
+        organizationId =
+          authUser?.organizationId ?? authUser?.organization_id ?? "";
       } catch {
         currentUserId = null;
       }
 
-      const [specsResp, usersResp] = await Promise.all([
-        listSpecs().catch(() => [] as SpecLike[]),
-        api
-          .get<{ data: UserLike[] }>("/users")
-          .catch(() => ({ data: [] as UserLike[] })),
+      // listSpecs() exige acp_id côté backend (ListTechnicalSpecsQuery.acp_id
+      // n'est PAS optionnel, cf. #617 C7/C8) — pas de listing org-wide direct.
+      // On agrège donc les specs de toutes les ACP du syndic.
+      const [acpsResp, usersResp] = await Promise.all([
+        listAcps().catch(() => []),
+        organizationId
+          ? listOrganizationUsers(organizationId).catch(() => ({ data: [] }))
+          : Promise.resolve({ data: [] }),
       ]);
+
+      const specsByAcp = await Promise.all(
+        acpsResp.map((acp) => listSpecs(acp.id).catch(() => [] as SpecLike[])),
+      );
+      const specsResp = specsByAcp.flat();
 
       specs = specsResp.map((s) => ({
         id: s.id,

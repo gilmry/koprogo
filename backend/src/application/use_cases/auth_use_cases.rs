@@ -35,9 +35,14 @@ impl AuthUseCases {
     }
 
     pub async fn login(&self, request: LoginRequest) -> Result<LoginResponse, AppError> {
+        // Emails sont stockés normalisés (lowercase, cf. `User::new`) — la
+        // recherche doit l'être aussi, sinon un login avec une casse
+        // différente de celle saisie à l'inscription échoue à tort en
+        // "Invalid credentials" (trouvé en investiguant #617 C4).
+        let normalized_email = request.email.trim().to_lowercase();
         let user = self
             .user_repo
-            .find_by_email(&request.email)
+            .find_by_email(&normalized_email)
             .await?
             .ok_or_else(|| {
                 // Audit failed login attempt
@@ -119,7 +124,12 @@ impl AuthUseCases {
     }
 
     pub async fn register(&self, request: RegisterRequest) -> Result<LoginResponse, String> {
-        if (self.user_repo.find_by_email(&request.email).await?).is_some() {
+        // Même normalisation que `User::new` (stockage lowercase) — sinon un
+        // doublon de casse ("Test@x.com" après "test@x.com") échappe au
+        // check applicatif et remonte comme erreur DB brute au lieu d'un
+        // "Email already exists" propre (trouvé en investiguant #617 C4).
+        let normalized_email = request.email.trim().to_lowercase();
+        if (self.user_repo.find_by_email(&normalized_email).await?).is_some() {
             return Err("Email already exists".to_string());
         }
 

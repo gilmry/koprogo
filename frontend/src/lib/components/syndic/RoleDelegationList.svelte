@@ -26,8 +26,8 @@
   //     interdite") sans masquer le CTA. Le backend reste source de vérité
   //     (403 si tentative invalide).
   //
-  // Pattern fetch : `initialDelegations` pour SSR / tests, sinon fetch au
-  // mount via `listDelegationsOf()`.
+  // Pattern fetch : `initialDelegations` pour le rendu build Astro (SSG) /
+  // tests, sinon fetch au mount via `listDelegationsOf()`.
   //
   // data-testid (cf. stories.md §B4) :
   //   role-delegation-list

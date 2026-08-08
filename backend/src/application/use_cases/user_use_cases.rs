@@ -133,6 +133,28 @@ impl UserUseCases {
             .collect())
     }
 
+    /// List users belonging to a given organization, with their roles.
+    ///
+    /// Authorization (syndic/accountant own org, superadmin any org) is
+    /// enforced upstream by the handler via `AuthenticatedUser::verify_org_access`.
+    pub async fn list_by_organization(
+        &self,
+        organization_id: Uuid,
+    ) -> Result<Vec<UserResponse>, String> {
+        let users = self.user_repo.find_by_organization(organization_id).await?;
+        let user_ids: Vec<Uuid> = users.iter().map(|u| u.id).collect();
+        let mut roles_map: HashMap<Uuid, Vec<UserRoleAssignment>> =
+            self.role_repo.list_for_users(&user_ids).await?;
+
+        Ok(users
+            .into_iter()
+            .map(|user| {
+                let assignments = roles_map.remove(&user.id).unwrap_or_default();
+                Self::build_response(user, assignments)
+            })
+            .collect())
+    }
+
     /// Create a new user with role assignments.
     /// Returns `Err("email_exists")` on duplicate email.
     pub async fn create(

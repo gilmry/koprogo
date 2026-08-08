@@ -6,7 +6,8 @@
   // INV-FE8 (append-only) : aucune action de mutation sur les lignes — pas
   // de bouton "Edit" ni "Delete" (cf. AC @security stories.md §B6).
   //
-  // Pattern : on accepte une prop `initialResponses` (SSR/test) ET on peut
+  // Pattern : on accepte une prop `initialResponses` (build Astro SSG /
+  // test) ET on peut
   // fetcher au mount si non fournie. Le parent peut rafraîchir via
   // `onCreated` du `SyndicResponseForm`.
   //
@@ -30,7 +31,7 @@
 
   let {
     ticketId,
-    /** Liste initiale (SSR / injection test). Si non fournie → fetch au mount. */
+    /** Liste initiale (build Astro SSG / injection test). Si non fournie → fetch au mount. */
     initialResponses = undefined,
     /** Map syndic_user_id → label humain (fallback UUID slice). */
     authorLabels = {},

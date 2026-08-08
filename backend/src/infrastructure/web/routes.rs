@@ -562,6 +562,7 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig) {
             .service(delete_organization)
             // Users (SuperAdmin only)
             .service(list_users)
+            .service(list_organization_users)
             .service(create_user)
             .service(update_user)
             .service(activate_user)

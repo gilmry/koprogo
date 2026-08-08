@@ -662,13 +662,25 @@ pub async fn register_and_login(
     app_state: &actix_web::web::Data<AppState>,
     org_id: Uuid,
 ) -> String {
+    register_and_login_with_role(app_state, org_id, "superadmin").await
+}
+
+/// Same as `register_and_login` but for an arbitrary role (syndic,
+/// accountant, owner, contractor, ...) — needed for org-scoped endpoint
+/// tests where the caller must NOT be superadmin.
+#[allow(dead_code)]
+pub async fn register_and_login_with_role(
+    app_state: &actix_web::web::Data<AppState>,
+    org_id: Uuid,
+    role: &str,
+) -> String {
     let email = format!("e2e+{}@test.com", Uuid::new_v4());
     let reg = koprogo_api::application::dto::RegisterRequest {
         email: email.clone(),
         password: "Passw0rd!".to_string(),
         first_name: "E2E".to_string(),
         last_name: "Tester".to_string(),
-        role: "superadmin".to_string(),
+        role: role.to_string(),
         organization_id: Some(org_id),
     };
     let _ = app_state

@@ -165,7 +165,7 @@ impl AcpRepository for PostgresAcpRepository {
                 r#"
                 SELECT id, organization_id, name, slug, legal_status, bce_number,
                        address_street, address_postal_code, address_city,
-                       created_at, updated_at
+                       total_tantiemes, created_at, updated_at
                 FROM acps
                 ORDER BY created_at DESC
                 "#,
@@ -178,7 +178,7 @@ impl AcpRepository for PostgresAcpRepository {
                 r#"
                 SELECT id, organization_id, name, slug, legal_status, bce_number,
                        address_street, address_postal_code, address_city,
-                       created_at, updated_at
+                       total_tantiemes, created_at, updated_at
                 FROM acps
                 WHERE organization_id = $1
                 ORDER BY created_at DESC

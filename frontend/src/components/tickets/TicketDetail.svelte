@@ -38,7 +38,7 @@
     slaDueAt = undefined as string | undefined,
     /** Story B6 — `first_response_at` (premier SyndicResponse). null si aucune. */
     firstResponseAt = null as string | null,
-    /** Story B6 — initial fetch des responses (SSR/test). */
+    /** Story B6 — initial fetch des responses (build Astro SSG / test). */
     initialResponses = undefined as SyndicResponseDto[] | undefined,
     onupdated,
     ondeleted,

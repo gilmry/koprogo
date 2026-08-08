@@ -9,7 +9,8 @@
   // anti-pattern stories.md §B3).
   //
   // Pattern fetch : on accepte une prop `initialMandates` pour faciliter le
-  // SSR / les tests (pas de fetch synchrone en bord de composant), et on
+  // rendu build Astro (SSG) / les tests (pas de fetch synchrone en bord de
+  // composant), et on
   // expose `refresh()` via le parent qui peut piloter le rechargement après
   // un POST réussi (callback `onIssued` du `MandateIssueForm`).
   //

@@ -74,6 +74,43 @@ pub async fn list_users(state: web::Data<AppState>, user: AuthenticatedUser) -> 
     }
 }
 
+/// GET /api/v1/organizations/{organization_id}/users — list users for an
+/// organization (syndic/accountant own org, superadmin any org).
+#[utoipa::path(
+    get,
+    path = "/organizations/{organization_id}/users",
+    tag = "Users",
+    summary = "List users for an organization (syndic/accountant own org, superadmin any org)",
+    params(
+        ("organization_id" = Uuid, Path, description = "Organization ID")
+    ),
+    responses(
+        (status = 200, description = "List of users"),
+        (status = 403, description = "Access denied — resource belongs to another organization"),
+    ),
+    security(("bearer_auth" = []))
+)]
+#[get("/organizations/{organization_id}/users")]
+pub async fn list_organization_users(
+    state: web::Data<AppState>,
+    user: AuthenticatedUser,
+    organization_id: web::Path<Uuid>,
+) -> impl Responder {
+    if let Err(e) = user.verify_org_access(*organization_id) {
+        return HttpResponse::Forbidden().json(json!({"error": e}));
+    }
+    match state
+        .user_use_cases
+        .list_by_organization(*organization_id)
+        .await
+    {
+        Ok(users) => HttpResponse::Ok().json(json!({ "data": users })),
+        Err(e) => HttpResponse::InternalServerError().json(json!({
+            "error": format!("Failed to fetch users: {}", e)
+        })),
+    }
+}
+
 /// POST /api/v1/users — create user (SuperAdmin only)
 #[post("/users")]
 pub async fn create_user(

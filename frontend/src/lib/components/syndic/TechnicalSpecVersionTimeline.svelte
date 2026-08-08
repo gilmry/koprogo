@@ -68,20 +68,24 @@
     label: string;
     classes: string;
   } {
+    // Clés en snake_case — le backend sérialise `TechnicalSpecStatus` via
+    // son `Display` ("draft"/"pending_signatures"/...), pas le nom d'enum
+    // Rust PascalCase (trouvé en investiguant #617 C7, même bug que
+    // TechnicalSpecDetail.svelte : ces clés PascalCase ne matchaient jamais).
     const map: Record<string, { label: string; classes: string }> = {
-      Draft: {
+      draft: {
         label: "Brouillon",
         classes: "bg-gray-100 text-gray-700 border-gray-300",
       },
-      PendingSignatures: {
+      pending_signatures: {
         label: "Attente signatures",
         classes: "bg-orange-100 text-orange-800 border-orange-300",
       },
-      Approved: {
+      approved: {
         label: "Approuvée",
         classes: "bg-green-100 text-green-800 border-green-300",
       },
-      Superseded: {
+      superseded: {
         label: "Remplacée",
         classes: "bg-gray-200 text-gray-500 border-gray-300",
       },
@@ -119,7 +123,7 @@
     >
       {#each sorted as spec (spec.id)}
         {@const badge = statusBadge(spec.status)}
-        {@const isSuperseded = spec.status === "Superseded"}
+        {@const isSuperseded = spec.status === "superseded"}
         {@const isCurrent = spec.id === currentVersionId}
         <li
           data-testid={`tech-spec-version-row-${spec.version}`}

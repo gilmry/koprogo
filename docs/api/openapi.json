@@ -2185,6 +2185,40 @@
         ]
       }
     },
+    "/organizations/{organization_id}/users": {
+      "get": {
+        "tags": [
+          "Users"
+        ],
+        "summary": "List users for an organization (syndic/accountant own org, superadmin any org)",
+        "operationId": "list_organization_users",
+        "parameters": [
+          {
+            "name": "organization_id",
+            "in": "path",
+            "description": "Organization ID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of users"
+          },
+          "403": {
+            "description": "Access denied — resource belongs to another organization"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
     "/owners/{owner_id}/payments": {
       "get": {
         "tags": [

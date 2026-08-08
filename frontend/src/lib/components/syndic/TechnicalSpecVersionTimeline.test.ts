@@ -23,7 +23,7 @@ function spec(over: Partial<TechnicalSpecDto>): TechnicalSpecDto {
     deliverables: ["dlv"],
     required_signatures: ["syndic"],
     attachments: [],
-    status: "Approved",
+    status: "approved",
     created_by: "u",
     previous_version_id: null,
     created_at: "2026-06-09T10:00:00Z",
@@ -37,13 +37,13 @@ describe("TechnicalSpecVersionTimeline — Story B7 (4-cat)", () => {
     const v100 = spec({
       id: "v100",
       version: "1.0.0",
-      status: "Superseded",
+      status: "superseded",
       created_at: "2026-06-09T10:00:00Z",
     });
     const v110 = spec({
       id: "v110",
       version: "1.1.0",
-      status: "Approved",
+      status: "approved",
       created_at: "2026-06-10T10:00:00Z",
     });
 
@@ -55,18 +55,18 @@ describe("TechnicalSpecVersionTimeline — Story B7 (4-cat)", () => {
     const row110 = getByTestId("tech-spec-version-row-1.1.0");
     const row100 = getByTestId("tech-spec-version-row-1.0.0");
 
-    expect(row110.getAttribute("data-status")).toBe("Approved");
+    expect(row110.getAttribute("data-status")).toBe("approved");
     expect(row110.getAttribute("data-current")).toBe("true");
     expect(row110.getAttribute("aria-current")).toBe("true");
 
-    expect(row100.getAttribute("data-status")).toBe("Superseded");
+    expect(row100.getAttribute("data-status")).toBe("superseded");
     expect(row100.getAttribute("data-current")).toBe("false");
     // Grisage via class opacity (combiné avec text-gray-500 — INV-FE9 daltoniens).
     expect(row100.className).toMatch(/opacity-70|text-gray-500/);
   });
 
   it("@happy onSelect callback déclenché au click sur 'Voir'", () => {
-    const v = spec({ id: "v100", version: "1.0.0", status: "Approved" });
+    const v = spec({ id: "v100", version: "1.0.0", status: "approved" });
     const onSelect = vi.fn();
     const { container } = render(TechnicalSpecVersionTimeline, {
       props: { versions: [v], currentVersionId: "v100", onSelect },
@@ -90,7 +90,7 @@ describe("TechnicalSpecVersionTimeline — Story B7 (4-cat)", () => {
   });
 
   it("@security pas de bouton Edit/Delete sur les lignes (read-only)", () => {
-    const v = spec({ id: "v100", version: "1.0.0", status: "Approved" });
+    const v = spec({ id: "v100", version: "1.0.0", status: "approved" });
     const { container } = render(TechnicalSpecVersionTimeline, {
       props: { versions: [v], currentVersionId: "v100" },
     });

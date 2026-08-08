@@ -68,21 +68,25 @@ export default defineConfig({
       // Phase C ouverte : `refonte-ux/phase-b-fe/` exclu du gate CI le temps
       // de stabiliser seeds + multi-rôle login flow (issue GH "Phase C —
       // Stabilisation Documentation Vivante e2e"). Réactivation au fur et à
-      // mesure par spec stabilisé (C1 role-assignment.spec.ts ✅ 2026-08-06,
-      // root cause #618-ish : `valid_until` jamais persisté en DB par
-      // `user_role_repository_impl.rs`). C2-C8 restent exclus. Les specs
-      // encore rouges restent dans le repo, lançables en local pour debug.
+      // mesure par spec stabilisé — 2026-08-06 : C1 role-assignment.spec.ts
+      // ✅ (root cause : `valid_until` jamais persisté en DB par
+      // `user_role_repository_impl.rs`), C5 ticket-complaint.spec.ts ✅ (bug
+      // de test), C6 syndic-response-sla.spec.ts ✅ (débloqué par le fix
+      // casse email de C4), C7 technical-spec-flow.spec.ts ✅ (bug produit
+      // réel : status snake_case du backend comparé en PascalCase côté FE)
+      // et C8 contractor-eval.spec.ts ✅. 2026-08-07 (Story S2,
+      // docs/maury/syndic-org-users-endpoint) : magic-link-issue.spec.ts et
+      // mandate-issue.spec.ts ✅ — débloqués par l'endpoint org-scopé
+      // `GET /organizations/{id}/users` (Story S1, #691), la branche de
+      // création (précédemment vacuously skip faute de sélecteur peuplé)
+      // s'exécute désormais réellement. role-delegation (C4) reste exclu
+      // volontairement — hors scope PRD §4 (cf. docs/agent-activity/
+      // 2026-08-06-issue617-c*.md).
       testIgnore: [
         /scenarios\//,
         /smoke\//,
         /characterization\//,
-        /refonte-ux\/phase-b-fe\/magic-link-issue\.spec\.ts/,
-        /refonte-ux\/phase-b-fe\/mandate-issue\.spec\.ts/,
         /refonte-ux\/phase-b-fe\/role-delegation\.spec\.ts/,
-        /refonte-ux\/phase-b-fe\/ticket-complaint\.spec\.ts/,
-        /refonte-ux\/phase-b-fe\/syndic-response-sla\.spec\.ts/,
-        /refonte-ux\/phase-b-fe\/technical-spec-flow\.spec\.ts/,
-        /refonte-ux\/phase-b-fe\/contractor-eval\.spec\.ts/,
       ],
     },
 
