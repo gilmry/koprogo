@@ -67,13 +67,22 @@ export default defineConfig({
       },
       // Phase C ouverte : `refonte-ux/phase-b-fe/` exclu du gate CI le temps
       // de stabiliser seeds + multi-rôle login flow (issue GH "Phase C —
-      // Stabilisation Documentation Vivante e2e"). Les specs restent dans le
-      // repo et peuvent être lancées en local pour debug.
+      // Stabilisation Documentation Vivante e2e"). Réactivation au fur et à
+      // mesure par spec stabilisé (C1 role-assignment.spec.ts ✅ 2026-08-06,
+      // root cause #618-ish : `valid_until` jamais persisté en DB par
+      // `user_role_repository_impl.rs`). C2-C8 restent exclus. Les specs
+      // encore rouges restent dans le repo, lançables en local pour debug.
       testIgnore: [
         /scenarios\//,
         /smoke\//,
         /characterization\//,
-        /refonte-ux\/phase-b-fe\//,
+        /refonte-ux\/phase-b-fe\/magic-link-issue\.spec\.ts/,
+        /refonte-ux\/phase-b-fe\/mandate-issue\.spec\.ts/,
+        /refonte-ux\/phase-b-fe\/role-delegation\.spec\.ts/,
+        /refonte-ux\/phase-b-fe\/ticket-complaint\.spec\.ts/,
+        /refonte-ux\/phase-b-fe\/syndic-response-sla\.spec\.ts/,
+        /refonte-ux\/phase-b-fe\/technical-spec-flow\.spec\.ts/,
+        /refonte-ux\/phase-b-fe\/contractor-eval\.spec\.ts/,
       ],
     },
 

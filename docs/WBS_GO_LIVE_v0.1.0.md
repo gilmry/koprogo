@@ -38,15 +38,17 @@ Légende : Tier 1 = humain exécute (agent diagnostique/propose). Taille S≤0.5
 
 ### Track A — Backend Decimal
 
-- **WP-A1 — Clôture C1 gouvernance** · #534/#521-C1 ferme #525 · T2 · M · _critique, premier_
+- **WP-A1 — Clôture C1 gouvernance** · #534/#521-C1 ferme #525 · T2 · M · _critique, premier_ · **FAIT** (PR #535, commits `98c16518` RED + `7fb172e0` GREEN + `a8459218` merge — ferme #525 [CLOSED])
   Appliquer `backend/migrations/20260516000000_alter_governance_to_numeric.sql` (DB test) ; `bdd_governance` 4 scénarios VERTS ; tuer le panic #525 ColumnDecode `units.quota`. Décisions bloquantes : (a) **ADR-0008 ratio** pour proxy validation `vote.rs:~312-342` (draft `docs/agent-activity/2026-05-16-adr8-noncompliance-body.md`) ; (b) **politique f64 d'affichage** — `resolution.rs:185-212` `pour/contre/abstention_percentage()` renvoient `f64` depuis comptes entiers : **reco = carve-out ADR-0008 explicite (affichage seul, jamais seuil légal)** + assertion que le chemin quorum/majorité légal n'a aucun aller-retour Decimal→f64→Decimal. Fichiers : la migration, `tests/bdd_governance.rs`, `features/governance_decimal.feature`, `entities/{vote,resolution,meeting,age_request}.rs`, repos impl correspondants. Deps : aucune.
+  **(resync 2026-08-06, doc-only, aucun code touché) : marqueur FAIT manquant depuis livraison, code+migration déjà sur `feature/dev` depuis PR #535.**
 
 - **WP-A2 — Cascade tests #443 (LONG POLE)** · #443 · T2 · L · _critique_ · **FAIT** (#539 + reconfirmé 2026-05-18)
   `docker compose run --rm backend cargo check --tests` propre (`--lib` déjà propre). Literals f64→`dec!()` aux call-sites, assertions Decimal-equality, zéro régression scénario @security/@negative. Fichiers : `tests/bdd_financial.rs` (~23 occ.), `tests/e2e_*.rs`, glue `features/*.feature`. Deps : conventions WP-A1. **Concurrent Track F.**
   **Reconfirmé** (post-merge 5 PR + WP-B3 + #526) : `cargo check --tests` **CHECK_EXIT=0**, 0 erreur, aucune cascade f64/Decimal résiduelle (1 warning amont `proc-macro-error2`, non-bloquant). Suite BDD 100% verte (G1/G2/OPS/COM/FIN=0) ⇒ zéro régression @security/@negative confirmée. **Critère GO « `cargo check --tests` propre » atteint.**
 
-- **WP-A3 — EXP-006 journal_entry (réduit)** · #433 · T2 · M
+- **WP-A3 — EXP-006 journal_entry (réduit)** · #433 · T2 · M · **FAIT** (commits `1a59d0eb` GREEN + `61e5e757` test 4-cat complet @security cross-org)
   `Result<_,String>`→`AppError` sur `JournalEntry/JournalEntryLine`. `features/journal_entries.feature` 4-cat RED-first : @negative **débit≠crédit rejeté**, @edge 0.1+0.2=0.3, @security isolation cross-org, @happy écriture équilibrée. Pas de SQL. Deps : A1, A2.
+  **(resync 2026-08-06, doc-only, aucun code touché) : `JournalEntryError` (enum domaine + pont `AppError`) déjà livré, marqueur FAIT manquant.**
 
 - **WP-A4 — EXP-005 charge_distribution** · #433 · T2 · M · _parallèle A3_ · **FAIT** (2026-05-19)
   `Result→AppError` ; 4-cat : @security somme quotas==100% à `dec!(1.0001)`, @negative quota>1/négatif rejeté. Deps : A1.
@@ -66,8 +68,9 @@ Légende : Tier 1 = humain exécute (agent diagnostique/propose). Taille S≤0.5
 
 ### Track B — Backend autre
 
-- **WP-B1 — Re-vérifier bugs revue humaine** · BUG-WF*/#523 · T2 · M (L si WF14-2 réel) · *J1\*
+- **WP-B1 — Re-vérifier bugs revue humaine** · BUG-WF*/#523 · T2 · M (L si WF14-2 réel) · *J1\* · **FAIT** (2026-05-17, branche `story/wbs-b1-review-bugs`, log `docs/agent-activity/2026-05-17-wbs-b1.md`)
   Re-jouer `HUMAN_REVIEW_REPORT_v0.1.0.md` comme checklist vs `feature/dev` courant : **BUG-WF14-2 fuite bâtiments cross-org (Alice voit 3 bâtiments) = bloquant sécurité bêta si reproductible** — tracer scoping `organization_id` repo buildings ; BUG-WF2-1 `voting_power≤1000` vs seed>1280 (vérifier `20260401000000_fix_voting_power_constraint.sql`) ; BUG-WF7-1 ticket 400 ; NaN% compteurs (probablement corrigé par #523 `7c2d664` — vérifier). Repro RED par bug confirmé. Deps : aucune.
+  **Réalisé** : les 4 bugs **ALREADY-FIXED** (rapport 2026-04-01 périmé, fixes déjà mergés le jour même). BUG-WF14-2 : isolation confirmée tenue (`dddde26`), gap de regression comblé (`@security` scenario `multitenancy.feature` + 5 steps `bdd.rs`). BUG-WF2-1 : seed correct, contrainte DB était le bug (`20260401000000_fix_voting_power_constraint.sql`). BUG-WF7-1 : fix frontend `dd935d2`. NaN% : `7c2d664`/`5857c23`. **(resync 2026-08-06, doc-only) : marqueur FAIT manquant depuis livraison.**
 
 - **WP-B2 — Gate sécurité dependabot #432** · #432 · T2 · S-M · _parallèle_ · **FAIT** (PR #538)
   Réalité : #432 = 100% npm/frontend (le "14 vulns" était périmé). `svelte 5.55.7` + `devalue 5.8.1` → 5 alertes résolues, `npm audit --omit=dev` = 0, build vert. Résiduel 1 HIGH `@babel/plugin-transform-modules-systemjs` (devDependency build-only, `audit fix --force` breaking → accepté/documenté). `cargo audit` (RustSec) exit 0 modulo ignores `.cargo/audit.toml`. Fichiers : `frontend/package-lock.json`. Deps : aucune.
@@ -430,7 +433,7 @@ graph LR
     classDef done fill:#dfd
     class G1,G2,F1,F2,F3 tier1
     class A2,A5,I5,I7 critical
-    class A2,A4,A5,A6,A7,B2,B3,FE1,FE2 done
+    class A1,A2,A3,A4,A5,A6,A7,B1,B2,B3,FE1,FE2 done
 ```
 
 **Chemin critique** : `A1(M) → A2(L) → A5(L etat_date) → #433 VERT → make ci VERT → G1(T1) → G2(T1)`, convergeant avec `FE1(L)→FE2→D1` et `E1→F1(T1)→F2(T1)→F3(T1)` et `H1→H2 / H3 / B4` (Track H Conformité métier — bloqueurs légaux Art. 3.87 §3-5 CC, ajoutés 2026-05-20 cf. #553/#554) **et** `I0→I7→I8→I9` (Track I FE refonte UX ajouté 2026-06-09 — convergence intégrée à G1).
