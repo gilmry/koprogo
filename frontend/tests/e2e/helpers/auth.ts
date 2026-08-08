@@ -235,7 +235,7 @@ export async function ensureAcp(
 async function seedConformantUnits(
   page: Page,
   adminToken: string,
-  orgId: string,
+  acpId: string,
   buildingId: string,
   totalUnits: number,
   quotaSum: number = 1000,
@@ -249,7 +249,7 @@ async function seedConformantUnits(
     const quota = i === totalUnits - 1 ? lastQuota : baseQuota;
     const unitResp = await page.request.post(`${API_BASE}/units`, {
       data: {
-        organization_id: orgId,
+        acp_id: acpId,
         building_id: buildingId,
         unit_number: `${i + 1}A`,
         floor: Math.floor(i / 2),
@@ -309,7 +309,7 @@ export async function loginAsSyndicWithBuilding(
     await seedConformantUnits(
       page,
       auth.adminToken,
-      auth.orgId,
+      acpId,
       building.id,
       totalUnits,
       totalTantiemes,
@@ -334,10 +334,11 @@ export async function loginAsSyndicWithUnit(
     totalTantiemes: 1000,
     seedUnits: false,
   });
+  const acpId = await ensureAcp(page, ctx.orgId, ctx.adminToken, prefix);
 
   const unitResp = await page.request.post(`${API_BASE}/units`, {
     data: {
-      organization_id: ctx.orgId,
+      acp_id: acpId,
       building_id: ctx.buildingId,
       unit_number: "1A",
       floor: 1,

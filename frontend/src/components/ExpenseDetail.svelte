@@ -146,10 +146,10 @@
 
   function getStatusBadge(status: string): { class: string; label: string } {
     const badges: Record<string, { class: string; label: string }> = {
-      'Paid': { class: 'bg-green-100 text-green-800', label: $_('expenses.status_paid') },
-      'Pending': { class: 'bg-yellow-100 text-yellow-800', label: $_('expenses.status_pending') },
-      'Overdue': { class: 'bg-red-100 text-red-800', label: $_('expenses.status_overdue') },
-      'Cancelled': { class: 'bg-gray-100 text-gray-800', label: $_('expenses.status_cancelled') }
+      'paid': { class: 'bg-green-100 text-green-800', label: $_('expenses.status_paid') },
+      'pending': { class: 'bg-yellow-100 text-yellow-800', label: $_('expenses.status_pending') },
+      'overdue': { class: 'bg-red-100 text-red-800', label: $_('expenses.status_overdue') },
+      'cancelled': { class: 'bg-gray-100 text-gray-800', label: $_('expenses.status_cancelled') }
     };
     return badges[status] || { class: 'bg-gray-100 text-gray-800', label: status };
   }
@@ -203,7 +203,7 @@
       {error}
     </div>
     <div class="mt-4">
-      <Button variant="outline" on:click={handleGoBack} data-testid="back-button">
+      <Button variant="outline" onclick={handleGoBack} data-testid="back-button">
         {$_('common.back')}
       </Button>
     </div>
@@ -222,29 +222,29 @@
           <h1 class="text-3xl font-bold text-gray-900">{$_('expenses.detail_title')}</h1>
         </div>
         <div class="flex gap-2">
-          {#if expense.payment_status === 'Pending'}
-            <Button variant="primary" on:click={handleMarkPaid} data-testid="mark-paid-button">
+          {#if expense.payment_status === 'pending'}
+            <Button variant="primary" onclick={handleMarkPaid} data-testid="mark-paid-button">
               {$_('expenses.mark_paid')}
             </Button>
-            <Button variant="outline" on:click={handleMarkOverdue} data-testid="mark-overdue-button">
+            <Button variant="outline" onclick={handleMarkOverdue} data-testid="mark-overdue-button">
               {$_('expenses.mark_overdue')}
             </Button>
-            <Button variant="outline" on:click={handleCancel} data-testid="cancel-button">
+            <Button variant="outline" onclick={handleCancel} data-testid="cancel-button">
               {$_('common.cancel')}
             </Button>
-          {:else if expense.payment_status === 'Overdue'}
-            <Button variant="primary" on:click={handleMarkPaid} data-testid="mark-paid-button">
+          {:else if expense.payment_status === 'overdue'}
+            <Button variant="primary" onclick={handleMarkPaid} data-testid="mark-paid-button">
               {$_('expenses.mark_paid')}
             </Button>
-            <Button variant="outline" on:click={handleCancel} data-testid="cancel-button">
+            <Button variant="outline" onclick={handleCancel} data-testid="cancel-button">
               {$_('common.cancel')}
             </Button>
-          {:else if expense.payment_status === 'Paid'}
-            <Button variant="outline" on:click={handleUnpay} data-testid="unpay-button">
+          {:else if expense.payment_status === 'paid'}
+            <Button variant="outline" onclick={handleUnpay} data-testid="unpay-button">
               {$_('expenses.cancel_payment')}
             </Button>
-          {:else if expense.payment_status === 'Cancelled'}
-            <Button variant="primary" on:click={handleReactivate} data-testid="reactivate-button">
+          {:else if expense.payment_status === 'cancelled'}
+            <Button variant="primary" onclick={handleReactivate} data-testid="reactivate-button">
               {$_('expenses.reactivate')}
             </Button>
           {/if}

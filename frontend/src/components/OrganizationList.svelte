@@ -129,7 +129,7 @@
         {$_('admin.organization.manageOrganizations')}
       </p>
     </div>
-    <Button variant="primary" on:click={handleCreate} data-testid="create-organization-button">
+    <Button variant="primary" onclick={handleCreate} data-testid="create-organization-button">
       ➕ {$_('admin.organization.newOrganization')}
     </Button>
   </div>

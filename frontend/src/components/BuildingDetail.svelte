@@ -119,7 +119,7 @@
       ⚠️ {error}
     </div>
     <div class="mt-4">
-      <Button variant="outline" on:click={handleGoBack}>
+      <Button variant="outline" onclick={handleGoBack}>
         ← {$_("common.back")}
       </Button>
     </div>

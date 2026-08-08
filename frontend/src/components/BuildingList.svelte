@@ -113,7 +113,7 @@
       </p>
     </div>
     {#if isSuperAdmin}
-      <Button variant="primary" on:click={handleCreate} data-testid="create-building-button">
+      <Button variant="primary" onclick={handleCreate} data-testid="create-building-button">
         ➕ {$_('buildings.new')}
       </Button>
     {/if}

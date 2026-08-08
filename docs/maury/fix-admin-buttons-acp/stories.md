@@ -28,6 +28,14 @@ Tout `<Button>` du panneau admin/dépenses déclenche son action au clic. Fix m�
 - `frontend/src/components/BuildingDetail.svelte:122` — retour
 - `frontend/src/components/MeetingDetail.svelte:236` — retour
 
+### Root cause additionnelle trouvée en RED — casse `payment_status`
+
+En écrivant les tests `@happy` du panneau dépense (ci-dessous), découverte d'un **second bug indépendant** sur le même fichier : `ExpenseDetail.svelte` compare `expense.payment_status` à des chaînes **PascalCase** (`'Pending'`, `'Overdue'`, `'Paid'`, `'Cancelled'`, lignes 225/235/242/246), alors que le backend sérialise `PaymentStatus` en **snake_case** (`#[serde(rename_all = "snake_case")]`, `backend/src/domain/entities/expense.rs:26`) → `"pending"`, `"paid"`, etc. Résultat : **le bloc conditionnel qui affiche les 5 boutons d'action ne matche jamais**, sur aucune dépense, quel que soit son statut réel — confirmé en direct (badge affiche `pending`, zéro bouton d'action dans le DOM).
+
+Même pattern déjà rencontré et corrigé sur `technical-spec-flow.spec.ts` (C7, cf. commentaire `playwright.config.ts`) mais pas ici. Sans ce fix, réparer uniquement le `on:click`→`onclick` ne suffit pas : les 8 boutons listés ci-dessus pour `ExpenseDetail.svelte` resteraient invisibles. **Inclus dans le scope de Story 1** (décision @gilmry 2026-08-08) — même fichier, même DoD ("panneau d'action ExpenseDetail.svelte fonctionnel").
+
+**Fix additionnel** : `ExpenseDetail.svelte` lignes 225/235/242/246, comparer `expense.payment_status` à `'pending'`/`'overdue'`/`'paid'`/`'cancelled'` (snake_case) au lieu de PascalCase.
+
 ### RED — tests avant code (Playwright, clic réel, pas de visite passive)
 
 | Cat | Scénario |
@@ -52,10 +60,11 @@ Remplacement mécanique `on:click=` → `onclick=` sur les 13 occurrences. Aucun
 
 ### DoD — Story 1
 
-- [ ] 13/13 occurrences corrigées, revérifiées par le même grep que #697 (0 résultat restant)
-- [ ] 4-cat GREEN
-- [ ] `npm run build` vert
-- [ ] Repro live des 3 étapes de #697 confirmée résolue
+- [x] 13/13 occurrences corrigées, revérifiées par le même grep que #697 (0 résultat restant)
+- [x] 4-cat GREEN (9/9 — le test `@negative` "retour" flake occasionnellement sur un hiccup dev-server Astro non lié au fix, confirmé 3/3 clean en isolation, couvert par les retries CI existants)
+- [x] Fix additionnel casse `payment_status` (PascalCase→snake_case) inclus, cf. ci-dessus
+- [x] `npm run build` vert (0 erreur, 115 pages) + `npx vitest run` vert (344/344)
+- [x] Repro live des 3 étapes de #697 confirmée résolue (dialogs org/immeuble/utilisateur s'ouvrent, panneau dépense fonctionnel de bout en bout)
 - [ ] Signature
 
 ---
