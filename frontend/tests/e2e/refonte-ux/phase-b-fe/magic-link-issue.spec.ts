@@ -167,24 +167,27 @@ async function seedSyndicWithTicketAndContractor(
   };
 }
 
-// Inject Bearer dans le store FE pour bypass UI login (perf + déterminisme).
-async function injectSyndicAuth(
+// Login UI réel (cf. C1 `role-assignment.spec.ts` `humanLogin`) — l'ancien
+// `injectSyndicAuth` posait un token dans une clé localStorage `koprogo_auth`
+// que l'architecture courante ne lit plus (WP-FE1 : JWT hors localStorage,
+// access token mémoire + refresh via cookie HttpOnly). En prime, le cookie
+// de session hérité du `register` syndic était de toute façon écrasé par le
+// `register` contractor qui suit dans `seedSyndicWithTicketAndContractor` —
+// un vrai login après le seed est nécessaire pour session correcte.
+async function humanLogin(
   page: import("@playwright/test").Page,
-  syndicToken: string,
-  syndicEmail: string,
+  email: string,
+  password: string,
 ): Promise<void> {
-  await page.addInitScript(
-    (arg: string[]) => {
-      const [t, e] = arg;
-      // Pattern existant — cf. helpers/auth.ts `injectAuth`.
-      const auth = {
-        token: t,
-        user: { email: e, role: "syndic" },
-      };
-      window.localStorage.setItem("koprogo_auth", JSON.stringify(auth));
-    },
-    [syndicToken, syndicEmail],
-  );
+  await page.goto("/login");
+  await page.getByLabel(/email|courriel/i).fill(email);
+  await page.getByLabel(/mot de passe|password/i).fill(password);
+  await page
+    .getByRole("button", { name: /connecter|sign\s*in|se\s*connecter/i })
+    .click();
+  await page
+    .waitForLoadState("networkidle", { timeout: 10_000 })
+    .catch(() => undefined);
 }
 
 // ---------------------------------------------------------------------------
@@ -198,7 +201,7 @@ test.describe("Story B2 — Magic Link issue (Phase B FE)", () => {
     browser,
   }) => {
     const seed = await seedSyndicWithTicketAndContractor(request);
-    await injectSyndicAuth(page, seed.syndicToken, seed.syndicEmail);
+    await humanLogin(page, seed.syndicEmail, TEST_PASSWORD);
 
     // Mock GET /users — le form charge la liste des destinataires.
     // (Si non implémenté côté backend → on stubbe au niveau du chargement
@@ -335,7 +338,7 @@ test.describe("Story B2 — Magic Link issue (Phase B FE)", () => {
     request,
   }) => {
     const seed = await seedSyndicWithTicketAndContractor(request);
-    await injectSyndicAuth(page, seed.syndicToken, seed.syndicEmail);
+    await humanLogin(page, seed.syndicEmail, TEST_PASSWORD);
 
     // Stub /users avec contractor mais on stubbe /buildings/.../tickets
     // pour renvoyer vide → autocomplete scope_id vide.
