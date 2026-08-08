@@ -3,38 +3,39 @@
   import { _ } from '../lib/i18n';
   import { api } from '../lib/api';
   import { authStore } from '../stores/auth';
-  import type { Organization, Building } from '../lib/types';
+  import type { Building } from '../lib/types';
+  import { listAcps, type AcpResponseDto } from '../lib/api/acps';
   import Button from './ui/Button.svelte';
 
-  let { open = $bindable(false), buildingId = undefined, organizationId = undefined, totalTantiemes = 1000, oncreated = () => {}, onclose = () => {} }: {
-    open?: boolean; buildingId?: string | undefined; organizationId?: string | undefined; totalTantiemes?: number; oncreated?: () => void; onclose?: () => void;
+  let { open = $bindable(false), buildingId = undefined, acpId = undefined, totalTantiemes = 1000, oncreated = () => {}, onclose = () => {} }: {
+    open?: boolean; buildingId?: string | undefined; acpId?: string | undefined; totalTantiemes?: number; oncreated?: () => void; onclose?: () => void;
   } = $props();
 
   let unitNumber = $state(''); let floor = $state(0); let surfaceArea = $state(0); let quota = $state(0);
   let unitType = $state<'Apartment' | 'Parking' | 'Cellar'>('Apartment');
   let loading = $state(false); let error = $state('');
-  let organizations = $state<Organization[]>([]); let buildings = $state<Building[]>([]);
-  let selectedOrganizationId = $state(''); let selectedBuildingId = $state('');
-  let loadingOrgs = $state(false); let loadingBuildings = $state(false);
+  let acps = $state<AcpResponseDto[]>([]); let buildings = $state<Building[]>([]);
+  let selectedAcpId = $state(''); let selectedBuildingId = $state('');
+  let loadingAcps = $state(false); let loadingBuildings = $state(false);
 
   // Sync selected IDs with props (live values via $effect, not stale initial capture)
-  $effect(() => { if (organizationId && !selectedOrganizationId) selectedOrganizationId = organizationId; });
+  $effect(() => { if (acpId && !selectedAcpId) selectedAcpId = acpId; });
   $effect(() => { if (buildingId && !selectedBuildingId) selectedBuildingId = buildingId; });
 
   let isSuperAdmin = $derived($authStore.user?.role === 'superadmin');
-  let needsSelection = $derived(isSuperAdmin && (!buildingId || !organizationId));
+  let needsSelection = $derived(isSuperAdmin && (!buildingId || !acpId));
 
-  $effect(() => { if (isSuperAdmin && !organizationId) loadOrganizations(); });
+  $effect(() => { if (isSuperAdmin && !acpId) loadAcps(); });
 
-  async function loadOrganizations() {
-    try { loadingOrgs = true; const response = await api.get<Organization[]>('/organizations'); organizations = response; } catch (e) { console.error('Error loading organizations:', e); error = $_('common.error_loading'); } finally { loadingOrgs = false; }
+  async function loadAcps() {
+    try { loadingAcps = true; acps = await listAcps(); } catch (e) { console.error('Error loading ACPs:', e); error = $_('common.error_loading'); } finally { loadingAcps = false; }
   }
 
-  async function loadBuildings(orgId: string) {
-    try { loadingBuildings = true; buildings = []; selectedBuildingId = ''; const response = await api.get<Building[]>(`/buildings?organization_id=${orgId}`); buildings = response; } catch (e) { console.error('Error loading buildings:', e); error = $_('common.error_loading_buildings'); } finally { loadingBuildings = false; }
+  async function loadBuildings() {
+    try { loadingBuildings = true; buildings = []; selectedBuildingId = ''; const response = await api.get<Building[]>('/buildings'); buildings = response; } catch (e) { console.error('Error loading buildings:', e); error = $_('common.error_loading_buildings'); } finally { loadingBuildings = false; }
   }
 
-  $effect(() => { if (selectedOrganizationId && isSuperAdmin && !organizationId) loadBuildings(selectedOrganizationId); });
+  $effect(() => { if (selectedAcpId && isSuperAdmin && !acpId) loadBuildings(); });
   $effect(() => { if (selectedBuildingId && buildings.length > 0) { const building = buildings.find(b => b.id === selectedBuildingId); if (building && building.total_tantiemes) totalTantiemes = building.total_tantiemes; } });
 
   function resetForm() { unitNumber = ''; floor = 0; surfaceArea = 0; quota = 0; unitType = 'Apartment'; error = ''; }
@@ -42,15 +43,15 @@
 
   async function handleSubmit() {
     error = '';
-    const finalOrganizationId = organizationId || selectedOrganizationId;
+    const finalAcpId = acpId || selectedAcpId;
     const finalBuildingId = buildingId || selectedBuildingId;
-    if (!finalOrganizationId) { error = $_('units.select_organization'); return; }
+    if (!finalAcpId) { error = $_('units.select_acp'); return; }
     if (!finalBuildingId) { error = $_('units.select_building'); return; }
     if (!unitNumber.trim()) { error = $_('units.unit_number_required'); return; }
     if (surfaceArea <= 0) { error = $_('units.surface_must_be_positive'); return; }
     if (quota <= 0) { error = $_('units.quota_must_be_positive'); return; }
     if (quota > totalTantiemes) { error = $_('units.quota_exceeds_max', { values: { max: totalTantiemes } }); return; }
-    try { loading = true; await api.post('/units', { organization_id: finalOrganizationId, building_id: finalBuildingId, unit_number: unitNumber.trim(), floor, surface_area: surfaceArea, quota, unit_type: unitType }); oncreated(); resetForm(); open = false; } catch (e) { error = e instanceof Error ? e.message : $_('units.error_creating_unit'); console.error('Error creating unit:', e); } finally { loading = false; }
+    try { loading = true; await api.post('/units', { acp_id: finalAcpId, building_id: finalBuildingId, unit_number: unitNumber.trim(), floor, surface_area: surfaceArea, quota, unit_type: unitType }); oncreated(); resetForm(); open = false; } catch (e) { error = e instanceof Error ? e.message : $_('units.error_creating_unit'); console.error('Error creating unit:', e); } finally { loading = false; }
   }
 </script>
 
@@ -62,8 +63,8 @@
       {#if error}<div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-4">{error}</div>{/if}
       <form onsubmit={(e: Event) => { e.preventDefault(); handleSubmit(); }} class="space-y-4">
         {#if needsSelection}
-          <div><label for="organizationSelect" class="block text-sm font-medium text-gray-700 mb-1">{$_('units.organization')} *</label><select id="organizationSelect" bind:value={selectedOrganizationId} disabled={loadingOrgs} required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"><option value="">{$_('common.select_organization')}</option>{#each organizations as org}<option value={org.id}>{org.name}</option>{/each}</select></div>
-          <div><label for="buildingSelect" class="block text-sm font-medium text-gray-700 mb-1">{$_('units.building')} *</label><select id="buildingSelect" bind:value={selectedBuildingId} disabled={!selectedOrganizationId || loadingBuildings} required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"><option value="">{$_('common.select_building')}</option>{#each buildings as building}<option value={building.id}>{building.name} - {building.address}</option>{/each}</select>{#if loadingBuildings}<p class="text-xs text-gray-500 mt-1">{$_('common.loading_buildings')}</p>{/if}</div>
+          <div><label for="acpSelect" class="block text-sm font-medium text-gray-700 mb-1">{$_('units.acp')} *</label><select id="acpSelect" bind:value={selectedAcpId} disabled={loadingAcps} required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"><option value="">{$_('common.select_acp')}</option>{#each acps as acp}<option value={acp.id}>{acp.name}</option>{/each}</select></div>
+          <div><label for="buildingSelect" class="block text-sm font-medium text-gray-700 mb-1">{$_('units.building')} *</label><select id="buildingSelect" bind:value={selectedBuildingId} disabled={!selectedAcpId || loadingBuildings} required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"><option value="">{$_('common.select_building')}</option>{#each buildings as building}<option value={building.id}>{building.name} - {building.address}</option>{/each}</select>{#if loadingBuildings}<p class="text-xs text-gray-500 mt-1">{$_('common.loading_buildings')}</p>{/if}</div>
         {/if}
         <div><label for="unitNumber" class="block text-sm font-medium text-gray-700 mb-1">{$_('units.unit_number')} *</label><input id="unitNumber" type="text" bind:value={unitNumber} placeholder={$_('units.unit_number_example')} required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500" /></div>
         <div><label for="unitType" class="block text-sm font-medium text-gray-700 mb-1">{$_('units.unit_type')} *</label><select id="unitType" bind:value={unitType} required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"><option value="Apartment">{$_('units.apartment')}</option><option value="Parking">{$_('units.parking')}</option><option value="Cellar">{$_('units.cellar')}</option></select></div>

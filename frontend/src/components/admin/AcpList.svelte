@@ -15,8 +15,15 @@
     type AcpResponseDto,
     type CreateAcpDto,
   } from "../../lib/api/acps";
+  import { api } from "../../lib/api";
+
+  interface OrganizationOption {
+    id: string;
+    name: string;
+  }
 
   let acps = $state<AcpResponseDto[]>([]);
+  let organizations = $state<OrganizationOption[]>([]);
   let loading = $state(true);
   let error = $state<string | null>(null);
   let showCreate = $state(false);
@@ -44,7 +51,27 @@
     }
   }
 
-  onMount(refresh);
+  async function loadOrganizations(): Promise<void> {
+    try {
+      const response = await api.get<{ data: OrganizationOption[] }>(
+        "/organizations?per_page=1000",
+      );
+      organizations = response.data;
+    } catch (e) {
+      console.error("Error loading organizations:", e);
+    }
+  }
+
+  function organizationLabel(organizationId: string | null): string {
+    if (!organizationId) return "Auto-gérée";
+    const org = organizations.find((o) => o.id === organizationId);
+    return org ? org.name : organizationId;
+  }
+
+  onMount(() => {
+    refresh();
+    loadOrganizations();
+  });
 
   async function submitCreate(event: SubmitEvent): Promise<void> {
     event.preventDefault();
@@ -113,15 +140,18 @@
         </label>
         <label class="block">
           <span class="text-sm font-medium text-gray-700">
-            Organization ID (cabinet syndic, optionnel)
+            Cabinet syndic (organisation, optionnel)
           </span>
-          <input
-            type="text"
+          <select
             bind:value={form.organization_id}
-            placeholder="UUID — vide = ACP auto-gérée"
             class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg"
             data-testid="acp-form-org-id"
-          />
+          >
+            <option value={null}>Aucun — ACP auto-gérée</option>
+            {#each organizations as org (org.id)}
+              <option value={org.id}>{org.name}</option>
+            {/each}
+          </select>
         </label>
         <label class="block">
           <span class="text-sm font-medium text-gray-700">Rue *</span>
@@ -208,7 +238,7 @@
             <td class="px-4 py-2 text-sm font-medium text-gray-900">{acp.name}</td>
             <td class="px-4 py-2 text-sm text-gray-500">{acp.slug}</td>
             <td class="px-4 py-2 text-sm text-gray-500">
-              {acp.organization_id ?? "Auto-gérée"}
+              {organizationLabel(acp.organization_id)}
             </td>
             <td class="px-4 py-2 text-sm text-gray-500">
               {acp.address_street}, {acp.address_postal_code} {acp.address_city}

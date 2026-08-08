@@ -54,7 +54,7 @@ export interface Organization {
 // Building interface
 export interface Building {
   id: string;
-  organization_id: string;
+  acp_id: string;
   name: string;
   address: string;
   city: string;

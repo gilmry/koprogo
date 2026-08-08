@@ -68,7 +68,7 @@ const mockedListBuildings = vi.mocked(listBuildings);
 function makeBuilding(overrides: Partial<Building> = {}): Building {
   return {
     id: "11111111-1111-1111-1111-111111111111",
-    organization_id: "acp-001",
+    acp_id: "acp-001",
     name: "Immeuble Test",
     address: "1 Rue Test",
     city: "Brussels",
@@ -173,7 +173,7 @@ describe("BuildingSelector @happy", () => {
     const target = makeBuilding({
       id: "b-click",
       name: "Cliqué",
-      organization_id: "acp-XYZ",
+      acp_id: "acp-XYZ",
     });
     mockedSearchBuildings.mockResolvedValue([target]);
 

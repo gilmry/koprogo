@@ -4,6 +4,8 @@
   import { api } from "../lib/api";
   import { toast } from "../stores/toast";
   import type { Building } from "../lib/types";
+  import { getAcp } from "../lib/api/acps";
+  import { tryGetOrganizationName } from "../lib/api/organizations";
   import BuildingForm from "./admin/BuildingForm.svelte";
   import Button from "./ui/Button.svelte";
   import UnitList from "./UnitList.svelte";
@@ -63,20 +65,17 @@
       error = "";
       building = await api.get<Building>(`/buildings/${buildingId}`);
 
-      // Load organization name (only for SuperAdmin)
-      if (building && building.organization_id) {
-        const orgId = building.organization_id;
+      // Résout le nom du cabinet syndic via l'ACP (building.acp_id ->
+      // acp.organization_id -> nom). Dégrade silencieusement (403 syndic/
+      // owner, ACP auto-gérée sans organisation) — cf. tryGetOrganizationName.
+      if (building && building.acp_id) {
         try {
-          const userInfo = await api.get<any>("/auth/me");
-          if (userInfo.role === "superadmin") {
-            const response = await api.get<{ data: any[] }>(
-              "/organizations?per_page=1000",
-            );
-            const org = response.data.find((o: any) => o.id === orgId);
-            organizationName = org ? org.name : $_("buildings.unknownOrg");
-          }
+          const acp = await getAcp(building.acp_id);
+          organizationName = acp.organization_id
+            ? (await tryGetOrganizationName(acp.organization_id)) ?? ""
+            : "";
         } catch (e) {
-          console.error("Error loading organization:", e);
+          console.error("Error loading ACP/organization:", e);
           organizationName = "";
         }
       }

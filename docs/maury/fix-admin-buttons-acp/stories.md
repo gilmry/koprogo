@@ -85,6 +85,15 @@ Story 1 signée et fusionnée (sinon le bouton "Nouvel immeuble" reste mort, imp
 - `frontend/src/components/admin/AcpList.svelte` — champ texte UUID → `<select>` peuplé via `GET /organizations`
 - Backend : **aucun changement** — `CreateBuildingDto.acp_id`, `building_handlers.rs`, `GET /acps` (`routes.rs:39`), `GET /organizations` existent déjà et sont conformes
 
+### Root cause additionnelle trouvée en préparant Story 2 — même dérive organization_id/acp_id ailleurs
+
+En cherchant tous les usages de `building.organization_id` (nécessaire pour typer correctement le pré-remplissage du dropdown en édition, cf. `@edge` ci-dessous), découverte de 3 sites supplémentaires touchés par la même dérive (migration Story H15/#602, `organization_id` remplacé par `acp_id`) :
+
+- **`UnitCreateModal.svelte:53`** — `POST /units` envoyait `organization_id`, alors que `UnitDto` exige `acp_id` (même symptôme que le helper de test corrigé en Story 1 : `"Json deserialize error: missing field acp_id"`). **Bug de production réel, pas seulement de test** : la création de lot était cassée pour tout appelant, plus sévère que #698. Inclus dans le scope de Story 2 (décision @gilmry 2026-08-08).
+- **`UnitList.svelte:105`** — passait `organizationId={building.organization_id}` (toujours `undefined`) à `UnitCreateModal` — corrigé en `acpId={building.acp_id}`.
+- **`BuildingDetail.svelte:67-68`** — `if (building.organization_id)` ne se déclenchait jamais → le nom du cabinet syndic ne s'affichait jamais sur la fiche immeuble. Cosmétique, inclus dans le scope (décision @gilmry 2026-08-08). Fix : résolution en 2 sauts `building.acp_id` → `GET /acps/{id}` → `acp.organization_id` → nom (réutilise `tryGetOrganizationName`, dégradation 403 déjà gérée).
+- **`frontend/src/lib/types.ts`** — le type `Building` déclarait encore `organization_id: string` (jamais envoyé par le backend, qui n'expose que `acp_id`) — corrigé en `acp_id: string`, nécessaire pour que les 3 fixes ci-dessus type-check.
+
 ### RED — tests avant code
 
 | Cat | Scénario |
@@ -109,13 +118,20 @@ Story 1 signée et fusionnée (sinon le bouton "Nouvel immeuble" reste mort, imp
 - Security gate : rien de nouveau (voir `@security`).
 - Commit : hooks locaux, CI complète au push.
 
+### Bug additionnel trouvé en GREEN — boucle infinie `$effect` sur ACP vide
+
+En testant le cas `@edge (bis)` (aucune ACP disponible), découverte d'une boucle infinie de requêtes `GET /acps` (des centaines en quelques secondes, confirmé via trace réseau Playwright) : le garde `$effect(() => { if (isOpen && isSuperAdmin && acps.length === 0) loadAcps(); })` se re-déclenche indéfiniment tant que la liste reste vide — ce qui est **exactement le cas légitime qu'on veut supporter** (système neuf sans ACP). Bug déjà présent dans le code original (`organizations.length === 0`, même structure), porté sans le voir lors du renommage. Fix : flag `acpsLoadAttempted` qui n'autorise qu'un seul chargement par cycle d'ouverture de la modale.
+
 ### DoD — Story 2
 
-- [ ] `BuildingForm.svelte` envoie `acp_id`, plus aucune trace de `organization_id` dans le payload de création/édition immeuble
-- [ ] `AcpList.svelte` : dropdown organisation fonctionnel, plus de champ UUID brut
-- [ ] 4-cat GREEN
-- [ ] `npm run build` + `cargo test --lib` verts
-- [ ] Flow complet org → ACP → immeuble testé de bout en bout au clic
+- [x] `BuildingForm.svelte` envoie `acp_id`, plus aucune trace de `organization_id` dans le payload de création/édition immeuble
+- [x] `AcpList.svelte` : dropdown organisation fonctionnel, plus de champ UUID brut
+- [x] `UnitCreateModal.svelte` envoie `acp_id` (bug de prod additionnel, cf. plus haut)
+- [x] `BuildingDetail.svelte` affiche le nom du cabinet (résolution via ACP)
+- [x] Fix boucle infinie `$effect`/ACP vide inclus
+- [x] 4-cat GREEN (7/7)
+- [x] `npm run build` vert (0 erreur) + `npx vitest run` vert (344/344) ; `cargo test --lib` non ré-exécuté — diff backend vide (`git diff --stat -- backend/` ne retourne rien), gate non-régression déjà couverte par Story 1
+- [x] Flow complet org → ACP → immeuble testé de bout en bout au clic (+ création de lot bonus)
 - [ ] Signature
 
 ---

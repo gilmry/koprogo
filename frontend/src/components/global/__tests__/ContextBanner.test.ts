@@ -67,7 +67,7 @@ const mockedTryGetOrgName = vi.mocked(tryGetOrganizationName);
 function makeBuilding(overrides: Partial<Building> = {}): Building {
   return {
     id: "b-aaaaaaaa-0000-0000-0000-000000000001",
-    organization_id: "acp-1111-1111-1111-1111-111111111111",
+    acp_id: "acp-1111-1111-1111-1111-111111111111",
     name: "Immeuble Alpha",
     address: "1 Rue Test",
     city: "Brussels",
@@ -134,7 +134,7 @@ describe("ContextBanner @happy", () => {
     const building = makeBuildingDetail({
       id: "b-happy",
       name: "Immeuble Alpha",
-      organization_id: "acp-1",
+      acp_id: "acp-1",
     });
     const acp = makeAcp({
       id: "acp-1",
@@ -211,7 +211,7 @@ describe("ContextBanner @edge", () => {
     const building = makeBuildingDetail({
       id: "b-edge",
       name: "Immeuble Bêta",
-      organization_id: "acp-auto",
+      acp_id: "acp-auto",
     });
     const acp = makeAcp({
       id: "acp-auto",
@@ -255,7 +255,7 @@ describe("ContextBanner @security", () => {
     const building = makeBuildingDetail({
       id: "b-sec",
       name: "Immeuble Sécurité",
-      organization_id: "acp-sec",
+      acp_id: "acp-sec",
     });
     const acp = makeAcp({
       id: "acp-sec",

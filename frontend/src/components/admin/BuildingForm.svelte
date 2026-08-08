@@ -5,7 +5,8 @@
   import { toast } from '../../stores/toast';
   import { api } from '../../lib/api';
   import { authStore } from '../../stores/auth';
-  import type { Building, Organization } from '../../lib/types';
+  import type { Building } from '../../lib/types';
+  import { listAcps, type AcpResponseDto } from '../../lib/api/acps';
   import Modal from '../ui/Modal.svelte';
   import FormInput from '../ui/FormInput.svelte';
   import FormSelect from '../ui/FormSelect.svelte';
@@ -34,12 +35,13 @@
     total_units: 0,
     total_tantiemes: 1000,
     construction_year: null as number | null,
-    organization_id: '',
+    acp_id: '',
   });
 
-  let organizations = $state<Organization[]>([]);
-  let organizationOptions = $state<Array<{ value: string; label: string }>>([]);
-  let loadingOrgs = $state(false);
+  let acps = $state<AcpResponseDto[]>([]);
+  let acpOptions = $state<Array<{ value: string; label: string }>>([]);
+  let loadingAcps = $state(false);
+  let acpsLoadAttempted = $state(false);
   let isSuperAdmin = $state(false);
 
   // Check if user is SuperAdmin
@@ -49,26 +51,33 @@
     }
   });
 
-  // Load organizations when modal opens and user is SuperAdmin
+  // Load ACPs when modal opens and user is SuperAdmin. `acpsLoadAttempted`
+  // évite une boucle infinie de requêtes quand la liste d'ACP est
+  // légitimement vide (acps.length reste à 0 après un chargement réussi) —
+  // sans lui, l'effet se re-déclenche indéfiniment tant qu'aucune ACP
+  // n'existe (bug réel, pas seulement un artefact de test).
   $effect(() => {
-    if (isOpen && isSuperAdmin && organizations.length === 0) {
-      loadOrganizations();
+    if (isOpen && isSuperAdmin && !acpsLoadAttempted) {
+      loadAcps();
+    }
+    if (!isOpen) {
+      acpsLoadAttempted = false;
     }
   });
 
-  async function loadOrganizations() {
-    loadingOrgs = true;
+  async function loadAcps() {
+    loadingAcps = true;
+    acpsLoadAttempted = true;
     try {
-      const response = await api.get<{ data: Organization[] }>('/organizations?per_page=1000');
-      organizations = response.data;
-      organizationOptions = organizations.map((org) => ({
-        value: org.id,
-        label: `${org.name} (${org.subscription_plan})`,
+      acps = await listAcps();
+      acpOptions = acps.map((acp) => ({
+        value: acp.id,
+        label: `${acp.name} — ${acp.address_street}, ${acp.address_postal_code} ${acp.address_city}`,
       }));
     } catch (e) {
-      console.error('Error loading organizations:', e);
+      console.error('Error loading ACPs:', e);
     } finally {
-      loadingOrgs = false;
+      loadingAcps = false;
     }
   }
 
@@ -80,7 +89,7 @@
     total_units: '',
     total_tantiemes: '',
     construction_year: '',
-    organization_id: '',
+    acp_id: '',
   });
 
   let loading = $state(false);
@@ -97,7 +106,7 @@
         total_units: building.total_units,
         total_tantiemes: building.total_tantiemes || 1000,
         construction_year: building.construction_year ?? null,
-        organization_id: building.organization_id || '',
+        acp_id: building.acp_id || '',
       };
     }
   });
@@ -112,7 +121,7 @@
       total_units: '',
       total_tantiemes: '',
       construction_year: '',
-      organization_id: '',
+      acp_id: '',
     };
 
     // Name validation
@@ -160,9 +169,9 @@
       }
     }
 
-    // Organization validation (only for SuperAdmin in create mode)
-    if (isSuperAdmin && mode === 'create' && !formData.organization_id) {
-      errors.organization_id = $_('admin.building.organizationRequired');
+    // ACP validation (only for SuperAdmin in create mode — required by backend)
+    if (isSuperAdmin && mode === 'create' && !formData.acp_id) {
+      errors.acp_id = $_('admin.building.acpRequired');
       isValid = false;
     }
 
@@ -188,18 +197,14 @@
         construction_year: formData.construction_year,
       };
 
-      // Include organization_id ONLY for creation or SuperAdmin edits
+      // acp_id : requis à la création (SuperAdmin uniquement, cf. backend
+      // building_handlers.rs), optionnel en édition (réaffectation d'ACP).
       if (mode === 'create') {
-        if (isSuperAdmin && formData.organization_id) {
-          // SuperAdmin: use selected organization
-          payload.organization_id = formData.organization_id;
-        } else if ($authStore.user?.organizationId) {
-          // Syndic/Accountant: use their organization
-          payload.organization_id = $authStore.user.organizationId;
+        if (isSuperAdmin && formData.acp_id) {
+          payload.acp_id = formData.acp_id;
         }
-      } else if (mode === 'edit' && isSuperAdmin && formData.organization_id) {
-        // Only SuperAdmin can change organization in edit mode
-        payload.organization_id = formData.organization_id;
+      } else if (mode === 'edit' && isSuperAdmin && formData.acp_id) {
+        payload.acp_id = formData.acp_id;
       }
 
       if (mode === 'create') {
@@ -237,7 +242,7 @@
         total_units: 0,
         total_tantiemes: 1000,
         construction_year: null,
-        organization_id: '',
+        acp_id: '',
       };
       errors = {
         name: '',
@@ -247,7 +252,7 @@
         total_units: '',
         total_tantiemes: '',
         construction_year: '',
-        organization_id: '',
+        acp_id: '',
       };
       onclose?.();
     }
@@ -267,15 +272,16 @@
   >
     {#if isSuperAdmin}
       <FormSelect
-        id="building-organization"
-        label={$_('common.organization')}
-        bind:value={formData.organization_id}
-        options={organizationOptions}
-        error={errors.organization_id}
+        id="building-acp"
+        label={$_('admin.building.acp')}
+        bind:value={formData.acp_id}
+        options={acpOptions}
+        error={errors.acp_id}
         required={mode === 'create'}
-        placeholder={loadingOrgs ? $_('common.loading') : $_('admin.building.selectOrganization')}
-        disabled={loadingOrgs}
-        data-testid="building-organization-select"
+        placeholder={loadingAcps ? $_('common.loading') : $_('admin.building.selectAcp')}
+        hint={!loadingAcps && acpOptions.length === 0 ? $_('admin.building.noAcpAvailable') : ''}
+        disabled={loadingAcps}
+        data-testid="building-acp-select"
       />
     {/if}
 

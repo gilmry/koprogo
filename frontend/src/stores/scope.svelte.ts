@@ -91,14 +91,7 @@ export function setBuilding(building: Building | null): void {
   }
   _state.selectedBuildingId = building.id;
   _state.selectedBuilding = building;
-  // Acp inféré si exposé sur le DTO ; Story 1.2 renomme organization_id → acp_id
-  // mais le frontend type Building expose encore `organization_id` (legacy).
-  // On lit prudemment les deux pour rester compatible le temps du rebranding FE.
-  const acpId =
-    (building as Building & { acp_id?: string }).acp_id ??
-    building.organization_id ??
-    null;
-  _state.selectedAcpId = acpId;
+  _state.selectedAcpId = building.acp_id ?? null;
   _state.scopeError = null;
 }
 
