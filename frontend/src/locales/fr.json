@@ -1091,6 +1091,52 @@
     "owner": "Copropriétaire",
     "user": "Utilisateur"
   },
+  "roleDelegation": {
+    "list": {
+      "title": "Délégations actives",
+      "new": "Nouvelle délégation",
+      "empty": "Aucune délégation active pour le moment."
+    },
+    "col": {
+      "target": "Cible",
+      "role": "Rôle",
+      "organization": "Organisation",
+      "source": "Source",
+      "expire": "Expire",
+      "actions": "Actions"
+    },
+    "banner": {
+      "inherited": {
+        "title": "Vous avez reçu ce rôle par délégation.",
+        "body": "Vous ne pouvez pas re-déléguer (non-transitivité INV-8)."
+      },
+      "info": {
+        "title": "Délégation non transitive (INV-8).",
+        "body": "Si vous avez reçu votre rôle par délégation, la re-délégation est interdite."
+      }
+    },
+    "action": {
+      "revoke": "Révoquer",
+      "create": "Déléguer"
+    },
+    "create": {
+      "title": "Nouvelle délégation de rôle",
+      "success": "Délégation créée."
+    },
+    "field": {
+      "target": "Utilisateur cible",
+      "role": "Rôle délégué",
+      "organization": "Organisation",
+      "validUntil": "Valide jusqu'au"
+    },
+    "revoke": {
+      "success": "Délégation révoquée.",
+      "confirm": {
+        "title": "Confirmer la révocation",
+        "body": "Le user perdra immédiatement le rôle délégué."
+      }
+    }
+  },
   "notices": {
     "title": "Annonces",
     "create": "Créer une annonce",

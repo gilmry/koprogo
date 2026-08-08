@@ -3298,6 +3298,52 @@
     "owner": "Miteigentümer",
     "user": "Benutzer"
   },
+  "roleDelegation": {
+    "list": {
+      "title": "Aktive Delegationen",
+      "new": "Neue Delegation",
+      "empty": "Derzeit keine aktive Delegation."
+    },
+    "col": {
+      "target": "Ziel",
+      "role": "Rolle",
+      "organization": "Organisation",
+      "source": "Quelle",
+      "expire": "Läuft ab",
+      "actions": "Aktionen"
+    },
+    "banner": {
+      "inherited": {
+        "title": "Sie haben diese Rolle durch Delegation erhalten.",
+        "body": "Sie können sie nicht erneut delegieren (Nicht-Transitivität INV-8)."
+      },
+      "info": {
+        "title": "Nicht-transitive Delegation (INV-8).",
+        "body": "Wenn Sie Ihre Rolle durch Delegation erhalten haben, ist eine erneute Delegation untersagt."
+      }
+    },
+    "action": {
+      "revoke": "Widerrufen",
+      "create": "Delegieren"
+    },
+    "create": {
+      "title": "Neue Rollendelegation",
+      "success": "Delegation erstellt."
+    },
+    "field": {
+      "target": "Zielbenutzer",
+      "role": "Delegierte Rolle",
+      "organization": "Organisation",
+      "validUntil": "Gültig bis"
+    },
+    "revoke": {
+      "success": "Delegation widerrufen.",
+      "confirm": {
+        "title": "Widerruf bestätigen",
+        "body": "Der Benutzer verliert sofort die delegierte Rolle."
+      }
+    }
+  },
   "settings": {
     "profile": {
       "title": "Profil",

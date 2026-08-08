@@ -22,6 +22,7 @@
     listDelegationsOf,
     type RoleDelegationResponse,
   } from "../../api/role_delegations";
+  import { listOrganizationUsers } from "../../api/organizations";
   import { api } from "../../api";
   import RoleDelegationList from "./RoleDelegationList.svelte";
   import RoleDelegationForm from "./RoleDelegationForm.svelte";
@@ -34,6 +35,7 @@
   let showForm = $state<boolean>(false);
   let loading = $state<boolean>(true);
   let currentUserId = $state<string | undefined>(undefined);
+  let currentOrganizationId = $state<string>("");
 
   type UserLike = {
     id: string;
@@ -48,11 +50,21 @@
     loading = true;
     try {
       // Lit le current user (utilisé par RoleDelegationList pour la détection
-      // INV-8 non-transitivité). Défensif : authStore peut être en cours de
-      // réhydratation au mount (#550 silent-refresh).
+      // INV-8 non-transitivité) et son organizationId (endpoint org-scopé —
+      // cf. Story S3 docs/maury/syndic-org-users-endpoint ; `organization_id`
+      // en fallback pour rester tolérant à la forme brute stockée par
+      // authStore). Défensif : authStore peut être en cours de réhydratation
+      // au mount (#550 silent-refresh).
+      let organizationId = "";
       try {
         const state = get(authStore);
         currentUserId = state.user?.id ?? undefined;
+        const authUser = state.user as
+          | { organizationId?: string; organization_id?: string }
+          | undefined;
+        organizationId =
+          authUser?.organizationId ?? authUser?.organization_id ?? "";
+        currentOrganizationId = organizationId;
       } catch {
         currentUserId = undefined;
       }
@@ -61,9 +73,11 @@
         listDelegationsOf(currentUserId).catch(
           () => [] as RoleDelegationResponse[],
         ),
-        api
-          .get<{ data: UserLike[] }>("/users?per_page=1000")
-          .catch(() => ({ data: [] as UserLike[] })),
+        organizationId
+          ? listOrganizationUsers(organizationId).catch(
+              () => ({ data: [] as UserLike[] }),
+            )
+          : Promise.resolve({ data: [] as UserLike[] }),
         api
           .get<{ data: OrgLike[] }>("/organizations?per_page=1000")
           .catch(() => ({ data: [] as OrgLike[] })),
@@ -139,6 +153,7 @@
         <RoleDelegationForm
           {targets}
           {organizations}
+          defaultOrganizationId={currentOrganizationId}
           onSuccess={handleCreated}
           onCancel={() => (showForm = false)}
         />

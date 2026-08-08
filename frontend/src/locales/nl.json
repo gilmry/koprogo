@@ -3298,6 +3298,52 @@
     "owner": "Mede-eigenaar",
     "user": "Gebruiker"
   },
+  "roleDelegation": {
+    "list": {
+      "title": "Actieve delegaties",
+      "new": "Nieuwe delegatie",
+      "empty": "Momenteel geen actieve delegatie."
+    },
+    "col": {
+      "target": "Doel",
+      "role": "Rol",
+      "organization": "Organisatie",
+      "source": "Bron",
+      "expire": "Vervalt",
+      "actions": "Acties"
+    },
+    "banner": {
+      "inherited": {
+        "title": "U heeft deze rol via delegatie ontvangen.",
+        "body": "U kunt niet opnieuw delegeren (niet-transitiviteit INV-8)."
+      },
+      "info": {
+        "title": "Niet-transitieve delegatie (INV-8).",
+        "body": "Als u uw rol via delegatie heeft ontvangen, is opnieuw delegeren verboden."
+      }
+    },
+    "action": {
+      "revoke": "Intrekken",
+      "create": "Delegeren"
+    },
+    "create": {
+      "title": "Nieuwe roldelegatie",
+      "success": "Delegatie aangemaakt."
+    },
+    "field": {
+      "target": "Doelgebruiker",
+      "role": "Gedelegeerde rol",
+      "organization": "Organisatie",
+      "validUntil": "Geldig tot"
+    },
+    "revoke": {
+      "success": "Delegatie ingetrokken.",
+      "confirm": {
+        "title": "Intrekking bevestigen",
+        "body": "De gebruiker verliest onmiddellijk de gedelegeerde rol."
+      }
+    }
+  },
   "settings": {
     "profile": {
       "title": "Profiel",

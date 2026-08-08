@@ -50,8 +50,17 @@
     /** Liste des users sélectionnables comme `target_user_id`. Fournie par le
      *  parent (découplage fetch). */
     targets = [],
-    /** Liste des organizations sélectionnables (scope de la délégation). */
+    /** Liste des organizations sélectionnables (scope de la délégation) —
+     *  peuplée uniquement pour un superadmin (`GET /organizations` reste
+     *  superadmin-only) ; vide pour un syndic normal. */
     organizations = [],
+    /** Organisation du user connecté — préselectionnée par défaut (un
+     *  syndic ne délègue que dans sa propre org ; le sélecteur `organizations`
+     *  reste disponible pour un superadmin qui veut choisir explicitement).
+     *  Cf. Story S3 docs/maury/syndic-org-users-endpoint : sans ce défaut,
+     *  organization_id partait `null` et le check anti-transitivité backend
+     *  (scopé par org) rejetait tout syndic réel avec 403. */
+    defaultOrganizationId = "",
     /** Callback succès — remonté avec la `RoleDelegationResponse` du backend. */
     onSuccess = undefined,
     /** Callback annulation (close modal côté parent). */
@@ -61,6 +70,7 @@
   }: {
     targets?: Array<{ id: string; label: string }>;
     organizations?: Array<{ id: string; label: string }>;
+    defaultOrganizationId?: string;
     onSuccess?: (d: RoleDelegationResponse) => void;
     onCancel?: () => void;
     nowOverride?: Date | undefined;
@@ -72,7 +82,7 @@
 
   let targetUserId = $state<string>("");
   let role = $state<string>(DELEGABLE_ROLES[0]); // "syndic" par défaut
-  let organizationId = $state<string>("");
+  let organizationId = $state<string>(defaultOrganizationId);
   let validUntil = $state<string>(""); // YYYY-MM-DD (input type=date)
 
   let submitting = $state<boolean>(false);

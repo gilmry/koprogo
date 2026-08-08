@@ -171,8 +171,13 @@ test.describe("Story B4 — RoleDelegation non-transitivité INV-8", () => {
       .getByTestId("role-delegate-role-select")
       .selectOption({ value: "syndic" });
 
-    // valid_until = today + 7j (au format YYYY-MM-DD)
-    const validUntilDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+    // valid_until = today + 6j (au format YYYY-MM-DD). Le form soumet
+    // `${validUntil}T23:59:59Z` (fin de journée) : `daysBetween()` (Math.ceil)
+    // calcule alors systématiquement N+1 jours restants depuis "now" — +6
+    // calendaires produit donc 7 jours restants pile, dans le seuil urgent
+    // (`≤ 7`, cf. dateBadge.ts). +7 calendaires produirait 8 jours (hors
+    // seuil) de façon déterministe, pas un flake.
+    const validUntilDate = new Date(Date.now() + 6 * 24 * 60 * 60 * 1000)
       .toISOString()
       .slice(0, 10);
     await page.getByTestId("role-delegate-until-input").fill(validUntilDate);
@@ -226,10 +231,24 @@ test.describe("Story B4 — RoleDelegation non-transitivité INV-8", () => {
       );
       return;
     }
+    const createdDelegation = await createResp.json();
 
-    // ─── Phase 2 : Pierre login UI → /syndic/role-delegations ────────────
+    // ─── Phase 2 : Pierre login UI → bascule vers son rôle hérité ─────────
+    // Pierre a maintenant 2 role assignments (owner natif + syndic délégué).
+    // Le rôle actif par défaut au login reste le rôle PRIMARY (owner, cf.
+    // `ensure_role_assignments` backend) — pas le rôle hérité. On bascule
+    // explicitement via le `role-selector` (mécanisme réel multi-rôle de
+    // l'app, `Navigation.svelte::handleRoleChange`), qui redirige lui-même
+    // vers `/syndic` une fois le switch effectué.
     await logoutUi(page);
     await uiLogin(page, pierre.email, TEST_PASSWORD);
+    const roleSelector = page.getByTestId("role-selector");
+    await expect(roleSelector).toBeVisible({ timeout: 10_000 });
+    const syndicOption = roleSelector.locator("option", { hasText: /syndic/i });
+    const syndicValue = await syndicOption.first().getAttribute("value");
+    await roleSelector.selectOption(syndicValue!);
+    await page.waitForURL(/\/syndic/, { timeout: 10_000 });
+
     await page.goto("/syndic/role-delegations", { waitUntil: "networkidle" });
 
     // ─── Phase 3 : banner rouge présent + CTA ABSENT du DOM ──────────────
@@ -242,6 +261,24 @@ test.describe("Story B4 — RoleDelegation non-transitivité INV-8", () => {
     await expect(page.getByTestId("role-delegate-new-button")).toHaveCount(0);
 
     // ─── Phase 4 : tentative POST direct (bypass DevTools) → 403 ──────────
+    // `pierre.token` (capturé à l'inscription, avant la délégation) porte
+    // encore le rôle natif "owner" — l'utiliser ferait échouer la requête
+    // sur le guard générique `caller_must_hold_role` (owner ≠ syndic), pas
+    // sur l'invariant INV-8 réellement visé par ce test. On récupère un
+    // token à jour reflétant le rôle "syndic" hérité via `/auth/switch-role`
+    // (même endpoint que le `role-selector` UI utilisé en Phase 2), pour que
+    // le bypass POST atteigne bien `find_active_by_user_and_role` côté
+    // use-case et déclenche `DelegationChainNotAllowed`.
+    const switchResp = await request.post(`${API_BASE}/auth/switch-role`, {
+      data: { role_id: createdDelegation.id },
+      headers: { Authorization: `Bearer ${pierre.token}` },
+    });
+    expect(
+      switchResp.ok(),
+      "Pierre switch-role to inherited syndic",
+    ).toBeTruthy();
+    const pierreSyndicToken = (await switchResp.json()).token as string;
+
     const bypassResp = await request.post(`${API_BASE}/role-delegations`, {
       data: {
         target_user_id: sophie.userId, // re-déléguer à un autre
@@ -249,12 +286,15 @@ test.describe("Story B4 — RoleDelegation non-transitivité INV-8", () => {
         valid_until: validUntilIso,
         organization_id: cabinet.id,
       },
-      headers: { Authorization: `Bearer ${pierre.token}` },
+      headers: { Authorization: `Bearer ${pierreSyndicToken}` },
     });
-    // Backend doit refuser (INV-8 DelegationChainNotAllowed).
+    // Backend doit refuser (INV-8 DelegationChainNotAllowed) — pas via le
+    // guard générique caller_must_hold_role (le token porte bien "syndic"
+    // ici), mais via has_native=false (assignment syndic de Pierre EST une
+    // délégation, cf. use-case `delegate_role`).
     expect(
       bypassResp.status(),
-      "Pierre (inherited) bypass POST should be 403",
+      "Pierre (inherited) bypass POST should be 403 (DelegationChainNotAllowed)",
     ).toBe(403);
   });
 });

@@ -79,15 +79,11 @@ export default defineConfig({
       // mandate-issue.spec.ts ✅ — débloqués par l'endpoint org-scopé
       // `GET /organizations/{id}/users` (Story S1, #691), la branche de
       // création (précédemment vacuously skip faute de sélecteur peuplé)
-      // s'exécute désormais réellement. role-delegation (C4) reste exclu
-      // volontairement — hors scope PRD §4 (cf. docs/agent-activity/
-      // 2026-08-06-issue617-c*.md).
-      testIgnore: [
-        /scenarios\//,
-        /smoke\//,
-        /characterization\//,
-        /refonte-ux\/phase-b-fe\/role-delegation\.spec\.ts/,
-      ],
+      // s'exécute désormais réellement. 2026-08-08 (Story S3) :
+      // role-delegation.spec.ts (C4) ✅ — même endpoint câblé sur
+      // `RoleDelegationsPage.svelte`, dernière exclusion Phase C levée
+      // (#617 clos, 8/8 sub-tasks).
+      testIgnore: [/scenarios\//, /smoke\//, /characterization\//],
     },
 
     /**

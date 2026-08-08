@@ -170,13 +170,77 @@ Aucun nouveau — les composants purs (`MagicLinkIssueForm`, `MandateIssueForm`,
 - [ ] Logs backend vérifiés en direct : `GET /organizations/{id}/users → 200` (plus de `GET /users → 403`) pendant les 3 runs.
 - [ ] Log Tier-2 `docs/agent-activity/<date>-issue617-endpoint-users-c2-c3-c8-final.md` récapitulant la clôture de C2/C3/C8 (C4 reste noté comme partiellement résolu — email fixé, `/users` toujours cassé pour cette page spécifique).
 
+---
+
+## Story S3 — Migration `RoleDelegationsPage.svelte` (C4) + clôture #617 Phase C
+
+### Goal
+
+Étendre le fix mécanique de S2 (`GET /users` → `GET /organizations/{id}/users`) à la 4e page identifiée avec le même trou, explicitement laissée hors scope de S2 (cf. §Notes anti-pattern S2 et PRD §4). Aucune nouvelle architecture : réutilise `listOrganizationUsers()` livré par S1, pattern identique à AC-S2.h2/h3. Objectif final : stabiliser `role-delegation.spec.ts` (C4) et clôturer intégralement `#617` Phase C (8/8 sub-tasks) + Track I WP-I9.
+
+### Parent
+
+- Brief/PRD `syndic-org-users-endpoint` (hors scope explicite S2, étendu ici) ; Architecture §3 (même pattern de migration).
+- Root cause déjà posée dans `docs/agent-activity/2026-08-06-issue617-c4-investigation.md` (« Root cause #2 — même blocage que C2/C3 »).
+- Sign-off : confirmation explicite @gilmry en session 2026-08-08 (« Oui, story de suivi S3 ») — extension de scope du PRD signé, cf. règle CRITICAL.md #5.
+
+### User journey
+
+1. **Syndic** ouvre `/syndic/role-delegations` → sélecteur "Destinataire" (`role-delegate-target-input`) peuplé avec les users de son org (hors lui-même) → délègue un rôle → row visible.
+2. **Pierre** (a reçu la délégation) tente de re-déléguer → banner non-transitivité persistant + bouton "Nouvelle délégation" absent du DOM (INV-8, comportement déjà couvert par `RoleDelegationList.svelte`, non touché ici).
+
+### AC détaillées 4-cat
+
+#### `@happy`
+
+- AC-S3.h1 — `RoleDelegationsPage.svelte` migré vers `listOrganizationUsers(organizationId)`. Test `role-delegation.spec.ts` @happy : sélecteur cible peuplé, flow délégation → row visible s'exécute sans skip.
+
+#### `@edge`
+
+- AC-S3.e1 — Organisation du syndic avec un seul autre user délégable → sélecteur contient exactement cet unique user (pas de régression sur l'exclusion du current user déjà en place ligne 82).
+
+#### `@security`
+
+- AC-S3.s1 — Test `role-delegation.spec.ts` @security (non-transitivité, ligne ~197) repasse vert avec le vrai flow de délégation exercé (jusqu'ici probablement vacuously skip faute de sélecteur peuplé — à confirmer en investigation).
+
+#### `@negative`
+
+- AC-S3.n1 — Si `listOrganizationUsers` échoue → liste `targets` vide, pas de crash (même `.catch(() => ...)` que S2).
+
+### data-testid
+
+Aucun nouveau — `RoleDelegationForm`/`RoleDelegationList` (composants purs) ne changent pas, seul le wrapper qui les alimente change.
+
+### Files exhaustifs
+
+#### Frontend
+
+- `frontend/src/lib/components/syndic/RoleDelegationsPage.svelte` — migration ligne ~65 (`GET /users?per_page=1000` → `listOrganizationUsers(organizationId)`), lecture `organizationId` via `authStore` (même pattern que `MandatesPage.svelte`).
+- `frontend/tests/e2e/refonte-ux/phase-b-fe/role-delegation.spec.ts` — re-vérification, fix si root cause distincte trouvée sur le test `@security` (pas de fix du test pour masquer un bug produit, cf. CRITICAL.md règle #12).
+- `frontend/playwright.config.ts` — retrait de `role-delegation.spec.ts` du `testIgnore`.
+
+### Notes anti-pattern
+
+- Ne PAS toucher `GET /organizations?per_page=1000` (liste des orgs pour le scope de délégation) dans cette story — hors du trou identifié, pas de symptôme observé dessus. **Amendé en cours d'exécution** : un symptôme réel est apparu (organization_id envoyé `null`, faisait échouer TOUTE délégation réelle) — fixé sans toucher cet endpoint, en préselectionnant l'org du syndic connecté (déjà disponible côté wrapper). Cf. Tier-2 log.
+- Si le `@security` échoue pour une raison distincte du blocage `/users`, documenter la root cause séparément (Tier 2) plutôt que forcer un fix non lié au scope de cette story.
+
+### DoD-S3
+
+- [x] `npx astro check` : 0 erreur, 0 warning (baseline inchangée).
+- [x] `role-delegation.spec.ts` : **3 runs consécutifs isolés, zéro flake** (répété 2×, soit 6 runs isolés au total après les 2 fix supplémentaires découverts en cours de route), branche de délégation réellement exécutée (pas de skip).
+- [x] `frontend/playwright.config.ts` : `role-delegation.spec.ts` retiré du `testIgnore` — plus aucune exclusion Phase C restante.
+- [x] Logs backend vérifiés en direct : `GET /organizations/{id}/users → 200` pendant les runs.
+- [ ] **Tier 1 — hors autorité agent (CRITICAL.md #11)** : Issue GitHub `#617` cochée/fermée par @gilmry. Le run combiné local des 8 specs (`docker run ... phase-b-fe/`) reste rouge de façon non-déterministe (tests différents échouent d'un run à l'autre) — root-causé à un `504 Gateway Timeout` du serveur Vite dev sous charge prolongée (pas un bug produit, cf. Tier-2 log). Le signal fiable est l'isolation par spec (validé ci-dessus) ; le signal de clôture réel est la CI GitHub Actions (environnement frais), pas ce replay local — à @gilmry de lancer/constater.
+- [x] Log Tier-2 `docs/agent-activity/2026-08-08-issue617-c4-closure.md` récapitulant la clôture complète de Phase C.
+
 ## Signature
 
 ```
 Mary (Brief)          : SIGNED v1.0 par @gilmry 2026-08-07
 John (PRD)             : SIGNED v1.0 par @gilmry 2026-08-07
 Winston (Architecture) : SIGNED v1.0 par @gilmry 2026-08-07
-Bob (Stories)          : SIGNED v1.0 par @gilmry 2026-08-07
+Bob (Stories)          : SIGNED v1.0 par @gilmry 2026-08-07 (S1, S2)
+                          SIGNED v1.0 par @gilmry 2026-08-08 (S3 — extension scope C4, confirmation session)
 ```
 
-→ Exécution débloquée (S1 puis S2).
+→ Exécution débloquée (S1 puis S2 puis S3).

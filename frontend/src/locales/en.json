@@ -3298,6 +3298,52 @@
     "owner": "Co-owner",
     "user": "User"
   },
+  "roleDelegation": {
+    "list": {
+      "title": "Active delegations",
+      "new": "New delegation",
+      "empty": "No active delegation at the moment."
+    },
+    "col": {
+      "target": "Target",
+      "role": "Role",
+      "organization": "Organization",
+      "source": "Source",
+      "expire": "Expires",
+      "actions": "Actions"
+    },
+    "banner": {
+      "inherited": {
+        "title": "You received this role by delegation.",
+        "body": "You cannot re-delegate it (non-transitivity INV-8)."
+      },
+      "info": {
+        "title": "Non-transitive delegation (INV-8).",
+        "body": "If you received your role by delegation, re-delegating it is forbidden."
+      }
+    },
+    "action": {
+      "revoke": "Revoke",
+      "create": "Delegate"
+    },
+    "create": {
+      "title": "New role delegation",
+      "success": "Delegation created."
+    },
+    "field": {
+      "target": "Target user",
+      "role": "Delegated role",
+      "organization": "Organization",
+      "validUntil": "Valid until"
+    },
+    "revoke": {
+      "success": "Delegation revoked.",
+      "confirm": {
+        "title": "Confirm revocation",
+        "body": "The user will immediately lose the delegated role."
+      }
+    }
+  },
   "settings": {
     "profile": {
       "title": "Profile",
