@@ -26,6 +26,20 @@ Journal continu des trouvailles pendant l'audit systématique, par rôle. Chaque
 - **Impact réel non mesuré** : pas de endpoint `GET /inspections` plat pour vérifier rapidement (scope building/organization uniquement) ; nécessiterait un fixture building pour tester en direct.
 - **Action** : hors-scope de ce sweep (réconciliation = son propre chantier, cf. brief §4). Signalé pour arbitrage @gilmry : soit aligner le frontend sur le vrai contrat backend, soit clarifier pourquoi le hand-written diverge (peut-être un DTO de réponse différent de l'entité domaine, à vérifier).
 
+## Syndic
+
+Visite des 36 écrans syndic (console + requêtes réseau) : **33/36 propres**. 2 écarts investigués :
+
+### ✅ Non-bug (investigué, confirmé bénin) — `getMyOwner()` 404 sur `/exchanges` et `/notices`
+
+- `exchanges.astro`/`notices.astro` appellent `getMyOwner()` (`GET /owners/me`) pour résoudre l'ownerId d'un syndic qui n'a pas de fiche Owner — 404 normal, catché silencieusement (`if (owner) {...}`, pas de toast). Le "console.error" observé est juste le logging réseau automatique de Chrome, pas une erreur applicative. Corrige/précise une trouvaille de l'exploration passive du début de session ("toast trompeur owners/me") — après investigation, il n'y a **pas** de toast, juste un log console silencieux.
+
+### ✅ FIXÉ — Toast "Accès refusé" superflu sur `/syndic/role-delegations`
+
+- **Constat** : `RoleDelegationsPage.svelte:82` appelle `GET /organizations?per_page=1000` (superadmin-only) pour enrichir l'affichage des noms d'organisation dans les délégations — 403 pour un syndic. Le `.catch()` local empêche le crash mais **`api.get()` déclenche un toast automatique avant** que le catch ne s'exécute (toute erreur HTTP sauf `silent: true`, `lib/api.ts:141-143`).
+- **Fix** : ajout de `{ silent: true }`, même pattern déjà établi dans `tryGetOrganizationName()` (`lib/api/organizations.ts:50`) pour exactement ce cas (appel optionnel d'enrichissement, 403 attendu pour non-superadmin).
+- **Vérifié** : `npm run build` 0 erreur. Les autres appels à `/organizations?per_page=1000` du repo sont tous dans des pages superadmin-only (`OrganizationList`, `AcpList`, `UserForm` via `UserListAdmin`, `RoleAssignmentForm`) — jamais atteints par un rôle non-superadmin, pas de 403 possible en pratique, pas besoin du même fix.
+
 ### Grep exhaustifs confirmant l'absence d'autres instances des 2 bugs connus (2026-08-09)
 
 - `<Composant ... on:click=/on:submit=/on:change=/on:input=/on:keydown=` sur toute balise capitalisée : **0 résultat**.

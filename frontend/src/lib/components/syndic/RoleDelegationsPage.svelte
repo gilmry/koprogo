@@ -79,7 +79,9 @@
             )
           : Promise.resolve({ data: [] as UserLike[] }),
         api
-          .get<{ data: OrgLike[] }>("/organizations?per_page=1000")
+          .get<{ data: OrgLike[] }>("/organizations?per_page=1000", {
+            silent: true,
+          })
           .catch(() => ({ data: [] as OrgLike[] })),
       ]);
 
