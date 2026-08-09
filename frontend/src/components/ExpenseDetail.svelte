@@ -156,23 +156,23 @@
 
   function getPaymentStatusBadge(status: string): { class: string; label: string } {
     const badges: Record<string, { class: string; label: string }> = {
-      'Pending': { class: 'bg-yellow-100 text-yellow-800', label: $_('expenses.payment_pending') },
-      'Processing': { class: 'bg-blue-100 text-blue-800', label: $_('expenses.payment_processing') },
-      'RequiresAction': { class: 'bg-orange-100 text-orange-800', label: $_('expenses.payment_action_required') },
-      'Succeeded': { class: 'bg-green-100 text-green-800', label: $_('expenses.payment_succeeded') },
-      'Failed': { class: 'bg-red-100 text-red-800', label: $_('expenses.payment_failed') },
-      'Cancelled': { class: 'bg-gray-100 text-gray-800', label: $_('expenses.payment_cancelled') },
-      'Refunded': { class: 'bg-purple-100 text-purple-800', label: $_('expenses.payment_refunded') },
+      'pending': { class: 'bg-yellow-100 text-yellow-800', label: $_('expenses.payment_pending') },
+      'processing': { class: 'bg-blue-100 text-blue-800', label: $_('expenses.payment_processing') },
+      'requires_action': { class: 'bg-orange-100 text-orange-800', label: $_('expenses.payment_action_required') },
+      'succeeded': { class: 'bg-green-100 text-green-800', label: $_('expenses.payment_succeeded') },
+      'failed': { class: 'bg-red-100 text-red-800', label: $_('expenses.payment_failed') },
+      'cancelled': { class: 'bg-gray-100 text-gray-800', label: $_('expenses.payment_cancelled') },
+      'refunded': { class: 'bg-purple-100 text-purple-800', label: $_('expenses.payment_refunded') },
     };
     return badges[status] || { class: 'bg-gray-100 text-gray-800', label: status };
   }
 
   function getPaymentMethodLabel(type: string): string {
     const labels: Record<string, string> = {
-      'Card': $_('expenses.method_card'),
-      'SepaDebit': $_('expenses.method_sepa'),
-      'BankTransfer': $_('expenses.method_transfer'),
-      'Cash': $_('expenses.method_cash'),
+      'card': $_('expenses.method_card'),
+      'sepa_debit': $_('expenses.method_sepa'),
+      'bank_transfer': $_('expenses.method_transfer'),
+      'cash': $_('expenses.method_cash'),
     };
     return labels[type] || type;
   }
