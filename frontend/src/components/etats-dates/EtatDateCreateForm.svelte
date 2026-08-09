@@ -47,18 +47,21 @@
     });
     units = result || [];
     unitId = '';
-    // Track H Story H2 — récupère le building enrichi (is_conformant + metrics)
-    // pour rendre le banner + gérer canCompute.
+    // Track H Story H2 — récupère le building enrichi (is_conformant + metrics).
+    // `GET /buildings` (liste paginée) renvoie toujours des métriques VIDES
+    // par défaut (units_count:0, is_conformant:false — choix de perf pour
+    // éviter un JOIN sur la pagination, cf. building_use_cases.rs
+    // `to_response_dto` / `BuildingMetrics::empty()`), jamais `undefined` —
+    // un check `=== undefined` ne se déclenche donc jamais et le formulaire
+    // affichait "non conforme" pour tout immeuble réellement conforme.
+    // Seul `GET /buildings/{id}` calcule les vraies métriques : on le
+    // recharge systématiquement pour le building sélectionné.
     selectedBuilding =
       buildings.find((b) => b.id === buildingId) || null;
-    if (selectedBuilding && selectedBuilding.is_conformant === undefined) {
-      // Fallback : si la liste paginée n'a pas exposé les metrics, recharger
-      // le building seul.
-      try {
-        selectedBuilding = await api.get<Building>(`/buildings/${buildingId}`);
-      } catch (e) {
-        console.error('Failed to load building metrics:', e);
-      }
+    try {
+      selectedBuilding = await api.get<Building>(`/buildings/${buildingId}`);
+    } catch (e) {
+      console.error('Failed to load building metrics:', e);
     }
   }
 
