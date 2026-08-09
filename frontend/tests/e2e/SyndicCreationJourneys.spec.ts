@@ -3,6 +3,7 @@ import {
   loginAsSyndicWithBuilding,
   loginAsSyndicWithUnit,
 } from "./helpers/auth";
+import { failOnPageErrors } from "./helpers/pageErrors";
 
 const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
 
@@ -29,6 +30,8 @@ async function seedOwner(
 }
 
 test.describe("Syndic — parcours de création remplis jusqu'au bout", () => {
+  test.beforeEach(async ({ page }) => failOnPageErrors(page));
+
   test("owner-contributions: crée une contribution de bout en bout", async ({
     page,
   }) => {

@@ -1,7 +1,10 @@
 import { test, expect } from "@playwright/test";
 import { loginAsSyndicWithBuilding } from "./helpers/auth";
+import { failOnPageErrors } from "./helpers/pageErrors";
 
 test.describe("Syndic — parcours de création remplis jusqu'au bout (tickets, notices)", () => {
+  test.beforeEach(async ({ page }) => failOnPageErrors(page));
+
   test("tickets: crée un ticket de bout en bout", async ({ page }) => {
     await loginAsSyndicWithBuilding(page, "journey-ticket");
     await page.goto("/tickets", { waitUntil: "networkidle" });

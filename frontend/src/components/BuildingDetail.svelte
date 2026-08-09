@@ -27,6 +27,7 @@
   let showEditModal = false;
   let buildingId: string = "";
   let organizationName: string = "";
+  let organizationId: string = "";
 
   // Track H Story H1 — Statut conformité dérivé du DTO BE.
   // `conformityStatus = null` tant que `building` n'est pas chargé ou que
@@ -71,6 +72,7 @@
       if (building && building.acp_id) {
         try {
           const acp = await getAcp(building.acp_id);
+          organizationId = acp.organization_id ?? "";
           organizationName = acp.organization_id
             ? (await tryGetOrganizationName(acp.organization_id)) ?? ""
             : "";
@@ -298,7 +300,7 @@
         <h3 class="text-lg font-semibold text-gray-900 mb-4">
           {$_("buildings.workReports")}
         </h3>
-        <WorkReportList {buildingId} />
+        <WorkReportList {buildingId} {organizationId} />
       </div>
 
       <!-- Technical Inspections Section -->
