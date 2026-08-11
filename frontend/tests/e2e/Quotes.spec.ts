@@ -153,6 +153,57 @@ test.describe("Quotes - Contractor Quote Management", () => {
     expect(submitted.status).toBe("Received");
   });
 
+  test("should request a quote without pricing then submit real pricing (2-phase workflow)", async ({
+    page,
+  }) => {
+    const { token, buildingId } = await loginAsSyndicWithBuilding(
+      page,
+      "quote",
+    );
+    const timestamp = Date.now();
+
+    // Phase 1 : le syndic demande un devis, sans connaître le prix
+    // (reproduit exactement le payload envoyé par QuoteList.svelte)
+    const quoteResp = await page.request.post(`${API_BASE}/quotes`, {
+      data: {
+        building_id: buildingId,
+        contractor_id: CONTRACTOR_UUID,
+        project_title: `Devis toiture ${timestamp}`,
+        project_description: "Remplacement de la toiture",
+        work_category: "roofing",
+      },
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    expect(quoteResp.status()).toBe(201);
+    const quote = await quoteResp.json();
+    expect(quote.status).toBe("Requested");
+    expect(quote.amount_excl_vat_cents).toBeFalsy();
+    expect(quote.work_category).toBe("roofing");
+
+    // Phase 2 : l'entrepreneur soumet son prix réel
+    const validityDate = new Date();
+    validityDate.setDate(validityDate.getDate() + 30);
+
+    const submitResp = await page.request.post(
+      `${API_BASE}/quotes/${quote.id}/submit`,
+      {
+        data: {
+          amount_excl_vat_cents: 480000,
+          vat_rate: 21.0,
+          validity_date: validityDate.toISOString(),
+          estimated_duration_days: 12,
+          warranty_years: 10,
+        },
+        headers: { Authorization: `Bearer ${token}` },
+      },
+    );
+    expect(submitResp.status()).toBe(200);
+    const submitted = await submitResp.json();
+    expect(submitted.status).toBe("Received");
+    expect(submitted.amount_excl_vat_cents).toBe(480000);
+    expect(submitted.amount_incl_vat_cents).toBe(580800);
+  });
+
   test("should require auth to access quotes API", async ({ page }) => {
     const resp = await page.request.get(`${API_BASE}/quotes/some-id`);
     expect([401, 403].includes(resp.status())).toBeTruthy();

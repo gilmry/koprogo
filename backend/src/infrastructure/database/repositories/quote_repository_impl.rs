@@ -11,7 +11,7 @@ pub struct PostgresQuoteRepository {
 
 /// Quote SELECT columns with cast for status enum
 const QUOTE_COLUMNS: &str = r#"
-    id, building_id, contractor_id, project_title, project_description,
+    id, building_id, contractor_id, project_title, project_description, work_category,
     amount_excl_vat, vat_rate, amount_incl_vat, validity_date,
     estimated_start_date, estimated_duration_days, warranty_years,
     contractor_rating, status::text as status_text, requested_at, submitted_at,
@@ -31,14 +31,14 @@ impl QuoteRepository for PostgresQuoteRepository {
         sqlx::query(
             r#"
             INSERT INTO quotes (
-                id, building_id, contractor_id, project_title, project_description,
+                id, building_id, contractor_id, project_title, project_description, work_category,
                 amount_excl_vat, vat_rate, amount_incl_vat, validity_date,
                 estimated_start_date, estimated_duration_days, warranty_years,
                 contractor_rating, status, requested_at, submitted_at,
                 reviewed_at, decision_at, decision_by, decision_notes,
                 created_at, updated_at
             )
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14::quote_status, $15, $16, $17, $18, $19, $20, $21, $22)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15::quote_status, $16, $17, $18, $19, $20, $21, $22, $23)
             "#,
         )
         .bind(quote.id)
@@ -46,6 +46,7 @@ impl QuoteRepository for PostgresQuoteRepository {
         .bind(quote.contractor_id)
         .bind(&quote.project_title)
         .bind(&quote.project_description)
+        .bind(&quote.work_category)
         .bind(quote.amount_excl_vat)
         .bind(quote.vat_rate)
         .bind(quote.amount_incl_vat)
@@ -183,22 +184,23 @@ impl QuoteRepository for PostgresQuoteRepository {
                 contractor_id = $3,
                 project_title = $4,
                 project_description = $5,
-                amount_excl_vat = $6,
-                vat_rate = $7,
-                amount_incl_vat = $8,
-                validity_date = $9,
-                estimated_start_date = $10,
-                estimated_duration_days = $11,
-                warranty_years = $12,
-                contractor_rating = $13,
-                status = $14::quote_status,
-                requested_at = $15,
-                submitted_at = $16,
-                reviewed_at = $17,
-                decision_at = $18,
-                decision_by = $19,
-                decision_notes = $20,
-                updated_at = $21
+                work_category = $6,
+                amount_excl_vat = $7,
+                vat_rate = $8,
+                amount_incl_vat = $9,
+                validity_date = $10,
+                estimated_start_date = $11,
+                estimated_duration_days = $12,
+                warranty_years = $13,
+                contractor_rating = $14,
+                status = $15::quote_status,
+                requested_at = $16,
+                submitted_at = $17,
+                reviewed_at = $18,
+                decision_at = $19,
+                decision_by = $20,
+                decision_notes = $21,
+                updated_at = $22
             WHERE id = $1
             "#,
         )
@@ -207,6 +209,7 @@ impl QuoteRepository for PostgresQuoteRepository {
         .bind(quote.contractor_id)
         .bind(&quote.project_title)
         .bind(&quote.project_description)
+        .bind(&quote.work_category)
         .bind(quote.amount_excl_vat)
         .bind(quote.vat_rate)
         .bind(quote.amount_incl_vat)
@@ -273,6 +276,7 @@ fn map_row_to_quote(row: &sqlx::postgres::PgRow) -> Quote {
         contractor_id: row.get("contractor_id"),
         project_title: row.get("project_title"),
         project_description: row.get("project_description"),
+        work_category: row.get("work_category"),
         amount_excl_vat: row.get("amount_excl_vat"),
         vat_rate: row.get("vat_rate"),
         amount_incl_vat: row.get("amount_incl_vat"),

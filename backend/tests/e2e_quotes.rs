@@ -8,6 +8,7 @@ use koprogo_api::application::dto::{
 use koprogo_api::infrastructure::web::{configure_routes, AppState};
 use serde_json::json;
 use serial_test::serial;
+use std::str::FromStr;
 use uuid::Uuid;
 
 // ==================== Test Setup ====================
@@ -126,11 +127,11 @@ async fn test_create_quote_success() {
     assert_eq!(quote.building_id, building_id.to_string());
     assert_eq!(quote.contractor_id, contractor_id.to_string());
     assert_eq!(quote.project_title, "Roof Repair Project");
-    assert_eq!(quote.amount_excl_vat, "5000.00");
-    assert_eq!(quote.amount_incl_vat, "6050.00"); // 5000 * 1.21
+    assert_eq!(quote.amount_excl_vat_cents, Some(500_000));
+    assert_eq!(quote.amount_incl_vat_cents, Some(605_000)); // 5000 * 1.21
     assert_eq!(quote.status, "Requested");
     assert!(!quote.is_expired);
-    assert_eq!(quote.estimated_duration_days, 14);
+    assert_eq!(quote.estimated_duration_days, Some(14));
     assert_eq!(quote.warranty_years, 10);
 }
 
@@ -189,11 +190,11 @@ async fn test_create_quote_belgian_vat_rates() {
     .await;
 
     let vat_rates = vec![
-        ("0.06", "5300.00"), // 6% reduced rate (renovations)
-        ("0.21", "6050.00"), // 21% standard rate (new construction)
+        ("0.06", 530_000i64), // 6% reduced rate (renovations)
+        ("0.21", 605_000i64), // 21% standard rate (new construction)
     ];
 
-    for (vat_rate, expected_incl_vat) in vat_rates {
+    for (vat_rate, expected_incl_vat_cents) in vat_rates {
         let contractor_id = create_test_contractor(&app_state, org_id).await;
         let validity_date = Utc::now() + Duration::days(30);
 
@@ -222,8 +223,12 @@ async fn test_create_quote_belgian_vat_rates() {
         );
 
         let quote: QuoteResponseDto = test::read_body_json(create_resp).await;
-        assert_eq!(quote.vat_rate, vat_rate);
-        assert_eq!(quote.amount_incl_vat, expected_incl_vat);
+        // Response vat_rate is a percentage (e.g. 21.00), not the request's
+        // fraction (0.21) — cf. QuoteResponseDto docs.
+        let expected_percentage =
+            rust_decimal::Decimal::from_str(vat_rate).unwrap() * rust_decimal::Decimal::from(100);
+        assert_eq!(quote.vat_rate, Some(expected_percentage));
+        assert_eq!(quote.amount_incl_vat_cents, Some(expected_incl_vat_cents));
     }
 }
 
@@ -584,9 +589,8 @@ async fn test_submit_quote() {
     )
     .await;
 
-    let validity_date = Utc::now() + Duration::days(30);
-
-    // Create quote (Requested)
+    // Create quote request — real "Demander un devis" shape: no pricing at
+    // all, nobody knows the price yet at request time (cf. QuoteList.svelte).
     let create_req = test::TestRequest::post()
         .uri("/api/v1/quotes")
         .insert_header((header::AUTHORIZATION, format!("Bearer {}", token)))
@@ -595,26 +599,26 @@ async fn test_submit_quote() {
             "contractor_id": contractor_id.to_string(),
             "project_title": "Roof Repair",
             "project_description": "Repair leaking roof",
-            "amount_excl_vat": "5000.00",
-            "vat_rate": "0.21",
-            "validity_date": validity_date.to_rfc3339(),
-            "estimated_duration_days": 14,
-            "warranty_years": 10
+            "work_category": "roofing"
         }))
         .to_request();
 
     let create_resp = test::call_service(&app, create_req).await;
+    assert_eq!(create_resp.status(), 201);
     let quote: QuoteResponseDto = test::read_body_json(create_resp).await;
     assert_eq!(quote.status, "Requested");
+    assert_eq!(quote.amount_excl_vat_cents, None);
+    assert_eq!(quote.work_category, Some("roofing".to_string()));
 
-    // Submit quote (Requested -> Received)
+    // Submit with real pricing (Requested -> Received) — units match the
+    // frontend UI directly (cents, VAT as percentage): cf. SubmitQuoteDto docs.
     let submit_req = test::TestRequest::post()
         .uri(&format!("/api/v1/quotes/{}/submit", quote.id))
         .insert_header((header::AUTHORIZATION, format!("Bearer {}", token)))
         .set_json(json!({
-            "amount_excl_vat": "4800.00",
-            "vat_rate": "0.21",
-            "estimated_start_date": (Utc::now() + Duration::days(45)).to_rfc3339(),
+            "amount_excl_vat_cents": 480_000,
+            "vat_rate": "21.00",
+            "validity_date": (Utc::now() + Duration::days(30)).to_rfc3339(),
             "estimated_duration_days": 12,
             "warranty_years": 10
         }))
@@ -625,8 +629,12 @@ async fn test_submit_quote() {
 
     let submitted_quote: QuoteResponseDto = test::read_body_json(submit_resp).await;
     assert_eq!(submitted_quote.status, "Received");
-    // submit_quote only changes status, does not update amounts
-    assert_eq!(submitted_quote.amount_excl_vat, "5000.00");
+    // The submitted pricing actually persists now — this is exactly the gap
+    // that used to be silently dropped (POST /quotes/{id}/submit had no
+    // body extractor at all).
+    assert_eq!(submitted_quote.amount_excl_vat_cents, Some(480_000));
+    assert_eq!(submitted_quote.amount_incl_vat_cents, Some(580_800)); // 4800 * 1.21
+    assert_eq!(submitted_quote.estimated_duration_days, Some(12));
     assert!(submitted_quote.submitted_at.is_some());
 }
 
@@ -1136,8 +1144,8 @@ async fn test_compare_quotes_automatic_scoring() {
     // The first quote (4000.00, 5 days, 10 years warranty, 100 rating) should be rank 1 (best)
     assert_eq!(comparison.comparison_items[0].rank, 1);
     assert_eq!(
-        comparison.comparison_items[0].quote.amount_excl_vat,
-        "4000.00"
+        comparison.comparison_items[0].quote.amount_excl_vat_cents,
+        Some(400_000)
     );
     assert_eq!(
         comparison.recommended_quote_id,
@@ -1265,9 +1273,9 @@ async fn test_complete_quote_lifecycle() {
 
     assert_eq!(final_quote.status, "Accepted");
     // submit_quote only changes status, does not update amounts or duration
-    assert_eq!(final_quote.amount_excl_vat, "5000.00");
-    assert_eq!(final_quote.amount_incl_vat, "6050.00"); // 5000 * 1.21
-    assert_eq!(final_quote.estimated_duration_days, 14);
+    assert_eq!(final_quote.amount_excl_vat_cents, Some(500_000));
+    assert_eq!(final_quote.amount_incl_vat_cents, Some(605_000)); // 5000 * 1.21
+    assert_eq!(final_quote.estimated_duration_days, Some(14));
     assert_eq!(final_quote.warranty_years, 10);
     assert_eq!(final_quote.contractor_rating, Some(85));
     assert!(!final_quote.is_expired);

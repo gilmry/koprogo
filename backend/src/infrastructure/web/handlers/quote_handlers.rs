@@ -1,4 +1,6 @@
-use crate::application::dto::{CreateQuoteDto, QuoteComparisonRequestDto, QuoteDecisionDto};
+use crate::application::dto::{
+    CreateQuoteDto, QuoteComparisonRequestDto, QuoteDecisionDto, SubmitQuoteDto,
+};
 use crate::infrastructure::web::middleware::AuthenticatedUser;
 use crate::infrastructure::web::AppState;
 use actix_web::{delete, get, post, put, web, HttpResponse, Responder};
@@ -106,14 +108,22 @@ pub async fn list_quotes_by_status(
 }
 
 /// POST /api/v1/quotes/:id/submit
-/// Submit quote (Contractor action)
+/// Submit quote (Contractor/Syndic action). Body is optional: a quote that
+/// already carries price data (cf. `CreateQuoteDto`'s escape hatch) can be
+/// submitted bodyless — otherwise pricing is required in the body.
 #[post("/quotes/{id}/submit")]
 pub async fn submit_quote(
     data: web::Data<AppState>,
     _auth: AuthenticatedUser,
     id: web::Path<Uuid>,
+    body: Option<web::Json<SubmitQuoteDto>>,
 ) -> impl Responder {
-    match data.quote_use_cases.submit_quote(id.into_inner()).await {
+    let pricing = body.map(|b| b.into_inner());
+    match data
+        .quote_use_cases
+        .submit_quote(id.into_inner(), pricing)
+        .await
+    {
         Ok(quote) => HttpResponse::Ok().json(quote),
         Err(e) => HttpResponse::BadRequest().json(serde_json::json!({
             "error": e

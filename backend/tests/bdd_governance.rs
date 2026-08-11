@@ -15,9 +15,9 @@ use koprogo_api::application::dto::{
     EtatDateResponse, EtatDateStatsResponse, PollResponseDto, PollResultsDto,
     QuoteComparisonRequestDto, QuoteComparisonResponseDto, QuoteDecisionDto, QuoteResponseDto,
     RecipientTrackingSummaryResponse, RecordRemoteJoinDto, RegenerateBackupCodesDto,
-    ScheduleConvocationRequest, SendConvocationRequest, Setup2FAResponseDto, SyndicResponseDto,
-    TwoFactorStatusDto, UpdateEtatDateAdditionalDataRequest, UpdateEtatDateFinancialRequest,
-    Verify2FADto, Verify2FAResponseDto,
+    ScheduleConvocationRequest, SendConvocationRequest, Setup2FAResponseDto, SubmitQuoteDto,
+    SyndicResponseDto, TwoFactorStatusDto, UpdateEtatDateAdditionalDataRequest,
+    UpdateEtatDateFinancialRequest, Verify2FADto, Verify2FAResponseDto,
 };
 use koprogo_api::application::ports::{BuildingRepository, OrganizationRepository, UserRepository};
 use koprogo_api::application::use_cases::{
@@ -39,6 +39,7 @@ use koprogo_api::infrastructure::database::{
     PostgresVoteRepository,
 };
 use koprogo_api::infrastructure::pool::DbPool;
+use rust_decimal::prelude::ToPrimitive;
 use rust_decimal::Decimal;
 use std::str::FromStr;
 use std::sync::Arc;
@@ -2068,11 +2069,12 @@ impl GovernanceWorld {
             contractor_id: contractor_id.to_string(),
             project_title: project_title.to_string(),
             project_description: format!("Description for {}", project_title),
-            amount_excl_vat: Decimal::from_str(amount_excl).unwrap(),
-            vat_rate: vat_decimal,
-            validity_date,
+            work_category: None,
+            amount_excl_vat: Some(Decimal::from_str(amount_excl).unwrap()),
+            vat_rate: Some(vat_decimal),
+            validity_date: Some(validity_date),
             estimated_start_date: None,
-            estimated_duration_days: duration_days,
+            estimated_duration_days: Some(duration_days),
             warranty_years,
         };
 
@@ -2116,7 +2118,7 @@ async fn given_received_quote(world: &mut GovernanceWorld) {
     let uc = world.quote_use_cases.as_ref().unwrap().clone();
     let quote_id = world.last_quote_id.unwrap();
     let resp = uc
-        .submit_quote(quote_id)
+        .submit_quote(quote_id, None)
         .await
         .expect("submit_quote failed");
     world.last_quote_response = Some(resp);
@@ -2130,7 +2132,7 @@ async fn given_received_quote_for_contractor(world: &mut GovernanceWorld, contra
     let uc = world.quote_use_cases.as_ref().unwrap().clone();
     let quote_id = world.last_quote_id.unwrap();
     let resp = uc
-        .submit_quote(quote_id)
+        .submit_quote(quote_id, None)
         .await
         .expect("submit_quote failed");
     world.last_quote_response = Some(resp);
@@ -2150,7 +2152,7 @@ async fn given_quote_under_review(world: &mut GovernanceWorld) {
         .await;
     let uc = world.quote_use_cases.as_ref().unwrap().clone();
     let quote_id = world.last_quote_id.unwrap();
-    uc.submit_quote(quote_id)
+    uc.submit_quote(quote_id, None)
         .await
         .expect("submit_quote failed");
     let resp = uc
@@ -2186,7 +2188,7 @@ async fn given_three_submitted_quotes(world: &mut GovernanceWorld, step: &Step) 
 
             let quote_id = Uuid::parse_str(&resp.id).unwrap();
             // Submit to Received
-            uc.submit_quote(quote_id)
+            uc.submit_quote(quote_id, None)
                 .await
                 .expect("submit_quote failed");
             // Set contractor rating
@@ -2250,7 +2252,9 @@ async fn given_quotes_various_statuses(world: &mut GovernanceWorld) {
         )
         .await;
     let id2 = world.last_quote_id.unwrap();
-    uc.submit_quote(id2).await.expect("submit_quote failed");
+    uc.submit_quote(id2, None)
+        .await
+        .expect("submit_quote failed");
 
     // Another Received quote
     world
@@ -2264,7 +2268,9 @@ async fn given_quotes_various_statuses(world: &mut GovernanceWorld) {
         )
         .await;
     let id3 = world.last_quote_id.unwrap();
-    uc.submit_quote(id3).await.expect("submit_quote failed");
+    uc.submit_quote(id3, None)
+        .await
+        .expect("submit_quote failed");
 }
 
 #[given("a quote with validity_date in the past exists")]
@@ -2341,11 +2347,12 @@ async fn when_create_quote(world: &mut GovernanceWorld, step: &Step) {
         contractor_id: contractor_id.to_string(),
         project_title,
         project_description: description,
-        amount_excl_vat: Decimal::from(budget),
-        vat_rate: Decimal::from_str("0.21").unwrap(),
-        validity_date: (Utc::now() + ChronoDuration::days(30)).to_rfc3339(),
+        work_category: None,
+        amount_excl_vat: Some(Decimal::from(budget)),
+        vat_rate: Some(Decimal::from_str("0.21").unwrap()),
+        validity_date: Some((Utc::now() + ChronoDuration::days(30)).to_rfc3339()),
         estimated_start_date: None,
-        estimated_duration_days: 14,
+        estimated_duration_days: Some(14),
         warranty_years: 2,
     };
 
@@ -2365,11 +2372,9 @@ async fn when_create_quote(world: &mut GovernanceWorld, step: &Step) {
 
 #[when("the contractor submits the quote:")]
 async fn when_contractor_submits(world: &mut GovernanceWorld, step: &Step) {
-    // The feature data table has amount/vat/duration/warranty, but the use case
-    // submit_quote only transitions status. The data was set at creation time.
-    // For this BDD test, we need to create the quote with the right data first.
-    // Since given_requested_quote_for_contractor already created with defaults,
-    // we re-create with the submitted data.
+    // Pricing now genuinely arrives via SubmitQuoteDto (POST /quotes/{id}/submit
+    // body) instead of the raw-SQL-then-bodyless-submit workaround this used to
+    // need — that gap is exactly what this fix closes.
     let mut amount_excl = "10000".to_string();
     let mut vat_rate = "21".to_string();
     let mut duration_days = 14;
@@ -2388,33 +2393,21 @@ async fn when_contractor_submits(world: &mut GovernanceWorld, step: &Step) {
         }
     }
 
-    // The quote was already created by the Given step. We need to update it with proper data.
-    // Since update_quote doesn't exist in use cases for full data, we use raw SQL to update,
-    // then submit via use case.
-    let pool = world.pool.as_ref().unwrap();
     let quote_id = world.last_quote_id.unwrap();
-    let amount: Decimal = Decimal::from_str(&amount_excl).unwrap();
-    let vat: Decimal = Decimal::from_str(&vat_rate).unwrap() / Decimal::from(100);
-    let amount_incl = amount * (Decimal::ONE + vat);
+    let amount_excl_vat_cents = (Decimal::from_str(&amount_excl).unwrap() * Decimal::from(100))
+        .to_i64()
+        .unwrap();
 
-    sqlx::query(
-        r#"UPDATE quotes SET amount_excl_vat = $1, vat_rate = $2, amount_incl_vat = $3,
-           estimated_duration_days = $4, warranty_years = $5, updated_at = NOW()
-           WHERE id = $6"#,
-    )
-    .bind(amount)
-    .bind(vat)
-    .bind(amount_incl)
-    .bind(duration_days)
-    .bind(warranty_years)
-    .bind(quote_id)
-    .execute(pool)
-    .await
-    .expect("update quote data");
+    let pricing = SubmitQuoteDto {
+        amount_excl_vat_cents,
+        vat_rate: Decimal::from_str(&vat_rate).unwrap(), // percentage, e.g. 21
+        validity_date: (Utc::now() + ChronoDuration::days(30)).to_rfc3339(),
+        estimated_duration_days: duration_days,
+        warranty_years,
+    };
 
-    // Now submit
     let uc = world.quote_use_cases.as_ref().unwrap().clone();
-    match uc.submit_quote(quote_id).await {
+    match uc.submit_quote(quote_id, Some(pricing)).await {
         Ok(resp) => {
             world.last_quote_response = Some(resp);
             world.operation_success = true;
@@ -2650,9 +2643,16 @@ async fn then_amount_incl_21_vat(world: &mut GovernanceWorld) {
         .last_quote_response
         .as_ref()
         .expect("No quote response");
-    let excl: Decimal = Decimal::from_str(&resp.amount_excl_vat).unwrap();
-    let incl: Decimal = Decimal::from_str(&resp.amount_incl_vat).unwrap();
-    let expected = excl * Decimal::from_str("1.21").unwrap();
+    let excl = resp
+        .amount_excl_vat_cents
+        .expect("no amount_excl_vat_cents");
+    let incl = resp
+        .amount_incl_vat_cents
+        .expect("no amount_incl_vat_cents");
+    let expected = (Decimal::from(excl) * Decimal::from_str("1.21").unwrap())
+        .round()
+        .to_i64()
+        .unwrap();
     assert_eq!(incl, expected, "amount_incl_vat should be excl * 1.21");
 }
 
@@ -2662,9 +2662,16 @@ async fn then_amount_incl_6_vat(world: &mut GovernanceWorld) {
         .last_quote_response
         .as_ref()
         .expect("No quote response");
-    let excl: Decimal = Decimal::from_str(&resp.amount_excl_vat).unwrap();
-    let incl: Decimal = Decimal::from_str(&resp.amount_incl_vat).unwrap();
-    let expected = excl * Decimal::from_str("1.06").unwrap();
+    let excl = resp
+        .amount_excl_vat_cents
+        .expect("no amount_excl_vat_cents");
+    let incl = resp
+        .amount_incl_vat_cents
+        .expect("no amount_incl_vat_cents");
+    let expected = (Decimal::from(excl) * Decimal::from_str("1.06").unwrap())
+        .round()
+        .to_i64()
+        .unwrap();
     assert_eq!(incl, expected, "amount_incl_vat should be excl * 1.06");
 }
 

@@ -137,7 +137,7 @@ pub use payment_reminder::{DeliveryMethod, PaymentReminder, ReminderLevel, Remin
 pub use poll::{Poll, PollOption, PollStatus, PollType};
 pub use poll_vote::PollVote;
 pub use portfolio::{Portfolio, PortfolioBuilding, PortfolioError, PortfolioShare};
-pub use quote::{Quote, QuoteScore, QuoteStatus};
+pub use quote::{Quote, QuoteScore, QuoteStatus, QuoteSubmission};
 pub use refresh_token::RefreshToken;
 pub use resolution::{MajorityType, Resolution, ResolutionStatus, ResolutionType};
 pub use resource_booking::{BookingStatus, RecurringPattern, ResourceBooking, ResourceType};
