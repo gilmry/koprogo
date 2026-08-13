@@ -162,3 +162,12 @@ Le brief de ce sweep (`brief.md` §1/§3) est explicitement un audit, pas une no
 - **Fix** : `inspections.astro` résout `organizationId` via `await authStore.init(); get(authStore)` (pattern déjà établi `owner-contributions.astro`/`work-reports.astro`) et le passe désormais en prop à `InspectionList`.
 - **Vérifié** : `SyndicInspectionsJourney.spec.ts` (nouveau) passe désormais (201, était 400 avant fix, reproduit en direct). Suite de régression `smoke/TechnicalInspections.spec.ts` (4 tests, crée via API directe donc n'aurait jamais détecté ce bug) rejouée, 4/4 verts.
 - **Sévérité** : haute — fonctionnalité "Planifier une inspection" syndic entièrement non-fonctionnelle en l'état, pour tous les syndics. Même schéma répété une 3e fois dans ce sweep (quotes, work-reports, inspections) : un prop de contexte (`organizationId`/`buildingId`) requis par le composant enfant mais jamais câblé par la page parente.
+
+### Grep proactif : recherche systématique d'autres instances du bug "prop `organizationId` requis mais non câblé" (2026-08-13)
+
+Après 3 occurrences du même schéma (quotes, work-reports, inspections), grep de tous les composants avec un `organizationId` de prop par défaut vide (`organizationId = ""`) et vérification de leur point de montage : `MandatesPage.svelte` et `ContractorEvaluationsPage.svelte` (Story B3/B8) suivent un pattern **différent et sain** — elles résolvent `organizationId` en interne via `get(authStore)` plutôt que de le recevoir en prop, donc pas exposées à ce bug précis. Elles partagent en revanche un risque de course async plus doux (lecture synchrone de `authStore` sans `await authStore.init()` avant) — dégradation silencieuse (liste vide) plutôt que 400 dur, à vérifier au cas par cas plutôt que présumé cassé. `InvoiceForm`/`RoleAssignmentForm`/`UserForm`/`ChallengeList` sont montés en composants imbriqués (pas de mount top-level de page), hors du schéma incriminé. Aucune 4e instance confirmée du bug dur.
+
+### ✅ Propre — Mandats (`/syndic/mandates`) : émission de mandat
+
+- **Couverture déjà existante** : `mandate-issue.spec.ts` (Story B3, préexistant) couvre déjà le parcours complet — émission d'un mandat (notaire, scope building, motif 50+ caractères, échéance +365j), vérification de la ligne + badge d'expiration dans la liste, puis déconnexion/reconnexion en tant que notaire pour confirmer l'accès accordé. Pas de nouveau test ajouté — la couverture est déjà au niveau "parcours rempli jusqu'au bout" attendu par ce sweep.
+- **Résultat** : rejoué, vert (18.2s).
