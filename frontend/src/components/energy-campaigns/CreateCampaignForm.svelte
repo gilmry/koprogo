@@ -50,11 +50,11 @@
     error = "";
     success = false;
 
-    if (!formData.campaign_name.trim()) { error = $_("energy.campaign.nameRequired"); return; }
-    if (formData.energy_types.length === 0) { error = $_("energy.campaign.typeRequired"); return; }
-    if (!formData.deadline_participation) { error = $_("energy.campaign.deadlineRequired"); return; }
+    if (!formData.campaign_name.trim()) { error = $_("energy.campaign.nameRequired"); loading = false; return; }
+    if (formData.energy_types.length === 0) { error = $_("energy.campaign.typeRequired"); loading = false; return; }
+    if (!formData.deadline_participation) { error = $_("energy.campaign.deadlineRequired"); loading = false; return; }
     const today = new Date().toISOString().split("T")[0];
-    if (formData.deadline_participation <= today) { error = $_("energy.campaign.deadlineMustBeFuture"); return; }
+    if (formData.deadline_participation <= today) { error = $_("energy.campaign.deadlineMustBeFuture"); loading = false; return; }
 
     const payload = {
       ...formData,
@@ -213,7 +213,7 @@
         <li>
           ✅ {$_("energy.campaign.gdprPoint3")}
         </li>
-        <li>✅ {$_("energy.campaign.gdprPoint4")}}</li>
+        <li>✅ {$_("energy.campaign.gdprPoint4")}</li>
         <li>
           ✅ {$_("energy.campaign.gdprPoint5")}
         </li>
