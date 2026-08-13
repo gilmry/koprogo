@@ -60,6 +60,15 @@ Journal continu des trouvailles pendant l'audit systématique, par rôle. Chaque
 - **Vérifié** : `AccountantJournalEntriesJourney.spec.ts` (nouveau) — création réelle d'une écriture équilibrée (604002/440) via un vrai compte accountant (route `/journal-entries` gated `[UserRole.ACCOUNTANT]` uniquement dans `guards.ts` — un syndic y est silencieusement redirigé vers `/syndic`, nécessitant un helper de login dédié plutôt que `loginAsSyndicWithBuilding`). `smoke/JournalEntries.spec.ts` (régression, 4 tests) 4/4 verts. `npx astro check` : 0 erreur.
 - **Sévérité** : haute — fonctionnalité de saisie d'écritures comptables manuelles entièrement cassée pour le seul rôle qui y a accès (comptable), sans message d'erreur explicite (401 générique).
 
+### ✅ Propre — Rapports PCMN (`/reports`) : génération du bilan
+
+- **Parcours testé** (`AccountantReportsJourney.spec.ts`, nouveau) : génération réelle du bilan comptable (`/reports/balance-sheet`) via un vrai compte accountant (`/reports` gated `[UserRole.ACCOUNTANT]` uniquement dans `guards.ts`, même helper de login dédié que `journal-entries`). Contrairement à `JournalEntryForm.svelte`, `FinancialReports.svelte` utilise correctement le client `api` partagé — pas de bug d'auth ici.
+- **Résultat** : vert du premier coup. `smoke/FinancialReports.spec.ts` (régression, 4 tests) 4/4 verts.
+
+## Bilan du sweep rôle Comptable
+
+6/6 écrans du menu `compta` couverts (`/expenses`, `/invoice-workflow`, `/budgets`, `/etats-dates`, `/journal-entries`, `/reports`). 2 bugs réels trouvés et corrigés (`InvoiceForm` : pagination `/buildings` non dépaquetée, cassait `/expenses` **et** `/invoice-workflow` ; `JournalEntryForm` : auth cassée via clé localStorage morte, cassait entièrement `/journal-entries`). Note méthodologique : `/journal-entries` et `/reports` sont gated `ACCOUNTANT`-only côté frontend (`guards.ts`) — `loginAsSyndicWithBuilding` (utilisé pour les 4 autres écrans, qui acceptent aussi le rôle syndic) y provoque une redirection silencieuse vers `/syndic` ; il a fallu un helper de login dédié créant un vrai compte `accountant`.
+
 ## Syndic
 
 Visite des 36 écrans syndic (console + requêtes réseau) : **33/36 propres**. 2 écarts investigués :
