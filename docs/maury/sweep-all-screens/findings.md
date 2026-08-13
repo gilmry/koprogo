@@ -41,6 +41,11 @@ Journal continu des trouvailles pendant l'audit systématique, par rôle. Chaque
 - **Parcours testé** (`AccountantInvoiceWorkflowJourney.spec.ts`, nouveau) : cycle de vie complet d'une dépense — soumission pour approbation (`draft → pending_approval`), approbation via la modale de confirmation dédiée (`approved`, génère une écriture comptable automatique), puis marquage payé (`payment_status: paid`). Piège rencontré : `approve`/`reject` ouvrent une vraie modale de confirmation Svelte (`"Approuver la facture"` avec détail description/montant), pas un `window.confirm()` natif comme `submit`/`mark-paid` — le bouton `approve-button` initial n'ouvre que la modale, il fallait cliquer le bouton "Approuver" à l'intérieur.
 - **Résultat** : vert du premier coup une fois le fix `InvoiceForm` (ci-dessus) appliqué — ce parcours dépendait de la même correction pour pouvoir créer la dépense de test. `Invoices.spec.ts` (régression, 7 tests) 7/7 verts.
 
+### ✅ Propre — Budgets (`/budgets`) : création d'un budget annuel
+
+- **Parcours testé** (`AccountantBudgetsJourney.spec.ts`, nouveau) : création réelle d'un budget via `BudgetCreateForm.svelte`. Vérifié en particulier que `buildings = response.data || []` dépaquette correctement la réponse paginée de `/buildings` (contrairement au bug `InvoiceForm` ci-dessus) — pas un bug ici.
+- **Résultat** : vert du premier coup.
+
 ## Syndic
 
 Visite des 36 écrans syndic (console + requêtes réseau) : **33/36 propres**. 2 écarts investigués :
