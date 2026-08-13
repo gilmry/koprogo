@@ -46,6 +46,11 @@ Journal continu des trouvailles pendant l'audit systématique, par rôle. Chaque
 - **Parcours testé** (`AccountantBudgetsJourney.spec.ts`, nouveau) : création réelle d'un budget via `BudgetCreateForm.svelte`. Vérifié en particulier que `buildings = response.data || []` dépaquette correctement la réponse paginée de `/buildings` (contrairement au bug `InvoiceForm` ci-dessus) — pas un bug ici.
 - **Résultat** : vert du premier coup.
 
+### ✅ Propre — États datés (`/etats-dates`) : déjà couvert, pas de restriction de rôle
+
+- **Constat** : même composant (`EtatDateCreateForm.svelte`) et même parcours déjà corrigés et vérifiés bout en bout dans la section Syndic de ce sweep (`✅ FIXÉ — EtatDateCreateForm.svelte : check de conformité === undefined`, via `SyndicCreationJourneys.spec.ts`). Vérifié côté backend (`etat_date_handlers.rs`) : aucune vérification de rôle spécifique, seulement `require_organization()` — le comptable a le même accès que le syndic, pas de chemin de code séparé à retester.
+- **Résultat** : `smoke/EtatsDates.spec.ts` (régression, 7 tests) rejoué, 7/7 verts. Pas de nouveau test ajouté — doublon inutile du parcours déjà vérifié.
+
 ## Syndic
 
 Visite des 36 écrans syndic (console + requêtes réseau) : **33/36 propres**. 2 écarts investigués :
