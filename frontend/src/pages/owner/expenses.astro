@@ -46,7 +46,7 @@ import Layout from '../../layouts/Layout.astro';
     listContainer.innerHTML = '';
     listComponent = mount(ExpenseList as any, {
       target: listContainer,
-      props: { buildingId },
+      props: { buildingId, allowCreate: false },
     });
   }
 

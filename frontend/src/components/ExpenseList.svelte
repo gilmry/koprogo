@@ -13,8 +13,9 @@
   import ConformityBanner from '../lib/components/shared/ConformityBanner.svelte';
   import { buildConformityStatus } from '../lib/utils/conformity';
 
-  let { buildingId = null }: {
+  let { buildingId = null, allowCreate = true }: {
     buildingId?: string | null;
+    allowCreate?: boolean;
   } = $props();
 
   // Modal state for creating new invoice
@@ -177,20 +178,22 @@
     <p class="text-gray-600">
       {totalItems} dépense{totalItems !== 1 ? 's' : ''}
     </p>
-    <button
-      onclick={() => showCreateModal = true}
-      disabled={!canCompute}
-      aria-disabled={!canCompute}
-      title={!canCompute ? $_('conformity.toast_title') : ''}
-      class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition font-medium flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-      data-testid="create-button"
-      data-can-compute={canCompute}
-    >
-      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-      </svg>
-      {$_('expenses.createInvoice')}
-    </button>
+    {#if allowCreate}
+      <button
+        onclick={() => showCreateModal = true}
+        disabled={!canCompute}
+        aria-disabled={!canCompute}
+        title={!canCompute ? $_('conformity.toast_title') : ''}
+        class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition font-medium flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+        data-testid="create-button"
+        data-can-compute={canCompute}
+      >
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+        </svg>
+        {$_('expenses.createInvoice')}
+      </button>
+    {/if}
   </div>
 
   {#if error}
