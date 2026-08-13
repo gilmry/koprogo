@@ -171,3 +171,13 @@ Après 3 occurrences du même schéma (quotes, work-reports, inspections), grep 
 
 - **Couverture déjà existante** : `mandate-issue.spec.ts` (Story B3, préexistant) couvre déjà le parcours complet — émission d'un mandat (notaire, scope building, motif 50+ caractères, échéance +365j), vérification de la ligne + badge d'expiration dans la liste, puis déconnexion/reconnexion en tant que notaire pour confirmer l'accès accordé. Pas de nouveau test ajouté — la couverture est déjà au niveau "parcours rempli jusqu'au bout" attendu par ce sweep.
 - **Résultat** : rejoué, vert (18.2s).
+
+### ✅ Propre — Liens magiques (`/syndic/...` émission) : couverture déjà existante
+
+- **Couverture déjà existante** : `magic-link-issue.spec.ts` (Story B2, préexistant) couvre déjà @happy (émission → écran `issued` → PWA contractant), @edge (slider 60s min + tampering 422), @security (auto-émission bloquée 422) et @negative (bouton désactivé sans scope). Pas de nouveau test ajouté.
+- **Résultat** : rejoué, 4/4 verts (36.4s).
+
+### ✅ Propre — Évaluations entrepreneurs (`/syndic/contractor-evaluations`) : couverture déjà existante
+
+- **Couverture déjà existante** : `contractor-eval.spec.ts` (Story B8, préexistant) couvre déjà @happy (Syndic A évalue) + @security (Syndic B voit la réputation en lecture seule, invariant append-only INV-24). Pas de nouveau test ajouté.
+- **Résultat** : rejoué, vert (25.0s) — la course async `get(authStore)` sans `await init()` notée plus haut (`ContractorEvaluationsPage.svelte`) ne s'est pas manifestée ici, cohérent avec une dégradation silencieuse conditionnée à la latence réseau plutôt qu'un échec systématique.
