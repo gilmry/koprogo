@@ -173,9 +173,12 @@ impl QuoteUseCases {
             ));
         }
 
-        // Ensure all quotes are for the same project, and that all have been
-        // submitted (priced) — comparing "Requested" quotes with no price
-        // data would make the scoring/aggregation below meaningless.
+        // Ensure all quotes are for the same project. Quotes not yet
+        // submitted (no price data — status "Requested") are a normal,
+        // reachable state now that quote creation doesn't require pricing
+        // up front: they're included in the response so the syndic can see
+        // they're still pending, but excluded from scoring/aggregates since
+        // there's nothing to score yet.
         let building_id = quotes[0].building_id;
         let project_title = quotes[0].project_title.clone();
         for quote in &quotes {
@@ -185,52 +188,62 @@ impl QuoteUseCases {
             if quote.project_title != project_title {
                 return Err("All quotes must be for the same project".to_string());
             }
-            if quote.amount_incl_vat.is_none() {
-                return Err(format!(
-                    "Quote {} has not been submitted yet (no price data) — cannot compare",
-                    quote.id
-                ));
-            }
         }
 
-        // Calculate aggregated statistics
-        let min_price = quotes
+        let (priced_quotes, pending_quotes): (Vec<Quote>, Vec<Quote>) = quotes
+            .into_iter()
+            .partition(|q| q.amount_incl_vat.is_some());
+
+        // Calculate aggregated statistics (priced quotes only)
+        let min_price = priced_quotes
             .iter()
             .filter_map(|q| q.amount_incl_vat)
             .min()
             .unwrap_or(Decimal::ZERO);
-        let max_price = quotes
+        let max_price = priced_quotes
             .iter()
             .filter_map(|q| q.amount_incl_vat)
             .max()
             .unwrap_or(Decimal::ZERO);
-        let avg_price = quotes
-            .iter()
-            .filter_map(|q| q.amount_incl_vat)
-            .sum::<Decimal>()
-            / Decimal::from(quotes.len());
+        let avg_price = if priced_quotes.is_empty() {
+            Decimal::ZERO
+        } else {
+            priced_quotes
+                .iter()
+                .filter_map(|q| q.amount_incl_vat)
+                .sum::<Decimal>()
+                / Decimal::from(priced_quotes.len())
+        };
 
-        let min_duration_days = quotes
+        let min_duration_days = priced_quotes
             .iter()
             .filter_map(|q| q.estimated_duration_days)
             .min()
             .unwrap_or(0);
-        let max_duration_days = quotes
+        let max_duration_days = priced_quotes
             .iter()
             .filter_map(|q| q.estimated_duration_days)
             .max()
             .unwrap_or(0);
-        let avg_duration_days = quotes
+        let avg_duration_days = if priced_quotes.is_empty() {
+            0.0
+        } else {
+            priced_quotes
+                .iter()
+                .filter_map(|q| q.estimated_duration_days)
+                .sum::<i32>() as f32
+                / priced_quotes.len() as f32
+        };
+
+        let max_warranty = priced_quotes
             .iter()
-            .filter_map(|q| q.estimated_duration_days)
-            .sum::<i32>() as f32
-            / quotes.len() as f32;
+            .map(|q| q.warranty_years)
+            .max()
+            .unwrap_or(0);
 
-        let max_warranty = quotes.iter().map(|q| q.warranty_years).max().unwrap_or(0);
-
-        // Calculate scores for each quote
+        // Calculate scores for priced quotes only
         let mut scored_quotes: Vec<(Quote, QuoteScore)> = Vec::new();
-        for quote in quotes {
+        for quote in priced_quotes {
             let score = quote.calculate_score(
                 min_price,
                 max_price,
@@ -248,8 +261,9 @@ impl QuoteUseCases {
                 .unwrap_or(std::cmp::Ordering::Equal)
         });
 
-        // Build comparison items with ranking
-        let comparison_items: Vec<QuoteComparisonItemDto> = scored_quotes
+        // Build comparison items: scored (priced) quotes first, ranked by
+        // score, then pending (unpriced) quotes appended with no score.
+        let mut comparison_items: Vec<QuoteComparisonItemDto> = scored_quotes
             .into_iter()
             .enumerate()
             .map(|(index, (quote, score))| QuoteComparisonItemDto {
@@ -258,9 +272,23 @@ impl QuoteUseCases {
                 rank: index + 1, // 1-indexed ranking
             })
             .collect();
+        let ranked_count = comparison_items.len();
+        comparison_items.extend(
+            pending_quotes
+                .into_iter()
+                .enumerate()
+                .map(|(index, quote)| QuoteComparisonItemDto {
+                    quote: QuoteResponseDto::from(quote),
+                    score: None,
+                    rank: ranked_count + index + 1,
+                }),
+        );
 
-        // Recommend top-ranked quote
-        let recommended_quote_id = comparison_items.first().map(|item| item.quote.id.clone());
+        // Recommend top-ranked (scored) quote
+        let recommended_quote_id = comparison_items
+            .iter()
+            .find(|item| item.score.is_some())
+            .map(|item| item.quote.id.clone());
 
         Ok(QuoteComparisonResponseDto {
             project_title,
@@ -493,5 +521,92 @@ mod tests {
             result.unwrap_err(),
             "Best practice requires at least 3 quotes for comparison"
         );
+    }
+
+    #[tokio::test]
+    async fn test_compare_quotes_with_pending_unpriced_quote() {
+        use crate::domain::entities::QuoteSubmission;
+
+        let building_id = Uuid::new_v4();
+        let contractor_id = Uuid::new_v4();
+
+        let mut priced_a = Quote::new(
+            building_id,
+            contractor_id,
+            "Roof Repair".to_string(),
+            "Fix leaking roof".to_string(),
+            Some("roofing".to_string()),
+            2,
+        )
+        .unwrap();
+        priced_a
+            .submit(Some(QuoteSubmission {
+                amount_excl_vat: dec!(4000.00),
+                vat_rate: dec!(0.21),
+                validity_date: Utc::now() + chrono::Duration::days(30),
+                estimated_duration_days: 10,
+                warranty_years: 2,
+            }))
+            .unwrap();
+
+        let mut priced_b = Quote::new(
+            building_id,
+            contractor_id,
+            "Roof Repair".to_string(),
+            "Fix leaking roof".to_string(),
+            Some("roofing".to_string()),
+            2,
+        )
+        .unwrap();
+        priced_b
+            .submit(Some(QuoteSubmission {
+                amount_excl_vat: dec!(5000.00),
+                vat_rate: dec!(0.21),
+                validity_date: Utc::now() + chrono::Duration::days(30),
+                estimated_duration_days: 12,
+                warranty_years: 2,
+            }))
+            .unwrap();
+
+        // Third quote still awaiting a price — a normal, reachable state
+        // since "Demander un devis" no longer requires pricing up front.
+        let pending = Quote::new(
+            building_id,
+            contractor_id,
+            "Roof Repair".to_string(),
+            "Fix leaking roof".to_string(),
+            Some("roofing".to_string()),
+            2,
+        )
+        .unwrap();
+
+        let quotes = vec![priced_a.clone(), priced_b.clone(), pending.clone()];
+        let ids: Vec<String> = quotes.iter().map(|q| q.id.to_string()).collect();
+
+        let mut mock_repo = MockQuoteRepo::new();
+        mock_repo
+            .expect_find_by_ids()
+            .returning(move |_| Ok(quotes.clone()));
+
+        let use_cases = QuoteUseCases::new(Arc::new(mock_repo));
+        let dto = QuoteComparisonRequestDto { quote_ids: ids };
+
+        let result = use_cases.compare_quotes(dto).await.unwrap();
+
+        assert_eq!(result.total_quotes, 3);
+        // Aggregates computed only over the 2 priced quotes. Decimal::eq
+        // ignores scale, but the DTO stores these as strings, so parse back.
+        assert_eq!(Decimal::from_str(&result.min_price).unwrap(), dec!(4840.00));
+        assert_eq!(Decimal::from_str(&result.max_price).unwrap(), dec!(6050.00));
+        // The pending quote must still appear in the comparison, unscored.
+        let pending_item = result
+            .comparison_items
+            .iter()
+            .find(|item| item.quote.id == pending.id.to_string())
+            .expect("pending quote missing from comparison");
+        assert!(pending_item.score.is_none());
+        // Recommendation must point at a scored quote, never the pending one.
+        let recommended_id = result.recommended_quote_id.unwrap();
+        assert_ne!(recommended_id, pending.id.to_string());
     }
 }

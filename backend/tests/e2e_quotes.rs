@@ -736,10 +736,11 @@ async fn test_accept_quote() {
     let create_resp = test::call_service(&app, create_req).await;
     let quote: QuoteResponseDto = test::read_body_json(create_resp).await;
 
+    // No body: quote already has pricing from creation (backward-compat
+    // path), so submit just confirms it and transitions the status.
     let submit_req = test::TestRequest::post()
         .uri(&format!("/api/v1/quotes/{}/submit", quote.id))
         .insert_header((header::AUTHORIZATION, format!("Bearer {}", token)))
-        .set_json(json!({}))
         .to_request();
 
     test::call_service(&app, submit_req).await;
@@ -809,10 +810,11 @@ async fn test_reject_quote() {
     let create_resp = test::call_service(&app, create_req).await;
     let quote: QuoteResponseDto = test::read_body_json(create_resp).await;
 
+    // No body: quote already has pricing from creation (backward-compat
+    // path), so submit just confirms it and transitions the status.
     let submit_req = test::TestRequest::post()
         .uri(&format!("/api/v1/quotes/{}/submit", quote.id))
         .insert_header((header::AUTHORIZATION, format!("Bearer {}", token)))
-        .set_json(json!({}))
         .to_request();
 
     test::call_service(&app, submit_req).await;
@@ -997,10 +999,11 @@ async fn test_compare_quotes_minimum_three() {
         let quote: QuoteResponseDto = test::read_body_json(create_resp).await;
 
         // Submit quote
+        // No body: quote already has pricing from creation (backward-compat
+        // path), so submit just confirms it and transitions the status.
         let submit_req = test::TestRequest::post()
             .uri(&format!("/api/v1/quotes/{}/submit", quote.id))
             .insert_header((header::AUTHORIZATION, format!("Bearer {}", token)))
-            .set_json(json!({}))
             .to_request();
 
         test::call_service(&app, submit_req).await;
@@ -1108,10 +1111,11 @@ async fn test_compare_quotes_automatic_scoring() {
         let create_resp = test::call_service(&app, create_req).await;
         let quote: QuoteResponseDto = test::read_body_json(create_resp).await;
 
+        // No body: quote already has pricing from creation (backward-compat
+        // path), so submit just confirms it and transitions the status.
         let submit_req = test::TestRequest::post()
             .uri(&format!("/api/v1/quotes/{}/submit", quote.id))
             .insert_header((header::AUTHORIZATION, format!("Bearer {}", token)))
-            .set_json(json!({}))
             .to_request();
 
         test::call_service(&app, submit_req).await;
@@ -1181,7 +1185,8 @@ async fn test_complete_quote_lifecycle() {
 
     let validity_date = Utc::now() + Duration::days(30);
 
-    // 1. Create quote (Requested)
+    // 1. Create quote request (Requested) — real "Demander un devis" shape,
+    // no pricing known yet (cf. QuoteList.svelte / test_submit_quote).
     let create_req = test::TestRequest::post()
         .uri("/api/v1/quotes")
         .insert_header((header::AUTHORIZATION, format!("Bearer {}", token)))
@@ -1190,28 +1195,25 @@ async fn test_complete_quote_lifecycle() {
             "contractor_id": contractor_id.to_string(),
             "project_title": "Roof Repair Project",
             "project_description": "Repair leaking roof tiles and replace gutters",
-            "amount_excl_vat": "5000.00",
-            "vat_rate": "0.21",
-            "validity_date": validity_date.to_rfc3339(),
-            "estimated_start_date": (Utc::now() + Duration::days(45)).to_rfc3339(),
-            "estimated_duration_days": 14,
-            "warranty_years": 10
+            "work_category": "roofing"
         }))
         .to_request();
 
     let create_resp = test::call_service(&app, create_req).await;
     let quote: QuoteResponseDto = test::read_body_json(create_resp).await;
     assert_eq!(quote.status, "Requested");
+    assert_eq!(quote.amount_excl_vat_cents, None);
 
-    // 2. Contractor submits quote (Requested -> Received)
+    // 2. Contractor submits real pricing (Requested -> Received) — units
+    // match the frontend UI directly (cents, VAT as percentage).
     let submit_req = test::TestRequest::post()
         .uri(&format!("/api/v1/quotes/{}/submit", quote.id))
         .insert_header((header::AUTHORIZATION, format!("Bearer {}", token)))
         .set_json(json!({
-            "amount_excl_vat": "4800.00",
-            "vat_rate": "0.21",
-            "estimated_start_date": (Utc::now() + Duration::days(40)).to_rfc3339(),
-            "estimated_duration_days": 12,
+            "amount_excl_vat_cents": 500_000,
+            "vat_rate": "21.00",
+            "validity_date": validity_date.to_rfc3339(),
+            "estimated_duration_days": 14,
             "warranty_years": 10
         }))
         .to_request();
@@ -1272,7 +1274,7 @@ async fn test_complete_quote_lifecycle() {
     let final_quote: QuoteResponseDto = test::read_body_json(get_resp).await;
 
     assert_eq!(final_quote.status, "Accepted");
-    // submit_quote only changes status, does not update amounts or duration
+    // Pricing persisted from the phase-2 submit (create carried none).
     assert_eq!(final_quote.amount_excl_vat_cents, Some(500_000));
     assert_eq!(final_quote.amount_incl_vat_cents, Some(605_000)); // 5000 * 1.21
     assert_eq!(final_quote.estimated_duration_days, Some(14));

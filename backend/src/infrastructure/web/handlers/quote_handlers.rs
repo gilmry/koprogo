@@ -116,9 +116,25 @@ pub async fn submit_quote(
     data: web::Data<AppState>,
     _auth: AuthenticatedUser,
     id: web::Path<Uuid>,
-    body: Option<web::Json<SubmitQuoteDto>>,
+    body: web::Bytes,
 ) -> impl Responder {
-    let pricing = body.map(|b| b.into_inner());
+    // No body = "confirm existing pricing" (use case rejects this unless the
+    // quote already has a price). A non-empty body must parse as
+    // SubmitQuoteDto — unlike Option<web::Json<T>>, a malformed body here
+    // is a real 400 rather than silently falling back to "no pricing".
+    let pricing = if body.is_empty() {
+        None
+    } else {
+        match serde_json::from_slice::<SubmitQuoteDto>(&body) {
+            Ok(dto) => Some(dto),
+            Err(e) => {
+                return HttpResponse::BadRequest().json(serde_json::json!({
+                    "error": format!("Invalid pricing payload: {}", e)
+                }))
+            }
+        }
+    };
+
     match data
         .quote_use_cases
         .submit_quote(id.into_inner(), pricing)
