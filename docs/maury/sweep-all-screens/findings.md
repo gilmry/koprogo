@@ -1,6 +1,6 @@
 ---
 feature: sweep-all-screens
-status: EN COURS
+status: TERMINÉ
 date: 2026-08-09
 authors: [Claude Sonnet 5 (drafting)]
 parent_brief: brief.md
@@ -9,6 +9,49 @@ parent_brief: brief.md
 # Findings — sweep-all-screens
 
 Journal continu des trouvailles pendant l'audit systématique, par rôle. Chaque entrée : constat, preuve, action (fixé / documenté / hors-scope).
+
+## Rapport final du sweep complet (4/4 rôles)
+
+Les 4 rôles (Admin, Syndic, Comptable, Copropriétaire) ont été sweepés selon la méthode du brief (§2/§3) : analyse statique + clic ciblé + parcours remplis jusqu'au bout quand ils fonctionnent. Bilan : **17 bugs réels trouvés et corrigés** (tests Playwright à l'appui, vérifiés rouge→vert), **7 trouvailles documentées mais non corrigées** (6 majeures ci-dessous + `InspectionStatus` frontend/backend divergent, dette mineure déjà connue avant ce sweep — hors-scope brief §4, choix de conception ou architecture à trancher, pas des patches mécaniques), le reste des écrans confirmés propres ou déjà couverts. Ordre ci-dessous : le plus actionnable en premier, pas l'ordre chronologique de découverte.
+
+### 🔴 Sécurité — à traiter en priorité, indépendamment du reste de ce rapport
+
+1. **7 endpoints `documents` backend sans aucun contrôle d'authentification** (critique, repro directe confirmée) — `get_document`, `download_document`, `list_documents_by_building`, `list_documents_by_meeting`, `list_documents_by_expense`, `link_document_to_meeting`, `link_document_to_expense`. N'importe qui, sans compte, peut lister/télécharger n'importe quel document et lier des documents à des réunions/dépenses arbitraires. Détail : section Copropriétaire, entrée "7 endpoints documents".
+2. **`GET /units` : fuite cross-ACP** (haute, repro directe confirmée) — un copropriétaire d'une copropriété voit les lots d'une autre copropriété indépendante de la même organisation. Régression d'un bug déjà fixé côté `list_buildings` (`BUG-WF14-2`) mais jamais porté à `list_units`. Signal (non vérifié en direct) que le même trou existe probablement sur `GET /documents` et d'autres endpoints `list_*` scopés uniquement par `organization_id` sans le raffinement `ListScope::Owner`. Détail : section Copropriétaire, entrée "`GET /units`".
+
+Ces deux trouvailles sont indépendantes de tout rôle UI précis — un audit de sécurité backend dédié sur les endpoints `list_*`/`get_*` serait plus efficace qu'une suite de patches au fil des sweeps frontend.
+
+### 🟠 Fonctionnalités entièrement non-fonctionnelles (architecture frontend/backend divergente — documenté, pas corrigé)
+
+Schéma répété 4 fois dans ce sweep : le frontend et le backend modélisent des ressources différentes ou incompatibles, chacun testé isolément (tests existants postent directement en API avec le bon contrat), jamais intégrés bout en bout — invisible tant que personne ne clique le vrai parcours UI.
+
+- **Partage d'objets (`/sharing`)** — création impossible (aucun formulaire), et le seul CTA restant (`Request to Borrow`) cible un endpoint `/loans` qui n'existe pas côté backend (modèle `borrow`/`return` direct implémenté à la place).
+- **Réservations (`/bookings`)** — `ResourceList` cible `/bookable-resources`, endpoint inexistant (404 systématique) ; `BookingCreateModal` enverrait de toute façon le mauvais contrat DTO.
+- **Demandes d'AGE (`/age-requests`)** — 0% d'UI (pages placeholder en texte brut) malgré un backend riche et déjà testé (13 scénarios BDD) pour un droit légal significatif des copropriétaires.
+- **Moyens de paiement (`/owner/payment-methods`)** — les 4 options du formulaire échouent toutes en 400 : `bank_transfer`/`cash` n'existent pas dans l'enum backend du endpoint (confusion probable de génération de types OpenAPI avec l'enum `Payment`, différent), et `card`/`sepa_debit` échouent aussi car `stripe_customer_id` (requis backend) n'est jamais collecté par le frontend.
+
+### 🟢 17 bugs réels trouvés et corrigés (vérifiés Playwright, rouge→vert)
+
+Par thème plutôt que liste plate — détail complet dans les sections par rôle plus bas :
+
+- **Auth cassée par clé localStorage morte** (WP-FE1 : le token vit en mémoire, jamais en localStorage) — 4 instances : `JournalEntryForm.svelte`, `ExpenseDocuments.svelte`, `MeetingDocuments.svelte`, plus le pattern confirmé isolé ailleurs par grep exhaustif.
+- **Réponse paginée `/buildings` non dépaquetée** — 2 instances (`InvoiceForm.svelte`, `OwnerContributionForm.svelte`), cassait la création de dépense/facture et de contribution.
+- **Prop de contexte (`organizationId`/`buildingId`) requis mais jamais câblé par la page parente** — 3 instances (`work-reports.astro`, `owner-contributions.astro`, `inspections.astro`), chacune rendant sa fonctionnalité 100% cassée pour tous les utilisateurs.
+- **Composant entièrement construit mais jamais monté** — Sessions AG vidéo (`AgVideoSession.svelte`), plus 4 bugs de contrat mécaniques (casing plateforme/statut, champs requis absents) découverts en le rendant accessible.
+- **Autres fixes isolés** : casing PascalCase vs backend (`ExpenseDetail.svelte`), codes de compte PCMN inventés, check de conformité qui ne se déclenche jamais, organisation jamais seedée en comptes PCMN, plantage Svelte au montage (`bind:value={undefined}` sur bindable avec fallback), toast "Accès refusé" superflu, bouton bloqué en spinner sur erreur de validation, CTA visible mais toujours rejeté 403 pour le rôle owner (`ExpenseList.svelte`).
+
+### Coverage : ce qui a été vérifié propre ou déjà suffisamment couvert
+
+- **Admin** : tous écrans, 1 fix + 1 divergence de statut déjà documentée comme dette connue (hors-scope).
+- **Syndic** : 36 écrans, 33/36 propres du premier passage, le reste couvert par les fixes/trouvailles ci-dessus.
+- **Comptable** : 6/6 écrans du menu, 2 bugs trouvés et corrigés (pagination `/buildings`, auth `JournalEntryForm`).
+- **Copropriétaire** : 8 écrans `mes-lots` (dashboard, lots, dépenses, paiements, moyens de paiement, tickets, documents, profil) tous sweepés avec de vraies données liées (pas juste l'état vide que testait `OwnerDashboard.spec.ts`) ; 8 écrans "communauté" partagés jugés — SEL et Compétences ont une vraie couverture owner, Sondages/Avis/Campagnes énergie n'ont que la création syndic testée (gap identifié : `poll-vote-button`, non construit), Bookings/Sharing renvoient aux trouvailles ci-dessus, Gamification en lecture seule sans couverture dédiée (risque faible).
+
+### Méthode qui a payé, à retenir pour le prochain sweep
+
+Le pivot documenté en cours de route (section Syndic) — remplir et soumettre chaque parcours de création jusqu'au bout plutôt que cliquer un bouton isolé ou poster directement en API — a trouvé la quasi-totalité des bugs sérieux de ce rapport. Le grep proactif après une 2e/3e instance du même bug (localStorage token mort, prop `organizationId` non câblé) a évité de les retrouver un par un manuellement. Et la leçon la plus récente (fix `ExpenseDocuments`/`MeetingDocuments`) : un test qui n'assert que le statut HTTP 200 peut passer aussi bien sur le code cassé que corrigé si le backend ne fait pas ce qu'on suppose — vérifier systématiquement rouge→vert via `git stash` avant de déclarer un fix vérifié, pas seulement vert.
+
+---
 
 ## Admin
 
