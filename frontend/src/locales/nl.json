@@ -2859,7 +2859,9 @@
     "quorumContribution": "Quorum bijdrage",
     "start": "Starten",
     "end": "Beëindigen",
-    "noSession": "Geen videosessie geconfigureerd"
+    "noSession": "Geen videosessie geconfigureerd",
+    "platformOther": "Andere",
+    "scheduledStart": "Geplande start"
   },
   "proxy": {
     "limitReached": "Volmachtlimiet bereikt (Art. 3.87 §6 BW)",

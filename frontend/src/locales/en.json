@@ -2859,7 +2859,9 @@
     "quorumContribution": "Quorum contrib.",
     "start": "Start",
     "end": "End",
-    "noSession": "No video session configured"
+    "noSession": "No video session configured",
+    "platformOther": "Other",
+    "scheduledStart": "Scheduled start"
   },
   "proxy": {
     "limitReached": "Proxy mandate limit reached (Art. 3.87 §6 CC)",

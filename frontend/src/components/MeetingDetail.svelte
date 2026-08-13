@@ -9,6 +9,7 @@
   import ResolutionList from "./resolutions/ResolutionList.svelte";
   import ConvocationPanel from "./convocations/ConvocationPanel.svelte";
   import QuorumPanel from "./meetings/QuorumPanel.svelte";
+  import AgVideoSession from "./AgVideoSession.svelte";
   import { toast } from "../stores/toast";
   import { formatDateTime } from "../lib/utils/date.utils";
   import {
@@ -457,6 +458,10 @@
 
     <div class="mb-8">
       <QuorumPanel {meeting} {canManage} />
+    </div>
+
+    <div class="mb-8">
+      <AgVideoSession {meetingId} readOnly={!canManage} />
     </div>
 
     <div class="mb-8">

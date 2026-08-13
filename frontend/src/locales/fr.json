@@ -3066,7 +3066,9 @@
     "quorumContribution": "Contrib. quorum",
     "start": "Démarrer",
     "end": "Terminer",
-    "noSession": "Aucune session vidéo configurée"
+    "noSession": "Aucune session vidéo configurée",
+    "platformOther": "Autre",
+    "scheduledStart": "Début programmé"
   },
   "proxy": {
     "limitReached": "Limite de procurations atteinte (Art. 3.87 §6 CC)",
