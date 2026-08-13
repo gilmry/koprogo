@@ -26,6 +26,16 @@ Journal continu des trouvailles pendant l'audit systématique, par rôle. Chaque
 - **Impact réel non mesuré** : pas de endpoint `GET /inspections` plat pour vérifier rapidement (scope building/organization uniquement) ; nécessiterait un fixture building pour tester en direct.
 - **Action** : hors-scope de ce sweep (réconciliation = son propre chantier, cf. brief §4). Signalé pour arbitrage @gilmry : soit aligner le frontend sur le vrai contrat backend, soit clarifier pourquoi le hand-written diverge (peut-être un DTO de réponse différent de l'entité domaine, à vérifier).
 
+## Comptable
+
+### ✅ FIXÉ — `InvoiceForm.svelte` : réponse paginée de `/buildings` non dépaquetée, création de dépense/facture impossible
+
+- **Constat** : `loadBuildings()` fait `const data = Array.isArray(response) ? response : [];` sur la réponse de `GET /buildings` — qui est **toujours** paginée (`{data: [...], pagination: {...}}`), jamais un tableau brut. `Array.isArray(response)` est donc toujours `false`, `buildings` reste **toujours vide**, le `<select>` d'immeuble ne s'affiche jamais (`{#if buildings.length > 0 && !buildingId}`), et `/expenses.astro` ne passe de toute façon aucun `buildingId` à `ExpenseList`/`InvoiceForm` (toujours `''`, donc `loadBuildings()` se déclenche systématiquement). Résultat : **impossible de créer une dépense ou une facture depuis `/expenses` ou `/invoice-workflow`**, pour tout rôle (comptable ou syndic), sans exception — bloqué sur l'erreur "-- Sélectionner un immeuble --" avec aucun moyen d'en sélectionner un puisque le menu déroulant n'apparaît jamais.
+- **Même classe de bug déjà rencontrée et fixée dans ce sweep** : `OwnerContributionForm.svelte` (`réponse paginée non dépaquetée`, section Syndic ci-dessus) — cette fois dans un composant partagé Comptable/Syndic (`InvoiceForm.svelte`, utilisé par `/expenses` et `/invoice-workflow`).
+- **Fix** : remplacement par l'utilitaire déjà existant `extractArray(response, 'buildings')` (`lib/utils/response.utils.ts`), le même que celui déjà utilisé par `BuildingSelector.svelte` — gère `.data`/`.buildings`/tableau brut de façon uniforme.
+- **Vérifié** : `AccountantExpensesJourney.spec.ts` (nouveau) — création réelle d'une dépense via le formulaire UI, 201, dépense visible dans la liste. `Expenses.spec.ts` (régression, 6 tests) 6/6 verts. `npx astro check` : 0 erreur.
+- **Sévérité** : haute — fonctionnalité de création de dépense/facture entièrement cassée pour tous les rôles qui y ont accès (comptable, syndic), sans message d'erreur explicite pointant vers la vraie cause.
+
 ## Syndic
 
 Visite des 36 écrans syndic (console + requêtes réseau) : **33/36 propres**. 2 écarts investigués :

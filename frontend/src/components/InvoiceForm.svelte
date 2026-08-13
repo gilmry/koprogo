@@ -7,6 +7,7 @@
   import { todayISO, defaultDueDate, toISODateNoon } from '../lib/utils/date.utils';
   import { calculateVAT as calcVAT, formatCurrency, aggregateLineItems } from '../lib/utils/finance.utils';
   import { withLoadingState, withErrorHandling } from '../lib/utils/error.utils';
+  import { extractArray } from '../lib/utils/response.utils';
 
   let { buildingId = '', organizationId = '', invoiceId = null, onSaved = null, onCancel = null }: {
     buildingId?: string;
@@ -89,8 +90,7 @@
     await withErrorHandling({
       action: async () => {
         const response = await api.get('/buildings');
-        const data = Array.isArray(response) ? response : [];
-        buildings = data;
+        buildings = extractArray(response, 'buildings');
         if (buildings.length > 0 && !selectedBuildingId) {
           selectedBuildingId = buildings[0].id;
         }
