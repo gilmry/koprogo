@@ -19,9 +19,10 @@ async fn create_test_building(
     app_state: &actix_web::web::Data<AppState>,
     organization_id: Uuid,
 ) -> Uuid {
+    let acp_id = common::create_test_acp(app_state, organization_id).await;
     let building_name = format!("Test Building {}", Uuid::new_v4());
     let dto = CreateBuildingDto {
-        acp_id: organization_id.to_string(),
+        acp_id,
         name: building_name,
         address: "123 Test Street".to_string(),
         city: "Test City".to_string(),

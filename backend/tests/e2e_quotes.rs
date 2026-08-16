@@ -41,9 +41,10 @@ async fn create_test_user(app_state: &web::Data<AppState>, org_id: Uuid) -> (Uui
 }
 
 async fn create_test_building(app_state: &web::Data<AppState>, organization_id: Uuid) -> Uuid {
+    let acp_id = common::create_test_acp(app_state, organization_id).await;
     let building_name = format!("Test Building {}", Uuid::new_v4());
     let dto = CreateBuildingDto {
-        acp_id: organization_id.to_string(),
+        acp_id,
         name: building_name,
         address: "123 Test Street".to_string(),
         city: "Test City".to_string(),
@@ -679,11 +680,16 @@ async fn test_start_review() {
         .uri(&format!("/api/v1/quotes/{}/submit", quote.id))
         .insert_header((header::AUTHORIZATION, format!("Bearer {}", token)))
         .set_json(json!({
-            "amount_excl_vat": "4800.00"
+            "amount_excl_vat_cents": 480_000,
+            "vat_rate": "21.00",
+            "validity_date": validity_date.to_rfc3339(),
+            "estimated_duration_days": 14,
+            "warranty_years": 10
         }))
         .to_request();
 
-    test::call_service(&app, submit_req).await;
+    let submit_resp = test::call_service(&app, submit_req).await;
+    assert_eq!(submit_resp.status(), 200);
 
     // Start review (Received -> UnderReview)
     let review_req = test::TestRequest::post()
