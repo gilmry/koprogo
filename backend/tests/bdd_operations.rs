@@ -1831,15 +1831,17 @@ async fn given_building_with_units(world: &mut OperationsWorld, _name: String, c
     let pool = world.pool.as_ref().unwrap();
     let building_id = world.building_id.unwrap();
     let org_id = world.org_id.unwrap();
+    // H15 — units.organization_id dropped, units.acp_id NOT NULL (same ACP as the building).
+    let acp_id = ensure_default_acp_for_org(pool, org_id).await;
     for i in 0..count {
         let unit_id = Uuid::new_v4();
         sqlx::query(
-            r#"INSERT INTO units (id, building_id, organization_id, unit_number, unit_type, floor, surface_area, quota, created_at, updated_at)
+            r#"INSERT INTO units (id, building_id, acp_id, unit_number, unit_type, floor, surface_area, quota, created_at, updated_at)
                VALUES ($1, $2, $3, $4, 'apartment', $5, 50.0, 100.0, NOW(), NOW())"#
         )
         .bind(unit_id)
         .bind(building_id)
-        .bind(org_id)
+        .bind(acp_id)
         .bind(format!("U{}", i + 1))
         .bind(i as i32 / 2)
         .execute(pool)
@@ -2074,13 +2076,15 @@ async fn given_2_uploads(world: &mut OperationsWorld) {
     // Create 2 units if none exist
     if world.unit_ids.is_empty() {
         let pool = world.pool.as_ref().unwrap();
+        // H15 — units.organization_id dropped, units.acp_id NOT NULL (same ACP as the building).
+        let acp_id = ensure_default_acp_for_org(pool, org_id).await;
         for i in 0..2 {
             let uid = Uuid::new_v4();
             sqlx::query(
-                r#"INSERT INTO units (id, building_id, organization_id, unit_number, unit_type, floor, surface_area, quota, created_at, updated_at)
+                r#"INSERT INTO units (id, building_id, acp_id, unit_number, unit_type, floor, surface_area, quota, created_at, updated_at)
                    VALUES ($1, $2, $3, $4, 'apartment', 0, 50.0, 100.0, NOW(), NOW())"#
             )
-            .bind(uid).bind(building_id).bind(org_id).bind(format!("BU{}", i))
+            .bind(uid).bind(building_id).bind(acp_id).bind(format!("BU{}", i))
             .execute(pool).await.expect("insert unit");
             world.unit_ids.push(uid);
         }
@@ -2145,11 +2149,13 @@ async fn given_unverified_upload(world: &mut OperationsWorld) {
     // Ensure at least one unit exists
     if world.unit_ids.is_empty() {
         let uid = Uuid::new_v4();
+        // H15 — units.organization_id dropped, units.acp_id NOT NULL (same ACP as the building).
+        let acp_id = ensure_default_acp_for_org(pool, org_id).await;
         sqlx::query(
-            r#"INSERT INTO units (id, building_id, organization_id, unit_number, unit_type, floor, surface_area, quota, created_at, updated_at)
+            r#"INSERT INTO units (id, building_id, acp_id, unit_number, unit_type, floor, surface_area, quota, created_at, updated_at)
                VALUES ($1, $2, $3, 'UV1', 'apartment', 0, 50.0, 100.0, NOW(), NOW())"#
         )
-        .bind(uid).bind(building_id).bind(org_id)
+        .bind(uid).bind(building_id).bind(acp_id)
         .execute(pool).await.expect("insert unit");
         world.unit_ids.push(uid);
     }
@@ -2352,16 +2358,18 @@ async fn given_n_participants(world: &mut OperationsWorld, count: usize) {
 
     use koprogo_api::domain::entities::EnergyBillUpload;
     let encryption_key: [u8; 32] = [42u8; 32];
+    // H15 — units.organization_id dropped, units.acp_id NOT NULL (same ACP as the building).
+    let acp_id = ensure_default_acp_for_org(pool, org_id).await;
     for i in 0..count {
         let unit_id = if i < world.unit_ids.len() {
             world.unit_ids[i]
         } else {
             let uid = Uuid::new_v4();
             sqlx::query(
-                r#"INSERT INTO units (id, building_id, organization_id, unit_number, unit_type, floor, surface_area, quota, created_at, updated_at)
+                r#"INSERT INTO units (id, building_id, acp_id, unit_number, unit_type, floor, surface_area, quota, created_at, updated_at)
                    VALUES ($1, $2, $3, $4, 'apartment', 0, 50.0, 100.0, NOW(), NOW())"#
             )
-            .bind(uid).bind(building_id).bind(org_id).bind(format!("P{}", i))
+            .bind(uid).bind(building_id).bind(acp_id).bind(format!("P{}", i))
             .execute(pool).await.expect("insert unit");
             world.unit_ids.push(uid);
             uid
