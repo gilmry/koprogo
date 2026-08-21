@@ -542,6 +542,20 @@ Baseline observée Phase A (slice 3 BE = 9 stories, ~ 1,8 M tokens consommés se
 
 **Bilan 2026-08-21** : 18/26 critères FAIT, 2 en cours de validation CI (PR #708), 1 partiellement couvert (D1/D2), 1 partiellement livré (RUNBOOK, revue humaine manquante), 1 cascade `String`→`AppError` différée non-bloquante, **5 critères Tier-1 F1/F2/F3/G1/G2 structurellement hors de portée d'une session agent sandboxée** (nécessitent VPS OVH réel, DNS réel, et un humain physiquement présent pour la revue GO/NO-GO et le tag). Le chemin critique restant vers v0.1.0 est donc désormais **entièrement côté humain** une fois PR #708 mergée.
 
+### Clôture de session 2026-08-21 — état final et items définitivement hors de portée
+
+**Survey final effectué** : relecture complète du WBS (tous les Tracks A→I, la checklist DoD, les sous-sections #618/Track H) à la recherche de tout item Tier-2 restant actionnable. Un résidu réel trouvé et **délibérément non traité** :
+
+- **[#661](https://github.com/gilmry/koprogo/issues/661)** — quorum AG (Art. 3.87 §5) calculé en `f64` sur un seuil légal dans `AgSession` (`ag_session.rs:234-244`, `ag_session_use_cases.rs:238`), endpoint exposé `GET /ag-sessions/{id}/quorum`. **Bloque la signature de l'amendement ADR-0008** (reste `Proposed`). Vérifié toujours présent tel quel dans le code courant (2026-08-21). **Non traité dans cette session** : contrairement aux fixes #695/#699/svelte-check (mécaniques, vérifiables par `rustfmt`/`npm`/tests locaux), ce fix touche la logique de calcul d'un seuil juridique de quorum AG — le corriger correctement nécessite soit une conversion Decimal ciblée, soit l'unification recommandée par l'issue avec le chemin `Meeting`/H9 déjà conforme. **Cette session n'a aucune capacité de compilation Rust** (Docker indisponible — `service docker start` échoue en sandbox ; fallback `cargo check` hôte bloqué par la politique réseau du proxy sur le build-script `utoipa-swagger-ui`, cf. logs plus haut dans cette conversation) : livrer un changement de logique sur du code de gouvernance légale sans jamais l'avoir compilé serait irresponsable, quelle que soit la délégation Tier-1 accordée. **Recommandation explicite** : prochaine session avec accès `cargo`/Docker fonctionnel — scope = les 6 critères de sortie déjà listés dans #661 (Decimal, unification quorum double, suppression `validate_proxy_mandate` mort, tranchage `BudgetVarianceResponse`, gate CI anti-f64, test `@edge` à 50% exact).
+
+**Item produit non tranché, pas une omission** : Track H4/H5/H6 (sous-rôles étendus, gouvernance hybride eIDAS, modularité/RBAC Communauté) restent en **arbitrage v0.1.0 vs v0.2.0** — décision produit explicitement réservée au PO (@gilmry) dans le WBS lui-même, pas un gap d'exécution agent.
+
+**Conclusion de session** : tout ce qui était Tier-2 **et** vérifiable dans les limites d'outillage de cette session sandboxée (pas de Docker, pas de compilation Rust, pas d'accès VPS/DNS/OVH réel) a été traité et poussé sur PR #708. Ce qui reste ouvert après le merge de #708 se répartit en trois catégories strictement définies, aucune n'étant une tâche agent non finie :
+
+1. **Tier-1 infra (F1-F3, G1, G2)** — nécessite des credentials et un système physique que cette session n'a jamais eus.
+2. **Tier-2 mais non vérifiable ici (#661)** — nécessite un environnement avec `cargo`/Docker fonctionnel, absent de cette session.
+3. **Décision produit humaine (Track H4/H5/H6)** — un arbitrage de périmètre, pas un bug ou un manque de code.
+
 ## Vérification — commandes exactes & gate humain
 
 Backend (agent) :
