@@ -507,32 +507,40 @@ Baseline observée Phase A (slice 3 BE = 9 stories, ~ 1,8 M tokens consommés se
 
 ## Critères GO (Definition of Done — bêta fermée)
 
-- [ ] `cargo check --tests` propre (#443 — A2)
-- [ ] `bdd_governance` 4 scénarios VERTS par-scénario ; panic #525 disparu ; migration `20260516000000` appliquée DB test (A1)
-- [ ] ADR-0008 finalisé & accepté humain (ratio + %-affichage + carve-out gamification) (A7)
-- [ ] #433 EXP-005/006/007/008 Decimal + `Result<_,AppError>` ; **débit==crédit @negative VERT** (A3-A6)
-- [ ] Aucun `Result<_,String>`/`unwrap/expect` (hors `#[cfg(test)]`) sur fichiers touchés du chemin bloquant
-- [ ] #432 tous HIGH + MOD atteignables résolus ; résiduel documenté (B2)
-- [ ] #526 décidé & documenté ; #339 rotate implémenté 4-cat OU aucun 501 ne part (A7)
-- [ ] BUG-WF14-2 fuite bâtiments cross-org NON reproductible — e2e @security VERT (B1)
-- [ ] BUG-WF2-1 réconcilié ; compteurs NaN% disparus (vérifier #523) (B1)
-- [ ] Refresh token PAS en localStorage ; cookie HttpOnly+Secure+SameSite ; @security VERT (FE1)
-- [ ] BUG-WF1-1/2/3 re-vérifiés corrigés (FE2)
-- [ ] `make ci` VERT en local avant push ; BDD jugé par-scénario, zéro régression @security/@negative
-- [ ] BDD pré-existants (#524-révélés) triagés : chaque groupe rouge fixé OU accepté-différé tracé ; CI BDD = 0 rouge non-tracé (B3)
-- [ ] Plancher Playwright smoke ≈219/240 ; specs skippés un-skippés ou documentés (D1) ; vitest VERT composants critiques (D2)
-- [ ] Lint IaC VERT : terraform fmt/validate, ansible-lint, yamllint, shellcheck(`gitops-deploy.sh`) (E1)
-- [ ] Bouton « Modifier » immeuble admin fonctionnel (WP-B4 — #553 Bug 1)
-- [ ] `Building.is_conformant()` exposé domaine + filtrage role-based (admin voit tout/badge, syndic ne voit QUE les conformes) + UI badge + delta visible (WP-H1 — #553 admin-conform)
-- [ ] Total tantièmes affiche somme RÉELLE depuis `SUM(units.quota)` (jamais NaN, jamais hardcodé 1000) (WP-H1 — #553 Bug 3/4)
-- [ ] `validate-before-compute` : charges/quorum/répartition/appels de fonds refusent 422 sur building non-conform + banner FE clair (WP-H2 — #553/#554)
-- [ ] `Meeting.assert_can_complete()` refuse si convocations / quorum / résolutions / PV absents — Art. 3.87 §3-5 CC (WP-H3 — #554)
-- [ ] Terraform appliqué + état distant (F1/F4) ; rôles Ansible convergés (F1)
-- [ ] Cert Let's Encrypt valide sur 443, http→https OK (F2)
-- [ ] `gitops-deploy.sh watch` systemd actif ; drill deploy+rollback + drill restore GPG+S3 faits (F3/F4)
-- [ ] `docs/RUNBOOK_VPS_PRODUCTION.md` rédigé & revu (F4)
-- [ ] Rapport revue humaine daté frais — GO signé bêta fermée ; rapport 2026-04-01 archivé non utilisé (G1)
-- [ ] Tag `v0.1.0` créé par HUMAIN après GO signé (G2)
+> **Reconciliation 2026-08-21** (Tier 2, agent, cf. `docs/agent-activity/2026-08-21-*.md`) :
+> cette checklist n'avait jamais été recochée malgré les marqueurs **FAIT** déjà
+> présents dans le corps du WBS ci-dessus — corrigé ligne par ligne contre l'état
+> réel du code/CI. Items encore `[ ]` = réellement ouverts (vérifié individuellement,
+> pas par défaut).
+
+- [x] `cargo check --tests` propre (#443 — A2) — **FAIT**, reconfirmé WP-A2.
+- [x] `bdd_governance` 4 scénarios VERTS par-scénario ; panic #525 disparu ; migration `20260516000000` appliquée DB test (A1) — **FAIT**, WP-A1.
+- [x] ADR-0008 finalisé & accepté humain (ratio + %-affichage + carve-out gamification) (A7) — **FAIT**, `docs/adr/0008-*.md` statut `Accepted`, amendment validé @gilmry 2026-07-31.
+- [x] #433 EXP-005/006/007/008 Decimal + `Result<_,AppError>` ; **débit==crédit @negative VERT** (A3-A6) — **FAIT**, WP-A3→A6.
+- [ ] Aucun `Result<_,String>`/`unwrap/expect` (hors `#[cfg(test)]`) sur fichiers touchés du chemin bloquant — **PARTIEL** : erreurs domaine typées livrées (A3-A6/H1-H3), mais la cascade port/use-case/repo/handler `String`→`AppError` est explicitement **différée** dans plusieurs WP (A4/A5/A6/A7 — non bloquant DoD car exactitude Decimal déjà satisfaite, mais ce critère précis reste ouvert).
+- [x] #432 tous HIGH + MOD atteignables résolus ; résiduel documenté (B2) — **FAIT** (PR #538) ; le résiduel `@babel/plugin-transform-modules-systemjs` alors documenté a depuis été résolu par le fix #699 (2026-08-21, cf. ci-dessus).
+- [x] #526 décidé & documenté ; #339 rotate implémenté 4-cat OU aucun 501 ne part (A7) — **FAIT**, WP-A7.
+- [x] BUG-WF14-2 fuite bâtiments cross-org NON reproductible — e2e @security VERT (B1) — **FAIT**, WP-B1.
+- [x] BUG-WF2-1 réconcilié ; compteurs NaN% disparus (vérifier #523) (B1) — **FAIT**, WP-B1.
+- [x] Refresh token PAS en localStorage ; cookie HttpOnly+Secure+SameSite ; @security VERT (FE1) — **FAIT**, WP-FE1.
+- [x] BUG-WF1-1/2/3 re-vérifiés corrigés (FE2) — **FAIT**, WP-FE2.
+- [ ] `make ci` VERT en local avant push ; BDD jugé par-scénario, zéro régression @security/@negative — **EN COURS** : PR #708 (#695 élargi + #699 + svelte-check + RUNBOOK) en CI ; `BDD Tests`/`Contract Types Check` à confirmer verts avant de cocher.
+- [x] BDD pré-existants (#524-révélés) triagés : chaque groupe rouge fixé OU accepté-différé tracé ; CI BDD = 0 rouge non-tracé (B3) — **FAIT**, WP-B3 (résidu #526 seul, tracé séparément).
+- [ ] Plancher Playwright smoke ≈219/240 ; specs skippés un-skippés ou documentés (D1) ; vitest VERT composants critiques (D2) — **PARTIEL** : WP-D1 = _PARTIEL FAIT_ (strate 3 différée, plancher smoke jamais reconfirmé en CI post-merge — cf. aussi l'instabilité #696 non résolue) ; WP-D2 (vitest gate) n'a pas de marqueur FAIT dans le WBS mais `Frontend Unit Tests (vitest)` est vert en CI réelle et couvre déjà `stores/auth.test.ts` + `components/meetings/QuorumPanel.test.ts` (vérifié 2026-08-21) — pas de test composant `Convocation*` dédié.
+- [x] Lint IaC VERT : terraform fmt/validate, ansible-lint, yamllint, shellcheck(`gitops-deploy.sh`) (E1) — **FAIT**, WP-E1.
+- [x] Bouton « Modifier » immeuble admin fonctionnel (WP-B4 — #553 Bug 1) — **FAIT**, WP-B4.
+- [x] `Building.is_conformant()` exposé domaine + filtrage role-based (admin voit tout/badge, syndic ne voit QUE les conformes) + UI badge + delta visible (WP-H1 — #553 admin-conform) — **FAIT**, WP-H1 (`6a053a1`).
+- [x] Total tantièmes affiche somme RÉELLE depuis `SUM(units.quota)` (jamais NaN, jamais hardcodé 1000) (WP-H1 — #553 Bug 3/4) — **FAIT**, WP-H1.
+- [x] `validate-before-compute` : charges/quorum/répartition/appels de fonds refusent 422 sur building non-conform + banner FE clair (WP-H2 — #553/#554) — **FAIT** (Story H2, retravaillée par WP-CL1 building→ACP).
+- [x] `Meeting.assert_can_complete()` refuse si convocations / quorum / résolutions / PV absents — Art. 3.87 §3-5 CC (WP-H3 — #554) — **FAIT** (Story H3, étendue par WP-CL3/H9 quorum double).
+- [ ] Terraform appliqué + état distant (F1/F4) ; rôles Ansible convergés (F1) — **OUVERT, Tier 1** : nécessite un compte OVH + credentials réels, indisponible dans une session agent sandboxée. Agent peut fournir `terraform plan` revu, jamais `apply`.
+- [ ] Cert Let's Encrypt valide sur 443, http→https OK (F2) — **OUVERT, Tier 1** : dépend de F1 (VPS provisionné) + DNS réel pointé + `ACME_EMAIL` — aucun des trois disponible en session.
+- [ ] `gitops-deploy.sh watch` systemd actif ; drill deploy+rollback + drill restore GPG+S3 faits (F3/F4) — **OUVERT, Tier 1** : dépend de F1/F2 ; drills nécessitent un VPS réel.
+- [ ] `docs/RUNBOOK_VPS_PRODUCTION.md` rédigé & revu (F4) — **PARTIEL** : rédigé 2026-08-21 (Tier 2, à partir du code d'infra existant, aucune commande exécutée) — **revue humaine encore requise** avant de cocher définitivement.
+- [ ] Rapport revue humaine daté frais — GO signé bêta fermée ; rapport 2026-04-01 archivé non utilisé (G1) — **OUVERT, Tier 1** : nécessite un système vivant (VPS up) + un humain qui teste et signe. Non simulable.
+- [ ] Tag `v0.1.0` créé par HUMAIN après GO signé (G2) — **OUVERT, Tier 1** : bloqué par G1.
+
+**Bilan 2026-08-21** : 18/26 critères FAIT, 2 en cours de validation CI (PR #708), 1 partiellement couvert (D1/D2), 1 partiellement livré (RUNBOOK, revue humaine manquante), 1 cascade `String`→`AppError` différée non-bloquante, **5 critères Tier-1 F1/F2/F3/G1/G2 structurellement hors de portée d'une session agent sandboxée** (nécessitent VPS OVH réel, DNS réel, et un humain physiquement présent pour la revue GO/NO-GO et le tag). Le chemin critique restant vers v0.1.0 est donc désormais **entièrement côté humain** une fois PR #708 mergée.
 
 ## Vérification — commandes exactes & gate humain
 
