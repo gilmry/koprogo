@@ -77,3 +77,27 @@ d'ouvrir une PR séparée, pour converger plus vite vers `make ci` VERT — sans
 franchir la ligne rouge infra (aucun `terraform apply`/`ansible-playbook`
 prod/tag exécuté, ces actions restent hors de portée de cette session
 sandboxée, cf. §2 du runbook).
+
+## 3. Reconciliation checklist DoD + test composant convocation manquant (WP-D2)
+
+Suite à la reconciliation de la checklist "Critères GO" (18/26 cochés contre
+l'état réel, cf. commit `docs(wbs): recocher la checklist DoD...`), un gap
+concret identifié en WP-D2 : aucun test vitest dédié pour un composant
+convocation (seul `stores/auth.test.ts` + `components/meetings/QuorumPanel.test.ts`
+couvraient "auth store + composants convocation/réunion" jusqu'ici).
+
+Ajouté `frontend/src/components/convocations/ConvocationPanel.test.ts` (4-cat
+RED-first, pattern déjà établi dans le repo — stub des boundaries authStore/
+i18n/convocationsApi/error.utils, logique de rendu/permission réelle) :
+
+- `@happy` — affiche statut + compteurs destinataires une fois la convocation chargée.
+- `@edge` — pas encore de convocation + syndic sur réunion Scheduled → bouton créer visible, `create()` appelé avec le bon payload.
+- `@security` — un owner ne voit **jamais** les actions créer/envoyer/annuler, avec ou sans convocation existante.
+- `@negative` — une erreur API non-404 remonte un message visible + retry (pas un échec silencieux).
+
+Ajusté au passage les mocks `getTrackingSummary`/`withLoadingState` (composant
+enfant `ConvocationTrackingSummary` monté quand `status=Sent`) pour éliminer
+les unhandled rejections silencieuses initialement produites par le test.
+
+**Vérifié** : `vitest run` → 348/348 (était 344/344, +4 nouveaux) ; `svelte-check
+--threshold warning` → 0/0 (1548 fichiers) ; `prettier --check .` propre.
