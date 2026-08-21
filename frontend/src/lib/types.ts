@@ -137,7 +137,7 @@ export interface Expense {
     | "Utilities"
     | "Management"
     | "Other";
-  payment_status: "Pending" | "Paid" | "Overdue" | "Cancelled";
+  payment_status: "pending" | "paid" | "overdue" | "cancelled";
   approval_status?:
     "draft" | "pending_approval" | "approved" | "rejected" | null;
   paid_date?: string;

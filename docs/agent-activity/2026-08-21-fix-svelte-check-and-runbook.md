@@ -101,3 +101,46 @@ les unhandled rejections silencieuses initialement produites par le test.
 
 **Vérifié** : `vitest run` → 348/348 (était 344/344, +4 nouveaux) ; `svelte-check
 --threshold warning` → 0/0 (1548 fichiers) ; `prettier --check .` propre.
+
+## 4. Correction — le fix ExpenseDetail.svelte §1.1 était incorrect
+
+Le CI réel de PR #708 a fait échouer `Playwright E2E Tests` sur `story1-admin-buttons.spec.ts:113`
+(« panneau dépense — marquer payé »), **au timeout** en attendant `mark-paid-button`.
+Vérification contre le run baseline `feature/dev` (job `96903831028`, commit
+`cf7326d`, avant tout diff de cette session) : **ce test passait** (3.8s, vert).
+Mon fix §1 (comparaisons `payment_status` PascalCase) a donc **cassé un test
+E2E qui passait avant**, pas corrigé un bug fonctionnel.
+
+**Root cause réelle** : `backend/src/domain/entities/expense.rs` déclare
+`#[derive(Serialize, Deserialize)] #[serde(rename_all = "snake_case")] pub enum
+PaymentStatus { Pending, Paid, Overdue, Cancelled }` — le JSON réel sur le
+wire est donc **minuscule** (`"pending"`, `"paid"`, …), confirmé par le type
+généré depuis l'OpenAPI réel (`frontend/src/types/api.d.ts:2580` —
+`PaymentStatus: "pending" | "paid" | "overdue" | "cancelled"`). Le vrai bug
+était le type **PascalCase** dans `frontend/src/lib/types.ts:140`
+(`Expense.payment_status`), un fichier de types **hand-maintained**, pas
+généré depuis openapi.json — stale/faux depuis le début, indépendamment de
+cette session.
+
+**Correctif appliqué** : `frontend/src/lib/types.ts:140` →
+`"pending" | "paid" | "overdue" | "cancelled"` (aligné sur le JSON réel/le
+type OpenAPI généré) ; `ExpenseDetail.svelte` (comparaisons + `getStatusBadge`)
+**revenu aux minuscules d'origine**, qui étaient correctes. svelte-check reste
+0/0 (c'est bien la correction du type, pas le changement de casing des
+comparaisons, qui satisfaisait le compilateur — les deux doivent être
+cohérents entre eux, peu importe laquelle des deux casings, mais seule la
+minuscule correspond à la réalité runtime).
+
+**Leçon** : quand `svelte-check` signale une comparaison littérale
+impossible contre un type, la correction n'est pas automatiquement « aligner
+le code sur le type » — il faut vérifier lequel des deux (code ou type)
+reflète la réalité runtime. Ici c'était le type qui avait tort. Le Playwright
+E2E réel (que je ne peux pas exécuter en session, faute de stack complète)
+a été le seul filet de sécurité qui a détecté l'erreur — confirmation que
+la mention "compilation Rust non vérifiable, CI fait foi" documentée plus
+haut dans ce log s'applique tout autant côté frontend : `svelte-check` seul
+ne suffit pas à garantir la correction runtime.
+
+**Vérifié après correction** : `svelte-check --threshold warning` → 0/0 ;
+`vitest run` → 348/348 ; `prettier --check .` propre ; `npm run build` →
+115 pages, aucune erreur.
