@@ -691,12 +691,15 @@ async fn given_owner_with_voting_power(
     .expect("insert owner");
 
     // Create unit with quota = voting power (tantièmes)
+    // H15 — units.acp_id NOT NULL (same ACP as the building).
+    let acp_id = ensure_default_acp_for_org(pool, org_id).await;
     sqlx::query(
-        r#"INSERT INTO units (id, building_id, unit_number, unit_type, floor, surface_area, quota, created_at, updated_at)
-           VALUES ($1, $2, $3, 'apartment', 1, 75.0, $4, NOW(), NOW())"#,
+        r#"INSERT INTO units (id, building_id, acp_id, unit_number, unit_type, floor, surface_area, quota, created_at, updated_at)
+           VALUES ($1, $2, $3, $4, 'apartment', 1, 75.0, $5, NOW(), NOW())"#,
     )
     .bind(unit_id)
     .bind(building_id)
+    .bind(acp_id)
     .bind(format!("Unit-{}", name))
     .bind(voting_power as f64)
     .execute(pool)
@@ -4127,13 +4130,15 @@ async fn given_poll_owner(world: &mut GovernanceWorld, name: String, _building: 
     .expect("insert poll owner");
 
     // Create unit
+    // H15 — units.organization_id dropped, units.acp_id NOT NULL (same ACP as the building).
+    let acp_id = ensure_default_acp_for_org(pool, org_id).await;
     sqlx::query(
-        r#"INSERT INTO units (id, building_id, organization_id, unit_number, unit_type, floor, surface_area, quota, created_at, updated_at)
+        r#"INSERT INTO units (id, building_id, acp_id, unit_number, unit_type, floor, surface_area, quota, created_at, updated_at)
            VALUES ($1, $2, $3, $4, 'apartment', 1, 80.0, 100.0, NOW(), NOW())"#,
     )
     .bind(unit_id)
     .bind(building_id)
-    .bind(org_id)
+    .bind(acp_id)
     .bind(format!("Unit-{}", name.chars().next().unwrap_or('X')))
     .execute(pool)
     .await
@@ -5078,6 +5083,8 @@ async fn given_n_owners_voted(
         .unwrap();
 
     // Create and vote with synthetic owners
+    // H15 — units.organization_id dropped, units.acp_id NOT NULL (same ACP as the building).
+    let acp_id = ensure_default_acp_for_org(pool, org_id).await;
     for i in 0..total {
         let owner_id = Uuid::new_v4();
         let unit_id = Uuid::new_v4();
@@ -5095,12 +5102,12 @@ async fn given_n_owners_voted(
         .expect("insert voter");
 
         sqlx::query(
-            r#"INSERT INTO units (id, building_id, organization_id, unit_number, unit_type, floor, surface_area, quota, created_at, updated_at)
+            r#"INSERT INTO units (id, building_id, acp_id, unit_number, unit_type, floor, surface_area, quota, created_at, updated_at)
                VALUES ($1, $2, $3, $4, 'apartment', 1, 50.0, 100.0, NOW(), NOW())"#,
         )
         .bind(unit_id)
         .bind(building_id)
-        .bind(org_id)
+        .bind(acp_id)
         .bind(format!("V{}", i))
         .execute(pool)
         .await
@@ -5825,13 +5832,15 @@ async fn given_etat_date_unit(world: &mut GovernanceWorld, unit_name: String, _b
     let building_id = world.building_id.unwrap();
     let org_id = world.org_id.unwrap();
 
+    // H15 — units.organization_id dropped, units.acp_id NOT NULL (same ACP as the building).
+    let acp_id = ensure_default_acp_for_org(pool, org_id).await;
     sqlx::query(
-        r#"INSERT INTO units (id, building_id, organization_id, unit_number, unit_type, floor, surface_area, quota, created_at, updated_at)
+        r#"INSERT INTO units (id, building_id, acp_id, unit_number, unit_type, floor, surface_area, quota, created_at, updated_at)
            VALUES ($1, $2, $3, $4, 'apartment', 1, 85.0, 100.0, NOW(), NOW())"#,
     )
     .bind(unit_id)
     .bind(building_id)
-    .bind(org_id)
+    .bind(acp_id)
     .bind(unit_name)
     .execute(pool)
     .await
@@ -7383,12 +7392,15 @@ async fn given_owners_with_shares(world: &mut GovernanceWorld, step: &Step) {
 
         // Create a unit and link owner
         let unit_id = Uuid::new_v4();
+        // H15 — units.acp_id NOT NULL (same ACP as the building).
+        let acp_id = ensure_default_acp_for_org(pool, org_id).await;
         sqlx::query(
-            r#"INSERT INTO units (id, building_id, unit_number, unit_type, floor, surface_area, quota, created_at, updated_at)
-               VALUES ($1, $2, $3, 'apartment', 1, 75.0, $4, NOW(), NOW())"#,
+            r#"INSERT INTO units (id, building_id, acp_id, unit_number, unit_type, floor, surface_area, quota, created_at, updated_at)
+               VALUES ($1, $2, $3, $4, 'apartment', 1, 75.0, $5, NOW(), NOW())"#,
         )
         .bind(unit_id)
         .bind(building_id)
+        .bind(acp_id)
         .bind(format!("AGE-Unit-{}", name.replace(' ', "-")))
         .bind(shares_pct * rust_decimal_macros::dec!(1000))
         .execute(pool)
@@ -8197,6 +8209,8 @@ async fn given_gd_resolution_with_votes(world: &mut GovernanceWorld, p1: String,
     world.meeting_id = Some(meeting_id);
 
     // Two owners + units + votes carrying the requested decimal voting powers.
+    // H15 — units.organization_id dropped, units.acp_id NOT NULL (same ACP as the building).
+    let acp_id = ensure_default_acp_for_org(&pool, org_id).await;
     for (idx, power_str) in [p1, p2].iter().enumerate() {
         let owner_id = Uuid::new_v4();
         let unit_id = Uuid::new_v4();
@@ -8216,12 +8230,12 @@ async fn given_gd_resolution_with_votes(world: &mut GovernanceWorld, p1: String,
         .expect("insert owner");
 
         sqlx::query(
-            r#"INSERT INTO units (id, building_id, organization_id, unit_number, unit_type, floor, surface_area, quota, created_at, updated_at)
+            r#"INSERT INTO units (id, building_id, acp_id, unit_number, unit_type, floor, surface_area, quota, created_at, updated_at)
                VALUES ($1, $2, $3, $4, 'apartment', 1, 75.0, $5, NOW(), NOW())"#,
         )
         .bind(unit_id)
         .bind(building_id)
-        .bind(org_id)
+        .bind(acp_id)
         .bind(format!("GD-Unit-{}", idx))
         .bind(power)
         .execute(&pool)
@@ -8344,14 +8358,16 @@ async fn given_gd_unit_quota(world: &mut GovernanceWorld, q: String) {
     let org_id = world.org_id.unwrap();
     let quota = Decimal::from_str(&q).expect("valid quota decimal");
     let unit_id = Uuid::new_v4();
+    // H15 — units.organization_id dropped, units.acp_id NOT NULL (same ACP as the building).
+    let acp_id = ensure_default_acp_for_org(&pool, org_id).await;
 
     sqlx::query(
-        r#"INSERT INTO units (id, building_id, organization_id, unit_number, unit_type, floor, surface_area, quota, created_at, updated_at)
+        r#"INSERT INTO units (id, building_id, acp_id, unit_number, unit_type, floor, surface_area, quota, created_at, updated_at)
            VALUES ($1, $2, $3, $4, 'apartment', 1, 75.0, $5, NOW(), NOW())"#,
     )
     .bind(unit_id)
     .bind(building_id)
-    .bind(org_id)
+    .bind(acp_id)
     .bind(format!("GD-Q-{}", &unit_id.to_string()[..8]))
     .bind(quota)
     .execute(&pool)

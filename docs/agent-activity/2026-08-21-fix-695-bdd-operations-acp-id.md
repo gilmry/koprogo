@@ -33,3 +33,15 @@ Aucune migration touchée, aucun fichier `.feature` à modifier (les steps eux-m
 
 - **#699** (npm audit dev-only) — nécessite bump amont ou `overrides` npm ciblé, hors scope de cette passe.
 - **#696** (instabilité smoke Playwright pré-existante) — explicitement non-bloquant, à garder sous les yeux avant tag.
+
+## Correction (même jour, suite au retour CI sur PR #708)
+
+Le constat §"Constat sur le code courant" ci-dessus était **incomplet** : les variantes citées dans l'issue d'origine (« insert unit for age request owner », « insert poll unit », « insert etat date unit », « create unit for legal holds », « create Alice unit ») n'avaient pas disparu — elles vivent dans **`backend/tests/bdd.rs`** et **`backend/tests/bdd_financial.rs`** / **`backend/tests/bdd_governance.rs`**, pas dans `bdd_operations.rs` (mon grep initial était scopé au seul fichier nommé par l'issue, qui sous-estimait le vrai périmètre du bug). La CI du premier push (job `BDD Tests`, run `32527230234`) confirme : `bdd_operations` n'apparaît **pas** dans la liste des 3 cibles en échec (`--test bdd`, `--test bdd_financial`, `--test bdd_governance`) — le fix ci-dessus est correct et suffisant pour ce fichier — mais la même régression H15 (colonne `organization_id` absente / `acp_id` NOT NULL non renseigné) frappe **14 sites supplémentaires** répartis sur ces 3 autres binaires BDD.
+
+**Sites corrigés en complément (même pattern `ensure_default_acp_for_org`)** :
+
+- `backend/tests/bdd.rs` : 2 sites (`create Alice unit`, `create unit for legal holds`).
+- `backend/tests/bdd_financial.rs` : 6 sites (tous `insert unit`, colonne `organization_id` → `acp_id`).
+- `backend/tests/bdd_governance.rs` : 6 sites (`insert unit` ×3 dont un sans colonne acp_id du tout → `NOT NULL violates constraint`, `insert poll unit`, `insert etat date unit`, `insert unit for age request owner`).
+
+Vérification : `grep -rn "INSERT INTO units" backend/tests/*.rs | grep -v acp_id` → 0 résultat (tous les fichiers BDD sont désormais propres). `rustfmt --check` propre sur les 4 fichiers touchés (`bdd.rs`, `bdd_financial.rs`, `bdd_governance.rs`, `bdd_operations.rs`). Compilation toujours non vérifiable localement (même limitation qu'au-dessus) — poussé sur PR #708, CI réelle re-déclenchée.
