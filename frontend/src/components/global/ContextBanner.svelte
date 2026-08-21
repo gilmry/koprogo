@@ -73,13 +73,9 @@
       if (scope.selectedBuildingId !== buildingId) return;
       buildingDetail = b;
 
-      // Story 1.2 : Building expose `acp_id` (anciennement `organization_id`).
-      // Le DTO TypeScript actuel garde `organization_id` legacy le temps du
-      // rebranding FE (cf. BuildingSelector lignes 96-100). On lit les deux.
-      const acpId =
-        (b as Building & { acp_id?: string }).acp_id ??
-        b.organization_id ??
-        null;
+      // Story 1.2 : Building expose `acp_id` (rebranding FE terminé,
+      // `organization_id` n'existe plus sur le DTO — cf. BuildingSelector).
+      const acpId = b.acp_id ?? null;
 
       if (acpId) {
         try {

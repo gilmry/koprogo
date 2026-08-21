@@ -43,7 +43,10 @@
   // un mandate franchit un seuil (J-30 → soon, J-7 → urgent, J0 → expired).
   // -------------------------------------------------------------------------
 
-  let now = $state<Date>(nowOverride ?? new Date());
+  // ⚠ on lit `nowOverride` via `$effect` ci-dessous (jamais directement dans
+  // l'initialiseur `$state`) pour éviter le warning Svelte 5
+  // `state_referenced_locally` — même pattern que SlaBadge.svelte.
+  let now = $state<Date>(new Date());
 
   $effect(() => {
     // En mode test (nowOverride fourni), on ne lance PAS de timer — on veut

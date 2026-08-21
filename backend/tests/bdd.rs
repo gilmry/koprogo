@@ -1201,13 +1201,15 @@ async fn given_alice_owns_unit_first_building(world: &mut BuildingWorld) {
 
     // 2. Create a unit in the FIRST building and link Alice as active owner.
     let unit_id = Uuid::new_v4();
+    // H15 — units.organization_id dropped, units.acp_id NOT NULL (same ACP as the building).
+    let acp_id = ensure_default_acp_for_org(&pool, org_id).await;
     sqlx::query(
-        "INSERT INTO units (id, building_id, organization_id, unit_number, unit_type, floor, surface_area, quota, created_at, updated_at)
+        "INSERT INTO units (id, building_id, acp_id, unit_number, unit_type, floor, surface_area, quota, created_at, updated_at)
          VALUES ($1, $2, $3, 'ISO-2A', 'apartment', 0, 50.0, 100.0, NOW(), NOW())",
     )
     .bind(unit_id)
     .bind(first_building_id)
-    .bind(org_id)
+    .bind(acp_id)
     .execute(&pool)
     .await
     .expect("create Alice unit");
@@ -1582,13 +1584,14 @@ async fn given_active_legal_holds(world: &mut BuildingWorld) {
 
     // Create a unit in the building
     let unit_id = Uuid::new_v4();
+    // H15 — units.organization_id dropped, units.acp_id NOT NULL (same ACP as the building, cf. acp_id above).
     sqlx::query(
-        "INSERT INTO units (id, building_id, organization_id, unit_number, unit_type, floor, surface_area, quota, created_at, updated_at)
+        "INSERT INTO units (id, building_id, acp_id, unit_number, unit_type, floor, surface_area, quota, created_at, updated_at)
          VALUES ($1, $2, $3, 'LH-01', 'apartment', 0, 50.0, 100.0, NOW(), NOW())",
     )
     .bind(unit_id)
     .bind(building_id)
-    .bind(org_id)
+    .bind(acp_id)
     .execute(pool)
     .await
     .expect("create unit for legal holds");
