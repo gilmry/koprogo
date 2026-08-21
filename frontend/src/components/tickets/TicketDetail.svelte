@@ -59,7 +59,10 @@
   let actionLoading = $state(false);
   /** Story B6 — bump pour forcer un re-fetch de SyndicResponseList après POST. */
   let responsesRefreshKey = $state(0);
-  let firstResponseAtLocal = $state<string | null>(firstResponseAt);
+  // Capture initiale de la prop via une lambda d'init pour éviter le warning
+  // Svelte 5 `state_referenced_locally` — intentionnel, cf. handleResponseCreated.
+  const initFirstResponseAt = (): string | null => firstResponseAt;
+  let firstResponseAtLocal = $state<string | null>(initFirstResponseAt());
 
   function handleResponseCreated(r: SyndicResponseDto): void {
     // 1re réponse → on note le timestamp pour basculer SlaBadge en "met"/"breached".

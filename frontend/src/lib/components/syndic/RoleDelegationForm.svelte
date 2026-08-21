@@ -80,9 +80,14 @@
   // State du formulaire
   // -------------------------------------------------------------------------
 
+  // Capture initiale de la prop via une lambda d'init pour éviter le warning
+  // Svelte 5 `state_referenced_locally` — champ de formulaire pré-rempli,
+  // modifiable ensuite par l'utilisateur.
+  const initOrganizationId = (): string => defaultOrganizationId;
+
   let targetUserId = $state<string>("");
   let role = $state<string>(DELEGABLE_ROLES[0]); // "syndic" par défaut
-  let organizationId = $state<string>(defaultOrganizationId);
+  let organizationId = $state<string>(initOrganizationId());
   let validUntil = $state<string>(""); // YYYY-MM-DD (input type=date)
 
   let submitting = $state<boolean>(false);
