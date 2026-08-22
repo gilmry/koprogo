@@ -54,7 +54,7 @@ export interface Organization {
 // Building interface
 export interface Building {
   id: string;
-  organization_id: string;
+  acp_id: string;
   name: string;
   address: string;
   city: string;
@@ -65,6 +65,13 @@ export interface Building {
   construction_year?: number;
   created_at?: string;
   updated_at?: string;
+
+  // Story 1.4 — FR11/FR12/FR23 : conformity metrics exposed by GET /buildings/{id}.
+  // `quota_sum` and `quota_delta` are Decimal-as-string (NEVER parseFloat).
+  units_count?: number;
+  quota_sum?: string;
+  is_conformant?: boolean;
+  quota_delta?: string;
 }
 
 // Owner interface
@@ -130,13 +137,9 @@ export interface Expense {
     | "Utilities"
     | "Management"
     | "Other";
-  payment_status: "Pending" | "Paid" | "Overdue" | "Cancelled";
+  payment_status: "pending" | "paid" | "overdue" | "cancelled";
   approval_status?:
-    | "draft"
-    | "pending_approval"
-    | "approved"
-    | "rejected"
-    | null;
+    "draft" | "pending_approval" | "approved" | "rejected" | null;
   paid_date?: string;
   supplier?: string;
   invoice_number?: string;
