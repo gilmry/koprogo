@@ -22,6 +22,23 @@ use koprogo_api::infrastructure::LinkyApiClientImpl;
 use std::env;
 use std::sync::Arc;
 
+/// Milliseconds `actix_governor` must wait before refilling one token, for a
+/// steady-state rate of 100 requests/minute per IP once the initial burst is
+/// spent. `GovernorConfigBuilder::milliseconds_per_request` takes the refill
+/// *interval*, not a requests-per-window count - `100 * 60 * 1000` (a
+/// previous version of this code) computed a ~100-minute interval instead of
+/// 600ms, so once burst_size(100) was exhausted the limiter effectively
+/// never refilled. That starved every route behind it, including
+/// `/api/v1/health`, whose own Docker healthcheck traffic was enough to
+/// exhaust the burst and then keep the container "unhealthy" indefinitely.
+fn rate_limit_refill_ms(enable_rate_limiting: bool) -> u64 {
+    if enable_rate_limiting {
+        60 * 1000 / 100 // 600ms between refills = 100 requests/minute steady-state
+    } else {
+        1 // 1ms = 1000 requests per second (effectively unlimited)
+    }
+}
+
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     dotenv().ok();
@@ -599,11 +616,7 @@ async fn main() -> std::io::Result<()> {
     // Configure rate limiter: 100 requests per minute per IP
     // Allows bursts up to 100 requests, then refills at 100/60000ms rate
     // When rate limiting is disabled, set a very high limit (effectively unlimited)
-    let rate_limit_ms = if enable_rate_limiting {
-        100 * 60 * 1000 // 100 requests per minute (60,000ms)
-    } else {
-        1 // 1ms = 1000 requests per second (effectively unlimited)
-    };
+    let rate_limit_ms = rate_limit_refill_ms(enable_rate_limiting);
     let burst_size = if enable_rate_limiting {
         100
     } else {
@@ -800,4 +813,23 @@ fn validate_cors_origins(origins: &[String]) -> std::io::Result<()> {
         origins.len()
     );
     Ok(())
+}
+
+#[cfg(test)]
+mod rate_limit_tests {
+    use super::*;
+
+    #[test]
+    fn rate_limit_refill_ms_enabled_yields_100_per_minute() {
+        // burst_size(100) + a 600ms refill interval == 100 req/min steady-state.
+        // The regression this guards: 100 * 60 * 1000 (6_000_000ms, ~100min
+        // per token) was committed instead, which let /api/v1/health lock
+        // itself out once the initial burst was consumed.
+        assert_eq!(rate_limit_refill_ms(true), 600);
+    }
+
+    #[test]
+    fn rate_limit_refill_ms_disabled_is_effectively_unlimited() {
+        assert_eq!(rate_limit_refill_ms(false), 1);
+    }
 }
