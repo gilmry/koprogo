@@ -1,87 +1,22 @@
 import { test, expect } from "@playwright/test";
-import type { Page } from "@playwright/test";
+import { loginAsSyndicWithBuilding } from "./helpers/auth";
 
 /**
  * Expenses E2E Test Suite - Invoice Workflow
  *
  * Tests expense listing, creation, and approval workflow.
  * Uses API-first setup for data, then validates UI.
+ *
+ * WP-FE1/#550 : utilise le helper partagé `loginAsSyndicWithBuilding`
+ * (injectAuth) pour éviter la course de rotation cookie refresh-token
+ * causée par l'ancien UI-login local. Cf. Meetings.spec.ts pour détails.
  */
 
 const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
 
-async function setupSyndicWithBuilding(page: Page): Promise<{
-  token: string;
-  buildingId: string;
-}> {
-  const timestamp = Date.now();
-  const email = `expense-test-${timestamp}@example.com`;
-
-  // Create organization first (required for syndic to create buildings/expenses)
-  const adminLoginResp = await page.request.post(`${API_BASE}/auth/login`, {
-    data: { email: "admin@koprogo.com", password: "admin123" },
-  });
-  const adminData = await adminLoginResp.json();
-  const adminToken = adminData.token;
-
-  const orgResp = await page.request.post(`${API_BASE}/organizations`, {
-    data: {
-      name: `Expense Test Org ${timestamp}`,
-      slug: `expense-test-${timestamp}`,
-      contact_email: email,
-      subscription_plan: "professional",
-    },
-    headers: { Authorization: `Bearer ${adminToken}` },
-  });
-  const org = await orgResp.json();
-  const orgId = org.id;
-
-  // Register syndic with organization
-  const regResponse = await page.request.post(`${API_BASE}/auth/register`, {
-    data: {
-      email,
-      password: "test123456",
-      first_name: "Expense",
-      last_name: `Test${timestamp}`,
-      role: "syndic",
-      organization_id: orgId,
-    },
-  });
-  expect(regResponse.ok()).toBeTruthy();
-  const userData = await regResponse.json();
-  const token = userData.token;
-
-  // Create building
-  // Create building (only SuperAdmin can create buildings)
-  const buildingResponse = await page.request.post(`${API_BASE}/buildings`, {
-    data: {
-      name: `Expense Building ${timestamp}`,
-      address: `${timestamp} Rue Facture`,
-      city: "Brussels",
-      postal_code: "1000",
-      country: "Belgium",
-      total_units: 5,
-      construction_year: 2020,
-      organization_id: orgId,
-    },
-    headers: { Authorization: `Bearer ${adminToken}` },
-  });
-  expect(buildingResponse.ok()).toBeTruthy();
-  const building = await buildingResponse.json();
-
-  // Login via UI
-  await page.goto("/login");
-  await page.getByTestId("login-email").fill(email);
-  await page.getByTestId("login-password").fill("test123456");
-  await page.getByTestId("login-submit").click();
-  await page.waitForURL(/\/(syndic|admin|owner)/, { timeout: 15000 });
-
-  return { token, buildingId: building.id };
-}
-
 test.describe("Expenses - Invoice Management", () => {
   test("should display expenses list page", async ({ page }) => {
-    await setupSyndicWithBuilding(page);
+    await loginAsSyndicWithBuilding(page, "expense");
     await page.goto("/expenses");
 
     await expect(page.locator("body")).toBeVisible();
@@ -91,7 +26,7 @@ test.describe("Expenses - Invoice Management", () => {
   });
 
   test("should display invoice workflow page", async ({ page }) => {
-    await setupSyndicWithBuilding(page);
+    await loginAsSyndicWithBuilding(page, "expense");
     await page.goto("/invoice-workflow");
 
     await expect(page.locator("body")).toBeVisible();
@@ -105,7 +40,10 @@ test.describe("Expenses - Invoice Management", () => {
   test("should create an expense via API and see it in the list", async ({
     page,
   }) => {
-    const { token, buildingId } = await setupSyndicWithBuilding(page);
+    const { token, buildingId } = await loginAsSyndicWithBuilding(
+      page,
+      "expense",
+    );
     const timestamp = Date.now();
 
     // Create expense via API
@@ -131,7 +69,10 @@ test.describe("Expenses - Invoice Management", () => {
   });
 
   test("should navigate to expense detail page", async ({ page }) => {
-    const { token, buildingId } = await setupSyndicWithBuilding(page);
+    const { token, buildingId } = await loginAsSyndicWithBuilding(
+      page,
+      "expense",
+    );
     const timestamp = Date.now();
 
     // Create expense via API
@@ -159,7 +100,10 @@ test.describe("Expenses - Invoice Management", () => {
   test("should display Belgian VAT information on expense", async ({
     page,
   }) => {
-    const { token, buildingId } = await setupSyndicWithBuilding(page);
+    const { token, buildingId } = await loginAsSyndicWithBuilding(
+      page,
+      "expense",
+    );
     const timestamp = Date.now();
 
     // Create expense with VAT
@@ -184,7 +128,7 @@ test.describe("Expenses - Invoice Management", () => {
   });
 
   test("should show payment reminders page", async ({ page }) => {
-    await setupSyndicWithBuilding(page);
+    await loginAsSyndicWithBuilding(page, "expense");
     await page.goto("/payment-reminders");
 
     await expect(page.locator("body")).toBeVisible();

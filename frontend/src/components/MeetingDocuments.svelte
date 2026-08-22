@@ -59,11 +59,7 @@
   async function handleDownload(documentId: string, title: string) {
     await withErrorHandling({
       action: async () => {
-        const response = await fetch(`${import.meta.env.PUBLIC_API_URL}/documents/${documentId}/download`, { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } });
-        if (!response.ok) throw new Error($_('meetings.error_downloading'));
-        const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a'); a.href = url; a.download = title; document.body.appendChild(a); a.click(); window.URL.revokeObjectURL(url); document.body.removeChild(a);
+        await api.download(`/documents/${documentId}/download`, title);
       },
       errorMessage: $_('meetings.error_downloading_document'),
     });

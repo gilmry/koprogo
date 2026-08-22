@@ -234,9 +234,16 @@ impl ContractorReportUseCases {
                 (&self.quote_repo, &self.payment_use_cases)
             {
                 if let Ok(Some(quote)) = quote_repo.find_by_id(quote_id).await {
-                    let amount_cents = (quote.amount_incl_vat * rust_decimal::Decimal::from(100))
-                        .to_string()
-                        .parse::<i64>()
+                    // A quote that was never submitted (Requested, no price
+                    // data) has nothing to pay — skip the auto-payment.
+                    let amount_cents = quote
+                        .amount_incl_vat
+                        .map(|a| {
+                            (a * rust_decimal::Decimal::from(100))
+                                .to_string()
+                                .parse::<i64>()
+                                .unwrap_or(0)
+                        })
                         .unwrap_or(0);
 
                     if amount_cents > 0 {

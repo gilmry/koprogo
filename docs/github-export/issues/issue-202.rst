@@ -4,7 +4,7 @@ Issue #202: feat: Owner Contributions Tracking (Suivi des Versements)
 
 :State: **CLOSED**
 :Milestone: Jalon 2: Conformité Légale Belge 📋
-:Labels: enhancement,phase:vps track:software,priority:critical finance
+:Labels: enhancement,phase:vps track:software,priority:critical finance
 :Assignees: Unassigned
 :Created: 2026-02-18
 :Updated: 2026-02-18

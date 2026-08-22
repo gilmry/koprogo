@@ -27,9 +27,18 @@ import Layout from '../layouts/Layout.astro';
   import { mount } from 'svelte';
   import OwnerContributionForm from '../components/OwnerContributionForm.svelte';
   import OwnerContributionList from '../components/OwnerContributionList.svelte';
+  import { authStore } from '../stores/auth';
+  import { get } from 'svelte/store';
 
-  // Get organization ID from auth (you may need to adjust this based on your auth setup)
-  const organizationId = localStorage.getItem('organizationId') || '';
+  // localStorage.getItem('organizationId') est une clé qui n'a jamais existé
+  // depuis la refonte JWT/cookie (WP-FE1) — organizationId était toujours
+  // vide, donc le formulaire de création ne chargeait jamais owners/units.
+  // `authStore.init()` doit être attendu avant lecture (silent-refresh async
+  // via cookie HttpOnly, pattern déjà établi dans settings.astro) — sans ça,
+  // `get(authStore)` course contre l'hydratation et lit un store encore vide.
+  await authStore.init();
+  const auth = get(authStore);
+  const organizationId = auth.user?.organizationId || auth.user?.activeRole?.organizationId || '';
 
   // Mount the form component using Svelte 5 API
   const formContainer = document.getElementById('contribution-form-container');

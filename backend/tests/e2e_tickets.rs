@@ -41,8 +41,9 @@ async fn create_test_fixtures(
     let token = login_response.token;
 
     // 2. Create building (org already created by setup_test_db)
+    let acp_id = common::create_test_acp(app_state, org_id).await;
     let building_dto = CreateBuildingDto {
-        organization_id: org_id.to_string(),
+        acp_id,
         name: format!("Test Building Ticket {}", Uuid::new_v4()),
         address: "456 Maintenance Ave".to_string(),
         city: "Brussels".to_string(),
@@ -63,7 +64,7 @@ async fn create_test_fixtures(
 
     // 3. Create unit
     let unit_dto = CreateUnitDto {
-        organization_id: org_id.to_string(),
+        acp_id: building.acp_id.clone(),
         building_id: building.id.clone(),
         unit_number: "A101".to_string(),
         unit_type: UnitType::Apartment,

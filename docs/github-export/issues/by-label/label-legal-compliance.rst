@@ -2,7 +2,7 @@
 Label: legal-compliance
 ========================
 
-Total: 21 issues
+Total: 41 issues
 
 .. toctree::
    :maxdepth: 1
@@ -28,3 +28,23 @@ Total: 21 issues
    ../issue-277
    ../issue-278
    ../issue-279
+   ../issue-348
+   ../issue-350
+   ../issue-433
+   ../issue-439
+   ../issue-553
+   ../issue-554
+   ../issue-556
+   ../issue-558
+   ../issue-559
+   ../issue-561
+   ../issue-570
+   ../issue-576
+   ../issue-577
+   ../issue-578
+   ../issue-579
+   ../issue-580
+   ../issue-582
+   ../issue-583
+   ../issue-584
+   ../issue-618

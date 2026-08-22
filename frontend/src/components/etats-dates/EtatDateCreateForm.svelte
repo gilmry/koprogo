@@ -5,10 +5,17 @@
   import { api } from '../../lib/api';
   import type { Building } from '../../lib/types';
   import { withErrorHandling } from "../../lib/utils/error.utils";
+  // Track H Story H2 — validate-before-compute (FR-H2). Banner + toast 422.
+  import ConformityBanner from '../../lib/components/shared/ConformityBanner.svelte';
+  import {
+    buildConformityStatus,
+    showConformityToast,
+  } from '../../lib/utils/conformity';
 
   const dispatch = createEventDispatcher();
 
   let buildings: Building[] = [];
+  let selectedBuilding: Building | null = null;
   let units: any[] = [];
   let loading = false;
   let error = '';
@@ -32,6 +39,7 @@
     if (!buildingId) {
       units = [];
       unitId = '';
+      selectedBuilding = null;
       return;
     }
     const result = await withErrorHandling({
@@ -39,9 +47,38 @@
     });
     units = result || [];
     unitId = '';
+    // Track H Story H2 — récupère le building enrichi (is_conformant + metrics).
+    // `GET /buildings` (liste paginée) renvoie toujours des métriques VIDES
+    // par défaut (units_count:0, is_conformant:false — choix de perf pour
+    // éviter un JOIN sur la pagination, cf. building_use_cases.rs
+    // `to_response_dto` / `BuildingMetrics::empty()`), jamais `undefined` —
+    // un check `=== undefined` ne se déclenche donc jamais et le formulaire
+    // affichait "non conforme" pour tout immeuble réellement conforme.
+    // Seul `GET /buildings/{id}` calcule les vraies métriques : on le
+    // recharge systématiquement pour le building sélectionné.
+    selectedBuilding =
+      buildings.find((b) => b.id === buildingId) || null;
+    try {
+      selectedBuilding = await api.get<Building>(`/buildings/${buildingId}`);
+    } catch (e) {
+      console.error('Failed to load building metrics:', e);
+    }
   }
 
   $: if (buildingId) loadUnits();
+
+  // Track H Story H2 — Statut conformité dérivé.
+  $: conformityStatus =
+    selectedBuilding && selectedBuilding.is_conformant !== undefined
+      ? buildConformityStatus({
+          is_conformant: !!selectedBuilding.is_conformant,
+          total_units: selectedBuilding.total_units,
+          units_count: selectedBuilding.units_count ?? 0,
+          total_tantiemes: selectedBuilding.total_tantiemes,
+          quota_delta: selectedBuilding.quota_delta ?? '0',
+        })
+      : null;
+  $: canCompute = conformityStatus ? conformityStatus.is_conformant : true;
 
   async function handleSubmit() {
     if (!buildingId || !unitId) {
@@ -63,15 +100,18 @@
       notary_email: notaryEmail,
       notary_phone: notaryPhone || undefined,
     };
-    const result = await withErrorHandling({
-      action: () => etatsDatesApi.create(data),
-      setLoading: (v) => loading = v,
-      errorMessage: $_('etatsDate.errors.creationFailed'),
-    });
-    if (result) {
+    // Track H Story H2 — try/catch direct pour intercepter le 422
+    // BUILDING_NOT_CONFORMANT et afficher le toast narratif.
+    loading = true;
+    try {
+      const result = await etatsDatesApi.create(data);
       dispatch('created', result);
-    } else if (!result) {
-      error = $_('etatsDate.errors.creationFailed');
+    } catch (err) {
+      if (!showConformityToast(err)) {
+        error = $_('etatsDate.errors.creationFailed');
+      }
+    } finally {
+      loading = false;
     }
   }
 </script>
@@ -81,6 +121,16 @@
     <div class="bg-red-50 border border-red-200 rounded-lg p-3">
       <p class="text-sm text-red-700">{error}</p>
     </div>
+  {/if}
+
+  <!-- Track H Story H2 — Banner conformité (FR-H2). DOM-absent si conformant
+       ou si aucun building sélectionné. -->
+  {#if conformityStatus && selectedBuilding}
+    <ConformityBanner
+      status={conformityStatus}
+      buildingId={selectedBuilding.id}
+      buildingName={selectedBuilding.name}
+    />
   {/if}
 
   <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -190,9 +240,12 @@
     </button>
     <button
       type="submit"
-      disabled={loading}
-      class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition disabled:opacity-50"
-      data-testid="submit-etat-date-button"
+      disabled={loading || !canCompute}
+      aria-disabled={loading || !canCompute}
+      title={!canCompute ? $_('conformity.toast_title') : ''}
+      class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+      data-testid="etat-date-generate-button"
+      data-can-compute={canCompute}
     >
       {loading ? $_('common.creating') : $_('etatsDate.createEtatDate')}
     </button>

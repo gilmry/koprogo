@@ -2,10 +2,10 @@
 Convocations AG Automatiques (Issue #88)
 =====================================================
 
-:Date: Mars 2026
-:Version: 1.0.0
-:Issue GitHub: #88
-:Statut: Production-ready (Backend complet)
+:Date: 2026-03 (initial) — màj 2026-06 (correction délais légaux Story H14)
+:Version: 1.1.0
+:Issue GitHub: #88 ; correction #618 (Track H, Story H14)
+:Statut: Production-ready (Backend + Frontend complets — #88 fermée)
 
 Vue d'ensemble
 ==============
@@ -18,13 +18,35 @@ Conformite legale belge
 Delais minimaux obligatoires
 -----------------------------
 
-+-----------------------+---------+-------------------------------------------+
-| Type d'AG             | Delai   | Base legale                               |
-+=======================+=========+===========================================+
-| Ordinaire             | 15 jours| Code Civil belge Art. 577-6               |
-| Extraordinaire        | 8 jours | Code Civil belge Art. 577-6               |
-| Seconde convocation   | 8 jours | Apres quorum non atteint                  |
-+-----------------------+---------+-------------------------------------------+
+Le delai minimum de convocation est de **15 jours pour TOUTES les assemblees
+generales** (ordinaire comme extraordinaire), conformement a l'**Art. 3.87 §3 du
+Code civil** (Livre 3, ex-Art. 577-6 §2). Il n'existe **pas** de delai reduit a
+8 jours pour les AG extraordinaires : cette distinction etait erronee.
+
+.. list-table:: Delais minimaux de convocation (Art. 3.87 Code civil)
+   :header-rows: 1
+   :widths: 45 15 40
+
+   * - Type de convocation
+     - Delai minimum
+     - Base legale
+   * - AG ordinaire
+     - 15 jours
+     - Art. 3.87 §3 Code civil
+   * - AG extraordinaire
+     - 15 jours
+     - Art. 3.87 §3 Code civil
+   * - Seconde convocation (quorum non atteint)
+     - 15 jours
+     - Art. 3.87 §5 Code civil
+
+**Exception — urgence.** L'Art. 3.87 §3 reserve le cas de l'urgence (« Sauf
+dans les cas d'urgence, la convocation est communiquee quinze jours au moins
+avant la date de l'assemblee... »). En cas d'urgence justifiee, le syndic peut
+convoquer dans un delai plus court : la loi **ne fixe aucun seuil minimal** et,
+en particulier, **aucun delai forfaitaire de 8 jours** n'est prevu par le Code
+civil. Le reglement de copropriete peut imposer un delai **plus long** que
+15 jours, jamais plus court (hors urgence).
 
 La validation des delais est effectuee a trois niveaux :
 

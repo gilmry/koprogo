@@ -1,3 +1,4 @@
+use crate::infrastructure::web::handlers::conformity_response::try_build_conformity_response;
 use crate::infrastructure::web::{AppState, AuthenticatedUser};
 use actix_web::{get, post, web, HttpResponse, Responder};
 use uuid::Uuid;
@@ -28,9 +29,15 @@ pub async fn calculate_and_save_distribution(
             "count": distributions.len(),
             "distributions": distributions
         })),
-        Err(err) => HttpResponse::BadRequest().json(serde_json::json!({
-            "error": err
-        })),
+        Err(err) => {
+            // Track H Story H2 — pre-check validate-before-compute → 422 narratif
+            if let Some(resp) = try_build_conformity_response(&err) {
+                return resp;
+            }
+            HttpResponse::BadRequest().json(serde_json::json!({
+                "error": err
+            }))
+        }
     }
 }
 

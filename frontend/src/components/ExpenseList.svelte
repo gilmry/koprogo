@@ -2,15 +2,20 @@
   // Svelte 5 runes mode
   import { _ } from '../lib/i18n';
   import { api } from '../lib/api';
-  import type { Expense, PageResponse } from '../lib/types';
+  import type { Building, Expense, PageResponse } from '../lib/types';
   import Pagination from './Pagination.svelte';
   import InvoiceForm from './InvoiceForm.svelte';
   import { formatDate } from '../lib/utils/date.utils';
   import { formatCurrency } from '../lib/utils/finance.utils';
   import { withLoadingState } from '../lib/utils/error.utils';
+  // Track H Story H2 — validate-before-compute (FR-H2). Banner narratif +
+  // bouton create disabled quand le building lié est non-conforme.
+  import ConformityBanner from '../lib/components/shared/ConformityBanner.svelte';
+  import { buildConformityStatus } from '../lib/utils/conformity';
 
-  let { buildingId = null }: {
+  let { buildingId = null, allowCreate = true }: {
     buildingId?: string | null;
+    allowCreate?: boolean;
   } = $props();
 
   // Modal state for creating new invoice
@@ -19,6 +24,10 @@
   let expenses = $state<Expense[]>([]);
   let loading = $state(true);
   let error = $state('');
+  // Track H Story H2 — building enrichi (is_conformant + metrics) chargé en
+  // parallèle des dépenses pour gating UI. `null` si pas de building_id en
+  // prop (vue globale) → on n'affiche pas de banner et on garde le bouton actif.
+  let building = $state<Building | null>(null);
 
   // Pagination state
   let currentPage = $state(1);
@@ -28,6 +37,11 @@
 
   $effect(() => {
     loadExpenses();
+    // Track H Story H2 — charger building enrichi (is_conformant + metrics)
+    // si on a un buildingId en prop. Sinon vue globale, pas de gating UI.
+    if (buildingId) {
+      loadBuilding();
+    }
 
     // Listen for page show events to reload data when navigating back (client-side only)
     if (typeof window !== 'undefined') {
@@ -42,6 +56,35 @@
       }
     };
   });
+
+  // Track H Story H2 — Statut conformité dérivé (cf. BuildingDetail.svelte
+  // pattern Story H1). `null` si building pas chargé → `canCompute=true`
+  // (sécurité défense profondeur : backend 422 reste source de vérité).
+  let conformityStatus = $derived(
+    building && building.is_conformant !== undefined
+      ? buildConformityStatus({
+          is_conformant: !!building.is_conformant,
+          total_units: building.total_units,
+          units_count: building.units_count ?? 0,
+          total_tantiemes: building.total_tantiemes,
+          quota_delta: building.quota_delta ?? '0',
+        })
+      : null,
+  );
+  let canCompute = $derived(
+    conformityStatus ? conformityStatus.is_conformant : true,
+  );
+
+  async function loadBuilding() {
+    if (!buildingId) return;
+    try {
+      building = await api.get<Building>(`/buildings/${buildingId}`);
+    } catch (e) {
+      // Non-bloquant : on garde le bouton actif si le DTO n'expose pas
+      // (encore) les champs metrics. Le backend 422 reste source de vérité.
+      console.error('Failed to load building metrics:', e);
+    }
+  }
 
   function handlePageShow(event: PageTransitionEvent) {
     if (event.persisted) {
@@ -121,20 +164,36 @@
 </script>
 
 <div class="space-y-4">
+  <!-- Track H Story H2 — Banner narratif conformité (FR-H2). DOM-absent si
+       conformant ou si building pas chargé (vue globale). -->
+  {#if conformityStatus && building}
+    <ConformityBanner
+      status={conformityStatus}
+      buildingId={building.id}
+      buildingName={building.name}
+    />
+  {/if}
+
   <div class="flex justify-between items-center">
     <p class="text-gray-600">
       {totalItems} dépense{totalItems !== 1 ? 's' : ''}
     </p>
-    <button
-      onclick={() => showCreateModal = true}
-      class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition font-medium flex items-center gap-2"
-      data-testid="create-button"
-    >
-      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-      </svg>
-      {$_('expenses.createInvoice')}
-    </button>
+    {#if allowCreate}
+      <button
+        onclick={() => showCreateModal = true}
+        disabled={!canCompute}
+        aria-disabled={!canCompute}
+        title={!canCompute ? $_('conformity.toast_title') : ''}
+        class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition font-medium flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+        data-testid="create-button"
+        data-can-compute={canCompute}
+      >
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+        </svg>
+        {$_('expenses.createInvoice')}
+      </button>
+    {/if}
   </div>
 
   {#if error}

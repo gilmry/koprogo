@@ -9,8 +9,7 @@
   // Copyright: Dany De Bontridder <dany@alchimerys.eu>
 
   import { _ } from '../lib/i18n';
-
-  const API_URL = import.meta.env.PUBLIC_API_URL || 'http://localhost:8080/api/v1';
+  import { api } from '../lib/api';
 
   let { buildingId = null, onSuccess = null }: {
     buildingId?: string | null;
@@ -78,38 +77,25 @@
     loading = true;
 
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${API_URL}/journal-entries`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          building_id: buildingId,
-          journal_type: journalType,
-          entry_date: `${entryDate}T12:00:00Z`,
-          description: description.trim(),
-          document_ref: documentRef.trim() || null,
-          lines: validLines.map((line) => ({
-            account_code: line.accountCode.trim(),
-            debit: parseFloat(line.debit) || 0,
-            credit: parseFloat(line.credit) || 0,
-            description: line.description.trim(),
-          })),
-        }),
+      await api.post('/journal-entries', {
+        building_id: buildingId,
+        journal_type: journalType,
+        entry_date: `${entryDate}T12:00:00Z`,
+        description: description.trim(),
+        document_ref: documentRef.trim() || null,
+        lines: validLines.map((line) => ({
+          account_code: line.accountCode.trim(),
+          debit: parseFloat(line.debit) || 0,
+          credit: parseFloat(line.credit) || 0,
+          description: line.description.trim(),
+        })),
       });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || $_('journal.error.creationFailed'));
-      }
 
       success = true;
       resetForm();
       if (onSuccess) onSuccess();
     } catch (err: any) {
-      error = err.message;
+      error = err.message || $_('journal.error.creationFailed');
     } finally {
       loading = false;
     }
@@ -213,7 +199,7 @@
               <tr class="journal-line">
                 <td>
                   <label for={`journal-line-${index}-account-code`} class="sr-only">{$_('journal.account')}</label>
-                  <input id={`journal-line-${index}-account-code`} type="text" bind:value={line.accountCode} class="form-control form-control-sm" placeholder="Ex: 6100" maxlength="10" />
+                  <input id={`journal-line-${index}-account-code`} type="text" bind:value={line.accountCode} class="form-control form-control-sm" placeholder="Ex: 604002" maxlength="10" />
                 </td>
                 <td>
                   <label for={`journal-line-${index}-description`} class="sr-only">{$_('journal.description')}</label>

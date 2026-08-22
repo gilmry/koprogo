@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "DELETE FROM units WHERE building_id IN (SELECT b.id FROM buildings b JOIN acps a ON a.id = b.acp_id WHERE a.organization_id = ANY($1))",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "UuidArray"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "7f744199896374717f39c115521d6ea152b41b4890bd3526f63bff66e82879ab"
+}

@@ -1,4 +1,6 @@
-use crate::application::dto::{CreateQuoteDto, QuoteComparisonRequestDto, QuoteDecisionDto};
+use crate::application::dto::{
+    CreateQuoteDto, QuoteComparisonRequestDto, QuoteDecisionDto, SubmitQuoteDto,
+};
 use crate::infrastructure::web::middleware::AuthenticatedUser;
 use crate::infrastructure::web::AppState;
 use actix_web::{delete, get, post, put, web, HttpResponse, Responder};
@@ -106,14 +108,38 @@ pub async fn list_quotes_by_status(
 }
 
 /// POST /api/v1/quotes/:id/submit
-/// Submit quote (Contractor action)
+/// Submit quote (Contractor/Syndic action). Body is optional: a quote that
+/// already carries price data (cf. `CreateQuoteDto`'s escape hatch) can be
+/// submitted bodyless — otherwise pricing is required in the body.
 #[post("/quotes/{id}/submit")]
 pub async fn submit_quote(
     data: web::Data<AppState>,
     _auth: AuthenticatedUser,
     id: web::Path<Uuid>,
+    body: web::Bytes,
 ) -> impl Responder {
-    match data.quote_use_cases.submit_quote(id.into_inner()).await {
+    // No body = "confirm existing pricing" (use case rejects this unless the
+    // quote already has a price). A non-empty body must parse as
+    // SubmitQuoteDto — unlike Option<web::Json<T>>, a malformed body here
+    // is a real 400 rather than silently falling back to "no pricing".
+    let pricing = if body.is_empty() {
+        None
+    } else {
+        match serde_json::from_slice::<SubmitQuoteDto>(&body) {
+            Ok(dto) => Some(dto),
+            Err(e) => {
+                return HttpResponse::BadRequest().json(serde_json::json!({
+                    "error": format!("Invalid pricing payload: {}", e)
+                }))
+            }
+        }
+    };
+
+    match data
+        .quote_use_cases
+        .submit_quote(id.into_inner(), pricing)
+        .await
+    {
         Ok(quote) => HttpResponse::Ok().json(quote),
         Err(e) => HttpResponse::BadRequest().json(serde_json::json!({
             "error": e

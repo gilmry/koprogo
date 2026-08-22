@@ -1,10 +1,17 @@
 <script lang="ts">
   // Svelte 5 runes mode
   import { _ } from '../lib/i18n';
-  import { callForFundsApi } from '../lib/api';
+  import { api, callForFundsApi } from '../lib/api';
+  import type { Building } from "../lib/types";
   import { formatDate } from "../lib/utils/date.utils";
   import { formatCurrency } from "../lib/utils/finance.utils";
   import { withErrorHandling } from "../lib/utils/error.utils";
+  // Track H Story H2 — validate-before-compute (FR-H2).
+  import ConformityBanner from '../lib/components/shared/ConformityBanner.svelte';
+  import {
+    buildConformityStatus,
+    showConformityToast,
+  } from '../lib/utils/conformity';
 
   let { buildingId = undefined, statusFilter = undefined, onCreate = () => {} }: {
     buildingId?: string | undefined;
@@ -14,6 +21,8 @@
 
   let calls = $state<any[]>([]);
   let loading = $state(true);
+  // Track H Story H2 — building enrichi pour gating UI.
+  let building = $state<Building | null>(null);
 
   let filteredCalls = $derived.by(() => {
     if (statusFilter && statusFilter !== 'all') {
@@ -28,7 +37,37 @@
 
   $effect(() => {
     loadCalls();
+    if (buildingId) {
+      loadBuilding();
+    }
   });
+
+  // Track H Story H2 — Statut conformité dérivé. Cf. pattern Story H1
+  // BuildingDetail.svelte. `null` si building pas chargé → canCompute=true
+  // (BE 422 reste source de vérité défense profondeur).
+  let conformityStatus = $derived(
+    building && building.is_conformant !== undefined
+      ? buildConformityStatus({
+          is_conformant: !!building.is_conformant,
+          total_units: building.total_units,
+          units_count: building.units_count ?? 0,
+          total_tantiemes: building.total_tantiemes,
+          quota_delta: building.quota_delta ?? '0',
+        })
+      : null,
+  );
+  let canCompute = $derived(
+    conformityStatus ? conformityStatus.is_conformant : true,
+  );
+
+  async function loadBuilding() {
+    if (!buildingId) return;
+    try {
+      building = await api.get<Building>(`/buildings/${buildingId}`);
+    } catch (e) {
+      console.error('Failed to load building metrics:', e);
+    }
+  }
 
   async function loadCalls() {
     loading = true;
@@ -42,12 +81,17 @@
 
   async function handleSend(id: string) {
     if (!confirm($_('callForFunds.sendConfirm'))) return;
-    const result = await withErrorHandling({
-      action: () => callForFundsApi.send(id),
-      successMessage: $_('callForFunds.sendSuccess', { values: { count: 0 } }),
-      errorMessage: $_('callForFunds.sendError'),
-    });
-    if (result) await loadCalls();
+    try {
+      await callForFundsApi.send(id);
+      await loadCalls();
+    } catch (err) {
+      // Track H Story H2 — toast narratif si 422 BUILDING_NOT_CONFORMANT.
+      // Sinon, fallback message standard.
+      if (!showConformityToast(err)) {
+        const { toast } = await import('../stores/toast');
+        toast.error($_('callForFunds.sendError'));
+      }
+    }
   }
 
   async function handleCancel(id: string) {
@@ -104,11 +148,25 @@
 </script>
 
 <div class="space-y-4" data-testid="call-for-funds-list">
+  <!-- Track H Story H2 — Banner conformité (FR-H2). -->
+  {#if conformityStatus && building}
+    <ConformityBanner
+      status={conformityStatus}
+      buildingId={building.id}
+      buildingName={building.name}
+    />
+  {/if}
+
   <div class="flex justify-between items-center">
     <h2 class="text-2xl font-bold text-gray-900">{$_('callForFunds.title')}</h2>
     <button
       onclick={onCreate}
-      class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+      disabled={!canCompute}
+      aria-disabled={!canCompute}
+      title={!canCompute ? $_('conformity.toast_title') : ''}
+      class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+      data-testid="call-for-funds-create-button"
+      data-can-compute={canCompute}
     >
       + {$_('callForFunds.new')}
     </button>

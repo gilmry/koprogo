@@ -15,26 +15,31 @@ Feature: Meeting Resolutions and Voting System
     And an owner "Alice" with 300 voting power (tantiemes) exists
     And an owner "Bob" with 200 voting power (tantiemes) exists
     And an owner "Charlie" with 500 voting power (tantiemes) exists
+    # Art. 3.87 §5 CC: a resolution (agenda item put to the vote) can only be
+    # created on a validly-constituted AG. 1000/1000 tantiemes present = 100%.
+    And the AG is validly constituted (quorum reached)
 
   # === RESOLUTION CREATION ===
 
-  Scenario: Create a resolution with simple majority
+  # Belgian named majority model (Art. 3.88 CC). Legacy "Simple"/"Qualified"
+  # labels were superseded by the named MajorityType enum (#310/#323): a simple
+  # copro decision = Absolute majority (Art. 3.88 §1), a 2/3 decision = TwoThirds.
+  Scenario: Create a resolution with absolute majority
     When I create a resolution for the meeting:
       | title              | Repaint lobby walls              |
       | description        | Repaint lobby in blue as discussed |
-      | majority_required  | Simple                           |
+      | majority_required  | Absolute                         |
     Then the resolution should be created
     And the resolution status should be "Pending"
-    And the majority type should be "Simple"
+    And the majority type should be "Absolute"
 
-  Scenario: Create a resolution with qualified majority (2/3)
+  Scenario: Create a resolution with two-thirds qualified majority
     When I create a resolution for the meeting:
       | title              | Modify building rules            |
       | description        | Amend rules for pet ownership    |
-      | majority_required  | Qualified                        |
-      | threshold          | 0.6667                           |
+      | majority_required  | TwoThirds                        |
     Then the resolution should be created
-    And the majority type should be "Qualified"
+    And the majority type should be "TwoThirds"
 
   # === VOTING ===
 
@@ -110,6 +115,18 @@ Feature: Meeting Resolutions and Voting System
     Given a pending resolution "Active vote" with votes
     When I try to delete the resolution
     Then the deletion should fail
+
+  # === SECURITY — VOTE INTEGRITY ===
+  # Art. 3.87 CC: one lot = one voice. A unit may not vote twice on the same
+  # resolution (ballot-stuffing / double-vote prevention). The legitimate way
+  # to revise a choice is "change vote" (covered above), not a second ballot.
+
+  @security
+  Scenario: A unit cannot vote twice on the same resolution
+    Given a pending resolution "Roof works budget" exists
+    And "Alice" has voted "Pour" on the resolution
+    When "Alice" votes "Contre" on the resolution
+    Then the vote should be rejected
 
   # === LISTING & SUMMARY ===
 

@@ -184,7 +184,7 @@ async fn test_accounts_create_duplicate_code_fails() {
     )
     .await;
 
-    let unique_code = format!("9{}", &Uuid::new_v4().to_string()[..4].replace('-', "0"));
+    let unique_code = format!("9{}", Uuid::new_v4().to_string()[..4].replace('-', "0"));
 
     let first_req = test::TestRequest::post()
         .uri("/api/v1/accounts")

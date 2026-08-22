@@ -439,3 +439,91 @@ Le workflow ``.github/workflows/docs.yml`` se charge ensuite de publier la docum
        <p><strong>🤖 Guide maintenu avec Claude Code</strong></p>
        <p>KoproGo ASBL - Tests E2E et Documentation Vivante</p>
    </div>
+
+Multi-rôles E2E (post-FE1 cookie HttpOnly)
+===========================================
+
+Depuis WP-FE1 (PR #543), l'authentification Playwright n'injecte plus de
+token dans ``localStorage``. Le flow est aligné prod : **cookie HttpOnly
+réel posé par le backend** + **silent-refresh** à la navigation.
+
+Helper ``injectAuth`` (chokepoint unique)
+------------------------------------------
+
+``frontend/tests/e2e/helpers/auth.ts`` :
+
+1. L'appelant fait un ``page.request.post(/auth/register)`` réel (ou
+   ``/auth/login``) — le cookie ``Set-Cookie: koprogo_refresh`` est
+   stocké dans le **cookie jar partagé** avec le contexte navigateur.
+2. ``injectAuth`` pose ``koprogo_user`` via ``page.addInitScript`` (cache
+   d'affichage non sensible, avant tout script de page).
+3. **UNE seule navigation** dashboard → ``authStore.init()`` →
+   silent-refresh via le cookie HttpOnly → access token mémoire frais.
+
+**Anti-course de rotation** : on évite ``goto("/login")`` préalable
+(LoginForm déclencherait son propre ``authStore.init()`` ⇒ un 1er refresh
+qui rote le cookie, puis un 2e refresh au goto dashboard avec le cookie
+révoqué → 401). Une seule navigation = un seul refresh.
+
+Pré-requis env (E2E sur ``http://localhost``)
+----------------------------------------------
+
+* ``COOKIE_SECURE=false`` côté backend (sinon le navigateur rejette le
+  cookie hors HTTPS). Cf. ``docker-compose.yml`` et ``.env.example``
+  (défaut prod = ``true``).
+* CORS ``supports_credentials()`` activé, origines explicites (jamais
+  ``*`` — ``validate_cors_origins`` le rejette).
+* Job CI Playwright : ``COOKIE_SECURE: "false"`` dans
+  ``.github/workflows/ci.yml`` step "Build and start backend".
+
+Helpers existants (réutiliser, ne pas dupliquer)
+------------------------------------------------
+
+* ``loginAsSyndic(page, prefix)`` — admin login, crée org, register
+  syndic, injectAuth syndic. Retourne ``{ token, adminToken, orgId,
+  email, userId }``.
+* ``loginAsSyndicWithBuilding`` / ``loginAsSyndicWithUnit`` /
+  ``loginAsSyndicWithMeeting`` / ``loginAsSyndicWithExpense`` /
+  ``loginAsSyndicWithOwner`` / ``loginAsSyndicWithLinkedOwner`` —
+  composent au-dessus en créant les ressources via ``page.request``.
+* ``loginAsAdmin(page)`` — variante superadmin.
+
+Pattern silent-refresh single-flight (frontend)
+================================================
+
+(Voir aussi ``docs/JWT_REFRESH_TOKENS.md`` §"Amendment 2026-05-19".)
+
+``frontend/src/stores/auth.ts`` coalesce les appels concurrents à
+``refreshAccessToken()`` via une promesse partagée au scope du module :
+
+.. code-block:: typescript
+
+   let inflightRefresh: Promise<boolean> | null = null;
+
+   refreshAccessToken: async (): Promise<boolean> => {
+     if (inflightRefresh) return inflightRefresh;  // dedup
+     inflightRefresh = doRefresh();
+     try { return await inflightRefresh; }
+     finally { inflightRefresh = null; }
+   }
+
+**Pourquoi c'est critique** : ``RouteGuard.svelte`` et
+``Navigation.svelte`` s'hydratent comme deux îlots Astro ``client:load``
+parallèles ; sans dedup, deux ``POST /auth/refresh`` concurrents
+réutilisent le même cookie → la rotation backend en révoque un → 401 →
+``clearSession()`` → déconnexion. C'est un bug prod réel (#550), pas
+seulement de test.
+
+Spec Playwright de référence (4-cat)
+-------------------------------------
+
+``frontend/tests/e2e/smoke/AuthCookie.spec.ts`` :
+
+* ``@security`` access token absent de ``localStorage`` + cookie illisible
+  ``document.cookie`` (HttpOnly).
+* ``@edge`` attributs du cookie (HttpOnly, SameSite=Strict, Path,
+  Secure).
+* ``@happy`` reload conserve la session via silent-refresh cookie.
+* ``@negative`` sans cookie → redirige ``/login``.
+
+À utiliser comme modèle pour toute nouvelle spec testant un flow authentifié.

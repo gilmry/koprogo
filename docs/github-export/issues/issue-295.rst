@@ -4,10 +4,10 @@ Issue #295: Tauri Shell: Application desktop (Windows/macOS/Linux)
 
 :State: **OPEN**
 :Milestone: Jalon 5: Mobile & API Publique 📱
-:Labels: enhancement,track:software tauri,desktop
+:Labels: enhancement,track:software tauri,desktop
 :Assignees: Unassigned
 :Created: 2026-03-21
-:Updated: 2026-03-22
+:Updated: 2026-03-23
 :URL: `View on GitHub <https://github.com/gilmry/koprogo/issues/295>`_
 
 Description

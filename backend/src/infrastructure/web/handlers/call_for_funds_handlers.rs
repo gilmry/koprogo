@@ -2,10 +2,28 @@ use crate::application::dto::{
     CallForFundsResponse, CreateCallForFundsRequest, SendCallForFundsRequest,
     SendCallForFundsResponse,
 };
-use crate::domain::entities::ContributionType;
+use crate::domain::entities::{ContributionType, UserRole};
+use crate::infrastructure::web::handlers::conformity_response::try_build_conformity_response;
 use crate::infrastructure::web::{AppState, AuthenticatedUser};
 use actix_web::{delete, get, post, put, web, HttpResponse};
+use std::str::FromStr;
 use uuid::Uuid;
+
+/// Story 3.1 — Vérifie que l'utilisateur peut créer un appel de fonds.
+///
+/// INV-10 : sortie financière → réservé aux émetteurs (syndic, superadmin,
+/// accountant générique, accountant.emetteur). Un `accountant.encodeur` seul
+/// est rejeté (403 `invalid_role`).
+fn check_can_create_call_for_funds(user: &AuthenticatedUser) -> Option<HttpResponse> {
+    match UserRole::from_str(&user.role).ok() {
+        Some(role) if role.can_create_call_for_funds() => None,
+        _ => Some(HttpResponse::Forbidden().json(serde_json::json!({
+            "error":
+                "Only syndic, superadmin, or accountant émetteur can create call-for-funds",
+            "code": "invalid_role",
+        }))),
+    }
+}
 
 /// POST /api/v1/call-for-funds
 /// Create a new call for funds
@@ -15,6 +33,11 @@ pub async fn create_call_for_funds(
     user: AuthenticatedUser,
     req: web::Json<CreateCallForFundsRequest>,
 ) -> HttpResponse {
+    // Story 3.1 INV-10 : seuls les émetteurs peuvent créer un appel de fonds.
+    if let Some(response) = check_can_create_call_for_funds(&user) {
+        return response;
+    }
+
     let organization_id = match user.organization_id {
         Some(org_id) => org_id,
         None => return HttpResponse::BadRequest().body("Organization ID required"),
@@ -49,7 +72,13 @@ pub async fn create_call_for_funds(
             let response = CallForFundsResponse::from(call);
             HttpResponse::Created().json(response)
         }
-        Err(e) => HttpResponse::BadRequest().body(e),
+        Err(e) => {
+            // Track H Story H2 — pre-check validate-before-compute → 422 narratif
+            if let Some(resp) = try_build_conformity_response(&e) {
+                return resp;
+            }
+            HttpResponse::BadRequest().body(e)
+        }
     }
 }
 
@@ -170,7 +199,13 @@ pub async fn send_call_for_funds(
             };
             HttpResponse::Ok().json(response)
         }
-        Err(e) => HttpResponse::BadRequest().body(e),
+        Err(e) => {
+            // Track H Story H2 — pre-check validate-before-compute → 422 narratif
+            if let Some(resp) = try_build_conformity_response(&e) {
+                return resp;
+            }
+            HttpResponse::BadRequest().body(e)
+        }
     }
 }
 

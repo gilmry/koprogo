@@ -1,13 +1,13 @@
-===============================================================================
+============================================================================
 Issue #222: R&D: Architecture de génération PDF pour documents légaux belges
-===============================================================================
+============================================================================
 
-:State: **OPEN**
+:State: **CLOSED**
 :Milestone: No milestone
-:Labels: enhancement,priority:high legal-compliance,pdf R&D
+:Labels: enhancement,priority:high legal-compliance,pdf R&D
 :Assignees: Unassigned
 :Created: 2026-03-07
-:Updated: 2026-03-07
+:Updated: 2026-03-24
 :URL: `View on GitHub <https://github.com/gilmry/koprogo/issues/222>`_
 
 Description

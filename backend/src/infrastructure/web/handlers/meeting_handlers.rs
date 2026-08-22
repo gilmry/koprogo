@@ -4,8 +4,9 @@ use crate::application::dto::{
     ValidateQuorumRequest,
 };
 use crate::infrastructure::audit::{AuditEventType, AuditLogEntry};
+use crate::infrastructure::web::middleware::scope_guard::verify_acp_org_access;
 use crate::infrastructure::web::{AppState, AuthenticatedUser};
-use actix_web::{delete, get, post, put, web, HttpResponse, Responder};
+use actix_web::{delete, get, post, put, web, HttpResponse, Responder, ResponseError};
 use uuid::Uuid;
 
 /// POST /meetings/{id}/validate-quorum — Art. 3.87 §5 CC
@@ -118,16 +119,22 @@ pub async fn get_meeting(
 ) -> impl Responder {
     match state.meeting_use_cases.get_meeting(*id).await {
         Ok(Some(meeting)) => {
-            // Multi-tenant isolation: verify meeting's building belongs to user's organization
+            // Hotfix #603 — multi-tenant isolation via ACP→organization resolution.
             if let Ok(Some(building)) = state
                 .building_use_cases
                 .get_building(meeting.building_id)
                 .await
             {
-                if let Ok(building_org) = Uuid::parse_str(&building.organization_id) {
-                    if let Err(e) = user.verify_org_access(building_org) {
-                        return HttpResponse::Forbidden().json(serde_json::json!({ "error": e }));
+                let acp_id = match Uuid::parse_str(&building.acp_id) {
+                    Ok(id) => id,
+                    Err(_) => {
+                        return HttpResponse::InternalServerError().json(serde_json::json!({
+                            "error": "Invalid building.acp_id format"
+                        }));
                     }
+                };
+                if let Err(err) = verify_acp_org_access(&user, acp_id, &state.acp_use_cases).await {
+                    return err.error_response();
                 }
             }
             HttpResponse::Ok().json(meeting)
@@ -171,13 +178,19 @@ pub async fn list_meetings_by_building(
     user: AuthenticatedUser,
     building_id: web::Path<Uuid>,
 ) -> impl Responder {
-    // Multi-tenant isolation: verify building belongs to user's organization
+    // Hotfix #603 — multi-tenant isolation via ACP→organization resolution.
     match state.building_use_cases.get_building(*building_id).await {
         Ok(Some(building)) => {
-            if let Ok(building_org) = Uuid::parse_str(&building.organization_id) {
-                if let Err(e) = user.verify_org_access(building_org) {
-                    return HttpResponse::Forbidden().json(serde_json::json!({ "error": e }));
+            let acp_id = match Uuid::parse_str(&building.acp_id) {
+                Ok(id) => id,
+                Err(_) => {
+                    return HttpResponse::InternalServerError().json(serde_json::json!({
+                        "error": "Invalid building.acp_id format"
+                    }));
                 }
+            };
+            if let Err(err) = verify_acp_org_access(&user, acp_id, &state.acp_use_cases).await {
+                return err.error_response();
             }
         }
         Ok(None) => {
@@ -237,6 +250,38 @@ pub async fn add_agenda_item(
         Err(err) => HttpResponse::BadRequest().json(serde_json::json!({
             "error": err
         })),
+    }
+}
+
+/// GET /meetings/{id}/completion-checklist — Track H Story H3
+/// Retourne la checklist d'invariants Art. 3.87 §3-5 CC + liste des invariants
+/// manquants, consommé côté FE par `<MissingInvariantsList>`.
+#[get("/meetings/{id}/completion-checklist")]
+pub async fn get_meeting_completion_checklist(
+    state: web::Data<AppState>,
+    _user: AuthenticatedUser,
+    id: web::Path<Uuid>,
+) -> impl Responder {
+    let meeting_id = id.into_inner();
+    match state
+        .meeting_use_cases
+        .build_completion_checklist(meeting_id)
+        .await
+    {
+        Ok((checklist, missing_json)) => HttpResponse::Ok().json(serde_json::json!({
+            "meeting_id": meeting_id,
+            "convocations_sent": checklist.convocations_sent,
+            "open_resolutions": checklist.open_resolutions,
+            "attendance_recorded": checklist.attendance_recorded,
+            "attended_quotas": checklist.attended_quotas.to_string(),
+            "total_quotas": checklist.total_quotas.to_string(),
+            "minutes_draft_exists": checklist.minutes_draft_exists,
+            "missing": missing_json,
+        })),
+        Err(err) if err.contains("not found") || err.contains("not configured") => {
+            HttpResponse::NotFound().json(serde_json::json!({ "error": err }))
+        }
+        Err(err) => HttpResponse::BadRequest().json(serde_json::json!({ "error": err })),
     }
 }
 
@@ -564,12 +609,12 @@ pub async fn export_meeting_minutes_pdf(
     // Convert DTOs to domain entities
     use crate::domain::entities::{Building, Meeting};
 
-    // Parse building organization_id from string
-    let building_org_id = match Uuid::parse_str(&building.organization_id) {
+    // Story 1.2 — building.acp_id (was organization_id).
+    let building_acp_id = match Uuid::parse_str(&building.acp_id) {
         Ok(id) => id,
         Err(err) => {
             return HttpResponse::InternalServerError().json(serde_json::json!({
-                "error": format!("Invalid organization_id: {}", err)
+                "error": format!("Invalid acp_id: {}", err)
             }))
         }
     };
@@ -609,7 +654,7 @@ pub async fn export_meeting_minutes_pdf(
         syndic_office_hours: None,
         syndic_emergency_contact: None,
         slug: None,
-        organization_id: building_org_id,
+        acp_id: building_acp_id,
         created_at: building_created_at,
         updated_at: building_updated_at,
     };

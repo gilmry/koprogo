@@ -1,4 +1,13 @@
 {
+  "conformity": {
+    "banner_title": "⚠️ {name} ist nicht konform",
+    "units_missing": "{n} Einheit(en) fehlen",
+    "units_extra": "{n} Einheit(en) überzählig",
+    "quota_off": "Summe der Anteile unter {delta} / {basis} (Teilungserklärung)",
+    "contact_admin": "Wenden Sie sich an den Administrator zur Korrektur.",
+    "toast_title": "Berechnung gesperrt — Gebäude nicht konform",
+    "toast_message": "{units_delta} Einheit(en) fehlen, Σ Anteile = {sum} / {basis}"
+  },
   "common": {
     "save": "Speichern",
     "cancel": "Abbrechen",
@@ -129,6 +138,7 @@
     "select": "Auswählen",
     "select_building": "Gebäude auswählen",
     "select_organization": "Organisation auswählen",
+    "select_acp": "ACP auswählen",
     "all_buildings": "Alle Gebäude",
     "loading_buildings": "Gebäude werden geladen...",
     "loading_details": "Details werden geladen...",
@@ -401,7 +411,15 @@
     "totalRevenue": "Gesamterträge",
     "unitCount": "Anzahl Einheiten",
     "units": "Einheiten",
-    "workReports": "Arbeitsberichte"
+    "workReports": "Arbeitsberichte",
+    "conformity": {
+      "conformant": "Gebäude konform",
+      "nonConformant": "Gebäude nicht konform",
+      "unitsCount": "Erklärte Einheiten",
+      "quotaSum": "Quoten-Summe",
+      "quotaDelta": "Abweichung",
+      "expected1000": " / 1000"
+    }
   },
   "units": {
     "title": "Einheiten",
@@ -457,6 +475,7 @@
     "no_unit_selected": "Keine Einheit ausgewählt",
     "ongoing": "Laufend",
     "organization": "Organisation",
+    "acp": "ACP",
     "owner_selection_help": "Wählen Sie einen Miteigentümer aus der Liste oder suchen Sie nach Name",
     "owners": "Miteigentümer",
     "ownership_percentage": "Eigentumsanteil (%)",
@@ -483,6 +502,7 @@
     "search_owner_placeholder": "Nach Name suchen...",
     "select_building": "Bitte wählen Sie ein Gebäude",
     "select_organization": "Bitte wählen Sie eine Organisation",
+    "select_acp": "Bitte wählen Sie eine ACP",
     "select_owner": "Bitte wählen Sie einen Miteigentümer",
     "select_owner_option": "-- Miteigentümer auswählen --",
     "showOwners": "Miteigentümer anzeigen",
@@ -1672,8 +1692,10 @@
       "totalTantgemesError": "Anteile müssen größer als 0 sein",
       "tantgemesHint": "Normalerweise 1000 Tausendstel",
       "constructionYear": "Baujahr",
-      "selectOrganization": "Organisation auswählen",
-      "organizationRequired": "Organisation ist erforderlich",
+      "acp": "ACP (Eigentümergemeinschaft)",
+      "selectAcp": "ACP auswählen",
+      "acpRequired": "ACP ist erforderlich",
+      "noAcpAvailable": "Keine ACP verfügbar — erstellen Sie zuerst eine unter Verwaltung > ACP",
       "createdSuccessfully": "Gebäude erfolgreich erstellt",
       "updatedSuccessfully": "Gebäude erfolgreich aktualisiert"
     }
@@ -2837,7 +2859,9 @@
     "quorumContribution": "Quorum-Beitrag",
     "start": "Starten",
     "end": "Beenden",
-    "noSession": "Keine Videositzung konfiguriert"
+    "noSession": "Keine Videositzung konfiguriert",
+    "platformOther": "Andere",
+    "scheduledStart": "Geplanter Start"
   },
   "proxy": {
     "limitReached": "Vollmachtslimit erreicht (Art. 3.87 §6 ZGB)",
@@ -3281,6 +3305,52 @@
     "owner": "Miteigentümer",
     "user": "Benutzer"
   },
+  "roleDelegation": {
+    "list": {
+      "title": "Aktive Delegationen",
+      "new": "Neue Delegation",
+      "empty": "Derzeit keine aktive Delegation."
+    },
+    "col": {
+      "target": "Ziel",
+      "role": "Rolle",
+      "organization": "Organisation",
+      "source": "Quelle",
+      "expire": "Läuft ab",
+      "actions": "Aktionen"
+    },
+    "banner": {
+      "inherited": {
+        "title": "Sie haben diese Rolle durch Delegation erhalten.",
+        "body": "Sie können sie nicht erneut delegieren (Nicht-Transitivität INV-8)."
+      },
+      "info": {
+        "title": "Nicht-transitive Delegation (INV-8).",
+        "body": "Wenn Sie Ihre Rolle durch Delegation erhalten haben, ist eine erneute Delegation untersagt."
+      }
+    },
+    "action": {
+      "revoke": "Widerrufen",
+      "create": "Delegieren"
+    },
+    "create": {
+      "title": "Neue Rollendelegation",
+      "success": "Delegation erstellt."
+    },
+    "field": {
+      "target": "Zielbenutzer",
+      "role": "Delegierte Rolle",
+      "organization": "Organisation",
+      "validUntil": "Gültig bis"
+    },
+    "revoke": {
+      "success": "Delegation widerrufen.",
+      "confirm": {
+        "title": "Widerruf bestätigen",
+        "body": "Der Benutzer verliert sofort die delegierte Rolle."
+      }
+    }
+  },
   "settings": {
     "profile": {
       "title": "Profil",
@@ -3400,5 +3470,25 @@
   "polls.results.winner": "Gewinneroption",
   "gamification.category": "Kategorie",
   "gamification.tier": "Stufe",
-  "_i18n_version": "2026-03-26"
+  "meeting.missing.ConvocationsNotSent": "Einberufungen nicht versendet (Art. 3.87 §3 BGB)",
+  "meeting.missing.VotesNotClosed": "{open_resolutions, plural, =1 {1 offene Beschluss} other {{open_resolutions} offene Beschlüsse}} (Art. 3.87 §4)",
+  "meeting.missing.AttendanceNotRecorded": "Anwesenheit nicht erfasst (Art. 3.87 §5 BGB)",
+  "meeting.missing.QuorumNotReached": "Quorum nicht erreicht ({attended_quotas}/{total_quotas}) — Art. 3.87 §5: einfache Mehrheit > 50%",
+  "meeting.missing.MinutesDraftMissing": "Protokollentwurf fehlt",
+  "meeting.complete.disabled_reason": "{n, plural, =1 {1 fehlende Bedingung} other {{n} fehlende Bedingungen}}",
+  "meeting.complete.missing_aria_label": "Bedingungen zum Abschluss der Sitzung",
+  "meeting.complete.blockers_title": "Um diese Versammlung zu schließen, erfüllen Sie die Bedingungen:",
+  "meeting.complete.toast_title": "Abschluss nicht möglich",
+  "meeting.complete.toast_message": "{n, plural, =1 {1 fehlende Bedingung} other {{n} fehlende Bedingungen}} (siehe Details auf der Sitzungsseite)",
+  "_i18n_version": "2026-03-26",
+  "scope": {
+    "searchPlaceholder": "Gebäude suchen…",
+    "selectBuilding": "Gebäude auswählen",
+    "forbidden": "Zugriff verweigert",
+    "clear": "Auswahl löschen",
+    "noBuildings": "Kein Gebäude in Ihrem Bereich",
+    "favorite": "Zu Favoriten hinzufügen",
+    "unfavorite": "Aus Favoriten entfernen",
+    "portfolios": "Portfolios"
+  }
 }

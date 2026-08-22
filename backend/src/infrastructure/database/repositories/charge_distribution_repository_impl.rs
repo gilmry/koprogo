@@ -1,9 +1,10 @@
 use crate::application::ports::ChargeDistributionRepository;
-use crate::domain::entities::ChargeDistribution;
+use crate::domain::entities::{ChargeDistribution, DistributionCriteria};
 use async_trait::async_trait;
 use chrono::{DateTime, Utc};
 use rust_decimal::Decimal;
 use sqlx::PgPool;
+use std::str::FromStr;
 use uuid::Uuid;
 
 /// PostgreSQL implementation of ChargeDistributionRepository
@@ -31,10 +32,12 @@ impl ChargeDistributionRepository for PostgresChargeDistributionRepository {
         let result = sqlx::query_as::<_, ChargeDistributionRow>(
             r#"
             INSERT INTO charge_distributions (
-                id, expense_id, unit_id, owner_id, quota_percentage, amount_due, created_at
+                id, expense_id, unit_id, owner_id, quota_percentage, amount_due, created_at,
+                distribution_criteria
             )
-            VALUES ($1, $2, $3, $4, $5, $6, $7)
-            RETURNING id, expense_id, unit_id, owner_id, quota_percentage, amount_due, created_at
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+            RETURNING id, expense_id, unit_id, owner_id, quota_percentage, amount_due, created_at,
+                distribution_criteria
             "#,
         )
         .bind(distribution.id)
@@ -44,6 +47,7 @@ impl ChargeDistributionRepository for PostgresChargeDistributionRepository {
         .bind(distribution.quota_percentage)
         .bind(distribution.amount_due)
         .bind(distribution.created_at)
+        .bind(distribution.distribution_criteria.as_str())
         .fetch_one(&self.pool)
         .await
         .map_err(|e| format!("Failed to create charge distribution: {}", e))?;
@@ -72,10 +76,12 @@ impl ChargeDistributionRepository for PostgresChargeDistributionRepository {
             let result = sqlx::query_as::<_, ChargeDistributionRow>(
                 r#"
                 INSERT INTO charge_distributions (
-                    id, expense_id, unit_id, owner_id, quota_percentage, amount_due, created_at
+                    id, expense_id, unit_id, owner_id, quota_percentage, amount_due, created_at,
+                    distribution_criteria
                 )
-                VALUES ($1, $2, $3, $4, $5, $6, $7)
-                RETURNING id, expense_id, unit_id, owner_id, quota_percentage, amount_due, created_at
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+                RETURNING id, expense_id, unit_id, owner_id, quota_percentage, amount_due, created_at,
+                    distribution_criteria
                 "#
             )
             .bind(dist.id)
@@ -85,6 +91,7 @@ impl ChargeDistributionRepository for PostgresChargeDistributionRepository {
             .bind(dist.quota_percentage)
             .bind(dist.amount_due)
             .bind(dist.created_at)
+            .bind(dist.distribution_criteria.as_str())
             .fetch_one(&mut *tx)
             .await
             .map_err(|e| format!("Failed to create charge distribution in bulk: {}", e))?;
@@ -102,7 +109,8 @@ impl ChargeDistributionRepository for PostgresChargeDistributionRepository {
     async fn find_by_id(&self, id: Uuid) -> Result<Option<ChargeDistribution>, String> {
         let result = sqlx::query_as::<_, ChargeDistributionRow>(
             r#"
-            SELECT id, expense_id, unit_id, owner_id, quota_percentage, amount_due, created_at
+            SELECT id, expense_id, unit_id, owner_id, quota_percentage, amount_due, created_at,
+                   distribution_criteria
             FROM charge_distributions
             WHERE id = $1
             "#,
@@ -118,7 +126,8 @@ impl ChargeDistributionRepository for PostgresChargeDistributionRepository {
     async fn find_by_expense(&self, expense_id: Uuid) -> Result<Vec<ChargeDistribution>, String> {
         let results = sqlx::query_as::<_, ChargeDistributionRow>(
             r#"
-            SELECT id, expense_id, unit_id, owner_id, quota_percentage, amount_due, created_at
+            SELECT id, expense_id, unit_id, owner_id, quota_percentage, amount_due, created_at,
+                   distribution_criteria
             FROM charge_distributions
             WHERE expense_id = $1
             ORDER BY created_at DESC
@@ -135,7 +144,8 @@ impl ChargeDistributionRepository for PostgresChargeDistributionRepository {
     async fn find_by_unit(&self, unit_id: Uuid) -> Result<Vec<ChargeDistribution>, String> {
         let results = sqlx::query_as::<_, ChargeDistributionRow>(
             r#"
-            SELECT id, expense_id, unit_id, owner_id, quota_percentage, amount_due, created_at
+            SELECT id, expense_id, unit_id, owner_id, quota_percentage, amount_due, created_at,
+                   distribution_criteria
             FROM charge_distributions
             WHERE unit_id = $1
             ORDER BY created_at DESC
@@ -152,7 +162,8 @@ impl ChargeDistributionRepository for PostgresChargeDistributionRepository {
     async fn find_by_owner(&self, owner_id: Uuid) -> Result<Vec<ChargeDistribution>, String> {
         let results = sqlx::query_as::<_, ChargeDistributionRow>(
             r#"
-            SELECT id, expense_id, unit_id, owner_id, quota_percentage, amount_due, created_at
+            SELECT id, expense_id, unit_id, owner_id, quota_percentage, amount_due, created_at,
+                   distribution_criteria
             FROM charge_distributions
             WHERE owner_id = $1
             ORDER BY created_at DESC
@@ -207,6 +218,8 @@ struct ChargeDistributionRow {
     owner_id: Uuid,
     quota_percentage: Decimal,
     amount_due: Decimal,
+    /// Story H12 — colonne TEXT 'value'/'utility'/'mixed' (parsée en enum).
+    distribution_criteria: String,
     created_at: DateTime<Utc>,
 }
 
@@ -219,6 +232,10 @@ impl ChargeDistributionRow {
             owner_id: self.owner_id,
             quota_percentage: self.quota_percentage,
             amount_due: self.amount_due,
+            // Texte DB → enum. Une valeur inattendue (hors contrainte CHECK)
+            // retombe sur le défaut `Value` plutôt que de paniquer.
+            distribution_criteria: DistributionCriteria::from_str(&self.distribution_criteria)
+                .unwrap_or_default(),
             created_at: self.created_at,
         }
     }
@@ -238,12 +255,17 @@ mod tests {
             owner_id: Uuid::new_v4(),
             quota_percentage: Decimal::new(2500, 4), // 0.2500
             amount_due: Decimal::new(50000, 2),      // 500.00
+            distribution_criteria: "value".to_string(),
             created_at: Utc::now(),
         };
 
         let entity = row.into_entity();
         assert_eq!(entity.quota_percentage, dec!(0.2500));
         assert_eq!(entity.amount_due, dec!(500.00));
+        assert_eq!(
+            entity.distribution_criteria,
+            crate::domain::entities::DistributionCriteria::Value
+        );
     }
 
     #[test]
@@ -255,6 +277,7 @@ mod tests {
             owner_id: Uuid::new_v4(),
             quota_percentage: Decimal::new(10000, 4), // 1.0000 (100%)
             amount_due: Decimal::new(0, 2),           // 0.00
+            distribution_criteria: "utility".to_string(),
             created_at: Utc::now(),
         };
 

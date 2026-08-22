@@ -3,6 +3,7 @@ use actix_governor::{Governor, GovernorConfigBuilder};
 use actix_web::{middleware, web, App, HttpServer};
 use dotenvy::dotenv;
 use koprogo_api::application::ports::mqtt_energy_port::MqttEnergyPort;
+use koprogo_api::application::ports::AcpRepository;
 use koprogo_api::application::services::ExpenseAccountingService;
 use koprogo_api::application::use_cases::*;
 use koprogo_api::infrastructure::audit_logger::AuditLogger;
@@ -165,7 +166,10 @@ async fn main() -> std::io::Result<()> {
     let call_for_funds_repo = Arc::new(PostgresCallForFundsRepository::new(pool.clone()));
     let resolution_repo = Arc::new(PostgresResolutionRepository::new(pool.clone()));
     let vote_repo = Arc::new(PostgresVoteRepository::new(pool.clone()));
+    // ticket_repo is cloned below for Story 3.7 SyndicResponseUseCases
+    // (concrete type required because the use-case is generic).
     let ticket_repo = Arc::new(PostgresTicketRepository::new(pool.clone()));
+    let ticket_repo_for_syndic_response = ticket_repo.clone();
     let notification_repo = Arc::new(PostgresNotificationRepository::new(pool.clone()));
     let notification_preference_repo =
         Arc::new(PostgresNotificationPreferenceRepository::new(pool.clone()));
@@ -211,6 +215,23 @@ async fn main() -> std::io::Result<()> {
     let ag_session_repo = Arc::new(PostgresAgSessionRepository::new(pool.clone()));
     let age_request_repo = Arc::new(PostgresAgeRequestRepository::new(pool.clone()));
     let contractor_report_repo = Arc::new(PostgresContractorReportRepository::new(pool.clone()));
+    // Story 3.2 — generic MagicLink for public-access tokens (contractor / tiers).
+    let magic_link_repo: Arc<dyn koprogo_api::application::ports::MagicLinkRepository> =
+        Arc::new(PostgresMagicLinkRepository::new(pool.clone()));
+    // Story 3.4 — Mandate (delegation to external professionals).
+    let mandate_repo: Arc<dyn koprogo_api::application::ports::MandateRepository> = Arc::new(
+        koprogo_api::infrastructure::database::repositories::PostgresMandateRepository::new(
+            pool.clone(),
+        ),
+    );
+    // Story 3.5 — Temporary role delegation (syndic → owner, bounded).
+    let role_delegation_repo: Arc<
+        dyn koprogo_api::application::ports::RoleDelegationRepository,
+    > = Arc::new(
+        koprogo_api::infrastructure::database::repositories::PostgresRoleDelegationRepository::new(
+            pool.clone(),
+        ),
+    );
 
     // Initialize audit logger with database persistence
     let audit_logger = AuditLogger::new(Some(audit_log_repo.clone()));
@@ -235,16 +256,33 @@ async fn main() -> std::io::Result<()> {
     let expense_accounting_service =
         Arc::new(ExpenseAccountingService::new(journal_entry_repo.clone()));
 
-    let expense_use_cases = ExpenseUseCases::with_accounting_service(
+    // Track H Story H7 — validate-before-compute wiring **ACP-level** (ADR-0010).
+    // `with_full_wiring` injecte `building_repo` (résolution acp_id) + `acp_repo`
+    // (métriques agrégées) pour le pre-check `Acp::assert_conformant?` avant
+    // toute mutation/calcul. `acp_repo` hoisté ici (partagé avec BoardMember/Acp).
+    let acp_repo: Arc<dyn AcpRepository> = Arc::new(PostgresAcpRepository::new(pool.clone()));
+    let expense_use_cases = ExpenseUseCases::with_full_wiring(
         expense_repo.clone(),
         expense_accounting_service.clone(),
+        building_repo.clone(),
+        acp_repo.clone(),
     );
-    let charge_distribution_use_cases = ChargeDistributionUseCases::new(
+    let charge_distribution_use_cases = ChargeDistributionUseCases::with_full_wiring(
         charge_distribution_repo,
         expense_repo.clone(),
         unit_owner_repo.clone(),
+        building_repo.clone(),
+        acp_repo.clone(),
     );
-    let meeting_use_cases = MeetingUseCases::new(meeting_repo.clone());
+    // Track H Story H3 — Meeting.assert_can_complete() Art. 3.87 §3-5 CC.
+    // Inject completion_checker pour permettre au use-case `complete_meeting`
+    // de charger la checklist (convocations / votes / présences / quorum / PV)
+    // avant la transition Scheduled → Completed.
+    let meeting_completion_checker = Arc::new(
+        koprogo_api::infrastructure::database::repositories::meeting_completion_checker_impl::PostgresMeetingCompletionChecker::new(pool.clone()),
+    );
+    let meeting_use_cases = MeetingUseCases::new(meeting_repo.clone())
+        .with_completion_checker(meeting_completion_checker);
     let convocation_use_cases = ConvocationUseCases::new(
         convocation_repo,
         convocation_recipient_repo,
@@ -252,8 +290,12 @@ async fn main() -> std::io::Result<()> {
         building_repo.clone(),
         meeting_repo.clone(),
     );
-    let resolution_use_cases =
-        ResolutionUseCases::new(resolution_repo, vote_repo, meeting_repo.clone());
+    let resolution_use_cases = ResolutionUseCases::new(
+        resolution_repo,
+        vote_repo,
+        meeting_repo.clone(),
+        unit_owner_repo.clone(),
+    );
     let ticket_use_cases = TicketUseCases::new(ticket_repo);
     let two_factor_use_cases =
         TwoFactorUseCases::new(two_factor_repo, user_repo.clone(), encryption_key);
@@ -306,7 +348,8 @@ async fn main() -> std::io::Result<()> {
         unit_repo.clone(),
         building_repo.clone(),
         unit_owner_repo.clone(),
-    );
+    )
+    .with_acp_repository(acp_repo.clone());
     let budget_use_cases =
         BudgetUseCases::new(budget_repo, building_repo.clone(), expense_repo.clone());
     let pcn_use_cases = PcnUseCases::new(expense_repo.clone());
@@ -316,8 +359,13 @@ async fn main() -> std::io::Result<()> {
         owner_repo.clone(),
     );
     let gdpr_use_cases = GdprUseCases::new(gdpr_repo, user_repo.clone());
-    let board_member_use_cases =
-        BoardMemberUseCases::new(board_member_repo.clone(), building_repo.clone());
+    // `acp_repo` est désormais hoisté plus haut (Track H Story H7 wiring) et
+    // partagé par BoardMemberUseCases / AcpUseCases / les 4 gates conformité.
+    let board_member_use_cases = BoardMemberUseCases::new(
+        board_member_repo.clone(),
+        building_repo.clone(),
+        acp_repo.clone(),
+    );
     let board_decision_use_cases = BoardDecisionUseCases::new(
         board_decision_repo.clone(),
         building_repo.clone(),
@@ -331,7 +379,19 @@ async fn main() -> std::io::Result<()> {
     let account_use_cases = AccountUseCases::new(account_repo.clone());
     let audit_log_use_cases = AuditLogUseCases::new(audit_log_repo.clone());
     let organization_repo = Arc::new(PostgresOrganizationRepository::new(pool.clone()));
-    let organization_use_cases = OrganizationUseCases::new(organization_repo);
+    let organization_use_cases = OrganizationUseCases::new(organization_repo.clone());
+
+    // ACP (Story 1.1 — Refonte UX multi-rôle, ADR-0010) — acp_repo hoisted
+    // above (Hotfix #603) to share with BoardMemberUseCases.
+    let acp_use_cases = AcpUseCases::new(acp_repo.clone(), organization_repo.clone());
+
+    // Portfolio (Story 2.1 — Slice 2 Refonte UX multi-rôle, ADR-0011)
+    let portfolio_repo = Arc::new(PostgresPortfolioRepository::new(pool.clone()));
+    let portfolio_use_cases = PortfolioUseCases::new(
+        portfolio_repo.clone(),
+        building_repo.clone(),
+        user_repo.clone(),
+    );
     let financial_report_use_cases = FinancialReportUseCases::new(
         account_repo.clone(),
         expense_repo.clone(),
@@ -344,10 +404,13 @@ async fn main() -> std::io::Result<()> {
     );
     let owner_contribution_use_cases =
         OwnerContributionUseCases::new(owner_contribution_repo.clone());
-    let call_for_funds_use_cases = CallForFundsUseCases::new(
+    // Track H Story H7 — validate-before-compute wiring ACP-level.
+    let call_for_funds_use_cases = CallForFundsUseCases::with_full_wiring(
         call_for_funds_repo,
         owner_contribution_repo,
         unit_owner_repo.clone(),
+        building_repo.clone(),
+        acp_repo.clone(),
     );
     let journal_entry_use_cases = JournalEntryUseCases::new(journal_entry_repo.clone());
     let poll_use_cases = PollUseCases::new(
@@ -375,6 +438,54 @@ async fn main() -> std::io::Result<()> {
     let age_request_use_cases = AgeRequestUseCases::new(age_request_repo.clone());
     let contractor_report_use_cases = ContractorReportUseCases::new(contractor_report_repo.clone())
         .with_payment_support(quote_repo.clone(), payment_use_cases_arc.clone());
+    // Story 3.2 — MagicLink use cases (public-access tokens for contractors/tiers).
+    let magic_link_use_cases = MagicLinkUseCases::new(magic_link_repo.clone());
+    // Story 3.4 — Mandate use cases (juridical delegation tracker).
+    let mandate_use_cases =
+        koprogo_api::application::use_cases::MandateUseCases::new(mandate_repo.clone());
+    // Story 3.5 — Role delegation use cases (FR8 INV-8).
+    let role_delegation_use_cases =
+        koprogo_api::application::use_cases::RoleDelegationUseCases::new(
+            role_delegation_repo.clone(),
+        );
+    // Story 3.7 — SyndicResponse + SLA escalation use cases (FR32 INV-23).
+    let syndic_response_repo = Arc::new(
+        koprogo_api::infrastructure::database::repositories::PostgresSyndicResponseRepository::new(
+            pool.clone(),
+        ),
+    );
+    let syndic_response_use_cases =
+        koprogo_api::application::use_cases::SyndicResponseUseCases::new(
+            syndic_response_repo,
+            ticket_repo_for_syndic_response,
+        );
+
+    // Story 3.8 — TechnicalSpec (versionable + signatures multi-parties) (FR33).
+    let technical_spec_repo: Arc<
+        dyn koprogo_api::application::ports::TechnicalSpecRepository,
+    > = Arc::new(
+        koprogo_api::infrastructure::database::repositories::PostgresTechnicalSpecRepository::new(
+            pool.clone(),
+        ),
+    );
+    let technical_spec_use_cases = koprogo_api::application::use_cases::TechnicalSpecUseCases::new(
+        technical_spec_repo.clone(),
+    );
+
+    // Story 3.9 — ContractorEvaluation (append-only, gated by approved
+    // TechnicalSpec) (FR34 FR35 INV-21 INV-24).
+    let contractor_evaluation_repo: Arc<
+        dyn koprogo_api::application::ports::ContractorEvaluationRepository,
+    > = Arc::new(
+        koprogo_api::infrastructure::database::repositories::PostgresContractorEvaluationRepository::new(
+            pool.clone(),
+        ),
+    );
+    let contractor_evaluation_use_cases =
+        koprogo_api::application::use_cases::ContractorEvaluationUseCases::new(
+            contractor_evaluation_repo,
+            technical_spec_repo,
+        );
 
     // Marketplace (Issue #276)
     let service_provider_repo = Arc::new(PostgresServiceProviderRepository::new(pool.clone()));
@@ -406,6 +517,7 @@ async fn main() -> std::io::Result<()> {
 
     let app_state = web::Data::new(AppState::new(
         account_use_cases,
+        acp_use_cases,
         audit_log_use_cases,
         auth_use_cases,
         building_use_cases,
@@ -424,6 +536,7 @@ async fn main() -> std::io::Result<()> {
         payment_use_cases_arc,
         payment_method_use_cases,
         poll_use_cases,
+        portfolio_use_cases,
         quote_use_cases,
         local_exchange_use_cases,
         notice_use_cases,
@@ -468,6 +581,12 @@ async fn main() -> std::io::Result<()> {
         mqtt_energy_adapter,
         boinc_use_cases,
         user_use_cases,
+        magic_link_use_cases,
+        mandate_use_cases,
+        role_delegation_use_cases,
+        syndic_response_use_cases,
+        technical_spec_use_cases,
+        contractor_evaluation_use_cases,
     ));
 
     log::info!(
@@ -497,8 +616,18 @@ async fn main() -> std::io::Result<()> {
         .finish()
         .unwrap();
 
-    // GDPR-specific rate limiting (10 requests/hour per user for GDPR endpoints)
-    let gdpr_rate_limit = GdprRateLimit::new(GdprRateLimitConfig::default());
+    // GDPR-specific rate limiting (10 requests/hour per user for GDPR endpoints).
+    // Honors ENABLE_RATE_LIMITING flag : when false (dev/CI), use a very high
+    // ceiling so the test suite + dev loops don't hit 429 from prior runs.
+    let gdpr_rate_limit_config = if enable_rate_limiting {
+        GdprRateLimitConfig::default()
+    } else {
+        GdprRateLimitConfig {
+            max_requests: 100_000,
+            window_duration: std::time::Duration::from_secs(60),
+        }
+    };
+    let gdpr_rate_limit = GdprRateLimit::new(gdpr_rate_limit_config);
 
     // Login rate limiting (anti-brute-force)
     // Configurable via LOGIN_RATE_LIMIT_MAX (default: 5) and LOGIN_RATE_LIMIT_WINDOW_SECS (default: 900)
@@ -522,6 +651,11 @@ async fn main() -> std::io::Result<()> {
             cors = cors.allowed_origin(origin);
         }
         let cors = cors
+            // WP-FE1 : le cookie refresh HttpOnly exige des requêtes
+            // crédentialisées (fetch `credentials:"include"`). Origines
+            // explicites obligatoires (jamais `*`) — `validate_cors_origins`
+            // rejette déjà le wildcard, contrat compatible credentials.
+            .supports_credentials()
             .allowed_methods(vec!["GET", "POST", "PUT", "DELETE", "OPTIONS"])
             .allowed_headers(vec![
                 actix_web::http::header::AUTHORIZATION,

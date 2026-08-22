@@ -60,6 +60,12 @@ async fn create_contractor_test_ticket(
         description: "Maintenance work required".to_string(),
         category: TicketCategory::Other,
         priority: TicketPriority::Medium,
+        // Story 3.6 defaults — preserves pre-3.6 Request behavior.
+        kind: None,
+        severity: None,
+        incident_date: None,
+        evidence_attachments: Vec::new(),
+        witnesses: Vec::new(),
     };
     let ticket = app_state
         .ticket_use_cases
@@ -74,8 +80,9 @@ async fn create_contractor_test_building(
     app_state: &actix_web::web::Data<AppState>,
     org_id: Uuid,
 ) -> Uuid {
+    let acp_id = common::create_test_acp(app_state, org_id).await;
     let dto = CreateBuildingDto {
-        organization_id: org_id.to_string(),
+        acp_id,
         name: format!("Contractor Report Test Building {}", Uuid::new_v4()),
         address: "42 Rue du Chantier".to_string(),
         city: "Antwerp".to_string(),

@@ -11,14 +11,14 @@ services:
     container_name: koprogo-traefik
     command:
       - "--api.dashboard=true"
-      - "--api.insecure=true"  # Dashboard on :8081
+      - "--api.insecure=true" # Dashboard on :8081
       - "--providers.docker=true"
       - "--providers.docker.exposedbydefault=false"
       - "--entrypoints.web.address=:80"
       - "--log.level=INFO"
     ports:
-      - "80:80"      # HTTP
-      - "8081:8080"  # Traefik Dashboard
+      - "80:80" # HTTP
+      - "8081:8080" # Traefik Dashboard
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
     networks:
@@ -33,7 +33,7 @@ services:
       POSTGRES_USER: koprogo
       POSTGRES_PASSWORD: koprogo123
     ports:
-      - "127.0.0.1:5432:5432"  # Localhost only - not exposed to network
+      - "127.0.0.1:5432:5432" # Localhost only - not exposed to network
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./backend/migrations:/docker-entrypoint-initdb.d/migrations:ro
@@ -58,6 +58,9 @@ services:
       RUST_LOG: debug
       RUST_BACKTRACE: 1
       SQLX_OFFLINE: "true"
+      # WP-FE1 : dev/E2E sur http://localhost → cookie refresh sans flag
+      # Secure (sinon le navigateur le rejette hors HTTPS). PROD = true.
+      COOKIE_SECURE: "false"
       ENABLE_RATE_LIMITING: false
       LOGIN_RATE_LIMIT_MAX: "1000"
       LOGIN_RATE_LIMIT_WINDOW_SECS: "60"
@@ -102,7 +105,7 @@ services:
     volumes:
       # Hot reload: mount source code
       - ./frontend:/app
-      - /app/node_modules  # Prevent overwriting node_modules
+      - /app/node_modules # Prevent overwriting node_modules
     depends_on:
       - backend
       - minio
@@ -125,12 +128,16 @@ services:
       MINIO_ROOT_PASSWORD: ${S3_SECRET_KEY:-minioadmin}
     # MinIO n'est exposé qu'en loopback. Utilisez un tunnel SSH si vous avez besoin d'y accéder à distance.
     ports:
-      - "127.0.0.1:9000:9000"  # S3 API (localhost uniquement)
-      - "127.0.0.1:9001:9001"  # Console (localhost uniquement)
+      - "127.0.0.1:9000:9000" # S3 API (localhost uniquement)
+      - "127.0.0.1:9001:9001" # Console (localhost uniquement)
     volumes:
       - minio_data:/data
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://127.0.0.1:9000/minio/health/live || exit 1"]
+      test:
+        [
+          "CMD-SHELL",
+          "curl -f http://127.0.0.1:9000/minio/health/live || exit 1",
+        ]
       interval: 10s
       timeout: 5s
       retries: 5

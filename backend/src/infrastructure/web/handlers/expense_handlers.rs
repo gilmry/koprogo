@@ -2,46 +2,80 @@ use crate::application::dto::{
     ApproveInvoiceDto, CreateExpenseDto, CreateInvoiceDraftDto, PageRequest, PageResponse,
     RejectInvoiceDto, SubmitForApprovalDto, UpdateInvoiceDraftDto,
 };
+use crate::domain::entities::UserRole;
 use crate::infrastructure::audit::{AuditEventType, AuditLogEntry};
+use crate::infrastructure::web::handlers::conformity_response::try_build_conformity_response;
+use crate::infrastructure::web::middleware::scope_guard::verify_acp_org_access;
 use crate::infrastructure::web::{AppState, AuthenticatedUser};
-use actix_web::{get, post, put, web, HttpResponse, Responder};
+use actix_web::{get, post, put, web, HttpResponse, Responder, ResponseError};
 use chrono::{DateTime, Utc};
 use serde::Deserialize;
+use std::str::FromStr;
 use uuid::Uuid;
 use validator::Validate;
 
-/// Helper function to check if owner role is trying to modify data
-/// Note: Accountant CAN create expenses and mark them as paid
+/// Story 3.1 — Resolve the typed `UserRole` from the JWT string.
+///
+/// Returns `None` when the JWT carries an unknown / malformed role (treated as
+/// no privilege — caller emits 403 `invalid_role`).
+fn user_role(user: &AuthenticatedUser) -> Option<UserRole> {
+    UserRole::from_str(&user.role).ok()
+}
+
+/// Helper function to check if owner role is trying to modify data.
+/// Note: Accountant CAN create expenses and mark them as paid.
 fn check_owner_readonly(user: &AuthenticatedUser) -> Option<HttpResponse> {
     if user.role == "owner" {
         Some(HttpResponse::Forbidden().json(serde_json::json!({
-            "error": "Owner role has read-only access"
+            "error": "Owner role has read-only access",
+            "code": "invalid_role",
         })))
     } else {
         None
     }
 }
 
-/// Helper function to check if user has syndic role (for approval workflow)
+/// Helper function to check if user has syndic role (for approval workflow).
 fn check_syndic_role(user: &AuthenticatedUser) -> Option<HttpResponse> {
-    if user.role != "syndic" && user.role != "superadmin" {
-        Some(HttpResponse::Forbidden().json(serde_json::json!({
-            "error": "Only syndic or superadmin can approve/reject invoices"
-        })))
-    } else {
-        None
+    match user_role(user) {
+        Some(UserRole::Syndic) | Some(UserRole::SuperAdmin) => None,
+        _ => Some(HttpResponse::Forbidden().json(serde_json::json!({
+            "error": "Only syndic or superadmin can approve/reject invoices",
+            "code": "invalid_role",
+        }))),
     }
 }
 
-/// Helper function to check if user has accountant role (for creating/editing invoices)
-fn check_accountant_role(user: &AuthenticatedUser) -> Option<HttpResponse> {
-    if user.role != "accountant" && user.role != "syndic" && user.role != "superadmin" {
-        Some(HttpResponse::Forbidden().json(serde_json::json!({
-            "error": "Only accountant, syndic, or superadmin can create/edit invoices"
-        })))
-    } else {
-        None
+/// Story 3.1 — Authorise *emitting* expenses / call-for-funds (sortie financière).
+/// INV-10 séparation des pouvoirs : un encodeur seul est rejeté ici.
+fn check_can_emit_expenses(user: &AuthenticatedUser) -> Option<HttpResponse> {
+    match user_role(user) {
+        Some(role) if role.can_emit_expenses() => None,
+        _ => Some(HttpResponse::Forbidden().json(serde_json::json!({
+            "error":
+                "Only syndic, superadmin, or accountant émetteur can create/pay expenses",
+            "code": "invalid_role",
+        }))),
     }
+}
+
+/// Story 3.1 — Authorise *encoding* invoices / drafts (entrée comptable amont).
+fn check_can_encode_invoices(user: &AuthenticatedUser) -> Option<HttpResponse> {
+    match user_role(user) {
+        Some(role) if role.can_encode_invoices() => None,
+        _ => Some(HttpResponse::Forbidden().json(serde_json::json!({
+            "error":
+                "Only syndic, superadmin, or accountant encodeur can create/edit invoices",
+            "code": "invalid_role",
+        }))),
+    }
+}
+
+/// Helper function to check if user has accountant role (for creating/editing invoices).
+///
+/// Story 3.1: alias kept for backwards-compat — delegates to `check_can_encode_invoices`.
+fn check_accountant_role(user: &AuthenticatedUser) -> Option<HttpResponse> {
+    check_can_encode_invoices(user)
 }
 
 #[post("/expenses")]
@@ -51,6 +85,12 @@ pub async fn create_expense(
     mut dto: web::Json<CreateExpenseDto>,
 ) -> impl Responder {
     if let Some(response) = check_owner_readonly(&user) {
+        return response;
+    }
+    // Story 3.1 INV-10 : un encodeur ne peut PAS émettre. POST /expenses est une
+    // sortie financière, donc réservé aux émetteurs (syndic/superadmin/accountant
+    // générique/accountant.emetteur).
+    if let Some(response) = check_can_emit_expenses(&user) {
         return response;
     }
 
@@ -100,6 +140,10 @@ pub async fn create_expense(
             .with_error(err.clone())
             .log();
 
+            // Track H Story H2 — pre-check validate-before-compute → 422 narratif
+            if let Some(resp) = try_build_conformity_response(&err) {
+                return resp;
+            }
             HttpResponse::BadRequest().json(serde_json::json!({
                 "error": err
             }))
@@ -115,15 +159,22 @@ pub async fn get_expense(
 ) -> impl Responder {
     match state.expense_use_cases.get_expense(*id).await {
         Ok(Some(expense)) => {
-            // Multi-tenant isolation: verify expense's building belongs to user's organization
+            // Hotfix #603 — multi-tenant isolation via ACP→organization resolution.
             if let Ok(building_id) = Uuid::parse_str(&expense.building_id) {
                 if let Ok(Some(building)) = state.building_use_cases.get_building(building_id).await
                 {
-                    if let Ok(building_org) = Uuid::parse_str(&building.organization_id) {
-                        if let Err(e) = user.verify_org_access(building_org) {
-                            return HttpResponse::Forbidden()
-                                .json(serde_json::json!({ "error": e }));
+                    let acp_id = match Uuid::parse_str(&building.acp_id) {
+                        Ok(id) => id,
+                        Err(_) => {
+                            return HttpResponse::InternalServerError().json(serde_json::json!({
+                                "error": "Invalid building.acp_id format"
+                            }));
                         }
+                    };
+                    if let Err(err) =
+                        verify_acp_org_access(&user, acp_id, &state.acp_use_cases).await
+                    {
+                        return err.error_response();
                     }
                 }
             }
@@ -168,13 +219,19 @@ pub async fn list_expenses_by_building(
     user: AuthenticatedUser,
     building_id: web::Path<Uuid>,
 ) -> impl Responder {
-    // Multi-tenant isolation: verify building belongs to user's organization
+    // Hotfix #603 — multi-tenant isolation via ACP→organization resolution.
     match state.building_use_cases.get_building(*building_id).await {
         Ok(Some(building)) => {
-            if let Ok(building_org) = Uuid::parse_str(&building.organization_id) {
-                if let Err(e) = user.verify_org_access(building_org) {
-                    return HttpResponse::Forbidden().json(serde_json::json!({ "error": e }));
+            let acp_id = match Uuid::parse_str(&building.acp_id) {
+                Ok(id) => id,
+                Err(_) => {
+                    return HttpResponse::InternalServerError().json(serde_json::json!({
+                        "error": "Invalid building.acp_id format"
+                    }));
                 }
+            };
+            if let Err(err) = verify_acp_org_access(&user, acp_id, &state.acp_use_cases).await {
+                return err.error_response();
             }
         }
         Ok(None) => {
@@ -208,6 +265,10 @@ pub async fn mark_expense_paid(
     id: web::Path<Uuid>,
 ) -> impl Responder {
     if let Some(response) = check_owner_readonly(&user) {
+        return response;
+    }
+    // Story 3.1 INV-10 : marquage payé = mouvement financier sortant.
+    if let Some(response) = check_can_emit_expenses(&user) {
         return response;
     }
 
@@ -394,6 +455,10 @@ pub async fn create_invoice_draft(
             .with_error(err.clone())
             .log();
 
+            // Track H Story H2 — pre-check validate-before-compute → 422 narratif
+            if let Some(resp) = try_build_conformity_response(&err) {
+                return resp;
+            }
             HttpResponse::BadRequest().json(serde_json::json!({
                 "error": err
             }))
@@ -595,15 +660,22 @@ pub async fn get_invoice(
 ) -> impl Responder {
     match state.expense_use_cases.get_invoice(*id).await {
         Ok(Some(invoice)) => {
-            // Multi-tenant isolation: verify invoice's building belongs to user's organization
+            // Hotfix #603 — multi-tenant isolation via ACP→organization resolution.
             if let Ok(building_id) = Uuid::parse_str(&invoice.building_id) {
                 if let Ok(Some(building)) = state.building_use_cases.get_building(building_id).await
                 {
-                    if let Ok(building_org) = Uuid::parse_str(&building.organization_id) {
-                        if let Err(e) = user.verify_org_access(building_org) {
-                            return HttpResponse::Forbidden()
-                                .json(serde_json::json!({ "error": e }));
+                    let acp_id = match Uuid::parse_str(&building.acp_id) {
+                        Ok(id) => id,
+                        Err(_) => {
+                            return HttpResponse::InternalServerError().json(serde_json::json!({
+                                "error": "Invalid building.acp_id format"
+                            }));
                         }
+                    };
+                    if let Err(err) =
+                        verify_acp_org_access(&user, acp_id, &state.acp_use_cases).await
+                    {
+                        return err.error_response();
                     }
                 }
             }
@@ -703,8 +775,12 @@ pub async fn export_work_quote_pdf(
         }
     };
 
-    // Convert DTOs to domain entities
-    let building_org_id = Uuid::parse_str(&building_dto.organization_id).unwrap_or(organization_id);
+    // Convert DTOs to domain entities — Story 1.2 : DTO field renamed
+    // `organization_id` → `acp_id` (FK vers acps.id). `organization_id`
+    // upstream (de require_organization()) reste utilisé pour audit
+    // mais n'est plus stocké sur Building.
+    let _ = organization_id;
+    let building_acp_id = Uuid::parse_str(&building_dto.acp_id).unwrap_or_else(|_| Uuid::new_v4());
 
     let building_created_at = DateTime::parse_from_rfc3339(&building_dto.created_at)
         .map(|dt| dt.with_timezone(&Utc))
@@ -731,7 +807,7 @@ pub async fn export_work_quote_pdf(
         syndic_office_hours: None,
         syndic_emergency_contact: None,
         slug: None,
-        organization_id: building_org_id,
+        acp_id: building_acp_id,
         created_at: building_created_at,
         updated_at: building_updated_at,
     };

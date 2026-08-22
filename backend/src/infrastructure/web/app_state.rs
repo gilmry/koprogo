@@ -2,28 +2,33 @@ use crate::application::ports::mqtt_energy_port::MqttEnergyPort;
 use crate::application::use_cases::boinc_use_cases::BoincUseCases;
 use crate::application::use_cases::consent_use_cases::ConsentUseCases;
 use crate::application::use_cases::{
-    AccountUseCases, AchievementUseCases, AgSessionUseCases, AgeRequestUseCases, AuditLogUseCases,
-    AuthUseCases, BoardDashboardUseCases, BoardDecisionUseCases, BoardMemberUseCases,
-    BudgetUseCases, BuildingUseCases, CallForFundsUseCases, ChallengeUseCases,
-    ChargeDistributionUseCases, ContractorReportUseCases, ConvocationUseCases, DashboardUseCases,
-    DocumentUseCases, EnergyBillUploadUseCases, EnergyCampaignUseCases, EtatDateUseCases,
-    ExpenseUseCases, FinancialReportUseCases, GamificationStatsUseCases, GdprArt30UseCases,
-    GdprUseCases, IndividualMemberUseCases, IoTUseCases, JournalEntryUseCases, LinkyUseCases,
-    LocalExchangeUseCases, MeetingUseCases, NoticeUseCases, NotificationUseCases,
-    OrganizationUseCases, OwnerContributionUseCases, OwnerUseCases, PaymentMethodUseCases,
-    PaymentReminderUseCases, PaymentUseCases, PcnUseCases, PollUseCases, QuoteUseCases,
-    ResolutionUseCases, ResourceBookingUseCases, SecurityIncidentUseCases, ServiceProviderUseCases,
-    SharedObjectUseCases, SkillUseCases, StatsUseCases, TechnicalInspectionUseCases,
-    TicketUseCases, TwoFactorUseCases, UnitOwnerUseCases, UnitUseCases, UserUseCases,
-    WorkReportUseCases,
+    AccountUseCases, AchievementUseCases, AcpUseCases, AgSessionUseCases, AgeRequestUseCases,
+    AuditLogUseCases, AuthUseCases, BoardDashboardUseCases, BoardDecisionUseCases,
+    BoardMemberUseCases, BudgetUseCases, BuildingUseCases, CallForFundsUseCases, ChallengeUseCases,
+    ChargeDistributionUseCases, ContractorEvaluationUseCases, ContractorReportUseCases,
+    ConvocationUseCases, DashboardUseCases, DocumentUseCases, EnergyBillUploadUseCases,
+    EnergyCampaignUseCases, EtatDateUseCases, ExpenseUseCases, FinancialReportUseCases,
+    GamificationStatsUseCases, GdprArt30UseCases, GdprUseCases, IndividualMemberUseCases,
+    IoTUseCases, JournalEntryUseCases, LinkyUseCases, LocalExchangeUseCases, MagicLinkUseCases,
+    MandateUseCases, MeetingUseCases, NoticeUseCases, NotificationUseCases, OrganizationUseCases,
+    OwnerContributionUseCases, OwnerUseCases, PaymentMethodUseCases, PaymentReminderUseCases,
+    PaymentUseCases, PcnUseCases, PollUseCases, PortfolioUseCases, QuoteUseCases,
+    ResolutionUseCases, ResourceBookingUseCases, RoleDelegationUseCases, SecurityIncidentUseCases,
+    ServiceProviderUseCases, SharedObjectUseCases, SkillUseCases, StatsUseCases,
+    SyndicResponseUseCases, TechnicalInspectionUseCases, TechnicalSpecUseCases, TicketUseCases,
+    TwoFactorUseCases, UnitOwnerUseCases, UnitUseCases, UserUseCases, WorkReportUseCases,
 };
 use crate::infrastructure::audit_logger::AuditLogger;
+use crate::infrastructure::database::repositories::{
+    PostgresSyndicResponseRepository, PostgresTicketRepository,
+};
 use crate::infrastructure::email::EmailService;
 use crate::infrastructure::pool::DbPool;
 use std::sync::Arc;
 
 pub struct AppState {
     pub account_use_cases: Arc<AccountUseCases>,
+    pub acp_use_cases: Arc<AcpUseCases>,
     pub audit_log_use_cases: Arc<AuditLogUseCases>,
     pub auth_use_cases: Arc<AuthUseCases>,
     pub building_use_cases: Arc<BuildingUseCases>,
@@ -42,6 +47,7 @@ pub struct AppState {
     pub payment_use_cases: Arc<PaymentUseCases>,
     pub payment_method_use_cases: Arc<PaymentMethodUseCases>,
     pub poll_use_cases: Arc<PollUseCases>,
+    pub portfolio_use_cases: Arc<PortfolioUseCases>,
     pub quote_use_cases: Arc<QuoteUseCases>,
     pub local_exchange_use_cases: Arc<LocalExchangeUseCases>,
     pub notice_use_cases: Arc<NoticeUseCases>,
@@ -87,12 +93,31 @@ pub struct AppState {
     pub mqtt_energy_adapter: Arc<dyn MqttEnergyPort>,
     pub boinc_use_cases: Arc<BoincUseCases>,
     pub user_use_cases: Arc<UserUseCases>,
+    /// Story 3.2 — generic MagicLink (public-access tokens for contractors / tiers).
+    pub magic_link_use_cases: Arc<MagicLinkUseCases>,
+    /// Story 3.4 — Mandate (delegation to external professionals: notaire,
+    /// avocat, AMO, architecte, BET, gardien) with bounded validity.
+    pub mandate_use_cases: Arc<MandateUseCases>,
+    /// Story 3.5 — Temporary role delegation (syndic → owner, bounded).
+    pub role_delegation_use_cases: Arc<RoleDelegationUseCases>,
+    /// Story 3.7 — SyndicResponse (append-only) + SLA escalation use-cases.
+    /// Concrete types because the use-case struct is generic over the two
+    /// repository traits; we use the production Postgres implementations
+    /// here and a single concrete alias in handlers / tests.
+    pub syndic_response_use_cases:
+        Arc<SyndicResponseUseCases<PostgresSyndicResponseRepository, PostgresTicketRepository>>,
+    /// Story 3.8 — TechnicalSpec (versionable + signatures multi-parties).
+    pub technical_spec_use_cases: Arc<TechnicalSpecUseCases>,
+    /// Story 3.9 — ContractorEvaluation (append-only, gated by an approved
+    /// TechnicalSpec) (FR34 FR35 INV-21 INV-24).
+    pub contractor_evaluation_use_cases: Arc<ContractorEvaluationUseCases>,
 }
 
 impl AppState {
     #[allow(clippy::too_many_arguments)]
     pub fn new(
         account_use_cases: AccountUseCases,
+        acp_use_cases: AcpUseCases,
         audit_log_use_cases: AuditLogUseCases,
         auth_use_cases: AuthUseCases,
         building_use_cases: BuildingUseCases,
@@ -111,6 +136,7 @@ impl AppState {
         payment_use_cases: Arc<PaymentUseCases>,
         payment_method_use_cases: PaymentMethodUseCases,
         poll_use_cases: PollUseCases,
+        portfolio_use_cases: PortfolioUseCases,
         quote_use_cases: QuoteUseCases,
         local_exchange_use_cases: LocalExchangeUseCases,
         notice_use_cases: NoticeUseCases,
@@ -155,9 +181,19 @@ impl AppState {
         mqtt_energy_adapter: Arc<dyn MqttEnergyPort>,
         boinc_use_cases: BoincUseCases,
         user_use_cases: UserUseCases,
+        magic_link_use_cases: MagicLinkUseCases,
+        mandate_use_cases: MandateUseCases,
+        role_delegation_use_cases: RoleDelegationUseCases,
+        syndic_response_use_cases: SyndicResponseUseCases<
+            PostgresSyndicResponseRepository,
+            PostgresTicketRepository,
+        >,
+        technical_spec_use_cases: TechnicalSpecUseCases,
+        contractor_evaluation_use_cases: ContractorEvaluationUseCases,
     ) -> Self {
         Self {
             account_use_cases: Arc::new(account_use_cases),
+            acp_use_cases: Arc::new(acp_use_cases),
             audit_log_use_cases: Arc::new(audit_log_use_cases),
             auth_use_cases: Arc::new(auth_use_cases),
             building_use_cases: Arc::new(building_use_cases),
@@ -176,6 +212,7 @@ impl AppState {
             payment_use_cases,
             payment_method_use_cases: Arc::new(payment_method_use_cases),
             poll_use_cases: Arc::new(poll_use_cases),
+            portfolio_use_cases: Arc::new(portfolio_use_cases),
             quote_use_cases: Arc::new(quote_use_cases),
             local_exchange_use_cases: Arc::new(local_exchange_use_cases),
             notice_use_cases: Arc::new(notice_use_cases),
@@ -220,6 +257,12 @@ impl AppState {
             mqtt_energy_adapter,
             boinc_use_cases: Arc::new(boinc_use_cases),
             user_use_cases: Arc::new(user_use_cases),
+            magic_link_use_cases: Arc::new(magic_link_use_cases),
+            mandate_use_cases: Arc::new(mandate_use_cases),
+            role_delegation_use_cases: Arc::new(role_delegation_use_cases),
+            syndic_response_use_cases: Arc::new(syndic_response_use_cases),
+            technical_spec_use_cases: Arc::new(technical_spec_use_cases),
+            contractor_evaluation_use_cases: Arc::new(contractor_evaluation_use_cases),
         }
     }
 }

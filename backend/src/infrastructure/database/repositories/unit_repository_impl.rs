@@ -29,12 +29,12 @@ impl UnitRepository for PostgresUnitRepository {
 
         sqlx::query(
             r#"
-            INSERT INTO units (id, organization_id, building_id, unit_number, unit_type, floor, surface_area, quota, owner_id, created_at, updated_at)
+            INSERT INTO units (id, acp_id, building_id, unit_number, unit_type, floor, surface_area, quota, owner_id, created_at, updated_at)
             VALUES ($1, $2, $3, $4, $5::unit_type, $6, $7, $8, $9, $10, $11)
             "#,
         )
         .bind(unit.id)
-        .bind(unit.organization_id)
+        .bind(unit.acp_id)
         .bind(unit.building_id)
         .bind(&unit.unit_number)
         .bind(unit_type_str)
@@ -54,7 +54,7 @@ impl UnitRepository for PostgresUnitRepository {
     async fn find_by_id(&self, id: Uuid) -> Result<Option<Unit>, String> {
         let row = sqlx::query(
             r#"
-            SELECT id, organization_id, building_id, unit_number, unit_type::text AS unit_type, floor, surface_area, quota, owner_id, created_at, updated_at
+            SELECT id, acp_id, building_id, unit_number, unit_type::text AS unit_type, floor, surface_area, quota, owner_id, created_at, updated_at
             FROM units
             WHERE id = $1
             "#,
@@ -76,7 +76,7 @@ impl UnitRepository for PostgresUnitRepository {
 
             Unit {
                 id: row.get("id"),
-                organization_id: row.get("organization_id"),
+                acp_id: row.get("acp_id"),
                 building_id: row.get("building_id"),
                 unit_number: row.get("unit_number"),
                 unit_type,
@@ -93,7 +93,7 @@ impl UnitRepository for PostgresUnitRepository {
     async fn find_by_building(&self, building_id: Uuid) -> Result<Vec<Unit>, String> {
         let rows = sqlx::query(
             r#"
-            SELECT id, organization_id, building_id, unit_number, unit_type::text AS unit_type, floor, surface_area, quota, owner_id, created_at, updated_at
+            SELECT id, acp_id, building_id, unit_number, unit_type::text AS unit_type, floor, surface_area, quota, owner_id, created_at, updated_at
             FROM units
             WHERE building_id = $1
             ORDER BY unit_number
@@ -118,7 +118,7 @@ impl UnitRepository for PostgresUnitRepository {
 
                 Unit {
                     id: row.get("id"),
-                    organization_id: row.get("organization_id"),
+                    acp_id: row.get("acp_id"),
                     building_id: row.get("building_id"),
                     unit_number: row.get("unit_number"),
                     unit_type,
@@ -136,7 +136,7 @@ impl UnitRepository for PostgresUnitRepository {
     async fn find_by_owner(&self, owner_id: Uuid) -> Result<Vec<Unit>, String> {
         let rows = sqlx::query(
             r#"
-            SELECT id, organization_id, building_id, unit_number, unit_type::text AS unit_type, floor, surface_area, quota, owner_id, created_at, updated_at
+            SELECT id, acp_id, building_id, unit_number, unit_type::text AS unit_type, floor, surface_area, quota, owner_id, created_at, updated_at
             FROM units
             WHERE owner_id = $1
             ORDER BY unit_number
@@ -161,7 +161,7 @@ impl UnitRepository for PostgresUnitRepository {
 
                 Unit {
                     id: row.get("id"),
-                    organization_id: row.get("organization_id"),
+                    acp_id: row.get("acp_id"),
                     building_id: row.get("building_id"),
                     unit_number: row.get("unit_number"),
                     unit_type,
@@ -188,10 +188,20 @@ impl UnitRepository for PostgresUnitRepository {
         let mut where_clauses = Vec::new();
         let mut param_count = 0;
 
-        // Multi-tenant isolation: ALWAYS filter by organization_id when provided
+        // Story H15 — isolation multi-tenant : scope org via l'ACP parente
+        // (la colonne units.organization_id a été DROP en migration 030000).
         if filters.organization_id.is_some() {
             param_count += 1;
-            where_clauses.push(format!("organization_id = ${}", param_count));
+            where_clauses.push(format!(
+                "acp_id IN (SELECT id FROM acps WHERE organization_id = ${})",
+                param_count
+            ));
+        }
+
+        // Story H15 — scope ACP direct.
+        if filters.acp_id.is_some() {
+            param_count += 1;
+            where_clauses.push(format!("acp_id = ${}", param_count));
         }
 
         if filters.building_id.is_some() {
@@ -240,9 +250,13 @@ impl UnitRepository for PostgresUnitRepository {
         let count_query = format!("SELECT COUNT(*) FROM units {}", where_clause);
         let mut count_query = sqlx::query_scalar::<_, i64>(&count_query);
 
-        // Bind organization_id FIRST (matches WHERE clause order)
+        // Bind organization_id FIRST (matches WHERE clause order: org subquery,
+        // then acp_id direct, then building_id, ...).
         if let Some(org_id) = filters.organization_id {
             count_query = count_query.bind(org_id);
+        }
+        if let Some(acp_id) = filters.acp_id {
+            count_query = count_query.bind(acp_id);
         }
         if let Some(building_id) = filters.building_id {
             count_query = count_query.bind(building_id);
@@ -269,7 +283,7 @@ impl UnitRepository for PostgresUnitRepository {
         let offset_param = param_count;
 
         let data_query = format!(
-            "SELECT id, organization_id, building_id, unit_number, unit_type::text AS unit_type, floor, surface_area, quota, owner_id, created_at, updated_at \
+            "SELECT id, acp_id, building_id, unit_number, unit_type::text AS unit_type, floor, surface_area, quota, owner_id, created_at, updated_at \
              FROM units {} ORDER BY {} {} LIMIT ${} OFFSET ${}",
             where_clause,
             sort_column,
@@ -280,9 +294,13 @@ impl UnitRepository for PostgresUnitRepository {
 
         let mut data_query = sqlx::query(&data_query);
 
-        // Bind organization_id FIRST (matches WHERE clause order)
+        // Bind organization_id FIRST (matches WHERE clause order: org subquery,
+        // then acp_id direct, then building_id, ...).
         if let Some(org_id) = filters.organization_id {
             data_query = data_query.bind(org_id);
+        }
+        if let Some(acp_id) = filters.acp_id {
+            data_query = data_query.bind(acp_id);
         }
         if let Some(building_id) = filters.building_id {
             data_query = data_query.bind(building_id);
@@ -323,7 +341,7 @@ impl UnitRepository for PostgresUnitRepository {
 
                 Unit {
                     id: row.get("id"),
-                    organization_id: row.get("organization_id"),
+                    acp_id: row.get("acp_id"),
                     building_id: row.get("building_id"),
                     unit_number: row.get("unit_number"),
                     unit_type,

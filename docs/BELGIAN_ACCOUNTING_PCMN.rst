@@ -2,9 +2,9 @@
 Belgian Accounting - PCMN (Plan Comptable Minimum Normalisé)
 ===================================================================
 
-:Date de mise à jour: 7 novembre 2025
+:Date de mise à jour: 2026-05-20 (amendement #526 contre-écritures)
 :Version: 1.0.0 - **IMPLÉMENTÉ** ✅
-:Issue GitHub: #79 (Fermée le 7 novembre 2025)
+:Issue GitHub: #79 (Fermée le 7 novembre 2025) — #526 politique amendée 2026-05
 :Statut: Production-ready
 
 📋 Vue d'ensemble
@@ -576,3 +576,55 @@ Tous ces fichiers incluent des headers d'attribution GPL-2.0 appropriés crédit
 
 | **Maintenu par**: Équipe KoproGo
 | **Remerciements spéciaux**: Projet Noalyss & Dany De Bontridder
+
+Annulations & contre-écritures (politique #526)
+================================================
+
+**Décision** (2026-05, WP-A7, amendement ADR-0008 §C) :
+**conserver ``CHECK (amount > 0)``** sur la table ``expenses`` (migration
+``20260502000000``). Les annulations / avoirs / remboursements se
+modélisent en **contre-écritures de journal PCMN**, *jamais* en
+relâchant la contrainte pour autoriser des montants ≤ 0.
+
+Rationale
+---------
+
+La positivité au niveau **schéma** est une défense en profondeur PCMN :
+
+* Une ligne ``expenses.amount ≤ 0`` corromprait les agrégats
+  (``SUM(amount)`` du dashboard, état daté, fonds de réserve, balance).
+* L'**inversion comptable** (paire débit/crédit journal classe 6/7)
+  préserve l'**auditabilité** (trace des **deux** écritures, de la
+  charge initiale et de son inversion). Un simple montant négatif
+  effacerait cette trace.
+* Conforme à l'écriture comptable double-partie (PCMN belge), où chaque
+  opération produit un mouvement débit ↔ crédit équilibré, jamais une
+  mutation rétroactive d'un montant.
+
+Implémentation
+--------------
+
+* **Contrainte DB** : ``CHECK (amount > 0)`` conservée sur ``expenses``
+  (migration ``20260502000000_complete_expense_decimal_cascade.sql``).
+* **Annulation côté domaine** : créer une **nouvelle écriture journal**
+  ``JournalEntry`` (cf. PCMN §"Journal d'opérations diverses (ODS)") qui
+  inverse les lignes débit/crédit de la charge à annuler. ``debit ==
+  credit`` toujours vérifié (``BALANCE_TOLERANCE``).
+* **Audit trail** : les deux ``JournalEntry`` (charge originale +
+  contre-écriture) restent visibles dans le journal — preuve légale
+  conservée.
+
+Tests
+-----
+
+Couvert vert par WP-B3 (commit ``086c953``) — la contrainte est
+opérationnelle sur ``feature/dev``.
+
+Ne **PAS** :
+~~~~~~~~~~~~
+
+* ``DROP CONSTRAINT expenses_amount_check`` puis ``ADD CONSTRAINT … >= 0`` ou
+  retirer la contrainte. Toute PR proposant cela doit être rejetée en
+  review (cf. ADR-0008 §C, amendement 2026-05-19).
+* Tenter de "corriger" un trop-perçu par un ``UPDATE expenses SET amount =
+  amount - X``. Toujours créer une contre-écriture journal séparée.

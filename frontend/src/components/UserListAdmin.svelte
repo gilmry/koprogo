@@ -170,7 +170,7 @@ interface BackendUser {
         {$_('admin.users.subtitle')}
       </p>
     </div>
-    <Button variant="primary" on:click={handleCreate} data-testid="create-user-button">
+    <Button variant="primary" onclick={handleCreate} data-testid="create-user-button">
       ➕ {$_('admin.users.createUser')}
     </Button>
   </div>

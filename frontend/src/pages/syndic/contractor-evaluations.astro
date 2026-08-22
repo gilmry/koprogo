@@ -1,0 +1,20 @@
+---
+// Story B8 (Phase B FE) — Page syndic des évaluations contractor.
+//
+// Monte le wrapper `ContractorEvaluationsPage.svelte` (lib/components/syndic)
+// qui orchestre `<ContractorEvaluationForm>` (modal) + liste des évaluations
+// créées dans la session.
+//
+// Route : /syndic/contractor-evaluations (accès gated côté backend RBAC
+// — superadmin / syndic only). Pas de RouteGuard FE strict — le backend
+// 403 sur les endpoints sera bloquant si l'utilisateur n'a pas le rôle.
+
+import Layout from '../../layouts/Layout.astro';
+import ContractorEvaluationsPage from '../../lib/components/syndic/ContractorEvaluationsPage.svelte';
+---
+
+<Layout title="Évaluations contractor — KoproGo">
+  <main class="container mx-auto px-4 py-8">
+    <ContractorEvaluationsPage client:load />
+  </main>
+</Layout>

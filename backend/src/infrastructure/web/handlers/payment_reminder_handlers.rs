@@ -1,4 +1,4 @@
-use crate::application::dto::{
+﻿use crate::application::dto::{
     AddTrackingNumberDto, BulkCreateRemindersDto, CancelReminderDto, CreatePaymentReminderDto,
     EscalateReminderDto, MarkReminderSentDto,
 };
@@ -73,11 +73,11 @@ pub async fn create_reminder(
                 Some(user.user_id),
                 Some(organization_id),
             )
-            .with_error(err.clone())
+            .with_error(err.to_string())
             .log();
 
             HttpResponse::BadRequest().json(serde_json::json!({
-                "error": err
+                "error": err.to_string()
             }))
         }
     }
@@ -105,7 +105,7 @@ pub async fn get_reminder(
             "error": "Payment reminder not found"
         })),
         Err(err) => HttpResponse::InternalServerError().json(serde_json::json!({
-            "error": err
+            "error": err.to_string()
         })),
     }
 }
@@ -133,7 +133,7 @@ pub async fn list_by_expense(
     {
         Ok(reminders) => HttpResponse::Ok().json(reminders),
         Err(err) => HttpResponse::InternalServerError().json(serde_json::json!({
-            "error": err
+            "error": err.to_string()
         })),
     }
 }
@@ -161,7 +161,7 @@ pub async fn list_by_owner(
     {
         Ok(reminders) => HttpResponse::Ok().json(reminders),
         Err(err) => HttpResponse::InternalServerError().json(serde_json::json!({
-            "error": err
+            "error": err.to_string()
         })),
     }
 }
@@ -189,7 +189,7 @@ pub async fn list_active_by_owner(
     {
         Ok(reminders) => HttpResponse::Ok().json(reminders),
         Err(err) => HttpResponse::InternalServerError().json(serde_json::json!({
-            "error": err
+            "error": err.to_string()
         })),
     }
 }
@@ -216,7 +216,7 @@ pub async fn list_by_organization(
     {
         Ok(reminders) => HttpResponse::Ok().json(reminders),
         Err(err) => HttpResponse::InternalServerError().json(serde_json::json!({
-            "error": err
+            "error": err.to_string()
         })),
     }
 }
@@ -266,7 +266,7 @@ pub async fn mark_as_sent(
             HttpResponse::Ok().json(reminder)
         }
         Err(err) => HttpResponse::BadRequest().json(serde_json::json!({
-            "error": err
+            "error": err.to_string()
         })),
     }
 }
@@ -304,7 +304,7 @@ pub async fn mark_as_opened(
             HttpResponse::Ok().json(reminder)
         }
         Err(err) => HttpResponse::BadRequest().json(serde_json::json!({
-            "error": err
+            "error": err.to_string()
         })),
     }
 }
@@ -342,7 +342,7 @@ pub async fn mark_as_paid(
             HttpResponse::Ok().json(reminder)
         }
         Err(err) => HttpResponse::BadRequest().json(serde_json::json!({
-            "error": err
+            "error": err.to_string()
         })),
     }
 }
@@ -392,7 +392,7 @@ pub async fn cancel_reminder(
             HttpResponse::Ok().json(reminder)
         }
         Err(err) => HttpResponse::BadRequest().json(serde_json::json!({
-            "error": err
+            "error": err.to_string()
         })),
     }
 }
@@ -438,7 +438,7 @@ pub async fn escalate_reminder(
             "message": "Reminder escalated (no next level created)"
         })),
         Err(err) => HttpResponse::BadRequest().json(serde_json::json!({
-            "error": err
+            "error": err.to_string()
         })),
     }
 }
@@ -488,7 +488,7 @@ pub async fn add_tracking_number(
             HttpResponse::Ok().json(reminder)
         }
         Err(err) => HttpResponse::BadRequest().json(serde_json::json!({
-            "error": err
+            "error": err.to_string()
         })),
     }
 }
@@ -515,7 +515,7 @@ pub async fn get_recovery_stats(
     {
         Ok(stats) => HttpResponse::Ok().json(stats),
         Err(err) => HttpResponse::InternalServerError().json(serde_json::json!({
-            "error": err
+            "error": err.to_string()
         })),
     }
 }
@@ -552,7 +552,7 @@ pub async fn find_overdue_without_reminders(
     {
         Ok(overdue) => HttpResponse::Ok().json(overdue),
         Err(err) => HttpResponse::InternalServerError().json(serde_json::json!({
-            "error": err
+            "error": err.to_string()
         })),
     }
 }
@@ -605,7 +605,7 @@ pub async fn bulk_create_reminders(
             HttpResponse::Ok().json(response)
         }
         Err(err) => HttpResponse::BadRequest().json(serde_json::json!({
-            "error": err
+            "error": err.to_string()
         })),
     }
 }
@@ -646,7 +646,7 @@ pub async fn delete_reminder(
             "error": "Payment reminder not found"
         })),
         Err(err) => HttpResponse::InternalServerError().json(serde_json::json!({
-            "error": err
+            "error": err.to_string()
         })),
     }
 }

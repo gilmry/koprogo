@@ -1,6 +1,7 @@
 use crate::application::dto::{
     AdminDashboardStats, SeedDataStats, SyndicDashboardStats, UrgentTask,
 };
+use crate::application::error::AppError;
 use crate::application::ports::StatsRepository;
 use std::sync::Arc;
 use uuid::Uuid;
@@ -14,18 +15,18 @@ impl StatsUseCases {
         Self { repo }
     }
 
-    pub async fn get_admin_dashboard_stats(&self) -> Result<AdminDashboardStats, String> {
+    pub async fn get_admin_dashboard_stats(&self) -> Result<AdminDashboardStats, AppError> {
         self.repo.get_admin_dashboard_stats().await
     }
 
-    pub async fn get_seed_data_stats(&self) -> Result<SeedDataStats, String> {
+    pub async fn get_seed_data_stats(&self) -> Result<SeedDataStats, AppError> {
         self.repo.get_seed_data_stats().await
     }
 
     pub async fn get_syndic_stats(
         &self,
         organization_id: Uuid,
-    ) -> Result<SyndicDashboardStats, String> {
+    ) -> Result<SyndicDashboardStats, AppError> {
         self.repo.get_syndic_stats(organization_id).await
     }
 
@@ -33,7 +34,7 @@ impl StatsUseCases {
     pub async fn get_owner_stats_by_user_id(
         &self,
         user_id: Uuid,
-    ) -> Result<SyndicDashboardStats, String> {
+    ) -> Result<SyndicDashboardStats, AppError> {
         match self.repo.find_owner_id_by_user_id(user_id).await? {
             None => Ok(SyndicDashboardStats {
                 total_buildings: 0,
@@ -50,7 +51,7 @@ impl StatsUseCases {
     pub async fn get_syndic_urgent_tasks(
         &self,
         organization_id: Uuid,
-    ) -> Result<Vec<UrgentTask>, String> {
+    ) -> Result<Vec<UrgentTask>, AppError> {
         self.repo.get_syndic_urgent_tasks(organization_id).await
     }
 }
@@ -66,7 +67,7 @@ mod tests {
 
     #[async_trait]
     impl StatsRepository for MockStatsRepository {
-        async fn get_admin_dashboard_stats(&self) -> Result<AdminDashboardStats, String> {
+        async fn get_admin_dashboard_stats(&self) -> Result<AdminDashboardStats, AppError> {
             Ok(AdminDashboardStats {
                 total_organizations: 5,
                 total_users: 50,
@@ -78,7 +79,7 @@ mod tests {
                 total_meetings: 20,
             })
         }
-        async fn get_seed_data_stats(&self) -> Result<SeedDataStats, String> {
+        async fn get_seed_data_stats(&self) -> Result<SeedDataStats, AppError> {
             Ok(SeedDataStats {
                 seed_organizations: 1,
                 production_organizations: 4,
@@ -94,7 +95,7 @@ mod tests {
         async fn get_syndic_stats(
             &self,
             _organization_id: Uuid,
-        ) -> Result<SyndicDashboardStats, String> {
+        ) -> Result<SyndicDashboardStats, AppError> {
             Ok(SyndicDashboardStats {
                 total_buildings: 2,
                 total_units: 10,
@@ -104,7 +105,7 @@ mod tests {
                 next_meeting: None,
             })
         }
-        async fn get_owner_stats(&self, _owner_id: Uuid) -> Result<SyndicDashboardStats, String> {
+        async fn get_owner_stats(&self, _owner_id: Uuid) -> Result<SyndicDashboardStats, AppError> {
             Ok(SyndicDashboardStats {
                 total_buildings: 1,
                 total_units: 2,
@@ -114,13 +115,13 @@ mod tests {
                 next_meeting: None,
             })
         }
-        async fn find_owner_id_by_user_id(&self, _user_id: Uuid) -> Result<Option<Uuid>, String> {
+        async fn find_owner_id_by_user_id(&self, _user_id: Uuid) -> Result<Option<Uuid>, AppError> {
             Ok(self.owner_id)
         }
         async fn get_syndic_urgent_tasks(
             &self,
             _organization_id: Uuid,
-        ) -> Result<Vec<UrgentTask>, String> {
+        ) -> Result<Vec<UrgentTask>, AppError> {
             Ok(vec![])
         }
     }

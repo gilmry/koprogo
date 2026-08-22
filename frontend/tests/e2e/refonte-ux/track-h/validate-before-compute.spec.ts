@@ -1,0 +1,172 @@
+/**
+ * Track H Story H2 — validate-before-compute E2E (FR-H2 + INV-H4/H6).
+ *
+ * Couvre :
+ *  - @happy : syndic crée une dépense sur building conformant → 200 + redirect.
+ *  - @security : syndic force POST /expenses sur building non-conformant via
+ *    `page.request.post` → 422 BUILDING_NOT_CONFORMANT avec payload narratif
+ *    (kind=building_not_conformant, details.code=BUILDING_NOT_CONFORMANT,
+ *    units_delta, quota_delta, quota_basis).
+ *
+ * Project chromium (PAS testIgnore — cf. mémoire `phase-c-reactivate-e2e-specs`).
+ * Reside dans `track-h/` qui n'est PAS exclu par `phase-b-fe/`.
+ *
+ * Pattern inspiré de `conformity-banner-display.spec.ts` (H1).
+ */
+import { test, expect } from "@playwright/test";
+import { loginAsAdmin, ensureAcp } from "../../helpers/auth";
+
+const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
+
+test.describe("Track H Story H2 — validate-before-compute", () => {
+  test("@security syndic POST /expenses on non-conformant building → 422 BUILDING_NOT_CONFORMANT", async ({
+    page,
+  }) => {
+    const { adminToken } = await loginAsAdmin(page);
+    const timestamp = Date.now();
+
+    // Seed : org + ACP + building non-conformant (declared 10 units mais 0
+    // unit inséré → quota_delta=1000, units_delta=10, basis=1000).
+    const orgResp = await page.request.post(`${API_BASE}/organizations`, {
+      data: {
+        name: `Track H2 Drift Org ${timestamp}`,
+        slug: `track-h2-drift-${timestamp}`,
+        contact_email: `track-h2-drift-${timestamp}@example.com`,
+        subscription_plan: "professional",
+      },
+      headers: { Authorization: `Bearer ${adminToken}` },
+    });
+    const org = await orgResp.json();
+    const acpId = await ensureAcp(page, org.id, adminToken, "track-h2-drift");
+
+    // Acteur réel du bypass : un syndic scopé à cette org (adminToken n'a pas
+    // d'organization_id dans ses claims JWT -> require_organization() rejette
+    // avec 401 avant même d'atteindre le gate 422 testé ici).
+    const syndicRegResp = await page.request.post(`${API_BASE}/auth/register`, {
+      data: {
+        email: `track-h2-drift-syndic-${timestamp}@example.com`,
+        password: "test123456",
+        first_name: "Syndic",
+        last_name: `Drift${timestamp}`,
+        role: "syndic",
+        organization_id: org.id,
+      },
+    });
+    const syndicToken = (await syndicRegResp.json()).token;
+
+    const buildingResp = await page.request.post(`${API_BASE}/buildings`, {
+      data: {
+        name: `Drift Manor ${timestamp}`,
+        address: `${timestamp} Rue Drift`,
+        city: "Brussels",
+        postal_code: "1000",
+        country: "Belgium",
+        total_units: 10,
+        total_tantiemes: 1000,
+        construction_year: 2010,
+        acp_id: acpId,
+      },
+      headers: { Authorization: `Bearer ${adminToken}` },
+    });
+    expect(buildingResp.ok()).toBeTruthy();
+    const building = await buildingResp.json();
+
+    // Acteur syndic force le POST direct API — bypass tenté.
+    const expenseResp = await page.request.post(`${API_BASE}/expenses`, {
+      data: {
+        organization_id: org.id,
+        building_id: building.id,
+        // PascalCase : doit matcher l'enum ExpenseCategory (sinon 400 deser
+        // AVANT le gate — c'était la cause du 400-vs-422, Story H7).
+        category: "Maintenance",
+        description: "Forced bypass attempt",
+        amount: 1000,
+        expense_date: new Date().toISOString(),
+        supplier: "Bypass SA",
+        invoice_number: "BYP-001",
+      },
+      headers: { Authorization: `Bearer ${syndicToken}` },
+    });
+
+    // BE 422 (pre-check validate-before-compute ACP-level, Story H7).
+    expect(expenseResp.status()).toBe(422);
+    const body = await expenseResp.json();
+    expect(body.kind).toBe("acp_not_conformant");
+    expect(body.details).toBeDefined();
+    expect(body.details.code).toBe("ACP_NOT_CONFORMANT");
+    expect(body.details.acp_id).toBe(acpId);
+    // ACP mono-bloc : 10 lots déclarés, 0 insérés → units_delta=10.
+    expect(body.details.units_delta).toBe(10);
+    // quota_basis=1000 (acte de base ACP), quota_delta="1000" (manque tout).
+    expect(body.details.quota_basis).toBe(1000);
+    expect(body.details.quota_delta).toBe("1000");
+  });
+
+  test("@security syndic POST /call-for-funds on non-conformant building → 422", async ({
+    page,
+  }) => {
+    const { adminToken } = await loginAsAdmin(page);
+    const timestamp = Date.now();
+
+    const orgResp = await page.request.post(`${API_BASE}/organizations`, {
+      data: {
+        name: `Track H2 CFF Org ${timestamp}`,
+        slug: `track-h2-cff-${timestamp}`,
+        contact_email: `track-h2-cff-${timestamp}@example.com`,
+        subscription_plan: "professional",
+      },
+      headers: { Authorization: `Bearer ${adminToken}` },
+    });
+    const org = await orgResp.json();
+    const acpId = await ensureAcp(page, org.id, adminToken, "track-h2-cff");
+
+    // Acteur réel du bypass : un syndic scopé à cette org (cf. note test
+    // précédent — adminToken n'a pas d'organization_id, 401 avant le 422).
+    const syndicRegResp = await page.request.post(`${API_BASE}/auth/register`, {
+      data: {
+        email: `track-h2-cff-syndic-${timestamp}@example.com`,
+        password: "test123456",
+        first_name: "Syndic",
+        last_name: `Cff${timestamp}`,
+        role: "syndic",
+        organization_id: org.id,
+      },
+    });
+    const syndicToken = (await syndicRegResp.json()).token;
+
+    const buildingResp = await page.request.post(`${API_BASE}/buildings`, {
+      data: {
+        name: `Drift CFF ${timestamp}`,
+        address: `${timestamp} Av Drift`,
+        city: "Brussels",
+        postal_code: "1000",
+        country: "Belgium",
+        total_units: 5,
+        total_tantiemes: 1000,
+        construction_year: 2015,
+        acp_id: acpId,
+      },
+      headers: { Authorization: `Bearer ${adminToken}` },
+    });
+    const building = await buildingResp.json();
+
+    const cffResp = await page.request.post(`${API_BASE}/call-for-funds`, {
+      data: {
+        building_id: building.id,
+        title: "Bypass call",
+        description: "Forced",
+        total_amount: 5000,
+        contribution_type: "regular",
+        call_date: new Date().toISOString(),
+        due_date: new Date(Date.now() + 30 * 86400 * 1000).toISOString(),
+      },
+      headers: { Authorization: `Bearer ${syndicToken}` },
+    });
+
+    expect(cffResp.status()).toBe(422);
+    const body = await cffResp.json();
+    expect(body.kind).toBe("acp_not_conformant");
+    expect(body.details.code).toBe("ACP_NOT_CONFORMANT");
+    expect(body.details.acp_id).toBe(acpId);
+  });
+});

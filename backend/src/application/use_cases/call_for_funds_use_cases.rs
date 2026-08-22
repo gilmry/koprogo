@@ -1,5 +1,6 @@
 use crate::application::ports::{
-    CallForFundsRepository, OwnerContributionRepository, UnitOwnerRepository,
+    AcpRepository, BuildingRepository, CallForFundsRepository, OwnerContributionRepository,
+    UnitOwnerRepository,
 };
 use crate::domain::entities::{CallForFunds, ContributionType, OwnerContribution};
 use chrono::{DateTime, Utc};
@@ -10,6 +11,11 @@ pub struct CallForFundsUseCases {
     call_for_funds_repository: Arc<dyn CallForFundsRepository>,
     owner_contribution_repository: Arc<dyn OwnerContributionRepository>,
     unit_owner_repository: Arc<dyn UnitOwnerRepository>,
+    /// Track H Story H7 — validate-before-compute ACP-level (FR-CL1). Optional.
+    /// Quand présents (wiring `main.rs`), le pre-check `Acp::assert_conformant?`
+    /// s'exécute avant `create_call_for_funds` / `send_call_for_funds`.
+    building_repository: Option<Arc<dyn BuildingRepository>>,
+    acp_repository: Option<Arc<dyn AcpRepository>>,
 }
 
 impl CallForFundsUseCases {
@@ -22,7 +28,47 @@ impl CallForFundsUseCases {
             call_for_funds_repository,
             owner_contribution_repository,
             unit_owner_repository,
+            building_repository: None,
+            acp_repository: None,
         }
+    }
+
+    /// Track H Story H7 — wiring complet (validate-before-compute ACP-level).
+    pub fn with_full_wiring(
+        call_for_funds_repository: Arc<dyn CallForFundsRepository>,
+        owner_contribution_repository: Arc<dyn OwnerContributionRepository>,
+        unit_owner_repository: Arc<dyn UnitOwnerRepository>,
+        building_repository: Arc<dyn BuildingRepository>,
+        acp_repository: Arc<dyn AcpRepository>,
+    ) -> Self {
+        Self {
+            call_for_funds_repository,
+            owner_contribution_repository,
+            unit_owner_repository,
+            building_repository: Some(building_repository),
+            acp_repository: Some(acp_repository),
+        }
+    }
+
+    /// Track H Story H7 — pre-check conformité copropriété (ACP). Résout
+    /// `building.acp_id` puis agrège les métriques de tous les blocs.
+    async fn assert_acp_conformant(&self, building_id: Uuid) -> Result<(), String> {
+        let (Some(building_repo), Some(acp_repo)) =
+            (&self.building_repository, &self.acp_repository)
+        else {
+            return Ok(());
+        };
+        let building = building_repo
+            .find_by_id(building_id)
+            .await?
+            .ok_or_else(|| "Building not found".to_string())?;
+        let (acp, metrics) = acp_repo
+            .find_by_id_with_metrics(building.acp_id)
+            .await
+            .map_err(|e| e.to_string())?
+            .ok_or_else(|| "ACP not found".to_string())?;
+        acp.assert_conformant(&metrics)?; // bridge String livré par H5
+        Ok(())
     }
 
     /// Create a new call for funds
@@ -40,6 +86,9 @@ impl CallForFundsUseCases {
         account_code: Option<String>,
         created_by: Option<Uuid>,
     ) -> Result<CallForFunds, String> {
+        // Track H Story H2 — validate-before-compute gate (Art. 3.85 CC).
+        self.assert_acp_conformant(building_id).await?;
+
         // Create the call for funds entity
         let mut call_for_funds = CallForFunds::new(
             organization_id,
@@ -90,6 +139,11 @@ impl CallForFundsUseCases {
             .find_by_id(id)
             .await?
             .ok_or_else(|| "Call for funds not found".to_string())?;
+
+        // Track H Story H2 — validate-before-compute gate (Art. 3.85 CC).
+        // Le send génère les contributions — calcul interdit sur immeuble drift.
+        self.assert_acp_conformant(call_for_funds.building_id)
+            .await?;
 
         // Mark as sent
         call_for_funds.mark_as_sent();
@@ -427,6 +481,13 @@ mod tests {
             _building_id: Uuid,
         ) -> Result<Vec<(Uuid, Uuid, rust_decimal::Decimal)>, String> {
             Ok(self.active_by_building.lock().unwrap().clone())
+        }
+
+        async fn find_voting_holders_by_unit(
+            &self,
+            _unit_id: Uuid,
+        ) -> Result<Vec<crate::domain::entities::LotHolder>, String> {
+            Ok(vec![])
         }
     }
 

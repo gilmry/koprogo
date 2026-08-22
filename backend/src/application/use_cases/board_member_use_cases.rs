@@ -1,7 +1,7 @@
 use crate::application::dto::{
     BoardMemberResponseDto, BoardStatsDto, CreateBoardMemberDto, RenewMandateDto,
 };
-use crate::application::ports::{BoardMemberRepository, BuildingRepository};
+use crate::application::ports::{AcpRepository, BoardMemberRepository, BuildingRepository};
 use crate::domain::entities::{BoardMember, BoardPosition};
 use chrono::{DateTime, Utc};
 use serde::Serialize;
@@ -25,16 +25,19 @@ pub struct ActiveMandateWithBuilding {
 pub struct BoardMemberUseCases {
     repository: Arc<dyn BoardMemberRepository>,
     building_repository: Arc<dyn BuildingRepository>,
+    acp_repository: Arc<dyn AcpRepository>,
 }
 
 impl BoardMemberUseCases {
     pub fn new(
         repository: Arc<dyn BoardMemberRepository>,
         building_repository: Arc<dyn BuildingRepository>,
+        acp_repository: Arc<dyn AcpRepository>,
     ) -> Self {
         Self {
             repository,
             building_repository,
+            acp_repository,
         }
     }
 
@@ -198,8 +201,14 @@ impl BoardMemberUseCases {
                 Some(b) => b,
                 None => continue,
             };
-            if building.organization_id != organization_id {
-                continue;
+            // Hotfix #603 — filtre org via ACP→organization resolution.
+            let acp = match self.acp_repository.find_by_id(building.acp_id).await {
+                Ok(Some(acp)) => acp,
+                _ => continue,
+            };
+            match acp.organization_id {
+                Some(org) if org == organization_id => {}
+                _ => continue,
             }
             let days_remaining = (member.mandate_end - now).num_days();
             result.push(ActiveMandateWithBuilding {
@@ -293,6 +302,26 @@ mod tests {
             ) -> Result<(Vec<Building>, i64), String>;
             async fn update(&self, building: &Building) -> Result<Building, String>;
             async fn delete(&self, id: Uuid) -> Result<bool, String>;
+            async fn find_by_id_with_metrics(
+                &self,
+                id: Uuid,
+            ) -> Result<Option<(Building, crate::domain::entities::BuildingMetrics)>, String>;
+        }
+    }
+
+    // Mock du AcpRepository (Hotfix #603 — pour BoardMemberUseCases::new)
+    mock! {
+        pub AcpRepo {}
+
+        #[async_trait::async_trait]
+        impl AcpRepository for AcpRepo {
+            async fn create(&self, acp: &crate::domain::entities::Acp) -> Result<crate::domain::entities::Acp, crate::application::error::AppError>;
+            async fn find_by_id(&self, id: Uuid) -> Result<Option<crate::domain::entities::Acp>, crate::application::error::AppError>;
+            async fn find_by_id_with_metrics(&self, id: Uuid) -> Result<Option<(crate::domain::entities::Acp, crate::domain::entities::AcpMetrics)>, crate::application::error::AppError>;
+            async fn list(&self, scope: crate::application::ports::ListScope) -> Result<Vec<crate::domain::entities::Acp>, crate::application::error::AppError>;
+            async fn update(&self, acp: &crate::domain::entities::Acp) -> Result<crate::domain::entities::Acp, crate::application::error::AppError>;
+            async fn archive(&self, id: Uuid) -> Result<(), crate::application::error::AppError>;
+            async fn count_buildings(&self, id: Uuid) -> Result<i64, crate::application::error::AppError>;
         }
     }
 
@@ -331,8 +360,11 @@ mod tests {
             .times(1)
             .returning(|member| Ok(member.clone()));
 
-        let use_cases =
-            BoardMemberUseCases::new(Arc::new(mock_board_repo), Arc::new(mock_building_repo));
+        let use_cases = BoardMemberUseCases::new(
+            Arc::new(mock_board_repo),
+            Arc::new(mock_building_repo),
+            Arc::new(MockAcpRepo::new()),
+        );
 
         let dto = CreateBoardMemberDto {
             owner_id: Uuid::new_v4().to_string(),
@@ -367,8 +399,11 @@ mod tests {
             .times(1)
             .returning(|_| Ok(None)); // Building not found
 
-        let use_cases =
-            BoardMemberUseCases::new(Arc::new(mock_board_repo), Arc::new(mock_building_repo));
+        let use_cases = BoardMemberUseCases::new(
+            Arc::new(mock_board_repo),
+            Arc::new(mock_building_repo),
+            Arc::new(MockAcpRepo::new()),
+        );
 
         let dto = CreateBoardMemberDto {
             owner_id: Uuid::new_v4().to_string(),
@@ -402,8 +437,11 @@ mod tests {
             .times(1)
             .returning(move |_| Ok(Some(create_test_building(15))));
 
-        let use_cases =
-            BoardMemberUseCases::new(Arc::new(mock_board_repo), Arc::new(mock_building_repo));
+        let use_cases = BoardMemberUseCases::new(
+            Arc::new(mock_board_repo),
+            Arc::new(mock_building_repo),
+            Arc::new(MockAcpRepo::new()),
+        );
 
         let dto = CreateBoardMemberDto {
             owner_id: Uuid::new_v4().to_string(),
@@ -477,8 +515,11 @@ mod tests {
             .times(1)
             .return_once(move |_, _| Ok(expiring));
 
-        let use_cases =
-            BoardMemberUseCases::new(Arc::new(mock_board_repo), Arc::new(mock_building_repo));
+        let use_cases = BoardMemberUseCases::new(
+            Arc::new(mock_board_repo),
+            Arc::new(mock_building_repo),
+            Arc::new(MockAcpRepo::new()),
+        );
 
         // Act
         let result = use_cases.get_board_stats(building_id).await;
@@ -526,12 +567,15 @@ mod tests {
             .times(1)
             .returning(|m| Ok(m.clone()));
 
-        let use_cases =
-            BoardMemberUseCases::new(Arc::new(mock_board_repo), Arc::new(mock_building_repo));
+        let use_cases = BoardMemberUseCases::new(
+            Arc::new(mock_board_repo),
+            Arc::new(mock_building_repo),
+            Arc::new(MockAcpRepo::new()),
+        );
 
         let dto = RenewMandateDto {
             new_elected_by_meeting_id: Uuid::new_v4().to_string(),
-            mandate_duration_days: 1095,
+            mandate_duration_days: 365, // ≈ 1 an (Art. 3.90 CC, conseil)
         };
 
         // Act

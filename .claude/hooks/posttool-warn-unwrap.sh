@@ -1,8 +1,11 @@
 #!/usr/bin/env bash
 # PostToolUse hook: warn (not block) when an Edit/Write introduces:
 #   - .unwrap() / .expect( in Rust files (outside tests)
+#   - Result<_, String> return types in Rust files (outside tests)
 #   - : any / as any in TS/Svelte files
 # Helps surface Anti-pattern discipline (#427 TDD/BDD + #425 quality).
+# Cf. #555 (audit 2026-07-31: violation count grew 1263->1321 while this
+# hook only checked unwrap/expect, never Result<_, String> itself).
 #
 # Exit 0 always; just stderr warnings.
 set -u
@@ -31,6 +34,10 @@ case "$file_path" in
     unwrap_count=$(printf '%s' "$new_content" | grep -cE '\.unwrap\(\)|\.expect\(' 2>/dev/null || true)
     if [ "${unwrap_count:-0}" -gt 0 ]; then
       warn "$unwrap_count occurrence(s) of .unwrap() / .expect( introduced. Prefer typed AppError + ? operator. Cf. #425 + #427 (4-cat negative tests)."
+    fi
+    result_string_count=$(printf '%s' "$new_content" | grep -cE 'Result<[^>]*,[[:space:]]*String>' 2>/dev/null || true)
+    if [ "${result_string_count:-0}" -gt 0 ]; then
+      warn "$result_string_count occurrence(s) of Result<_, String> introduced. Use a typed domain error + \`impl From<DomainError> for AppError\` instead. Cf. #555 (CRITICAL.md rule 4)."
     fi
     ;;
   *.ts|*.tsx|*.svelte)

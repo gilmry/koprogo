@@ -65,7 +65,56 @@ export default defineConfig({
         locale: "fr-BE",
         trace: "on",
       },
-      testIgnore: [/scenarios\//, /smoke\//],
+      // Phase C ouverte : `refonte-ux/phase-b-fe/` exclu du gate CI le temps
+      // de stabiliser seeds + multi-rôle login flow (issue GH "Phase C —
+      // Stabilisation Documentation Vivante e2e"). Réactivation au fur et à
+      // mesure par spec stabilisé — 2026-08-06 : C1 role-assignment.spec.ts
+      // ✅ (root cause : `valid_until` jamais persisté en DB par
+      // `user_role_repository_impl.rs`), C5 ticket-complaint.spec.ts ✅ (bug
+      // de test), C6 syndic-response-sla.spec.ts ✅ (débloqué par le fix
+      // casse email de C4), C7 technical-spec-flow.spec.ts ✅ (bug produit
+      // réel : status snake_case du backend comparé en PascalCase côté FE)
+      // et C8 contractor-eval.spec.ts ✅. 2026-08-07 (Story S2,
+      // docs/maury/syndic-org-users-endpoint) : magic-link-issue.spec.ts et
+      // mandate-issue.spec.ts ✅ — débloqués par l'endpoint org-scopé
+      // `GET /organizations/{id}/users` (Story S1, #691), la branche de
+      // création (précédemment vacuously skip faute de sélecteur peuplé)
+      // s'exécute désormais réellement. 2026-08-08 (Story S3) :
+      // role-delegation.spec.ts (C4) ✅ — même endpoint câblé sur
+      // `RoleDelegationsPage.svelte`, dernière exclusion Phase C levée
+      // (#617 clos, 8/8 sub-tasks).
+      testIgnore: [/scenarios\//, /smoke\//, /characterization\//],
+    },
+
+    /**
+     * Characterization suite (Story 0.1) — gel comportement HEAD pré-refonte.
+     *
+     * Ces specs DOIVENT rester VERTES sur toutes les slices ultérieures
+     * de la refonte UX multi-rôle ACP. Tournent sur CHAQUE PR slices 1-5
+     * et bloquent le merge si ROUGE (gate Tx.1).
+     *
+     * Run: npx playwright test --project=characterization
+     * Source: docs/maury/refonte-ux-multi-role-acp/stories.md §2 Story 0.1
+     */
+    {
+      name: "characterization",
+      testDir: "./tests/e2e/characterization",
+      fullyParallel: false,
+      // Single worker pour éviter les conflits (helpers réutilisent admin login,
+      // state DB partagé). Suite caractérisation = ordre déterministe pour gel.
+      workers: 1,
+      // Retry sur HMR/dev server hiccups (ERR_ABORTED). Cible : zero-flake gate Tx.1.
+      retries: 2,
+      use: {
+        ...devices["Desktop Chrome"],
+        viewport: { width: 1280, height: 720 },
+        locale: "fr-BE",
+        trace: "on",
+        video: {
+          mode: "on",
+          size: { width: 1280, height: 720 },
+        },
+      },
     },
 
     /**

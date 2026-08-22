@@ -1,6 +1,7 @@
 use crate::application::dto::{
     AdminDashboardStats, NextMeetingInfo, SeedDataStats, SyndicDashboardStats, UrgentTask,
 };
+use crate::application::error::AppError;
 use crate::application::ports::StatsRepository;
 use crate::infrastructure::pool::DbPool;
 use async_trait::async_trait;
@@ -20,7 +21,7 @@ impl PostgresStatsRepository {
 
 #[async_trait]
 impl StatsRepository for PostgresStatsRepository {
-    async fn get_admin_dashboard_stats(&self) -> Result<AdminDashboardStats, String> {
+    async fn get_admin_dashboard_stats(&self) -> Result<AdminDashboardStats, AppError> {
         let total_organizations =
             sqlx::query_scalar::<_, i64>("SELECT COUNT(*) FROM organizations")
                 .fetch_one(&self.pool)
@@ -76,7 +77,7 @@ impl StatsRepository for PostgresStatsRepository {
         })
     }
 
-    async fn get_seed_data_stats(&self) -> Result<SeedDataStats, String> {
+    async fn get_seed_data_stats(&self) -> Result<SeedDataStats, AppError> {
         let seed_organizations = sqlx::query_scalar::<_, i64>(
             "SELECT COUNT(*) FROM organizations WHERE is_seed_data = true",
         )
@@ -93,7 +94,8 @@ impl StatsRepository for PostgresStatsRepository {
 
         let seed_buildings = sqlx::query_scalar::<_, i64>(
             "SELECT COUNT(*) FROM buildings b
-             INNER JOIN organizations o ON b.organization_id = o.id
+             INNER JOIN acps a ON a.id = b.acp_id
+             INNER JOIN organizations o ON a.organization_id = o.id
              WHERE o.is_seed_data = true",
         )
         .fetch_one(&self.pool)
@@ -103,7 +105,8 @@ impl StatsRepository for PostgresStatsRepository {
         let seed_units = sqlx::query_scalar::<_, i64>(
             "SELECT COUNT(*) FROM units u
              INNER JOIN buildings b ON u.building_id = b.id
-             INNER JOIN organizations o ON b.organization_id = o.id
+             INNER JOIN acps a ON a.id = b.acp_id
+             INNER JOIN organizations o ON a.organization_id = o.id
              WHERE o.is_seed_data = true",
         )
         .fetch_one(&self.pool)
@@ -115,7 +118,8 @@ impl StatsRepository for PostgresStatsRepository {
              INNER JOIN unit_owners uo ON o.id = uo.owner_id
              INNER JOIN units u ON uo.unit_id = u.id
              INNER JOIN buildings b ON u.building_id = b.id
-             INNER JOIN organizations org ON b.organization_id = org.id
+             INNER JOIN acps a ON a.id = b.acp_id
+             INNER JOIN organizations org ON a.organization_id = org.id
              WHERE org.is_seed_data = true",
         )
         .fetch_one(&self.pool)
@@ -126,7 +130,8 @@ impl StatsRepository for PostgresStatsRepository {
             "SELECT COUNT(*) FROM unit_owners uo
              INNER JOIN units u ON uo.unit_id = u.id
              INNER JOIN buildings b ON u.building_id = b.id
-             INNER JOIN organizations o ON b.organization_id = o.id
+             INNER JOIN acps a ON a.id = b.acp_id
+             INNER JOIN organizations o ON a.organization_id = o.id
              WHERE o.is_seed_data = true",
         )
         .fetch_one(&self.pool)
@@ -136,7 +141,8 @@ impl StatsRepository for PostgresStatsRepository {
         let seed_expenses = sqlx::query_scalar::<_, i64>(
             "SELECT COUNT(*) FROM expenses e
              INNER JOIN buildings b ON e.building_id = b.id
-             INNER JOIN organizations o ON b.organization_id = o.id
+             INNER JOIN acps a ON a.id = b.acp_id
+             INNER JOIN organizations o ON a.organization_id = o.id
              WHERE o.is_seed_data = true",
         )
         .fetch_one(&self.pool)
@@ -146,7 +152,8 @@ impl StatsRepository for PostgresStatsRepository {
         let seed_meetings = sqlx::query_scalar::<_, i64>(
             "SELECT COUNT(*) FROM meetings m
              INNER JOIN buildings b ON m.building_id = b.id
-             INNER JOIN organizations o ON b.organization_id = o.id
+             INNER JOIN acps a ON a.id = b.acp_id
+             INNER JOIN organizations o ON a.organization_id = o.id
              WHERE o.is_seed_data = true",
         )
         .fetch_one(&self.pool)
@@ -178,9 +185,9 @@ impl StatsRepository for PostgresStatsRepository {
     async fn get_syndic_stats(
         &self,
         organization_id: Uuid,
-    ) -> Result<SyndicDashboardStats, String> {
+    ) -> Result<SyndicDashboardStats, AppError> {
         let total_buildings = sqlx::query_scalar::<_, i64>(
-            "SELECT COUNT(*) FROM buildings WHERE organization_id = $1",
+            "SELECT COUNT(*) FROM buildings b JOIN acps a ON a.id = b.acp_id WHERE a.organization_id = $1",
         )
         .bind(organization_id)
         .fetch_one(&self.pool)
@@ -190,7 +197,7 @@ impl StatsRepository for PostgresStatsRepository {
         let total_units = sqlx::query_scalar::<_, i64>(
             "SELECT COUNT(*) FROM units u
              INNER JOIN buildings b ON u.building_id = b.id
-             WHERE b.organization_id = $1",
+             WHERE b.acp_id IN (SELECT id FROM acps WHERE organization_id = $1)",
         )
         .bind(organization_id)
         .fetch_one(&self.pool)
@@ -202,7 +209,7 @@ impl StatsRepository for PostgresStatsRepository {
              INNER JOIN unit_owners uo ON o.id = uo.owner_id
              INNER JOIN units u ON uo.unit_id = u.id
              INNER JOIN buildings b ON u.building_id = b.id
-             WHERE b.organization_id = $1 AND uo.end_date IS NULL",
+             WHERE b.acp_id IN (SELECT id FROM acps WHERE organization_id = $1) AND uo.end_date IS NULL",
         )
         .bind(organization_id)
         .fetch_one(&self.pool)
@@ -213,7 +220,7 @@ impl StatsRepository for PostgresStatsRepository {
             "SELECT COUNT(*) as count, COALESCE(SUM(amount)::float8, 0::float8) as total
              FROM expenses e
              INNER JOIN buildings b ON e.building_id = b.id
-             WHERE b.organization_id = $1 AND e.payment_status = 'pending'",
+             WHERE b.acp_id IN (SELECT id FROM acps WHERE organization_id = $1) AND e.payment_status = 'pending'",
         )
         .bind(organization_id)
         .fetch_one(&self.pool)
@@ -226,7 +233,7 @@ impl StatsRepository for PostgresStatsRepository {
             "SELECT m.id, m.scheduled_date, b.name as building_name
              FROM meetings m
              INNER JOIN buildings b ON m.building_id = b.id
-             WHERE b.organization_id = $1 AND m.scheduled_date > NOW() AND m.status = 'scheduled'
+             WHERE b.acp_id IN (SELECT id FROM acps WHERE organization_id = $1) AND m.scheduled_date > NOW() AND m.status = 'scheduled'
              ORDER BY m.scheduled_date ASC
              LIMIT 1",
         )
@@ -249,7 +256,7 @@ impl StatsRepository for PostgresStatsRepository {
         })
     }
 
-    async fn get_owner_stats(&self, owner_id: Uuid) -> Result<SyndicDashboardStats, String> {
+    async fn get_owner_stats(&self, owner_id: Uuid) -> Result<SyndicDashboardStats, AppError> {
         let total_buildings = sqlx::query_scalar::<_, i64>(
             "SELECT COUNT(DISTINCT b.id) FROM buildings b
              INNER JOIN units u ON b.id = u.building_id
@@ -331,7 +338,7 @@ impl StatsRepository for PostgresStatsRepository {
         })
     }
 
-    async fn find_owner_id_by_user_id(&self, user_id: Uuid) -> Result<Option<Uuid>, String> {
+    async fn find_owner_id_by_user_id(&self, user_id: Uuid) -> Result<Option<Uuid>, AppError> {
         let row = sqlx::query("SELECT id FROM owners WHERE user_id = $1")
             .bind(user_id)
             .fetch_optional(&self.pool)
@@ -343,14 +350,14 @@ impl StatsRepository for PostgresStatsRepository {
     async fn get_syndic_urgent_tasks(
         &self,
         organization_id: Uuid,
-    ) -> Result<Vec<UrgentTask>, String> {
+    ) -> Result<Vec<UrgentTask>, AppError> {
         let mut tasks: Vec<UrgentTask> = Vec::new();
 
         let overdue_expenses = sqlx::query(
             "SELECT e.id, e.description, e.amount, b.name as building_name, e.expense_date
              FROM expenses e
              INNER JOIN buildings b ON e.building_id = b.id
-             WHERE b.organization_id = $1
+             WHERE b.acp_id IN (SELECT id FROM acps WHERE organization_id = $1)
              AND e.payment_status = 'overdue'
              ORDER BY e.expense_date ASC
              LIMIT 5",
@@ -361,11 +368,11 @@ impl StatsRepository for PostgresStatsRepository {
         .map_err(|e| e.to_string())?;
 
         for expense in overdue_expenses {
-            let amount: f64 = expense.get("amount");
+            let amount: rust_decimal::Decimal = expense.try_get("amount")?;
             let id: Uuid = expense.get("id");
             tasks.push(UrgentTask {
                 task_type: "expense".to_string(),
-                title: format!("Charge en retard - {:.2}€", amount),
+                title: format!("Charge en retard - {}€", amount.round_dp(2)),
                 description: expense.get("description"),
                 priority: "urgent".to_string(),
                 building_name: Some(expense.get("building_name")),
@@ -378,7 +385,7 @@ impl StatsRepository for PostgresStatsRepository {
             "SELECT m.id, m.title, m.scheduled_date, b.name as building_name
              FROM meetings m
              INNER JOIN buildings b ON m.building_id = b.id
-             WHERE b.organization_id = $1
+             WHERE b.acp_id IN (SELECT id FROM acps WHERE organization_id = $1)
              AND m.status = 'scheduled'
              AND m.scheduled_date BETWEEN NOW() AND NOW() + INTERVAL '7 days'
              ORDER BY m.scheduled_date ASC
@@ -409,7 +416,7 @@ impl StatsRepository for PostgresStatsRepository {
             "SELECT COUNT(*)
              FROM expenses e
              INNER JOIN buildings b ON e.building_id = b.id
-             WHERE b.organization_id = $1
+             WHERE b.acp_id IN (SELECT id FROM acps WHERE organization_id = $1)
              AND e.payment_status = 'pending'
              AND e.expense_date < NOW() - INTERVAL '30 days'",
         )

@@ -67,7 +67,7 @@ const waitForRouteGuard = async (page: Page) => {
 const navigateToOrganizations = async (page: Page) => {
   await page
     .getByRole("navigation")
-    .getByRole("link", { name: "🏛️ Organisations" })
+    .getByRole("link", { name: "Organisations" })
     .click();
   await expect(page).toHaveURL(/\/admin\/organizations$/);
   await waitForRouteGuard(page);
@@ -132,7 +132,7 @@ test.describe("Admin Dashboard - CRUD with Test IDs", () => {
       // Navigate to organizations page
       await page
         .getByRole("navigation")
-        .getByRole("link", { name: "🏛️ Organisations" })
+        .getByRole("link", { name: "Organisations" })
         .click();
       await expect(page).toHaveURL(/\/admin\/organizations$/);
       await waitForRouteGuard(page);
@@ -206,7 +206,7 @@ test.describe("Admin Dashboard - CRUD with Test IDs", () => {
     test("should search organizations", async ({ page }) => {
       await page
         .getByRole("navigation")
-        .getByRole("link", { name: "🏛️ Organisations" })
+        .getByRole("link", { name: "Organisations" })
         .click();
       await waitForRouteGuard(page);
 
@@ -229,7 +229,7 @@ test.describe("Admin Dashboard - CRUD with Test IDs", () => {
       // Navigate to organizations
       await page
         .getByRole("navigation")
-        .getByRole("link", { name: "🏛️ Organisations" })
+        .getByRole("link", { name: "Organisations" })
         .click();
       await waitForRouteGuard(page);
       await page
@@ -278,7 +278,7 @@ test.describe("Admin Dashboard - CRUD with Test IDs", () => {
 
       await page
         .getByRole("navigation")
-        .getByRole("link", { name: "👥 Utilisateurs" })
+        .getByRole("link", { name: "Utilisateurs" })
         .click();
       await expect(page).toHaveURL(/\/admin\/users$/);
       await waitForRouteGuard(page);
@@ -344,7 +344,7 @@ test.describe("Admin Dashboard - CRUD with Test IDs", () => {
     test("should filter users by role using test IDs", async ({ page }) => {
       await page
         .getByRole("navigation")
-        .getByRole("link", { name: "👥 Utilisateurs" })
+        .getByRole("link", { name: "Utilisateurs" })
         .click();
       await waitForRouteGuard(page);
       await page.getByTestId("users-table-body").waitFor({ timeout: 10000 });
@@ -359,7 +359,7 @@ test.describe("Admin Dashboard - CRUD with Test IDs", () => {
     }) => {
       await page
         .getByRole("navigation")
-        .getByRole("link", { name: "👥 Utilisateurs" })
+        .getByRole("link", { name: "Utilisateurs" })
         .click();
       await waitForRouteGuard(page);
       await page.getByTestId("users-table-body").waitFor({ timeout: 10000 });
@@ -515,7 +515,7 @@ test.describe("Admin Dashboard - CRUD with Test IDs", () => {
         // 2. CREATE USER via UI
         await page
           .getByRole("navigation")
-          .getByRole("link", { name: "👥 Utilisateurs" })
+          .getByRole("link", { name: "Utilisateurs" })
           .click();
         await waitForRouteGuard(page);
         await page.getByTestId("users-table-body").waitFor({ timeout: 10000 });

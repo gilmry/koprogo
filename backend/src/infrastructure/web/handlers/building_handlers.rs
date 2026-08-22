@@ -1,11 +1,22 @@
 use crate::application::dto::{CreateBuildingDto, PageRequest, PageResponse, UpdateBuildingDto};
 use crate::infrastructure::audit::{AuditEventType, AuditLogEntry};
+use crate::infrastructure::web::middleware::scope_guard::verify_acp_org_access;
 use crate::infrastructure::web::{AppState, AuthenticatedUser};
-use actix_web::{delete, get, post, put, web, HttpResponse, Responder};
+use actix_web::{delete, get, post, put, web, HttpResponse, Responder, ResponseError};
 use chrono::{DateTime, Datelike, Utc};
 use serde::Deserialize;
 use uuid::Uuid;
 use validator::Validate;
+
+/// Recherche libre optionnelle (ILIKE name/city/address) sur GET /buildings —
+/// évite au frontend (BuildingSelector) de devoir fetch les 100 premiers
+/// buildings et filtrer en mémoire, ce qui ratait les buildings récents une
+/// fois >100 buildings créés globalement (constaté en E2E CI, superadmin
+/// scope = toutes les orgs).
+#[derive(Deserialize)]
+pub struct BuildingSearchQuery {
+    pub search: Option<String>,
+}
 
 #[utoipa::path(
     post,
@@ -25,7 +36,7 @@ use validator::Validate;
 pub async fn create_building(
     state: web::Data<AppState>,
     user: AuthenticatedUser, // JWT-extracted user info (SECURE!)
-    mut dto: web::Json<CreateBuildingDto>,
+    dto: web::Json<CreateBuildingDto>,
 ) -> impl Responder {
     // Only SuperAdmin can create buildings (structural data)
     if user.role != "superadmin" {
@@ -34,39 +45,26 @@ pub async fn create_building(
         }));
     }
 
-    // SuperAdmin can create buildings for any organization
-    // Regular users can only create for their own organization
-    let organization_id: Uuid;
-
-    if user.role == "superadmin" {
-        // SuperAdmin: organization_id must be provided in DTO
-        if dto.organization_id.is_empty() {
-            return HttpResponse::BadRequest().json(serde_json::json!({
-                "error": "SuperAdmin must specify organization_id"
-            }));
-        }
-        // Parse the organization_id from DTO
-        organization_id = match Uuid::parse_str(&dto.organization_id) {
+    // Story 1.2 — Building::acp_id (FK vers acps.id, ex-organization_id).
+    // SuperAdmin must specify the target ACP id in the DTO.
+    let acp_id: Uuid = if dto.acp_id.is_empty() {
+        return HttpResponse::BadRequest().json(serde_json::json!({
+            "error": "SuperAdmin must specify acp_id"
+        }));
+    } else {
+        match Uuid::parse_str(&dto.acp_id) {
             Ok(id) => id,
             Err(_) => {
                 return HttpResponse::BadRequest().json(serde_json::json!({
-                    "error": "Invalid organization_id format"
+                    "error": "Invalid acp_id format"
                 }));
             }
-        };
-    } else {
-        // Regular user: override organization_id from JWT token
-        // This prevents users from creating buildings in other organizations
-        organization_id = match user.require_organization() {
-            Ok(org_id) => org_id,
-            Err(e) => {
-                return HttpResponse::Unauthorized().json(serde_json::json!({
-                    "error": e.to_string()
-                }))
-            }
-        };
-        dto.organization_id = organization_id.to_string();
-    }
+        }
+    };
+    // The audit log still records the user's home organization for traceability ;
+    // the building's organization is now derived via its parent ACP.
+    let organization_id: Option<Uuid> = user.organization_id;
+    let _ = acp_id; // used implicitly via dto.acp_id forwarded to use_case
 
     if let Err(errors) = dto.validate() {
         return HttpResponse::BadRequest().json(serde_json::json!({
@@ -85,7 +83,7 @@ pub async fn create_building(
             AuditLogEntry::new(
                 AuditEventType::BuildingCreated,
                 Some(user.user_id),
-                Some(organization_id),
+                organization_id,
             )
             .with_resource("Building", Uuid::parse_str(&building.id).unwrap())
             .log();
@@ -97,7 +95,7 @@ pub async fn create_building(
             AuditLogEntry::new(
                 AuditEventType::BuildingCreated,
                 Some(user.user_id),
-                Some(organization_id),
+                organization_id,
             )
             .with_error(err.clone())
             .log();
@@ -126,12 +124,14 @@ pub async fn list_buildings(
     state: web::Data<AppState>,
     user: AuthenticatedUser,
     page_request: web::Query<PageRequest>,
+    search_query: web::Query<BuildingSearchQuery>,
 ) -> impl Responder {
-    // Extract organization_id from authenticated user (secure!)
-    let organization_id = user.organization_id;
+    // Story 1.3 — role-based scope derivation (ADR-0010 §3.3) :
+    // - superadmin / admin without org : ListScope::All  -> no FK filter
+    // - admin / syndic / accountant : ListScope::Organization -> filter by org
+    // - owner : ListScope::Owner -> filter via unit_owners (BUG-WF14-2)
+    let organization_id = user.effective_org_filter();
 
-    // BUG-WF14-2: Pour les Owners, filtrer par les immeubles où ils possèdent un lot
-    // via la table unit_owners → units → buildings
     let owner_user_id = if user.role == "owner" {
         Some(user.user_id)
     } else {
@@ -140,7 +140,12 @@ pub async fn list_buildings(
 
     match state
         .building_use_cases
-        .list_buildings_paginated_for_user(&page_request, organization_id, owner_user_id)
+        .list_buildings_paginated_for_user(
+            &page_request,
+            organization_id,
+            owner_user_id,
+            search_query.search.clone(),
+        )
         .await
     {
         Ok((buildings, total)) => {
@@ -175,22 +180,32 @@ pub async fn get_building(
     user: AuthenticatedUser,
     id: web::Path<Uuid>,
 ) -> impl Responder {
-    match state.building_use_cases.get_building(*id).await {
+    // Story 1.4 — use `get_building_with_metrics` so units_count, quota_sum,
+    // is_conformant and quota_delta are exposed (#553 Bugs 1/3/4 + FR11/FR12/FR23).
+    match state
+        .building_use_cases
+        .get_building_with_metrics(*id)
+        .await
+    {
         Ok(Some(building)) => {
-            // Multi-tenant isolation: verify building belongs to user's organization
-            if let Ok(building_org) = Uuid::parse_str(&building.organization_id) {
-                if let Err(e) = user.verify_org_access(building_org) {
-                    return HttpResponse::Forbidden().json(serde_json::json!({ "error": e }));
+            // Hotfix #603 — multi-tenant isolation via ACP→organization resolution.
+            let acp_id = match Uuid::parse_str(&building.acp_id) {
+                Ok(id) => id,
+                Err(_) => {
+                    return HttpResponse::InternalServerError().json(serde_json::json!({
+                        "error": "Invalid building.acp_id format"
+                    }));
                 }
+            };
+            if let Err(err) = verify_acp_org_access(&user, acp_id, &state.acp_use_cases).await {
+                return err.error_response();
             }
             HttpResponse::Ok().json(building)
         }
         Ok(None) => HttpResponse::NotFound().json(serde_json::json!({
             "error": "Building not found"
         })),
-        Err(err) => HttpResponse::InternalServerError().json(serde_json::json!({
-            "error": err
-        })),
+        Err(err) => err.error_response(),
     }
 }
 
@@ -233,52 +248,20 @@ pub async fn update_building(
         }));
     }
 
-    // Only SuperAdmin can change organization_id
-    if dto.organization_id.is_some() && user.role != "superadmin" {
+    // Story 1.2 — Only SuperAdmin can re-affect the parent ACP.
+    if dto.acp_id.is_some() && user.role != "superadmin" {
         return HttpResponse::Forbidden().json(serde_json::json!({
-            "error": "Only SuperAdmins can change building organization"
+            "error": "Only SuperAdmins can change building ACP"
         }));
     }
 
-    // For non-SuperAdmins, verify they own the building
+    // Hotfix #603 — defensive duplicate guard (branch unreachable as
+    // superadmin-only guard above already returns 403, but kept in case
+    // the upstream guard is relaxed in the future).
     if user.role != "superadmin" {
-        match state.building_use_cases.get_building(*id).await {
-            Ok(Some(building)) => {
-                let building_org_id = match Uuid::parse_str(&building.organization_id) {
-                    Ok(id) => id,
-                    Err(_) => {
-                        return HttpResponse::InternalServerError().json(serde_json::json!({
-                            "error": "Invalid building organization_id"
-                        }));
-                    }
-                };
-
-                let user_org_id = match user.require_organization() {
-                    Ok(id) => id,
-                    Err(e) => {
-                        return HttpResponse::Unauthorized().json(serde_json::json!({
-                            "error": e.to_string()
-                        }));
-                    }
-                };
-
-                if building_org_id != user_org_id {
-                    return HttpResponse::Forbidden().json(serde_json::json!({
-                        "error": "You can only update buildings in your own organization"
-                    }));
-                }
-            }
-            Ok(None) => {
-                return HttpResponse::NotFound().json(serde_json::json!({
-                    "error": "Building not found"
-                }));
-            }
-            Err(err) => {
-                return HttpResponse::InternalServerError().json(serde_json::json!({
-                    "error": err
-                }));
-            }
-        }
+        return HttpResponse::Forbidden().json(serde_json::json!({
+            "error": "Only SuperAdmin can update buildings (structural data)"
+        }));
     }
 
     match state
@@ -485,8 +468,10 @@ pub async fn export_annual_report_pdf(
     // Reserve fund (default to 0.0 if not provided)
     let reserve_fund = query.reserve_fund.unwrap_or(rust_decimal::Decimal::ZERO);
 
-    // Convert DTOs to domain entities
-    let building_org_id = Uuid::parse_str(&building_dto.organization_id).unwrap_or(organization_id);
+    // Convert DTOs to domain entities — Story 1.2 : the DTO field is now
+    // `acp_id` (the building's parent ACP). The legacy variable name
+    // `organization_id` is preserved upstream for audit/scope use only.
+    let building_acp_id = Uuid::parse_str(&building_dto.acp_id).unwrap_or_else(|_| Uuid::new_v4());
 
     let building_created_at = DateTime::parse_from_rfc3339(&building_dto.created_at)
         .map(|dt| dt.with_timezone(&Utc))
@@ -513,7 +498,7 @@ pub async fn export_annual_report_pdf(
         syndic_office_hours: None,
         syndic_emergency_contact: None,
         slug: None,
-        organization_id: building_org_id,
+        acp_id: building_acp_id,
         created_at: building_created_at,
         updated_at: building_updated_at,
     };

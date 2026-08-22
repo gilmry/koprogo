@@ -37,6 +37,7 @@ Accédez à http://localhost:8082
 ### 4. Générer des clients API
 
 **TypeScript/JavaScript** :
+
 ```bash
 npm install @openapitools/openapi-generator-cli -g
 openapi-generator-cli generate \
@@ -46,6 +47,7 @@ openapi-generator-cli generate \
 ```
 
 **Python** :
+
 ```bash
 openapi-generator-cli generate \
   -i docs/api/openapi.yaml \
@@ -54,6 +56,7 @@ openapi-generator-cli generate \
 ```
 
 **Rust** :
+
 ```bash
 openapi-generator-cli generate \
   -i docs/api/openapi.yaml \
@@ -67,11 +70,13 @@ Liste complète : https://openapi-generator.tech/docs/generators
 ### 5. Importer dans Postman/Insomnia
 
 **Postman** :
+
 1. Fichier → Import
 2. Sélectionner `openapi.yaml`
 3. Toutes les requêtes sont créées automatiquement
 
 **Insomnia** :
+
 1. Application → Preferences → Data → Import Data
 2. Sélectionner `openapi.yaml`
 
@@ -115,17 +120,20 @@ curl -X POST https://api.koprogo.com/api/v1/auth/login \
 ### Endpoints clés
 
 #### Bâtiments
+
 - `GET /buildings` - Liste des immeubles
 - `POST /buildings` - Créer un immeuble
 - `GET /buildings/{id}` - Détails d'un immeuble
 
 #### Multi-propriétaires
+
 - `GET /units/{unit_id}/owners` - Copropriétaires actifs d'un lot
 - `POST /units/{unit_id}/owners` - Ajouter un copropriétaire
 - `GET /units/{unit_id}/owners/total-percentage` - Vérifier somme quotes-parts
 - `POST /units/{unit_id}/owners/transfer` - Transférer propriété
 
 #### Workflow dépenses
+
 - `POST /expenses` - Créer dépense (Draft)
 - `PUT /expenses/{id}/submit-for-approval` - Soumettre (Draft → PendingApproval)
 - `PUT /expenses/{id}/approve` - Approuver (PendingApproval → Approved)
@@ -133,6 +141,7 @@ curl -X POST https://api.koprogo.com/api/v1/auth/login \
 - `PUT /expenses/{id}/mark-paid` - Marquer comme payée
 
 #### Comptabilité PCMN
+
 - `GET /accounts` - Liste comptes PCMN
 - `GET /accounts/code/{code}` - Recherche par code (ex: 451000)
 - `POST /accounts/seed/belgian-pcmn` - Seed 90 comptes PCMN
@@ -140,11 +149,13 @@ curl -X POST https://api.koprogo.com/api/v1/auth/login \
 - `GET /reports/income-statement?year=2025&quarter=4` - Compte de résultats
 
 #### Relances de paiement
+
 - `POST /payment-reminders` - Créer relance
 - `PUT /payment-reminders/{id}/escalate` - Escalader niveau
 - `GET /payment-reminders/stats` - Statistiques recouvrement
 
 #### GDPR
+
 - `GET /gdpr/owners/{id}/data-export` - Export données (Art. 15)
 - `GET /gdpr/owners/{id}/portable-data` - Données portables (Art. 20)
 - `DELETE /gdpr/owners/{id}/delete-data` - Droit à l'effacement (Art. 17)
@@ -253,6 +264,7 @@ Lors de l'ajout de nouveaux endpoints :
 ### Versionning
 
 La spec suit le versionnement sémantique :
+
 - **Major** : Breaking changes (ex: 2.0.0)
 - **Minor** : Nouveaux endpoints (ex: 1.1.0)
 - **Patch** : Corrections (ex: 1.0.1)
@@ -260,6 +272,7 @@ La spec suit le versionnement sémantique :
 ## 🌐 Déploiement public
 
 La spec OpenAPI sera disponible publiquement à :
+
 - **Swagger UI** : https://api.koprogo.com/docs
 - **ReDoc** : https://api.koprogo.com/redoc
 - **Spec JSON** : https://api.koprogo.com/openapi.json
@@ -284,4 +297,4 @@ Pour améliorer la spec OpenAPI :
 
 ---
 
-**Version** : 1.0.0 | **Dernière mise à jour** : 10 novembre 2025
+**Version** : 1.0.0 | **Dernière mise à jour** : 2026-05-20

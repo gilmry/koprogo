@@ -4,7 +4,7 @@ Issue #48: feat: Implement strong authentication for voting (itsme, eID)
 
 :State: **OPEN**
 :Milestone: Jalon 4: Automation & Intégrations 📅
-:Labels: phase:k8s,track:software priority:low,proptech:blockchain release:v0.7.0
+:Labels: phase:k8s,track:software priority:low,proptech:blockchain release:v0.7.0
 :Assignees: Unassigned
 :Created: 2025-10-27
 :Updated: 2026-03-15

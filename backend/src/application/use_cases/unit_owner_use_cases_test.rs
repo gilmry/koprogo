@@ -117,6 +117,13 @@ impl UnitOwnerRepository for MockUnitOwnerRepository {
     ) -> Result<Vec<(Uuid, Uuid, Decimal)>, String> {
         Ok(vec![])
     }
+
+    async fn find_voting_holders_by_unit(
+        &self,
+        _unit_id: Uuid,
+    ) -> Result<Vec<crate::domain::entities::LotHolder>, String> {
+        Ok(vec![])
+    }
 }
 
 // Mock UnitRepository

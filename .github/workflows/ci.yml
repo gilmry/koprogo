@@ -36,7 +36,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Setup Rust toolchain
         uses: dtolnay/rust-toolchain@stable
@@ -44,19 +44,19 @@ jobs:
           components: rustfmt, clippy
 
       - name: Cache cargo registry
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: ~/.cargo/registry
           key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Cache cargo index
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: ~/.cargo/git
           key: ${{ runner.os }}-cargo-index-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Cache cargo build
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: backend/target
           key: ${{ runner.os }}-cargo-build-target-${{ hashFiles('**/Cargo.lock') }}
@@ -76,25 +76,25 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Setup Rust toolchain
         uses: dtolnay/rust-toolchain@stable
 
       - name: Cache cargo registry
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: ~/.cargo/registry
           key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Cache cargo index
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: ~/.cargo/git
           key: ${{ runner.os }}-cargo-index-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Cache cargo build
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: backend/target
           key: ${{ runner.os }}-cargo-build-target-${{ hashFiles('**/Cargo.lock') }}
@@ -124,7 +124,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Setup Rust toolchain
         uses: dtolnay/rust-toolchain@stable
@@ -133,19 +133,19 @@ jobs:
         run: cargo install sqlx-cli --no-default-features --features postgres
 
       - name: Cache cargo registry
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: ~/.cargo/registry
           key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Cache cargo index
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: ~/.cargo/git
           key: ${{ runner.os }}-cargo-index-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Cache cargo build
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: backend/target
           key: ${{ runner.os }}-cargo-build-target-${{ hashFiles('**/Cargo.lock') }}
@@ -162,7 +162,10 @@ jobs:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/koprogo_test
         run: |
           cd backend
-          cargo test --test bdd --test bdd_governance --test bdd_financial --test bdd_operations --test bdd_community
+          # --no-fail-fast: run ALL bdd*.rs binaries even if some panic, so the
+          # full BDD picture surfaces in one CI run instead of one binary at a
+          # time. Aligns with #524 (aggregate failures).
+          cargo test --no-fail-fast --test bdd --test bdd_governance --test bdd_financial --test bdd_operations --test bdd_community
 
   test-e2e:
     name: E2E Tests
@@ -184,7 +187,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Setup Rust toolchain
         uses: dtolnay/rust-toolchain@stable
@@ -193,19 +196,19 @@ jobs:
         run: cargo install sqlx-cli --no-default-features --features postgres
 
       - name: Cache cargo registry
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: ~/.cargo/registry
           key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Cache cargo index
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: ~/.cargo/git
           key: ${{ runner.os }}-cargo-index-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Cache cargo build
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: backend/target
           key: ${{ runner.os }}-cargo-build-target-${{ hashFiles('**/Cargo.lock') }}
@@ -230,12 +233,12 @@ jobs:
     if: github.event_name == 'pull_request'
     steps:
       - name: Checkout PR branch
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           path: pr
 
       - name: Checkout base branch
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           ref: ${{ github.base_ref }}
           path: base
@@ -253,12 +256,19 @@ jobs:
           PR_SPEC="pr/docs/api/openapi.json"
           [ -f "$BASE_SPEC" ] || BASE_SPEC="base/docs/api/openapi.yaml"
           [ -f "$PR_SPEC" ] || PR_SPEC="pr/docs/api/openapi.yaml"
+          # Intentional, documented contract changes (v0.1.0 pre-release, no
+          # live clients) are declared in .github/oasdiff-err-ignore.txt.
+          # Any OTHER breaking change still hard-fails (--fail-on ERR).
+          IGNORE_OPT=""
+          [ -f "pr/.github/oasdiff-err-ignore.txt" ] \
+            && IGNORE_OPT="--err-ignore pr/.github/oasdiff-err-ignore.txt"
           oasdiff breaking "$BASE_SPEC" "$PR_SPEC" \
             --fail-on ERR \
+            $IGNORE_OPT \
             --format text || {
             echo ""
-            echo "❌ Breaking API changes detected!"
-            echo "   If intentional, document the migration in the PR description."
+            echo "❌ Breaking API changes detected (non déclarés dans oasdiff-err-ignore.txt) !"
+            echo "   If intentional, add a narrow rule to .github/oasdiff-err-ignore.txt + document in the PR."
             echo "   See: https://www.oasdiff.com/breaking-changes"
             exit 1
           }
@@ -278,33 +288,33 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Setup Rust toolchain
         uses: dtolnay/rust-toolchain@stable
 
       - name: Cache cargo registry
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: ~/.cargo/registry
           key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Cache cargo index
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: ~/.cargo/git
           key: ${{ runner.os }}-cargo-index-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Cache cargo build
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: backend/target
           key: ${{ runner.os }}-cargo-build-target-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Setup Node.js
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v7
         with:
-          node-version: '22'
+          node-version: "22"
 
       - name: Install frontend dependencies
         run: |
@@ -401,12 +411,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Setup Node.js
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v7
         with:
-          node-version: '22'
+          node-version: "22"
 
       - name: Install frontend dependencies
         run: |
@@ -423,12 +433,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Setup Node.js
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v7
         with:
-          node-version: '22'
+          node-version: "22"
 
       - name: Install dependencies
         run: |
@@ -466,12 +476,12 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Setup Node.js
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v7
         with:
-          node-version: '22'
+          node-version: "22"
 
       - name: Install frontend dependencies
         run: |
@@ -487,7 +497,7 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
 
       - name: Cache cargo build
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: backend/target
           key: ${{ runner.os }}-cargo-build-target-${{ hashFiles('**/Cargo.lock') }}
@@ -505,6 +515,11 @@ jobs:
           LOGIN_RATE_LIMIT_MAX: 1000
           SMTP_ENABLED: false
           RUST_LOG: warn
+          # WP-FE1 : ce job lance le backend en HTTP direct (cargo run, pas
+          # docker-compose). Le défaut sûr COOKIE_SECURE=true poserait le
+          # cookie refresh `Secure`, rejeté par le navigateur sur http://
+          # → silent-refresh 401 → toute la suite auth E2E échoue.
+          COOKIE_SECURE: "false"
         run: |
           cd backend
           cargo install sqlx-cli --no-default-features --features postgres
@@ -568,12 +583,19 @@ jobs:
             -H 'Content-Type: application/json' || echo "Seed already exists or failed"
 
       - name: Run Documentation Vivante scenarios (video generation)
+        # Phase C ouverte (issue #617) : les .scenario.ts (admin-setup,
+        # budget-workflow, etc.) cassent sur seeds + auth multi-rôle au
+        # même titre que les .spec.ts Phase B FE déjà exclus via testIgnore.
+        # Décision @gilmry 2026-06-15 : restaurer `continue-on-error: true`
+        # le temps de stabiliser dans Phase C. À retirer quand toutes les
+        # sub-tasks C-Scen sont DONE et 0 flake sur 3 runs successifs.
+        continue-on-error: true
         env:
           PLAYWRIGHT_BASE_URL: http://localhost:3000
           PLAYWRIGHT_API_BASE: http://localhost:8080/api/v1
         run: |
           cd frontend
-          npx playwright test --project=scenarios || echo "Some scenarios failed (non-blocking for CI)"
+          npx playwright test --project=scenarios
 
       - name: Cleanup scenario world
         if: always()
@@ -596,28 +618,37 @@ jobs:
   build:
     name: Build
     runs-on: ubuntu-latest
-    needs: [lint, test-unit, test-bdd, test-e2e, frontend-check, contract-types, vitest]
+    needs:
+      [
+        lint,
+        test-unit,
+        test-bdd,
+        test-e2e,
+        frontend-check,
+        contract-types,
+        vitest,
+      ]
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Setup Rust toolchain
         uses: dtolnay/rust-toolchain@stable
 
       - name: Cache cargo registry
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: ~/.cargo/registry
           key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Cache cargo index
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: ~/.cargo/git
           key: ${{ runner.os }}-cargo-index-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Cache cargo build
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: backend/target
           key: ${{ runner.os }}-cargo-build-target-${{ hashFiles('**/Cargo.lock') }}

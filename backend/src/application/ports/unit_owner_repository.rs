@@ -1,4 +1,4 @@
-use crate::domain::entities::UnitOwner;
+use crate::domain::entities::{LotHolder, UnitOwner};
 use async_trait::async_trait;
 use rust_decimal::Decimal;
 use uuid::Uuid;
@@ -49,4 +49,11 @@ pub trait UnitOwnerRepository: Send + Sync {
         &self,
         building_id: Uuid,
     ) -> Result<Vec<(Uuid, Uuid, Decimal)>, String>;
+
+    /// Story H17 (Art. 3.87 §1 CC) — titularités actives d'un lot réduites aux
+    /// attributs pertinents pour le calcul du droit de vote (`ownership_type`
+    /// + `is_voting_representative`). Consommé par le gate vote (`cast_vote`)
+    /// pour rejeter les lots démembrés/indivis sans représentant unique désigné
+    /// (`VOTING_RIGHT_SUSPENDED`).
+    async fn find_voting_holders_by_unit(&self, unit_id: Uuid) -> Result<Vec<LotHolder>, String>;
 }

@@ -1,13 +1,13 @@
-=========================================================================================================
+=====================================================================================================
 Issue #276: feat: Marketplace corps de métier + enquêtes satisfaction (ancre L13 Art. 3.89 §5 12° CC)
-=========================================================================================================
+=====================================================================================================
 
-:State: **OPEN**
+:State: **CLOSED**
 :Milestone: Jalon 3: Features Différenciantes 🎯
-:Labels: enhancement,track:software finance,legal-compliance release:0.1.0
+:Labels: enhancement,track:software finance,legal-compliance release:0.1.0
 :Assignees: Unassigned
 :Created: 2026-03-11
-:Updated: 2026-03-14
+:Updated: 2026-03-24
 :URL: `View on GitHub <https://github.com/gilmry/koprogo/issues/276>`_
 
 Description

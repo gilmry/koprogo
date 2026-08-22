@@ -20,6 +20,19 @@ import Layout from "../layouts/Layout.astro";
   import { mount, unmount } from "svelte";
   import InspectionList from "../components/inspections/InspectionList.svelte";
   import BuildingSelector from "../components/BuildingSelector.svelte";
+  import { authStore } from "../stores/auth";
+  import { get } from "svelte/store";
+
+  // organizationId n'était jamais passé à InspectionList, qui l'envoie
+  // pourtant tel quel (string vide par défaut) dans CreateInspectionDto —
+  // le backend l'exige en UUID valide (technical_inspection_use_cases.rs),
+  // donc toute création échouait en 400 "Invalid organization_id format".
+  // await authStore.init() nécessaire : silent-refresh async via cookie,
+  // pattern déjà établi dans owner-contributions.astro/work-reports.astro.
+  await authStore.init();
+  const auth = get(authStore);
+  const organizationId =
+    auth.user?.organizationId || auth.user?.activeRole?.organizationId || "";
 
   const selectorContainer = document.getElementById("building-selector-container");
   const listContainer = document.getElementById("inspections-container");
@@ -31,7 +44,7 @@ import Layout from "../layouts/Layout.astro";
     listContainer.innerHTML = "";
     listComponent = mount(InspectionList as any, {
       target: listContainer,
-      props: { buildingId },
+      props: { buildingId, organizationId },
     });
   }
 

@@ -102,7 +102,7 @@
   {/if}
 
   {#if buildingId && building}
-    <UnitCreateModal bind:open={showCreateModal} buildingId={buildingId} organizationId={building.organization_id} totalTantiemes={building.total_tantiemes} oncreated={loadUnits} onclose={() => showCreateModal = false} />
+    <UnitCreateModal bind:open={showCreateModal} buildingId={buildingId} acpId={building.acp_id} totalTantiemes={building.total_tantiemes} oncreated={loadUnits} onclose={() => showCreateModal = false} />
     <UnitEditModal bind:open={showEditModal} unit={selectedUnit} totalTantiemes={building.total_tantiemes} onupdated={loadUnits} onclose={() => { showEditModal = false; selectedUnit = null; }} />
   {/if}
 

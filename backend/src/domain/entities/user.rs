@@ -3,14 +3,46 @@ use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 use validator::Validate;
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+/// Roles métier KoproGo.
+///
+/// Story 3.1 — Sous-rôles métier (FR21 — séparation des pouvoirs comptables).
+/// L'enum distingue :
+/// - `Accountant` (générique, conservé pour compatibilité — encodeur + émetteur)
+/// - `AccountantEncodeur` (saisie comptable amont : Invoice / Quote uniquement)
+/// - `AccountantEmetteur` (sortie financière : Expense / CallForFunds uniquement)
+/// - `CommunityModerator` (modération SEL, sondages, panneau d'affichage)
+/// - Mandataires / spécialistes : Lawyer, Notary, Amo, Architect, Bet, Warden
+///
+/// INV-10 (séparation des pouvoirs) : un encodeur ne peut pas émettre, un émetteur
+/// ne peut pas encoder. Le cumul des deux rôles passe par DEUX assignments
+/// (cf. `UserRoleAssignment`).
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub enum UserRole {
     SuperAdmin,
     Syndic,
+    /// Comptable générique (rétrocompat — possède encodeur + émetteur).
     Accountant,
+    /// Comptable encodeur — saisie comptable amont (facture, devis).
+    AccountantEncodeur,
+    /// Comptable émetteur — sortie financière (charges, appels de fonds).
+    AccountantEmetteur,
     BoardMember, // Membre du conseil de copropriété
     Contractor,  // Prestataire externe (plombier, électricien, etc.)
     Owner,
+    /// Modérateur communauté (SEL, sondages, notices).
+    CommunityModerator,
+    /// Avocat (conseil juridique de la copro).
+    Lawyer,
+    /// Notaire.
+    Notary,
+    /// Assistant Maître d'Ouvrage (AMO).
+    Amo,
+    /// Architecte.
+    Architect,
+    /// Bureau d'études techniques (BET).
+    Bet,
+    /// Concierge / gardien.
+    Warden,
 }
 
 impl std::fmt::Display for UserRole {
@@ -19,9 +51,18 @@ impl std::fmt::Display for UserRole {
             UserRole::SuperAdmin => write!(f, "superadmin"),
             UserRole::Syndic => write!(f, "syndic"),
             UserRole::Accountant => write!(f, "accountant"),
+            UserRole::AccountantEncodeur => write!(f, "accountant.encodeur"),
+            UserRole::AccountantEmetteur => write!(f, "accountant.emetteur"),
             UserRole::BoardMember => write!(f, "board_member"),
             UserRole::Contractor => write!(f, "contractor"),
             UserRole::Owner => write!(f, "owner"),
+            UserRole::CommunityModerator => write!(f, "community.moderator"),
+            UserRole::Lawyer => write!(f, "lawyer"),
+            UserRole::Notary => write!(f, "notary"),
+            UserRole::Amo => write!(f, "amo"),
+            UserRole::Architect => write!(f, "architect"),
+            UserRole::Bet => write!(f, "bet"),
+            UserRole::Warden => write!(f, "warden"),
         }
     }
 }
@@ -30,15 +71,92 @@ impl std::str::FromStr for UserRole {
     type Err = String;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        match s.to_lowercase().as_str() {
+        // Story 3.1 @edge: trim + lowercase, rejet caractères spéciaux non whitelist.
+        let normalized = s.trim().to_lowercase();
+        if normalized.is_empty() {
+            return Err("Invalid user role: empty string".to_string());
+        }
+        // Whitelist stricte : seuls [a-z0-9_.] tolérés (refuse < > / etc. — @negative).
+        if !normalized
+            .chars()
+            .all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '_' || c == '.')
+        {
+            return Err(format!("Invalid user role: invalid characters in {}", s));
+        }
+        match normalized.as_str() {
             "superadmin" => Ok(UserRole::SuperAdmin),
             "syndic" => Ok(UserRole::Syndic),
             "accountant" => Ok(UserRole::Accountant),
+            "accountant.encodeur" => Ok(UserRole::AccountantEncodeur),
+            "accountant.emetteur" => Ok(UserRole::AccountantEmetteur),
             "board_member" => Ok(UserRole::BoardMember),
             "contractor" => Ok(UserRole::Contractor),
             "owner" => Ok(UserRole::Owner),
+            "community.moderator" => Ok(UserRole::CommunityModerator),
+            "lawyer" => Ok(UserRole::Lawyer),
+            "notary" => Ok(UserRole::Notary),
+            "amo" => Ok(UserRole::Amo),
+            "architect" => Ok(UserRole::Architect),
+            "bet" => Ok(UserRole::Bet),
+            "warden" => Ok(UserRole::Warden),
             _ => Err(format!("Invalid user role: {}", s)),
         }
+    }
+}
+
+impl UserRole {
+    // ===============================================================
+    // === Story 3.1 — Permission helpers (FR21 séparation pouvoirs)
+    // ===============================================================
+
+    /// Peut saisir une facture / devis (entrée comptable amont).
+    ///
+    /// INV-10 : seuls encodeurs comptables + syndic + superadmin (les syndics
+    /// gardent la pleine autorité en l'absence de comptable dédié).
+    pub fn can_encode_invoices(&self) -> bool {
+        matches!(
+            self,
+            UserRole::SuperAdmin
+                | UserRole::Syndic
+                | UserRole::Accountant
+                | UserRole::AccountantEncodeur
+        )
+    }
+
+    /// Peut émettre une charge (sortie financière).
+    ///
+    /// INV-10 : seuls émetteurs comptables + syndic + superadmin.
+    /// Un `AccountantEncodeur` SEUL ne peut PAS émettre — il faut un
+    /// `AccountantEmetteur` (ou cumul des deux assignments).
+    pub fn can_emit_expenses(&self) -> bool {
+        matches!(
+            self,
+            UserRole::SuperAdmin
+                | UserRole::Syndic
+                | UserRole::Accountant
+                | UserRole::AccountantEmetteur
+        )
+    }
+
+    /// Peut créer un appel de fonds.
+    ///
+    /// Même règle que `can_emit_expenses` : c'est une sortie financière.
+    pub fn can_create_call_for_funds(&self) -> bool {
+        matches!(
+            self,
+            UserRole::SuperAdmin
+                | UserRole::Syndic
+                | UserRole::Accountant
+                | UserRole::AccountantEmetteur
+        )
+    }
+
+    /// Peut modérer la communauté (SEL, sondages, panneau d'affichage).
+    pub fn can_moderate_community(&self) -> bool {
+        matches!(
+            self,
+            UserRole::SuperAdmin | UserRole::Syndic | UserRole::CommunityModerator
+        )
     }
 }
 
@@ -244,6 +362,258 @@ impl User {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::str::FromStr;
+
+    // ============================================================
+    // === Story 3.1 — UserRole sous-rôles + helpers — 4 catégories
+    // ============================================================
+
+    // --- @happy : parsing canonique + helpers nominaux ---
+
+    #[test]
+    fn happy_parse_accountant_encodeur() {
+        assert_eq!(
+            UserRole::from_str("accountant.encodeur").unwrap(),
+            UserRole::AccountantEncodeur
+        );
+    }
+
+    #[test]
+    fn happy_parse_accountant_emetteur() {
+        assert_eq!(
+            UserRole::from_str("accountant.emetteur").unwrap(),
+            UserRole::AccountantEmetteur
+        );
+    }
+
+    #[test]
+    fn happy_parse_community_moderator() {
+        assert_eq!(
+            UserRole::from_str("community.moderator").unwrap(),
+            UserRole::CommunityModerator
+        );
+    }
+
+    #[test]
+    fn happy_parse_mandataires() {
+        assert_eq!(UserRole::from_str("lawyer").unwrap(), UserRole::Lawyer);
+        assert_eq!(UserRole::from_str("notary").unwrap(), UserRole::Notary);
+        assert_eq!(UserRole::from_str("amo").unwrap(), UserRole::Amo);
+        assert_eq!(
+            UserRole::from_str("architect").unwrap(),
+            UserRole::Architect
+        );
+        assert_eq!(UserRole::from_str("bet").unwrap(), UserRole::Bet);
+        assert_eq!(UserRole::from_str("warden").unwrap(), UserRole::Warden);
+    }
+
+    #[test]
+    fn happy_encodeur_can_encode_invoices() {
+        assert!(UserRole::AccountantEncodeur.can_encode_invoices());
+    }
+
+    #[test]
+    fn happy_emetteur_can_emit_expenses() {
+        assert!(UserRole::AccountantEmetteur.can_emit_expenses());
+        assert!(UserRole::AccountantEmetteur.can_create_call_for_funds());
+    }
+
+    #[test]
+    fn happy_community_moderator_can_moderate() {
+        assert!(UserRole::CommunityModerator.can_moderate_community());
+    }
+
+    #[test]
+    fn happy_display_round_trip() {
+        for role in [
+            UserRole::SuperAdmin,
+            UserRole::Syndic,
+            UserRole::Accountant,
+            UserRole::AccountantEncodeur,
+            UserRole::AccountantEmetteur,
+            UserRole::BoardMember,
+            UserRole::Contractor,
+            UserRole::Owner,
+            UserRole::CommunityModerator,
+            UserRole::Lawyer,
+            UserRole::Notary,
+            UserRole::Amo,
+            UserRole::Architect,
+            UserRole::Bet,
+            UserRole::Warden,
+        ] {
+            let s = role.to_string();
+            let parsed = UserRole::from_str(&s)
+                .unwrap_or_else(|e| panic!("Round-trip failed for {:?} -> {} : {}", role, s, e));
+            assert_eq!(parsed, role);
+        }
+    }
+
+    // --- @edge : trim/lowercase, syndic legacy still has all powers ---
+
+    #[test]
+    fn edge_parse_accountant_encodeur_trim_uppercase() {
+        assert_eq!(
+            UserRole::from_str("  ACCOUNTANT.ENCODEUR  ").unwrap(),
+            UserRole::AccountantEncodeur
+        );
+    }
+
+    #[test]
+    fn edge_parse_mixed_case_community_moderator() {
+        assert_eq!(
+            UserRole::from_str("CoMmUnItY.MoDeRaToR").unwrap(),
+            UserRole::CommunityModerator
+        );
+    }
+
+    #[test]
+    fn edge_syndic_keeps_all_finance_powers() {
+        // Syndic = compétence pleine en l'absence de comptable dédié.
+        assert!(UserRole::Syndic.can_encode_invoices());
+        assert!(UserRole::Syndic.can_emit_expenses());
+        assert!(UserRole::Syndic.can_create_call_for_funds());
+        assert!(UserRole::Syndic.can_moderate_community());
+    }
+
+    #[test]
+    fn edge_generic_accountant_keeps_both_powers() {
+        // Rétrocompat : Accountant générique = encodeur + émetteur.
+        assert!(UserRole::Accountant.can_encode_invoices());
+        assert!(UserRole::Accountant.can_emit_expenses());
+        assert!(UserRole::Accountant.can_create_call_for_funds());
+    }
+
+    #[test]
+    fn edge_cumul_encodeur_et_emetteur_via_assignments() {
+        // INV-10 : un user qui cumule les 2 assignments a les pleins droits comptables.
+        // On simule le cumul en testant que chaque rôle apporte sa capacité.
+        let encodeur = UserRole::AccountantEncodeur;
+        let emetteur = UserRole::AccountantEmetteur;
+        // Union des capacités (le call-site itère sur les assignments).
+        let can_encode = encodeur.can_encode_invoices() || emetteur.can_encode_invoices();
+        let can_emit = encodeur.can_emit_expenses() || emetteur.can_emit_expenses();
+        let can_call = encodeur.can_create_call_for_funds() || emetteur.can_create_call_for_funds();
+        assert!(
+            can_encode && can_emit && can_call,
+            "Encodeur+Emetteur cumul should grant all finance powers"
+        );
+    }
+
+    // --- @security : INV-10 séparation des pouvoirs ---
+
+    #[test]
+    fn security_encodeur_cannot_emit_expenses() {
+        // FR21 / INV-10 : un encodeur seul NE peut PAS émettre une charge.
+        assert!(!UserRole::AccountantEncodeur.can_emit_expenses());
+    }
+
+    #[test]
+    fn security_encodeur_cannot_create_call_for_funds() {
+        assert!(!UserRole::AccountantEncodeur.can_create_call_for_funds());
+    }
+
+    #[test]
+    fn security_emetteur_cannot_encode_invoices() {
+        // Symétrique : un émetteur seul NE peut PAS saisir une facture.
+        assert!(!UserRole::AccountantEmetteur.can_encode_invoices());
+    }
+
+    #[test]
+    fn security_owner_has_no_finance_power() {
+        assert!(!UserRole::Owner.can_encode_invoices());
+        assert!(!UserRole::Owner.can_emit_expenses());
+        assert!(!UserRole::Owner.can_create_call_for_funds());
+        assert!(!UserRole::Owner.can_moderate_community());
+    }
+
+    #[test]
+    fn security_community_moderator_has_no_finance_power() {
+        assert!(!UserRole::CommunityModerator.can_emit_expenses());
+        assert!(!UserRole::CommunityModerator.can_encode_invoices());
+        assert!(!UserRole::CommunityModerator.can_create_call_for_funds());
+    }
+
+    #[test]
+    fn security_mandataires_have_no_finance_power() {
+        for role in [
+            UserRole::Lawyer,
+            UserRole::Notary,
+            UserRole::Amo,
+            UserRole::Architect,
+            UserRole::Bet,
+            UserRole::Warden,
+            UserRole::Contractor,
+            UserRole::BoardMember,
+        ] {
+            assert!(
+                !role.can_emit_expenses(),
+                "{} should not be able to emit expenses",
+                role
+            );
+            assert!(
+                !role.can_encode_invoices(),
+                "{} should not be able to encode invoices",
+                role
+            );
+            assert!(
+                !role.can_create_call_for_funds(),
+                "{} should not be able to create call for funds",
+                role
+            );
+            assert!(
+                !role.can_moderate_community(),
+                "{} should not be able to moderate community",
+                role
+            );
+        }
+    }
+
+    // --- @negative : rôles inconnus, vide, caractères spéciaux ---
+
+    #[test]
+    fn negative_unknown_role_rejected() {
+        let err = UserRole::from_str("hackerman").unwrap_err();
+        assert!(
+            err.contains("Invalid user role"),
+            "Unknown role should fail typed: got {}",
+            err
+        );
+    }
+
+    #[test]
+    fn negative_empty_role_rejected() {
+        let err = UserRole::from_str("").unwrap_err();
+        assert!(
+            err.contains("empty") || err.contains("Invalid"),
+            "Empty role should fail: got {}",
+            err
+        );
+    }
+
+    #[test]
+    fn negative_whitespace_only_role_rejected() {
+        assert!(UserRole::from_str("   ").is_err());
+    }
+
+    #[test]
+    fn negative_role_with_special_chars_rejected() {
+        // Tentative d'injection : refusée AVANT le match sur la whitelist.
+        assert!(UserRole::from_str("accountant.<script>").is_err());
+        assert!(UserRole::from_str("accountant';drop").is_err());
+        assert!(UserRole::from_str("accountant/encodeur").is_err());
+    }
+
+    #[test]
+    fn negative_partial_subrole_rejected() {
+        // "accountant.foo" n'est pas dans la whitelist.
+        assert!(UserRole::from_str("accountant.foo").is_err());
+        assert!(UserRole::from_str("community.spam").is_err());
+    }
+
+    // ============================================================
+    // === Tests existants (rétrocompat User entity)
+    // ============================================================
 
     #[test]
     fn test_create_user_success() {

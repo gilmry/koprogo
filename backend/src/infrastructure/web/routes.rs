@@ -32,7 +32,26 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig) {
             .service(register)
             .service(refresh_token)
             .service(switch_role)
+            .service(logout)
             .service(get_current_user)
+            // ACPs (Story 1.1 — Association des Copropriétaires, ADR-0010)
+            .service(create_acp)
+            .service(list_acps)
+            .service(get_acp)
+            .service(update_acp)
+            .service(archive_acp)
+            // Portfolios (Story 2.1 — Slice 2 Refonte UX multi-rôle, ADR-0011)
+            .service(create_portfolio)
+            .service(list_portfolios)
+            .service(get_portfolio)
+            .service(update_portfolio)
+            .service(delete_portfolio)
+            .service(add_portfolio_building)
+            .service(list_portfolio_buildings)
+            .service(remove_portfolio_building)
+            .service(share_portfolio)
+            .service(list_portfolio_shares)
+            .service(unshare_portfolio)
             // Buildings
             .service(create_building)
             .service(list_buildings)
@@ -116,6 +135,7 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig) {
             .service(update_meeting)
             .service(add_agenda_item)
             .service(complete_meeting)
+            .service(get_meeting_completion_checklist) // GET /meetings/{id}/completion-checklist (Track H Story H3)
             .service(cancel_meeting)
             .service(reschedule_meeting)
             .service(delete_meeting)
@@ -177,6 +197,7 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig) {
             .service(list_building_tickets)
             .service(list_organization_tickets)
             .service(get_ticket)
+            .service(update_ticket_fields)
             .service(delete_ticket)
             .service(assign_ticket)
             .service(start_work)
@@ -541,6 +562,7 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig) {
             .service(delete_organization)
             // Users (SuperAdmin only)
             .service(list_users)
+            .service(list_organization_users)
             .service(create_user)
             .service(update_user)
             .service(activate_user)
@@ -661,6 +683,61 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig) {
             .service(reject_contractor_report) // PUT /contractor-reports/{id}/reject
             .service(update_contractor_report) // PUT /contractor-reports/{id}
             .service(delete_contractor_report) // DELETE /contractor-reports/{id}
-            .service(get_contractor_report), // GET /contractor-reports/{id} — LAST (parameterized)
+            .service(get_contractor_report) // GET /contractor-reports/{id} — LAST (parameterized)
+            // Generic MagicLinks (Story 3.2 — FR6 INV-13 INV-17)
+            // POST /magic-links : syndic/superadmin issues a link
+            // GET  /c/{token}   : PUBLIC (no auth) — validate + consume + resolve scope
+            .service(issue_magic_link)
+            .service(consume_magic_link)
+            // Mandates (Story 3.4 — FR7 INV-14)
+            // POST   /mandates              : syndic/superadmin issues a mandate
+            // GET    /mandates?subject=<u>  : list active mandates for a subject
+            // GET    /mandates/{id}         : mandate details
+            // POST   /mandates/{id}/revoke  : early revocation
+            .service(issue_mandate)
+            .service(list_mandates)
+            .service(revoke_mandate)
+            .service(get_mandate)
+            // Role Delegations (Story 3.5 — FR8 INV-8)
+            // POST   /role-delegations              : delegate role to another user (bounded)
+            // DELETE /role-delegations/{id}         : revoke a delegation
+            // GET    /role-delegations?subject=<u>  : list delegations of a subject
+            .service(create_role_delegation)
+            .service(revoke_role_delegation)
+            .service(list_role_delegations)
+            // Role Assignments — CRUD REST (Story B0bis — gap Story 3.1)
+            // POST   /users/{user_id}/role-assignments              : assign sub-role
+            // GET    /users/{user_id}/role-assignments              : list user's assignments
+            // DELETE /users/{user_id}/role-assignments/{id}         : revoke assignment
+            // GET    /role-assignments?organization_id=&role=       : superadmin filtered list
+            .service(assign_role)
+            .service(list_role_assignments_for_user)
+            .service(revoke_role_assignment)
+            .service(list_role_assignments_admin)
+            // SyndicResponse (Story 3.7 — FR32 INV-23) — append-only.
+            // POST /tickets/{id}/syndic-responses : syndic/superadmin posts a reply
+            // GET  /tickets/{id}/syndic-responses : list responses for a ticket
+            .service(create_syndic_response)
+            .service(list_syndic_responses)
+            // TechnicalSpec (Story 3.8 — FR33) — versionnable + signatures multi-parties.
+            // POST /technical-specs              : create Draft (syndic/superadmin)
+            // POST /technical-specs/{id}/bump    : new version (syndic/superadmin)
+            // POST /technical-specs/{id}/submit  : Draft -> PendingSignatures
+            // POST /technical-specs/{id}/signatures : record a signature
+            // GET  /technical-specs/{id}         : details
+            // GET  /technical-specs?acp_id=      : list for an ACP
+            .service(create_technical_spec)
+            .service(bump_technical_spec)
+            .service(submit_technical_spec)
+            .service(sign_technical_spec)
+            .service(list_technical_specs)
+            .service(get_technical_spec)
+            // ContractorEvaluation (Story 3.9 — FR34 FR35 INV-21 INV-24) — append-only.
+            // POST /contractor-evaluations                       : record an evaluation
+            // GET  /contractor-evaluations/{id}                  : details
+            // GET  /contractors/{contractor_user_id}/evaluations : list for a contractor
+            .service(create_contractor_evaluation)
+            .service(get_contractor_evaluation)
+            .service(list_contractor_evaluations),
     );
 }

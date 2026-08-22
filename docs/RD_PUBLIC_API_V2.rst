@@ -724,3 +724,63 @@ References
 - `REST API Best Practices <https://restfulapi.net/>`_
 - `Stripe API Design (reference) <https://stripe.com/docs/api>`_
 - `GitHub API v3 (reference) <https://docs.github.com/en/rest/>`_
+
+API Key Lifecycle — Rotation (2026-05 #339)
+============================================
+
+Livré
+-----
+
+Endpoint ``POST /api-keys/{id}/rotate`` (handler ``api_key_handlers.rs::rotate_api_key``),
+implémenté dans WP-A7 (PR #546 fermant #339).
+
+Sémantique
+----------
+
+* **Gate de rôle** : ``SYNDIC`` ou ``SUPERADMIN`` (403 sinon — même
+  privilège que la création).
+* **Transaction** atomique :
+
+  1. ``SELECT`` scopé ``organization_id`` (isolation cross-org : une clé
+     d'une autre organisation = **404** sans fuite d'existence, jamais
+     403).
+  2. ``UPDATE … SET is_active = FALSE`` sur l'ancienne clé
+     (désactivation immédiate — anti-rejeu).
+  3. ``INSERT`` de la remplaçante héritant ``name``, ``description``,
+     ``permissions``, ``rate_limit``, ``expires_at`` ; nouveau ``id``,
+     nouveau ``key_prefix``, nouveau ``key_hash``.
+  4. ``INSERT INTO api_key_audit (action='rotated', actor_id, reason=…)``.
+
+* **Secret rendu une seule fois** : la réponse ``200 OK`` renvoie
+  ``ApiKeyCreatedResponse`` avec ``key`` (le secret complet ``kpg_live_…``).
+  Ce secret n'est jamais ré-affiché ultérieurement (cohérent avec
+  ``create_api_key``).
+
+Choix techniques
+----------------
+
+* ``sqlx::query`` (non-macro) pour éviter la régénération du cache
+  offline ``.sqlx/`` à chaque ajout de query ; le pattern est déjà présent
+  dans ``etat_date_repository_impl.rs``.
+
+Tests 4 catégories
+------------------
+
+Dans ``backend/tests/e2e_api_keys.rs`` :
+
+* ``happy_rotate_api_key_issues_new_secret`` — 200, nouveau secret
+  ``kpg_live_``, métadonnées héritées, nouvel ``id`` ≠ ancien.
+* ``security_old_key_is_invalid_after_rotation`` — ancienne clé
+  ``is_active = FALSE`` post-rotate (vérifié en DB) ; exactement 1 clé
+  active pour l'organisation (la remplaçante).
+* ``negative_rotate_requires_privileged_role`` — rôle ``owner`` → **403**.
+* ``edge_rotate_unknown_key_is_404`` — ``id`` inconnu / cross-org →
+  **404** (pas de fuite d'existence).
+
+Conséquence go-live
+-------------------
+
+L'endpoint était précédemment ``501 Not Implemented``. Avec cette livraison,
+**aucun 501 ne part en bêta** (critère GO ``#427``/``#429``). Le cycle
+de vie complet des clés API (create / list / get / update / revoke /
+**rotate**) est désormais opérationnel.

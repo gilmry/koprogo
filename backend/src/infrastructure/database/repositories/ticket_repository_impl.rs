@@ -148,6 +148,21 @@ impl TicketRepository for PostgresTicketRepository {
             resolved_at: row.resolved_at,
             closed_at: row.closed_at,
             work_order_sent_at: None,
+            // Story 3.6 (FR31) — Phase A: repository keeps the legacy SQL
+            // surface untouched (no SQLx-cache breakage). Newly-added DB
+            // columns carry their migration defaults (`request`, empty arrays);
+            // the entity falls back to the same defaults on read-back here.
+            // Full read/write of complaint fields lands with the repo refresh
+            // tracked in cluster #555 (and the Phase B FE pulls them then).
+            kind: crate::domain::entities::TicketKind::Request,
+            severity: None,
+            incident_date: None,
+            evidence_attachments: Vec::new(),
+            witnesses: Vec::new(),
+            // Story 3.7 — SLA columns added in 20260605050000; repo refresh
+            // tracked in #555. Read-back uses None until then.
+            sla_due_at: None,
+            sla_escalated_at: None,
         })
     }
 
@@ -185,6 +200,18 @@ impl TicketRepository for PostgresTicketRepository {
                 resolved_at: r.resolved_at,
                 closed_at: r.closed_at,
                 work_order_sent_at: None,
+                // Story 3.6 (FR31) — repo not yet wired for these columns
+                // (Phase A keeps SQLx cache untouched). DB defaults apply on
+                // INSERT; read-back falls back to entity defaults until the
+                // repo refresh tracked in #555.
+                kind: crate::domain::entities::TicketKind::Request,
+                severity: None,
+                incident_date: None,
+                evidence_attachments: Vec::new(),
+                witnesses: Vec::new(),
+                // Story 3.7 — SLA defaults; repo refresh tracked in #555.
+                sla_due_at: None,
+                sla_escalated_at: None,
             })),
             None => Ok(None),
         }
@@ -226,6 +253,15 @@ impl TicketRepository for PostgresTicketRepository {
                     resolved_at: r.resolved_at,
                     closed_at: r.closed_at,
                     work_order_sent_at: None,
+                    // Story 3.6 (FR31) — see same comment in `find_by_id`.
+                    kind: crate::domain::entities::TicketKind::Request,
+                    severity: None,
+                    incident_date: None,
+                    evidence_attachments: Vec::new(),
+                    witnesses: Vec::new(),
+                    // Story 3.7 — SLA defaults; repo refresh tracked in #555.
+                    sla_due_at: None,
+                    sla_escalated_at: None,
                 })
             })
             .collect()
@@ -267,6 +303,15 @@ impl TicketRepository for PostgresTicketRepository {
                     resolved_at: r.resolved_at,
                     closed_at: r.closed_at,
                     work_order_sent_at: None,
+                    // Story 3.6 (FR31) — see same comment in `find_by_id`.
+                    kind: crate::domain::entities::TicketKind::Request,
+                    severity: None,
+                    incident_date: None,
+                    evidence_attachments: Vec::new(),
+                    witnesses: Vec::new(),
+                    // Story 3.7 — SLA defaults; repo refresh tracked in #555.
+                    sla_due_at: None,
+                    sla_escalated_at: None,
                 })
             })
             .collect()
@@ -308,6 +353,15 @@ impl TicketRepository for PostgresTicketRepository {
                     resolved_at: r.resolved_at,
                     closed_at: r.closed_at,
                     work_order_sent_at: None,
+                    // Story 3.6 (FR31) — see same comment in `find_by_id`.
+                    kind: crate::domain::entities::TicketKind::Request,
+                    severity: None,
+                    incident_date: None,
+                    evidence_attachments: Vec::new(),
+                    witnesses: Vec::new(),
+                    // Story 3.7 — SLA defaults; repo refresh tracked in #555.
+                    sla_due_at: None,
+                    sla_escalated_at: None,
                 })
             })
             .collect()
@@ -349,6 +403,15 @@ impl TicketRepository for PostgresTicketRepository {
                     resolved_at: r.resolved_at,
                     closed_at: r.closed_at,
                     work_order_sent_at: None,
+                    // Story 3.6 (FR31) — see same comment in `find_by_id`.
+                    kind: crate::domain::entities::TicketKind::Request,
+                    severity: None,
+                    incident_date: None,
+                    evidence_attachments: Vec::new(),
+                    witnesses: Vec::new(),
+                    // Story 3.7 — SLA defaults; repo refresh tracked in #555.
+                    sla_due_at: None,
+                    sla_escalated_at: None,
                 })
             })
             .collect()
@@ -397,6 +460,15 @@ impl TicketRepository for PostgresTicketRepository {
                     resolved_at: r.resolved_at,
                     closed_at: r.closed_at,
                     work_order_sent_at: None,
+                    // Story 3.6 (FR31) — see same comment in `find_by_id`.
+                    kind: crate::domain::entities::TicketKind::Request,
+                    severity: None,
+                    incident_date: None,
+                    evidence_attachments: Vec::new(),
+                    witnesses: Vec::new(),
+                    // Story 3.7 — SLA defaults; repo refresh tracked in #555.
+                    sla_due_at: None,
+                    sla_escalated_at: None,
                 })
             })
             .collect()
@@ -467,6 +539,21 @@ impl TicketRepository for PostgresTicketRepository {
             resolved_at: row.resolved_at,
             closed_at: row.closed_at,
             work_order_sent_at: None,
+            // Story 3.6 (FR31) — Phase A: repository keeps the legacy SQL
+            // surface untouched (no SQLx-cache breakage). Newly-added DB
+            // columns carry their migration defaults (`request`, empty arrays);
+            // the entity falls back to the same defaults on read-back here.
+            // Full read/write of complaint fields lands with the repo refresh
+            // tracked in cluster #555 (and the Phase B FE pulls them then).
+            kind: crate::domain::entities::TicketKind::Request,
+            severity: None,
+            incident_date: None,
+            evidence_attachments: Vec::new(),
+            witnesses: Vec::new(),
+            // Story 3.7 — SLA columns added in 20260605050000; repo refresh
+            // tracked in #555. Read-back uses None until then.
+            sla_due_at: None,
+            sla_escalated_at: None,
         })
     }
 

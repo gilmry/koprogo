@@ -2,12 +2,12 @@
 Issue #300: feat(iot): MQTT Home Assistant + BOINC Grid Computing (IoT Phase 1)
 ===============================================================================
 
-:State: **OPEN**
+:State: **CLOSED**
 :Milestone: Jalon 3: Features Différenciantes 🎯
-:Labels: enhancement,track:software proptech:iot
+:Labels: enhancement,track:software proptech:iot
 :Assignees: Unassigned
 :Created: 2026-03-21
-:Updated: 2026-03-21
+:Updated: 2026-03-24
 :URL: `View on GitHub <https://github.com/gilmry/koprogo/issues/300>`_
 
 Description

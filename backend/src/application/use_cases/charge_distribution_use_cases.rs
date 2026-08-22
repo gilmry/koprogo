@@ -1,6 +1,7 @@
 use crate::application::dto::ChargeDistributionResponseDto;
 use crate::application::ports::{
-    ChargeDistributionRepository, ExpenseRepository, UnitOwnerRepository,
+    AcpRepository, BuildingRepository, ChargeDistributionRepository, ExpenseRepository,
+    UnitOwnerRepository,
 };
 use crate::domain::entities::{ApprovalStatus, ChargeDistribution};
 use rust_decimal::Decimal;
@@ -11,6 +12,12 @@ pub struct ChargeDistributionUseCases {
     distribution_repository: Arc<dyn ChargeDistributionRepository>,
     expense_repository: Arc<dyn ExpenseRepository>,
     unit_owner_repository: Arc<dyn UnitOwnerRepository>,
+    /// Track H Story H7 — validate-before-compute ACP-level (FR-CL1). Optional.
+    /// Quand présents (wiring `main.rs`), le pre-check `Acp::assert_conformant?`
+    /// s'exécute avant la répartition des charges (calcul interdit sur ACP non
+    /// conforme — répartition = parties communes, Art. 3.86).
+    building_repository: Option<Arc<dyn BuildingRepository>>,
+    acp_repository: Option<Arc<dyn AcpRepository>>,
 }
 
 impl ChargeDistributionUseCases {
@@ -23,7 +30,47 @@ impl ChargeDistributionUseCases {
             distribution_repository,
             expense_repository,
             unit_owner_repository,
+            building_repository: None,
+            acp_repository: None,
         }
+    }
+
+    /// Track H Story H7 — wiring complet (validate-before-compute ACP-level).
+    pub fn with_full_wiring(
+        distribution_repository: Arc<dyn ChargeDistributionRepository>,
+        expense_repository: Arc<dyn ExpenseRepository>,
+        unit_owner_repository: Arc<dyn UnitOwnerRepository>,
+        building_repository: Arc<dyn BuildingRepository>,
+        acp_repository: Arc<dyn AcpRepository>,
+    ) -> Self {
+        Self {
+            distribution_repository,
+            expense_repository,
+            unit_owner_repository,
+            building_repository: Some(building_repository),
+            acp_repository: Some(acp_repository),
+        }
+    }
+
+    /// Track H Story H7 — pre-check conformité copropriété (ACP). Résout
+    /// `building.acp_id` puis agrège les métriques de tous les blocs.
+    async fn assert_acp_conformant(&self, building_id: Uuid) -> Result<(), String> {
+        let (Some(building_repo), Some(acp_repo)) =
+            (&self.building_repository, &self.acp_repository)
+        else {
+            return Ok(());
+        };
+        let building = building_repo
+            .find_by_id(building_id)
+            .await?
+            .ok_or_else(|| "Building not found".to_string())?;
+        let (acp, metrics) = acp_repo
+            .find_by_id_with_metrics(building.acp_id)
+            .await
+            .map_err(|e| e.to_string())?
+            .ok_or_else(|| "ACP not found".to_string())?;
+        acp.assert_conformant(&metrics)?; // bridge String (H5)
+        Ok(())
     }
 
     /// Calculer et sauvegarder la répartition des charges pour une facture approuvée
@@ -45,6 +92,11 @@ impl ChargeDistributionUseCases {
                 expense.approval_status
             ));
         }
+
+        // 2bis. Track H Story H2 — validate-before-compute gate (Art. 3.85 CC).
+        // L'immeuble doit être conforme pour répartir : sinon delta sur quotas
+        // → distribution erronée. Pre-check bloque AVANT le calcul.
+        self.assert_acp_conformant(expense.building_id).await?;
 
         // 3. Récupérer le montant TTC à répartir
         let total_amount = expense.amount_incl_vat.unwrap_or(expense.amount);
@@ -125,6 +177,7 @@ impl ChargeDistributionUseCases {
             owner_id: distribution.owner_id.to_string(),
             quota_percentage: distribution.quota_percentage,
             amount_due: distribution.amount_due,
+            distribution_criteria: distribution.distribution_criteria.to_string(),
             created_at: distribution.created_at.to_rfc3339(),
         }
     }
@@ -394,6 +447,13 @@ mod tests {
         ) -> Result<Vec<(Uuid, Uuid, Decimal)>, String> {
             let ownerships = self.building_ownerships.lock().unwrap();
             Ok(ownerships.get(&building_id).cloned().unwrap_or_default())
+        }
+
+        async fn find_voting_holders_by_unit(
+            &self,
+            _unit_id: Uuid,
+        ) -> Result<Vec<crate::domain::entities::LotHolder>, String> {
+            Ok(vec![])
         }
     }
 

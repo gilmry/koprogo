@@ -1,13 +1,13 @@
-=========================================================================================================
+====================================================================================================
 Issue #306: [Bug] CRITIQUE : Validation tantièmes — possible de dépasser 100% par ajouts séquentiels
-=========================================================================================================
+====================================================================================================
 
-:State: **OPEN**
+:State: **CLOSED**
 :Milestone: Jalon 2: Conformité Légale Belge 📋
-:Labels: bug:critique,conformité test:e2e
+:Labels: bug:critique,conformité test:e2e
 :Assignees: Unassigned
 :Created: 2026-03-22
-:Updated: 2026-03-22
+:Updated: 2026-03-24
 :URL: `View on GitHub <https://github.com/gilmry/koprogo/issues/306>`_
 
 Description

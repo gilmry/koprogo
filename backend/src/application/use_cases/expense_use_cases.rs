@@ -3,7 +3,7 @@ use crate::application::dto::{
     InvoiceResponseDto, PageRequest, PendingInvoicesListDto, RejectInvoiceDto, SortOrder,
     SubmitForApprovalDto, UpdateInvoiceDraftDto,
 };
-use crate::application::ports::ExpenseRepository;
+use crate::application::ports::{AcpRepository, BuildingRepository, ExpenseRepository};
 use crate::application::services::expense_accounting_service::ExpenseAccountingService;
 use crate::domain::entities::{ApprovalStatus, Expense};
 use chrono::DateTime;
@@ -13,6 +13,14 @@ use uuid::Uuid;
 pub struct ExpenseUseCases {
     repository: Arc<dyn ExpenseRepository>,
     accounting_service: Option<Arc<ExpenseAccountingService>>,
+    /// Track H Story H2/H7 — validate-before-compute (FR-CL1). Optional pour
+    /// préserver les constructeurs des tests unitaires (mocks expense seuls).
+    /// Quand présents (wiring `main.rs`), le pre-check `Acp::assert_conformant`
+    /// (niveau copropriété, ADR-0010) s'exécute avant `create_expense` /
+    /// `create_invoice_draft` : on résout `building.acp_id` puis on agrège les
+    /// métriques de tous les blocs de l'ACP.
+    building_repository: Option<Arc<dyn BuildingRepository>>,
+    acp_repository: Option<Arc<dyn AcpRepository>>,
 }
 
 impl ExpenseUseCases {
@@ -20,6 +28,8 @@ impl ExpenseUseCases {
         Self {
             repository,
             accounting_service: None,
+            building_repository: None,
+            acp_repository: None,
         }
     }
 
@@ -30,7 +40,52 @@ impl ExpenseUseCases {
         Self {
             repository,
             accounting_service: Some(accounting_service),
+            building_repository: None,
+            acp_repository: None,
         }
+    }
+
+    /// Track H Story H7 — wiring complet (mutations gated par
+    /// validate-before-compute ACP-level). Utilisé par `main.rs`. Les tests
+    /// unitaires continuent d'utiliser `new()` / `with_accounting_service()`
+    /// sans repos (pre-check no-op).
+    pub fn with_full_wiring(
+        repository: Arc<dyn ExpenseRepository>,
+        accounting_service: Arc<ExpenseAccountingService>,
+        building_repository: Arc<dyn BuildingRepository>,
+        acp_repository: Arc<dyn AcpRepository>,
+    ) -> Self {
+        Self {
+            repository,
+            accounting_service: Some(accounting_service),
+            building_repository: Some(building_repository),
+            acp_repository: Some(acp_repository),
+        }
+    }
+
+    /// Track H Story H7 — pre-check conformité **copropriété (ACP)**. No-op si
+    /// les repos ne sont pas injectés (tests unitaires). Sinon : résout
+    /// `building.acp_id`, agrège les métriques de tous les blocs de l'ACP, et
+    /// appelle `Acp::assert_conformant`. Le `?` convertit `AcpNotConformantError`
+    /// en `String` (préfixe `ACP_NOT_CONFORMANT:` parsé en 422 par le handler,
+    /// cf. `conformity_response.rs`). ADR-0010, mémoire `validate-before-compute`.
+    async fn assert_acp_conformant(&self, building_id: Uuid) -> Result<(), String> {
+        let (Some(building_repo), Some(acp_repo)) =
+            (&self.building_repository, &self.acp_repository)
+        else {
+            return Ok(());
+        };
+        let building = building_repo
+            .find_by_id(building_id)
+            .await?
+            .ok_or_else(|| "Building not found".to_string())?;
+        let (acp, metrics) = acp_repo
+            .find_by_id_with_metrics(building.acp_id)
+            .await
+            .map_err(|e| e.to_string())?
+            .ok_or_else(|| "ACP not found".to_string())?;
+        acp.assert_conformant(&metrics)?; // From<AcpNotConformantError> for String
+        Ok(())
     }
 
     pub async fn create_expense(
@@ -41,6 +96,10 @@ impl ExpenseUseCases {
             .map_err(|_| "Invalid organization_id format".to_string())?;
         let building_id = Uuid::parse_str(&dto.building_id)
             .map_err(|_| "Invalid building ID format".to_string())?;
+
+        // Track H Story H2 — validate-before-compute gate (Art. 3.85 CC).
+        // No-op si building_repository absent (tests unitaires).
+        self.assert_acp_conformant(building_id).await?;
 
         let expense_date = DateTime::parse_from_rfc3339(&dto.expense_date)
             .map_err(|_| "Invalid date format".to_string())?
@@ -190,6 +249,9 @@ impl ExpenseUseCases {
             .map_err(|_| "Invalid organization_id format".to_string())?;
         let building_id = Uuid::parse_str(&dto.building_id)
             .map_err(|_| "Invalid building ID format".to_string())?;
+
+        // Track H Story H2 — validate-before-compute gate (Art. 3.85 CC).
+        self.assert_acp_conformant(building_id).await?;
 
         let invoice_date = DateTime::parse_from_rfc3339(&dto.invoice_date)
             .map_err(|_| "Invalid invoice_date format".to_string())?

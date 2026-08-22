@@ -60,8 +60,9 @@ async fn create_building_for_bookings(
     name: &str,
 ) -> String {
     use koprogo_api::application::dto::CreateBuildingDto;
+    let acp_id = common::create_test_acp(app_state, org_id).await;
     let dto = CreateBuildingDto {
-        organization_id: org_id.to_string(),
+        acp_id,
         name: format!("{} {}", name, uuid::Uuid::new_v4()),
         address: "40 Booking Street".to_string(),
         city: "Brussels".to_string(),

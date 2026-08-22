@@ -464,3 +464,122 @@ The JWT refresh token implementation is **production-ready** with:
 ---
 
 **Issue #78: Security Hardening - COMPLETE ✅**
+
+---
+
+## Amendment 2026-05-19 — FE1 HttpOnly Cookie + Single-flight Refresh
+
+> Statut : **Livré** sur `feature/dev` (PR #543 WP-FE1 + fix #550).
+> Supersède le flow décrit ci-dessus pour la partie **stockage côté
+> client** et **anti-rejeu concurrent**.
+
+### Pourquoi
+
+Le flow d'origine plaçait l'access token ET le refresh token dans
+`localStorage` côté frontend (vol session via XSS = session longue
+rejouable). FE1 ferme ce bloquant sécurité bêta :
+
+- **Access token** : mémoire JS seule (`frontend/src/lib/accessToken.ts`).
+  Jamais persisté.
+- **Refresh token** : cookie `HttpOnly; Secure; SameSite=Strict;
+  Path=/api/v1/auth; Max-Age=7j` posé par le backend. Illisible par JS,
+  non rejouable hors du même site.
+
+### Backend
+
+`backend/src/infrastructure/web/auth_cookie.rs` :
+
+```rust
+pub fn build_refresh_cookie(refresh_token: &str) -> Cookie<'static> {
+    Cookie::build(REFRESH_COOKIE_NAME, refresh_token.to_owned())
+        .http_only(true)
+        .secure(cookie_secure())   // COOKIE_SECURE env (défaut true)
+        .same_site(SameSite::Strict)
+        .path(REFRESH_COOKIE_PATH) // "/api/v1/auth"
+        .max_age(Duration::days(7))
+        .finish()
+}
+```
+
+Handlers `login`/`register`/`switch-role` (`auth_handlers.rs`) :
+
+- **Posent** le cookie via `auth_response_with_cookie()`.
+- **Retirent `refresh_token` du corps JSON** (projection `AuthBody { token,
+  user }` ; le DTO `LoginResponse` interne reste inchangé).
+
+Handler `refresh_token` :
+
+- Lit le cookie `koprogo_refresh` (plus de `web::Json<RefreshTokenRequest>`).
+- **Rote** le refresh (révoque l'ancien, émet un nouveau cookie).
+- → 401 si cookie absent/forgé/expiré.
+
+Nouveau handler `POST /auth/logout` :
+
+- Révoque **tous** les refresh tokens de l'utilisateur (`revoke_all_refresh_tokens`).
+- Expire le cookie côté navigateur (`build_clearing_cookie`).
+
+CORS (`main.rs`) : `.supports_credentials()` activé. Origines explicites
+(`validate_cors_origins` rejette `*`). Cookie reçu par le navigateur sur
+les fetch `credentials: "include"`.
+
+### Frontend
+
+`frontend/src/lib/accessToken.ts` (nouveau) : module dédié hors cycles
+d'import. Jamais `localStorage`/`sessionStorage`/cookie JS.
+
+`frontend/src/stores/auth.ts` :
+
+- `init()` = **silent-refresh** via le cookie HttpOnly (re-produit un
+  access token mémoire après reload).
+- `login(user, token)` (refresh arg supprimé) ; le cookie est déjà posé
+  par le backend dans la réponse.
+- `refreshAccessToken()` sans arg, `credentials:"include"`, corps sans
+  refresh.
+- `logout()` appelle `POST /auth/logout` puis `clearSession()`.
+- `koprogo_user` conservé en localStorage = **cache d'affichage non
+  sensible** (peinture instantanée), jamais une preuve d'authentification.
+
+### Single-flight `refreshAccessToken()` (fix #550)
+
+Sans coalescence, **RouteGuard.svelte** et **Navigation.svelte** s'hydratent
+en parallèle comme deux îlots Astro `client:load` et appellent chacun
+`authStore.init()` → deux `POST /auth/refresh` concurrents avec le **même
+cookie A** → la rotation backend révoque A au 1er refresh, le 2e (cookie
+A déjà révoqué) → 401 → `clearSession()` → déconnexion. **Bug prod
+réel** : tout utilisateur authentifié serait déconnecté à chaque page.
+
+Le fix `frontend/src/stores/auth.ts` :
+
+```typescript
+let inflightRefresh: Promise<boolean> | null = null;
+
+refreshAccessToken: async (): Promise<boolean> => {
+  if (inflightRefresh) return inflightRefresh;  // dedup
+  inflightRefresh = doRefresh();
+  try { return await inflightRefresh; }
+  finally { inflightRefresh = null; }
+}
+```
+
+Un seul `/auth/refresh` quels que soient N appelants concurrents
+(RouteGuard + Navigation + interval périodique + validateSession 401).
+Une seule rotation. Rotation/anti-rejeu inchangés (testés par
+`backend/tests/e2e_auth.rs::fe1_edge_old_refresh_cookie_revoked_after_rotation`).
+
+### Tests (4-cat)
+
+- **Backend** : `backend/tests/e2e_auth.rs` — `fe1_happy_login_sets_httponly_cookie_and_strips_body`,
+  `fe1_security_refresh_via_cookie_rotates_and_body_has_no_refresh`,
+  `fe1_negative_refresh_without_or_forged_cookie_is_401`,
+  `fe1_edge_old_refresh_cookie_revoked_after_rotation`.
+- **Frontend (Playwright)** : `frontend/tests/e2e/smoke/AuthCookie.spec.ts`
+  — access token absent de localStorage, cookie illisible `document.cookie`,
+  reload conserve session via silent-refresh, sans cookie → /login.
+
+### Topologie & déploiement
+
+`SameSite=Strict` validé pour **prod même-site** (Traefik domaine unique,
+API en `/api/v1`). En dev/E2E sur `http://localhost`, `COOKIE_SECURE=false`
+(sinon le navigateur rejette le cookie hors HTTPS) — cf.
+`docker-compose.yml` et `.env.example`. Si bascule sous-domaines séparés
+(Phase 2), re-décision `Lax`+`COOKIE_DOMAIN` requise.

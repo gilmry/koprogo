@@ -4,7 +4,7 @@ Issue #89: feat: Digital Maintenance Logbook (Carnet d'Entretien)
 
 :State: **CLOSED**
 :Milestone: Jalon 3: Features Différenciantes 🎯
-:Labels: enhancement,phase:k3s track:software,priority:high legal-compliance,maintenance
+:Labels: enhancement,phase:k3s track:software,priority:high legal-compliance,maintenance
 :Assignees: Unassigned
 :Created: 2025-11-01
 :Updated: 2026-03-21

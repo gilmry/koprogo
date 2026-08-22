@@ -7,13 +7,24 @@ use uuid::Uuid;
 /// Filters for building list queries
 #[derive(Debug, Deserialize, Default, Clone)]
 pub struct BuildingFilters {
+    /// Story 1.3 — Scope organisation : filtre les buildings dont
+    /// l'ACP parente appartient à cette organisation. Le repository
+    /// traduit en `acp_id IN (SELECT id FROM acps WHERE organization_id = $)`
+    /// (la colonne `buildings.organization_id` a été DROP en migration 040000).
     pub organization_id: Option<Uuid>,
+    /// Story 1.2 — Scope ACP direct (filtre `buildings.acp_id = $`).
+    pub acp_id: Option<Uuid>,
     pub city: Option<String>,
     pub construction_year: Option<i32>,
     pub min_units: Option<i32>,
     pub max_units: Option<i32>,
     /// BUG-WF14-2: Si défini, filtre les buildings où cet user possède un lot (via owners.user_id → unit_owners → units)
     pub owner_user_id: Option<Uuid>,
+    /// Recherche libre (ILIKE) sur name/city/address — évite au frontend de
+    /// devoir fetch les 100 premiers buildings puis filtrer en mémoire
+    /// (BuildingSelector : ratait les buildings récents une fois >100
+    /// buildings créés globalement en CI, cf. searchBuildings côté frontend).
+    pub search: Option<String>,
 }
 
 /// Filters for expense list queries
@@ -34,7 +45,13 @@ pub struct ExpenseFilters {
 /// Filters for unit list queries
 #[derive(Debug, Deserialize, Default, Clone)]
 pub struct UnitFilters {
+    /// Story H15 — Scope organisation : filtre les lots dont l'ACP appartient
+    /// à cette organisation. Le repository traduit en
+    /// `acp_id IN (SELECT id FROM acps WHERE organization_id = $)` (la colonne
+    /// `units.organization_id` a été DROP en migration 20260630030000).
     pub organization_id: Option<Uuid>,
+    /// Story H15 — Scope ACP direct (filtre `units.acp_id = $`).
+    pub acp_id: Option<Uuid>,
     pub building_id: Option<Uuid>,
     pub unit_type: Option<String>,
     pub has_owner: Option<bool>,

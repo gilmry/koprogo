@@ -1,6 +1,7 @@
 use crate::application::dto::{
     BudgetResponse, CreateBudgetRequest, PageRequest, UpdateBudgetRequest,
 };
+use crate::application::error::AppError;
 use crate::application::ports::{
     BudgetRepository, BudgetStatsResponse, BudgetVarianceResponse, BuildingRepository,
     ExpenseRepository,
@@ -33,13 +34,14 @@ impl BudgetUseCases {
     pub async fn create_budget(
         &self,
         request: CreateBudgetRequest,
-    ) -> Result<BudgetResponse, String> {
+    ) -> Result<BudgetResponse, AppError> {
         // Verify building exists
         let _building = self
             .building_repository
             .find_by_id(request.building_id)
-            .await?
-            .ok_or_else(|| "Building not found".to_string())?;
+            .await
+            .map_err(AppError::from)?
+            .ok_or_else(|| AppError::NotFound("Building not found".to_string()))?;
 
         // Check if budget already exists for this building/fiscal_year
         if let Some(_existing) = self
@@ -47,10 +49,10 @@ impl BudgetUseCases {
             .find_by_building_and_fiscal_year(request.building_id, request.fiscal_year)
             .await?
         {
-            return Err(format!(
+            return Err(AppError::Conflict(format!(
                 "Budget already exists for building {} and fiscal year {}",
                 request.building_id, request.fiscal_year
-            ));
+            )));
         }
 
         // Create budget
@@ -72,7 +74,7 @@ impl BudgetUseCases {
     }
 
     /// Get budget by ID
-    pub async fn get_budget(&self, id: Uuid) -> Result<Option<BudgetResponse>, String> {
+    pub async fn get_budget(&self, id: Uuid) -> Result<Option<BudgetResponse>, AppError> {
         let budget = self.repository.find_by_id(id).await?;
         Ok(budget.map(BudgetResponse::from))
     }
@@ -82,7 +84,7 @@ impl BudgetUseCases {
         &self,
         building_id: Uuid,
         fiscal_year: i32,
-    ) -> Result<Option<BudgetResponse>, String> {
+    ) -> Result<Option<BudgetResponse>, AppError> {
         let budget = self
             .repository
             .find_by_building_and_fiscal_year(building_id, fiscal_year)
@@ -94,13 +96,16 @@ impl BudgetUseCases {
     pub async fn get_active_budget(
         &self,
         building_id: Uuid,
-    ) -> Result<Option<BudgetResponse>, String> {
+    ) -> Result<Option<BudgetResponse>, AppError> {
         let budget = self.repository.find_active_by_building(building_id).await?;
         Ok(budget.map(BudgetResponse::from))
     }
 
     /// List budgets for a building
-    pub async fn list_by_building(&self, building_id: Uuid) -> Result<Vec<BudgetResponse>, String> {
+    pub async fn list_by_building(
+        &self,
+        building_id: Uuid,
+    ) -> Result<Vec<BudgetResponse>, AppError> {
         let budgets = self.repository.find_by_building(building_id).await?;
         Ok(budgets.into_iter().map(BudgetResponse::from).collect())
     }
@@ -110,7 +115,7 @@ impl BudgetUseCases {
         &self,
         organization_id: Uuid,
         fiscal_year: i32,
-    ) -> Result<Vec<BudgetResponse>, String> {
+    ) -> Result<Vec<BudgetResponse>, AppError> {
         let budgets = self
             .repository
             .find_by_fiscal_year(organization_id, fiscal_year)
@@ -123,7 +128,7 @@ impl BudgetUseCases {
         &self,
         organization_id: Uuid,
         status: BudgetStatus,
-    ) -> Result<Vec<BudgetResponse>, String> {
+    ) -> Result<Vec<BudgetResponse>, AppError> {
         let budgets = self
             .repository
             .find_by_status(organization_id, status)
@@ -138,7 +143,7 @@ impl BudgetUseCases {
         organization_id: Option<Uuid>,
         building_id: Option<Uuid>,
         status: Option<BudgetStatus>,
-    ) -> Result<(Vec<BudgetResponse>, i64), String> {
+    ) -> Result<(Vec<BudgetResponse>, i64), AppError> {
         let (budgets, total) = self
             .repository
             .find_all_paginated(page_request, organization_id, building_id, status)
@@ -153,7 +158,7 @@ impl BudgetUseCases {
         &self,
         id: Uuid,
         request: UpdateBudgetRequest,
-    ) -> Result<BudgetResponse, String> {
+    ) -> Result<BudgetResponse, AppError> {
         let mut budget = self
             .repository
             .find_by_id(id)
@@ -178,7 +183,7 @@ impl BudgetUseCases {
     }
 
     /// Submit budget for approval
-    pub async fn submit_for_approval(&self, id: Uuid) -> Result<BudgetResponse, String> {
+    pub async fn submit_for_approval(&self, id: Uuid) -> Result<BudgetResponse, AppError> {
         let mut budget = self
             .repository
             .find_by_id(id)
@@ -196,7 +201,7 @@ impl BudgetUseCases {
         &self,
         id: Uuid,
         meeting_id: Uuid,
-    ) -> Result<BudgetResponse, String> {
+    ) -> Result<BudgetResponse, AppError> {
         let mut budget = self
             .repository
             .find_by_id(id)
@@ -214,7 +219,7 @@ impl BudgetUseCases {
         &self,
         id: Uuid,
         reason: Option<String>,
-    ) -> Result<BudgetResponse, String> {
+    ) -> Result<BudgetResponse, AppError> {
         let mut budget = self
             .repository
             .find_by_id(id)
@@ -239,7 +244,7 @@ impl BudgetUseCases {
     }
 
     /// Archive budget
-    pub async fn archive_budget(&self, id: Uuid) -> Result<BudgetResponse, String> {
+    pub async fn archive_budget(&self, id: Uuid) -> Result<BudgetResponse, AppError> {
         let mut budget = self
             .repository
             .find_by_id(id)
@@ -253,12 +258,12 @@ impl BudgetUseCases {
     }
 
     /// Delete budget
-    pub async fn delete_budget(&self, id: Uuid) -> Result<bool, String> {
+    pub async fn delete_budget(&self, id: Uuid) -> Result<bool, AppError> {
         self.repository.delete(id).await
     }
 
     /// Get budget statistics
-    pub async fn get_stats(&self, organization_id: Uuid) -> Result<BudgetStatsResponse, String> {
+    pub async fn get_stats(&self, organization_id: Uuid) -> Result<BudgetStatsResponse, AppError> {
         self.repository.get_stats(organization_id).await
     }
 
@@ -266,7 +271,7 @@ impl BudgetUseCases {
     pub async fn get_variance(
         &self,
         budget_id: Uuid,
-    ) -> Result<Option<BudgetVarianceResponse>, String> {
+    ) -> Result<Option<BudgetVarianceResponse>, AppError> {
         self.repository.get_variance(budget_id).await
     }
 }
@@ -282,6 +287,7 @@ mod tests {
     use crate::domain::entities::{Building, Expense};
     use mockall::mock;
     use mockall::predicate::*;
+    use rust_decimal_macros::dec;
 
     // Mock BudgetRepository
     mock! {
@@ -289,40 +295,40 @@ mod tests {
 
         #[async_trait::async_trait]
         impl BudgetRepository for BudgetRepo {
-            async fn create(&self, budget: &Budget) -> Result<Budget, String>;
-            async fn find_by_id(&self, id: Uuid) -> Result<Option<Budget>, String>;
+            async fn create(&self, budget: &Budget) -> Result<Budget, AppError>;
+            async fn find_by_id(&self, id: Uuid) -> Result<Option<Budget>, AppError>;
             async fn find_by_building_and_fiscal_year(
                 &self,
                 building_id: Uuid,
                 fiscal_year: i32,
-            ) -> Result<Option<Budget>, String>;
-            async fn find_by_building(&self, building_id: Uuid) -> Result<Vec<Budget>, String>;
-            async fn find_active_by_building(&self, building_id: Uuid) -> Result<Option<Budget>, String>;
+            ) -> Result<Option<Budget>, AppError>;
+            async fn find_by_building(&self, building_id: Uuid) -> Result<Vec<Budget>, AppError>;
+            async fn find_active_by_building(&self, building_id: Uuid) -> Result<Option<Budget>, AppError>;
             async fn find_by_fiscal_year(
                 &self,
                 organization_id: Uuid,
                 fiscal_year: i32,
-            ) -> Result<Vec<Budget>, String>;
+            ) -> Result<Vec<Budget>, AppError>;
             async fn find_by_status(
                 &self,
                 organization_id: Uuid,
                 status: BudgetStatus,
-            ) -> Result<Vec<Budget>, String>;
+            ) -> Result<Vec<Budget>, AppError>;
             async fn find_all_paginated(
                 &self,
                 page_request: &PageRequest,
                 organization_id: Option<Uuid>,
                 building_id: Option<Uuid>,
                 status: Option<BudgetStatus>,
-            ) -> Result<(Vec<Budget>, i64), String>;
-            async fn update(&self, budget: &Budget) -> Result<Budget, String>;
-            async fn delete(&self, id: Uuid) -> Result<bool, String>;
-            async fn get_stats(&self, organization_id: Uuid) -> Result<BudgetStatsResponse, String>;
-            async fn get_variance(&self, budget_id: Uuid) -> Result<Option<BudgetVarianceResponse>, String>;
+            ) -> Result<(Vec<Budget>, i64), AppError>;
+            async fn update(&self, budget: &Budget) -> Result<Budget, AppError>;
+            async fn delete(&self, id: Uuid) -> Result<bool, AppError>;
+            async fn get_stats(&self, organization_id: Uuid) -> Result<BudgetStatsResponse, AppError>;
+            async fn get_variance(&self, budget_id: Uuid) -> Result<Option<BudgetVarianceResponse>, AppError>;
         }
     }
 
-    // Mock BuildingRepository
+    // Mock BuildingRepository (port still uses String; do not migrate here)
     mock! {
         pub BuildingRepo {}
 
@@ -339,10 +345,14 @@ mod tests {
             ) -> Result<(Vec<Building>, i64), String>;
             async fn update(&self, building: &Building) -> Result<Building, String>;
             async fn delete(&self, id: Uuid) -> Result<bool, String>;
+            async fn find_by_id_with_metrics(
+                &self,
+                id: Uuid,
+            ) -> Result<Option<(Building, crate::domain::entities::BuildingMetrics)>, String>;
         }
     }
 
-    // Mock ExpenseRepository
+    // Mock ExpenseRepository (port still uses String; do not migrate here)
     mock! {
         pub ExpenseRepo {}
 
@@ -379,7 +389,7 @@ mod tests {
 
     /// Helper: create a Draft budget ready for use in tests
     fn make_draft_budget(org_id: Uuid, building_id: Uuid) -> Budget {
-        Budget::new(org_id, building_id, 2025, 60000.0, 15000.0).unwrap()
+        Budget::new(org_id, building_id, 2025, dec!(60000), dec!(15000)).unwrap()
     }
 
     /// Helper: build the BudgetUseCases from three mock repos
@@ -434,8 +444,8 @@ mod tests {
             organization_id: org_id,
             building_id,
             fiscal_year: 2025,
-            ordinary_budget: 60000.0,
-            extraordinary_budget: 15000.0,
+            ordinary_budget: dec!(60000),
+            extraordinary_budget: dec!(15000),
             notes: Some("Budget prévisionnel toiture".to_string()),
         };
 
@@ -443,9 +453,9 @@ mod tests {
         assert!(result.is_ok());
         let resp = result.unwrap();
         assert_eq!(resp.fiscal_year, 2025);
-        assert_eq!(resp.ordinary_budget, 60000.0);
-        assert_eq!(resp.extraordinary_budget, 15000.0);
-        assert_eq!(resp.total_budget, 75000.0);
+        assert_eq!(resp.ordinary_budget, dec!(60000));
+        assert_eq!(resp.extraordinary_budget, dec!(15000));
+        assert_eq!(resp.total_budget, dec!(75000));
         assert_eq!(resp.status, BudgetStatus::Draft);
         assert!(resp.is_editable);
         assert!(!resp.is_active);
@@ -485,14 +495,17 @@ mod tests {
             organization_id: org_id,
             building_id,
             fiscal_year: 2025,
-            ordinary_budget: 60000.0,
-            extraordinary_budget: 15000.0,
+            ordinary_budget: dec!(60000),
+            extraordinary_budget: dec!(15000),
             notes: None,
         };
 
         let result = uc.create_budget(request).await;
         assert!(result.is_err());
-        assert!(result.unwrap_err().contains("Budget already exists"));
+        assert!(result
+            .unwrap_err()
+            .to_string()
+            .contains("Budget already exists"));
     }
 
     // ---------------------------------------------------------------

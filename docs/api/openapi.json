@@ -256,26 +256,14 @@
           "Auth"
         ],
         "summary": "Refresh Token",
+        "description": "Le refresh token est lu depuis le cookie HttpOnly `koprogo_refresh` (WP-FE1) — aucun corps de requête. La réponse rote le cookie et ne contient pas de refresh_token.",
         "operationId": "refresh_token",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/RefreshTokenRequest"
-              }
-            }
-          },
-          "required": true
-        },
         "responses": {
-          "201": {
-            "description": "Resource created successfully"
+          "200": {
+            "description": "Access token rafraîchi"
           },
-          "400": {
-            "description": "Bad Request"
-          },
-          "404": {
-            "description": "Not Found"
+          "401": {
+            "description": "Cookie refresh absent, expiré ou révoqué"
           },
           "500": {
             "description": "Internal Server Error"
@@ -978,6 +966,33 @@
         ]
       }
     },
+    "/c/{token}": {
+      "get": {
+        "tags": [
+          "MagicLink"
+        ],
+        "summary": "Public access via magic link",
+        "operationId": "consume_magic_link",
+        "parameters": [
+          {
+            "name": "token",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Scope payload"
+          },
+          "403": {
+            "description": "Invalid / expired / already consumed"
+          }
+        }
+      }
+    },
     "/consent": {
       "post": {
         "tags": [
@@ -1055,6 +1070,116 @@
             "bearer_auth": []
           }
         ]
+      }
+    },
+    "/contractor-evaluations": {
+      "post": {
+        "tags": [
+          "ContractorEvaluation"
+        ],
+        "operationId": "create_contractor_evaluation",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateContractorEvaluationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Evaluation created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContractorEvaluationDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error"
+          },
+          "403": {
+            "description": "Forbidden — only syndic / superadmin"
+          },
+          "404": {
+            "description": "TechnicalSpec not found"
+          },
+          "422": {
+            "description": "TechnicalSpec not Approved, or self-evaluation"
+          }
+        }
+      }
+    },
+    "/contractor-evaluations/{id}": {
+      "get": {
+        "tags": [
+          "ContractorEvaluation"
+        ],
+        "operationId": "get_contractor_evaluation",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Evaluation details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContractorEvaluationDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Evaluation not found"
+          }
+        }
+      }
+    },
+    "/contractors/{contractor_user_id}/evaluations": {
+      "get": {
+        "tags": [
+          "ContractorEvaluation"
+        ],
+        "operationId": "list_contractor_evaluations",
+        "parameters": [
+          {
+            "name": "contractor_user_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of evaluations (newest first)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ContractorEvaluationDto"
+                  }
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/expenses/{expense_id}/payments": {
@@ -1354,6 +1479,179 @@
             "bearer_auth": []
           }
         ]
+      }
+    },
+    "/magic-links": {
+      "post": {
+        "tags": [
+          "MagicLink"
+        ],
+        "summary": "Issue a magic link (syndic / superadmin only)",
+        "operationId": "issue_magic_link",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IssueMagicLinkRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "MagicLink issued"
+          },
+          "400": {
+            "description": "Validation error"
+          },
+          "403": {
+            "description": "Forbidden — only syndic or superadmin"
+          }
+        }
+      }
+    },
+    "/mandates": {
+      "get": {
+        "tags": [
+          "Mandate"
+        ],
+        "summary": "List active mandates for a subject user",
+        "operationId": "list_mandates",
+        "parameters": [
+          {
+            "name": "subject",
+            "in": "query",
+            "description": "Subject user id. Defaults to the caller.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Active mandates",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MandateResponse"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden — caller cannot view this subject's mandates"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Mandate"
+        ],
+        "summary": "Issue a mandate (syndic / superadmin only)",
+        "operationId": "issue_mandate",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IssueMandateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Mandate issued",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MandateResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error"
+          },
+          "403": {
+            "description": "Forbidden — only syndic or superadmin"
+          }
+        }
+      }
+    },
+    "/mandates/{id}": {
+      "get": {
+        "tags": [
+          "Mandate"
+        ],
+        "summary": "Get mandate details",
+        "operationId": "get_mandate",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Mandate details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MandateResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden — not allowed to view this mandate"
+          },
+          "404": {
+            "description": "Mandate not found"
+          }
+        }
+      }
+    },
+    "/mandates/{id}/revoke": {
+      "post": {
+        "tags": [
+          "Mandate"
+        ],
+        "summary": "Revoke a mandate before its natural expiry (syndic / superadmin)",
+        "operationId": "revoke_mandate",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Mandate revoked"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Mandate not found"
+          }
+        }
       }
     },
     "/meetings/{meeting_id}/resolutions": {
@@ -1878,6 +2176,40 @@
           },
           "500": {
             "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/organizations/{organization_id}/users": {
+      "get": {
+        "tags": [
+          "Users"
+        ],
+        "summary": "List users for an organization (syndic/accountant own org, superadmin any org)",
+        "operationId": "list_organization_users",
+        "parameters": [
+          {
+            "name": "organization_id",
+            "in": "path",
+            "description": "Organization ID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of users"
+          },
+          "403": {
+            "description": "Access denied — resource belongs to another organization"
           }
         },
         "security": [
@@ -3094,6 +3426,408 @@
         ]
       }
     },
+    "/role-assignments": {
+      "get": {
+        "tags": [
+          "RoleAssignment"
+        ],
+        "summary": "List role assignments filtered by organization and/or role (superadmin only)",
+        "operationId": "list_role_assignments_admin",
+        "parameters": [
+          {
+            "name": "organization_id",
+            "in": "query",
+            "description": "Filter by organization",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "role",
+            "in": "query",
+            "description": "Filter by role string (whitelist)",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Filtered role assignments",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/UserRoleAssignmentResponse"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden — superadmin only"
+          }
+        }
+      }
+    },
+    "/role-delegations": {
+      "get": {
+        "tags": [
+          "RoleDelegation"
+        ],
+        "summary": "List active delegations involving a subject user",
+        "operationId": "list_role_delegations",
+        "parameters": [
+          {
+            "name": "subject",
+            "in": "query",
+            "description": "Subject user id. Defaults to the caller.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Active delegations",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/RoleDelegationResponse"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden — caller cannot view this subject's delegations"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "RoleDelegation"
+        ],
+        "summary": "Delegate a role to another user for a bounded duration",
+        "operationId": "create_role_delegation",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DelegateRoleRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Delegation created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RoleDelegationResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error"
+          },
+          "403": {
+            "description": "Forbidden — caller cannot delegate this role"
+          },
+          "409": {
+            "description": "Target already holds the role"
+          }
+        }
+      }
+    },
+    "/role-delegations/{id}": {
+      "delete": {
+        "tags": [
+          "RoleDelegation"
+        ],
+        "summary": "Revoke a delegation before its natural expiry",
+        "operationId": "revoke_role_delegation",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Delegation revoked"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Delegation not found"
+          }
+        }
+      }
+    },
+    "/technical-specs": {
+      "get": {
+        "tags": [
+          "TechnicalSpec"
+        ],
+        "operationId": "list_technical_specs",
+        "parameters": [
+          {
+            "name": "acp_id",
+            "in": "query",
+            "description": "ACP id to list specs for",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of specs",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TechnicalSpecDto"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "TechnicalSpec"
+        ],
+        "operationId": "create_technical_spec",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateTechnicalSpecRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Spec created (Draft)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TechnicalSpecDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error"
+          },
+          "403": {
+            "description": "Forbidden — only syndic / superadmin"
+          }
+        }
+      }
+    },
+    "/technical-specs/{id}": {
+      "get": {
+        "tags": [
+          "TechnicalSpec"
+        ],
+        "operationId": "get_technical_spec",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Spec details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TechnicalSpecDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Spec not found"
+          }
+        }
+      }
+    },
+    "/technical-specs/{id}/bump": {
+      "post": {
+        "tags": [
+          "TechnicalSpec"
+        ],
+        "operationId": "bump_technical_spec",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BumpTechnicalSpecRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "New version created (Draft)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TechnicalSpecDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error"
+          },
+          "403": {
+            "description": "Forbidden — only syndic / superadmin"
+          },
+          "404": {
+            "description": "Previous spec not found"
+          }
+        }
+      }
+    },
+    "/technical-specs/{id}/signatures": {
+      "post": {
+        "tags": [
+          "TechnicalSpec"
+        ],
+        "operationId": "sign_technical_spec",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SignTechnicalSpecRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Signature recorded",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TechnicalSpecSignatureDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Spec not in PendingSignatures state"
+          },
+          "403": {
+            "description": "Signatory role not authorised"
+          },
+          "404": {
+            "description": "Spec not found"
+          },
+          "409": {
+            "description": "Signature already exists for (user, role)"
+          }
+        }
+      }
+    },
+    "/technical-specs/{id}/submit": {
+      "post": {
+        "tags": [
+          "TechnicalSpec"
+        ],
+        "operationId": "submit_technical_spec",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Spec submitted (PendingSignatures)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TechnicalSpecDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden — only syndic / superadmin"
+          },
+          "404": {
+            "description": "Spec not found"
+          },
+          "409": {
+            "description": "Spec already approved"
+          }
+        }
+      }
+    },
     "/tickets": {
       "post": {
         "tags": [
@@ -3301,6 +4035,58 @@
           },
           "401": {
             "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Ticket not found"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      },
+      "patch": {
+        "tags": [
+          "Tickets"
+        ],
+        "summary": "Update editable fields of a ticket (Story 3.6 INV-24, within 5-min window)",
+        "description": "Edits the editable fields of a ticket (title / description / category /\npriority / severity / incident_date / evidence_attachments / witnesses).\nReturns:\n- 200 OK on success;\n- 403 (`kind = ticket_immutable`) if the 5-minute editability window\n  has elapsed;\n- 404 if the ticket does not exist;\n- 400 (`kind = validation`) on invariant violations;\n- 403 (multi-tenant isolation) if the ticket belongs to a different org.\n\nWorkflow transitions (assign/resolve/close/cancel/reopen) keep their\nown dedicated PUT endpoints — this PATCH is for content corrections\ninside the 5-minute window only.",
+        "operationId": "update_ticket_fields",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Ticket ID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateTicketRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Ticket updated"
+          },
+          "400": {
+            "description": "Validation error (e.g. complaint without severity)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Ticket immutable (INV-24) or out of scope"
           },
           "404": {
             "description": "Ticket not found"
@@ -3575,6 +4361,224 @@
         ]
       }
     },
+    "/tickets/{id}/syndic-responses": {
+      "get": {
+        "tags": [
+          "SyndicResponse"
+        ],
+        "summary": "List syndic responses for a ticket (oldest first)",
+        "operationId": "list_syndic_responses",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Responses list",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SyndicResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "SyndicResponse"
+        ],
+        "summary": "Post a structured syndic response to a ticket (append-only)",
+        "operationId": "create_syndic_response",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateSyndicResponseRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Response saved",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SyndicResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error (body too short/long, invalid action)"
+          },
+          "403": {
+            "description": "Forbidden — only syndic / superadmin"
+          },
+          "404": {
+            "description": "Ticket not found"
+          }
+        }
+      }
+    },
+    "/users/{user_id}/role-assignments": {
+      "get": {
+        "tags": [
+          "RoleAssignment"
+        ],
+        "summary": "List role assignments for a user",
+        "operationId": "list_role_assignments_for_user",
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "description": "Target user UUID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Role assignments",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/UserRoleAssignmentResponse"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "RoleAssignment"
+        ],
+        "summary": "Assign a sub-role to a user (Story B0bis — gap Story 3.1)",
+        "operationId": "assign_role",
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "description": "Target user UUID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AssignRoleRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Role assigned",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserRoleAssignmentResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error (unknown role, past valid_until)"
+          },
+          "403": {
+            "description": "Forbidden — not superadmin/syndic"
+          },
+          "404": {
+            "description": "Target user not found"
+          },
+          "409": {
+            "description": "Role already actively assigned to this user"
+          }
+        }
+      }
+    },
+    "/users/{user_id}/role-assignments/{assignment_id}": {
+      "delete": {
+        "tags": [
+          "RoleAssignment"
+        ],
+        "summary": "Revoke a role assignment",
+        "operationId": "revoke_role_assignment",
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "description": "Target user UUID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "assignment_id",
+            "in": "path",
+            "description": "Assignment UUID to revoke",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Assignment revoked"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Assignment not found"
+          }
+        }
+      }
+    },
     "/votes/{vote_id}": {
       "put": {
         "tags": [
@@ -3660,6 +4664,34 @@
           "rejected"
         ]
       },
+      "AssignRoleRequest": {
+        "type": "object",
+        "required": [
+          "role"
+        ],
+        "properties": {
+          "organization_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid",
+            "description": "Organization scope (None = role global)."
+          },
+          "role": {
+            "type": "string",
+            "description": "Role canonique (ex. \"accountant.encodeur\", \"community.moderator\")."
+          },
+          "valid_until": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "description": "Si Some, assignment temporaire (delegated) qui expire à cette date.\nSi None, assignment native permanente."
+          }
+        }
+      },
       "AssignTicketRequest": {
         "type": "object",
         "required": [
@@ -3704,6 +4736,57 @@
           "Rejected",
           "Archived"
         ]
+      },
+      "BumpTechnicalSpecRequest": {
+        "type": "object",
+        "required": [
+          "version"
+        ],
+        "properties": {
+          "attachments": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "type": "string"
+            }
+          },
+          "deliverables": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "type": "string"
+            }
+          },
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "required_signatures": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "type": "string"
+            }
+          },
+          "title": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "version": {
+            "type": "string",
+            "description": "New SemVer. Must be strictly greater than the previous one."
+          }
+        }
       },
       "CampaignStatus": {
         "type": "string",
@@ -3799,8 +4882,8 @@
             "$ref": "#/components/schemas/VoteChoice"
           },
           "voting_power": {
-            "type": "number",
-            "format": "double"
+            "type": "string",
+            "description": "Tantièmes/millièmes — Decimal exact (ADR-0008), sérialisé en string JSON."
           }
         }
       },
@@ -3843,8 +4926,8 @@
         ],
         "properties": {
           "total_voting_power": {
-            "type": "number",
-            "format": "double"
+            "type": "string",
+            "description": "Total tantièmes du bâtiment — Decimal exact (ADR-0008), string JSON."
           }
         }
       },
@@ -3915,6 +4998,59 @@
           "Variable"
         ]
       },
+      "ContractorEvaluationDto": {
+        "type": "object",
+        "required": [
+          "id",
+          "contractor_user_id",
+          "technical_spec_id",
+          "linked_ticket_ids",
+          "evaluator_user_id",
+          "scores",
+          "average_score",
+          "comment",
+          "created_at"
+        ],
+        "properties": {
+          "average_score": {
+            "type": "number",
+            "format": "double"
+          },
+          "comment": {
+            "type": "string"
+          },
+          "contractor_user_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "evaluator_user_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "linked_ticket_ids": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "scores": {
+            "$ref": "#/components/schemas/EvaluationScoresOutDto"
+          },
+          "technical_spec_id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
       "ConvocationStatus": {
         "type": "string",
         "description": "Convocation status",
@@ -3937,7 +5073,7 @@
       "CreateBuildingDto": {
         "type": "object",
         "required": [
-          "organization_id",
+          "acp_id",
           "name",
           "address",
           "city",
@@ -3946,6 +5082,10 @@
           "total_units"
         ],
         "properties": {
+          "acp_id": {
+            "type": "string",
+            "description": "Story 1.2 — FK vers `acps.id` (anciennement `organization_id`).\nLa migration 040000 a DROP la colonne ; le scoping org se fait\ndésormais via `acps.organization_id`."
+          },
           "address": {
             "type": "string"
           },
@@ -3965,9 +5105,6 @@
           "name": {
             "type": "string"
           },
-          "organization_id": {
-            "type": "string"
-          },
           "postal_code": {
             "type": "string"
           },
@@ -3981,6 +5118,38 @@
           "total_units": {
             "type": "integer",
             "format": "int32"
+          }
+        }
+      },
+      "CreateContractorEvaluationRequest": {
+        "type": "object",
+        "required": [
+          "contractor_user_id",
+          "technical_spec_id",
+          "scores",
+          "comment"
+        ],
+        "properties": {
+          "comment": {
+            "type": "string"
+          },
+          "contractor_user_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "linked_ticket_ids": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "scores": {
+            "$ref": "#/components/schemas/EvaluationScoresDto"
+          },
+          "technical_spec_id": {
+            "type": "string",
+            "format": "uuid"
           }
         }
       },
@@ -4201,6 +5370,78 @@
           }
         }
       },
+      "CreateSyndicResponseRequest": {
+        "type": "object",
+        "required": [
+          "body"
+        ],
+        "properties": {
+          "action_proposed": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "One of: `schedule_inspection`, `request_quote`, `closed_no_action`,\n`escalated_board`, `other`. Optional."
+          },
+          "body": {
+            "type": "string",
+            "description": "Free text — 10..=5000 chars after trim."
+          }
+        }
+      },
+      "CreateTechnicalSpecRequest": {
+        "type": "object",
+        "required": [
+          "acp_id",
+          "title",
+          "description",
+          "version",
+          "deliverables",
+          "required_signatures"
+        ],
+        "properties": {
+          "acp_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "attachments": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "building_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "deliverables": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "description": {
+            "type": "string"
+          },
+          "required_signatures": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Roles required to sign: `syndic`, `amo`, `lawyer`, `architect`,\n`acp_representative`."
+          },
+          "title": {
+            "type": "string"
+          },
+          "version": {
+            "type": "string",
+            "description": "SemVer string (`major.minor.patch`, e.g. `1.0.0`). Strict — no\n`v`-prefix, no pre-release / build metadata."
+          }
+        }
+      },
       "CreateTicketRequest": {
         "type": "object",
         "required": [
@@ -4221,8 +5462,45 @@
           "description": {
             "type": "string"
           },
+          "evidence_attachments": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Story 3.6 (FR31) — URL / S3-MinIO references. Up to 10."
+          },
+          "incident_date": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "description": "Story 3.6 (FR31) — Optional incident timestamp."
+          },
+          "kind": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/TicketKind",
+                "description": "Story 3.6 (FR31) — Request (default) vs Complaint. Optional for\nbackward compatibility with pre-3.6 clients (defaults to Request)."
+              }
+            ]
+          },
           "priority": {
             "$ref": "#/components/schemas/TicketPriority"
+          },
+          "severity": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/TicketSeverity",
+                "description": "Story 3.6 (FR31) — REQUIRED when `kind = Complaint`."
+              }
+            ]
           },
           "title": {
             "type": "string"
@@ -4233,6 +5511,14 @@
               "null"
             ],
             "format": "uuid"
+          },
+          "witnesses": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Story 3.6 (FR31) — Up to 10 witness user_ids (no duplicates)."
           }
         }
       },
@@ -4243,6 +5529,34 @@
           "Balanced",
           "Negative"
         ]
+      },
+      "DelegateRoleRequest": {
+        "type": "object",
+        "required": [
+          "target_user_id",
+          "role",
+          "valid_until"
+        ],
+        "properties": {
+          "organization_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "role": {
+            "type": "string"
+          },
+          "target_user_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "valid_until": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
       },
       "DeliveryMethod": {
         "type": "string",
@@ -4280,6 +5594,80 @@
           "delivered",
           "expired"
         ]
+      },
+      "EvaluationScoresDto": {
+        "type": "object",
+        "required": [
+          "quality",
+          "timeliness",
+          "communication",
+          "cost_compliance",
+          "overall"
+        ],
+        "properties": {
+          "communication": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "cost_compliance": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "overall": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "quality": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "timeliness": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          }
+        }
+      },
+      "EvaluationScoresOutDto": {
+        "type": "object",
+        "required": [
+          "quality",
+          "timeliness",
+          "communication",
+          "cost_compliance",
+          "overall"
+        ],
+        "properties": {
+          "communication": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "cost_compliance": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "overall": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "quality": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "timeliness": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          }
+        }
       },
       "ExchangeStatus": {
         "type": "string",
@@ -4448,6 +5836,75 @@
           }
         ]
       },
+      "IssueMagicLinkRequest": {
+        "type": "object",
+        "required": [
+          "subject_user_id",
+          "scope_kind",
+          "scope_id",
+          "expires_in_seconds"
+        ],
+        "properties": {
+          "expires_in_seconds": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "scope_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "scope_kind": {
+            "type": "string"
+          },
+          "subject_user_id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
+      "IssueMandateRequest": {
+        "type": "object",
+        "required": [
+          "subject_user_id",
+          "kind",
+          "scope_kind",
+          "scope_id",
+          "reason",
+          "valid_until"
+        ],
+        "properties": {
+          "kind": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string"
+          },
+          "scope_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "scope_kind": {
+            "type": "string"
+          },
+          "subject_user_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "valid_from": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "description": "Optional — defaults to `now()` server-side."
+          },
+          "valid_until": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Mandatory. Returning 422-like validation if missing."
+          }
+        }
+      },
       "LoginRequest": {
         "type": "object",
         "required": [
@@ -4472,6 +5929,72 @@
           "four_fifths",
           "unanimity"
         ]
+      },
+      "MandateResponse": {
+        "type": "object",
+        "required": [
+          "id",
+          "subject_user_id",
+          "kind",
+          "scope_kind",
+          "scope_id",
+          "issued_by",
+          "reason",
+          "valid_from",
+          "valid_until",
+          "created_at",
+          "updated_at"
+        ],
+        "properties": {
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "issued_by": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "kind": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string"
+          },
+          "revoked_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "scope_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "scope_kind": {
+            "type": "string"
+          },
+          "subject_user_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "valid_from": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "valid_until": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
       },
       "MarkReadRequest": {
         "type": "object",
@@ -4672,17 +6195,6 @@
           "Monthly"
         ]
       },
-      "RefreshTokenRequest": {
-        "type": "object",
-        "required": [
-          "refresh_token"
-        ],
-        "properties": {
-          "refresh_token": {
-            "type": "string"
-          }
-        }
-      },
       "RefundPaymentRequest": {
         "type": "object",
         "description": "Refund payment request DTO",
@@ -4811,6 +6323,58 @@
           "Other"
         ]
       },
+      "RoleDelegationResponse": {
+        "type": "object",
+        "required": [
+          "id",
+          "user_id",
+          "role",
+          "created_at",
+          "updated_at"
+        ],
+        "properties": {
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "delegated_from_user_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "organization_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "role": {
+            "type": "string"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "user_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "valid_until": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          }
+        }
+      },
       "SharedObjectCategory": {
         "type": "string",
         "description": "Category for shared objects",
@@ -4824,6 +6388,26 @@
           "Baby",
           "Other"
         ]
+      },
+      "SignTechnicalSpecRequest": {
+        "type": "object",
+        "required": [
+          "role"
+        ],
+        "properties": {
+          "mandate_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid",
+            "description": "Optional Mandate id. REQUIRED for mandataire roles (amo / lawyer /\narchitect) — Story 3.4 chain."
+          },
+          "role": {
+            "type": "string",
+            "description": "Role under which the caller signs. Must be in the spec's\n`required_signatures` list."
+          }
+        }
       },
       "SkillCategory": {
         "type": "string",
@@ -4864,6 +6448,164 @@
           }
         }
       },
+      "SyndicResponseDto": {
+        "type": "object",
+        "required": [
+          "id",
+          "ticket_id",
+          "syndic_user_id",
+          "body",
+          "created_at"
+        ],
+        "properties": {
+          "action_proposed": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "body": {
+            "type": "string"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "syndic_user_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "ticket_id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
+      "TechnicalSpecDto": {
+        "type": "object",
+        "required": [
+          "id",
+          "acp_id",
+          "title",
+          "description",
+          "version",
+          "status",
+          "deliverables",
+          "required_signatures",
+          "attachments",
+          "created_by",
+          "created_at",
+          "updated_at"
+        ],
+        "properties": {
+          "acp_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "attachments": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "building_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "created_by": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "deliverables": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "description": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "previous_version_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "required_signatures": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "status": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "version": {
+            "type": "string"
+          }
+        }
+      },
+      "TechnicalSpecSignatureDto": {
+        "type": "object",
+        "required": [
+          "id",
+          "technical_spec_id",
+          "signatory_user_id",
+          "role",
+          "signed_at"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "mandate_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "role": {
+            "type": "string"
+          },
+          "signatory_user_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "signed_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "technical_spec_id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
       "TicketCategory": {
         "type": "string",
         "description": "Ticket Category - Types of maintenance requests",
@@ -4879,6 +6621,14 @@
           "Other"
         ]
       },
+      "TicketKind": {
+        "type": "string",
+        "description": "Story 3.6 (FR31) — Distinguishes a maintenance request (default) from a\nformal complaint (incident report → triage / mediation workflow).",
+        "enum": [
+          "request",
+          "complaint"
+        ]
+      },
       "TicketPriority": {
         "type": "string",
         "description": "Ticket Priority",
@@ -4887,6 +6637,16 @@
           "Medium",
           "High",
           "Critical"
+        ]
+      },
+      "TicketSeverity": {
+        "type": "string",
+        "description": "Story 3.6 (FR31) — Severity tier for ticket triage. Ordered so callers\ncan compare (e.g. `>= High`) when deciding alerting / SLA targets.",
+        "enum": [
+          "low",
+          "normal",
+          "high",
+          "critical"
         ]
       },
       "TicketStatus": {
@@ -4924,6 +6684,13 @@
           "total_units"
         ],
         "properties": {
+          "acp_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Story 1.2 — Réaffectation de l'ACP parente (SuperAdmin uniquement)."
+          },
           "address": {
             "type": "string"
           },
@@ -4942,12 +6709,6 @@
           },
           "name": {
             "type": "string"
-          },
-          "organization_id": {
-            "type": [
-              "string",
-              "null"
-            ]
           },
           "postal_code": {
             "type": "string"
@@ -5037,6 +6798,136 @@
               "boolean",
               "null"
             ]
+          }
+        }
+      },
+      "UpdateTicketRequest": {
+        "type": "object",
+        "description": "Story 3.6 (FR31 / INV-24) — Partial update applicable only inside the\n5-minute editability window. After that, the use-case returns\n`AppError::TicketImmutable` (403).",
+        "properties": {
+          "category": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/TicketCategory"
+              }
+            ]
+          },
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "evidence_attachments": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "type": "string"
+            }
+          },
+          "incident_date": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "priority": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/TicketPriority"
+              }
+            ]
+          },
+          "severity": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/TicketSeverity"
+              }
+            ]
+          },
+          "title": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "witnesses": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        }
+      },
+      "UserRoleAssignmentResponse": {
+        "type": "object",
+        "required": [
+          "id",
+          "user_id",
+          "role",
+          "is_primary",
+          "created_at",
+          "updated_at"
+        ],
+        "properties": {
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "delegated_from_user_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "is_primary": {
+            "type": "boolean"
+          },
+          "organization_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "role": {
+            "type": "string"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "user_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "valid_until": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
           }
         }
       },
@@ -5207,6 +7098,34 @@
     {
       "name": "Legal Reference",
       "description": "Belgian legal reference rules and majority types"
+    },
+    {
+      "name": "ContractorEvaluation",
+      "description": "Contractor performance evaluations (Story 3.9 — FR34 FR35 INV-21 INV-24)"
+    },
+    {
+      "name": "MagicLink",
+      "description": "Single-use scoped magic links for public access (Story 3.2 — FR6 INV-13 INV-17)"
+    },
+    {
+      "name": "Mandate",
+      "description": "Time-bounded mandates for mandataire delegation (Story 3.4 — FR7 INV-14)"
+    },
+    {
+      "name": "RoleAssignment",
+      "description": "CRUD REST on user_role_assignments (Story B0bis — gap fill Story 3.1)"
+    },
+    {
+      "name": "RoleDelegation",
+      "description": "Temporary role delegation between users (Story 3.5 — FR8 INV-8)"
+    },
+    {
+      "name": "SyndicResponse",
+      "description": "Append-only syndic replies to tickets (Story 3.7 — FR32 INV-23)"
+    },
+    {
+      "name": "TechnicalSpec",
+      "description": "Versionable technical specifications with multi-party signatures (Story 3.8 — FR33)"
     }
   ]
 }

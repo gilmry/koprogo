@@ -4,6 +4,7 @@ use crate::application::dto::{
     OverdueExpenseDto, PaymentRecoveryStatsDto, PaymentReminderResponseDto, ReminderLevelCountDto,
     ReminderStatusCountDto,
 };
+use crate::application::error::AppError;
 use crate::application::ports::{ExpenseRepository, OwnerRepository, PaymentReminderRepository};
 use crate::domain::entities::{PaymentReminder, PaymentStatus, ReminderStatus};
 use chrono::{DateTime, Utc};
@@ -33,7 +34,7 @@ impl PaymentReminderUseCases {
     async fn enrich_with_owner_info(
         &self,
         mut dto: PaymentReminderResponseDto,
-    ) -> Result<PaymentReminderResponseDto, String> {
+    ) -> Result<PaymentReminderResponseDto, AppError> {
         let owner_id =
             Uuid::parse_str(&dto.owner_id).map_err(|_| "Invalid owner_id format".to_string())?;
 
@@ -49,7 +50,7 @@ impl PaymentReminderUseCases {
     pub async fn create_reminder(
         &self,
         dto: CreatePaymentReminderDto,
-    ) -> Result<PaymentReminderResponseDto, String> {
+    ) -> Result<PaymentReminderResponseDto, AppError> {
         let organization_id = Uuid::parse_str(&dto.organization_id)
             .map_err(|_| "Invalid organization_id format".to_string())?;
         let expense_id = Uuid::parse_str(&dto.expense_id)
@@ -69,7 +70,9 @@ impl PaymentReminderUseCases {
             .ok_or_else(|| "Expense not found".to_string())?;
 
         if expense.payment_status == PaymentStatus::Paid {
-            return Err("Cannot create reminder for paid expense".to_string());
+            return Err(AppError::Conflict(
+                "Cannot create reminder for paid expense".to_string(),
+            ));
         }
 
         // Check if reminder already exists for this expense and owner at this level
@@ -81,10 +84,10 @@ impl PaymentReminderUseCases {
                 && r.status != ReminderStatus::Cancelled
                 && r.status != ReminderStatus::Paid
         }) {
-            return Err(format!(
+            return Err(AppError::Conflict(format!(
                 "Active reminder already exists for this expense at {:?} level",
                 dto.level
-            ));
+            )));
         }
 
         let reminder = PaymentReminder::new(
@@ -105,7 +108,7 @@ impl PaymentReminderUseCases {
     pub async fn get_reminder(
         &self,
         id: Uuid,
-    ) -> Result<Option<PaymentReminderResponseDto>, String> {
+    ) -> Result<Option<PaymentReminderResponseDto>, AppError> {
         let reminder = self.reminder_repository.find_by_id(id).await?;
         Ok(reminder.map(|r| r.into()))
     }
@@ -114,7 +117,7 @@ impl PaymentReminderUseCases {
     pub async fn list_by_expense(
         &self,
         expense_id: Uuid,
-    ) -> Result<Vec<PaymentReminderResponseDto>, String> {
+    ) -> Result<Vec<PaymentReminderResponseDto>, AppError> {
         let reminders = self.reminder_repository.find_by_expense(expense_id).await?;
         Ok(reminders.into_iter().map(|r| r.into()).collect())
     }
@@ -123,7 +126,7 @@ impl PaymentReminderUseCases {
     pub async fn list_by_owner(
         &self,
         owner_id: Uuid,
-    ) -> Result<Vec<PaymentReminderResponseDto>, String> {
+    ) -> Result<Vec<PaymentReminderResponseDto>, AppError> {
         let reminders = self.reminder_repository.find_by_owner(owner_id).await?;
         Ok(reminders.into_iter().map(|r| r.into()).collect())
     }
@@ -132,7 +135,7 @@ impl PaymentReminderUseCases {
     pub async fn list_by_organization(
         &self,
         organization_id: Uuid,
-    ) -> Result<Vec<PaymentReminderResponseDto>, String> {
+    ) -> Result<Vec<PaymentReminderResponseDto>, AppError> {
         let reminders = self
             .reminder_repository
             .find_by_organization(organization_id)
@@ -153,7 +156,7 @@ impl PaymentReminderUseCases {
     pub async fn list_active_by_owner(
         &self,
         owner_id: Uuid,
-    ) -> Result<Vec<PaymentReminderResponseDto>, String> {
+    ) -> Result<Vec<PaymentReminderResponseDto>, AppError> {
         let reminders = self
             .reminder_repository
             .find_active_by_owner(owner_id)
@@ -166,7 +169,7 @@ impl PaymentReminderUseCases {
         &self,
         id: Uuid,
         dto: MarkReminderSentDto,
-    ) -> Result<PaymentReminderResponseDto, String> {
+    ) -> Result<PaymentReminderResponseDto, AppError> {
         let mut reminder = self
             .reminder_repository
             .find_by_id(id)
@@ -180,7 +183,7 @@ impl PaymentReminderUseCases {
     }
 
     /// Mark reminder as opened (email opened)
-    pub async fn mark_as_opened(&self, id: Uuid) -> Result<PaymentReminderResponseDto, String> {
+    pub async fn mark_as_opened(&self, id: Uuid) -> Result<PaymentReminderResponseDto, AppError> {
         let mut reminder = self
             .reminder_repository
             .find_by_id(id)
@@ -194,7 +197,7 @@ impl PaymentReminderUseCases {
     }
 
     /// Mark reminder as paid
-    pub async fn mark_as_paid(&self, id: Uuid) -> Result<PaymentReminderResponseDto, String> {
+    pub async fn mark_as_paid(&self, id: Uuid) -> Result<PaymentReminderResponseDto, AppError> {
         let mut reminder = self
             .reminder_repository
             .find_by_id(id)
@@ -212,7 +215,7 @@ impl PaymentReminderUseCases {
         &self,
         id: Uuid,
         dto: CancelReminderDto,
-    ) -> Result<PaymentReminderResponseDto, String> {
+    ) -> Result<PaymentReminderResponseDto, AppError> {
         let mut reminder = self
             .reminder_repository
             .find_by_id(id)
@@ -230,7 +233,7 @@ impl PaymentReminderUseCases {
         &self,
         id: Uuid,
         _dto: EscalateReminderDto,
-    ) -> Result<Option<PaymentReminderResponseDto>, String> {
+    ) -> Result<Option<PaymentReminderResponseDto>, AppError> {
         let mut reminder = self
             .reminder_repository
             .find_by_id(id)
@@ -269,7 +272,7 @@ impl PaymentReminderUseCases {
         &self,
         id: Uuid,
         dto: AddTrackingNumberDto,
-    ) -> Result<PaymentReminderResponseDto, String> {
+    ) -> Result<PaymentReminderResponseDto, AppError> {
         let mut reminder = self
             .reminder_repository
             .find_by_id(id)
@@ -283,7 +286,9 @@ impl PaymentReminderUseCases {
     }
 
     /// Find all pending reminders (to be sent)
-    pub async fn find_pending_reminders(&self) -> Result<Vec<PaymentReminderResponseDto>, String> {
+    pub async fn find_pending_reminders(
+        &self,
+    ) -> Result<Vec<PaymentReminderResponseDto>, AppError> {
         let reminders = self.reminder_repository.find_pending_reminders().await?;
         Ok(reminders.into_iter().map(|r| r.into()).collect())
     }
@@ -291,7 +296,7 @@ impl PaymentReminderUseCases {
     /// Find reminders needing escalation (sent >15 days ago)
     pub async fn find_reminders_needing_escalation(
         &self,
-    ) -> Result<Vec<PaymentReminderResponseDto>, String> {
+    ) -> Result<Vec<PaymentReminderResponseDto>, AppError> {
         let cutoff_date = Utc::now() - chrono::Duration::days(15);
         let reminders = self
             .reminder_repository
@@ -311,7 +316,7 @@ impl PaymentReminderUseCases {
     pub async fn get_recovery_stats(
         &self,
         organization_id: Uuid,
-    ) -> Result<PaymentRecoveryStatsDto, String> {
+    ) -> Result<PaymentRecoveryStatsDto, AppError> {
         let (total_owed, total_penalties, level_counts) = self
             .reminder_repository
             .get_dashboard_stats(organization_id)
@@ -341,7 +346,7 @@ impl PaymentReminderUseCases {
         &self,
         organization_id: Uuid,
         min_days_overdue: i64,
-    ) -> Result<Vec<OverdueExpenseDto>, String> {
+    ) -> Result<Vec<OverdueExpenseDto>, AppError> {
         let results = self
             .reminder_repository
             .find_overdue_expenses_without_reminders(organization_id, min_days_overdue)
@@ -364,7 +369,7 @@ impl PaymentReminderUseCases {
     pub async fn bulk_create_reminders(
         &self,
         dto: BulkCreateRemindersDto,
-    ) -> Result<BulkCreateRemindersResponseDto, String> {
+    ) -> Result<BulkCreateRemindersResponseDto, AppError> {
         let organization_id = Uuid::parse_str(&dto.organization_id)
             .map_err(|_| "Invalid organization_id format".to_string())?;
 
@@ -443,7 +448,7 @@ impl PaymentReminderUseCases {
     }
 
     /// Process automatic escalations (called by cron job)
-    pub async fn process_automatic_escalations(&self) -> Result<i32, String> {
+    pub async fn process_automatic_escalations(&self) -> Result<i32, AppError> {
         let reminders = self.find_reminders_needing_escalation().await?;
         let mut escalated_count = 0;
 
@@ -466,7 +471,7 @@ impl PaymentReminderUseCases {
     }
 
     /// Recalculate penalties for all active reminders (called periodically)
-    pub async fn recalculate_all_penalties(&self, organization_id: Uuid) -> Result<i32, String> {
+    pub async fn recalculate_all_penalties(&self, organization_id: Uuid) -> Result<i32, AppError> {
         let reminders = self
             .reminder_repository
             .find_by_organization_and_status(organization_id, ReminderStatus::Sent)
@@ -487,7 +492,7 @@ impl PaymentReminderUseCases {
     }
 
     /// Delete a reminder
-    pub async fn delete_reminder(&self, id: Uuid) -> Result<bool, String> {
+    pub async fn delete_reminder(&self, id: Uuid) -> Result<bool, AppError> {
         self.reminder_repository.delete(id).await
     }
 }
@@ -518,18 +523,21 @@ mod tests {
 
     #[async_trait]
     impl PaymentReminderRepository for MockPaymentReminderRepository {
-        async fn create(&self, reminder: &PaymentReminder) -> Result<PaymentReminder, String> {
+        async fn create(&self, reminder: &PaymentReminder) -> Result<PaymentReminder, AppError> {
             let mut reminders = self.reminders.lock().unwrap();
             reminders.insert(reminder.id, reminder.clone());
             Ok(reminder.clone())
         }
 
-        async fn find_by_id(&self, id: Uuid) -> Result<Option<PaymentReminder>, String> {
+        async fn find_by_id(&self, id: Uuid) -> Result<Option<PaymentReminder>, AppError> {
             let reminders = self.reminders.lock().unwrap();
             Ok(reminders.get(&id).cloned())
         }
 
-        async fn find_by_expense(&self, expense_id: Uuid) -> Result<Vec<PaymentReminder>, String> {
+        async fn find_by_expense(
+            &self,
+            expense_id: Uuid,
+        ) -> Result<Vec<PaymentReminder>, AppError> {
             let reminders = self.reminders.lock().unwrap();
             Ok(reminders
                 .values()
@@ -538,7 +546,7 @@ mod tests {
                 .collect())
         }
 
-        async fn find_by_owner(&self, owner_id: Uuid) -> Result<Vec<PaymentReminder>, String> {
+        async fn find_by_owner(&self, owner_id: Uuid) -> Result<Vec<PaymentReminder>, AppError> {
             let reminders = self.reminders.lock().unwrap();
             Ok(reminders
                 .values()
@@ -550,7 +558,7 @@ mod tests {
         async fn find_by_organization(
             &self,
             organization_id: Uuid,
-        ) -> Result<Vec<PaymentReminder>, String> {
+        ) -> Result<Vec<PaymentReminder>, AppError> {
             let reminders = self.reminders.lock().unwrap();
             Ok(reminders
                 .values()
@@ -562,7 +570,7 @@ mod tests {
         async fn find_by_status(
             &self,
             status: ReminderStatus,
-        ) -> Result<Vec<PaymentReminder>, String> {
+        ) -> Result<Vec<PaymentReminder>, AppError> {
             let reminders = self.reminders.lock().unwrap();
             Ok(reminders
                 .values()
@@ -575,7 +583,7 @@ mod tests {
             &self,
             organization_id: Uuid,
             status: ReminderStatus,
-        ) -> Result<Vec<PaymentReminder>, String> {
+        ) -> Result<Vec<PaymentReminder>, AppError> {
             let reminders = self.reminders.lock().unwrap();
             Ok(reminders
                 .values()
@@ -584,49 +592,49 @@ mod tests {
                 .collect())
         }
 
-        async fn find_pending_reminders(&self) -> Result<Vec<PaymentReminder>, String> {
+        async fn find_pending_reminders(&self) -> Result<Vec<PaymentReminder>, AppError> {
             self.find_by_status(ReminderStatus::Pending).await
         }
 
         async fn find_reminders_needing_escalation(
             &self,
             _cutoff_date: DateTime<Utc>,
-        ) -> Result<Vec<PaymentReminder>, String> {
+        ) -> Result<Vec<PaymentReminder>, AppError> {
             Ok(vec![])
         }
 
         async fn find_latest_by_expense(
             &self,
             _expense_id: Uuid,
-        ) -> Result<Option<PaymentReminder>, String> {
+        ) -> Result<Option<PaymentReminder>, AppError> {
             Ok(None)
         }
 
         async fn find_active_by_owner(
             &self,
             _owner_id: Uuid,
-        ) -> Result<Vec<PaymentReminder>, String> {
+        ) -> Result<Vec<PaymentReminder>, AppError> {
             Ok(vec![])
         }
 
         async fn count_by_status(
             &self,
             _organization_id: Uuid,
-        ) -> Result<Vec<(ReminderStatus, i64)>, String> {
+        ) -> Result<Vec<(ReminderStatus, i64)>, AppError> {
             Ok(vec![])
         }
 
         async fn get_total_owed_by_organization(
             &self,
             _organization_id: Uuid,
-        ) -> Result<f64, String> {
+        ) -> Result<f64, AppError> {
             Ok(0.0)
         }
 
         async fn get_total_penalties_by_organization(
             &self,
             _organization_id: Uuid,
-        ) -> Result<f64, String> {
+        ) -> Result<f64, AppError> {
             Ok(0.0)
         }
 
@@ -634,17 +642,17 @@ mod tests {
             &self,
             _organization_id: Uuid,
             _min_days_overdue: i64,
-        ) -> Result<Vec<(Uuid, Uuid, i64, f64)>, String> {
+        ) -> Result<Vec<(Uuid, Uuid, i64, f64)>, AppError> {
             Ok(vec![])
         }
 
-        async fn update(&self, reminder: &PaymentReminder) -> Result<PaymentReminder, String> {
+        async fn update(&self, reminder: &PaymentReminder) -> Result<PaymentReminder, AppError> {
             let mut reminders = self.reminders.lock().unwrap();
             reminders.insert(reminder.id, reminder.clone());
             Ok(reminder.clone())
         }
 
-        async fn delete(&self, id: Uuid) -> Result<bool, String> {
+        async fn delete(&self, id: Uuid) -> Result<bool, AppError> {
             let mut reminders = self.reminders.lock().unwrap();
             Ok(reminders.remove(&id).is_some())
         }
@@ -652,7 +660,7 @@ mod tests {
         async fn get_dashboard_stats(
             &self,
             _organization_id: Uuid,
-        ) -> Result<(f64, f64, Vec<(ReminderLevel, i64)>), String> {
+        ) -> Result<(f64, f64, Vec<(ReminderLevel, i64)>), AppError> {
             Ok((0.0, 0.0, vec![]))
         }
     }

@@ -6,6 +6,7 @@ pub mod owner_statement_exporter;
 pub mod ownership_contract_exporter;
 pub mod pcn_exporter;
 pub mod pcn_mapper;
+pub mod pdf_writer;
 pub mod work_quote_exporter;
 
 pub use annual_report_exporter::{AnnualReportExporter, BudgetItem};

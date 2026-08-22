@@ -1,8 +1,10 @@
 # Performance Tuning Guide
 
-Version: 1.0.0 | Target: P99 < 5ms, Throughput > 100k req/s
+Version: 1.0.0 | Target (Mai 2026, ajustée) : **P99 ≤ 500 ms** sur endpoints critiques, **Throughput ≥ 1k req/s** par instance backend (cf. `CLAUDE.md` §Performance et ADR #429 §6 SLO).
 
-## Current Performance (Oct 2025)
+> ⚠️ La cible historique « P99 < 5 ms, > 100k req/s » documentée ci-dessous était **irréaliste** pour le profil KoproGo (5 000 copros max, latence dominée par I/O DB). Elle est conservée comme référence de l'exigence initiale ; la cible officielle courante est celle ci-dessus.
+
+## Current Performance (Oct 2025, baseline historique)
 
 - **Latency P99**: 752ms (1 vCPU, sustained load)
 - **Throughput**: 287 req/s

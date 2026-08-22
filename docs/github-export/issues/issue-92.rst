@@ -4,7 +4,7 @@ Issue #92: feat: Public Syndic Information Page (Non-authenticated)
 
 :State: **CLOSED**
 :Milestone: Jalon 3: Features Différenciantes 🎯
-:Labels: enhancement,phase:k3s track:software,priority:high legal-compliance
+:Labels: enhancement,phase:k3s track:software,priority:high legal-compliance
 :Assignees: Unassigned
 :Created: 2025-11-01
 :Updated: 2026-03-21

@@ -3,10 +3,9 @@ use crate::application::dto::{
     UpdateEtatDateAdditionalDataRequest, UpdateEtatDateFinancialRequest,
 };
 use crate::application::ports::{
-    BuildingRepository, EtatDateRepository, UnitOwnerRepository, UnitRepository,
+    AcpRepository, BuildingRepository, EtatDateRepository, UnitOwnerRepository, UnitRepository,
 };
 use crate::domain::entities::{EtatDate, EtatDateStatus};
-use rust_decimal::prelude::ToPrimitive;
 use rust_decimal::Decimal;
 use rust_decimal_macros::dec;
 use std::sync::Arc;
@@ -17,6 +16,9 @@ pub struct EtatDateUseCases {
     unit_repository: Arc<dyn UnitRepository>,
     building_repository: Arc<dyn BuildingRepository>,
     unit_owner_repository: Arc<dyn UnitOwnerRepository>,
+    /// Track H Story H7 — validate-before-compute ACP-level. Optional : no-op
+    /// si absent (tests unitaires). Wiré en prod via `with_acp_repository`.
+    acp_repository: Option<Arc<dyn AcpRepository>>,
 }
 
 impl EtatDateUseCases {
@@ -31,7 +33,16 @@ impl EtatDateUseCases {
             unit_repository,
             building_repository,
             unit_owner_repository,
+            acp_repository: None,
         }
+    }
+
+    /// Track H Story H7 — injecte le repo ACP pour activer le gate
+    /// validate-before-compute au niveau copropriété (ADR-0010). Utilisé par
+    /// `main.rs`.
+    pub fn with_acp_repository(mut self, acp_repository: Arc<dyn AcpRepository>) -> Self {
+        self.acp_repository = Some(acp_repository);
+        self
     }
 
     /// Create a new état daté request
@@ -46,12 +57,23 @@ impl EtatDateUseCases {
             .await?
             .ok_or_else(|| "Unit not found".to_string())?;
 
-        // Verify building exists
-        let building = self
+        // Verify building exists (name/address pour le doc) + Track H Story H7
+        // validate-before-compute gate **ACP-level** (Art. 3.89 CC — transparence
+        // chiffres syndic). L'état daté ne peut être généré que sur une
+        // copropriété conforme (sinon quotes-parts erronées dans le doc notaire).
+        let (building, _building_metrics) = self
             .building_repository
-            .find_by_id(request.building_id)
+            .find_by_id_with_metrics(request.building_id)
             .await?
             .ok_or_else(|| "Building not found".to_string())?;
+        if let Some(acp_repo) = &self.acp_repository {
+            let (acp, acp_metrics) = acp_repo
+                .find_by_id_with_metrics(building.acp_id)
+                .await
+                .map_err(|e| e.to_string())?
+                .ok_or_else(|| "ACP not found".to_string())?;
+            acp.assert_conformant(&acp_metrics)?; // bridge String (H5)
+        }
 
         // Get unit ownership info (quotes-parts)
         let unit_owners = self
@@ -64,13 +86,12 @@ impl EtatDateUseCases {
         }
 
         // Calculate total quote-parts (should be 100% or close).
-        // ownership_percentage est Decimal (exact); EtatDate::new attend f64 actuellement
-        // (entité non encore migrée — cf. EXP-003 follow-up).
+        // ownership_percentage et EtatDate quotas sont Decimal exact (ADR-0008).
         let total_quota: Decimal = unit_owners.iter().map(|uo| uo.ownership_percentage).sum();
 
         // For simplicity, use total quota as both ordinary and extraordinary
         // In a real system, these might be stored separately per unit
-        let ordinary_charges_quota = (total_quota * dec!(100)).to_f64().unwrap_or(0.0);
+        let ordinary_charges_quota = total_quota * dec!(100);
         let extraordinary_charges_quota = ordinary_charges_quota;
 
         // Create état daté
@@ -338,6 +359,10 @@ mod tests {
             ) -> Result<(Vec<Building>, i64), String>;
             async fn update(&self, building: &Building) -> Result<Building, String>;
             async fn delete(&self, id: Uuid) -> Result<bool, String>;
+            async fn find_by_id_with_metrics(
+                &self,
+                id: Uuid,
+            ) -> Result<Option<(Building, crate::domain::entities::BuildingMetrics)>, String>;
         }
     }
 
@@ -358,6 +383,7 @@ mod tests {
             async fn get_total_ownership_percentage(&self, unit_id: Uuid) -> Result<rust_decimal::Decimal, String>;
             async fn find_active_by_unit_and_owner(&self, unit_id: Uuid, owner_id: Uuid) -> Result<Option<UnitOwner>, String>;
             async fn find_active_by_building(&self, building_id: Uuid) -> Result<Vec<(Uuid, Uuid, rust_decimal::Decimal)>, String>;
+            async fn find_voting_holders_by_unit(&self, unit_id: Uuid) -> Result<Vec<crate::domain::entities::LotHolder>, String>;
         }
     }
 
@@ -416,8 +442,8 @@ mod tests {
             "101".to_string(),
             Some("1".to_string()),
             Some(85.0),
-            50.0,
-            50.0,
+            dec!(50),
+            dec!(50),
         )
         .unwrap()
     }
@@ -474,13 +500,20 @@ mod tests {
             .times(1)
             .returning(move |_| Ok(Some(unit.clone())));
 
-        // Mock building exists
+        // Mock building exists + Track H Story H2 metrics
+        // (find_by_id_with_metrics utilisé pour le pre-check assert_conformant).
+        // Building default : total_units=10, total_tantiemes=1000.
+        // Pour rester conformant on retourne metrics matching.
         let building = make_building(org_id);
+        let metrics = crate::domain::entities::BuildingMetrics {
+            units_count: building.total_units,
+            quota_sum: rust_decimal::Decimal::from(building.total_tantiemes),
+        };
         building_repo
-            .expect_find_by_id()
+            .expect_find_by_id_with_metrics()
             .with(eq(building_id))
             .times(1)
-            .returning(move |_| Ok(Some(building.clone())));
+            .returning(move |_| Ok(Some((building.clone(), metrics.clone()))));
 
         // Mock unit owners exist with 50% ownership
         let uo = make_unit_owner(unit_id);
@@ -553,11 +586,16 @@ mod tests {
             .returning(move |_| Ok(Some(unit.clone())));
 
         let building = make_building(org_id);
+        // Track H Story H2 — pre-check load building + metrics conformes.
+        let metrics = crate::domain::entities::BuildingMetrics {
+            units_count: building.total_units,
+            quota_sum: rust_decimal::Decimal::from(building.total_tantiemes),
+        };
         building_repo
-            .expect_find_by_id()
+            .expect_find_by_id_with_metrics()
             .with(eq(building_id))
             .times(1)
-            .returning(move |_| Ok(Some(building.clone())));
+            .returning(move |_| Ok(Some((building.clone(), metrics.clone()))));
 
         // No active owners
         uo_repo
@@ -775,21 +813,21 @@ mod tests {
         );
 
         let request = UpdateEtatDateFinancialRequest {
-            owner_balance: -1250.50,
-            arrears_amount: 800.0,
-            monthly_provision_amount: 150.0,
-            total_balance: -1250.50,
-            approved_works_unpaid: 3500.0,
+            owner_balance: dec!(-1250.50),
+            arrears_amount: dec!(800.0),
+            monthly_provision_amount: dec!(150.0),
+            total_balance: dec!(-1250.50),
+            approved_works_unpaid: dec!(3500.0),
         };
 
         let result = use_cases.update_financial_data(etat_id, request).await;
         assert!(result.is_ok());
         let response = result.unwrap();
-        assert_eq!(response.owner_balance, -1250.50);
-        assert_eq!(response.arrears_amount, 800.0);
-        assert_eq!(response.monthly_provision_amount, 150.0);
-        assert_eq!(response.total_balance, -1250.50);
-        assert_eq!(response.approved_works_unpaid, 3500.0);
+        assert_eq!(response.owner_balance, dec!(-1250.50));
+        assert_eq!(response.arrears_amount, dec!(800.0));
+        assert_eq!(response.monthly_provision_amount, dec!(150.0));
+        assert_eq!(response.total_balance, dec!(-1250.50));
+        assert_eq!(response.approved_works_unpaid, dec!(3500.0));
     }
 
     #[tokio::test]

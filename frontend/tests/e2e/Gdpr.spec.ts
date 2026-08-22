@@ -63,6 +63,15 @@ async function registerAndLogin(
 }
 
 // Helper: Login via UI
+//
+// #605 root cause : après waitForURL, le cookie de refresh HttpOnly posé par
+// `authStore.login()` n'a pas forcément fini de se stabiliser côté navigateur
+// avant qu'un test enchaîne immédiatement une 2e navigation (ex. goto
+// `/admin/gdpr`). Cette 2e navigation déclenche son propre silent-refresh
+// (RouteGuard `authStore.init()`) qui peut alors échouer en 401 → redirect
+// /login. Même pattern que le fix `humanLogin` de
+// `refonte-ux/phase-b-fe/role-assignment.spec.ts` : attendre explicitement
+// `networkidle` après le waitForURL absorbe la course.
 async function loginViaUI(page: Page, email: string, password: string) {
   await page.goto("/login");
   await page.getByTestId("login-email").fill(email);
@@ -71,6 +80,7 @@ async function loginViaUI(page: Page, email: string, password: string) {
   await page.waitForURL(/\/(owner|syndic|accountant|admin|superadmin)/, {
     timeout: 15000,
   });
+  await page.waitForLoadState("networkidle").catch(() => undefined);
 }
 
 // Helper: Clear browser state (localStorage, cookies) to prevent stale auth

@@ -3,8 +3,9 @@ use crate::application::dto::{
     ResolutionResponse, VoteResponse,
 };
 use crate::infrastructure::audit::{AuditEventType, AuditLogEntry};
+use crate::infrastructure::web::middleware::scope_guard::verify_acp_org_access;
 use crate::infrastructure::web::{AppState, AuthenticatedUser};
-use actix_web::{delete, get, post, put, web, HttpResponse, Responder};
+use actix_web::{delete, get, post, put, web, HttpResponse, Responder, ResponseError};
 use uuid::Uuid;
 
 // ==================== Resolution Endpoints ====================
@@ -101,8 +102,8 @@ pub async fn get_resolution(
 ) -> impl Responder {
     match state.resolution_use_cases.get_resolution(*id).await {
         Ok(Some(resolution)) => {
-            // Multi-tenant isolation: verify resolution's meeting belongs to user's organization
-            // Resolution → Meeting → Building → Organization
+            // Hotfix #603 — multi-tenant isolation via ACP→organization resolution.
+            // Resolution → Meeting → Building → Acp → Organization
             if let Ok(Some(meeting)) = state
                 .meeting_use_cases
                 .get_meeting(resolution.meeting_id)
@@ -113,11 +114,18 @@ pub async fn get_resolution(
                     .get_building(meeting.building_id)
                     .await
                 {
-                    if let Ok(building_org) = Uuid::parse_str(&building.organization_id) {
-                        if let Err(e) = user.verify_org_access(building_org) {
-                            return HttpResponse::Forbidden()
-                                .json(serde_json::json!({ "error": e }));
+                    let acp_id = match Uuid::parse_str(&building.acp_id) {
+                        Ok(id) => id,
+                        Err(_) => {
+                            return HttpResponse::InternalServerError().json(serde_json::json!({
+                                "error": "Invalid building.acp_id format"
+                            }));
                         }
+                    };
+                    if let Err(err) =
+                        verify_acp_org_access(&user, acp_id, &state.acp_use_cases).await
+                    {
+                        return err.error_response();
                     }
                 }
             }

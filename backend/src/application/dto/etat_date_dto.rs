@@ -21,11 +21,13 @@ pub struct CreateEtatDateRequest {
 /// Request pour mettre à jour les données financières d'un état daté
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct UpdateEtatDateFinancialRequest {
-    pub owner_balance: f64,
-    pub arrears_amount: f64,
-    pub monthly_provision_amount: f64,
-    pub total_balance: f64,
-    pub approved_works_unpaid: f64,
+    // MONÉTAIRE : Decimal exact (ADR-0007/0008), sérialisé string JSON
+    // comme les quote-parts (#433 / WP-A5 EXP-007).
+    pub owner_balance: rust_decimal::Decimal,
+    pub arrears_amount: rust_decimal::Decimal,
+    pub monthly_provision_amount: rust_decimal::Decimal,
+    pub total_balance: rust_decimal::Decimal,
+    pub approved_works_unpaid: rust_decimal::Decimal,
 }
 
 /// Request pour mettre à jour les données additionnelles (sections 7-16)
@@ -56,13 +58,15 @@ pub struct EtatDateResponse {
     pub unit_number: String,
     pub unit_floor: Option<String>,
     pub unit_area: Option<f64>,
-    pub ordinary_charges_quota: f64,
-    pub extraordinary_charges_quota: f64,
-    pub owner_balance: f64,
-    pub arrears_amount: f64,
-    pub monthly_provision_amount: f64,
-    pub total_balance: f64,
-    pub approved_works_unpaid: f64,
+    /// Quote-part charges ordinaires — Decimal exact (ADR-0008), string JSON.
+    pub ordinary_charges_quota: rust_decimal::Decimal,
+    /// Quote-part charges extraordinaires — Decimal exact (ADR-0008), string JSON.
+    pub extraordinary_charges_quota: rust_decimal::Decimal,
+    pub owner_balance: rust_decimal::Decimal,
+    pub arrears_amount: rust_decimal::Decimal,
+    pub monthly_provision_amount: rust_decimal::Decimal,
+    pub total_balance: rust_decimal::Decimal,
+    pub approved_works_unpaid: rust_decimal::Decimal,
     pub additional_data: serde_json::Value,
     pub pdf_file_path: Option<String>,
     pub created_at: DateTime<Utc>,

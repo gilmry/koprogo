@@ -17,7 +17,7 @@ export interface Quote {
   contractor_name?: string;
   project_title: string;
   project_description: string;
-  work_category: string;
+  work_category?: string;
   amount_excl_vat_cents?: number;
   vat_rate?: number;
   amount_incl_vat_cents?: number;

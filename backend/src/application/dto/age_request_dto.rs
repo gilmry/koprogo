@@ -1,5 +1,6 @@
 use crate::domain::entities::age_request::{AgeRequest, AgeRequestCosignatory, AgeRequestStatus};
 use chrono::{DateTime, Utc};
+use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -15,8 +16,8 @@ pub struct CreateAgeRequestDto {
 #[derive(Debug, Deserialize)]
 pub struct AddCosignatoryDto {
     pub owner_id: Uuid,
-    /// Quote-part du copropriétaire (0.0 à 1.0)
-    pub shares_pct: f64,
+    /// Quote-part du copropriétaire (0.0 à 1.0) — Decimal exact (ADR-0008)
+    pub shares_pct: Decimal,
 }
 
 /// Réponse du syndic (accept ou reject)
@@ -32,7 +33,7 @@ pub struct SyndicResponseDto {
 pub struct AgeRequestCosignatoryDto {
     pub id: Uuid,
     pub owner_id: Uuid,
-    pub shares_pct: f64,
+    pub shares_pct: Decimal,
     pub signed_at: DateTime<Utc>,
 }
 
@@ -58,8 +59,8 @@ pub struct AgeRequestResponseDto {
     pub status: String,
     pub created_by: Uuid,
     pub cosignatories: Vec<AgeRequestCosignatoryDto>,
-    pub total_shares_pct: f64,
-    pub threshold_pct: f64,
+    pub total_shares_pct: Decimal,
+    pub threshold_pct: Decimal,
     pub threshold_reached: bool,
     pub threshold_reached_at: Option<DateTime<Utc>>,
     pub submitted_to_syndic_at: Option<DateTime<Utc>>,
@@ -69,8 +70,8 @@ pub struct AgeRequestResponseDto {
     pub auto_convocation_triggered: bool,
     pub meeting_id: Option<Uuid>,
     pub concertation_poll_id: Option<Uuid>,
-    /// Pourcentage manquant pour atteindre le seuil (0.0 si déjà atteint)
-    pub shares_pct_missing: f64,
+    /// Pourcentage manquant pour atteindre le seuil (0.0 si déjà atteint) — Decimal exact
+    pub shares_pct_missing: Decimal,
     /// Le délai syndic est-il dépassé ?
     pub is_deadline_expired: bool,
     pub created_at: DateTime<Utc>,

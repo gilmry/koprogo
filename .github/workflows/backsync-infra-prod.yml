@@ -29,7 +29,7 @@ jobs:
         target: [infra-staging, infra-integration, main]
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
@@ -60,20 +60,20 @@ jobs:
             echo "::notice::Existing PR #$pr_number — head moves automatically"
           else
             head_sha=$(git rev-parse origin/infra-prod)
+            body_file=$(mktemp)
+            {
+              printf 'Automated back-sync — propagates the new infra-prod state to %s.\n\n' "${{ matrix.target }}"
+              printf 'Per RFC #466 (Alternative D), every push to infra-prod triggers this workflow\n'
+              printf 'to keep lower envs aligned with prod and avoid drift.\n\n'
+              printf 'If this PR is labelled `needs-resolution`, a conflict was detected:\n'
+              printf 'a human must rebase or merge manually. No destructive override.\n'
+            } > "$body_file"
             gh pr create \
               --base "${{ matrix.target }}" \
               --head infra-prod \
               --title "backsync: infra-prod → ${{ matrix.target }} (auto)" \
-              --body "$(cat <<EOF
-Automated back-sync — propagates the new infra-prod state to ${{ matrix.target }}.
-
-Per RFC #466 (Alternative D), every push to infra-prod triggers this workflow
-to keep lower envs aligned with prod and avoid drift.
-
-If this PR is labelled \`needs-resolution\`, a conflict was detected:
-a human must rebase or merge manually. No destructive override.
-EOF
-)"
+              --body-file "$body_file"
+            rm -f "$body_file"
             pr_number=$(gh pr list --base "${{ matrix.target }}" --head infra-prod --state open --json number --jq '.[0].number')
           fi
           echo "pr_number=$pr_number" >> "$GITHUB_OUTPUT"

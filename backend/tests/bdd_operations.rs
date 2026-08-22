@@ -2,6 +2,10 @@
 // technical_inspections, iot, energy_campaigns
 // Phase 2 Tier 1: Ticket step definitions (17 scenarios)
 
+#[path = "common/acp_test_helper.rs"]
+mod acp_test_helper;
+use acp_test_helper::ensure_default_acp_for_org;
+
 use chrono::{DateTime, Duration as ChronoDuration, Utc};
 use cucumber::{gherkin::Step, given, then, when, World};
 use koprogo_api::application::dto::{
@@ -275,9 +279,18 @@ impl OperationsWorld {
             .get_host_port_ipv4(5432)
             .await
             .expect("Failed to get host port");
+        // testcontainers-resolved host (honors TESTCONTAINERS_HOST_OVERRIDE) vs
+        // hardcoded 127.0.0.1 — CI resolves to localhost (unchanged); inside the
+        // dev backend container the Postgres sibling is reached via
+        // host.docker.internal. Same fix as bdd_governance #535 / bdd_financial
+        // #539 (WP-B3 debruit, idempotent, neutral on CI).
+        let host = postgres_container
+            .get_host()
+            .await
+            .expect("Failed to get container host");
         let connection_string = format!(
-            "postgres://postgres:postgres@127.0.0.1:{}/postgres",
-            host_port
+            "postgres://postgres:postgres@{}:{}/postgres",
+            host, host_port
         );
         let pool = create_pool(&connection_string)
             .await
@@ -303,8 +316,10 @@ impl OperationsWorld {
             Arc::new(PostgresBuildingRepository::new(pool.clone()));
         {
             use koprogo_api::domain::entities::Building;
+            // Hotfix #602 — Building.acp_id (FK acps.id) replaces organization_id.
+            let acp_id = ensure_default_acp_for_org(&pool, org_id).await;
             let b = Building::new(
-                org_id,
+                acp_id,
                 "Residence Operations".to_string(),
                 "1 Rue des Travaux".to_string(),
                 "Liege".to_string(),
@@ -385,6 +400,12 @@ impl OperationsWorld {
             description: description.to_string(),
             category,
             priority,
+            // Story 3.6 — backward-compat defaults.
+            kind: None,
+            severity: None,
+            incident_date: None,
+            evidence_attachments: Vec::new(),
+            witnesses: Vec::new(),
         };
 
         let result = uc.create_ticket(org_id, created_by, request).await;
@@ -463,6 +484,35 @@ impl OperationsWorld {
         let result = uc.create_notification(org_id, request).await;
         self.store_notification_result(result);
     }
+}
+
+/// Parse a BDD seed date that may be absolute (RFC3339 or `YYYY-MM-DD`) or
+/// relative (`+90d`, `-30d`, `+6m`, `+1y`). Relative tokens resolve against
+/// `Utc::now()` at run time so seeds never become stale time-bombs — the
+/// recurring cause of pre-existing BDD reds (WP-B3 / #540).
+fn parse_seed_date(s: &str) -> DateTime<Utc> {
+    let s = s.trim();
+    if let Some(rest) = s.strip_prefix(['+', '-']) {
+        let sign: i64 = if s.starts_with('-') { -1 } else { 1 };
+        if let (Some(num), Some(unit)) = (rest.get(..rest.len() - 1), rest.chars().last()) {
+            if let Ok(n) = num.parse::<i64>() {
+                let days = match unit {
+                    'w' => n * 7,
+                    'm' => n * 30,
+                    'y' => n * 365,
+                    _ => n, // 'd' or default
+                };
+                return Utc::now() + ChronoDuration::days(sign * days);
+            }
+        }
+    }
+    if let Ok(dt) = s.parse::<DateTime<Utc>>() {
+        return dt;
+    }
+    if let Ok(dt) = format!("{}T00:00:00Z", s).parse::<DateTime<Utc>>() {
+        return dt;
+    }
+    Utc::now() + ChronoDuration::days(30)
 }
 
 fn parse_ticket_category(s: &str) -> TicketCategory {
@@ -1781,15 +1831,17 @@ async fn given_building_with_units(world: &mut OperationsWorld, _name: String, c
     let pool = world.pool.as_ref().unwrap();
     let building_id = world.building_id.unwrap();
     let org_id = world.org_id.unwrap();
+    // H15 — units.organization_id dropped, units.acp_id NOT NULL (same ACP as the building).
+    let acp_id = ensure_default_acp_for_org(pool, org_id).await;
     for i in 0..count {
         let unit_id = Uuid::new_v4();
         sqlx::query(
-            r#"INSERT INTO units (id, building_id, organization_id, unit_number, unit_type, floor, surface_area, quota, created_at, updated_at)
+            r#"INSERT INTO units (id, building_id, acp_id, unit_number, unit_type, floor, surface_area, quota, created_at, updated_at)
                VALUES ($1, $2, $3, $4, 'apartment', $5, 50.0, 100.0, NOW(), NOW())"#
         )
         .bind(unit_id)
         .bind(building_id)
-        .bind(org_id)
+        .bind(acp_id)
         .bind(format!("U{}", i + 1))
         .bind(i as i32 / 2)
         .execute(pool)
@@ -1857,9 +1909,7 @@ async fn when_create_campaign(world: &mut OperationsWorld, step: &Step) {
         _ => EnergyType::Electricity,
     }];
     let deadline_str = get_table_value(step, "deadline_participation");
-    let deadline = deadline_str
-        .parse::<DateTime<Utc>>()
-        .expect("parse deadline");
+    let deadline = parse_seed_date(&deadline_str);
 
     let user_id = world.authenticated_user_id.unwrap_or(Uuid::new_v4());
     let campaign = EnergyCampaign::new(org_id, building_id, name, deadline, energy_types, user_id)
@@ -2026,18 +2076,24 @@ async fn given_2_uploads(world: &mut OperationsWorld) {
     // Create 2 units if none exist
     if world.unit_ids.is_empty() {
         let pool = world.pool.as_ref().unwrap();
+        // H15 — units.organization_id dropped, units.acp_id NOT NULL (same ACP as the building).
+        let acp_id = ensure_default_acp_for_org(pool, org_id).await;
         for i in 0..2 {
             let uid = Uuid::new_v4();
             sqlx::query(
-                r#"INSERT INTO units (id, building_id, organization_id, unit_number, unit_type, floor, surface_area, quota, created_at, updated_at)
+                r#"INSERT INTO units (id, building_id, acp_id, unit_number, unit_type, floor, surface_area, quota, created_at, updated_at)
                    VALUES ($1, $2, $3, $4, 'apartment', 0, 50.0, 100.0, NOW(), NOW())"#
             )
-            .bind(uid).bind(building_id).bind(org_id).bind(format!("BU{}", i))
+            .bind(uid).bind(building_id).bind(acp_id).bind(format!("BU{}", i))
             .execute(pool).await.expect("insert unit");
             world.unit_ids.push(uid);
         }
     }
     let uploader_id = world.authenticated_user_id.unwrap_or_else(Uuid::new_v4);
+    // Persist the uploader so `when_list_my_uploads` queries the SAME id.
+    // get_my_uploads filters by uploaded_by (a user id); the listing step
+    // previously passed unit_ids → 0 matches (WP-B3 / #540 test-id bug).
+    world.authenticated_user_id = Some(uploader_id);
     for i in 0..2 {
         let unit_id = world.unit_ids[i];
         let upload = EnergyBillUpload::new(
@@ -2066,13 +2122,17 @@ async fn given_2_uploads(world: &mut OperationsWorld) {
 #[when("I list my uploads")]
 async fn when_list_my_uploads(world: &mut OperationsWorld) {
     let bill_uc = world.energy_bill_use_cases.as_ref().unwrap().clone();
-    // Count uploads across all units owned by this user
-    let mut total = 0;
-    for &unit_id in &world.unit_ids {
-        if let Ok(list) = bill_uc.get_my_uploads(unit_id).await {
-            total += list.len();
-        }
-    }
+    // get_my_uploads filters by uploaded_by (a *user* id), not unit_id.
+    // Query the uploader persisted by the seed (WP-B3 / #540 test-id bug:
+    // the loop previously passed unit_ids → always 0).
+    let uploader_id = world
+        .authenticated_user_id
+        .expect("uploader set by upload seed");
+    let total = bill_uc
+        .get_my_uploads(uploader_id)
+        .await
+        .map(|l| l.len())
+        .unwrap_or(0);
     world.upload_list_count = total;
     world.operation_success = true;
 }
@@ -2089,11 +2149,13 @@ async fn given_unverified_upload(world: &mut OperationsWorld) {
     // Ensure at least one unit exists
     if world.unit_ids.is_empty() {
         let uid = Uuid::new_v4();
+        // H15 — units.organization_id dropped, units.acp_id NOT NULL (same ACP as the building).
+        let acp_id = ensure_default_acp_for_org(pool, org_id).await;
         sqlx::query(
-            r#"INSERT INTO units (id, building_id, organization_id, unit_number, unit_type, floor, surface_area, quota, created_at, updated_at)
+            r#"INSERT INTO units (id, building_id, acp_id, unit_number, unit_type, floor, surface_area, quota, created_at, updated_at)
                VALUES ($1, $2, $3, 'UV1', 'apartment', 0, 50.0, 100.0, NOW(), NOW())"#
         )
-        .bind(uid).bind(building_id).bind(org_id)
+        .bind(uid).bind(building_id).bind(acp_id)
         .execute(pool).await.expect("insert unit");
         world.unit_ids.push(uid);
     }
@@ -2296,16 +2358,18 @@ async fn given_n_participants(world: &mut OperationsWorld, count: usize) {
 
     use koprogo_api::domain::entities::EnergyBillUpload;
     let encryption_key: [u8; 32] = [42u8; 32];
+    // H15 — units.organization_id dropped, units.acp_id NOT NULL (same ACP as the building).
+    let acp_id = ensure_default_acp_for_org(pool, org_id).await;
     for i in 0..count {
         let unit_id = if i < world.unit_ids.len() {
             world.unit_ids[i]
         } else {
             let uid = Uuid::new_v4();
             sqlx::query(
-                r#"INSERT INTO units (id, building_id, organization_id, unit_number, unit_type, floor, surface_area, quota, created_at, updated_at)
+                r#"INSERT INTO units (id, building_id, acp_id, unit_number, unit_type, floor, surface_area, quota, created_at, updated_at)
                    VALUES ($1, $2, $3, $4, 'apartment', 0, 50.0, 100.0, NOW(), NOW())"#
             )
-            .bind(uid).bind(building_id).bind(org_id).bind(format!("P{}", i))
+            .bind(uid).bind(building_id).bind(acp_id).bind(format!("P{}", i))
             .execute(pool).await.expect("insert unit");
             world.unit_ids.push(uid);
             uid
@@ -3399,13 +3463,14 @@ async fn given_work_reports_2_orgs(world: &mut OperationsWorld) {
            VALUES ($1, 'Other Org', 'other-org', 'other@org.com', 'starter', 10, 10, true, NOW(), NOW())"#
     )
     .bind(other_org_id).execute(pool).await.expect("insert other org");
-    // Insert a work report for other org directly
+    // Insert a work report for other org directly (Hotfix #602 : via acp_id)
+    let other_acp_id = ensure_default_acp_for_org(pool, other_org_id).await;
     let building_id = Uuid::new_v4();
     sqlx::query(
-        r#"INSERT INTO buildings (id, organization_id, name, address, city, postal_code, country, total_units, created_at, updated_at)
+        r#"INSERT INTO buildings (id, acp_id, name, address, city, postal_code, country, total_units, created_at, updated_at)
            VALUES ($1, $2, 'Other Building', '1 Other St', 'Brussels', '1000', 'Belgique', 5, NOW(), NOW())"#
     )
-    .bind(building_id).bind(other_org_id).execute(pool).await.expect("insert other building");
+    .bind(building_id).bind(other_acp_id).execute(pool).await.expect("insert other building");
 }
 
 #[when("I list work reports for our organization")]
@@ -4129,6 +4194,12 @@ async fn given_ticket_exists_in_building(world: &mut OperationsWorld, title: Str
         description: "Auto-created for contractor report BDD".to_string(),
         category: TicketCategory::Other,
         priority: TicketPriority::Medium,
+        // Story 3.6 — backward-compat defaults.
+        kind: None,
+        severity: None,
+        incident_date: None,
+        evidence_attachments: Vec::new(),
+        witnesses: Vec::new(),
     };
 
     match uc.create_ticket(org_id, created_by, request).await {
@@ -4815,25 +4886,26 @@ async fn then_deletion_fails(world: &mut OperationsWorld) {
 
 #[tokio::main]
 async fn main() {
-    OperationsWorld::cucumber()
-        .run("tests/features/tickets.feature")
-        .await;
-    OperationsWorld::cucumber()
-        .run("tests/features/notifications.feature")
-        .await;
-    OperationsWorld::cucumber()
-        .run("tests/features/energy_campaigns.feature")
-        .await;
-    OperationsWorld::cucumber()
-        .run("tests/features/iot.feature")
-        .await;
-    OperationsWorld::cucumber()
-        .run("tests/features/work_reports.feature")
-        .await;
-    OperationsWorld::cucumber()
-        .run("tests/features/technical_inspections.feature")
-        .await;
-    OperationsWorld::cucumber()
-        .run_and_exit("tests/features/contractor_reports.feature")
-        .await;
+    // Issue #524: aggregate failures across all features so CI exit code
+    // reflects ANY failed scenario, not just the last `.run_and_exit()`.
+    use cucumber::writer::Stats as _;
+    let features = [
+        "tests/features/tickets.feature",
+        "tests/features/notifications.feature",
+        "tests/features/energy_campaigns.feature",
+        "tests/features/iot.feature",
+        "tests/features/work_reports.feature",
+        "tests/features/technical_inspections.feature",
+        "tests/features/contractor_reports.feature",
+    ];
+    let mut had_failures = false;
+    for f in features {
+        let writer = OperationsWorld::cucumber().run(f).await;
+        if writer.execution_has_failed() {
+            had_failures = true;
+        }
+    }
+    if had_failures {
+        std::process::exit(1);
+    }
 }

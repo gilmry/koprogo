@@ -3,8 +3,9 @@ use crate::application::dto::{
     WorkReportFilters,
 };
 use crate::infrastructure::audit::{AuditEventType, AuditLogEntry};
+use crate::infrastructure::web::middleware::scope_guard::verify_acp_org_access;
 use crate::infrastructure::web::{AppState, AuthenticatedUser};
-use actix_web::{delete, get, post, put, web, HttpResponse, Responder};
+use actix_web::{delete, get, post, put, web, HttpResponse, Responder, ResponseError};
 use uuid::Uuid;
 
 // ==================== Work Report CRUD Endpoints ====================
@@ -63,18 +64,19 @@ pub async fn get_work_report(
 
             match state.building_use_cases.get_building(building_id).await {
                 Ok(Some(building)) => {
-                    // Verify organization access
-                    let org_id = match uuid::Uuid::parse_str(&building.organization_id) {
-                        Ok(oid) => oid,
+                    // Hotfix #603 — multi-tenant isolation via ACP→organization resolution.
+                    let acp_id = match Uuid::parse_str(&building.acp_id) {
+                        Ok(id) => id,
                         Err(_) => {
-                            return HttpResponse::InternalServerError().json(
-                                serde_json::json!({"error": "Invalid organization_id format"}),
-                            )
+                            return HttpResponse::InternalServerError().json(serde_json::json!({
+                                "error": "Invalid building.acp_id format"
+                            }));
                         }
                     };
-
-                    if let Err(err) = user.verify_org_access(org_id) {
-                        return HttpResponse::Forbidden().json(serde_json::json!({"error": err}));
+                    if let Err(err) =
+                        verify_acp_org_access(&user, acp_id, &state.acp_use_cases).await
+                    {
+                        return err.error_response();
                     }
                     HttpResponse::Ok().json(work_report)
                 }

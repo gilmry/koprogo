@@ -1,6 +1,9 @@
-use crate::application::ports::{MeetingRepository, ResolutionRepository, VoteRepository};
+use crate::application::ports::{
+    MeetingRepository, ResolutionRepository, UnitOwnerRepository, VoteRepository,
+};
 use crate::domain::entities::{
-    MajorityType, Resolution, ResolutionStatus, ResolutionType, Vote, VoteChoice,
+    assert_voting_right_active, MajorityType, Resolution, ResolutionStatus, ResolutionType, Vote,
+    VoteChoice,
 };
 use std::sync::Arc;
 use uuid::Uuid;
@@ -9,6 +12,8 @@ pub struct ResolutionUseCases {
     resolution_repository: Arc<dyn ResolutionRepository>,
     vote_repository: Arc<dyn VoteRepository>,
     meeting_repository: Arc<dyn MeetingRepository>,
+    // Story H17 — résolution du droit de vote du lot (Art. 3.87 §1).
+    unit_owner_repository: Arc<dyn UnitOwnerRepository>,
 }
 
 impl ResolutionUseCases {
@@ -16,11 +21,13 @@ impl ResolutionUseCases {
         resolution_repository: Arc<dyn ResolutionRepository>,
         vote_repository: Arc<dyn VoteRepository>,
         meeting_repository: Arc<dyn MeetingRepository>,
+        unit_owner_repository: Arc<dyn UnitOwnerRepository>,
     ) -> Self {
         Self {
             resolution_repository,
             vote_repository,
             meeting_repository,
+            unit_owner_repository,
         }
     }
 
@@ -121,7 +128,7 @@ impl ResolutionUseCases {
         owner_id: Uuid,
         unit_id: Uuid,
         vote_choice: VoteChoice,
-        voting_power: f64,
+        voting_power: rust_decimal::Decimal,
         proxy_owner_id: Option<Uuid>,
     ) -> Result<Vote, String> {
         // Check if resolution exists and is pending
@@ -134,6 +141,29 @@ impl ResolutionUseCases {
         if resolution.status != ResolutionStatus::Pending {
             return Err("Cannot vote on a resolution that is not pending".to_string());
         }
+
+        // Story H10 — Art. 3.87 §5 CC : un vote n'est valable que si le quorum de
+        // l'AG est atteint (sauf 2e convocation). Gate défense-en-profondeur sur
+        // le chemin VOTE (en plus du gate à la création de résolution, l.47) :
+        // résout la réunion via `resolution.meeting_id` puis `check_quorum_for_voting`.
+        let meeting = self
+            .meeting_repository
+            .find_by_id(resolution.meeting_id)
+            .await?
+            .ok_or_else(|| format!("Meeting not found: {}", resolution.meeting_id))?;
+        meeting.check_quorum_for_voting()?;
+
+        // Story H17 — Art. 3.87 §1 CC : un lot démembré (usufruit/nue-propriété,
+        // emphytéose, superficie) ou en indivision a son droit de vote SUSPENDU
+        // tant qu'un représentant unique n'est pas désigné. Gate → rejet
+        // `VOTING_RIGHT_SUSPENDED`. Un lot suspendu ne peut donc pas voter : il
+        // est de facto exclu du décompte/quorum (cohérence H9). Rétro-compat :
+        // un lot sans titularité qualifiée reste `Active` (cf. domaine).
+        let holders = self
+            .unit_owner_repository
+            .find_voting_holders_by_unit(unit_id)
+            .await?;
+        assert_voting_right_active(unit_id, &holders)?;
 
         // Check if unit has already voted
         if self
@@ -215,7 +245,7 @@ impl ResolutionUseCases {
     pub async fn close_voting(
         &self,
         resolution_id: Uuid,
-        total_voting_power: f64,
+        total_voting_power: rust_decimal::Decimal,
     ) -> Result<Resolution, String> {
         let mut resolution = self
             .resolution_repository
@@ -297,7 +327,7 @@ impl ResolutionUseCases {
         &self,
         resolution_id: Uuid,
         proxy_owner_id: Uuid,
-        new_voting_power: f64,
+        new_voting_power: rust_decimal::Decimal,
     ) -> Result<(), String> {
         let (existing_count, existing_power) = self
             .vote_repository
@@ -324,7 +354,9 @@ impl ResolutionUseCases {
             + new_voting_power; // inclure ce qu'on est en train d'ajouter
 
         // Exception: si total procurations < 10% du total général → pas de limite
-        if total_all_votes > 0.0 && (total_proxy_power / total_all_votes) < 0.10 {
+        if total_all_votes > rust_decimal::Decimal::ZERO
+            && (total_proxy_power / total_all_votes) < rust_decimal_macros::dec!(0.10)
+        {
             return Ok(()); // Exception 10% s'applique
         }
 
@@ -334,10 +366,10 @@ impl ResolutionUseCases {
                 "Le mandataire détient déjà {} procurations. Maximum autorisé : 3 (Art. 3.87 §7 CC). \
                  Exception 10% non applicable (procurations représentent >{:.1}% des votes).",
                 existing_count,
-                if total_all_votes > 0.0 {
-                    (total_proxy_power / total_all_votes) * 100.0
+                if total_all_votes > rust_decimal::Decimal::ZERO {
+                    (total_proxy_power / total_all_votes) * rust_decimal_macros::dec!(100)
                 } else {
-                    0.0
+                    rust_decimal::Decimal::ZERO
                 }
             ));
         }
@@ -376,9 +408,9 @@ pub struct VoteStatistics {
     pub vote_count_pour: i32,
     pub vote_count_contre: i32,
     pub vote_count_abstention: i32,
-    pub total_voting_power_pour: f64,
-    pub total_voting_power_contre: f64,
-    pub total_voting_power_abstention: f64,
+    pub total_voting_power_pour: rust_decimal::Decimal,
+    pub total_voting_power_contre: rust_decimal::Decimal,
+    pub total_voting_power_abstention: rust_decimal::Decimal,
     pub pour_percentage: f64,
     pub contre_percentage: f64,
     pub abstention_percentage: f64,
@@ -389,12 +421,103 @@ pub struct VoteStatistics {
 mod tests {
     use super::*;
     use crate::application::dto::PageRequest;
-    use crate::application::ports::{MeetingRepository, ResolutionRepository, VoteRepository};
-    use crate::domain::entities::{Meeting, MeetingType};
+    use crate::application::ports::{
+        MeetingRepository, ResolutionRepository, UnitOwnerRepository, VoteRepository,
+    };
+    use crate::domain::entities::{LotHolder, Meeting, MeetingType, OwnershipType, UnitOwner};
     use async_trait::async_trait;
     use chrono::Utc;
     use std::collections::HashMap;
     use std::sync::Mutex;
+
+    // Story H17 — mock UnitOwnerRepository : `find_voting_holders_by_unit`
+    // configurable par lot (défaut vide → `voting_right_status` Active, donc
+    // les tests existants ne changent pas de comportement).
+    struct MockUnitOwnerRepository {
+        holders: Mutex<HashMap<Uuid, Vec<LotHolder>>>,
+    }
+
+    impl MockUnitOwnerRepository {
+        fn new() -> Self {
+            Self {
+                holders: Mutex::new(HashMap::new()),
+            }
+        }
+
+        fn with_holders(unit_id: Uuid, holders: Vec<LotHolder>) -> Self {
+            let m = Self::new();
+            m.holders.lock().unwrap().insert(unit_id, holders);
+            m
+        }
+    }
+
+    #[async_trait]
+    impl UnitOwnerRepository for MockUnitOwnerRepository {
+        async fn create(&self, unit_owner: &UnitOwner) -> Result<UnitOwner, String> {
+            Ok(unit_owner.clone())
+        }
+        async fn find_by_id(&self, _id: Uuid) -> Result<Option<UnitOwner>, String> {
+            Ok(None)
+        }
+        async fn find_current_owners_by_unit(
+            &self,
+            _unit_id: Uuid,
+        ) -> Result<Vec<UnitOwner>, String> {
+            Ok(vec![])
+        }
+        async fn find_current_units_by_owner(
+            &self,
+            _owner_id: Uuid,
+        ) -> Result<Vec<UnitOwner>, String> {
+            Ok(vec![])
+        }
+        async fn find_all_owners_by_unit(&self, _unit_id: Uuid) -> Result<Vec<UnitOwner>, String> {
+            Ok(vec![])
+        }
+        async fn find_all_units_by_owner(&self, _owner_id: Uuid) -> Result<Vec<UnitOwner>, String> {
+            Ok(vec![])
+        }
+        async fn update(&self, unit_owner: &UnitOwner) -> Result<UnitOwner, String> {
+            Ok(unit_owner.clone())
+        }
+        async fn delete(&self, _id: Uuid) -> Result<(), String> {
+            Ok(())
+        }
+        async fn has_active_owners(&self, _unit_id: Uuid) -> Result<bool, String> {
+            Ok(true)
+        }
+        async fn get_total_ownership_percentage(
+            &self,
+            _unit_id: Uuid,
+        ) -> Result<rust_decimal::Decimal, String> {
+            Ok(rust_decimal::Decimal::ONE)
+        }
+        async fn find_active_by_unit_and_owner(
+            &self,
+            _unit_id: Uuid,
+            _owner_id: Uuid,
+        ) -> Result<Option<UnitOwner>, String> {
+            Ok(None)
+        }
+        async fn find_active_by_building(
+            &self,
+            _building_id: Uuid,
+        ) -> Result<Vec<(Uuid, Uuid, rust_decimal::Decimal)>, String> {
+            Ok(vec![])
+        }
+        async fn find_voting_holders_by_unit(
+            &self,
+            unit_id: Uuid,
+        ) -> Result<Vec<LotHolder>, String> {
+            Ok(self
+                .holders
+                .lock()
+                .unwrap()
+                .get(&unit_id)
+                .cloned()
+                .unwrap_or_default())
+        }
+    }
 
     // Mock repositories for testing
     struct MockMeetingRepository {
@@ -526,9 +649,9 @@ mod tests {
             vote_count_pour: i32,
             vote_count_contre: i32,
             vote_count_abstention: i32,
-            total_voting_power_pour: f64,
-            total_voting_power_contre: f64,
-            total_voting_power_abstention: f64,
+            total_voting_power_pour: rust_decimal::Decimal,
+            total_voting_power_contre: rust_decimal::Decimal,
+            total_voting_power_abstention: rust_decimal::Decimal,
         ) -> Result<(), String> {
             if let Some(resolution) = self.resolutions.lock().unwrap().get_mut(&resolution_id) {
                 resolution.vote_count_pour = vote_count_pour;
@@ -659,19 +782,26 @@ mod tests {
         async fn sum_voting_power_by_resolution(
             &self,
             resolution_id: Uuid,
-        ) -> Result<(f64, f64, f64), String> {
+        ) -> Result<
+            (
+                rust_decimal::Decimal,
+                rust_decimal::Decimal,
+                rust_decimal::Decimal,
+            ),
+            String,
+        > {
             let votes = self.find_by_resolution_id(resolution_id).await?;
-            let pour: f64 = votes
+            let pour: rust_decimal::Decimal = votes
                 .iter()
                 .filter(|v| v.vote_choice == VoteChoice::Pour)
                 .map(|v| v.voting_power)
                 .sum();
-            let contre: f64 = votes
+            let contre: rust_decimal::Decimal = votes
                 .iter()
                 .filter(|v| v.vote_choice == VoteChoice::Contre)
                 .map(|v| v.voting_power)
                 .sum();
-            let abstention: f64 = votes
+            let abstention: rust_decimal::Decimal = votes
                 .iter()
                 .filter(|v| v.vote_choice == VoteChoice::Abstention)
                 .map(|v| v.voting_power)
@@ -683,14 +813,14 @@ mod tests {
             &self,
             resolution_id: Uuid,
             proxy_owner_id: Uuid,
-        ) -> Result<(i64, f64), String> {
+        ) -> Result<(i64, rust_decimal::Decimal), String> {
             let votes = self.find_by_resolution_id(resolution_id).await?;
             let proxy_votes: Vec<_> = votes
                 .iter()
                 .filter(|v| v.proxy_owner_id == Some(proxy_owner_id))
                 .collect();
             let count = proxy_votes.len() as i64;
-            let power: f64 = proxy_votes.iter().map(|v| v.voting_power).sum();
+            let power: rust_decimal::Decimal = proxy_votes.iter().map(|v| v.voting_power).sum();
             Ok((count, power))
         }
     }
@@ -700,8 +830,12 @@ mod tests {
         let resolution_repo = Arc::new(MockResolutionRepository::new());
         let vote_repo = Arc::new(MockVoteRepository::new());
         let meeting_repo = Arc::new(MockMeetingRepository::new());
-        let use_cases =
-            ResolutionUseCases::new(resolution_repo.clone(), vote_repo, meeting_repo.clone());
+        let use_cases = ResolutionUseCases::new(
+            resolution_repo.clone(),
+            vote_repo,
+            meeting_repo.clone(),
+            Arc::new(MockUnitOwnerRepository::new()),
+        );
 
         let org_id = Uuid::new_v4();
         let building_id = Uuid::new_v4();
@@ -720,7 +854,12 @@ mod tests {
         .unwrap();
         meeting.id = meeting_id;
         // Validate quorum (600/1000 = 60% > 50%)
-        meeting.validate_quorum(600.0, 1000.0).unwrap();
+        meeting
+            .validate_quorum(
+                rust_decimal_macros::dec!(600),
+                rust_decimal_macros::dec!(1000),
+            )
+            .unwrap();
         meeting_repo.create(&meeting).await.unwrap();
 
         let result = use_cases
@@ -745,8 +884,12 @@ mod tests {
         let resolution_repo = Arc::new(MockResolutionRepository::new());
         let vote_repo = Arc::new(MockVoteRepository::new());
         let meeting_repo = Arc::new(MockMeetingRepository::new());
-        let use_cases =
-            ResolutionUseCases::new(resolution_repo.clone(), vote_repo, meeting_repo.clone());
+        let use_cases = ResolutionUseCases::new(
+            resolution_repo.clone(),
+            vote_repo,
+            meeting_repo.clone(),
+            Arc::new(MockUnitOwnerRepository::new()),
+        );
 
         let org_id = Uuid::new_v4();
         let building_id = Uuid::new_v4();
@@ -765,7 +908,12 @@ mod tests {
         .unwrap();
         meeting.id = meeting_id;
         // Validate quorum (400/1000 = 40% < 50%) — quorum NOT reached
-        meeting.validate_quorum(400.0, 1000.0).unwrap();
+        meeting
+            .validate_quorum(
+                rust_decimal_macros::dec!(400),
+                rust_decimal_macros::dec!(1000),
+            )
+            .unwrap();
         meeting_repo.create(&meeting).await.unwrap();
 
         let result = use_cases
@@ -793,6 +941,7 @@ mod tests {
             resolution_repo.clone(),
             vote_repo.clone(),
             meeting_repo.clone(),
+            Arc::new(MockUnitOwnerRepository::new()),
         );
 
         // Create a resolution
@@ -812,7 +961,12 @@ mod tests {
         )
         .unwrap();
         meeting.id = meeting_id;
-        meeting.validate_quorum(600.0, 1000.0).unwrap();
+        meeting
+            .validate_quorum(
+                rust_decimal_macros::dec!(600),
+                rust_decimal_macros::dec!(1000),
+            )
+            .unwrap();
         meeting_repo.create(&meeting).await.unwrap();
 
         let resolution = use_cases
@@ -836,7 +990,7 @@ mod tests {
                 owner_id,
                 unit_id,
                 VoteChoice::Pour,
-                100.0,
+                rust_decimal_macros::dec!(100),
                 None,
             )
             .await;
@@ -850,7 +1004,10 @@ mod tests {
             .unwrap()
             .unwrap();
         assert_eq!(updated_resolution.vote_count_pour, 1);
-        assert_eq!(updated_resolution.total_voting_power_pour, 100.0);
+        assert_eq!(
+            updated_resolution.total_voting_power_pour,
+            rust_decimal_macros::dec!(100)
+        );
     }
 
     #[tokio::test]
@@ -858,8 +1015,12 @@ mod tests {
         let resolution_repo = Arc::new(MockResolutionRepository::new());
         let vote_repo = Arc::new(MockVoteRepository::new());
         let meeting_repo = Arc::new(MockMeetingRepository::new());
-        let use_cases =
-            ResolutionUseCases::new(resolution_repo.clone(), vote_repo, meeting_repo.clone());
+        let use_cases = ResolutionUseCases::new(
+            resolution_repo.clone(),
+            vote_repo,
+            meeting_repo.clone(),
+            Arc::new(MockUnitOwnerRepository::new()),
+        );
 
         // Create resolution
         let org_id = Uuid::new_v4();
@@ -878,7 +1039,12 @@ mod tests {
         )
         .unwrap();
         meeting.id = meeting_id;
-        meeting.validate_quorum(600.0, 1000.0).unwrap();
+        meeting
+            .validate_quorum(
+                rust_decimal_macros::dec!(600),
+                rust_decimal_macros::dec!(1000),
+            )
+            .unwrap();
         meeting_repo.create(&meeting).await.unwrap();
 
         let resolution = use_cases
@@ -903,7 +1069,7 @@ mod tests {
                 owner_id,
                 unit_id,
                 VoteChoice::Pour,
-                100.0,
+                rust_decimal_macros::dec!(100),
                 None,
             )
             .await;
@@ -916,7 +1082,7 @@ mod tests {
                 owner_id,
                 unit_id,
                 VoteChoice::Contre,
-                100.0,
+                rust_decimal_macros::dec!(100),
                 None,
             )
             .await;
@@ -934,6 +1100,7 @@ mod tests {
             resolution_repo.clone(),
             vote_repo.clone(),
             meeting_repo.clone(),
+            Arc::new(MockUnitOwnerRepository::new()),
         );
 
         let org_id = Uuid::new_v4();
@@ -952,7 +1119,12 @@ mod tests {
         )
         .unwrap();
         meeting.id = meeting_id;
-        meeting.validate_quorum(600.0, 1000.0).unwrap();
+        meeting
+            .validate_quorum(
+                rust_decimal_macros::dec!(600),
+                rust_decimal_macros::dec!(1000),
+            )
+            .unwrap();
         meeting_repo.create(&meeting).await.unwrap();
 
         let resolution = use_cases
@@ -979,7 +1151,7 @@ mod tests {
                     owner_id,
                     unit_id,
                     VoteChoice::Pour,
-                    100.0, // 100 millièmes chacun = 300 total
+                    rust_decimal_macros::dec!(100), // 100 millièmes chacun = 300 total
                     Some(mandataire_id),
                 )
                 .await;
@@ -1000,7 +1172,7 @@ mod tests {
                 owner_id_4,
                 unit_id_4,
                 VoteChoice::Pour,
-                100.0,
+                rust_decimal_macros::dec!(100),
                 Some(mandataire_id),
             )
             .await;
@@ -1021,6 +1193,7 @@ mod tests {
             resolution_repo.clone(),
             vote_repo.clone(),
             meeting_repo.clone(),
+            Arc::new(MockUnitOwnerRepository::new()),
         );
 
         let org_id = Uuid::new_v4();
@@ -1039,7 +1212,12 @@ mod tests {
         )
         .unwrap();
         meeting.id = meeting_id;
-        meeting.validate_quorum(600.0, 1000.0).unwrap();
+        meeting
+            .validate_quorum(
+                rust_decimal_macros::dec!(600),
+                rust_decimal_macros::dec!(1000),
+            )
+            .unwrap();
         meeting_repo.create(&meeting).await.unwrap();
 
         let resolution = use_cases
@@ -1064,7 +1242,7 @@ mod tests {
                     Uuid::new_v4(),
                     Uuid::new_v4(),
                     VoteChoice::Pour,
-                    100.0, // 100 millièmes each, 9 × 100 = 900 total direct
+                    rust_decimal_macros::dec!(100), // 100 millièmes each, 9 × 100 = 900 total direct
                     None,
                 )
                 .await;
@@ -1079,7 +1257,7 @@ mod tests {
                     Uuid::new_v4(),
                     Uuid::new_v4(),
                     VoteChoice::Pour,
-                    5.0, // 5 millièmes chacun
+                    rust_decimal_macros::dec!(5), // 5 millièmes chacun
                     Some(mandataire_id),
                 )
                 .await;
@@ -1090,5 +1268,242 @@ mod tests {
                 result.err()
             );
         }
+    }
+
+    // ------------------------------------------------------------------------
+    // Story H10 (CL3) — Gate quorum sur le chemin VOTE (Art. 3.87 §5).
+    // ------------------------------------------------------------------------
+
+    /// @security — voter sur une AG sans quorum validé est rejeté (gate
+    /// défense-en-profondeur sur `cast_vote`). On insère une résolution Pending
+    /// directement (bypass `create_resolution`) avec une réunion SANS quorum.
+    #[tokio::test]
+    async fn security_cast_vote_rejected_without_quorum() {
+        let resolution_repo = Arc::new(MockResolutionRepository::new());
+        let vote_repo = Arc::new(MockVoteRepository::new());
+        let meeting_repo = Arc::new(MockMeetingRepository::new());
+        let use_cases = ResolutionUseCases::new(
+            resolution_repo.clone(),
+            vote_repo,
+            meeting_repo.clone(),
+            Arc::new(MockUnitOwnerRepository::new()),
+        );
+
+        let meeting_id = Uuid::new_v4();
+        let mut meeting = Meeting::new(
+            Uuid::new_v4(),
+            Uuid::new_v4(),
+            MeetingType::Ordinary,
+            "AGO sans quorum".to_string(),
+            None,
+            Utc::now() + chrono::Duration::days(30),
+            "Salle".to_string(),
+        )
+        .unwrap();
+        meeting.id = meeting_id;
+        // PAS de validate_quorum → quorum_percentage = None.
+        meeting_repo.create(&meeting).await.unwrap();
+
+        let mut resolution = Resolution::new(
+            meeting_id,
+            "R".to_string(),
+            "D".to_string(),
+            ResolutionType::Ordinary,
+            MajorityType::Absolute,
+            None,
+        )
+        .unwrap();
+        resolution.status = ResolutionStatus::Pending;
+        resolution_repo.create(&resolution).await.unwrap();
+
+        let err = use_cases
+            .cast_vote(
+                resolution.id,
+                Uuid::new_v4(),
+                Uuid::new_v4(),
+                VoteChoice::Pour,
+                rust_decimal_macros::dec!(100),
+                None,
+            )
+            .await
+            .unwrap_err();
+        assert!(
+            err.contains("Quorum"),
+            "le vote sans quorum doit être rejeté, got: {}",
+            err
+        );
+    }
+
+    /// @negative — résolution dont la réunion n'existe plus (drift data) →
+    /// vote rejeté proprement (pas de panic).
+    #[tokio::test]
+    async fn negative_cast_vote_meeting_not_found() {
+        let resolution_repo = Arc::new(MockResolutionRepository::new());
+        let vote_repo = Arc::new(MockVoteRepository::new());
+        let meeting_repo = Arc::new(MockMeetingRepository::new()); // vide
+        let use_cases = ResolutionUseCases::new(
+            resolution_repo.clone(),
+            vote_repo,
+            meeting_repo,
+            Arc::new(MockUnitOwnerRepository::new()),
+        );
+
+        let mut resolution = Resolution::new(
+            Uuid::new_v4(), // meeting_id absent du repo
+            "R".to_string(),
+            "D".to_string(),
+            ResolutionType::Ordinary,
+            MajorityType::Absolute,
+            None,
+        )
+        .unwrap();
+        resolution.status = ResolutionStatus::Pending;
+        resolution_repo.create(&resolution).await.unwrap();
+
+        let err = use_cases
+            .cast_vote(
+                resolution.id,
+                Uuid::new_v4(),
+                Uuid::new_v4(),
+                VoteChoice::Pour,
+                rust_decimal_macros::dec!(100),
+                None,
+            )
+            .await
+            .unwrap_err();
+        assert!(
+            err.contains("Meeting not found"),
+            "réunion absente → erreur typée, got: {}",
+            err
+        );
+    }
+
+    // ------------------------------------------------------------------------
+    // Story H17 (CL3) — Gate droit de vote sur `cast_vote` (Art. 3.87 §1).
+    // ------------------------------------------------------------------------
+
+    /// Helper — réunion avec quorum validé + résolution Pending prête à voter.
+    async fn meeting_with_quorum_and_resolution(
+        resolution_repo: &Arc<MockResolutionRepository>,
+        meeting_repo: &Arc<MockMeetingRepository>,
+    ) -> Resolution {
+        let meeting_id = Uuid::new_v4();
+        let mut meeting = Meeting::new(
+            Uuid::new_v4(),
+            Uuid::new_v4(),
+            MeetingType::Ordinary,
+            "AGO".to_string(),
+            None,
+            Utc::now() + chrono::Duration::days(30),
+            "Salle".to_string(),
+        )
+        .unwrap();
+        meeting.id = meeting_id;
+        meeting
+            .validate_quorum(
+                rust_decimal_macros::dec!(600),
+                rust_decimal_macros::dec!(1000),
+            )
+            .unwrap();
+        meeting_repo.create(&meeting).await.unwrap();
+
+        let mut resolution = Resolution::new(
+            meeting_id,
+            "R".to_string(),
+            "D".to_string(),
+            ResolutionType::Ordinary,
+            MajorityType::Absolute,
+            None,
+        )
+        .unwrap();
+        resolution.status = ResolutionStatus::Pending;
+        resolution_repo.create(&resolution).await.unwrap();
+        resolution
+    }
+
+    /// @security — un lot en indivision SANS représentant unique désigné a son
+    /// droit de vote suspendu (Art. 3.87 §1) : `cast_vote` est rejeté avec
+    /// `VOTING_RIGHT_SUSPENDED`, et le lot ne contribue donc pas au quorum.
+    #[tokio::test]
+    async fn security_cast_vote_rejected_when_voting_right_suspended() {
+        let resolution_repo = Arc::new(MockResolutionRepository::new());
+        let vote_repo = Arc::new(MockVoteRepository::new());
+        let meeting_repo = Arc::new(MockMeetingRepository::new());
+        let resolution = meeting_with_quorum_and_resolution(&resolution_repo, &meeting_repo).await;
+
+        let unit_id = Uuid::new_v4();
+        // Lot indivis (2 indivisaires), aucun représentant désigné → suspendu.
+        let unit_owner_repo = Arc::new(MockUnitOwnerRepository::with_holders(
+            unit_id,
+            vec![
+                LotHolder::new(OwnershipType::Indivisaire, false),
+                LotHolder::new(OwnershipType::Indivisaire, false),
+            ],
+        ));
+        let use_cases = ResolutionUseCases::new(
+            resolution_repo.clone(),
+            vote_repo,
+            meeting_repo,
+            unit_owner_repo,
+        );
+
+        let err = use_cases
+            .cast_vote(
+                resolution.id,
+                Uuid::new_v4(),
+                unit_id,
+                VoteChoice::Pour,
+                rust_decimal_macros::dec!(100),
+                None,
+            )
+            .await
+            .unwrap_err();
+        assert!(
+            err.contains("VOTING_RIGHT_SUSPENDED"),
+            "lot suspendu → vote rejeté typé, got: {}",
+            err
+        );
+    }
+
+    /// @happy — un lot démembré AVEC représentant unique désigné peut voter :
+    /// le gate H17 laisse passer (Art. 3.87 §1).
+    #[tokio::test]
+    async fn happy_cast_vote_allowed_with_designated_representative() {
+        let resolution_repo = Arc::new(MockResolutionRepository::new());
+        let vote_repo = Arc::new(MockVoteRepository::new());
+        let meeting_repo = Arc::new(MockMeetingRepository::new());
+        let resolution = meeting_with_quorum_and_resolution(&resolution_repo, &meeting_repo).await;
+
+        let unit_id = Uuid::new_v4();
+        // Usufruit + nue-propriété, l'usufruitier est le représentant → actif.
+        let unit_owner_repo = Arc::new(MockUnitOwnerRepository::with_holders(
+            unit_id,
+            vec![
+                LotHolder::new(OwnershipType::Usufruct, true),
+                LotHolder::new(OwnershipType::BareOwner, false),
+            ],
+        ));
+        let use_cases = ResolutionUseCases::new(
+            resolution_repo.clone(),
+            vote_repo,
+            meeting_repo,
+            unit_owner_repo,
+        );
+
+        let result = use_cases
+            .cast_vote(
+                resolution.id,
+                Uuid::new_v4(),
+                unit_id,
+                VoteChoice::Pour,
+                rust_decimal_macros::dec!(100),
+                None,
+            )
+            .await;
+        assert!(
+            result.is_ok(),
+            "lot avec représentant désigné doit pouvoir voter, got: {:?}",
+            result.err()
+        );
     }
 }

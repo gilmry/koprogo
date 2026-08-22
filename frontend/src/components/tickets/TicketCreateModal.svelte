@@ -48,7 +48,14 @@
     priority: TicketPriority.Medium,
     category: TicketCategory.Other,
     requester_id: "",
-    unit_id: undefined,
+    // '' et non `undefined` : FormInput.svelte a `value = $bindable('')`
+    // (fallback non-undefined) — passer `undefined` à un bind:value sur un
+    // bindable avec fallback fait planter tout l'arbre Svelte au montage
+    // ("Cannot do bind:value={undefined} when value has a fallback value"),
+    // donc TOUTE ouverture de cette modale sans unitId pré-rempli (le cas
+    // courant : création d'un ticket au niveau immeuble) échouait purement
+    // et simplement — modale jamais rendue, aucun ticket ne pouvait être créé.
+    unit_id: "",
   });
 
   let submitting = $state(false);

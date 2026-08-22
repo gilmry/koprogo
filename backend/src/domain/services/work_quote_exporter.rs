@@ -1,7 +1,9 @@
 use crate::domain::entities::{Building, Expense, ExpenseCategory};
-use printpdf::*;
+use crate::domain::services::pdf_writer::{
+    builtin_font, new_document, save_document, PdfPageBuilder,
+};
+use printpdf::BuiltinFont;
 use rust_decimal::Decimal;
-use std::io::BufWriter;
 
 /// Work Quote Document Exporter - Generates PDF for Devis de Travaux
 ///
@@ -47,86 +49,75 @@ impl WorkQuoteExporter {
         }
 
         // Create PDF document (A4: 210mm x 297mm)
-        let (doc, page1, layer1) =
-            PdfDocument::new("Devis de Travaux", Mm(210.0), Mm(297.0), "Layer 1");
-        let current_layer = doc.get_page(page1).get_layer(layer1);
+        let doc = new_document("Devis de Travaux");
+        let mut current_layer = PdfPageBuilder::new();
 
         // Load fonts
-        let font = doc
-            .add_builtin_font(BuiltinFont::Helvetica)
-            .map_err(|e| e.to_string())?;
-        let font_bold = doc
-            .add_builtin_font(BuiltinFont::HelveticaBold)
-            .map_err(|e| e.to_string())?;
+        let font = builtin_font(BuiltinFont::Helvetica);
+        let font_bold = builtin_font(BuiltinFont::HelveticaBold);
 
         let mut y = 270.0; // Start from top
 
         // === HEADER ===
-        current_layer.use_text(
-            "DEVIS DE TRAVAUX".to_string(),
-            18.0,
-            Mm(20.0),
-            Mm(y),
-            &font_bold,
-        );
+        current_layer.text("DEVIS DE TRAVAUX".to_string(), 18.0, 20.0, y, &font_bold);
         y -= 15.0;
 
         // Quote information
         if let Some(ref invoice_num) = expense.invoice_number {
-            current_layer.use_text(
+            current_layer.text(
                 format!("Devis N°: {}", invoice_num),
                 11.0,
-                Mm(20.0),
-                Mm(y),
+                20.0,
+                y,
                 &font_bold,
             );
             y -= 7.0;
         }
 
-        current_layer.use_text(
+        current_layer.text(
             format!("Date: {}", expense.expense_date.format("%d/%m/%Y")),
             10.0,
-            Mm(20.0),
-            Mm(y),
+            20.0,
+            y,
             &font,
         );
         y -= 10.0;
 
         // Building information
-        current_layer.use_text("COPROPRIÉTÉ".to_string(), 14.0, Mm(20.0), Mm(y), &font_bold);
+        current_layer.text("COPROPRIÉTÉ".to_string(), 14.0, 20.0, y, &font_bold);
         y -= 8.0;
 
-        current_layer.use_text(building.name.clone(), 11.0, Mm(20.0), Mm(y), &font);
+        current_layer.text(building.name.clone(), 11.0, 20.0, y, &font);
         y -= 6.0;
 
-        current_layer.use_text(
+        current_layer.text(
             format!(
                 "{}, {} {}",
                 building.address, building.postal_code, building.city
             ),
             10.0,
-            Mm(20.0),
-            Mm(y),
+            20.0,
+            y,
             &font,
         );
         y -= 10.0;
 
         // Contractor information
-        current_layer.use_text("PRESTATAIRE".to_string(), 14.0, Mm(20.0), Mm(y), &font_bold);
+        current_layer.text("PRESTATAIRE".to_string(), 14.0, 20.0, y, &font_bold);
         y -= 8.0;
 
-        current_layer.use_text(contractor_name.to_string(), 11.0, Mm(20.0), Mm(y), &font);
+        current_layer.text(contractor_name.to_string(), 11.0, 20.0, y, &font);
         y -= 6.0;
 
-        current_layer.use_text(contractor_contact.to_string(), 10.0, Mm(20.0), Mm(y), &font);
+        current_layer.text(contractor_contact.to_string(), 10.0, 20.0, y, &font);
         y -= 10.0;
 
         // Work description
-        current_layer.use_text(
+        current_layer.text(
             "DESCRIPTION DES TRAVAUX".to_string(),
             14.0,
-            Mm(20.0),
-            Mm(y),
+            20.0,
+            y,
             &font_bold,
         );
         y -= 8.0;
@@ -134,36 +125,30 @@ impl WorkQuoteExporter {
         // Wrap long description
         let description_lines = Self::wrap_text(&expense.description, 80);
         for line in description_lines {
-            current_layer.use_text(line, 10.0, Mm(20.0), Mm(y), &font);
+            current_layer.text(line, 10.0, 20.0, y, &font);
             y -= 6.0;
         }
         y -= 5.0;
 
         // Timeline
-        current_layer.use_text(
+        current_layer.text(
             format!("Délai d'exécution: {}", timeline),
             10.0,
-            Mm(20.0),
-            Mm(y),
+            20.0,
+            y,
             &font_bold,
         );
         y -= 10.0;
 
         // === LINE ITEMS ===
-        current_layer.use_text(
-            "DÉTAIL DU DEVIS".to_string(),
-            14.0,
-            Mm(20.0),
-            Mm(y),
-            &font_bold,
-        );
+        current_layer.text("DÉTAIL DU DEVIS".to_string(), 14.0, 20.0, y, &font_bold);
         y -= 8.0;
 
         // Table header
-        current_layer.use_text("Description", 10.0, Mm(20.0), Mm(y), &font_bold);
-        current_layer.use_text("Quantité", 10.0, Mm(110.0), Mm(y), &font_bold);
-        current_layer.use_text("Prix Unit.", 10.0, Mm(140.0), Mm(y), &font_bold);
-        current_layer.use_text("Total", 10.0, Mm(170.0), Mm(y), &font_bold);
+        current_layer.text("Description", 10.0, 20.0, y, &font_bold);
+        current_layer.text("Quantité", 10.0, 110.0, y, &font_bold);
+        current_layer.text("Prix Unit.", 10.0, 140.0, y, &font_bold);
+        current_layer.text("Total", 10.0, 170.0, y, &font_bold);
         y -= 6.0;
 
         let mut subtotal = Decimal::ZERO;
@@ -179,25 +164,13 @@ impl WorkQuoteExporter {
             } else {
                 item.description.clone()
             };
-            current_layer.use_text(desc, 9.0, Mm(20.0), Mm(y), &font);
+            current_layer.text(desc, 9.0, 20.0, y, &font);
 
-            current_layer.use_text(
-                format!("{:.2}", item.quantity),
-                9.0,
-                Mm(110.0),
-                Mm(y),
-                &font,
-            );
+            current_layer.text(format!("{:.2}", item.quantity), 9.0, 110.0, y, &font);
 
-            current_layer.use_text(
-                format!("{:.2} €", item.unit_price),
-                9.0,
-                Mm(140.0),
-                Mm(y),
-                &font,
-            );
+            current_layer.text(format!("{:.2} €", item.unit_price), 9.0, 140.0, y, &font);
 
-            current_layer.use_text(format!("{:.2} €", item.total), 9.0, Mm(170.0), Mm(y), &font);
+            current_layer.text(format!("{:.2} €", item.total), 9.0, 170.0, y, &font);
 
             subtotal += item.total;
             y -= 5.0;
@@ -205,31 +178,25 @@ impl WorkQuoteExporter {
         y -= 8.0;
 
         // === TOTALS ===
-        current_layer.use_text(
+        current_layer.text(
             format!("SOUS-TOTAL: {:.2} €", subtotal),
             11.0,
-            Mm(140.0),
-            Mm(y),
+            140.0,
+            y,
             &font,
         );
         y -= 6.0;
 
         let tva = subtotal * rust_decimal_macros::dec!(0.21); // Belgian VAT 21% for work
-        current_layer.use_text(
-            format!("TVA (21%): {:.2} €", tva),
-            11.0,
-            Mm(140.0),
-            Mm(y),
-            &font,
-        );
+        current_layer.text(format!("TVA (21%): {:.2} €", tva), 11.0, 140.0, y, &font);
         y -= 6.0;
 
         let total = subtotal + tva;
-        current_layer.use_text(
+        current_layer.text(
             format!("TOTAL TTC: {:.2} €", total),
             12.0,
-            Mm(140.0),
-            Mm(y),
+            140.0,
+            y,
             &font_bold,
         );
         y -= 10.0;
@@ -244,7 +211,7 @@ impl WorkQuoteExporter {
             crate::domain::entities::ApprovalStatus::Draft => "○ Brouillon",
         };
 
-        current_layer.use_text(approval_text.to_string(), 11.0, Mm(20.0), Mm(y), &font_bold);
+        current_layer.text(approval_text.to_string(), 11.0, 20.0, y, &font_bold);
         y -= 15.0;
 
         // === SIGNATURES ===
@@ -252,40 +219,31 @@ impl WorkQuoteExporter {
             y = 40.0;
         }
 
-        current_layer.use_text("SIGNATURES".to_string(), 12.0, Mm(20.0), Mm(y), &font_bold);
+        current_layer.text("SIGNATURES".to_string(), 12.0, 20.0, y, &font_bold);
         y -= 10.0;
 
-        current_layer.use_text(
+        current_layer.text(
             "Le Syndic: ________________".to_string(),
             10.0,
-            Mm(20.0),
-            Mm(y),
+            20.0,
+            y,
             &font,
         );
 
-        current_layer.use_text(
+        current_layer.text(
             "Le Prestataire: ________________".to_string(),
             10.0,
-            Mm(120.0),
-            Mm(y),
+            120.0,
+            y,
             &font,
         );
         y -= 6.0;
 
-        current_layer.use_text(
-            "Date: ________________".to_string(),
-            10.0,
-            Mm(20.0),
-            Mm(y),
-            &font,
-        );
+        current_layer.text("Date: ________________".to_string(), 10.0, 20.0, y, &font);
 
         // Save to bytes
-        let mut buffer = Vec::new();
-        doc.save(&mut BufWriter::new(&mut buffer))
-            .map_err(|e| e.to_string())?;
-
-        Ok(buffer)
+        let page = current_layer.into_page(210.0, 297.0);
+        Ok(save_document(doc, page))
     }
 
     fn wrap_text(text: &str, max_len: usize) -> Vec<String> {
@@ -323,6 +281,7 @@ mod tests {
 
     #[test]
     fn test_export_work_quote_pdf() {
+        let test_org_id = Uuid::new_v4();
         let building = Building {
             id: Uuid::new_v4(),
             name: "Les Jardins de Bruxelles".to_string(),
@@ -340,7 +299,7 @@ mod tests {
             syndic_office_hours: None,
             syndic_emergency_contact: None,
             slug: None,
-            organization_id: Uuid::new_v4(),
+            acp_id: Uuid::new_v4(),
             created_at: Utc::now(),
             updated_at: Utc::now(),
         };
@@ -348,7 +307,7 @@ mod tests {
         let expense = Expense {
             id: Uuid::new_v4(),
             building_id: building.id,
-            organization_id: building.organization_id,
+            organization_id: test_org_id,
             description: "Rénovation de la façade principale".to_string(),
             amount: rust_decimal_macros::dec!(15000),
             amount_excl_vat: Some(rust_decimal_macros::dec!(12396.69)),

@@ -2,8 +2,17 @@
 Jalons À Venir
 ============================
 
-:Date: 2025-01-19
-:État: Ce qui vient ensuite
+:Date: 2026-05 (snapshot post-bêta v0.1.0)
+:État: Ce qui vient ensuite — Jalon 1 complété (cf. ``jalons-atteints``), Jalon 2 largement avancé techniquement
+
+.. note::
+   **Snapshot 2026-05** : depuis cette version, plusieurs items techniques
+   du Jalon 2 sont **déjà implémentés** côté backend/frontend (#17 État
+   Daté, #18 Budget, #22 Conseil, #23 Recouvrement de base — voir
+   ``backend/src/domain/entities/`` ``etat_date.rs``, ``budget.rs``,
+   ``board_member.rs``, ``payment_recovery``). Le **bloquant restant
+   pour Jalon 2** = validation légale (notaires, huissiers, signature
+   numérique) + finition rapports PDF conformes.
 
 .. contents:: Table des matières
    :depth: 2

@@ -8,21 +8,40 @@ Version: 1.0.0 | Date: 10 novembre 2025
 - **Minor** (0.x.0): New features, backward compatible
 - **Patch** (0.0.x): Bug fixes only
 
+## v0.1.0 Bêta Fermée — cas spécial
+
+v0.1.0 n'est PAS une release publique. Le processus standard ci-dessous
+s'applique aux releases ≥ v0.2.0 (production ouverte).
+
+Pour la **bêta fermée v0.1.0** (5-10 copropriétés pilotes, VPS-first) :
+
+- **Critères GO** : `docs/WBS_GO_LIVE_v0.1.0.md` §"Critères GO (Definition of
+  Done — bêta fermée)" — cocher la checklist complète avant tag.
+- **Gate humain** (Tier-1) : revue humaine fraîche signée
+  (`docs/HUMAN_REVIEW_REPORT_v0.1.0_<date>.md`) + tag `v0.1.0` manuel.
+- **Périmètre allégé vs gate public** (#427) : sécurité réelle mais bornée
+  aux bloquants identifiés (cf. WBS § "Gate de release").
+- **Déploiement** : VPS OVH + docker-compose + poller systemd
+  `gitops-deploy.sh` (k3s/ArgoCD différé Phase 2).
+
 ## Pre-Release Checklist
 
 ### 1. Code Quality
+
 - [ ] All tests pass (`make test`)
 - [ ] Linting passes (`make lint`)
 - [ ] No security vulnerabilities (`cargo audit`)
 - [ ] Coverage ≥ 80% for new code
 
 ### 2. Documentation
+
 - [ ] CHANGELOG.md updated with all changes
 - [ ] API documentation updated if endpoints changed
 - [ ] User guides updated if UI/UX changed
 - [ ] Migration guide if breaking changes
 
 ### 3. Testing
+
 - [ ] Unit tests pass (`cargo test --lib`)
 - [ ] Integration tests pass (`cargo test --test integration`)
 - [ ] BDD tests pass (`cargo test --test bdd`)
@@ -31,11 +50,13 @@ Version: 1.0.0 | Date: 10 novembre 2025
 - [ ] Manual QA in staging environment
 
 ### 4. Database
+
 - [ ] Migrations tested (up + down)
 - [ ] Backup taken before migration
 - [ ] Migration rollback plan documented
 
 ### 5. Dependencies
+
 - [ ] Dependencies updated (`cargo update`)
 - [ ] Security audit passed (`cargo audit`)
 - [ ] License compatibility verified
@@ -64,16 +85,20 @@ version = "1.2.0"
 ## [1.2.0] - 2025-11-10
 
 ### Added
+
 - New feature X (#123)
 - New endpoint `/api/v1/feature-x` (#124)
 
 ### Changed
+
 - Improved performance of Y by 30% (#125)
 
 ### Fixed
+
 - Bug in Z causing incorrect calculation (#126)
 
 ### Security
+
 - Updated dependency A to patch CVE-2025-XXXX
 ```
 
@@ -179,12 +204,14 @@ sqlx migrate revert
 For critical bugs in production:
 
 1. **Branch from main** (not develop):
+
    ```bash
    git checkout main
    git checkout -b hotfix/v1.2.1
    ```
 
 2. **Fix bug + tests**:
+
    ```bash
    # Fix code
    cargo test

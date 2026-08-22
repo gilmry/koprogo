@@ -1,6 +1,11 @@
 use chrono::{DateTime, Utc};
+use rust_decimal::Decimal;
+use rust_decimal_macros::dec;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
+
+/// Voting-power upper bound (Art. 3.87 §7 CC envelope, 10000 dix-millièmes).
+const MAX_VOTING_POWER: Decimal = dec!(10000);
 
 /// Choix de vote d'un copropriétaire
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, utoipa::ToSchema)]
@@ -19,7 +24,7 @@ pub struct Vote {
     pub owner_id: Uuid,
     pub unit_id: Uuid,
     pub vote_choice: VoteChoice,
-    pub voting_power: f64,            // Tantièmes/millièmes du lot
+    pub voting_power: Decimal, // Tantièmes/millièmes du lot (Decimal exact — ADR-0008)
     pub proxy_owner_id: Option<Uuid>, // ID du mandataire si vote par procuration
     pub voted_at: DateTime<Utc>,
 }
@@ -31,14 +36,14 @@ impl Vote {
         owner_id: Uuid,
         unit_id: Uuid,
         vote_choice: VoteChoice,
-        voting_power: f64,
+        voting_power: Decimal,
         proxy_owner_id: Option<Uuid>,
     ) -> Result<Self, String> {
         // Validation du pouvoir de vote
-        if voting_power <= 0.0 {
+        if voting_power <= Decimal::ZERO {
             return Err("Voting power must be positive".to_string());
         }
-        if voting_power > 10000.0 {
+        if voting_power > MAX_VOTING_POWER {
             return Err("Voting power exceeds maximum (10000 dix-millièmes)".to_string());
         }
 
@@ -97,7 +102,7 @@ mod tests {
             owner_id,
             unit_id,
             VoteChoice::Pour,
-            150.0, // 150 millièmes
+            dec!(150), // 150 millièmes
             None,
         );
 
@@ -107,7 +112,7 @@ mod tests {
         assert_eq!(vote.owner_id, owner_id);
         assert_eq!(vote.unit_id, unit_id);
         assert_eq!(vote.vote_choice, VoteChoice::Pour);
-        assert_eq!(vote.voting_power, 150.0);
+        assert_eq!(vote.voting_power, dec!(150));
         assert!(!vote.is_proxy_vote());
         assert_eq!(vote.effective_voter_id(), owner_id);
     }
@@ -124,7 +129,7 @@ mod tests {
             owner_id,
             unit_id,
             VoteChoice::Contre,
-            200.0,
+            dec!(200),
             Some(proxy_id),
         );
 
@@ -146,7 +151,7 @@ mod tests {
             owner_id,
             unit_id,
             VoteChoice::Pour,
-            0.0,
+            dec!(0),
             None,
         );
 
@@ -165,7 +170,7 @@ mod tests {
             owner_id,
             unit_id,
             VoteChoice::Pour,
-            -50.0,
+            dec!(-50),
             None,
         );
 
@@ -184,7 +189,7 @@ mod tests {
             owner_id,
             unit_id,
             VoteChoice::Pour,
-            15000.0, // Exceeds max
+            dec!(15000), // Exceeds max
             None,
         );
 
@@ -203,7 +208,7 @@ mod tests {
             owner_id,
             unit_id,
             VoteChoice::Pour,
-            150.0,
+            dec!(150),
             Some(owner_id), // Self as proxy
         );
 
@@ -222,7 +227,7 @@ mod tests {
             owner_id,
             unit_id,
             VoteChoice::Pour,
-            150.0,
+            dec!(150),
             None,
         )
         .unwrap();

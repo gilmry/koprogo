@@ -1,69 +1,22 @@
 import { test, expect } from "@playwright/test";
-import type { Page } from "@playwright/test";
+import { loginAsSyndic, ensureAcp } from "./helpers/auth";
 
 /**
  * Buildings E2E Test Suite - Building Management
  *
  * Tests building listing, creation, and detail pages.
  * Idempotent: each test creates its own data with unique timestamps.
+ *
+ * WP-FE1/#550 : utilise le helper partagé `loginAsSyndic` (injectAuth)
+ * pour éviter la course de rotation cookie refresh-token causée par
+ * l'ancien UI-login local. Cf. Meetings.spec.ts pour détails.
  */
 
 const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
 
-async function registerAndLoginAsSyndic(page: Page): Promise<{
-  token: string;
-  email: string;
-  adminToken: string;
-  orgId: string;
-}> {
-  const timestamp = Date.now();
-  const email = `building-test-${timestamp}@example.com`;
-
-  // Create an organization first (required for syndic to create buildings)
-  const adminLoginResp = await page.request.post(`${API_BASE}/auth/login`, {
-    data: { email: "admin@koprogo.com", password: "admin123" },
-  });
-  const adminData = await adminLoginResp.json();
-  const adminToken = adminData.token;
-
-  const orgResp = await page.request.post(`${API_BASE}/organizations`, {
-    data: {
-      name: `Building Test Org ${timestamp}`,
-      slug: `building-test-${timestamp}`,
-      contact_email: email,
-      subscription_plan: "professional",
-    },
-    headers: { Authorization: `Bearer ${adminToken}` },
-  });
-  const org = await orgResp.json();
-  const orgId = org.id;
-
-  const response = await page.request.post(`${API_BASE}/auth/register`, {
-    data: {
-      email,
-      password: "test123456",
-      first_name: "Building",
-      last_name: `Test${timestamp}`,
-      role: "syndic",
-      organization_id: orgId,
-    },
-  });
-  expect(response.ok()).toBeTruthy();
-  const data = await response.json();
-
-  // Login via UI
-  await page.goto("/login");
-  await page.getByTestId("login-email").fill(email);
-  await page.getByTestId("login-password").fill("test123456");
-  await page.getByTestId("login-submit").click();
-  await page.waitForURL(/\/(syndic|admin|owner)/, { timeout: 15000 });
-
-  return { token: data.token, email, adminToken, orgId };
-}
-
 test.describe("Buildings - List and Detail", () => {
   test("should display buildings list page", async ({ page }) => {
-    await registerAndLoginAsSyndic(page);
+    await loginAsSyndic(page, "building");
     await page.goto("/buildings");
 
     // Page should load without errors
@@ -77,9 +30,11 @@ test.describe("Buildings - List and Detail", () => {
   test("should create a new building via API and see it in the list", async ({
     page,
   }) => {
-    const { adminToken, orgId } = await registerAndLoginAsSyndic(page);
+    const { adminToken, orgId } = await loginAsSyndic(page, "building");
     const timestamp = Date.now();
     const buildingName = `Test Building ${timestamp}`;
+    // Hotfix #602 — buildings.acp_id (FK acps.id) replaced organization_id.
+    const acpId = await ensureAcp(page, orgId, adminToken, "building");
 
     // Create building via API (only SuperAdmin can create buildings)
     const createResponse = await page.request.post(`${API_BASE}/buildings`, {
@@ -91,7 +46,7 @@ test.describe("Buildings - List and Detail", () => {
         country: "Belgium",
         total_units: 10,
         construction_year: 2020,
-        organization_id: orgId,
+        acp_id: acpId,
       },
       headers: { Authorization: `Bearer ${adminToken}` },
     });
@@ -107,9 +62,11 @@ test.describe("Buildings - List and Detail", () => {
   });
 
   test("should navigate to building detail page", async ({ page }) => {
-    const { adminToken, orgId } = await registerAndLoginAsSyndic(page);
+    const { adminToken, orgId } = await loginAsSyndic(page, "building");
     const timestamp = Date.now();
     const buildingName = `Detail Building ${timestamp}`;
+    // Hotfix #602 — buildings.acp_id (FK acps.id) replaced organization_id.
+    const acpId = await ensureAcp(page, orgId, adminToken, "building");
 
     // Create building via API (only SuperAdmin can create buildings)
     const createResponse = await page.request.post(`${API_BASE}/buildings`, {
@@ -121,7 +78,7 @@ test.describe("Buildings - List and Detail", () => {
         country: "Belgium",
         total_units: 5,
         construction_year: 2015,
-        organization_id: orgId,
+        acp_id: acpId,
       },
       headers: { Authorization: `Bearer ${adminToken}` },
     });
@@ -138,8 +95,10 @@ test.describe("Buildings - List and Detail", () => {
   });
 
   test("should display building units section", async ({ page }) => {
-    const { adminToken, orgId } = await registerAndLoginAsSyndic(page);
+    const { adminToken, orgId } = await loginAsSyndic(page, "building");
     const timestamp = Date.now();
+    // Hotfix #602 — buildings.acp_id (FK acps.id) replaced organization_id.
+    const acpId = await ensureAcp(page, orgId, adminToken, "building");
 
     // Create building via API (only SuperAdmin can create buildings)
     const createResponse = await page.request.post(`${API_BASE}/buildings`, {
@@ -151,7 +110,7 @@ test.describe("Buildings - List and Detail", () => {
         country: "Belgium",
         total_units: 3,
         construction_year: 2018,
-        organization_id: orgId,
+        acp_id: acpId,
       },
       headers: { Authorization: `Bearer ${adminToken}` },
     });
@@ -166,7 +125,7 @@ test.describe("Buildings - List and Detail", () => {
   });
 
   test("should handle non-existent building gracefully", async ({ page }) => {
-    await registerAndLoginAsSyndic(page);
+    await loginAsSyndic(page, "building");
 
     // Try to access a building that doesn't exist
     await page.goto("/building-detail?id=00000000-0000-0000-0000-000000000000");

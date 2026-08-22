@@ -608,8 +608,8 @@ pub async fn export_ownership_contract_pdf(
         }
     };
 
-    // Convert DTOs to domain entities
-    let building_org_id = Uuid::parse_str(&building_dto.organization_id).unwrap_or(organization_id);
+    // Story 1.2 — Building.acp_id (FK acps.id, was organization_id).
+    let building_acp_id = Uuid::parse_str(&building_dto.acp_id).unwrap_or_else(|_| Uuid::new_v4());
 
     let building_created_at = DateTime::parse_from_rfc3339(&building_dto.created_at)
         .map(|dt| dt.with_timezone(&Utc))
@@ -636,14 +636,14 @@ pub async fn export_ownership_contract_pdf(
         syndic_office_hours: None,
         syndic_emergency_contact: None,
         slug: None,
-        organization_id: building_org_id,
+        acp_id: building_acp_id,
         created_at: building_created_at,
         updated_at: building_updated_at,
     };
 
     let unit_entity = Unit {
         id: Uuid::parse_str(&unit_dto.id).unwrap_or(unit_owner.unit_id),
-        organization_id,
+        acp_id: building_acp_id,
         building_id: building_uuid,
         unit_number: unit_dto.unit_number,
         floor: unit_dto.floor,

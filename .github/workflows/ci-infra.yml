@@ -49,6 +49,7 @@ env:
   KUBECTL_VERSION: "v1.34.1"
   HELM_VERSION: "v3.16.4"
   KUBECONFORM_VERSION: "0.6.7"
+  TERRAFORM_VERSION: "1.9.8"
 
 jobs:
   kustomize-build:
@@ -60,7 +61,7 @@ jobs:
         env: [dev, integration, staging, production]
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Setup kubectl (with embedded kustomize v5)
         uses: azure/setup-kubectl@v5
@@ -99,7 +100,7 @@ jobs:
         profile: [docker-desktop, k3s-self-hosted, k8s-managed]
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Setup Helm
         uses: azure/setup-helm@v5
@@ -141,7 +142,7 @@ jobs:
         env: [dev, integration, staging, production]
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Setup kubectl
         uses: azure/setup-kubectl@v5
@@ -171,7 +172,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Render ApplicationSet templates (× 3 cluster types)
         run: |
@@ -217,7 +218,7 @@ jobs:
       ARGOCD_CHART_VERSION: "7.7.7"
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Setup kubectl
         uses: azure/setup-kubectl@v5
@@ -393,10 +394,107 @@ jobs:
           kubectl get events -n koprogo-dev --sort-by='.lastTimestamp' | tail -30
           exit 1
 
+  iac-lint:
+    name: IaC lint (VPS go-live subset, #354)
+    runs-on: ubuntu-latest
+    # WP-E1 minimal viable gate. Phase 2 (OUT here): conftest/OPA, molecule,
+    # terratest, full ansible-lint `production` profile, multisite/k3s/k8s.
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v4
+        with:
+          terraform_version: ${{ env.TERRAFORM_VERSION }}
+          terraform_wrapper: false
+
+      - name: Setup Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+
+      - name: Install ansible-lint + yamllint
+        run: |
+          set -euo pipefail
+          python -m pip install --upgrade pip
+          # ansible-core épinglé < 2.21 : ansible-lint 24.x importe
+          # `ansible.parsing.yaml.constructor`, déplacé/retiré en core 2.21
+          # (sinon ModuleNotFoundError au runtime). Cf. #354 / WP-E1.
+          pip install "ansible-lint==24.*" "yamllint==1.*" "ansible-core>=2.16,<2.19"
+          ansible-lint --version
+          yamllint --version
+          # `ufw` (utilisé par le rôle common pour le firewall VPS) vit dans
+          # la collection community.general, pas dans ansible-core. Sans cette
+          # install, ansible-lint échoue avec "couldn't resolve module/action
+          # 'ufw'". Pinned pour reproductibilité. Cf. issue #354/WP-E1.
+          ansible-galaxy collection install 'community.general:>=8.0.0,<11.0.0' --force
+
+      - name: Install shellcheck
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y shellcheck
+          shellcheck --version
+
+      # --- Terraform: fmt -check + validate (VPS subset only) ---
+      - name: Terraform fmt -check (ovh-vps module + prod vps)
+        run: |
+          set -euo pipefail
+          terraform fmt -check -recursive infrastructure/_shared/terraform/modules/ovh-vps
+          terraform fmt -check -recursive infrastructure/monosite/vps/production/terraform
+          echo "::notice::terraform fmt OK (ovh-vps module + prod vps)"
+
+      # Le module ovh-vps déclare `configuration_aliases = [openstack.ovh]`
+      # (versions.tf) : un module recevant un provider *aliasé* de son
+      # appelant NE PEUT PAS être `terraform validate`'d en isolation
+      # (aucun root ne fournit la config provider → "Provider configuration
+      # not present"). Sa correction est validée transitivement via le root
+      # prod-vps ci-dessous (qui l'instancie + configure openstack.ovh).
+      # Le `fmt -check` standalone (au-dessus) reste valable. (#354 / WP-E1)
+      - name: Terraform validate (prod vps)
+        run: |
+          set -euo pipefail
+          terraform -chdir=infrastructure/monosite/vps/production/terraform init -backend=false -input=false
+          terraform -chdir=infrastructure/monosite/vps/production/terraform validate
+          echo "::notice::terraform validate OK (prod vps)"
+
+      # --- yamllint: prod VPS yaml subset (scoped .yamllint config) ---
+      - name: yamllint (prod vps)
+        run: |
+          set -euo pipefail
+          yamllint -c .yamllint -s infrastructure/monosite/vps/production
+          echo "::notice::yamllint OK (prod vps)"
+
+      # --- ansible-lint: prod playbook + shared roles (scoped .ansible-lint, profile=min) ---
+      - name: ansible-lint (prod playbook + 14 shared roles)
+        run: |
+          set -euo pipefail
+          ansible-lint -c .ansible-lint \
+            infrastructure/monosite/vps/production/ansible/playbook.yml \
+            infrastructure/_shared/ansible/roles
+          echo "::notice::ansible-lint OK (prod playbook + shared roles)"
+
+      # --- shellcheck: HARD GATE on the prod deployment script ---
+      - name: shellcheck gitops-deploy.sh (HARD gate — executes prod deploy)
+        run: |
+          set -euo pipefail
+          shellcheck infrastructure/_shared/scripts/gitops-deploy.sh
+          echo "::notice::shellcheck OK (gitops-deploy.sh — clean, hard gate passed)"
+
+
   summary:
     name: ✅ CI Infra summary
     runs-on: ubuntu-latest
-    needs: [kustomize-build, helm-template, kubeconform, applicationset-render, fresh-cluster-deploy]
+    needs:
+      [
+        kustomize-build,
+        helm-template,
+        kubeconform,
+        applicationset-render,
+        fresh-cluster-deploy,
+        iac-lint,
+      ]
     if: always()
     steps:
       - name: Verdict
@@ -406,7 +504,8 @@ jobs:
           if [ "${{ needs.kustomize-build.result }}" != "success" ] \
              || [ "${{ needs.helm-template.result }}" != "success" ] \
              || [ "${{ needs.kubeconform.result }}" != "success" ] \
-             || [ "${{ needs.applicationset-render.result }}" != "success" ]; then
+             || [ "${{ needs.applicationset-render.result }}" != "success" ] \
+             || [ "${{ needs.iac-lint.result }}" != "success" ]; then
             echo "::error::ci-infra failed (one or more required jobs not green)"
             exit 1
           fi

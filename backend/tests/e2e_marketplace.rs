@@ -19,8 +19,9 @@ async fn create_test_building_for_marketplace(
     app_state: &actix_web::web::Data<koprogo_api::infrastructure::web::AppState>,
     org_id: Uuid,
 ) -> String {
+    let acp_id = common::create_test_acp(app_state, org_id).await;
     let dto = CreateBuildingDto {
-        organization_id: org_id.to_string(),
+        acp_id,
         name: format!("Marketplace Test Building {}", Uuid::new_v4()),
         address: "100 Marketplace Ave".to_string(),
         city: "Brussels".to_string(),

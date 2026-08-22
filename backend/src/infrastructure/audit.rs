@@ -16,6 +16,9 @@ pub enum AuditEventType {
     BuildingCreated,
     BuildingUpdated,
     BuildingDeleted,
+    AcpCreated,
+    AcpUpdated,
+    AcpArchived,
     JournalEntryCreated,
     JournalEntryDeleted,
     UnitCreated,
@@ -66,6 +69,8 @@ pub enum AuditEventType {
     TicketReopened,
     TicketDeleted,
     TicketWorkOrderSent,
+    /// Story 3.6 (FR31 / INV-24) — PATCH field edit within the 5-min window.
+    TicketUpdated,
 
     // Notification events (Issue #86 - Phase 2)
     NotificationCreated,
@@ -275,6 +280,15 @@ pub enum AuditEventType {
 
     // Financial reporting events
     ReportGenerated,
+
+    // Portfolio events (Story 2.1 — ADR-0011, Slice 2 Refonte UX multi-rôle ACP)
+    PortfolioCreated,
+    PortfolioUpdated,
+    PortfolioDeleted,
+    PortfolioBuildingAdded,
+    PortfolioBuildingRemoved,
+    PortfolioShared,
+    PortfolioUnshared,
 }
 
 /// Audit log entry

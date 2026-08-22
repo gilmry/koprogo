@@ -1,0 +1,24 @@
+---
+// Story B8 (Phase B FE) — Page reputation contractor (publique au sein de l'org).
+//
+// Route : /contractor-reputation?contractorId=<uuid>
+//
+// Pourquoi query param et pas `/contractors/<id>/reputation` :
+//   Astro est en mode `output: "static"` (cf. astro.config.mjs) sans adapter
+//   SSR. Les dynamic routes exigeraient soit `getStaticPaths()` (impossible —
+//   les contractors sont créés à la volée), soit un adapter SSR.
+//   Pattern cohérent fed175d (cf. /c.astro magic-link) — query param + fetch
+//   client-side.
+//
+// Accès : tout user authentifié (le backend filtre par scope org). Pas de
+// gate FE — on s'appuie sur le backend pour l'autorisation.
+
+import Layout from '../layouts/Layout.astro';
+import ContractorReputationPage from '../lib/components/shared/ContractorReputationPage.svelte';
+---
+
+<Layout title="Réputation contractor — KoproGo">
+  <main class="container mx-auto px-4 py-8">
+    <ContractorReputationPage client:load />
+  </main>
+</Layout>

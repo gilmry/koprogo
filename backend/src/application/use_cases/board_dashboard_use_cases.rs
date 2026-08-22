@@ -525,7 +525,7 @@ mod tests {
             if self.exists {
                 Ok(Some(crate::domain::entities::Building {
                     id: Uuid::new_v4(),
-                    organization_id: Uuid::new_v4(),
+                    acp_id: Uuid::new_v4(),
                     name: "Test Building".to_string(),
                     address: "123 Test St".to_string(),
                     city: "Brussels".to_string(),
@@ -576,6 +576,19 @@ mod tests {
             &self,
             _slug: &str,
         ) -> Result<Option<crate::domain::entities::Building>, String> {
+            unimplemented!()
+        }
+
+        async fn find_by_id_with_metrics(
+            &self,
+            _id: Uuid,
+        ) -> Result<
+            Option<(
+                crate::domain::entities::Building,
+                crate::domain::entities::BuildingMetrics,
+            )>,
+            String,
+        > {
             unimplemented!()
         }
     }

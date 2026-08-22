@@ -5,7 +5,7 @@ KoproGo - Infrastructure Roadmap
 :Number: 3
 :Public: true
 :Total Items: 38
-:Custom Fields: 14
+:Custom Fields: 17
 :URL: `View on GitHub <https://github.com/users/gilmry/projects/3>`_
 
 Description
@@ -17,7 +17,7 @@ Statistics
 ==========
 
 - **Total Items**: 38 issues/PRs tracked
-- **Custom Fields**: 14 custom fields configured
+- **Custom Fields**: 17 custom fields configured
 
 View Details
 ============

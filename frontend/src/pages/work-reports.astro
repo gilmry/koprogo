@@ -20,6 +20,17 @@ import Layout from "../layouts/Layout.astro";
   import { mount, unmount } from "svelte";
   import WorkReportList from "../components/work-reports/WorkReportList.svelte";
   import BuildingSelector from "../components/BuildingSelector.svelte";
+  import { authStore } from "../stores/auth";
+  import { get } from "svelte/store";
+
+  // `organizationId` n'était jamais passé au composant (prop par défaut ''),
+  // donc chaque création de rapport envoyait `organization_id: ""` — rejeté
+  // par le backend ("Invalid organization_id format"). Toute création de
+  // rapport de travaux échouait, quel que soit l'immeuble sélectionné.
+  await authStore.init();
+  const auth = get(authStore);
+  const organizationId =
+    auth.user?.organizationId || auth.user?.activeRole?.organizationId || "";
 
   const selectorContainer = document.getElementById("building-selector-container");
   const listContainer = document.getElementById("work-reports-container");
@@ -31,7 +42,7 @@ import Layout from "../layouts/Layout.astro";
     listContainer.innerHTML = "";
     listComponent = mount(WorkReportList as any, {
       target: listContainer,
-      props: { buildingId },
+      props: { buildingId, organizationId },
     });
   }
 

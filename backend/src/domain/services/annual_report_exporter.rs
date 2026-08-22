@@ -1,10 +1,12 @@
 use crate::domain::entities::{Building, Expense, ExpenseCategory};
+use crate::domain::services::pdf_writer::{
+    builtin_font, new_document, save_document, PdfPageBuilder,
+};
 use chrono::Utc;
-use printpdf::*;
+use printpdf::BuiltinFont;
 use rust_decimal::Decimal;
 use rust_decimal_macros::dec;
 use std::collections::HashMap;
-use std::io::BufWriter;
 
 /// Annual Financial Report Exporter - Generates PDF for Rapport Financier Annuel
 ///
@@ -40,96 +42,79 @@ impl AnnualReportExporter {
         reserve_fund: Decimal,
     ) -> Result<Vec<u8>, String> {
         // Create PDF document (A4: 210mm x 297mm)
-        let (doc, page1, layer1) =
-            PdfDocument::new("Rapport Financier Annuel", Mm(210.0), Mm(297.0), "Layer 1");
-        let current_layer = doc.get_page(page1).get_layer(layer1);
+        let doc = new_document("Rapport Financier Annuel");
+        let mut current_layer = PdfPageBuilder::new();
 
         // Load fonts
-        let font = doc
-            .add_builtin_font(BuiltinFont::Helvetica)
-            .map_err(|e| e.to_string())?;
-        let font_bold = doc
-            .add_builtin_font(BuiltinFont::HelveticaBold)
-            .map_err(|e| e.to_string())?;
+        let font = builtin_font(BuiltinFont::Helvetica);
+        let font_bold = builtin_font(BuiltinFont::HelveticaBold);
 
         let mut y = 270.0; // Start from top
 
         // === HEADER ===
-        current_layer.use_text(
+        current_layer.text(
             "RAPPORT FINANCIER ANNUEL".to_string(),
             18.0,
-            Mm(20.0),
-            Mm(y),
+            20.0,
+            y,
             &font_bold,
         );
         y -= 15.0;
 
         // Building information
-        current_layer.use_text(
+        current_layer.text(
             format!("Copropriété: {}", building.name),
             12.0,
-            Mm(20.0),
-            Mm(y),
+            20.0,
+            y,
             &font_bold,
         );
         y -= 7.0;
 
-        current_layer.use_text(
+        current_layer.text(
             format!("Adresse: {}", building.address),
             10.0,
-            Mm(20.0),
-            Mm(y),
+            20.0,
+            y,
             &font,
         );
         y -= 10.0;
 
-        current_layer.use_text(
-            format!("Exercice: {}", year),
-            12.0,
-            Mm(20.0),
-            Mm(y),
-            &font_bold,
-        );
+        current_layer.text(format!("Exercice: {}", year), 12.0, 20.0, y, &font_bold);
         y -= 10.0;
 
-        current_layer.use_text(
+        current_layer.text(
             format!("Date d'établissement: {}", Utc::now().format("%d/%m/%Y")),
             10.0,
-            Mm(20.0),
-            Mm(y),
+            20.0,
+            y,
             &font,
         );
         y -= 15.0;
 
         // === SUMMARY ===
-        current_layer.use_text(
-            "SYNTHÈSE FINANCIÈRE".to_string(),
-            14.0,
-            Mm(20.0),
-            Mm(y),
-            &font_bold,
-        );
+        current_layer.text("SYNTHÈSE FINANCIÈRE".to_string(), 14.0, 20.0, y, &font_bold);
         y -= 8.0;
 
         let total_expenses: Decimal = expenses.iter().map(|e| e.amount).sum();
 
-        current_layer.use_text(
+        current_layer.text(
             format!(
                 "Total des produits (charges perçues): {:.2} €",
                 total_income
             ),
             11.0,
-            Mm(20.0),
-            Mm(y),
+            20.0,
+            y,
             &font,
         );
         y -= 6.0;
 
-        current_layer.use_text(
+        current_layer.text(
             format!("Total des charges: {:.2} €", total_expenses),
             11.0,
-            Mm(20.0),
-            Mm(y),
+            20.0,
+            y,
             &font,
         );
         y -= 6.0;
@@ -140,30 +125,30 @@ impl AnnualReportExporter {
         } else {
             "Déficit"
         };
-        current_layer.use_text(
+        current_layer.text(
             format!("{}: {:.2} €", balance_label, balance.abs()),
             12.0,
-            Mm(20.0),
-            Mm(y),
+            20.0,
+            y,
             &font_bold,
         );
         y -= 6.0;
 
-        current_layer.use_text(
+        current_layer.text(
             format!("Fonds de réserve: {:.2} €", reserve_fund),
             11.0,
-            Mm(20.0),
-            Mm(y),
+            20.0,
+            y,
             &font,
         );
         y -= 12.0;
 
         // === EXPENSE BREAKDOWN BY CATEGORY ===
-        current_layer.use_text(
+        current_layer.text(
             "RÉPARTITION DES CHARGES PAR CATÉGORIE".to_string(),
             14.0,
-            Mm(20.0),
-            Mm(y),
+            20.0,
+            y,
             &font_bold,
         );
         y -= 8.0;
@@ -182,9 +167,9 @@ impl AnnualReportExporter {
         sorted_categories.sort_by(|a, b| b.1.partial_cmp(a.1).unwrap());
 
         // Table header
-        current_layer.use_text("Catégorie", 10.0, Mm(20.0), Mm(y), &font_bold);
-        current_layer.use_text("Montant", 10.0, Mm(120.0), Mm(y), &font_bold);
-        current_layer.use_text("% Total", 10.0, Mm(160.0), Mm(y), &font_bold);
+        current_layer.text("Catégorie", 10.0, 20.0, y, &font_bold);
+        current_layer.text("Montant", 10.0, 120.0, y, &font_bold);
+        current_layer.text("% Total", 10.0, 160.0, y, &font_bold);
         y -= 6.0;
 
         for (category, amount) in sorted_categories {
@@ -199,28 +184,28 @@ impl AnnualReportExporter {
                 Decimal::ZERO
             };
 
-            current_layer.use_text(category.clone(), 9.0, Mm(20.0), Mm(y), &font);
-            current_layer.use_text(format!("{:.2} €", amount), 9.0, Mm(120.0), Mm(y), &font);
-            current_layer.use_text(format!("{:.1}%", percentage), 9.0, Mm(160.0), Mm(y), &font);
+            current_layer.text(category.clone(), 9.0, 20.0, y, &font);
+            current_layer.text(format!("{:.2} €", amount), 9.0, 120.0, y, &font);
+            current_layer.text(format!("{:.1}%", percentage), 9.0, 160.0, y, &font);
             y -= 5.0;
         }
         y -= 10.0;
 
         // === BUDGET VS ACTUAL ===
-        current_layer.use_text(
+        current_layer.text(
             "COMPARAISON BUDGET / RÉALISÉ".to_string(),
             14.0,
-            Mm(20.0),
-            Mm(y),
+            20.0,
+            y,
             &font_bold,
         );
         y -= 8.0;
 
         // Table header
-        current_layer.use_text("Catégorie", 10.0, Mm(20.0), Mm(y), &font_bold);
-        current_layer.use_text("Budget", 10.0, Mm(100.0), Mm(y), &font_bold);
-        current_layer.use_text("Réalisé", 10.0, Mm(130.0), Mm(y), &font_bold);
-        current_layer.use_text("Écart", 10.0, Mm(160.0), Mm(y), &font_bold);
+        current_layer.text("Catégorie", 10.0, 20.0, y, &font_bold);
+        current_layer.text("Budget", 10.0, 100.0, y, &font_bold);
+        current_layer.text("Réalisé", 10.0, 130.0, y, &font_bold);
+        current_layer.text("Écart", 10.0, 160.0, y, &font_bold);
         y -= 6.0;
 
         let mut total_budgeted = Decimal::ZERO;
@@ -236,26 +221,14 @@ impl AnnualReportExporter {
             let variance = item.budgeted - item.actual;
             let variance_sign = if variance >= Decimal::ZERO { "+" } else { "" };
 
-            current_layer.use_text(category_name, 9.0, Mm(20.0), Mm(y), &font);
-            current_layer.use_text(
-                format!("{:.2} €", item.budgeted),
-                9.0,
-                Mm(100.0),
-                Mm(y),
-                &font,
-            );
-            current_layer.use_text(
-                format!("{:.2} €", item.actual),
-                9.0,
-                Mm(130.0),
-                Mm(y),
-                &font,
-            );
-            current_layer.use_text(
+            current_layer.text(category_name, 9.0, 20.0, y, &font);
+            current_layer.text(format!("{:.2} €", item.budgeted), 9.0, 100.0, y, &font);
+            current_layer.text(format!("{:.2} €", item.actual), 9.0, 130.0, y, &font);
+            current_layer.text(
                 format!("{}{:.2} €", variance_sign, variance),
                 9.0,
-                Mm(160.0),
-                Mm(y),
+                160.0,
+                y,
                 &font,
             );
 
@@ -266,21 +239,15 @@ impl AnnualReportExporter {
         y -= 3.0;
 
         // Totals line
-        current_layer.use_text("TOTAL", 10.0, Mm(20.0), Mm(y), &font_bold);
-        current_layer.use_text(
+        current_layer.text("TOTAL", 10.0, 20.0, y, &font_bold);
+        current_layer.text(
             format!("{:.2} €", total_budgeted),
             10.0,
-            Mm(100.0),
-            Mm(y),
+            100.0,
+            y,
             &font_bold,
         );
-        current_layer.use_text(
-            format!("{:.2} €", total_actual),
-            10.0,
-            Mm(130.0),
-            Mm(y),
-            &font_bold,
-        );
+        current_layer.text(format!("{:.2} €", total_actual), 10.0, 130.0, y, &font_bold);
 
         let total_variance = total_budgeted - total_actual;
         let total_variance_sign = if total_variance >= Decimal::ZERO {
@@ -288,11 +255,11 @@ impl AnnualReportExporter {
         } else {
             ""
         };
-        current_layer.use_text(
+        current_layer.text(
             format!("{}{:.2} €", total_variance_sign, total_variance),
             10.0,
-            Mm(160.0),
-            Mm(y),
+            160.0,
+            y,
             &font_bold,
         );
         y -= 15.0;
@@ -302,40 +269,31 @@ impl AnnualReportExporter {
             y = 40.0;
         }
 
-        current_layer.use_text("SIGNATURES".to_string(), 12.0, Mm(20.0), Mm(y), &font_bold);
+        current_layer.text("SIGNATURES".to_string(), 12.0, 20.0, y, &font_bold);
         y -= 10.0;
 
-        current_layer.use_text(
+        current_layer.text(
             "Le Syndic: ________________".to_string(),
             10.0,
-            Mm(20.0),
-            Mm(y),
+            20.0,
+            y,
             &font,
         );
 
-        current_layer.use_text(
+        current_layer.text(
             "Le Trésorier: ________________".to_string(),
             10.0,
-            Mm(120.0),
-            Mm(y),
+            120.0,
+            y,
             &font,
         );
         y -= 6.0;
 
-        current_layer.use_text(
-            "Date: ________________".to_string(),
-            10.0,
-            Mm(20.0),
-            Mm(y),
-            &font,
-        );
+        current_layer.text("Date: ________________".to_string(), 10.0, 20.0, y, &font);
 
         // Save to bytes
-        let mut buffer = Vec::new();
-        doc.save(&mut BufWriter::new(&mut buffer))
-            .map_err(|e| e.to_string())?;
-
-        Ok(buffer)
+        let page = current_layer.into_page(210.0, 297.0);
+        Ok(save_document(doc, page))
     }
 
     fn category_name(category: &ExpenseCategory) -> String {
@@ -360,6 +318,7 @@ mod tests {
 
     #[test]
     fn test_export_annual_report_pdf() {
+        let test_org_id = Uuid::new_v4();
         let building = Building {
             id: Uuid::new_v4(),
             name: "Les Jardins de Bruxelles".to_string(),
@@ -377,7 +336,7 @@ mod tests {
             syndic_office_hours: None,
             syndic_emergency_contact: None,
             slug: None,
-            organization_id: Uuid::new_v4(),
+            acp_id: Uuid::new_v4(),
             created_at: Utc::now(),
             updated_at: Utc::now(),
         };
@@ -386,7 +345,7 @@ mod tests {
             Expense {
                 id: Uuid::new_v4(),
                 building_id: building.id,
-                organization_id: building.organization_id,
+                organization_id: test_org_id,
                 description: "Entretien ascenseur".to_string(),
                 amount: dec!(1500),
                 amount_excl_vat: Some(dec!(1239.67)),
@@ -414,7 +373,7 @@ mod tests {
             Expense {
                 id: Uuid::new_v4(),
                 building_id: building.id,
-                organization_id: building.organization_id,
+                organization_id: test_org_id,
                 description: "Électricité parties communes".to_string(),
                 amount: dec!(800),
                 amount_excl_vat: Some(dec!(661.16)),

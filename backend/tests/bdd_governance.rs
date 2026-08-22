@@ -1,6 +1,10 @@
 // BDD tests for Governance domain: resolutions, convocations, quotes, organizations, two_factor, public_syndic
 // Phase 2 Tier 1: Resolution step definitions (14 scenarios)
 
+#[path = "common/acp_test_helper.rs"]
+mod acp_test_helper;
+use acp_test_helper::ensure_default_acp_for_org;
+
 use chrono::{Duration as ChronoDuration, Utc};
 use cucumber::{gherkin::Step, given, then, when, World};
 use koprogo_api::application::dto::{
@@ -11,9 +15,9 @@ use koprogo_api::application::dto::{
     EtatDateResponse, EtatDateStatsResponse, PollResponseDto, PollResultsDto,
     QuoteComparisonRequestDto, QuoteComparisonResponseDto, QuoteDecisionDto, QuoteResponseDto,
     RecipientTrackingSummaryResponse, RecordRemoteJoinDto, RegenerateBackupCodesDto,
-    ScheduleConvocationRequest, SendConvocationRequest, Setup2FAResponseDto, SyndicResponseDto,
-    TwoFactorStatusDto, UpdateEtatDateAdditionalDataRequest, UpdateEtatDateFinancialRequest,
-    Verify2FADto, Verify2FAResponseDto,
+    ScheduleConvocationRequest, SendConvocationRequest, Setup2FAResponseDto, SubmitQuoteDto,
+    SyndicResponseDto, TwoFactorStatusDto, UpdateEtatDateAdditionalDataRequest,
+    UpdateEtatDateFinancialRequest, Verify2FADto, Verify2FAResponseDto,
 };
 use koprogo_api::application::ports::{BuildingRepository, OrganizationRepository, UserRepository};
 use koprogo_api::application::use_cases::{
@@ -35,6 +39,7 @@ use koprogo_api::infrastructure::database::{
     PostgresVoteRepository,
 };
 use koprogo_api::infrastructure::pool::DbPool;
+use rust_decimal::prelude::ToPrimitive;
 use rust_decimal::Decimal;
 use std::str::FromStr;
 use std::sync::Arc;
@@ -71,9 +76,9 @@ pub struct GovernanceWorld {
     unit_alice_id: Option<Uuid>,
     unit_bob_id: Option<Uuid>,
     unit_charlie_id: Option<Uuid>,
-    alice_voting_power: f64,
-    bob_voting_power: f64,
-    charlie_voting_power: f64,
+    alice_voting_power: Decimal,
+    bob_voting_power: Decimal,
+    charlie_voting_power: Decimal,
 
     // Resolution tracking
     last_resolution_id: Option<Uuid>,
@@ -83,7 +88,7 @@ pub struct GovernanceWorld {
     // Vote tracking
     last_vote_id: Option<Uuid>,
     last_vote_choice: Option<VoteChoice>,
-    last_vote_power: Option<f64>,
+    last_vote_power: Option<Decimal>,
     last_vote_proxy_id: Option<Uuid>,
 
     // Operation results
@@ -178,8 +183,20 @@ pub struct GovernanceWorld {
     last_age_request_response: Option<AgeRequestResponseDto>,
     age_request_list: Vec<AgeRequestResponseDto>,
     // name, owner_id, shares_pct
-    age_request_owner_ids: Vec<(String, Uuid, f64)>,
-    age_request_prev_total_shares: f64,
+    age_request_owner_ids: Vec<(String, Uuid, Decimal)>,
+    age_request_prev_total_shares: Decimal,
+
+    // Story 521-C1 — governance decimal exactness probes
+    gd_vote_powers: Vec<Decimal>,
+    gd_vote_sum: Option<Decimal>,
+    gd_aggregation_ok: bool,
+    gd_quorum_total: Option<Decimal>,
+    gd_quorum_present: Option<Decimal>,
+    gd_quorum_reached: Option<bool>,
+    gd_unit_id: Option<Uuid>,
+    gd_unit_read_quota: Option<Decimal>,
+    gd_age_request_id: Option<Uuid>,
+    gd_cosignatory_read_shares: Option<Decimal>,
 }
 
 impl std::fmt::Debug for GovernanceWorld {
@@ -211,9 +228,9 @@ impl GovernanceWorld {
             unit_alice_id: None,
             unit_bob_id: None,
             unit_charlie_id: None,
-            alice_voting_power: 0.0,
-            bob_voting_power: 0.0,
-            charlie_voting_power: 0.0,
+            alice_voting_power: Decimal::ZERO,
+            bob_voting_power: Decimal::ZERO,
+            charlie_voting_power: Decimal::ZERO,
             last_resolution_id: None,
             last_resolution_status: None,
             last_resolution_majority: None,
@@ -292,7 +309,17 @@ impl GovernanceWorld {
             last_age_request_response: None,
             age_request_list: Vec::new(),
             age_request_owner_ids: Vec::new(),
-            age_request_prev_total_shares: 0.0,
+            age_request_prev_total_shares: Decimal::ZERO,
+            gd_vote_powers: Vec::new(),
+            gd_vote_sum: None,
+            gd_aggregation_ok: false,
+            gd_quorum_total: None,
+            gd_quorum_present: None,
+            gd_quorum_reached: None,
+            gd_unit_id: None,
+            gd_unit_read_quota: None,
+            gd_age_request_id: None,
+            gd_cosignatory_read_shares: None,
         }
     }
 
@@ -318,9 +345,19 @@ impl GovernanceWorld {
             .await
             .expect("Failed to get host port");
 
+        // Use the testcontainers-resolved host (honors TESTCONTAINERS_HOST_OVERRIDE)
+        // instead of a hardcoded 127.0.0.1. On CI (cargo on the runner host) this
+        // resolves to localhost — unchanged. Inside the dev backend container the
+        // testcontainers Postgres is a *sibling* (docker.sock mounted), reachable
+        // via host.docker.internal, not the container's own 127.0.0.1 — this is
+        // what was causing PoolTimedOut for local docker BDD runs.
+        let host = postgres_container
+            .get_host()
+            .await
+            .expect("Failed to get container host");
         let connection_string = format!(
-            "postgres://postgres:postgres@127.0.0.1:{}/postgres",
-            host_port
+            "postgres://postgres:postgres@{}:{}/postgres",
+            host, host_port
         );
 
         let pool = create_pool(&connection_string)
@@ -350,8 +387,10 @@ impl GovernanceWorld {
             Arc::new(PostgresBuildingRepository::new(pool.clone()));
         {
             use koprogo_api::domain::entities::Building;
+            // Hotfix #602 — Building.acp_id (FK acps.id) replaces organization_id.
+            let acp_id = ensure_default_acp_for_org(&pool, org_id).await;
             let b = Building::new(
-                org_id,
+                acp_id,
                 "Residence Governance".to_string(),
                 "1 Rue du Parlement".to_string(),
                 "Bruxelles".to_string(),
@@ -381,8 +420,12 @@ impl GovernanceWorld {
             Arc::new(PostgresUserRoleRepository::new(pool.clone()));
         let two_factor_repo = Arc::new(PostgresTwoFactorRepository::new(pool.clone()));
 
-        let resolution_use_cases =
-            ResolutionUseCases::new(resolution_repo, vote_repo, meeting_repo.clone());
+        let resolution_use_cases = ResolutionUseCases::new(
+            resolution_repo,
+            vote_repo,
+            meeting_repo.clone(),
+            Arc::new(PostgresUnitOwnerRepository::new(pool.clone())),
+        );
         let quote_use_cases = QuoteUseCases::new(quote_repo);
         let building_use_cases = BuildingUseCases::new(building_repo.clone());
         let convocation_use_cases = ConvocationUseCases::new(
@@ -477,7 +520,7 @@ impl GovernanceWorld {
         }
     }
 
-    fn get_voting_power(&self, name: &str) -> f64 {
+    fn get_voting_power(&self, name: &str) -> Decimal {
         match name {
             "Alice" => self.alice_voting_power,
             "Bob" => self.bob_voting_power,
@@ -648,12 +691,15 @@ async fn given_owner_with_voting_power(
     .expect("insert owner");
 
     // Create unit with quota = voting power (tantièmes)
+    // H15 — units.acp_id NOT NULL (same ACP as the building).
+    let acp_id = ensure_default_acp_for_org(pool, org_id).await;
     sqlx::query(
-        r#"INSERT INTO units (id, building_id, unit_number, unit_type, floor, surface_area, quota, created_at, updated_at)
-           VALUES ($1, $2, $3, 'apartment', 1, 75.0, $4, NOW(), NOW())"#,
+        r#"INSERT INTO units (id, building_id, acp_id, unit_number, unit_type, floor, surface_area, quota, created_at, updated_at)
+           VALUES ($1, $2, $3, $4, 'apartment', 1, 75.0, $5, NOW(), NOW())"#,
     )
     .bind(unit_id)
     .bind(building_id)
+    .bind(acp_id)
     .bind(format!("Unit-{}", name))
     .bind(voting_power as f64)
     .execute(pool)
@@ -676,20 +722,52 @@ async fn given_owner_with_voting_power(
         "Alice" => {
             world.owner_alice_id = Some(owner_id);
             world.unit_alice_id = Some(unit_id);
-            world.alice_voting_power = voting_power as f64;
+            world.alice_voting_power = Decimal::from(voting_power);
         }
         "Bob" => {
             world.owner_bob_id = Some(owner_id);
             world.unit_bob_id = Some(unit_id);
-            world.bob_voting_power = voting_power as f64;
+            world.bob_voting_power = Decimal::from(voting_power);
         }
         "Charlie" => {
             world.owner_charlie_id = Some(owner_id);
             world.unit_charlie_id = Some(unit_id);
-            world.charlie_voting_power = voting_power as f64;
+            world.charlie_voting_power = Decimal::from(voting_power);
         }
         _ => {}
     }
+}
+
+/// Models a validly-constituted general assembly (Art. 3.87 §5 CC).
+///
+/// `resolutions.feature` (Issue #46) predates the quorum-on-create rule
+/// introduced by #310/#323: `create_resolution` now enforces
+/// `Meeting::check_quorum_for_voting()` — a resolution (= agenda item put to
+/// the vote at an AG) can only be created once quorum is validated (or on a
+/// 2nd convocation). The stale Background never expressed this legal
+/// precondition, so all 14 scenarios failed at the quorum gate (WP-B3 / #540).
+///
+/// The 3 owners total 1000 tantièmes (Alice 300 + Bob 200 + Charlie 500); all
+/// present/represented ⇒ 1000/1000 = 100 % > 50 % ⇒ quorum reached. We persist
+/// the legal state directly (the quorum *computation* itself — `validate_quorum`
+/// — is exercised by governance_decimal.feature and vote_ag_workflow.feature;
+/// this feature's job is the voting *mechanics* on a validly-constituted AG).
+/// Satisfies chk_quorum_percentage_range (0–100) and
+/// chk_quorum_validated_consistency (validated ⇒ pct > 50.0).
+#[given("the AG is validly constituted (quorum reached)")]
+async fn given_ag_validly_constituted(world: &mut GovernanceWorld) {
+    let pool = world.pool.as_ref().unwrap();
+    let meeting_id = world.meeting_id.expect("meeting must exist before quorum");
+
+    sqlx::query(
+        r#"UPDATE meetings
+           SET quorum_validated = true, quorum_percentage = 100.0, updated_at = NOW()
+           WHERE id = $1"#,
+    )
+    .bind(meeting_id)
+    .execute(pool)
+    .await
+    .expect("validate AG quorum");
 }
 
 // ============================================================
@@ -1061,19 +1139,20 @@ async fn then_resolution_status(world: &mut GovernanceWorld, expected_status: St
     );
 }
 
-#[then(regex = r#"^the majority type should be "(Simple|Absolute|Qualified)"$"#)]
+// Belgian named majority model (Art. 3.88 CC): Absolute / TwoThirds /
+// FourFifths / Unanimity. The legacy "Simple"/"Qualified" labels predate the
+// #310/#323 migration to the named `MajorityType` enum and were never removed
+// from this assertion — `MajorityType`'s Debug never yields "Simple"/"Qualified"
+// so those arms were dead (WP-B3 / #540, same stale-spec cause as the quorum
+// gap). Assertion now matches the canonical enum Debug exactly.
+#[then(regex = r#"^the majority type should be "(Absolute|TwoThirds|FourFifths|Unanimity)"$"#)]
 async fn then_majority_type(world: &mut GovernanceWorld, expected: String) {
     let majority_str = world.last_resolution_majority.as_ref().unwrap();
-    match expected.as_str() {
-        "Simple" => assert_eq!(majority_str, "Simple"),
-        "Absolute" => assert_eq!(majority_str, "Absolute"),
-        "Qualified" => assert!(
-            majority_str.starts_with("Qualified"),
-            "Expected Qualified but got {}",
-            majority_str
-        ),
-        _ => panic!("Unknown majority: {}", expected),
-    }
+    assert_eq!(
+        majority_str, &expected,
+        "Expected majority {} but got {}",
+        expected, majority_str
+    );
 }
 
 #[then("the vote should be recorded")]
@@ -1101,8 +1180,9 @@ async fn then_vote_choice(world: &mut GovernanceWorld, expected: String) {
 #[then(regex = r#"^the voting power should be (\d+)$"#)]
 async fn then_voting_power(world: &mut GovernanceWorld, expected_power: i32) {
     let actual = world.last_vote_power.unwrap();
-    assert!(
-        (actual - expected_power as f64).abs() < 0.01,
+    assert_eq!(
+        actual,
+        Decimal::from(expected_power),
         "Expected voting power {} but got {}",
         expected_power,
         actual
@@ -1135,12 +1215,10 @@ async fn then_proxy_owner(world: &mut GovernanceWorld, expected_name: String) {
 async fn then_voting_power_of_owner(world: &mut GovernanceWorld, owner_name: String) {
     let expected_power = world.get_voting_power(&owner_name);
     let actual = world.last_vote_power.unwrap();
-    assert!(
-        (actual - expected_power).abs() < 0.01,
+    assert_eq!(
+        actual, expected_power,
         "Expected {}'s tantiemes ({}) but got {}",
-        owner_name,
-        expected_power,
-        actual
+        owner_name, expected_power, actual
     );
 }
 
@@ -1994,11 +2072,12 @@ impl GovernanceWorld {
             contractor_id: contractor_id.to_string(),
             project_title: project_title.to_string(),
             project_description: format!("Description for {}", project_title),
-            amount_excl_vat: Decimal::from_str(amount_excl).unwrap(),
-            vat_rate: vat_decimal,
-            validity_date,
+            work_category: None,
+            amount_excl_vat: Some(Decimal::from_str(amount_excl).unwrap()),
+            vat_rate: Some(vat_decimal),
+            validity_date: Some(validity_date),
             estimated_start_date: None,
-            estimated_duration_days: duration_days,
+            estimated_duration_days: Some(duration_days),
             warranty_years,
         };
 
@@ -2042,7 +2121,7 @@ async fn given_received_quote(world: &mut GovernanceWorld) {
     let uc = world.quote_use_cases.as_ref().unwrap().clone();
     let quote_id = world.last_quote_id.unwrap();
     let resp = uc
-        .submit_quote(quote_id)
+        .submit_quote(quote_id, None)
         .await
         .expect("submit_quote failed");
     world.last_quote_response = Some(resp);
@@ -2056,7 +2135,7 @@ async fn given_received_quote_for_contractor(world: &mut GovernanceWorld, contra
     let uc = world.quote_use_cases.as_ref().unwrap().clone();
     let quote_id = world.last_quote_id.unwrap();
     let resp = uc
-        .submit_quote(quote_id)
+        .submit_quote(quote_id, None)
         .await
         .expect("submit_quote failed");
     world.last_quote_response = Some(resp);
@@ -2076,7 +2155,7 @@ async fn given_quote_under_review(world: &mut GovernanceWorld) {
         .await;
     let uc = world.quote_use_cases.as_ref().unwrap().clone();
     let quote_id = world.last_quote_id.unwrap();
-    uc.submit_quote(quote_id)
+    uc.submit_quote(quote_id, None)
         .await
         .expect("submit_quote failed");
     let resp = uc
@@ -2112,7 +2191,7 @@ async fn given_three_submitted_quotes(world: &mut GovernanceWorld, step: &Step) 
 
             let quote_id = Uuid::parse_str(&resp.id).unwrap();
             // Submit to Received
-            uc.submit_quote(quote_id)
+            uc.submit_quote(quote_id, None)
                 .await
                 .expect("submit_quote failed");
             // Set contractor rating
@@ -2176,7 +2255,9 @@ async fn given_quotes_various_statuses(world: &mut GovernanceWorld) {
         )
         .await;
     let id2 = world.last_quote_id.unwrap();
-    uc.submit_quote(id2).await.expect("submit_quote failed");
+    uc.submit_quote(id2, None)
+        .await
+        .expect("submit_quote failed");
 
     // Another Received quote
     world
@@ -2190,7 +2271,9 @@ async fn given_quotes_various_statuses(world: &mut GovernanceWorld) {
         )
         .await;
     let id3 = world.last_quote_id.unwrap();
-    uc.submit_quote(id3).await.expect("submit_quote failed");
+    uc.submit_quote(id3, None)
+        .await
+        .expect("submit_quote failed");
 }
 
 #[given("a quote with validity_date in the past exists")]
@@ -2267,11 +2350,12 @@ async fn when_create_quote(world: &mut GovernanceWorld, step: &Step) {
         contractor_id: contractor_id.to_string(),
         project_title,
         project_description: description,
-        amount_excl_vat: Decimal::from(budget),
-        vat_rate: Decimal::from_str("0.21").unwrap(),
-        validity_date: (Utc::now() + ChronoDuration::days(30)).to_rfc3339(),
+        work_category: None,
+        amount_excl_vat: Some(Decimal::from(budget)),
+        vat_rate: Some(Decimal::from_str("0.21").unwrap()),
+        validity_date: Some((Utc::now() + ChronoDuration::days(30)).to_rfc3339()),
         estimated_start_date: None,
-        estimated_duration_days: 14,
+        estimated_duration_days: Some(14),
         warranty_years: 2,
     };
 
@@ -2291,11 +2375,9 @@ async fn when_create_quote(world: &mut GovernanceWorld, step: &Step) {
 
 #[when("the contractor submits the quote:")]
 async fn when_contractor_submits(world: &mut GovernanceWorld, step: &Step) {
-    // The feature data table has amount/vat/duration/warranty, but the use case
-    // submit_quote only transitions status. The data was set at creation time.
-    // For this BDD test, we need to create the quote with the right data first.
-    // Since given_requested_quote_for_contractor already created with defaults,
-    // we re-create with the submitted data.
+    // Pricing now genuinely arrives via SubmitQuoteDto (POST /quotes/{id}/submit
+    // body) instead of the raw-SQL-then-bodyless-submit workaround this used to
+    // need — that gap is exactly what this fix closes.
     let mut amount_excl = "10000".to_string();
     let mut vat_rate = "21".to_string();
     let mut duration_days = 14;
@@ -2314,33 +2396,21 @@ async fn when_contractor_submits(world: &mut GovernanceWorld, step: &Step) {
         }
     }
 
-    // The quote was already created by the Given step. We need to update it with proper data.
-    // Since update_quote doesn't exist in use cases for full data, we use raw SQL to update,
-    // then submit via use case.
-    let pool = world.pool.as_ref().unwrap();
     let quote_id = world.last_quote_id.unwrap();
-    let amount: Decimal = Decimal::from_str(&amount_excl).unwrap();
-    let vat: Decimal = Decimal::from_str(&vat_rate).unwrap() / Decimal::from(100);
-    let amount_incl = amount * (Decimal::ONE + vat);
+    let amount_excl_vat_cents = (Decimal::from_str(&amount_excl).unwrap() * Decimal::from(100))
+        .to_i64()
+        .unwrap();
 
-    sqlx::query(
-        r#"UPDATE quotes SET amount_excl_vat = $1, vat_rate = $2, amount_incl_vat = $3,
-           estimated_duration_days = $4, warranty_years = $5, updated_at = NOW()
-           WHERE id = $6"#,
-    )
-    .bind(amount)
-    .bind(vat)
-    .bind(amount_incl)
-    .bind(duration_days)
-    .bind(warranty_years)
-    .bind(quote_id)
-    .execute(pool)
-    .await
-    .expect("update quote data");
+    let pricing = SubmitQuoteDto {
+        amount_excl_vat_cents,
+        vat_rate: Decimal::from_str(&vat_rate).unwrap(), // percentage, e.g. 21
+        validity_date: (Utc::now() + ChronoDuration::days(30)).to_rfc3339(),
+        estimated_duration_days: duration_days,
+        warranty_years,
+    };
 
-    // Now submit
     let uc = world.quote_use_cases.as_ref().unwrap().clone();
-    match uc.submit_quote(quote_id).await {
+    match uc.submit_quote(quote_id, Some(pricing)).await {
         Ok(resp) => {
             world.last_quote_response = Some(resp);
             world.operation_success = true;
@@ -2576,9 +2646,16 @@ async fn then_amount_incl_21_vat(world: &mut GovernanceWorld) {
         .last_quote_response
         .as_ref()
         .expect("No quote response");
-    let excl: Decimal = Decimal::from_str(&resp.amount_excl_vat).unwrap();
-    let incl: Decimal = Decimal::from_str(&resp.amount_incl_vat).unwrap();
-    let expected = excl * Decimal::from_str("1.21").unwrap();
+    let excl = resp
+        .amount_excl_vat_cents
+        .expect("no amount_excl_vat_cents");
+    let incl = resp
+        .amount_incl_vat_cents
+        .expect("no amount_incl_vat_cents");
+    let expected = (Decimal::from(excl) * Decimal::from_str("1.21").unwrap())
+        .round()
+        .to_i64()
+        .unwrap();
     assert_eq!(incl, expected, "amount_incl_vat should be excl * 1.21");
 }
 
@@ -2588,9 +2665,16 @@ async fn then_amount_incl_6_vat(world: &mut GovernanceWorld) {
         .last_quote_response
         .as_ref()
         .expect("No quote response");
-    let excl: Decimal = Decimal::from_str(&resp.amount_excl_vat).unwrap();
-    let incl: Decimal = Decimal::from_str(&resp.amount_incl_vat).unwrap();
-    let expected = excl * Decimal::from_str("1.06").unwrap();
+    let excl = resp
+        .amount_excl_vat_cents
+        .expect("no amount_excl_vat_cents");
+    let incl = resp
+        .amount_incl_vat_cents
+        .expect("no amount_incl_vat_cents");
+    let expected = (Decimal::from(excl) * Decimal::from_str("1.06").unwrap())
+        .round()
+        .to_i64()
+        .unwrap();
     assert_eq!(incl, expected, "amount_incl_vat should be excl * 1.06");
 }
 
@@ -3878,8 +3962,10 @@ async fn given_building_no_syndic(world: &mut GovernanceWorld, name: String) {
     let org_id = world.org_id.unwrap();
 
     use koprogo_api::domain::entities::Building;
+    // Hotfix #602 — Building.acp_id (FK acps.id) replaces organization_id.
+    let acp_id = ensure_default_acp_for_org(pool, org_id).await;
     let b = Building::new(
-        org_id,
+        acp_id,
         name,
         "10 Rue Vide".to_string(),
         "Namur".to_string(),
@@ -3945,8 +4031,10 @@ async fn given_building_named_in_city(world: &mut GovernanceWorld, name: String,
     let org_id = world.org_id.unwrap();
 
     use koprogo_api::domain::entities::Building;
+    // Hotfix #602 — Building.acp_id (FK acps.id) replaces organization_id.
+    let acp_id = ensure_default_acp_for_org(pool, org_id).await;
     let b = Building::new(
-        org_id,
+        acp_id,
         name,
         "1 Rue Test".to_string(),
         city,
@@ -4042,13 +4130,15 @@ async fn given_poll_owner(world: &mut GovernanceWorld, name: String, _building: 
     .expect("insert poll owner");
 
     // Create unit
+    // H15 — units.organization_id dropped, units.acp_id NOT NULL (same ACP as the building).
+    let acp_id = ensure_default_acp_for_org(pool, org_id).await;
     sqlx::query(
-        r#"INSERT INTO units (id, building_id, organization_id, unit_number, unit_type, floor, surface_area, quota, created_at, updated_at)
+        r#"INSERT INTO units (id, building_id, acp_id, unit_number, unit_type, floor, surface_area, quota, created_at, updated_at)
            VALUES ($1, $2, $3, $4, 'apartment', 1, 80.0, 100.0, NOW(), NOW())"#,
     )
     .bind(unit_id)
     .bind(building_id)
-    .bind(org_id)
+    .bind(acp_id)
     .bind(format!("Unit-{}", name.chars().next().unwrap_or('X')))
     .execute(pool)
     .await
@@ -4993,6 +5083,8 @@ async fn given_n_owners_voted(
         .unwrap();
 
     // Create and vote with synthetic owners
+    // H15 — units.organization_id dropped, units.acp_id NOT NULL (same ACP as the building).
+    let acp_id = ensure_default_acp_for_org(pool, org_id).await;
     for i in 0..total {
         let owner_id = Uuid::new_v4();
         let unit_id = Uuid::new_v4();
@@ -5010,12 +5102,12 @@ async fn given_n_owners_voted(
         .expect("insert voter");
 
         sqlx::query(
-            r#"INSERT INTO units (id, building_id, organization_id, unit_number, unit_type, floor, surface_area, quota, created_at, updated_at)
+            r#"INSERT INTO units (id, building_id, acp_id, unit_number, unit_type, floor, surface_area, quota, created_at, updated_at)
                VALUES ($1, $2, $3, $4, 'apartment', 1, 50.0, 100.0, NOW(), NOW())"#,
         )
         .bind(unit_id)
         .bind(building_id)
-        .bind(org_id)
+        .bind(acp_id)
         .bind(format!("V{}", i))
         .execute(pool)
         .await
@@ -5740,13 +5832,15 @@ async fn given_etat_date_unit(world: &mut GovernanceWorld, unit_name: String, _b
     let building_id = world.building_id.unwrap();
     let org_id = world.org_id.unwrap();
 
+    // H15 — units.organization_id dropped, units.acp_id NOT NULL (same ACP as the building).
+    let acp_id = ensure_default_acp_for_org(pool, org_id).await;
     sqlx::query(
-        r#"INSERT INTO units (id, building_id, organization_id, unit_number, unit_type, floor, surface_area, quota, created_at, updated_at)
+        r#"INSERT INTO units (id, building_id, acp_id, unit_number, unit_type, floor, surface_area, quota, created_at, updated_at)
            VALUES ($1, $2, $3, $4, 'apartment', 1, 85.0, 100.0, NOW(), NOW())"#,
     )
     .bind(unit_id)
     .bind(building_id)
-    .bind(org_id)
+    .bind(acp_id)
     .bind(unit_name)
     .execute(pool)
     .await
@@ -6003,30 +6097,32 @@ async fn when_update_financial_data(world: &mut GovernanceWorld, step: &Step) {
     let id = world.last_etat_date_id.unwrap();
     let table = step.table.as_ref().expect("table");
 
-    let mut owner_balance = 0.0;
-    let mut arrears = 0.0;
-    let mut monthly_provision = 0.0;
-    let mut total_balance = 0.0;
-    let mut approved_works = 0.0;
+    // WP-A5 : montants Decimal exacts (cents/100 sans dérive f64).
+    let cents = |v: &str| Decimal::from_str(v).unwrap_or(Decimal::ZERO) / Decimal::from(100);
+    let mut owner_balance = Decimal::ZERO;
+    let mut arrears = Decimal::ZERO;
+    let mut monthly_provision = Decimal::ZERO;
+    let mut total_balance = Decimal::ZERO;
+    let mut approved_works = Decimal::ZERO;
 
     for row in &table.rows {
         let key = row[0].trim();
         let val = row[1].trim();
         match key {
             "provisions_paid_amount_cents" => {
-                owner_balance = val.parse::<f64>().unwrap_or(0.0) / 100.0;
+                owner_balance = cents(val);
             }
             "outstanding_amount_cents" => {
-                arrears = val.parse::<f64>().unwrap_or(0.0) / 100.0;
+                arrears = cents(val);
             }
             "quota_ordinary" => {
-                monthly_provision = val.parse::<f64>().unwrap_or(0.0);
+                monthly_provision = Decimal::from_str(val).unwrap_or(Decimal::ZERO);
             }
             "pending_works_amount_cents" => {
-                approved_works = val.parse::<f64>().unwrap_or(0.0) / 100.0;
+                approved_works = cents(val);
             }
             "reserve_fund_amount_cents" => {
-                total_balance = val.parse::<f64>().unwrap_or(0.0) / 100.0;
+                total_balance = cents(val);
             }
             _ => {}
         }
@@ -6106,11 +6202,11 @@ async fn given_etat_date_with_sections(world: &mut GovernanceWorld) {
     let uc = world.etat_date_use_cases.as_ref().unwrap().clone();
     let id = world.last_etat_date_id.unwrap();
     let fin_req = UpdateEtatDateFinancialRequest {
-        owner_balance: 1500.0,
-        arrears_amount: 0.0,
-        monthly_provision_amount: 250.0,
-        total_balance: 50000.0,
-        approved_works_unpaid: 5000.0,
+        owner_balance: Decimal::from(1500),
+        arrears_amount: Decimal::ZERO,
+        monthly_provision_amount: Decimal::from(250),
+        total_balance: Decimal::from(50000),
+        approved_works_unpaid: Decimal::from(5000),
     };
     uc.update_financial_data(id, fin_req)
         .await
@@ -7272,7 +7368,7 @@ async fn given_owners_with_shares(world: &mut GovernanceWorld, step: &Step) {
 
     for row in table.rows.iter().skip(1) {
         let name = row[0].trim().to_string();
-        let shares_pct: f64 = row[1].trim().parse().expect("Invalid shares_pct");
+        let shares_pct: Decimal = Decimal::from_str(row[1].trim()).expect("Invalid shares_pct");
         let owner_id = Uuid::new_v4();
 
         // Split name into first/last
@@ -7296,14 +7392,17 @@ async fn given_owners_with_shares(world: &mut GovernanceWorld, step: &Step) {
 
         // Create a unit and link owner
         let unit_id = Uuid::new_v4();
+        // H15 — units.acp_id NOT NULL (same ACP as the building).
+        let acp_id = ensure_default_acp_for_org(pool, org_id).await;
         sqlx::query(
-            r#"INSERT INTO units (id, building_id, unit_number, unit_type, floor, surface_area, quota, created_at, updated_at)
-               VALUES ($1, $2, $3, 'apartment', 1, 75.0, $4, NOW(), NOW())"#,
+            r#"INSERT INTO units (id, building_id, acp_id, unit_number, unit_type, floor, surface_area, quota, created_at, updated_at)
+               VALUES ($1, $2, $3, $4, 'apartment', 1, 75.0, $5, NOW(), NOW())"#,
         )
         .bind(unit_id)
         .bind(building_id)
+        .bind(acp_id)
         .bind(format!("AGE-Unit-{}", name.replace(' ', "-")))
-        .bind(shares_pct * 1000.0)
+        .bind(shares_pct * rust_decimal_macros::dec!(1000))
         .execute(pool)
         .await
         .expect("insert unit for age request owner");
@@ -7433,13 +7532,13 @@ async fn then_age_request_created_with_status(world: &mut GovernanceWorld, expec
 }
 
 #[then(regex = r#"^the threshold_pct should be ([\d.]+)$"#)]
-async fn then_threshold_pct(world: &mut GovernanceWorld, expected: f64) {
+async fn then_threshold_pct(world: &mut GovernanceWorld, expected: Decimal) {
     let resp = world
         .last_age_request_response
         .as_ref()
         .expect("No AGE request response");
     assert!(
-        (resp.threshold_pct - expected).abs() < 0.01,
+        (resp.threshold_pct - expected).abs() < rust_decimal_macros::dec!(0.01),
         "threshold_pct {} != expected {}",
         resp.threshold_pct,
         expected
@@ -7447,13 +7546,13 @@ async fn then_threshold_pct(world: &mut GovernanceWorld, expected: f64) {
 }
 
 #[then(regex = r#"^the total_shares_pct should be ([\d.]+)$"#)]
-async fn then_total_shares_pct(world: &mut GovernanceWorld, expected: f64) {
+async fn then_total_shares_pct(world: &mut GovernanceWorld, expected: Decimal) {
     let resp = world
         .last_age_request_response
         .as_ref()
         .expect("No AGE request response");
     assert!(
-        (resp.total_shares_pct - expected).abs() < 0.01,
+        (resp.total_shares_pct - expected).abs() < rust_decimal_macros::dec!(0.01),
         "total_shares_pct {} != expected {}",
         resp.total_shares_pct,
         expected
@@ -7538,7 +7637,7 @@ async fn given_open_age_request_by(world: &mut GovernanceWorld, owner_name: Stri
 }
 
 #[when(regex = r#"^owner "([^"]*)" cosigns with shares ([\d.]+)$"#)]
-async fn when_owner_cosigns(world: &mut GovernanceWorld, owner_name: String, shares: f64) {
+async fn when_owner_cosigns(world: &mut GovernanceWorld, owner_name: String, shares: Decimal) {
     let uc = world.age_request_use_cases.as_ref().unwrap().clone();
     let org_id = world.org_id.unwrap();
     let id = world.last_age_request_id.unwrap();
@@ -7568,13 +7667,13 @@ async fn when_owner_cosigns(world: &mut GovernanceWorld, owner_name: String, sha
 }
 
 #[then(regex = r#"^the AGE request total_shares_pct should be ([\d.]+)$"#)]
-async fn then_age_request_total_shares_pct(world: &mut GovernanceWorld, expected: f64) {
+async fn then_age_request_total_shares_pct(world: &mut GovernanceWorld, expected: Decimal) {
     let resp = world
         .last_age_request_response
         .as_ref()
         .expect("No AGE request response");
     assert!(
-        (resp.total_shares_pct - expected).abs() < 0.01,
+        (resp.total_shares_pct - expected).abs() < rust_decimal_macros::dec!(0.01),
         "total_shares_pct {} != expected {}",
         resp.total_shares_pct,
         expected
@@ -7582,13 +7681,13 @@ async fn then_age_request_total_shares_pct(world: &mut GovernanceWorld, expected
 }
 
 #[then(regex = r#"^the total_shares_pct should be at least ([\d.]+)$"#)]
-async fn then_total_shares_at_least(world: &mut GovernanceWorld, min: f64) {
+async fn then_total_shares_at_least(world: &mut GovernanceWorld, min: Decimal) {
     let resp = world
         .last_age_request_response
         .as_ref()
         .expect("No AGE request response");
     assert!(
-        resp.total_shares_pct >= min - 0.01,
+        resp.total_shares_pct >= min - rust_decimal_macros::dec!(0.01),
         "total_shares_pct {} < expected min {}",
         resp.total_shares_pct,
         min
@@ -7597,19 +7696,19 @@ async fn then_total_shares_at_least(world: &mut GovernanceWorld, min: f64) {
 
 #[given(regex = r#"^owner "([^"]*)" has already cosigned$"#)]
 async fn given_owner_has_already_cosigned(world: &mut GovernanceWorld, owner_name: String) {
-    when_owner_cosigns(world, owner_name, 0.25).await;
+    when_owner_cosigns(world, owner_name, rust_decimal_macros::dec!(0.25)).await;
     assert!(world.operation_success, "Failed to cosign for setup");
 }
 
 #[given(regex = r#"^owner "([^"]*)" has cosigned$"#)]
 async fn given_owner_has_cosigned(world: &mut GovernanceWorld, owner_name: String) {
-    when_owner_cosigns(world, owner_name, 0.25).await;
+    when_owner_cosigns(world, owner_name, rust_decimal_macros::dec!(0.25)).await;
     assert!(world.operation_success, "Failed to cosign");
 }
 
 #[when(regex = r#"^owner "([^"]*)" tries to cosign again$"#)]
 async fn when_owner_tries_to_cosign_again(world: &mut GovernanceWorld, owner_name: String) {
-    when_owner_cosigns(world, owner_name, 0.25).await;
+    when_owner_cosigns(world, owner_name, rust_decimal_macros::dec!(0.25)).await;
 }
 
 #[then("the cosigning should fail")]
@@ -8049,16 +8148,316 @@ async fn then_request_includes_cosignatories(world: &mut GovernanceWorld) {
 }
 
 #[then(regex = r#"^shares_pct_missing should be ([\d.]+)$"#)]
-async fn then_shares_pct_missing(world: &mut GovernanceWorld, expected: f64) {
+async fn then_shares_pct_missing(world: &mut GovernanceWorld, expected: Decimal) {
     let resp = world
         .last_age_request_response
         .as_ref()
         .expect("No AGE request response");
     assert!(
-        (resp.shares_pct_missing - expected).abs() < 0.01,
+        (resp.shares_pct_missing - expected).abs() < rust_decimal_macros::dec!(0.01),
         "shares_pct_missing {} != expected {}",
         resp.shares_pct_missing,
         expected
+    );
+}
+
+// ============================================================
+// === STORY 521-C1: GOVERNANCE DECIMAL EXACTNESS (ADR-0008) ===
+// ============================================================
+
+#[given("the governance decimal system is initialized")]
+async fn given_gd_initialized(world: &mut GovernanceWorld) {
+    if world.pool.is_none() {
+        world.setup_database().await;
+    }
+}
+
+// --- @negative @bug525 : voting power aggregation exact, no ColumnDecode panic ---
+
+#[given(regex = r#"^a resolution with votes of power "([^"]*)" and "([^"]*)"$"#)]
+async fn given_gd_resolution_with_votes(world: &mut GovernanceWorld, p1: String, p2: String) {
+    let pool = world.pool.as_ref().unwrap().clone();
+    let building_id = world.building_id.unwrap();
+    let org_id = world.org_id.unwrap();
+
+    // Meeting
+    let meeting_id = Uuid::new_v4();
+    sqlx::query(
+        r#"INSERT INTO meetings (id, organization_id, building_id, meeting_type, title, scheduled_date, location, status, created_at, updated_at)
+           VALUES ($1, $2, $3, 'ordinary', 'GD vote meeting', NOW() + interval '30 days', 'Salle', 'scheduled', NOW(), NOW())"#,
+    )
+    .bind(meeting_id)
+    .bind(org_id)
+    .bind(building_id)
+    .execute(&pool)
+    .await
+    .expect("insert meeting");
+
+    // Resolution
+    let resolution_id = Uuid::new_v4();
+    sqlx::query(
+        r#"INSERT INTO resolutions (id, meeting_id, title, description, resolution_type, majority_required, status, created_at)
+           VALUES ($1, $2, 'GD resolution', 'desc', 'Ordinary', 'Simple', 'Pending', NOW())"#,
+    )
+    .bind(resolution_id)
+    .bind(meeting_id)
+    .execute(&pool)
+    .await
+    .expect("insert resolution");
+
+    world.last_resolution_id = Some(resolution_id);
+    world.meeting_id = Some(meeting_id);
+
+    // Two owners + units + votes carrying the requested decimal voting powers.
+    // H15 — units.organization_id dropped, units.acp_id NOT NULL (same ACP as the building).
+    let acp_id = ensure_default_acp_for_org(&pool, org_id).await;
+    for (idx, power_str) in [p1, p2].iter().enumerate() {
+        let owner_id = Uuid::new_v4();
+        let unit_id = Uuid::new_v4();
+        let power = Decimal::from_str(power_str).expect("valid decimal power");
+        world.gd_vote_powers.push(power);
+
+        sqlx::query(
+            r#"INSERT INTO owners (id, organization_id, first_name, last_name, email, phone, address, city, postal_code, country, created_at, updated_at)
+               VALUES ($1, $2, $3, 'GD', $4, '+32100000000', 'Rue 1', 'Bruxelles', '1000', 'Belgique', NOW(), NOW())"#,
+        )
+        .bind(owner_id)
+        .bind(org_id)
+        .bind(format!("GdOwner{}", idx))
+        .bind(format!("gd-owner-{}@bdd.be", idx))
+        .execute(&pool)
+        .await
+        .expect("insert owner");
+
+        sqlx::query(
+            r#"INSERT INTO units (id, building_id, acp_id, unit_number, unit_type, floor, surface_area, quota, created_at, updated_at)
+               VALUES ($1, $2, $3, $4, 'apartment', 1, 75.0, $5, NOW(), NOW())"#,
+        )
+        .bind(unit_id)
+        .bind(building_id)
+        .bind(acp_id)
+        .bind(format!("GD-Unit-{}", idx))
+        .bind(power)
+        .execute(&pool)
+        .await
+        .expect("insert unit");
+
+        sqlx::query(
+            r#"INSERT INTO votes (id, resolution_id, owner_id, unit_id, vote_choice, voting_power, proxy_owner_id, voted_at)
+               VALUES ($1, $2, $3, $4, 'Pour', $5, NULL, NOW())"#,
+        )
+        .bind(Uuid::new_v4())
+        .bind(resolution_id)
+        .bind(owner_id)
+        .bind(unit_id)
+        .bind(power)
+        .execute(&pool)
+        .await
+        .expect("insert vote");
+    }
+}
+
+#[when("the syndic aggregates the voting powers")]
+async fn when_gd_aggregate_votes(world: &mut GovernanceWorld) {
+    use koprogo_api::application::ports::VoteRepository;
+    let pool = world.pool.as_ref().unwrap().clone();
+    let resolution_id = world.last_resolution_id.unwrap();
+    let vote_repo = PostgresVoteRepository::new(pool);
+
+    // Exercise the production code path (sum_voting_power_by_resolution).
+    match vote_repo
+        .sum_voting_power_by_resolution(resolution_id)
+        .await
+    {
+        Ok((pour, _contre, _abstention)) => {
+            world.gd_aggregation_ok = true;
+            world.gd_vote_sum = Some(pour);
+        }
+        Err(e) => {
+            world.gd_aggregation_ok = false;
+            world.operation_error = Some(e);
+        }
+    }
+}
+
+#[then("the aggregation succeeds without ColumnDecode panic")]
+async fn then_gd_aggregation_ok(world: &mut GovernanceWorld) {
+    assert!(
+        world.gd_aggregation_ok,
+        "Voting power aggregation failed: {:?}",
+        world.operation_error
+    );
+}
+
+#[then(regex = r#"^the sum is exactly "([^"]*)"$"#)]
+async fn then_gd_sum_exact(world: &mut GovernanceWorld, expected: String) {
+    let expected = Decimal::from_str(&expected).expect("valid expected decimal");
+    let actual = world.gd_vote_sum.expect("no aggregated sum");
+    assert_eq!(
+        actual, expected,
+        "Sum {} != expected {} (exact Decimal comparison)",
+        actual, expected
+    );
+}
+
+// --- @security : quorum at exact legal boundary ---
+
+#[given(regex = r#"^a building with total quotas "([^"]*)"$"#)]
+async fn given_gd_quorum_total(world: &mut GovernanceWorld, total: String) {
+    world.gd_quorum_total = Some(Decimal::from_str(&total).expect("valid total quotas"));
+}
+
+#[given(regex = r#"^present owners cumulating "([^"]*)" quotas$"#)]
+async fn given_gd_quorum_present(world: &mut GovernanceWorld, present: String) {
+    world.gd_quorum_present = Some(Decimal::from_str(&present).expect("valid present quotas"));
+}
+
+#[when(regex = r#"^the syndic checks the quorum at threshold (\d+) percent$"#)]
+async fn when_gd_check_quorum(world: &mut GovernanceWorld, _threshold: u32) {
+    use koprogo_api::domain::entities::Meeting;
+    let total = world.gd_quorum_total.unwrap();
+    let present = world.gd_quorum_present.unwrap();
+
+    let mut meeting = Meeting::new(
+        world.org_id.unwrap(),
+        world.building_id.unwrap(),
+        koprogo_api::domain::entities::MeetingType::Ordinary,
+        "GD quorum meeting".to_string(),
+        None,
+        Utc::now() + ChronoDuration::days(30),
+        "Salle".to_string(),
+    )
+    .expect("create meeting");
+
+    // Exercise the production quorum logic (Art. 3.87 §5 CC).
+    match meeting.validate_quorum(present, total) {
+        Ok(reached) => world.gd_quorum_reached = Some(reached),
+        Err(e) => {
+            world.gd_quorum_reached = None;
+            world.operation_error = Some(e);
+        }
+    }
+}
+
+#[then("the quorum is REACHED with exact comparison")]
+async fn then_gd_quorum_reached(world: &mut GovernanceWorld) {
+    assert_eq!(
+        world.gd_quorum_reached,
+        Some(true),
+        "Quorum should be REACHED at the exact boundary (500.0001 > 500.0000). error={:?}",
+        world.operation_error
+    );
+}
+
+// --- @edge : units.quota round-trip exact ---
+
+#[given(regex = r#"^a unit with quota "([^"]*)" stored in the database$"#)]
+async fn given_gd_unit_quota(world: &mut GovernanceWorld, q: String) {
+    let pool = world.pool.as_ref().unwrap().clone();
+    let building_id = world.building_id.unwrap();
+    let org_id = world.org_id.unwrap();
+    let quota = Decimal::from_str(&q).expect("valid quota decimal");
+    let unit_id = Uuid::new_v4();
+    // H15 — units.organization_id dropped, units.acp_id NOT NULL (same ACP as the building).
+    let acp_id = ensure_default_acp_for_org(&pool, org_id).await;
+
+    sqlx::query(
+        r#"INSERT INTO units (id, building_id, acp_id, unit_number, unit_type, floor, surface_area, quota, created_at, updated_at)
+           VALUES ($1, $2, $3, $4, 'apartment', 1, 75.0, $5, NOW(), NOW())"#,
+    )
+    .bind(unit_id)
+    .bind(building_id)
+    .bind(acp_id)
+    .bind(format!("GD-Q-{}", &unit_id.to_string()[..8]))
+    .bind(quota)
+    .execute(&pool)
+    .await
+    .expect("insert unit");
+
+    world.gd_unit_id = Some(unit_id);
+}
+
+#[when("the unit is read back from the database")]
+async fn when_gd_read_unit(world: &mut GovernanceWorld) {
+    use koprogo_api::application::ports::UnitRepository;
+    let pool = world.pool.as_ref().unwrap().clone();
+    let unit_repo = PostgresUnitRepository::new(pool);
+    let unit_id = world.gd_unit_id.unwrap();
+
+    // Exercise the production read path (bug #525 ColumnDecode panic site).
+    let unit = unit_repo
+        .find_by_id(unit_id)
+        .await
+        .expect("find_by_id should not error")
+        .expect("unit exists");
+    world.gd_unit_read_quota = Some(unit.quota);
+}
+
+#[then(regex = r#"^the unit quota is exactly "([^"]*)"$"#)]
+async fn then_gd_unit_quota_exact(world: &mut GovernanceWorld, expected: String) {
+    let expected = Decimal::from_str(&expected).expect("valid expected decimal");
+    let actual = world.gd_unit_read_quota.expect("no quota read");
+    assert_eq!(
+        actual, expected,
+        "unit.quota {} != expected {} (exact Decimal round-trip)",
+        actual, expected
+    );
+}
+
+// --- @happy : AGE request shares_pct round-trip exact ---
+
+#[given(regex = r#"^an AGE request with a cosignatory shares_pct "([^"]*)"$"#)]
+async fn given_gd_age_request(world: &mut GovernanceWorld, shares: String) {
+    use koprogo_api::application::ports::age_request_repository::AgeRequestRepository;
+    use koprogo_api::domain::entities::age_request::{AgeRequest, AgeRequestCosignatory};
+    let pool = world.pool.as_ref().unwrap().clone();
+    let repo = PostgresAgeRequestRepository::new(pool);
+
+    let shares_dec = Decimal::from_str(&shares).expect("valid shares_pct");
+
+    let req = AgeRequest::new(
+        world.org_id.unwrap(),
+        world.building_id.unwrap(),
+        "GD AGE request".to_string(),
+        Some("decimal round-trip".to_string()),
+        Uuid::new_v4(),
+    )
+    .expect("create age request");
+    repo.create(&req).await.expect("persist age request");
+
+    let cosignatory =
+        AgeRequestCosignatory::new(req.id, Uuid::new_v4(), shares_dec).expect("cosignatory");
+    repo.add_cosignatory(&cosignatory)
+        .await
+        .expect("add cosignatory");
+
+    world.gd_age_request_id = Some(req.id);
+}
+
+#[when("the AGE request is read back")]
+async fn when_gd_read_age_request(world: &mut GovernanceWorld) {
+    use koprogo_api::application::ports::age_request_repository::AgeRequestRepository;
+    let pool = world.pool.as_ref().unwrap().clone();
+    let repo = PostgresAgeRequestRepository::new(pool);
+    let id = world.gd_age_request_id.unwrap();
+
+    let req = repo
+        .find_by_id(id)
+        .await
+        .expect("find_by_id ok")
+        .expect("age request exists");
+    let cosig = req.cosignatories.first().expect("at least one cosignatory");
+    world.gd_cosignatory_read_shares = Some(cosig.shares_pct);
+}
+
+#[then(regex = r#"^the cosignatory shares_pct is exactly "([^"]*)"$"#)]
+async fn then_gd_shares_exact(world: &mut GovernanceWorld, expected: String) {
+    let expected = Decimal::from_str(&expected).expect("valid expected decimal");
+    let actual = world.gd_cosignatory_read_shares.expect("no shares read");
+    assert_eq!(
+        actual, expected,
+        "cosignatory.shares_pct {} != expected {} (exact Decimal round-trip)",
+        actual, expected
     );
 }
 
@@ -8068,34 +8467,30 @@ async fn then_shares_pct_missing(world: &mut GovernanceWorld, expected: f64) {
 
 #[tokio::main]
 async fn main() {
-    GovernanceWorld::cucumber()
-        .run("tests/features/resolutions.feature")
-        .await;
-    GovernanceWorld::cucumber()
-        .run("tests/features/convocations.feature")
-        .await;
-    GovernanceWorld::cucumber()
-        .run("tests/features/quotes.feature")
-        .await;
-    GovernanceWorld::cucumber()
-        .run("tests/features/two_factor.feature")
-        .await;
-    GovernanceWorld::cucumber()
-        .run("tests/features/organizations.feature")
-        .await;
-    GovernanceWorld::cucumber()
-        .run("tests/features/public_syndic.feature")
-        .await;
-    GovernanceWorld::cucumber()
-        .run("tests/features/polls.feature")
-        .await;
-    GovernanceWorld::cucumber()
-        .run("tests/features/etat_date.feature")
-        .await;
-    GovernanceWorld::cucumber()
-        .run("tests/features/ag_sessions.feature")
-        .await;
-    GovernanceWorld::cucumber()
-        .run_and_exit("tests/features/age_requests.feature")
-        .await;
+    // Issue #524: aggregate failures across all features so CI exit code
+    // reflects ANY failed scenario, not just the last `.run_and_exit()`.
+    use cucumber::writer::Stats as _;
+    let features = [
+        "tests/features/resolutions.feature",
+        "tests/features/convocations.feature",
+        "tests/features/quotes.feature",
+        "tests/features/two_factor.feature",
+        "tests/features/organizations.feature",
+        "tests/features/public_syndic.feature",
+        "tests/features/polls.feature",
+        "tests/features/etat_date.feature",
+        "tests/features/ag_sessions.feature",
+        "tests/features/age_requests.feature",
+        "tests/features/governance_decimal.feature",
+    ];
+    let mut had_failures = false;
+    for f in features {
+        let writer = GovernanceWorld::cucumber().run(f).await;
+        if writer.execution_has_failed() {
+            had_failures = true;
+        }
+    }
+    if had_failures {
+        std::process::exit(1);
+    }
 }

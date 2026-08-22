@@ -842,6 +842,13 @@ mod tests {
                 })
                 .collect())
         }
+
+        async fn find_voting_holders_by_unit(
+            &self,
+            _unit_id: Uuid,
+        ) -> Result<Vec<crate::domain::entities::LotHolder>, String> {
+            Ok(vec![])
+        }
     }
 
     struct MockOwnerRepository;

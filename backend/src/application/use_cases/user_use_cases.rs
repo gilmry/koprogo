@@ -1,3 +1,4 @@
+use crate::application::error::AppError;
 use crate::application::ports::{UserRepository, UserRoleRepository};
 use crate::domain::entities::{User, UserRole, UserRoleAssignment};
 use chrono::{DateTime, Utc};
@@ -119,6 +120,28 @@ impl UserUseCases {
     /// List all users with their roles.
     pub async fn list_all(&self) -> Result<Vec<UserResponse>, String> {
         let users = self.user_repo.find_all().await?;
+        let user_ids: Vec<Uuid> = users.iter().map(|u| u.id).collect();
+        let mut roles_map: HashMap<Uuid, Vec<UserRoleAssignment>> =
+            self.role_repo.list_for_users(&user_ids).await?;
+
+        Ok(users
+            .into_iter()
+            .map(|user| {
+                let assignments = roles_map.remove(&user.id).unwrap_or_default();
+                Self::build_response(user, assignments)
+            })
+            .collect())
+    }
+
+    /// List users belonging to a given organization, with their roles.
+    ///
+    /// Authorization (syndic/accountant own org, superadmin any org) is
+    /// enforced upstream by the handler via `AuthenticatedUser::verify_org_access`.
+    pub async fn list_by_organization(
+        &self,
+        organization_id: Uuid,
+    ) -> Result<Vec<UserResponse>, String> {
+        let users = self.user_repo.find_by_organization(organization_id).await?;
         let user_ids: Vec<Uuid> = users.iter().map(|u| u.id).collect();
         let mut roles_map: HashMap<Uuid, Vec<UserRoleAssignment>> =
             self.role_repo.list_for_users(&user_ids).await?;
@@ -254,6 +277,154 @@ impl UserUseCases {
         }
         Ok(())
     }
+
+    // ======================================================================
+    // Story B0bis — CRUD REST sur user_role_assignments (gap Story 3.1).
+    //
+    // Story 3.1 a livré l'entité + repo + helpers RBAC mais n'a JAMAIS exposé
+    // un endpoint pour assigner / lister / révoquer un sous-rôle. Cela
+    // bloquait toute UI d'administration ainsi que la Story B1 du Phase B FE
+    // (`RoleAssignmentForm` / `RoleAssignmentList`).
+    //
+    // Ces 3 méthodes sont **AppError-typées** (cf. CRITICAL.md §4) et
+    // appliquent les invariants :
+    //   - target user existant ;
+    //   - role parsable (whitelist UserRole::from_str) ;
+    //   - valid_until > now() si Some ;
+    //   - aucune double-attribution active sur le tuple
+    //     (user_id, role, organization_id).
+    // ======================================================================
+
+    /// Assigne un sous-rôle à un user existant.
+    ///
+    /// L'autorisation (superadmin / syndic-sur-son-org) est vérifiée AMONT par
+    /// le handler — ici on applique uniquement les invariants métier.
+    ///
+    /// # Errors
+    ///
+    /// - `AppError::NotFound` si `target_user_id` n'existe pas.
+    /// - `AppError::Validation` si `valid_until` n'est pas dans le futur, ou
+    ///   si un user tente de s'auto-attribuer un rôle à privilèges élevés
+    ///   (cohérent invariants MagicLink / Mandate §3.2 §3.4).
+    /// - `AppError::RoleAlreadyAssigned` si une assignment active existe déjà
+    ///   pour le tuple `(user_id, role, organization_id)`.
+    pub async fn assign_role(
+        &self,
+        target_user_id: Uuid,
+        role: UserRole,
+        organization_id: Option<Uuid>,
+        valid_until: Option<DateTime<Utc>>,
+        granted_by_user_id: Uuid,
+    ) -> Result<UserRoleAssignment, AppError> {
+        // --- @edge : valid_until doit être strictement futur si fourni -----
+        if let Some(t) = valid_until {
+            if t <= Utc::now() {
+                return Err(AppError::Validation(
+                    "valid_until must be strictly in the future".to_string(),
+                ));
+            }
+        }
+
+        // --- @security : auto-attribution interdite pour rôles à privilèges
+        //     élevés (superadmin / syndic). Cohérent avec l'invariant
+        //     subject!=issuer des MagicLink / Mandate / RoleDelegation.
+        let high_privilege = matches!(role, UserRole::SuperAdmin | UserRole::Syndic);
+        if high_privilege && granted_by_user_id == target_user_id {
+            return Err(AppError::Validation(
+                "A user cannot self-grant a high-privilege role".to_string(),
+            ));
+        }
+
+        // --- target user doit exister -------------------------------------
+        let target = self
+            .user_repo
+            .find_by_id(target_user_id)
+            .await
+            .map_err(AppError::from)?
+            .ok_or_else(|| AppError::NotFound(format!("User {} not found", target_user_id)))?;
+
+        // --- @negative : double-attribution -------------------------------
+        let existing = self
+            .role_repo
+            .list_for_user(target_user_id)
+            .await
+            .map_err(AppError::from)?;
+        let already = existing.iter().any(|a| {
+            a.role == role && a.organization_id == organization_id && a.is_currently_active()
+        });
+        if already {
+            return Err(AppError::RoleAlreadyAssigned {
+                user_id: target_user_id,
+                role: role.to_string(),
+            });
+        }
+
+        // --- Build assignment (delegated if `valid_until` is Some) --------
+        let is_first = existing.is_empty();
+        let assignment = match valid_until {
+            Some(t) => UserRoleAssignment::new_delegated(
+                target_user_id,
+                role,
+                organization_id,
+                t,
+                granted_by_user_id,
+            ),
+            None => UserRoleAssignment::new(target_user_id, role, organization_id, is_first),
+        };
+
+        let saved = self
+            .role_repo
+            .create(&assignment)
+            .await
+            .map_err(AppError::from)?;
+        // Silence the "unused" lint on the user we fetched to enforce existence.
+        let _ = target.id;
+        Ok(saved)
+    }
+
+    /// Liste toutes les assignments d'un user (actives + expirées) afin que
+    /// le FE puisse afficher l'historique.
+    ///
+    /// L'autorisation (superadmin / syndic-sur-son-org / self) est vérifiée
+    /// AMONT par le handler.
+    pub async fn list_assignments_for_user(
+        &self,
+        user_id: Uuid,
+    ) -> Result<Vec<UserRoleAssignment>, AppError> {
+        self.role_repo
+            .list_for_user(user_id)
+            .await
+            .map_err(AppError::from)
+    }
+
+    /// Révoque (= supprime) une assignment.
+    ///
+    /// L'autorisation est vérifiée AMONT par le handler. Renvoie
+    /// `AppError::NotFound` si l'assignment n'existe pas.
+    pub async fn revoke_assignment(&self, assignment_id: Uuid) -> Result<(), AppError> {
+        let existing = self
+            .role_repo
+            .find_by_id(assignment_id)
+            .await
+            .map_err(AppError::from)?
+            .ok_or_else(|| {
+                AppError::NotFound(format!("Role assignment {} not found", assignment_id))
+            })?;
+        let _ = existing.id;
+        let deleted = self
+            .role_repo
+            .delete_by_id(assignment_id)
+            .await
+            .map_err(AppError::from)?;
+        if !deleted {
+            // Race condition : found-then-deleted-by-someone-else.
+            return Err(AppError::NotFound(format!(
+                "Role assignment {} not found",
+                assignment_id
+            )));
+        }
+        Ok(())
+    }
 }
 
 #[cfg(test)]
@@ -323,5 +494,242 @@ mod tests {
         let uc = UserUseCases::new(Arc::new(mock_user), Arc::new(mock_role));
         let result = uc.delete(Uuid::new_v4()).await.unwrap();
         assert!(result);
+    }
+
+    // ======================================================================
+    // Story B0bis — assign_role / list_assignments_for_user / revoke
+    // — taxonomie 4 catégories (CRITICAL.md §3).
+    // ======================================================================
+
+    fn make_uc_with_mocks(mock_user: MockUserRepo, mock_role: MockUserRoleRepo) -> UserUseCases {
+        UserUseCases::new(Arc::new(mock_user), Arc::new(mock_role))
+    }
+
+    // ---- @happy ---------------------------------------------------------
+
+    #[tokio::test]
+    async fn happy_assign_role_creates_native_assignment() {
+        let target = Uuid::new_v4();
+        let granted_by = Uuid::new_v4();
+        let user = make_user(target);
+
+        let mut mock_user = MockUserRepo::new();
+        let u = user.clone();
+        mock_user
+            .expect_find_by_id()
+            .returning(move |_| Ok(Some(u.clone())));
+
+        let mut mock_role = MockUserRoleRepo::new();
+        mock_role.expect_list_for_user().returning(|_| Ok(vec![]));
+        mock_role
+            .expect_create()
+            .returning(|a: &UserRoleAssignment| Ok(a.clone()));
+
+        let uc = make_uc_with_mocks(mock_user, mock_role);
+        let saved = uc
+            .assign_role(target, UserRole::AccountantEncodeur, None, None, granted_by)
+            .await
+            .unwrap();
+        assert_eq!(saved.user_id, target);
+        assert_eq!(saved.role, UserRole::AccountantEncodeur);
+        assert!(saved.valid_until.is_none(), "native assignment");
+    }
+
+    #[tokio::test]
+    async fn happy_list_assignments_returns_repo_rows() {
+        let user_id = Uuid::new_v4();
+        let a = UserRoleAssignment::new(user_id, UserRole::Owner, None, true);
+
+        let mock_user = MockUserRepo::new();
+        let mut mock_role = MockUserRoleRepo::new();
+        let row = a.clone();
+        mock_role
+            .expect_list_for_user()
+            .returning(move |_| Ok(vec![row.clone()]));
+
+        let uc = make_uc_with_mocks(mock_user, mock_role);
+        let rows = uc.list_assignments_for_user(user_id).await.unwrap();
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0].id, a.id);
+    }
+
+    #[tokio::test]
+    async fn happy_revoke_assignment_deletes_existing() {
+        let user_id = Uuid::new_v4();
+        let a = UserRoleAssignment::new(user_id, UserRole::Owner, None, true);
+        let a_id = a.id;
+
+        let mock_user = MockUserRepo::new();
+        let mut mock_role = MockUserRoleRepo::new();
+        let row = a.clone();
+        mock_role
+            .expect_find_by_id()
+            .returning(move |_| Ok(Some(row.clone())));
+        mock_role.expect_delete_by_id().returning(|_| Ok(true));
+
+        let uc = make_uc_with_mocks(mock_user, mock_role);
+        uc.revoke_assignment(a_id).await.unwrap();
+    }
+
+    // ---- @edge ----------------------------------------------------------
+
+    #[tokio::test]
+    async fn edge_assign_role_with_future_valid_until_creates_delegated() {
+        let target = Uuid::new_v4();
+        let granted_by = Uuid::new_v4();
+        let user = make_user(target);
+
+        let mut mock_user = MockUserRepo::new();
+        let u = user.clone();
+        mock_user
+            .expect_find_by_id()
+            .returning(move |_| Ok(Some(u.clone())));
+
+        let mut mock_role = MockUserRoleRepo::new();
+        mock_role.expect_list_for_user().returning(|_| Ok(vec![]));
+        mock_role
+            .expect_create()
+            .returning(|a: &UserRoleAssignment| Ok(a.clone()));
+
+        let uc = make_uc_with_mocks(mock_user, mock_role);
+        let valid_until = Utc::now() + chrono::Duration::seconds(60);
+        let saved = uc
+            .assign_role(
+                target,
+                UserRole::Lawyer,
+                None,
+                Some(valid_until),
+                granted_by,
+            )
+            .await
+            .unwrap();
+        assert!(saved.is_delegated());
+        assert_eq!(saved.valid_until, Some(valid_until));
+    }
+
+    #[tokio::test]
+    async fn edge_assign_role_with_past_valid_until_is_rejected() {
+        let target = Uuid::new_v4();
+        let granted_by = Uuid::new_v4();
+
+        let mock_user = MockUserRepo::new();
+        let mock_role = MockUserRoleRepo::new();
+
+        let uc = make_uc_with_mocks(mock_user, mock_role);
+        let valid_until = Utc::now() - chrono::Duration::seconds(1);
+        let err = uc
+            .assign_role(target, UserRole::Owner, None, Some(valid_until), granted_by)
+            .await
+            .unwrap_err();
+        assert!(matches!(err, AppError::Validation(_)));
+    }
+
+    // ---- @security ------------------------------------------------------
+
+    #[tokio::test]
+    async fn security_assign_high_privilege_role_to_self_is_rejected() {
+        // INV: a user cannot self-grant Syndic / SuperAdmin (cohérent §3.2 §3.4).
+        let same = Uuid::new_v4();
+
+        let mock_user = MockUserRepo::new();
+        let mock_role = MockUserRoleRepo::new();
+
+        let uc = make_uc_with_mocks(mock_user, mock_role);
+        let err = uc
+            .assign_role(same, UserRole::Syndic, None, None, same)
+            .await
+            .unwrap_err();
+        assert!(matches!(err, AppError::Validation(_)));
+    }
+
+    #[tokio::test]
+    async fn security_assign_non_privileged_self_role_is_allowed() {
+        // Self-assign d'un rôle non-privilégié (community.moderator, …) reste
+        // OK — pas de loophole, c'est juste qu'on ne traite pas tous les
+        // rôles comme égaux en risque.
+        let same = Uuid::new_v4();
+        let user = make_user(same);
+
+        let mut mock_user = MockUserRepo::new();
+        let u = user.clone();
+        mock_user
+            .expect_find_by_id()
+            .returning(move |_| Ok(Some(u.clone())));
+
+        let mut mock_role = MockUserRoleRepo::new();
+        mock_role.expect_list_for_user().returning(|_| Ok(vec![]));
+        mock_role
+            .expect_create()
+            .returning(|a: &UserRoleAssignment| Ok(a.clone()));
+
+        let uc = make_uc_with_mocks(mock_user, mock_role);
+        let saved = uc
+            .assign_role(same, UserRole::CommunityModerator, None, None, same)
+            .await
+            .unwrap();
+        assert_eq!(saved.role, UserRole::CommunityModerator);
+    }
+
+    // ---- @negative ------------------------------------------------------
+
+    #[tokio::test]
+    async fn negative_assign_role_to_unknown_user_returns_not_found() {
+        let target = Uuid::new_v4();
+        let granted_by = Uuid::new_v4();
+
+        let mut mock_user = MockUserRepo::new();
+        mock_user.expect_find_by_id().returning(|_| Ok(None));
+
+        let mock_role = MockUserRoleRepo::new();
+
+        let uc = make_uc_with_mocks(mock_user, mock_role);
+        let err = uc
+            .assign_role(target, UserRole::Owner, None, None, granted_by)
+            .await
+            .unwrap_err();
+        assert!(matches!(err, AppError::NotFound(_)));
+    }
+
+    #[tokio::test]
+    async fn negative_assign_role_double_returns_conflict() {
+        let target = Uuid::new_v4();
+        let granted_by = Uuid::new_v4();
+        let user = make_user(target);
+        // Pre-existing native assignment on the same (role, org).
+        let existing = UserRoleAssignment::new(target, UserRole::Owner, None, true);
+
+        let mut mock_user = MockUserRepo::new();
+        let u = user.clone();
+        mock_user
+            .expect_find_by_id()
+            .returning(move |_| Ok(Some(u.clone())));
+
+        let mut mock_role = MockUserRoleRepo::new();
+        let row = existing.clone();
+        mock_role
+            .expect_list_for_user()
+            .returning(move |_| Ok(vec![row.clone()]));
+
+        let uc = make_uc_with_mocks(mock_user, mock_role);
+        let err = uc
+            .assign_role(target, UserRole::Owner, None, None, granted_by)
+            .await
+            .unwrap_err();
+        assert!(
+            matches!(err, AppError::RoleAlreadyAssigned { .. }),
+            "expected RoleAlreadyAssigned, got {:?}",
+            err
+        );
+    }
+
+    #[tokio::test]
+    async fn negative_revoke_unknown_assignment_returns_not_found() {
+        let mock_user = MockUserRepo::new();
+        let mut mock_role = MockUserRoleRepo::new();
+        mock_role.expect_find_by_id().returning(|_| Ok(None));
+
+        let uc = make_uc_with_mocks(mock_user, mock_role);
+        let err = uc.revoke_assignment(Uuid::new_v4()).await.unwrap_err();
+        assert!(matches!(err, AppError::NotFound(_)));
     }
 }

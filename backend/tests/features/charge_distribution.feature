@@ -15,6 +15,17 @@ Feature: Charge Distribution
     And unit 3 owned by "Charlie" at 25%
     And an expense of 1000 EUR exists for the building
 
+  # 4 catégories (#433/WP-A4 — EXP-005). @edge (borne tolérance somme
+  # quotités 1.0001), @negative (quote-part > 1 / négative, total négatif)
+  # et @security (somme quotités > 100% ⇒ sur-facturation rejetée) sont des
+  # invariants de l'entité domaine, vérifiés par les tests unitaires typés
+  # `edge_quota_sum_at_tolerance_boundary`, `negative_quota_out_of_range_rejected`,
+  # `negative_total_amount_rejected`, `security_quota_sum_overflow_prevents_overcharge`
+  # (charge_distribution.rs) — le Background BDD fixe une répartition valide à
+  # 100% et ne peut donc pas exercer comportementalement ces chemins de rejet
+  # ici (même précédent que journal_entries.feature / WP-A3).
+
+  @happy
   Scenario: Calculate distribution for an invoice
     When I calculate charge distribution for the expense
     Then distributions should be created for all 3 owners
@@ -38,7 +49,10 @@ Feature: Charge Distribution
     When I get total due for owner "Alice" (40%)
     Then the total due should be 600 EUR (40% of 1500 EUR)
 
+  @edge
   Scenario: Distribution respects ownership percentages exactly
+    # Cent-rounding precision: 333 EUR ventilé en quotités 40/35/25 — Decimal
+    # exact (ADR-0007), pas de dérive f64 sur le cumul des montants dus.
     Given an expense of 333 EUR exists
     When I calculate charge distribution
     Then "Alice" should owe 133.20 EUR (40%)

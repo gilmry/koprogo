@@ -11,7 +11,7 @@ use koprogo_api::application::ports::{MqttEnergyPort, MqttError};
 use koprogo_api::application::use_cases::*;
 use koprogo_api::infrastructure::audit_logger::AuditLogger;
 use koprogo_api::infrastructure::database::{
-    create_pool, PostgresAccountRepository, PostgresAchievementRepository,
+    create_pool, PostgresAccountRepository, PostgresAchievementRepository, PostgresAcpRepository,
     PostgresAgSessionRepository, PostgresAgeRequestRepository, PostgresAuditLogRepository,
     PostgresBoardDecisionRepository, PostgresBoardMemberRepository, PostgresBudgetRepository,
     PostgresBuildingRepository, PostgresCallForFundsRepository,
@@ -226,8 +226,15 @@ pub async fn setup_test_db() -> (
 
     let board_member_repo = Arc::new(PostgresBoardMemberRepository::new(pool.clone()));
     let board_decision_repo = Arc::new(PostgresBoardDecisionRepository::new(pool.clone()));
-    let board_member_use_cases =
-        BoardMemberUseCases::new(board_member_repo.clone(), building_repo.clone());
+    // Hotfix #603 — BoardMemberUseCases needs acp_repository. We hoist its
+    // creation up here to share the same Arc with AcpUseCases below.
+    let acp_repo_for_board: std::sync::Arc<dyn koprogo_api::application::ports::AcpRepository> =
+        Arc::new(PostgresAcpRepository::new(pool.clone()));
+    let board_member_use_cases = BoardMemberUseCases::new(
+        board_member_repo.clone(),
+        building_repo.clone(),
+        acp_repo_for_board,
+    );
     let board_decision_use_cases = BoardDecisionUseCases::new(
         board_decision_repo.clone(),
         building_repo.clone(),
@@ -246,6 +253,9 @@ pub async fn setup_test_db() -> (
     let resolution_repo = Arc::new(PostgresResolutionRepository::new(pool.clone()));
     let vote_repo = Arc::new(PostgresVoteRepository::new(pool.clone()));
     let ticket_repo = Arc::new(PostgresTicketRepository::new(pool.clone()));
+    // Story 3.7 — concrete clone used downstream by SyndicResponseUseCases
+    // (generic over concrete repo types).
+    let ticket_repo_for_syndic_response = ticket_repo.clone();
     let two_factor_repo = Arc::new(PostgresTwoFactorRepository::new(pool.clone()));
     let notification_repo = Arc::new(PostgresNotificationRepository::new(pool.clone()));
     let notification_preference_repo =
@@ -288,8 +298,12 @@ pub async fn setup_test_db() -> (
         building_repo.clone(),
         meeting_repo.clone(),
     );
-    let resolution_use_cases =
-        ResolutionUseCases::new(resolution_repo, vote_repo, meeting_repo.clone());
+    let resolution_use_cases = ResolutionUseCases::new(
+        resolution_repo,
+        vote_repo,
+        meeting_repo.clone(),
+        unit_owner_repo.clone(),
+    );
     let ticket_use_cases = TicketUseCases::new(ticket_repo);
     let encryption_key: [u8; 32] = *b"test-encryption-key-32bytes!!!!!";
     let two_factor_use_cases =
@@ -306,7 +320,21 @@ pub async fn setup_test_db() -> (
     );
     let notice_use_cases = NoticeUseCases::new(notice_repo, user_repo.clone());
     let organization_repo = Arc::new(PostgresOrganizationRepository::new(pool.clone()));
-    let organization_use_cases = OrganizationUseCases::new(organization_repo);
+    let organization_use_cases = OrganizationUseCases::new(organization_repo.clone());
+
+    // ACP (Story 1.1 — ADR-0010)
+    let acp_repo = Arc::new(PostgresAcpRepository::new(pool.clone()));
+    let acp_use_cases = AcpUseCases::new(acp_repo, organization_repo.clone());
+
+    // Portfolio (Story 2.1 — ADR-0011)
+    let portfolio_repo = Arc::new(
+        koprogo_api::infrastructure::database::PostgresPortfolioRepository::new(pool.clone()),
+    );
+    let portfolio_use_cases = koprogo_api::application::use_cases::PortfolioUseCases::new(
+        portfolio_repo,
+        building_repo.clone(),
+        user_repo.clone(),
+    );
     let resource_booking_use_cases =
         ResourceBookingUseCases::new(resource_booking_repo, owner_repo.clone());
     let shared_object_use_cases = SharedObjectUseCases::new(
@@ -405,8 +433,72 @@ pub async fn setup_test_db() -> (
     let boinc_grid_adapter = Arc::new(BoincGridAdapter::new(pool.clone()));
     let boinc_use_cases = BoincUseCases::new(boinc_grid_adapter, boinc_iot_repo);
 
+    let magic_link_repo: Arc<dyn koprogo_api::application::ports::MagicLinkRepository> = Arc::new(
+        koprogo_api::infrastructure::database::repositories::PostgresMagicLinkRepository::new(
+            pool.clone(),
+        ),
+    );
+    let magic_link_use_cases =
+        koprogo_api::application::use_cases::MagicLinkUseCases::new(magic_link_repo);
+
+    let mandate_repo: Arc<dyn koprogo_api::application::ports::MandateRepository> = Arc::new(
+        koprogo_api::infrastructure::database::repositories::PostgresMandateRepository::new(
+            pool.clone(),
+        ),
+    );
+    let mandate_use_cases = koprogo_api::application::use_cases::MandateUseCases::new(mandate_repo);
+
+    let role_delegation_repo: Arc<
+        dyn koprogo_api::application::ports::RoleDelegationRepository,
+    > = Arc::new(
+        koprogo_api::infrastructure::database::repositories::PostgresRoleDelegationRepository::new(
+            pool.clone(),
+        ),
+    );
+    let role_delegation_use_cases =
+        koprogo_api::application::use_cases::RoleDelegationUseCases::new(role_delegation_repo);
+
+    // Story 3.7 — SyndicResponse use-cases (generic over concrete types).
+    let syndic_response_repo = Arc::new(
+        koprogo_api::infrastructure::database::repositories::PostgresSyndicResponseRepository::new(
+            pool.clone(),
+        ),
+    );
+    let syndic_response_use_cases =
+        koprogo_api::application::use_cases::SyndicResponseUseCases::new(
+            syndic_response_repo,
+            ticket_repo_for_syndic_response,
+        );
+
+    // Story 3.8 — TechnicalSpec use-cases (FR33).
+    let technical_spec_repo: Arc<
+        dyn koprogo_api::application::ports::TechnicalSpecRepository,
+    > = Arc::new(
+        koprogo_api::infrastructure::database::repositories::PostgresTechnicalSpecRepository::new(
+            pool.clone(),
+        ),
+    );
+    let technical_spec_use_cases = koprogo_api::application::use_cases::TechnicalSpecUseCases::new(
+        technical_spec_repo.clone(),
+    );
+
+    // Story 3.9 — ContractorEvaluation use-cases (FR34 FR35 INV-21 INV-24).
+    let contractor_evaluation_repo: Arc<
+        dyn koprogo_api::application::ports::ContractorEvaluationRepository,
+    > = Arc::new(
+        koprogo_api::infrastructure::database::repositories::PostgresContractorEvaluationRepository::new(
+            pool.clone(),
+        ),
+    );
+    let contractor_evaluation_use_cases =
+        koprogo_api::application::use_cases::ContractorEvaluationUseCases::new(
+            contractor_evaluation_repo,
+            technical_spec_repo,
+        );
+
     let app_state = actix_web::web::Data::new(AppState::new(
         account_use_cases,
+        acp_use_cases,
         audit_log_use_cases,
         auth_use_cases,
         building_use_cases,
@@ -425,6 +517,7 @@ pub async fn setup_test_db() -> (
         Arc::new(payment_use_cases),
         payment_method_use_cases,
         poll_use_cases,
+        portfolio_use_cases,
         quote_use_cases,
         local_exchange_use_cases,
         notice_use_cases,
@@ -472,9 +565,95 @@ pub async fn setup_test_db() -> (
         mqtt_energy_adapter,
         boinc_use_cases,
         user_use_cases,
+        magic_link_use_cases,
+        mandate_use_cases,
+        role_delegation_use_cases,
+        syndic_response_use_cases,
+        technical_spec_use_cases,
+        contractor_evaluation_use_cases,
     ));
 
     (app_state, container, org_id)
+}
+
+/// Hotfix #602 follow-up — ensure an ACP exists for `org_id` so tests can
+/// create a building bound to that organization without violating the
+/// `buildings_acp_id_fkey` constraint introduced by migration
+/// `20260601020000_add_buildings_acp_id.sql`.
+///
+/// Returns the `acp.id` ready to be passed as `Building::new(acp_id, ...)`.
+/// Idempotent: re-uses the first existing ACP for the org if any.
+#[allow(dead_code)]
+pub async fn ensure_default_acp_for_org(pool: &sqlx::PgPool, org_id: Uuid) -> Uuid {
+    let existing: Option<(Uuid,)> = sqlx::query_as(
+        "SELECT id FROM acps WHERE organization_id = $1 ORDER BY created_at ASC LIMIT 1",
+    )
+    .bind(org_id)
+    .fetch_optional(pool)
+    .await
+    .expect("lookup acp for org");
+
+    if let Some((id,)) = existing {
+        return id;
+    }
+
+    let acp_id = Uuid::new_v4();
+    let now = chrono::Utc::now();
+    let short = org_id.simple().to_string();
+    let short_prefix = &short[..8];
+    let acp_name = format!("BDD ACP ({})", short_prefix);
+    let acp_slug = format!("bdd-acp-{}", short_prefix);
+
+    sqlx::query(
+        r#"INSERT INTO acps (id, organization_id, name, slug, legal_status,
+            address_street, address_postal_code, address_city, created_at, updated_at)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)"#,
+    )
+    .bind(acp_id)
+    .bind(org_id)
+    .bind(&acp_name)
+    .bind(&acp_slug)
+    .bind("copropriete_belge")
+    .bind("Adresse a completer")
+    .bind("0000")
+    .bind("A completer")
+    .bind(now)
+    .bind(now)
+    .execute(pool)
+    .await
+    .expect("create default acp for org");
+
+    acp_id
+}
+
+/// Hotfix #602 — create an ACP bound to `org_id` via the use-case layer and
+/// return its id as `String`, ready to be assigned to `CreateBuildingDto.acp_id`.
+///
+/// Each call materialises a fresh ACP (UUID-suffixed name/slug) so tests that
+/// share an `org_id` across multiple buildings never collide on the unique
+/// `(organization_id, slug)` constraint. Use this in any `create_*_test_building`
+/// helper or inline `CreateBuildingDto { ... }` literal that previously passed
+/// `org_id.to_string()` as `acp_id` (FK violation on `buildings_acp_id_fkey`).
+#[allow(dead_code)]
+pub async fn create_test_acp(app_state: &actix_web::web::Data<AppState>, org_id: Uuid) -> String {
+    let dto = koprogo_api::application::dto::CreateAcpDto {
+        organization_id: Some(org_id.to_string()),
+        name: format!("E2E Test ACP {}", Uuid::new_v4().simple()),
+        address_street: "Rue E2E 1".to_string(),
+        address_postal_code: "1000".to_string(),
+        address_city: "Bruxelles".to_string(),
+        bce_number: None,
+        total_tantiemes: None,
+    };
+    let acp = app_state
+        .acp_use_cases
+        .create_acp(
+            &koprogo_api::application::use_cases::acp_use_cases::AcpCaller::SuperAdmin,
+            dto,
+        )
+        .await
+        .expect("create_test_acp: create_acp use case failed");
+    acp.id
 }
 
 /// Helper to register a user and get a JWT token
@@ -483,13 +662,25 @@ pub async fn register_and_login(
     app_state: &actix_web::web::Data<AppState>,
     org_id: Uuid,
 ) -> String {
+    register_and_login_with_role(app_state, org_id, "superadmin").await
+}
+
+/// Same as `register_and_login` but for an arbitrary role (syndic,
+/// accountant, owner, contractor, ...) — needed for org-scoped endpoint
+/// tests where the caller must NOT be superadmin.
+#[allow(dead_code)]
+pub async fn register_and_login_with_role(
+    app_state: &actix_web::web::Data<AppState>,
+    org_id: Uuid,
+    role: &str,
+) -> String {
     let email = format!("e2e+{}@test.com", Uuid::new_v4());
     let reg = koprogo_api::application::dto::RegisterRequest {
         email: email.clone(),
         password: "Passw0rd!".to_string(),
         first_name: "E2E".to_string(),
         last_name: "Tester".to_string(),
-        role: "superadmin".to_string(),
+        role: role.to_string(),
         organization_id: Some(org_id),
     };
     let _ = app_state

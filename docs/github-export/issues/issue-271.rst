@@ -1,13 +1,13 @@
-====================================================================
+===================================================================
 Issue #271: fix(legal): Quorum 50%+ validation AG (Art. 3.87 §5 CC)
-====================================================================
+===================================================================
 
-:State: **OPEN**
+:State: **CLOSED**
 :Milestone: Jalon 1: Sécurité & GDPR 🔒
-:Labels: bug,priority:critical legal-compliance,governance release:0.1.0
+:Labels: bug,priority:critical legal-compliance,governance release:0.1.0
 :Assignees: Unassigned
 :Created: 2026-03-11
-:Updated: 2026-03-22
+:Updated: 2026-03-24
 :URL: `View on GitHub <https://github.com/gilmry/koprogo/issues/271>`_
 
 Description

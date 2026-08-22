@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { ensureAcp } from "./helpers/auth";
 
 /**
  * I18n (Internationalization) Tests
@@ -51,6 +52,8 @@ test.describe("I18n - Internationalization", () => {
       headers: { Authorization: `Bearer ${adminToken}` },
     });
     const org = await orgResp.json();
+    // Hotfix #602 — buildings.acp_id (FK acps.id) replaced organization_id.
+    const acpId = await ensureAcp(page, org.id, adminToken, "i18n-fr");
 
     // Create building with accented French name (typical Belgian copropriété)
     const buildingResp = await page.request.post(`${API_BASE}/buildings`, {
@@ -62,7 +65,7 @@ test.describe("I18n - Internationalization", () => {
         country: "Belgium",
         total_units: 12,
         construction_year: 1985,
-        organization_id: org.id,
+        acp_id: acpId,
       },
       headers: { Authorization: `Bearer ${adminToken}` },
     });
@@ -93,6 +96,8 @@ test.describe("I18n - Internationalization", () => {
       headers: { Authorization: `Bearer ${adminToken}` },
     });
     const org = await orgResp.json();
+    // Hotfix #602 — buildings.acp_id (FK acps.id) replaced organization_id.
+    const acpId = await ensureAcp(page, org.id, adminToken, "i18n-nl");
 
     const buildingResp = await page.request.post(`${API_BASE}/buildings`, {
       data: {
@@ -103,7 +108,7 @@ test.describe("I18n - Internationalization", () => {
         country: "Belgium",
         total_units: 8,
         construction_year: 2000,
-        organization_id: org.id,
+        acp_id: acpId,
       },
       headers: { Authorization: `Bearer ${adminToken}` },
     });

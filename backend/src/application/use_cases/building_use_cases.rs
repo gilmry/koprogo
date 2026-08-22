@@ -1,8 +1,9 @@
 use crate::application::dto::{
     BuildingFilters, BuildingResponseDto, CreateBuildingDto, PageRequest, UpdateBuildingDto,
 };
+use crate::application::error::AppError;
 use crate::application::ports::BuildingRepository;
-use crate::domain::entities::Building;
+use crate::domain::entities::{Building, BuildingMetrics};
 use std::sync::Arc;
 use uuid::Uuid;
 
@@ -19,11 +20,15 @@ impl BuildingUseCases {
         &self,
         dto: CreateBuildingDto,
     ) -> Result<BuildingResponseDto, String> {
-        let organization_id = Uuid::parse_str(&dto.organization_id)
-            .map_err(|_| "Invalid organization_id format".to_string())?;
+        // Story 1.2 — Building::acp_id (FK vers acps.id, anciennement
+        // organization_id). Le DTO expose désormais `acp_id` (renommé) ;
+        // le handler résout l'ACP à partir de l'organisation du JWT pour
+        // les non-superadmins (cf. building_handlers::create_building).
+        let acp_id =
+            Uuid::parse_str(&dto.acp_id).map_err(|_| "Invalid acp_id format".to_string())?;
 
         let building = Building::new(
-            organization_id,
+            acp_id,
             dto.name,
             dto.address,
             dto.city,
@@ -41,6 +46,23 @@ impl BuildingUseCases {
     pub async fn get_building(&self, id: Uuid) -> Result<Option<BuildingResponseDto>, String> {
         let building = self.repository.find_by_id(id).await?;
         Ok(building.map(|b| self.to_response_dto(&b)))
+    }
+
+    /// Story 1.4 — Get building + metrics (count units + SUM quotas) +
+    /// is_conformant + delta. Retour typé `AppError` (cluster #555).
+    ///
+    /// `Ok(None)` quand l'id n'existe pas (le handler le mappe en 404).
+    /// Toute erreur infra remonte en `AppError::Internal` via `From<String>`.
+    pub async fn get_building_with_metrics(
+        &self,
+        id: Uuid,
+    ) -> Result<Option<BuildingResponseDto>, AppError> {
+        let pair = self
+            .repository
+            .find_by_id_with_metrics(id)
+            .await
+            .map_err(AppError::from)?;
+        Ok(pair.map(|(b, m)| Self::to_response_dto_with_metrics(&b, &m)))
     }
 
     pub async fn list_buildings(&self) -> Result<Vec<BuildingResponseDto>, String> {
@@ -74,10 +96,12 @@ impl BuildingUseCases {
         page_request: &PageRequest,
         organization_id: Option<Uuid>,
         owner_user_id: Option<Uuid>,
+        search: Option<String>,
     ) -> Result<(Vec<BuildingResponseDto>, i64), String> {
         let filters = BuildingFilters {
             organization_id,
             owner_user_id,
+            search,
             ..Default::default()
         };
 
@@ -101,11 +125,11 @@ impl BuildingUseCases {
             .await?
             .ok_or_else(|| "Building not found".to_string())?;
 
-        // Update organization if provided (SuperAdmin feature)
-        if let Some(org_id_str) = dto.organization_id {
-            let org_id = Uuid::parse_str(&org_id_str)
-                .map_err(|_| "Invalid organization_id format".to_string())?;
-            building.organization_id = org_id;
+        // Story 1.2 — Réaffectation ACP (SuperAdmin uniquement).
+        if let Some(acp_id_str) = dto.acp_id {
+            let acp_id =
+                Uuid::parse_str(&acp_id_str).map_err(|_| "Invalid acp_id format".to_string())?;
+            building.acp_id = acp_id;
         }
 
         building.update_info(
@@ -133,9 +157,29 @@ impl BuildingUseCases {
     }
 
     fn to_response_dto(&self, building: &Building) -> BuildingResponseDto {
+        // Story 1.4 : par défaut on retourne des métriques vides — les
+        // callers historiques (list, update) ne paient pas le coût d'un
+        // JOIN. Le path GET unique passe par `to_response_dto_with_metrics`
+        // pour exposer is_conformant + delta réels.
+        Self::to_response_dto_with_metrics(building, &BuildingMetrics::empty())
+    }
+
+    /// Story 1.4 — Variante exposant les métriques réelles (count units +
+    /// SUM quotas) + `is_conformant` + delta Decimal-as-string.
+    ///
+    /// Strict Decimal : `quota_sum`/`quota_delta` sérialisés via `to_string()`
+    /// (jamais `to_f64`) — cf. mémoire `no-f64-in-money` + ADR-0007.
+    fn to_response_dto_with_metrics(
+        building: &Building,
+        metrics: &BuildingMetrics,
+    ) -> BuildingResponseDto {
+        let is_conformant = building.is_conformant(metrics);
+        // Track H Story H1 — `quota_delta` est désormais méthode d'instance
+        // (acte de base lu sur `self.total_tantiemes`).
+        let delta = building.quota_delta(metrics);
         BuildingResponseDto {
             id: building.id.to_string(),
-            organization_id: building.organization_id.to_string(),
+            acp_id: building.acp_id.to_string(),
             name: building.name.clone(),
             address: building.address.clone(),
             city: building.city.clone(),
@@ -146,6 +190,10 @@ impl BuildingUseCases {
             construction_year: building.construction_year,
             created_at: building.created_at.to_rfc3339(),
             updated_at: building.updated_at.to_rfc3339(),
+            units_count: metrics.units_count,
+            quota_sum: metrics.quota_sum.to_string(),
+            is_conformant,
+            quota_delta: delta.to_string(),
         }
     }
 }
@@ -173,6 +221,10 @@ mod tests {
             async fn update(&self, building: &Building) -> Result<Building, String>;
             async fn delete(&self, id: Uuid) -> Result<bool, String>;
             async fn find_by_slug(&self, slug: &str) -> Result<Option<Building>, String>;
+            async fn find_by_id_with_metrics(
+                &self,
+                id: Uuid,
+            ) -> Result<Option<(Building, BuildingMetrics)>, String>;
         }
     }
 
@@ -185,7 +237,7 @@ mod tests {
         let use_cases = BuildingUseCases::new(Arc::new(mock_repo));
 
         let dto = CreateBuildingDto {
-            organization_id: Uuid::new_v4().to_string(),
+            acp_id: Uuid::new_v4().to_string(),
             name: "Test Building".to_string(),
             address: "123 Test St".to_string(),
             city: "Paris".to_string(),
@@ -206,7 +258,7 @@ mod tests {
         let use_cases = BuildingUseCases::new(Arc::new(mock_repo));
 
         let dto = CreateBuildingDto {
-            organization_id: Uuid::new_v4().to_string(),
+            acp_id: Uuid::new_v4().to_string(),
             name: "".to_string(), // Invalid: empty name
             address: "123 Test St".to_string(),
             city: "Paris".to_string(),

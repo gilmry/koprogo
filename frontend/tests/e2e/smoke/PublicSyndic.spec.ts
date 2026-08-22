@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { ensureAcp } from "../helpers/auth";
 
 const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
 
@@ -29,6 +30,9 @@ test.describe("Public Syndic Info - Belgian Legal Requirement", () => {
     });
     const org = await orgResp.json();
 
+    // Hotfix #602 — buildings.acp_id (FK acps.id) replaced organization_id.
+    const acpId = await ensureAcp(page, org.id, adminToken, "public-syndic");
+
     // Create building
     const buildingResp = await page.request.post(`${API_BASE}/buildings`, {
       data: {
@@ -39,7 +43,7 @@ test.describe("Public Syndic Info - Belgian Legal Requirement", () => {
         country: "Belgium",
         total_units: 8,
         construction_year: 2010,
-        organization_id: org.id,
+        acp_id: acpId,
       },
       headers: { Authorization: `Bearer ${adminToken}` },
     });

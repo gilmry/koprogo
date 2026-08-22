@@ -23,8 +23,9 @@ async fn create_test_fixtures(
     let token = common::register_and_login(app_state, org_id).await;
 
     // Create building using DTO
+    let acp_id = common::create_test_acp(app_state, org_id).await;
     let building_dto = CreateBuildingDto {
-        organization_id: org_id.to_string(),
+        acp_id,
         name: "Test Building".to_string(),
         address: "123 Main St".to_string(),
         city: "Brussels".to_string(),
@@ -45,7 +46,7 @@ async fn create_test_fixtures(
 
     // Create unit using DTO
     let unit_dto = CreateUnitDto {
-        organization_id: org_id.to_string(),
+        acp_id: building.acp_id.clone(),
         building_id: building_id.to_string(),
         unit_number: "101".to_string(),
         unit_type: UnitType::Apartment,

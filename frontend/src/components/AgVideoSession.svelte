@@ -17,7 +17,7 @@
     platform: string;
     video_url: string;
     host_url?: string;
-    status: 'Scheduled' | 'Live' | 'Ended' | 'Cancelled';
+    status: 'scheduled' | 'live' | 'ended' | 'cancelled';
     remote_attendees_count: number;
     remote_voting_power: number;
     quorum_remote_contribution: number;
@@ -33,15 +33,27 @@
   let showForm = $state(false);
 
   let form = $state({
-    platform: 'Jitsi',
+    platform: 'jitsi',
     video_url: '',
     host_url: '',
     access_password: '',
+    scheduled_start: '',
     waiting_room_enabled: true,
     recording_enabled: false,
   });
 
-  const platforms = ['Zoom', 'Teams', 'Meet', 'Jitsi', 'Whereby'];
+  // Valeurs exactes attendues par VideoPlatform::from_db_string
+  // (backend/src/domain/entities/ag_session.rs) — un mauvais casing/nom
+  // (ex. l'ancien 'Jitsi'/'Teams'/'Meet') échoue systématiquement en 400
+  // "Unknown video platform".
+  const platforms: { value: string; label: string }[] = [
+    { value: 'zoom', label: 'Zoom' },
+    { value: 'microsoft_teams', label: 'Microsoft Teams' },
+    { value: 'google_meet', label: 'Google Meet' },
+    { value: 'jitsi', label: 'Jitsi' },
+    { value: 'whereby', label: 'Whereby' },
+    { value: 'other', label: $_('agSession.platformOther') },
+  ];
 
   async function loadSession() {
     loading = true;
@@ -66,13 +78,20 @@
     creating = true;
     try {
       const token = $authStore.token;
+      const payload = {
+        ...form,
+        meeting_id: meetingId,
+        scheduled_start: form.scheduled_start
+          ? new Date(form.scheduled_start).toISOString()
+          : undefined,
+      };
       const res = await fetch(apiEndpoint(`/meetings/${meetingId}/ag-session`), {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(form),
+        body: JSON.stringify(payload),
       });
       if (res.ok) {
         session = await res.json();
@@ -117,10 +136,10 @@
 
   function getStatusBadge(status: string) {
     const map: Record<string, string> = {
-      Scheduled: 'bg-blue-100 text-blue-800',
-      Live: 'bg-green-100 text-green-800',
-      Ended: 'bg-gray-100 text-gray-800',
-      Cancelled: 'bg-red-100 text-red-800',
+      scheduled: 'bg-blue-100 text-blue-800',
+      live: 'bg-green-100 text-green-800',
+      ended: 'bg-gray-100 text-gray-800',
+      cancelled: 'bg-red-100 text-red-800',
     };
     return map[status] || 'bg-gray-100 text-gray-800';
   }
@@ -153,13 +172,17 @@
         <label for="ag-session-platform" class="block text-xs font-medium text-gray-700 mb-1">{$_('agSession.platform')}</label>
         <select id="ag-session-platform" bind:value={form.platform} class="w-full rounded border border-gray-300 px-2 py-1 text-sm" data-testid="ag-session-platform-select">
           {#each platforms as p}
-            <option value={p}>{p}</option>
+            <option value={p.value}>{p.label}</option>
           {/each}
         </select>
       </div>
       <div>
         <label for="ag-session-video-url" class="block text-xs font-medium text-gray-700 mb-1">{$_('agSession.meetingUrl')} *</label>
         <input id="ag-session-video-url" bind:value={form.video_url} type="url" required class="w-full rounded border border-gray-300 px-2 py-1 text-sm" placeholder="https://meet.jit.si/..." data-testid="ag-session-video-url-input" />
+      </div>
+      <div>
+        <label for="ag-session-scheduled-start" class="block text-xs font-medium text-gray-700 mb-1">{$_('agSession.scheduledStart')} *</label>
+        <input id="ag-session-scheduled-start" bind:value={form.scheduled_start} type="datetime-local" required class="w-full rounded border border-gray-300 px-2 py-1 text-sm" data-testid="ag-session-scheduled-start-input" />
       </div>
       <div>
         <label for="ag-session-host-url" class="block text-xs font-medium text-gray-700 mb-1">{$_('agSession.hostUrl')}</label>
@@ -220,9 +243,9 @@
 
       {#if !readOnly}
         <div class="flex gap-2 mt-2">
-          {#if session.status === 'Scheduled'}
+          {#if session.status === 'scheduled'}
             <Button size="sm" variant="primary" onclick={startSession} data-testid="ag-session-start-btn">▶ {$_('agSession.start')}</Button>
-          {:else if session.status === 'Live'}
+          {:else if session.status === 'live'}
             <Button size="sm" variant="danger" onclick={endSession} data-testid="ag-session-end-btn">⏹ {$_('agSession.end')}</Button>
           {/if}
         </div>

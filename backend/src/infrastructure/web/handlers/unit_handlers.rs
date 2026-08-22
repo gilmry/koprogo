@@ -1,7 +1,8 @@
 use crate::application::dto::{CreateUnitDto, PageRequest, PageResponse, UpdateUnitDto};
 use crate::infrastructure::audit::{AuditEventType, AuditLogEntry};
+use crate::infrastructure::web::middleware::scope_guard::verify_acp_org_access;
 use crate::infrastructure::web::{AppState, AuthenticatedUser};
-use actix_web::{delete, get, post, put, web, HttpResponse, Responder};
+use actix_web::{delete, get, post, put, web, HttpResponse, Responder, ResponseError};
 use uuid::Uuid;
 use validator::Validate;
 
@@ -18,11 +19,11 @@ pub async fn create_unit(
         }));
     }
 
-    // SuperAdmin must specify organization_id and building_id in the request body
-    // Validate that both are provided
-    if dto.organization_id.is_empty() {
+    // Story H15 — SuperAdmin must specify acp_id (ex-organization_id) and
+    // building_id in the request body. Validate that both are provided.
+    if dto.acp_id.is_empty() {
         return HttpResponse::BadRequest().json(serde_json::json!({
-            "error": "SuperAdmin must specify organization_id"
+            "error": "SuperAdmin must specify acp_id"
         }));
     }
 
@@ -32,15 +33,16 @@ pub async fn create_unit(
         }));
     }
 
-    // Parse organization_id for audit logging
-    let organization_id = match Uuid::parse_str(&dto.organization_id) {
-        Ok(org_id) => org_id,
-        Err(_) => {
-            return HttpResponse::BadRequest().json(serde_json::json!({
-                "error": "Invalid organization_id format"
-            }))
-        }
-    };
+    // Validate acp_id format up-front (the use-case re-parses it).
+    if Uuid::parse_str(&dto.acp_id).is_err() {
+        return HttpResponse::BadRequest().json(serde_json::json!({
+            "error": "Invalid acp_id format"
+        }));
+    }
+
+    // Story H15 — audit org context : units.organization_id ayant été DROP,
+    // le scope org de l'audit vient du contexte utilisateur (cf. buildings).
+    let organization_id = user.organization_id;
 
     if let Err(errors) = dto.validate() {
         return HttpResponse::BadRequest().json(serde_json::json!({
@@ -55,7 +57,7 @@ pub async fn create_unit(
             AuditLogEntry::new(
                 AuditEventType::UnitCreated,
                 Some(user.user_id),
-                Some(organization_id),
+                organization_id,
             )
             .with_resource("Unit", Uuid::parse_str(&unit.id).unwrap())
             .log();
@@ -67,7 +69,7 @@ pub async fn create_unit(
             AuditLogEntry::new(
                 AuditEventType::UnitCreated,
                 Some(user.user_id),
-                Some(organization_id),
+                organization_id,
             )
             .with_error(err.clone())
             .log();
@@ -87,15 +89,22 @@ pub async fn get_unit(
 ) -> impl Responder {
     match state.unit_use_cases.get_unit(*id).await {
         Ok(Some(unit)) => {
-            // Multi-tenant isolation: verify building belongs to user's organization
+            // Hotfix #603 — multi-tenant isolation via ACP→organization resolution.
             if let Ok(building_id) = Uuid::parse_str(&unit.building_id) {
                 if let Ok(Some(building)) = state.building_use_cases.get_building(building_id).await
                 {
-                    if let Ok(building_org) = Uuid::parse_str(&building.organization_id) {
-                        if let Err(e) = user.verify_org_access(building_org) {
-                            return HttpResponse::Forbidden()
-                                .json(serde_json::json!({ "error": e }));
+                    let acp_id = match Uuid::parse_str(&building.acp_id) {
+                        Ok(id) => id,
+                        Err(_) => {
+                            return HttpResponse::InternalServerError().json(serde_json::json!({
+                                "error": "Invalid building.acp_id format"
+                            }));
                         }
+                    };
+                    if let Err(err) =
+                        verify_acp_org_access(&user, acp_id, &state.acp_use_cases).await
+                    {
+                        return err.error_response();
                     }
                 }
             }
@@ -140,13 +149,19 @@ pub async fn list_units_by_building(
     user: AuthenticatedUser,
     building_id: web::Path<Uuid>,
 ) -> impl Responder {
-    // Multi-tenant isolation: verify building belongs to user's organization
+    // Hotfix #603 — multi-tenant isolation via ACP→organization resolution.
     match state.building_use_cases.get_building(*building_id).await {
         Ok(Some(building)) => {
-            if let Ok(building_org) = Uuid::parse_str(&building.organization_id) {
-                if let Err(e) = user.verify_org_access(building_org) {
-                    return HttpResponse::Forbidden().json(serde_json::json!({ "error": e }));
+            let acp_id = match Uuid::parse_str(&building.acp_id) {
+                Ok(id) => id,
+                Err(_) => {
+                    return HttpResponse::InternalServerError().json(serde_json::json!({
+                        "error": "Invalid building.acp_id format"
+                    }));
                 }
+            };
+            if let Err(err) = verify_acp_org_access(&user, acp_id, &state.acp_use_cases).await {
+                return err.error_response();
             }
         }
         Ok(None) => {
@@ -210,30 +225,23 @@ pub async fn update_unit(
 
                 match state.building_use_cases.get_building(building_id).await {
                     Ok(Some(building)) => {
-                        let building_org_id = match Uuid::parse_str(&building.organization_id) {
+                        // Hotfix #603 — branch is unreachable (superadmin-only guard
+                        // above) but defensive verify_acp_org_access in case the
+                        // guard is relaxed in the future.
+                        let acp_id = match Uuid::parse_str(&building.acp_id) {
                             Ok(id) => id,
                             Err(_) => {
                                 return HttpResponse::InternalServerError().json(
                                     serde_json::json!({
-                                        "error": "Invalid building organization_id"
+                                        "error": "Invalid building.acp_id format"
                                     }),
                                 );
                             }
                         };
-
-                        let user_org_id = match user.require_organization() {
-                            Ok(id) => id,
-                            Err(e) => {
-                                return HttpResponse::Unauthorized().json(serde_json::json!({
-                                    "error": e.to_string()
-                                }));
-                            }
-                        };
-
-                        if building_org_id != user_org_id {
-                            return HttpResponse::Forbidden().json(serde_json::json!({
-                                "error": "You can only update units in your own organization"
-                            }));
+                        if let Err(err) =
+                            verify_acp_org_access(&user, acp_id, &state.acp_use_cases).await
+                        {
+                            return err.error_response();
                         }
                     }
                     Ok(None) => {

@@ -1,13 +1,13 @@
-================================================================================
+==============================================================================
 Issue #317: [RGPD] Art. 33 : Procédure notification violation de données (72h)
-================================================================================
+==============================================================================
 
-:State: **OPEN**
+:State: **CLOSED**
 :Milestone: Jalon 1: Sécurité & GDPR 🔒
 :Labels: gdpr
 :Assignees: Unassigned
 :Created: 2026-03-22
-:Updated: 2026-03-22
+:Updated: 2026-03-24
 :URL: `View on GitHub <https://github.com/gilmry/koprogo/issues/317>`_
 
 Description

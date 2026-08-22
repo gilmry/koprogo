@@ -1,13 +1,13 @@
-=========================================================================================================
+====================================================================================================
 Issue #277: feat: Guide légal contextuel UI — LegalHelper + AG Wizard (docs/legal/ source de vérité)
-=========================================================================================================
+====================================================================================================
 
-:State: **OPEN**
+:State: **CLOSED**
 :Milestone: Jalon 3: Features Différenciantes 🎯
-:Labels: documentation,enhancement track:software,legal-compliance governance,release:0.1.0
+:Labels: documentation,enhancement track:software,legal-compliance governance,release:0.1.0
 :Assignees: Unassigned
 :Created: 2026-03-11
-:Updated: 2026-03-14
+:Updated: 2026-03-24
 :URL: `View on GitHub <https://github.com/gilmry/koprogo/issues/277>`_
 
 Description

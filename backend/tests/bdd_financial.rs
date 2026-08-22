@@ -1,6 +1,10 @@
-// BDD tests for Financial domain: payments, payment_methods, journal_entries,
+﻿// BDD tests for Financial domain: payments, payment_methods, journal_entries,
 // call_for_funds, owner_contributions, charge_distribution, dashboard
 // Phase 2: payments + payment_methods step definitions
+
+#[path = "common/acp_test_helper.rs"]
+mod acp_test_helper;
+use acp_test_helper::ensure_default_acp_for_org;
 
 use chrono::{DateTime, Datelike, Duration as ChronoDuration, Utc};
 use cucumber::{gherkin::Step, given, then, when, World};
@@ -8,13 +12,13 @@ use koprogo_api::application::dto::{
     AccountantDashboardStats, ApproveInvoiceDto, CreateBudgetRequest, CreateInvoiceDraftDto,
     CreatePaymentMethodRequest, CreatePaymentRequest, InvoiceResponseDto, PaymentMethodResponse,
     PaymentResponse, PaymentStatsResponse, RecentTransaction, RefundPaymentRequest,
-    RejectInvoiceDto, SubmitForApprovalDto, UpdateBudgetRequest, UpdateInvoiceDraftDto,
+    RejectInvoiceDto, SubmitForApprovalDto, UpdateBudgetRequest, UpdateInvoiceDraftDto, UrgentTask,
 };
 use koprogo_api::application::ports::BuildingRepository;
 use koprogo_api::application::use_cases::{
     AccountUseCases, BudgetUseCases, CallForFundsUseCases, ChargeDistributionUseCases,
     DashboardUseCases, ExpenseUseCases, JournalEntryUseCases, OwnerContributionUseCases,
-    PaymentMethodUseCases, PaymentReminderUseCases, PaymentUseCases,
+    PaymentMethodUseCases, PaymentReminderUseCases, PaymentUseCases, StatsUseCases,
 };
 use koprogo_api::domain::entities::{
     Account, AccountType, ContributionPaymentMethod, ContributionType, ExpenseCategory,
@@ -31,7 +35,7 @@ use koprogo_api::infrastructure::database::{
     PostgresCallForFundsRepository, PostgresChargeDistributionRepository,
     PostgresExpenseRepository, PostgresJournalEntryRepository, PostgresOwnerContributionRepository,
     PostgresOwnerRepository, PostgresPaymentMethodRepository, PostgresPaymentReminderRepository,
-    PostgresPaymentRepository, PostgresUnitOwnerRepository,
+    PostgresPaymentRepository, PostgresStatsRepository, PostgresUnitOwnerRepository,
 };
 use koprogo_api::infrastructure::pool::DbPool;
 use std::sync::Arc;
@@ -128,9 +132,9 @@ pub struct FinancialWorld {
     // Budget tracking
     last_budget_id: Option<Uuid>,
     last_budget_status: Option<String>,
-    last_budget_ordinary: Option<f64>,
-    last_budget_extraordinary: Option<f64>,
-    last_budget_total: Option<f64>,
+    last_budget_ordinary: Option<Decimal>,
+    last_budget_extraordinary: Option<Decimal>,
+    last_budget_total: Option<Decimal>,
     budget_list_count: usize,
     meeting_id: Option<Uuid>,
 
@@ -158,6 +162,11 @@ pub struct FinancialWorld {
     // Operation result
     operation_success: bool,
     operation_error: Option<String>,
+
+    // Stats / urgent tasks (#521 Story A)
+    stats_use_cases: Option<Arc<StatsUseCases>>,
+    other_org_id: Option<Uuid>,
+    last_urgent_tasks_result: Option<Result<Vec<UrgentTask>, String>>,
 }
 
 impl std::fmt::Debug for FinancialWorld {
@@ -250,6 +259,9 @@ impl FinancialWorld {
             expense_list_count: 0,
             operation_success: false,
             operation_error: None,
+            stats_use_cases: None,
+            other_org_id: None,
+            last_urgent_tasks_result: None,
         }
     }
 
@@ -270,9 +282,21 @@ impl FinancialWorld {
             .get_host_port_ipv4(5432)
             .await
             .expect("Failed to get host port");
+
+        // Use the testcontainers-resolved host (honors TESTCONTAINERS_HOST_OVERRIDE)
+        // instead of a hardcoded 127.0.0.1. On CI (cargo on the runner host) this
+        // resolves to localhost — unchanged. Inside the dev backend container the
+        // testcontainers Postgres is a *sibling* (docker.sock mounted), reachable
+        // via host.docker.internal, not the container's own 127.0.0.1 — this is
+        // what was causing PoolTimedOut for local docker BDD runs. Mirrors the
+        // identical fix already applied to bdd_governance.rs setup_database.
+        let host = postgres_container
+            .get_host()
+            .await
+            .expect("Failed to get container host");
         let connection_string = format!(
-            "postgres://postgres:postgres@127.0.0.1:{}/postgres",
-            host_port
+            "postgres://postgres:postgres@{}:{}/postgres",
+            host, host_port
         );
         let pool = create_pool(&connection_string)
             .await
@@ -298,8 +322,10 @@ impl FinancialWorld {
             Arc::new(PostgresBuildingRepository::new(pool.clone()));
         {
             use koprogo_api::domain::entities::Building;
+            // Hotfix #602 — Building.acp_id (FK acps.id) replaces organization_id.
+            let acp_id = ensure_default_acp_for_org(&pool, org_id).await;
             let b = Building::new(
-                org_id,
+                acp_id,
                 "Residence Financiere".to_string(),
                 "1 Rue de la Bourse".to_string(),
                 "Bruxelles".to_string(),
@@ -356,6 +382,9 @@ impl FinancialWorld {
         );
         let dashboard_use_cases =
             DashboardUseCases::new(expense_repo, owner_contribution_repo, payment_reminder_repo);
+        let stats_repo: Arc<dyn koprogo_api::application::ports::StatsRepository> =
+            Arc::new(PostgresStatsRepository::new(pool.clone()));
+        let stats_use_cases = StatsUseCases::new(stats_repo);
 
         self.account_use_cases = Some(Arc::new(account_use_cases));
         self.expense_use_cases = Some(Arc::new(expense_use_cases));
@@ -368,6 +397,7 @@ impl FinancialWorld {
         self.owner_contribution_use_cases = Some(Arc::new(owner_contribution_use_cases));
         self.charge_distribution_use_cases = Some(Arc::new(charge_distribution_use_cases));
         self.dashboard_use_cases = Some(Arc::new(dashboard_use_cases));
+        self.stats_use_cases = Some(Arc::new(stats_use_cases));
         self._container = Some(postgres_container);
         self.org_id = Some(org_id);
 
@@ -385,7 +415,7 @@ impl FinancialWorld {
             }
             Err(e) => {
                 self.operation_success = false;
-                self.operation_error = Some(e);
+                self.operation_error = Some(e.to_string());
             }
         }
     }
@@ -400,7 +430,7 @@ impl FinancialWorld {
             }
             Err(e) => {
                 self.operation_success = false;
-                self.operation_error = Some(e);
+                self.operation_error = Some(e.to_string());
             }
         }
     }
@@ -1031,7 +1061,7 @@ async fn when_list_owner_payments(world: &mut FinancialWorld, _name: String) {
         }
         Err(e) => {
             world.operation_success = false;
-            world.operation_error = Some(e);
+            world.operation_error = Some(e.to_string());
         }
     }
 }
@@ -1048,7 +1078,7 @@ async fn when_list_by_status(world: &mut FinancialWorld, status: String) {
         }
         Err(e) => {
             world.operation_success = false;
-            world.operation_error = Some(e);
+            world.operation_error = Some(e.to_string());
         }
     }
 }
@@ -1064,7 +1094,7 @@ async fn when_get_owner_stats(world: &mut FinancialWorld, _name: String) {
         }
         Err(e) => {
             world.operation_success = false;
-            world.operation_error = Some(e);
+            world.operation_error = Some(e.to_string());
         }
     }
 }
@@ -1080,7 +1110,7 @@ async fn when_get_total_paid_expense(world: &mut FinancialWorld) {
         }
         Err(e) => {
             world.operation_success = false;
-            world.operation_error = Some(e);
+            world.operation_error = Some(e.to_string());
         }
     }
 }
@@ -1098,7 +1128,7 @@ async fn when_delete_payment(world: &mut FinancialWorld) {
         }
         Err(e) => {
             world.operation_success = false;
-            world.operation_error = Some(e);
+            world.operation_error = Some(e.to_string());
         }
     }
 }
@@ -1191,7 +1221,7 @@ async fn when_list_active_pms(world: &mut FinancialWorld, _name: String) {
         }
         Err(e) => {
             world.operation_success = false;
-            world.operation_error = Some(e);
+            world.operation_error = Some(e.to_string());
         }
     }
 }
@@ -1207,7 +1237,7 @@ async fn when_check_has_active(world: &mut FinancialWorld, _name: String) {
         }
         Err(e) => {
             world.operation_success = false;
-            world.operation_error = Some(e);
+            world.operation_error = Some(e.to_string());
         }
     }
 }
@@ -1223,7 +1253,7 @@ async fn when_count_active_pms(world: &mut FinancialWorld, _name: String) {
         }
         Err(e) => {
             world.operation_success = false;
-            world.operation_error = Some(e);
+            world.operation_error = Some(e.to_string());
         }
     }
 }
@@ -1238,7 +1268,7 @@ async fn when_delete_pm(world: &mut FinancialWorld) {
         }
         Err(e) => {
             world.operation_success = false;
-            world.operation_error = Some(e);
+            world.operation_error = Some(e.to_string());
         }
     }
 }
@@ -1652,7 +1682,7 @@ async fn when_add_journal_lines(world: &mut FinancialWorld, step: &Step) {
         }
         Err(e) => {
             world.operation_success = false;
-            world.operation_error = Some(e);
+            world.operation_error = Some(e.to_string());
         }
     }
 }
@@ -1955,8 +1985,10 @@ async fn given_journal_entries_2_buildings(world: &mut FinancialWorld) {
     let pool = world.pool.as_ref().unwrap();
     let building_repo: Arc<dyn BuildingRepository> =
         Arc::new(PostgresBuildingRepository::new(pool.clone()));
+    // Hotfix #602 — Building.acp_id (FK acps.id) replaces organization_id.
+    let acp_id = ensure_default_acp_for_org(pool, org_id).await;
     let b2 = koprogo_api::domain::entities::Building::new(
-        org_id,
+        acp_id,
         "Autre Residence".to_string(),
         "2 Rue Test".to_string(),
         "Liege".to_string(),
@@ -2072,7 +2104,7 @@ async fn when_delete_journal_entry(world: &mut FinancialWorld) {
         }
         Err(e) => {
             world.operation_success = false;
-            world.operation_error = Some(e);
+            world.operation_error = Some(e.to_string());
         }
     }
 }
@@ -2100,15 +2132,17 @@ async fn given_building_with_units(
     let building_id = world.building_id.unwrap();
     let org_id = world.org_id.unwrap();
 
+    // H15 — units.organization_id dropped, units.acp_id NOT NULL (same ACP as the building).
+    let acp_id = ensure_default_acp_for_org(pool, org_id).await;
     for i in 1..=unit_count {
         let unit_id = Uuid::new_v4();
         sqlx::query(
-            r#"INSERT INTO units (id, building_id, organization_id, unit_number, unit_type, floor, surface_area, quota, created_at, updated_at)
+            r#"INSERT INTO units (id, building_id, acp_id, unit_number, unit_type, floor, surface_area, quota, created_at, updated_at)
                VALUES ($1, $2, $3, $4, 'apartment', $5, 60.0, 100.0, NOW(), NOW())"#,
         )
         .bind(unit_id)
         .bind(building_id)
-        .bind(org_id)
+        .bind(acp_id)
         .bind(format!("Unit-{}", i))
         .bind(i as i32)
         .execute(pool)
@@ -2177,13 +2211,7 @@ async fn when_create_call_for_funds(world: &mut FinancialWorld, step: &Step) {
             "title" => title = val.to_string(),
             "total_amount" => total_amount = val.parse().unwrap_or(Decimal::ZERO),
             "contribution_type" => contribution_type = parse_contribution_type(val),
-            "due_date" => {
-                due_date = val.parse::<DateTime<Utc>>().unwrap_or_else(|_| {
-                    format!("{}T00:00:00Z", val)
-                        .parse()
-                        .unwrap_or(Utc::now() + ChronoDuration::days(30))
-                });
-            }
+            "due_date" => due_date = parse_seed_date(val),
             "account_code" => account_code = Some(val.to_string()),
             _ => {}
         }
@@ -2217,7 +2245,7 @@ async fn when_create_call_for_funds(world: &mut FinancialWorld, step: &Step) {
         }
         Err(e) => {
             world.operation_success = false;
-            world.operation_error = Some(e);
+            world.operation_error = Some(e.to_string());
         }
     }
 }
@@ -2275,7 +2303,7 @@ async fn when_send_call_for_funds(world: &mut FinancialWorld) {
         }
         Err(e) => {
             world.operation_success = false;
-            world.operation_error = Some(e);
+            world.operation_error = Some(e.to_string());
         }
     }
 }
@@ -2433,7 +2461,7 @@ async fn when_cancel_call_for_funds(world: &mut FinancialWorld) {
         }
         Err(e) => {
             world.operation_success = false;
-            world.operation_error = Some(e);
+            world.operation_error = Some(e.to_string());
         }
     }
 }
@@ -2449,7 +2477,7 @@ async fn when_delete_call_for_funds(world: &mut FinancialWorld) {
         }
         Err(e) => {
             world.operation_success = false;
-            world.operation_error = Some(e);
+            world.operation_error = Some(e.to_string());
         }
     }
 }
@@ -2499,7 +2527,7 @@ async fn when_try_delete_sent_call(world: &mut FinancialWorld) {
         }
         Err(e) => {
             world.operation_success = false;
-            world.operation_error = Some(e);
+            world.operation_error = Some(e.to_string());
         }
     }
 }
@@ -2546,15 +2574,17 @@ async fn given_2_owners_with_pcts(world: &mut FinancialWorld, pct1: f64, pct2: f
 
     // Create units if not already created
     if world.unit_ids.is_empty() {
+        // H15 — units.organization_id dropped, units.acp_id NOT NULL (same ACP as the building).
+        let acp_id = ensure_default_acp_for_org(pool, org_id).await;
         for i in 1..=2 {
             let unit_id = Uuid::new_v4();
             sqlx::query(
-                r#"INSERT INTO units (id, building_id, organization_id, unit_number, unit_type, floor, surface_area, quota, created_at, updated_at)
+                r#"INSERT INTO units (id, building_id, acp_id, unit_number, unit_type, floor, surface_area, quota, created_at, updated_at)
                    VALUES ($1, $2, $3, $4, 'apartment', 1, 50.0, 100.0, NOW(), NOW())"#,
             )
             .bind(unit_id)
             .bind(building_id)
-            .bind(org_id)
+            .bind(acp_id)
             .bind(format!("Pct-Unit-{}", i))
             .execute(pool)
             .await
@@ -2657,13 +2687,15 @@ async fn given_sent_call_with_contributions(world: &mut FinancialWorld) {
         let org_id = world.org_id.unwrap();
 
         let unit_id = Uuid::new_v4();
+        // H15 — units.organization_id dropped, units.acp_id NOT NULL (same ACP as the building).
+        let acp_id = ensure_default_acp_for_org(pool, org_id).await;
         sqlx::query(
-            r#"INSERT INTO units (id, building_id, organization_id, unit_number, unit_type, floor, surface_area, quota, created_at, updated_at)
+            r#"INSERT INTO units (id, building_id, acp_id, unit_number, unit_type, floor, surface_area, quota, created_at, updated_at)
                VALUES ($1, $2, $3, 'CFF-Unit', 'apartment', 1, 50.0, 100.0, NOW(), NOW())"#,
         )
         .bind(unit_id)
         .bind(building_id)
-        .bind(org_id)
+        .bind(acp_id)
         .execute(pool)
         .await
         .expect("insert unit");
@@ -2748,7 +2780,7 @@ async fn when_owner_pays_contribution(world: &mut FinancialWorld) {
         }
         Err(e) => {
             world.operation_success = false;
-            world.operation_error = Some(e);
+            world.operation_error = Some(e.to_string());
         }
     }
 }
@@ -2783,13 +2815,15 @@ async fn given_owner_with_unit(world: &mut FinancialWorld, name: String) {
 
     // Create a unit and link
     let unit_id = Uuid::new_v4();
+    // H15 — units.organization_id dropped, units.acp_id NOT NULL (same ACP as the building).
+    let acp_id = ensure_default_acp_for_org(pool, org_id).await;
     sqlx::query(
-        r#"INSERT INTO units (id, building_id, organization_id, unit_number, unit_type, floor, surface_area, quota, created_at, updated_at)
+        r#"INSERT INTO units (id, building_id, acp_id, unit_number, unit_type, floor, surface_area, quota, created_at, updated_at)
            VALUES ($1, $2, $3, 'OC-Unit', 'apartment', 1, 50.0, 100.0, NOW(), NOW())"#,
     )
     .bind(unit_id)
     .bind(building_id)
-    .bind(org_id)
+    .bind(acp_id)
     .execute(pool)
     .await
     .expect("insert unit");
@@ -2859,7 +2893,7 @@ async fn when_create_contribution(world: &mut FinancialWorld, name: String, step
         }
         Err(e) => {
             world.operation_success = false;
-            world.operation_error = Some(e);
+            world.operation_error = Some(e.to_string());
         }
     }
 }
@@ -3120,7 +3154,7 @@ async fn when_mark_paid(world: &mut FinancialWorld) {
         }
         Err(e) => {
             world.operation_success = false;
-            world.operation_error = Some(e);
+            world.operation_error = Some(e.to_string());
         }
     }
 }
@@ -3184,7 +3218,7 @@ async fn when_try_pay_again(world: &mut FinancialWorld) {
         }
         Err(e) => {
             world.operation_success = false;
-            world.operation_error = Some(e);
+            world.operation_error = Some(e.to_string());
         }
     }
 }
@@ -3306,15 +3340,17 @@ async fn given_building_with_n_units(world: &mut FinancialWorld, _name: String, 
     let building_id = world.building_id.unwrap();
     let org_id = world.org_id.unwrap();
 
+    // H15 — units.organization_id dropped, units.acp_id NOT NULL (same ACP as the building).
+    let acp_id = ensure_default_acp_for_org(pool, org_id).await;
     for i in 1..=count {
         let unit_id = Uuid::new_v4();
         sqlx::query(
-            r#"INSERT INTO units (id, building_id, organization_id, unit_number, unit_type, floor, surface_area, quota, created_at, updated_at)
+            r#"INSERT INTO units (id, building_id, acp_id, unit_number, unit_type, floor, surface_area, quota, created_at, updated_at)
                VALUES ($1, $2, $3, $4, 'apartment', $5, 60.0, 100.0, NOW(), NOW())"#,
         )
         .bind(unit_id)
         .bind(building_id)
-        .bind(org_id)
+        .bind(acp_id)
         .bind(format!("CD-Unit-{}", i))
         .bind(i as i32)
         .execute(pool)
@@ -3410,7 +3446,7 @@ async fn when_calculate_distribution(world: &mut FinancialWorld) {
         }
         Err(e) => {
             world.operation_success = false;
-            world.operation_error = Some(e);
+            world.operation_error = Some(e.to_string());
         }
     }
 }
@@ -3692,7 +3728,7 @@ async fn when_recalculate_distribution(world: &mut FinancialWorld) {
         }
         Err(e) => {
             world.operation_success = false;
-            world.operation_error = Some(e);
+            world.operation_error = Some(e.to_string());
         }
     }
 }
@@ -3747,7 +3783,7 @@ async fn when_request_dashboard_stats(world: &mut FinancialWorld) {
         }
         Err(e) => {
             world.operation_success = false;
-            world.operation_error = Some(e);
+            world.operation_error = Some(e.to_string());
         }
     }
 }
@@ -3824,7 +3860,7 @@ async fn when_request_recent_transactions(world: &mut FinancialWorld, limit: usi
         }
         Err(e) => {
             world.operation_success = false;
-            world.operation_error = Some(e);
+            world.operation_error = Some(e.to_string());
         }
     }
 }
@@ -3919,6 +3955,35 @@ async fn then_all_totals_zero(world: &mut FinancialWorld) {
 
 // ==================== PARSE HELPERS ====================
 
+/// Parse a BDD seed date that may be absolute (RFC3339 or `YYYY-MM-DD`) or
+/// relative (`+90d`, `-30d`, `+6m`, `+1y`). Relative tokens resolve against
+/// `Utc::now()` at run time so seeds never become stale time-bombs — the
+/// recurring cause of pre-existing BDD reds (WP-B3 / #540).
+fn parse_seed_date(s: &str) -> DateTime<Utc> {
+    let s = s.trim();
+    if let Some(rest) = s.strip_prefix(['+', '-']) {
+        let sign: i64 = if s.starts_with('-') { -1 } else { 1 };
+        if let (Some(num), Some(unit)) = (rest.get(..rest.len() - 1), rest.chars().last()) {
+            if let Ok(n) = num.parse::<i64>() {
+                let days = match unit {
+                    'w' => n * 7,
+                    'm' => n * 30,
+                    'y' => n * 365,
+                    _ => n, // 'd' or default
+                };
+                return Utc::now() + ChronoDuration::days(sign * days);
+            }
+        }
+    }
+    if let Ok(dt) = s.parse::<DateTime<Utc>>() {
+        return dt;
+    }
+    if let Ok(dt) = format!("{}T00:00:00Z", s).parse::<DateTime<Utc>>() {
+        return dt;
+    }
+    Utc::now() + ChronoDuration::days(30)
+}
+
 fn parse_contribution_type(s: &str) -> ContributionType {
     match s {
         "Regular" | "regular" | "QuarterlyCharge" => ContributionType::Regular,
@@ -3990,15 +4055,17 @@ async fn given_invoice_building(world: &mut FinancialWorld, _name: String, count
     let pool = world.pool.as_ref().unwrap();
     let building_id = world.building_id.unwrap();
     let org_id = world.org_id.unwrap();
+    // H15 — units.organization_id dropped, units.acp_id NOT NULL (same ACP as the building).
+    let acp_id = ensure_default_acp_for_org(pool, org_id).await;
     for i in 0..count {
         let unit_id = Uuid::new_v4();
         sqlx::query(
-            r#"INSERT INTO units (id, building_id, organization_id, unit_number, unit_type, floor, surface_area, quota, created_at, updated_at)
+            r#"INSERT INTO units (id, building_id, acp_id, unit_number, unit_type, floor, surface_area, quota, created_at, updated_at)
                VALUES ($1, $2, $3, $4, 'apartment', $5, 75.0, 100.0, NOW(), NOW())"#,
         )
         .bind(unit_id)
         .bind(building_id)
-        .bind(org_id)
+        .bind(acp_id)
         .bind(format!("A{}", i + 1))
         .bind(i as i32)
         .execute(pool)
@@ -4135,7 +4202,7 @@ async fn when_create_invoice_draft(world: &mut FinancialWorld, step: &Step) {
         }
         Err(e) => {
             world.operation_success = false;
-            world.operation_error = Some(e);
+            world.operation_error = Some(e.to_string());
         }
     }
 }
@@ -4253,7 +4320,7 @@ async fn when_update_invoice(world: &mut FinancialWorld, step: &Step) {
         }
         Err(e) => {
             world.operation_success = false;
-            world.operation_error = Some(e);
+            world.operation_error = Some(e.to_string());
         }
     }
 }
@@ -4376,7 +4443,7 @@ async fn when_try_update_approved(world: &mut FinancialWorld) {
         }
         Err(e) => {
             world.operation_success = false;
-            world.operation_error = Some(e);
+            world.operation_error = Some(e.to_string());
         }
     }
 }
@@ -4429,7 +4496,7 @@ async fn when_submit_invoice(world: &mut FinancialWorld) {
         }
         Err(e) => {
             world.operation_success = false;
-            world.operation_error = Some(e);
+            world.operation_error = Some(e.to_string());
         }
     }
 }
@@ -4454,7 +4521,7 @@ async fn when_try_resubmit(world: &mut FinancialWorld) {
         }
         Err(e) => {
             world.operation_success = false;
-            world.operation_error = Some(e);
+            world.operation_error = Some(e.to_string());
         }
     }
 }
@@ -4497,7 +4564,7 @@ async fn when_syndic_approves(world: &mut FinancialWorld) {
         }
         Err(e) => {
             world.operation_success = false;
-            world.operation_error = Some(e);
+            world.operation_error = Some(e.to_string());
         }
     }
 }
@@ -4551,7 +4618,7 @@ async fn when_syndic_rejects(world: &mut FinancialWorld, reason: String) {
         }
         Err(e) => {
             world.operation_success = false;
-            world.operation_error = Some(e);
+            world.operation_error = Some(e.to_string());
         }
     }
 }
@@ -4597,7 +4664,7 @@ async fn when_reject_empty_reason(world: &mut FinancialWorld) {
         }
         Err(e) => {
             world.operation_success = false;
-            world.operation_error = Some(e);
+            world.operation_error = Some(e.to_string());
         }
     }
 }
@@ -4726,7 +4793,7 @@ async fn when_syndic_requests_pending(world: &mut FinancialWorld) {
         }
         Err(e) => {
             world.operation_success = false;
-            world.operation_error = Some(e);
+            world.operation_error = Some(e.to_string());
         }
     }
 }
@@ -4788,7 +4855,7 @@ async fn when_calculate_invoice_charge_distribution(world: &mut FinancialWorld) 
         }
         Err(e) => {
             world.operation_success = false;
-            world.operation_error = Some(e);
+            world.operation_error = Some(e.to_string());
         }
     }
 }
@@ -4833,7 +4900,7 @@ async fn when_mark_invoice_paid(world: &mut FinancialWorld) {
         }
         Err(e) => {
             world.operation_success = false;
-            world.operation_error = Some(e);
+            world.operation_error = Some(e.to_string());
         }
     }
 }
@@ -4898,7 +4965,7 @@ async fn when_update_rejected(world: &mut FinancialWorld) {
         }
         Err(e) => {
             world.operation_success = false;
-            world.operation_error = Some(e);
+            world.operation_error = Some(e.to_string());
         }
     }
 }
@@ -5061,7 +5128,7 @@ async fn when_create_reminder_level(world: &mut FinancialWorld, level: String) {
         }
         Err(e) => {
             world.operation_success = false;
-            world.operation_error = Some(e);
+            world.operation_error = Some(e.to_string());
         }
     }
 }
@@ -5179,7 +5246,7 @@ async fn when_mark_sent_pdf(world: &mut FinancialWorld, pdf_path: String) {
         }
         Err(e) => {
             world.operation_success = false;
-            world.operation_error = Some(e);
+            world.operation_error = Some(e.to_string());
         }
     }
 }
@@ -5250,7 +5317,7 @@ async fn when_escalate_reminder(world: &mut FinancialWorld) {
         }
         Err(e) => {
             world.operation_success = false;
-            world.operation_error = Some(e);
+            world.operation_error = Some(e.to_string());
         }
     }
 }
@@ -5368,7 +5435,7 @@ async fn when_cancel_reminder(world: &mut FinancialWorld, reason: String) {
         }
         Err(e) => {
             world.operation_success = false;
-            world.operation_error = Some(e);
+            world.operation_error = Some(e.to_string());
         }
     }
 }
@@ -5395,7 +5462,7 @@ async fn when_mark_reminder_paid(world: &mut FinancialWorld) {
         }
         Err(e) => {
             world.operation_success = false;
-            world.operation_error = Some(e);
+            world.operation_error = Some(e.to_string());
         }
     }
 }
@@ -5548,16 +5615,16 @@ async fn when_create_budget(world: &mut FinancialWorld, step: &Step) {
         .unwrap_or("2026".to_string())
         .parse()
         .unwrap();
-    let ordinary: f64 = get_invoice_table_value(step, "ordinary_budget_cents")
+    let ordinary: Decimal = get_invoice_table_value(step, "ordinary_budget_cents")
         .unwrap_or("5000000".to_string())
-        .parse::<f64>()
+        .parse::<Decimal>()
         .unwrap()
-        / 100.0;
-    let extraordinary: f64 = get_invoice_table_value(step, "extraordinary_budget_cents")
+        / Decimal::from(100);
+    let extraordinary: Decimal = get_invoice_table_value(step, "extraordinary_budget_cents")
         .unwrap_or("0".to_string())
-        .parse::<f64>()
+        .parse::<Decimal>()
         .unwrap()
-        / 100.0;
+        / Decimal::from(100);
     let notes = get_invoice_table_value(step, "notes");
 
     let dto = CreateBudgetRequest {
@@ -5580,7 +5647,7 @@ async fn when_create_budget(world: &mut FinancialWorld, step: &Step) {
         }
         Err(e) => {
             world.operation_success = false;
-            world.operation_error = Some(e);
+            world.operation_error = Some(e.to_string());
         }
     }
 }
@@ -5613,14 +5680,14 @@ async fn then_budget_status(world: &mut FinancialWorld, expected: String) {
 
 #[then(regex = r#"^the ordinary budget should be "([^"]*)"$"#)]
 async fn then_ordinary_budget(world: &mut FinancialWorld, expected: String) {
-    let val = world.last_budget_ordinary.unwrap_or(0.0);
-    let expected_val: f64 = expected
+    let val = world.last_budget_ordinary.unwrap_or(Decimal::ZERO);
+    let expected_val: Decimal = expected
         .replace(" EUR", "")
         .replace(',', "")
         .parse()
-        .unwrap_or(0.0);
+        .unwrap_or(Decimal::ZERO);
     assert!(
-        (val - expected_val).abs() < 0.01,
+        (val - expected_val).abs() < dec!(0.01),
         "Expected {}, got {}",
         expected_val,
         val
@@ -5629,14 +5696,14 @@ async fn then_ordinary_budget(world: &mut FinancialWorld, expected: String) {
 
 #[then(regex = r#"^the extraordinary budget should be "([^"]*)"$"#)]
 async fn then_extraordinary_budget(world: &mut FinancialWorld, expected: String) {
-    let val = world.last_budget_extraordinary.unwrap_or(0.0);
-    let expected_val: f64 = expected
+    let val = world.last_budget_extraordinary.unwrap_or(Decimal::ZERO);
+    let expected_val: Decimal = expected
         .replace(" EUR", "")
         .replace(',', "")
         .parse()
-        .unwrap_or(0.0);
+        .unwrap_or(Decimal::ZERO);
     assert!(
-        (val - expected_val).abs() < 0.01,
+        (val - expected_val).abs() < dec!(0.01),
         "Expected {}, got {}",
         expected_val,
         val
@@ -5653,8 +5720,8 @@ async fn given_draft_budget(world: &mut FinancialWorld) {
         organization_id: world.org_id.unwrap(),
         building_id: world.building_id.unwrap(),
         fiscal_year: 2026,
-        ordinary_budget: 50000.0,
-        extraordinary_budget: 20000.0,
+        ordinary_budget: dec!(50000),
+        extraordinary_budget: dec!(20000),
         notes: Some("Test budget".to_string()),
     };
     let resp = uc.create_budget(dto).await.expect("create budget");
@@ -5674,7 +5741,7 @@ async fn when_submit_budget(world: &mut FinancialWorld) {
         }
         Err(e) => {
             world.operation_success = false;
-            world.operation_error = Some(e);
+            world.operation_error = Some(e.to_string());
         }
     }
 }
@@ -5724,7 +5791,7 @@ async fn when_approve_budget(world: &mut FinancialWorld, _meeting_id: String) {
         }
         Err(e) => {
             world.operation_success = false;
-            world.operation_error = Some(e);
+            world.operation_error = Some(e.to_string());
         }
     }
 }
@@ -5746,7 +5813,7 @@ async fn when_reject_budget(world: &mut FinancialWorld, _reason: String) {
         }
         Err(e) => {
             world.operation_success = false;
-            world.operation_error = Some(e);
+            world.operation_error = Some(e.to_string());
         }
     }
 }
@@ -5772,11 +5839,11 @@ async fn when_update_budget(world: &mut FinancialWorld, step: &Step) {
     let uc = world.budget_use_cases.as_ref().unwrap().clone();
     let id = world.last_budget_id.expect("no budget id");
     let ordinary = get_invoice_table_value(step, "ordinary_budget_cents")
-        .and_then(|v| v.parse::<f64>().ok())
-        .map(|v| v / 100.0);
+        .and_then(|v| v.parse::<Decimal>().ok())
+        .map(|v| v / Decimal::from(100));
     let extraordinary = get_invoice_table_value(step, "extraordinary_budget_cents")
-        .and_then(|v| v.parse::<f64>().ok())
-        .map(|v| v / 100.0);
+        .and_then(|v| v.parse::<Decimal>().ok())
+        .map(|v| v / Decimal::from(100));
     let dto = UpdateBudgetRequest {
         ordinary_budget: ordinary,
         extraordinary_budget: extraordinary,
@@ -5792,7 +5859,7 @@ async fn when_update_budget(world: &mut FinancialWorld, step: &Step) {
         }
         Err(e) => {
             world.operation_success = false;
-            world.operation_error = Some(e);
+            world.operation_error = Some(e.to_string());
         }
     }
 }
@@ -5805,11 +5872,11 @@ async fn given_approved_budget_with(world: &mut FinancialWorld, _year: i32, step
     let id = world.last_budget_id.unwrap();
 
     let ordinary = get_invoice_table_value(step, "ordinary_budget_cents")
-        .and_then(|v| v.parse::<f64>().ok())
-        .map(|v| v / 100.0);
+        .and_then(|v| v.parse::<Decimal>().ok())
+        .map(|v| v / Decimal::from(100));
     let extraordinary = get_invoice_table_value(step, "extraordinary_budget_cents")
-        .and_then(|v| v.parse::<f64>().ok())
-        .map(|v| v / 100.0);
+        .and_then(|v| v.parse::<Decimal>().ok())
+        .map(|v| v / Decimal::from(100));
     if ordinary.is_some() || extraordinary.is_some() {
         let dto = UpdateBudgetRequest {
             ordinary_budget: ordinary,
@@ -5898,15 +5965,15 @@ async fn when_try_duplicate_budget(world: &mut FinancialWorld) {
         organization_id: world.org_id.unwrap(),
         building_id: world.building_id.unwrap(),
         fiscal_year: 2026,
-        ordinary_budget: 50000.0,
-        extraordinary_budget: 20000.0,
+        ordinary_budget: dec!(50000),
+        extraordinary_budget: dec!(20000),
         notes: None,
     };
     match uc.create_budget(dto).await {
         Ok(_) => world.operation_success = true,
         Err(e) => {
             world.operation_success = false;
-            world.operation_error = Some(e);
+            world.operation_error = Some(e.to_string());
         }
     }
 }
@@ -5942,8 +6009,8 @@ async fn given_budgets_3_years(world: &mut FinancialWorld) {
             organization_id: world.org_id.unwrap(),
             building_id: world.building_id.unwrap(),
             fiscal_year: year,
-            ordinary_budget: 50000.0,
-            extraordinary_budget: 20000.0,
+            ordinary_budget: dec!(50000),
+            extraordinary_budget: dec!(20000),
             notes: None,
         };
         uc.create_budget(dto).await.expect("create budget");
@@ -5961,7 +6028,7 @@ async fn when_request_budgets_2026(world: &mut FinancialWorld) {
         }
         Err(e) => {
             world.operation_success = false;
-            world.operation_error = Some(e);
+            world.operation_error = Some(e.to_string());
         }
     }
 }
@@ -6008,7 +6075,7 @@ async fn when_budget_stats(world: &mut FinancialWorld) {
         Ok(_) => world.operation_success = true,
         Err(e) => {
             world.operation_success = false;
-            world.operation_error = Some(e);
+            world.operation_error = Some(e.to_string());
         }
     }
 }
@@ -6062,7 +6129,7 @@ async fn when_seed_belgian_pcmn(world: &mut FinancialWorld) {
         }
         Err(e) => {
             world.operation_success = false;
-            world.operation_error = Some(e);
+            world.operation_error = Some(e.to_string());
         }
     }
 }
@@ -6160,7 +6227,7 @@ async fn when_create_account(world: &mut FinancialWorld, step: &Step) {
         }
         Err(e) => {
             world.operation_success = false;
-            world.operation_error = Some(e);
+            world.operation_error = Some(e.to_string());
         }
     }
 }
@@ -6197,7 +6264,7 @@ async fn when_create_duplicate_account(world: &mut FinancialWorld, code: String)
         }
         Err(e) => {
             world.operation_success = false;
-            world.operation_error = Some(e);
+            world.operation_error = Some(e.to_string());
         }
     }
 }
@@ -6224,7 +6291,7 @@ async fn when_create_empty_code(world: &mut FinancialWorld) {
         }
         Err(e) => {
             world.operation_success = false;
-            world.operation_error = Some(e);
+            world.operation_error = Some(e.to_string());
         }
     }
 }
@@ -6260,7 +6327,7 @@ async fn when_retrieve_account_by_code(world: &mut FinancialWorld, code: String)
         }
         Err(e) => {
             world.operation_success = false;
-            world.operation_error = Some(e);
+            world.operation_error = Some(e.to_string());
         }
     }
 }
@@ -6320,7 +6387,7 @@ async fn when_list_all_accounts(world: &mut FinancialWorld) {
         }
         Err(e) => {
             world.operation_success = false;
-            world.operation_error = Some(e);
+            world.operation_error = Some(e.to_string());
         }
     }
 }
@@ -6349,7 +6416,7 @@ async fn when_list_accounts_by_type(world: &mut FinancialWorld, type_str: String
         }
         Err(e) => {
             world.operation_success = false;
-            world.operation_error = Some(e);
+            world.operation_error = Some(e.to_string());
         }
     }
 }
@@ -6388,7 +6455,7 @@ async fn when_list_child_accounts(world: &mut FinancialWorld, parent_code: Strin
         }
         Err(e) => {
             world.operation_success = false;
-            world.operation_error = Some(e);
+            world.operation_error = Some(e.to_string());
         }
     }
 }
@@ -6418,7 +6485,7 @@ async fn when_update_account(world: &mut FinancialWorld, code: String, step: &St
         }
         Err(e) => {
             world.operation_success = false;
-            world.operation_error = Some(e);
+            world.operation_error = Some(e.to_string());
             return;
         }
     };
@@ -6442,7 +6509,7 @@ async fn when_update_account(world: &mut FinancialWorld, code: String, step: &St
         }
         Err(e) => {
             world.operation_success = false;
-            world.operation_error = Some(e);
+            world.operation_error = Some(e.to_string());
         }
     }
 }
@@ -6493,7 +6560,7 @@ async fn when_delete_account(world: &mut FinancialWorld) {
         }
         Err(e) => {
             world.operation_success = false;
-            world.operation_error = Some(e);
+            world.operation_error = Some(e.to_string());
         }
     }
 }
@@ -6615,7 +6682,7 @@ async fn when_count_accounts(world: &mut FinancialWorld) {
         }
         Err(e) => {
             world.operation_success = false;
-            world.operation_error = Some(e);
+            world.operation_error = Some(e.to_string());
         }
     }
 }
@@ -6712,7 +6779,7 @@ async fn when_create_simple_expense(world: &mut FinancialWorld, step: &Step) {
         }
         Err(e) => {
             world.operation_success = false;
-            world.operation_error = Some(e);
+            world.operation_error = Some(e.to_string());
         }
     }
 }
@@ -6791,7 +6858,7 @@ async fn when_create_expense_with_tva(world: &mut FinancialWorld, step: &Step) {
         }
         Err(e) => {
             world.operation_success = false;
-            world.operation_error = Some(e);
+            world.operation_error = Some(e.to_string());
         }
     }
 }
@@ -6845,7 +6912,7 @@ async fn when_create_expense_bad_amount(world: &mut FinancialWorld, amount: Deci
         }
         Err(e) => {
             world.operation_success = false;
-            world.operation_error = Some(e);
+            world.operation_error = Some(e.to_string());
         }
     }
 }
@@ -6898,7 +6965,7 @@ async fn when_submit_expense_for_approval(world: &mut FinancialWorld) {
         }
         Err(e) => {
             world.operation_success = false;
-            world.operation_error = Some(e);
+            world.operation_error = Some(e.to_string());
         }
     }
 }
@@ -6957,7 +7024,7 @@ async fn when_syndic_approves_expense(world: &mut FinancialWorld) {
         }
         Err(e) => {
             world.operation_success = false;
-            world.operation_error = Some(e);
+            world.operation_error = Some(e.to_string());
         }
     }
 }
@@ -6988,7 +7055,7 @@ async fn when_syndic_rejects_expense(world: &mut FinancialWorld, reason: String)
         }
         Err(e) => {
             world.operation_success = false;
-            world.operation_error = Some(e);
+            world.operation_error = Some(e.to_string());
         }
     }
 }
@@ -7041,7 +7108,7 @@ async fn when_try_update_expense_amount(world: &mut FinancialWorld, _new_amount:
         }
         Err(e) => {
             world.operation_success = false;
-            world.operation_error = Some(e);
+            world.operation_error = Some(e.to_string());
         }
     }
 }
@@ -7063,7 +7130,7 @@ async fn when_mark_expense_paid(world: &mut FinancialWorld) {
         }
         Err(e) => {
             world.operation_success = false;
-            world.operation_error = Some(e);
+            world.operation_error = Some(e.to_string());
         }
     }
 }
@@ -7113,7 +7180,7 @@ async fn when_list_expenses_for_building(world: &mut FinancialWorld) {
         }
         Err(e) => {
             world.operation_success = false;
-            world.operation_error = Some(e);
+            world.operation_error = Some(e.to_string());
         }
     }
 }
@@ -7198,7 +7265,7 @@ async fn when_list_expenses_by_status(world: &mut FinancialWorld, status: String
             }
             Err(e) => {
                 world.operation_success = false;
-                world.operation_error = Some(e);
+                world.operation_error = Some(e.to_string());
             }
         }
     } else {
@@ -7221,7 +7288,7 @@ async fn when_list_expenses_by_status(world: &mut FinancialWorld, status: String
             }
             Err(e) => {
                 world.operation_success = false;
-                world.operation_error = Some(e);
+                world.operation_error = Some(e.to_string());
             }
         }
     }
@@ -7286,7 +7353,7 @@ async fn when_create_expense_with_lines(world: &mut FinancialWorld, step: &Step)
         }
         Err(e) => {
             world.operation_success = false;
-            world.operation_error = Some(e);
+            world.operation_error = Some(e.to_string());
         }
     }
 }
@@ -7350,44 +7417,310 @@ async fn when_try_delete_approved_expense(world: &mut FinancialWorld) {
 
 // Note: "the deletion should fail" step is defined above in the accounts section
 
+// ==================== STATS URGENT TASKS (#521 Story A) ====================
+
+#[given(regex = r#"^an organization "([^"]*)" exists with slug "([^"]*)"$"#)]
+async fn given_org_exists_with_slug(world: &mut FinancialWorld, name: String, slug: String) {
+    let pool = world.pool.as_ref().expect("pool initialized").clone();
+    // First call: org already created in setup_database; mark as "Test Org" alias.
+    // Subsequent calls (e.g. "Other Org"): create a fresh org for security scoping.
+    if world.other_org_id.is_none() && name.contains("Other") {
+        let id = Uuid::new_v4();
+        sqlx::query(
+            r#"INSERT INTO organizations (id, name, slug, contact_email, subscription_plan, max_buildings, max_users, is_active, created_at, updated_at)
+               VALUES ($1, $2, $3, $4, 'starter', 10, 10, true, NOW(), NOW())
+               ON CONFLICT (slug) DO NOTHING"#
+        )
+        .bind(id)
+        .bind(&name)
+        .bind(&slug)
+        .bind(format!("{}@bdd.com", slug))
+        .execute(&pool)
+        .await
+        .expect("insert other org");
+        world.other_org_id = Some(id);
+    }
+}
+
+#[given(regex = r#"^a syndic user "([^"]*)" exists in "([^"]*)"$"#)]
+async fn given_syndic_user_exists_in_org(_world: &mut FinancialWorld, _name: String, _org: String) {
+    // Use case is called with org_id; no actual user record needed for these scenarios.
+}
+
+#[given(regex = r#"^an owner user "([^"]*)" exists in "([^"]*)"$"#)]
+async fn given_owner_user_exists_in_org(_world: &mut FinancialWorld, _name: String, _org: String) {
+    // Use case is called with org_id; no actual user record needed for these scenarios.
+}
+
+#[given(regex = r#"^a building "([^"]*)" exists in "([^"]*)"$"#)]
+async fn given_building_exists_in_named_org(
+    _world: &mut FinancialWorld,
+    _name: String,
+    _org: String,
+) {
+    // Building already created in setup_database under the primary org.
+}
+
+#[given(regex = r#"^an expense "([^"]*)" of "([^"]*)" EUR exists for "([^"]*)"$"#)]
+async fn given_named_expense_exists_for_building(
+    world: &mut FinancialWorld,
+    description: String,
+    amount: Decimal,
+    _building: String,
+) {
+    let pool = world.pool.as_ref().expect("pool").clone();
+    let building_id = world.building_id.expect("building_id");
+    let org_id = world.org_id.expect("org_id");
+    let id = Uuid::new_v4();
+    sqlx::query(
+        r#"INSERT INTO expenses (id, building_id, organization_id, category, description, amount, expense_date, payment_status, created_at, updated_at)
+           VALUES ($1, $2, $3, 'maintenance', $4, $5, NOW(), 'pending', NOW(), NOW())"#
+    )
+    .bind(id)
+    .bind(building_id)
+    .bind(org_id)
+    .bind(&description)
+    .bind(amount)
+    .execute(&pool)
+    .await
+    .expect("insert named expense");
+    world.expense_id = Some(id);
+}
+
+/// #526 @negative — attempts an expense insert and captures (not panics on)
+/// the outcome, so a scenario can assert the `expenses_amount_check > 0`
+/// domain rule rejects amount = 0 (a cancellation is a journal counter-entry,
+/// not a zero expense — WBS WP-A7b signed decision).
+#[when(regex = r#"^creating an expense "([^"]*)" of "([^"]*)" EUR is attempted for "([^"]*)"$"#)]
+async fn when_create_expense_attempted(
+    world: &mut FinancialWorld,
+    description: String,
+    amount: Decimal,
+    _building: String,
+) {
+    let pool = world.pool.as_ref().expect("pool").clone();
+    let building_id = world.building_id.expect("building_id");
+    let org_id = world.org_id.expect("org_id");
+    let id = Uuid::new_v4();
+    let res = sqlx::query(
+        r#"INSERT INTO expenses (id, building_id, organization_id, category, description, amount, expense_date, payment_status, created_at, updated_at)
+           VALUES ($1, $2, $3, 'maintenance', $4, $5, NOW(), 'pending', NOW(), NOW())"#,
+    )
+    .bind(id)
+    .bind(building_id)
+    .bind(org_id)
+    .bind(&description)
+    .bind(amount)
+    .execute(&pool)
+    .await;
+    match res {
+        Ok(_) => {
+            world.operation_success = true;
+            world.operation_error = None;
+            world.expense_id = Some(id);
+        }
+        Err(e) => {
+            world.operation_success = false;
+            world.operation_error = Some(e.to_string());
+        }
+    }
+}
+
+#[then("the expense creation is rejected by the amount constraint")]
+async fn then_expense_rejected_amount(world: &mut FinancialWorld) {
+    assert!(
+        !world.operation_success,
+        "Expected expense creation to be rejected by expenses_amount_check (#526)"
+    );
+    let err = world.operation_error.as_deref().unwrap_or("");
+    assert!(
+        err.contains("expenses_amount_check"),
+        "Expected expenses_amount_check violation, got: {}",
+        err
+    );
+}
+
+#[given(regex = r#"^the expense payment status is "([^"]*)"$"#)]
+async fn given_expense_payment_status(world: &mut FinancialWorld, status: String) {
+    let pool = world.pool.as_ref().expect("pool").clone();
+    let id = world.expense_id.expect("expense_id");
+    sqlx::query("UPDATE expenses SET payment_status = $1::payment_status WHERE id = $2")
+        .bind(&status)
+        .bind(id)
+        .execute(&pool)
+        .await
+        .expect("update payment_status");
+}
+
+#[when("Marc requests GET /api/v1/stats/syndic/urgent-tasks")]
+async fn when_marc_requests_urgent_tasks(world: &mut FinancialWorld) {
+    let uc = world
+        .stats_use_cases
+        .as_ref()
+        .expect("stats_use_cases initialized")
+        .clone();
+    let org_id = world.org_id.expect("org_id");
+    // Catch panic so the @negative scenario can assert "did not panic" properly.
+    let result = std::panic::AssertUnwindSafe(uc.get_syndic_urgent_tasks(org_id));
+    use futures_util::FutureExt;
+    let outcome = result.catch_unwind().await;
+    let typed: Result<Vec<UrgentTask>, String> = match outcome {
+        Ok(inner) => inner.map_err(|e| e.to_string()),
+        Err(panic_payload) => {
+            let msg = if let Some(s) = panic_payload.downcast_ref::<&'static str>() {
+                (*s).to_string()
+            } else if let Some(s) = panic_payload.downcast_ref::<String>() {
+                s.clone()
+            } else {
+                "use case panicked".to_string()
+            };
+            Err(format!("PANIC: {}", msg))
+        }
+    };
+    world.last_urgent_tasks_result = Some(typed);
+}
+
+#[when("Bob requests GET /api/v1/stats/syndic/urgent-tasks")]
+async fn when_bob_requests_urgent_tasks(world: &mut FinancialWorld) {
+    let uc = world
+        .stats_use_cases
+        .as_ref()
+        .expect("stats_use_cases initialized")
+        .clone();
+    let other_org_id = world
+        .other_org_id
+        .expect("other_org_id (security scenario)");
+    let result = std::panic::AssertUnwindSafe(uc.get_syndic_urgent_tasks(other_org_id));
+    use futures_util::FutureExt;
+    let outcome = result.catch_unwind().await;
+    let typed: Result<Vec<UrgentTask>, String> = match outcome {
+        Ok(inner) => inner.map_err(|e| e.to_string()),
+        Err(_) => Err("PANIC".to_string()),
+    };
+    world.last_urgent_tasks_result = Some(typed);
+}
+
+#[then("the urgent tasks operation succeeds")]
+async fn then_urgent_tasks_succeeds(world: &mut FinancialWorld) {
+    let result = world
+        .last_urgent_tasks_result
+        .as_ref()
+        .expect("when step ran");
+    assert!(
+        result.is_ok(),
+        "expected urgent tasks Ok, got: {:?}",
+        result.as_ref().err()
+    );
+}
+
+#[then("the urgent tasks operation does not panic")]
+async fn then_urgent_tasks_no_panic(world: &mut FinancialWorld) {
+    let result = world
+        .last_urgent_tasks_result
+        .as_ref()
+        .expect("when step ran");
+    if let Err(msg) = result {
+        assert!(!msg.starts_with("PANIC"), "urgent tasks panicked: {}", msg);
+    }
+}
+
+#[then(regex = r#"^the returned task list contains a task of type "([^"]*)"$"#)]
+async fn then_task_list_contains_type(world: &mut FinancialWorld, task_type: String) {
+    let tasks = world
+        .last_urgent_tasks_result
+        .as_ref()
+        .expect("when step ran")
+        .as_ref()
+        .expect("Ok result");
+    assert!(
+        tasks.iter().any(|t| t.task_type == task_type),
+        "no task of type '{}' found; got: {:?}",
+        task_type,
+        tasks.iter().map(|t| &t.task_type).collect::<Vec<_>>()
+    );
+}
+
+#[then(regex = r#"^the task title displays the amount as "([^"]*)"$"#)]
+async fn then_task_title_displays_amount(world: &mut FinancialWorld, amount_str: String) {
+    let tasks = world
+        .last_urgent_tasks_result
+        .as_ref()
+        .expect("when step ran")
+        .as_ref()
+        .expect("Ok result");
+    assert!(
+        tasks.iter().any(|t| t.title.contains(&amount_str)),
+        "no task title contains amount '{}'; titles: {:?}",
+        amount_str,
+        tasks.iter().map(|t| &t.title).collect::<Vec<_>>()
+    );
+}
+
+#[then(regex = r#"^the task title is "([^"]*)"$"#)]
+async fn then_task_title_is(world: &mut FinancialWorld, expected: String) {
+    let tasks = world
+        .last_urgent_tasks_result
+        .as_ref()
+        .expect("when step ran")
+        .as_ref()
+        .expect("Ok result");
+    let first = tasks.first().expect("at least one task");
+    assert_eq!(
+        first.title,
+        expected,
+        "title mismatch; titles: {:?}",
+        tasks.iter().map(|t| &t.title).collect::<Vec<_>>()
+    );
+}
+
+#[then(regex = r#"^the returned task list does NOT contain a task referencing "([^"]*)"$"#)]
+async fn then_task_list_excludes(world: &mut FinancialWorld, needle: String) {
+    let tasks = world
+        .last_urgent_tasks_result
+        .as_ref()
+        .expect("when step ran")
+        .as_ref()
+        .expect("Ok result");
+    assert!(
+        !tasks
+            .iter()
+            .any(|t| t.title.contains(&needle) || t.description.contains(&needle)),
+        "task referencing '{}' should not appear; tasks: {:?}",
+        needle,
+        tasks
+    );
+}
+
 // ==================== MAIN ====================
 
 #[tokio::main]
 async fn main() {
-    FinancialWorld::cucumber()
-        .run("tests/features/payments.feature")
-        .await;
-    FinancialWorld::cucumber()
-        .run("tests/features/payment_methods.feature")
-        .await;
-    FinancialWorld::cucumber()
-        .run("tests/features/journal_entries.feature")
-        .await;
-    FinancialWorld::cucumber()
-        .run("tests/features/call_for_funds.feature")
-        .await;
-    FinancialWorld::cucumber()
-        .run("tests/features/owner_contributions.feature")
-        .await;
-    FinancialWorld::cucumber()
-        .run("tests/features/charge_distribution.feature")
-        .await;
-    FinancialWorld::cucumber()
-        .run("tests/features/dashboard.feature")
-        .await;
-    FinancialWorld::cucumber()
-        .run("tests/features/invoices.feature")
-        .await;
-    FinancialWorld::cucumber()
-        .run("tests/features/payment_recovery.feature")
-        .await;
-    FinancialWorld::cucumber()
-        .run("tests/features/budget.feature")
-        .await;
-    FinancialWorld::cucumber()
-        .run("tests/features/accounts.feature")
-        .await;
-    FinancialWorld::cucumber()
-        .run_and_exit("tests/features/expenses.feature")
-        .await;
+    // Issue #524: aggregate failures across all features so CI exit code
+    // reflects ANY failed scenario, not just the last `.run_and_exit()`.
+    use cucumber::writer::Stats as _;
+    let features = [
+        "tests/features/payments.feature",
+        "tests/features/payment_methods.feature",
+        "tests/features/journal_entries.feature",
+        "tests/features/call_for_funds.feature",
+        "tests/features/owner_contributions.feature",
+        "tests/features/charge_distribution.feature",
+        "tests/features/dashboard.feature",
+        "tests/features/stats_urgent_tasks.feature",
+        "tests/features/invoices.feature",
+        "tests/features/payment_recovery.feature",
+        "tests/features/budget.feature",
+        "tests/features/accounts.feature",
+        "tests/features/expenses.feature",
+    ];
+    let mut had_failures = false;
+    for f in features {
+        let writer = FinancialWorld::cucumber().run(f).await;
+        if writer.execution_has_failed() {
+            had_failures = true;
+        }
+    }
+    if had_failures {
+        std::process::exit(1);
+    }
 }

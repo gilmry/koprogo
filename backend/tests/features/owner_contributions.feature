@@ -13,6 +13,17 @@ Feature: Owner Contributions
     And a building "Residence Contribution" exists in organization "org-contrib"
     And an owner "Marie Payeuse" exists with a unit in the building
 
+  # 4 catégories (#433/WP-A6 EXP-008). Montant Decimal exact (PCMN classe 7).
+  # @edge (montant zéro / exactitude Decimal), @negative (montant négatif,
+  # description vide) et @security (revenu falsifié négatif rejeté) sont des
+  # invariants de l'entité domaine, vérifiés par les tests unitaires typés
+  # `edge_zero_amount_and_decimal_exactness`,
+  # `negative_amount_and_empty_description_rejected`,
+  # `security_tampered_negative_revenue_rejected` (owner_contribution.rs) —
+  # le glue BDD utilise des données valides et ne peut donc pas exercer
+  # comportementalement ces rejets ici (précédent WP-A3/A4/A5).
+
+  @happy
   Scenario: Create an owner contribution
     When I create a contribution for "Marie Payeuse":
       | description        | Charges trimestrielles Q1 |
@@ -45,6 +56,7 @@ Feature: Owner Contributions
     Then the payment status should be "Paid"
     And the payment date should be set
 
+  @edge
   Scenario: Cannot pay an already-paid contribution
     Given a paid contribution exists
     When I try to mark it as paid again

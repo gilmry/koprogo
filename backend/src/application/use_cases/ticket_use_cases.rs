@@ -1,9 +1,10 @@
 use crate::application::dto::{
     AssignTicketRequest, CancelTicketRequest, CreateTicketRequest, ReopenTicketRequest,
-    ResolveTicketRequest, TicketResponse,
+    ResolveTicketRequest, TicketResponse, UpdateTicketRequest,
 };
+use crate::application::error::AppError;
 use crate::application::ports::TicketRepository;
-use crate::domain::entities::{Ticket, TicketStatus};
+use crate::domain::entities::{Ticket, TicketKind, TicketStatus};
 use std::sync::Arc;
 use uuid::Uuid;
 
@@ -16,14 +17,24 @@ impl TicketUseCases {
         Self { ticket_repository }
     }
 
-    /// Create a new maintenance request ticket
+    /// Create a new maintenance request ticket.
+    ///
+    /// Backward-compatible entry point. Pre-Story-3.6 clients keep working
+    /// (kind defaults to `Request`, complaint fields default to empty).
+    /// Post-3.6 clients pass `kind = Some(Complaint)` + `severity = Some(_)`
+    /// and the request is validated by [`Ticket::new_with_kind`].
     pub async fn create_ticket(
         &self,
         organization_id: Uuid,
         created_by: Uuid,
         request: CreateTicketRequest,
     ) -> Result<TicketResponse, String> {
-        let ticket = Ticket::new(
+        let kind = request.kind.unwrap_or(TicketKind::Request);
+
+        // The Story 3.6 surface (kind / severity / incident_date / evidence /
+        // witnesses) is validated by `new_with_kind`. Pre-3.6 callers send
+        // empty defaults so the entity-level invariants stay green.
+        let ticket = Ticket::new_with_kind(
             organization_id,
             request.building_id,
             request.unit_id,
@@ -32,10 +43,105 @@ impl TicketUseCases {
             request.description,
             request.category,
             request.priority,
-        )?;
+            kind,
+            request.severity,
+            request.incident_date,
+            request.evidence_attachments,
+            request.witnesses,
+        )
+        // Bridge AppError → String for the retro-compat surface (cluster #555
+        // tracks the full migration; here we only touch the surface the story
+        // requires, per Phase A scope).
+        .map_err(|e| e.to_string())?;
 
         let created = self.ticket_repository.create(&ticket).await?;
         Ok(TicketResponse::from(created))
+    }
+
+    /// Story 3.6 (FR31 / INV-24) — Patch the editable fields of a ticket.
+    ///
+    /// Native `AppError` surface (no legacy `String` bridging). Two failure
+    /// modes that must be HTTP-distinct:
+    ///
+    /// - `AppError::NotFound` (404) — unknown id;
+    /// - `AppError::TicketImmutable` (403) — INV-24 window elapsed;
+    /// - `AppError::Validation` (400) — invariant violation on the new state.
+    ///
+    /// Workflow transitions (assign / resolve / close / cancel / reopen) are
+    /// intentionally NOT exposed here — they have their own typed endpoints
+    /// to preserve audit fidelity (PUT /tickets/{id}/{transition}).
+    pub async fn update_ticket_fields(
+        &self,
+        id: Uuid,
+        request: UpdateTicketRequest,
+    ) -> Result<TicketResponse, AppError> {
+        let mut ticket = self
+            .ticket_repository
+            .find_by_id(id)
+            .await
+            .map_err(AppError::from)?
+            .ok_or_else(|| AppError::NotFound(format!("ticket {}", id)))?;
+
+        if !ticket.is_currently_editable() {
+            return Err(AppError::TicketImmutable);
+        }
+
+        if let Some(title) = request.title {
+            let trimmed = title.trim().to_string();
+            if trimmed.is_empty() {
+                return Err(AppError::Validation("Title cannot be empty".to_string()));
+            }
+            if trimmed.len() > 200 {
+                return Err(AppError::Validation(
+                    "Title cannot exceed 200 characters".to_string(),
+                ));
+            }
+            ticket.title = trimmed;
+        }
+        if let Some(description) = request.description {
+            let trimmed = description.trim().to_string();
+            if trimmed.is_empty() {
+                return Err(AppError::Validation(
+                    "Description cannot be empty".to_string(),
+                ));
+            }
+            if trimmed.len() > 5000 {
+                return Err(AppError::Validation(
+                    "Description cannot exceed 5000 characters".to_string(),
+                ));
+            }
+            ticket.description = trimmed;
+        }
+        if let Some(category) = request.category {
+            ticket.category = category;
+        }
+        if let Some(priority) = request.priority {
+            ticket.priority = priority;
+        }
+        if let Some(severity) = request.severity {
+            ticket.severity = Some(severity);
+        }
+        if let Some(incident_date) = request.incident_date {
+            ticket.incident_date = Some(incident_date);
+        }
+        if let Some(evidence) = request.evidence_attachments {
+            ticket.evidence_attachments = evidence;
+        }
+        if let Some(witnesses) = request.witnesses {
+            ticket.witnesses = witnesses;
+        }
+        ticket.updated_at = chrono::Utc::now();
+
+        // Re-validate the post-mutation state. Invariant violations bubble up
+        // as `AppError::Validation` → 400.
+        ticket.validate_invariants()?;
+
+        let updated = self
+            .ticket_repository
+            .update(&ticket)
+            .await
+            .map_err(AppError::from)?;
+        Ok(TicketResponse::from(updated))
     }
 
     /// Get a ticket by ID
@@ -576,6 +682,12 @@ mod tests {
             description: "L'eau coule sous l'évier de la cuisine commune".to_string(),
             category: TicketCategory::Plumbing,
             priority: TicketPriority::High,
+            // Story 3.6 — defaults preserve pre-3.6 behavior.
+            kind: None,
+            severity: None,
+            incident_date: None,
+            evidence_attachments: Vec::new(),
+            witnesses: Vec::new(),
         }
     }
 
@@ -630,6 +742,11 @@ mod tests {
             description: "Some description".to_string(),
             category: TicketCategory::Electrical,
             priority: TicketPriority::Low,
+            kind: None,
+            severity: None,
+            incident_date: None,
+            evidence_attachments: Vec::new(),
+            witnesses: Vec::new(),
         };
 
         let result = use_cases
@@ -999,5 +1116,164 @@ mod tests {
         assert!(result
             .unwrap_err()
             .contains("Can only delete tickets with Open status"));
+    }
+
+    // ========================================================================
+    // Story 3.6 — Complaint creation + INV-24 PATCH immutability (FR31)
+    // 4-cat taxonomy: @happy / @edge / @security / @negative
+    // ========================================================================
+
+    use crate::application::dto::UpdateTicketRequest;
+    use crate::application::error::AppError;
+    use crate::domain::entities::{TicketKind, TicketSeverity};
+
+    fn make_complaint_request(building_id: Uuid) -> CreateTicketRequest {
+        CreateTicketRequest {
+            building_id,
+            unit_id: None,
+            title: "Plainte tapage nocturne".to_string(),
+            description: "Bruit récurrent depuis 3 semaines, 2 témoins".to_string(),
+            category: TicketCategory::Other,
+            priority: TicketPriority::High,
+            kind: Some(TicketKind::Complaint),
+            severity: Some(TicketSeverity::Critical),
+            incident_date: Some(chrono::Utc::now() - chrono::Duration::hours(2)),
+            evidence_attachments: vec![
+                "https://store.test/a.jpg".to_string(),
+                "https://store.test/b.jpg".to_string(),
+                "https://store.test/c.jpg".to_string(),
+            ],
+            witnesses: vec![Uuid::new_v4(), Uuid::new_v4()],
+        }
+    }
+
+    // ---- @happy -------------------------------------------------------------
+
+    #[tokio::test]
+    async fn happy_create_complaint_with_severity_evidence_witnesses() {
+        let repo = Arc::new(MockTicketRepository::new());
+        let use_cases = make_use_cases(repo);
+
+        let org_id = Uuid::new_v4();
+        let building_id = Uuid::new_v4();
+        let creator = Uuid::new_v4();
+
+        let res = use_cases
+            .create_ticket(org_id, creator, make_complaint_request(building_id))
+            .await
+            .expect("complaint creation should succeed");
+
+        assert_eq!(res.kind, TicketKind::Complaint);
+        assert_eq!(res.severity, Some(TicketSeverity::Critical));
+        assert_eq!(res.evidence_attachments.len(), 3);
+        assert_eq!(res.witnesses.len(), 2);
+    }
+
+    #[tokio::test]
+    async fn happy_update_ticket_within_window_persists_changes() {
+        let repo = Arc::new(MockTicketRepository::new());
+        let use_cases = make_use_cases(repo);
+
+        let org_id = Uuid::new_v4();
+        let building_id = Uuid::new_v4();
+        let ticket = create_ticket_helper(&use_cases, org_id, building_id).await;
+
+        let update = UpdateTicketRequest {
+            title: Some("Titre corrigé".to_string()),
+            description: Some("Description corrigée".to_string()),
+            ..Default::default()
+        };
+        let updated = use_cases
+            .update_ticket_fields(ticket.id, update)
+            .await
+            .expect("edit within 5min window should succeed");
+        assert_eq!(updated.title, "Titre corrigé");
+        assert_eq!(updated.description, "Description corrigée");
+    }
+
+    // ---- @edge --------------------------------------------------------------
+
+    #[tokio::test]
+    async fn edge_pre_3_6_client_without_kind_defaults_to_request() {
+        let repo = Arc::new(MockTicketRepository::new());
+        let use_cases = make_use_cases(repo);
+
+        let org_id = Uuid::new_v4();
+        let building_id = Uuid::new_v4();
+        let user_id = Uuid::new_v4();
+        let request = make_create_request(building_id);
+
+        let res = use_cases
+            .create_ticket(org_id, user_id, request)
+            .await
+            .expect("retro-compat path should succeed");
+        assert_eq!(res.kind, TicketKind::Request);
+        assert!(res.severity.is_none());
+        assert!(res.evidence_attachments.is_empty());
+        assert!(res.witnesses.is_empty());
+    }
+
+    // ---- @security ----------------------------------------------------------
+
+    #[tokio::test]
+    async fn security_update_past_5_minute_window_returns_ticket_immutable_403() {
+        let repo = Arc::new(MockTicketRepository::new());
+        let use_cases = make_use_cases(repo.clone());
+
+        let org_id = Uuid::new_v4();
+        let building_id = Uuid::new_v4();
+        let ticket = create_ticket_helper(&use_cases, org_id, building_id).await;
+
+        // Manually age the ticket past INV-24 in the mock store.
+        {
+            let mut store = repo.tickets.lock().unwrap();
+            if let Some(t) = store.get_mut(&ticket.id) {
+                t.created_at = chrono::Utc::now() - chrono::Duration::minutes(6);
+            }
+        }
+
+        let update = UpdateTicketRequest {
+            title: Some("Tentative tardive".to_string()),
+            ..Default::default()
+        };
+        let err = use_cases
+            .update_ticket_fields(ticket.id, update)
+            .await
+            .unwrap_err();
+        assert!(matches!(err, AppError::TicketImmutable));
+    }
+
+    // ---- @negative ----------------------------------------------------------
+
+    #[tokio::test]
+    async fn negative_create_complaint_without_severity_returns_validation_422() {
+        let repo = Arc::new(MockTicketRepository::new());
+        let use_cases = make_use_cases(repo);
+
+        let org_id = Uuid::new_v4();
+        let building_id = Uuid::new_v4();
+
+        let mut req = make_complaint_request(building_id);
+        req.severity = None;
+        let err = use_cases
+            .create_ticket(org_id, Uuid::new_v4(), req)
+            .await
+            .unwrap_err();
+        assert!(
+            err.contains("severity"),
+            "expected severity-related error, got: {err}"
+        );
+    }
+
+    #[tokio::test]
+    async fn negative_update_unknown_ticket_returns_not_found_404() {
+        let repo = Arc::new(MockTicketRepository::new());
+        let use_cases = make_use_cases(repo);
+
+        let err = use_cases
+            .update_ticket_fields(Uuid::new_v4(), UpdateTicketRequest::default())
+            .await
+            .unwrap_err();
+        assert!(matches!(err, AppError::NotFound(_)));
     }
 }

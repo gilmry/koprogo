@@ -1,5 +1,6 @@
 use crate::domain::entities::{Budget, BudgetStatus};
 use chrono::{DateTime, Utc};
+use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -10,16 +11,16 @@ pub struct CreateBudgetRequest {
     pub organization_id: Uuid, // Will be overridden by JWT token
     pub building_id: Uuid,
     pub fiscal_year: i32,
-    pub ordinary_budget: f64,
-    pub extraordinary_budget: f64,
+    pub ordinary_budget: Decimal,
+    pub extraordinary_budget: Decimal,
     pub notes: Option<String>,
 }
 
 /// Request pour mettre à jour un budget (Draft uniquement)
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct UpdateBudgetRequest {
-    pub ordinary_budget: Option<f64>,
-    pub extraordinary_budget: Option<f64>,
+    pub ordinary_budget: Option<Decimal>,
+    pub extraordinary_budget: Option<Decimal>,
     pub notes: Option<String>,
 }
 
@@ -30,14 +31,14 @@ pub struct BudgetResponse {
     pub organization_id: Uuid,
     pub building_id: Uuid,
     pub fiscal_year: i32,
-    pub ordinary_budget: f64,
-    pub extraordinary_budget: f64,
-    pub total_budget: f64,
+    pub ordinary_budget: Decimal,
+    pub extraordinary_budget: Decimal,
+    pub total_budget: Decimal,
     pub status: BudgetStatus,
     pub submitted_date: Option<DateTime<Utc>>,
     pub approved_date: Option<DateTime<Utc>>,
     pub approved_by_meeting_id: Option<Uuid>,
-    pub monthly_provision_amount: f64,
+    pub monthly_provision_amount: Decimal,
     pub notes: Option<String>,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,

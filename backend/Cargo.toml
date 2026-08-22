@@ -10,7 +10,7 @@ default-run = "koprogo-api"
 actix-web = "4.11"
 actix-cors = "0.7"
 actix-rt = "2.11"
-actix-multipart = "0.7"
+actix-multipart = "0.8"
 actix-governor = "0.10"
 
 # Async runtime
@@ -23,7 +23,7 @@ serde_json = "1.0"
 
 # Database
 sqlx = { version = "0.8.6", features = ["runtime-tokio-native-tls", "postgres", "uuid", "chrono", "migrate", "rust_decimal"] }
-rust_decimal = "1.42"
+rust_decimal = { version = "1.42", features = ["serde-with-float"] }
 rust_decimal_macros = "1.36"
 
 # Configuration
@@ -38,9 +38,9 @@ log = "0.4" # Keep for compatibility with existing log! macros
 # Utilities
 uuid = { version = "1.23", features = ["serde", "v4"] }
 chrono = { version = "0.4", features = ["serde"] }
-validator = { version = "0.20", features = ["derive"] }
+validator = { version = "0.21", features = ["derive"] }
 bcrypt = "0.19"
-jsonwebtoken = { version = "10.4", default-features = false, features = ["aws_lc_rs"] }
+jsonwebtoken = { version = "11.0", default-features = false, features = ["aws_lc_rs"] }
 hex = "0.4"
 sha2 = "0.10"
 md5 = "0.8"
@@ -49,8 +49,8 @@ md5 = "0.8"
 totp-lite = "2.0"
 qrcode = "0.14"
 image = { version = "0.25", default-features = false, features = ["png"] }
-base64 = "0.22"
-aes-gcm = "0.10"
+base64 = "0.23"
+aes-gcm = "0.11"
 urlencoding = "2.1"
 
 # Async trait support
@@ -71,10 +71,10 @@ aws-types = "1"
 aws-credential-types = "1"
 
 # PDF generation
-printpdf = "0.7"
+printpdf = "0.12"
 
 # Excel generation
-rust_xlsxwriter = "0.95.0"
+rust_xlsxwriter = "0.98.1"
 
 # Random data generation (for seed scripts)
 rand = "0.10"
@@ -95,7 +95,7 @@ utoipa-swagger-ui = { version = "9.0", features = ["actix-web"] }
 
 [dev-dependencies]
 # Unit & Integration tests
-mockall = "0.14"
+mockall = "0.15"
 tokio-test = "0.4"
 testcontainers = "0.27"
 testcontainers-modules = { version = "0.15", features = ["postgres", "minio"] }
@@ -111,7 +111,7 @@ reqwest = { version = "0.13", features = ["json"] }
 criterion = { version = "0.8", features = ["async_tokio", "html_reports"] }
 
 # Test utilities
-serial_test = "3.1"
+serial_test = "4.0"
 fake = { version = "5.1", features = ["derive", "chrono", "uuid"] }
 [[bench]]
 name = "load_tests"
@@ -145,3 +145,53 @@ harness = false
 opt-level = 3
 lto = true
 codegen-units = 1
+
+# Story 1.1 - ACP integration tests (testcontainers Postgres)
+[[test]]
+name = "acp_integration"
+path = "tests/integration/acp_test.rs"
+
+# Story 1.1 - ACP BDD harness (Cucumber)
+[[test]]
+name = "bdd_acp"
+harness = false
+
+# Story 1.2 - Migration buildings.organization_id → acp_id (testcontainers)
+[[test]]
+name = "migration_acp_backfill_test"
+path = "tests/integration/migration_acp_backfill_test.rs"
+
+# Issue #602 - runtime /buildings post acp_id migration (RED-first hotfix gate)
+[[test]]
+name = "buildings_runtime_test"
+path = "tests/integration/buildings_runtime_test.rs"
+
+# Story 1.3 - Role-based listing + scope_guard BDD harness (Cucumber)
+[[test]]
+name = "bdd_list_buildings_role_based"
+harness = false
+
+# Story 1.4 - Building conformity BDD harness (Cucumber)
+[[test]]
+name = "bdd_building_conformity"
+harness = false
+
+# Track H Story H2 - Validate-before-compute on 4 use-cases (FR-H2)
+[[test]]
+name = "bdd_validate_before_compute"
+harness = false
+
+# Track H Story H3 - Meeting.assert_can_complete() Art. 3.87 §3-5 CC (FR-H3)
+[[test]]
+name = "bdd_meeting_complete"
+harness = false
+
+# Track H Story H17 - voting_right_status() Art. 3.87 §1 CC (suspension du vote)
+[[test]]
+name = "bdd_voting_right"
+harness = false
+
+# Story 2.1 - Portfolio BDD harness (Cucumber) — Slice 2 Refonte UX multi-rôle
+[[test]]
+name = "bdd_portfolio"
+harness = false

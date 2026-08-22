@@ -1,0 +1,25 @@
+---
+# ansible-lint config — WP-E1 minimal viable IaC lint (#354)
+#
+# Rationale: the go-live gate must catch *real breakage* in the production VPS
+# playbook + roles — syntax errors, unparseable YAML, undefined modules, broken
+# task structure, jinja that won't render. It deliberately does NOT enforce the
+# opinionated `production` profile (FQCN everywhere, `true` vs `yes`, capitalised
+# handler names, no-changed-when on every command) on working, battle-tested
+# roles: that is a large stylistic refactor scheduled for Phase 2 alongside
+# conftest / molecule / terratest. Minimal-but-green > exhaustive-but-red.
+#
+# Profile `min` = the "your playbook will fail to run" tier only.
+profile: min
+
+# The prod playbook references shared roles via relative path
+# (../../../_shared/ansible/roles/*); point ansible-lint at that tree so role
+# tasks/handlers are resolved.
+exclude_paths:
+  - infrastructure/multisite/
+  - infrastructure/_shared/helm/
+  - infrastructure/_shared/kustomize/
+  - infrastructure/_shared/argocd/
+
+# Phase 2 (#354 follow-up): raise to `profile: production`, add FQCN,
+# fix truthy + handler naming + changed_when across the 14 roles.

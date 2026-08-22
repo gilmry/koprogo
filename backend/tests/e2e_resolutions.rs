@@ -64,8 +64,9 @@ async fn create_test_fixtures(
     let token = login.token;
 
     // 2. Create building
+    let acp_id = common::create_test_acp(app_state, org_id).await;
     let building_dto = CreateBuildingDto {
-        organization_id: org_id.to_string(),
+        acp_id,
         name: format!("Test Building Resolution {}", Uuid::new_v4()),
         address: "456 Vote Ave".to_string(),
         city: "Brussels".to_string(),
@@ -147,7 +148,7 @@ async fn create_test_fixtures(
 
     // 5. Create units
     let unit1_dto = CreateUnitDto {
-        organization_id: org_id.to_string(),
+        acp_id: building.acp_id.clone(),
         building_id: building_id.to_string(),
         unit_number: "A101".to_string(),
         floor: Some(1),
@@ -165,7 +166,7 @@ async fn create_test_fixtures(
     let unit1_id = Uuid::parse_str(&unit1.id).expect("Failed to parse unit1 id");
 
     let unit2_dto = CreateUnitDto {
-        organization_id: org_id.to_string(),
+        acp_id: building.acp_id.clone(),
         building_id: building_id.to_string(),
         unit_number: "A102".to_string(),
         floor: Some(1),
@@ -209,13 +210,20 @@ async fn create_test_fixtures(
 /// Helper: Create an additional unit for a second owner in tests that need it
 async fn create_extra_unit(
     app_state: &actix_web::web::Data<AppState>,
-    org_id: Uuid,
+    _org_id: Uuid,
     building_id: Uuid,
     owner_id: Uuid,
     unit_number: &str,
 ) -> Uuid {
+    // Story H15 — le lot dérive son acp_id du building parent (units.organization_id DROP).
+    let building = app_state
+        .building_use_cases
+        .get_building(building_id)
+        .await
+        .expect("Failed to fetch building")
+        .expect("Building must exist");
     let unit_dto = CreateUnitDto {
-        organization_id: org_id.to_string(),
+        acp_id: building.acp_id,
         building_id: building_id.to_string(),
         unit_number: unit_number.to_string(),
         floor: Some(1),

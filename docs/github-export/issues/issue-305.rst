@@ -1,13 +1,13 @@
-==============================================================================
+=============================================================================
 Issue #305: [Bug] Création ticket : bouton silencieux si building_id manquant
-==============================================================================
+=============================================================================
 
-:State: **OPEN**
+:State: **CLOSED**
 :Milestone: No milestone
-:Labels: bug:majeur,test:e2e
+:Labels: bug:majeur,test:e2e
 :Assignees: Unassigned
 :Created: 2026-03-22
-:Updated: 2026-03-22
+:Updated: 2026-03-24
 :URL: `View on GitHub <https://github.com/gilmry/koprogo/issues/305>`_
 
 Description

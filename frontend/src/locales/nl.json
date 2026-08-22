@@ -1,4 +1,13 @@
 {
+  "conformity": {
+    "banner_title": "⚠️ {name} is niet conform",
+    "units_missing": "{n} kavel(s) ontbreken",
+    "units_extra": "{n} kavel(s) te veel",
+    "quota_off": "Som van de quota onder {delta} / {basis} (basisakte)",
+    "contact_admin": "Neem contact op met de beheerder om dit te corrigeren.",
+    "toast_title": "Berekening geblokkeerd — Gebouw niet conform",
+    "toast_message": "{units_delta} kavel(s) ontbreken, Σ quota = {sum} / {basis}"
+  },
   "common": {
     "save": "Opslaan",
     "cancel": "Annuleren",
@@ -129,6 +138,7 @@
     "select": "Selecteren",
     "select_building": "Selecteer een gebouw",
     "select_organization": "Selecteer een organisatie",
+    "select_acp": "Selecteer een VME",
     "all_buildings": "Alle gebouwen",
     "loading_buildings": "Gebouwen laden...",
     "loading_details": "Details laden...",
@@ -401,7 +411,15 @@
     "totalRevenue": "Totaal opbrengsten",
     "unitCount": "Aantal kavels",
     "units": "Kavels",
-    "workReports": "Werkrapporten"
+    "workReports": "Werkrapporten",
+    "conformity": {
+      "conformant": "Gebouw conform",
+      "nonConformant": "Gebouw niet conform",
+      "unitsCount": "Aangegeven kavels",
+      "quotaSum": "Som quota's",
+      "quotaDelta": "Verschil",
+      "expected1000": " / 1000"
+    }
   },
   "units": {
     "title": "Kavels",
@@ -457,6 +475,7 @@
     "no_unit_selected": "Geen kavel geselecteerd",
     "ongoing": "Lopend",
     "organization": "Organisatie",
+    "acp": "VME",
     "owner_selection_help": "Selecteer een mede-eigenaar uit de lijst of zoek op naam",
     "owners": "Mede-eigenaars",
     "ownership_percentage": "Eigendomsaandeel (%)",
@@ -483,6 +502,7 @@
     "search_owner_placeholder": "Zoeken op naam...",
     "select_building": "Selecteer een gebouw",
     "select_organization": "Selecteer een organisatie",
+    "select_acp": "Selecteer een VME",
     "select_owner": "Selecteer een mede-eigenaar",
     "select_owner_option": "-- Selecteer een mede-eigenaar --",
     "showOwners": "Mede-eigenaars tonen",
@@ -1672,8 +1692,10 @@
       "totalTantgemesError": "Aandelen moeten groter zijn dan 0",
       "tantgemesHint": "Meestal 1000 duizendsten",
       "constructionYear": "Bouwjaar",
-      "selectOrganization": "Selecteer een organisatie",
-      "organizationRequired": "Organisatie is vereist",
+      "acp": "VME (Vereniging van Mede-eigenaars)",
+      "selectAcp": "Selecteer een VME",
+      "acpRequired": "VME is vereist",
+      "noAcpAvailable": "Geen VME beschikbaar — maak er eerst een aan in Administratie > VME",
       "createdSuccessfully": "Gebouw succesvol aangemaakt",
       "updatedSuccessfully": "Gebouw succesvol bijgewerkt"
     }
@@ -2837,7 +2859,9 @@
     "quorumContribution": "Quorum bijdrage",
     "start": "Starten",
     "end": "Beëindigen",
-    "noSession": "Geen videosessie geconfigureerd"
+    "noSession": "Geen videosessie geconfigureerd",
+    "platformOther": "Andere",
+    "scheduledStart": "Geplande start"
   },
   "proxy": {
     "limitReached": "Volmachtlimiet bereikt (Art. 3.87 §6 BW)",
@@ -3281,6 +3305,52 @@
     "owner": "Mede-eigenaar",
     "user": "Gebruiker"
   },
+  "roleDelegation": {
+    "list": {
+      "title": "Actieve delegaties",
+      "new": "Nieuwe delegatie",
+      "empty": "Momenteel geen actieve delegatie."
+    },
+    "col": {
+      "target": "Doel",
+      "role": "Rol",
+      "organization": "Organisatie",
+      "source": "Bron",
+      "expire": "Vervalt",
+      "actions": "Acties"
+    },
+    "banner": {
+      "inherited": {
+        "title": "U heeft deze rol via delegatie ontvangen.",
+        "body": "U kunt niet opnieuw delegeren (niet-transitiviteit INV-8)."
+      },
+      "info": {
+        "title": "Niet-transitieve delegatie (INV-8).",
+        "body": "Als u uw rol via delegatie heeft ontvangen, is opnieuw delegeren verboden."
+      }
+    },
+    "action": {
+      "revoke": "Intrekken",
+      "create": "Delegeren"
+    },
+    "create": {
+      "title": "Nieuwe roldelegatie",
+      "success": "Delegatie aangemaakt."
+    },
+    "field": {
+      "target": "Doelgebruiker",
+      "role": "Gedelegeerde rol",
+      "organization": "Organisatie",
+      "validUntil": "Geldig tot"
+    },
+    "revoke": {
+      "success": "Delegatie ingetrokken.",
+      "confirm": {
+        "title": "Intrekking bevestigen",
+        "body": "De gebruiker verliest onmiddellijk de gedelegeerde rol."
+      }
+    }
+  },
   "settings": {
     "profile": {
       "title": "Profiel",
@@ -3400,5 +3470,25 @@
   "polls.results.winner": "Winnende optie",
   "gamification.category": "Categorie",
   "gamification.tier": "Niveau",
-  "_i18n_version": "2026-03-26"
+  "meeting.missing.ConvocationsNotSent": "Oproepingen niet verzonden (Art. 3.87 §3 BW)",
+  "meeting.missing.VotesNotClosed": "{open_resolutions, plural, =1 {1 lopende beslissing} other {{open_resolutions} lopende beslissingen}} (Art. 3.87 §4 BW)",
+  "meeting.missing.AttendanceNotRecorded": "Aanwezigheden niet geregistreerd (Art. 3.87 §5 BW)",
+  "meeting.missing.QuorumNotReached": "Quorum niet bereikt ({attended_quotas}/{total_quotas}) — Art. 3.87 §5 BW: gewone meerderheid > 50%",
+  "meeting.missing.MinutesDraftMissing": "Ontwerp van de notulen ontbreekt",
+  "meeting.complete.disabled_reason": "{n, plural, =1 {1 ontbrekende voorwaarde} other {{n} ontbrekende voorwaarden}}",
+  "meeting.complete.missing_aria_label": "Voorwaarden om de vergadering af te sluiten",
+  "meeting.complete.blockers_title": "Om deze AV af te sluiten, vervul de voorwaarden:",
+  "meeting.complete.toast_title": "Afsluiten onmogelijk",
+  "meeting.complete.toast_message": "{n, plural, =1 {1 ontbrekende voorwaarde} other {{n} ontbrekende voorwaarden}} (zie details op de vergaderingsfiche)",
+  "_i18n_version": "2026-03-26",
+  "scope": {
+    "searchPlaceholder": "Een gebouw zoeken…",
+    "selectBuilding": "Een gebouw selecteren",
+    "forbidden": "Toegang geweigerd",
+    "clear": "Selectie wissen",
+    "noBuildings": "Geen gebouw binnen uw bereik",
+    "favorite": "Toevoegen aan favorieten",
+    "unfavorite": "Verwijderen uit favorieten",
+    "portfolios": "portefeuilles"
+  }
 }

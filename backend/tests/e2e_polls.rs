@@ -23,8 +23,9 @@ async fn create_test_building_for_polls(
     app_state: &actix_web::web::Data<AppState>,
     org_id: Uuid,
 ) -> String {
+    let acp_id = common::create_test_acp(app_state, org_id).await;
     let dto = CreateBuildingDto {
-        organization_id: org_id.to_string(),
+        acp_id,
         name: format!("Polls Test Building {}", Uuid::new_v4()),
         address: "789 Poll Street".to_string(),
         city: "Brussels".to_string(),
@@ -45,7 +46,7 @@ async fn create_test_building_for_polls(
     let unit = app_state
         .unit_use_cases
         .create_unit(CreateUnitDto {
-            organization_id: org_id.to_string(),
+            acp_id: building.acp_id.clone(),
             building_id: building.id.clone(),
             unit_number: "A1".to_string(),
             unit_type: UnitType::Apartment,
@@ -380,8 +381,9 @@ async fn test_polls_cast_vote() {
     let user_id = login_resp.user.id;
 
     // Create building with a unit
+    let acp_id = common::create_test_acp(&app_state, org_id).await;
     let dto = koprogo_api::application::dto::CreateBuildingDto {
-        organization_id: org_id.to_string(),
+        acp_id,
         name: format!("Polls Vote Building {}", Uuid::new_v4()),
         address: "1 Vote Street".to_string(),
         city: "Brussels".to_string(),
@@ -401,7 +403,7 @@ async fn test_polls_cast_vote() {
     let unit = app_state
         .unit_use_cases
         .create_unit(koprogo_api::application::dto::CreateUnitDto {
-            organization_id: org_id.to_string(),
+            acp_id: building.acp_id.clone(),
             building_id: building_id.clone(),
             unit_number: "V1".to_string(),
             unit_type: UnitType::Apartment,

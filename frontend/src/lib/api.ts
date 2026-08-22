@@ -1,6 +1,8 @@
-import { get } from "svelte/store";
 import { locale } from "svelte-i18n";
+import { get } from "svelte/store";
 import { toast } from "../stores/toast";
+import { authStore } from "../stores/auth";
+import { getAccessToken, clearAccessToken } from "./accessToken";
 import type { Document, DocumentUploadPayload } from "./types";
 
 /**
@@ -32,10 +34,8 @@ function buildHeaders(
 
   headers.set("Accept-Language", getCurrentLanguage());
 
-  const token =
-    typeof window !== "undefined"
-      ? localStorage.getItem("koprogo_token")
-      : null;
+  // WP-FE1 : access token en mémoire (jamais localStorage).
+  const token = getAccessToken();
 
   if (token) {
     headers.set("Authorization", `Bearer ${token}`);
@@ -56,15 +56,41 @@ function buildHeaders(
 }
 
 /**
+ * Optional flags for `apiFetch`. `silent: true` suppresses the auto-toast on
+ * 4xx (used by best-effort reads like `tryGetOrganizationName` where a 403
+ * is an expected, non-actionable degradation — not a user-facing error).
+ */
+export interface ApiFetchOptions extends RequestInit {
+  silent?: boolean;
+}
+
+/**
  * Enhanced fetch with automatic language headers and error handling
  */
 export async function apiFetch<T = any>(
   endpoint: string,
-  options: RequestInit = {},
+  options: ApiFetchOptions = {},
 ): Promise<T> {
   const url = endpoint.startsWith("http")
     ? endpoint
     : `${API_BASE_URL}${endpoint}`;
+
+  // #550 strate 2 : course init() vs onMount des composants.
+  //
+  // Symptôme observé en live console : composants (NotificationBell,
+  // listes diverses, AdminDashboard) mountent et appellent `api.get()`
+  // AVANT que `authStore.init()` n'ait fini son silent-refresh → pas de
+  // token en mémoire → "Missing authorization header" 401.
+  //
+  // Si pas de token + pas un endpoint /auth/*, on attend le refresh
+  // in-flight (mémoïsé via `inflightRefresh` dans authStore — un seul
+  // POST /auth/refresh partagé entre tous les callers concurrents).
+  // Coût : 1 extra round trip pour visiteurs vraiment unauth (refresh
+  // fail rapide). Au pire : 1 POST 401, puis clearSession ; rien de
+  // cassant.
+  if (!getAccessToken() && !endpoint.startsWith("/auth/")) {
+    await authStore.refreshAccessToken();
+  }
 
   const response = await fetch(url, {
     ...options,
@@ -112,30 +138,37 @@ export async function apiFetch<T = any>(
       if (mapped) errorMessage = mapped;
     }
 
-    // Toast automatique selon le code HTTP
-    if (response.status === 429) {
-      toast.error("Trop de tentatives. Réessayez dans 15 minutes.");
-    } else if (response.status >= 500) {
-      toast.error("Erreur serveur. Veuillez réessayer.");
-    } else if (response.status === 401) {
-      // Clear stale token and dedupe toast across parallel 401s
-      if (typeof window !== "undefined") {
-        const hadToken = localStorage.getItem("koprogo_token");
-        localStorage.removeItem("koprogo_token");
-        if (hadToken && !(window as any).__koprogo_session_expired_shown__) {
-          (window as any).__koprogo_session_expired_shown__ = true;
-          toast.warning("Session expirée. Veuillez vous reconnecter.");
-          setTimeout(() => {
-            (window as any).__koprogo_session_expired_shown__ = false;
-          }, 5000);
+    // Toast automatique selon le code HTTP — sauf si `silent: true` (best-effort
+    // reads où un 4xx est une dégradation attendue, pas une erreur utilisateur).
+    if (!options.silent) {
+      if (response.status === 429) {
+        toast.error("Trop de tentatives. Réessayez dans 15 minutes.");
+      } else if (response.status >= 500) {
+        toast.error("Erreur serveur. Veuillez réessayer.");
+      } else if (response.status === 401) {
+        // Clear stale token and dedupe toast across parallel 401s
+        if (typeof window !== "undefined") {
+          const hadToken = getAccessToken() !== null;
+          clearAccessToken();
+          if (hadToken && !(window as any).__koprogo_session_expired_shown__) {
+            (window as any).__koprogo_session_expired_shown__ = true;
+            toast.warning("Session expirée. Veuillez vous reconnecter.");
+            setTimeout(() => {
+              (window as any).__koprogo_session_expired_shown__ = false;
+            }, 5000);
+          }
         }
+      } else if (response.status === 403) {
+        toast.warning(
+          "Accès refusé. Vous n'avez pas les permissions nécessaires.",
+        );
+      } else if (response.status >= 400) {
+        toast.error(errorMessage);
       }
-    } else if (response.status === 403) {
-      toast.warning(
-        "Accès refusé. Vous n'avez pas les permissions nécessaires.",
-      );
-    } else if (response.status >= 400) {
-      toast.error(errorMessage);
+    } else if (response.status === 401 && typeof window !== "undefined") {
+      // Silent 401 : on clear quand même le token périmé (cohérence session)
+      // mais pas de toast — l'appelant gère le `null` retourné.
+      clearAccessToken();
     }
 
     throw new Error(errorMessage);
@@ -156,7 +189,7 @@ export const api = {
   /**
    * GET request
    */
-  get: <T = any>(endpoint: string, options?: RequestInit): Promise<T> => {
+  get: <T = any>(endpoint: string, options?: ApiFetchOptions): Promise<T> => {
     return apiFetch<T>(endpoint, { ...options, method: "GET" });
   },
 

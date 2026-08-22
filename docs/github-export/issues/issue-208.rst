@@ -4,7 +4,7 @@ Issue #208: feat(tests): BDD step definitions for 24 new feature files (279 scen
 
 :State: **CLOSED**
 :Milestone: Jalon 1: Sécurité & GDPR 🔒
-:Labels: priority:high,release:v0.5.0 testing,bdd
+:Labels: priority:high,release:v0.5.0 testing,bdd
 :Assignees: Unassigned
 :Created: 2026-02-26
 :Updated: 2026-03-07

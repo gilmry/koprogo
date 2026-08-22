@@ -15,17 +15,25 @@ interface SyncQueue {
 
 export class LocalDB {
   private db: IDBDatabase | null = null;
+  // Mémoïsation : init() est idempotent et concurrent-safe (plusieurs
+  // appels simultanés partagent la même promesse). #548 / WP-D1.
+  private initPromise: Promise<void> | null = null;
 
   async init(): Promise<void> {
     // Skip initialization on server side
     if (typeof indexedDB === "undefined") {
       return Promise.resolve();
     }
+    if (this.db) return; // déjà ouverte
+    if (this.initPromise) return this.initPromise; // ouverture en cours
 
-    return new Promise((resolve, reject) => {
+    this.initPromise = new Promise<void>((resolve, reject) => {
       const request = indexedDB.open(DB_NAME, DB_VERSION);
 
-      request.onerror = () => reject(request.error);
+      request.onerror = () => {
+        this.initPromise = null; // permet une nouvelle tentative
+        reject(request.error);
+      };
       request.onsuccess = () => {
         this.db = request.result;
         resolve();
@@ -58,11 +66,20 @@ export class LocalDB {
         }
       };
     });
+
+    return this.initPromise;
+  }
+
+  /** Lazy guard : toute opération auto-initialise le cache local au lieu
+   *  de throw "Database not initialized" — un cache client doit se réparer,
+   *  jamais casser l'appelant (auth ≠ cache, cf. #548 / WP-D1). */
+  private async ensureDb(): Promise<void> {
+    if (!this.db) await this.init();
   }
 
   // Generic CRUD operations
   async get<T>(storeName: string, id: string): Promise<T | null> {
-    if (!this.db) throw new Error("Database not initialized");
+    await this.ensureDb();
 
     return new Promise((resolve, reject) => {
       const transaction = this.db!.transaction(storeName, "readonly");
@@ -75,7 +92,7 @@ export class LocalDB {
   }
 
   async getAll<T>(storeName: string): Promise<T[]> {
-    if (!this.db) throw new Error("Database not initialized");
+    await this.ensureDb();
 
     return new Promise((resolve, reject) => {
       const transaction = this.db!.transaction(storeName, "readonly");
@@ -88,7 +105,7 @@ export class LocalDB {
   }
 
   async put<T>(storeName: string, data: T): Promise<void> {
-    if (!this.db) throw new Error("Database not initialized");
+    await this.ensureDb();
 
     return new Promise((resolve, reject) => {
       const transaction = this.db!.transaction(storeName, "readwrite");
@@ -101,7 +118,7 @@ export class LocalDB {
   }
 
   async delete(storeName: string, id: string): Promise<void> {
-    if (!this.db) throw new Error("Database not initialized");
+    await this.ensureDb();
 
     return new Promise((resolve, reject) => {
       const transaction = this.db!.transaction(storeName, "readwrite");
@@ -114,7 +131,7 @@ export class LocalDB {
   }
 
   async clear(storeName: string): Promise<void> {
-    if (!this.db) throw new Error("Database not initialized");
+    await this.ensureDb();
 
     return new Promise((resolve, reject) => {
       const transaction = this.db!.transaction(storeName, "readwrite");
@@ -148,7 +165,7 @@ export class LocalDB {
   }
 
   async markSynced(id: number): Promise<void> {
-    if (!this.db) throw new Error("Database not initialized");
+    await this.ensureDb();
 
     const item = await this.get<SyncQueue>("sync_queue", id.toString());
     if (item) {
@@ -158,7 +175,7 @@ export class LocalDB {
   }
 
   async clearSyncedItems(): Promise<void> {
-    if (!this.db) throw new Error("Database not initialized");
+    await this.ensureDb();
 
     const items = await this.getSyncQueue();
     const syncedItems = items.filter((item) => item.synced);

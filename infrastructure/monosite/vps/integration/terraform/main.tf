@@ -1,6 +1,6 @@
 # KoproGo VPS - Integration Environment
 module "vps" {
-  source = "../../../_shared/terraform/modules/ovh-vps"
+  source = "../../../../_shared/terraform/modules/ovh-vps"
 
   instance_name       = var.instance_name
   flavor_name         = var.flavor_name

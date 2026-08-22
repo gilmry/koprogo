@@ -119,6 +119,204 @@ impl UnitOwner {
     }
 }
 
+// ============================================================================
+// Story H17 (Track H, CL3) — Représentant de vote / suspension (Art. 3.87 §1).
+//
+// Un lot peut appartenir à plusieurs titulaires (indivision) OU être démembré
+// (usufruit/nue-propriété, emphytéose, superficie). Dans ce cas le droit de
+// vote est SUSPENDU jusqu'à désignation d'un représentant unique (mandataire
+// commun). Logique domaine pure (zéro I/O), consommée par le gate vote (H10)
+// et le recalcul de quorum (H9). Cf. ADR-0011 + spec H17.
+// ============================================================================
+
+/// Nature de la titularité d'une ligne `unit_owners` (Art. 3.87 §1 CC).
+/// Détermine si le lot vote directement ou requiert un représentant unique.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum OwnershipType {
+    /// Pleine propriété — titulaire unique, vote direct.
+    #[default]
+    FullOwner,
+    /// Usufruitier (démembrement).
+    Usufruct,
+    /// Nu-propriétaire (démembrement).
+    BareOwner,
+    /// Co-titulaire en indivision.
+    Indivisaire,
+    /// Emphytéote (bail emphytéotique).
+    Emphyteote,
+    /// Superficiaire (droit de superficie).
+    Superficiaire,
+}
+
+impl OwnershipType {
+    /// Vrai uniquement pour la pleine propriété (seul cas votant sans
+    /// représentant désigné quand le lot est mono-titulaire).
+    pub fn is_full_ownership(&self) -> bool {
+        matches!(self, OwnershipType::FullOwner)
+    }
+}
+
+impl std::fmt::Display for OwnershipType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        // Valeurs alignées sur le CHECK SQL (migration 20260621000000).
+        let s = match self {
+            OwnershipType::FullOwner => "full_owner",
+            OwnershipType::Usufruct => "usufruct",
+            OwnershipType::BareOwner => "bare_owner",
+            OwnershipType::Indivisaire => "indivisaire",
+            OwnershipType::Emphyteote => "emphyteote",
+            OwnershipType::Superficiaire => "superficiaire",
+        };
+        f.write_str(s)
+    }
+}
+
+impl std::str::FromStr for OwnershipType {
+    type Err = VotingRightError;
+
+    /// Parse strict (mémoire `validate-before-compute`) : toute valeur hors
+    /// enum → erreur typée, jamais un fallback silencieux.
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "full_owner" => Ok(OwnershipType::FullOwner),
+            "usufruct" => Ok(OwnershipType::Usufruct),
+            "bare_owner" => Ok(OwnershipType::BareOwner),
+            "indivisaire" => Ok(OwnershipType::Indivisaire),
+            "emphyteote" => Ok(OwnershipType::Emphyteote),
+            "superficiaire" => Ok(OwnershipType::Superficiaire),
+            other => Err(VotingRightError::UnknownOwnershipType(other.to_string())),
+        }
+    }
+}
+
+/// Statut du droit de vote d'un lot (Art. 3.87 §1 CC).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum VotingRightStatus {
+    /// Le lot peut voter (mono-plein-propriétaire OU représentant désigné).
+    Active,
+    /// Vote suspendu : lot démembré/indivis sans représentant unique désigné.
+    Suspended,
+}
+
+/// Une ligne de titularité d'un lot, réduite aux attributs pertinents pour le
+/// calcul du droit de vote (Art. 3.87 §1). Value object pur.
+///
+/// Volontairement découplé de `UnitOwner` (persistance) : le gate vote et le
+/// checker quorum n'ont besoin que de `(ownership_type, is_voting_representative)`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct LotHolder {
+    pub ownership_type: OwnershipType,
+    pub is_voting_representative: bool,
+}
+
+impl LotHolder {
+    pub fn new(ownership_type: OwnershipType, is_voting_representative: bool) -> Self {
+        Self {
+            ownership_type,
+            is_voting_representative,
+        }
+    }
+}
+
+/// Erreurs typées du calcul de droit de vote (Art. 3.87 §1 CC).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum VotingRightError {
+    /// Chaîne de titularité inconnue (hors enum / CHECK DB).
+    UnknownOwnershipType(String),
+    /// Plus d'un représentant de vote désigné pour un même lot. Art. 3.87 §1 :
+    /// les titulaires désignent UN représentant unique.
+    MultipleRepresentatives { unit_id: Uuid, count: usize },
+}
+
+impl std::fmt::Display for VotingRightError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            VotingRightError::UnknownOwnershipType(s) => {
+                write!(f, "Type de titularité inconnu : '{}'", s)
+            }
+            VotingRightError::MultipleRepresentatives { unit_id, count } => write!(
+                f,
+                "Lot {} : {} représentants de vote désignés, un seul autorisé (Art. 3.87 §1 CC)",
+                unit_id, count
+            ),
+        }
+    }
+}
+
+impl std::error::Error for VotingRightError {}
+
+/// Droit de vote suspendu (Art. 3.87 §1 CC) : lot démembré/indivis sans
+/// représentant unique désigné. Erreur typée → `AppError` 422
+/// `VOTING_RIGHT_SUSPENDED` (bridge dans `application/error.rs`).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct VotingRightSuspendedError {
+    pub unit_id: Uuid,
+}
+
+impl std::fmt::Display for VotingRightSuspendedError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "Droit de vote suspendu pour le lot {} : lot démembré/indivis sans \
+             représentant unique désigné (Art. 3.87 §1 CC)",
+            self.unit_id
+        )
+    }
+}
+
+impl std::error::Error for VotingRightSuspendedError {}
+
+/// Détermine le statut du droit de vote d'un lot à partir de ses titulaires
+/// **actifs** (Art. 3.87 §1 CC). Domaine pur, déterministe.
+///
+/// - Aucun titulaire qualifié (rétro-compat des lots pré-H17) → `Active`
+///   (lot supposé en pleine propriété mono-titulaire).
+/// - Au moins un représentant de vote désigné → `Active` (le mandataire
+///   unique exerce le vote du lot).
+/// - Un seul titulaire en pleine propriété → `Active`.
+/// - Sinon (indivision OU démembrement sans représentant) → `Suspended`.
+pub fn voting_right_status(holders: &[LotHolder]) -> VotingRightStatus {
+    if holders.is_empty() {
+        return VotingRightStatus::Active;
+    }
+    if holders.iter().any(|h| h.is_voting_representative) {
+        return VotingRightStatus::Active;
+    }
+    if holders.len() == 1 && holders[0].ownership_type.is_full_ownership() {
+        return VotingRightStatus::Active;
+    }
+    VotingRightStatus::Suspended
+}
+
+/// Vérifie qu'**au plus un** représentant de vote est désigné pour le lot
+/// (Art. 3.87 §1 : représentant UNIQUE). Erreur typée si ≥ 2 (à appeler lors
+/// de la désignation d'un représentant).
+pub fn assert_single_voting_representative(
+    unit_id: Uuid,
+    holders: &[LotHolder],
+) -> Result<(), VotingRightError> {
+    let count = holders
+        .iter()
+        .filter(|h| h.is_voting_representative)
+        .count();
+    if count >= 2 {
+        return Err(VotingRightError::MultipleRepresentatives { unit_id, count });
+    }
+    Ok(())
+}
+
+/// Garde d'application (gate vote H10/H17) : un lot dont le vote est suspendu
+/// ne peut pas voter (Art. 3.87 §1). Erreur typée → 422 `VOTING_RIGHT_SUSPENDED`.
+pub fn assert_voting_right_active(
+    unit_id: Uuid,
+    holders: &[LotHolder],
+) -> Result<(), VotingRightSuspendedError> {
+    match voting_right_status(holders) {
+        VotingRightStatus::Active => Ok(()),
+        VotingRightStatus::Suspended => Err(VotingRightSuspendedError { unit_id }),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -358,5 +556,147 @@ mod tests {
         let total =
             owner1.ownership_percentage + owner2.ownership_percentage + owner3.ownership_percentage;
         assert_eq!(total, Decimal::ONE);
+    }
+
+    // ------------------------------------------------------------------------
+    // Story H17 (CL3) — Représentant de vote / suspension (Art. 3.87 §1 CC).
+    // TDD 4 catégories : @happy / @edge / @security / @negative.
+    // ------------------------------------------------------------------------
+
+    use std::str::FromStr;
+
+    fn holder(t: OwnershipType, rep: bool) -> LotHolder {
+        LotHolder::new(t, rep)
+    }
+
+    /// @happy — lot mono-plein-propriétaire → vote actif.
+    #[test]
+    fn happy_voting_active_mono_full_owner() {
+        let holders = [holder(OwnershipType::FullOwner, false)];
+        assert_eq!(voting_right_status(&holders), VotingRightStatus::Active);
+        assert!(assert_voting_right_active(Uuid::new_v4(), &holders).is_ok());
+    }
+
+    /// @happy — lot avec représentant de vote désigné → vote actif.
+    #[test]
+    fn happy_voting_active_with_designated_representative() {
+        // Indivision (2 titulaires) mais un représentant désigné → actif.
+        let holders = [
+            holder(OwnershipType::Indivisaire, true),
+            holder(OwnershipType::Indivisaire, false),
+        ];
+        assert_eq!(voting_right_status(&holders), VotingRightStatus::Active);
+        assert!(assert_voting_right_active(Uuid::new_v4(), &holders).is_ok());
+    }
+
+    /// @happy — rétro-compat : aucune titularité qualifiée → actif (lot supposé
+    /// pleine propriété mono-titulaire ; aucune régression de vote pré-H17).
+    #[test]
+    fn happy_voting_active_legacy_no_holders() {
+        assert_eq!(voting_right_status(&[]), VotingRightStatus::Active);
+        assert!(assert_voting_right_active(Uuid::new_v4(), &[]).is_ok());
+    }
+
+    /// @edge — lot démembré usufruit/nue-propriété AVEC représentant désigné
+    /// (ici l'usufruitier) → actif.
+    #[test]
+    fn edge_voting_active_usufruct_with_representative() {
+        let holders = [
+            holder(OwnershipType::Usufruct, true),
+            holder(OwnershipType::BareOwner, false),
+        ];
+        assert_eq!(voting_right_status(&holders), VotingRightStatus::Active);
+    }
+
+    /// @edge — emphytéote/superficiaire seul SANS représentant → suspendu
+    /// (démembrement, pas pleine propriété).
+    #[test]
+    fn edge_voting_suspended_single_dismembered_holder() {
+        for t in [OwnershipType::Emphyteote, OwnershipType::Superficiaire] {
+            let holders = [holder(t, false)];
+            assert_eq!(
+                voting_right_status(&holders),
+                VotingRightStatus::Suspended,
+                "type {t} seul sans représentant doit suspendre le vote"
+            );
+        }
+    }
+
+    /// @edge — round-trip Display ⇄ FromStr aligné sur le CHECK SQL.
+    #[test]
+    fn edge_ownership_type_display_fromstr_roundtrip() {
+        for t in [
+            OwnershipType::FullOwner,
+            OwnershipType::Usufruct,
+            OwnershipType::BareOwner,
+            OwnershipType::Indivisaire,
+            OwnershipType::Emphyteote,
+            OwnershipType::Superficiaire,
+        ] {
+            let s = t.to_string();
+            assert_eq!(OwnershipType::from_str(&s).unwrap(), t);
+        }
+    }
+
+    /// @security — lot indivis SANS représentant → suspendu + gate rejette le
+    /// vote avec erreur typée `VotingRightSuspendedError` (→ 422).
+    #[test]
+    fn security_voting_suspended_indivision_without_representative() {
+        let unit_id = Uuid::new_v4();
+        let holders = [
+            holder(OwnershipType::Indivisaire, false),
+            holder(OwnershipType::Indivisaire, false),
+        ];
+        assert_eq!(voting_right_status(&holders), VotingRightStatus::Suspended);
+        let err = assert_voting_right_active(unit_id, &holders).unwrap_err();
+        assert_eq!(err.unit_id, unit_id);
+    }
+
+    /// @security — lot démembré (usufruit + nue-propriété) SANS représentant →
+    /// suspendu (le contournement « voter quand même » est bloqué).
+    #[test]
+    fn security_voting_suspended_dismembered_without_representative() {
+        let holders = [
+            holder(OwnershipType::Usufruct, false),
+            holder(OwnershipType::BareOwner, false),
+        ];
+        assert_eq!(voting_right_status(&holders), VotingRightStatus::Suspended);
+        assert!(assert_voting_right_active(Uuid::new_v4(), &holders).is_err());
+    }
+
+    /// @negative — désignation de 2 représentants pour un même lot → rejet typé
+    /// (Art. 3.87 §1 : représentant unique), pas de panic.
+    #[test]
+    fn negative_multiple_voting_representatives_rejected() {
+        let unit_id = Uuid::new_v4();
+        let holders = [
+            holder(OwnershipType::Indivisaire, true),
+            holder(OwnershipType::Indivisaire, true),
+        ];
+        let err = assert_single_voting_representative(unit_id, &holders).unwrap_err();
+        match err {
+            VotingRightError::MultipleRepresentatives { unit_id: u, count } => {
+                assert_eq!(u, unit_id);
+                assert_eq!(count, 2);
+            }
+            other => panic!("attendu MultipleRepresentatives, obtenu {other:?}"),
+        }
+        // Un seul représentant (ou zéro) passe.
+        assert!(assert_single_voting_representative(
+            unit_id,
+            &[holder(OwnershipType::Indivisaire, true)]
+        )
+        .is_ok());
+    }
+
+    /// @negative — type de titularité inconnu → erreur typée, jamais un
+    /// fallback silencieux.
+    #[test]
+    fn negative_unknown_ownership_type_rejected() {
+        let err = OwnershipType::from_str("locataire").unwrap_err();
+        assert_eq!(
+            err,
+            VotingRightError::UnknownOwnershipType("locataire".to_string())
+        );
     }
 }

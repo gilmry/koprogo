@@ -25,7 +25,7 @@ pub async fn get_accountant_stats(
         .await
     {
         Ok(stats) => HttpResponse::Ok().json(stats),
-        Err(e) => HttpResponse::InternalServerError().body(e),
+        Err(e) => HttpResponse::InternalServerError().body(e.to_string()),
     }
 }
 
@@ -52,7 +52,7 @@ pub async fn get_recent_transactions(
         .await
     {
         Ok(transactions) => HttpResponse::Ok().json(transactions),
-        Err(e) => HttpResponse::InternalServerError().body(e),
+        Err(e) => HttpResponse::InternalServerError().body(e.to_string()),
     }
 }
 

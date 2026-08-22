@@ -1,4 +1,13 @@
 {
+  "conformity": {
+    "banner_title": "⚠️ {name} n'est pas conforme",
+    "units_missing": "{n} lot(s) manquant(s)",
+    "units_extra": "{n} lot(s) en surplus",
+    "quota_off": "Somme des quotas en deçà de {delta} / {basis} (acte de base)",
+    "contact_admin": "Contactez l'admin pour corriger.",
+    "toast_title": "Calcul bloqué — Immeuble non conforme",
+    "toast_message": "{units_delta} lot(s) manquant(s), Σ quotas = {sum} / {basis}"
+  },
   "common": {
     "save": "Enregistrer",
     "cancel": "Annuler",
@@ -129,6 +138,7 @@
     "select": "Sélectionner",
     "select_building": "Sélectionner un immeuble",
     "select_organization": "Sélectionner une organisation",
+    "select_acp": "Sélectionner une ACP",
     "all_buildings": "Tous les immeubles",
     "loading_buildings": "Chargement des immeubles...",
     "loading_details": "Chargement des détails...",
@@ -401,7 +411,15 @@
     "totalRevenue": "Total produits",
     "unitCount": "Nombre de lots",
     "units": "Lots",
-    "workReports": "Rapports de travaux"
+    "workReports": "Rapports de travaux",
+    "conformity": {
+      "conformant": "Immeuble conforme",
+      "nonConformant": "Immeuble non-conforme",
+      "unitsCount": "Lots déclarés",
+      "quotaSum": "Somme quotas",
+      "quotaDelta": "Écart",
+      "expected1000": " / 1000"
+    }
   },
   "units": {
     "title": "Lots",
@@ -457,6 +475,7 @@
     "no_unit_selected": "Aucun lot sélectionné",
     "ongoing": "En cours",
     "organization": "Organisation",
+    "acp": "ACP",
     "owner_selection_help": "Sélectionnez un copropriétaire dans la liste ou recherchez par nom",
     "owners": "Copropriétaires",
     "ownership_percentage": "Quote-part (%)",
@@ -483,6 +502,7 @@
     "search_owner_placeholder": "Rechercher par nom...",
     "select_building": "Veuillez sélectionner un immeuble",
     "select_organization": "Veuillez sélectionner une organisation",
+    "select_acp": "Veuillez sélectionner une ACP",
     "select_owner": "Veuillez sélectionner un copropriétaire",
     "select_owner_option": "-- Sélectionner un copropriétaire --",
     "showOwners": "Afficher les copropriétaires",
@@ -1068,12 +1088,57 @@
     }
   },
   "roles": {
+    "superadmin": "Super Administrateur",
     "syndic": "Syndic",
-    "board_member": "Membre du conseil",
-    "contractor": "Prestataire",
-    "owner": "Copropriétaire",
     "accountant": "Comptable",
-    "superadmin": "Administrateur"
+    "owner": "Copropriétaire",
+    "user": "Utilisateur"
+  },
+  "roleDelegation": {
+    "list": {
+      "title": "Délégations actives",
+      "new": "Nouvelle délégation",
+      "empty": "Aucune délégation active pour le moment."
+    },
+    "col": {
+      "target": "Cible",
+      "role": "Rôle",
+      "organization": "Organisation",
+      "source": "Source",
+      "expire": "Expire",
+      "actions": "Actions"
+    },
+    "banner": {
+      "inherited": {
+        "title": "Vous avez reçu ce rôle par délégation.",
+        "body": "Vous ne pouvez pas re-déléguer (non-transitivité INV-8)."
+      },
+      "info": {
+        "title": "Délégation non transitive (INV-8).",
+        "body": "Si vous avez reçu votre rôle par délégation, la re-délégation est interdite."
+      }
+    },
+    "action": {
+      "revoke": "Révoquer",
+      "create": "Déléguer"
+    },
+    "create": {
+      "title": "Nouvelle délégation de rôle",
+      "success": "Délégation créée."
+    },
+    "field": {
+      "target": "Utilisateur cible",
+      "role": "Rôle délégué",
+      "organization": "Organisation",
+      "validUntil": "Valide jusqu'au"
+    },
+    "revoke": {
+      "success": "Délégation révoquée.",
+      "confirm": {
+        "title": "Confirmer la révocation",
+        "body": "Le user perdra immédiatement le rôle délégué."
+      }
+    }
   },
   "notices": {
     "title": "Annonces",
@@ -1682,8 +1747,10 @@
       "totalTantgemesError": "Les tantièmes doivent être supérieurs à 0",
       "tantgemesHint": "Généralement 1000 millièmes",
       "constructionYear": "Année de construction",
-      "selectOrganization": "Sélectionner une organisation",
-      "organizationRequired": "L'organisation est requise",
+      "acp": "ACP (Association des Copropriétaires)",
+      "selectAcp": "Sélectionner une ACP",
+      "acpRequired": "L'ACP est requise",
+      "noAcpAvailable": "Aucune ACP disponible — créez-en une d'abord dans Administration > ACP",
       "createdSuccessfully": "Immeuble créé avec succès",
       "updatedSuccessfully": "Immeuble mis à jour avec succès"
     }
@@ -2999,7 +3066,9 @@
     "quorumContribution": "Contrib. quorum",
     "start": "Démarrer",
     "end": "Terminer",
-    "noSession": "Aucune session vidéo configurée"
+    "noSession": "Aucune session vidéo configurée",
+    "platformOther": "Autre",
+    "scheduledStart": "Début programmé"
   },
   "proxy": {
     "limitReached": "Limite de procurations atteinte (Art. 3.87 §6 CC)",
@@ -3284,13 +3353,6 @@
       "venDesc": "Journal des ventes (clients)"
     }
   },
-  "roles": {
-    "superadmin": "Super Administrateur",
-    "syndic": "Syndic",
-    "accountant": "Comptable",
-    "owner": "Copropriétaire",
-    "user": "Utilisateur"
-  },
   "settings": {
     "profile": {
       "title": "Profil",
@@ -3410,5 +3472,25 @@
   "polls.results.winner": "Option gagnante",
   "gamification.category": "Catégorie",
   "gamification.tier": "Niveau",
-  "_i18n_version": "2026-03-26"
+  "meeting.missing.ConvocationsNotSent": "Convocations non envoyées (Art. 3.87 §3 CC)",
+  "meeting.missing.VotesNotClosed": "{open_resolutions, plural, =1 {1 résolution en cours} other {{open_resolutions} résolutions en cours}} (Art. 3.87 §4 CC)",
+  "meeting.missing.AttendanceNotRecorded": "Présences pas enregistrées (Art. 3.87 §5 CC)",
+  "meeting.missing.QuorumNotReached": "Quorum non atteint ({attended_quotas}/{total_quotas}) — Art. 3.87 §5 CC : majorité simple > 50%",
+  "meeting.missing.MinutesDraftMissing": "PV draft manquant",
+  "meeting.complete.disabled_reason": "{n, plural, =1 {1 condition manquante} other {{n} conditions manquantes}}",
+  "meeting.complete.missing_aria_label": "Conditions manquantes pour clôturer la réunion",
+  "meeting.complete.blockers_title": "Pour clôturer cette AG, complétez les conditions :",
+  "meeting.complete.toast_title": "Clôture impossible",
+  "meeting.complete.toast_message": "{n, plural, =1 {1 condition manquante} other {{n} conditions manquantes}} (voir détail sur la fiche réunion)",
+  "_i18n_version": "2026-03-26",
+  "scope": {
+    "searchPlaceholder": "Rechercher un immeuble…",
+    "selectBuilding": "Sélectionner un immeuble",
+    "forbidden": "Accès refusé",
+    "clear": "Effacer la sélection",
+    "noBuildings": "Aucun immeuble dans votre périmètre",
+    "favorite": "Ajouter aux favoris",
+    "unfavorite": "Retirer des favoris",
+    "portfolios": "portefeuilles"
+  }
 }

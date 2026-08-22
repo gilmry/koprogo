@@ -151,14 +151,14 @@ Documentation
 * DCO (Developer Certificate of Origin)
 * Pull request templates
 
-Jalon 1 : Sécurité & GDPR (En Cours) 🔄
+Jalon 1 : Sécurité & GDPR (Complété) ✅
 ========================================
 
-**État** : **70% COMPLÉTÉ**
+**État** : **100% COMPLÉTÉ (Mai 2026)**
 
-**Capacité débloquée** : 50-100 copropriétés (beta publique)
+**Capacité débloquée** : 50-100 copropriétés (bêta privée fermée, VPS-first)
 
-**Conformité légale** : 40%
+**Conformité légale** : 95%
 
 Déjà Fait
 ---------
@@ -167,29 +167,33 @@ Déjà Fait
 
 * LUKS Encryption at-rest ✅
 * Backups GPG + S3 ✅
-* Monitoring/Alerting ✅
+* Monitoring/Alerting (Prometheus, Grafana, Loki, Alertmanager) ✅
 * Intrusion Detection (Suricata) ✅
 * WAF (CrowdSec) ✅
 * fail2ban + SSH hardening ✅
 
-En Cours
---------
+✅ **GDPR Complet** (Issues #42, #90, #64, #65, #67)
 
-⏳ **GDPR Basique** (Issue #42)
+* Export données utilisateur (Article 15 GDPR) ✅
+* Droit à l'oubli (Article 17 GDPR) ✅
+* Articles 16, 18, 21 (rectification, restriction, opposition) ✅
+* Privacy policy + documentation GDPR ✅
+* Tests GDPR automatisés ✅
 
-* ⏳ Export données utilisateur (Article 15 GDPR)
-* ⏳ Droit à l'oubli (Article 17 GDPR)
-* ⏳ Privacy policy v1.0
-* ⏳ Tests GDPR automatisés
+✅ **Sécurité Auth & Comptable** (Mai 2026 — WP-A1/A4..A7, FE1)
 
-⏳ **Authentification Forte** (Issue #48)
+* #271 / #272 / #273 : Quorum AG (Art. 3.87 §5 CC), 2e convocation, vote mandataire ✅
+* #525 (WP-A1 Story C1) : Governance Decimal (quotas/voting power exacts) ✅
+* #433 umbrella : Decimal end-to-end (EXP-005/006/007/008) + erreurs domaine typées ✅
+* #343 (WP-FE1) : JWT hors localStorage — refresh = cookie ``HttpOnly``, access en mémoire, silent-refresh single-flight (#550) ✅
+* #339 (WP-A7) : Rotation clés API (gate SYNDIC/SUPERADMIN, anti-rejeu, secret une fois) ✅
+* #526 : ``expenses.amount > 0`` conservé, annulations = contre-écritures journal PCMN ✅
+* ADR-0008 amendement 2026-05-19 : carve-outs ``f64`` fermés (résolution %-affichage / ratio proxy vote / gamification / surfaces m² / IoT) ✅
 
-* ⏳ Inscription itsme® (délai 2-4 semaines)
-* ⏳ Intégration API itsme®
-* ✅ Fallback email/password (déjà implémenté)
-* ⏳ Tests auth E2E
+⏳ **Différé v0.2.0** (non bloquant bêta fermée)
 
-**Effort restant estimé** : 2-4 semaines (selon force de travail)
+* #48 : itsme® / eID pour votes AG (Phase 2 — auth forte)
+* Cascade port/use-case/handler ``Result<_, String>`` → ``AppError`` (pont conservé)
 
 Modules Fonctionnels Déjà Implémentés
 ======================================

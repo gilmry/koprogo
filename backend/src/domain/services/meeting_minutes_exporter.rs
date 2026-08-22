@@ -1,6 +1,11 @@
 use crate::domain::entities::{Building, Meeting, MeetingType, Resolution, Vote};
-use printpdf::*;
-use std::io::BufWriter;
+use crate::domain::services::pdf_writer::{
+    builtin_font, new_document, save_document, PdfPageBuilder,
+};
+use printpdf::BuiltinFont;
+use rust_decimal::prelude::ToPrimitive;
+use rust_decimal::Decimal;
+use rust_decimal_macros::dec;
 use uuid::Uuid;
 
 /// Meeting Minutes Exporter - Generates PDF for Procès-Verbal d'Assemblée Générale
@@ -13,7 +18,7 @@ pub struct AttendeeInfo {
     pub owner_id: Uuid,
     pub name: String,
     pub email: String,
-    pub voting_power: f64, // Millièmes/tantièmes
+    pub voting_power: Decimal, // Millièmes/tantièmes (Decimal exact — ADR-0008)
     pub is_proxy: bool,
     pub proxy_for: Option<String>, // Name of owner being represented
 }
@@ -41,49 +46,40 @@ impl MeetingMinutesExporter {
         resolutions: &[ResolutionWithVotes],
     ) -> Result<Vec<u8>, String> {
         // Create PDF document (A4: 210mm x 297mm)
-        let (doc, page1, layer1) = PdfDocument::new(
-            "Procès-Verbal d'Assemblée Générale",
-            Mm(210.0),
-            Mm(297.0),
-            "Layer 1",
-        );
-        let current_layer = doc.get_page(page1).get_layer(layer1);
+        let doc = new_document("Procès-Verbal d'Assemblée Générale");
+        let mut current_layer = PdfPageBuilder::new();
 
         // Load fonts
-        let font = doc
-            .add_builtin_font(BuiltinFont::Helvetica)
-            .map_err(|e| e.to_string())?;
-        let font_bold = doc
-            .add_builtin_font(BuiltinFont::HelveticaBold)
-            .map_err(|e| e.to_string())?;
+        let font = builtin_font(BuiltinFont::Helvetica);
+        let font_bold = builtin_font(BuiltinFont::HelveticaBold);
 
         let mut y = 270.0; // Start from top
 
         // === HEADER ===
-        current_layer.use_text(
+        current_layer.text(
             "PROCÈS-VERBAL D'ASSEMBLÉE GÉNÉRALE".to_string(),
             18.0,
-            Mm(20.0),
-            Mm(y),
+            20.0,
+            y,
             &font_bold,
         );
         y -= 15.0;
 
         // Building information
-        current_layer.use_text(
+        current_layer.text(
             format!("Copropriété: {}", building.name),
             12.0,
-            Mm(20.0),
-            Mm(y),
+            20.0,
+            y,
             &font_bold,
         );
         y -= 7.0;
 
-        current_layer.use_text(
+        current_layer.text(
             format!("Adresse: {}", building.address),
             10.0,
-            Mm(20.0),
-            Mm(y),
+            20.0,
+            y,
             &font,
         );
         y -= 10.0;
@@ -94,11 +90,11 @@ impl MeetingMinutesExporter {
             MeetingType::Extraordinary => "Assemblée Générale Extraordinaire (AGE)",
         };
 
-        current_layer.use_text(
+        current_layer.text(
             format!("Type: {}", meeting_type_label),
             10.0,
-            Mm(20.0),
-            Mm(y),
+            20.0,
+            y,
             &font,
         );
         y -= 6.0;
@@ -107,50 +103,50 @@ impl MeetingMinutesExporter {
             .scheduled_date
             .format("%d/%m/%Y à %H:%M")
             .to_string();
-        current_layer.use_text(format!("Date: {}", date_str), 10.0, Mm(20.0), Mm(y), &font);
+        current_layer.text(format!("Date: {}", date_str), 10.0, 20.0, y, &font);
         y -= 6.0;
 
-        current_layer.use_text(
-            format!("Lieu: {}", meeting.location),
-            10.0,
-            Mm(20.0),
-            Mm(y),
-            &font,
-        );
+        current_layer.text(format!("Lieu: {}", meeting.location), 10.0, 20.0, y, &font);
         y -= 6.0;
         y -= 5.0;
 
         // === ATTENDEES SECTION ===
-        current_layer.use_text(
+        current_layer.text(
             "PRÉSENCES ET REPRÉSENTATIONS".to_string(),
             14.0,
-            Mm(20.0),
-            Mm(y),
+            20.0,
+            y,
             &font_bold,
         );
         y -= 8.0;
 
-        // Calculate total voting power
-        let total_voting_power: f64 = attendees.iter().map(|a| a.voting_power).sum();
-        let total_millimes = building.total_units as f64 * 1000.0; // Assuming 1000 millièmes per unit
-        let quorum_percentage = (total_voting_power / total_millimes) * 100.0;
+        // Calculate total voting power (Decimal exact — ADR-0008)
+        let total_voting_power: Decimal = attendees.iter().map(|a| a.voting_power).sum();
+        let total_millimes = Decimal::from(building.total_units) * dec!(1000); // 1000 millièmes/unit
+        let quorum_percentage = if total_millimes > Decimal::ZERO {
+            (total_voting_power / total_millimes * dec!(100))
+                .to_f64()
+                .unwrap_or(0.0)
+        } else {
+            0.0
+        };
 
-        current_layer.use_text(
+        current_layer.text(
             format!(
                 "Présents ou représentés: {} millièmes sur {} ({:.2}%)",
                 total_voting_power, total_millimes, quorum_percentage
             ),
             10.0,
-            Mm(20.0),
-            Mm(y),
+            20.0,
+            y,
             &font,
         );
         y -= 10.0;
 
         // Attendees table header
-        current_layer.use_text("Copropriétaire", 10.0, Mm(20.0), Mm(y), &font_bold);
-        current_layer.use_text("Millièmes", 10.0, Mm(110.0), Mm(y), &font_bold);
-        current_layer.use_text("Présence", 10.0, Mm(150.0), Mm(y), &font_bold);
+        current_layer.text("Copropriétaire", 10.0, 20.0, y, &font_bold);
+        current_layer.text("Millièmes", 10.0, 110.0, y, &font_bold);
+        current_layer.text("Présence", 10.0, 150.0, y, &font_bold);
         y -= 6.0;
 
         // Attendees list
@@ -160,12 +156,12 @@ impl MeetingMinutesExporter {
                 break;
             }
 
-            current_layer.use_text(&attendee.name, 9.0, Mm(20.0), Mm(y), &font);
-            current_layer.use_text(
+            current_layer.text(attendee.name.as_str(), 9.0, 20.0, y, &font);
+            current_layer.text(
                 format!("{:.2}", attendee.voting_power),
                 9.0,
-                Mm(110.0),
-                Mm(y),
+                110.0,
+                y,
                 &font,
             );
 
@@ -179,7 +175,7 @@ impl MeetingMinutesExporter {
                 "Présent".to_string()
             };
 
-            current_layer.use_text(presence, 9.0, Mm(150.0), Mm(y), &font);
+            current_layer.text(presence, 9.0, 150.0, y, &font);
             y -= 5.0;
         }
         y -= 8.0;
@@ -191,15 +187,15 @@ impl MeetingMinutesExporter {
             "✗ QUORUM NON ATTEINT"
         };
 
-        current_layer.use_text(quorum_status.to_string(), 11.0, Mm(20.0), Mm(y), &font_bold);
+        current_layer.text(quorum_status.to_string(), 11.0, 20.0, y, &font_bold);
         y -= 12.0;
 
         // === RESOLUTIONS SECTION ===
-        current_layer.use_text(
+        current_layer.text(
             "RÉSOLUTIONS ET VOTES".to_string(),
             14.0,
-            Mm(20.0),
-            Mm(y),
+            20.0,
+            y,
             &font_bold,
         );
         y -= 10.0;
@@ -213,11 +209,11 @@ impl MeetingMinutesExporter {
             let resolution = &res_with_votes.resolution;
 
             // Resolution number and title
-            current_layer.use_text(
+            current_layer.text(
                 format!("Résolution n°{}: {}", idx + 1, resolution.title),
                 11.0,
-                Mm(20.0),
-                Mm(y),
+                20.0,
+                y,
                 &font_bold,
             );
             y -= 6.0;
@@ -229,7 +225,7 @@ impl MeetingMinutesExporter {
                 resolution.description.clone()
             };
 
-            current_layer.use_text(description, 9.0, Mm(25.0), Mm(y), &font);
+            current_layer.text(description, 9.0, 25.0, y, &font);
             y -= 6.0;
 
             // Majority type
@@ -246,17 +242,17 @@ impl MeetingMinutesExporter {
                 crate::domain::entities::MajorityType::Unanimity => "Unanimité (Art. 3.88 §1, 3°)",
             };
 
-            current_layer.use_text(
+            current_layer.text(
                 format!("Majorité requise: {}", majority_label),
                 9.0,
-                Mm(25.0),
-                Mm(y),
+                25.0,
+                y,
                 &font,
             );
             y -= 6.0;
 
             // Vote results
-            current_layer.use_text(
+            current_layer.text(
                 format!(
                     "Pour: {} votes ({:.2} millièmes) | Contre: {} votes ({:.2} millièmes) | Abstention: {} votes ({:.2} millièmes)",
                     resolution.vote_count_pour,
@@ -267,8 +263,8 @@ impl MeetingMinutesExporter {
                     resolution.total_voting_power_abstention
                 ),
                 9.0,
-                Mm(25.0),
-                Mm(y),
+                25.0,
+                y,
                 &font,
             );
             y -= 6.0;
@@ -280,11 +276,11 @@ impl MeetingMinutesExporter {
                 crate::domain::entities::ResolutionStatus::Pending => ("EN ATTENTE", "○"),
             };
 
-            current_layer.use_text(
+            current_layer.text(
                 format!("{} Résolution {}", result_symbol, result_text),
                 10.0,
-                Mm(25.0),
-                Mm(y),
+                25.0,
+                y,
                 &font_bold,
             );
             y -= 10.0;
@@ -297,31 +293,22 @@ impl MeetingMinutesExporter {
             y -= 10.0;
         }
 
-        current_layer.use_text("SIGNATURES".to_string(), 12.0, Mm(20.0), Mm(y), &font_bold);
+        current_layer.text("SIGNATURES".to_string(), 12.0, 20.0, y, &font_bold);
         y -= 10.0;
 
-        current_layer.use_text(
+        current_layer.text(
             "Le Président de séance: ________________",
             10.0,
-            Mm(20.0),
-            Mm(y),
+            20.0,
+            y,
             &font,
         );
 
-        current_layer.use_text(
-            "Le Secrétaire: ________________",
-            10.0,
-            Mm(120.0),
-            Mm(y),
-            &font,
-        );
+        current_layer.text("Le Secrétaire: ________________", 10.0, 120.0, y, &font);
 
         // Save to bytes
-        let mut buffer = Vec::new();
-        doc.save(&mut BufWriter::new(&mut buffer))
-            .map_err(|e| e.to_string())?;
-
-        Ok(buffer)
+        let page = current_layer.into_page(210.0, 297.0);
+        Ok(save_document(doc, page))
     }
 }
 
@@ -350,14 +337,15 @@ mod tests {
             syndic_office_hours: None,
             syndic_emergency_contact: None,
             slug: None,
-            organization_id: Uuid::new_v4(),
+            acp_id: Uuid::new_v4(),
             created_at: Utc::now(),
             updated_at: Utc::now(),
         };
+        let test_org_id = Uuid::new_v4();
 
         let meeting = Meeting {
             id: Uuid::new_v4(),
-            organization_id: building.organization_id,
+            organization_id: test_org_id,
             building_id: building.id,
             meeting_type: MeetingType::Ordinary,
             title: "Assemblée Générale Ordinaire".to_string(),
@@ -386,7 +374,7 @@ mod tests {
                 owner_id: Uuid::new_v4(),
                 name: "Jean Dupont".to_string(),
                 email: "jean@example.com".to_string(),
-                voting_power: 150.0,
+                voting_power: dec!(150),
                 is_proxy: false,
                 proxy_for: None,
             },
@@ -394,7 +382,7 @@ mod tests {
                 owner_id: Uuid::new_v4(),
                 name: "Marie Martin".to_string(),
                 email: "marie@example.com".to_string(),
-                voting_power: 120.0,
+                voting_power: dec!(120),
                 is_proxy: true,
                 proxy_for: Some("Pierre Durant".to_string()),
             },
@@ -410,9 +398,9 @@ mod tests {
             vote_count_pour: 2,
             vote_count_contre: 0,
             vote_count_abstention: 0,
-            total_voting_power_pour: 270.0,
-            total_voting_power_contre: 0.0,
-            total_voting_power_abstention: 0.0,
+            total_voting_power_pour: dec!(270),
+            total_voting_power_contre: dec!(0),
+            total_voting_power_abstention: dec!(0),
             status: ResolutionStatus::Adopted,
             agenda_item_index: None,
             voted_at: Some(Utc::now()),

@@ -5,7 +5,10 @@ use validator::Validate;
 
 #[derive(Debug, Deserialize, Validate, Clone)]
 pub struct CreateUnitDto {
-    pub organization_id: String,
+    /// Story H15 — FK vers `acps.id` (anciennement `organization_id`).
+    /// Le lot dérive son ACP de son building parent (cf. #602) ; le scoping
+    /// org se fait via `acps.organization_id`.
+    pub acp_id: String,
     pub building_id: String,
 
     #[validate(length(min = 1))]

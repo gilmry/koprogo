@@ -75,7 +75,7 @@ Feature: Community Notice Board
     When I create a notice with expiration:
       | title       | Temporary parking notice          |
       | content     | Parking lot closed this weekend   |
-      | expires_at  | 2026-04-01T00:00:00Z              |
+      | expires_at  | +30d                              |
     Then the notice should have an expiration date
 
   # === LISTING ===

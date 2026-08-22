@@ -35,3 +35,15 @@ Feature: Multi-tenancy isolation
     When a superadmin lists all units without organization filter
     Then units from both organizations are returned
 
+  # BUG-WF14-2 (Human Review v0.1.0, 2026-04-01) — owner-level building isolation.
+  # An owner who owns a unit in only ONE building must not see the OTHER
+  # buildings of the same organization. Fixed by commit dddde26; this scenario
+  # is the @security regression guard proving the isolation holds.
+  @security
+  Scenario: Owner sees only buildings where they own a unit (BUG-WF14-2)
+    Given an organization with three buildings
+    And an owner Alice who owns a unit only in the first building
+    When Alice lists buildings scoped to her ownership
+    Then Alice sees exactly 1 building
+    And Alice does not see the other two buildings
+

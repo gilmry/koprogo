@@ -96,6 +96,43 @@ pub struct OwnerContribution {
     pub created_by: Option<Uuid>,
 }
 
+/// Domain-typed validation error for owner contributions (PCMN classe 7).
+///
+/// Pure domain type — no infra/application dependency (hexagonal purity).
+/// Précédent `JournalEntryError`/`ChargeDistributionError` : l'entité
+/// renvoie son erreur typée, l'application la mappe vers `AppError`
+/// (#433 / WP-A6 EXP-008) → 400 validation, jamais 500 Internal.
+#[derive(Debug, Clone, PartialEq)]
+pub enum OwnerContributionError {
+    /// Montant négatif (un revenu entrant ne peut être < 0).
+    NonPositiveAmount,
+    /// Description vide.
+    EmptyDescription,
+}
+
+impl std::fmt::Display for OwnerContributionError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::NonPositiveAmount => write!(
+                f,
+                "Contribution amount must be positive (revenue = money coming IN)"
+            ),
+            Self::EmptyDescription => write!(f, "Description cannot be empty"),
+        }
+    }
+}
+
+impl std::error::Error for OwnerContributionError {}
+
+/// Bridge : use-cases/ports `Result<_, String>` inchangés pendant que
+/// l'entité est typée (cascade String→AppError = slice large différée,
+/// précédent WP-A3/A4/A5). Pur, std-only.
+impl From<OwnerContributionError> for String {
+    fn from(e: OwnerContributionError) -> String {
+        e.to_string()
+    }
+}
+
 impl OwnerContribution {
     #[allow(clippy::too_many_arguments)]
     pub fn new(
@@ -107,17 +144,15 @@ impl OwnerContribution {
         contribution_type: ContributionType,
         contribution_date: DateTime<Utc>,
         account_code: Option<String>,
-    ) -> Result<Self, String> {
+    ) -> Result<Self, OwnerContributionError> {
         // Validate amount is positive (revenue = money coming IN)
         if amount < Decimal::ZERO {
-            return Err(
-                "Contribution amount must be positive (revenue = money coming IN)".to_string(),
-            );
+            return Err(OwnerContributionError::NonPositiveAmount);
         }
 
         // Validate description
         if description.trim().is_empty() {
-            return Err("Description cannot be empty".to_string());
+            return Err(OwnerContributionError::EmptyDescription);
         }
 
         Ok(Self {
@@ -204,8 +239,10 @@ mod tests {
             None,
         );
 
-        assert!(contrib.is_err());
-        assert!(contrib.unwrap_err().contains("must be positive"));
+        assert!(matches!(
+            contrib.unwrap_err(),
+            OwnerContributionError::NonPositiveAmount
+        ));
     }
 
     #[test]
@@ -221,8 +258,10 @@ mod tests {
             None,
         );
 
-        assert!(contrib.is_err());
-        assert!(contrib.unwrap_err().contains("Description cannot be empty"));
+        assert!(matches!(
+            contrib.unwrap_err(),
+            OwnerContributionError::EmptyDescription
+        ));
     }
 
     #[test]
@@ -273,5 +312,110 @@ mod tests {
         .unwrap();
 
         assert!(contrib.is_overdue());
+    }
+
+    // ------------------------------------------------------------------------
+    // 4 catégories #433/WP-A6 EXP-008 — erreur typée (CRITICAL.md #3).
+    // Entité déjà Decimal (PCMN classe 7) ; ce WP type l'erreur domaine.
+    // ------------------------------------------------------------------------
+
+    /// @happy — contribution nominale : montant Decimal exact conservé.
+    #[test]
+    fn happy_contribution_amount_decimal_exact() {
+        let c = OwnerContribution::new(
+            Uuid::new_v4(),
+            Uuid::new_v4(),
+            None,
+            "Provision Q1".to_string(),
+            rust_decimal_macros::dec!(1234.56),
+            ContributionType::Regular,
+            Utc::now(),
+            None,
+        )
+        .unwrap();
+        assert_eq!(c.amount, rust_decimal_macros::dec!(1234.56));
+    }
+
+    /// @edge — montant exactement zéro accepté (revenu nul, borne incluse) ;
+    /// addition Decimal exacte (0.1+0.2=0.3, f64 échoue).
+    #[test]
+    fn edge_zero_amount_and_decimal_exactness() {
+        let zero = OwnerContribution::new(
+            Uuid::new_v4(),
+            Uuid::new_v4(),
+            None,
+            "Régularisation nulle".to_string(),
+            Decimal::ZERO,
+            ContributionType::Regular,
+            Utc::now(),
+            None,
+        );
+        assert!(zero.is_ok());
+
+        let c = OwnerContribution::new(
+            Uuid::new_v4(),
+            Uuid::new_v4(),
+            None,
+            "x".to_string(),
+            rust_decimal_macros::dec!(0.1) + rust_decimal_macros::dec!(0.2),
+            ContributionType::Regular,
+            Utc::now(),
+            None,
+        )
+        .unwrap();
+        assert_eq!(c.amount, rust_decimal_macros::dec!(0.3));
+    }
+
+    /// @negative — montant négatif & description vide rejetés (erreur typée).
+    #[test]
+    fn negative_amount_and_empty_description_rejected() {
+        assert!(matches!(
+            OwnerContribution::new(
+                Uuid::new_v4(),
+                Uuid::new_v4(),
+                None,
+                "ok".to_string(),
+                rust_decimal_macros::dec!(-0.01),
+                ContributionType::Regular,
+                Utc::now(),
+                None,
+            )
+            .unwrap_err(),
+            OwnerContributionError::NonPositiveAmount
+        ));
+        assert!(matches!(
+            OwnerContribution::new(
+                Uuid::new_v4(),
+                Uuid::new_v4(),
+                None,
+                "  ".to_string(),
+                rust_decimal_macros::dec!(10),
+                ContributionType::Regular,
+                Utc::now(),
+                None,
+            )
+            .unwrap_err(),
+            OwnerContributionError::EmptyDescription
+        ));
+    }
+
+    /// @security — un montant de revenu falsifié négatif (détournement
+    /// comptable PCMN classe 7) ne peut jamais être persisté.
+    #[test]
+    fn security_tampered_negative_revenue_rejected() {
+        let result = OwnerContribution::new(
+            Uuid::new_v4(),
+            Uuid::new_v4(),
+            None,
+            "Faux avoir".to_string(),
+            rust_decimal_macros::dec!(-99999.99),
+            ContributionType::Regular,
+            Utc::now(),
+            None,
+        );
+        assert!(matches!(
+            result.unwrap_err(),
+            OwnerContributionError::NonPositiveAmount
+        ));
     }
 }

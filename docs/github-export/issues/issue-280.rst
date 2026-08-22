@@ -1,13 +1,13 @@
-================================================================================================================================
+===========================================================================================================================
 Issue #280: feat: Orchestrateur neutre achat groupé énergie — zéro commission + maisons individuelles + CER (extension BC8)
-================================================================================================================================
+===========================================================================================================================
 
-:State: **OPEN**
+:State: **CLOSED**
 :Milestone: Jalon 3: Features Différenciantes 🎯
-:Labels: enhancement,track:software release:0.1.0
+:Labels: enhancement,track:software release:0.1.0
 :Assignees: Unassigned
 :Created: 2026-03-12
-:Updated: 2026-03-14
+:Updated: 2026-03-24
 :URL: `View on GitHub <https://github.com/gilmry/koprogo/issues/280>`_
 
 Description

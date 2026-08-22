@@ -1,10 +1,10 @@
-==============================================================================
+=============================================================================
 Issue #297: Adapters SQLite: Implémentation Repository traits pour mode local
-==============================================================================
+=============================================================================
 
 :State: **OPEN**
 :Milestone: Jalon 5: Mobile & API Publique 📱
-:Labels: enhancement,track:software tauri,offline
+:Labels: enhancement,track:software tauri,offline
 :Assignees: Unassigned
 :Created: 2026-03-21
 :Updated: 2026-03-21

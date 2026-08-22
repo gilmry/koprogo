@@ -4,7 +4,7 @@ Issue #197: feat: Complete frontend UI for all backend features
 
 :State: **CLOSED**
 :Milestone: No milestone
-:Labels: enhancement,track:software
+:Labels: enhancement,track:software
 :Assignees: Unassigned
 :Created: 2026-02-17
 :Updated: 2026-02-17

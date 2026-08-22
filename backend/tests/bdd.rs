@@ -1,3 +1,7 @@
+#[path = "common/acp_test_helper.rs"]
+mod acp_test_helper;
+use acp_test_helper::ensure_default_acp_for_org;
+
 use cucumber::{given, then, when, World};
 use koprogo_api::application::dto::{
     AddDecisionNotesDto, BoardDecisionResponseDto, BoardMemberResponseDto, BoardStatsDto, Claims,
@@ -19,11 +23,11 @@ use koprogo_api::application::use_cases::{
 use koprogo_api::domain::entities::{ExpenseCategory, UserRole, UserRoleAssignment};
 use koprogo_api::domain::i18n::{I18n, Language, TranslationKey};
 use koprogo_api::infrastructure::database::{
-    create_pool, PostgresAuditLogRepository, PostgresBoardDecisionRepository,
-    PostgresBoardMemberRepository, PostgresBuildingRepository, PostgresDocumentRepository,
-    PostgresExpenseRepository, PostgresGdprRepository, PostgresMeetingRepository,
-    PostgresOwnerRepository, PostgresRefreshTokenRepository, PostgresUserRepository,
-    PostgresUserRoleRepository,
+    create_pool, PostgresAcpRepository, PostgresAuditLogRepository,
+    PostgresBoardDecisionRepository, PostgresBoardMemberRepository, PostgresBuildingRepository,
+    PostgresDocumentRepository, PostgresExpenseRepository, PostgresGdprRepository,
+    PostgresMeetingRepository, PostgresOwnerRepository, PostgresRefreshTokenRepository,
+    PostgresUserRepository, PostgresUserRoleRepository,
 };
 use koprogo_api::infrastructure::pool::DbPool;
 use koprogo_api::infrastructure::storage::{FileStorage, StorageProvider};
@@ -208,9 +212,20 @@ impl BuildingWorld {
             .await
             .expect("Failed to get host port");
 
+        // Use the testcontainers-resolved host (honors TESTCONTAINERS_HOST_OVERRIDE)
+        // instead of a hardcoded 127.0.0.1. On CI (cargo on the runner host) this
+        // resolves to localhost — unchanged. Inside the dev backend container the
+        // testcontainers Postgres is a *sibling* (docker.sock mounted), reachable
+        // via host.docker.internal, not the container's own 127.0.0.1 — this is
+        // what was causing PoolTimedOut for local docker BDD runs (same fix as
+        // bdd_governance #535 / bdd_financial #539; WP-B3 debruit, idempotent).
+        let host = postgres_container
+            .get_host()
+            .await
+            .expect("Failed to get container host");
         let connection_string = format!(
-            "postgres://postgres:postgres@127.0.0.1:{}/postgres",
-            host_port
+            "postgres://postgres:postgres@{}:{}/postgres",
+            host, host_port
         );
 
         let pool = create_pool(&connection_string)
@@ -255,8 +270,14 @@ impl BuildingWorld {
 
         let building_use_cases = BuildingUseCases::new(building_repo.clone());
         let meeting_use_cases = MeetingUseCases::new(meeting_repo.clone());
-        let board_member_use_cases =
-            BoardMemberUseCases::new(board_member_repo.clone(), building_repo.clone());
+        // Hotfix #603 — BoardMemberUseCases needs acp_repository
+        let acp_repo_for_board: std::sync::Arc<dyn koprogo_api::application::ports::AcpRepository> =
+            Arc::new(PostgresAcpRepository::new(pool.clone()));
+        let board_member_use_cases = BoardMemberUseCases::new(
+            board_member_repo.clone(),
+            building_repo.clone(),
+            acp_repo_for_board,
+        );
         let board_decision_use_cases = BoardDecisionUseCases::new(
             board_decision_repo.clone(),
             building_repo.clone(),
@@ -284,8 +305,10 @@ impl BuildingWorld {
         // Create one building for meeting/doc scenarios
         let building_id = {
             use koprogo_api::domain::entities::Building as DomBuilding;
+            // Hotfix #602 — Building.acp_id (FK acps.id) replaces organization_id.
+            let acp_id = ensure_default_acp_for_org(&pool, org_id).await;
             let b = DomBuilding::new(
-                org_id,
+                acp_id,
                 "BDD Building".to_string(),
                 "1 Test St".to_string(),
                 "Bruxelles".to_string(),
@@ -350,8 +373,13 @@ async fn given_system(world: &mut BuildingWorld) {
 
 #[when(regex = r#"^I create a building named "([^"]*)" in "([^"]*)"$"#)]
 async fn when_create_building(world: &mut BuildingWorld, name: String, city: String) {
+    // Hotfix #602 : resolve acp_id from org_id (was passing org_id as acp_id)
+    let org_id = world.org_id.unwrap();
+    let pool = world.pool.as_ref().expect("pool").clone();
+    let acp_id = ensure_default_acp_for_org(&pool, org_id).await;
+
     let dto = CreateBuildingDto {
-        organization_id: world.org_id.unwrap().to_string(),
+        acp_id: acp_id.to_string(),
         name: name.clone(),
         address: "123 Test St".to_string(),
         city: city.clone(),
@@ -384,66 +412,45 @@ async fn then_building_in_city(world: &mut BuildingWorld, city: String) {
 
 #[tokio::main]
 async fn main() {
-    // Only load features that have step definitions in THIS file.
-    // Features migrated to bdd_governance/bdd_financial/bdd_operations/bdd_community
+    // Issue #524: aggregate failures across all features so CI exit code
+    // reflects ANY failed scenario, not just the last `.run_and_exit()`.
+    // Only loads features that have step definitions in THIS file — features
+    // migrated to bdd_governance/bdd_financial/bdd_operations/bdd_community
     // are excluded to avoid skip noise.
-    BuildingWorld::cucumber()
-        .run("tests/features/auth.feature")
-        .await;
-    BuildingWorld::cucumber()
-        .run("tests/features/building.feature")
-        .await;
-    BuildingWorld::cucumber()
-        .run("tests/features/meetings.feature")
-        .await;
-    BuildingWorld::cucumber()
-        .run("tests/features/meetings_manage.feature")
-        .await;
-    BuildingWorld::cucumber()
-        .run("tests/features/documents.feature")
-        .await;
-    BuildingWorld::cucumber()
-        .run("tests/features/documents_delete.feature")
-        .await;
-    BuildingWorld::cucumber()
-        .run("tests/features/documents_linking.feature")
-        .await;
-    BuildingWorld::cucumber()
-        .run("tests/features/documents_expenses.feature")
-        .await;
-    // invoices: No step definitions in this file — pending migration
-    BuildingWorld::cucumber()
-        .run("tests/features/expenses_pagination.feature")
-        .await;
-    BuildingWorld::cucumber()
-        .run("tests/features/expenses_pcn.feature")
-        .await;
-    BuildingWorld::cucumber()
-        .run("tests/features/gdpr.feature")
-        .await;
-    BuildingWorld::cucumber()
-        .run("tests/features/i18n.feature")
-        .await;
-    BuildingWorld::cucumber()
-        .run("tests/features/multitenancy.feature")
-        .await;
-    BuildingWorld::cucumber()
-        .run("tests/features/pagination_filtering.feature")
-        .await;
-    // payment_recovery, local_exchange, polls, budget, etat_date:
-    // No step definitions in this file — covered by bdd_financial/bdd_governance or pending migration
-    BuildingWorld::cucumber()
-        .run("tests/features/board.feature")
-        .await;
-    BuildingWorld::cucumber()
-        .run("tests/features/board_members.feature")
-        .await;
-    BuildingWorld::cucumber()
-        .run("tests/features/board_decisions.feature")
-        .await;
-    BuildingWorld::cucumber()
-        .run_and_exit("tests/features/board_dashboard.feature")
-        .await;
+    use cucumber::writer::Stats as _;
+    let features = [
+        "tests/features/auth.feature",
+        "tests/features/building.feature",
+        "tests/features/meetings.feature",
+        "tests/features/meetings_manage.feature",
+        "tests/features/documents.feature",
+        "tests/features/documents_delete.feature",
+        "tests/features/documents_linking.feature",
+        "tests/features/documents_expenses.feature",
+        // invoices: no step definitions in this file — pending migration
+        "tests/features/expenses_pagination.feature",
+        "tests/features/expenses_pcn.feature",
+        "tests/features/gdpr.feature",
+        "tests/features/i18n.feature",
+        "tests/features/multitenancy.feature",
+        "tests/features/pagination_filtering.feature",
+        // payment_recovery, local_exchange, polls, budget, etat_date:
+        // no step definitions in this file — covered elsewhere or pending migration
+        "tests/features/board.feature",
+        "tests/features/board_members.feature",
+        "tests/features/board_decisions.feature",
+        "tests/features/board_dashboard.feature",
+    ];
+    let mut had_failures = false;
+    for f in features {
+        let writer = BuildingWorld::cucumber().run(f).await;
+        if writer.execution_has_failed() {
+            had_failures = true;
+        }
+    }
+    if had_failures {
+        std::process::exit(1);
+    }
 }
 
 // Meetings BDD
@@ -1062,8 +1069,10 @@ async fn given_two_orgs(world: &mut BuildingWorld) {
     // Create a building for second org
     let building_repo = PostgresBuildingRepository::new(pool.clone());
     use koprogo_api::domain::entities::Building as DomBuilding;
+    // Hotfix #602 — Building.acp_id (FK acps.id) replaces organization_id.
+    let acp_id = ensure_default_acp_for_org(&pool, second_org_id).await;
     let b = DomBuilding::new(
-        second_org_id,
+        acp_id,
         "Second Org Building".to_string(),
         "2 Test St".to_string(),
         "Namur".to_string(),
@@ -1103,6 +1112,165 @@ async fn when_list_buildings_for_first_org(world: &mut BuildingWorld) {
 
 #[then("I should not see buildings from the second organization")]
 async fn then_no_cross_org(_world: &mut BuildingWorld) {}
+
+// ============================================================================
+// BUG-WF14-2 — owner-level building isolation (Human Review v0.1.0).
+// An owner must only see buildings where they own a unit, even when other
+// buildings exist in the SAME organization. Exercises the production path
+// `list_buildings_paginated_for_user(.., owner_user_id)` used by the handler
+// for role == "owner". Fixed by commit dddde26 — this is the regression guard.
+// ============================================================================
+
+#[given("an organization with three buildings")]
+async fn given_org_three_buildings(world: &mut BuildingWorld) {
+    if world.pool.is_none() {
+        world.setup_database().await;
+    }
+    let org_id = world.org_id.expect("org_id");
+    let pool = world.pool.as_ref().expect("pool").clone();
+    let building_repo = PostgresBuildingRepository::new(pool.clone());
+    use koprogo_api::domain::entities::Building as DomBuilding;
+
+    // setup_database already created one building (world.building_id) for this
+    // org; treat it as building #1 (the one Alice will own a unit in).
+    // Add two more buildings in the SAME org that Alice must NOT see.
+    // Hotfix #602 — Building.acp_id (FK acps.id) replaces organization_id.
+    let acp_id = ensure_default_acp_for_org(&pool, org_id).await;
+    for (name, city) in [("Iso Building 2", "Liège"), ("Iso Building 3", "Gent")] {
+        let b = DomBuilding::new(
+            acp_id,
+            name.to_string(),
+            "X Test St".to_string(),
+            city.to_string(),
+            "4000".to_string(),
+            "Belgique".to_string(),
+            4,
+            1000,
+            Some(2010),
+        )
+        .expect("build extra building");
+        building_repo
+            .create(&b)
+            .await
+            .expect("create extra org building");
+    }
+}
+
+#[given("an owner Alice who owns a unit only in the first building")]
+async fn given_alice_owns_unit_first_building(world: &mut BuildingWorld) {
+    let org_id = world.org_id.expect("org_id");
+    let first_building_id = world.building_id.expect("building_id");
+    let pool = world.pool.as_ref().expect("pool").clone();
+    let owner_repo = world.owner_repo.as_ref().expect("owner repo").clone();
+
+    // 1. Create a user (Alice) and link an Owner record to that user_id.
+    let alice_email = format!("alice+{}@iso.test", Uuid::new_v4());
+    let reg = RegisterRequest {
+        email: alice_email.clone(),
+        password: "Passw0rd!".to_string(),
+        first_name: "Alice".to_string(),
+        last_name: "Owner".to_string(),
+        role: "owner".to_string(),
+        organization_id: Some(org_id),
+    };
+    let auth_uc = world.auth_use_cases.as_ref().expect("auth uc");
+    auth_uc.register(reg).await.expect("register Alice");
+    let login = LoginRequest {
+        email: alice_email.clone(),
+        password: "Passw0rd!".to_string(),
+    };
+    let login_resp = auth_uc.login(login).await.expect("login Alice");
+    let alice_user_id = login_resp.user.id;
+    world.last_user_id = Some(alice_user_id);
+
+    let mut owner = koprogo_api::domain::entities::Owner::new(
+        org_id,
+        "Alice".to_string(),
+        "Owner".to_string(),
+        alice_email,
+        Some("+32123456789".to_string()),
+        "1 Iso St".to_string(),
+        "Bruxelles".to_string(),
+        "1000".to_string(),
+        "Belgium".to_string(),
+    )
+    .expect("create Alice owner");
+    owner.user_id = Some(alice_user_id);
+    let created_owner = owner_repo.create(&owner).await.expect("save Alice owner");
+    world.current_owner_id = Some(created_owner.id);
+
+    // 2. Create a unit in the FIRST building and link Alice as active owner.
+    let unit_id = Uuid::new_v4();
+    // H15 — units.organization_id dropped, units.acp_id NOT NULL (same ACP as the building).
+    let acp_id = ensure_default_acp_for_org(&pool, org_id).await;
+    sqlx::query(
+        "INSERT INTO units (id, building_id, acp_id, unit_number, unit_type, floor, surface_area, quota, created_at, updated_at)
+         VALUES ($1, $2, $3, 'ISO-2A', 'apartment', 0, 50.0, 100.0, NOW(), NOW())",
+    )
+    .bind(unit_id)
+    .bind(first_building_id)
+    .bind(acp_id)
+    .execute(&pool)
+    .await
+    .expect("create Alice unit");
+
+    let uo_id = Uuid::new_v4();
+    sqlx::query(
+        "INSERT INTO unit_owners (id, unit_id, owner_id, ownership_percentage, start_date, is_primary_contact, created_at, updated_at)
+         VALUES ($1, $2, $3, 1.0, NOW(), true, NOW(), NOW())",
+    )
+    .bind(uo_id)
+    .bind(unit_id)
+    .bind(created_owner.id)
+    .execute(&pool)
+    .await
+    .expect("link Alice to unit (active, end_date NULL)");
+}
+
+#[when("Alice lists buildings scoped to her ownership")]
+async fn when_alice_lists_scoped_buildings(world: &mut BuildingWorld) {
+    let org_id = world.org_id;
+    let alice_user_id = world.last_user_id.expect("alice user id");
+    let page_req = PageRequest {
+        page: 1,
+        per_page: 50,
+        sort_by: Some("created_at".to_string()),
+        order: SortOrder::Desc,
+    };
+    let uc = world.use_cases.as_ref().expect("building use cases");
+    // Same call the handler makes for role == "owner".
+    let (items, total) = uc
+        .list_buildings_paginated_for_user(&page_req, org_id, Some(alice_user_id), None)
+        .await
+        .expect("owner-scoped building list");
+    assert_eq!(
+        total,
+        items.len() as i64,
+        "paginated total must match returned rows"
+    );
+    world.last_count = Some(items.len());
+}
+
+#[then("Alice sees exactly 1 building")]
+async fn then_alice_sees_one_building(world: &mut BuildingWorld) {
+    assert_eq!(
+        world.last_count,
+        Some(1),
+        "BUG-WF14-2: owner must see exactly the 1 building where she owns a unit, \
+         not the 3 buildings of her organization"
+    );
+}
+
+#[then("Alice does not see the other two buildings")]
+async fn then_alice_no_other_buildings(world: &mut BuildingWorld) {
+    // last_count == 1 already proves the other two same-org buildings are
+    // filtered out; assert again for an explicit, readable failure message.
+    assert_eq!(
+        world.last_count,
+        Some(1),
+        "BUG-WF14-2: cross-owner leak — Alice can see buildings she has no unit in"
+    );
+}
 
 // ============================================================================
 // GDPR BDD Steps (Articles 15 & 17)
@@ -1401,27 +1569,29 @@ async fn given_active_legal_holds(world: &mut BuildingWorld) {
         .expect("find owner for legal holds");
     let owner_id: Uuid = sqlx::Row::get(&owner_row, "id");
 
-    // Create a building
+    // Create a building (Hotfix #602 : via acp_id)
+    let acp_id = ensure_default_acp_for_org(pool, org_id).await;
     let building_id = Uuid::new_v4();
     sqlx::query(
-        "INSERT INTO buildings (id, organization_id, name, address, city, postal_code, country, total_units, created_at, updated_at)
+        "INSERT INTO buildings (id, acp_id, name, address, city, postal_code, country, total_units, created_at, updated_at)
          VALUES ($1, $2, 'Legal Hold Building', '789 Hold Ave', 'Brussels', '1000', 'Belgium', 1, NOW(), NOW())",
     )
     .bind(building_id)
-    .bind(org_id)
+    .bind(acp_id)
     .execute(pool)
     .await
     .expect("create building for legal holds");
 
     // Create a unit in the building
     let unit_id = Uuid::new_v4();
+    // H15 — units.organization_id dropped, units.acp_id NOT NULL (same ACP as the building, cf. acp_id above).
     sqlx::query(
-        "INSERT INTO units (id, building_id, organization_id, unit_number, unit_type, floor, surface_area, quota, created_at, updated_at)
+        "INSERT INTO units (id, building_id, acp_id, unit_number, unit_type, floor, surface_area, quota, created_at, updated_at)
          VALUES ($1, $2, $3, 'LH-01', 'apartment', 0, 50.0, 100.0, NOW(), NOW())",
     )
     .bind(unit_id)
     .bind(building_id)
-    .bind(org_id)
+    .bind(acp_id)
     .execute(pool)
     .await
     .expect("create unit for legal holds");
@@ -1640,8 +1810,10 @@ async fn given_building_with_many_units(world: &mut BuildingWorld) {
 
     // Create building with 25 units
     use koprogo_api::domain::entities::Building as DomBuilding;
+    // Hotfix #602 — Building.acp_id (FK acps.id) replaces organization_id.
+    let acp_id = ensure_default_acp_for_org(&pool, org_id).await;
     let b = DomBuilding::new(
-        org_id,
+        acp_id,
         "Large Building".to_string(),
         "100 Main St".to_string(),
         "Brussels".to_string(),
@@ -1766,8 +1938,10 @@ async fn given_building_with_20_units(world: &mut BuildingWorld) {
 
     // Create building with exactly 20 units
     use koprogo_api::domain::entities::Building as DomBuilding;
+    // Hotfix #602 — Building.acp_id (FK acps.id) replaces organization_id.
+    let acp_id = ensure_default_acp_for_org(&pool, org_id).await;
     let b = DomBuilding::new(
-        org_id,
+        acp_id,
         "Small Building".to_string(),
         "50 Main St".to_string(),
         "Brussels".to_string(),
@@ -1800,8 +1974,10 @@ async fn given_building_with_25_units(world: &mut BuildingWorld) {
 
     // Create building with exactly 25 units
     use koprogo_api::domain::entities::Building as DomBuilding;
+    // Hotfix #602 — Building.acp_id (FK acps.id) replaces organization_id.
+    let acp_id = ensure_default_acp_for_org(&pool, org_id).await;
     let b = DomBuilding::new(
-        org_id,
+        acp_id,
         "Medium Building".to_string(),
         "75 Board Ave".to_string(),
         "Brussels".to_string(),
@@ -2069,13 +2245,14 @@ async fn given_n_overdue_decisions(world: &mut BuildingWorld, count: usize) {
     let meeting_id = world.last_meeting_id.expect("meeting_id");
     let pool = world.pool.as_ref().expect("pool");
 
-    // Get organization_id from building
-    let organization_id: Uuid =
-        sqlx::query_scalar("SELECT organization_id FROM buildings WHERE id = $1")
-            .bind(building_id)
-            .fetch_one(pool)
-            .await
-            .expect("get organization_id from building");
+    // Get organization_id from building via acps (post-#602 migration)
+    let organization_id: Uuid = sqlx::query_scalar(
+        "SELECT a.organization_id FROM buildings b JOIN acps a ON a.id = b.acp_id WHERE b.id = $1",
+    )
+    .bind(building_id)
+    .fetch_one(pool)
+    .await
+    .expect("get organization_id from building");
 
     // Create overdue decisions directly in DB to bypass validation
     for i in 0..count {
@@ -2161,8 +2338,10 @@ async fn given_building_with_units(world: &mut BuildingWorld, name: String, unit
     let org_id = world.org_id.expect("org_id");
 
     use koprogo_api::domain::entities::Building as DomBuilding;
+    // Hotfix #602 — Building.acp_id (FK acps.id) replaces organization_id.
+    let acp_id = ensure_default_acp_for_org(&pool, org_id).await;
     let building = DomBuilding::new(
-        org_id,
+        acp_id,
         name,
         "1 Main St".to_string(),
         "Brussels".to_string(),
@@ -2765,7 +2944,7 @@ async fn when_renew_board_mandate(world: &mut BuildingWorld) {
     let use_cases = world.board_member_use_cases.as_ref().unwrap();
     let dto = RenewMandateDto {
         new_elected_by_meeting_id: meeting_id.to_string(),
-        mandate_duration_days: 1095,
+        mandate_duration_days: 365, // ≈ 1 an (Art. 3.90 CC, conseil)
     };
     match use_cases.renew_mandate(member_id, dto).await {
         Ok(m) => {
@@ -3821,7 +4000,7 @@ async fn when_renew_mandate_of_owner(
     let use_cases = world.board_member_use_cases.as_ref().unwrap();
     let dto = RenewMandateDto {
         new_elected_by_meeting_id: meeting_id.to_string(),
-        mandate_duration_days: 1095,
+        mandate_duration_days: 365, // ≈ 1 an (Art. 3.90 CC, conseil)
     };
     match use_cases.renew_mandate(member_id, dto).await {
         Ok(m) => {
@@ -3854,7 +4033,7 @@ async fn when_try_renew_mandate(world: &mut BuildingWorld) {
     let use_cases = world.board_member_use_cases.as_ref().unwrap();
     let dto = RenewMandateDto {
         new_elected_by_meeting_id: meeting_id.to_string(),
-        mandate_duration_days: 1095,
+        mandate_duration_days: 365, // ≈ 1 an (Art. 3.90 CC, conseil)
     };
     match use_cases.renew_mandate(member_id, dto).await {
         Ok(m) => {

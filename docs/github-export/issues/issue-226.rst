@@ -1,13 +1,13 @@
-================================================================================
+===============================================================================
 Issue #226: R&D: Assistant IA Syndic - Architecture LLM, RAG et conformité GDPR
-================================================================================
+===============================================================================
 
-:State: **OPEN**
+:State: **CLOSED**
 :Milestone: No milestone
-:Labels: priority:medium,gdpr proptech:ai,R&D
+:Labels: priority:medium,gdpr proptech:ai,R&D
 :Assignees: Unassigned
 :Created: 2026-03-07
-:Updated: 2026-03-07
+:Updated: 2026-03-24
 :URL: `View on GitHub <https://github.com/gilmry/koprogo/issues/226>`_
 
 Description

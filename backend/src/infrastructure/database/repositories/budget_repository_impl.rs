@@ -1,4 +1,5 @@
 use crate::application::dto::PageRequest;
+use crate::application::error::AppError;
 use crate::application::ports::{BudgetRepository, BudgetStatsResponse, BudgetVarianceResponse};
 use crate::domain::entities::{Budget, BudgetStatus, ExpenseCategory};
 use async_trait::async_trait;
@@ -11,15 +12,16 @@ pub struct PostgresBudgetRepository {
     pool: PgPool,
 }
 
-/// Budget SELECT columns with casts for enums and decimals
+/// Budget SELECT columns. Monetary columns are NUMERIC → lus directement en
+/// `Decimal` (cf. ADR-0007, Story H11). Seul l'enum statut est casté en texte.
 const BUDGET_COLUMNS: &str = r#"
     id, organization_id, building_id, fiscal_year,
-    ordinary_budget::float8 as ordinary_budget,
-    extraordinary_budget::float8 as extraordinary_budget,
-    total_budget::float8 as total_budget,
+    ordinary_budget,
+    extraordinary_budget,
+    total_budget,
     status::text as status_text,
     submitted_date, approved_date, approved_by_meeting_id,
-    monthly_provision_amount::float8 as monthly_provision_amount,
+    monthly_provision_amount,
     notes, created_at, updated_at
 "#;
 
@@ -62,7 +64,7 @@ impl PostgresBudgetRepository {
 
 #[async_trait]
 impl BudgetRepository for PostgresBudgetRepository {
-    async fn create(&self, budget: &Budget) -> Result<Budget, String> {
+    async fn create(&self, budget: &Budget) -> Result<Budget, AppError> {
         let status_str = match budget.status {
             BudgetStatus::Draft => "draft",
             BudgetStatus::Submitted => "submitted",
@@ -84,12 +86,12 @@ impl BudgetRepository for PostgresBudgetRepository {
                 $9, $10, $11, $12, $13, $14, $15
             )
             RETURNING id, organization_id, building_id, fiscal_year,
-                ordinary_budget::float8 as ordinary_budget,
-                extraordinary_budget::float8 as extraordinary_budget,
-                total_budget::float8 as total_budget,
+                ordinary_budget,
+                extraordinary_budget,
+                total_budget,
                 status::text as status_text,
                 submitted_date, approved_date, approved_by_meeting_id,
-                monthly_provision_amount::float8 as monthly_provision_amount,
+                monthly_provision_amount,
                 notes, created_at, updated_at
             "#,
         )
@@ -115,7 +117,7 @@ impl BudgetRepository for PostgresBudgetRepository {
         Ok(self.row_to_budget(row))
     }
 
-    async fn find_by_id(&self, id: Uuid) -> Result<Option<Budget>, String> {
+    async fn find_by_id(&self, id: Uuid) -> Result<Option<Budget>, AppError> {
         let sql = format!("SELECT {} FROM budgets WHERE id = $1", BUDGET_COLUMNS);
         let result = sqlx::query(&sql)
             .bind(id)
@@ -130,7 +132,7 @@ impl BudgetRepository for PostgresBudgetRepository {
         &self,
         building_id: Uuid,
         fiscal_year: i32,
-    ) -> Result<Option<Budget>, String> {
+    ) -> Result<Option<Budget>, AppError> {
         let sql = format!(
             "SELECT {} FROM budgets WHERE building_id = $1 AND fiscal_year = $2",
             BUDGET_COLUMNS
@@ -145,7 +147,7 @@ impl BudgetRepository for PostgresBudgetRepository {
         Ok(result.map(|row| self.row_to_budget(row)))
     }
 
-    async fn find_by_building(&self, building_id: Uuid) -> Result<Vec<Budget>, String> {
+    async fn find_by_building(&self, building_id: Uuid) -> Result<Vec<Budget>, AppError> {
         let sql = format!(
             "SELECT {} FROM budgets WHERE building_id = $1 ORDER BY fiscal_year DESC",
             BUDGET_COLUMNS
@@ -162,7 +164,7 @@ impl BudgetRepository for PostgresBudgetRepository {
             .collect())
     }
 
-    async fn find_active_by_building(&self, building_id: Uuid) -> Result<Option<Budget>, String> {
+    async fn find_active_by_building(&self, building_id: Uuid) -> Result<Option<Budget>, AppError> {
         let sql = format!("SELECT {} FROM budgets WHERE building_id = $1 AND status = 'approved' ORDER BY fiscal_year DESC LIMIT 1", BUDGET_COLUMNS);
         let result = sqlx::query(&sql)
             .bind(building_id)
@@ -177,7 +179,7 @@ impl BudgetRepository for PostgresBudgetRepository {
         &self,
         organization_id: Uuid,
         fiscal_year: i32,
-    ) -> Result<Vec<Budget>, String> {
+    ) -> Result<Vec<Budget>, AppError> {
         let sql = format!("SELECT {} FROM budgets WHERE organization_id = $1 AND fiscal_year = $2 ORDER BY created_at DESC", BUDGET_COLUMNS);
         let rows = sqlx::query(&sql)
             .bind(organization_id)
@@ -196,7 +198,7 @@ impl BudgetRepository for PostgresBudgetRepository {
         &self,
         organization_id: Uuid,
         status: BudgetStatus,
-    ) -> Result<Vec<Budget>, String> {
+    ) -> Result<Vec<Budget>, AppError> {
         let status_str = match status {
             BudgetStatus::Draft => "draft",
             BudgetStatus::Submitted => "submitted",
@@ -225,7 +227,7 @@ impl BudgetRepository for PostgresBudgetRepository {
         organization_id: Option<Uuid>,
         building_id: Option<Uuid>,
         status: Option<BudgetStatus>,
-    ) -> Result<(Vec<Budget>, i64), String> {
+    ) -> Result<(Vec<Budget>, i64), AppError> {
         let offset = (page_request.page - 1) * page_request.per_page;
 
         // Build dynamic query
@@ -302,7 +304,7 @@ impl BudgetRepository for PostgresBudgetRepository {
         Ok((budgets, total))
     }
 
-    async fn update(&self, budget: &Budget) -> Result<Budget, String> {
+    async fn update(&self, budget: &Budget) -> Result<Budget, AppError> {
         let status_str = match budget.status {
             BudgetStatus::Draft => "draft",
             BudgetStatus::Submitted => "submitted",
@@ -326,12 +328,12 @@ impl BudgetRepository for PostgresBudgetRepository {
                 updated_at = $11
             WHERE id = $1
             RETURNING id, organization_id, building_id, fiscal_year,
-                ordinary_budget::float8 as ordinary_budget,
-                extraordinary_budget::float8 as extraordinary_budget,
-                total_budget::float8 as total_budget,
+                ordinary_budget,
+                extraordinary_budget,
+                total_budget,
                 status::text as status_text,
                 submitted_date, approved_date, approved_by_meeting_id,
-                monthly_provision_amount::float8 as monthly_provision_amount,
+                monthly_provision_amount,
                 notes, created_at, updated_at
             "#,
         )
@@ -353,7 +355,7 @@ impl BudgetRepository for PostgresBudgetRepository {
         Ok(self.row_to_budget(row))
     }
 
-    async fn delete(&self, id: Uuid) -> Result<bool, String> {
+    async fn delete(&self, id: Uuid) -> Result<bool, AppError> {
         let result = sqlx::query("DELETE FROM budgets WHERE id = $1")
             .bind(id)
             .execute(&self.pool)
@@ -363,7 +365,7 @@ impl BudgetRepository for PostgresBudgetRepository {
         Ok(result.rows_affected() > 0)
     }
 
-    async fn get_stats(&self, organization_id: Uuid) -> Result<BudgetStatsResponse, String> {
+    async fn get_stats(&self, organization_id: Uuid) -> Result<BudgetStatsResponse, AppError> {
         let row = sqlx::query(
             r#"
             SELECT
@@ -399,12 +401,20 @@ impl BudgetRepository for PostgresBudgetRepository {
     async fn get_variance(
         &self,
         budget_id: Uuid,
-    ) -> Result<Option<BudgetVarianceResponse>, String> {
+    ) -> Result<Option<BudgetVarianceResponse>, AppError> {
         // First, get the budget
         let budget = match self.find_by_id(budget_id).await? {
             Some(b) => b,
             None => return Ok(None),
         };
+
+        // L'analyse de variance (reporting) reste en f64 : la source de vérité
+        // monétaire (entité Budget) est en Decimal (Story H11, ADR-0007) ; on
+        // convertit uniquement ici, à la frontière du reporting analytique.
+        use rust_decimal::prelude::ToPrimitive;
+        let budget_ordinary = budget.ordinary_budget.to_f64().unwrap_or(0.0);
+        let budget_extraordinary = budget.extraordinary_budget.to_f64().unwrap_or(0.0);
+        let budget_total = budget.total_budget.to_f64().unwrap_or(0.0);
 
         // Get actual expenses for this budget's fiscal year and building
         let fiscal_year_start = format!("{}-01-01", budget.fiscal_year);
@@ -436,7 +446,8 @@ impl BudgetRepository for PostgresBudgetRepository {
 
         for row in expense_rows {
             let category_str: String = row.get("category");
-            let amount: f64 = row.get("total_amount");
+            let amount_dec: rust_decimal::Decimal = row.try_get("total_amount")?;
+            let amount: f64 = amount_dec.to_f64().unwrap_or(0.0);
 
             let category = match category_str.as_str() {
                 "utilities" => ExpenseCategory::Utilities,
@@ -458,25 +469,25 @@ impl BudgetRepository for PostgresBudgetRepository {
         let actual_total = actual_ordinary + actual_extraordinary;
 
         // Calculate variances
-        let variance_ordinary = budget.ordinary_budget - actual_ordinary;
-        let variance_extraordinary = budget.extraordinary_budget - actual_extraordinary;
-        let variance_total = budget.total_budget - actual_total;
+        let variance_ordinary = budget_ordinary - actual_ordinary;
+        let variance_extraordinary = budget_extraordinary - actual_extraordinary;
+        let variance_total = budget_total - actual_total;
 
         // Calculate variance percentages
-        let variance_ordinary_pct = if budget.ordinary_budget > 0.0 {
-            (variance_ordinary / budget.ordinary_budget) * 100.0
+        let variance_ordinary_pct = if budget_ordinary > 0.0 {
+            (variance_ordinary / budget_ordinary) * 100.0
         } else {
             0.0
         };
 
-        let variance_extraordinary_pct = if budget.extraordinary_budget > 0.0 {
-            (variance_extraordinary / budget.extraordinary_budget) * 100.0
+        let variance_extraordinary_pct = if budget_extraordinary > 0.0 {
+            (variance_extraordinary / budget_extraordinary) * 100.0
         } else {
             0.0
         };
 
-        let variance_total_pct = if budget.total_budget > 0.0 {
-            (variance_total / budget.total_budget) * 100.0
+        let variance_total_pct = if budget_total > 0.0 {
+            (variance_total / budget_total) * 100.0
         } else {
             0.0
         };
@@ -514,9 +525,9 @@ impl BudgetRepository for PostgresBudgetRepository {
             budget_id: budget.id,
             fiscal_year: budget.fiscal_year,
             building_id: budget.building_id,
-            budgeted_ordinary: budget.ordinary_budget,
-            budgeted_extraordinary: budget.extraordinary_budget,
-            budgeted_total: budget.total_budget,
+            budgeted_ordinary: budget_ordinary,
+            budgeted_extraordinary: budget_extraordinary,
+            budgeted_total: budget_total,
             actual_ordinary,
             actual_extraordinary,
             actual_total,

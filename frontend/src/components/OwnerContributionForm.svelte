@@ -6,7 +6,7 @@
 
   let { organizationId, onSuccess = () => {} }: { organizationId: string; onSuccess?: () => void } = $props();
 
-  let formData = $state({ owner_id: '', unit_id: '', description: '', amount: '', contribution_type: 'regular', contribution_date: new Date().toISOString().split('T')[0], account_code: '7000' });
+  let formData = $state({ owner_id: '', unit_id: '', description: '', amount: '', contribution_type: 'regular', contribution_date: new Date().toISOString().split('T')[0], account_code: '700001' });
   let owners = $state<any[]>([]);
   let units = $state<any[]>([]);
   let loading = $state(false);
@@ -14,16 +14,29 @@
 
   async function loadData() {
     await withErrorHandling({
-      action: async () => { const [ownersData, unitsData] = await Promise.all([api.get('/owners'), api.get('/units')]); return { ownersData, unitsData }; },
+      action: async () => {
+        const [ownersResp, unitsResp] = await Promise.all([
+          api.get<{ data: any[] }>('/owners?per_page=1000'),
+          api.get<{ data: any[] }>('/units?per_page=1000'),
+        ]);
+        return { ownersData: ownersResp.data, unitsData: unitsResp.data };
+      },
       onSuccess: (result: any) => { owners = result.ownersData; units = result.unitsData; },
     });
   }
 
   $effect(() => { if (organizationId) loadData(); });
 
+  // '7000'/'7100' n'existent pas dans le PCMN belge réellement seedé
+  // (seul '700xxx', comptes feuilles direct_use=true, cf.
+  // account_use_cases.rs get_belgian_pcmn_seed_data) — la FK
+  // owner_contributions.account_code -> accounts(organization_id, code)
+  // rejetait donc systématiquement toute création avec 400/500.
   $effect(() => {
-    if (formData.contribution_type === 'regular') { formData.account_code = '7000'; }
-    else if (formData.contribution_type === 'extraordinary') { formData.account_code = '7100'; }
+    if (formData.contribution_type === 'regular') { formData.account_code = '700001'; }
+    else if (formData.contribution_type === 'extraordinary') { formData.account_code = '700002'; }
+    else if (formData.contribution_type === 'advance') { formData.account_code = '700003'; }
+    else if (formData.contribution_type === 'adjustment') { formData.account_code = '700001'; }
   });
 
   async function handleSubmit(e: Event) {
@@ -36,7 +49,7 @@
       },
       setLoading: (v: boolean) => loading = v,
       errorMessage: $_('contributions.createError'),
-      onSuccess: () => { formData = { owner_id: '', unit_id: '', description: '', amount: '', contribution_type: 'regular', contribution_date: new Date().toISOString().split('T')[0], account_code: '7000' }; onSuccess(); },
+      onSuccess: () => { formData = { owner_id: '', unit_id: '', description: '', amount: '', contribution_type: 'regular', contribution_date: new Date().toISOString().split('T')[0], account_code: '700001' }; onSuccess(); },
     });
   }
 </script>

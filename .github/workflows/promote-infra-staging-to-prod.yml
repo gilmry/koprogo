@@ -23,7 +23,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
@@ -52,18 +52,18 @@ jobs:
             echo "::notice::Existing PR #$existing already open — refusing to duplicate. Resolve it first."
             exit 1
           fi
+          body_file=$(mktemp)
+          {
+            printf '**Tier 1 promotion** — manually triggered after human validation on the\n'
+            printf 'staging cluster.\n\n'
+            printf 'Per RFC #466 (Alternative D), merging this PR triggers the back-sync workflow\n'
+            printf 'which propagates the new infra-prod state to infra-staging, infra-integration,\n'
+            printf 'and main.\n\n'
+            printf 'Release tag: `%s`\n' "${tag:-<not specified>}"
+          } > "$body_file"
           gh pr create \
             --base infra-prod \
             --head infra-staging \
             --title "promote: infra-staging → infra-prod$title_suffix" \
-            --body "$(cat <<EOF
-**Tier 1 promotion** — manually triggered after human validation on the
-staging cluster.
-
-Per RFC #466 (Alternative D), merging this PR triggers the back-sync workflow
-which propagates the new infra-prod state to infra-staging, infra-integration,
-and main.
-
-Release tag: \`${tag:-<not specified>}\`
-EOF
-)"
+            --body-file "$body_file"
+          rm -f "$body_file"

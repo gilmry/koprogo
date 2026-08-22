@@ -7,12 +7,7 @@ import { api } from "../api";
  */
 
 export type VideoPlatform =
-  | "Zoom"
-  | "MicrosoftTeams"
-  | "GoogleMeet"
-  | "Jitsi"
-  | "Whereby"
-  | "Other";
+  "Zoom" | "MicrosoftTeams" | "GoogleMeet" | "Jitsi" | "Whereby" | "Other";
 export type AgSessionStatus = "Scheduled" | "Live" | "Ended" | "Cancelled";
 
 export interface AgSession {

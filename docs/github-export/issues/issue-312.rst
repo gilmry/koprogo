@@ -1,13 +1,13 @@
-=============================================================================
+==========================================================================
 Issue #312: [Conformité] AG : Procurations — max 3 mandats + exception 10%
-=============================================================================
+==========================================================================
 
-:State: **OPEN**
+:State: **CLOSED**
 :Milestone: Jalon 2: Conformité Légale Belge 📋
 :Labels: conformité
 :Assignees: Unassigned
 :Created: 2026-03-22
-:Updated: 2026-03-22
+:Updated: 2026-03-24
 :URL: `View on GitHub <https://github.com/gilmry/koprogo/issues/312>`_
 
 Description

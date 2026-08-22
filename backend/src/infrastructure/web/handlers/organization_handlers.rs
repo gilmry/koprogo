@@ -100,7 +100,21 @@ pub async fn create_organization(
         )
         .await
     {
-        Ok(org) => HttpResponse::Created().json(to_response(org)),
+        Ok(org) => {
+            // Sans ce seeding, toute création d'owner-contribution/expense
+            // échoue avec une violation de FK sur account_code tant que le
+            // job de démarrage (seed_belgian_pcmn_for_all_organizations)
+            // n'a pas tourné pour cette org — jamais le cas pour une org
+            // créée après le boot du serveur.
+            if let Err(e) = state.account_use_cases.seed_belgian_pcmn(org.id).await {
+                log::error!(
+                    "Failed to seed Belgian PCMN accounts for new organization {}: {}",
+                    org.id,
+                    e
+                );
+            }
+            HttpResponse::Created().json(to_response(org))
+        }
         Err(e) if e == "invalid_plan" => HttpResponse::BadRequest().json(serde_json::json!({
             "error": "Invalid subscription plan"
         })),
