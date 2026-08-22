@@ -133,6 +133,20 @@ services:
       - "traefik.http.routers.koprogo-frontend.entrypoints=websecure"
       - "traefik.http.routers.koprogo-frontend.tls.certresolver=letsencrypt"
       - "traefik.http.services.koprogo-frontend.loadbalancer.server.port=80"
+    # Écrase le HEALTHCHECK de l'image (wget http://localhost/health) : sur
+    # cette image, "localhost" résout en IPv6 (::1) alors que nginx n'écoute
+    # qu'en IPv4, donc "connection refused" en boucle malgré une appli saine
+    # (vérifié : curl http://127.0.0.1/health répond 200 depuis l'intérieur du
+    # conteneur). Container jamais "healthy" -> Traefik l'exclut du routage et
+    # ne demande jamais de certificat Let's Encrypt pour ce domaine. Forcer
+    # l'IPv4 explicitement contourne le problème sans attendre un nouveau
+    # build d'image.
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
     networks:
       - koprogo-network
 
