@@ -1,0 +1,186 @@
+# KoproGo - Déploiement auto-hébergé (build local, indépendant du registre GHCR)
+#
+# Usage:
+#   cp .env.production.example .env      # puis éditer DOMAIN/API_DOMAIN/secrets
+#   docker compose -f docker-compose.prod.yml up -d --build
+#
+# Pointer DOMAIN et API_DOMAIN (enregistrements DNS A) vers cet hôte avant le
+# premier démarrage : Traefik demande les certificats Let's Encrypt au boot.
+# Voir deploy.sh pour le déploiement continu automatisé (cron).
+
+services:
+  traefik:
+    image: traefik:v3.7
+    container_name: koprogo-traefik
+    restart: unless-stopped
+    environment:
+      DOCKER_API_VERSION: "1.41"
+    command:
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      - "--entrypoints.web.http.redirections.entrypoint.to=websecure"
+      - "--entrypoints.web.http.redirections.entrypoint.scheme=https"
+      - "--certificatesresolvers.letsencrypt.acme.email=${ACME_EMAIL:-admin@koprogo.com}"
+      - "--certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json"
+      - "--certificatesresolvers.letsencrypt.acme.httpchallenge=true"
+      - "--certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web"
+      - "--log.level=INFO"
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - traefik_certs:/letsencrypt
+    networks:
+      - koprogo-network
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: koprogo-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-koprogo_db}
+      POSTGRES_USER: ${POSTGRES_USER:-koprogo}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD manquant dans .env}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./backend/migrations:/docker-entrypoint-initdb.d/migrations:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-koprogo} -d ${POSTGRES_DB:-koprogo_db}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - koprogo-network
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.production
+    container_name: koprogo-backend
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-koprogo}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-koprogo_db}
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET manquant dans .env (openssl rand -base64 32)}
+      TOTP_ENCRYPTION_KEY: ${TOTP_ENCRYPTION_KEY:?TOTP_ENCRYPTION_KEY manquant dans .env (openssl rand -hex 32)}
+      SERVER_HOST: 0.0.0.0
+      SERVER_PORT: 8080
+      ACTIX_WORKERS: ${ACTIX_WORKERS:-1}
+      RUST_LOG: ${RUST_LOG:-warn}
+      ENABLE_RATE_LIMITING: ${ENABLE_RATE_LIMITING:-true}
+      LOGIN_RATE_LIMIT_MAX: ${LOGIN_RATE_LIMIT_MAX:-5}
+      LOGIN_RATE_LIMIT_WINDOW_SECS: ${LOGIN_RATE_LIMIT_WINDOW_SECS:-60}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-https://koprogo.com}
+      STORAGE_PROVIDER: ${STORAGE_PROVIDER:-s3}
+      UPLOAD_DIR: /app/uploads
+      S3_BUCKET: ${S3_BUCKET:-koprogo-documents}
+      S3_REGION: ${S3_REGION:-us-east-1}
+      S3_ENDPOINT: ${S3_ENDPOINT:-http://minio:9000}
+      S3_ACCESS_KEY: ${S3_ACCESS_KEY:-koprogo}
+      S3_SECRET_KEY: ${S3_SECRET_KEY:?S3_SECRET_KEY manquant dans .env}
+      S3_FORCE_PATH_STYLE: ${S3_FORCE_PATH_STYLE:-true}
+      S3_KEY_PREFIX: ${S3_KEY_PREFIX:-documents}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    volumes:
+      - backend_uploads:/app/uploads
+      - backend_logs:/app/logs
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.koprogo-backend.rule=Host(`${API_DOMAIN:-api.koprogo.com}`)"
+      - "traefik.http.routers.koprogo-backend.entrypoints=websecure"
+      - "traefik.http.routers.koprogo-backend.tls.certresolver=letsencrypt"
+      - "traefik.http.services.koprogo-backend.loadbalancer.server.port=8080"
+      # /api/v1/auth/login: bcrypt côté serveur, rate-limité par IP source pour
+      # ne pas laisser un burst saturer le seul cœur CPU de la VPS (même
+      # pattern que api.elevia.ecosolva.org, cf. mcp-oauth-maison skill).
+      - "traefik.http.routers.koprogo-backend-login.rule=Host(`${API_DOMAIN:-api.koprogo.com}`) && Path(`/api/v1/auth/login`)"
+      - "traefik.http.routers.koprogo-backend-login.entrypoints=websecure"
+      - "traefik.http.routers.koprogo-backend-login.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.koprogo-backend-login.service=koprogo-backend"
+      - "traefik.http.routers.koprogo-backend-login.middlewares=koprogo-login-ratelimit"
+      - "traefik.http.middlewares.koprogo-login-ratelimit.ratelimit.average=5"
+      - "traefik.http.middlewares.koprogo-login-ratelimit.ratelimit.period=1m"
+      - "traefik.http.middlewares.koprogo-login-ratelimit.ratelimit.burst=10"
+    networks:
+      - koprogo-network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.production
+      args:
+        PUBLIC_API_URL: ${PUBLIC_API_URL:-https://api.koprogo.com/api/v1}
+    container_name: koprogo-frontend
+    restart: unless-stopped
+    environment:
+      PUBLIC_API_URL: ${PUBLIC_API_URL:-https://api.koprogo.com/api/v1}
+    depends_on:
+      backend:
+        condition: service_healthy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.koprogo-frontend.rule=Host(`${DOMAIN:-koprogo.com}`)"
+      - "traefik.http.routers.koprogo-frontend.entrypoints=websecure"
+      - "traefik.http.routers.koprogo-frontend.tls.certresolver=letsencrypt"
+      - "traefik.http.services.koprogo-frontend.loadbalancer.server.port=80"
+    networks:
+      - koprogo-network
+
+  minio:
+    image: minio/minio:latest
+    container_name: koprogo-minio
+    restart: unless-stopped
+    command: server /data --console-address :9001
+    environment:
+      MINIO_ROOT_USER: ${S3_ACCESS_KEY:-koprogo}
+      MINIO_ROOT_PASSWORD: ${S3_SECRET_KEY:?S3_SECRET_KEY manquant dans .env}
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://127.0.0.1:9000/minio/health/live || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - koprogo-network
+
+  minio-bootstrap:
+    image: minio/mc:latest
+    container_name: koprogo-minio-bootstrap
+    depends_on:
+      minio:
+        condition: service_healthy
+    environment:
+      S3_BUCKET: ${S3_BUCKET:-koprogo-documents}
+      S3_ENDPOINT: ${S3_ENDPOINT:-http://minio:9000}
+      S3_ACCESS_KEY: ${S3_ACCESS_KEY:-koprogo}
+      S3_SECRET_KEY: ${S3_SECRET_KEY:?S3_SECRET_KEY manquant dans .env}
+    entrypoint: ["/bin/sh", "-c"]
+    command: >
+      set -e;
+      until mc alias set local "$${S3_ENDPOINT}" "$${S3_ACCESS_KEY}" "$${S3_SECRET_KEY}"; do
+        echo "Waiting for MinIO...";
+        sleep 2;
+      done;
+      mc mb --ignore-existing "local/$${S3_BUCKET}";
+      mc anonymous set private "local/$${S3_BUCKET}" >/dev/null 2>&1 || true;
+      echo "MinIO bucket $${S3_BUCKET} ready.";
+    networks:
+      - koprogo-network
+
+networks:
+  koprogo-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  traefik_certs:
+  backend_uploads:
+  backend_logs:
+  minio_data:
