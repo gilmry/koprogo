@@ -148,8 +148,7 @@ export function isPublicRoute(route: string): boolean {
   // final, comportement standard pour un répertoire) ; sans cette normalisation,
   // isPublicRoute("/login/") renvoie false, RouteGuard redirige vers /login,
   // nginx rajoute le slash -> boucle infinie constatée en prod (koprogo.com).
-  const normalized =
-    route.length > 1 ? route.replace(/\/+$/, "") : route;
+  const normalized = route.length > 1 ? route.replace(/\/+$/, "") : route;
   if (publicRoutes.includes(normalized)) return true;
   if (route === "/blog" || route.startsWith("/blog/")) return true;
   return false;
