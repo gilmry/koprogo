@@ -1240,7 +1240,7 @@ async fn when_alice_lists_scoped_buildings(world: &mut BuildingWorld) {
     let uc = world.use_cases.as_ref().expect("building use cases");
     // Same call the handler makes for role == "owner".
     let (items, total) = uc
-        .list_buildings_paginated_for_user(&page_req, org_id, Some(alice_user_id))
+        .list_buildings_paginated_for_user(&page_req, org_id, Some(alice_user_id), None)
         .await
         .expect("owner-scoped building list");
     assert_eq!(
