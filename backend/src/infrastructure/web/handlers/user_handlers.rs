@@ -140,7 +140,7 @@ pub async fn create_user(
 
     let roles = match normalize_roles(req.roles.clone(), req.role.clone(), req.organization_id) {
         Ok(r) => r,
-        Err(resp) => return resp,
+        Err(resp) => return *resp,
     };
 
     let primary = roles
@@ -220,7 +220,7 @@ pub async fn update_user(
 
     let roles = match normalize_roles(req.roles.clone(), req.role.clone(), req.organization_id) {
         Ok(r) => r,
-        Err(resp) => return resp,
+        Err(resp) => return *resp,
     };
 
     let primary = roles
@@ -367,7 +367,7 @@ fn normalize_roles(
     roles: Option<Vec<RoleAssignmentRequest>>,
     fallback_role: Option<String>,
     fallback_org: Option<Uuid>,
-) -> Result<Vec<NormalizedRole>, HttpResponse> {
+) -> Result<Vec<NormalizedRole>, Box<HttpResponse>> {
     let mut entries = roles.unwrap_or_else(|| {
         fallback_role
             .map(|role| {
@@ -381,9 +381,9 @@ fn normalize_roles(
     });
 
     if entries.is_empty() {
-        return Err(HttpResponse::BadRequest().json(json!({
+        return Err(Box::new(HttpResponse::BadRequest().json(json!({
             "error": "At least one role must be specified"
-        })));
+        }))));
     }
 
     let mut normalized = Vec::with_capacity(entries.len());
@@ -398,17 +398,17 @@ fn normalize_roles(
         } = entry;
         let normalized_role = role.trim().to_lowercase();
         if !ALLOWED_ROLES.contains(&normalized_role.as_str()) {
-            return Err(HttpResponse::BadRequest().json(json!({
+            return Err(Box::new(HttpResponse::BadRequest().json(json!({
                 "error": format!("Invalid role: {}", role)
-            })));
+            }))));
         }
 
         let mut organization_id = organization_id;
         if normalized_role != "superadmin" {
             if organization_id.is_none() {
-                return Err(HttpResponse::BadRequest().json(json!({
+                return Err(Box::new(HttpResponse::BadRequest().json(json!({
                     "error": format!("Organization is required for role {}", normalized_role)
-                })));
+                }))));
             }
         } else {
             organization_id = None;
@@ -418,17 +418,17 @@ fn normalize_roles(
         if is_primary {
             primary_count += 1;
             if primary_count > 1 {
-                return Err(HttpResponse::BadRequest().json(json!({
+                return Err(Box::new(HttpResponse::BadRequest().json(json!({
                     "error": "Only one primary role can be specified"
-                })));
+                }))));
             }
         }
 
         let key = (normalized_role.clone(), organization_id);
         if !seen.insert(key) {
-            return Err(HttpResponse::BadRequest().json(json!({
+            return Err(Box::new(HttpResponse::BadRequest().json(json!({
                 "error": "Duplicate role assignment detected"
-            })));
+            }))));
         }
 
         normalized.push(NormalizedRole {
