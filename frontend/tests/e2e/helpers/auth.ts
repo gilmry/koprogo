@@ -19,6 +19,8 @@ interface AuthContext {
 
 interface SyndicContext extends AuthContext {
   buildingId: string;
+  /** Post-#602 : units/meetings/etc. requièrent acp_id, pas organization_id. */
+  acpId: string;
 }
 
 interface SyndicWithUnitContext extends SyndicContext {
@@ -316,7 +318,7 @@ export async function loginAsSyndicWithBuilding(
     );
   }
 
-  return { ...auth, buildingId: building.id };
+  return { ...auth, buildingId: building.id, acpId };
 }
 
 /**

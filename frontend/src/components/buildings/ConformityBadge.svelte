@@ -52,12 +52,17 @@
     return "+" + formatDecimalFRBE(cleaned);
   }
 
+  // Convention backend (building.rs) : quota_delta = total_tantiemes - quota_sum,
+  // donc un DÉFICIT (quotas manquants) est POSITIF et un SURPLUS est NÉGATIF -
+  // l'inverse de ce qu'on lirait naïvement. Un déficit (ex: immeuble sans
+  // aucune unité créée) est le cas le plus grave -> rouge ; un surplus (ex:
+  // léger dépassement d'arrondi au-dessus de 1000) -> orange.
   let badgeClass = $derived(
     isConformant
       ? "bg-green-100 text-green-800 border-green-300"
       : quotaDelta.startsWith("-")
-        ? "bg-red-100 text-red-800 border-red-300"
-        : "bg-orange-100 text-orange-800 border-orange-300",
+        ? "bg-orange-100 text-orange-800 border-orange-300"
+        : "bg-red-100 text-red-800 border-red-300",
   );
 
   let badgeIcon = $derived(isConformant ? "✅" : "⚠️");

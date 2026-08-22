@@ -187,6 +187,14 @@ impl BuildingRepository for PostgresBuildingRepository {
             ));
         }
 
+        if filters.search.is_some() {
+            param_count += 1;
+            where_clauses.push(format!(
+                "(name ILIKE ${p} OR city ILIKE ${p} OR address ILIKE ${p})",
+                p = param_count
+            ));
+        }
+
         let where_clause = if where_clauses.is_empty() {
             String::new()
         } else {
@@ -232,6 +240,9 @@ impl BuildingRepository for PostgresBuildingRepository {
         if let Some(owner_id) = filters.owner_user_id {
             count_query = count_query.bind(owner_id);
         }
+        if let Some(search) = &filters.search {
+            count_query = count_query.bind(format!("%{}%", search));
+        }
 
         let total_items = count_query
             .fetch_one(&self.pool)
@@ -276,6 +287,9 @@ impl BuildingRepository for PostgresBuildingRepository {
         }
         if let Some(owner_id) = filters.owner_user_id {
             data_query = data_query.bind(owner_id);
+        }
+        if let Some(search) = &filters.search {
+            data_query = data_query.bind(format!("%{}%", search));
         }
 
         data_query = data_query

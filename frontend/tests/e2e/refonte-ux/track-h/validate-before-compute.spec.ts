@@ -39,6 +39,21 @@ test.describe("Track H Story H2 — validate-before-compute", () => {
     const org = await orgResp.json();
     const acpId = await ensureAcp(page, org.id, adminToken, "track-h2-drift");
 
+    // Acteur réel du bypass : un syndic scopé à cette org (adminToken n'a pas
+    // d'organization_id dans ses claims JWT -> require_organization() rejette
+    // avec 401 avant même d'atteindre le gate 422 testé ici).
+    const syndicRegResp = await page.request.post(`${API_BASE}/auth/register`, {
+      data: {
+        email: `track-h2-drift-syndic-${timestamp}@example.com`,
+        password: "test123456",
+        first_name: "Syndic",
+        last_name: `Drift${timestamp}`,
+        role: "syndic",
+        organization_id: org.id,
+      },
+    });
+    const syndicToken = (await syndicRegResp.json()).token;
+
     const buildingResp = await page.request.post(`${API_BASE}/buildings`, {
       data: {
         name: `Drift Manor ${timestamp}`,
@@ -70,7 +85,7 @@ test.describe("Track H Story H2 — validate-before-compute", () => {
         supplier: "Bypass SA",
         invoice_number: "BYP-001",
       },
-      headers: { Authorization: `Bearer ${adminToken}` },
+      headers: { Authorization: `Bearer ${syndicToken}` },
     });
 
     // BE 422 (pre-check validate-before-compute ACP-level, Story H7).
@@ -105,6 +120,20 @@ test.describe("Track H Story H2 — validate-before-compute", () => {
     const org = await orgResp.json();
     const acpId = await ensureAcp(page, org.id, adminToken, "track-h2-cff");
 
+    // Acteur réel du bypass : un syndic scopé à cette org (cf. note test
+    // précédent — adminToken n'a pas d'organization_id, 401 avant le 422).
+    const syndicRegResp = await page.request.post(`${API_BASE}/auth/register`, {
+      data: {
+        email: `track-h2-cff-syndic-${timestamp}@example.com`,
+        password: "test123456",
+        first_name: "Syndic",
+        last_name: `Cff${timestamp}`,
+        role: "syndic",
+        organization_id: org.id,
+      },
+    });
+    const syndicToken = (await syndicRegResp.json()).token;
+
     const buildingResp = await page.request.post(`${API_BASE}/buildings`, {
       data: {
         name: `Drift CFF ${timestamp}`,
@@ -131,7 +160,7 @@ test.describe("Track H Story H2 — validate-before-compute", () => {
         call_date: new Date().toISOString(),
         due_date: new Date(Date.now() + 30 * 86400 * 1000).toISOString(),
       },
-      headers: { Authorization: `Bearer ${adminToken}` },
+      headers: { Authorization: `Bearer ${syndicToken}` },
     });
 
     expect(cffResp.status()).toBe(422);

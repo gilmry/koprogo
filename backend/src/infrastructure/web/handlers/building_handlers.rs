@@ -8,6 +8,16 @@ use serde::Deserialize;
 use uuid::Uuid;
 use validator::Validate;
 
+/// Recherche libre optionnelle (ILIKE name/city/address) sur GET /buildings —
+/// évite au frontend (BuildingSelector) de devoir fetch les 100 premiers
+/// buildings et filtrer en mémoire, ce qui ratait les buildings récents une
+/// fois >100 buildings créés globalement (constaté en E2E CI, superadmin
+/// scope = toutes les orgs).
+#[derive(Deserialize)]
+pub struct BuildingSearchQuery {
+    pub search: Option<String>,
+}
+
 #[utoipa::path(
     post,
     path = "/buildings",
@@ -114,6 +124,7 @@ pub async fn list_buildings(
     state: web::Data<AppState>,
     user: AuthenticatedUser,
     page_request: web::Query<PageRequest>,
+    search_query: web::Query<BuildingSearchQuery>,
 ) -> impl Responder {
     // Story 1.3 — role-based scope derivation (ADR-0010 §3.3) :
     // - superadmin / admin without org : ListScope::All  -> no FK filter
@@ -129,7 +140,12 @@ pub async fn list_buildings(
 
     match state
         .building_use_cases
-        .list_buildings_paginated_for_user(&page_request, organization_id, owner_user_id)
+        .list_buildings_paginated_for_user(
+            &page_request,
+            organization_id,
+            owner_user_id,
+            search_query.search.clone(),
+        )
         .await
     {
         Ok((buildings, total)) => {

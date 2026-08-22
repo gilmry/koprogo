@@ -20,6 +20,11 @@ pub struct BuildingFilters {
     pub max_units: Option<i32>,
     /// BUG-WF14-2: Si défini, filtre les buildings où cet user possède un lot (via owners.user_id → unit_owners → units)
     pub owner_user_id: Option<Uuid>,
+    /// Recherche libre (ILIKE) sur name/city/address — évite au frontend de
+    /// devoir fetch les 100 premiers buildings puis filtrer en mémoire
+    /// (BuildingSelector : ratait les buildings récents une fois >100
+    /// buildings créés globalement en CI, cf. searchBuildings côté frontend).
+    pub search: Option<String>,
 }
 
 /// Filters for expense list queries

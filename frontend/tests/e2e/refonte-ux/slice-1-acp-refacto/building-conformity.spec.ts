@@ -99,7 +99,11 @@ test.describe("Building Conformity (Story 1.4)", () => {
     page,
   }) => {
     // Helper créé building via admin token, login syndic page → /buildings detail.
-    const ctx = await loginAsSyndicWithBuilding(page, "conf-syndic");
+    // seedUnits:false — le défaut du helper (Track H Story H2) seed des
+    // unités conformes ; ce test veut spécifiquement le cas non-conformant.
+    const ctx = await loginAsSyndicWithBuilding(page, "conf-syndic", {
+      seedUnits: false,
+    });
 
     await page.goto(`/building-detail?id=${ctx.buildingId}`, {
       waitUntil: "networkidle",

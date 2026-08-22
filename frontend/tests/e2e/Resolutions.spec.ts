@@ -86,14 +86,15 @@ test.describe("Resolutions - AG Voting System", () => {
   });
 
   test("should cast a vote on a resolution", async ({ page }) => {
-    const { token, meetingId, buildingId, orgId, adminToken } =
+    const { token, meetingId, buildingId, orgId, acpId, adminToken } =
       await loginAsSyndicWithMeeting(page, "resolution");
     const timestamp = Date.now();
 
     // Create unit + owner for voting
+    // acp_id (pas organization_id) requis sur CreateUnitDto depuis #602.
     const unitResp = await page.request.post(`${API_BASE}/units`, {
       data: {
-        organization_id: orgId,
+        acp_id: acpId,
         building_id: buildingId,
         unit_number: `V${timestamp}`,
         floor: 1,
@@ -188,14 +189,15 @@ test.describe("Resolutions - AG Voting System", () => {
   });
 
   test("should close voting and calculate result", async ({ page }) => {
-    const { token, meetingId, buildingId, orgId, adminToken } =
+    const { token, meetingId, buildingId, orgId, acpId, adminToken } =
       await loginAsSyndicWithMeeting(page, "resolution");
     const timestamp = Date.now();
 
     // Create unit + owner for voting
+    // acp_id (pas organization_id) requis sur CreateUnitDto depuis #602.
     const unitResp = await page.request.post(`${API_BASE}/units`, {
       data: {
-        organization_id: orgId,
+        acp_id: acpId,
         building_id: buildingId,
         unit_number: `C${timestamp}`,
         floor: 1,

@@ -2,13 +2,8 @@
 //
 // Aligne avec les endpoints backend exposés dans
 // `backend/src/infrastructure/web/handlers/building_handlers.rs` :
-// - `GET /buildings?page=&per_page=` (list paginé scope-filtré par rôle).
-//
-// Pas de full-text search backend dédié à ce jour (cf. Story 2.5 deep-links
-// pour un endpoint search `?q=` premier-niveau). Le composant
-// `BuildingSelector` filtre côté client la première page paginée — acceptable
-// tant qu'une organisation reste ≤ 500 buildings (cf. AC @edge debounce
-// 150ms + pagination 20). Au-delà, Story 2.5 introduira `?search=<q>`.
+// - `GET /buildings?page=&per_page=&search=` (list paginé scope-filtré par
+//   rôle, `search` = ILIKE name/city/address côté serveur).
 
 import { api } from "../api";
 import type { Building } from "../types";
@@ -54,6 +49,11 @@ export async function listBuildings(
  * backend `?search=<q>` (Story 2.5 deep-links). Le composant garde un
  * debounce 150ms pour amortir le coût réseau de l'unique fetch.
  *
+ * Recherche côté backend (`?search=`, ILIKE name/city/address) — un filtrage
+ * client sur les 100 premiers buildings (par created_at DESC) ratait les
+ * buildings récents dès que >100 buildings existaient dans le scope visible
+ * (constaté en E2E CI en scope superadmin, toutes orgs confondues).
+ *
  * @param query Texte saisi (peut être vide → retourne premiers résultats).
  * @param limit Nombre maximum de résultats à retourner (cap 20 par défaut).
  */
@@ -61,19 +61,18 @@ export async function searchBuildings(
   query: string,
   limit = 20,
 ): Promise<Building[]> {
-  const page = await listBuildings(1, Math.max(100, limit));
-  const q = query.trim().toLowerCase();
-  if (q === "") {
-    return page.data.slice(0, limit);
+  const q = query.trim();
+  const params = new URLSearchParams({
+    page: "1",
+    per_page: String(limit),
+  });
+  if (q !== "") {
+    params.set("search", q);
   }
-  return page.data
-    .filter((b) => {
-      const name = (b.name ?? "").toLowerCase();
-      const city = (b.city ?? "").toLowerCase();
-      const address = (b.address ?? "").toLowerCase();
-      return name.includes(q) || city.includes(q) || address.includes(q);
-    })
-    .slice(0, limit);
+  const page = await api.get<PaginatedBuildings>(
+    `/buildings?${params.toString()}`,
+  );
+  return page.data.slice(0, limit);
 }
 
 /**

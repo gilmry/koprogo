@@ -96,10 +96,12 @@ impl BuildingUseCases {
         page_request: &PageRequest,
         organization_id: Option<Uuid>,
         owner_user_id: Option<Uuid>,
+        search: Option<String>,
     ) -> Result<(Vec<BuildingResponseDto>, i64), String> {
         let filters = BuildingFilters {
             organization_id,
             owner_user_id,
+            search,
             ..Default::default()
         };
 

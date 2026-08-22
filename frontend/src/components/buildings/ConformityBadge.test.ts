@@ -57,14 +57,18 @@ describe("ConformityBadge", () => {
   // @edge — bornes
   // -------------------------------------------------------------------------
 
-  it("@edge renders non-conformant badge (red) when delta is -1 (missing 1 millième)", () => {
+  // Convention backend (building.rs) : quota_delta = total_tantiemes - quota_sum,
+  // donc un DÉFICIT est POSITIF et un SURPLUS est NÉGATIF (l'inverse d'une
+  // lecture naïve du signe). Bug corrigé en session : le badge coloriait
+  // à l'envers (déficit → orange, surplus → rouge) avant ce fix.
+  it("@edge renders non-conformant badge (red) when delta is +1 (missing 1 millième, deficit)", () => {
     render(ConformityBadge, {
       props: {
         isConformant: false,
         unitsCount: 50,
         totalUnits: 50,
         quotaSum: "999",
-        quotaDelta: "-1",
+        quotaDelta: "1",
       },
     });
 
@@ -72,17 +76,17 @@ describe("ConformityBadge", () => {
     expect(badge.className).toMatch(/bg-red-100/);
 
     const quotaDelta = screen.getByTestId("building-quota-delta");
-    expect(quotaDelta.textContent).toMatch(/-1/);
+    expect(quotaDelta.textContent).toMatch(/\+1/);
   });
 
-  it("@edge renders warning badge (orange) when delta is +500 (surplus quotas)", () => {
+  it("@edge renders warning badge (orange) when delta is -500 (surplus quotas)", () => {
     render(ConformityBadge, {
       props: {
         isConformant: false,
         unitsCount: 50,
         totalUnits: 50,
         quotaSum: "1500",
-        quotaDelta: "500",
+        quotaDelta: "-500",
       },
     });
 
@@ -90,7 +94,7 @@ describe("ConformityBadge", () => {
     expect(badge.className).toMatch(/bg-orange-100/);
 
     const quotaDelta = screen.getByTestId("building-quota-delta");
-    expect(quotaDelta.textContent).toMatch(/\+500/);
+    expect(quotaDelta.textContent).toMatch(/-500/);
   });
 
   it("@edge renders quotaSum 0 when no units (empty building, no NaN)", () => {
@@ -100,7 +104,7 @@ describe("ConformityBadge", () => {
         unitsCount: 0,
         totalUnits: 10,
         quotaSum: "0",
-        quotaDelta: "-1000",
+        quotaDelta: "1000",
       },
     });
 
