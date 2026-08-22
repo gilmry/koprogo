@@ -358,6 +358,11 @@ pub async fn delete_user(
 // Pure helper functions — no DB access, kept here because they have tests
 // ---------------------------------------------------------------------------
 
+// HttpResponse as the Err variant is the established pattern in this handler
+// module for early-return error responses (see call sites' `match ... Err(e)
+// => return e`); boxing it would ripple into every caller and test for a
+// clippy perf lint with no correctness implication here.
+#[allow(clippy::result_large_err)]
 fn normalize_roles(
     roles: Option<Vec<RoleAssignmentRequest>>,
     fallback_role: Option<String>,
