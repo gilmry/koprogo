@@ -56,9 +56,12 @@ services:
       - koprogo-network
 
   backend:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile.production
+    # Image pré-construite (dernier build réussi de `main`) plutôt qu'un build
+    # local : sur cette VPS (1 vCPU / 1,9 Go RAM), le linking du binaire Rust
+    # release sature RAM+swap et bloque indéfiniment (thrashing constaté en
+    # session, load >15, aucun progrès en 10+ min). `main` est en retard sur
+    # `feature/dev`, compromis accepté pour avoir un déploiement qui marche.
+    image: ghcr.io/gilmry/koprogo/backend:${IMAGE_TAG:-latest}
     container_name: koprogo-backend
     restart: unless-stopped
     environment:
@@ -111,11 +114,12 @@ services:
       - koprogo-network
 
   frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile.production
-      args:
-        PUBLIC_API_URL: ${PUBLIC_API_URL:-https://api.koprogo.com/api/v1}
+    # Image pré-construite (même raison que backend ci-dessus). L'URL d'API
+    # figée au build (`api2.koprogo.com`, cf. docker-build-push.yml) est sans
+    # conséquence : frontend/src/lib/config.ts lit window.__ENV__.API_URL en
+    # priorité, régénéré au démarrage du conteneur par generate-config.sh à
+    # partir de la variable PUBLIC_API_URL ci-dessous.
+    image: ghcr.io/gilmry/koprogo/frontend:${IMAGE_TAG:-latest}
     container_name: koprogo-frontend
     restart: unless-stopped
     environment:
