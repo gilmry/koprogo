@@ -4,8 +4,8 @@
 //! - `POST /magic-links` — syndic / superadmin issues a link for a recipient.
 //! - `GET  /c/{token}`   — PUBLIC: validate, consume, resolve scope. The route
 //!   is intentionally outside `/api/v1` so the public-facing URL stays short
-//!   (`/c/<token>`). Standard `actix_governor` rate-limiting configured in
-//!   `main.rs` applies to all routes — no extra guard needed here.
+//!   (`/c/<token>`). IP-based rate-limiting is enforced by Traefik for all
+//!   routes — no extra guard needed here.
 
 use crate::application::error::AppError;
 use crate::domain::entities::MagicLinkScopeKind;

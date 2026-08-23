@@ -62,8 +62,6 @@ services:
       # Secure (sinon le navigateur le rejette hors HTTPS). PROD = true.
       COOKIE_SECURE: "false"
       ENABLE_RATE_LIMITING: false
-      LOGIN_RATE_LIMIT_MAX: "1000"
-      LOGIN_RATE_LIMIT_WINDOW_SECS: "60"
       STORAGE_PROVIDER: ${STORAGE_PROVIDER:-s3} # Basculer sur le stockage local: STORAGE_PROVIDER=local
       UPLOAD_DIR: /app/uploads
       S3_BUCKET: ${S3_BUCKET:-koprogo-dev} # Pour du S3 externe, renseigner vos identifiants/bucket
