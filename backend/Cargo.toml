@@ -11,7 +11,6 @@ actix-web = "4.11"
 actix-cors = "0.7"
 actix-rt = "2.11"
 actix-multipart = "0.8"
-actix-governor = "0.10"
 
 # Async runtime
 tokio = { version = "1.52", features = ["macros", "rt-multi-thread", "time"] }

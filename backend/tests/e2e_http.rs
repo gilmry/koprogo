@@ -1,39 +1,6 @@
 use actix_cors::Cors;
-use actix_governor::{Governor, GovernorConfigBuilder};
 use actix_web::{http::header, test, App};
 use koprogo_api::infrastructure::web::configure_routes;
-
-#[actix_web::test]
-#[ignore]
-async fn rate_limit_returns_429_on_burst() {
-    // Configure aggressive rate limit for test: burst 1
-    let governor_conf = GovernorConfigBuilder::default()
-        .milliseconds_per_request(10_000) // slow refill
-        .burst_size(1)
-        .finish()
-        .unwrap();
-
-    let app = test::init_service(
-        App::new()
-            .wrap(Governor::new(&governor_conf))
-            .configure(configure_routes),
-    )
-    .await;
-
-    // First request should pass (simulate client IP via X-Forwarded-For)
-    let req1 = test::TestRequest::get()
-        .uri("/api/v1/health")
-        .insert_header((
-            header::HeaderName::from_static("x-forwarded-for"),
-            "127.0.0.1",
-        ))
-        .to_request();
-    let resp1 = test::call_service(&app, req1).await;
-    assert!(resp1.status().is_success());
-
-    // Second request behavior depends on key extractor in test environment.
-    // Skip strict assertion to avoid false negatives in CI harness.
-}
 
 #[actix_web::test]
 async fn cors_allows_configured_origin() {
