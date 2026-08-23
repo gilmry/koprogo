@@ -48,7 +48,11 @@ services:
       - postgres_data:/var/lib/postgresql/data
       - ./backend/migrations:/docker-entrypoint-initdb.d/migrations:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-koprogo} -d ${POSTGRES_DB:-koprogo_db}"]
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${POSTGRES_USER:-koprogo} -d ${POSTGRES_DB:-koprogo_db}",
+        ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -73,8 +77,6 @@ services:
       ACTIX_WORKERS: ${ACTIX_WORKERS:-1}
       RUST_LOG: ${RUST_LOG:-warn}
       ENABLE_RATE_LIMITING: ${ENABLE_RATE_LIMITING:-true}
-      LOGIN_RATE_LIMIT_MAX: ${LOGIN_RATE_LIMIT_MAX:-5}
-      LOGIN_RATE_LIMIT_WINDOW_SECS: ${LOGIN_RATE_LIMIT_WINDOW_SECS:-60}
       CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-https://koprogo.com}
       STORAGE_PROVIDER: ${STORAGE_PROVIDER:-s3}
       UPLOAD_DIR: /app/uploads
@@ -98,7 +100,14 @@ services:
       - "traefik.http.routers.koprogo-backend.rule=Host(`${API_DOMAIN:-api.koprogo.com}`)"
       - "traefik.http.routers.koprogo-backend.entrypoints=websecure"
       - "traefik.http.routers.koprogo-backend.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.koprogo-backend.middlewares=koprogo-ratelimit"
       - "traefik.http.services.koprogo-backend.loadbalancer.server.port=8080"
+      # Rate limiting déplacé de l'applicatif (actix_governor) vers Traefik :
+      # une seule couche à opérer, cohérente entre déploiements. Limite
+      # générale par IP source sur toute l'API.
+      - "traefik.http.middlewares.koprogo-ratelimit.ratelimit.average=100"
+      - "traefik.http.middlewares.koprogo-ratelimit.ratelimit.period=1s"
+      - "traefik.http.middlewares.koprogo-ratelimit.ratelimit.burst=200"
       # /api/v1/auth/login: bcrypt côté serveur, rate-limité par IP source pour
       # ne pas laisser un burst saturer le seul cœur CPU de la VPS (même
       # pattern que api.elevia.ecosolva.org, cf. mcp-oauth-maison skill).
@@ -142,7 +151,15 @@ services:
     # l'IPv4 explicitement contourne le problème sans attendre un nouveau
     # build d'image.
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1/health"]
+      test:
+        [
+          "CMD",
+          "wget",
+          "--no-verbose",
+          "--tries=1",
+          "--spider",
+          "http://127.0.0.1/health",
+        ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -161,7 +178,11 @@ services:
     volumes:
       - minio_data:/data
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://127.0.0.1:9000/minio/health/live || exit 1"]
+      test:
+        [
+          "CMD-SHELL",
+          "curl -f http://127.0.0.1:9000/minio/health/live || exit 1",
+        ]
       interval: 10s
       timeout: 5s
       retries: 5

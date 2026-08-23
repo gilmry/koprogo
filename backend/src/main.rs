@@ -1,5 +1,4 @@
 use actix_cors::Cors;
-use actix_governor::{Governor, GovernorConfigBuilder};
 use actix_web::{middleware, web, App, HttpServer};
 use dotenvy::dotenv;
 use koprogo_api::application::ports::mqtt_energy_port::MqttEnergyPort;
@@ -15,29 +14,11 @@ use koprogo_api::infrastructure::storage::{
     FileStorage, S3Storage, S3StorageConfig, StorageProvider,
 };
 use koprogo_api::infrastructure::web::{
-    configure_routes, AppState, GdprRateLimit, GdprRateLimitConfig, LoginRateLimiter,
-    SecurityHeaders,
+    configure_routes, AppState, GdprRateLimit, GdprRateLimitConfig, SecurityHeaders,
 };
 use koprogo_api::infrastructure::LinkyApiClientImpl;
 use std::env;
 use std::sync::Arc;
-
-/// Milliseconds `actix_governor` must wait before refilling one token, for a
-/// steady-state rate of 100 requests/minute per IP once the initial burst is
-/// spent. `GovernorConfigBuilder::milliseconds_per_request` takes the refill
-/// *interval*, not a requests-per-window count - `100 * 60 * 1000` (a
-/// previous version of this code) computed a ~100-minute interval instead of
-/// 600ms, so once burst_size(100) was exhausted the limiter effectively
-/// never refilled. That starved every route behind it, including
-/// `/api/v1/health`, whose own Docker healthcheck traffic was enough to
-/// exhaust the burst and then keep the container "unhealthy" indefinitely.
-fn rate_limit_refill_ms(enable_rate_limiting: bool) -> u64 {
-    if enable_rate_limiting {
-        60 * 1000 / 100 // 600ms between refills = 100 requests/minute steady-state
-    } else {
-        1 // 1ms = 1000 requests per second (effectively unlimited)
-    }
-}
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -123,7 +104,10 @@ async fn main() -> std::io::Result<()> {
     validate_cors_origins(&allowed_origins)?;
 
     log::info!("CORS allowed origins: {:?}", allowed_origins);
-    log::info!("Rate limiting enabled: {}", enable_rate_limiting);
+    log::info!(
+        "GDPR endpoint rate limiting enabled: {}",
+        enable_rate_limiting
+    );
 
     let pool = create_pool(&database_url)
         .await
@@ -613,22 +597,6 @@ async fn main() -> std::io::Result<()> {
         actix_workers
     );
 
-    // Configure rate limiter: 100 requests per minute per IP
-    // Allows bursts up to 100 requests, then refills at 100/60000ms rate
-    // When rate limiting is disabled, set a very high limit (effectively unlimited)
-    let rate_limit_ms = rate_limit_refill_ms(enable_rate_limiting);
-    let burst_size = if enable_rate_limiting {
-        100
-    } else {
-        u32::MAX // Effectively unlimited burst
-    };
-
-    let governor_conf = GovernorConfigBuilder::default()
-        .milliseconds_per_request(rate_limit_ms)
-        .burst_size(burst_size)
-        .finish()
-        .unwrap();
-
     // GDPR-specific rate limiting (10 requests/hour per user for GDPR endpoints).
     // Honors ENABLE_RATE_LIMITING flag : when false (dev/CI), use a very high
     // ceiling so the test suite + dev loops don't hit 429 from prior runs.
@@ -641,21 +609,6 @@ async fn main() -> std::io::Result<()> {
         }
     };
     let gdpr_rate_limit = GdprRateLimit::new(gdpr_rate_limit_config);
-
-    // Login rate limiting (anti-brute-force)
-    // Configurable via LOGIN_RATE_LIMIT_MAX (default: 5) and LOGIN_RATE_LIMIT_WINDOW_SECS (default: 900)
-    let login_max_attempts: u32 = env::var("LOGIN_RATE_LIMIT_MAX")
-        .ok()
-        .and_then(|v| v.parse().ok())
-        .unwrap_or(5);
-    let login_window_secs: u64 = env::var("LOGIN_RATE_LIMIT_WINDOW_SECS")
-        .ok()
-        .and_then(|v| v.parse().ok())
-        .unwrap_or(900);
-    let login_rate_limiter = LoginRateLimiter::new(
-        login_max_attempts,
-        std::time::Duration::from_secs(login_window_secs),
-    );
 
     HttpServer::new(move || {
         // Configure CORS with allowed origins from environment
@@ -680,8 +633,6 @@ async fn main() -> std::io::Result<()> {
         App::new()
             .app_data(app_state.clone())
             .wrap(gdpr_rate_limit.clone())
-            .wrap(login_rate_limiter.clone()) // Login brute-force protection (5/15min)
-            .wrap(Governor::new(&governor_conf))
             .wrap(cors)
             .wrap(SecurityHeaders) // Security headers for all responses
             .wrap(middleware::Logger::default())
@@ -813,23 +764,4 @@ fn validate_cors_origins(origins: &[String]) -> std::io::Result<()> {
         origins.len()
     );
     Ok(())
-}
-
-#[cfg(test)]
-mod rate_limit_tests {
-    use super::*;
-
-    #[test]
-    fn rate_limit_refill_ms_enabled_yields_100_per_minute() {
-        // burst_size(100) + a 600ms refill interval == 100 req/min steady-state.
-        // The regression this guards: 100 * 60 * 1000 (6_000_000ms, ~100min
-        // per token) was committed instead, which let /api/v1/health lock
-        // itself out once the initial burst was consumed.
-        assert_eq!(rate_limit_refill_ms(true), 600);
-    }
-
-    #[test]
-    fn rate_limit_refill_ms_disabled_is_effectively_unlimited() {
-        assert_eq!(rate_limit_refill_ms(false), 1);
-    }
 }
