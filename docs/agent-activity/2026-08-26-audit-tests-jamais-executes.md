@@ -2,6 +2,32 @@
 
 **Persona :** audit qualité + outillage CI (Tier 2), branche `story/661-followup-payment-reminder-decimal`.
 
+> ## Précaution sur le mot « jamais »
+>
+> Ce document dit à plusieurs reprises que ces tests n'ont « jamais tourné ».
+> C'est plus fort que ce que les preuves soutiennent, et il faut lire la
+> nuance.
+>
+> **Ce qui est vérifié** — aucun de ces harnais n'a jamais été câblé dans la
+> CI. Recherché sur l'historique complet de `.github/workflows/` : le seul
+> commit qui mentionne `--test e2e_meetings`, `--test e2e_resolutions`,
+> `--test e2e_quotes` ou `--test e2e_notices` est celui de cette session.
+>
+> **Ce qui est solidement inféré** — ils n'ont pas été exécutés depuis le
+> **2026-07-06**, date de la migration Story H15 qui a supprimé
+> `units.organization_id`. Les jouer après cette date échoue immédiatement
+> (« Failed to create building »), ce qui n'aurait pas pu passer inaperçu.
+>
+> **Ce qui n'est pas établi** — qu'ils n'aient jamais tourné du tout. Une
+> exécution locale ne laisse aucune trace. `e2e_meetings` date du 2025-12-02
+> et `e2e_notices` du 2026-03-21 : entre leur écriture et juillet 2026, rien
+> n'interdit qu'ils aient été lancés par leur auteur, et il est même probable
+> qu'ils l'aient été au moins une fois.
+>
+> La formulation exacte est donc : **jamais câblés en CI, et non exécutés
+> depuis au moins le 2026-07-06.** Ce qui reste un angle mort de sept semaines
+> au minimum, et de plusieurs mois pour les plus anciens.
+
 **Déclencheur :** question directe de @gilmry — « il y a d'autres tests qui sont écrits et jamais exécutés, fais le point ». Elle est partie d'un constat fait en traitant #661 : les assertions renforcées de `e2e_ag_sessions.rs` étaient « laissées à la CI », alors que la CI ne joue pas ce fichier.
 
 ## Constat : ~36 800 lignes de test n'ont jamais rien vérifié
