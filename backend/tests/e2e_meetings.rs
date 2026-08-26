@@ -57,11 +57,17 @@ async fn create_test_fixtures(
     )
     .await;
 
+    // `CreateBuildingDto` exige `acp_id` depuis #602 (Story 1.2) : la colonne
+    // `buildings.organization_id` a ete DROP, le scoping org passe par
+    // `acps.organization_id`. Sans lui : 400 « Failed to create building ».
+    // Ce harnais n'ayant jamais ete execute, la migration l'avait manque.
+    let acp_id = common::create_test_acp(&app_state, org_id).await;
     let building_req = test::TestRequest::post()
         .uri("/api/v1/buildings")
         .insert_header((header::AUTHORIZATION, format!("Bearer {}", token)))
         .set_json(json!({
             "organization_id": org_id.to_string(),
+            "acp_id": acp_id.clone(),
             "name": "Test Building",
             "address": "123 Main St",
             "city": "Brussels",

@@ -28,6 +28,33 @@ async fn setup_app() -> (
     common::setup_test_db().await
 }
 
+/// Compare un champ `Decimal` d'une reponse JSON a une valeur attendue.
+///
+/// `rust_decimal` serialise les `Decimal` en STRING JSON, et le contrat
+/// publie l'assume explicitement (`docs/api/openapi.json` : « type: string —
+/// Decimal exact (ADR-0008) »). Comparer a un litteral flottant echouait donc
+/// avec `left: String("0.6000"), right: 0.6`.
+///
+/// La comparaison se fait en `Decimal` et non sur la chaine : l'echelle rendue
+/// par PostgreSQL varie ("0.4" ici, "0.6000" la) alors que la valeur est la
+/// meme. `Decimal` compare la valeur, pas la representation.
+///
+/// Ce meme decalage a produit un vrai defaut en production : le front
+/// additionnait ces trois champs avec `+`, ce qui concatenait les chaines.
+#[allow(dead_code)]
+fn assert_decimal_field(value: &serde_json::Value, expected: rust_decimal::Decimal) {
+    let raw = value
+        .as_str()
+        .unwrap_or_else(|| panic!("champ Decimal attendu en string JSON, recu : {value}"));
+    let got: rust_decimal::Decimal = raw
+        .parse()
+        .unwrap_or_else(|_| panic!("Decimal illisible : {raw}"));
+    assert_eq!(
+        got, expected,
+        "valeur Decimal inattendue (brut JSON : {raw})"
+    );
+}
+
 /// Helper: Create test fixtures (organization, building, meeting, owners, units)
 async fn create_test_fixtures(
     app_state: &actix_web::web::Data<AppState>,
@@ -102,6 +129,29 @@ async fn create_test_fixtures(
         .create_meeting(meeting_req)
         .await
         .expect("Failed to create meeting");
+
+    // 3 bis. Valider le quorum AVANT toute resolution.
+    //
+    // `Resolution::create` passe par `Meeting::check_quorum_for_voting()`
+    // (Art. 3.87 §5 CC) : sans quorum valide, la creation est refusee avec
+    // « Quorum has not been validated yet » et le handler rend 400. Les 13
+    // tests de ce harnais echouaient tous la-dessus, directement pour les
+    // deux qui assertent le 201, en cascade pour les autres qui lisent un
+    // `id` dans un corps d'erreur.
+    //
+    // Le produit a raison : on ne vote pas sans quorum. C'est le harnais,
+    // jamais execute, qui omettait la precondition legale. 600 sur 1000
+    // quotites depasse le seuil strict de 50% applique par
+    // `Meeting::validate_quorum`.
+    app_state
+        .meeting_use_cases
+        .validate_quorum(
+            meeting.id,
+            rust_decimal_macros::dec!(600),
+            rust_decimal_macros::dec!(1000),
+        )
+        .await
+        .expect("Failed to validate quorum");
 
     // 4. Create owners
     let owner1_dto = CreateOwnerDto {
@@ -541,7 +591,7 @@ async fn test_cast_vote_pour_success() {
 
     let vote: serde_json::Value = test::read_body_json(resp).await;
     assert_eq!(vote["vote_choice"], "pour");
-    assert_eq!(vote["voting_power"], 0.4);
+    assert_decimal_field(&vote["voting_power"], rust_decimal_macros::dec!(0.4));
     assert_eq!(vote["owner_id"], owner1_id.to_string());
 }
 
@@ -827,7 +877,10 @@ async fn test_close_voting_simple_majority() {
     );
     assert_eq!(closed_resolution["vote_count_pour"], 1);
     assert_eq!(closed_resolution["vote_count_contre"], 1);
-    assert_eq!(closed_resolution["total_voting_power_pour"], 0.6);
+    assert_decimal_field(
+        &closed_resolution["total_voting_power_pour"],
+        rust_decimal_macros::dec!(0.6),
+    );
 }
 
 #[actix_web::test]
@@ -1167,7 +1220,7 @@ async fn test_complete_voting_lifecycle() {
     let closed: serde_json::Value = test::read_body_json(close_resp).await;
     assert_eq!(closed["status"], "adopted");
     assert_eq!(closed["vote_count_pour"], 2);
-    assert_eq!(closed["total_voting_power_pour"], 1.0);
+    assert_decimal_field(&closed["total_voting_power_pour"], rust_decimal_macros::dec!(1.0));
 
     // 7. Get meeting vote summary
     let summary_req = test::TestRequest::get()
