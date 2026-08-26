@@ -5,6 +5,7 @@
  * localStorage injection — saves ~5s per test and keeps videos focused
  * on the actual feature being tested.
  */
+import { test } from "@playwright/test";
 import type { APIRequestContext, Page } from "@playwright/test";
 
 const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
@@ -935,9 +936,23 @@ export async function uiLoginWithRetry(
     } catch (err) {
       lastErr = err;
       if (attempt === MAX_TRIES) break;
-      // Fenetre Traefik : 1 minute. Un tiers de fenetre par tentative suffit
-      // a reconstituer des jetons du seau sans immobiliser la campagne.
-      await new Promise((r) => setTimeout(r, 20_000 * attempt));
+
+      // ETENDRE LE BUDGET DU TEST AVANT D'ATTENDRE.
+      //
+      // Sans cela, la reprise se retourne contre nous : le delai par defaut
+      // d'un test Playwright est de 30 s, et une seule attente de 20 s le
+      // consomme presque entierement. Le test expirait alors sur un
+      // « Test timeout of 30000ms exceeded » qui ne dit rien du rate limit —
+      // j'ai introduit ce defaut en ajoutant la reprise, et il a fait
+      // echouer OwnerDashboard, role-delegation et technical-spec-flow.
+      //
+      // Une reprise ne vaut que si le test a le temps de la voir aboutir.
+      test.setTimeout(90_000 + 40_000 * attempt);
+
+      // Fenetre Traefik : 1 minute. Une attente courte d'abord : le seau se
+      // recharge en continu (5 jetons/minute), quelques secondes suffisent
+      // souvent, et on ne paie la longue attente qu'en cas d'echec repete.
+      await new Promise((r) => setTimeout(r, 8_000 * attempt));
     }
   }
 

@@ -559,10 +559,21 @@ test.describe("Story 2.5 — slice 2 multi-role narratif", () => {
 
     // Admin/superadmin voit le building non-conformant (gouvernance +
     // audit — pattern admin publishes conform but admin sees all).
-    // per_page=500 pour éviter la pagination écraser le building cible.
-    const listAdmin = await request.get(`${API_BASE}/buildings?per_page=500`, {
-      headers: { Authorization: `Bearer ${adminToken}` },
-    });
+    // Recherche SERVEUR par nom, pas pagination.
+    //
+    // `per_page=500` supposait que le building cree tienne dans la premiere
+    // page. La base d'integration en compte plus d'un millier : la cible en
+    // sortait et l'assertion echouait sur un defaut inexistant. Un plafond
+    // fixe repousse le seuil, il ne le supprime pas.
+    //
+    // `/buildings?search=` filtre cote serveur (BuildingSearchQuery), ce qui
+    // rend l'assertion independante du volume de la base.
+    const listAdmin = await request.get(
+      `${API_BASE}/buildings?per_page=500&search=${encodeURIComponent(buildingNonConform.name)}`,
+      {
+        headers: { Authorization: `Bearer ${adminToken}` },
+      },
+    );
     expect(listAdmin.status()).toBe(200);
     const bodyAdmin = await listAdmin.json();
     const itemsAdmin: Array<{ id: string }> = Array.isArray(bodyAdmin)
@@ -581,9 +592,12 @@ test.describe("Story 2.5 — slice 2 multi-role narratif", () => {
     // documenter le comportement actuel — ce qui révèle si le filtrage
     // s'applique au scope organisation ou seulement au rôle.
     const owner = await registerOwner(request, cabinet.id, "owner-neg");
-    const listOwner = await request.get(`${API_BASE}/buildings?per_page=500`, {
-      headers: { Authorization: `Bearer ${owner.token}` },
-    });
+    const listOwner = await request.get(
+      `${API_BASE}/buildings?per_page=500&search=${encodeURIComponent(buildingNonConform.name)}`,
+      {
+        headers: { Authorization: `Bearer ${owner.token}` },
+      },
+    );
     expect(
       [200, 403].includes(listOwner.status()),
       `owner list_buildings status: ${listOwner.status()} (200 si filtré, 403 si interdit)`,
