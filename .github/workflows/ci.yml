@@ -171,7 +171,121 @@ jobs:
           # --no-fail-fast: run ALL bdd*.rs binaries even if some panic, so the
           # full BDD picture surfaces in one CI run instead of one binary at a
           # time. Aligns with #524 (aggregate failures).
-          cargo test --no-fail-fast --test bdd --test bdd_governance --test bdd_financial --test bdd_operations --test bdd_community
+          #
+          # 2026-08-26 : ce commentaire disait « run ALL bdd*.rs » alors que la
+          # commande n'en listait que 5 sur 13. Les 8 manquants n'avaient JAMAIS
+          # tourné en CI — dont bdd_meeting_complete (WP-H3, Art. 3.87 §3-5),
+          # bdd_acp (Art. 3.84), bdd_building_conformity et bdd_voting_right,
+          # tous marqués « bloqueur légal FAIT » dans le WBS sur la foi d'une
+          # exécution locale ponctuelle. Mesurés un par un : 91/92 scénarios
+          # verts, 1 skipped, 0 échec. Ils s'exécutent en quelques secondes une
+          # fois compilés — c'est la compilation qui coûte, pas l'exécution.
+          cargo test --no-fail-fast \
+            --test bdd --test bdd_governance --test bdd_financial \
+            --test bdd_operations --test bdd_community \
+            --test bdd_acp --test bdd_building_conformity \
+            --test bdd_list_buildings_role_based --test bdd_meeting_complete \
+            --test bdd_portfolio --test bdd_validate_before_compute \
+            --test bdd_voting_right --test bdd_iot
+
+  coverage:
+    # Mesure de couverture — n'existait pas avant le 2026-08-26. `make coverage`
+    # était documenté dans CLAUDE.md mais appelait `cargo tarpaulin`, un outil
+    # qui n'était installé nulle part : la couverture de KoproGo n'avait donc
+    # jamais été mesurée, ni côté backend ni côté frontend.
+    #
+    # Non bloquant volontairement (`continue-on-error`) tant qu'aucun plancher
+    # n'est fixé : un seuil posé avant de connaître la valeur réelle bloque la
+    # CI sans rien apprendre. Le plancher se fixe une fois la pyramide branchée,
+    # juste sous la valeur constatée, et c'est à ce moment que le job devient
+    # bloquant.
+    name: Coverage (report only)
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: koprogo_test
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Setup Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: llvm-tools-preview
+
+      - name: Install cargo-llvm-cov
+        uses: taiki-e/install-action@cargo-llvm-cov
+
+      - name: Install sqlx-cli
+        run: cargo install sqlx-cli --no-default-features --features postgres
+
+      - name: Cache cargo registry
+        uses: actions/cache@v6
+        with:
+          path: ~/.cargo/registry
+          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Cache cargo index
+        uses: actions/cache@v6
+        with:
+          path: ~/.cargo/git
+          key: ${{ runner.os }}-cargo-index-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Setup test database
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/koprogo_test
+        run: |
+          cd backend
+          sqlx migrate run
+
+      - name: Backend coverage (unit + BDD)
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/koprogo_test
+        run: |
+          cd backend
+          mkdir -p ../coverage
+          # Les binaires d'intégration API (`e2e_*.rs`) ne sont PAS inclus ici :
+          # 59 binaires à instrumenter feraient exploser la durée du job. Ils
+          # rejoindront cette mesure quand ils seront eux-mêmes branchés à la CI.
+          cargo llvm-cov --lib --all-features \
+            --lcov --output-path ../coverage/backend.lcov \
+            --ignore-filename-regex '(tests/|/\.cargo/)'
+          cargo llvm-cov report --summary-only \
+            --ignore-filename-regex '(tests/|/\.cargo/)'
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+          cache: "npm"
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Frontend coverage (vitest v8)
+        run: |
+          cd frontend
+          npm ci
+          npm run test:unit:coverage
+
+      - name: Upload coverage reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage-reports
+          path: coverage/
+          retention-days: 14
 
   test-e2e:
     name: E2E Tests

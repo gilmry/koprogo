@@ -45,6 +45,10 @@ pub struct IotWorld {
     last_topic: Option<String>,
     parsed_copropriete_id: Option<Uuid>,
     parsed_unit_id: Option<Uuid>,
+    /// Nom de la **variante** de `MqttError` (ex. `InvalidTopic`), pas son
+    /// message d'affichage : c'est ce que désignent les scénarios.
+    topic_parse_error_kind: Option<String>,
+    /// Message complet, conservé pour les diagnostics d'échec.
     topic_parse_error: Option<String>,
 
     // MQTT reading state
@@ -90,6 +94,7 @@ impl IotWorld {
             last_topic: None,
             parsed_copropriete_id: None,
             parsed_unit_id: None,
+            topic_parse_error_kind: None,
             topic_parse_error: None,
             last_reading_id: None,
             last_reading_value: None,
@@ -123,9 +128,20 @@ impl IotWorld {
             .get_host_port_ipv4(5432)
             .await
             .expect("Failed to get host port");
+        // `127.0.0.1` en dur ne résout pas quand le runner de test est
+        // lui-même dans un conteneur : le port publié par testcontainers
+        // appartient à l'hôte Docker, pas au conteneur qui exécute `cargo
+        // test`. D'où `PoolTimedOut` sur 15 des 22 scénarios de ce harnais.
+        // Correctif identique à celui déjà appliqué à `bdd_governance` et
+        // `bdd_financial` (cf. leur commentaire) — `bdd_iot` ne l'avait jamais
+        // reçu, n'ayant jamais tourné ailleurs qu'en local.
+        let host = container
+            .get_host()
+            .await
+            .expect("Failed to get container host");
         let connection_string = format!(
-            "postgres://postgres:postgres@127.0.0.1:{}/postgres",
-            host_port
+            "postgres://postgres:postgres@{}:{}/postgres",
+            host, host_port
         );
         let pool = create_pool(&connection_string)
             .await
@@ -169,9 +185,15 @@ impl IotWorld {
 
         // Seed owner
         let owner_id = Uuid::new_v4();
+        // `owners` porte `first_name`/`last_name` (refactoring du modèle Owner,
+        // cf. docs/OWNER_MODEL_REFACTORING.rst), pas une colonne `name`. Ce
+        // test insérait encore `name` : la colonne avait disparu du schéma sans
+        // que rien ne le signale, puisque ce harnais ne tournait nulle part.
         sqlx::query(
-            r#"INSERT INTO owners (id, organization_id, name, email, phone, created_at, updated_at)
-               VALUES ($1, $2, 'Jean IoT', 'jean@iot.com', '+32499000000', NOW(), NOW())"#,
+            r#"INSERT INTO owners (id, organization_id, first_name, last_name, email, phone,
+                                   address, city, postal_code, country, created_at, updated_at)
+               VALUES ($1, $2, 'Jean', 'IoT', 'jean@iot.com', '+32499000000',
+                       '1 Rue Test', 'Bruxelles', '1000', 'Belgique', NOW(), NOW())"#,
         )
         .bind(owner_id)
         .bind(org_id)
@@ -210,9 +232,21 @@ async fn when_parse_topic(world: &mut IotWorld) {
         Ok((copropriete_id, unit_id)) => {
             world.parsed_copropriete_id = Some(copropriete_id);
             world.parsed_unit_id = Some(unit_id);
+            world.topic_parse_error_kind = None;
             world.topic_parse_error = None;
         }
         Err(e) => {
+            // Nom de variante, obtenu par le `Debug` dérivé de `MqttError`
+            // (`InvalidTopic("…")` -> `InvalidTopic`). Le scénario parle du
+            // TYPE d'erreur ; le message d'affichage, lui, est libre de
+            // changer sans que la règle métier bouge.
+            let dbg = format!("{:?}", e);
+            let kind = dbg
+                .split(['(', ' ', '{'])
+                .next()
+                .unwrap_or(&dbg)
+                .to_string();
+            world.topic_parse_error_kind = Some(kind);
             world.topic_parse_error = Some(e.to_string());
             world.parsed_copropriete_id = None;
             world.parsed_unit_id = None;
@@ -238,15 +272,21 @@ async fn then_unit_id(world: &mut IotWorld, expected: String) {
 
 #[then(expr = "topic parsing fails with {string}")]
 async fn then_topic_parse_fails(world: &mut IotWorld, expected_error_kind: String) {
-    let err = world
-        .topic_parse_error
+    // Le scénario nomme la VARIANTE (`InvalidTopic`), pas le message. L'ancienne
+    // assertion cherchait « InvalidTopic » dans « Topic format invalid: … » et
+    // échouait donc systématiquement, alors que le parsing rejetait bien le
+    // topic. C'était un défaut du test, pas du code.
+    let kind = world
+        .topic_parse_error_kind
         .as_ref()
         .expect("expected a topic parse error, but parsing succeeded");
-    assert!(
-        err.contains(&expected_error_kind),
-        "Expected error containing '{}', got: {}",
+    assert_eq!(
+        kind,
+        &expected_error_kind,
+        "Expected MqttError::{}, got {} (message: {})",
         expected_error_kind,
-        err
+        kind,
+        world.topic_parse_error.as_deref().unwrap_or("-")
     );
 }
 

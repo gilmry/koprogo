@@ -105,10 +105,27 @@ test-watch: ## 👀 Tests en mode watch (auto-reload)
 bench: ## ⚡ Benchmarks (backend)
 	cd backend && cargo bench
 
-coverage: ## 📊 Génération rapport de couverture
-	@echo "$(GREEN)📊 Génération coverage...$(NC)"
-	cd backend && cargo tarpaulin --out Html --output-dir ../coverage
-	@echo "$(GREEN)✅ Rapport: coverage/index.html$(NC)"
+coverage: coverage-backend coverage-frontend ## 📊 Couverture backend + frontend
+
+coverage-backend: ## 📊 Couverture backend (llvm-cov, tous les étages de la pyramide)
+	@echo "$(GREEN)📊 Couverture backend (unit + intégration + BDD)...$(NC)"
+	@# `cargo-llvm-cov` plutôt que tarpaulin : instrumentation native LLVM,
+	@# nettement moins gourmande en RAM (tarpaulin instrumente via ptrace et
+	@# ne tenait pas sur une machine de 8 Gio avec ce crate), et capable de
+	@# couvrir les binaires de test d'intégration, pas seulement `--lib`.
+	cd backend && cargo llvm-cov --workspace --all-features \
+		--lcov --output-path ../coverage/backend.lcov \
+		--ignore-filename-regex '(tests/|/\.cargo/)'
+	cd backend && cargo llvm-cov report --html --output-dir ../coverage/backend
+	@echo "$(GREEN)✅ Rapport: coverage/backend/index.html$(NC)"
+
+coverage-backend-lib: ## 📊 Couverture backend, tests unitaires seuls (rapide)
+	cd backend && cargo llvm-cov --lib --all-features --summary-only
+
+coverage-frontend: ## 📊 Couverture frontend (vitest v8)
+	@echo "$(GREEN)📊 Couverture frontend...$(NC)"
+	cd frontend && npm run test:unit:coverage
+	@echo "$(GREEN)✅ Rapport: coverage/frontend/index.html$(NC)"
 
 ##
 ## 🔍 Qualité du code
