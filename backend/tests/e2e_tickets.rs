@@ -853,9 +853,10 @@ async fn test_get_ticket_statistics() {
     // `total_tickets`, c'est le harnais — jamais execute — qui visait le nom
     // interne.
     assert!(
-        stats["total_tickets"].as_i64().unwrap_or_else(|| panic!(
-            "champ total_tickets absent des statistiques : {stats}"
-        )) >= 3
+        stats["total_tickets"]
+            .as_i64()
+            .unwrap_or_else(|| panic!("champ total_tickets absent des statistiques : {stats}"))
+            >= 3
     );
 }
 

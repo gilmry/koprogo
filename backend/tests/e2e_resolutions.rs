@@ -1220,7 +1220,10 @@ async fn test_complete_voting_lifecycle() {
     let closed: serde_json::Value = test::read_body_json(close_resp).await;
     assert_eq!(closed["status"], "adopted");
     assert_eq!(closed["vote_count_pour"], 2);
-    assert_decimal_field(&closed["total_voting_power_pour"], rust_decimal_macros::dec!(1.0));
+    assert_decimal_field(
+        &closed["total_voting_power_pour"],
+        rust_decimal_macros::dec!(1.0),
+    );
 
     // 7. Get meeting vote summary
     let summary_req = test::TestRequest::get()

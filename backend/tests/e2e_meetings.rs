@@ -61,7 +61,7 @@ async fn create_test_fixtures(
     // `buildings.organization_id` a ete DROP, le scoping org passe par
     // `acps.organization_id`. Sans lui : 400 « Failed to create building ».
     // Ce harnais n'ayant jamais ete execute, la migration l'avait manque.
-    let acp_id = common::create_test_acp(&app_state, org_id).await;
+    let acp_id = common::create_test_acp(app_state, org_id).await;
     let building_req = test::TestRequest::post()
         .uri("/api/v1/buildings")
         .insert_header((header::AUTHORIZATION, format!("Bearer {}", token)))
