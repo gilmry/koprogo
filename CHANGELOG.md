@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed - Penalites de retard et montants dus en `f64` (suite #661) — 2026-08-26
+
+Les relances de paiement portaient des **sommes reclamees a un coproprietaire**
+— dont des penalites de retard au **taux legal civil belge** — en `DOUBLE
+PRECISION` / `f64`, de la colonne SQL jusqu'au DTO. Defaut revele par le gate
+`check-no-f64-money.sh` livre avec #661.
+
+- Migration `20260826000000` : `amount_owed`, `penalty_amount`, `total_amount`
+  passent en `NUMERIC(12,2)`.
+- La contrainte `CHECK (total_amount = amount_owed + penalty_amount)` etait une
+  **egalite flottante exacte** : elle pouvait rejeter une ligne valide de facon
+  non reproductible. Elle est desormais fiable.
+- `calculate_penalty` : l'arrondi `(x * 100.0).round() / 100.0` en `f64` est
+  remplace par un arrondi **commercial** au centime
+  (`MidpointAwayFromZero`), et non le « banker's rounding » par defaut.
+- L'invariant « au moins un centime », porte par `#[validate(range)]` sur le DTO
+  (inapplicable a un `Decimal`), descend dans `PaymentReminder::new` — il vaut
+  desormais pour tous les appelants, pas seulement pour la route HTTP.
+- Suppression d'un aller-retour `Decimal -> f64` sur `expenses.amount`, colonne
+  pourtant deja `NUMERIC`.
+- Assertions de test en egalite exacte : le step BDD tolerait jusqu'ici **1 euro**
+  d'ecart sur une penalite de retard legale.
+
+
 ### Fixed - Quorum d'AG en `f64` sur un seuil legal (#661) — 2026-08-26
 
 **Le quorum d'assemblee generale hybride (Art. 3.87 §5 CC) etait calcule et compare

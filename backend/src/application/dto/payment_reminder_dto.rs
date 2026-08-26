@@ -1,4 +1,5 @@
 use crate::domain::entities::{DeliveryMethod, PaymentReminder, ReminderLevel, ReminderStatus};
+use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 use validator::Validate;
 
@@ -10,8 +11,15 @@ pub struct CreatePaymentReminderDto {
     pub owner_id: String,
     pub level: ReminderLevel,
 
-    #[validate(range(min = 0.01))]
-    pub amount_owed: f64,
+    /// Montant dû en euros. `Decimal` exact (ADR-0007/0008, suite #661).
+    ///
+    /// Plus d'annotation `#[validate(range)]` : `validator` ne sait pas borner
+    /// un `Decimal`. L'invariant n'est pas perdu pour autant — il est porté par
+    /// `PaymentReminder::new`, qui rejette tout montant inférieur au centime.
+    /// C'est aussi la place correcte au regard de l'architecture hexagonale, et
+    /// le pattern déjà suivi par `expense_dto` / `budget_dto` pour leurs
+    /// montants.
+    pub amount_owed: Decimal,
 
     pub due_date: String, // ISO 8601 format
 
@@ -30,9 +38,9 @@ pub struct PaymentReminderResponseDto {
     pub owner_email: Option<String>, // Owner email for contact
     pub level: ReminderLevel,
     pub status: ReminderStatus,
-    pub amount_owed: f64,
-    pub penalty_amount: f64,
-    pub total_amount: f64,
+    pub amount_owed: Decimal,
+    pub penalty_amount: Decimal,
+    pub total_amount: Decimal,
     pub due_date: String,
     pub days_overdue: i64,
     pub delivery_method: DeliveryMethod,
@@ -102,8 +110,8 @@ pub struct AddTrackingNumberDto {
 /// DTO for payment recovery dashboard statistics
 #[derive(Debug, Serialize, Clone)]
 pub struct PaymentRecoveryStatsDto {
-    pub total_owed: f64,
-    pub total_penalties: f64,
+    pub total_owed: Decimal,
+    pub total_penalties: Decimal,
     pub reminder_counts: Vec<ReminderLevelCountDto>,
     pub status_counts: Vec<ReminderStatusCountDto>,
 }
@@ -126,13 +134,13 @@ pub struct OverdueExpenseDto {
     pub expense_id: String,
     pub owner_id: String,
     pub days_overdue: i64,
-    pub amount: f64,
+    pub amount: Decimal,
     pub recommended_level: ReminderLevel,
 }
 
 impl OverdueExpenseDto {
     /// Create DTO with automatically determined reminder level
-    pub fn new(expense_id: String, owner_id: String, days_overdue: i64, amount: f64) -> Self {
+    pub fn new(expense_id: String, owner_id: String, days_overdue: i64, amount: Decimal) -> Self {
         let recommended_level = if days_overdue >= 60 {
             ReminderLevel::FormalNotice
         } else if days_overdue >= 30 {

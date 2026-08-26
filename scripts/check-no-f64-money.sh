@@ -52,15 +52,10 @@ ALLOWLIST=(
   # --- Données de démonstration, jamais un calcul opposable ---
   "infrastructure/database/seed.rs:"
   # --- DETTE CONNUE ET TRACÉE (à résorber, pas un carve-out accordé) ---
-  # payment_reminder : montants dus + pénalités de retard au taux civil belge,
-  # en f64. Défaut ADR-0008 réel, hors périmètre #661 (qui portait sur le
-  # quorum). Gelé ici pour empêcher toute AGGRAVATION, à traiter dans une
-  # story dédiée — ne pas transformer cette ligne en carve-out sans amendement.
-  "domain/entities/payment_reminder.rs:"
-  "application/dto/payment_reminder_dto.rs:"
-  "application/ports/payment_reminder_repository.rs:"
-  "application/use_cases/payment_reminder_use_cases.rs:"
-  "infrastructure/database/repositories/payment_reminder_repository_impl.rs:"
+  # (payment_reminder a été RÉSORBÉ — converti en Decimal, migration
+  #  20260826000000. Ses lignes ont été retirées de cette liste : c'est le
+  #  sens de marche attendu, une entrée de dette se supprime, elle ne se
+  #  transforme pas en carve-out.)
   # work_report / technical_inspection : coûts de travaux et d'inspections en
   # euros, en f64. Même nature de défaut que payment_reminder — gelé, à traiter.
   "domain/entities/work_report.rs:cost"
