@@ -109,6 +109,44 @@ Compiler 75 binaires de test, chacun liant un crate de 117 000 lignes, ne tient 
 
 **C'est une contrainte à retenir pour la CI** : brancher les 488 tests d'intégration API demandera de découper les jobs, pas seulement d'allonger une liste.
 
+## Ce que l'échantillon d'intégration API a révélé
+
+Six harnais sur 59 lancés (les plus gros, les plus sensibles, et un témoin touché par #661). Deux défauts majeurs sont sortis dès les trois premiers — et aucun n'aurait été trouvé autrement.
+
+### 1. Un endpoint cassé en production depuis des mois
+
+`e2e_api_keys` : 3 passés, 10 échecs, **tous en 403**.
+
+`api_key_handlers.rs` comparait `claims.role` à `"SYNDIC"` / `"SUPERADMIN"` en **majuscules**. Le JWT porte `UserRole::to_string()`, qui rend `"syndic"` / `"superadmin"` en **minuscules** : la condition était toujours vraie. Création, listage, révocation et rotation de clé répondaient **403 à tout le monde**, syndic légitime inclus.
+
+Ce bug était identifié dès **avril 2026** dans le WBS (*« compare les rôles en MAJUSCULES alors que le JWT retourne des minuscules → 403 sur tous les endpoints »*) et n'a jamais été corrigé. Le WBS coche par ailleurs WP-A7 / #339 « rotation implémentée, 4-cat RED-first, **aucun 501 ne part en bêta** » : les tests 4 catégories existent bel et bien dans `e2e_api_keys.rs` — ils n'ont simplement jamais été exécutés. L'endpoint ne renvoyait pas 501, il renvoyait 403.
+
+Même bug de casse trouvé dans `ag_session_handlers.rs`. Les deux sont corrigés par des helpers insensibles à la casse.
+
+**C'est l'argument le plus fort de tout cet audit** : les tests débranchés ne coûtaient pas seulement leur maintenance, ils *masquaient* un endpoint mort en production.
+
+### 2. Un drift de contrat introduit par ce chantier même
+
+`e2e_ag_sessions` a échoué sur `body["combined_percentage"].as_f64()` → `None`.
+
+Les commits #661 et « pénalités » affirmaient tous deux **« aucun drift de contrat API »**. C'était **faux**. L'affirmation reposait sur l'absence de ces DTO dans `openapi.json`, pas sur le comportement de sérialisation : `rust_decimal` sérialise un `Decimal` en **chaîne** par défaut, et la feature `serde-with-float` ne change pas ce défaut — elle fournit un module à appliquer explicitement, ce que `dashboard_dto.rs` faisait déjà (*« serialized as JSON number for frontend display »*).
+
+Les conversions faisaient donc passer `combined_percentage` de `60.0` à `"60"`, et de même pour les montants de budget et de relances. **43 champs** ont été annotés `#[serde(with = "rust_decimal::serde::float")]`.
+
+Sans ce test — celui-là même que je décrivais comme « laissé à la CI » alors que la CI ne le joue pas — ce changement silencieux de type serait parti en production.
+
+### Taux constaté
+
+| Harnais | Résultat | Nature |
+| --- | --- | --- |
+| `e2e_buildings` | 7/8 | test dérivé du modèle (`organization_id` → `acp_id`, Story 1.2) |
+| `e2e_api_keys` | 3/13 | **bug de production** |
+| `e2e_ag_sessions` | 8/8 après correction | drift de contrat introduit par ce chantier |
+
+Hors bug de production, la dérive des tests est **faible** : ~1 test sur 8 a divergé du modèle au fil des refactorings. Le « mur » des 488 tests d'intégration relève de la remise à niveau ponctuelle, pas de la réécriture.
+
+**Note de méthode** : la première passe de mesure a été invalidée par mes propres modifications de code, concurrentes de l'exécution. Mesurer un mur exige un arbre figé.
+
 ## Reste ouvert
 
 - Les 488 tests d'intégration API : jamais exécutés, non mesurés ici (échantillonnage à prévoir).
