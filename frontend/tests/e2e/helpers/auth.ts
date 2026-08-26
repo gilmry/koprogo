@@ -5,9 +5,111 @@
  * localStorage injection — saves ~5s per test and keeps videos focused
  * on the actual feature being tested.
  */
-import type { Page } from "@playwright/test";
+import type { APIRequestContext, Page } from "@playwright/test";
 
 const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
+
+// ---------------------------------------------------------------------------
+// Connexion admin mutualisée (anti-429)
+// ---------------------------------------------------------------------------
+//
+// `/api/v1/auth/login` est rate-limité par Traefik en production :
+// average=5/minute, burst=10, par IP source (docker-compose.prod.yml,
+// middleware `koprogo-login-ratelimit`). Le garde-fou est volontaire : le
+// hachage bcrypt est fait côté serveur et un burst saturerait l'unique cœur
+// de la VPS.
+//
+// Or chaque helper d'authentification re-loguait l'admin, soit une connexion
+// PAR TEST. Sur la campagne smoke du 2026-08-26 contre koprogo.com, cela a
+// produit ~18 connexions/minute contre 5 autorisées : 47 des 51 blocs d'échec
+// remontaient à la même ligne, avec `SyntaxError: Unexpected token 'T', "Too
+// Many Requests" is not valid JSON` — le corps 429 de Traefik, en texte brut,
+// passé à `.json()`.
+//
+// Le compte admin est le même pour toute la campagne : une seule connexion
+// suffit. Le jeton est donc mémorisé au niveau module (partagé par tous les
+// fichiers d'un même worker Playwright) et renouvelé 60 s avant son
+// expiration réelle, lue dans le JWT plutôt que supposée.
+//
+// Le retry sur 429 reste nécessaire malgré le cache : plusieurs workers, ou
+// une campagne lancée juste après une autre, peuvent encore franchir le
+// seuil. Traefik n'émet pas de `Retry-After`, d'où l'attente fixe alignée sur
+// la fenêtre du middleware.
+
+let cachedAdminToken: string | null = null;
+let cachedAdminExpiry = 0;
+
+/** Expiration réelle du JWT (ms epoch), 0 si illisible. */
+function jwtExpiryMs(token: string): number {
+  try {
+    const payload = token.split(".")[1];
+    const json = JSON.parse(
+      Buffer.from(payload, "base64url").toString("utf-8"),
+    );
+    return typeof json.exp === "number" ? json.exp * 1000 : 0;
+  } catch {
+    return 0;
+  }
+}
+
+/**
+ * Jeton superadmin, mutualisé sur toute la campagne.
+ *
+ * Une seule requête `/auth/login` par worker au lieu d'une par test.
+ */
+export async function adminLogin(
+  target: Page | APIRequestContext,
+): Promise<string> {
+  if (cachedAdminToken && Date.now() < cachedAdminExpiry) {
+    return cachedAdminToken;
+  }
+
+  // `scenarios/` n'a pas de Page au moment du seed : il travaille avec un
+  // APIRequestContext nu. Les deux exposent `.post()`, on normalise ici pour
+  // qu'un seul cache serve toute la campagne.
+  const api: APIRequestContext =
+    "request" in target
+      ? (target as Page).request
+      : (target as APIRequestContext);
+
+  const MAX_TRIES = 4;
+  let lastStatus = 0;
+  let lastBody = "";
+
+  for (let attempt = 1; attempt <= MAX_TRIES; attempt++) {
+    const resp = await api.post(`${API_BASE}/auth/login`, {
+      data: { email: "admin@koprogo.com", password: "admin123" },
+    });
+    lastStatus = resp.status();
+
+    if (resp.ok()) {
+      const data = await resp.json();
+      if (!data.token) {
+        throw new Error(
+          `adminLogin: réponse 200 sans champ token : ${JSON.stringify(data).slice(0, 200)}`,
+        );
+      }
+      cachedAdminToken = data.token;
+      // Marge de 60 s pour ne pas présenter un jeton qui expire en vol.
+      const exp = jwtExpiryMs(data.token);
+      cachedAdminExpiry = exp > 0 ? exp - 60_000 : Date.now() + 15 * 60_000;
+      return data.token;
+    }
+
+    lastBody = (await resp.text()).slice(0, 120);
+
+    if (lastStatus !== 429 || attempt === MAX_TRIES) break;
+
+    // Fenêtre du middleware Traefik : 1 minute. On attend un cinquième de
+    // fenêtre par tentative, ce qui suffit à reconstituer des jetons du
+    // seau sans immobiliser la campagne une minute entière.
+    await new Promise((r) => setTimeout(r, 12_000 * attempt));
+  }
+
+  throw new Error(
+    `adminLogin: échec après ${MAX_TRIES} tentatives — HTTP ${lastStatus} : ${lastBody}`,
+  );
+}
 
 interface AuthContext {
   token: string;
@@ -123,11 +225,7 @@ export async function loginAsSyndic(
   const email = `${prefix}-${timestamp}@example.com`;
 
   // Admin login
-  const adminLoginResp = await page.request.post(`${API_BASE}/auth/login`, {
-    data: { email: "admin@koprogo.com", password: "admin123" },
-  });
-  const adminData = await adminLoginResp.json();
-  const adminToken = adminData.token;
+  const adminToken = await adminLogin(page);
 
   // Create org
   const orgResp = await page.request.post(`${API_BASE}/organizations`, {
@@ -491,19 +589,16 @@ export async function loginAsSyndicWithLinkedOwner(
 export async function loginAsAdmin(
   page: Page,
 ): Promise<{ token: string; adminToken: string }> {
-  const loginResp = await page.request.post(`${API_BASE}/auth/login`, {
-    data: { email: "admin@koprogo.com", password: "admin123" },
-  });
-  const data = await loginResp.json();
+  const token = await adminLogin(page);
 
-  await injectAuth(page, data.token, {
+  await injectAuth(page, token, {
     email: "admin@koprogo.com",
     first_name: "Admin",
     last_name: "KoproGo",
     role: "superadmin",
   });
 
-  return { token: data.token, adminToken: data.token };
+  return { token, adminToken: token };
 }
 
 // ---------------------------------------------------------------------------
@@ -540,11 +635,7 @@ async function registerScopedUser(
   const timestamp = Date.now();
   const email = `${prefix}-${timestamp}@example.com`;
 
-  const adminLoginResp = await page.request.post(`${API_BASE}/auth/login`, {
-    data: { email: "admin@koprogo.com", password: "admin123" },
-  });
-  const adminData = await adminLoginResp.json();
-  const adminToken = adminData.token;
+  const adminToken = await adminLogin(page);
 
   const orgResp = await page.request.post(`${API_BASE}/organizations`, {
     data: {

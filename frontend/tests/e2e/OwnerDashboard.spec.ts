@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
 import type { Page } from "@playwright/test";
+import { adminLogin } from "./helpers/auth";
 
 /**
  * Owner Dashboard E2E Test Suite - Owner Portal
@@ -20,11 +21,7 @@ async function registerAndLoginAsOwner(page: Page): Promise<{
   const email = `owner-test-${timestamp}@example.com`;
 
   // Admin login to create org
-  const adminLoginResp = await page.request.post(`${API_BASE}/auth/login`, {
-    data: { email: "admin@koprogo.com", password: "admin123" },
-  });
-  const adminToken = (await adminLoginResp.json()).token;
-
+  const adminToken = await adminLogin(page);
   const orgResp = await page.request.post(`${API_BASE}/organizations`, {
     data: {
       name: `Owner Test Org ${timestamp}`,

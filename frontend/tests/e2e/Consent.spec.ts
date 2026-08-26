@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { adminLogin } from "./helpers/auth";
 
 /**
  * Consent Modal E2E Test Suite - GDPR Consent Flow
@@ -70,12 +71,7 @@ test.describe("Consent - Privacy Policy Consent Modal", () => {
     const email = `consent-test-${timestamp}@example.com`;
 
     // Login as admin to create an organization
-    const adminLoginResp = await page.request.post(`${API_BASE}/auth/login`, {
-      data: { email: "admin@koprogo.com", password: "admin123" },
-    });
-    const adminData = await adminLoginResp.json();
-    const adminToken = adminData.token;
-
+    const adminToken = await adminLogin(page);
     // Create org (consent endpoint requires organization_id in JWT)
     const orgResp = await page.request.post(`${API_BASE}/organizations`, {
       data: {

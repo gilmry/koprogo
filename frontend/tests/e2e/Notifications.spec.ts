@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
 import type { Page } from "@playwright/test";
+import { adminLogin } from "./helpers/auth";
 
 /**
  * Notifications E2E Test Suite - Multi-Channel Notifications
@@ -17,12 +18,7 @@ async function registerAndLogin(
   const email = `notif-test-${timestamp}@example.com`;
 
   // Create organization first (required for users to create notifications)
-  const adminLoginResp = await page.request.post(`${API_BASE}/auth/login`, {
-    data: { email: "admin@koprogo.com", password: "admin123" },
-  });
-  const adminData = await adminLoginResp.json();
-  const adminToken = adminData.token;
-
+  const adminToken = await adminLogin(page);
   const orgResp = await page.request.post(`${API_BASE}/organizations`, {
     data: {
       name: `Notif Test Org ${timestamp}`,

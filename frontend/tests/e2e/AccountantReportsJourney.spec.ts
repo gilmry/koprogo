@@ -1,5 +1,6 @@
 import { test, expect, type Page } from "@playwright/test";
 import { failOnPageErrors } from "./helpers/pageErrors";
+import { adminLogin } from "./helpers/auth";
 
 const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
 const TEST_PASSWORD = process.env.PLAYWRIGHT_TEST_PASSWORD || "test123456";
@@ -10,11 +11,7 @@ async function loginAsAccountant(page: Page, prefix: string) {
   const timestamp = Date.now();
   const email = `${prefix}-${timestamp}@example.com`;
 
-  const adminLoginResp = await page.request.post(`${API_BASE}/auth/login`, {
-    data: { email: "admin@koprogo.com", password: "admin123" },
-  });
-  const adminToken = (await adminLoginResp.json()).token;
-
+  const adminToken = await adminLogin(page);
   const orgResp = await page.request.post(`${API_BASE}/organizations`, {
     data: {
       name: `${prefix} Org ${timestamp}`,

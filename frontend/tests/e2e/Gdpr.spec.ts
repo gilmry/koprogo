@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
 import type { Page } from "@playwright/test";
+import { adminLogin } from "./helpers/auth";
 
 /**
  * GDPR E2E Test Suite - Idempotent & Self-Contained
@@ -21,12 +22,7 @@ async function registerAndLogin(
   const password = "test123456";
 
   // Login as admin first to create an organization
-  const adminLoginResp = await page.request.post(`${API_BASE}/auth/login`, {
-    data: { email: "admin@koprogo.com", password: "admin123" },
-  });
-  const adminData = await adminLoginResp.json();
-  const adminToken = adminData.token;
-
+  const adminToken = await adminLogin(page);
   // Create org for the user
   const orgResp = await page.request.post(`${API_BASE}/organizations`, {
     data: {

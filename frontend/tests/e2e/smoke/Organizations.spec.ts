@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { loginAsAdmin } from "../helpers/auth";
+import { loginAsAdmin, adminLogin } from "../helpers/auth";
 
 const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
 
@@ -48,11 +48,7 @@ test.describe("Organizations - SuperAdmin Management", () => {
   test("should require superadmin to list organizations", async ({ page }) => {
     const timestamp = Date.now();
     // Create regular user
-    const adminLoginResp = await page.request.post(`${API_BASE}/auth/login`, {
-      data: { email: "admin@koprogo.com", password: "admin123" },
-    });
-    const adminToken = (await adminLoginResp.json()).token;
-
+    const adminToken = await adminLogin(page);
     const orgResp = await page.request.post(`${API_BASE}/organizations`, {
       data: {
         name: `Restricted Org ${timestamp}`,

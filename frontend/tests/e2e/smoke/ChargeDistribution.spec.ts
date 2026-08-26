@@ -9,21 +9,25 @@ test.describe("Charge Distribution - Invoice Allocation", () => {
       await loginAsSyndicWithExpense(page, "chargedist");
     const timestamp = Date.now();
 
-    // Create a unit in the building
-    const unitResp = await page.request.post(`${API_BASE}/units`, {
-      data: {
-        organization_id: orgId,
-        building_id: buildingId,
-        unit_number: `CD-${timestamp}`,
-        floor: 1,
-        surface_area: 85.0,
-        unit_type: "Apartment",
-        quota: 100.0,
-      },
-      headers: { Authorization: `Bearer ${adminToken}` },
-    });
-    expect(unitResp.status()).toBe(201);
-    const unit = await unitResp.json();
+    // On REUTILISE un lot deja seede, on n'en cree pas un de plus.
+    //
+    // `loginAsSyndicWithBuilding` construit un immeuble conforme : 12 lots
+    // dont la somme des quotites vaut exactement `total_tantiemes` (1000).
+    // Ajouter un 13e lot a 100 quotites portait la somme a 1100 et violait
+    // l'invariant de l'acte de base. Le calcul de repartition applique la
+    // regle « validate before compute » (Track H Story H2) et repondait 422,
+    // avec la liste des invariants manquants — comportement correct du
+    // produit, que ce test contredisait en cassant lui-meme la conformite
+    // qu'il venait d'etablir.
+    const unitsResp = await page.request.get(
+      `${API_BASE}/buildings/${buildingId}/units`,
+      { headers: { Authorization: `Bearer ${adminToken}` } },
+    );
+    expect(unitsResp.status()).toBe(200);
+    const unitsBody = await unitsResp.json();
+    const units = Array.isArray(unitsBody) ? unitsBody : (unitsBody.data ?? []);
+    expect(units.length).toBeGreaterThan(0);
+    const unit = units[0];
 
     // Create an owner
     const ownerResp = await page.request.post(`${API_BASE}/owners`, {
