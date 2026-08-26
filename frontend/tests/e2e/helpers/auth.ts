@@ -64,16 +64,18 @@ function jwtExpiryMs(token: string): number {
  *
  * Une seule requête `/auth/login` par worker au lieu d'une par test.
  */
-export async function adminLogin(
+/**
+ * Connexion admin RÉELLE, avec retry sur 429. Pas de cache.
+ *
+ * Utilisée telle quelle quand l'appelant a besoin de l'effet de bord d'une
+ * vraie requête — le `Set-Cookie: koprogo_refresh` déposé dans le contexte —
+ * et non seulement d'un jeton porteur.
+ */
+export async function performAdminLogin(
   target: Page | APIRequestContext,
 ): Promise<string> {
-  if (cachedAdminToken && Date.now() < cachedAdminExpiry) {
-    return cachedAdminToken;
-  }
-
   // `scenarios/` n'a pas de Page au moment du seed : il travaille avec un
-  // APIRequestContext nu. Les deux exposent `.post()`, on normalise ici pour
-  // qu'un seul cache serve toute la campagne.
+  // APIRequestContext nu. Les deux exposent `.post()`, on normalise ici.
   const api: APIRequestContext =
     "request" in target
       ? (target as Page).request
@@ -93,14 +95,10 @@ export async function adminLogin(
       const data = await resp.json();
       if (!data.token) {
         throw new Error(
-          `adminLogin: réponse 200 sans champ token : ${JSON.stringify(data).slice(0, 200)}`,
+          `performAdminLogin: réponse 200 sans champ token : ${JSON.stringify(data).slice(0, 200)}`,
         );
       }
-      cachedAdminToken = data.token;
-      // Marge de 60 s pour ne pas présenter un jeton qui expire en vol.
-      const exp = jwtExpiryMs(data.token);
-      cachedAdminExpiry = exp > 0 ? exp - 60_000 : Date.now() + 15 * 60_000;
-      return data.token;
+      return data.token as string;
     }
 
     lastBody = (await resp.text()).slice(0, 120);
@@ -114,8 +112,26 @@ export async function adminLogin(
   }
 
   throw new Error(
-    `adminLogin: échec après ${MAX_TRIES} tentatives — HTTP ${lastStatus} : ${lastBody}`,
+    `performAdminLogin: échec après ${MAX_TRIES} tentatives — HTTP ${lastStatus} : ${lastBody}`,
   );
+}
+
+/**
+ * Jeton superadmin mutualisé sur toute la campagne (une connexion par worker).
+ *
+ * À réserver aux appels API porteurs. Pour ouvrir une session NAVIGATEUR,
+ * passer par `loginAsAdmin`, qui a besoin du cookie et donc d'une vraie
+ * requête (cf. le commentaire qui y est).
+ */
+export async function adminLogin(
+  target: Page | APIRequestContext,
+): Promise<string> {
+  if (cachedAdminToken && Date.now() < cachedAdminExpiry) {
+    return cachedAdminToken;
+  }
+  const token = await performAdminLogin(target);
+  primeAdminTokenCache(token);
+  return token;
 }
 
 interface AuthContext {
@@ -614,15 +630,7 @@ export async function loginAsAdmin(
   //
   // `loginAsSyndic` n'a pas ce probleme : son POST /auth/register passe par
   // `page.request` et depose bien le cookie du syndic dans le contexte.
-  const resp = await page.request.post(`${API_BASE}/auth/login`, {
-    data: { email: "admin@koprogo.com", password: "admin123" },
-  });
-  if (!resp.ok()) {
-    throw new Error(
-      `loginAsAdmin: HTTP ${resp.status()} — ${(await resp.text()).slice(0, 120)}`,
-    );
-  }
-  const token: string = (await resp.json()).token;
+  const token = await performAdminLogin(page);
   // Une connexion reelle vient d'avoir lieu : autant en faire profiter le
   // cache partage plutot que d'en consommer une de plus juste apres.
   primeAdminTokenCache(token);
