@@ -39,6 +39,13 @@ const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
 let cachedAdminToken: string | null = null;
 let cachedAdminExpiry = 0;
 
+/** Alimente le cache partagé depuis une connexion faite ailleurs. */
+function primeAdminTokenCache(token: string): void {
+  cachedAdminToken = token;
+  const exp = jwtExpiryMs(token);
+  cachedAdminExpiry = exp > 0 ? exp - 60_000 : Date.now() + 15 * 60_000;
+}
+
 /** Expiration réelle du JWT (ms epoch), 0 si illisible. */
 function jwtExpiryMs(token: string): number {
   try {
@@ -589,7 +596,36 @@ export async function loginAsSyndicWithLinkedOwner(
 export async function loginAsAdmin(
   page: Page,
 ): Promise<{ token: string; adminToken: string }> {
-  const token = await adminLogin(page);
+  // NE PAS utiliser le jeton memorise ici.
+  //
+  // `adminLogin()` rend une CHAINE, reutilisable partout pour un en-tete
+  // Authorization. Mais ouvrir une SESSION NAVIGATEUR demande autre chose :
+  // le `Set-Cookie: koprogo_refresh` (HttpOnly, SameSite=Strict, scope
+  // /api/v1/auth) que seule une vraie requete /auth/login depose dans le
+  // pot a cookies DE CE CONTEXTE. Sans lui, `authStore.init()` ne peut pas
+  // faire son silent-refresh, l'access token reste vide en memoire et le
+  // RouteGuard renvoie sur /login?redirect=...
+  //
+  // Un cookie est lie au contexte, un bearer ne l'est pas : les deux
+  // chemins ne se substituent pas l'un a l'autre. C'est exactement le
+  // piege dans lequel la mutualisation du jeton m'a fait tomber
+  // (11 echecs sur refonte-ux/fix-admin-buttons-acp, tous en redirection
+  // vers /login alors que les tests visaient des boutons Svelte 5).
+  //
+  // `loginAsSyndic` n'a pas ce probleme : son POST /auth/register passe par
+  // `page.request` et depose bien le cookie du syndic dans le contexte.
+  const resp = await page.request.post(`${API_BASE}/auth/login`, {
+    data: { email: "admin@koprogo.com", password: "admin123" },
+  });
+  if (!resp.ok()) {
+    throw new Error(
+      `loginAsAdmin: HTTP ${resp.status()} — ${(await resp.text()).slice(0, 120)}`,
+    );
+  }
+  const token: string = (await resp.json()).token;
+  // Une connexion reelle vient d'avoir lieu : autant en faire profiter le
+  // cache partage plutot que d'en consommer une de plus juste apres.
+  primeAdminTokenCache(token);
 
   await injectAuth(page, token, {
     email: "admin@koprogo.com",
