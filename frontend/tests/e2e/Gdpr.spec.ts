@@ -60,6 +60,16 @@ async function registerAndLogin(
 
 // Helper: Login via UI
 //
+// Attente sur EXPRESSION REGULIERE, pas sur chemin exact.
+//
+// Le build statique servi en production redirige `/login` vers `/login/`
+// (301). `waitForURL("/login")` compare le chemin a l'identique et ne
+// reconnait donc pas `/login/`, alors meme que le journal Playwright montre
+// « navigated to https://koprogo.com/login/ ». Trois tests expiraient sur
+// une navigation qui avait bel et bien eu lieu.
+//
+// Le reste de la suite utilisait deja `/\/login/` ; ce fichier etait le seul
+// a comparer une chaine exacte.
 // #605 root cause : après waitForURL, le cookie de refresh HttpOnly posé par
 // `authStore.login()` n'a pas forcément fini de se stabiliser côté navigateur
 // avant qu'un test enchaîne immédiatement une 2e navigation (ex. goto
@@ -157,7 +167,7 @@ test.describe("GDPR - Complete User Journey (Idempotent)", () => {
     ).toBeVisible({
       timeout: 10000,
     });
-    await page.waitForURL("/login", { timeout: 10000 });
+    await page.waitForURL(/\/login/, { timeout: 10000 });
 
     // Step 6: Verify cannot login anymore
     await page.getByTestId("login-email").fill(user.email);
@@ -241,7 +251,7 @@ test.describe("GDPR - Mixed Scenario: User Creates Data, Admin Exports", () => {
 
     // Step 3: User logs out and clear browser state
     await page.getByTestId("user-menu-logout").click();
-    await page.waitForURL("/login");
+    await page.waitForURL(/\/login/);
     await clearBrowserState(page);
 
     // Step 4: Admin logs in
@@ -276,7 +286,7 @@ test.describe("GDPR - Mixed Scenario: User Creates Data, Admin Exports", () => {
 
     // Step 6: User logs back in and exports own data
     await page.getByTestId("user-menu-logout").click();
-    await page.waitForURL("/login");
+    await page.waitForURL(/\/login/);
     await clearBrowserState(page);
 
     await loginViaUI(page, user.email, user.password);
@@ -298,7 +308,7 @@ test.describe("GDPR - Mixed Scenario: User Creates Data, Admin Exports", () => {
     await expect(page.getByTestId("gdpr-export-modal")).not.toBeVisible();
     await page.getByTestId("gdpr-erase-button").click();
     await page.getByTestId("gdpr-erase-confirm-button").click();
-    await page.waitForURL("/login", { timeout: 10000 });
+    await page.waitForURL(/\/login/, { timeout: 10000 });
   });
 });
 
@@ -321,7 +331,7 @@ test.describe("GDPR - Audit Logs Verification", () => {
 
     // Logout and clear browser state
     await page.getByTestId("user-menu-logout").click();
-    await page.waitForURL("/login");
+    await page.waitForURL(/\/login/);
     await clearBrowserState(page);
 
     // Step 2: Admin checks audit logs
