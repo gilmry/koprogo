@@ -71,6 +71,36 @@ function jwtExpiryMs(token: string): number {
  * vraie requête — le `Set-Cookie: koprogo_refresh` déposé dans le contexte —
  * et non seulement d'un jeton porteur.
  */
+/**
+ * Parse une reponse en exigeant un statut 2xx.
+ *
+ * Les helpers de seed enchainaient `await resp.json()` SANS jamais regarder
+ * le statut. Un echec transitoire sur une seule requete produisait donc un
+ * `undefined` silencieux, et le defaut ressortait beaucoup plus loin sous une
+ * forme trompeuse — typiquement un 422 « immeuble non conforme » alors que la
+ * vraie cause etait un lot jamais cree.
+ *
+ * Constate sur `ChargeDistribution`, vert en isolation et rouge en campagne.
+ * Le produit avait raison a chaque fois ; c'est le harnais qui construisait
+ * un etat incomplet sans le dire.
+ */
+async function expectOk<T = any>(
+  resp: {
+    status: () => number;
+    ok: () => boolean;
+    text: () => Promise<string>;
+    json: () => Promise<any>;
+  },
+  label: string,
+): Promise<T> {
+  if (!resp.ok()) {
+    throw new Error(
+      `${label}: HTTP ${resp.status()} — ${(await resp.text()).slice(0, 200)}`,
+    );
+  }
+  return (await resp.json()) as T;
+}
+
 export async function performAdminLogin(
   target: Page | APIRequestContext,
 ): Promise<string> {
@@ -260,7 +290,7 @@ export async function loginAsSyndic(
     },
     headers: { Authorization: `Bearer ${adminToken}` },
   });
-  const org = await orgResp.json();
+  const org = await expectOk(orgResp, "seed:org");
 
   // Register syndic
   const regResp = await page.request.post(`${API_BASE}/auth/register`, {
@@ -273,7 +303,7 @@ export async function loginAsSyndic(
       organization_id: org.id,
     },
   });
-  const userData = await regResp.json();
+  const userData = await expectOk(regResp, "seed:reg");
 
   // Inject auth into browser (no UI login!)
   await injectAuth(page, userData.token, {
@@ -335,7 +365,7 @@ export async function ensureAcp(
       `ensureAcp: POST /acps failed ${createResp.status()} : ${body}`,
     );
   }
-  const acp = await createResp.json();
+  const acp = await expectOk(createResp, "seed:create");
   return acp.id;
 }
 
@@ -382,7 +412,25 @@ async function seedConformantUnits(
       },
       headers: { Authorization: `Bearer ${adminToken}` },
     });
-    const unit = await unitResp.json();
+    // Verifier CHAQUE creation.
+    //
+    // Sans ce controle, un echec transitoire sur un seul lot passait
+    // inapercu : `unitIds` recevait `undefined`, l'immeuble restait NON
+    // CONFORME (somme des quotites != total_tantiemes), et le defaut
+    // ressortait bien plus loin sous la forme d'un 422 au calcul de
+    // repartition — un message qui ne dit rien de la vraie cause.
+    //
+    // C'est exactement ce qui faisait echouer `ChargeDistribution` en
+    // campagne alors qu'il passe seul : le produit refusait a juste titre de
+    // calculer sur un immeuble que le helper avait laisse incomplet.
+    if (unitResp.status() !== 201) {
+      throw new Error(
+        `seedConformantUnits: lot ${i + 1}/${totalUnits} (quota ${quota}) ` +
+          `refuse en HTTP ${unitResp.status()} — ` +
+          `${(await unitResp.text()).slice(0, 160)}`,
+      );
+    }
+    const unit = await expectOk(unitResp, "seed:unit");
     unitIds.push(unit.id);
   }
   return unitIds;
@@ -423,7 +471,7 @@ export async function loginAsSyndicWithBuilding(
     },
     headers: { Authorization: `Bearer ${auth.adminToken}` },
   });
-  const building = await buildingResp.json();
+  const building = await expectOk(buildingResp, "seed:building");
 
   // Track H Story H2 — seed conformant units by default so operational
   // computations (expenses/charges/états datés) are not blocked with 422.
@@ -471,7 +519,7 @@ export async function loginAsSyndicWithUnit(
     },
     headers: { Authorization: `Bearer ${ctx.adminToken}` },
   });
-  const unit = await unitResp.json();
+  const unit = await expectOk(unitResp, "seed:unit");
 
   return { ...ctx, unitId: unit.id };
 }
@@ -500,7 +548,7 @@ export async function loginAsSyndicWithMeeting(
     },
     headers: { Authorization: `Bearer ${ctx.token}` },
   });
-  const meeting = await meetingResp.json();
+  const meeting = await expectOk(meetingResp, "seed:meeting");
 
   return { ...ctx, meetingId: meeting.id };
 }
@@ -524,7 +572,7 @@ export async function loginAsSyndicWithExpense(
     },
     headers: { Authorization: `Bearer ${ctx.token}` },
   });
-  const expense = await expenseResp.json();
+  const expense = await expectOk(expenseResp, "seed:expense");
 
   return { ...ctx, expenseId: expense.id };
 }
@@ -552,7 +600,7 @@ export async function loginAsSyndicWithOwner(
     },
     headers: { Authorization: `Bearer ${ctx.token}` },
   });
-  const owner = await ownerResp.json();
+  const owner = await expectOk(ownerResp, "seed:owner");
 
   return { ...ctx, ownerId: owner.id };
 }
@@ -581,7 +629,7 @@ export async function loginAsSyndicWithLinkedOwner(
       organization_id: ctx.orgId,
     },
   });
-  const ownerUserData = await regResp.json();
+  const ownerUserData = await expectOk(regResp, "seed:reg");
   const ownerUserId =
     ownerUserData.user?.id || ownerUserData.id || ownerUserData.user_id || "";
   const ownerToken = ownerUserData.token;
@@ -601,7 +649,7 @@ export async function loginAsSyndicWithLinkedOwner(
     },
     headers: { Authorization: `Bearer ${ctx.token}` },
   });
-  const owner = await ownerResp.json();
+  const owner = await expectOk(ownerResp, "seed:owner");
 
   return { ...ctx, ownerId: owner.id, ownerToken };
 }
@@ -690,7 +738,7 @@ async function registerScopedUser(
     },
     headers: { Authorization: `Bearer ${adminToken}` },
   });
-  const org = await orgResp.json();
+  const org = await expectOk(orgResp, "seed:org");
 
   const regResp = await page.request.post(`${API_BASE}/auth/register`, {
     data: {
@@ -702,7 +750,7 @@ async function registerScopedUser(
       organization_id: org.id,
     },
   });
-  const userData = await regResp.json();
+  const userData = await expectOk(regResp, "seed:reg");
 
   await injectAuth(page, userData.token, {
     email,
