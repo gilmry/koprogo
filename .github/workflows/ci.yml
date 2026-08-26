@@ -368,6 +368,31 @@ jobs:
             --test e2e --test e2e_ag_sessions --test e2e_buildings \
             --test e2e_convocations --test e2e_gdpr --test e2e_payments \
             --test e2e_api_keys
+          # Lot 2 — 13 harnais supplémentaires, 130 tests, mesurés verts le
+          # 2026-08-26. Aucun n'avait jamais été exécuté, ni en CI ni en local.
+          # Leur première exécution a mis au jour deux défauts produit :
+          #
+          #   * `/admin/security-incidents/overdue` répondait 404, avalé par
+          #     `/{incident_id}` déclaré avant lui dans `routes.rs`. C'est
+          #     l'endpoint des violations dépassant les 72 h de notification à
+          #     l'APD (RGPD Art. 33) : inatteignable en production.
+          #   * `/accounts/seed/belgian-pcmn` rendait 400 au lieu de 409 sur un
+          #     PCMN déjà seedé — cas systématique, `POST /organizations`
+          #     seedant déjà le plan comptable.
+          #
+          # `storage_s3` est le SEUL harnais qui exerce `S3Storage`, le
+          # fournisseur utilisé en production. `tests/common/mod.rs` câble
+          # `FileStorage` en dur : `e2e_documents` peut donc être vert sans
+          # jamais toucher le chemin de production. Il démarre MinIO via
+          # testcontainers, ce qui fonctionne nativement ici (cargo tourne sur
+          # le runner, pas dans un conteneur).
+          cargo test --no-fail-fast \
+            --test e2e_security_incidents --test e2e_resolutions \
+            --test e2e_meetings --test e2e_quotes --test e2e_tickets \
+            --test e2e_notifications --test e2e_payment_recovery \
+            --test e2e_budget --test e2e_notices --test e2e_skills \
+            --test e2e_invoices --test e2e_local_exchange \
+            --test e2e_documents --test storage_s3
 
   api-breaking-changes:
     name: API Breaking Change Detection (oasdiff)
