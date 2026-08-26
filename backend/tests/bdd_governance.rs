@@ -7015,8 +7015,8 @@ async fn when_record_remote_participant(
     let session_id = world.last_ag_session_id.unwrap();
 
     let dto = RecordRemoteJoinDto {
-        voting_power: voting_power as f64,
-        total_building_quotas: total_quotas as f64,
+        voting_power: Decimal::from(voting_power),
+        total_building_quotas: Decimal::from(total_quotas),
     };
 
     match uc.record_remote_join(session_id, org_id, dto).await {
@@ -7056,27 +7056,46 @@ async fn then_remote_attendees_count(world: &mut GovernanceWorld, expected: i32)
 }
 
 #[then(regex = r#"^the remote_voting_power should be ([\d.]+)$"#)]
-async fn then_remote_voting_power(world: &mut GovernanceWorld, expected: f64) {
+async fn then_remote_voting_power(world: &mut GovernanceWorld, expected: String) {
     let resp = world
         .last_ag_session_response
         .as_ref()
         .expect("No session response");
-    assert!(
-        (resp.remote_voting_power - expected).abs() < 1.0,
+    // #661 : égalité Decimal EXACTE. L'ancienne tolérance `< 1.0` laissait
+    // passer un millième entier d'écart sur une quote-part d'AG.
+    let expected: Decimal = expected.parse().expect("expected doit être un décimal");
+    assert_eq!(
+        resp.remote_voting_power, expected,
         "remote_voting_power {} != expected {}",
-        resp.remote_voting_power,
-        expected
+        resp.remote_voting_power, expected
     );
 }
 
-#[when(regex = r#"^I calculate the combined quorum with (\d+) physical quotas out of (\d+)$"#)]
-async fn when_calculate_combined_quorum(world: &mut GovernanceWorld, physical: i64, total: i64) {
+/// #661 — le volet « têtes » du quorum double fait désormais partie du step :
+/// un quorum d'AG ne se juge pas sur les seules quotités (Art. 3.87 §5 CC).
+#[when(
+    regex = r#"^I calculate the combined quorum with (\d+) physical quotas out of (\d+), (\d+) owners present out of (\d+)$"#
+)]
+async fn when_calculate_combined_quorum(
+    world: &mut GovernanceWorld,
+    physical: i64,
+    total: i64,
+    physical_owners: i64,
+    total_owners: i64,
+) {
     let uc = world.ag_session_use_cases.as_ref().unwrap().clone();
     let org_id = world.org_id.unwrap();
     let session_id = world.last_ag_session_id.unwrap();
 
     match uc
-        .calculate_combined_quorum(session_id, org_id, physical as f64, total as f64)
+        .calculate_combined_quorum(
+            session_id,
+            org_id,
+            Decimal::from(physical),
+            Decimal::from(total),
+            physical_owners as i32,
+            total_owners as i32,
+        )
         .await
     {
         Ok(resp) => {
@@ -7105,13 +7124,18 @@ async fn then_quorum_calculation_succeeds(world: &mut GovernanceWorld) {
 }
 
 #[then(regex = r#"^the combined_percentage should be approximately ([\d.]+)$"#)]
-async fn then_combined_percentage(world: &mut GovernanceWorld, expected: f64) {
+async fn then_combined_percentage(world: &mut GovernanceWorld, expected: String) {
     let resp = world
         .combined_quorum_response
         .as_ref()
         .expect("No quorum response");
-    assert!(
-        (resp.combined_percentage - expected).abs() < 5.0,
+    // #661 : la tolérance d'origine était de ±5 POINTS de pourcentage sur un
+    // seuil légal fixé à 50% — un scénario à 47% passait pour un quorum à 50%.
+    // Comparaison Decimal à 4 décimales (précision de la colonne NUMERIC(8,4)).
+    let expected: Decimal = expected.parse().expect("expected doit être un décimal");
+    assert_eq!(
+        resp.combined_percentage.round_dp(4),
+        expected.round_dp(4),
         "combined_percentage {} != expected {}",
         resp.combined_percentage,
         expected

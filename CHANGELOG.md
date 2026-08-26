@@ -7,6 +7,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed - Quorum d'AG en `f64` sur un seuil legal (#661) — 2026-08-26
+
+**Le quorum d'assemblee generale hybride (Art. 3.87 §5 CC) etait calcule et compare
+en `f64` sur un endpoint expose** (`GET /ag-sessions/{id}/quorum`), et ne verifiait
+que le volet quotites — pas le volet « tetes » exige par la loi.
+
+- `AgSession` : quorum en `Decimal` de bout en bout (entite, DTO, use case, handler,
+  repository). Aucune migration SQL : les colonnes etaient deja `NUMERIC`, le
+  repository les degradait par des casts `::FLOAT8` (8 retires).
+- **Une seule implementation d'Art. 3.87 §5** : la regle du quorum double est
+  extraite en predicats partages sur `Meeting` (`double_quorum_reached` et ses
+  trois volets), appliques a la fois par le chemin presentiel (`assert_can_complete`,
+  Story H9) et par le chemin hybride. **Changement de comportement** : une AG
+  hybride ne peut plus etre declaree en quorum sur les seules quotites.
+- Les deux bornes de l'article sont desormais codifiees distinctement : quotites
+  « au moins la moitie » (inclusif), tetes « plus de la moitie » (strict).
+- `validate_proxy_mandate` supprimee : morte, en `f64`, et juridiquement fausse
+  (cumul en ET de deux regles dont la seconde est une exception). La regle reelle
+  est `validate_proxy_limit`, deja en `Decimal`.
+- `BudgetVarianceResponse` et `BudgetStatsResponse` passent en `Decimal` : ce sont
+  des charges de copropriete, qu'ADR-0008 §A exclut de tout carve-out `f64`.
+- **Nouveau gate CI** `scripts/check-no-f64-money.sh` (job `lint`) : echoue sur tout
+  `f64` monetaire ou de quotite hors de la liste fermee ADR-0008. L'invariant §B de
+  l'ADR reposait jusqu'ici sur la vigilance humaine — c'est ainsi que ce bug a
+  survecu des mois.
+- Tests 4 categories, assertions en egalite `Decimal` exacte. Les steps BDD
+  toleraient jusque-la **±5 points de pourcentage** sur un seuil fixe a 50%.
+
+
 ### Note de transparence
 
 Ce projet est en version **0.1.0** (fondations techniques). Un audit de conformite juridique

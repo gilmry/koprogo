@@ -82,30 +82,30 @@ pub struct BudgetVarianceResponse {
     pub building_id: Uuid,
 
     // Budget prévu
-    pub budgeted_ordinary: f64,
-    pub budgeted_extraordinary: f64,
-    pub budgeted_total: f64,
+    pub budgeted_ordinary: Decimal,
+    pub budgeted_extraordinary: Decimal,
+    pub budgeted_total: Decimal,
 
     // Réalisé (YTD - Year To Date)
-    pub actual_ordinary: f64,
-    pub actual_extraordinary: f64,
-    pub actual_total: f64,
+    pub actual_ordinary: Decimal,
+    pub actual_extraordinary: Decimal,
+    pub actual_total: Decimal,
 
     // Variance (budget - actual)
-    pub variance_ordinary: f64,
-    pub variance_extraordinary: f64,
-    pub variance_total: f64,
+    pub variance_ordinary: Decimal,
+    pub variance_extraordinary: Decimal,
+    pub variance_total: Decimal,
 
     // Variance en % ((budget - actual) / budget * 100)
-    pub variance_ordinary_pct: f64,
-    pub variance_extraordinary_pct: f64,
-    pub variance_total_pct: f64,
+    pub variance_ordinary_pct: Decimal,
+    pub variance_extraordinary_pct: Decimal,
+    pub variance_total_pct: Decimal,
 
     // Alertes
-    pub has_overruns: bool,              // Dépassements > 10%
-    pub overrun_categories: Vec<String>, // Catégories en dépassement
-    pub months_elapsed: i32,             // Mois écoulés dans l'exercice
-    pub projected_year_end_total: f64,   // Projection fin d'année
+    pub has_overruns: bool,                // Dépassements > 10%
+    pub overrun_categories: Vec<String>,   // Catégories en dépassement
+    pub months_elapsed: i32,               // Mois écoulés dans l'exercice
+    pub projected_year_end_total: Decimal, // Projection fin d'année
 }
 
 /// Response avec statistiques budgétaires
@@ -117,6 +117,7 @@ pub struct BudgetStatsResponse {
     pub approved_count: i64,
     pub rejected_count: i64,
     pub archived_count: i64,
-    pub average_total_budget: f64,
-    pub average_monthly_provision: f64,
+    // #661 — moyennes de montants : Decimal comme le reste du PCMN.
+    pub average_total_budget: Decimal,
+    pub average_monthly_provision: Decimal,
 }

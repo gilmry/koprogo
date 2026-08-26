@@ -5,6 +5,7 @@ use crate::application::dto::ag_session_dto::{
 use crate::application::ports::ag_session_repository::AgSessionRepository;
 use crate::application::ports::meeting_repository::MeetingRepository;
 use crate::domain::entities::ag_session::{AgSession, VideoPlatform};
+use rust_decimal::Decimal;
 use std::sync::Arc;
 use uuid::Uuid;
 
@@ -212,8 +213,10 @@ impl AgSessionUseCases {
         &self,
         id: Uuid,
         organization_id: Uuid,
-        physical_quotas: f64,
-        total_building_quotas: f64,
+        physical_quotas: Decimal,
+        total_building_quotas: Decimal,
+        physical_owners_count: i32,
+        total_owners_count: i32,
     ) -> Result<CombinedQuorumResponse, String> {
         let session = self
             .ag_session_repo
@@ -227,6 +230,14 @@ impl AgSessionUseCases {
 
         let combined_pct =
             session.calculate_combined_quorum(physical_quotas, total_building_quotas)?;
+        // Le seuil légal vit dans le domaine (Art. 3.87 §5 CC) — ne jamais le
+        // ré-écrire ici, sous peine de le voir diverger du chemin `Meeting`.
+        let quorum_reached = session.is_combined_quorum_reached(
+            physical_quotas,
+            total_building_quotas,
+            physical_owners_count,
+            total_owners_count,
+        )?;
 
         Ok(CombinedQuorumResponse {
             session_id: session.id,
@@ -235,7 +246,10 @@ impl AgSessionUseCases {
             remote_quotas: session.remote_voting_power,
             total_building_quotas,
             combined_percentage: combined_pct,
-            quorum_reached: combined_pct > 50.0,
+            physical_owners_count,
+            remote_attendees_count: session.remote_attendees_count,
+            total_owners_count,
+            quorum_reached,
         })
     }
 
@@ -278,6 +292,7 @@ mod tests {
     use crate::domain::entities::meeting::{Meeting, MeetingType};
     use async_trait::async_trait;
     use chrono::{Duration, Utc};
+    use rust_decimal_macros::dec;
     use std::collections::HashMap;
     use std::sync::Mutex;
 
@@ -625,8 +640,8 @@ mod tests {
         let uc = make_use_cases(ag_repo, meeting_repo);
 
         let dto = RecordRemoteJoinDto {
-            voting_power: 150.0,
-            total_building_quotas: 1000.0,
+            voting_power: dec!(150),
+            total_building_quotas: dec!(1000),
         };
 
         let result = uc.record_remote_join(session_id, org_id, dto).await;
@@ -634,7 +649,8 @@ mod tests {
         assert!(result.is_ok());
         let resp = result.unwrap();
         assert_eq!(resp.remote_attendees_count, 1);
-        assert!((resp.remote_voting_power - 150.0).abs() < 0.01);
-        assert!((resp.quorum_remote_contribution - 15.0).abs() < 0.01);
+        // Égalité Decimal exacte (#661) — plus de tolérance flottante.
+        assert_eq!(resp.remote_voting_power, dec!(150));
+        assert_eq!(resp.quorum_remote_contribution, dec!(15));
     }
 }

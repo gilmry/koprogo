@@ -2,6 +2,7 @@ use crate::application::dto::PageRequest;
 use crate::application::error::AppError;
 use crate::domain::entities::{Budget, BudgetStatus};
 use async_trait::async_trait;
+use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -75,30 +76,37 @@ pub struct BudgetStatsResponse {
     pub approved_count: i64,
     pub rejected_count: i64,
     pub archived_count: i64,
-    pub average_total_budget: f64,
-    pub average_monthly_provision: f64,
+    // #661 — moyennes de montants : Decimal comme le reste du PCMN.
+    pub average_total_budget: Decimal,
+    pub average_monthly_provision: Decimal,
 }
 
 /// Variance analysis response
+///
+/// Issue #661 — tous les montants sont en `Decimal` : ce sont des charges de
+/// copropriété (PCMN), et l'ADR-0008 §A n'accorde aucun carve-out `f64` à un
+/// montant. Les `*_pct` suivent, parce qu'ils alimentent le seuil métier
+/// `has_overruns` (dépassement > 10%) — un pourcentage comparé à un seuil
+/// n'est pas un pourcentage d'affichage.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BudgetVarianceResponse {
     pub budget_id: Uuid,
     pub fiscal_year: i32,
     pub building_id: Uuid,
-    pub budgeted_ordinary: f64,
-    pub budgeted_extraordinary: f64,
-    pub budgeted_total: f64,
-    pub actual_ordinary: f64,
-    pub actual_extraordinary: f64,
-    pub actual_total: f64,
-    pub variance_ordinary: f64,
-    pub variance_extraordinary: f64,
-    pub variance_total: f64,
-    pub variance_ordinary_pct: f64,
-    pub variance_extraordinary_pct: f64,
-    pub variance_total_pct: f64,
+    pub budgeted_ordinary: Decimal,
+    pub budgeted_extraordinary: Decimal,
+    pub budgeted_total: Decimal,
+    pub actual_ordinary: Decimal,
+    pub actual_extraordinary: Decimal,
+    pub actual_total: Decimal,
+    pub variance_ordinary: Decimal,
+    pub variance_extraordinary: Decimal,
+    pub variance_total: Decimal,
+    pub variance_ordinary_pct: Decimal,
+    pub variance_extraordinary_pct: Decimal,
+    pub variance_total_pct: Decimal,
     pub has_overruns: bool,
     pub overrun_categories: Vec<String>,
     pub months_elapsed: i32,
-    pub projected_year_end_total: f64,
+    pub projected_year_end_total: Decimal,
 }

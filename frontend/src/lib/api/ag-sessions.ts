@@ -43,11 +43,28 @@ export interface RecordJoinDto {
   remote_voting_power: number;
 }
 
+export interface CombinedQuorumQuery {
+  physical_quotas: number;
+  total_building_quotas: number;
+  /** Volet « têtes » du quorum double, Art. 3.87 §5 CC (#661). */
+  physical_owners_count: number;
+  total_owners_count: number;
+}
+
 export interface CombinedQuorumResponse {
+  session_id: string;
+  meeting_id: string;
   physical_quotas: number;
   remote_quotas: number;
-  total_quotas: number;
+  total_building_quotas: number;
   combined_percentage: number;
+  physical_owners_count: number;
+  remote_attendees_count: number;
+  total_owners_count: number;
+  /**
+   * Art. 3.87 §5 CC — quorum DOUBLE : têtes > 50% ET quotités >= 50%, ou
+   * quotités > 3/4. Décidé côté backend, jamais recalculé côté client.
+   */
   quorum_reached: boolean;
 }
 
@@ -87,8 +104,19 @@ export const agSessionsApi = {
     return api.put(`/ag-sessions/${id}/record-join`, data);
   },
 
-  async getCombinedQuorum(id: string): Promise<CombinedQuorumResponse> {
-    return api.get(`/ag-sessions/${id}/combined-quorum`);
+  async getCombinedQuorum(
+    id: string,
+    query: CombinedQuorumQuery,
+  ): Promise<CombinedQuorumResponse> {
+    // #661 — l'URL était `/combined-quorum`, la route backend est `/quorum`
+    // (`routes.rs:648`). Cet appel n'a jamais pu aboutir ; corrigé au passage.
+    const params = new URLSearchParams({
+      physical_quotas: String(query.physical_quotas),
+      total_building_quotas: String(query.total_building_quotas),
+      physical_owners_count: String(query.physical_owners_count),
+      total_owners_count: String(query.total_owners_count),
+    });
+    return api.get(`/ag-sessions/${id}/quorum?${params}`);
   },
 
   async delete(id: string): Promise<void> {

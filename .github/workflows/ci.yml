@@ -71,6 +71,12 @@ jobs:
           cd backend
           cargo clippy --all-targets --all-features -- -D warnings
 
+      # Issue #661 — ADR-0008 §A : aucun montant / quote-part / valeur
+      # alimentant un seuil légal ne doit être en f64. Le gate est dans le job
+      # lint (pas de compilation requise, échoue en quelques secondes).
+      - name: ADR-0008 gate — no f64 on money or quotas
+        run: ./scripts/check-no-f64-money.sh
+
   test-unit:
     name: Unit Tests
     runs-on: ubuntu-latest
