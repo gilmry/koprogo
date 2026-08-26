@@ -82,29 +82,42 @@ pub struct BudgetVarianceResponse {
     pub building_id: Uuid,
 
     // Budget prévu
+    #[serde(with = "rust_decimal::serde::float")]
     pub budgeted_ordinary: Decimal,
+    #[serde(with = "rust_decimal::serde::float")]
     pub budgeted_extraordinary: Decimal,
+    #[serde(with = "rust_decimal::serde::float")]
     pub budgeted_total: Decimal,
 
     // Réalisé (YTD - Year To Date)
+    #[serde(with = "rust_decimal::serde::float")]
     pub actual_ordinary: Decimal,
+    #[serde(with = "rust_decimal::serde::float")]
     pub actual_extraordinary: Decimal,
+    #[serde(with = "rust_decimal::serde::float")]
     pub actual_total: Decimal,
 
     // Variance (budget - actual)
+    #[serde(with = "rust_decimal::serde::float")]
     pub variance_ordinary: Decimal,
+    #[serde(with = "rust_decimal::serde::float")]
     pub variance_extraordinary: Decimal,
+    #[serde(with = "rust_decimal::serde::float")]
     pub variance_total: Decimal,
 
     // Variance en % ((budget - actual) / budget * 100)
+    #[serde(with = "rust_decimal::serde::float")]
     pub variance_ordinary_pct: Decimal,
+    #[serde(with = "rust_decimal::serde::float")]
     pub variance_extraordinary_pct: Decimal,
+    #[serde(with = "rust_decimal::serde::float")]
     pub variance_total_pct: Decimal,
 
     // Alertes
-    pub has_overruns: bool,                // Dépassements > 10%
-    pub overrun_categories: Vec<String>,   // Catégories en dépassement
-    pub months_elapsed: i32,               // Mois écoulés dans l'exercice
+    pub has_overruns: bool,              // Dépassements > 10%
+    pub overrun_categories: Vec<String>, // Catégories en dépassement
+    pub months_elapsed: i32,             // Mois écoulés dans l'exercice
+    #[serde(with = "rust_decimal::serde::float")]
     pub projected_year_end_total: Decimal, // Projection fin d'année
 }
 
@@ -118,6 +131,8 @@ pub struct BudgetStatsResponse {
     pub rejected_count: i64,
     pub archived_count: i64,
     // #661 — moyennes de montants : Decimal comme le reste du PCMN.
+    #[serde(with = "rust_decimal::serde::float")]
     pub average_total_budget: Decimal,
+    #[serde(with = "rust_decimal::serde::float")]
     pub average_monthly_provision: Decimal,
 }

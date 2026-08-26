@@ -285,7 +285,11 @@ pub async fn get_ag_session_platform_stats(
     user: AuthenticatedUser,
 ) -> impl Responder {
     // Only superadmin can see platform-wide stats
-    if user.role != "SUPERADMIN" {
+    //
+    // #661-audit : même bug de casse que dans `api_key_handlers` — le JWT rend
+    // "superadmin" en minuscules, la comparaison visait "SUPERADMIN".
+    // L'endpoint répondait 403 même à un superadmin.
+    if !user.role.eq_ignore_ascii_case("superadmin") {
         return HttpResponse::Forbidden().json(serde_json::json!({
             "error": "SuperAdmin only"
         }));

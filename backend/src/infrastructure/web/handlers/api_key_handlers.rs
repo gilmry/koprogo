@@ -100,15 +100,38 @@ fn generate_api_key() -> (String, String, String) {
     (full_key, prefix, hash)
 }
 
+/// Le rôle porté par le JWT provient de `UserRole::to_string()`, qui rend des
+/// valeurs en minuscules (`syndic`, `superadmin`). Comparer à une constante en
+/// majuscules ne matche jamais — cf. le bug corrigé ici. Ces deux helpers
+/// centralisent le test pour qu'il ne puisse plus diverger d'un handler à
+/// l'autre.
+fn is_superadmin(role: &str) -> bool {
+    role.eq_ignore_ascii_case("superadmin")
+}
+
+fn is_syndic_or_admin(role: &str) -> bool {
+    role.eq_ignore_ascii_case("syndic") || is_superadmin(role)
+}
+
 /// Create a new API key (Syndic or SuperAdmin only)
 #[post("/api-keys")]
+
 pub async fn create_api_key(
     claims: AuthenticatedUser,
     state: web::Data<AppState>,
     body: web::Json<CreateApiKeyRequest>,
 ) -> HttpResponse {
     // Verify permissions
-    if claims.role != "SYNDIC" && claims.role != "SUPERADMIN" {
+    //
+    // #661-audit : la comparaison se faisait contre "SYNDIC"/"SUPERADMIN" en
+    // MAJUSCULES, alors que le JWT porte `UserRole::to_string()`, qui rend
+    // "syndic"/"superadmin" en minuscules. La condition était donc TOUJOURS
+    // vraie : tous les endpoints de clés API répondaient 403, y compris à un
+    // syndic légitime. Bug identifié dès 2026-04 (WBS #331), jamais corrigé,
+    // et invisible parce que `e2e_api_keys.rs` n'a jamais tourné en CI.
+    // Comparaison insensible à la casse pour rester robuste quelle que soit
+    // la source du rôle.
+    if !is_syndic_or_admin(&claims.role) {
         return HttpResponse::Forbidden().json(serde_json::json!({
             "error": "Only syndics and admins can create API keys"
         }));
@@ -345,7 +368,7 @@ pub async fn update_api_key(
 
     match existing {
         Ok(Some(key)) => {
-            if key.created_by != claims.user_id && claims.role != "SUPERADMIN" {
+            if key.created_by != claims.user_id && !is_superadmin(&claims.role) {
                 return HttpResponse::Forbidden().json(serde_json::json!({
                     "error": "Only the API key creator can update it"
                 }));
@@ -494,7 +517,7 @@ pub async fn rotate_api_key(
     path: web::Path<Uuid>,
 ) -> HttpResponse {
     // Rotation mints fresh credentials → same privilege gate as creation.
-    if claims.role != "SYNDIC" && claims.role != "SUPERADMIN" {
+    if !is_syndic_or_admin(&claims.role) {
         return HttpResponse::Forbidden().json(serde_json::json!({
             "error": "Only syndics and admins can rotate API keys"
         }));

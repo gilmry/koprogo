@@ -26,7 +26,9 @@ pub struct EndAgSessionDto {
 /// DTO pour enregistrer un participant distant
 #[derive(Debug, Clone, Deserialize)]
 pub struct RecordRemoteJoinDto {
+    #[serde(with = "rust_decimal::serde::float")]
     pub voting_power: Decimal,
+    #[serde(with = "rust_decimal::serde::float")]
     pub total_building_quotas: Decimal,
 }
 
@@ -44,7 +46,9 @@ pub struct AgSessionResponse {
     pub actual_start: Option<DateTime<Utc>>,
     pub actual_end: Option<DateTime<Utc>>,
     pub remote_attendees_count: i32,
+    #[serde(with = "rust_decimal::serde::float")]
     pub remote_voting_power: Decimal,
+    #[serde(with = "rust_decimal::serde::float")]
     pub quorum_remote_contribution: Decimal,
     pub waiting_room_enabled: bool,
     pub recording_enabled: bool,
@@ -60,9 +64,13 @@ pub struct AgSessionResponse {
 pub struct CombinedQuorumResponse {
     pub session_id: Uuid,
     pub meeting_id: Uuid,
+    #[serde(with = "rust_decimal::serde::float")]
     pub physical_quotas: Decimal,
+    #[serde(with = "rust_decimal::serde::float")]
     pub remote_quotas: Decimal,
+    #[serde(with = "rust_decimal::serde::float")]
     pub total_building_quotas: Decimal,
+    #[serde(with = "rust_decimal::serde::float")]
     pub combined_percentage: Decimal,
     /// Volet « têtes » du quorum double (#661) — présents physiquement,
     /// connectés en visio, et total des copropriétaires.

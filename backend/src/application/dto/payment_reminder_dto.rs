@@ -19,6 +19,7 @@ pub struct CreatePaymentReminderDto {
     /// C'est aussi la place correcte au regard de l'architecture hexagonale, et
     /// le pattern déjà suivi par `expense_dto` / `budget_dto` pour leurs
     /// montants.
+    #[serde(with = "rust_decimal::serde::float")]
     pub amount_owed: Decimal,
 
     pub due_date: String, // ISO 8601 format
@@ -38,8 +39,11 @@ pub struct PaymentReminderResponseDto {
     pub owner_email: Option<String>, // Owner email for contact
     pub level: ReminderLevel,
     pub status: ReminderStatus,
+    #[serde(with = "rust_decimal::serde::float")]
     pub amount_owed: Decimal,
+    #[serde(with = "rust_decimal::serde::float")]
     pub penalty_amount: Decimal,
+    #[serde(with = "rust_decimal::serde::float")]
     pub total_amount: Decimal,
     pub due_date: String,
     pub days_overdue: i64,
@@ -110,7 +114,9 @@ pub struct AddTrackingNumberDto {
 /// DTO for payment recovery dashboard statistics
 #[derive(Debug, Serialize, Clone)]
 pub struct PaymentRecoveryStatsDto {
+    #[serde(with = "rust_decimal::serde::float")]
     pub total_owed: Decimal,
+    #[serde(with = "rust_decimal::serde::float")]
     pub total_penalties: Decimal,
     pub reminder_counts: Vec<ReminderLevelCountDto>,
     pub status_counts: Vec<ReminderStatusCountDto>,
@@ -134,6 +140,7 @@ pub struct OverdueExpenseDto {
     pub expense_id: String,
     pub owner_id: String,
     pub days_overdue: i64,
+    #[serde(with = "rust_decimal::serde::float")]
     pub amount: Decimal,
     pub recommended_level: ReminderLevel,
 }

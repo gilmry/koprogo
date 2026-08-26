@@ -77,7 +77,9 @@ pub struct BudgetStatsResponse {
     pub rejected_count: i64,
     pub archived_count: i64,
     // #661 — moyennes de montants : Decimal comme le reste du PCMN.
+    #[serde(with = "rust_decimal::serde::float")]
     pub average_total_budget: Decimal,
+    #[serde(with = "rust_decimal::serde::float")]
     pub average_monthly_provision: Decimal,
 }
 
@@ -93,20 +95,33 @@ pub struct BudgetVarianceResponse {
     pub budget_id: Uuid,
     pub fiscal_year: i32,
     pub building_id: Uuid,
+    #[serde(with = "rust_decimal::serde::float")]
     pub budgeted_ordinary: Decimal,
+    #[serde(with = "rust_decimal::serde::float")]
     pub budgeted_extraordinary: Decimal,
+    #[serde(with = "rust_decimal::serde::float")]
     pub budgeted_total: Decimal,
+    #[serde(with = "rust_decimal::serde::float")]
     pub actual_ordinary: Decimal,
+    #[serde(with = "rust_decimal::serde::float")]
     pub actual_extraordinary: Decimal,
+    #[serde(with = "rust_decimal::serde::float")]
     pub actual_total: Decimal,
+    #[serde(with = "rust_decimal::serde::float")]
     pub variance_ordinary: Decimal,
+    #[serde(with = "rust_decimal::serde::float")]
     pub variance_extraordinary: Decimal,
+    #[serde(with = "rust_decimal::serde::float")]
     pub variance_total: Decimal,
+    #[serde(with = "rust_decimal::serde::float")]
     pub variance_ordinary_pct: Decimal,
+    #[serde(with = "rust_decimal::serde::float")]
     pub variance_extraordinary_pct: Decimal,
+    #[serde(with = "rust_decimal::serde::float")]
     pub variance_total_pct: Decimal,
     pub has_overruns: bool,
     pub overrun_categories: Vec<String>,
     pub months_elapsed: i32,
+    #[serde(with = "rust_decimal::serde::float")]
     pub projected_year_end_total: Decimal,
 }
