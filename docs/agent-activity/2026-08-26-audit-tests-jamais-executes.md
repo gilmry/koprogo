@@ -135,16 +135,30 @@ Les conversions faisaient donc passer `combined_percentage` de `60.0` à `"60"`,
 
 Sans ce test — celui-là même que je décrivais comme « laissé à la CI » alors que la CI ne le joue pas — ce changement silencieux de type serait parti en production.
 
+### Taux constaté — échantillon complet (6 harnais, 97 tests)
+
+| Harnais | Avant | Après correction |
+| --- | --- | --- |
+| `e2e_buildings` | 7/8 | **8/8** |
+| `e2e_api_keys` | 3/13 | **13/13** |
+| `e2e_ag_sessions` | 7/8 | **8/8** |
+| `e2e_convocations` | 24/24 | 24/24 |
+| `e2e_gdpr` | 21/21 | 21/21 |
+| `e2e_payments` | 23/23 | 23/23 |
+| **Total** | 85/97 | **97/97** |
+
+**Trois défauts au total sur 97 tests**, et un seul relevait d'une dérive de test :
+
+1. le **bug de production** des clés API (10 échecs à lui seul) ;
+2. le **drift de contrat** introduit par ce chantier même ;
+3. un payload resté sur `organization_id` après la Story 1.2 — et pour lequel `common::create_test_acp` existait déjà, avec une documentation mettant explicitement en garde contre cette erreur.
+
+Autrement dit : ces 488 tests d'intégration sont un **actif dormant en bon état**, pas une dette. Le coût de les brancher tient à la contrainte de compilation, pas à leur réparation.
+
 ### Taux constaté
 
 | Harnais | Résultat | Nature |
 | --- | --- | --- |
-| `e2e_buildings` | 7/8 | test dérivé du modèle (`organization_id` → `acp_id`, Story 1.2) |
-| `e2e_api_keys` | 3/13 | **bug de production** |
-| `e2e_ag_sessions` | 8/8 après correction | drift de contrat introduit par ce chantier |
-
-Hors bug de production, la dérive des tests est **faible** : ~1 test sur 8 a divergé du modèle au fil des refactorings. Le « mur » des 488 tests d'intégration relève de la remise à niveau ponctuelle, pas de la réécriture.
-
 **Note de méthode** : la première passe de mesure a été invalidée par mes propres modifications de code, concurrentes de l'exécution. Mesurer un mur exige un arbre figé.
 
 ## Reste ouvert

@@ -288,7 +288,13 @@ jobs:
           retention-days: 14
 
   test-e2e:
-    name: E2E Tests
+    # Nom rectifié 2026-08-26 : ces tests montent l'application Actix EN MÉMOIRE
+    # (`test::init_service`) contre un PostgreSQL réel — vérifié sur les 59
+    # fichiers, aucun ne passe par un socket réseau. C'est de l'intégration API,
+    # pas du end-to-end. Le seul e2e réel du projet est Playwright (job
+    # `playwright`). Le nom `E2E Tests` a entretenu la confusion : il a laissé
+    # croire que 488 tests tournaient alors que la commande n'en jouait que 4.
+    name: Integration Tests (API)
     runs-on: ubuntu-latest
     services:
       postgres:
@@ -340,12 +346,28 @@ jobs:
           cd backend
           sqlx migrate run
 
-      - name: Run E2E tests
+      - name: Run integration tests (API)
         env:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/koprogo_test
         run: |
           cd backend
-          cargo test --test e2e
+          # Lot 1 des tests d'intégration API. `--test e2e` seul ne jouait que
+          # tests/e2e.rs (4 tests) et laissait dormir les 59 fichiers
+          # `e2e_*.rs` (488 tests) — dont `e2e_api_keys.rs`, qui aurait
+          # signalé dès sa première exécution que TOUS les endpoints de clés
+          # API répondaient 403 en production (bug de casse de rôle, corrigé
+          # dans ce même lot de commits).
+          #
+          # Élargissement par lots, pas d'un bloc : chaque binaire de test lie
+          # le crate entier, et compiler les 59 d'un coup demande plus de
+          # mémoire qu'un runner standard n'en a (mesuré : saturation à 7,6 Gio).
+          # Ce lot 1 rassemble les 6 harnais mesurés le 2026-08-26 : 97 tests,
+          # 97 verts après correction des 2 défauts trouvés (403 clés API, et un
+          # payload resté sur `organization_id` après la Story 1.2).
+          cargo test --no-fail-fast \
+            --test e2e --test e2e_ag_sessions --test e2e_buildings \
+            --test e2e_convocations --test e2e_gdpr --test e2e_payments \
+            --test e2e_api_keys
 
   api-breaking-changes:
     name: API Breaking Change Detection (oasdiff)
@@ -680,13 +702,32 @@ jobs:
             sleep 2
           done
 
-      - name: Run Playwright smoke tests
+      # Nom rectifié 2026-08-26 : ce step s'intitulait « Run Playwright smoke
+      # tests » alors qu'il lance le projet `chromium`, dont la config porte
+      # `testIgnore: [/smoke\//, /scenarios\//, /characterization\//]` — il
+      # EXCLUT donc précisément smoke. Les 98 tests du projet `smoke` n'ont
+      # jamais tourné, et le diagnostic de #696 (« 109 échecs sur la smoke
+      # suite ») portait en réalité sur les specs de la racine.
+      - name: Run Playwright tests (chromium project)
         env:
           PLAYWRIGHT_BASE_URL: http://localhost:3000
           PLAYWRIGHT_API_BASE: http://localhost:8080/api/v1
         run: |
           cd frontend
           npx playwright test --project=chromium
+
+      # Le projet `smoke` (98 tests) est réintroduit en non bloquant : son état
+      # réel n'a jamais été mesuré en CI, et le rendre bloquant d'emblée
+      # casserait toutes les PR sur un héritage inconnu. Objectif : établir un
+      # plancher chiffré, puis basculer en bloquant (WP-D1 / #696).
+      - name: Run Playwright smoke project (report only)
+        continue-on-error: true
+        env:
+          PLAYWRIGHT_BASE_URL: http://localhost:3000
+          PLAYWRIGHT_API_BASE: http://localhost:8080/api/v1
+        run: |
+          cd frontend
+          npx playwright test --project=smoke || true
 
       - name: Seed scenario world for Documentation Vivante
         env:
