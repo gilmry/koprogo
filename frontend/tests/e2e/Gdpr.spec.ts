@@ -1,3 +1,25 @@
+/**
+ * CONTRAINTE D'ENVIRONNEMENT — ce fichier ne peut pas passer en entier contre
+ * une instance ou le rate limiting est actif.
+ *
+ * `GdprRateLimit` (backend/src/infrastructure/web/middleware/mod.rs) plafonne
+ * `/api/v1/gdpr` et `/api/v1/admin/gdpr` a **10 requetes par heure**. Or ce
+ * fichier fait 4 `goto("/admin/gdpr")`, et chaque chargement de page declenche
+ * a lui seul plusieurs appels (`/admin/gdpr/users/...`, `/admin/gdpr/audit-logs`),
+ * auxquels s'ajoutent les exports et effacements des tests eux-memes.
+ *
+ * Le seau est donc epuise avant le dernier test, qui echoue toujours sur un
+ * `admin-gdpr-user-row` introuvable : le back rend 429, la page n'affiche
+ * rien, et le symptome ne dit rien du rate limit.
+ *
+ * Mesure du 2026-08-26 contre koprogo.com, seau plein au depart :
+ * **4 passes, 1 echec**, le dernier. Sur seau vide : 1 passe, 4 echecs.
+ *
+ * En dev et en CI, `ENABLE_RATE_LIMITING=false` et le probleme ne se pose pas.
+ * Ne pas "corriger" ce fichier en allongeant des delais : ce n'est pas de la
+ * lenteur, c'est un refus.
+ */
+
 import { test, expect } from "@playwright/test";
 import type { Page } from "@playwright/test";
 import { adminLogin } from "./helpers/auth";

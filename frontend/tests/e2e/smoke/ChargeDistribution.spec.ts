@@ -73,7 +73,14 @@ test.describe("Charge Distribution - Invoice Allocation", () => {
       `${API_BASE}/invoices/${expenseId}/calculate-distribution`,
       { headers: { Authorization: `Bearer ${token}` } },
     );
-    expect(calcResp.status()).toBe(200);
+    // Le 422 de « validate before compute » (Track H Story H2) transporte la
+    // LISTE des invariants manquants dans son corps. L'assertion nue jetait
+    // cette information et laissait un « Expected 200, Received 422 » qui ne
+    // dit pas quel invariant est en cause.
+    expect(
+      calcResp.status(),
+      `calculate-distribution: ${await calcResp.text().catch(() => "<corps illisible>")}`,
+    ).toBe(200);
   });
 
   test("should get charge distribution for invoice", async ({ page }) => {
