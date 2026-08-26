@@ -48,6 +48,7 @@ import {
   type Page,
 } from "@playwright/test";
 import { setupContainerApiUrl } from "../../helpers/video-pace";
+import { uiLoginWithRetry, adminLogin } from "../../helpers/auth";
 
 const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
 const ADMIN_EMAIL = "admin@koprogo.com";
@@ -60,12 +61,11 @@ const TEST_PASSWORD = process.env.PLAYWRIGHT_TEST_PASSWORD || "test123456";
 
 /** Connexion admin → renvoie le bearer token superadmin. */
 async function loginAdmin(request: APIRequestContext): Promise<string> {
-  const resp = await request.post(`${API_BASE}/auth/login`, {
-    data: { email: ADMIN_EMAIL, password: ADMIN_PASSWORD },
-  });
-  expect(resp.status(), "admin login").toBe(200);
-  const body = await resp.json();
-  return body.token as string;
+  // Delegue au helper partage : jeton memorise pour toute la campagne, et
+  // reprise sur 429. Chaque copie locale reloguait sans cache et epuisait le
+  // plafond Traefik de 5 connexions/minute sur `/api/v1/auth/login`
+  // (symptome observe : « admin login — Expected: 200, Received: 429 »).
+  return adminLogin(request);
 }
 
 /** Crée un cabinet syndic (Organization). */
@@ -232,18 +232,9 @@ async function uiLogin(
   email: string,
   password: string,
 ): Promise<void> {
-  await page.goto("/login", { waitUntil: "networkidle" });
-  await page.getByTestId("login-email").fill(email);
-  await page.getByTestId("login-password").fill(password);
-  await page.getByTestId("login-submit").click();
-  // Attente du redirect vers le dashboard du rôle.
-  await page.waitForURL(/\/(admin|syndic|owner|accountant)/, {
-    timeout: 15_000,
-  });
-  // Wait jusqu'au prochain idle pour laisser le RouteGuard + silent-refresh
-  // se stabiliser (sinon le composant BuildingSelector peut être unmounted
-  // par un refresh tardif).
-  await page.waitForLoadState("networkidle");
+  // Delegue au helper partage : il reprend sur echec, ce qui absorbe le
+  // plafond Traefik de 5 connexions/minute sur `/api/v1/auth/login`.
+  await uiLoginWithRetry(page, email, password);
 }
 
 /**

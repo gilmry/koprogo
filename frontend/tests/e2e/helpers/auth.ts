@@ -843,3 +843,58 @@ export async function loginAsWarden(
 ): Promise<AuthContext> {
   return registerScopedUser(page, prefix, "contractor");
 }
+
+// ---------------------------------------------------------------------------
+// Connexion par le FORMULAIRE, avec reprise sur rate limit
+// ---------------------------------------------------------------------------
+//
+// Certains parcours doivent passer par l'UI : ils verifient le redirect par
+// role, la banniere de contexte, ou tout simplement que le formulaire marche.
+// Ils ne peuvent donc pas utiliser `injectAuth`.
+//
+// Mais chaque soumission declenche un `/api/v1/auth/login`, plafonne a
+// 5/minute par IP source chez Traefik en production (`koprogo-login-ratelimit`,
+// average=5 period=1m burst=10). Une suite qui se connecte a chaque test
+// depasse ce seuil : le back rend 429, le front reste sur /login, et
+// `waitForURL` expire au bout de 15 s sur une navigation qui n'aura jamais
+// lieu. Le symptome ne dit rien du rate limit — d'ou le temps qu'il a fallu
+// pour l'identifier.
+//
+// On ne peut pas lire le statut HTTP depuis le formulaire : on traite donc le
+// timeout comme un signal de throttling probable et on retente apres une
+// attente alignee sur la fenetre du middleware.
+
+/** Connexion par le formulaire, avec 2 reprises espacees sur echec. */
+export async function uiLoginWithRetry(
+  page: Page,
+  email: string,
+  password: string,
+  urlPattern: RegExp = /\/(admin|syndic|owner|accountant)/,
+  timeoutMs = 15_000,
+): Promise<void> {
+  const MAX_TRIES = 3;
+  let lastErr: unknown;
+
+  for (let attempt = 1; attempt <= MAX_TRIES; attempt++) {
+    try {
+      await page.goto("/login", { waitUntil: "networkidle" });
+      await page.getByTestId("login-email").fill(email);
+      await page.getByTestId("login-password").fill(password);
+      await page.getByTestId("login-submit").click();
+      await page.waitForURL(urlPattern, { timeout: timeoutMs });
+      await page.waitForLoadState("networkidle");
+      return;
+    } catch (err) {
+      lastErr = err;
+      if (attempt === MAX_TRIES) break;
+      // Fenetre Traefik : 1 minute. Un tiers de fenetre par tentative suffit
+      // a reconstituer des jetons du seau sans immobiliser la campagne.
+      await new Promise((r) => setTimeout(r, 20_000 * attempt));
+    }
+  }
+
+  throw new Error(
+    `uiLoginWithRetry: echec apres ${MAX_TRIES} tentatives pour ${email} ` +
+      `(rate limit /auth/login probable) — ${String(lastErr).slice(0, 200)}`,
+  );
+}
