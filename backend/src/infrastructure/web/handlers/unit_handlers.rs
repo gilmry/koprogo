@@ -19,26 +19,55 @@ pub async fn create_unit(
         }));
     }
 
-    // Story H15 — SuperAdmin must specify acp_id (ex-organization_id) and
-    // building_id in the request body. Validate that both are provided.
-    if dto.acp_id.is_empty() {
-        return HttpResponse::BadRequest().json(serde_json::json!({
-            "error": "SuperAdmin must specify acp_id"
-        }));
-    }
-
     if dto.building_id.is_empty() {
         return HttpResponse::BadRequest().json(serde_json::json!({
             "error": "SuperAdmin must specify building_id"
         }));
     }
 
-    // Validate acp_id format up-front (the use-case re-parses it).
-    if Uuid::parse_str(&dto.acp_id).is_err() {
-        return HttpResponse::BadRequest().json(serde_json::json!({
-            "error": "Invalid acp_id format"
-        }));
-    }
+    let building_uuid = match Uuid::parse_str(&dto.building_id) {
+        Ok(id) => id,
+        Err(_) => {
+            return HttpResponse::BadRequest().json(serde_json::json!({
+                "error": "Invalid building ID format"
+            }));
+        }
+    };
+
+    // Story H15 — l'ACP d'un lot est celle de son building parent (#602).
+    // Elle reste acceptée dans le corps pour ne rien casser chez les
+    // appelants existants, mais elle n'est plus exigée : absente ou vide,
+    // on la lit sur le building, qui en est la source de vérité.
+    let acp_id = match dto.acp_id.as_deref().map(str::trim).filter(|s| !s.is_empty()) {
+        Some(raw) => match Uuid::parse_str(raw) {
+            Ok(id) => id,
+            Err(_) => {
+                return HttpResponse::BadRequest().json(serde_json::json!({
+                    "error": "Invalid acp_id format"
+                }));
+            }
+        },
+        None => match state.building_use_cases.get_building(building_uuid).await {
+            Ok(Some(building)) => match Uuid::parse_str(&building.acp_id) {
+                Ok(id) => id,
+                Err(_) => {
+                    return HttpResponse::InternalServerError().json(serde_json::json!({
+                        "error": "Invalid building.acp_id format"
+                    }));
+                }
+            },
+            Ok(None) => {
+                return HttpResponse::NotFound().json(serde_json::json!({
+                    "error": "Building not found"
+                }));
+            }
+            Err(err) => {
+                return HttpResponse::InternalServerError().json(serde_json::json!({
+                    "error": format!("Failed to resolve building ACP: {}", err)
+                }));
+            }
+        },
+    };
 
     // Story H15 — audit org context : units.organization_id ayant été DROP,
     // le scope org de l'audit vient du contexte utilisateur (cf. buildings).
@@ -51,7 +80,12 @@ pub async fn create_unit(
         }));
     }
 
-    match state.unit_use_cases.create_unit(dto.into_inner()).await {
+    // L'ACP resolue ci-dessus fait foi : on la reinjecte dans le DTO pour que
+    // le use case travaille sur une valeur toujours presente et bien formee.
+    let mut dto = dto.into_inner();
+    dto.acp_id = Some(acp_id.to_string());
+
+    match state.unit_use_cases.create_unit(dto).await {
         Ok(unit) => {
             // Audit log: successful unit creation
             AuditLogEntry::new(

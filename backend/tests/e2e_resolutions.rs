@@ -198,7 +198,7 @@ async fn create_test_fixtures(
 
     // 5. Create units
     let unit1_dto = CreateUnitDto {
-        acp_id: building.acp_id.clone(),
+        acp_id: Some(building.acp_id.clone()),
         building_id: building_id.to_string(),
         unit_number: "A101".to_string(),
         floor: Some(1),
@@ -216,7 +216,7 @@ async fn create_test_fixtures(
     let unit1_id = Uuid::parse_str(&unit1.id).expect("Failed to parse unit1 id");
 
     let unit2_dto = CreateUnitDto {
-        acp_id: building.acp_id.clone(),
+        acp_id: Some(building.acp_id.clone()),
         building_id: building_id.to_string(),
         unit_number: "A102".to_string(),
         floor: Some(1),
@@ -273,7 +273,7 @@ async fn create_extra_unit(
         .expect("Failed to fetch building")
         .expect("Building must exist");
     let unit_dto = CreateUnitDto {
-        acp_id: building.acp_id,
+        acp_id: Some(building.acp_id),
         building_id: building_id.to_string(),
         unit_number: unit_number.to_string(),
         floor: Some(1),

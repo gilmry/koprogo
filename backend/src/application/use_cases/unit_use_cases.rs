@@ -16,8 +16,18 @@ impl UnitUseCases {
     }
 
     pub async fn create_unit(&self, dto: CreateUnitDto) -> Result<UnitResponseDto, String> {
+        // `acp_id` est optionnel dans le DTO depuis 2026-08-27 (cf. son
+        // commentaire). La route HTTP la resout depuis le building parent
+        // avant d'appeler ce use case ; un appelant direct qui l'omet reçoit
+        // une erreur explicite plutot qu'un `unwrap` sur `None`.
+        let acp_id_raw = dto
+            .acp_id
+            .as_deref()
+            .map(str::trim)
+            .filter(|s| !s.is_empty())
+            .ok_or_else(|| "Missing acp_id".to_string())?;
         let acp_id =
-            Uuid::parse_str(&dto.acp_id).map_err(|_| "Invalid acp_id format".to_string())?;
+            Uuid::parse_str(acp_id_raw).map_err(|_| "Invalid acp_id format".to_string())?;
         let building_id = Uuid::parse_str(&dto.building_id)
             .map_err(|_| "Invalid building ID format".to_string())?;
 
@@ -221,7 +231,7 @@ mod tests {
 
     fn make_create_dto(acp_id: Uuid, building_id: Uuid) -> CreateUnitDto {
         CreateUnitDto {
-            acp_id: acp_id.to_string(),
+            acp_id: Some(acp_id.to_string()),
             building_id: building_id.to_string(),
             unit_number: "A101".to_string(),
             unit_type: UnitType::Apartment,
@@ -260,7 +270,7 @@ mod tests {
         let acp_id = Uuid::new_v4();
 
         let dto = CreateUnitDto {
-            acp_id: acp_id.to_string(),
+            acp_id: Some(acp_id.to_string()),
             building_id: "not-a-valid-uuid".to_string(),
             unit_number: "A101".to_string(),
             unit_type: UnitType::Apartment,

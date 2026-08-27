@@ -8,7 +8,28 @@ pub struct CreateUnitDto {
     /// Story H15 — FK vers `acps.id` (anciennement `organization_id`).
     /// Le lot dérive son ACP de son building parent (cf. #602) ; le scoping
     /// org se fait via `acps.organization_id`.
-    pub acp_id: String,
+    ///
+    /// OPTIONNEL depuis 2026-08-27. Le champ était obligatoire, ce qui
+    /// contredisait la ligne au-dessus : si l'ACP se dérive du building, le
+    /// client n'a pas à la fournir. Deux conséquences mesurées :
+    ///
+    ///   1. Un `POST /units` sans `acp_id` était rejeté par serde AVANT
+    ///      d'atteindre le handler, avec un corps en TEXTE BRUT
+    ///      (« Json deserialize error: missing field `acp_id` »). Le garde-fou
+    ///      `if dto.acp_id.is_empty()` du handler, qui rend un JSON propre,
+    ///      était donc mort pour ce cas : il ne se déclenchait que sur une
+    ///      chaîne vide explicite.
+    ///
+    ///   2. Tout appelant faisant `.json()` sur cette réponse recevait
+    ///      « Unexpected token 'J' », un message qui ne dit rien du défaut.
+    ///      C'est ce qui faisait échouer `02-ag-full-cycle` (gate de
+    ///      caractérisation) et taire `seedConformantUnits` en `status=400`.
+    ///
+    /// Absent ou vide, l'ACP est désormais lue sur le building parent, qui
+    /// est la source de vérité. Fournie, elle est utilisée telle quelle :
+    /// le comportement des appelants existants est inchangé.
+    #[serde(default)]
+    pub acp_id: Option<String>,
     pub building_id: String,
 
     #[validate(length(min = 1))]
