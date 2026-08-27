@@ -1,4 +1,4 @@
-# Agent activity — 2026-08-26 — Six défauts de production, trouvés en exécutant des tests qui existaient déjà
+# Agent activity — 2026-08-26 — Sept défauts de production, trouvés en exécutant des tests qui existaient déjà
 
 **Persona :** qualité, outillage CI et infrastructure (Tier 2), branche
 `fix/e2e-login-ratelimit-et-contrats-obsoletes`.
@@ -7,11 +7,11 @@
 (`2026-08-26-audit-tests-jamais-executes.md`) avait montré qu'une grande part
 des harnais n'était pas câblée en CI. Les câbler et les lancer a suffi.
 
-**Aucun des six défauts ci-dessous n'a été trouvé par relecture.**
+**Aucun des sept défauts ci-dessous n'a été trouvé par relecture.**
 
 ---
 
-## Les six défauts
+## Les sept défauts
 
 ### 1. 403 sur tous les endpoints de clés API
 
@@ -92,6 +92,43 @@ chez le voisin, des documents de copropriété — données personnelles au sens
 RGPD — y auraient été écrits. Le défaut n'a pas fui parce qu'il échouait, pas
 parce qu'il isolait.
 
+### 7. Trente casts `::FLOAT8` oubliés dans le repository des relances
+
+Celui-ci est de ma main, introduit le jour même par la conversion
+`payment_reminder` en `Decimal`, et il aurait fait partir la CI rouge.
+
+    ColumnDecode { index: "amount_owed",
+      source: "Rust type `Decimal` (as SQL type `NUMERIC`)
+               is not compatible with SQL type `FLOAT8`" }
+
+La colonne est bien `NUMERIC` en base et la migration fonctionne, y compris
+sur PostgreSQL 11 (vérifié par reproduction). Mais dix requêtes de lecture
+redégradaient la valeur avant de la rendre. Exactement le défaut que la
+conversion devait supprimer, laissé dans le chemin de lecture.
+
+Mon compte rendu du matin disait « casts `::FLOAT8` retirés des agrégats
+`SUM(...)` ». Exact et incomplet, et la formulation le trahit : j'avais nommé
+les agrégats parce que c'étaient ceux que j'avais traités, sans chercher s'il
+y en avait d'autres.
+
+Trouvé en rejouant BDD, ce que j'avais jugé superflu au motif que « BDD ne
+traverse pas HTTP ». Vrai, et hors sujet : la conversion touche le domaine et
+le repository, que BDD exerce directement.
+
+---
+
+## Trois vérifications jugées superflues, trois défauts bloquants
+
+| Vérification | Mon raisonnement pour l'éviter | Ce qu'elle a trouvé |
+|---|---|---|
+| Gate `lint` avant fusion | « les tests passent, `fmt` n'est pas un test » | `needless_borrow` + `fmt --check` : CI rouge |
+| Campagne `chromium` finale | « j'ai vérifié les 5 correctifs isolément » | un chiffre périmé de 5 rouges |
+| Rejeu BDD | « BDD ne traverse pas HTTP » | 30 casts `FLOAT8` : CI rouge |
+
+Chaque raisonnement était plausible, et faux pour une raison que je n'avais
+pas envisagée. C'est l'argument le plus net de la journée pour qu'un outil
+externe tranche plutôt que le jugement de celui qui produit.
+
 ---
 
 ## Ce que la journée dit de la méthode
@@ -145,7 +182,7 @@ sûrement qu'un test rouge.
 | Tests d'intégration backend | **130 verts**, 12 harnais jamais joués auparavant |
 | Playwright `chromium` | **244 verts** contre un hôte HTTPS réel |
 | Playwright `smoke` | 96 verts sur 98 |
-| Scénarios BDD | 90 verts |
+| Scénarios BDD, 13 harnais | **7056 steps, 0 rouge** |
 
 ### Contraintes d'environnement documentées
 
