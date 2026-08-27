@@ -102,12 +102,12 @@ impl TicketRepository for PostgresTicketRepository {
             INSERT INTO tickets (
                 id, organization_id, building_id, unit_id, created_by, assigned_to,
                 title, description, category, priority, status, resolution_notes,
-                created_at, updated_at, resolved_at, closed_at
+                created_at, updated_at, resolved_at, closed_at, work_order_sent_at
             )
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
             RETURNING id, organization_id, building_id, unit_id, created_by, assigned_to,
                       title, description, category, priority, status, resolution_notes,
-                      created_at, updated_at, resolved_at, closed_at
+                      created_at, updated_at, resolved_at, closed_at, work_order_sent_at
             "#,
             ticket.id,
             ticket.organization_id,
@@ -124,7 +124,8 @@ impl TicketRepository for PostgresTicketRepository {
             ticket.created_at,
             ticket.updated_at,
             ticket.resolved_at,
-            ticket.closed_at
+            ticket.closed_at,
+            ticket.work_order_sent_at
         )
         .fetch_one(&self.pool)
         .await
@@ -147,7 +148,7 @@ impl TicketRepository for PostgresTicketRepository {
             updated_at: row.updated_at,
             resolved_at: row.resolved_at,
             closed_at: row.closed_at,
-            work_order_sent_at: None,
+            work_order_sent_at: row.work_order_sent_at,
             // Story 3.6 (FR31) — Phase A: repository keeps the legacy SQL
             // surface untouched (no SQLx-cache breakage). Newly-added DB
             // columns carry their migration defaults (`request`, empty arrays);
@@ -171,7 +172,7 @@ impl TicketRepository for PostgresTicketRepository {
             r#"
             SELECT id, organization_id, building_id, unit_id, created_by, assigned_to,
                    title, description, category, priority, status, resolution_notes,
-                   created_at, updated_at, resolved_at, closed_at
+                   created_at, updated_at, resolved_at, closed_at, work_order_sent_at
             FROM tickets
             WHERE id = $1
             "#,
@@ -199,7 +200,7 @@ impl TicketRepository for PostgresTicketRepository {
                 updated_at: r.updated_at,
                 resolved_at: r.resolved_at,
                 closed_at: r.closed_at,
-                work_order_sent_at: None,
+                work_order_sent_at: r.work_order_sent_at,
                 // Story 3.6 (FR31) — repo not yet wired for these columns
                 // (Phase A keeps SQLx cache untouched). DB defaults apply on
                 // INSERT; read-back falls back to entity defaults until the
@@ -222,7 +223,7 @@ impl TicketRepository for PostgresTicketRepository {
             r#"
             SELECT id, organization_id, building_id, unit_id, created_by, assigned_to,
                    title, description, category, priority, status, resolution_notes,
-                   created_at, updated_at, resolved_at, closed_at
+                   created_at, updated_at, resolved_at, closed_at, work_order_sent_at
             FROM tickets
             WHERE building_id = $1
             ORDER BY created_at DESC
@@ -252,7 +253,7 @@ impl TicketRepository for PostgresTicketRepository {
                     updated_at: r.updated_at,
                     resolved_at: r.resolved_at,
                     closed_at: r.closed_at,
-                    work_order_sent_at: None,
+                    work_order_sent_at: r.work_order_sent_at,
                     // Story 3.6 (FR31) — see same comment in `find_by_id`.
                     kind: crate::domain::entities::TicketKind::Request,
                     severity: None,
@@ -272,7 +273,7 @@ impl TicketRepository for PostgresTicketRepository {
             r#"
             SELECT id, organization_id, building_id, unit_id, created_by, assigned_to,
                    title, description, category, priority, status, resolution_notes,
-                   created_at, updated_at, resolved_at, closed_at
+                   created_at, updated_at, resolved_at, closed_at, work_order_sent_at
             FROM tickets
             WHERE organization_id = $1
             ORDER BY created_at DESC
@@ -302,7 +303,7 @@ impl TicketRepository for PostgresTicketRepository {
                     updated_at: r.updated_at,
                     resolved_at: r.resolved_at,
                     closed_at: r.closed_at,
-                    work_order_sent_at: None,
+                    work_order_sent_at: r.work_order_sent_at,
                     // Story 3.6 (FR31) — see same comment in `find_by_id`.
                     kind: crate::domain::entities::TicketKind::Request,
                     severity: None,
@@ -322,7 +323,7 @@ impl TicketRepository for PostgresTicketRepository {
             r#"
             SELECT id, organization_id, building_id, unit_id, created_by, assigned_to,
                    title, description, category, priority, status, resolution_notes,
-                   created_at, updated_at, resolved_at, closed_at
+                   created_at, updated_at, resolved_at, closed_at, work_order_sent_at
             FROM tickets
             WHERE created_by = $1
             ORDER BY created_at DESC
@@ -352,7 +353,7 @@ impl TicketRepository for PostgresTicketRepository {
                     updated_at: r.updated_at,
                     resolved_at: r.resolved_at,
                     closed_at: r.closed_at,
-                    work_order_sent_at: None,
+                    work_order_sent_at: r.work_order_sent_at,
                     // Story 3.6 (FR31) — see same comment in `find_by_id`.
                     kind: crate::domain::entities::TicketKind::Request,
                     severity: None,
@@ -372,7 +373,7 @@ impl TicketRepository for PostgresTicketRepository {
             r#"
             SELECT id, organization_id, building_id, unit_id, created_by, assigned_to,
                    title, description, category, priority, status, resolution_notes,
-                   created_at, updated_at, resolved_at, closed_at
+                   created_at, updated_at, resolved_at, closed_at, work_order_sent_at
             FROM tickets
             WHERE assigned_to = $1
             ORDER BY created_at DESC
@@ -402,7 +403,7 @@ impl TicketRepository for PostgresTicketRepository {
                     updated_at: r.updated_at,
                     resolved_at: r.resolved_at,
                     closed_at: r.closed_at,
-                    work_order_sent_at: None,
+                    work_order_sent_at: r.work_order_sent_at,
                     // Story 3.6 (FR31) — see same comment in `find_by_id`.
                     kind: crate::domain::entities::TicketKind::Request,
                     severity: None,
@@ -428,7 +429,7 @@ impl TicketRepository for PostgresTicketRepository {
             r#"
             SELECT id, organization_id, building_id, unit_id, created_by, assigned_to,
                    title, description, category, priority, status, resolution_notes,
-                   created_at, updated_at, resolved_at, closed_at
+                   created_at, updated_at, resolved_at, closed_at, work_order_sent_at
             FROM tickets
             WHERE building_id = $1 AND status = $2
             ORDER BY created_at DESC
@@ -459,7 +460,7 @@ impl TicketRepository for PostgresTicketRepository {
                     updated_at: r.updated_at,
                     resolved_at: r.resolved_at,
                     closed_at: r.closed_at,
-                    work_order_sent_at: None,
+                    work_order_sent_at: r.work_order_sent_at,
                     // Story 3.6 (FR31) — see same comment in `find_by_id`.
                     kind: crate::domain::entities::TicketKind::Request,
                     severity: None,
@@ -495,11 +496,12 @@ impl TicketRepository for PostgresTicketRepository {
                 resolution_notes = $12,
                 updated_at = $13,
                 resolved_at = $14,
-                closed_at = $15
+                closed_at = $15,
+                work_order_sent_at = $16
             WHERE id = $1
             RETURNING id, organization_id, building_id, unit_id, created_by, assigned_to,
                       title, description, category, priority, status, resolution_notes,
-                      created_at, updated_at, resolved_at, closed_at
+                      created_at, updated_at, resolved_at, closed_at, work_order_sent_at
             "#,
             ticket.id,
             ticket.organization_id,
@@ -515,7 +517,8 @@ impl TicketRepository for PostgresTicketRepository {
             ticket.resolution_notes,
             ticket.updated_at,
             ticket.resolved_at,
-            ticket.closed_at
+            ticket.closed_at,
+            ticket.work_order_sent_at
         )
         .fetch_one(&self.pool)
         .await
@@ -538,7 +541,7 @@ impl TicketRepository for PostgresTicketRepository {
             updated_at: row.updated_at,
             resolved_at: row.resolved_at,
             closed_at: row.closed_at,
-            work_order_sent_at: None,
+            work_order_sent_at: row.work_order_sent_at,
             // Story 3.6 (FR31) — Phase A: repository keeps the legacy SQL
             // surface untouched (no SQLx-cache breakage). Newly-added DB
             // columns carry their migration defaults (`request`, empty arrays);

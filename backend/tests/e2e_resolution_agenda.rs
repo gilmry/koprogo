@@ -75,6 +75,48 @@ async fn create_meeting_fixtures(
         .await
         .expect("Failed to create meeting");
 
+    // Poser un ORDRE DU JOUR avant toute resolution.
+    //
+    // `CreateMeetingRequest` ne porte pas de champ `agenda` : les points
+    // s'ajoutent separement. La fixture creait donc une AG a l'ordre du jour
+    // VIDE, et `create_resolution` refuse tout `agenda_item_index` parce que
+    // `index >= meeting.agenda.len()` — « Resolution must correspond to a
+    // valid agenda item (Art. 3.87 CC) ».
+    //
+    // Les tests utilisent les indices 0 a 5, dont le 5 dans un cas qui attend
+    // 201 : il faut donc au moins six points.
+    for i in 1..=6 {
+        app_state
+            .meeting_use_cases
+            .add_agenda_item(
+                meeting.id,
+                koprogo_api::application::dto::AddAgendaItemRequest {
+                    item: format!("Point {i} de l'ordre du jour"),
+                },
+            )
+            .await
+            .expect("Failed to add agenda item");
+    }
+
+    // Valider le quorum AVANT toute resolution.
+    //
+    // `create_resolution` passe par `Meeting::check_quorum_for_voting()`
+    // (Art. 3.87 §5 CC) : sans quorum valide, la creation est refusee et le
+    // handler rend 400. Les 5 tests de ce harnais tombaient tous la-dessus.
+    //
+    // Meme omission que dans `e2e_resolutions`, corrigee la veille. Le produit
+    // a raison : on ne vote pas sans quorum. 600 sur 1000 quotites depasse le
+    // seuil strict de 50% applique par `Meeting::validate_quorum`.
+    app_state
+        .meeting_use_cases
+        .validate_quorum(
+            meeting.id,
+            rust_decimal_macros::dec!(600),
+            rust_decimal_macros::dec!(1000),
+        )
+        .await
+        .expect("Failed to validate quorum");
+
     (token, building_id, meeting.id)
 }
 

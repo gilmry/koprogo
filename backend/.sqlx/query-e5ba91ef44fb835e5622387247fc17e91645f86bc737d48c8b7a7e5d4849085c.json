@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n            UPDATE tickets\n            SET organization_id = $2,\n                building_id = $3,\n                unit_id = $4,\n                created_by = $5,\n                assigned_to = $6,\n                title = $7,\n                description = $8,\n                category = $9,\n                priority = $10,\n                status = $11,\n                resolution_notes = $12,\n                updated_at = $13,\n                resolved_at = $14,\n                closed_at = $15\n            WHERE id = $1\n            RETURNING id, organization_id, building_id, unit_id, created_by, assigned_to,\n                      title, description, category, priority, status, resolution_notes,\n                      created_at, updated_at, resolved_at, closed_at\n            ",
+  "query": "\n            SELECT id, organization_id, building_id, unit_id, created_by, assigned_to,\n                   title, description, category, priority, status, resolution_notes,\n                   created_at, updated_at, resolved_at, closed_at, work_order_sent_at\n            FROM tickets\n            WHERE created_by = $1\n            ORDER BY created_at DESC\n            ",
   "describe": {
     "columns": [
       {
@@ -82,25 +82,16 @@
         "ordinal": 15,
         "name": "closed_at",
         "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 16,
+        "name": "work_order_sent_at",
+        "type_info": "Timestamptz"
       }
     ],
     "parameters": {
       "Left": [
-        "Uuid",
-        "Uuid",
-        "Uuid",
-        "Uuid",
-        "Uuid",
-        "Uuid",
-        "Varchar",
-        "Text",
-        "Varchar",
-        "Varchar",
-        "Varchar",
-        "Text",
-        "Timestamptz",
-        "Timestamptz",
-        "Timestamptz"
+        "Uuid"
       ]
     },
     "nullable": [
@@ -119,8 +110,9 @@
       false,
       false,
       true,
+      true,
       true
     ]
   },
-  "hash": "1a20bc488f55fa14968d3ba27e00d9c23918ffab51affa5549de949fdcb41e5a"
+  "hash": "e5ba91ef44fb835e5622387247fc17e91645f86bc737d48c8b7a7e5d4849085c"
 }
