@@ -99,12 +99,13 @@ Infrastructure (adapters PostgreSQL + Actix handlers)
 
 ```bash
 cargo test --lib                             # unit (in-module #[cfg(test)])
-cargo test --test integration                # integration (testcontainers)
+cargo test --test acp_integration            # intégration composant (testcontainers)
+cargo test --test e2e_buildings              # intégration API (app Actix en mémoire + DB réelle)
 cargo test --test bdd                        # BDD/Cucumber (backend/tests/features/)
 cargo test --test bdd -- --tags @security    # filtrer par catégorie
 cd frontend && npm run test                  # Vitest composants
 cd frontend && npx playwright test           # E2E
-make coverage                                # tarpaulin → coverage/index.html
+make coverage                                # llvm-cov (backend) + vitest v8 (frontend)
 ```
 
 ---

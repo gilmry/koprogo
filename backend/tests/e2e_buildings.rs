@@ -44,6 +44,13 @@ async fn create_test_building(
 async fn test_building_create_success() {
     let (app_state, _container, org_id) = common::setup_test_db().await;
     let token = common::register_and_login(&app_state, org_id).await;
+    // `CreateBuildingDto` attend `acp_id` depuis la Story 1.2 : la colonne
+    // `buildings.organization_id` a été supprimée par la migration 040000, le
+    // scoping org passe désormais par `acps.organization_id`. Ce test envoyait
+    // encore `organization_id` et recevait 400 — dérive jamais détectée, faute
+    // d'être exécuté. `common::create_test_acp` existe précisément pour ça, et
+    // sa documentation met en garde contre cette erreur.
+    let acp_id = common::create_test_acp(&app_state, org_id).await;
 
     let app = test::init_service(
         App::new()
@@ -56,7 +63,7 @@ async fn test_building_create_success() {
         .uri("/api/v1/buildings")
         .insert_header((header::AUTHORIZATION, format!("Bearer {}", token)))
         .set_json(json!({
-            "organization_id": org_id.to_string(),
+            "acp_id": acp_id.clone(),
             "name": "Résidence Les Jardins",
             "address": "45 Avenue Louise",
             "city": "Brussels",
@@ -81,6 +88,7 @@ async fn test_building_create_success() {
 async fn test_building_create_missing_name() {
     let (app_state, _container, org_id) = common::setup_test_db().await;
     let token = common::register_and_login(&app_state, org_id).await;
+    let acp_id = common::create_test_acp(&app_state, org_id).await;
 
     let app = test::init_service(
         App::new()
@@ -93,7 +101,7 @@ async fn test_building_create_missing_name() {
         .uri("/api/v1/buildings")
         .insert_header((header::AUTHORIZATION, format!("Bearer {}", token)))
         .set_json(json!({
-            "organization_id": org_id.to_string(),
+            "acp_id": acp_id.clone(),
             "name": "",
             "address": "45 Avenue Louise",
             "city": "Brussels",
@@ -271,7 +279,7 @@ async fn test_building_delete_success() {
 #[actix_web::test]
 #[serial]
 async fn test_building_create_requires_auth() {
-    let (app_state, _container, org_id) = common::setup_test_db().await;
+    let (app_state, _container, _org_id) = common::setup_test_db().await;
 
     let app = test::init_service(
         App::new()
@@ -283,7 +291,9 @@ async fn test_building_create_requires_auth() {
     let req = test::TestRequest::post()
         .uri("/api/v1/buildings")
         .set_json(json!({
-            "organization_id": org_id.to_string(),
+            // Requête rejetée pour absence d'auth avant toute validation de
+            // payload : un UUID arbitraire suffit ici.
+            "acp_id": uuid::Uuid::new_v4().to_string(),
             "name": "Unauthorized Building",
             "address": "1 Rue Test",
             "city": "Brussels",

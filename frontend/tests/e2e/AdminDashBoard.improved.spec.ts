@@ -22,6 +22,10 @@ import { test, expect } from "@playwright/test";
 import type { Page } from "@playwright/test";
 import { loginAsAdmin } from "./helpers/auth";
 
+// Les ancres d'URL tolerent le slash final : le build statique servi en
+// production redirige `/x` vers `/x/` (301), contrairement au serveur de
+// dev. Une ancre `$/` stricte passe en local et echoue contre la prod.
+
 // Helper to generate unique test data
 const generateTestData = (prefix: string) => {
   const timestamp = Date.now();
@@ -69,7 +73,7 @@ const navigateToOrganizations = async (page: Page) => {
     .getByRole("navigation")
     .getByRole("link", { name: "Organisations" })
     .click();
-  await expect(page).toHaveURL(/\/admin\/organizations$/);
+  await expect(page).toHaveURL(/\/admin\/organizations\/?$/);
   await waitForRouteGuard(page);
   await page
     .getByTestId("organizations-table-body")
@@ -134,7 +138,7 @@ test.describe("Admin Dashboard - CRUD with Test IDs", () => {
         .getByRole("navigation")
         .getByRole("link", { name: "Organisations" })
         .click();
-      await expect(page).toHaveURL(/\/admin\/organizations$/);
+      await expect(page).toHaveURL(/\/admin\/organizations\/?$/);
       await waitForRouteGuard(page);
 
       // Wait for table to load
@@ -280,7 +284,7 @@ test.describe("Admin Dashboard - CRUD with Test IDs", () => {
         .getByRole("navigation")
         .getByRole("link", { name: "Utilisateurs" })
         .click();
-      await expect(page).toHaveURL(/\/admin\/users$/);
+      await expect(page).toHaveURL(/\/admin\/users\/?$/);
       await waitForRouteGuard(page);
       await page.getByTestId("users-table-body").waitFor({ timeout: 10000 });
 

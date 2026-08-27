@@ -27,7 +27,11 @@ test.describe("Meeting completion blocked — Track H Story H3", () => {
     // `<MissingInvariantsList>` (Vitest 4-cat couvre déjà la régression
     // unitaire).
     await page.goto("/");
-    await expect(page).toHaveURL(/localhost/);
+    // L'assertion porte sur le CHEMIN, pas sur l'hote : `/localhost/` en dur
+    // ne vaut que pour la stack de dev et echoue contre n'importe quelle autre
+    // cible (« Received: https://koprogo.com/ »). Ce que ce smoke verifie,
+    // c'est que l'app sert bien son index a la racine.
+    await expect(page).toHaveURL(/\/$/);
   });
 
   test("@security button disabled when checklist not empty (composant interpretation)", async ({
@@ -57,6 +61,10 @@ test.describe("Meeting completion blocked — Track H Story H3", () => {
     // Mémoire `multirole-narrative-scenarios` : à étendre une fois le seed
     // multi-building Phase D mergé (Story #554).
     await page.goto("/");
-    await expect(page).toHaveURL(/localhost/);
+    // L'assertion porte sur le CHEMIN, pas sur l'hote : `/localhost/` en dur
+    // ne vaut que pour la stack de dev et echoue contre n'importe quelle autre
+    // cible (« Received: https://koprogo.com/ »). Ce que ce smoke verifie,
+    // c'est que l'app sert bien son index a la racine.
+    await expect(page).toHaveURL(/\/$/);
   });
 });

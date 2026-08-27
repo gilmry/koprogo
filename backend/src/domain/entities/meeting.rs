@@ -185,12 +185,12 @@ impl Meeting {
         //   sinon → 2e convocation (gérée ailleurs : `is_second_convocation`).
         // Comparaisons par multiplication croisée : exact (Decimal), pas de
         // division ⇒ pas de div/0 ni d'arrondi. `total_* <= 0` → volet KO.
-        let quotas_alternative_ok = checklist.total_quotas > Decimal::ZERO
-            && checklist.attended_quotas * dec!(4) > checklist.total_quotas * dec!(3);
+        let quotas_alternative_ok =
+            Self::quotas_three_quarters_reached(checklist.attended_quotas, checklist.total_quotas);
         if !quotas_alternative_ok {
             // Volet quotités ≥ 50% (inclusif — « au moins la moitié »).
-            let quotas_half_ok = checklist.total_quotas > Decimal::ZERO
-                && checklist.attended_quotas * dec!(2) >= checklist.total_quotas;
+            let quotas_half_ok =
+                Self::quotas_half_reached(checklist.attended_quotas, checklist.total_quotas);
             if !quotas_half_ok {
                 missing.push(MissingInvariant::QuorumNotReached {
                     attended_quotas: checklist.attended_quotas,
@@ -198,8 +198,10 @@ impl Meeting {
                 });
             }
             // Volet têtes > 50% (strict — « plus de la moitié des copropriétaires »).
-            let heads_ok = checklist.total_owners_count > 0
-                && checklist.present_owners_count * 2 > checklist.total_owners_count;
+            let heads_ok = Self::heads_majority_reached(
+                checklist.present_owners_count,
+                checklist.total_owners_count,
+            );
             if !heads_ok {
                 missing.push(MissingInvariant::HeadCountQuorumNotReached {
                     present_owners_count: checklist.present_owners_count,
@@ -250,6 +252,52 @@ impl Meeting {
         self.status == MeetingStatus::Scheduled && self.scheduled_date > Utc::now()
     }
 
+    // ------------------------------------------------------------------
+    // Art. 3.87 §5 CC — prédicats du quorum double (#661)
+    //
+    // Source UNIQUE de la règle : `assert_can_complete` (chemin présentiel,
+    // Story H9) et `AgSession::is_combined_quorum_reached` (chemin hybride
+    // présentiel + distanciel) appellent tous deux ces fonctions. Avant #661,
+    // chaque chemin portait son propre littéral `50`, avec des sémantiques qui
+    // avaient déjà divergé (strict ici, inclusif là) sans que rien ne le
+    // signale.
+    //
+    // Toutes les comparaisons se font par **multiplication croisée** en
+    // `Decimal` : exact, sans division, donc sans arrondi ni division par zéro.
+    // ------------------------------------------------------------------
+
+    /// Alternative de l'Art. 3.87 §5 : quotités présentes **> 3/4** du total,
+    /// quel que soit le nombre de têtes.
+    pub fn quotas_three_quarters_reached(attended_quotas: Decimal, total_quotas: Decimal) -> bool {
+        total_quotas > Decimal::ZERO && attended_quotas * dec!(4) > total_quotas * dec!(3)
+    }
+
+    /// Volet **quotités** du quorum double : au moins la moitié des quotes-parts
+    /// (**inclusif** — « au moins la moitié »).
+    pub fn quotas_half_reached(attended_quotas: Decimal, total_quotas: Decimal) -> bool {
+        total_quotas > Decimal::ZERO && attended_quotas * dec!(2) >= total_quotas
+    }
+
+    /// Volet **têtes** du quorum double : plus de la moitié des copropriétaires
+    /// présents ou représentés (**strict** — « plus de la moitié »).
+    pub fn heads_majority_reached(present_owners_count: i32, total_owners_count: i32) -> bool {
+        total_owners_count > 0 && present_owners_count * 2 > total_owners_count
+    }
+
+    /// Quorum double complet (Art. 3.87 §5 CC) :
+    ///   (A) têtes > 50% **ET** quotités ≥ 50%, **ou**
+    ///   (B) quotités > 3/4 seules.
+    pub fn double_quorum_reached(
+        attended_quotas: Decimal,
+        total_quotas: Decimal,
+        present_owners_count: i32,
+        total_owners_count: i32,
+    ) -> bool {
+        Self::quotas_three_quarters_reached(attended_quotas, total_quotas)
+            || (Self::quotas_half_reached(attended_quotas, total_quotas)
+                && Self::heads_majority_reached(present_owners_count, total_owners_count))
+    }
+
     /// Valide le quorum de l'AG (Art. 3.87 §5 CC).
     /// Quorum atteint si les quotes-parts présentes/représentées dépassent 50% du total.
     /// Retourne Ok(true) si quorum atteint, Ok(false) si insuffisant (2e convocation requise).
@@ -274,7 +322,21 @@ impl Meeting {
         }
 
         let percentage = (present_quotas / total_quotas) * dec!(100);
-        // Quorum : >50% des quotes-parts (Art. 3.87 §5 — majorité stricte)
+        // Volet **quotités seul** — `quorum_validated` sert de garde au vote
+        // (cf. `check_quorum_for_voting`). Le quorum double complet — têtes ET
+        // quotités, Art. 3.87 §5 — est jugé par `double_quorum_reached`, que
+        // `assert_can_complete` applique à la clôture (#661).
+        //
+        // ⚠ DIVERGENCE CONSTATÉE, VOLONTAIREMENT NON CORRIGÉE ICI (#661) :
+        // ce seuil est **strict** (> 50%) alors que `quotas_half_reached`,
+        // utilisé par la clôture H9, est **inclusif** (≥ 50%). L'Art. 3.87 §5
+        // dit « pour autant qu'ils possèdent au moins la moitié des
+        // quotes-parts » — l'inclusif est donc le bon. Ce chemin-ci est plus
+        // restrictif que la loi : il refuse un quorum à 50% pile que la loi
+        // accepte. Défaut réel, mais changer le comportement du garde-fou de
+        // vote dépasse le périmètre de #661 (qui porte sur le type, pas sur le
+        // seuil) et casserait `test_quorum_not_reached_at_50_percent_exact`,
+        // écrit pour la sémantique stricte. À trancher dans une story dédiée.
         let quorum_reached = percentage > dec!(50);
 
         self.present_quotas = Some(present_quotas);

@@ -416,7 +416,7 @@ async fn test_ag_sessions_combined_quorum() {
     // Query combined quorum
     let req = test::TestRequest::get()
         .uri(&format!(
-            "/api/v1/ag-sessions/{}/quorum?physical_quotas=600.0&total_building_quotas=1000.0",
+            "/api/v1/ag-sessions/{}/quorum?physical_quotas=600.0&total_building_quotas=1000.0&physical_owners_count=6&total_owners_count=10",
             session_id
         ))
         .insert_header((header::AUTHORIZATION, format!("Bearer {}", token)))
@@ -426,9 +426,53 @@ async fn test_ag_sessions_combined_quorum() {
     assert_eq!(resp.status(), 200, "Should return combined quorum data");
 
     let body: serde_json::Value = test::read_body_json(resp).await;
-    assert!(body["combined_percentage"].is_number());
-    assert!(body["quorum_reached"].is_boolean());
+    // #661 — @happy : 600/1000 quotités = 60% exactement, et 6 têtes sur 10.
+    // On assert la VALEUR, pas seulement le type : c'est le contrat HTTP du
+    // seuil légal Art. 3.87 §5. `combined_percentage` doit rester un NOMBRE
+    // JSON — un `Decimal` non annoté sérialiserait en chaîne et changerait le
+    // contrat sans que rien ne le signale.
+    assert_eq!(body["combined_percentage"].as_f64().unwrap(), 60.0);
+    assert_eq!(body["quorum_reached"], serde_json::json!(true));
     assert_eq!(body["session_id"], session_id);
+
+    // #661 — @edge : quotités à 50% pile (borne INCLUSIVE, donc satisfaites),
+    // mais têtes à 4+0 sur 10, soit 40% — sous la barre STRICTE de la moitié.
+    // Le quorum double n'est donc pas atteint. Vérifie au passage que la query
+    // string se désérialise bien en `Decimal` côté handler.
+    let req = test::TestRequest::get()
+        .uri(&format!(
+            "/api/v1/ag-sessions/{}/quorum?physical_quotas=500&total_building_quotas=1000&physical_owners_count=4&total_owners_count=10",
+            session_id
+        ))
+        .insert_header((header::AUTHORIZATION, format!("Bearer {}", token)))
+        .to_request();
+    let resp = test::call_service(&app, req).await;
+    assert_eq!(
+        resp.status(),
+        200,
+        "50% pile doit répondre 200, pas échouer"
+    );
+    let body: serde_json::Value = test::read_body_json(resp).await;
+    assert_eq!(body["combined_percentage"].as_f64().unwrap(), 50.0);
+    assert_eq!(
+        body["quorum_reached"],
+        serde_json::json!(false),
+        "Art. 3.87 §5 CC : volet têtes sous la moitié = quorum NON atteint"
+    );
+
+    // #661 — @negative : total de quotes-parts nul → erreur, jamais NaN/Inf.
+    let req = test::TestRequest::get()
+        .uri(&format!(
+            "/api/v1/ag-sessions/{}/quorum?physical_quotas=100&total_building_quotas=0&physical_owners_count=1&total_owners_count=10",
+            session_id
+        ))
+        .insert_header((header::AUTHORIZATION, format!("Bearer {}", token)))
+        .to_request();
+    let resp = test::call_service(&app, req).await;
+    assert!(
+        resp.status().is_client_error() || resp.status().is_server_error(),
+        "un total de quotes-parts nul doit être refusé, pas produire un NaN"
+    );
 }
 
 #[actix_web::test]

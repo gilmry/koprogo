@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n            SELECT id, organization_id, building_id, unit_id, created_by, assigned_to,\n                   title, description, category, priority, status, resolution_notes,\n                   created_at, updated_at, resolved_at, closed_at\n            FROM tickets\n            WHERE created_by = $1\n            ORDER BY created_at DESC\n            ",
+  "query": "\n            SELECT id, organization_id, building_id, unit_id, created_by, assigned_to,\n                   title, description, category, priority, status, resolution_notes,\n                   created_at, updated_at, resolved_at, closed_at, work_order_sent_at\n            FROM tickets\n            WHERE id = $1\n            ",
   "describe": {
     "columns": [
       {
@@ -82,6 +82,11 @@
         "ordinal": 15,
         "name": "closed_at",
         "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 16,
+        "name": "work_order_sent_at",
+        "type_info": "Timestamptz"
       }
     ],
     "parameters": {
@@ -105,8 +110,9 @@
       false,
       false,
       true,
+      true,
       true
     ]
   },
-  "hash": "43f6d8ad2d71baa16eff1c2bc04f6a6c707781ca7641fa4b6f6a64ebb0749afa"
+  "hash": "baab0f3601d101fb5a8f25863e820c5776dafe39c67b7d9bacea64e606dc7ff7"
 }

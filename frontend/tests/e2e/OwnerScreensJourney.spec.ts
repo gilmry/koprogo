@@ -67,7 +67,14 @@ test.describe("Copropriétaire — écrans en lecture seule, données réelles",
       },
       headers: { Authorization: `Bearer ${ctx.token}` },
     });
-    expect(uploadResp.status()).toBe(201);
+    // L'assertion porte le CORPS de la reponse : un « Expected 201, Received
+    // 500 » nu ne dit rien de la cause, et c'est exactement ce qui a fait
+    // perdre du temps sur ce defaut. Le handler renvoie `{"error": ...}`, on
+    // le remonte donc dans le message d'echec.
+    expect(
+      uploadResp.status(),
+      `upload document: ${await uploadResp.text().catch(() => "<corps illisible>")}`,
+    ).toBe(201);
 
     // --- Dashboard : vérifie qu'on navigue bien en tant qu'owner lié
     // (dernier register/login à avoir posé son cookie dans ce contexte

@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
 import type { Page } from "@playwright/test";
+import { adminLogin, uiLoginWithRetry } from "./helpers/auth";
 
 /**
  * Owner Dashboard E2E Test Suite - Owner Portal
@@ -20,11 +21,7 @@ async function registerAndLoginAsOwner(page: Page): Promise<{
   const email = `owner-test-${timestamp}@example.com`;
 
   // Admin login to create org
-  const adminLoginResp = await page.request.post(`${API_BASE}/auth/login`, {
-    data: { email: "admin@koprogo.com", password: "admin123" },
-  });
-  const adminToken = (await adminLoginResp.json()).token;
-
+  const adminToken = await adminLogin(page);
   const orgResp = await page.request.post(`${API_BASE}/organizations`, {
     data: {
       name: `Owner Test Org ${timestamp}`,
@@ -49,12 +46,14 @@ async function registerAndLoginAsOwner(page: Page): Promise<{
   expect(response.ok()).toBeTruthy();
   const data = await response.json();
 
-  // Login via UI
-  await page.goto("/login");
-  await page.getByTestId("login-email").fill(email);
-  await page.getByTestId("login-password").fill("test123456");
-  await page.getByTestId("login-submit").click();
-  await page.waitForURL(/\/(owner|syndic|admin)/, { timeout: 15000 });
+  // Connexion par l'UI, avec reprise sur throttling.
+  //
+  // `/api/v1/auth/login` est plafonne a 5/minute par IP source chez Traefik
+  // en production. Ce helper etant appele par chaque test du fichier, la
+  // soumission du formulaire finissait par ne plus rediriger et `waitForURL`
+  // expirait a 15 s sur une navigation qui n'aurait jamais lieu — sans que
+  // rien dans le symptome ne pointe vers un rate limit.
+  await uiLoginWithRetry(page, email, "test123456", /\/(owner|syndic|admin)/);
 
   return {
     token: data.token,

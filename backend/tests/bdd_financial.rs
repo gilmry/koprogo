@@ -1,4 +1,4 @@
-﻿// BDD tests for Financial domain: payments, payment_methods, journal_entries,
+// BDD tests for Financial domain: payments, payment_methods, journal_entries,
 // call_for_funds, owner_contributions, charge_distribution, dashboard
 // Phase 2: payments + payment_methods step definitions
 
@@ -142,7 +142,7 @@ pub struct FinancialWorld {
     last_reminder_id: Option<Uuid>,
     last_reminder_level: Option<String>,
     last_reminder_status: Option<String>,
-    last_reminder_penalty: Option<f64>,
+    last_reminder_penalty: Option<Decimal>,
     last_reminder_delivery: Option<String>,
     last_reminder_days_overdue: Option<i64>,
     reminder_list_count: usize,
@@ -5111,7 +5111,7 @@ async fn when_create_reminder_level(world: &mut FinancialWorld, level: String) {
         expense_id: expense_id.to_string(),
         owner_id: owner_id.to_string(),
         level: reminder_level,
-        amount_owed: 100.0,
+        amount_owed: dec!(100),
         due_date: (Utc::now() - ChronoDuration::days(days)).to_rfc3339(),
         days_overdue: days,
     };
@@ -5155,8 +5155,12 @@ async fn then_reminder_level(world: &mut FinancialWorld, expected: String) {
 
 #[then(regex = r"^the penalty amount should be calculated at [\d.]+% annual rate.*$")]
 async fn then_penalty_calculated(world: &mut FinancialWorld) {
-    let penalty = world.last_reminder_penalty.unwrap_or(0.0);
-    assert!(penalty > 0.0, "Penalty should be > 0, got {}", penalty);
+    let penalty = world.last_reminder_penalty.unwrap_or(Decimal::ZERO);
+    assert!(
+        penalty > Decimal::ZERO,
+        "Penalty should be > 0, got {}",
+        penalty
+    );
 }
 
 #[then(regex = r#"^the days overdue should be (\d+)$"#)]
@@ -5179,21 +5183,21 @@ async fn then_delivery_method(world: &mut FinancialWorld, expected: String) {
 #[when("I calculate the penalty amount")]
 async fn when_calculate_penalty(world: &mut FinancialWorld) {
     use koprogo_api::domain::entities::PaymentReminder;
-    let penalty = PaymentReminder::calculate_penalty(1000.0, 365);
+    let penalty = PaymentReminder::calculate_penalty(dec!(1000), 365);
     world.last_reminder_penalty = Some(penalty);
     world.operation_success = true;
 }
 
 #[then(regex = r#"^the penalty should be (\d+) EUR$"#)]
 async fn then_penalty_amount(world: &mut FinancialWorld, expected: Decimal) {
-    use rust_decimal::prelude::FromPrimitive;
-    let penalty_f64 = world.last_reminder_penalty.unwrap_or(0.0);
-    let penalty = Decimal::from_f64(penalty_f64).unwrap_or(Decimal::ZERO);
-    assert!(
-        (penalty - expected).abs() < dec!(1),
+    // Égalité Decimal exacte. La tolérance précédente était de `dec!(1)` —
+    // **un euro** d'écart admis sur une pénalité de retard légale, calculée par
+    // ailleurs en f64 puis reconvertie via `Decimal::from_f64`.
+    let penalty = world.last_reminder_penalty.unwrap_or(Decimal::ZERO);
+    assert_eq!(
+        penalty, expected,
         "Expected {} EUR, got {}",
-        expected,
-        penalty
+        expected, penalty
     );
 }
 

@@ -1,5 +1,6 @@
 use crate::domain::entities::ag_session::AgSession;
 use chrono::{DateTime, Utc};
+use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -25,8 +26,10 @@ pub struct EndAgSessionDto {
 /// DTO pour enregistrer un participant distant
 #[derive(Debug, Clone, Deserialize)]
 pub struct RecordRemoteJoinDto {
-    pub voting_power: f64,
-    pub total_building_quotas: f64,
+    #[serde(with = "rust_decimal::serde::float")]
+    pub voting_power: Decimal,
+    #[serde(with = "rust_decimal::serde::float")]
+    pub total_building_quotas: Decimal,
 }
 
 /// Réponse API pour une session AG
@@ -43,8 +46,10 @@ pub struct AgSessionResponse {
     pub actual_start: Option<DateTime<Utc>>,
     pub actual_end: Option<DateTime<Utc>>,
     pub remote_attendees_count: i32,
-    pub remote_voting_power: f64,
-    pub quorum_remote_contribution: f64,
+    #[serde(with = "rust_decimal::serde::float")]
+    pub remote_voting_power: Decimal,
+    #[serde(with = "rust_decimal::serde::float")]
+    pub quorum_remote_contribution: Decimal,
     pub waiting_room_enabled: bool,
     pub recording_enabled: bool,
     pub recording_url: Option<String>,
@@ -59,11 +64,23 @@ pub struct AgSessionResponse {
 pub struct CombinedQuorumResponse {
     pub session_id: Uuid,
     pub meeting_id: Uuid,
-    pub physical_quotas: f64,
-    pub remote_quotas: f64,
-    pub total_building_quotas: f64,
-    pub combined_percentage: f64,
-    pub quorum_reached: bool, // true si combined_percentage > 50.0
+    #[serde(with = "rust_decimal::serde::float")]
+    pub physical_quotas: Decimal,
+    #[serde(with = "rust_decimal::serde::float")]
+    pub remote_quotas: Decimal,
+    #[serde(with = "rust_decimal::serde::float")]
+    pub total_building_quotas: Decimal,
+    #[serde(with = "rust_decimal::serde::float")]
+    pub combined_percentage: Decimal,
+    /// Volet « têtes » du quorum double (#661) — présents physiquement,
+    /// connectés en visio, et total des copropriétaires.
+    pub physical_owners_count: i32,
+    pub remote_attendees_count: i32,
+    pub total_owners_count: i32,
+    /// Art. 3.87 §5 CC — décidé par `AgSession::is_combined_quorum_reached`,
+    /// qui applique le quorum DOUBLE (têtes ET quotités) de
+    /// `Meeting::double_quorum_reached`. Jamais recalculé ici.
+    pub quorum_reached: bool,
 }
 
 impl From<&AgSession> for AgSessionResponse {

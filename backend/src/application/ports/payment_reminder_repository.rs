@@ -2,6 +2,7 @@ use crate::application::error::AppError;
 use crate::domain::entities::{PaymentReminder, ReminderLevel, ReminderStatus};
 use async_trait::async_trait;
 use chrono::{DateTime, Utc};
+use rust_decimal::Decimal;
 use uuid::Uuid;
 
 /// Repository trait for payment reminder persistence operations
@@ -63,13 +64,16 @@ pub trait PaymentReminderRepository: Send + Sync {
     ) -> Result<Vec<(ReminderStatus, i64)>, AppError>;
 
     /// Get statistics: total amount owed by organization
-    async fn get_total_owed_by_organization(&self, organization_id: Uuid) -> Result<f64, AppError>;
+    async fn get_total_owed_by_organization(
+        &self,
+        organization_id: Uuid,
+    ) -> Result<Decimal, AppError>;
 
     /// Get statistics: total penalties by organization
     async fn get_total_penalties_by_organization(
         &self,
         organization_id: Uuid,
-    ) -> Result<f64, AppError>;
+    ) -> Result<Decimal, AppError>;
 
     /// Get overdue expenses without reminders (for automated detection)
     /// Returns list of (expense_id, owner_id, days_overdue, amount)
@@ -77,7 +81,7 @@ pub trait PaymentReminderRepository: Send + Sync {
         &self,
         organization_id: Uuid,
         min_days_overdue: i64,
-    ) -> Result<Vec<(Uuid, Uuid, i64, f64)>, AppError>;
+    ) -> Result<Vec<(Uuid, Uuid, i64, Decimal)>, AppError>;
 
     /// Update a reminder
     async fn update(&self, reminder: &PaymentReminder) -> Result<PaymentReminder, AppError>;
@@ -90,5 +94,5 @@ pub trait PaymentReminderRepository: Send + Sync {
     async fn get_dashboard_stats(
         &self,
         organization_id: Uuid,
-    ) -> Result<(f64, f64, Vec<(ReminderLevel, i64)>), AppError>;
+    ) -> Result<(Decimal, Decimal, Vec<(ReminderLevel, i64)>), AppError>;
 }

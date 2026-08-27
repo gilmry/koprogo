@@ -94,6 +94,31 @@ async fn create_test_fixtures(
 // ═══════════════════════════════════════════════════════════════════════════
 //
 
+/// Compare un champ `Decimal` d'une reponse JSON a une valeur attendue.
+///
+/// `rust_decimal` serialise les `Decimal` en STRING JSON (ADR-0008), d'ou des
+/// echecs `left: String("1.00000"), right: 1.0` contre un litteral flottant.
+///
+/// La comparaison se fait en `Decimal` et non sur la chaine : PostgreSQL rend
+/// "1.00000" ou "0.60000" selon l'echelle, pour la meme valeur.
+///
+/// Ce meme decalage a produit un defaut de production : `UnitOwners.svelte`
+/// additionnait ces champs avec `+`, ce qui concatenait, et l'avertissement
+/// « les quotites devraient faire 100% » restait affiche en permanence.
+#[allow(dead_code)]
+fn assert_decimal_field(value: &serde_json::Value, expected: rust_decimal::Decimal) {
+    let raw = value
+        .as_str()
+        .unwrap_or_else(|| panic!("champ Decimal attendu en string JSON, recu : {value}"));
+    let got: rust_decimal::Decimal = raw
+        .parse()
+        .unwrap_or_else(|_| panic!("Decimal illisible : {raw}"));
+    assert_eq!(
+        got, expected,
+        "valeur Decimal inattendue (brut JSON : {raw})"
+    );
+}
+
 #[actix_web::test]
 #[serial]
 async fn test_add_owner_to_unit_success() {
@@ -124,7 +149,10 @@ async fn test_add_owner_to_unit_success() {
     let body: serde_json::Value = test::read_body_json(resp).await;
     assert_eq!(body["unit_id"], unit_id.to_string());
     assert_eq!(body["owner_id"], owner_id.to_string());
-    assert_eq!(body["ownership_percentage"], 1.0);
+    assert_decimal_field(
+        &body["ownership_percentage"],
+        rust_decimal_macros::dec!(1.0),
+    );
     assert_eq!(body["is_primary_contact"], true);
     assert_eq!(body["is_active"], true);
 }
@@ -250,7 +278,10 @@ async fn test_list_owners_for_unit_success() {
     assert!(body.is_array(), "Should return array of unit owners");
     let owners = body.as_array().unwrap();
     assert_eq!(owners.len(), 1);
-    assert_eq!(owners[0]["ownership_percentage"], 1.0);
+    assert_decimal_field(
+        &owners[0]["ownership_percentage"],
+        rust_decimal_macros::dec!(1.0),
+    );
 }
 
 //
@@ -353,7 +384,10 @@ async fn test_update_unit_owner_percentage_success() {
     assert_eq!(resp.status(), 200, "Should update ownership percentage");
 
     let body: serde_json::Value = test::read_body_json(resp).await;
-    assert_eq!(body["ownership_percentage"], 0.8);
+    assert_decimal_field(
+        &body["ownership_percentage"],
+        rust_decimal_macros::dec!(0.8),
+    );
 }
 
 //
@@ -540,7 +574,10 @@ async fn test_transfer_ownership_success() {
         "Should have new_relationship"
     );
     assert_eq!(body["new_relationship"]["owner_id"], owner2_id.to_string());
-    assert_eq!(body["new_relationship"]["ownership_percentage"], 1.0);
+    assert_decimal_field(
+        &body["new_relationship"]["ownership_percentage"],
+        rust_decimal_macros::dec!(1.0),
+    );
     assert_eq!(body["new_relationship"]["is_active"], true);
 }
 
@@ -590,7 +627,10 @@ async fn test_get_total_ownership_percentage_success() {
     assert_eq!(resp.status(), 200);
 
     let body: serde_json::Value = test::read_body_json(resp).await;
-    assert_eq!(body["total_ownership_percentage"], 0.6);
+    assert_decimal_field(
+        &body["total_ownership_percentage"],
+        rust_decimal_macros::dec!(0.6),
+    );
 }
 
 //

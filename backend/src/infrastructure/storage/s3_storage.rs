@@ -13,6 +13,32 @@ use std::sync::Arc;
 use std::time::Instant;
 use uuid::Uuid;
 
+/// Deplie la chaine de causes d'une erreur du SDK AWS.
+///
+/// `SdkError` implemente `Display` de facon quasi muette : un echec
+/// d'authentification, un bucket absent et un refus de politique rendent tous
+/// les trois la meme chaine, « service error ». Le detail exploitable
+/// (`NoSuchBucket`, `AccessDenied`, `InvalidAccessKeyId`, code HTTP) vit dans
+/// `source()`.
+///
+/// Consequence concrete, constatee le 2026-08-26 : l'upload de documents
+/// echouait en production et l'API ne savait dire que
+/// « Failed to upload object: service error ». Impossible de distinguer une
+/// erreur de configuration d'une panne, ni cote exploitation ni cote test.
+/// Un message qui ne discrimine rien equivaut a une absence de message.
+fn describe_error(err: &dyn std::error::Error) -> String {
+    let mut parts = vec![err.to_string()];
+    let mut cur = err.source();
+    while let Some(e) = cur {
+        let s = e.to_string();
+        if !s.is_empty() && !parts.contains(&s) {
+            parts.push(s);
+        }
+        cur = e.source();
+    }
+    parts.join(" <- ")
+}
+
 /// Configuration holder for the S3/MinIO storage backend.
 #[derive(Clone, Debug)]
 pub struct S3StorageConfig {
@@ -148,10 +174,18 @@ impl S3Storage {
                     {
                         Ok(())
                     }
-                    Err(e) => Err(format!("Failed to create bucket `{}`: {}", bucket, e)),
+                    Err(e) => Err(format!(
+                        "Failed to create bucket `{}`: {}",
+                        bucket,
+                        describe_error(&e)
+                    )),
                 }
             }
-            Err(e) => Err(format!("Failed to verify bucket `{}`: {}", bucket, e)),
+            Err(e) => Err(format!(
+                "Failed to verify bucket `{}`: {}",
+                bucket,
+                describe_error(&e)
+            )),
         }
     }
 }
@@ -175,7 +209,7 @@ impl StorageProvider for S3Storage {
             .body(ByteStream::from(content.to_vec()))
             .send()
             .await
-            .map_err(|e| format!("Failed to upload object: {}", e))
+            .map_err(|e| format!("Failed to upload object: {}", describe_error(&e)))
             .map(|_| key.clone());
 
         record_storage_operation(
@@ -200,9 +234,12 @@ impl StorageProvider for S3Storage {
         {
             Ok(output) => match output.body.collect().await {
                 Ok(data) => Ok(data.into_bytes().to_vec()),
-                Err(e) => Err(format!("Failed to read object body: {}", e)),
+                Err(e) => Err(format!(
+                    "Failed to read object body: {}",
+                    describe_error(&e)
+                )),
             },
-            Err(e) => Err(format!("Failed to fetch object: {}", e)),
+            Err(e) => Err(format!("Failed to fetch object: {}", describe_error(&e))),
         };
 
         record_storage_operation(
@@ -224,7 +261,7 @@ impl StorageProvider for S3Storage {
             .key(relative_path)
             .send()
             .await
-            .map_err(|e| format!("Failed to delete object: {}", e))
+            .map_err(|e| format!("Failed to delete object: {}", describe_error(&e)))
             .map(|_| ());
 
         record_storage_operation(

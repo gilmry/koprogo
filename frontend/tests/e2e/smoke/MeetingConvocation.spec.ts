@@ -18,6 +18,11 @@ import {
  * Taxonomie 4 catégories (CRITICAL.md #3). Stack live (CI).
  */
 
+// Le front est un build Astro `output: "static"` : il n'y a pas de route
+// dynamique `/meetings/[id]`. Le détail d'une AG vit sur la page plate
+// `/meeting-detail?id=<uuid>` (cf. MeetingList.svelte:180). Viser
+// `/meetings/<uuid>` renvoyait 200 en servant la landing page publique, d'où
+// un `convocation-panel` introuvable qui ressemblait à un bug d'UI.
 test.describe("WP-FE2 — meetings / convocations UI (WF1-1/2/3)", () => {
   test("@happy syndic crée une réunion via l'UI (WF1-1)", async ({ page }) => {
     await loginAsSyndicWithBuilding(page, "fe2happy");
@@ -45,7 +50,9 @@ test.describe("WP-FE2 — meetings / convocations UI (WF1-1/2/3)", () => {
     page,
   }) => {
     const { meetingId } = await loginAsSyndicWithMeeting(page, "fe2conv");
-    await page.goto(`/meetings/${meetingId}`, { waitUntil: "networkidle" });
+    await page.goto(`/meeting-detail?id=${meetingId}`, {
+      waitUntil: "networkidle",
+    });
 
     const panel = page.getByTestId("convocation-panel");
     await expect(panel).toBeVisible({ timeout: 10000 });
@@ -93,7 +100,9 @@ test.describe("WP-FE2 — meetings / convocations UI (WF1-1/2/3)", () => {
     page,
   }) => {
     const { meetingId } = await loginAsSyndicWithMeeting(page, "fe2neg");
-    await page.goto(`/meetings/${meetingId}`, { waitUntil: "networkidle" });
+    await page.goto(`/meeting-detail?id=${meetingId}`, {
+      waitUntil: "networkidle",
+    });
     await expect(page.getByTestId("convocation-panel")).toBeVisible({
       timeout: 10000,
     });

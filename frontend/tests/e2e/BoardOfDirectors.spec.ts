@@ -24,6 +24,7 @@
 
 import { test, expect } from "@playwright/test";
 import type { Page } from "@playwright/test";
+import { loginAsAdmin } from "./helpers/auth";
 
 // Helper to generate unique test data
 const generateTestData = (prefix: string) => {
@@ -79,12 +80,18 @@ const generateTestData = (prefix: string) => {
 // Test suite configuration
 test.describe("Board of Directors", () => {
   test.beforeEach(async ({ page }) => {
-    // Login as syndic/admin user
-    await page.goto("/login");
-    await page.fill('input[type="email"]', "admin@koprogo.com");
-    await page.fill('input[type="password"]', "admin123");
-    await page.click('button[type="submit"]');
-    await page.waitForURL(/\/(admin|syndic)/);
+    // Connexion par l'API, pas par le formulaire.
+    //
+    // Le formulaire declenchait une requete `/auth/login` PAR TEST, et
+    // `/api/v1/auth/login` est plafonne a 5/minute par IP source chez Traefik
+    // en production (middleware `koprogo-login-ratelimit`). Ce beforeEach
+    // faisait donc expirer le hook a 30 s sur les derniers tests du fichier.
+    //
+    // `loginAsAdmin` est la convention du reste de la suite : une connexion
+    // reelle (le cookie refresh doit exister dans le contexte) suivie d'une
+    // injection d'etat, sans passer par l'UI. Ces tests portent sur le conseil
+    // de copropriete, pas sur le formulaire de connexion.
+    await loginAsAdmin(page);
   });
 
   test("should display board dashboard with mandate and statistics", async ({

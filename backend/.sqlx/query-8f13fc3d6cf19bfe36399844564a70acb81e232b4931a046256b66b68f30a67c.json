@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n            SELECT id, organization_id, building_id, unit_id, created_by, assigned_to,\n                   title, description, category, priority, status, resolution_notes,\n                   created_at, updated_at, resolved_at, closed_at\n            FROM tickets\n            WHERE building_id = $1\n            ORDER BY created_at DESC\n            ",
+  "query": "\n            INSERT INTO tickets (\n                id, organization_id, building_id, unit_id, created_by, assigned_to,\n                title, description, category, priority, status, resolution_notes,\n                created_at, updated_at, resolved_at, closed_at, work_order_sent_at\n            )\n            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)\n            RETURNING id, organization_id, building_id, unit_id, created_by, assigned_to,\n                      title, description, category, priority, status, resolution_notes,\n                      created_at, updated_at, resolved_at, closed_at, work_order_sent_at\n            ",
   "describe": {
     "columns": [
       {
@@ -82,11 +82,32 @@
         "ordinal": 15,
         "name": "closed_at",
         "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 16,
+        "name": "work_order_sent_at",
+        "type_info": "Timestamptz"
       }
     ],
     "parameters": {
       "Left": [
-        "Uuid"
+        "Uuid",
+        "Uuid",
+        "Uuid",
+        "Uuid",
+        "Uuid",
+        "Uuid",
+        "Varchar",
+        "Text",
+        "Varchar",
+        "Varchar",
+        "Varchar",
+        "Text",
+        "Timestamptz",
+        "Timestamptz",
+        "Timestamptz",
+        "Timestamptz",
+        "Timestamptz"
       ]
     },
     "nullable": [
@@ -105,8 +126,9 @@
       false,
       false,
       true,
+      true,
       true
     ]
   },
-  "hash": "0167dce3555c31e8873e19bd79e3cc06b93f61d073c30b36e20050481cf04ea6"
+  "hash": "8f13fc3d6cf19bfe36399844564a70acb81e232b4931a046256b66b68f30a67c"
 }

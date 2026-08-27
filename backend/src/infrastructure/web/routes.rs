@@ -587,11 +587,26 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig) {
             .service(list_processing_activities)
             .service(list_sub_processors)
             // GDPR Article 33 - Security Incidents & 72h APD Notification (Issue #317)
+            // IMPORTANT : routes specifiques AVANT les routes parametrees.
+            //
+            // Actix apparie dans l'ordre d'enregistrement. Avec
+            // `/{incident_id}` declare en premier, un GET sur
+            // `/admin/security-incidents/overdue` etait appareille avec
+            // `incident_id = "overdue"`, l'incident n'existait evidemment pas,
+            // et l'endpoint repondait 404 — donc INATTEIGNABLE en production.
+            //
+            // C'est l'endpoint qui liste les violations depassant le delai de
+            // 72 h de notification a l'APD (RGPD Art. 33). Un instrument de
+            // conformite legale, muet depuis son ecriture.
+            //
+            // Detecte par `e2e_security_incidents::test_list_overdue_incidents`,
+            // harnais jamais execute. Meme precaution deja documentee plus haut
+            // pour `/payment-reminders/stats` face a `/payment-reminders/{id}`.
             .service(create_security_incident)
+            .service(list_overdue_incidents)
             .service(list_security_incidents)
             .service(get_security_incident)
             .service(report_incident_to_apd)
-            .service(list_overdue_incidents)
             // Two-Factor Authentication (2FA TOTP - Issue #78)
             .configure(two_factor_handlers::configure_two_factor_routes)
             // API Key Management (Public API v2 - Issues #111, #232)

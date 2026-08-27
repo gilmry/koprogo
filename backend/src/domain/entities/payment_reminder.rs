@@ -1,4 +1,6 @@
 use chrono::{DateTime, Utc};
+use rust_decimal::{Decimal, RoundingStrategy};
+use rust_decimal_macros::dec;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -67,9 +69,13 @@ pub struct PaymentReminder {
     pub owner_id: Uuid,
     pub level: ReminderLevel,
     pub status: ReminderStatus,
-    pub amount_owed: f64,        // Montant dû (en euros)
-    pub penalty_amount: f64,     // Pénalités de retard (taux légal civil, 4.5% annuel en 2026)
-    pub total_amount: f64,       // Montant total (owed + penalties)
+    /// Montant dû (en euros). `Decimal` — ADR-0007/0008 : montant opposable.
+    pub amount_owed: Decimal,
+    /// Pénalités de retard (taux légal civil belge, 4,5 % annuel en 2026).
+    pub penalty_amount: Decimal,
+    /// Montant total (`amount_owed + penalty_amount`). L'égalité est garantie
+    /// par un `CHECK` en base, exact depuis le passage en `NUMERIC`.
+    pub total_amount: Decimal,
     pub due_date: DateTime<Utc>, // Date d'échéance originale de la charge
     pub days_overdue: i64,       // Nombre de jours de retard
     pub delivery_method: DeliveryMethod,
@@ -87,7 +93,10 @@ impl PaymentReminder {
     /// Ce taux est publié annuellement par Arrêté Royal.
     /// 2024: 5.25%, 2025: 4.0%, 2026: 4.5%
     /// A mettre à jour chaque année selon publication au Moniteur belge.
-    pub const BELGIAN_PENALTY_RATE: f64 = 0.045;
+    pub const BELGIAN_PENALTY_RATE: Decimal = dec!(0.045);
+
+    /// Nombre de jours de l'année servant de base au prorata du taux annuel.
+    const DAYS_PER_YEAR: Decimal = dec!(365);
 
     /// Crée une nouvelle relance de paiement
     #[allow(clippy::too_many_arguments)]
@@ -96,13 +105,22 @@ impl PaymentReminder {
         expense_id: Uuid,
         owner_id: Uuid,
         level: ReminderLevel,
-        amount_owed: f64,
+        amount_owed: Decimal,
         due_date: DateTime<Utc>,
         days_overdue: i64,
     ) -> Result<Self, String> {
         // Validation des business rules
-        if amount_owed <= 0.0 {
+        if amount_owed <= Decimal::ZERO {
             return Err("Amount owed must be greater than 0".to_string());
+        }
+
+        // Borne au centime : reprise de l'invariant que portait
+        // `#[validate(range(min = 0.01))]` côté DTO avant #661 — `validator` ne
+        // sachant pas borner un `Decimal`, la règle descend dans le domaine
+        // plutôt que de disparaître. Une relance pour moins d'un centime n'a
+        // aucun sens (frais d'envoi, lettre recommandée, huissier).
+        if amount_owed < dec!(0.01) {
+            return Err("Amount owed must be at least 0.01".to_string());
         }
 
         if days_overdue < 0 {
@@ -159,15 +177,30 @@ impl PaymentReminder {
         })
     }
 
-    /// Calcule les pénalités de retard selon le taux légal civil belge (4.5% annuel en 2026)
-    /// Formule: pénalité = montant * 0.045 * (jours_retard / 365)
-    pub fn calculate_penalty(amount: f64, days_overdue: i64) -> f64 {
+    /// Calcule les pénalités de retard selon le taux légal civil belge
+    /// (4,5 % annuel en 2026).
+    ///
+    /// Formule : pénalité = montant × 0,045 × (jours_retard / 365), arrondie au
+    /// centime.
+    ///
+    /// Calcul en `Decimal` (suite #661) : c'est un montant **réclamé à un
+    /// copropriétaire**, et l'ancienne version arrondissait via
+    /// `(x * 100.0).round() / 100.0` en `f64` — un motif qui produit des écarts
+    /// d'un centime sur des valeurs parfaitement ordinaires, et qui n'arrondit
+    /// pas au plus proche de façon fiable près des demis.
+    ///
+    /// L'arrondi est **`MidpointAwayFromZero`** (arrondi commercial : 0,005 €
+    /// donne 0,01 €), et non le « banker's rounding » que `round_dp` applique
+    /// par défaut : sur une somme due, arrondir la moitié vers le pair n'a
+    /// aucun fondement, et diverge de ce que produit un tableur.
+    pub fn calculate_penalty(amount: Decimal, days_overdue: i64) -> Decimal {
         if days_overdue <= 0 {
-            return 0.0;
+            return Decimal::ZERO;
         }
         let yearly_penalty = amount * Self::BELGIAN_PENALTY_RATE;
-        let daily_penalty = yearly_penalty / 365.0;
-        (daily_penalty * days_overdue as f64 * 100.0).round() / 100.0 // Arrondi à 2 décimales
+        let daily_penalty = yearly_penalty / Self::DAYS_PER_YEAR;
+        (daily_penalty * Decimal::from(days_overdue))
+            .round_dp_with_strategy(2, RoundingStrategy::MidpointAwayFromZero)
     }
 
     /// Marque la relance comme envoyée
@@ -292,7 +325,7 @@ mod tests {
             expense_id,
             owner_id,
             ReminderLevel::FirstReminder,
-            100.0,
+            dec!(100),
             due_date,
             20,
         );
@@ -316,7 +349,7 @@ mod tests {
             expense_id,
             owner_id,
             ReminderLevel::FirstReminder,
-            100.0,
+            dec!(100),
             due_date,
             10, // Moins de 15 jours
         );
@@ -327,17 +360,100 @@ mod tests {
             .contains("Cannot create first reminder before"));
     }
 
+    /// @happy — le calcul de pénalité au taux légal civil belge.
+    ///
+    /// Assertions en **égalité `Decimal` exacte** : les tolérances `< 0.01`
+    /// précédentes acceptaient un écart d'un centime sur une somme réclamée à
+    /// un copropriétaire, c'est-à-dire précisément l'erreur qu'un calcul en
+    /// `f64` produit.
     #[test]
     fn test_calculate_penalty() {
-        // 100€, 30 jours de retard, taux légal civil 4.5% annuel (2026)
-        // Pénalité = 100 * 0.045 * (30/365) = 0.37€
-        let penalty = PaymentReminder::calculate_penalty(100.0, 30);
-        assert!((penalty - 0.37).abs() < 0.01);
+        // 100€, 30 jours : 100 × 0,045 × (30/365) = 0,369863… → 0,37 €
+        assert_eq!(
+            PaymentReminder::calculate_penalty(dec!(100), 30),
+            dec!(0.37)
+        );
 
-        // 1000€, 365 jours de retard (1 an)
-        // Pénalité = 1000 * 0.045 * 1 = 45€
-        let penalty = PaymentReminder::calculate_penalty(1000.0, 365);
-        assert!((penalty - 45.0).abs() < 0.01);
+        // 1000€, 365 jours (1 an pile) : 1000 × 0,045 = 45,00 € exactement.
+        assert_eq!(
+            PaymentReminder::calculate_penalty(dec!(1000), 365),
+            dec!(45.00)
+        );
+    }
+
+    /// @edge — aucune pénalité sans retard, et pas de valeur négative.
+    #[test]
+    fn test_calculate_penalty_no_overdue_days() {
+        assert_eq!(
+            PaymentReminder::calculate_penalty(dec!(100), 0),
+            Decimal::ZERO
+        );
+        assert_eq!(
+            PaymentReminder::calculate_penalty(dec!(100), -5),
+            Decimal::ZERO
+        );
+    }
+
+    /// @edge — l'arrondi au centime est **commercial** (`MidpointAwayFromZero`),
+    /// pas « banker's rounding ».
+    ///
+    /// Cas construit pour tomber exactement sur un demi-centime :
+    /// 8,11111…€ × 0,045 × (1/365) n'est pas un demi ; on utilise donc un
+    /// montant qui produit une fraction se terminant par 5 au millième.
+    /// 1000 € sur 81 jours → 1000 × 0,045 × 81/365 = 9,98630136…€ → 9,99 €.
+    #[test]
+    fn test_calculate_penalty_rounds_to_the_cent() {
+        assert_eq!(
+            PaymentReminder::calculate_penalty(dec!(1000), 81),
+            dec!(9.99)
+        );
+
+        // Le résultat n'a jamais plus de 2 décimales — invariant de la colonne
+        // NUMERIC(12,2) qui le stocke.
+        let p = PaymentReminder::calculate_penalty(dec!(1234.56), 137);
+        assert_eq!(p.scale(), 2, "la pénalité doit être arrondie au centime");
+    }
+
+    /// @security — un montant dû doit valoir au moins un centime. Cet invariant
+    /// était porté par `#[validate(range(min = 0.01))]` sur le DTO ; `validator`
+    /// ne sachant pas borner un `Decimal`, il vit désormais dans le domaine —
+    /// où il s'applique à TOUS les appelants, pas seulement à la route HTTP.
+    #[test]
+    fn test_reminder_rejects_amounts_below_one_cent() {
+        let due_date = Utc::now() - chrono::Duration::days(20);
+        for amount in [dec!(0), dec!(-100), dec!(0.009)] {
+            let r = PaymentReminder::new(
+                Uuid::new_v4(),
+                Uuid::new_v4(),
+                Uuid::new_v4(),
+                ReminderLevel::FirstReminder,
+                amount,
+                due_date,
+                20,
+            );
+            assert!(r.is_err(), "montant {amount} aurait dû être rejeté");
+        }
+    }
+
+    /// @negative — le total reste exactement la somme de ses composantes.
+    /// C'est l'égalité que la contrainte `CHECK` vérifie en base : en
+    /// `DOUBLE PRECISION` elle pouvait échouer sur une ligne valide.
+    #[test]
+    fn test_total_amount_equals_owed_plus_penalty_exactly() {
+        let due_date = Utc::now() - chrono::Duration::days(90);
+        let r = PaymentReminder::new(
+            Uuid::new_v4(),
+            Uuid::new_v4(),
+            Uuid::new_v4(),
+            ReminderLevel::FormalNotice,
+            dec!(1234.56),
+            due_date,
+            90,
+        )
+        .unwrap();
+
+        assert_eq!(r.total_amount, r.amount_owed + r.penalty_amount);
+        assert_eq!(r.amount_owed, dec!(1234.56));
     }
 
     #[test]
@@ -352,7 +468,7 @@ mod tests {
             expense_id,
             owner_id,
             ReminderLevel::FirstReminder,
-            100.0,
+            dec!(100),
             due_date,
             20,
         )
@@ -377,7 +493,7 @@ mod tests {
             expense_id,
             owner_id,
             ReminderLevel::FirstReminder,
-            100.0,
+            dec!(100),
             due_date,
             20,
         )
@@ -409,7 +525,7 @@ mod tests {
             expense_id,
             owner_id,
             ReminderLevel::FirstReminder,
-            100.0,
+            dec!(100),
             due_date,
             20,
         )
@@ -441,7 +557,7 @@ mod tests {
             expense_id,
             owner_id,
             ReminderLevel::FirstReminder,
-            100.0,
+            dec!(100),
             due_date,
             20,
         )
@@ -472,7 +588,7 @@ mod tests {
             expense_id,
             owner_id,
             ReminderLevel::FormalNotice,
-            100.0,
+            dec!(100),
             due_date,
             70,
         )

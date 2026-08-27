@@ -20,5 +20,23 @@ export default defineConfig({
     alias: {
       $lib: "/src/lib",
     },
+    // Couverture des tests unitaires de composants et de stores.
+    // Ne mesure PAS ce que couvrent les specs Playwright : celles-ci
+    // s'exécutent contre un serveur, hors de ce process.
+    coverage: {
+      provider: "v8",
+      reporter: ["text-summary", "html", "lcov"],
+      reportsDirectory: "../coverage/frontend",
+      include: ["src/**/*.{ts,svelte}"],
+      exclude: [
+        "src/**/*.test.ts",
+        "src/test-setup.ts",
+        "src/types/**", // types générés depuis OpenAPI
+        "src/env.d.ts",
+      ],
+      // Pas de `thresholds` tant que le plancher réel n'est pas mesuré :
+      // un seuil posé au hasard bloque la CI ou ne sert à rien. À fixer
+      // juste sous la valeur constatée, une fois la pyramide complète.
+    },
   },
 });

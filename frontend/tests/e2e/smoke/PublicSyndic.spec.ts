@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { ensureAcp } from "../helpers/auth";
+import { ensureAcp, adminLogin } from "../helpers/auth";
 
 const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
 
@@ -13,11 +13,7 @@ test.describe("Public Syndic Info - Belgian Legal Requirement", () => {
 
   test("should expose public syndic info without auth", async ({ page }) => {
     const timestamp = Date.now();
-    const adminLoginResp = await page.request.post(`${API_BASE}/auth/login`, {
-      data: { email: "admin@koprogo.com", password: "admin123" },
-    });
-    const adminToken = (await adminLoginResp.json()).token;
-
+    const adminToken = await adminLogin(page);
     // Create org
     const orgResp = await page.request.post(`${API_BASE}/organizations`, {
       data: {

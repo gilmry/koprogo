@@ -14,7 +14,7 @@ test.describe("Copropriétaire — Mon profil, parcours de modification rempli j
     await loginAsSyndicWithLinkedOwner(page, "journey-owner-profile");
 
     await page.goto("/owner/profile", { waitUntil: "networkidle" });
-    await expect(page).toHaveURL(/\/profile$/);
+    await expect(page).toHaveURL(/\/profile\/?$/);
     await expect(page.getByTestId("profile-panel")).toBeVisible();
 
     await page.getByRole("button", { name: "Modifier" }).click();

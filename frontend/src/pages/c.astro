@@ -36,6 +36,21 @@ const SW_VERSION = "2026-06-07-1";
          fail — that's intentional (PWA contractor isolated from syndic UI). -->
     <link rel="manifest" href="/manifest.webmanifest" />
     <link rel="apple-touch-icon" href="/icons/pwa-192.png" />
+
+    <!-- Configuration runtime — INDISPENSABLE.
+         Cette page n'utilise pas `Layout.astro` (PWA publique isolee de l'UI
+         syndic), et `Layout.astro` etait le SEUL endroit qui chargeait
+         `/config.js`. Sans lui, `window.__ENV__` reste indefini et
+         `getApiUrl()` (src/lib/config.ts) retombe sur
+         `http://127.0.0.1:8080/api/v1` : depuis une page servie en HTTPS,
+         l'appel est du contenu mixte pointant vers la machine du visiteur.
+         `fetch` leve, et `MagicLinkContractorPage` affiche « Service
+         indisponible ».
+         Autrement dit : la PWA entrepreneur etait inoperante en production
+         pour tout lien magique. Constate le 2026-08-26 contre koprogo.com,
+         ou /login et /buildings chargent bien config.js et /c ne le chargeait
+         pas. -->
+    <script is:inline src="/config.js"></script>
   </head>
   <body class="bg-gray-50 min-h-screen">
     <main class="max-w-2xl mx-auto px-4 py-10">

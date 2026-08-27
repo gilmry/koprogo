@@ -59,9 +59,9 @@ impl ResolutionRepository for PostgresResolutionRepository {
                 id, meeting_id, title, description, resolution_type, majority_required,
                 vote_count_pour, vote_count_contre, vote_count_abstention,
                 total_voting_power_pour, total_voting_power_contre, total_voting_power_abstention,
-                status, created_at, voted_at
+                status, created_at, voted_at, agenda_item_index
             )
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
             "#,
         )
         .bind(resolution.id)
@@ -79,6 +79,9 @@ impl ResolutionRepository for PostgresResolutionRepository {
         .bind(status_str)
         .bind(resolution.created_at)
         .bind(resolution.voted_at)
+        // `usize` n'a pas d'encodage Postgres : l'indice est stocke en INTEGER,
+        // borne a >= 0 par un CHECK cote base.
+        .bind(resolution.agenda_item_index.map(|i| i as i32))
         .execute(&self.pool)
         .await
         .map_err(|e| format!("Database error creating resolution: {}", e))?;
@@ -92,7 +95,7 @@ impl ResolutionRepository for PostgresResolutionRepository {
             SELECT id, meeting_id, title, description, resolution_type, majority_required,
                    vote_count_pour, vote_count_contre, vote_count_abstention,
                    total_voting_power_pour, total_voting_power_contre, total_voting_power_abstention,
-                   status, created_at, voted_at
+                   status, created_at, voted_at, agenda_item_index
             FROM resolutions
             WHERE id = $1
             "#,
@@ -135,7 +138,9 @@ impl ResolutionRepository for PostgresResolutionRepository {
                 status,
                 created_at: row.get("created_at"),
                 voted_at: row.get("voted_at"),
-                agenda_item_index: None,
+                agenda_item_index: row
+                    .get::<Option<i32>, _>("agenda_item_index")
+                    .map(|i| i as usize),
             }
         }))
     }
@@ -146,7 +151,7 @@ impl ResolutionRepository for PostgresResolutionRepository {
             SELECT id, meeting_id, title, description, resolution_type, majority_required,
                    vote_count_pour, vote_count_contre, vote_count_abstention,
                    total_voting_power_pour, total_voting_power_contre, total_voting_power_abstention,
-                   status, created_at, voted_at
+                   status, created_at, voted_at, agenda_item_index
             FROM resolutions
             WHERE meeting_id = $1
             ORDER BY created_at ASC
@@ -192,7 +197,9 @@ impl ResolutionRepository for PostgresResolutionRepository {
                     status,
                     created_at: row.get("created_at"),
                     voted_at: row.get("voted_at"),
-                    agenda_item_index: None,
+                    agenda_item_index: row
+                        .get::<Option<i32>, _>("agenda_item_index")
+                        .map(|i| i as usize),
                 }
             })
             .collect())
@@ -210,7 +217,7 @@ impl ResolutionRepository for PostgresResolutionRepository {
             SELECT id, meeting_id, title, description, resolution_type, majority_required,
                    vote_count_pour, vote_count_contre, vote_count_abstention,
                    total_voting_power_pour, total_voting_power_contre, total_voting_power_abstention,
-                   status, created_at, voted_at
+                   status, created_at, voted_at, agenda_item_index
             FROM resolutions
             WHERE status = $1
             ORDER BY created_at DESC
@@ -249,7 +256,9 @@ impl ResolutionRepository for PostgresResolutionRepository {
                     status: status.clone(),
                     created_at: row.get("created_at"),
                     voted_at: row.get("voted_at"),
-                    agenda_item_index: None,
+                    agenda_item_index: row
+                        .get::<Option<i32>, _>("agenda_item_index")
+                        .map(|i| i as usize),
                 }
             })
             .collect())
