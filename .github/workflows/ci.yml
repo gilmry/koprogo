@@ -120,7 +120,21 @@ jobs:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
           POSTGRES_DB: koprogo_test
+        # --shm-size : le defaut Docker est 64 Mo, et PostgreSQL y alloue ses
+        # segments de memoire partagee. La migration
+        # `20260826000000_alter_payment_reminders_to_numeric` fait un
+        # `ALTER COLUMN TYPE` sur trois colonnes, donc une reecriture de table
+        # que PostgreSQL parallelise. Sous charge, la demande depasse les
+        # 64 Mo :
+        #
+        #   could not resize shared memory segment to 33554432 bytes:
+        #   No space left on device                        (SQLSTATE 53100)
+        #
+        # Constate le 2026-08-27 sur la base de test locale, sous une charge
+        # que mes propres campagnes paralleles avaient creee. Le risque en CI
+        # est faible mais reel, et le durcissement ne coute rien.
         options: >-
+          --shm-size=256m
           --health-cmd "pg_isready -U postgres"
           --health-interval 10s
           --health-timeout 5s
@@ -209,7 +223,21 @@ jobs:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
           POSTGRES_DB: koprogo_test
+        # --shm-size : le defaut Docker est 64 Mo, et PostgreSQL y alloue ses
+        # segments de memoire partagee. La migration
+        # `20260826000000_alter_payment_reminders_to_numeric` fait un
+        # `ALTER COLUMN TYPE` sur trois colonnes, donc une reecriture de table
+        # que PostgreSQL parallelise. Sous charge, la demande depasse les
+        # 64 Mo :
+        #
+        #   could not resize shared memory segment to 33554432 bytes:
+        #   No space left on device                        (SQLSTATE 53100)
+        #
+        # Constate le 2026-08-27 sur la base de test locale, sous une charge
+        # que mes propres campagnes paralleles avaient creee. Le risque en CI
+        # est faible mais reel, et le durcissement ne coute rien.
         options: >-
+          --shm-size=256m
           --health-cmd "pg_isready -U postgres"
           --health-interval 10s
           --health-timeout 5s
@@ -303,7 +331,21 @@ jobs:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
           POSTGRES_DB: koprogo_test
+        # --shm-size : le defaut Docker est 64 Mo, et PostgreSQL y alloue ses
+        # segments de memoire partagee. La migration
+        # `20260826000000_alter_payment_reminders_to_numeric` fait un
+        # `ALTER COLUMN TYPE` sur trois colonnes, donc une reecriture de table
+        # que PostgreSQL parallelise. Sous charge, la demande depasse les
+        # 64 Mo :
+        #
+        #   could not resize shared memory segment to 33554432 bytes:
+        #   No space left on device                        (SQLSTATE 53100)
+        #
+        # Constate le 2026-08-27 sur la base de test locale, sous une charge
+        # que mes propres campagnes paralleles avaient creee. Le risque en CI
+        # est faible mais reel, et le durcissement ne coute rien.
         options: >-
+          --shm-size=256m
           --health-cmd "pg_isready -U postgres"
           --health-interval 10s
           --health-timeout 5s
@@ -633,7 +675,21 @@ jobs:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
           POSTGRES_DB: koprogo_test
+        # --shm-size : le defaut Docker est 64 Mo, et PostgreSQL y alloue ses
+        # segments de memoire partagee. La migration
+        # `20260826000000_alter_payment_reminders_to_numeric` fait un
+        # `ALTER COLUMN TYPE` sur trois colonnes, donc une reecriture de table
+        # que PostgreSQL parallelise. Sous charge, la demande depasse les
+        # 64 Mo :
+        #
+        #   could not resize shared memory segment to 33554432 bytes:
+        #   No space left on device                        (SQLSTATE 53100)
+        #
+        # Constate le 2026-08-27 sur la base de test locale, sous une charge
+        # que mes propres campagnes paralleles avaient creee. Le risque en CI
+        # est faible mais reel, et le durcissement ne coute rien.
         options: >-
+          --shm-size=256m
           --health-cmd "pg_isready -U postgres"
           --health-interval 10s
           --health-timeout 5s

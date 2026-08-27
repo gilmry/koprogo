@@ -69,9 +69,20 @@ async fn post_building_injects_org_from_jwt() {
         id: String,
     }
 
+    // `acp_id` requis depuis #602 (Story 1.2) : `buildings.organization_id` a
+    // ete DROP, le scoping org passe par `acps.organization_id`. Sans lui, le
+    // handler rejette en 400 « SuperAdmin must specify acp_id ».
+    //
+    // Ce harnais n'ayant jamais ete cable en CI, la migration l'avait manque.
+    // Mon balayage mecanique precedent l'avait manque aussi : il cherchait le
+    // motif `set_json(json!({` inline, alors qu'ici la charge utile est
+    // construite dans une variable en amont.
+    let acp_id = common::create_test_acp(&app_state, org_id).await;
+
     // Use the valid org_id that was created in setup
     let payload = serde_json::json!({
         "organization_id": org_id.to_string(),
+        "acp_id": acp_id,
         "name": "JWT Building",
         "address": "1 JWT St",
         "city": "Brussels",
@@ -98,16 +109,28 @@ async fn post_building_injects_org_from_jwt() {
     let body: BuildingResp = test::read_body_json(resp).await;
     let building_id = Uuid::parse_str(&body.id).expect("uuid");
 
-    // Verify in DB that organization_id is org_id (as specified by SuperAdmin)
-    let fetched_org_id: Uuid =
-        sqlx::query_scalar("SELECT organization_id FROM buildings WHERE id = $1")
-            .bind(building_id)
-            .fetch_one(&pool)
-            .await
-            .expect("select org id");
+    // Le rattachement organisationnel se verifie via l'ACP, plus via
+    // `buildings.organization_id`.
+    //
+    // La Story H15 a DROP cette colonne : le scoping org passe desormais par
+    // `acps.organization_id`. Ce test interrogeait donc une colonne disparue
+    // (« column "organization_id" does not exist »). Harnais jamais cable en
+    // CI, la migration l'avait manque.
+    //
+    // L'intention du test est preservee : verifier que l'immeuble cree par un
+    // SuperAdmin est bien rattache a l'organisation attendue. Le chemin a
+    // change, pas la propriete testee.
+    let fetched_org_id: Uuid = sqlx::query_scalar(
+        "SELECT a.organization_id FROM buildings b \
+         JOIN acps a ON a.id = b.acp_id WHERE b.id = $1",
+    )
+    .bind(building_id)
+    .fetch_one(&pool)
+    .await
+    .expect("select org id via acp");
     assert_eq!(
         fetched_org_id, org_id,
-        "SuperAdmin should be able to create building with specified organization_id"
+        "L'immeuble doit etre rattache a l'organisation via son ACP"
     );
 }
 

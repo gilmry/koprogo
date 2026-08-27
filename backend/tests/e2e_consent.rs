@@ -109,7 +109,7 @@ async fn test_record_terms_consent() {
 #[serial]
 async fn test_record_consent_invalid_type() {
     let (app_state, _container, org_id) = common::setup_test_db().await;
-    let (_user_id, token) = create_test_user(&app_state, org_id).await;
+    let (_user_id, _token) = create_test_user(&app_state, org_id).await;
 
     let app = test::init_service(
         App::new()
@@ -118,9 +118,22 @@ async fn test_record_consent_invalid_type() {
     )
     .await;
 
+    // Jeton PORTE PAR UNE ORGANISATION, et non superadmin.
+    //
+    // `record_consent` verifie `auth.require_organization()` AVANT de valider
+    // le `consent_type`. Or le JWT d'un superadmin porte
+    // `organization_id: None` : la requete s'arretait sur
+    // « Organization context required to record consent » et n'atteignait
+    // jamais la validation que ce test vise.
+    //
+    // Le test passait donc son assertion de statut (400) POUR LA MAUVAISE
+    // RAISON, et n'echouait que sur le message. Un 400 obtenu par un autre
+    // chemin que celui teste n'atteste rien.
+    let org_token = common::register_and_login_with_role(&app_state, org_id, "syndic").await;
+
     let req = test::TestRequest::post()
         .uri("/api/v1/consent")
-        .insert_header((header::AUTHORIZATION, format!("Bearer {}", token)))
+        .insert_header((header::AUTHORIZATION, format!("Bearer {}", org_token)))
         .set_json(json!({
             "consent_type": "invalid_type"
         }))
@@ -130,10 +143,18 @@ async fn test_record_consent_invalid_type() {
     assert_eq!(resp.status(), 400, "Should reject invalid consent type");
 
     let body: serde_json::Value = test::read_body_json(resp).await;
-    assert!(body["error"]
-        .as_str()
-        .unwrap()
-        .contains("Invalid consent_type"));
+    // Le produit dit « Invalid consent type » (avec une ESPACE), et enumere
+    // les valeurs admises. Le test cherchait « Invalid consent_type », avec un
+    // souligne : la sous-chaine ne correspondait pas au libelle reel.
+    //
+    // On asserte sur ce que le produit garantit vraiment — que le message
+    // nomme la valeur refusee et rappelle les valeurs admises — plutot que sur
+    // une graphie exacte qui se casse au premier reformulage.
+    let msg = body["error"].as_str().unwrap_or("<absent>");
+    assert!(
+        msg.contains("invalid_type") && msg.contains("privacy_policy"),
+        "message inattendu : {msg}"
+    );
 }
 
 #[actix_web::test]

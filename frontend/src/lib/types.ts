@@ -96,7 +96,11 @@ export interface UnitOwner {
   id: string;
   unit_id: string;
   owner_id: string;
-  ownership_percentage: number;
+  // `string`, PAS `number` : `ownership_percentage` est un `Decimal` cote Rust
+  // et `rust_decimal` le serialise en STRING JSON (ADR-0008, meme regle que
+  // `total_voting_power_*`). Le declarer `number` faisait concatener au lieu
+  // d'additionner partout ou il passe dans un `+`.
+  ownership_percentage: string;
   start_date: string;
   end_date?: string;
   is_primary_contact: boolean;
@@ -294,7 +298,11 @@ export interface GdprUnitOwnershipData {
   owner_id: string;
   unit_number?: string;
   building_name?: string;
-  ownership_percentage: number;
+  // `string`, PAS `number` : `ownership_percentage` est un `Decimal` cote Rust
+  // et `rust_decimal` le serialise en STRING JSON (ADR-0008, meme regle que
+  // `total_voting_power_*`). Le declarer `number` faisait concatener au lieu
+  // d'additionner partout ou il passe dans un `+`.
+  ownership_percentage: string;
   start_date: string;
   end_date?: string;
   is_primary_contact: boolean;
