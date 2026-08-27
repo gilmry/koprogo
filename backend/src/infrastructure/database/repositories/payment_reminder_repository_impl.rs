@@ -157,7 +157,7 @@ impl PaymentReminderRepository for PostgresPaymentReminderRepository {
             r#"
             SELECT id, organization_id, expense_id, owner_id,
                    level::text AS level, status::text AS status,
-                   amount_owed::FLOAT8 AS amount_owed, penalty_amount::FLOAT8 AS penalty_amount, total_amount::FLOAT8 AS total_amount, due_date, days_overdue,
+                   amount_owed, penalty_amount, total_amount, due_date, days_overdue,
                    delivery_method::text AS delivery_method,
                    sent_date, opened_date, pdf_path, tracking_number, notes,
                    created_at, updated_at
@@ -178,7 +178,7 @@ impl PaymentReminderRepository for PostgresPaymentReminderRepository {
             r#"
             SELECT id, organization_id, expense_id, owner_id,
                    level::text AS level, status::text AS status,
-                   amount_owed::FLOAT8 AS amount_owed, penalty_amount::FLOAT8 AS penalty_amount, total_amount::FLOAT8 AS total_amount, due_date, days_overdue,
+                   amount_owed, penalty_amount, total_amount, due_date, days_overdue,
                    delivery_method::text AS delivery_method,
                    sent_date, opened_date, pdf_path, tracking_number, notes,
                    created_at, updated_at
@@ -200,7 +200,7 @@ impl PaymentReminderRepository for PostgresPaymentReminderRepository {
             r#"
             SELECT id, organization_id, expense_id, owner_id,
                    level::text AS level, status::text AS status,
-                   amount_owed::FLOAT8 AS amount_owed, penalty_amount::FLOAT8 AS penalty_amount, total_amount::FLOAT8 AS total_amount, due_date, days_overdue,
+                   amount_owed, penalty_amount, total_amount, due_date, days_overdue,
                    delivery_method::text AS delivery_method,
                    sent_date, opened_date, pdf_path, tracking_number, notes,
                    created_at, updated_at
@@ -225,7 +225,7 @@ impl PaymentReminderRepository for PostgresPaymentReminderRepository {
             r#"
             SELECT id, organization_id, expense_id, owner_id,
                    level::text AS level, status::text AS status,
-                   amount_owed::FLOAT8 AS amount_owed, penalty_amount::FLOAT8 AS penalty_amount, total_amount::FLOAT8 AS total_amount, due_date, days_overdue,
+                   amount_owed, penalty_amount, total_amount, due_date, days_overdue,
                    delivery_method::text AS delivery_method,
                    sent_date, opened_date, pdf_path, tracking_number, notes,
                    created_at, updated_at
@@ -250,7 +250,7 @@ impl PaymentReminderRepository for PostgresPaymentReminderRepository {
             r#"
             SELECT id, organization_id, expense_id, owner_id,
                    level::text AS level, status::text AS status,
-                   amount_owed::FLOAT8 AS amount_owed, penalty_amount::FLOAT8 AS penalty_amount, total_amount::FLOAT8 AS total_amount, due_date, days_overdue,
+                   amount_owed, penalty_amount, total_amount, due_date, days_overdue,
                    delivery_method::text AS delivery_method,
                    sent_date, opened_date, pdf_path, tracking_number, notes,
                    created_at, updated_at
@@ -276,7 +276,7 @@ impl PaymentReminderRepository for PostgresPaymentReminderRepository {
             r#"
             SELECT id, organization_id, expense_id, owner_id,
                    level::text AS level, status::text AS status,
-                   amount_owed::FLOAT8 AS amount_owed, penalty_amount::FLOAT8 AS penalty_amount, total_amount::FLOAT8 AS total_amount, due_date, days_overdue,
+                   amount_owed, penalty_amount, total_amount, due_date, days_overdue,
                    delivery_method::text AS delivery_method,
                    sent_date, opened_date, pdf_path, tracking_number, notes,
                    created_at, updated_at
@@ -299,7 +299,7 @@ impl PaymentReminderRepository for PostgresPaymentReminderRepository {
             r#"
             SELECT id, organization_id, expense_id, owner_id,
                    level::text AS level, status::text AS status,
-                   amount_owed::FLOAT8 AS amount_owed, penalty_amount::FLOAT8 AS penalty_amount, total_amount::FLOAT8 AS total_amount, due_date, days_overdue,
+                   amount_owed, penalty_amount, total_amount, due_date, days_overdue,
                    delivery_method::text AS delivery_method,
                    sent_date, opened_date, pdf_path, tracking_number, notes,
                    created_at, updated_at
@@ -323,7 +323,7 @@ impl PaymentReminderRepository for PostgresPaymentReminderRepository {
             r#"
             SELECT id, organization_id, expense_id, owner_id,
                    level::text AS level, status::text AS status,
-                   amount_owed::FLOAT8 AS amount_owed, penalty_amount::FLOAT8 AS penalty_amount, total_amount::FLOAT8 AS total_amount, due_date, days_overdue,
+                   amount_owed, penalty_amount, total_amount, due_date, days_overdue,
                    delivery_method::text AS delivery_method,
                    sent_date, opened_date, pdf_path, tracking_number, notes,
                    created_at, updated_at
@@ -350,7 +350,7 @@ impl PaymentReminderRepository for PostgresPaymentReminderRepository {
             r#"
             SELECT id, organization_id, expense_id, owner_id,
                    level::text AS level, status::text AS status,
-                   amount_owed::FLOAT8 AS amount_owed, penalty_amount::FLOAT8 AS penalty_amount, total_amount::FLOAT8 AS total_amount, due_date, days_overdue,
+                   amount_owed, penalty_amount, total_amount, due_date, days_overdue,
                    delivery_method::text AS delivery_method,
                    sent_date, opened_date, pdf_path, tracking_number, notes,
                    created_at, updated_at
@@ -373,7 +373,7 @@ impl PaymentReminderRepository for PostgresPaymentReminderRepository {
             r#"
             SELECT id, organization_id, expense_id, owner_id,
                    level::text AS level, status::text AS status,
-                   amount_owed::FLOAT8 AS amount_owed, penalty_amount::FLOAT8 AS penalty_amount, total_amount::FLOAT8 AS total_amount, due_date, days_overdue,
+                   amount_owed, penalty_amount, total_amount, due_date, days_overdue,
                    delivery_method::text AS delivery_method,
                    sent_date, opened_date, pdf_path, tracking_number, notes,
                    created_at, updated_at
