@@ -435,6 +435,32 @@ jobs:
             --test e2e_budget --test e2e_notices --test e2e_skills \
             --test e2e_invoices --test e2e_local_exchange \
             --test e2e_documents --test storage_s3
+          # Lot 3 et 4 — 41 harnais supplementaires, mesures verts les
+          # 2026-08-26/27. Aucun n'avait jamais ete execute. Leur premiere
+          # execution a mis au jour quatre defauts produit de plus, dont deux
+          # de persistance : `tickets.work_order_sent_at` et
+          # `resolutions.agenda_item_index`, tous deux renseignes par le
+          # domaine et jamais ecrits en base.
+          cargo test --no-fail-fast \
+            --test e2e_auth --test e2e_consent --test e2e_accounts \
+            --test e2e_legal_api --test integration_unit_owner \
+            --test e2e_unit_owner --test e2e_marketplace --test e2e_polls \
+            --test e2e_owner_contributions --test e2e_organization_users \
+            --test e2e_individual_members --test e2e_gdpr_art30 \
+            --test e2e_gamification --test e2e_etat_date \
+            --test e2e_contractor_reports --test e2e_call_for_funds \
+            --test e2e_work_reports --test e2e_units --test e2e_two_factor \
+            --test e2e_technical_inspections
+          cargo test --no-fail-fast \
+            --test e2e_age_requests --test e2e_board --test e2e_board_dashboard \
+            --test e2e_charge_distribution --test e2e_dashboard \
+            --test e2e_energy_campaigns --test e2e_financial_reports \
+            --test e2e_gdpr_audit --test e2e_http --test e2e_iot \
+            --test e2e_journal_entries --test e2e_mcp_sse \
+            --test e2e_organizations --test e2e_owners --test e2e_public_syndic \
+            --test e2e_resolution_agenda --test e2e_resource_bookings \
+            --test e2e_second_convocation --test e2e_shared_objects \
+            --test e2e_users --test e2e_work_orders
 
   api-breaking-changes:
     name: API Breaking Change Detection (oasdiff)
