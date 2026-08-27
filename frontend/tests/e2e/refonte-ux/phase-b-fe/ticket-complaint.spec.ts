@@ -174,6 +174,25 @@ async function logoutUi(page: Page): Promise<void> {
 // ---------------------------------------------------------------------------
 
 test.describe("Story B5 — Ticket Complaint (multi-rôle)", () => {
+  // Budget de temps releve a 90 s. Le defaut Playwright est de 30 s, pense
+  // pour un test unitaire d'ecran ; ce scenario narratif enchaine trois
+  // roles, leurs connexions et une dizaine de navigations.
+  //
+  // Mesures du 2026-08-27, pile locale identique a celle de la CI
+  // (backend construit depuis la branche, `astro dev`, 1 worker, 4 CPU) :
+  // ce test et ses voisins de meme nature se placent entre 28,5 s et 34 s,
+  // c'est-a-dire A CHEVAL sur la limite. Verifie par un controle : les
+  // versions `origin/main` des memes fichiers, rejouees sur la meme pile au
+  // meme CPU, tombent dans la meme bande et echouent elles aussi
+  // (contractor-eval 33,9 s, syndic-response-sla 33,1 s). Ce n'est donc pas
+  // une regression, c'est un budget mal dimensionne des l'origine, que seule
+  // la vitesse du runner masquait.
+  //
+  // AUCUNE assertion n'est touchee. Le test verifie un comportement, pas une
+  // latence : le rendre vert en lui laissant le temps de s'executer ne retire
+  // rien a ce qu'il controle.
+  test.describe.configure({ timeout: 90_000 });
+
   test.beforeEach(async ({ page }) => {
     await setupContainerApiUrl(page);
   });
