@@ -98,8 +98,8 @@ impl AgSessionRepository for PostgresAgSessionRepository {
             r#"
             SELECT id, organization_id, meeting_id, platform::TEXT, video_url, host_url,
                    status::TEXT, scheduled_start, actual_start, actual_end,
-                   remote_attendees_count, remote_voting_power::FLOAT8,
-                   quorum_remote_contribution::FLOAT8,
+                   remote_attendees_count, remote_voting_power,
+                   quorum_remote_contribution,
                    access_password, waiting_room_enabled, recording_enabled, recording_url,
                    created_at, updated_at, created_by
             FROM ag_sessions
@@ -119,8 +119,8 @@ impl AgSessionRepository for PostgresAgSessionRepository {
             r#"
             SELECT id, organization_id, meeting_id, platform::TEXT, video_url, host_url,
                    status::TEXT, scheduled_start, actual_start, actual_end,
-                   remote_attendees_count, remote_voting_power::FLOAT8,
-                   quorum_remote_contribution::FLOAT8,
+                   remote_attendees_count, remote_voting_power,
+                   quorum_remote_contribution,
                    access_password, waiting_room_enabled, recording_enabled, recording_url,
                    created_at, updated_at, created_by
             FROM ag_sessions
@@ -140,8 +140,8 @@ impl AgSessionRepository for PostgresAgSessionRepository {
             r#"
             SELECT id, organization_id, meeting_id, platform::TEXT, video_url, host_url,
                    status::TEXT, scheduled_start, actual_start, actual_end,
-                   remote_attendees_count, remote_voting_power::FLOAT8,
-                   quorum_remote_contribution::FLOAT8,
+                   remote_attendees_count, remote_voting_power,
+                   quorum_remote_contribution,
                    access_password, waiting_room_enabled, recording_enabled, recording_url,
                    created_at, updated_at, created_by
             FROM ag_sessions
@@ -217,8 +217,8 @@ impl AgSessionRepository for PostgresAgSessionRepository {
             r#"
             SELECT id, organization_id, meeting_id, platform::TEXT, video_url, host_url,
                    status::TEXT, scheduled_start, actual_start, actual_end,
-                   remote_attendees_count, remote_voting_power::FLOAT8,
-                   quorum_remote_contribution::FLOAT8,
+                   remote_attendees_count, remote_voting_power,
+                   quorum_remote_contribution,
                    access_password, waiting_room_enabled, recording_enabled, recording_url,
                    created_at, updated_at, created_by
             FROM ag_sessions

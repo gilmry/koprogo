@@ -25,12 +25,18 @@ async fn test_create_service_exchange_offer() {
     .await;
 
     // Create a building via API
+    // `CreateBuildingDto` exige `acp_id` depuis #602 (Story 1.2) : la colonne
+    // `buildings.organization_id` a ete DROP, le scoping org passe par
+    // `acps.organization_id`. Sans lui : 400 « Failed to create building ».
+    // Ce harnais n'ayant jamais ete execute, la migration l'avait manque.
+    let acp_id = common::create_test_acp(&app_state, org_id).await;
     let building_req = test::TestRequest::post()
         .uri("/api/v1/buildings")
         .insert_header(header::ContentType::json())
         .insert_header((header::AUTHORIZATION, format!("Bearer {}", token)))
         .set_json(json!({
             "organization_id": org_id.to_string(),
+            "acp_id": acp_id.clone(),
             "name": "Test Building SEL",
             "address": "123 Test Street",
             "city": "Brussels",
@@ -103,12 +109,18 @@ async fn test_exchange_workflow_offered_to_completed() {
     .await;
 
     // Create a building
+    // `CreateBuildingDto` exige `acp_id` depuis #602 (Story 1.2) : la colonne
+    // `buildings.organization_id` a ete DROP, le scoping org passe par
+    // `acps.organization_id`. Sans lui : 400 « Failed to create building ».
+    // Ce harnais n'ayant jamais ete execute, la migration l'avait manque.
+    let acp_id = common::create_test_acp(&app_state, org_id).await;
     let building_req = test::TestRequest::post()
         .uri("/api/v1/buildings")
         .insert_header(header::ContentType::json())
         .insert_header((header::AUTHORIZATION, format!("Bearer {}", token)))
         .set_json(json!({
             "organization_id": org_id.to_string(),
+            "acp_id": acp_id.clone(),
             "name": "Workflow Building",
             "address": "10 Rue Workflow",
             "city": "Brussels",
@@ -184,12 +196,18 @@ async fn test_mutual_rating_system() {
     .await;
 
     // Create building
+    // `CreateBuildingDto` exige `acp_id` depuis #602 (Story 1.2) : la colonne
+    // `buildings.organization_id` a ete DROP, le scoping org passe par
+    // `acps.organization_id`. Sans lui : 400 « Failed to create building ».
+    // Ce harnais n'ayant jamais ete execute, la migration l'avait manque.
+    let acp_id = common::create_test_acp(&app_state, org_id).await;
     let building_req = test::TestRequest::post()
         .uri("/api/v1/buildings")
         .insert_header(header::ContentType::json())
         .insert_header((header::AUTHORIZATION, format!("Bearer {}", token)))
         .set_json(json!({
             "organization_id": org_id.to_string(),
+            "acp_id": acp_id.clone(),
             "name": "Rating Building",
             "address": "20 Rue Rating",
             "city": "Brussels",
@@ -263,12 +281,18 @@ async fn test_get_credit_balance() {
     .await;
 
     // Create building
+    // `CreateBuildingDto` exige `acp_id` depuis #602 (Story 1.2) : la colonne
+    // `buildings.organization_id` a ete DROP, le scoping org passe par
+    // `acps.organization_id`. Sans lui : 400 « Failed to create building ».
+    // Ce harnais n'ayant jamais ete execute, la migration l'avait manque.
+    let acp_id = common::create_test_acp(&app_state, org_id).await;
     let building_req = test::TestRequest::post()
         .uri("/api/v1/buildings")
         .insert_header(header::ContentType::json())
         .insert_header((header::AUTHORIZATION, format!("Bearer {}", token)))
         .set_json(json!({
             "organization_id": org_id.to_string(),
+            "acp_id": acp_id.clone(),
             "name": "Credit Building",
             "address": "30 Rue Credit",
             "city": "Brussels",
@@ -337,12 +361,18 @@ async fn test_leaderboard() {
     .await;
 
     // Create building
+    // `CreateBuildingDto` exige `acp_id` depuis #602 (Story 1.2) : la colonne
+    // `buildings.organization_id` a ete DROP, le scoping org passe par
+    // `acps.organization_id`. Sans lui : 400 « Failed to create building ».
+    // Ce harnais n'ayant jamais ete execute, la migration l'avait manque.
+    let acp_id = common::create_test_acp(&app_state, org_id).await;
     let building_req = test::TestRequest::post()
         .uri("/api/v1/buildings")
         .insert_header(header::ContentType::json())
         .insert_header((header::AUTHORIZATION, format!("Bearer {}", token)))
         .set_json(json!({
             "organization_id": org_id.to_string(),
+            "acp_id": acp_id.clone(),
             "name": "Leaderboard Building",
             "address": "40 Rue Leaderboard",
             "city": "Brussels",
@@ -385,12 +415,18 @@ async fn test_sel_statistics() {
     .await;
 
     // Create building
+    // `CreateBuildingDto` exige `acp_id` depuis #602 (Story 1.2) : la colonne
+    // `buildings.organization_id` a ete DROP, le scoping org passe par
+    // `acps.organization_id`. Sans lui : 400 « Failed to create building ».
+    // Ce harnais n'ayant jamais ete execute, la migration l'avait manque.
+    let acp_id = common::create_test_acp(&app_state, org_id).await;
     let building_req = test::TestRequest::post()
         .uri("/api/v1/buildings")
         .insert_header(header::ContentType::json())
         .insert_header((header::AUTHORIZATION, format!("Bearer {}", token)))
         .set_json(json!({
             "organization_id": org_id.to_string(),
+            "acp_id": acp_id.clone(),
             "name": "Stats Building",
             "address": "50 Rue Stats",
             "city": "Brussels",
@@ -479,12 +515,18 @@ async fn test_list_available_exchanges() {
     .await;
 
     // Create building
+    // `CreateBuildingDto` exige `acp_id` depuis #602 (Story 1.2) : la colonne
+    // `buildings.organization_id` a ete DROP, le scoping org passe par
+    // `acps.organization_id`. Sans lui : 400 « Failed to create building ».
+    // Ce harnais n'ayant jamais ete execute, la migration l'avait manque.
+    let acp_id = common::create_test_acp(&app_state, org_id).await;
     let building_req = test::TestRequest::post()
         .uri("/api/v1/buildings")
         .insert_header(header::ContentType::json())
         .insert_header((header::AUTHORIZATION, format!("Bearer {}", token)))
         .set_json(json!({
             "organization_id": org_id.to_string(),
+            "acp_id": acp_id.clone(),
             "name": "Available Building",
             "address": "70 Rue Available",
             "city": "Brussels",
@@ -527,12 +569,18 @@ async fn test_cancel_exchange_with_reason() {
     .await;
 
     // Create building
+    // `CreateBuildingDto` exige `acp_id` depuis #602 (Story 1.2) : la colonne
+    // `buildings.organization_id` a ete DROP, le scoping org passe par
+    // `acps.organization_id`. Sans lui : 400 « Failed to create building ».
+    // Ce harnais n'ayant jamais ete execute, la migration l'avait manque.
+    let acp_id = common::create_test_acp(&app_state, org_id).await;
     let building_req = test::TestRequest::post()
         .uri("/api/v1/buildings")
         .insert_header(header::ContentType::json())
         .insert_header((header::AUTHORIZATION, format!("Bearer {}", token)))
         .set_json(json!({
             "organization_id": org_id.to_string(),
+            "acp_id": acp_id.clone(),
             "name": "Cancel Building",
             "address": "80 Rue Cancel",
             "city": "Brussels",

@@ -64,7 +64,7 @@ async fn create_test_fixtures(
 
     // 3. Create unit
     let unit_dto = CreateUnitDto {
-        acp_id: building.acp_id.clone(),
+        acp_id: Some(building.acp_id.clone()),
         building_id: building.id.clone(),
         unit_number: "A101".to_string(),
         unit_type: UnitType::Apartment,
@@ -847,7 +847,17 @@ async fn test_get_ticket_statistics() {
     assert_eq!(stats_resp.status(), 200);
 
     let stats: serde_json::Value = test::read_body_json(stats_resp).await;
-    assert!(stats["total"].as_i64().unwrap() >= 3);
+    // `TicketStatistics` porte `#[serde(rename = "total_tickets")]` : le nom
+    // JSON n'est pas le nom du champ Rust. Le test lisait `stats["total"]`,
+    // donc `Null`, et `.as_i64().unwrap()` paniquait. Le contrat expose bien
+    // `total_tickets`, c'est le harnais — jamais execute — qui visait le nom
+    // interne.
+    assert!(
+        stats["total_tickets"]
+            .as_i64()
+            .unwrap_or_else(|| panic!("champ total_tickets absent des statistiques : {stats}"))
+            >= 3
+    );
 }
 
 #[actix_web::test]

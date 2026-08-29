@@ -6,11 +6,12 @@
 //!
 //! **Performance** : 6 sous-queries indépendantes, ≤ 5ms sur Postgres bêta.
 //!
-//! **Compat** : `meetings.present_quotas` est `DOUBLE PRECISION` côté DB
-//! (state-of-art de la branche v0.1.0) — converti en `Decimal` au boundary
-//! pour respecter le domain pur (`Meeting::assert_can_complete` consomme
-//! `Decimal`). La précision « millième » est préservée (entiers ou demi
-//! millièmes — la perte IEEE754 reste sous le seuil exigé Art. 3.87 §4 CC).
+//! **Types** : `meetings.present_quotas` et `units.quota` sont `NUMERIC` en DB
+//! depuis `20260516000000_alter_governance_to_numeric.sql` (WP-A1), et lus
+//! directement en `Decimal` — aucun `f64` sur le chemin (ADR-0008, #661).
+//! Le commentaire de compatibilité précédent, qui décrivait un boundary
+//! `DOUBLE PRECISION → Decimal` « à perte IEEE754 acceptable », ne
+//! correspondait plus à la DB depuis cette migration.
 
 use async_trait::async_trait;
 use rust_decimal::Decimal;
@@ -74,7 +75,7 @@ impl MeetingCompletionCheckerPort for PostgresMeetingCompletionChecker {
                     WHERE r.status = 'Pending'
                 )::int AS open_resolutions,
                 (SELECT present_quotas IS NOT NULL FROM m) AS attendance_recorded,
-                COALESCE((SELECT present_quotas FROM m), 0.0) AS attended_quotas,
+                COALESCE((SELECT present_quotas FROM m), 0) AS attended_quotas,
                 COALESCE(
                     (SELECT SUM(u.quota)
                      FROM units u
@@ -105,10 +106,12 @@ impl MeetingCompletionCheckerPort for PostgresMeetingCompletionChecker {
             return Err(format!("Meeting {} not found", meeting_id));
         }
 
-        // `present_quotas` est DOUBLE PRECISION (f64). Conversion lossless
-        // raisonnable pour des entiers/demi-millièmes (Art. 3.87 §4 CC).
-        let attended_f64: f64 = row.try_get("attended_quotas").unwrap_or(0.0);
-        let attended_quotas = Decimal::from_f64_retain(attended_f64).unwrap_or(Decimal::ZERO);
+        // #661 — `meetings.present_quotas` est NUMERIC(10,4) depuis la migration
+        // `20260516000000_alter_governance_to_numeric.sql` (WP-A1). Le commentaire
+        // précédent affirmait encore DOUBLE PRECISION et faisait transiter la
+        // quote-part par un `f64` : un aller-retour NUMERIC→f64→Decimal sans
+        // objet, sur le chemin de clôture d'AG (Art. 3.87 §5 CC).
+        let attended_quotas: Decimal = row.try_get("attended_quotas").unwrap_or(Decimal::ZERO);
 
         let total_quotas: Decimal = row.try_get("total_quotas").unwrap_or(Decimal::ZERO);
 

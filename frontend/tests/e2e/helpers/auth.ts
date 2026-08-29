@@ -5,9 +5,165 @@
  * localStorage injection — saves ~5s per test and keeps videos focused
  * on the actual feature being tested.
  */
-import type { Page } from "@playwright/test";
+import { test } from "@playwright/test";
+import type { APIRequestContext, Page } from "@playwright/test";
 
 const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
+
+// ---------------------------------------------------------------------------
+// Connexion admin mutualisée (anti-429)
+// ---------------------------------------------------------------------------
+//
+// `/api/v1/auth/login` est rate-limité par Traefik en production :
+// average=5/minute, burst=10, par IP source (docker-compose.prod.yml,
+// middleware `koprogo-login-ratelimit`). Le garde-fou est volontaire : le
+// hachage bcrypt est fait côté serveur et un burst saturerait l'unique cœur
+// de la VPS.
+//
+// Or chaque helper d'authentification re-loguait l'admin, soit une connexion
+// PAR TEST. Sur la campagne smoke du 2026-08-26 contre koprogo.com, cela a
+// produit ~18 connexions/minute contre 5 autorisées : 47 des 51 blocs d'échec
+// remontaient à la même ligne, avec `SyntaxError: Unexpected token 'T', "Too
+// Many Requests" is not valid JSON` — le corps 429 de Traefik, en texte brut,
+// passé à `.json()`.
+//
+// Le compte admin est le même pour toute la campagne : une seule connexion
+// suffit. Le jeton est donc mémorisé au niveau module (partagé par tous les
+// fichiers d'un même worker Playwright) et renouvelé 60 s avant son
+// expiration réelle, lue dans le JWT plutôt que supposée.
+//
+// Le retry sur 429 reste nécessaire malgré le cache : plusieurs workers, ou
+// une campagne lancée juste après une autre, peuvent encore franchir le
+// seuil. Traefik n'émet pas de `Retry-After`, d'où l'attente fixe alignée sur
+// la fenêtre du middleware.
+
+let cachedAdminToken: string | null = null;
+let cachedAdminExpiry = 0;
+
+/** Alimente le cache partagé depuis une connexion faite ailleurs. */
+function primeAdminTokenCache(token: string): void {
+  cachedAdminToken = token;
+  const exp = jwtExpiryMs(token);
+  cachedAdminExpiry = exp > 0 ? exp - 60_000 : Date.now() + 15 * 60_000;
+}
+
+/** Expiration réelle du JWT (ms epoch), 0 si illisible. */
+function jwtExpiryMs(token: string): number {
+  try {
+    const payload = token.split(".")[1];
+    const json = JSON.parse(
+      Buffer.from(payload, "base64url").toString("utf-8"),
+    );
+    return typeof json.exp === "number" ? json.exp * 1000 : 0;
+  } catch {
+    return 0;
+  }
+}
+
+/**
+ * Jeton superadmin, mutualisé sur toute la campagne.
+ *
+ * Une seule requête `/auth/login` par worker au lieu d'une par test.
+ */
+/**
+ * Connexion admin RÉELLE, avec retry sur 429. Pas de cache.
+ *
+ * Utilisée telle quelle quand l'appelant a besoin de l'effet de bord d'une
+ * vraie requête — le `Set-Cookie: koprogo_refresh` déposé dans le contexte —
+ * et non seulement d'un jeton porteur.
+ */
+/**
+ * Parse une reponse en exigeant un statut 2xx.
+ *
+ * Les helpers de seed enchainaient `await resp.json()` SANS jamais regarder
+ * le statut. Un echec transitoire sur une seule requete produisait donc un
+ * `undefined` silencieux, et le defaut ressortait beaucoup plus loin sous une
+ * forme trompeuse — typiquement un 422 « immeuble non conforme » alors que la
+ * vraie cause etait un lot jamais cree.
+ *
+ * Constate sur `ChargeDistribution`, vert en isolation et rouge en campagne.
+ * Le produit avait raison a chaque fois ; c'est le harnais qui construisait
+ * un etat incomplet sans le dire.
+ */
+async function expectOk<T = any>(
+  resp: {
+    status: () => number;
+    ok: () => boolean;
+    text: () => Promise<string>;
+    json: () => Promise<any>;
+  },
+  label: string,
+): Promise<T> {
+  if (!resp.ok()) {
+    throw new Error(
+      `${label}: HTTP ${resp.status()} — ${(await resp.text()).slice(0, 200)}`,
+    );
+  }
+  return (await resp.json()) as T;
+}
+
+export async function performAdminLogin(
+  target: Page | APIRequestContext,
+): Promise<string> {
+  // `scenarios/` n'a pas de Page au moment du seed : il travaille avec un
+  // APIRequestContext nu. Les deux exposent `.post()`, on normalise ici.
+  const api: APIRequestContext =
+    "request" in target
+      ? (target as Page).request
+      : (target as APIRequestContext);
+
+  const MAX_TRIES = 4;
+  let lastStatus = 0;
+  let lastBody = "";
+
+  for (let attempt = 1; attempt <= MAX_TRIES; attempt++) {
+    const resp = await api.post(`${API_BASE}/auth/login`, {
+      data: { email: "admin@koprogo.com", password: "admin123" },
+    });
+    lastStatus = resp.status();
+
+    if (resp.ok()) {
+      const data = await resp.json();
+      if (!data.token) {
+        throw new Error(
+          `performAdminLogin: réponse 200 sans champ token : ${JSON.stringify(data).slice(0, 200)}`,
+        );
+      }
+      return data.token as string;
+    }
+
+    lastBody = (await resp.text()).slice(0, 120);
+
+    if (lastStatus !== 429 || attempt === MAX_TRIES) break;
+
+    // Fenêtre du middleware Traefik : 1 minute. On attend un cinquième de
+    // fenêtre par tentative, ce qui suffit à reconstituer des jetons du
+    // seau sans immobiliser la campagne une minute entière.
+    await new Promise((r) => setTimeout(r, 12_000 * attempt));
+  }
+
+  throw new Error(
+    `performAdminLogin: échec après ${MAX_TRIES} tentatives — HTTP ${lastStatus} : ${lastBody}`,
+  );
+}
+
+/**
+ * Jeton superadmin mutualisé sur toute la campagne (une connexion par worker).
+ *
+ * À réserver aux appels API porteurs. Pour ouvrir une session NAVIGATEUR,
+ * passer par `loginAsAdmin`, qui a besoin du cookie et donc d'une vraie
+ * requête (cf. le commentaire qui y est).
+ */
+export async function adminLogin(
+  target: Page | APIRequestContext,
+): Promise<string> {
+  if (cachedAdminToken && Date.now() < cachedAdminExpiry) {
+    return cachedAdminToken;
+  }
+  const token = await performAdminLogin(target);
+  primeAdminTokenCache(token);
+  return token;
+}
 
 interface AuthContext {
   token: string;
@@ -123,11 +279,7 @@ export async function loginAsSyndic(
   const email = `${prefix}-${timestamp}@example.com`;
 
   // Admin login
-  const adminLoginResp = await page.request.post(`${API_BASE}/auth/login`, {
-    data: { email: "admin@koprogo.com", password: "admin123" },
-  });
-  const adminData = await adminLoginResp.json();
-  const adminToken = adminData.token;
+  const adminToken = await adminLogin(page);
 
   // Create org
   const orgResp = await page.request.post(`${API_BASE}/organizations`, {
@@ -139,7 +291,7 @@ export async function loginAsSyndic(
     },
     headers: { Authorization: `Bearer ${adminToken}` },
   });
-  const org = await orgResp.json();
+  const org = await expectOk(orgResp, "seed:org");
 
   // Register syndic
   const regResp = await page.request.post(`${API_BASE}/auth/register`, {
@@ -152,7 +304,7 @@ export async function loginAsSyndic(
       organization_id: org.id,
     },
   });
-  const userData = await regResp.json();
+  const userData = await expectOk(regResp, "seed:reg");
 
   // Inject auth into browser (no UI login!)
   await injectAuth(page, userData.token, {
@@ -214,7 +366,7 @@ export async function ensureAcp(
       `ensureAcp: POST /acps failed ${createResp.status()} : ${body}`,
     );
   }
-  const acp = await createResp.json();
+  const acp = await expectOk(createResp, "seed:create");
   return acp.id;
 }
 
@@ -261,7 +413,25 @@ async function seedConformantUnits(
       },
       headers: { Authorization: `Bearer ${adminToken}` },
     });
-    const unit = await unitResp.json();
+    // Verifier CHAQUE creation.
+    //
+    // Sans ce controle, un echec transitoire sur un seul lot passait
+    // inapercu : `unitIds` recevait `undefined`, l'immeuble restait NON
+    // CONFORME (somme des quotites != total_tantiemes), et le defaut
+    // ressortait bien plus loin sous la forme d'un 422 au calcul de
+    // repartition — un message qui ne dit rien de la vraie cause.
+    //
+    // C'est exactement ce qui faisait echouer `ChargeDistribution` en
+    // campagne alors qu'il passe seul : le produit refusait a juste titre de
+    // calculer sur un immeuble que le helper avait laisse incomplet.
+    if (unitResp.status() !== 201) {
+      throw new Error(
+        `seedConformantUnits: lot ${i + 1}/${totalUnits} (quota ${quota}) ` +
+          `refuse en HTTP ${unitResp.status()} — ` +
+          `${(await unitResp.text()).slice(0, 160)}`,
+      );
+    }
+    const unit = await expectOk(unitResp, "seed:unit");
     unitIds.push(unit.id);
   }
   return unitIds;
@@ -302,7 +472,7 @@ export async function loginAsSyndicWithBuilding(
     },
     headers: { Authorization: `Bearer ${auth.adminToken}` },
   });
-  const building = await buildingResp.json();
+  const building = await expectOk(buildingResp, "seed:building");
 
   // Track H Story H2 — seed conformant units by default so operational
   // computations (expenses/charges/états datés) are not blocked with 422.
@@ -350,7 +520,7 @@ export async function loginAsSyndicWithUnit(
     },
     headers: { Authorization: `Bearer ${ctx.adminToken}` },
   });
-  const unit = await unitResp.json();
+  const unit = await expectOk(unitResp, "seed:unit");
 
   return { ...ctx, unitId: unit.id };
 }
@@ -379,7 +549,7 @@ export async function loginAsSyndicWithMeeting(
     },
     headers: { Authorization: `Bearer ${ctx.token}` },
   });
-  const meeting = await meetingResp.json();
+  const meeting = await expectOk(meetingResp, "seed:meeting");
 
   return { ...ctx, meetingId: meeting.id };
 }
@@ -403,7 +573,7 @@ export async function loginAsSyndicWithExpense(
     },
     headers: { Authorization: `Bearer ${ctx.token}` },
   });
-  const expense = await expenseResp.json();
+  const expense = await expectOk(expenseResp, "seed:expense");
 
   return { ...ctx, expenseId: expense.id };
 }
@@ -431,7 +601,7 @@ export async function loginAsSyndicWithOwner(
     },
     headers: { Authorization: `Bearer ${ctx.token}` },
   });
-  const owner = await ownerResp.json();
+  const owner = await expectOk(ownerResp, "seed:owner");
 
   return { ...ctx, ownerId: owner.id };
 }
@@ -460,7 +630,7 @@ export async function loginAsSyndicWithLinkedOwner(
       organization_id: ctx.orgId,
     },
   });
-  const ownerUserData = await regResp.json();
+  const ownerUserData = await expectOk(regResp, "seed:reg");
   const ownerUserId =
     ownerUserData.user?.id || ownerUserData.id || ownerUserData.user_id || "";
   const ownerToken = ownerUserData.token;
@@ -480,7 +650,7 @@ export async function loginAsSyndicWithLinkedOwner(
     },
     headers: { Authorization: `Bearer ${ctx.token}` },
   });
-  const owner = await ownerResp.json();
+  const owner = await expectOk(ownerResp, "seed:owner");
 
   return { ...ctx, ownerId: owner.id, ownerToken };
 }
@@ -491,19 +661,37 @@ export async function loginAsSyndicWithLinkedOwner(
 export async function loginAsAdmin(
   page: Page,
 ): Promise<{ token: string; adminToken: string }> {
-  const loginResp = await page.request.post(`${API_BASE}/auth/login`, {
-    data: { email: "admin@koprogo.com", password: "admin123" },
-  });
-  const data = await loginResp.json();
+  // NE PAS utiliser le jeton memorise ici.
+  //
+  // `adminLogin()` rend une CHAINE, reutilisable partout pour un en-tete
+  // Authorization. Mais ouvrir une SESSION NAVIGATEUR demande autre chose :
+  // le `Set-Cookie: koprogo_refresh` (HttpOnly, SameSite=Strict, scope
+  // /api/v1/auth) que seule une vraie requete /auth/login depose dans le
+  // pot a cookies DE CE CONTEXTE. Sans lui, `authStore.init()` ne peut pas
+  // faire son silent-refresh, l'access token reste vide en memoire et le
+  // RouteGuard renvoie sur /login?redirect=...
+  //
+  // Un cookie est lie au contexte, un bearer ne l'est pas : les deux
+  // chemins ne se substituent pas l'un a l'autre. C'est exactement le
+  // piege dans lequel la mutualisation du jeton m'a fait tomber
+  // (11 echecs sur refonte-ux/fix-admin-buttons-acp, tous en redirection
+  // vers /login alors que les tests visaient des boutons Svelte 5).
+  //
+  // `loginAsSyndic` n'a pas ce probleme : son POST /auth/register passe par
+  // `page.request` et depose bien le cookie du syndic dans le contexte.
+  const token = await performAdminLogin(page);
+  // Une connexion reelle vient d'avoir lieu : autant en faire profiter le
+  // cache partage plutot que d'en consommer une de plus juste apres.
+  primeAdminTokenCache(token);
 
-  await injectAuth(page, data.token, {
+  await injectAuth(page, token, {
     email: "admin@koprogo.com",
     first_name: "Admin",
     last_name: "KoproGo",
     role: "superadmin",
   });
 
-  return { token: data.token, adminToken: data.token };
+  return { token, adminToken: token };
 }
 
 // ---------------------------------------------------------------------------
@@ -540,11 +728,7 @@ async function registerScopedUser(
   const timestamp = Date.now();
   const email = `${prefix}-${timestamp}@example.com`;
 
-  const adminLoginResp = await page.request.post(`${API_BASE}/auth/login`, {
-    data: { email: "admin@koprogo.com", password: "admin123" },
-  });
-  const adminData = await adminLoginResp.json();
-  const adminToken = adminData.token;
+  const adminToken = await adminLogin(page);
 
   const orgResp = await page.request.post(`${API_BASE}/organizations`, {
     data: {
@@ -555,7 +739,7 @@ async function registerScopedUser(
     },
     headers: { Authorization: `Bearer ${adminToken}` },
   });
-  const org = await orgResp.json();
+  const org = await expectOk(orgResp, "seed:org");
 
   const regResp = await page.request.post(`${API_BASE}/auth/register`, {
     data: {
@@ -567,7 +751,7 @@ async function registerScopedUser(
       organization_id: org.id,
     },
   });
-  const userData = await regResp.json();
+  const userData = await expectOk(regResp, "seed:reg");
 
   await injectAuth(page, userData.token, {
     email,
@@ -707,4 +891,73 @@ export async function loginAsWarden(
   prefix: string = "warden",
 ): Promise<AuthContext> {
   return registerScopedUser(page, prefix, "contractor");
+}
+
+// ---------------------------------------------------------------------------
+// Connexion par le FORMULAIRE, avec reprise sur rate limit
+// ---------------------------------------------------------------------------
+//
+// Certains parcours doivent passer par l'UI : ils verifient le redirect par
+// role, la banniere de contexte, ou tout simplement que le formulaire marche.
+// Ils ne peuvent donc pas utiliser `injectAuth`.
+//
+// Mais chaque soumission declenche un `/api/v1/auth/login`, plafonne a
+// 5/minute par IP source chez Traefik en production (`koprogo-login-ratelimit`,
+// average=5 period=1m burst=10). Une suite qui se connecte a chaque test
+// depasse ce seuil : le back rend 429, le front reste sur /login, et
+// `waitForURL` expire au bout de 15 s sur une navigation qui n'aura jamais
+// lieu. Le symptome ne dit rien du rate limit — d'ou le temps qu'il a fallu
+// pour l'identifier.
+//
+// On ne peut pas lire le statut HTTP depuis le formulaire : on traite donc le
+// timeout comme un signal de throttling probable et on retente apres une
+// attente alignee sur la fenetre du middleware.
+
+/** Connexion par le formulaire, avec 2 reprises espacees sur echec. */
+export async function uiLoginWithRetry(
+  page: Page,
+  email: string,
+  password: string,
+  urlPattern: RegExp = /\/(admin|syndic|owner|accountant)/,
+  timeoutMs = 15_000,
+): Promise<void> {
+  const MAX_TRIES = 3;
+  let lastErr: unknown;
+
+  for (let attempt = 1; attempt <= MAX_TRIES; attempt++) {
+    try {
+      await page.goto("/login", { waitUntil: "networkidle" });
+      await page.getByTestId("login-email").fill(email);
+      await page.getByTestId("login-password").fill(password);
+      await page.getByTestId("login-submit").click();
+      await page.waitForURL(urlPattern, { timeout: timeoutMs });
+      await page.waitForLoadState("networkidle");
+      return;
+    } catch (err) {
+      lastErr = err;
+      if (attempt === MAX_TRIES) break;
+
+      // ETENDRE LE BUDGET DU TEST AVANT D'ATTENDRE.
+      //
+      // Sans cela, la reprise se retourne contre nous : le delai par defaut
+      // d'un test Playwright est de 30 s, et une seule attente de 20 s le
+      // consomme presque entierement. Le test expirait alors sur un
+      // « Test timeout of 30000ms exceeded » qui ne dit rien du rate limit —
+      // j'ai introduit ce defaut en ajoutant la reprise, et il a fait
+      // echouer OwnerDashboard, role-delegation et technical-spec-flow.
+      //
+      // Une reprise ne vaut que si le test a le temps de la voir aboutir.
+      test.setTimeout(90_000 + 40_000 * attempt);
+
+      // Fenetre Traefik : 1 minute. Une attente courte d'abord : le seau se
+      // recharge en continu (5 jetons/minute), quelques secondes suffisent
+      // souvent, et on ne paie la longue attente qu'en cas d'echec repete.
+      await new Promise((r) => setTimeout(r, 8_000 * attempt));
+    }
+  }
+
+  throw new Error(
+    `uiLoginWithRetry: echec apres ${MAX_TRIES} tentatives pour ${email} ` +
+      `(rate limit /auth/login probable) — ${String(lastErr).slice(0, 200)}`,
+  );
 }

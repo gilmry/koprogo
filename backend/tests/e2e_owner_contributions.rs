@@ -79,7 +79,7 @@ async fn create_contribution_fixtures(
 
     // 4. Create unit
     let unit_dto = CreateUnitDto {
-        acp_id: building.acp_id.clone(),
+        acp_id: Some(building.acp_id.clone()),
         building_id: building.id.clone(),
         unit_number: "B2".to_string(),
         unit_type: UnitType::Apartment,

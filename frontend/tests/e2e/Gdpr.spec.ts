@@ -1,5 +1,28 @@
+/**
+ * CONTRAINTE D'ENVIRONNEMENT — ce fichier ne peut pas passer en entier contre
+ * une instance ou le rate limiting est actif.
+ *
+ * `GdprRateLimit` (backend/src/infrastructure/web/middleware/mod.rs) plafonne
+ * `/api/v1/gdpr` et `/api/v1/admin/gdpr` a **10 requetes par heure**. Or ce
+ * fichier fait 4 `goto("/admin/gdpr")`, et chaque chargement de page declenche
+ * a lui seul plusieurs appels (`/admin/gdpr/users/...`, `/admin/gdpr/audit-logs`),
+ * auxquels s'ajoutent les exports et effacements des tests eux-memes.
+ *
+ * Le seau est donc epuise avant le dernier test, qui echoue toujours sur un
+ * `admin-gdpr-user-row` introuvable : le back rend 429, la page n'affiche
+ * rien, et le symptome ne dit rien du rate limit.
+ *
+ * Mesure du 2026-08-26 contre koprogo.com, seau plein au depart :
+ * **4 passes, 1 echec**, le dernier. Sur seau vide : 1 passe, 4 echecs.
+ *
+ * En dev et en CI, `ENABLE_RATE_LIMITING=false` et le probleme ne se pose pas.
+ * Ne pas "corriger" ce fichier en allongeant des delais : ce n'est pas de la
+ * lenteur, c'est un refus.
+ */
+
 import { test, expect } from "@playwright/test";
 import type { Page } from "@playwright/test";
+import { adminLogin } from "./helpers/auth";
 
 /**
  * GDPR E2E Test Suite - Idempotent & Self-Contained
@@ -21,12 +44,7 @@ async function registerAndLogin(
   const password = "test123456";
 
   // Login as admin first to create an organization
-  const adminLoginResp = await page.request.post(`${API_BASE}/auth/login`, {
-    data: { email: "admin@koprogo.com", password: "admin123" },
-  });
-  const adminData = await adminLoginResp.json();
-  const adminToken = adminData.token;
-
+  const adminToken = await adminLogin(page);
   // Create org for the user
   const orgResp = await page.request.post(`${API_BASE}/organizations`, {
     data: {
@@ -64,6 +82,16 @@ async function registerAndLogin(
 
 // Helper: Login via UI
 //
+// Attente sur EXPRESSION REGULIERE, pas sur chemin exact.
+//
+// Le build statique servi en production redirige `/login` vers `/login/`
+// (301). `waitForURL("/login")` compare le chemin a l'identique et ne
+// reconnait donc pas `/login/`, alors meme que le journal Playwright montre
+// « navigated to https://koprogo.com/login/ ». Trois tests expiraient sur
+// une navigation qui avait bel et bien eu lieu.
+//
+// Le reste de la suite utilisait deja `/\/login/` ; ce fichier etait le seul
+// a comparer une chaine exacte.
 // #605 root cause : après waitForURL, le cookie de refresh HttpOnly posé par
 // `authStore.login()` n'a pas forcément fini de se stabiliser côté navigateur
 // avant qu'un test enchaîne immédiatement une 2e navigation (ex. goto
@@ -161,7 +189,7 @@ test.describe("GDPR - Complete User Journey (Idempotent)", () => {
     ).toBeVisible({
       timeout: 10000,
     });
-    await page.waitForURL("/login", { timeout: 10000 });
+    await page.waitForURL(/\/login/, { timeout: 10000 });
 
     // Step 6: Verify cannot login anymore
     await page.getByTestId("login-email").fill(user.email);
@@ -233,6 +261,26 @@ test.describe("GDPR - Admin Operations (Idempotent)", () => {
 });
 
 test.describe("GDPR - Mixed Scenario: User Creates Data, Admin Exports", () => {
+  // Budget de temps releve a 90 s. Le defaut Playwright est de 30 s, pense
+  // pour un test unitaire d'ecran ; ce scenario narratif enchaine une
+  // inscription, quatre connexions, six navigations, deux exports et un
+  // effacement de compte.
+  //
+  // Mesures du 2026-08-27, pile locale identique a celle de la CI
+  // (backend construit depuis la branche, `astro dev`, 1 worker, 4 CPU) :
+  // ce test et ses voisins de meme nature se placent entre 28,5 s et 34 s,
+  // c'est-a-dire A CHEVAL sur la limite. Verifie par un controle : les
+  // versions `origin/main` des memes fichiers, rejouees sur la meme pile au
+  // meme CPU, tombent dans la meme bande et echouent elles aussi
+  // (contractor-eval 33,9 s, syndic-response-sla 33,1 s). Ce n'est donc pas
+  // une regression, c'est un budget mal dimensionne des l'origine, que seule
+  // la vitesse du runner masquait.
+  //
+  // AUCUNE assertion n'est touchee. Le test verifie un comportement, pas une
+  // latence : le rendre vert en lui laissant le temps de s'executer ne retire
+  // rien a ce qu'il controle.
+  test.describe.configure({ timeout: 90_000 });
+
   test("should handle user creating data then admin exporting it", async ({
     page,
   }) => {
@@ -245,7 +293,7 @@ test.describe("GDPR - Mixed Scenario: User Creates Data, Admin Exports", () => {
 
     // Step 3: User logs out and clear browser state
     await page.getByTestId("user-menu-logout").click();
-    await page.waitForURL("/login");
+    await page.waitForURL(/\/login/);
     await clearBrowserState(page);
 
     // Step 4: Admin logs in
@@ -280,7 +328,7 @@ test.describe("GDPR - Mixed Scenario: User Creates Data, Admin Exports", () => {
 
     // Step 6: User logs back in and exports own data
     await page.getByTestId("user-menu-logout").click();
-    await page.waitForURL("/login");
+    await page.waitForURL(/\/login/);
     await clearBrowserState(page);
 
     await loginViaUI(page, user.email, user.password);
@@ -302,7 +350,7 @@ test.describe("GDPR - Mixed Scenario: User Creates Data, Admin Exports", () => {
     await expect(page.getByTestId("gdpr-export-modal")).not.toBeVisible();
     await page.getByTestId("gdpr-erase-button").click();
     await page.getByTestId("gdpr-erase-confirm-button").click();
-    await page.waitForURL("/login", { timeout: 10000 });
+    await page.waitForURL(/\/login/, { timeout: 10000 });
   });
 });
 
@@ -325,7 +373,7 @@ test.describe("GDPR - Audit Logs Verification", () => {
 
     // Logout and clear browser state
     await page.getByTestId("user-menu-logout").click();
-    await page.waitForURL("/login");
+    await page.waitForURL(/\/login/);
     await clearBrowserState(page);
 
     // Step 2: Admin checks audit logs

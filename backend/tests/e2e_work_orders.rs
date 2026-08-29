@@ -26,6 +26,27 @@ async fn setup_app() -> (
 }
 
 /// Helper: Create a building for ticket tests
+/// Cree un entrepreneur REEL dans l'organisation et rend son id.
+///
+/// Les tests faisaient `let contractor_id = Uuid::new_v4()`, donc un
+/// utilisateur inexistant. `tickets.assigned_to` porte
+/// `REFERENCES users(id)` : l'assignation etait refusee, et le handler
+/// rendait 400.
+///
+/// Le produit a raison : on n'assigne pas un ticket a quelqu'un qui n'existe
+/// pas. Troisieme occurrence de ce motif dans la session, apres la campagne
+/// energie et le membre individuel.
+async fn create_test_contractor(app_state: &actix_web::web::Data<AppState>, org_id: Uuid) -> Uuid {
+    let _ = common::register_and_login_with_role(app_state, org_id, "contractor").await;
+    sqlx::query_scalar(
+        "SELECT id FROM users WHERE organization_id = $1 ORDER BY created_at DESC LIMIT 1",
+    )
+    .bind(org_id)
+    .fetch_one(&app_state.pool)
+    .await
+    .expect("create_test_contractor: aucun utilisateur apres enregistrement")
+}
+
 async fn create_test_building(app_state: &actix_web::web::Data<AppState>, org_id: Uuid) -> Uuid {
     let acp_id = common::create_test_acp(app_state, org_id).await;
     let building_dto = CreateBuildingDto {
@@ -84,7 +105,7 @@ async fn test_send_work_order_for_in_progress_ticket() {
     let ticket_id = created["id"].as_str().unwrap();
 
     // 2. Assign the ticket to a contractor
-    let contractor_id = Uuid::new_v4();
+    let contractor_id = create_test_contractor(&app_state, org_id).await;
     let assign_req = test::TestRequest::put()
         .uri(&format!("/api/v1/tickets/{}/assign", ticket_id))
         .insert_header((header::AUTHORIZATION, format!("Bearer {}", token)))
@@ -110,7 +131,7 @@ async fn test_send_work_order_for_in_progress_ticket() {
     let ticket: serde_json::Value = test::read_body_json(work_order_resp).await;
     assert!(
         ticket["work_order_sent_at"].as_str().is_some(),
-        "work_order_sent_at should be set"
+        "work_order_sent_at absent — corps recu : {ticket}"
     );
     assert_eq!(ticket["status"], "InProgress");
 }
@@ -137,7 +158,7 @@ async fn test_send_work_order_rejected_for_open_ticket() {
             "building_id": building_id.to_string(),
             "title": "Elevator noise",
             "description": "Elevator making strange noises",
-            "category": "General",
+            "category": "Elevator",
             "priority": "Medium"
         }))
         .to_request();
@@ -266,7 +287,7 @@ async fn test_send_work_order_rejected_for_resolved_ticket() {
     let ticket_id = created["id"].as_str().unwrap();
 
     // 2. Assign to contractor
-    let contractor_id = Uuid::new_v4();
+    let contractor_id = create_test_contractor(&app_state, org_id).await;
     let assign_req = test::TestRequest::put()
         .uri(&format!("/api/v1/tickets/{}/assign", ticket_id))
         .insert_header((header::AUTHORIZATION, format!("Bearer {}", token)))

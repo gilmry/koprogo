@@ -3,6 +3,7 @@ use crate::application::dto::ag_session_dto::{
 };
 use crate::infrastructure::web::{AppState, AuthenticatedUser};
 use actix_web::{delete, get, post, put, web, HttpResponse, Responder};
+use rust_decimal::Decimal;
 use uuid::Uuid;
 
 /// POST /meetings/:id/ag-session — Crée une session visio pour une réunion
@@ -234,6 +235,8 @@ pub async fn get_combined_quorum(
             organization_id,
             query.physical_quotas,
             query.total_building_quotas,
+            query.physical_owners_count,
+            query.total_owners_count,
         )
         .await
     {
@@ -282,7 +285,11 @@ pub async fn get_ag_session_platform_stats(
     user: AuthenticatedUser,
 ) -> impl Responder {
     // Only superadmin can see platform-wide stats
-    if user.role != "SUPERADMIN" {
+    //
+    // #661-audit : même bug de casse que dans `api_key_handlers` — le JWT rend
+    // "superadmin" en minuscules, la comparaison visait "SUPERADMIN".
+    // L'endpoint répondait 403 même à un superadmin.
+    if !user.role.eq_ignore_ascii_case("superadmin") {
         return HttpResponse::Forbidden().json(serde_json::json!({
             "error": "SuperAdmin only"
         }));
@@ -300,6 +307,15 @@ pub async fn get_ag_session_platform_stats(
 
 #[derive(serde::Deserialize)]
 pub struct CombinedQuorumQuery {
-    pub physical_quotas: f64,
-    pub total_building_quotas: f64,
+    /// Quotes-parts présentes physiquement. `Decimal` : la valeur alimente
+    /// directement le seuil légal de quorum (Art. 3.87 §5 CC, ADR-0008).
+    pub physical_quotas: Decimal,
+    pub total_building_quotas: Decimal,
+    /// Volet « têtes » du quorum double (Art. 3.87 §5 CC, #661). Absents =
+    /// 0 : le volet têtes est alors non atteint, et le quorum ne peut être
+    /// déclaré que par l'alternative des 3/4 de quotités.
+    #[serde(default)]
+    pub physical_owners_count: i32,
+    #[serde(default)]
+    pub total_owners_count: i32,
 }

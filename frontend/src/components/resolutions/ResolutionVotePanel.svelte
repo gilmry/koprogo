@@ -1,6 +1,6 @@
 <script lang="ts">
   // Svelte 5 runes mode
-  import { _ } from '../../lib/i18n';
+  import { _ } from "../../lib/i18n";
   import {
     resolutionsApi,
     type Resolution,
@@ -8,16 +8,16 @@
     VoteChoice,
     ResolutionStatus,
     MajorityType,
-  } from '../../lib/api/resolutions';
-  import { api } from '../../lib/api';
-  import { toast } from '../../stores/toast';
-  import ResolutionStatusBadge from './ResolutionStatusBadge.svelte';
-  import { formatDateTime } from '../../lib/utils/date.utils';
-  import { withErrorHandling } from '../../lib/utils/error.utils';
+  } from "../../lib/api/resolutions";
+  import { api } from "../../lib/api";
+  import { toast } from "../../stores/toast";
+  import ResolutionStatusBadge from "./ResolutionStatusBadge.svelte";
+  import { formatDateTime } from "../../lib/utils/date.utils";
+  import { withErrorHandling } from "../../lib/utils/error.utils";
 
   let {
     resolution,
-    meetingStatus = 'Scheduled',
+    meetingStatus = "Scheduled",
     isAdmin = false,
   }: {
     resolution: Resolution;
@@ -31,29 +31,33 @@
 
   let voteChoice = $state<VoteChoice | null>(null);
   let votingPower = $state(1);
-  let proxyOwnerId = $state('');
+  let proxyOwnerId = $state("");
   let submittingVote = $state(false);
   let closingVoting = $state(false);
 
-  let myOwnerId = $state('');
+  let myOwnerId = $state("");
   let myUnits = $state<Array<{ unit_id: string; unit_number?: string }>>([]);
-  let selectedUnitId = $state('');
+  let selectedUnitId = $state("");
 
   $effect(() => {
     (async () => {
       try {
-        const me = await api.get<{ id: string }>('/owners/me');
+        const me = await api.get<{ id: string }>("/owners/me");
         myOwnerId = me.id;
-        const ownerships = await api.get<Array<{ unit_id: string }>>(`/owners/${myOwnerId}/units`);
+        const ownerships = await api.get<Array<{ unit_id: string }>>(
+          `/owners/${myOwnerId}/units`,
+        );
         const enriched = await Promise.all(
           (Array.isArray(ownerships) ? ownerships : []).map(async (o) => {
             try {
-              const u = await api.get<{ unit_number?: string }>(`/units/${o.unit_id}`);
+              const u = await api.get<{ unit_number?: string }>(
+                `/units/${o.unit_id}`,
+              );
               return { unit_id: o.unit_id, unit_number: u.unit_number };
             } catch {
               return { unit_id: o.unit_id };
             }
-          })
+          }),
         );
         myUnits = enriched;
         if (myUnits.length > 0) selectedUnitId = myUnits[0].unit_id;
@@ -64,21 +68,47 @@
   });
 
   let isOwner = $derived(!!myOwnerId && myUnits.length > 0);
-  let canVote = $derived(resolution.status === ResolutionStatus.Pending && meetingStatus === 'Scheduled' && isOwner);
+  let canVote = $derived(
+    resolution.status === ResolutionStatus.Pending &&
+      meetingStatus === "Scheduled" &&
+      isOwner,
+  );
   let isClosed = $derived(resolution.status !== ResolutionStatus.Pending);
   let votesPour = $derived(resolution.vote_count_pour ?? 0);
   let votesContre = $derived(resolution.vote_count_contre ?? 0);
   let votesAbstention = $derived(resolution.vote_count_abstention ?? 0);
-  let totalVotes = $derived(resolution.total_votes ?? (votesPour + votesContre + votesAbstention));
-  let totalVotingPower = $derived((resolution.total_voting_power_pour ?? 0) + (resolution.total_voting_power_contre ?? 0) + (resolution.total_voting_power_abstention ?? 0));
+  let totalVotes = $derived(
+    resolution.total_votes ?? votesPour + votesContre + votesAbstention,
+  );
+  // Les trois totaux arrivent en STRING JSON (`Decimal` cote Rust, cf.
+  // ADR-0008 et `docs/api/openapi.json`). L'addition `+` sur des strings
+  // CONCATENE : "0.6000" + "0.4000" + "0.0000" donnait "0.60000.40000.0000",
+  // dont `> 0` vaut false via NaN — la ligne « pouvoir de vote » ne
+  // s'affichait donc JAMAIS. Panne silencieuse sur un decompte de vote
+  // d'AG (Art. 3.87). Detectee par `e2e_resolutions`, harnais qui n'avait
+  // jamais ete execute.
+  const toNumber = (v: string | number | null | undefined): number => {
+    const n = typeof v === "number" ? v : Number.parseFloat(String(v ?? ""));
+    return Number.isFinite(n) ? n : 0;
+  };
+  let totalVotingPower = $derived(
+    toNumber(resolution.total_voting_power_pour) +
+      toNumber(resolution.total_voting_power_contre) +
+      toNumber(resolution.total_voting_power_abstention),
+  );
 
   function getMajorityLabel(type: MajorityType): string {
     switch (type) {
-      case MajorityType.Absolute: return $_("resolutions.create.majorityAbsolute");
-      case MajorityType.TwoThirds: return $_("resolutions.create.majorityTwoThirds");
-      case MajorityType.FourFifths: return $_("resolutions.create.majorityFourFifths");
-      case MajorityType.Unanimity: return $_("resolutions.create.majorityUnanimity");
-      default: return type;
+      case MajorityType.Absolute:
+        return $_("resolutions.create.majorityAbsolute");
+      case MajorityType.TwoThirds:
+        return $_("resolutions.create.majorityTwoThirds");
+      case MajorityType.FourFifths:
+        return $_("resolutions.create.majorityFourFifths");
+      case MajorityType.Unanimity:
+        return $_("resolutions.create.majorityUnanimity");
+      default:
+        return type;
     }
   }
 
@@ -95,7 +125,7 @@
         showVotes = true;
         return result;
       },
-      setLoading: (v: boolean) => loadingVotes = v,
+      setLoading: (v: boolean) => (loadingVotes = v),
       errorMessage: $_("resolutions.vote.loadVotesError"),
     });
   }
@@ -111,14 +141,15 @@
     }
 
     await withErrorHandling({
-      action: () => resolutionsApi.castVote(resolution.id, {
-        owner_id: myOwnerId,
-        unit_id: selectedUnitId,
-        choice: voteChoice!,
-        voting_power: votingPower,
-        proxy_owner_id: proxyOwnerId || undefined,
-      }),
-      setLoading: (v: boolean) => submittingVote = v,
+      action: () =>
+        resolutionsApi.castVote(resolution.id, {
+          owner_id: myOwnerId,
+          unit_id: selectedUnitId,
+          choice: voteChoice!,
+          voting_power: votingPower,
+          proxy_owner_id: proxyOwnerId || undefined,
+        }),
+      setLoading: (v: boolean) => (submittingVote = v),
       successMessage: $_("resolutions.vote.success"),
       errorMessage: $_("resolutions.vote.error"),
       onSuccess: async () => {
@@ -134,12 +165,17 @@
 
     await withErrorHandling({
       action: () => resolutionsApi.closeVoting(resolution.id),
-      setLoading: (v: boolean) => closingVoting = v,
+      setLoading: (v: boolean) => (closingVoting = v),
       errorMessage: $_("resolutions.vote.closeError"),
       onSuccess: async (result) => {
         resolution = result;
-        const status = resolution.status === ResolutionStatus.Adopted ? $_("resolutions.vote.adopted") : $_("resolutions.vote.rejected");
-        toast.success($_("resolutions.vote.closedMessage", { values: { status } }));
+        const status =
+          resolution.status === ResolutionStatus.Adopted
+            ? $_("resolutions.vote.adopted")
+            : $_("resolutions.vote.rejected");
+        toast.success(
+          $_("resolutions.vote.closedMessage", { values: { status } }),
+        );
         if (showVotes) await loadVotes();
       },
     });
@@ -147,19 +183,27 @@
 
   function getChoiceLabel(choice: VoteChoice): string {
     switch (choice) {
-      case VoteChoice.Pour: return $_("resolutions.vote.for");
-      case VoteChoice.Contre: return $_("resolutions.vote.against");
-      case VoteChoice.Abstention: return $_("resolutions.vote.abstain");
-      default: return choice;
+      case VoteChoice.Pour:
+        return $_("resolutions.vote.for");
+      case VoteChoice.Contre:
+        return $_("resolutions.vote.against");
+      case VoteChoice.Abstention:
+        return $_("resolutions.vote.abstain");
+      default:
+        return choice;
     }
   }
 
   function getChoiceColor(choice: VoteChoice): string {
     switch (choice) {
-      case VoteChoice.Pour: return 'text-green-700 bg-green-100';
-      case VoteChoice.Contre: return 'text-red-700 bg-red-100';
-      case VoteChoice.Abstention: return 'text-gray-700 bg-gray-100';
-      default: return 'text-gray-700 bg-gray-100';
+      case VoteChoice.Pour:
+        return "text-green-700 bg-green-100";
+      case VoteChoice.Contre:
+        return "text-red-700 bg-red-100";
+      case VoteChoice.Abstention:
+        return "text-gray-700 bg-gray-100";
+      default:
+        return "text-gray-700 bg-gray-100";
     }
   }
 </script>
@@ -168,7 +212,9 @@
   <div class="flex items-start justify-between mb-3">
     <div class="flex-1 min-w-0">
       <div class="flex items-center gap-2 mb-1">
-        <h4 class="text-sm font-semibold text-gray-900 truncate">{resolution.title}</h4>
+        <h4 class="text-sm font-semibold text-gray-900 truncate">
+          {resolution.title}
+        </h4>
         <ResolutionStatusBadge status={resolution.status} />
       </div>
       {#if resolution.description}
@@ -183,75 +229,109 @@
   <div class="space-y-2 mb-4">
     <div data-testid="vote-progress-pour">
       <div class="flex items-center justify-between text-sm mb-1">
-        <span class="text-green-700 font-medium">{$_("resolutions.vote.for")}</span>
-        <span class="text-gray-600">{votesPour} {$_("resolutions.vote.votes", { values: { count: votesPour } })} ({getVotePercentage(votesPour).toFixed(1)}%)</span>
+        <span class="text-green-700 font-medium"
+          >{$_("resolutions.vote.for")}</span
+        >
+        <span class="text-gray-600"
+          >{votesPour}
+          {$_("resolutions.vote.votes", { values: { count: votesPour } })} ({getVotePercentage(
+            votesPour,
+          ).toFixed(1)}%)</span
+        >
       </div>
       <div class="w-full bg-gray-100 rounded-full h-2.5">
-        <div class="bg-green-500 h-2.5 rounded-full transition-all" style="width: {getVotePercentage(votesPour)}%"></div>
+        <div
+          class="bg-green-500 h-2.5 rounded-full transition-all"
+          style="width: {getVotePercentage(votesPour)}%"
+        ></div>
       </div>
     </div>
 
     <div data-testid="vote-progress-contre">
       <div class="flex items-center justify-between text-sm mb-1">
-        <span class="text-red-700 font-medium">{$_("resolutions.vote.against")}</span>
-        <span class="text-gray-600">{votesContre} {$_("resolutions.vote.votes", { values: { count: votesContre } })} ({getVotePercentage(votesContre).toFixed(1)}%)</span>
+        <span class="text-red-700 font-medium"
+          >{$_("resolutions.vote.against")}</span
+        >
+        <span class="text-gray-600"
+          >{votesContre}
+          {$_("resolutions.vote.votes", { values: { count: votesContre } })} ({getVotePercentage(
+            votesContre,
+          ).toFixed(1)}%)</span
+        >
       </div>
       <div class="w-full bg-gray-100 rounded-full h-2.5">
-        <div class="bg-red-500 h-2.5 rounded-full transition-all" style="width: {getVotePercentage(votesContre)}%"></div>
+        <div
+          class="bg-red-500 h-2.5 rounded-full transition-all"
+          style="width: {getVotePercentage(votesContre)}%"
+        ></div>
       </div>
     </div>
 
     <div data-testid="vote-progress-abstention">
       <div class="flex items-center justify-between text-sm mb-1">
-        <span class="text-gray-700 font-medium">{$_("resolutions.vote.abstain")}</span>
-        <span class="text-gray-600">{votesAbstention} {$_("resolutions.vote.votes", { values: { count: votesAbstention } })} ({getVotePercentage(votesAbstention).toFixed(1)}%)</span>
+        <span class="text-gray-700 font-medium"
+          >{$_("resolutions.vote.abstain")}</span
+        >
+        <span class="text-gray-600"
+          >{votesAbstention}
+          {$_("resolutions.vote.votes", { values: { count: votesAbstention } })} ({getVotePercentage(
+            votesAbstention,
+          ).toFixed(1)}%)</span
+        >
       </div>
       <div class="w-full bg-gray-100 rounded-full h-2.5">
-        <div class="bg-gray-400 h-2.5 rounded-full transition-all" style="width: {getVotePercentage(votesAbstention)}%"></div>
+        <div
+          class="bg-gray-400 h-2.5 rounded-full transition-all"
+          style="width: {getVotePercentage(votesAbstention)}%"
+        ></div>
       </div>
     </div>
 
     <p class="text-xs text-gray-500 mt-1">
-      {$_("resolutions.vote.total")}: {totalVotes} {$_("resolutions.vote.votes", { values: { count: totalVotes } })}
+      {$_("resolutions.vote.total")}: {totalVotes}
+      {$_("resolutions.vote.votes", { values: { count: totalVotes } })}
       {#if totalVotingPower > 0}
-        &middot; {$_("resolutions.vote.votingPower")}: {totalVotingPower} {$_("resolutions.vote.thousandths")}
+        &middot; {$_("resolutions.vote.votingPower")}: {totalVotingPower}
+        {$_("resolutions.vote.thousandths")}
       {/if}
     </p>
   </div>
 
   {#if canVote}
     <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-3">
-      <h5 class="text-sm font-semibold text-blue-900 mb-3">{$_("resolutions.vote.formTitle")}</h5>
+      <h5 class="text-sm font-semibold text-blue-900 mb-3">
+        {$_("resolutions.vote.formTitle")}
+      </h5>
 
       <div class="flex gap-2 mb-3">
         <button
-          onclick={() => voteChoice = VoteChoice.Pour}
+          onclick={() => (voteChoice = VoteChoice.Pour)}
           class="flex-1 py-2 px-3 rounded-lg text-sm font-medium border-2 transition-colors
             {voteChoice === VoteChoice.Pour
-              ? 'bg-green-600 text-white border-green-600'
-              : 'bg-white text-green-700 border-green-300 hover:bg-green-50'}"
+            ? 'bg-green-600 text-white border-green-600'
+            : 'bg-white text-green-700 border-green-300 hover:bg-green-50'}"
           disabled={submittingVote}
           data-testid="vote-btn-pour"
         >
           {$_("resolutions.vote.for")}
         </button>
         <button
-          onclick={() => voteChoice = VoteChoice.Contre}
+          onclick={() => (voteChoice = VoteChoice.Contre)}
           class="flex-1 py-2 px-3 rounded-lg text-sm font-medium border-2 transition-colors
             {voteChoice === VoteChoice.Contre
-              ? 'bg-red-600 text-white border-red-600'
-              : 'bg-white text-red-700 border-red-300 hover:bg-red-50'}"
+            ? 'bg-red-600 text-white border-red-600'
+            : 'bg-white text-red-700 border-red-300 hover:bg-red-50'}"
           disabled={submittingVote}
           data-testid="vote-btn-contre"
         >
           {$_("resolutions.vote.against")}
         </button>
         <button
-          onclick={() => voteChoice = VoteChoice.Abstention}
+          onclick={() => (voteChoice = VoteChoice.Abstention)}
           class="flex-1 py-2 px-3 rounded-lg text-sm font-medium border-2 transition-colors
             {voteChoice === VoteChoice.Abstention
-              ? 'bg-gray-600 text-white border-gray-600'
-              : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}"
+            ? 'bg-gray-600 text-white border-gray-600'
+            : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}"
           disabled={submittingVote}
           data-testid="vote-btn-abstention"
         >
@@ -261,7 +341,10 @@
 
       {#if myUnits.length > 1}
         <div class="mb-3">
-          <label for="unit-{resolution.id}" class="block text-xs font-medium text-gray-700 mb-1">
+          <label
+            for="unit-{resolution.id}"
+            class="block text-xs font-medium text-gray-700 mb-1"
+          >
             {$_("resolutions.vote.unitLabel")}
           </label>
           <select
@@ -271,7 +354,10 @@
             data-testid="vote-unit-select"
           >
             {#each myUnits as u (u.unit_id)}
-              <option value={u.unit_id}>{$_("tickets.unit")} {u.unit_number || u.unit_id.slice(0, 8)}</option>
+              <option value={u.unit_id}
+                >{$_("tickets.unit")}
+                {u.unit_number || u.unit_id.slice(0, 8)}</option
+              >
             {/each}
           </select>
         </div>
@@ -279,7 +365,10 @@
 
       <div class="grid grid-cols-2 gap-3 mb-3">
         <div>
-          <label for="voting-power-{resolution.id}" class="block text-xs font-medium text-gray-700 mb-1">
+          <label
+            for="voting-power-{resolution.id}"
+            class="block text-xs font-medium text-gray-700 mb-1"
+          >
             {$_("resolutions.vote.votingPowerLabel")}
           </label>
           <input
@@ -293,7 +382,10 @@
           />
         </div>
         <div>
-          <label for="proxy-{resolution.id}" class="block text-xs font-medium text-gray-700 mb-1">
+          <label
+            for="proxy-{resolution.id}"
+            class="block text-xs font-medium text-gray-700 mb-1"
+          >
             {$_("resolutions.vote.proxyLabel")}
           </label>
           <input
@@ -323,7 +415,7 @@
 
   <div class="flex items-center gap-2">
     <button
-      onclick={showVotes ? () => showVotes = false : loadVotes}
+      onclick={showVotes ? () => (showVotes = false) : loadVotes}
       class="text-xs text-indigo-600 hover:text-indigo-800 underline"
       disabled={loadingVotes}
     >
@@ -343,7 +435,9 @@
         class="text-xs text-orange-600 hover:text-orange-800 underline ml-auto"
         data-testid="vote-close-btn"
       >
-        {closingVoting ? $_("resolutions.vote.closing") : $_("resolutions.vote.closeButton")}
+        {closingVoting
+          ? $_("resolutions.vote.closing")
+          : $_("resolutions.vote.closeButton")}
       </button>
     {/if}
   </div>
@@ -355,7 +449,9 @@
           <tr class="text-left text-xs text-gray-500 uppercase">
             <th scope="col" class="pb-2">{$_("resolutions.vote.voter")}</th>
             <th scope="col" class="pb-2">{$_("resolutions.vote.choice")}</th>
-            <th scope="col" class="pb-2 text-right">{$_("resolutions.vote.thousandths")}</th>
+            <th scope="col" class="pb-2 text-right"
+              >{$_("resolutions.vote.thousandths")}</th
+            >
             <th scope="col" class="pb-2 text-right">{$_("common.date")}</th>
           </tr>
         </thead>
@@ -363,24 +459,38 @@
           {#each votes as vote}
             <tr>
               <td class="py-1.5">
-                <span class="text-gray-900">{vote.owner_name || vote.owner_id.slice(0, 8)}</span>
+                <span class="text-gray-900"
+                  >{vote.owner_name || vote.owner_id.slice(0, 8)}</span
+                >
                 {#if vote.proxy_owner_id}
-                  <span class="text-xs text-gray-400 ml-1">({$_("resolutions.vote.proxy")})</span>
+                  <span class="text-xs text-gray-400 ml-1"
+                    >({$_("resolutions.vote.proxy")})</span
+                  >
                 {/if}
               </td>
               <td class="py-1.5">
-                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium {getChoiceColor(vote.choice)}">
+                <span
+                  class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium {getChoiceColor(
+                    vote.choice,
+                  )}"
+                >
                   {getChoiceLabel(vote.choice)}
                 </span>
               </td>
-              <td class="py-1.5 text-right text-gray-600">{vote.voting_power}</td>
-              <td class="py-1.5 text-right text-xs text-gray-400">{formatDateTime(vote.created_at)}</td>
+              <td class="py-1.5 text-right text-gray-600"
+                >{vote.voting_power}</td
+              >
+              <td class="py-1.5 text-right text-xs text-gray-400"
+                >{formatDateTime(vote.created_at)}</td
+              >
             </tr>
           {/each}
         </tbody>
       </table>
     </div>
   {:else if showVotes && votes.length === 0}
-    <p class="mt-3 text-xs text-gray-400 text-center">{$_("resolutions.vote.noVotes")}</p>
+    <p class="mt-3 text-xs text-gray-400 text-center">
+      {$_("resolutions.vote.noVotes")}
+    </p>
   {/if}
 </div>

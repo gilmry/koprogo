@@ -21,12 +21,28 @@ const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
  * large côté requête réseau pour rendre le test déterministe, sans changer
  * le code produit.
  */
+/**
+ * Force une page de liste assez grande pour contenir l'immeuble que le test
+ * vient de creer.
+ *
+ * Necessaire parce que la recherche de `BuildingList.svelte` est CLIENTE :
+ * `buildings.filter(...)` (l. 94) ne filtre que la page deja chargee, jamais
+ * la base. Un immeuble hors de la page courante est donc introuvable par la
+ * recherche — limitation produit reelle des qu'une ACP depasse une page.
+ *
+ * `per_page=500` ne suffisait plus : la base cible en comptait 609, le nouvel
+ * immeuble tombait hors page et `toHaveCount(1)` voyait 0. Le test passait en
+ * isolation et echouait en campagne, ce qui rendait le symptome trompeur.
+ *
+ * Un nombre fixe reste par nature fragile : il repousse le seuil, il ne le
+ * supprime pas. Le seul correctif de fond est une recherche cote serveur.
+ */
 async function forceLargePageSize(
   page: import("@playwright/test").Page,
 ): Promise<void> {
   await page.route("**/buildings?*", (route) => {
     const url = new URL(route.request().url());
-    url.searchParams.set("per_page", "500");
+    url.searchParams.set("per_page", "10000");
     route.continue({ url: url.toString() });
   });
 }

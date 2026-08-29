@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
 import type { Page } from "@playwright/test";
-import { loginAsSyndicWithBuilding } from "../helpers/auth";
+import { loginAsSyndicWithBuilding, adminLogin } from "../helpers/auth";
 
 const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
 
@@ -23,11 +23,7 @@ test.describe("Accounts - PCMN Belgian Chart of Accounts", () => {
   test("should seed Belgian PCMN accounts via API", async ({ page }) => {
     const { orgId } = await setupAccountant(page);
     // Use admin (superadmin) token for seeding
-    const adminResp = await page.request.post(`${API_BASE}/auth/login`, {
-      data: { email: "admin@koprogo.com", password: "admin123" },
-    });
-    const adminToken = (await adminResp.json()).token;
-
+    const adminToken = await adminLogin(page);
     const seedResp = await page.request.post(
       `${API_BASE}/accounts/seed/belgian-pcmn`,
       {
@@ -52,11 +48,7 @@ test.describe("Accounts - PCMN Belgian Chart of Accounts", () => {
 
   test("should find account by code", async ({ page }) => {
     const { token, orgId } = await setupAccountant(page);
-    const adminResp = await page.request.post(`${API_BASE}/auth/login`, {
-      data: { email: "admin@koprogo.com", password: "admin123" },
-    });
-    const adminToken = (await adminResp.json()).token;
-
+    const adminToken = await adminLogin(page);
     // Seed with admin token (superadmin required)
     await page.request.post(`${API_BASE}/accounts/seed/belgian-pcmn`, {
       data: { organization_id: orgId },

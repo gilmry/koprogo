@@ -48,6 +48,7 @@ import {
   type Page,
 } from "@playwright/test";
 import { setupContainerApiUrl } from "../../helpers/video-pace";
+import { uiLoginWithRetry, adminLogin } from "../../helpers/auth";
 
 const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
 const ADMIN_EMAIL = "admin@koprogo.com";
@@ -60,12 +61,11 @@ const TEST_PASSWORD = process.env.PLAYWRIGHT_TEST_PASSWORD || "test123456";
 
 /** Connexion admin → renvoie le bearer token superadmin. */
 async function loginAdmin(request: APIRequestContext): Promise<string> {
-  const resp = await request.post(`${API_BASE}/auth/login`, {
-    data: { email: ADMIN_EMAIL, password: ADMIN_PASSWORD },
-  });
-  expect(resp.status(), "admin login").toBe(200);
-  const body = await resp.json();
-  return body.token as string;
+  // Delegue au helper partage : jeton memorise pour toute la campagne, et
+  // reprise sur 429. Chaque copie locale reloguait sans cache et epuisait le
+  // plafond Traefik de 5 connexions/minute sur `/api/v1/auth/login`
+  // (symptome observe : « admin login — Expected: 200, Received: 429 »).
+  return adminLogin(request);
 }
 
 /** Crée un cabinet syndic (Organization). */
@@ -232,18 +232,9 @@ async function uiLogin(
   email: string,
   password: string,
 ): Promise<void> {
-  await page.goto("/login", { waitUntil: "networkidle" });
-  await page.getByTestId("login-email").fill(email);
-  await page.getByTestId("login-password").fill(password);
-  await page.getByTestId("login-submit").click();
-  // Attente du redirect vers le dashboard du rôle.
-  await page.waitForURL(/\/(admin|syndic|owner|accountant)/, {
-    timeout: 15_000,
-  });
-  // Wait jusqu'au prochain idle pour laisser le RouteGuard + silent-refresh
-  // se stabiliser (sinon le composant BuildingSelector peut être unmounted
-  // par un refresh tardif).
-  await page.waitForLoadState("networkidle");
+  // Delegue au helper partage : il reprend sur echec, ce qui absorbe le
+  // plafond Traefik de 5 connexions/minute sur `/api/v1/auth/login`.
+  await uiLoginWithRetry(page, email, password);
 }
 
 /**
@@ -302,6 +293,25 @@ async function logoutUi(page: Page): Promise<void> {
 // ---------------------------------------------------------------------------
 
 test.describe("Story 2.5 — slice 2 multi-role narratif", () => {
+  // Budget de temps releve a 90 s. Le defaut Playwright est de 30 s, pense
+  // pour un test unitaire d'ecran ; ce scenario narratif enchaine trois
+  // roles, leurs connexions et une dizaine de navigations.
+  //
+  // Mesures du 2026-08-27, pile locale identique a celle de la CI
+  // (backend construit depuis la branche, `astro dev`, 1 worker, 4 CPU) :
+  // ce test et ses voisins de meme nature se placent entre 28,5 s et 34 s,
+  // c'est-a-dire A CHEVAL sur la limite. Verifie par un controle : les
+  // versions `origin/main` des memes fichiers, rejouees sur la meme pile au
+  // meme CPU, tombent dans la meme bande et echouent elles aussi
+  // (contractor-eval 33,9 s, syndic-response-sla 33,1 s). Ce n'est donc pas
+  // une regression, c'est un budget mal dimensionne des l'origine, que seule
+  // la vitesse du runner masquait.
+  //
+  // AUCUNE assertion n'est touchee. Le test verifie un comportement, pas une
+  // latence : le rendre vert en lui laissant le temps de s'executer ne retire
+  // rien a ce qu'il controle.
+  test.describe.configure({ timeout: 90_000 });
+
   test.beforeEach(async ({ page }) => {
     // Permet le run in-container (CI ou agent worktree) : injecte
     // window.__ENV__.API_URL = $PLAYWRIGHT_API_BASE avant tout script de page,
@@ -568,10 +578,21 @@ test.describe("Story 2.5 — slice 2 multi-role narratif", () => {
 
     // Admin/superadmin voit le building non-conformant (gouvernance +
     // audit — pattern admin publishes conform but admin sees all).
-    // per_page=500 pour éviter la pagination écraser le building cible.
-    const listAdmin = await request.get(`${API_BASE}/buildings?per_page=500`, {
-      headers: { Authorization: `Bearer ${adminToken}` },
-    });
+    // Recherche SERVEUR par nom, pas pagination.
+    //
+    // `per_page=500` supposait que le building cree tienne dans la premiere
+    // page. La base d'integration en compte plus d'un millier : la cible en
+    // sortait et l'assertion echouait sur un defaut inexistant. Un plafond
+    // fixe repousse le seuil, il ne le supprime pas.
+    //
+    // `/buildings?search=` filtre cote serveur (BuildingSearchQuery), ce qui
+    // rend l'assertion independante du volume de la base.
+    const listAdmin = await request.get(
+      `${API_BASE}/buildings?per_page=500&search=${encodeURIComponent(buildingNonConform.name)}`,
+      {
+        headers: { Authorization: `Bearer ${adminToken}` },
+      },
+    );
     expect(listAdmin.status()).toBe(200);
     const bodyAdmin = await listAdmin.json();
     const itemsAdmin: Array<{ id: string }> = Array.isArray(bodyAdmin)
@@ -590,9 +611,12 @@ test.describe("Story 2.5 — slice 2 multi-role narratif", () => {
     // documenter le comportement actuel — ce qui révèle si le filtrage
     // s'applique au scope organisation ou seulement au rôle.
     const owner = await registerOwner(request, cabinet.id, "owner-neg");
-    const listOwner = await request.get(`${API_BASE}/buildings?per_page=500`, {
-      headers: { Authorization: `Bearer ${owner.token}` },
-    });
+    const listOwner = await request.get(
+      `${API_BASE}/buildings?per_page=500&search=${encodeURIComponent(buildingNonConform.name)}`,
+      {
+        headers: { Authorization: `Bearer ${owner.token}` },
+      },
+    );
     expect(
       [200, 403].includes(listOwner.status()),
       `owner list_buildings status: ${listOwner.status()} (200 si filtré, 403 si interdit)`,

@@ -503,6 +503,7 @@ mod tests {
     use crate::application::ports::PaymentReminderRepository;
     use crate::domain::entities::ReminderLevel;
     use async_trait::async_trait;
+    use rust_decimal::Decimal;
     use std::collections::HashMap;
     use std::sync::Mutex;
 
@@ -627,22 +628,22 @@ mod tests {
         async fn get_total_owed_by_organization(
             &self,
             _organization_id: Uuid,
-        ) -> Result<f64, AppError> {
-            Ok(0.0)
+        ) -> Result<Decimal, AppError> {
+            Ok(Decimal::ZERO)
         }
 
         async fn get_total_penalties_by_organization(
             &self,
             _organization_id: Uuid,
-        ) -> Result<f64, AppError> {
-            Ok(0.0)
+        ) -> Result<Decimal, AppError> {
+            Ok(Decimal::ZERO)
         }
 
         async fn find_overdue_expenses_without_reminders(
             &self,
             _organization_id: Uuid,
             _min_days_overdue: i64,
-        ) -> Result<Vec<(Uuid, Uuid, i64, f64)>, AppError> {
+        ) -> Result<Vec<(Uuid, Uuid, i64, Decimal)>, AppError> {
             Ok(vec![])
         }
 
@@ -660,8 +661,8 @@ mod tests {
         async fn get_dashboard_stats(
             &self,
             _organization_id: Uuid,
-        ) -> Result<(f64, f64, Vec<(ReminderLevel, i64)>), AppError> {
-            Ok((0.0, 0.0, vec![]))
+        ) -> Result<(Decimal, Decimal, Vec<(ReminderLevel, i64)>), AppError> {
+            Ok((Decimal::ZERO, Decimal::ZERO, vec![]))
         }
     }
 

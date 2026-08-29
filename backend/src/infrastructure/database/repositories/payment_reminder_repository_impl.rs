@@ -4,6 +4,7 @@ use crate::domain::entities::{DeliveryMethod, PaymentReminder, ReminderLevel, Re
 use crate::infrastructure::database::pool::DbPool;
 use async_trait::async_trait;
 use chrono::{DateTime, Utc};
+use rust_decimal::Decimal;
 use sqlx::Row;
 use uuid::Uuid;
 
@@ -156,7 +157,7 @@ impl PaymentReminderRepository for PostgresPaymentReminderRepository {
             r#"
             SELECT id, organization_id, expense_id, owner_id,
                    level::text AS level, status::text AS status,
-                   amount_owed::FLOAT8 AS amount_owed, penalty_amount::FLOAT8 AS penalty_amount, total_amount::FLOAT8 AS total_amount, due_date, days_overdue,
+                   amount_owed, penalty_amount, total_amount, due_date, days_overdue,
                    delivery_method::text AS delivery_method,
                    sent_date, opened_date, pdf_path, tracking_number, notes,
                    created_at, updated_at
@@ -177,7 +178,7 @@ impl PaymentReminderRepository for PostgresPaymentReminderRepository {
             r#"
             SELECT id, organization_id, expense_id, owner_id,
                    level::text AS level, status::text AS status,
-                   amount_owed::FLOAT8 AS amount_owed, penalty_amount::FLOAT8 AS penalty_amount, total_amount::FLOAT8 AS total_amount, due_date, days_overdue,
+                   amount_owed, penalty_amount, total_amount, due_date, days_overdue,
                    delivery_method::text AS delivery_method,
                    sent_date, opened_date, pdf_path, tracking_number, notes,
                    created_at, updated_at
@@ -199,7 +200,7 @@ impl PaymentReminderRepository for PostgresPaymentReminderRepository {
             r#"
             SELECT id, organization_id, expense_id, owner_id,
                    level::text AS level, status::text AS status,
-                   amount_owed::FLOAT8 AS amount_owed, penalty_amount::FLOAT8 AS penalty_amount, total_amount::FLOAT8 AS total_amount, due_date, days_overdue,
+                   amount_owed, penalty_amount, total_amount, due_date, days_overdue,
                    delivery_method::text AS delivery_method,
                    sent_date, opened_date, pdf_path, tracking_number, notes,
                    created_at, updated_at
@@ -224,7 +225,7 @@ impl PaymentReminderRepository for PostgresPaymentReminderRepository {
             r#"
             SELECT id, organization_id, expense_id, owner_id,
                    level::text AS level, status::text AS status,
-                   amount_owed::FLOAT8 AS amount_owed, penalty_amount::FLOAT8 AS penalty_amount, total_amount::FLOAT8 AS total_amount, due_date, days_overdue,
+                   amount_owed, penalty_amount, total_amount, due_date, days_overdue,
                    delivery_method::text AS delivery_method,
                    sent_date, opened_date, pdf_path, tracking_number, notes,
                    created_at, updated_at
@@ -249,7 +250,7 @@ impl PaymentReminderRepository for PostgresPaymentReminderRepository {
             r#"
             SELECT id, organization_id, expense_id, owner_id,
                    level::text AS level, status::text AS status,
-                   amount_owed::FLOAT8 AS amount_owed, penalty_amount::FLOAT8 AS penalty_amount, total_amount::FLOAT8 AS total_amount, due_date, days_overdue,
+                   amount_owed, penalty_amount, total_amount, due_date, days_overdue,
                    delivery_method::text AS delivery_method,
                    sent_date, opened_date, pdf_path, tracking_number, notes,
                    created_at, updated_at
@@ -275,7 +276,7 @@ impl PaymentReminderRepository for PostgresPaymentReminderRepository {
             r#"
             SELECT id, organization_id, expense_id, owner_id,
                    level::text AS level, status::text AS status,
-                   amount_owed::FLOAT8 AS amount_owed, penalty_amount::FLOAT8 AS penalty_amount, total_amount::FLOAT8 AS total_amount, due_date, days_overdue,
+                   amount_owed, penalty_amount, total_amount, due_date, days_overdue,
                    delivery_method::text AS delivery_method,
                    sent_date, opened_date, pdf_path, tracking_number, notes,
                    created_at, updated_at
@@ -298,7 +299,7 @@ impl PaymentReminderRepository for PostgresPaymentReminderRepository {
             r#"
             SELECT id, organization_id, expense_id, owner_id,
                    level::text AS level, status::text AS status,
-                   amount_owed::FLOAT8 AS amount_owed, penalty_amount::FLOAT8 AS penalty_amount, total_amount::FLOAT8 AS total_amount, due_date, days_overdue,
+                   amount_owed, penalty_amount, total_amount, due_date, days_overdue,
                    delivery_method::text AS delivery_method,
                    sent_date, opened_date, pdf_path, tracking_number, notes,
                    created_at, updated_at
@@ -322,7 +323,7 @@ impl PaymentReminderRepository for PostgresPaymentReminderRepository {
             r#"
             SELECT id, organization_id, expense_id, owner_id,
                    level::text AS level, status::text AS status,
-                   amount_owed::FLOAT8 AS amount_owed, penalty_amount::FLOAT8 AS penalty_amount, total_amount::FLOAT8 AS total_amount, due_date, days_overdue,
+                   amount_owed, penalty_amount, total_amount, due_date, days_overdue,
                    delivery_method::text AS delivery_method,
                    sent_date, opened_date, pdf_path, tracking_number, notes,
                    created_at, updated_at
@@ -349,7 +350,7 @@ impl PaymentReminderRepository for PostgresPaymentReminderRepository {
             r#"
             SELECT id, organization_id, expense_id, owner_id,
                    level::text AS level, status::text AS status,
-                   amount_owed::FLOAT8 AS amount_owed, penalty_amount::FLOAT8 AS penalty_amount, total_amount::FLOAT8 AS total_amount, due_date, days_overdue,
+                   amount_owed, penalty_amount, total_amount, due_date, days_overdue,
                    delivery_method::text AS delivery_method,
                    sent_date, opened_date, pdf_path, tracking_number, notes,
                    created_at, updated_at
@@ -372,7 +373,7 @@ impl PaymentReminderRepository for PostgresPaymentReminderRepository {
             r#"
             SELECT id, organization_id, expense_id, owner_id,
                    level::text AS level, status::text AS status,
-                   amount_owed::FLOAT8 AS amount_owed, penalty_amount::FLOAT8 AS penalty_amount, total_amount::FLOAT8 AS total_amount, due_date, days_overdue,
+                   amount_owed, penalty_amount, total_amount, due_date, days_overdue,
                    delivery_method::text AS delivery_method,
                    sent_date, opened_date, pdf_path, tracking_number, notes,
                    created_at, updated_at
@@ -417,10 +418,13 @@ impl PaymentReminderRepository for PostgresPaymentReminderRepository {
             .collect())
     }
 
-    async fn get_total_owed_by_organization(&self, organization_id: Uuid) -> Result<f64, AppError> {
+    async fn get_total_owed_by_organization(
+        &self,
+        organization_id: Uuid,
+    ) -> Result<Decimal, AppError> {
         let row = sqlx::query(
             r#"
-            SELECT COALESCE(SUM(amount_owed), 0.0)::FLOAT8 as total
+            SELECT COALESCE(SUM(amount_owed), 0) as total
             FROM payment_reminders
             WHERE organization_id = $1
               AND status NOT IN ('Paid'::reminder_status, 'Cancelled'::reminder_status)
@@ -437,10 +441,10 @@ impl PaymentReminderRepository for PostgresPaymentReminderRepository {
     async fn get_total_penalties_by_organization(
         &self,
         organization_id: Uuid,
-    ) -> Result<f64, AppError> {
+    ) -> Result<Decimal, AppError> {
         let row = sqlx::query(
             r#"
-            SELECT COALESCE(SUM(penalty_amount), 0.0)::FLOAT8 as total
+            SELECT COALESCE(SUM(penalty_amount), 0) as total
             FROM payment_reminders
             WHERE organization_id = $1
               AND status NOT IN ('Paid'::reminder_status, 'Cancelled'::reminder_status)
@@ -458,7 +462,7 @@ impl PaymentReminderRepository for PostgresPaymentReminderRepository {
         &self,
         organization_id: Uuid,
         min_days_overdue: i64,
-    ) -> Result<Vec<(Uuid, Uuid, i64, f64)>, AppError> {
+    ) -> Result<Vec<(Uuid, Uuid, i64, Decimal)>, AppError> {
         let rows = sqlx::query(
             r#"
             SELECT
@@ -488,15 +492,13 @@ impl PaymentReminderRepository for PostgresPaymentReminderRepository {
         .map_err(|e| format!("Database error finding overdue expenses: {}", e))?;
 
         rows.iter()
-            .map(|row| -> Result<(Uuid, Uuid, i64, f64), AppError> {
+            .map(|row| -> Result<(Uuid, Uuid, i64, Decimal), AppError> {
                 let expense_id: Uuid = row.try_get("expense_id")?;
                 let owner_id: Uuid = row.try_get("owner_id")?;
                 let days_overdue: i64 = row.try_get("days_overdue")?;
-                let amount_dec: rust_decimal::Decimal = row.try_get("amount")?;
-                let amount: f64 = {
-                    use rust_decimal::prelude::ToPrimitive;
-                    amount_dec.to_f64().unwrap_or(0.0)
-                };
+                // `expenses.amount` est NUMERIC : lu directement en Decimal,
+                // sans l'aller-retour `to_f64()` que faisait le code précédent.
+                let amount: Decimal = row.try_get("amount")?;
                 Ok((expense_id, owner_id, days_overdue, amount))
             })
             .collect()
@@ -552,7 +554,7 @@ impl PaymentReminderRepository for PostgresPaymentReminderRepository {
     async fn get_dashboard_stats(
         &self,
         organization_id: Uuid,
-    ) -> Result<(f64, f64, Vec<(ReminderLevel, i64)>), AppError> {
+    ) -> Result<(Decimal, Decimal, Vec<(ReminderLevel, i64)>), AppError> {
         let total_owed = self.get_total_owed_by_organization(organization_id).await?;
         let total_penalties = self
             .get_total_penalties_by_organization(organization_id)

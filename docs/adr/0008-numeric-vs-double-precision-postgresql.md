@@ -139,7 +139,7 @@ Any monetary amount, quote-part, or value feeding a **legal threshold**
 | Site                                                  | Value                                                         | Why f64 is acceptable                                                                                                                                                                                         |
 | ----------------------------------------------------- | ------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `resolution.rs` `pour/contre/abstention_percentage()` | % d'affichage calculé depuis des **comptes entiers** de votes | **Présentation seule.** Jamais persisté, jamais comparé à un seuil légal. Le chemin légal quorum/majorité utilise les comptes entiers / `Decimal` directement — **aucun aller-retour `Decimal→f64→Decimal`**. |
-| `vote.rs` proxy-validation ratio                      | ratio de quotités pour plafond de procurations                | Le **seuil** reste évalué en `Decimal` ; le `f64` éventuel est un indicateur dérivé non opposable. Invariant : la décision de rejet d'une procuration ne dépend que de comparaisons `Decimal`.                |
+| ~~`vote.rs` proxy-validation ratio~~ **RETIRÉ** (#661) | ~~ratio de quotités pour plafond de procurations~~             | **Sans objet** : `validate_proxy_mandate` a été supprimée (morte + juridiquement fausse). Cf. amendement 2026-08-26 §A. La règle vit dans `validate_proxy_limit`, déjà en `Decimal`.                          |
 | `challenge.rs:401` progression %                      | `current_value as f64 / target_value as f64 * 100`            | **Score de jeu non-PCMN** (gamification). Jamais un montant, jamais légal. Analogue au carve-out IoT (ADR-0009).                                                                                              |
 | `etat_date.unit_area`, `units.area_m2`                | surface m²                                                    | Mesure **physique**, pas un montant (ADR-0009 §physique).                                                                                                                                                     |
 | IoT / énergie (`iot_readings.value`, conso)           | mesures capteur                                               | ADR-0009 (déjà acté).                                                                                                                                                                                         |
@@ -207,3 +207,56 @@ un nouvel amendement signé, comme ci-dessus.
 
 🤖 Amendment drafted by backend agent (Tier 2 **proposal**) — acceptance =
 @gilmry en session. Traçé : `docs/agent-activity/2026-07-31-audit-433.md`.
+
+## Amendment 2026-08-26 — §B outillé, carve-out `vote.rs` retiré (Issue #661)
+
+- **Status of this amendment**: **Proposed** — acceptance = @gilmry au merge.
+- **Scope**: rend le §B vérifiable, et retire de la liste fermée §A un
+  carve-out devenu sans objet.
+
+### A. Le carve-out `vote.rs` proxy-validation est **retiré**
+
+La ligne « `vote.rs` proxy-validation ratio » de la liste fermée §A visait
+`validate_proxy_mandate`. Cette fonction est **supprimée** (#661) : elle était
+morte (référencée par ses seuls tests) et juridiquement fausse (elle cumulait
+en ET la limite de 3 mandats et le plafond de 10%, là où l'Art. 3.87 §7 fait du
+second une **exception** au premier). La règle est portée par
+`validate_proxy_limit` (`resolution_use_cases.rs:326`), en `Decimal` et
+réellement câblée. **Un carve-out de moins, sans rien perdre.**
+
+### B. Le §B n'est plus une affirmation, c'est un gate
+
+Le §B de l'amendement 2026-05-19 affirmait que « pour chaque chemin légal,
+aucune valeur de seuil ne transite par `f64` ». C'était **faux au moment où il
+a été écrit** : le quorum d'AG hybride (`AgSession`) comparait son seuil en
+`f64` sur un endpoint exposé, et l'a fait pendant des mois. La cause n'était
+pas l'inattention mais le mode d'application : §A confiait l'enforcement à
+« un `code-reviewer` [qui] rejette tout nouveau `f64` », donc à un humain.
+
+Depuis #661, l'invariant est tenu par **`scripts/check-no-f64-money.sh`**,
+exécuté dans le job `lint` de `ci.yml`. Il échoue sur tout `f64` dont le
+symbole appartient au lexique monétaire/quotité hors allowlist, et son
+allowlist **est** la liste fermée §A + ADR-0009.
+
+Conséquence pratique : **ajouter une ligne à cette allowlist sans amendement
+signé revient à modifier cet ADR en douce.** La revue doit traiter un diff sur
+ce script comme un diff sur ce document.
+
+### C. Dette `f64` monétaire connue et gelée (≠ carve-out)
+
+Le gate a révélé des `f64` monétaires que la liste fermée n'avait jamais
+couverts, et qui ne sont **pas** accordés — ils sont gelés dans l'allowlist
+avec la mention explicite « DETTE CONNUE ET TRACÉE », pour empêcher
+l'aggravation en attendant leur conversion :
+
+| Site                                                   | Nature                                                           |
+| ------------------------------------------------------ | ---------------------------------------------------------------- |
+| `payment_reminder` (entité, DTO, port, use case, repo) | Montants dus + **pénalités de retard au taux civil belge**       |
+| `work_report.cost`, `technical_inspection.cost`        | Coûts de travaux et d'inspections en euros                       |
+| `stats_dto.pending_expenses_amount`                    | Agrégat de dépenses en attente                                   |
+
+`payment_reminder` est le plus sensible : ce sont des sommes **réclamées à un
+copropriétaire**, avec un calcul de pénalité légale.
+
+🤖 Amendment drafted by backend agent (Tier 2 **proposal**) — acceptance =
+@gilmry au merge. Tracé : `docs/agent-activity/2026-08-26-issue661-quorum-decimal.md`.

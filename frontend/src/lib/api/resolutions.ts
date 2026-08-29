@@ -23,9 +23,15 @@ export interface Resolution {
   vote_count_pour: number;
   vote_count_contre: number;
   vote_count_abstention: number;
-  total_voting_power_pour: number;
-  total_voting_power_contre: number;
-  total_voting_power_abstention: number;
+  // `string`, PAS `number` : ces trois champs sont des `Decimal` cote Rust et
+  // `rust_decimal` les serialise en STRING JSON. Le contrat publie le dit
+  // explicitement (`docs/api/openapi.json` : « type: string — Decimal exact
+  // (ADR-0008), serialise en string JSON ») et les types generes dans
+  // `src/types/api.d.ts` aussi. Ce client ecrit a la main les declarait
+  // `number`, ce qui faisait concatener au lieu d'additionner.
+  total_voting_power_pour: string;
+  total_voting_power_contre: string;
+  total_voting_power_abstention: string;
   // Computed by backend
   total_votes: number;
   pour_percentage: number;
@@ -35,7 +41,7 @@ export interface Resolution {
   votes_pour?: number;
   votes_contre?: number;
   votes_abstention?: number;
-  total_voting_power?: number;
+  total_voting_power?: string;
   status: ResolutionStatus;
   voted_at?: string;
   created_at: string;

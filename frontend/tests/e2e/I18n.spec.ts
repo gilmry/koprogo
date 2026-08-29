@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { ensureAcp } from "./helpers/auth";
+import { adminLogin } from "./helpers/auth";
 
 /**
  * I18n (Internationalization) Tests
@@ -37,11 +38,7 @@ test.describe("I18n - Internationalization", () => {
       process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
     const timestamp = Date.now();
 
-    const adminLoginResp = await page.request.post(`${API_BASE}/auth/login`, {
-      data: { email: "admin@koprogo.com", password: "admin123" },
-    });
-    const adminToken = (await adminLoginResp.json()).token;
-
+    const adminToken = await adminLogin(page);
     const orgResp = await page.request.post(`${API_BASE}/organizations`, {
       data: {
         name: `I18n Test Org ${timestamp}`,
@@ -81,11 +78,7 @@ test.describe("I18n - Internationalization", () => {
       process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
     const timestamp = Date.now();
 
-    const adminLoginResp = await page.request.post(`${API_BASE}/auth/login`, {
-      data: { email: "admin@koprogo.com", password: "admin123" },
-    });
-    const adminToken = (await adminLoginResp.json()).token;
-
+    const adminToken = await adminLogin(page);
     const orgResp = await page.request.post(`${API_BASE}/organizations`, {
       data: {
         name: `Vlaams I18n Org ${timestamp}`,

@@ -24,6 +24,10 @@
  */
 import { test, expect, type APIRequestContext } from "@playwright/test";
 import { devices } from "@playwright/test";
+// Connexion admin mutualisee : `/auth/login` est plafonne a 5/min par
+// Traefik en production. Chaque copie locale de ce helper relogue sans
+// cache et epuise le seau (constate : « adminLogin failed: 429 »).
+import { adminLogin } from "../../helpers/auth";
 
 // Pixel 7 viewport pour la PWA contractor — proxy raisonnable pour la cible
 // (Android Chrome milieu de gamme). `test.use(...)` DOIT rester au top-level :
@@ -31,24 +35,11 @@ import { devices } from "@playwright/test";
 test.use({ ...devices["Pixel 7"] });
 
 const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
-const ADMIN_EMAIL = "admin@koprogo.com";
-const ADMIN_PASSWORD = "admin123";
 const TEST_PASSWORD = process.env.PLAYWRIGHT_TEST_PASSWORD || "test123456";
 
 // ---------------------------------------------------------------------------
 // API seed helpers — reuse the use-case path, never raw SQL.
 // ---------------------------------------------------------------------------
-
-async function adminLogin(request: APIRequestContext): Promise<string> {
-  const resp = await request.post(`${API_BASE}/auth/login`, {
-    data: { email: ADMIN_EMAIL, password: ADMIN_PASSWORD },
-  });
-  if (!resp.ok()) {
-    throw new Error(`adminLogin failed: ${resp.status()}`);
-  }
-  const body = await resp.json();
-  return body.token;
-}
 
 async function seedSyndicWithTicket(request: APIRequestContext): Promise<{
   syndicToken: string;

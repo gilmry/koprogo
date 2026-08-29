@@ -4,6 +4,8 @@ use crate::application::ports::{BudgetRepository, BudgetStatsResponse, BudgetVar
 use crate::domain::entities::{Budget, BudgetStatus, ExpenseCategory};
 use async_trait::async_trait;
 use chrono::Datelike;
+use rust_decimal::Decimal;
+use rust_decimal_macros::dec;
 use sqlx::postgres::PgRow;
 use sqlx::{PgPool, Row};
 use uuid::Uuid;
@@ -375,8 +377,8 @@ impl BudgetRepository for PostgresBudgetRepository {
                 COUNT(*) FILTER (WHERE status = 'approved') as approved_count,
                 COUNT(*) FILTER (WHERE status = 'rejected') as rejected_count,
                 COUNT(*) FILTER (WHERE status = 'archived') as archived_count,
-                COALESCE(AVG(total_budget), 0)::float8 as average_total_budget,
-                COALESCE(AVG(monthly_provision_amount), 0)::float8 as average_monthly_provision
+                COALESCE(AVG(total_budget), 0) as average_total_budget,
+                COALESCE(AVG(monthly_provision_amount), 0) as average_monthly_provision
             FROM budgets
             WHERE organization_id = $1
             "#,
@@ -408,13 +410,14 @@ impl BudgetRepository for PostgresBudgetRepository {
             None => return Ok(None),
         };
 
-        // L'analyse de variance (reporting) reste en f64 : la source de vérité
-        // monétaire (entité Budget) est en Decimal (Story H11, ADR-0007) ; on
-        // convertit uniquement ici, à la frontière du reporting analytique.
-        use rust_decimal::prelude::ToPrimitive;
-        let budget_ordinary = budget.ordinary_budget.to_f64().unwrap_or(0.0);
-        let budget_extraordinary = budget.extraordinary_budget.to_f64().unwrap_or(0.0);
-        let budget_total = budget.total_budget.to_f64().unwrap_or(0.0);
+        // Issue #661 — l'analyse de variance reste en `Decimal` de bout en bout.
+        // Le commentaire précédent justifiait une conversion `to_f64()` « à la
+        // frontière du reporting » : c'était précisément l'aller-retour
+        // Decimal→f64 que l'ADR-0008 §A interdit sur un montant, et il
+        // s'appliquait ici à des charges de copropriété.
+        let budget_ordinary = budget.ordinary_budget;
+        let budget_extraordinary = budget.extraordinary_budget;
+        let budget_total = budget.total_budget;
 
         // Get actual expenses for this budget's fiscal year and building
         let fiscal_year_start = format!("{}-01-01", budget.fiscal_year);
@@ -440,14 +443,13 @@ impl BudgetRepository for PostgresBudgetRepository {
         .await
         .map_err(|e| format!("Failed to get expenses: {}", e))?;
 
-        let mut actual_ordinary = 0.0;
-        let mut actual_extraordinary = 0.0;
+        let mut actual_ordinary = Decimal::ZERO;
+        let mut actual_extraordinary = Decimal::ZERO;
         let mut overrun_categories = Vec::new();
 
         for row in expense_rows {
             let category_str: String = row.get("category");
-            let amount_dec: rust_decimal::Decimal = row.try_get("total_amount")?;
-            let amount: f64 = amount_dec.to_f64().unwrap_or(0.0);
+            let amount: Decimal = row.try_get("total_amount")?;
 
             let category = match category_str.as_str() {
                 "utilities" => ExpenseCategory::Utilities,
@@ -474,33 +476,27 @@ impl BudgetRepository for PostgresBudgetRepository {
         let variance_total = budget_total - actual_total;
 
         // Calculate variance percentages
-        let variance_ordinary_pct = if budget_ordinary > 0.0 {
-            (variance_ordinary / budget_ordinary) * 100.0
-        } else {
-            0.0
+        let pct = |variance: Decimal, budget: Decimal| -> Decimal {
+            if budget > Decimal::ZERO {
+                (variance / budget) * dec!(100)
+            } else {
+                Decimal::ZERO
+            }
         };
+        let variance_ordinary_pct = pct(variance_ordinary, budget_ordinary);
+        let variance_extraordinary_pct = pct(variance_extraordinary, budget_extraordinary);
+        let variance_total_pct = pct(variance_total, budget_total);
 
-        let variance_extraordinary_pct = if budget_extraordinary > 0.0 {
-            (variance_extraordinary / budget_extraordinary) * 100.0
-        } else {
-            0.0
-        };
+        // Check for overruns (> 10%) — seuil comparé en Decimal (#661)
+        const OVERRUN_THRESHOLD_PCT: Decimal = dec!(-10);
+        let has_overruns = variance_ordinary_pct < OVERRUN_THRESHOLD_PCT
+            || variance_extraordinary_pct < OVERRUN_THRESHOLD_PCT
+            || variance_total_pct < OVERRUN_THRESHOLD_PCT;
 
-        let variance_total_pct = if budget_total > 0.0 {
-            (variance_total / budget_total) * 100.0
-        } else {
-            0.0
-        };
-
-        // Check for overruns (> 10%)
-        let has_overruns = variance_ordinary_pct < -10.0
-            || variance_extraordinary_pct < -10.0
-            || variance_total_pct < -10.0;
-
-        if variance_ordinary_pct < -10.0 {
+        if variance_ordinary_pct < OVERRUN_THRESHOLD_PCT {
             overrun_categories.push("Ordinary charges".to_string());
         }
-        if variance_extraordinary_pct < -10.0 {
+        if variance_extraordinary_pct < OVERRUN_THRESHOLD_PCT {
             overrun_categories.push("Extraordinary charges".to_string());
         }
 
@@ -516,9 +512,9 @@ impl BudgetRepository for PostgresBudgetRepository {
 
         // Project year-end total (linear projection)
         let projected_year_end_total = if months_elapsed > 0 {
-            (actual_total / months_elapsed as f64) * 12.0
+            (actual_total / Decimal::from(months_elapsed)) * dec!(12)
         } else {
-            0.0
+            Decimal::ZERO
         };
 
         Ok(Some(BudgetVarianceResponse {

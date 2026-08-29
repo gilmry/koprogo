@@ -575,9 +575,27 @@ pub async fn seed_belgian_pcmn(
             .with_error(err.clone())
             .log();
 
-            HttpResponse::BadRequest().json(serde_json::json!({
-                "error": err
-            }))
+            // « Deja seede » est un conflit d'etat, pas une requete malformee.
+            //
+            // `POST /organizations` seede deja le PCMN belge a la creation
+            // (organization_handlers.rs), donc pour toute organisation neuve
+            // cet endpoint explicite tombe systematiquement dans ce cas. Le
+            // collapser en 400 rendait l'appelant incapable de distinguer
+            // « rien a faire » d'une erreur reelle : le smoke e2e
+            // (Accounts.spec.ts) attendait deja [200, 409] et echouait sur ce
+            // seul point.
+            //
+            // Le use case renvoie un `String`, d'ou le test sur le contenu du
+            // message plutot que sur une variante d'erreur typee.
+            if err.contains("already has") {
+                HttpResponse::Conflict().json(serde_json::json!({
+                    "error": err
+                }))
+            } else {
+                HttpResponse::BadRequest().json(serde_json::json!({
+                    "error": err
+                }))
+            }
         }
     }
 }

@@ -684,22 +684,22 @@ mod tests {
             budget_id,
             fiscal_year: 2025,
             building_id,
-            budgeted_ordinary: 60000.0,
-            budgeted_extraordinary: 15000.0,
-            budgeted_total: 75000.0,
-            actual_ordinary: 45000.0,
-            actual_extraordinary: 20000.0,
-            actual_total: 65000.0,
-            variance_ordinary: 15000.0,
-            variance_extraordinary: -5000.0,
-            variance_total: 10000.0,
-            variance_ordinary_pct: 25.0,
-            variance_extraordinary_pct: -33.33,
-            variance_total_pct: 13.33,
+            budgeted_ordinary: dec!(60000),
+            budgeted_extraordinary: dec!(15000),
+            budgeted_total: dec!(75000),
+            actual_ordinary: dec!(45000),
+            actual_extraordinary: dec!(20000),
+            actual_total: dec!(65000),
+            variance_ordinary: dec!(15000),
+            variance_extraordinary: dec!(-5000),
+            variance_total: dec!(10000),
+            variance_ordinary_pct: dec!(25),
+            variance_extraordinary_pct: dec!(-33.33),
+            variance_total_pct: dec!(13.33),
             has_overruns: true,
             overrun_categories: vec!["Extraordinary".to_string()],
             months_elapsed: 8,
-            projected_year_end_total: 97500.0,
+            projected_year_end_total: dec!(97500),
         };
 
         let expected_variance = variance.clone();
@@ -718,9 +718,9 @@ mod tests {
         assert!(opt.is_some());
         let v = opt.unwrap();
         assert_eq!(v.budget_id, expected_variance.budget_id);
-        assert_eq!(v.budgeted_total, 75000.0);
-        assert_eq!(v.actual_total, 65000.0);
-        assert_eq!(v.variance_total, 10000.0);
+        assert_eq!(v.budgeted_total, dec!(75000));
+        assert_eq!(v.actual_total, dec!(65000));
+        assert_eq!(v.variance_total, dec!(10000));
         assert!(v.has_overruns);
         assert_eq!(v.overrun_categories, vec!["Extraordinary".to_string()]);
     }

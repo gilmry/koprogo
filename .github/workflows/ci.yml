@@ -71,6 +71,12 @@ jobs:
           cd backend
           cargo clippy --all-targets --all-features -- -D warnings
 
+      # Issue #661 — ADR-0008 §A : aucun montant / quote-part / valeur
+      # alimentant un seuil légal ne doit être en f64. Le gate est dans le job
+      # lint (pas de compilation requise, échoue en quelques secondes).
+      - name: ADR-0008 gate — no f64 on money or quotas
+        run: ./scripts/check-no-f64-money.sh
+
   test-unit:
     name: Unit Tests
     runs-on: ubuntu-latest
@@ -114,7 +120,21 @@ jobs:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
           POSTGRES_DB: koprogo_test
+        # --shm-size : le defaut Docker est 64 Mo, et PostgreSQL y alloue ses
+        # segments de memoire partagee. La migration
+        # `20260826000000_alter_payment_reminders_to_numeric` fait un
+        # `ALTER COLUMN TYPE` sur trois colonnes, donc une reecriture de table
+        # que PostgreSQL parallelise. Sous charge, la demande depasse les
+        # 64 Mo :
+        #
+        #   could not resize shared memory segment to 33554432 bytes:
+        #   No space left on device                        (SQLSTATE 53100)
+        #
+        # Constate le 2026-08-27 sur la base de test locale, sous une charge
+        # que mes propres campagnes paralleles avaient creee. Le risque en CI
+        # est faible mais reel, et le durcissement ne coute rien.
         options: >-
+          --shm-size=256m
           --health-cmd "pg_isready -U postgres"
           --health-interval 10s
           --health-timeout 5s
@@ -165,10 +185,144 @@ jobs:
           # --no-fail-fast: run ALL bdd*.rs binaries even if some panic, so the
           # full BDD picture surfaces in one CI run instead of one binary at a
           # time. Aligns with #524 (aggregate failures).
-          cargo test --no-fail-fast --test bdd --test bdd_governance --test bdd_financial --test bdd_operations --test bdd_community
+          #
+          # 2026-08-26 : ce commentaire disait « run ALL bdd*.rs » alors que la
+          # commande n'en listait que 5 sur 13. Les 8 manquants n'avaient JAMAIS
+          # tourné en CI — dont bdd_meeting_complete (WP-H3, Art. 3.87 §3-5),
+          # bdd_acp (Art. 3.84), bdd_building_conformity et bdd_voting_right,
+          # tous marqués « bloqueur légal FAIT » dans le WBS sur la foi d'une
+          # exécution locale ponctuelle. Mesurés un par un : 91/92 scénarios
+          # verts, 1 skipped, 0 échec. Ils s'exécutent en quelques secondes une
+          # fois compilés — c'est la compilation qui coûte, pas l'exécution.
+          cargo test --no-fail-fast \
+            --test bdd --test bdd_governance --test bdd_financial \
+            --test bdd_operations --test bdd_community \
+            --test bdd_acp --test bdd_building_conformity \
+            --test bdd_list_buildings_role_based --test bdd_meeting_complete \
+            --test bdd_portfolio --test bdd_validate_before_compute \
+            --test bdd_voting_right --test bdd_iot
+
+  coverage:
+    # Mesure de couverture — n'existait pas avant le 2026-08-26. `make coverage`
+    # était documenté dans CLAUDE.md mais appelait `cargo tarpaulin`, un outil
+    # qui n'était installé nulle part : la couverture de KoproGo n'avait donc
+    # jamais été mesurée, ni côté backend ni côté frontend.
+    #
+    # Non bloquant volontairement (`continue-on-error`) tant qu'aucun plancher
+    # n'est fixé : un seuil posé avant de connaître la valeur réelle bloque la
+    # CI sans rien apprendre. Le plancher se fixe une fois la pyramide branchée,
+    # juste sous la valeur constatée, et c'est à ce moment que le job devient
+    # bloquant.
+    name: Coverage (report only)
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: koprogo_test
+        # --shm-size : le defaut Docker est 64 Mo, et PostgreSQL y alloue ses
+        # segments de memoire partagee. La migration
+        # `20260826000000_alter_payment_reminders_to_numeric` fait un
+        # `ALTER COLUMN TYPE` sur trois colonnes, donc une reecriture de table
+        # que PostgreSQL parallelise. Sous charge, la demande depasse les
+        # 64 Mo :
+        #
+        #   could not resize shared memory segment to 33554432 bytes:
+        #   No space left on device                        (SQLSTATE 53100)
+        #
+        # Constate le 2026-08-27 sur la base de test locale, sous une charge
+        # que mes propres campagnes paralleles avaient creee. Le risque en CI
+        # est faible mais reel, et le durcissement ne coute rien.
+        options: >-
+          --shm-size=256m
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Setup Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: llvm-tools-preview
+
+      - name: Install cargo-llvm-cov
+        uses: taiki-e/install-action@cargo-llvm-cov
+
+      - name: Install sqlx-cli
+        run: cargo install sqlx-cli --no-default-features --features postgres
+
+      - name: Cache cargo registry
+        uses: actions/cache@v6
+        with:
+          path: ~/.cargo/registry
+          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Cache cargo index
+        uses: actions/cache@v6
+        with:
+          path: ~/.cargo/git
+          key: ${{ runner.os }}-cargo-index-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Setup test database
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/koprogo_test
+        run: |
+          cd backend
+          sqlx migrate run
+
+      - name: Backend coverage (unit + BDD)
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/koprogo_test
+        run: |
+          cd backend
+          mkdir -p ../coverage
+          # Les binaires d'intégration API (`e2e_*.rs`) ne sont PAS inclus ici :
+          # 59 binaires à instrumenter feraient exploser la durée du job. Ils
+          # rejoindront cette mesure quand ils seront eux-mêmes branchés à la CI.
+          cargo llvm-cov --lib --all-features \
+            --lcov --output-path ../coverage/backend.lcov \
+            --ignore-filename-regex '(tests/|/\.cargo/)'
+          cargo llvm-cov report --summary-only \
+            --ignore-filename-regex '(tests/|/\.cargo/)'
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+          cache: "npm"
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Frontend coverage (vitest v8)
+        run: |
+          cd frontend
+          npm ci
+          npm run test:unit:coverage
+
+      - name: Upload coverage reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage-reports
+          path: coverage/
+          retention-days: 14
 
   test-e2e:
-    name: E2E Tests
+    # Nom rectifié 2026-08-26 : ces tests montent l'application Actix EN MÉMOIRE
+    # (`test::init_service`) contre un PostgreSQL réel — vérifié sur les 59
+    # fichiers, aucun ne passe par un socket réseau. C'est de l'intégration API,
+    # pas du end-to-end. Le seul e2e réel du projet est Playwright (job
+    # `playwright`). Le nom `E2E Tests` a entretenu la confusion : il a laissé
+    # croire que 488 tests tournaient alors que la commande n'en jouait que 4.
+    name: Integration Tests (API)
     runs-on: ubuntu-latest
     services:
       postgres:
@@ -177,7 +331,21 @@ jobs:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
           POSTGRES_DB: koprogo_test
+        # --shm-size : le defaut Docker est 64 Mo, et PostgreSQL y alloue ses
+        # segments de memoire partagee. La migration
+        # `20260826000000_alter_payment_reminders_to_numeric` fait un
+        # `ALTER COLUMN TYPE` sur trois colonnes, donc une reecriture de table
+        # que PostgreSQL parallelise. Sous charge, la demande depasse les
+        # 64 Mo :
+        #
+        #   could not resize shared memory segment to 33554432 bytes:
+        #   No space left on device                        (SQLSTATE 53100)
+        #
+        # Constate le 2026-08-27 sur la base de test locale, sous une charge
+        # que mes propres campagnes paralleles avaient creee. Le risque en CI
+        # est faible mais reel, et le durcissement ne coute rien.
         options: >-
+          --shm-size=256m
           --health-cmd "pg_isready -U postgres"
           --health-interval 10s
           --health-timeout 5s
@@ -220,12 +388,79 @@ jobs:
           cd backend
           sqlx migrate run
 
-      - name: Run E2E tests
+      - name: Run integration tests (API)
         env:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/koprogo_test
         run: |
           cd backend
-          cargo test --test e2e
+          # Lot 1 des tests d'intégration API. `--test e2e` seul ne jouait que
+          # tests/e2e.rs (4 tests) et laissait dormir les 59 fichiers
+          # `e2e_*.rs` (488 tests) — dont `e2e_api_keys.rs`, qui aurait
+          # signalé dès sa première exécution que TOUS les endpoints de clés
+          # API répondaient 403 en production (bug de casse de rôle, corrigé
+          # dans ce même lot de commits).
+          #
+          # Élargissement par lots, pas d'un bloc : chaque binaire de test lie
+          # le crate entier, et compiler les 59 d'un coup demande plus de
+          # mémoire qu'un runner standard n'en a (mesuré : saturation à 7,6 Gio).
+          # Ce lot 1 rassemble les 6 harnais mesurés le 2026-08-26 : 97 tests,
+          # 97 verts après correction des 2 défauts trouvés (403 clés API, et un
+          # payload resté sur `organization_id` après la Story 1.2).
+          cargo test --no-fail-fast \
+            --test e2e --test e2e_ag_sessions --test e2e_buildings \
+            --test e2e_convocations --test e2e_gdpr --test e2e_payments \
+            --test e2e_api_keys
+          # Lot 2 — 13 harnais supplémentaires, 130 tests, mesurés verts le
+          # 2026-08-26. Aucun n'avait jamais été exécuté, ni en CI ni en local.
+          # Leur première exécution a mis au jour deux défauts produit :
+          #
+          #   * `/admin/security-incidents/overdue` répondait 404, avalé par
+          #     `/{incident_id}` déclaré avant lui dans `routes.rs`. C'est
+          #     l'endpoint des violations dépassant les 72 h de notification à
+          #     l'APD (RGPD Art. 33) : inatteignable en production.
+          #   * `/accounts/seed/belgian-pcmn` rendait 400 au lieu de 409 sur un
+          #     PCMN déjà seedé — cas systématique, `POST /organizations`
+          #     seedant déjà le plan comptable.
+          #
+          # `storage_s3` est le SEUL harnais qui exerce `S3Storage`, le
+          # fournisseur utilisé en production. `tests/common/mod.rs` câble
+          # `FileStorage` en dur : `e2e_documents` peut donc être vert sans
+          # jamais toucher le chemin de production. Il démarre MinIO via
+          # testcontainers, ce qui fonctionne nativement ici (cargo tourne sur
+          # le runner, pas dans un conteneur).
+          cargo test --no-fail-fast \
+            --test e2e_security_incidents --test e2e_resolutions \
+            --test e2e_meetings --test e2e_quotes --test e2e_tickets \
+            --test e2e_notifications --test e2e_payment_recovery \
+            --test e2e_budget --test e2e_notices --test e2e_skills \
+            --test e2e_invoices --test e2e_local_exchange \
+            --test e2e_documents --test storage_s3
+          # Lot 3 et 4 — 41 harnais supplementaires, mesures verts les
+          # 2026-08-26/27. Aucun n'avait jamais ete execute. Leur premiere
+          # execution a mis au jour quatre defauts produit de plus, dont deux
+          # de persistance : `tickets.work_order_sent_at` et
+          # `resolutions.agenda_item_index`, tous deux renseignes par le
+          # domaine et jamais ecrits en base.
+          cargo test --no-fail-fast \
+            --test e2e_auth --test e2e_consent --test e2e_accounts \
+            --test e2e_legal_api --test integration_unit_owner \
+            --test e2e_unit_owner --test e2e_marketplace --test e2e_polls \
+            --test e2e_owner_contributions --test e2e_organization_users \
+            --test e2e_individual_members --test e2e_gdpr_art30 \
+            --test e2e_gamification --test e2e_etat_date \
+            --test e2e_contractor_reports --test e2e_call_for_funds \
+            --test e2e_work_reports --test e2e_units --test e2e_two_factor \
+            --test e2e_technical_inspections
+          cargo test --no-fail-fast \
+            --test e2e_age_requests --test e2e_board --test e2e_board_dashboard \
+            --test e2e_charge_distribution --test e2e_dashboard \
+            --test e2e_energy_campaigns --test e2e_financial_reports \
+            --test e2e_gdpr_audit --test e2e_http --test e2e_iot \
+            --test e2e_journal_entries --test e2e_mcp_sse \
+            --test e2e_organizations --test e2e_owners --test e2e_public_syndic \
+            --test e2e_resolution_agenda --test e2e_resource_bookings \
+            --test e2e_second_convocation --test e2e_shared_objects \
+            --test e2e_users --test e2e_work_orders
 
   api-breaking-changes:
     name: API Breaking Change Detection (oasdiff)
@@ -466,7 +701,21 @@ jobs:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
           POSTGRES_DB: koprogo_test
+        # --shm-size : le defaut Docker est 64 Mo, et PostgreSQL y alloue ses
+        # segments de memoire partagee. La migration
+        # `20260826000000_alter_payment_reminders_to_numeric` fait un
+        # `ALTER COLUMN TYPE` sur trois colonnes, donc une reecriture de table
+        # que PostgreSQL parallelise. Sous charge, la demande depasse les
+        # 64 Mo :
+        #
+        #   could not resize shared memory segment to 33554432 bytes:
+        #   No space left on device                        (SQLSTATE 53100)
+        #
+        # Constate le 2026-08-27 sur la base de test locale, sous une charge
+        # que mes propres campagnes paralleles avaient creee. Le risque en CI
+        # est faible mais reel, et le durcissement ne coute rien.
         options: >-
+          --shm-size=256m
           --health-cmd "pg_isready -U postgres"
           --health-interval 10s
           --health-timeout 5s
@@ -560,13 +809,32 @@ jobs:
             sleep 2
           done
 
-      - name: Run Playwright smoke tests
+      # Nom rectifié 2026-08-26 : ce step s'intitulait « Run Playwright smoke
+      # tests » alors qu'il lance le projet `chromium`, dont la config porte
+      # `testIgnore: [/smoke\//, /scenarios\//, /characterization\//]` — il
+      # EXCLUT donc précisément smoke. Les 98 tests du projet `smoke` n'ont
+      # jamais tourné, et le diagnostic de #696 (« 109 échecs sur la smoke
+      # suite ») portait en réalité sur les specs de la racine.
+      - name: Run Playwright tests (chromium project)
         env:
           PLAYWRIGHT_BASE_URL: http://localhost:3000
           PLAYWRIGHT_API_BASE: http://localhost:8080/api/v1
         run: |
           cd frontend
           npx playwright test --project=chromium
+
+      # Le projet `smoke` (98 tests) est réintroduit en non bloquant : son état
+      # réel n'a jamais été mesuré en CI, et le rendre bloquant d'emblée
+      # casserait toutes les PR sur un héritage inconnu. Objectif : établir un
+      # plancher chiffré, puis basculer en bloquant (WP-D1 / #696).
+      - name: Run Playwright smoke project (report only)
+        continue-on-error: true
+        env:
+          PLAYWRIGHT_BASE_URL: http://localhost:3000
+          PLAYWRIGHT_API_BASE: http://localhost:8080/api/v1
+        run: |
+          cd frontend
+          npx playwright test --project=smoke || true
 
       - name: Seed scenario world for Documentation Vivante
         env:

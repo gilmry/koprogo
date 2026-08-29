@@ -116,9 +116,15 @@ Feature: IoT MQTT Home Assistant + BOINC Grid Computing
     And result_json is not empty
 
   Scenario: Poll status of a non-existent task
+    # Le scenario nommait la variante `TaskNotFound` de `GridParticipationError`,
+    # mais `poll_task` renvoie `Result<_, String>` : la variante est aplatie en
+    # texte avant d'atteindre le test, elle n'est donc pas observable a ce
+    # niveau. On assert sur le message, faute de mieux. A rebasculer sur la
+    # variante quand ce chemin passera a `AppError` (critere GO « aucun
+    # Result<_, String> », toujours ouvert au WBS).
     Given a task_id that does not exist in grid_tasks
     When I poll the task status
-    Then the poll fails with "TaskNotFound"
+    Then the poll fails with "Task not found"
 
   # ─────────────────────────────────────────────────────────────────────────────
   # REST API Endpoints

@@ -37,6 +37,7 @@ import {
   type Page,
 } from "@playwright/test";
 import { setupContainerApiUrl } from "../../helpers/video-pace";
+import { uiLoginWithRetry, adminLogin } from "../../helpers/auth";
 
 const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
 const ADMIN_EMAIL = "admin@koprogo.com";
@@ -48,12 +49,11 @@ const TEST_PASSWORD = process.env.PLAYWRIGHT_TEST_PASSWORD || "test123456";
 // ---------------------------------------------------------------------------
 
 async function loginAdmin(request: APIRequestContext): Promise<string> {
-  const resp = await request.post(`${API_BASE}/auth/login`, {
-    data: { email: ADMIN_EMAIL, password: ADMIN_PASSWORD },
-  });
-  expect(resp.status(), "admin login").toBe(200);
-  const body = await resp.json();
-  return body.token as string;
+  // Delegue au helper partage : jeton memorise pour toute la campagne, et
+  // reprise sur 429. Chaque copie locale reloguait sans cache et epuisait le
+  // plafond Traefik de 5 connexions/minute sur `/api/v1/auth/login`
+  // (symptome observe : « admin login — Expected: 200, Received: 429 »).
+  return adminLogin(request);
 }
 
 async function createOrg(
@@ -174,14 +174,9 @@ async function uiLogin(
   email: string,
   password: string,
 ): Promise<void> {
-  await page.goto("/login", { waitUntil: "networkidle" });
-  await page.getByTestId("login-email").fill(email);
-  await page.getByTestId("login-password").fill(password);
-  await page.getByTestId("login-submit").click();
-  await page.waitForURL(/\/(admin|syndic|owner|accountant)/, {
-    timeout: 15_000,
-  });
-  await page.waitForLoadState("networkidle");
+  // Delegue au helper partage : il reprend sur echec, ce qui absorbe le
+  // plafond Traefik de 5 connexions/minute sur `/api/v1/auth/login`.
+  await uiLoginWithRetry(page, email, password);
 }
 
 async function logoutUi(page: Page): Promise<void> {
@@ -206,6 +201,25 @@ async function logoutUi(page: Page): Promise<void> {
 // ---------------------------------------------------------------------------
 
 test.describe("Story B6 — SyndicResponse + SlaBadge (multi-rôle)", () => {
+  // Budget de temps releve a 90 s. Le defaut Playwright est de 30 s, pense
+  // pour un test unitaire d'ecran ; ce scenario narratif enchaine trois
+  // roles, leurs connexions et une dizaine de navigations.
+  //
+  // Mesures du 2026-08-27, pile locale identique a celle de la CI
+  // (backend construit depuis la branche, `astro dev`, 1 worker, 4 CPU) :
+  // ce test et ses voisins de meme nature se placent entre 28,5 s et 34 s,
+  // c'est-a-dire A CHEVAL sur la limite. Verifie par un controle : les
+  // versions `origin/main` des memes fichiers, rejouees sur la meme pile au
+  // meme CPU, tombent dans la meme bande et echouent elles aussi
+  // (contractor-eval 33,9 s, syndic-response-sla 33,1 s). Ce n'est donc pas
+  // une regression, c'est un budget mal dimensionne des l'origine, que seule
+  // la vitesse du runner masquait.
+  //
+  // AUCUNE assertion n'est touchee. Le test verifie un comportement, pas une
+  // latence : le rendre vert en lui laissant le temps de s'executer ne retire
+  // rien a ce qu'il controle.
+  test.describe.configure({ timeout: 90_000 });
+
   test.beforeEach(async ({ page }) => {
     await setupContainerApiUrl(page);
   });

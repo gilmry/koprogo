@@ -82,7 +82,29 @@ services:
       UPLOAD_DIR: /app/uploads
       S3_BUCKET: ${S3_BUCKET:-koprogo-documents}
       S3_REGION: ${S3_REGION:-us-east-1}
-      S3_ENDPOINT: ${S3_ENDPOINT:-http://minio:9000}
+      # `koprogo-minio` et NON `minio` : nom de conteneur, non ambigu.
+      #
+      # Le backend est attache a DEUX reseaux — `koprogo_koprogo-network` (avec
+      # son propre MinIO) et `ecosolva-web` (avec Traefik, et avec le MinIO de
+      # derniere-chance qui porte le meme alias de service `minio`). La
+      # resolution DNS de Docker sur un conteneur multi-reseaux ne garantit
+      # aucun ordre : en production, `minio` resolvait vers
+      # `derniere-chance-minio` (172.18.0.7), dont le seul bucket est `photos`.
+      #
+      # Consequence constatee le 2026-08-26 : tout upload de document
+      # repondait 500 (« Failed to upload object: service error »), le bucket
+      # `koprogo-documents` n'existant pas sur cette instance. Et si le bucket
+      # avait existe, les documents de copropriete — donnees personnelles au
+      # sens RGPD — auraient ete ecrits dans le stockage d'une AUTRE
+      # application hebergee sur la meme machine.
+      #
+      # Le conteneur `minio-bootstrap`, lui, n'est PAS multi-reseaux : il a
+      # donc toujours vise le bon MinIO, ce qui explique que le bucket existe
+      # bien cote koprogo alors que le backend ne le trouvait pas.
+      #
+      # `koprogo-minio` est le `container_name`, unique sur l'hote, resolu sans
+      # ambiguite (verifie : 172.19.0.3, bucket `koprogo-documents`).
+      S3_ENDPOINT: ${S3_ENDPOINT:-http://koprogo-minio:9000}
       S3_ACCESS_KEY: ${S3_ACCESS_KEY:-koprogo}
       S3_SECRET_KEY: ${S3_SECRET_KEY:?S3_SECRET_KEY manquant dans .env}
       S3_FORCE_PATH_STYLE: ${S3_FORCE_PATH_STYLE:-true}
@@ -197,7 +219,7 @@ services:
         condition: service_healthy
     environment:
       S3_BUCKET: ${S3_BUCKET:-koprogo-documents}
-      S3_ENDPOINT: ${S3_ENDPOINT:-http://minio:9000}
+      S3_ENDPOINT: ${S3_ENDPOINT:-http://koprogo-minio:9000}
       S3_ACCESS_KEY: ${S3_ACCESS_KEY:-koprogo}
       S3_SECRET_KEY: ${S3_SECRET_KEY:?S3_SECRET_KEY manquant dans .env}
     entrypoint: ["/bin/sh", "-c"]
