@@ -13,6 +13,7 @@
  * Duree video attendue : ~45-60 secondes (rythme humain)
  */
 import { test, expect } from "@playwright/test";
+import { nameContains } from "../helpers/name-match";
 import {
   humanLogin,
   humanClick,
@@ -62,7 +63,9 @@ test.describe("Scenario: Workflow d'approbation d'une facture", () => {
     });
     const buildings = await buildingsResp.json();
     const building = Array.isArray(buildings)
-      ? buildings.find((b: any) => b.name?.includes("Residence du Parc"))
+      ? buildings.find(
+          (b: any) => b.name && nameContains(b.name, "Résidence du Parc"),
+        )
       : null;
 
     if (building) {

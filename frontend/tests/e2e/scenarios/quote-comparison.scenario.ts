@@ -14,6 +14,7 @@
  * Duree video attendue : ~50-70 secondes (rythme humain)
  */
 import { test, expect } from "@playwright/test";
+import { nameContains, selectOptionByName } from "../helpers/name-match";
 import {
   humanLogin,
   humanClick,
@@ -63,7 +64,9 @@ test.describe("Scenario: Comparaison de devis entrepreneurs (Francois)", () => {
     });
     const buildings = await buildingsResp.json();
     const building = Array.isArray(buildings)
-      ? buildings.find((b: any) => b.name?.includes("Residence du Parc"))
+      ? buildings.find(
+          (b: any) => b.name && nameContains(b.name, "Résidence du Parc"),
+        )
       : null;
 
     if (building) {
@@ -203,17 +206,11 @@ test.describe("Scenario: Comparaison de devis entrepreneurs (Francois)", () => {
     if (await buildingSelect.isVisible({ timeout: 2000 }).catch(() => false)) {
       await buildingSelect.scrollIntoViewIfNeeded();
       await page.waitForTimeout(PACE.BEFORE_SELECT);
-      const options = await buildingSelect.locator("option").all();
-      for (const option of options) {
-        const text = await option.textContent();
-        if (text && text.includes("Residence du Parc")) {
-          const value = await option.getAttribute("value");
-          if (value) {
-            await buildingSelect.selectOption(value);
-            break;
-          }
-        }
-      }
+      await selectOptionByName(
+        buildingSelect,
+        "Résidence du Parc",
+        "quote-comparison.scenario.ts",
+      );
       await page.waitForTimeout(PACE.AFTER_SELECT);
     }
     await waitForSpinner(page);
