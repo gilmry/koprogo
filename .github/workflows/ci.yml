@@ -77,6 +77,15 @@ jobs:
       - name: ADR-0008 gate — no f64 on money or quotas
         run: ./scripts/check-no-f64-money.sh
 
+      # Angle mort du job « Contract Types Check » : il compare la spec à la
+      # source Rust, puis les types TS à la spec. Un endpoint ABSENT de la spec
+      # est absent des deux côtés — donc cohérent, donc invisible. C'est ainsi
+      # que les 16 endpoints payment-methods ont vécu hors contrat jusqu'à
+      # produire un 400 silencieux (#732). Ce gate mesure l'exhaustivité de la
+      # déclaration, pas sa cohérence. Cliquet : la dette ne doit pas croître.
+      - name: OpenAPI coverage gate — no new route outside the contract
+        run: ./scripts/check-openapi-coverage.sh
+
   test-unit:
     name: Unit Tests
     runs-on: ubuntu-latest
