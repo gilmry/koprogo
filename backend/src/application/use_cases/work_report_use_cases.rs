@@ -50,7 +50,7 @@ impl WorkReportUseCases {
             work_date,
             dto.cost,
             dto.warranty_type.clone(),
-        );
+        )?;
 
         let mut work_report = work_report;
         work_report.contractor_contact = dto.contractor_contact;
@@ -199,7 +199,7 @@ impl WorkReportUseCases {
             work_report.completion_date = Some(completion_date);
         }
         if let Some(cost) = dto.cost {
-            work_report.cost = cost;
+            work_report.set_cost(cost)?;
         }
         if let Some(invoice_number) = dto.invoice_number {
             work_report.invoice_number = Some(invoice_number);
@@ -306,6 +306,7 @@ mod tests {
     use crate::domain::entities::{WarrantyType, WorkReport, WorkType};
     use async_trait::async_trait;
     use chrono::Utc;
+    use rust_decimal_macros::dec;
     use std::sync::Arc;
     use tokio::sync::Mutex;
     use uuid::Uuid;
@@ -439,7 +440,7 @@ mod tests {
             contractor_contact: None,
             work_date,
             completion_date: None,
-            cost: 2500.0,
+            cost: dec!(2500.00),
             invoice_number: Some("INV-001".to_string()),
             notes: None,
             warranty_type: WarrantyType::Standard,
@@ -449,7 +450,7 @@ mod tests {
         assert!(result.is_ok());
         let resp = result.unwrap();
         assert_eq!(resp.title, "Elevator repair");
-        assert_eq!(resp.cost, 2500.0);
+        assert_eq!(resp.cost, dec!(2500.00));
         assert_eq!(resp.contractor_name, "Schindler");
         assert!(resp.is_warranty_valid);
     }
@@ -465,9 +466,10 @@ mod tests {
             WorkType::Maintenance,
             "Contractor A".to_string(),
             Utc::now(),
-            1000.0,
+            dec!(1000.00),
             WarrantyType::None,
-        );
+        )
+        .expect("cout de test valide");
         let report_id = report.id;
 
         let repo = Arc::new(MockWorkReportRepository::with_reports(vec![report]));
@@ -481,7 +483,7 @@ mod tests {
             contractor_contact: None,
             work_date: None,
             completion_date: None,
-            cost: Some(1500.0),
+            cost: Some(dec!(1500.00)),
             invoice_number: None,
             notes: None,
             warranty_type: None,
@@ -491,7 +493,7 @@ mod tests {
         assert!(result.is_ok());
         let resp = result.unwrap();
         assert_eq!(resp.title, "Updated title");
-        assert_eq!(resp.cost, 1500.0);
+        assert_eq!(resp.cost, dec!(1500.00));
     }
 
     #[tokio::test]
@@ -507,9 +509,10 @@ mod tests {
             WorkType::Repair,
             "C1".into(),
             Utc::now(),
-            100.0,
+            dec!(100.00),
             WarrantyType::None,
-        );
+        )
+        .expect("cout de test valide");
         let r2 = WorkReport::new(
             org_id,
             building_id,
@@ -518,9 +521,10 @@ mod tests {
             WorkType::Maintenance,
             "C2".into(),
             Utc::now(),
-            200.0,
+            dec!(200.00),
             WarrantyType::None,
-        );
+        )
+        .expect("cout de test valide");
         let r3 = WorkReport::new(
             org_id,
             other_building,
@@ -529,9 +533,10 @@ mod tests {
             WorkType::Emergency,
             "C3".into(),
             Utc::now(),
-            300.0,
+            dec!(300.00),
             WarrantyType::None,
-        );
+        )
+        .expect("cout de test valide");
 
         let repo = Arc::new(MockWorkReportRepository::with_reports(vec![r1, r2, r3]));
         let uc = WorkReportUseCases::new(repo);
@@ -558,9 +563,10 @@ mod tests {
             WorkType::Renovation,
             "C1".into(),
             Utc::now(),
-            5000.0,
+            dec!(5000.00),
             WarrantyType::Standard,
-        );
+        )
+        .expect("cout de test valide");
         // No warranty
         let r2 = WorkReport::new(
             org_id,
@@ -570,9 +576,10 @@ mod tests {
             WorkType::Maintenance,
             "C2".into(),
             Utc::now(),
-            100.0,
+            dec!(100.00),
             WarrantyType::None,
-        );
+        )
+        .expect("cout de test valide");
 
         let repo = Arc::new(MockWorkReportRepository::with_reports(vec![r1, r2]));
         let uc = WorkReportUseCases::new(repo);
@@ -599,9 +606,10 @@ mod tests {
             WorkType::Repair,
             "C1".into(),
             Utc::now(),
-            1000.0,
+            dec!(1000.00),
             WarrantyType::Standard,
-        );
+        )
+        .expect("cout de test valide");
         // Override warranty_expiry to 20 days from now
         r1.warranty_expiry = Utc::now() + chrono::Duration::days(20);
 
@@ -614,9 +622,10 @@ mod tests {
             WorkType::Renovation,
             "C2".into(),
             Utc::now(),
-            50000.0,
+            dec!(50000.00),
             WarrantyType::Decennial,
-        );
+        )
+        .expect("cout de test valide");
 
         let repo = Arc::new(MockWorkReportRepository::with_reports(vec![r1, r2]));
         let uc = WorkReportUseCases::new(repo);

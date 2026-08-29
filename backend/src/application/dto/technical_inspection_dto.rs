@@ -1,4 +1,17 @@
+//! Technical inspection DTOs — les montants utilisent `rust_decimal::Decimal`
+//! (ADR-0007/0008).
+//!
+//! `validator` ne sait pas borner un `Decimal` : l'invariant « coût ≥ 0 » que
+//! portait `#[validate(range(min = 0.0))]` descend dans le domaine
+//! (`TechnicalInspection::set_cost`), où il couvre tous les appelants et plus
+//! seulement la route HTTP.
+//!
+//! `serde::float_option` préserve la représentation JSON numérique (un
+//! `Decimal` nu sérialiserait en chaîne) ; `default` conserve le comportement
+//! « champ absent = non modifié » d'une mise à jour partielle.
+
 use crate::domain::entities::{InspectionStatus, InspectionType};
+use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 use validator::Validate;
 
@@ -35,8 +48,8 @@ pub struct CreateTechnicalInspectionDto {
 
     pub compliance_valid_until: Option<String>, // ISO 8601 format
 
-    #[validate(range(min = 0.0))]
-    pub cost: Option<f64>,
+    #[serde(default, with = "rust_decimal::serde::float_option")]
+    pub cost: Option<Decimal>,
 
     #[validate(length(max = 100))]
     pub invoice_number: Option<String>,
@@ -75,8 +88,8 @@ pub struct UpdateTechnicalInspectionDto {
 
     pub compliance_valid_until: Option<String>,
 
-    #[validate(range(min = 0.0))]
-    pub cost: Option<f64>,
+    #[serde(default, with = "rust_decimal::serde::float_option")]
+    pub cost: Option<Decimal>,
 
     #[validate(length(max = 100))]
     pub invoice_number: Option<String>,
@@ -104,7 +117,8 @@ pub struct TechnicalInspectionResponseDto {
     pub compliant: Option<bool>,
     pub compliance_certificate_number: Option<String>,
     pub compliance_valid_until: Option<String>,
-    pub cost: Option<f64>,
+    #[serde(default, with = "rust_decimal::serde::float_option")]
+    pub cost: Option<Decimal>,
     pub invoice_number: Option<String>,
     pub reports: Vec<String>,
     pub photos: Vec<String>,

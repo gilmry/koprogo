@@ -61,7 +61,7 @@ impl TechnicalInspectionUseCases {
         inspection.compliant = dto.compliant;
         inspection.compliance_certificate_number = dto.compliance_certificate_number;
         inspection.compliance_valid_until = compliance_valid_until;
-        inspection.cost = dto.cost;
+        inspection.set_cost(dto.cost)?;
         inspection.invoice_number = dto.invoice_number;
         inspection.notes = dto.notes;
 
@@ -246,7 +246,7 @@ impl TechnicalInspectionUseCases {
             inspection.compliance_valid_until = Some(compliance_valid_until);
         }
         if let Some(cost) = dto.cost {
-            inspection.cost = Some(cost);
+            inspection.set_cost(Some(cost))?;
         }
         if let Some(invoice_number) = dto.invoice_number {
             inspection.invoice_number = Some(invoice_number);
@@ -380,6 +380,7 @@ mod tests {
     use crate::application::ports::TechnicalInspectionRepository;
     use crate::domain::entities::{InspectionStatus, InspectionType, TechnicalInspection};
     use async_trait::async_trait;
+    use rust_decimal_macros::dec;
     use std::collections::HashMap;
     use std::sync::Mutex;
 
@@ -532,7 +533,7 @@ mod tests {
             compliant: None,
             compliance_certificate_number: None,
             compliance_valid_until: None,
-            cost: Some(450.0),
+            cost: Some(dec!(450.00)),
             invoice_number: Some("INV-2026-100".to_string()),
             notes: None,
         }
@@ -558,7 +559,7 @@ mod tests {
         assert_eq!(dto.title, "Inspection annuelle ascenseur");
         assert_eq!(dto.inspector_name, "Schindler Belgium");
         assert_eq!(dto.inspector_company, Some("Schindler SA".to_string()));
-        assert_eq!(dto.cost, Some(450.0));
+        assert_eq!(dto.cost, Some(dec!(450.00)));
         assert_eq!(dto.status, InspectionStatus::Scheduled);
         assert!(dto.reports.is_empty());
         assert!(dto.photos.is_empty());

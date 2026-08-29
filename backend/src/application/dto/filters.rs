@@ -80,8 +80,18 @@ pub struct WorkReportFilters {
     pub contractor_name: Option<String>,
     pub work_date_from: Option<DateTime<Utc>>,
     pub work_date_to: Option<DateTime<Utc>>,
-    pub min_cost: Option<f64>,
-    pub max_cost: Option<f64>,
+    // ADR-0008 : bornes de coût en `Decimal`, comme la colonne
+    // `work_reports.cost` qu'elles filtrent.
+    //
+    // ATTENTION — ces deux bornes, comme `warranty_type`, `contractor_name`,
+    // `work_date_from`, `work_date_to` et `warranty_active`, sont acceptées
+    // par l'API mais **jamais appliquées** : `work_report_repository_impl`
+    // ne lit que `building_id` et `work_type`. Un appelant qui passe
+    // `?min_cost=1000` reçoit la liste NON filtrée en croyant l'inverse.
+    // Défaut constaté en convertissant ces champs — tracé, non corrigé ici
+    // (le corriger demande 7 filtres + tests 4-cat, hors périmètre ADR-0008).
+    pub min_cost: Option<Decimal>,
+    pub max_cost: Option<Decimal>,
     pub warranty_active: Option<bool>,
 }
 

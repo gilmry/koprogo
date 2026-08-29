@@ -6,6 +6,7 @@ use crate::application::ports::StatsRepository;
 use crate::infrastructure::pool::DbPool;
 use async_trait::async_trait;
 use chrono::Utc;
+use rust_decimal::Decimal;
 use sqlx::Row;
 use uuid::Uuid;
 
@@ -217,7 +218,7 @@ impl StatsRepository for PostgresStatsRepository {
         .map_err(|e| e.to_string())?;
 
         let row = sqlx::query(
-            "SELECT COUNT(*) as count, COALESCE(SUM(amount)::float8, 0::float8) as total
+            "SELECT COUNT(*) as count, COALESCE(SUM(amount), 0::NUMERIC) as total
              FROM expenses e
              INNER JOIN buildings b ON e.building_id = b.id
              WHERE b.acp_id IN (SELECT id FROM acps WHERE organization_id = $1) AND e.payment_status = 'pending'",
@@ -227,7 +228,7 @@ impl StatsRepository for PostgresStatsRepository {
         .await
         .map_err(|e| e.to_string())?;
         let pending_count: i64 = row.try_get("count").unwrap_or(0);
-        let pending_total: f64 = row.try_get("total").unwrap_or(0.0);
+        let pending_total: Decimal = row.try_get("total").unwrap_or(Decimal::ZERO);
 
         let next_meeting_row = sqlx::query(
             "SELECT m.id, m.scheduled_date, b.name as building_name
@@ -291,7 +292,7 @@ impl StatsRepository for PostgresStatsRepository {
         .map_err(|e| e.to_string())?;
 
         let row = sqlx::query(
-            "SELECT COUNT(*) as count, COALESCE(SUM(amount)::float8, 0::float8) as total
+            "SELECT COUNT(*) as count, COALESCE(SUM(amount), 0::NUMERIC) as total
              FROM expenses e
              WHERE e.building_id IN (
                  SELECT DISTINCT u.building_id FROM units u
@@ -304,7 +305,7 @@ impl StatsRepository for PostgresStatsRepository {
         .await
         .map_err(|e| e.to_string())?;
         let pending_count: i64 = row.try_get("count").unwrap_or(0);
-        let pending_total: f64 = row.try_get("total").unwrap_or(0.0);
+        let pending_total: Decimal = row.try_get("total").unwrap_or(Decimal::ZERO);
 
         let next_meeting_row = sqlx::query(
             "SELECT m.id, m.scheduled_date, b.name as building_name

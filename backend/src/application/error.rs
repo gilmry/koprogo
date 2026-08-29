@@ -553,6 +553,24 @@ impl From<crate::domain::entities::CallForFundsError> for AppError {
     }
 }
 
+impl From<crate::domain::entities::WorkReportError> for AppError {
+    /// Un coût de travaux négatif est une erreur d'entrée client → 400
+    /// validation, **jamais** 500 Internal. Reprend l'invariant que portait
+    /// `#[validate(range(min = 0.0))]` sur le DTO avant la conversion Decimal
+    /// (ADR-0008, suite #661).
+    fn from(e: crate::domain::entities::WorkReportError) -> Self {
+        AppError::Validation(e.to_string())
+    }
+}
+
+impl From<crate::domain::entities::TechnicalInspectionError> for AppError {
+    /// Un coût d'inspection négatif est une erreur d'entrée client → 400
+    /// validation, **jamais** 500 Internal (ADR-0008, suite #661).
+    fn from(e: crate::domain::entities::TechnicalInspectionError) -> Self {
+        AppError::Validation(e.to_string())
+    }
+}
+
 impl From<crate::domain::entities::AcpError> for AppError {
     /// Une ACP malformée (nom vide / trop court / trop long, adresse vide)
     /// est une erreur d'entrée client → 400 validation, **jamais** 500

@@ -1,4 +1,22 @@
+//! Work report DTOs — les montants utilisent `rust_decimal::Decimal` (ADR-0007/0008).
+//!
+//! Deux notes qui expliquent les attributs serde ci-dessous :
+//!
+//! 1. `validator` ne sait pas borner un `Decimal` (`#[validate(range(...))]`
+//!    n'accepte que des littéraux flottants). L'invariant « coût ≥ 0 » descend
+//!    donc dans le domaine — `WorkReport::new` / `WorkReport::set_cost` — où il
+//!    couvre tous les appelants et plus seulement la route HTTP.
+//!
+//! 2. Un `Decimal` nu sérialise en **chaîne** JSON (`"1500.00"`), là où le type
+//!    d'avant produisait un nombre (`1500.0`). `serde::float` /
+//!    `serde::float_option` préservent la représentation numérique : la
+//!    conversion ne provoque donc AUCUN drift de contrat API. Le `default` sur
+//!    les champs optionnels est indispensable : `#[serde(with = ...)]` fait
+//!    perdre le défaut implicite d'un `Option` absent, et un `cost` omis dans
+//!    une mise à jour partielle deviendrait un 400 « missing field ».
+
 use crate::domain::entities::{WarrantyType, WorkType};
+use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 use validator::Validate;
 
@@ -24,8 +42,8 @@ pub struct CreateWorkReportDto {
     pub work_date: String,               // ISO 8601 format
     pub completion_date: Option<String>, // ISO 8601 format
 
-    #[validate(range(min = 0.0))]
-    pub cost: f64,
+    #[serde(with = "rust_decimal::serde::float")]
+    pub cost: Decimal,
 
     #[validate(length(max = 100))]
     pub invoice_number: Option<String>,
@@ -53,8 +71,8 @@ pub struct UpdateWorkReportDto {
     pub work_date: Option<String>,
     pub completion_date: Option<String>,
 
-    #[validate(range(min = 0.0))]
-    pub cost: Option<f64>,
+    #[serde(default, with = "rust_decimal::serde::float_option")]
+    pub cost: Option<Decimal>,
 
     #[validate(length(max = 100))]
     pub invoice_number: Option<String>,
@@ -75,7 +93,8 @@ pub struct WorkReportResponseDto {
     pub contractor_contact: Option<String>,
     pub work_date: String,
     pub completion_date: Option<String>,
-    pub cost: f64,
+    #[serde(with = "rust_decimal::serde::float")]
+    pub cost: Decimal,
     pub invoice_number: Option<String>,
     pub photos: Vec<String>,
     pub documents: Vec<String>,

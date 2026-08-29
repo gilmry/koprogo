@@ -3,6 +3,7 @@ use crate::application::dto::{
 };
 use crate::application::error::AppError;
 use crate::application::ports::StatsRepository;
+use rust_decimal::Decimal;
 use std::sync::Arc;
 use uuid::Uuid;
 
@@ -41,7 +42,7 @@ impl StatsUseCases {
                 total_units: 0,
                 total_owners: 0,
                 pending_expenses_count: 0,
-                pending_expenses_amount: 0.0,
+                pending_expenses_amount: Decimal::ZERO,
                 next_meeting: None,
             }),
             Some(owner_id) => self.repo.get_owner_stats(owner_id).await,
@@ -60,6 +61,7 @@ impl StatsUseCases {
 mod tests {
     use super::*;
     use async_trait::async_trait;
+    use rust_decimal_macros::dec;
 
     struct MockStatsRepository {
         owner_id: Option<Uuid>,
@@ -101,7 +103,7 @@ mod tests {
                 total_units: 10,
                 total_owners: 8,
                 pending_expenses_count: 3,
-                pending_expenses_amount: 1500.0,
+                pending_expenses_amount: dec!(1500.00),
                 next_meeting: None,
             })
         }
@@ -111,7 +113,7 @@ mod tests {
                 total_units: 2,
                 total_owners: 5,
                 pending_expenses_count: 1,
-                pending_expenses_amount: 500.0,
+                pending_expenses_amount: dec!(500.00),
                 next_meeting: None,
             })
         }
