@@ -5,6 +5,8 @@
 #[path = "common/acp_test_helper.rs"]
 mod acp_test_helper;
 use acp_test_helper::ensure_default_acp_for_org;
+use rust_decimal::Decimal;
+use rust_decimal_macros::dec;
 
 use chrono::{DateTime, Duration as ChronoDuration, Utc};
 use cucumber::{gherkin::Step, given, then, when, World};
@@ -3165,7 +3167,7 @@ async fn when_create_work_report(world: &mut OperationsWorld, step: &Step) {
         contractor_contact: None,
         work_date: format!("{}T00:00:00Z", start_date),
         completion_date: end_date.map(|d| format!("{}T00:00:00Z", d)),
-        cost: 10000.0,
+        cost: dec!(10000.00),
         invoice_number: None,
         notes: None,
         warranty_type,
@@ -3198,7 +3200,7 @@ async fn given_work_report_exists(world: &mut OperationsWorld) {
         contractor_contact: None,
         work_date: "2026-01-15T00:00:00Z".to_string(),
         completion_date: Some("2026-02-15T00:00:00Z".to_string()),
-        cost: 5000.0,
+        cost: dec!(5000.00),
         invoice_number: None,
         notes: None,
         warranty_type: WarrantyType::Standard,
@@ -3251,7 +3253,7 @@ async fn given_n_work_reports_building(world: &mut OperationsWorld, count: usize
             contractor_contact: None,
             work_date: format!("2026-01-{:02}T00:00:00Z", (i + 1).min(28)),
             completion_date: None,
-            cost: 1000.0 * (i + 1) as f64,
+            cost: dec!(1000.00) * Decimal::from(i + 1),
             invoice_number: None,
             notes: None,
             warranty_type: WarrantyType::Standard,
@@ -3294,7 +3296,7 @@ async fn given_warranties_exist(world: &mut OperationsWorld) {
             contractor_contact: None,
             work_date: "2025-06-01T00:00:00Z".to_string(),
             completion_date: Some("2025-07-01T00:00:00Z".to_string()),
-            cost: 5000.0,
+            cost: dec!(5000.00),
             invoice_number: None,
             notes: None,
             warranty_type: wt,
@@ -3342,7 +3344,7 @@ async fn given_expiring_warranty(world: &mut OperationsWorld) {
         contractor_contact: None,
         work_date: work_date.to_rfc3339(),
         completion_date: Some(work_date.to_rfc3339()),
-        cost: 3000.0,
+        cost: dec!(3000.00),
         invoice_number: None,
         notes: None,
         warranty_type: WarrantyType::Standard,
@@ -3601,7 +3603,7 @@ async fn when_create_inspection(world: &mut OperationsWorld, step: &Step) {
         compliant: Some(true),
         compliance_certificate_number: None,
         compliance_valid_until: next_inspection.map(|d| format!("{}T00:00:00Z", d)),
-        cost: Some(500.0),
+        cost: Some(dec!(500.00)),
         invoice_number: None,
         notes: None,
     };
@@ -3643,7 +3645,7 @@ async fn given_inspection_exists(world: &mut OperationsWorld) {
         compliant: Some(true),
         compliance_certificate_number: None,
         compliance_valid_until: None,
-        cost: Some(500.0),
+        cost: Some(dec!(500.00)),
         invoice_number: None,
         notes: None,
     };

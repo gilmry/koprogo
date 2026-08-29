@@ -45,7 +45,7 @@ async fn create_test_unit(
     building_id: &str,
 ) -> UnitResponseDto {
     let dto = CreateUnitDto {
-        acp_id: acp_id.to_string(),
+        acp_id: Some(acp_id.to_string()),
         building_id: building_id.to_string(),
         unit_number: format!("A{}", Uuid::new_v4().to_string()[..4].to_uppercase()),
         unit_type: UnitType::Apartment,

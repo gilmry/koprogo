@@ -223,6 +223,10 @@ pub async fn update_acp(
         (status = 204, description = "ACP archived"),
         (status = 403, description = "Forbidden / out of scope"),
         (status = 404, description = "Not found"),
+        (
+            status = 409,
+            description = "ACP still carries buildings — detach or delete them first"
+        ),
     ),
     security(("bearer_auth" = []))
 )]

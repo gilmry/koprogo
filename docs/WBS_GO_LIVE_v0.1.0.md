@@ -100,6 +100,51 @@ Légende : Tier 1 = humain exécute (agent diagnostique/propose). Taille S≤0.5
   - `5d2a7ae` #550 strate 2 v3 — `apiFetch` attend le refresh in-flight si pas de token (composants `client:load` qui mountent et appellent `api.get` avant `init()` complet). Validé en live console (0 erreur 401 cascade).
     **Différé** : strate 3 (Resolutions/Invoices/Notifications/AdminDashBoard tests qui passent shared helper mais échouent encore — issue #550 garde la trace). Plancher smoke à confirmer en CI post-merge feature/dev→dev.
 
+  **Session 2026-08-29 — le bloc de 11 échauffés est décomposé (PR #730).**
+
+  Deux constats invalident la formulation ci-dessus, mesurés sur trois runs CI
+  (`33062485058`, `33236027844`, `33239341373`) aux chiffres **identiques** —
+  donc déterministes, pas instables :
+
+  1. **L'occurrence de #696 (109 échecs, 2026-08-08) ne s'est pas reproduite.**
+     Le régime courant est `11 failed · 260 passed · 98 passed`. La question
+     explicitement ouverte de l'issue (« à confirmer si observé de façon
+     répétée ») est tranchée : non. La piste « dégradation du serveur Vite sous
+     charge » n'a pas lieu d'être poursuivie pour cet écart.
+
+  2. **Le plancher « smoke ≈219/240 » visait la mauvaise cible.** Le projet
+     `smoke` est à **zéro échec** — sa docstring le dit, il teste des contrats
+     d'API, sans navigation UI. Les 11 échecs sont tous dans `[scenarios]`.
+
+  **Et « 11 échecs » n'est pas 11 problèmes** : ce sont ~11 tests portant
+  chacun une *chaîne* de blocages successifs. Chaque correctif fait avancer le
+  test jusqu'au suivant ; le total ne baisse qu'une fois une chaîne entièrement
+  dégagée. Exemple mesuré sur `budget-workflow` : `nav-link-budgets` →
+  `budget-row` → `text=2026` (deux blocages levés, le budget est désormais
+  réellement créé, le `POST /budgets` part).
+
+  Cinq causes distinctes, nommées — trois corrigées, deux arbitrages produit :
+
+  | # | Cause | État |
+  |---|---|---|
+  | 1 | `RoleSubmenu.svelte` range les liens dans un `<details>` replié : enfants présents dans le DOM mais **invisibles**, `click` attend 30 s. `defaultOpen` n'est passé par aucun appelant. | **corrigé** — `expandCollapsedSection` |
+  | 2 | `slugify()` retire les diacritiques : le testid est `nav-link-assemblees`, le test l'attendait accentué. | **corrigé** |
+  | 3 | Le seeder crée « Résidence du Parc Royal » ; 7 scénarios cherchaient « Residence du Parc » sans accent, **en silence** (`for…of` sans correspondance, `if (building)` sauté). D'où : formulaire soumis, aucun `POST`, échec 15 s plus tard sur une liste vide, en accusant l'affichage. | **corrigé** — `helpers/name-match.ts`, échec bruyant |
+  | 4 | `nav-link-immeubles` (SuperAdmin) : `canSee` ne donne le menu `gestion` aux admins qu'en mode in-context, et `getAdminItems` n'a aucune entrée Immeubles. | **arbitrage produit** |
+  | 5 | `nav-link-assemblees` (Alice, owner) : `canSee` ne donne aux copropriétaires que le menu `communaute`. | **arbitrage produit** |
+
+  Les causes 4 et 5 **ne sont pas des bugs** : les scénarios contredisent des
+  règles de visibilité délibérées et commentées. Les corriger revient à décider
+  *ce que les scénarios racontent* — décision PO, pas correctif d'agent.
+
+  Le reste des échecs porte sur des **données de scénario**, pas sur l'UI :
+  sujet distinct, à traiter avec les seeds.
+
+  **Défaut annexe tracé** : le teardown CI supprime `residence-parc-royal-test`
+  alors que le seeder crée « Résidence du Parc Royal » — `ℹ️ No scenario world
+  found to clear` à chaque run. Le nettoyage ne nettoie rien, le monde survit
+  d'un run à l'autre.
+
 - **WP-D2 — Câbler vitest au gate** · #343 · T2 · S-M
   Job `vitest` existe (`ci.yml:402`) ; couvrir auth store (WP-FE1) + composants convocation/réunion @happy/@negative ; cible = composants critiques bêta (pas 181/181). Deps : WP-FE1, WP-FE2.
 
@@ -553,6 +598,55 @@ Baseline observée Phase A (slice 3 BE = 9 stories, ~ 1,8 M tokens consommés se
 3. **La dette `f64` monétaire hors quorum est entamée.** Le gate a révélé des montants en `f64` que la liste fermée ADR-0008 §A n'avait jamais couverts. Le plus sensible — `payment_reminder`, c'est-à-dire des **sommes réclamées à un copropriétaire** avec pénalités au taux légal civil belge — a été résorbé dans la foulée (migration `20260826000000`, branche `story/661-followup-payment-reminder-decimal`, journal `2026-08-26-payment-reminder-decimal.md`). Au passage, sa contrainte `CHECK (total_amount = amount_owed + penalty_amount)` était une **égalité flottante exacte**, capable de rejeter une ligne valide de façon non reproductible.
 
 **Ce qui reste réellement ouvert vers le tag v0.1.0** : D1 (plancher Playwright, borné par #696), la revue humaine fraîche G1, le tag G2, et les drills F3. Plus le reliquat de dette `f64` monétaire — `work_report.cost`, `technical_inspection.cost`, `filters.min_cost`/`max_cost`, `stats_dto.pending_expenses_amount` — désormais **gelé et visible** par le gate CI plutôt qu'invisible.
+
+### Session 2026-08-29 — reliquat `f64` monétaire résorbé (vérification INCOMPLÈTE)
+
+Le reliquat listé juste au-dessus a été traité sur la branche
+`story/661-followup-work-report-inspection-decimal` : `work_report.cost` et
+`technical_inspection.cost` passés en `NUMERIC(12,2)` (migration
+`20260829000000`, rejouée sur base réelle), `filters.min_cost`/`max_cost` et
+`stats_dto.pending_expenses_amount` en `Decimal`, deux casts
+`SUM(amount)::float8` retirés du tableau de bord alors qu'`expenses.amount`
+est `NUMERIC` depuis `20260502000000`. Invariant « coût ≥ 0 » descendu du DTO
+vers le domaine (erreurs typées → 400). 22 tests 4-cat ajoutés. Les six
+entrées sont retirées de l'allowlist de `check-no-f64-money.sh`, dont la
+rubrique « DETTE CONNUE ET TRACÉE » est désormais **vide**.
+
+Détail : `docs/agent-activity/2026-08-29-work-report-inspection-decimal.md`.
+
+**Vérifié, tout exécuté pour de vrai** (aucun résultat déduit) :
+
+| Contrôle | Résultat |
+| --- | --- |
+| `cargo test --lib` | **1684 passed, 0 failed**, 8 ignored |
+| `cargo clippy --all-targets --all-features -- -D warnings` | exit 0, aucun avertissement |
+| `cargo run --bin export_openapi` + diff | **aucun drift** vs `docs/api/openapi.json` |
+| `cargo check --all-targets` | exit 0, aucun avertissement |
+| `cargo fmt --check` | propre |
+| `scripts/check-no-f64-money.sh` | vert **avec l'allowlist vidée** |
+| Migration rejouée sur base neuve | contraintes en `numeric`, sans cast résiduel ni doublon, données préservées |
+
+Le gate ADR-0008 qui passe *après* suppression des six entrées est la preuve
+utile : ce n'est pas une affirmation, c'est le script qui refuserait de passer
+si un `f64` monétaire subsistait.
+
+**Contrainte d'outillage rencontrée, utile pour la suite** : `cargo test` se
+fait tuer par l'OOM killer (exit 137) aux réglages par défaut sur cette
+machine — 7,6 Gio de RAM, soit exactement la saturation mesurée en
+`b1b6648e`. `check` passe car il ne lie aucun binaire ; `test` doit en lier
+un, et chaque harnais lie la crate entière. Contournement figé dans
+`~/bin/kcargo-lean` : `-j 2` + `CARGO_PROFILE_TEST_DEBUG=0`.
+
+**Deux défauts trouvés au passage, tracés et NON corrigés** :
+
+1. `WorkReportFilters` expose 9 champs, `work_report_repository_impl` n'en
+   applique que 2 (`building_id`, `work_type`). `min_cost`, `max_cost`,
+   `warranty_type`, `contractor_name`, `work_date_from`, `work_date_to` et
+   `warranty_active` sont acceptés par l'API puis **silencieusement ignorés**.
+   Un filtre qui ment est pire qu'un filtre absent.
+2. `InspectionList.svelte:78` / `InspectionDetail.svelte:98` envoient
+   `cost: form.cost || undefined` — `0` étant falsy, un coût de zéro devient
+   « champ non fourni », alors que le domaine l'accepte explicitement.
 
 ### Clôture de session 2026-08-21 — état final et items définitivement hors de portée
 

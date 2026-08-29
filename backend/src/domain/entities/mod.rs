@@ -149,7 +149,9 @@ pub use syndic_response::{
     sla_window_for_severity, SyndicResponse, ALLOWED_ACTIONS, MAX_RESPONSE_BODY_LEN,
     MIN_RESPONSE_BODY_LEN,
 };
-pub use technical_inspection::{InspectionStatus, InspectionType, TechnicalInspection};
+pub use technical_inspection::{
+    InspectionStatus, InspectionType, TechnicalInspection, TechnicalInspectionError,
+};
 pub use technical_spec::{
     SemVer, SignatoryRole, TechnicalSpec, TechnicalSpecSignature, TechnicalSpecStatus,
     MAX_ATTACHMENTS as TECH_SPEC_MAX_ATTACHMENTS, MAX_DELIVERABLES as TECH_SPEC_MAX_DELIVERABLES,
@@ -172,4 +174,4 @@ pub use unit_owner::{
 pub use user::{User, UserRole};
 pub use user_role_assignment::UserRoleAssignment;
 pub use vote::{Vote, VoteChoice};
-pub use work_report::{WarrantyType, WorkReport, WorkType};
+pub use work_report::{WarrantyType, WorkReport, WorkReportError, WorkType};

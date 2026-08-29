@@ -68,7 +68,7 @@ test.describe("Scenario: Vote multi-role sur une resolution en AG", () => {
     await stepPause(page);
 
     // Navigation vers les Assemblees
-    await humanClick(page, "nav-link-assemblées");
+    await humanClick(page, "nav-link-assemblees");
     await waitForSpinner(page);
     await page.waitForTimeout(PACE.AFTER_NAVIGATION);
 
@@ -111,7 +111,7 @@ test.describe("Scenario: Vote multi-role sur une resolution en AG", () => {
     await stepPause(page);
 
     // Alice navigue vers les assemblees
-    await humanClick(page, "nav-link-assemblées");
+    await humanClick(page, "nav-link-assemblees");
     await waitForSpinner(page);
     await page.waitForTimeout(PACE.AFTER_NAVIGATION);
 
@@ -184,7 +184,7 @@ test.describe("Scenario: Vote multi-role sur une resolution en AG", () => {
     await stepPause(page);
 
     // Re-naviguer vers l'AG
-    await humanClick(page, "nav-link-assemblées");
+    await humanClick(page, "nav-link-assemblees");
     await waitForSpinner(page);
     await page.waitForTimeout(PACE.AFTER_NAVIGATION);
 

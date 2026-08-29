@@ -63,10 +63,51 @@ export async function humanFill(
 }
 
 /**
+ * Déplie la section de navigation qui contient `locator`, si elle est repliée.
+ *
+ * `RoleSubmenu.svelte` range les liens de navigation dans un `<details>` dont
+ * l'ouverture est dérivée : `isOpen = defaultOpen || containsActive`. Aucun
+ * appelant ne passe `defaultOpen`, donc une section n'est ouverte QUE si elle
+ * contient la page courante. Depuis le tableau de bord, « Budgets » est fermé.
+ *
+ * Or un `<details>` fermé laisse ses enfants dans le DOM mais les rend
+ * INVISIBLES. Playwright résout donc le lien, puis attend indéfiniment qu'il
+ * devienne visible :
+ *
+ *     locator resolved to <a href="/budgets" data-testid="nav-link-budgets">
+ *     attempting click action
+ *       - element is not visible          (x60, jusqu'au timeout de 30 s)
+ *
+ * C'est la cause UNIQUE des 11 échecs `[scenarios]` en CI — pas onze bugs
+ * distincts (#696, WP-D1). Le projet `smoke` n'était pas touché parce qu'il
+ * teste des contrats d'API, sans navigation dans l'interface.
+ *
+ * On déplie en cliquant le `<summary>`, comme le ferait un utilisateur, plutôt
+ * qu'en forçant l'attribut `open` : ces scénarios sont enregistrés en vidéo
+ * comme documentation vivante, et le geste de dépliage fait partie du parcours
+ * réel. Forcer l'attribut produirait une vidéo qui ne montre pas ce que
+ * l'utilisateur doit faire.
+ */
+async function expandCollapsedSection(
+  page: Page,
+  locator: Locator,
+): Promise<void> {
+  const collapsed = locator.locator("xpath=ancestor::details[not(@open)][1]");
+  if ((await collapsed.count()) === 0) return;
+
+  const summary = collapsed.locator("summary").first();
+  await summary.scrollIntoViewIfNeeded();
+  await page.waitForTimeout(PACE.BEFORE_CLICK);
+  await summary.click();
+  await page.waitForTimeout(PACE.AFTER_CLICK);
+}
+
+/**
  * Click an element identified by data-testid at human pace.
  */
 export async function humanClick(page: Page, testId: string): Promise<void> {
   const locator = page.getByTestId(testId);
+  await expandCollapsedSection(page, locator);
   await locator.scrollIntoViewIfNeeded();
   await page.waitForTimeout(PACE.BEFORE_CLICK);
   await locator.click();
@@ -80,6 +121,7 @@ export async function humanClickLocator(
   page: Page,
   locator: Locator,
 ): Promise<void> {
+  await expandCollapsedSection(page, locator);
   await locator.scrollIntoViewIfNeeded();
   await page.waitForTimeout(PACE.BEFORE_CLICK);
   await locator.click();

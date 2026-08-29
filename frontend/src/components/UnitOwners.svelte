@@ -12,6 +12,7 @@
     withErrorHandling,
   } from "../lib/utils/error.utils";
   import { formatDate } from "../lib/utils/date.utils";
+  import { toNumber } from "../lib/utils/decimal.utils";
 
   let {
     unitId,
@@ -175,7 +176,7 @@
               <div class="ml-2 flex items-center gap-1 sm:gap-2">
                 <div class="text-right">
                   <p class="text-lg sm:text-xl font-bold text-primary-600">
-                    {formatPercentage(unitOwner.ownership_percentage)}
+                    {formatPercentage(toNumber(unitOwner.ownership_percentage))}
                   </p>
                   <p class="text-xs text-gray-500 hidden sm:block">
                     {$_("units.quota_label")}
@@ -255,7 +256,7 @@
               </div>
               <div class="ml-4 text-right">
                 <p class="text-lg font-semibold text-gray-600">
-                  {formatPercentage(unitOwner.ownership_percentage)}
+                  {formatPercentage(toNumber(unitOwner.ownership_percentage))}
                 </p>
               </div>
             </div>
