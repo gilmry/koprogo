@@ -100,6 +100,51 @@ Légende : Tier 1 = humain exécute (agent diagnostique/propose). Taille S≤0.5
   - `5d2a7ae` #550 strate 2 v3 — `apiFetch` attend le refresh in-flight si pas de token (composants `client:load` qui mountent et appellent `api.get` avant `init()` complet). Validé en live console (0 erreur 401 cascade).
     **Différé** : strate 3 (Resolutions/Invoices/Notifications/AdminDashBoard tests qui passent shared helper mais échouent encore — issue #550 garde la trace). Plancher smoke à confirmer en CI post-merge feature/dev→dev.
 
+  **Session 2026-08-29 — le bloc de 11 échauffés est décomposé (PR #730).**
+
+  Deux constats invalident la formulation ci-dessus, mesurés sur trois runs CI
+  (`33062485058`, `33236027844`, `33239341373`) aux chiffres **identiques** —
+  donc déterministes, pas instables :
+
+  1. **L'occurrence de #696 (109 échecs, 2026-08-08) ne s'est pas reproduite.**
+     Le régime courant est `11 failed · 260 passed · 98 passed`. La question
+     explicitement ouverte de l'issue (« à confirmer si observé de façon
+     répétée ») est tranchée : non. La piste « dégradation du serveur Vite sous
+     charge » n'a pas lieu d'être poursuivie pour cet écart.
+
+  2. **Le plancher « smoke ≈219/240 » visait la mauvaise cible.** Le projet
+     `smoke` est à **zéro échec** — sa docstring le dit, il teste des contrats
+     d'API, sans navigation UI. Les 11 échecs sont tous dans `[scenarios]`.
+
+  **Et « 11 échecs » n'est pas 11 problèmes** : ce sont ~11 tests portant
+  chacun une *chaîne* de blocages successifs. Chaque correctif fait avancer le
+  test jusqu'au suivant ; le total ne baisse qu'une fois une chaîne entièrement
+  dégagée. Exemple mesuré sur `budget-workflow` : `nav-link-budgets` →
+  `budget-row` → `text=2026` (deux blocages levés, le budget est désormais
+  réellement créé, le `POST /budgets` part).
+
+  Cinq causes distinctes, nommées — trois corrigées, deux arbitrages produit :
+
+  | # | Cause | État |
+  |---|---|---|
+  | 1 | `RoleSubmenu.svelte` range les liens dans un `<details>` replié : enfants présents dans le DOM mais **invisibles**, `click` attend 30 s. `defaultOpen` n'est passé par aucun appelant. | **corrigé** — `expandCollapsedSection` |
+  | 2 | `slugify()` retire les diacritiques : le testid est `nav-link-assemblees`, le test l'attendait accentué. | **corrigé** |
+  | 3 | Le seeder crée « Résidence du Parc Royal » ; 7 scénarios cherchaient « Residence du Parc » sans accent, **en silence** (`for…of` sans correspondance, `if (building)` sauté). D'où : formulaire soumis, aucun `POST`, échec 15 s plus tard sur une liste vide, en accusant l'affichage. | **corrigé** — `helpers/name-match.ts`, échec bruyant |
+  | 4 | `nav-link-immeubles` (SuperAdmin) : `canSee` ne donne le menu `gestion` aux admins qu'en mode in-context, et `getAdminItems` n'a aucune entrée Immeubles. | **arbitrage produit** |
+  | 5 | `nav-link-assemblees` (Alice, owner) : `canSee` ne donne aux copropriétaires que le menu `communaute`. | **arbitrage produit** |
+
+  Les causes 4 et 5 **ne sont pas des bugs** : les scénarios contredisent des
+  règles de visibilité délibérées et commentées. Les corriger revient à décider
+  *ce que les scénarios racontent* — décision PO, pas correctif d'agent.
+
+  Le reste des échecs porte sur des **données de scénario**, pas sur l'UI :
+  sujet distinct, à traiter avec les seeds.
+
+  **Défaut annexe tracé** : le teardown CI supprime `residence-parc-royal-test`
+  alors que le seeder crée « Résidence du Parc Royal » — `ℹ️ No scenario world
+  found to clear` à chaque run. Le nettoyage ne nettoie rien, le monde survit
+  d'un run à l'autre.
+
 - **WP-D2 — Câbler vitest au gate** · #343 · T2 · S-M
   Job `vitest` existe (`ci.yml:402`) ; couvrir auth store (WP-FE1) + composants convocation/réunion @happy/@negative ; cible = composants critiques bêta (pas 181/181). Deps : WP-FE1, WP-FE2.
 
