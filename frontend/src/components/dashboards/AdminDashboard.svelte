@@ -554,6 +554,18 @@
             >
           </a>
           <a
+            href="/admin/acps"
+            data-testid="admin-quick-action-acps"
+            class="flex flex-col items-center justify-center p-6 border-2 border-gray-200 rounded-lg hover:border-primary-500 hover:bg-primary-50 transition group"
+          >
+            <span class="text-4xl mb-2 group-hover:scale-110 transition"
+              >🏘️</span
+            >
+            <span class="text-sm font-medium text-gray-700"
+              >{$_("navigation.acps")}</span
+            >
+          </a>
+          <a
             href="/admin/users"
             class="flex flex-col items-center justify-center p-6 border-2 border-gray-200 rounded-lg hover:border-primary-500 hover:bg-primary-50 transition group"
           >

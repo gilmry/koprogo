@@ -50,6 +50,20 @@ use utoipa_swagger_ui::SwaggerUi;
     paths(
         // Health
         crate::infrastructure::web::handlers::health::health_check,
+        // ACP (Association des Copropriétaires)
+        //
+        // Les 5 handlers portaient DÉJÀ `#[utoipa::path]` et leurs DTO
+        // `#[derive(ToSchema)]`, mais rien n'était déclaré ici — utoipa ne
+        // collecte QUE ce qui est listé. Les annotations étaient donc mortes :
+        // aucun path `/acps` dans `docs/api/openapi.json`, aucun type dans
+        // `api.d.ts`, et un `CreateAcpDto` recopié à la main côté frontend qui
+        // avait déjà divergé (il omettait `total_tantiemes`). Même défaut que
+        // les 16 endpoints `payment-methods` (#732).
+        crate::infrastructure::web::handlers::acp_handlers::create_acp,
+        crate::infrastructure::web::handlers::acp_handlers::list_acps,
+        crate::infrastructure::web::handlers::acp_handlers::get_acp,
+        crate::infrastructure::web::handlers::acp_handlers::update_acp,
+        crate::infrastructure::web::handlers::acp_handlers::archive_acp,
         // Auth
         crate::infrastructure::web::handlers::auth_handlers::login,
         crate::infrastructure::web::handlers::auth_handlers::register,
@@ -191,6 +205,11 @@ use utoipa_swagger_ui::SwaggerUi;
         crate::infrastructure::web::handlers::technical_spec_handlers::list_technical_specs,
     ),
     components(schemas(
+        // ACP — voir la note dans `paths()` ci-dessus.
+        crate::application::dto::acp_dto::CreateAcpDto,
+        crate::application::dto::acp_dto::UpdateAcpDto,
+        crate::application::dto::acp_dto::AcpResponseDto,
+        crate::domain::entities::acp::AcpLegalStatus,
         // Pagination primitives — referenced by query params on list endpoints
         crate::application::dto::pagination::SortOrder,
         // STORY-P7-701/702: all enums used by frontend wrappers are exposed
