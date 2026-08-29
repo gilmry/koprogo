@@ -110,6 +110,11 @@ function makeAcp(
     address_street: "1 rue test",
     address_postal_code: "1000",
     address_city: "Bruxelles",
+    // Dénominateur de l'acte de base (Art. 3.84 CC). Champ obligatoire de
+    // `AcpResponseDto`, absent de cette fixture tant que le type était recopié
+    // à la main côté frontend — les endpoints ACP n'étaient pas enregistrés
+    // dans `openapi.rs`, donc rien ne générait ni ne vérifiait ce contrat.
+    total_tantiemes: 1000,
     created_at: "2026-01-01T00:00:00Z",
     updated_at: "2026-01-01T00:00:00Z",
     ...overrides,

@@ -254,6 +254,26 @@ impl AcpUseCases {
             .await?
             .ok_or_else(|| AppError::NotFound(format!("ACP {} not found", id)))?;
         Self::assert_scope(caller, &acp)?;
+
+        // Refuser explicitement plutôt que de laisser la base trancher.
+        //
+        // `archive` fait un `DELETE FROM acps` et `buildings.acp_id` référence
+        // `acps(id)` en `NO ACTION` (migration 20260601020000), colonne
+        // `NOT NULL` depuis 20260601040000. Sans ce contrôle, supprimer une ACP
+        // qui porte au moins un immeuble — le cas normal — remonte une
+        // violation de clé étrangère en `AppError::Database`, donc un **500**,
+        // pour ce qui est une règle métier parfaitement prévisible.
+        //
+        // Le port `count_buildings` existait pour ça depuis l'origine mais
+        // renvoyait `Ok(0)` en dur et n'était appelé nulle part.
+        let buildings = self.repository.count_buildings(id).await?;
+        if buildings > 0 {
+            return Err(AppError::Conflict(format!(
+                "ACP {} carries {} building(s) and cannot be archived; detach or delete them first",
+                id, buildings
+            )));
+        }
+
         self.repository.archive(id).await
     }
 
@@ -593,5 +613,113 @@ mod tests {
             AppError::NotFound(_) => {}
             other => panic!("expected NotFound, got {:?}", other),
         }
+    }
+
+    // ----- archivage : garde-fou immeubles rattachés (4-cat) ---------------
+
+    fn make_acp(org_id: Option<Uuid>) -> Acp {
+        Acp::new(
+            org_id,
+            "Residence du Test".to_string(),
+            "Rue X 1".to_string(),
+            "1000".to_string(),
+            "Bruxelles".to_string(),
+            None,
+        )
+        .expect("acp valide")
+    }
+
+    /// @happy — une ACP sans immeuble s'archive.
+    #[tokio::test]
+    async fn happy_archive_acp_without_buildings_succeeds() {
+        let acp = make_acp(None);
+        let acp_id = acp.id;
+        let mut acp_repo = MockAcpRepo::new();
+
+        acp_repo
+            .expect_find_by_id()
+            .returning(move |_| Ok(Some(make_acp(None))));
+        acp_repo.expect_count_buildings().returning(|_| Ok(0));
+        acp_repo.expect_archive().returning(|_| Ok(()));
+
+        let uc = AcpUseCases::new(Arc::new(acp_repo), Arc::new(MockOrgRepo::new()));
+
+        assert!(uc.archive_acp(&AcpCaller::SuperAdmin, acp_id).await.is_ok());
+    }
+
+    /// @negative — une ACP qui porte des immeubles est refusée en **409**, pas
+    /// en 500.
+    ///
+    /// Avant ce garde-fou, `archive` lançait un `DELETE FROM acps` nu contre
+    /// une clé étrangère en `NO ACTION` : la base levait une violation, mappée
+    /// en `AppError::Database`, donc un 500 Internal Server Error pour une
+    /// règle métier parfaitement prévisible.
+    #[tokio::test]
+    async fn negative_archive_acp_with_buildings_returns_conflict() {
+        let acp_id = make_acp(None).id;
+        let mut acp_repo = MockAcpRepo::new();
+
+        acp_repo
+            .expect_find_by_id()
+            .returning(move |_| Ok(Some(make_acp(None))));
+        acp_repo.expect_count_buildings().returning(|_| Ok(3));
+        // L'archivage ne doit JAMAIS être tenté dans ce cas.
+        acp_repo.expect_archive().never();
+
+        let uc = AcpUseCases::new(Arc::new(acp_repo), Arc::new(MockOrgRepo::new()));
+        let err = uc
+            .archive_acp(&AcpCaller::SuperAdmin, acp_id)
+            .await
+            .unwrap_err();
+
+        match err {
+            AppError::Conflict(msg) => {
+                assert!(msg.contains('3'), "le message doit citer le nombre : {msg}");
+            }
+            other => panic!("expected Conflict, got {:?}", other),
+        }
+    }
+
+    /// @edge — la borne est à zéro : un seul immeuble suffit à refuser.
+    #[tokio::test]
+    async fn edge_archive_acp_with_one_building_is_refused() {
+        let acp_id = make_acp(None).id;
+        let mut acp_repo = MockAcpRepo::new();
+
+        acp_repo
+            .expect_find_by_id()
+            .returning(move |_| Ok(Some(make_acp(None))));
+        acp_repo.expect_count_buildings().returning(|_| Ok(1));
+        acp_repo.expect_archive().never();
+
+        let uc = AcpUseCases::new(Arc::new(acp_repo), Arc::new(MockOrgRepo::new()));
+
+        assert!(matches!(
+            uc.archive_acp(&AcpCaller::SuperAdmin, acp_id).await,
+            Err(AppError::Conflict(_))
+        ));
+    }
+
+    /// @security — le contrôle de droits passe AVANT le comptage : un syndic
+    /// ne doit pas pouvoir sonder l'existence d'immeubles via ce chemin.
+    #[tokio::test]
+    async fn security_syndic_archive_is_refused_before_counting() {
+        let mut acp_repo = MockAcpRepo::new();
+        acp_repo.expect_find_by_id().never();
+        acp_repo.expect_count_buildings().never();
+        acp_repo.expect_archive().never();
+
+        let uc = AcpUseCases::new(Arc::new(acp_repo), Arc::new(MockOrgRepo::new()));
+        let err = uc
+            .archive_acp(
+                &AcpCaller::Syndic {
+                    organization_id: Uuid::new_v4(),
+                },
+                Uuid::new_v4(),
+            )
+            .await
+            .unwrap_err();
+
+        assert!(matches!(err, AppError::Forbidden(_)), "got {:?}", err);
     }
 }

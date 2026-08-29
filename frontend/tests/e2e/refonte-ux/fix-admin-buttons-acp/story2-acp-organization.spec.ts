@@ -81,6 +81,63 @@ async function createOrgAndAcp(
 }
 
 test.describe("Story 2 (#698) — ACP au lieu d'Organisation", () => {
+  /**
+   * Le point d'entrée, pas le formulaire.
+   *
+   * Tous les autres tests de ce fichier atteignent la page par
+   * `page.goto("/admin/acps")`. Ils prouvent donc que la création FONCTIONNE,
+   * et masquent en même temps qu'elle était INATTEIGNABLE : la page, livrée
+   * par 7d9aab08 (« ACPs invisibles »), n'était liée depuis nulle part — ni
+   * dans `getAdminItems()`, ni depuis le tableau de bord admin. Un admin ne
+   * pouvait y arriver qu'en tapant l'URL à la main, et `noAcpAvailable` le
+   * renvoyait vers un « Administration > ACP » qui n'existait pas.
+   *
+   * Ce test navigue donc par le MENU. C'est le seul de ce fichier capable
+   * d'attraper la disparition du lien ; par construction, les autres ne le
+   * peuvent pas.
+   */
+  test("@happy la gestion des ACP est atteignable depuis le menu admin", async ({
+    page,
+  }) => {
+    await loginAsAdmin(page);
+    await page.goto("/dashboard");
+
+    // Ciblage par `href` et non par `data-testid` : `RoleSubmenu.svelte`
+    // génère `nav-link-{slugify(item.label)}` à partir du libellé TRADUIT, donc
+    // `nav-link-acp` en fr, `nav-link-acps` en en, `nav-link-vme-s` en nl. Son
+    // propre en-tête documente pourtant un `stableSlug`, et la config
+    // Playwright force `fr-BE` en admettant « so nav testids match hardcoded
+    // expectations ». Le `href`, lui, ne dépend d'aucune locale.
+    const navLink = page.locator('nav a[href="/admin/acps"]').first();
+    await expect(navLink).toBeVisible({ timeout: 15_000 });
+    await navLink.click();
+
+    await expect(page).toHaveURL(/\/admin\/acps/);
+    await expect(page.getByTestId("admin-acps-page")).toBeVisible({
+      timeout: 15_000,
+    });
+    // Le geste de création doit être présent en arrivant par ce chemin.
+    await expect(page.getByTestId("acp-create-toggle")).toBeVisible();
+  });
+
+  /**
+   * Second point d'entrée : la carte du tableau de bord admin.
+   */
+  test("@happy la carte du tableau de bord admin mène aux ACP", async ({
+    page,
+  }) => {
+    await loginAsAdmin(page);
+    await page.goto("/admin");
+
+    const card = page.getByTestId("admin-quick-action-acps");
+    await expect(card).toBeVisible({ timeout: 15_000 });
+    await card.click();
+
+    await expect(page.getByTestId("admin-acps-page")).toBeVisible({
+      timeout: 15_000,
+    });
+  });
+
   test("@happy création immeuble avec ACP sélectionnée — payload correct", async ({
     page,
   }) => {

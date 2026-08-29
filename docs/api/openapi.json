@@ -24,6 +24,218 @@
     }
   ],
   "paths": {
+    "/acps": {
+      "get": {
+        "tags": [
+          "Acps"
+        ],
+        "summary": "List ACPs visible to the authenticated user",
+        "operationId": "list_acps",
+        "responses": {
+          "200": {
+            "description": "List of ACPs",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AcpResponseDto"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "Acps"
+        ],
+        "summary": "Create an ACP (Association des Copropriétaires)",
+        "operationId": "create_acp",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateAcpDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "ACP created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AcpResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error"
+          },
+          "403": {
+            "description": "Forbidden (non-admin)"
+          },
+          "422": {
+            "description": "Domain validation error"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/acps/{id}": {
+      "get": {
+        "tags": [
+          "Acps"
+        ],
+        "summary": "Get an ACP by id (scope-guarded)",
+        "operationId": "get_acp",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "ACP UUID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ACP found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AcpResponseDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Out of scope (AcpNotInScope)"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "Acps"
+        ],
+        "summary": "Update an ACP (admin + scope)",
+        "operationId": "update_acp",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "ACP UUID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateAcpDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "ACP updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AcpResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error"
+          },
+          "403": {
+            "description": "Forbidden / out of scope"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "Acps"
+        ],
+        "summary": "Archive (delete) an ACP (admin + scope)",
+        "operationId": "archive_acp",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "ACP UUID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "ACP archived"
+          },
+          "403": {
+            "description": "Forbidden / out of scope"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "409": {
+            "description": "ACP still carries buildings — detach or delete them first"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
     "/api/v1/health": {
       "get": {
         "tags": [
@@ -4654,6 +4866,74 @@
           "Diamond"
         ]
       },
+      "AcpLegalStatus": {
+        "type": "string",
+        "description": "Statut juridique d'une ACP. `Copropriete` correspond à\n\"copropriete_belge\" en DB (encodage stable v0.1.0).",
+        "enum": [
+          "copropriete_belge"
+        ]
+      },
+      "AcpResponseDto": {
+        "type": "object",
+        "description": "Réponse JSON pour une ACP.\n\nIDs et timestamps sérialisés en `String` (UUID + RFC3339) pour\ncohérence avec les autres DTOs (cf. `BuildingResponseDto`).",
+        "required": [
+          "id",
+          "name",
+          "slug",
+          "legal_status",
+          "total_tantiemes",
+          "address_street",
+          "address_postal_code",
+          "address_city",
+          "created_at",
+          "updated_at"
+        ],
+        "properties": {
+          "address_city": {
+            "type": "string"
+          },
+          "address_postal_code": {
+            "type": "string"
+          },
+          "address_street": {
+            "type": "string"
+          },
+          "bce_number": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "created_at": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "legal_status": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "organization_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "slug": {
+            "type": "string"
+          },
+          "total_tantiemes": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "updated_at": {
+            "type": "string"
+          }
+        }
+      },
       "ApprovalStatus": {
         "type": "string",
         "description": "Statut d'approbation pour le workflow de validation",
@@ -5069,6 +5349,50 @@
           "Extraordinary",
           "SecondConvocation"
         ]
+      },
+      "CreateAcpDto": {
+        "type": "object",
+        "description": "Création d'une ACP.\n\nChamps :\n- `organization_id` : `Option<String>` — UUID du cabinet syndic, `None` si\n  ACP auto-gérée (ADR-0010).\n- `name` : 2..=160 chars (post-trim côté domain).\n- `address_street`, `address_postal_code`, `address_city` : obligatoires.\n- `bce_number` : optionnel (toutes les ACPs ne sont pas immatriculées BCE).",
+        "required": [
+          "name",
+          "address_street",
+          "address_postal_code",
+          "address_city"
+        ],
+        "properties": {
+          "address_city": {
+            "type": "string"
+          },
+          "address_postal_code": {
+            "type": "string"
+          },
+          "address_street": {
+            "type": "string"
+          },
+          "bce_number": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "name": {
+            "type": "string"
+          },
+          "organization_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "total_tantiemes": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "description": "Dénominateur de l'acte de base (quotités) — défaut 1000 si absent.\n1000 millièmes / 10000 dix-millièmes / autre (Art. 3.84 CC, ADR-0010)."
+          }
+        }
       },
       "CreateBuildingDto": {
         "type": "object",
@@ -6672,6 +6996,51 @@
           "cancelled",
           "refunded"
         ]
+      },
+      "UpdateAcpDto": {
+        "type": "object",
+        "description": "Mise à jour d'une ACP (PATCH-like : tous les champs identitaires sont requis,\npar défaut on ré-envoie l'état complet via PUT — pattern Building).",
+        "required": [
+          "name",
+          "address_street",
+          "address_postal_code",
+          "address_city"
+        ],
+        "properties": {
+          "address_city": {
+            "type": "string"
+          },
+          "address_postal_code": {
+            "type": "string"
+          },
+          "address_street": {
+            "type": "string"
+          },
+          "bce_number": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "name": {
+            "type": "string"
+          },
+          "organization_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Permet à un admin de rattacher / détacher l'ACP d'un cabinet.\n`Some(None)` (JSON `\"organization_id\": null`) = détache,\n`None` (clé absente) = conserve l'existant."
+          },
+          "total_tantiemes": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "description": "Dénominateur de l'acte de base (quotités) — défaut 1000 si absent."
+          }
+        }
       },
       "UpdateBuildingDto": {
         "type": "object",

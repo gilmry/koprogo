@@ -153,6 +153,11 @@
       label: t("navigation.organizations"),
       icon: "🏛️",
     },
+    // `/admin/acps` existait depuis 7d9aab08 (« ACPs invisibles ») mais n'était
+    // liée depuis nulle part : ni ici, ni depuis AdminDashboard. La page n'était
+    // atteignable qu'en tapant l'URL, et `admin.building.noAcpAvailable`
+    // renvoyait l'utilisateur vers un « Administration > ACP » inexistant.
+    { href: "/admin/acps", label: t("navigation.acps"), icon: "🏘️" },
     { href: "/admin/users", label: t("navigation.users"), icon: "👥" },
     {
       href: "/admin/monitoring",

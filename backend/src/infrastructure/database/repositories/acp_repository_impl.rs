@@ -292,13 +292,25 @@ impl AcpRepository for PostgresAcpRepository {
         Ok(())
     }
 
+    /// Nombre d'immeubles rattachés à cette ACP.
+    ///
+    /// Le corps précédent renvoyait `Ok(0)` en dur, avec ce commentaire :
+    /// « Story 1.1 : la colonne `buildings.acp_id` n'existe pas encore
+    /// (Story 1.2) ». Le commentaire était périmé — la colonne existe depuis
+    /// la migration `20260601020000`, et elle est même `NOT NULL` depuis
+    /// `20260601040000`. Le garde-fou était donc en façade, et personne ne
+    /// l'appelait.
+    ///
+    /// Conséquence : `archive()` faisait un `DELETE FROM acps` nu contre une
+    /// clé étrangère en `NO ACTION`, ce qui remontait une violation SQL en
+    /// `AppError::Database` — soit un **500** à l'utilisateur pour ce qui est
+    /// une règle métier parfaitement légitime.
     async fn count_buildings(&self, id: Uuid) -> Result<i64, AppError> {
-        // Story 1.1 : la colonne `buildings.acp_id` n'existe pas encore
-        // (Story 1.2). On répond 0 sans paniquer — implémentation se
-        // raffinera en Story 1.2 sans changer la signature du port.
-        // Note : on évite un SELECT sur une colonne inexistante (cause
-        // une erreur SQL) ; on renvoie 0 directement.
-        let _ = id;
-        Ok(0)
+        let count: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM buildings WHERE acp_id = $1")
+            .bind(id)
+            .fetch_one(&self.pool)
+            .await
+            .map_err(|e| AppError::Database(e.to_string()))?;
+        Ok(count)
     }
 }

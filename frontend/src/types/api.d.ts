@@ -4,6 +4,43 @@
  */
 
 export interface paths {
+  "/acps": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List ACPs visible to the authenticated user */
+    get: operations["list_acps"];
+    put?: never;
+    /** Create an ACP (Association des Copropriétaires) */
+    post: operations["create_acp"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/acps/{id}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get an ACP by id (scope-guarded) */
+    get: operations["get_acp"];
+    /** Update an ACP (admin + scope) */
+    put: operations["update_acp"];
+    post?: never;
+    /** Archive (delete) an ACP (admin + scope) */
+    delete: operations["archive_acp"];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/api/v1/health": {
     parameters: {
       query?: never;
@@ -2039,6 +2076,33 @@ export interface components {
      */
     AchievementTier: "Bronze" | "Silver" | "Gold" | "Platinum" | "Diamond";
     /**
+     * @description Statut juridique d'une ACP. `Copropriete` correspond à
+     *     "copropriete_belge" en DB (encodage stable v0.1.0).
+     * @enum {string}
+     */
+    AcpLegalStatus: "copropriete_belge";
+    /**
+     * @description Réponse JSON pour une ACP.
+     *
+     *     IDs et timestamps sérialisés en `String` (UUID + RFC3339) pour
+     *     cohérence avec les autres DTOs (cf. `BuildingResponseDto`).
+     */
+    AcpResponseDto: {
+      address_city: string;
+      address_postal_code: string;
+      address_street: string;
+      bce_number?: string | null;
+      created_at: string;
+      id: string;
+      legal_status: string;
+      name: string;
+      organization_id?: string | null;
+      slug: string;
+      /** Format: int32 */
+      total_tantiemes: number;
+      updated_at: string;
+    };
+    /**
      * @description Statut d'approbation pour le workflow de validation
      * @enum {string}
      */
@@ -2194,6 +2258,30 @@ export interface components {
      * @enum {string}
      */
     ConvocationType: "Ordinary" | "Extraordinary" | "SecondConvocation";
+    /**
+     * @description Création d'une ACP.
+     *
+     *     Champs :
+     *     - `organization_id` : `Option<String>` — UUID du cabinet syndic, `None` si
+     *       ACP auto-gérée (ADR-0010).
+     *     - `name` : 2..=160 chars (post-trim côté domain).
+     *     - `address_street`, `address_postal_code`, `address_city` : obligatoires.
+     *     - `bce_number` : optionnel (toutes les ACPs ne sont pas immatriculées BCE).
+     */
+    CreateAcpDto: {
+      address_city: string;
+      address_postal_code: string;
+      address_street: string;
+      bce_number?: string | null;
+      name: string;
+      organization_id?: string | null;
+      /**
+       * Format: int32
+       * @description Dénominateur de l'acte de base (quotités) — défaut 1000 si absent.
+       *     1000 millièmes / 10000 dix-millièmes / autre (Art. 3.84 CC, ADR-0010).
+       */
+      total_tantiemes?: number | null;
+    };
     CreateBuildingDto: {
       /**
        * @description Story 1.2 — FK vers `acps.id` (anciennement `organization_id`).
@@ -2826,6 +2914,28 @@ export interface components {
       | "failed"
       | "cancelled"
       | "refunded";
+    /**
+     * @description Mise à jour d'une ACP (PATCH-like : tous les champs identitaires sont requis,
+     *     par défaut on ré-envoie l'état complet via PUT — pattern Building).
+     */
+    UpdateAcpDto: {
+      address_city: string;
+      address_postal_code: string;
+      address_street: string;
+      bce_number?: string | null;
+      name: string;
+      /**
+       * @description Permet à un admin de rattacher / détacher l'ACP d'un cabinet.
+       *     `Some(None)` (JSON `"organization_id": null`) = détache,
+       *     `None` (clé absente) = conserve l'existant.
+       */
+      organization_id?: string | null;
+      /**
+       * Format: int32
+       * @description Dénominateur de l'acte de base (quotités) — défaut 1000 si absent.
+       */
+      total_tantiemes?: number | null;
+    };
     UpdateBuildingDto: {
       /** @description Story 1.2 — Réaffectation de l'ACP parente (SuperAdmin uniquement). */
       acp_id?: string | null;
@@ -2925,6 +3035,205 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+  list_acps: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description List of ACPs */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["AcpResponseDto"][];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  create_acp: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["CreateAcpDto"];
+      };
+    };
+    responses: {
+      /** @description ACP created */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["AcpResponseDto"];
+        };
+      };
+      /** @description Validation error */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Forbidden (non-admin) */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Domain validation error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  get_acp: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description ACP UUID */
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description ACP found */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["AcpResponseDto"];
+        };
+      };
+      /** @description Out of scope (AcpNotInScope) */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  update_acp: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description ACP UUID */
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["UpdateAcpDto"];
+      };
+    };
+    responses: {
+      /** @description ACP updated */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["AcpResponseDto"];
+        };
+      };
+      /** @description Validation error */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Forbidden / out of scope */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  archive_acp: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description ACP UUID */
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description ACP archived */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Forbidden / out of scope */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description ACP still carries buildings — detach or delete them first */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
   health_check: {
     parameters: {
       query?: never;
