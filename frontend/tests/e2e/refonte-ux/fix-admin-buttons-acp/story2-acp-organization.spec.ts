@@ -102,6 +102,19 @@ test.describe("Story 2 (#698) — ACP au lieu d'Organisation", () => {
     await loginAsAdmin(page);
     await page.goto("/dashboard");
 
+    // Déplier d'abord la section « Administration ».
+    //
+    // `RoleSubmenu.svelte` range ses liens dans un `<details>` dont l'ouverture
+    // est dérivée de `defaultOpen || containsActive` — et aucun appelant ne
+    // passe `defaultOpen`. Depuis /dashboard, la section admin ne contient pas
+    // la page courante : elle est donc REPLIÉE, et ses liens sont présents dans
+    // le DOM mais INVISIBLES. C'est exactement la cause des 11 échecs
+    // `[scenarios]` corrigée en #730 ; le geste utilisateur est de cliquer le
+    // `<summary>` avant le lien.
+    const adminMenu = page.getByTestId("navigation-menu-admin");
+    await expect(adminMenu).toBeAttached({ timeout: 15_000 });
+    await adminMenu.locator("summary").first().click();
+
     // Ciblage par `href` et non par `data-testid` : `RoleSubmenu.svelte`
     // génère `nav-link-{slugify(item.label)}` à partir du libellé TRADUIT, donc
     // `nav-link-acp` en fr, `nav-link-acps` en en, `nav-link-vme-s` en nl. Son
