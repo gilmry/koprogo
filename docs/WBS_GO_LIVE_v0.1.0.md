@@ -554,6 +554,55 @@ Baseline observée Phase A (slice 3 BE = 9 stories, ~ 1,8 M tokens consommés se
 
 **Ce qui reste réellement ouvert vers le tag v0.1.0** : D1 (plancher Playwright, borné par #696), la revue humaine fraîche G1, le tag G2, et les drills F3. Plus le reliquat de dette `f64` monétaire — `work_report.cost`, `technical_inspection.cost`, `filters.min_cost`/`max_cost`, `stats_dto.pending_expenses_amount` — désormais **gelé et visible** par le gate CI plutôt qu'invisible.
 
+### Session 2026-08-29 — reliquat `f64` monétaire résorbé (vérification INCOMPLÈTE)
+
+Le reliquat listé juste au-dessus a été traité sur la branche
+`story/661-followup-work-report-inspection-decimal` : `work_report.cost` et
+`technical_inspection.cost` passés en `NUMERIC(12,2)` (migration
+`20260829000000`, rejouée sur base réelle), `filters.min_cost`/`max_cost` et
+`stats_dto.pending_expenses_amount` en `Decimal`, deux casts
+`SUM(amount)::float8` retirés du tableau de bord alors qu'`expenses.amount`
+est `NUMERIC` depuis `20260502000000`. Invariant « coût ≥ 0 » descendu du DTO
+vers le domaine (erreurs typées → 400). 22 tests 4-cat ajoutés. Les six
+entrées sont retirées de l'allowlist de `check-no-f64-money.sh`, dont la
+rubrique « DETTE CONNUE ET TRACÉE » est désormais **vide**.
+
+Détail : `docs/agent-activity/2026-08-29-work-report-inspection-decimal.md`.
+
+**Vérifié, tout exécuté pour de vrai** (aucun résultat déduit) :
+
+| Contrôle | Résultat |
+| --- | --- |
+| `cargo test --lib` | **1684 passed, 0 failed**, 8 ignored |
+| `cargo clippy --all-targets --all-features -- -D warnings` | exit 0, aucun avertissement |
+| `cargo run --bin export_openapi` + diff | **aucun drift** vs `docs/api/openapi.json` |
+| `cargo check --all-targets` | exit 0, aucun avertissement |
+| `cargo fmt --check` | propre |
+| `scripts/check-no-f64-money.sh` | vert **avec l'allowlist vidée** |
+| Migration rejouée sur base neuve | contraintes en `numeric`, sans cast résiduel ni doublon, données préservées |
+
+Le gate ADR-0008 qui passe *après* suppression des six entrées est la preuve
+utile : ce n'est pas une affirmation, c'est le script qui refuserait de passer
+si un `f64` monétaire subsistait.
+
+**Contrainte d'outillage rencontrée, utile pour la suite** : `cargo test` se
+fait tuer par l'OOM killer (exit 137) aux réglages par défaut sur cette
+machine — 7,6 Gio de RAM, soit exactement la saturation mesurée en
+`b1b6648e`. `check` passe car il ne lie aucun binaire ; `test` doit en lier
+un, et chaque harnais lie la crate entière. Contournement figé dans
+`~/bin/kcargo-lean` : `-j 2` + `CARGO_PROFILE_TEST_DEBUG=0`.
+
+**Deux défauts trouvés au passage, tracés et NON corrigés** :
+
+1. `WorkReportFilters` expose 9 champs, `work_report_repository_impl` n'en
+   applique que 2 (`building_id`, `work_type`). `min_cost`, `max_cost`,
+   `warranty_type`, `contractor_name`, `work_date_from`, `work_date_to` et
+   `warranty_active` sont acceptés par l'API puis **silencieusement ignorés**.
+   Un filtre qui ment est pire qu'un filtre absent.
+2. `InspectionList.svelte:78` / `InspectionDetail.svelte:98` envoient
+   `cost: form.cost || undefined` — `0` étant falsy, un coût de zéro devient
+   « champ non fourni », alors que le domaine l'accepte explicitement.
+
 ### Clôture de session 2026-08-21 — état final et items définitivement hors de portée
 
 **Survey final effectué** : relecture complète du WBS (tous les Tracks A→I, la checklist DoD, les sous-sections #618/Track H) à la recherche de tout item Tier-2 restant actionnable. Un résidu réel trouvé et **délibérément non traité** :

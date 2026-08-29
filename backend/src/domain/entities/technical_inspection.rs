@@ -1,4 +1,5 @@
 use chrono::{DateTime, Utc};
+use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -38,7 +39,10 @@ pub struct TechnicalInspection {
     pub compliance_valid_until: Option<DateTime<Utc>>,
 
     // Financial
-    pub cost: Option<f64>,
+    /// Coût de l'inspection en EUR. `Decimal` et non `f64` : montant
+    /// refacturé via la répartition des charges (Art. 3.86 CC) —
+    /// ADR-0007/0008 §A.
+    pub cost: Option<Decimal>,
     pub invoice_number: Option<String>,
 
     // Documentation (JSON arrays of file paths)
@@ -112,7 +116,50 @@ impl InspectionType {
     }
 }
 
+/// Erreurs de validation du domaine `TechnicalInspection`.
+///
+/// Type domaine pur — aucune dépendance infra/application (pureté hexagonale).
+#[derive(Debug, Clone, PartialEq)]
+pub enum TechnicalInspectionError {
+    /// Coût d'inspection strictement négatif.
+    NegativeCost,
+}
+
+impl std::fmt::Display for TechnicalInspectionError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::NegativeCost => write!(f, "Technical inspection cost cannot be negative"),
+        }
+    }
+}
+
+impl std::error::Error for TechnicalInspectionError {}
+
+/// Bridge : use-cases/ports `Result<_, String>` inchangés.
+impl From<TechnicalInspectionError> for String {
+    fn from(e: TechnicalInspectionError) -> String {
+        e.to_string()
+    }
+}
+
 impl TechnicalInspection {
+    /// Pose le coût en portant l'invariant de non-négativité.
+    ///
+    /// `TechnicalInspection::new` ne prend pas de coût (il est renseigné plus
+    /// tard, à la facturation) : l'invariant que portait
+    /// `#[validate(range(min = 0.0))]` côté DTO se place donc ici, au seul
+    /// point d'écriture, plutôt que de disparaître avec l'annotation.
+    pub fn set_cost(&mut self, cost: Option<Decimal>) -> Result<(), TechnicalInspectionError> {
+        if let Some(value) = cost {
+            if value < Decimal::ZERO {
+                return Err(TechnicalInspectionError::NegativeCost);
+            }
+        }
+        self.cost = cost;
+        self.updated_at = Utc::now();
+        Ok(())
+    }
+
     #[allow(clippy::too_many_arguments)]
     pub fn new(
         organization_id: Uuid,
@@ -204,6 +251,7 @@ impl TechnicalInspection {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use rust_decimal_macros::dec;
 
     #[test]
     fn test_inspection_creation() {
@@ -265,5 +313,101 @@ mod tests {
 
         inspection.mark_overdue();
         assert_eq!(inspection.status, InspectionStatus::Overdue);
+    }
+
+    // ----- set_cost : ADR-0008, tests 4-cat -------------------------------
+
+    fn make_inspection() -> TechnicalInspection {
+        TechnicalInspection::new(
+            Uuid::new_v4(),
+            Uuid::new_v4(),
+            "Inspection annuelle ascenseur".to_string(),
+            None,
+            InspectionType::Elevator,
+            "Schindler Belgium".to_string(),
+            Utc::now(),
+        )
+    }
+
+    /// @happy — le coût se pose et l'horodatage suit.
+    #[test]
+    fn happy_set_cost_records_the_amount() {
+        let mut inspection = make_inspection();
+        let before = inspection.updated_at;
+
+        inspection
+            .set_cost(Some(dec!(450.00)))
+            .expect("coût valide");
+
+        assert_eq!(inspection.cost, Some(dec!(450.00)));
+        assert!(inspection.updated_at >= before);
+    }
+
+    /// @happy — `None` est légitime : inspection planifiée, pas encore facturée.
+    #[test]
+    fn happy_set_cost_none_is_accepted() {
+        let mut inspection = make_inspection();
+        inspection.set_cost(Some(dec!(10.00))).expect("coût valide");
+
+        inspection.set_cost(None).expect("absence de coût valide");
+
+        assert_eq!(inspection.cost, None);
+    }
+
+    /// @edge — zéro accepté (inspection sous contrat déjà réglé), le centime
+    /// négatif refusé : la borne est à zéro exclu du côté négatif.
+    #[test]
+    fn edge_zero_accepted_minus_one_cent_rejected() {
+        let mut inspection = make_inspection();
+
+        inspection
+            .set_cost(Some(Decimal::ZERO))
+            .expect("zéro est un coût valide");
+        assert_eq!(inspection.cost, Some(Decimal::ZERO));
+
+        assert_eq!(
+            inspection.set_cost(Some(dec!(-0.01))).unwrap_err(),
+            TechnicalInspectionError::NegativeCost
+        );
+    }
+
+    /// @edge — exactitude décimale, raison d'être de la conversion : en
+    /// binary64 cette égalité est fausse.
+    #[test]
+    fn edge_decimal_arithmetic_is_exact() {
+        let mut inspection = make_inspection();
+        inspection.set_cost(Some(dec!(0.10))).expect("coût valide");
+
+        let cumulated = inspection.cost.expect("coût posé") + dec!(0.20);
+        inspection.set_cost(Some(cumulated)).expect("coût valide");
+
+        assert_eq!(inspection.cost, Some(dec!(0.30)));
+    }
+
+    /// @negative — un refus ne laisse aucune écriture partielle derrière lui.
+    #[test]
+    fn negative_rejected_set_cost_leaves_the_entity_untouched() {
+        let mut inspection = make_inspection();
+        inspection
+            .set_cost(Some(dec!(120.00)))
+            .expect("coût valide");
+        let before = inspection.updated_at;
+
+        let _ = inspection.set_cost(Some(dec!(-5.00)));
+
+        assert_eq!(inspection.cost, Some(dec!(120.00)));
+        assert_eq!(inspection.updated_at, before);
+    }
+
+    /// @security — un coût négatif refacturé via la répartition des charges
+    /// (Art. 3.86 CC) produirait un avoir au profit des copropriétaires depuis
+    /// une simple fiche d'inspection. L'invariant tient dans le domaine, donc
+    /// hors d'atteinte d'un contournement de la route HTTP.
+    #[test]
+    fn security_negative_cost_cannot_bypass_the_domain() {
+        let mut inspection = make_inspection();
+
+        assert!(inspection.set_cost(Some(dec!(-999999.99))).is_err());
+        assert_eq!(inspection.cost, None);
     }
 }

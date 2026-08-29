@@ -53,18 +53,13 @@ ALLOWLIST=(
   "infrastructure/database/seed.rs:"
   # --- DETTE CONNUE ET TRACÉE (à résorber, pas un carve-out accordé) ---
   # (payment_reminder a été RÉSORBÉ — converti en Decimal, migration
-  #  20260826000000. Ses lignes ont été retirées de cette liste : c'est le
-  #  sens de marche attendu, une entrée de dette se supprime, elle ne se
-  #  transforme pas en carve-out.)
-  # work_report / technical_inspection : coûts de travaux et d'inspections en
-  # euros, en f64. Même nature de défaut que payment_reminder — gelé, à traiter.
-  "domain/entities/work_report.rs:cost"
-  "domain/entities/technical_inspection.rs:cost"
-  "application/dto/work_report_dto.rs:cost"
-  "application/dto/technical_inspection_dto.rs:cost"
-  "application/dto/filters.rs:_cost"
-  # stats_dto : agrégat de dépenses en attente, affiché sur un tableau de bord.
-  "application/dto/stats_dto.rs:pending_expenses_amount"
+  #  20260826000000. work_report / technical_inspection / filters / stats_dto
+  #  l'ont été à leur tour — migration 20260829000000. Leurs lignes ont été
+  #  retirées de cette liste : c'est le sens de marche attendu, une entrée de
+  #  dette se supprime, elle ne se transforme pas en carve-out.
+  #
+  #  Cette rubrique est désormais VIDE. Toute nouvelle entrée ici doit être
+  #  accompagnée d'une issue de résorption — sinon c'est un carve-out déguisé.)
   # mcp_sse_handlers : formatage d'affichage cents -> "12.34" pour un outil MCP,
   # ne réalimente aucun calcul.
   "infrastructure/web/handlers/mcp_sse_handlers.rs:amount_eur"
