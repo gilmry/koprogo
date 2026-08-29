@@ -10,6 +10,7 @@
  * Duree video attendue : ~70-90 secondes (rythme humain, multi-role)
  */
 import { test, expect } from "@playwright/test";
+import { selectOptionByName } from "../helpers/name-match";
 import {
   humanLogin,
   humanFill,
@@ -157,17 +158,11 @@ test.describe("Scenario: Cycle de vie d'un ticket de maintenance", () => {
     if (await buildingSelect.isVisible({ timeout: 5000 })) {
       await buildingSelect.scrollIntoViewIfNeeded();
       await page.waitForTimeout(PACE.BEFORE_SELECT);
-      const options = await buildingSelect.locator("option").all();
-      for (const option of options) {
-        const text = await option.textContent();
-        if (text && text.includes("Residence du Parc")) {
-          const value = await option.getAttribute("value");
-          if (value) {
-            await buildingSelect.selectOption(value);
-            break;
-          }
-        }
-      }
+      await selectOptionByName(
+        buildingSelect,
+        "Résidence du Parc",
+        "ticket-lifecycle.scenario.ts",
+      );
       await page.waitForTimeout(PACE.AFTER_SELECT);
     }
     await waitForSpinner(page);

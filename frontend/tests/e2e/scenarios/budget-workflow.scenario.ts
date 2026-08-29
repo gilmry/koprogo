@@ -15,6 +15,7 @@
  * Duree video attendue : ~50-70 secondes (rythme humain)
  */
 import { test, expect } from "@playwright/test";
+import { selectOptionByName } from "../helpers/name-match";
 import {
   humanLogin,
   humanClick,
@@ -103,17 +104,11 @@ test.describe("Scenario: Francois cree et soumet un budget annuel", () => {
     await buildingSelect.scrollIntoViewIfNeeded();
     await page.waitForTimeout(PACE.BEFORE_SELECT);
 
-    const options = await buildingSelect.locator("option").all();
-    for (const option of options) {
-      const text = await option.textContent();
-      if (text && text.includes("Residence du Parc")) {
-        const value = await option.getAttribute("value");
-        if (value) {
-          await buildingSelect.selectOption(value);
-          break;
-        }
-      }
-    }
+    await selectOptionByName(
+      buildingSelect,
+      "Résidence du Parc",
+      "budget-workflow.scenario.ts",
+    );
     await page.waitForTimeout(PACE.AFTER_SELECT);
 
     await stepPause(page);
