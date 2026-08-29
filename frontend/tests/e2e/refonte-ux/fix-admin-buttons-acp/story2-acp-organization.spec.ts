@@ -100,20 +100,23 @@ test.describe("Story 2 (#698) — ACP au lieu d'Organisation", () => {
     page,
   }) => {
     await loginAsAdmin(page);
-    await page.goto("/dashboard");
 
-    // Déplier d'abord la section « Administration ».
+    // On part de `/admin`, pas de `/dashboard`.
     //
-    // `RoleSubmenu.svelte` range ses liens dans un `<details>` dont l'ouverture
-    // est dérivée de `defaultOpen || containsActive` — et aucun appelant ne
-    // passe `defaultOpen`. Depuis /dashboard, la section admin ne contient pas
-    // la page courante : elle est donc REPLIÉE, et ses liens sont présents dans
-    // le DOM mais INVISIBLES. C'est exactement la cause des 11 échecs
-    // `[scenarios]` corrigée en #730 ; le geste utilisateur est de cliquer le
-    // `<summary>` avant le lien.
-    const adminMenu = page.getByTestId("navigation-menu-admin");
-    await expect(adminMenu).toBeAttached({ timeout: 15_000 });
-    await adminMenu.locator("summary").first().click();
+    // Deux raisons, constatées et non supposées :
+    //
+    // 1. Depuis `/dashboard`, la capture d'écran de l'échec CI montre l'écran
+    //    de CONNEXION : le RouteGuard renvoie sur `/login` avant que
+    //    `authStore.init()` n'ait fini son silent-refresh. C'est le piège que
+    //    `loginAsAdmin` documente lui-même — « 11 échecs sur
+    //    refonte-ux/fix-admin-buttons-acp, tous en redirection vers /login ».
+    //
+    // 2. Sur `/admin`, la section « Administration » contient la page courante,
+    //    donc `containsActive` est vrai et le `<details>` est déplié
+    //    (`isOpen = defaultOpen || containsActive`). Le lien est directement
+    //    visible, sans geste d'ouverture — ce qui teste bien le point d'entrée
+    //    et non la mécanique du menu.
+    await page.goto("/admin");
 
     // Ciblage par `href` et non par `data-testid` : `RoleSubmenu.svelte`
     // génère `nav-link-{slugify(item.label)}` à partir du libellé TRADUIT, donc
