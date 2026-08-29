@@ -38,7 +38,12 @@ pub async fn create_unit(
     // Elle reste acceptée dans le corps pour ne rien casser chez les
     // appelants existants, mais elle n'est plus exigée : absente ou vide,
     // on la lit sur le building, qui en est la source de vérité.
-    let acp_id = match dto.acp_id.as_deref().map(str::trim).filter(|s| !s.is_empty()) {
+    let acp_id = match dto
+        .acp_id
+        .as_deref()
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+    {
         Some(raw) => match Uuid::parse_str(raw) {
             Ok(id) => id,
             Err(_) => {
