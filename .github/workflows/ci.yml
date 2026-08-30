@@ -11,6 +11,17 @@ on:
       - "claude/**"
       - "release/**"
       - "feature/**"
+      # `feature/dev` est la branche que le VPS ecosolva déploie en continu
+      # sur koprogo.com. Elle a son propre circuit, volontairement court :
+      # .github/workflows/vps-feature-dev.yml construit les deux images et
+      # les publie sous `sha-<court>`, et deploy-ecosolva.sh attend qu'elles
+      # existent avant de déployer.
+      #
+      # Cette pipeline-ci prend environ 95 minutes : la laisser tourner sur
+      # chaque commit de la branche allongeait la boucle sans rien bloquer,
+      # puisque le déploiement ne l'attend pas. L'exclusion doit rester APRÈS
+      # `feature/**`, les motifs étant évalués dans l'ordre.
+      - "!feature/dev"
       - "story/**"
       - "chore/**"
   pull_request:
