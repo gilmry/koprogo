@@ -7,6 +7,17 @@
 # d'une chose, un tag immuable par commit, et n'a rien à faire dans le
 # nommage GitOps du cluster.
 #
+# Les images ne sont publiées QUE si les tests unitaires passent : c'est
+# `deploy-ecosolva.sh` qui attend leur publication, donc conditionner celle-ci
+# revient à mettre une barrière avant la production. Sans cela, la sortie de
+# `feature/dev` du CI classique laisserait partir n'importe quoi pourvu que ça
+# compile.
+#
+# Sous-ensemble volontairement réduit aux tests unitaires (5,3 min côté
+# backend, 0,9 min côté frontend sur la pipeline complète). Les tests BDD,
+# d'intégration et Playwright restent hors de cette branche : ce sont eux qui
+# faisaient les 95 minutes.
+#
 # Ce workflow ne publie donc QU'UN tag : `sha-<7 premiers caractères>`.
 # Volontairement pas de `latest` ni de tag mobile : c'est précisément ce que
 # deploy-ecosolva.sh cherche à ne plus tirer. Il attend que les deux images
@@ -35,7 +46,71 @@ env:
 # construit avec cette valeur appelle un hôte inexistant.
 
 jobs:
+  tests-backend:
+    name: Tests unitaires backend
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Setup Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      # Mêmes clés que la pipeline complète : les deux se partagent le cache
+      # au lieu d'en entretenir deux jeux.
+      - name: Cache cargo registry
+        uses: actions/cache@v6
+        with:
+          path: ~/.cargo/registry
+          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Cache cargo index
+        uses: actions/cache@v6
+        with:
+          path: ~/.cargo/git
+          key: ${{ runner.os }}-cargo-index-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Cache cargo build
+        uses: actions/cache@v6
+        with:
+          path: backend/target
+          key: ${{ runner.os }}-cargo-build-target-${{ hashFiles('**/Cargo.lock') }}
+
+      # `--lib` uniquement : pas de base de données à provisionner, donc pas
+      # de service Postgres ni de migrations à jouer.
+      - name: Run unit tests
+        run: |
+          cd backend
+          cargo test --lib --all-features
+
+  tests-frontend:
+    name: Tests unitaires frontend
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        run: |
+          cd frontend
+          npm ci
+
+      - name: Run vitest
+        run: |
+          cd frontend
+          npx vitest run --reporter=default
+
   images:
+    # La barrière. Un test rouge empêche la publication des images, donc le
+    # déploiement, qui ne fait que les attendre.
+    needs: [tests-backend, tests-frontend]
     runs-on: ubuntu-latest
     permissions:
       contents: read
