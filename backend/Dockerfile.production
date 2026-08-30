@@ -31,7 +31,17 @@ FROM chef AS planner
 
 COPY Cargo.toml Cargo.lock ./
 COPY src ./src
-COPY benches ./benches
+
+# Cargo.toml déclare seize sections [[test]] et une [[bench]]. Cargo refuse de
+# parser un manifeste dont les fichiers cibles manquent, or `tests/` n'est
+# volontairement pas copié dans ce stage. On fabrique donc des souches vides,
+# dérivées du manifeste lui-même : aucune liste à tenir à jour en double, et
+# l'ajout d'un test ne casse pas le build.
+RUN mkdir -p tests benches && \
+    awk '/^\[\[test\]\]/{f=1} f&&/^name *=/{gsub(/.*= *"|"/,""); print; f=0}' Cargo.toml \
+      | while read -r t; do echo 'fn main() {}' > "tests/$t.rs"; done && \
+    awk '/^\[\[bench\]\]/{f=1} f&&/^name *=/{gsub(/.*= *"|"/,""); print; f=0}' Cargo.toml \
+      | while read -r b; do echo 'fn main() {}' > "benches/$b.rs"; done
 
 RUN cargo chef prepare --recipe-path recipe.json
 
@@ -48,10 +58,24 @@ FROM chef AS builder
 ENV SQLX_OFFLINE=true
 
 COPY --from=planner /build/recipe.json recipe.json
+COPY Cargo.toml Cargo.lock ./
+
+# Cargo.toml déclare seize sections [[test]] et une [[bench]]. Cargo refuse de
+# parser un manifeste dont les fichiers cibles manquent, or `tests/` n'est
+# volontairement pas copié dans ce stage. On fabrique donc des souches vides,
+# dérivées du manifeste lui-même : aucune liste à tenir à jour en double, et
+# l'ajout d'un test ne casse pas le build.
+RUN mkdir -p tests benches && \
+    awk '/^\[\[test\]\]/{f=1} f&&/^name *=/{gsub(/.*= *"|"/,""); print; f=0}' Cargo.toml \
+      | while read -r t; do echo 'fn main() {}' > "tests/$t.rs"; done && \
+    awk '/^\[\[bench\]\]/{f=1} f&&/^name *=/{gsub(/.*= *"|"/,""); print; f=0}' Cargo.toml \
+      | while read -r b; do echo 'fn main() {}' > "benches/$b.rs"; done
+
 RUN cargo chef cook --release --recipe-path recipe.json
 
-COPY Cargo.toml Cargo.lock ./
 COPY src ./src
+# Les vraies sources écrasent les souches correspondantes ; celles de `tests/`
+# restent en place, `cargo build --release` ne les compilant pas.
 COPY benches ./benches
 # `sqlx::migrate!` embarque les migrations à la compilation : elles doivent
 # être présentes AVANT `cargo build`, pas seulement dans l'image finale.
