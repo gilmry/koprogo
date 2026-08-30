@@ -32,16 +32,11 @@ FROM chef AS planner
 COPY Cargo.toml Cargo.lock ./
 COPY src ./src
 
-# Cargo.toml déclare seize sections [[test]] et une [[bench]]. Cargo refuse de
-# parser un manifeste dont les fichiers cibles manquent, or `tests/` n'est
-# volontairement pas copié dans ce stage. On fabrique donc des souches vides,
-# dérivées du manifeste lui-même : aucune liste à tenir à jour en double, et
-# l'ajout d'un test ne casse pas le build.
-RUN mkdir -p tests benches && \
-    awk '/^\[\[test\]\]/{f=1} f&&/^name *=/{gsub(/.*= *"|"/,""); print; f=0}' Cargo.toml \
-      | while read -r t; do echo 'fn main() {}' > "tests/$t.rs"; done && \
-    awk '/^\[\[bench\]\]/{f=1} f&&/^name *=/{gsub(/.*= *"|"/,""); print; f=0}' Cargo.toml \
-      | while read -r b; do echo 'fn main() {}' > "benches/$b.rs"; done
+# Souches pour les cibles de test et de bench déclarées au manifeste : cargo
+# refuse de le parser si leurs fichiers manquent, et `tests/` n'est pas copié
+# ici. Voir docker/stub-targets.sh pour le détail.
+COPY docker/stub-targets.sh /usr/local/bin/stub-targets
+RUN chmod +x /usr/local/bin/stub-targets && stub-targets
 
 RUN cargo chef prepare --recipe-path recipe.json
 
@@ -60,16 +55,11 @@ ENV SQLX_OFFLINE=true
 COPY --from=planner /build/recipe.json recipe.json
 COPY Cargo.toml Cargo.lock ./
 
-# Cargo.toml déclare seize sections [[test]] et une [[bench]]. Cargo refuse de
-# parser un manifeste dont les fichiers cibles manquent, or `tests/` n'est
-# volontairement pas copié dans ce stage. On fabrique donc des souches vides,
-# dérivées du manifeste lui-même : aucune liste à tenir à jour en double, et
-# l'ajout d'un test ne casse pas le build.
-RUN mkdir -p tests benches && \
-    awk '/^\[\[test\]\]/{f=1} f&&/^name *=/{gsub(/.*= *"|"/,""); print; f=0}' Cargo.toml \
-      | while read -r t; do echo 'fn main() {}' > "tests/$t.rs"; done && \
-    awk '/^\[\[bench\]\]/{f=1} f&&/^name *=/{gsub(/.*= *"|"/,""); print; f=0}' Cargo.toml \
-      | while read -r b; do echo 'fn main() {}' > "benches/$b.rs"; done
+# Souches pour les cibles de test et de bench déclarées au manifeste : cargo
+# refuse de le parser si leurs fichiers manquent, et `tests/` n'est pas copié
+# ici. Voir docker/stub-targets.sh pour le détail.
+COPY docker/stub-targets.sh /usr/local/bin/stub-targets
+RUN chmod +x /usr/local/bin/stub-targets && stub-targets
 
 RUN cargo chef cook --release --recipe-path recipe.json
 
