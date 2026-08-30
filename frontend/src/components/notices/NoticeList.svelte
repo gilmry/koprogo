@@ -97,7 +97,7 @@
           >
             <option value="all">{$_("notices.all_types")}</option>
             {#each Object.values(NoticeType) as type}
-              <option value={type}>{type}</option>
+              <option value={type}>{$_(`notices.noticeType.${type}`)}</option>
             {/each}
           </select>
         </div>
