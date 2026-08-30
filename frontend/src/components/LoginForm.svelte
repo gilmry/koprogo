@@ -65,6 +65,15 @@
         error =
           $_("auth.tooManyAttempts") ||
           "Trop de tentatives de connexion. Réessayez dans 15 minutes.";
+      } else if (response.status === 401) {
+        // Le backend renvoie `{"error": "Invalid credentials"}`, en anglais.
+        // Reprendre cette chaîne telle quelle affichait « Invalid credentials »
+        // à un utilisateur francophone, alors que la traduction existait juste
+        // à côté et n'était jamais atteinte : le `||` ne se déclenche que si le
+        // serveur ne dit rien. Sur un identifiant erroné, la seule information
+        // utile est « c'est faux » ; on l'affiche donc dans la langue de
+        // l'interface, sans jamais relayer le texte du serveur.
+        error = $_("auth.loginError");
       } else {
         const errorData = await response.json().catch(() => ({}));
         error = errorData.error || $_("auth.loginError");
