@@ -162,6 +162,11 @@ jobs:
           file: ${{ matrix.dockerfile }}
           push: true
           tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/${{ matrix.service }}:sha-${{ steps.vars.outputs.short_sha }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          # `scope` par service, sinon les deux jobs de la matrice écrivent
+          # dans le même index de cache GHA et s'écrasent : celui qui termine
+          # en dernier gagne, et l'autre reconstruit tout au run suivant.
+          # Mesuré sur trois runs — l'image backend alternait entre 25 s et
+          # 17 min selon l'ordre de fin du run précédent.
+          cache-from: type=gha,scope=${{ matrix.service }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.service }}
           build-args: ${{ matrix.build_args }}
