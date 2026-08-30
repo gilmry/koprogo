@@ -1237,6 +1237,8 @@
         "noMeetingsPlanned": "No meetings planned",
         "owners": "Co-owners",
         "pendingExpenses": "Pending Expenses",
+        "unitsEncoded": "units encoded",
+        "unitsEncodedOfDeclared": "{encoded} / {declared} units encoded",
         "unitsTotal": "total units"
       },
       "subtitle": "Manage your co-ownerships",

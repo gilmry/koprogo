@@ -1237,6 +1237,8 @@
         "noMeetingsPlanned": "Aucune assemblée planifiée",
         "owners": "Copropriétaires",
         "pendingExpenses": "Charges en attente",
+        "unitsEncoded": "lots encodés",
+        "unitsEncodedOfDeclared": "{encoded} / {declared} lots encodés",
         "unitsTotal": "lots au total"
       },
       "subtitle": "Gestion de vos copropriétés",

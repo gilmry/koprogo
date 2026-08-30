@@ -1237,6 +1237,8 @@
         "noMeetingsPlanned": "Keine Versammlungen geplant",
         "owners": "Miteigentümer",
         "pendingExpenses": "Ausstehende Kosten",
+        "unitsEncoded": "erfasste Einheiten",
+        "unitsEncodedOfDeclared": "{encoded} / {declared} Einheiten erfasst",
         "unitsTotal": "Einheiten insgesamt"
       },
       "subtitle": "Verwalten Sie Ihre Miteigentümergemeinschaften",

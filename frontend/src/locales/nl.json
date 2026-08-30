@@ -1237,6 +1237,8 @@
         "noMeetingsPlanned": "Geen vergaderingen gepland",
         "owners": "Mede-eigenaars",
         "pendingExpenses": "Openstaande kosten",
+        "unitsEncoded": "kavels ingevoerd",
+        "unitsEncodedOfDeclared": "{encoded} / {declared} kavels ingevoerd",
         "unitsTotal": "totaal kavels"
       },
       "subtitle": "Beheer uw mede-eigendommen",

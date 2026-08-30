@@ -40,6 +40,7 @@ impl StatsUseCases {
             None => Ok(SyndicDashboardStats {
                 total_buildings: 0,
                 total_units: 0,
+                declared_units: 0,
                 total_owners: 0,
                 pending_expenses_count: 0,
                 pending_expenses_amount: Decimal::ZERO,
@@ -101,6 +102,7 @@ mod tests {
             Ok(SyndicDashboardStats {
                 total_buildings: 2,
                 total_units: 10,
+                declared_units: 12,
                 total_owners: 8,
                 pending_expenses_count: 3,
                 pending_expenses_amount: dec!(1500.00),
@@ -111,6 +113,7 @@ mod tests {
             Ok(SyndicDashboardStats {
                 total_buildings: 1,
                 total_units: 2,
+                declared_units: 2,
                 total_owners: 5,
                 pending_expenses_count: 1,
                 pending_expenses_amount: dec!(500.00),

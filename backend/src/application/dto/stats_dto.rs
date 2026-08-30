@@ -37,7 +37,18 @@ pub struct NextMeetingInfo {
 #[derive(Debug, Clone, Serialize)]
 pub struct SyndicDashboardStats {
     pub total_buildings: i64,
+    /// Lots effectivement encodés (lignes de la table `units`).
     pub total_units: i64,
+    /// Lots déclarés à l'acte de base, sommés sur les immeubles de
+    /// l'organisation (`buildings.total_units`).
+    ///
+    /// Les deux nombres mesurent des choses différentes et étaient affichés
+    /// sous le même libellé : le tableau de bord annonçait « 0 lots au
+    /// total » pendant que la liste des immeubles affichait « 8 Lots ». Tous
+    /// deux étaient exacts, mais l'un comptait l'encodage et l'autre la
+    /// déclaration. Les exposer ensemble lève l'ambiguïté, comme le fait
+    /// déjà la fiche immeuble avec son « 0/8 ».
+    pub declared_units: i64,
     pub total_owners: i64,
     pub pending_expenses_count: i64,
     /// Total des dépenses en attente, en EUR.
