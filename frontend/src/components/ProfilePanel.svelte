@@ -230,10 +230,16 @@
               <p class="text-xs text-gray-500 uppercase tracking-wider mb-1">Email</p>
               <p class="text-lg text-gray-900">{user.email}</p>
             </div>
-            <div>
-              <p class="text-xs text-gray-500 uppercase tracking-wider mb-1">Membre depuis</p>
-              <p class="text-lg text-gray-900">{formatDate(user.created_at)}</p>
-            </div>
+            <!-- La date n'est affichée que si l'API la fournit. Un compte
+                 connecté avant l'ajout de `created_at` à la réponse de
+                 connexion garde en cache un utilisateur sans ce champ :
+                 mieux vaut masquer la ligne qu'afficher « - ». -->
+            {#if user.created_at}
+              <div>
+                <p class="text-xs text-gray-500 uppercase tracking-wider mb-1">Membre depuis</p>
+                <p class="text-lg text-gray-900">{formatDate(user.created_at)}</p>
+              </div>
+            {/if}
           </div>
         {/if}
       </div>

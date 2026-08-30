@@ -59,6 +59,11 @@ pub struct UserResponse {
     pub role: String,
     pub organization_id: Option<uuid::Uuid>,
     pub is_active: bool,
+    /// Date d'inscription. Absente jusqu'au 2026-08-30 : la page profil
+    /// lisait l'utilisateur depuis la réponse de connexion et affichait donc
+    /// « Membre depuis : - ». `UserResponse` de `user_use_cases` l'exposait
+    /// déjà, ce DTO-ci l'avait simplement oubliée.
+    pub created_at: chrono::DateTime<chrono::Utc>,
     pub roles: Vec<UserRoleSummary>,
     pub active_role: Option<UserRoleSummary>,
 }
