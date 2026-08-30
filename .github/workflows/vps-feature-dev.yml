@@ -1,0 +1,92 @@
+# CI légère pour le déploiement VPS ecosolva (koprogo.com).
+#
+# Pourquoi un workflow à part plutôt qu'ajouter `feature/dev` à
+# docker-build-push.yml : celui-ci porte tout un schéma de tags destiné à
+# ArgoCD et aux environnements Kubernetes (branch, branch-latest,
+# branch-sha7, semver...). La branche déployée sur le VPS n'a besoin que
+# d'une chose, un tag immuable par commit, et n'a rien à faire dans le
+# nommage GitOps du cluster.
+#
+# Ce workflow ne publie donc QU'UN tag : `sha-<7 premiers caractères>`.
+# Volontairement pas de `latest` ni de tag mobile : c'est précisément ce que
+# deploy-ecosolva.sh cherche à ne plus tirer. Il attend que les deux images
+# de ce tag existent avant de déployer, et revient en arrière si le
+# démarrage échoue.
+#
+# Sans ce workflow, `feature/dev` n'était construite nulle part : le VPS
+# tirait `latest`, produit depuis une autre branche, et faisait donc tourner
+# des images sans aucun rapport avec le commit qu'il inscrivait comme
+# déployé.
+
+name: VPS ecosolva (feature/dev)
+
+on:
+  push:
+    branches:
+      - feature/dev
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+# Note sur PUBLIC_API_URL (plus bas, dans la matrice) : le Traefik du VPS
+# route ${API_DOMAIN:-api.koprogo.com} vers le backend. docker-build-push.yml
+# compile `api2.koprogo.com`, qui ne résout pas du tout — un frontend
+# construit avec cette valeur appelle un hôte inexistant.
+
+jobs:
+  images:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    strategy:
+      # Les deux images sont indépendantes : les construire en parallèle et
+      # ne pas interrompre l'une si l'autre échoue. deploy-ecosolva.sh
+      # n'agira de toute façon que lorsque les DEUX seront publiées.
+      fail-fast: false
+      matrix:
+        include:
+          - service: backend
+            dockerfile: backend/Dockerfile.production
+            context: ./backend
+            # Parité avec docker-build-push.yml, qui produit les images qui
+            # tournent aujourd'hui.
+            build_args: SQLX_OFFLINE=true
+          - service: frontend
+            dockerfile: frontend/Dockerfile.production
+            context: ./frontend
+            # Seul le frontend déclare cet ARG ; le passer au backend ferait
+            # un avertissement « build-arg non consommé » à chaque build.
+            build_args: PUBLIC_API_URL=https://api.koprogo.com/api/v1
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v4
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Compute short SHA
+        id: vars
+        # Sept caractères, comme le calcule deploy-ecosolva.sh côté serveur.
+        run: echo "short_sha=${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+
+      - name: Build and push ${{ matrix.service }}
+        uses: docker/build-push-action@v7
+        with:
+          context: ${{ matrix.context }}
+          file: ${{ matrix.dockerfile }}
+          push: true
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/${{ matrix.service }}:sha-${{ steps.vars.outputs.short_sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: ${{ matrix.build_args }}
