@@ -80,6 +80,37 @@ const DYNAMIC_ENUMS: Record<string, string[]> = {
   'notices.noticeType': ['Announcement', 'Event', 'LostAndFound', 'ClassifiedAd'],
 };
 
+// Une clé peut exister et rester non traduite : `gamification.challenges_title`
+// valait « Challenges » en français. Le contrôle de présence ci-dessus ne
+// voyait rien, et c'était affiché tel quel sur /gamification.
+//
+// Comparer bêtement fr et en produirait 141 faux positifs — beaucoup de mots
+// sont légitimement identiques (« Sauna », « Actions », « Type », « Global »).
+// On se limite donc à une liste de mots sans ambiguïté possible en français.
+const ENGLISH_ONLY = [
+  'Achievements', 'Challenges', 'Settings', 'Refresh', 'Unread', 'Loading',
+  'Password', 'Username', 'Failed', 'Warning',
+];
+
+describe('valeurs effectivement traduites', () => {
+  it('le catalogue français ne contient pas de mot manifestement anglais', () => {
+    const catalog = JSON.parse(readFileSync(join(SRC, 'locales', 'fr.json'), 'utf8'));
+    const offenders: string[] = [];
+    const walk = (obj: Record<string, unknown>, prefix = '') => {
+      for (const [k, v] of Object.entries(obj)) {
+        const key = `${prefix}${k}`;
+        if (v !== null && typeof v === 'object') walk(v as Record<string, unknown>, `${key}.`);
+        else if (typeof v === 'string') {
+          const hit = ENGLISH_ONLY.find((w) => new RegExp(`\\b${w}\\b`, 'i').test(v));
+          if (hit) offenders.push(`${key} = ${JSON.stringify(v)}  (« ${hit} »)`);
+        }
+      }
+    };
+    walk(catalog);
+    expect(offenders, 'valeurs françaises restées en anglais').toEqual([]);
+  });
+});
+
 describe('énumérations traduites', () => {
   it.each(LOCALES)('%s traduit chaque valeur d\'énumération', (locale) => {
     const missing: string[] = [];
