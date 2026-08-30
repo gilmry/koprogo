@@ -3,9 +3,9 @@
 # Multi-stage build for minimal image size and optimal performance
 # ============================================================================
 
-# Stage 1: Build
+# Stage 1a: base de construction, partagée par les deux stages suivants.
 # Use nightly with Debian Bookworm base to match runtime GLIBC version
-FROM rustlang/rust:nightly-bookworm-slim AS builder
+FROM rustlang/rust:nightly-bookworm-slim AS chef
 
 WORKDIR /build
 
@@ -18,18 +18,48 @@ RUN apt-get update && \
         curl && \
     rm -rf /var/lib/apt/lists/*
 
-# Copy manifests
-COPY Cargo.toml Cargo.lock ./
+# cargo-chef sépare la compilation des dépendances de celle du code. Couche
+# figée tant que l'image de base ne bouge pas.
+RUN cargo install cargo-chef --locked
 
-# Copy source code
+# Stage 1b: relevé des dépendances.
+#
+# `prepare` ne lit que les manifestes : la recette produite ne change que
+# lorsque Cargo.toml ou Cargo.lock changent, pas à chaque modification de
+# source. C'est ce qui permet à la couche suivante de rester en cache.
+FROM chef AS planner
+
+COPY Cargo.toml Cargo.lock ./
 COPY src ./src
-COPY migrations ./migrations
-COPY tests ./tests
 COPY benches ./benches
-COPY .sqlx ./.sqlx
+
+RUN cargo chef prepare --recipe-path recipe.json
+
+# Stage 1c: construction.
+#
+# Avant ce découpage, tout était copié puis compilé d'un bloc : changer une
+# ligne de source invalidait la couche et recompilait les ~100 dépendances,
+# soit environ quinze minutes à chaque itération. Désormais `cook` compile
+# les dépendances seules et reste en cache tant que Cargo.lock ne bouge pas ;
+# seul le crate applicatif est recompilé.
+FROM chef AS builder
 
 # Set SQLx offline mode for Docker builds
 ENV SQLX_OFFLINE=true
+
+COPY --from=planner /build/recipe.json recipe.json
+RUN cargo chef cook --release --recipe-path recipe.json
+
+COPY Cargo.toml Cargo.lock ./
+COPY src ./src
+COPY benches ./benches
+# `sqlx::migrate!` embarque les migrations à la compilation : elles doivent
+# être présentes AVANT `cargo build`, pas seulement dans l'image finale.
+COPY migrations ./migrations
+COPY .sqlx ./.sqlx
+
+# `tests/` n'est plus copié : `cargo build --release` ne le compile pas, et
+# sa présence invalidait la couche à chaque modification d'un test.
 
 # Build with optimizations (matching CLAUDE.md specs)
 RUN cargo build --release && \
