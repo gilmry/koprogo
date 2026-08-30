@@ -10,9 +10,11 @@
   import PaymentMethodAddModal from "./PaymentMethodAddModal.svelte";
   import Button from "../ui/Button.svelte";
 
-  let { ownerId, canManage = true }: {
+  let { ownerId, canManage = true, showHeader = true }: {
     ownerId: string;
     canManage?: boolean;
+    // Masqué sur /owner/payment-methods, qui porte déjà le même H1.
+    showHeader?: boolean;
   } = $props();
 
   let paymentMethods: PaymentMethod[] = $state([]);
@@ -44,12 +46,16 @@
   <!-- Header -->
   <div class="px-6 py-4 border-b border-gray-200">
     <div class="flex items-center justify-between">
-      <div>
-        <h2 class="text-xl font-semibold text-gray-900">{$_('payments.methodsTitle')}</h2>
-        <p class="mt-1 text-sm text-gray-600">
-          {$_('payments.methodsDescription')}
-        </p>
-      </div>
+      {#if showHeader}
+        <div>
+          <h2 class="text-xl font-semibold text-gray-900">{$_('payments.methodsTitle')}</h2>
+          <p class="mt-1 text-sm text-gray-600">
+            {$_('payments.methodsDescription')}
+          </p>
+        </div>
+      {:else}
+        <div></div>
+      {/if}
       {#if canManage}
         <Button onclick={() => (showAddModal = true)} data-testid="add-payment-method-btn">
           {$_('payments.addMethod')}

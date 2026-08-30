@@ -84,7 +84,7 @@ import Layout from "../../layouts/Layout.astro";
       if (ownerId) {
         mount(PaymentMethodList as any, {
           target: listContainer,
-          props: { ownerId, canManage: true },
+          props: { ownerId, canManage: true, showHeader: false },
         });
       } else {
         listContainer.innerHTML = '<div class="text-center py-12 text-gray-500" data-testid="payment-method-list-error">Impossible de charger vos moyens de paiement. Veuillez vous reconnecter.</div>';

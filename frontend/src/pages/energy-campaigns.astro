@@ -42,9 +42,7 @@ import Layout from "../layouts/Layout.astro";
   if (listContainer) {
     mount(EnergyCampaignList as any, {
       target: listContainer,
-      props: {
-        organizationId: organizationId,
-      },
+      props: { organizationId: organizationId, showHeader: false },
     });
   }
 </script>

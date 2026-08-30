@@ -10,8 +10,9 @@
   import { formatDateShort } from "../../lib/utils/date.utils";
   import { withLoadingState } from "../../lib/utils/error.utils";
 
-  let { organizationId = undefined }: {
+  let { organizationId = undefined, showHeader = true }: {
     organizationId?: string | undefined;
+    showHeader?: boolean;
   } = $props();
 
   let campaigns: EnergyCampaign[] = $state([]);
@@ -60,9 +61,15 @@
 <div class="bg-white shadow-md rounded-lg" data-testid="energy-campaign-list">
   <div class="px-4 py-5 border-b border-gray-200 sm:px-6">
     <div class="flex items-center justify-between">
-      <h3 class="text-lg leading-6 font-medium text-gray-900">
-        📊 {$_("energy.campaign.groupBuying")}
-      </h3>
+    <!-- Masqué quand la page porte déjà un H1 identique ; le div vide
+         conserve l'alignement de la rangée en justify-between. -->
+      {#if showHeader}
+        <h3 class="text-lg leading-6 font-medium text-gray-900">
+          📊 {$_("energy.campaign.groupBuying")}
+        </h3>
+      {:else}
+        <div></div>
+      {/if}
       <a
         href="/energy-campaigns/new"
         class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700"
