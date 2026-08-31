@@ -153,6 +153,28 @@ test.describe("Audit 2026-08-30 — non-régression", () => {
     await expect(page.locator("body")).toBeVisible();
   });
 
+  // UX1 : la liste admin n'offrait aucun moyen d'ouvrir une organisation.
+  test("le nom d'une organisation ouvre sa fiche de détail", async ({ page }) => {
+    await loginAsAdmin(page);
+    await page.goto("/admin/organizations");
+
+    const first = page.getByTestId("organization-name").first();
+    await expect(first).toBeVisible({ timeout: 15000 });
+    const name = (await first.innerText()).trim();
+    await first.click();
+
+    await expect(page).toHaveURL(/\/admin\/organization-detail\?id=/);
+    await expect(page.getByTestId("organization-detail-name")).toHaveText(name, {
+      timeout: 10000,
+    });
+
+    // Les compteurs sont le cœur de la fiche : ils disent ce que
+    // l'organisation contient, là où la liste ne montrait que les plafonds.
+    for (const stat of ["stat-acps", "stat-buildings", "stat-users", "stat-units"]) {
+      await expect(page.getByTestId(stat)).toBeVisible();
+    }
+  });
+
   // B4 : signalé comme « perte de session sur URL admin inconnue ».
   test("une URL admin inconnue ne détruit pas la session", async ({ page }) => {
     await loginAsAdmin(page);

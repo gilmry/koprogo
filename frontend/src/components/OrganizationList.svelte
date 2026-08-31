@@ -204,7 +204,12 @@
               <tr class="hover:bg-gray-50" data-testid="organization-row" data-org-id={org.id} data-org-name={org.name}>
                 <td class="px-6 py-4 whitespace-nowrap">
                   <div>
-                    <div class="text-sm font-medium text-gray-900" data-testid="organization-name">{org.name}</div>
+                    <a
+                      href={`/admin/organization-detail?id=${org.id}`}
+                      class="text-sm font-medium text-primary-600 hover:underline"
+                      data-testid="organization-name"
+                      title={$_('admin.organizations.detail.open')}
+                    >{org.name}</a>
                     <div class="text-sm text-gray-500" data-testid="organization-slug">/{org.slug}</div>
                   </div>
                 </td>

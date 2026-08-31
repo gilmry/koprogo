@@ -87,7 +87,31 @@ impl DatabaseSeeder {
         let now = Utc::now();
         let short = org_id.simple().to_string();
         let short_prefix = &short[..8];
-        let acp_name = format!("ACP par defaut ({})", short_prefix);
+
+        // Copropriétés bruxelloises plausibles plutôt que « ACP par defaut »
+        // avec « Adresse a completer, 0000 A completer ». Le site de
+        // démonstration montrait ces valeurs telles quelles, ce qui donnait
+        // l'impression d'un produit inachevé.
+        //
+        // Rues et codes postaux réels de la Région bruxelloise ; noms de
+        // résidences inventés. `bce_number` reste NULL : un numéro
+        // d'entreprise syntaxiquement valide risquerait de correspondre à une
+        // vraie société.
+        const ACP_MODELES: [(&str, &str, &str, &str); 6] = [
+            ("Résidence Les Tilleuls", "Avenue Louise 143", "1050", "Ixelles"),
+            ("Résidence Dansaert", "Rue Antoine Dansaert 62", "1000", "Bruxelles"),
+            ("Résidence Parc Léopold", "Rue Belliard 28", "1040", "Etterbeek"),
+            ("Résidence Flagey", "Place Eugène Flagey 18", "1050", "Ixelles"),
+            ("Résidence Montgomery", "Avenue de Tervueren 96", "1150", "Woluwe-Saint-Pierre"),
+            ("Résidence Val d'Or", "Chaussée de Waterloo 715", "1180", "Uccle"),
+        ];
+
+        // Choix déterministe : un même identifiant d'organisation rend
+        // toujours la même adresse, donc un seed rejoué reste stable.
+        let index = (org_id.as_u128() % ACP_MODELES.len() as u128) as usize;
+        let (residence, rue, code_postal, commune) = ACP_MODELES[index];
+
+        let acp_name = format!("ACP {residence}");
         let acp_slug = format!("acp-seed-{}", short_prefix);
 
         sqlx::query(
@@ -100,9 +124,9 @@ impl DatabaseSeeder {
         .bind(&acp_name)
         .bind(&acp_slug)
         .bind("copropriete_belge")
-        .bind("Adresse a completer")
-        .bind("0000")
-        .bind("A completer")
+        .bind(rue)
+        .bind(code_postal)
+        .bind(commune)
         .bind(now)
         .bind(now)
         .execute(&self.pool)
