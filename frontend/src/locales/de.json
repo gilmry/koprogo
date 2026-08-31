@@ -1918,6 +1918,13 @@
     "article15": {
       "title": "Auskunftsrecht (Art. 15)"
     },
+    "erase": {
+      "confirmAction": "Endgültig löschen",
+      "confirmBody": "Diese Aktion ist unumkehrbar. Ihre personenbezogenen Daten werden anonymisiert und Sie werden abgemeldet. Geben Sie Ihr Passwort zur Bestätigung ein.",
+      "confirmTitle": "Löschung Ihrer Daten bestätigen",
+      "passwordLabel": "Passwort",
+      "wrongPassword": "Falsches Passwort"
+    },
     "myPersonalData": "DSGVO - Meine persönlichen Daten",
     "rights": "Gemäß der Datenschutz-Grundverordnung."
   },

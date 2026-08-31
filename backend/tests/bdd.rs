@@ -1497,7 +1497,7 @@ async fn when_request_erase_data(world: &mut BuildingWorld) {
     let user_id = world.last_user_id.unwrap();
 
     let result = gdpr_uc
-        .erase_user_data(user_id, user_id, world.org_id)
+        .erase_user_data(user_id, user_id, world.org_id, Some("Passw0rd!"))
         .await;
 
     match result {
@@ -1754,7 +1754,7 @@ async fn when_admin_erase_user_data(world: &mut BuildingWorld) {
     let target_user_id = world.multi_user_id.unwrap();
 
     let result = gdpr_uc
-        .erase_user_data(target_user_id, admin_id, None) // SuperAdmin, no org restriction
+        .erase_user_data(target_user_id, admin_id, None, None) // SuperAdmin, no org restriction
         .await;
 
     match result {

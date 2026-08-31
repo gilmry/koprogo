@@ -1918,6 +1918,13 @@
     "article15": {
       "title": "Recht op inzage (Art. 15)"
     },
+    "erase": {
+      "confirmAction": "Definitief wissen",
+      "confirmBody": "Deze actie is onomkeerbaar. Uw persoonsgegevens worden geanonimiseerd en u wordt afgemeld. Voer uw wachtwoord in om te bevestigen.",
+      "confirmTitle": "Bevestig het wissen van uw gegevens",
+      "passwordLabel": "Wachtwoord",
+      "wrongPassword": "Onjuist wachtwoord"
+    },
     "myPersonalData": "AVG - Mijn persoonlijke gegevens",
     "rights": "In overeenstemming met de Algemene Verordening Gegevensbescherming."
   },

@@ -1918,6 +1918,13 @@
     "article15": {
       "title": "Right of Access (Art. 15)"
     },
+    "erase": {
+      "confirmAction": "Erase permanently",
+      "confirmBody": "This action is irreversible. Your personal data will be anonymised and you will be logged out. Enter your password to confirm.",
+      "confirmTitle": "Confirm erasure of your data",
+      "passwordLabel": "Password",
+      "wrongPassword": "Incorrect password"
+    },
     "myPersonalData": "GDPR - My Personal Data",
     "rights": "In accordance with the General Data Protection Regulation."
   },

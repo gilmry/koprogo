@@ -1918,6 +1918,13 @@
     "article15": {
       "title": "Droit d'accès (Art. 15)"
     },
+    "erase": {
+      "confirmAction": "Effacer définitivement",
+      "confirmBody": "Cette action est irréversible. Vos données personnelles seront anonymisées et vous serez déconnecté. Saisissez votre mot de passe pour confirmer.",
+      "confirmTitle": "Confirmer l'effacement de vos données",
+      "passwordLabel": "Mot de passe",
+      "wrongPassword": "Mot de passe incorrect"
+    },
     "myPersonalData": "RGPD - Mes données personnelles",
     "rights": "Conformément au Règlement Général sur la Protection des Données."
   },

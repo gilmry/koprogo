@@ -123,6 +123,36 @@ test.describe("Audit 2026-08-30 — non-régression", () => {
     expect(clipped, "le badge déborde de sa boîte").toBe(false);
   });
 
+  // UX4 : l'effacement RGPD n'était protégé que par deux `confirm()`.
+  //
+  // Le test s'arrête au mot de passe ERRONÉ, à dessein : vérifier le chemin
+  // nominal effacerait réellement un compte. Ce qui compte ici est que le
+  // garde-fou existe et morde, pas qu'une suppression aboutisse.
+  test("l'effacement RGPD exige le mot de passe et rejette un faux", async ({
+    page,
+  }) => {
+    await loginAsSyndicWithBuilding(page, "audit-gdpr");
+    await page.goto("/profile");
+
+    await page.getByRole("button", { name: /Effacer mes données/ }).click();
+
+    const field = page.getByTestId("gdpr-erase-password");
+    await expect(field).toBeVisible({ timeout: 10000 });
+
+    // Sans mot de passe, l'action reste inaccessible.
+    await expect(page.getByTestId("gdpr-erase-confirm")).toBeDisabled();
+
+    await field.fill("ce-n-est-pas-le-bon-mot-de-passe");
+    await page.getByTestId("gdpr-erase-confirm").click();
+
+    // Le serveur refuse : l'erreur s'affiche et le compte survit.
+    await expect(page.getByTestId("gdpr-erase-error")).toBeVisible({
+      timeout: 10000,
+    });
+    await page.goto("/profile");
+    await expect(page.locator("body")).toBeVisible();
+  });
+
   // B4 : signalé comme « perte de session sur URL admin inconnue ».
   test("une URL admin inconnue ne détruit pas la session", async ({ page }) => {
     await loginAsAdmin(page);

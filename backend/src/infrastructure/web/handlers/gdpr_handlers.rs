@@ -1,4 +1,5 @@
 use crate::application::dto::{
+    GdprEraseRequestDto,
     GdprActionResponse, GdprMarketingPreferenceRequest, GdprRectifyRequest,
     GdprRestrictProcessingRequest,
 };
@@ -200,6 +201,7 @@ pub async fn erase_user_data(
     req: HttpRequest,
     data: web::Data<AppState>,
     auth: AuthenticatedUser,
+    body: web::Json<GdprEraseRequestDto>,
 ) -> impl Responder {
     // Extract user_id from authenticated user
     let user_id = auth.user_id;
@@ -218,7 +220,7 @@ pub async fn erase_user_data(
     // Call use case to erase data
     match data
         .gdpr_use_cases
-        .erase_user_data(user_id, user_id, organization_id)
+        .erase_user_data(user_id, user_id, organization_id, Some(&body.password))
         .await
     {
         Ok(erase_response) => {
