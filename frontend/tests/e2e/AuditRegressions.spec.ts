@@ -1,5 +1,9 @@
 import { test, expect } from "@playwright/test";
-import { loginAsSyndicWithBuilding, loginAsAdmin } from "./helpers/auth";
+import {
+  loginAsSyndicWithBuilding,
+  loginAsSyndicWithUnit,
+  loginAsAdmin,
+} from "./helpers/auth";
 
 /**
  * Non-régression des défauts relevés par l'audit du 2026-08-30.
@@ -174,6 +178,33 @@ test.describe("Audit 2026-08-30 — non-régression", () => {
     for (const stat of ["stat-acps", "stat-buildings", "stat-users", "stat-units"]) {
       await expect(page.getByTestId(stat)).toBeVisible();
     }
+  });
+
+  // Signalé le 2026-08-31 : le bouton « Copropriétaires » d'un lot ne faisait
+  // rien. `expandedUnits` était un Set natif dans un composant en mode runes.
+  // `$state` rend réactifs les objets et les tableaux, jamais les collections
+  // natives, et la réaffectation à soi-même — qui suffisait en Svelte 4 — ne
+  // déclenche rien puisque la comparaison est référentielle.
+  test("le bouton Copropriétaires déplie la liste des propriétaires", async ({
+    page,
+  }) => {
+    const { buildingId } = await loginAsSyndicWithUnit(page, "audit-owners");
+    await page.goto(`/building-detail?id=${buildingId}`);
+
+    const toggle = page.getByRole("button", { name: /Copropriétaires/ }).first();
+    await expect(toggle).toBeVisible({ timeout: 15000 });
+
+    // Replié au départ.
+    await expect(page.getByTestId("owner-list")).toHaveCount(0);
+
+    await toggle.click();
+    await expect(page.getByTestId("owner-list").first()).toBeVisible({
+      timeout: 10000,
+    });
+
+    // Et le bouton referme, sans quoi le Set ne serait réactif qu'à l'ajout.
+    await toggle.click();
+    await expect(page.getByTestId("owner-list")).toHaveCount(0);
   });
 
   // B4 : signalé comme « perte de session sur URL admin inconnue ».

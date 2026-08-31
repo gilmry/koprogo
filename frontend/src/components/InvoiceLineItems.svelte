@@ -58,7 +58,9 @@
 
   function handleLineChange(index: number) {
     calculateLine(lineItems[index]);
-    lineItems = lineItems; // Trigger reactivity
+    // Nouvelle référence plutôt que réaffectation à soi-même : en mode
+    // runes, réassigner la même valeur ne déclenche rien.
+    lineItems = [...lineItems];
     notifyChange();
   }
 

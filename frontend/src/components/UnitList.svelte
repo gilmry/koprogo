@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { SvelteSet } from "svelte/reactivity";
   // Svelte 5 runes mode
   import { _ } from '../lib/i18n';
   import { api } from '../lib/api';
@@ -16,7 +17,12 @@
 
   let units = $state<Unit[]>([]); let loading = $state(true); let error = $state(''); let building = $state<Building | null>(null);
   let currentPage = $state(1); let perPage = $state(20); let totalItems = $state(0); let totalPages = $state(0);
-  let expandedUnits = $state<Set<string>>(new Set());
+  // SvelteSet, pas Set : `$state` rend réactifs les objets et les tableaux,
+  // jamais les collections natives. Muter un Set puis se réaffecter
+  // (`expandedUnits = expandedUnits`) marchait en Svelte 4 ; en mode runes la
+  // comparaison est référentielle, donc l'affectation ne déclenche rien et le
+  // bouton restait sans effet.
+  let expandedUnits = new SvelteSet<string>();
   let showCreateModal = $state(false); let showEditModal = $state(false); let selectedUnit = $state<Unit | null>(null);
   let showDeleteConfirm = $state(false); let unitToDelete = $state<Unit | null>(null);
 
@@ -34,7 +40,7 @@
 
   async function handlePageChange(page: number) { currentPage = page; await loadUnits(); }
 
-  function toggleUnitExpanded(unitId: string) { if (expandedUnits.has(unitId)) expandedUnits.delete(unitId); else expandedUnits.add(unitId); expandedUnits = expandedUnits; }
+  function toggleUnitExpanded(unitId: string) { if (expandedUnits.has(unitId)) expandedUnits.delete(unitId); else expandedUnits.add(unitId); }
 
   function getUnitTypeLabel(type: string): string { const labels: Record<string, string> = { 'Apartment': $_('units.types.apartment'), 'Parking': $_('units.types.parking'), 'Cellar': $_('units.types.cellar') }; return labels[type] || type; }
   function getUnitTypeIcon(type: string): string { const icons: Record<string, string> = { 'Apartment': '🏠', 'Parking': '🚗', 'Cellar': '📦' }; return icons[type] || '📋'; }

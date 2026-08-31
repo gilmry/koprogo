@@ -26,8 +26,9 @@
     for (const bid of buildingIds) {
       try {
         const b = await api.get<Building>(`/buildings/${bid}`);
+        // `$state` rend les objets réactifs en profondeur : l'affectation
+        // par clé suffit, la réaffectation à soi-même était sans effet.
         buildings[bid] = b;
-        buildings = buildings;
       } catch {
         /* skip */
       }
