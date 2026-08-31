@@ -89,7 +89,7 @@
               </div>
             </div>
           </div>
-          {#if expandedUnits.has(unit.id)}<div class="border-t border-gray-200 bg-gray-50 p-4"><UnitOwners unitId={unit.id} /></div>{/if}
+          {#if expandedUnits.has(unit.id)}<div class="border-t border-gray-200 bg-gray-50 p-4" data-testid="unit-owners-panel"><UnitOwners unitId={unit.id} /></div>{/if}
         </div>
       {/each}
     </div>

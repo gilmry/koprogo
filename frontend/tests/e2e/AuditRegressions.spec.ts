@@ -194,17 +194,20 @@ test.describe("Audit 2026-08-30 — non-régression", () => {
     const toggle = page.getByRole("button", { name: /Copropriétaires/ }).first();
     await expect(toggle).toBeVisible({ timeout: 15000 });
 
-    // Replié au départ.
-    await expect(page.getByTestId("owner-list")).toHaveCount(0);
+    // On vise le panneau, pas la liste : `owner-list` n'est rendue que si le
+    // lot a des propriétaires, et un lot fraîchement créé n'en a aucun. Le
+    // panneau, lui, apparaît dès que le lot est déplié — c'est exactement ce
+    // que le bouton doit produire.
+    await expect(page.getByTestId("unit-owners-panel")).toHaveCount(0);
 
     await toggle.click();
-    await expect(page.getByTestId("owner-list").first()).toBeVisible({
+    await expect(page.getByTestId("unit-owners-panel").first()).toBeVisible({
       timeout: 10000,
     });
 
     // Et le bouton referme, sans quoi le Set ne serait réactif qu'à l'ajout.
     await toggle.click();
-    await expect(page.getByTestId("owner-list")).toHaveCount(0);
+    await expect(page.getByTestId("unit-owners-panel")).toHaveCount(0);
   });
 
   // B4 : signalé comme « perte de session sur URL admin inconnue ».
