@@ -83,6 +83,46 @@ test.describe("Audit 2026-08-30 — non-régression", () => {
     });
   });
 
+  // UX7 : signalé comme « switch de langue non fonctionnel ou non visible ».
+  test("le sélecteur de langue change la langue et la retient", async ({
+    page,
+  }) => {
+    await page.goto("/login");
+
+    const switcher = page.locator('button[aria-label="Changer de langue"]');
+    await expect(switcher).toBeVisible({ timeout: 10000 });
+
+    await switcher.click();
+    await page.getByRole("menuitem", { name: /Deutsch/ }).click();
+
+    // La langue s'applique...
+    await expect(switcher).toContainText("DE", { timeout: 5000 });
+    // ...et survit à un rechargement, via localStorage.
+    await page.reload();
+    await expect(switcher).toContainText("DE", { timeout: 10000 });
+  });
+
+  // UX2 : signalé comme « badges rôles tronqués (Syn..., Cop...) ».
+  //
+  // Testé au viewport le plus étroit : c'est là que la troncature
+  // surviendrait si elle devait survenir. Vérifié de 375 à 1920 px, le badge
+  // garde sa largeur naturelle — la table défile horizontalement plutôt que
+  // d'écraser ses colonnes.
+  test("les badges de rôle ne sont pas tronqués", async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 812 });
+    await loginAsAdmin(page);
+    await page.goto("/admin/users");
+
+    const badge = page.locator('[data-testid="user-role-badge"]').first();
+    await expect(badge).toBeVisible({ timeout: 15000 });
+
+    // Un badge tronqué déborde de sa boîte : scrollWidth dépasse clientWidth.
+    const clipped = await badge.evaluate(
+      (node) => node.scrollWidth > node.clientWidth + 1,
+    );
+    expect(clipped, "le badge déborde de sa boîte").toBe(false);
+  });
+
   // B4 : signalé comme « perte de session sur URL admin inconnue ».
   test("une URL admin inconnue ne détruit pas la session", async ({ page }) => {
     await loginAsAdmin(page);

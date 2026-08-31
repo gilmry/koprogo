@@ -3390,6 +3390,13 @@
     "skill": "Skill",
     "title": "Skills Directory"
   },
+  "sync": {
+    "ariaLabel": "Synchronise data",
+    "button": "Sync",
+    "inProgress": "Sync…",
+    "offline": "Offline",
+    "online": "Online"
+  },
   "ticket": {
     "syndic_responses": {
       "empty": "No response yet.",

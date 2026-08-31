@@ -3390,6 +3390,13 @@
     "skill": "Vaardigheid",
     "title": "Vaardigheidsgids"
   },
+  "sync": {
+    "ariaLabel": "Gegevens synchroniseren",
+    "button": "Sync",
+    "inProgress": "Sync…",
+    "offline": "Offline",
+    "online": "Online"
+  },
   "ticket": {
     "syndic_responses": {
       "empty": "Nog geen antwoord.",

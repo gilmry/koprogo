@@ -3390,6 +3390,13 @@
     "skill": "Fähigkeit",
     "title": "Fähigkeitenverzeichnis"
   },
+  "sync": {
+    "ariaLabel": "Daten synchronisieren",
+    "button": "Sync",
+    "inProgress": "Sync…",
+    "offline": "Offline",
+    "online": "Online"
+  },
   "ticket": {
     "syndic_responses": {
       "empty": "Noch keine Antwort.",

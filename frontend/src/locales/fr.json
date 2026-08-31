@@ -3390,6 +3390,13 @@
     "skill": "Compétence",
     "title": "Annuaire des compétences"
   },
+  "sync": {
+    "ariaLabel": "Synchroniser les données",
+    "button": "Sync",
+    "inProgress": "Sync…",
+    "offline": "Hors ligne",
+    "online": "En ligne"
+  },
   "ticket": {
     "syndic_responses": {
       "empty": "Aucune réponse pour l'instant.",
