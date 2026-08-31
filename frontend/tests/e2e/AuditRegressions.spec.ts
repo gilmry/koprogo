@@ -163,7 +163,8 @@ test.describe("Audit 2026-08-30 — non-régression", () => {
     const name = (await first.innerText()).trim();
     await first.click();
 
-    await expect(page).toHaveURL(/\/admin\/organization-detail\?id=/);
+    // Astro sert les pages statiques avec une barre oblique finale.
+    await expect(page).toHaveURL(/\/admin\/organization-detail\/?\?id=/);
     await expect(page.getByTestId("organization-detail-name")).toHaveText(name, {
       timeout: 10000,
     });
