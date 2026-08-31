@@ -113,8 +113,12 @@ test.describe("Audit 2026-08-30 — non-régression", () => {
     await loginAsAdmin(page);
     await page.goto("/admin/users");
 
+    // Délai large à dessein : la page rend aujourd'hui ~500 utilisateurs et
+    // près de 1900 badges de rôle, conséquence des organisations de test
+    // accumulées en base (B8 du rapport). Une fois celles-ci nettoyées, ce
+    // délai deviendra très supérieur au nécessaire — et c'est tant mieux.
     const badge = page.locator('[data-testid="user-role-badge"]').first();
-    await expect(badge).toBeVisible({ timeout: 15000 });
+    await expect(badge).toBeVisible({ timeout: 45000 });
 
     // Un badge tronqué déborde de sa boîte : scrollWidth dépasse clientWidth.
     const clipped = await badge.evaluate(
