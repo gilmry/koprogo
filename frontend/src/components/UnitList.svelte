@@ -10,6 +10,7 @@
   import UnitCreateModal from './UnitCreateModal.svelte';
   import UnitEditModal from './UnitEditModal.svelte';
   import Button from './ui/Button.svelte';
+  import { toNumber } from '../lib/utils/decimal.utils';
 
   let { buildingId = null }: { buildingId?: string | null } = $props();
 
@@ -51,7 +52,12 @@
   async function confirmDelete() { if (!unitToDelete) return; try { await api.delete(`/units/${unitToDelete.id}`); showDeleteConfirm = false; unitToDelete = null; await loadUnits(); } catch (e) { error = e instanceof Error ? e.message : $_('units.deleteError'); console.error('Error deleting unit:', e); showDeleteConfirm = false; } }
   function cancelDelete() { showDeleteConfirm = false; unitToDelete = null; }
 
-  let totalQuotas = $derived(units.reduce((sum, unit) => sum + (unit.quota || 0), 0));
+  // `quota` est un Decimal serialise en STRING (ADR-0008) : `+` concatene au
+  // lieu d'additionner, donc la somme valait "0200.00200.00" et l'affichage
+  // « NaN/1000emes ». Plus grave, `quotasMismatch` comparait NaN, ce qui est
+  // toujours faux : l'indicateur de conformite des quotites annoncait
+  // « quotites correctes » quel que soit l'encodage reel.
+  let totalQuotas = $derived(units.reduce((sum, unit) => sum + toNumber(unit.quota), 0));
   let expectedTotal = $derived(building?.total_tantiemes || 1000);
   let quotasMismatch = $derived(Math.abs(totalQuotas - expectedTotal) > 0.5);
 </script>
@@ -77,7 +83,7 @@
                 <div class="flex-1">
                   <h3 class="text-lg font-semibold text-gray-900">{$_('units.lot')} {unit.unit_number}</h3>
                   <p class="text-gray-600 text-sm mt-1">{getUnitTypeLabel(unit.unit_type)} - {$_('units.floor')} {unit.floor}</p>
-                  <div class="flex gap-4 mt-2 text-sm text-gray-500"><span>📐 {unit.surface_area} m²</span><span>🔢 {Math.round(unit.quota)}/{building?.total_tantiemes || 1000}èmes</span></div>
+                  <div class="flex gap-4 mt-2 text-sm text-gray-500"><span>📐 {unit.surface_area} m²</span><span>🔢 {Math.round(toNumber(unit.quota))}/{building?.total_tantiemes || 1000}èmes</span></div>
                 </div>
               </div>
               <div class="flex gap-2 ml-4">

@@ -143,7 +143,7 @@
       <div>
         <span class="text-gray-500">{$_("owners.summary.total_quota")}</span
         ><span class="ml-1 font-semibold text-gray-900"
-          >{units.reduce((sum, u) => sum + (u.quota || 0), 0)}/1000</span
+          >{units.reduce((sum, u) => sum + toNumber(u.quota), 0)}/1000</span
         >
       </div>
     </div>

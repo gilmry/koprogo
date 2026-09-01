@@ -8,22 +8,22 @@
 // Copyright: Dany De Bontridder <dany@alchimerys.eu>
 
 import Layout from '../layouts/Layout.astro';
-import JournalEntryForm from '../components/JournalEntryForm.svelte';
+import JournalEntriesPanel from '../components/JournalEntriesPanel.svelte';
 ---
 
 <Layout title="Écritures Comptables - KoproGo">
   <div class="container">
     <div class="page-header">
-      <h1>📒 Écritures Comptables Manuelles</h1>
+      <h1>📒 Écritures Comptables</h1>
       <p class="subtitle">
-        Saisie d'opérations comptables en partie double (inspirée de Noalyss)
+        Saisie et consultation des opérations en partie double (inspirée de Noalyss)
       </p>
     </div>
 
     <div class="content-grid">
       <!-- Form Section -->
       <div class="form-section">
-        <JournalEntryForm client:load buildingId={null} />
+        <JournalEntriesPanel client:load buildingId={null} />
       </div>
 
       <!-- Help Section -->

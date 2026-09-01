@@ -71,16 +71,19 @@ export interface PaymentMethod {
   updated_at: string;
 }
 
-export interface CreatePaymentDto {
-  owner_id: string;
-  expense_id?: string;
-  building_id?: string;
-  amount_cents: number;
-  currency?: string;
-  payment_method_type: PaymentMethodType;
-  stripe_payment_intent_id?: string;
-  metadata?: Record<string, any>;
-}
+// Importe depuis le contrat plutot que redeclare a la main.
+//
+// La version manuscrite avait derive sur trois points sans que rien ne le
+// signale : `building_id` y etait optionnel alors que le contrat le declare
+// REQUIS, et `currency` / `stripe_payment_intent_id` n'existent tout
+// simplement pas cote backend — ils etaient donc envoyes puis jetes par serde,
+// qui ignore les champs inconnus par defaut. Les champs `payment_method_id` et
+// `description`, eux, etaient inatteignables.
+//
+// `/payments` est pourtant l'une des rares routes entierement documentees
+// (22/22 dans `payment_handlers.rs`) : le contrat existait, il n'etait pas
+// branche. Un type importe fait echouer `astro check` a la premiere divergence.
+export type CreatePaymentDto = components["schemas"]["CreatePaymentRequest"];
 
 export interface CreatePaymentMethodDto {
   owner_id: string;

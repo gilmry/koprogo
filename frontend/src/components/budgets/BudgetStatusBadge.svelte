@@ -8,6 +8,14 @@
     status: string;
   } = $props();
 
+  // L'API renvoie l'enum en PascalCase ('Draft', 'Submitted'), conformement a
+  // `docs/api/openapi.json`. Les cles etaient en minuscules : aucune ne
+  // correspondait, et le repli `label: s` affichait le statut brut en anglais.
+  //
+  // La normalisation en minuscules plutot qu'un simple changement de casse des
+  // cles : le MEME enum circule en snake_case dans la base et dans le filtre
+  // `?status=draft` accepte par l'API. Indexer sur une forme normalisee evite
+  // que la prochaine divergence de casse reproduise le meme silence.
   function getBadge(s: string): { class: string; label: string } {
     const badges: Record<string, { class: string; label: string }> = {
       'draft': { class: 'bg-gray-100 text-gray-800', label: $_('budgets.status.draft') },
@@ -16,7 +24,7 @@
       'rejected': { class: 'bg-red-100 text-red-800', label: $_('budgets.status.rejected') },
       'archived': { class: 'bg-yellow-100 text-yellow-800', label: $_('budgets.status.archived') },
     };
-    return badges[s] || { class: 'bg-gray-100 text-gray-800', label: s };
+    return badges[(s ?? '').toLowerCase()] || { class: 'bg-gray-100 text-gray-800', label: s };
   }
 
   let badge = $derived(getBadge(status));

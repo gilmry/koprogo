@@ -37,8 +37,13 @@ import PaymentReminderList from '../components/PaymentReminderList.svelte';
             <p>Si pas de réponse après mise en demeure, procédure judiciaire</p>
           </div>
         </div>
+        <!-- Le taux annonce ici doit rester celui reellement applique par
+             `PaymentReminder::BELGIAN_PENALTY_RATE`
+             (backend/src/domain/entities/payment_reminder.rs). Il annoncait 8 %
+             alors que le domaine calcule a 4,5 % : les penalites affichees
+             etaient inferieures de pres de moitie a celles promises. -->
         <p class="text-sm text-gray-600 mt-4">
-          <strong>Pénalités de retard:</strong> Taux légal belge de 8% annuel (montant * 0.08 * jours_retard / 365)
+          <strong>Pénalités de retard:</strong> 4,5 % annuel (montant × 0,045 × jours_retard / 365), arrondi au centime
         </p>
       </div>
     </div>

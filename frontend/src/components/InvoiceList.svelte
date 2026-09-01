@@ -4,6 +4,7 @@
   import { api } from '../lib/api';
   import { formatDate } from '../lib/utils/date.utils';
   import { formatCurrency } from '../lib/utils/finance.utils';
+  import { toNumber } from '../lib/utils/decimal.utils';
   import { withLoadingState } from '../lib/utils/error.utils';
 
   let { buildingId = null, onInvoiceSelected = null, filterByStatus = null, showPendingOnly = false }: {
@@ -143,9 +144,19 @@
     return status;
   }
 
-  function formatAmount(amount: number | null | undefined): string {
+  // Nom DELIBEREMENT distinct de celui de `finance.utils` :
+  //
+  // le helper partage divise par 100 (il recoit des centimes), celle-ci recoit
+  // des EUROS. Deux fonctions homonymes de semantique inverse dans le meme
+  // depot etaient une erreur de facteur 100 en attente : il suffisait
+  // d'ajouter l'import partage a ce fichier, ou de deplacer une ligne d'un
+  // composant a l'autre, pour afficher 24,20 EUR au lieu de 2 420 EUR.
+  //
+  // `toNumber` parce que les montants sont des `Decimal` serialises en chaine
+  // (ADR-0008) : `formatCurrency` est type `number`.
+  function formatEuros(amount: string | number | null | undefined): string {
     if (amount === null || amount === undefined) return '-';
-    return formatCurrency(amount);
+    return formatCurrency(toNumber(amount));
   }
 
   $effect(() => {
@@ -258,10 +269,10 @@
               <td class="description-cell">{invoice.description}</td>
               <td>{invoice.supplier || '-'}</td>
               <td>{invoice.invoice_number || '-'}</td>
-              <td class="amount-cell">{formatAmount(invoice.amount_excl_vat)}</td>
+              <td class="amount-cell">{formatEuros(invoice.amount_excl_vat)}</td>
               <td class="amount-cell">{invoice.vat_rate ? `${invoice.vat_rate}%` : '-'}</td>
               <td class="amount-cell total">
-                {formatAmount(invoice.amount_incl_vat || invoice.amount)}
+                {formatEuros(invoice.amount_incl_vat || invoice.amount)}
               </td>
               <td>
                 <span class="badge {getStatusBadgeClass(invoice.approval_status)}">

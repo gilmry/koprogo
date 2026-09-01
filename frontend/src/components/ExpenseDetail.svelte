@@ -11,12 +11,14 @@
   import { formatDate } from '../lib/utils/date.utils';
   import { formatCurrency, formatAmount } from '../lib/utils/finance.utils';
   import { withErrorHandling } from '../lib/utils/error.utils';
+  import { toNumber } from '../lib/utils/decimal.utils';
 
   let expense: Expense | null = null;
   let building: Building | null = null;
   let expensePayments: Payment[] = [];
   let totalPaidCents = 0;
   let distributions: ChargeDistribution[] = [];
+  let calculatingDistribution = false;
   let loading = true;
   let error = '';
   let expenseId: string = '';
@@ -78,8 +80,52 @@
     }
   }
 
+  // Decomposition HT / TVA (F20). Les quatre champs sont optionnels cote
+  // backend : une depense saisie avant l'ajout du detail TVA, ou creee par
+  // API sans ces champs, n'a que son TTC. On n'affiche donc le bloc que si
+  // au moins le montant HT est connu, plutot que d'afficher des « 0,00 € »
+  // qui se liraient comme une TVA nulle.
+  $: amountExclVat = expense?.amount_excl_vat != null ? toNumber(expense.amount_excl_vat) : null;
+  $: vatRate = expense?.vat_rate != null ? toNumber(expense.vat_rate) : null;
+  // `vat_amount` n'est pas toujours persiste : il se deduit du HT et du TTC.
+  $: vatAmount =
+    expense?.vat_amount != null
+      ? toNumber(expense.vat_amount)
+      : amountExclVat != null
+        ? Math.round((toNumber(expense?.amount) - amountExclVat) * 100) / 100
+        : null;
+  $: hasVatBreakdown = amountExclVat != null;
+
+  $: distributionTotal = distributions.reduce(
+    (sum, d) => sum + toNumber(d.amount_due),
+    0,
+  );
+
   const handleGoBack = () => {
     window.history.back();
+  };
+
+  // La ventilation par tantiemes (F19) etait LISIBLE mais jamais calculable :
+  // `chargeDistributionsApi.calculate` n'avait aucun appelant dans l'interface,
+  // si bien que le bloc `{#if distributions.length > 0}` ne s'affichait jamais
+  // et que la fiche depense ne montrait aucune repartition entre
+  // coproprietaires. C'est le declencheur qui manquait, pas le calcul.
+  const handleCalculateDistribution = async () => {
+    if (!expenseId) return;
+    // Recalculer ecrase des montants dus potentiellement deja notifies :
+    // on ne le fait pas sans confirmation. Le premier calcul, lui, ne detruit
+    // rien et part directement.
+    if (distributions.length > 0 && !confirm($_('expenses.confirm_recalculate_distribution'))) return;
+    calculatingDistribution = true;
+    await withErrorHandling({
+      action: async () => {
+        await chargeDistributionsApi.calculate(expenseId);
+        distributions = await chargeDistributionsApi.getByExpense(expenseId);
+      },
+      successMessage: $_('expenses.distribution_calculated'),
+      errorMessage: $_('expenses.distribution_error'),
+    });
+    calculatingDistribution = false;
   };
 
   const handleMarkPaid = async () => {
@@ -273,7 +319,29 @@
           <!-- Amount -->
           <div>
             <h3 class="text-sm font-medium text-gray-500 uppercase tracking-wider mb-2">{$_('common.amount')}</h3>
-            <p class="text-2xl font-bold text-gray-900" data-testid="amount-display">{formatCurrency(expense.amount)}</p>
+            <p class="text-2xl font-bold text-gray-900" data-testid="amount-display">{formatCurrency(toNumber(expense.amount))}</p>
+            {#if hasVatBreakdown}
+              <dl class="mt-2 space-y-0.5 text-sm" data-testid="vat-breakdown">
+                <div class="flex justify-between gap-4">
+                  <dt class="text-gray-500">{$_('invoices.amount_excl_vat')}</dt>
+                  <dd class="text-gray-900 tabular-nums" data-testid="vat-excl">{formatCurrency(amountExclVat ?? 0)}</dd>
+                </div>
+                <div class="flex justify-between gap-4">
+                  <dt class="text-gray-500">
+                    {$_('expenses.vat_amount')}{vatRate != null ? ` (${vatRate}%)` : ''}
+                  </dt>
+                  <dd class="text-gray-900 tabular-nums" data-testid="vat-amount">{formatCurrency(vatAmount ?? 0)}</dd>
+                </div>
+                <div class="flex justify-between gap-4 border-t border-gray-200 pt-1 font-medium">
+                  <dt class="text-gray-700">{$_('invoices.amount_incl_vat')}</dt>
+                  <dd class="text-gray-900 tabular-nums" data-testid="vat-incl">{formatCurrency(toNumber(expense.amount))}</dd>
+                </div>
+              </dl>
+            {:else}
+              <p class="mt-2 text-xs text-gray-500" data-testid="vat-breakdown-absent">
+                {$_('expenses.no_vat_detail')}
+              </p>
+            {/if}
           </div>
 
           <!-- Category -->
@@ -335,35 +403,60 @@
     </div>
 
     <!-- Charge Distribution Section -->
-    {#if distributions.length > 0}
-      <div class="bg-white rounded-lg shadow-lg overflow-hidden mb-8" data-testid="distributions-section">
-        <div class="bg-gradient-to-r from-indigo-600 to-indigo-700 px-6 py-4">
-          <h2 class="text-xl font-semibold text-white">{$_('expenses.charge_distribution')}</h2>
-        </div>
-        <div class="p-6">
+    <!--
+      La section etait conditionnee a `distributions.length > 0` et n'avait
+      aucun declencheur : elle restait donc invisible en permanence. Elle est
+      desormais toujours rendue, avec l'action qui manquait.
+    -->
+    <div class="bg-white rounded-lg shadow-lg overflow-hidden mb-8" data-testid="distributions-section">
+      <div class="bg-gradient-to-r from-indigo-600 to-indigo-700 px-6 py-4 flex items-center justify-between gap-4">
+        <h2 class="text-xl font-semibold text-white">{$_('expenses.charge_distribution')}</h2>
+        <button
+          type="button"
+          data-testid="calculate-distribution-button"
+          disabled={calculatingDistribution}
+          on:click={handleCalculateDistribution}
+          class="shrink-0 rounded-lg bg-white/15 px-3 py-1.5 text-sm font-medium text-white hover:bg-white/25 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          {calculatingDistribution
+            ? $_('common.loading')
+            : distributions.length > 0
+              ? $_('expenses.recalculate_distribution')
+              : $_('expenses.calculate_distribution')}
+        </button>
+      </div>
+      <div class="p-6">
+        {#if distributions.length === 0}
+          <p class="text-sm text-gray-500" data-testid="no-distribution">{$_('expenses.no_distribution')}</p>
+        {:else}
           <div class="space-y-3">
             {#each distributions as dist}
-              <div class="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
+              <div class="flex items-center justify-between p-3 border border-gray-200 rounded-lg" data-testid="distribution-row">
                 <div class="flex-1">
                   <p class="text-sm font-medium text-gray-900">
                     {$_('expenses.owner')} #{dist.owner_id.substring(0, 8)}
                   </p>
                   <p class="text-xs text-gray-500">
-                    {$_('expenses.quota_part')}: {(dist.quota_percentage * 100).toFixed(2)}%
+                    {$_('expenses.quota_part')}: {(toNumber(dist.quota_percentage) * 100).toFixed(2)}%
                   </p>
                 </div>
                 <span class="text-sm font-bold text-indigo-600">
-                  {formatCurrency(dist.amount_due)}
+                  {formatCurrency(toNumber(dist.amount_due))}
                 </span>
               </div>
             {/each}
           </div>
-          <div class="mt-4 pt-3 border-t text-sm text-gray-500">
-            {distributions.length} {$_('expenses.owner_count', { values: { count: distributions.length } })}
+          <div class="mt-4 pt-3 border-t flex items-center justify-between text-sm">
+            <span class="text-gray-500">
+              {distributions.length} {$_('expenses.owner_count', { values: { count: distributions.length } })}
+            </span>
+            <span class="font-medium text-gray-900" data-testid="distribution-total">
+              {$_('expenses.distribution_total')}: {formatCurrency(distributionTotal)}
+            </span>
           </div>
-        </div>
+        {/if}
       </div>
-    {/if}
+    </div>
 
     <!-- Payments Section -->
     <div class="bg-white rounded-lg shadow-lg overflow-hidden mb-8" data-testid="payments-section">

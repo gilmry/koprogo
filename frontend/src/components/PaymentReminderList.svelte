@@ -39,6 +39,18 @@
 
   let filteredReminders = $derived(reminders.filter(r => { if (filterStatus !== 'all' && r.status !== filterStatus) return false; if (filterLevel !== 'all' && r.level !== filterLevel) return false; return true; }));
 
+  // « Relances actives » ne comptait que le statut `Sent` : une relance
+  // `Pending` (creee mais pas encore envoyee) ou `Escalated` n'y figurait pas,
+  // d'ou un compteur a 0 alors que la liste juste en dessous affichait une
+  // relance en attente. Est active toute relance dont le recouvrement est
+  // encore en cours, c'est-a-dire ni payee ni annulee.
+  const STATUTS_CLOS = ['Paid', 'Cancelled'];
+  let activeRemindersCount = $derived(
+    (stats?.status_counts ?? [])
+      .filter((s: any) => !STATUTS_CLOS.includes(s.status))
+      .reduce((n: number, s: any) => n + (s.count ?? 0), 0),
+  );
+
   function bulkCreateReminders() { if (confirm($_('paymentReminders.bulkCreateConfirm'))) createBulkReminders(); }
 
   async function createBulkReminders() {
@@ -51,7 +63,7 @@
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
       <div class="bg-white rounded-lg shadow p-6"><div class="flex items-center justify-between mb-2"><span class="text-gray-600 text-sm font-medium">{$_('paymentReminders.totalOwed')}</span><span class="text-2xl">💰</span></div><p class="text-3xl font-bold text-gray-900">{formatCurrency(stats.total_owed)}</p></div>
       <div class="bg-white rounded-lg shadow p-6"><div class="flex items-center justify-between mb-2"><span class="text-gray-600 text-sm font-medium">{$_('paymentReminders.penalties')}</span><span class="text-2xl">📊</span></div><p class="text-3xl font-bold text-red-600">{formatCurrency(stats.total_penalties)}</p></div>
-      <div class="bg-white rounded-lg shadow p-6"><div class="flex items-center justify-between mb-2"><span class="text-gray-600 text-sm font-medium">{$_('paymentReminders.activeReminders')}</span><span class="text-2xl">📧</span></div><p class="text-3xl font-bold text-blue-600">{stats.status_counts.find((s: any) => s.status === 'Sent')?.count || 0}</p></div>
+      <div class="bg-white rounded-lg shadow p-6"><div class="flex items-center justify-between mb-2"><span class="text-gray-600 text-sm font-medium">{$_('paymentReminders.activeReminders')}</span><span class="text-2xl">📧</span></div><p class="text-3xl font-bold text-blue-600">{activeRemindersCount}</p></div>
       <div class="bg-white rounded-lg shadow p-6"><div class="flex items-center justify-between mb-2"><span class="text-gray-600 text-sm font-medium">{$_('paymentReminders.recoveryRate')}</span><span class="text-2xl">✅</span></div><p class="text-3xl font-bold text-green-600">{stats.status_counts.find((s: any) => s.status === 'Paid')?.count || 0}</p></div>
     </div>
   {/if}

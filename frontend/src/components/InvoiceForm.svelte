@@ -27,6 +27,13 @@
   let vatRate = $state('21.00');
   let invoiceDate = $state('');
   let dueDate = $state('');
+  // Le millesime du placeholder de numero de facture etait fige a 2024 dans
+  // les quatre catalogues : interpole plutot que reecrit chaque janvier.
+  //
+  // Passe en CHAINE : svelte-i18n formate les arguments via ICU MessageFormat,
+  // et un nombre y recoit le groupement de milliers de la locale — `{year}`
+  // avec 2026 afficherait « 2 026 » en francais.
+  const currentYear = String(new Date().getFullYear());
   let supplier = $state('');
   let invoiceNumber = $state('');
   let accountCode = $state('');
@@ -219,6 +226,11 @@
       description: mode === 'simple' ? description : lineItems.map(l => l.description).join(', '),
       category,
       expense_date: toISODateNoon(invoiceDate),
+      // Le champ etait saisi (pre-rempli par `defaultDueDate()`), relu en
+      // edition, mais jamais envoye : la fiche depense affichait « - » pour une
+      // echeance que l'utilisateur venait de renseigner, et aucun retard
+      // fournisseur ne pouvait etre calcule.
+      due_date: dueDate ? toISODateNoon(dueDate) : null,
       supplier: supplier || null,
       invoice_number: invoiceNumber || null,
       account_code: accountCode || null
@@ -440,7 +452,7 @@
           type="text"
           id="invoiceNumber"
           bind:value={invoiceNumber}
-          placeholder={$_('invoices.invoice_number_placeholder')}
+          placeholder={$_('invoices.invoice_number_placeholder', { values: { year: currentYear } })}
           disabled={loading}
         />
       </div>

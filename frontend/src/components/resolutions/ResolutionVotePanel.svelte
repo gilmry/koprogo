@@ -14,6 +14,7 @@
   import ResolutionStatusBadge from "./ResolutionStatusBadge.svelte";
   import { formatDateTime } from "../../lib/utils/date.utils";
   import { withErrorHandling } from "../../lib/utils/error.utils";
+  import { toNumber } from "../../lib/utils/decimal.utils";
 
   let {
     resolution,
@@ -87,10 +88,6 @@
   // s'affichait donc JAMAIS. Panne silencieuse sur un decompte de vote
   // d'AG (Art. 3.87). Detectee par `e2e_resolutions`, harnais qui n'avait
   // jamais ete execute.
-  const toNumber = (v: string | number | null | undefined): number => {
-    const n = typeof v === "number" ? v : Number.parseFloat(String(v ?? ""));
-    return Number.isFinite(n) ? n : 0;
-  };
   let totalVotingPower = $derived(
     toNumber(resolution.total_voting_power_pour) +
       toNumber(resolution.total_voting_power_contre) +

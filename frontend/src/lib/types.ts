@@ -1,3 +1,5 @@
+import type { components } from "../types/api";
+
 // User roles in the SaaS platform
 export enum UserRole {
   SUPERADMIN = "superadmin", // Platform administrator
@@ -113,18 +115,23 @@ export interface UnitOwner {
 }
 
 // Unit interface
-export interface Unit {
-  id: string;
-  building_id: string;
-  unit_number: string;
-  floor: number;
-  surface_area: number;
-  quota: number; // Quote-part en millièmes (déjà exprimée sur 1000, ex: 350 = 350/1000èmes)
-  unit_type: "Apartment" | "Parking" | "Cellar";
-  owner_id?: string; // Deprecated - use unit_owners instead
-  // Optional: populated owners list
+// Branché sur le contrat plutôt que recopié.
+//
+// La version manuscrite déclarait `quota: number`. Le backend le sérialise en
+// CHAÎNE (`Decimal`, ADR-0008), ce que le contrat dit désormais explicitement :
+// `quota: string`. Ce seul mensonge de type est la cause du défaut F14 du
+// rapport du 2026-09-01 — `units.reduce((s, u) => s + u.quota, 0)` compilait
+// sans broncher, alors que `+` concatène des chaînes : le total des tantièmes
+// affichait « NaN/1000èmes », et l'indicateur de conformité des quotités
+// comparait NaN, donc annonçait « quotités correctes » quel que soit
+// l'encodage réel.
+//
+// Avec le type importé, la même ligne ne compile plus.
+export type Unit = components["schemas"]["UnitResponseDto"] & {
+  // Enrichissement côté client : la liste des détenteurs, chargée séparément
+  // depuis `/unit-owners`. N'existe pas dans la réponse de `/units`.
   owners?: UnitOwner[];
-}
+};
 
 // Expense interface
 export interface Expense {
@@ -148,6 +155,19 @@ export interface Expense {
   supplier?: string;
   invoice_number?: string;
   created_at?: string;
+
+  // Decomposition HT/TVA. Ces champs etaient renvoyes par l'API mais absents
+  // de ce type : la fiche depense ne pouvait afficher que le TTC.
+  //
+  // Type `string | number` et non `number` : ce sont des `Decimal` cote Rust,
+  // serialises en CHAINE (ADR-0008). Les declarer `number` mentait sur le
+  // contenu reel et laissait passer les sommes `+` qui concatenent au lieu
+  // d'additionner. Passer par `toNumber()` avant tout calcul.
+  amount_excl_vat?: string | number | null;
+  vat_rate?: string | number | null;
+  vat_amount?: string | number | null;
+  amount_incl_vat?: string | number | null;
+  account_code?: string | null;
 }
 
 // Meeting interface
