@@ -24,11 +24,21 @@
 #
 # ── Pourquoi un cliquet et non un seuil ───────────────────────────────────
 #
-# Au 2026-08-29 : 604 routes, 46 annotées, 558 non annotées. Exiger 100 %
-# casserait toutes les PR sur un héritage que personne n'a choisi. Le gate
-# applique donc la règle déjà retenue pour le projet Playwright `smoke`
+# Exiger 100 % casserait toutes les PR sur un héritage que personne n'a choisi.
+# Le gate applique donc la règle déjà retenue pour le projet Playwright `smoke`
 # (b1b6648e) : « plancher chiffré puis bascule ». Il échoue UNIQUEMENT si la
 # dette augmente.
+#
+# ── Attention à l'historique de ce chiffre ────────────────────────────────
+#
+# Le cliquet a valu 558 du 2026-08-29 au 2026-09-01, sur la foi d'un comptage
+# FAUX : la détection exigeait moins de 12 lignes entre `#[utoipa::path]` et la
+# macro de route, ce qui excluait toute route dont l'annotation décrit
+# plusieurs réponses. 118 routes pourtant annotées étaient comptées comme
+# manquantes. La dette réelle au 2026-08-29 n'était pas de 558 mais de ~463.
+#
+# Ne pas lire une baisse brutale de ce chiffre comme un progrès : vérifier
+# d'abord que la mesure n'a pas changé.
 #
 # Faire baisser BASELINE au fil des annotations ajoutées est le sens de marche
 # attendu ; le gate y invite explicitement quand l'écart se creuse.
@@ -49,19 +59,30 @@ if [[ ! -d "$ROOT" ]]; then
 fi
 
 # Nombre de routes SANS `#[utoipa::path]` toléré. Ne doit que décroître.
-BASELINE=558
+# Mesuré le 2026-09-01 après annotation des modules journal-entries, units,
+# owner-contributions et call-for-funds (rapport de test workflows financiers).
+BASELINE=440
 
 read -r total annotated < <(
   awk '
-    # Mémorise la distance depuis le dernier #[utoipa::path] rencontré.
-    /#\[utoipa::path/ { seen = NR }
+    # Une annotation `#[utoipa::path(...)]` couvre la PROCHAINE macro de route,
+    # quelle que soit sa longueur.
+    #
+    # La version precedente exigeait moins de 12 lignes entre les deux. Le
+    # seuil punissait la documentation soignee : une route decrivant cinq
+    # reponses, ses parametres et une description multiligne depasse 12 lignes
+    # et etait comptee NON ANNOTEE. Au 2026-09-01, 23 routes fraichement
+    # annotees n\x27en faisaient remonter que 9 — le gate sous-estimait donc le
+    # travail accompli, et aurait pu laisser reperdre un gain reel.
+    #
+    # Le drapeau est remis a zero a chaque fichier ET a chaque route consommee :
+    # une annotation ne peut couvrir qu une seule route.
+    FNR == 1 { pending = 0 }
+    /#\[utoipa::path/ { pending = 1 }
     /^[[:space:]]*#\[(get|post|put|patch|delete)\("/ {
       total++
-      # L annotation doit précéder la macro de route de peu (attributs
-      # intercalés : #[tracing::instrument], commentaires doc, etc.).
-      if (seen && NR - seen <= 12) annotated++
+      if (pending) { annotated++; pending = 0 }
     }
-    FNR == 1 { seen = 0 }
     END { print total+0, annotated+0 }
   ' "$ROOT"/*.rs
 )

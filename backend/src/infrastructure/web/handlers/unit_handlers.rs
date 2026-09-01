@@ -1,4 +1,6 @@
-use crate::application::dto::{CreateUnitDto, PageRequest, PageResponse, UpdateUnitDto};
+use crate::application::dto::{
+    CreateUnitDto, PageRequest, PageResponse, UnitResponseDto, UpdateUnitDto,
+};
 use crate::infrastructure::audit::{AuditEventType, AuditLogEntry};
 use crate::infrastructure::web::middleware::scope_guard::verify_acp_org_access;
 use crate::infrastructure::web::{AppState, AuthenticatedUser};
@@ -6,6 +8,20 @@ use actix_web::{delete, get, post, put, web, HttpResponse, Responder, ResponseEr
 use uuid::Uuid;
 use validator::Validate;
 
+#[utoipa::path(
+    post,
+    path = "/units",
+    tag = "Units",
+    summary = "Create a unit (lot) inside a building",
+    request_body = CreateUnitDto,
+    responses(
+        (status = 201, description = "Unit created", body = UnitResponseDto),
+        (status = 400, description = "Validation error, or unknown field in the body"),
+        (status = 403, description = "Forbidden (superadmin only — structural data)"),
+        (status = 404, description = "Building not found"),
+    ),
+    security(("bearer_auth" = []))
+)]
 #[post("/units")]
 pub async fn create_unit(
     state: web::Data<AppState>,
@@ -120,6 +136,18 @@ pub async fn create_unit(
     }
 }
 
+#[utoipa::path(
+    get,
+    path = "/units/{id}",
+    tag = "Units",
+    summary = "Get a single unit",
+    params(("id" = Uuid, Path, description = "Unit identifier")),
+    responses(
+        (status = 200, description = "Unit", body = UnitResponseDto),
+        (status = 404, description = "Unit not found"),
+    ),
+    security(("bearer_auth" = []))
+)]
 #[get("/units/{id}")]
 pub async fn get_unit(
     state: web::Data<AppState>,
@@ -158,6 +186,17 @@ pub async fn get_unit(
     }
 }
 
+#[utoipa::path(
+    get,
+    path = "/units",
+    tag = "Units",
+    summary = "List units visible to the authenticated user (paginated)",
+    responses(
+        (status = 200, description = "Units page"),
+        (status = 401, description = "User does not belong to an organization"),
+    ),
+    security(("bearer_auth" = []))
+)]
 #[get("/units")]
 pub async fn list_units(
     state: web::Data<AppState>,
@@ -182,6 +221,18 @@ pub async fn list_units(
     }
 }
 
+#[utoipa::path(
+    get,
+    path = "/buildings/{building_id}/units",
+    tag = "Units",
+    summary = "List the units of a building",
+    params(("building_id" = Uuid, Path, description = "Building identifier")),
+    responses(
+        (status = 200, description = "Units", body = Vec<UnitResponseDto>),
+        (status = 403, description = "Forbidden (building outside the user scope)"),
+    ),
+    security(("bearer_auth" = []))
+)]
 #[get("/buildings/{building_id}/units")]
 pub async fn list_units_by_building(
     state: web::Data<AppState>,
@@ -227,6 +278,26 @@ pub async fn list_units_by_building(
     }
 }
 
+#[utoipa::path(
+    put,
+    path = "/units/{id}",
+    tag = "Units",
+    summary = "Update a unit",
+    description = "N'accepte PAS `owner_id` : la relation lot/proprietaire vit dans \
+`unit_owners` (routes `/unit-owners`), qui porte les quotites et les dates de \
+detention. `units.owner_id` est deprecie depuis la migration \
+`20250127000000_refactor_owners_multitenancy`. Un corps portant `owner_id` \
+recevait auparavant un 200 en jetant le champ ; il recoit desormais un 400.",
+    params(("id" = Uuid, Path, description = "Unit identifier")),
+    request_body = UpdateUnitDto,
+    responses(
+        (status = 200, description = "Unit updated", body = UnitResponseDto),
+        (status = 400, description = "Validation error, or unknown field (e.g. `owner_id`)"),
+        (status = 403, description = "Forbidden (superadmin only — quotites are structural)"),
+        (status = 404, description = "Unit not found"),
+    ),
+    security(("bearer_auth" = []))
+)]
 #[put("/units/{id}")]
 pub async fn update_unit(
     state: web::Data<AppState>,
@@ -343,6 +414,19 @@ pub async fn update_unit(
     }
 }
 
+#[utoipa::path(
+    delete,
+    path = "/units/{id}",
+    tag = "Units",
+    summary = "Delete a unit",
+    params(("id" = Uuid, Path, description = "Unit identifier")),
+    responses(
+        (status = 204, description = "Unit deleted"),
+        (status = 403, description = "Forbidden (superadmin only)"),
+        (status = 404, description = "Unit not found"),
+    ),
+    security(("bearer_auth" = []))
+)]
 #[delete("/units/{id}")]
 pub async fn delete_unit(
     state: web::Data<AppState>,
@@ -392,6 +476,21 @@ pub async fn delete_unit(
     }
 }
 
+#[utoipa::path(
+    put,
+    path = "/units/{unit_id}/assign-owner/{owner_id}",
+    tag = "Units",
+    summary = "Assign an owner to a unit",
+    params(
+        ("unit_id" = Uuid, Path, description = "Unit identifier"),
+        ("owner_id" = Uuid, Path, description = "Owner identifier"),
+    ),
+    responses(
+        (status = 200, description = "Owner assigned", body = UnitResponseDto),
+        (status = 400, description = "Assignment refused by the domain"),
+    ),
+    security(("bearer_auth" = []))
+)]
 #[put("/units/{unit_id}/assign-owner/{owner_id}")]
 pub async fn assign_owner(
     state: web::Data<AppState>,

@@ -28,7 +28,6 @@ async function ensureBuildingHasOwner(
   // Create a unit in the building
   const unitResp = await page.request.post(`${API_BASE}/units`, {
     data: {
-      organization_id: orgId,
       building_id: buildingId,
       unit_number: `P${ts}`,
       floor: 1,

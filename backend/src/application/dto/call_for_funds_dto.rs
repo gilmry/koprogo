@@ -4,7 +4,8 @@ use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 /// Request to create a new call for funds
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, utoipa::ToSchema)]
+#[serde(deny_unknown_fields)]
 pub struct CreateCallForFundsRequest {
     pub building_id: Uuid,
     pub title: String,
@@ -17,7 +18,7 @@ pub struct CreateCallForFundsRequest {
 }
 
 /// Response containing call for funds details
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, utoipa::ToSchema)]
 pub struct CallForFundsResponse {
     pub id: Uuid,
     pub organization_id: Uuid,
@@ -80,13 +81,13 @@ impl From<CallForFunds> for CallForFundsResponse {
 }
 
 /// Request to send a call for funds (triggers automatic contribution generation)
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, utoipa::ToSchema)]
 pub struct SendCallForFundsRequest {
     // Empty for now, could add fields like send_date override, notification preferences, etc.
 }
 
 /// Response after sending a call for funds
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, utoipa::ToSchema)]
 pub struct SendCallForFundsResponse {
     pub call_for_funds: CallForFundsResponse,
     pub contributions_generated: usize,

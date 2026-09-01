@@ -182,7 +182,6 @@ test.describe("Characterization 02 — AG Full Cycle (multi-rôle)", () => {
     // Préparer le vote (1 unit + 1 owner record + vote) avant la clôture
     const unitResp = await page.request.post(`${API_BASE}/units`, {
       data: {
-        organization_id: org.id,
         building_id: building.id,
         unit_number: `AG${timestamp}`,
         floor: 1,

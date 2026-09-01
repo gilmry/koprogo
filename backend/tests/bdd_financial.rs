@@ -352,7 +352,11 @@ impl FinancialWorld {
         let expense_repo = Arc::new(PostgresExpenseRepository::new(pool.clone()));
         let payment_reminder_repo = Arc::new(PostgresPaymentReminderRepository::new(pool.clone()));
 
-        let payment_use_cases = PaymentUseCases::new(payment_repo, payment_method_repo.clone());
+        let payment_use_cases = PaymentUseCases::new(
+            payment_repo,
+            payment_method_repo.clone(),
+            owner_contribution_repo.clone(),
+        );
         let payment_method_use_cases = PaymentMethodUseCases::new(payment_method_repo);
         let journal_entry_use_cases = JournalEntryUseCases::new(journal_entry_repo);
         let call_for_funds_use_cases = CallForFundsUseCases::new(
@@ -487,6 +491,7 @@ impl FinancialWorld {
             building_id: self.building_id.unwrap(),
             owner_id,
             expense_id,
+            contribution_id: None,
             amount_cents,
             payment_method_type: method_type,
             payment_method_id: None,

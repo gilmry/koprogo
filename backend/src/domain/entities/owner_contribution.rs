@@ -11,7 +11,7 @@ use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 /// Type of owner contribution
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, utoipa::ToSchema)]
 #[serde(rename_all = "lowercase")]
 pub enum ContributionType {
     /// Regular quarterly fees (appels de fonds ordinaires)
@@ -25,7 +25,7 @@ pub enum ContributionType {
 }
 
 /// Payment status for contributions
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, utoipa::ToSchema)]
 #[serde(rename_all = "lowercase")]
 pub enum ContributionPaymentStatus {
     /// Not yet paid
@@ -39,7 +39,7 @@ pub enum ContributionPaymentStatus {
 }
 
 /// Payment method for contributions
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, utoipa::ToSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum ContributionPaymentMethod {
     /// Bank transfer (virement)
@@ -50,6 +50,39 @@ pub enum ContributionPaymentMethod {
     Check,
     /// Direct debit (domiciliation)
     Domiciliation,
+}
+
+/// Traduction du moyen de paiement TECHNIQUE (module de paiement) vers le
+/// moyen COMPTABLE inscrit sur la quote-part.
+///
+/// Les deux enumerations ne se recouvrent pas : le module de paiement raisonne
+/// en canal d'encaissement (`Card`, `SepaDebit`, `BankTransfer`, `Cash`), la
+/// comptabilite de copropriete en mode de reglement (virement, especes,
+/// cheque, domiciliation). La correspondance est donc etablie ici, une seule
+/// fois, plutot que devinee a chaque appel.
+///
+/// Deux points assumes :
+///   - `Card` -> `BankTransfer`, faute de valeur « carte » cote comptable :
+///     un paiement par carte arrive sur le compte de l'ACP sous forme de
+///     virement du prestataire.
+///   - `SepaDebit` -> `Domiciliation`, qui est exactement la meme chose sous
+///     son nom belge.
+///
+/// Si la distinction devenait necessaire (rapprochement bancaire fin), c'est
+/// `ContributionPaymentMethod` qu'il faudrait etendre, pas cette conversion
+/// qu'il faudrait contourner. Le `match` est EXHAUSTIF sans bras `_` : ajouter
+/// un canal d'encaissement doit forcer a decider de sa traduction comptable,
+/// pas le laisser tomber silencieusement dans un defaut.
+impl From<crate::domain::entities::PaymentMethodType> for ContributionPaymentMethod {
+    fn from(value: crate::domain::entities::PaymentMethodType) -> Self {
+        use crate::domain::entities::PaymentMethodType;
+        match value {
+            PaymentMethodType::SepaDebit => ContributionPaymentMethod::Domiciliation,
+            PaymentMethodType::BankTransfer => ContributionPaymentMethod::BankTransfer,
+            PaymentMethodType::Cash => ContributionPaymentMethod::Cash,
+            PaymentMethodType::Card => ContributionPaymentMethod::BankTransfer,
+        }
+    }
 }
 
 /// Owner contribution (appel de fonds / cotisation)

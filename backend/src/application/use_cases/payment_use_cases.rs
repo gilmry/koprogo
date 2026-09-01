@@ -1,24 +1,30 @@
 use crate::application::dto::{
     CreatePaymentRequest, PaymentResponse, PaymentStatsResponse, RefundPaymentRequest,
 };
-use crate::application::ports::{PaymentMethodRepository, PaymentRepository, PaymentStats};
-use crate::domain::entities::{Payment, TransactionStatus};
+use crate::application::ports::{
+    OwnerContributionRepository, PaymentMethodRepository, PaymentRepository, PaymentStats,
+};
+use crate::domain::entities::{ContributionPaymentMethod, Payment, TransactionStatus};
 use std::sync::Arc;
 use uuid::Uuid;
 
 pub struct PaymentUseCases {
     payment_repository: Arc<dyn PaymentRepository>,
     payment_method_repository: Arc<dyn PaymentMethodRepository>,
+    /// Necessaire pour solder la quote-part rattachee a un paiement reussi.
+    owner_contribution_repository: Arc<dyn OwnerContributionRepository>,
 }
 
 impl PaymentUseCases {
     pub fn new(
         payment_repository: Arc<dyn PaymentRepository>,
         payment_method_repository: Arc<dyn PaymentMethodRepository>,
+        owner_contribution_repository: Arc<dyn OwnerContributionRepository>,
     ) -> Self {
         Self {
             payment_repository,
             payment_method_repository,
+            owner_contribution_repository,
         }
     }
 
@@ -56,6 +62,7 @@ impl PaymentUseCases {
             request.building_id,
             request.owner_id,
             request.expense_id,
+            request.contribution_id,
             request.amount_cents,
             request.payment_method_type,
             idempotency_key,
@@ -194,6 +201,13 @@ impl PaymentUseCases {
     }
 
     /// Mark payment as succeeded
+    ///
+    /// Si le paiement solde une quote-part (`contribution_id`), celle-ci passe
+    /// a `Paid` ici — et NULLE PART AILLEURS. C'est le seul instant ou l'argent
+    /// est reellement arrive : un paiement naissant `Pending` n'est qu'une
+    /// intention (3DS a valider, virement SEPA en vol), et marquer la
+    /// contribution des sa creation aurait affiche comme paye ce qui ne l'est
+    /// pas encore.
     pub async fn mark_succeeded(&self, id: Uuid) -> Result<PaymentResponse, String> {
         let mut payment = self
             .payment_repository
@@ -204,7 +218,76 @@ impl PaymentUseCases {
         payment.mark_succeeded()?;
 
         let updated = self.payment_repository.update(&payment).await?;
+        self.settle_linked_contribution(&updated).await;
         Ok(PaymentResponse::from(updated))
+    }
+
+    /// Solde la quote-part rattachee a un paiement reussi.
+    ///
+    /// Volontairement INFAILLIBLE : le paiement, lui, a deja abouti et a ete
+    /// persiste. Faire echouer l'appel parce que la contribution est
+    /// introuvable ou deja soldee ferait remonter une erreur sur une operation
+    /// qui a pourtant reussi, et pousserait l'appelant a rejouer un encaissement.
+    /// Un echec est donc journalise, pas propage.
+    async fn settle_linked_contribution(&self, payment: &Payment) {
+        let Some(contribution_id) = payment.contribution_id else {
+            return;
+        };
+
+        let contribution = match self
+            .owner_contribution_repository
+            .find_by_id(contribution_id)
+            .await
+        {
+            Ok(Some(c)) => c,
+            Ok(None) => {
+                tracing::warn!(
+                    payment_id = %payment.id,
+                    contribution_id = %contribution_id,
+                    "paiement reussi rattache a une contribution introuvable",
+                );
+                return;
+            }
+            Err(err) => {
+                tracing::error!(
+                    payment_id = %payment.id,
+                    contribution_id = %contribution_id,
+                    error = %err,
+                    "lecture de la contribution impossible apres un paiement reussi",
+                );
+                return;
+            }
+        };
+
+        // Deja soldee : cas normal d'un second paiement partiel ou d'un rejeu
+        // de webhook. Ne rien faire vaut mieux qu'ecraser la date de paiement
+        // d'origine.
+        if contribution.is_paid() {
+            return;
+        }
+
+        let mut contribution = contribution;
+        contribution.mark_as_paid(
+            payment.succeeded_at.unwrap_or(payment.updated_at),
+            // Le module de paiement raisonne en `PaymentMethodType` (Stripe) et
+            // la contribution en `ContributionPaymentMethod` (comptable). La
+            // correspondance est etablie une seule fois, ici.
+            ContributionPaymentMethod::from(payment.payment_method_type.clone()),
+            Some(payment.id.to_string()),
+        );
+
+        if let Err(err) = self
+            .owner_contribution_repository
+            .update(&contribution)
+            .await
+        {
+            tracing::error!(
+                payment_id = %payment.id,
+                contribution_id = %contribution_id,
+                error = %err,
+                "quote-part non soldee malgre un paiement reussi",
+            );
+        }
     }
 
     /// Mark payment as failed
@@ -386,8 +469,14 @@ mod tests {
     use crate::domain::entities::payment_method::{
         PaymentMethod, PaymentMethodType as PMMethodType,
     };
-    use crate::domain::entities::{Payment, PaymentMethodType, TransactionStatus};
+    use crate::application::ports::OwnerContributionRepository;
+    use crate::domain::entities::{
+        ContributionPaymentStatus, ContributionType, OwnerContribution, Payment, PaymentMethodType,
+        TransactionStatus,
+    };
     use async_trait::async_trait;
+    use chrono::Utc;
+    use rust_decimal_macros::dec;
     use std::collections::HashMap;
     use std::sync::Mutex;
     use uuid::Uuid;
@@ -795,7 +884,95 @@ mod tests {
         payment_repo: Arc<dyn PaymentRepository>,
         pm_repo: Arc<dyn PaymentMethodRepository>,
     ) -> PaymentUseCases {
-        PaymentUseCases::new(payment_repo, pm_repo)
+        PaymentUseCases::new(
+            payment_repo,
+            pm_repo,
+            Arc::new(MockOwnerContributionRepository::new()),
+        )
+    }
+
+    fn make_use_cases_with_contributions(
+        payment_repo: Arc<dyn PaymentRepository>,
+        pm_repo: Arc<dyn PaymentMethodRepository>,
+        contribution_repo: Arc<MockOwnerContributionRepository>,
+    ) -> PaymentUseCases {
+        PaymentUseCases::new(payment_repo, pm_repo, contribution_repo)
+    }
+
+    struct MockOwnerContributionRepository {
+        contributions: Mutex<HashMap<Uuid, OwnerContribution>>,
+    }
+
+    impl MockOwnerContributionRepository {
+        fn new() -> Self {
+            Self {
+                contributions: Mutex::new(HashMap::new()),
+            }
+        }
+
+        fn with_contribution(contribution: OwnerContribution) -> Self {
+            let mut map = HashMap::new();
+            map.insert(contribution.id, contribution);
+            Self {
+                contributions: Mutex::new(map),
+            }
+        }
+
+        fn get(&self, id: Uuid) -> Option<OwnerContribution> {
+            self.contributions.lock().unwrap().get(&id).cloned()
+        }
+    }
+
+    #[async_trait]
+    impl OwnerContributionRepository for MockOwnerContributionRepository {
+        async fn create(&self, c: &OwnerContribution) -> Result<OwnerContribution, String> {
+            self.contributions.lock().unwrap().insert(c.id, c.clone());
+            Ok(c.clone())
+        }
+        async fn find_by_id(&self, id: Uuid) -> Result<Option<OwnerContribution>, String> {
+            Ok(self.contributions.lock().unwrap().get(&id).cloned())
+        }
+        async fn find_by_organization(
+            &self,
+            organization_id: Uuid,
+        ) -> Result<Vec<OwnerContribution>, String> {
+            Ok(self
+                .contributions
+                .lock()
+                .unwrap()
+                .values()
+                .filter(|c| c.organization_id == organization_id)
+                .cloned()
+                .collect())
+        }
+        async fn find_by_owner(&self, owner_id: Uuid) -> Result<Vec<OwnerContribution>, String> {
+            Ok(self
+                .contributions
+                .lock()
+                .unwrap()
+                .values()
+                .filter(|c| c.owner_id == owner_id)
+                .cloned()
+                .collect())
+        }
+        async fn update(&self, c: &OwnerContribution) -> Result<OwnerContribution, String> {
+            self.contributions.lock().unwrap().insert(c.id, c.clone());
+            Ok(c.clone())
+        }
+    }
+
+    fn seed_contribution(organization_id: Uuid, owner_id: Uuid) -> OwnerContribution {
+        OwnerContribution::new(
+            organization_id,
+            owner_id,
+            None,
+            "Charges Q3 2026".to_string(),
+            dec!(2000.00),
+            ContributionType::Regular,
+            Utc::now(),
+            Some("7000".to_string()),
+        )
+        .expect("contribution de test valide")
     }
 
     fn make_create_request(
@@ -807,6 +984,7 @@ mod tests {
             building_id,
             owner_id,
             expense_id: None,
+            contribution_id: None,
             amount_cents,
             payment_method_type: PaymentMethodType::Card,
             payment_method_id: None,
@@ -827,6 +1005,7 @@ mod tests {
             org_id,
             building_id,
             owner_id,
+            None,
             None,
             amount_cents,
             PaymentMethodType::Card,
@@ -894,6 +1073,171 @@ mod tests {
         assert!(result
             .unwrap_err()
             .contains("Amount must be greater than 0"));
+    }
+
+    // ------------------------------------------------------------------
+    // Non-regression F4 (rapport du 2026-09-01) — le paiement d'une quote-part
+    // laissait la contribution en `pending` indefiniment. Le champ
+    // `contribution_id` n'existait pas et etait jete en silence par serde.
+    // ------------------------------------------------------------------
+
+    /// Un paiement REUSSI solde la quote-part qu'il designe.
+    #[tokio::test]
+    async fn test_paiement_reussi_solde_la_quote_part_liee() {
+        let org_id = Uuid::new_v4();
+        let owner_id = Uuid::new_v4();
+        let contribution = seed_contribution(org_id, owner_id);
+        let contribution_id = contribution.id;
+        assert_eq!(
+            contribution.payment_status,
+            ContributionPaymentStatus::Pending,
+            "prealable : la contribution part impayee"
+        );
+
+        let payment_repo = Arc::new(MockPaymentRepository::new());
+        let contrib_repo = Arc::new(MockOwnerContributionRepository::with_contribution(
+            contribution,
+        ));
+        let uc = make_use_cases_with_contributions(
+            payment_repo.clone(),
+            Arc::new(MockPaymentMethodRepository::new()),
+            contrib_repo.clone(),
+        );
+
+        let mut request = make_create_request(Uuid::new_v4(), owner_id, 200_000);
+        request.contribution_id = Some(contribution_id);
+        let created = uc.create_payment(org_id, request).await.unwrap();
+
+        // Le rattachement est bien persiste...
+        assert_eq!(created.contribution_id, Some(contribution_id));
+        // ...mais un paiement naissant `Pending` ne solde RIEN : c'est une
+        // intention, pas un encaissement. C'est la moitie du defaut F4 que le
+        // rapport n'avait pas vue.
+        assert_eq!(
+            contrib_repo.get(contribution_id).unwrap().payment_status,
+            ContributionPaymentStatus::Pending,
+            "une intention de paiement ne doit pas marquer la quote-part payee"
+        );
+
+        uc.mark_processing(created.id).await.unwrap();
+        uc.mark_succeeded(created.id).await.unwrap();
+
+        let apres = contrib_repo.get(contribution_id).unwrap();
+        assert_eq!(
+            apres.payment_status,
+            ContributionPaymentStatus::Paid,
+            "la quote-part doit etre soldee des que le paiement aboutit"
+        );
+        assert!(apres.payment_date.is_some(), "la date de paiement est posee");
+        assert_eq!(
+            apres.payment_reference,
+            Some(created.id.to_string()),
+            "la reference doit permettre de remonter au paiement"
+        );
+        // `Card` n'a pas d'equivalent comptable : il se traduit en virement.
+        assert_eq!(
+            apres.payment_method,
+            Some(ContributionPaymentMethod::BankTransfer)
+        );
+    }
+
+    /// Un paiement sans quote-part liee ne touche a rien.
+    #[tokio::test]
+    async fn test_paiement_sans_quote_part_ne_solde_rien() {
+        let org_id = Uuid::new_v4();
+        let owner_id = Uuid::new_v4();
+        let contribution = seed_contribution(org_id, owner_id);
+        let contribution_id = contribution.id;
+
+        let payment_repo = Arc::new(MockPaymentRepository::new());
+        let contrib_repo = Arc::new(MockOwnerContributionRepository::with_contribution(
+            contribution,
+        ));
+        let uc = make_use_cases_with_contributions(
+            payment_repo.clone(),
+            Arc::new(MockPaymentMethodRepository::new()),
+            contrib_repo.clone(),
+        );
+
+        let request = make_create_request(Uuid::new_v4(), owner_id, 200_000);
+        let created = uc.create_payment(org_id, request).await.unwrap();
+        uc.mark_processing(created.id).await.unwrap();
+        uc.mark_succeeded(created.id).await.unwrap();
+
+        assert_eq!(
+            contrib_repo.get(contribution_id).unwrap().payment_status,
+            ContributionPaymentStatus::Pending,
+            "un paiement non rattache ne doit solder aucune quote-part"
+        );
+    }
+
+    /// @edge — une quote-part deja soldee n'est pas ecrasee.
+    ///
+    /// Cas reel : rejeu d'un webhook Stripe, ou second paiement partiel. Ecraser
+    /// la date de paiement d'origine fausserait le suivi des retards.
+    #[tokio::test]
+    async fn test_quote_part_deja_soldee_nest_pas_ecrasee() {
+        let org_id = Uuid::new_v4();
+        let owner_id = Uuid::new_v4();
+        let mut contribution = seed_contribution(org_id, owner_id);
+        let contribution_id = contribution.id;
+        let date_origine = Utc::now() - chrono::Duration::days(10);
+        contribution.mark_as_paid(
+            date_origine,
+            ContributionPaymentMethod::Cash,
+            Some("recu-papier-42".to_string()),
+        );
+
+        let payment_repo = Arc::new(MockPaymentRepository::new());
+        let contrib_repo = Arc::new(MockOwnerContributionRepository::with_contribution(
+            contribution,
+        ));
+        let uc = make_use_cases_with_contributions(
+            payment_repo.clone(),
+            Arc::new(MockPaymentMethodRepository::new()),
+            contrib_repo.clone(),
+        );
+
+        let mut request = make_create_request(Uuid::new_v4(), owner_id, 200_000);
+        request.contribution_id = Some(contribution_id);
+        let created = uc.create_payment(org_id, request).await.unwrap();
+        uc.mark_processing(created.id).await.unwrap();
+        uc.mark_succeeded(created.id).await.unwrap();
+
+        let apres = contrib_repo.get(contribution_id).unwrap();
+        assert_eq!(
+            apres.payment_reference,
+            Some("recu-papier-42".to_string()),
+            "le paiement d'origine doit rester la reference"
+        );
+        assert_eq!(apres.payment_method, Some(ContributionPaymentMethod::Cash));
+    }
+
+    /// @edge — une contribution introuvable ne fait PAS echouer le paiement.
+    ///
+    /// Le paiement a abouti et est deja persiste : remonter une erreur ici
+    /// pousserait l'appelant a rejouer un encaissement.
+    #[tokio::test]
+    async fn test_quote_part_introuvable_ne_fait_pas_echouer_le_paiement() {
+        let org_id = Uuid::new_v4();
+        let payment_repo = Arc::new(MockPaymentRepository::new());
+        let uc = make_use_cases_with_contributions(
+            payment_repo.clone(),
+            Arc::new(MockPaymentMethodRepository::new()),
+            Arc::new(MockOwnerContributionRepository::new()),
+        );
+
+        let mut request = make_create_request(Uuid::new_v4(), Uuid::new_v4(), 200_000);
+        request.contribution_id = Some(Uuid::new_v4()); // n'existe pas
+        let created = uc.create_payment(org_id, request).await.unwrap();
+        uc.mark_processing(created.id).await.unwrap();
+
+        let resultat = uc.mark_succeeded(created.id).await;
+        assert!(
+            resultat.is_ok(),
+            "le paiement reste reussi meme si la quote-part est introuvable"
+        );
+        assert_eq!(resultat.unwrap().status, TransactionStatus::Succeeded);
     }
 
     #[tokio::test]

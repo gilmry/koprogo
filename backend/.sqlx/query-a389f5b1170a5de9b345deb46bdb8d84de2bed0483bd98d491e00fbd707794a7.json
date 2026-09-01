@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n            SELECT id, organization_id, building_id, owner_id, expense_id,\n                   amount_cents, currency, status AS \"status: String\",\n                   payment_method_type AS \"payment_method_type: String\",\n                   stripe_payment_intent_id, stripe_customer_id, payment_method_id,\n                   idempotency_key, description, metadata, failure_reason,\n                   refunded_amount_cents, succeeded_at, failed_at, cancelled_at,\n                   created_at, updated_at\n            FROM payments\n            WHERE expense_id = $1\n            ORDER BY created_at DESC\n            ",
+  "query": "\n            SELECT id, organization_id, building_id, owner_id, expense_id, contribution_id,\n                   amount_cents, currency, status AS \"status: String\",\n                   payment_method_type AS \"payment_method_type: String\",\n                   stripe_payment_intent_id, stripe_customer_id, payment_method_id,\n                   idempotency_key, description, metadata, failure_reason,\n                   refunded_amount_cents, succeeded_at, failed_at, cancelled_at,\n                   created_at, updated_at\n            FROM payments\n            WHERE expense_id = $1\n            ORDER BY created_at DESC\n            ",
   "describe": {
     "columns": [
       {
@@ -30,16 +30,21 @@
       },
       {
         "ordinal": 5,
+        "name": "contribution_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 6,
         "name": "amount_cents",
         "type_info": "Int8"
       },
       {
-        "ordinal": 6,
+        "ordinal": 7,
         "name": "currency",
         "type_info": "Varchar"
       },
       {
-        "ordinal": 7,
+        "ordinal": 8,
         "name": "status: String",
         "type_info": {
           "Custom": {
@@ -59,7 +64,7 @@
         }
       },
       {
-        "ordinal": 8,
+        "ordinal": 9,
         "name": "payment_method_type: String",
         "type_info": {
           "Custom": {
@@ -76,67 +81,67 @@
         }
       },
       {
-        "ordinal": 9,
+        "ordinal": 10,
         "name": "stripe_payment_intent_id",
         "type_info": "Varchar"
       },
       {
-        "ordinal": 10,
+        "ordinal": 11,
         "name": "stripe_customer_id",
         "type_info": "Varchar"
       },
       {
-        "ordinal": 11,
+        "ordinal": 12,
         "name": "payment_method_id",
         "type_info": "Uuid"
       },
       {
-        "ordinal": 12,
+        "ordinal": 13,
         "name": "idempotency_key",
         "type_info": "Varchar"
       },
       {
-        "ordinal": 13,
+        "ordinal": 14,
         "name": "description",
         "type_info": "Text"
       },
       {
-        "ordinal": 14,
+        "ordinal": 15,
         "name": "metadata",
         "type_info": "Jsonb"
       },
       {
-        "ordinal": 15,
+        "ordinal": 16,
         "name": "failure_reason",
         "type_info": "Text"
       },
       {
-        "ordinal": 16,
+        "ordinal": 17,
         "name": "refunded_amount_cents",
         "type_info": "Int8"
       },
       {
-        "ordinal": 17,
+        "ordinal": 18,
         "name": "succeeded_at",
         "type_info": "Timestamptz"
       },
       {
-        "ordinal": 18,
+        "ordinal": 19,
         "name": "failed_at",
         "type_info": "Timestamptz"
       },
       {
-        "ordinal": 19,
+        "ordinal": 20,
         "name": "cancelled_at",
         "type_info": "Timestamptz"
       },
       {
-        "ordinal": 20,
+        "ordinal": 21,
         "name": "created_at",
         "type_info": "Timestamptz"
       },
       {
-        "ordinal": 21,
+        "ordinal": 22,
         "name": "updated_at",
         "type_info": "Timestamptz"
       }
@@ -151,6 +156,7 @@
       false,
       false,
       false,
+      true,
       true,
       false,
       false,
@@ -171,5 +177,5 @@
       false
     ]
   },
-  "hash": "625b41081e2c0ebeadb90abe57289600b85f2394a45d14dd61d0a04aededca17"
+  "hash": "a389f5b1170a5de9b345deb46bdb8d84de2bed0483bd98d491e00fbd707794a7"
 }

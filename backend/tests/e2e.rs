@@ -261,7 +261,11 @@ async fn setup_test_db() -> (
         TwoFactorUseCases::new(two_factor_repo, user_repo.clone(), encryption_key);
     let notification_use_cases =
         NotificationUseCases::new(notification_repo, notification_preference_repo);
-    let payment_use_cases = PaymentUseCases::new(payment_repo.clone(), payment_method_repo.clone());
+    let payment_use_cases = PaymentUseCases::new(
+        payment_repo.clone(),
+        payment_method_repo.clone(),
+        owner_contribution_repo.clone(),
+    );
     let payment_method_use_cases = PaymentMethodUseCases::new(payment_method_repo);
     let quote_use_cases = QuoteUseCases::new(quote_repo);
     let local_exchange_use_cases = LocalExchangeUseCases::new(

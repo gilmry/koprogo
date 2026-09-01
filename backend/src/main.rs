@@ -321,6 +321,8 @@ async fn main() -> std::io::Result<()> {
     let payment_use_cases_arc = Arc::new(PaymentUseCases::new(
         payment_repo.clone(),
         payment_method_repo.clone(),
+        // Un paiement reussi solde la quote-part qu'il designe.
+        owner_contribution_repo.clone(),
     ));
     let payment_method_use_cases = PaymentMethodUseCases::new(payment_method_repo);
     let quote_use_cases = QuoteUseCases::new(quote_repo.clone());
@@ -632,6 +634,31 @@ async fn main() -> std::io::Result<()> {
 
         App::new()
             .app_data(app_state.clone())
+            // Corps d'erreur JSON pour les echecs de DESERIALISATION.
+            //
+            // Sans ceci, actix rend un 400 en `text/plain` (« Json deserialize
+            // error: ... »). Tout appelant faisant `.json()` dessus recoit
+            // « Unexpected token 'J' », un message qui ne dit rien du defaut
+            // reel : c'est ce qui avait fait echouer `02-ag-full-cycle` et
+            // taire `seedConformantUnits` sur `POST /units` (cf. le commentaire
+            // de `CreateUnitDto::acp_id`). Le contournement d'alors avait rendu
+            // `acp_id` optionnel ; la cause, elle, restait entiere pour tous les
+            // autres champs de toutes les autres routes.
+            //
+            // Prealable a `#[serde(deny_unknown_fields)]` : un champ inconnu
+            // doit produire un refus LISIBLE, sinon on remplace une perte
+            // silencieuse par une erreur illisible.
+            .app_data(web::JsonConfig::default().error_handler(|err, _req| {
+                let detail = err.to_string();
+                actix_web::error::InternalError::from_response(
+                    err,
+                    actix_web::HttpResponse::BadRequest().json(serde_json::json!({
+                        "error": "Invalid request body",
+                        "details": detail,
+                    })),
+                )
+                .into()
+            }))
             .wrap(gdpr_rate_limit.clone())
             .wrap(cors)
             .wrap(SecurityHeaders) // Security headers for all responses

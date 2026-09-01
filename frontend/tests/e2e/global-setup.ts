@@ -115,7 +115,6 @@ export default async function globalSetup() {
   ] as const) {
     const unitResp = await ctx.post(`${API_BASE}/units`, {
       data: {
-        organization_id: org.id,
         building_id: building.id,
         unit_number: num,
         unit_type: "Apartment",

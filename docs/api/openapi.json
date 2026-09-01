@@ -978,6 +978,50 @@
         ]
       }
     },
+    "/buildings/{building_id}/units": {
+      "get": {
+        "tags": [
+          "Units"
+        ],
+        "summary": "List the units of a building",
+        "operationId": "list_units_by_building",
+        "parameters": [
+          {
+            "name": "building_id",
+            "in": "path",
+            "description": "Building identifier",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Units",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/UnitResponseDto"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden (building outside the user scope)"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
     "/buildings/{id}": {
       "get": {
         "tags": [
@@ -1203,6 +1247,303 @@
             "description": "Invalid / expired / already consumed"
           }
         }
+      }
+    },
+    "/call-for-funds": {
+      "get": {
+        "tags": [
+          "CallForFunds"
+        ],
+        "summary": "List calls for funds, optionally filtered by building or status",
+        "operationId": "list_call_for_funds",
+        "parameters": [
+          {
+            "name": "building_id",
+            "in": "query",
+            "description": "Restrict to one building",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "description": "draft | sent | overdue | cancelled",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Calls for funds",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CallForFundsResponse"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "User does not belong to an organization"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "CallForFunds"
+        ],
+        "summary": "Create a collective call for funds (draft)",
+        "operationId": "create_call_for_funds",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateCallForFundsRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Call for funds created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CallForFundsResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error, or unknown field in the body"
+          },
+          "401": {
+            "description": "User does not belong to an organization"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/call-for-funds/overdue": {
+      "get": {
+        "tags": [
+          "CallForFunds"
+        ],
+        "summary": "List overdue calls for funds",
+        "operationId": "get_overdue_calls",
+        "responses": {
+          "200": {
+            "description": "Overdue calls",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CallForFundsResponse"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "User does not belong to an organization"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/call-for-funds/{id}": {
+      "get": {
+        "tags": [
+          "CallForFunds"
+        ],
+        "summary": "Get a single call for funds",
+        "operationId": "get_call_for_funds",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Call for funds identifier",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Call for funds",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CallForFundsResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "CallForFunds"
+        ],
+        "summary": "Delete a draft call for funds",
+        "operationId": "delete_call_for_funds",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Call for funds identifier",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Deleted"
+          },
+          "400": {
+            "description": "Only a draft can be deleted"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/call-for-funds/{id}/cancel": {
+      "put": {
+        "tags": [
+          "CallForFunds"
+        ],
+        "summary": "Cancel a call for funds",
+        "operationId": "cancel_call_for_funds",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Call for funds identifier",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Cancelled",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CallForFundsResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/call-for-funds/{id}/send": {
+      "post": {
+        "tags": [
+          "CallForFunds"
+        ],
+        "summary": "Send a call for funds and generate individual contributions",
+        "description": "Ventile le montant total entre les coproprietaires ACTIFS du batiment, au prorata de leurs quotites. Les detentions sont lues dans `unit_owners` (routes `/unit-owners`), PAS dans le champ deprecie `units.owner_id` : un batiment dont les lots n'ont pas de detenteur actif enregistre la echoue avec « No active owners found for this building ».",
+        "operationId": "send_call_for_funds",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Call for funds identifier",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SendCallForFundsRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Sent, contributions generated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SendCallForFundsResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "No active owners, or building not conformant"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
       }
     },
     "/consent": {
@@ -1496,6 +1837,16 @@
         "summary": "Erase user data by anonymization (Article 17 - Right to Erasure)",
         "description": "This endpoint anonymizes the user's account and all linked owner profiles.\nData is not deleted entirely to preserve referential integrity and comply with\nlegal retention requirements (e.g., financial records must be kept for 7 years).\n\n# Returns\n* `200 OK` - JSON confirmation of successful anonymization\n* `401 Unauthorized` - Missing or invalid authentication\n* `403 Forbidden` - User attempting to erase another user's data\n* `409 Conflict` - Legal holds prevent erasure (e.g., unpaid expenses)\n* `410 Gone` - User already anonymized\n* `500 Internal Server Error` - Database or processing error",
         "operationId": "erase_user_data",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GdprEraseRequestDto"
+              }
+            }
+          },
+          "required": true
+        },
         "responses": {
           "200": {
             "description": "User data anonymized"
@@ -1684,6 +2035,244 @@
           },
           "500": {
             "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/journal-entries": {
+      "get": {
+        "tags": [
+          "JournalEntries"
+        ],
+        "summary": "List journal entries (paginated, filterable)",
+        "description": "**Access:** Accountant, SuperAdmin, Syndic\n\n**Query Parameters:**\n- `building_id`: Filter by building (optional)\n- `journal_type`: Filter by journal type (ACH, VEN, FIN, ODS) (optional)\n- `start_date`: Filter by start date (ISO 8601) (optional)\n- `end_date`: Filter by end date (ISO 8601) (optional)\n- `page`: Page number (default: 1)\n- `per_page`: Items per page (default: 20, max: 100)\n\n**Example:**\n```\nGET /api/v1/journal-entries?journal_type=ACH&page=1&per_page=20\n```",
+        "operationId": "list_journal_entries",
+        "parameters": [
+          {
+            "name": "building_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "journal_type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          {
+            "name": "start_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          {
+            "name": "end_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "format": "int64"
+            }
+          },
+          {
+            "name": "per_page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Journal entries page",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/JournalEntryResponse"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "User does not belong to an organization"
+          },
+          "403": {
+            "description": "Forbidden (accountant, syndic or superadmin only)"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "JournalEntries"
+        ],
+        "summary": "Create a manual journal entry (double-entry bookkeeping)",
+        "description": "**Access:** Accountant, SuperAdmin\n\n**Noalyss-Inspired Features:**\n- Journal types: ACH (Purchases), VEN (Sales), FIN (Financial), ODS (Miscellaneous)\n- Double-entry validation (debits = credits)\n- Multi-line entries with account codes\n\n**Example:**\n```json\nPOST /api/v1/journal-entries\n{\n  \"building_id\": \"uuid\",\n  \"journal_type\": \"ACH\",\n  \"entry_date\": \"2025-01-01T00:00:00Z\",\n  \"description\": \"Achat fournitures\",\n  \"reference\": \"FA-2025-001\",\n  \"lines\": [\n    {\"account_code\": \"604\", \"debit\": 100.0, \"credit\": 0.0, \"description\": \"Fournitures\"},\n    {\"account_code\": \"440\", \"debit\": 0.0, \"credit\": 100.0, \"description\": \"Fournisseur X\"}\n  ]\n}\n```",
+        "operationId": "create_journal_entry",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateJournalEntryRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Journal entry created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JournalEntryWithLinesResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Unbalanced entry, or unknown field in the body"
+          },
+          "401": {
+            "description": "User does not belong to an organization"
+          },
+          "403": {
+            "description": "Forbidden (accountant or superadmin only)"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/journal-entries/{id}": {
+      "get": {
+        "tags": [
+          "JournalEntries"
+        ],
+        "summary": "Get a single journal entry with its lines",
+        "description": "**Access:** Accountant, SuperAdmin, Syndic\n\n**Example:**\n```\nGET /api/v1/journal-entries/{id}\n```",
+        "operationId": "get_journal_entry",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Journal entry identifier",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Journal entry with lines",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JournalEntryWithLinesResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "User does not belong to an organization"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Journal entry not found"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "JournalEntries"
+        ],
+        "summary": "Delete a journal entry and its lines",
+        "description": "**Access:** Accountant, SuperAdmin\n\n**Note:** Only manual entries (not auto-generated from expenses/contributions) can be deleted.\n\n**Example:**\n```\nDELETE /api/v1/journal-entries/{id}\n```",
+        "operationId": "delete_journal_entry",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Journal entry identifier",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Journal entry deleted"
+          },
+          "401": {
+            "description": "User does not belong to an organization"
+          },
+          "403": {
+            "description": "Forbidden (accountant or superadmin only)"
+          },
+          "404": {
+            "description": "Journal entry not found"
           }
         },
         "security": [
@@ -2422,6 +3011,218 @@
           },
           "403": {
             "description": "Access denied — resource belongs to another organization"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/owner-contributions": {
+      "get": {
+        "tags": [
+          "OwnerContributions"
+        ],
+        "summary": "List contributions of the organization, or of a single owner",
+        "operationId": "get_contributions_by_owner",
+        "parameters": [
+          {
+            "name": "owner_id",
+            "in": "query",
+            "description": "Restrict to one owner",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Contributions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/OwnerContributionResponse"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "User does not belong to an organization"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "OwnerContributions"
+        ],
+        "summary": "Create an owner contribution (quote-part)",
+        "operationId": "create_contribution",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateOwnerContributionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Contribution created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OwnerContributionResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error, or unknown field in the body"
+          },
+          "401": {
+            "description": "User does not belong to an organization"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/owner-contributions/outstanding": {
+      "get": {
+        "tags": [
+          "OwnerContributions"
+        ],
+        "summary": "List unpaid contributions",
+        "operationId": "get_outstanding_contributions",
+        "responses": {
+          "200": {
+            "description": "Outstanding contributions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/OwnerContributionResponse"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "User does not belong to an organization"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/owner-contributions/{id}": {
+      "get": {
+        "tags": [
+          "OwnerContributions"
+        ],
+        "summary": "Get a single owner contribution",
+        "operationId": "get_contribution",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Contribution identifier",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Contribution",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OwnerContributionResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Contribution not found"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/owner-contributions/{id}/mark-paid": {
+      "put": {
+        "tags": [
+          "OwnerContributions"
+        ],
+        "summary": "Record a payment against a contribution",
+        "description": "Voie SUPPORTEE pour solder une quote-part depuis l'interface. Un paiement du module `/payments` peut aussi la solder automatiquement : il suffit de lui passer `contribution_id`, et la quote-part bascule quand le paiement atteint `succeeded`.",
+        "operationId": "record_payment",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Contribution identifier",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecordPaymentRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Payment recorded",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OwnerContributionResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Already paid, or unknown field in the body"
+          },
+          "404": {
+            "description": "Contribution not found"
           }
         },
         "security": [
@@ -4657,6 +5458,254 @@
         }
       }
     },
+    "/units": {
+      "get": {
+        "tags": [
+          "Units"
+        ],
+        "summary": "List units visible to the authenticated user (paginated)",
+        "operationId": "list_units",
+        "responses": {
+          "200": {
+            "description": "Units page"
+          },
+          "401": {
+            "description": "User does not belong to an organization"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "Units"
+        ],
+        "summary": "Create a unit (lot) inside a building",
+        "operationId": "create_unit",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateUnitDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Unit created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnitResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error, or unknown field in the body"
+          },
+          "403": {
+            "description": "Forbidden (superadmin only — structural data)"
+          },
+          "404": {
+            "description": "Building not found"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/units/{id}": {
+      "get": {
+        "tags": [
+          "Units"
+        ],
+        "summary": "Get a single unit",
+        "operationId": "get_unit",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Unit identifier",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Unit",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnitResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Unit not found"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "Units"
+        ],
+        "summary": "Update a unit",
+        "description": "N'accepte PAS `owner_id` : la relation lot/proprietaire vit dans `unit_owners` (routes `/unit-owners`), qui porte les quotites et les dates de detention. `units.owner_id` est deprecie depuis la migration `20250127000000_refactor_owners_multitenancy`. Un corps portant `owner_id` recevait auparavant un 200 en jetant le champ ; il recoit desormais un 400.",
+        "operationId": "update_unit",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Unit identifier",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateUnitDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Unit updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnitResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error, or unknown field (e.g. `owner_id`)"
+          },
+          "403": {
+            "description": "Forbidden (superadmin only — quotites are structural)"
+          },
+          "404": {
+            "description": "Unit not found"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "Units"
+        ],
+        "summary": "Delete a unit",
+        "operationId": "delete_unit",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Unit identifier",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Unit deleted"
+          },
+          "403": {
+            "description": "Forbidden (superadmin only)"
+          },
+          "404": {
+            "description": "Unit not found"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/units/{unit_id}/assign-owner/{owner_id}": {
+      "put": {
+        "tags": [
+          "Units"
+        ],
+        "summary": "Assign an owner to a unit",
+        "operationId": "assign_owner",
+        "parameters": [
+          {
+            "name": "unit_id",
+            "in": "path",
+            "description": "Unit identifier",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "owner_id",
+            "in": "path",
+            "description": "Owner identifier",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Owner assigned",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnitResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Assignment refused by the domain"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
     "/users/{user_id}/role-assignments": {
       "get": {
         "tags": [
@@ -5068,6 +6117,99 @@
           }
         }
       },
+      "CallForFundsResponse": {
+        "type": "object",
+        "description": "Response containing call for funds details",
+        "required": [
+          "id",
+          "organization_id",
+          "building_id",
+          "title",
+          "description",
+          "total_amount",
+          "contribution_type",
+          "call_date",
+          "due_date",
+          "status",
+          "is_overdue",
+          "created_at",
+          "updated_at"
+        ],
+        "properties": {
+          "account_code": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "building_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "call_date": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "contribution_type": {
+            "type": "string"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "created_by": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "description": {
+            "type": "string"
+          },
+          "due_date": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "is_overdue": {
+            "type": "boolean"
+          },
+          "notes": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "organization_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "sent_date": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "status": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "total_amount": {
+            "type": "string"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
       "CampaignStatus": {
         "type": "string",
         "enum": [
@@ -5331,6 +6473,36 @@
           }
         }
       },
+      "ContributionPaymentMethod": {
+        "type": "string",
+        "description": "Payment method for contributions",
+        "enum": [
+          "bank_transfer",
+          "cash",
+          "check",
+          "domiciliation"
+        ]
+      },
+      "ContributionPaymentStatus": {
+        "type": "string",
+        "description": "Payment status for contributions",
+        "enum": [
+          "pending",
+          "paid",
+          "partial",
+          "cancelled"
+        ]
+      },
+      "ContributionType": {
+        "type": "string",
+        "description": "Type of owner contribution",
+        "enum": [
+          "regular",
+          "extraordinary",
+          "advance",
+          "adjustment"
+        ]
+      },
       "ConvocationStatus": {
         "type": "string",
         "description": "Convocation status",
@@ -5445,6 +6617,52 @@
           }
         }
       },
+      "CreateCallForFundsRequest": {
+        "type": "object",
+        "description": "Request to create a new call for funds",
+        "required": [
+          "building_id",
+          "title",
+          "description",
+          "total_amount",
+          "contribution_type",
+          "call_date",
+          "due_date"
+        ],
+        "properties": {
+          "account_code": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "building_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "call_date": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "contribution_type": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "due_date": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "title": {
+            "type": "string"
+          },
+          "total_amount": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
       "CreateContractorEvaluationRequest": {
         "type": "object",
         "required": [
@@ -5476,6 +6694,47 @@
             "format": "uuid"
           }
         }
+      },
+      "CreateJournalEntryRequest": {
+        "type": "object",
+        "description": "`deny_unknown_fields` : le rapport de test du 2026-09-01 (constat F16)\nsignalait `operation_date` et `reference` « non persistes ». Les noms\nattendus sont `entry_date` et `document_ref` ; l'interface les envoie\ncorrectement, mais un appelant qui se trompait recevait un 201 avec une\necriture amputee de sa reference. Serde les rejette desormais.",
+        "required": [
+          "journal_type",
+          "entry_date",
+          "description",
+          "lines"
+        ],
+        "properties": {
+          "building_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "description": {
+            "type": "string"
+          },
+          "document_ref": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "entry_date": {
+            "type": "string"
+          },
+          "journal_type": {
+            "type": "string"
+          },
+          "lines": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/JournalEntryLineRequest"
+            }
+          }
+        },
+        "additionalProperties": false
       },
       "CreateNotificationRequest": {
         "type": "object",
@@ -5522,9 +6781,53 @@
           }
         }
       },
+      "CreateOwnerContributionRequest": {
+        "type": "object",
+        "description": "DTO for creating a new owner contribution",
+        "required": [
+          "owner_id",
+          "description",
+          "amount",
+          "contribution_type",
+          "contribution_date"
+        ],
+        "properties": {
+          "account_code": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "amount": {
+            "type": "string"
+          },
+          "contribution_date": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "contribution_type": {
+            "$ref": "#/components/schemas/ContributionType"
+          },
+          "description": {
+            "type": "string"
+          },
+          "owner_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "unit_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          }
+        },
+        "additionalProperties": false
+      },
       "CreatePaymentRequest": {
         "type": "object",
-        "description": "Create payment request DTO",
+        "description": "Create payment request DTO\n\n`deny_unknown_fields` : un `POST /payments` portant `contribution_id`\nrepondait 201 en jetant le champ, laissant croire que la quote-part venait\nd'etre soldee. Le champ existe desormais ; tout AUTRE champ inconnu\n(`currency`, `stripe_payment_intent_id`, que le client TypeScript envoyait\nsans qu'ils existent cote serveur) produit un 400 explicite plutot qu'une\nperte silencieuse.",
         "required": [
           "building_id",
           "owner_id",
@@ -5539,6 +6842,14 @@
           "building_id": {
             "type": "string",
             "format": "uuid"
+          },
+          "contribution_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid",
+            "description": "Quote-part soldee par ce paiement. La contribution ne passe a `paid`\nqu'a la reussite du paiement, pas a sa creation."
           },
           "description": {
             "type": [
@@ -5573,7 +6884,8 @@
           "payment_method_type": {
             "$ref": "#/components/schemas/PaymentMethodType"
           }
-        }
+        },
+        "additionalProperties": false
       },
       "CreatePollDto": {
         "type": "object",
@@ -5846,6 +7158,50 @@
           }
         }
       },
+      "CreateUnitDto": {
+        "type": "object",
+        "required": [
+          "building_id",
+          "unit_number",
+          "unit_type",
+          "surface_area",
+          "quota"
+        ],
+        "properties": {
+          "acp_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Story H15 — FK vers `acps.id` (anciennement `organization_id`).\nLe lot dérive son ACP de son building parent (cf. #602) ; le scoping\norg se fait via `acps.organization_id`.\n\nOPTIONNEL depuis 2026-08-27. Le champ était obligatoire, ce qui\ncontredisait la ligne au-dessus : si l'ACP se dérive du building, le\nclient n'a pas à la fournir. Deux conséquences mesurées :\n\n  1. Un `POST /units` sans `acp_id` était rejeté par serde AVANT\n     d'atteindre le handler, avec un corps en TEXTE BRUT\n     (« Json deserialize error: missing field `acp_id` »). Le garde-fou\n     `if dto.acp_id.is_empty()` du handler, qui rend un JSON propre,\n     était donc mort pour ce cas : il ne se déclenchait que sur une\n     chaîne vide explicite.\n\n  2. Tout appelant faisant `.json()` sur cette réponse recevait\n     « Unexpected token 'J' », un message qui ne dit rien du défaut.\n     C'est ce qui faisait échouer `02-ag-full-cycle` (gate de\n     caractérisation) et taire `seedConformantUnits` en `status=400`.\n\nAbsent ou vide, l'ACP est désormais lue sur le building parent, qui\nest la source de vérité. Fournie, elle est utilisée telle quelle :\nle comportement des appelants existants est inchangé."
+          },
+          "building_id": {
+            "type": "string"
+          },
+          "floor": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32"
+          },
+          "quota": {
+            "type": "string",
+            "description": "Quote-part en millièmes (Decimal exact, range 0.1..=1000 enforced en domain)."
+          },
+          "surface_area": {
+            "type": "number",
+            "format": "double"
+          },
+          "unit_number": {
+            "type": "string"
+          },
+          "unit_type": {
+            "$ref": "#/components/schemas/UnitType"
+          }
+        },
+        "additionalProperties": false
+      },
       "CreditStatus": {
         "type": "string",
         "enum": [
@@ -6034,6 +7390,26 @@
           "Advanced",
           "Expert"
         ]
+      },
+      "GdprEraseRequestDto": {
+        "type": "object",
+        "description": "Request DTO for GDPR data erasure (Article 17)",
+        "required": [
+          "password"
+        ],
+        "properties": {
+          "confirmation": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Optional confirmation token for security"
+          },
+          "password": {
+            "type": "string",
+            "description": "Mot de passe de la personne qui demande l'effacement de ses propres\ndonnées. L'action est irréversible : deux `confirm()` côté navigateur\nne prouvent rien, et un appel direct à l'API les ignorait tout à fait."
+          }
+        }
       },
       "GdprMarketingPreferenceRequest": {
         "type": "object",
@@ -6226,6 +7602,148 @@
             "type": "string",
             "format": "date-time",
             "description": "Mandatory. Returning 422-like validation if missing."
+          }
+        }
+      },
+      "JournalEntryLineRequest": {
+        "type": "object",
+        "required": [
+          "account_code",
+          "debit",
+          "credit",
+          "description"
+        ],
+        "properties": {
+          "account_code": {
+            "type": "string"
+          },
+          "credit": {
+            "type": "string"
+          },
+          "debit": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "JournalEntryLineResponse": {
+        "type": "object",
+        "required": [
+          "id",
+          "journal_entry_id",
+          "account_code",
+          "debit",
+          "credit",
+          "created_at"
+        ],
+        "properties": {
+          "account_code": {
+            "type": "string"
+          },
+          "created_at": {
+            "type": "string"
+          },
+          "credit": {
+            "type": "string"
+          },
+          "debit": {
+            "type": "string"
+          },
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "id": {
+            "type": "string"
+          },
+          "journal_entry_id": {
+            "type": "string"
+          }
+        }
+      },
+      "JournalEntryResponse": {
+        "type": "object",
+        "required": [
+          "id",
+          "organization_id",
+          "entry_date",
+          "created_at",
+          "updated_at"
+        ],
+        "properties": {
+          "building_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "contribution_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "created_at": {
+            "type": "string"
+          },
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "document_ref": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "entry_date": {
+            "type": "string"
+          },
+          "expense_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "id": {
+            "type": "string"
+          },
+          "journal_type": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "organization_id": {
+            "type": "string"
+          },
+          "updated_at": {
+            "type": "string"
+          }
+        }
+      },
+      "JournalEntryWithLinesResponse": {
+        "type": "object",
+        "required": [
+          "entry",
+          "lines"
+        ],
+        "properties": {
+          "entry": {
+            "$ref": "#/components/schemas/JournalEntryResponse"
+          },
+          "lines": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/JournalEntryLineResponse"
+            }
           }
         }
       },
@@ -6429,6 +7947,102 @@
           "Used"
         ]
       },
+      "OwnerContributionResponse": {
+        "type": "object",
+        "description": "DTO for owner contribution response",
+        "required": [
+          "id",
+          "organization_id",
+          "owner_id",
+          "description",
+          "amount",
+          "contribution_type",
+          "contribution_date",
+          "payment_status",
+          "created_at",
+          "updated_at"
+        ],
+        "properties": {
+          "account_code": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "amount": {
+            "type": "string"
+          },
+          "contribution_date": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "contribution_type": {
+            "$ref": "#/components/schemas/ContributionType"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "description": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "notes": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "organization_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "owner_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "payment_date": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "payment_method": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/ContributionPaymentMethod"
+              }
+            ]
+          },
+          "payment_reference": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "payment_status": {
+            "$ref": "#/components/schemas/ContributionPaymentStatus"
+          },
+          "unit_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
       "ParticipationLevel": {
         "type": "string",
         "enum": [
@@ -6508,6 +8122,30 @@
             "description": "Optional policy version (e.g., \"1.0\", \"1.1\")"
           }
         }
+      },
+      "RecordPaymentRequest": {
+        "type": "object",
+        "description": "DTO for recording a payment",
+        "required": [
+          "payment_date",
+          "payment_method"
+        ],
+        "properties": {
+          "payment_date": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "payment_method": {
+            "$ref": "#/components/schemas/ContributionPaymentMethod"
+          },
+          "payment_reference": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "additionalProperties": false
       },
       "RecurringPattern": {
         "type": "string",
@@ -6696,6 +8334,27 @@
               "null"
             ],
             "format": "date-time"
+          }
+        }
+      },
+      "SendCallForFundsRequest": {
+        "type": "object",
+        "description": "Request to send a call for funds (triggers automatic contribution generation)"
+      },
+      "SendCallForFundsResponse": {
+        "type": "object",
+        "description": "Response after sending a call for funds",
+        "required": [
+          "call_for_funds",
+          "contributions_generated"
+        ],
+        "properties": {
+          "call_for_funds": {
+            "$ref": "#/components/schemas/CallForFundsResponse"
+          },
+          "contributions_generated": {
+            "type": "integer",
+            "minimum": 0
           }
         }
       },
@@ -6997,6 +8656,62 @@
           "refunded"
         ]
       },
+      "UnitResponseDto": {
+        "type": "object",
+        "required": [
+          "id",
+          "building_id",
+          "unit_number",
+          "unit_type",
+          "surface_area",
+          "quota"
+        ],
+        "properties": {
+          "building_id": {
+            "type": "string"
+          },
+          "floor": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32"
+          },
+          "id": {
+            "type": "string"
+          },
+          "owner_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "quota": {
+            "type": "string"
+          },
+          "surface_area": {
+            "type": "number",
+            "format": "double"
+          },
+          "unit_number": {
+            "type": "string"
+          },
+          "unit_type": {
+            "$ref": "#/components/schemas/UnitType"
+          }
+        }
+      },
+      "UnitType": {
+        "type": "string",
+        "description": "Type de lot (appartement, cave, parking, etc.)",
+        "enum": [
+          "Apartment",
+          "Parking",
+          "Cellar",
+          "Commercial",
+          "Other"
+        ]
+      },
       "UpdateAcpDto": {
         "type": "object",
         "description": "Mise à jour d'une ACP (PATCH-like : tous les champs identitaires sont requis,\npar défaut on ré-envoie l'état complet via PUT — pattern Building).",
@@ -7244,6 +8959,38 @@
           }
         }
       },
+      "UpdateUnitDto": {
+        "type": "object",
+        "description": "`deny_unknown_fields` : un `PUT /units/{id}` portant `owner_id` repondait\n200 en jetant le champ, laissant croire que le lot venait d'etre rattache a\nun proprietaire. `units.owner_id` est DEPRECIE depuis la migration\n`20250127000000_refactor_owners_multitenancy` — la relation vit dans\n`unit_owners` (API `/unit-owners`), qui porte les quotites et les dates.\nLe refus explicite renvoie desormais vers la bonne route au lieu de perdre\nla donnee en silence.",
+        "required": [
+          "unit_number",
+          "unit_type",
+          "floor",
+          "surface_area",
+          "quota"
+        ],
+        "properties": {
+          "floor": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "quota": {
+            "type": "string",
+            "description": "Quote-part en millièmes (Decimal exact, range 0.1..=1000 enforced en domain)."
+          },
+          "surface_area": {
+            "type": "number",
+            "format": "double"
+          },
+          "unit_number": {
+            "type": "string"
+          },
+          "unit_type": {
+            "$ref": "#/components/schemas/UnitType"
+          }
+        },
+        "additionalProperties": false
+      },
       "UserRoleAssignmentResponse": {
         "type": "object",
         "required": [
@@ -7411,6 +9158,18 @@
     {
       "name": "Budgets",
       "description": "Annual budget management"
+    },
+    {
+      "name": "JournalEntries",
+      "description": "Double-entry bookkeeping (PCMN general ledger)"
+    },
+    {
+      "name": "OwnerContributions",
+      "description": "Owner quote-parts (calls for funds receivables)"
+    },
+    {
+      "name": "CallForFunds",
+      "description": "Collective calls for funds, split by ownership shares"
     },
     {
       "name": "Documents",

@@ -203,8 +203,63 @@ use utoipa_swagger_ui::SwaggerUi;
         crate::infrastructure::web::handlers::technical_spec_handlers::sign_technical_spec,
         crate::infrastructure::web::handlers::technical_spec_handlers::get_technical_spec,
         crate::infrastructure::web::handlers::technical_spec_handlers::list_technical_specs,
+        // JournalEntries — remboursement de dette de contrat (rapport du
+        // 2026-09-01). Les 4 routes du grand livre etaient hors spec : le
+        // frontend devinait donc les noms de champs, d'ou les confusions
+        // `operation_date`/`entry_date` et `reference`/`document_ref` du
+        // constat F16. Voir `scripts/check-openapi-coverage.sh`.
+        crate::infrastructure::web::handlers::journal_entry_handlers::create_journal_entry,
+        crate::infrastructure::web::handlers::journal_entry_handlers::list_journal_entries,
+        crate::infrastructure::web::handlers::journal_entry_handlers::get_journal_entry,
+        crate::infrastructure::web::handlers::journal_entry_handlers::delete_journal_entry,
+        // OwnerContributions — quote-parts des coproprietaires (constat F4).
+        crate::infrastructure::web::handlers::owner_contribution_handlers::create_contribution,
+        crate::infrastructure::web::handlers::owner_contribution_handlers::get_contribution,
+        crate::infrastructure::web::handlers::owner_contribution_handlers::get_contributions_by_owner,
+        crate::infrastructure::web::handlers::owner_contribution_handlers::get_outstanding_contributions,
+        crate::infrastructure::web::handlers::owner_contribution_handlers::record_payment,
+        // Units — `PUT /units/{id}` acceptait `owner_id` en silence (constat F1).
+        crate::infrastructure::web::handlers::unit_handlers::create_unit,
+        crate::infrastructure::web::handlers::unit_handlers::get_unit,
+        crate::infrastructure::web::handlers::unit_handlers::list_units,
+        crate::infrastructure::web::handlers::unit_handlers::list_units_by_building,
+        crate::infrastructure::web::handlers::unit_handlers::update_unit,
+        crate::infrastructure::web::handlers::unit_handlers::delete_unit,
+        crate::infrastructure::web::handlers::unit_handlers::assign_owner,
+        // CallForFunds — la ventilation par tantiemes (constat F2).
+        crate::infrastructure::web::handlers::call_for_funds_handlers::create_call_for_funds,
+        crate::infrastructure::web::handlers::call_for_funds_handlers::get_call_for_funds,
+        crate::infrastructure::web::handlers::call_for_funds_handlers::list_call_for_funds,
+        crate::infrastructure::web::handlers::call_for_funds_handlers::get_overdue_calls,
+        crate::infrastructure::web::handlers::call_for_funds_handlers::send_call_for_funds,
+        crate::infrastructure::web::handlers::call_for_funds_handlers::cancel_call_for_funds,
+        crate::infrastructure::web::handlers::call_for_funds_handlers::delete_call_for_funds,
     ),
     components(schemas(
+        // JournalEntries — le `#[derive(ToSchema)]` seul NE SUFFIT PAS :
+        // utoipa ne collecte que ce qui est enregistre ici.
+        crate::infrastructure::web::handlers::journal_entry_handlers::CreateJournalEntryRequest,
+        crate::infrastructure::web::handlers::journal_entry_handlers::JournalEntryLineRequest,
+        crate::infrastructure::web::handlers::journal_entry_handlers::JournalEntryResponse,
+        crate::infrastructure::web::handlers::journal_entry_handlers::JournalEntryLineResponse,
+        crate::infrastructure::web::handlers::journal_entry_handlers::JournalEntryWithLinesResponse,
+        // OwnerContributions
+        crate::application::dto::owner_contribution_dto::CreateOwnerContributionRequest,
+        crate::application::dto::owner_contribution_dto::RecordPaymentRequest,
+        crate::application::dto::owner_contribution_dto::OwnerContributionResponse,
+        crate::domain::entities::owner_contribution::ContributionType,
+        crate::domain::entities::owner_contribution::ContributionPaymentStatus,
+        crate::domain::entities::owner_contribution::ContributionPaymentMethod,
+        // Units
+        crate::application::dto::unit_dto::CreateUnitDto,
+        crate::application::dto::unit_dto::UpdateUnitDto,
+        crate::application::dto::unit_dto::UnitResponseDto,
+        crate::domain::entities::unit::UnitType,
+        // CallForFunds
+        crate::application::dto::call_for_funds_dto::CreateCallForFundsRequest,
+        crate::application::dto::call_for_funds_dto::CallForFundsResponse,
+        crate::application::dto::call_for_funds_dto::SendCallForFundsRequest,
+        crate::application::dto::call_for_funds_dto::SendCallForFundsResponse,
         // ACP — voir la note dans `paths()` ci-dessus.
         crate::application::dto::acp_dto::CreateAcpDto,
         crate::application::dto::acp_dto::UpdateAcpDto,
@@ -278,6 +333,9 @@ use utoipa_swagger_ui::SwaggerUi;
         (name = "Expenses", description = "Expense and invoice management"),
         (name = "Meetings", description = "General assembly management"),
         (name = "Budgets", description = "Annual budget management"),
+        (name = "JournalEntries", description = "Double-entry bookkeeping (PCMN general ledger)"),
+        (name = "OwnerContributions", description = "Owner quote-parts (calls for funds receivables)"),
+        (name = "CallForFunds", description = "Collective calls for funds, split by ownership shares"),
         (name = "Documents", description = "Document upload/download"),
         (name = "GDPR", description = "Data privacy compliance"),
         (name = "Payments", description = "Payment processing"),

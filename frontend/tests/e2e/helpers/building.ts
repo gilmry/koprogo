@@ -214,7 +214,6 @@ export async function seedBuildingWithUnits(
       method: "POST",
       headers,
       body: JSON.stringify({
-        organization_id: organizationId,
         building_id: building.id,
         unit_number: `${i + 1}A`,
         floor: Math.floor(i / 2),

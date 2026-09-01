@@ -55,6 +55,12 @@ pub struct Payment {
     pub owner_id: Uuid,
     /// Expense being paid (optional: could be general account credit)
     pub expense_id: Option<Uuid>,
+    /// Quote-part de coproprietaire soldee par ce paiement (optionnel).
+    ///
+    /// Le rattachement seul ne solde rien : la contribution passe a `Paid`
+    /// quand le paiement atteint `Succeeded`, pas a sa creation — un paiement
+    /// naissant `Pending` n'est qu'une intention.
+    pub contribution_id: Option<Uuid>,
     /// Payment amount in cents (EUR) - Stripe uses smallest currency unit
     pub amount_cents: i64,
     /// Currency (always EUR for Belgian context)
@@ -97,6 +103,7 @@ impl Payment {
     /// * `building_id` - Building ID
     /// * `owner_id` - Owner making the payment
     /// * `expense_id` - Optional expense being paid
+    /// * `contribution_id` - Optional owner contribution settled by this payment
     /// * `amount_cents` - Amount in cents (EUR)
     /// * `payment_method_type` - Payment method type
     /// * `idempotency_key` - Idempotency key for safe retries
@@ -110,6 +117,7 @@ impl Payment {
         building_id: Uuid,
         owner_id: Uuid,
         expense_id: Option<Uuid>,
+        contribution_id: Option<Uuid>,
         amount_cents: i64,
         payment_method_type: PaymentMethodType,
         idempotency_key: String,
@@ -135,6 +143,7 @@ impl Payment {
             building_id,
             owner_id,
             expense_id,
+            contribution_id,
             amount_cents,
             currency: "EUR".to_string(), // Always EUR for Belgian context
             status: TransactionStatus::Pending,
@@ -331,6 +340,7 @@ mod tests {
             Uuid::new_v4(),
             Uuid::new_v4(),
             Some(Uuid::new_v4()),
+            None,
             10000, // 100.00 EUR
             PaymentMethodType::Card,
             "test_idempotency_key_123456789".to_string(),
@@ -355,6 +365,7 @@ mod tests {
             Uuid::new_v4(),
             Uuid::new_v4(),
             None,
+            None,
             0, // Invalid: must be > 0
             PaymentMethodType::Card,
             "test_idempotency_key_123456789".to_string(),
@@ -370,6 +381,7 @@ mod tests {
             Uuid::new_v4(),
             Uuid::new_v4(),
             Uuid::new_v4(),
+            None,
             None,
             10000,
             PaymentMethodType::Card,

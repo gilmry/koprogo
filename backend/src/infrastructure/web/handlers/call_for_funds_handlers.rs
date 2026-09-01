@@ -27,6 +27,19 @@ fn check_can_create_call_for_funds(user: &AuthenticatedUser) -> Option<HttpRespo
 
 /// POST /api/v1/call-for-funds
 /// Create a new call for funds
+#[utoipa::path(
+    post,
+    path = "/call-for-funds",
+    tag = "CallForFunds",
+    summary = "Create a collective call for funds (draft)",
+    request_body = CreateCallForFundsRequest,
+    responses(
+        (status = 201, description = "Call for funds created", body = CallForFundsResponse),
+        (status = 400, description = "Validation error, or unknown field in the body"),
+        (status = 401, description = "User does not belong to an organization"),
+    ),
+    security(("bearer_auth" = []))
+)]
 #[post("/call-for-funds")]
 pub async fn create_call_for_funds(
     state: web::Data<AppState>,
@@ -84,6 +97,18 @@ pub async fn create_call_for_funds(
 
 /// GET /api/v1/call-for-funds/{id}
 /// Get a call for funds by ID
+#[utoipa::path(
+    get,
+    path = "/call-for-funds/{id}",
+    tag = "CallForFunds",
+    summary = "Get a single call for funds",
+    params(("id" = Uuid, Path, description = "Call for funds identifier")),
+    responses(
+        (status = 200, description = "Call for funds", body = CallForFundsResponse),
+        (status = 404, description = "Not found"),
+    ),
+    security(("bearer_auth" = []))
+)]
 #[get("/call-for-funds/{id}")]
 pub async fn get_call_for_funds(
     state: web::Data<AppState>,
@@ -102,6 +127,21 @@ pub async fn get_call_for_funds(
 
 /// GET /api/v1/call-for-funds?building_id={uuid}
 /// List all calls for funds for a building or organization
+#[utoipa::path(
+    get,
+    path = "/call-for-funds",
+    tag = "CallForFunds",
+    summary = "List calls for funds, optionally filtered by building or status",
+    params(
+        ("building_id" = Option<Uuid>, Query, description = "Restrict to one building"),
+        ("status" = Option<String>, Query, description = "draft | sent | overdue | cancelled"),
+    ),
+    responses(
+        (status = 200, description = "Calls for funds", body = Vec<CallForFundsResponse>),
+        (status = 401, description = "User does not belong to an organization"),
+    ),
+    security(("bearer_auth" = []))
+)]
 #[get("/call-for-funds")]
 pub async fn list_call_for_funds(
     state: web::Data<AppState>,
@@ -150,6 +190,17 @@ pub async fn list_call_for_funds(
 
 /// GET /api/v1/call-for-funds/overdue
 /// Get all overdue calls for funds
+#[utoipa::path(
+    get,
+    path = "/call-for-funds/overdue",
+    tag = "CallForFunds",
+    summary = "List overdue calls for funds",
+    responses(
+        (status = 200, description = "Overdue calls", body = Vec<CallForFundsResponse>),
+        (status = 401, description = "User does not belong to an organization"),
+    ),
+    security(("bearer_auth" = []))
+)]
 #[get("/call-for-funds/overdue")]
 pub async fn get_overdue_calls(
     state: web::Data<AppState>,
@@ -166,6 +217,24 @@ pub async fn get_overdue_calls(
 
 /// POST /api/v1/call-for-funds/{id}/send
 /// Send a call for funds (marks as sent and generates individual contributions)
+#[utoipa::path(
+    post,
+    path = "/call-for-funds/{id}/send",
+    tag = "CallForFunds",
+    summary = "Send a call for funds and generate individual contributions",
+    description = "Ventile le montant total entre les coproprietaires ACTIFS du \
+batiment, au prorata de leurs quotites. Les detentions sont lues dans \
+`unit_owners` (routes `/unit-owners`), PAS dans le champ deprecie \
+`units.owner_id` : un batiment dont les lots n'ont pas de detenteur actif \
+enregistre la echoue avec « No active owners found for this building ».",
+    params(("id" = Uuid, Path, description = "Call for funds identifier")),
+    responses(
+        (status = 200, description = "Sent, contributions generated", body = SendCallForFundsResponse),
+        (status = 400, description = "No active owners, or building not conformant"),
+        (status = 404, description = "Not found"),
+    ),
+    security(("bearer_auth" = []))
+)]
 #[post("/call-for-funds/{id}/send")]
 pub async fn send_call_for_funds(
     state: web::Data<AppState>,
@@ -211,6 +280,18 @@ pub async fn send_call_for_funds(
 
 /// PUT /api/v1/call-for-funds/{id}/cancel
 /// Cancel a call for funds
+#[utoipa::path(
+    put,
+    path = "/call-for-funds/{id}/cancel",
+    tag = "CallForFunds",
+    summary = "Cancel a call for funds",
+    params(("id" = Uuid, Path, description = "Call for funds identifier")),
+    responses(
+        (status = 200, description = "Cancelled", body = CallForFundsResponse),
+        (status = 404, description = "Not found"),
+    ),
+    security(("bearer_auth" = []))
+)]
 #[put("/call-for-funds/{id}/cancel")]
 pub async fn cancel_call_for_funds(
     state: web::Data<AppState>,
@@ -232,6 +313,19 @@ pub async fn cancel_call_for_funds(
 
 /// DELETE /api/v1/call-for-funds/{id}
 /// Delete a call for funds (only if in draft status)
+#[utoipa::path(
+    delete,
+    path = "/call-for-funds/{id}",
+    tag = "CallForFunds",
+    summary = "Delete a draft call for funds",
+    params(("id" = Uuid, Path, description = "Call for funds identifier")),
+    responses(
+        (status = 204, description = "Deleted"),
+        (status = 400, description = "Only a draft can be deleted"),
+        (status = 404, description = "Not found"),
+    ),
+    security(("bearer_auth" = []))
+)]
 #[delete("/call-for-funds/{id}")]
 pub async fn delete_call_for_funds(
     state: web::Data<AppState>,
