@@ -245,24 +245,43 @@ et 56 fichiers franchissent encore le seuil.
 Constats d'audit qui ne relèvent pas d'un défaut d'implémentation mais
 d'une décision. Ils sont listés ici plutôt que corrigés unilatéralement.
 
-### 5.1 — Le délai légal des états datés : calendaires ou ouvrables ?
+### 5.1 — Le délai des états datés : TRANCHÉ, jours calendaires
 
-`EtatDate::is_overdue` calcule `requested_date + 15 jours` **calendaires**.
-La documentation de la même entité annonce, deux lignes plus haut :
+`EtatDate::is_overdue` calcule `requested_date + 15 jours` calendaires,
+tandis que la documentation de la même entité annonçait « 15 jours
+**ouvrables** ». Quinze jours ouvrables font environ vingt-et-un jours
+calendaires : une seule des deux lectures pouvait être juste.
 
-> **Délai légal** : Art. 3.94 CC — 15 jours **ouvrables** (demande simple),
-> 30 jours (demande notaire par recommandé)
+**Vérification sur le texte, le 2026-09-02.** La loi belge est bilingue
+et les deux versions font également foi :
 
-Quinze jours ouvrables font environ vingt-et-un jours calendaires. Si la
-documentation dit vrai, le système signale un état daté « en retard »
-près d'une semaine trop tôt — une fausse alerte qui pousse un syndic à se
-presser sur un document engageant. Si c'est le code qui dit vrai, c'est
-la documentation qu'il faut corriger.
+| version | texte |
+|---|---|
+| FR | « sur simple demande **endéans les quinze jours** » |
+| NL | « binnen een termijn van **vijftien dagen** » |
 
-Le test unitaire du domaine encode lui aussi les jours calendaires : le
-code est cohérent avec lui-même, pas avec ce qu'il annonce. Une seule des
-deux lectures est juridiquement correcte, et c'est une question de droit
-belge, pas de logiciel.
+Le néerlandais est décisif : *dagen*, et non *werkdagen*. Aucune des deux
+versions ne mentionne les jours ouvrables.
+
+**Le calcul était juste, la documentation fausse.** Le commentaire a été
+corrigé et `test_delai_art_3_94_se_compte_en_jours_calendaires` verrouille
+les bornes (14 jours dans les temps, 16 hors délai, 18 hors délai) — ce
+dernier cas étant précisément celui qui distinguerait un comptage en
+jours ouvrables.
+
+**Nuance restante.** L'article prévoit DEUX délais : quinze jours sur
+simple demande (§ 1er, que la demande vienne du notaire, de l'agent ou du
+copropriétaire sortant) et trente jours lorsque le notaire écrit par
+recommandé (§ 2). L'entité ne mémorise pas le CANAL de la demande, seulement
+l'identité du notaire : le délai le plus court s'applique donc à tous les
+cas. C'est le sens prudent — on n'annonce jamais un retard trop tard —
+mais un syndic répondant au vingtième jour à une demande recommandée sera
+signalé en retard alors qu'il est légalement dans les temps. Ajouter le
+canal à la demande lèverait la restriction.
+
+Sources : [Art. 3.94 BW, texte néerlandais](https://www.elfri.be/artikel/mede-eigendom-in-het-nieuw-burgerlijk-wetboek) ·
+[Art. 3.94 CC, commentaire belge](https://www.propertytoday.be/fr_BE/blog/articles-1/art-3-94-cc-avez-vous-bien-pense-a-tout-7) ·
+[Obligation d'information du syndic](https://blog.smartsyndic.be/qa/informatieplicht-van-syndicus-bij-overdracht-van-mede-eigendom/)
 
 ### 5.2 — Le numéro de registre des états datés ne s'incrémente pas
 

@@ -35,8 +35,16 @@ pub enum EtatDateLanguage {
 /// Un état daté est un document légal obligatoire pour toute vente de lot en copropriété.
 /// Il contient 16 sections légales détaillant la situation financière et juridique du lot.
 ///
-/// **Délai légal**: Art. 3.94 CC — 15 jours ouvrables (demande simple),
-/// 30 jours (demande notaire par recommandé)
+/// **Délai légal**: Art. 3.94 CC — 15 jours CALENDAIRES sur simple demande
+/// (§ 1er), 30 jours si le notaire adresse sa demande par recommandé (§ 2).
+///
+/// Vérifié le 2026-09-02 sur les deux versions linguistiques, qui font
+/// également foi : « endéans les quinze jours » (FR) et « binnen een termijn
+/// van vijftien dagen » (NL). Le néerlandais lève l'ambiguïté — « dagen » et
+/// non « werkdagen ». Aucune des deux ne dit « ouvrables ».
+///
+/// Ce commentaire annonçait « jours ouvrables », soit environ 21 jours
+/// calendaires : la documentation était fausse, pas le calcul.
 /// **Validité**: 3 mois à partir de la date de référence (pratique professionnelle, non légale)
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct EtatDate {
@@ -357,8 +365,20 @@ impl EtatDate {
         now > expiration_date
     }
 
-    /// Vérifie si la génération est en retard (>15 jours depuis la demande)
-    /// Art. 3.94 CC: le syndic doit répondre sous 15 jours (demande simple)
+    /// Vérifie si la génération est en retard.
+    ///
+    /// Art. 3.94 § 1er CC : le syndic répond « sur simple demande endéans les
+    /// quinze jours » — quinze jours CALENDAIRES. Le § 2 porte le délai à
+    /// trente jours lorsque le notaire adresse sa demande par lettre
+    /// recommandée.
+    ///
+    /// LIMITE ASSUMÉE : l'entité ne mémorise pas le CANAL de la demande
+    /// (simple ou recommandé), seulement l'identité du notaire. Le délai le
+    /// plus court est donc appliqué à tous les cas. C'est le sens prudent —
+    /// on n'annonce jamais un retard trop tard — mais un syndic qui répond au
+    /// vingtième jour à une demande recommandée sera signalé en retard alors
+    /// qu'il est dans les temps. Ajouter le canal à la demande lèverait la
+    /// restriction.
     pub fn is_overdue(&self) -> bool {
         if matches!(
             self.status,
@@ -662,6 +682,76 @@ mod tests {
         ed.requested_date = Utc::now() - chrono::Duration::days(16);
 
         assert!(ed.is_overdue());
+    }
+
+    /// Le délai de l'Art. 3.94 § 1er CC se compte en jours CALENDAIRES.
+    ///
+    /// Ce test existe parce que la documentation de l'entité annonçait
+    /// « 15 jours ouvrables », soit environ 21 jours calendaires — le calcul
+    /// et sa description se contredisaient, et une seule des deux lectures
+    /// pouvait être juridiquement correcte.
+    ///
+    /// Tranché le 2026-09-02 sur les deux versions linguistiques du Code,
+    /// qui font également foi :
+    ///   FR — « sur simple demande endéans les quinze jours »
+    ///   NL — « binnen een termijn van vijftien dagen »
+    ///
+    /// Le néerlandais est décisif : « dagen », pas « werkdagen ». Aucune des
+    /// deux versions ne dit « ouvrables ». Le calcul était juste, la
+    /// documentation fausse.
+    ///
+    /// Les bornes ci-dessous verrouillent cette lecture : au quatorzième jour
+    /// on est dans les temps, au seizième on ne l'est plus. Si quelqu'un
+    /// bascule un jour sur les jours ouvrables, ce test le forcera à
+    /// argumenter plutôt qu'à le faire en passant.
+    #[test]
+    fn test_delai_art_3_94_se_compte_en_jours_calendaires() {
+        let ed_neuf = || {
+            EtatDate::new(
+                Uuid::new_v4(),
+                Uuid::new_v4(),
+                Uuid::new_v4(),
+                Utc::now(),
+                EtatDateLanguage::Fr,
+                "Maître Dupont".to_string(),
+                "dupont@notaire.be".to_string(),
+                None,
+                "Résidence Les Jardins".to_string(),
+                "Rue de la Loi 123".to_string(),
+                "101".to_string(),
+                None,
+                None,
+                dec!(100),
+                dec!(100),
+            )
+            .unwrap()
+        };
+
+        // 14 jours calendaires : dans les temps.
+        let mut avant = ed_neuf();
+        avant.requested_date = Utc::now() - chrono::Duration::days(14);
+        assert!(
+            !avant.is_overdue(),
+            "quatorze jours calendaires restent dans le délai légal"
+        );
+
+        // 16 jours calendaires : hors délai.
+        let mut apres = ed_neuf();
+        apres.requested_date = Utc::now() - chrono::Duration::days(16);
+        assert!(
+            apres.is_overdue(),
+            "seize jours calendaires dépassent le délai légal"
+        );
+
+        // 18 jours : encore dans les temps SI l'on comptait en jours
+        // ouvrables (≈ 21 jours calendaires pour 15 ouvrables). Le test
+        // affirme le contraire — c'est là que se joue la différence.
+        let mut ouvrables = ed_neuf();
+        ouvrables.requested_date = Utc::now() - chrono::Duration::days(18);
+        assert!(
+            ouvrables.is_overdue(),
+            "le délai se compte en jours calendaires, pas en jours ouvrables"
+        );
     }
 
     #[test]
