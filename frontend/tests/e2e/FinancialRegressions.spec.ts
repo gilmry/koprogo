@@ -2,6 +2,7 @@ import { test, expect } from "@playwright/test";
 import {
   loginAsAccountantEmetteur,
   loginAsSyndicWithBuilding,
+  loginAsSyndicWithOwner,
   loginAsSyndicWithExpense,
   loginAsSyndicWithUnit,
 } from "./helpers/auth";
@@ -92,6 +93,107 @@ test.describe("Workflows financiers 2026-09-01 — non-régression", () => {
     });
     expect(resp.status(), await resp.text()).toBe(200);
     expect((await resp.json()).unit_number).toBe("1A-bis");
+  });
+
+  // ───────────────────────────────────────────────────────────────────────
+  // F2 — le cycle complet d'appel de fonds
+  // ───────────────────────────────────────────────────────────────────────
+
+  /// Le rapport concluait : « L'ensemble de la chaîne appel de fonds →
+  /// ventilation par tantièmes → contributions individuelles est non
+  /// fonctionnel. »
+  ///
+  /// Elle l'est. Ce qui ne fonctionnait pas, c'est la façon d'y entrer : le
+  /// testeur rattachait les propriétaires via `PUT /units { owner_id }`,
+  /// champ déprécié que l'API acceptait puis jetait. La détention vit dans
+  /// `unit_owners`, alimentée par `POST /units/{id}/owners`.
+  ///
+  /// Ce test parcourt la chaîne de bout en bout, par la bonne porte.
+  test("F2 — un appel de fonds envoyé génère les quotes-parts par tantièmes", async ({
+    page,
+  }) => {
+    const ctx = await loginAsSyndicWithOwner(page, "fin-f2");
+    const entetes = { Authorization: `Bearer ${ctx.adminToken}` };
+
+    // 1. Un lot portant la totalité des tantièmes, pour que l'immeuble soit
+    //    conforme (le `send` refuse un immeuble en dérive, Art. 3.85 CC).
+    const lot = await page.request.post(`${API_BASE}/units`, {
+      data: {
+        acp_id: ctx.acpId,
+        building_id: ctx.buildingId,
+        unit_number: "F2-1A",
+        floor: 1,
+        surface_area: 90.0,
+        unit_type: "Apartment",
+        quota: 1000.0,
+      },
+      headers: entetes,
+    });
+    expect(lot.status(), await lot.text()).toBe(201);
+    const unitId = (await lot.json()).id;
+
+    // 2. Le rattachement — par `unit_owners`, PAS par `units.owner_id`.
+    const detention = await page.request.post(
+      `${API_BASE}/units/${unitId}/owners`,
+      {
+        data: {
+          owner_id: ctx.ownerId,
+          ownership_percentage: 1.0,
+          is_primary_contact: true,
+        },
+        headers: entetes,
+      },
+    );
+    expect(
+      detention.status(),
+      `rattachement du propriétaire: ${await detention.text()}`,
+    ).toBe(201);
+
+    // 3. L'appel de fonds collectif.
+    const maintenant = new Date();
+    const echeance = new Date(maintenant.getTime() + 30 * 864e5);
+    const appel = await page.request.post(`${API_BASE}/call-for-funds`, {
+      data: {
+        building_id: ctx.buildingId,
+        title: `Charges Q3 ${Date.now()}`,
+        description: "Non-régression F2",
+        total_amount: 10000.0,
+        contribution_type: "regular",
+        call_date: maintenant.toISOString(),
+        due_date: echeance.toISOString(),
+      },
+      headers: { Authorization: `Bearer ${ctx.token}` },
+    });
+    expect(appel.status(), await appel.text()).toBe(201);
+    const appelId = (await appel.json()).id;
+
+    // 4. L'envoi — c'est ici que le rapport butait sur « No active owners
+    //    found for this building ».
+    const envoi = await page.request.post(
+      `${API_BASE}/call-for-funds/${appelId}/send`,
+      { headers: { Authorization: `Bearer ${ctx.token}` } },
+    );
+    expect(
+      envoi.status(),
+      `envoi de l'appel de fonds: ${await envoi.text()}`,
+    ).toBe(200);
+
+    const resultat = await envoi.json();
+    expect(
+      resultat.contributions_generated,
+      "une quote-part par détention active",
+    ).toBe(1);
+
+    // 5. La quote-part existe, au bon montant : 100 % de 10 000 €.
+    const quotes = await page.request.get(
+      `${API_BASE}/owner-contributions?owner_id=${ctx.ownerId}`,
+      { headers: { Authorization: `Bearer ${ctx.token}` } },
+    );
+    expect(quotes.status()).toBe(200);
+    const liste = await quotes.json();
+    expect(liste.length).toBeGreaterThan(0);
+    expect(Number(liste[0].amount)).toBe(10000);
+    expect(liste[0].payment_status).toBe("pending");
   });
 
   // ───────────────────────────────────────────────────────────────────────

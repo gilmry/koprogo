@@ -78,6 +78,29 @@ que soit sa longueur. Cliquet abaissé de 558 à 440.
 nouveaux schémas, aucun chemin perdu. Priorité suivante : `expense`,
 `budget`, `payment-reminder` — le reste du module financier.
 
+### Ce qui reste hors contrat et mérite d'être su
+
+Deux constats trouvés en remboursant la dette, tous deux du même type
+« champ envoyé, champ jeté » :
+
+- **`POST /expenses` recevait `amount_excl_vat`, `vat_rate` et `due_date`
+  sans les accepter.** Ces champs n'existaient que sur
+  `CreateInvoiceDraftDto`, servi par `POST /invoices/draft` — une autre
+  route, que l'interface n'appelle pas. Corrigé le 2026-09-02 : ce sont
+  les constats F12 et F20.
+- **Le mode « détaillé » du formulaire de facture envoie `line_items`, qui
+  n'est accepté par aucune route.** La table `invoice_line_items` existe
+  depuis novembre 2025, `CreateInvoiceLineItemDto` aussi, mais **aucun
+  endpoint ne les expose**. Le détail ligne à ligne saisi par
+  l'utilisateur ne quitte donc jamais le navigateur.
+
+  Ce n'est pas un défaut visible aujourd'hui : les totaux HT / TVA / TTC
+  sont correctement agrégés et enregistrés, et aucun écran ne relit les
+  lignes. Le mode détaillé fonctionne donc comme une calculatrice. Mais
+  c'est un piège : le jour où un écran voudra afficher le détail, la
+  donnée sera absente pour tout l'historique. **Non corrigé** — exposer
+  ces lignes est une fonctionnalité à part entière, pas une correction.
+
 ---
 
 ## 2. Les tests unitaires — 3 modules sur 67 non couverts

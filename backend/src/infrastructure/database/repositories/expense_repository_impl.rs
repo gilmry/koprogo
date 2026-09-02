@@ -39,8 +39,22 @@ impl ExpenseRepository for PostgresExpenseRepository {
 
         sqlx::query(
             r#"
-            INSERT INTO expenses (id, organization_id, building_id, category, description, amount, expense_date, payment_status, supplier, invoice_number, account_code, contractor_report_id, created_at, updated_at)
-            VALUES ($1, $2, $3, CAST($4 AS expense_category), $5, $6, $7, CAST($8 AS payment_status), $9, $10, $11, $12, $13, $14)
+            -- `amount_excl_vat`, `vat_rate`, `vat_amount`, `amount_incl_vat`,
+            -- `invoice_date` et `due_date` existent depuis la migration
+            -- `20251104000001_enrich_expenses_invoice_workflow` (novembre 2025)
+            -- mais n'étaient NI écrites ici, NI relues plus bas — le mapping
+            -- de lecture les forçait à `None`.
+            --
+            -- Toute dépense enregistrée depuis lors a donc ces six colonnes à
+            -- NULL. C'est la cause de fond des constats F12 (« échéance
+            -- affiche - ») et F20 (« seul le TTC est affiché ») du rapport du
+            -- 2026-09-01 : corriger le DTO d'entrée, le constructeur et le DTO
+            -- de sortie ne changeait rien tant que cette couche-ci perdait la
+            -- donnée.
+            INSERT INTO expenses (id, organization_id, building_id, category, description, amount, expense_date, payment_status, supplier, invoice_number, account_code, contractor_report_id, created_at, updated_at,
+                                  amount_excl_vat, vat_rate, vat_amount, amount_incl_vat, invoice_date, due_date)
+            VALUES ($1, $2, $3, CAST($4 AS expense_category), $5, $6, $7, CAST($8 AS payment_status), $9, $10, $11, $12, $13, $14,
+                    $15, $16, $17, $18, $19, $20)
             "#,
         )
         .bind(expense.id)
@@ -57,6 +71,12 @@ impl ExpenseRepository for PostgresExpenseRepository {
         .bind(expense.contractor_report_id)
         .bind(expense.created_at)
         .bind(expense.updated_at)
+        .bind(expense.amount_excl_vat)
+        .bind(expense.vat_rate)
+        .bind(expense.vat_amount)
+        .bind(expense.amount_incl_vat)
+        .bind(expense.invoice_date)
+        .bind(expense.due_date)
         .execute(&self.pool)
         .await
         .map_err(|e| format!("Database error: {}", e))?;
@@ -71,7 +91,8 @@ impl ExpenseRepository for PostgresExpenseRepository {
                    category::text AS category, description, amount, expense_date,
                    payment_status::text AS payment_status, approval_status::text AS approval_status,
                    submitted_at, approved_by, approved_at, rejection_reason, paid_date,
-                   supplier, invoice_number, account_code, contractor_report_id, created_at, updated_at
+                   supplier, invoice_number, account_code, contractor_report_id, created_at, updated_at,
+                   amount_excl_vat, vat_rate, vat_amount, amount_incl_vat, invoice_date, due_date
             FROM expenses
             WHERE id = $1
             "#,
@@ -117,13 +138,20 @@ impl ExpenseRepository for PostgresExpenseRepository {
                 category,
                 description: row.get("description"),
                 amount: row.get("amount"),
-                amount_excl_vat: None,
-                vat_rate: None,
-                vat_amount: None,
-                amount_incl_vat: Some(row.get("amount")),
+                amount_excl_vat: row.try_get("amount_excl_vat").ok().flatten(),
+                vat_rate: row.try_get("vat_rate").ok().flatten(),
+                vat_amount: row.try_get("vat_amount").ok().flatten(),
+                // Repli sur le TTC : les dépenses antérieures au câblage de
+                // ces colonnes ont `amount_incl_vat` à NULL alors que `amount`
+                // porte bien le TTC.
+                amount_incl_vat: row
+                    .try_get("amount_incl_vat")
+                    .ok()
+                    .flatten()
+                    .or_else(|| Some(row.get("amount"))),
                 expense_date: row.get("expense_date"),
-                invoice_date: None,
-                due_date: None,
+                invoice_date: row.try_get("invoice_date").ok().flatten(),
+                due_date: row.try_get("due_date").ok().flatten(),
                 paid_date: row.try_get("paid_date").ok(),
                 approval_status,
                 submitted_at: row.try_get("submitted_at").ok(),
@@ -148,7 +176,8 @@ impl ExpenseRepository for PostgresExpenseRepository {
                    category::text AS category, description, amount, expense_date,
                    payment_status::text AS payment_status, approval_status::text AS approval_status,
                    submitted_at, approved_by, approved_at, rejection_reason, paid_date,
-                   supplier, invoice_number, account_code, contractor_report_id, created_at, updated_at
+                   supplier, invoice_number, account_code, contractor_report_id, created_at, updated_at,
+                   amount_excl_vat, vat_rate, vat_amount, amount_incl_vat, invoice_date, due_date
             FROM expenses
             WHERE building_id = $1
             ORDER BY expense_date DESC
@@ -197,13 +226,17 @@ impl ExpenseRepository for PostgresExpenseRepository {
                     category,
                     description: row.get("description"),
                     amount: row.get("amount"),
-                    amount_excl_vat: None,
-                    vat_rate: None,
-                    vat_amount: None,
-                    amount_incl_vat: Some(row.get("amount")),
+                    amount_excl_vat: row.try_get("amount_excl_vat").ok().flatten(),
+                    vat_rate: row.try_get("vat_rate").ok().flatten(),
+                    vat_amount: row.try_get("vat_amount").ok().flatten(),
+                    amount_incl_vat: row
+                        .try_get("amount_incl_vat")
+                        .ok()
+                        .flatten()
+                        .or_else(|| Some(row.get("amount"))),
                     expense_date: row.get("expense_date"),
-                    invoice_date: None,
-                    due_date: None,
+                    invoice_date: row.try_get("invoice_date").ok().flatten(),
+                    due_date: row.try_get("due_date").ok().flatten(),
                     paid_date: row.try_get("paid_date").ok(),
                     approval_status,
                     submitted_at: row.try_get("submitted_at").ok(),
@@ -343,7 +376,7 @@ impl ExpenseRepository for PostgresExpenseRepository {
         let offset_param = param_count;
 
         let data_query = format!(
-            "SELECT id, organization_id, building_id, category::text AS category, description, amount, expense_date, payment_status::text AS payment_status, approval_status::text AS approval_status, submitted_at, approved_by, approved_at, rejection_reason, paid_date, supplier, invoice_number, account_code, contractor_report_id, created_at, updated_at \
+            "SELECT id, organization_id, building_id, category::text AS category, description, amount, expense_date, payment_status::text AS payment_status, approval_status::text AS approval_status, submitted_at, approved_by, approved_at, rejection_reason, paid_date, supplier, invoice_number, account_code, contractor_report_id, created_at, updated_at, amount_excl_vat, vat_rate, vat_amount, amount_incl_vat, invoice_date, due_date \
              FROM expenses {} ORDER BY {} {} LIMIT ${} OFFSET ${}",
             where_clause,
             sort_column,
@@ -435,13 +468,17 @@ impl ExpenseRepository for PostgresExpenseRepository {
                     category,
                     description: row.get("description"),
                     amount: row.get("amount"),
-                    amount_excl_vat: None,
-                    vat_rate: None,
-                    vat_amount: None,
-                    amount_incl_vat: Some(row.get("amount")),
+                    amount_excl_vat: row.try_get("amount_excl_vat").ok().flatten(),
+                    vat_rate: row.try_get("vat_rate").ok().flatten(),
+                    vat_amount: row.try_get("vat_amount").ok().flatten(),
+                    amount_incl_vat: row
+                        .try_get("amount_incl_vat")
+                        .ok()
+                        .flatten()
+                        .or_else(|| Some(row.get("amount"))),
                     expense_date: row.get("expense_date"),
-                    invoice_date: None,
-                    due_date: None,
+                    invoice_date: row.try_get("invoice_date").ok().flatten(),
+                    due_date: row.try_get("due_date").ok().flatten(),
                     paid_date: row.try_get("paid_date").ok(),
                     approval_status,
                     submitted_at: row.try_get("submitted_at").ok(),

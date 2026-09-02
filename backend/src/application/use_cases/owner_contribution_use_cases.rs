@@ -46,6 +46,11 @@ impl OwnerContributionUseCases {
         let Some(ref accounting) = self.accounting_service else {
             return;
         };
+        // `building_id` à None : la quote-part ne porte qu'un `unit_id`
+        // optionnel, et remonter au bâtiment demanderait un dépôt de lots ici.
+        // Conséquence assumée et limitée : l'écriture est bien au grand livre,
+        // mais n'apparaît pas dans les rapports financiers PAR IMMEUBLE. La
+        // voie `/payments`, elle, connaît son immeuble et le renseigne.
         if let Err(e) = accounting
             .generate_contribution_receipt_entry(contribution, None, None, None)
             .await

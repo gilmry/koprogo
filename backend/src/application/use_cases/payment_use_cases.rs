@@ -307,7 +307,15 @@ impl PaymentUseCases {
         // doit debiter la banque qu'une fois.
         if let Some(ref accounting) = self.accounting_service {
             if let Err(err) = accounting
-                .generate_contribution_receipt_entry(&contribution, None, None, None)
+                .generate_contribution_receipt_entry(
+                    &contribution,
+                    // Le paiement porte l'immeuble : sans lui, l'ecriture
+                    // n'apparaitrait dans aucun rapport financier par batiment
+                    // (`calculate_account_balances_for_building`).
+                    Some(payment.building_id),
+                    None,
+                    None,
+                )
                 .await
             {
                 tracing::warn!(
