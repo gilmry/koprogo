@@ -306,6 +306,7 @@ mod tests {
 
         let expense = Expense {
             id: Uuid::new_v4(),
+            acp_id: Uuid::new_v4(),
             building_id: building.id,
             organization_id: test_org_id,
             description: "Rénovation de la façade principale".to_string(),

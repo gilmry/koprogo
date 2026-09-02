@@ -57,6 +57,7 @@ pub mod shared_object;
 pub mod skill;
 pub mod syndic_response;
 pub mod technical_inspection;
+pub mod syndic_mandate;
 pub mod technical_spec;
 pub mod ticket;
 pub mod two_factor_secret;
@@ -152,6 +153,7 @@ pub use syndic_response::{
 pub use technical_inspection::{
     InspectionStatus, InspectionType, TechnicalInspection, TechnicalInspectionError,
 };
+pub use syndic_mandate::{SyndicMandate, SyndicMandateError};
 pub use technical_spec::{
     SemVer, SignatoryRole, TechnicalSpec, TechnicalSpecSignature, TechnicalSpecStatus,
     MAX_ATTACHMENTS as TECH_SPEC_MAX_ATTACHMENTS, MAX_DELIVERABLES as TECH_SPEC_MAX_DELIVERABLES,

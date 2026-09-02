@@ -65,6 +65,9 @@ pub struct CreateExpenseDto {
 #[derive(Debug, Serialize)]
 pub struct ExpenseResponseDto {
     pub id: String,
+    /// ACP propriétaire de la charge — clé de rattachement patrimonial.
+    /// Suit la copropriété lors des passations de syndic.
+    pub acp_id: String,
     pub building_id: String,
     pub category: ExpenseCategory,
     pub description: String,

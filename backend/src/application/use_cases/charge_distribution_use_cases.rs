@@ -508,6 +508,7 @@ mod tests {
         let amount_excl_vat = amount_incl_vat / vat_factor;
         Expense {
             id: Uuid::new_v4(),
+            acp_id: Uuid::new_v4(),
             organization_id: Uuid::new_v4(),
             building_id,
             category: ExpenseCategory::Maintenance,
@@ -540,6 +541,7 @@ mod tests {
         let now = Utc::now();
         Expense {
             id: Uuid::new_v4(),
+            acp_id: Uuid::new_v4(),
             organization_id: Uuid::new_v4(),
             building_id,
             category: ExpenseCategory::Maintenance,
@@ -881,6 +883,7 @@ mod tests {
         let now = Utc::now();
         let expense = Expense {
             id: Uuid::new_v4(),
+            acp_id: Uuid::new_v4(),
             organization_id: Uuid::new_v4(),
             building_id,
             category: ExpenseCategory::Utilities,

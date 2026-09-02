@@ -629,6 +629,7 @@ pub async fn export_owner_statement_pdf(
 
             Some(Expense {
                 id: exp_id,
+                acp_id: Uuid::parse_str(&e.acp_id).ok()?,
                 organization_id,
                 building_id: bldg_id,
                 category: e.category.clone(),

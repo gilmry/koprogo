@@ -181,6 +181,7 @@ mod tests {
         amount: rust_decimal::Decimal,
     ) -> Expense {
         Expense::new(
+            Uuid::new_v4(), // acp_id
             organization_id,
             building_id,
             category,

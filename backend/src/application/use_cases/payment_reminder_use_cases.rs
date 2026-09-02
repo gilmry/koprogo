@@ -886,6 +886,7 @@ mod tests {
 
     fn expense_impaye(org_id: Uuid, montant: Decimal) -> crate::domain::entities::Expense {
         crate::domain::entities::Expense::new(
+            Uuid::new_v4(), // acp_id
             org_id,
             Uuid::new_v4(),
             crate::domain::entities::ExpenseCategory::Maintenance,

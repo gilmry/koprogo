@@ -562,6 +562,7 @@ mod tests {
         let org_id = Uuid::new_v4();
         let expense = Expense {
             id: Uuid::new_v4(),
+            acp_id: Uuid::new_v4(),
             organization_id: org_id,
             building_id: Uuid::new_v4(),
             description: "Facture eau".to_string(),
@@ -635,6 +636,7 @@ mod tests {
         let org_id = Uuid::new_v4();
         let expense = Expense {
             id: Uuid::new_v4(),
+            acp_id: Uuid::new_v4(),
             organization_id: org_id,
             building_id: Uuid::new_v4(),
             description: "Facture eau".to_string(),

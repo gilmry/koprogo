@@ -51,13 +51,14 @@ impl ExpenseRepository for PostgresExpenseRepository {
             -- 2026-09-01 : corriger le DTO d'entrée, le constructeur et le DTO
             -- de sortie ne changeait rien tant que cette couche-ci perdait la
             -- donnée.
-            INSERT INTO expenses (id, organization_id, building_id, category, description, amount, expense_date, payment_status, supplier, invoice_number, account_code, contractor_report_id, created_at, updated_at,
+            INSERT INTO expenses (id, acp_id, organization_id, building_id, category, description, amount, expense_date, payment_status, supplier, invoice_number, account_code, contractor_report_id, created_at, updated_at,
                                   amount_excl_vat, vat_rate, vat_amount, amount_incl_vat, invoice_date, due_date)
-            VALUES ($1, $2, $3, CAST($4 AS expense_category), $5, $6, $7, CAST($8 AS payment_status), $9, $10, $11, $12, $13, $14,
-                    $15, $16, $17, $18, $19, $20)
+            VALUES ($1, $2, $3, $4, CAST($5 AS expense_category), $6, $7, $8, CAST($9 AS payment_status), $10, $11, $12, $13, $14, $15,
+                    $16, $17, $18, $19, $20, $21)
             "#,
         )
         .bind(expense.id)
+        .bind(expense.acp_id)
         .bind(expense.organization_id)
         .bind(expense.building_id)
         .bind(category_str)
@@ -87,7 +88,7 @@ impl ExpenseRepository for PostgresExpenseRepository {
     async fn find_by_id(&self, id: Uuid) -> Result<Option<Expense>, String> {
         let row = sqlx::query(
             r#"
-            SELECT id, organization_id, building_id,
+            SELECT id, acp_id, organization_id, building_id,
                    category::text AS category, description, amount, expense_date,
                    payment_status::text AS payment_status, approval_status::text AS approval_status,
                    submitted_at, approved_by, approved_at, rejection_reason, paid_date,
@@ -133,6 +134,7 @@ impl ExpenseRepository for PostgresExpenseRepository {
 
             Expense {
                 id: row.get("id"),
+                acp_id: row.get("acp_id"),
                 organization_id: row.get("organization_id"),
                 building_id: row.get("building_id"),
                 category,
@@ -172,7 +174,7 @@ impl ExpenseRepository for PostgresExpenseRepository {
     async fn find_by_building(&self, building_id: Uuid) -> Result<Vec<Expense>, String> {
         let rows = sqlx::query(
             r#"
-            SELECT id, organization_id, building_id,
+            SELECT id, acp_id, organization_id, building_id,
                    category::text AS category, description, amount, expense_date,
                    payment_status::text AS payment_status, approval_status::text AS approval_status,
                    submitted_at, approved_by, approved_at, rejection_reason, paid_date,
@@ -221,6 +223,7 @@ impl ExpenseRepository for PostgresExpenseRepository {
 
                 Expense {
                     id: row.get("id"),
+                    acp_id: row.get("acp_id"),
                     organization_id: row.get("organization_id"),
                     building_id: row.get("building_id"),
                     category,
@@ -376,7 +379,7 @@ impl ExpenseRepository for PostgresExpenseRepository {
         let offset_param = param_count;
 
         let data_query = format!(
-            "SELECT id, organization_id, building_id, category::text AS category, description, amount, expense_date, payment_status::text AS payment_status, approval_status::text AS approval_status, submitted_at, approved_by, approved_at, rejection_reason, paid_date, supplier, invoice_number, account_code, contractor_report_id, created_at, updated_at, amount_excl_vat, vat_rate, vat_amount, amount_incl_vat, invoice_date, due_date \
+            "SELECT id, acp_id, organization_id, building_id, category::text AS category, description, amount, expense_date, payment_status::text AS payment_status, approval_status::text AS approval_status, submitted_at, approved_by, approved_at, rejection_reason, paid_date, supplier, invoice_number, account_code, contractor_report_id, created_at, updated_at, amount_excl_vat, vat_rate, vat_amount, amount_incl_vat, invoice_date, due_date \
              FROM expenses {} ORDER BY {} {} LIMIT ${} OFFSET ${}",
             where_clause,
             sort_column,
@@ -463,6 +466,7 @@ impl ExpenseRepository for PostgresExpenseRepository {
 
                 Expense {
                     id: row.get("id"),
+                    acp_id: row.get("acp_id"),
                     organization_id: row.get("organization_id"),
                     building_id: row.get("building_id"),
                     category,

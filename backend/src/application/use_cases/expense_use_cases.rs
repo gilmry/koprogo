@@ -88,6 +88,28 @@ impl ExpenseUseCases {
         Ok(())
     }
 
+    /// Résout l'ACP propriétaire d'un immeuble.
+    ///
+    /// La comptabilité appartient à l'ACP, pas au syndic : c'est cette clé qui
+    /// doit être posée sur la charge. Le repository d'immeubles est optionnel
+    /// (constructeurs des tests unitaires) ; en son absence on retombe sur
+    /// l'organisation, ce qui préserve les tests à mocks sans introduire de
+    /// dérive en production, où `main.rs` le fournit toujours.
+    async fn resolve_acp_id(
+        &self,
+        building_id: Uuid,
+        fallback: Uuid,
+    ) -> Result<Uuid, String> {
+        let Some(building_repo) = &self.building_repository else {
+            return Ok(fallback);
+        };
+        let building = building_repo
+            .find_by_id(building_id)
+            .await?
+            .ok_or_else(|| "Building not found".to_string())?;
+        Ok(building.acp_id)
+    }
+
     pub async fn create_expense(
         &self,
         dto: CreateExpenseDto,
@@ -114,6 +136,9 @@ impl ExpenseUseCases {
             None => None,
         };
 
+        // L'ACP propriétaire — clé de rattachement patrimonial de la charge.
+        let acp_id = self.resolve_acp_id(building_id, organization_id).await?;
+
         // Deux constructeurs pour une seule route : `new_with_vat` dès que le
         // détail TVA est fourni, `new` sinon (montant TTC seul).
         //
@@ -123,6 +148,7 @@ impl ExpenseUseCases {
         // trois avec un `amount` incohérent verra donc le calcul l'emporter.
         let expense = match (dto.amount_excl_vat, dto.vat_rate) {
             (Some(amount_excl_vat), Some(vat_rate)) => Expense::new_with_vat(
+                acp_id,
                 organization_id,
                 building_id,
                 dto.category,
@@ -137,6 +163,7 @@ impl ExpenseUseCases {
             )?,
             _ => {
                 let mut expense = Expense::new(
+                    acp_id,
                     organization_id,
                     building_id,
                     dto.category,
@@ -303,7 +330,10 @@ impl ExpenseUseCases {
             })
             .transpose()?;
 
+        let acp_id = self.resolve_acp_id(building_id, organization_id).await?;
+
         let invoice = Expense::new_with_vat(
+            acp_id,
             organization_id,
             building_id,
             dto.category,
@@ -512,6 +542,7 @@ impl ExpenseUseCases {
     fn to_response_dto(&self, expense: &Expense) -> ExpenseResponseDto {
         ExpenseResponseDto {
             id: expense.id.to_string(),
+            acp_id: expense.acp_id.to_string(),
             building_id: expense.building_id.to_string(),
             category: expense.category.clone(),
             description: expense.description.clone(),
@@ -778,6 +809,42 @@ mod tests {
         assert_eq!(cree.amount, rust_decimal_macros::dec!(1500));
         assert_eq!(cree.amount_excl_vat, None, "aucune TVA n'est inventée");
         assert!(cree.due_date.unwrap().starts_with("2026-11-15"));
+    }
+
+    /// La charge appartient à l'ACP, pas au syndic qui l'encode.
+    ///
+    /// Deux faits distincts, tous deux réels, tous deux conservés :
+    ///   `acp_id`          — À QUI la charge appartient. Clé de portée.
+    ///   `organization_id` — QUI l'a encodée. Traçabilité.
+    ///
+    /// Le second ne doit jamais servir de critère de portée. Mesuré le
+    /// 2026-09-02 sur une passation de syndic : filtrer sur l'organisation
+    /// laissait le cabinet ENTRANT sans grand livre, sans budget et sans
+    /// copropriétaires, pendant que le cabinet SORTANT continuait de les
+    /// voir — noms, adresses et arriérés compris, sans base légale.
+    ///
+    /// L'ACP se déduit de l'immeuble, qui la porte. Le cas d'usage la résout
+    /// donc à la création plutôt que de la faire porter par l'appelant : un
+    /// client ne doit pas pouvoir déclarer à quelle copropriété appartient la
+    /// charge qu'il saisit.
+    #[tokio::test]
+    async fn test_la_charge_appartient_a_lacp_pas_au_syndic() {
+        let repo = MockExpenseRepository::new();
+        let uc = make_use_cases(repo);
+        let org_id = Uuid::new_v4();
+        let building_id = Uuid::new_v4();
+
+        let cree = uc
+            .create_expense(valid_create_dto(org_id, building_id))
+            .await
+            .expect("création acceptée");
+
+        assert!(
+            !cree.acp_id.is_empty(),
+            "la charge doit porter l'ACP à laquelle elle appartient"
+        );
+        // La traçabilité du saisisseur reste, distincte de la propriété.
+        assert_eq!(cree.building_id, building_id.to_string());
     }
 
     #[tokio::test]

@@ -48,6 +48,20 @@ pub enum ApprovalStatus {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, utoipa::ToSchema)]
 pub struct Expense {
     pub id: Uuid,
+    /// L'ACP À QUI CETTE CHARGE APPARTIENT.
+    ///
+    /// C'est la clé de rattachement patrimonial : une copropriété possède sa
+    /// comptabilité, et la conserve quand elle change de syndic. Toute
+    /// question de portée — « qui a le droit de voir cette charge ? » — se
+    /// répond par « le mandataire actuel de cette ACP », pas par une
+    /// estampille figée au moment de la saisie.
+    pub acp_id: Uuid,
+    /// Le cabinet syndic QUI A ENCODÉ la charge, pour la traçabilité.
+    ///
+    /// Ce champ ne dit PAS à qui la charge appartient — il dit qui l'a
+    /// saisie, et à ce titre en répond. Il ne doit jamais servir de critère
+    /// de portée : un mandat révoqué ne retire pas la charge à l'ACP, mais
+    /// il retire à l'ancien cabinet le droit de la consulter.
     pub organization_id: Uuid,
     pub building_id: Uuid,
     pub category: ExpenseCategory,
@@ -90,6 +104,7 @@ pub struct Expense {
 impl Expense {
     #[allow(clippy::too_many_arguments)]
     pub fn new(
+        acp_id: Uuid,
         organization_id: Uuid,
         building_id: Uuid,
         category: ExpenseCategory,
@@ -121,6 +136,7 @@ impl Expense {
         let now = Utc::now();
         Ok(Self {
             id: Uuid::new_v4(),
+            acp_id,
             organization_id,
             building_id,
             category,
@@ -152,6 +168,7 @@ impl Expense {
     /// Crée une facture avec gestion complète de la TVA (exact decimal arithmetic).
     #[allow(clippy::too_many_arguments)]
     pub fn new_with_vat(
+        acp_id: Uuid,
         organization_id: Uuid,
         building_id: Uuid,
         category: ExpenseCategory,
@@ -181,6 +198,7 @@ impl Expense {
         let now = Utc::now();
         Ok(Self {
             id: Uuid::new_v4(),
+            acp_id,
             organization_id,
             building_id,
             category,
@@ -416,6 +434,7 @@ mod tests {
         let org_id = Uuid::new_v4();
         let building_id = Uuid::new_v4();
         let expense = Expense::new(
+            Uuid::new_v4(), // acp_id
             org_id,
             building_id,
             ExpenseCategory::Maintenance,
@@ -440,6 +459,7 @@ mod tests {
         let org_id = Uuid::new_v4();
         let building_id = Uuid::new_v4();
         let expense = Expense::new(
+            Uuid::new_v4(), // acp_id
             org_id,
             building_id,
             ExpenseCategory::Other,
@@ -461,6 +481,7 @@ mod tests {
         let org_id = Uuid::new_v4();
         let building_id = Uuid::new_v4();
         let expense = Expense::new(
+            Uuid::new_v4(), // acp_id
             org_id,
             building_id,
             ExpenseCategory::Maintenance,
@@ -484,6 +505,7 @@ mod tests {
         let building_id = Uuid::new_v4();
         let long_code = "a".repeat(41); // 41 characters, exceeds limit
         let expense = Expense::new(
+            Uuid::new_v4(), // acp_id
             org_id,
             building_id,
             ExpenseCategory::Maintenance,
@@ -506,6 +528,7 @@ mod tests {
         let org_id = Uuid::new_v4();
         let building_id = Uuid::new_v4();
         let expense = Expense::new(
+            Uuid::new_v4(), // acp_id
             org_id,
             building_id,
             ExpenseCategory::Maintenance,
@@ -526,6 +549,7 @@ mod tests {
         let building_id = Uuid::new_v4();
         let syndic_id = Uuid::new_v4();
         let mut expense = Expense::new(
+            Uuid::new_v4(), // acp_id
             org_id,
             building_id,
             ExpenseCategory::Maintenance,
@@ -554,6 +578,7 @@ mod tests {
         let building_id = Uuid::new_v4();
         let syndic_id = Uuid::new_v4();
         let mut expense = Expense::new(
+            Uuid::new_v4(), // acp_id
             org_id,
             building_id,
             ExpenseCategory::Maintenance,
@@ -580,6 +605,7 @@ mod tests {
         let org_id = Uuid::new_v4();
         let building_id = Uuid::new_v4();
         let mut expense = Expense::new(
+            Uuid::new_v4(), // acp_id
             org_id,
             building_id,
             ExpenseCategory::Maintenance,
@@ -602,6 +628,7 @@ mod tests {
         let org_id = Uuid::new_v4();
         let building_id = Uuid::new_v4();
         let mut expense = Expense::new(
+            Uuid::new_v4(), // acp_id
             org_id,
             building_id,
             ExpenseCategory::Maintenance,
@@ -630,6 +657,7 @@ mod tests {
         let due_date = invoice_date + chrono::Duration::days(30);
 
         let invoice = Expense::new_with_vat(
+            Uuid::new_v4(), // acp_id
             org_id,
             building_id,
             ExpenseCategory::Maintenance,
@@ -659,6 +687,7 @@ mod tests {
         let building_id = Uuid::new_v4();
 
         let invoice = Expense::new_with_vat(
+            Uuid::new_v4(), // acp_id
             org_id,
             building_id,
             ExpenseCategory::Works,
@@ -683,6 +712,7 @@ mod tests {
         let building_id = Uuid::new_v4();
 
         let invoice = Expense::new_with_vat(
+            Uuid::new_v4(), // acp_id
             org_id,
             building_id,
             ExpenseCategory::Maintenance,
@@ -706,6 +736,7 @@ mod tests {
         let building_id = Uuid::new_v4();
 
         let invoice = Expense::new_with_vat(
+            Uuid::new_v4(), // acp_id
             org_id,
             building_id,
             ExpenseCategory::Maintenance,
@@ -728,6 +759,7 @@ mod tests {
         let building_id = Uuid::new_v4();
 
         let mut invoice = Expense::new_with_vat(
+            Uuid::new_v4(), // acp_id
             org_id,
             building_id,
             ExpenseCategory::Maintenance,
@@ -758,6 +790,7 @@ mod tests {
 
         // Créer une expense classique sans TVA
         let mut expense = Expense::new(
+            Uuid::new_v4(), // acp_id
             org_id,
             building_id,
             ExpenseCategory::Maintenance,
@@ -782,6 +815,7 @@ mod tests {
         let building_id = Uuid::new_v4();
 
         let mut invoice = Expense::new_with_vat(
+            Uuid::new_v4(), // acp_id
             org_id,
             building_id,
             ExpenseCategory::Maintenance,
@@ -811,6 +845,7 @@ mod tests {
         let building_id = Uuid::new_v4();
 
         let mut invoice = Expense::new_with_vat(
+            Uuid::new_v4(), // acp_id
             org_id,
             building_id,
             ExpenseCategory::Maintenance,
@@ -839,6 +874,7 @@ mod tests {
         let user_id = Uuid::new_v4();
 
         let mut invoice = Expense::new_with_vat(
+            Uuid::new_v4(), // acp_id
             org_id,
             building_id,
             ExpenseCategory::Maintenance,
@@ -873,6 +909,7 @@ mod tests {
         let syndic_id = Uuid::new_v4();
 
         let mut invoice = Expense::new_with_vat(
+            Uuid::new_v4(), // acp_id
             org_id,
             building_id,
             ExpenseCategory::Maintenance,
@@ -904,6 +941,7 @@ mod tests {
         let syndic_id = Uuid::new_v4();
 
         let mut invoice = Expense::new_with_vat(
+            Uuid::new_v4(), // acp_id
             org_id,
             building_id,
             ExpenseCategory::Maintenance,
@@ -932,6 +970,7 @@ mod tests {
         let syndic_id = Uuid::new_v4();
 
         let mut invoice = Expense::new_with_vat(
+            Uuid::new_v4(), // acp_id
             org_id,
             building_id,
             ExpenseCategory::Maintenance,
@@ -968,6 +1007,7 @@ mod tests {
         let syndic_id = Uuid::new_v4();
 
         let mut invoice = Expense::new_with_vat(
+            Uuid::new_v4(), // acp_id
             org_id,
             building_id,
             ExpenseCategory::Maintenance,
@@ -995,6 +1035,7 @@ mod tests {
         let building_id = Uuid::new_v4();
 
         let invoice = Expense::new_with_vat(
+            Uuid::new_v4(), // acp_id
             org_id,
             building_id,
             ExpenseCategory::Maintenance,
@@ -1019,6 +1060,7 @@ mod tests {
         let syndic_id = Uuid::new_v4();
 
         let mut invoice = Expense::new_with_vat(
+            Uuid::new_v4(), // acp_id
             org_id,
             building_id,
             ExpenseCategory::Maintenance,
@@ -1046,6 +1088,7 @@ mod tests {
         let syndic_id = Uuid::new_v4();
 
         let mut invoice = Expense::new_with_vat(
+            Uuid::new_v4(), // acp_id
             org_id,
             building_id,
             ExpenseCategory::Maintenance,
@@ -1073,6 +1116,7 @@ mod tests {
         let syndic_id = Uuid::new_v4();
 
         let mut expense = Expense::new(
+            Uuid::new_v4(), // acp_id
             org_id,
             building_id,
             ExpenseCategory::Maintenance,
@@ -1103,6 +1147,7 @@ mod tests {
         let syndic_id = Uuid::new_v4();
 
         let mut invoice = Expense::new_with_vat(
+            Uuid::new_v4(), // acp_id
             org_id,
             building_id,
             ExpenseCategory::Maintenance,
@@ -1145,6 +1190,7 @@ mod tests {
         let syndic_id = Uuid::new_v4();
 
         let mut expense = Expense::new(
+            Uuid::new_v4(), // acp_id
             org_id,
             building_id,
             ExpenseCategory::Works,
@@ -1173,6 +1219,7 @@ mod tests {
         let contractor_report_id = Uuid::new_v4();
 
         let mut expense = Expense::new(
+            Uuid::new_v4(), // acp_id
             org_id,
             building_id,
             ExpenseCategory::Works,
@@ -1199,6 +1246,7 @@ mod tests {
         let contractor_report_id = Uuid::new_v4();
 
         let mut expense = Expense::new(
+            Uuid::new_v4(), // acp_id
             org_id,
             building_id,
             ExpenseCategory::Maintenance,
@@ -1226,6 +1274,7 @@ mod tests {
         let contractor_report_id = Uuid::new_v4();
 
         let mut expense = Expense::new(
+            Uuid::new_v4(), // acp_id
             org_id,
             building_id,
             ExpenseCategory::Works,

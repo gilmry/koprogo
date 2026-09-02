@@ -874,6 +874,7 @@ pub async fn export_work_quote_pdf(
 
     let expense_entity = Expense {
         id: expense_id_uuid,
+        acp_id: Uuid::parse_str(&expense_dto.acp_id).unwrap_or(organization_id),
         organization_id,
         building_id: expense_building_id,
         category: expense_dto.category.clone(),
