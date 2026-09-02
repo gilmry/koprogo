@@ -421,7 +421,8 @@ async fn main() -> std::io::Result<()> {
         building_repo.clone(),
         acp_repo.clone(),
     );
-    let journal_entry_use_cases = JournalEntryUseCases::new(journal_entry_repo.clone());
+    let journal_entry_use_cases = JournalEntryUseCases::new(journal_entry_repo.clone())
+        .with_acp_resolution(building_repo.clone());
     let poll_use_cases = PollUseCases::new(
         poll_repo.clone(),
         poll_vote_repo.clone(),

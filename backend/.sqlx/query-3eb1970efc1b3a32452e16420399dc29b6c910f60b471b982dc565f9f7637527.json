@@ -1,0 +1,28 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            -- LIMITE CONNUE (lot J4) : `account_balances` est une vue d'agrégat\n            -- construite sur `organization_id`. Elle est donc encore cloisonnée\n            -- par le syndic et non par l'ACP, contrairement à toutes les\n            -- requêtes ci-dessus. La recalculer par ACP est un chantier à part,\n            -- tracé dans le WBS — pas une ligne à changer ici.\n            SELECT account_code, balance\n            FROM account_balances\n            WHERE organization_id = $1\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "account_code",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 1,
+        "name": "balance",
+        "type_info": "Numeric"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      true,
+      true
+    ]
+  },
+  "hash": "3eb1970efc1b3a32452e16420399dc29b6c910f60b471b982dc565f9f7637527"
+}

@@ -53,7 +53,8 @@ pub fn perimetre_du_mandataire<'a>(
 mod tests {
     use super::*;
     use crate::domain::entities::{
-        Budget, CallForFunds, ContributionType, Expense, ExpenseCategory, OwnerContribution,
+        Budget, CallForFunds, ContributionType, Expense, ExpenseCategory, JournalEntry,
+        JournalEntryLine, OwnerContribution,
     };
     use chrono::Duration;
     use rust_decimal_macros::dec;
@@ -66,6 +67,7 @@ mod tests {
         budget: Budget,
         appel_de_fonds: CallForFunds,
         quote_part: OwnerContribution,
+        ecriture: JournalEntry,
     }
 
     impl DossierComplet {
@@ -118,6 +120,40 @@ mod tests {
                     Some("7000".to_string()),
                 )
                 .expect("quote-part valide"),
+                ecriture: {
+                    let id = Uuid::new_v4();
+                    JournalEntry::new(
+                        acp,
+                        syndic,
+                        Some(immeuble),
+                        Utc::now(),
+                        Some("Entretien de la chaudière".to_string()),
+                        None,
+                        Some("ACH".to_string()),
+                        None,
+                        None,
+                        vec![
+                            JournalEntryLine::new_debit(
+                                id,
+                                syndic,
+                                "610".to_string(),
+                                dec!(1200.00),
+                                None,
+                            )
+                            .expect("débit valide"),
+                            JournalEntryLine::new_credit(
+                                id,
+                                syndic,
+                                "440".to_string(),
+                                dec!(1200.00),
+                                None,
+                            )
+                            .expect("crédit valide"),
+                        ],
+                        None,
+                    )
+                    .expect("écriture valide")
+                },
             }
         }
 
@@ -127,6 +163,7 @@ mod tests {
                 &self.budget,
                 &self.appel_de_fonds,
                 &self.quote_part,
+                &self.ecriture,
             ]
         }
     }

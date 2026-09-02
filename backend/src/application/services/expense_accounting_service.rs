@@ -167,6 +167,7 @@ impl ExpenseAccountingService {
 
         // Create journal entry
         let journal_entry = JournalEntry::new(
+            expense.acp_id,
             expense.organization_id,
             Some(expense.building_id), // building_id
             expense.expense_date,
@@ -263,6 +264,7 @@ impl ExpenseAccountingService {
 
         // Create journal entry
         let journal_entry = JournalEntry::new(
+            expense.acp_id,
             expense.organization_id,
             Some(expense.building_id), // building_id
             expense.paid_date.unwrap_or_else(Utc::now),
@@ -354,6 +356,7 @@ impl ExpenseAccountingService {
         ];
 
         let journal_entry = JournalEntry::new(
+            contribution.acp_id,
             contribution.organization_id,
             building_id,
             contribution.payment_date.unwrap_or_else(Utc::now),

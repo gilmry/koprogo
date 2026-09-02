@@ -32,6 +32,21 @@ use uuid::Uuid;
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct JournalEntry {
     pub id: Uuid,
+
+    /// L'ACP dont ces comptes sont les comptes.
+    ///
+    /// Art. 3.89 § 5, 15° : le syndic tient « les comptes de l'association des
+    /// copropriétaires » suivant le plan comptable minimum normalisé. Il les
+    /// tient ; ils ne sont pas les siens. Une écriture sans ACP est une
+    /// écriture dans les livres de personne. Cf. ADR-0045.
+    ///
+    /// Obligatoire, contrairement à `building_id` : une ACP peut avoir
+    /// plusieurs immeubles et des écritures qui ne se rattachent à aucun
+    /// (Art. 3.84, groupe d'immeubles), mais aucune écriture n'existe hors
+    /// d'une comptabilité.
+    pub acp_id: Uuid,
+
+    /// Le syndic qui a passé l'écriture, conservé comme trace d'auteur.
     pub organization_id: Uuid,
     /// Optional link to building for building-specific accounting
     pub building_id: Option<Uuid>,
@@ -178,6 +193,7 @@ impl JournalEntry {
     /// - `Err(String)` if validation fails
     #[allow(clippy::too_many_arguments)]
     pub fn new(
+        acp_id: Uuid,
         organization_id: Uuid,
         building_id: Option<Uuid>,
         entry_date: DateTime<Utc>,
@@ -212,6 +228,7 @@ impl JournalEntry {
         let now = Utc::now();
         Ok(Self {
             id: Uuid::new_v4(),
+            acp_id,
             organization_id,
             building_id,
             entry_date,
@@ -396,6 +413,7 @@ mod tests {
         ];
 
         let entry = JournalEntry::new(
+            Uuid::new_v4(), // acp_id
             org_id,
             None, // building_id
             Utc::now(),
@@ -429,6 +447,7 @@ mod tests {
         ];
 
         let entry = JournalEntry::new(
+            Uuid::new_v4(), // acp_id
             org_id,
             None, // building_id
             Utc::now(),
@@ -466,6 +485,7 @@ mod tests {
         };
 
         let entry = JournalEntry::new(
+            Uuid::new_v4(), // acp_id
             org_id,
             None,
             Utc::now(),
@@ -503,6 +523,7 @@ mod tests {
         };
 
         let entry = JournalEntry::new(
+            Uuid::new_v4(), // acp_id
             org_id,
             None,
             Utc::now(),
@@ -542,6 +563,7 @@ mod tests {
         ];
 
         let entry = JournalEntry::new(
+            Uuid::new_v4(), // acp_id
             org_id,
             None,
             Utc::now(),
@@ -578,6 +600,7 @@ mod tests {
         ];
 
         let entry = JournalEntry::new(
+            Uuid::new_v4(), // acp_id
             org_id,
             None,
             Utc::now(),
@@ -637,6 +660,7 @@ mod tests {
         ];
 
         let result = JournalEntry::new(
+            Uuid::new_v4(), // acp_id
             org_id,
             None,
             Utc::now(),
@@ -654,5 +678,11 @@ mod tests {
             result.unwrap_err(),
             JournalEntryError::CrossOrgLine
         ));
+    }
+}
+
+impl crate::domain::services::PieceDeGestion for JournalEntry {
+    fn acp_id(&self) -> Uuid {
+        self.acp_id
     }
 }

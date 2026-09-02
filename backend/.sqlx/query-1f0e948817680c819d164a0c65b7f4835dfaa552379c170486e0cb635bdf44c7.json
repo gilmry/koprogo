@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n            SELECT\n                id, organization_id, building_id, entry_date, description, document_ref,\n                journal_type, expense_id, contribution_id, created_at, updated_at, created_by\n            FROM journal_entries\n            WHERE organization_id = $1\n            ORDER BY entry_date DESC, created_at DESC\n            ",
+  "query": "\n            SELECT\n                id, acp_id, organization_id, building_id, entry_date, description,\n                document_ref, journal_type, expense_id, contribution_id, created_at, updated_at, created_by\n            FROM journal_entries\n            WHERE acp_id IN (SELECT id FROM acps WHERE organization_id = $1)\n              AND ($2::uuid IS NULL OR building_id = $2)\n              AND ($3::text IS NULL OR journal_type = $3)\n              AND ($4::timestamptz IS NULL OR entry_date >= $4)\n              AND ($5::timestamptz IS NULL OR entry_date <= $5)\n            ORDER BY entry_date DESC, created_at DESC\n            LIMIT $6 OFFSET $7\n            ",
   "describe": {
     "columns": [
       {
@@ -10,66 +10,78 @@
       },
       {
         "ordinal": 1,
-        "name": "organization_id",
+        "name": "acp_id",
         "type_info": "Uuid"
       },
       {
         "ordinal": 2,
-        "name": "building_id",
+        "name": "organization_id",
         "type_info": "Uuid"
       },
       {
         "ordinal": 3,
+        "name": "building_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 4,
         "name": "entry_date",
         "type_info": "Timestamptz"
       },
       {
-        "ordinal": 4,
+        "ordinal": 5,
         "name": "description",
         "type_info": "Text"
       },
       {
-        "ordinal": 5,
+        "ordinal": 6,
         "name": "document_ref",
         "type_info": "Varchar"
       },
       {
-        "ordinal": 6,
+        "ordinal": 7,
         "name": "journal_type",
         "type_info": "Varchar"
       },
       {
-        "ordinal": 7,
+        "ordinal": 8,
         "name": "expense_id",
         "type_info": "Uuid"
       },
       {
-        "ordinal": 8,
+        "ordinal": 9,
         "name": "contribution_id",
         "type_info": "Uuid"
       },
       {
-        "ordinal": 9,
+        "ordinal": 10,
         "name": "created_at",
         "type_info": "Timestamptz"
       },
       {
-        "ordinal": 10,
+        "ordinal": 11,
         "name": "updated_at",
         "type_info": "Timestamptz"
       },
       {
-        "ordinal": 11,
+        "ordinal": 12,
         "name": "created_by",
         "type_info": "Uuid"
       }
     ],
     "parameters": {
       "Left": [
-        "Uuid"
+        "Uuid",
+        "Uuid",
+        "Text",
+        "Timestamptz",
+        "Timestamptz",
+        "Int8",
+        "Int8"
       ]
     },
     "nullable": [
+      false,
       false,
       false,
       true,
@@ -84,5 +96,5 @@
       true
     ]
   },
-  "hash": "42e2a54951ef79eb6980b8ab8e10975503b2b6b60f398b805f5cfe8d3fdbf6b0"
+  "hash": "1f0e948817680c819d164a0c65b7f4835dfaa552379c170486e0cb635bdf44c7"
 }

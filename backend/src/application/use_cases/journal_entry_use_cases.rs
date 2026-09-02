@@ -25,11 +25,55 @@ use uuid::Uuid;
 
 pub struct JournalEntryUseCases {
     journal_entry_repo: Arc<dyn JournalEntryRepository>,
+    /// Résolution de l'ACP dont on tient les comptes.
+    ///
+    /// Optionnel pour ne pas casser les constructeurs des tests, mais son
+    /// absence fait échouer la saisie : une écriture sans ACP est une écriture
+    /// dans les livres de personne (ADR-0045).
+    building_repository: Option<Arc<dyn crate::application::ports::BuildingRepository>>,
 }
 
 impl JournalEntryUseCases {
     pub fn new(journal_entry_repo: Arc<dyn JournalEntryRepository>) -> Self {
-        Self { journal_entry_repo }
+        Self {
+            journal_entry_repo,
+            building_repository: None,
+        }
+    }
+
+    /// Câble la résolution de l'ACP depuis l'immeuble.
+    pub fn with_acp_resolution(
+        mut self,
+        building_repository: Arc<dyn crate::application::ports::BuildingRepository>,
+    ) -> Self {
+        self.building_repository = Some(building_repository);
+        self
+    }
+
+    /// L'ACP dont on tient les comptes, résolue depuis l'immeuble.
+    ///
+    /// Art. 3.89 § 5, 15° : le syndic tient les comptes *de l'association*.
+    /// Une saisie manuelle qui ne désigne pas d'immeuble ne dit pas dans quels
+    /// livres elle s'inscrit — on refuse plutôt que d'écrire au hasard.
+    ///
+    /// Limite connue : une ACP à plusieurs immeubles (Art. 3.84) peut avoir des
+    /// écritures qui ne se rattachent à aucun bloc. Elles ne sont pas encore
+    /// saisissables par cette voie ; il faudra désigner l'ACP directement.
+    async fn resoudre_lacp(&self, building_id: Option<Uuid>) -> Result<Uuid, String> {
+        let building_id = building_id.ok_or_else(|| {
+            "Impossible de déterminer l'ACP : une écriture manuelle doit désigner un immeuble"
+                .to_string()
+        })?;
+        let Some(building_repo) = &self.building_repository else {
+            return Err(
+                "Impossible de déterminer l'ACP : dépôt d'immeubles non câblé".to_string(),
+            );
+        };
+        let building = building_repo
+            .find_by_id(building_id)
+            .await?
+            .ok_or_else(|| "Immeuble introuvable".to_string())?;
+        Ok(building.acp_id)
     }
 
     /// Create a manual journal entry with multiple lines
@@ -101,9 +145,15 @@ impl JournalEntryUseCases {
             journal_lines.push(line);
         }
 
+        // L'ACP est résolue APRÈS les validations de forme : une écriture
+        // déséquilibrée ou à une seule ligne doit échouer sur son motif, pas
+        // sur une résolution d'ACP qu'elle n'aurait jamais dû atteindre.
+        let acp_id = self.resoudre_lacp(building_id).await?;
+
         // Create journal entry
         let journal_entry = JournalEntry {
             id: entry_id,
+            acp_id,
             organization_id,
             building_id,
             entry_date,
@@ -412,8 +462,99 @@ mod tests {
 
     // ========== Helpers ==========
 
+    /// Dépôt d'immeubles minimal : un immeuble rattaché à une ACP nommée.
+    ///
+    /// Il n'existait pas ici parce que l'écriture ne cherchait pas ses livres.
+    /// Elle les cherche désormais (ADR-0045).
+    struct MockBuildingRepository {
+        acp_id: Uuid,
+    }
+
+    impl MockBuildingRepository {
+        fn immeuble_de(acp_id: Uuid) -> Self {
+            Self { acp_id }
+        }
+
+        fn immeuble(&self) -> crate::domain::entities::Building {
+            crate::domain::entities::Building::new(
+                self.acp_id,
+                "Résidence du Parc".to_string(),
+                "12 Rue de la Loi".to_string(),
+                "Brussels".to_string(),
+                "1000".to_string(),
+                "Belgium".to_string(),
+                10,
+                1000,
+                Some(2015),
+            )
+            .expect("immeuble valide")
+        }
+    }
+
+    #[async_trait::async_trait]
+    impl crate::application::ports::BuildingRepository for MockBuildingRepository {
+        async fn create(
+            &self,
+            b: &crate::domain::entities::Building,
+        ) -> Result<crate::domain::entities::Building, String> {
+            Ok(b.clone())
+        }
+        async fn find_by_id(
+            &self,
+            _id: Uuid,
+        ) -> Result<Option<crate::domain::entities::Building>, String> {
+            Ok(Some(self.immeuble()))
+        }
+        async fn find_all(&self) -> Result<Vec<crate::domain::entities::Building>, String> {
+            Ok(vec![self.immeuble()])
+        }
+        async fn find_all_paginated(
+            &self,
+            _p: &crate::application::dto::PageRequest,
+            _f: &crate::application::dto::BuildingFilters,
+        ) -> Result<(Vec<crate::domain::entities::Building>, i64), String> {
+            Ok((vec![self.immeuble()], 1))
+        }
+        async fn update(
+            &self,
+            b: &crate::domain::entities::Building,
+        ) -> Result<crate::domain::entities::Building, String> {
+            Ok(b.clone())
+        }
+        async fn delete(&self, _id: Uuid) -> Result<bool, String> {
+            Ok(true)
+        }
+        async fn find_by_slug(
+            &self,
+            _s: &str,
+        ) -> Result<Option<crate::domain::entities::Building>, String> {
+            Ok(Some(self.immeuble()))
+        }
+        async fn find_by_id_with_metrics(
+            &self,
+            _id: Uuid,
+        ) -> Result<
+            Option<(
+                crate::domain::entities::Building,
+                crate::domain::entities::BuildingMetrics,
+            )>,
+            String,
+        > {
+            Ok(None)
+        }
+    }
+
     fn make_use_cases(repo: MockJournalEntryRepository) -> JournalEntryUseCases {
+        make_use_cases_pour_lacp(repo, Uuid::new_v4())
+    }
+
+    /// Les mêmes use-cases, en nommant l'ACP dont on tient les comptes.
+    fn make_use_cases_pour_lacp(
+        repo: MockJournalEntryRepository,
+        acp_id: Uuid,
+    ) -> JournalEntryUseCases {
         JournalEntryUseCases::new(Arc::new(repo))
+            .with_acp_resolution(Arc::new(MockBuildingRepository::immeuble_de(acp_id)))
     }
 
     /// Balanced lines: 1000 debit on 6100, 1000 credit on 4400
@@ -436,6 +577,93 @@ mod tests {
 
     // ========== Tests ==========
 
+    /// Art. 3.89 § 5, 15° et ADR-0045 : le grand livre est celui de l'ACP.
+    ///
+    /// L'ACP se lit sur l'immeuble, jamais sur l'appelant.
+    #[tokio::test]
+    async fn test_lecriture_sinscrit_dans_les_livres_de_lacp_pas_du_syndic() {
+        let acp_des_livres = Uuid::new_v4();
+        let cabinet_qui_saisit = Uuid::new_v4();
+        let uc = make_use_cases_pour_lacp(MockJournalEntryRepository::new(), acp_des_livres);
+
+        let ecriture = uc
+            .create_manual_entry(
+                cabinet_qui_saisit,
+                Some(Uuid::new_v4()),
+                Some("ODS".to_string()),
+                Utc::now(),
+                Some("Régularisation".to_string()),
+                None,
+                balanced_lines(),
+            )
+            .await
+            .expect("écriture valide");
+
+        assert_eq!(
+            ecriture.acp_id, acp_des_livres,
+            "l'écriture s'inscrit dans les livres de l'ACP de l'immeuble"
+        );
+        assert_eq!(
+            ecriture.organization_id, cabinet_qui_saisit,
+            "le syndic reste tracé comme auteur de la saisie"
+        );
+    }
+
+    /// Une écriture qui ne désigne pas d'immeuble ne dit pas dans quels livres
+    /// elle s'inscrit. On refuse, plutôt que d'écrire au hasard.
+    #[tokio::test]
+    async fn test_pas_decriture_sans_livres_identifiables() {
+        let uc = make_use_cases(MockJournalEntryRepository::new());
+
+        let erreur = uc
+            .create_manual_entry(
+                Uuid::new_v4(),
+                None, // aucun immeuble
+                Some("ODS".to_string()),
+                Utc::now(),
+                Some("Régularisation".to_string()),
+                None,
+                balanced_lines(),
+            )
+            .await
+            .expect_err("doit refuser");
+
+        assert!(
+            erreur.contains("ACP"),
+            "le refus doit nommer ce qui manque : {erreur}"
+        );
+    }
+
+    /// Une écriture mal formée échoue sur son motif, pas sur l'ACP.
+    ///
+    /// L'ordre compte : si la résolution passait avant les validations de
+    /// forme, un déséquilibre remonterait comme un problème de rattachement.
+    #[tokio::test]
+    async fn test_le_desequilibre_est_signale_avant_la_resolution_de_lacp() {
+        let uc = make_use_cases(MockJournalEntryRepository::new());
+
+        let erreur = uc
+            .create_manual_entry(
+                Uuid::new_v4(),
+                None, // pas d'immeuble non plus, et pourtant…
+                Some("ODS".to_string()),
+                Utc::now(),
+                None,
+                None,
+                vec![
+                    ("600".to_string(), dec!(100), dec!(0), "débit".to_string()),
+                    ("440".to_string(), dec!(0), dec!(50), "crédit".to_string()),
+                ],
+            )
+            .await
+            .expect_err("doit refuser");
+
+        assert!(
+            erreur.contains("unbalanced"),
+            "…c'est le déséquilibre qui doit être signalé, pas l'ACP : {erreur}"
+        );
+    }
+
     #[tokio::test]
     async fn test_create_manual_entry_success_balanced() {
         let repo = MockJournalEntryRepository::new();
@@ -445,7 +673,7 @@ mod tests {
         let result = uc
             .create_manual_entry(
                 org_id,
-                None,
+                Some(Uuid::new_v4()), // l'écriture désigne l'immeuble dont elle relève
                 Some("ACH".to_string()),
                 Utc::now(),
                 Some("Facture eau janvier".to_string()),
@@ -571,7 +799,7 @@ mod tests {
         let created = uc
             .create_manual_entry(
                 org_id,
-                None,
+                Some(Uuid::new_v4()), // l'écriture désigne l'immeuble dont elle relève
                 Some("FIN".to_string()),
                 Utc::now(),
                 Some("Manual entry to delete".to_string()),
@@ -601,6 +829,7 @@ mod tests {
         {
             let mut entries = repo.entries.lock().unwrap();
             let auto_entry = JournalEntry {
+                acp_id: Uuid::new_v4(),
                 id: entry_id,
                 organization_id: org_id,
                 building_id: None,
