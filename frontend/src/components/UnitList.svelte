@@ -104,7 +104,7 @@
       <div class="mt-4 p-3 bg-gray-50 border border-gray-200 rounded-lg">
         <div class="flex justify-between items-center">
           <span class="font-semibold text-gray-700">{$_('units.totalQuotas')}</span>
-          <div class="text-right"><span class="text-xl font-bold" class:text-green-600={!quotasMismatch} class:text-red-600={quotasMismatch}>{Math.round(totalQuotas)}/{expectedTotal}èmes</span></div>
+          <div class="text-right"><span class="text-xl font-bold" data-testid="quotas-total" class:text-green-600={!quotasMismatch} class:text-red-600={quotasMismatch}>{Math.round(totalQuotas)}/{expectedTotal}èmes</span></div>
         </div>
         {#if quotasMismatch}<p class="text-xs text-red-600 mt-1">{$_('units.quotasMismatch', { values: { current: Math.round(totalQuotas), expected: expectedTotal, diff: Math.round(totalQuotas - expectedTotal) } })}</p>{:else}<p class="text-xs text-green-600 mt-1">{$_('units.quotasCorrect')}</p>{/if}
       </div>

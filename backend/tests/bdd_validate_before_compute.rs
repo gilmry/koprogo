@@ -600,6 +600,9 @@ async fn when_create_expense(world: &mut VbcWorld, name: String) {
         supplier: Some("Supp".to_string()),
         invoice_number: Some("INV-X".to_string()),
         account_code: None,
+        amount_excl_vat: None,
+        vat_rate: None,
+        due_date: None,
     };
     match world.expense_uc.as_ref().unwrap().create_expense(dto).await {
         Ok(_) => {
@@ -628,6 +631,9 @@ async fn when_create_expense_unknown(world: &mut VbcWorld) {
         supplier: None,
         invoice_number: None,
         account_code: None,
+        amount_excl_vat: None,
+        vat_rate: None,
+        due_date: None,
     };
     match world.expense_uc.as_ref().unwrap().create_expense(dto).await {
         Ok(_) => {

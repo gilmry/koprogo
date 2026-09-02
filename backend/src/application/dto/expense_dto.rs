@@ -33,6 +33,33 @@ pub struct CreateExpenseDto {
     /// Must reference an existing account in the organization's chart of accounts
     #[validate(length(max = 40))]
     pub account_code: Option<String>,
+
+    // ── Champs que le formulaire envoyait déjà, et que serde jetait ──────
+    //
+    // `InvoiceForm.svelte` poste sur `/expenses` en envoyant `amount_excl_vat`,
+    // `vat_rate` et `due_date`. Ces trois champs n'existaient que sur
+    // `CreateInvoiceDraftDto`, servi par `POST /invoices/draft` — une AUTRE
+    // route, que l'interface n'appelle pas.
+    //
+    // Conséquences mesurées, constats F12 et F20 du rapport du 2026-09-01 :
+    // la date d'échéance saisie s'affichait « - » sur la fiche dépense, et la
+    // décomposition HT/TVA n'était jamais renseignée, si bien que seul le TTC
+    // pouvait être affiché.
+    //
+    // Les accepter ici plutôt que de rebrancher le formulaire sur
+    // `/invoices/draft` : cette route-là crée une facture en statut `Draft`,
+    // à soumettre puis approuver. Changer d'endpoint changerait le workflow
+    // visible de l'utilisateur, ce qui est une décision de produit ; accepter
+    // les champs ne change que le fait de ne plus perdre la saisie.
+    /// Montant HT. Fourni avec `vat_rate`, la TVA est calculée et le TTC
+    /// déduit ; `amount` est alors ignoré au profit du calcul exact.
+    pub amount_excl_vat: Option<Decimal>,
+
+    /// Taux de TVA en POURCENTAGE (21.0 pour 21 %), validé 0..=100.
+    pub vat_rate: Option<Decimal>,
+
+    /// Échéance de règlement fournisseur (ISO 8601).
+    pub due_date: Option<String>,
 }
 
 #[derive(Debug, Serialize)]
@@ -51,6 +78,27 @@ pub struct ExpenseResponseDto {
     pub account_code: Option<String>,
     /// Contractor report reference for Works category (Issue #309)
     pub contractor_report_id: Option<String>,
+
+    // ── Champs présents en base, absents de la réponse ──────────────────
+    //
+    // `expenses` porte `due_date`, `amount_excl_vat`, `vat_rate`,
+    // `vat_amount` et `amount_incl_vat` ; cette réponse n'en renvoyait aucun.
+    // La fiche dépense affichait donc « - » pour l'échéance (constat F12) et
+    // ne pouvait montrer que le TTC (constat F20) — non parce que la donnée
+    // manquait, mais parce que le contrat de sortie l'omettait.
+    //
+    // Trois couches manquaient les mêmes champs : le DTO d'entrée les jetait,
+    // le constructeur ne les posait pas, et cette réponse ne les exposait pas.
+    /// Échéance de règlement fournisseur (ISO 8601).
+    pub due_date: Option<String>,
+    /// Montant hors TVA.
+    pub amount_excl_vat: Option<Decimal>,
+    /// Taux de TVA en POURCENTAGE (21.0 pour 21 %).
+    pub vat_rate: Option<Decimal>,
+    /// Montant de TVA.
+    pub vat_amount: Option<Decimal>,
+    /// Montant TVA comprise.
+    pub amount_incl_vat: Option<Decimal>,
 }
 
 // ========== New Invoice DTOs (with VAT & Workflow) ==========

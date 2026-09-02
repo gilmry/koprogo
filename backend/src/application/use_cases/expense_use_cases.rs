@@ -105,17 +105,54 @@ impl ExpenseUseCases {
             .map_err(|_| "Invalid date format".to_string())?
             .with_timezone(&chrono::Utc);
 
-        let expense = Expense::new(
-            organization_id,
-            building_id,
-            dto.category,
-            dto.description,
-            dto.amount,
-            expense_date,
-            dto.supplier,
-            dto.invoice_number,
-            dto.account_code,
-        )?;
+        let due_date = match dto.due_date.as_deref() {
+            Some(d) => Some(
+                DateTime::parse_from_rfc3339(d)
+                    .map_err(|_| "Invalid due_date format".to_string())?
+                    .with_timezone(&chrono::Utc),
+            ),
+            None => None,
+        };
+
+        // Deux constructeurs pour une seule route : `new_with_vat` dès que le
+        // détail TVA est fourni, `new` sinon (montant TTC seul).
+        //
+        // Le montant TTC est alors CALCULÉ à partir du HT et du taux, et non
+        // repris de `amount` : c'est le seul moyen d'avoir des lignes
+        // comptables qui s'équilibrent au centime. Un client qui envoie les
+        // trois avec un `amount` incohérent verra donc le calcul l'emporter.
+        let expense = match (dto.amount_excl_vat, dto.vat_rate) {
+            (Some(amount_excl_vat), Some(vat_rate)) => Expense::new_with_vat(
+                organization_id,
+                building_id,
+                dto.category,
+                dto.description,
+                amount_excl_vat,
+                vat_rate,
+                expense_date,
+                due_date,
+                dto.supplier,
+                dto.invoice_number,
+                dto.account_code,
+            )?,
+            _ => {
+                let mut expense = Expense::new(
+                    organization_id,
+                    building_id,
+                    dto.category,
+                    dto.description,
+                    dto.amount,
+                    expense_date,
+                    dto.supplier,
+                    dto.invoice_number,
+                    dto.account_code,
+                )?;
+                // `Expense::new` ne prend pas d'échéance : elle serait perdue
+                // pour toute dépense saisie sans détail TVA.
+                expense.due_date = due_date;
+                expense
+            }
+        };
 
         let created = self.repository.create(&expense).await?;
         Ok(self.to_response_dto(&created))
@@ -486,6 +523,11 @@ impl ExpenseUseCases {
             invoice_number: expense.invoice_number.clone(),
             account_code: expense.account_code.clone(),
             contractor_report_id: expense.contractor_report_id.map(|id| id.to_string()),
+            due_date: expense.due_date.map(|d| d.to_rfc3339()),
+            amount_excl_vat: expense.amount_excl_vat,
+            vat_rate: expense.vat_rate,
+            vat_amount: expense.vat_amount,
+            amount_incl_vat: expense.amount_incl_vat,
         }
     }
 
@@ -632,6 +674,9 @@ mod tests {
             supplier: Some("Schindler SA".to_string()),
             invoice_number: Some("INV-2026-001".to_string()),
             account_code: Some("611002".to_string()),
+            amount_excl_vat: None,
+            vat_rate: None,
+            due_date: None,
         }
     }
 
@@ -672,6 +717,67 @@ mod tests {
         assert_eq!(dto.approval_status, ApprovalStatus::Draft);
         assert_eq!(dto.supplier, Some("Schindler SA".to_string()));
         assert_eq!(dto.account_code, Some("611002".to_string()));
+    }
+
+    /// Non-régression F12 / F20 — l'échéance et le détail TVA doivent survivre
+    /// à l'aller-retour.
+    ///
+    /// `InvoiceForm.svelte` envoyait déjà `amount_excl_vat`, `vat_rate` et
+    /// `due_date` à `POST /expenses`. Ces champs n'existaient que sur
+    /// `CreateInvoiceDraftDto`, servi par une AUTRE route que l'interface
+    /// n'appelle pas : serde les jetait en silence.
+    ///
+    /// Trois couches manquaient les mêmes champs — le DTO d'entrée, le
+    /// constructeur, et le DTO de réponse. Corriger une seule n'aurait rien
+    /// changé de visible, ce qui est précisément pourquoi ce test les traverse
+    /// toutes les trois.
+    #[tokio::test]
+    async fn test_echeance_et_tva_survivent_a_la_creation() {
+        let repo = MockExpenseRepository::new();
+        let uc = make_use_cases(repo);
+        let org_id = Uuid::new_v4();
+        let building_id = Uuid::new_v4();
+
+        let mut dto = valid_create_dto(org_id, building_id);
+        dto.amount_excl_vat = Some(rust_decimal_macros::dec!(2000));
+        dto.vat_rate = Some(rust_decimal_macros::dec!(21));
+        dto.due_date = Some("2026-10-31T12:00:00Z".to_string());
+
+        let cree = uc.create_expense(dto).await.expect("création acceptée");
+
+        // Le TTC est CALCULÉ à partir du HT et du taux, pas repris de
+        // `amount` (1500 dans la fixture) : sans quoi les lignes comptables
+        // ne s'équilibreraient pas au centime.
+        assert_eq!(cree.amount, rust_decimal_macros::dec!(2420));
+        assert_eq!(cree.amount_excl_vat, Some(rust_decimal_macros::dec!(2000)));
+        assert_eq!(cree.vat_rate, Some(rust_decimal_macros::dec!(21)));
+        assert_eq!(cree.vat_amount, Some(rust_decimal_macros::dec!(420)));
+        assert_eq!(cree.amount_incl_vat, Some(rust_decimal_macros::dec!(2420)));
+        assert!(
+            cree.due_date.is_some(),
+            "l'échéance saisie ne doit pas être perdue"
+        );
+        assert!(cree.due_date.unwrap().starts_with("2026-10-31"));
+    }
+
+    /// @edge — une dépense SANS détail TVA garde son échéance.
+    ///
+    /// `Expense::new` ne prend pas d'échéance en paramètre : sans traitement
+    /// explicite, elle serait perdue pour toute dépense saisie en TTC seul,
+    /// c'est-à-dire le cas le plus courant.
+    #[tokio::test]
+    async fn test_echeance_conservee_sans_detail_tva() {
+        let repo = MockExpenseRepository::new();
+        let uc = make_use_cases(repo);
+
+        let mut dto = valid_create_dto(Uuid::new_v4(), Uuid::new_v4());
+        dto.due_date = Some("2026-11-15T12:00:00Z".to_string());
+
+        let cree = uc.create_expense(dto).await.expect("création acceptée");
+
+        assert_eq!(cree.amount, rust_decimal_macros::dec!(1500));
+        assert_eq!(cree.amount_excl_vat, None, "aucune TVA n'est inventée");
+        assert!(cree.due_date.unwrap().starts_with("2026-11-15"));
     }
 
     #[tokio::test]

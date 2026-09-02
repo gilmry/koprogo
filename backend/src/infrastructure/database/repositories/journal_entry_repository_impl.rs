@@ -161,6 +161,35 @@ impl JournalEntryRepository for PostgresJournalEntryRepository {
         Ok(entries)
     }
 
+    async fn find_by_contribution(
+        &self,
+        contribution_id: Uuid,
+    ) -> Result<Vec<JournalEntry>, String> {
+        let entry_rows = sqlx::query_as!(
+            JournalEntryRow,
+            r#"
+            SELECT
+                id, organization_id, building_id, entry_date, description, document_ref,
+                journal_type, expense_id, contribution_id, created_at, updated_at, created_by
+            FROM journal_entries
+            WHERE contribution_id = $1
+            ORDER BY entry_date DESC, created_at DESC
+            "#,
+            contribution_id
+        )
+        .fetch_all(&self.pool)
+        .await
+        .map_err(|e| format!("Failed to find journal entries for contribution: {}", e))?;
+
+        let mut entries = Vec::new();
+        for row in entry_rows {
+            let lines = self.load_lines(row.id).await?;
+            entries.push(row.into_journal_entry(lines));
+        }
+
+        Ok(entries)
+    }
+
     async fn find_by_expense(&self, expense_id: Uuid) -> Result<Vec<JournalEntry>, String> {
         let entry_rows = sqlx::query_as!(
             JournalEntryRow,

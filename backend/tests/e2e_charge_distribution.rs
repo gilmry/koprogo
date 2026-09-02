@@ -126,6 +126,9 @@ async fn setup_charge_distribution_fixtures(
         supplier: Some("Elevator SPRL".to_string()),
         invoice_number: Some("INV-2025-001".to_string()),
         account_code: None,
+        amount_excl_vat: None,
+        vat_rate: None,
+        due_date: None,
     };
     let expense = app_state
         .expense_use_cases

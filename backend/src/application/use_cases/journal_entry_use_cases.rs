@@ -270,6 +270,18 @@ mod tests {
                 .collect())
         }
 
+        async fn find_by_contribution(
+            &self,
+            contribution_id: Uuid,
+        ) -> Result<Vec<JournalEntry>, String> {
+            let entries = self.entries.lock().unwrap();
+            Ok(entries
+                .values()
+                .filter(|e| e.contribution_id == Some(contribution_id))
+                .cloned()
+                .collect())
+        }
+
         async fn find_by_date_range(
             &self,
             organization_id: Uuid,

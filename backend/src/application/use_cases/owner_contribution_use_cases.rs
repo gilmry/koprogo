@@ -1,4 +1,5 @@
 use crate::application::ports::OwnerContributionRepository;
+use crate::application::services::expense_accounting_service::ExpenseAccountingService;
 use crate::domain::entities::{ContributionPaymentMethod, ContributionType, OwnerContribution};
 use chrono::{DateTime, Utc};
 use rust_decimal::Decimal;
@@ -7,11 +8,54 @@ use uuid::Uuid;
 
 pub struct OwnerContributionUseCases {
     repository: Arc<dyn OwnerContributionRepository>,
+    /// Optionnel pour préserver les constructeurs des tests unitaires, qui ne
+    /// montent qu'un dépôt de contributions. Le câblage de `main.rs` le
+    /// fournit toujours.
+    accounting_service: Option<Arc<ExpenseAccountingService>>,
 }
 
 impl OwnerContributionUseCases {
     pub fn new(repository: Arc<dyn OwnerContributionRepository>) -> Self {
-        Self { repository }
+        Self {
+            repository,
+            accounting_service: None,
+        }
+    }
+
+    pub fn with_accounting(
+        mut self,
+        accounting_service: Arc<ExpenseAccountingService>,
+    ) -> Self {
+        self.accounting_service = Some(accounting_service);
+        self
+    }
+
+    /// Enregistre l'écriture d'encaissement d'une quote-part soldée.
+    ///
+    /// Volontairement INFAILLIBLE, comme du côté des dépenses : le paiement a
+    /// été enregistré et persisté ; refuser l'opération à cause d'une écriture
+    /// comptable ferait perdre l'encaissement lui-même.
+    ///
+    /// Ce silence a un précédent coûteux — c'est lui qui a laissé la
+    /// génération automatique côté dépense échouer pendant des mois sur des
+    /// codes de compte inexistants (constat F7 du 2026-09-01). Le garde-fou
+    /// n'est donc pas ici mais en amont :
+    /// `test_les_comptes_utilises_existent_dans_le_plan` vérifie que les
+    /// comptes référencés existent bel et bien dans le plan provisionné.
+    pub(crate) async fn enregistrer_encaissement(&self, contribution: &OwnerContribution) {
+        let Some(ref accounting) = self.accounting_service else {
+            return;
+        };
+        if let Err(e) = accounting
+            .generate_contribution_receipt_entry(contribution, None, None, None)
+            .await
+        {
+            log::warn!(
+                "Écriture d'encaissement non générée pour la quote-part {} : {}",
+                contribution.id,
+                e
+            );
+        }
     }
 
     /// Create a new owner contribution (appel de fonds)
@@ -67,7 +111,12 @@ impl OwnerContributionUseCases {
         contribution.mark_as_paid(payment_date, payment_method, payment_reference);
 
         // Update
-        self.repository.update(&contribution).await
+        let updated = self.repository.update(&contribution).await?;
+
+        // D 550 (banque) / C 400 (copropriétaires) — constat F7.
+        self.enregistrer_encaissement(&updated).await;
+
+        Ok(updated)
     }
 
     /// Get contribution by ID

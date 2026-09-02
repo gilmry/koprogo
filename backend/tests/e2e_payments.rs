@@ -77,6 +77,9 @@ async fn create_test_fixtures(
         supplier: Some("Test Vendor".to_string()),
         invoice_number: None,
         account_code: None,
+        amount_excl_vat: None,
+        vat_rate: None,
+        due_date: None,
     };
 
     let expense = app_state

@@ -318,12 +318,16 @@ async fn main() -> std::io::Result<()> {
     let linky_use_cases = LinkyUseCases::new(iot_repo, linky_client, oauth_redirect_uri);
     let notification_use_cases =
         NotificationUseCases::new(notification_repo, notification_preference_repo);
-    let payment_use_cases_arc = Arc::new(PaymentUseCases::new(
-        payment_repo.clone(),
-        payment_method_repo.clone(),
-        // Un paiement reussi solde la quote-part qu'il designe.
-        owner_contribution_repo.clone(),
-    ));
+    let payment_use_cases_arc = Arc::new(
+        PaymentUseCases::new(
+            payment_repo.clone(),
+            payment_method_repo.clone(),
+            // Un paiement reussi solde la quote-part qu'il designe...
+            owner_contribution_repo.clone(),
+        )
+        // ...et enregistre l'ecriture d'encaissement correspondante.
+        .with_accounting(expense_accounting_service.clone()),
+    );
     let payment_method_use_cases = PaymentMethodUseCases::new(payment_method_repo);
     let quote_use_cases = QuoteUseCases::new(quote_repo.clone());
     let local_exchange_use_cases = LocalExchangeUseCases::new(
@@ -406,7 +410,8 @@ async fn main() -> std::io::Result<()> {
         payment_reminder_repo.clone(),
     );
     let owner_contribution_use_cases =
-        OwnerContributionUseCases::new(owner_contribution_repo.clone());
+        OwnerContributionUseCases::new(owner_contribution_repo.clone())
+            .with_accounting(expense_accounting_service.clone());
     // Track H Story H7 — validate-before-compute wiring ACP-level.
     let call_for_funds_use_cases = CallForFundsUseCases::with_full_wiring(
         call_for_funds_repo,

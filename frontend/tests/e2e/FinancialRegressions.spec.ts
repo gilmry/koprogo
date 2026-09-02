@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
 import {
-  loginAsAdmin,
+  loginAsAccountantEmetteur,
   loginAsSyndicWithBuilding,
   loginAsSyndicWithExpense,
   loginAsSyndicWithUnit,
@@ -104,7 +104,9 @@ test.describe("Workflows financiers 2026-09-01 — non-régression", () => {
     const ctx = await loginAsSyndicWithUnit(page, "fin-f14");
     await page.goto(`/building-detail?id=${ctx.buildingId}`);
 
-    const total = page.locator("text=/èmes/").first();
+    // `data-testid` et non `text=/èmes/` : ce dernier attrapait le LIBELLÉ
+    // « 📊 Total tantièmes: » avant la valeur.
+    const total = page.getByTestId("quotas-total");
     await expect(total).toBeVisible({ timeout: 15000 });
 
     const texte = (await total.textContent()) ?? "";
@@ -174,7 +176,11 @@ test.describe("Workflows financiers 2026-09-01 — non-régression", () => {
   test("F6 — /journal-entries affiche la liste des écritures, pas seulement le formulaire", async ({
     page,
   }) => {
-    await loginAsAdmin(page);
+    // Compte COMPTABLE et non admin : `superadmin` n'appartient à aucune
+    // organisation et reçoit un 401 sur toute route scopée. C'est très
+    // exactement la cause du constat F3, que le rapport attribuait à des noms
+    // de paramètres erronés.
+    await loginAsAccountantEmetteur(page, "fin-f6a");
     await page.goto("/journal-entries");
 
     const liste = page.getByTestId("journal-entry-list");
@@ -189,7 +195,7 @@ test.describe("Workflows financiers 2026-09-01 — non-régression", () => {
   test("F6 — une écriture créée est retrouvable dans la liste, avec ses lignes", async ({
     page,
   }) => {
-    const ctx = await loginAsAdmin(page);
+    const ctx = await loginAsAccountantEmetteur(page, "fin-f6b");
     const reference = `NR-${Date.now()}`;
 
     const creation = await page.request.post(`${API_BASE}/journal-entries`, {
@@ -230,7 +236,7 @@ test.describe("Workflows financiers 2026-09-01 — non-régression", () => {
   test("F16 — POST /journal-entries refuse `operation_date` et `reference`", async ({
     page,
   }) => {
-    const ctx = await loginAsAdmin(page);
+    const ctx = await loginAsAccountantEmetteur(page, "fin-f16");
 
     const resp = await page.request.post(`${API_BASE}/journal-entries`, {
       data: {
@@ -260,7 +266,10 @@ test.describe("Workflows financiers 2026-09-01 — non-régression", () => {
   test("F3 — le bilan se génère sans erreur pour un compte scopé", async ({
     page,
   }) => {
-    await loginAsSyndicWithBuilding(page, "fin-f3");
+    // Les rapports PCMN sont réservés aux comptables et superadmins (403
+    // sinon). Le rapport du 2026-09-01 concluait « Erreur lors de la
+    // génération » là où il s'agissait d'un refus d'autorisation.
+    await loginAsAccountantEmetteur(page, "fin-f3");
     await page.goto("/reports");
 
     const requete = page.waitForResponse(

@@ -4,6 +4,7 @@ use crate::application::dto::{
 use crate::application::ports::{
     OwnerContributionRepository, PaymentMethodRepository, PaymentRepository, PaymentStats,
 };
+use crate::application::services::expense_accounting_service::ExpenseAccountingService;
 use crate::domain::entities::{ContributionPaymentMethod, Payment, TransactionStatus};
 use std::sync::Arc;
 use uuid::Uuid;
@@ -13,6 +14,9 @@ pub struct PaymentUseCases {
     payment_method_repository: Arc<dyn PaymentMethodRepository>,
     /// Necessaire pour solder la quote-part rattachee a un paiement reussi.
     owner_contribution_repository: Arc<dyn OwnerContributionRepository>,
+    /// Ecriture d'encaissement de la quote-part soldee. Optionnel pour
+    /// preserver les constructeurs des tests unitaires.
+    accounting_service: Option<Arc<ExpenseAccountingService>>,
 }
 
 impl PaymentUseCases {
@@ -25,7 +29,13 @@ impl PaymentUseCases {
             payment_repository,
             payment_method_repository,
             owner_contribution_repository,
+            accounting_service: None,
         }
+    }
+
+    pub fn with_accounting(mut self, accounting_service: Arc<ExpenseAccountingService>) -> Self {
+        self.accounting_service = Some(accounting_service);
+        self
     }
 
     /// Create a new payment
@@ -287,6 +297,26 @@ impl PaymentUseCases {
                 error = %err,
                 "quote-part non soldee malgre un paiement reussi",
             );
+            return;
+        }
+
+        // D 550 (banque) / C 400 (coproprietaires) — constat F7.
+        //
+        // La generation est idempotente : la meme quote-part peut aussi etre
+        // soldee par `mark-paid` depuis l'interface, et un meme encaissement ne
+        // doit debiter la banque qu'une fois.
+        if let Some(ref accounting) = self.accounting_service {
+            if let Err(err) = accounting
+                .generate_contribution_receipt_entry(&contribution, None, None, None)
+                .await
+            {
+                tracing::warn!(
+                    payment_id = %payment.id,
+                    contribution_id = %contribution_id,
+                    error = %err,
+                    "ecriture d'encaissement non generee",
+                );
+            }
         }
     }
 
