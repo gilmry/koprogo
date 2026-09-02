@@ -5,7 +5,9 @@ use crate::application::dto::{
 use crate::domain::entities::UserRole;
 use crate::infrastructure::audit::{AuditEventType, AuditLogEntry};
 use crate::infrastructure::web::handlers::conformity_response::try_build_conformity_response;
-use crate::infrastructure::web::middleware::scope_guard::verify_acp_org_access;
+use crate::infrastructure::web::middleware::scope_guard::{
+    verify_acp_org_access, verify_building_org_access,
+};
 use crate::infrastructure::web::{AppState, AuthenticatedUser};
 use actix_web::{get, post, put, web, HttpResponse, Responder, ResponseError};
 use chrono::{DateTime, Utc};
@@ -105,6 +107,33 @@ pub async fn create_expense(
         }
     };
     dto.organization_id = organization_id.to_string();
+
+    // Isolation multi-tenant à l'ÉCRITURE : l'immeuble visé doit relever d'une
+    // ACP dont ce syndic a la gestion.
+    //
+    // L'affectation ci-dessus protège le mauvais champ : elle empêche
+    // d'ESTAMPILLER l'enregistrement au nom d'autrui, pas de le RATTACHER au
+    // patrimoine d'autrui. Mesuré le 2026-09-02 entre deux cabinets syndics
+    // indépendants : `POST /expenses` sur l'immeuble d'un tiers répondait 201,
+    // et la dépense apparaissait dans la liste des charges de cet immeuble.
+    let building_uuid = match Uuid::parse_str(&dto.building_id) {
+        Ok(id) => id,
+        Err(_) => {
+            return HttpResponse::BadRequest()
+                .json(serde_json::json!({ "error": "Invalid building_id format" }))
+        }
+    };
+    if let Err(err) = verify_building_org_access(
+        &user,
+        building_uuid,
+        &state.building_use_cases,
+        &state.acp_use_cases,
+    )
+    .await
+    {
+        return err.error_response();
+    }
+
 
     if let Err(errors) = dto.validate() {
         return HttpResponse::BadRequest().json(serde_json::json!({
@@ -422,6 +451,33 @@ pub async fn create_invoice_draft(
         }
     };
     dto.organization_id = organization_id.to_string();
+
+    // Isolation multi-tenant à l'ÉCRITURE : l'immeuble visé doit relever d'une
+    // ACP dont ce syndic a la gestion.
+    //
+    // L'affectation ci-dessus protège le mauvais champ : elle empêche
+    // d'ESTAMPILLER l'enregistrement au nom d'autrui, pas de le RATTACHER au
+    // patrimoine d'autrui. Mesuré le 2026-09-02 entre deux cabinets syndics
+    // indépendants : `POST /expenses` sur l'immeuble d'un tiers répondait 201,
+    // et la dépense apparaissait dans la liste des charges de cet immeuble.
+    let building_uuid = match Uuid::parse_str(&dto.building_id) {
+        Ok(id) => id,
+        Err(_) => {
+            return HttpResponse::BadRequest()
+                .json(serde_json::json!({ "error": "Invalid building_id format" }))
+        }
+    };
+    if let Err(err) = verify_building_org_access(
+        &user,
+        building_uuid,
+        &state.building_use_cases,
+        &state.acp_use_cases,
+    )
+    .await
+    {
+        return err.error_response();
+    }
+
 
     if let Err(errors) = dto.validate() {
         return HttpResponse::BadRequest().json(serde_json::json!({

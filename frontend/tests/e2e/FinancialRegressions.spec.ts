@@ -771,6 +771,179 @@ test.describe("Workflows financiers 2026-09-01 — non-régression", () => {
   });
 
   // ───────────────────────────────────────────────────────────────────────
+  // A7 — cloisonnement entre cabinets syndics, côté ÉCRITURE
+  // ───────────────────────────────────────────────────────────────────────
+
+  /// Une ACP est une entité à part entière : sa comptabilité, ses lots et ses
+  /// mutations lui appartiennent. Un syndic n'en est que le mandataire, et ce
+  /// mandat change au gré des assemblées générales.
+  ///
+  /// Les LECTURES étaient correctement cloisonnées (403 dans toutes les
+  /// directions, aucune fuite dans les listes — Hotfix #603). Les ÉCRITURES ne
+  /// l'étaient pas : 29 routes acceptent un `building_id` dans leur corps sans
+  /// vérifier qu'il relève d'une ACP gérée par l'appelant.
+  ///
+  /// Mesuré le 2026-09-02 entre deux cabinets indépendants. Le cabinet B a pu,
+  /// sur l'immeuble du cabinet A :
+  ///
+  ///   POST /expenses         → 201, dépense de 50 000 € VISIBLE dans la
+  ///                            liste des charges de l'immeuble de A ;
+  ///   POST /call-for-funds   → 201, puis `send` → 200, générant une
+  ///                            quote-part de 25 000 € réclamée à une
+  ///                            copropriétaire de A.
+  ///
+  /// La garde existante protégeait le mauvais champ : écraser
+  /// `organization_id` avec celui du JWT empêche d'ESTAMPILLER un
+  /// enregistrement au nom d'autrui, pas de le RATTACHER au patrimoine
+  /// d'autrui.
+  test("A7 — un cabinet ne peut pas écrire dans le patrimoine d'un autre", async ({
+    page,
+  }) => {
+    const ts = Date.now();
+
+    const a = await loginAsSyndicWithBuilding(page, "iso-a", {
+      totalUnits: 1,
+      totalTantiemes: 1000,
+      seedUnits: false,
+    });
+    const adminA = { Authorization: `Bearer ${a.adminToken}` };
+    const synA = { Authorization: `Bearer ${a.token}` };
+
+    const lot = await page.request.post(`${API_BASE}/units`, {
+      data: {
+        acp_id: a.acpId,
+        building_id: a.buildingId,
+        unit_number: "ISO1",
+        floor: 0,
+        surface_area: 80,
+        unit_type: "Apartment",
+        quota: 1000,
+      },
+      headers: adminA,
+    });
+    expect(lot.status(), await lot.text()).toBe(201);
+    const unitA = (await lot.json()).id;
+
+    const prop = await page.request.post(`${API_BASE}/owners`, {
+      data: {
+        organization_id: a.orgId,
+        first_name: "Alice",
+        last_name: `Iso${ts}`,
+        email: `iso-${ts}@example.com`,
+        address: "1 Rue A",
+        city: "Bruxelles",
+        postal_code: "1000",
+        country: "Belgium",
+      },
+      headers: synA,
+    });
+    const ownerA = (await prop.json()).id;
+    await page.request.post(`${API_BASE}/units/${unitA}/owners`, {
+      data: {
+        owner_id: ownerA,
+        ownership_percentage: 1.0,
+        is_primary_contact: true,
+      },
+      headers: adminA,
+    });
+
+    // Cabinet B, totalement indépendant.
+    const b = await loginAsSyndicWithBuilding(page, "iso-b", {
+      totalUnits: 1,
+      totalTantiemes: 1000,
+      seedUnits: false,
+    });
+    const synB = { Authorization: `Bearer ${b.token}` };
+    expect(b.orgId).not.toBe(a.orgId);
+
+    // ── Écritures sur le patrimoine de A, depuis B ────────────────────
+    const intrusionDepense = await page.request.post(`${API_BASE}/expenses`, {
+      data: {
+        building_id: a.buildingId,
+        category: "Maintenance",
+        description: `INTRUSION ${ts}`,
+        amount: 50000.0,
+        expense_date: new Date().toISOString(),
+        account_code: "611002",
+      },
+      headers: synB,
+    });
+    expect(
+      intrusionDepense.status(),
+      "un cabinet tiers ne doit pas pouvoir imputer une charge",
+    ).toBe(403);
+
+    const intrusionAppel = await page.request.post(`${API_BASE}/call-for-funds`, {
+      data: {
+        building_id: a.buildingId,
+        title: `INTRUSION ${ts}`,
+        description: "x",
+        total_amount: 25000.0,
+        contribution_type: "regular",
+        call_date: new Date().toISOString(),
+        due_date: new Date(Date.now() + 30 * 864e5).toISOString(),
+      },
+      headers: synB,
+    });
+    expect(
+      intrusionAppel.status(),
+      "un cabinet tiers ne doit pas pouvoir appeler des fonds",
+    ).toBe(403);
+
+    const intrusionBudget = await page.request.post(`${API_BASE}/budgets`, {
+      data: {
+        building_id: a.buildingId,
+        fiscal_year: new Date().getFullYear(),
+        ordinary_budget: 1.0,
+        extraordinary_budget: 0.0,
+      },
+      headers: synB,
+    });
+    expect(intrusionBudget.status(), "ni voter un budget").toBe(403);
+
+    const intrusionEtat = await page.request.post(`${API_BASE}/etats-dates`, {
+      data: {
+        building_id: a.buildingId,
+        unit_id: unitA,
+        reference_date: new Date().toISOString(),
+        language: "fr",
+        notary_name: "Intrus",
+        notary_email: `intrus-${ts}@example.com`,
+      },
+      headers: synB,
+    });
+    expect(intrusionEtat.status(), "ni délivrer un état daté").toBe(403);
+
+    // ── Le patrimoine de A doit être intact ───────────────────────────
+    const charges = await page.request.get(
+      `${API_BASE}/buildings/${a.buildingId}/expenses`,
+      { headers: synA },
+    );
+    expect(await charges.text()).not.toContain(`INTRUSION ${ts}`);
+
+    const quotes = await page.request.get(
+      `${API_BASE}/owner-contributions?owner_id=${ownerA}`,
+      { headers: synA },
+    );
+    const liste = await quotes.json();
+    expect(
+      Array.isArray(liste) ? liste.length : 0,
+      "aucune quote-part ne doit avoir été réclamée à la copropriétaire de A",
+    ).toBe(0);
+
+    // ── Et les lectures restent cloisonnées ───────────────────────────
+    for (const url of [
+      `${API_BASE}/buildings/${a.buildingId}`,
+      `${API_BASE}/units/${unitA}`,
+      `${API_BASE}/owners/${ownerA}`,
+      `${API_BASE}/buildings/${a.buildingId}/expenses`,
+    ]) {
+      const r = await page.request.get(url, { headers: synB });
+      expect(r.status(), `lecture cloisonnée: ${url}`).toBe(403);
+    }
+  });
+
+  // ───────────────────────────────────────────────────────────────────────
   // F14 — tantièmes : somme de `Decimal` sérialisés en chaîne
   // ───────────────────────────────────────────────────────────────────────
 

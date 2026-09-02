@@ -39,6 +39,7 @@ use uuid::Uuid;
 
 use crate::application::error::AppError;
 use crate::application::use_cases::acp_use_cases::{AcpCaller, AcpUseCases};
+use crate::application::use_cases::building_use_cases::BuildingUseCases;
 use crate::infrastructure::web::app_state::AppState;
 use crate::infrastructure::web::AuthenticatedUser;
 
@@ -228,6 +229,59 @@ pub async fn verify_acp_org_access(
 
     user.verify_org_access(acp_org_id)
         .map_err(|_| AppError::AcpNotInScope { acp_id })
+}
+
+/// Isolation multi-tenant sur les ÉCRITURES qui désignent un immeuble par le
+/// CORPS de la requête.
+///
+/// `verify_acp_org_access` ci-dessus protège les lectures par identifiant
+/// (Hotfix #603). Le côté écriture n'avait pas d'équivalent : 29 routes
+/// `POST`/`PUT` acceptent un `building_id` dans leur DTO et aucune ne
+/// vérifiait qu'il appartient à l'organisation de l'appelant.
+///
+/// Mesuré en conditions réelles le 2026-09-02 entre deux cabinets syndics
+/// indépendants. Le cabinet B a pu, sur l'immeuble du cabinet A :
+///
+///   POST /expenses          → 201, dépense de 50 000 € VISIBLE dans la
+///                             liste des charges de l'immeuble de A ;
+///   POST /call-for-funds    → 201, puis `send` → 200, générant une
+///                             quote-part de 25 000 € réclamée à une
+///                             copropriétaire de A.
+///
+/// Les lectures, elles, répondaient bien 403 dans toutes les directions : la
+/// faille était strictement du côté écriture.
+///
+/// La garde existante `dto.organization_id = <celle du JWT>` ne protège pas
+/// de cela — elle empêche d'ESTAMPILLER l'enregistrement au nom d'autrui, pas
+/// de le RATTACHER au patrimoine d'autrui. Le champ contrôlé n'était pas le
+/// bon.
+///
+/// Sémantique : superadmin passe ; sinon l'immeuble doit exister et son ACP
+/// appartenir à l'organisation de l'appelant. Un immeuble introuvable est
+/// refusé plutôt qu'ignoré — accepter une écriture pointant vers le vide
+/// créerait un orphelin invisible.
+pub async fn verify_building_org_access(
+    user: &AuthenticatedUser,
+    building_id: Uuid,
+    building_use_cases: &BuildingUseCases,
+    acp_use_cases: &AcpUseCases,
+) -> Result<(), AppError> {
+    if user.is_superadmin() {
+        return Ok(());
+    }
+
+    let building = building_use_cases
+        .get_building(building_id)
+        .await
+        .map_err(AppError::from)?
+        .ok_or(AppError::NotFound(format!(
+            "Building not found: {building_id}"
+        )))?;
+
+    let acp_id = Uuid::parse_str(&building.acp_id)
+        .map_err(|_| AppError::Internal("Invalid building.acp_id format".to_string()))?;
+
+    verify_acp_org_access(user, acp_id, acp_use_cases).await
 }
 
 // ============================================================================

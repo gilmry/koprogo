@@ -4,8 +4,9 @@ use crate::application::dto::{
 };
 use crate::domain::entities::{ContributionType, UserRole};
 use crate::infrastructure::web::handlers::conformity_response::try_build_conformity_response;
+use crate::infrastructure::web::middleware::scope_guard::verify_building_org_access;
 use crate::infrastructure::web::{AppState, AuthenticatedUser};
-use actix_web::{delete, get, post, put, web, HttpResponse};
+use actix_web::{delete, get, post, put, web, HttpResponse, ResponseError};
 use std::str::FromStr;
 use uuid::Uuid;
 
@@ -55,6 +56,22 @@ pub async fn create_call_for_funds(
         Some(org_id) => org_id,
         None => return HttpResponse::BadRequest().json(serde_json::json!({ "error": "Organization ID required" })),
     };
+
+    // Isolation multi-tenant à l'ÉCRITURE : l'immeuble visé doit relever d'une
+    // ACP dont ce syndic a la gestion. Mesuré le 2026-09-02 : un cabinet tiers
+    // pouvait créer PUIS ENVOYER un appel de fonds sur l'immeuble d'un autre,
+    // générant des quotes-parts réclamées à des copropriétaires qui ne sont
+    // pas les siens.
+    if let Err(err) = verify_building_org_access(
+        &user,
+        req.building_id,
+        &state.building_use_cases,
+        &state.acp_use_cases,
+    )
+    .await
+    {
+        return err.error_response();
+    }
 
     // Parse contribution type
     let contribution_type = match req.contribution_type.as_str() {
