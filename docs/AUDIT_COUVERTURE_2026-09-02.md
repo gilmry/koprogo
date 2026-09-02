@@ -224,15 +224,39 @@ et le testeur n'a aucun moyen de le savoir depuis son côté. C'est une
 hypothèse à écarter avant toute autre quand un rapport annonce un grand
 nombre d'échecs hétérogènes.
 
-**Ce qu'il faut faire à la place** — par ordre de préférence :
+### Résolu le 2026-09-02 — exception CrowdSec pour l'hôte
 
-1. lancer la suite contre une pile locale (`PLAYWRIGHT_BASE_URL` par
-   défaut : `http://localhost`), ce pour quoi elle est écrite ;
-2. si la production est visée, procéder par lots de 5 à 7 fichiers avec
-   `--workers=1`, en laissant retomber la fenêtre du limiteur entre les
-   lots ;
-3. mettre l'IP du lanceur en liste d'exception CrowdSec, si des campagnes
-   régulières contre la production sont voulues.
+Le bannissement s'est déclenché **six fois dans la journée**, chaque fois
+levé à la main. L'IP concernée était `57.128.85.217`, c'est-à-dire
+**celle de la VPS elle-même** : la machine se bannissait, coupant du même
+coup son cron de déploiement, sa supervision et ses tests.
+
+```
+cscli allowlists create koprogo-hote -d "…"
+cscli allowlists add koprogo-hote 57.128.85.217
+```
+
+**Le compromis, énoncé.** Une IP en exception n'est plus bannie, même si
+elle se comporte mal. Ici la contrepartie est faible et le gain net :
+bannir l'hôte le protège de lui-même tout en cassant ses propres
+services. Les décisions restent actives pour toute autre source —
+vérifié, une IP tierce reste bannissable.
+
+L'exception est **étroite** (une adresse, pas un sous-réseau),
+**inspectable** (`cscli allowlists inspect koprogo-hote`) et
+**révocable** en une commande (`cscli allowlists delete koprogo-hote`).
+Son motif est écrit dans la description, lisible par qui la découvrira.
+
+Elle persiste aux recréations de conteneur : la base CrowdSec est sur le
+volume `traefik_crowdsec_data`.
+
+Vérifié : la suite complète, **30 scénarios en une seule passe**, sans
+déclencher de bannissement — ce qui échouait systématiquement avant.
+
+**Ce qui reste préférable malgré tout** : lancer la suite contre une pile
+locale (`PLAYWRIGHT_BASE_URL` vaut `http://localhost` par défaut, la
+suite est écrite pour ça). L'exception traite le symptôme sur
+l'infrastructure ; elle ne rend pas souhaitable de tester en production.
 
 Le cache de jeton de `helpers/auth.ts` (une connexion par worker au lieu
 d'une par test) atténue le problème sans le supprimer : plusieurs workers
