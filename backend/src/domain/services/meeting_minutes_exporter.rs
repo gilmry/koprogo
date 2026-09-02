@@ -344,6 +344,7 @@ mod tests {
         let test_org_id = Uuid::new_v4();
 
         let meeting = Meeting {
+            acp_id: Uuid::new_v4(),
             id: Uuid::new_v4(),
             organization_id: test_org_id,
             building_id: building.id,

@@ -363,6 +363,7 @@ mod tests {
         // Mock meeting exists
         use crate::domain::entities::MeetingType;
         let meeting = Meeting::new(
+            Uuid::new_v4(), // acp_id
             org_id,
             building_id,
             MeetingType::Ordinary,

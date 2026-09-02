@@ -13,6 +13,12 @@ use uuid::Uuid;
 
 pub struct MeetingUseCases {
     repository: Arc<dyn MeetingRepository>,
+    /// Résolution de l'ACP dont c'est l'assemblée.
+    ///
+    /// Optionnel pour ne pas casser les constructeurs des tests, mais son
+    /// absence fait échouer la création : une assemblée sans ACP n'est
+    /// l'assemblée de personne (ADR-0045).
+    building_repository: Option<Arc<dyn crate::application::ports::BuildingRepository>>,
     convocation_use_cases: Option<Arc<crate::application::use_cases::ConvocationUseCases>>,
     /// Track H Story H3 — Port DB pour construire la checklist Art. 3.87
     /// §3-5 CC avant `complete_meeting`. `None` signifie : pas de gate
@@ -24,6 +30,7 @@ impl MeetingUseCases {
     pub fn new(repository: Arc<dyn MeetingRepository>) -> Self {
         Self {
             repository,
+            building_repository: None,
             convocation_use_cases: None,
             completion_checker: None,
         }
@@ -36,6 +43,7 @@ impl MeetingUseCases {
     ) -> Self {
         Self {
             repository,
+            building_repository: None,
             convocation_use_cases: Some(convocation_use_cases),
             completion_checker: None,
         }
@@ -133,11 +141,41 @@ impl MeetingUseCases {
         Ok((checklist, missing_json))
     }
 
+    /// Câble la résolution de l'ACP depuis l'immeuble.
+    pub fn with_acp_resolution(
+        mut self,
+        building_repository: Arc<dyn crate::application::ports::BuildingRepository>,
+    ) -> Self {
+        self.building_repository = Some(building_repository);
+        self
+    }
+
+    /// L'ACP dont c'est l'assemblée, résolue depuis l'immeuble.
+    ///
+    /// Art. 3.87 § 1er : l'assemblée générale est l'organe de l'association.
+    /// Le syndic la tient (§ 2), il ne la possède pas.
+    async fn resoudre_lacp(&self, building_id: Uuid) -> Result<Uuid, String> {
+        let Some(building_repo) = &self.building_repository else {
+            return Err(
+                "Impossible de déterminer l'ACP dont c'est l'assemblée : dépôt d'immeubles \
+                 non câblé"
+                    .to_string(),
+            );
+        };
+        let building = building_repo
+            .find_by_id(building_id)
+            .await?
+            .ok_or_else(|| "Immeuble introuvable".to_string())?;
+        Ok(building.acp_id)
+    }
+
     pub async fn create_meeting(
         &self,
         request: CreateMeetingRequest,
     ) -> Result<MeetingResponse, String> {
+        let acp_id = self.resoudre_lacp(request.building_id).await?;
         let mut meeting = Meeting::new(
+            acp_id,
             request.organization_id,
             request.building_id,
             request.meeting_type,
@@ -410,6 +448,77 @@ mod tests {
     use mockall::mock;
     use std::sync::Arc;
 
+    use crate::domain::entities::Building;
+
+    /// Dépôt d'immeubles minimal : un immeuble rattaché à une ACP quelconque.
+    ///
+    /// L'assemblée cherche désormais l'ACP dont elle est l'assemblée
+    /// (Art. 3.87 § 1er, ADR-0045). Les tests qui vérifient le rattachement
+    /// nomment l'ACP ; les autres n'ont besoin que d'un immeuble qui existe.
+    fn mock_building_repo() -> Arc<dyn crate::application::ports::BuildingRepository> {
+        mock_building_repo_pour(Uuid::new_v4())
+    }
+
+    fn mock_building_repo_pour(
+        acp_id: Uuid,
+    ) -> Arc<dyn crate::application::ports::BuildingRepository> {
+        struct Depot {
+            acp_id: Uuid,
+        }
+        impl Depot {
+            fn immeuble(&self) -> Building {
+                Building::new(
+                    self.acp_id,
+                    "Résidence du Parc".to_string(),
+                    "12 Rue de la Loi".to_string(),
+                    "Brussels".to_string(),
+                    "1000".to_string(),
+                    "Belgium".to_string(),
+                    10,
+                    1000,
+                    Some(2015),
+                )
+                .expect("immeuble valide")
+            }
+        }
+        #[async_trait]
+        impl crate::application::ports::BuildingRepository for Depot {
+            async fn create(&self, b: &Building) -> Result<Building, String> {
+                Ok(b.clone())
+            }
+            async fn find_by_id(&self, _id: Uuid) -> Result<Option<Building>, String> {
+                Ok(Some(self.immeuble()))
+            }
+            async fn find_all(&self) -> Result<Vec<Building>, String> {
+                Ok(vec![self.immeuble()])
+            }
+            async fn find_all_paginated(
+                &self,
+                _p: &PageRequest,
+                _f: &crate::application::dto::BuildingFilters,
+            ) -> Result<(Vec<Building>, i64), String> {
+                Ok((vec![self.immeuble()], 1))
+            }
+            async fn update(&self, b: &Building) -> Result<Building, String> {
+                Ok(b.clone())
+            }
+            async fn delete(&self, _id: Uuid) -> Result<bool, String> {
+                Ok(true)
+            }
+            async fn find_by_slug(&self, _s: &str) -> Result<Option<Building>, String> {
+                Ok(Some(self.immeuble()))
+            }
+            async fn find_by_id_with_metrics(
+                &self,
+                _id: Uuid,
+            ) -> Result<Option<(Building, crate::domain::entities::BuildingMetrics)>, String>
+            {
+                Ok(None)
+            }
+        }
+        Arc::new(Depot { acp_id })
+    }
+
     mock! {
         MeetingRepo {}
 
@@ -431,6 +540,7 @@ mod tests {
     /// Helper to build a valid Meeting for testing purposes.
     fn make_meeting(building_id: Uuid, org_id: Uuid) -> Meeting {
         Meeting::new(
+            Uuid::new_v4(), // acp_id
             org_id,
             building_id,
             MeetingType::Ordinary,
@@ -445,13 +555,83 @@ mod tests {
     // ---------------------------------------------------------------
     // 1. Create meeting success
     // ---------------------------------------------------------------
+    /// Art. 3.87 § 1er et ADR-0045 : l'assemblée est l'organe de l'ACP.
+    ///
+    /// L'ACP se lit sur l'immeuble, jamais sur l'appelant. Un changement de
+    /// syndic ne rend pas les assemblées passées invisibles.
+    #[tokio::test]
+    async fn test_lassemblee_est_celle_de_lacp_pas_du_syndic() {
+        let acp_de_limmeuble = Uuid::new_v4();
+        let cabinet_qui_la_tient = Uuid::new_v4();
+
+        let mut mock_repo = MockMeetingRepo::new();
+        mock_repo.expect_create().returning(|m| Ok(m.clone()));
+
+        let use_cases = MeetingUseCases::new(Arc::new(mock_repo))
+            .with_acp_resolution(mock_building_repo_pour(acp_de_limmeuble));
+
+        let assemblee = use_cases
+            .create_meeting(CreateMeetingRequest {
+                organization_id: cabinet_qui_la_tient,
+                building_id: Uuid::new_v4(),
+                meeting_type: MeetingType::Ordinary,
+                title: "AGO 2026".to_string(),
+                description: None,
+                scheduled_date: Utc::now() + Duration::days(30),
+                location: "Salle communale".to_string(),
+                is_second_convocation: false,
+            })
+            .await
+            .expect("création valide");
+
+        assert_eq!(
+            assemblee.acp_id, acp_de_limmeuble,
+            "l'assemblée est celle de l'ACP de l'immeuble"
+        );
+        // La réponse n'expose pas le syndic, et c'est voulu : ce qui compte
+        // pour un client est de quelle copropriété relève l'assemblée. La
+        // trace d'auteur reste en base, elle n'est pas un droit d'accès.
+        assert_ne!(
+            assemblee.acp_id, cabinet_qui_la_tient,
+            "l'ACP et le syndic sont deux entités distinctes"
+        );
+    }
+
+    /// Sans dépôt d'immeubles, on ne sait pas de quelle ACP c'est l'assemblée.
+    #[tokio::test]
+    async fn test_pas_dassemblee_sans_acp_identifiable() {
+        let mut mock_repo = MockMeetingRepo::new();
+        mock_repo.expect_create().returning(|m| Ok(m.clone()));
+
+        let use_cases = MeetingUseCases::new(Arc::new(mock_repo)); // pas de résolution
+
+        let erreur = use_cases
+            .create_meeting(CreateMeetingRequest {
+                organization_id: Uuid::new_v4(),
+                building_id: Uuid::new_v4(),
+                meeting_type: MeetingType::Ordinary,
+                title: "AGO 2026".to_string(),
+                description: None,
+                scheduled_date: Utc::now() + Duration::days(30),
+                location: "Salle communale".to_string(),
+                is_second_convocation: false,
+            })
+            .await
+            .expect_err("doit refuser");
+
+        assert!(
+            erreur.contains("ACP"),
+            "le refus doit nommer ce qui manque : {erreur}"
+        );
+    }
+
     #[tokio::test]
     async fn test_create_meeting_success() {
         let mut mock_repo = MockMeetingRepo::new();
 
         mock_repo.expect_create().returning(|m| Ok(m.clone()));
 
-        let use_cases = MeetingUseCases::new(Arc::new(mock_repo));
+        let use_cases = MeetingUseCases::new(Arc::new(mock_repo)).with_acp_resolution(mock_building_repo());
 
         let request = CreateMeetingRequest {
             organization_id: Uuid::new_v4(),
@@ -477,7 +657,7 @@ mod tests {
     #[tokio::test]
     async fn test_create_meeting_empty_title_fails() {
         let mock_repo = MockMeetingRepo::new();
-        let use_cases = MeetingUseCases::new(Arc::new(mock_repo));
+        let use_cases = MeetingUseCases::new(Arc::new(mock_repo)).with_acp_resolution(mock_building_repo());
 
         let request = CreateMeetingRequest {
             organization_id: Uuid::new_v4(),
@@ -501,7 +681,7 @@ mod tests {
     #[tokio::test]
     async fn test_create_meeting_empty_location_fails() {
         let mock_repo = MockMeetingRepo::new();
-        let use_cases = MeetingUseCases::new(Arc::new(mock_repo));
+        let use_cases = MeetingUseCases::new(Arc::new(mock_repo)).with_acp_resolution(mock_building_repo());
 
         let request = CreateMeetingRequest {
             organization_id: Uuid::new_v4(),
@@ -535,7 +715,7 @@ mod tests {
             .withf(move |id| *id == meeting_id)
             .returning(move |_| Ok(Some(make_meeting(building_id, org_id))));
 
-        let use_cases = MeetingUseCases::new(Arc::new(mock_repo));
+        let use_cases = MeetingUseCases::new(Arc::new(mock_repo)).with_acp_resolution(mock_building_repo());
 
         let result = use_cases.get_meeting(meeting_id).await;
         assert!(result.is_ok());
@@ -550,7 +730,7 @@ mod tests {
         let mut mock_repo = MockMeetingRepo::new();
         mock_repo.expect_find_by_id().returning(|_| Ok(None));
 
-        let use_cases = MeetingUseCases::new(Arc::new(mock_repo));
+        let use_cases = MeetingUseCases::new(Arc::new(mock_repo)).with_acp_resolution(mock_building_repo());
 
         let result = use_cases.get_meeting(Uuid::new_v4()).await;
         assert!(result.is_ok());
@@ -576,7 +756,7 @@ mod tests {
                 ])
             });
 
-        let use_cases = MeetingUseCases::new(Arc::new(mock_repo));
+        let use_cases = MeetingUseCases::new(Arc::new(mock_repo)).with_acp_resolution(mock_building_repo());
 
         let result = use_cases.list_meetings_by_building(building_id).await;
         assert!(result.is_ok());
@@ -602,7 +782,7 @@ mod tests {
 
         mock_repo.expect_update().returning(|m| Ok(m.clone()));
 
-        let use_cases = MeetingUseCases::new(Arc::new(mock_repo));
+        let use_cases = MeetingUseCases::new(Arc::new(mock_repo)).with_acp_resolution(mock_building_repo());
 
         let request = UpdateMeetingRequest {
             title: Some("Renamed AGO".to_string()),
@@ -625,7 +805,7 @@ mod tests {
         let mut mock_repo = MockMeetingRepo::new();
         mock_repo.expect_find_by_id().returning(|_| Ok(None));
 
-        let use_cases = MeetingUseCases::new(Arc::new(mock_repo));
+        let use_cases = MeetingUseCases::new(Arc::new(mock_repo)).with_acp_resolution(mock_building_repo());
 
         let request = UpdateMeetingRequest {
             title: Some("New title".to_string()),
@@ -655,7 +835,7 @@ mod tests {
             .expect_find_by_id()
             .returning(move |_| Ok(Some(meeting_clone.clone())));
 
-        let use_cases = MeetingUseCases::new(Arc::new(mock_repo));
+        let use_cases = MeetingUseCases::new(Arc::new(mock_repo)).with_acp_resolution(mock_building_repo());
 
         let request = UpdateMeetingRequest {
             title: Some("".to_string()),
@@ -682,7 +862,7 @@ mod tests {
             .withf(move |id| *id == meeting_id)
             .returning(|_| Ok(true));
 
-        let use_cases = MeetingUseCases::new(Arc::new(mock_repo));
+        let use_cases = MeetingUseCases::new(Arc::new(mock_repo)).with_acp_resolution(mock_building_repo());
 
         let result = use_cases.delete_meeting(meeting_id).await;
         assert!(result.is_ok());
@@ -708,7 +888,7 @@ mod tests {
 
         mock_repo.expect_update().returning(|m| Ok(m.clone()));
 
-        let use_cases = MeetingUseCases::new(Arc::new(mock_repo));
+        let use_cases = MeetingUseCases::new(Arc::new(mock_repo)).with_acp_resolution(mock_building_repo());
 
         // 600/1000 = 60% → quorum reached
         let result = use_cases
@@ -741,7 +921,7 @@ mod tests {
         mock_repo.expect_update().returning(|m| Ok(m.clone()));
 
         // No convocation_use_cases set, so second convocation won't be triggered
-        let use_cases = MeetingUseCases::new(Arc::new(mock_repo));
+        let use_cases = MeetingUseCases::new(Arc::new(mock_repo)).with_acp_resolution(mock_building_repo());
 
         // 400/1000 = 40% → quorum NOT reached
         let result = use_cases
@@ -762,7 +942,7 @@ mod tests {
         let mut mock_repo = MockMeetingRepo::new();
         mock_repo.expect_find_by_id().returning(|_| Ok(None));
 
-        let use_cases = MeetingUseCases::new(Arc::new(mock_repo));
+        let use_cases = MeetingUseCases::new(Arc::new(mock_repo)).with_acp_resolution(mock_building_repo());
 
         let result = use_cases
             .validate_quorum(Uuid::new_v4(), dec!(600), dec!(1000))
@@ -790,7 +970,7 @@ mod tests {
 
         mock_repo.expect_update().returning(|m| Ok(m.clone()));
 
-        let use_cases = MeetingUseCases::new(Arc::new(mock_repo));
+        let use_cases = MeetingUseCases::new(Arc::new(mock_repo)).with_acp_resolution(mock_building_repo());
 
         let request = CompleteMeetingRequest {
             attendees_count: 42,
@@ -821,7 +1001,7 @@ mod tests {
 
         mock_repo.expect_update().returning(|m| Ok(m.clone()));
 
-        let use_cases = MeetingUseCases::new(Arc::new(mock_repo));
+        let use_cases = MeetingUseCases::new(Arc::new(mock_repo)).with_acp_resolution(mock_building_repo());
 
         let result = use_cases.cancel_meeting(meeting_id).await;
         assert!(result.is_ok());
@@ -847,7 +1027,7 @@ mod tests {
 
         mock_repo.expect_update().returning(|m| Ok(m.clone()));
 
-        let use_cases = MeetingUseCases::new(Arc::new(mock_repo));
+        let use_cases = MeetingUseCases::new(Arc::new(mock_repo)).with_acp_resolution(mock_building_repo());
 
         let request = AddAgendaItemRequest {
             item: "Approbation des comptes".to_string(),
@@ -878,7 +1058,7 @@ mod tests {
 
         mock_repo.expect_update().returning(|m| Ok(m.clone()));
 
-        let use_cases = MeetingUseCases::new(Arc::new(mock_repo));
+        let use_cases = MeetingUseCases::new(Arc::new(mock_repo)).with_acp_resolution(mock_building_repo());
 
         // 500/1000 = exactly 50% → quorum NOT reached (Art. 3.87 §5: strictly >50%)
         let result = use_cases

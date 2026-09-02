@@ -38,7 +38,7 @@ impl EtatDateRepository for PostgresEtatDateRepository {
         sqlx::query(
             r#"
             INSERT INTO etats_dates (
-                id, organization_id, building_id, unit_id,
+                id, acp_id, organization_id, building_id, unit_id,
                 reference_date, requested_date, generated_date, delivered_date,
                 status, language, reference_number,
                 notary_name, notary_email, notary_phone,
@@ -50,20 +50,21 @@ impl EtatDateRepository for PostgresEtatDateRepository {
                 created_at, updated_at
             )
             VALUES (
-                $1, $2, $3, $4,
-                $5, $6, $7, $8,
-                CAST($9 AS etat_date_status), CAST($10 AS etat_date_language), $11,
-                $12, $13, $14,
-                $15, $16, $17, $18, $19,
-                $20, $21,
-                $22, $23, $24,
-                $25, $26,
-                $27, $28,
-                $29, $30
+                $1, $2, $3, $4, $5,
+                $6, $7, $8, $9,
+                CAST($10 AS etat_date_status), CAST($11 AS etat_date_language), $12,
+                $13, $14, $15,
+                $16, $17, $18, $19, $20,
+                $21, $22,
+                $23, $24, $25,
+                $26, $27,
+                $28, $29,
+                $30, $31
             )
             "#,
         )
         .bind(etat_date.id)
+        .bind(etat_date.acp_id)
         .bind(etat_date.organization_id)
         .bind(etat_date.building_id)
         .bind(etat_date.unit_id)
@@ -104,7 +105,7 @@ impl EtatDateRepository for PostgresEtatDateRepository {
         let row = sqlx::query(
             r#"
             SELECT
-                id, organization_id, building_id, unit_id,
+                id, acp_id, organization_id, building_id, unit_id,
                 reference_date, requested_date, generated_date, delivered_date,
                 status::text AS status, language::text AS language, reference_number,
                 notary_name, notary_email, notary_phone,
@@ -133,7 +134,7 @@ impl EtatDateRepository for PostgresEtatDateRepository {
         let row = sqlx::query(
             r#"
             SELECT
-                id, organization_id, building_id, unit_id,
+                id, acp_id, organization_id, building_id, unit_id,
                 reference_date, requested_date, generated_date, delivered_date,
                 status::text AS status, language::text AS language, reference_number,
                 notary_name, notary_email, notary_phone,
@@ -159,7 +160,7 @@ impl EtatDateRepository for PostgresEtatDateRepository {
         let rows = sqlx::query(
             r#"
             SELECT
-                id, organization_id, building_id, unit_id,
+                id, acp_id, organization_id, building_id, unit_id,
                 reference_date, requested_date, generated_date, delivered_date,
                 status::text AS status, language::text AS language, reference_number,
                 notary_name, notary_email, notary_phone,
@@ -189,7 +190,7 @@ impl EtatDateRepository for PostgresEtatDateRepository {
         let rows = sqlx::query(
             r#"
             SELECT
-                id, organization_id, building_id, unit_id,
+                id, acp_id, organization_id, building_id, unit_id,
                 reference_date, requested_date, generated_date, delivered_date,
                 status::text AS status, language::text AS language, reference_number,
                 notary_name, notary_email, notary_phone,
@@ -226,7 +227,7 @@ impl EtatDateRepository for PostgresEtatDateRepository {
         let mut query_str = String::from(
             r#"
             SELECT
-                id, organization_id, building_id, unit_id,
+                id, acp_id, organization_id, building_id, unit_id,
                 reference_date, requested_date, generated_date, delivered_date,
                 status::text AS status, language::text AS language, reference_number,
                 notary_name, notary_email, notary_phone,
@@ -244,8 +245,8 @@ impl EtatDateRepository for PostgresEtatDateRepository {
         let mut count_query_str = String::from("SELECT COUNT(*) FROM etats_dates WHERE 1=1");
 
         if organization_id.is_some() {
-            query_str.push_str(" AND organization_id = $1");
-            count_query_str.push_str(" AND organization_id = $1");
+            query_str.push_str(" AND acp_id IN (SELECT id FROM acps WHERE organization_id = $1)");
+            count_query_str.push_str(" AND acp_id IN (SELECT id FROM acps WHERE organization_id = $1)");
         }
 
         if status.is_some() {
@@ -327,7 +328,7 @@ impl EtatDateRepository for PostgresEtatDateRepository {
         let rows = sqlx::query(
             r#"
             SELECT
-                id, organization_id, building_id, unit_id,
+                id, acp_id, organization_id, building_id, unit_id,
                 reference_date, requested_date, generated_date, delivered_date,
                 status::text AS status, language::text AS language, reference_number,
                 notary_name, notary_email, notary_phone,
@@ -338,7 +339,7 @@ impl EtatDateRepository for PostgresEtatDateRepository {
                 additional_data, pdf_file_path,
                 created_at, updated_at
             FROM etats_dates
-            WHERE organization_id = $1
+            WHERE acp_id IN (SELECT id FROM acps WHERE organization_id = $1)
               AND status IN ('requested', 'in_progress')
               AND requested_date < NOW() - INTERVAL '15 days'
             ORDER BY requested_date ASC
@@ -359,7 +360,7 @@ impl EtatDateRepository for PostgresEtatDateRepository {
         let rows = sqlx::query(
             r#"
             SELECT
-                id, organization_id, building_id, unit_id,
+                id, acp_id, organization_id, building_id, unit_id,
                 reference_date, requested_date, generated_date, delivered_date,
                 status::text AS status, language::text AS language, reference_number,
                 notary_name, notary_email, notary_phone,
@@ -370,7 +371,7 @@ impl EtatDateRepository for PostgresEtatDateRepository {
                 additional_data, pdf_file_path,
                 created_at, updated_at
             FROM etats_dates
-            WHERE organization_id = $1
+            WHERE acp_id IN (SELECT id FROM acps WHERE organization_id = $1)
               AND reference_date < NOW() - INTERVAL '90 days'
             ORDER BY reference_date ASC
             "#,
@@ -454,7 +455,7 @@ impl EtatDateRepository for PostgresEtatDateRepository {
                 COUNT(*) FILTER (WHERE status IN ('requested', 'in_progress') AND requested_date < NOW() - INTERVAL '15 days') as overdue_count,
                 COALESCE(AVG(EXTRACT(EPOCH FROM (COALESCE(generated_date, NOW()) - requested_date)) / 86400), 0)::FLOAT8 as avg_processing_days
             FROM etats_dates
-            WHERE organization_id = $1
+            WHERE acp_id IN (SELECT id FROM acps WHERE organization_id = $1)
             "#,
         )
         .bind(organization_id)
@@ -488,7 +489,7 @@ impl EtatDateRepository for PostgresEtatDateRepository {
         };
 
         let count = sqlx::query_scalar::<_, i64>(
-            "SELECT COUNT(*) FROM etats_dates WHERE organization_id = $1 AND status = CAST($2 AS etat_date_status)",
+            "SELECT COUNT(*) FROM etats_dates WHERE acp_id IN (SELECT id FROM acps WHERE organization_id = $1) AND status = CAST($2 AS etat_date_status)",
         )
         .bind(organization_id)
         .bind(status_str)
@@ -520,6 +521,7 @@ impl PostgresEtatDateRepository {
 
         EtatDate {
             id: row.get("id"),
+            acp_id: row.get("acp_id"),
             organization_id: row.get("organization_id"),
             building_id: row.get("building_id"),
             unit_id: row.get("unit_id"),

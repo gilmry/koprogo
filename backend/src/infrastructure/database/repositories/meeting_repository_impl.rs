@@ -35,6 +35,7 @@ fn row_to_meeting(row: &sqlx::postgres::PgRow) -> Meeting {
 
     Meeting {
         id: row.get("id"),
+        acp_id: row.get("acp_id"),
         organization_id: row.get("organization_id"),
         building_id: row.get("building_id"),
         meeting_type,
@@ -57,7 +58,7 @@ fn row_to_meeting(row: &sqlx::postgres::PgRow) -> Meeting {
     }
 }
 
-const SELECT_COLUMNS: &str = "id, organization_id, building_id, \
+const SELECT_COLUMNS: &str = "id, acp_id, organization_id, building_id, \
     meeting_type::text AS meeting_type, title, description, scheduled_date, \
     location, status::text AS status, agenda, attendees_count, \
     quorum_validated, quorum_percentage, total_quotas, present_quotas, \
@@ -83,16 +84,17 @@ impl MeetingRepository for PostgresMeetingRepository {
         sqlx::query(
             r#"
             INSERT INTO meetings (
-                id, organization_id, building_id, meeting_type, title, description,
+                id, acp_id, organization_id, building_id, meeting_type, title, description,
                 scheduled_date, location, status, agenda, attendees_count,
                 quorum_validated, quorum_percentage, total_quotas, present_quotas,
                 is_second_convocation, created_at, updated_at
             )
-            VALUES ($1, $2, $3, CAST($4 AS meeting_type), $5, $6, $7, $8, CAST($9 AS meeting_status),
-                    $10, $11, $12, $13, $14, $15, $16, $17, $18)
+            VALUES ($1, $2, $3, $4, CAST($5 AS meeting_type), $6, $7, $8, $9, CAST($10 AS meeting_status),
+                    $11, $12, $13, $14, $15, $16, $17, $18, $19)
             "#,
         )
         .bind(meeting.id)
+        .bind(meeting.acp_id)
         .bind(meeting.organization_id)
         .bind(meeting.building_id)
         .bind(meeting_type_str)
@@ -210,7 +212,14 @@ impl MeetingRepository for PostgresMeetingRepository {
         page_request.validate()?;
 
         let where_clause = if let Some(org_id) = organization_id {
-            format!("WHERE organization_id = '{}'", org_id)
+            // Le périmètre se dérive du mandat, pas d'une colonne gravée dans
+            // l'assemblée (ADR-0045). L'interpolation reste sûre — `org_id` est
+            // un `Uuid` typé, pas une chaîne venue de l'extérieur — mais elle
+            // gagnerait à devenir un paramètre lié comme partout ailleurs.
+            format!(
+                "WHERE acp_id IN (SELECT id FROM acps WHERE organization_id = '{}')",
+                org_id
+            )
         } else {
             String::new()
         };

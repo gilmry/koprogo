@@ -283,6 +283,7 @@ async fn main() -> std::io::Result<()> {
         koprogo_api::infrastructure::database::repositories::meeting_completion_checker_impl::PostgresMeetingCompletionChecker::new(pool.clone()),
     );
     let meeting_use_cases = MeetingUseCases::new(meeting_repo.clone())
+        .with_acp_resolution(building_repo.clone())
         .with_completion_checker(meeting_completion_checker);
     let convocation_use_cases = ConvocationUseCases::new(
         convocation_repo,

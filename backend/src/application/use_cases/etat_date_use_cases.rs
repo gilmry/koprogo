@@ -96,6 +96,9 @@ impl EtatDateUseCases {
 
         // Create état daté
         let etat_date = EtatDate::new(
+            // Les sommes attestées sont dues à l'ACP (Art. 3.94), le syndic
+            // ne fait que les certifier. Cf. ADR-0045.
+            building.acp_id,
             request.organization_id,
             request.building_id,
             request.unit_id,
@@ -430,6 +433,7 @@ mod tests {
 
     fn make_etat_date(org_id: Uuid, building_id: Uuid, unit_id: Uuid) -> EtatDate {
         EtatDate::new(
+            Uuid::new_v4(), // acp_id
             org_id,
             building_id,
             unit_id,

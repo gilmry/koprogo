@@ -53,8 +53,9 @@ pub fn perimetre_du_mandataire<'a>(
 mod tests {
     use super::*;
     use crate::domain::entities::{
-        Budget, CallForFunds, ContributionType, Expense, ExpenseCategory, JournalEntry,
-        JournalEntryLine, OwnerContribution,
+        Budget, CallForFunds, Convocation, ConvocationType, ContributionType, EtatDate,
+        EtatDateLanguage, Expense, ExpenseCategory, JournalEntry, JournalEntryLine, Meeting,
+        MeetingType, OwnerContribution,
     };
     use chrono::Duration;
     use rust_decimal_macros::dec;
@@ -68,6 +69,9 @@ mod tests {
         appel_de_fonds: CallForFunds,
         quote_part: OwnerContribution,
         ecriture: JournalEntry,
+        assemblee: Meeting,
+        convocation: Convocation,
+        etat_date: EtatDate,
     }
 
     impl DossierComplet {
@@ -154,6 +158,47 @@ mod tests {
                     )
                     .expect("écriture valide")
                 },
+                assemblee: Meeting::new(
+                    acp,
+                    syndic,
+                    immeuble,
+                    MeetingType::Ordinary,
+                    "AGO 2026".to_string(),
+                    None,
+                    Utc::now() + Duration::days(30),
+                    "Salle communale".to_string(),
+                )
+                .expect("assemblée valide"),
+                convocation: Convocation::new(
+                    acp,
+                    syndic,
+                    immeuble,
+                    Uuid::new_v4(),
+                    ConvocationType::Ordinary,
+                    Utc::now() + Duration::days(30),
+                    "FR".to_string(),
+                    Uuid::new_v4(),
+                )
+                .expect("convocation valide"),
+                etat_date: EtatDate::new(
+                    acp,
+                    syndic,
+                    immeuble,
+                    Uuid::new_v4(),
+                    Utc::now(),
+                    EtatDateLanguage::Fr,
+                    "Me Dupont".to_string(),
+                    "dupont@notaire.be".to_string(),
+                    None,
+                    "Résidence du Parc".to_string(),
+                    "12 Rue de la Loi".to_string(),
+                    "A101".to_string(),
+                    Some("1".to_string()),
+                    Some(85.0),
+                    dec!(100),
+                    dec!(100),
+                )
+                .expect("état daté valide"),
             }
         }
 
@@ -164,6 +209,9 @@ mod tests {
                 &self.appel_de_fonds,
                 &self.quote_part,
                 &self.ecriture,
+                &self.assemblee,
+                &self.convocation,
+                &self.etat_date,
             ]
         }
     }

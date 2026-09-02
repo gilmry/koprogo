@@ -95,6 +95,16 @@ impl ConvocationStatus {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Convocation {
     pub id: Uuid,
+
+    /// L'ACP dont les copropriétaires sont convoqués.
+    ///
+    /// Art. 3.87 § 3 : la convocation est adressée par le syndic, mais
+    /// « les frais administratifs afférents à la convocation à l'assemblée
+    /// générale sont à charge de l'association des copropriétaires ». Elle est
+    /// un acte de l'ACP, pas du cabinet. Cf. ADR-0045.
+    pub acp_id: Uuid,
+
+    /// Le syndic qui a envoyé la convocation, conservé comme trace d'auteur.
     pub organization_id: Uuid,
     pub building_id: Uuid,
     pub meeting_id: Uuid,
@@ -148,6 +158,7 @@ impl Convocation {
     /// # Returns
     /// Result with Convocation or error if meeting date is too soon
     pub fn new(
+        acp_id: Uuid,
         organization_id: Uuid,
         building_id: Uuid,
         meeting_id: Uuid,
@@ -185,6 +196,7 @@ impl Convocation {
 
         Ok(Self {
             id: Uuid::new_v4(),
+            acp_id,
             organization_id,
             building_id,
             meeting_id,
@@ -217,6 +229,7 @@ impl Convocation {
     ///   (aucun quorum minimum requis)
     /// - Le contenu de l'ordre du jour est identique à la 1ère AG
     pub fn new_second_convocation(
+        acp_id: Uuid,
         organization_id: Uuid,
         building_id: Uuid,
         new_meeting_id: Uuid,
@@ -239,6 +252,7 @@ impl Convocation {
         }
 
         let mut convocation = Self::new(
+            acp_id,
             organization_id,
             building_id,
             new_meeting_id,
@@ -408,6 +422,7 @@ mod tests {
         let meeting_date = Utc::now() + Duration::days(20);
 
         let convocation = Convocation::new(
+            Uuid::new_v4(), // acp_id
             org_id,
             building_id,
             meeting_id,
@@ -430,6 +445,7 @@ mod tests {
         let meeting_date = Utc::now() + Duration::days(5); // Only 5 days notice for ordinary meeting
 
         let result = Convocation::new(
+            Uuid::new_v4(), // acp_id
             Uuid::new_v4(),
             Uuid::new_v4(),
             Uuid::new_v4(),
@@ -448,6 +464,7 @@ mod tests {
         let meeting_date = Utc::now() + Duration::days(20);
 
         let result = Convocation::new(
+            Uuid::new_v4(), // acp_id
             Uuid::new_v4(),
             Uuid::new_v4(),
             Uuid::new_v4(),
@@ -465,6 +482,7 @@ mod tests {
     fn test_schedule_convocation() {
         let meeting_date = Utc::now() + Duration::days(20);
         let mut convocation = Convocation::new(
+            Uuid::new_v4(), // acp_id
             Uuid::new_v4(),
             Uuid::new_v4(),
             Uuid::new_v4(),
@@ -487,6 +505,7 @@ mod tests {
     fn test_schedule_convocation_too_late() {
         let meeting_date = Utc::now() + Duration::days(20);
         let mut convocation = Convocation::new(
+            Uuid::new_v4(), // acp_id
             Uuid::new_v4(),
             Uuid::new_v4(),
             Uuid::new_v4(),
@@ -509,6 +528,7 @@ mod tests {
     fn test_mark_sent() {
         let meeting_date = Utc::now() + Duration::days(20);
         let mut convocation = Convocation::new(
+            Uuid::new_v4(), // acp_id
             Uuid::new_v4(),
             Uuid::new_v4(),
             Uuid::new_v4(),
@@ -537,6 +557,7 @@ mod tests {
         // Art. 3.87 §3: all types require 15 days notice, so 20 days is valid
         let far_meeting_date = Utc::now() + Duration::days(20);
         let mut convocation_far = Convocation::new(
+            Uuid::new_v4(), // acp_id
             Uuid::new_v4(),
             Uuid::new_v4(),
             Uuid::new_v4(),
@@ -564,6 +585,7 @@ mod tests {
     fn test_opening_rate() {
         let meeting_date = Utc::now() + Duration::days(20);
         let mut convocation = Convocation::new(
+            Uuid::new_v4(), // acp_id
             Uuid::new_v4(),
             Uuid::new_v4(),
             Uuid::new_v4(),
@@ -587,6 +609,7 @@ mod tests {
     fn test_respects_legal_deadline() {
         let meeting_date = Utc::now() + Duration::days(20);
         let mut convocation = Convocation::new(
+            Uuid::new_v4(), // acp_id
             Uuid::new_v4(),
             Uuid::new_v4(),
             Uuid::new_v4(),
@@ -616,6 +639,7 @@ mod tests {
         let new_meeting_id = Uuid::new_v4();
 
         let result = Convocation::new_second_convocation(
+            Uuid::new_v4(), // acp_id
             Uuid::new_v4(),
             Uuid::new_v4(),
             new_meeting_id,
@@ -640,6 +664,7 @@ mod tests {
         let second_meeting_date = Utc::now() + Duration::days(40); // 10 jours seulement
 
         let result = Convocation::new_second_convocation(
+            Uuid::new_v4(), // acp_id
             Uuid::new_v4(),
             Uuid::new_v4(),
             Uuid::new_v4(),
@@ -661,6 +686,7 @@ mod tests {
         let second_meeting_date = Utc::now() + Duration::days(45);
 
         let result = Convocation::new_second_convocation(
+            Uuid::new_v4(), // acp_id
             Uuid::new_v4(),
             Uuid::new_v4(),
             Uuid::new_v4(),
@@ -674,5 +700,11 @@ mod tests {
         assert!(result.is_ok());
         let conv = result.unwrap();
         assert_eq!(conv.meeting_type, ConvocationType::SecondConvocation);
+    }
+}
+
+impl crate::domain::services::PieceDeGestion for Convocation {
+    fn acp_id(&self) -> Uuid {
+        self.acp_id
     }
 }

@@ -852,6 +852,7 @@ mod tests {
 
         // Create a meeting with quorum reached
         let mut meeting = Meeting::new(
+            Uuid::new_v4(), // acp_id
             org_id,
             building_id,
             MeetingType::Ordinary,
@@ -906,6 +907,7 @@ mod tests {
 
         // Create a meeting with quorum NOT reached
         let mut meeting = Meeting::new(
+            Uuid::new_v4(), // acp_id
             org_id,
             building_id,
             MeetingType::Ordinary,
@@ -960,6 +962,7 @@ mod tests {
 
         // Create a meeting with quorum reached
         let mut meeting = Meeting::new(
+            Uuid::new_v4(), // acp_id
             org_id,
             building_id,
             MeetingType::Ordinary,
@@ -1038,6 +1041,7 @@ mod tests {
 
         // Create a meeting with quorum reached
         let mut meeting = Meeting::new(
+            Uuid::new_v4(), // acp_id
             org_id,
             building_id,
             MeetingType::Ordinary,
@@ -1118,6 +1122,7 @@ mod tests {
 
         // Create a meeting with quorum reached
         let mut meeting = Meeting::new(
+            Uuid::new_v4(), // acp_id
             org_id,
             building_id,
             MeetingType::Ordinary,
@@ -1211,6 +1216,7 @@ mod tests {
 
         // Create a meeting with quorum reached
         let mut meeting = Meeting::new(
+            Uuid::new_v4(), // acp_id
             org_id,
             building_id,
             MeetingType::Ordinary,
@@ -1300,6 +1306,7 @@ mod tests {
 
         let meeting_id = Uuid::new_v4();
         let mut meeting = Meeting::new(
+            Uuid::new_v4(), // acp_id
             Uuid::new_v4(),
             Uuid::new_v4(),
             MeetingType::Ordinary,
@@ -1398,6 +1405,7 @@ mod tests {
     ) -> Resolution {
         let meeting_id = Uuid::new_v4();
         let mut meeting = Meeting::new(
+            Uuid::new_v4(), // acp_id
             Uuid::new_v4(),
             Uuid::new_v4(),
             MeetingType::Ordinary,

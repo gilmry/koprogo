@@ -23,6 +23,16 @@ pub enum MeetingStatus {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct Meeting {
     pub id: Uuid,
+
+    /// L'ACP dont c'est l'assemblée.
+    ///
+    /// Art. 3.87 § 1er : « Chaque propriétaire d'un lot fait partie de
+    /// l'assemblée générale ». L'assemblée est l'organe de l'association, pas
+    /// une réunion que le syndic organiserait pour son compte. Il la tient
+    /// (Art. 3.87 § 2), il ne la possède pas. Cf. ADR-0045.
+    pub acp_id: Uuid,
+
+    /// Le syndic qui a tenu l'assemblée, conservé comme trace d'auteur.
     pub organization_id: Uuid,
     pub building_id: Uuid,
     pub meeting_type: MeetingType,
@@ -49,6 +59,7 @@ pub struct Meeting {
 
 impl Meeting {
     pub fn new(
+        acp_id: Uuid,
         organization_id: Uuid,
         building_id: Uuid,
         meeting_type: MeetingType,
@@ -67,6 +78,7 @@ impl Meeting {
         let now = Utc::now();
         Ok(Self {
             id: Uuid::new_v4(),
+            acp_id,
             organization_id,
             building_id,
             meeting_type,
@@ -511,6 +523,7 @@ mod tests {
         let future_date = Utc::now() + Duration::days(30);
 
         let meeting = Meeting::new(
+            Uuid::new_v4(), // acp_id
             org_id,
             building_id,
             MeetingType::Ordinary,
@@ -534,6 +547,7 @@ mod tests {
         let future_date = Utc::now() + Duration::days(30);
 
         let mut meeting = Meeting::new(
+            Uuid::new_v4(), // acp_id
             org_id,
             building_id,
             MeetingType::Ordinary,
@@ -556,6 +570,7 @@ mod tests {
         let future_date = Utc::now() + Duration::days(30);
 
         let mut meeting = Meeting::new(
+            Uuid::new_v4(), // acp_id
             org_id,
             building_id,
             MeetingType::Ordinary,
@@ -580,6 +595,7 @@ mod tests {
         let future_date = Utc::now() + Duration::days(30);
 
         let mut meeting = Meeting::new(
+            Uuid::new_v4(), // acp_id
             org_id,
             building_id,
             MeetingType::Ordinary,
@@ -603,6 +619,7 @@ mod tests {
         let future_date = Utc::now() + Duration::days(30);
 
         let mut meeting = Meeting::new(
+            Uuid::new_v4(), // acp_id
             org_id,
             building_id,
             MeetingType::Ordinary,
@@ -625,6 +642,7 @@ mod tests {
         let future_date = Utc::now() + Duration::days(30);
 
         let mut meeting = Meeting::new(
+            Uuid::new_v4(), // acp_id
             org_id,
             building_id,
             MeetingType::Ordinary,
@@ -650,6 +668,7 @@ mod tests {
         let future_date = Utc::now() + Duration::days(30);
 
         let mut meeting = Meeting::new(
+            Uuid::new_v4(), // acp_id
             org_id,
             building_id,
             MeetingType::Ordinary,
@@ -674,6 +693,7 @@ mod tests {
         let future_date = Utc::now() + Duration::days(30);
 
         let mut meeting = Meeting::new(
+            Uuid::new_v4(), // acp_id
             org_id,
             building_id,
             MeetingType::Ordinary,
@@ -698,6 +718,7 @@ mod tests {
         let future_date = Utc::now() + Duration::days(30);
 
         let meeting = Meeting::new(
+            Uuid::new_v4(), // acp_id
             org_id,
             building_id,
             MeetingType::Ordinary,
@@ -721,6 +742,7 @@ mod tests {
         let future_date = Utc::now() + Duration::days(30);
 
         let mut meeting = Meeting::new(
+            Uuid::new_v4(), // acp_id
             org_id,
             building_id,
             MeetingType::Extraordinary,
@@ -746,6 +768,7 @@ mod tests {
         let future_date = Utc::now() + Duration::days(30);
 
         let mut meeting = Meeting::new(
+            Uuid::new_v4(), // acp_id
             org_id,
             building_id,
             MeetingType::Ordinary,
@@ -769,6 +792,7 @@ mod tests {
         let future_date = Utc::now() + Duration::days(30);
 
         let mut meeting = Meeting::new(
+            Uuid::new_v4(), // acp_id
             org_id,
             building_id,
             MeetingType::Ordinary,
@@ -790,6 +814,7 @@ mod tests {
         let future_date = Utc::now() + Duration::days(30);
 
         let mut meeting = Meeting::new(
+            Uuid::new_v4(), // acp_id
             org_id,
             building_id,
             MeetingType::Ordinary,
@@ -815,6 +840,7 @@ mod tests {
         let doc_id = Uuid::new_v4();
 
         let mut meeting = Meeting::new(
+            Uuid::new_v4(), // acp_id
             org_id,
             building_id,
             MeetingType::Ordinary,
@@ -844,6 +870,7 @@ mod tests {
         let doc_id = Uuid::new_v4();
 
         let mut meeting = Meeting::new(
+            Uuid::new_v4(), // acp_id
             org_id,
             building_id,
             MeetingType::Ordinary,
@@ -873,6 +900,7 @@ mod tests {
         let future_date = Utc::now() + Duration::days(30);
 
         let meeting = Meeting::new(
+            Uuid::new_v4(), // acp_id
             org_id,
             building_id,
             MeetingType::Ordinary,
@@ -896,6 +924,7 @@ mod tests {
         let doc_id = Uuid::new_v4();
 
         let mut meeting = Meeting::new(
+            Uuid::new_v4(), // acp_id
             org_id,
             building_id,
             MeetingType::Ordinary,
@@ -922,6 +951,7 @@ mod tests {
         let future_date = Utc::now() + Duration::days(30);
 
         let mut meeting = Meeting::new(
+            Uuid::new_v4(), // acp_id
             org_id,
             building_id,
             MeetingType::Ordinary,
@@ -948,6 +978,7 @@ mod tests {
         let future_date = Utc::now() + Duration::days(30);
 
         let mut meeting = Meeting::new(
+            Uuid::new_v4(), // acp_id
             org_id,
             building_id,
             MeetingType::Ordinary,
@@ -981,6 +1012,7 @@ mod assert_can_complete_tests {
         let org_id = Uuid::new_v4();
         let building_id = Uuid::new_v4();
         Meeting::new(
+            Uuid::new_v4(), // acp_id
             org_id,
             building_id,
             MeetingType::Ordinary,
@@ -1396,5 +1428,11 @@ mod assert_can_complete_tests {
             .missing
             .iter()
             .any(|x| matches!(x, MissingInvariant::HeadCountQuorumNotReached { .. })));
+    }
+}
+
+impl crate::domain::services::PieceDeGestion for Meeting {
+    fn acp_id(&self) -> Uuid {
+        self.acp_id
     }
 }

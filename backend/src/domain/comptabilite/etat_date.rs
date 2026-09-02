@@ -62,6 +62,16 @@ pub enum EtatDateLanguage {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct EtatDate {
     pub id: Uuid,
+
+    /// L'ACP dont l'état daté rend compte.
+    ///
+    /// Art. 3.94 : à la transmission d'un lot, le notaire réclame au syndic
+    /// l'état de la situation du copropriétaire cédant vis-à-vis de
+    /// **l'association**. Les sommes dues le sont à l'ACP ; le syndic ne fait
+    /// que les attester. Cf. ADR-0045.
+    pub acp_id: Uuid,
+
+    /// Le syndic qui a établi l'état daté, conservé comme trace d'auteur.
     pub organization_id: Uuid,
     pub building_id: Uuid,
     pub unit_id: Uuid,
@@ -211,6 +221,7 @@ impl From<EtatDateError> for String {
 impl EtatDate {
     #[allow(clippy::too_many_arguments)]
     pub fn new(
+        acp_id: Uuid,
         organization_id: Uuid,
         building_id: Uuid,
         unit_id: Uuid,
@@ -262,6 +273,7 @@ impl EtatDate {
 
         Ok(Self {
             id: Uuid::new_v4(),
+            acp_id,
             organization_id,
             building_id,
             unit_id,
@@ -465,6 +477,7 @@ mod tests {
         let ref_date = Utc::now();
 
         let etat_date = EtatDate::new(
+            Uuid::new_v4(), // acp_id
             org_id,
             building_id,
             unit_id,
@@ -497,6 +510,7 @@ mod tests {
         let ref_date = Utc::now();
 
         let result = EtatDate::new(
+            Uuid::new_v4(), // acp_id
             org_id,
             building_id,
             unit_id,
@@ -528,6 +542,7 @@ mod tests {
         let ref_date = Utc::now();
 
         let result = EtatDate::new(
+            Uuid::new_v4(), // acp_id
             org_id,
             building_id,
             unit_id,
@@ -559,6 +574,7 @@ mod tests {
         let ref_date = Utc::now();
 
         let mut ed = EtatDate::new(
+            Uuid::new_v4(), // acp_id
             org_id,
             building_id,
             unit_id,
@@ -603,6 +619,7 @@ mod tests {
         let ref_date = Utc::now();
 
         let mut ed = EtatDate::new(
+            Uuid::new_v4(), // acp_id
             org_id,
             building_id,
             unit_id,
@@ -634,6 +651,7 @@ mod tests {
         let ref_date = Utc::now();
 
         let mut ed = EtatDate::new(
+            Uuid::new_v4(), // acp_id
             org_id,
             building_id,
             unit_id,
@@ -673,6 +691,7 @@ mod tests {
         let ref_date = Utc::now();
 
         let mut ed = EtatDate::new(
+            Uuid::new_v4(), // acp_id
             org_id,
             building_id,
             unit_id,
@@ -727,6 +746,7 @@ mod tests {
     fn test_delai_art_3_94_se_compte_en_jours_calendaires() {
         let ed_neuf = || {
             EtatDate::new(
+                Uuid::new_v4(), // acp_id
                 Uuid::new_v4(),
                 Uuid::new_v4(),
                 Uuid::new_v4(),
@@ -781,6 +801,7 @@ mod tests {
         let ref_date = Utc::now();
 
         let mut ed = EtatDate::new(
+            Uuid::new_v4(), // acp_id
             org_id,
             building_id,
             unit_id,
@@ -812,6 +833,7 @@ mod tests {
 
     fn sample() -> EtatDate {
         EtatDate::new(
+            Uuid::new_v4(), // acp_id
             Uuid::new_v4(),
             Uuid::new_v4(),
             Uuid::new_v4(),
@@ -865,6 +887,7 @@ mod tests {
 
         // Quota exactement 100% (borne incluse) accepté.
         let ok = EtatDate::new(
+            Uuid::new_v4(), // acp_id
             Uuid::new_v4(),
             Uuid::new_v4(),
             Uuid::new_v4(),
@@ -914,6 +937,7 @@ mod tests {
     #[test]
     fn security_tampered_quota_rejected() {
         let result = EtatDate::new(
+            Uuid::new_v4(), // acp_id
             Uuid::new_v4(),
             Uuid::new_v4(),
             Uuid::new_v4(),
@@ -934,5 +958,11 @@ mod tests {
             result.unwrap_err(),
             EtatDateError::QuotaOutOfRange(_)
         ));
+    }
+}
+
+impl crate::domain::services::PieceDeGestion for EtatDate {
+    fn acp_id(&self) -> Uuid {
+        self.acp_id
     }
 }

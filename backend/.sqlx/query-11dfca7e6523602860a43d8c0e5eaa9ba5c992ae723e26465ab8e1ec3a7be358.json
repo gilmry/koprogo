@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n            SELECT id, organization_id, building_id, meeting_id, meeting_type::text AS \"meeting_type!\", meeting_date,\n                   status::text AS \"status!\", minimum_send_date, actual_send_date, scheduled_send_date,\n                   pdf_file_path, language, total_recipients, opened_count,\n                   will_attend_count, will_not_attend_count, reminder_sent_at,\n                   first_meeting_id, no_quorum_required, created_at, updated_at, created_by\n            FROM convocations\n            WHERE status = 'scheduled'\n              AND scheduled_send_date IS NOT NULL\n              AND scheduled_send_date <= $1\n            ORDER BY scheduled_send_date ASC\n            ",
+  "query": "\n            SELECT id, acp_id, organization_id, building_id, meeting_id, meeting_type::text AS \"meeting_type!\", meeting_date,\n                   status::text AS \"status!\", minimum_send_date, actual_send_date, scheduled_send_date,\n                   pdf_file_path, language, total_recipients, opened_count,\n                   will_attend_count, will_not_attend_count, reminder_sent_at,\n                   first_meeting_id, no_quorum_required, created_at, updated_at, created_by\n            FROM convocations\n            WHERE acp_id IN (SELECT id FROM acps WHERE organization_id = $1)\n            ORDER BY meeting_date DESC\n            ",
   "describe": {
     "columns": [
       {
@@ -10,116 +10,122 @@
       },
       {
         "ordinal": 1,
-        "name": "organization_id",
+        "name": "acp_id",
         "type_info": "Uuid"
       },
       {
         "ordinal": 2,
-        "name": "building_id",
+        "name": "organization_id",
         "type_info": "Uuid"
       },
       {
         "ordinal": 3,
-        "name": "meeting_id",
+        "name": "building_id",
         "type_info": "Uuid"
       },
       {
         "ordinal": 4,
+        "name": "meeting_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 5,
         "name": "meeting_type!",
         "type_info": "Text"
       },
       {
-        "ordinal": 5,
+        "ordinal": 6,
         "name": "meeting_date",
         "type_info": "Timestamptz"
       },
       {
-        "ordinal": 6,
+        "ordinal": 7,
         "name": "status!",
         "type_info": "Text"
       },
       {
-        "ordinal": 7,
+        "ordinal": 8,
         "name": "minimum_send_date",
         "type_info": "Timestamptz"
       },
       {
-        "ordinal": 8,
+        "ordinal": 9,
         "name": "actual_send_date",
         "type_info": "Timestamptz"
       },
       {
-        "ordinal": 9,
+        "ordinal": 10,
         "name": "scheduled_send_date",
         "type_info": "Timestamptz"
       },
       {
-        "ordinal": 10,
+        "ordinal": 11,
         "name": "pdf_file_path",
         "type_info": "Text"
       },
       {
-        "ordinal": 11,
+        "ordinal": 12,
         "name": "language",
         "type_info": "Varchar"
       },
       {
-        "ordinal": 12,
+        "ordinal": 13,
         "name": "total_recipients",
         "type_info": "Int4"
       },
       {
-        "ordinal": 13,
+        "ordinal": 14,
         "name": "opened_count",
         "type_info": "Int4"
       },
       {
-        "ordinal": 14,
+        "ordinal": 15,
         "name": "will_attend_count",
         "type_info": "Int4"
       },
       {
-        "ordinal": 15,
+        "ordinal": 16,
         "name": "will_not_attend_count",
         "type_info": "Int4"
       },
       {
-        "ordinal": 16,
+        "ordinal": 17,
         "name": "reminder_sent_at",
         "type_info": "Timestamptz"
       },
       {
-        "ordinal": 17,
+        "ordinal": 18,
         "name": "first_meeting_id",
         "type_info": "Uuid"
       },
       {
-        "ordinal": 18,
+        "ordinal": 19,
         "name": "no_quorum_required",
         "type_info": "Bool"
       },
       {
-        "ordinal": 19,
+        "ordinal": 20,
         "name": "created_at",
         "type_info": "Timestamptz"
       },
       {
-        "ordinal": 20,
+        "ordinal": 21,
         "name": "updated_at",
         "type_info": "Timestamptz"
       },
       {
-        "ordinal": 21,
+        "ordinal": 22,
         "name": "created_by",
         "type_info": "Uuid"
       }
     ],
     "parameters": {
       "Left": [
-        "Timestamptz"
+        "Uuid"
       ]
     },
     "nullable": [
+      false,
       false,
       false,
       false,
@@ -144,5 +150,5 @@
       false
     ]
   },
-  "hash": "5d277b3f1f5f18fd668712c2ee4e9147eb44f52f1f783970c872866813a256af"
+  "hash": "11dfca7e6523602860a43d8c0e5eaa9ba5c992ae723e26465ab8e1ec3a7be358"
 }

@@ -661,6 +661,8 @@ pub async fn export_meeting_minutes_pdf(
 
     let meeting_entity = Meeting {
         id: meeting.id,
+        // L'assemblée relève de l'ACP de son immeuble (Art. 3.87, ADR-0045).
+        acp_id: building_acp_id,
         organization_id,
         building_id: meeting.building_id,
         meeting_type: meeting.meeting_type,
