@@ -38,10 +38,23 @@ pub enum EtatDateLanguage {
 /// **Délai légal**: Art. 3.94 CC — 15 jours CALENDAIRES sur simple demande
 /// (§ 1er), 30 jours si le notaire adresse sa demande par recommandé (§ 2).
 ///
-/// Vérifié le 2026-09-02 sur les deux versions linguistiques, qui font
-/// également foi : « endéans les quinze jours » (FR) et « binnen een termijn
-/// van vijftien dagen » (NL). Le néerlandais lève l'ambiguïté — « dagen » et
-/// non « werkdagen ». Aucune des deux ne dit « ouvrables ».
+/// Texte officiel (Justel, SPF Justice — base consolidée du Code civil) :
+///
+/// > § 1er. […] les informations et documents suivants, que le syndic lui
+/// > communique **sur simple demande, dans un délai de quinze jours** […]
+/// > A défaut de réponse du syndic **dans les quinze jours** de la demande,
+/// > le notaire […] avise les parties de la carence de celui-ci.
+///
+/// > § 2. […] le notaire instrumentant demande au syndic […] **par envoi
+/// > recommandé** […] A défaut de réponse du syndic **dans les trente jours**
+/// > de la demande, le notaire avise les parties de la carence de celui-ci.
+///
+/// Ni l'un ni l'autre ne dit « ouvrables ». Et l'argument décisif n'est pas
+/// cette absence, c'est que le législateur emploie le terme AILLEURS dans le
+/// même livre quand il le veut — Art. 3.31, § 2 : « Le délai […] est prolongé
+/// jusqu'au premier **jour ouvrable** suivant lorsque le dernier jour dudit
+/// délai est un jour de fermeture des bureaux. » Son absence à l'Art. 3.94
+/// est donc un choix, pas un oubli.
 ///
 /// Ce commentaire annonçait « jours ouvrables », soit environ 21 jours
 /// calendaires : la documentation était fausse, pas le calcul.
@@ -691,14 +704,20 @@ mod tests {
     /// et sa description se contredisaient, et une seule des deux lectures
     /// pouvait être juridiquement correcte.
     ///
-    /// Tranché le 2026-09-02 sur les deux versions linguistiques du Code,
-    /// qui font également foi :
-    ///   FR — « sur simple demande endéans les quinze jours »
-    ///   NL — « binnen een termijn van vijftien dagen »
+    /// Tranché le 2026-09-02 sur le texte officiel (Justel, SPF Justice) :
     ///
-    /// Le néerlandais est décisif : « dagen », pas « werkdagen ». Aucune des
-    /// deux versions ne dit « ouvrables ». Le calcul était juste, la
-    /// documentation fausse.
+    ///   « le syndic lui communique sur simple demande, dans un délai de
+    ///     quinze jours »  —  Art. 3.94, § 1er
+    ///
+    /// Ni « ouvrables », ni « werkdagen » dans la version néerlandaise
+    /// (« binnen een termijn van vijftien dagen »), qui fait également foi.
+    ///
+    /// L'argument décisif n'est pas l'absence du mot mais son emploi AILLEURS :
+    /// l'Art. 3.31, § 2 du même livre écrit « prolongé jusqu'au premier jour
+    /// ouvrable suivant ». Le législateur sait donc le dire quand il le veut ;
+    /// son silence à l'Art. 3.94 est un choix, pas un oubli.
+    ///
+    /// Le calcul était juste, la documentation fausse.
     ///
     /// Les bornes ci-dessous verrouillent cette lecture : au quatorzième jour
     /// on est dans les temps, au seizième on ne l'est plus. Si quelqu'un

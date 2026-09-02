@@ -252,16 +252,42 @@ tandis que la documentation de la même entité annonçait « 15 jours
 **ouvrables** ». Quinze jours ouvrables font environ vingt-et-un jours
 calendaires : une seule des deux lectures pouvait être juste.
 
-**Vérification sur le texte, le 2026-09-02.** La loi belge est bilingue
-et les deux versions font également foi :
+**Vérification sur le texte officiel, le 2026-09-02.** Source : base
+consolidée **Justel du SPF Justice** (`ejustice.just.fgov.be`), Code
+civil, livre 3 « Les biens ».
 
-| version | texte |
-|---|---|
-| FR | « sur simple demande **endéans les quinze jours** » |
-| NL | « binnen een termijn van **vijftien dagen** » |
+> **§ 1er.** […] les informations et documents suivants, que le syndic
+> lui communique **sur simple demande, dans un délai de quinze jours** […]
+> À défaut de réponse du syndic **dans les quinze jours** de la demande,
+> le notaire […] avise les parties de la carence de celui-ci.
 
-Le néerlandais est décisif : *dagen*, et non *werkdagen*. Aucune des deux
-versions ne mentionne les jours ouvrables.
+> **§ 2.** […] le notaire instrumentant demande au syndic […] **par envoi
+> recommandé** […] À défaut de réponse du syndic **dans les trente
+> jours** de la demande, le notaire avise les parties de la carence de
+> celui-ci.
+
+Ni l'un ni l'autre ne dit « ouvrables ». La version néerlandaise, qui
+fait également foi, écrit « binnen een termijn van **vijftien dagen** »
+— *dagen*, pas *werkdagen*.
+
+**L'argument décisif n'est pas cette absence, c'est l'emploi du terme
+ailleurs.** Le même livre écrit, à l'article 3.31, § 2 :
+
+> « Le délai […] est prolongé jusqu'au premier **jour ouvrable** suivant
+> lorsque le dernier jour dudit délai est un jour de fermeture des
+> bureaux. »
+
+Le législateur sait donc dire « jour ouvrable » quand il l'entend ainsi.
+Son silence à l'article 3.94 est un choix, pas un oubli.
+
+**Note de méthode.** Le PDF du Moniteur est vectorisé (3,3 Mo de tracés,
+aucun texte extractible) et la page Justel est une application
+JavaScript dont la récupération automatique s'arrête à l'article 3.92.
+Le texte est néanmoins présent dans le HTML servi : il a fallu le
+récupérer en direct puis l'extraire. Les commentaires juridiques
+consultés d'abord disaient juste, mais ne valaient pas preuve — et la
+majorité des résultats de recherche sur « état daté » relèvent du droit
+FRANÇAIS (décret 67-223, article 20), sans rapport.
 
 **Le calcul était juste, la documentation fausse.** Le commentaire a été
 corrigé et `test_delai_art_3_94_se_compte_en_jours_calendaires` verrouille
@@ -279,9 +305,12 @@ mais un syndic répondant au vingtième jour à une demande recommandée sera
 signalé en retard alors qu'il est légalement dans les temps. Ajouter le
 canal à la demande lèverait la restriction.
 
-Sources : [Art. 3.94 BW, texte néerlandais](https://www.elfri.be/artikel/mede-eigendom-in-het-nieuw-burgerlijk-wetboek) ·
-[Art. 3.94 CC, commentaire belge](https://www.propertytoday.be/fr_BE/blog/articles-1/art-3-94-cc-avez-vous-bien-pense-a-tout-7) ·
-[Obligation d'information du syndic](https://blog.smartsyndic.be/qa/informatieplicht-van-syndicus-bij-overdracht-van-mede-eigendom/)
+**Source primaire** : [Justel — Code civil, livre 3 (SPF Justice)](https://www.ejustice.just.fgov.be/cgi_loi/change_lg.pl?language=fr&la=F&cn=2020020416&table_name=loi)
+
+Commentaires consultés en amont, concordants mais non probants :
+[Art. 3.94 BW, néerlandais](https://www.elfri.be/artikel/mede-eigendom-in-het-nieuw-burgerlijk-wetboek) ·
+[PropertyToday](https://www.propertytoday.be/fr_BE/blog/articles-1/art-3-94-cc-avez-vous-bien-pense-a-tout-7) ·
+[SmartSyndic](https://blog.smartsyndic.be/qa/informatieplicht-van-syndicus-bij-overdracht-van-mede-eigendom/)
 
 ### 5.2 — Le numéro de registre des états datés ne s'incrémente pas
 
