@@ -997,6 +997,35 @@ test.describe("Workflows financiers 2026-09-01 — non-régression", () => {
     });
     expect(lot.status(), await lot.text()).toBe(201);
 
+    // Un copropriétaire : c'est lui qui disparaissait chez l'entrant tout en
+    // restant visible chez le sortant — noms, adresses et arriérés compris.
+    const nomProprio = `Detenteur${ts}`;
+    const prop = await page.request.post(`${API_BASE}/owners`, {
+      data: {
+        organization_id: sortant.orgId,
+        first_name: "Alice",
+        last_name: nomProprio,
+        email: `passa-${ts}@example.com`,
+        address: "1 Rue Test",
+        city: "Bruxelles",
+        postal_code: "1000",
+        country: "Belgium",
+      },
+      headers: synS,
+    });
+    expect(prop.status(), await prop.text()).toBe(201);
+    const ownerId = (await prop.json()).id;
+    const unitId = (await lot.json()).id;
+    const det = await page.request.post(`${API_BASE}/units/${unitId}/owners`, {
+      data: {
+        owner_id: ownerId,
+        ownership_percentage: 1.0,
+        is_primary_contact: true,
+      },
+      headers: adminH,
+    });
+    expect(det.status(), await det.text()).toBe(201);
+
     const marqueur = `Historique ${ts}`;
     const dep = await page.request.post(`${API_BASE}/expenses`, {
       data: {
@@ -1023,9 +1052,22 @@ test.describe("Workflows financiers 2026-09-01 — non-régression", () => {
       return { http: 200, trouve: (await r.text()).includes(marqueur) };
     };
 
+    const proprioVisible = async (entetes: any) => {
+      const r = await page.request.get(
+        `${API_BASE}/owners?page=1&per_page=200`,
+        { headers: entetes },
+      );
+      if (!r.ok()) return false;
+      return (await r.text()).includes(nomProprio);
+    };
+
     expect(
       (await chargesVisibles(synS)).trouve,
       "prérequis : le syndic en fonction voit la charge",
+    ).toBe(true);
+    expect(
+      await proprioVisible(synS),
+      "prérequis : le syndic en fonction voit le copropriétaire",
     ).toBe(true);
 
     // ── L'assemblée générale nomme un nouveau syndic ──────────────────
@@ -1071,6 +1113,22 @@ test.describe("Workflows financiers 2026-09-01 — non-régression", () => {
     expect(
       chezSortant.trouve,
       "le syndic sortant n'a plus de base légale pour consulter cette ACP",
+    ).toBe(false);
+
+    // Le copropriétaire suit la copropriété, pas le cabinet.
+    //
+    // Art. 3.84 CC répartit le droit de propriété « par lots » et
+    // l'Art. 3.86 § 1er fait naître l'ACP par « la cession ou l'attribution
+    // d'un lot au moins » : un copropriétaire est une personne qui DÉTIENT.
+    // Son rattachement passe donc par ses détentions, jamais par le cabinet
+    // qui a saisi sa fiche.
+    expect(
+      await proprioVisible(synE),
+      "le syndic entrant doit voir les copropriétaires de l'ACP qu'il reprend",
+    ).toBe(true);
+    expect(
+      await proprioVisible(synS),
+      "le syndic sortant ne doit plus accéder aux noms, adresses et arriérés",
     ).toBe(false);
   });
 
