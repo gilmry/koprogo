@@ -505,6 +505,15 @@ mod tests {
         ) -> Result<Vec<(Uuid, Uuid, rust_decimal::Decimal)>, String> {
             Ok(vec![])
         }
+
+        /// Même source que ci-dessus dans les tests : les fixtures posent
+        /// directement des quotes-parts déjà résolues.
+        async fn find_active_quota_shares_by_building(
+            &self,
+            _building_id: Uuid,
+        ) -> Result<Vec<(Uuid, Uuid, rust_decimal::Decimal)>, String> {
+            Ok(vec![])
+        }
         async fn find_voting_holders_by_unit(
             &self,
             unit_id: Uuid,

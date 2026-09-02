@@ -45,7 +45,32 @@ pub trait UnitOwnerRepository: Send + Sync {
     /// Get all active unit-owner relationships for a building
     /// Returns tuples of (unit_id, owner_id, ownership_percentage)
     /// Useful for calculating charge distributions
+    /// Détentions actives d'un immeuble, avec le pourcentage BRUT de détention
+    /// dans le lot (`unit_owners.ownership_percentage`).
+    ///
+    /// ⚠️ Ce pourcentage n'est PAS une quote-part de charge. Un propriétaire
+    /// unique d'un lot vaut 1.0 quel que soit le poids de son lot dans
+    /// l'immeuble. Ne l'utiliser que pour identifier QUI détient quoi
+    /// (autorisations, éligibilité au vote), jamais pour répartir un montant :
+    /// voir `find_active_quota_shares_by_building`.
     async fn find_active_by_building(
+        &self,
+        building_id: Uuid,
+    ) -> Result<Vec<(Uuid, Uuid, Decimal)>, String>;
+
+    /// Quotes-parts de CHARGE des détenteurs actifs d'un immeuble.
+    ///
+    /// Renvoie `(unit_id, owner_id, part)` où `part` est la fraction [0,1] du
+    /// montant total qui incombe à ce copropriétaire :
+    ///
+    /// ```text
+    /// part = (unit.quota / building.total_tantiemes) × ownership_percentage
+    /// ```
+    ///
+    /// C'est la formule de l'Art. 3.84 CC, déjà implémentée et testée par
+    /// `ChargeDistribution::resolve_owner_quota`. La somme des parts d'un
+    /// immeuble conforme vaut 1.
+    async fn find_active_quota_shares_by_building(
         &self,
         building_id: Uuid,
     ) -> Result<Vec<(Uuid, Uuid, Decimal)>, String>;

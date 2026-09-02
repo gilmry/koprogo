@@ -226,6 +226,19 @@ impl UnitOwnerRepository for MockUnitOwnerRepo {
     ) -> Result<Option<UnitOwner>, String> {
         Ok(None)
     }
+    async fn find_active_quota_shares_by_building(
+        &self,
+        bid: Uuid,
+    ) -> Result<Vec<OwnerTriple>, String> {
+        Ok(self
+            .by_building
+            .lock()
+            .unwrap()
+            .get(&bid)
+            .cloned()
+            .unwrap_or_default())
+    }
+
     async fn find_active_by_building(&self, bid: Uuid) -> Result<Vec<OwnerTriple>, String> {
         Ok(self
             .by_building

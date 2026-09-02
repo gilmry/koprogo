@@ -165,11 +165,19 @@ impl CallForFundsUseCases {
         &self,
         call_for_funds: &CallForFunds,
     ) -> Result<Vec<OwnerContribution>, String> {
-        // Get all active unit owners for the building
-        // Returns (unit_id, owner_id, percentage)
+        // Quotes-parts de CHARGE, pas pourcentages de détention.
+        //
+        // `find_active_by_building` renvoyait le `ownership_percentage` brut :
+        // 1.0 pour tout propriétaire unique de son lot, quel que soit le poids
+        // du lot. Multiplié par le montant total, cela appelait le montant
+        // ENTIER à chaque copropriétaire — un appel de 10 000 € sur un
+        // immeuble conforme à 4 lots générait 4 quotes-parts de 10 000 €,
+        // soit 40 000 € appelés, et répondait 200.
+        //
+        // Les tantièmes de l'acte de base étaient purement ignorés.
         let unit_owners = self
             .unit_owner_repository
-            .find_active_by_building(call_for_funds.building_id)
+            .find_active_quota_shares_by_building(call_for_funds.building_id)
             .await?;
 
         if unit_owners.is_empty() {
@@ -411,19 +419,41 @@ mod tests {
     // ── Mock: UnitOwnerRepository ─────────────────────────────────────
 
     struct MockUnitOwnerRepo {
+        /// Pourcentages de détention BRUTS (1.0 par propriétaire unique).
         active_by_building: Mutex<Vec<(Uuid, Uuid, rust_decimal::Decimal)>>,
+        /// Quotes-parts de CHARGE résolues (somme = 1 sur immeuble conforme).
+        ///
+        /// Distinctes de la précédente À DESSEIN : c'est ce qui permet de
+        /// prouver LAQUELLE des deux le cas d'usage consomme. Un mock qui
+        /// renverrait la même chose des deux côtés laisserait passer le défaut
+        /// qui a produit 40 000 € appelés pour 10 000 € dus.
+        quota_shares: Mutex<Vec<(Uuid, Uuid, rust_decimal::Decimal)>>,
     }
 
     impl MockUnitOwnerRepo {
         fn new() -> Self {
             Self {
                 active_by_building: Mutex::new(Vec::new()),
+                quota_shares: Mutex::new(Vec::new()),
             }
         }
 
         fn with_owners(owners: Vec<(Uuid, Uuid, rust_decimal::Decimal)>) -> Self {
             Self {
-                active_by_building: Mutex::new(owners),
+                active_by_building: Mutex::new(owners.clone()),
+                quota_shares: Mutex::new(owners),
+            }
+        }
+
+        /// Les deux sources divergent : détentions brutes d'un côté,
+        /// quotes-parts de l'autre.
+        fn with_divergent(
+            brut: Vec<(Uuid, Uuid, rust_decimal::Decimal)>,
+            parts: Vec<(Uuid, Uuid, rust_decimal::Decimal)>,
+        ) -> Self {
+            Self {
+                active_by_building: Mutex::new(brut),
+                quota_shares: Mutex::new(parts),
             }
         }
     }
@@ -481,6 +511,13 @@ mod tests {
             _building_id: Uuid,
         ) -> Result<Vec<(Uuid, Uuid, rust_decimal::Decimal)>, String> {
             Ok(self.active_by_building.lock().unwrap().clone())
+        }
+
+        async fn find_active_quota_shares_by_building(
+            &self,
+            _building_id: Uuid,
+        ) -> Result<Vec<(Uuid, Uuid, rust_decimal::Decimal)>, String> {
+            Ok(self.quota_shares.lock().unwrap().clone())
         }
 
         async fn find_voting_holders_by_unit(
@@ -599,6 +636,99 @@ mod tests {
         // 40% of 5000 = 2000, 60% of 5000 = 3000
         assert_eq!(amounts[0], rust_decimal_macros::dec!(2_000));
         assert_eq!(amounts[1], rust_decimal_macros::dec!(3_000));
+    }
+
+    /// Non-régression — l'appel de fonds lit les QUOTES-PARTS DE CHARGE, pas
+    /// les pourcentages de détention.
+    ///
+    /// Le défaut, mesuré en production le 2026-09-02 sur un immeuble conforme
+    /// à 4 lots (200/200/300/300 millièmes, un propriétaire unique par lot) :
+    /// un appel de 10 000 € générait QUATRE quotes-parts de 10 000 €, soit
+    /// 40 000 € appelés, chacune étiquetée « Quote-part: 100 % ». Les
+    /// tantièmes de l'acte de base étaient purement ignorés, et la route
+    /// répondait 200.
+    ///
+    /// Cause : `find_active_by_building` renvoie `ownership_percentage` brut,
+    /// qui vaut 1.0 pour tout propriétaire unique de son lot. Multiplié par le
+    /// montant total, il appelle l'intégralité à chacun. La formule légale
+    /// (Art. 3.84) — `(quota / total_tantiemes) × ownership_percentage` —
+    /// existait dans `ChargeDistribution::resolve_owner_quota`, testée, et
+    /// n'avait AUCUN appelant en production.
+    ///
+    /// Le test précédent ne pouvait pas le voir : ses fixtures posent
+    /// directement 0.60/0.40, c'est-à-dire des quotes-parts déjà résolues. Il
+    /// encodait donc le bon contrat pendant que le dépôt le violait. Ici les
+    /// deux sources DIVERGENT, ce qui rend la confusion détectable.
+    #[tokio::test]
+    async fn test_appel_de_fonds_utilise_les_quotes_parts_pas_les_detentions() {
+        let cff_repo = Arc::new(MockCallForFundsRepo::new());
+        let contrib_repo = Arc::new(MockOwnerContributionRepo::new());
+
+        let lots: Vec<Uuid> = (0..4).map(|_| Uuid::new_v4()).collect();
+        let proprios: Vec<Uuid> = (0..4).map(|_| Uuid::new_v4()).collect();
+
+        // Immeuble conforme : 200/200/300/300 millièmes sur 1000.
+        // Détention brute : 100 % de son lot pour chacun → somme = 4.0.
+        let brut: Vec<_> = lots
+            .iter()
+            .zip(&proprios)
+            .map(|(u, o)| (*u, *o, rust_decimal_macros::dec!(1.0)))
+            .collect();
+        // Quotes-parts de charge : 0,2 / 0,2 / 0,3 / 0,3 → somme = 1.0.
+        let parts = vec![
+            (lots[0], proprios[0], rust_decimal_macros::dec!(0.2)),
+            (lots[1], proprios[1], rust_decimal_macros::dec!(0.2)),
+            (lots[2], proprios[2], rust_decimal_macros::dec!(0.3)),
+            (lots[3], proprios[3], rust_decimal_macros::dec!(0.3)),
+        ];
+
+        let uo_repo = Arc::new(MockUnitOwnerRepo::with_divergent(brut, parts));
+        let uc = make_use_cases(cff_repo.clone(), contrib_repo.clone(), uo_repo);
+        let (call_date, due_date) = sample_dates();
+
+        let cff = uc
+            .create_call_for_funds(
+                Uuid::new_v4(),
+                Uuid::new_v4(),
+                "Charges Q3".to_string(),
+                "Non-régression répartition".to_string(),
+                rust_decimal_macros::dec!(10_000),
+                ContributionType::Regular,
+                call_date,
+                due_date,
+                None,
+                None,
+            )
+            .await
+            .unwrap();
+
+        uc.send_call_for_funds(cff.id).await.expect("envoi accepté");
+
+        let contributions = contrib_repo.store.lock().unwrap();
+        assert_eq!(contributions.len(), 4, "une quote-part par lot");
+
+        let mut montants: Vec<rust_decimal::Decimal> =
+            contributions.iter().map(|c| c.amount).collect();
+        montants.sort();
+        assert_eq!(
+            montants,
+            vec![
+                rust_decimal_macros::dec!(2_000),
+                rust_decimal_macros::dec!(2_000),
+                rust_decimal_macros::dec!(3_000),
+                rust_decimal_macros::dec!(3_000),
+            ],
+            "chaque copropriétaire doit être appelé au prorata de ses tantièmes"
+        );
+
+        // L'invariant qui compte pour le syndic : on n'appelle jamais plus que
+        // ce qui est dû. Avant correction, cette somme valait 40 000.
+        let total: rust_decimal::Decimal = montants.iter().sum();
+        assert_eq!(
+            total,
+            rust_decimal_macros::dec!(10_000),
+            "la somme appelée doit égaler le montant de l'appel de fonds"
+        );
     }
 
     // ── 3. Cancel ─────────────────────────────────────────────────────

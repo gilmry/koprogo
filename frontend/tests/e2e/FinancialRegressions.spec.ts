@@ -206,6 +206,186 @@ test.describe("Workflows financiers 2026-09-01 — non-régression", () => {
   });
 
   // ───────────────────────────────────────────────────────────────────────
+  // A1/A2 — répartition selon les tantièmes, sur un immeuble à PLUSIEURS lots
+  // ───────────────────────────────────────────────────────────────────────
+
+  /// Le test précédent (F2) porte sur un immeuble à UN lot détenu à 100 % —
+  /// le seul cas où le défaut est invisible, puisque 100 % du lot vaut aussi
+  /// 100 % de l'immeuble. Celui-ci utilise quatre lots aux tantièmes
+  /// distincts, ce qui rend la clé de répartition observable.
+  ///
+  /// Mesuré en production le 2026-09-02, sur un immeuble CONFORME
+  /// (4 lots / 4, 1000 millièmes / 1000) :
+  ///
+  ///   - `POST /call-for-funds/{id}/send` de 10 000 € générait QUATRE
+  ///     quotes-parts de 10 000 €, soit **40 000 € appelés**, chacune
+  ///     étiquetée « Quote-part: 100 % » — et répondait 200 ;
+  ///   - `POST /invoices/{id}/calculate-distribution` refusait toute
+  ///     répartition avec « Total quota percentage exceeds 100%
+  ///     (got: 400.00000) » — 400 % = 4 lots × 100 %.
+  ///
+  /// Cause commune : `find_active_by_building` renvoyait le pourcentage de
+  /// détention BRUT (1.0 par propriétaire unique), utilisé tel quel comme
+  /// quote-part du montant total. La formule légale (Art. 3.84)
+  /// `(quota / total_tantiemes) × ownership_percentage` existait dans
+  /// `ChargeDistribution::resolve_owner_quota`, testée, et n'avait aucun
+  /// appelant en production.
+  test("A1/A2 — charges et appels de fonds suivent les tantièmes sur 4 lots", async ({
+    page,
+  }) => {
+    const ctx = await loginAsSyndicWithBuilding(page, "regr-repartition", {
+      totalUnits: 4,
+      totalTantiemes: 1000,
+      seedUnits: false,
+    });
+    const admin = { Authorization: `Bearer ${ctx.adminToken}` };
+    const syndic = { Authorization: `Bearer ${ctx.token}` };
+
+    const TANTIEMES = [200, 200, 300, 300];
+    for (let i = 0; i < TANTIEMES.length; i++) {
+      const lot = await page.request.post(`${API_BASE}/units`, {
+        data: {
+          acp_id: ctx.acpId,
+          building_id: ctx.buildingId,
+          unit_number: `T${i + 1}`,
+          floor: i,
+          surface_area: 50 + i * 10,
+          unit_type: "Apartment",
+          quota: TANTIEMES[i],
+        },
+        headers: admin,
+      });
+      expect(lot.status(), `lot ${i + 1}: ${await lot.text()}`).toBe(201);
+      const unitId = (await lot.json()).id;
+
+      const prop = await page.request.post(`${API_BASE}/owners`, {
+        data: {
+          organization_id: ctx.orgId,
+          first_name: `Copro${i + 1}`,
+          last_name: `Repartition${Date.now()}`,
+          email: `repartition-${i}-${Date.now()}@example.com`,
+          address: `${i + 1} Rue Test`,
+          city: "Bruxelles",
+          postal_code: "1000",
+          country: "Belgium",
+        },
+        headers: syndic,
+      });
+      expect(prop.status(), await prop.text()).toBe(201);
+      const ownerId = (await prop.json()).id;
+
+      const det = await page.request.post(`${API_BASE}/units/${unitId}/owners`, {
+        data: {
+          owner_id: ownerId,
+          ownership_percentage: 1.0,
+          is_primary_contact: true,
+        },
+        headers: admin,
+      });
+      expect(det.status(), `détention ${i + 1}: ${await det.text()}`).toBe(201);
+    }
+
+    // Prérequis : sans conformité, la répartition est refusée en amont
+    // (Art. 3.85 CC) et le test ne prouverait rien.
+    const bat = await page.request.get(
+      `${API_BASE}/buildings/${ctx.buildingId}`,
+      { headers: syndic },
+    );
+    const b = await bat.json();
+    expect(b.is_conformant, `immeuble non conforme: ${JSON.stringify(b)}`).toBe(
+      true,
+    );
+
+    // ── Répartition d'une charge de 2 420 € TTC ─────────────────────────
+    const dep = await page.request.post(`${API_BASE}/expenses`, {
+      data: {
+        building_id: ctx.buildingId,
+        category: "Maintenance",
+        description: `Ascenseur ${Date.now()}`,
+        amount: 2420.0,
+        amount_excl_vat: 2000.0,
+        vat_rate: 21.0,
+        expense_date: new Date().toISOString(),
+        account_code: "611002",
+        supplier: "Kone SA",
+      },
+      headers: syndic,
+    });
+    expect(dep.status(), await dep.text()).toBe(201);
+    const depenseId = (await dep.json()).id;
+
+    await page.request.put(`${API_BASE}/invoices/${depenseId}/submit`, {
+      data: { submitted_by_user_id: ctx.userId },
+      headers: syndic,
+    });
+    await page.request.put(`${API_BASE}/invoices/${depenseId}/approve`, {
+      data: { approved_by_user_id: ctx.userId },
+      headers: syndic,
+    });
+
+    const rep = await page.request.post(
+      `${API_BASE}/invoices/${depenseId}/calculate-distribution`,
+      { data: {}, headers: syndic },
+    );
+    expect(rep.status(), `répartition: ${await rep.text()}`).toBeLessThan(300);
+
+    const brut = await rep.json();
+    const lignes = Array.isArray(brut) ? brut : (brut.distributions ?? []);
+    expect(lignes.length, "une ligne par lot").toBe(4);
+
+    // 2420 × 200/1000 = 484,00   |   2420 × 300/1000 = 726,00
+    const dus = lignes
+      .map((l: any) => Number(l.amount_due))
+      .sort((a: number, b: number) => a - b);
+    expect(dus).toEqual([484, 484, 726, 726]);
+
+    const sommeRepartie = dus.reduce((a: number, b: number) => a + b, 0);
+    expect(
+      sommeRepartie,
+      "la somme répartie doit égaler la charge, ni plus ni moins",
+    ).toBeCloseTo(2420, 2);
+
+    // ── Appel de fonds de 10 000 € ──────────────────────────────────────
+    const maintenant = new Date();
+    const appel = await page.request.post(`${API_BASE}/call-for-funds`, {
+      data: {
+        building_id: ctx.buildingId,
+        title: `Charges Q3 ${Date.now()}`,
+        description: "Non-régression répartition",
+        total_amount: 10000.0,
+        contribution_type: "regular",
+        call_date: maintenant.toISOString(),
+        due_date: new Date(maintenant.getTime() + 30 * 864e5).toISOString(),
+      },
+      headers: syndic,
+    });
+    expect(appel.status(), await appel.text()).toBe(201);
+    const appelId = (await appel.json()).id;
+
+    const envoi = await page.request.post(
+      `${API_BASE}/call-for-funds/${appelId}/send`,
+      { data: {}, headers: syndic },
+    );
+    expect(envoi.status(), `envoi: ${await envoi.text()}`).toBe(200);
+    expect((await envoi.json()).contributions_generated).toBe(4);
+
+    const quotes = await page.request.get(`${API_BASE}/owner-contributions`, {
+      headers: syndic,
+    });
+    const liste = await quotes.json();
+    const montants = liste
+      .map((q: any) => Number(q.amount))
+      .sort((a: number, b: number) => a - b);
+    expect(montants).toEqual([2000, 2000, 3000, 3000]);
+
+    const sommeAppelee = montants.reduce((a: number, b: number) => a + b, 0);
+    expect(
+      sommeAppelee,
+      "avant correction, un appel de 10 000 € en appelait 40 000",
+    ).toBe(10000);
+  });
+
+  // ───────────────────────────────────────────────────────────────────────
   // F14 — tantièmes : somme de `Decimal` sérialisés en chaîne
   // ───────────────────────────────────────────────────────────────────────
 

@@ -1,0 +1,46 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            SELECT uo.unit_id, uo.owner_id, uo.ownership_percentage,\n                   u.quota AS unit_quota,\n                   b.total_tantiemes\n            FROM unit_owners uo\n            JOIN units u ON uo.unit_id = u.id\n            JOIN buildings b ON u.building_id = b.id\n            WHERE u.building_id = $1 AND uo.end_date IS NULL\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "unit_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "owner_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 2,
+        "name": "ownership_percentage",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 3,
+        "name": "unit_quota",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 4,
+        "name": "total_tantiemes",
+        "type_info": "Int4"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "f9319fea265902538dd184177c25ae5fb3619d93fef65f544ede8efff69c36b0"
+}

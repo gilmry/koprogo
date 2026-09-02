@@ -101,10 +101,15 @@ impl ChargeDistributionUseCases {
         // 3. Récupérer le montant TTC à répartir
         let total_amount = expense.amount_incl_vat.unwrap_or(expense.amount);
 
-        // 4. Récupérer toutes les relations unit-owner actives pour ce bâtiment
+        // 4. Quotes-parts de CHARGE des détenteurs actifs (Art. 3.84).
+        //
+        // `find_active_by_building` renvoyait le pourcentage de détention brut,
+        // dont la somme vaut le NOMBRE DE LOTS. La répartition échouait donc
+        // sur tout immeuble de plus d'un lot, avec « Total quota percentage
+        // exceeds 100% (got: 400.00000) » sur un immeuble pourtant conforme.
         let unit_ownerships = self
             .unit_owner_repository
-            .find_active_by_building(expense.building_id)
+            .find_active_quota_shares_by_building(expense.building_id)
             .await?;
 
         if unit_ownerships.is_empty() {
@@ -442,6 +447,16 @@ mod tests {
         }
 
         async fn find_active_by_building(
+            &self,
+            building_id: Uuid,
+        ) -> Result<Vec<(Uuid, Uuid, Decimal)>, String> {
+            let ownerships = self.building_ownerships.lock().unwrap();
+            Ok(ownerships.get(&building_id).cloned().unwrap_or_default())
+        }
+
+        /// Dans les tests, les fixtures posent directement des quotes-parts
+        /// déjà résolues : la même source sert donc aux deux méthodes.
+        async fn find_active_quota_shares_by_building(
             &self,
             building_id: Uuid,
         ) -> Result<Vec<(Uuid, Uuid, Decimal)>, String> {
