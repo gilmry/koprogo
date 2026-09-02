@@ -514,6 +514,134 @@ test.describe("Workflows financiers 2026-09-01 — non-régression", () => {
     ).toBeCloseTo(1000, 2);
   });
 
+  /// A5 — l'écart budgétaire ne doit ni planter, ni contredire le grand livre.
+  ///
+  /// Deux défauts sur la même requête, mesurés en production le 2026-09-02.
+  ///
+  /// 1. `SELECT category` lisait une colonne de type énuméré PostgreSQL
+  ///    (`expense_category`) en `String`, via `row.get()` — qui PANIQUE sur
+  ///    une erreur de décodage au lieu de la remonter. Le worker actix
+  ///    mourait et l'appelant recevait un 502.
+  ///
+  ///    Le défaut restait invisible tant qu'aucune dépense ne correspondait au
+  ///    filtre : sans ligne, la boucle ne s'exécute pas. Il suffisait d'une
+  ///    seule dépense pour faire tomber l'écran de suivi budgétaire.
+  ///
+  /// 2. Le filtre portait sur `payment_status = 'paid'` — le décaissé — alors
+  ///    que le grand livre comptabilise la charge à l'APPROBATION. Les deux
+  ///    rapports se contredisaient sur le même engagement : grand livre
+  ///    2 420 € de charges, suivi budgétaire 0 consommé.
+  test("A5 — écart budgétaire : pas de 502, et accord avec le grand livre", async ({
+    page,
+  }) => {
+    const ctx = await loginAsSyndicWithBuilding(page, "regr-budget", {
+      totalUnits: 1,
+      totalTantiemes: 1000,
+      seedUnits: false,
+    });
+    const admin = { Authorization: `Bearer ${ctx.adminToken}` };
+    const syndic = { Authorization: `Bearer ${ctx.token}` };
+    const ts = Date.now();
+
+    const lot = await page.request.post(`${API_BASE}/units`, {
+      data: {
+        acp_id: ctx.acpId,
+        building_id: ctx.buildingId,
+        unit_number: "BG1",
+        floor: 0,
+        surface_area: 80,
+        unit_type: "Apartment",
+        quota: 1000,
+      },
+      headers: admin,
+    });
+    expect(lot.status(), await lot.text()).toBe(201);
+
+    const annee = new Date().getFullYear();
+    const bud = await page.request.post(`${API_BASE}/budgets`, {
+      data: {
+        building_id: ctx.buildingId,
+        fiscal_year: annee,
+        ordinary_budget: 40000.0,
+        extraordinary_budget: 8000.0,
+      },
+      headers: syndic,
+    });
+    expect(bud.status(), await bud.text()).toBe(201);
+    const budget = await bud.json();
+    expect(Number(budget.total_budget)).toBe(48000);
+    // 48 000 / 12 mois.
+    expect(Number(budget.monthly_provision_amount)).toBe(4000);
+
+    // Une charge approuvée de 2 420 €.
+    const dep = await page.request.post(`${API_BASE}/expenses`, {
+      data: {
+        building_id: ctx.buildingId,
+        category: "Maintenance",
+        description: `Budget ${ts}`,
+        amount: 2420.0,
+        expense_date: new Date().toISOString(),
+        account_code: "611002",
+      },
+      headers: syndic,
+    });
+    expect(dep.status(), await dep.text()).toBe(201);
+    const depenseId = (await dep.json()).id;
+
+    await page.request.put(`${API_BASE}/invoices/${depenseId}/submit`, {
+      data: { submitted_by_user_id: ctx.userId },
+      headers: syndic,
+    });
+    await page.request.put(`${API_BASE}/invoices/${depenseId}/approve`, {
+      data: { approved_by_user_id: ctx.userId },
+      headers: syndic,
+    });
+
+    // Le point qui produisait un 502 : une ligne existe désormais.
+    const ecart = await page.request.get(
+      `${API_BASE}/budgets/${budget.id}/variance`,
+      { headers: syndic },
+    );
+    expect(
+      ecart.status(),
+      `l'écart ne doit pas faire tomber le worker: ${await ecart.text()}`,
+    ).toBe(200);
+
+    const v = await ecart.json();
+    expect(
+      Number(v.actual_total),
+      "une facture approuvée consomme le budget, qu'elle soit payée ou non",
+    ).toBe(2420);
+    expect(Number(v.variance_total)).toBe(48000 - 2420);
+
+    // Et le grand livre doit dire la même chose.
+    const reg = await page.request.post(`${API_BASE}/auth/register`, {
+      data: {
+        email: `budget-regr-${ts}@example.com`,
+        password: process.env.PLAYWRIGHT_TEST_PASSWORD || "test123456",
+        first_name: "Marie",
+        last_name: `Compta${ts}`,
+        role: "accountant",
+        organization_id: ctx.orgId,
+      },
+    });
+    expect(reg.status(), await reg.text()).toBe(201);
+    const compta = { Authorization: `Bearer ${(await reg.json()).token}` };
+
+    const debut = new Date(annee, 0, 1).toISOString();
+    const fin = new Date(annee, 11, 31).toISOString();
+    const cr = await page.request.get(
+      `${API_BASE}/reports/income-statement?period_start=${debut}&period_end=${fin}`,
+      { headers: compta },
+    );
+    expect(cr.status()).toBe(200);
+    const r = await cr.json();
+    expect(
+      Number(r.total_expenses),
+      "suivi budgétaire et grand livre doivent s'accorder sur le même engagement",
+    ).toBe(Number(v.actual_total));
+  });
+
   // ───────────────────────────────────────────────────────────────────────
   // F14 — tantièmes : somme de `Decimal` sérialisés en chaîne
   // ───────────────────────────────────────────────────────────────────────

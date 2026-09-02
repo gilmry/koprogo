@@ -423,16 +423,42 @@ impl BudgetRepository for PostgresBudgetRepository {
         let fiscal_year_start = format!("{}-01-01", budget.fiscal_year);
         let fiscal_year_end = format!("{}-12-31", budget.fiscal_year);
 
+        // `category::text` — et non `category` nu.
+        //
+        // La colonne est de type énuméré PostgreSQL `expense_category`. La lue
+        // en `String` sans transtypage échoue au décodage, et `row.get()`
+        // PANIQUE sur cette erreur : le worker actix meurt et l'appelant reçoit
+        // un 502. Le défaut ne se voyait qu'une fois l'immeuble doté d'au moins
+        // une dépense correspondant au filtre — sans ligne, la boucle ne
+        // s'exécute pas et la route répond 200 avec un réalisé à zéro.
+        //
+        // Le transtypage explicite est le motif déjà suivi ailleurs dans le
+        // dépôt (`notice_repository_impl`, `expense_repository_impl`).
+        //
+        // ── Ce que « réalisé » compte ──────────────────────────────────────
+        //
+        // Le filtre portait sur `payment_status = 'paid'` : seul le décaissé.
+        // Le grand livre, lui, comptabilise la charge à l'APPROBATION de la
+        // facture (écriture ACH : D 6xxxxx / C 440). Les deux rapports
+        // divergeaient donc sur le même engagement — mesuré le 2026-09-02 :
+        // grand livre 2 420 € de charges, suivi budgétaire 0 consommé.
+        //
+        // Pour un syndic, la question utile est « combien du budget voté est
+        // déjà engagé ? », pas « combien est sorti de la banque ». Une facture
+        // approuvée sera réclamée aux copropriétaires qu'elle soit payée ou
+        // non. Le réalisé s'aligne donc sur ce que le grand livre enregistre,
+        // en excluant les factures annulées.
         let expense_rows = sqlx::query(
             r#"
             SELECT
-                category,
+                category::text AS category,
                 COALESCE(SUM(amount), 0) as total_amount
             FROM expenses
             WHERE building_id = $1
               AND expense_date >= $2::date
               AND expense_date <= $3::date
-              AND payment_status = 'paid'
+              AND approval_status = 'approved'
+              AND payment_status <> 'cancelled'
             GROUP BY category
             "#,
         )
@@ -448,7 +474,9 @@ impl BudgetRepository for PostgresBudgetRepository {
         let mut overrun_categories = Vec::new();
 
         for row in expense_rows {
-            let category_str: String = row.get("category");
+            // `try_get` et non `get` : ce dernier panique sur une erreur de
+            // décodage au lieu de la remonter.
+            let category_str: String = row.try_get("category")?;
             let amount: Decimal = row.try_get("total_amount")?;
 
             let category = match category_str.as_str() {

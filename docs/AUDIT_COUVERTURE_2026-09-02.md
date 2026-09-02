@@ -6,6 +6,14 @@ question qui vient après : **pourquoi personne ne les avait vus.**
 
 Trois mesures, dans l'ordre de ce qu'elles coûtent à réparer.
 
+> **Cadrage.** KoproGo prépare sa toute première release : rien n'est
+> encore livré à de vrais copropriétaires. Les constats qui suivent
+> décrivent donc des **capacités pas encore assemblées** — une fonction
+> écrite mais pas appelée, une colonne présente mais pas câblée — et non
+> des pannes qui durent. La sévérité technique reste entière : une
+> répartition de charges fausse doit être corrigée avant la mise en
+> service. C'est la datation qui n'aurait pas de sens, pas le diagnostic.
+
 ---
 
 ## 1. Le contrat d'API — 27 % des routes
@@ -89,10 +97,10 @@ Deux constats trouvés en remboursant la dette, tous deux du même type
   route, que l'interface n'appelle pas. Corrigé le 2026-09-02 : ce sont
   les constats F12 et F20.
 - **Le mode « détaillé » du formulaire de facture envoie `line_items`, qui
-  n'est accepté par aucune route.** La table `invoice_line_items` existe
-  depuis novembre 2025, `CreateInvoiceLineItemDto` aussi, mais **aucun
-  endpoint ne les expose**. Le détail ligne à ligne saisi par
-  l'utilisateur ne quitte donc jamais le navigateur.
+  n'est accepté par aucune route.** La table `invoice_line_items` existe,
+  `CreateInvoiceLineItemDto` aussi, mais **aucun endpoint ne les expose** :
+  la capacité est posée, le câblage manque. Le détail ligne à ligne saisi
+  par l'utilisateur ne quitte donc pas le navigateur.
 
   Ce n'est pas un défaut visible aujourd'hui : les totaux HT / TVA / TTC
   sont correctement agrégés et enregistrés, et aucun écran ne relit les
