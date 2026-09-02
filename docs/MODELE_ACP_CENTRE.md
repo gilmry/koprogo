@@ -152,6 +152,43 @@ C'est la tranche la plus structurante et la moins urgente.
 
 ## 5. Ce qui est déjà fait
 
+### Tranche 0 — le mandat, et la première entité *(2026-09-02, en production)*
+
+**`SyndicMandate`** — le mandat existe désormais comme entité bornée dans
+le temps, portant les décisions d'AG qui l'ouvrent et le ferment. Bornes
+début inclus / fin exclue : à l'instant d'une passation il y a exactement
+un mandataire, ni deux, ni zéro. `holder_at()` répond enfin à « qui
+gérait cette ACP le 12 mars ? ». Additif — `Acp.organization_id` reste la
+lecture rapide du mandataire courant.
+
+**`Expense.acp_id`** — la charge porte l'ACP qui la possède, en plus du
+cabinet qui l'a encodée. Les deux faits sont vrais et tous deux
+conservés : la loi veut que l'ACP possède sa comptabilité ET que le
+syndic en fonction réponde de ce qu'il a saisi. Reprise depuis
+`buildings.acp_id`, exacte et sans perte ; 65 charges sur 65 en
+production. La migration lève une exception plutôt que de laisser une
+colonne à demi remplie.
+
+**Le filtre de portée** est branché sur les charges :
+
+```sql
+- WHERE organization_id = $1
++ WHERE acp_id IN (SELECT id FROM acps WHERE organization_id = $1)
+```
+
+Vérifié en production : après passation, le syndic entrant voit la
+comptabilité de l'ACP qu'il reprend, et le syndic sortant ne la voit
+plus. Les deux moitiés du problème, refermées du même geste.
+
+**Reste au même patron** : budgets, écritures, appels de fonds, états
+datés, convocations, réunions — toutes portent un `building_id`, donc la
+reprise est mécanique. `owners` et `payment_reminders` relèvent de la
+tranche 2, plus délicate.
+
+### Outillage
+
+
+
 `verify_building_org_access` (2026-09-02) résout **immeuble → ACP →
 organisation** et pose donc déjà la bonne question : *ce syndic a-t-il
 la gestion de cette ACP ?* Elle reste juste après le recentrage, et sert
