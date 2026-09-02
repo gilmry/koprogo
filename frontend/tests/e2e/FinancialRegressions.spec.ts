@@ -643,6 +643,134 @@ test.describe("Workflows financiers 2026-09-01 — non-régression", () => {
   });
 
   // ───────────────────────────────────────────────────────────────────────
+  // A6 — garde-fous du cycle de vie d'une facture
+  // ───────────────────────────────────────────────────────────────────────
+
+  /// Audité contre la production le 2026-09-02 : les huit transitions
+  /// interdites sont TOUTES refusées, avec un message juste. Rien à corriger.
+  ///
+  /// Elles sont verrouillées ici parce qu'elles gardent des mouvements
+  /// d'argent : approuver un brouillon, payer sans approbation ou modifier une
+  /// facture approuvée sont des contournements du contrôle interne, pas des
+  /// détails d'ergonomie. Un audit qui constate « c'est bon » sans laisser de
+  /// preuve durable ne protège rien.
+  test("A6 — les transitions interdites du cycle de facture sont refusées", async ({
+    page,
+  }) => {
+    const ctx = await loginAsSyndicWithBuilding(page, "regr-wf", {
+      totalUnits: 1,
+      totalTantiemes: 1000,
+      seedUnits: false,
+    });
+    const admin = { Authorization: `Bearer ${ctx.adminToken}` };
+    const syndic = { Authorization: `Bearer ${ctx.token}` };
+
+    const lot = await page.request.post(`${API_BASE}/units`, {
+      data: {
+        acp_id: ctx.acpId,
+        building_id: ctx.buildingId,
+        unit_number: "WF1",
+        floor: 0,
+        surface_area: 80,
+        unit_type: "Apartment",
+        quota: 1000,
+      },
+      headers: admin,
+    });
+    expect(lot.status(), await lot.text()).toBe(201);
+
+    const creerFacture = async (categorie = "Maintenance") => {
+      const r = await page.request.post(`${API_BASE}/expenses`, {
+        data: {
+          building_id: ctx.buildingId,
+          category: categorie,
+          description: `WF ${Date.now()}-${Math.random()}`,
+          amount: 1000.0,
+          expense_date: new Date().toISOString(),
+          account_code: "611002",
+        },
+        headers: syndic,
+      });
+      expect(r.status(), await r.text()).toBe(201);
+      return (await r.json()).id;
+    };
+    const soumettre = (id: string) =>
+      page.request.put(`${API_BASE}/invoices/${id}/submit`, {
+        data: { submitted_by_user_id: ctx.userId },
+        headers: syndic,
+      });
+    const approuver = (id: string) =>
+      page.request.put(`${API_BASE}/invoices/${id}/approve`, {
+        data: { approved_by_user_id: ctx.userId },
+        headers: syndic,
+      });
+
+    // 1. Approuver un brouillon sans l'avoir soumis.
+    const brouillon = await creerFacture();
+    const r1 = await approuver(brouillon);
+    expect(r1.status()).toBe(400);
+    expect(await r1.text()).toContain("must be submitted first");
+
+    // 2. Payer une facture non approuvée — le contournement le plus coûteux.
+    const r2 = await page.request.put(
+      `${API_BASE}/expenses/${brouillon}/mark-paid`,
+      { data: {}, headers: syndic },
+    );
+    expect(r2.status()).toBe(400);
+    expect(await r2.text()).toContain("must be approved first");
+
+    // 3. Le cycle nominal, puis une seconde approbation.
+    const facture = await creerFacture();
+    expect((await soumettre(facture)).status()).toBe(200);
+    expect((await approuver(facture)).status()).toBe(200);
+    const r3 = await approuver(facture);
+    expect(r3.status()).toBe(400);
+    expect(await r3.text()).toContain("already approved");
+
+    // 4. Modifier une facture approuvée.
+    const r4 = await page.request.put(`${API_BASE}/invoices/${facture}`, {
+      data: { description: "Modifiée après approbation" },
+      headers: syndic,
+    });
+    expect(r4.status()).toBe(400);
+    expect(await r4.text()).toContain("cannot be modified");
+
+    // 5. Rejet sans motif : un refus doit être motivé.
+    const rejetee = await creerFacture();
+    await soumettre(rejetee);
+    const r5 = await page.request.put(`${API_BASE}/invoices/${rejetee}/reject`, {
+      data: { rejected_by_user_id: ctx.userId, rejection_reason: "   " },
+      headers: syndic,
+    });
+    expect(r5.status()).toBe(400);
+    expect(await r5.text()).toContain("reason cannot be empty");
+
+    // 6. Rejet motivé, puis approbation d'une facture rejetée.
+    const r6 = await page.request.put(`${API_BASE}/invoices/${rejetee}/reject`, {
+      data: {
+        rejected_by_user_id: ctx.userId,
+        rejection_reason: "Montant erroné",
+      },
+      headers: syndic,
+    });
+    expect(r6.status()).toBe(200);
+    const r7 = await approuver(rejetee);
+    expect(r7.status()).toBe(400);
+    expect(await r7.text()).toContain("resubmit first");
+
+    // 7. Mais la re-soumission après rejet reste possible.
+    expect((await soumettre(rejetee)).status()).toBe(200);
+
+    // 8. Une dépense « Travaux » sans rapport de prestataire validé
+    //    (chaîne de bon de commande, issue #309).
+    const travaux = await creerFacture("Works");
+    await soumettre(travaux);
+    const r8 = await approuver(travaux);
+    expect(r8.status()).toBe(400);
+    expect(await r8.text()).toContain("contractor report");
+  });
+
+  // ───────────────────────────────────────────────────────────────────────
   // F14 — tantièmes : somme de `Decimal` sérialisés en chaîne
   // ───────────────────────────────────────────────────────────────────────
 

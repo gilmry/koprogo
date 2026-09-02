@@ -237,3 +237,82 @@ nombre d'échecs hétérogènes.
 Le cache de jeton de `helpers/auth.ts` (une connexion par worker au lieu
 d'une par test) atténue le problème sans le supprimer : plusieurs workers
 et 56 fichiers franchissent encore le seuil.
+
+---
+
+## 5. Points d'arbitrage — méthode comptable et droit
+
+Constats d'audit qui ne relèvent pas d'un défaut d'implémentation mais
+d'une décision. Ils sont listés ici plutôt que corrigés unilatéralement.
+
+### 5.1 — Le délai légal des états datés : calendaires ou ouvrables ?
+
+`EtatDate::is_overdue` calcule `requested_date + 15 jours` **calendaires**.
+La documentation de la même entité annonce, deux lignes plus haut :
+
+> **Délai légal** : Art. 3.94 CC — 15 jours **ouvrables** (demande simple),
+> 30 jours (demande notaire par recommandé)
+
+Quinze jours ouvrables font environ vingt-et-un jours calendaires. Si la
+documentation dit vrai, le système signale un état daté « en retard »
+près d'une semaine trop tôt — une fausse alerte qui pousse un syndic à se
+presser sur un document engageant. Si c'est le code qui dit vrai, c'est
+la documentation qu'il faut corriger.
+
+Le test unitaire du domaine encode lui aussi les jours calendaires : le
+code est cohérent avec lui-même, pas avec ce qu'il annonce. Une seule des
+deux lectures est juridiquement correcte, et c'est une question de droit
+belge, pas de logiciel.
+
+### 5.2 — Le numéro de registre des états datés ne s'incrémente pas
+
+Le format annoncé est `ED-YYYY-NNN-BLD…-U…`, celui d'un registre numéroté.
+Le `NNN` provient d'un compteur `static AtomicU64` **local au processus**,
+remis à zéro à chaque redémarrage et pris modulo 1000. Tout redémarrage
+recommence donc à `ED-2026-000-…`, et plusieurs instances numéroteraient
+en parallèle.
+
+L'unicité, elle, est garantie : un fragment d'UUID aléatoire est inséré
+dans la référence. Ce n'est donc pas un risque de collision, mais un
+numéro de registre qui n'en est pas un — sur un document remis à un
+notaire. Un vrai séquenceur suppose une décision de portée : par
+organisation, par ACP, par exercice ?
+
+### 5.3 — Une règle métier s'affiche comme « erreur interne »
+
+Saisir un budget négatif renvoie :
+
+    HTTP 400  {"error":"Internal server error: Ordinary budget cannot be negative"}
+
+Le code HTTP est juste ; c'est le libellé qui ment. `AppError` possède
+pourtant une variante `Validation` dédiée. La cause est
+`impl From<String> for AppError`, qui rabat TOUT `String` sur
+`AppError::Internal` — et les entités du domaine renvoient leurs
+violations de règle en `String`.
+
+**Non corrigé, délibérément** : les repositories renvoient eux aussi des
+`String` pour de vraies pannes d'infrastructure (`format!("Database
+error: {}", e)`). Basculer le `From` global sur `Validation` ferait
+répondre 400 à une panne de base. Le tri doit se faire au cas par cas,
+côté cas d'usage.
+
+Observé sur au moins trois modules : budgets, relances, dépenses.
+
+### 5.4 — Ce que l'audit du workflow de facture a confirmé
+
+Rien à corriger. Les huit transitions interdites sont refusées, avec un
+message juste : approuver un brouillon, payer sans approbation, approuver
+deux fois, modifier une facture approuvée, rejeter sans motif, approuver
+une facture rejetée, approuver des travaux sans rapport de prestataire
+validé. La re-soumission après rejet reste possible.
+
+La **séparation des pouvoirs** est par RÔLE et non par personne : un
+syndic peut soumettre puis approuver la même facture. C'est explicite
+dans `User::can_encode_invoices` / `can_emit_expenses` — « les syndics
+gardent la pleine autorité en l'absence de comptable dédié ». Choix
+documenté, pas une lacune.
+
+Ces huit garde-fous sont désormais verrouillés par
+`FinancialRegressions.spec.ts` : ils gardent des mouvements d'argent, et
+un audit qui constate « c'est bon » sans laisser de preuve durable ne
+protège rien.
