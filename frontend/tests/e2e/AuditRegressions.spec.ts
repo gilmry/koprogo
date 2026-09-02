@@ -191,7 +191,14 @@ test.describe("Audit 2026-08-30 — non-régression", () => {
     const { buildingId } = await loginAsSyndicWithUnit(page, "audit-owners");
     await page.goto(`/building-detail?id=${buildingId}`);
 
-    const toggle = page.getByRole("button", { name: /Copropriétaires/ }).first();
+    // `data-testid` et non le rôle+nom : Playwright résout le nom accessible,
+    // qui vient ici de l'`aria-label` (« Afficher les copropriétaires », c
+    // minuscule) et non du texte visible (« ▶ Copropriétaires »). La regex
+    // `/Copropriétaires/` ne matchait donc rien, et ce test — écrit le
+    // 2026-08-31 en même temps que le correctif — n'a jamais passé : je ne
+    // l'avais pas exécuté. Un point d'accroche stable ne dépend ni du libellé,
+    // ni de la langue, ni de l'attribut qui porte le nom accessible.
+    const toggle = page.getByTestId("toggle-unit-owners").first();
     await expect(toggle).toBeVisible({ timeout: 15000 });
 
     // On vise le panneau, pas la liste : `owner-list` n'est rendue que si le

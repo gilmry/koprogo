@@ -29,7 +29,7 @@ pub async fn create_contribution(
     // Get organization_id from user (required for creating contributions)
     let organization_id = match user.organization_id {
         Some(org_id) => org_id,
-        None => return HttpResponse::BadRequest().body("Organization ID required"),
+        None => return HttpResponse::BadRequest().json(serde_json::json!({ "error": "Organization ID required" })),
     };
 
     match state
@@ -50,7 +50,7 @@ pub async fn create_contribution(
             let response = OwnerContributionResponse::from(contribution);
             HttpResponse::Created().json(response)
         }
-        Err(e) => HttpResponse::BadRequest().body(e),
+        Err(e) => HttpResponse::BadRequest().json(serde_json::json!({ "error": e })),
     }
 }
 
@@ -83,8 +83,8 @@ pub async fn get_contribution(
             let response = OwnerContributionResponse::from(contribution);
             HttpResponse::Ok().json(response)
         }
-        Ok(None) => HttpResponse::NotFound().body("Contribution not found"),
-        Err(e) => HttpResponse::InternalServerError().body(e),
+        Ok(None) => HttpResponse::NotFound().json(serde_json::json!({ "error": "Contribution not found" })),
+        Err(e) => HttpResponse::InternalServerError().json(serde_json::json!({ "error": e })),
     }
 }
 
@@ -112,7 +112,7 @@ pub async fn get_contributions_by_owner(
     if let Some(id_str) = query.get("owner_id") {
         let owner_id = match Uuid::parse_str(id_str) {
             Ok(id) => id,
-            Err(_) => return HttpResponse::BadRequest().body("Invalid owner_id format"),
+            Err(_) => return HttpResponse::BadRequest().json(serde_json::json!({ "error": "Invalid owner_id format" })),
         };
 
         match state
@@ -125,14 +125,14 @@ pub async fn get_contributions_by_owner(
                     contributions.into_iter().map(Into::into).collect();
                 return HttpResponse::Ok().json(responses);
             }
-            Err(e) => return HttpResponse::InternalServerError().body(e),
+            Err(e) => return HttpResponse::InternalServerError().json(serde_json::json!({ "error": e })),
         }
     }
 
     // Otherwise, return all contributions for user's organization
     let organization_id = match user.organization_id {
         Some(org_id) => org_id,
-        None => return HttpResponse::BadRequest().body("Organization ID required"),
+        None => return HttpResponse::BadRequest().json(serde_json::json!({ "error": "Organization ID required" })),
     };
 
     match state
@@ -145,7 +145,7 @@ pub async fn get_contributions_by_owner(
                 contributions.into_iter().map(Into::into).collect();
             HttpResponse::Ok().json(responses)
         }
-        Err(e) => HttpResponse::InternalServerError().body(e),
+        Err(e) => HttpResponse::InternalServerError().json(serde_json::json!({ "error": e })),
     }
 }
 
@@ -171,9 +171,9 @@ pub async fn get_outstanding_contributions(
     let owner_id = match query.get("owner_id") {
         Some(id_str) => match Uuid::parse_str(id_str) {
             Ok(id) => id,
-            Err(_) => return HttpResponse::BadRequest().body("Invalid owner_id format"),
+            Err(_) => return HttpResponse::BadRequest().json(serde_json::json!({ "error": "Invalid owner_id format" })),
         },
-        None => return HttpResponse::BadRequest().body("owner_id is required"),
+        None => return HttpResponse::BadRequest().json(serde_json::json!({ "error": "owner_id is required" })),
     };
 
     match state
@@ -186,7 +186,7 @@ pub async fn get_outstanding_contributions(
                 contributions.into_iter().map(Into::into).collect();
             HttpResponse::Ok().json(responses)
         }
-        Err(e) => HttpResponse::InternalServerError().body(e),
+        Err(e) => HttpResponse::InternalServerError().json(serde_json::json!({ "error": e })),
     }
 }
 
@@ -231,6 +231,6 @@ pub async fn record_payment(
             let response = OwnerContributionResponse::from(contribution);
             HttpResponse::Ok().json(response)
         }
-        Err(e) => HttpResponse::BadRequest().body(e),
+        Err(e) => HttpResponse::BadRequest().json(serde_json::json!({ "error": e })),
     }
 }

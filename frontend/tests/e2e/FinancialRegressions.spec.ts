@@ -2,7 +2,6 @@ import { test, expect } from "@playwright/test";
 import {
   loginAsAccountantEmetteur,
   loginAsSyndicWithBuilding,
-  loginAsSyndicWithOwner,
   loginAsSyndicWithExpense,
   loginAsSyndicWithUnit,
 } from "./helpers/auth";
@@ -112,32 +111,38 @@ test.describe("Workflows financiers 2026-09-01 — non-régression", () => {
   test("F2 — un appel de fonds envoyé génère les quotes-parts par tantièmes", async ({
     page,
   }) => {
-    const ctx = await loginAsSyndicWithOwner(page, "fin-f2");
+    // `loginAsSyndicWithUnit` et non `loginAsSyndicWithOwner` : le second passe
+    // par la configuration par défaut (12 lots attendus), et l'appel de fonds
+    // est refusé sur un immeuble en dérive par rapport à son acte de base
+    // (Art. 3.85 CC, gate `validate-before-compute`). Le premier produit un
+    // immeuble conforme : 1 lot, 1000 millièmes.
+    const ctx = await loginAsSyndicWithUnit(page, "fin-f2");
     const entetes = { Authorization: `Bearer ${ctx.adminToken}` };
+    const unitId = ctx.unitId;
 
-    // 1. Un lot portant la totalité des tantièmes, pour que l'immeuble soit
-    //    conforme (le `send` refuse un immeuble en dérive, Art. 3.85 CC).
-    const lot = await page.request.post(`${API_BASE}/units`, {
+    // 1. Un copropriétaire à rattacher au lot.
+    const prop = await page.request.post(`${API_BASE}/owners`, {
       data: {
-        acp_id: ctx.acpId,
-        building_id: ctx.buildingId,
-        unit_number: "F2-1A",
-        floor: 1,
-        surface_area: 90.0,
-        unit_type: "Apartment",
-        quota: 1000.0,
+        organization_id: ctx.orgId,
+        first_name: "Jean",
+        last_name: `Peeters${Date.now()}`,
+        email: `f2-${Date.now()}@example.com`,
+        address: "1 Rue Test",
+        city: "Bruxelles",
+        postal_code: "1000",
+        country: "Belgium",
       },
-      headers: entetes,
+      headers: { Authorization: `Bearer ${ctx.token}` },
     });
-    expect(lot.status(), await lot.text()).toBe(201);
-    const unitId = (await lot.json()).id;
+    expect(prop.status(), await prop.text()).toBe(201);
+    const ownerId = (await prop.json()).id;
 
     // 2. Le rattachement — par `unit_owners`, PAS par `units.owner_id`.
     const detention = await page.request.post(
       `${API_BASE}/units/${unitId}/owners`,
       {
         data: {
-          owner_id: ctx.ownerId,
+          owner_id: ownerId,
           ownership_percentage: 1.0,
           is_primary_contact: true,
         },
@@ -169,9 +174,13 @@ test.describe("Workflows financiers 2026-09-01 — non-régression", () => {
 
     // 4. L'envoi — c'est ici que le rapport butait sur « No active owners
     //    found for this building ».
+    // Corps `{}` obligatoire : le handler prend un `web::Json<...>`, même si
+    // la structure est vide. Sans lui, la requête est rejetée en 400
+    // « Content type error » — ce que le nouveau gestionnaire d'erreurs JSON
+    // dit désormais explicitement, au lieu d'un corps `text/plain`.
     const envoi = await page.request.post(
       `${API_BASE}/call-for-funds/${appelId}/send`,
-      { headers: { Authorization: `Bearer ${ctx.token}` } },
+      { data: {}, headers: { Authorization: `Bearer ${ctx.token}` } },
     );
     expect(
       envoi.status(),
@@ -186,7 +195,7 @@ test.describe("Workflows financiers 2026-09-01 — non-régression", () => {
 
     // 5. La quote-part existe, au bon montant : 100 % de 10 000 €.
     const quotes = await page.request.get(
-      `${API_BASE}/owner-contributions?owner_id=${ctx.ownerId}`,
+      `${API_BASE}/owner-contributions?owner_id=${ownerId}`,
       { headers: { Authorization: `Bearer ${ctx.token}` } },
     );
     expect(quotes.status()).toBe(200);
