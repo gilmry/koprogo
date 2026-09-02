@@ -385,6 +385,135 @@ test.describe("Workflows financiers 2026-09-01 — non-régression", () => {
     ).toBe(10000);
   });
 
+  /// A3 — un lot en INDIVISION ne doit pas bloquer la répartition.
+  ///
+  /// `charge_distributions` portait `UNIQUE (expense_id, unit_id)`. Un lot
+  /// détenu par deux copropriétaires — un couple, une succession, un
+  /// démembrement — produit deux lignes pour ce lot, que la contrainte
+  /// refusait. L'insertion étant groupée, l'échec ne portait pas sur la seule
+  /// ligne fautive : AUCUNE répartition n'était enregistrée pour l'immeuble.
+  ///
+  /// Mesuré en production le 2026-09-02 :
+  ///   400 — duplicate key value violates unique constraint "unique_expense_unit"
+  ///
+  /// L'indivision est le cas ORDINAIRE en copropriété belge, pas un cas limite.
+  /// Le domaine la gérait déjà (`resolve_owner_quota` multiplie par
+  /// `ownership_percentage`, testé sur « 50/50 ») ; c'est le schéma qui
+  /// l'interdisait.
+  test("A3 — indivision 50/50 : la répartition passe et les montants tiennent", async ({
+    page,
+  }) => {
+    const ctx = await loginAsSyndicWithBuilding(page, "regr-indivis", {
+      totalUnits: 2,
+      totalTantiemes: 1000,
+      seedUnits: false,
+    });
+    const admin = { Authorization: `Bearer ${ctx.adminToken}` };
+    const syndic = { Authorization: `Bearer ${ctx.token}` };
+
+    const creerProprio = async (nom: string) => {
+      const r = await page.request.post(`${API_BASE}/owners`, {
+        data: {
+          organization_id: ctx.orgId,
+          first_name: nom,
+          last_name: `Indivis${Date.now()}`,
+          email: `${nom.toLowerCase()}-${Date.now()}@example.com`,
+          address: "1 Rue Test",
+          city: "Bruxelles",
+          postal_code: "1000",
+          country: "Belgium",
+        },
+        headers: syndic,
+      });
+      expect(r.status(), await r.text()).toBe(201);
+      return (await r.json()).id;
+    };
+
+    const creerLot = async (numero: string, quota: number) => {
+      const r = await page.request.post(`${API_BASE}/units`, {
+        data: {
+          acp_id: ctx.acpId,
+          building_id: ctx.buildingId,
+          unit_number: numero,
+          floor: 0,
+          surface_area: 70,
+          unit_type: "Apartment",
+          quota,
+        },
+        headers: admin,
+      });
+      expect(r.status(), await r.text()).toBe(201);
+      return (await r.json()).id;
+    };
+
+    // Lot A : 400 millièmes, en indivision 50/50 (un couple).
+    // Lot B : 600 millièmes, propriétaire unique.
+    const lotA = await creerLot("IA", 400);
+    const lotB = await creerLot("IB", 600);
+    const epoux1 = await creerProprio("Jean");
+    const epouse = await creerProprio("Anne");
+    const seul = await creerProprio("Philippe");
+
+    for (const [lot, owner, pct, principal] of [
+      [lotA, epoux1, 0.5, true],
+      [lotA, epouse, 0.5, false],
+      [lotB, seul, 1.0, true],
+    ] as const) {
+      const d = await page.request.post(`${API_BASE}/units/${lot}/owners`, {
+        data: {
+          owner_id: owner,
+          ownership_percentage: pct,
+          is_primary_contact: principal,
+        },
+        headers: admin,
+      });
+      expect(d.status(), `détention ${pct}: ${await d.text()}`).toBe(201);
+    }
+
+    const dep = await page.request.post(`${API_BASE}/expenses`, {
+      data: {
+        building_id: ctx.buildingId,
+        category: "Maintenance",
+        description: `Indivision ${Date.now()}`,
+        amount: 1000.0,
+        expense_date: new Date().toISOString(),
+        account_code: "611002",
+      },
+      headers: syndic,
+    });
+    expect(dep.status(), await dep.text()).toBe(201);
+    const depenseId = (await dep.json()).id;
+
+    await page.request.put(`${API_BASE}/invoices/${depenseId}/submit`, {
+      data: { submitted_by_user_id: ctx.userId },
+      headers: syndic,
+    });
+    await page.request.put(`${API_BASE}/invoices/${depenseId}/approve`, {
+      data: { approved_by_user_id: ctx.userId },
+      headers: syndic,
+    });
+
+    const rep = await page.request.post(
+      `${API_BASE}/invoices/${depenseId}/calculate-distribution`,
+      { data: {}, headers: syndic },
+    );
+    expect(rep.status(), `répartition: ${await rep.text()}`).toBeLessThan(300);
+
+    const brut = await rep.json();
+    const lignes = Array.isArray(brut) ? brut : (brut.distributions ?? []);
+    expect(lignes.length, "trois lignes : deux indivisaires + un seul").toBe(3);
+
+    // 400‰ × 50 % = 200 € chacun ; 600‰ × 100 % = 600 €.
+    const dus = lignes
+      .map((l: any) => Number(l.amount_due))
+      .sort((a: number, b: number) => a - b);
+    expect(dus).toEqual([200, 200, 600]);
+    expect(
+      dus.reduce((a: number, b: number) => a + b, 0),
+      "la somme répartie doit égaler la charge",
+    ).toBeCloseTo(1000, 2);
+  });
+
   // ───────────────────────────────────────────────────────────────────────
   // F14 — tantièmes : somme de `Decimal` sérialisés en chaîne
   // ───────────────────────────────────────────────────────────────────────
