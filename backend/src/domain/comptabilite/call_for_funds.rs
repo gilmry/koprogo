@@ -35,6 +35,18 @@ pub enum CallForFundsStatus {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct CallForFunds {
     pub id: Uuid,
+
+    /// L'ACP au nom de laquelle les fonds sont appelés.
+    ///
+    /// Art. 3.86 § 3 : le patrimoine de l'ACP « est constitué par des apports
+    /// périodiques des copropriétaires décidés par l'assemblée générale ». Le
+    /// syndic lance l'appel, l'ACP en est créancière. Le mandat s'éteint, la
+    /// créance reste. Cf. ADR-0045.
+    pub acp_id: Uuid,
+
+    /// Le syndic qui a lancé l'appel, conservé comme trace d'auteur.
+    ///
+    /// N'entre dans aucun prédicat d'autorisation.
     pub organization_id: Uuid,
     pub building_id: Uuid,
 
@@ -109,6 +121,7 @@ impl From<CallForFundsError> for String {
 impl CallForFunds {
     #[allow(clippy::too_many_arguments)]
     pub fn new(
+        acp_id: Uuid,
         organization_id: Uuid,
         building_id: Uuid,
         title: String,
@@ -141,6 +154,7 @@ impl CallForFunds {
 
         Ok(Self {
             id: Uuid::new_v4(),
+            acp_id,
             organization_id,
             building_id,
             title,
@@ -197,6 +211,7 @@ mod tests {
         let due_date = call_date + chrono::Duration::days(30);
 
         let call = CallForFunds::new(
+            Uuid::new_v4(), // acp_id
             Uuid::new_v4(),
             Uuid::new_v4(),
             "Appel de fonds Q1 2025".to_string(),
@@ -220,6 +235,7 @@ mod tests {
         let due_date = call_date + chrono::Duration::days(30);
 
         let call = CallForFunds::new(
+            Uuid::new_v4(), // acp_id
             Uuid::new_v4(),
             Uuid::new_v4(),
             "Test".to_string(),
@@ -243,6 +259,7 @@ mod tests {
         let due_date = call_date - chrono::Duration::days(1); // Due date BEFORE call date
 
         let call = CallForFunds::new(
+            Uuid::new_v4(), // acp_id
             Uuid::new_v4(),
             Uuid::new_v4(),
             "Test".to_string(),
@@ -266,6 +283,7 @@ mod tests {
         let due_date = call_date + chrono::Duration::days(30);
 
         let mut call = CallForFunds::new(
+            Uuid::new_v4(), // acp_id
             Uuid::new_v4(),
             Uuid::new_v4(),
             "Test".to_string(),
@@ -293,6 +311,7 @@ mod tests {
         let due_date = Utc::now() - chrono::Duration::days(30); // 30 days ago
 
         let call = CallForFunds::new(
+            Uuid::new_v4(), // acp_id
             Uuid::new_v4(),
             Uuid::new_v4(),
             "Overdue call".to_string(),
@@ -316,6 +335,7 @@ mod tests {
     fn mk(amount: Decimal, days: i64) -> Result<CallForFunds, CallForFundsError> {
         let call_date = Utc::now();
         CallForFunds::new(
+            Uuid::new_v4(), // acp_id
             Uuid::new_v4(),
             Uuid::new_v4(),
             "Appel".to_string(),
@@ -371,5 +391,11 @@ mod tests {
             mk(rust_decimal_macros::dec!(-1), 30).unwrap_err(),
             CallForFundsError::NonPositiveTotalAmount
         ));
+    }
+}
+
+impl crate::domain::services::PieceDeGestion for CallForFunds {
+    fn acp_id(&self) -> Uuid {
+        self.acp_id
     }
 }

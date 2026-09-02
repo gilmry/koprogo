@@ -36,17 +36,18 @@ impl CallForFundsRepository for PostgresCallForFundsRepository {
         sqlx::query(
             r#"
             INSERT INTO call_for_funds (
-                id, organization_id, building_id, title, description,
+                id, acp_id, organization_id, building_id, title, description,
                 total_amount, contribution_type, call_date, due_date,
                 sent_date, status, account_code, notes, created_at,
                 updated_at, created_by
             )
-            VALUES ($1, $2, $3, $4, $5, $6, CAST($7 AS contribution_type),
-                    $8, $9, $10, CAST($11 AS call_for_funds_status),
-                    $12, $13, $14, $15, $16)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, CAST($8 AS contribution_type),
+                    $9, $10, $11, CAST($12 AS call_for_funds_status),
+                    $13, $14, $15, $16, $17)
             "#,
         )
         .bind(call_for_funds.id)
+        .bind(call_for_funds.acp_id)
         .bind(call_for_funds.organization_id)
         .bind(call_for_funds.building_id)
         .bind(&call_for_funds.title)
@@ -72,7 +73,7 @@ impl CallForFundsRepository for PostgresCallForFundsRepository {
     async fn find_by_id(&self, id: Uuid) -> Result<Option<CallForFunds>, String> {
         let row = sqlx::query(
             r#"
-            SELECT id, organization_id, building_id, title, description,
+            SELECT id, acp_id, organization_id, building_id, title, description,
                    total_amount, contribution_type::text AS contribution_type,
                    call_date, due_date, sent_date,
                    status::text AS status, account_code, notes,
@@ -92,7 +93,7 @@ impl CallForFundsRepository for PostgresCallForFundsRepository {
     async fn find_by_building(&self, building_id: Uuid) -> Result<Vec<CallForFunds>, String> {
         let rows = sqlx::query(
             r#"
-            SELECT id, organization_id, building_id, title, description,
+            SELECT id, acp_id, organization_id, building_id, title, description,
                    total_amount, contribution_type::text AS contribution_type,
                    call_date, due_date, sent_date,
                    status::text AS status, account_code, notes,
@@ -116,13 +117,13 @@ impl CallForFundsRepository for PostgresCallForFundsRepository {
     ) -> Result<Vec<CallForFunds>, String> {
         let rows = sqlx::query(
             r#"
-            SELECT id, organization_id, building_id, title, description,
+            SELECT id, acp_id, organization_id, building_id, title, description,
                    total_amount, contribution_type::text AS contribution_type,
                    call_date, due_date, sent_date,
                    status::text AS status, account_code, notes,
                    created_at, updated_at, created_by
             FROM call_for_funds
-            WHERE organization_id = $1
+            WHERE acp_id IN (SELECT id FROM acps WHERE organization_id = $1)
             ORDER BY call_date DESC
             "#,
         )
@@ -199,7 +200,7 @@ impl CallForFundsRepository for PostgresCallForFundsRepository {
     async fn find_overdue(&self) -> Result<Vec<CallForFunds>, String> {
         let rows = sqlx::query(
             r#"
-            SELECT id, organization_id, building_id, title, description,
+            SELECT id, acp_id, organization_id, building_id, title, description,
                    total_amount, contribution_type::text AS contribution_type,
                    call_date, due_date, sent_date,
                    status::text AS status, account_code, notes,
@@ -239,6 +240,7 @@ impl PostgresCallForFundsRepository {
 
         CallForFunds {
             id: row.get("id"),
+            acp_id: row.get("acp_id"),
             organization_id: row.get("organization_id"),
             building_id: row.get("building_id"),
             title: row.get("title"),

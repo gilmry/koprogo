@@ -50,20 +50,49 @@ impl CallForFundsUseCases {
         }
     }
 
-    /// Track H Story H7 — pre-check conformité copropriété (ACP). Résout
-    /// `building.acp_id` puis agrège les métriques de tous les blocs.
-    async fn assert_acp_conformant(&self, building_id: Uuid) -> Result<(), String> {
-        let (Some(building_repo), Some(acp_repo)) =
-            (&self.building_repository, &self.acp_repository)
-        else {
-            return Ok(());
+    /// Résout l'ACP de l'immeuble, et vérifie sa conformité au passage.
+    ///
+    /// Deux responsabilités volontairement réunies : on ne peut pas vérifier
+    /// la conformité d'une ACP sans l'avoir identifiée, et on ne veut pas
+    /// appeler des fonds au nom d'une ACP dont l'acte de base ne boucle pas
+    /// (Story H7, Art. 3.85 § 1er).
+    ///
+    /// **Le dépôt d'immeubles est requis.** Sans lui, on ne sait pas au nom de
+    /// qui l'argent est appelé — et un appel de fonds dont on ignore le
+    /// créancier n'a pas à exister. On échoue plutôt que de retomber sur
+    /// l'identifiant du syndic, qui est précisément la confusion que
+    /// l'ADR-0045 supprime.
+    ///
+    /// La vérification de conformité, elle, reste facultative : elle dépend du
+    /// dépôt d'ACP, câblé séparément.
+    async fn resoudre_lacp_conforme(&self, building_id: Uuid) -> Result<Uuid, String> {
+        let Some(building_repo) = &self.building_repository else {
+            return Err(
+                "Impossible d'appeler des fonds : l'ACP créancière n'est pas résoluble \
+                 (dépôt d'immeubles non câblé)"
+                    .to_string(),
+            );
         };
         let building = building_repo
             .find_by_id(building_id)
             .await?
             .ok_or_else(|| "Building not found".to_string())?;
+
+        self.verifier_conformite(building.acp_id).await?;
+        Ok(building.acp_id)
+    }
+
+    /// Vérifie que l'acte de base d'une ACP boucle, quand le dépôt est câblé.
+    ///
+    /// Facultatif à dessein : la conformité est un garde-fou de calcul
+    /// (Story H7), pas une condition d'identité. Une ACP non conforme existe,
+    /// elle n'est simplement pas en état qu'on réparte des charges dessus.
+    async fn verifier_conformite(&self, acp_id: Uuid) -> Result<(), String> {
+        let Some(acp_repo) = &self.acp_repository else {
+            return Ok(());
+        };
         let (acp, metrics) = acp_repo
-            .find_by_id_with_metrics(building.acp_id)
+            .find_by_id_with_metrics(acp_id)
             .await
             .map_err(|e| e.to_string())?
             .ok_or_else(|| "ACP not found".to_string())?;
@@ -86,11 +115,13 @@ impl CallForFundsUseCases {
         account_code: Option<String>,
         created_by: Option<Uuid>,
     ) -> Result<CallForFunds, String> {
-        // Track H Story H2 — validate-before-compute gate (Art. 3.85 CC).
-        self.assert_acp_conformant(building_id).await?;
+        // Track H Story H2 — validate-before-compute gate (Art. 3.85 CC),
+        // et résolution de l'ACP créancière (ADR-0045).
+        let acp_id = self.resoudre_lacp_conforme(building_id).await?;
 
         // Create the call for funds entity
         let mut call_for_funds = CallForFunds::new(
+            acp_id,
             organization_id,
             building_id,
             title,
@@ -142,8 +173,11 @@ impl CallForFundsUseCases {
 
         // Track H Story H2 — validate-before-compute gate (Art. 3.85 CC).
         // Le send génère les contributions — calcul interdit sur immeuble drift.
-        self.assert_acp_conformant(call_for_funds.building_id)
-            .await?;
+        //
+        // On interroge l'ACP portée par l'appel, pas celle de l'immeuble : la
+        // créance a été constituée au nom d'une ACP donnée, et c'est celle-là
+        // qui doit être conforme au moment où on répartit.
+        self.verifier_conformite(call_for_funds.acp_id).await?;
 
         // Mark as sent
         call_for_funds.mark_as_sent();
@@ -262,6 +296,7 @@ impl CallForFundsUseCases {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use rust_decimal_macros::dec;
     use crate::application::ports::{
         CallForFundsRepository, OwnerContributionRepository, UnitOwnerRepository,
     };
@@ -528,6 +563,91 @@ mod tests {
         }
     }
 
+    // ── Dépôt d'immeubles ─────────────────────────────────────────────
+    //
+    // Il n'était pas câblé dans ces tests, parce que la résolution de l'ACP
+    // n'existait pas. Elle est désormais obligatoire à la création : on ne
+    // lance pas un appel de fonds sans savoir qui en est créancier
+    // (ADR-0045).
+
+    struct MockBuildingRepo {
+        acp_id: Uuid,
+    }
+
+    impl MockBuildingRepo {
+        fn rattache_a(acp_id: Uuid) -> Self {
+            Self { acp_id }
+        }
+
+        fn immeuble(&self) -> crate::domain::entities::Building {
+            crate::domain::entities::Building::new(
+                self.acp_id,
+                "Résidence du Parc".to_string(),
+                "12 Rue de la Loi".to_string(),
+                "Brussels".to_string(),
+                "1000".to_string(),
+                "Belgium".to_string(),
+                10,
+                1000,
+                Some(2015),
+            )
+            .expect("immeuble valide")
+        }
+    }
+
+    #[async_trait]
+    impl BuildingRepository for MockBuildingRepo {
+        async fn create(
+            &self,
+            b: &crate::domain::entities::Building,
+        ) -> Result<crate::domain::entities::Building, String> {
+            Ok(b.clone())
+        }
+        async fn find_by_id(
+            &self,
+            _id: Uuid,
+        ) -> Result<Option<crate::domain::entities::Building>, String> {
+            Ok(Some(self.immeuble()))
+        }
+        async fn find_all(&self) -> Result<Vec<crate::domain::entities::Building>, String> {
+            Ok(vec![self.immeuble()])
+        }
+        async fn find_all_paginated(
+            &self,
+            _p: &crate::application::dto::PageRequest,
+            _f: &crate::application::dto::BuildingFilters,
+        ) -> Result<(Vec<crate::domain::entities::Building>, i64), String> {
+            Ok((vec![self.immeuble()], 1))
+        }
+        async fn update(
+            &self,
+            b: &crate::domain::entities::Building,
+        ) -> Result<crate::domain::entities::Building, String> {
+            Ok(b.clone())
+        }
+        async fn delete(&self, _id: Uuid) -> Result<bool, String> {
+            Ok(true)
+        }
+        async fn find_by_slug(
+            &self,
+            _slug: &str,
+        ) -> Result<Option<crate::domain::entities::Building>, String> {
+            Ok(Some(self.immeuble()))
+        }
+        async fn find_by_id_with_metrics(
+            &self,
+            _id: Uuid,
+        ) -> Result<
+            Option<(
+                crate::domain::entities::Building,
+                crate::domain::entities::BuildingMetrics,
+            )>,
+            String,
+        > {
+            Ok(None)
+        }
+    }
+
     // ── Helpers ───────────────────────────────────────────────────────
 
     fn make_use_cases(
@@ -535,7 +655,19 @@ mod tests {
         contrib_repo: Arc<dyn OwnerContributionRepository>,
         uo_repo: Arc<dyn UnitOwnerRepository>,
     ) -> CallForFundsUseCases {
-        CallForFundsUseCases::new(cff_repo, contrib_repo, uo_repo)
+        make_use_cases_pour_lacp(cff_repo, contrib_repo, uo_repo, Uuid::new_v4())
+    }
+
+    /// Les mêmes use-cases, mais en nommant l'ACP de l'immeuble.
+    fn make_use_cases_pour_lacp(
+        cff_repo: Arc<dyn CallForFundsRepository>,
+        contrib_repo: Arc<dyn OwnerContributionRepository>,
+        uo_repo: Arc<dyn UnitOwnerRepository>,
+        acp_id: Uuid,
+    ) -> CallForFundsUseCases {
+        let mut uc = CallForFundsUseCases::new(cff_repo, contrib_repo, uo_repo);
+        uc.building_repository = Some(Arc::new(MockBuildingRepo::rattache_a(acp_id)));
+        uc
     }
 
     fn sample_dates() -> (chrono::DateTime<Utc>, chrono::DateTime<Utc>) {
@@ -545,6 +677,84 @@ mod tests {
     }
 
     // ── 1. Create ─────────────────────────────────────────────────────
+
+    /// Art. 3.86 § 3 et ADR-0045 : l'ACP est créancière des fonds appelés.
+    ///
+    /// L'ACP se déduit de l'immeuble, jamais de l'appelant. Le lien
+    /// immeuble → ACP est fixé par l'acte de base ; un cabinet ne peut donc
+    /// pas appeler des fonds au nom d'une ACP qu'il désigne lui-même.
+    #[tokio::test]
+    async fn test_lappel_de_fonds_a_pour_creanciere_lacp_de_limmeuble() {
+        let acp_creanciere = Uuid::new_v4();
+        let cabinet_emetteur = Uuid::new_v4();
+
+        let uc = make_use_cases_pour_lacp(
+            Arc::new(MockCallForFundsRepo::new()),
+            Arc::new(MockOwnerContributionRepo::new()),
+            Arc::new(MockUnitOwnerRepo::new()),
+            acp_creanciere,
+        );
+        let (call_date, due_date) = sample_dates();
+
+        let appel = uc
+            .create_call_for_funds(
+                cabinet_emetteur,
+                Uuid::new_v4(),
+                "Provision T1 2026".to_string(),
+                "Charges ordinaires".to_string(),
+                dec!(10000),
+                ContributionType::Regular,
+                call_date,
+                due_date,
+                None,
+                None,
+            )
+            .await
+            .expect("création valide");
+
+        assert_eq!(
+            appel.acp_id, acp_creanciere,
+            "les fonds sont appelés au nom de l'ACP de l'immeuble"
+        );
+        assert_eq!(
+            appel.organization_id, cabinet_emetteur,
+            "le syndic reste tracé comme émetteur, sans devenir créancier"
+        );
+    }
+
+    /// Sans dépôt d'immeubles, on ne sait pas au nom de qui l'argent est
+    /// appelé. On refuse, plutôt que de retomber sur l'identifiant du syndic
+    /// — c'est exactement la confusion que l'ADR-0045 supprime.
+    #[tokio::test]
+    async fn test_pas_dappel_de_fonds_sans_creanciere_resoluble() {
+        let uc = CallForFundsUseCases::new(
+            Arc::new(MockCallForFundsRepo::new()),
+            Arc::new(MockOwnerContributionRepo::new()),
+            Arc::new(MockUnitOwnerRepo::new()),
+        );
+        let (call_date, due_date) = sample_dates();
+
+        let resultat = uc
+            .create_call_for_funds(
+                Uuid::new_v4(),
+                Uuid::new_v4(),
+                "Provision".to_string(),
+                "Charges".to_string(),
+                dec!(10000),
+                ContributionType::Regular,
+                call_date,
+                due_date,
+                None,
+                None,
+            )
+            .await;
+
+        let erreur = resultat.expect_err("doit refuser");
+        assert!(
+            erreur.contains("créancière"),
+            "le refus doit nommer ce qui manque, pas échouer obscurément : {erreur}"
+        );
+    }
 
     #[tokio::test]
     async fn test_create_call_for_funds_success() {
@@ -842,6 +1052,7 @@ mod tests {
         let call_date = Utc::now() - Duration::days(60);
         let due_date = Utc::now() - Duration::days(30);
         let overdue_cff = CallForFunds::new(
+            Uuid::new_v4(), // acp_id
             Uuid::new_v4(),
             Uuid::new_v4(),
             "Overdue call".to_string(),
