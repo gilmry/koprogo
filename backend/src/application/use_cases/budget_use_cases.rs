@@ -57,6 +57,7 @@ impl BudgetUseCases {
 
         // Create budget
         let mut budget = Budget::new(
+            Uuid::new_v4(), // acp_id
             request.organization_id,
             request.building_id,
             request.fiscal_year,

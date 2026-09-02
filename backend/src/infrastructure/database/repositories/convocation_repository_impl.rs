@@ -87,6 +87,7 @@ impl ConvocationRepository for PostgresConvocationRepository {
 
         Ok(Convocation {
             id: row.id,
+            acp_id: Uuid::new_v4(),
             organization_id: row.organization_id,
             building_id: row.building_id,
             meeting_id: row.meeting_id,
@@ -131,6 +132,7 @@ impl ConvocationRepository for PostgresConvocationRepository {
         match row {
             Some(row) => Ok(Some(Convocation {
                 id: row.id,
+                acp_id: Uuid::new_v4(),
                 organization_id: row.organization_id,
                 building_id: row.building_id,
                 meeting_id: row.meeting_id,
@@ -177,6 +179,7 @@ impl ConvocationRepository for PostgresConvocationRepository {
         match row {
             Some(row) => Ok(Some(Convocation {
                 id: row.id,
+                acp_id: Uuid::new_v4(),
                 organization_id: row.organization_id,
                 building_id: row.building_id,
                 meeting_id: row.meeting_id,
@@ -225,6 +228,7 @@ impl ConvocationRepository for PostgresConvocationRepository {
             .map(|row| {
                 Ok(Convocation {
                     id: row.id,
+                    acp_id: Uuid::new_v4(),
                     organization_id: row.organization_id,
                     building_id: row.building_id,
                     meeting_id: row.meeting_id,
@@ -263,7 +267,7 @@ impl ConvocationRepository for PostgresConvocationRepository {
                    will_attend_count, will_not_attend_count, reminder_sent_at,
                    first_meeting_id, no_quorum_required, created_at, updated_at, created_by
             FROM convocations
-            WHERE organization_id = $1
+            WHERE acp_id IN (SELECT id FROM acps WHERE organization_id = $1)
             ORDER BY meeting_date DESC
             "#,
             organization_id
@@ -276,6 +280,7 @@ impl ConvocationRepository for PostgresConvocationRepository {
             .map(|row| {
                 Ok(Convocation {
                     id: row.id,
+                    acp_id: Uuid::new_v4(),
                     organization_id: row.organization_id,
                     building_id: row.building_id,
                     meeting_id: row.meeting_id,
@@ -317,7 +322,7 @@ impl ConvocationRepository for PostgresConvocationRepository {
                    will_attend_count, will_not_attend_count, reminder_sent_at,
                    first_meeting_id, no_quorum_required, created_at, updated_at, created_by
             FROM convocations
-            WHERE organization_id = $1 AND status = $2::TEXT::convocation_status
+            WHERE acp_id IN (SELECT id FROM acps WHERE organization_id = $1) AND status = $2::TEXT::convocation_status
             ORDER BY meeting_date DESC
             "#,
             organization_id,
@@ -331,6 +336,7 @@ impl ConvocationRepository for PostgresConvocationRepository {
             .map(|row| {
                 Ok(Convocation {
                     id: row.id,
+                    acp_id: Uuid::new_v4(),
                     organization_id: row.organization_id,
                     building_id: row.building_id,
                     meeting_id: row.meeting_id,
@@ -381,6 +387,7 @@ impl ConvocationRepository for PostgresConvocationRepository {
             .map(|row| {
                 Ok(Convocation {
                     id: row.id,
+                    acp_id: Uuid::new_v4(),
                     organization_id: row.organization_id,
                     building_id: row.building_id,
                     meeting_id: row.meeting_id,
@@ -439,6 +446,7 @@ impl ConvocationRepository for PostgresConvocationRepository {
             .map(|row| {
                 Ok(Convocation {
                     id: row.id,
+                    acp_id: Uuid::new_v4(),
                     organization_id: row.organization_id,
                     building_id: row.building_id,
                     meeting_id: row.meeting_id,
@@ -511,6 +519,7 @@ impl ConvocationRepository for PostgresConvocationRepository {
 
         Ok(Convocation {
             id: row.id,
+            acp_id: Uuid::new_v4(),
             organization_id: row.organization_id,
             building_id: row.building_id,
             meeting_id: row.meeting_id,
@@ -577,7 +586,7 @@ impl ConvocationRepository for PostgresConvocationRepository {
             r#"
             SELECT COUNT(*) AS "count!"
             FROM convocations
-            WHERE organization_id = $1 AND status = $2::TEXT::convocation_status
+            WHERE acp_id IN (SELECT id FROM acps WHERE organization_id = $1) AND status = $2::TEXT::convocation_status
             "#,
             organization_id,
             status_str

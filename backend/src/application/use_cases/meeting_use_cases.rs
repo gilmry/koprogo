@@ -138,6 +138,7 @@ impl MeetingUseCases {
         request: CreateMeetingRequest,
     ) -> Result<MeetingResponse, String> {
         let mut meeting = Meeting::new(
+            Uuid::new_v4(), // acp_id
             request.organization_id,
             request.building_id,
             request.meeting_type,
@@ -431,6 +432,7 @@ mod tests {
     /// Helper to build a valid Meeting for testing purposes.
     fn make_meeting(building_id: Uuid, org_id: Uuid) -> Meeting {
         Meeting::new(
+            Uuid::new_v4(), // acp_id
             org_id,
             building_id,
             MeetingType::Ordinary,

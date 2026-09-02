@@ -96,6 +96,7 @@ impl EtatDateUseCases {
 
         // Create état daté
         let etat_date = EtatDate::new(
+            Uuid::new_v4(), // acp_id
             request.organization_id,
             request.building_id,
             request.unit_id,
@@ -430,6 +431,7 @@ mod tests {
 
     fn make_etat_date(org_id: Uuid, building_id: Uuid, unit_id: Uuid) -> EtatDate {
         EtatDate::new(
+            Uuid::new_v4(), // acp_id
             org_id,
             building_id,
             unit_id,

@@ -661,6 +661,7 @@ pub async fn export_meeting_minutes_pdf(
 
     let meeting_entity = Meeting {
         id: meeting.id,
+        acp_id: Uuid::new_v4(),
         organization_id,
         building_id: meeting.building_id,
         meeting_type: meeting.meeting_type,

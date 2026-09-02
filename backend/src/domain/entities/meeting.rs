@@ -23,6 +23,12 @@ pub enum MeetingStatus {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct Meeting {
     pub id: Uuid,
+    /// L'ACP à qui cet enregistrement appartient.
+    ///
+    /// Clé de rattachement patrimonial : la copropriété le conserve
+    /// quand elle change de syndic. `organization_id` reste, distinct,
+    /// pour la traçabilité de qui l'a saisi.
+    pub acp_id: Uuid,
     pub organization_id: Uuid,
     pub building_id: Uuid,
     pub meeting_type: MeetingType,
@@ -49,6 +55,7 @@ pub struct Meeting {
 
 impl Meeting {
     pub fn new(
+        acp_id: Uuid,
         organization_id: Uuid,
         building_id: Uuid,
         meeting_type: MeetingType,
@@ -67,6 +74,7 @@ impl Meeting {
         let now = Utc::now();
         Ok(Self {
             id: Uuid::new_v4(),
+            acp_id,
             organization_id,
             building_id,
             meeting_type,
@@ -511,6 +519,7 @@ mod tests {
         let future_date = Utc::now() + Duration::days(30);
 
         let meeting = Meeting::new(
+            Uuid::new_v4(), // acp_id
             org_id,
             building_id,
             MeetingType::Ordinary,
@@ -534,6 +543,7 @@ mod tests {
         let future_date = Utc::now() + Duration::days(30);
 
         let mut meeting = Meeting::new(
+            Uuid::new_v4(), // acp_id
             org_id,
             building_id,
             MeetingType::Ordinary,
@@ -556,6 +566,7 @@ mod tests {
         let future_date = Utc::now() + Duration::days(30);
 
         let mut meeting = Meeting::new(
+            Uuid::new_v4(), // acp_id
             org_id,
             building_id,
             MeetingType::Ordinary,
@@ -580,6 +591,7 @@ mod tests {
         let future_date = Utc::now() + Duration::days(30);
 
         let mut meeting = Meeting::new(
+            Uuid::new_v4(), // acp_id
             org_id,
             building_id,
             MeetingType::Ordinary,
@@ -603,6 +615,7 @@ mod tests {
         let future_date = Utc::now() + Duration::days(30);
 
         let mut meeting = Meeting::new(
+            Uuid::new_v4(), // acp_id
             org_id,
             building_id,
             MeetingType::Ordinary,
@@ -625,6 +638,7 @@ mod tests {
         let future_date = Utc::now() + Duration::days(30);
 
         let mut meeting = Meeting::new(
+            Uuid::new_v4(), // acp_id
             org_id,
             building_id,
             MeetingType::Ordinary,
@@ -650,6 +664,7 @@ mod tests {
         let future_date = Utc::now() + Duration::days(30);
 
         let mut meeting = Meeting::new(
+            Uuid::new_v4(), // acp_id
             org_id,
             building_id,
             MeetingType::Ordinary,
@@ -674,6 +689,7 @@ mod tests {
         let future_date = Utc::now() + Duration::days(30);
 
         let mut meeting = Meeting::new(
+            Uuid::new_v4(), // acp_id
             org_id,
             building_id,
             MeetingType::Ordinary,
@@ -698,6 +714,7 @@ mod tests {
         let future_date = Utc::now() + Duration::days(30);
 
         let meeting = Meeting::new(
+            Uuid::new_v4(), // acp_id
             org_id,
             building_id,
             MeetingType::Ordinary,
@@ -721,6 +738,7 @@ mod tests {
         let future_date = Utc::now() + Duration::days(30);
 
         let mut meeting = Meeting::new(
+            Uuid::new_v4(), // acp_id
             org_id,
             building_id,
             MeetingType::Extraordinary,
@@ -746,6 +764,7 @@ mod tests {
         let future_date = Utc::now() + Duration::days(30);
 
         let mut meeting = Meeting::new(
+            Uuid::new_v4(), // acp_id
             org_id,
             building_id,
             MeetingType::Ordinary,
@@ -769,6 +788,7 @@ mod tests {
         let future_date = Utc::now() + Duration::days(30);
 
         let mut meeting = Meeting::new(
+            Uuid::new_v4(), // acp_id
             org_id,
             building_id,
             MeetingType::Ordinary,
@@ -790,6 +810,7 @@ mod tests {
         let future_date = Utc::now() + Duration::days(30);
 
         let mut meeting = Meeting::new(
+            Uuid::new_v4(), // acp_id
             org_id,
             building_id,
             MeetingType::Ordinary,
@@ -815,6 +836,7 @@ mod tests {
         let doc_id = Uuid::new_v4();
 
         let mut meeting = Meeting::new(
+            Uuid::new_v4(), // acp_id
             org_id,
             building_id,
             MeetingType::Ordinary,
@@ -844,6 +866,7 @@ mod tests {
         let doc_id = Uuid::new_v4();
 
         let mut meeting = Meeting::new(
+            Uuid::new_v4(), // acp_id
             org_id,
             building_id,
             MeetingType::Ordinary,
@@ -873,6 +896,7 @@ mod tests {
         let future_date = Utc::now() + Duration::days(30);
 
         let meeting = Meeting::new(
+            Uuid::new_v4(), // acp_id
             org_id,
             building_id,
             MeetingType::Ordinary,
@@ -896,6 +920,7 @@ mod tests {
         let doc_id = Uuid::new_v4();
 
         let mut meeting = Meeting::new(
+            Uuid::new_v4(), // acp_id
             org_id,
             building_id,
             MeetingType::Ordinary,
@@ -922,6 +947,7 @@ mod tests {
         let future_date = Utc::now() + Duration::days(30);
 
         let mut meeting = Meeting::new(
+            Uuid::new_v4(), // acp_id
             org_id,
             building_id,
             MeetingType::Ordinary,
@@ -948,6 +974,7 @@ mod tests {
         let future_date = Utc::now() + Duration::days(30);
 
         let mut meeting = Meeting::new(
+            Uuid::new_v4(), // acp_id
             org_id,
             building_id,
             MeetingType::Ordinary,
@@ -981,6 +1008,7 @@ mod assert_can_complete_tests {
         let org_id = Uuid::new_v4();
         let building_id = Uuid::new_v4();
         Meeting::new(
+            Uuid::new_v4(), // acp_id
             org_id,
             building_id,
             MeetingType::Ordinary,

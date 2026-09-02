@@ -35,6 +35,7 @@ fn row_to_meeting(row: &sqlx::postgres::PgRow) -> Meeting {
 
     Meeting {
         id: row.get("id"),
+        acp_id: Uuid::new_v4(),
         organization_id: row.get("organization_id"),
         building_id: row.get("building_id"),
         meeting_type,
@@ -210,7 +211,10 @@ impl MeetingRepository for PostgresMeetingRepository {
         page_request.validate()?;
 
         let where_clause = if let Some(org_id) = organization_id {
-            format!("WHERE organization_id = '{}'", org_id)
+            format!(
+                "WHERE acp_id IN (SELECT id FROM acps WHERE organization_id = '{}')",
+                org_id
+            )
         } else {
             String::new()
         };

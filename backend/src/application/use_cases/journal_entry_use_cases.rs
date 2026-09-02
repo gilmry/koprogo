@@ -104,6 +104,7 @@ impl JournalEntryUseCases {
         // Create journal entry
         let journal_entry = JournalEntry {
             id: entry_id,
+            acp_id: Uuid::new_v4(),
             organization_id,
             building_id,
             entry_date,
@@ -602,6 +603,7 @@ mod tests {
             let mut entries = repo.entries.lock().unwrap();
             let auto_entry = JournalEntry {
                 id: entry_id,
+                acp_id: Uuid::new_v4(),
                 organization_id: org_id,
                 building_id: None,
                 entry_date: Utc::now(),

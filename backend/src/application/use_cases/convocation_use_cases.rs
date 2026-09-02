@@ -46,6 +46,7 @@ impl ConvocationUseCases {
     ) -> Result<ConvocationResponse, String> {
         // Create domain entity (validates legal deadline)
         let convocation = Convocation::new(
+            Uuid::new_v4(), // acp_id
             organization_id,
             request.building_id,
             request.meeting_id,
@@ -445,6 +446,7 @@ impl ConvocationUseCases {
         // Create the second convocation using the domain entity constructor
         // This validates that the second meeting is at least 15 days after the first
         let second_convocation = Convocation::new_second_convocation(
+            Uuid::new_v4(), // acp_id
             organization_id,
             building_id,
             new_meeting_id,
@@ -628,6 +630,7 @@ mod tests {
     fn make_convocation(org_id: Uuid, building_id: Uuid, meeting_id: Uuid) -> Convocation {
         let meeting_date = Utc::now() + Duration::days(20);
         Convocation::new(
+            Uuid::new_v4(), // acp_id
             org_id,
             building_id,
             meeting_id,

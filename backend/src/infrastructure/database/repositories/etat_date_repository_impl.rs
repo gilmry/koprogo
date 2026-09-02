@@ -244,8 +244,8 @@ impl EtatDateRepository for PostgresEtatDateRepository {
         let mut count_query_str = String::from("SELECT COUNT(*) FROM etats_dates WHERE 1=1");
 
         if organization_id.is_some() {
-            query_str.push_str(" AND organization_id = $1");
-            count_query_str.push_str(" AND organization_id = $1");
+            query_str.push_str(" AND acp_id IN (SELECT id FROM acps WHERE organization_id = $1)");
+            count_query_str.push_str(" AND acp_id IN (SELECT id FROM acps WHERE organization_id = $1)");
         }
 
         if status.is_some() {
@@ -338,7 +338,7 @@ impl EtatDateRepository for PostgresEtatDateRepository {
                 additional_data, pdf_file_path,
                 created_at, updated_at
             FROM etats_dates
-            WHERE organization_id = $1
+            WHERE acp_id IN (SELECT id FROM acps WHERE organization_id = $1)
               AND status IN ('requested', 'in_progress')
               AND requested_date < NOW() - INTERVAL '15 days'
             ORDER BY requested_date ASC
@@ -370,7 +370,7 @@ impl EtatDateRepository for PostgresEtatDateRepository {
                 additional_data, pdf_file_path,
                 created_at, updated_at
             FROM etats_dates
-            WHERE organization_id = $1
+            WHERE acp_id IN (SELECT id FROM acps WHERE organization_id = $1)
               AND reference_date < NOW() - INTERVAL '90 days'
             ORDER BY reference_date ASC
             "#,
@@ -454,7 +454,7 @@ impl EtatDateRepository for PostgresEtatDateRepository {
                 COUNT(*) FILTER (WHERE status IN ('requested', 'in_progress') AND requested_date < NOW() - INTERVAL '15 days') as overdue_count,
                 COALESCE(AVG(EXTRACT(EPOCH FROM (COALESCE(generated_date, NOW()) - requested_date)) / 86400), 0)::FLOAT8 as avg_processing_days
             FROM etats_dates
-            WHERE organization_id = $1
+            WHERE acp_id IN (SELECT id FROM acps WHERE organization_id = $1)
             "#,
         )
         .bind(organization_id)
@@ -488,7 +488,7 @@ impl EtatDateRepository for PostgresEtatDateRepository {
         };
 
         let count = sqlx::query_scalar::<_, i64>(
-            "SELECT COUNT(*) FROM etats_dates WHERE organization_id = $1 AND status = CAST($2 AS etat_date_status)",
+            "SELECT COUNT(*) FROM etats_dates WHERE acp_id IN (SELECT id FROM acps WHERE organization_id = $1) AND status = CAST($2 AS etat_date_status)",
         )
         .bind(organization_id)
         .bind(status_str)
@@ -520,6 +520,7 @@ impl PostgresEtatDateRepository {
 
         EtatDate {
             id: row.get("id"),
+            acp_id: Uuid::new_v4(),
             organization_id: row.get("organization_id"),
             building_id: row.get("building_id"),
             unit_id: row.get("unit_id"),

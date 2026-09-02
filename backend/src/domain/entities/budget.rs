@@ -22,6 +22,12 @@ pub enum BudgetStatus {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct Budget {
     pub id: Uuid,
+    /// L'ACP à qui cet enregistrement appartient.
+    ///
+    /// Clé de rattachement patrimonial : la copropriété le conserve
+    /// quand elle change de syndic. `organization_id` reste, distinct,
+    /// pour la traçabilité de qui l'a saisi.
+    pub acp_id: Uuid,
     pub organization_id: Uuid,
     pub building_id: Uuid,
 
@@ -62,6 +68,7 @@ pub struct Budget {
 
 impl Budget {
     pub fn new(
+        acp_id: Uuid,
         organization_id: Uuid,
         building_id: Uuid,
         fiscal_year: i32,
@@ -93,6 +100,7 @@ impl Budget {
         let now = Utc::now();
         Ok(Self {
             id: Uuid::new_v4(),
+            acp_id,
             organization_id,
             building_id,
             fiscal_year,
@@ -234,6 +242,7 @@ mod tests {
     fn happy_monthly_provision_is_exact_decimal() {
         // 75000 / 12 = 6250 exact (Decimal, pas de dérive en virgule flottante).
         let b = Budget::new(
+            Uuid::new_v4(), // acp_id
             Uuid::new_v4(),
             Uuid::new_v4(),
             2025,
@@ -257,6 +266,7 @@ mod tests {
     fn security_large_budget_no_overflow() {
         // Decimal supporte ~7.9e28 : un budget géant ne panique pas.
         let b = Budget::new(
+            Uuid::new_v4(), // acp_id
             Uuid::new_v4(),
             Uuid::new_v4(),
             2025,

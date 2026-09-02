@@ -143,7 +143,7 @@ impl JournalEntryRepository for PostgresJournalEntryRepository {
                 id, organization_id, building_id, entry_date, description, document_ref,
                 journal_type, expense_id, contribution_id, created_at, updated_at, created_by
             FROM journal_entries
-            WHERE organization_id = $1
+            WHERE acp_id IN (SELECT id FROM acps WHERE organization_id = $1)
             ORDER BY entry_date DESC, created_at DESC
             "#,
             organization_id
@@ -229,7 +229,7 @@ impl JournalEntryRepository for PostgresJournalEntryRepository {
                 id, organization_id, building_id, entry_date, description, document_ref,
                 journal_type, expense_id, contribution_id, created_at, updated_at, created_by
             FROM journal_entries
-            WHERE organization_id = $1
+            WHERE acp_id IN (SELECT id FROM acps WHERE organization_id = $1)
               AND entry_date >= $2
               AND entry_date <= $3
             ORDER BY entry_date, created_at
@@ -260,6 +260,9 @@ impl JournalEntryRepository for PostgresJournalEntryRepository {
             r#"
             SELECT account_code, balance
             FROM account_balances
+            -- `account_balances` agrege deja par organisation et ne porte pas
+            -- d'`acp_id` : la recentrer suppose de revoir la vue elle-meme.
+            -- Consigne dans docs/MODELE_ACP_CENTRE.md, tranche restante.
             WHERE organization_id = $1
             "#,
             organization_id
@@ -296,7 +299,11 @@ impl JournalEntryRepository for PostgresJournalEntryRepository {
             JOIN journal_entries je ON je.id = jel.journal_entry_id
             JOIN accounts a ON a.organization_id = jel.organization_id
                            AND a.code = jel.account_code
-            WHERE jel.organization_id = $1
+            -- Portée par ACP : les lignes portent leur propre
+            -- `organization_id`, mais c'est l'ÉCRITURE qui appartient à une
+            -- ACP. Filtrer sur la ligne ferait suivre le bilan le cabinet
+            -- plutôt que la copropriété.
+            WHERE je.acp_id IN (SELECT id FROM acps WHERE organization_id = $1)
               AND je.entry_date >= $2
               AND je.entry_date <= $3
             GROUP BY jel.account_code, a.account_type
@@ -345,7 +352,12 @@ impl JournalEntryRepository for PostgresJournalEntryRepository {
                 jel.description,
                 jel.created_at
             FROM journal_entry_lines jel
-            WHERE jel.organization_id = $1
+            -- Portée par ACP : la ligne porte son propre `organization_id`,
+            -- mais c'est l'ÉCRITURE qui appartient à une copropriété. Filtrer
+            -- sur la ligne ferait suivre le grand livre le cabinet plutôt que
+            -- l'ACP — d'où la jointure.
+            JOIN journal_entries je ON je.id = jel.journal_entry_id
+            WHERE je.acp_id IN (SELECT id FROM acps WHERE organization_id = $1)
               AND jel.account_code = $2
             ORDER BY jel.created_at
             "#,
@@ -395,7 +407,11 @@ impl JournalEntryRepository for PostgresJournalEntryRepository {
             FROM journal_entry_lines jel
             JOIN journal_entries je ON jel.journal_entry_id = je.id
             LEFT JOIN expenses e ON je.expense_id = e.id
-            WHERE jel.organization_id = $1
+            -- Portée par ACP : les lignes portent leur propre
+            -- `organization_id`, mais c'est l'ÉCRITURE qui appartient à une
+            -- ACP. Filtrer sur la ligne ferait suivre le bilan le cabinet
+            -- plutôt que la copropriété.
+            WHERE je.acp_id IN (SELECT id FROM acps WHERE organization_id = $1)
               AND (e.building_id = $2 OR e.building_id IS NULL)
             GROUP BY jel.account_code
             "#,
@@ -449,7 +465,11 @@ impl JournalEntryRepository for PostgresJournalEntryRepository {
             FROM journal_entry_lines jel
             JOIN journal_entries je ON jel.journal_entry_id = je.id
             LEFT JOIN expenses e ON je.expense_id = e.id
-            WHERE jel.organization_id = $1
+            -- Portée par ACP : les lignes portent leur propre
+            -- `organization_id`, mais c'est l'ÉCRITURE qui appartient à une
+            -- ACP. Filtrer sur la ligne ferait suivre le bilan le cabinet
+            -- plutôt que la copropriété.
+            WHERE je.acp_id IN (SELECT id FROM acps WHERE organization_id = $1)
               AND (e.building_id = $2 OR e.building_id IS NULL)
               AND je.entry_date >= $3
               AND je.entry_date <= $4
@@ -722,6 +742,7 @@ impl JournalEntryRow {
     fn into_journal_entry(self, lines: Vec<JournalEntryLine>) -> JournalEntry {
         JournalEntry {
             id: self.id,
+            acp_id: Uuid::new_v4(),
             organization_id: self.organization_id,
             building_id: self.building_id,
             entry_date: self.entry_date,

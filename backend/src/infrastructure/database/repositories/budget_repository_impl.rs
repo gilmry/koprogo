@@ -46,6 +46,7 @@ impl PostgresBudgetRepository {
 
         Budget {
             id: row.get("id"),
+            acp_id: Uuid::new_v4(),
             organization_id: row.get("organization_id"),
             building_id: row.get("building_id"),
             fiscal_year: row.get("fiscal_year"),
@@ -182,7 +183,7 @@ impl BudgetRepository for PostgresBudgetRepository {
         organization_id: Uuid,
         fiscal_year: i32,
     ) -> Result<Vec<Budget>, AppError> {
-        let sql = format!("SELECT {} FROM budgets WHERE organization_id = $1 AND fiscal_year = $2 ORDER BY created_at DESC", BUDGET_COLUMNS);
+        let sql = format!("SELECT {} FROM budgets WHERE acp_id IN (SELECT id FROM acps WHERE organization_id = $1) AND fiscal_year = $2 ORDER BY created_at DESC", BUDGET_COLUMNS);
         let rows = sqlx::query(&sql)
             .bind(organization_id)
             .bind(fiscal_year)
@@ -209,7 +210,7 @@ impl BudgetRepository for PostgresBudgetRepository {
             BudgetStatus::Archived => "archived",
         };
 
-        let sql = format!("SELECT {} FROM budgets WHERE organization_id = $1 AND status = $2::budget_status ORDER BY created_at DESC", BUDGET_COLUMNS);
+        let sql = format!("SELECT {} FROM budgets WHERE acp_id IN (SELECT id FROM acps WHERE organization_id = $1) AND status = $2::budget_status ORDER BY created_at DESC", BUDGET_COLUMNS);
         let rows = sqlx::query(&sql)
             .bind(organization_id)
             .bind(status_str)
@@ -240,8 +241,8 @@ impl BudgetRepository for PostgresBudgetRepository {
         let mut bindings: Vec<String> = Vec::new();
 
         if let Some(org_id) = organization_id {
-            query.push_str(&format!(" AND organization_id = ${}::uuid", bind_index));
-            count_query.push_str(&format!(" AND organization_id = ${}::uuid", bind_index));
+            query.push_str(&format!(" AND acp_id IN (SELECT id FROM acps WHERE organization_id = ${}::uuid)", bind_index));
+            count_query.push_str(&format!(" AND acp_id IN (SELECT id FROM acps WHERE organization_id = ${}::uuid)", bind_index));
             bindings.push(org_id.to_string());
             bind_index += 1;
         }
@@ -380,7 +381,7 @@ impl BudgetRepository for PostgresBudgetRepository {
                 COALESCE(AVG(total_budget), 0) as average_total_budget,
                 COALESCE(AVG(monthly_provision_amount), 0) as average_monthly_provision
             FROM budgets
-            WHERE organization_id = $1
+            WHERE acp_id IN (SELECT id FROM acps WHERE organization_id = $1)
             "#,
         )
         .bind(organization_id)

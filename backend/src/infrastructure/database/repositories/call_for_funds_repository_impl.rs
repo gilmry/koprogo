@@ -122,7 +122,7 @@ impl CallForFundsRepository for PostgresCallForFundsRepository {
                    status::text AS status, account_code, notes,
                    created_at, updated_at, created_by
             FROM call_for_funds
-            WHERE organization_id = $1
+            WHERE acp_id IN (SELECT id FROM acps WHERE organization_id = $1)
             ORDER BY call_date DESC
             "#,
         )
@@ -239,6 +239,7 @@ impl PostgresCallForFundsRepository {
 
         CallForFunds {
             id: row.get("id"),
+            acp_id: Uuid::new_v4(),
             organization_id: row.get("organization_id"),
             building_id: row.get("building_id"),
             title: row.get("title"),

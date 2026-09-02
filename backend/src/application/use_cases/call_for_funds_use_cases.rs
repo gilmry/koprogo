@@ -91,6 +91,7 @@ impl CallForFundsUseCases {
 
         // Create the call for funds entity
         let mut call_for_funds = CallForFunds::new(
+            Uuid::new_v4(), // acp_id
             organization_id,
             building_id,
             title,
@@ -842,6 +843,7 @@ mod tests {
         let call_date = Utc::now() - Duration::days(60);
         let due_date = Utc::now() - Duration::days(30);
         let overdue_cff = CallForFunds::new(
+            Uuid::new_v4(), // acp_id
             Uuid::new_v4(),
             Uuid::new_v4(),
             "Overdue call".to_string(),

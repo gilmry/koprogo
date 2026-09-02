@@ -32,6 +32,12 @@ use uuid::Uuid;
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct JournalEntry {
     pub id: Uuid,
+    /// L'ACP à qui cet enregistrement appartient.
+    ///
+    /// Clé de rattachement patrimonial : la copropriété le conserve
+    /// quand elle change de syndic. `organization_id` reste, distinct,
+    /// pour la traçabilité de qui l'a saisi.
+    pub acp_id: Uuid,
     pub organization_id: Uuid,
     /// Optional link to building for building-specific accounting
     pub building_id: Option<Uuid>,
@@ -178,6 +184,7 @@ impl JournalEntry {
     /// - `Err(String)` if validation fails
     #[allow(clippy::too_many_arguments)]
     pub fn new(
+        acp_id: Uuid,
         organization_id: Uuid,
         building_id: Option<Uuid>,
         entry_date: DateTime<Utc>,
@@ -212,6 +219,7 @@ impl JournalEntry {
         let now = Utc::now();
         Ok(Self {
             id: Uuid::new_v4(),
+            acp_id,
             organization_id,
             building_id,
             entry_date,
@@ -396,6 +404,7 @@ mod tests {
         ];
 
         let entry = JournalEntry::new(
+            Uuid::new_v4(), // acp_id
             org_id,
             None, // building_id
             Utc::now(),
@@ -429,6 +438,7 @@ mod tests {
         ];
 
         let entry = JournalEntry::new(
+            Uuid::new_v4(), // acp_id
             org_id,
             None, // building_id
             Utc::now(),
@@ -466,6 +476,7 @@ mod tests {
         };
 
         let entry = JournalEntry::new(
+            Uuid::new_v4(), // acp_id
             org_id,
             None,
             Utc::now(),
@@ -503,6 +514,7 @@ mod tests {
         };
 
         let entry = JournalEntry::new(
+            Uuid::new_v4(), // acp_id
             org_id,
             None,
             Utc::now(),
@@ -542,6 +554,7 @@ mod tests {
         ];
 
         let entry = JournalEntry::new(
+            Uuid::new_v4(), // acp_id
             org_id,
             None,
             Utc::now(),
@@ -578,6 +591,7 @@ mod tests {
         ];
 
         let entry = JournalEntry::new(
+            Uuid::new_v4(), // acp_id
             org_id,
             None,
             Utc::now(),
@@ -637,6 +651,7 @@ mod tests {
         ];
 
         let result = JournalEntry::new(
+            Uuid::new_v4(), // acp_id
             org_id,
             None,
             Utc::now(),
