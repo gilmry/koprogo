@@ -28,6 +28,9 @@ pub struct UpdateBudgetRequest {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BudgetResponse {
     pub id: Uuid,
+    /// L'ACP dont ce budget est le budget (ADR-0045).
+    pub acp_id: Uuid,
+    /// Le syndic qui l'a préparé. Trace d'auteur, pas un droit d'accès.
     pub organization_id: Uuid,
     pub building_id: Uuid,
     pub fiscal_year: i32,
@@ -54,6 +57,7 @@ impl From<Budget> for BudgetResponse {
 
         Self {
             id: budget.id,
+            acp_id: budget.acp_id,
             organization_id: budget.organization_id,
             building_id: budget.building_id,
             fiscal_year: budget.fiscal_year,

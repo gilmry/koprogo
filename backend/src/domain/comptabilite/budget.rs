@@ -22,6 +22,19 @@ pub enum BudgetStatus {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct Budget {
     pub id: Uuid,
+
+    /// L'ACP dont ce budget est le budget.
+    ///
+    /// Deux faits distincts, et c'est leur confusion qui a fait appartenir le
+    /// dossier de gestion au syndic (ADR-0045) : le budget prévisionnel est
+    /// **préparé par** le syndic (Art. 3.89 § 5, 16°) mais **appartient à**
+    /// l'ACP, qui le vote et le supporte. Le mandat change, le budget reste.
+    pub acp_id: Uuid,
+
+    /// Le syndic qui a préparé ce budget, conservé comme trace d'auteur.
+    ///
+    /// N'entre dans aucun prédicat d'autorisation : le périmètre d'un syndic
+    /// se dérive de son mandat, cf. `perimetre_du_mandataire`.
     pub organization_id: Uuid,
     pub building_id: Uuid,
 
@@ -62,6 +75,7 @@ pub struct Budget {
 
 impl Budget {
     pub fn new(
+        acp_id: Uuid,
         organization_id: Uuid,
         building_id: Uuid,
         fiscal_year: i32,
@@ -93,6 +107,7 @@ impl Budget {
         let now = Utc::now();
         Ok(Self {
             id: Uuid::new_v4(),
+            acp_id,
             organization_id,
             building_id,
             fiscal_year,
@@ -228,18 +243,32 @@ mod tests {
     use super::*;
     use rust_decimal_macros::dec;
 
+    /// Un budget de test, pour une ACP anonyme préparé par un syndic anonyme.
+    ///
+    /// Le premier identifiant est celui de l'ACP, pas du syndic : c'est elle
+    /// qui vote le budget et le supporte (Art. 3.89 § 5, 16°). Les tests qui
+    /// ont besoin de nommer l'ACP appellent `Budget::new` directement.
+    fn budget_quelconque(
+        fiscal_year: i32,
+        ordinaire: Decimal,
+        extraordinaire: Decimal,
+    ) -> Result<Budget, String> {
+        Budget::new(
+            Uuid::new_v4(),
+            Uuid::new_v4(),
+            Uuid::new_v4(),
+            fiscal_year,
+            ordinaire,
+            extraordinaire,
+        )
+    }
+
     // ----- Story H11 (CL4) — montants Budget en Decimal exact (4-cat) --------
 
     #[test]
     fn happy_monthly_provision_is_exact_decimal() {
         // 75000 / 12 = 6250 exact (Decimal, pas de dérive en virgule flottante).
-        let b = Budget::new(
-            Uuid::new_v4(),
-            Uuid::new_v4(),
-            2025,
-            dec!(50000),
-            dec!(25000),
-        )
+        let b = budget_quelconque(2025, dec!(50000), dec!(25000))
         .unwrap();
         assert_eq!(b.total_budget, dec!(75000));
         assert_eq!(b.monthly_provision_amount, dec!(6250));
@@ -249,37 +278,32 @@ mod tests {
     fn edge_no_floating_point_drift_on_sum() {
         // En virgule flottante binaire, 0.10 + 0.20 != 0.30 (dérive IEEE 754).
         // En Decimal c'est 0.30 exact.
-        let b = Budget::new(Uuid::new_v4(), Uuid::new_v4(), 2025, dec!(0.10), dec!(0.20)).unwrap();
+        let b = budget_quelconque(2025, dec!(0.10), dec!(0.20)).unwrap();
         assert_eq!(b.total_budget, dec!(0.30));
     }
 
     #[test]
     fn security_large_budget_no_overflow() {
         // Decimal supporte ~7.9e28 : un budget géant ne panique pas.
-        let b = Budget::new(
-            Uuid::new_v4(),
-            Uuid::new_v4(),
-            2025,
-            dec!(900000000000),
-            dec!(100000000000),
-        )
+        let b = budget_quelconque(2025, dec!(900000000000), dec!(100000000000))
         .unwrap();
         assert_eq!(b.total_budget, dec!(1000000000000));
     }
 
     #[test]
     fn negative_budget_rejected_typed() {
-        let r = Budget::new(Uuid::new_v4(), Uuid::new_v4(), 2025, dec!(-1), dec!(0));
+        let r = budget_quelconque(2025, dec!(-1), dec!(0));
         assert!(r.is_err());
         assert!(r.unwrap_err().contains("negative"));
     }
 
     #[test]
     fn test_create_budget_success() {
+        let acp_id = Uuid::new_v4();
         let org_id = Uuid::new_v4();
         let building_id = Uuid::new_v4();
 
-        let budget = Budget::new(org_id, building_id, 2025, dec!(50000), dec!(25000));
+        let budget = Budget::new(acp_id, org_id, building_id, 2025, dec!(50000), dec!(25000));
 
         assert!(budget.is_ok());
         let b = budget.unwrap();
@@ -293,10 +317,11 @@ mod tests {
 
     #[test]
     fn test_create_budget_invalid_year() {
+        let acp_id = Uuid::new_v4();
         let org_id = Uuid::new_v4();
         let building_id = Uuid::new_v4();
 
-        let result = Budget::new(org_id, building_id, 1999, dec!(50000), dec!(25000));
+        let result = Budget::new(acp_id, org_id, building_id, 1999, dec!(50000), dec!(25000));
 
         assert!(result.is_err());
         assert!(result.unwrap_err().contains("between 2000 and 2100"));
@@ -304,22 +329,24 @@ mod tests {
 
     #[test]
     fn test_create_budget_negative_amounts() {
+        let acp_id = Uuid::new_v4();
         let org_id = Uuid::new_v4();
         let building_id = Uuid::new_v4();
 
-        let result1 = Budget::new(org_id, building_id, 2025, dec!(-1000), dec!(25000));
+        let result1 = Budget::new(acp_id, org_id, building_id, 2025, dec!(-1000), dec!(25000));
         assert!(result1.is_err());
 
-        let result2 = Budget::new(org_id, building_id, 2025, dec!(50000), dec!(-1000));
+        let result2 = Budget::new(acp_id, org_id, building_id, 2025, dec!(50000), dec!(-1000));
         assert!(result2.is_err());
     }
 
     #[test]
     fn test_create_budget_zero_total() {
+        let acp_id = Uuid::new_v4();
         let org_id = Uuid::new_v4();
         let building_id = Uuid::new_v4();
 
-        let result = Budget::new(org_id, building_id, 2025, dec!(0), dec!(0));
+        let result = Budget::new(acp_id, org_id, building_id, 2025, dec!(0), dec!(0));
 
         assert!(result.is_err());
         assert_eq!(result.unwrap_err(), "Total budget cannot be zero");
@@ -327,10 +354,11 @@ mod tests {
 
     #[test]
     fn test_submit_for_approval() {
+        let acp_id = Uuid::new_v4();
         let org_id = Uuid::new_v4();
         let building_id = Uuid::new_v4();
 
-        let mut budget = Budget::new(org_id, building_id, 2025, dec!(50000), dec!(25000)).unwrap();
+        let mut budget = Budget::new(acp_id, org_id, building_id, 2025, dec!(50000), dec!(25000)).unwrap();
 
         assert!(budget.submit_for_approval().is_ok());
         assert_eq!(budget.status, BudgetStatus::Submitted);
@@ -339,11 +367,12 @@ mod tests {
 
     #[test]
     fn test_approve_budget() {
+        let acp_id = Uuid::new_v4();
         let org_id = Uuid::new_v4();
         let building_id = Uuid::new_v4();
         let meeting_id = Uuid::new_v4();
 
-        let mut budget = Budget::new(org_id, building_id, 2025, dec!(50000), dec!(25000)).unwrap();
+        let mut budget = Budget::new(acp_id, org_id, building_id, 2025, dec!(50000), dec!(25000)).unwrap();
         budget.submit_for_approval().unwrap();
 
         assert!(budget.approve(meeting_id).is_ok());
@@ -355,10 +384,11 @@ mod tests {
 
     #[test]
     fn test_reject_budget() {
+        let acp_id = Uuid::new_v4();
         let org_id = Uuid::new_v4();
         let building_id = Uuid::new_v4();
 
-        let mut budget = Budget::new(org_id, building_id, 2025, dec!(50000), dec!(25000)).unwrap();
+        let mut budget = Budget::new(acp_id, org_id, building_id, 2025, dec!(50000), dec!(25000)).unwrap();
         budget.submit_for_approval().unwrap();
 
         assert!(budget.reject().is_ok());
@@ -367,11 +397,12 @@ mod tests {
 
     #[test]
     fn test_archive_budget() {
+        let acp_id = Uuid::new_v4();
         let org_id = Uuid::new_v4();
         let building_id = Uuid::new_v4();
         let meeting_id = Uuid::new_v4();
 
-        let mut budget = Budget::new(org_id, building_id, 2025, dec!(50000), dec!(25000)).unwrap();
+        let mut budget = Budget::new(acp_id, org_id, building_id, 2025, dec!(50000), dec!(25000)).unwrap();
         budget.submit_for_approval().unwrap();
         budget.approve(meeting_id).unwrap();
 
@@ -382,10 +413,11 @@ mod tests {
 
     #[test]
     fn test_update_amounts_draft() {
+        let acp_id = Uuid::new_v4();
         let org_id = Uuid::new_v4();
         let building_id = Uuid::new_v4();
 
-        let mut budget = Budget::new(org_id, building_id, 2025, dec!(50000), dec!(25000)).unwrap();
+        let mut budget = Budget::new(acp_id, org_id, building_id, 2025, dec!(50000), dec!(25000)).unwrap();
 
         assert!(budget.update_amounts(dec!(60000), dec!(30000)).is_ok());
         assert_eq!(budget.ordinary_budget, dec!(60000));
@@ -396,10 +428,11 @@ mod tests {
 
     #[test]
     fn test_update_amounts_submitted_fails() {
+        let acp_id = Uuid::new_v4();
         let org_id = Uuid::new_v4();
         let building_id = Uuid::new_v4();
 
-        let mut budget = Budget::new(org_id, building_id, 2025, dec!(50000), dec!(25000)).unwrap();
+        let mut budget = Budget::new(acp_id, org_id, building_id, 2025, dec!(50000), dec!(25000)).unwrap();
         budget.submit_for_approval().unwrap();
 
         let result = budget.update_amounts(dec!(60000), dec!(30000));
@@ -411,11 +444,12 @@ mod tests {
 
     #[test]
     fn test_workflow_draft_to_approved() {
+        let acp_id = Uuid::new_v4();
         let org_id = Uuid::new_v4();
         let building_id = Uuid::new_v4();
         let meeting_id = Uuid::new_v4();
 
-        let mut budget = Budget::new(org_id, building_id, 2025, dec!(50000), dec!(25000)).unwrap();
+        let mut budget = Budget::new(acp_id, org_id, building_id, 2025, dec!(50000), dec!(25000)).unwrap();
 
         // Draft → Submitted
         assert_eq!(budget.status, BudgetStatus::Draft);
@@ -436,10 +470,11 @@ mod tests {
 
     #[test]
     fn test_workflow_draft_to_rejected_to_resubmit() {
+        let acp_id = Uuid::new_v4();
         let org_id = Uuid::new_v4();
         let building_id = Uuid::new_v4();
 
-        let mut budget = Budget::new(org_id, building_id, 2025, dec!(50000), dec!(25000)).unwrap();
+        let mut budget = Budget::new(acp_id, org_id, building_id, 2025, dec!(50000), dec!(25000)).unwrap();
 
         // Draft → Submitted → Rejected
         budget.submit_for_approval().unwrap();
@@ -454,15 +489,22 @@ mod tests {
 
     #[test]
     fn test_update_notes() {
+        let acp_id = Uuid::new_v4();
         let org_id = Uuid::new_v4();
         let building_id = Uuid::new_v4();
 
-        let mut budget = Budget::new(org_id, building_id, 2025, dec!(50000), dec!(25000)).unwrap();
+        let mut budget = Budget::new(acp_id, org_id, building_id, 2025, dec!(50000), dec!(25000)).unwrap();
 
         budget.update_notes("Budget prévisionnel incluant réfection toiture".to_string());
         assert_eq!(
             budget.notes,
             Some("Budget prévisionnel incluant réfection toiture".to_string())
         );
+    }
+}
+
+impl crate::domain::services::PieceDeGestion for Budget {
+    fn acp_id(&self) -> Uuid {
+        self.acp_id
     }
 }

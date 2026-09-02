@@ -52,7 +52,7 @@ pub fn perimetre_du_mandataire<'a>(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::domain::entities::{Expense, ExpenseCategory};
+    use crate::domain::entities::{Budget, Expense, ExpenseCategory};
     use chrono::Duration;
     use rust_decimal_macros::dec;
 
@@ -61,6 +61,7 @@ mod tests {
     /// l'Art. 3.89 § 5, 7° oblige à transmettre.
     struct DossierComplet {
         charge: Expense,
+        budget: Budget,
     }
 
     impl DossierComplet {
@@ -79,11 +80,20 @@ mod tests {
                     None,
                 )
                 .expect("charge valide"),
+                budget: Budget::new(
+                    acp,
+                    syndic,
+                    immeuble,
+                    2026,
+                    dec!(48000.00),
+                    dec!(12000.00),
+                )
+                .expect("budget valide"),
             }
         }
 
         fn pieces(&self) -> Vec<&dyn PieceDeGestion> {
-            vec![&self.charge]
+            vec![&self.charge, &self.budget]
         }
     }
 
