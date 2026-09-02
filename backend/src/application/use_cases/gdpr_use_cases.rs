@@ -361,6 +361,39 @@ mod tests {
     use super::*;
     use crate::application::ports::gdpr_repository::MockGdprRepo;
     use crate::application::ports::user_repository::MockUserRepo;
+
+    /// Dépôt utilisateur répondant à la vérification de mot de passe.
+    ///
+    /// `erase_user_data` relit l'utilisateur pour comparer le mot de passe
+    /// depuis le commit « Exige le mot de passe pour l'effacement RGPD ». Les
+    /// trois tests d'auto-effacement construisaient un `MockUserRepo::new()`
+    /// nu : l'appel n'était pas attendu, et mockall paniquait avec
+    /// « No matching expectation found ».
+    ///
+    /// Rien ne l'avait signalé : la CI de `feature/dev` est volontairement
+    /// sans barrière de tests (les tests tournent en local dans la boucle de
+    /// développement), et la suite `--lib` demande plusieurs minutes de
+    /// compilation. C'est exactement le genre de régression qu'un helper
+    /// nommé rend impossible à réintroduire en silence.
+    fn mock_user_repo_avec_mot_de_passe(user_id: Uuid, mot_de_passe: &str) -> MockUserRepo {
+        let hash = bcrypt::hash(mot_de_passe, bcrypt::DEFAULT_COST).expect("hachage de test");
+        let mut mock = MockUserRepo::new();
+        mock.expect_find_by_id().times(1).returning(move |id| {
+            assert_eq!(id, user_id, "l'effacement doit relire l'utilisateur ciblé");
+            let mut user = crate::domain::entities::User::new(
+                "test@example.com".to_string(),
+                hash.clone(),
+                "Test".to_string(),
+                "User".to_string(),
+                crate::domain::entities::UserRole::Owner,
+                None,
+            )
+            .expect("utilisateur de test valide");
+            user.id = id;
+            Ok(Some(user))
+        });
+        mock
+    }
     use crate::domain::entities::gdpr_export::{GdprExport, UserData};
     use chrono::Utc;
 
@@ -499,7 +532,7 @@ mod tests {
             .times(2)
             .returning(|_| Ok(()));
 
-        let mock_user_repo = MockUserRepo::new();
+        let mock_user_repo = mock_user_repo_avec_mot_de_passe(user_id, "password");
 
         let use_cases = GdprUseCases::new(Arc::new(mock_repo), Arc::new(mock_user_repo));
         let result = use_cases
@@ -546,7 +579,7 @@ mod tests {
             .times(1)
             .returning(|_| Ok(true));
 
-        let mock_user_repo = MockUserRepo::new();
+        let mock_user_repo = mock_user_repo_avec_mot_de_passe(user_id, "password");
 
         let use_cases = GdprUseCases::new(Arc::new(mock_repo), Arc::new(mock_user_repo));
         let result = use_cases
@@ -571,7 +604,7 @@ mod tests {
             .times(1)
             .returning(|_| Ok(vec!["Unpaid expenses".to_string()]));
 
-        let mock_user_repo = MockUserRepo::new();
+        let mock_user_repo = mock_user_repo_avec_mot_de_passe(user_id, "password");
 
         let use_cases = GdprUseCases::new(Arc::new(mock_repo), Arc::new(mock_user_repo));
         let result = use_cases

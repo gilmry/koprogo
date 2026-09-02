@@ -249,13 +249,25 @@ impl PaymentReminder {
     }
 
     /// Escalade vers le niveau de relance supérieur
-    pub fn escalate(&mut self) -> Result<Option<ReminderLevel>, String> {
+    /// Vérifie sans muter qu'une escalade est permise.
+    ///
+    /// Extrait de `escalate` pour que l'appelant puisse contrôler l'ordre :
+    /// la couche application doit refuser un dossier soldé AVANT de construire
+    /// le niveau suivant, sinon un dossier payé se voit reprocher son délai
+    /// plutôt que son statut — un message qui envoie chercher le problème au
+    /// mauvais endroit.
+    pub fn can_escalate(&self) -> Result<(), String> {
         if self.status == ReminderStatus::Paid || self.status == ReminderStatus::Cancelled {
             return Err(format!(
                 "Cannot escalate reminder with status {:?}",
                 self.status
             ));
         }
+        Ok(())
+    }
+
+    pub fn escalate(&mut self) -> Result<Option<ReminderLevel>, String> {
+        self.can_escalate()?;
 
         self.status = ReminderStatus::Escalated;
         self.updated_at = Utc::now();
