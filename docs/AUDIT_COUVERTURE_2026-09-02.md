@@ -183,3 +183,49 @@ malentendu.
 
 `FinancialRegressions.spec.ts` couvre aussi ces contre-épreuves : un
 constat écarté sans preuve revient au prochain audit.
+
+---
+
+## 4. La suite e2e complète ne peut pas tourner contre la production
+
+Constat opérationnel du 2026-09-02, trouvé en essayant précisément cela.
+
+Lancer les 56 fichiers de `tests/e2e/` contre `koprogo.com` déclenche une
+réaction en chaîne :
+
+1. Chaque fichier appelle `/auth/login`. Le middleware Traefik
+   `koprogo-login-ratelimit` autorise 5 requêtes/minute par IP source
+   (rafale 10) — un garde-fou volontaire, le hachage bcrypt saturerait
+   l'unique cœur de la VPS.
+2. Passé le seuil, Traefik répond **403** en rafale.
+3. CrowdSec lit ces 403 répétés comme le scénario
+   `LePresidente/http-generic-403-bf` — une attaque par force brute — et
+   **bannit l'IP pour 4 heures**.
+4. À partir de là, TOUT est en 403, y compris `/health`. Les tests
+   suivants échouent en masse pour une raison qui n'a plus rien à voir
+   avec le code.
+
+La campagne du 2026-09-02 a ainsi produit 33 échecs dont **aucun** n'était
+une régression : les mêmes suites, relancées par lots de 5 à 7 fichiers,
+passent toutes. L'IP concernée était celle de la VPS elle-même ; le
+bannissement a été levé à la main (`cscli decisions delete --ip`).
+
+**Conséquence pour la lecture d'un rapport de test.** Une campagne large
+contre la production produit des échecs indiscernables de vrais défauts,
+et le testeur n'a aucun moyen de le savoir depuis son côté. C'est une
+hypothèse à écarter avant toute autre quand un rapport annonce un grand
+nombre d'échecs hétérogènes.
+
+**Ce qu'il faut faire à la place** — par ordre de préférence :
+
+1. lancer la suite contre une pile locale (`PLAYWRIGHT_BASE_URL` par
+   défaut : `http://localhost`), ce pour quoi elle est écrite ;
+2. si la production est visée, procéder par lots de 5 à 7 fichiers avec
+   `--workers=1`, en laissant retomber la fenêtre du limiteur entre les
+   lots ;
+3. mettre l'IP du lanceur en liste d'exception CrowdSec, si des campagnes
+   régulières contre la production sont voulues.
+
+Le cache de jeton de `helpers/auth.ts` (une connexion par worker au lieu
+d'une par test) atténue le problème sans le supprimer : plusieurs workers
+et 56 fichiers franchissent encore le seuil.
