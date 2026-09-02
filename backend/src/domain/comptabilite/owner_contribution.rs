@@ -92,6 +92,16 @@ impl From<crate::domain::entities::PaymentMethodType> for ContributionPaymentMet
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct OwnerContribution {
     pub id: Uuid,
+
+    /// L'ACP à laquelle cette quote-part est due.
+    ///
+    /// Art. 3.86 § 3 : les apports des copropriétaires constituent le
+    /// patrimoine de l'ACP. Ce que doit un copropriétaire, il le doit à sa
+    /// copropriété, jamais au cabinet qui la gère au moment de l'appel.
+    /// Cf. ADR-0045.
+    pub acp_id: Uuid,
+
+    /// Le syndic qui a émis la quote-part, conservé comme trace d'auteur.
     pub organization_id: Uuid,
     pub owner_id: Uuid,
     pub unit_id: Option<Uuid>,
@@ -169,6 +179,7 @@ impl From<OwnerContributionError> for String {
 impl OwnerContribution {
     #[allow(clippy::too_many_arguments)]
     pub fn new(
+        acp_id: Uuid,
         organization_id: Uuid,
         owner_id: Uuid,
         unit_id: Option<Uuid>,
@@ -190,6 +201,7 @@ impl OwnerContribution {
 
         Ok(Self {
             id: Uuid::new_v4(),
+            acp_id,
             organization_id,
             owner_id,
             unit_id,
@@ -242,6 +254,7 @@ mod tests {
     #[test]
     fn test_create_contribution_success() {
         let contrib = OwnerContribution::new(
+            Uuid::new_v4(), // acp_id
             Uuid::new_v4(),
             Uuid::new_v4(),
             Some(Uuid::new_v4()),
@@ -262,6 +275,7 @@ mod tests {
     #[test]
     fn test_create_contribution_negative_amount() {
         let contrib = OwnerContribution::new(
+            Uuid::new_v4(), // acp_id
             Uuid::new_v4(),
             Uuid::new_v4(),
             None,
@@ -281,6 +295,7 @@ mod tests {
     #[test]
     fn test_create_contribution_empty_description() {
         let contrib = OwnerContribution::new(
+            Uuid::new_v4(), // acp_id
             Uuid::new_v4(),
             Uuid::new_v4(),
             None,
@@ -300,6 +315,7 @@ mod tests {
     #[test]
     fn test_mark_as_paid() {
         let mut contrib = OwnerContribution::new(
+            Uuid::new_v4(), // acp_id
             Uuid::new_v4(),
             Uuid::new_v4(),
             None,
@@ -333,6 +349,7 @@ mod tests {
         let past_date = Utc::now() - chrono::Duration::days(30);
 
         let contrib = OwnerContribution::new(
+            Uuid::new_v4(), // acp_id
             Uuid::new_v4(),
             Uuid::new_v4(),
             None,
@@ -356,6 +373,7 @@ mod tests {
     #[test]
     fn happy_contribution_amount_decimal_exact() {
         let c = OwnerContribution::new(
+            Uuid::new_v4(), // acp_id
             Uuid::new_v4(),
             Uuid::new_v4(),
             None,
@@ -374,6 +392,7 @@ mod tests {
     #[test]
     fn edge_zero_amount_and_decimal_exactness() {
         let zero = OwnerContribution::new(
+            Uuid::new_v4(), // acp_id
             Uuid::new_v4(),
             Uuid::new_v4(),
             None,
@@ -386,6 +405,7 @@ mod tests {
         assert!(zero.is_ok());
 
         let c = OwnerContribution::new(
+            Uuid::new_v4(), // acp_id
             Uuid::new_v4(),
             Uuid::new_v4(),
             None,
@@ -404,6 +424,7 @@ mod tests {
     fn negative_amount_and_empty_description_rejected() {
         assert!(matches!(
             OwnerContribution::new(
+                Uuid::new_v4(), // acp_id
                 Uuid::new_v4(),
                 Uuid::new_v4(),
                 None,
@@ -418,6 +439,7 @@ mod tests {
         ));
         assert!(matches!(
             OwnerContribution::new(
+                Uuid::new_v4(), // acp_id
                 Uuid::new_v4(),
                 Uuid::new_v4(),
                 None,
@@ -437,6 +459,7 @@ mod tests {
     #[test]
     fn security_tampered_negative_revenue_rejected() {
         let result = OwnerContribution::new(
+            Uuid::new_v4(), // acp_id
             Uuid::new_v4(),
             Uuid::new_v4(),
             None,
@@ -450,5 +473,11 @@ mod tests {
             result.unwrap_err(),
             OwnerContributionError::NonPositiveAmount
         ));
+    }
+}
+
+impl crate::domain::services::PieceDeGestion for OwnerContribution {
+    fn acp_id(&self) -> Uuid {
+        self.acp_id
     }
 }

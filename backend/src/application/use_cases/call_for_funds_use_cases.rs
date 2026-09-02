@@ -233,6 +233,9 @@ impl CallForFundsUseCases {
 
             // Create owner contribution
             let mut contribution = OwnerContribution::new(
+                // La quote-part est due à l'ACP créancière de l'appel, pas au
+                // cabinet qui l'a émis (Art. 3.86 § 3, ADR-0045).
+                call_for_funds.acp_id,
                 call_for_funds.organization_id,
                 owner_id,
                 Some(unit_id),

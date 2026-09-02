@@ -32,6 +32,8 @@ pub struct RecordPaymentRequest {
 #[derive(Debug, Serialize, utoipa::ToSchema)]
 pub struct OwnerContributionResponse {
     pub id: Uuid,
+    /// L'ACP propriétaire de la pièce (ADR-0045).
+    pub acp_id: Uuid,
     pub organization_id: Uuid,
     pub owner_id: Uuid,
     pub unit_id: Option<Uuid>,
@@ -53,6 +55,7 @@ impl From<OwnerContribution> for OwnerContributionResponse {
     fn from(contribution: OwnerContribution) -> Self {
         Self {
             id: contribution.id,
+            acp_id: contribution.acp_id,
             organization_id: contribution.organization_id,
             owner_id: contribution.owner_id,
             unit_id: contribution.unit_id,

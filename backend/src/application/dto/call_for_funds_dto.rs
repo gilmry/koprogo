@@ -21,6 +21,8 @@ pub struct CreateCallForFundsRequest {
 #[derive(Debug, Serialize, Deserialize, utoipa::ToSchema)]
 pub struct CallForFundsResponse {
     pub id: Uuid,
+    /// L'ACP propriétaire de la pièce (ADR-0045).
+    pub acp_id: Uuid,
     pub organization_id: Uuid,
     pub building_id: Uuid,
     pub title: String,
@@ -60,6 +62,7 @@ impl From<CallForFunds> for CallForFundsResponse {
 
         Self {
             id: call.id,
+            acp_id: call.acp_id,
             organization_id: call.organization_id,
             building_id: call.building_id,
             title: call.title,

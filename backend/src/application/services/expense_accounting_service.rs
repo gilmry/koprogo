@@ -701,6 +701,7 @@ mod tests {
 
         let org_id = Uuid::new_v4();
         let mut contribution = crate::domain::entities::OwnerContribution::new(
+            Uuid::new_v4(), // acp_id
             org_id,
             Uuid::new_v4(),
             None,
@@ -763,6 +764,7 @@ mod tests {
 
         let org_id = Uuid::new_v4();
         let mut contribution = crate::domain::entities::OwnerContribution::new(
+            Uuid::new_v4(), // acp_id
             org_id,
             Uuid::new_v4(),
             None,

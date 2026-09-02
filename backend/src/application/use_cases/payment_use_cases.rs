@@ -1001,6 +1001,7 @@ mod tests {
 
     fn seed_contribution(organization_id: Uuid, owner_id: Uuid) -> OwnerContribution {
         OwnerContribution::new(
+            Uuid::new_v4(), // acp_id
             organization_id,
             owner_id,
             None,

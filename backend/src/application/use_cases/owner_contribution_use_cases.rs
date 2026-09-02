@@ -8,6 +8,12 @@ use uuid::Uuid;
 
 pub struct OwnerContributionUseCases {
     repository: Arc<dyn OwnerContributionRepository>,
+    /// Résolution de l'ACP créancière, depuis le lot.
+    ///
+    /// Optionnel comme `accounting_service`, pour ne pas casser les
+    /// constructeurs des tests unitaires — mais son absence fait échouer la
+    /// création, elle ne la laisse pas passer avec un identifiant de repli.
+    unit_repository: Option<Arc<dyn crate::application::ports::UnitRepository>>,
     /// Optionnel pour préserver les constructeurs des tests unitaires, qui ne
     /// montent qu'un dépôt de contributions. Le câblage de `main.rs` le
     /// fournit toujours.
@@ -18,8 +24,18 @@ impl OwnerContributionUseCases {
     pub fn new(repository: Arc<dyn OwnerContributionRepository>) -> Self {
         Self {
             repository,
+            unit_repository: None,
             accounting_service: None,
         }
+    }
+
+    /// Câble la résolution de l'ACP créancière depuis le lot.
+    pub fn with_acp_resolution(
+        mut self,
+        unit_repository: Arc<dyn crate::application::ports::UnitRepository>,
+    ) -> Self {
+        self.unit_repository = Some(unit_repository);
+        self
     }
 
     pub fn with_accounting(
@@ -63,6 +79,31 @@ impl OwnerContributionUseCases {
         }
     }
 
+    /// L'ACP à laquelle la quote-part est due, lue sur le lot.
+    ///
+    /// Le lot porte déjà son ACP (Story H15) : le rattachement vient de l'acte
+    /// de base, il ne dépend ni de l'appelant ni du mandat en cours. On échoue
+    /// si on ne peut pas le lire, plutôt que de retomber sur l'identifiant du
+    /// syndic — une quote-part due à personne n'est pas une quote-part
+    /// (ADR-0045).
+    async fn resoudre_lacp_creanciere(&self, unit_id: Option<Uuid>) -> Result<Uuid, String> {
+        let unit_id = unit_id.ok_or_else(|| {
+            "Impossible de déterminer l'ACP créancière : la quote-part doit porter un lot"
+                .to_string()
+        })?;
+        let Some(unit_repo) = &self.unit_repository else {
+            return Err(
+                "Impossible de déterminer l'ACP créancière : dépôt de lots non câblé"
+                    .to_string(),
+            );
+        };
+        let unit = unit_repo
+            .find_by_id(unit_id)
+            .await?
+            .ok_or_else(|| "Lot introuvable".to_string())?;
+        Ok(unit.acp_id)
+    }
+
     /// Create a new owner contribution (appel de fonds)
     #[allow(clippy::too_many_arguments)]
     pub async fn create_contribution(
@@ -76,8 +117,11 @@ impl OwnerContributionUseCases {
         contribution_date: DateTime<Utc>,
         account_code: Option<String>,
     ) -> Result<OwnerContribution, String> {
+        let acp_id = self.resoudre_lacp_creanciere(unit_id).await?;
+
         // Create domain entity (validates business rules)
         let contribution = OwnerContribution::new(
+            acp_id,
             organization_id,
             owner_id,
             unit_id,
@@ -246,8 +290,148 @@ mod tests {
         }
     }
 
+    /// Dépôt de lots minimal : un lot rattaché à une ACP nommée.
+    ///
+    /// Il n'existait pas ici parce que la quote-part ne cherchait pas son
+    /// créancier. Elle le cherche désormais (ADR-0045).
+    struct MockUnitRepository {
+        acp_id: Uuid,
+    }
+
+    impl MockUnitRepository {
+        fn lot_de(acp_id: Uuid) -> Self {
+            Self { acp_id }
+        }
+
+        fn lot(&self) -> crate::domain::entities::Unit {
+            crate::domain::entities::Unit::new(
+                self.acp_id,
+                Uuid::new_v4(),
+                "A101".to_string(),
+                crate::domain::entities::UnitType::Apartment,
+                Some(1),
+                85.0,
+                rust_decimal_macros::dec!(100),
+            )
+            .expect("lot valide")
+        }
+    }
+
+    #[async_trait::async_trait]
+    impl crate::application::ports::UnitRepository for MockUnitRepository {
+        async fn create(
+            &self,
+            u: &crate::domain::entities::Unit,
+        ) -> Result<crate::domain::entities::Unit, String> {
+            Ok(u.clone())
+        }
+        async fn find_by_id(
+            &self,
+            _id: Uuid,
+        ) -> Result<Option<crate::domain::entities::Unit>, String> {
+            Ok(Some(self.lot()))
+        }
+        async fn find_by_building(
+            &self,
+            _b: Uuid,
+        ) -> Result<Vec<crate::domain::entities::Unit>, String> {
+            Ok(vec![self.lot()])
+        }
+        async fn find_by_owner(
+            &self,
+            _o: Uuid,
+        ) -> Result<Vec<crate::domain::entities::Unit>, String> {
+            Ok(vec![self.lot()])
+        }
+        async fn find_all_paginated(
+            &self,
+            _p: &crate::application::dto::PageRequest,
+            _f: &crate::application::dto::UnitFilters,
+        ) -> Result<(Vec<crate::domain::entities::Unit>, i64), String> {
+            Ok((vec![self.lot()], 1))
+        }
+        async fn update(
+            &self,
+            u: &crate::domain::entities::Unit,
+        ) -> Result<crate::domain::entities::Unit, String> {
+            Ok(u.clone())
+        }
+        async fn delete(&self, _id: Uuid) -> Result<bool, String> {
+            Ok(true)
+        }
+    }
+
     fn make_use_cases(repo: MockOwnerContributionRepository) -> OwnerContributionUseCases {
+        make_use_cases_pour_lacp(repo, Uuid::new_v4())
+    }
+
+    /// Les mêmes use-cases, en nommant l'ACP à laquelle le lot est rattaché.
+    fn make_use_cases_pour_lacp(
+        repo: MockOwnerContributionRepository,
+        acp_id: Uuid,
+    ) -> OwnerContributionUseCases {
         OwnerContributionUseCases::new(Arc::new(repo))
+            .with_acp_resolution(Arc::new(MockUnitRepository::lot_de(acp_id)))
+    }
+
+    /// Art. 3.86 § 3 et ADR-0045 : la quote-part est due à l'ACP.
+    ///
+    /// L'ACP est lue sur le lot, jamais sur l'appelant. Un cabinet ne peut
+    /// donc pas émettre une quote-part au profit d'une ACP qu'il désigne.
+    #[tokio::test]
+    async fn test_la_quote_part_est_due_a_lacp_du_lot_pas_au_syndic() {
+        let acp_creanciere = Uuid::new_v4();
+        let cabinet_emetteur = Uuid::new_v4();
+        let use_cases =
+            make_use_cases_pour_lacp(MockOwnerContributionRepository::new(), acp_creanciere);
+
+        let quote_part = use_cases
+            .create_contribution(
+                cabinet_emetteur,
+                Uuid::new_v4(),
+                Some(Uuid::new_v4()),
+                "Appel de fonds Q1 2026".to_string(),
+                rust_decimal_macros::dec!(750),
+                ContributionType::Regular,
+                Utc::now(),
+                Some("7000".to_string()),
+            )
+            .await
+            .expect("création valide");
+
+        assert_eq!(
+            quote_part.acp_id, acp_creanciere,
+            "la quote-part est due à l'ACP du lot"
+        );
+        assert_eq!(
+            quote_part.organization_id, cabinet_emetteur,
+            "le syndic reste tracé comme émetteur, sans devenir créancier"
+        );
+    }
+
+    /// Sans lot, on ne sait pas à quelle ACP la somme est due. On refuse.
+    #[tokio::test]
+    async fn test_pas_de_quote_part_sans_lot_donc_sans_creanciere() {
+        let use_cases = make_use_cases(MockOwnerContributionRepository::new());
+
+        let erreur = use_cases
+            .create_contribution(
+                Uuid::new_v4(),
+                Uuid::new_v4(),
+                None, // pas de lot
+                "Appel hors lot".to_string(),
+                rust_decimal_macros::dec!(750),
+                ContributionType::Regular,
+                Utc::now(),
+                None,
+            )
+            .await
+            .expect_err("doit refuser");
+
+        assert!(
+            erreur.contains("créancière"),
+            "le refus doit nommer ce qui manque : {erreur}"
+        );
     }
 
     #[tokio::test]
@@ -289,6 +473,7 @@ mod tests {
 
         // Pre-populate with a pending contribution
         let contrib = OwnerContribution::new(
+            Uuid::new_v4(), // acp_id
             org_id,
             owner_id,
             None,
@@ -331,6 +516,7 @@ mod tests {
 
         // Pre-populate with an already-paid contribution
         let mut contrib = OwnerContribution::new(
+            Uuid::new_v4(), // acp_id
             org_id,
             owner_id,
             None,
@@ -367,6 +553,7 @@ mod tests {
 
         // Create one paid and two unpaid contributions
         let mut paid_contrib = OwnerContribution::new(
+            Uuid::new_v4(), // acp_id
             org_id,
             owner_id,
             None,
@@ -380,6 +567,7 @@ mod tests {
         paid_contrib.mark_as_paid(Utc::now(), ContributionPaymentMethod::Domiciliation, None);
 
         let unpaid1 = OwnerContribution::new(
+            Uuid::new_v4(), // acp_id
             org_id,
             owner_id,
             None,
@@ -392,6 +580,7 @@ mod tests {
         .unwrap();
 
         let unpaid2 = OwnerContribution::new(
+            Uuid::new_v4(), // acp_id
             org_id,
             owner_id,
             None,
@@ -427,6 +616,7 @@ mod tests {
 
         // Create one paid (should not count) and two unpaid
         let mut paid = OwnerContribution::new(
+            Uuid::new_v4(), // acp_id
             org_id,
             owner_id,
             None,
@@ -440,6 +630,7 @@ mod tests {
         paid.mark_as_paid(Utc::now(), ContributionPaymentMethod::Check, None);
 
         let unpaid1 = OwnerContribution::new(
+            Uuid::new_v4(), // acp_id
             org_id,
             owner_id,
             None,
@@ -452,6 +643,7 @@ mod tests {
         .unwrap();
 
         let unpaid2 = OwnerContribution::new(
+            Uuid::new_v4(), // acp_id
             org_id,
             owner_id,
             None,

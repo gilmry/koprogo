@@ -52,7 +52,9 @@ pub fn perimetre_du_mandataire<'a>(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::domain::entities::{Budget, Expense, ExpenseCategory};
+    use crate::domain::entities::{
+        Budget, CallForFunds, ContributionType, Expense, ExpenseCategory, OwnerContribution,
+    };
     use chrono::Duration;
     use rust_decimal_macros::dec;
 
@@ -62,6 +64,8 @@ mod tests {
     struct DossierComplet {
         charge: Expense,
         budget: Budget,
+        appel_de_fonds: CallForFunds,
+        quote_part: OwnerContribution,
     }
 
     impl DossierComplet {
@@ -89,11 +93,41 @@ mod tests {
                     dec!(12000.00),
                 )
                 .expect("budget valide"),
+                appel_de_fonds: CallForFunds::new(
+                    acp,
+                    syndic,
+                    immeuble,
+                    "Provision T1 2026".to_string(),
+                    "Charges ordinaires du premier trimestre".to_string(),
+                    dec!(12000.00),
+                    ContributionType::Regular,
+                    Utc::now(),
+                    Utc::now() + Duration::days(30),
+                    None,
+                )
+                .expect("appel de fonds valide"),
+                quote_part: OwnerContribution::new(
+                    acp,
+                    syndic,
+                    Uuid::new_v4(),
+                    Some(Uuid::new_v4()),
+                    "Quote-part provision T1 2026".to_string(),
+                    dec!(1200.00),
+                    ContributionType::Regular,
+                    Utc::now(),
+                    Some("7000".to_string()),
+                )
+                .expect("quote-part valide"),
             }
         }
 
         fn pieces(&self) -> Vec<&dyn PieceDeGestion> {
-            vec![&self.charge, &self.budget]
+            vec![
+                &self.charge,
+                &self.budget,
+                &self.appel_de_fonds,
+                &self.quote_part,
+            ]
         }
     }
 

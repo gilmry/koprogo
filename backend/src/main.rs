@@ -411,6 +411,7 @@ async fn main() -> std::io::Result<()> {
     );
     let owner_contribution_use_cases =
         OwnerContributionUseCases::new(owner_contribution_repo.clone())
+            .with_acp_resolution(unit_repo.clone())
             .with_accounting(expense_accounting_service.clone());
     // Track H Story H7 — validate-before-compute wiring ACP-level.
     let call_for_funds_use_cases = CallForFundsUseCases::with_full_wiring(
