@@ -944,6 +944,137 @@ test.describe("Workflows financiers 2026-09-01 — non-régression", () => {
   });
 
   // ───────────────────────────────────────────────────────────────────────
+  // A8 — passation d'ACP : l'entrant hérite, le sortant perd l'accès
+  // ───────────────────────────────────────────────────────────────────────
+
+  /// Une ACP est une entité juridique : sa comptabilité lui appartient et la
+  /// suit quand l'assemblée générale change de syndic.
+  ///
+  /// Mesuré le 2026-09-02, AVANT correction, sur une passation réelle :
+  ///
+  ///                    charges  écritures  budgets  quotes-parts  proprios
+  ///   avant, sortant       1        1         1          1           1
+  ///   après, ENTRANT       1        0         0          0           0
+  ///   après, SORTANT     403        1         1          1           1
+  ///
+  /// Deux défauts symétriques. L'entrant héritait d'une copropriété amputée —
+  /// alors que l'Art. 3.94 § 1er lui impose de transmettre à un notaire les
+  /// décomptes des deux derniers exercices. Et le sortant, mandat révoqué,
+  /// gardait accès aux noms, adresses et ARRIÉRÉS des copropriétaires : un
+  /// traitement de données personnelles sans base légale.
+  ///
+  /// Cause unique : les lectures filtraient sur `organization_id`, l'estampille
+  /// du cabinet ayant SAISI l'enregistrement. Le mandat change, l'estampille
+  /// non. La portée se lit désormais « cette charge relève-t-elle d'une ACP
+  /// dont ce cabinet a la gestion ? ».
+  ///
+  /// Ce test ne couvre encore que les CHARGES : c'est la première entité
+  /// migrée. Budgets, écritures et copropriétaires suivront le même patron.
+  test("A8 — une ACP qui change de syndic emporte sa comptabilité", async ({
+    page,
+  }) => {
+    const ts = Date.now();
+
+    const sortant = await loginAsSyndicWithBuilding(page, "passa-s", {
+      totalUnits: 1,
+      totalTantiemes: 1000,
+      seedUnits: false,
+    });
+    const adminH = { Authorization: `Bearer ${sortant.adminToken}` };
+    const synS = { Authorization: `Bearer ${sortant.token}` };
+
+    const lot = await page.request.post(`${API_BASE}/units`, {
+      data: {
+        acp_id: sortant.acpId,
+        building_id: sortant.buildingId,
+        unit_number: "PA1",
+        floor: 0,
+        surface_area: 80,
+        unit_type: "Apartment",
+        quota: 1000,
+      },
+      headers: adminH,
+    });
+    expect(lot.status(), await lot.text()).toBe(201);
+
+    const marqueur = `Historique ${ts}`;
+    const dep = await page.request.post(`${API_BASE}/expenses`, {
+      data: {
+        building_id: sortant.buildingId,
+        category: "Maintenance",
+        description: marqueur,
+        amount: 2420.0,
+        expense_date: new Date().toISOString(),
+        account_code: "611002",
+      },
+      headers: synS,
+    });
+    expect(dep.status(), await dep.text()).toBe(201);
+    // La charge porte l'ACP à laquelle elle appartient, pas seulement le
+    // cabinet qui l'a saisie.
+    expect((await dep.json()).acp_id).toBe(sortant.acpId);
+
+    const chargesVisibles = async (entetes: any) => {
+      const r = await page.request.get(
+        `${API_BASE}/expenses?page=1&per_page=200`,
+        { headers: entetes },
+      );
+      if (!r.ok()) return { http: r.status(), trouve: false };
+      return { http: 200, trouve: (await r.text()).includes(marqueur) };
+    };
+
+    expect(
+      (await chargesVisibles(synS)).trouve,
+      "prérequis : le syndic en fonction voit la charge",
+    ).toBe(true);
+
+    // ── L'assemblée générale nomme un nouveau syndic ──────────────────
+    const entrant = await loginAsSyndicWithBuilding(page, "passa-e", {
+      totalUnits: 1,
+      totalTantiemes: 1000,
+      seedUnits: false,
+    });
+    const synE = { Authorization: `Bearer ${entrant.token}` };
+
+    const acp = await (
+      await page.request.get(`${API_BASE}/acps/${sortant.acpId}`, {
+        headers: adminH,
+      })
+    ).json();
+
+    const passation = await page.request.put(
+      `${API_BASE}/acps/${sortant.acpId}`,
+      {
+        data: {
+          organization_id: entrant.orgId,
+          name: acp.name,
+          address_street: acp.address_street,
+          address_postal_code: acp.address_postal_code,
+          address_city: acp.address_city,
+          address_country: acp.address_country ?? "Belgium",
+          total_tantiemes: acp.total_tantiemes,
+          legal_status: acp.legal_status,
+        },
+        headers: adminH,
+      },
+    );
+    expect(passation.status(), await passation.text()).toBe(200);
+
+    // ── Les deux moitiés du problème ──────────────────────────────────
+    const chezEntrant = await chargesVisibles(synE);
+    expect(
+      chezEntrant.trouve,
+      "le syndic entrant hérite de la comptabilité de l'ACP qu'il reprend",
+    ).toBe(true);
+
+    const chezSortant = await chargesVisibles(synS);
+    expect(
+      chezSortant.trouve,
+      "le syndic sortant n'a plus de base légale pour consulter cette ACP",
+    ).toBe(false);
+  });
+
+  // ───────────────────────────────────────────────────────────────────────
   // F14 — tantièmes : somme de `Decimal` sérialisés en chaîne
   // ───────────────────────────────────────────────────────────────────────
 

@@ -270,9 +270,30 @@ impl ExpenseRepository for PostgresExpenseRepository {
         let mut where_clauses = Vec::new();
         let mut param_count = 0;
 
+        // Portée par ACP GÉRÉE, pas par estampille de saisie.
+        //
+        // Le filtre portait sur `expenses.organization_id` — le cabinet qui a
+        // encodé la charge. Une copropriété change pourtant de syndic au gré
+        // des assemblées générales, et sa comptabilité lui appartient.
+        // Filtrer sur l'estampille produisait deux effets opposés, mesurés le
+        // 2026-09-02 sur une passation réelle :
+        //
+        //   le syndic ENTRANT ne voyait rien de l'historique — ni grand livre,
+        //     ni budget, ni appels de fonds — alors que l'Art. 3.94 § 1er lui
+        //     impose de transmettre les décomptes des deux derniers exercices ;
+        //   le syndic SORTANT continuait de tout voir, y compris les noms,
+        //     adresses et arriérés des copropriétaires, sans plus aucune base
+        //     légale pour les traiter.
+        //
+        // `filters.organization_id` désigne désormais le SYNDIC QUI DEMANDE,
+        // et la clause traduit la vraie question : « cette charge relève-t-elle
+        // d'une ACP dont ce cabinet a la gestion ? ».
         if filters.organization_id.is_some() {
             param_count += 1;
-            where_clauses.push(format!("organization_id = ${}", param_count));
+            where_clauses.push(format!(
+                "acp_id IN (SELECT id FROM acps WHERE organization_id = ${})",
+                param_count
+            ));
         }
 
         if filters.building_id.is_some() {
