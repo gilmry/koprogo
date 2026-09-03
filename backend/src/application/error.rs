@@ -491,10 +491,56 @@ impl From<jsonwebtoken::errors::Error> for AppError {
 }
 
 impl From<sqlx::Error> for AppError {
+    /// Convertit une erreur sqlx, **en la traçant**.
+    ///
+    /// Le silence d'avant n'était pas anodin. Pendant l'incident du
+    /// 2026-08-24 (09:16Z–09:48Z), les 502 sur `/units` et `/acps` n'ont
+    /// laissé que sept lignes de log au total, aucune liée aux endpoints en
+    /// échec : ni panic, ni erreur sqlx. L'hypothèse « pool épuisé » n'était
+    /// pas réfutée, elle était **structurellement inobservable** — ce qui est
+    /// pire, parce qu'on ne peut pas non plus l'écarter.
+    ///
+    /// `PoolTimedOut` est distingué des autres variantes et journalisé en
+    /// `error!` avec un marqueur explicite : c'est la seule signature qui
+    /// permette, après coup, de trancher entre un pool saturé et une requête
+    /// lente. Les autres erreurs de base restent en `error!` aussi, mais sans
+    /// ce marqueur.
+    ///
+    /// `RowNotFound` ne loggue rien : ce n'est pas une panne, c'est une
+    /// réponse. La journaliser noierait les vraies erreurs sous le bruit des
+    /// 404 légitimes.
+    ///
+    /// Voir #719 et #718.
     fn from(e: sqlx::Error) -> Self {
         match &e {
             sqlx::Error::RowNotFound => AppError::NotFound("row not found".to_string()),
-            _ => AppError::Database(e.to_string()),
+            sqlx::Error::PoolTimedOut => {
+                log::error!(
+                    "sqlx_pool_timed_out: délai d'acquisition d'une connexion dépassé. \
+                     Le pool est saturé — voir DB_POOL_MAX_CONNECTIONS et le nombre de \
+                     workers Actix. Erreur brute : {e}"
+                );
+                AppError::Database(e.to_string())
+            }
+            sqlx::Error::PoolClosed => {
+                log::error!("sqlx_pool_closed: le pool est fermé. Erreur brute : {e}");
+                AppError::Database(e.to_string())
+            }
+            sqlx::Error::Database(db) => {
+                // Le code SQLSTATE est ce qui distingue une violation de
+                // contrainte d'une panne réelle. Le perdre revient à traiter
+                // les deux de la même façon.
+                log::error!(
+                    "sqlx_database_error: sqlstate={:?} contrainte={:?} — {e}",
+                    db.code(),
+                    db.constraint()
+                );
+                AppError::Database(e.to_string())
+            }
+            _ => {
+                log::error!("sqlx_error: {e}");
+                AppError::Database(e.to_string())
+            }
         }
     }
 }

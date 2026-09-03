@@ -27,6 +27,21 @@ services:
       - "--certificatesresolvers.letsencrypt.acme.httpchallenge=true"
       - "--certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web"
       - "--log.level=INFO"
+      # Accesslog JSON — sans lui, un 502 ne laisse AUCUNE trace côté serveur.
+      # Pendant l'incident du 2026-08-24, il était impossible de distinguer un
+      # timeout upstream d'une connexion refusée : la donnée n'existait pas
+      # (#719). Le format JSON facilite le filtrage post-incident.
+      - "--accesslog=true"
+      - "--accesslog.format=json"
+      # Les 2xx et 3xx sont écartés : ce sont eux qui noieraient les erreurs, et
+      # ce n'est pas d'un journal de trafic qu'on a besoin mais d'un journal de
+      # pannes.
+      - "--accesslog.filters.statuscodes=400-599"
+      # `Authorization` et les cookies ne doivent pas atterrir dans un fichier
+      # de log — un jeton lisible dans un journal est un jeton compromis.
+      - "--accesslog.fields.headers.defaultmode=drop"
+      - "--accesslog.fields.headers.names.User-Agent=keep"
+      - "--accesslog.fields.headers.names.X-Forwarded-For=keep"
     ports:
       - "80:80"
       - "443:443"
