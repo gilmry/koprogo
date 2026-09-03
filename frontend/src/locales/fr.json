@@ -2833,7 +2833,9 @@
       "fixErrors": "Veuillez corriger les erreurs avant de soumettre.",
       "labelMinLength": "Le nom doit contenir au moins 2 caractères.",
       "stripeIdRequired": "L'identifiant Stripe est obligatoire."
-    }
+    },
+    "stripeCustomerId": "Identifiant client Stripe",
+    "setAsDefault": "Définir comme moyen de paiement par défaut"
   },
   "polls": {
     "addOption": "Ajouter une option",

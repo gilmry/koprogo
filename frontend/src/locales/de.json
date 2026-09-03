@@ -2833,7 +2833,9 @@
       "fixErrors": "Bitte korrigieren Sie die Fehler vor dem Absenden.",
       "labelMinLength": "Der Name muss mindestens 2 Zeichen enthalten.",
       "stripeIdRequired": "Die Stripe-ID ist erforderlich."
-    }
+    },
+    "stripeCustomerId": "Stripe-Kunden-ID",
+    "setAsDefault": "Als Standardzahlungsmittel festlegen"
   },
   "polls": {
     "addOption": "Option hinzufügen",

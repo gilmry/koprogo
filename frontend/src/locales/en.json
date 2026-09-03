@@ -2833,7 +2833,9 @@
       "fixErrors": "Please correct the errors before submitting.",
       "labelMinLength": "Name must be at least 2 characters.",
       "stripeIdRequired": "Stripe ID is required."
-    }
+    },
+    "stripeCustomerId": "Stripe customer ID",
+    "setAsDefault": "Set as default payment method"
   },
   "polls": {
     "addOption": "Add option",

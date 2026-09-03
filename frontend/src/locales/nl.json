@@ -2833,7 +2833,9 @@
       "fixErrors": "Corrigeer de fouten voordat u indient.",
       "labelMinLength": "De naam moet minstens 2 tekens bevatten.",
       "stripeIdRequired": "Het Stripe-ID is verplicht."
-    }
+    },
+    "stripeCustomerId": "Stripe klant-ID",
+    "setAsDefault": "Instellen als standaard betaalmethode"
   },
   "polls": {
     "addOption": "Optie toevoegen",
