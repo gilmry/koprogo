@@ -119,7 +119,7 @@ interpole l'identifiant au lieu de le lier.
 | K3 | Reliquat `f64` monétaire | **fait** `da711473` — le gate est vert, #433 fermée |
 | K4 | Vulnérabilités | **partiel** `d85f80c9` — npm à **zéro**, #674 fermée. #432 : deux alertes restantes, corrigées localement, se fermeront quand le correctif atteindra `main` |
 | K5 | Contrat OpenAPI | **fait** `c3f736b6` `09ddca66` — #734 et #732 fermées, cliquet 440 → 425 |
-| K6 | Bugs fonctionnels ouverts | **partiel** — #662, #721, #722 fermées ; restent #552, #553, #554, #718, #731 |
+| K6 | Bugs fonctionnels ouverts | **fait pour ce qui est corrigeable ici** — #552, #553, #554, #662, #721, #722 fermées. Restent #718 (comportement sous charge) et #731 (DNS du VPS), qui demandent l'environnement réel |
 | K8 | Observabilité et code mort | **fait** `8aa6b59d` — #719 et #720 fermées |
 | K7 | Auto-merge Dependabot sans gate CI | **fait** `7c90d191` — #659 fermée |
 
@@ -136,6 +136,25 @@ Reste **F3** : aucun drill de rollback ni de restauration GPG+S3 n'a été joué
 - **G2** — tag `v0.1.0`, posé par un humain après G1.
 
 Ces deux actes ne sont pas délégables : cf. `docs/governance/RESPONSABILITE.md`.
+
+## Ce qui reste, et ce qui le bloque
+
+Au 2026-09-03, trois catégories bien distinctes.
+
+**Faisable ici** : #426 (nettoyage de docs), #443 et #660 (tests BDD et e2e
+backend), #427 (taxonomie et gate de release), et les volets restants des
+stories #576, #581, #582, #583, #663 — dont la part domaine est livrée.
+
+**Bloqué par un push** : #432 se ferme quand le correctif npm atteint `main`. Le
+travail est commité localement mais non poussé — `feature/dev` est déployée
+automatiquement toutes les cinq minutes sur le VPS, et pousser des migrations de
+schéma déclencherait ce déploiement. C'est une décision qui revient à Gilles.
+
+**Bloqué par l'environnement ou par un humain** : #696, #548 et #723
+(l'instabilité Playwright ne s'observe qu'en CI), #718 (comportement sous
+rafale), #731 (collision DNS sur le réseau partagé), les drills F3, et bien sûr
+**G1 la revue humaine et G2 le tag**, qui sont Tier 1 par
+`docs/governance/RESPONSABILITE.md`.
 
 ## Ordre d'exécution
 
