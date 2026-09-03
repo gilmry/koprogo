@@ -37,13 +37,13 @@ impl CallForFundsRepository for PostgresCallForFundsRepository {
             r#"
             INSERT INTO call_for_funds (
                 id, acp_id, organization_id, building_id, title, description,
-                total_amount, contribution_type, call_date, due_date,
+                total_amount, reserve_fund_share, contribution_type, call_date, due_date,
                 sent_date, status, account_code, notes, created_at,
                 updated_at, created_by
             )
-            VALUES ($1, $2, $3, $4, $5, $6, $7, CAST($8 AS contribution_type),
-                    $9, $10, $11, CAST($12 AS call_for_funds_status),
-                    $13, $14, $15, $16, $17)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, CAST($9 AS contribution_type),
+                    $10, $11, $12, CAST($13 AS call_for_funds_status),
+                    $14, $15, $16, $17, $18)
             "#,
         )
         .bind(call_for_funds.id)
@@ -53,6 +53,7 @@ impl CallForFundsRepository for PostgresCallForFundsRepository {
         .bind(&call_for_funds.title)
         .bind(&call_for_funds.description)
         .bind(call_for_funds.total_amount)
+        .bind(call_for_funds.reserve_fund_share)
         .bind(contribution_type_str)
         .bind(call_for_funds.call_date)
         .bind(call_for_funds.due_date)
@@ -74,7 +75,7 @@ impl CallForFundsRepository for PostgresCallForFundsRepository {
         let row = sqlx::query(
             r#"
             SELECT id, acp_id, organization_id, building_id, title, description,
-                   total_amount, contribution_type::text AS contribution_type,
+                   total_amount, reserve_fund_share, contribution_type::text AS contribution_type,
                    call_date, due_date, sent_date,
                    status::text AS status, account_code, notes,
                    created_at, updated_at, created_by
@@ -94,7 +95,7 @@ impl CallForFundsRepository for PostgresCallForFundsRepository {
         let rows = sqlx::query(
             r#"
             SELECT id, acp_id, organization_id, building_id, title, description,
-                   total_amount, contribution_type::text AS contribution_type,
+                   total_amount, reserve_fund_share, contribution_type::text AS contribution_type,
                    call_date, due_date, sent_date,
                    status::text AS status, account_code, notes,
                    created_at, updated_at, created_by
@@ -118,7 +119,7 @@ impl CallForFundsRepository for PostgresCallForFundsRepository {
         let rows = sqlx::query(
             r#"
             SELECT id, acp_id, organization_id, building_id, title, description,
-                   total_amount, contribution_type::text AS contribution_type,
+                   total_amount, reserve_fund_share, contribution_type::text AS contribution_type,
                    call_date, due_date, sent_date,
                    status::text AS status, account_code, notes,
                    created_at, updated_at, created_by
@@ -157,14 +158,15 @@ impl CallForFundsRepository for PostgresCallForFundsRepository {
             SET title = $2,
                 description = $3,
                 total_amount = $4,
-                contribution_type = CAST($5 AS contribution_type),
-                call_date = $6,
-                due_date = $7,
-                sent_date = $8,
-                status = CAST($9 AS call_for_funds_status),
-                account_code = $10,
-                notes = $11,
-                updated_at = $12
+                reserve_fund_share = $5,
+                contribution_type = CAST($6 AS contribution_type),
+                call_date = $7,
+                due_date = $8,
+                sent_date = $9,
+                status = CAST($10 AS call_for_funds_status),
+                account_code = $11,
+                notes = $12,
+                updated_at = $13
             WHERE id = $1
             "#,
         )
@@ -172,6 +174,7 @@ impl CallForFundsRepository for PostgresCallForFundsRepository {
         .bind(&call_for_funds.title)
         .bind(&call_for_funds.description)
         .bind(call_for_funds.total_amount)
+        .bind(call_for_funds.reserve_fund_share)
         .bind(contribution_type_str)
         .bind(call_for_funds.call_date)
         .bind(call_for_funds.due_date)
@@ -201,7 +204,7 @@ impl CallForFundsRepository for PostgresCallForFundsRepository {
         let rows = sqlx::query(
             r#"
             SELECT id, acp_id, organization_id, building_id, title, description,
-                   total_amount, contribution_type::text AS contribution_type,
+                   total_amount, reserve_fund_share, contribution_type::text AS contribution_type,
                    call_date, due_date, sent_date,
                    status::text AS status, account_code, notes,
                    created_at, updated_at, created_by
@@ -246,6 +249,7 @@ impl PostgresCallForFundsRepository {
             title: row.get("title"),
             description: row.get("description"),
             total_amount: row.get("total_amount"),
+            reserve_fund_share: row.get("reserve_fund_share"),
             contribution_type,
             call_date: row.get("call_date"),
             due_date: row.get("due_date"),

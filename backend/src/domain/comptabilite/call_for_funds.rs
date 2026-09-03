@@ -57,6 +57,21 @@ pub struct CallForFunds {
     // Financial details
     pub total_amount: Decimal, // Total amount to be collected from ALL owners
 
+    /// Part du montant appelé qui alimentera le fonds de réserve.
+    ///
+    /// Art. 3.86 § 3, alinéa 7 : « Le syndic communique à toutes les parties
+    /// concernées **lors de l'appel de fonds** quelle part sera affectée au
+    /// fonds de réserve. »
+    ///
+    /// L'obligation n'est pas d'affichage : le fonds de réserve est la part
+    /// qu'un copropriétaire **ne récupère pas** en vendant son lot (elle suit
+    /// le lot, pas le vendeur). Il doit donc savoir ce qu'il y verse au moment
+    /// où on le lui réclame, et non le découvrir à la mutation.
+    ///
+    /// Zéro est licite et explicite : toutes les charges n'alimentent pas le
+    /// fonds. Ce qui ne l'est pas, c'est de ne rien dire.
+    pub reserve_fund_share: Decimal,
+
     // Type
     pub contribution_type: ContributionType,
 
@@ -93,11 +108,23 @@ pub enum CallForFundsError {
     EmptyDescription,
     /// Date d'échéance ≤ date d'appel (fenêtre de paiement invalide).
     DueDateNotAfterCallDate,
+    /// Part affectée au fonds de réserve négative (Art. 3.86 § 3 al. 7).
+    NegativeReserveShare,
+    /// Part affectée au fonds de réserve supérieure au montant appelé.
+    ReserveShareExceedsTotal,
 }
 
 impl std::fmt::Display for CallForFundsError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
+            Self::NegativeReserveShare => write!(
+                f,
+                "La part affectée au fonds de réserve ne peut pas être négative (Art. 3.86 § 3)"
+            ),
+            Self::ReserveShareExceedsTotal => write!(
+                f,
+                "La part affectée au fonds de réserve dépasse le montant appelé (Art. 3.86 § 3)"
+            ),
             Self::NonPositiveTotalAmount => write!(f, "Total amount must be positive"),
             Self::EmptyTitle => write!(f, "Title cannot be empty"),
             Self::EmptyDescription => write!(f, "Description cannot be empty"),
@@ -131,6 +158,7 @@ impl CallForFunds {
         call_date: DateTime<Utc>,
         due_date: DateTime<Utc>,
         account_code: Option<String>,
+        reserve_fund_share: Decimal,
     ) -> Result<Self, CallForFundsError> {
         // Validate total amount is positive
         if total_amount <= Decimal::ZERO {
@@ -152,6 +180,17 @@ impl CallForFunds {
             return Err(CallForFundsError::DueDateNotAfterCallDate);
         }
 
+        // Art. 3.86 § 3 al. 7 — la part de réserve est bornée par l'appel.
+        // Une part négative retirerait du fonds de réserve par un appel de
+        // fonds, sans décision d'assemblée ; une part supérieure au total
+        // affecterait de l'argent qu'on ne réclame pas.
+        if reserve_fund_share < Decimal::ZERO {
+            return Err(CallForFundsError::NegativeReserveShare);
+        }
+        if reserve_fund_share > total_amount {
+            return Err(CallForFundsError::ReserveShareExceedsTotal);
+        }
+
         Ok(Self {
             id: Uuid::new_v4(),
             acp_id,
@@ -160,6 +199,7 @@ impl CallForFunds {
             title,
             description,
             total_amount,
+            reserve_fund_share,
             contribution_type,
             call_date,
             due_date,
@@ -201,6 +241,83 @@ impl CallForFunds {
 }
 
 #[cfg(test)]
+mod tests_art_3_86_fonds_de_reserve {
+    use super::*;
+    use chrono::Duration;
+    use rust_decimal_macros::dec;
+
+    fn appel(total: Decimal, part_reserve: Decimal) -> Result<CallForFunds, CallForFundsError> {
+        let maintenant = Utc::now();
+        CallForFunds::new(
+            Uuid::new_v4(),
+            Uuid::new_v4(),
+            Uuid::new_v4(),
+            "Provision T1 2026".to_string(),
+            "Charges ordinaires".to_string(),
+            total,
+            ContributionType::Regular,
+            maintenant,
+            maintenant + Duration::days(30),
+            None,
+            part_reserve,
+        )
+    }
+
+    /// Art. 3.86 § 3, alinéa 7 :
+    ///
+    /// > « Le syndic communique à toutes les parties concernées **lors de
+    /// > l'appel de fonds** quelle part sera affectée au fonds de réserve. »
+    ///
+    /// Ce n'est pas une formalité d'affichage. Le fonds de réserve est la part
+    /// qu'un copropriétaire ne récupère pas en vendant son lot : il doit savoir
+    /// ce qu'il y verse au moment où on le lui réclame, pas à la mutation.
+    #[test]
+    fn happy_lappel_porte_la_part_affectee_au_fonds_de_reserve() {
+        let appel = appel(dec!(12000), dec!(3000)).expect("appel valide");
+
+        assert_eq!(appel.reserve_fund_share, dec!(3000));
+        assert_eq!(
+            appel.total_amount - appel.reserve_fund_share,
+            dec!(9000),
+            "le reste alimente le fonds de roulement et les charges courantes"
+        );
+    }
+
+    /// Un appel sans part de réserve reste licite : toutes les charges ne
+    /// l'alimentent pas. Ce qui ne l'est pas, c'est de ne pas le dire.
+    #[test]
+    fn happy_une_part_nulle_est_licite_et_explicite() {
+        let appel = appel(dec!(12000), Decimal::ZERO).expect("appel valide");
+        assert_eq!(appel.reserve_fund_share, Decimal::ZERO);
+    }
+
+    /// @negative — on ne peut pas affecter au fonds de réserve plus que ce
+    /// qu'on appelle.
+    #[test]
+    fn negative_la_part_de_reserve_ne_depasse_pas_le_total() {
+        let erreur = appel(dec!(12000), dec!(12001)).expect_err("doit refuser");
+        assert_eq!(erreur, CallForFundsError::ReserveShareExceedsTotal);
+    }
+
+    /// @edge — la part peut valoir exactement le total : un appel dédié à la
+    /// constitution du fonds de réserve est un cas réel (Art. 3.86 § 3 al. 4,
+    /// obligation de constitution à cinq ans).
+    #[test]
+    fn edge_la_part_peut_valoir_le_total() {
+        let appel = appel(dec!(12000), dec!(12000)).expect("appel valide");
+        assert_eq!(appel.reserve_fund_share, appel.total_amount);
+    }
+
+    /// @security — une part négative retirerait du fonds de réserve par un
+    /// appel de fonds, sans décision d'assemblée.
+    #[test]
+    fn security_une_part_negative_est_refusee() {
+        let erreur = appel(dec!(12000), dec!(-1)).expect_err("doit refuser");
+        assert_eq!(erreur, CallForFundsError::NegativeReserveShare);
+    }
+}
+
+#[cfg(test)]
 mod tests {
     use super::*;
     use crate::domain::entities::ContributionType;
@@ -221,6 +338,7 @@ mod tests {
             call_date,
             due_date,
             Some("7000".to_string()),
+            Decimal::ZERO, // part fonds de réserve
         );
 
         assert!(call.is_ok());
@@ -245,6 +363,7 @@ mod tests {
             call_date,
             due_date,
             None,
+            Decimal::ZERO, // part fonds de réserve
         );
 
         assert!(matches!(
@@ -269,6 +388,7 @@ mod tests {
             call_date,
             due_date,
             None,
+            Decimal::ZERO, // part fonds de réserve
         );
 
         assert!(matches!(
@@ -293,6 +413,7 @@ mod tests {
             call_date,
             due_date,
             None,
+            Decimal::ZERO, // part fonds de réserve
         )
         .unwrap();
 
@@ -321,6 +442,7 @@ mod tests {
             call_date,
             due_date,
             None,
+            Decimal::ZERO, // part fonds de réserve
         )
         .unwrap();
 
@@ -345,6 +467,7 @@ mod tests {
             call_date,
             call_date + chrono::Duration::days(days),
             None,
+            Decimal::ZERO, // part fonds de réserve
         )
     }
 

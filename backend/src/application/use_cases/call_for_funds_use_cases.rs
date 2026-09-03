@@ -114,6 +114,7 @@ impl CallForFundsUseCases {
         due_date: DateTime<Utc>,
         account_code: Option<String>,
         created_by: Option<Uuid>,
+        reserve_fund_share: rust_decimal::Decimal,
     ) -> Result<CallForFunds, String> {
         // Track H Story H2 — validate-before-compute gate (Art. 3.85 CC),
         // et résolution de l'ACP créancière (ADR-0045).
@@ -131,6 +132,7 @@ impl CallForFundsUseCases {
             call_date,
             due_date,
             account_code,
+            reserve_fund_share,
         )?;
 
         call_for_funds.created_by = created_by;
@@ -711,6 +713,7 @@ mod tests {
                 due_date,
                 None,
                 None,
+                rust_decimal::Decimal::ZERO, // part fonds de réserve
             )
             .await
             .expect("création valide");
@@ -749,6 +752,7 @@ mod tests {
                 due_date,
                 None,
                 None,
+                rust_decimal::Decimal::ZERO, // part fonds de réserve
             )
             .await;
 
@@ -782,6 +786,7 @@ mod tests {
                 due_date,
                 Some("7000".to_string()),
                 Some(Uuid::new_v4()),
+                rust_decimal::Decimal::ZERO, // part fonds de réserve
             )
             .await;
 
@@ -827,6 +832,7 @@ mod tests {
                 due_date,
                 None,
                 None,
+                rust_decimal::Decimal::ZERO, // part fonds de réserve
             )
             .await
             .unwrap();
@@ -911,6 +917,7 @@ mod tests {
                 due_date,
                 None,
                 None,
+                rust_decimal::Decimal::ZERO, // part fonds de réserve
             )
             .await
             .unwrap();
@@ -967,6 +974,7 @@ mod tests {
                 due_date,
                 None,
                 None,
+                rust_decimal::Decimal::ZERO, // part fonds de réserve
             )
             .await
             .unwrap();
@@ -999,6 +1007,7 @@ mod tests {
                 due_date,
                 None,
                 None,
+                rust_decimal::Decimal::ZERO, // part fonds de réserve
             )
             .await
             .unwrap();
@@ -1034,6 +1043,7 @@ mod tests {
                 due_date,
                 None,
                 None,
+                rust_decimal::Decimal::ZERO, // part fonds de réserve
             )
             .await
             .unwrap();
@@ -1065,6 +1075,7 @@ mod tests {
             call_date,
             due_date,
             None,
+            rust_decimal::Decimal::ZERO, // part fonds de réserve
         )
         .unwrap();
 
@@ -1108,6 +1119,7 @@ mod tests {
             due_date,
             None,
             None,
+            rust_decimal::Decimal::ZERO, // part fonds de réserve
         )
         .await
         .unwrap();
@@ -1123,6 +1135,7 @@ mod tests {
             due_date,
             None,
             None,
+            rust_decimal::Decimal::ZERO, // part fonds de réserve
         )
         .await
         .unwrap();
@@ -1139,6 +1152,7 @@ mod tests {
             due_date,
             None,
             None,
+            rust_decimal::Decimal::ZERO, // part fonds de réserve
         )
         .await
         .unwrap();

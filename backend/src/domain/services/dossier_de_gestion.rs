@@ -111,6 +111,7 @@ mod tests {
                     Utc::now(),
                     Utc::now() + Duration::days(30),
                     None,
+                    rust_decimal::Decimal::ZERO, // part fonds de réserve
                 )
                 .expect("appel de fonds valide"),
                 quote_part: OwnerContribution::new(

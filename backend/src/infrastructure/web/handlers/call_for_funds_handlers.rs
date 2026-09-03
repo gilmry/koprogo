@@ -95,6 +95,7 @@ pub async fn create_call_for_funds(
             req.due_date,
             req.account_code.clone(),
             Some(user.user_id),
+            req.reserve_fund_share,
         )
         .await
     {
