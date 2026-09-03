@@ -117,9 +117,9 @@ interpole l'identifiant au lieu de le lier.
 | K1 | Plancher Playwright smoke, borné par l'instabilité CI | #696, #548, #723 |
 | K2 | Cascade `Result<_, String>` → `AppError` | #555 (**différé 0.2.0**, non bloquant) |
 | K3 | Reliquat `f64` monétaire | **fait** `da711473` — le gate est vert, #433 fermée |
-| K4 | Vulnérabilités | **partiel** `d85f80c9` — npm à zéro, #674 fermée ; reste #432 (dependabot backend) |
+| K4 | Vulnérabilités | **partiel** `d85f80c9` — npm à **zéro**, #674 fermée. #432 : deux alertes restantes, corrigées localement, se fermeront quand le correctif atteindra `main` |
 | K5 | Contrat OpenAPI | **fait** `c3f736b6` `09ddca66` — #734 et #732 fermées, cliquet 440 → 425 |
-| K6 | Bugs fonctionnels ouverts | **partiel** — #721 et #722 fermées ; restent #552, #553, #554, #662, #718, #731 |
+| K6 | Bugs fonctionnels ouverts | **partiel** — #662, #721, #722 fermées ; restent #552, #553, #554, #718, #731 |
 | K8 | Observabilité et code mort | **fait** `8aa6b59d` — #719 et #720 fermées |
 | K7 | Auto-merge Dependabot sans gate CI | **fait** `7c90d191` — #659 fermée |
 
