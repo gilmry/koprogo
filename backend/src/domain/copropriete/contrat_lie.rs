@@ -43,11 +43,29 @@ pub enum LienAvecLeSyndic {
     /// de lien au sens de l'article.
     Parente { degre: u8 },
     /// Une entreprise dont une des personnes ci-dessus est propriétaire ou
-    /// détient une participation.
+    /// détient une participation, **quel qu'en soit le montant**.
     ///
-    /// L'article ne fixe **aucun seuil** de participation : détenir une part
-    /// suffit. Ne pas en inventer un.
-    EntrepriseLiee,
+    /// L'article ne fixe aucun seuil : détenir une part suffit. Ne pas en
+    /// inventer un.
+    EntrepriseDetenue,
+    /// Une entreprise dans laquelle une de ces personnes exerce des
+    /// **fonctions de direction ou de contrôle**.
+    ///
+    /// Ne rien posséder ne suffit donc pas à échapper à l'obligation : un
+    /// syndic administrateur d'une société de nettoyage y est soumis.
+    EntrepriseDirigee,
+    /// Une entreprise dont une de ces personnes est **salariée ou préposée**.
+    ///
+    /// Le cas le plus discret des trois, et il est visé par le texte au même
+    /// titre que les deux autres.
+    EntrepriseEmployeuse,
+    /// Une entreprise qui détient, **directement ou indirectement**, une
+    /// participation dans le capital du syndic personne morale.
+    ///
+    /// Le lien en sens inverse, que la fin du 13° vise expressément.
+    /// « Indirectement » couvre les holdings : s'arrêter à la détention
+    /// directe laisserait passer l'interposition d'une société.
+    ActionnaireDuSyndic,
 }
 
 impl LienAvecLeSyndic {
@@ -57,7 +75,12 @@ impl LienAvecLeSyndic {
     /// l'article ne s'applique pas — et l'étendre serait inventer une règle.
     pub fn exige_autorisation(&self) -> bool {
         match self {
-            Self::LeSyndic | Self::Prepose | Self::EntrepriseLiee => true,
+            Self::LeSyndic
+            | Self::Prepose
+            | Self::EntrepriseDetenue
+            | Self::EntrepriseDirigee
+            | Self::EntrepriseEmployeuse
+            | Self::ActionnaireDuSyndic => true,
             Self::Parente { degre } => *degre <= 3,
         }
     }
@@ -69,9 +92,22 @@ impl std::fmt::Display for LienAvecLeSyndic {
             Self::LeSyndic => write!(f, "le syndic lui-même"),
             Self::Prepose => write!(f, "un préposé du syndic"),
             Self::Parente { degre } => write!(f, "un parent ou allié au {degre}e degré"),
-            Self::EntrepriseLiee => {
-                write!(f, "une entreprise liée au syndic ou à ses proches")
+            Self::EntrepriseDetenue => {
+                write!(f, "une entreprise détenue par le syndic ou ses proches")
             }
+            Self::EntrepriseDirigee => write!(
+                f,
+                "une entreprise dirigée ou contrôlée par le syndic ou ses proches"
+            ),
+            Self::EntrepriseEmployeuse => write!(
+                f,
+                "une entreprise dont le syndic ou l'un de ses proches est salarié ou préposé"
+            ),
+            Self::ActionnaireDuSyndic => write!(
+                f,
+                "une entreprise détenant une participation, directe ou indirecte, dans le \
+                 capital du syndic"
+            ),
         }
     }
 }
@@ -172,7 +208,7 @@ mod tests {
     #[test]
     fn happy_un_contrat_lie_autorise_avant_signature_passe() {
         assert!(autorisation_valable(
-            Some(LienAvecLeSyndic::EntrepriseLiee),
+            Some(LienAvecLeSyndic::EntrepriseDetenue),
             il_y_a(10),
             Some(&autorisation(30)),
         )
@@ -184,7 +220,7 @@ mod tests {
     #[test]
     fn security_un_contrat_avec_la_societe_du_syndic_sans_vote_est_refuse() {
         let refus = autorisation_valable(
-            Some(LienAvecLeSyndic::EntrepriseLiee),
+            Some(LienAvecLeSyndic::EntrepriseDetenue),
             il_y_a(10),
             None,
         )
@@ -193,7 +229,7 @@ mod tests {
         assert_eq!(
             refus,
             ContratRefuse::AutorisationAbsente {
-                lien: LienAvecLeSyndic::EntrepriseLiee
+                lien: LienAvecLeSyndic::EntrepriseDetenue
             }
         );
     }
@@ -260,7 +296,36 @@ mod tests {
     /// suffit. Ne pas en inventer un.
     #[test]
     fn security_une_participation_meme_minime_declenche_lobligation() {
-        assert!(LienAvecLeSyndic::EntrepriseLiee.exige_autorisation());
+        assert!(LienAvecLeSyndic::EntrepriseDetenue.exige_autorisation());
+    }
+
+    /// @security — ne rien posséder ne suffit pas à y échapper.
+    ///
+    /// Le texte vise aussi celui qui **dirige ou contrôle**, et celui qui est
+    /// simplement **salarié ou préposé**. S'arrêter à la détention laisserait
+    /// passer les montages les plus courants : un syndic administrateur d'une
+    /// société de nettoyage, un préposé employé du prestataire.
+    #[test]
+    fn security_diriger_ou_etre_salarie_declenche_aussi_lobligation() {
+        assert!(LienAvecLeSyndic::EntrepriseDirigee.exige_autorisation());
+        assert!(LienAvecLeSyndic::EntrepriseEmployeuse.exige_autorisation());
+    }
+
+    /// @security — et le lien en sens inverse.
+    ///
+    /// La fin du 13° vise l'entreprise qui détient une participation dans le
+    /// capital du syndic personne morale, « directement **ou
+    /// indirectement** » : s'arrêter à la détention directe laisserait passer
+    /// l'interposition d'une holding.
+    #[test]
+    fn security_lactionnaire_du_syndic_declenche_lobligation() {
+        assert!(LienAvecLeSyndic::ActionnaireDuSyndic.exige_autorisation());
+        assert!(autorisation_valable(
+            Some(LienAvecLeSyndic::ActionnaireDuSyndic),
+            il_y_a(10),
+            None
+        )
+        .is_err());
     }
 
     #[test]
