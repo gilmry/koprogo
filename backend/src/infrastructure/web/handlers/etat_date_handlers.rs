@@ -5,8 +5,8 @@ use crate::application::dto::{
 use crate::domain::entities::EtatDateStatus;
 use crate::infrastructure::audit::{AuditEventType, AuditLogEntry};
 use crate::infrastructure::web::handlers::conformity_response::try_build_conformity_response;
-use crate::infrastructure::web::{AppState, AuthenticatedUser};
 use crate::infrastructure::web::middleware::scope_guard::verify_building_org_access;
+use crate::infrastructure::web::{AppState, AuthenticatedUser};
 use actix_web::{delete, get, post, put, web, HttpResponse, Responder, ResponseError};
 use serde::Deserialize;
 use uuid::Uuid;
@@ -60,7 +60,6 @@ pub async fn create_etat_date(
     {
         return err.error_response();
     }
-
 
     match state
         .etat_date_use_cases

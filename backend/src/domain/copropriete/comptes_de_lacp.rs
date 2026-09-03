@@ -167,8 +167,16 @@ mod tests {
     fn happy_deux_comptes_distincts_au_nom_de_lacp_sont_en_regle() {
         let acp = Uuid::new_v4();
         let comptes = vec![
-            compte("BE68 5390 0754 7034", AffectationDuCompte::FondsDeRoulement, Some(acp)),
-            compte("BE71 0961 2345 6769", AffectationDuCompte::FondsDeReserve, Some(acp)),
+            compte(
+                "BE68 5390 0754 7034",
+                AffectationDuCompte::FondsDeRoulement,
+                Some(acp),
+            ),
+            compte(
+                "BE71 0961 2345 6769",
+                AffectationDuCompte::FondsDeReserve,
+                Some(acp),
+            ),
         ];
         assert!(verifier(&comptes, acp).is_empty());
     }
@@ -179,8 +187,16 @@ mod tests {
     fn happy_un_troisieme_compte_nest_pas_une_irregularite() {
         let acp = Uuid::new_v4();
         let comptes = vec![
-            compte("BE68 5390 0754 7034", AffectationDuCompte::FondsDeRoulement, Some(acp)),
-            compte("BE71 0961 2345 6769", AffectationDuCompte::FondsDeReserve, Some(acp)),
+            compte(
+                "BE68 5390 0754 7034",
+                AffectationDuCompte::FondsDeRoulement,
+                Some(acp),
+            ),
+            compte(
+                "BE71 0961 2345 6769",
+                AffectationDuCompte::FondsDeReserve,
+                Some(acp),
+            ),
             compte("BE62 5100 0754 7061", AffectationDuCompte::Autre, Some(acp)),
         ];
         assert!(verifier(&comptes, acp).is_empty());
@@ -194,8 +210,16 @@ mod tests {
     fn security_un_compte_unique_pour_les_deux_fonds_est_signale() {
         let acp = Uuid::new_v4();
         let comptes = vec![
-            compte("BE68 5390 0754 7034", AffectationDuCompte::FondsDeRoulement, Some(acp)),
-            compte("BE68 5390 0754 7034", AffectationDuCompte::FondsDeReserve, Some(acp)),
+            compte(
+                "BE68 5390 0754 7034",
+                AffectationDuCompte::FondsDeRoulement,
+                Some(acp),
+            ),
+            compte(
+                "BE68 5390 0754 7034",
+                AffectationDuCompte::FondsDeReserve,
+                Some(acp),
+            ),
         ];
         let manquements = verifier(&comptes, acp);
         assert_eq!(
@@ -214,8 +238,16 @@ mod tests {
     fn security_un_compte_au_nom_du_syndic_est_signale() {
         let acp = Uuid::new_v4();
         let comptes = vec![
-            compte("BE68 5390 0754 7034", AffectationDuCompte::FondsDeRoulement, None),
-            compte("BE71 0961 2345 6769", AffectationDuCompte::FondsDeReserve, Some(acp)),
+            compte(
+                "BE68 5390 0754 7034",
+                AffectationDuCompte::FondsDeRoulement,
+                None,
+            ),
+            compte(
+                "BE71 0961 2345 6769",
+                AffectationDuCompte::FondsDeReserve,
+                Some(acp),
+            ),
         ];
         let manquements = verifier(&comptes, acp);
         assert_eq!(manquements.len(), 1);
@@ -231,8 +263,16 @@ mod tests {
         let acp = Uuid::new_v4();
         let voisine = Uuid::new_v4();
         let comptes = vec![
-            compte("BE68 5390 0754 7034", AffectationDuCompte::FondsDeRoulement, Some(voisine)),
-            compte("BE71 0961 2345 6769", AffectationDuCompte::FondsDeReserve, Some(acp)),
+            compte(
+                "BE68 5390 0754 7034",
+                AffectationDuCompte::FondsDeRoulement,
+                Some(voisine),
+            ),
+            compte(
+                "BE71 0961 2345 6769",
+                AffectationDuCompte::FondsDeReserve,
+                Some(acp),
+            ),
         ];
         assert_eq!(verifier(&comptes, acp).len(), 1);
     }
@@ -263,6 +303,10 @@ mod tests {
         )];
         let manquements = verifier(&comptes, acp);
 
-        assert_eq!(manquements.len(), 2, "réserve absente ET compte hors du nom");
+        assert_eq!(
+            manquements.len(),
+            2,
+            "réserve absente ET compte hors du nom"
+        );
     }
 }

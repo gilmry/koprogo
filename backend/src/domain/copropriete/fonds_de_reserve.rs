@@ -219,11 +219,13 @@ mod tests {
         let statut = StatutFondsReserve::Exigible {
             plancher_annuel: dec!(2400),
         };
-        let refus = verifier_dotation(&statut, dec!(1000), dec!(48000))
-            .expect_err("doit refuser");
+        let refus = verifier_dotation(&statut, dec!(1000), dec!(48000)).expect_err("doit refuser");
         assert_eq!(refus.plancher, dec!(2400));
         assert_eq!(refus.prevue, dec!(1000));
-        assert!(refus.to_string().contains("4/5"), "le refus doit dire l'issue");
+        assert!(
+            refus.to_string().contains("4/5"),
+            "le refus doit dire l'issue"
+        );
     }
 
     #[test]

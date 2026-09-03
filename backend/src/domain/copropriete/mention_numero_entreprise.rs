@@ -82,7 +82,11 @@ pub fn verifier_les_documents(
         return MentionNumeroEntreprise::NumeroNonAttribue;
     };
 
-    let normalise = |s: &str| s.chars().filter(|c| c.is_alphanumeric()).collect::<String>();
+    let normalise = |s: &str| {
+        s.chars()
+            .filter(|c| c.is_alphanumeric())
+            .collect::<String>()
+    };
     let attendu = normalise(numero);
 
     let manquants: Vec<&'static str> = documents
@@ -140,7 +144,10 @@ mod tests {
 
     #[test]
     fn negative_un_document_sans_mention_est_signale() {
-        let docs = vec![document("appel de fonds", "Appel de fonds T1 2026\nMontant : 1200 €")];
+        let docs = vec![document(
+            "appel de fonds",
+            "Appel de fonds T1 2026\nMontant : 1200 €",
+        )];
         assert_eq!(
             verifier_les_documents(Some(NUMERO), &docs),
             MentionNumeroEntreprise::Manquante {

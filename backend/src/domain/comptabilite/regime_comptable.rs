@@ -30,6 +30,7 @@
 //!
 //! Voir issue #746.
 
+pub use crate::domain::copropriete::decompte_des_lots::lots_comptes;
 use crate::domain::copropriete::unit::UnitType;
 
 /// Le régime comptable auquel une ACP est tenue.
@@ -45,7 +46,10 @@ pub enum RegimeComptable {
 
 impl RegimeComptable {
     /// Le seuil légal, en lots comptés au sens de l'Art. 3.89 § 5, 15°.
-    pub const SEUIL_LEGAL: usize = 20;
+    ///
+    /// Repris du décompte de `copropriete` : un lot est une notion de l'acte
+    /// de base, pas une notion comptable. Le régime **dérive** du décompte.
+    pub const SEUIL_LEGAL: usize = crate::domain::copropriete::decompte_des_lots::SEUIL_LEGAL;
 
     pub fn est_simplifie(&self) -> bool {
         matches!(self, Self::Simplifie)
@@ -61,24 +65,16 @@ impl std::fmt::Display for RegimeComptable {
     }
 }
 
-/// Un lot compte-t-il dans le décompte légal ?
+/// Le décompte légal, réexporté depuis `copropriete`.
 ///
-/// L'article exclut « les caves, les garages et parkings ». `Other` est
-/// compté : le doute profite à l'obligation la plus stricte, puisque se
-/// tromper dans ce sens fait tenir une comptabilité plus détaillée que
-/// nécessaire, tandis que l'erreur inverse met l'ACP en défaut.
-pub fn compte_dans_le_seuil(nature: UnitType) -> bool {
-    !matches!(nature, UnitType::Cellar | UnitType::Parking)
-}
-
-/// Le nombre de lots au sens de l'Art. 3.89 § 5, 15°.
-pub fn lots_comptes(natures: &[UnitType]) -> usize {
-    natures
-        .iter()
-        .copied()
-        .filter(|n| compte_dans_le_seuil(*n))
-        .count()
-}
+/// La règle ne vit pas ici : un lot est une notion de l'acte de base
+/// (Art. 3.85 § 1er), pas une notion comptable, et l'Art. 3.90 § 1er emploie
+/// exactement le même décompte pour le conseil de copropriété. Deux
+/// définitions du même comptage finiraient par diverger.
+///
+/// Réexporté pour que le lecteur du régime comptable trouve la règle sans
+/// changer de contexte.
+pub use crate::domain::copropriete::decompte_des_lots::compte_dans_le_seuil;
 
 /// Le régime auquel une ACP est tenue, dérivé de ses lots.
 pub fn regime_applicable(natures: &[UnitType]) -> RegimeComptable {
@@ -138,7 +134,10 @@ mod tests {
     /// @edge — et vingt lots basculent.
     #[test]
     fn edge_vingt_lots_imposent_le_plan_normalise() {
-        assert_eq!(regime_applicable(&lots(20, 0, 0, 0)), RegimeComptable::Complet);
+        assert_eq!(
+            regime_applicable(&lots(20, 0, 0, 0)),
+            RegimeComptable::Complet
+        );
     }
 
     /// Les commerces comptent : l'article n'exclut que caves, garages et

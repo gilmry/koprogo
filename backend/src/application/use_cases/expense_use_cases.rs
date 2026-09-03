@@ -95,11 +95,7 @@ impl ExpenseUseCases {
     /// (constructeurs des tests unitaires) ; en son absence on retombe sur
     /// l'organisation, ce qui préserve les tests à mocks sans introduire de
     /// dérive en production, où `main.rs` le fournit toujours.
-    async fn resolve_acp_id(
-        &self,
-        building_id: Uuid,
-        fallback: Uuid,
-    ) -> Result<Uuid, String> {
+    async fn resolve_acp_id(&self, building_id: Uuid, fallback: Uuid) -> Result<Uuid, String> {
         let Some(building_repo) = &self.building_repository else {
             return Ok(fallback);
         };

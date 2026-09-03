@@ -69,14 +69,20 @@ impl std::fmt::Display for SignatureManquante {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::President { president } => {
-                write!(f, "Art. 3.87 § 10 : le président {president} n'a pas signé.")
+                write!(
+                    f,
+                    "Art. 3.87 § 10 : le président {president} n'a pas signé."
+                )
             }
             Self::SecretaireNonDesigne => write!(
                 f,
                 "Art. 3.87 § 10 : aucun secrétaire n'a été désigné à l'ouverture de la séance."
             ),
             Self::Secretaire { secretaire } => {
-                write!(f, "Art. 3.87 § 10 : le secrétaire {secretaire} n'a pas signé.")
+                write!(
+                    f,
+                    "Art. 3.87 § 10 : le secrétaire {secretaire} n'a pas signé."
+                )
             }
             Self::CoproprietairesPresents { manquants } => write!(
                 f,
@@ -163,10 +169,7 @@ mod tests {
         let present = Uuid::new_v4();
         let s = seance(president, secretaire, vec![present]);
 
-        assert!(pv_valablement_signe(
-            &s,
-            &[president, secretaire, present]
-        ));
+        assert!(pv_valablement_signe(&s, &[president, secretaire, present]));
     }
 
     #[test]
@@ -199,9 +202,7 @@ mod tests {
         let manquements = verifier_signatures(&s, &[syndic, secretaire]);
         assert_eq!(
             manquements,
-            vec![SignatureManquante::PresidentNonCoproprietaire {
-                president: syndic
-            }],
+            vec![SignatureManquante::PresidentNonCoproprietaire { president: syndic }],
             "il a bien signé, mais il n'aurait pas dû présider"
         );
     }

@@ -38,10 +38,7 @@ impl OwnerContributionUseCases {
         self
     }
 
-    pub fn with_accounting(
-        mut self,
-        accounting_service: Arc<ExpenseAccountingService>,
-    ) -> Self {
+    pub fn with_accounting(mut self, accounting_service: Arc<ExpenseAccountingService>) -> Self {
         self.accounting_service = Some(accounting_service);
         self
     }
@@ -93,8 +90,7 @@ impl OwnerContributionUseCases {
         })?;
         let Some(unit_repo) = &self.unit_repository else {
             return Err(
-                "Impossible de déterminer l'ACP créancière : dépôt de lots non câblé"
-                    .to_string(),
+                "Impossible de déterminer l'ACP créancière : dépôt de lots non câblé".to_string(),
             );
         };
         let unit = unit_repo

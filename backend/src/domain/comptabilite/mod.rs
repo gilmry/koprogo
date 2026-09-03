@@ -9,7 +9,6 @@
 //! par l'acte de base (Art. 3.85 § 1er), elle ne peut pas les ignorer.
 //! L'inverse est faux — la loi dit ce qu'est un lot sans le plan comptable.
 
-
 pub mod account;
 pub mod arrieres_mutation;
 pub mod budget;
@@ -24,10 +23,11 @@ pub mod owner_credit_balance;
 pub mod payment;
 pub mod payment_method;
 pub mod payment_reminder;
-pub mod regime_comptable;
 pub mod quote;
+pub mod regime_comptable;
 
 pub use account::{Account, AccountType};
+pub use arrieres_mutation::{jours_ouvrables, ArrieresARetenir};
 pub use budget::{Budget, BudgetStatus};
 pub use call_for_funds::{CallForFunds, CallForFundsError, CallForFundsStatus};
 pub use charge_distribution::{ChargeDistribution, ChargeDistributionError, DistributionCriteria};
@@ -45,4 +45,3 @@ pub use payment_method::PaymentMethod;
 pub use payment_reminder::{DeliveryMethod, PaymentReminder, ReminderLevel, ReminderStatus};
 pub use quote::{Quote, QuoteScore, QuoteStatus, QuoteSubmission};
 pub use regime_comptable::{lots_comptes, regime_applicable, RegimeComptable};
-pub use arrieres_mutation::{jours_ouvrables, ArrieresARetenir};

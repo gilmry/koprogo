@@ -211,8 +211,8 @@ mod tests {
             vote(Uuid::new_v4(), dec!(100), None),
         ];
 
-        let refus = verifier_procurations(&votes, TOTAL_DES_LOTS, Some(syndic))
-            .expect_err("doit refuser");
+        let refus =
+            verifier_procurations(&votes, TOTAL_DES_LOTS, Some(syndic)).expect_err("doit refuser");
         assert_eq!(refus, ProcurationRefusee::SyndicMandataire { mandats: 1 });
     }
 
@@ -264,8 +264,7 @@ mod tests {
         votes.push(vote(Uuid::new_v4(), dec!(800), None));
 
         // 200/1000 = 20 % > 10 %.
-        let refus =
-            verifier_procurations(&votes, TOTAL_DES_LOTS, None).expect_err("doit refuser");
+        let refus = verifier_procurations(&votes, TOTAL_DES_LOTS, None).expect_err("doit refuser");
         match refus {
             ProcurationRefusee::TropDeProcurations {
                 recues,
@@ -320,8 +319,7 @@ mod tests {
             vote(Uuid::new_v4(), dec!(199), None),
         ];
 
-        let refus =
-            verifier_procurations(&votes, TOTAL_DES_LOTS, None).expect_err("doit refuser");
+        let refus = verifier_procurations(&votes, TOTAL_DES_LOTS, None).expect_err("doit refuser");
         match refus {
             ProcurationRefusee::PoidsSuperieurAuReste {
                 voix,
@@ -357,8 +355,7 @@ mod tests {
         votes.push(vote(Uuid::new_v4(), dec!(300), None));
 
         // 550 pour le mandataire, 300 pour le reste.
-        let refus =
-            verifier_procurations(&votes, TOTAL_DES_LOTS, None).expect_err("doit refuser");
+        let refus = verifier_procurations(&votes, TOTAL_DES_LOTS, None).expect_err("doit refuser");
         assert!(matches!(
             refus,
             ProcurationRefusee::PoidsSuperieurAuReste { .. }

@@ -1,11 +1,11 @@
-﻿use crate::application::dto::{
+use crate::application::dto::{
     CreateBudgetRequest, PageRequest, PageResponse, UpdateBudgetRequest,
 };
 use crate::domain::entities::BudgetStatus;
 use crate::infrastructure::audit::{AuditEventType, AuditLogEntry};
 use crate::infrastructure::web::middleware::scope_guard::verify_acp_org_access;
-use crate::infrastructure::web::{AppState, AuthenticatedUser};
 use crate::infrastructure::web::middleware::scope_guard::verify_building_org_access;
+use crate::infrastructure::web::{AppState, AuthenticatedUser};
 use actix_web::{delete, get, post, put, web, HttpResponse, Responder, ResponseError};
 use uuid::Uuid;
 
@@ -42,7 +42,6 @@ pub async fn create_budget(
     {
         return err.error_response();
     }
-
 
     match state
         .budget_use_cases

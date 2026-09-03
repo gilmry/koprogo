@@ -240,6 +240,12 @@ impl CallForFunds {
     }
 }
 
+impl crate::domain::services::PieceDeGestion for CallForFunds {
+    fn acp_id(&self) -> Uuid {
+        self.acp_id
+    }
+}
+
 #[cfg(test)]
 mod tests_art_3_86_fonds_de_reserve {
     use super::*;
@@ -514,11 +520,5 @@ mod tests {
             mk(rust_decimal_macros::dec!(-1), 30).unwrap_err(),
             CallForFundsError::NonPositiveTotalAmount
         ));
-    }
-}
-
-impl crate::domain::services::PieceDeGestion for CallForFunds {
-    fn acp_id(&self) -> Uuid {
-        self.acp_id
     }
 }

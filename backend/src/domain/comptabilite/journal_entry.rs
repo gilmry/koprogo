@@ -375,6 +375,12 @@ impl JournalEntryLine {
     }
 }
 
+impl crate::domain::services::PieceDeGestion for JournalEntry {
+    fn acp_id(&self) -> Uuid {
+        self.acp_id
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -678,11 +684,5 @@ mod tests {
             result.unwrap_err(),
             JournalEntryError::CrossOrgLine
         ));
-    }
-}
-
-impl crate::domain::services::PieceDeGestion for JournalEntry {
-    fn acp_id(&self) -> Uuid {
-        self.acp_id
     }
 }

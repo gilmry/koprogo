@@ -246,7 +246,8 @@ impl EtatDateRepository for PostgresEtatDateRepository {
 
         if organization_id.is_some() {
             query_str.push_str(" AND acp_id IN (SELECT id FROM acps WHERE organization_id = $1)");
-            count_query_str.push_str(" AND acp_id IN (SELECT id FROM acps WHERE organization_id = $1)");
+            count_query_str
+                .push_str(" AND acp_id IN (SELECT id FROM acps WHERE organization_id = $1)");
         }
 
         if status.is_some() {

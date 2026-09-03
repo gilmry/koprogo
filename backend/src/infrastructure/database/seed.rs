@@ -98,12 +98,42 @@ impl DatabaseSeeder {
         // d'entreprise syntaxiquement valide risquerait de correspondre à une
         // vraie société.
         const ACP_MODELES: [(&str, &str, &str, &str); 6] = [
-            ("Résidence Les Tilleuls", "Avenue Louise 143", "1050", "Ixelles"),
-            ("Résidence Dansaert", "Rue Antoine Dansaert 62", "1000", "Bruxelles"),
-            ("Résidence Parc Léopold", "Rue Belliard 28", "1040", "Etterbeek"),
-            ("Résidence Flagey", "Place Eugène Flagey 18", "1050", "Ixelles"),
-            ("Résidence Montgomery", "Avenue de Tervueren 96", "1150", "Woluwe-Saint-Pierre"),
-            ("Résidence Val d'Or", "Chaussée de Waterloo 715", "1180", "Uccle"),
+            (
+                "Résidence Les Tilleuls",
+                "Avenue Louise 143",
+                "1050",
+                "Ixelles",
+            ),
+            (
+                "Résidence Dansaert",
+                "Rue Antoine Dansaert 62",
+                "1000",
+                "Bruxelles",
+            ),
+            (
+                "Résidence Parc Léopold",
+                "Rue Belliard 28",
+                "1040",
+                "Etterbeek",
+            ),
+            (
+                "Résidence Flagey",
+                "Place Eugène Flagey 18",
+                "1050",
+                "Ixelles",
+            ),
+            (
+                "Résidence Montgomery",
+                "Avenue de Tervueren 96",
+                "1150",
+                "Woluwe-Saint-Pierre",
+            ),
+            (
+                "Résidence Val d'Or",
+                "Chaussée de Waterloo 715",
+                "1180",
+                "Uccle",
+            ),
         ];
 
         // Choix déterministe : un même identifiant d'organisation rend

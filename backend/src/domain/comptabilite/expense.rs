@@ -425,6 +425,12 @@ impl Expense {
     }
 }
 
+impl crate::domain::services::PieceDeGestion for Expense {
+    fn acp_id(&self) -> Uuid {
+        self.acp_id
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1296,11 +1302,5 @@ mod tests {
 
         assert!(result.is_ok());
         assert_eq!(expense.approval_status, ApprovalStatus::Approved);
-    }
-}
-
-impl crate::domain::services::PieceDeGestion for Expense {
-    fn acp_id(&self) -> Uuid {
-        self.acp_id
     }
 }

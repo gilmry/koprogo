@@ -61,11 +61,7 @@ pub enum EtatDemande {
 }
 
 impl DemandeDeReleve {
-    pub fn nouvelle(
-        notaire: String,
-        unit_id: Uuid,
-        recue_le: DateTime<Utc>,
-    ) -> Self {
+    pub fn nouvelle(notaire: String, unit_id: Uuid, recue_le: DateTime<Utc>) -> Self {
         Self {
             id: Uuid::new_v4(),
             notaire,
@@ -202,7 +198,11 @@ mod tests {
         let demandes = vec![demande(28), demande(40), demande(5), demande(26)];
         let urgentes = a_relancer(&demandes, Utc::now(), 7);
 
-        assert_eq!(urgentes.len(), 3, "celle reçue il y a 5 jours n'est pas urgente");
+        assert_eq!(
+            urgentes.len(),
+            3,
+            "celle reçue il y a 5 jours n'est pas urgente"
+        );
         assert!(
             urgentes[0].echeance <= urgentes[1].echeance,
             "la plus pressée en premier"

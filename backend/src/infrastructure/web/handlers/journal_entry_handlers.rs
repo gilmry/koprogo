@@ -10,12 +10,12 @@
 // API endpoints for manual journal entry creation and management
 
 use crate::infrastructure::audit::{AuditEventType, AuditLogEntry};
+use crate::infrastructure::web::middleware::scope_guard::verify_building_org_access;
 use crate::infrastructure::web::{AppState, AuthenticatedUser};
 use actix_web::ResponseError;
 use actix_web::{delete, get, post, web, HttpResponse, Responder};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
-use crate::infrastructure::web::middleware::scope_guard::verify_building_org_access;
 
 /// `deny_unknown_fields` : le rapport de test du 2026-09-01 (constat F16)
 /// signalait `operation_date` et `reference` « non persistes ». Les noms

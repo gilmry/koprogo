@@ -691,7 +691,9 @@ mod tests {
             MockUnitOwnerRepository::with_building_ownerships(building_id, trop_grossier),
         );
         assert!(
-            uc.calculate_and_save_distribution(expense_id).await.is_err(),
+            uc.calculate_and_save_distribution(expense_id)
+                .await
+                .is_err(),
             "10 centimes d'écart dépassent la tolérance"
         );
 
@@ -709,7 +711,9 @@ mod tests {
             MockUnitOwnerRepository::with_building_ownerships(building_id, exact),
         );
         assert!(
-            uc2.calculate_and_save_distribution(expense_id).await.is_ok(),
+            uc2.calculate_and_save_distribution(expense_id)
+                .await
+                .is_ok(),
             "une traîne d'arrondi sous le centime doit rester admise"
         );
     }

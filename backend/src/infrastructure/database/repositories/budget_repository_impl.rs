@@ -242,8 +242,14 @@ impl BudgetRepository for PostgresBudgetRepository {
         let mut bindings: Vec<String> = Vec::new();
 
         if let Some(org_id) = organization_id {
-            query.push_str(&format!(" AND acp_id IN (SELECT id FROM acps WHERE organization_id = ${}::uuid)", bind_index));
-            count_query.push_str(&format!(" AND acp_id IN (SELECT id FROM acps WHERE organization_id = ${}::uuid)", bind_index));
+            query.push_str(&format!(
+                " AND acp_id IN (SELECT id FROM acps WHERE organization_id = ${}::uuid)",
+                bind_index
+            ));
+            count_query.push_str(&format!(
+                " AND acp_id IN (SELECT id FROM acps WHERE organization_id = ${}::uuid)",
+                bind_index
+            ));
             bindings.push(org_id.to_string());
             bind_index += 1;
         }

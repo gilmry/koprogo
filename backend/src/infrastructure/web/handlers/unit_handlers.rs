@@ -7,7 +7,6 @@ use crate::infrastructure::web::{AppState, AuthenticatedUser};
 use actix_web::{delete, get, post, put, web, HttpResponse, Responder, ResponseError};
 use uuid::Uuid;
 use validator::Validate;
-use crate::infrastructure::web::middleware::scope_guard::verify_building_org_access;
 
 #[utoipa::path(
     post,

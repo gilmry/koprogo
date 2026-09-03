@@ -333,6 +333,12 @@ impl PaymentReminder {
     }
 }
 
+impl crate::domain::services::PieceDeGestion for PaymentReminder {
+    fn acp_id(&self) -> Uuid {
+        self.acp_id
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -628,11 +634,5 @@ mod tests {
         .unwrap();
 
         assert_eq!(reminder.delivery_method, DeliveryMethod::RegisteredLetter);
-    }
-}
-
-impl crate::domain::services::PieceDeGestion for PaymentReminder {
-    fn acp_id(&self) -> Uuid {
-        self.acp_id
     }
 }

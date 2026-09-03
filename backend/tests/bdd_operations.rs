@@ -2249,10 +2249,12 @@ async fn when_add_provider_offer(world: &mut OperationsWorld, step: &Step) {
 
     use koprogo_api::domain::entities::ProviderOffer;
     let provider_name = get_table_value(step, "provider_name");
-    let price_kwh: f64 = get_table_value(step, "price_kwh_electricity")
+    // Prix et redevance sont des montants : `Decimal`, jamais `f64`
+    // (ADR-0008 § A). Le pourcentage d'énergie verte reste un affichage.
+    let price_kwh: rust_decimal::Decimal = get_table_value(step, "price_kwh_electricity")
         .parse()
         .unwrap();
-    let fee: f64 = get_table_value(step, "fixed_monthly_fee").parse().unwrap();
+    let fee: rust_decimal::Decimal = get_table_value(step, "fixed_monthly_fee").parse().unwrap();
     let green: f64 = get_table_value(step, "green_energy_pct").parse().unwrap();
     let duration: i32 = get_table_value(step, "contract_duration_months")
         .parse()
@@ -2301,9 +2303,11 @@ async fn given_n_offers(world: &mut OperationsWorld, count: usize) {
         let offer = ProviderOffer::new(
             campaign_id,
             format!("Provider {}", i + 1),
-            Some(0.25 + (i as f64 * 0.02)),
+            // Prix et redevance en `Decimal` (ADR-0008 § A) : ce sont des
+            // montants. Le pourcentage d'énergie verte reste un affichage.
+            Some(rust_decimal::Decimal::new(25 + (i as i64 * 2), 2)),
             None,
-            5.0 + i as f64,
+            rust_decimal::Decimal::new(500 + i as i64 * 100, 2),
             80.0,
             12,
             10.0 + i as f64,

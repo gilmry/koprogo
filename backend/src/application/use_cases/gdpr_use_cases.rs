@@ -82,7 +82,8 @@ impl GdprUseCases {
     /// # Returns
     /// * `Ok(GdprEraseResponseDto)` - Anonymization confirmation
     /// * `Err(String)` - If user not found, not authorized, already anonymized, or legal holds exist
-    /// Efface les données d'un utilisateur (art. 17 RGPD).
+    ///
+    /// # Mot de passe exigé
     ///
     /// `password` : mot de passe de la personne qui demande l'effacement,
     /// exigé lorsqu'elle efface ses propres données. L'interface demandait

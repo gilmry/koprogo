@@ -219,12 +219,9 @@ mod tests {
     /// avec sa propre société.
     #[test]
     fn security_un_contrat_avec_la_societe_du_syndic_sans_vote_est_refuse() {
-        let refus = autorisation_valable(
-            Some(LienAvecLeSyndic::EntrepriseDetenue),
-            il_y_a(10),
-            None,
-        )
-        .expect_err("doit refuser");
+        let refus =
+            autorisation_valable(Some(LienAvecLeSyndic::EntrepriseDetenue), il_y_a(10), None)
+                .expect_err("doit refuser");
 
         assert_eq!(
             refus,

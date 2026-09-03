@@ -454,8 +454,8 @@ mod tests {
     };
     use async_trait::async_trait;
     use chrono::Utc;
-    use std::collections::HashMap;
     use rust_decimal_macros::dec;
+    use std::collections::HashMap;
     use std::sync::Mutex;
 
     // Story H17 — mock UnitOwnerRepository : `find_voting_holders_by_unit`
@@ -967,7 +967,10 @@ mod tests {
                 .expect("vote enregistré");
         }
 
-        assert!(use_cases.close_voting(resolution_id, dec!(1000)).await.is_ok());
+        assert!(use_cases
+            .close_voting(resolution_id, dec!(1000))
+            .await
+            .is_ok());
     }
 
     #[tokio::test]

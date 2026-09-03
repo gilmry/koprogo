@@ -206,7 +206,10 @@ mod tests_art_33_rgpd {
             vec![],
             None,
         );
-        assert!(refus.is_err(), "la nullabilité de l'organisation n'assouplit rien d'autre");
+        assert!(
+            refus.is_err(),
+            "la nullabilité de l'organisation n'assouplit rien d'autre"
+        );
     }
 }
 

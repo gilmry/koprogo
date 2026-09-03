@@ -53,7 +53,7 @@ pub fn perimetre_du_mandataire<'a>(
 mod tests {
     use super::*;
     use crate::domain::entities::{
-        Budget, CallForFunds, Convocation, ConvocationType, ContributionType, EtatDate,
+        Budget, CallForFunds, ContributionType, Convocation, ConvocationType, EtatDate,
         EtatDateLanguage, Expense, ExpenseCategory, JournalEntry, JournalEntryLine, Meeting,
         MeetingType, OwnerContribution, PaymentReminder, ReminderLevel,
     };
@@ -91,15 +91,8 @@ mod tests {
                     None,
                 )
                 .expect("charge valide"),
-                budget: Budget::new(
-                    acp,
-                    syndic,
-                    immeuble,
-                    2026,
-                    dec!(48000.00),
-                    dec!(12000.00),
-                )
-                .expect("budget valide"),
+                budget: Budget::new(acp, syndic, immeuble, 2026, dec!(48000.00), dec!(12000.00))
+                    .expect("budget valide"),
                 appel_de_fonds: CallForFunds::new(
                     acp,
                     syndic,
@@ -249,7 +242,11 @@ mod tests {
 
         let mut mandat_sortant = SyndicMandate::new(acp, cabinet_sortant, avant, None);
         mandat_sortant
-            .revoke(passation, None, Some("Fin de mandat votée en AG".to_string()))
+            .revoke(
+                passation,
+                None,
+                Some("Fin de mandat votée en AG".to_string()),
+            )
             .expect("révocation valide");
         let mandat_entrant = SyndicMandate::new(acp, cabinet_entrant, passation, None);
         let mandats = vec![mandat_sortant, mandat_entrant];
@@ -288,15 +285,22 @@ mod tests {
         let dossier = DossierComplet::pour(acp, ancien_syndic, Uuid::new_v4());
         let pieces = dossier.pieces();
 
-        let mut mandat = SyndicMandate::new(acp, ancien_syndic, passation - Duration::days(90), None);
-        mandat.revoke(passation, None, None).expect("révocation valide");
+        let mut mandat =
+            SyndicMandate::new(acp, ancien_syndic, passation - Duration::days(90), None);
+        mandat
+            .revoke(passation, None, None)
+            .expect("révocation valide");
 
         assert!(
             perimetre_du_mandataire(&pieces, &[mandat], ancien_syndic, passation).is_empty(),
             "plus personne ne voit le dossier"
         );
         for piece in &pieces {
-            assert_eq!(piece.acp_id(), acp, "mais chaque pièce sait encore à qui elle est");
+            assert_eq!(
+                piece.acp_id(),
+                acp,
+                "mais chaque pièce sait encore à qui elle est"
+            );
         }
     }
 

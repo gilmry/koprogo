@@ -136,8 +136,7 @@ impl RequeteAg {
         convoquee_le: Option<DateTime<Utc>>,
         moment: DateTime<Utc>,
     ) -> bool {
-        self.cosignataires.contains(&copropietaire)
-            && self.syndic_defaillant(convoquee_le, moment)
+        self.cosignataires.contains(&copropietaire) && self.syndic_defaillant(convoquee_le, moment)
     }
 }
 
@@ -159,8 +158,8 @@ mod tests {
 
     #[test]
     fn happy_une_requete_au_seuil_est_recevable() {
-        let requete = deposer(vec![Uuid::new_v4()], dec!(200), TOTAL, il_y_a(5))
-            .expect("recevable");
+        let requete =
+            deposer(vec![Uuid::new_v4()], dec!(200), TOTAL, il_y_a(5)).expect("recevable");
         assert_eq!(requete.quotites_reunies, dec!(200));
     }
 
@@ -171,8 +170,7 @@ mod tests {
     #[test]
     fn negative_dix_neuf_petits_porteurs_natteignent_pas_le_seuil() {
         let cosignataires: Vec<Uuid> = (0..19).map(|_| Uuid::new_v4()).collect();
-        let refus = deposer(cosignataires, dec!(150), TOTAL, il_y_a(5))
-            .expect_err("doit refuser");
+        let refus = deposer(cosignataires, dec!(150), TOTAL, il_y_a(5)).expect_err("doit refuser");
 
         assert_eq!(
             refus,

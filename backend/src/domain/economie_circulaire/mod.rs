@@ -21,7 +21,6 @@
 //! Dépend de `copropriete` : un échange, une réservation, une campagne ont
 //! lieu au sein d'une ACP et n'existent pas sans elle.
 
-
 pub mod achievement;
 pub mod challenge;
 pub mod contractor_evaluation;

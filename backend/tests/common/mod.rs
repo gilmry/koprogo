@@ -192,7 +192,8 @@ pub async fn setup_test_db() -> (
         expense_repo.clone(),
         unit_owner_repo.clone(),
     );
-    let meeting_use_cases = MeetingUseCases::new(meeting_repo.clone());
+    let meeting_use_cases =
+        MeetingUseCases::new(meeting_repo.clone()).with_acp_resolution(building_repo.clone());
     let storage_root = std::env::temp_dir().join(format!("koprogo_e2e_{}", Uuid::new_v4()));
     let storage: Arc<dyn StorageProvider> =
         Arc::new(FileStorage::new(&storage_root).expect("storage"));
@@ -328,7 +329,7 @@ pub async fn setup_test_db() -> (
 
     // ACP (Story 1.1 — ADR-0010)
     let acp_repo = Arc::new(PostgresAcpRepository::new(pool.clone()));
-    let acp_use_cases = AcpUseCases::new(acp_repo, organization_repo.clone());
+    let acp_use_cases = AcpUseCases::new(acp_repo.clone(), organization_repo.clone());
 
     // Portfolio (Story 2.1 — ADR-0011)
     let portfolio_repo = Arc::new(
@@ -383,13 +384,17 @@ pub async fn setup_test_db() -> (
         payment_reminder_repo.clone(),
     );
     let owner_contribution_use_cases =
-        OwnerContributionUseCases::new(owner_contribution_repo.clone());
-    let call_for_funds_use_cases = CallForFundsUseCases::new(
+        OwnerContributionUseCases::new(owner_contribution_repo.clone())
+            .with_acp_resolution(unit_repo.clone());
+    let call_for_funds_use_cases = CallForFundsUseCases::with_full_wiring(
         call_for_funds_repo,
         owner_contribution_repo,
         unit_owner_repo.clone(),
+        building_repo.clone(),
+        acp_repo.clone(),
     );
-    let journal_entry_use_cases = JournalEntryUseCases::new(journal_entry_repo.clone());
+    let journal_entry_use_cases = JournalEntryUseCases::new(journal_entry_repo.clone())
+        .with_acp_resolution(building_repo.clone());
     let poll_use_cases = PollUseCases::new(
         poll_repo,
         poll_vote_repo,

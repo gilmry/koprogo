@@ -200,10 +200,7 @@ mod tests {
             m.covers(Utc::now() - Duration::days(60)),
             "il engageait encore la copropriété avant sa révocation"
         );
-        assert!(
-            !m.covers(Utc::now()),
-            "il n'engage plus rien après"
-        );
+        assert!(!m.covers(Utc::now()), "il n'engage plus rien après");
     }
 
     /// @edge — bornes : début inclus, fin exclue.
@@ -217,7 +214,10 @@ mod tests {
         let mut m = SyndicMandate::new(Uuid::new_v4(), Uuid::new_v4(), debut, None);
         m.revoke(fin, None, None).unwrap();
 
-        assert!(m.covers(debut), "le jour de la prise de fonction est couvert");
+        assert!(
+            m.covers(debut),
+            "le jour de la prise de fonction est couvert"
+        );
         assert!(
             !m.covers(fin),
             "le jour de la fin appartient au mandat suivant"
@@ -257,8 +257,12 @@ mod tests {
         let passation = Utc::now() - Duration::days(90);
 
         let mut m1 = SyndicMandate::new(acp, ancien, Utc::now() - Duration::days(730), None);
-        m1.revoke(passation, Some(Uuid::new_v4()), Some("Révocation AG".into()))
-            .unwrap();
+        m1.revoke(
+            passation,
+            Some(Uuid::new_v4()),
+            Some("Révocation AG".into()),
+        )
+        .unwrap();
         let m2 = SyndicMandate::new(acp, nouveau, passation, Some(Uuid::new_v4()));
         let historique = vec![m1, m2];
 

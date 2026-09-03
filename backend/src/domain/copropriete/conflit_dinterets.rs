@@ -137,8 +137,8 @@ mod tests {
             vote(Uuid::new_v4(), dec!(300), None),
         ];
 
-        let conflit = verifier_conflit_dinterets(&votes, Some(entrepreneur))
-            .expect_err("doit refuser");
+        let conflit =
+            verifier_conflit_dinterets(&votes, Some(entrepreneur)).expect_err("doit refuser");
         assert_eq!(conflit.interesse, entrepreneur);
         assert_eq!(conflit.bulletins, 1);
         assert!(!conflit.par_procuration);
@@ -156,8 +156,8 @@ mod tests {
             vote(Uuid::new_v4(), dec!(300), None),
         ];
 
-        let conflit = verifier_conflit_dinterets(&votes, Some(entrepreneur))
-            .expect_err("doit refuser");
+        let conflit =
+            verifier_conflit_dinterets(&votes, Some(entrepreneur)).expect_err("doit refuser");
         assert_eq!(conflit.bulletins, 1);
         assert!(conflit.par_procuration);
     }
@@ -172,8 +172,8 @@ mod tests {
             vote(Uuid::new_v4(), dec!(300), None),
         ];
 
-        let conflit = verifier_conflit_dinterets(&votes, Some(entrepreneur))
-            .expect_err("doit refuser");
+        let conflit =
+            verifier_conflit_dinterets(&votes, Some(entrepreneur)).expect_err("doit refuser");
         assert_eq!(conflit.bulletins, 1);
         assert!(conflit.par_procuration);
     }
@@ -187,8 +187,8 @@ mod tests {
             vote(Uuid::new_v4(), dec!(300), None),
         ];
 
-        let conflit = verifier_conflit_dinterets(&votes, Some(entrepreneur))
-            .expect_err("doit refuser");
+        let conflit =
+            verifier_conflit_dinterets(&votes, Some(entrepreneur)).expect_err("doit refuser");
         assert_eq!(conflit.bulletins, 2);
     }
 }

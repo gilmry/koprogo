@@ -29,9 +29,9 @@
 //!
 //! Voir issue #753.
 
-use crate::domain::comptabilite::regime_comptable::lots_comptes;
-use crate::domain::copropriete::unit::UnitType;
-use crate::domain::copropriete::unit_owner::OwnershipType;
+use super::decompte_des_lots::lots_comptes;
+use super::unit::UnitType;
+use super::unit_owner::OwnershipType;
 use chrono::{DateTime, Utc};
 use uuid::Uuid;
 

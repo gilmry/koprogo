@@ -8343,6 +8343,7 @@ async fn when_gd_check_quorum(world: &mut GovernanceWorld, _threshold: u32) {
     let present = world.gd_quorum_present.unwrap();
 
     let mut meeting = Meeting::new(
+        Uuid::new_v4(), // acp_id (ADR-0045)
         world.org_id.unwrap(),
         world.building_id.unwrap(),
         koprogo_api::domain::entities::MeetingType::Ordinary,

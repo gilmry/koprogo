@@ -65,9 +65,7 @@ impl JournalEntryUseCases {
                 .to_string()
         })?;
         let Some(building_repo) = &self.building_repository else {
-            return Err(
-                "Impossible de déterminer l'ACP : dépôt d'immeubles non câblé".to_string(),
-            );
+            return Err("Impossible de déterminer l'ACP : dépôt d'immeubles non câblé".to_string());
         };
         let building = building_repo
             .find_by_id(building_id)

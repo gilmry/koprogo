@@ -134,7 +134,6 @@ pub async fn create_expense(
         return err.error_response();
     }
 
-
     if let Err(errors) = dto.validate() {
         return HttpResponse::BadRequest().json(serde_json::json!({
             "error": "Validation failed",
@@ -477,7 +476,6 @@ pub async fn create_invoice_draft(
     {
         return err.error_response();
     }
-
 
     if let Err(errors) = dto.validate() {
         return HttpResponse::BadRequest().json(serde_json::json!({

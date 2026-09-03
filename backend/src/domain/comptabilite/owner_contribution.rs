@@ -247,6 +247,12 @@ impl OwnerContribution {
     }
 }
 
+impl crate::domain::services::PieceDeGestion for OwnerContribution {
+    fn acp_id(&self) -> Uuid {
+        self.acp_id
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -473,11 +479,5 @@ mod tests {
             result.unwrap_err(),
             OwnerContributionError::NonPositiveAmount
         ));
-    }
-}
-
-impl crate::domain::services::PieceDeGestion for OwnerContribution {
-    fn acp_id(&self) -> Uuid {
-        self.acp_id
     }
 }

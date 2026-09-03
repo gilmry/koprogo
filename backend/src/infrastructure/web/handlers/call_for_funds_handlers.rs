@@ -54,7 +54,10 @@ pub async fn create_call_for_funds(
 
     let organization_id = match user.organization_id {
         Some(org_id) => org_id,
-        None => return HttpResponse::BadRequest().json(serde_json::json!({ "error": "Organization ID required" })),
+        None => {
+            return HttpResponse::BadRequest()
+                .json(serde_json::json!({ "error": "Organization ID required" }))
+        }
     };
 
     // Isolation multi-tenant à l'ÉCRITURE : l'immeuble visé doit relever d'une
@@ -79,7 +82,10 @@ pub async fn create_call_for_funds(
         "extraordinary" => ContributionType::Extraordinary,
         "advance" => ContributionType::Advance,
         "adjustment" => ContributionType::Adjustment,
-        _ => return HttpResponse::BadRequest().json(serde_json::json!({ "error": "Invalid contribution type" })),
+        _ => {
+            return HttpResponse::BadRequest()
+                .json(serde_json::json!({ "error": "Invalid contribution type" }))
+        }
     };
 
     match state
@@ -138,7 +144,8 @@ pub async fn get_call_for_funds(
             let response = CallForFundsResponse::from(call);
             HttpResponse::Ok().json(response)
         }
-        Ok(None) => HttpResponse::NotFound().json(serde_json::json!({ "error": "Call for funds not found" })),
+        Ok(None) => HttpResponse::NotFound()
+            .json(serde_json::json!({ "error": "Call for funds not found" })),
         Err(e) => HttpResponse::InternalServerError().json(serde_json::json!({ "error": e })),
     }
 }
@@ -170,7 +177,10 @@ pub async fn list_call_for_funds(
     if let Some(id_str) = query.get("building_id") {
         let building_id = match Uuid::parse_str(id_str) {
             Ok(id) => id,
-            Err(_) => return HttpResponse::BadRequest().json(serde_json::json!({ "error": "Invalid building_id format" })),
+            Err(_) => {
+                return HttpResponse::BadRequest()
+                    .json(serde_json::json!({ "error": "Invalid building_id format" }))
+            }
         };
 
         match state
@@ -183,14 +193,19 @@ pub async fn list_call_for_funds(
                     calls.into_iter().map(Into::into).collect();
                 return HttpResponse::Ok().json(responses);
             }
-            Err(e) => return HttpResponse::InternalServerError().json(serde_json::json!({ "error": e })),
+            Err(e) => {
+                return HttpResponse::InternalServerError().json(serde_json::json!({ "error": e }))
+            }
         }
     }
 
     // Otherwise, return all calls for user's organization
     let organization_id = match user.organization_id {
         Some(org_id) => org_id,
-        None => return HttpResponse::BadRequest().json(serde_json::json!({ "error": "Organization ID required" })),
+        None => {
+            return HttpResponse::BadRequest()
+                .json(serde_json::json!({ "error": "Organization ID required" }))
+        }
     };
 
     match state
@@ -356,7 +371,8 @@ pub async fn delete_call_for_funds(
         .await
     {
         Ok(true) => HttpResponse::NoContent().finish(),
-        Ok(false) => HttpResponse::NotFound().json(serde_json::json!({ "error": "Call for funds not found" })),
+        Ok(false) => HttpResponse::NotFound()
+            .json(serde_json::json!({ "error": "Call for funds not found" })),
         Err(e) => HttpResponse::BadRequest().json(serde_json::json!({ "error": e })),
     }
 }

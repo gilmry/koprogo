@@ -1,7 +1,7 @@
 use chrono::{DateTime, Utc};
+use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
-use rust_decimal::Decimal;
 
 /// Campagne d'achat groupé d'énergie
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]

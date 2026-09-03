@@ -301,7 +301,6 @@ impl CallForFundsUseCases {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use rust_decimal_macros::dec;
     use crate::application::ports::{
         CallForFundsRepository, OwnerContributionRepository, UnitOwnerRepository,
     };
@@ -310,6 +309,7 @@ mod tests {
     };
     use async_trait::async_trait;
     use chrono::{Duration, Utc};
+    use rust_decimal_macros::dec;
     use std::collections::HashMap;
     use std::sync::{Arc, Mutex};
     use uuid::Uuid;

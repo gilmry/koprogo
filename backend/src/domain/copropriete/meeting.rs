@@ -510,6 +510,12 @@ impl std::fmt::Display for MeetingNotCompletableError {
 
 impl std::error::Error for MeetingNotCompletableError {}
 
+impl crate::domain::services::PieceDeGestion for Meeting {
+    fn acp_id(&self) -> Uuid {
+        self.acp_id
+    }
+}
+
 #[cfg(test)]
 #[allow(deprecated)] // tests legacy `complete()` — Track H Story H3
 mod tests {
@@ -1428,11 +1434,5 @@ mod assert_can_complete_tests {
             .missing
             .iter()
             .any(|x| matches!(x, MissingInvariant::HeadCountQuorumNotReached { .. })));
-    }
-}
-
-impl crate::domain::services::PieceDeGestion for Meeting {
-    fn acp_id(&self) -> Uuid {
-        self.acp_id
     }
 }

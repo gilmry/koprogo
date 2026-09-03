@@ -23,13 +23,13 @@
 //! retournent `AcpError` (enum dédié), mappé vers `AppError::Validation`
 //! côté application (cf. `application/error.rs`, pattern WP-A* #433).
 
+use super::fenetre_ag_ordinaire::FenetreAgOrdinaire;
 use chrono::{DateTime, Utc};
 use rust_decimal::Decimal;
 use rust_decimal_macros::dec;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 use uuid::Uuid;
-use super::fenetre_ag_ordinaire::FenetreAgOrdinaire;
 
 /// Dénominateur par défaut de l'acte de base (millièmes belges classiques).
 /// L'acte authentique peut fixer 10000 (dix-millièmes) ou une autre base —
@@ -395,10 +395,7 @@ impl Acp {
     ///
     /// `None` quand le ROI n'a pas été encodé : on ne peut alors ni confirmer
     /// ni infirmer, et le dire est plus honnête que de répondre « conforme ».
-    pub fn ag_ordinaire_dans_la_fenetre(
-        &self,
-        date: chrono::NaiveDate,
-    ) -> Option<bool> {
+    pub fn ag_ordinaire_dans_la_fenetre(&self, date: chrono::NaiveDate) -> Option<bool> {
         self.fenetre_ag_ordinaire.map(|f| f.contient(date))
     }
 
@@ -665,7 +662,10 @@ mod tests_art_3_85_fenetre_statutaire {
         let mut acp = acp();
         acp.fixer_fenetre_ag_ordinaire(FenetreAgOrdinaire::new(6, 1).unwrap());
 
-        assert_eq!(acp.ag_ordinaire_dans_la_fenetre(le(2026, 9, 8)), Some(false));
+        assert_eq!(
+            acp.ag_ordinaire_dans_la_fenetre(le(2026, 9, 8)),
+            Some(false)
+        );
     }
 
     /// Sans ROI encodé, on ne peut ni confirmer ni infirmer.

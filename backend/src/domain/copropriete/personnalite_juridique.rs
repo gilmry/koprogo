@@ -96,7 +96,10 @@ impl std::fmt::Display for PersonnaliteJuridique {
                  (Art. 3.86 § 2)"
             ),
             Self::Acquise { depuis } => {
-                write!(f, "Personnalité juridique acquise le {depuis} (Art. 3.86 § 1er)")
+                write!(
+                    f,
+                    "Personnalité juridique acquise le {depuis} (Art. 3.86 § 1er)"
+                )
             }
         }
     }
@@ -133,7 +136,12 @@ mod tests {
     #[test]
     fn happy_les_deux_conditions_reunies_donnent_la_personnalite() {
         let p = personnalite(Some(le(2026, 3, 1)), Some(le(2026, 2, 1)));
-        assert_eq!(p, PersonnaliteJuridique::Acquise { depuis: le(2026, 3, 1) });
+        assert_eq!(
+            p,
+            PersonnaliteJuridique::Acquise {
+                depuis: le(2026, 3, 1)
+            }
+        );
         assert!(p.opposable_par_lacp());
         assert!(p.opposable_par_un_tiers());
     }

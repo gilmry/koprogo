@@ -320,6 +320,12 @@ impl FinancialWorld {
 
         let building_repo: Arc<dyn BuildingRepository> =
             Arc::new(PostgresBuildingRepository::new(pool.clone()));
+        // La quote-part résout son ACP créancière depuis le lot (ADR-0045).
+        let unit_repo: Arc<dyn koprogo_api::application::ports::UnitRepository> = Arc::new(
+            koprogo_api::infrastructure::database::repositories::PostgresUnitRepository::new(
+                pool.clone(),
+            ),
+        );
         {
             use koprogo_api::domain::entities::Building;
             // Hotfix #602 — Building.acp_id (FK acps.id) replaces organization_id.
@@ -358,14 +364,23 @@ impl FinancialWorld {
             owner_contribution_repo.clone(),
         );
         let payment_method_use_cases = PaymentMethodUseCases::new(payment_method_repo);
-        let journal_entry_use_cases = JournalEntryUseCases::new(journal_entry_repo);
-        let call_for_funds_use_cases = CallForFundsUseCases::new(
+        let journal_entry_use_cases = JournalEntryUseCases::new(journal_entry_repo)
+            .with_acp_resolution(building_repo.clone());
+        let acp_repo = Arc::new(
+            koprogo_api::infrastructure::database::repositories::PostgresAcpRepository::new(
+                pool.clone(),
+            ),
+        );
+        let call_for_funds_use_cases = CallForFundsUseCases::with_full_wiring(
             call_for_funds_repo,
             owner_contribution_repo.clone(),
             unit_owner_repo.clone(),
+            building_repo.clone(),
+            acp_repo,
         );
         let owner_contribution_use_cases =
-            OwnerContributionUseCases::new(owner_contribution_repo.clone());
+            OwnerContributionUseCases::new(owner_contribution_repo.clone())
+                .with_acp_resolution(unit_repo.clone());
         let charge_distribution_use_cases = ChargeDistributionUseCases::new(
             charge_distribution_repo,
             expense_repo.clone(),
@@ -2238,6 +2253,7 @@ async fn when_create_call_for_funds(world: &mut FinancialWorld, step: &Step) {
             due_date,
             account_code,
             None,
+            rust_decimal::Decimal::ZERO, // part fonds de réserve (Art. 3.86 § 3 al. 7)
         )
         .await;
 
@@ -2289,6 +2305,7 @@ async fn given_draft_call_for_funds(world: &mut FinancialWorld, amount: Decimal)
             Utc::now() + ChronoDuration::days(30),
             Some("701000".to_string()),
             None,
+            rust_decimal::Decimal::ZERO, // part fonds de réserve (Art. 3.86 § 3 al. 7)
         )
         .await
         .expect("create draft call");
@@ -2366,6 +2383,7 @@ async fn given_n_calls_for_funds(world: &mut FinancialWorld, count: usize) {
             Utc::now() + ChronoDuration::days(30),
             None,
             None,
+            rust_decimal::Decimal::ZERO, // part fonds de réserve (Art. 3.86 § 3 al. 7)
         )
         .await
         .expect("create call");
@@ -2407,6 +2425,7 @@ async fn given_sent_overdue_call(world: &mut FinancialWorld) {
             Utc::now() - ChronoDuration::days(30),
             None,
             None,
+            rust_decimal::Decimal::ZERO, // part fonds de réserve (Art. 3.86 § 3 al. 7)
         )
         .await
         .expect("create call");
@@ -2449,6 +2468,7 @@ async fn given_draft_call_exists(world: &mut FinancialWorld) {
             Utc::now() + ChronoDuration::days(30),
             None,
             None,
+            rust_decimal::Decimal::ZERO, // part fonds de réserve (Art. 3.86 § 3 al. 7)
         )
         .await
         .expect("create draft call");
@@ -2514,6 +2534,7 @@ async fn given_sent_call_exists(world: &mut FinancialWorld) {
             Utc::now() + ChronoDuration::days(30),
             None,
             None,
+            rust_decimal::Decimal::ZERO, // part fonds de réserve (Art. 3.86 § 3 al. 7)
         )
         .await
         .expect("create call");
@@ -2652,6 +2673,7 @@ async fn given_call_of_amount_sent(world: &mut FinancialWorld, amount: Decimal) 
             Utc::now() + ChronoDuration::days(30),
             None,
             None,
+            rust_decimal::Decimal::ZERO, // part fonds de réserve (Art. 3.86 § 3 al. 7)
         )
         .await
         .expect("create call");
@@ -2746,6 +2768,7 @@ async fn given_sent_call_with_contributions(world: &mut FinancialWorld) {
             Utc::now() + ChronoDuration::days(30),
             None,
             None,
+            rust_decimal::Decimal::ZERO, // part fonds de réserve (Art. 3.86 § 3 al. 7)
         )
         .await
         .expect("create call");

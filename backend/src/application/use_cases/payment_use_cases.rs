@@ -503,11 +503,11 @@ impl PaymentUseCases {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::application::ports::OwnerContributionRepository;
     use crate::application::ports::{PaymentMethodRepository, PaymentRepository, PaymentStats};
     use crate::domain::entities::payment_method::{
         PaymentMethod, PaymentMethodType as PMMethodType,
     };
-    use crate::application::ports::OwnerContributionRepository;
     use crate::domain::entities::{
         ContributionPaymentStatus, ContributionType, OwnerContribution, Payment, PaymentMethodType,
         TransactionStatus,
@@ -1167,7 +1167,10 @@ mod tests {
             ContributionPaymentStatus::Paid,
             "la quote-part doit etre soldee des que le paiement aboutit"
         );
-        assert!(apres.payment_date.is_some(), "la date de paiement est posee");
+        assert!(
+            apres.payment_date.is_some(),
+            "la date de paiement est posee"
+        );
         assert_eq!(
             apres.payment_reference,
             Some(created.id.to_string()),

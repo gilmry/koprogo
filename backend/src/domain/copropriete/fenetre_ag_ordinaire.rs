@@ -174,7 +174,10 @@ mod tests {
 
     #[test]
     fn negative_une_ag_hors_fenetre_est_signalee() {
-        assert!(!juin().contient(le(2026, 6, 16)), "le seizième jour est dehors");
+        assert!(
+            !juin().contient(le(2026, 6, 16)),
+            "le seizième jour est dehors"
+        );
         assert!(!juin().contient(le(2026, 5, 31)), "la veille aussi");
     }
 

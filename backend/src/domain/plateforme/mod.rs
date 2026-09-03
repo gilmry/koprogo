@@ -8,7 +8,6 @@
 //! dossier de gestion a cessé d'appartenir à l'ACP (ADR-0045). Cette
 //! frontière existe pour que ça ne se reproduise pas.
 
-
 pub mod consent;
 pub mod gdpr_art30;
 pub mod gdpr_export;

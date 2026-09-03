@@ -967,7 +967,8 @@ mod tests {
     async fn test_la_relance_reclame_au_profit_de_lacp_pas_du_syndic() {
         let acp_creanciere = Uuid::new_v4();
         let cabinet_qui_relance = Uuid::new_v4();
-        let depense = expense_impaye_de_lacp(acp_creanciere, cabinet_qui_relance, Decimal::from(2000));
+        let depense =
+            expense_impaye_de_lacp(acp_creanciere, cabinet_qui_relance, Decimal::from(2000));
         let prop = proprietaire(cabinet_qui_relance);
         let (expense_id, owner_id) = (depense.id, prop.id);
 
@@ -1016,7 +1017,13 @@ mod tests {
             Arc::new(MockOwnerRepo::with(prop)),
         );
 
-        let dto = create_dto(org_id, expense_id, owner_id, ReminderLevel::FirstReminder, 17);
+        let dto = create_dto(
+            org_id,
+            expense_id,
+            owner_id,
+            ReminderLevel::FirstReminder,
+            17,
+        );
         let cree = uc.create_reminder(dto).await.expect("création acceptée");
 
         assert_eq!(reminders.count(), 1);

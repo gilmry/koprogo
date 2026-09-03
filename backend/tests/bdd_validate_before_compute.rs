@@ -680,6 +680,7 @@ async fn when_create_cff(world: &mut VbcWorld, name: String) {
             now + Duration::days(30),
             None,
             None,
+            rust_decimal::Decimal::ZERO, // part fonds de réserve (Art. 3.86 § 3 al. 7)
         )
         .await
     {

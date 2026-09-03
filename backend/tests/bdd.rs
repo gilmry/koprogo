@@ -269,7 +269,8 @@ impl BuildingWorld {
             Arc::new(PostgresBoardDecisionRepository::new(pool.clone()));
 
         let building_use_cases = BuildingUseCases::new(building_repo.clone());
-        let meeting_use_cases = MeetingUseCases::new(meeting_repo.clone());
+        let meeting_use_cases =
+            MeetingUseCases::new(meeting_repo.clone()).with_acp_resolution(building_repo.clone());
         // Hotfix #603 — BoardMemberUseCases needs acp_repository
         let acp_repo_for_board: std::sync::Arc<dyn koprogo_api::application::ports::AcpRepository> =
             Arc::new(PostgresAcpRepository::new(pool.clone()));
@@ -1866,7 +1867,16 @@ async fn when_elect_simple_board_member(world: &mut BuildingWorld, position: Str
 
     // Create a meeting to elect the member
     use koprogo_api::domain::entities::{Meeting, MeetingType};
+    // L'assemblée relève de l'ACP de son immeuble (Art. 3.87, ADR-0045), et on
+    // la résout comme la production : depuis l'immeuble, pas depuis
+    // l'organisation.
+    let acp_id: uuid::Uuid = sqlx::query_scalar("SELECT acp_id FROM buildings WHERE id = $1")
+        .bind(building_id)
+        .fetch_one(&pool)
+        .await
+        .expect("l'immeuble porte une ACP");
     let meeting = Meeting::new(
+        acp_id,
         org_id,
         building_id,
         MeetingType::Ordinary,
@@ -2036,7 +2046,14 @@ async fn given_meeting_occurred(world: &mut BuildingWorld) {
     let pool = world.pool.as_ref().expect("pool").clone();
 
     use koprogo_api::domain::entities::{Meeting, MeetingType};
+    // Même résolution que ci-dessus : l'ACP vient de l'immeuble.
+    let acp_id: uuid::Uuid = sqlx::query_scalar("SELECT acp_id FROM buildings WHERE id = $1")
+        .bind(building_id)
+        .fetch_one(&pool)
+        .await
+        .expect("l'immeuble porte une ACP");
     let meeting = Meeting::new(
+        acp_id,
         org_id,
         building_id,
         MeetingType::Ordinary,

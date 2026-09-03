@@ -197,8 +197,7 @@ mod tests {
 
     #[test]
     fn happy_une_designation_couvre_son_exercice() {
-        let designations =
-            vec![Commissariat::designer(vec![Uuid::new_v4()], 2026, None).unwrap()];
+        let designations = vec![Commissariat::designer(vec![Uuid::new_v4()], 2026, None).unwrap()];
         assert!(commissariat_de_lexercice(&designations, 2026).is_some());
     }
 
@@ -209,8 +208,7 @@ mod tests {
     /// pour les contrôler.
     #[test]
     fn security_une_designation_ne_se_reconduit_pas_tacitement() {
-        let designations =
-            vec![Commissariat::designer(vec![Uuid::new_v4()], 2026, None).unwrap()];
+        let designations = vec![Commissariat::designer(vec![Uuid::new_v4()], 2026, None).unwrap()];
         assert!(
             commissariat_de_lexercice(&designations, 2027).is_none(),
             "la désignation de 2026 ne couvre pas 2027"

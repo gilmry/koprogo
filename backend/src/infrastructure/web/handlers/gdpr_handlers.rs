@@ -1,6 +1,5 @@
 use crate::application::dto::{
-    GdprEraseRequestDto,
-    GdprActionResponse, GdprMarketingPreferenceRequest, GdprRectifyRequest,
+    GdprActionResponse, GdprEraseRequestDto, GdprMarketingPreferenceRequest, GdprRectifyRequest,
     GdprRestrictProcessingRequest,
 };
 use crate::infrastructure::audit::{AuditEventType, AuditLogEntry};

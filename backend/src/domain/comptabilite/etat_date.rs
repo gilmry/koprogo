@@ -465,6 +465,12 @@ impl EtatDate {
     }
 }
 
+impl crate::domain::services::PieceDeGestion for EtatDate {
+    fn acp_id(&self) -> Uuid {
+        self.acp_id
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -958,11 +964,5 @@ mod tests {
             result.unwrap_err(),
             EtatDateError::QuotaOutOfRange(_)
         ));
-    }
-}
-
-impl crate::domain::services::PieceDeGestion for EtatDate {
-    fn acp_id(&self) -> Uuid {
-        self.acp_id
     }
 }

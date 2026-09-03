@@ -3,11 +3,11 @@ use crate::application::dto::{
     SendConvocationRequest, SetProxyRequest, UpdateAttendanceRequest,
 };
 use crate::infrastructure::audit::{AuditEventType, AuditLogEntry};
+use crate::infrastructure::web::middleware::scope_guard::verify_building_org_access;
 use crate::infrastructure::web::{AppState, AuthenticatedUser};
 use actix_web::ResponseError;
 use actix_web::{delete, get, post, put, web, HttpResponse, Responder};
 use uuid::Uuid;
-use crate::infrastructure::web::middleware::scope_guard::verify_building_org_access;
 
 // ==================== Convocation CRUD Endpoints ====================
 

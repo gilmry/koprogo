@@ -401,6 +401,12 @@ impl Convocation {
     }
 }
 
+impl crate::domain::services::PieceDeGestion for Convocation {
+    fn acp_id(&self) -> Uuid {
+        self.acp_id
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -700,11 +706,5 @@ mod tests {
         assert!(result.is_ok());
         let conv = result.unwrap();
         assert_eq!(conv.meeting_type, ConvocationType::SecondConvocation);
-    }
-}
-
-impl crate::domain::services::PieceDeGestion for Convocation {
-    fn acp_id(&self) -> Uuid {
-        self.acp_id
     }
 }

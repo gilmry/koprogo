@@ -77,7 +77,10 @@ impl ArrieresARetenir {
             ("Charges ordinaires", self.charges_ordinaires),
             ("Charges extraordinaires", self.charges_extraordinaires),
             ("Frais de récupération", self.frais_de_recuperation),
-            ("Frais de transmission (Art. 3.94)", self.frais_de_transmission),
+            (
+                "Frais de transmission (Art. 3.94)",
+                self.frais_de_transmission,
+            ),
         ]
         .into_iter()
         .filter(|(_, montant)| !montant.is_zero())
@@ -96,11 +99,7 @@ impl ArrieresARetenir {
 /// Les jours fériés sont passés en paramètre plutôt que codés en dur : ils
 /// varient d'une année à l'autre, et une liste figée dans le code se périmerait
 /// en silence.
-pub fn jours_ouvrables(
-    depart: NaiveDate,
-    nombre: i64,
-    feries: &[NaiveDate],
-) -> NaiveDate {
+pub fn jours_ouvrables(depart: NaiveDate, nombre: i64, feries: &[NaiveDate]) -> NaiveDate {
     let mut date = depart;
     let mut restants = nombre;
     while restants > 0 {
@@ -119,10 +118,7 @@ pub const DELAI_AVIS_CONTESTATION_OUVRABLES: i64 = 3;
 pub const DELAI_SAISIE_ARRET_OUVRABLES: i64 = 20;
 
 /// Date limite pour que le notaire avise le syndic d'une contestation.
-pub fn limite_avis_contestation(
-    passation: NaiveDate,
-    feries: &[NaiveDate],
-) -> NaiveDate {
+pub fn limite_avis_contestation(passation: NaiveDate, feries: &[NaiveDate]) -> NaiveDate {
     jours_ouvrables(passation, DELAI_AVIS_CONTESTATION_OUVRABLES, feries)
 }
 
@@ -130,10 +126,7 @@ pub fn limite_avis_contestation(
 /// arriérés au copropriétaire sortant.
 ///
 /// Le compte part de **l'envoi du recommandé**, pas de la passation de l'acte.
-pub fn liberation_des_fonds(
-    envoi_recommande: NaiveDate,
-    feries: &[NaiveDate],
-) -> NaiveDate {
+pub fn liberation_des_fonds(envoi_recommande: NaiveDate, feries: &[NaiveDate]) -> NaiveDate {
     jours_ouvrables(envoi_recommande, DELAI_SAISIE_ARRET_OUVRABLES, feries)
 }
 

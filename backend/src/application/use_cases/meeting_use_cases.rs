@@ -631,7 +631,8 @@ mod tests {
 
         mock_repo.expect_create().returning(|m| Ok(m.clone()));
 
-        let use_cases = MeetingUseCases::new(Arc::new(mock_repo)).with_acp_resolution(mock_building_repo());
+        let use_cases =
+            MeetingUseCases::new(Arc::new(mock_repo)).with_acp_resolution(mock_building_repo());
 
         let request = CreateMeetingRequest {
             organization_id: Uuid::new_v4(),
@@ -657,7 +658,8 @@ mod tests {
     #[tokio::test]
     async fn test_create_meeting_empty_title_fails() {
         let mock_repo = MockMeetingRepo::new();
-        let use_cases = MeetingUseCases::new(Arc::new(mock_repo)).with_acp_resolution(mock_building_repo());
+        let use_cases =
+            MeetingUseCases::new(Arc::new(mock_repo)).with_acp_resolution(mock_building_repo());
 
         let request = CreateMeetingRequest {
             organization_id: Uuid::new_v4(),
@@ -681,7 +683,8 @@ mod tests {
     #[tokio::test]
     async fn test_create_meeting_empty_location_fails() {
         let mock_repo = MockMeetingRepo::new();
-        let use_cases = MeetingUseCases::new(Arc::new(mock_repo)).with_acp_resolution(mock_building_repo());
+        let use_cases =
+            MeetingUseCases::new(Arc::new(mock_repo)).with_acp_resolution(mock_building_repo());
 
         let request = CreateMeetingRequest {
             organization_id: Uuid::new_v4(),
@@ -715,7 +718,8 @@ mod tests {
             .withf(move |id| *id == meeting_id)
             .returning(move |_| Ok(Some(make_meeting(building_id, org_id))));
 
-        let use_cases = MeetingUseCases::new(Arc::new(mock_repo)).with_acp_resolution(mock_building_repo());
+        let use_cases =
+            MeetingUseCases::new(Arc::new(mock_repo)).with_acp_resolution(mock_building_repo());
 
         let result = use_cases.get_meeting(meeting_id).await;
         assert!(result.is_ok());
@@ -730,7 +734,8 @@ mod tests {
         let mut mock_repo = MockMeetingRepo::new();
         mock_repo.expect_find_by_id().returning(|_| Ok(None));
 
-        let use_cases = MeetingUseCases::new(Arc::new(mock_repo)).with_acp_resolution(mock_building_repo());
+        let use_cases =
+            MeetingUseCases::new(Arc::new(mock_repo)).with_acp_resolution(mock_building_repo());
 
         let result = use_cases.get_meeting(Uuid::new_v4()).await;
         assert!(result.is_ok());
@@ -756,7 +761,8 @@ mod tests {
                 ])
             });
 
-        let use_cases = MeetingUseCases::new(Arc::new(mock_repo)).with_acp_resolution(mock_building_repo());
+        let use_cases =
+            MeetingUseCases::new(Arc::new(mock_repo)).with_acp_resolution(mock_building_repo());
 
         let result = use_cases.list_meetings_by_building(building_id).await;
         assert!(result.is_ok());
@@ -782,7 +788,8 @@ mod tests {
 
         mock_repo.expect_update().returning(|m| Ok(m.clone()));
 
-        let use_cases = MeetingUseCases::new(Arc::new(mock_repo)).with_acp_resolution(mock_building_repo());
+        let use_cases =
+            MeetingUseCases::new(Arc::new(mock_repo)).with_acp_resolution(mock_building_repo());
 
         let request = UpdateMeetingRequest {
             title: Some("Renamed AGO".to_string()),
@@ -805,7 +812,8 @@ mod tests {
         let mut mock_repo = MockMeetingRepo::new();
         mock_repo.expect_find_by_id().returning(|_| Ok(None));
 
-        let use_cases = MeetingUseCases::new(Arc::new(mock_repo)).with_acp_resolution(mock_building_repo());
+        let use_cases =
+            MeetingUseCases::new(Arc::new(mock_repo)).with_acp_resolution(mock_building_repo());
 
         let request = UpdateMeetingRequest {
             title: Some("New title".to_string()),
@@ -835,7 +843,8 @@ mod tests {
             .expect_find_by_id()
             .returning(move |_| Ok(Some(meeting_clone.clone())));
 
-        let use_cases = MeetingUseCases::new(Arc::new(mock_repo)).with_acp_resolution(mock_building_repo());
+        let use_cases =
+            MeetingUseCases::new(Arc::new(mock_repo)).with_acp_resolution(mock_building_repo());
 
         let request = UpdateMeetingRequest {
             title: Some("".to_string()),
@@ -862,7 +871,8 @@ mod tests {
             .withf(move |id| *id == meeting_id)
             .returning(|_| Ok(true));
 
-        let use_cases = MeetingUseCases::new(Arc::new(mock_repo)).with_acp_resolution(mock_building_repo());
+        let use_cases =
+            MeetingUseCases::new(Arc::new(mock_repo)).with_acp_resolution(mock_building_repo());
 
         let result = use_cases.delete_meeting(meeting_id).await;
         assert!(result.is_ok());
@@ -888,7 +898,8 @@ mod tests {
 
         mock_repo.expect_update().returning(|m| Ok(m.clone()));
 
-        let use_cases = MeetingUseCases::new(Arc::new(mock_repo)).with_acp_resolution(mock_building_repo());
+        let use_cases =
+            MeetingUseCases::new(Arc::new(mock_repo)).with_acp_resolution(mock_building_repo());
 
         // 600/1000 = 60% → quorum reached
         let result = use_cases
@@ -921,7 +932,8 @@ mod tests {
         mock_repo.expect_update().returning(|m| Ok(m.clone()));
 
         // No convocation_use_cases set, so second convocation won't be triggered
-        let use_cases = MeetingUseCases::new(Arc::new(mock_repo)).with_acp_resolution(mock_building_repo());
+        let use_cases =
+            MeetingUseCases::new(Arc::new(mock_repo)).with_acp_resolution(mock_building_repo());
 
         // 400/1000 = 40% → quorum NOT reached
         let result = use_cases
@@ -942,7 +954,8 @@ mod tests {
         let mut mock_repo = MockMeetingRepo::new();
         mock_repo.expect_find_by_id().returning(|_| Ok(None));
 
-        let use_cases = MeetingUseCases::new(Arc::new(mock_repo)).with_acp_resolution(mock_building_repo());
+        let use_cases =
+            MeetingUseCases::new(Arc::new(mock_repo)).with_acp_resolution(mock_building_repo());
 
         let result = use_cases
             .validate_quorum(Uuid::new_v4(), dec!(600), dec!(1000))
@@ -970,7 +983,8 @@ mod tests {
 
         mock_repo.expect_update().returning(|m| Ok(m.clone()));
 
-        let use_cases = MeetingUseCases::new(Arc::new(mock_repo)).with_acp_resolution(mock_building_repo());
+        let use_cases =
+            MeetingUseCases::new(Arc::new(mock_repo)).with_acp_resolution(mock_building_repo());
 
         let request = CompleteMeetingRequest {
             attendees_count: 42,
@@ -1001,7 +1015,8 @@ mod tests {
 
         mock_repo.expect_update().returning(|m| Ok(m.clone()));
 
-        let use_cases = MeetingUseCases::new(Arc::new(mock_repo)).with_acp_resolution(mock_building_repo());
+        let use_cases =
+            MeetingUseCases::new(Arc::new(mock_repo)).with_acp_resolution(mock_building_repo());
 
         let result = use_cases.cancel_meeting(meeting_id).await;
         assert!(result.is_ok());
@@ -1027,7 +1042,8 @@ mod tests {
 
         mock_repo.expect_update().returning(|m| Ok(m.clone()));
 
-        let use_cases = MeetingUseCases::new(Arc::new(mock_repo)).with_acp_resolution(mock_building_repo());
+        let use_cases =
+            MeetingUseCases::new(Arc::new(mock_repo)).with_acp_resolution(mock_building_repo());
 
         let request = AddAgendaItemRequest {
             item: "Approbation des comptes".to_string(),
@@ -1058,7 +1074,8 @@ mod tests {
 
         mock_repo.expect_update().returning(|m| Ok(m.clone()));
 
-        let use_cases = MeetingUseCases::new(Arc::new(mock_repo)).with_acp_resolution(mock_building_repo());
+        let use_cases =
+            MeetingUseCases::new(Arc::new(mock_repo)).with_acp_resolution(mock_building_repo());
 
         // 500/1000 = exactly 50% → quorum NOT reached (Art. 3.87 §5: strictly >50%)
         let result = use_cases
