@@ -140,7 +140,7 @@
       <div class="flex items-center justify-between">
         <div class="flex items-center space-x-4">
           <button
-            on:click={handleGoBack}
+            onclick={handleGoBack}
             class="text-gray-600 hover:text-gray-900"
           >
             ← {$_("common.back")}
@@ -155,7 +155,7 @@
         </div>
         <Button
           variant="primary"
-          on:click={handleEdit}
+          onclick={handleEdit}
           data-testid="building-edit-submit"
         >
           ✏️ {$_("common.edit")}
