@@ -273,6 +273,15 @@ impl ResolutionUseCases {
         crate::domain::copropriete::verifier_procurations(&votes, total_voting_power, None)
             .map_err(|refus| refus.to_string())?;
 
+        // Art. 3.87 § 9 — le prestataire ne délibère pas sur sa propre
+        // mission. Même moment, même raison : c'est l'ensemble des bulletins
+        // qu'il faut regarder, pas le dernier déposé.
+        crate::domain::copropriete::verifier_conflit_dinterets(
+            &votes,
+            resolution.prestataire_de_la_mission,
+        )
+        .map_err(|conflit| conflit.to_string())?;
+
         // Calculate final result
         resolution.close_voting(total_voting_power)?;
 

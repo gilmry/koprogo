@@ -57,6 +57,22 @@ pub struct Resolution {
     pub status: ResolutionStatus,
     // Issue #310: Link resolution to agenda item
     pub agenda_item_index: Option<usize>, // Index into meeting.agenda Vec
+
+    /// La personne dont la mission fait l'objet de cette délibération.
+    ///
+    /// Art. 3.87 § 9 : « Aucune personne mandatée ou employée par
+    /// l'association [...] ne peut participer personnellement ou par
+    /// procuration aux délibérations et aux votes **relatifs à la mission qui
+    /// lui a été confiée**. »
+    ///
+    /// La règle est étroite : elle n'écarte pas le prestataire de toute
+    /// l'assemblée, seulement des points qui le concernent. Un entrepreneur
+    /// copropriétaire vote sur le budget ; il ne vote pas sur l'attribution du
+    /// marché qu'il brigue.
+    ///
+    /// `None` est le cas courant — la plupart des résolutions ne portent la
+    /// mission de personne.
+    pub prestataire_de_la_mission: Option<Uuid>,
     pub created_at: DateTime<Utc>,
     pub voted_at: Option<DateTime<Utc>>,
 }
@@ -71,6 +87,29 @@ impl Resolution {
         resolution_type: ResolutionType,
         majority_required: MajorityType,
         agenda_item_index: Option<usize>,
+    ) -> Result<Self, String> {
+        Self::new_avec_prestataire(
+            meeting_id,
+            title,
+            description,
+            resolution_type,
+            majority_required,
+            agenda_item_index,
+            None,
+        )
+    }
+
+    /// La même résolution, en désignant la personne dont elle traite la
+    /// mission (Art. 3.87 § 9).
+    #[allow(clippy::too_many_arguments)]
+    pub fn new_avec_prestataire(
+        meeting_id: Uuid,
+        title: String,
+        description: String,
+        resolution_type: ResolutionType,
+        majority_required: MajorityType,
+        agenda_item_index: Option<usize>,
+        prestataire_de_la_mission: Option<Uuid>,
     ) -> Result<Self, String> {
         if title.is_empty() {
             return Err("Resolution title cannot be empty".to_string());
@@ -95,6 +134,7 @@ impl Resolution {
             total_voting_power_abstention: Decimal::ZERO,
             status: ResolutionStatus::Pending,
             agenda_item_index,
+            prestataire_de_la_mission,
             created_at: now,
             voted_at: None,
         })

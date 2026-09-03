@@ -584,6 +584,7 @@ pub async fn export_meeting_minutes_pdf(
         use crate::domain::entities::{Resolution, Vote};
 
         let resolution_entity = Resolution {
+            prestataire_de_la_mission: None,
             id: resolution_dto.id,
             meeting_id: resolution_dto.meeting_id,
             title: resolution_dto.title,

@@ -59,9 +59,9 @@ impl ResolutionRepository for PostgresResolutionRepository {
                 id, meeting_id, title, description, resolution_type, majority_required,
                 vote_count_pour, vote_count_contre, vote_count_abstention,
                 total_voting_power_pour, total_voting_power_contre, total_voting_power_abstention,
-                status, created_at, voted_at, agenda_item_index
+                status, created_at, voted_at, agenda_item_index, prestataire_de_la_mission
             )
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
             "#,
         )
         .bind(resolution.id)
@@ -82,6 +82,7 @@ impl ResolutionRepository for PostgresResolutionRepository {
         // `usize` n'a pas d'encodage Postgres : l'indice est stocke en INTEGER,
         // borne a >= 0 par un CHECK cote base.
         .bind(resolution.agenda_item_index.map(|i| i as i32))
+        .bind(resolution.prestataire_de_la_mission)
         .execute(&self.pool)
         .await
         .map_err(|e| format!("Database error creating resolution: {}", e))?;
@@ -95,7 +96,7 @@ impl ResolutionRepository for PostgresResolutionRepository {
             SELECT id, meeting_id, title, description, resolution_type, majority_required,
                    vote_count_pour, vote_count_contre, vote_count_abstention,
                    total_voting_power_pour, total_voting_power_contre, total_voting_power_abstention,
-                   status, created_at, voted_at, agenda_item_index
+                   status, created_at, voted_at, agenda_item_index, prestataire_de_la_mission
             FROM resolutions
             WHERE id = $1
             "#,
@@ -141,6 +142,7 @@ impl ResolutionRepository for PostgresResolutionRepository {
                 agenda_item_index: row
                     .get::<Option<i32>, _>("agenda_item_index")
                     .map(|i| i as usize),
+                prestataire_de_la_mission: row.get("prestataire_de_la_mission"),
             }
         }))
     }
@@ -151,7 +153,7 @@ impl ResolutionRepository for PostgresResolutionRepository {
             SELECT id, meeting_id, title, description, resolution_type, majority_required,
                    vote_count_pour, vote_count_contre, vote_count_abstention,
                    total_voting_power_pour, total_voting_power_contre, total_voting_power_abstention,
-                   status, created_at, voted_at, agenda_item_index
+                   status, created_at, voted_at, agenda_item_index, prestataire_de_la_mission
             FROM resolutions
             WHERE meeting_id = $1
             ORDER BY created_at ASC
@@ -200,6 +202,7 @@ impl ResolutionRepository for PostgresResolutionRepository {
                     agenda_item_index: row
                         .get::<Option<i32>, _>("agenda_item_index")
                         .map(|i| i as usize),
+                    prestataire_de_la_mission: row.get("prestataire_de_la_mission"),
                 }
             })
             .collect())
@@ -217,7 +220,7 @@ impl ResolutionRepository for PostgresResolutionRepository {
             SELECT id, meeting_id, title, description, resolution_type, majority_required,
                    vote_count_pour, vote_count_contre, vote_count_abstention,
                    total_voting_power_pour, total_voting_power_contre, total_voting_power_abstention,
-                   status, created_at, voted_at, agenda_item_index
+                   status, created_at, voted_at, agenda_item_index, prestataire_de_la_mission
             FROM resolutions
             WHERE status = $1
             ORDER BY created_at DESC
@@ -259,6 +262,7 @@ impl ResolutionRepository for PostgresResolutionRepository {
                     agenda_item_index: row
                         .get::<Option<i32>, _>("agenda_item_index")
                         .map(|i| i as usize),
+                    prestataire_de_la_mission: row.get("prestataire_de_la_mission"),
                 }
             })
             .collect())
