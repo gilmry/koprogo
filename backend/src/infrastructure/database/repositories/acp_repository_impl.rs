@@ -26,6 +26,9 @@ impl PostgresAcpRepository {
     fn row_to_acp(row: &sqlx::postgres::PgRow) -> Acp {
         let legal_status_str: String = row.get("legal_status");
         Acp {
+            // Le ROI n'est pas encore persisté : la fenêtre statutaire de l'AG
+            // ordinaire (Art. 3.85 § 3, 3°) reste à saisir. Voir #747.
+            fenetre_ag_ordinaire: None,
             id: row.get("id"),
             organization_id: row.get("organization_id"),
             name: row.get("name"),

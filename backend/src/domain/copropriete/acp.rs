@@ -29,6 +29,7 @@ use rust_decimal_macros::dec;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 use uuid::Uuid;
+use super::fenetre_ag_ordinaire::FenetreAgOrdinaire;
 
 /// Dénominateur par défaut de l'acte de base (millièmes belges classiques).
 /// L'acte authentique peut fixer 10000 (dix-millièmes) ou une autre base —
@@ -150,6 +151,17 @@ pub struct Acp {
     /// l'ACP, Art. 3.86 §3). Doit couvrir ≥ 5 % des charges ordinaires N-1
     /// sauf renonciation 4/5. Decimal exact (ADR-0007).
     #[serde(default)]
+    /// La période annuelle de quinze jours pendant laquelle se tient l'AG
+    /// ordinaire, fixée par le règlement d'ordre intérieur.
+    ///
+    /// Art. 3.85 § 3, 3°. `None` tant que le ROI n'a pas été encodé : une ACP
+    /// sans fenêtre n'est pas en infraction, elle est incomplète. C'est au
+    /// SuperAdmin de la renseigner en même temps que le reste des statuts.
+    ///
+    /// Elle sert aussi de point d'ancrage au délai de trois semaines des
+    /// propositions (Art. 3.87 § 3) : sans elle, ce délai n'a pas de départ.
+    pub fenetre_ag_ordinaire: Option<FenetreAgOrdinaire>,
+
     pub reserve_fund_balance: Decimal,
     /// Story H13 — solde du **fonds de roulement** (compte distinct, dépenses
     /// courantes récurrentes — loi 2019).
@@ -220,6 +232,7 @@ impl Acp {
             address_street,
             address_postal_code,
             address_city,
+            fenetre_ag_ordinaire: None,
             reserve_fund_balance: Decimal::ZERO,
             working_capital_balance: Decimal::ZERO,
             reserve_fund_waived: false,
@@ -336,6 +349,27 @@ impl Acp {
     /// Retourne `Err(AcpNotConformantError)` typée si l'ACP n'est pas conforme.
     /// Consommée par les use-cases (validate-before-compute, Story H7) et le
     /// frontend (banner/toast 422 narratif).
+    /// Renseigne la période statutaire de l'AG ordinaire (Art. 3.85 § 3, 3°).
+    ///
+    /// Séparé du constructeur à dessein : le ROI est un acte sous signature
+    /// privée, encodé après l'acte de base authentique. Une ACP existe
+    /// juridiquement avant que son ROI soit saisi.
+    pub fn fixer_fenetre_ag_ordinaire(&mut self, fenetre: FenetreAgOrdinaire) {
+        self.fenetre_ag_ordinaire = Some(fenetre);
+        self.updated_at = Utc::now();
+    }
+
+    /// L'assemblée ordinaire tombe-t-elle dans la fenêtre statutaire ?
+    ///
+    /// `None` quand le ROI n'a pas été encodé : on ne peut alors ni confirmer
+    /// ni infirmer, et le dire est plus honnête que de répondre « conforme ».
+    pub fn ag_ordinaire_dans_la_fenetre(
+        &self,
+        date: chrono::NaiveDate,
+    ) -> Option<bool> {
+        self.fenetre_ag_ordinaire.map(|f| f.contient(date))
+    }
+
     pub fn assert_conformant(&self, metrics: &AcpMetrics) -> Result<(), AcpNotConformantError> {
         if !self.is_conformant(metrics) {
             return Err(AcpNotConformantError {
@@ -500,6 +534,63 @@ fn generate_slug(name: &str) -> String {
 // ============================================================================
 // Tests — taxonomie 4 catégories (CRITICAL.md règle #3, #427).
 // ============================================================================
+
+#[cfg(test)]
+mod tests_art_3_85_fenetre_statutaire {
+    use super::*;
+    use crate::domain::copropriete::fenetre_ag_ordinaire::FenetreAgOrdinaire;
+
+    fn acp() -> Acp {
+        Acp::new(
+            Some(Uuid::new_v4()),
+            "ACP Résidence du Parc".to_string(),
+            "12 Rue de la Loi".to_string(),
+            "1000".to_string(),
+            "Bruxelles".to_string(),
+            None,
+        )
+        .expect("ACP valide")
+    }
+
+    fn le(annee: i32, mois: u32, jour: u32) -> chrono::NaiveDate {
+        chrono::NaiveDate::from_ymd_opt(annee, mois, jour).expect("date valide")
+    }
+
+    /// Art. 3.85 § 3, 3° : le ROI fixe une période annuelle de quinze jours.
+    #[test]
+    fn happy_une_ag_dans_la_fenetre_est_conforme() {
+        let mut acp = acp();
+        acp.fixer_fenetre_ag_ordinaire(FenetreAgOrdinaire::new(6, 1).unwrap());
+
+        assert_eq!(acp.ag_ordinaire_dans_la_fenetre(le(2026, 6, 8)), Some(true));
+    }
+
+    #[test]
+    fn negative_une_ag_hors_fenetre_est_signalee() {
+        let mut acp = acp();
+        acp.fixer_fenetre_ag_ordinaire(FenetreAgOrdinaire::new(6, 1).unwrap());
+
+        assert_eq!(acp.ag_ordinaire_dans_la_fenetre(le(2026, 9, 8)), Some(false));
+    }
+
+    /// Sans ROI encodé, on ne peut ni confirmer ni infirmer.
+    ///
+    /// Répondre « conforme » serait un mensonge par défaut, et « non conforme »
+    /// accuserait une ACP qui n'a rien fait de mal : elle est incomplète, pas
+    /// en infraction. Le troisième état est le seul honnête.
+    #[test]
+    fn edge_sans_roi_encode_la_question_reste_ouverte() {
+        assert_eq!(acp().ag_ordinaire_dans_la_fenetre(le(2026, 6, 8)), None);
+    }
+
+    /// Le ROI est un acte sous signature privée, encodé après l'acte de base
+    /// authentique : une ACP existe juridiquement avant que sa fenêtre soit
+    /// connue.
+    #[test]
+    fn happy_une_acp_neuve_na_pas_encore_de_fenetre() {
+        assert!(acp().fenetre_ag_ordinaire.is_none());
+    }
+}
 
 #[cfg(test)]
 mod tests {
