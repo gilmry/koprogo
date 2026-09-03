@@ -85,13 +85,33 @@ export interface PaymentMethod {
 // branche. Un type importe fait echouer `astro check` a la premiere divergence.
 export type CreatePaymentDto = components["schemas"]["CreatePaymentRequest"];
 
+/**
+ * Aligne sur `CreatePaymentMethodRequest` du backend (#732).
+ *
+ * Ce type etait ecrit a la main et divergeait du contrat : il declarait
+ * `stripe_payment_method_id` facultatif alors qu'il est requis, omettait
+ * `stripe_customer_id` et `is_default` qui le sont aussi, et ajoutait `last4`
+ * et `brand` qui n'existent pas cote serveur. Resultat : un 400 a chaque ajout
+ * de moyen de paiement, avec une CI verte de bout en bout — les seize routes
+ * `payment-methods` etaient absentes du contrat OpenAPI, donc absentes des
+ * deux cotes, donc coherentes.
+ *
+ * Les routes sont desormais annotees et enregistrees, et le gate
+ * `check-openapi-coverage.sh` verifie les deux. Ce type devrait a terme venir
+ * de `components["schemas"]["CreatePaymentMethodRequest"]` plutot que d'etre
+ * redeclare ici.
+ */
 export interface CreatePaymentMethodDto {
   owner_id: string;
   method_type: PaymentMethodType;
-  stripe_payment_method_id?: string;
+  /** Requis cote serveur. */
+  stripe_payment_method_id: string;
+  /** Requis cote serveur, et absent de l'ancienne declaration. */
+  stripe_customer_id: string;
   display_label: string;
-  last4?: string;
-  brand?: string;
+  /** Requis cote serveur, et absent de l'ancienne declaration. */
+  is_default: boolean;
+  metadata?: string;
   expires_at?: string;
 }
 

@@ -255,8 +255,31 @@ use utoipa_swagger_ui::SwaggerUi;
         crate::infrastructure::web::handlers::ticket_handlers::list_assignable_users,
         // Authentification — la déconnexion manquait au contrat.
         crate::infrastructure::web::handlers::auth_handlers::logout,
+        // Moyens de paiement (#732). Les quinze routes existaient et
+        // fonctionnaient ; aucune n'était déclarée, si bien que le frontend a
+        // écrit son DTO à la main — en oubliant `stripe_customer_id` et
+        // `is_default`, tous deux requis. D'où un 400 à chaque ajout de moyen
+        // de paiement, avec une CI verte de bout en bout.
+        crate::infrastructure::web::handlers::payment_method_handlers::create_payment_method,
+        crate::infrastructure::web::handlers::payment_method_handlers::get_payment_method,
+        crate::infrastructure::web::handlers::payment_method_handlers::get_payment_method_by_stripe_id,
+        crate::infrastructure::web::handlers::payment_method_handlers::list_owner_payment_methods,
+        crate::infrastructure::web::handlers::payment_method_handlers::list_active_owner_payment_methods,
+        crate::infrastructure::web::handlers::payment_method_handlers::get_default_payment_method,
+        crate::infrastructure::web::handlers::payment_method_handlers::list_organization_payment_methods,
+        crate::infrastructure::web::handlers::payment_method_handlers::list_payment_methods_by_type,
+        crate::infrastructure::web::handlers::payment_method_handlers::update_payment_method,
+        crate::infrastructure::web::handlers::payment_method_handlers::set_payment_method_as_default,
+        crate::infrastructure::web::handlers::payment_method_handlers::deactivate_payment_method,
+        crate::infrastructure::web::handlers::payment_method_handlers::reactivate_payment_method,
+        crate::infrastructure::web::handlers::payment_method_handlers::delete_payment_method,
+        crate::infrastructure::web::handlers::payment_method_handlers::count_active_payment_methods,
+        crate::infrastructure::web::handlers::payment_method_handlers::has_active_payment_methods,
     ),
     components(schemas(
+            crate::application::dto::PaymentMethodResponse,
+            crate::application::dto::CreatePaymentMethodRequest,
+            crate::application::dto::UpdatePaymentMethodRequest,
         // JournalEntries — le `#[derive(ToSchema)]` seul NE SUFFIT PAS :
         // utoipa ne collecte que ce qui est enregistre ici.
         crate::infrastructure::web::handlers::journal_entry_handlers::CreateJournalEntryRequest,

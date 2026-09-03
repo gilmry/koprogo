@@ -76,9 +76,9 @@ if [[ ! -d "$ROOT" ]]; then
 fi
 
 # Nombre de routes SANS `#[utoipa::path]` toléré. Ne doit que décroître.
-# Mesuré le 2026-09-01 après annotation des modules journal-entries, units,
-# owner-contributions et call-for-funds (rapport de test workflows financiers).
-BASELINE=440
+# Mesuré le 2026-09-03 après annotation des quinze routes payment-methods
+# (#732), qui vivaient hors contrat depuis toujours. Précédemment 440.
+BASELINE=425
 
 read -r total annotated < <(
   awk '
