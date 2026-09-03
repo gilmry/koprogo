@@ -1,6 +1,7 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
+use rust_decimal::Decimal;
 
 /// Campagne d'achat groupé d'énergie
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -175,9 +176,26 @@ pub struct ProviderOffer {
     pub id: Uuid,
     pub campaign_id: Uuid,
     pub provider_name: String,
-    pub price_kwh_electricity: Option<f64>,
-    pub price_kwh_gas: Option<f64>,
-    pub fixed_monthly_fee: f64,
+    /// Prix du kWh électrique, en euros.
+    ///
+    /// `Decimal` et non `f64` (ADR-0008 § A) : c'est un montant, multiplié par
+    /// une consommation pour produire une facture. La dérive s'y accumule
+    /// d'autant plus qu'un prix au kWh se compte en millièmes d'euro et se
+    /// multiplie par des milliers d'unités.
+    ///
+    /// L'enjeu n'est pas cosmétique : ces prix servent à comparer des offres
+    /// pour un achat groupé, et l'économie annoncée aux copropriétaires en
+    /// découle. Une comparaison faussée oriente une décision collective.
+    pub price_kwh_electricity: Option<Decimal>,
+    /// Prix du kWh gaz, en euros. Même raison.
+    pub price_kwh_gas: Option<Decimal>,
+    /// Redevance mensuelle fixe, en euros. Elle s'additionne sur la durée du
+    /// contrat, souvent trente-six mois.
+    pub fixed_monthly_fee: Decimal,
+    /// Part d'énergie verte, en pourcentage d'affichage.
+    ///
+    /// Reste en `f64` : ce n'est ni un montant ni une quotité, et il n'est
+    /// jamais comparé à un seuil légal (carve-out ADR-0008 § A).
     pub green_energy_pct: f64, // 0-100
     pub contract_duration_months: i32,
     pub estimated_savings_pct: f64,
@@ -191,9 +209,9 @@ impl ProviderOffer {
     pub fn new(
         campaign_id: Uuid,
         provider_name: String,
-        price_kwh_electricity: Option<f64>,
-        price_kwh_gas: Option<f64>,
-        fixed_monthly_fee: f64,
+        price_kwh_electricity: Option<Decimal>,
+        price_kwh_gas: Option<Decimal>,
+        fixed_monthly_fee: Decimal,
         green_energy_pct: f64,
         contract_duration_months: i32,
         estimated_savings_pct: f64,
@@ -490,9 +508,9 @@ mod tests {
         let offer = ProviderOffer::new(
             Uuid::new_v4(),
             "Lampiris".to_string(),
-            Some(0.27),
+            Some(rust_decimal_macros::dec!(0.27)),
             None,
-            12.50,
+            rust_decimal_macros::dec!(12.50),
             100.0,
             12,
             15.0,
@@ -510,9 +528,9 @@ mod tests {
         let offer_100 = ProviderOffer::new(
             Uuid::new_v4(),
             "Lampiris".to_string(),
-            Some(0.27),
+            Some(rust_decimal_macros::dec!(0.27)),
             None,
-            12.50,
+            rust_decimal_macros::dec!(12.50),
             100.0,
             12,
             15.0,
@@ -524,9 +542,9 @@ mod tests {
         let offer_75 = ProviderOffer::new(
             Uuid::new_v4(),
             "Engie".to_string(),
-            Some(0.25),
+            Some(rust_decimal_macros::dec!(0.25)),
             None,
-            12.50,
+            rust_decimal_macros::dec!(12.50),
             75.0,
             12,
             18.0,
@@ -538,9 +556,9 @@ mod tests {
         let offer_30 = ProviderOffer::new(
             Uuid::new_v4(),
             "Luminus".to_string(),
-            Some(0.26),
+            Some(rust_decimal_macros::dec!(0.26)),
             None,
-            12.50,
+            rust_decimal_macros::dec!(12.50),
             30.0,
             12,
             16.0,
@@ -576,9 +594,9 @@ mod tests {
         let offer = ProviderOffer::new(
             campaign.id,
             "Lampiris".to_string(),
-            Some(0.27),
+            Some(rust_decimal_macros::dec!(0.27)),
             None,
-            12.50,
+            rust_decimal_macros::dec!(12.50),
             100.0,
             12,
             15.0,
