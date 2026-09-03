@@ -33,6 +33,19 @@ on:
   push:
     branches:
       - feature/dev
+  # Rattrapage manuel. Un commit poussé par une Action avec le `GITHUB_TOKEN`
+  # par défaut ne déclenche aucun autre workflow : c'est le cas des auto-merges
+  # Dependabot. Ses images ne sont donc jamais construites, et
+  # deploy-ecosolva.sh attend indéfiniment un tag qui n'arrivera pas. Constaté
+  # le 2026-09-03 : la démo est restée figée sur sha-87d24ac depuis la veille,
+  # bloquée derrière a868f237. Ce déclencheur permet de construire les images
+  # d'un commit resté en rade sans avoir à pousser un commit vide par-dessus.
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: "Commit ou branche à construire (par défaut feature/dev)"
+        required: false
+        default: feature/dev
 
 env:
   REGISTRY: ghcr.io
@@ -73,6 +86,11 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v7
+        with:
+          # En rattrapage manuel, on construit le commit demandé, pas la tête
+          # de la branche : un commit resté en rade a justement d'autres
+          # commits derrière lui.
+          ref: ${{ inputs.ref || github.sha }}
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
@@ -87,7 +105,11 @@ jobs:
       - name: Compute short SHA
         id: vars
         # Sept caractères, comme le calcule deploy-ecosolva.sh côté serveur.
-        run: echo "short_sha=${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+        # Lu depuis l'arbre de travail et non depuis GITHUB_SHA : en
+        # rattrapage manuel, GITHUB_SHA vaut la tête de la branche alors que
+        # le checkout porte sur le commit demandé. Le tag doit désigner ce
+        # qui a réellement été construit.
+        run: echo "short_sha=$(git rev-parse --short=7 HEAD)" >> "$GITHUB_OUTPUT"
 
       - name: Build and push ${{ matrix.service }}
         uses: docker/build-push-action@v7
