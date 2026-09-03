@@ -50,11 +50,11 @@ slice-5 restent en 0.2.0.
 | J3 | Puis `owner_contributions`, `payment_reminders` | **fait** `1126d3cd` `5a098e37` |
 | J4 | `account_balances` recalculée par ACP | **fait** `2c38da55` |
 | J5 | Garde d'écriture sur les routes non protégées — #694, #663 | **fait** `1ea85683` (dette bornée à 69, 5 gardes posées) |
-| J6 | Les 11 invariants absents — #737 à #747 | **8 sur 11** : #737 #738 #739 #740 #742 #743 #746 #747 |
+| J6 | Les 11 invariants absents — #737 à #747 | **fait, 11 sur 11** |
 | J7 | Les 9 partiels — #748 à #756 | à faire |
 | J8 | `registre_legal.rs` exécutable + rapport de conformité pour juriste | à faire |
 
-**Couverture côté loi** : 17 couverts, 9 partiels, 3 absents. Cible : 29 couverts.
+**Couverture côté loi** : **20 couverts, 9 partiels, 0 absent**. Cible : 29 couverts.
 
 Livrés depuis, chacun par la boucle rouge-vert avec son article cité dans le nom
 du test :
@@ -69,16 +69,27 @@ du test :
 | 3.85 § 3, 3° | fenêtre statutaire de l'AG ordinaire, et le préavis des propositions | #747 |
 | 3.86 § 1er | personnalité juridique aux deux conditions, avec l'asymétrie du § 2 | #740 |
 | 3.86 § 3 al. 4 | fonds de réserve exigible à cinq ans, plancher de 5 % | #738 |
+| 3.87 § 2 | AG sur requête d'un cinquième des parts, et la sanction du silence | #741 |
+| 3.87 § 12 | PV consigné au registre et transmis sous trente jours | #744 |
+| 3.89 § 5, 13° | contrat lié au syndic : autorisation **préalable** | #745 |
 
-Restent absents, tous trois parce qu'ils demandent une entité que le modèle n'a
-pas encore :
+**Aucun invariant du registre n'est plus absent.** Les neuf partiels restent, et
+ce sont eux qui portent le solde vers la cible de 29.
 
-- **#741** — l'AG sur requête d'un cinquième des parts. Il faut une requête
-  datée, cosignée, avec son seuil vérifié en quotités.
-- **#744** — le PV consigné au registre et transmis sous trente jours. Il faut
-  tracer la consignation et la transmission destinataire par destinataire.
-- **#745** — le contrat lié au syndic. Il faut une entité contrat qui déclare
-  son lien de parenté ou de participation au capital.
+Ce que ces onze itérations ont appris, et qui n'était pas dans le registre :
+
+- **la règle du poids de l'Art. 3.87 § 7 interdit à un majoritaire d'emporter
+  un vote seul.** Un copropriétaire à 550/1000 la viole dès qu'il vote ;
+- **le décompte de l'Art. 3.89 § 5, 15° n'est pas celui de l'acte de base** :
+  quinze appartements, quinze caves et vingt parkings font cinquante lots à
+  l'acte et quinze au sens de l'article ;
+- **l'asymétrie de l'Art. 3.86 § 2** : une ACP non transcrite ne peut pas
+  opposer sa personnalité à un tiers, mais ce tiers peut la lui opposer ;
+- **l'antériorité de l'Art. 3.89 § 5, 13°** : une autorisation votée après
+  signature ne régularise rien.
+
+Chacune de ces quatre lectures aurait pu passer inaperçue dans une
+implémentation qui se contente du sens apparent du texte.
 
 **Le dossier de gestion couvre neuf familles de pièces** : charge, budget, appel de
 fonds, quote-part, écriture, assemblée, convocation, état daté, relance. Chacune
