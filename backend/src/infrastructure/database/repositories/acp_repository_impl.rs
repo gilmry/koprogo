@@ -32,6 +32,10 @@ impl PostgresAcpRepository {
             // Pas encore persistée non plus : elle fait courir le délai de
             // cinq ans du fonds de réserve (Art. 3.86 § 3 al. 4). Voir #738.
             reception_provisoire_parties_communes: None,
+            // Ni les deux conditions de l'Art. 3.86 § 1er : sans elles, la
+            // personnalité juridique se lit `Inexistante`. Voir #740.
+            premiere_cession_de_lot: None,
+            transcription_statuts: None,
             id: row.get("id"),
             organization_id: row.get("organization_id"),
             name: row.get("name"),

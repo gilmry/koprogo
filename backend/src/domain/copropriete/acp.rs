@@ -175,6 +175,22 @@ pub struct Acp {
     /// depuis longtemps.
     pub reception_provisoire_parties_communes: Option<chrono::NaiveDate>,
 
+    /// Date de la première cession ou attribution d'un lot.
+    ///
+    /// Art. 3.86 § 1er, 1° : c'est elle qui fait **naître l'indivision**, donc
+    /// l'association. Sans elle, un immeuble encore entier aux mains du
+    /// promoteur n'a pas d'ACP, quels que soient ses statuts.
+    pub premiere_cession_de_lot: Option<chrono::NaiveDate>,
+
+    /// Date de transcription des statuts au bureau de la Documentation
+    /// patrimoniale.
+    ///
+    /// Art. 3.86 § 1er, 2°. Son absence ne supprime pas l'association : elle
+    /// la prive seulement du droit d'opposer sa personnalité **aux tiers**,
+    /// lesquels gardent la faculté de la lui opposer (§ 2). La protection joue
+    /// dans un seul sens, contre l'association négligente.
+    pub transcription_statuts: Option<chrono::NaiveDate>,
+
     pub reserve_fund_balance: Decimal,
     /// Story H13 — solde du **fonds de roulement** (compte distinct, dépenses
     /// courantes récurrentes — loi 2019).
@@ -247,6 +263,8 @@ impl Acp {
             address_city,
             fenetre_ag_ordinaire: None,
             reception_provisoire_parties_communes: None,
+            premiere_cession_de_lot: None,
+            transcription_statuts: None,
             reserve_fund_balance: Decimal::ZERO,
             working_capital_balance: Decimal::ZERO,
             reserve_fund_waived: false,
@@ -411,6 +429,40 @@ impl Acp {
             self.reserve_fund_waived,
             charges_ordinaires_n_moins_1,
         )
+    }
+
+    /// Enregistre la première cession ou attribution d'un lot, qui fait
+    /// naître l'indivision (Art. 3.86 § 1er, 1°).
+    pub fn enregistrer_premiere_cession(&mut self, date: chrono::NaiveDate) {
+        self.premiere_cession_de_lot = Some(date);
+        self.updated_at = Utc::now();
+    }
+
+    /// Enregistre la transcription des statuts (Art. 3.86 § 1er, 2°).
+    pub fn enregistrer_transcription_statuts(&mut self, date: chrono::NaiveDate) {
+        self.transcription_statuts = Some(date);
+        self.updated_at = Utc::now();
+    }
+
+    /// L'état de la personnalité juridique, dérivé des deux conditions.
+    ///
+    /// Jamais saisi à la main : il se déduit des faits. Une ACP acquiert la
+    /// personnalité parce qu'un lot a été cédé et que les statuts ont été
+    /// transcrits, pas parce qu'un administrateur l'a coché.
+    pub fn personnalite_juridique(&self) -> super::personnalite_juridique::PersonnaliteJuridique {
+        super::personnalite_juridique::personnalite(
+            self.premiere_cession_de_lot,
+            self.transcription_statuts,
+        )
+    }
+
+    /// L'ACP peut-elle engager — signer un contrat, ouvrir un compte à son
+    /// nom, agir en justice ?
+    ///
+    /// Non tant que ses statuts ne sont pas transcrits : elle ne peut pas
+    /// opposer sa personnalité au cocontractant (Art. 3.86 § 2).
+    pub fn peut_engager(&self) -> bool {
+        self.personnalite_juridique().opposable_par_lacp()
     }
 
     pub fn assert_conformant(&self, metrics: &AcpMetrics) -> Result<(), AcpNotConformantError> {
