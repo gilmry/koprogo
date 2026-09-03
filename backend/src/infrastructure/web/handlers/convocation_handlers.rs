@@ -4,8 +4,10 @@ use crate::application::dto::{
 };
 use crate::infrastructure::audit::{AuditEventType, AuditLogEntry};
 use crate::infrastructure::web::{AppState, AuthenticatedUser};
+use actix_web::ResponseError;
 use actix_web::{delete, get, post, put, web, HttpResponse, Responder};
 use uuid::Uuid;
+use crate::infrastructure::web::middleware::scope_guard::verify_building_org_access;
 
 // ==================== Convocation CRUD Endpoints ====================
 
@@ -21,6 +23,20 @@ pub async fn create_convocation(
             return HttpResponse::Unauthorized().json(serde_json::json!({"error": e.to_string()}))
         }
     };
+
+    // Isolation multi-tenant à l'ÉCRITURE (ADR-0045) : la convocation est un
+    // acte de l'ACP, dont elle supporte les frais (Art. 3.87 § 3). L'immeuble
+    // visé doit relever d'une ACP confiée à ce syndic.
+    if let Err(err) = verify_building_org_access(
+        &user,
+        request.building_id,
+        &state.building_use_cases,
+        &state.acp_use_cases,
+    )
+    .await
+    {
+        return err.error_response();
+    }
 
     let created_by = user.user_id;
 
@@ -416,6 +432,20 @@ pub async fn schedule_second_convocation(
     };
 
     let req = request.into_inner();
+
+    // Isolation multi-tenant à l'ÉCRITURE (ADR-0045) : la seconde convocation
+    // crée une assemblée ET une convocation dans le dossier de l'ACP. Sans
+    // garde, un cabinet tiers convoquerait les copropriétaires d'un autre.
+    if let Err(err) = verify_building_org_access(
+        &user,
+        req.building_id,
+        &state.building_use_cases,
+        &state.acp_use_cases,
+    )
+    .await
+    {
+        return err.error_response();
+    }
 
     // Create a new meeting for the second convocation
     let new_meeting_req = crate::application::dto::CreateMeetingRequest {

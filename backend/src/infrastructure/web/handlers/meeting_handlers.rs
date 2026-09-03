@@ -4,6 +4,7 @@ use crate::application::dto::{
     ValidateQuorumRequest,
 };
 use crate::infrastructure::audit::{AuditEventType, AuditLogEntry};
+use crate::infrastructure::web::middleware::scope_guard::verify_building_org_access;
 use crate::infrastructure::web::middleware::scope_guard::verify_acp_org_access;
 use crate::infrastructure::web::{AppState, AuthenticatedUser};
 use actix_web::{delete, get, post, put, web, HttpResponse, Responder, ResponseError};
@@ -76,6 +77,23 @@ pub async fn create_meeting(
         }
     };
     request.organization_id = organization_id;
+
+    // Isolation multi-tenant à l'ÉCRITURE (ADR-0045). L'affectation de
+    // `organization_id` depuis le jeton protège l'ESTAMPILLE, pas le
+    // RATTACHEMENT : elle empêche d'écrire au nom d'autrui, pas d'écrire dans
+    // le dossier d'autrui. L'immeuble visé doit relever d'une ACP confiée à ce
+    // syndic.
+    if let Err(err) = verify_building_org_access(
+        &user,
+        request.building_id,
+        &state.building_use_cases,
+        &state.acp_use_cases,
+    )
+    .await
+    {
+        return err.error_response();
+    }
+
 
     match state
         .meeting_use_cases

@@ -11,9 +11,11 @@
 
 use crate::infrastructure::audit::{AuditEventType, AuditLogEntry};
 use crate::infrastructure::web::{AppState, AuthenticatedUser};
+use actix_web::ResponseError;
 use actix_web::{delete, get, post, web, HttpResponse, Responder};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
+use crate::infrastructure::web::middleware::scope_guard::verify_building_org_access;
 
 /// `deny_unknown_fields` : le rapport de test du 2026-09-01 (constat F16)
 /// signalait `operation_date` et `reference` « non persistes ». Les noms
@@ -141,6 +143,27 @@ pub async fn create_journal_entry(
             }))
         }
     };
+
+    // Isolation multi-tenant à l'ÉCRITURE (ADR-0045) : l'immeuble visé doit
+    // relever d'une ACP confiée à ce syndic. Sans cette garde, l'affectation de
+    // `organization_id` depuis le jeton protège l'estampille et non le
+    // rattachement — on écrit au bon nom dans le mauvais dossier.
+    //
+    // `building_id` est facultatif ici, et le use-case refuse déjà une saisie
+    // qui n'en désigne aucun : sans immeuble, on ne sait pas dans quels livres
+    // l'écriture s'inscrit. La garde ne s'applique donc qu'au cas renseigné.
+    if let Some(building_id) = req.building_id {
+        if let Err(err) = verify_building_org_access(
+            &user,
+            building_id,
+            &state.building_use_cases,
+            &state.acp_use_cases,
+        )
+        .await
+        {
+            return err.error_response();
+        }
+    }
 
     // Parse entry_date
     let entry_date = match chrono::DateTime::parse_from_rfc3339(&req.entry_date) {
