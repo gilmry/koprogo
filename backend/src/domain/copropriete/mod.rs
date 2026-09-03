@@ -29,6 +29,7 @@ pub mod board_decision;
 pub mod board_member;
 pub mod building;
 pub mod conflit_dinterets;
+pub mod consignation_pv;
 pub mod convocation;
 pub mod convocation_recipient;
 pub mod document;
@@ -93,3 +94,4 @@ pub use solidarite::{poursuivables_pour_le_tout, repartir_charge, Obligation, Ti
 pub use fenetre_ag_ordinaire::{FenetreAgOrdinaire, FenetreInvalide};
 pub use fonds_de_reserve::{DotationInsuffisante, StatutFondsReserve};
 pub use personnalite_juridique::{personnalite, PersonnaliteJuridique};
+pub use consignation_pv::{echeance as echeance_consignation_pv, EtatConsignation};
