@@ -64,6 +64,16 @@ pub enum DeliveryMethod {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct PaymentReminder {
     pub id: Uuid,
+
+    /// L'ACP au profit de laquelle la somme est réclamée.
+    ///
+    /// Art. 3.86 § 3 : « Le syndic peut prendre toutes les mesures judiciaires
+    /// et extrajudiciaires pour la récupération des charges ». Il recouvre
+    /// **pour** l'association ; la créance et les pénalités lui reviennent.
+    /// Cf. ADR-0045.
+    pub acp_id: Uuid,
+
+    /// Le syndic qui a émis la relance, conservé comme trace d'auteur.
     pub organization_id: Uuid,
     pub expense_id: Uuid,
     pub owner_id: Uuid,
@@ -101,6 +111,7 @@ impl PaymentReminder {
     /// Crée une nouvelle relance de paiement
     #[allow(clippy::too_many_arguments)]
     pub fn new(
+        acp_id: Uuid,
         organization_id: Uuid,
         expense_id: Uuid,
         owner_id: Uuid,
@@ -156,6 +167,7 @@ impl PaymentReminder {
         let now = Utc::now();
         Ok(Self {
             id: Uuid::new_v4(),
+            acp_id,
             organization_id,
             expense_id,
             owner_id,
@@ -333,6 +345,7 @@ mod tests {
         let due_date = Utc::now() - chrono::Duration::days(20);
 
         let reminder = PaymentReminder::new(
+            Uuid::new_v4(), // acp_id
             org_id,
             expense_id,
             owner_id,
@@ -357,6 +370,7 @@ mod tests {
         let due_date = Utc::now() - chrono::Duration::days(10);
 
         let reminder = PaymentReminder::new(
+            Uuid::new_v4(), // acp_id
             org_id,
             expense_id,
             owner_id,
@@ -435,6 +449,7 @@ mod tests {
         let due_date = Utc::now() - chrono::Duration::days(20);
         for amount in [dec!(0), dec!(-100), dec!(0.009)] {
             let r = PaymentReminder::new(
+                Uuid::new_v4(), // acp_id
                 Uuid::new_v4(),
                 Uuid::new_v4(),
                 Uuid::new_v4(),
@@ -454,6 +469,7 @@ mod tests {
     fn test_total_amount_equals_owed_plus_penalty_exactly() {
         let due_date = Utc::now() - chrono::Duration::days(90);
         let r = PaymentReminder::new(
+            Uuid::new_v4(), // acp_id
             Uuid::new_v4(),
             Uuid::new_v4(),
             Uuid::new_v4(),
@@ -476,6 +492,7 @@ mod tests {
         let due_date = Utc::now() - chrono::Duration::days(20);
 
         let mut reminder = PaymentReminder::new(
+            Uuid::new_v4(), // acp_id
             org_id,
             expense_id,
             owner_id,
@@ -501,6 +518,7 @@ mod tests {
         let due_date = Utc::now() - chrono::Duration::days(20);
 
         let mut reminder = PaymentReminder::new(
+            Uuid::new_v4(), // acp_id
             org_id,
             expense_id,
             owner_id,
@@ -533,6 +551,7 @@ mod tests {
         let due_date = Utc::now() - chrono::Duration::days(20);
 
         let mut reminder = PaymentReminder::new(
+            Uuid::new_v4(), // acp_id
             org_id,
             expense_id,
             owner_id,
@@ -565,6 +584,7 @@ mod tests {
         let due_date = Utc::now() - chrono::Duration::days(20);
 
         let mut reminder = PaymentReminder::new(
+            Uuid::new_v4(), // acp_id
             org_id,
             expense_id,
             owner_id,
@@ -596,6 +616,7 @@ mod tests {
         let due_date = Utc::now() - chrono::Duration::days(70);
 
         let reminder = PaymentReminder::new(
+            Uuid::new_v4(), // acp_id
             org_id,
             expense_id,
             owner_id,
@@ -607,5 +628,11 @@ mod tests {
         .unwrap();
 
         assert_eq!(reminder.delivery_method, DeliveryMethod::RegisteredLetter);
+    }
+}
+
+impl crate::domain::services::PieceDeGestion for PaymentReminder {
+    fn acp_id(&self) -> Uuid {
+        self.acp_id
     }
 }

@@ -91,6 +91,9 @@ impl PaymentReminderUseCases {
         }
 
         let reminder = PaymentReminder::new(
+            // La créance et ses pénalités reviennent à l'ACP ; le syndic ne
+            // fait que recouvrer pour elle (Art. 3.86 § 3, ADR-0045).
+            expense.acp_id,
             organization_id,
             expense_id,
             owner_id,
@@ -262,6 +265,9 @@ impl PaymentReminderUseCases {
             Some(level) => {
                 let days_overdue = (Utc::now() - reminder.due_date).num_days();
                 Some(PaymentReminder::new(
+                    // L'escalade reste due à la même ACP que la relance dont
+                    // elle procède.
+                    reminder.acp_id,
                     reminder.organization_id,
                     reminder.expense_id,
                     reminder.owner_id,
@@ -885,8 +891,17 @@ mod tests {
     // ── Fixtures ─────────────────────────────────────────────────────────
 
     fn expense_impaye(org_id: Uuid, montant: Decimal) -> crate::domain::entities::Expense {
+        expense_impaye_de_lacp(Uuid::new_v4(), org_id, montant)
+    }
+
+    /// La même dépense, en nommant l'ACP à laquelle elle est imputée.
+    fn expense_impaye_de_lacp(
+        acp_id: Uuid,
+        org_id: Uuid,
+        montant: Decimal,
+    ) -> crate::domain::entities::Expense {
         crate::domain::entities::Expense::new(
-            Uuid::new_v4(), // acp_id
+            acp_id,
             org_id,
             Uuid::new_v4(),
             crate::domain::entities::ExpenseCategory::Maintenance,
@@ -942,6 +957,48 @@ mod tests {
     }
 
     // ── Tests ────────────────────────────────────────────────────────────
+
+    /// Art. 3.86 § 3 et ADR-0045 : la somme réclamée est due à l'ACP.
+    ///
+    /// « Le syndic peut prendre toutes les mesures judiciaires et
+    /// extrajudiciaires pour la récupération des charges » : il recouvre pour
+    /// elle. L'ACP se lit sur la dépense impayée, jamais sur l'appelant.
+    #[tokio::test]
+    async fn test_la_relance_reclame_au_profit_de_lacp_pas_du_syndic() {
+        let acp_creanciere = Uuid::new_v4();
+        let cabinet_qui_relance = Uuid::new_v4();
+        let depense = expense_impaye_de_lacp(acp_creanciere, cabinet_qui_relance, Decimal::from(2000));
+        let prop = proprietaire(cabinet_qui_relance);
+        let (expense_id, owner_id) = (depense.id, prop.id);
+
+        let uc = use_cases(
+            Arc::new(MockPaymentReminderRepository::new()),
+            Arc::new(MockExpenseRepo::with(depense)),
+            Arc::new(MockOwnerRepo::with(prop)),
+        );
+
+        let relance = uc
+            .create_reminder(create_dto(
+                cabinet_qui_relance,
+                expense_id,
+                owner_id,
+                ReminderLevel::FirstReminder,
+                17,
+            ))
+            .await
+            .expect("création acceptée");
+
+        assert_eq!(
+            relance.acp_id,
+            acp_creanciere.to_string(),
+            "la somme réclamée est due à l'ACP de la dépense impayée"
+        );
+        assert_eq!(
+            relance.organization_id,
+            cabinet_qui_relance.to_string(),
+            "le syndic reste tracé comme celui qui relance, sans devenir créancier"
+        );
+    }
 
     /// Le chemin nominal : une dépense impayée depuis 17 jours produit un
     /// premier rappel, avec sa pénalité calculée.

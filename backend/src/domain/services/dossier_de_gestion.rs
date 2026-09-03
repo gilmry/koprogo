@@ -55,7 +55,7 @@ mod tests {
     use crate::domain::entities::{
         Budget, CallForFunds, Convocation, ConvocationType, ContributionType, EtatDate,
         EtatDateLanguage, Expense, ExpenseCategory, JournalEntry, JournalEntryLine, Meeting,
-        MeetingType, OwnerContribution,
+        MeetingType, OwnerContribution, PaymentReminder, ReminderLevel,
     };
     use chrono::Duration;
     use rust_decimal_macros::dec;
@@ -72,6 +72,7 @@ mod tests {
         assemblee: Meeting,
         convocation: Convocation,
         etat_date: EtatDate,
+        relance: PaymentReminder,
     }
 
     impl DossierComplet {
@@ -199,6 +200,17 @@ mod tests {
                     dec!(100),
                 )
                 .expect("état daté valide"),
+                relance: PaymentReminder::new(
+                    acp,
+                    syndic,
+                    Uuid::new_v4(),
+                    Uuid::new_v4(),
+                    ReminderLevel::FirstReminder,
+                    dec!(450.00),
+                    Utc::now() - Duration::days(45),
+                    45,
+                )
+                .expect("relance valide"),
             }
         }
 
@@ -212,6 +224,7 @@ mod tests {
                 &self.assemblee,
                 &self.convocation,
                 &self.etat_date,
+                &self.relance,
             ]
         }
     }
