@@ -51,10 +51,18 @@ slice-5 restent en 0.2.0.
 | J4 | `account_balances` recalculée par ACP | **fait** `2c38da55` |
 | J5 | Garde d'écriture sur les routes non protégées — #694, #663 | **fait** `1ea85683` (dette bornée à 69, 5 gardes posées) |
 | J6 | Les 11 invariants absents — #737 à #747 | **fait, 11 sur 11** |
-| J7 | Les 9 partiels — #748 à #756 | à faire |
-| J8 | `registre_legal.rs` exécutable + rapport de conformité pour juriste | à faire |
+| J7 | Les 9 partiels — #748 à #756 | **fait, 9 sur 9** |
+| J8 | `registre_legal.rs` exécutable + rapport de conformité pour juriste | **fait** `df2259f6` |
 
-**Couverture côté loi** : **20 couverts, 9 partiels, 0 absent**. Cible : 29 couverts.
+**Couverture côté loi** : **29 sur 29**. Le registre est exécutable : deux tests
+d'intégrité vérifient que chaque invariant désigne un module et un test qui
+existent encore, si bien qu'il ne peut plus se désynchroniser en silence.
+
+Il ne prouve pas qu'un invariant est *correctement* implémenté — c'est le travail
+des tests eux-mêmes — mais qu'il est *encore là*. La distinction est écrite dans le
+module, pour qu'on ne lise pas la couverture comme une garantie de justesse.
+
+**Le Track J est terminé.**
 
 Livrés depuis, chacun par la boucle rouge-vert avec son article cité dans le nom
 du test :
