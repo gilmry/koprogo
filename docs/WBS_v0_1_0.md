@@ -46,15 +46,26 @@ slice-5 restent en 0.2.0.
 |---|---|---|
 | J0 | Contextes bornés + `tests/architecture.rs` | **fait** `a17ea6b1` |
 | J1 | `PieceDeGestion`, `perimetre_du_mandataire`, `SyndicMandate` | **fait** `2529104c` |
-| J2 | `acp_id` sur `budget`, `call_for_funds`, `journal_entry`, `etat_date`, `meeting`, `convocation` | à faire |
-| J3 | Puis `payment_reminders`, `owner_contributions` | à faire |
-| J4 | `account_balances` recalculée par ACP (vue d'agrégat, sans rattachement possible en l'état) | à faire |
+| J2 | `acp_id` sur `budget`, `call_for_funds`, `journal_entry`, `etat_date`, `meeting`, `convocation` | **fait** `380fa2f3` `b517298d` `1126d3cd` `a7b785d3` `fa8f206d` |
+| J3 | Puis `owner_contributions`, `payment_reminders` | **fait** `1126d3cd` `5a098e37` |
+| J4 | `account_balances` recalculée par ACP | **fait** `2c38da55` |
 | J5 | Garde d'écriture sur les routes non protégées — #694, #663 | à faire |
 | J6 | Les 11 invariants absents — #737 à #747 | à faire |
 | J7 | Les 9 partiels — #748 à #756 | à faire |
 | J8 | `registre_legal.rs` exécutable + rapport de conformité pour juriste | à faire |
 
 **Couverture côté loi** : 9 couverts, 9 partiels, 11 absents. Cible : 29 couverts.
+
+**Le dossier de gestion couvre neuf familles de pièces** : charge, budget, appel de
+fonds, quote-part, écriture, assemblée, convocation, état daté, relance. Chacune
+porte son ACP, et le scénario de passation
+(`le_dossier_de_gestion_suit_lacp_lors_dune_passation`) les fait toutes changer de
+mandataire sans qu'aucune ne bouge.
+
+**Deux limites connues, écrites sur place plutôt que découvertes plus tard** :
+`accounts` (le plan comptable) reste rattaché à l'organisation alors que l'AR du
+12/07/2012 le fixe au niveau de l'ACP ; et le filtre de `meeting_repository_impl`
+interpole l'identifiant au lieu de le lier.
 
 ### Track K — Dette bloquante reprise du WBS précédent
 
