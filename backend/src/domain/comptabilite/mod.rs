@@ -11,6 +11,7 @@
 
 
 pub mod account;
+pub mod arrieres_mutation;
 pub mod budget;
 pub mod call_for_funds;
 pub mod charge_distribution;
@@ -44,3 +45,4 @@ pub use payment_method::PaymentMethod;
 pub use payment_reminder::{DeliveryMethod, PaymentReminder, ReminderLevel, ReminderStatus};
 pub use quote::{Quote, QuoteScore, QuoteStatus, QuoteSubmission};
 pub use regime_comptable::{lots_comptes, regime_applicable, RegimeComptable};
+pub use arrieres_mutation::{jours_ouvrables, ArrieresARetenir};
