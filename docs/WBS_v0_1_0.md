@@ -49,12 +49,29 @@ slice-5 restent en 0.2.0.
 | J2 | `acp_id` sur `budget`, `call_for_funds`, `journal_entry`, `etat_date`, `meeting`, `convocation` | **fait** `380fa2f3` `b517298d` `1126d3cd` `a7b785d3` `fa8f206d` |
 | J3 | Puis `owner_contributions`, `payment_reminders` | **fait** `1126d3cd` `5a098e37` |
 | J4 | `account_balances` recalculée par ACP | **fait** `2c38da55` |
-| J5 | Garde d'écriture sur les routes non protégées — #694, #663 | à faire |
-| J6 | Les 11 invariants absents — #737 à #747 | à faire |
+| J5 | Garde d'écriture sur les routes non protégées — #694, #663 | **fait** `1ea85683` (dette bornée à 69, 5 gardes posées) |
+| J6 | Les 11 invariants absents — #737 à #747 | **5 sur 11** : #737 #739 #742 #743 #746 |
 | J7 | Les 9 partiels — #748 à #756 | à faire |
 | J8 | `registre_legal.rs` exécutable + rapport de conformité pour juriste | à faire |
 
-**Couverture côté loi** : 9 couverts, 9 partiels, 11 absents. Cible : 29 couverts.
+**Couverture côté loi** : 14 couverts, 9 partiels, 6 absents. Cible : 29 couverts.
+
+Livrés depuis, chacun par la boucle rouge-vert avec son article cité dans le nom
+du test :
+
+| Article | Invariant | Issue |
+|---|---|---|
+| 3.86 § 3 al. 7 | part du fonds de réserve annoncée à l'appel de fonds | #737 |
+| 3.86 § 3 al. 8 | solidarité des titulaires en cas d'usufruit | #739 |
+| 3.87 § 7 | plafonds de procuration, vérifiés à la clôture du vote | #742 |
+| 3.87 § 9 | le prestataire ne vote pas sur sa propre mission | #743 |
+| 3.89 § 5, 15° | régime comptable dérivé du décompte légal des lots | #746 |
+
+Restent absents : #738 (fonds de réserve à cinq ans, plancher de 5 %), #740
+(personnalité juridique aux deux conditions), #741 (AG sur requête d'un
+cinquième), #744 (PV au registre sous trente jours), #745 (contrat lié au
+syndic — demande une entité contrat que le modèle n'a pas), #747 (fenêtre
+statutaire de l'AG ordinaire).
 
 **Le dossier de gestion couvre neuf familles de pièces** : charge, budget, appel de
 fonds, quote-part, écriture, assemblée, convocation, état daté, relance. Chacune
