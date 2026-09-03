@@ -120,3 +120,48 @@ describe("directives d'evenement Svelte 5", () => {
     ).toEqual([]);
   });
 });
+
+/**
+ * Garde-fou cible : les actions de la fiche immeuble et de l'assemblee.
+ *
+ * Le test generique ci-dessus attrape la famille entiere. Celui-ci nomme les
+ * boutons dont on SAIT qu'ils ont ete inertes, pour que leur regression soit
+ * lisible dans le rapport de test plutot que noyee dans une liste.
+ *
+ * `BuildingDetail` : le bouton « Modifier » (#553, bug 1). Le composant est en
+ * mode legacy — il utilise `$:` et des `let` simples — donc `showEditModal`
+ * y est bien reactif. Le seul defaut etait la directive.
+ *
+ * `MeetingDetail` : cloturer, annuler, reprogrammer (#662). Trois actions de
+ * gouvernance.
+ */
+describe("actions critiques cablees", () => {
+  const CRITIQUES: Array<[string, string[]]> = [
+    ["components/BuildingDetail.svelte", ["handleEdit"]],
+    [
+      "components/MeetingDetail.svelte",
+      ["handleComplete", "handleCancel", "handleReschedule"],
+    ],
+  ];
+
+  for (const [fichier, gestionnaires] of CRITIQUES) {
+    for (const gestionnaire of gestionnaires) {
+      it(`${fichier} — ${gestionnaire} est branche par une prop, pas une directive`, () => {
+        const source = readFileSync(join(SRC, fichier), "utf8");
+
+        expect(
+          source.includes(`onclick={${gestionnaire}}`),
+          `${gestionnaire} doit etre branche par \`onclick={...}\`. Sur un ` +
+            `composant, \`on:click\` s'abonne a un evenement que \`Button\` ` +
+            `n'emet pas : le bouton ne fait rien, sans erreur ni avertissement.`,
+        ).toBe(true);
+
+        expect(
+          source.includes(`on:click={${gestionnaire}}`),
+          `${gestionnaire} porte encore la directive legacy \`on:click\`, ` +
+            `silencieusement inoperante sur un composant.`,
+        ).toBe(false);
+      });
+    }
+  }
+});
