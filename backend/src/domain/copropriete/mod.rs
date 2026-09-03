@@ -34,6 +34,7 @@ pub mod document;
 pub mod mandate;
 pub mod meeting;
 pub mod poll;
+pub mod procurations;
 pub mod poll_vote;
 pub mod resolution;
 pub mod syndic_mandate;
@@ -81,3 +82,4 @@ pub use unit_owner::{
 pub use vote::{Vote, VoteChoice};
 pub use owner::Owner;
 pub use contract_evaluation::ContractEvaluation;
+pub use procurations::{verifier_procurations, ProcurationRefusee};

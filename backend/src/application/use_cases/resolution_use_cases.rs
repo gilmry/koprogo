@@ -257,6 +257,22 @@ impl ResolutionUseCases {
             return Err("Resolution voting is already closed".to_string());
         }
 
+        // Art. 3.87 § 7 — les plafonds de procuration se vérifient à la
+        // CLÔTURE, pas à chaque vote : ils portent sur l'ensemble des voix
+        // exprimées, et le dernier vote enregistré peut faire basculer une
+        // séance qui était licite jusque-là.
+        //
+        // Le refus est bloquant. Une assemblée tenue en violation de ces
+        // plafonds est attaquable, et ce sont ses décisions — travaux,
+        // budgets, mandats — qui tombent avec elle. Mieux vaut refuser de
+        // clore que proclamer un résultat annulable.
+        let votes = self
+            .vote_repository
+            .find_by_resolution_id(resolution_id)
+            .await?;
+        crate::domain::copropriete::verifier_procurations(&votes, total_voting_power, None)
+            .map_err(|refus| refus.to_string())?;
+
         // Calculate final result
         resolution.close_voting(total_voting_power)?;
 
@@ -424,10 +440,13 @@ mod tests {
     use crate::application::ports::{
         MeetingRepository, ResolutionRepository, UnitOwnerRepository, VoteRepository,
     };
-    use crate::domain::entities::{LotHolder, Meeting, MeetingType, OwnershipType, UnitOwner};
+    use crate::domain::entities::{
+        LotHolder, Meeting, MeetingType, OwnershipType, UnitOwner, VoteChoice,
+    };
     use async_trait::async_trait;
     use chrono::Utc;
     use std::collections::HashMap;
+    use rust_decimal_macros::dec;
     use std::sync::Mutex;
 
     // Story H17 — mock UnitOwnerRepository : `find_voting_holders_by_unit`
@@ -832,6 +851,114 @@ mod tests {
             let power: rust_decimal::Decimal = proxy_votes.iter().map(|v| v.voting_power).sum();
             Ok((count, power))
         }
+    }
+
+    /// Art. 3.87 § 7 : la clôture refuse une séance où un votant pèse plus
+    /// que tous les autres réunis.
+    ///
+    /// Le contrôle est à la clôture et pas au vote, parce qu'il porte sur
+    /// l'ensemble des voix : c'est le dernier bulletin déposé qui peut faire
+    /// basculer une séance licite jusque-là.
+    #[tokio::test]
+    async fn test_art_3_87_la_cloture_refuse_un_votant_plus_lourd_que_tous_les_autres() {
+        let resolution_repo = Arc::new(MockResolutionRepository::new());
+        let vote_repo = Arc::new(MockVoteRepository::new());
+        let use_cases = ResolutionUseCases::new(
+            resolution_repo.clone(),
+            vote_repo.clone(),
+            Arc::new(MockMeetingRepository::new()),
+            Arc::new(MockUnitOwnerRepository::new()),
+        );
+
+        let resolution = Resolution::new(
+            Uuid::new_v4(),
+            "Réfection de la toiture".to_string(),
+            "Travaux de couverture votés en AGO".to_string(),
+            ResolutionType::Ordinary,
+            MajorityType::Absolute,
+            Some(1),
+        )
+        .expect("résolution valide");
+        let resolution_id = resolution.id;
+        resolution_repo
+            .create(&resolution)
+            .await
+            .expect("résolution enregistrée");
+
+        // 600 pour un seul, 399 pour tous les autres réunis.
+        for (voix, _) in [(dec!(600), 0), (dec!(200), 1), (dec!(199), 2)] {
+            vote_repo
+                .create(
+                    &Vote::new(
+                        resolution_id,
+                        Uuid::new_v4(),
+                        Uuid::new_v4(),
+                        VoteChoice::Pour,
+                        voix,
+                        None,
+                    )
+                    .expect("vote valide"),
+                )
+                .await
+                .expect("vote enregistré");
+        }
+
+        let erreur = use_cases
+            .close_voting(resolution_id, dec!(1000))
+            .await
+            .expect_err("la clôture doit être refusée");
+
+        assert!(
+            erreur.contains("3.87"),
+            "le refus doit citer son article, pour que le président sache quoi corriger : {erreur}"
+        );
+    }
+
+    /// La même séance, répartie normalement, se clôture sans obstacle.
+    #[tokio::test]
+    async fn test_art_3_87_une_seance_equilibree_se_cloture() {
+        let resolution_repo = Arc::new(MockResolutionRepository::new());
+        let vote_repo = Arc::new(MockVoteRepository::new());
+        let use_cases = ResolutionUseCases::new(
+            resolution_repo.clone(),
+            vote_repo.clone(),
+            Arc::new(MockMeetingRepository::new()),
+            Arc::new(MockUnitOwnerRepository::new()),
+        );
+
+        let resolution = Resolution::new(
+            Uuid::new_v4(),
+            "Réfection de la toiture".to_string(),
+            "Travaux de couverture votés en AGO".to_string(),
+            ResolutionType::Ordinary,
+            MajorityType::Absolute,
+            Some(1),
+        )
+        .expect("résolution valide");
+        let resolution_id = resolution.id;
+        resolution_repo
+            .create(&resolution)
+            .await
+            .expect("résolution enregistrée");
+
+        for voix in [dec!(400), dec!(300), dec!(300)] {
+            vote_repo
+                .create(
+                    &Vote::new(
+                        resolution_id,
+                        Uuid::new_v4(),
+                        Uuid::new_v4(),
+                        VoteChoice::Pour,
+                        voix,
+                        None,
+                    )
+                    .expect("vote valide"),
+                )
+                .await
+                .expect("vote enregistré");
+        }
+
+        assert!(use_cases.close_voting(resolution_id, dec!(1000)).await.is_ok());
     }
 
     #[tokio::test]
