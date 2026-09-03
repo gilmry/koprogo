@@ -162,6 +162,19 @@ pub struct Acp {
     /// propositions (Art. 3.87 § 3) : sans elle, ce délai n'a pas de départ.
     pub fenetre_ag_ordinaire: Option<FenetreAgOrdinaire>,
 
+    /// Date de réception provisoire des parties communes de l'immeuble.
+    ///
+    /// Art. 3.86 § 3 al. 4 : elle fait courir le délai de **cinq ans** au
+    /// terme duquel le fonds de réserve devient obligatoire. Ce n'est ni la
+    /// date de constitution de l'ACP, ni celle de la première assemblée — une
+    /// confusion facile qui décalerait l'échéance de plusieurs années.
+    ///
+    /// `None` tant qu'elle n'est pas encodée. Et l'inconnu **ne vaut pas
+    /// dispense** : `StatutFondsReserve::ReceptionInconnue` le dit plutôt que
+    /// de répondre « pas encore exigible » à une ACP qui l'est peut-être
+    /// depuis longtemps.
+    pub reception_provisoire_parties_communes: Option<chrono::NaiveDate>,
+
     pub reserve_fund_balance: Decimal,
     /// Story H13 — solde du **fonds de roulement** (compte distinct, dépenses
     /// courantes récurrentes — loi 2019).
@@ -233,6 +246,7 @@ impl Acp {
             address_postal_code,
             address_city,
             fenetre_ag_ordinaire: None,
+            reception_provisoire_parties_communes: None,
             reserve_fund_balance: Decimal::ZERO,
             working_capital_balance: Decimal::ZERO,
             reserve_fund_waived: false,
@@ -368,6 +382,35 @@ impl Acp {
         date: chrono::NaiveDate,
     ) -> Option<bool> {
         self.fenetre_ag_ordinaire.map(|f| f.contient(date))
+    }
+
+    /// Enregistre la réception provisoire des parties communes.
+    ///
+    /// Elle fait courir le délai de cinq ans du fonds de réserve obligatoire
+    /// (Art. 3.86 § 3 al. 4).
+    pub fn enregistrer_reception_provisoire(&mut self, date: chrono::NaiveDate) {
+        self.reception_provisoire_parties_communes = Some(date);
+        self.updated_at = Utc::now();
+    }
+
+    /// L'état de l'obligation de fonds de réserve, à une date donnée.
+    ///
+    /// `charges_ordinaires_n_moins_1` vient de la comptabilité : le domaine ne
+    /// va pas la chercher, il la reçoit. Les charges **extraordinaires** en
+    /// sont exclues — les inclure gonflerait l'obligation d'une ACP qui vient
+    /// de faire de gros travaux, alors que l'article vise le train de vie
+    /// courant.
+    pub fn statut_fonds_de_reserve(
+        &self,
+        aujourdhui: chrono::NaiveDate,
+        charges_ordinaires_n_moins_1: Decimal,
+    ) -> super::fonds_de_reserve::StatutFondsReserve {
+        super::fonds_de_reserve::statut(
+            self.reception_provisoire_parties_communes,
+            aujourdhui,
+            self.reserve_fund_waived,
+            charges_ordinaires_n_moins_1,
+        )
     }
 
     pub fn assert_conformant(&self, metrics: &AcpMetrics) -> Result<(), AcpNotConformantError> {

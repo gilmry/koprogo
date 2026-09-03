@@ -29,6 +29,9 @@ impl PostgresAcpRepository {
             // Le ROI n'est pas encore persisté : la fenêtre statutaire de l'AG
             // ordinaire (Art. 3.85 § 3, 3°) reste à saisir. Voir #747.
             fenetre_ag_ordinaire: None,
+            // Pas encore persistée non plus : elle fait courir le délai de
+            // cinq ans du fonds de réserve (Art. 3.86 § 3 al. 4). Voir #738.
+            reception_provisoire_parties_communes: None,
             id: row.get("id"),
             organization_id: row.get("organization_id"),
             name: row.get("name"),
