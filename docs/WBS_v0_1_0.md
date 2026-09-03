@@ -116,12 +116,12 @@ interpole l'identifiant au lieu de le lier.
 |---|---|---|
 | K1 | Plancher Playwright smoke, borné par l'instabilité CI | #696, #548, #723 |
 | K2 | Cascade `Result<_, String>` → `AppError` | #555 (**différé 0.2.0**, non bloquant) |
-| K3 | Reliquat `f64` monétaire : `work_report.cost`, `technical_inspection.cost`, `filters.min_cost`/`max_cost`, `stats_dto.pending_expenses_amount` | #433 |
-| K4 | Vulnérabilités : 14 dependabot, 10 npm high | #432, #674 |
+| K3 | Reliquat `f64` monétaire | **fait** `da711473` — le gate est vert, #433 fermée |
+| K4 | Vulnérabilités | **partiel** `d85f80c9` — npm à zéro, #674 fermée ; reste #432 (dependabot backend) |
 | K5 | Contrat OpenAPI | **fait** `c3f736b6` `09ddca66` — #734 et #732 fermées, cliquet 440 → 425 |
 | K6 | Bugs fonctionnels ouverts | **partiel** — #721 et #722 fermées ; restent #552, #553, #554, #662, #718, #731 |
 | K8 | Observabilité et code mort | **fait** `8aa6b59d` — #719 et #720 fermées |
-| K7 | Auto-merge Dependabot sans gate CI | #659 |
+| K7 | Auto-merge Dependabot sans gate CI | **fait** `7c90d191` — #659 fermée |
 
 ### Track F — Ops (repris tel quel)
 
