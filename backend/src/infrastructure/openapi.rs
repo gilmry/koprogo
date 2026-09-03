@@ -234,6 +234,27 @@ use utoipa_swagger_ui::SwaggerUi;
         crate::infrastructure::web::handlers::call_for_funds_handlers::send_call_for_funds,
         crate::infrastructure::web::handlers::call_for_funds_handlers::cancel_call_for_funds,
         crate::infrastructure::web::handlers::call_for_funds_handlers::delete_call_for_funds,
+        // Portfolios (Story 2.1 — portefeuille immeubles multi-rôle).
+        // Annotées depuis leur écriture, mais jamais enregistrées ici : elles
+        // n'atteignaient donc pas `docs/api/openapi.json`, et le frontend
+        // n'avait aucun type généré pour elles. C'est l'angle mort que le gate
+        // #734 ferme désormais — annoter ne suffit pas, il faut enregistrer.
+        crate::infrastructure::web::handlers::portfolio_handlers::create_portfolio,
+        crate::infrastructure::web::handlers::portfolio_handlers::list_portfolios,
+        crate::infrastructure::web::handlers::portfolio_handlers::get_portfolio,
+        crate::infrastructure::web::handlers::portfolio_handlers::update_portfolio,
+        crate::infrastructure::web::handlers::portfolio_handlers::delete_portfolio,
+        crate::infrastructure::web::handlers::portfolio_handlers::add_portfolio_building,
+        crate::infrastructure::web::handlers::portfolio_handlers::list_portfolio_buildings,
+        crate::infrastructure::web::handlers::portfolio_handlers::remove_portfolio_building,
+        crate::infrastructure::web::handlers::portfolio_handlers::share_portfolio,
+        crate::infrastructure::web::handlers::portfolio_handlers::list_portfolio_shares,
+        crate::infrastructure::web::handlers::portfolio_handlers::unshare_portfolio,
+        // Tickets — deux routes restées hors contrat pour la même raison.
+        crate::infrastructure::web::handlers::ticket_handlers::send_work_order,
+        crate::infrastructure::web::handlers::ticket_handlers::list_assignable_users,
+        // Authentification — la déconnexion manquait au contrat.
+        crate::infrastructure::web::handlers::auth_handlers::logout,
     ),
     components(schemas(
         // JournalEntries — le `#[derive(ToSchema)]` seul NE SUFFIT PAS :

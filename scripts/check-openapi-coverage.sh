@@ -43,6 +43,23 @@
 # Faire baisser BASELINE au fil des annotations ajoutées est le sens de marche
 # attendu ; le gate y invite explicitement quand l'écart se creuse.
 #
+# ── Le second angle mort, fermé le 2026-09-03 (#734) ──────────────────────
+#
+# Compter les `#[utoipa::path]` ne suffisait pas. Une route peut être annotée
+# et n'atteindre malgré tout NI la spec NI les types du frontend, si sa
+# fonction n'est pas listée dans le `paths(...)` de
+# `backend/src/infrastructure/openapi.rs`. utoipa ne découvre rien tout seul :
+# l'annotation décrit, l'enregistrement publie.
+#
+# C'est ainsi que les onze routes `portfolio`, deux routes `ticket` et la
+# déconnexion vivaient hors contrat tout en étant proprement documentées —
+# invisibles au gate précédent, qui les comptait comme couvertes.
+#
+# Le gate mesure donc deux choses distinctes, et échoue sur l'une ou l'autre :
+# l'exhaustivité de l'ANNOTATION (cliquet), et l'exhaustivité de
+# l'ENREGISTREMENT (tolérance zéro — une route annotée sans être enregistrée
+# est un travail à moitié fait, pas une dette héritée).
+#
 # Usage : backend/scripts/check-openapi-coverage.sh [chemin/handlers]
 
 set -euo pipefail
@@ -136,3 +153,67 @@ fi
 
 echo
 echo "✅ Aucune nouvelle route hors contrat."
+
+# ── Second contrôle : annoté ET enregistré ────────────────────────────────
+#
+# Tolérance zéro, contrairement au cliquet ci-dessus : annoter une route sans
+# l'enregistrer n'est pas une dette héritée mais un travail interrompu à
+# mi-chemin, et le corriger ne coûte qu'une ligne.
+
+OPENAPI_RS="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/backend/src/infrastructure/openapi.rs"
+
+if [[ ! -f "$OPENAPI_RS" ]]; then
+  echo "check-openapi-coverage: openapi.rs introuvable : $OPENAPI_RS" >&2
+  exit 2
+fi
+
+non_enregistrees=$(
+  python3 - "$ROOT" "$OPENAPI_RS" <<'PY'
+import os, re, sys
+
+racine, openapi = sys.argv[1], sys.argv[2]
+enregistrees = set(
+    re.findall(r"handlers::(?:\w+::)*(\w+)\s*,", open(openapi, encoding="utf-8").read())
+)
+
+manquantes = []
+for fichier in sorted(os.listdir(racine)):
+    if not fichier.endswith(".rs"):
+        continue
+    annotee = False
+    for ligne in open(os.path.join(racine, fichier), encoding="utf-8"):
+        if "#[utoipa::path" in ligne:
+            annotee = True
+            continue
+        m = re.match(r"\s*pub async fn (\w+)", ligne)
+        if m and annotee:
+            if m.group(1) not in enregistrees:
+                manquantes.append(f"{fichier[:-3]}::{m.group(1)}")
+            annotee = False
+
+print("\n".join(manquantes))
+PY
+)
+
+if [[ -n "$non_enregistrees" ]]; then
+  nb=$(printf '%s\n' "$non_enregistrees" | wc -l | tr -d ' ')
+  cat >&2 <<MSG
+
+──────────────────────────────────────────────────────────────────
+${nb} route(s) ANNOTÉE(S) mais NON ENREGISTRÉE(S) dans openapi.rs :
+
+$(printf '%s\n' "$non_enregistrees" | sed 's/^/  /')
+
+utoipa ne découvre rien tout seul. L'annotation \`#[utoipa::path]\` décrit la
+route ; c'est le \`paths(...)\` de \`backend/src/infrastructure/openapi.rs\`
+qui la publie. Sans les deux, la route n'entre ni dans
+\`docs/api/openapi.json\` ni dans \`frontend/src/types/api.d.ts\` — et le
+frontend écrira son DTO à la main, en oubliant un champ (#732).
+
+Ajouter la ligne correspondante dans \`paths(...)\`.
+──────────────────────────────────────────────────────────────────
+MSG
+  exit 1
+fi
+
+echo "  enregistrement        : toutes les routes annotées sont dans paths()"
