@@ -4,7 +4,11 @@ use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 /// Type de lot (appartement, cave, parking, etc.)
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, utoipa::ToSchema)]
+///
+/// `Copy` parce que le décompte légal de l'Art. 3.89 § 5, 15° raisonne sur
+/// des natures de lot, pas sur des lots : les cloner pour les compter serait
+/// du bruit.
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, utoipa::ToSchema)]
 pub enum UnitType {
     Apartment,
     Parking,

@@ -23,6 +23,7 @@ pub mod owner_credit_balance;
 pub mod payment;
 pub mod payment_method;
 pub mod payment_reminder;
+pub mod regime_comptable;
 pub mod quote;
 
 pub use account::{Account, AccountType};
@@ -42,3 +43,4 @@ pub use payment::{Payment, PaymentMethodType, TransactionStatus};
 pub use payment_method::PaymentMethod;
 pub use payment_reminder::{DeliveryMethod, PaymentReminder, ReminderLevel, ReminderStatus};
 pub use quote::{Quote, QuoteScore, QuoteStatus, QuoteSubmission};
+pub use regime_comptable::{lots_comptes, regime_applicable, RegimeComptable};
