@@ -259,14 +259,9 @@ impl JournalEntryRepository for PostgresJournalEntryRepository {
         // Use the account_balances view created in migration
         let balances = sqlx::query!(
             r#"
-            -- LIMITE CONNUE (lot J4) : `account_balances` est une vue d'agrégat
-            -- construite sur `organization_id`. Elle est donc encore cloisonnée
-            -- par le syndic et non par l'ACP, contrairement à toutes les
-            -- requêtes ci-dessus. La recalculer par ACP est un chantier à part,
-            -- tracé dans le WBS — pas une ligne à changer ici.
             SELECT account_code, balance
             FROM account_balances
-            WHERE organization_id = $1
+            WHERE acp_id IN (SELECT id FROM acps WHERE organization_id = $1)
             "#,
             organization_id
         )
