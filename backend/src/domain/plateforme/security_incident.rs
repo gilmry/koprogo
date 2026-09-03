@@ -149,6 +149,68 @@ impl SecurityIncident {
 }
 
 #[cfg(test)]
+mod tests_art_33_rgpd {
+    use super::*;
+
+    fn incident(organization_id: Option<Uuid>) -> Result<SecurityIncident, String> {
+        SecurityIncident::new(
+            organization_id,
+            Uuid::new_v4(),
+            "high".to_string(),
+            "data_breach".to_string(),
+            "Fuite de base de données".to_string(),
+            "Accès non autorisé constaté sur le réplica de lecture".to_string(),
+            vec!["identite".to_string(), "coordonnees".to_string()],
+            Some(1200),
+        )
+    }
+
+    /// RGPD art. 33 : la notification incombe au **responsable du traitement**.
+    ///
+    /// Pour une violation qui touche une seule copropriété, c'est son syndic.
+    #[test]
+    fn happy_un_incident_rattache_a_une_organisation_est_valable() {
+        let org = Uuid::new_v4();
+        let i = incident(Some(org)).expect("incident valide");
+        assert_eq!(i.organization_id, Some(org));
+    }
+
+    /// Pour une violation de la plateforme elle-même — fuite de base,
+    /// compromission d'infrastructure — le responsable est l'exploitant, qui
+    /// n'est rattaché à aucune organisation.
+    ///
+    /// C'est le cas que la contrainte `NOT NULL` interdisait, alors que le
+    /// domaine le modélisait déjà : un superadmin, seul rôle autorisé sur ces
+    /// endpoints et seul dont le jeton porte `organization_id = NULL`, ne
+    /// pouvait déclarer aucune violation. Les endpoints de notification
+    /// étaient inutilisables par la seule personne censée s'en servir.
+    #[test]
+    fn security_un_incident_transverse_a_la_plateforme_est_valable() {
+        let i = incident(None).expect("un incident transverse est licite");
+        assert_eq!(
+            i.organization_id, None,
+            "l'absence d'organisation n'est pas une donnée manquante, c'est \
+             l'information : l'incident dépasse une copropriété"
+        );
+    }
+
+    #[test]
+    fn negative_un_incident_sans_titre_reste_refuse() {
+        let refus = SecurityIncident::new(
+            None,
+            Uuid::new_v4(),
+            "high".to_string(),
+            "data_breach".to_string(),
+            String::new(),
+            "Description".to_string(),
+            vec![],
+            None,
+        );
+        assert!(refus.is_err(), "la nullabilité de l'organisation n'assouplit rien d'autre");
+    }
+}
+
+#[cfg(test)]
 mod tests {
     use super::*;
 
