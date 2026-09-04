@@ -45,7 +45,12 @@ async fn create_call_for_funds_fixtures(
         city: "Brussels".to_string(),
         postal_code: "1000".to_string(),
         country: "Belgium".to_string(),
-        total_units: 4,
+        // Cohérent avec l'unique lot créé plus bas : le garde-fou
+        // « valider avant de calculer » refuse d'appeler des fonds sur une ACP
+        // dont les lots ne totalisent pas les tantièmes déclarés. Déclarer 4
+        // lots et 1000 tantièmes pour n'en créer qu'un à 0,25 rendait la
+        // fixture non conforme, et le 422 était la bonne réponse.
+        total_units: 1,
         total_tantiemes: Some(1000),
         construction_year: Some(2005),
     };
@@ -84,7 +89,7 @@ async fn create_call_for_funds_fixtures(
         unit_type: UnitType::Apartment,
         floor: Some(1),
         surface_area: 80.0,
-        quota: rust_decimal_macros::dec!(0.25),
+        quota: rust_decimal_macros::dec!(1000),
     };
     let unit = app_state
         .unit_use_cases

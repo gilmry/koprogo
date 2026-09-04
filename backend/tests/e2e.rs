@@ -136,7 +136,8 @@ async fn setup_test_db() -> (
         unit_repo.clone(),
         owner_repo.clone(),
     );
-    let expense_use_cases = ExpenseUseCases::new(expense_repo.clone());
+    let expense_use_cases =
+        ExpenseUseCases::new(expense_repo.clone()).with_acp_resolution(building_repo.clone());
     let charge_distribution_use_cases = ChargeDistributionUseCases::new(
         charge_distribution_repo,
         expense_repo.clone(),

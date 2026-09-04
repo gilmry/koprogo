@@ -49,6 +49,17 @@ impl ExpenseUseCases {
     /// validate-before-compute ACP-level). Utilisé par `main.rs`. Les tests
     /// unitaires continuent d'utiliser `new()` / `with_accounting_service()`
     /// sans repos (pre-check no-op).
+    /// Ne câble que la résolution de l'ACP, sans le service comptable ni le
+    /// dépôt d'ACP. Les harnais d'intégration montent l'application sans
+    /// comptabilité, mais écrivent en base réelle : sans ce câblage,
+    /// `resolve_acp_id` retombait sur l'organisation et l'insertion violait
+    /// `fk_expenses_acp`. Vingt-cinq tests e2e rouges le 2026-09-03, tous de
+    /// cette seule cause. Même nom que `MeetingUseCases::with_acp_resolution`.
+    pub fn with_acp_resolution(mut self, building_repository: Arc<dyn BuildingRepository>) -> Self {
+        self.building_repository = Some(building_repository);
+        self
+    }
+
     pub fn with_full_wiring(
         repository: Arc<dyn ExpenseRepository>,
         accounting_service: Arc<ExpenseAccountingService>,

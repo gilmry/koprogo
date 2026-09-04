@@ -186,7 +186,8 @@ pub async fn setup_test_db() -> (
         unit_repo.clone(),
         owner_repo.clone(),
     );
-    let expense_use_cases = ExpenseUseCases::new(expense_repo.clone());
+    let expense_use_cases =
+        ExpenseUseCases::new(expense_repo.clone()).with_acp_resolution(building_repo.clone());
     let charge_distribution_use_cases = ChargeDistributionUseCases::new(
         charge_distribution_repo,
         expense_repo.clone(),
@@ -663,6 +664,39 @@ pub async fn create_test_acp(app_state: &actix_web::web::Data<AppState>, org_id:
         .await
         .expect("create_test_acp: create_acp use case failed");
     acp.id
+}
+
+/// Crée une ACP puis un immeuble qui lui est rattaché, et rend l'identifiant
+/// de l'immeuble.
+///
+/// Depuis l'ADR-0045, une pièce de gestion doit dire à quelle ACP elle
+/// appartient. Les écritures manuelles la déduisent de leur immeuble : un test
+/// qui n'en crée aucun ne peut plus rien écrire. L'immeuble est déclaré
+/// cohérent — un lot, mille tantièmes — pour passer le garde-fou
+/// « valider avant de calculer ».
+#[allow(dead_code)]
+pub async fn create_test_building(
+    app_state: &actix_web::web::Data<AppState>,
+    org_id: Uuid,
+) -> Uuid {
+    let acp_id = create_test_acp(app_state, org_id).await;
+    let dto = koprogo_api::application::dto::CreateBuildingDto {
+        acp_id,
+        name: format!("E2E Test Building {}", Uuid::new_v4().simple()),
+        address: "Rue E2E 1".to_string(),
+        city: "Bruxelles".to_string(),
+        postal_code: "1000".to_string(),
+        country: "Belgium".to_string(),
+        total_units: 1,
+        total_tantiemes: Some(1000),
+        construction_year: Some(2005),
+    };
+    let building = app_state
+        .building_use_cases
+        .create_building(dto)
+        .await
+        .expect("create_test_building: create_building use case failed");
+    Uuid::parse_str(&building.id).expect("create_test_building: identifiant illisible")
 }
 
 /// Helper to register a user and get a JWT token
