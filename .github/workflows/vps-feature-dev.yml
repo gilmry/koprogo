@@ -144,6 +144,16 @@ jobs:
         working-directory: frontend
         run: npm ci
 
+      # `astro sync` génère `.astro/types.d.ts`, qui contient la référence
+      # `astro/client` déclarant `import.meta.env`. Le répertoire est ignoré
+      # par git, donc présent en local et absent après un `npm ci` en CI :
+      # sans cette étape, svelte-check signale six erreurs « Property 'env'
+      # does not exist on type 'ImportMeta' » qu'aucun développeur ne voit
+      # sur sa machine.
+      - name: Types générés par Astro
+        working-directory: frontend
+        run: npx astro sync
+
       - name: svelte-check
         working-directory: frontend
         run: npx svelte-check --threshold error
