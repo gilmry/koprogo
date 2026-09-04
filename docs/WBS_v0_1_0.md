@@ -1,6 +1,6 @@
 # WBS v0.1.0 — seule vérité courante
 
-`WBS-v0.1.0-r2` · établi le 2026-09-02 · base `feature/dev` à `50406f09`
+`WBS-v0.1.0-r3` · établi le 2026-09-02, révisé le 2026-09-04 · base `feature/dev` à `31ff3fc8`
 
 > **Ce document remplace** `WBS_GO_LIVE_v0.1.0.md` et les trois WBS de 2026-04-01,
 > déplacés dans [`docs/archive/`](archive/README.md) avec leur journal de vérification.
@@ -127,12 +127,38 @@ interpole l'identifiant au lieu de le lier.
 
 F1 et F2 sont satisfaits de fait : `koprogo.com` et `api.koprogo.com` répondent 200
 avec un certificat valide, déployés en continu par `/etc/cron.d/ecosolva-auto-deploy`.
-Reste **F3** : aucun drill de rollback ni de restauration GPG+S3 n'a été joué.
+
+**F3 est joué le 2026-09-04** — rapport : [`docs/ops/2026-09-04-drill-f3-restauration.md`](ops/2026-09-04-drill-f3-restauration.md).
+Son résultat est **négatif sur deux volets sur trois**, et le noter « fait » sans le
+dire serait un mensonge :
+
+| Volet | Résultat |
+|---|---|
+| Rollback de déploiement | **échoue** dès qu'une version a migré — constaté en réel le 2026-09-03, la démo est restée morte |
+| Sauvegardes GPG+S3 du runbook | **n'existent pas** sur ecosolva : ni cron, ni clé GPG, ni `s3cmd` |
+| Restauration d'un dump | **fonctionne** : 13 s, zéro erreur, 1247 ACP et 11 371 lots retrouvés |
+
+Le drill a aussi **nommé la cause** de l'incident du 2026-09-03, jusque-là attribuée
+vaguement à « un conflit avec les données existantes » : deux migrations refusent de
+s'appliquer parce que 13 quotes-parts n'ont aucun lot et 9 écritures aucun
+rattachement. Elles ont raison de refuser.
+
+`scripts/quarantaine-pieces-sans-acp.sql` lève le blocage **sans rien détruire**, en
+déplaçant ces pièces vers une table de quarantaine. Chemin complet vérifié sur la
+sauvegarde du 2026-08-31 : restauration → quarantaine → 17 migrations, zéro échec,
+données intactes.
+
+**Ce qui reste ouvert au titre de F3** : aucune sauvegarde automatisée n'existe sur
+la machine, et le runbook décrit une procédure absente. C'est plus dangereux qu'un
+runbook vide, parce qu'on se croit couvert.
 
 ### Track G — Gate humain (Tier 1)
 
 - **G1** — revue humaine fraîche, GO signé. Le rapport du 2026-04-01 est archivé et
   ne sert plus. Cette revue doit porter sur le modèle recentré, pas sur l'ancien.
+  **Dossier préparé** : [`docs/governance/G1-dossier-de-revue-0.1.0.md`](governance/G1-dossier-de-revue-0.1.0.md)
+  — les points à trancher, ce qui reste cassé, et les deux lectures de l'Art. 3.87
+  § 7 qui ne sont pas dictées par le texte.
 - **G2** — tag `v0.1.0`, posé par un humain après G1.
 
 Ces deux actes ne sont pas délégables : cf. `docs/governance/RESPONSABILITE.md`.
@@ -141,20 +167,40 @@ Ces deux actes ne sont pas délégables : cf. `docs/governance/RESPONSABILITE.md
 
 Au 2026-09-03, trois catégories bien distinctes.
 
-**Faisable ici** : #426 (nettoyage de docs), #443 et #660 (tests BDD et e2e
-backend), #427 (taxonomie et gate de release), et les volets restants des
-stories #576, #581, #582, #583, #663 — dont la part domaine est livrée.
+**Faisable ici** : #426 (nettoyage de docs), #427 (taxonomie et gate de release),
+et les volets restants des stories #576, #581, #582, #583, #663 — dont la part
+domaine est livrée. Nouvelles depuis la session du 2026-09-04 : #761, #762, #763.
 
-**Bloqué par un push** : #432 se ferme quand le correctif npm atteint `main`. Le
-travail est commité localement mais non poussé — `feature/dev` est déployée
-automatiquement toutes les cinq minutes sur le VPS, et pousser des migrations de
-schéma déclencherait ce déploiement. C'est une décision qui revient à Gilles.
+**Plus bloqué par un push** : la série a été poussée sur `feature/dev` les 3 et 4
+septembre, sur autorisation. #660 est **fermée**, preuves d'exécution à l'appui.
+#443 a sa part compilation résorbée ; ce qu'elle recouvrait d'autre est mesuré et
+commenté sur l'issue.
 
 **Bloqué par l'environnement ou par un humain** : #696, #548 et #723
 (l'instabilité Playwright ne s'observe qu'en CI), #718 (comportement sous
-rafale), #731 (collision DNS sur le réseau partagé), les drills F3, et bien sûr
-**G1 la revue humaine et G2 le tag**, qui sont Tier 1 par
-`docs/governance/RESPONSABILITE.md`.
+rafale), #731 (collision DNS sur le réseau partagé), et **G1 la revue humaine et
+G2 le tag**, qui sont Tier 1 par `docs/governance/RESPONSABILITE.md`.
+
+S'y ajoutent les onze harnais BDD, qui exigent le socket Docker et ne
+s'exécutent **nulle part** aujourd'hui : ni en local, ni en CI puisque `ci.yml`
+exclut `feature/dev`. Mesuré le 2026-09-04, suivi en #540.
+
+### Ce que la branche vérifie désormais avant de déployer
+
+`ci.yml` exclut nommément `feature/dev` — sa pipeline prend ~95 minutes et le
+déploiement ne l'attend pas. Le coût de ce choix a été chiffré : **45 régressions
+ont vécu sur la branche qui alimente la démo publique** sans qu'aucun signal
+n'apparaisse, parce que `cargo test --lib` ne compile pas `tests/`.
+
+Depuis `e337c603`, `vps-feature-dev.yml` porte un **barrage rapide** qui
+conditionne la construction des images : gardes ADR-0008 et OpenAPI, `fmt`,
+`clippy --all-targets` (la seule étape qui compile les harnais), tests unitaires,
+garde d'architecture, cliquet de garde d'écriture, `astro sync`, `svelte-check`,
+vitest. Ni e2e, ni BDD, ni Playwright.
+
+Un commit rouge ne produit donc pas d'image et la démo reste sur sa dernière
+version saine. Coût mesuré : **11 minutes** à cache froid, contre 1 minute pour
+les images. Pour relâcher sans supprimer : retirer le `needs: barrage`.
 
 ## Ordre d'exécution
 
