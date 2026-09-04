@@ -247,10 +247,18 @@ pub async fn create_journal_entry(
             .log();
 
             // Return 400 for business rule violations, 500 for unexpected errors
+            //
+            // « Impossible de déterminer l'ACP » et « Immeuble introuvable »
+            // sont des saisies incomplètes ou erronées, pas des pannes : une
+            // écriture manuelle doit désigner l'immeuble dont on déduit l'ACP
+            // (ADR-0045). Sans ces deux cas, la requête ressortait en 500 et
+            // laissait croire à un défaut du serveur.
             if err.contains("unbalanced")
                 || err.contains("foreign key")
                 || err.contains("violates")
                 || err.contains("not found")
+                || err.contains("Impossible de déterminer l'ACP")
+                || err.contains("Immeuble introuvable")
             {
                 HttpResponse::BadRequest().json(serde_json::json!({
                     "error": err
