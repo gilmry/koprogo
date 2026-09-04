@@ -3609,6 +3609,8 @@
     "available": "Beschikbaar: {pct} %",
     "building": "Gebouw",
     "cellar": "Kelder",
+    "commercial": "Handelsruimte",
+    "other": "Andere",
     "confirmDeleteMessage": "Weet u zeker dat u kavel wilt verwijderen",
     "coowners": "Mede-eigenaars",
     "create": "Kavel toevoegen",

@@ -3609,6 +3609,8 @@
     "available": "Disponible : {pct} %",
     "building": "Immeuble",
     "cellar": "Cave",
+    "commercial": "Local commercial",
+    "other": "Autre",
     "confirmDeleteMessage": "Êtes-vous sûr de vouloir supprimer le lot",
     "coowners": "Copropriétaires",
     "create": "Ajouter un lot",

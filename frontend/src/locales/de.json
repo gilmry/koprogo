@@ -3609,6 +3609,8 @@
     "available": "Verfügbar: {pct} %",
     "building": "Gebäude",
     "cellar": "Keller",
+    "commercial": "Gewerbeeinheit",
+    "other": "Sonstige",
     "confirmDeleteMessage": "Sind Sie sicher, dass Sie Einheit löschen möchten",
     "coowners": "Miteigentümer",
     "create": "Einheit hinzufügen",

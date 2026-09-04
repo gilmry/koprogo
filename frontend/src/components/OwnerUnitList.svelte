@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { formatTantiemes } from "../lib/utils/tantiemes";
   // Svelte 5 runes mode
   import { _ } from "../lib/i18n";
   import { api } from "../lib/api";
@@ -72,10 +73,6 @@
   function formatArea(area: number | null | undefined): string {
     if (!area) return "-";
     return `${area} m²`;
-  }
-  function formatQuota(quota: number | null | undefined): string {
-    if (!quota && quota !== 0) return "-";
-    return `${quota}/1000`;
   }
 </script>
 
@@ -186,7 +183,7 @@
             <div class="flex justify-between">
               <dt class="text-gray-500">{$_("common.quota")}</dt>
               <dd class="font-medium text-gray-900">
-                {formatQuota(unit.quota)}
+                {formatTantiemes(unit.quota)}
               </dd>
             </div>
             {#if !selectedBuildingId && unit.building_id}<div

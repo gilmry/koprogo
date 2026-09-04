@@ -3609,6 +3609,8 @@
     "available": "Available: {pct}%",
     "building": "Building",
     "cellar": "Cellar",
+    "commercial": "Commercial unit",
+    "other": "Other",
     "confirmDeleteMessage": "Are you sure you want to delete unit",
     "coowners": "Co-owners",
     "create": "Add Unit",
