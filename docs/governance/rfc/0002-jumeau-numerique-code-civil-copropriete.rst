@@ -186,9 +186,11 @@ une source secondaire.
      - ``Vote``
    * - 3.87 § 7
      - Trois procurations au maximum, sauf si le total reste ≤ 10 % des voix ;
-       nul ne vote pour plus de voix que la somme des autres présents
-     - absent
-     - ``Vote::is_proxy_vote`` existe, aucun plafond n'est vérifié
+       le syndic n'est pas mandataire ; nul ne prend part au vote, même comme
+       mandant ou mandataire, pour plus de voix que la somme des autres
+     - **couvert**
+     - ``verifier_procurations`` (refus) et ``plafonner_les_voix`` +
+       ``repartir_le_plafond`` (réduction), trace en base ``voix_plafonnees``
    * - 3.87 § 8
      - Majorité absolue des présents ; abstentions, blancs et nuls exclus du
        calcul
@@ -299,3 +301,51 @@ Alternatives écartées
   n'ont pourtant pas empêché le dossier de gestion d'appartenir au syndic :
   ils vérifient ce qu'on a pensé à vérifier. Une frontière de contexte
   interdit une classe entière d'erreurs au lieu d'en attraper des instances.
+
+Deux lectures de l'Art. 3.87 § 7, et celle qui a été retenue
+------------------------------------------------------------
+
+L'alinéa 4 dit : « Nul ne peut prendre part au vote, même comme mandant ou
+mandataire, pour un nombre de voix supérieur à la somme des voix dont
+disposent les autres copropriétaires présents ou représentés. »
+
+La première implémentation en faisait un **refus de clore** l'assemblée. C'était
+la mauvaise lecture, et elle rendait ingouvernable toute copropriété où un seul
+détient la majorité — situation licite et fréquente.
+
+**Arbitrage humain du 2026-09-04 : plafonner et tracer l'écart.** Le texte
+interdit de voter *pour* un nombre de voix supérieur ; il ne frappe pas la
+séance de nullité. La doctrine belge le confirme : l'article « limite le nombre
+de voix du copropriétaire majoritaire plutôt que d'annuler l'assemblée », et
+c'est au syndic de l'appliquer.
+
+Trois points que le texte seul ne suffisait pas à trancher :
+
+1. **Le mandant est visé autant que le mandataire.** Un copropriétaire
+   majoritaire qui désigne un mandataire distinct par lot échapperait au plafond
+   si l'on groupait par mandataire. La pratique a été tentée ; la doctrine la
+   juge non conforme, le mandat étant lié à la personne du copropriétaire et non
+   au bien. Le regroupement se fait donc par personne engagée, à quelque titre
+   que ce soit.
+
+2. **La répartition de l'écart entre les sens de vote n'est pas réglée par la
+   loi.** Un mandataire peut voter « pour » son lot et « contre » celui d'un
+   mandant. Retenue : la réduction proportionnelle, qui préserve son arbitrage
+   relatif. Retrancher d'abord des « pour » ou d'abord des « contre » ferait
+   pencher le résultat sans fondement.
+
+3. **Le votant unique n'est pas ramené à zéro.** La somme des autres vaut alors
+   zéro et l'application littérale viderait la séance de tout sens. C'est le
+   quorum de l'Art. 3.87 § 5 qui traite ce cas.
+
+L'écart entre voix brutes et voix retenues est conservé en base
+(``resolutions.voix_plafonnees``). Un plafonnement silencieux serait
+indéfendable : le procès-verbal afficherait un décompte que rien dans les
+bulletins ne permettrait de retrouver.
+
+Sources consultées le 2026-09-04 :
+
+- PropertyToday, « Sens et non-sens de la réduction de vote de l'art. 3.87 § 7
+  Cc » — https://www.propertytoday.be/fr_BE/blog/articles-1/sens-et-non-sens-de-la-reduction-de-vote-de-l-art-3-87-ss7-cc-16
+- ARC, « La réduction des voix des copropriétaires majoritaires à l'assemblée
+  générale » — https://arc-copro.fr/documentation/la-reduction-des-voix-des-coproprietaires-majoritaires-lassemblee-generale

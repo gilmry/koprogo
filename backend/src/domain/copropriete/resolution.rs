@@ -158,6 +158,32 @@ impl Resolution {
         self.total_voting_power_abstention += voting_power;
     }
 
+    /// Refait le décompte pondéré à partir des bulletins et de leur poids
+    /// retenu, après application du plafond de l'Art. 3.87 § 7 al. 4.
+    ///
+    /// Les compteurs accumulés au fil des votes reflètent les voix **brutes**.
+    /// Quand un votant est plafonné, ils ne valent plus rien pour établir la
+    /// majorité : il faut repartir des bulletins. Le nombre de votants, lui,
+    /// ne change pas — c'est le poids qui est réduit, pas le droit de voter.
+    ///
+    /// `poids_retenus` suit l'ordre de `votes`, tel que le rend
+    /// `repartir_le_plafond`.
+    pub fn recompter_avec(&mut self, votes: &[super::vote::Vote], poids_retenus: &[Decimal]) {
+        use super::vote::VoteChoice;
+
+        self.total_voting_power_pour = Decimal::ZERO;
+        self.total_voting_power_contre = Decimal::ZERO;
+        self.total_voting_power_abstention = Decimal::ZERO;
+
+        for (vote, poids) in votes.iter().zip(poids_retenus) {
+            match vote.vote_choice {
+                VoteChoice::Pour => self.total_voting_power_pour += poids,
+                VoteChoice::Contre => self.total_voting_power_contre += poids,
+                VoteChoice::Abstention => self.total_voting_power_abstention += poids,
+            }
+        }
+    }
+
     /// Calcule le résultat du vote en fonction du type de majorité — Art. 3.88 §1 Code Civil belge
     pub fn calculate_result(&self, total_voting_power: Decimal) -> ResolutionStatus {
         let expressed = self.total_voting_power_pour + self.total_voting_power_contre;

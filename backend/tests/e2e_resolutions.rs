@@ -871,15 +871,29 @@ async fn test_close_voting_simple_majority() {
     assert_eq!(close_resp.status(), 200, "Should close voting successfully");
 
     let closed_resolution: serde_json::Value = test::read_body_json(close_resp).await;
+
+    // Art. 3.87 § 7 al. 4 — le majoritaire ne décide pas seul.
+    //
+    // Ce test attendait « adopted » : 60 % pour contre 40 % contre. C'était
+    // compter les voix brutes. Le copropriétaire à 60 % pèse plus que tous les
+    // autres présents réunis, ses voix sont donc ramenées à 40 %. Le décompte
+    // devient 40 contre 40, et la majorité absolue de l'Art. 3.88 § 1er n'est
+    // pas atteinte.
+    //
+    // C'est très exactement l'effet recherché par le législateur. Un test qui
+    // exigerait « adopted » ici demanderait au logiciel d'ignorer la règle.
     assert_eq!(
-        closed_resolution["status"], "adopted",
-        "Should be Adopted with Simple majority (60% Pour > 40% Contre)"
+        closed_resolution["status"], "rejected",
+        "le majoritaire est plafonné à la somme des autres : 40 contre 40, pas de majorité"
     );
+
+    // Le nombre de votants ne change pas : c'est le poids qui est réduit, pas
+    // le droit de voter.
     assert_eq!(closed_resolution["vote_count_pour"], 1);
     assert_eq!(closed_resolution["vote_count_contre"], 1);
     assert_decimal_field(
         &closed_resolution["total_voting_power_pour"],
-        rust_decimal_macros::dec!(0.6),
+        rust_decimal_macros::dec!(0.4),
     );
 }
 
@@ -1220,9 +1234,21 @@ async fn test_complete_voting_lifecycle() {
     let closed: serde_json::Value = test::read_body_json(close_resp).await;
     assert_eq!(closed["status"], "adopted");
     assert_eq!(closed["vote_count_pour"], 2);
+
+    // Art. 3.87 § 7 al. 4 — le plafond s'applique même quand tout le monde est
+    // d'accord.
+    //
+    // Les deux copropriétaires votent « pour ». Le majoritaire pèse pourtant
+    // 0,6 contre 0,4, ses voix sont donc ramenées à 0,4 et le décompte retenu
+    // vaut 0,8 et non 1,0. La règle porte sur le nombre de voix qu'une
+    // personne peut exprimer, pas sur l'issue du vote : la subordonner au
+    // résultat reviendrait à ne l'appliquer que lorsqu'elle dérange.
+    //
+    // La résolution reste adoptée, l'unanimité des présents n'étant pas
+    // affectée dans son sens.
     assert_decimal_field(
         &closed["total_voting_power_pour"],
-        rust_decimal_macros::dec!(1.0),
+        rust_decimal_macros::dec!(0.8),
     );
 
     // 7. Get meeting vote summary

@@ -100,7 +100,10 @@ pub use owner::Owner;
 pub use personnalite_juridique::{personnalite, PersonnaliteJuridique};
 pub use poll::{Poll, PollOption, PollStatus, PollType};
 pub use poll_vote::PollVote;
-pub use procurations::{verifier_procurations, ProcurationRefusee};
+pub use procurations::{
+    plafonner_les_voix, repartir_le_plafond, verifier_procurations, DecompteDesVoix,
+    EcartDePlafond, ProcurationRefusee,
+};
 pub use registre_legal::{rapport_de_conformite, InvariantLegal, REGISTRE};
 pub use releve_notaire::{DemandeDeReleve, EtatDemande};
 pub use requete_ag::{deposer as deposer_requete_ag, RequeteAg, RequeteIrrecevable};

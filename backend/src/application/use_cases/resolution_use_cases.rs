@@ -282,12 +282,53 @@ impl ResolutionUseCases {
         )
         .map_err(|conflit| conflit.to_string())?;
 
+        // Art. 3.87 § 7 al. 4 — le plafonnement des voix.
+        //
+        // Arbitrage humain du 2026-09-04 : le texte interdit de prendre part au
+        // vote POUR un nombre de voix supérieur à la somme des autres, il ne
+        // frappe pas la séance de nullité. On ramène donc le majoritaire au
+        // poids des autres et on délibère sur ce décompte corrigé, au lieu de
+        // refuser de clore — ce qui rendait ingouvernable toute copropriété où
+        // un seul détient la majorité.
+        let decompte = crate::domain::copropriete::plafonner_les_voix(&votes);
+        let voix_plafonnees = if decompte.ecarts().is_empty() {
+            None
+        } else {
+            let poids_retenus = crate::domain::copropriete::repartir_le_plafond(&votes, &decompte);
+            resolution.recompter_avec(&votes, &poids_retenus);
+            // Le décompte corrigé doit être PERSISTÉ, pas seulement servir au
+            // calcul : sans cela la base garderait les voix brutes tandis que
+            // le statut refléterait les voix plafonnées. Le procès-verbal
+            // afficherait alors un décompte que son propre résultat contredit,
+            // ce qui est indéfendable si la décision est attaquée.
+            self.resolution_repository
+                .update_vote_counts(
+                    resolution_id,
+                    resolution.vote_count_pour,
+                    resolution.vote_count_contre,
+                    resolution.vote_count_abstention,
+                    resolution.total_voting_power_pour,
+                    resolution.total_voting_power_contre,
+                    resolution.total_voting_power_abstention,
+                )
+                .await?;
+            Some(serde_json::json!(decompte
+                .ecarts()
+                .iter()
+                .map(|e| serde_json::json!({
+                    "votant": e.votant,
+                    "voix_brutes": e.voix_brutes,
+                    "voix_retenues": e.voix_retenues,
+                }))
+                .collect::<Vec<_>>()))
+        };
+
         // Calculate final result
         resolution.close_voting(total_voting_power)?;
 
         // Update resolution with final status
         self.resolution_repository
-            .close_voting(resolution_id, resolution.status.clone())
+            .close_voting(resolution_id, resolution.status.clone(), voix_plafonnees)
             .await?;
 
         // Fetch updated resolution
@@ -619,12 +660,17 @@ mod tests {
 
     struct MockResolutionRepository {
         resolutions: Mutex<HashMap<Uuid, Resolution>>,
+        /// Ce que la dernière clôture a consigné au titre de l'Art. 3.87 § 7
+        /// al. 4. Sans ce champ, la trace du plafonnement serait invérifiable
+        /// en test unitaire, et le seul moyen de la constater serait la base.
+        dernier_plafonnement: Mutex<Option<serde_json::Value>>,
     }
 
     impl MockResolutionRepository {
         fn new() -> Self {
             Self {
                 resolutions: Mutex::new(HashMap::new()),
+                dernier_plafonnement: Mutex::new(None),
             }
         }
     }
@@ -705,7 +751,11 @@ mod tests {
             &self,
             resolution_id: Uuid,
             final_status: ResolutionStatus,
+            voix_plafonnees: Option<serde_json::Value>,
         ) -> Result<(), String> {
+            // La trace du plafonnement est conservée par le mock, sans quoi
+            // aucun test unitaire ne pourrait vérifier qu'elle est bien écrite.
+            *self.dernier_plafonnement.lock().unwrap() = voix_plafonnees;
             if let Some(resolution) = self.resolutions.lock().unwrap().get_mut(&resolution_id) {
                 resolution.status = final_status;
                 resolution.voted_at = Some(chrono::Utc::now());
@@ -863,13 +913,18 @@ mod tests {
     }
 
     /// Art. 3.87 § 7 : la clôture refuse une séance où un votant pèse plus
-    /// que tous les autres réunis.
+    /// que tous les autres réunis : ses voix sont **ramenées** à la somme des
+    /// leurs, et l'écart est consigné.
     ///
     /// Le contrôle est à la clôture et pas au vote, parce qu'il porte sur
     /// l'ensemble des voix : c'est le dernier bulletin déposé qui peut faire
     /// basculer une séance licite jusque-là.
+    ///
+    /// Anciennement `..._refuse_un_votant_plus_lourd_...`, qui attendait un
+    /// refus de clore. Arbitrage humain du 2026-09-04, confirmé par la
+    /// doctrine belge : l'Art. 3.87 § 7 al. 4 plafonne, il n'annule pas.
     #[tokio::test]
-    async fn test_art_3_87_la_cloture_refuse_un_votant_plus_lourd_que_tous_les_autres() {
+    async fn test_art_3_87_la_cloture_plafonne_un_votant_plus_lourd_que_tous_les_autres() {
         let resolution_repo = Arc::new(MockResolutionRepository::new());
         let vote_repo = Arc::new(MockVoteRepository::new());
         let use_cases = ResolutionUseCases::new(
@@ -912,14 +967,31 @@ mod tests {
                 .expect("vote enregistré");
         }
 
-        let erreur = use_cases
+        // La séance se clôture : le poids d'un votant ne fait plus obstacle.
+        use_cases
             .close_voting(resolution_id, dec!(1000))
             .await
-            .expect_err("la clôture doit être refusée");
+            .expect("le plafonnement remplace le refus");
 
-        assert!(
-            erreur.contains("3.87"),
-            "le refus doit citer son article, pour que le président sache quoi corriger : {erreur}"
+        // L'écart est consigné, sans quoi le procès-verbal afficherait un
+        // décompte que rien dans les bulletins ne permettrait de retrouver.
+        let trace = resolution_repo
+            .dernier_plafonnement
+            .lock()
+            .unwrap()
+            .clone()
+            .expect("un plafonnement a eu lieu, il doit être tracé");
+        let ecarts = trace.as_array().expect("un tableau d'écarts");
+        assert_eq!(
+            ecarts.len(),
+            1,
+            "un seul votant dépassait la somme des autres"
+        );
+        assert_eq!(ecarts[0]["voix_brutes"], serde_json::json!(dec!(600)));
+        assert_eq!(
+            ecarts[0]["voix_retenues"],
+            serde_json::json!(dec!(399)),
+            "ramené à 200 + 199"
         );
     }
 

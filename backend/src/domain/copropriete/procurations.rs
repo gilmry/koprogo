@@ -41,12 +41,6 @@ pub enum ProcurationRefusee {
         recues: usize,
         part_des_voix: Decimal,
     },
-    /// Un votant pèse plus que tous les autres réunis.
-    PoidsSuperieurAuReste {
-        votant: Uuid,
-        voix: Decimal,
-        voix_des_autres: Decimal,
-    },
     /// Le syndic a voté comme mandataire d'un copropriétaire.
     SyndicMandataire { mandats: usize },
 }
@@ -63,15 +57,6 @@ impl std::fmt::Display for ProcurationRefusee {
                 "Art. 3.87 § 7 : le mandataire {mandataire} détient {recues} procurations \
                  et pèse {part_des_voix} % des voix. Au-delà de trois procurations, \
                  l'exception ne joue que sous 10 %."
-            ),
-            Self::PoidsSuperieurAuReste {
-                votant,
-                voix,
-                voix_des_autres,
-            } => write!(
-                f,
-                "Art. 3.87 § 7 : le votant {votant} pèse {voix} voix contre {voix_des_autres} \
-                 pour tous les autres présents ou représentés réunis."
             ),
             Self::SyndicMandataire { mandats } => write!(
                 f,
@@ -105,6 +90,34 @@ fn voix_par_votant(votes: &[Vote]) -> HashMap<Uuid, Decimal> {
     par_votant
 }
 
+/// Les voix qu'une personne engage dans le vote, à quelque titre que ce soit.
+///
+/// Le texte vise « même comme **mandant** ou mandataire ». Une personne engage
+/// donc : ses propres lots, même confiés à un mandataire, **et** les lots
+/// qu'elle porte pour autrui.
+///
+/// Grouper par mandataire seul laissait passer un contournement documenté :
+/// un copropriétaire majoritaire désignait un mandataire différent par lot,
+/// de sorte qu'aucun d'eux ne dépassait le seuil pris isolément. La doctrine
+/// belge le juge non conforme, le mandat étant lié à la personne du
+/// copropriétaire et non au bien.
+///
+/// Pour une personne X donnée, chaque bulletin tombe d'un seul côté : soit X y
+/// est engagée, soit non. Il n'y a donc pas de double compte dans la
+/// comparaison entre X et le reste.
+fn voix_engagees_par_personne(votes: &[Vote]) -> HashMap<Uuid, Decimal> {
+    let mut engagees: HashMap<Uuid, Decimal> = HashMap::new();
+    for vote in votes {
+        *engagees.entry(vote.owner_id).or_insert(Decimal::ZERO) += vote.voting_power;
+        if let Some(mandataire) = vote.proxy_owner_id {
+            if mandataire != vote.owner_id {
+                *engagees.entry(mandataire).or_insert(Decimal::ZERO) += vote.voting_power;
+            }
+        }
+    }
+    engagees
+}
+
 /// Le nombre de procurations acceptées par chaque mandataire.
 fn procurations_par_mandataire(votes: &[Vote]) -> HashMap<Uuid, usize> {
     let mut par_mandataire: HashMap<Uuid, usize> = HashMap::new();
@@ -114,6 +127,135 @@ fn procurations_par_mandataire(votes: &[Vote]) -> HashMap<Uuid, usize> {
         }
     }
     par_mandataire
+}
+
+/// L'écart entre ce qu'un votant pesait et ce qui lui a été retenu.
+///
+/// Conservé pour que l'ACP puisse répondre de son décompte : si la décision
+/// est attaquée, il faut pouvoir montrer que la règle a été appliquée, et de
+/// combien. Un plafonnement silencieux serait indéfendable.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct EcartDePlafond {
+    pub votant: Uuid,
+    /// Ce dont le votant disposait, procurations comprises.
+    pub voix_brutes: Decimal,
+    /// Ce qui a été retenu : la somme des voix des autres.
+    pub voix_retenues: Decimal,
+}
+
+/// Le décompte d'une séance après application de l'Art. 3.87 § 7 al. 4.
+#[derive(Debug, Clone, Default)]
+pub struct DecompteDesVoix {
+    retenues: HashMap<Uuid, Decimal>,
+    ecarts: Vec<EcartDePlafond>,
+}
+
+impl DecompteDesVoix {
+    /// Les voix retenues pour un votant, plafonnement compris.
+    pub fn voix(&self, votant: Uuid) -> Decimal {
+        self.retenues.get(&votant).copied().unwrap_or(Decimal::ZERO)
+    }
+
+    /// Les plafonnements appliqués. Vide quand personne n'était majoritaire.
+    pub fn ecarts(&self) -> &[EcartDePlafond] {
+        &self.ecarts
+    }
+}
+
+/// Applique l'Art. 3.87 § 7 al. 4 : « Nul ne peut prendre part au vote, même
+/// comme mandant ou mandataire, pour un nombre de voix supérieur à la somme
+/// des voix dont disposent les autres copropriétaires présents ou
+/// représentés. »
+///
+/// Le texte interdit de voter **pour** un nombre de voix supérieur ; il ne
+/// frappe pas la séance de nullité. Le décompte du majoritaire est ramené à la
+/// somme des autres, et l'assemblée délibère là-dessus. Refuser de clore
+/// rendrait ingouvernable toute copropriété où un seul détient la majorité,
+/// situation licite et fréquente.
+///
+/// Au plus un votant peut être plafonné : dépasser la somme des autres, c'est
+/// dépasser la moitié du total, et deux personnes ne le peuvent pas ensemble.
+///
+/// Cas limite du votant unique : la somme des autres vaut zéro. Le ramener à
+/// zéro viderait la séance de tout sens. C'est le quorum de l'Art. 3.87 § 5
+/// qui traite ce cas, pas cet alinéa-ci.
+pub fn plafonner_les_voix(votes: &[Vote]) -> DecompteDesVoix {
+    let brutes = voix_engagees_par_personne(votes);
+    // Le dénominateur est l'ensemble des voix présentes ou représentées, une
+    // seule fois chacune — pas la somme des engagements, qui compte deux fois
+    // un lot confié à un mandataire.
+    let total: Decimal = votes.iter().map(|v| v.voting_power).sum();
+
+    let mut retenues = HashMap::with_capacity(brutes.len());
+    let mut ecarts = Vec::new();
+
+    for (votant, poids) in brutes {
+        let reste = total - poids;
+        if poids > reste && !reste.is_zero() {
+            ecarts.push(EcartDePlafond {
+                votant,
+                voix_brutes: poids,
+                voix_retenues: reste,
+            });
+            retenues.insert(votant, reste);
+        } else {
+            retenues.insert(votant, poids);
+        }
+    }
+
+    DecompteDesVoix { retenues, ecarts }
+}
+
+/// Répartit le plafonnement sur chaque bulletin, dans l'ordre des votes reçus.
+///
+/// Un mandataire peut voter « pour » son propre lot et « contre » celui d'un
+/// mandant. Quand il est plafonné, il faut décider comment l'écart se répartit
+/// entre ces sens. **La loi ne le dit pas.** Le choix retenu est la réduction
+/// proportionnelle : chaque bulletin conserve la même part relative, donc
+/// l'arbitrage du votant est préservé. Les deux autres lectures possibles —
+/// retrancher d'abord des « pour », ou d'abord des « contre » — feraient
+/// pencher le résultat dans un sens que rien ne justifie.
+///
+/// Rend un poids retenu par vote, dans le même ordre que `votes`.
+pub fn repartir_le_plafond(votes: &[Vote], decompte: &DecompteDesVoix) -> Vec<Decimal> {
+    let brutes = voix_engagees_par_personne(votes);
+
+    // La proportion conservée pour une personne : 1 si elle n'est pas plafonnée.
+    let part = |personne: Uuid| -> Decimal {
+        let brut = brutes.get(&personne).copied().unwrap_or(Decimal::ZERO);
+        if brut.is_zero() {
+            return Decimal::ONE;
+        }
+        let retenu = decompte.voix(personne);
+        if retenu == brut {
+            Decimal::ONE
+        } else {
+            retenu / brut
+        }
+    };
+
+    votes
+        .iter()
+        .map(|v| {
+            // Un bulletin engage son propriétaire ET son mandataire. Si les
+            // deux sont plafonnés, c'est la réduction la plus forte qui
+            // s'applique : retenir la plus douce laisserait l'un des deux
+            // dépasser la somme des autres, ce que le texte interdit à chacun
+            // pour son propre compte.
+            let mut proportion = part(v.owner_id);
+            if let Some(mandataire) = v.proxy_owner_id {
+                let p = part(mandataire);
+                if p < proportion {
+                    proportion = p;
+                }
+            }
+            if proportion == Decimal::ONE {
+                v.voting_power
+            } else {
+                v.voting_power * proportion
+            }
+        })
+        .collect()
 }
 
 /// Vérifie les trois plafonds de l'Art. 3.87 § 7 sur une séance.
@@ -164,24 +306,190 @@ pub fn verifier_procurations(
         }
     }
 
-    // 3. Nul ne pèse plus que tous les autres réunis.
-    let total_exprime: Decimal = voix.values().copied().sum();
-    for (votant, poids) in &voix {
-        let reste = total_exprime - poids;
-        if *poids > reste {
-            return Err(ProcurationRefusee::PoidsSuperieurAuReste {
-                votant: *votant,
-                voix: *poids,
-                voix_des_autres: reste,
-            });
-        }
-    }
+    // L'alinéa 4 — « nul ne prend part au vote pour un nombre de voix
+    // supérieur à la somme des autres » — n'est PAS vérifié ici : ce n'est pas
+    // un refus mais un plafonnement, appliqué par `plafonner_les_voix`.
+    // Arbitrage humain du 2026-09-04 : le texte interdit de voter POUR un
+    // nombre de voix supérieur, il ne frappe pas la séance de nullité.
 
     Ok(())
 }
 
 #[cfg(test)]
 mod tests {
+    // ── Art. 3.87 § 7 al. 4 — le plafonnement des voix ──────────────────────
+    //
+    // Le texte dit : « Nul ne peut prendre part au vote, même comme mandant ou
+    // mandataire, pour un nombre de voix supérieur à la somme des voix dont
+    // disposent les autres copropriétaires présents ou représentés. »
+    //
+    // Il interdit de VOTER POUR un nombre de voix supérieur ; il ne frappe pas
+    // la séance de nullité. Le décompte du majoritaire est donc ramené à la
+    // somme des autres, et l'assemblée délibère sur ce décompte corrigé. Une
+    // copropriété où un seul détient la majorité est licite et courante :
+    // refuser de clore la rendrait ingouvernable.
+    //
+    // L'écart est conservé. Si la décision est attaquée, l'ACP doit pouvoir
+    // montrer qu'elle a appliqué la règle, et de combien.
+
+    #[test]
+    fn security_le_majoritaire_ne_contourne_pas_le_plafond_en_eclatant_ses_procurations() {
+        // Le texte vise « même comme MANDANT ou mandataire ». Le mandant reste
+        // donc plafonné pour ses propres voix, quel que soit le nombre de
+        // mandataires entre lesquels il les répartit.
+        //
+        // Le contournement a été tenté en pratique : désigner un mandataire
+        // distinct par lot, de sorte qu'aucun d'eux ne dépasse le seuil pris
+        // isolément. La doctrine belge le juge non conforme — le mandat est
+        // lié à la personne du copropriétaire, pas au bien.
+        // Voir propertytoday.be, « Sens et non-sens de la réduction de vote de
+        // l'art. 3.87 § 7 Cc », consulté le 2026-09-04.
+        let majoritaire = Uuid::new_v4();
+        let autre_a = Uuid::new_v4();
+        let autre_b = Uuid::new_v4();
+        let votes = vec![
+            // 600 voix éclatées entre trois mandataires différents.
+            vote(majoritaire, dec!(200), Some(Uuid::new_v4())),
+            vote(majoritaire, dec!(200), Some(Uuid::new_v4())),
+            vote(majoritaire, dec!(200), Some(Uuid::new_v4())),
+            vote(autre_a, dec!(250), None),
+            vote(autre_b, dec!(150), None),
+        ];
+
+        let decompte = plafonner_les_voix(&votes);
+
+        let ecarts = decompte.ecarts();
+        assert_eq!(
+            ecarts.len(),
+            1,
+            "le mandant est plafonné, pas ses mandataires"
+        );
+        assert_eq!(ecarts[0].votant, majoritaire);
+        assert_eq!(ecarts[0].voix_brutes, dec!(600));
+        assert_eq!(ecarts[0].voix_retenues, dec!(400), "250 + 150");
+    }
+
+    #[test]
+    fn le_plafond_se_repartit_proportionnellement_entre_les_sens() {
+        // Le mandataire pèse 800 (200 pour lui, 600 portés), les autres 400.
+        // Il est ramené à 400, soit la moitié. Chacun de ses bulletins est
+        // réduit dans la même proportion : son arbitrage relatif entre
+        // « pour » et « contre » reste intact.
+        //
+        // Le rapport est choisi exact (1/2) à dessein. Avec 2/3, la valeur
+        // attendue et la valeur calculée diffèrent au dernier chiffre selon
+        // l'ordre des opérations, et le test mesurerait l'arrondi de
+        // `Decimal` plutôt que la règle de droit.
+        let mandataire = Uuid::new_v4();
+        let mandant = Uuid::new_v4();
+        let autre = Uuid::new_v4();
+        let votes = vec![
+            vote(mandataire, dec!(200), None),
+            vote(mandant, dec!(600), Some(mandataire)),
+            vote(autre, dec!(400), None),
+        ];
+
+        let decompte = plafonner_les_voix(&votes);
+        let retenus = repartir_le_plafond(&votes, &decompte);
+
+        assert_eq!(retenus[0], dec!(100), "200 ramenés de moitié");
+        assert_eq!(retenus[1], dec!(300), "600 ramenés de moitié");
+        assert_eq!(retenus[2], dec!(400), "les autres ne bougent pas");
+        assert_eq!(retenus[0] + retenus[1], dec!(400), "total ramené au reste");
+    }
+
+    #[test]
+    fn le_majoritaire_est_ramene_a_la_somme_des_autres() {
+        let majoritaire = Uuid::new_v4();
+        let autre_a = Uuid::new_v4();
+        let autre_b = Uuid::new_v4();
+        let votes = vec![
+            vote(majoritaire, dec!(600), None),
+            vote(autre_a, dec!(250), None),
+            vote(autre_b, dec!(150), None),
+        ];
+
+        let decompte = plafonner_les_voix(&votes);
+
+        assert_eq!(decompte.voix(majoritaire), dec!(400), "ramené à 250 + 150");
+        assert_eq!(decompte.voix(autre_a), dec!(250), "les autres sont intacts");
+        assert_eq!(decompte.voix(autre_b), dec!(150));
+    }
+
+    #[test]
+    fn lecart_est_conserve_pour_pouvoir_en_repondre() {
+        let majoritaire = Uuid::new_v4();
+        let autre = Uuid::new_v4();
+        let votes = vec![
+            vote(majoritaire, dec!(600), None),
+            vote(autre, dec!(400), None),
+        ];
+
+        let decompte = plafonner_les_voix(&votes);
+
+        let ecarts = decompte.ecarts();
+        assert_eq!(ecarts.len(), 1, "un seul votant plafonné");
+        assert_eq!(ecarts[0].votant, majoritaire);
+        assert_eq!(ecarts[0].voix_brutes, dec!(600));
+        assert_eq!(ecarts[0].voix_retenues, dec!(400));
+    }
+
+    #[test]
+    fn sans_majoritaire_rien_nest_plafonne() {
+        let a = Uuid::new_v4();
+        let b = Uuid::new_v4();
+        let c = Uuid::new_v4();
+        let votes = vec![
+            vote(a, dec!(400), None),
+            vote(b, dec!(350), None),
+            vote(c, dec!(250), None),
+        ];
+
+        let decompte = plafonner_les_voix(&votes);
+
+        assert!(
+            decompte.ecarts().is_empty(),
+            "personne ne pèse plus que le reste"
+        );
+        assert_eq!(decompte.voix(a), dec!(400));
+    }
+
+    #[test]
+    fn le_mandataire_pese_ses_voix_et_celles_de_ses_mandants() {
+        // Un mandataire qui porte assez de procurations pour devenir
+        // majoritaire est plafonné comme n'importe qui : la loi vise le
+        // mandant COMME le mandataire.
+        let mandataire = Uuid::new_v4();
+        let mandant_a = Uuid::new_v4();
+        let mandant_b = Uuid::new_v4();
+        let isole = Uuid::new_v4();
+        let votes = vec![
+            vote(mandataire, dec!(200), None),
+            vote(mandant_a, dec!(250), Some(mandataire)),
+            vote(mandant_b, dec!(250), Some(mandataire)),
+            vote(isole, dec!(300), None),
+        ];
+
+        let decompte = plafonner_les_voix(&votes);
+
+        assert_eq!(decompte.voix(mandataire), dec!(300), "700 ramenés à 300");
+        assert_eq!(decompte.voix(isole), dec!(300));
+    }
+
+    #[test]
+    fn une_seule_voix_exprimee_nest_pas_plafonnee_a_zero() {
+        // Cas limite : un unique votant présent. La somme des autres vaut
+        // zéro. Le plafonner à zéro viderait la séance de tout sens ; le
+        // quorum de l'Art. 3.87 § 5 est le garde-fou qui vaut ici, pas celui-ci.
+        let seul = Uuid::new_v4();
+        let votes = vec![vote(seul, dec!(500), None)];
+
+        let decompte = plafonner_les_voix(&votes);
+
+        assert_eq!(decompte.voix(seul), dec!(500));
+        assert!(decompte.ecarts().is_empty());
+    }
+
     use super::*;
     use crate::domain::copropriete::vote::VoteChoice;
     use rust_decimal_macros::dec;
@@ -311,7 +619,10 @@ mod tests {
     // ── Nul ne pèse plus que tous les autres réunis ────────────────────
 
     #[test]
-    fn negative_un_votant_ne_depasse_pas_la_somme_des_autres() {
+    fn un_votant_qui_depasse_la_somme_des_autres_est_plafonne_pas_refuse() {
+        // Anciennement `negative_un_votant_ne_depasse_pas_la_somme_des_autres`,
+        // qui attendait un refus. Arbitrage humain du 2026-09-04 : l'Art. 3.87
+        // § 7 al. 4 plafonne, il n'annule pas. La séance reste valide.
         let dominant = Uuid::new_v4();
         let votes = vec![
             vote(dominant, dec!(600), None),
@@ -319,18 +630,12 @@ mod tests {
             vote(Uuid::new_v4(), dec!(199), None),
         ];
 
-        let refus = verifier_procurations(&votes, TOTAL_DES_LOTS, None).expect_err("doit refuser");
-        match refus {
-            ProcurationRefusee::PoidsSuperieurAuReste {
-                voix,
-                voix_des_autres,
-                ..
-            } => {
-                assert_eq!(voix, dec!(600));
-                assert_eq!(voix_des_autres, dec!(399));
-            }
-            autre => panic!("mauvais refus : {autre}"),
-        }
+        verifier_procurations(&votes, TOTAL_DES_LOTS, None)
+            .expect("le poids ne fait plus obstacle à la clôture");
+
+        let decompte = plafonner_les_voix(&votes);
+        assert_eq!(decompte.voix(dominant), dec!(399), "ramené à 200 + 199");
+        assert_eq!(decompte.ecarts().len(), 1);
     }
 
     #[test]
@@ -348,18 +653,21 @@ mod tests {
     fn security_un_mandataire_ne_contourne_pas_le_plafond_en_cumulant() {
         // Trois procurations seulement — le plafond des procurations passe —
         // mais le mandataire rassemble la majorité absolue des voix exprimées.
-        // C'est la seconde règle qui l'arrête, et elle seule.
+        // C'est le plafonnement de l'alinéa 4 qui le ramène à sa place.
         let mandataire = Uuid::new_v4();
         let mut votes = vec![vote(mandataire, dec!(100), None)];
         votes.extend((0..3).map(|_| vote(Uuid::new_v4(), dec!(150), Some(mandataire))));
         votes.push(vote(Uuid::new_v4(), dec!(300), None));
 
-        // 550 pour le mandataire, 300 pour le reste.
-        let refus = verifier_procurations(&votes, TOTAL_DES_LOTS, None).expect_err("doit refuser");
-        assert!(matches!(
-            refus,
-            ProcurationRefusee::PoidsSuperieurAuReste { .. }
-        ));
+        // 550 pour le mandataire, 300 pour le reste. La propriété de sécurité
+        // tient toujours : il ne peut pas emporter le vote à lui seul. Ce qui
+        // change depuis l'arbitrage du 2026-09-04, c'est le mécanisme — il est
+        // ramené au poids des autres, il n'est plus opposé un refus de clore.
+        verifier_procurations(&votes, TOTAL_DES_LOTS, None)
+            .expect("trois procurations : les plafonds de procuration passent");
+
+        let decompte = plafonner_les_voix(&votes);
+        assert_eq!(decompte.voix(mandataire), dec!(300), "550 ramenés à 300");
     }
 
     #[test]

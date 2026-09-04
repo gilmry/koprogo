@@ -365,6 +365,7 @@ impl ResolutionRepository for PostgresResolutionRepository {
         &self,
         resolution_id: Uuid,
         final_status: ResolutionStatus,
+        voix_plafonnees: Option<serde_json::Value>,
     ) -> Result<(), String> {
         let status_str = match final_status {
             ResolutionStatus::Pending => "Pending",
@@ -375,12 +376,13 @@ impl ResolutionRepository for PostgresResolutionRepository {
         sqlx::query(
             r#"
             UPDATE resolutions
-            SET status = $2, voted_at = CURRENT_TIMESTAMP
+            SET status = $2, voted_at = CURRENT_TIMESTAMP, voix_plafonnees = $3
             WHERE id = $1
             "#,
         )
         .bind(resolution_id)
         .bind(status_str)
+        .bind(voix_plafonnees)
         .execute(&self.pool)
         .await
         .map_err(|e| format!("Database error closing voting: {}", e))?;
