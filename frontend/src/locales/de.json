@@ -703,7 +703,8 @@
     "unitCount": "Anzahl Einheiten",
     "units": "Einheiten",
     "unknownOrg": "Unbekannte Organisation",
-    "workReports": "Arbeitsberichte"
+    "workReports": "Arbeitsberichte",
+    "acpUnknown": "Unbekannte Eigentümergemeinschaft"
   },
   "callForFunds": {
     "accountCode": "Kontonummer",

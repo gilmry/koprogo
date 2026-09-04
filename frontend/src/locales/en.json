@@ -703,7 +703,8 @@
     "unitCount": "Number of units",
     "units": "Units",
     "unknownOrg": "Unknown organization",
-    "workReports": "Work Reports"
+    "workReports": "Work Reports",
+    "acpUnknown": "Unknown co-ownership"
   },
   "callForFunds": {
     "accountCode": "Account code",

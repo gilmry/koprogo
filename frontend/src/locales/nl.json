@@ -703,7 +703,8 @@
     "unitCount": "Aantal kavels",
     "units": "Kavels",
     "unknownOrg": "Onbekende organisatie",
-    "workReports": "Werkrapporten"
+    "workReports": "Werkrapporten",
+    "acpUnknown": "Onbekende VME"
   },
   "callForFunds": {
     "accountCode": "Rekeningcode",
