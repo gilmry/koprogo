@@ -220,17 +220,18 @@ pub fn plafonner_les_voix(votes: &[Vote]) -> DecompteDesVoix {
 pub fn repartir_le_plafond(votes: &[Vote], decompte: &DecompteDesVoix) -> Vec<Decimal> {
     let brutes = voix_engagees_par_personne(votes);
 
-    // La proportion conservée pour une personne : 1 si elle n'est pas plafonnée.
-    let part = |personne: Uuid| -> Decimal {
+    // Le couple (retenu, brut) d'une personne. `None` si elle n'est pas
+    // plafonnée.
+    let plafond = |personne: Uuid| -> Option<(Decimal, Decimal)> {
         let brut = brutes.get(&personne).copied().unwrap_or(Decimal::ZERO);
         if brut.is_zero() {
-            return Decimal::ONE;
+            return None;
         }
         let retenu = decompte.voix(personne);
         if retenu == brut {
-            Decimal::ONE
+            None
         } else {
-            retenu / brut
+            Some((retenu, brut))
         }
     };
 
@@ -242,17 +243,36 @@ pub fn repartir_le_plafond(votes: &[Vote], decompte: &DecompteDesVoix) -> Vec<De
             // s'applique : retenir la plus douce laisserait l'un des deux
             // dépasser la somme des autres, ce que le texte interdit à chacun
             // pour son propre compte.
-            let mut proportion = part(v.owner_id);
+            let mut retenu_brut = plafond(v.owner_id);
             if let Some(mandataire) = v.proxy_owner_id {
-                let p = part(mandataire);
-                if p < proportion {
-                    proportion = p;
+                if let Some((r2, b2)) = plafond(mandataire) {
+                    // Comparaison de deux fractions sans les évaluer :
+                    // r2/b2 < r1/b1  ⟺  r2·b1 < r1·b2.
+                    let plus_severe = match retenu_brut {
+                        None => true,
+                        Some((r1, b1)) => r2 * b1 < r1 * b2,
+                    };
+                    if plus_severe {
+                        retenu_brut = Some((r2, b2));
+                    }
                 }
             }
-            if proportion == Decimal::ONE {
-                v.voting_power
-            } else {
-                v.voting_power * proportion
+
+            match retenu_brut {
+                None => v.voting_power,
+                // MULTIPLIER AVANT DE DIVISER.
+                //
+                // Calculer d'abord le ratio `retenu / brut` puis multiplier
+                // laisse une traîne d'arrondi : 550 × (450/550) donne
+                // 450,00000000000000000000000001. Ce résidu de 10⁻²⁶ suffit à
+                // transformer une ÉGALITÉ en majorité — 450 contre 450
+                // devenait « adopté » alors que l'Art. 3.88 § 1er exige PLUS
+                // de la moitié des voix exprimées.
+                //
+                // Constaté en recette le 2026-09-04 sur une vraie résolution.
+                // L'ADR-0008 impose `Decimal` pour éviter exactement cela ; le
+                // type ne suffit pas, l'ordre des opérations compte aussi.
+                Some((retenu, brut)) => v.voting_power * retenu / brut,
             }
         })
         .collect()

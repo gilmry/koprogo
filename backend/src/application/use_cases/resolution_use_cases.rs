@@ -995,6 +995,80 @@ mod tests {
         );
     }
 
+    /// Reproduction du scénario de recette du 2026-09-04.
+    ///
+    /// Alice pèse 550 et vote « pour ». Bob (250) et Claire (200) votent
+    /// « contre ». Après plafonnement, Alice est ramenée à 450 : le décompte
+    /// devient 450 contre 450.
+    ///
+    /// La majorité absolue de l'Art. 3.88 § 1er exige **plus** de la moitié
+    /// des voix exprimées. Une égalité n'est pas une majorité : la résolution
+    /// doit être REJETÉE.
+    #[tokio::test]
+    async fn test_art_3_88_une_egalite_apres_plafonnement_nest_pas_une_majorite() {
+        let resolution_repo = Arc::new(MockResolutionRepository::new());
+        let vote_repo = Arc::new(MockVoteRepository::new());
+        let use_cases = ResolutionUseCases::new(
+            resolution_repo.clone(),
+            vote_repo.clone(),
+            Arc::new(MockMeetingRepository::new()),
+            Arc::new(MockUnitOwnerRepository::new()),
+        );
+
+        let resolution = Resolution::new(
+            Uuid::new_v4(),
+            "Approbation des comptes".to_string(),
+            "Comptes annuels".to_string(),
+            ResolutionType::Ordinary,
+            MajorityType::Absolute,
+            Some(1),
+        )
+        .expect("résolution valide");
+        let resolution_id = resolution.id;
+        resolution_repo
+            .create(&resolution)
+            .await
+            .expect("enregistrée");
+
+        for (voix, choix) in [
+            (dec!(550), VoteChoice::Pour),
+            (dec!(250), VoteChoice::Contre),
+            (dec!(200), VoteChoice::Contre),
+        ] {
+            vote_repo
+                .create(
+                    &Vote::new(
+                        resolution_id,
+                        Uuid::new_v4(),
+                        Uuid::new_v4(),
+                        choix,
+                        voix,
+                        None,
+                    )
+                    .expect("vote valide"),
+                )
+                .await
+                .expect("vote enregistré");
+        }
+
+        let close = use_cases
+            .close_voting(resolution_id, dec!(1000))
+            .await
+            .expect("la clôture aboutit");
+
+        assert_eq!(
+            close.total_voting_power_pour,
+            dec!(450),
+            "Alice est ramenée à la somme des autres"
+        );
+        assert_eq!(close.total_voting_power_contre, dec!(450));
+        assert_eq!(
+            close.status,
+            ResolutionStatus::Rejected,
+            "450 contre 450 : égalité, donc pas de majorité absolue"
+        );
+    }
+
     /// La même séance, répartie normalement, se clôture sans obstacle.
     #[tokio::test]
     async fn test_art_3_87_une_seance_equilibree_se_cloture() {
