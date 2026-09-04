@@ -57,7 +57,103 @@ env:
 # construit avec cette valeur appelle un hôte inexistant.
 
 jobs:
+  # ── Barrage rapide ────────────────────────────────────────────────────────
+  #
+  # `ci.yml` exclut nommément `feature/dev` : sa pipeline complète prend ~95
+  # minutes et le déploiement ne l'attend pas. Conséquence mesurée le
+  # 2026-09-04 : quarante-cinq régressions ont vécu sur la branche qui alimente
+  # la démo publique sans que rien ne les signale, parce que `cargo test --lib`
+  # ne compile même pas les harnais d'intégration.
+  #
+  # Ce barrage ne rejoue pas la pipeline complète. Il lance ce qui est rapide et
+  # qui aurait suffi à attraper ces régressions : la compilation de TOUTES les
+  # cibles, les tests unitaires, les gardes d'architecture, et le frontend. Ni
+  # e2e, ni BDD, ni Playwright — ceux-là restent l'affaire de `ci.yml` sur les
+  # branches qu'elle couvre.
+  #
+  # Il conditionne la construction des images. Un commit rouge ne produit donc
+  # pas d'image, et la démo reste sur sa dernière version saine plutôt que de
+  # recevoir du code cassé. C'est le bon sens de la panne : rester en arrière
+  # est réparable, déployer du rouge ne l'est pas toujours — le 2026-09-03,
+  # un rollback a échoué parce que la base avait déjà migré.
+  #
+  # Pour relâcher ce barrage sans le supprimer, retirer le `needs: barrage`
+  # ci-dessous : les images se construiront à nouveau sans condition.
+  barrage:
+    name: Barrage rapide (compilation, unitaires, gardes)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.ref || github.sha }}
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: backend
+
+      - name: Gate ADR-0008 — aucun f64 monétaire
+        run: ./scripts/check-no-f64-money.sh
+
+      - name: Gate OpenAPI — annotation et enregistrement
+        run: ./scripts/check-openapi-coverage.sh
+
+      - name: cargo fmt
+        working-directory: backend
+        run: cargo fmt --all -- --check
+
+      # `--all-targets` et pas seulement `--lib` : c'est la seule étape qui
+      # compile `tests/`. Sans elle, une signature de use-case peut changer et
+      # casser quatorze harnais sans qu'aucun signal n'apparaisse.
+      - name: cargo clippy (toutes cibles)
+        working-directory: backend
+        env:
+          SQLX_OFFLINE: "true"
+        run: cargo clippy --all-targets --all-features -- -D warnings
+
+      - name: Tests unitaires
+        working-directory: backend
+        env:
+          SQLX_OFFLINE: "true"
+        run: cargo test --lib
+
+      - name: Garde d'architecture — frontières entre contextes bornés
+        working-directory: backend
+        env:
+          SQLX_OFFLINE: "true"
+        run: cargo test --test architecture
+
+      - name: Garde d'écriture — la dette ne grossit pas
+        working-directory: backend
+        env:
+          SQLX_OFFLINE: "true"
+        run: cargo test --test garde_ecriture
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Dépendances frontend
+        working-directory: frontend
+        run: npm ci
+
+      - name: svelte-check
+        working-directory: frontend
+        run: npx svelte-check --threshold error
+
+      - name: Tests unitaires frontend
+        working-directory: frontend
+        run: npx vitest run --reporter=dot
+
   images:
+    needs: barrage
     runs-on: ubuntu-latest
     permissions:
       contents: read
