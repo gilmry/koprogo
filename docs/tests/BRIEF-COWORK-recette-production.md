@@ -12,6 +12,34 @@ admin@koprogo.com / admin123     (SuperAdmin)
 > Ces identifiants sont déductibles du dépôt public : défaut connu, suivi en
 > #763. Ne pas le rapporter.
 
+### Trois choses vérifiées le 2026-09-04, à connaître avant de commencer
+
+**1. Le SuperAdmin n'appartient à aucune organisation.** Il crée les
+organisations, les utilisateurs et les ACP, mais il ne peut pas saisir de
+comptabilité : l'API répond `401 — User does not belong to an organization`.
+**Ce n'est pas un bug.** Il faut créer un utilisateur de l'organisation puis
+basculer dessus, ce que fait l'acte 2.
+
+**2. Les écritures comptables exigent le rôle comptable**, pas syndic. Un
+syndic reçoit `403 — Only accountants and superadmins can create journal
+entries`. Prévoir donc **trois** utilisateurs à l'acte 1 : syndic, comptable,
+copropriétaire.
+
+**3. Toutes les URL renvoient un `301` vers leur version avec barre oblique
+finale** (`/register` → `/register/`), puis un `200`. C'est le comportement
+normal d'Astro. **Ne pas le rapporter comme une redirection anormale.**
+
+### Comptes de démonstration existants, si utiles
+
+Le parcours n'en a pas besoin, mais ils permettent de comparer avec des
+données déjà en place :
+
+| Rôle | Identifiant | Mot de passe |
+|---|---|---|
+| Syndic | `syndic@grandplace.be` | `syndic123` |
+| Comptable | `comptable@grandplace.be` | `comptable123` |
+| Copropriétaire | `proprietaire1@grandplace.be` | `syndic123` |
+
 ---
 
 ## Le rôle à tenir
@@ -115,12 +143,16 @@ savoir à qui s'adresser.
 **À vérifier** : les champs obligatoires, le numéro d'entreprise (BCE), et
 qu'une organisation sans nom est refusée.
 
-### 1.2 Créer un utilisateur syndic dans cette organisation
+### 1.2 Créer trois utilisateurs dans cette organisation
 
-**À vérifier** : le rôle est bien `syndic`, l'utilisateur est rattaché à
-l'organisation, et il peut se connecter.
+**Un syndic, un comptable, un copropriétaire.** Les trois sont nécessaires :
+le SuperAdmin ne peut pas saisir de comptabilité, et les écritures exigent
+le rôle comptable.
 
-> Garder ces identifiants : tout l'acte 2 se joue avec eux.
+**À vérifier** : chaque rôle est bien celui demandé, l'utilisateur est
+rattaché à l'organisation, et il peut se connecter.
+
+> Garder ces identifiants : tout le reste du parcours se joue avec eux.
 
 ### 1.3 Créer l'ACP ★ le cœur du modèle
 
@@ -169,8 +201,12 @@ Puis les lots. **Créer les cinq natures** : `Appartement`, `Parking`, `Cave`,
 
 ## Acte 2 — La comptabilité
 
-> Bascule sur le compte **syndic** créé en 1.2. Tout ce qui suit doit être
-> faisable sans repasser SuperAdmin.
+> Bascule sur les comptes créés en 1.2 — **syndic** pour les budgets, appels
+> de fonds et dépenses, **comptable** pour les écritures. Tout ce qui suit
+> doit être faisable sans repasser SuperAdmin.
+>
+> **Si une opération de gestion courante exige le SuperAdmin, c'est un
+> défaut à signaler** : un cabinet client n'aura jamais ce compte.
 
 ### 2.1 Le régime comptable ★
 
@@ -221,8 +257,9 @@ près. Vérifier la TVA si l'écran la propose.
 **Attendu** : refus en **400**, message expliquant qu'il faut un immeuble
 pour déterminer l'ACP.
 
-> C'était un **500** jusqu'à aujourd'hui. **Si un 500 apparaît ici, c'est une
-> régression : signalez-la.**
+> C'était un **500** jusqu'à aujourd'hui. **Vérifié en production le
+> 2026-09-04** : l'API répond bien `400` avec le message ci-dessus. **Si un
+> 500 apparaît, c'est une régression : signalez-la.**
 
 **Scénario B** : créer une écriture déséquilibrée (débit ≠ crédit). Refus
 attendu, message clair.
