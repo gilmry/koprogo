@@ -77,6 +77,22 @@ pub struct Resolution {
     pub voted_at: Option<DateTime<Utc>>,
 }
 
+/// Un pourcentage lisible, à partir de voix exactes.
+///
+/// Le calcul se fait en `Decimal` puis se convertit à la fin : diviser des
+/// `f64` réintroduirait l'inexactitude que l'ADR-0008 bannit. La conversion
+/// finale est un **affichage**, pas une base de décision — les majorités se
+/// calculent sur les `Decimal`, jamais sur ce nombre.
+fn pourcentage(part: Decimal, total: Decimal) -> f64 {
+    if total <= Decimal::ZERO {
+        return 0.0;
+    }
+    (part * Decimal::from(100) / total)
+        .to_string()
+        .parse()
+        .unwrap_or(0.0)
+}
+
 impl Resolution {
     /// Crée une nouvelle résolution
     /// Issue #310: Optional agenda_item_index for Art. 3.87 CC compliance (Belgian law)
@@ -247,34 +263,48 @@ impl Resolution {
         self.vote_count_pour + self.vote_count_contre + self.vote_count_abstention
     }
 
-    /// Retourne le pourcentage de votes "Pour"
+    /// Le total des voix exprimées, abstentions exclues.
+    ///
+    /// Art. 3.87 § 8 : « Les abstentions, les votes nuls et blancs ne sont pas
+    /// considérés comme des voix émises pour le calcul de la majorité
+    /// requise. » C'est donc ce total, et non celui de tous les présents, qui
+    /// sert de dénominateur à la majorité.
+    pub fn voix_exprimees(&self) -> Decimal {
+        self.total_voting_power_pour + self.total_voting_power_contre
+    }
+
+    /// La part des voix « pour », en pourcentage des voix **exprimées**.
+    ///
+    /// Art. 3.87 § 6 : « Chaque copropriétaire dispose d'un nombre de voix
+    /// correspondant à sa quote-part dans les parties communes. » Le droit
+    /// belge compte donc des **voix**, jamais des têtes.
+    ///
+    /// Ce pourcentage comptait auparavant les bulletins : trois votants dont
+    /// un majoritaire donnaient « 33 % pour » alors qu'il pesait 55 % des
+    /// tantièmes. Un syndic lisant cet écran voyait l'inverse du droit.
+    /// Constaté en recette le 2026-09-04.
+    ///
+    /// Le dénominateur est celui de la majorité, pour que le pourcentage
+    /// affiché et le résultat proclamé se répondent.
     pub fn pour_percentage(&self) -> f64 {
-        let total = self.total_votes();
-        if total > 0 {
-            (self.vote_count_pour as f64 / total as f64) * 100.0
-        } else {
-            0.0
-        }
+        pourcentage(self.total_voting_power_pour, self.voix_exprimees())
     }
 
-    /// Retourne le pourcentage de votes "Contre"
+    /// La part des voix « contre », sur la même base que `pour_percentage`.
     pub fn contre_percentage(&self) -> f64 {
-        let total = self.total_votes();
-        if total > 0 {
-            (self.vote_count_contre as f64 / total as f64) * 100.0
-        } else {
-            0.0
-        }
+        pourcentage(self.total_voting_power_contre, self.voix_exprimees())
     }
 
-    /// Retourne le pourcentage d'abstentions
+    /// La part des abstentions, rapportée à **toutes** les voix présentes.
+    ///
+    /// Dénominateur différent de celui des deux précédents, à dessein : une
+    /// abstention ne participe pas à la majorité (Art. 3.87 § 8), donc la
+    /// rapporter aux seules voix exprimées n'aurait aucun sens — elle en est
+    /// exclue par définition. Ce qu'un syndic veut savoir, c'est quelle part
+    /// de l'assemblée s'est abstenue.
     pub fn abstention_percentage(&self) -> f64 {
-        let total = self.total_votes();
-        if total > 0 {
-            (self.vote_count_abstention as f64 / total as f64) * 100.0
-        } else {
-            0.0
-        }
+        let presentes = self.voix_exprimees() + self.total_voting_power_abstention;
+        pourcentage(self.total_voting_power_abstention, presentes)
     }
 }
 
@@ -736,12 +766,61 @@ mod tests {
         .unwrap();
 
         resolution.record_vote_pour(dec!(100));
-        resolution.record_vote_pour(dec!(100)); // 2 votes pour
-        resolution.record_vote_contre(dec!(100)); // 1 vote contre
-        resolution.record_abstention(dec!(100)); // 1 abstention
+        resolution.record_vote_pour(dec!(100)); // 200 voix pour
+        resolution.record_vote_contre(dec!(100)); // 100 voix contre
+        resolution.record_abstention(dec!(100)); // 100 voix d'abstention
 
-        assert_eq!(resolution.pour_percentage(), 50.0); // 2/4 = 50%
-        assert_eq!(resolution.contre_percentage(), 25.0); // 1/4 = 25%
-        assert_eq!(resolution.abstention_percentage(), 25.0); // 1/4 = 25%
+        // Sur les voix EXPRIMÉES (300), abstentions exclues par l'Art. 3.87 § 8.
+        assert!((resolution.pour_percentage() - 66.666_666).abs() < 0.001);
+        assert!((resolution.contre_percentage() - 33.333_333).abs() < 0.001);
+        // L'abstention se rapporte à toutes les voix présentes (400).
+        assert_eq!(resolution.abstention_percentage(), 25.0);
+    }
+
+    /// Art. 3.87 § 6 — le droit belge compte des voix, pas des têtes.
+    ///
+    /// Scénario de la recette du 2026-09-04 : trois votants, dont un pesant
+    /// 550 tantièmes sur 1000. L'écran affichait « 33 % pour » — le tiers des
+    /// bulletins — alors qu'il pesait 55 % des voix. Un syndic y lisait
+    /// l'inverse du droit.
+    #[test]
+    fn les_pourcentages_comptent_des_voix_pas_des_tetes() {
+        let mut resolution = Resolution::new(
+            Uuid::new_v4(),
+            "Approbation des comptes".to_string(),
+            "Comptes annuels".to_string(),
+            ResolutionType::Ordinary,
+            MajorityType::Absolute,
+            Some(1),
+        )
+        .unwrap();
+
+        resolution.record_vote_pour(dec!(550)); // un seul bulletin, mais 55 %
+        resolution.record_vote_contre(dec!(250));
+        resolution.record_vote_contre(dec!(200));
+
+        // Un tiers des bulletins, mais 55 % des voix.
+        assert_eq!(resolution.vote_count_pour, 1);
+        assert_eq!(resolution.vote_count_contre, 2);
+        assert_eq!(resolution.pour_percentage(), 55.0);
+        assert_eq!(resolution.contre_percentage(), 45.0);
+    }
+
+    /// Une résolution sans aucun vote ne divise pas par zéro.
+    #[test]
+    fn sans_vote_les_pourcentages_valent_zero() {
+        let resolution = Resolution::new(
+            Uuid::new_v4(),
+            "Rien".to_string(),
+            "Aucun vote".to_string(),
+            ResolutionType::Ordinary,
+            MajorityType::Absolute,
+            Some(1),
+        )
+        .unwrap();
+
+        assert_eq!(resolution.pour_percentage(), 0.0);
+        assert_eq!(resolution.contre_percentage(), 0.0);
+        assert_eq!(resolution.abstention_percentage(), 0.0);
     }
 }

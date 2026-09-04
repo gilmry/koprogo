@@ -74,6 +74,26 @@
       meetingStatus === "Scheduled" &&
       isOwner,
   );
+
+  /**
+   * Le droit de CLORE le scrutin, distinct du droit d'y VOTER.
+   *
+   * Présider une assemblée n'est pas y participer. Un syndic qui n'est pas
+   * copropriétaire ne vote pas — Art. 3.87 § 6, les voix suivent les
+   * quotes-parts — mais c'est lui qui tient la séance et en proclame le
+   * résultat.
+   *
+   * Le bouton dépendait de `canVote`, donc de `isOwner` : un syndic non
+   * copropriétaire ne le voyait jamais, les résolutions restaient
+   * indéfiniment « en attente », et le plafonnement de l'Art. 3.87 § 7 —
+   * qui s'applique à la clôture — n'était jamais déclenché. Un invariant
+   * légal implémenté mais inatteignable. Constaté en recette le 2026-09-04.
+   */
+  let canCloseVoting = $derived(
+    isAdmin &&
+      resolution.status === ResolutionStatus.Pending &&
+      meetingStatus === "Scheduled",
+  );
   let isClosed = $derived(resolution.status !== ResolutionStatus.Pending);
   let votesPour = $derived(resolution.vote_count_pour ?? 0);
   let votesContre = $derived(resolution.vote_count_contre ?? 0);
@@ -425,7 +445,7 @@
       {/if}
     </button>
 
-    {#if isAdmin && canVote && totalVotes > 0}
+    {#if canCloseVoting && totalVotes > 0}
       <button
         onclick={handleCloseVoting}
         disabled={closingVoting}
