@@ -168,11 +168,29 @@ impl DatabaseSeeder {
 
     /// Create or update the default superadmin user
     pub async fn seed_superadmin(&self) -> Result<User, String> {
-        let superadmin_email = "admin@koprogo.com";
-        let superadmin_password = "admin123"; // Change in production!
+        // Configurables par l'environnement, avec repli sur les valeurs
+        // historiques pour ne rien casser là où rien n'est configuré.
+        //
+        // Ces identifiants donnent le rôle `superadmin`. Codés en dur dans un
+        // dépôt AGPL, ils sont lisibles par quiconque, et l'API de la démo est
+        // publiquement joignable. Le repli n'est donc pas une solution : c'est
+        // une compatibilité le temps que `KOPROGO_SUPERADMIN_PASSWORD` soit
+        // renseigné sur chaque déploiement. Voir l'issue de suivi.
+        let superadmin_email = std::env::var("KOPROGO_SUPERADMIN_EMAIL")
+            .unwrap_or_else(|_| "admin@koprogo.com".to_string());
+        let superadmin_password =
+            std::env::var("KOPROGO_SUPERADMIN_PASSWORD").unwrap_or_else(|_| "admin123".to_string());
+
+        if superadmin_password == "admin123" {
+            log::warn!(
+                "SÉCURITÉ : le superadmin utilise le mot de passe par défaut, \
+                 lisible dans le dépôt public. Renseignez \
+                 KOPROGO_SUPERADMIN_PASSWORD."
+            );
+        }
 
         // Hash password
-        let password_hash = hash(superadmin_password, DEFAULT_COST)
+        let password_hash = hash(&superadmin_password, DEFAULT_COST)
             .map_err(|e| format!("Failed to hash password: {}", e))?;
 
         let superadmin_id = Uuid::parse_str("00000000-0000-0000-0000-000000000001")
