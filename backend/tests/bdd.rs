@@ -294,7 +294,8 @@ impl BuildingWorld {
             Arc::new(FileStorage::new(&storage_root).expect("storage"));
         let document_use_cases = DocumentUseCases::new(document_repo, storage.clone());
         let pcn_use_cases = PcnUseCases::new(expense_repo.clone());
-        let expense_use_cases = ExpenseUseCases::new(expense_repo);
+        let expense_use_cases =
+            ExpenseUseCases::new(expense_repo).with_acp_resolution(building_repo.clone());
         let gdpr_use_cases = GdprUseCases::new(gdpr_repo, user_repo.clone());
         let auth_use_cases = koprogo_api::application::use_cases::AuthUseCases::new(
             user_repo,
@@ -1616,8 +1617,8 @@ async fn given_active_legal_holds(world: &mut BuildingWorld) {
     // Create an unpaid expense on the building
     let expense_id = Uuid::new_v4();
     sqlx::query(
-        "INSERT INTO expenses (id, building_id, organization_id, category, description, amount, expense_date, payment_status, created_at, updated_at)
-         VALUES ($1, $2, $3, 'maintenance', 'Unpaid charge', 500.00, NOW(), 'pending', NOW(), NOW())",
+        "INSERT INTO expenses (id, acp_id, building_id, organization_id, category, description, amount, expense_date, payment_status, created_at, updated_at)
+             VALUES ($1, (SELECT acp_id FROM buildings WHERE id = $2), $2, $3, 'maintenance', 'Unpaid charge', 500.00, NOW(), 'pending', NOW(), NOW())",
     )
     .bind(expense_id)
     .bind(building_id)
@@ -2198,8 +2199,8 @@ async fn given_i_am_board_member(world: &mut BuildingWorld) {
     if world.last_meeting_id.is_none() {
         let meeting_id = Uuid::new_v4();
         sqlx::query(
-            "INSERT INTO meetings (id, organization_id, building_id, meeting_type, title, location, scheduled_date, created_at, updated_at)
-             VALUES ($1, $2, $3, $4::meeting_type, $5, $6, $7, NOW(), NOW())"
+            "INSERT INTO meetings (id, acp_id, organization_id, building_id, meeting_type, title, location, scheduled_date, created_at, updated_at)
+             VALUES ($1, (SELECT acp_id FROM buildings WHERE id = $3), $2, $3, $4::meeting_type, $5, $6, $7, NOW(), NOW())"
         )
         .bind(meeting_id)
         .bind(org_id)
@@ -2450,8 +2451,8 @@ async fn when_elect_board_member(
         let meeting_id = Uuid::new_v4();
 
         sqlx::query(
-            "INSERT INTO meetings (id, organization_id, building_id, meeting_type, title, location, scheduled_date, created_at, updated_at)
-             VALUES ($1, $2, $3, $4::meeting_type, $5, $6, $7, NOW(), NOW())"
+            "INSERT INTO meetings (id, acp_id, organization_id, building_id, meeting_type, title, location, scheduled_date, created_at, updated_at)
+             VALUES ($1, (SELECT acp_id FROM buildings WHERE id = $3), $2, $3, $4::meeting_type, $5, $6, $7, NOW(), NOW())"
         )
         .bind(meeting_id)
         .bind(org_id)
@@ -2555,8 +2556,8 @@ async fn given_meeting_for_building(
     let meeting_id = Uuid::new_v4();
 
     sqlx::query(
-        "INSERT INTO meetings (id, organization_id, building_id, meeting_type, title, location, scheduled_date, created_at, updated_at)
-         VALUES ($1, $2, $3, $4::meeting_type, $5, $6, $7, NOW(), NOW())"
+        "INSERT INTO meetings (id, acp_id, organization_id, building_id, meeting_type, title, location, scheduled_date, created_at, updated_at)
+             VALUES ($1, (SELECT acp_id FROM buildings WHERE id = $3), $2, $3, $4::meeting_type, $5, $6, $7, NOW(), NOW())"
     )
     .bind(meeting_id)
     .bind(org_id)
@@ -2941,8 +2942,8 @@ async fn given_new_general_assembly_meeting(world: &mut BuildingWorld) {
     let pool = world.pool.as_ref().expect("pool");
     let meeting_id = Uuid::new_v4();
     sqlx::query(
-        "INSERT INTO meetings (id, organization_id, building_id, meeting_type, title, location, scheduled_date, created_at, updated_at)
-         VALUES ($1, $2, $3, $4::meeting_type, $5, $6, $7, NOW(), NOW())"
+        "INSERT INTO meetings (id, acp_id, organization_id, building_id, meeting_type, title, location, scheduled_date, created_at, updated_at)
+             VALUES ($1, (SELECT acp_id FROM buildings WHERE id = $3), $2, $3, $4::meeting_type, $5, $6, $7, NOW(), NOW())"
     )
     .bind(meeting_id)
     .bind(org_id)
@@ -3056,8 +3057,8 @@ async fn given_n_expired_board_members(world: &mut BuildingWorld, count: usize) 
     // Create a meeting
     let meeting_id = Uuid::new_v4();
     sqlx::query(
-        "INSERT INTO meetings (id, organization_id, building_id, meeting_type, title, location, scheduled_date, created_at, updated_at)
-         VALUES ($1, $2, $3, 'ordinary'::meeting_type, $4, $5, $6, NOW(), NOW())"
+        "INSERT INTO meetings (id, acp_id, organization_id, building_id, meeting_type, title, location, scheduled_date, created_at, updated_at)
+             VALUES ($1, (SELECT acp_id FROM buildings WHERE id = $3), $2, $3, 'ordinary'::meeting_type, $4, $5, $6, NOW(), NOW())"
     )
     .bind(meeting_id).bind(org_id).bind(building_id)
     .bind("Old Election AG").bind("Hall")
@@ -3534,8 +3535,8 @@ async fn when_attempt_create_wrong_duration(world: &mut BuildingWorld, months: i
 
     let meeting_id = Uuid::new_v4();
     sqlx::query(
-        "INSERT INTO meetings (id, organization_id, building_id, meeting_type, title, location, scheduled_date, created_at, updated_at)
-         VALUES ($1, $2, $3, 'ordinary'::meeting_type, $4, $5, $6, NOW(), NOW())"
+        "INSERT INTO meetings (id, acp_id, organization_id, building_id, meeting_type, title, location, scheduled_date, created_at, updated_at)
+             VALUES ($1, (SELECT acp_id FROM buildings WHERE id = $3), $2, $3, 'ordinary'::meeting_type, $4, $5, $6, NOW(), NOW())"
     )
     .bind(meeting_id).bind(org_id).bind(building_id)
     .bind("Test Meeting").bind("Hall").bind(chrono::Utc::now())

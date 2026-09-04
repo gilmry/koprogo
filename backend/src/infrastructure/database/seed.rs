@@ -1683,8 +1683,10 @@ impl DatabaseSeeder {
             // Insert new expense
             sqlx::query(
                 r#"
-                INSERT INTO expenses (id, organization_id, building_id, category, description, amount, expense_date, payment_status, approval_status, paid_date, supplier, invoice_number, created_at, updated_at)
-                VALUES ($1, $2, $3, $4::expense_category, $5, $6, $7, $8::payment_status, $9::approval_status, $10, $11, $12, $13, $14)
+                -- L'ACP se deduit de l'immeuble : la depense appartient a la
+                -- copropriete, pas au syndic qui la saisit (ADR-0045).
+                INSERT INTO expenses (id, acp_id, organization_id, building_id, category, description, amount, expense_date, payment_status, approval_status, paid_date, supplier, invoice_number, created_at, updated_at)
+                VALUES ($1, (SELECT acp_id FROM buildings WHERE id = $3), $2, $3, $4::expense_category, $5, $6, $7, $8::payment_status, $9::approval_status, $10, $11, $12, $13, $14)
                 "#
             )
             .bind(expense_id)
@@ -1735,8 +1737,9 @@ impl DatabaseSeeder {
 
         sqlx::query(
             r#"
-            INSERT INTO meetings (id, building_id, organization_id, meeting_type, title, description, scheduled_date, location, status, agenda, created_at, updated_at)
-            VALUES ($1, $2, $3, $4::meeting_type, $5, $6, $7, $8, $9::meeting_status, $10, $11, $12)
+            -- Idem : l'assemblee est celle de l'ACP (ADR-0045).
+            INSERT INTO meetings (id, acp_id, building_id, organization_id, meeting_type, title, description, scheduled_date, location, status, agenda, created_at, updated_at)
+            VALUES ($1, (SELECT acp_id FROM buildings WHERE id = $2), $2, $3, $4::meeting_type, $5, $6, $7, $8, $9::meeting_status, $10, $11, $12)
             "#
         )
         .bind(meeting_id)
@@ -2186,8 +2189,8 @@ impl DatabaseSeeder {
                         };
 
                         sqlx::query(
-                        "INSERT INTO expenses (id, organization_id, building_id, category, description, amount, expense_date, payment_status, approval_status, paid_date, created_at, updated_at)
-                         VALUES ($1, $2, $3, $4::expense_category, $5, $6, $7, $8::payment_status, $9::approval_status, $10, $11, $12)"
+                        "INSERT INTO expenses (id, acp_id, organization_id, building_id, category, description, amount, expense_date, payment_status, approval_status, paid_date, created_at, updated_at)
+                         VALUES ($1, (SELECT acp_id FROM buildings WHERE id = $3), $2, $3, $4::expense_category, $5, $6, $7, $8::payment_status, $9::approval_status, $10, $11, $12)"
                     )
                     .bind(Uuid::new_v4())
                     .bind(org_id)
@@ -2384,12 +2387,12 @@ impl DatabaseSeeder {
             sqlx::query(
                 r#"
                 INSERT INTO expenses (
-                    id, organization_id, building_id, category, description,
+                    id, acp_id, organization_id, building_id, category, description,
                     amount, amount_excl_vat, vat_rate, expense_date, due_date,
                     payment_status, paid_date, approval_status, supplier, invoice_number,
                     account_code, created_at, updated_at
                 )
-                VALUES ($1, $2, $3, $4::expense_category, $5, $6, $7, $8, $9, $10, $11::payment_status, $12, $13::approval_status, $14, $15, $16, $17, $18)
+                VALUES ($1, (SELECT acp_id FROM buildings WHERE id = $3), $2, $3, $4::expense_category, $5, $6, $7, $8, $9, $10, $11::payment_status, $12, $13::approval_status, $14, $15, $16, $17, $18)
                 "#
             )
             .bind(expense_id)
@@ -2475,10 +2478,10 @@ impl DatabaseSeeder {
         sqlx::query!(
             r#"
             INSERT INTO journal_entries (
-                id, organization_id, entry_date, description,
+                id, acp_id, organization_id, entry_date, description,
                 document_ref, expense_id, created_at, updated_at
             )
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+            VALUES ($1, (SELECT acp_id FROM expenses WHERE id = $6), $2, $3, $4, $5, $6, $7, $8)
             "#,
             journal_entry_id,
             organization_id,
@@ -2711,13 +2714,13 @@ impl DatabaseSeeder {
         sqlx::query(
             r#"
             INSERT INTO owner_contributions (
-                id, organization_id, owner_id, unit_id,
+                id, acp_id, organization_id, owner_id, unit_id,
                 description, amount, account_code,
                 contribution_type, contribution_date, payment_date,
                 payment_method, payment_status,
                 created_at, updated_at
             )
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+            VALUES ($1, (SELECT acp_id FROM units WHERE id = $4), $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
             "#,
         )
         .bind(contribution_id)
@@ -2788,10 +2791,10 @@ impl DatabaseSeeder {
         sqlx::query(
             r#"
             INSERT INTO journal_entries (
-                id, organization_id, entry_date, description,
+                id, acp_id, organization_id, entry_date, description,
                 contribution_id, created_at, updated_at
             )
-            VALUES ($1, $2, $3, $4, $5, $6, $7)
+            VALUES ($1, (SELECT acp_id FROM owner_contributions WHERE id = $5), $2, $3, $4, $5, $6, $7)
             "#,
         )
         .bind(journal_entry_id)
@@ -2899,12 +2902,12 @@ impl DatabaseSeeder {
         sqlx::query(
             r#"
             INSERT INTO payment_reminders (
-                id, organization_id, expense_id, owner_id,
+                id, acp_id, organization_id, expense_id, owner_id,
                 level, status, amount_owed, penalty_amount, total_amount,
                 due_date, days_overdue, delivery_method, sent_date,
                 created_at, updated_at
             )
-            VALUES ($1, $2, $3, $4, $5::reminder_level, $6::reminder_status, $7, $8, $9, $10, $11, $12::delivery_method, $13, $14, $15)
+            VALUES ($1, (SELECT acp_id FROM expenses WHERE id = $3), $2, $3, $4, $5::reminder_level, $6::reminder_status, $7, $8, $9, $10, $11, $12::delivery_method, $13, $14, $15)
             "#
         )
         .bind(reminder_id)

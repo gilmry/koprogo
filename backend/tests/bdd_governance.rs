@@ -651,8 +651,8 @@ async fn given_meeting_exists(world: &mut GovernanceWorld, title: String) {
     let org_id = world.org_id.unwrap();
 
     sqlx::query(
-        r#"INSERT INTO meetings (id, organization_id, building_id, meeting_type, title, scheduled_date, location, status, created_at, updated_at)
-           VALUES ($1, $2, $3, 'ordinary', $4, NOW() + interval '30 days', 'Salle AG', 'scheduled', NOW(), NOW())"#,
+        r#"INSERT INTO meetings (id, acp_id, organization_id, building_id, meeting_type, title, scheduled_date, location, status, created_at, updated_at)
+             VALUES ($1, (SELECT acp_id FROM buildings WHERE id = $3), $2, $3, 'ordinary', $4, NOW() + interval '30 days', 'Salle AG', 'scheduled', NOW(), NOW())"#,
     )
     .bind(meeting_id)
     .bind(org_id)
@@ -1299,8 +1299,8 @@ async fn given_meeting_in_n_days(world: &mut GovernanceWorld, _title: String, da
     let meeting_date = Utc::now() + ChronoDuration::days(days);
 
     sqlx::query(
-        r#"INSERT INTO meetings (id, organization_id, building_id, meeting_type, title, scheduled_date, location, status, created_at, updated_at)
-           VALUES ($1, $2, $3, 'ordinary', $4, $5, 'Salle AG', 'scheduled', NOW(), NOW())"#,
+        r#"INSERT INTO meetings (id, acp_id, organization_id, building_id, meeting_type, title, scheduled_date, location, status, created_at, updated_at)
+             VALUES ($1, (SELECT acp_id FROM buildings WHERE id = $3), $2, $3, 'ordinary', $4, $5, 'Salle AG', 'scheduled', NOW(), NOW())"#,
     )
     .bind(meeting_id)
     .bind(org_id)
@@ -1509,8 +1509,8 @@ async fn given_n_convocations(world: &mut GovernanceWorld, count: i32) {
         let meeting_date = Utc::now() + ChronoDuration::days(20 + i as i64 * 5);
 
         sqlx::query(
-            r#"INSERT INTO meetings (id, organization_id, building_id, meeting_type, title, scheduled_date, location, status, created_at, updated_at)
-               VALUES ($1, $2, $3, 'ordinary', $4, $5, 'Salle AG', 'scheduled', NOW(), NOW())"#,
+            r#"INSERT INTO meetings (id, acp_id, organization_id, building_id, meeting_type, title, scheduled_date, location, status, created_at, updated_at)
+             VALUES ($1, (SELECT acp_id FROM buildings WHERE id = $3), $2, $3, 'ordinary', $4, $5, 'Salle AG', 'scheduled', NOW(), NOW())"#,
         )
         .bind(meeting_id)
         .bind(org_id)
@@ -6848,8 +6848,8 @@ async fn given_scheduled_ag_session(world: &mut GovernanceWorld) {
     let new_meeting_id = Uuid::new_v4();
     let building_id = world.building_id.unwrap();
     sqlx::query(
-        r#"INSERT INTO meetings (id, organization_id, building_id, meeting_type, title, scheduled_date, location, status, created_at, updated_at)
-           VALUES ($1, $2, $3, 'ordinary', 'Meeting for AG Session', NOW() + interval '10 days', 'Online', 'scheduled', NOW(), NOW())"#,
+        r#"INSERT INTO meetings (id, acp_id, organization_id, building_id, meeting_type, title, scheduled_date, location, status, created_at, updated_at)
+             VALUES ($1, (SELECT acp_id FROM buildings WHERE id = $3), $2, $3, 'ordinary', 'Meeting for AG Session', NOW() + interval '10 days', 'Online', 'scheduled', NOW(), NOW())"#,
     )
     .bind(new_meeting_id)
     .bind(org_id)
@@ -7233,8 +7233,8 @@ async fn given_n_ag_sessions_in_org(world: &mut GovernanceWorld, count: usize) {
         // Create a unique meeting for each session
         let new_meeting_id = Uuid::new_v4();
         sqlx::query(
-            r#"INSERT INTO meetings (id, organization_id, building_id, meeting_type, title, scheduled_date, location, status, created_at, updated_at)
-               VALUES ($1, $2, $3, 'ordinary', $4, NOW() + interval '20 days', 'Online', 'scheduled', NOW(), NOW())"#,
+            r#"INSERT INTO meetings (id, acp_id, organization_id, building_id, meeting_type, title, scheduled_date, location, status, created_at, updated_at)
+             VALUES ($1, (SELECT acp_id FROM buildings WHERE id = $3), $2, $3, 'ordinary', $4, NOW() + interval '20 days', 'Online', 'scheduled', NOW(), NOW())"#,
         )
         .bind(new_meeting_id)
         .bind(org_id)
@@ -8207,8 +8207,8 @@ async fn given_gd_resolution_with_votes(world: &mut GovernanceWorld, p1: String,
     // Meeting
     let meeting_id = Uuid::new_v4();
     sqlx::query(
-        r#"INSERT INTO meetings (id, organization_id, building_id, meeting_type, title, scheduled_date, location, status, created_at, updated_at)
-           VALUES ($1, $2, $3, 'ordinary', 'GD vote meeting', NOW() + interval '30 days', 'Salle', 'scheduled', NOW(), NOW())"#,
+        r#"INSERT INTO meetings (id, acp_id, organization_id, building_id, meeting_type, title, scheduled_date, location, status, created_at, updated_at)
+             VALUES ($1, (SELECT acp_id FROM buildings WHERE id = $3), $2, $3, 'ordinary', 'GD vote meeting', NOW() + interval '30 days', 'Salle', 'scheduled', NOW(), NOW())"#,
     )
     .bind(meeting_id)
     .bind(org_id)
