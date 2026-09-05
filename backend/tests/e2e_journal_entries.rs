@@ -32,6 +32,9 @@ async fn test_journal_entries_create() {
     let (app_state, _container, org_id) = common::setup_test_db().await;
     let token = common::register_and_login(&app_state, org_id).await;
     seed_accounts_for_journal_entries(&app_state, org_id).await;
+    // L'écriture manuelle désigne son immeuble : c'est de lui qu'on déduit
+    // l'ACP dont ce sont les livres (ADR-0045).
+    let building_id = common::create_test_building(&app_state, org_id).await;
 
     let app = test::init_service(
         App::new()
@@ -46,6 +49,7 @@ async fn test_journal_entries_create() {
         .uri("/api/v1/journal-entries")
         .insert_header((header::AUTHORIZATION, format!("Bearer {}", token)))
         .set_json(json!({
+            "building_id": building_id.to_string(),
             "journal_type": "ACH",
             "entry_date": entry_date,
             "description": "Achat fournitures de bureau",
@@ -85,6 +89,9 @@ async fn test_journal_entries_get() {
     let (app_state, _container, org_id) = common::setup_test_db().await;
     let token = common::register_and_login(&app_state, org_id).await;
     seed_accounts_for_journal_entries(&app_state, org_id).await;
+    // L'écriture manuelle désigne son immeuble : c'est de lui qu'on déduit
+    // l'ACP dont ce sont les livres (ADR-0045).
+    let building_id = common::create_test_building(&app_state, org_id).await;
 
     let app = test::init_service(
         App::new()
@@ -100,6 +107,7 @@ async fn test_journal_entries_get() {
         .uri("/api/v1/journal-entries")
         .insert_header((header::AUTHORIZATION, format!("Bearer {}", token)))
         .set_json(json!({
+            "building_id": building_id.to_string(),
             "journal_type": "FIN",
             "entry_date": entry_date,
             "description": "Paiement fournisseur",
@@ -147,6 +155,9 @@ async fn test_journal_entries_list() {
     let (app_state, _container, org_id) = common::setup_test_db().await;
     let token = common::register_and_login(&app_state, org_id).await;
     seed_accounts_for_journal_entries(&app_state, org_id).await;
+    // L'écriture manuelle désigne son immeuble : c'est de lui qu'on déduit
+    // l'ACP dont ce sont les livres (ADR-0045).
+    let building_id = common::create_test_building(&app_state, org_id).await;
 
     let app = test::init_service(
         App::new()
@@ -162,6 +173,7 @@ async fn test_journal_entries_list() {
         .uri("/api/v1/journal-entries")
         .insert_header((header::AUTHORIZATION, format!("Bearer {}", token)))
         .set_json(json!({
+            "building_id": building_id.to_string(),
             "journal_type": "ODS",
             "entry_date": entry_date,
             "description": "Opération diverse",
@@ -209,6 +221,9 @@ async fn test_journal_entries_delete() {
     let (app_state, _container, org_id) = common::setup_test_db().await;
     let token = common::register_and_login(&app_state, org_id).await;
     seed_accounts_for_journal_entries(&app_state, org_id).await;
+    // L'écriture manuelle désigne son immeuble : c'est de lui qu'on déduit
+    // l'ACP dont ce sont les livres (ADR-0045).
+    let building_id = common::create_test_building(&app_state, org_id).await;
 
     let app = test::init_service(
         App::new()
@@ -224,6 +239,7 @@ async fn test_journal_entries_delete() {
         .uri("/api/v1/journal-entries")
         .insert_header((header::AUTHORIZATION, format!("Bearer {}", token)))
         .set_json(json!({
+            "building_id": building_id.to_string(),
             "journal_type": "VEN",
             "entry_date": entry_date,
             "description": "Vente à supprimer",
@@ -276,6 +292,9 @@ async fn test_journal_entries_unbalanced_fails() {
     let (app_state, _container, org_id) = common::setup_test_db().await;
     let token = common::register_and_login(&app_state, org_id).await;
     seed_accounts_for_journal_entries(&app_state, org_id).await;
+    // L'écriture manuelle désigne son immeuble : c'est de lui qu'on déduit
+    // l'ACP dont ce sont les livres (ADR-0045).
+    let building_id = common::create_test_building(&app_state, org_id).await;
 
     let app = test::init_service(
         App::new()
@@ -291,6 +310,7 @@ async fn test_journal_entries_unbalanced_fails() {
         .uri("/api/v1/journal-entries")
         .insert_header((header::AUTHORIZATION, format!("Bearer {}", token)))
         .set_json(json!({
+            "building_id": building_id.to_string(),
             "journal_type": "ACH",
             "entry_date": entry_date,
             "description": "Unbalanced entry attempt",

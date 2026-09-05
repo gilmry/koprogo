@@ -59,7 +59,10 @@ async fn setup_charge_distribution_fixtures(
         city: "Liège".to_string(),
         postal_code: "4000".to_string(),
         country: "Belgium".to_string(),
-        total_units: 2,
+        // Cohérent avec l'unique lot créé plus bas : le garde-fou
+        // « valider avant de calculer » refuse de répartir des charges sur une
+        // ACP dont les lots ne totalisent pas les tantièmes déclarés.
+        total_units: 1,
         total_tantiemes: Some(1000),
         construction_year: Some(2010),
     };
@@ -78,7 +81,7 @@ async fn setup_charge_distribution_fixtures(
         unit_type: UnitType::Apartment,
         floor: Some(1),
         surface_area: 80.0,
-        quota: rust_decimal_macros::dec!(1),
+        quota: rust_decimal_macros::dec!(1000),
     };
     let unit = app_state
         .unit_use_cases
@@ -126,6 +129,10 @@ async fn setup_charge_distribution_fixtures(
         supplier: Some("Elevator SPRL".to_string()),
         invoice_number: Some("INV-2025-001".to_string()),
         account_code: None,
+        amount_excl_vat: None,
+        vat_rate: None,
+        due_date: None,
+        line_items: None,
     };
     let expense = app_state
         .expense_use_cases

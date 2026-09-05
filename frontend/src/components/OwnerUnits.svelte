@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { formatTantiemes } from "../lib/utils/tantiemes";
   // Svelte 5 runes mode
   import { _ } from "../lib/i18n";
   import { api } from "../lib/api";
@@ -108,9 +109,9 @@
                         {ownerUnit.unit.floor}
                       </p>
                       <p class="text-xs text-gray-500">
-                        {ownerUnit.unit.surface_area} m² • {Math.round(
+                        {ownerUnit.unit.surface_area} m² • {formatTantiemes(
                           ownerUnit.unit.quota,
-                        )}/1000èmes
+                        )}
                       </p>
                     </div>
                   </div>

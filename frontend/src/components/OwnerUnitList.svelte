@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { formatTantiemes } from "../lib/utils/tantiemes";
   // Svelte 5 runes mode
   import { _ } from "../lib/i18n";
   import { api } from "../lib/api";
@@ -26,8 +27,9 @@
     for (const bid of buildingIds) {
       try {
         const b = await api.get<Building>(`/buildings/${bid}`);
+        // `$state` rend les objets réactifs en profondeur : l'affectation
+        // par clé suffit, la réaffectation à soi-même était sans effet.
         buildings[bid] = b;
-        buildings = buildings;
       } catch {
         /* skip */
       }
@@ -71,10 +73,6 @@
   function formatArea(area: number | null | undefined): string {
     if (!area) return "-";
     return `${area} m²`;
-  }
-  function formatQuota(quota: number | null | undefined): string {
-    if (!quota && quota !== 0) return "-";
-    return `${quota}/1000`;
   }
 </script>
 
@@ -142,7 +140,7 @@
       <div>
         <span class="text-gray-500">{$_("owners.summary.total_quota")}</span
         ><span class="ml-1 font-semibold text-gray-900"
-          >{units.reduce((sum, u) => sum + (u.quota || 0), 0)}/1000</span
+          >{units.reduce((sum, u) => sum + toNumber(u.quota), 0)}/1000</span
         >
       </div>
     </div>
@@ -185,7 +183,7 @@
             <div class="flex justify-between">
               <dt class="text-gray-500">{$_("common.quota")}</dt>
               <dd class="font-medium text-gray-900">
-                {formatQuota(unit.quota)}
+                {formatTantiemes(unit.quota)}
               </dd>
             </div>
             {#if !selectedBuildingId && unit.building_id}<div

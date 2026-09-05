@@ -26,7 +26,24 @@ pub async fn create_work_report(
 
     match state
         .work_report_use_cases
-        .create_work_report(request.into_inner())
+        // L'organisation vient du JETON, jamais du corps de la requête.
+        //
+        // Elle y était pourtant attendue, et le client ne l'avait pas toujours :
+        // sur `/building-detail`, `organizationId` est résolu via
+        // `getAcp(building.acp_id)`, qui **dégrade silencieusement en 403** pour
+        // un syndic ou un copropriétaire. Le formulaire postait alors une chaîne
+        // vide, `Uuid::parse_str("")` échouait, et le serveur répondait 400 sans
+        // que rien n'indique quel champ posait problème (#552).
+        //
+        // Le handler calculait déjà cette organisation — `require_organization()`
+        // ci-dessus — puis la jetait. La lire du jeton corrige le 400 **et**
+        // ferme une porte : un client ne peut plus estampiller un rapport de travaux
+        // au nom d'une autre organisation (même famille que l'ADR-0045).
+        .create_work_report({
+            let mut dto = request.into_inner();
+            dto.organization_id = organization_id.to_string();
+            dto
+        })
         .await
     {
         Ok(work_report) => {

@@ -15,7 +15,7 @@ s'applique aux releases ≥ v0.2.0 (production ouverte).
 
 Pour la **bêta fermée v0.1.0** (5-10 copropriétés pilotes, VPS-first) :
 
-- **Critères GO** : `docs/WBS_GO_LIVE_v0.1.0.md` §"Critères GO (Definition of
+- **Critères GO** : `docs/archive/WBS_GO_LIVE_v0.1.0.md` §"Critères GO (Definition of
   Done — bêta fermée)" — cocher la checklist complète avant tag.
 - **Gate humain** (Tier-1) : revue humaine fraîche signée
   (`docs/HUMAN_REVIEW_REPORT_v0.1.0_<date>.md`) + tag `v0.1.0` manuel.

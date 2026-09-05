@@ -71,24 +71,47 @@ export interface PaymentMethod {
   updated_at: string;
 }
 
-export interface CreatePaymentDto {
-  owner_id: string;
-  expense_id?: string;
-  building_id?: string;
-  amount_cents: number;
-  currency?: string;
-  payment_method_type: PaymentMethodType;
-  stripe_payment_intent_id?: string;
-  metadata?: Record<string, any>;
-}
+// Importe depuis le contrat plutot que redeclare a la main.
+//
+// La version manuscrite avait derive sur trois points sans que rien ne le
+// signale : `building_id` y etait optionnel alors que le contrat le declare
+// REQUIS, et `currency` / `stripe_payment_intent_id` n'existent tout
+// simplement pas cote backend — ils etaient donc envoyes puis jetes par serde,
+// qui ignore les champs inconnus par defaut. Les champs `payment_method_id` et
+// `description`, eux, etaient inatteignables.
+//
+// `/payments` est pourtant l'une des rares routes entierement documentees
+// (22/22 dans `payment_handlers.rs`) : le contrat existait, il n'etait pas
+// branche. Un type importe fait echouer `astro check` a la premiere divergence.
+export type CreatePaymentDto = components["schemas"]["CreatePaymentRequest"];
 
+/**
+ * Aligne sur `CreatePaymentMethodRequest` du backend (#732).
+ *
+ * Ce type etait ecrit a la main et divergeait du contrat : il declarait
+ * `stripe_payment_method_id` facultatif alors qu'il est requis, omettait
+ * `stripe_customer_id` et `is_default` qui le sont aussi, et ajoutait `last4`
+ * et `brand` qui n'existent pas cote serveur. Resultat : un 400 a chaque ajout
+ * de moyen de paiement, avec une CI verte de bout en bout — les seize routes
+ * `payment-methods` etaient absentes du contrat OpenAPI, donc absentes des
+ * deux cotes, donc coherentes.
+ *
+ * Les routes sont desormais annotees et enregistrees, et le gate
+ * `check-openapi-coverage.sh` verifie les deux. Ce type devrait a terme venir
+ * de `components["schemas"]["CreatePaymentMethodRequest"]` plutot que d'etre
+ * redeclare ici.
+ */
 export interface CreatePaymentMethodDto {
   owner_id: string;
   method_type: PaymentMethodType;
-  stripe_payment_method_id?: string;
+  /** Requis cote serveur. */
+  stripe_payment_method_id: string;
+  /** Requis cote serveur, et absent de l'ancienne declaration. */
+  stripe_customer_id: string;
   display_label: string;
-  last4?: string;
-  brand?: string;
+  /** Requis cote serveur, et absent de l'ancienne declaration. */
+  is_default: boolean;
+  metadata?: string;
   expires_at?: string;
 }
 

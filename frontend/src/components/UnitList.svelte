@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { SvelteSet } from "svelte/reactivity";
   // Svelte 5 runes mode
   import { _ } from '../lib/i18n';
   import { api } from '../lib/api';
@@ -9,6 +10,7 @@
   import UnitCreateModal from './UnitCreateModal.svelte';
   import UnitEditModal from './UnitEditModal.svelte';
   import Button from './ui/Button.svelte';
+  import { toNumber } from '../lib/utils/decimal.utils';
 
   let { buildingId = null }: { buildingId?: string | null } = $props();
 
@@ -16,7 +18,12 @@
 
   let units = $state<Unit[]>([]); let loading = $state(true); let error = $state(''); let building = $state<Building | null>(null);
   let currentPage = $state(1); let perPage = $state(20); let totalItems = $state(0); let totalPages = $state(0);
-  let expandedUnits = $state<Set<string>>(new Set());
+  // SvelteSet, pas Set : `$state` rend réactifs les objets et les tableaux,
+  // jamais les collections natives. Muter un Set puis se réaffecter
+  // (`expandedUnits = expandedUnits`) marchait en Svelte 4 ; en mode runes la
+  // comparaison est référentielle, donc l'affectation ne déclenche rien et le
+  // bouton restait sans effet.
+  let expandedUnits = new SvelteSet<string>();
   let showCreateModal = $state(false); let showEditModal = $state(false); let selectedUnit = $state<Unit | null>(null);
   let showDeleteConfirm = $state(false); let unitToDelete = $state<Unit | null>(null);
 
@@ -34,7 +41,7 @@
 
   async function handlePageChange(page: number) { currentPage = page; await loadUnits(); }
 
-  function toggleUnitExpanded(unitId: string) { if (expandedUnits.has(unitId)) expandedUnits.delete(unitId); else expandedUnits.add(unitId); expandedUnits = expandedUnits; }
+  function toggleUnitExpanded(unitId: string) { if (expandedUnits.has(unitId)) expandedUnits.delete(unitId); else expandedUnits.add(unitId); }
 
   function getUnitTypeLabel(type: string): string { const labels: Record<string, string> = { 'Apartment': $_('units.types.apartment'), 'Parking': $_('units.types.parking'), 'Cellar': $_('units.types.cellar') }; return labels[type] || type; }
   function getUnitTypeIcon(type: string): string { const icons: Record<string, string> = { 'Apartment': '🏠', 'Parking': '🚗', 'Cellar': '📦' }; return icons[type] || '📋'; }
@@ -45,7 +52,12 @@
   async function confirmDelete() { if (!unitToDelete) return; try { await api.delete(`/units/${unitToDelete.id}`); showDeleteConfirm = false; unitToDelete = null; await loadUnits(); } catch (e) { error = e instanceof Error ? e.message : $_('units.deleteError'); console.error('Error deleting unit:', e); showDeleteConfirm = false; } }
   function cancelDelete() { showDeleteConfirm = false; unitToDelete = null; }
 
-  let totalQuotas = $derived(units.reduce((sum, unit) => sum + (unit.quota || 0), 0));
+  // `quota` est un Decimal serialise en STRING (ADR-0008) : `+` concatene au
+  // lieu d'additionner, donc la somme valait "0200.00200.00" et l'affichage
+  // « NaN/1000emes ». Plus grave, `quotasMismatch` comparait NaN, ce qui est
+  // toujours faux : l'indicateur de conformite des quotites annoncait
+  // « quotites correctes » quel que soit l'encodage reel.
+  let totalQuotas = $derived(units.reduce((sum, unit) => sum + toNumber(unit.quota), 0));
   let expectedTotal = $derived(building?.total_tantiemes || 1000);
   let quotasMismatch = $derived(Math.abs(totalQuotas - expectedTotal) > 0.5);
 </script>
@@ -71,7 +83,7 @@
                 <div class="flex-1">
                   <h3 class="text-lg font-semibold text-gray-900">{$_('units.lot')} {unit.unit_number}</h3>
                   <p class="text-gray-600 text-sm mt-1">{getUnitTypeLabel(unit.unit_type)} - {$_('units.floor')} {unit.floor}</p>
-                  <div class="flex gap-4 mt-2 text-sm text-gray-500"><span>📐 {unit.surface_area} m²</span><span>🔢 {Math.round(unit.quota)}/{building?.total_tantiemes || 1000}èmes</span></div>
+                  <div class="flex gap-4 mt-2 text-sm text-gray-500"><span>📐 {unit.surface_area} m²</span><span>🔢 {Math.round(toNumber(unit.quota))}/{building?.total_tantiemes || 1000}èmes</span></div>
                 </div>
               </div>
               <div class="flex gap-2 ml-4">
@@ -79,11 +91,11 @@
                   <button onclick={() => handleEditUnit(unit)} class="px-3 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 transition" aria-label={$_('units.editUnit')} title={$_('units.editUnit')}>✏️</button>
                   <button onclick={() => handleDeleteClick(unit)} class="px-3 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 transition" aria-label={$_('units.deleteUnit')} title={$_('units.deleteUnit')}>🗑️</button>
                 {/if}
-                <button onclick={() => toggleUnitExpanded(unit.id)} class="px-3 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition" aria-label={expandedUnits.has(unit.id) ? $_('units.hideOwners') : $_('units.showOwners')} title={expandedUnits.has(unit.id) ? $_('units.hideOwners') : $_('units.showOwners')}>{expandedUnits.has(unit.id) ? '▼' : '▶'} {$_('units.owners')}</button>
+                <button onclick={() => toggleUnitExpanded(unit.id)} data-testid="toggle-unit-owners" class="px-3 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition" aria-label={expandedUnits.has(unit.id) ? $_('units.hideOwners') : $_('units.showOwners')} title={expandedUnits.has(unit.id) ? $_('units.hideOwners') : $_('units.showOwners')}>{expandedUnits.has(unit.id) ? '▼' : '▶'} {$_('units.owners')}</button>
               </div>
             </div>
           </div>
-          {#if expandedUnits.has(unit.id)}<div class="border-t border-gray-200 bg-gray-50 p-4"><UnitOwners unitId={unit.id} /></div>{/if}
+          {#if expandedUnits.has(unit.id)}<div class="border-t border-gray-200 bg-gray-50 p-4" data-testid="unit-owners-panel"><UnitOwners unitId={unit.id} /></div>{/if}
         </div>
       {/each}
     </div>
@@ -92,7 +104,7 @@
       <div class="mt-4 p-3 bg-gray-50 border border-gray-200 rounded-lg">
         <div class="flex justify-between items-center">
           <span class="font-semibold text-gray-700">{$_('units.totalQuotas')}</span>
-          <div class="text-right"><span class="text-xl font-bold" class:text-green-600={!quotasMismatch} class:text-red-600={quotasMismatch}>{Math.round(totalQuotas)}/{expectedTotal}èmes</span></div>
+          <div class="text-right"><span class="text-xl font-bold" data-testid="quotas-total" class:text-green-600={!quotasMismatch} class:text-red-600={quotasMismatch}>{Math.round(totalQuotas)}/{expectedTotal}èmes</span></div>
         </div>
         {#if quotasMismatch}<p class="text-xs text-red-600 mt-1">{$_('units.quotasMismatch', { values: { current: Math.round(totalQuotas), expected: expectedTotal, diff: Math.round(totalQuotas - expectedTotal) } })}</p>{:else}<p class="text-xs text-green-600 mt-1">{$_('units.quotasCorrect')}</p>{/if}
       </div>

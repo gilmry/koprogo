@@ -42,7 +42,9 @@ import Layout from "../layouts/Layout.astro";
     listContainer.innerHTML = "";
     listComponent = mount(ConvocationList as any, {
       target: listContainer,
-      props: { buildingId },
+      // La page porte déjà le H1 « 📨 Convocations » et son sous-titre :
+      // l'en-tête de carte du composant y ferait doublon.
+      props: { buildingId, showHeader: false },
     });
   }
 

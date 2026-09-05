@@ -1,0 +1,96 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            SELECT\n                id, acp_id, organization_id, building_id, entry_date, description, document_ref,\n                journal_type, expense_id, contribution_id, created_at, updated_at, created_by\n            FROM journal_entries\n            WHERE acp_id IN (SELECT id FROM acps WHERE organization_id = $1)\n              AND entry_date >= $2\n              AND entry_date <= $3\n            ORDER BY entry_date, created_at\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "acp_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 2,
+        "name": "organization_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 3,
+        "name": "building_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 4,
+        "name": "entry_date",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 5,
+        "name": "description",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 6,
+        "name": "document_ref",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 7,
+        "name": "journal_type",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 8,
+        "name": "expense_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 9,
+        "name": "contribution_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 10,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 11,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 12,
+        "name": "created_by",
+        "type_info": "Uuid"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Timestamptz",
+        "Timestamptz"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      true,
+      false,
+      true,
+      true,
+      true,
+      true,
+      true,
+      false,
+      false,
+      true
+    ]
+  },
+  "hash": "49ff11f61e0188a54bdb0b040d4593ae5ae7cc2fbe51376f9390851ab433036f"
+}

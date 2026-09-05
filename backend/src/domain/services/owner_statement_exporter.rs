@@ -331,6 +331,7 @@ mod tests {
 
         let expenses = vec![Expense {
             id: Uuid::new_v4(),
+            acp_id: Uuid::new_v4(),
             building_id: building.id,
             organization_id: owner.organization_id,
             description: "Entretien ascenseur".to_string(),

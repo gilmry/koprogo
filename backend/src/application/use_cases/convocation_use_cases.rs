@@ -44,8 +44,17 @@ impl ConvocationUseCases {
         request: CreateConvocationRequest,
         created_by: Uuid,
     ) -> Result<ConvocationResponse, String> {
+        // La convocation est un acte de l'ACP : ses frais sont à sa charge
+        // (Art. 3.87 § 3), et elle survit au mandat qui l'a émise (ADR-0045).
+        let building = self
+            .building_repository
+            .find_by_id(request.building_id)
+            .await?
+            .ok_or_else(|| "Immeuble introuvable".to_string())?;
+
         // Create domain entity (validates legal deadline)
         let convocation = Convocation::new(
+            building.acp_id,
             organization_id,
             request.building_id,
             request.meeting_id,
@@ -442,9 +451,16 @@ impl ConvocationUseCases {
             .await?
             .ok_or_else(|| format!("First meeting not found: {}", first_meeting_id))?;
 
+        let building = self
+            .building_repository
+            .find_by_id(building_id)
+            .await?
+            .ok_or_else(|| "Immeuble introuvable".to_string())?;
+
         // Create the second convocation using the domain entity constructor
         // This validates that the second meeting is at least 15 days after the first
         let second_convocation = Convocation::new_second_convocation(
+            building.acp_id,
             organization_id,
             building_id,
             new_meeting_id,
@@ -612,9 +628,29 @@ mod tests {
         conv_repo: MockConvRepo,
         recip_repo: MockRecipientRepo,
         owner_repo: MockOwnerRepo,
-        building_repo: MockBuildingRepo,
+        mut building_repo: MockBuildingRepo,
         meeting_repo: MockMeetingRepo,
     ) -> ConvocationUseCases {
+        // Repli : la convocation résout désormais l'ACP de son immeuble
+        // (Art. 3.87 § 3, ADR-0045). Les tests qui posent leur propre
+        // attente la voient prise en compte d'abord ; les autres obtiennent
+        // un immeuble quelconque plutôt qu'une panique de mock.
+        building_repo.expect_find_by_id().returning(|_| {
+            Ok(Some(
+                Building::new(
+                    Uuid::new_v4(),
+                    "Résidence du Parc".to_string(),
+                    "12 Rue de la Loi".to_string(),
+                    "Brussels".to_string(),
+                    "1000".to_string(),
+                    "Belgium".to_string(),
+                    10,
+                    1000,
+                    Some(2015),
+                )
+                .expect("immeuble valide"),
+            ))
+        });
         ConvocationUseCases::new(
             Arc::new(conv_repo),
             Arc::new(recip_repo),
@@ -628,6 +664,7 @@ mod tests {
     fn make_convocation(org_id: Uuid, building_id: Uuid, meeting_id: Uuid) -> Convocation {
         let meeting_date = Utc::now() + Duration::days(20);
         Convocation::new(
+            Uuid::new_v4(), // acp_id
             org_id,
             building_id,
             meeting_id,

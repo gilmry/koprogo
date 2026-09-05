@@ -19,6 +19,15 @@ interface Props {
 }
 
 const { title, showNav = true, requireAuth = false, showFooter = true } = Astro.props;
+
+// 40 des 53 pages passent déjà un titre contenant « KoproGo », les autres
+// non. Le layout ajoutait le suffixe systématiquement, d'où des onglets
+// nommés « Réservations - KoproGo - KoproGo » ou « KoproGo - Gestion de
+// Copropriété SaaS - KoproGo ». On normalise ici plutôt que de retoucher
+// quarante pages : le suffixe n'est ajouté que si la marque est absente, ce
+// qui rend les deux conventions d'appel équivalentes.
+const SITE_NAME = "KoproGo";
+const pageTitle = title.includes(SITE_NAME) ? title : `${title} - ${SITE_NAME}`;
 ---
 
 <!doctype html>
@@ -29,7 +38,7 @@ const { title, showNav = true, requireAuth = false, showFooter = true } = Astro.
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
 		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 		<meta name="generator" content={Astro.generator} />
-		<title>{title} - KoproGo</title>
+		<title>{pageTitle}</title>
 
 		<!-- PWA Manifest -->
 		<link rel="manifest" href="/manifest.json" />

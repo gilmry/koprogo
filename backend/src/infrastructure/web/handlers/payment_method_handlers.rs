@@ -1,4 +1,6 @@
-use crate::application::dto::{CreatePaymentMethodRequest, UpdatePaymentMethodRequest};
+use crate::application::dto::{
+    CreatePaymentMethodRequest, PaymentMethodResponse, UpdatePaymentMethodRequest,
+};
 use crate::domain::entities::payment_method::PaymentMethodType;
 use crate::infrastructure::audit::{AuditEventType, AuditLogEntry};
 use crate::infrastructure::web::{AppState, AuthenticatedUser};
@@ -7,6 +9,19 @@ use uuid::Uuid;
 
 // ==================== Payment Method CRUD Endpoints ====================
 
+#[utoipa::path(
+    post,
+    path = "/payment-methods",
+    tag = "PaymentMethods",
+    summary = "Enregistrer un moyen de paiement pour un copropriétaire",
+    request_body = CreatePaymentMethodRequest,
+    responses(
+        (status = 201, description = "Moyen de paiement créé", body = PaymentMethodResponse),
+        (status = 400, description = "Requête invalide — champs manquants ou moyen déjà enregistré"),
+        (status = 401, description = "L'utilisateur n'appartient à aucune organisation"),
+    ),
+    security(("bearer_auth" = []))
+)]
 #[post("/payment-methods")]
 pub async fn create_payment_method(
     state: web::Data<AppState>,
@@ -50,6 +65,18 @@ pub async fn create_payment_method(
     }
 }
 
+#[utoipa::path(
+    get,
+    path = "/payment-methods/{id}",
+    tag = "PaymentMethods",
+    summary = "Récupérer un moyen de paiement",
+    params(("id" = Uuid, Path, description = "Identifiant du moyen de paiement")),
+    responses(
+        (status = 200, description = "Moyen de paiement", body = PaymentMethodResponse),
+        (status = 404, description = "Introuvable"),
+    ),
+    security(("bearer_auth" = []))
+)]
 #[get("/payment-methods/{id}")]
 pub async fn get_payment_method(
     state: web::Data<AppState>,
@@ -71,6 +98,18 @@ pub async fn get_payment_method(
     }
 }
 
+#[utoipa::path(
+    get,
+    path = "/payment-methods/stripe/{stripe_payment_method_id}",
+    tag = "PaymentMethods",
+    summary = "Récupérer un moyen de paiement par son identifiant Stripe",
+    params(("stripe_payment_method_id" = String, Path, description = "Identifiant Stripe")),
+    responses(
+        (status = 200, description = "Moyen de paiement", body = PaymentMethodResponse),
+        (status = 404, description = "Introuvable"),
+    ),
+    security(("bearer_auth" = []))
+)]
 #[get("/payment-methods/stripe/{stripe_payment_method_id}")]
 pub async fn get_payment_method_by_stripe_id(
     state: web::Data<AppState>,
@@ -89,6 +128,17 @@ pub async fn get_payment_method_by_stripe_id(
     }
 }
 
+#[utoipa::path(
+    get,
+    path = "/owners/{owner_id}/payment-methods",
+    tag = "PaymentMethods",
+    summary = "Lister les moyens de paiement d'un copropriétaire",
+    params(("owner_id" = Uuid, Path, description = "Identifiant du copropriétaire")),
+    responses(
+        (status = 200, description = "Liste des moyens de paiement", body = Vec<PaymentMethodResponse>),
+    ),
+    security(("bearer_auth" = []))
+)]
 #[get("/owners/{owner_id}/payment-methods")]
 pub async fn list_owner_payment_methods(
     state: web::Data<AppState>,
@@ -104,6 +154,17 @@ pub async fn list_owner_payment_methods(
     }
 }
 
+#[utoipa::path(
+    get,
+    path = "/owners/{owner_id}/payment-methods/active",
+    tag = "PaymentMethods",
+    summary = "Lister les moyens de paiement actifs d'un copropriétaire",
+    params(("owner_id" = Uuid, Path, description = "Identifiant du copropriétaire")),
+    responses(
+        (status = 200, description = "Liste des moyens actifs", body = Vec<PaymentMethodResponse>),
+    ),
+    security(("bearer_auth" = []))
+)]
 #[get("/owners/{owner_id}/payment-methods/active")]
 pub async fn list_active_owner_payment_methods(
     state: web::Data<AppState>,
@@ -119,6 +180,18 @@ pub async fn list_active_owner_payment_methods(
     }
 }
 
+#[utoipa::path(
+    get,
+    path = "/owners/{owner_id}/payment-methods/default",
+    tag = "PaymentMethods",
+    summary = "Récupérer le moyen de paiement par défaut d'un copropriétaire",
+    params(("owner_id" = Uuid, Path, description = "Identifiant du copropriétaire")),
+    responses(
+        (status = 200, description = "Moyen par défaut", body = PaymentMethodResponse),
+        (status = 404, description = "Aucun moyen par défaut"),
+    ),
+    security(("bearer_auth" = []))
+)]
 #[get("/owners/{owner_id}/payment-methods/default")]
 pub async fn get_default_payment_method(
     state: web::Data<AppState>,
@@ -137,6 +210,17 @@ pub async fn get_default_payment_method(
     }
 }
 
+#[utoipa::path(
+    get,
+    path = "/organizations/{organization_id}/payment-methods",
+    tag = "PaymentMethods",
+    summary = "Lister les moyens de paiement d'une organisation",
+    params(("organization_id" = Uuid, Path, description = "Identifiant de l'organisation")),
+    responses(
+        (status = 200, description = "Liste des moyens de paiement", body = Vec<PaymentMethodResponse>),
+    ),
+    security(("bearer_auth" = []))
+)]
 #[get("/organizations/{organization_id}/payment-methods")]
 pub async fn list_organization_payment_methods(
     state: web::Data<AppState>,
@@ -156,6 +240,21 @@ pub async fn list_organization_payment_methods(
     }
 }
 
+#[utoipa::path(
+    get,
+    path = "/owners/{owner_id}/payment-methods/type/{method_type}",
+    tag = "PaymentMethods",
+    summary = "Lister les moyens de paiement d'un copropriétaire par type",
+    params(
+        ("owner_id" = Uuid, Path, description = "Identifiant du copropriétaire"),
+        ("method_type" = String, Path, description = "Type de moyen : card, sepa_debit, bancontact"),
+    ),
+    responses(
+        (status = 200, description = "Liste filtrée", body = Vec<PaymentMethodResponse>),
+        (status = 400, description = "Type de moyen inconnu"),
+    ),
+    security(("bearer_auth" = []))
+)]
 #[get("/owners/{owner_id}/payment-methods/type/{method_type}")]
 pub async fn list_payment_methods_by_type(
     state: web::Data<AppState>,
@@ -184,6 +283,20 @@ pub async fn list_payment_methods_by_type(
     }
 }
 
+#[utoipa::path(
+    put,
+    path = "/payment-methods/{id}",
+    tag = "PaymentMethods",
+    summary = "Mettre à jour un moyen de paiement",
+    params(("id" = Uuid, Path, description = "Identifiant du moyen de paiement")),
+    request_body = UpdatePaymentMethodRequest,
+    responses(
+        (status = 200, description = "Moyen mis à jour", body = PaymentMethodResponse),
+        (status = 400, description = "Requête invalide"),
+        (status = 404, description = "Introuvable"),
+    ),
+    security(("bearer_auth" = []))
+)]
 #[put("/payment-methods/{id}")]
 pub async fn update_payment_method(
     state: web::Data<AppState>,
@@ -218,6 +331,18 @@ pub async fn update_payment_method(
     }
 }
 
+#[utoipa::path(
+    put,
+    path = "/payment-methods/{id}/set-default",
+    tag = "PaymentMethods",
+    summary = "Désigner un moyen de paiement comme moyen par défaut",
+    params(("id" = Uuid, Path, description = "Identifiant du moyen de paiement")),
+    responses(
+        (status = 200, description = "Moyen désigné par défaut", body = PaymentMethodResponse),
+        (status = 404, description = "Introuvable"),
+    ),
+    security(("bearer_auth" = []))
+)]
 #[put("/payment-methods/{id}/set-default")]
 pub async fn set_payment_method_as_default(
     state: web::Data<AppState>,
@@ -268,6 +393,18 @@ pub async fn set_payment_method_as_default(
     }
 }
 
+#[utoipa::path(
+    put,
+    path = "/payment-methods/{id}/deactivate",
+    tag = "PaymentMethods",
+    summary = "Désactiver un moyen de paiement",
+    params(("id" = Uuid, Path, description = "Identifiant du moyen de paiement")),
+    responses(
+        (status = 200, description = "Moyen désactivé", body = PaymentMethodResponse),
+        (status = 404, description = "Introuvable"),
+    ),
+    security(("bearer_auth" = []))
+)]
 #[put("/payment-methods/{id}/deactivate")]
 pub async fn deactivate_payment_method(
     state: web::Data<AppState>,
@@ -301,6 +438,18 @@ pub async fn deactivate_payment_method(
     }
 }
 
+#[utoipa::path(
+    put,
+    path = "/payment-methods/{id}/reactivate",
+    tag = "PaymentMethods",
+    summary = "Réactiver un moyen de paiement",
+    params(("id" = Uuid, Path, description = "Identifiant du moyen de paiement")),
+    responses(
+        (status = 200, description = "Moyen réactivé", body = PaymentMethodResponse),
+        (status = 404, description = "Introuvable"),
+    ),
+    security(("bearer_auth" = []))
+)]
 #[put("/payment-methods/{id}/reactivate")]
 pub async fn reactivate_payment_method(
     state: web::Data<AppState>,
@@ -334,6 +483,18 @@ pub async fn reactivate_payment_method(
     }
 }
 
+#[utoipa::path(
+    delete,
+    path = "/payment-methods/{id}",
+    tag = "PaymentMethods",
+    summary = "Supprimer un moyen de paiement",
+    params(("id" = Uuid, Path, description = "Identifiant du moyen de paiement")),
+    responses(
+        (status = 204, description = "Moyen supprimé"),
+        (status = 404, description = "Introuvable"),
+    ),
+    security(("bearer_auth" = []))
+)]
 #[delete("/payment-methods/{id}")]
 pub async fn delete_payment_method(
     state: web::Data<AppState>,
@@ -372,6 +533,17 @@ pub async fn delete_payment_method(
 
 // ==================== Payment Method Statistics Endpoints ====================
 
+#[utoipa::path(
+    get,
+    path = "/owners/{owner_id}/payment-methods/count",
+    tag = "PaymentMethods",
+    summary = "Compter les moyens de paiement actifs d'un copropriétaire",
+    params(("owner_id" = Uuid, Path, description = "Identifiant du copropriétaire")),
+    responses(
+        (status = 200, description = "Nombre de moyens actifs"),
+    ),
+    security(("bearer_auth" = []))
+)]
 #[get("/owners/{owner_id}/payment-methods/count")]
 pub async fn count_active_payment_methods(
     state: web::Data<AppState>,
@@ -390,6 +562,17 @@ pub async fn count_active_payment_methods(
     }
 }
 
+#[utoipa::path(
+    get,
+    path = "/owners/{owner_id}/payment-methods/has-active",
+    tag = "PaymentMethods",
+    summary = "Indiquer si un copropriétaire a au moins un moyen de paiement actif",
+    params(("owner_id" = Uuid, Path, description = "Identifiant du copropriétaire")),
+    responses(
+        (status = 200, description = "Présence d'un moyen actif"),
+    ),
+    security(("bearer_auth" = []))
+)]
 #[get("/owners/{owner_id}/payment-methods/has-active")]
 pub async fn has_active_payment_methods(
     state: web::Data<AppState>,

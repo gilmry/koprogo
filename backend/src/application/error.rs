@@ -195,7 +195,20 @@ pub enum AppError {
     /// **N'expose pas d'info sensible** (pas d'user_id, pas d'org_id) :
     /// uniquement `building_id` + deltas + `quota_basis` — payload requis
     /// par l'admin pour corriger.
-    #[error("L'immeuble n'est pas conforme à son acte de base")]
+    // Le message DIT ce qui manque. Il ne disait que « non conforme », et le
+    // syndic n'avait aucun moyen de savoir quoi corriger : il voyait un refus
+    // sans cause, sur un écran qui ne montre pas les deltas. Constaté en
+    // recette le 2026-09-04, rapporté comme un blocage de la comptabilité.
+    //
+    // Les deltas sont signés : positif = il manque, négatif = il y a en trop.
+    // Les nommer ainsi évite d'avoir à deviner le sens de la soustraction.
+    #[error(
+        "L'immeuble n'est pas conforme à son acte de base : \
+         {} lot(s) et {} millième(s) d'écart sur une base de {quota_basis}. \
+         Déclarez les lots manquants ou corrigez le total déclaré.",
+        if *units_delta >= 0 { format!("il manque {units_delta}") } else { format!("{} en trop", -units_delta) },
+        if *quota_delta >= rust_decimal::Decimal::ZERO { format!("il manque {quota_delta}") } else { format!("{} en trop", -quota_delta) }
+    )]
     BuildingNotConformant {
         building_id: uuid::Uuid,
         units_delta: i32,
@@ -220,7 +233,13 @@ pub enum AppError {
     /// de tous les blocs ≠ `acps.total_tantiemes`). 422 + payload
     /// `ACP_NOT_CONFORMANT` (acp_id + deltas + quota_basis), même format que
     /// `BuildingNotConformant`. N'expose pas d'info sensible.
-    #[error("La copropriété n'est pas conforme à son acte de base")]
+    #[error(
+        "La copropriété n'est pas conforme à son acte de base : \
+         {} lot(s) et {} millième(s) d'écart sur une base de {quota_basis}. \
+         Déclarez les lots manquants ou corrigez le total déclaré.",
+        if *units_delta >= 0 { format!("il manque {units_delta}") } else { format!("{} en trop", -units_delta) },
+        if *quota_delta >= rust_decimal::Decimal::ZERO { format!("il manque {quota_delta}") } else { format!("{} en trop", -quota_delta) }
+    )]
     AcpNotConformant {
         acp_id: uuid::Uuid,
         units_delta: i32,
@@ -491,10 +510,56 @@ impl From<jsonwebtoken::errors::Error> for AppError {
 }
 
 impl From<sqlx::Error> for AppError {
+    /// Convertit une erreur sqlx, **en la traçant**.
+    ///
+    /// Le silence d'avant n'était pas anodin. Pendant l'incident du
+    /// 2026-08-24 (09:16Z–09:48Z), les 502 sur `/units` et `/acps` n'ont
+    /// laissé que sept lignes de log au total, aucune liée aux endpoints en
+    /// échec : ni panic, ni erreur sqlx. L'hypothèse « pool épuisé » n'était
+    /// pas réfutée, elle était **structurellement inobservable** — ce qui est
+    /// pire, parce qu'on ne peut pas non plus l'écarter.
+    ///
+    /// `PoolTimedOut` est distingué des autres variantes et journalisé en
+    /// `error!` avec un marqueur explicite : c'est la seule signature qui
+    /// permette, après coup, de trancher entre un pool saturé et une requête
+    /// lente. Les autres erreurs de base restent en `error!` aussi, mais sans
+    /// ce marqueur.
+    ///
+    /// `RowNotFound` ne loggue rien : ce n'est pas une panne, c'est une
+    /// réponse. La journaliser noierait les vraies erreurs sous le bruit des
+    /// 404 légitimes.
+    ///
+    /// Voir #719 et #718.
     fn from(e: sqlx::Error) -> Self {
         match &e {
             sqlx::Error::RowNotFound => AppError::NotFound("row not found".to_string()),
-            _ => AppError::Database(e.to_string()),
+            sqlx::Error::PoolTimedOut => {
+                log::error!(
+                    "sqlx_pool_timed_out: délai d'acquisition d'une connexion dépassé. \
+                     Le pool est saturé — voir DB_POOL_MAX_CONNECTIONS et le nombre de \
+                     workers Actix. Erreur brute : {e}"
+                );
+                AppError::Database(e.to_string())
+            }
+            sqlx::Error::PoolClosed => {
+                log::error!("sqlx_pool_closed: le pool est fermé. Erreur brute : {e}");
+                AppError::Database(e.to_string())
+            }
+            sqlx::Error::Database(db) => {
+                // Le code SQLSTATE est ce qui distingue une violation de
+                // contrainte d'une panne réelle. Le perdre revient à traiter
+                // les deux de la même façon.
+                log::error!(
+                    "sqlx_database_error: sqlstate={:?} contrainte={:?} — {e}",
+                    db.code(),
+                    db.constraint()
+                );
+                AppError::Database(e.to_string())
+            }
+            _ => {
+                log::error!("sqlx_error: {e}");
+                AppError::Database(e.to_string())
+            }
         }
     }
 }

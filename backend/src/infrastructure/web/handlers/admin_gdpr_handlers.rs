@@ -350,7 +350,7 @@ pub async fn admin_erase_user_data(
     // SuperAdmin can erase any user's data (no organization restriction)
     match data
         .gdpr_use_cases
-        .erase_user_data(target_user_id, auth.user_id, None)
+        .erase_user_data(target_user_id, auth.user_id, None, None)
         .await
     {
         Ok(erase_response) => {

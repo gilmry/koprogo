@@ -1,9 +1,10 @@
-﻿use crate::application::dto::{
+use crate::application::dto::{
     CreateBudgetRequest, PageRequest, PageResponse, UpdateBudgetRequest,
 };
 use crate::domain::entities::BudgetStatus;
 use crate::infrastructure::audit::{AuditEventType, AuditLogEntry};
 use crate::infrastructure::web::middleware::scope_guard::verify_acp_org_access;
+use crate::infrastructure::web::middleware::scope_guard::verify_building_org_access;
 use crate::infrastructure::web::{AppState, AuthenticatedUser};
 use actix_web::{delete, get, post, put, web, HttpResponse, Responder, ResponseError};
 use uuid::Uuid;
@@ -25,6 +26,22 @@ pub async fn create_budget(
         }
     };
     request.organization_id = organization_id;
+
+    // Isolation multi-tenant à l'ÉCRITURE : l'immeuble visé doit relever d'une
+    // ACP dont ce syndic a la gestion. L'affectation de `organization_id`
+    // ci-dessus protège le mauvais champ — elle empêche d'estampiller
+    // l'enregistrement au nom d'autrui, pas de le rattacher au patrimoine
+    // d'autrui (audit du 2026-09-02).
+    if let Err(err) = verify_building_org_access(
+        &user,
+        request.building_id,
+        &state.building_use_cases,
+        &state.acp_use_cases,
+    )
+    .await
+    {
+        return err.error_response();
+    }
 
     match state
         .budget_use_cases

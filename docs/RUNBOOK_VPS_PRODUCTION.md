@@ -5,7 +5,7 @@
 > commande de ce document n'a été exécutée en session distante** (pas d'accès
 > OVH/DNS réel ici) — à **relire et valider par un humain** avant le premier
 > déploiement réel (WP-F4, DoD go-live). Périmètre : bêta privée fermée, VPS
-> OVH + docker-compose (Phase 1 — cf. `docs/WBS_GO_LIVE_v0.1.0.md`).
+> OVH + docker-compose (Phase 1 — cf. `docs/archive/WBS_GO_LIVE_v0.1.0.md`).
 
 ## 1. Topologie
 
@@ -209,7 +209,7 @@ docker-compose.override.yml logs -f backend` (ou `frontend`).
 
 ## 10. Références
 
-- WBS complet & DoD go-live : `docs/WBS_GO_LIVE_v0.1.0.md` (Track F/G).
+- WBS complet & DoD go-live : `docs/archive/WBS_GO_LIVE_v0.1.0.md` (Track F/G).
 - Sécurité runtime : `infrastructure/SECURITY.md`.
 - Script GitOps : `infrastructure/_shared/scripts/gitops-deploy.sh`.
 - Rôles Ansible : `infrastructure/_shared/ansible/roles/{hardening,security,monitoring,backup,gitops}/`.

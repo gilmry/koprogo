@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { valeurQuota } from "../lib/utils/tantiemes";
   // Svelte 5 runes mode
   import { _ } from '../lib/i18n';
   import { api } from '../lib/api';
@@ -9,11 +10,24 @@
     open?: boolean; unit?: Unit | null; totalTantiemes?: number; onupdated?: () => void; onclose?: () => void;
   } = $props();
 
-  let unitNumber = $state(''); let floor = $state(0); let surfaceArea = $state(0); let quota = $state(0);
-  let unitType = $state<'Apartment' | 'Parking' | 'Cellar'>('Apartment');
+  let unitNumber = $state(''); let floor = $state(0); let surfaceArea = $state(0);
+  // La quote-part est un `Decimal` côté backend (ADR-0008 § A), donc une chaîne
+  // en JSON. La stocker en nombre forçait une conversion silencieuse à chaque
+  // aller-retour, et faisait mentir le type généré depuis l'OpenAPI.
+  let quota = $state('');
+  // Les CINQ natures, pas trois. `Commercial` et `Other` manquaient : éditer un
+  // lot commercial le basculait silencieusement en `Apartment`.
+  //
+  // Ce n'est pas cosmétique. La nature du lot commande le décompte de
+  // l'Art. 3.89 § 5, 15° — caves et parkings sont exclus du seuil des vingt
+  // lots qui détermine si l'ACP tient une comptabilité simplifiée ou complète.
+  // Un formulaire qui altère la nature peut faire basculer une copropriété du
+  // mauvais côté d'une obligation légale.
+  type NatureDeLot = 'Apartment' | 'Parking' | 'Cellar' | 'Commercial' | 'Other';
+  let unitType = $state<NatureDeLot>('Apartment');
   let loading = $state(false); let error = $state('');
 
-  $effect(() => { if (unit && open) { unitNumber = unit.unit_number; floor = unit.floor; surfaceArea = unit.surface_area; quota = unit.quota; unitType = unit.unit_type; error = ''; } });
+  $effect(() => { if (unit && open) { unitNumber = unit.unit_number; floor = unit.floor ?? 0; surfaceArea = unit.surface_area; quota = unit.quota; unitType = unit.unit_type; error = ''; } });
 
   function handleClose() { onclose(); }
 
@@ -21,8 +35,12 @@
     error = '';
     if (!unitNumber.trim()) { error = $_('units.unit_number_required'); return; }
     if (surfaceArea <= 0) { error = $_('units.surface_must_be_positive'); return; }
-    if (quota <= 0) { error = $_('units.quota_must_be_positive'); return; }
-    if (quota > totalTantiemes) { error = $_('units.quota_exceeds_max', { values: { max: totalTantiemes } }); return; }
+    // Validation sur la valeur numérique, sans arrondi : une quote-part de
+    // 0,4 doit être refusée comme non positive, pas acceptée parce que
+    // l'arrondi la ramène à 0 ou la monte à 1.
+    const quotaNum = valeurQuota(quota);
+    if (quotaNum === null || quotaNum <= 0) { error = $_('units.quota_must_be_positive'); return; }
+    if (quotaNum > totalTantiemes) { error = $_('units.quota_exceeds_max', { values: { max: totalTantiemes } }); return; }
     if (!unit) { error = $_('units.no_unit_selected'); return; }
     try { loading = true; await api.put(`/units/${unit.id}`, { unit_number: unitNumber.trim(), floor, surface_area: surfaceArea, quota, unit_type: unitType }); onupdated(); open = false; } catch (e) { error = e instanceof Error ? e.message : $_('units.error_updating_unit'); console.error('Error updating unit:', e); } finally { loading = false; }
   }
@@ -36,7 +54,7 @@
       {#if error}<div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-4">{error}</div>{/if}
       <form onsubmit={(e: Event) => { e.preventDefault(); handleSubmit(); }} class="space-y-4">
         <div><label for="unitNumber" class="block text-sm font-medium text-gray-700 mb-1">{$_('units.unit_number')} *</label><input id="unitNumber" type="text" bind:value={unitNumber} placeholder={$_('units.unit_number_example')} required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500" /></div>
-        <div><label for="unitType" class="block text-sm font-medium text-gray-700 mb-1">{$_('units.unit_type')} *</label><select id="unitType" bind:value={unitType} required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"><option value="Apartment">{$_('units.apartment')}</option><option value="Parking">{$_('units.parking')}</option><option value="Cellar">{$_('units.cellar')}</option></select></div>
+        <div><label for="unitType" class="block text-sm font-medium text-gray-700 mb-1">{$_('units.unit_type')} *</label><select id="unitType" bind:value={unitType} required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"><option value="Apartment">{$_('units.apartment')}</option><option value="Parking">{$_('units.parking')}</option><option value="Cellar">{$_('units.cellar')}</option><option value="Commercial">{$_('units.commercial')}</option><option value="Other">{$_('units.other')}</option></select></div>
         <div><label for="floor" class="block text-sm font-medium text-gray-700 mb-1">{$_('units.floor')} *</label><input id="floor" type="number" bind:value={floor} placeholder={$_('units.floor_example')} required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500" /></div>
         <div><label for="surfaceArea" class="block text-sm font-medium text-gray-700 mb-1">{$_('units.surface_area')} *</label><input id="surfaceArea" type="number" step="0.01" min="0.01" bind:value={surfaceArea} placeholder={$_('units.surface_area_example')} required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500" /></div>
         <div><label for="quota" class="block text-sm font-medium text-gray-700 mb-1">{$_('units.quota')} * <span class="text-sm text-gray-500">/ {totalTantiemes}</span></label><input id="quota" type="number" min="1" max={totalTantiemes} bind:value={quota} placeholder={$_('units.quota_example')} required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500" /><p class="text-xs text-gray-500 mt-1">{$_('units.quota_description')}</p></div>

@@ -7,6 +7,7 @@
   import { formatDate } from '../../lib/utils/date.utils';
   import { formatCurrency } from '../../lib/utils/finance.utils';
   import { toast } from '../../stores/toast';
+  import { api } from '../../lib/api';
 
   let budget: Budget | null = null;
   let variance: BudgetVariance | null = null;
@@ -14,6 +15,10 @@
   let error = '';
   let actionLoading = false;
   let budgetId = '';
+  // Le budget ne porte que `building_id` : la fiche affichait donc un fragment
+  // d'UUID la ou le syndic attend un nom d'immeuble. Resolu par un appel
+  // separe, non bloquant (l'absence de nom ne doit pas masquer le budget).
+  let buildingName = '';
 
   let showApproveModal = false;
   let meetingId = '';
@@ -43,8 +48,18 @@
       onSuccess: (result) => {
         budget = result.b;
         variance = result.v;
+        if (budget?.building_id) loadBuildingName(budget.building_id);
       },
     });
+  }
+
+  async function loadBuildingName(id: string) {
+    try {
+      const b = await api.get<{ name?: string }>(`/buildings/${id}`);
+      buildingName = b?.name || '';
+    } catch {
+      buildingName = '';
+    }
   }
 
   async function submitBudget() {
@@ -121,7 +136,7 @@
         <div class="flex items-center justify-between">
           <div>
             <h1 class="text-2xl font-bold text-white">{$_('budgets.budget')} {budget.fiscal_year}</h1>
-            <p class="text-primary-100 mt-1">{$_('budgets.building')}: {budget.building_id.substring(0, 8)}...</p>
+            <p class="text-primary-100 mt-1">{$_('budgets.building')}: {buildingName || `${budget.building_id.substring(0, 8)}...`}</p>
           </div>
           <BudgetStatusBadge status={budget.status} />
         </div>

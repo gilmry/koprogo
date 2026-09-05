@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { SvelteSet } from "svelte/reactivity";
   // Svelte 5 runes mode
   import { _ } from '../../lib/i18n';
   import {
@@ -31,7 +32,9 @@
   let error = $state("");
 
   let selectedOptionId: string | null = $state(null);
-  let selectedOptions: Set<string> = $state(new Set());
+  // Même défaut que UnitList : un Set natif n'est pas rendu réactif par
+  // `$state`, et la réaffectation à soi-même ne déclenche rien en mode runes.
+  let selectedOptions = new SvelteSet<string>();
   let ratingValue: number | null = $state(null);
   let openEndedText = $state("");
   let votingInProgress = $state(false);
@@ -176,7 +179,6 @@
     } else {
       selectedOptions.add(optionId);
     }
-    selectedOptions = selectedOptions;
   }
 
   function calculateParticipationRate(p: Poll): number {

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { _ } from "svelte-i18n";
   import { onMount } from "svelte";
   import {
     notificationsApi,
@@ -23,7 +24,7 @@
       action: () => filter === "unread"
         ? notificationsApi.getUnread()
         : notificationsApi.listMy(),
-      errorMessage: "Failed to load notifications",
+      errorMessage: $_("notifications.loadError"),
     });
     if (result) notifications = result;
     loading = false;
@@ -32,8 +33,8 @@
   async function handleMarkAllRead() {
     await withErrorHandling({
       action: () => notificationStore.markAllAsRead(),
-      successMessage: "All notifications marked as read",
-      errorMessage: "Failed to mark all as read",
+      successMessage: $_("notifications.markAllReadSuccess"),
+      errorMessage: $_("notifications.markAllReadError"),
       onSuccess: () => loadNotifications(),
     });
   }
@@ -62,14 +63,14 @@
             class="text-sm text-blue-600 hover:text-blue-700 font-medium"
             data-testid="mark-all-read-button"
           >
-            Mark all read
+            {$_("notifications.markAllRead")}
           </button>
         {/if}
         <button
           on:click={loadNotifications}
           class="px-3 py-1 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
         >
-          Refresh
+          {$_("notifications.refresh")}
         </button>
       </div>
     </div>
@@ -82,7 +83,7 @@
           ? 'bg-blue-100 text-blue-700'
           : 'text-gray-600 hover:bg-gray-100'}"
       >
-        All
+        {$_("notifications.filterAll")}
       </button>
       <button
         on:click={() => (filter = "unread")}
@@ -90,7 +91,7 @@
           ? 'bg-blue-100 text-blue-700'
           : 'text-gray-600 hover:bg-gray-100'}"
       >
-        Unread
+        {$_("notifications.filterUnread")}
       </button>
     </div>
   </div>
@@ -121,12 +122,12 @@
           />
         </svg>
         <p class="mt-4 text-lg font-medium">
-          {filter === "unread" ? "No unread notifications" : "No notifications"}
+          {filter === "unread" ? $_("notifications.emptyUnread") : $_("notifications.emptyAll")}
         </p>
         <p class="mt-2 text-sm">
           {filter === "unread"
-            ? "All caught up! You're all set."
-            : "You don't have any notifications yet."}
+            ? $_("notifications.emptyUnreadHint")
+            : $_("notifications.emptyAllHint")}
         </p>
       </div>
     {:else}

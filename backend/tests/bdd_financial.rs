@@ -320,6 +320,12 @@ impl FinancialWorld {
 
         let building_repo: Arc<dyn BuildingRepository> =
             Arc::new(PostgresBuildingRepository::new(pool.clone()));
+        // La quote-part résout son ACP créancière depuis le lot (ADR-0045).
+        let unit_repo: Arc<dyn koprogo_api::application::ports::UnitRepository> = Arc::new(
+            koprogo_api::infrastructure::database::repositories::PostgresUnitRepository::new(
+                pool.clone(),
+            ),
+        );
         {
             use koprogo_api::domain::entities::Building;
             // Hotfix #602 — Building.acp_id (FK acps.id) replaces organization_id.
@@ -352,22 +358,36 @@ impl FinancialWorld {
         let expense_repo = Arc::new(PostgresExpenseRepository::new(pool.clone()));
         let payment_reminder_repo = Arc::new(PostgresPaymentReminderRepository::new(pool.clone()));
 
-        let payment_use_cases = PaymentUseCases::new(payment_repo, payment_method_repo.clone());
+        let payment_use_cases = PaymentUseCases::new(
+            payment_repo,
+            payment_method_repo.clone(),
+            owner_contribution_repo.clone(),
+        );
         let payment_method_use_cases = PaymentMethodUseCases::new(payment_method_repo);
-        let journal_entry_use_cases = JournalEntryUseCases::new(journal_entry_repo);
-        let call_for_funds_use_cases = CallForFundsUseCases::new(
+        let journal_entry_use_cases = JournalEntryUseCases::new(journal_entry_repo)
+            .with_acp_resolution(building_repo.clone());
+        let acp_repo = Arc::new(
+            koprogo_api::infrastructure::database::repositories::PostgresAcpRepository::new(
+                pool.clone(),
+            ),
+        );
+        let call_for_funds_use_cases = CallForFundsUseCases::with_full_wiring(
             call_for_funds_repo,
             owner_contribution_repo.clone(),
             unit_owner_repo.clone(),
+            building_repo.clone(),
+            acp_repo,
         );
         let owner_contribution_use_cases =
-            OwnerContributionUseCases::new(owner_contribution_repo.clone());
+            OwnerContributionUseCases::new(owner_contribution_repo.clone())
+                .with_acp_resolution(unit_repo.clone());
         let charge_distribution_use_cases = ChargeDistributionUseCases::new(
             charge_distribution_repo,
             expense_repo.clone(),
             unit_owner_repo,
         );
-        let expense_use_cases = ExpenseUseCases::new(expense_repo.clone());
+        let expense_use_cases =
+            ExpenseUseCases::new(expense_repo.clone()).with_acp_resolution(building_repo.clone());
         let account_repo: Arc<dyn koprogo_api::application::ports::AccountRepository> =
             Arc::new(PostgresAccountRepository::new(pool.clone()));
         let account_use_cases = AccountUseCases::new(account_repo);
@@ -460,8 +480,8 @@ impl FinancialWorld {
         let org_id = self.org_id.unwrap();
         let id = Uuid::new_v4();
         sqlx::query(
-            r#"INSERT INTO expenses (id, building_id, organization_id, category, description, amount, expense_date, payment_status, created_at, updated_at)
-               VALUES ($1, $2, $3, 'maintenance', 'BDD test expense', $4, NOW(), 'pending', NOW(), NOW())"#
+            r#"INSERT INTO expenses (id, acp_id, building_id, organization_id, category, description, amount, expense_date, payment_status, created_at, updated_at)
+             VALUES ($1, (SELECT acp_id FROM buildings WHERE id = $2), $2, $3, 'maintenance', 'BDD test expense', $4, NOW(), 'pending', NOW(), NOW())"#
         )
         .bind(id)
         .bind(building_id)
@@ -487,6 +507,7 @@ impl FinancialWorld {
             building_id: self.building_id.unwrap(),
             owner_id,
             expense_id,
+            contribution_id: None,
             amount_cents,
             payment_method_type: method_type,
             payment_method_id: None,
@@ -2233,6 +2254,7 @@ async fn when_create_call_for_funds(world: &mut FinancialWorld, step: &Step) {
             due_date,
             account_code,
             None,
+            rust_decimal::Decimal::ZERO, // part fonds de réserve (Art. 3.86 § 3 al. 7)
         )
         .await;
 
@@ -2284,6 +2306,7 @@ async fn given_draft_call_for_funds(world: &mut FinancialWorld, amount: Decimal)
             Utc::now() + ChronoDuration::days(30),
             Some("701000".to_string()),
             None,
+            rust_decimal::Decimal::ZERO, // part fonds de réserve (Art. 3.86 § 3 al. 7)
         )
         .await
         .expect("create draft call");
@@ -2361,6 +2384,7 @@ async fn given_n_calls_for_funds(world: &mut FinancialWorld, count: usize) {
             Utc::now() + ChronoDuration::days(30),
             None,
             None,
+            rust_decimal::Decimal::ZERO, // part fonds de réserve (Art. 3.86 § 3 al. 7)
         )
         .await
         .expect("create call");
@@ -2402,6 +2426,7 @@ async fn given_sent_overdue_call(world: &mut FinancialWorld) {
             Utc::now() - ChronoDuration::days(30),
             None,
             None,
+            rust_decimal::Decimal::ZERO, // part fonds de réserve (Art. 3.86 § 3 al. 7)
         )
         .await
         .expect("create call");
@@ -2444,6 +2469,7 @@ async fn given_draft_call_exists(world: &mut FinancialWorld) {
             Utc::now() + ChronoDuration::days(30),
             None,
             None,
+            rust_decimal::Decimal::ZERO, // part fonds de réserve (Art. 3.86 § 3 al. 7)
         )
         .await
         .expect("create draft call");
@@ -2509,6 +2535,7 @@ async fn given_sent_call_exists(world: &mut FinancialWorld) {
             Utc::now() + ChronoDuration::days(30),
             None,
             None,
+            rust_decimal::Decimal::ZERO, // part fonds de réserve (Art. 3.86 § 3 al. 7)
         )
         .await
         .expect("create call");
@@ -2647,6 +2674,7 @@ async fn given_call_of_amount_sent(world: &mut FinancialWorld, amount: Decimal) 
             Utc::now() + ChronoDuration::days(30),
             None,
             None,
+            rust_decimal::Decimal::ZERO, // part fonds de réserve (Art. 3.86 § 3 al. 7)
         )
         .await
         .expect("create call");
@@ -2741,6 +2769,7 @@ async fn given_sent_call_with_contributions(world: &mut FinancialWorld) {
             Utc::now() + ChronoDuration::days(30),
             None,
             None,
+            rust_decimal::Decimal::ZERO, // part fonds de réserve (Art. 3.86 § 3 al. 7)
         )
         .await
         .expect("create call");
@@ -3405,8 +3434,8 @@ async fn given_expense_for_building(world: &mut FinancialWorld, amount: Decimal)
 
     // Create an approved expense (charge distribution requires approved status)
     sqlx::query(
-        r#"INSERT INTO expenses (id, building_id, organization_id, category, description, amount, expense_date, payment_status, approval_status, created_at, updated_at)
-           VALUES ($1, $2, $3, 'maintenance', 'BDD charge test', $4, NOW(), 'pending', 'approved', NOW(), NOW())"#,
+        r#"INSERT INTO expenses (id, acp_id, building_id, organization_id, category, description, amount, expense_date, payment_status, approval_status, created_at, updated_at)
+             VALUES ($1, (SELECT acp_id FROM buildings WHERE id = $2), $2, $3, 'maintenance', 'BDD charge test', $4, NOW(), 'pending', 'approved', NOW(), NOW())"#,
     )
     .bind(id)
     .bind(building_id)
@@ -3540,8 +3569,8 @@ async fn given_distributions_multiple_expenses(world: &mut FinancialWorld) {
     let org_id = world.org_id.unwrap();
     let id2 = Uuid::new_v4();
     sqlx::query(
-        r#"INSERT INTO expenses (id, building_id, organization_id, category, description, amount, expense_date, payment_status, approval_status, created_at, updated_at)
-           VALUES ($1, $2, $3, 'maintenance', 'Second expense', 500.0, NOW(), 'pending', 'approved', NOW(), NOW())"#,
+        r#"INSERT INTO expenses (id, acp_id, building_id, organization_id, category, description, amount, expense_date, payment_status, approval_status, created_at, updated_at)
+             VALUES ($1, (SELECT acp_id FROM buildings WHERE id = $2), $2, $3, 'maintenance', 'Second expense', 500.0, NOW(), 'pending', 'approved', NOW(), NOW())"#,
     )
     .bind(id2)
     .bind(building_id)
@@ -3610,8 +3639,8 @@ async fn given_distributions_2_amounts(world: &mut FinancialWorld, _amount1: f64
     let org_id = world.org_id.unwrap();
     let id2 = Uuid::new_v4();
     sqlx::query(
-        r#"INSERT INTO expenses (id, building_id, organization_id, category, description, amount, expense_date, payment_status, approval_status, created_at, updated_at)
-           VALUES ($1, $2, $3, 'maintenance', 'Second expense', $4, NOW(), 'pending', 'approved', NOW(), NOW())"#,
+        r#"INSERT INTO expenses (id, acp_id, building_id, organization_id, category, description, amount, expense_date, payment_status, approval_status, created_at, updated_at)
+             VALUES ($1, (SELECT acp_id FROM buildings WHERE id = $2), $2, $3, 'maintenance', 'Second expense', $4, NOW(), 'pending', 'approved', NOW(), NOW())"#,
     )
     .bind(id2)
     .bind(building_id)
@@ -3758,8 +3787,8 @@ async fn given_building_with_expenses(world: &mut FinancialWorld) {
 
     for i in 1..=3 {
         sqlx::query(
-            r#"INSERT INTO expenses (id, building_id, organization_id, category, description, amount, expense_date, payment_status, created_at, updated_at)
-               VALUES ($1, $2, $3, 'maintenance', $4, $5, NOW(), 'pending', NOW(), NOW())"#,
+            r#"INSERT INTO expenses (id, acp_id, building_id, organization_id, category, description, amount, expense_date, payment_status, created_at, updated_at)
+             VALUES ($1, (SELECT acp_id FROM buildings WHERE id = $2), $2, $3, 'maintenance', $4, $5, NOW(), 'pending', NOW(), NOW())"#,
         )
         .bind(Uuid::new_v4())
         .bind(building_id)
@@ -3834,8 +3863,8 @@ async fn given_n_transactions(world: &mut FinancialWorld, count: usize) {
 
     for i in 0..count {
         sqlx::query(
-            r#"INSERT INTO expenses (id, building_id, organization_id, category, description, amount, expense_date, payment_status, created_at, updated_at)
-               VALUES ($1, $2, $3, 'maintenance', $4, $5, NOW() - interval '1 day' * $6, 'pending', NOW(), NOW())"#,
+            r#"INSERT INTO expenses (id, acp_id, building_id, organization_id, category, description, amount, expense_date, payment_status, created_at, updated_at)
+             VALUES ($1, (SELECT acp_id FROM buildings WHERE id = $2), $2, $3, 'maintenance', $4, $5, NOW() - interval '1 day' * $6, 'pending', NOW(), NOW())"#,
         )
         .bind(Uuid::new_v4())
         .bind(building_id)
@@ -5071,8 +5100,8 @@ async fn given_overdue_expense(world: &mut FinancialWorld, amount: Decimal, days
     let id = Uuid::new_v4();
     let due_date = Utc::now() - ChronoDuration::days(days_ago);
     sqlx::query(
-        r#"INSERT INTO expenses (id, building_id, organization_id, category, description, amount, expense_date, due_date, payment_status, created_at, updated_at)
-           VALUES ($1, $2, $3, 'maintenance', 'Overdue expense', $4, $5, $5, 'overdue', NOW(), NOW())"#,
+        r#"INSERT INTO expenses (id, acp_id, building_id, organization_id, category, description, amount, expense_date, due_date, payment_status, created_at, updated_at)
+             VALUES ($1, (SELECT acp_id FROM buildings WHERE id = $2), $2, $3, 'maintenance', 'Overdue expense', $4, $5, $5, 'overdue', NOW(), NOW())"#,
     )
     .bind(id)
     .bind(building_id)
@@ -5771,8 +5800,8 @@ async fn given_meeting(world: &mut FinancialWorld, _meeting_id: String) {
     let org_id = world.org_id.unwrap();
     let meeting_id = Uuid::new_v4();
     sqlx::query(
-        r#"INSERT INTO meetings (id, building_id, organization_id, title, scheduled_date, location, meeting_type, status, created_at, updated_at)
-           VALUES ($1, $2, $3, 'AG Budget', NOW() + INTERVAL '30 days', 'Online', 'ordinary', 'scheduled', NOW(), NOW())"#,
+        r#"INSERT INTO meetings (id, acp_id, building_id, organization_id, title, scheduled_date, location, meeting_type, status, created_at, updated_at)
+             VALUES ($1, (SELECT acp_id FROM buildings WHERE id = $2), $2, $3, 'AG Budget', NOW() + INTERVAL '30 days', 'Online', 'ordinary', 'scheduled', NOW(), NOW())"#,
     )
     .bind(meeting_id)
     .bind(building_id)
@@ -6773,6 +6802,10 @@ async fn when_create_simple_expense(world: &mut FinancialWorld, step: &Step) {
         supplier: None,
         invoice_number: None,
         account_code: None,
+        amount_excl_vat: None,
+        vat_rate: None,
+        due_date: None,
+        line_items: None,
     };
     match uc.create_expense(dto).await {
         Ok(resp) => {
@@ -6907,6 +6940,10 @@ async fn when_create_expense_bad_amount(world: &mut FinancialWorld, amount: Deci
         supplier: None,
         invoice_number: None,
         account_code: None,
+        amount_excl_vat: None,
+        vat_rate: None,
+        due_date: None,
+        line_items: None,
     };
     match uc.create_expense(dto).await {
         Ok(resp) => {
@@ -7168,6 +7205,10 @@ async fn given_n_expenses_for_building(world: &mut FinancialWorld, count: usize)
             supplier: None,
             invoice_number: None,
             account_code: None,
+            amount_excl_vat: None,
+            vat_rate: None,
+            due_date: None,
+            line_items: None,
         };
         uc.create_expense(dto).await.expect("create expense");
     }
@@ -7477,8 +7518,8 @@ async fn given_named_expense_exists_for_building(
     let org_id = world.org_id.expect("org_id");
     let id = Uuid::new_v4();
     sqlx::query(
-        r#"INSERT INTO expenses (id, building_id, organization_id, category, description, amount, expense_date, payment_status, created_at, updated_at)
-           VALUES ($1, $2, $3, 'maintenance', $4, $5, NOW(), 'pending', NOW(), NOW())"#
+        r#"INSERT INTO expenses (id, acp_id, building_id, organization_id, category, description, amount, expense_date, payment_status, created_at, updated_at)
+             VALUES ($1, (SELECT acp_id FROM buildings WHERE id = $2), $2, $3, 'maintenance', $4, $5, NOW(), 'pending', NOW(), NOW())"#
     )
     .bind(id)
     .bind(building_id)
@@ -7507,8 +7548,8 @@ async fn when_create_expense_attempted(
     let org_id = world.org_id.expect("org_id");
     let id = Uuid::new_v4();
     let res = sqlx::query(
-        r#"INSERT INTO expenses (id, building_id, organization_id, category, description, amount, expense_date, payment_status, created_at, updated_at)
-           VALUES ($1, $2, $3, 'maintenance', $4, $5, NOW(), 'pending', NOW(), NOW())"#,
+        r#"INSERT INTO expenses (id, acp_id, building_id, organization_id, category, description, amount, expense_date, payment_status, created_at, updated_at)
+             VALUES ($1, (SELECT acp_id FROM buildings WHERE id = $2), $2, $3, 'maintenance', $4, $5, NOW(), 'pending', NOW(), NOW())"#,
     )
     .bind(id)
     .bind(building_id)

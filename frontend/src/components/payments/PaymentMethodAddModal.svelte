@@ -20,13 +20,16 @@
     onadded?: () => void;
   } = $props();
 
+  // `stripe_customer_id` et `is_default` sont requis par le serveur et
+  // manquaient a ce formulaire : chaque envoi produisait un 400 (#732).
+  // `last4` et `brand` n'existent pas cote serveur et ont ete retires.
   let formData: CreatePaymentMethodDto = $state({
     owner_id: "",
     method_type: PaymentMethodType.Card,
     display_label: "",
     stripe_payment_method_id: "",
-    last4: "",
-    brand: "",
+    stripe_customer_id: "",
+    is_default: false,
   });
   // Sync with prop (live value via $effect, not stale initial capture)
   $effect(() => { if (ownerId && !formData.owner_id) formData.owner_id = ownerId; });
@@ -68,16 +71,14 @@
       method_type: PaymentMethodType.Card,
       display_label: "",
       stripe_payment_method_id: "",
-      last4: "",
-      brand: "",
+      stripe_customer_id: "",
+      is_default: false,
     };
     errors = {};
   }
 
   function handleMethodTypeChange() {
     formData.stripe_payment_method_id = "";
-    formData.last4 = "";
-    formData.brand = "";
   }
 </script>
 
@@ -129,34 +130,34 @@
           data-testid="stripe-id-input"
         />
 
-        {#if formData.method_type === PaymentMethodType.Card}
-          <div class="grid grid-cols-2 gap-4">
-            <FormInput
-              id="brand"
-              label={$_('payments.cardBrand')}
-              bind:value={formData.brand}
-              placeholder={$_('payments.cardBrandPlaceholder')}
-              data-testid="brand-input"
-            />
-            <FormInput
-              id="last4"
-              label={$_('payments.last4')}
-              bind:value={formData.last4}
-              placeholder="1234"
-              maxlength={4}
-              data-testid="last4-input"
-            />
-          </div>
-        {:else}
-          <FormInput
-            id="last4-iban"
-            label={$_('payments.last4Iban')}
-            bind:value={formData.last4}
-            placeholder="1234"
-            maxlength={4}
-            data-testid="last4-input"
+        <!--
+          `brand` et `last4` etaient saisis ici mais n'existent pas cote
+          serveur : ils partaient dans le corps de la requete et n'y servaient
+          a rien. Ce que le serveur attend et qui manquait, c'est
+          `stripe_customer_id` et `is_default` (#732).
+
+          La marque et les quatre derniers chiffres restent lisibles apres
+          coup : le backend les derive du moyen Stripe et les expose dans
+          `display_label`.
+        -->
+        <FormInput
+          id="stripe-customer-id"
+          label={$_('payments.stripeCustomerId')}
+          bind:value={formData.stripe_customer_id}
+          error={errors.stripe_customer_id}
+          required
+          placeholder="cus_xxxxxxxxxxxxx"
+          data-testid="stripe-customer-id-input"
+        />
+
+        <label class="flex items-center gap-2">
+          <input
+            type="checkbox"
+            bind:checked={formData.is_default}
+            data-testid="is-default-input"
           />
-        {/if}
+          <span>{$_('payments.setAsDefault')}</span>
+        </label>
       {/if}
 
       <!-- Help Text -->

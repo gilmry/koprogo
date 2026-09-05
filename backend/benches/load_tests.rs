@@ -72,6 +72,7 @@ fn benchmark_expense_calculation(c: &mut Criterion) {
         let expenses: Vec<Expense> = (0..*num_expenses)
             .map(|i| {
                 Expense::new(
+                    Uuid::new_v4(), // acp_id
                     org_id,
                     building_id,
                     ExpenseCategory::Maintenance,
@@ -102,6 +103,7 @@ fn benchmark_unit_share_calculation(c: &mut Criterion) {
     let org_id = Uuid::new_v4();
     let building_id = Uuid::new_v4();
     let expense = Expense::new(
+        Uuid::new_v4(), // acp_id
         org_id,
         building_id,
         ExpenseCategory::Maintenance,

@@ -257,12 +257,78 @@ impl ResolutionUseCases {
             return Err("Resolution voting is already closed".to_string());
         }
 
+        // Art. 3.87 § 7 — les plafonds de procuration se vérifient à la
+        // CLÔTURE, pas à chaque vote : ils portent sur l'ensemble des voix
+        // exprimées, et le dernier vote enregistré peut faire basculer une
+        // séance qui était licite jusque-là.
+        //
+        // Le refus est bloquant. Une assemblée tenue en violation de ces
+        // plafonds est attaquable, et ce sont ses décisions — travaux,
+        // budgets, mandats — qui tombent avec elle. Mieux vaut refuser de
+        // clore que proclamer un résultat annulable.
+        let votes = self
+            .vote_repository
+            .find_by_resolution_id(resolution_id)
+            .await?;
+        crate::domain::copropriete::verifier_procurations(&votes, total_voting_power, None)
+            .map_err(|refus| refus.to_string())?;
+
+        // Art. 3.87 § 9 — le prestataire ne délibère pas sur sa propre
+        // mission. Même moment, même raison : c'est l'ensemble des bulletins
+        // qu'il faut regarder, pas le dernier déposé.
+        crate::domain::copropriete::verifier_conflit_dinterets(
+            &votes,
+            resolution.prestataire_de_la_mission,
+        )
+        .map_err(|conflit| conflit.to_string())?;
+
+        // Art. 3.87 § 7 al. 4 — le plafonnement des voix.
+        //
+        // Arbitrage humain du 2026-09-04 : le texte interdit de prendre part au
+        // vote POUR un nombre de voix supérieur à la somme des autres, il ne
+        // frappe pas la séance de nullité. On ramène donc le majoritaire au
+        // poids des autres et on délibère sur ce décompte corrigé, au lieu de
+        // refuser de clore — ce qui rendait ingouvernable toute copropriété où
+        // un seul détient la majorité.
+        let decompte = crate::domain::copropriete::plafonner_les_voix(&votes);
+        let voix_plafonnees = if decompte.ecarts().is_empty() {
+            None
+        } else {
+            let poids_retenus = crate::domain::copropriete::repartir_le_plafond(&votes, &decompte);
+            resolution.recompter_avec(&votes, &poids_retenus);
+            // Le décompte corrigé doit être PERSISTÉ, pas seulement servir au
+            // calcul : sans cela la base garderait les voix brutes tandis que
+            // le statut refléterait les voix plafonnées. Le procès-verbal
+            // afficherait alors un décompte que son propre résultat contredit,
+            // ce qui est indéfendable si la décision est attaquée.
+            self.resolution_repository
+                .update_vote_counts(
+                    resolution_id,
+                    resolution.vote_count_pour,
+                    resolution.vote_count_contre,
+                    resolution.vote_count_abstention,
+                    resolution.total_voting_power_pour,
+                    resolution.total_voting_power_contre,
+                    resolution.total_voting_power_abstention,
+                )
+                .await?;
+            Some(serde_json::json!(decompte
+                .ecarts()
+                .iter()
+                .map(|e| serde_json::json!({
+                    "votant": e.votant,
+                    "voix_brutes": e.voix_brutes,
+                    "voix_retenues": e.voix_retenues,
+                }))
+                .collect::<Vec<_>>()))
+        };
+
         // Calculate final result
         resolution.close_voting(total_voting_power)?;
 
         // Update resolution with final status
         self.resolution_repository
-            .close_voting(resolution_id, resolution.status.clone())
+            .close_voting(resolution_id, resolution.status.clone(), voix_plafonnees)
             .await?;
 
         // Fetch updated resolution
@@ -424,9 +490,12 @@ mod tests {
     use crate::application::ports::{
         MeetingRepository, ResolutionRepository, UnitOwnerRepository, VoteRepository,
     };
-    use crate::domain::entities::{LotHolder, Meeting, MeetingType, OwnershipType, UnitOwner};
+    use crate::domain::entities::{
+        LotHolder, Meeting, MeetingType, OwnershipType, UnitOwner, VoteChoice,
+    };
     use async_trait::async_trait;
     use chrono::Utc;
+    use rust_decimal_macros::dec;
     use std::collections::HashMap;
     use std::sync::Mutex;
 
@@ -500,6 +569,15 @@ mod tests {
             Ok(None)
         }
         async fn find_active_by_building(
+            &self,
+            _building_id: Uuid,
+        ) -> Result<Vec<(Uuid, Uuid, rust_decimal::Decimal)>, String> {
+            Ok(vec![])
+        }
+
+        /// Même source que ci-dessus dans les tests : les fixtures posent
+        /// directement des quotes-parts déjà résolues.
+        async fn find_active_quota_shares_by_building(
             &self,
             _building_id: Uuid,
         ) -> Result<Vec<(Uuid, Uuid, rust_decimal::Decimal)>, String> {
@@ -582,12 +660,17 @@ mod tests {
 
     struct MockResolutionRepository {
         resolutions: Mutex<HashMap<Uuid, Resolution>>,
+        /// Ce que la dernière clôture a consigné au titre de l'Art. 3.87 § 7
+        /// al. 4. Sans ce champ, la trace du plafonnement serait invérifiable
+        /// en test unitaire, et le seul moyen de la constater serait la base.
+        dernier_plafonnement: Mutex<Option<serde_json::Value>>,
     }
 
     impl MockResolutionRepository {
         fn new() -> Self {
             Self {
                 resolutions: Mutex::new(HashMap::new()),
+                dernier_plafonnement: Mutex::new(None),
             }
         }
     }
@@ -668,7 +751,11 @@ mod tests {
             &self,
             resolution_id: Uuid,
             final_status: ResolutionStatus,
+            voix_plafonnees: Option<serde_json::Value>,
         ) -> Result<(), String> {
+            // La trace du plafonnement est conservée par le mock, sans quoi
+            // aucun test unitaire ne pourrait vérifier qu'elle est bien écrite.
+            *self.dernier_plafonnement.lock().unwrap() = voix_plafonnees;
             if let Some(resolution) = self.resolutions.lock().unwrap().get_mut(&resolution_id) {
                 resolution.status = final_status;
                 resolution.voted_at = Some(chrono::Utc::now());
@@ -825,6 +912,213 @@ mod tests {
         }
     }
 
+    /// Art. 3.87 § 7 : la clôture refuse une séance où un votant pèse plus
+    /// que tous les autres réunis : ses voix sont **ramenées** à la somme des
+    /// leurs, et l'écart est consigné.
+    ///
+    /// Le contrôle est à la clôture et pas au vote, parce qu'il porte sur
+    /// l'ensemble des voix : c'est le dernier bulletin déposé qui peut faire
+    /// basculer une séance licite jusque-là.
+    ///
+    /// Anciennement `..._refuse_un_votant_plus_lourd_...`, qui attendait un
+    /// refus de clore. Arbitrage humain du 2026-09-04, confirmé par la
+    /// doctrine belge : l'Art. 3.87 § 7 al. 4 plafonne, il n'annule pas.
+    #[tokio::test]
+    async fn test_art_3_87_la_cloture_plafonne_un_votant_plus_lourd_que_tous_les_autres() {
+        let resolution_repo = Arc::new(MockResolutionRepository::new());
+        let vote_repo = Arc::new(MockVoteRepository::new());
+        let use_cases = ResolutionUseCases::new(
+            resolution_repo.clone(),
+            vote_repo.clone(),
+            Arc::new(MockMeetingRepository::new()),
+            Arc::new(MockUnitOwnerRepository::new()),
+        );
+
+        let resolution = Resolution::new(
+            Uuid::new_v4(),
+            "Réfection de la toiture".to_string(),
+            "Travaux de couverture votés en AGO".to_string(),
+            ResolutionType::Ordinary,
+            MajorityType::Absolute,
+            Some(1),
+        )
+        .expect("résolution valide");
+        let resolution_id = resolution.id;
+        resolution_repo
+            .create(&resolution)
+            .await
+            .expect("résolution enregistrée");
+
+        // 600 pour un seul, 399 pour tous les autres réunis.
+        for (voix, _) in [(dec!(600), 0), (dec!(200), 1), (dec!(199), 2)] {
+            vote_repo
+                .create(
+                    &Vote::new(
+                        resolution_id,
+                        Uuid::new_v4(),
+                        Uuid::new_v4(),
+                        VoteChoice::Pour,
+                        voix,
+                        None,
+                    )
+                    .expect("vote valide"),
+                )
+                .await
+                .expect("vote enregistré");
+        }
+
+        // La séance se clôture : le poids d'un votant ne fait plus obstacle.
+        use_cases
+            .close_voting(resolution_id, dec!(1000))
+            .await
+            .expect("le plafonnement remplace le refus");
+
+        // L'écart est consigné, sans quoi le procès-verbal afficherait un
+        // décompte que rien dans les bulletins ne permettrait de retrouver.
+        let trace = resolution_repo
+            .dernier_plafonnement
+            .lock()
+            .unwrap()
+            .clone()
+            .expect("un plafonnement a eu lieu, il doit être tracé");
+        let ecarts = trace.as_array().expect("un tableau d'écarts");
+        assert_eq!(
+            ecarts.len(),
+            1,
+            "un seul votant dépassait la somme des autres"
+        );
+        assert_eq!(ecarts[0]["voix_brutes"], serde_json::json!(dec!(600)));
+        assert_eq!(
+            ecarts[0]["voix_retenues"],
+            serde_json::json!(dec!(399)),
+            "ramené à 200 + 199"
+        );
+    }
+
+    /// Reproduction du scénario de recette du 2026-09-04.
+    ///
+    /// Alice pèse 550 et vote « pour ». Bob (250) et Claire (200) votent
+    /// « contre ». Après plafonnement, Alice est ramenée à 450 : le décompte
+    /// devient 450 contre 450.
+    ///
+    /// La majorité absolue de l'Art. 3.88 § 1er exige **plus** de la moitié
+    /// des voix exprimées. Une égalité n'est pas une majorité : la résolution
+    /// doit être REJETÉE.
+    #[tokio::test]
+    async fn test_art_3_88_une_egalite_apres_plafonnement_nest_pas_une_majorite() {
+        let resolution_repo = Arc::new(MockResolutionRepository::new());
+        let vote_repo = Arc::new(MockVoteRepository::new());
+        let use_cases = ResolutionUseCases::new(
+            resolution_repo.clone(),
+            vote_repo.clone(),
+            Arc::new(MockMeetingRepository::new()),
+            Arc::new(MockUnitOwnerRepository::new()),
+        );
+
+        let resolution = Resolution::new(
+            Uuid::new_v4(),
+            "Approbation des comptes".to_string(),
+            "Comptes annuels".to_string(),
+            ResolutionType::Ordinary,
+            MajorityType::Absolute,
+            Some(1),
+        )
+        .expect("résolution valide");
+        let resolution_id = resolution.id;
+        resolution_repo
+            .create(&resolution)
+            .await
+            .expect("enregistrée");
+
+        for (voix, choix) in [
+            (dec!(550), VoteChoice::Pour),
+            (dec!(250), VoteChoice::Contre),
+            (dec!(200), VoteChoice::Contre),
+        ] {
+            vote_repo
+                .create(
+                    &Vote::new(
+                        resolution_id,
+                        Uuid::new_v4(),
+                        Uuid::new_v4(),
+                        choix,
+                        voix,
+                        None,
+                    )
+                    .expect("vote valide"),
+                )
+                .await
+                .expect("vote enregistré");
+        }
+
+        let close = use_cases
+            .close_voting(resolution_id, dec!(1000))
+            .await
+            .expect("la clôture aboutit");
+
+        assert_eq!(
+            close.total_voting_power_pour,
+            dec!(450),
+            "Alice est ramenée à la somme des autres"
+        );
+        assert_eq!(close.total_voting_power_contre, dec!(450));
+        assert_eq!(
+            close.status,
+            ResolutionStatus::Rejected,
+            "450 contre 450 : égalité, donc pas de majorité absolue"
+        );
+    }
+
+    /// La même séance, répartie normalement, se clôture sans obstacle.
+    #[tokio::test]
+    async fn test_art_3_87_une_seance_equilibree_se_cloture() {
+        let resolution_repo = Arc::new(MockResolutionRepository::new());
+        let vote_repo = Arc::new(MockVoteRepository::new());
+        let use_cases = ResolutionUseCases::new(
+            resolution_repo.clone(),
+            vote_repo.clone(),
+            Arc::new(MockMeetingRepository::new()),
+            Arc::new(MockUnitOwnerRepository::new()),
+        );
+
+        let resolution = Resolution::new(
+            Uuid::new_v4(),
+            "Réfection de la toiture".to_string(),
+            "Travaux de couverture votés en AGO".to_string(),
+            ResolutionType::Ordinary,
+            MajorityType::Absolute,
+            Some(1),
+        )
+        .expect("résolution valide");
+        let resolution_id = resolution.id;
+        resolution_repo
+            .create(&resolution)
+            .await
+            .expect("résolution enregistrée");
+
+        for voix in [dec!(400), dec!(300), dec!(300)] {
+            vote_repo
+                .create(
+                    &Vote::new(
+                        resolution_id,
+                        Uuid::new_v4(),
+                        Uuid::new_v4(),
+                        VoteChoice::Pour,
+                        voix,
+                        None,
+                    )
+                    .expect("vote valide"),
+                )
+                .await
+                .expect("vote enregistré");
+        }
+
+        assert!(use_cases
+            .close_voting(resolution_id, dec!(1000))
+            .await
+            .is_ok());
+    }
+
     #[tokio::test]
     async fn test_create_resolution() {
         let resolution_repo = Arc::new(MockResolutionRepository::new());
@@ -843,6 +1137,7 @@ mod tests {
 
         // Create a meeting with quorum reached
         let mut meeting = Meeting::new(
+            Uuid::new_v4(), // acp_id
             org_id,
             building_id,
             MeetingType::Ordinary,
@@ -897,6 +1192,7 @@ mod tests {
 
         // Create a meeting with quorum NOT reached
         let mut meeting = Meeting::new(
+            Uuid::new_v4(), // acp_id
             org_id,
             building_id,
             MeetingType::Ordinary,
@@ -951,6 +1247,7 @@ mod tests {
 
         // Create a meeting with quorum reached
         let mut meeting = Meeting::new(
+            Uuid::new_v4(), // acp_id
             org_id,
             building_id,
             MeetingType::Ordinary,
@@ -1029,6 +1326,7 @@ mod tests {
 
         // Create a meeting with quorum reached
         let mut meeting = Meeting::new(
+            Uuid::new_v4(), // acp_id
             org_id,
             building_id,
             MeetingType::Ordinary,
@@ -1109,6 +1407,7 @@ mod tests {
 
         // Create a meeting with quorum reached
         let mut meeting = Meeting::new(
+            Uuid::new_v4(), // acp_id
             org_id,
             building_id,
             MeetingType::Ordinary,
@@ -1202,6 +1501,7 @@ mod tests {
 
         // Create a meeting with quorum reached
         let mut meeting = Meeting::new(
+            Uuid::new_v4(), // acp_id
             org_id,
             building_id,
             MeetingType::Ordinary,
@@ -1291,6 +1591,7 @@ mod tests {
 
         let meeting_id = Uuid::new_v4();
         let mut meeting = Meeting::new(
+            Uuid::new_v4(), // acp_id
             Uuid::new_v4(),
             Uuid::new_v4(),
             MeetingType::Ordinary,
@@ -1389,6 +1690,7 @@ mod tests {
     ) -> Resolution {
         let meeting_id = Uuid::new_v4();
         let mut meeting = Meeting::new(
+            Uuid::new_v4(), // acp_id
             Uuid::new_v4(),
             Uuid::new_v4(),
             MeetingType::Ordinary,

@@ -10,12 +10,20 @@
 // API endpoints for manual journal entry creation and management
 
 use crate::infrastructure::audit::{AuditEventType, AuditLogEntry};
+use crate::infrastructure::web::middleware::scope_guard::verify_building_org_access;
 use crate::infrastructure::web::{AppState, AuthenticatedUser};
+use actix_web::ResponseError;
 use actix_web::{delete, get, post, web, HttpResponse, Responder};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-#[derive(Debug, Deserialize)]
+/// `deny_unknown_fields` : le rapport de test du 2026-09-01 (constat F16)
+/// signalait `operation_date` et `reference` « non persistes ». Les noms
+/// attendus sont `entry_date` et `document_ref` ; l'interface les envoie
+/// correctement, mais un appelant qui se trompait recevait un 201 avec une
+/// ecriture amputee de sa reference. Serde les rejette desormais.
+#[derive(Debug, Deserialize, utoipa::ToSchema)]
+#[serde(deny_unknown_fields)]
 pub struct CreateJournalEntryRequest {
     pub building_id: Option<Uuid>,
     pub journal_type: String,
@@ -25,7 +33,8 @@ pub struct CreateJournalEntryRequest {
     pub lines: Vec<JournalEntryLineRequest>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, utoipa::ToSchema)]
+#[serde(deny_unknown_fields)]
 pub struct JournalEntryLineRequest {
     pub account_code: String,
     pub debit: rust_decimal::Decimal,
@@ -33,7 +42,7 @@ pub struct JournalEntryLineRequest {
     pub description: String,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, utoipa::ToSchema)]
 pub struct JournalEntryResponse {
     pub id: String,
     pub organization_id: String,
@@ -48,7 +57,7 @@ pub struct JournalEntryResponse {
     pub updated_at: String,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, utoipa::ToSchema)]
 pub struct JournalEntryLineResponse {
     pub id: String,
     pub journal_entry_id: String,
@@ -59,13 +68,13 @@ pub struct JournalEntryLineResponse {
     pub created_at: String,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, utoipa::ToSchema)]
 pub struct JournalEntryWithLinesResponse {
     pub entry: JournalEntryResponse,
     pub lines: Vec<JournalEntryLineResponse>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, utoipa::IntoParams)]
 pub struct ListJournalEntriesQuery {
     pub building_id: Option<Uuid>,
     pub journal_type: Option<String>,
@@ -99,6 +108,20 @@ pub struct ListJournalEntriesQuery {
 ///   ]
 /// }
 /// ```
+#[utoipa::path(
+    post,
+    path = "/journal-entries",
+    tag = "JournalEntries",
+    summary = "Create a manual journal entry (double-entry bookkeeping)",
+    request_body = CreateJournalEntryRequest,
+    responses(
+        (status = 201, description = "Journal entry created", body = JournalEntryWithLinesResponse),
+        (status = 400, description = "Unbalanced entry, or unknown field in the body"),
+        (status = 401, description = "User does not belong to an organization"),
+        (status = 403, description = "Forbidden (accountant or superadmin only)"),
+    ),
+    security(("bearer_auth" = []))
+)]
 #[post("/journal-entries")]
 pub async fn create_journal_entry(
     state: web::Data<AppState>,
@@ -120,6 +143,27 @@ pub async fn create_journal_entry(
             }))
         }
     };
+
+    // Isolation multi-tenant à l'ÉCRITURE (ADR-0045) : l'immeuble visé doit
+    // relever d'une ACP confiée à ce syndic. Sans cette garde, l'affectation de
+    // `organization_id` depuis le jeton protège l'estampille et non le
+    // rattachement — on écrit au bon nom dans le mauvais dossier.
+    //
+    // `building_id` est facultatif ici, et le use-case refuse déjà une saisie
+    // qui n'en désigne aucun : sans immeuble, on ne sait pas dans quels livres
+    // l'écriture s'inscrit. La garde ne s'applique donc qu'au cas renseigné.
+    if let Some(building_id) = req.building_id {
+        if let Err(err) = verify_building_org_access(
+            &user,
+            building_id,
+            &state.building_use_cases,
+            &state.acp_use_cases,
+        )
+        .await
+        {
+            return err.error_response();
+        }
+    }
 
     // Parse entry_date
     let entry_date = match chrono::DateTime::parse_from_rfc3339(&req.entry_date) {
@@ -203,10 +247,18 @@ pub async fn create_journal_entry(
             .log();
 
             // Return 400 for business rule violations, 500 for unexpected errors
+            //
+            // « Impossible de déterminer l'ACP » et « Immeuble introuvable »
+            // sont des saisies incomplètes ou erronées, pas des pannes : une
+            // écriture manuelle doit désigner l'immeuble dont on déduit l'ACP
+            // (ADR-0045). Sans ces deux cas, la requête ressortait en 500 et
+            // laissait croire à un défaut du serveur.
             if err.contains("unbalanced")
                 || err.contains("foreign key")
                 || err.contains("violates")
                 || err.contains("not found")
+                || err.contains("Impossible de déterminer l'ACP")
+                || err.contains("Immeuble introuvable")
             {
                 HttpResponse::BadRequest().json(serde_json::json!({
                     "error": err
@@ -236,6 +288,19 @@ pub async fn create_journal_entry(
 /// ```
 /// GET /api/v1/journal-entries?journal_type=ACH&page=1&per_page=20
 /// ```
+#[utoipa::path(
+    get,
+    path = "/journal-entries",
+    tag = "JournalEntries",
+    summary = "List journal entries (paginated, filterable)",
+    params(ListJournalEntriesQuery),
+    responses(
+        (status = 200, description = "Journal entries page", body = Vec<JournalEntryResponse>),
+        (status = 401, description = "User does not belong to an organization"),
+        (status = 403, description = "Forbidden (accountant, syndic or superadmin only)"),
+    ),
+    security(("bearer_auth" = []))
+)]
 #[get("/journal-entries")]
 pub async fn list_journal_entries(
     state: web::Data<AppState>,
@@ -327,6 +392,20 @@ pub async fn list_journal_entries(
 /// ```
 /// GET /api/v1/journal-entries/{id}
 /// ```
+#[utoipa::path(
+    get,
+    path = "/journal-entries/{id}",
+    tag = "JournalEntries",
+    summary = "Get a single journal entry with its lines",
+    params(("id" = Uuid, Path, description = "Journal entry identifier")),
+    responses(
+        (status = 200, description = "Journal entry with lines", body = JournalEntryWithLinesResponse),
+        (status = 401, description = "User does not belong to an organization"),
+        (status = 403, description = "Forbidden"),
+        (status = 404, description = "Journal entry not found"),
+    ),
+    security(("bearer_auth" = []))
+)]
 #[get("/journal-entries/{id}")]
 pub async fn get_journal_entry(
     state: web::Data<AppState>,
@@ -402,6 +481,20 @@ pub async fn get_journal_entry(
 /// ```
 /// DELETE /api/v1/journal-entries/{id}
 /// ```
+#[utoipa::path(
+    delete,
+    path = "/journal-entries/{id}",
+    tag = "JournalEntries",
+    summary = "Delete a journal entry and its lines",
+    params(("id" = Uuid, Path, description = "Journal entry identifier")),
+    responses(
+        (status = 204, description = "Journal entry deleted"),
+        (status = 401, description = "User does not belong to an organization"),
+        (status = 403, description = "Forbidden (accountant or superadmin only)"),
+        (status = 404, description = "Journal entry not found"),
+    ),
+    security(("bearer_auth" = []))
+)]
 #[delete("/journal-entries/{id}")]
 pub async fn delete_journal_entry(
     state: web::Data<AppState>,

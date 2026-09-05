@@ -80,12 +80,8 @@
   //   - `currentTotalPercentage` transmis aux modales d'ajout et d'edition,
   //     ou `1 - currentTotalPercentage` donnait NaN, cassant le calcul du
   //     pourcentage encore disponible et le garde-fou de depassement.
-  const pct = (v: string | number | null | undefined): number => {
-    const n = typeof v === "number" ? v : Number.parseFloat(String(v ?? ""));
-    return Number.isFinite(n) ? n : 0;
-  };
   let totalPercentage = $derived(
-    activeOwners.reduce((sum, uo) => sum + pct(uo.ownership_percentage), 0),
+    activeOwners.reduce((sum, uo) => sum + toNumber(uo.ownership_percentage), 0),
   );
 
   function handleEditUnitOwner(unitOwner: UnitOwner & { owner?: Owner }) {

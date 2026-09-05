@@ -39,11 +39,26 @@ impl ExpenseRepository for PostgresExpenseRepository {
 
         sqlx::query(
             r#"
-            INSERT INTO expenses (id, organization_id, building_id, category, description, amount, expense_date, payment_status, supplier, invoice_number, account_code, contractor_report_id, created_at, updated_at)
-            VALUES ($1, $2, $3, CAST($4 AS expense_category), $5, $6, $7, CAST($8 AS payment_status), $9, $10, $11, $12, $13, $14)
+            -- `amount_excl_vat`, `vat_rate`, `vat_amount`, `amount_incl_vat`,
+            -- `invoice_date` et `due_date` existent depuis la migration
+            -- `20251104000001_enrich_expenses_invoice_workflow` (novembre 2025)
+            -- mais n'étaient NI écrites ici, NI relues plus bas — le mapping
+            -- de lecture les forçait à `None`.
+            --
+            -- Toute dépense enregistrée depuis lors a donc ces six colonnes à
+            -- NULL. C'est la cause de fond des constats F12 (« échéance
+            -- affiche - ») et F20 (« seul le TTC est affiché ») du rapport du
+            -- 2026-09-01 : corriger le DTO d'entrée, le constructeur et le DTO
+            -- de sortie ne changeait rien tant que cette couche-ci perdait la
+            -- donnée.
+            INSERT INTO expenses (id, acp_id, organization_id, building_id, category, description, amount, expense_date, payment_status, supplier, invoice_number, account_code, contractor_report_id, created_at, updated_at,
+                                  amount_excl_vat, vat_rate, vat_amount, amount_incl_vat, invoice_date, due_date)
+            VALUES ($1, $2, $3, $4, CAST($5 AS expense_category), $6, $7, $8, CAST($9 AS payment_status), $10, $11, $12, $13, $14, $15,
+                    $16, $17, $18, $19, $20, $21)
             "#,
         )
         .bind(expense.id)
+        .bind(expense.acp_id)
         .bind(expense.organization_id)
         .bind(expense.building_id)
         .bind(category_str)
@@ -57,6 +72,12 @@ impl ExpenseRepository for PostgresExpenseRepository {
         .bind(expense.contractor_report_id)
         .bind(expense.created_at)
         .bind(expense.updated_at)
+        .bind(expense.amount_excl_vat)
+        .bind(expense.vat_rate)
+        .bind(expense.vat_amount)
+        .bind(expense.amount_incl_vat)
+        .bind(expense.invoice_date)
+        .bind(expense.due_date)
         .execute(&self.pool)
         .await
         .map_err(|e| format!("Database error: {}", e))?;
@@ -64,14 +85,52 @@ impl ExpenseRepository for PostgresExpenseRepository {
         Ok(expense.clone())
     }
 
+    async fn enregistrer_lignes_de_facture(
+        &self,
+        expense_id: Uuid,
+        lignes: &[crate::application::ports::expense_repository::LigneDeFacture],
+    ) -> Result<(), String> {
+        if lignes.is_empty() {
+            return Ok(());
+        }
+
+        // Les montants dérivés sont recalculés ici, à partir de la quantité,
+        // du prix et du taux. Les accepter du client permettrait à une
+        // facture d'afficher un total qui ne découle pas de ses lignes.
+        for ligne in lignes {
+            sqlx::query(
+                r#"
+                INSERT INTO invoice_line_items
+                    (id, expense_id, description, quantity, unit_price,
+                     amount_excl_vat, vat_rate, vat_amount, amount_incl_vat, created_at)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW())
+                "#,
+            )
+            .bind(Uuid::new_v4())
+            .bind(expense_id)
+            .bind(&ligne.description)
+            .bind(ligne.quantity)
+            .bind(ligne.unit_price)
+            .bind(ligne.montant_hors_tva())
+            .bind(ligne.vat_rate)
+            .bind(ligne.montant_tva())
+            .bind(ligne.montant_tva_comprise())
+            .execute(&self.pool)
+            .await
+            .map_err(|e| format!("Database error inserting invoice line: {e}"))?;
+        }
+        Ok(())
+    }
+
     async fn find_by_id(&self, id: Uuid) -> Result<Option<Expense>, String> {
         let row = sqlx::query(
             r#"
-            SELECT id, organization_id, building_id,
+            SELECT id, acp_id, organization_id, building_id,
                    category::text AS category, description, amount, expense_date,
                    payment_status::text AS payment_status, approval_status::text AS approval_status,
                    submitted_at, approved_by, approved_at, rejection_reason, paid_date,
-                   supplier, invoice_number, account_code, contractor_report_id, created_at, updated_at
+                   supplier, invoice_number, account_code, contractor_report_id, created_at, updated_at,
+                   amount_excl_vat, vat_rate, vat_amount, amount_incl_vat, invoice_date, due_date
             FROM expenses
             WHERE id = $1
             "#,
@@ -112,18 +171,26 @@ impl ExpenseRepository for PostgresExpenseRepository {
 
             Expense {
                 id: row.get("id"),
+                acp_id: row.get("acp_id"),
                 organization_id: row.get("organization_id"),
                 building_id: row.get("building_id"),
                 category,
                 description: row.get("description"),
                 amount: row.get("amount"),
-                amount_excl_vat: None,
-                vat_rate: None,
-                vat_amount: None,
-                amount_incl_vat: Some(row.get("amount")),
+                amount_excl_vat: row.try_get("amount_excl_vat").ok().flatten(),
+                vat_rate: row.try_get("vat_rate").ok().flatten(),
+                vat_amount: row.try_get("vat_amount").ok().flatten(),
+                // Repli sur le TTC : les dépenses antérieures au câblage de
+                // ces colonnes ont `amount_incl_vat` à NULL alors que `amount`
+                // porte bien le TTC.
+                amount_incl_vat: row
+                    .try_get("amount_incl_vat")
+                    .ok()
+                    .flatten()
+                    .or_else(|| Some(row.get("amount"))),
                 expense_date: row.get("expense_date"),
-                invoice_date: None,
-                due_date: None,
+                invoice_date: row.try_get("invoice_date").ok().flatten(),
+                due_date: row.try_get("due_date").ok().flatten(),
                 paid_date: row.try_get("paid_date").ok(),
                 approval_status,
                 submitted_at: row.try_get("submitted_at").ok(),
@@ -144,11 +211,12 @@ impl ExpenseRepository for PostgresExpenseRepository {
     async fn find_by_building(&self, building_id: Uuid) -> Result<Vec<Expense>, String> {
         let rows = sqlx::query(
             r#"
-            SELECT id, organization_id, building_id,
+            SELECT id, acp_id, organization_id, building_id,
                    category::text AS category, description, amount, expense_date,
                    payment_status::text AS payment_status, approval_status::text AS approval_status,
                    submitted_at, approved_by, approved_at, rejection_reason, paid_date,
-                   supplier, invoice_number, account_code, contractor_report_id, created_at, updated_at
+                   supplier, invoice_number, account_code, contractor_report_id, created_at, updated_at,
+                   amount_excl_vat, vat_rate, vat_amount, amount_incl_vat, invoice_date, due_date
             FROM expenses
             WHERE building_id = $1
             ORDER BY expense_date DESC
@@ -192,18 +260,23 @@ impl ExpenseRepository for PostgresExpenseRepository {
 
                 Expense {
                     id: row.get("id"),
+                    acp_id: row.get("acp_id"),
                     organization_id: row.get("organization_id"),
                     building_id: row.get("building_id"),
                     category,
                     description: row.get("description"),
                     amount: row.get("amount"),
-                    amount_excl_vat: None,
-                    vat_rate: None,
-                    vat_amount: None,
-                    amount_incl_vat: Some(row.get("amount")),
+                    amount_excl_vat: row.try_get("amount_excl_vat").ok().flatten(),
+                    vat_rate: row.try_get("vat_rate").ok().flatten(),
+                    vat_amount: row.try_get("vat_amount").ok().flatten(),
+                    amount_incl_vat: row
+                        .try_get("amount_incl_vat")
+                        .ok()
+                        .flatten()
+                        .or_else(|| Some(row.get("amount"))),
                     expense_date: row.get("expense_date"),
-                    invoice_date: None,
-                    due_date: None,
+                    invoice_date: row.try_get("invoice_date").ok().flatten(),
+                    due_date: row.try_get("due_date").ok().flatten(),
                     paid_date: row.try_get("paid_date").ok(),
                     approval_status,
                     submitted_at: row.try_get("submitted_at").ok(),
@@ -234,9 +307,30 @@ impl ExpenseRepository for PostgresExpenseRepository {
         let mut where_clauses = Vec::new();
         let mut param_count = 0;
 
+        // Portée par ACP GÉRÉE, pas par estampille de saisie.
+        //
+        // Le filtre portait sur `expenses.organization_id` — le cabinet qui a
+        // encodé la charge. Une copropriété change pourtant de syndic au gré
+        // des assemblées générales, et sa comptabilité lui appartient.
+        // Filtrer sur l'estampille produisait deux effets opposés, mesurés le
+        // 2026-09-02 sur une passation réelle :
+        //
+        //   le syndic ENTRANT ne voyait rien de l'historique — ni grand livre,
+        //     ni budget, ni appels de fonds — alors que l'Art. 3.94 § 1er lui
+        //     impose de transmettre les décomptes des deux derniers exercices ;
+        //   le syndic SORTANT continuait de tout voir, y compris les noms,
+        //     adresses et arriérés des copropriétaires, sans plus aucune base
+        //     légale pour les traiter.
+        //
+        // `filters.organization_id` désigne désormais le SYNDIC QUI DEMANDE,
+        // et la clause traduit la vraie question : « cette charge relève-t-elle
+        // d'une ACP dont ce cabinet a la gestion ? ».
         if filters.organization_id.is_some() {
             param_count += 1;
-            where_clauses.push(format!("organization_id = ${}", param_count));
+            where_clauses.push(format!(
+                "acp_id IN (SELECT id FROM acps WHERE organization_id = ${})",
+                param_count
+            ));
         }
 
         if filters.building_id.is_some() {
@@ -343,7 +437,7 @@ impl ExpenseRepository for PostgresExpenseRepository {
         let offset_param = param_count;
 
         let data_query = format!(
-            "SELECT id, organization_id, building_id, category::text AS category, description, amount, expense_date, payment_status::text AS payment_status, approval_status::text AS approval_status, submitted_at, approved_by, approved_at, rejection_reason, paid_date, supplier, invoice_number, account_code, contractor_report_id, created_at, updated_at \
+            "SELECT id, acp_id, organization_id, building_id, category::text AS category, description, amount, expense_date, payment_status::text AS payment_status, approval_status::text AS approval_status, submitted_at, approved_by, approved_at, rejection_reason, paid_date, supplier, invoice_number, account_code, contractor_report_id, created_at, updated_at, amount_excl_vat, vat_rate, vat_amount, amount_incl_vat, invoice_date, due_date \
              FROM expenses {} ORDER BY {} {} LIMIT ${} OFFSET ${}",
             where_clause,
             sort_column,
@@ -430,18 +524,23 @@ impl ExpenseRepository for PostgresExpenseRepository {
 
                 Expense {
                     id: row.get("id"),
+                    acp_id: row.get("acp_id"),
                     organization_id: row.get("organization_id"),
                     building_id: row.get("building_id"),
                     category,
                     description: row.get("description"),
                     amount: row.get("amount"),
-                    amount_excl_vat: None,
-                    vat_rate: None,
-                    vat_amount: None,
-                    amount_incl_vat: Some(row.get("amount")),
+                    amount_excl_vat: row.try_get("amount_excl_vat").ok().flatten(),
+                    vat_rate: row.try_get("vat_rate").ok().flatten(),
+                    vat_amount: row.try_get("vat_amount").ok().flatten(),
+                    amount_incl_vat: row
+                        .try_get("amount_incl_vat")
+                        .ok()
+                        .flatten()
+                        .or_else(|| Some(row.get("amount"))),
                     expense_date: row.get("expense_date"),
-                    invoice_date: None,
-                    due_date: None,
+                    invoice_date: row.try_get("invoice_date").ok().flatten(),
+                    due_date: row.try_get("due_date").ok().flatten(),
                     paid_date: row.try_get("paid_date").ok(),
                     approval_status,
                     submitted_at: row.try_get("submitted_at").ok(),

@@ -1,0 +1,244 @@
+# CI légère pour le déploiement VPS ecosolva (koprogo.com).
+#
+# Pourquoi un workflow à part plutôt qu'ajouter `feature/dev` à
+# docker-build-push.yml : celui-ci porte tout un schéma de tags destiné à
+# ArgoCD et aux environnements Kubernetes (branch, branch-latest,
+# branch-sha7, semver...). La branche déployée sur le VPS n'a besoin que
+# d'une chose, un tag immuable par commit, et n'a rien à faire dans le
+# nommage GitOps du cluster.
+#
+# Aucun test ici, et c'est un choix explicite : la validation se fait en
+# local pendant le développement, et `feature/dev` sert à éprouver le résultat
+# en conditions réelles sur koprogo.com, qui est une production expérimentale.
+# Ce workflow n'a donc qu'un seul objectif, être le plus court possible entre
+# un push et quelque chose de déployé.
+#
+# Corollaire à ne pas perdre de vue : rien ne s'interpose entre un commit et
+# la mise en ligne. La qualité repose entièrement sur la discipline locale.
+#
+# Ce workflow ne publie qu'un tag : `sha-<7 premiers caractères>`.
+# Volontairement pas de `latest` ni de tag mobile : c'est précisément ce que
+# deploy-ecosolva.sh cherche à ne plus tirer. Il attend que les deux images
+# de ce tag existent avant de déployer, et revient en arrière si le
+# démarrage échoue.
+#
+# Sans ce workflow, `feature/dev` n'était construite nulle part : le VPS
+# tirait `latest`, produit depuis une autre branche, et faisait donc tourner
+# des images sans aucun rapport avec le commit qu'il inscrivait comme
+# déployé.
+
+name: VPS ecosolva (feature/dev)
+
+on:
+  push:
+    branches:
+      - feature/dev
+  # Rattrapage manuel. Un commit poussé par une Action avec le `GITHUB_TOKEN`
+  # par défaut ne déclenche aucun autre workflow : c'est le cas des auto-merges
+  # Dependabot. Ses images ne sont donc jamais construites, et
+  # deploy-ecosolva.sh attend indéfiniment un tag qui n'arrivera pas. Constaté
+  # le 2026-09-03 : la démo est restée figée sur sha-87d24ac depuis la veille,
+  # bloquée derrière a868f237. Ce déclencheur permet de construire les images
+  # d'un commit resté en rade sans avoir à pousser un commit vide par-dessus.
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: "Commit ou branche à construire (par défaut feature/dev)"
+        required: false
+        default: feature/dev
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+# Note sur PUBLIC_API_URL (plus bas, dans la matrice) : le Traefik du VPS
+# route ${API_DOMAIN:-api.koprogo.com} vers le backend. docker-build-push.yml
+# compile `api2.koprogo.com`, qui ne résout pas du tout — un frontend
+# construit avec cette valeur appelle un hôte inexistant.
+
+jobs:
+  # ── Barrage rapide ────────────────────────────────────────────────────────
+  #
+  # `ci.yml` exclut nommément `feature/dev` : sa pipeline complète prend ~95
+  # minutes et le déploiement ne l'attend pas. Conséquence mesurée le
+  # 2026-09-04 : quarante-cinq régressions ont vécu sur la branche qui alimente
+  # la démo publique sans que rien ne les signale, parce que `cargo test --lib`
+  # ne compile même pas les harnais d'intégration.
+  #
+  # Ce barrage ne rejoue pas la pipeline complète. Il lance ce qui est rapide et
+  # qui aurait suffi à attraper ces régressions : la compilation de TOUTES les
+  # cibles, les tests unitaires, les gardes d'architecture, et le frontend. Ni
+  # e2e, ni BDD, ni Playwright — ceux-là restent l'affaire de `ci.yml` sur les
+  # branches qu'elle couvre.
+  #
+  # Il conditionne la construction des images. Un commit rouge ne produit donc
+  # pas d'image, et la démo reste sur sa dernière version saine plutôt que de
+  # recevoir du code cassé. C'est le bon sens de la panne : rester en arrière
+  # est réparable, déployer du rouge ne l'est pas toujours — le 2026-09-03,
+  # un rollback a échoué parce que la base avait déjà migré.
+  #
+  # Pour relâcher ce barrage sans le supprimer, retirer le `needs: barrage`
+  # ci-dessous : les images se construiront à nouveau sans condition.
+  barrage:
+    name: Barrage rapide (compilation, unitaires, gardes)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.ref || github.sha }}
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: backend
+
+      - name: Gate ADR-0008 — aucun f64 monétaire
+        run: ./scripts/check-no-f64-money.sh
+
+      - name: Gate OpenAPI — annotation et enregistrement
+        run: ./scripts/check-openapi-coverage.sh
+
+      - name: cargo fmt
+        working-directory: backend
+        run: cargo fmt --all -- --check
+
+      # `--all-targets` et pas seulement `--lib` : c'est la seule étape qui
+      # compile `tests/`. Sans elle, une signature de use-case peut changer et
+      # casser quatorze harnais sans qu'aucun signal n'apparaisse.
+      - name: cargo clippy (toutes cibles)
+        working-directory: backend
+        env:
+          SQLX_OFFLINE: "true"
+        run: cargo clippy --all-targets --all-features -- -D warnings
+
+      - name: Tests unitaires
+        working-directory: backend
+        env:
+          SQLX_OFFLINE: "true"
+        run: cargo test --lib
+
+      - name: Garde d'architecture — frontières entre contextes bornés
+        working-directory: backend
+        env:
+          SQLX_OFFLINE: "true"
+        run: cargo test --test architecture
+
+      - name: Garde d'écriture — la dette ne grossit pas
+        working-directory: backend
+        env:
+          SQLX_OFFLINE: "true"
+        run: cargo test --test garde_ecriture
+
+      # `garde_champs_ignores` est né le 2026-09-04 et n'était joué par AUCUN
+      # portail : ni ici, ni dans ci.yml, qui énumèrent tous deux leurs
+      # harnais un par un. Un cliquet que rien n'exécute ne freine rien, il
+      # décore. Il coûte 0,02 s et ne demande pas de base.
+      - name: Garde des champs ignorés — la dette ne grossit pas
+        working-directory: backend
+        env:
+          SQLX_OFFLINE: "true"
+        run: cargo test --test garde_champs_ignores
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Dépendances frontend
+        working-directory: frontend
+        run: npm ci
+
+      # `astro sync` génère `.astro/types.d.ts`, qui contient la référence
+      # `astro/client` déclarant `import.meta.env`. Le répertoire est ignoré
+      # par git, donc présent en local et absent après un `npm ci` en CI :
+      # sans cette étape, svelte-check signale six erreurs « Property 'env'
+      # does not exist on type 'ImportMeta' » qu'aucun développeur ne voit
+      # sur sa machine.
+      - name: Types générés par Astro
+        working-directory: frontend
+        run: npx astro sync
+
+      - name: svelte-check
+        working-directory: frontend
+        run: npx svelte-check --threshold error
+
+      - name: Tests unitaires frontend
+        working-directory: frontend
+        run: npx vitest run --reporter=dot
+
+  images:
+    needs: barrage
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    strategy:
+      # Les deux images sont indépendantes : les construire en parallèle et
+      # ne pas interrompre l'une si l'autre échoue. deploy-ecosolva.sh
+      # n'agira de toute façon que lorsque les DEUX seront publiées.
+      fail-fast: false
+      matrix:
+        include:
+          - service: backend
+            dockerfile: backend/Dockerfile.production
+            context: ./backend
+            # Parité avec docker-build-push.yml, qui produit les images qui
+            # tournent aujourd'hui.
+            build_args: SQLX_OFFLINE=true
+          - service: frontend
+            dockerfile: frontend/Dockerfile.production
+            context: ./frontend
+            # Seul le frontend déclare cet ARG ; le passer au backend ferait
+            # un avertissement « build-arg non consommé » à chaque build.
+            build_args: PUBLIC_API_URL=https://api.koprogo.com/api/v1
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+        with:
+          # En rattrapage manuel, on construit le commit demandé, pas la tête
+          # de la branche : un commit resté en rade a justement d'autres
+          # commits derrière lui.
+          ref: ${{ inputs.ref || github.sha }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v4
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Compute short SHA
+        id: vars
+        # Sept caractères, comme le calcule deploy-ecosolva.sh côté serveur.
+        # Lu depuis l'arbre de travail et non depuis GITHUB_SHA : en
+        # rattrapage manuel, GITHUB_SHA vaut la tête de la branche alors que
+        # le checkout porte sur le commit demandé. Le tag doit désigner ce
+        # qui a réellement été construit.
+        run: echo "short_sha=$(git rev-parse --short=7 HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Build and push ${{ matrix.service }}
+        uses: docker/build-push-action@v7
+        with:
+          context: ${{ matrix.context }}
+          file: ${{ matrix.dockerfile }}
+          push: true
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/${{ matrix.service }}:sha-${{ steps.vars.outputs.short_sha }}
+          # `scope` par service, sinon les deux jobs de la matrice écrivent
+          # dans le même index de cache GHA et s'écrasent : celui qui termine
+          # en dernier gagne, et l'autre reconstruit tout au run suivant.
+          # Mesuré sur trois runs — l'image backend alternait entre 25 s et
+          # 17 min selon l'ordre de fin du run précédent.
+          cache-from: type=gha,scope=${{ matrix.service }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.service }}
+          build-args: ${{ matrix.build_args }}

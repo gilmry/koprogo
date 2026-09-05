@@ -203,8 +203,107 @@ use utoipa_swagger_ui::SwaggerUi;
         crate::infrastructure::web::handlers::technical_spec_handlers::sign_technical_spec,
         crate::infrastructure::web::handlers::technical_spec_handlers::get_technical_spec,
         crate::infrastructure::web::handlers::technical_spec_handlers::list_technical_specs,
+        // JournalEntries — remboursement de dette de contrat (rapport du
+        // 2026-09-01). Les 4 routes du grand livre etaient hors spec : le
+        // frontend devinait donc les noms de champs, d'ou les confusions
+        // `operation_date`/`entry_date` et `reference`/`document_ref` du
+        // constat F16. Voir `scripts/check-openapi-coverage.sh`.
+        crate::infrastructure::web::handlers::journal_entry_handlers::create_journal_entry,
+        crate::infrastructure::web::handlers::journal_entry_handlers::list_journal_entries,
+        crate::infrastructure::web::handlers::journal_entry_handlers::get_journal_entry,
+        crate::infrastructure::web::handlers::journal_entry_handlers::delete_journal_entry,
+        // OwnerContributions — quote-parts des coproprietaires (constat F4).
+        crate::infrastructure::web::handlers::owner_contribution_handlers::create_contribution,
+        crate::infrastructure::web::handlers::owner_contribution_handlers::get_contribution,
+        crate::infrastructure::web::handlers::owner_contribution_handlers::get_contributions_by_owner,
+        crate::infrastructure::web::handlers::owner_contribution_handlers::get_outstanding_contributions,
+        crate::infrastructure::web::handlers::owner_contribution_handlers::record_payment,
+        // Units — `PUT /units/{id}` acceptait `owner_id` en silence (constat F1).
+        crate::infrastructure::web::handlers::unit_handlers::create_unit,
+        crate::infrastructure::web::handlers::unit_handlers::get_unit,
+        crate::infrastructure::web::handlers::unit_handlers::list_units,
+        crate::infrastructure::web::handlers::unit_handlers::list_units_by_building,
+        crate::infrastructure::web::handlers::unit_handlers::update_unit,
+        crate::infrastructure::web::handlers::unit_handlers::delete_unit,
+        crate::infrastructure::web::handlers::unit_handlers::assign_owner,
+        // CallForFunds — la ventilation par tantiemes (constat F2).
+        crate::infrastructure::web::handlers::call_for_funds_handlers::create_call_for_funds,
+        crate::infrastructure::web::handlers::call_for_funds_handlers::get_call_for_funds,
+        crate::infrastructure::web::handlers::call_for_funds_handlers::list_call_for_funds,
+        crate::infrastructure::web::handlers::call_for_funds_handlers::get_overdue_calls,
+        crate::infrastructure::web::handlers::call_for_funds_handlers::send_call_for_funds,
+        crate::infrastructure::web::handlers::call_for_funds_handlers::cancel_call_for_funds,
+        crate::infrastructure::web::handlers::call_for_funds_handlers::delete_call_for_funds,
+        // Portfolios (Story 2.1 — portefeuille immeubles multi-rôle).
+        // Annotées depuis leur écriture, mais jamais enregistrées ici : elles
+        // n'atteignaient donc pas `docs/api/openapi.json`, et le frontend
+        // n'avait aucun type généré pour elles. C'est l'angle mort que le gate
+        // #734 ferme désormais — annoter ne suffit pas, il faut enregistrer.
+        crate::infrastructure::web::handlers::portfolio_handlers::create_portfolio,
+        crate::infrastructure::web::handlers::portfolio_handlers::list_portfolios,
+        crate::infrastructure::web::handlers::portfolio_handlers::get_portfolio,
+        crate::infrastructure::web::handlers::portfolio_handlers::update_portfolio,
+        crate::infrastructure::web::handlers::portfolio_handlers::delete_portfolio,
+        crate::infrastructure::web::handlers::portfolio_handlers::add_portfolio_building,
+        crate::infrastructure::web::handlers::portfolio_handlers::list_portfolio_buildings,
+        crate::infrastructure::web::handlers::portfolio_handlers::remove_portfolio_building,
+        crate::infrastructure::web::handlers::portfolio_handlers::share_portfolio,
+        crate::infrastructure::web::handlers::portfolio_handlers::list_portfolio_shares,
+        crate::infrastructure::web::handlers::portfolio_handlers::unshare_portfolio,
+        // Tickets — deux routes restées hors contrat pour la même raison.
+        crate::infrastructure::web::handlers::ticket_handlers::send_work_order,
+        crate::infrastructure::web::handlers::ticket_handlers::list_assignable_users,
+        // Authentification — la déconnexion manquait au contrat.
+        crate::infrastructure::web::handlers::auth_handlers::logout,
+        // Moyens de paiement (#732). Les quinze routes existaient et
+        // fonctionnaient ; aucune n'était déclarée, si bien que le frontend a
+        // écrit son DTO à la main — en oubliant `stripe_customer_id` et
+        // `is_default`, tous deux requis. D'où un 400 à chaque ajout de moyen
+        // de paiement, avec une CI verte de bout en bout.
+        crate::infrastructure::web::handlers::payment_method_handlers::create_payment_method,
+        crate::infrastructure::web::handlers::payment_method_handlers::get_payment_method,
+        crate::infrastructure::web::handlers::payment_method_handlers::get_payment_method_by_stripe_id,
+        crate::infrastructure::web::handlers::payment_method_handlers::list_owner_payment_methods,
+        crate::infrastructure::web::handlers::payment_method_handlers::list_active_owner_payment_methods,
+        crate::infrastructure::web::handlers::payment_method_handlers::get_default_payment_method,
+        crate::infrastructure::web::handlers::payment_method_handlers::list_organization_payment_methods,
+        crate::infrastructure::web::handlers::payment_method_handlers::list_payment_methods_by_type,
+        crate::infrastructure::web::handlers::payment_method_handlers::update_payment_method,
+        crate::infrastructure::web::handlers::payment_method_handlers::set_payment_method_as_default,
+        crate::infrastructure::web::handlers::payment_method_handlers::deactivate_payment_method,
+        crate::infrastructure::web::handlers::payment_method_handlers::reactivate_payment_method,
+        crate::infrastructure::web::handlers::payment_method_handlers::delete_payment_method,
+        crate::infrastructure::web::handlers::payment_method_handlers::count_active_payment_methods,
+        crate::infrastructure::web::handlers::payment_method_handlers::has_active_payment_methods,
     ),
     components(schemas(
+            crate::application::dto::PaymentMethodResponse,
+            crate::application::dto::CreatePaymentMethodRequest,
+            crate::application::dto::UpdatePaymentMethodRequest,
+        // JournalEntries — le `#[derive(ToSchema)]` seul NE SUFFIT PAS :
+        // utoipa ne collecte que ce qui est enregistre ici.
+        crate::infrastructure::web::handlers::journal_entry_handlers::CreateJournalEntryRequest,
+        crate::infrastructure::web::handlers::journal_entry_handlers::JournalEntryLineRequest,
+        crate::infrastructure::web::handlers::journal_entry_handlers::JournalEntryResponse,
+        crate::infrastructure::web::handlers::journal_entry_handlers::JournalEntryLineResponse,
+        crate::infrastructure::web::handlers::journal_entry_handlers::JournalEntryWithLinesResponse,
+        // OwnerContributions
+        crate::application::dto::owner_contribution_dto::CreateOwnerContributionRequest,
+        crate::application::dto::owner_contribution_dto::RecordPaymentRequest,
+        crate::application::dto::owner_contribution_dto::OwnerContributionResponse,
+        crate::domain::entities::owner_contribution::ContributionType,
+        crate::domain::entities::owner_contribution::ContributionPaymentStatus,
+        crate::domain::entities::owner_contribution::ContributionPaymentMethod,
+        // Units
+        crate::application::dto::unit_dto::CreateUnitDto,
+        crate::application::dto::unit_dto::UpdateUnitDto,
+        crate::application::dto::unit_dto::UnitResponseDto,
+        crate::domain::entities::unit::UnitType,
+        // CallForFunds
+        crate::application::dto::call_for_funds_dto::CreateCallForFundsRequest,
+        crate::application::dto::call_for_funds_dto::CallForFundsResponse,
+        crate::application::dto::call_for_funds_dto::SendCallForFundsRequest,
+        crate::application::dto::call_for_funds_dto::SendCallForFundsResponse,
         // ACP — voir la note dans `paths()` ci-dessus.
         crate::application::dto::acp_dto::CreateAcpDto,
         crate::application::dto::acp_dto::UpdateAcpDto,
@@ -278,6 +377,9 @@ use utoipa_swagger_ui::SwaggerUi;
         (name = "Expenses", description = "Expense and invoice management"),
         (name = "Meetings", description = "General assembly management"),
         (name = "Budgets", description = "Annual budget management"),
+        (name = "JournalEntries", description = "Double-entry bookkeeping (PCMN general ledger)"),
+        (name = "OwnerContributions", description = "Owner quote-parts (calls for funds receivables)"),
+        (name = "CallForFunds", description = "Collective calls for funds, split by ownership shares"),
         (name = "Documents", description = "Document upload/download"),
         (name = "GDPR", description = "Data privacy compliance"),
         (name = "Payments", description = "Payment processing"),

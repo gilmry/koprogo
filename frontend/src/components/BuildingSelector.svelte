@@ -12,6 +12,7 @@
     disabled = false,
     onSelect,
     onSelectBuilding,
+    onSelectAcp,
   }: {
     selectedBuildingId?: string;
     label?: string;
@@ -19,6 +20,12 @@
     disabled?: boolean;
     onSelect?: (buildingId: string) => void;
     onSelectBuilding?: (building: Building) => void;
+    /**
+     * Rappelée avec l'ACP du bloc choisi. C'est elle qui porte le périmètre au
+     * sens de la loi : le dossier de gestion appartient à l'ACP, pas au bloc
+     * ni au syndic (ADR-0045). Un immeuble n'en est qu'une porte d'entrée.
+     */
+    onSelectAcp?: (acpId: string) => void;
   } = $props();
 
   interface Building {
@@ -28,15 +35,69 @@
     city?: string;
     postal_code?: string;
     organization_id?: string;
+    /** L'ACP dont ce bloc dépend (ADR-0045). */
+    acp_id?: string;
+  }
+
+  interface Acp {
+    id: string;
+    name: string;
   }
 
   let buildings = $state<Building[]>([]);
+  let acps = $state<Acp[]>([]);
   let loading = $state(true);
   let error = $state("");
 
+  /**
+   * Les blocs groupés par ACP, dans l'ordre des ACP puis des blocs.
+   *
+   * Une ACP peut compter plusieurs blocs — c'est même le cas visé par
+   * l'Art. 3.85 § 1er, « immeuble ou groupe d'immeubles ». Les présenter à
+   * plat laissait croire que chaque bloc était une copropriété distincte, ce
+   * qui est faux dès qu'un groupe existe, et masquait que les charges se
+   * répartissent au niveau de l'ACP.
+   *
+   * Les blocs dont l'ACP est inconnue sont regroupés à part plutôt que
+   * masqués : les taire ferait disparaître des immeubles de l'écran sans que
+   * personne comprenne pourquoi.
+   */
+  let groupes = $derived.by(() => {
+    const parAcp = new Map<string, { nom: string; blocs: Building[] }>();
+    for (const b of buildings) {
+      const cle = b.acp_id ?? "__sans_acp__";
+      if (!parAcp.has(cle)) {
+        const acp = acps.find((a) => a.id === b.acp_id);
+        parAcp.set(cle, {
+          nom: acp?.name ?? (b.acp_id ? b.acp_id : $_("buildings.acpUnknown")),
+          blocs: [],
+        });
+      }
+      parAcp.get(cle)!.blocs.push(b);
+    }
+    return [...parAcp.entries()]
+      .map(([id, g]) => ({ id, ...g }))
+      .sort((x, y) => x.nom.localeCompare(y.nom, "fr"));
+  });
+
   $effect(() => {
     loadBuildings();
+    loadAcps();
   });
+
+  /**
+   * Les noms d'ACP servent à l'affichage seul. Leur échec ne doit pas empêcher
+   * de choisir un immeuble : on retombe alors sur l'identifiant, ce qui reste
+   * exploitable, plutôt que de bloquer l'écran.
+   */
+  async function loadAcps() {
+    try {
+      const reponse = await api.get("/acps?per_page=200");
+      acps = extractArray<Acp>(reponse, "acps");
+    } catch {
+      acps = [];
+    }
+  }
 
   async function loadBuildings() {
     await withLoadingState({
@@ -106,6 +167,7 @@
           if (onSelect) onSelect(selectedBuildingId);
           const selected = buildings.find(b => b.id === selectedBuildingId);
           if (selected && onSelectBuilding) onSelectBuilding(selected);
+          if (selected?.acp_id && onSelectAcp) onSelectAcp(selected.acp_id);
         }
       }}
       {required}
@@ -113,10 +175,14 @@
       class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
     >
       <option value="">{$_('buildings.selectBuilding')}</option>
-      {#each buildings as building}
-        <option value={building.id}>
-          {building.name} — {building.address}{#if building.city}, {building.postal_code} {building.city}{/if}
-        </option>
+      {#each groupes as groupe (groupe.id)}
+        <optgroup label={groupe.nom}>
+          {#each groupe.blocs as building (building.id)}
+            <option value={building.id}>
+              {building.name} — {building.address}{#if building.city}, {building.postal_code} {building.city}{/if}
+            </option>
+          {/each}
+        </optgroup>
       {/each}
     </select>
   </div>

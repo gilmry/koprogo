@@ -205,6 +205,16 @@ impl StatsRepository for PostgresStatsRepository {
         .await
         .map_err(|e| e.to_string())?;
 
+        // COALESCE : SUM sur un ensemble vide rend NULL, pas 0.
+        let declared_units = sqlx::query_scalar::<_, i64>(
+            "SELECT COALESCE(SUM(b.total_units), 0)::bigint FROM buildings b
+             WHERE b.acp_id IN (SELECT id FROM acps WHERE organization_id = $1)",
+        )
+        .bind(organization_id)
+        .fetch_one(&self.pool)
+        .await
+        .map_err(|e| e.to_string())?;
+
         let total_owners = sqlx::query_scalar::<_, i64>(
             "SELECT COUNT(DISTINCT o.id) FROM owners o
              INNER JOIN unit_owners uo ON o.id = uo.owner_id
@@ -246,6 +256,7 @@ impl StatsRepository for PostgresStatsRepository {
         Ok(SyndicDashboardStats {
             total_buildings,
             total_units,
+            declared_units,
             total_owners,
             pending_expenses_count: pending_count,
             pending_expenses_amount: pending_total,
@@ -328,6 +339,7 @@ impl StatsRepository for PostgresStatsRepository {
         Ok(SyndicDashboardStats {
             total_buildings,
             total_units,
+            declared_units: total_units,
             total_owners,
             pending_expenses_count: pending_count,
             pending_expenses_amount: pending_total,

@@ -5,6 +5,7 @@ use crate::application::dto::{
 };
 use crate::infrastructure::audit::{AuditEventType, AuditLogEntry};
 use crate::infrastructure::web::middleware::scope_guard::verify_acp_org_access;
+use crate::infrastructure::web::middleware::scope_guard::verify_building_org_access;
 use crate::infrastructure::web::{AppState, AuthenticatedUser};
 use actix_web::{delete, get, post, put, web, HttpResponse, Responder, ResponseError};
 use uuid::Uuid;
@@ -76,6 +77,22 @@ pub async fn create_meeting(
         }
     };
     request.organization_id = organization_id;
+
+    // Isolation multi-tenant à l'ÉCRITURE (ADR-0045). L'affectation de
+    // `organization_id` depuis le jeton protège l'ESTAMPILLE, pas le
+    // RATTACHEMENT : elle empêche d'écrire au nom d'autrui, pas d'écrire dans
+    // le dossier d'autrui. L'immeuble visé doit relever d'une ACP confiée à ce
+    // syndic.
+    if let Err(err) = verify_building_org_access(
+        &user,
+        request.building_id,
+        &state.building_use_cases,
+        &state.acp_use_cases,
+    )
+    .await
+    {
+        return err.error_response();
+    }
 
     match state
         .meeting_use_cases
@@ -566,6 +583,7 @@ pub async fn export_meeting_minutes_pdf(
         use crate::domain::entities::{Resolution, Vote};
 
         let resolution_entity = Resolution {
+            prestataire_de_la_mission: None,
             id: resolution_dto.id,
             meeting_id: resolution_dto.meeting_id,
             title: resolution_dto.title,
@@ -661,6 +679,8 @@ pub async fn export_meeting_minutes_pdf(
 
     let meeting_entity = Meeting {
         id: meeting.id,
+        // L'assemblée relève de l'ACP de son immeuble (Art. 3.87, ADR-0045).
+        acp_id: building_acp_id,
         organization_id,
         building_id: meeting.building_id,
         meeting_type: meeting.meeting_type,

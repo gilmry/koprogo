@@ -101,10 +101,15 @@ impl ChargeDistributionUseCases {
         // 3. Récupérer le montant TTC à répartir
         let total_amount = expense.amount_incl_vat.unwrap_or(expense.amount);
 
-        // 4. Récupérer toutes les relations unit-owner actives pour ce bâtiment
+        // 4. Quotes-parts de CHARGE des détenteurs actifs (Art. 3.84).
+        //
+        // `find_active_by_building` renvoyait le pourcentage de détention brut,
+        // dont la somme vaut le NOMBRE DE LOTS. La répartition échouait donc
+        // sur tout immeuble de plus d'un lot, avec « Total quota percentage
+        // exceeds 100% (got: 400.00000) » sur un immeuble pourtant conforme.
         let unit_ownerships = self
             .unit_owner_repository
-            .find_active_by_building(expense.building_id)
+            .find_active_quota_shares_by_building(expense.building_id)
             .await?;
 
         if unit_ownerships.is_empty() {
@@ -114,6 +119,34 @@ impl ChargeDistributionUseCases {
         // 5. Calculer les distributions
         let distributions =
             ChargeDistribution::calculate_distributions(expense_id, total_amount, unit_ownerships)?;
+
+        // 5bis. La somme répartie doit égaler la charge, au centime près.
+        //
+        // `verify_distribution` existait, testée, et n'avait AUCUN appelant :
+        // troisième garde-fou dormant de ce module, après `resolve_owner_quota`
+        // et `expense_has_journal_entries`.
+        //
+        // Ce qu'il rattrape concrètement : la base de tantièmes est stockée
+        // DEUX FOIS — `acps.total_tantiemes`, qui fonde le contrôle de
+        // conformité, et `buildings.total_tantiemes`, qui fonde le calcul des
+        // quotes-parts. Les deux sont saisissables séparément par un
+        // administrateur et rien ne les tient ensemble. Une divergence produit
+        // une répartition qui ne couvre pas la charge, ou qui la dépasse, sans
+        // qu'aucune étape ne s'en aperçoive.
+        //
+        // Répartir 2 420 € en 2 418 € ou en 2 422 € n'est pas un détail
+        // d'affichage : ce sont les montants réclamés aux copropriétaires.
+        if !ChargeDistribution::verify_distribution(&distributions, total_amount) {
+            let reparti = ChargeDistribution::total_distributed(&distributions);
+            return Err(format!(
+                "Distribution does not cover the charge: {} distributed for {} due \
+                 (delta {}). Check that the ACP base (acps.total_tantiemes) and the \
+                 building base (buildings.total_tantiemes) agree.",
+                reparti,
+                total_amount,
+                reparti - total_amount,
+            ));
+        }
 
         // 6. Sauvegarder en masse
         let saved_distributions = self
@@ -313,6 +346,17 @@ mod tests {
 
     #[async_trait]
     impl ExpenseRepository for MockExpenseRepository {
+        async fn enregistrer_lignes_de_facture(
+            &self,
+            _expense_id: Uuid,
+            _lignes: &[crate::application::ports::expense_repository::LigneDeFacture],
+        ) -> Result<(), String> {
+            // Mock : rien à enregistrer. Le port n'offre pas d'implémentation
+            // par défaut, précisément pour que ce choix soit écrit ici plutôt
+            // que subi partout.
+            Ok(())
+        }
+
         async fn create(&self, expense: &Expense) -> Result<Expense, String> {
             let mut expenses = self.expenses.lock().unwrap();
             expenses.insert(expense.id, expense.clone());
@@ -449,6 +493,16 @@ mod tests {
             Ok(ownerships.get(&building_id).cloned().unwrap_or_default())
         }
 
+        /// Dans les tests, les fixtures posent directement des quotes-parts
+        /// déjà résolues : la même source sert donc aux deux méthodes.
+        async fn find_active_quota_shares_by_building(
+            &self,
+            building_id: Uuid,
+        ) -> Result<Vec<(Uuid, Uuid, Decimal)>, String> {
+            let ownerships = self.building_ownerships.lock().unwrap();
+            Ok(ownerships.get(&building_id).cloned().unwrap_or_default())
+        }
+
         async fn find_voting_holders_by_unit(
             &self,
             _unit_id: Uuid,
@@ -465,6 +519,7 @@ mod tests {
         let amount_excl_vat = amount_incl_vat / vat_factor;
         Expense {
             id: Uuid::new_v4(),
+            acp_id: Uuid::new_v4(),
             organization_id: Uuid::new_v4(),
             building_id,
             category: ExpenseCategory::Maintenance,
@@ -497,6 +552,7 @@ mod tests {
         let now = Utc::now();
         Expense {
             id: Uuid::new_v4(),
+            acp_id: Uuid::new_v4(),
             organization_id: Uuid::new_v4(),
             building_id,
             category: ExpenseCategory::Maintenance,
@@ -576,6 +632,101 @@ mod tests {
         assert!(distributions
             .iter()
             .all(|d| d.expense_id == expense_id.to_string()));
+    }
+
+    /// Non-régression — une répartition qui ne couvre pas la charge est refusée.
+    ///
+    /// `verify_distribution` existait, testée, sans aucun appelant. Le cas
+    /// qu'elle rattrape n'est pas théorique : la base de tantièmes est stockée
+    /// deux fois (`acps.total_tantiemes` pour le contrôle de conformité,
+    /// `buildings.total_tantiemes` pour le calcul des quotes-parts), les deux
+    /// sont saisissables séparément par un administrateur, et rien ne les tient
+    /// ensemble. Une divergence répartit moins — ou plus — que la charge.
+    ///
+    /// Ici, des quotes-parts de 0,30 et 0,40 : 70 % d'une charge de 1 000 €,
+    /// soit 700 € répartis pour 1 000 € dus. Sans la garde, ces 700 € étaient
+    /// enregistrés et réclamés tels quels aux copropriétaires.
+    #[tokio::test]
+    async fn test_repartition_incomplete_est_refusee() {
+        let building_id = Uuid::new_v4();
+        let expense = make_approved_expense(building_id, dec!(1000));
+        let expense_id = expense.id;
+
+        let ownerships = vec![
+            (Uuid::new_v4(), Uuid::new_v4(), dec!(0.30)),
+            (Uuid::new_v4(), Uuid::new_v4(), dec!(0.40)),
+        ];
+
+        let dist_repo = MockChargeDistributionRepository::new();
+        let uc = make_use_cases(
+            dist_repo,
+            MockExpenseRepository::with_expense(expense),
+            MockUnitOwnerRepository::with_building_ownerships(building_id, ownerships),
+        );
+
+        let err = uc
+            .calculate_and_save_distribution(expense_id)
+            .await
+            .expect_err("une répartition à 70 % doit être refusée");
+        assert!(
+            err.contains("does not cover the charge"),
+            "le message doit nommer l'écart : {err}"
+        );
+        assert!(
+            err.contains("700"),
+            "le message doit chiffrer ce qui a été réparti : {err}"
+        );
+    }
+
+    /// @edge — la tolérance d'un centime reste admise.
+    ///
+    /// Une division non décimale (un tiers de 1 000 €) laisse une traîne
+    /// d'arrondi. Refuser à l'exactitude absolue rendrait toute copropriété à
+    /// base non décimale impossible à gérer.
+    #[tokio::test]
+    async fn test_arrondi_au_centime_reste_accepte() {
+        let building_id = Uuid::new_v4();
+        let expense = make_approved_expense(building_id, dec!(1000));
+        let expense_id = expense.id;
+
+        // 0,3333 × 3 = 0,9999 → 999,90 € répartis pour 1 000 € dus.
+        // L'écart de 10 centimes DÉPASSE la tolérance : il doit être refusé.
+        let trop_grossier = vec![
+            (Uuid::new_v4(), Uuid::new_v4(), dec!(0.3333)),
+            (Uuid::new_v4(), Uuid::new_v4(), dec!(0.3333)),
+            (Uuid::new_v4(), Uuid::new_v4(), dec!(0.3333)),
+        ];
+        let uc = make_use_cases(
+            MockChargeDistributionRepository::new(),
+            MockExpenseRepository::with_expense(expense.clone()),
+            MockUnitOwnerRepository::with_building_ownerships(building_id, trop_grossier),
+        );
+        assert!(
+            uc.calculate_and_save_distribution(expense_id)
+                .await
+                .is_err(),
+            "10 centimes d'écart dépassent la tolérance"
+        );
+
+        // La même répartition en pleine précision décimale tombe, elle, à
+        // moins d'un centime : elle doit passer.
+        let tiers = Decimal::ONE / Decimal::from(3);
+        let exact = vec![
+            (Uuid::new_v4(), Uuid::new_v4(), tiers),
+            (Uuid::new_v4(), Uuid::new_v4(), tiers),
+            (Uuid::new_v4(), Uuid::new_v4(), tiers),
+        ];
+        let uc2 = make_use_cases(
+            MockChargeDistributionRepository::new(),
+            MockExpenseRepository::with_expense(expense),
+            MockUnitOwnerRepository::with_building_ownerships(building_id, exact),
+        );
+        assert!(
+            uc2.calculate_and_save_distribution(expense_id)
+                .await
+                .is_ok(),
+            "une traîne d'arrondi sous le centime doit rester admise"
+        );
     }
 
     #[tokio::test]
@@ -747,6 +898,7 @@ mod tests {
         let now = Utc::now();
         let expense = Expense {
             id: Uuid::new_v4(),
+            acp_id: Uuid::new_v4(),
             organization_id: Uuid::new_v4(),
             building_id,
             category: ExpenseCategory::Utilities,

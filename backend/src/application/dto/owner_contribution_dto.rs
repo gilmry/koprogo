@@ -7,7 +7,8 @@ use crate::domain::entities::{
 };
 
 /// DTO for creating a new owner contribution
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, utoipa::ToSchema)]
+#[serde(deny_unknown_fields)]
 pub struct CreateOwnerContributionRequest {
     pub owner_id: Uuid,
     pub unit_id: Option<Uuid>,
@@ -19,7 +20,8 @@ pub struct CreateOwnerContributionRequest {
 }
 
 /// DTO for recording a payment
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, utoipa::ToSchema)]
+#[serde(deny_unknown_fields)]
 pub struct RecordPaymentRequest {
     pub payment_date: DateTime<Utc>,
     pub payment_method: ContributionPaymentMethod,
@@ -27,9 +29,11 @@ pub struct RecordPaymentRequest {
 }
 
 /// DTO for owner contribution response
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, utoipa::ToSchema)]
 pub struct OwnerContributionResponse {
     pub id: Uuid,
+    /// L'ACP propriétaire de la pièce (ADR-0045).
+    pub acp_id: Uuid,
     pub organization_id: Uuid,
     pub owner_id: Uuid,
     pub unit_id: Option<Uuid>,
@@ -51,6 +55,7 @@ impl From<OwnerContribution> for OwnerContributionResponse {
     fn from(contribution: OwnerContribution) -> Self {
         Self {
             id: contribution.id,
+            acp_id: contribution.acp_id,
             organization_id: contribution.organization_id,
             owner_id: contribution.owner_id,
             unit_id: contribution.unit_id,

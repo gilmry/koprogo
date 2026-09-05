@@ -1,0 +1,10 @@
+---
+// Détail d'une organisation (UX1 de l'audit du 2026-08-30). La liste admin
+// permettait de modifier ou supprimer une organisation, jamais de l'ouvrir.
+import Layout from "../../layouts/Layout.astro";
+import OrganizationDetail from "../../components/admin/OrganizationDetail.svelte";
+---
+
+<Layout title="Détail organisation - KoproGo" showNav={true} requireAuth={true}>
+  <OrganizationDetail client:only="svelte" />
+</Layout>

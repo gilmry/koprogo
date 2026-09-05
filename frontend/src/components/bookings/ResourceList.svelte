@@ -93,7 +93,7 @@
           >
             <option value="all">{$_('common.all')}</option>
             {#each Object.values(ResourceType) as type}
-              <option value={type}>{type}</option>
+              <option value={type}>{$_(`bookings.resourceType.${type}`)}</option>
             {/each}
           </select>
         </div>

@@ -15,6 +15,7 @@
   interface SyndicStats {
     total_buildings: number;
     total_units: number;
+    declared_units: number;
     total_owners: number;
     pending_expenses_count: number;
     pending_expenses_amount: number;
@@ -152,7 +153,18 @@
           <span class="text-2xl">🏢</span>
         </div>
         <p class="text-3xl font-bold text-gray-900">{stats.total_buildings}</p>
-        <p class="text-sm text-gray-500 mt-1">{stats.total_units} {$_('dashboards.syndic.stats.unitsTotal')}</p>
+        <!-- « 0 lots au total » à côté de « 8 Lots » sur la liste des
+             immeubles semblait contradictoire. Les deux nombres sont exacts
+             mais ne mesurent pas la même chose : l'un compte les lots
+             encodés, l'autre ceux déclarés à l'acte de base. La fraction lève
+             l'ambiguïté, et n'est affichée que lorsqu'il y a un écart. -->
+        <p class="text-sm text-gray-500 mt-1">
+          {stats.declared_units > stats.total_units
+            ? $_('dashboards.syndic.stats.unitsEncodedOfDeclared', {
+                values: { encoded: stats.total_units, declared: stats.declared_units },
+              })
+            : `${stats.total_units} ${$_('dashboards.syndic.stats.unitsEncoded')}`}
+        </p>
       </div>
 
       <div class="bg-white rounded-lg shadow p-6">

@@ -13,8 +13,13 @@
 
   let {
     buildingId,
+    // Les pages dédiées portent déjà un H1 identique ; l'en-tête de carte y
+    // faisait doublon. Il reste par défaut pour les usages où le composant
+    // est une section parmi d'autres.
+    showHeader = true,
   }: {
     buildingId: string;
+    showHeader?: boolean;
   } = $props();
 
   let convocations = $state<Convocation[]>([]);
@@ -70,14 +75,16 @@
 </script>
 
 <div class="bg-white shadow-md rounded-lg" data-testid="convocation-list">
-  <div class="px-4 py-5 border-b border-gray-200 sm:px-6">
-    <h3 class="text-lg leading-6 font-medium text-gray-900">
-      📨 {$_('convocations.title')}
-    </h3>
-    <p class="mt-1 text-sm text-gray-500">
-      {$_('convocations.description')}
-    </p>
-  </div>
+  {#if showHeader}
+    <div class="px-4 py-5 border-b border-gray-200 sm:px-6">
+      <h3 class="text-lg leading-6 font-medium text-gray-900">
+        📨 {$_('convocations.title')}
+      </h3>
+      <p class="mt-1 text-sm text-gray-500">
+        {$_('convocations.description')}
+      </p>
+    </div>
+  {/if}
 
   <!-- Filters -->
   <div class="px-4 py-3 bg-gray-50 border-b border-gray-200">

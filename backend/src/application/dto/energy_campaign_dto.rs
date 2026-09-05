@@ -2,6 +2,8 @@ use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
+use rust_decimal::Decimal;
+
 use crate::domain::entities::{
     CampaignStatus, CampaignType, ContractType, EnergyCampaign, EnergyType, ProviderOffer,
 };
@@ -100,9 +102,9 @@ pub struct CampaignStatsResponse {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CreateProviderOfferRequest {
     pub provider_name: String,
-    pub price_kwh_electricity: Option<f64>,
-    pub price_kwh_gas: Option<f64>,
-    pub fixed_monthly_fee: f64,
+    pub price_kwh_electricity: Option<Decimal>,
+    pub price_kwh_gas: Option<Decimal>,
+    pub fixed_monthly_fee: Decimal,
     pub green_energy_pct: f64,
     pub contract_duration_months: i32,
     pub estimated_savings_pct: f64,
@@ -115,9 +117,9 @@ pub struct ProviderOfferResponse {
     pub id: Uuid,
     pub campaign_id: Uuid,
     pub provider_name: String,
-    pub price_kwh_electricity: Option<f64>,
-    pub price_kwh_gas: Option<f64>,
-    pub fixed_monthly_fee: f64,
+    pub price_kwh_electricity: Option<Decimal>,
+    pub price_kwh_gas: Option<Decimal>,
+    pub fixed_monthly_fee: Decimal,
     pub green_energy_pct: f64,
     pub green_score: i32, // Calculated 0/5/10
     pub contract_duration_months: i32,

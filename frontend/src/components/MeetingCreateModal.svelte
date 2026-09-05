@@ -65,6 +65,11 @@
   }
 </script>
 
+<!-- Échap ferme le modal, comme le composant Modal partagé. Sans cela, la
+     seule sortie était le bouton de fermeture ou le clic sur le fond, ce qui
+     piège un utilisateur au clavier. -->
+<svelte:window onkeydown={(e) => { if (e.key === 'Escape') handleClose(); }} />
+
 <!-- svelte-ignore a11y_click_events_have_key_events -->
 <div
   class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"

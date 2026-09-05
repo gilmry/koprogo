@@ -283,6 +283,7 @@ async fn main() -> std::io::Result<()> {
         koprogo_api::infrastructure::database::repositories::meeting_completion_checker_impl::PostgresMeetingCompletionChecker::new(pool.clone()),
     );
     let meeting_use_cases = MeetingUseCases::new(meeting_repo.clone())
+        .with_acp_resolution(building_repo.clone())
         .with_completion_checker(meeting_completion_checker);
     let convocation_use_cases = ConvocationUseCases::new(
         convocation_repo,
@@ -318,10 +319,16 @@ async fn main() -> std::io::Result<()> {
     let linky_use_cases = LinkyUseCases::new(iot_repo, linky_client, oauth_redirect_uri);
     let notification_use_cases =
         NotificationUseCases::new(notification_repo, notification_preference_repo);
-    let payment_use_cases_arc = Arc::new(PaymentUseCases::new(
-        payment_repo.clone(),
-        payment_method_repo.clone(),
-    ));
+    let payment_use_cases_arc = Arc::new(
+        PaymentUseCases::new(
+            payment_repo.clone(),
+            payment_method_repo.clone(),
+            // Un paiement reussi solde la quote-part qu'il designe...
+            owner_contribution_repo.clone(),
+        )
+        // ...et enregistre l'ecriture d'encaissement correspondante.
+        .with_accounting(expense_accounting_service.clone()),
+    );
     let payment_method_use_cases = PaymentMethodUseCases::new(payment_method_repo);
     let quote_use_cases = QuoteUseCases::new(quote_repo.clone());
     let local_exchange_use_cases = LocalExchangeUseCases::new(
@@ -404,7 +411,9 @@ async fn main() -> std::io::Result<()> {
         payment_reminder_repo.clone(),
     );
     let owner_contribution_use_cases =
-        OwnerContributionUseCases::new(owner_contribution_repo.clone());
+        OwnerContributionUseCases::new(owner_contribution_repo.clone())
+            .with_acp_resolution(unit_repo.clone())
+            .with_accounting(expense_accounting_service.clone());
     // Track H Story H7 — validate-before-compute wiring ACP-level.
     let call_for_funds_use_cases = CallForFundsUseCases::with_full_wiring(
         call_for_funds_repo,
@@ -413,7 +422,8 @@ async fn main() -> std::io::Result<()> {
         building_repo.clone(),
         acp_repo.clone(),
     );
-    let journal_entry_use_cases = JournalEntryUseCases::new(journal_entry_repo.clone());
+    let journal_entry_use_cases = JournalEntryUseCases::new(journal_entry_repo.clone())
+        .with_acp_resolution(building_repo.clone());
     let poll_use_cases = PollUseCases::new(
         poll_repo.clone(),
         poll_vote_repo.clone(),
@@ -632,6 +642,31 @@ async fn main() -> std::io::Result<()> {
 
         App::new()
             .app_data(app_state.clone())
+            // Corps d'erreur JSON pour les echecs de DESERIALISATION.
+            //
+            // Sans ceci, actix rend un 400 en `text/plain` (« Json deserialize
+            // error: ... »). Tout appelant faisant `.json()` dessus recoit
+            // « Unexpected token 'J' », un message qui ne dit rien du defaut
+            // reel : c'est ce qui avait fait echouer `02-ag-full-cycle` et
+            // taire `seedConformantUnits` sur `POST /units` (cf. le commentaire
+            // de `CreateUnitDto::acp_id`). Le contournement d'alors avait rendu
+            // `acp_id` optionnel ; la cause, elle, restait entiere pour tous les
+            // autres champs de toutes les autres routes.
+            //
+            // Prealable a `#[serde(deny_unknown_fields)]` : un champ inconnu
+            // doit produire un refus LISIBLE, sinon on remplace une perte
+            // silencieuse par une erreur illisible.
+            .app_data(web::JsonConfig::default().error_handler(|err, _req| {
+                let detail = err.to_string();
+                actix_web::error::InternalError::from_response(
+                    err,
+                    actix_web::HttpResponse::BadRequest().json(serde_json::json!({
+                        "error": "Invalid request body",
+                        "details": detail,
+                    })),
+                )
+                .into()
+            }))
             .wrap(gdpr_rate_limit.clone())
             .wrap(cors)
             .wrap(SecurityHeaders) // Security headers for all responses

@@ -131,10 +131,15 @@
       </button>
     </div>
   {:else if filteredPolls.length === 0}
+    <!-- Deux états distincts. Avant, « Sondage non trouvé » et « Aucun
+         sondage créé » s'affichaient ensemble et sans condition : le premier
+         se lit comme un 404, le second comme un état vide, et les voir côte à
+         côte laissait croire à une erreur. -->
     <div class="p-8 text-center">
-      <p class="text-gray-500">{$_("polls.list.notFound")}</p>
-      <p class="mt-2 text-sm text-gray-400">
-        {$_("polls.list.emptyMessage")}
+      <p class="text-gray-500">
+        {polls.length === 0
+          ? $_("polls.list.emptyMessage")
+          : $_("polls.list.noneMatchFilter")}
       </p>
     </div>
   {:else}

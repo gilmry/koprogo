@@ -243,7 +243,7 @@
       <div class="flex items-center justify-between">
         <div class="flex items-center space-x-4">
           <button
-            on:click={handleGoBack}
+            onclick={handleGoBack}
             class="text-gray-600 hover:text-gray-900"
           >
             {$_("common.back")}
@@ -255,7 +255,7 @@
             <div class="flex flex-col items-start">
               <Button
                 variant="primary"
-                on:click={handleComplete}
+                onclick={handleComplete}
                 disabled={!canCompleteMeeting}
                 aria-disabled={!canCompleteMeeting}
                 aria-describedby={!canCompleteMeeting
@@ -279,14 +279,14 @@
             </div>
             <Button
               variant="outline"
-              on:click={handleCancel}
+              onclick={handleCancel}
               data-testid="meeting-cancel-btn"
             >
               {$_("common.cancel")}
             </Button>
             <Button
               variant="outline"
-              on:click={handleReschedule}
+              onclick={handleReschedule}
               data-testid="meeting-reschedule-btn"
             >
               {$_("meetings.reschedule")}
@@ -294,7 +294,7 @@
           {:else if canManage && meeting.status === "Cancelled"}
             <Button
               variant="primary"
-              on:click={handleReschedule}
+              onclick={handleReschedule}
               data-testid="meeting-reschedule-btn"
             >
               {$_("meetings.reschedule")}

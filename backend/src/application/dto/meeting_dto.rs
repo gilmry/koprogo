@@ -8,6 +8,12 @@ use uuid::Uuid;
 #[derive(Debug, Serialize, Deserialize)]
 pub struct MeetingResponse {
     pub id: Uuid,
+    /// L'ACP dont c'est l'assemblée (Art. 3.87 § 1er, ADR-0045).
+    ///
+    /// La réponse n'expose délibérément pas le syndic : ce qu'un client a
+    /// besoin de savoir, c'est de quelle copropriété relève l'assemblée, pas
+    /// qui la tenait au moment où elle s'est réunie.
+    pub acp_id: Uuid,
     pub building_id: Uuid,
     pub meeting_type: MeetingType,
     pub title: String,
@@ -33,6 +39,7 @@ impl From<Meeting> for MeetingResponse {
     fn from(meeting: Meeting) -> Self {
         Self {
             id: meeting.id,
+            acp_id: meeting.acp_id,
             building_id: meeting.building_id,
             meeting_type: meeting.meeting_type,
             title: meeting.title,

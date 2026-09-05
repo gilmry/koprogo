@@ -690,9 +690,12 @@ mod tests {
         ProviderOffer::new(
             campaign_id,
             "Lampiris".to_string(),
-            Some(0.27),
+            // 0,27 € le kWh et 12,50 € de redevance : des montants, donc
+            // `Decimal` (ADR-0008 § A). Le pourcentage d'énergie verte reste
+            // en `f64`, c'est un affichage.
+            Some(rust_decimal_macros::dec!(0.27)),
             None,
-            12.50,
+            rust_decimal_macros::dec!(12.50),
             100.0,
             12,
             15.0,

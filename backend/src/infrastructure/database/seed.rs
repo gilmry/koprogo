@@ -87,7 +87,61 @@ impl DatabaseSeeder {
         let now = Utc::now();
         let short = org_id.simple().to_string();
         let short_prefix = &short[..8];
-        let acp_name = format!("ACP par defaut ({})", short_prefix);
+
+        // Copropriétés bruxelloises plausibles plutôt que « ACP par defaut »
+        // avec « Adresse a completer, 0000 A completer ». Le site de
+        // démonstration montrait ces valeurs telles quelles, ce qui donnait
+        // l'impression d'un produit inachevé.
+        //
+        // Rues et codes postaux réels de la Région bruxelloise ; noms de
+        // résidences inventés. `bce_number` reste NULL : un numéro
+        // d'entreprise syntaxiquement valide risquerait de correspondre à une
+        // vraie société.
+        const ACP_MODELES: [(&str, &str, &str, &str); 6] = [
+            (
+                "Résidence Les Tilleuls",
+                "Avenue Louise 143",
+                "1050",
+                "Ixelles",
+            ),
+            (
+                "Résidence Dansaert",
+                "Rue Antoine Dansaert 62",
+                "1000",
+                "Bruxelles",
+            ),
+            (
+                "Résidence Parc Léopold",
+                "Rue Belliard 28",
+                "1040",
+                "Etterbeek",
+            ),
+            (
+                "Résidence Flagey",
+                "Place Eugène Flagey 18",
+                "1050",
+                "Ixelles",
+            ),
+            (
+                "Résidence Montgomery",
+                "Avenue de Tervueren 96",
+                "1150",
+                "Woluwe-Saint-Pierre",
+            ),
+            (
+                "Résidence Val d'Or",
+                "Chaussée de Waterloo 715",
+                "1180",
+                "Uccle",
+            ),
+        ];
+
+        // Choix déterministe : un même identifiant d'organisation rend
+        // toujours la même adresse, donc un seed rejoué reste stable.
+        let index = (org_id.as_u128() % ACP_MODELES.len() as u128) as usize;
+        let (residence, rue, code_postal, commune) = ACP_MODELES[index];
+
+        let acp_name = format!("ACP {residence}");
         let acp_slug = format!("acp-seed-{}", short_prefix);
 
         sqlx::query(
@@ -100,9 +154,9 @@ impl DatabaseSeeder {
         .bind(&acp_name)
         .bind(&acp_slug)
         .bind("copropriete_belge")
-        .bind("Adresse a completer")
-        .bind("0000")
-        .bind("A completer")
+        .bind(rue)
+        .bind(code_postal)
+        .bind(commune)
         .bind(now)
         .bind(now)
         .execute(&self.pool)
@@ -114,11 +168,29 @@ impl DatabaseSeeder {
 
     /// Create or update the default superadmin user
     pub async fn seed_superadmin(&self) -> Result<User, String> {
-        let superadmin_email = "admin@koprogo.com";
-        let superadmin_password = "admin123"; // Change in production!
+        // Configurables par l'environnement, avec repli sur les valeurs
+        // historiques pour ne rien casser là où rien n'est configuré.
+        //
+        // Ces identifiants donnent le rôle `superadmin`. Codés en dur dans un
+        // dépôt AGPL, ils sont lisibles par quiconque, et l'API de la démo est
+        // publiquement joignable. Le repli n'est donc pas une solution : c'est
+        // une compatibilité le temps que `KOPROGO_SUPERADMIN_PASSWORD` soit
+        // renseigné sur chaque déploiement. Voir l'issue de suivi.
+        let superadmin_email = std::env::var("KOPROGO_SUPERADMIN_EMAIL")
+            .unwrap_or_else(|_| "admin@koprogo.com".to_string());
+        let superadmin_password =
+            std::env::var("KOPROGO_SUPERADMIN_PASSWORD").unwrap_or_else(|_| "admin123".to_string());
+
+        if superadmin_password == "admin123" {
+            log::warn!(
+                "SÉCURITÉ : le superadmin utilise le mot de passe par défaut, \
+                 lisible dans le dépôt public. Renseignez \
+                 KOPROGO_SUPERADMIN_PASSWORD."
+            );
+        }
 
         // Hash password
-        let password_hash = hash(superadmin_password, DEFAULT_COST)
+        let password_hash = hash(&superadmin_password, DEFAULT_COST)
             .map_err(|e| format!("Failed to hash password: {}", e))?;
 
         let superadmin_id = Uuid::parse_str("00000000-0000-0000-0000-000000000001")
@@ -1629,8 +1701,10 @@ impl DatabaseSeeder {
             // Insert new expense
             sqlx::query(
                 r#"
-                INSERT INTO expenses (id, organization_id, building_id, category, description, amount, expense_date, payment_status, approval_status, paid_date, supplier, invoice_number, created_at, updated_at)
-                VALUES ($1, $2, $3, $4::expense_category, $5, $6, $7, $8::payment_status, $9::approval_status, $10, $11, $12, $13, $14)
+                -- L'ACP se deduit de l'immeuble : la depense appartient a la
+                -- copropriete, pas au syndic qui la saisit (ADR-0045).
+                INSERT INTO expenses (id, acp_id, organization_id, building_id, category, description, amount, expense_date, payment_status, approval_status, paid_date, supplier, invoice_number, created_at, updated_at)
+                VALUES ($1, (SELECT acp_id FROM buildings WHERE id = $3), $2, $3, $4::expense_category, $5, $6, $7, $8::payment_status, $9::approval_status, $10, $11, $12, $13, $14)
                 "#
             )
             .bind(expense_id)
@@ -1681,8 +1755,9 @@ impl DatabaseSeeder {
 
         sqlx::query(
             r#"
-            INSERT INTO meetings (id, building_id, organization_id, meeting_type, title, description, scheduled_date, location, status, agenda, created_at, updated_at)
-            VALUES ($1, $2, $3, $4::meeting_type, $5, $6, $7, $8, $9::meeting_status, $10, $11, $12)
+            -- Idem : l'assemblee est celle de l'ACP (ADR-0045).
+            INSERT INTO meetings (id, acp_id, building_id, organization_id, meeting_type, title, description, scheduled_date, location, status, agenda, created_at, updated_at)
+            VALUES ($1, (SELECT acp_id FROM buildings WHERE id = $2), $2, $3, $4::meeting_type, $5, $6, $7, $8, $9::meeting_status, $10, $11, $12)
             "#
         )
         .bind(meeting_id)
@@ -2132,8 +2207,8 @@ impl DatabaseSeeder {
                         };
 
                         sqlx::query(
-                        "INSERT INTO expenses (id, organization_id, building_id, category, description, amount, expense_date, payment_status, approval_status, paid_date, created_at, updated_at)
-                         VALUES ($1, $2, $3, $4::expense_category, $5, $6, $7, $8::payment_status, $9::approval_status, $10, $11, $12)"
+                        "INSERT INTO expenses (id, acp_id, organization_id, building_id, category, description, amount, expense_date, payment_status, approval_status, paid_date, created_at, updated_at)
+                         VALUES ($1, (SELECT acp_id FROM buildings WHERE id = $3), $2, $3, $4::expense_category, $5, $6, $7, $8::payment_status, $9::approval_status, $10, $11, $12)"
                     )
                     .bind(Uuid::new_v4())
                     .bind(org_id)
@@ -2330,12 +2405,12 @@ impl DatabaseSeeder {
             sqlx::query(
                 r#"
                 INSERT INTO expenses (
-                    id, organization_id, building_id, category, description,
+                    id, acp_id, organization_id, building_id, category, description,
                     amount, amount_excl_vat, vat_rate, expense_date, due_date,
                     payment_status, paid_date, approval_status, supplier, invoice_number,
                     account_code, created_at, updated_at
                 )
-                VALUES ($1, $2, $3, $4::expense_category, $5, $6, $7, $8, $9, $10, $11::payment_status, $12, $13::approval_status, $14, $15, $16, $17, $18)
+                VALUES ($1, (SELECT acp_id FROM buildings WHERE id = $3), $2, $3, $4::expense_category, $5, $6, $7, $8, $9, $10, $11::payment_status, $12, $13::approval_status, $14, $15, $16, $17, $18)
                 "#
             )
             .bind(expense_id)
@@ -2421,10 +2496,10 @@ impl DatabaseSeeder {
         sqlx::query!(
             r#"
             INSERT INTO journal_entries (
-                id, organization_id, entry_date, description,
+                id, acp_id, organization_id, entry_date, description,
                 document_ref, expense_id, created_at, updated_at
             )
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+            VALUES ($1, (SELECT acp_id FROM expenses WHERE id = $6), $2, $3, $4, $5, $6, $7, $8)
             "#,
             journal_entry_id,
             organization_id,
@@ -2657,13 +2732,13 @@ impl DatabaseSeeder {
         sqlx::query(
             r#"
             INSERT INTO owner_contributions (
-                id, organization_id, owner_id, unit_id,
+                id, acp_id, organization_id, owner_id, unit_id,
                 description, amount, account_code,
                 contribution_type, contribution_date, payment_date,
                 payment_method, payment_status,
                 created_at, updated_at
             )
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+            VALUES ($1, (SELECT acp_id FROM units WHERE id = $4), $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
             "#,
         )
         .bind(contribution_id)
@@ -2734,10 +2809,10 @@ impl DatabaseSeeder {
         sqlx::query(
             r#"
             INSERT INTO journal_entries (
-                id, organization_id, entry_date, description,
+                id, acp_id, organization_id, entry_date, description,
                 contribution_id, created_at, updated_at
             )
-            VALUES ($1, $2, $3, $4, $5, $6, $7)
+            VALUES ($1, (SELECT acp_id FROM owner_contributions WHERE id = $5), $2, $3, $4, $5, $6, $7)
             "#,
         )
         .bind(journal_entry_id)
@@ -2845,12 +2920,12 @@ impl DatabaseSeeder {
         sqlx::query(
             r#"
             INSERT INTO payment_reminders (
-                id, organization_id, expense_id, owner_id,
+                id, acp_id, organization_id, expense_id, owner_id,
                 level, status, amount_owed, penalty_amount, total_amount,
                 due_date, days_overdue, delivery_method, sent_date,
                 created_at, updated_at
             )
-            VALUES ($1, $2, $3, $4, $5::reminder_level, $6::reminder_status, $7, $8, $9, $10, $11, $12::delivery_method, $13, $14, $15)
+            VALUES ($1, (SELECT acp_id FROM expenses WHERE id = $3), $2, $3, $4, $5::reminder_level, $6::reminder_status, $7, $8, $9, $10, $11, $12::delivery_method, $13, $14, $15)
             "#
         )
         .bind(reminder_id)

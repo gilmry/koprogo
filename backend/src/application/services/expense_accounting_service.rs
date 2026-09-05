@@ -10,7 +10,7 @@
 // Auto-generates double-entry journal entries from expense transactions
 
 use crate::application::ports::JournalEntryRepository;
-use crate::domain::entities::{Expense, JournalEntry, JournalEntryLine};
+use crate::domain::entities::{Expense, JournalEntry, JournalEntryLine, OwnerContribution};
 use chrono::Utc;
 use rust_decimal::Decimal;
 use rust_decimal_macros::dec;
@@ -28,6 +28,38 @@ use uuid::Uuid;
 pub struct ExpenseAccountingService {
     journal_entry_repo: Arc<dyn JournalEntryRepository>,
 }
+
+// ── Comptes du PCMN utilisés par la génération automatique ──────────────────
+//
+// Ces codes DOIVENT exister dans le plan comptable provisionné par
+// `AccountUseCases::seed_belgian_pcmn`. `journal_entry_lines` porte une clé
+// étrangère `(organization_id, account_code) → accounts` : un code absent fait
+// échouer l'insertion.
+//
+// Ils étaient auparavant écrits en dur dans le corps des méthodes, sur QUATRE
+// chiffres — `4110`, `4400`, `5500` — alors que le plan en compte trois :
+// `411`, `440`, `550`. Aucune écriture automatique n'a donc jamais pu être
+// enregistrée contre une organisation correctement provisionnée. Et personne
+// ne l'a vu : les deux appelants (`approve_invoice` et `mark_as_paid`)
+// journalisent l'échec en `warn!` et poursuivent, pour ne pas faire échouer
+// une approbation à cause d'une écriture comptable.
+//
+// C'est ce que décrit le constat F7 du rapport du 2026-09-01 — non pas « la
+// saisie est 100 % manuelle », mais « l'automatisation existe et échoue en
+// silence ».
+//
+// `test_les_comptes_utilises_existent_dans_le_plan` verrouille la
+// correspondance.
+
+/// TVA récupérable (classe 4).
+const COMPTE_TVA_RECUPERABLE: &str = "411";
+/// Fournisseurs (classe 4) — dette envers le prestataire.
+const COMPTE_FOURNISSEURS: &str = "440";
+/// Compte courant bancaire (classe 5).
+const COMPTE_BANQUE: &str = "550";
+/// Copropriétaires — appels de fonds (classe 4) : la créance sur le
+/// copropriétaire, soldée quand sa quote-part est encaissée.
+const COMPTE_COPROPRIETAIRES: &str = "400";
 
 impl ExpenseAccountingService {
     pub fn new(journal_entry_repo: Arc<dyn JournalEntryRepository>) -> Self {
@@ -58,6 +90,18 @@ impl ExpenseAccountingService {
         expense: &Expense,
         created_by: Option<Uuid>,
     ) -> Result<JournalEntry, String> {
+        // Idempotence : une seule écriture d'achat par dépense.
+        //
+        // `approve_invoice` refuse déjà d'approuver deux fois, mais la garde
+        // vaut aussi pour tout autre appelant — le seed, une reprise de
+        // données, un futur endpoint de régénération.
+        if self.has_entry_in_journal(expense.id, "ACH").await? {
+            return Err(format!(
+                "Journal entry already exists for expense {} (ACH)",
+                expense.id
+            ));
+        }
+
         // Validate expense has account code
         let account_code = expense
             .account_code
@@ -91,11 +135,15 @@ impl ExpenseAccountingService {
                 JournalEntryLine::new_debit(
                     entry_id,
                     expense.organization_id,
-                    "4110".to_string(), // VAT Recoverable account
+                    COMPTE_TVA_RECUPERABLE.to_string(),
                     vat_amount,
+                    // `vat_rate` est DÉJÀ un pourcentage (21.0 pour 21 %,
+                    // cf. `Expense::vat_rate` et sa validation `0..=100`). Le
+                    // multiplier par 100 écrivait « TVA récupérable 2100% »
+                    // sur chaque pièce comptable générée.
                     Some(format!(
-                        "TVA récupérable {}%",
-                        expense.vat_rate.unwrap_or(Decimal::ZERO) * dec!(100)
+                        "TVA récupérable {} %",
+                        expense.vat_rate.unwrap_or(Decimal::ZERO)
                     )),
                 )
                 .map_err(|e| format!("Failed to create VAT debit line: {}", e))?,
@@ -107,7 +155,7 @@ impl ExpenseAccountingService {
             JournalEntryLine::new_credit(
                 entry_id,
                 expense.organization_id,
-                "4400".to_string(), // Suppliers account
+                COMPTE_FOURNISSEURS.to_string(),
                 total_amount,
                 expense
                     .supplier
@@ -119,6 +167,7 @@ impl ExpenseAccountingService {
 
         // Create journal entry
         let journal_entry = JournalEntry::new(
+            expense.acp_id,
             expense.organization_id,
             Some(expense.building_id), // building_id
             expense.expense_date,
@@ -158,7 +207,25 @@ impl ExpenseAccountingService {
         payment_account: Option<String>,
         created_by: Option<Uuid>,
     ) -> Result<JournalEntry, String> {
-        let payment_account = payment_account.unwrap_or_else(|| "5500".to_string());
+        // Idempotence : une seule écriture de règlement par dépense.
+        //
+        // `unpay_expense` ramène une dépense de `Paid` à `Pending` SANS
+        // contre-passer l'écriture déjà passée. Un cycle payer → dépayer →
+        // repayer créditait donc la banque deux fois pour un seul règlement,
+        // et le compte fournisseur ne se soldait jamais.
+        //
+        // Contre-passer serait le traitement comptable complet, mais c'est une
+        // décision de méthode : une écriture passée ne se supprime pas, elle
+        // s'annule par une écriture inverse datée. En attendant cet arbitrage,
+        // refuser le doublon vaut mieux que fausser les comptes.
+        if self.has_entry_in_journal(expense.id, "FIN").await? {
+            return Err(format!(
+                "Payment journal entry already exists for expense {} (FIN)",
+                expense.id
+            ));
+        }
+
+        let payment_account = payment_account.unwrap_or_else(|| COMPTE_BANQUE.to_string());
         let total_amount = expense.amount;
         let entry_id = Uuid::new_v4();
 
@@ -169,7 +236,7 @@ impl ExpenseAccountingService {
             JournalEntryLine::new_debit(
                 entry_id,
                 expense.organization_id,
-                "4400".to_string(),
+                COMPTE_FOURNISSEURS.to_string(),
                 total_amount,
                 Some(format!("Paiement: {}", expense.description)),
             )
@@ -185,10 +252,8 @@ impl ExpenseAccountingService {
                 total_amount,
                 Some(format!(
                     "Paiement via {}",
-                    if payment_account == "5500" {
+                    if payment_account == COMPTE_BANQUE {
                         "Banque"
-                    } else if payment_account == "5700" {
-                        "Caisse"
                     } else {
                         "Autre"
                     }
@@ -199,6 +264,7 @@ impl ExpenseAccountingService {
 
         // Create journal entry
         let journal_entry = JournalEntry::new(
+            expense.acp_id,
             expense.organization_id,
             Some(expense.building_id), // building_id
             expense.paid_date.unwrap_or_else(Utc::now),
@@ -219,12 +285,120 @@ impl ExpenseAccountingService {
             .map_err(|e| format!("Failed to persist payment journal entry: {}", e))
     }
 
+    /// Génère l'écriture d'ENCAISSEMENT d'une quote-part de copropriétaire.
+    ///
+    /// # Logique comptable (PCMN belge)
+    ///
+    /// Exemple : quote-part de 2 000 € reçue par virement.
+    ///
+    /// ```text
+    /// Débit :  550 (Compte courant bancaire)   2 000,00 €
+    /// Crédit : 400 (Copropriétaires)           2 000,00 €
+    /// ```
+    ///
+    /// L'argent entre (actif en hausse), la créance sur le copropriétaire
+    /// s'éteint (actif en baisse). Journal FIN.
+    ///
+    /// # Ce que cette écriture n'est PAS
+    ///
+    /// Elle ne constate pas le PRODUIT. L'appel de fonds est un produit de
+    /// classe 7 constaté à son émission, pas à son encaissement ; cette
+    /// écriture-ci ne fait que solder une créance déjà comptabilisée. Générer
+    /// un produit ici le compterait deux fois.
+    ///
+    /// # Idempotence
+    ///
+    /// Une quote-part peut être soldée par deux voies : `mark-paid` depuis
+    /// l'interface, ou la réussite d'un paiement portant `contribution_id`.
+    /// Sans ce contrôle, un même encaissement débiterait la banque deux fois.
+    pub async fn generate_contribution_receipt_entry(
+        &self,
+        contribution: &OwnerContribution,
+        building_id: Option<Uuid>,
+        payment_account: Option<String>,
+        created_by: Option<Uuid>,
+    ) -> Result<JournalEntry, String> {
+        let existantes = self
+            .journal_entry_repo
+            .find_by_contribution(contribution.id)
+            .await?;
+        if existantes
+            .iter()
+            .any(|e| e.journal_type.as_deref() == Some("FIN"))
+        {
+            return Err(format!(
+                "Receipt journal entry already exists for contribution {} (FIN)",
+                contribution.id
+            ));
+        }
+
+        let payment_account = payment_account.unwrap_or_else(|| COMPTE_BANQUE.to_string());
+        let entry_id = Uuid::new_v4();
+        let montant = contribution.amount;
+
+        let lines = vec![
+            JournalEntryLine::new_debit(
+                entry_id,
+                contribution.organization_id,
+                payment_account,
+                montant,
+                Some(format!("Encaissement: {}", contribution.description)),
+            )
+            .map_err(|e| format!("Failed to create bank debit line: {}", e))?,
+            JournalEntryLine::new_credit(
+                entry_id,
+                contribution.organization_id,
+                COMPTE_COPROPRIETAIRES.to_string(),
+                montant,
+                Some(format!("Quote-part {}", contribution.owner_id)),
+            )
+            .map_err(|e| format!("Failed to create owner credit line: {}", e))?,
+        ];
+
+        let journal_entry = JournalEntry::new(
+            contribution.acp_id,
+            contribution.organization_id,
+            building_id,
+            contribution.payment_date.unwrap_or_else(Utc::now),
+            Some(format!("Encaissement: {}", contribution.description)),
+            contribution.payment_reference.clone(),
+            Some("FIN".to_string()),
+            None,
+            Some(contribution.id),
+            lines,
+            created_by,
+        )
+        .map_err(|e| format!("Failed to create contribution journal entry: {}", e))?;
+
+        self.journal_entry_repo
+            .create(&journal_entry)
+            .await
+            .map_err(|e| format!("Failed to persist contribution journal entry: {}", e))
+    }
+
     /// Check if expense already has journal entries
     ///
     /// Prevents duplicate journal entries for the same expense.
     pub async fn expense_has_journal_entries(&self, expense_id: Uuid) -> Result<bool, String> {
         let entries = self.journal_entry_repo.find_by_expense(expense_id).await?;
         Ok(!entries.is_empty())
+    }
+
+    /// Une écriture d'un journal donné existe-t-elle déjà pour cette dépense ?
+    ///
+    /// Distingue l'achat (ACH, généré à l'approbation) du règlement (FIN,
+    /// généré au paiement) : `expense_has_journal_entries` ne le pouvait pas,
+    /// et c'est pour cela qu'elle n'a jamais servi malgré son commentaire
+    /// « Prevents duplicate journal entries ».
+    async fn has_entry_in_journal(
+        &self,
+        expense_id: Uuid,
+        journal_type: &str,
+    ) -> Result<bool, String> {
+        let entries = self.journal_entry_repo.find_by_expense(expense_id).await?;
+        Ok(entries
+            .iter()
+            .any(|e| e.journal_type.as_deref() == Some(journal_type)))
     }
 
     /// Get journal entries for an expense
@@ -269,6 +443,18 @@ mod tests {
             Ok(entries
                 .iter()
                 .filter(|e| e.expense_id == Some(expense_id))
+                .cloned()
+                .collect())
+        }
+
+        async fn find_by_contribution(
+            &self,
+            contribution_id: Uuid,
+        ) -> Result<Vec<JournalEntry>, String> {
+            let entries = self.entries.lock().unwrap();
+            Ok(entries
+                .iter()
+                .filter(|e| e.contribution_id == Some(contribution_id))
                 .cloned()
                 .collect())
         }
@@ -379,6 +565,7 @@ mod tests {
         let org_id = Uuid::new_v4();
         let expense = Expense {
             id: Uuid::new_v4(),
+            acp_id: Uuid::new_v4(),
             organization_id: org_id,
             building_id: Uuid::new_v4(),
             description: "Facture eau".to_string(),
@@ -432,14 +619,14 @@ mod tests {
         let vat_line = entry
             .lines
             .iter()
-            .find(|l| l.account_code == "4110")
+            .find(|l| l.account_code == COMPTE_TVA_RECUPERABLE)
             .unwrap();
         assert_eq!(vat_line.debit, dec!(210));
 
         let supplier_line = entry
             .lines
             .iter()
-            .find(|l| l.account_code == "4400")
+            .find(|l| l.account_code == COMPTE_FOURNISSEURS)
             .unwrap();
         assert_eq!(supplier_line.credit, dec!(1210));
     }
@@ -452,6 +639,7 @@ mod tests {
         let org_id = Uuid::new_v4();
         let expense = Expense {
             id: Uuid::new_v4(),
+            acp_id: Uuid::new_v4(),
             organization_id: org_id,
             building_id: Uuid::new_v4(),
             description: "Facture eau".to_string(),
@@ -496,15 +684,156 @@ mod tests {
         let supplier_line = entry
             .lines
             .iter()
-            .find(|l| l.account_code == "4400")
+            .find(|l| l.account_code == COMPTE_FOURNISSEURS)
             .unwrap();
         assert_eq!(supplier_line.debit, dec!(1210));
 
         let bank_line = entry
             .lines
             .iter()
-            .find(|l| l.account_code == "5500")
+            .find(|l| l.account_code == COMPTE_BANQUE)
             .unwrap();
         assert_eq!(bank_line.credit, dec!(1210));
+    }
+
+    /// F7 — l'encaissement d'une quote-part produit son écriture.
+    #[tokio::test]
+    async fn test_encaissement_quote_part_genere_lecriture() {
+        let repo = Arc::new(MockJournalEntryRepository::new());
+        let service = ExpenseAccountingService::new(repo.clone());
+
+        let org_id = Uuid::new_v4();
+        let mut contribution = crate::domain::entities::OwnerContribution::new(
+            Uuid::new_v4(), // acp_id
+            org_id,
+            Uuid::new_v4(),
+            None,
+            "Charges Q3 2026".to_string(),
+            dec!(2000),
+            crate::domain::entities::ContributionType::Regular,
+            Utc::now(),
+            Some("700001".to_string()),
+        )
+        .unwrap();
+        contribution.mark_as_paid(
+            Utc::now(),
+            crate::domain::entities::ContributionPaymentMethod::BankTransfer,
+            Some("VIR-2026-42".to_string()),
+        );
+
+        let entry = service
+            .generate_contribution_receipt_entry(&contribution, None, None, None)
+            .await
+            .expect("écriture générée");
+
+        assert!(entry.is_balanced());
+        assert_eq!(entry.total_debits(), dec!(2000));
+        assert_eq!(entry.journal_type.as_deref(), Some("FIN"));
+        assert_eq!(entry.contribution_id, Some(contribution.id));
+
+        // D 550 (banque) : l'argent entre.
+        let banque = entry
+            .lines
+            .iter()
+            .find(|l| l.account_code == COMPTE_BANQUE)
+            .expect("ligne banque");
+        assert_eq!(banque.debit, dec!(2000));
+
+        // C 400 (copropriétaires) : la créance s'éteint.
+        let copro = entry
+            .lines
+            .iter()
+            .find(|l| l.account_code == COMPTE_COPROPRIETAIRES)
+            .expect("ligne copropriétaires");
+        assert_eq!(copro.credit, dec!(2000));
+
+        // Aucune ligne de classe 7 : l'appel de fonds est un produit constaté à
+        // son ÉMISSION. En constater un ici le compterait deux fois.
+        assert!(
+            !entry.lines.iter().any(|l| l.account_code.starts_with('7')),
+            "l'encaissement ne constate pas de produit"
+        );
+    }
+
+    /// @edge — une quote-part peut être soldée par deux voies : la banque ne
+    /// doit être débitée qu'une fois.
+    ///
+    /// `mark-paid` depuis l'interface, ou la réussite d'un paiement portant
+    /// `contribution_id` : les deux appellent ce service.
+    #[tokio::test]
+    async fn test_encaissement_non_duplique() {
+        let repo = Arc::new(MockJournalEntryRepository::new());
+        let service = ExpenseAccountingService::new(repo.clone());
+
+        let org_id = Uuid::new_v4();
+        let mut contribution = crate::domain::entities::OwnerContribution::new(
+            Uuid::new_v4(), // acp_id
+            org_id,
+            Uuid::new_v4(),
+            None,
+            "Charges Q3 2026".to_string(),
+            dec!(2000),
+            crate::domain::entities::ContributionType::Regular,
+            Utc::now(),
+            Some("700001".to_string()),
+        )
+        .unwrap();
+        contribution.mark_as_paid(
+            Utc::now(),
+            crate::domain::entities::ContributionPaymentMethod::BankTransfer,
+            None,
+        );
+
+        service
+            .generate_contribution_receipt_entry(&contribution, None, None, None)
+            .await
+            .expect("première écriture");
+
+        let err = service
+            .generate_contribution_receipt_entry(&contribution, None, None, None)
+            .await
+            .expect_err("le doublon doit être refusé");
+        assert!(format!("{err}").contains("already exists"), "{err}");
+    }
+
+    /// Le test qui aurait évité le défaut F7.
+    ///
+    /// `journal_entry_lines` porte une clé étrangère
+    /// `(organization_id, account_code) → accounts`. Un code absent du plan
+    /// comptable fait échouer l'insertion — et les deux appelants
+    /// (`approve_invoice`, `mark_as_paid`) journalisent l'échec en `warn!`
+    /// avant de poursuivre, pour ne pas faire échouer une approbation à cause
+    /// d'une écriture. L'automatisation pouvait donc ne JAMAIS produire une
+    /// seule écriture sans que rien ne s'en aperçoive.
+    ///
+    /// C'est ce qui s'est passé : le service référençait `4110`, `4400`,
+    /// `5500` et `5700` là où le plan provisionne `411`, `440` et `550`.
+    ///
+    /// Les deux tests ci-dessus ne pouvaient pas le voir : ils vérifient la
+    /// forme de l'écriture contre un dépôt simulé, sans base ni contrainte.
+    /// Une écriture parfaitement équilibrée sur des comptes inexistants leur
+    /// paraît correcte.
+    #[test]
+    fn test_les_comptes_utilises_existent_dans_le_plan() {
+        let plan: Vec<&str> =
+            crate::application::use_cases::account_use_cases::get_belgian_pcmn_seed_data()
+                .into_iter()
+                .map(|(code, ..)| code)
+                .collect();
+
+        for compte in [
+            COMPTE_TVA_RECUPERABLE,
+            COMPTE_FOURNISSEURS,
+            COMPTE_BANQUE,
+            COMPTE_COPROPRIETAIRES,
+        ] {
+            assert!(
+                plan.contains(&compte),
+                "le compte {compte} est utilisé par la génération automatique \
+                 mais absent du plan provisionné par `seed_belgian_pcmn` : \
+                 la clé étrangère de `journal_entry_lines` rejettera l'écriture, \
+                 et l'échec sera avalé par le `warn!` de l'appelant"
+            );
+        }
     }
 }

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { formatTantiemes } from "../../lib/utils/tantiemes";
   // Svelte 5 runes mode
   import { _ } from '../../lib/i18n';
   import { authStore } from '../../stores/auth';
@@ -319,7 +320,7 @@
                     <span class="text-2xl">{getUnitTypeIcon(unit.unit_type)}</span>
                   </div>
                   <p class="text-sm text-gray-600">{getUnitTypeLabel(unit.unit_type)} - Étage {unit.floor}</p>
-                  <p class="text-sm text-gray-500 mt-1">{unit.surface_area} m² • {Math.round(unit.quota)}/1000èmes</p>
+                  <p class="text-sm text-gray-500 mt-1">{unit.surface_area} m² • {formatTantiemes(unit.quota)}</p>
                 </div>
               {/each}
             </div>

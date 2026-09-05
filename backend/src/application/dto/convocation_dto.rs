@@ -6,6 +6,8 @@ use uuid::Uuid;
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct ConvocationResponse {
     pub id: Uuid,
+    /// L'ACP propriétaire de la pièce (ADR-0045).
+    pub acp_id: Uuid,
     pub organization_id: Uuid,
     pub building_id: Uuid,
     pub meeting_id: Uuid,
@@ -56,6 +58,7 @@ impl From<Convocation> for ConvocationResponse {
 
         Self {
             id: convocation.id,
+            acp_id: convocation.acp_id,
             organization_id: convocation.organization_id,
             building_id: convocation.building_id,
             meeting_id: convocation.meeting_id,

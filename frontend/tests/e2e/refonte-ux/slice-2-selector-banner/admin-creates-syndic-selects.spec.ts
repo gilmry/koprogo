@@ -115,15 +115,16 @@ async function createAcpViaApi(
  * les units sont créées via /units afin que SUM(quota)==1000 — building
  * conforme côté #553 (admin publishes conform buildings).
  *
- * NOTE — POST /units requiert `organization_id` (cabinet syndic propriétaire
- * de l'ACP). C'est passé explicitement même si le building le déduit via
- * acp_id → c'est le contrat backend actuel (cf. UnitDto.organization_id).
+ * NOTE — `POST /units` n'accepte PLUS `organization_id` : le champ a disparu
+ * du DTO avec la Story H15 (le scope org se derive de l'ACP du building). Il
+ * a continue d'etre envoye ici pendant des mois, serde l'ignorant en silence.
+ * `CreateUnitDto` porte desormais `deny_unknown_fields` : le champ serait
+ * rejete en 400.
  */
 async function createBuildingViaApi(
   request: APIRequestContext,
   adminToken: string,
   acpId: string,
-  cabinetId: string,
   prefix: string,
   options: { totalUnits?: number; makeConformant?: boolean } = {},
 ): Promise<{ id: string; name: string }> {
@@ -152,7 +153,6 @@ async function createBuildingViaApi(
       const quota = i === 0 ? baseQuota + remainder : baseQuota;
       const unitResp = await request.post(`${API_BASE}/units`, {
         data: {
-          organization_id: cabinetId,
           building_id: building.id,
           unit_number: `${prefix.charAt(0).toUpperCase()}${i + 1}`,
           floor: Math.floor(i / 2),
@@ -337,7 +337,6 @@ test.describe("Story 2.5 — slice 2 multi-role narratif", () => {
       request,
       adminToken,
       acp.id,
-      cabinet.id,
       "happy-A",
       { totalUnits: 4, makeConformant: true },
     );
@@ -434,7 +433,6 @@ test.describe("Story 2.5 — slice 2 multi-role narratif", () => {
       request,
       adminToken,
       acp.id,
-      cabinet.id,
       "edge-A",
       { totalUnits: 4, makeConformant: true },
     );
@@ -442,7 +440,6 @@ test.describe("Story 2.5 — slice 2 multi-role narratif", () => {
       request,
       adminToken,
       acp.id,
-      cabinet.id,
       "edge-B",
       { totalUnits: 4, makeConformant: true },
     );
@@ -513,7 +510,6 @@ test.describe("Story 2.5 — slice 2 multi-role narratif", () => {
       request,
       adminToken,
       acpA.id,
-      cabinetA.id,
       "sec-A",
       { totalUnits: 2, makeConformant: true },
     );
@@ -530,7 +526,6 @@ test.describe("Story 2.5 — slice 2 multi-role narratif", () => {
       request,
       adminToken,
       acpB.id,
-      cabinetB.id,
       "sec-B",
       { totalUnits: 2, makeConformant: true },
     );
@@ -571,7 +566,6 @@ test.describe("Story 2.5 — slice 2 multi-role narratif", () => {
       request,
       adminToken,
       acp.id,
-      cabinet.id,
       "neg-empty",
       { totalUnits: 50, makeConformant: false }, // 0 units → non-conformant
     );

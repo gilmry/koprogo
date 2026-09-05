@@ -38,18 +38,33 @@ pub async fn create_building(
     user: AuthenticatedUser, // JWT-extracted user info (SECURE!)
     dto: web::Json<CreateBuildingDto>,
 ) -> impl Responder {
-    // Only SuperAdmin can create buildings (structural data)
-    if user.role != "superadmin" {
+    // Le syndic crée les immeubles de SES ACP ; le SuperAdmin, de toutes.
+    //
+    // La création était réservée au SuperAdmin, au motif que ces données sont
+    // structurelles. L'intention est juste — immeubles et lots découlent de
+    // l'acte de base, un acte notarié que personne n'invente — mais la
+    // conséquence ne l'était pas : un syndic ne pouvait pas encoder sa propre
+    // copropriété, et un cabinet client devait passer par l'éditeur pour
+    // exister. Constaté en recette le 2026-09-04.
+    //
+    // Le syndic est le mandataire de l'ACP (Art. 3.89) et détient l'acte de
+    // base : c'est lui qui le retranscrit. Ce qu'il ne doit pas pouvoir faire,
+    // c'est créer dans l'ACP d'un autre — d'où le contrôle de périmètre
+    // ci-dessous, et non un refus par rôle.
+    //
+    // La cohérence de ce qu'il déclare reste contrôlée ailleurs : le
+    // garde-fou « valider avant de calculer » refuse toute opération
+    // financière tant que les lots ne totalisent pas les tantièmes annoncés.
+    if !matches!(user.role.as_str(), "superadmin" | "syndic") {
         return HttpResponse::Forbidden().json(serde_json::json!({
-            "error": "Only SuperAdmin can create buildings (structural data cannot be modified after creation)"
+            "error": "Seuls le syndic et le SuperAdmin créent des immeubles"
         }));
     }
 
     // Story 1.2 — Building::acp_id (FK vers acps.id, ex-organization_id).
-    // SuperAdmin must specify the target ACP id in the DTO.
     let acp_id: Uuid = if dto.acp_id.is_empty() {
         return HttpResponse::BadRequest().json(serde_json::json!({
-            "error": "SuperAdmin must specify acp_id"
+            "error": "L'immeuble doit désigner l'ACP dont il relève (acp_id)"
         }));
     } else {
         match Uuid::parse_str(&dto.acp_id) {
@@ -61,6 +76,18 @@ pub async fn create_building(
             }
         }
     };
+    // Le contrôle de périmètre : un syndic ne crée que dans les ACP de son
+    // organisation. Le SuperAdmin passe outre, c'est son rôle.
+    if let Err(e) = crate::infrastructure::web::middleware::scope_guard::verify_acp_org_access(
+        &user,
+        acp_id,
+        &state.acp_use_cases,
+    )
+    .await
+    {
+        return e.error_response();
+    }
+
     // The audit log still records the user's home organization for traceability ;
     // the building's organization is now derived via its parent ACP.
     let organization_id: Option<Uuid> = user.organization_id;
@@ -516,6 +543,7 @@ pub async fn export_annual_report_pdf(
 
             Some(Expense {
                 id: exp_id,
+                acp_id: Uuid::parse_str(&e.acp_id).ok()?,
                 organization_id,
                 building_id: bldg_id,
                 category: e.category.clone(),

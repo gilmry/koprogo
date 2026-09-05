@@ -186,13 +186,15 @@ pub async fn setup_test_db() -> (
         unit_repo.clone(),
         owner_repo.clone(),
     );
-    let expense_use_cases = ExpenseUseCases::new(expense_repo.clone());
+    let expense_use_cases =
+        ExpenseUseCases::new(expense_repo.clone()).with_acp_resolution(building_repo.clone());
     let charge_distribution_use_cases = ChargeDistributionUseCases::new(
         charge_distribution_repo,
         expense_repo.clone(),
         unit_owner_repo.clone(),
     );
-    let meeting_use_cases = MeetingUseCases::new(meeting_repo.clone());
+    let meeting_use_cases =
+        MeetingUseCases::new(meeting_repo.clone()).with_acp_resolution(building_repo.clone());
     let storage_root = std::env::temp_dir().join(format!("koprogo_e2e_{}", Uuid::new_v4()));
     let storage: Arc<dyn StorageProvider> =
         Arc::new(FileStorage::new(&storage_root).expect("storage"));
@@ -310,7 +312,11 @@ pub async fn setup_test_db() -> (
         TwoFactorUseCases::new(two_factor_repo, user_repo.clone(), encryption_key);
     let notification_use_cases =
         NotificationUseCases::new(notification_repo, notification_preference_repo);
-    let payment_use_cases = PaymentUseCases::new(payment_repo.clone(), payment_method_repo.clone());
+    let payment_use_cases = PaymentUseCases::new(
+        payment_repo.clone(),
+        payment_method_repo.clone(),
+        owner_contribution_repo.clone(),
+    );
     let payment_method_use_cases = PaymentMethodUseCases::new(payment_method_repo);
     let quote_use_cases = QuoteUseCases::new(quote_repo);
     let local_exchange_use_cases = LocalExchangeUseCases::new(
@@ -324,7 +330,7 @@ pub async fn setup_test_db() -> (
 
     // ACP (Story 1.1 — ADR-0010)
     let acp_repo = Arc::new(PostgresAcpRepository::new(pool.clone()));
-    let acp_use_cases = AcpUseCases::new(acp_repo, organization_repo.clone());
+    let acp_use_cases = AcpUseCases::new(acp_repo.clone(), organization_repo.clone());
 
     // Portfolio (Story 2.1 — ADR-0011)
     let portfolio_repo = Arc::new(
@@ -379,13 +385,17 @@ pub async fn setup_test_db() -> (
         payment_reminder_repo.clone(),
     );
     let owner_contribution_use_cases =
-        OwnerContributionUseCases::new(owner_contribution_repo.clone());
-    let call_for_funds_use_cases = CallForFundsUseCases::new(
+        OwnerContributionUseCases::new(owner_contribution_repo.clone())
+            .with_acp_resolution(unit_repo.clone());
+    let call_for_funds_use_cases = CallForFundsUseCases::with_full_wiring(
         call_for_funds_repo,
         owner_contribution_repo,
         unit_owner_repo.clone(),
+        building_repo.clone(),
+        acp_repo.clone(),
     );
-    let journal_entry_use_cases = JournalEntryUseCases::new(journal_entry_repo.clone());
+    let journal_entry_use_cases = JournalEntryUseCases::new(journal_entry_repo.clone())
+        .with_acp_resolution(building_repo.clone());
     let poll_use_cases = PollUseCases::new(
         poll_repo,
         poll_vote_repo,
@@ -654,6 +664,64 @@ pub async fn create_test_acp(app_state: &actix_web::web::Data<AppState>, org_id:
         .await
         .expect("create_test_acp: create_acp use case failed");
     acp.id
+}
+
+/// Crée une seconde organisation, réelle, pour éprouver le cloisonnement.
+///
+/// `acps.organization_id` porte une clé étrangère : rattacher une ACP à un
+/// UUID inventé échoue à l'insertion, et le test panique dans sa préparation
+/// au lieu de vérifier ce qu'il prétend vérifier. Un test de sécurité qui
+/// échoue pour une mauvaise raison ne prouve rien — et s'il avait « réussi »
+/// pour une mauvaise raison, il aurait été pire.
+#[allow(dead_code)]
+pub async fn create_test_organization(app_state: &actix_web::web::Data<AppState>) -> Uuid {
+    let org_id = Uuid::new_v4();
+    let court = &org_id.to_string()[..8];
+    sqlx::query(
+        r#"INSERT INTO organizations (id, name, slug, contact_email, subscription_plan,
+                                      max_buildings, max_users, is_active, created_at, updated_at)
+           VALUES ($1, 'Org Test Bis', $2, $3, 'starter', 10, 10, true, NOW(), NOW())"#,
+    )
+    .bind(org_id)
+    .bind(format!("org-bis-{court}"))
+    .bind(format!("org-bis-{court}@test.com"))
+    .execute(&app_state.pool)
+    .await
+    .expect("create_test_organization: insertion de l'organisation");
+    org_id
+}
+
+/// Crée une ACP puis un immeuble qui lui est rattaché, et rend l'identifiant
+/// de l'immeuble.
+///
+/// Depuis l'ADR-0045, une pièce de gestion doit dire à quelle ACP elle
+/// appartient. Les écritures manuelles la déduisent de leur immeuble : un test
+/// qui n'en crée aucun ne peut plus rien écrire. L'immeuble est déclaré
+/// cohérent — un lot, mille tantièmes — pour passer le garde-fou
+/// « valider avant de calculer ».
+#[allow(dead_code)]
+pub async fn create_test_building(
+    app_state: &actix_web::web::Data<AppState>,
+    org_id: Uuid,
+) -> Uuid {
+    let acp_id = create_test_acp(app_state, org_id).await;
+    let dto = koprogo_api::application::dto::CreateBuildingDto {
+        acp_id,
+        name: format!("E2E Test Building {}", Uuid::new_v4().simple()),
+        address: "Rue E2E 1".to_string(),
+        city: "Bruxelles".to_string(),
+        postal_code: "1000".to_string(),
+        country: "Belgium".to_string(),
+        total_units: 1,
+        total_tantiemes: Some(1000),
+        construction_year: Some(2005),
+    };
+    let building = app_state
+        .building_use_cases
+        .create_building(dto)
+        .await
+        .expect("create_test_building: create_building use case failed");
+    Uuid::parse_str(&building.id).expect("create_test_building: identifiant illisible")
 }
 
 /// Helper to register a user and get a JWT token

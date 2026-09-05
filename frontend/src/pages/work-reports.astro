@@ -42,7 +42,7 @@ import Layout from "../layouts/Layout.astro";
     listContainer.innerHTML = "";
     listComponent = mount(WorkReportList as any, {
       target: listContainer,
-      props: { buildingId, organizationId },
+      props: { buildingId, organizationId, showHeader: false },
     });
   }
 

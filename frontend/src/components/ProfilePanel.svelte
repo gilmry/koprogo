@@ -18,6 +18,13 @@
   // GDPR states
   let gdprExporting = false;
   let gdprErasing = false;
+  // Deux `confirm()` successifs se franchissaient d'un double clic distrait,
+  // et un appel direct à l'API les ignorait tout à fait. Pour une action
+  // irréversible, la confirmation passe par une preuve : le mot de passe,
+  // vérifié côté serveur.
+  let showEraseDialog = false;
+  let erasePassword = '';
+  let eraseError = '';
   let gdprRestricting = false;
   let gdprMarketingLoading = false;
   let canErase: GdprCanEraseResponse | null = null;
@@ -103,18 +110,31 @@
     }
   }
 
+  function openEraseDialog() {
+    erasePassword = '';
+    eraseError = '';
+    showEraseDialog = true;
+  }
+
   async function handleGdprErase() {
-    if (!confirm('ATTENTION : Cette action est IRRÉVERSIBLE. Toutes vos données personnelles seront anonymisées. Êtes-vous sûr ?')) return;
-    if (!confirm('Dernière confirmation : vos données seront définitivement anonymisées. Continuer ?')) return;
+    if (!erasePassword) return;
 
     try {
       gdprErasing = true;
-      await api.delete('/gdpr/erase');
+      eraseError = '';
+      await api.delete('/gdpr/erase', {
+        body: JSON.stringify({ password: erasePassword }),
+        headers: { 'Content-Type': 'application/json' },
+      });
       toast.success('Données anonymisées (Art. 17 RGPD - Droit à l\'effacement)');
       await authStore.logout();
       window.location.href = '/login';
     } catch (err: any) {
-      toast.error(err.message || 'Erreur lors de l\'anonymisation');
+      // Le serveur renvoie « Invalid password » : on l'affiche dans le
+      // dialogue plutôt qu'en toast, à côté du champ concerné.
+      eraseError = /invalid password|password required/i.test(err.message ?? '')
+        ? $_('gdpr.erase.wrongPassword')
+        : (err.message || 'Erreur lors de l\'anonymisation');
     } finally {
       gdprErasing = false;
     }
@@ -230,10 +250,16 @@
               <p class="text-xs text-gray-500 uppercase tracking-wider mb-1">Email</p>
               <p class="text-lg text-gray-900">{user.email}</p>
             </div>
-            <div>
-              <p class="text-xs text-gray-500 uppercase tracking-wider mb-1">Membre depuis</p>
-              <p class="text-lg text-gray-900">{formatDate(user.created_at)}</p>
-            </div>
+            <!-- La date n'est affichée que si l'API la fournit. Un compte
+                 connecté avant l'ajout de `created_at` à la réponse de
+                 connexion garde en cache un utilisateur sans ce champ :
+                 mieux vaut masquer la ligne qu'afficher « - ». -->
+            {#if user.created_at}
+              <div>
+                <p class="text-xs text-gray-500 uppercase tracking-wider mb-1">Membre depuis</p>
+                <p class="text-lg text-gray-900">{formatDate(user.created_at)}</p>
+              </div>
+            {/if}
           </div>
         {/if}
       </div>
@@ -365,13 +391,68 @@
               class="px-3 py-1.5 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors whitespace-nowrap">
               Vérifier éligibilité
             </button>
-            <button on:click={handleGdprErase} disabled={gdprErasing || (canErase !== null && !canErase.can_erase)}
+            <button on:click={openEraseDialog} disabled={gdprErasing || (canErase !== null && !canErase.can_erase)}
               class="px-3 py-1.5 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 disabled:opacity-50 transition-colors whitespace-nowrap">
               {gdprErasing ? 'Anonymisation...' : 'Effacer mes données'}
             </button>
           </div>
         </div>
       </div>
+    </div>
+  </div>
+{/if}
+
+<!-- Confirmation de l'effacement RGPD.
+     Le mot de passe est vérifié CÔTÉ SERVEUR (GdprUseCases::erase_user_data) :
+     ce dialogue ne fait que le recueillir. Les deux `confirm()` précédents ne
+     prouvaient rien et un appel direct à l'API les ignorait. -->
+{#if showEraseDialog}
+  <div
+    class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+    role="dialog"
+    aria-modal="true"
+    aria-label={$_('gdpr.erase.confirmTitle')}
+  >
+    <div class="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+      <h3 class="text-lg font-bold text-gray-900">{$_('gdpr.erase.confirmTitle')}</h3>
+      <p class="mt-2 text-sm text-gray-600">{$_('gdpr.erase.confirmBody')}</p>
+
+      <form class="mt-4" on:submit|preventDefault={handleGdprErase}>
+        <label class="block text-sm font-medium text-gray-700" for="gdpr-erase-password">
+          {$_('gdpr.erase.passwordLabel')}
+        </label>
+        <input
+          id="gdpr-erase-password"
+          type="password"
+          bind:value={erasePassword}
+          required
+          autocomplete="current-password"
+          data-testid="gdpr-erase-password"
+          class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-red-500 focus:ring-red-500"
+        />
+        {#if eraseError}
+          <p class="mt-2 text-sm text-red-600" data-testid="gdpr-erase-error">{eraseError}</p>
+        {/if}
+
+        <div class="mt-5 flex justify-end gap-2">
+          <button
+            type="button"
+            on:click={() => (showEraseDialog = false)}
+            disabled={gdprErasing}
+            class="px-4 py-2 text-sm font-medium rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 disabled:opacity-50"
+          >
+            {$_('common.cancel')}
+          </button>
+          <button
+            type="submit"
+            disabled={gdprErasing || !erasePassword}
+            data-testid="gdpr-erase-confirm"
+            class="px-4 py-2 text-sm font-medium rounded-lg bg-red-600 text-white hover:bg-red-700 disabled:opacity-50"
+          >
+            {gdprErasing ? 'Anonymisation…' : $_('gdpr.erase.confirmAction')}
+          </button>
+        </div>
+      </form>
     </div>
   </div>
 {/if}

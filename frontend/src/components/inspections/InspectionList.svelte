@@ -10,9 +10,13 @@
   import { formatCurrency } from "../../lib/utils/finance.utils";
   import { withErrorHandling } from "../../lib/utils/error.utils";
 
-  let { buildingId, organizationId = "" }: {
+  let { buildingId, organizationId = "", showHeader = true }: {
     buildingId: string;
     organizationId?: string;
+    // La page dédiée porte déjà un H1 identique ; l'en-tête interne y faisait
+    // doublon. Conservé par défaut pour la fiche immeuble, où le composant
+    // est une section parmi d'autres et a besoin de son étiquette.
+    showHeader?: boolean;
   } = $props();
 
   let inspections: TechnicalInspection[] = $state([]);
@@ -137,7 +141,13 @@
 
 <div class="space-y-4" data-testid="inspection-list">
   <div class="flex items-center justify-between">
-    <h2 class="text-lg font-semibold text-gray-800">{$_("inspections.title")}</h2>
+    <!-- Le div vide conserve l'alignement : la rangée est en
+         justify-between, sans lui le bouton d'action remonterait à gauche. -->
+    {#if showHeader}
+  <h2 class="text-lg font-semibold text-gray-800">{$_("inspections.title")}</h2>
+    {:else}
+      <div></div>
+    {/if}
     <button
       onclick={() => (showCreateForm = !showCreateForm)}
       class="px-3 py-1.5 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700"

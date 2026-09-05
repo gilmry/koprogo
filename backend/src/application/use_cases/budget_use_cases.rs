@@ -35,8 +35,9 @@ impl BudgetUseCases {
         &self,
         request: CreateBudgetRequest,
     ) -> Result<BudgetResponse, AppError> {
-        // Verify building exists
-        let _building = self
+        // L'immeuble donne l'ACP : c'est elle qui vote et supporte le budget
+        // (Art. 3.89 § 5, 16°), le syndic ne fait que le préparer. Cf. ADR-0045.
+        let building = self
             .building_repository
             .find_by_id(request.building_id)
             .await
@@ -57,6 +58,7 @@ impl BudgetUseCases {
 
         // Create budget
         let mut budget = Budget::new(
+            building.acp_id,
             request.organization_id,
             request.building_id,
             request.fiscal_year,
@@ -358,6 +360,17 @@ mod tests {
 
         #[async_trait::async_trait]
         impl ExpenseRepository for ExpenseRepo {
+        async fn enregistrer_lignes_de_facture(
+            &self,
+            _expense_id: Uuid,
+            _lignes: &[crate::application::ports::expense_repository::LigneDeFacture],
+        ) -> Result<(), String> {
+            // Mock : rien à enregistrer. Le port n'offre pas d'implémentation
+            // par défaut, précisément pour que ce choix soit écrit ici plutôt
+            // que subi partout.
+            Ok(())
+        }
+
             async fn create(&self, expense: &Expense) -> Result<Expense, String>;
             async fn find_by_id(&self, id: Uuid) -> Result<Option<Expense>, String>;
             async fn find_by_building(&self, building_id: Uuid) -> Result<Vec<Expense>, String>;
@@ -372,9 +385,14 @@ mod tests {
     }
 
     /// Helper: create a valid Building for mock returns
-    fn make_building(org_id: Uuid) -> Building {
+    /// Un immeuble rattaché à une ACP.
+    ///
+    /// Le premier argument de `Building::new` est l'**ACP**, pas
+    /// l'organisation : un immeuble appartient à une copropriété, pas à un
+    /// cabinet de syndic (Art. 3.85 § 1er, ADR-0010).
+    fn make_building(acp_id: Uuid) -> Building {
         Building::new(
-            org_id,
+            acp_id,
             "Résidence du Parc".to_string(),
             "12 Rue de la Loi".to_string(),
             "Brussels".to_string(),
@@ -388,8 +406,11 @@ mod tests {
     }
 
     /// Helper: create a Draft budget ready for use in tests
-    fn make_draft_budget(org_id: Uuid, building_id: Uuid) -> Budget {
-        Budget::new(org_id, building_id, 2025, dec!(60000), dec!(15000)).unwrap()
+    ///
+    /// L'ACP vient en premier : c'est elle qui vote le budget et le supporte
+    /// (Art. 3.89 § 5, 16°), le syndic ne fait que le préparer.
+    fn make_draft_budget(acp_id: Uuid, org_id: Uuid, building_id: Uuid) -> Budget {
+        Budget::new(acp_id, org_id, building_id, 2025, dec!(60000), dec!(15000)).unwrap()
     }
 
     /// Helper: build the BudgetUseCases from three mock repos
@@ -405,11 +426,71 @@ mod tests {
         )
     }
 
+    /// Art. 3.89 § 5, 16° et ADR-0045 : le budget appartient à l'ACP.
+    ///
+    /// L'ACP se **déduit de l'immeuble**, elle n'est jamais lue dans la
+    /// requête. C'est ce qui empêche un cabinet d'écrire dans le dossier d'un
+    /// autre en forgeant un identifiant : le lien immeuble → ACP est fixé par
+    /// l'acte de base, la requête ne peut pas le contredire.
+    #[tokio::test]
+    async fn test_le_budget_appartient_a_lacp_de_limmeuble_pas_au_syndic() {
+        let acp_de_limmeuble = Uuid::new_v4();
+        let cabinet_qui_encode = Uuid::new_v4();
+        let building_id = Uuid::new_v4();
+
+        let mut budget_repo = MockBudgetRepo::new();
+        let mut building_repo = MockBuildingRepo::new();
+        let expense_repo = MockExpenseRepo::new();
+
+        let building = make_building(acp_de_limmeuble);
+        building_repo
+            .expect_find_by_id()
+            .with(eq(building_id))
+            .times(1)
+            .returning(move |_| Ok(Some(building.clone())));
+        budget_repo
+            .expect_find_by_building_and_fiscal_year()
+            .times(1)
+            .returning(|_, _| Ok(None));
+        budget_repo
+            .expect_create()
+            .times(1)
+            .returning(|b| Ok(b.clone()));
+
+        let uc = make_use_cases(budget_repo, building_repo, expense_repo);
+
+        let budget = uc
+            .create_budget(CreateBudgetRequest {
+                organization_id: cabinet_qui_encode,
+                building_id,
+                fiscal_year: 2026,
+                ordinary_budget: dec!(48000),
+                extraordinary_budget: dec!(12000),
+                notes: None,
+            })
+            .await
+            .expect("création valide");
+
+        assert_eq!(
+            budget.acp_id, acp_de_limmeuble,
+            "le budget doit être rattaché à l'ACP de l'immeuble"
+        );
+        assert_eq!(
+            budget.organization_id, cabinet_qui_encode,
+            "le syndic reste tracé comme auteur, sans que ça lui donne un droit"
+        );
+        assert_ne!(
+            budget.acp_id, budget.organization_id,
+            "l'ACP et le syndic sont deux entités distinctes, pas deux noms de la même"
+        );
+    }
+
     // ---------------------------------------------------------------
     // 1. Create budget (happy path)
     // ---------------------------------------------------------------
     #[tokio::test]
     async fn test_create_budget_success() {
+        let acp_id = Uuid::new_v4();
         let org_id = Uuid::new_v4();
         let building_id = Uuid::new_v4();
 
@@ -418,7 +499,7 @@ mod tests {
         let expense_repo = MockExpenseRepo::new();
 
         // Building exists
-        let building = make_building(org_id);
+        let building = make_building(acp_id);
         building_repo
             .expect_find_by_id()
             .with(eq(building_id))
@@ -467,6 +548,7 @@ mod tests {
     // ---------------------------------------------------------------
     #[tokio::test]
     async fn test_create_budget_duplicate_fiscal_year() {
+        let acp_id = Uuid::new_v4();
         let org_id = Uuid::new_v4();
         let building_id = Uuid::new_v4();
 
@@ -474,7 +556,7 @@ mod tests {
         let mut building_repo = MockBuildingRepo::new();
         let expense_repo = MockExpenseRepo::new();
 
-        let building = make_building(org_id);
+        let building = make_building(acp_id);
         building_repo
             .expect_find_by_id()
             .with(eq(building_id))
@@ -482,7 +564,7 @@ mod tests {
             .returning(move |_| Ok(Some(building.clone())));
 
         // Duplicate exists
-        let existing = make_draft_budget(org_id, building_id);
+        let existing = make_draft_budget(acp_id, org_id, building_id);
         budget_repo
             .expect_find_by_building_and_fiscal_year()
             .with(eq(building_id), eq(2025))
@@ -513,6 +595,7 @@ mod tests {
     // ---------------------------------------------------------------
     #[tokio::test]
     async fn test_submit_for_approval_success() {
+        let acp_id = Uuid::new_v4();
         let org_id = Uuid::new_v4();
         let building_id = Uuid::new_v4();
         let budget_id = Uuid::new_v4();
@@ -521,7 +604,7 @@ mod tests {
         let building_repo = MockBuildingRepo::new();
         let expense_repo = MockExpenseRepo::new();
 
-        let mut draft = make_draft_budget(org_id, building_id);
+        let mut draft = make_draft_budget(acp_id, org_id, building_id);
         draft.id = budget_id;
 
         budget_repo
@@ -549,6 +632,7 @@ mod tests {
     // ---------------------------------------------------------------
     #[tokio::test]
     async fn test_approve_budget_success() {
+        let acp_id = Uuid::new_v4();
         let org_id = Uuid::new_v4();
         let building_id = Uuid::new_v4();
         let budget_id = Uuid::new_v4();
@@ -559,7 +643,7 @@ mod tests {
         let expense_repo = MockExpenseRepo::new();
 
         // Budget must be in Submitted state
-        let mut submitted = make_draft_budget(org_id, building_id);
+        let mut submitted = make_draft_budget(acp_id, org_id, building_id);
         submitted.id = budget_id;
         submitted.submit_for_approval().unwrap();
 
@@ -590,6 +674,7 @@ mod tests {
     // ---------------------------------------------------------------
     #[tokio::test]
     async fn test_reject_budget_with_reason() {
+        let acp_id = Uuid::new_v4();
         let org_id = Uuid::new_v4();
         let building_id = Uuid::new_v4();
         let budget_id = Uuid::new_v4();
@@ -598,7 +683,7 @@ mod tests {
         let building_repo = MockBuildingRepo::new();
         let expense_repo = MockExpenseRepo::new();
 
-        let mut submitted = make_draft_budget(org_id, building_id);
+        let mut submitted = make_draft_budget(acp_id, org_id, building_id);
         submitted.id = budget_id;
         submitted.submit_for_approval().unwrap();
 
@@ -632,6 +717,7 @@ mod tests {
     // ---------------------------------------------------------------
     #[tokio::test]
     async fn test_archive_budget_success() {
+        let acp_id = Uuid::new_v4();
         let org_id = Uuid::new_v4();
         let building_id = Uuid::new_v4();
         let budget_id = Uuid::new_v4();
@@ -642,7 +728,7 @@ mod tests {
         let expense_repo = MockExpenseRepo::new();
 
         // Budget must be Approved to archive
-        let mut approved = make_draft_budget(org_id, building_id);
+        let mut approved = make_draft_budget(acp_id, org_id, building_id);
         approved.id = budget_id;
         approved.submit_for_approval().unwrap();
         approved.approve(meeting_id).unwrap();
@@ -730,6 +816,7 @@ mod tests {
     // ---------------------------------------------------------------
     #[tokio::test]
     async fn test_get_active_budget_for_building() {
+        let acp_id = Uuid::new_v4();
         let org_id = Uuid::new_v4();
         let building_id = Uuid::new_v4();
         let meeting_id = Uuid::new_v4();
@@ -739,7 +826,7 @@ mod tests {
         let expense_repo = MockExpenseRepo::new();
 
         // Active budget = Approved
-        let mut approved = make_draft_budget(org_id, building_id);
+        let mut approved = make_draft_budget(acp_id, org_id, building_id);
         approved.submit_for_approval().unwrap();
         approved.approve(meeting_id).unwrap();
 

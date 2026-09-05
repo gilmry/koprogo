@@ -30,10 +30,15 @@ fn given_system(_world: &mut MeetingCompleteWorld) {
 
 #[given(regex = r#"^a scheduled meeting "(.+)"$"#)]
 fn given_scheduled_meeting(world: &mut MeetingCompleteWorld, title: String) {
+    // Fixture pure : ni base ni immeuble réel, donc l'ACP est tirée au sort
+    // comme l'organisation et l'immeuble. Ce scénario porte sur les invariants
+    // de clôture (Art. 3.87 § 5), pas sur le rattachement.
+    let acp_id = Uuid::new_v4();
     let org_id = Uuid::new_v4();
     let building_id = Uuid::new_v4();
     let future_date = Utc::now() + Duration::days(30);
     let meeting = Meeting::new(
+        acp_id,
         org_id,
         building_id,
         MeetingType::Ordinary,

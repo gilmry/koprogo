@@ -1,4 +1,5 @@
 <script lang="ts">
+  let { showHeader = true }: { showHeader?: boolean } = $props();
   import { onMount } from 'svelte';
   import { _ } from '../lib/i18n';
   import { authStore } from '../stores/auth';
@@ -151,7 +152,12 @@
 
 <div class="bg-white shadow rounded-lg p-6" data-testid="gdpr-data-panel">
   <div class="flex items-center justify-between mb-6">
-    <h2 class="text-2xl font-bold text-gray-900" data-testid="gdpr-panel-title">{$_('gdpr.myPersonalData')}</h2>
+    <!-- Masqué quand la page porte déjà ce titre en H1. -->
+    {#if showHeader}
+      <h2 class="text-2xl font-bold text-gray-900" data-testid="gdpr-panel-title">{$_('gdpr.myPersonalData')}</h2>
+    {:else}
+      <div></div>
+    {/if}
     <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800" data-testid="gdpr-rights-badge">
       {$_('gdpr.rights')}
     </span>
