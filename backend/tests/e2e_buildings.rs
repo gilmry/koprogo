@@ -433,5 +433,9 @@ async fn security_un_comptable_ne_cree_pas_dimmeuble() {
         .to_request();
 
     let resp = test::call_service(&app, req).await;
-    assert_eq!(resp.status(), 403, "le comptable tient les livres, pas l'acte de base");
+    assert_eq!(
+        resp.status(),
+        403,
+        "le comptable tient les livres, pas l'acte de base"
+    );
 }

@@ -1,7 +1,7 @@
 use crate::application::dto::{ExpenseFilters, PageRequest};
 use crate::domain::entities::Expense;
-use rust_decimal::Decimal;
 use async_trait::async_trait;
+use rust_decimal::Decimal;
 use uuid::Uuid;
 
 #[async_trait]

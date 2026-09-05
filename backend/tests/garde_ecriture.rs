@@ -59,7 +59,7 @@ const MODULES_PATRIMOINE: &[&str] = &[
 /// Ce nombre est un **plafond** : il descend, il ne remonte pas. Il n'est pas
 /// une cible acceptable, seulement la mesure honnête de ce qui reste.
 ///
-/// Les 69 restantes se répartissent en deux familles :
+/// Les 67 restantes se répartissent en deux familles :
 ///
 /// - celles qui **agissent sur une pièce par son identifiant** (approuver un
 ///   budget, envoyer un appel de fonds, escalader une relance). Elles ne
@@ -71,7 +71,14 @@ const MODULES_PATRIMOINE: &[&str] = &[
 ///   exemple). La garde y passerait sans rien vérifier, puisqu'un superadmin
 ///   la traverse par construction. Les compter reste juste : le jour où le
 ///   rôle s'élargit, la garde manquera vraiment.
-const DETTE_AU_2026_09_03: usize = 69;
+///
+/// **Ce jour est arrivé le 2026-09-05**, et pour l'exemple même cité
+/// ci-dessus. `create_building` et `create_unit` se sont ouvertes au syndic,
+/// ce qui a rendu leur garde de périmètre réellement nécessaire ; elles la
+/// portent désormais, et la dette tombe de 69 à 67. Les avoir comptées alors
+/// qu'elles étaient inoffensives est ce qui a permis de les voir au moment où
+/// elles ont cessé de l'être.
+const DETTE_AU_2026_09_05: usize = 67;
 
 fn racine_handlers() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("src/infrastructure/web/handlers")
@@ -143,7 +150,7 @@ fn la_dette_de_garde_decriture_ne_grossit_pas() {
     }
 
     assert!(
-        non_gardees.len() <= DETTE_AU_2026_09_03,
+        non_gardees.len() <= DETTE_AU_2026_09_05,
         "la dette de garde d'écriture a grossi : {} routes non gardées contre {} \
          au moment où la frontière a été posée.\n\n{}\n\n\
          Une route d'écriture neuve sur le patrimoine d'une ACP appelle \
@@ -151,7 +158,7 @@ fn la_dette_de_garde_decriture_ne_grossit_pas() {
          cabinet peut écrire dans le dossier d'une copropriété qu'on ne lui a \
          pas confiée (ADR-0045).",
         non_gardees.len(),
-        DETTE_AU_2026_09_03,
+        DETTE_AU_2026_09_05,
         non_gardees.join("\n")
     );
 }

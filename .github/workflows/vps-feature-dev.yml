@@ -134,6 +134,16 @@ jobs:
           SQLX_OFFLINE: "true"
         run: cargo test --test garde_ecriture
 
+      # `garde_champs_ignores` est né le 2026-09-04 et n'était joué par AUCUN
+      # portail : ni ici, ni dans ci.yml, qui énumèrent tous deux leurs
+      # harnais un par un. Un cliquet que rien n'exécute ne freine rien, il
+      # décore. Il coûte 0,02 s et ne demande pas de base.
+      - name: Garde des champs ignorés — la dette ne grossit pas
+        working-directory: backend
+        env:
+          SQLX_OFFLINE: "true"
+        run: cargo test --test garde_champs_ignores
+
       - uses: actions/setup-node@v4
         with:
           node-version: "22"

@@ -196,12 +196,14 @@ impl ExpenseUseCases {
         if let Some(lignes) = &dto.line_items {
             let lignes: Vec<_> = lignes
                 .iter()
-                .map(|l| crate::application::ports::expense_repository::LigneDeFacture {
-                    description: l.description.clone(),
-                    quantity: l.quantity,
-                    unit_price: l.unit_price,
-                    vat_rate: l.vat_rate,
-                })
+                .map(
+                    |l| crate::application::ports::expense_repository::LigneDeFacture {
+                        description: l.description.clone(),
+                        quantity: l.quantity,
+                        unit_price: l.unit_price,
+                        vat_rate: l.vat_rate,
+                    },
+                )
                 .collect();
             self.repository
                 .enregistrer_lignes_de_facture(created.id, &lignes)
