@@ -59,6 +59,17 @@ impl MockExpenseRepo {
 
 #[async_trait]
 impl ExpenseRepository for MockExpenseRepo {
+    async fn enregistrer_lignes_de_facture(
+        &self,
+        _expense_id: Uuid,
+        _lignes: &[koprogo_api::application::ports::expense_repository::LigneDeFacture],
+    ) -> Result<(), String> {
+        // Mock : rien à enregistrer. Le port n'offre pas d'implémentation
+        // par défaut, précisément pour que ce choix soit écrit ici plutôt
+        // que subi partout.
+        Ok(())
+    }
+
     async fn create(&self, e: &Expense) -> Result<Expense, String> {
         self.store.lock().unwrap().insert(e.id, e.clone());
         Ok(e.clone())
@@ -616,6 +627,7 @@ async fn when_create_expense(world: &mut VbcWorld, name: String) {
         amount_excl_vat: None,
         vat_rate: None,
         due_date: None,
+        line_items: None,
     };
     match world.expense_uc.as_ref().unwrap().create_expense(dto).await {
         Ok(_) => {
@@ -647,6 +659,7 @@ async fn when_create_expense_unknown(world: &mut VbcWorld) {
         amount_excl_vat: None,
         vat_rate: None,
         due_date: None,
+        line_items: None,
     };
     match world.expense_uc.as_ref().unwrap().create_expense(dto).await {
         Ok(_) => {

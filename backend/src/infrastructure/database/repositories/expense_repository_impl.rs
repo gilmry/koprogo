@@ -85,6 +85,43 @@ impl ExpenseRepository for PostgresExpenseRepository {
         Ok(expense.clone())
     }
 
+    async fn enregistrer_lignes_de_facture(
+        &self,
+        expense_id: Uuid,
+        lignes: &[crate::application::ports::expense_repository::LigneDeFacture],
+    ) -> Result<(), String> {
+        if lignes.is_empty() {
+            return Ok(());
+        }
+
+        // Les montants dérivés sont recalculés ici, à partir de la quantité,
+        // du prix et du taux. Les accepter du client permettrait à une
+        // facture d'afficher un total qui ne découle pas de ses lignes.
+        for ligne in lignes {
+            sqlx::query(
+                r#"
+                INSERT INTO invoice_line_items
+                    (id, expense_id, description, quantity, unit_price,
+                     amount_excl_vat, vat_rate, vat_amount, amount_incl_vat, created_at)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW())
+                "#,
+            )
+            .bind(Uuid::new_v4())
+            .bind(expense_id)
+            .bind(&ligne.description)
+            .bind(ligne.quantity)
+            .bind(ligne.unit_price)
+            .bind(ligne.montant_hors_tva())
+            .bind(ligne.vat_rate)
+            .bind(ligne.montant_tva())
+            .bind(ligne.montant_tva_comprise())
+            .execute(&self.pool)
+            .await
+            .map_err(|e| format!("Database error inserting invoice line: {e}"))?;
+        }
+        Ok(())
+    }
+
     async fn find_by_id(&self, id: Uuid) -> Result<Option<Expense>, String> {
         let row = sqlx::query(
             r#"

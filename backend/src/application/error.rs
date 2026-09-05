@@ -195,7 +195,20 @@ pub enum AppError {
     /// **N'expose pas d'info sensible** (pas d'user_id, pas d'org_id) :
     /// uniquement `building_id` + deltas + `quota_basis` — payload requis
     /// par l'admin pour corriger.
-    #[error("L'immeuble n'est pas conforme à son acte de base")]
+    // Le message DIT ce qui manque. Il ne disait que « non conforme », et le
+    // syndic n'avait aucun moyen de savoir quoi corriger : il voyait un refus
+    // sans cause, sur un écran qui ne montre pas les deltas. Constaté en
+    // recette le 2026-09-04, rapporté comme un blocage de la comptabilité.
+    //
+    // Les deltas sont signés : positif = il manque, négatif = il y a en trop.
+    // Les nommer ainsi évite d'avoir à deviner le sens de la soustraction.
+    #[error(
+        "L'immeuble n'est pas conforme à son acte de base : \
+         {} lot(s) et {} millième(s) d'écart sur une base de {quota_basis}. \
+         Déclarez les lots manquants ou corrigez le total déclaré.",
+        if *units_delta >= 0 { format!("il manque {units_delta}") } else { format!("{} en trop", -units_delta) },
+        if *quota_delta >= rust_decimal::Decimal::ZERO { format!("il manque {quota_delta}") } else { format!("{} en trop", -quota_delta) }
+    )]
     BuildingNotConformant {
         building_id: uuid::Uuid,
         units_delta: i32,
@@ -220,7 +233,13 @@ pub enum AppError {
     /// de tous les blocs ≠ `acps.total_tantiemes`). 422 + payload
     /// `ACP_NOT_CONFORMANT` (acp_id + deltas + quota_basis), même format que
     /// `BuildingNotConformant`. N'expose pas d'info sensible.
-    #[error("La copropriété n'est pas conforme à son acte de base")]
+    #[error(
+        "La copropriété n'est pas conforme à son acte de base : \
+         {} lot(s) et {} millième(s) d'écart sur une base de {quota_basis}. \
+         Déclarez les lots manquants ou corrigez le total déclaré.",
+        if *units_delta >= 0 { format!("il manque {units_delta}") } else { format!("{} en trop", -units_delta) },
+        if *quota_delta >= rust_decimal::Decimal::ZERO { format!("il manque {quota_delta}") } else { format!("{} en trop", -quota_delta) }
+    )]
     AcpNotConformant {
         acp_id: uuid::Uuid,
         units_delta: i32,

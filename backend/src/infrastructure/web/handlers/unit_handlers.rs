@@ -28,16 +28,19 @@ pub async fn create_unit(
     user: AuthenticatedUser, // JWT-extracted user info (SECURE!)
     dto: web::Json<CreateUnitDto>,
 ) -> impl Responder {
-    // Only SuperAdmin can create units (structural data)
-    if user.role != "superadmin" {
+    // Le syndic crée les lots de SES immeubles ; le SuperAdmin, de tous.
+    // Même raisonnement que pour les immeubles : c'est le syndic qui
+    // retranscrit l'acte de base, et le contrôle porte sur le périmètre, pas
+    // sur le rôle. Voir building_handlers::create_building.
+    if !matches!(user.role.as_str(), "superadmin" | "syndic") {
         return HttpResponse::Forbidden().json(serde_json::json!({
-            "error": "Only SuperAdmin can create units (structural data cannot be modified after creation)"
+            "error": "Seuls le syndic et le SuperAdmin créent des lots"
         }));
     }
 
     if dto.building_id.is_empty() {
         return HttpResponse::BadRequest().json(serde_json::json!({
-            "error": "SuperAdmin must specify building_id"
+            "error": "Le lot doit désigner l'immeuble dont il relève (building_id)"
         }));
     }
 
@@ -49,6 +52,19 @@ pub async fn create_unit(
             }));
         }
     };
+
+    // Le contrôle de périmètre : un syndic ne crée que dans les immeubles de
+    // son organisation, résolus via l'ACP parente. Le SuperAdmin passe outre.
+    if let Err(e) = crate::infrastructure::web::middleware::scope_guard::verify_building_org_access(
+        &user,
+        building_uuid,
+        &state.building_use_cases,
+        &state.acp_use_cases,
+    )
+    .await
+    {
+        return e.error_response();
+    }
 
     // Story H15 — l'ACP d'un lot est celle de son building parent (#602).
     // Elle reste acceptée dans le corps pour ne rien casser chez les

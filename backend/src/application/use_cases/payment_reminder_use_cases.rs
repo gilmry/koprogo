@@ -764,6 +764,17 @@ mod tests {
 
     #[async_trait]
     impl crate::application::ports::ExpenseRepository for MockExpenseRepo {
+        async fn enregistrer_lignes_de_facture(
+            &self,
+            _expense_id: Uuid,
+            _lignes: &[crate::application::ports::expense_repository::LigneDeFacture],
+        ) -> Result<(), String> {
+            // Mock : rien à enregistrer. Le port n'offre pas d'implémentation
+            // par défaut, précisément pour que ce choix soit écrit ici plutôt
+            // que subi partout.
+            Ok(())
+        }
+
         async fn create(
             &self,
             e: &crate::domain::entities::Expense,

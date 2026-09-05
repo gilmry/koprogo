@@ -189,6 +189,25 @@ impl ExpenseUseCases {
         };
 
         let created = self.repository.create(&expense).await?;
+
+        // Le détail de la facture, quand elle est saisie ligne par ligne.
+        // Sans cet appel, `line_items` était accepté par le DTO puis perdu :
+        // la facture gardait ses totaux et le comptable perdait sa saisie.
+        if let Some(lignes) = &dto.line_items {
+            let lignes: Vec<_> = lignes
+                .iter()
+                .map(|l| crate::application::ports::expense_repository::LigneDeFacture {
+                    description: l.description.clone(),
+                    quantity: l.quantity,
+                    unit_price: l.unit_price,
+                    vat_rate: l.vat_rate,
+                })
+                .collect();
+            self.repository
+                .enregistrer_lignes_de_facture(created.id, &lignes)
+                .await?;
+        }
+
         Ok(self.to_response_dto(&created))
     }
 
@@ -636,6 +655,17 @@ mod tests {
 
     #[async_trait]
     impl ExpenseRepository for MockExpenseRepository {
+        async fn enregistrer_lignes_de_facture(
+            &self,
+            _expense_id: Uuid,
+            _lignes: &[crate::application::ports::expense_repository::LigneDeFacture],
+        ) -> Result<(), String> {
+            // Mock : rien à enregistrer. Le port n'offre pas d'implémentation
+            // par défaut, précisément pour que ce choix soit écrit ici plutôt
+            // que subi partout.
+            Ok(())
+        }
+
         async fn create(&self, expense: &Expense) -> Result<Expense, String> {
             let mut expenses = self.expenses.lock().unwrap();
             expenses.insert(expense.id, expense.clone());
@@ -715,6 +745,7 @@ mod tests {
             amount_excl_vat: None,
             vat_rate: None,
             due_date: None,
+            line_items: None,
         }
     }
 

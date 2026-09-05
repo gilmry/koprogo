@@ -360,6 +360,17 @@ mod tests {
 
         #[async_trait::async_trait]
         impl ExpenseRepository for ExpenseRepo {
+        async fn enregistrer_lignes_de_facture(
+            &self,
+            _expense_id: Uuid,
+            _lignes: &[crate::application::ports::expense_repository::LigneDeFacture],
+        ) -> Result<(), String> {
+            // Mock : rien à enregistrer. Le port n'offre pas d'implémentation
+            // par défaut, précisément pour que ce choix soit écrit ici plutôt
+            // que subi partout.
+            Ok(())
+        }
+
             async fn create(&self, expense: &Expense) -> Result<Expense, String>;
             async fn find_by_id(&self, id: Uuid) -> Result<Option<Expense>, String>;
             async fn find_by_building(&self, building_id: Uuid) -> Result<Vec<Expense>, String>;

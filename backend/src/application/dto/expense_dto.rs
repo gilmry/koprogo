@@ -13,6 +13,7 @@ use validator::Validate;
 // ========== Legacy DTOs (backward compatibility) ==========
 
 #[derive(Debug, Deserialize, Validate, Clone)]
+#[serde(deny_unknown_fields)]
 pub struct CreateExpenseDto {
     #[serde(default)]
     pub organization_id: String,
@@ -60,6 +61,12 @@ pub struct CreateExpenseDto {
 
     /// Échéance de règlement fournisseur (ISO 8601).
     pub due_date: Option<String>,
+
+    /// Le détail de la facture, quand elle est saisie ligne par ligne.
+    ///
+    /// Absent en saisie simple : la dépense ne porte alors que ses totaux.
+    #[serde(default)]
+    pub line_items: Option<Vec<NouvelleLigneDeFactureDto>>,
 }
 
 #[derive(Debug, Serialize)]
@@ -109,6 +116,7 @@ pub struct ExpenseResponseDto {
 /// Créer une facture brouillon avec gestion TVA.
 /// Validation des montants > 0 et taux 0-100 effectuée dans `Expense::new_with_vat`.
 #[derive(Debug, Deserialize, Validate, Clone)]
+#[serde(deny_unknown_fields)]
 pub struct CreateInvoiceDraftDto {
     #[serde(default)]
     pub organization_id: String,
@@ -132,6 +140,7 @@ pub struct CreateInvoiceDraftDto {
 
 /// Modifier une facture brouillon ou rejetée.
 #[derive(Debug, Deserialize, Validate, Clone)]
+#[serde(deny_unknown_fields)]
 pub struct UpdateInvoiceDraftDto {
     #[validate(length(min = 1))]
     pub description: Option<String>,
@@ -168,9 +177,32 @@ pub struct RejectInvoiceDto {
     pub rejection_reason: String,
 }
 
+/// Une ligne de facture transmise **à la création** de la dépense.
+///
+/// Distincte de `CreateInvoiceLineItemDto`, qui exige un `expense_id` parce
+/// qu'elle sert à ajouter une ligne à une facture déjà enregistrée. À la
+/// création, la dépense n'a pas encore d'identifiant : le lien se fait après
+/// coup, côté use-case.
+///
+/// Sans ce type, `InvoiceForm.svelte` envoyait `line_items` dans le corps et
+/// serde les jetait en silence : la facture était créée avec ses totaux, et
+/// le détail — description, quantité, prix unitaire, TVA de chaque ligne —
+/// disparaissait sans le moindre avertissement. Un comptable saisissant une
+/// facture ligne par ligne perdait son travail. Constaté le 2026-09-04.
+#[derive(Debug, Clone, Deserialize, Serialize, Validate, utoipa::ToSchema)]
+#[serde(deny_unknown_fields)]
+pub struct NouvelleLigneDeFactureDto {
+    #[validate(length(min = 1))]
+    pub description: String,
+    pub quantity: Decimal,
+    pub unit_price: Decimal,
+    pub vat_rate: Decimal,
+}
+
 /// Créer une ligne de facture.
 /// Validations (quantity > 0, unit_price ≥ 0, vat_rate 0..=100) dans `InvoiceLineItem::new`.
 #[derive(Debug, Deserialize, Validate, Clone)]
+#[serde(deny_unknown_fields)]
 pub struct CreateInvoiceLineItemDto {
     pub expense_id: String,
 

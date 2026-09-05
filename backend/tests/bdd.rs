@@ -750,6 +750,7 @@ async fn given_create_expense(world: &mut BuildingWorld, amount: rust_decimal::D
         amount_excl_vat: None,
         vat_rate: None,
         due_date: None,
+        line_items: None,
     };
     let res = uc.create_expense(dto).await.expect("create expense");
     world.last_expense_id = Some(Uuid::parse_str(&res.id).unwrap());

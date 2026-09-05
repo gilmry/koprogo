@@ -666,6 +666,31 @@ pub async fn create_test_acp(app_state: &actix_web::web::Data<AppState>, org_id:
     acp.id
 }
 
+/// Crée une seconde organisation, réelle, pour éprouver le cloisonnement.
+///
+/// `acps.organization_id` porte une clé étrangère : rattacher une ACP à un
+/// UUID inventé échoue à l'insertion, et le test panique dans sa préparation
+/// au lieu de vérifier ce qu'il prétend vérifier. Un test de sécurité qui
+/// échoue pour une mauvaise raison ne prouve rien — et s'il avait « réussi »
+/// pour une mauvaise raison, il aurait été pire.
+#[allow(dead_code)]
+pub async fn create_test_organization(app_state: &actix_web::web::Data<AppState>) -> Uuid {
+    let org_id = Uuid::new_v4();
+    let court = &org_id.to_string()[..8];
+    sqlx::query(
+        r#"INSERT INTO organizations (id, name, slug, contact_email, subscription_plan,
+                                      max_buildings, max_users, is_active, created_at, updated_at)
+           VALUES ($1, 'Org Test Bis', $2, $3, 'starter', 10, 10, true, NOW(), NOW())"#,
+    )
+    .bind(org_id)
+    .bind(format!("org-bis-{court}"))
+    .bind(format!("org-bis-{court}@test.com"))
+    .execute(&app_state.pool)
+    .await
+    .expect("create_test_organization: insertion de l'organisation");
+    org_id
+}
+
 /// Crée une ACP puis un immeuble qui lui est rattaché, et rend l'identifiant
 /// de l'immeuble.
 ///

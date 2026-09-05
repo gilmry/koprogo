@@ -310,3 +310,128 @@ async fn test_building_create_requires_auth() {
         "Should require authentication to create buildings"
     );
 }
+
+// ─────────────────────────────────────────────────────────────────────────
+// Recette du 2026-09-04 — R1-1 : « un syndic ne peut pas créer d'immeuble »
+//
+// La création était réservée au SuperAdmin, au motif que ces données sont
+// structurelles. L'intention était juste — immeubles et lots découlent de
+// l'acte de base — mais elle rendait le produit inutilisable : un cabinet
+// client devait passer par l'éditeur pour exister.
+//
+// Le syndic est le mandataire de l'ACP (Art. 3.89) et retranscrit cet acte.
+// Le contrôle porte donc sur le PÉRIMÈTRE, pas sur le rôle. Les deux tests
+// ci-dessous tiennent ensemble : ouvrir sans cloisonner serait pire que
+// fermer.
+// ─────────────────────────────────────────────────────────────────────────
+
+#[actix_web::test]
+#[serial]
+async fn test_le_syndic_cree_un_immeuble_dans_sa_propre_acp() {
+    let (app_state, _container, org_id) = common::setup_test_db().await;
+    let token = common::register_and_login_with_role(&app_state, org_id, "syndic").await;
+    let acp_id = common::create_test_acp(&app_state, org_id).await;
+
+    let app = test::init_service(
+        App::new()
+            .app_data(app_state.clone())
+            .configure(configure_routes),
+    )
+    .await;
+
+    let req = test::TestRequest::post()
+        .uri("/api/v1/buildings")
+        .insert_header((header::AUTHORIZATION, format!("Bearer {}", token)))
+        .set_json(json!({
+            "acp_id": acp_id,
+            "name": "Résidence du Syndic",
+            "address": "1 rue de la Loi",
+            "city": "Bruxelles",
+            "postal_code": "1000",
+            "country": "Belgium",
+            "total_units": 4
+        }))
+        .to_request();
+
+    let resp = test::call_service(&app, req).await;
+    assert_eq!(
+        resp.status(),
+        201,
+        "le syndic retranscrit l'acte de base de SES copropriétés"
+    );
+}
+
+#[actix_web::test]
+#[serial]
+async fn security_le_syndic_ne_cree_pas_dimmeuble_dans_lacp_dun_autre() {
+    let (app_state, _container, org_a) = common::setup_test_db().await;
+
+    // L'ACP appartient à une AUTRE organisation, réellement créée : un UUID
+    // inventé violerait la clé étrangère `acps_organization_id_fkey` et le
+    // test échouerait dans sa préparation, sans rien prouver.
+    let org_b = common::create_test_organization(&app_state).await;
+    let acp_de_b = common::create_test_acp(&app_state, org_b).await;
+
+    let token_a = common::register_and_login_with_role(&app_state, org_a, "syndic").await;
+
+    let app = test::init_service(
+        App::new()
+            .app_data(app_state.clone())
+            .configure(configure_routes),
+    )
+    .await;
+
+    let req = test::TestRequest::post()
+        .uri("/api/v1/buildings")
+        .insert_header((header::AUTHORIZATION, format!("Bearer {}", token_a)))
+        .set_json(json!({
+            "acp_id": acp_de_b,
+            "name": "Immeuble volé",
+            "address": "2 rue de la Loi",
+            "city": "Bruxelles",
+            "postal_code": "1000",
+            "country": "Belgium",
+            "total_units": 4
+        }))
+        .to_request();
+
+    let resp = test::call_service(&app, req).await;
+    assert_eq!(
+        resp.status(),
+        403,
+        "ouvrir la création sans cloisonner serait pire que la fermer"
+    );
+}
+
+#[actix_web::test]
+#[serial]
+async fn security_un_comptable_ne_cree_pas_dimmeuble() {
+    // Le comptable tient les livres, il ne retranscrit pas l'acte de base.
+    let (app_state, _container, org_id) = common::setup_test_db().await;
+    let token = common::register_and_login_with_role(&app_state, org_id, "accountant").await;
+    let acp_id = common::create_test_acp(&app_state, org_id).await;
+
+    let app = test::init_service(
+        App::new()
+            .app_data(app_state.clone())
+            .configure(configure_routes),
+    )
+    .await;
+
+    let req = test::TestRequest::post()
+        .uri("/api/v1/buildings")
+        .insert_header((header::AUTHORIZATION, format!("Bearer {}", token)))
+        .set_json(json!({
+            "acp_id": acp_id,
+            "name": "Résidence du Comptable",
+            "address": "3 rue de la Loi",
+            "city": "Bruxelles",
+            "postal_code": "1000",
+            "country": "Belgium",
+            "total_units": 4
+        }))
+        .to_request();
+
+    let resp = test::call_service(&app, req).await;
+    assert_eq!(resp.status(), 403, "le comptable tient les livres, pas l'acte de base");
+}

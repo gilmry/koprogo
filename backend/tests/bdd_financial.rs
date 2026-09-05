@@ -6805,6 +6805,7 @@ async fn when_create_simple_expense(world: &mut FinancialWorld, step: &Step) {
         amount_excl_vat: None,
         vat_rate: None,
         due_date: None,
+        line_items: None,
     };
     match uc.create_expense(dto).await {
         Ok(resp) => {
@@ -6942,6 +6943,7 @@ async fn when_create_expense_bad_amount(world: &mut FinancialWorld, amount: Deci
         amount_excl_vat: None,
         vat_rate: None,
         due_date: None,
+        line_items: None,
     };
     match uc.create_expense(dto).await {
         Ok(resp) => {
@@ -7206,6 +7208,7 @@ async fn given_n_expenses_for_building(world: &mut FinancialWorld, count: usize)
             amount_excl_vat: None,
             vat_rate: None,
             due_date: None,
+            line_items: None,
         };
         uc.create_expense(dto).await.expect("create expense");
     }

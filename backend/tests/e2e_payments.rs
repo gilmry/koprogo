@@ -80,6 +80,7 @@ async fn create_test_fixtures(
         amount_excl_vat: None,
         vat_rate: None,
         due_date: None,
+        line_items: None,
     };
 
     let expense = app_state
