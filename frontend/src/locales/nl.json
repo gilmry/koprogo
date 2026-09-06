@@ -398,7 +398,7 @@
     "filterByStatus": "Filteren op status",
     "hideMembers": "Vorige leden verbergen",
     "legalNote": "Juridische opmerking",
-    "legalRequirement": "De raad van mede-eigendom is verplicht voor mede-eigendommen met meer dan 20 kavels (Art. 577-8/1 BW).",
+    "legalRequirement": "De raad van mede-eigendom is verplicht voor mede-eigendommen met meer dan 20 kavels (Art. 3.90 BW).",
     "mandate": {
       "active": "Actief mandaat — nog {days} dag(en)",
       "endDate": "Einde mandaat",
@@ -1951,10 +1951,49 @@
       "confirmBody": "Deze actie is onomkeerbaar. Uw persoonsgegevens worden geanonimiseerd en u wordt afgemeld. Voer uw wachtwoord in om te bevestigen.",
       "confirmTitle": "Bevestig het wissen van uw gegevens",
       "passwordLabel": "Wachtwoord",
-      "wrongPassword": "Onjuist wachtwoord"
+      "wrongPassword": "Onjuist wachtwoord",
+      "done": "Gegevens geanonimiseerd",
+      "confirmHeading": "Wissing van mijn gegevens bevestigen",
+      "item1": "Uw gebruikersaccount anonimiseren",
+      "item2": "Al uw eigenaarsdossiers anonimiseren",
+      "item3": "Identificeerbare gegevens vervangen door plaatsaanduidingen",
+      "item4": "U onmiddellijk afmelden",
+      "inProgress": "Bezig met wissen…",
+      "confirmYes": "Ja, wis mijn gegevens"
     },
     "myPersonalData": "AVG - Mijn persoonlijke gegevens",
-    "rights": "In overeenstemming met de Algemene Verordening Gegevensbescherming."
+    "rights": "In overeenstemming met de Algemene Verordening Gegevensbescherming.",
+    "article16": {
+      "title": "Recht op rectificatie (Art. 16)",
+      "action": "Mijn gegevens corrigeren",
+      "modalTitle": "Persoonsgegevens corrigeren",
+      "inProgress": "Bijwerken…",
+      "submit": "Opslaan"
+    },
+    "article18": {
+      "title": "Recht op beperking van de verwerking (Art. 18)",
+      "restricted": "Verwerking beperkt",
+      "active": "Verwerking actief"
+    },
+    "article21": {
+      "title": "Recht van bezwaar (Art. 21)",
+      "optedOut": "Afgemeld voor commerciële communicatie",
+      "optedIn": "Aangemeld voor commerciële communicatie"
+    },
+    "article17": {
+      "title": "Recht op gegevenswissing (Art. 17)",
+      "action": "Wissing aanvragen — onomkeerbaar",
+      "checking": "Geschiktheid controleren…",
+      "contactSupport": "Neem contact op met de ondersteuning voor meer informatie."
+    },
+    "export": {
+      "action": "Mijn gegevens exporteren",
+      "inProgress": "Bezig met exporteren…",
+      "title": "Export van mijn persoonsgegevens",
+      "download": "JSON downloaden",
+      "noOwners": "Geen eigenaarsdossiers",
+      "noUnits": "Geen gekoppelde kavels"
+    }
   },
   "inspections": {
     "all": "Alle",
@@ -2507,7 +2546,17 @@
       "event": "Evenement",
       "info": "Informatie",
       "maintenance": "Onderhoud"
-    }
+    },
+    "noticeCategory": {
+      "General": "Algemeen",
+      "Maintenance": "Onderhoud",
+      "Social": "Sociaal",
+      "Security": "Veiligheid",
+      "Environment": "Milieu",
+      "Parking": "Parkeren",
+      "Other": "Andere"
+    },
+    "fieldTitle": "Titel"
   },
   "notifications": {
     "channels": {
@@ -3217,7 +3266,7 @@
       "creating": "Aanmaken...",
       "descriptionPlaceholder": "Gedetailleerde beschrijving van de resolutie...",
       "error": "Fout bij het aanmaken van de resolutie",
-      "legalText": "De vereiste meerderheden zijn bepaald door de artikelen 577-7 en volgende van het Burgerlijk Wetboek.",
+      "legalText": "De vereiste meerderheden zijn bepaald door de artikelen 3.88 en volgende van het Burgerlijk Wetboek.",
       "majorityAbsolute": "Volstrekte meerderheid (>50% van aanwezigen, onthoudingen uitgesloten)",
       "majorityFourFifths": "Viervijfdemeerderheid (≥4/5 van aanwezigen)",
       "majorityRequired": "Vereiste meerderheid",
@@ -3238,7 +3287,7 @@
       "deleteError": "Fout bij het verwijderen van de resolutie",
       "deleteSuccess": "Resolutie succesvol verwijderd",
       "emptyMessage": "Klik op + Toevoegen om de eerste resolutie van deze vergadering aan te maken.",
-      "legalText": "De meerderheden worden berekend conform de artikelen 577-7 en volgende van het Belgisch Burgerlijk Wetboek.",
+      "legalText": "De meerderheden worden berekend conform de artikelen 3.88 en volgende van het Belgisch Burgerlijk Wetboek.",
       "loading": "Resoluties laden...",
       "loadingError": "Fout bij het laden van resoluties",
       "notFound": "Geen resoluties voor deze vergadering.",

@@ -398,7 +398,7 @@
     "filterByStatus": "Nach Status filtern",
     "hideMembers": "Ehemalige Mitglieder ausblenden",
     "legalNote": "Rechtlicher Hinweis",
-    "legalRequirement": "Der Verwaltungsrat ist für Miteigentümergemeinschaften mit mehr als 20 Einheiten obligatorisch (Art. 577-8/1 ZGB).",
+    "legalRequirement": "Der Verwaltungsrat ist für Miteigentümergemeinschaften mit mehr als 20 Einheiten obligatorisch (Art. 3.90 ZGB).",
     "mandate": {
       "active": "Aktives Mandat — noch {days} Tag(e)",
       "endDate": "Mandatsende",
@@ -1951,10 +1951,49 @@
       "confirmBody": "Diese Aktion ist unumkehrbar. Ihre personenbezogenen Daten werden anonymisiert und Sie werden abgemeldet. Geben Sie Ihr Passwort zur Bestätigung ein.",
       "confirmTitle": "Löschung Ihrer Daten bestätigen",
       "passwordLabel": "Passwort",
-      "wrongPassword": "Falsches Passwort"
+      "wrongPassword": "Falsches Passwort",
+      "done": "Daten anonymisiert",
+      "confirmHeading": "Löschung meiner Daten bestätigen",
+      "item1": "Ihr Benutzerkonto anonymisieren",
+      "item2": "Alle Ihre Eigentümerdatensätze anonymisieren",
+      "item3": "Identifizierende Angaben durch Platzhalter ersetzen",
+      "item4": "Sie sofort abmelden",
+      "inProgress": "Löschung läuft…",
+      "confirmYes": "Ja, meine Daten löschen"
     },
     "myPersonalData": "DSGVO - Meine persönlichen Daten",
-    "rights": "Gemäß der Datenschutz-Grundverordnung."
+    "rights": "Gemäß der Datenschutz-Grundverordnung.",
+    "article16": {
+      "title": "Recht auf Berichtigung (Art. 16)",
+      "action": "Meine Daten berichtigen",
+      "modalTitle": "Personenbezogene Daten berichtigen",
+      "inProgress": "Wird aktualisiert…",
+      "submit": "Speichern"
+    },
+    "article18": {
+      "title": "Recht auf Einschränkung der Verarbeitung (Art. 18)",
+      "restricted": "Verarbeitung eingeschränkt",
+      "active": "Verarbeitung aktiv"
+    },
+    "article21": {
+      "title": "Widerspruchsrecht (Art. 21)",
+      "optedOut": "Von Werbekommunikation abgemeldet",
+      "optedIn": "Für Werbekommunikation angemeldet"
+    },
+    "article17": {
+      "title": "Recht auf Löschung (Art. 17)",
+      "action": "Löschung beantragen — unwiderruflich",
+      "checking": "Berechtigung wird geprüft…",
+      "contactSupport": "Bitte wenden Sie sich an den Support."
+    },
+    "export": {
+      "action": "Meine Daten exportieren",
+      "inProgress": "Export läuft…",
+      "title": "Export meiner personenbezogenen Daten",
+      "download": "JSON herunterladen",
+      "noOwners": "Keine Eigentümerdatensätze",
+      "noUnits": "Keine zugeordneten Einheiten"
+    }
   },
   "inspections": {
     "all": "Alle",
@@ -2507,7 +2546,17 @@
       "event": "Veranstaltung",
       "info": "Information",
       "maintenance": "Wartung"
-    }
+    },
+    "noticeCategory": {
+      "General": "Allgemein",
+      "Maintenance": "Instandhaltung",
+      "Social": "Soziales",
+      "Security": "Sicherheit",
+      "Environment": "Umwelt",
+      "Parking": "Parken",
+      "Other": "Sonstiges"
+    },
+    "fieldTitle": "Titel"
   },
   "notifications": {
     "channels": {
@@ -3217,7 +3266,7 @@
       "creating": "Wird erstellt...",
       "descriptionPlaceholder": "Detaillierte Beschreibung des Beschlusses...",
       "error": "Fehler beim Erstellen des Beschlusses",
-      "legalText": "Die erforderlichen Mehrheiten sind durch die Artikel 577-7 ff. des belgischen Zivilgesetzbuches festgelegt.",
+      "legalText": "Die erforderlichen Mehrheiten sind durch die Artikel 3.88 ff. des belgischen Zivilgesetzbuches festgelegt.",
       "majorityAbsolute": "Absolute Mehrheit (>50% der Anwesenden, Enthaltungen ausgeschlossen)",
       "majorityFourFifths": "Vierfünftelmehrheit (≥4/5 der Anwesenden)",
       "majorityRequired": "Erforderliche Mehrheit",
@@ -3238,7 +3287,7 @@
       "deleteError": "Fehler beim Löschen des Beschlusses",
       "deleteSuccess": "Beschluss erfolgreich gelöscht",
       "emptyMessage": "Klicken Sie auf + Hinzufügen, um den ersten Beschluss für diese Versammlung zu erstellen.",
-      "legalText": "Die Mehrheiten werden gemäß den Artikeln 577-7 ff. des belgischen Zivilgesetzbuches berechnet.",
+      "legalText": "Die Mehrheiten werden gemäß den Artikeln 3.88 ff. des belgischen Zivilgesetzbuches berechnet.",
       "loading": "Beschlüsse werden geladen...",
       "loadingError": "Fehler beim Laden der Beschlüsse",
       "notFound": "Keine Beschlüsse für diese Versammlung.",

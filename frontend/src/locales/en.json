@@ -398,7 +398,7 @@
     "filterByStatus": "Filter by status",
     "hideMembers": "Hide former members",
     "legalNote": "Legal note",
-    "legalRequirement": "The board of co-owners is mandatory for co-ownerships with more than 20 units (Art. 577-8/1 CC).",
+    "legalRequirement": "The board of co-owners is mandatory for co-ownerships with more than 20 units (Art. 3.90 CC).",
     "mandate": {
       "active": "Active mandate — {days} day(s) left",
       "endDate": "Mandate end",
@@ -1951,10 +1951,49 @@
       "confirmBody": "This action is irreversible. Your personal data will be anonymised and you will be logged out. Enter your password to confirm.",
       "confirmTitle": "Confirm erasure of your data",
       "passwordLabel": "Password",
-      "wrongPassword": "Incorrect password"
+      "wrongPassword": "Incorrect password",
+      "done": "Data anonymized successfully",
+      "confirmHeading": "Confirm Data Erasure",
+      "item1": "Anonymize your user account",
+      "item2": "Anonymize all your owner records",
+      "item3": "Replace identifiable information with placeholders",
+      "item4": "Log you out immediately",
+      "inProgress": "Erasing…",
+      "confirmYes": "Yes, erase my data"
     },
     "myPersonalData": "GDPR - My Personal Data",
-    "rights": "In accordance with the General Data Protection Regulation."
+    "rights": "In accordance with the General Data Protection Regulation.",
+    "article16": {
+      "title": "Right to Rectification (Art. 16)",
+      "action": "Update My Information",
+      "modalTitle": "Update Personal Information",
+      "inProgress": "Updating…",
+      "submit": "Update Information"
+    },
+    "article18": {
+      "title": "Right to Restriction of Processing (Art. 18)",
+      "restricted": "Processing is restricted",
+      "active": "Processing is active"
+    },
+    "article21": {
+      "title": "Right to Object (Art. 21)",
+      "optedOut": "Opted out of marketing",
+      "optedIn": "Opted in to marketing"
+    },
+    "article17": {
+      "title": "Right to Erasure (Art. 17)",
+      "action": "Request data erasure — irreversible",
+      "checking": "Checking eligibility…",
+      "contactSupport": "Please contact support for more information."
+    },
+    "export": {
+      "action": "Export My Data",
+      "inProgress": "Exporting…",
+      "title": "Personal Data Export",
+      "download": "Download JSON",
+      "noOwners": "No owner records",
+      "noUnits": "No unit ownerships"
+    }
   },
   "inspections": {
     "all": "All",
@@ -2507,7 +2546,17 @@
       "event": "Event",
       "info": "Information",
       "maintenance": "Maintenance"
-    }
+    },
+    "noticeCategory": {
+      "General": "General",
+      "Maintenance": "Maintenance",
+      "Social": "Social",
+      "Security": "Security",
+      "Environment": "Environment",
+      "Parking": "Parking",
+      "Other": "Other"
+    },
+    "fieldTitle": "Title"
   },
   "notifications": {
     "channels": {
@@ -3238,7 +3287,7 @@
       "deleteError": "Error deleting resolution",
       "deleteSuccess": "Resolution deleted successfully",
       "emptyMessage": "Click + Add to create the first resolution for this meeting.",
-      "legalText": "Majorities are calculated in accordance with Articles 577-7 et seq. of the Belgian Civil Code.",
+      "legalText": "Majorities are calculated in accordance with Articles 3.88 et seq. of the Belgian Civil Code.",
       "loading": "Loading resolutions...",
       "loadingError": "Error loading resolutions",
       "notFound": "No resolutions for this meeting.",

@@ -43,7 +43,13 @@
   $effect(() => {
     (async () => {
       try {
-        const me = await api.get<{ id: string }>("/owners/me");
+        // `null` = l'utilisateur n'est pas copropriétaire. Cas normal pour un
+        // syndic ou un comptable, et non une erreur : la route rendait un 404
+        // qui polluait le parcours nominal (voir #766).
+        const me = await api.get<{ id: string } | null>("/owners/me");
+        if (!me?.id) {
+          return;
+        }
         myOwnerId = me.id;
         const ownerships = await api.get<Array<{ unit_id: string }>>(
           `/owners/${myOwnerId}/units`,
@@ -129,9 +135,36 @@
     }
   }
 
-  function getVotePercentage(count: number): number {
-    if (totalVotes === 0) return 0;
-    return (count / totalVotes) * 100;
+  // Les pourcentages viennent du SERVEUR, jamais d'un calcul local.
+  //
+  // Ils étaient calculés ici par `count / totalVotes`, c'est-à-dire par
+  // NOMBRE DE BULLETINS. L'Art. 3.87 § 6 compte des voix : « chaque
+  // copropriétaire dispose d'un nombre de voix correspondant à sa quote-part
+  // dans les parties communes ».
+  //
+  // Constaté en recette le 2026-09-06 (RN-3) : Alice 550 ‰ pour, Bob 250 ‰ et
+  // Claire 200 ‰ contre. L'écran affichait « Pour 1 vote (33,3 %) » et
+  // « Contre 2 votes (66,7 %) », barre rouge plus longue à l'appui, pendant
+  // que l'API renvoyait 55 % et 45 %. Une résolution ADOPTÉE était présentée
+  // comme rejetée, sur l'écran même où le syndic rédige son procès-verbal.
+  //
+  // Le backend avait été corrigé le 2026-09-04 ; le calcul existait en double
+  // et corriger l'un laissait l'autre faux, sans qu'aucun test ne le voie.
+  //
+  // ATTENTION aux dénominateurs, qui diffèrent À DESSEIN et ne somment donc
+  // pas à 100 : « pour » et « contre » se rapportent aux voix EXPRIMÉES, les
+  // abstentions en étant exclues par l'Art. 3.87 § 8 ; l'abstention se
+  // rapporte à TOUTES les voix présentes. Ne pas les ramener à une base
+  // commune sous prétexte que le total ne fait pas 100.
+  let partPour = $derived(resolution.pour_percentage ?? 0);
+  let partContre = $derived(resolution.contre_percentage ?? 0);
+  let partAbstention = $derived(resolution.abstention_percentage ?? 0);
+
+  /// Les millièmes retenus, tels que le serveur les compte — plafonnement de
+  /// l'Art. 3.87 § 7 compris depuis le 2026-09-06.
+  function millièmes(valeur: string | number | undefined): string {
+    const n = Number(valeur ?? 0);
+    return Number.isFinite(n) ? n.toLocaleString("fr-BE", { maximumFractionDigits: 2 }) : "0";
   }
 
   async function loadVotes() {
@@ -251,15 +284,15 @@
         >
         <span class="text-gray-600"
           >{votesPour}
-          {$_("resolutions.vote.votes", { values: { count: votesPour } })} ({getVotePercentage(
-            votesPour,
-          ).toFixed(1)}%)</span
+          {$_("resolutions.vote.votes", { values: { count: votesPour } })} · {millièmes(
+            resolution.total_voting_power_pour,
+          )} ‰ ({partPour.toFixed(1)}%)</span
         >
       </div>
       <div class="w-full bg-gray-100 rounded-full h-2.5">
         <div
           class="bg-green-500 h-2.5 rounded-full transition-all"
-          style="width: {getVotePercentage(votesPour)}%"
+          style="width: {partPour}%"
         ></div>
       </div>
     </div>
@@ -271,15 +304,15 @@
         >
         <span class="text-gray-600"
           >{votesContre}
-          {$_("resolutions.vote.votes", { values: { count: votesContre } })} ({getVotePercentage(
-            votesContre,
-          ).toFixed(1)}%)</span
+          {$_("resolutions.vote.votes", { values: { count: votesContre } })} · {millièmes(
+            resolution.total_voting_power_contre,
+          )} ‰ ({partContre.toFixed(1)}%)</span
         >
       </div>
       <div class="w-full bg-gray-100 rounded-full h-2.5">
         <div
           class="bg-red-500 h-2.5 rounded-full transition-all"
-          style="width: {getVotePercentage(votesContre)}%"
+          style="width: {partContre}%"
         ></div>
       </div>
     </div>
@@ -291,15 +324,15 @@
         >
         <span class="text-gray-600"
           >{votesAbstention}
-          {$_("resolutions.vote.votes", { values: { count: votesAbstention } })} ({getVotePercentage(
-            votesAbstention,
-          ).toFixed(1)}%)</span
+          {$_("resolutions.vote.votes", { values: { count: votesAbstention } })} · {millièmes(
+            resolution.total_voting_power_abstention,
+          )} ‰ ({partAbstention.toFixed(1)}%)</span
         >
       </div>
       <div class="w-full bg-gray-100 rounded-full h-2.5">
         <div
           class="bg-gray-400 h-2.5 rounded-full transition-all"
-          style="width: {getVotePercentage(votesAbstention)}%"
+          style="width: {partAbstention}%"
         ></div>
       </div>
     </div>

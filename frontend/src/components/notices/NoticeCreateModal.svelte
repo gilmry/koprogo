@@ -104,7 +104,12 @@
               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
             >
               {#each Object.values(NoticeType) as type}
-                <option value={type}>{type}</option>
+                <!-- Même traduction que la liste (NoticeList.svelte) : le
+                     formulaire affichait les valeurs brutes de l'énumération,
+                     « LostAndFound » et « ClassifiedAd », là où le filtre
+                     affichait « Objets trouvés » et « Petite annonce ».
+                     Constaté en recette le 2026-09-06 (RN-5). -->
+                <option value={type}>{$_(`notices.noticeType.${type}`)}</option>
               {/each}
             </select>
           </div>
@@ -120,7 +125,10 @@
               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
             >
               {#each Object.values(NoticeCategory) as cat}
-                <option value={cat}>{cat}</option>
+                <!-- `notices.categories` existait avec des clés minuscules qui
+                     ne correspondaient à aucune valeur servie par l'API.
+                     `noticeCategory` suit les sept valeurs réelles. -->
+                <option value={cat}>{$_(`notices.noticeCategory.${cat}`)}</option>
               {/each}
             </select>
           </div>
@@ -128,7 +136,9 @@
           <!-- Title -->
           <div>
             <label for="title" class="block text-sm font-medium text-gray-700 mb-1">
-              {$_("notices.title")} <span class="text-red-500">*</span>
+              <!-- `notices.title` est le titre de la PAGE (« Annonces ») ;
+                   l'employer ici affichait « Annonces * » au lieu de « Titre * ». -->
+              {$_("notices.fieldTitle")} <span class="text-red-500">*</span>
             </label>
             <input
               type="text"

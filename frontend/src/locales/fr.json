@@ -398,7 +398,7 @@
     "filterByStatus": "Filtrer par statut",
     "hideMembers": "Masquer les anciens membres",
     "legalNote": "Note juridique",
-    "legalRequirement": "Le conseil de copropriété est obligatoire pour les copropriétés de plus de 20 lots (Art. 577-8/1 CC).",
+    "legalRequirement": "Le conseil de copropriété est obligatoire pour les copropriétés de plus de 20 lots (Art. 3.90 CC).",
     "mandate": {
       "active": "Mandat actif — {days} jour(s) restant(s)",
       "endDate": "Fin du mandat",
@@ -1951,10 +1951,49 @@
       "confirmBody": "Cette action est irréversible. Vos données personnelles seront anonymisées et vous serez déconnecté. Saisissez votre mot de passe pour confirmer.",
       "confirmTitle": "Confirmer l'effacement de vos données",
       "passwordLabel": "Mot de passe",
-      "wrongPassword": "Mot de passe incorrect"
+      "wrongPassword": "Mot de passe incorrect",
+      "done": "Données anonymisées",
+      "confirmHeading": "Confirmer l'effacement de mes données",
+      "item1": "Anonymiser votre compte utilisateur",
+      "item2": "Anonymiser toutes vos fiches de copropriétaire",
+      "item3": "Remplacer les informations identifiantes par des marqueurs",
+      "item4": "Vous déconnecter immédiatement",
+      "inProgress": "Effacement en cours…",
+      "confirmYes": "Oui, effacer mes données"
     },
     "myPersonalData": "RGPD - Mes données personnelles",
-    "rights": "Conformément au Règlement Général sur la Protection des Données."
+    "rights": "Conformément au Règlement Général sur la Protection des Données.",
+    "article16": {
+      "title": "Droit de rectification (Art. 16)",
+      "action": "Corriger mes informations",
+      "modalTitle": "Corriger mes informations personnelles",
+      "inProgress": "Mise à jour…",
+      "submit": "Enregistrer"
+    },
+    "article18": {
+      "title": "Droit à la limitation du traitement (Art. 18)",
+      "restricted": "Traitement limité",
+      "active": "Traitement actif"
+    },
+    "article21": {
+      "title": "Droit d'opposition (Art. 21)",
+      "optedOut": "Désinscrit des communications commerciales",
+      "optedIn": "Inscrit aux communications commerciales"
+    },
+    "article17": {
+      "title": "Droit à l'effacement (Art. 17)",
+      "action": "Demander l'effacement — irréversible",
+      "checking": "Vérification de l'éligibilité…",
+      "contactSupport": "Contactez le support pour en savoir plus."
+    },
+    "export": {
+      "action": "Exporter mes données",
+      "inProgress": "Export en cours…",
+      "title": "Export de mes données personnelles",
+      "download": "Télécharger le JSON",
+      "noOwners": "Aucune fiche de copropriétaire",
+      "noUnits": "Aucun lot rattaché"
+    }
   },
   "inspections": {
     "all": "Toutes",
@@ -2507,7 +2546,17 @@
       "event": "Événement",
       "info": "Information",
       "maintenance": "Maintenance"
-    }
+    },
+    "noticeCategory": {
+      "General": "Général",
+      "Maintenance": "Entretien",
+      "Social": "Vie sociale",
+      "Security": "Sécurité",
+      "Environment": "Environnement",
+      "Parking": "Stationnement",
+      "Other": "Autre"
+    },
+    "fieldTitle": "Titre"
   },
   "notifications": {
     "channels": {
@@ -3238,7 +3287,7 @@
       "deleteError": "Erreur lors de la suppression de la résolution",
       "deleteSuccess": "Résolution supprimée avec succès",
       "emptyMessage": "Cliquez sur + Ajouter pour créer la première résolution de cette assemblée.",
-      "legalText": "Les majorités sont calculées conformément aux articles 577-7 et suivants du Code Civil belge.",
+      "legalText": "Les majorités sont calculées conformément aux articles 3.88 et suivants du Code Civil belge.",
       "loading": "Chargement des résolutions...",
       "loadingError": "Erreur lors du chargement des résolutions",
       "notFound": "Aucune résolution pour cette assemblée.",

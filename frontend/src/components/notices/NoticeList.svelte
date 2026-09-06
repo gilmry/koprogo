@@ -11,9 +11,11 @@
   let {
     buildingId,
     showFilters = true,
+    initialStatus = "active-only",
   }: {
     buildingId: string;
     showFilters?: boolean;
+    initialStatus?: NoticeStatus | "active-only";
   } = $props();
 
   let notices: Notice[] = $state([]);
@@ -21,7 +23,16 @@
   let loading = $state(true);
   let searchQuery = $state("");
   let selectedType: NoticeType | "all" = $state("all");
-  let selectedStatus: NoticeStatus | "active-only" = $state("active-only");
+  // Statut affiché à l'ouverture. La page le force à « Draft » juste après une
+  // création, sans quoi l'annonce neuve reste invisible : `Notice::new` la crée
+  // en BROUILLON (domaine, `notice.rs`) et la vue par défaut ne montre que les
+  // publiées. Constaté en recette le 2026-09-06 (RN-6), rapporté comme
+  // « aucune annonce créée » alors que le serveur rendait bien 201.
+  // svelte-ignore state_referenced_locally
+  // Lecture unique au montage, voulue : la page remonte le composant quand elle
+  // veut changer de filtre. Le rendre réactif écraserait le choix de
+  // l'utilisateur à chaque rendu du parent.
+  let selectedStatus: NoticeStatus | "active-only" = $state(initialStatus);
 
   $effect(() => {
     loadNotices();

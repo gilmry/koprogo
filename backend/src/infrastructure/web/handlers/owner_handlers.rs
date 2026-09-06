@@ -153,9 +153,24 @@ pub async fn get_my_owner(state: web::Data<AppState>, user: AuthenticatedUser) -
 
     match result {
         Ok(Some(owner)) => HttpResponse::Ok().json(owner),
-        Ok(None) => HttpResponse::NotFound().json(serde_json::json!({
-            "error": "No owner record linked to this user"
-        })),
+        // Pas de fiche de copropriétaire : c'est un ÉTAT NORMAL, pas une
+        // erreur. Un syndic ou un comptable n'est pas copropriétaire de
+        // l'immeuble qu'il gère.
+        //
+        // Cette route rendait 404 dans ce cas. Conséquence mesurée au
+        // navigateur le 2026-09-06 : chaque page communautaire visitée par un
+        // syndic émettait un 404 sur le parcours nominal. Or c'est
+        // exactement ce que `crowdsecurity/http-probing` compte pour
+        // identifier un scanner — le testeur de recette a été banni 4 h sur
+        // douze 404 du même genre (issue #766).
+        //
+        // Une application qui produit des 404 en fonctionnement normal
+        // apprend à son propre pare-feu à la prendre pour une attaque.
+        //
+        // On rend donc 200 avec un corps nul. Les appelants distinguent déjà
+        // l'absence de fiche : `ResolutionVotePanel` en tire `isOwner`, et
+        // l'absence de `myOwnerId` y a le même effet qu'avant.
+        Ok(None) => HttpResponse::Ok().json(serde_json::Value::Null),
         Err(err) => HttpResponse::InternalServerError().json(serde_json::json!({
             "error": err
         })),

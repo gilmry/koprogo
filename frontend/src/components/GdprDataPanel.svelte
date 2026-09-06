@@ -189,9 +189,9 @@
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
               </svg>
-              Exporting...
+              {$_('gdpr.export.inProgress')}
             {:else}
-              Export My Data
+              {$_('gdpr.export.action')}
             {/if}
           </button>
         </div>
@@ -207,7 +207,7 @@
           </svg>
         </div>
         <div class="ml-3 flex-1">
-          <h3 class="text-lg font-medium text-green-900">Right to Rectification (Article 16)</h3>
+          <h3 class="text-lg font-medium text-green-900">{$_('gdpr.article16.title')}</h3>
           <p class="mt-2 text-sm text-green-700">
             Correct any inaccurate or incomplete personal data we hold about you. You can update your email,
             first name, and last name.
@@ -218,7 +218,7 @@
             data-testid="gdpr-rectify-button"
             class="mt-4 inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50"
           >
-            Update My Information
+            {$_('gdpr.article16.action')}
           </button>
         </div>
       </div>
@@ -233,7 +233,7 @@
           </svg>
         </div>
         <div class="ml-3 flex-1">
-          <h3 class="text-lg font-medium text-yellow-900">Right to Restriction of Processing (Article 18)</h3>
+          <h3 class="text-lg font-medium text-yellow-900">{$_('gdpr.article18.title')}</h3>
           <p class="mt-2 text-sm text-yellow-700">
             Temporarily restrict how we process your personal data. While restricted, we will only store your data
             and not actively process it for other purposes.
@@ -250,7 +250,7 @@
               <span class={`${processingRestricted ? 'translate-x-5' : 'translate-x-0'} pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out`}></span>
             </button>
             <span class="ml-3 text-sm font-medium text-gray-900">
-              {processingRestricted ? 'Processing is restricted' : 'Processing is active'}
+              {processingRestricted ? $_('gdpr.article18.restricted') : $_('gdpr.article18.active')}
             </span>
           </div>
         </div>
@@ -266,7 +266,7 @@
           </svg>
         </div>
         <div class="ml-3 flex-1">
-          <h3 class="text-lg font-medium text-purple-900">Right to Object (Article 21)</h3>
+          <h3 class="text-lg font-medium text-purple-900">{$_('gdpr.article21.title')}</h3>
           <p class="mt-2 text-sm text-purple-700">
             Object to the processing of your personal data for marketing purposes. Opt out of receiving promotional
             emails, newsletters, and other marketing communications.
@@ -283,7 +283,7 @@
               <span class={`${marketingOptOut ? 'translate-x-5' : 'translate-x-0'} pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out`}></span>
             </button>
             <span class="ml-3 text-sm font-medium text-gray-900">
-              {marketingOptOut ? 'Opted out of marketing' : 'Opted in to marketing'}
+              {marketingOptOut ? $_('gdpr.article21.optedOut') : $_('gdpr.article21.optedIn')}
             </span>
           </div>
         </div>
@@ -299,7 +299,7 @@
           </svg>
         </div>
         <div class="ml-3 flex-1">
-          <h3 class="text-lg font-medium text-red-900">Right to Erasure (Article 17)</h3>
+          <h3 class="text-lg font-medium text-red-900">{$_('gdpr.article17.title')}</h3>
           <p class="mt-2 text-sm text-red-700">
             Request the permanent anonymization of your personal data. This action is irreversible and will
             replace your identifiable information with anonymized placeholders.
@@ -310,7 +310,7 @@
             <div class="mt-3 bg-yellow-50 border border-yellow-200 rounded-md p-3">
               <p class="text-sm text-yellow-800">
                 ⚠️ Your data cannot be erased at this time due to legal holds or active obligations.
-                Please contact support for more information.
+                {$_('gdpr.article17.contactSupport')}
               </p>
             </div>
           {:else}
@@ -320,7 +320,7 @@
               data-testid="gdpr-erase-button"
               class="mt-4 inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50"
             >
-              Request Data Erasure
+              {$_('gdpr.article17.action')}
             </button>
           {/if}
         </div>
@@ -361,7 +361,7 @@
           <div class="sm:flex sm:items-start">
             <div class="mt-3 text-center sm:mt-0 sm:text-left w-full">
               <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">
-                Personal Data Export
+                {$_('gdpr.export.title')}
               </h3>
               <div class="mt-2 space-y-4 max-h-96 overflow-y-auto">
                 <div>
@@ -406,7 +406,7 @@
             data-testid="gdpr-download-export-button"
             class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm"
           >
-            Download JSON
+            {$_('gdpr.export.download')}
           </button>
           <button
             type="button"
@@ -438,14 +438,14 @@
             </div>
             <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
               <h3 class="text-lg leading-6 font-medium text-gray-900">
-                Confirm Data Erasure
+                {$_('gdpr.erase.confirmHeading')}
               </h3>
               <div class="mt-2">
                 <p class="text-sm text-gray-500">
                   Are you absolutely sure you want to erase your personal data? This action is <strong>irreversible</strong> and will:
                 </p>
                 <ul class="mt-2 text-sm text-gray-500 list-disc list-inside">
-                  <li>Anonymize your user account</li>
+                  <li>{$_('gdpr.erase.item1')}</li>
                   <li>Anonymize all your owner records</li>
                   <li>Replace identifiable information with placeholders</li>
                   <li>Log you out immediately</li>
@@ -466,9 +466,9 @@
             class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-50"
           >
             {#if loading}
-              Erasing...
+              {$_('gdpr.erase.inProgress')}
             {:else}
-              Yes, Erase My Data
+              {$_('gdpr.erase.confirmYes')}
             {/if}
           </button>
           <button
@@ -502,7 +502,7 @@
             </div>
             <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
               <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">
-                Update Personal Information
+                {$_('gdpr.article16.modalTitle')}
               </h3>
               <div class="mt-4 space-y-4">
                 <div>
@@ -554,9 +554,9 @@
             class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-green-600 text-base font-medium text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-50"
           >
             {#if loading}
-              Updating...
+              {$_('gdpr.article16.inProgress')}
             {:else}
-              Update Information
+              {$_('gdpr.article16.submit')}
             {/if}
           </button>
           <button

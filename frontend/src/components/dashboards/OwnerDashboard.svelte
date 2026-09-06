@@ -83,7 +83,13 @@
 
       // Load this owner's actual units (not all org units)
       try {
-        const me = await api.get<{ id: string }>('/owners/me');
+        // Peut valoir `null` : l'utilisateur n'a pas de fiche de
+        // copropriétaire. Voir ResolutionVotePanel et l'issue #766.
+        const me = await api.get<{ id: string } | null>('/owners/me');
+        if (!me?.id) {
+          recentUnits = [];
+          return;
+        }
         const ownerships = await api.get<Array<{ unit_id: string }>>(`/owners/${me.id}/units`);
         const ids = (Array.isArray(ownerships) ? ownerships : []).slice(0, 5).map(o => o.unit_id);
         recentUnits = await Promise.all(ids.map(id => api.get<Unit>(`/units/${id}`)));
