@@ -40,6 +40,7 @@ use uuid::Uuid;
 use crate::application::error::AppError;
 use crate::application::use_cases::acp_use_cases::{AcpCaller, AcpUseCases};
 use crate::application::use_cases::building_use_cases::BuildingUseCases;
+use crate::application::use_cases::owner_use_cases::OwnerUseCases;
 use crate::infrastructure::web::app_state::AppState;
 use crate::infrastructure::web::AuthenticatedUser;
 
@@ -282,6 +283,56 @@ pub async fn verify_building_org_access(
         .map_err(|_| AppError::Internal("Invalid building.acp_id format".to_string()))?;
 
     verify_acp_org_access(user, acp_id, acp_use_cases).await
+}
+
+/// Vérifie le mandat de l'appelant sur l'organisation d'un **copropriétaire**.
+///
+/// ── Pourquoi cette garde-ci compte plus que les autres ─────────────────────
+///
+/// Les routes portées par un copropriétaire servent, nominativement, ce qu'une
+/// personne doit et ce qu'elle a payé :
+///
+///     GET /owners/{id}/payments            montants et dates
+///     GET /owners/{id}/payments/total      ce qu'elle a versé
+///     GET /owners/{id}/payment-methods     ses instruments enregistrés
+///     GET /owners/{id}/payment-reminders   ses rappels, donc ses retards
+///     GET /owners/{id}/distributions       sa quote-part de chaque charge
+///     GET /owners/{id}/total-due           ce qu'elle doit
+///
+/// Un identifiant de copropriétaire suffisait à les obtenir. Ce n'est pas un
+/// écart de périmètre, c'est la situation financière d'une personne nommée
+/// servie à qui la demande — au sens du RGPD, une violation de données.
+///
+/// ── Le chemin est court, et c'est ce qui le rend sûr ───────────────────────
+///
+/// `Owner` porte directement son `organization_id` (`domain/copropriete/owner.rs:9`).
+/// Pas de chaîne à remonter, donc pas de chaîne à recopier de travers — c'est
+/// la recopie manuelle d'une chaîne de quatre sauts qui avait laissé fuir les
+/// bulletins de vote nominatifs (RN-2, issue #772).
+///
+/// Sémantique : superadmin passe ; sinon le copropriétaire doit exister et
+/// relever de l'organisation de l'appelant. Un copropriétaire introuvable est
+/// refusé plutôt qu'ignoré.
+pub async fn verify_owner_org_access(
+    user: &AuthenticatedUser,
+    owner_id: Uuid,
+    owner_use_cases: &OwnerUseCases,
+) -> Result<(), AppError> {
+    if user.is_superadmin() {
+        return Ok(());
+    }
+
+    let owner = owner_use_cases
+        .get_owner(owner_id)
+        .await
+        .map_err(AppError::from)?
+        .ok_or(AppError::NotFound(format!("Owner not found: {owner_id}")))?;
+
+    let org_id = Uuid::parse_str(&owner.organization_id)
+        .map_err(|_| AppError::Internal("Invalid owner.organization_id format".to_string()))?;
+
+    user.verify_org_access(org_id)
+        .map_err(|_| AppError::Forbidden("Owner outside your organization".to_string()))
 }
 
 /// Vérifie le mandat de l'appelant sur l'ACP dont relève une **assemblée**.

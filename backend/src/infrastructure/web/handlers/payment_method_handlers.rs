@@ -4,7 +4,7 @@ use crate::application::dto::{
 use crate::domain::entities::payment_method::PaymentMethodType;
 use crate::infrastructure::audit::{AuditEventType, AuditLogEntry};
 use crate::infrastructure::web::{AppState, AuthenticatedUser};
-use actix_web::{delete, get, post, put, web, HttpResponse, Responder};
+use actix_web::{delete, get, post, put, web, HttpResponse, Responder, ResponseError};
 use uuid::Uuid;
 
 // ==================== Payment Method CRUD Endpoints ====================
@@ -143,7 +143,21 @@ pub async fn get_payment_method_by_stripe_id(
 pub async fn list_owner_payment_methods(
     state: web::Data<AppState>,
     owner_id: web::Path<Uuid>,
+    user: AuthenticatedUser,
 ) -> impl Responder {
+    // Route imbriquee non gardee au releve du 2026-09-06 (issue #772) : elle
+    // servait la situation financiere NOMINATIVE d'une personne a quiconque
+    // connaissait son identifiant.
+    if let Err(err) = crate::infrastructure::web::middleware::scope_guard::verify_owner_org_access(
+        &user,
+        *owner_id,
+        &state.owner_use_cases,
+    )
+    .await
+    {
+        return err.error_response();
+    }
+
     match state
         .payment_method_use_cases
         .list_owner_payment_methods(*owner_id)
@@ -169,7 +183,21 @@ pub async fn list_owner_payment_methods(
 pub async fn list_active_owner_payment_methods(
     state: web::Data<AppState>,
     owner_id: web::Path<Uuid>,
+    user: AuthenticatedUser,
 ) -> impl Responder {
+    // Route imbriquee non gardee au releve du 2026-09-06 (issue #772) : elle
+    // servait la situation financiere NOMINATIVE d'une personne a quiconque
+    // connaissait son identifiant.
+    if let Err(err) = crate::infrastructure::web::middleware::scope_guard::verify_owner_org_access(
+        &user,
+        *owner_id,
+        &state.owner_use_cases,
+    )
+    .await
+    {
+        return err.error_response();
+    }
+
     match state
         .payment_method_use_cases
         .list_active_owner_payment_methods(*owner_id)
@@ -196,7 +224,21 @@ pub async fn list_active_owner_payment_methods(
 pub async fn get_default_payment_method(
     state: web::Data<AppState>,
     owner_id: web::Path<Uuid>,
+    user: AuthenticatedUser,
 ) -> impl Responder {
+    // Route imbriquee non gardee au releve du 2026-09-06 (issue #772) : elle
+    // servait la situation financiere NOMINATIVE d'une personne a quiconque
+    // connaissait son identifiant.
+    if let Err(err) = crate::infrastructure::web::middleware::scope_guard::verify_owner_org_access(
+        &user,
+        *owner_id,
+        &state.owner_use_cases,
+    )
+    .await
+    {
+        return err.error_response();
+    }
+
     match state
         .payment_method_use_cases
         .get_default_payment_method(*owner_id)
@@ -259,8 +301,21 @@ pub async fn list_organization_payment_methods(
 pub async fn list_payment_methods_by_type(
     state: web::Data<AppState>,
     path: web::Path<(Uuid, String)>,
+    user: AuthenticatedUser,
 ) -> impl Responder {
     let (owner_id, method_type_str) = path.into_inner();
+    // Route imbriquee non gardee au releve du 2026-09-06 (issue #772) : elle
+    // servait la situation financiere NOMINATIVE d'une personne a quiconque
+    // connaissait son identifiant.
+    if let Err(err) = crate::infrastructure::web::middleware::scope_guard::verify_owner_org_access(
+        &user,
+        owner_id,
+        &state.owner_use_cases,
+    )
+    .await
+    {
+        return err.error_response();
+    }
 
     // Parse method type string to enum
     let method_type = match method_type_str.as_str() {
@@ -548,7 +603,21 @@ pub async fn delete_payment_method(
 pub async fn count_active_payment_methods(
     state: web::Data<AppState>,
     owner_id: web::Path<Uuid>,
+    user: AuthenticatedUser,
 ) -> impl Responder {
+    // Route imbriquee non gardee au releve du 2026-09-06 (issue #772) : elle
+    // servait la situation financiere NOMINATIVE d'une personne a quiconque
+    // connaissait son identifiant.
+    if let Err(err) = crate::infrastructure::web::middleware::scope_guard::verify_owner_org_access(
+        &user,
+        *owner_id,
+        &state.owner_use_cases,
+    )
+    .await
+    {
+        return err.error_response();
+    }
+
     match state
         .payment_method_use_cases
         .count_active_payment_methods(*owner_id)
@@ -577,7 +646,21 @@ pub async fn count_active_payment_methods(
 pub async fn has_active_payment_methods(
     state: web::Data<AppState>,
     owner_id: web::Path<Uuid>,
+    user: AuthenticatedUser,
 ) -> impl Responder {
+    // Route imbriquee non gardee au releve du 2026-09-06 (issue #772) : elle
+    // servait la situation financiere NOMINATIVE d'une personne a quiconque
+    // connaissait son identifiant.
+    if let Err(err) = crate::infrastructure::web::middleware::scope_guard::verify_owner_org_access(
+        &user,
+        *owner_id,
+        &state.owner_use_cases,
+    )
+    .await
+    {
+        return err.error_response();
+    }
+
     match state
         .payment_method_use_cases
         .has_active_payment_methods(*owner_id)

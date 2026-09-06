@@ -1,6 +1,6 @@
 use crate::infrastructure::web::handlers::conformity_response::try_build_conformity_response;
 use crate::infrastructure::web::{AppState, AuthenticatedUser};
-use actix_web::{get, post, web, HttpResponse, Responder};
+use actix_web::{get, post, web, HttpResponse, Responder, ResponseError};
 use uuid::Uuid;
 
 /// POST /invoices/{id}/calculate-distribution - Calculate and save charge distribution
@@ -65,7 +65,21 @@ pub async fn get_distribution_by_expense(
 pub async fn get_distributions_by_owner(
     state: web::Data<AppState>,
     owner_id: web::Path<Uuid>,
+    user: AuthenticatedUser,
 ) -> impl Responder {
+    // Route imbriquee non gardee au releve du 2026-09-06 (issue #772) : elle
+    // servait la situation financiere NOMINATIVE d'une personne a quiconque
+    // connaissait son identifiant.
+    if let Err(err) = crate::infrastructure::web::middleware::scope_guard::verify_owner_org_access(
+        &user,
+        *owner_id,
+        &state.owner_use_cases,
+    )
+    .await
+    {
+        return err.error_response();
+    }
+
     match state
         .charge_distribution_use_cases
         .get_distributions_by_owner(*owner_id)
@@ -83,7 +97,21 @@ pub async fn get_distributions_by_owner(
 pub async fn get_total_due_by_owner(
     state: web::Data<AppState>,
     owner_id: web::Path<Uuid>,
+    user: AuthenticatedUser,
 ) -> impl Responder {
+    // Route imbriquee non gardee au releve du 2026-09-06 (issue #772) : elle
+    // servait la situation financiere NOMINATIVE d'une personne a quiconque
+    // connaissait son identifiant.
+    if let Err(err) = crate::infrastructure::web::middleware::scope_guard::verify_owner_org_access(
+        &user,
+        *owner_id,
+        &state.owner_use_cases,
+    )
+    .await
+    {
+        return err.error_response();
+    }
+
     match state
         .charge_distribution_use_cases
         .get_total_due_by_owner(*owner_id)

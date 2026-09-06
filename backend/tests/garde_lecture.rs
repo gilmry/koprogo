@@ -57,17 +57,22 @@ use std::path::{Path, PathBuf};
 /// fait partie de la correction — sans quoi le cliquet rend gratuites autant
 /// de régressions qu'il compte d'unités d'écart.
 ///
-/// 73 au relevé du 2026-09-06 ; 70 après les trois listes de documents, puis
-/// **33** après avoir gardé les trente-six routes portées par un immeuble —
-/// annonces, objets partagés, compétences, inspections, tickets, rapports de
-/// travaux, paiements, états datés, convocations.
+/// 73 au relevé du 2026-09-06 ; 70 après les trois listes de documents, 33
+/// après les trente-six routes portées par un immeuble — annonces, objets
+/// partagés, compétences, inspections, tickets, rapports de travaux, paiements,
+/// états datés, convocations — puis **19** après les quatorze portées par un
+/// copropriétaire.
+///
+/// Ces quatorze-là servaient, nominativement, ce qu'une personne doit et ce
+/// qu'elle a payé : paiements, moyens de paiement, rappels, quotes-parts,
+/// solde dû. Un identifiant suffisait à les obtenir.
 ///
 /// Un cliquet posé sans une première baisse n'est qu'une constatation.
 ///
 /// Ordre de traitement retenu, du plus exposé au moins : documents (actes de
 /// base, procès-verbaux, factures nominatives), paiements et états datés
 /// (montants par personne nommée), convocations, avis.
-const DETTE_AU_2026_09_06: usize = 33;
+const DETTE_AU_2026_09_06: usize = 19;
 
 /// Routes imbriquées qui **prennent** l'identité sans jamais la **vérifier**.
 ///
@@ -106,9 +111,10 @@ fn racine_handlers() -> PathBuf {
 /// `verifier_mandat_sur_ag` fait de même depuis une assemblée ;
 /// `require_organization` et `is_superadmin` sont des décisions plus grossières
 /// mais réelles. Un corps qui n'en contient aucun ne décide de rien.
-const MARQUEURS_DE_GARDE: [&str; 8] = [
+const MARQUEURS_DE_GARDE: [&str; 9] = [
     "verify_acp_org_access",
     "verify_building_org_access",
+    "verify_owner_org_access",
     "verify_meeting_org_access",
     "verify_expense_org_access",
     "verifier_mandat",

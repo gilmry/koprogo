@@ -292,7 +292,21 @@ pub async fn list_notices_by_status(
 pub async fn list_author_notices(
     data: web::Data<AppState>,
     author_id: web::Path<Uuid>,
+    user: AuthenticatedUser,
 ) -> impl Responder {
+    // Route imbriquee non gardee au releve du 2026-09-06 (issue #772) : elle
+    // servait la situation financiere NOMINATIVE d'une personne a quiconque
+    // connaissait son identifiant.
+    if let Err(err) = crate::infrastructure::web::middleware::scope_guard::verify_owner_org_access(
+        &user,
+        *author_id,
+        &data.owner_use_cases,
+    )
+    .await
+    {
+        return err.error_response();
+    }
+
     match data
         .notice_use_cases
         .list_author_notices(author_id.into_inner())

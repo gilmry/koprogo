@@ -385,7 +385,7 @@ Ces deux actes ne sont pas délégables : cf. `docs/governance/RESPONSABILITE.md
 
 ## Inventaire complet du périmètre 0.1.0
 
-**106 issues ouvertes** portent l'étiquette `release:0.1.0`. Elles sont
+**88 issues ouvertes** portent l'étiquette `release:0.1.0`. Elles sont
 toutes ci-dessous, sans exception : une issue du périmètre absente du WBS est
 une issue que personne ne planifie.
 
@@ -396,13 +396,13 @@ cinq jours.
 
 | Priorité | Nombre |
 |---|---|
-| critical | 15 |
-| high | 35 |
-| medium | 28 |
+| critical | 7 |
+| high | 33 |
+| medium | 23 |
 | low | 2 |
-| — | 26 |
+| — | 23 |
 
-### Track R — Défauts de recette navigateur (35)
+### Track R — Défauts de recette navigateur (24)
 
 Six recettes menées au navigateur entre le 2026-09-04 et le 2026-09-06. Le
 motif dominant, confirmé six fois : **une capacité écrite, testée, et
@@ -411,20 +411,11 @@ ne peut pas y arriver.
 
 | Issue | Prio | Intitulé |
 |---|---|---|
-| #763 | critical | Sécurité — identifiants superadmin déductibles du dépôt public |
-| #766 | critical | Le "crash API" et la "régression CORS" de la recette sont un bannissement CrowdSec, déclenché par n… |
-| #767 | critical | Art. 3.87 § 7 — le plafonnement des voix existe mais reste invisible jusqu'à la clôture, que rien n… |
-| #769 | critical | POST /auth/register repose le cookie de session sur l'appelant : le SuperAdmin est déconnecté à cha… |
 | #770 | critical | total_units est déclaré à la création et jamais recalculé : ajouter un lot rend l'immeuble non conf… |
 | #772 | critical | Fuite inter-organisations : 75 routes imbriquées sur 310 n'exigent aucune identité — des votes nomi… |
-| #773 | critical | L'écran de résultat de vote calcule les majorités par tête alors que l'API renvoie les tantièmes |
 | #780 | critical | Le cycle de vie d'une AG ne peut pas aboutir : trois verrous indépendants, aucun contournable depui… |
-| #782 | critical | Les erreurs 400 nomment le champ fautif et l'interface le jette — deux extracteurs morts sous des t… |
-| #783 | critical | acp_id absent du formulaire d'immeuble pour un syndic : le bouton a été ouvert, pas le champ |
-| #787 | critical | Sécurité — le jeton JWT et le contenu du localStorage sont écrits dans la console du navigateur |
 | #814 | critical | Cinq rôles sur quatorze reçoivent une navigation entièrement vide : canSee() les fait tomber en fai… |
 | #765 | high | Contrat : les 17 routes /expenses et /invoices sont hors OpenAPI — c'est ce qui a laissé line_items… |
-| #768 | high | Huit modules communautaires ont une page et pas de backend : 404 en rafale, et c'est ce qui fait ba… |
 | #771 | high | Surface publique : la page d'inscription existe mais n'est liée nulle part, et « mot de passe oubli… |
 | #774 | high | Page RGPD majoritairement en anglais : le copropriétaire lit ses droits et déclenche un effacement … |
 | #775 | high | Annonces : création sans effet ni retour, filtre Brouillon en chargement infini, et énumérations br… |
@@ -432,7 +423,6 @@ ne peut pas y arriver.
 | #778 | high | Bouton de création d'immeuble et de lot invisibles pour le syndic : la route serveur est ouverte, l… |
 | #779 | high | Rebrancher les six modules communautaires : 111 points d'entrée servis que le frontend n'appelle pa… |
 | #784 | high | L'envoi de convocation exige recipient_owner_ids que l'interface ne peut pas constituer |
-| #785 | high | Le bouton « Reporter » est correct dans la source : suspicion de bundle JS périmé servi par le serv… |
 | #788 | high | Classes Tailwind interpolées dans le tableau de bord comptable : les styles ne sont jamais générés |
 | #789 | high | La grille à cinq colonnes des membres du conseil n'existe jamais : classe Tailwind interpolée |
 | #819 | high | Deux énumérations portent le même nom de schéma : le contrat interdit d'enregistrer un paiement en … |
@@ -442,12 +432,11 @@ ne peut pas y arriver.
 | #791 | medium | Le tableau de bord admin affiche une activité récente inventée, située à Paris et à Lyon |
 | #792 | medium | Les statuts de tickets s'affichent en valeurs internes : Open, InProgress, Resolved, Closed |
 | #794 | medium | Le tiroir de navigation mobile n'a pas de piège de focus, et son overlay est un div déguisé en bout… |
-| #795 | medium | L'application est écrite desktop-first alors que le syndic et le copropriétaire décident sur téléph… |
 | #804 | medium | La PWA n'a jamais fonctionné : le service worker échoue à l'installation depuis novembre 2025 |
 | #793 | low | « Precedent » sans accent dans la pagination, y compris dans le libellé lu par les lecteurs d'écran |
 | #796 | low | La balise theme-color annonce un vert que l'application n'utilise plus |
 
-### Track U — Refonte UX/UI (18)
+### Track U — Refonte UX/UI (14)
 
 Revue de design du 2026-09-06. Entrée en 0.1.0 le même jour : un financeur ne
 lit pas du code, et l'ASBL se fonde sur ce que le produit montre. **U2 ne
@@ -467,13 +456,9 @@ d'avoir fermé la dette de cloisonnement serait l'ordre inverse du bon.
 | #825 | high | Refonte UX — importer et implémenter la maquette Claude Design « Mobile First (modernisé) » |
 | #826 | high | Refonte UX — importer et implémenter la maquette Claude Design « Syndic Dashboard (modernisé) » |
 | #797 | medium | Refonte UX — jetons de design et jeu d'icônes SVG : remplacer les émojis qui collisionnent |
-| #799 | medium | Refonte UX — coquille applicative : barre latérale, barre de contexte unique, navigation mobile |
-| #800 | medium | Refonte UX — motif de liste unifié et composant d'encadré légal |
-| #801 | medium | Refonte UX — les tableaux de bord présentent des tâches, pas de la navigation |
 | #821 | medium | Refonte UX — importer et implémenter la maquette Claude Design « Admin Dashboard (modernisé) » |
 | #822 | medium | Refonte UX — importer et implémenter la maquette Claude Design « Accountant Dashboard (modernisé) » |
 | #827 | medium | Refonte UX — importer et implémenter la maquette Claude Design « Lists (modernisé) » |
-| #343 | — | refactor(frontend): architecture hexagonale light + data-testid + bug fixes |
 
 ### Track D — Documentation vivante multi-persona (13)
 
@@ -498,7 +483,7 @@ vont changer produit une documentation périmée le jour de sa livraison.
 | #817 | medium | Workflow multi-persona — le ticket, du copropriétaire qui signale au prestataire qui est payé |
 | #595 | — | [Story Tx.3] Documentation docs/agent-activity/ (Tier 2 log) |
 
-### Track M — Modularité par ACP et RBAC communautaire (11)
+### Track M — Modularité par ACP et RBAC communautaire (10)
 
 Slice 5 de l'épopée #556. Une ACP active les modules dont elle a besoin ; le
 reste répond 403, pas 404. Ce track porte aussi les deux arbitrages ouverts
@@ -516,7 +501,6 @@ sur les droits communautaires — le syndic peut-il réserver au nom de l'ACP
 | #590 | — | [Story 5.6] Activation/désactivation modules audité + archivage data (jamais delete) |
 | #591 | — | [Story 5.7] Onboarding modulaire wizard ≤ 5 min |
 | #592 | — | [Story 5.8] Gate CI a11y axe-core + data-testid + Lighthouse |
-| #663 | — | feat(scope): BuildingSelector devrait chercher/sélectionner l'ACP, pas le Building |
 | #694 | — | Scoping user↔ACP absent : un syndic/comptable voit toute l'organisation, pas seulement ses ACPs |
 
 ### Track S — Gouvernance d'assemblée avancée (7)
@@ -536,7 +520,7 @@ au-delà du strict Art. 3.87.
 | #582 | — | [Story 4.7] CdC membre élu + action create_alert |
 | #583 | — | [Story 4.8] [cluster-coord] CommissaireAuxComptes + VerificationCertificate |
 
-### Track T — Dette d'infrastructure de test (6)
+### Track T — Dette d'infrastructure de test (4)
 
 Ce qui empêche la CI de dire la vérité. **Quatre jobs sur dix sont rouges en
 continu depuis le 2026-09-04 au moins** : `prettier`, le contrat OpenAPI,
@@ -548,8 +532,6 @@ apprend seulement à ne plus la regarder.
 | #540 | high | bug(test-infra): inventaire consolidé des ~27 scénarios BDD pré-existants rouges (révélés post-#524) |
 | #548 | high | bug(e2e): WP-D1/FE1 — ripple Playwright (59 specs) après JWT→cookie : auth.ts init-ordering 'Databa… |
 | #443 | medium | BDD-MIGRATION-001: Finalize Decimal cascade in BDD/E2E tests (~50 errors residual) |
-| #723 | medium | characterization/02-ag-full-cycle.spec.ts rouge depuis 3 runs CI : test envoie organization_id au l… |
-| #331 | — | test(playwright): 48 fichiers E2E Playwright frontend couvrant tous les modules |
 | #696 | — | Instabilité smoke suite Playwright CI : 109 échecs sur specs pré-existantes (occurrence 2026-08-08) |
 
 ### Track K — Dette de code et de contrat (3)
@@ -663,14 +645,23 @@ déclarerai pas mortes sans mesure.
 
 ### Le compte
 
-**106 issues aujourd'hui ; 95 si les onze fermetures sont validées.**
+**106 issues au relevé ; 88 après les dix-huit fermetures du 2026-09-06.**
+
+Douze recouvrements ou caducités, validés par le porteur du projet, et six
+défauts critiques désormais corrigés, déployés et **gardés par un test
+vérifié par témoin** — #767, #769, #773, #782, #783, #787.
+
+Deux de ces six n'avaient aucun filet avant leur fermeture : le cookie de
+session reposé par `register` (#769) et les majorités comptées par tête
+(#773). Ils en ont un maintenant, et fermer sans filet aurait seulement
+déplacé la date de leur retour.
 
 ## Ce qui reste, et ce qui le bloque
 
 ### ⚠️ Le périmètre a doublé le 2026-09-06, et c'est une décision assumée
 
 **Tout ce qui restait en 0.2.0 entre en 0.1.0, avec la refonte UX/UI.** Le compte passe de
-**34 à 106 issues ouvertes** en `release:0.1.0` : les 31 ouvertes le 2026-09-06, les 24
+**34 à 88 issues ouvertes** en `release:0.1.0` : les 31 ouvertes le 2026-09-06, les 24
 qui étaient en 0.2.0, les 6 lots de la refonte, la documentation vivante et les défauts
 trouvés en vérifiant. Il ne reste plus rien en 0.2.0.
 

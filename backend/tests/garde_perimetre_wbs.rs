@@ -85,15 +85,44 @@ fn linventaire_du_perimetre_est_present_et_peuple() {
         .unwrap_or(texte.len());
     let section = &texte[debut..fin];
 
+    // Le nombre ANNONCÉ par l'en-tête, et le nombre RÉELLEMENT tabulé.
+    //
+    // Un seuil fixe aurait été le mauvais instrument : le périmètre a
+    // légitimement baissé de 106 à 88 le 2026-09-06, et un cliquet qui
+    // interdit la baisse punit le travail au lieu de l'écart. Ce qu'il faut
+    // interdire, c'est la DIVERGENCE entre ce que le document annonce et ce
+    // qu'il montre — c'est-à-dire l'édition à la main.
+    let annonce: usize = texte[debut..]
+        .split_once("issues ouvertes** portent")
+        .and_then(|(avant, _)| {
+            // `avant` se termine par « …**88 » : le fragment cherché est le
+            // DERNIER, donc le premier que `rsplit` rend.
+            avant
+                .rsplit("**")
+                .next()
+                .and_then(|s| s.trim().parse().ok())
+        })
+        .expect("l'en-tête de l'inventaire n'annonce plus un nombre d'issues");
+
+    let lignes = section
+        .lines()
+        .filter(|l| l.trim_start().starts_with("| #"))
+        .count();
+
+    assert_eq!(
+        lignes, annonce,
+        "L'inventaire annonce {annonce} issues et en tabule {lignes}.\n\n\
+         L'écart signifie qu'on a édité le document à la main plutôt que de le \
+         régénérer. C'est ainsi que 21 issues du périmètre se sont retrouvées \
+         hors plan, dont #780 en `priority:critical`.\n\n\
+         Régénérez : python3 scripts/inventaire-wbs.py"
+    );
+
     let citees = issues_citees(section);
     assert!(
-        citees.len() >= 90,
-        "l'inventaire du périmètre ne cite plus que {} issues.\n\n\
-         Il en citait 96 au 2026-09-06, une par ligne de tableau. Un inventaire \
-         qui rétrécit sans qu'on le dise est exactement ce qui a laissé 21 issues \
-         hors plan, dont #780 en `priority:critical`.\n\n\
-         Si des issues ont été fermées, régénérez plutôt que de retrancher à la \
-         main : python3 scripts/inventaire-wbs.py",
+        citees.len() >= 40,
+        "l'inventaire ne cite plus que {} issues : le périmètre 0.1.0 ne peut \
+         pas avoir fondu à ce point sans que le reste du WBS soit réécrit",
         citees.len()
     );
 

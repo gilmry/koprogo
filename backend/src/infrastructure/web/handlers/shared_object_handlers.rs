@@ -276,7 +276,21 @@ pub async fn list_objects_by_category(
 pub async fn list_owner_objects(
     data: web::Data<AppState>,
     owner_id: web::Path<Uuid>,
+    user: AuthenticatedUser,
 ) -> impl Responder {
+    // Route imbriquee non gardee au releve du 2026-09-06 (issue #772) : elle
+    // servait la situation financiere NOMINATIVE d'une personne a quiconque
+    // connaissait son identifiant.
+    if let Err(err) = crate::infrastructure::web::middleware::scope_guard::verify_owner_org_access(
+        &user,
+        *owner_id,
+        &data.owner_use_cases,
+    )
+    .await
+    {
+        return err.error_response();
+    }
+
     match data
         .shared_object_use_cases
         .list_owner_objects(owner_id.into_inner())

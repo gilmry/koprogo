@@ -144,7 +144,21 @@ pub async fn get_payment_by_stripe_intent(
 pub async fn list_owner_payments(
     state: web::Data<AppState>,
     owner_id: web::Path<Uuid>,
+    user: AuthenticatedUser,
 ) -> impl Responder {
+    // Route imbriquee non gardee au releve du 2026-09-06 (issue #772) : elle
+    // servait la situation financiere NOMINATIVE d'une personne a quiconque
+    // connaissait son identifiant.
+    if let Err(err) = crate::infrastructure::web::middleware::scope_guard::verify_owner_org_access(
+        &user,
+        *owner_id,
+        &state.owner_use_cases,
+    )
+    .await
+    {
+        return err.error_response();
+    }
+
     match state.payment_use_cases.list_owner_payments(*owner_id).await {
         Ok(payments) => HttpResponse::Ok().json(payments),
         Err(err) => HttpResponse::InternalServerError().json(serde_json::json!({"error": err})),
@@ -715,7 +729,21 @@ pub async fn delete_payment(
 pub async fn get_owner_payment_stats(
     state: web::Data<AppState>,
     owner_id: web::Path<Uuid>,
+    user: AuthenticatedUser,
 ) -> impl Responder {
+    // Route imbriquee non gardee au releve du 2026-09-06 (issue #772) : elle
+    // servait la situation financiere NOMINATIVE d'une personne a quiconque
+    // connaissait son identifiant.
+    if let Err(err) = crate::infrastructure::web::middleware::scope_guard::verify_owner_org_access(
+        &user,
+        *owner_id,
+        &state.owner_use_cases,
+    )
+    .await
+    {
+        return err.error_response();
+    }
+
     match state
         .payment_use_cases
         .get_owner_payment_stats(*owner_id)
@@ -815,7 +843,21 @@ pub async fn get_expense_total_paid(
 pub async fn get_owner_total_paid(
     state: web::Data<AppState>,
     owner_id: web::Path<Uuid>,
+    user: AuthenticatedUser,
 ) -> impl Responder {
+    // Route imbriquee non gardee au releve du 2026-09-06 (issue #772) : elle
+    // servait la situation financiere NOMINATIVE d'une personne a quiconque
+    // connaissait son identifiant.
+    if let Err(err) = crate::infrastructure::web::middleware::scope_guard::verify_owner_org_access(
+        &user,
+        *owner_id,
+        &state.owner_use_cases,
+    )
+    .await
+    {
+        return err.error_response();
+    }
+
     match state
         .payment_use_cases
         .get_total_paid_by_owner(*owner_id)

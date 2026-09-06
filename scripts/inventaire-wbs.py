@@ -13,14 +13,14 @@ TRACKS = [
 motif dominant, confirmé six fois : **une capacité écrite, testée, et
 inatteignable**. Nos tests prouvent que le code marche tout en masquant qu'on
 ne peut pas y arriver.""",
-  [763,765,766,767,768,769,770,771,772,773,774,775,776,777,778,779,780,782,
-   783,784,785,786,787,788,789,790,791,792,793,794,795,796,804,814,819]),
+  [765,770,771,772,774,775,776,777,778,779,780,
+   784,786,788,789,790,791,792,793,794,796,804,814,819]),
 
  ("U", "Refonte UX/UI", """Revue de design du 2026-09-06. Entrée en 0.1.0 le même jour : un financeur ne
 lit pas du code, et l'ASBL se fonde sur ce que le produit montre. **U2 ne
 commence qu'une fois #772 fermée** — remanier le périmètre applicatif avant
 d'avoir fermé la dette de cloisonnement serait l'ordre inverse du bon.""",
-  [556,343,818,820,821,822,823,824,825,826,827,797,798,799,800,801,802,803]),
+  [556,818,820,821,822,823,824,825,826,827,797,798,802,803]),
 
  ("D", "Documentation vivante multi-persona", """Six personas, quatre workflows transverses, et la restructuration des cent
 specs e2e pour que les vidéos racontent le produit plutôt que ses modules.
@@ -32,7 +32,7 @@ vont changer produit une documentation périmée le jour de sa livraison.""",
 reste répond 403, pas 404. Ce track porte aussi les deux arbitrages ouverts
 sur les droits communautaires — le syndic peut-il réserver au nom de l'ACP
 (#781, #588), et le comptable doit-il être exclu du communautaire (#589).""",
-  [585,586,587,588,589,590,591,592,663,694,781]),
+  [585,586,587,588,589,590,591,592,694,781]),
 
  ("S", "Gouvernance d'assemblée avancée", """Slice 4 de #556 : assemblée hybride, vote à distance authentifié fort,
 procès-verbal signé eIDAS, conseil de copropriété élu, commissaire aux
@@ -44,7 +44,7 @@ au-delà du strict Art. 3.87.""",
 continu depuis le 2026-09-04 au moins** : `prettier`, le contrat OpenAPI,
 `oasdiff` et la suite BDD. Une CI rouge en permanence ne garde rien — elle
 apprend seulement à ne plus la regarder.""",
-  [331,443,540,548,696,723]),
+  [443,540,548,696]),
 
  ("K", "Dette de code et de contrat", """Les erreurs typées plutôt que classées par sous-chaîne, le contrat OpenAPI
 complet, et la suppression du repli qui fabrique une ACP inexistante.""",
