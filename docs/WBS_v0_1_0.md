@@ -161,8 +161,9 @@ ses coordonnées de clic — qui lui faisait manquer toutes les petites cibles.
 | R14 | **Les erreurs 400 nomment le champ fautif et l'interface le jette.** Trois coupures dans `api.ts` et `error.utils.ts`. Deux extracteurs de `details` existent déjà et **ne peuvent jamais fonctionner** | #782 | ouvert |
 | R15 | `acp_id` absent du formulaire d'immeuble pour un syndic. **Régression introduite par R10** : le bouton a été ouvert, pas le champ | #783 | ouvert |
 | R16 | L'envoi de convocation exige `recipient_owner_ids` que l'interface ne peut pas constituer | #784 | ouvert |
-| R17 | « Reporter » : la source est correcte et le câblage aussi. **Suspicion de bundle JS périmé servi par le service worker** | #785 | ouvert |
-| R18 | Le type `Vote` du frontend ne correspond pas au DTO servi ; clé `notices.draft` affichée en clair | #786 | ouvert |
+| R17 | « Reporter » : **faux positif**, le bouton fonctionne. Un `prompt()` rejeté par l'outil de test expliquait tout. Reste à remplacer les dialogues natifs et à corriger le journal d'audit du report | #785 | **partiel** |
+| R18 | Le type `Vote` du frontend ne correspond pas au DTO servi ; clé `notices.draft` affichée en clair | #786 | **fait** |
+| R22 | **La PWA n'a jamais fonctionné** : le service worker échoue à l'installation depuis novembre 2025, deux icônes du manifeste répondent 404 | #804 | ouvert |
 
 #### R19 à R21 — revue de design frontend, « Part 0 »
 
@@ -229,6 +230,36 @@ du test. Elle dit aussi que ses références légales et ses codes PCMN sont des
 valeurs de maquette, à lire depuis le registre de règles du projet. Sur un
 sujet où trois références périmées et une affirmation juridique sans base ont
 déjà été trouvées, c'est la bonne règle.
+
+### Track D — Documentation vivante multi-persona (nouveau, 2026-09-06)
+
+Sur le modèle de `gilmry/klaar` : livrables portant leur persona d'auteur en
+en-tête, parcours numérotés par persona, organisation par contexte borné.
+
+| Lot | Contenu | Issue |
+|---|---|---|
+| D1 | Un document par rôle — syndic, copropriétaire, comptable, admin — avec parcours nominal, refus assumés et références légales | #805 |
+| D2 | Workflows transverses : cycle de vie d'une AG, circuit d'une facture, entrée d'un copropriétaire | #805 |
+| D3 | Cliquet de couverture documentaire, et vérification que les parcours décrits sont **atteignables** | #805 |
+
+**Ce que KoproGo a déjà, et ce qui manque.** Le dépôt compte 86 documents dans
+`docs/`, et ils sont bons — PCMN belge, RGPD, convocations, workflow de
+facture, gouvernance. Mais ils sont classés **par sujet technique ou
+réglementaire, jamais par personne**. Aucun ne répond à la question qu'un
+syndic se pose en arrivant : que puis-je faire, dans quel ordre, et pourquoi.
+
+**Pourquoi c'est en 0.1.0.** Même raison que le reste : un financeur ne lit pas
+du code. Le produit doit être compréhensible avant la fondation de l'ASBL.
+
+**Ce que « vivante » veut dire ici.** Une documentation qui se met à jour parce
+qu'un test la garde, pas parce qu'on y pense. Le dépôt a déjà les deux
+mécanismes : le cliquet, employé cinq fois, et le contrat `data-testid` figé
+(#802, #803) — un parcours documenté dont une étape n'a pas d'ancrage est un
+parcours qu'on ne peut pas prouver.
+
+**Un document qui décrit une capacité inatteignable ment.** C'est le motif
+dominant des défauts de ce produit, et c'est pourquoi D1 exige que chaque
+document nomme ce qui ne fonctionne pas encore.
 
 ### Track F — Ops (repris tel quel)
 
@@ -364,8 +395,10 @@ empêche d'utiliser le produit, et parce que R14 rend observable tout ce qui sui
 13. **U2** (#798) — le périmètre ACP, **une fois R1 fermée**, et pas avant.
 14. **U3 → U4 → U5** — coquille, motif de liste, tableaux de bord.
 15. K1, K4, K5, K6, K7 (dette bloquante, parallélisable)
-16. F3 (drills)
-17. G1 puis G2
+16. **D1 → D2 → D3** — la documentation vivante, **après** que les parcours
+    fonctionnent : documenter un parcours qui casse produit un document qui ment.
+17. F3 (drills)
+18. G1 puis G2
 
 ## Méthode
 
