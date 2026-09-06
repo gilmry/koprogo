@@ -202,11 +202,18 @@ pub enum AppError {
     //
     // Les deltas sont signés : positif = il manque, négatif = il y a en trop.
     // Les nommer ainsi évite d'avoir à deviner le sens de la soustraction.
+    // Le message nomme d'abord ce qui BLOQUE — les quotités — et ne mentionne
+    // les lots qu'en second, à titre indicatif.
+    //
+    // Depuis #770, un écart de lots ne ferme plus rien : le nombre de lots se
+    // compte, il ne se déclare pas. Dire « déclarez les lots manquants » à
+    // quelqu'un dont le seul écart est un compte de lots l'enverrait corriger
+    // une donnée qui n'y est pour rien.
     #[error(
         "L'immeuble n'est pas conforme à son acte de base : \
-         {} lot(s) et {} millième(s) d'écart sur une base de {quota_basis}. \
-         Déclarez les lots manquants ou corrigez le total déclaré.",
-        if *units_delta >= 0 { format!("il manque {units_delta}") } else { format!("{} en trop", -units_delta) },
+         {} millième(s) d'écart sur une base de {quota_basis}. \
+         Corrigez les quotités des lots, ou le total déclaré par l'acte. \
+         (Pour information, écart de lots : {units_delta}.)",
         if *quota_delta >= rust_decimal::Decimal::ZERO { format!("il manque {quota_delta}") } else { format!("{} en trop", -quota_delta) }
     )]
     BuildingNotConformant {
@@ -235,9 +242,9 @@ pub enum AppError {
     /// `BuildingNotConformant`. N'expose pas d'info sensible.
     #[error(
         "La copropriété n'est pas conforme à son acte de base : \
-         {} lot(s) et {} millième(s) d'écart sur une base de {quota_basis}. \
-         Déclarez les lots manquants ou corrigez le total déclaré.",
-        if *units_delta >= 0 { format!("il manque {units_delta}") } else { format!("{} en trop", -units_delta) },
+         {} millième(s) d'écart sur une base de {quota_basis}. \
+         Corrigez les quotités des lots, ou le total déclaré par l'acte. \
+         (Pour information, écart de lots : {units_delta}.)",
         if *quota_delta >= rust_decimal::Decimal::ZERO { format!("il manque {quota_delta}") } else { format!("{} en trop", -quota_delta) }
     )]
     AcpNotConformant {

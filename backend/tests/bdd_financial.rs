@@ -330,6 +330,16 @@ impl FinancialWorld {
             use koprogo_api::domain::entities::Building;
             // Hotfix #602 — Building.acp_id (FK acps.id) replaces organization_id.
             let acp_id = ensure_default_acp_for_org(&pool, org_id).await;
+            // L'immeuble est declare CONFORME des sa creation : un lot,
+            // mille tantiemes, et ce lot existe reellement.
+            //
+            // Il declarait auparavant dix lots et mille tantiemes sans en
+            // creer aucun. Le garde-fou « valider avant de calculer » refusait
+            // alors toute operation financiere avec
+            // `ACP_NOT_CONFORMANT: units_delta=6 quota_delta=600`, et la suite
+            // BDD est restee rouge en CI. Le fixture declarait autre chose que
+            // ce qu'il fabriquait — c'est le meme defaut que l'issue #770
+            // decrit pour le produit, reproduit dans son harnais de test.
             let b = Building::new(
                 acp_id,
                 "Residence Financiere".to_string(),
@@ -337,13 +347,25 @@ impl FinancialWorld {
                 "Bruxelles".to_string(),
                 "1000".to_string(),
                 "Belgique".to_string(),
-                10,
+                1,
                 1000,
                 Some(2000),
             )
             .unwrap();
             building_repo.create(&b).await.expect("create building");
             self.building_id = Some(b.id);
+
+            sqlx::query(
+                r#"INSERT INTO units (id, building_id, acp_id, unit_number, unit_type, floor,
+                                      surface_area, quota, created_at, updated_at)
+                   VALUES ($1, $2, $3, 'Lot-initial', 'apartment', 0, 60.0, 1000.0, NOW(), NOW())"#,
+            )
+            .bind(Uuid::new_v4())
+            .bind(b.id)
+            .bind(acp_id)
+            .execute(&pool)
+            .await
+            .expect("insert lot initial");
         }
 
         let payment_repo = Arc::new(PostgresPaymentRepository::new(pool.clone()));
@@ -2155,22 +2177,59 @@ async fn given_building_with_units(
 
     // H15 — units.organization_id dropped, units.acp_id NOT NULL (same ACP as the building).
     let acp_id = ensure_default_acp_for_org(pool, org_id).await;
+
+    // Le lot de mise en place cede la place aux lots du scenario.
+    sqlx::query("DELETE FROM units WHERE building_id = $1 AND unit_number = 'Lot-initial'")
+        .bind(building_id)
+        .execute(pool)
+        .await
+        .expect("retirer le lot initial");
+
+    // Les quotites somment EXACTEMENT les mille tantiemes de l'acte, le reste
+    // de la division allant au dernier lot.
+    //
+    // Ce n'est pas une commodite de test : c'est la pratique reelle. Un acte de
+    // base qui repartit mille tantiemes entre six lots ne peut pas donner
+    // 166,66 a chacun — il doit tomber juste, sans quoi la repartition des
+    // charges perd des centimes a chaque appel de fonds (ADR-0008).
+    let quota_unitaire = 1000 / unit_count as i64;
+    let reste = 1000 - quota_unitaire * unit_count as i64;
+
     for i in 1..=unit_count {
         let unit_id = Uuid::new_v4();
+        let quota = if i == unit_count {
+            quota_unitaire + reste
+        } else {
+            quota_unitaire
+        };
         sqlx::query(
             r#"INSERT INTO units (id, building_id, acp_id, unit_number, unit_type, floor, surface_area, quota, created_at, updated_at)
-               VALUES ($1, $2, $3, $4, 'apartment', $5, 60.0, 100.0, NOW(), NOW())"#,
+               VALUES ($1, $2, $3, $4, 'apartment', $5, 60.0, $6, NOW(), NOW())"#,
         )
         .bind(unit_id)
         .bind(building_id)
         .bind(acp_id)
         .bind(format!("Unit-{}", i))
         .bind(i as i32)
+        .bind(rust_decimal::Decimal::from(quota))
         .execute(pool)
         .await
         .expect("insert unit");
         world.unit_ids.push(unit_id);
     }
+
+    // La declaration suit ce qui a ete encode.
+    //
+    // C'est precisement ce que le PRODUIT ne fait pas, et c'est l'objet de
+    // #770 : `total_units` est saisi a la creation de l'immeuble et n'evolue
+    // plus, si bien qu'un syndic qui encode son acte de base progressivement
+    // se retrouve non conforme, donc prive de toute comptabilite.
+    sqlx::query("UPDATE buildings SET total_units = $1 WHERE id = $2")
+        .bind(unit_count as i32)
+        .bind(building_id)
+        .execute(pool)
+        .await
+        .expect("aligner la declaration sur les lots encodes");
 }
 
 #[given(regex = r#"^(\d+) owners with ownership percentages exist$"#)]
@@ -3371,22 +3430,54 @@ async fn given_building_with_n_units(world: &mut FinancialWorld, _name: String, 
 
     // H15 — units.organization_id dropped, units.acp_id NOT NULL (same ACP as the building).
     let acp_id = ensure_default_acp_for_org(pool, org_id).await;
+
+    // Meme correction que `given_building_with_units` : le lot de mise en
+    // place cede la place, et les quotites somment EXACTEMENT l'acte.
+    //
+    // Ces scenarios echouaient avec « Distribution does not cover the charge:
+    // 100.00 distributed for 1000.00 due » : trois lots a 100 sur une base de
+    // 1000 ne repartissent que 30 % de la charge. La repartition des charges
+    // se fait aux tantiemes (Art. 3.87 § 6) ; si les tantiemes ne totalisent
+    // pas l'acte, elle ne peut pas couvrir la depense — et c'est le domaine
+    // qui a raison de le refuser.
+    sqlx::query("DELETE FROM units WHERE building_id = $1 AND unit_number = 'Lot-initial'")
+        .bind(building_id)
+        .execute(pool)
+        .await
+        .expect("retirer le lot initial");
+
+    let quota_unitaire = 1000 / count as i64;
+    let reste = 1000 - quota_unitaire * count as i64;
+
     for i in 1..=count {
         let unit_id = Uuid::new_v4();
+        let quota = if i == count {
+            quota_unitaire + reste
+        } else {
+            quota_unitaire
+        };
         sqlx::query(
             r#"INSERT INTO units (id, building_id, acp_id, unit_number, unit_type, floor, surface_area, quota, created_at, updated_at)
-               VALUES ($1, $2, $3, $4, 'apartment', $5, 60.0, 100.0, NOW(), NOW())"#,
+               VALUES ($1, $2, $3, $4, 'apartment', $5, 60.0, $6, NOW(), NOW())"#,
         )
         .bind(unit_id)
         .bind(building_id)
         .bind(acp_id)
         .bind(format!("CD-Unit-{}", i))
         .bind(i as i32)
+        .bind(rust_decimal::Decimal::from(quota))
         .execute(pool)
         .await
         .expect("insert unit");
         world.unit_ids.push(unit_id);
     }
+
+    sqlx::query("UPDATE buildings SET total_units = $1 WHERE id = $2")
+        .bind(count as i32)
+        .bind(building_id)
+        .execute(pool)
+        .await
+        .expect("aligner la declaration sur les lots encodes");
 }
 
 #[given(regex = r#"^unit (\d+) owned by "([^"]*)" at (\d+)%$"#)]

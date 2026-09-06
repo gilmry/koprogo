@@ -27,7 +27,11 @@
   import { authStore } from "../../stores/auth";
   import { UserRole } from "../../lib/types";
   import { scope } from "../../stores/scope.svelte";
-  import { canSee, type Menu } from "../../lib/auth/permissions";
+  import {
+    canSee,
+    ROLES_SANS_INTERFACE,
+    type Menu,
+  } from "../../lib/auth/permissions";
   import RoleSubmenu from "./RoleSubmenu.svelte";
   import NotificationBell from "../notifications/NotificationBell.svelte";
 
@@ -47,6 +51,21 @@
 
   // Role courant pour canSee() — string lowercase. null si non assigne.
   let activeRole = $derived(user?.role ?? null);
+  // Un rôle SANS INTERFACE n'est pas un rôle absent.
+  //
+  // Jusqu'au 2026-09-06, cinq rôles servis par le backend tombaient en
+  // fail-closed dans `canSee()` : les huit blocs de menu rendaient `false`, et
+  // le message de secours ci-dessous ne se déclenchait pas — il teste
+  // l'ABSENCE de rôle, or ces comptes en ont un. Ils recevaient une barre avec
+  // un logo et un bouton de déconnexion, sans un mot d'explication (#814).
+  //
+  // Trois de ces cinq sont désormais mappés. Les autres — prestataire, membre
+  // du conseil, et six rôles professionnels sans écran — figurent au registre
+  // `ROLES_SANS_INTERFACE`. Ceux-là méritent une phrase, pas un vide.
+  let aUnRoleSansInterface = $derived(
+    !!activeRole && ROLES_SANS_INTERFACE.has(activeRole),
+  );
+
   let hasNoRoleAssignment = $derived(
     isAuthenticated && (!activeRole || (user?.roles?.length ?? 0) === 0),
   );
@@ -311,7 +330,25 @@
 </script>
 
 {#if isAuthenticated}
-  {#if hasNoRoleAssignment}
+  {#if aUnRoleSansInterface}
+    <!-- ================================================================== -->
+    <!-- Rôle connu du serveur, sans écran dédié — cf. #814, #815, #816     -->
+    <!-- ================================================================== -->
+    <aside
+      class="hidden lg:flex lg:flex-col lg:fixed lg:inset-y-0 lg:left-0 lg:w-60 bg-white border-r border-gray-200 z-30 items-center justify-center p-6 text-center"
+      role="navigation"
+      aria-label="Navigation principale"
+      data-testid="navigation-role-sans-interface"
+    >
+      <p class="text-sm font-semibold text-gray-800 mb-2">
+        Aucun écran pour ce rôle
+      </p>
+      <p class="text-xs text-gray-500">
+        Votre rôle est bien reconnu, mais l'application ne lui propose pas
+        encore d'écran. Contactez votre syndic pour savoir comment procéder.
+      </p>
+    </aside>
+  {:else if hasNoRoleAssignment}
     <!-- ================================================================== -->
     <!-- @negative — user authentifie sans aucun UserRoleAssignment         -->
     <!-- ================================================================== -->

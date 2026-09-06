@@ -367,9 +367,38 @@ impl Acp {
     // ========================================================================
 
     /// L'ACP est-elle conformante, étant données ses métriques agrégées ?
+    ///
+    /// ── Un seul axe, et c'est le bon ───────────────────────────────────────
+    ///
+    /// La conformité ne porte que sur les **quotités**. C'est l'invariant que
+    /// le registre légal enregistre, dans les termes de l'Art. 3.85 § 1er
+    /// al. 2 : « Les quotités sont fixées par l'acte de base ; leur somme est
+    /// le dénominateur. » Un acte de base donne un total de quotités ; il ne
+    /// donne pas un compte de lots qu'on ne pourrait pas vérifier autrement.
+    ///
+    /// ── Ce qui a été retiré, et pourquoi ───────────────────────────────────
+    ///
+    /// La règle exigeait aussi `units_count == declared_units_total`, c'est-à-
+    /// dire l'égalité entre les lots réellement encodés et un `total_units`
+    /// saisi à la main sur l'immeuble. **Rien ne tenait cette déclaration à
+    /// jour** : créer un lot ne la touchait jamais.
+    ///
+    /// D'où le piège, rencontré en recette dès la première session : un syndic
+    /// déclare vingt lots à la création de l'immeuble, en encode trois, et
+    /// **toute sa comptabilité se ferme** — `assert_conformant` alimente le
+    /// garde-fou « valider avant de calculer ». C'est le chemin nominal d'un
+    /// syndic qui encode son acte de base progressivement, seule façon
+    /// réaliste de le faire.
+    ///
+    /// On demandait deux fois le même fait — le nombre de lots — et on ne le
+    /// réconciliait jamais. La réponse n'est pas d'affaiblir la règle mais de
+    /// **supprimer la source redondante** : le nombre de lots se compte, il ne
+    /// se déclare pas.
+    ///
+    /// L'écart de lots reste **rapporté** par `assert_conformant`, parce qu'il
+    /// renseigne. Il ne bloque plus. Voir #770.
     pub fn is_conformant(&self, metrics: &AcpMetrics) -> bool {
-        metrics.units_count == metrics.declared_units_total
-            && metrics.quota_sum == Decimal::from(self.total_tantiemes)
+        metrics.quota_sum == Decimal::from(self.total_tantiemes)
     }
 
     /// Écart de quotités vs l'acte de base : `total_tantiemes - quota_sum`.
@@ -884,14 +913,43 @@ mod tests {
         assert_eq!(err.units_delta, 0);
     }
 
+    /// Un écart de LOTS ne rend plus l'ACP non conforme (#770).
+    ///
+    /// Ce test disait l'inverse jusqu'au 2026-09-06 : neuf lots réels contre
+    /// dix déclarés, quotités justes, et l'ACP était refusée.
+    ///
+    /// C'est ce refus qui fermait la comptabilité d'un syndic encodant son acte
+    /// de base progressivement — le seul chemin réaliste. La déclaration
+    /// `total_units` n'était mise à jour par rien, si bien qu'on comparait un
+    /// compte vivant à un chiffre mort.
+    ///
+    /// La conformité ne porte désormais que sur les quotités, seul axe que
+    /// l'acte de base fixe (Art. 3.85 § 1er al. 2).
     #[test]
-    fn edge_acp_units_drift_quota_ok() {
+    fn edge_acp_units_drift_avec_quotites_justes_est_conforme() {
         let acp = sample_acp(); // 1000
                                 // 9 lots réels mais 10 déclarés ; quotités OK à 1000.
         let m = metrics(9, 10, Decimal::from(1000), 1);
+        assert!(
+            acp.assert_conformant(&m).is_ok(),
+            "un écart de lots ne doit plus fermer la comptabilité : \
+             c'est le chemin nominal d'un encodage progressif (#770)"
+        );
+    }
+
+    /// L'écart de quotités, lui, reste bloquant — et c'est voulu.
+    ///
+    /// Répartir des charges sur une base fausse produit des appels de fonds
+    /// faux. Refuser de calculer est ici la bonne réponse, et c'est un des
+    /// points forts du produit.
+    #[test]
+    fn negative_ecart_de_quotites_reste_bloquant() {
+        let acp = sample_acp(); // 1000
+                                // Lots justes, quotités courtes de 400.
+        let m = metrics(10, 10, Decimal::from(600), 1);
         let err = acp.assert_conformant(&m).unwrap_err();
-        assert_eq!(err.units_delta, 1);
-        assert_eq!(err.quota_delta, Decimal::ZERO);
+        assert_eq!(err.quota_delta, Decimal::from(400));
+        assert_eq!(err.quota_basis, 1000);
     }
 
     #[test]

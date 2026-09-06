@@ -134,3 +134,46 @@ describe("aucun rôle du backend ne reçoit une navigation vide (#814)", () => {
     ).toEqual([]);
   });
 });
+
+/**
+ * Un rôle sans interface reçoit une phrase, pas un vide.
+ *
+ * Le registre `ROLES_SANS_INTERFACE` dit qu'un rôle n'a délibérément pas
+ * d'écran. Encore faut-il le DIRE à l'utilisateur : jusqu'au 2026-09-06, un
+ * prestataire connecté obtenait une barre avec un logo et un bouton de
+ * déconnexion, et rien d'autre.
+ *
+ * Le message de secours existant ne se déclenchait pas — il teste l'ABSENCE de
+ * rôle, or ces comptes en ont un.
+ */
+describe("un rôle sans interface est expliqué, pas laissé vide (#814)", () => {
+  const NAVIGATION = join(
+    process.cwd(),
+    "src/components/navigation/Navigation.svelte",
+  );
+  const source = readFileSync(NAVIGATION, "utf8");
+
+  it("distingue « aucun rôle » de « aucun écran pour ce rôle »", () => {
+    expect(
+      source,
+      "La navigation ne distingue plus le rôle ABSENT du rôle SANS ÉCRAN. " +
+        "Un prestataire ou un membre du conseil se retrouve devant une barre " +
+        "vide sans savoir pourquoi (#814, #815, #816).",
+    ).toContain("navigation-role-sans-interface");
+
+    expect(
+      source,
+      "Le bandeau existant pour les comptes sans aucun rôle a disparu.",
+    ).toContain("navigation-empty-no-role");
+  });
+
+  it("s'appuie sur le registre plutôt que sur une liste recopiée", () => {
+    expect(
+      source,
+      "La navigation recopie une liste de rôles au lieu de lire " +
+        "`ROLES_SANS_INTERFACE`. Deux listes qui doivent être égales et qu'on " +
+        "écrit deux fois finissent par diverger — c'est exactement ce qui a " +
+        "produit le défaut d'origine.",
+    ).toContain("ROLES_SANS_INTERFACE");
+  });
+});

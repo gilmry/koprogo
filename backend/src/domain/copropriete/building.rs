@@ -220,12 +220,20 @@ impl Building {
     ///
     /// **Story H1** : `total_tantiemes` est paramètre (acte de base de
     /// l'immeuble, 1000 / 10000 / autre) — plus de constante hard-codée.
+    ///
+    /// `declared_units` n'entre plus dans le verdict : la conformité ne porte
+    /// que sur les **quotités**, seul axe que l'acte de base fixe et que le
+    /// registre légal enregistre (Art. 3.85 § 1er al. 2). Le paramètre est
+    /// conservé pour ne pas casser les appelants, et parce que l'écart de lots
+    /// reste rapporté par `assert_conformant` — il renseigne sans bloquer.
+    ///
+    /// Voir la note détaillée sur `Acp::is_conformant` et l'issue #770.
     pub fn compute_is_conformant(
-        declared_units: i32,
+        _declared_units: i32,
         total_tantiemes: i32,
         metrics: &BuildingMetrics,
     ) -> bool {
-        metrics.units_count == declared_units && metrics.quota_sum == Decimal::from(total_tantiemes)
+        metrics.quota_sum == Decimal::from(total_tantiemes)
     }
 
     /// Delta des quotas vs acte de base (positif = manque, négatif = surplus).
@@ -430,12 +438,28 @@ mod tests {
         assert_eq!(b.quota_delta(&metrics), dec!(1));
     }
 
+    /// Un écart de lots seul ne rend plus l'immeuble non conforme (#770).
     #[test]
-    fn edge_is_not_conformant_when_units_count_mismatch() {
+    fn edge_is_conformant_meme_si_le_compte_de_lots_diverge() {
         let b = make_building(3);
         let metrics = BuildingMetrics {
             units_count: 2,
             quota_sum: dec!(1000),
+        };
+        assert!(
+            b.is_conformant(&metrics),
+            "les quotités totalisent l'acte : le compte de lots déclaré ne doit \
+             plus fermer la comptabilité (#770)"
+        );
+    }
+
+    /// L'écart de quotités reste bloquant.
+    #[test]
+    fn negative_is_not_conformant_quand_les_quotites_manquent() {
+        let b = make_building(3);
+        let metrics = BuildingMetrics {
+            units_count: 3,
+            quota_sum: dec!(999),
         };
         assert!(!b.is_conformant(&metrics));
     }
@@ -629,18 +653,18 @@ mod assert_conformant_tests {
         assert_eq!(err.quota_basis, 10000);
     }
 
+    /// Quotités justes, compte de lots divergent → **conforme** (#770).
+    ///
+    /// L'ancien AC-H1.e2 exigeait l'inverse. Il encodait une règle qui fermait
+    /// la comptabilité de tout syndic encodant son acte de base lot par lot.
     #[test]
-    fn edge_units_mismatch_with_quota_correct_fails() {
-        // AC-H1.e2 — delta quota exactement 0 mais units_delta != 0 → Err.
+    fn edge_units_mismatch_with_quota_correct_passe() {
         let b = make_building_with_basis(10, 1000);
         let metrics = BuildingMetrics {
             units_count: 9,
             quota_sum: dec!(1000),
         };
-        let err = b.assert_conformant(&metrics).unwrap_err();
-        assert_eq!(err.units_delta, 1);
-        assert_eq!(err.quota_delta, dec!(0));
-        assert_eq!(err.quota_basis, 1000);
+        assert!(b.assert_conformant(&metrics).is_ok());
     }
 
     #[test]
@@ -674,12 +698,14 @@ mod assert_conformant_tests {
         };
         assert!(b.assert_conformant(&forged_conformant).is_ok());
 
+        // Les quotités sont le seul axe : c'est un quota_sum tronqué qui
+        // doit être détecté, pas un compte de lots (#770).
         let forged_non_conformant = BuildingMetrics {
-            units_count: 9,
-            quota_sum: dec!(1000),
+            units_count: 10,
+            quota_sum: dec!(999),
         };
         let err = b.assert_conformant(&forged_non_conformant).unwrap_err();
-        assert_eq!(err.units_delta, 1);
+        assert_eq!(err.quota_delta, dec!(1));
         // Calcul reste déterministe, indépendant de tout état externe.
     }
 
