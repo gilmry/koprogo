@@ -1270,8 +1270,21 @@ mod assert_can_complete_tests {
         // Display = "Meeting X not completable: N missing invariant(s)". Pas
         // de fuite de quotas / IDs sensibles dans le Display public (le
         // détail vit dans le payload structuré JSON 422, pas en clair).
+        //
+        // Identifiant FIXE, et choisi pour ne contenir ni « 400 » ni « 1000 ».
+        //
+        // Il valait `Uuid::new_v4()`, alors que le Display inclut cet
+        // identifiant et que les deux assertions ci-dessous portent sur des
+        // sous-chaînes. Un UUID tiré au hasard contient « 400 » environ une
+        // fois sur 130 : le test échouait donc par intermittence, sans aucun
+        // rapport avec le code testé. Constaté en CI le 2026-09-06, run
+        // 34023615618, sur un commit qui ne touchait pas ce module.
+        //
+        // Un test dont l'échec ne dit rien du code est pire qu'absent : il
+        // apprend à ignorer le rouge.
         let err = MeetingNotCompletableError {
-            meeting_id: Uuid::new_v4(),
+            meeting_id: Uuid::parse_str("7bcd5e2f-8a9b-4c7d-9e5f-2a3b6c8d9e5f")
+                .expect("UUID de test valide"),
             missing: vec![MissingInvariant::QuorumNotReached {
                 attended_quotas: dec!(400),
                 total_quotas: dec!(1000),

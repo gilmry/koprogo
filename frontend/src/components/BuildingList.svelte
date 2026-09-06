@@ -12,6 +12,23 @@
 
   $: isSuperAdmin = $authStore.user?.role === 'superadmin';
 
+  // Le syndic retranscrit l'acte de base de SES copropriétés : il crée les
+  // immeubles, comme le SuperAdmin. La route serveur a été ouverte le
+  // 2026-09-05 avec un contrôle de périmètre par ACP (verify_acp_org_access).
+  //
+  // Le bouton, lui, était resté derrière `isSuperAdmin`. La capacité existait
+  // donc côté API sans être atteignable à l'écran, et la recette 3 du
+  // 2026-09-06 a reclassé R1-1 en « non fait » — à juste titre : pour
+  // l'utilisateur, une fonction inatteignable n'existe pas.
+  //
+  // ATTENTION en étendant ceci. Ne PAS ouvrir la modification ni la
+  // suppression sur le même critère : `update_building` et `delete_building`
+  // n'ont pas encore de garde de périmètre côté serveur (dette suivie par
+  // `garde_ecriture.rs`). Ouvrir leur bouton exposerait des écritures
+  // inter-organisations. C'est pourquoi la ligne 183 reste sur `isSuperAdmin`.
+  $: peutCreerUnImmeuble =
+    $authStore.user?.role === 'superadmin' || $authStore.user?.role === 'syndic';
+
   let buildings: Building[] = [];
   let loading = true;
   let error = '';
@@ -112,7 +129,7 @@
         {$_('buildings.subtitle')}
       </p>
     </div>
-    {#if isSuperAdmin}
+    {#if peutCreerUnImmeuble}
       <Button variant="primary" onclick={handleCreate} data-testid="create-building-button">
         ➕ {$_('buildings.new')}
       </Button>

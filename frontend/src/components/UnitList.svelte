@@ -16,6 +16,18 @@
 
   let isSuperAdmin = $derived($authStore.user?.role === 'superadmin');
 
+  // Même raisonnement que pour les immeubles : le syndic crée les lots de SES
+  // immeubles, la route serveur a été ouverte le 2026-09-05 avec un contrôle
+  // de périmètre (verify_building_org_access), et le bouton était resté
+  // derrière `isSuperAdmin`.
+  //
+  // La MODIFICATION et la SUPPRESSION restent au SuperAdmin : `assign_owner`
+  // et `delete_unit` sont encore sans garde côté serveur, dette suivie par
+  // `garde_ecriture.rs`. On n'ouvre que ce qui est réellement protégé.
+  let peutCreerUnLot = $derived(
+    $authStore.user?.role === 'superadmin' || $authStore.user?.role === 'syndic'
+  );
+
   let units = $state<Unit[]>([]); let loading = $state(true); let error = $state(''); let building = $state<Building | null>(null);
   let currentPage = $state(1); let perPage = $state(20); let totalItems = $state(0); let totalPages = $state(0);
   // SvelteSet, pas Set : `$state` rend réactifs les objets et les tableaux,
@@ -65,7 +77,7 @@
 <div class="space-y-4">
   <div class="flex justify-between items-center">
     <p class="text-gray-600">{totalItems} lot{totalItems !== 1 ? 's' : ''}</p>
-    {#if buildingId && isSuperAdmin}<Button variant="primary" onclick={() => showCreateModal = true}>+ {$_('units.addUnit')}</Button>{/if}
+    {#if buildingId && peutCreerUnLot}<Button variant="primary" onclick={() => showCreateModal = true}>+ {$_('units.addUnit')}</Button>{/if}
   </div>
 
   {#if error}<div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">{error}</div>{/if}

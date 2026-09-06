@@ -1261,3 +1261,114 @@ async fn test_complete_voting_lifecycle() {
     let summary: serde_json::Value = test::read_body_json(summary_resp).await;
     assert!(!summary.as_array().unwrap().is_empty());
 }
+
+// ─────────────────────────────────────────────────────────────────────────
+// Recette 3 du 2026-09-06 — RN-2 : les sous-collections ignoraient le
+// cloisonnement.
+//
+// Un syndic d'une autre organisation obtenait 200 sur
+// `/meetings/{id}/resolutions` et `/resolutions/{id}/votes`, alors que les
+// mêmes ressources en accès direct rendaient bien 403. Le garde était posé
+// sur la résolution d'une ressource unique, jamais sur les listes imbriquées,
+// qui ne prenaient même pas `AuthenticatedUser` en paramètre.
+//
+// Ce qui fuyait n'était pas anodin : le sens du vote de copropriétaires
+// nommés, avec leur poids. Le vote en assemblée est confidentiel et nominatif.
+//
+// Ces deux tests lisent depuis une organisation étrangère, réellement créée —
+// un UUID inventé violerait la clé étrangère et le test échouerait dans sa
+// préparation, sans rien prouver.
+//
+// Voir issue #772 : 73 autres routes imbriquées restent sans identité.
+// ─────────────────────────────────────────────────────────────────────────
+
+#[actix_web::test]
+#[serial]
+async fn security_les_resolutions_dune_ag_ne_fuient_pas_vers_une_autre_organisation() {
+    let (app_state, _container, org_a) = setup_app().await;
+    let (_token_a, _org, _building, meeting_id, _o1, _o2, _u1) =
+        create_test_fixtures(&app_state, org_a).await;
+
+    // Un syndic d'une organisation étrangère.
+    let org_b = common::create_test_organization(&app_state).await;
+    let token_b = common::register_and_login_with_role(&app_state, org_b, "syndic").await;
+
+    let app = test::init_service(
+        App::new()
+            .app_data(app_state.clone())
+            .configure(configure_routes),
+    )
+    .await;
+
+    let req = test::TestRequest::get()
+        .uri(&format!("/api/v1/meetings/{}/resolutions", meeting_id))
+        .insert_header((header::AUTHORIZATION, format!("Bearer {}", token_b)))
+        .to_request();
+
+    let resp = test::call_service(&app, req).await;
+    assert_ne!(
+        resp.status(),
+        200,
+        "la liste des résolutions d'une AG d'une autre copropriété ne doit pas \
+         être lisible : c'est ce qui fuyait avant le 2026-09-06"
+    );
+}
+
+#[actix_web::test]
+#[serial]
+async fn security_les_votes_dune_resolution_ne_fuient_pas_vers_une_autre_organisation() {
+    let (app_state, _container, org_a) = setup_app().await;
+    let (token_a, _org, _building, meeting_id, _o1, _o2, _u1) =
+        create_test_fixtures(&app_state, org_a).await;
+
+    let app = test::init_service(
+        App::new()
+            .app_data(app_state.clone())
+            .configure(configure_routes),
+    )
+    .await;
+
+    // L'organisation propriétaire crée une résolution.
+    let req = test::TestRequest::post()
+        .uri(&format!("/api/v1/meetings/{}/resolutions", meeting_id))
+        .insert_header((header::AUTHORIZATION, format!("Bearer {}", token_a)))
+        .set_json(json!({
+            "meeting_id": meeting_id.to_string(),
+            "title": "Résolution confidentielle",
+            "description": "Son décompte ne regarde pas les autres cabinets",
+            "resolution_type": "ordinary",
+            "majority_required": "absolute"
+        }))
+        .to_request();
+    let resp = test::call_service(&app, req).await;
+    let cree = resp.status().is_success();
+    let resolution_id = if cree {
+        let body: serde_json::Value = test::read_body_json(resp).await;
+        body["id"].as_str().map(|s| s.to_string())
+    } else {
+        None
+    };
+
+    // Sans résolution créée, le test ne prouverait rien : on le dit plutôt que
+    // de le laisser passer au vert par défaut.
+    let resolution_id = resolution_id.expect(
+        "la résolution doit être créée pour que le cloisonnement de ses votes \
+         soit vérifiable",
+    );
+
+    let org_b = common::create_test_organization(&app_state).await;
+    let token_b = common::register_and_login_with_role(&app_state, org_b, "syndic").await;
+
+    let req = test::TestRequest::get()
+        .uri(&format!("/api/v1/resolutions/{}/votes", resolution_id))
+        .insert_header((header::AUTHORIZATION, format!("Bearer {}", token_b)))
+        .to_request();
+
+    let resp = test::call_service(&app, req).await;
+    assert_ne!(
+        resp.status(),
+        200,
+        "les bulletins nominatifs d'une résolution d'une autre copropriété ne \
+         doivent pas être lisibles"
+    );
+}

@@ -10,6 +10,63 @@ use uuid::Uuid;
 
 // ==================== Resolution Endpoints ====================
 
+/// Vérifie que l'appelant a un mandat sur l'ACP dont relève une AG.
+///
+/// **Pourquoi une fonction et pas une ligne recopiée.** La chaîne à remonter
+/// fait quatre sauts — AG → immeuble → ACP → organisation. Recopiée dans
+/// chaque gestionnaire, elle finit par manquer là où on n'y a pas pensé :
+/// c'est exactement ce qui est arrivé à `list_meeting_resolutions` et
+/// `list_resolution_votes`, qui rendaient 200 sur les données d'une autre
+/// copropriété pendant que l'accès direct à la même ressource rendait 403.
+///
+/// Constaté en recette le 2026-09-06 (RN-2) : un syndic concurrent lisait le
+/// sens du vote de copropriétaires nommés, avec leur poids. Le vote en AG est
+/// confidentiel et nominatif : c'est une violation de données, pas un simple
+/// écart de périmètre.
+///
+/// Le maillon absent est traité comme un refus. Une AG dont on ne retrouve ni
+/// l'immeuble ni l'ACP ne peut pas être autorisée « par défaut » : c'est
+/// précisément le cas où l'on ne sait pas à qui elle appartient.
+///
+/// Rend `None` quand l'accès est accordé, `Some(reponse)` quand il est refusé.
+/// Un `Result<(), HttpResponse>` dirait la même chose, mais clippy le refuse à
+/// juste titre : `HttpResponse` est volumineux, et le porter dans la variante
+/// d'erreur alourdirait chaque valeur de retour, y compris sur le chemin
+/// nominal.
+async fn verifier_mandat_sur_ag(
+    state: &web::Data<AppState>,
+    user: &AuthenticatedUser,
+    meeting_id: Uuid,
+) -> Option<HttpResponse> {
+    if user.is_superadmin() {
+        return None;
+    }
+    let introuvable = || {
+        HttpResponse::NotFound().json(serde_json::json!({
+            "error": "Meeting not found"
+        }))
+    };
+    let Ok(Some(meeting)) = state.meeting_use_cases.get_meeting(meeting_id).await else {
+        return Some(introuvable());
+    };
+    let Ok(Some(building)) = state
+        .building_use_cases
+        .get_building(meeting.building_id)
+        .await
+    else {
+        return Some(introuvable());
+    };
+    let Ok(acp_id) = Uuid::parse_str(&building.acp_id) else {
+        return Some(HttpResponse::InternalServerError().json(serde_json::json!({
+            "error": "Invalid building.acp_id format"
+        })));
+    };
+    verify_acp_org_access(user, acp_id, &state.acp_use_cases)
+        .await
+        .err()
+        .map(|err| err.error_response())
+}
+
 #[utoipa::path(
     post,
     path = "/meetings/{meeting_id}/resolutions",
@@ -157,8 +214,12 @@ pub async fn get_resolution(
 #[get("/meetings/{meeting_id}/resolutions")]
 pub async fn list_meeting_resolutions(
     state: web::Data<AppState>,
+    user: AuthenticatedUser,
     meeting_id: web::Path<Uuid>,
 ) -> impl Responder {
+    if let Some(refus) = verifier_mandat_sur_ag(&state, &user, *meeting_id).await {
+        return refus;
+    }
     match state
         .resolution_use_cases
         .get_meeting_resolutions(*meeting_id)
@@ -325,8 +386,22 @@ pub async fn cast_vote(
 #[get("/resolutions/{resolution_id}/votes")]
 pub async fn list_resolution_votes(
     state: web::Data<AppState>,
+    user: AuthenticatedUser,
     resolution_id: web::Path<Uuid>,
 ) -> impl Responder {
+    // On remonte à l'AG par la résolution, puis on applique le même mandat.
+    let Ok(Some(resolution)) = state
+        .resolution_use_cases
+        .get_resolution(*resolution_id)
+        .await
+    else {
+        return HttpResponse::NotFound().json(serde_json::json!({
+            "error": "Resolution not found"
+        }));
+    };
+    if let Some(refus) = verifier_mandat_sur_ag(&state, &user, resolution.meeting_id).await {
+        return refus;
+    }
     match state
         .resolution_use_cases
         .get_resolution_votes(*resolution_id)

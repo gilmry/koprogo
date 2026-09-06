@@ -123,6 +123,39 @@ interpole l'identifiant au lieu de le lier.
 | K8 | Observabilité et code mort | **fait** `8aa6b59d` — #719 et #720 fermées |
 | K7 | Auto-merge Dependabot sans gate CI | **fait** `7c90d191` — #659 fermée |
 
+### Track R — Recette navigateur du 2026-09-04 au 06 (nouveau)
+
+Trois sessions de recette humaine par Cowork, sur la production. Les rapports ont
+trouvé de vraies choses **et** trois faux diagnostics, corrigés par la mesure — le
+détail est dans chaque issue.
+
+| Lot | Contenu | Issue | État |
+|---|---|---|---|
+| R1 | **Fuite inter-organisations sur les routes imbriquées.** Un syndic lisait les bulletins nominatifs d'une autre copropriété. 2 routes prouvées fermées, **73 restent sans identité** sur 310 | #772 | **partiel** |
+| R2 | Plafonnement Art. 3.87 § 7 appliqué à la lecture, plus seulement à la clôture | #767 | **fait** |
+| R3 | L'écran de résultat de vote compte des têtes quand l'API compte des voix | #773 | ouvert |
+| R4 | **Rebrancher les six modules communautaires** : 111 points d'entrée servis que le frontend appelle au mauvais chemin. Arbitrage ACP contre immeuble à rendre | #779, #768 | ouvert |
+| R5 | `register` reposait la session sur l'appelant authentifié | #769 | **fait** |
+| R6 | Page RGPD majoritairement en anglais, boutons d'action compris | #774 | ouvert |
+| R7 | Bouton « Clôturer le vote » présent et sans effet : le cycle de vie d'une AG ne s'achève jamais | #776 | ouvert |
+| R8 | Annonces : création sans effet, filtre en chargement infini, énumérations brutes | #775 | ouvert |
+| R9 | Inscription orpheline, « mot de passe oublié » sans backend | #771 | **fait** |
+| R10 | Boutons de création d'immeuble et de lot cachés au syndic alors que l'API est ouverte | #778 | **fait** |
+| R11 | CrowdSec bannit les testeurs, à cause de nos propres 404 | #766 | **palliatif** — liste blanche posée, la cause tient à R4 |
+| R12 | Test intermittent : UUID aléatoire contenant « 400 », bloquait le déploiement | #777 | **fait** |
+| R13 | Contrat OpenAPI absent pour `/expenses` et `/invoices` | #765 | ouvert |
+
+**Ce que ce track apprend, au-delà des lots.** Cinq défauts sur treize sont des
+capacités **écrites, testées et inatteignables** : les modules communautaires, la page
+d'inscription, les boutons de création, le plafonnement des voix, le bouton de clôture.
+Nos tests prouvent que le code marche tout en masquant qu'on ne peut pas y arriver.
+C'est le motif dominant de cette recette, et il n'est visible que par un humain devant
+un navigateur.
+
+**R1 et R4 sont bloquants pour la 0.1.0.** Le premier expose des données d'un client à
+un autre. Le second rend toute recette impossible au bout de quelques minutes, en plus
+de laisser dormir le module qui distingue le produit.
+
 ### Track F — Ops (repris tel quel)
 
 F1 et F2 sont satisfaits de fait : `koprogo.com` et `api.koprogo.com` répondent 200
