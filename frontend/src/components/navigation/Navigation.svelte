@@ -7,7 +7,7 @@
   // - Visibilité des menus pilotee par `lib/auth/permissions.canSee(role, menu, scope)`
   //   (helper TypeScript pur testable en Vitest sans render).
   // - 5 menus business stables (gestion, compta, gouvernance, communaute, ticketing)
-  //   + mes-lots (owner/community-moderator) + admin (super/cabinet hors in-context).
+  //   + mes-lots (owner/community.moderator) + admin (super/cabinet hors in-context).
   // - Sous-menus collapsibles via `RoleSubmenu` (composant reutilisable, <details> a11y native).
   // - data-testid i18n-safe (cf. memory data-testid-systematic).
   //

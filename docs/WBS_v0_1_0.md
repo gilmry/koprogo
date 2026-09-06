@@ -165,6 +165,28 @@ ses coordonnées de clic — qui lui faisait manquer toutes les petites cibles.
 | R18 | Le type `Vote` du frontend ne correspond pas au DTO servi ; clé `notices.draft` affichée en clair | #786 | **fait** |
 | R22 | **La PWA n'a jamais fonctionné** : le service worker échoue à l'installation depuis novembre 2025, deux icônes du manifeste répondent 404 | #804 | ouvert |
 
+#### R23 — cinq rôles sur quatorze n'ont aucune navigation (#814)
+
+Trouvé en cadrant les personas prestataire et conseil de copropriété.
+`canSee()` reconnaît six noms de rôle ; le serveur en sérialise quatorze.
+`board_member`, `contractor`, `accountant.encodeur` et `accountant.emetteur`
+tombent en fail-closed — et `community.moderator` aussi, parce que l'interface
+compare à `community-moderator`, avec un trait d'union là où le serveur écrit
+un point.
+
+Les huit blocs de menu de `Navigation.svelte` rendent alors `false`, et le
+message de secours ne se déclenche pas : il teste l'**absence** de rôle, or ces
+comptes en ont un. Ils reçoivent une barre avec un logo et un bouton de
+déconnexion.
+
+Ces rôles ne sont pas décoratifs : neuf routes `/board-decisions`, dix
+`/board-members`, vingt-et-une `/tickets`, quinze `/contractor-reports`, et les
+écrans qui vont avec. **Sixième occurrence du motif dominant** — écrit, testé,
+inatteignable.
+
+**Bloque D1e, D1f et D2d** : deux de leurs étapes ne peuvent pas être jouées au
+navigateur tant que la barre est vide.
+
 #### R19 à R21 — revue de design frontend, « Part 0 »
 
 Dix défauts de code, **vérifiés un par un**, une issue chacun. La refonte UX elle-même
@@ -238,9 +260,18 @@ en-tête, parcours numérotés par persona, organisation par contexte borné.
 
 | Lot | Contenu | Issue |
 |---|---|---|
-| D1 | Un document par rôle — syndic, copropriétaire, comptable, admin — avec parcours nominal, refus assumés et références légales | #805 |
-| D2 | Workflows transverses : cycle de vie d'une AG, circuit d'une facture, entrée d'un copropriétaire | #805 |
-| D3 | Cliquet de couverture documentaire, et vérification que les parcours décrits sont **atteignables** | #805 |
+| D0 | Cadre d'ensemble : en-têtes de persona, registre de règles, cliquet de couverture | #805 |
+| D1a | **Syndic** — 15 étapes, du premier écran à la clôture d'une assemblée | #806 |
+| D1b | **Copropriétaire** — 10 étapes. Le rôle le plus nombreux en base, et le seul que cinq recettes n'ont jamais éprouvé | #807 |
+| D1c | **Comptable** — 10 étapes, dont le cas dégradé de l'immeuble non conforme | #808 |
+| D1d | **Administrateur** — 7 étapes, et surtout ce qu'il ne doit pas pouvoir faire | #809 |
+| D1e | **Prestataire** — 12 étapes, du ticket reçu au rapport validé qui déclenche le paiement. Le seul persona extérieur à la copropriété | #815 |
+| D1f | **Conseil de copropriété** — 11 étapes. Organe de surveillance (Art. 3.90 § 1er) : lecture large, presque aucune écriture | #816 |
+| D2a | **Cycle de vie d'une AG** — 12 étapes, 3 rôles, 6 articles du Code civil. Le parcours qui porte le risque juridique | #810 |
+| D2b | **Circuit d'une facture** — 11 étapes, du fournisseur au copropriétaire qui paie | #811 |
+| D2c | **Naissance d'une copropriété** — 10 étapes, de l'organisation à la première connexion d'un copropriétaire | #812 |
+| D2d | **Le ticket jusqu'au paiement** — 14 étapes, 4 rôles. Le seul parcours qui boucle : celui qui signale est celui qui paie | #817 |
+| D3 | **Restructurer les 100 specs e2e par persona** pour que les vidéos racontent le produit | #813 |
 
 **Ce que KoproGo a déjà, et ce qui manque.** Le dépôt compte 86 documents dans
 `docs/`, et ils sont bons — PCMN belge, RGPD, convocations, workflow de
@@ -253,9 +284,24 @@ du code. Le produit doit être compréhensible avant la fondation de l'ASBL.
 
 **Ce que « vivante » veut dire ici.** Une documentation qui se met à jour parce
 qu'un test la garde, pas parce qu'on y pense. Le dépôt a déjà les deux
-mécanismes : le cliquet, employé cinq fois, et le contrat `data-testid` figé
+mécanismes : le cliquet, employé six fois, et le contrat `data-testid` figé
 (#802, #803) — un parcours documenté dont une étape n'a pas d'ancrage est un
 parcours qu'on ne peut pas prouver.
+
+**Les vidéos existent déjà, mal rangées.** `playwright.config.ts` enregistre
+toutes les exécutions en 1280×720, sous le commentaire « DOCUMENTATION
+VIVANTE ! », `generate-video-rst.py` construit une galerie et `docs.yml` la
+publie. Mais les **cent specs sont organisées par module**, donc par sujet
+technique : une vidéo de `Convocations.spec.ts` montre qu'une convocation se
+crée, jamais pourquoi ni qui la reçoit. Quinze vidéos numérotées suivant un
+syndic du premier écran à la clôture racontent le produit ; cent vidéos par
+module ne racontent rien.
+
+**D3 vient après U et après #803**, et l'ordre n'est pas négociable : filmer
+des écrans qui vont être refaits produit une documentation périmée le jour de
+sa livraison, et restructurer des tests avant que les ancrages existent oblige
+à cibler par texte ou par position — ce qui a fait manquer des cibles à la
+recette pendant deux sessions.
 
 **Un document qui décrit une capacité inatteignable ment.** C'est le motif
 dominant des défauts de ce produit, et c'est pourquoi D1 exige que chaque
@@ -306,7 +352,7 @@ Ces deux actes ne sont pas délégables : cf. `docs/governance/RESPONSABILITE.md
 ### ⚠️ Le périmètre a doublé le 2026-09-06, et c'est une décision assumée
 
 **Tout ce qui restait en 0.2.0 entre en 0.1.0, avec la refonte UX/UI.** Le compte passe de
-**34 à 84 issues ouvertes** en `release:0.1.0` : les 31 ouvertes le 2026-09-06, les 24
+**34 à 96 issues ouvertes** en `release:0.1.0` : les 31 ouvertes le 2026-09-06, les 24
 qui étaient en 0.2.0, les 6 lots de la refonte, la documentation vivante et les défauts
 trouvés en vérifiant. Il ne reste plus rien en 0.2.0.
 

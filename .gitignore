@@ -42,6 +42,15 @@ target/criterion/
 
 # Python
 .venv/
+
+# Artefacts du déploiement ecosolva, écrits par `/etc/cron.d/ecosolva-auto-deploy`
+# dans l'arbre de travail : verrou, révision déployée, compose et script
+# recopiés. Ils appartiennent à la machine, pas au dépôt.
+.deploy-ecosolva.lock
+.deployed_rev_ecosolva
+deploy-ecosolva.sh
+docker-compose.ecosolva.yml
+docker-compose.ecosolva.yml.bak-*
 __pycache__/
 *.pyc
 
@@ -78,6 +87,17 @@ crash.log
 **/.kube/config
 
 # .env files (real ones; .env.example is tracked)
+#
+# Les motifs ci-dessous nomment chaque variante une par une. Une SAUVEGARDE
+# n'en portait aucun : `.env.bak-20260906`, écrit par le script de rotation du
+# 2026-09-06, contenait `POSTGRES_PASSWORD` en clair, à la racine du dépôt,
+# ni suivi ni ignoré. Un seul `git add -A` l'aurait publié.
+#
+# D'où le glob : ce qui compte est le PRÉFIXE `.env`, pas la liste des suffixes
+# qu'on a pensé à écrire.
+.env*
+!.env.example
+!.env.production.example
 .env
 .env.local
 .env.production

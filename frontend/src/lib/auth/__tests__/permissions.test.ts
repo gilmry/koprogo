@@ -164,15 +164,34 @@ describe("canSee @security", () => {
     }
   });
 
-  it("community-moderator est traité comme un owner pour le menu communaute", () => {
-    // Sub-rôle pas encore en BE — story 3.1 raffinera. Pour 2.4, on accepte
-    // le fallback : community-moderator voit communaute (comme owner).
+  it("community.moderator est traité comme un owner pour le menu communaute", () => {
+    // Le nom vient du backend : `UserRole::CommunityModerator` s'affiche
+    // `community.moderator`, avec un POINT (`user.rs:59`). Ce test employait
+    // `community-moderator`, avec un trait d'union — la même faute que le
+    // code qu'il gardait. Il passait donc en validant une constante qui
+    // n'existe nulle part ailleurs, pendant qu'un vrai modérateur recevait
+    // une navigation vide (#814).
     expect(
-      canSee("community-moderator", "communaute", SCOPE_WITH_BUILDING),
+      canSee("community.moderator", "communaute", SCOPE_WITH_BUILDING),
     ).toBe(true);
-    expect(canSee("community-moderator", "gestion", SCOPE_WITH_BUILDING)).toBe(
+    expect(canSee("community.moderator", "gestion", SCOPE_WITH_BUILDING)).toBe(
       false,
     );
+    expect(canSee("community.moderator", "mes-lots", SCOPE_WITH_BUILDING)).toBe(
+      true,
+    );
+  });
+
+  it("les deux sous-rôles comptables voient compta, comme le comptable générique", () => {
+    // `accountant.encodeur` (saisie amont) et `accountant.emetteur` (sortie
+    // financière) sont servis par le backend depuis la story 3.1. Seul
+    // `accountant` était reconnu : les deux autres tombaient en fail-closed
+    // et recevaient une barre de navigation vide (#814).
+    for (const role of ["accountant.encodeur", "accountant.emetteur"]) {
+      expect(canSee(role, "compta", SCOPE_WITH_BUILDING)).toBe(true);
+      expect(canSee(role, "gestion", SCOPE_WITH_BUILDING)).toBe(false);
+      expect(canSee(role, "admin", null)).toBe(false);
+    }
   });
 });
 

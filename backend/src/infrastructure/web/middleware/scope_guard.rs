@@ -284,6 +284,69 @@ pub async fn verify_building_org_access(
     verify_acp_org_access(user, acp_id, acp_use_cases).await
 }
 
+/// Vérifie le mandat de l'appelant sur l'ACP dont relève une **assemblée**.
+///
+/// Remonte AG → immeuble → ACP → organisation. Cette chaîne était recopiée à
+/// la main dans chaque gestionnaire qui en avait besoin, et c'est ainsi
+/// qu'elle a fini par manquer : `GET /meetings/{id}/resolutions` et
+/// `GET /resolutions/{id}/votes` rendaient `200` sur les données d'une autre
+/// copropriété, bulletins nominatifs compris (RN-2, issue #772).
+///
+/// Une AG introuvable est refusée, jamais ignorée : c'est précisément le cas
+/// où l'on ne sait pas à qui elle appartient.
+pub async fn verify_meeting_org_access(
+    user: &AuthenticatedUser,
+    meeting_id: Uuid,
+    meeting_use_cases: &crate::application::use_cases::MeetingUseCases,
+    building_use_cases: &BuildingUseCases,
+    acp_use_cases: &AcpUseCases,
+) -> Result<(), AppError> {
+    if user.is_superadmin() {
+        return Ok(());
+    }
+
+    let meeting = meeting_use_cases
+        .get_meeting(meeting_id)
+        .await
+        .map_err(AppError::from)?
+        .ok_or(AppError::NotFound(format!(
+            "Meeting not found: {meeting_id}"
+        )))?;
+
+    verify_building_org_access(user, meeting.building_id, building_use_cases, acp_use_cases).await
+}
+
+/// Vérifie le mandat de l'appelant sur l'ACP dont relève une **dépense**.
+///
+/// Remonte dépense → immeuble → ACP → organisation. Même motif que
+/// `verify_meeting_org_access` : une dépense porte des montants et souvent des
+/// pièces jointes nominatives — factures, devis — qui n'ont pas à circuler
+/// entre cabinets.
+pub async fn verify_expense_org_access(
+    user: &AuthenticatedUser,
+    expense_id: Uuid,
+    expense_use_cases: &crate::application::use_cases::ExpenseUseCases,
+    building_use_cases: &BuildingUseCases,
+    acp_use_cases: &AcpUseCases,
+) -> Result<(), AppError> {
+    if user.is_superadmin() {
+        return Ok(());
+    }
+
+    let depense = expense_use_cases
+        .get_expense(expense_id)
+        .await
+        .map_err(AppError::from)?
+        .ok_or(AppError::NotFound(format!(
+            "Expense not found: {expense_id}"
+        )))?;
+
+    let building_id = Uuid::parse_str(&depense.building_id)
+        .map_err(|_| AppError::Internal("Invalid expense.building_id format".to_string()))?;
+
+    verify_building_org_access(user, building_id, building_use_cases, acp_use_cases).await
+}
+
 // ============================================================================
 // Actix middleware
 // ============================================================================

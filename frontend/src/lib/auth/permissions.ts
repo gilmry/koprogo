@@ -51,8 +51,10 @@ export type Role =
   | "admin"
   | "syndic"
   | "accountant"
+  | "accountant.encodeur"
+  | "accountant.emetteur"
   | "owner"
-  | "community-moderator"
+  | "community.moderator"
   | string
   | null;
 
@@ -81,6 +83,56 @@ const ADMIN_ROLES: ReadonlySet<string> = new Set(["superadmin", "admin"]);
 const BUSINESS_ROLES_ALWAYS: ReadonlySet<string> = new Set(["syndic"]);
 
 /**
+ * Les rôles comptables, générique et sous-rôles.
+ *
+ * `UserRole` distingue depuis la story 3.1 la saisie amont
+ * (`accountant.encodeur` — facture, devis) de la sortie financière
+ * (`accountant.emetteur` — charges, appels de fonds). Les deux sous-rôles
+ * travaillent dans le même menu ; ce qu'ils peuvent y faire relève des gardes
+ * de route, pas de la visibilité du menu.
+ *
+ * Avant le 2026-09-06, seul `accountant` était reconnu : un comptable encodeur
+ * tombait en fail-closed et recevait une navigation entièrement vide (#814).
+ */
+const ACCOUNTING_ROLES: ReadonlySet<string> = new Set([
+  "accountant",
+  "accountant.encodeur",
+  "accountant.emetteur",
+]);
+
+/**
+ * Rôles servis par le backend qui n'ont **délibérément** aucune interface.
+ *
+ * Le fail-closed est correct pour eux : aucun écran ne leur est destiné. Ce qui
+ * ne l'est pas, c'est de le leur montrer sous la forme d'une barre de
+ * navigation vide — c'est le sujet de #814.
+ *
+ * `contractor` et `board_member` figurent ici **à titre provisoire**. Leurs
+ * écrans existent (`pages/contractor/`, `pages/board-dashboard.astro`,
+ * `BoardDashboard.svelte`, `DecisionTracker.svelte`) et leurs routes serveur
+ * aussi — dix pour `/board-members`, neuf pour `/board-decisions`, quinze pour
+ * `/contractor-reports`. Ce qui manque est une décision, pas du code : quels
+ * menus, dans quel périmètre. Un prestataire est un tiers qui n'a rien à voir
+ * du dossier d'ACP ; un membre du conseil surveille le syndic (Art. 3.90 § 1er)
+ * et a donc besoin de lecture large sans écriture. Voir #815 et #816.
+ *
+ * Cette liste est le **registre des rôles sans interface** : `garde-roles`
+ * exige que chaque rôle du backend voie au moins un menu ou figure ici. Un rôle
+ * ajouté côté serveur et oublié côté interface fait alors échouer un test, au
+ * lieu d'offrir un écran vide à un utilisateur.
+ */
+export const ROLES_SANS_INTERFACE: ReadonlySet<string> = new Set([
+  "contractor",
+  "board_member",
+  "lawyer",
+  "notary",
+  "amo",
+  "architect",
+  "bet",
+  "warden",
+]);
+
+/**
  * Détermine si un menu doit être visible pour un rôle dans un scope donné.
  *
  * Règles :
@@ -97,9 +149,9 @@ const BUSINESS_ROLES_ALWAYS: ReadonlySet<string> = new Set(["syndic"]);
  *      (mode in-context).
  *    - accountant → uniquement `compta`.
  *    - owner → uniquement `communaute` (+ `mes-lots`).
- *    - community-moderator → comme owner pour `communaute`.
+ *    - community.moderator → comme owner pour `communaute`.
  * 4. **Menu mes-lots** :
- *    - owner / community-moderator → true.
+ *    - owner / community.moderator → true.
  *    - autres → false (les pros n'ont pas de "Mes lots").
  *
  * @param role  Rôle actif de l'utilisateur (UserRoleAssignment.role)
@@ -123,7 +175,7 @@ export function canSee(role: Role, menu: Menu, scope: Scope): boolean {
 
   // 3. Menu mes-lots (portail copropriétaire).
   if (menu === "mes-lots") {
-    return role === "owner" || role === "community-moderator";
+    return role === "owner" || role === "community.moderator";
   }
 
   // 4. Menus business (gestion/compta/gouvernance/communaute/ticketing).
@@ -145,16 +197,22 @@ export function canSee(role: Role, menu: Menu, scope: Scope): boolean {
   // 4b. Admin/Superadmin en mode in-context (building sélectionné).
   if (ADMIN_ROLES.has(role)) return hasBuildingScope;
 
-  // 4c. Accountant → uniquement compta.
-  if (role === "accountant") return menu === "compta";
+  // 4c. Comptable, générique ou sous-rôle → uniquement compta.
+  if (ACCOUNTING_ROLES.has(role)) return menu === "compta";
 
   // 4d. Owner → uniquement communaute.
   if (role === "owner") return menu === "communaute";
 
-  // 4e. Community-moderator (sub-rôle, story 3.1) → communaute uniquement.
-  if (role === "community-moderator") return menu === "communaute";
+  // 4e. Modérateur communauté (sub-rôle, story 3.1) → communaute uniquement.
+  //
+  // Le backend sérialise `community.moderator`, avec un POINT
+  // (`user.rs:59`). L'interface comparait à `community-moderator`, avec un
+  // trait d'union : la comparaison ne pouvait jamais réussir, et le
+  // modérateur recevait une navigation vide. Le test unitaire ne le voyait
+  // pas — il employait la même constante fautive que le code (#814).
+  if (role === "community.moderator") return menu === "communaute";
 
-  // 4f. Rôle inconnu (lawyer/notary/amo/architect/bet pas encore mappés,
-  //     ou string aléatoire) → fail-closed. Story 3.4 introduira scope mandat.
+  // 4f. Rôle sans interface (cf. ROLES_SANS_INTERFACE) ou string inconnue →
+  //     fail-closed. Story 3.4 introduira le scope mandat.
   return false;
 }
