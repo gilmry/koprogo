@@ -18,6 +18,10 @@ pub struct ConvocationUseCases {
     owner_repository: Arc<dyn OwnerRepository>,
     building_repository: Arc<dyn BuildingRepository>,
     meeting_repository: Arc<dyn MeetingRepository>,
+    /// Sert à déduire les destinataires quand l'appelant n'en fournit pas.
+    /// `OwnerRepository` ne sait pas lister par immeuble, et aucune route
+    /// `GET /buildings/{id}/owners` n'existe.
+    unit_owner_repository: Arc<dyn crate::application::ports::UnitOwnerRepository>,
 }
 
 impl ConvocationUseCases {
@@ -27,6 +31,7 @@ impl ConvocationUseCases {
         owner_repository: Arc<dyn OwnerRepository>,
         building_repository: Arc<dyn BuildingRepository>,
         meeting_repository: Arc<dyn MeetingRepository>,
+        unit_owner_repository: Arc<dyn crate::application::ports::UnitOwnerRepository>,
     ) -> Self {
         Self {
             convocation_repository,
@@ -34,6 +39,7 @@ impl ConvocationUseCases {
             owner_repository,
             building_repository,
             meeting_repository,
+            unit_owner_repository,
         }
     }
 
@@ -182,9 +188,51 @@ impl ConvocationUseCases {
         ConvocationExporter::save_to_file(&pdf_bytes, &pdf_file_path)
             .map_err(|e| format!("Failed to save PDF: {}", e))?;
 
+        // Les destinataires : ceux qu'on nous donne, ou tous les
+        // copropriétaires actifs de l'immeuble.
+        //
+        // L'interface n'offre aujourd'hui aucun moyen de constituer cette
+        // liste — « Destinataires 0 » est un libellé, pas un contrôle — et
+        // envoyait donc un corps vide. Plutôt que d'exiger d'elle ce qu'elle
+        // ne peut pas fournir, on déduit : convoquer une assemblée, c'est par
+        // défaut convoquer tout le monde.
+        let destinataires: Vec<Uuid> = match &request.recipient_owner_ids {
+            Some(ids) if !ids.is_empty() => ids.clone(),
+            _ => {
+                let detenteurs = self
+                    .unit_owner_repository
+                    .find_active_by_building(convocation.building_id)
+                    .await?;
+                // Un copropriétaire détenant plusieurs lots ne doit être
+                // convoqué qu'une fois.
+                let mut vus = std::collections::BTreeSet::new();
+                detenteurs
+                    .into_iter()
+                    .filter_map(|(_unit_id, owner_id, _quota)| {
+                        vus.insert(owner_id).then_some(owner_id)
+                    })
+                    .collect()
+            }
+        };
+
+        // Convoquer personne n'est pas convoquer.
+        //
+        // `mark_sent(pdf, 0)` marquait la convocation comme envoyée avec zéro
+        // destinataire : un envoi à personne était compté comme régulier, et
+        // la condition de clôture « convocations envoyées » se trouvait
+        // satisfaite sans que quiconque ait été prévenu.
+        if destinataires.is_empty() {
+            return Err(
+                "Aucun copropriétaire à convoquer : cet immeuble n'a pas de lot \
+                 attribué. Rattachez les copropriétaires à leurs lots avant de \
+                 convoquer l'assemblée."
+                    .to_string(),
+            );
+        }
+
         // Fetch owner emails
         let mut recipients = Vec::new();
-        for owner_id in &request.recipient_owner_ids {
+        for owner_id in &destinataires {
             let owner = self
                 .owner_repository
                 .find_by_id(*owner_id)
@@ -606,6 +654,28 @@ mod tests {
     }
 
     mock! {
+        UnitOwnerRepo {}
+
+        #[async_trait]
+        impl crate::application::ports::UnitOwnerRepository for UnitOwnerRepo {
+            async fn create(&self, unit_owner: &crate::domain::entities::UnitOwner) -> Result<crate::domain::entities::UnitOwner, String>;
+            async fn find_by_id(&self, id: Uuid) -> Result<Option<crate::domain::entities::UnitOwner>, String>;
+            async fn find_current_owners_by_unit(&self, unit_id: Uuid) -> Result<Vec<crate::domain::entities::UnitOwner>, String>;
+            async fn find_current_units_by_owner(&self, owner_id: Uuid) -> Result<Vec<crate::domain::entities::UnitOwner>, String>;
+            async fn find_all_owners_by_unit(&self, unit_id: Uuid) -> Result<Vec<crate::domain::entities::UnitOwner>, String>;
+            async fn find_all_units_by_owner(&self, owner_id: Uuid) -> Result<Vec<crate::domain::entities::UnitOwner>, String>;
+            async fn update(&self, unit_owner: &crate::domain::entities::UnitOwner) -> Result<crate::domain::entities::UnitOwner, String>;
+            async fn delete(&self, id: Uuid) -> Result<(), String>;
+            async fn has_active_owners(&self, unit_id: Uuid) -> Result<bool, String>;
+            async fn get_total_ownership_percentage(&self, unit_id: Uuid) -> Result<rust_decimal::Decimal, String>;
+            async fn find_active_by_unit_and_owner(&self, unit_id: Uuid, owner_id: Uuid) -> Result<Option<crate::domain::entities::UnitOwner>, String>;
+            async fn find_active_by_building(&self, building_id: Uuid) -> Result<Vec<(Uuid, Uuid, rust_decimal::Decimal)>, String>;
+            async fn find_active_quota_shares_by_building(&self, building_id: Uuid) -> Result<Vec<(Uuid, Uuid, rust_decimal::Decimal)>, String>;
+            async fn find_voting_holders_by_unit(&self, unit_id: Uuid) -> Result<Vec<crate::domain::copropriete::LotHolder>, String>;
+        }
+    }
+
+    mock! {
         MeetingRepo {}
 
         #[async_trait]
@@ -651,12 +721,33 @@ mod tests {
                 .expect("immeuble valide"),
             ))
         });
+        // Par défaut, l'immeuble a deux copropriétaires : c'est ce que le
+        // serveur déduit quand l'appelant ne fournit pas de destinataires.
+        let mut unit_owner_repo = MockUnitOwnerRepo::new();
+        unit_owner_repo
+            .expect_find_active_by_building()
+            .returning(|_| {
+                Ok(vec![
+                    (
+                        Uuid::new_v4(),
+                        Uuid::new_v4(),
+                        rust_decimal::Decimal::from(500),
+                    ),
+                    (
+                        Uuid::new_v4(),
+                        Uuid::new_v4(),
+                        rust_decimal::Decimal::from(500),
+                    ),
+                ])
+            });
+
         ConvocationUseCases::new(
             Arc::new(conv_repo),
             Arc::new(recip_repo),
             Arc::new(owner_repo),
             Arc::new(building_repo),
             Arc::new(meeting_repo),
+            Arc::new(unit_owner_repo),
         )
     }
 

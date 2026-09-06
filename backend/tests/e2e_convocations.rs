@@ -1502,3 +1502,80 @@ async fn test_legal_deadline_second_convocation() {
         "Second convocation with 20 days notice should respect legal deadline"
     );
 }
+
+// ─────────────────────────────────────────────────────────────────────────
+// Régression RN-10, cherchée depuis la recette 4 et nommée en recette 5.
+//
+// `SendConvocationRequest.recipient_owner_ids` était OBLIGATOIRE, et
+// `frontend/src/lib/api/convocations.ts:148` envoie littéralement `{}` :
+//
+//     POST /api/v1/convocations/{id}/send   body : {}
+//     → 400 {"details":"Json deserialize error: missing field
+//            `recipient_owner_ids` at line 1 column 2"}
+//
+// L'extracteur `web::Json` rejetait donc la requête AVANT d'entrer dans le
+// gestionnaire. Le bouton « Envoyer maintenant » paraissait sans effet, et
+// c'était le premier des trois verrous empêchant une AG d'aboutir (#780).
+//
+// Les 24 tests de ce fichier fournissaient tous une liste : le contrat réel
+// du frontend n'était couvert nulle part. Ce test envoie exactement son corps.
+// ─────────────────────────────────────────────────────────────────────────
+
+#[actix_web::test]
+#[serial]
+async fn test_envoi_accepte_un_corps_vide_comme_le_frontend() {
+    let (app_state, _container, org_id) = common::setup_test_db().await;
+    let token = common::register_and_login(&app_state, org_id).await;
+    let building_id = create_test_building(&app_state, org_id).await;
+    let meeting_date = Utc::now() + Duration::days(30);
+    let meeting_id = create_test_meeting(&app_state, org_id, building_id, meeting_date).await;
+
+    let app = test::init_service(
+        App::new()
+            .app_data(app_state.clone())
+            .configure(configure_routes),
+    )
+    .await;
+
+    let req = test::TestRequest::post()
+        .uri("/api/v1/convocations")
+        .insert_header((header::AUTHORIZATION, format!("Bearer {}", token)))
+        .set_json(json!({
+            "building_id": building_id.to_string(),
+            "meeting_id": meeting_id.to_string(),
+            "meeting_type": "Ordinary",
+            "meeting_date": meeting_date.to_rfc3339(),
+            "language": "FR"
+        }))
+        .to_request();
+    let resp = test::call_service(&app, req).await;
+    assert_eq!(resp.status(), 201, "la convocation doit être créée");
+    let creee: serde_json::Value = test::read_body_json(resp).await;
+    let convocation_id = creee["id"].as_str().expect("identifiant rendu").to_string();
+
+    // Exactement le corps que `convocationsApi.send` envoie.
+    let req = test::TestRequest::post()
+        .uri(&format!("/api/v1/convocations/{}/send", convocation_id))
+        .insert_header((header::AUTHORIZATION, format!("Bearer {}", token)))
+        .set_json(json!({}))
+        .to_request();
+    let resp = test::call_service(&app, req).await;
+    let statut = resp.status();
+    let corps = test::read_body(resp).await;
+    let texte = String::from_utf8_lossy(&corps);
+
+    // Le point du test : le corps vide ne doit plus être refusé À LA
+    // DÉSÉRIALISATION. Ce qui se passe ensuite relève du métier — ici
+    // l'immeuble n'a aucun lot attribué, donc personne à convoquer, et le
+    // refus qui en découle est LÉGITIME et explicite.
+    assert!(
+        !texte.contains("recipient_owner_ids"),
+        "le corps vide ne doit plus être rejeté sur le champ manquant, \
+         réponse obtenue ({statut}) : {texte}"
+    );
+    assert!(
+        !texte.contains("Json deserialize error"),
+        "aucune erreur de désérialisation ne doit subsister, \
+         réponse obtenue ({statut}) : {texte}"
+    );
+}

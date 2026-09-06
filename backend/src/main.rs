@@ -291,6 +291,7 @@ async fn main() -> std::io::Result<()> {
         owner_repo.clone(),
         building_repo.clone(),
         meeting_repo.clone(),
+        unit_owner_repo.clone(),
     );
     let resolution_use_cases = ResolutionUseCases::new(
         resolution_repo,

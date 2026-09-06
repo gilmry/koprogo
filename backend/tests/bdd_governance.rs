@@ -434,6 +434,7 @@ impl GovernanceWorld {
             owner_repo,
             building_repo,
             meeting_repo,
+            Arc::new(PostgresUnitOwnerRepository::new(pool.clone())),
         );
         let auth_use_cases = AuthUseCases::new(
             user_repo.clone(),
@@ -1430,7 +1431,7 @@ async fn given_sent_convocation_with_recipients(world: &mut GovernanceWorld) {
     let id = world.last_convocation_id.unwrap();
 
     let request = SendConvocationRequest {
-        recipient_owner_ids: world.convocation_owner_ids.clone(),
+        recipient_owner_ids: Some(world.convocation_owner_ids.clone()),
     };
     let result = uc.send_convocation(id, request).await;
     match result {
@@ -1648,7 +1649,7 @@ async fn when_send_convocation(world: &mut GovernanceWorld) {
     let id = world.last_convocation_id.unwrap();
 
     let request = SendConvocationRequest {
-        recipient_owner_ids: world.convocation_owner_ids.clone(),
+        recipient_owner_ids: Some(world.convocation_owner_ids.clone()),
     };
     let result = uc.send_convocation(id, request).await;
     match result {

@@ -104,7 +104,20 @@ pub struct ScheduleConvocationRequest {
 
 #[derive(Debug, Deserialize)]
 pub struct SendConvocationRequest {
-    pub recipient_owner_ids: Vec<Uuid>, // List of owner IDs to send to
+    /// Les destinataires, **facultatifs**.
+    ///
+    /// Absents, le serveur convoque tous les copropriétaires actifs de
+    /// l'immeuble. Ce champ était obligatoire et le frontend envoyait `{}` :
+    /// l'extracteur `web::Json` rejetait la requête en 400 avant même
+    /// d'entrer dans le gestionnaire, si bien que le bouton « Envoyer »
+    /// paraissait sans effet. Constaté en recette le 2026-09-06 (RN-10),
+    /// premier des trois verrous qui empêchent une AG d'aboutir (#780).
+    ///
+    /// Le champ est conservé pour l'écran de sélection à venir : convoquer
+    /// est un acte juridique, et le syndic doit pouvoir voir et choisir qui
+    /// reçoit. Voir #784.
+    #[serde(default)]
+    pub recipient_owner_ids: Option<Vec<Uuid>>,
 }
 
 #[derive(Debug, Serialize)]
