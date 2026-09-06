@@ -92,7 +92,24 @@ pub async fn get_convocation(
 pub async fn get_convocation_by_meeting(
     state: web::Data<AppState>,
     meeting_id: web::Path<Uuid>,
+    user: AuthenticatedUser,
 ) -> impl Responder {
+    // Route imbriquee non gardee au releve du 2026-09-06 (issue #772). C'est
+    // par ce genre de route qu'un cabinet a lu les bulletins NOMINATIFS d'une
+    // autre copropriete (RN-2).
+    if let Err(err) =
+        crate::infrastructure::web::middleware::scope_guard::verify_meeting_org_access(
+            &user,
+            *meeting_id,
+            &state.meeting_use_cases,
+            &state.building_use_cases,
+            &state.acp_use_cases,
+        )
+        .await
+    {
+        return err.error_response();
+    }
+
     match state
         .convocation_use_cases
         .get_convocation_by_meeting(*meeting_id)
@@ -295,7 +312,23 @@ pub async fn cancel_convocation(
 pub async fn list_convocation_recipients(
     state: web::Data<AppState>,
     id: web::Path<Uuid>,
+    user: AuthenticatedUser,
 ) -> impl Responder {
+    // Route imbriquee non gardee au releve du 2026-09-06 (issue #772) : elle
+    // sert la liste NOMINATIVE des copropriétaires convoqués.
+    if let Err(err) =
+        crate::infrastructure::web::middleware::scope_guard::verify_convocation_org_access(
+            &user,
+            *id,
+            &state.convocation_use_cases,
+            &state.building_use_cases,
+            &state.acp_use_cases,
+        )
+        .await
+    {
+        return err.error_response();
+    }
+
     match state
         .convocation_use_cases
         .list_convocation_recipients(*id)
@@ -310,7 +343,23 @@ pub async fn list_convocation_recipients(
 pub async fn get_convocation_tracking_summary(
     state: web::Data<AppState>,
     id: web::Path<Uuid>,
+    user: AuthenticatedUser,
 ) -> impl Responder {
+    // Route imbriquee non gardee au releve du 2026-09-06 (issue #772) : elle
+    // sert la liste NOMINATIVE des copropriétaires convoqués.
+    if let Err(err) =
+        crate::infrastructure::web::middleware::scope_guard::verify_convocation_org_access(
+            &user,
+            *id,
+            &state.convocation_use_cases,
+            &state.building_use_cases,
+            &state.acp_use_cases,
+        )
+        .await
+    {
+        return err.error_response();
+    }
+
     match state.convocation_use_cases.get_tracking_summary(*id).await {
         Ok(summary) => HttpResponse::Ok().json(summary),
         Err(err) => HttpResponse::InternalServerError().json(serde_json::json!({"error": err})),

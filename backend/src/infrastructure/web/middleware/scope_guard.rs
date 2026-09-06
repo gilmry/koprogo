@@ -40,7 +40,10 @@ use uuid::Uuid;
 use crate::application::error::AppError;
 use crate::application::use_cases::acp_use_cases::{AcpCaller, AcpUseCases};
 use crate::application::use_cases::building_use_cases::BuildingUseCases;
+use crate::application::use_cases::convocation_use_cases::ConvocationUseCases;
+use crate::application::use_cases::document_use_cases::DocumentUseCases;
 use crate::application::use_cases::owner_use_cases::OwnerUseCases;
+use crate::application::use_cases::unit_use_cases::UnitUseCases;
 use crate::infrastructure::web::app_state::AppState;
 use crate::infrastructure::web::AuthenticatedUser;
 
@@ -283,6 +286,109 @@ pub async fn verify_building_org_access(
         .map_err(|_| AppError::Internal("Invalid building.acp_id format".to_string()))?;
 
     verify_acp_org_access(user, acp_id, acp_use_cases).await
+}
+
+/// Vérifie le mandat de l'appelant sur l'ACP dont relève une **convocation**.
+///
+/// La convocation porte directement son `building_id` : le saut est unique.
+///
+/// `GET /convocations/{id}/recipients` sert la liste NOMINATIVE des
+/// copropriétaires convoqués, avec leur adresse de courriel et le mode d'envoi
+/// retenu. C'est un fichier de personnes, et il était servi à qui connaissait
+/// un identifiant de convocation.
+///
+/// `tracking-summary` en dit davantage encore : qui a ouvert le courriel et
+/// quand. Une donnée de comportement, pas seulement d'identité.
+pub async fn verify_convocation_org_access(
+    user: &AuthenticatedUser,
+    convocation_id: Uuid,
+    convocation_use_cases: &ConvocationUseCases,
+    building_use_cases: &BuildingUseCases,
+    acp_use_cases: &AcpUseCases,
+) -> Result<(), AppError> {
+    if user.is_superadmin() {
+        return Ok(());
+    }
+
+    let convocation = convocation_use_cases
+        .get_convocation(convocation_id)
+        .await
+        .map_err(AppError::from)?;
+
+    verify_building_org_access(
+        user,
+        convocation.building_id,
+        building_use_cases,
+        acp_use_cases,
+    )
+    .await
+}
+
+/// Vérifie le mandat de l'appelant sur l'ACP dont relève un **document**.
+///
+/// Remonte document → immeuble → ACP → organisation.
+///
+/// Un document de copropriété n'est pas un fichier anodin : l'acte de base,
+/// les procès-verbaux d'assemblée et les factures nominatives passent par là.
+/// `GET /documents/{id}/download` servait le contenu même du fichier à qui
+/// connaissait son identifiant.
+///
+/// Les deux routes de rattachement — vers une assemblée, vers une dépense —
+/// sont des **écritures** : elles permettaient de raccrocher le document d'un
+/// cabinet au dossier d'un autre.
+pub async fn verify_document_org_access(
+    user: &AuthenticatedUser,
+    document_id: Uuid,
+    document_use_cases: &DocumentUseCases,
+    building_use_cases: &BuildingUseCases,
+    acp_use_cases: &AcpUseCases,
+) -> Result<(), AppError> {
+    if user.is_superadmin() {
+        return Ok(());
+    }
+
+    let document = document_use_cases
+        .get_document(document_id)
+        .await
+        .map_err(AppError::from)?;
+
+    verify_building_org_access(
+        user,
+        document.building_id,
+        building_use_cases,
+        acp_use_cases,
+    )
+    .await
+}
+
+/// Vérifie le mandat de l'appelant sur l'ACP dont relève un **lot**.
+///
+/// Remonte lot → immeuble → ACP → organisation.
+///
+/// `GET /units/{id}/etats-dates` sert les états datés d'un lot : le document
+/// remis au notaire lors d'une vente, qui porte les arriérés du vendeur et
+/// l'état du fonds de réserve. C'est une pièce financière nominative.
+pub async fn verify_unit_org_access(
+    user: &AuthenticatedUser,
+    unit_id: Uuid,
+    unit_use_cases: &UnitUseCases,
+    building_use_cases: &BuildingUseCases,
+    acp_use_cases: &AcpUseCases,
+) -> Result<(), AppError> {
+    if user.is_superadmin() {
+        return Ok(());
+    }
+
+    let unit = unit_use_cases
+        .get_unit(unit_id)
+        .await
+        .map_err(AppError::from)?
+        .ok_or(AppError::NotFound(format!("Unit not found: {unit_id}")))?;
+
+    let building_id = Uuid::parse_str(&unit.building_id)
+        .map_err(|_| AppError::Internal("Invalid unit.building_id format".to_string()))?;
+
+    verify_building_org_access(user, building_id, building_use_cases, acp_use_cases).await
 }
 
 /// Vérifie le mandat de l'appelant sur l'organisation d'un **copropriétaire**.

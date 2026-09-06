@@ -165,6 +165,29 @@ ses coordonnées de clic — qui lui faisait manquer toutes les petites cibles.
 | R18 | Le type `Vote` du frontend ne correspond pas au DTO servi ; clé `notices.draft` affichée en clair | #786 | **fait** |
 | R22 | **La PWA n'a jamais fonctionné** : le service worker échoue à l'installation depuis novembre 2025, deux icônes du manifeste répondent 404 | #804 | ouvert |
 
+#### R1 — état au 2026-09-06 : 73 routes gardées sur 81 (#772)
+
+Le relevé initial comptait 73 routes imbriquées sans aucune identité. Il en
+reste **8**, et aucune ne se règle en ajoutant un garde : chacune demande une
+décision.
+
+Quatre gardes nouvelles sont venues compléter les quatre existantes —
+`verify_owner_org_access`, `verify_document_org_access`,
+`verify_unit_org_access`, `verify_convocation_org_access`. Les quatorze routes
+portées par un copropriétaire méritent d'être signalées à part : elles
+servaient **nominativement** ce qu'une personne doit et ce qu'elle a payé.
+
+**Et le cliquet lui-même était faux.** Il comptait la présence du paramètre
+`AuthenticatedUser` — nécessaire, pas suffisant. Un script d'insertion a posé
+ce paramètre sans la garde qui l'emploie ; le cliquet l'aurait comptée
+protégée, et seul l'avertissement `unused variable` du compilateur l'a trahie.
+Un second cliquet mesure désormais l'effet : **109 routes prennent l'identité
+sans jamais l'employer**, majorant à trier.
+
+**Le seul arbitrage restant** porte sur les quatre routes de campagne d'énergie :
+un achat groupé s'adresse peut-être à des personnes qui ne sont copropriétaires
+de rien, mais `consent` et `consumption` touchent à un consentement RGPD.
+
 #### R23 — cinq rôles sur quatorze n'ont aucune navigation (#814)
 
 Trouvé en cadrant les personas prestataire et conseil de copropriété.

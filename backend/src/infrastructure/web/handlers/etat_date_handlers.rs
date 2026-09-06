@@ -189,7 +189,21 @@ pub async fn list_etats_dates(
 pub async fn list_etats_dates_by_unit(
     state: web::Data<AppState>,
     unit_id: web::Path<Uuid>,
+    user: AuthenticatedUser,
 ) -> impl Responder {
+    // Route imbriquee non gardee au releve du 2026-09-06 (issue #772).
+    if let Err(err) = crate::infrastructure::web::middleware::scope_guard::verify_unit_org_access(
+        &user,
+        *unit_id,
+        &state.unit_use_cases,
+        &state.building_use_cases,
+        &state.acp_use_cases,
+    )
+    .await
+    {
+        return err.error_response();
+    }
+
     match state.etat_date_use_cases.list_by_unit(*unit_id).await {
         Ok(etats) => HttpResponse::Ok().json(etats),
         Err(err) => HttpResponse::InternalServerError().json(serde_json::json!({

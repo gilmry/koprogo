@@ -171,7 +171,22 @@ pub async fn list_documents(
 pub async fn download_document(
     app_state: web::Data<AppState>,
     path: web::Path<Uuid>,
+    user: AuthenticatedUser,
 ) -> impl Responder {
+    // Route imbriquee non gardee au releve du 2026-09-06 (issue #772).
+    if let Err(err) =
+        crate::infrastructure::web::middleware::scope_guard::verify_document_org_access(
+            &user,
+            *path,
+            &app_state.document_use_cases,
+            &app_state.building_use_cases,
+            &app_state.acp_use_cases,
+        )
+        .await
+    {
+        return err.error_response();
+    }
+
     let id = path.into_inner();
 
     match app_state.document_use_cases.download_document(id).await {
@@ -295,7 +310,22 @@ pub async fn link_document_to_meeting(
     app_state: web::Data<AppState>,
     path: web::Path<Uuid>,
     request: web::Json<LinkDocumentToMeetingRequest>,
+    user: AuthenticatedUser,
 ) -> impl Responder {
+    // Route imbriquee non gardee au releve du 2026-09-06 (issue #772).
+    if let Err(err) =
+        crate::infrastructure::web::middleware::scope_guard::verify_document_org_access(
+            &user,
+            *path,
+            &app_state.document_use_cases,
+            &app_state.building_use_cases,
+            &app_state.acp_use_cases,
+        )
+        .await
+    {
+        return err.error_response();
+    }
+
     let id = path.into_inner();
 
     match app_state
@@ -314,7 +344,22 @@ pub async fn link_document_to_expense(
     app_state: web::Data<AppState>,
     path: web::Path<Uuid>,
     request: web::Json<LinkDocumentToExpenseRequest>,
+    user: AuthenticatedUser,
 ) -> impl Responder {
+    // Route imbriquee non gardee au releve du 2026-09-06 (issue #772).
+    if let Err(err) =
+        crate::infrastructure::web::middleware::scope_guard::verify_document_org_access(
+            &user,
+            *path,
+            &app_state.document_use_cases,
+            &app_state.building_use_cases,
+            &app_state.acp_use_cases,
+        )
+        .await
+    {
+        return err.error_response();
+    }
+
     let id = path.into_inner();
 
     match app_state

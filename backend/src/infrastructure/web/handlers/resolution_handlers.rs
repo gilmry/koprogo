@@ -607,7 +607,24 @@ pub async fn close_voting(
 pub async fn get_meeting_vote_summary(
     state: web::Data<AppState>,
     meeting_id: web::Path<Uuid>,
+    user: AuthenticatedUser,
 ) -> impl Responder {
+    // Route imbriquee non gardee au releve du 2026-09-06 (issue #772). C'est
+    // par ce genre de route qu'un cabinet a lu les bulletins NOMINATIFS d'une
+    // autre copropriete (RN-2).
+    if let Err(err) =
+        crate::infrastructure::web::middleware::scope_guard::verify_meeting_org_access(
+            &user,
+            *meeting_id,
+            &state.meeting_use_cases,
+            &state.building_use_cases,
+            &state.acp_use_cases,
+        )
+        .await
+    {
+        return err.error_response();
+    }
+
     match state
         .resolution_use_cases
         .get_meeting_vote_summary(*meeting_id)

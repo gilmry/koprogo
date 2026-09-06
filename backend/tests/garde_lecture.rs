@@ -60,8 +60,9 @@ use std::path::{Path, PathBuf};
 /// 73 au relevé du 2026-09-06 ; 70 après les trois listes de documents, 33
 /// après les trente-six routes portées par un immeuble — annonces, objets
 /// partagés, compétences, inspections, tickets, rapports de travaux, paiements,
-/// états datés, convocations — puis **19** après les quatorze portées par un
-/// copropriétaire.
+/// états datés, convocations — 19 après les quatorze portées par un
+/// copropriétaire, puis **8** après les onze dernières : documents, lots,
+/// convocations, paiements d'une dépense, ordre du jour, synthèse des votes.
 ///
 /// Ces quatorze-là servaient, nominativement, ce qu'une personne doit et ce
 /// qu'elle a payé : paiements, moyens de paiement, rappels, quotes-parts,
@@ -69,10 +70,55 @@ use std::path::{Path, PathBuf};
 ///
 /// Un cliquet posé sans une première baisse n'est qu'une constatation.
 ///
-/// Ordre de traitement retenu, du plus exposé au moins : documents (actes de
-/// base, procès-verbaux, factures nominatives), paiements et états datés
-/// (montants par personne nommée), convocations, avis.
-const DETTE_AU_2026_09_06: usize = 19;
+/// ── Les huit qui restent, et pourquoi ─────────────────────────────────────
+///
+/// Elles ne se règlent pas en ajoutant un garde : chacune demande une décision.
+///
+/// **Trois s'authentifient autrement, par conception.**
+///
+///     POST /contractor/token/{token}/submit
+///     POST /contractor-reports/magic/{token}/submit
+///
+/// Le jeton à usage unique EST l'autorisation : un prestataire n'a pas de
+/// compte, c'est le sens du lien magique (#815). Exiger une session ici
+/// supprimerait la fonctionnalité.
+///
+///     GET /public/buildings/{slug}/syndic
+///
+/// Publique de par son nom. Art. 3.89 § 5 : les coordonnées du syndic doivent
+/// être affichées à l'entrée de l'immeuble. Les rendre lisibles en ligne est
+/// conforme, pas fuyant.
+///
+/// **Une est appelée depuis un client de courriel.**
+///
+///     PUT /convocation-recipients/{id}/email-opened
+///
+/// Un pixel de suivi ne porte aucune session. Elle reste néanmoins une
+/// ÉCRITURE non authentifiée dont la seule clé est un UUID : qui devinerait un
+/// identifiant marquerait un courriel comme lu. La conséquence est mince — une
+/// statistique faussée, pas une donnée divulguée — mais elle mérite d'être
+/// dite plutôt que d'être comptée comme réglée.
+///
+/// **Quatre relèvent d'un choix produit non tranché.**
+///
+///     POST   /energy-campaigns/{id}/join-as-individual
+///     POST   /energy-campaigns/{id}/members/{member_id}/consent
+///     PUT    /energy-campaigns/{id}/members/{member_id}/consumption
+///     DELETE /energy-campaigns/{id}/members/{member_id}/withdraw
+///
+/// Une campagne d'achat groupé d'énergie s'adresse peut-être à des personnes
+/// qui ne sont copropriétaires de rien — c'est tout l'intérêt d'un achat
+/// groupé. Mais `consent` et `consumption` touchent à des données personnelles
+/// et à un consentement RGPD, qu'on ne laisse pas modifier par un inconnu
+/// muni d'un identifiant. À arbitrer avant de coder.
+///
+/// ── Ordre suivi jusqu'ici ──────────────────────────────────────────────────
+///
+/// Du plus exposé au moins : documents (actes de base, procès-verbaux,
+/// factures nominatives), paiements et états datés (montants par personne
+/// nommée), copropriétaires (situation financière nominative), convocations
+/// (listes de personnes), avis.
+const DETTE_AU_2026_09_06: usize = 8;
 
 /// Routes imbriquées qui **prennent** l'identité sans jamais la **vérifier**.
 ///
@@ -111,8 +157,11 @@ fn racine_handlers() -> PathBuf {
 /// `verifier_mandat_sur_ag` fait de même depuis une assemblée ;
 /// `require_organization` et `is_superadmin` sont des décisions plus grossières
 /// mais réelles. Un corps qui n'en contient aucun ne décide de rien.
-const MARQUEURS_DE_GARDE: [&str; 9] = [
+const MARQUEURS_DE_GARDE: [&str; 12] = [
     "verify_acp_org_access",
+    "verify_document_org_access",
+    "verify_unit_org_access",
+    "verify_convocation_org_access",
     "verify_building_org_access",
     "verify_owner_org_access",
     "verify_meeting_org_access",

@@ -224,7 +224,23 @@ pub async fn list_building_payments(
 pub async fn list_expense_payments(
     state: web::Data<AppState>,
     expense_id: web::Path<Uuid>,
+    user: AuthenticatedUser,
 ) -> impl Responder {
+    // Route imbriquee non gardee au releve du 2026-09-06 (issue #772) : les
+    // paiements d'une depense nomment qui a paye quoi.
+    if let Err(err) =
+        crate::infrastructure::web::middleware::scope_guard::verify_expense_org_access(
+            &user,
+            *expense_id,
+            &state.expense_use_cases,
+            &state.building_use_cases,
+            &state.acp_use_cases,
+        )
+        .await
+    {
+        return err.error_response();
+    }
+
     match state
         .payment_use_cases
         .list_expense_payments(*expense_id)
@@ -813,7 +829,23 @@ pub async fn get_building_payment_stats(
 pub async fn get_expense_total_paid(
     state: web::Data<AppState>,
     expense_id: web::Path<Uuid>,
+    user: AuthenticatedUser,
 ) -> impl Responder {
+    // Route imbriquee non gardee au releve du 2026-09-06 (issue #772) : les
+    // paiements d'une depense nomment qui a paye quoi.
+    if let Err(err) =
+        crate::infrastructure::web::middleware::scope_guard::verify_expense_org_access(
+            &user,
+            *expense_id,
+            &state.expense_use_cases,
+            &state.building_use_cases,
+            &state.acp_use_cases,
+        )
+        .await
+    {
+        return err.error_response();
+    }
+
     match state
         .payment_use_cases
         .get_total_paid_for_expense(*expense_id)

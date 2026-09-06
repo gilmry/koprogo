@@ -257,7 +257,22 @@ pub async fn add_agenda_item(
     state: web::Data<AppState>,
     id: web::Path<Uuid>,
     request: web::Json<AddAgendaItemRequest>,
+    user: AuthenticatedUser,
 ) -> impl Responder {
+    // Route imbriquee non gardee au releve du 2026-09-06 (issue #772).
+    if let Err(err) =
+        crate::infrastructure::web::middleware::scope_guard::verify_meeting_org_access(
+            &user,
+            *id,
+            &state.meeting_use_cases,
+            &state.building_use_cases,
+            &state.acp_use_cases,
+        )
+        .await
+    {
+        return err.error_response();
+    }
+
     match state
         .meeting_use_cases
         .add_agenda_item(*id, request.into_inner())
