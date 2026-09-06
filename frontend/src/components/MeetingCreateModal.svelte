@@ -3,6 +3,7 @@
   import { _ } from '../lib/i18n';
   import { api } from '../lib/api';
   import BuildingSelector from './BuildingSelector.svelte';
+  import { evaluerDelai } from '../lib/utils/delaiConvocation';
 
   let { oncreated, onclose }: {
     oncreated?: () => void;
@@ -17,6 +18,19 @@
   let buildingId = $state('');
   let loading = $state(false);
   let error = $state('');
+
+  // Le délai de convocation, évalué À LA SAISIE (Art. 3.87 § 3).
+  //
+  // Recette du 2026-09-06 (RN-9) : une assemblée créée pour dans cinq jours ne
+  // pouvait plus être convoquée régulièrement, et l'application ne le disait
+  // qu'au clic sur « Créer une convocation » — au moment où il ne restait plus
+  // qu'à subir. Le syndic n'en sortait qu'en supprimant l'assemblée.
+  //
+  // C'est un AVERTISSEMENT, jamais un refus : l'urgence est prévue par le
+  // texte lui-même, et une assemblée peut être encodée après coup (#780).
+  let delaiConvocation = $derived(
+    scheduledDate ? evaluerDelai(new Date(scheduledDate)) : null,
+  );
 
   async function handleSubmit() {
     error = '';
@@ -149,6 +163,31 @@
           required
           data-testid="input-meeting-date"
         />
+
+        {#if delaiConvocation?.etat === 'trop-court'}
+          <p
+            class="mt-2 text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-md p-2"
+            data-testid="meeting-date-delai-trop-court"
+            role="status"
+          >
+            <strong>Convocation impossible dans les délais.</strong>
+            L'Art. 3.87 § 3 impose quinze jours de préavis : la convocation aurait
+            dû partir le {delaiConvocation.dateLimiteEnvoi.toLocaleDateString('fr-BE')}.
+            Reculez l'assemblée de {delaiConvocation.joursManquants} jour{delaiConvocation.joursManquants >
+            1
+              ? 's'
+              : ''}, ou convoquez dans l'urgence — le texte le prévoit.
+          </p>
+        {:else if delaiConvocation?.etat === 'tenable'}
+          <p
+            class="mt-2 text-sm text-gray-600"
+            data-testid="meeting-date-delai-tenable"
+          >
+            Date limite d'envoi de la convocation :
+            <strong>{delaiConvocation.dateLimiteEnvoi.toLocaleDateString('fr-BE')}</strong>
+            (Art. 3.87 § 3).
+          </p>
+        {/if}
       </div>
 
       <div>

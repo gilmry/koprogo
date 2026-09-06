@@ -3501,14 +3501,36 @@ async fn given_unit_owned_by(world: &mut FinancialWorld, unit_num: usize, name: 
     .await
     .expect("insert owner");
 
+    // « unit 1 owned by "Alice" at 40% » : le pourcentage est la part
+    // d'ALICE DANS L'IMMEUBLE, pas sa part dans le lot.
+    //
+    // Le feature file le dit sans ambiguïté : sur une dépense de 333 EUR,
+    // « Alice should owe 133.20 EUR (40%) », soit 333 × 0,40. Et sur 1000 EUR,
+    // 400 EUR. Le pourcentage porte donc sur la dépense entière.
+    //
+    // Le fixture l'écrivait dans `ownership_percentage`, que le domaine lit
+    // comme la part d'Alice DANS SON LOT — indivision, usufruit. Alice se
+    // retrouvait avec 40 % d'un lot qui pèse un tiers de l'immeuble, les 60 %
+    // restants n'appartenant à personne. La répartition ne couvrait alors que
+    // 333,25 EUR sur 1000, et le domaine avait raison de la refuser : on ne
+    // répartit pas une charge sur des quotités orphelines.
+    //
+    // Traduction juste : le lot porte 40 % des tantièmes, et Alice le possède
+    // en entier.
+    sqlx::query("UPDATE units SET quota = $1 WHERE id = $2")
+        .bind(rust_decimal::Decimal::from((pct * 10.0) as i64))
+        .bind(unit_id)
+        .execute(pool)
+        .await
+        .expect("porter le pourcentage sur les tantiemes du lot");
+
     sqlx::query(
         r#"INSERT INTO unit_owners (id, unit_id, owner_id, ownership_percentage, is_primary_contact, start_date, created_at, updated_at)
-           VALUES ($1, $2, $3, $4, true, NOW(), NOW(), NOW())"#,
+           VALUES ($1, $2, $3, 1.0, true, NOW(), NOW(), NOW())"#,
     )
     .bind(Uuid::new_v4())
     .bind(unit_id)
     .bind(owner_id)
-    .bind(pct / 100.0)
     .execute(pool)
     .await
     .expect("link owner to unit");

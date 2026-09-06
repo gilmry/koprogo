@@ -31,12 +31,70 @@ pub struct MeetingResponse {
     pub is_second_convocation: bool,
     pub minutes_document_id: Option<Uuid>,
     pub minutes_sent_at: Option<DateTime<Utc>>,
+
+    // ── Délai de convocation, Art. 3.87 § 3 ────────────────────────────────
+    //
+    // Servis pour que l'écran puisse AVERTIR à la saisie, au lieu de laisser
+    // découvrir l'impasse au moment de convoquer.
+    //
+    // Recette du 2026-09-06 (RN-9) : une assemblée créée à cinq jours ne peut
+    // plus être convoquée régulièrement, et le bouton « Reporter » ne sortait
+    // de rien. Le syndic n'en sortait qu'en supprimant l'assemblée. La règle
+    // était juste, sa temporalité ne l'était pas (#780, verrou 1).
+    /// La date limite d'envoi d'une convocation régulière : quinze jours avant
+    /// l'assemblée. `None` si l'assemblée est déjà tenue.
+    pub date_limite_envoi_convocation: Option<DateTime<Utc>>,
+    /// Le délai de quinze jours peut-il encore être tenu ?
+    ///
+    /// `false` **n'interdit rien** : l'urgence est prévue par le texte
+    /// lui-même, une assemblée peut être encodée après coup, et une seconde
+    /// convocation subit la date de l'échec précédent.
+    pub convocation_encore_possible: bool,
+    /// De combien de jours faudrait-il reculer l'assemblée pour tenir le
+    /// délai. `None` quand il est tenu, ou que l'assemblée est passée.
+    pub jours_manquants_convocation: Option<i64>,
+
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
 }
 
 impl From<Meeting> for MeetingResponse {
     fn from(meeting: Meeting) -> Self {
+        // Le délai de convocation se DÉDUIT de la date et du type ; il ne se
+        // stocke pas. Un champ persisté serait faux dès le lendemain.
+        //
+        // La seconde convocation partage le même délai depuis la loi de 2019
+        // (Art. 3.87 § 5) : `is_second_convocation` ne change donc pas le
+        // calcul, et le rappeler ici évite qu'on croie l'avoir oublié.
+        let type_de_convocation = match meeting.meeting_type {
+            crate::domain::entities::MeetingType::Ordinary => {
+                crate::domain::copropriete::convocation::ConvocationType::Ordinary
+            }
+            crate::domain::entities::MeetingType::Extraordinary => {
+                crate::domain::copropriete::convocation::ConvocationType::Extraordinary
+            }
+        };
+        let delai = crate::domain::copropriete::delai_de_convocation::evaluer(
+            meeting.scheduled_date,
+            &type_de_convocation,
+            Utc::now(),
+        );
+        use crate::domain::copropriete::delai_de_convocation::DelaiDeConvocation;
+        let (
+            date_limite_envoi_convocation,
+            convocation_encore_possible,
+            jours_manquants_convocation,
+        ) = match delai {
+            DelaiDeConvocation::Tenable { date_limite_envoi } => {
+                (Some(date_limite_envoi), true, None)
+            }
+            DelaiDeConvocation::TropCourt {
+                date_limite_envoi,
+                jours_manquants,
+            } => (Some(date_limite_envoi), false, Some(jours_manquants)),
+            DelaiDeConvocation::DejaTenue => (None, false, None),
+        };
+
         Self {
             id: meeting.id,
             acp_id: meeting.acp_id,
@@ -56,6 +114,9 @@ impl From<Meeting> for MeetingResponse {
             is_second_convocation: meeting.is_second_convocation,
             minutes_document_id: meeting.minutes_document_id,
             minutes_sent_at: meeting.minutes_sent_at,
+            date_limite_envoi_convocation,
+            convocation_encore_possible,
+            jours_manquants_convocation,
             created_at: meeting.created_at,
             updated_at: meeting.updated_at,
         }

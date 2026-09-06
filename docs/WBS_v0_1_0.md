@@ -165,6 +165,37 @@ ses coordonnées de clic — qui lui faisait manquer toutes les petites cibles.
 | R18 | Le type `Vote` du frontend ne correspond pas au DTO servi ; clé `notices.draft` affichée en clair | #786 | **fait** |
 | R22 | **La PWA n'a jamais fonctionné** : le service worker échoue à l'installation depuis novembre 2025, deux icônes du manifeste répondent 404 | #804 | ouvert |
 
+#### R25 — le cycle de vie d'une AG : deux verrous levés sur trois (#780)
+
+| Verrou | État |
+|---|---|
+| La convocation exigeait des destinataires que l'interface ne pouvait pas constituer | **levé** (#784) — le serveur les déduit des copropriétaires actifs |
+| « Clôturer le vote » sans effet | **levé** — `total_voting_power` optionnel, dénominateur lu sur l'immeuble |
+| Une AG créée trop près de sa date ne peut être ni convoquée ni reportée | **levé le 2026-09-06** |
+
+Le troisième n'était pas une règle fausse mais une règle **annoncée trop
+tard** : l'Art. 3.87 § 3 impose quinze jours de préavis, et l'application ne le
+disait qu'au clic sur « Créer une convocation », quand il ne restait plus qu'à
+supprimer l'assemblée.
+
+`domain/copropriete/delai_de_convocation.rs` répond désormais « peut-on encore
+convoquer régulièrement pour cette date ? », l'API sert le verdict sur chaque
+assemblée, et la modale de création **avertit à la saisie**, avec la date
+limite d'envoi et le nombre de jours manquants.
+
+**Il n'interdit rien**, et c'est délibéré : le texte prévoit lui-même
+l'urgence, une assemblée peut être encodée après coup pour tenir le registre,
+et une seconde convocation subit la date de l'échec précédent. Un avertissement
+qui bloquerait rendrait ces trois cas impossibles.
+
+La règle est écrite deux fois — domaine et navigateur — parce qu'au moment de
+la saisie l'assemblée n'existe pas encore. `delai-convocation.test.ts` lit donc
+`minimum_notice_days` **dans la source Rust** et refuse que les deux nombres
+s'écartent : c'est une règle écrite deux fois qui a produit #773.
+
+**Reste pour clore #780** : le parcours complet mené au navigateur, de la
+création de l'AG à sa clôture, sans requête forgée.
+
 #### R1 — état au 2026-09-06 : 73 routes gardées sur 81 (#772)
 
 Le relevé initial comptait 73 routes imbriquées sans aucune identité. Il en

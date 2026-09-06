@@ -182,6 +182,22 @@ export interface Meeting {
   status: "Scheduled" | "Completed" | "Cancelled";
   agenda: string[]; // Liste des points à l'ordre du jour
   attendees_count?: number;
+
+  // ── Délai de convocation, Art. 3.87 § 3 ────────────────────────────────
+  //
+  // Servis par l'API pour que l'écran d'assemblée puisse dire, sans recalculer,
+  // jusqu'à quand la convocation peut partir.
+  //
+  // `convocation_encore_possible: false` n'interdit rien : l'urgence est prévue
+  // par le texte lui-même, une assemblée peut être encodée après coup, et une
+  // seconde convocation subit la date de l'échec précédent (#780).
+  /** Date limite d'envoi d'une convocation régulière. Absente si l'assemblée est passée. */
+  date_limite_envoi_convocation?: string | null;
+  /** Le délai de quinze jours peut-il encore être tenu ? */
+  convocation_encore_possible?: boolean;
+  /** De combien de jours reculer l'assemblée pour tenir le délai. */
+  jours_manquants_convocation?: number | null;
+
   created_at?: string;
   updated_at?: string;
 }
