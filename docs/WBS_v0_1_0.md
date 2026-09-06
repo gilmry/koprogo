@@ -123,38 +123,78 @@ interpole l'identifiant au lieu de le lier.
 | K8 | Observabilité et code mort | **fait** `8aa6b59d` — #719 et #720 fermées |
 | K7 | Auto-merge Dependabot sans gate CI | **fait** `7c90d191` — #659 fermée |
 
-### Track R — Recette navigateur du 2026-09-04 au 06 (nouveau)
+### Track R — Recette navigateur et revue de design, 2026-09-04 au 06
 
-Trois sessions de recette humaine par Cowork, sur la production. Les rapports ont
-trouvé de vraies choses **et** trois faux diagnostics, corrigés par la mesure — le
-détail est dans chaque issue.
+Cinq sessions de recette humaine par Cowork sur la production, plus une revue de design
+frontend reçue le 06. **Trente et une issues ouvertes le 2026-09-06**, toutes au périmètre
+de la 0.1.0 par décision du 06.
+
+Les rapports ont trouvé de vraies choses et **quatre faux diagnostics**, redressés par la
+mesure : le « crash API » était un bannissement CrowdSec, la « régression CORS » le même
+bannissement, `onclick: null` est le comportement normal de Svelte 5, et « 7 modules
+communautaires sans backend » venait de sondages sur des chemins que personne n'appelle.
+Le testeur a lui-même trouvé et corrigé un biais de son outil — une échelle de 1,125 sur
+ses coordonnées de clic — qui lui faisait manquer toutes les petites cibles.
+
+#### R1 à R13 — recettes 1 à 4
 
 | Lot | Contenu | Issue | État |
 |---|---|---|---|
-| R1 | **Fuite inter-organisations sur les routes imbriquées.** Un syndic lisait les bulletins nominatifs d'une autre copropriété. 2 routes prouvées fermées, **73 restent sans identité** sur 310 | #772 | **partiel** |
+| R1 | **Fuite inter-organisations sur les routes imbriquées.** Un syndic lisait les bulletins nominatifs d'une autre copropriété. 2 routes fermées, **73 restent sans identité** sur 310 | #772 | **partiel** |
 | R2 | Plafonnement Art. 3.87 § 7 appliqué à la lecture, plus seulement à la clôture | #767 | **fait** |
-| R3 | L'écran de résultat de vote compte des têtes quand l'API compte des voix | #773 | ouvert |
-| R4 | **Rebrancher les six modules communautaires** : 111 points d'entrée servis que le frontend appelle au mauvais chemin. Arbitrage ACP contre immeuble à rendre | #779, #768 | ouvert |
+| R3 | L'écran de résultat de vote comptait des têtes quand l'API compte des voix | #773 | **fait** |
+| R4 | Modules communautaires : le frontend appelle des chemins par ACP, le serveur sert par immeuble. 111 points d'entrée dorment | #779, #768 | ouvert |
 | R5 | `register` reposait la session sur l'appelant authentifié | #769 | **fait** |
-| R6 | Page RGPD majoritairement en anglais, boutons d'action compris | #774 | ouvert |
-| R7 | Bouton « Clôturer le vote » présent et sans effet : le cycle de vie d'une AG ne s'achève jamais | #776 | ouvert |
-| R8 | Annonces : création sans effet, filtre en chargement infini, énumérations brutes | #775 | ouvert |
+| R6 | Page RGPD en anglais, intitulés, boutons et paragraphes | #774 | **fait** |
+| R7 | « Clôturer le vote » sans effet : le champ `total_voting_power` était obligatoire et le frontend envoyait `{}` | #776 | **fait** |
+| R8 | Annonces : création invisible, filtre en chargement infini, énumérations brutes | #775 | **fait** |
 | R9 | Inscription orpheline, « mot de passe oublié » sans backend | #771 | **fait** |
-| R10 | Boutons de création d'immeuble et de lot cachés au syndic alors que l'API est ouverte | #778 | **fait** |
-| R11 | CrowdSec bannit les testeurs, à cause de nos propres 404 | #766 | **palliatif** — liste blanche posée, la cause tient à R4 |
-| R12 | Test intermittent : UUID aléatoire contenant « 400 », bloquait le déploiement | #777 | **fait** |
+| R10 | Boutons de création d'immeuble et de lot cachés au syndic | #778 | **fait** |
+| R11 | CrowdSec bannit les testeurs à cause de nos propres 404 | #766 | **palliatif** — liste blanche posée, la cause tient à R4 |
+| R12 | Test intermittent : un UUID aléatoire contenant « 400 » bloquait le déploiement | #777 | **fait** |
 | R13 | Contrat OpenAPI absent pour `/expenses` et `/invoices` | #765 | ouvert |
 
-**Ce que ce track apprend, au-delà des lots.** Cinq défauts sur treize sont des
-capacités **écrites, testées et inatteignables** : les modules communautaires, la page
-d'inscription, les boutons de création, le plafonnement des voix, le bouton de clôture.
-Nos tests prouvent que le code marche tout en masquant qu'on ne peut pas y arriver.
-C'est le motif dominant de cette recette, et il n'est visible que par un humain devant
-un navigateur.
+#### R14 à R18 — recette 5
 
-**R1 et R4 sont bloquants pour la 0.1.0.** Le premier expose des données d'un client à
-un autre. Le second rend toute recette impossible au bout de quelques minutes, en plus
-de laisser dormir le module qui distingue le produit.
+| Lot | Contenu | Issue | État |
+|---|---|---|---|
+| R14 | **Les erreurs 400 nomment le champ fautif et l'interface le jette.** Trois coupures dans `api.ts` et `error.utils.ts`. Deux extracteurs de `details` existent déjà et **ne peuvent jamais fonctionner** | #782 | ouvert |
+| R15 | `acp_id` absent du formulaire d'immeuble pour un syndic. **Régression introduite par R10** : le bouton a été ouvert, pas le champ | #783 | ouvert |
+| R16 | L'envoi de convocation exige `recipient_owner_ids` que l'interface ne peut pas constituer | #784 | ouvert |
+| R17 | « Reporter » : la source est correcte et le câblage aussi. **Suspicion de bundle JS périmé servi par le service worker** | #785 | ouvert |
+| R18 | Le type `Vote` du frontend ne correspond pas au DTO servi ; clé `notices.draft` affichée en clair | #786 | ouvert |
+
+#### R19 à R21 — revue de design frontend, « Part 0 »
+
+Dix défauts de code, **vérifiés un par un**, une issue chacun. La refonte UX elle-même
+reste **hors 0.1.0** : son étape principale, le passage du périmètre à l'ACP dans le modèle
+de données et `permissions.ts`, touche la même zone que R1, où 73 routes n'ont toujours
+aucune identité.
+
+| Lot | Contenu | Issue |
+|---|---|---|
+| R19 | **Le jeton JWT et le `localStorage` écrits dans la console du navigateur** | #787 |
+| R20 | Classes Tailwind interpolées : les styles ne sont jamais générés (tableau comptable, grille du conseil) | #788, #789 |
+| R21 | Dette de forme : configuration Tailwind morte, `theme-color` périmé, activité inventée à Paris et Lyon, énumérations brutes, accent manquant, piège de focus absent, desktop-first | #790, #796, #791, #792, #793, #794, #795 |
+
+#### Ce que ce track apprend, et qui dépasse ses lots
+
+**La majorité des défauts trouvés sont des capacités écrites, testées et inatteignables.**
+Les modules communautaires, la page d'inscription, les boutons de création, le plafonnement
+des voix, la clôture du vote, les deux extracteurs de `details`, la règle de l'Art. 3.87 § 3
+al. 3 sur l'accord préalable au courriel : dans chaque cas le code existe, ses tests passent,
+et rien n'y mène.
+
+**Nos tests prouvent que le code marche tout en masquant qu'on ne peut pas y arriver.** Ce
+motif n'est visible que par un humain devant un navigateur, et cinq recettes l'ont confirmé.
+
+**Une seconde cause commune est apparue en recette 5** : le frontend et le serveur ne
+s'accordent pas sur les noms de champs, et rien ne le détecte — `acp_id`,
+`recipient_owner_ids`, `total_voting_power`, `vote_choice`, `voted_at`, `content`. C'est
+R13 : sans contrat OpenAPI, le frontend écrit ses types à la main et ils dérivent.
+
+**R1, R4, R14, R15 et R19 sont les plus bloquants.** R1 et R19 exposent des données. R14
+rend visible tout le reste. R15 empêche de créer un immeuble. R4 fait bannir les testeurs.
 
 ### Track F — Ops (repris tel quel)
 
@@ -198,7 +238,29 @@ Ces deux actes ne sont pas délégables : cf. `docs/governance/RESPONSABILITE.md
 
 ## Ce qui reste, et ce qui le bloque
 
-Au 2026-09-03, trois catégories bien distinctes.
+### ⚠️ Le périmètre a changé le 2026-09-06
+
+**Sur décision du 06, les trente et une issues ouvertes ce jour-là entrent au périmètre de la
+0.1.0 et bloquent le tag.** Le compte passe de **34 à 50 issues ouvertes** en
+`release:0.1.0`. `#775` et `#781`, jusque-là en 0.2.0, ont été remontées.
+
+Ce n'est pas un ajustement de forme. Cela change ce que « v0.1.0 » signifie : la release ne
+sera plus « ce qui fonctionne assez pour être montré », mais « ce qu'un syndic peut mener à
+son terme sans se heurter à un mur ». Le Track R ci-dessus dit pourquoi — cinq recettes
+navigateur ont montré qu'une part importante du produit est écrite, testée et inatteignable.
+
+Trois conséquences à assumer :
+
+- **La date recule.** Cinquante issues ne se ferment pas en une semaine, et plusieurs
+  demandent un arbitrage produit (#770, #779, #781) ou un travail de fond (#772, 73 routes
+  sans identité).
+- **G1 devient plus utile.** La revue humaine portera sur un produit dont le parcours
+  central va au bout, ce qui n'est pas le cas aujourd'hui.
+- **L'ordre compte plus que le compte.** R14 (#782) rend visibles les erreurs et donc tout
+  le reste ; R15 (#783) débloque #770 ; R1 (#772) et R19 (#787) exposent des données. Ces
+  quatre-là d'abord.
+
+### Les catégories antérieures, au 2026-09-03
 
 **Faisable ici** : #426 (nettoyage de docs), #427 (taxonomie et gate de release),
 et les volets restants des stories #576, #581, #582, #583, #663 — dont la part
@@ -237,13 +299,27 @@ les images. Pour relâcher sans supprimer : retirer le `needs: barrage`.
 
 ## Ordre d'exécution
 
-1. J2 → J3 → J4 (propriété ACP complète)
-2. J5 (garde d'écriture)
-3. J6 → J7 (invariants)
-4. J8 (registre exécutable)
-5. K1, K4, K5, K6, K7 (dette bloquante, parallélisable)
-6. F3 (drills)
-7. G1 puis G2
+**Le Track R passe devant**, parce qu'il contient ce qui expose des données et ce qui
+empêche d'utiliser le produit, et parce que R14 rend observable tout ce qui suit.
+
+1. **R14** (#782) — rendre les erreurs lisibles. Une seule correction d'affichage révèle une
+   classe entière de défauts, et réveille deux extracteurs morts. À faire en premier, sans
+   discussion : tout le reste se vérifie mieux ensuite.
+2. **R19** (#787) et **R1** (#772) — ce qui expose des données : le jeton en console, puis
+   les 73 routes imbriquées sans identité.
+3. **R15** (#783) et **R16** (#784) — les champs manquants, qui débloquent la création
+   d'immeuble et l'envoi de convocation, donc #770 et le cycle de vie d'une AG.
+4. **R17** (#785) — trancher l'hypothèse du bundle périmé **avant** d'écrire du code. Si elle
+   se confirme, elle remet en cause chaque vérification navigateur faite jusqu'ici.
+5. **R4** (#779) — rebrancher les modules communautaires, ce qui referme aussi R11.
+6. R18, R20, R21 — le reste du Track R, parallélisable.
+7. J2 → J3 → J4 (propriété ACP complète)
+8. J5 (garde d'écriture)
+9. J6 → J7 (invariants)
+10. J8 (registre exécutable)
+11. K1, K4, K5, K6, K7 (dette bloquante, parallélisable)
+12. F3 (drills)
+13. G1 puis G2
 
 ## Méthode
 
