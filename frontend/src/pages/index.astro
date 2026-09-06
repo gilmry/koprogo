@@ -41,6 +41,13 @@ const categoryColors: Record<string, string> = {
 				<a href="/blog" class="text-gray-600 hover:text-primary-700 transition">Blog</a>
 				<a href="#youtube" class="text-gray-600 hover:text-primary-700 transition hidden md:inline">YouTube</a>
 				<a
+					href="/register"
+					class="text-gray-600 hover:text-primary-700 transition font-medium"
+					data-testid="home-register-link"
+				>
+					Créer un compte
+				</a>
+				<a
 					href="/login"
 					class="px-5 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition font-medium"
 				>
@@ -267,8 +274,9 @@ const categoryColors: Record<string, string> = {
 					pour une gestion transparente et conforme.
 				</p>
 				<a
-					href="/login"
+					href="/register"
 					class="inline-block px-8 py-4 bg-white text-primary-700 rounded-lg hover:bg-primary-50 transition font-semibold text-lg shadow-lg"
+					data-testid="home-register-cta"
 				>
 					Commencer maintenant
 				</a>

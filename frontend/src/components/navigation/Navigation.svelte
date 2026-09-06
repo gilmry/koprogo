@@ -113,16 +113,40 @@
     { href: "/documents", label: t("navigation.documents"), icon: "📄" },
   ];
 
-  const getCommunauteItems = (t: any): NavItem[] => [
-    { href: "/exchanges", label: t("navigation.sel"), icon: "🔄" },
-    { href: "/polls", label: t("navigation.polls"), icon: "📊" },
-    { href: "/notices", label: t("navigation.notices"), icon: "📌" },
-    { href: "/bookings", label: t("navigation.bookings"), icon: "📅" },
-    { href: "/sharing", label: t("navigation.sharing_short"), icon: "🎁" },
-    { href: "/skills", label: t("navigation.skills"), icon: "🎓" },
-    { href: "/energy-campaigns", label: t("navigation.energy"), icon: "⚡" },
-    { href: "/gamification", label: t("navigation.gamification"), icon: "🏆" },
-  ];
+  // Modules communautaires effectivement servis par le backend.
+  //
+  // Mesuré le 2026-09-06 en sondant l'API depuis le conteneur, ce qui
+  // distingue une route absente (404) d'un simple refus d'authentification
+  // (401) :
+  //
+  //   polls 401, energy-campaigns 401   → servis
+  //   exchanges, notices, bookings, sharing, skills, gamification → 404
+  //
+  // Pourquoi les retirer du menu plutôt que les laisser. Six entrées de menu
+  // qui ne mènent nulle part ne sont pas seulement décevantes : ouvrir la
+  // section communautaire déclenchait une rafale de 404, et CrowdSec y voyait
+  // un scanner. Un testeur humain a été banni 4 h le 2026-09-06 sur douze de
+  // ces 404, puis a rapporté un « crash serveur » qui n'existait pas. Notre
+  // incomplétude fabriquait le profil d'un attaquant. Voir les issues #766 et
+  // #768.
+  //
+  // Les pages et leurs composants restent dans le dépôt : rien n'est supprimé.
+  // Rebrancher un module tient en une ligne ci-dessous, le jour où son backend
+  // existe — et le jour où on l'ajoute, on n'oubliera pas le menu, puisque
+  // c'est ici qu'on vient le chercher.
+  const MODULES_COMMUNAUTAIRES_SERVIS = ["/polls", "/energy-campaigns"];
+
+  const getCommunauteItems = (t: any): NavItem[] =>
+    [
+      { href: "/exchanges", label: t("navigation.sel"), icon: "🔄" },
+      { href: "/polls", label: t("navigation.polls"), icon: "📊" },
+      { href: "/notices", label: t("navigation.notices"), icon: "📌" },
+      { href: "/bookings", label: t("navigation.bookings"), icon: "📅" },
+      { href: "/sharing", label: t("navigation.sharing_short"), icon: "🎁" },
+      { href: "/skills", label: t("navigation.skills"), icon: "🎓" },
+      { href: "/energy-campaigns", label: t("navigation.energy"), icon: "⚡" },
+      { href: "/gamification", label: t("navigation.gamification"), icon: "🏆" },
+    ].filter((item) => MODULES_COMMUNAUTAIRES_SERVIS.includes(item.href));
 
   const getTicketingItems = (t: any): NavItem[] => [
     { href: "/tickets", label: t("navigation.tickets"), icon: "🎫" },

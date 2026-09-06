@@ -80,7 +80,57 @@ impl ResolutionUseCases {
 
     /// Get a resolution by ID
     pub async fn get_resolution(&self, id: Uuid) -> Result<Option<Resolution>, String> {
-        self.resolution_repository.find_by_id(id).await
+        let resolution = self.resolution_repository.find_by_id(id).await?;
+        match resolution {
+            Some(r) => Ok(Some(self.plafonner_pour_lecture(r).await)),
+            None => Ok(None),
+        }
+    }
+
+    /// Applique le plafond de l'Art. 3.87 § 7 al. 4 au décompte **avant de le
+    /// rendre**, sans rien persister.
+    ///
+    /// **Pourquoi c'est nécessaire.** Les compteurs de la résolution
+    /// accumulent les voix **brutes** à chaque bulletin (`record_vote_pour`
+    /// et consorts). Seul `close_voting` les recalculait plafonnés. Toute
+    /// lecture antérieure à la clôture rendait donc un décompte légalement
+    /// faux — et c'est celui-là que le syndic lit à l'écran pendant la
+    /// séance, puisque `pour_percentage()` en dérive. Constaté en recette le
+    /// 2026-09-04 (R3-1, R3-2) : Alice, 550 ‰ sur 1000, apparaissait à 550 au
+    /// lieu des 450 que lui laisse la somme des autres présents.
+    ///
+    /// **Pourquoi en mémoire seulement.** La clôture reste le seul moment où
+    /// le décompte officiel est arrêté et écrit. Persister ici ferait deux
+    /// écritures concurrentes du même fait, et une lecture pourrait figer un
+    /// décompte alors que des bulletins restent à venir.
+    ///
+    /// **Pourquoi réutiliser et ne pas recalculer.** `plafonner_les_voix` et
+    /// `repartir_le_plafond` sont les fonctions que `close_voting` emploie.
+    /// Une seconde implémentation du plafond, même correcte le jour où on
+    /// l'écrit, finirait par diverger de celle qui fait foi.
+    ///
+    /// En cas d'échec de lecture des bulletins, la résolution est rendue
+    /// telle quelle plutôt que de faire échouer la requête : une page qui
+    /// s'affiche vaut mieux qu'un 500. Le décompte reste alors brut, ce qui
+    /// est l'ancien comportement, jamais pire.
+    async fn plafonner_pour_lecture(&self, mut resolution: Resolution) -> Resolution {
+        let Ok(votes) = self
+            .vote_repository
+            .find_by_resolution_id(resolution.id)
+            .await
+        else {
+            return resolution;
+        };
+        if votes.is_empty() {
+            return resolution;
+        }
+        let decompte = crate::domain::copropriete::plafonner_les_voix(&votes);
+        if decompte.ecarts().is_empty() {
+            return resolution;
+        }
+        let poids_retenus = crate::domain::copropriete::repartir_le_plafond(&votes, &decompte);
+        resolution.recompter_avec(&votes, &poids_retenus);
+        resolution
     }
 
     /// Get all resolutions for a meeting
@@ -88,9 +138,17 @@ impl ResolutionUseCases {
         &self,
         meeting_id: Uuid,
     ) -> Result<Vec<Resolution>, String> {
-        self.resolution_repository
+        let resolutions = self
+            .resolution_repository
             .find_by_meeting_id(meeting_id)
-            .await
+            .await?;
+        // Même plafonnement qu'en lecture unitaire : la liste d'une séance est
+        // ce que le syndic a sous les yeux pendant qu'il préside.
+        let mut plafonnees = Vec::with_capacity(resolutions.len());
+        for r in resolutions {
+            plafonnees.push(self.plafonner_pour_lecture(r).await);
+        }
+        Ok(plafonnees)
     }
 
     /// Get resolutions by status
@@ -910,6 +968,157 @@ mod tests {
             let power: rust_decimal::Decimal = proxy_votes.iter().map(|v| v.voting_power).sum();
             Ok((count, power))
         }
+    }
+
+    /// Le décompte servi **avant** la clôture est déjà plafonné.
+    ///
+    /// Reproduction exacte de la recette du 2026-09-04 (R3-1) : Alice pèse
+    /// 550 ‰ et vote « pour », Bob (250) et Claire (200) votent « contre ».
+    /// L'Art. 3.87 § 7 al. 4 ramène Alice à 450, la somme des autres présents.
+    ///
+    /// Le testeur lisait 550 et concluait que le plafonnement n'était pas
+    /// implémenté. Il l'était — mais seulement dans `close_voting`, que rien
+    /// ne déclenche automatiquement. Toute la séance se déroulait donc sous
+    /// les yeux du syndic avec un décompte légalement faux.
+    ///
+    /// **Ce test lit sans clôturer.** C'était précisément l'angle mort : les
+    /// tests du domaine passaient, `close_voting` était correct, et l'API
+    /// restait fausse. Un test qui clôture d'abord ne prouverait rien ici.
+    #[tokio::test]
+    async fn test_art_3_87_la_lecture_avant_cloture_est_deja_plafonnee() {
+        let resolution_repo = Arc::new(MockResolutionRepository::new());
+        let vote_repo = Arc::new(MockVoteRepository::new());
+        let use_cases = ResolutionUseCases::new(
+            resolution_repo.clone(),
+            vote_repo.clone(),
+            Arc::new(MockMeetingRepository::new()),
+            Arc::new(MockUnitOwnerRepository::new()),
+        );
+
+        let resolution = Resolution::new(
+            Uuid::new_v4(),
+            "RECETTE-Approbation des comptes".to_string(),
+            "Scénario de recette du 2026-09-04".to_string(),
+            ResolutionType::Ordinary,
+            MajorityType::Absolute,
+            Some(1),
+        )
+        .expect("résolution valide");
+        let resolution_id = resolution.id;
+        resolution_repo
+            .create(&resolution)
+            .await
+            .expect("résolution enregistrée");
+
+        for (voix, choix) in [
+            (dec!(550), VoteChoice::Pour),
+            (dec!(250), VoteChoice::Contre),
+            (dec!(200), VoteChoice::Contre),
+        ] {
+            vote_repo
+                .create(
+                    &Vote::new(
+                        resolution_id,
+                        Uuid::new_v4(),
+                        Uuid::new_v4(),
+                        choix,
+                        voix,
+                        None,
+                    )
+                    .expect("vote valide"),
+                )
+                .await
+                .expect("vote enregistré");
+        }
+
+        // AUCUNE clôture ici. C'est tout l'objet du test.
+        let lue = use_cases
+            .get_resolution(resolution_id)
+            .await
+            .expect("lecture réussie")
+            .expect("résolution trouvée");
+
+        assert_eq!(
+            lue.total_voting_power_pour,
+            dec!(450),
+            "Alice doit être ramenée à la somme des autres présents (250 + 200), \
+             pas servie à ses 550 ‰ bruts"
+        );
+        assert_eq!(lue.total_voting_power_contre, dec!(450));
+        assert_eq!(
+            lue.pour_percentage(),
+            50.0,
+            "50 % n'est pas la majorité absolue : le pourcentage affiché doit \
+             répondre au résultat que la clôture proclamera"
+        );
+        assert_eq!(
+            lue.status,
+            ResolutionStatus::Pending,
+            "plafonner la lecture ne clôt pas la résolution"
+        );
+    }
+
+    /// Le plafonnement de lecture ne persiste rien.
+    ///
+    /// Deux lectures successives doivent rendre le même résultat. Si la
+    /// première écrivait le décompte corrigé, la seconde replafonnerait un
+    /// décompte déjà plafonné et le rétrécirait encore.
+    #[tokio::test]
+    async fn test_la_lecture_plafonnee_est_idempotente_et_ne_persiste_rien() {
+        let resolution_repo = Arc::new(MockResolutionRepository::new());
+        let vote_repo = Arc::new(MockVoteRepository::new());
+        let use_cases = ResolutionUseCases::new(
+            resolution_repo.clone(),
+            vote_repo.clone(),
+            Arc::new(MockMeetingRepository::new()),
+            Arc::new(MockUnitOwnerRepository::new()),
+        );
+
+        let resolution = Resolution::new(
+            Uuid::new_v4(),
+            "Lecture répétée".to_string(),
+            "Contrôle d'idempotence".to_string(),
+            ResolutionType::Ordinary,
+            MajorityType::Absolute,
+            Some(1),
+        )
+        .expect("résolution valide");
+        let resolution_id = resolution.id;
+        resolution_repo.create(&resolution).await.expect("créée");
+
+        for (voix, choix) in [
+            (dec!(550), VoteChoice::Pour),
+            (dec!(250), VoteChoice::Contre),
+            (dec!(200), VoteChoice::Contre),
+        ] {
+            vote_repo
+                .create(
+                    &Vote::new(
+                        resolution_id,
+                        Uuid::new_v4(),
+                        Uuid::new_v4(),
+                        choix,
+                        voix,
+                        None,
+                    )
+                    .expect("vote valide"),
+                )
+                .await
+                .expect("vote enregistré");
+        }
+
+        let une = use_cases
+            .get_resolution(resolution_id)
+            .await
+            .unwrap()
+            .unwrap();
+        let deux = use_cases
+            .get_resolution(resolution_id)
+            .await
+            .unwrap()
+            .unwrap();
+        assert_eq!(une.total_voting_power_pour, deux.total_voting_power_pour);
+        assert_eq!(deux.total_voting_power_pour, dec!(450));
     }
 
     /// Art. 3.87 § 7 : la clôture refuse une séance où un votant pèse plus
