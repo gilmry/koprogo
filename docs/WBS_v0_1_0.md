@@ -306,8 +306,9 @@ Ces deux actes ne sont pas délégables : cf. `docs/governance/RESPONSABILITE.md
 ### ⚠️ Le périmètre a doublé le 2026-09-06, et c'est une décision assumée
 
 **Tout ce qui restait en 0.2.0 entre en 0.1.0, avec la refonte UX/UI.** Le compte passe de
-**34 à 77 issues ouvertes** en `release:0.1.0` : les 31 ouvertes le 2026-09-06, les 24
-qui étaient en 0.2.0, et les 6 lots de la refonte. Il ne reste plus rien en 0.2.0.
+**34 à 84 issues ouvertes** en `release:0.1.0` : les 31 ouvertes le 2026-09-06, les 24
+qui étaient en 0.2.0, les 6 lots de la refonte, la documentation vivante et les défauts
+trouvés en vérifiant. Il ne reste plus rien en 0.2.0.
 
 **La raison est stratégique et elle est écrite ici pour qu'on s'en souvienne.** Le produit
 doit être bon **avant** la fondation de l'ASBL, parce que c'est sur lui que reposera la
