@@ -34,12 +34,12 @@ const categoryColors: Record<string, string> = {
 	<!-- Navigation bar -->
 	<header class="bg-white border-b border-gray-200 sticky top-0 z-50">
 		<div class="container mx-auto px-4 py-4 flex items-center justify-between">
-			<a href="/" class="text-2xl font-bold text-primary-700">KoproGo</a>
+			<a href="/" class="text-2xl font-bold text-primary-700" data-testid="home-logo">KoproGo</a>
 			<nav class="flex items-center gap-6">
-				<a href="#features" class="text-gray-600 hover:text-primary-700 transition hidden md:inline">Fonctionnalités</a>
-				<a href="#ideas" class="text-gray-600 hover:text-primary-700 transition hidden md:inline">Idées clés</a>
-				<a href="/blog" class="text-gray-600 hover:text-primary-700 transition">Blog</a>
-				<a href="#youtube" class="text-gray-600 hover:text-primary-700 transition hidden md:inline">YouTube</a>
+				<a href="#features" class="text-gray-600 hover:text-primary-700 transition hidden md:inline" data-testid="home-nav-features">Fonctionnalités</a>
+				<a href="#ideas" class="text-gray-600 hover:text-primary-700 transition hidden md:inline" data-testid="home-nav-ideas">Idées clés</a>
+				<a href="/blog" class="text-gray-600 hover:text-primary-700 transition" data-testid="home-nav-blog">Blog</a>
+				<a href="#youtube" class="text-gray-600 hover:text-primary-700 transition hidden md:inline" data-testid="home-nav-youtube">YouTube</a>
 				<a
 					href="/register"
 					class="text-gray-600 hover:text-primary-700 transition font-medium"
@@ -49,6 +49,7 @@ const categoryColors: Record<string, string> = {
 				</a>
 				<a
 					href="/login"
+					data-testid="home-login-nav"
 					class="px-5 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition font-medium"
 				>
 					Se connecter
@@ -72,12 +73,14 @@ const categoryColors: Record<string, string> = {
 				<div class="flex flex-col sm:flex-row justify-center gap-4">
 					<a
 						href="/login"
+						data-testid="home-login-hero"
 						class="px-8 py-4 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition font-semibold text-lg shadow-lg"
 					>
 						Accéder à la plateforme
 					</a>
 					<a
 						href="/blog"
+						data-testid="home-blog-hero"
 						class="px-8 py-4 bg-white text-primary-700 border-2 border-primary-200 rounded-lg hover:border-primary-400 transition font-semibold text-lg"
 					>
 						Lire le blog juridique
@@ -194,13 +197,13 @@ const categoryColors: Record<string, string> = {
 						<h2 class="text-3xl font-bold text-gray-900">Blog juridique</h2>
 						<p class="text-gray-600 mt-2">Guide pratique de la copropriété belge</p>
 					</div>
-					<a href="/blog" class="text-primary-700 hover:text-primary-800 font-medium transition hidden md:inline">
+					<a href="/blog" class="text-primary-700 hover:text-primary-800 font-medium transition hidden md:inline" data-testid="home-blog-more-desktop">
 						Tous les articles &rarr;
 					</a>
 				</div>
 				<div class="grid gap-8 md:grid-cols-3">
 					{latestPosts.map(post => (
-						<a href={`/blog/${post.id}`} class="group bg-white border border-gray-200 rounded-xl hover:shadow-lg transition-shadow overflow-hidden">
+						<a href={`/blog/${post.id}`} data-testid={`home-blog-post-${post.id}`} class="group bg-white border border-gray-200 rounded-xl hover:shadow-lg transition-shadow overflow-hidden">
 							<div class="p-6">
 								<div class="flex items-center gap-2 mb-3">
 									<span class={`px-2 py-0.5 rounded-full text-xs font-medium ${categoryColors[post.data.category] || 'bg-gray-100 text-gray-800'}`}>
@@ -218,7 +221,7 @@ const categoryColors: Record<string, string> = {
 					))}
 				</div>
 				<div class="mt-8 text-center md:hidden">
-					<a href="/blog" class="text-primary-700 hover:text-primary-800 font-medium transition">
+					<a href="/blog" class="text-primary-700 hover:text-primary-800 font-medium transition" data-testid="home-blog-more">
 						Tous les articles &rarr;
 					</a>
 				</div>
@@ -252,6 +255,7 @@ const categoryColors: Record<string, string> = {
 				<div class="text-center">
 					<a
 						href="https://www.youtube.com/@KoproGo"
+						data-testid="home-youtube-cta"
 						target="_blank"
 						rel="noopener noreferrer"
 						class="inline-flex items-center gap-2 px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition font-medium"
@@ -298,9 +302,9 @@ const categoryColors: Record<string, string> = {
 				<div>
 					<h3 class="text-white font-semibold mb-3">Liens utiles</h3>
 					<ul class="space-y-2 text-sm">
-						<li><a href="/blog" class="hover:text-white transition">Blog juridique</a></li>
-						<li><a href="/mentions-legales" class="hover:text-white transition">Mentions légales</a></li>
-						<li><a href="/mentions-legales#rgpd" class="hover:text-white transition">RGPD</a></li>
+						<li><a href="/blog" class="hover:text-white transition" data-testid="home-footer-blog">Blog juridique</a></li>
+						<li><a href="/mentions-legales" class="hover:text-white transition" data-testid="home-footer-legal">Mentions légales</a></li>
+						<li><a href="/mentions-legales#rgpd" class="hover:text-white transition" data-testid="home-footer-gdpr">RGPD</a></li>
 						<li><a href="https://github.com/gilmry/koprogo" target="_blank" rel="noopener noreferrer" class="hover:text-white transition">GitHub</a></li>
 					</ul>
 				</div>

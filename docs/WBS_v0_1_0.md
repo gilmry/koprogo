@@ -196,6 +196,40 @@ R13 : sans contrat OpenAPI, le frontend écrit ses types à la main et ils déri
 **R1, R4, R14, R15 et R19 sont les plus bloquants.** R1 et R19 exposent des données. R14
 rend visible tout le reste. R15 empêche de créer un immeuble. R4 fait bannir les testeurs.
 
+### Track U — Refonte UX/UI (revue Claude Design du 2026-09-06)
+
+Entrée au périmètre 0.1.0 sur décision du 06. Neuf lots, dont l'ordre est
+contraint : U2 dépend de R1, et tout le reste dépend de U1.
+
+| Lot | Contenu | Issue | Dépend de |
+|---|---|---|---|
+| U1 | **Jetons de design et jeu d'icônes SVG.** Les émojis collisionnent — 📋 📊 📅 📄 💰 servent chacun deux entrées de menu | #797 | — |
+| U2 | **Le périmètre devient l'ACP** dans le modèle de données et `permissions.ts`. Le plus gros lot, et celui dont tout dépend | #798 | **R1 (#772)** |
+| U3 | Coquille : barre latérale, barre de contexte unique, navigation mobile, inversion des points de rupture | #799 | U1, U2 |
+| U4 | Motif de liste unifié et composant d'encadré légal, alimenté par le registre de règles | #800 | U1 |
+| U5 | Tableaux de bord : une file de tâches, pas une navigation dupliquée. Mobile-first par rôle | #801 | U3, U4 |
+| U6 | Contrat de tests : ce qui doit survivre, ce qui s'adapte, ce que ce travail doit en plus | #802 | — |
+
+**U2 ne commence pas avant que R1 soit fermée.** Le passage à l'ACP touche
+`permissions.ts`, le store de périmètre et les gardes de portée — exactement la
+zone où **73 routes imbriquées n'ont aucune identité**. Remanier un
+cloisonnement pendant qu'il est percé serait l'ordre inverse du bon.
+
+**Le contrat `data-testid` est figé depuis le 2026-09-06** : 882 identifiants
+littéraux et 22 préfixes construits, versionnés dans
+`frontend/src/lib/__tests__/data-testid.contrat.json` et gardés par un cliquet.
+Il ne peut que grandir. Le code en offre 882 quand les tests n'en interrogent
+que ~530 : plus de trois cents existent sans filet et auraient disparu sans un
+bruit pendant la refonte.
+
+**Ce que la revue apporte au-delà des écrans.** Elle signale elle-même sa
+contradiction avec un test `@security` — sa barre latérale du comptable inclut
+un groupe Communauté, que `Navigation.test.ts` interdit — et tranche en faveur
+du test. Elle dit aussi que ses références légales et ses codes PCMN sont des
+valeurs de maquette, à lire depuis le registre de règles du projet. Sur un
+sujet où trois références périmées et une affirmation juridique sans base ont
+déjà été trouvées, c'est la bonne règle.
+
 ### Track F — Ops (repris tel quel)
 
 F1 et F2 sont satisfaits de fait : `koprogo.com` et `api.koprogo.com` répondent 200
@@ -238,27 +272,34 @@ Ces deux actes ne sont pas délégables : cf. `docs/governance/RESPONSABILITE.md
 
 ## Ce qui reste, et ce qui le bloque
 
-### ⚠️ Le périmètre a changé le 2026-09-06
+### ⚠️ Le périmètre a doublé le 2026-09-06, et c'est une décision assumée
 
-**Sur décision du 06, les trente et une issues ouvertes ce jour-là entrent au périmètre de la
-0.1.0 et bloquent le tag.** Le compte passe de **34 à 50 issues ouvertes** en
-`release:0.1.0`. `#775` et `#781`, jusque-là en 0.2.0, ont été remontées.
+**Tout ce qui restait en 0.2.0 entre en 0.1.0, avec la refonte UX/UI.** Le compte passe de
+**34 à 77 issues ouvertes** en `release:0.1.0` : les 31 ouvertes le 2026-09-06, les 24
+qui étaient en 0.2.0, et les 6 lots de la refonte. Il ne reste plus rien en 0.2.0.
 
-Ce n'est pas un ajustement de forme. Cela change ce que « v0.1.0 » signifie : la release ne
-sera plus « ce qui fonctionne assez pour être montré », mais « ce qu'un syndic peut mener à
-son terme sans se heurter à un mur ». Le Track R ci-dessus dit pourquoi — cinq recettes
-navigateur ont montré qu'une part importante du produit est écrite, testée et inatteignable.
+**La raison est stratégique et elle est écrite ici pour qu'on s'en souvienne.** Le produit
+doit être bon **avant** la fondation de l'ASBL, parce que c'est sur lui que reposera la
+levée de fonds. Une v0.1.0 qui se contenterait de « fonctionner assez pour être montré »
+serait suffisante pour une démonstration et insuffisante pour convaincre un financeur.
 
-Trois conséquences à assumer :
+Ce que « v0.1.0 » signifie change donc deux fois. Ce n'est plus « ce qui fonctionne assez
+pour être montré », ni même « ce qu'un syndic peut mener à son terme » : c'est **ce qu'on
+peut présenter à quelqu'un qui décide d'y mettre de l'argent**.
 
-- **La date recule.** Cinquante issues ne se ferment pas en une semaine, et plusieurs
-  demandent un arbitrage produit (#770, #779, #781) ou un travail de fond (#772, 73 routes
-  sans identité).
-- **G1 devient plus utile.** La revue humaine portera sur un produit dont le parcours
-  central va au bout, ce qui n'est pas le cas aujourd'hui.
+Quatre conséquences à assumer :
+
+- **La date recule nettement.** Soixante-dix-sept issues, dont plusieurs de fond : les 73
+  routes sans identité (#772), la migration `Result<_, String>` (#555, 1263 occurrences),
+  le périmètre ACP (#694, #798), et six lots de refonte.
 - **L'ordre compte plus que le compte.** R14 (#782) rend visibles les erreurs et donc tout
-  le reste ; R15 (#783) débloque #770 ; R1 (#772) et R19 (#787) exposent des données. Ces
-  quatre-là d'abord.
+  le reste ; R1 (#772) et R19 (#787) exposent des données ; U2 (#798) ne peut pas commencer
+  avant R1. Ces dépendances sont dures, pas indicatives.
+- **Trois arbitrages produit bloquent** : #770 (conformité et `total_units`), #779
+  (périmètre des modules communautaires), #781 (le syndic agissant pour l'ACP). Aucun ne se
+  tranche en écrivant du code.
+- **G1 devient le vrai jalon.** La revue humaine portera sur un produit complet, ce qui est
+  la seule façon d'en tirer un avis qui vaille pour un financeur.
 
 ### Les catégories antérieures, au 2026-09-03
 
@@ -313,13 +354,18 @@ empêche d'utiliser le produit, et parce que R14 rend observable tout ce qui sui
    se confirme, elle remet en cause chaque vérification navigateur faite jusqu'ici.
 5. **R4** (#779) — rebrancher les modules communautaires, ce qui referme aussi R11.
 6. R18, R20, R21 — le reste du Track R, parallélisable.
-7. J2 → J3 → J4 (propriété ACP complète)
-8. J5 (garde d'écriture)
-9. J6 → J7 (invariants)
-10. J8 (registre exécutable)
-11. K1, K4, K5, K6, K7 (dette bloquante, parallélisable)
-12. F3 (drills)
-13. G1 puis G2
+7. **U1** (#797) — jetons et icônes : tout le Track U s'appuie dessus.
+8. **U6** (#802) — relever le contrat de tests avant d'y toucher. Le contrat
+   `data-testid` est déjà figé et gardé par un cliquet.
+9. J2 → J3 → J4 (propriété ACP complète)
+10. J5 (garde d'écriture)
+11. J6 → J7 (invariants)
+12. J8 (registre exécutable)
+13. **U2** (#798) — le périmètre ACP, **une fois R1 fermée**, et pas avant.
+14. **U3 → U4 → U5** — coquille, motif de liste, tableaux de bord.
+15. K1, K4, K5, K6, K7 (dette bloquante, parallélisable)
+16. F3 (drills)
+17. G1 puis G2
 
 ## Méthode
 
