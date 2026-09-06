@@ -425,7 +425,18 @@
           <h2 class="text-lg font-semibold text-gray-900">{$_('dashboards.owner.quickActions')}</h2>
         </div>
         <div class="p-6">
-          <div class="grid grid-cols-2 md:grid-cols-{boardMandates.length > 0 ? '5' : '4'} gap-4">
+          <!-- Deux chaînes COMPLÈTES, pas une interpolation : Tailwind ne
+               génère que les classes qu'il voit écrites en toutes lettres.
+               `md:grid-cols-{...}` ne produisait ni `md:grid-cols-5` ni
+               `md:grid-cols-4`, si bien que la grille retombait sur deux
+               colonnes — et le cas qui avait le plus besoin de la cinquième,
+               celui d'un membre du conseil, était précisément celui qui ne
+               l'obtenait pas. Revue de design du 2026-09-06, issue #789. -->
+          <div
+            class="grid grid-cols-2 gap-4 {boardMandates.length > 0
+              ? 'md:grid-cols-5'
+              : 'md:grid-cols-4'}"
+          >
             <a href="/buildings" class="flex flex-col items-center justify-center p-6 border-2 border-gray-200 rounded-lg hover:border-primary-500 hover:bg-primary-50 transition group">
               <span class="text-4xl mb-2 group-hover:scale-110 transition">🏢</span>
               <span class="text-sm font-medium text-gray-700">{$_('navigation.buildings')}</span>

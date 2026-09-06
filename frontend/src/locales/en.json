@@ -70,7 +70,8 @@
       "totalTantiemes": "Total shares",
       "totalUnits": "Total units",
       "totalUnitsError": "Total units must be greater than 0",
-      "updatedSuccessfully": "Building updated successfully"
+      "updatedSuccessfully": "Building updated successfully",
+      "noAcpAskAdmin": "No ACP exists in your organisation yet. Only an administrator can create one: ask them to add the co-ownership before entering its building."
     },
     "errors": {
       "failedToLoadBoardMembers": "Failed to load board members",
@@ -1152,7 +1153,8 @@
         "newOrganization": "New organisation created",
         "newUser": "New user registered",
         "twoHoursAgo": "2 hours ago",
-        "yesterday": "Yesterday"
+        "yesterday": "Yesterday",
+        "notAvailableYet": "Recent activity will be shown from the audit log. This section is being wired up."
       },
       "quickActions": "Quick Actions",
       "recentActivity": "Recent Activity",
@@ -3344,7 +3346,8 @@
       "voter": "Voter",
       "votes": "{count, plural, one {vote} other {votes}}",
       "votingPower": "Voting power",
-      "votingPowerLabel": "Shares (thousandths)"
+      "votingPowerLabel": "Shares (thousandths)",
+      "unknownOwner": "Unidentified co-owner"
     },
     "voteAgainst": "Against",
     "voteFor": "For"

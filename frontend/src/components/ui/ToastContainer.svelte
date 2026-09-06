@@ -23,7 +23,7 @@
 <div class="fixed top-4 right-4 z-50 space-y-2">
   {#each $toast as item (item.id)}
     <div
-      class="flex items-center p-4 border rounded-lg shadow-lg max-w-md animate-slide-in {typeStyles[item.type]}"
+      class="flex items-start p-4 border rounded-lg shadow-lg max-w-md animate-slide-in {typeStyles[item.type]}"
       role="alert"
     >
       <svg class="w-5 h-5 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -32,6 +32,17 @@
 
       <div class="flex-1">
         <p class="text-sm font-medium">{item.message}</p>
+        {#if item.details}
+          <!-- Le détail servi par le serveur : c'est lui qui nomme le champ
+               fautif. Monospace parce qu'il cite souvent un nom de champ, et
+               sélectionnable pour être recopié dans un rapport. -->
+          <p
+            class="mt-1 text-xs font-mono opacity-80 break-words select-all"
+            data-testid="toast-details"
+          >
+            {item.details}
+          </p>
+        {/if}
       </div>
 
       <button

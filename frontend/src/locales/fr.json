@@ -70,7 +70,8 @@
       "totalTantiemes": "Total tantièmes",
       "totalUnits": "Nombre de lots",
       "totalUnitsError": "Le nombre de lots doit être supérieur à 0",
-      "updatedSuccessfully": "Immeuble mis à jour avec succès"
+      "updatedSuccessfully": "Immeuble mis à jour avec succès",
+      "noAcpAskAdmin": "Aucune ACP n'existe encore dans votre organisation. Seul un administrateur peut en créer une : demandez-lui d'ajouter la copropriété avant de saisir son immeuble."
     },
     "errors": {
       "failedToLoadBoardMembers": "Erreur lors du chargement des membres du conseil",
@@ -1152,7 +1153,8 @@
         "newOrganization": "Nouvelle organisation créée",
         "newUser": "Nouvel utilisateur inscrit",
         "twoHoursAgo": "Il y a 2 heures",
-        "yesterday": "Hier"
+        "yesterday": "Hier",
+        "notAvailableYet": "L'activité récente sera affichée depuis le journal d'audit. Cette section est en cours de raccordement."
       },
       "quickActions": "Actions rapides",
       "recentActivity": "Activité récente",
@@ -3344,7 +3346,8 @@
       "voter": "Votant",
       "votes": "{count, plural, one {vote} other {votes}}",
       "votingPower": "Pouvoir de vote",
-      "votingPowerLabel": "Tantièmes (millièmes)"
+      "votingPowerLabel": "Tantièmes (millièmes)",
+      "unknownOwner": "Copropriétaire non identifié"
     },
     "voteAgainst": "Contre",
     "voteFor": "Pour"

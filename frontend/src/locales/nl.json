@@ -70,7 +70,8 @@
       "totalTantiemes": "Totaal aandelen",
       "totalUnits": "Aantal eenheden",
       "totalUnitsError": "Aantal eenheden moet groter zijn dan 0",
-      "updatedSuccessfully": "Gebouw succesvol bijgewerkt"
+      "updatedSuccessfully": "Gebouw succesvol bijgewerkt",
+      "noAcpAskAdmin": "Er bestaat nog geen VME in uw organisatie. Alleen een beheerder kan er een aanmaken: vraag hem de mede-eigendom toe te voegen voordat u het gebouw invoert."
     },
     "errors": {
       "failedToLoadBoardMembers": "Fout bij het laden van bestuursleden",
@@ -1152,7 +1153,8 @@
         "newOrganization": "Nieuwe organisatie aangemaakt",
         "newUser": "Nieuwe gebruiker geregistreerd",
         "twoHoursAgo": "2 uur geleden",
-        "yesterday": "Gisteren"
+        "yesterday": "Gisteren",
+        "notAvailableYet": "De recente activiteit wordt weergegeven vanuit het auditlogboek. Deze sectie wordt nog aangesloten."
       },
       "quickActions": "Snelle acties",
       "recentActivity": "Recente activiteit",
@@ -3344,7 +3346,8 @@
       "voter": "Stemmer",
       "votes": "{count, plural, one {stem} other {stemmen}}",
       "votingPower": "Stemrecht",
-      "votingPowerLabel": "Aandelen (duizendsten)"
+      "votingPowerLabel": "Aandelen (duizendsten)",
+      "unknownOwner": "Niet-geïdentificeerde mede-eigenaar"
     },
     "voteAgainst": "Tegen",
     "voteFor": "Voor"

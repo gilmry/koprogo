@@ -43,11 +43,29 @@
   let loadingAcps = $state(false);
   let acpsLoadAttempted = $state(false);
   let isSuperAdmin = $state(false);
+  // Qui peut CRÉER un immeuble, et doit donc pouvoir désigner son ACP.
+  //
+  // Le serveur a ouvert `POST /buildings` au syndic le 2026-09-04, avec un
+  // contrôle de périmètre par ACP (`verify_acp_org_access`). Le BOUTON a été
+  // ouvert le 2026-09-05 (#778). Le CHAMP ACP, lui, est resté derrière
+  // `isSuperAdmin` : pour un syndic, aucune ACP n'était chargée, aucun select
+  // affiché, `acp_id` absent du corps — et la validation qui aurait pu
+  // l'arrêter était gardée pareillement.
+  //
+  // Résultat : 400 « missing field `acp_id` », sans message lisible. Une
+  // correction à moitié posée vaut parfois moins que pas de correction du
+  // tout. Constaté en recette le 2026-09-06 (RN-17), issue #783.
+  //
+  // La MODIFICATION d'ACP reste au superadmin : `update_building` la lui
+  // réserve côté serveur (`building_handlers.rs:279`).
+  let peutDesignerLAcp = $state(false);
 
   // Check if user is SuperAdmin
   $effect(() => {
     if ($authStore.user) {
       isSuperAdmin = $authStore.user.role === 'superadmin';
+      peutDesignerLAcp =
+        $authStore.user.role === 'superadmin' || $authStore.user.role === 'syndic';
     }
   });
 
@@ -57,7 +75,7 @@
   // sans lui, l'effet se re-déclenche indéfiniment tant qu'aucune ACP
   // n'existe (bug réel, pas seulement un artefact de test).
   $effect(() => {
-    if (isOpen && isSuperAdmin && !acpsLoadAttempted) {
+    if (isOpen && peutDesignerLAcp && !acpsLoadAttempted) {
       loadAcps();
     }
     if (!isOpen) {
@@ -74,6 +92,16 @@
         value: acp.id,
         label: `${acp.name} — ${acp.address_street}, ${acp.address_postal_code} ${acp.address_city}`,
       }));
+      // Une seule ACP : la choisir pour l'utilisateur.
+      //
+      // Un syndic de cabinet à ACP unique n'a rien à décider ici, et
+      // l'obliger à ouvrir une liste d'un élément est une occasion d'oublier.
+      // Le store de périmètre porte bien un `selectedAcpId`, mais il n'est
+      // peuplé qu'après sélection d'un immeuble — inutilisable à la création,
+      // où aucun immeuble n'existe encore.
+      if (mode === 'create' && acps.length === 1 && !formData.acp_id) {
+        formData.acp_id = acps[0].id;
+      }
     } catch (e) {
       console.error('Error loading ACPs:', e);
     } finally {
@@ -170,7 +198,7 @@
     }
 
     // ACP validation (only for SuperAdmin in create mode — required by backend)
-    if (isSuperAdmin && mode === 'create' && !formData.acp_id) {
+    if (peutDesignerLAcp && mode === 'create' && !formData.acp_id) {
       errors.acp_id = $_('admin.building.acpRequired');
       isValid = false;
     }
@@ -197,10 +225,11 @@
         construction_year: formData.construction_year,
       };
 
-      // acp_id : requis à la création (SuperAdmin uniquement, cf. backend
-      // building_handlers.rs), optionnel en édition (réaffectation d'ACP).
+      // `acp_id` est REQUIS à la création — `CreateBuildingDto` le déclare
+      // sans `Option` — et optionnel en édition, où il vaut réaffectation et
+      // reste réservé au superadmin.
       if (mode === 'create') {
-        if (isSuperAdmin && formData.acp_id) {
+        if (peutDesignerLAcp && formData.acp_id) {
           payload.acp_id = formData.acp_id;
         }
       } else if (mode === 'edit' && isSuperAdmin && formData.acp_id) {
@@ -270,7 +299,7 @@
     class="space-y-4"
     data-testid="building-form"
   >
-    {#if isSuperAdmin}
+    {#if peutDesignerLAcp}
       <FormSelect
         id="building-acp"
         label={$_('admin.building.acp')}
@@ -279,7 +308,9 @@
         error={errors.acp_id}
         required={mode === 'create'}
         placeholder={loadingAcps ? $_('common.loading') : $_('admin.building.selectAcp')}
-        hint={!loadingAcps && acpOptions.length === 0 ? $_('admin.building.noAcpAvailable') : ''}
+        hint={!loadingAcps && acpOptions.length === 0
+          ? $_(isSuperAdmin ? 'admin.building.noAcpAvailable' : 'admin.building.noAcpAskAdmin')
+          : ''}
         disabled={loadingAcps}
         data-testid="building-acp-select"
       />

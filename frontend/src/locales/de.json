@@ -70,7 +70,8 @@
       "totalTantiemes": "Gesamtanteile",
       "totalUnits": "Gesamtanzahl Einheiten",
       "totalUnitsError": "Gesamtanzahl muss größer als 0 sein",
-      "updatedSuccessfully": "Gebäude erfolgreich aktualisiert"
+      "updatedSuccessfully": "Gebäude erfolgreich aktualisiert",
+      "noAcpAskAdmin": "In Ihrer Organisation besteht noch keine Eigentümergemeinschaft. Nur ein Administrator kann eine anlegen: Bitten Sie ihn darum, bevor Sie das Gebäude erfassen."
     },
     "errors": {
       "failedToLoadBoardMembers": "Fehler beim Laden der Vorstandsmitglieder",
@@ -1152,7 +1153,8 @@
         "newOrganization": "Neue Organisation erstellt",
         "newUser": "Neuer Benutzer registriert",
         "twoHoursAgo": "Vor 2 Stunden",
-        "yesterday": "Gestern"
+        "yesterday": "Gestern",
+        "notAvailableYet": "Die letzten Aktivitäten werden aus dem Prüfprotokoll angezeigt. Dieser Bereich wird gerade angebunden."
       },
       "quickActions": "Schnellaktionen",
       "recentActivity": "Letzte Aktivität",
@@ -3344,7 +3346,8 @@
       "voter": "Abstimmender",
       "votes": "{count, plural, one {Stimme} other {Stimmen}}",
       "votingPower": "Stimmrecht",
-      "votingPowerLabel": "Anteile (Tausendstel)"
+      "votingPowerLabel": "Anteile (Tausendstel)",
+      "unknownOwner": "Nicht identifizierter Miteigentümer"
     },
     "voteAgainst": "Dagegen",
     "voteFor": "Dafür"

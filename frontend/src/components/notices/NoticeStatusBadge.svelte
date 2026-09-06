@@ -28,5 +28,11 @@
 </script>
 
 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {config.class}">
-  {$_("notices." + status.toLowerCase())}
+  <!-- La clé vient de `statusConfig`, pas d'une interpolation.
+       `"notices." + status.toLowerCase()` donnait `notices.draft`, une clé qui
+       n'existe pas : c'est la CLÉ BRUTE qui s'affichait sur chaque carte
+       d'annonce, alors que `labelKey` juste au-dessus porte la bonne
+       (`notices.status_draft`, présente dans les quatre langues). Constaté en
+       recette le 2026-09-06, RN-23, issue #786. -->
+  {$_(config.labelKey)}
 </span>

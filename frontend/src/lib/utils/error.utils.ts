@@ -7,7 +7,18 @@ export interface ErrorHandlingOptions<T> {
   setLoading?: (loading: boolean) => void;
   /** Toast message on success. If undefined, no success toast shown. */
   successMessage?: string;
-  /** Fallback error message if err.message is empty */
+  /**
+   * Titre du message d'erreur. **Prioritaire sur `err.message`.**
+   *
+   * Le JSDoc disait « Fallback error message if err.message is empty », ce
+   * qui décrivait l'inverse du code : `opts.errorMessage || err?.message`
+   * fait toujours gagner le libellé de l'appelant. Environ 197 appelants en
+   * fournissent un, donc le message du serveur était écrasé partout.
+   *
+   * On conserve ce comportement — ces libellés sont en français, ceux du
+   * serveur souvent en anglais — mais le DÉTAIL du serveur est désormais
+   * ajouté en seconde ligne du toast. Voir l'issue #782.
+   */
   errorMessage?: string;
   /** Called with result on success, before returning */
   onSuccess?: (result: T) => void;
@@ -28,6 +39,23 @@ export interface ErrorHandlingOptions<T> {
  * });
  * if (ticket) dispatch("updated", ticket);
  */
+/**
+ * Le détail à afficher sous le titre d'un toast d'erreur.
+ *
+ * `apiFetch` lève une `ApiError` qui porte le corps de la réponse. Quand le
+ * serveur nomme le champ fautif — « missing field `acp_id` » — c'est cette
+ * chaîne qu'on montre, sous le libellé français de l'appelant.
+ *
+ * Rendu `undefined` si le détail n'est pas une chaîne : les erreurs métier
+ * typées (`{code, ...}`) ont leurs gestionnaires dédiés dans `conformity.ts`
+ * et `meetingCompletion.ts`, et un objet brut ne dirait rien à personne.
+ */
+function detailDuServeur(err: any): string | undefined {
+  if (typeof err?.details === "string") return err.details;
+  if (typeof err?.details?.message === "string") return err.details.message;
+  return undefined;
+}
+
 export async function withErrorHandling<T>(
   opts: ErrorHandlingOptions<T>,
 ): Promise<T | undefined> {
@@ -40,8 +68,13 @@ export async function withErrorHandling<T>(
     opts.onSuccess?.(result);
     return result;
   } catch (err: any) {
-    const message = opts.errorMessage || err?.message || "An error occurred";
-    toast.error(message);
+    // `apiFetch` a déjà émis un toast pour les 4xx et 5xx : en émettre un
+    // second, au libellé différent, en affichait deux que la déduplication ne
+    // fusionnait pas. On ne parle que si personne n'a parlé.
+    if (!err?.body?.__toastEmis) {
+      const message = opts.errorMessage || err?.message || "An error occurred";
+      toast.error(message, 7000, detailDuServeur(err));
+    }
     return undefined;
   } finally {
     opts.setLoading?.(false);
@@ -75,7 +108,9 @@ export async function withLoadingState<T>(opts: {
   } catch (err: any) {
     const message = opts.errorMessage || err?.message || "An error occurred";
     opts.setError(message);
-    toast.error(message);
+    if (!err?.body?.__toastEmis) {
+      toast.error(message, 7000, detailDuServeur(err));
+    }
   } finally {
     opts.setLoading(false);
   }

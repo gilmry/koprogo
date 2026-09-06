@@ -78,19 +78,21 @@
     seedMessage = "";
     seedError = "";
 
-    // DEBUG: Log token state
-    console.log("=== DEBUG: Seed Demo Data ===");
-    console.log("Auth Store State:", $authStore);
-    console.log("Token:", $authStore.token);
-    console.log("Is Authenticated:", $authStore.isAuthenticated);
-    if (typeof window !== "undefined") {
-      // WP-FE1 : access token en mémoire (jamais localStorage) ;
-      // refresh = cookie HttpOnly (illisible par JS).
-      console.log("In-memory access token present:", $authStore.token !== null);
-      console.log("LocalStorage User:", localStorage.getItem("koprogo_user"));
-    }
-    console.log("API Endpoint:", apiEndpoint("/seed/demo"));
-    console.log("============================");
+    // Aucune trace de débogage ici, et surtout pas du jeton.
+    //
+    // Ce bloc écrivait `console.log("Token:", $authStore.token)`, l'état
+    // complet du store d'authentification, et le contenu du `localStorage`.
+    // Le jeton d'accès d'un compte ADMINISTRATEUR se retrouvait en clair dans
+    // la console du navigateur, lisible par toute personne devant l'écran,
+    // toute extension de navigateur, toute capture d'écran et tout outil de
+    // collecte de journaux. Le rendre invisible au JavaScript (WP-FE1, jeton
+    // en mémoire et cookie HttpOnly) ne sert à rien si on le recopie ensuite.
+    //
+    // Une action d'administration se trace au JOURNAL D'AUDIT, côté serveur,
+    // où elle est datée, attribuée et conservée. Pas dans la console du
+    // client, qui n'appartient à personne.
+    //
+    // Voir l'issue #787.
 
     try {
       const response = await fetch(apiEndpoint("/seed/demo"), {
@@ -488,48 +490,21 @@
         </h2>
       </div>
       <div class="p-6">
-        <div class="space-y-4">
-          <div class="flex items-start space-x-3">
-            <span class="text-2xl">🏛️</span>
-            <div class="flex-1">
-              <p class="text-sm font-medium text-gray-900">
-                {$_("dashboards.admin.activity.newOrganization")}
-              </p>
-              <p class="text-sm text-gray-600">
-                Copropriété Les Jardins - Paris 15e
-              </p>
-              <p class="text-xs text-gray-400 mt-1">
-                {$_("dashboards.admin.activity.twoHoursAgo")}
-              </p>
-            </div>
-          </div>
-          <div class="flex items-start space-x-3">
-            <span class="text-2xl">👤</span>
-            <div class="flex-1">
-              <p class="text-sm font-medium text-gray-900">
-                {$_("dashboards.admin.activity.newUser")}
-              </p>
-              <p class="text-sm text-gray-600">
-                jean.dupont@example.com (Syndic)
-              </p>
-              <p class="text-xs text-gray-400 mt-1">
-                {$_("dashboards.admin.activity.fiveHoursAgo")}
-              </p>
-            </div>
-          </div>
-          <div class="flex items-start space-x-3">
-            <span class="text-2xl">🏢</span>
-            <div class="flex-1">
-              <p class="text-sm font-medium text-gray-900">
-                {$_("dashboards.admin.activity.buildingAdded")}
-              </p>
-              <p class="text-sm text-gray-600">Résidence Le Parc - Lyon 3e</p>
-              <p class="text-xs text-gray-400 mt-1">
-                {$_("dashboards.admin.activity.yesterday")}
-              </p>
-            </div>
-          </div>
-        </div>
+        <!-- Aucune activité inventée.
+             Cette section affichait trois événements CODÉS EN DUR — une
+             copropriété « Paris 15e », un immeuble « Lyon 3e », une adresse
+             `jean.dupont@example.com` — dans un produit dont tout le reste est
+             belge : PCMN, Art. 3.87, BCE, tantièmes en millièmes.
+             Un administrateur ne pouvait pas distinguer, en regardant l'écran,
+             ce qui était réel de ce qui ne l'était pas.
+             La source légitime est le journal d'audit (`AuditLogEntry`,
+             `AuditEventType`), qui existe côté serveur mais n'est pas encore
+             exposé en lecture. En attendant, un état vide honnête vaut mieux
+             qu'une activité fictive. Revue de design du 2026-09-06, issue
+             #791. -->
+        <p class="text-sm text-gray-500" data-testid="admin-activity-empty">
+          {$_("dashboards.admin.activity.notAvailableYet")}
+        </p>
       </div>
     </div>
 

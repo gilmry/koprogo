@@ -50,8 +50,35 @@
     return type === 'paymentreceived' ? $_('dashboards.accountant.transaction.received') : $_('dashboards.accountant.transaction.made');
   }
 
-  function getTransactionColor(type: string): string {
-    return type === 'paymentreceived' ? 'green' : 'red';
+  /**
+   * Les classes d'une transaction, en CHAÎNES COMPLÈTES.
+   *
+   * Cette fonction rendait `'green'` ou `'red'`, et le gabarit composait
+   * `bg-{...}-50 border-{...}-200` et `text-{...}-600`. Tailwind ne fait pas
+   * d'analyse dynamique : il scanne le source à la recherche de classes
+   * entières. `bg-green-50` n'était donc **jamais générée** et n'entrait pas
+   * dans la feuille de style livrée.
+   *
+   * Les transactions s'affichaient sans fond, sans bordure et sans couleur de
+   * montant. Le code semblait juste, le rendu ne l'était pas, et rien ne le
+   * signalait — ni la compilation, ni les tests. Relevé par la revue de
+   * design du 2026-09-06, point 0.3, issue #788.
+   */
+  const TON_TRANSACTION = {
+    recu: {
+      cadre: 'bg-green-50 border-green-200',
+      montant: 'text-green-600',
+    },
+    sorti: {
+      cadre: 'bg-red-50 border-red-200',
+      montant: 'text-red-600',
+    },
+  } as const;
+
+  function tonDeLaTransaction(type: string) {
+    return type === 'paymentreceived'
+      ? TON_TRANSACTION.recu
+      : TON_TRANSACTION.sorti;
   }
 </script>
 
@@ -144,7 +171,7 @@
         {:else if transactions.length > 0}
           <div class="space-y-4">
             {#each transactions as transaction}
-              <div class="flex items-center justify-between p-4 bg-{getTransactionColor(transaction.transaction_type)}-50 border border-{getTransactionColor(transaction.transaction_type)}-200 rounded-lg">
+              <div class="flex items-center justify-between p-4 border rounded-lg {tonDeLaTransaction(transaction.transaction_type).cadre}">
                 <div class="flex items-center space-x-3">
                   <span class="text-2xl">{getTransactionIcon(transaction.transaction_type)}</span>
                   <div>
@@ -156,7 +183,7 @@
                     <p class="text-xs text-gray-400 mt-1">{formatDate(transaction.date)}</p>
                   </div>
                 </div>
-                <p class="text-lg font-bold text-{getTransactionColor(transaction.transaction_type)}-600">
+                <p class="text-lg font-bold {tonDeLaTransaction(transaction.transaction_type).montant}">
                   {transaction.amount >= 0 ? '+' : ''}{formatCurrency(transaction.amount)}
                 </p>
               </div>
