@@ -1944,7 +1944,8 @@
   "gamification.tier": "Niveau",
   "gdpr": {
     "article15": {
-      "title": "Droit d'accès (Art. 15)"
+      "title": "Droit d'accès (Art. 15)",
+      "desc": "Exportez toutes vos données personnelles dans un format lisible par machine : informations de compte, fiches de copropriétaire, lots détenus, dépenses, documents et participations aux assemblées."
     },
     "erase": {
       "confirmAction": "Effacer définitivement",
@@ -1968,23 +1969,28 @@
       "action": "Corriger mes informations",
       "modalTitle": "Corriger mes informations personnelles",
       "inProgress": "Mise à jour…",
-      "submit": "Enregistrer"
+      "submit": "Enregistrer",
+      "desc": "Corrigez toute donnée personnelle inexacte ou incomplète vous concernant. Vous pouvez modifier votre adresse électronique, votre prénom et votre nom.",
+      "hint": "Laissez un champ vide pour ne pas le modifier. Ne renseignez que ce que vous souhaitez changer."
     },
     "article18": {
       "title": "Droit à la limitation du traitement (Art. 18)",
       "restricted": "Traitement limité",
-      "active": "Traitement actif"
+      "active": "Traitement actif",
+      "desc": "Limitez temporairement le traitement de vos données personnelles. Pendant la limitation, vos données sont conservées mais ne sont plus traitées à d'autres fins."
     },
     "article21": {
       "title": "Droit d'opposition (Art. 21)",
       "optedOut": "Désinscrit des communications commerciales",
-      "optedIn": "Inscrit aux communications commerciales"
+      "optedIn": "Inscrit aux communications commerciales",
+      "desc": "Opposez-vous au traitement de vos données personnelles à des fins de prospection. Vous cessez alors de recevoir courriels promotionnels, lettres d'information et autres communications commerciales."
     },
     "article17": {
       "title": "Droit à l'effacement (Art. 17)",
       "action": "Demander l'effacement — irréversible",
       "checking": "Vérification de l'éligibilité…",
-      "contactSupport": "Contactez le support pour en savoir plus."
+      "contactSupport": "Contactez le support pour en savoir plus.",
+      "desc": "Demandez l'anonymisation définitive de vos données personnelles. Cette action est IRRÉVERSIBLE : vos informations identifiantes seront remplacées par des marqueurs anonymes et ne pourront pas être restaurées."
     },
     "export": {
       "action": "Exporter mes données",
@@ -2912,7 +2918,7 @@
       },
       "formDescription": "Consultez les copropriétaires entre les assemblées générales sur des décisions ponctuelles",
       "legalFramework": "Cadre légal",
-      "legalReference": "Article 577-8/4 §4 du Code Civil Belge",
+      "legalReference": "Consultation informelle, sans valeur de vote en assemblée",
       "legalText": "Le syndic peut consulter les copropriétaires entre les assemblées générales sur toute décision ne nécessitant pas de vote formel en AG. Les résultats doivent être documentés au procès-verbal de la prochaine AG.",
       "maxRating": "Note maximale",
       "minRating": "Note minimale",
@@ -3029,7 +3035,7 @@
   },
   "polls.results.averageRating": "Note moyenne",
   "polls.results.legalFramework": "Cadre légal",
-  "polls.results.legalText": "Article 577-8/4 §4 du Code Civil belge",
+  "polls.results.legalText": "Consultation informelle, sans valeur de vote en assemblée",
   "polls.results.openEndedMessage": "Réponses libres collectées",
   "polls.results.participationRate": "Taux de participation",
   "polls.results.ratingDistribution": "Distribution des notes",
@@ -3444,7 +3450,15 @@
     "success": {
       "loanRequestSent": "Demande de prêt envoyée avec succès"
     },
-    "title": "Partage d'objets"
+    "title": "Partage d'objets",
+    "pageTitle": "Bibliothèque d'objets partagés",
+    "pageSubtitle": "Empruntez et prêtez outils, matériel et autres objets au sein de votre copropriété",
+    "availabilityLabel": "Disponibilité",
+    "availableOnly": "Disponibles uniquement",
+    "empty": "Aucun objet partagé pour le moment.",
+    "allObjects": "Tous les objets",
+    "categoryLabel": "Catégorie",
+    "allCategories": "Toutes les catégories"
   },
   "skills": {
     "availability": "Disponibilité",
@@ -3490,7 +3504,17 @@
     "loadError": "Erreur lors du chargement des compétences",
     "noSkills": "Aucune compétence enregistrée.",
     "skill": "Compétence",
-    "title": "Annuaire des compétences"
+    "title": "Annuaire des compétences",
+    "pageTitle": "Annuaire des compétences",
+    "pageSubtitle": "Découvrez et partagez des compétences au sein de votre copropriété",
+    "offerAction": "Proposer une compétence",
+    "searchLabel": "Rechercher",
+    "searchPlaceholder": "Rechercher une compétence…",
+    "categoryLabel": "Catégorie",
+    "allCategories": "Toutes les catégories",
+    "expertiseLabel": "Niveau",
+    "allLevels": "Tous les niveaux",
+    "empty": "Aucune compétence proposée pour le moment."
   },
   "sync": {
     "ariaLabel": "Synchroniser les données",

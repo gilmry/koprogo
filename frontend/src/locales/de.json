@@ -1944,7 +1944,8 @@
   "gamification.tier": "Stufe",
   "gdpr": {
     "article15": {
-      "title": "Auskunftsrecht (Art. 15)"
+      "title": "Auskunftsrecht (Art. 15)",
+      "desc": "Exportieren Sie alle Ihre personenbezogenen Daten in einem maschinenlesbaren Format: Kontodaten, Eigentümerdatensätze, Einheiten, Ausgaben, Dokumente und Teilnahme an Versammlungen."
     },
     "erase": {
       "confirmAction": "Endgültig löschen",
@@ -1968,23 +1969,28 @@
       "action": "Meine Daten berichtigen",
       "modalTitle": "Personenbezogene Daten berichtigen",
       "inProgress": "Wird aktualisiert…",
-      "submit": "Speichern"
+      "submit": "Speichern",
+      "desc": "Berichtigen Sie unrichtige oder unvollständige personenbezogene Daten über Sie. Sie können E-Mail-Adresse, Vorname und Nachname ändern.",
+      "hint": "Lassen Sie ein Feld leer, um es nicht zu ändern. Geben Sie nur an, was Sie ändern möchten."
     },
     "article18": {
       "title": "Recht auf Einschränkung der Verarbeitung (Art. 18)",
       "restricted": "Verarbeitung eingeschränkt",
-      "active": "Verarbeitung aktiv"
+      "active": "Verarbeitung aktiv",
+      "desc": "Schränken Sie die Verarbeitung Ihrer personenbezogenen Daten vorübergehend ein. Während der Einschränkung werden Ihre Daten nur gespeichert und nicht weiterverarbeitet."
     },
     "article21": {
       "title": "Widerspruchsrecht (Art. 21)",
       "optedOut": "Von Werbekommunikation abgemeldet",
-      "optedIn": "Für Werbekommunikation angemeldet"
+      "optedIn": "Für Werbekommunikation angemeldet",
+      "desc": "Widersprechen Sie der Verarbeitung Ihrer personenbezogenen Daten zu Werbezwecken. Sie erhalten dann keine Werbe-E-Mails oder Newsletter mehr."
     },
     "article17": {
       "title": "Recht auf Löschung (Art. 17)",
       "action": "Löschung beantragen — unwiderruflich",
       "checking": "Berechtigung wird geprüft…",
-      "contactSupport": "Bitte wenden Sie sich an den Support."
+      "contactSupport": "Bitte wenden Sie sich an den Support.",
+      "desc": "Beantragen Sie die dauerhafte Anonymisierung Ihrer personenbezogenen Daten. Diese Aktion ist UNWIDERRUFLICH: Ihre identifizierenden Angaben werden durch anonyme Platzhalter ersetzt."
     },
     "export": {
       "action": "Meine Daten exportieren",
@@ -2912,7 +2918,7 @@
       },
       "formDescription": "Befragen Sie Miteigentümer zwischen Generalversammlungen zu einzelnen Entscheidungen",
       "legalFramework": "Rechtlicher Rahmen",
-      "legalReference": "Artikel 577-8/4 §4 des Belgischen Zivilgesetzbuches",
+      "legalReference": "Informelle Konsultation, ohne die Wirkung einer Abstimmung in der Versammlung",
       "legalText": "Der Verwalter kann Miteigentümer zwischen Generalversammlungen zu Entscheidungen befragen, die keine formelle GV-Abstimmung erfordern. Die Ergebnisse müssen im Protokoll der nächsten GV dokumentiert werden.",
       "maxRating": "Höchstbewertung",
       "minRating": "Mindestbewertung",
@@ -3029,7 +3035,7 @@
   },
   "polls.results.averageRating": "Durchschnittliche Bewertung",
   "polls.results.legalFramework": "Rechtlicher Rahmen",
-  "polls.results.legalText": "Artikel 577-8/4 §4 des belgischen Zivilgesetzbuches",
+  "polls.results.legalText": "Informelle Konsultation, ohne die Wirkung einer Abstimmung in der Versammlung",
   "polls.results.openEndedMessage": "Offene Antworten gesammelt",
   "polls.results.participationRate": "Beteiligungsrate",
   "polls.results.ratingDistribution": "Bewertungsverteilung",
@@ -3444,7 +3450,15 @@
     "success": {
       "loanRequestSent": "Leihanfrage erfolgreich gesendet"
     },
-    "title": "Objektteilung"
+    "title": "Objektteilung",
+    "pageTitle": "Bibliothek geteilter Gegenstände",
+    "pageSubtitle": "Leihen und verleihen Sie Werkzeuge, Ausrüstung und andere Gegenstände in Ihrer Eigentümergemeinschaft",
+    "availabilityLabel": "Verfügbarkeit",
+    "availableOnly": "Nur verfügbare",
+    "empty": "Noch keine geteilten Gegenstände.",
+    "allObjects": "Alle Gegenstände",
+    "categoryLabel": "Kategorie",
+    "allCategories": "Alle Kategorien"
   },
   "skills": {
     "availability": "Verfügbarkeit",
@@ -3490,7 +3504,17 @@
     "loadError": "Fehler beim Laden der Fähigkeiten",
     "noSkills": "Keine Fähigkeiten registriert.",
     "skill": "Fähigkeit",
-    "title": "Fähigkeitenverzeichnis"
+    "title": "Fähigkeitenverzeichnis",
+    "pageTitle": "Kompetenzverzeichnis",
+    "pageSubtitle": "Entdecken und teilen Sie Kompetenzen in Ihrer Eigentümergemeinschaft",
+    "offerAction": "Eine Kompetenz anbieten",
+    "searchLabel": "Suchen",
+    "searchPlaceholder": "Eine Kompetenz suchen…",
+    "categoryLabel": "Kategorie",
+    "allCategories": "Alle Kategorien",
+    "expertiseLabel": "Niveau",
+    "allLevels": "Alle Niveaus",
+    "empty": "Noch keine Kompetenzen angeboten."
   },
   "sync": {
     "ariaLabel": "Daten synchronisieren",

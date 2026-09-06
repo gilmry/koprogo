@@ -835,6 +835,26 @@ impl From<crate::domain::entities::MeetingNotCompletableError> for String {
 // Tests — taxonomie 4 catégories obligatoire (cf. CRITICAL.md règle #3, #427)
 // ============================================================================
 
+/// Refus opposé à qui n'a pas de fiche de copropriétaire, sur les modules
+/// communautaires qui engagent une personne : offre de compétence, prêt
+/// d'objet, réservation de ressource.
+///
+/// **Pourquoi une constante et pas un littéral recopié.** Six tests
+/// affirmaient `contains("Owner not found")`, c'est-à-dire le LIBELLÉ et non
+/// le comportement. Reformuler le message pour le rendre lisible par un
+/// utilisateur les a tous cassés, alors que rien n'avait changé de ce qu'ils
+/// prétendaient vérifier. Un test qui casse sur une reformulation décourage
+/// de reformuler — et le message est resté illisible longtemps pour cette
+/// raison. Constaté le 2026-09-06 (recette 4, RN-11).
+///
+/// Le vrai remède est une erreur TYPÉE : voir #555 et #762. En attendant,
+/// nommer la chaîne suffit à découpler l'assertion du libellé.
+pub const REFUS_RESERVE_AUX_COPROPRIETAIRES: &str =
+    "Cette action est réservée aux copropriétaires : elle engage une personne, \
+     pas la copropriété. Votre compte n'a pas de fiche de copropriétaire dans \
+     cette organisation. Si vous êtes syndic et souhaitez agir pour le compte \
+     de l'ACP, cette possibilité n'existe pas encore.";
+
 #[cfg(test)]
 mod tests {
     use super::*;

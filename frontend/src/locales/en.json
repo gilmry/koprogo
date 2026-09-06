@@ -1944,7 +1944,8 @@
   "gamification.tier": "Tier",
   "gdpr": {
     "article15": {
-      "title": "Right of Access (Art. 15)"
+      "title": "Right of Access (Art. 15)",
+      "desc": "Export all your personal data in a machine-readable format. This includes your account information, owner records, unit ownerships, expenses, documents, and meeting participation."
     },
     "erase": {
       "confirmAction": "Erase permanently",
@@ -1968,23 +1969,28 @@
       "action": "Update My Information",
       "modalTitle": "Update Personal Information",
       "inProgress": "Updating…",
-      "submit": "Update Information"
+      "submit": "Update Information",
+      "desc": "Correct any inaccurate or incomplete personal data we hold about you. You can update your email, first name, and last name.",
+      "hint": "Leave fields empty if you don't want to change them. Only provide the fields you wish to update."
     },
     "article18": {
       "title": "Right to Restriction of Processing (Art. 18)",
       "restricted": "Processing is restricted",
-      "active": "Processing is active"
+      "active": "Processing is active",
+      "desc": "Temporarily restrict how we process your personal data. While restricted, we will only store your data and not actively process it for other purposes."
     },
     "article21": {
       "title": "Right to Object (Art. 21)",
       "optedOut": "Opted out of marketing",
-      "optedIn": "Opted in to marketing"
+      "optedIn": "Opted in to marketing",
+      "desc": "Object to the processing of your personal data for marketing purposes. Opt out of receiving promotional emails, newsletters, and other marketing communications."
     },
     "article17": {
       "title": "Right to Erasure (Art. 17)",
       "action": "Request data erasure — irreversible",
       "checking": "Checking eligibility…",
-      "contactSupport": "Please contact support for more information."
+      "contactSupport": "Please contact support for more information.",
+      "desc": "Request the permanent anonymization of your personal data. This action is IRREVERSIBLE: your identifiable information will be replaced with anonymized placeholders and cannot be restored."
     },
     "export": {
       "action": "Export My Data",
@@ -2912,7 +2918,7 @@
       },
       "formDescription": "Consult with co-owners between general assemblies on specific decisions",
       "legalFramework": "Legal Framework",
-      "legalReference": "Article 577-8/4 §4 of the Belgian Civil Code",
+      "legalReference": "Informal consultation, without the force of a general meeting vote",
       "legalText": "The syndic may consult co-owners between general assemblies on any decision not requiring formal GA voting. Results must be documented in the next GA minutes.",
       "maxRating": "Maximum Rating",
       "minRating": "Minimum Rating",
@@ -3029,7 +3035,7 @@
   },
   "polls.results.averageRating": "Average rating",
   "polls.results.legalFramework": "Legal framework",
-  "polls.results.legalText": "Article 577-8/4 §4 of the Belgian Civil Code",
+  "polls.results.legalText": "Informal consultation, without the force of a general meeting vote",
   "polls.results.openEndedMessage": "Open-ended responses collected",
   "polls.results.participationRate": "Participation rate",
   "polls.results.ratingDistribution": "Rating distribution",
@@ -3444,7 +3450,15 @@
     "success": {
       "loanRequestSent": "Loan request sent successfully"
     },
-    "title": "Object Sharing"
+    "title": "Object Sharing",
+    "pageTitle": "Object Sharing Library",
+    "pageSubtitle": "Borrow and lend tools, equipment, and other items within your community",
+    "availabilityLabel": "Availability",
+    "availableOnly": "Available only",
+    "empty": "No shared objects found.",
+    "allObjects": "All objects",
+    "categoryLabel": "Category",
+    "allCategories": "All categories"
   },
   "skills": {
     "availability": "Availability",
@@ -3490,7 +3504,17 @@
     "loadError": "Error loading skills",
     "noSkills": "No skills registered.",
     "skill": "Skill",
-    "title": "Skills Directory"
+    "title": "Skills Directory",
+    "pageTitle": "Skills Directory",
+    "pageSubtitle": "Discover and share skills within your community",
+    "offerAction": "Offer your skill",
+    "searchLabel": "Search",
+    "searchPlaceholder": "Search skills…",
+    "categoryLabel": "Category",
+    "allCategories": "All categories",
+    "expertiseLabel": "Expertise",
+    "allLevels": "All levels",
+    "empty": "No skill offers found."
   },
   "sync": {
     "ariaLabel": "Synchronise data",

@@ -1944,7 +1944,8 @@
   "gamification.tier": "Niveau",
   "gdpr": {
     "article15": {
-      "title": "Recht op inzage (Art. 15)"
+      "title": "Recht op inzage (Art. 15)",
+      "desc": "Exporteer al uw persoonsgegevens in een machineleesbaar formaat: accountgegevens, eigenaarsdossiers, kavels, uitgaven, documenten en deelname aan vergaderingen."
     },
     "erase": {
       "confirmAction": "Definitief wissen",
@@ -1968,23 +1969,28 @@
       "action": "Mijn gegevens corrigeren",
       "modalTitle": "Persoonsgegevens corrigeren",
       "inProgress": "Bijwerken…",
-      "submit": "Opslaan"
+      "submit": "Opslaan",
+      "desc": "Corrigeer onjuiste of onvolledige persoonsgegevens over u. U kunt uw e-mailadres, voornaam en achternaam wijzigen.",
+      "hint": "Laat een veld leeg om het niet te wijzigen. Vul alleen in wat u wilt aanpassen."
     },
     "article18": {
       "title": "Recht op beperking van de verwerking (Art. 18)",
       "restricted": "Verwerking beperkt",
-      "active": "Verwerking actief"
+      "active": "Verwerking actief",
+      "desc": "Beperk tijdelijk de verwerking van uw persoonsgegevens. Tijdens de beperking worden uw gegevens alleen bewaard en niet verder verwerkt."
     },
     "article21": {
       "title": "Recht van bezwaar (Art. 21)",
       "optedOut": "Afgemeld voor commerciële communicatie",
-      "optedIn": "Aangemeld voor commerciële communicatie"
+      "optedIn": "Aangemeld voor commerciële communicatie",
+      "desc": "Maak bezwaar tegen de verwerking van uw persoonsgegevens voor marketingdoeleinden. U ontvangt dan geen promotionele e-mails of nieuwsbrieven meer."
     },
     "article17": {
       "title": "Recht op gegevenswissing (Art. 17)",
       "action": "Wissing aanvragen — onomkeerbaar",
       "checking": "Geschiktheid controleren…",
-      "contactSupport": "Neem contact op met de ondersteuning voor meer informatie."
+      "contactSupport": "Neem contact op met de ondersteuning voor meer informatie.",
+      "desc": "Vraag de definitieve anonimisering van uw persoonsgegevens aan. Deze actie is ONOMKEERBAAR: uw identificeerbare gegevens worden vervangen door anonieme plaatsaanduidingen."
     },
     "export": {
       "action": "Mijn gegevens exporteren",
@@ -2912,7 +2918,7 @@
       },
       "formDescription": "Raadpleeg mede-eigenaars tussen algemene vergaderingen over individuele beslissingen",
       "legalFramework": "Juridisch kader",
-      "legalReference": "Artikel 577-8/4 §4 van het Belgisch Burgerlijk Wetboek",
+      "legalReference": "Informele raadpleging, zonder de waarde van een stemming in de algemene vergadering",
       "legalText": "De syndicus kan de mede-eigenaars tussen de algemene vergaderingen raadplegen over elke beslissing die geen formele AG-stemming vereist. De resultaten moeten worden vastgelegd in het verslag van de volgende AG.",
       "maxRating": "Maximale score",
       "minRating": "Minimale score",
@@ -3029,7 +3035,7 @@
   },
   "polls.results.averageRating": "Gemiddelde beoordeling",
   "polls.results.legalFramework": "Juridisch kader",
-  "polls.results.legalText": "Artikel 577-8/4 §4 van het Belgisch Burgerlijk Wetboek",
+  "polls.results.legalText": "Informele raadpleging, zonder de waarde van een stemming in de algemene vergadering",
   "polls.results.openEndedMessage": "Open antwoorden verzameld",
   "polls.results.participationRate": "Deelnamegraad",
   "polls.results.ratingDistribution": "Beoordelingsverdeling",
@@ -3444,7 +3450,15 @@
     "success": {
       "loanRequestSent": "Leenaanvraag succesvol verzonden"
     },
-    "title": "Objecten delen"
+    "title": "Objecten delen",
+    "pageTitle": "Bibliotheek van gedeelde voorwerpen",
+    "pageSubtitle": "Leen en verleen gereedschap, materiaal en andere voorwerpen binnen uw mede-eigendom",
+    "availabilityLabel": "Beschikbaarheid",
+    "availableOnly": "Alleen beschikbare",
+    "empty": "Nog geen gedeelde voorwerpen.",
+    "allObjects": "Alle voorwerpen",
+    "categoryLabel": "Categorie",
+    "allCategories": "Alle categorieën"
   },
   "skills": {
     "availability": "Beschikbaarheid",
@@ -3490,7 +3504,17 @@
     "loadError": "Fout bij het laden van vaardigheden",
     "noSkills": "Geen vaardigheden geregistreerd.",
     "skill": "Vaardigheid",
-    "title": "Vaardigheidsgids"
+    "title": "Vaardigheidsgids",
+    "pageTitle": "Vaardighedengids",
+    "pageSubtitle": "Ontdek en deel vaardigheden binnen uw mede-eigendom",
+    "offerAction": "Een vaardigheid aanbieden",
+    "searchLabel": "Zoeken",
+    "searchPlaceholder": "Een vaardigheid zoeken…",
+    "categoryLabel": "Categorie",
+    "allCategories": "Alle categorieën",
+    "expertiseLabel": "Niveau",
+    "allLevels": "Alle niveaus",
+    "empty": "Nog geen vaardigheden aangeboden."
   },
   "sync": {
     "ariaLabel": "Gegevens synchroniseren",

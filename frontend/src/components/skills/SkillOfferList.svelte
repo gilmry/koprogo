@@ -7,6 +7,7 @@
     ExpertiseLevel,
   } from "../../lib/api/skills";
   import SkillOfferCard from "./SkillOfferCard.svelte";
+  import { _ } from "../../lib/i18n";
   import { withErrorHandling } from "../../lib/utils/error.utils";
 
   let { buildingId, showFilters = true }: {
@@ -76,13 +77,13 @@
         <!-- Search -->
         <div>
           <label for="search" class="block text-sm font-medium text-gray-700 mb-1">
-            Search
+            {$_("skills.searchLabel")}
           </label>
           <input
             type="text"
             id="search"
             bind:value={searchQuery}
-            placeholder="Search skills..."
+            placeholder={$_("skills.searchPlaceholder")}
             class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
           />
         </div>
@@ -90,14 +91,14 @@
         <!-- Category Filter -->
         <div>
           <label for="category" class="block text-sm font-medium text-gray-700 mb-1">
-            Category
+            {$_("skills.categoryLabel")}
           </label>
           <select
             id="category"
             bind:value={selectedCategory}
             class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
           >
-            <option value="all">All Categories</option>
+            <option value="all">{$_("skills.allCategories")}</option>
             {#each Object.values(SkillCategory) as category}
               <option value={category}>{category}</option>
             {/each}
@@ -107,14 +108,14 @@
         <!-- Expertise Filter -->
         <div>
           <label for="expertise" class="block text-sm font-medium text-gray-700 mb-1">
-            Expertise
+            {$_("skills.expertiseLabel")}
           </label>
           <select
             id="expertise"
             bind:value={selectedExpertise}
             class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
           >
-            <option value="all">All Levels</option>
+            <option value="all">{$_("skills.allLevels")}</option>
             {#each Object.values(ExpertiseLevel) as level}
               <option value={level}>{level}</option>
             {/each}
@@ -130,7 +131,7 @@
   {:else if filteredOffers.length === 0}
     <div class="bg-white shadow rounded-lg p-12 text-center">
       <p class="text-gray-500">
-        No skill offers found.
+        {$_("skills.empty")}
         {#if searchQuery || selectedCategory !== "all" || selectedExpertise !== "all"}
           Try adjusting your filters.
         {/if}

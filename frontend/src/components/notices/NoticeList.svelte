@@ -55,7 +55,7 @@
       const matchesSearch =
         searchQuery === "" ||
         notice.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        notice.content.toLowerCase().includes(searchQuery.toLowerCase());
+        (notice.content ?? "").toLowerCase().includes(searchQuery.toLowerCase());
 
       const matchesType = selectedType === "all" || notice.notice_type === selectedType;
 
@@ -75,7 +75,27 @@
     applyFilters();
   });
 
-  function truncate(text: string, maxLength: number): string {
+  /// Tronque un texte, en tolérant son ABSENCE.
+  ///
+  /// Deux points d'entrée servent la même collection d'annonces et ne rendent
+  /// PAS la même forme : `/buildings/{id}/notices` renvoie un
+  /// `NoticeSummaryDto`, qui n'a pas de `content` ; `/notices/{id}` renvoie un
+  /// `NoticeResponseDto`, qui en a un. Le type TypeScript généré déclare
+  /// `content: string` — il décrit le second et ment sur le premier.
+  ///
+  /// Conséquence mesurée le 2026-09-06 : `text.length` sur `undefined` levait
+  /// une `TypeError` PENDANT LE RENDU, donc hors du `try` de `withLoadingState`.
+  /// Le `finally` qui remet `loading` à faux n'était jamais atteint, et l'écran
+  /// restait sur « Chargement des annonces… » indéfiniment. C'est le RN-7 des
+  /// recettes 3 et 4, et il rendait la création d'annonce invérifiable : la
+  /// seule vue montrant un brouillon était précisément celle qui ne chargeait
+  /// jamais.
+  ///
+  /// Le défaut de fond — deux formes pour une même collection — est suivi dans
+  /// l'issue #765, sur l'absence de contrat OpenAPI. Ici on refuse simplement
+  /// qu'un champ absent casse la page.
+  function truncate(text: string | undefined | null, maxLength: number): string {
+    if (!text) return "";
     if (text.length <= maxLength) return text;
     return text.substring(0, maxLength) + "...";
   }

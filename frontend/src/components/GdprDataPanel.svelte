@@ -175,8 +175,7 @@
         <div class="ml-3 flex-1">
           <h3 class="text-lg font-medium text-blue-900">{$_('gdpr.article15.title')}</h3>
           <p class="mt-2 text-sm text-blue-700">
-            Export all your personal data in a machine-readable format. This includes your account information,
-            owner records, unit ownerships, expenses, documents, and meeting participation.
+            {$_('gdpr.article15.desc')}
           </p>
           <button
             on:click={handleExportData}
@@ -209,8 +208,7 @@
         <div class="ml-3 flex-1">
           <h3 class="text-lg font-medium text-green-900">{$_('gdpr.article16.title')}</h3>
           <p class="mt-2 text-sm text-green-700">
-            Correct any inaccurate or incomplete personal data we hold about you. You can update your email,
-            first name, and last name.
+            {$_('gdpr.article16.desc')}
           </p>
           <button
             on:click={() => showRectifyModal = true}
@@ -235,8 +233,7 @@
         <div class="ml-3 flex-1">
           <h3 class="text-lg font-medium text-yellow-900">{$_('gdpr.article18.title')}</h3>
           <p class="mt-2 text-sm text-yellow-700">
-            Temporarily restrict how we process your personal data. While restricted, we will only store your data
-            and not actively process it for other purposes.
+            {$_('gdpr.article18.desc')}
           </p>
           <div class="mt-4 flex items-center">
             <button
@@ -268,8 +265,7 @@
         <div class="ml-3 flex-1">
           <h3 class="text-lg font-medium text-purple-900">{$_('gdpr.article21.title')}</h3>
           <p class="mt-2 text-sm text-purple-700">
-            Object to the processing of your personal data for marketing purposes. Opt out of receiving promotional
-            emails, newsletters, and other marketing communications.
+            {$_('gdpr.article21.desc')}
           </p>
           <div class="mt-4 flex items-center">
             <button
@@ -301,8 +297,7 @@
         <div class="ml-3 flex-1">
           <h3 class="text-lg font-medium text-red-900">{$_('gdpr.article17.title')}</h3>
           <p class="mt-2 text-sm text-red-700">
-            Request the permanent anonymization of your personal data. This action is irreversible and will
-            replace your identifiable information with anonymized placeholders.
+            {$_('gdpr.article17.desc')}
           </p>
           {#if checkingErasure}
             <p class="mt-2 text-sm text-red-600">Checking eligibility...</p>
@@ -539,8 +534,8 @@
                   />
                 </div>
                 <p class="text-xs text-gray-500">
-                  Leave fields empty if you don't want to change them. Only provide the fields you wish to update.
-                </p>
+                  {$_('gdpr.article16.hint')}
+          </p>
               </div>
             </div>
           </div>
