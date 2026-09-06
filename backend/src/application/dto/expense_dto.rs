@@ -12,7 +12,7 @@ use validator::Validate;
 
 // ========== Legacy DTOs (backward compatibility) ==========
 
-#[derive(Debug, Deserialize, Validate, Clone)]
+#[derive(Debug, Deserialize, Validate, Clone, utoipa::ToSchema)]
 #[serde(deny_unknown_fields)]
 pub struct CreateExpenseDto {
     #[serde(default)]
@@ -69,7 +69,7 @@ pub struct CreateExpenseDto {
     pub line_items: Option<Vec<NouvelleLigneDeFactureDto>>,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, utoipa::ToSchema)]
 pub struct ExpenseResponseDto {
     pub id: String,
     /// ACP propriétaire de la charge — clé de rattachement patrimonial.
@@ -115,7 +115,7 @@ pub struct ExpenseResponseDto {
 
 /// Créer une facture brouillon avec gestion TVA.
 /// Validation des montants > 0 et taux 0-100 effectuée dans `Expense::new_with_vat`.
-#[derive(Debug, Deserialize, Validate, Clone)]
+#[derive(Debug, Deserialize, Validate, Clone, utoipa::ToSchema)]
 #[serde(deny_unknown_fields)]
 pub struct CreateInvoiceDraftDto {
     #[serde(default)]
@@ -139,7 +139,7 @@ pub struct CreateInvoiceDraftDto {
 }
 
 /// Modifier une facture brouillon ou rejetée.
-#[derive(Debug, Deserialize, Validate, Clone)]
+#[derive(Debug, Deserialize, Validate, Clone, utoipa::ToSchema)]
 #[serde(deny_unknown_fields)]
 pub struct UpdateInvoiceDraftDto {
     #[validate(length(min = 1))]
@@ -157,19 +157,19 @@ pub struct UpdateInvoiceDraftDto {
 }
 
 /// Soumettre une facture pour validation (Draft → PendingApproval).
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Debug, Deserialize, Clone, utoipa::ToSchema)]
 pub struct SubmitForApprovalDto {
     // Empty body, action via PUT /invoices/:id/submit
 }
 
 /// Approuver une facture (PendingApproval → Approved).
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Debug, Deserialize, Clone, utoipa::ToSchema)]
 pub struct ApproveInvoiceDto {
     pub approved_by_user_id: String, // User ID du syndic/admin
 }
 
 /// Rejeter une facture avec raison (PendingApproval → Rejected).
-#[derive(Debug, Deserialize, Validate, Clone)]
+#[derive(Debug, Deserialize, Validate, Clone, utoipa::ToSchema)]
 pub struct RejectInvoiceDto {
     pub rejected_by_user_id: String,
 

@@ -1992,7 +1992,8 @@
       "action": "Wissing aanvragen — onomkeerbaar",
       "checking": "Geschiktheid controleren…",
       "contactSupport": "Neem contact op met de ondersteuning voor meer informatie.",
-      "desc": "Vraag de definitieve anonimisering van uw persoonsgegevens aan. Deze actie is ONOMKEERBAAR: uw identificeerbare gegevens worden vervangen door anonieme plaatsaanduidingen."
+      "desc": "Vraag de definitieve anonimisering van uw persoonsgegevens aan. Deze actie is ONOMKEERBAAR: uw identificeerbare gegevens worden vervangen door anonieme plaatsaanduidingen.",
+      "blocked": "Uw gegevens kunnen momenteel niet worden gewist: wettelijke verplichtingen of lopende verrichtingen verhinderen dit."
     },
     "export": {
       "action": "Mijn gegevens exporteren",
@@ -2001,7 +2002,25 @@
       "download": "JSON downloaden",
       "noOwners": "Geen eigenaarsdossiers",
       "noUnits": "Geen gekoppelde kavels"
-    }
+    },
+    "checkingEligibility": "Geschiktheid controleren…",
+    "anonymizedSuccess": "Gegevens geanonimiseerd",
+    "anonymizedDetail": "Uw account en {count} eigenaarsdossier(s) zijn geanonimiseerd.",
+    "loggedOutIn": "U wordt over 3 seconden afgemeld…",
+    "exportDate": "Exportdatum",
+    "userInformation": "Accountgegevens",
+    "ownerRecords": "Eigenaarsdossiers",
+    "noOwnerRecords": "Geen eigenaarsdossiers",
+    "unitOwnerships": "Kavelbezit",
+    "noUnitOwnerships": "Geen kavelbezit",
+    "totalItems": "Totaal aantal items",
+    "confirmErase": "Weet u zeker dat u uw persoonsgegevens wilt wissen? Deze actie is onomkeerbaar en zal:",
+    "eraseStepOwners": "al uw eigenaarsdossiers anonimiseren",
+    "eraseStepReplace": "identificeerbare gegevens vervangen door plaatsaanduidingen",
+    "eraseStepLogout": "u onmiddellijk afmelden",
+    "cannotBeUndone": "Deze actie kan niet ongedaan worden gemaakt.",
+    "firstName": "Voornaam",
+    "lastName": "Achternaam"
   },
   "inspections": {
     "all": "Alle",

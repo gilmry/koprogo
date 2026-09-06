@@ -367,6 +367,23 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/buildings/{building_id}/expenses": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Lister les dépenses d'un immeuble */
+    get: operations["list_expenses_by_building"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/buildings/{building_id}/payments": {
     parameters: {
       query?: never;
@@ -785,6 +802,24 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/expenses": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Lister les dépenses de l'organisation */
+    get: operations["list_expenses"];
+    put?: never;
+    /** Créer une dépense */
+    post: operations["create_expense"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/expenses/{expense_id}/payments": {
     parameters: {
       query?: never;
@@ -813,6 +848,125 @@ export interface paths {
     get: operations["get_expense_total_paid"];
     put?: never;
     post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/expenses/{id}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Lire une dépense */
+    get: operations["get_expense"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/expenses/{id}/cancel": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Annuler une dépense */
+    post: operations["cancel_expense"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/expenses/{id}/export-quote-pdf": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Exporter un devis en PDF */
+    get: operations["export_work_quote_pdf"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/expenses/{id}/mark-overdue": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Marquer une dépense en retard */
+    post: operations["mark_expense_overdue"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/expenses/{id}/mark-paid": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /** Marquer une dépense comme payée */
+    put: operations["mark_expense_paid"];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/expenses/{id}/reactivate": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Réactiver une dépense annulée */
+    post: operations["reactivate_expense"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/expenses/{id}/unpay": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Annuler le paiement d'une dépense */
+    post: operations["unpay_expense"];
     delete?: never;
     options?: never;
     head?: never;
@@ -993,6 +1147,109 @@ export interface paths {
      *     * `500 Internal Server Error` - Database or processing error
      */
     put: operations["restrict_user_processing"];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/invoices/draft": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Créer une facture brouillon avec TVA */
+    post: operations["create_invoice_draft"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/invoices/pending": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Lister les factures en attente d'approbation */
+    get: operations["get_pending_invoices"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/invoices/{id}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Lire une facture */
+    get: operations["get_invoice"];
+    /** Modifier une facture brouillon ou rejetée */
+    put: operations["update_invoice_draft"];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/invoices/{id}/approve": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /** Approuver une facture */
+    put: operations["approve_invoice"];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/invoices/{id}/reject": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /** Rejeter une facture avec motif */
+    put: operations["reject_invoice"];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/invoices/{id}/submit": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /** Soumettre une facture pour validation */
+    put: operations["submit_invoice_for_approval"];
     post?: never;
     delete?: never;
     options?: never;
@@ -2826,6 +3083,10 @@ export interface components {
      * @enum {string}
      */
     ApprovalStatus: "draft" | "pending_approval" | "approved" | "rejected";
+    /** @description Approuver une facture (PendingApproval → Approved). */
+    ApproveInvoiceDto: {
+      approved_by_user_id: string;
+    };
     AssignRoleRequest: {
       /**
        * Format: uuid
@@ -3121,6 +3382,55 @@ export interface components {
       /** Format: uuid */
       technical_spec_id: string;
     };
+    CreateExpenseDto: {
+      /**
+       * @description Optional Belgian PCMN account code (e.g., "604001" for electricity)
+       *     Must reference an existing account in the organization's chart of accounts
+       */
+      account_code?: string | null;
+      /** @description Montant TTC (validé > 0 dans Expense::new). Decimal exact (cf. ADR-0007). */
+      amount: string;
+      /**
+       * @description Montant HT. Fourni avec `vat_rate`, la TVA est calculée et le TTC
+       *     déduit ; `amount` est alors ignoré au profit du calcul exact.
+       */
+      amount_excl_vat?: string | null;
+      building_id: string;
+      category: components["schemas"]["ExpenseCategory"];
+      description: string;
+      /** @description Échéance de règlement fournisseur (ISO 8601). */
+      due_date?: string | null;
+      expense_date: string;
+      invoice_number?: string | null;
+      /**
+       * @description Le détail de la facture, quand elle est saisie ligne par ligne.
+       *
+       *     Absent en saisie simple : la dépense ne porte alors que ses totaux.
+       */
+      line_items?: components["schemas"]["NouvelleLigneDeFactureDto"][] | null;
+      organization_id?: string;
+      supplier?: string | null;
+      /** @description Taux de TVA en POURCENTAGE (21.0 pour 21 %), validé 0..=100. */
+      vat_rate?: string | null;
+    };
+    /**
+     * @description Créer une facture brouillon avec gestion TVA.
+     *     Validation des montants > 0 et taux 0-100 effectuée dans `Expense::new_with_vat`.
+     */
+    CreateInvoiceDraftDto: {
+      /** @description Montant HT (validé > 0 dans `Expense::new_with_vat`). */
+      amount_excl_vat: string;
+      building_id: string;
+      category: components["schemas"]["ExpenseCategory"];
+      description: string;
+      due_date?: string | null;
+      invoice_date: string;
+      invoice_number?: string | null;
+      organization_id?: string;
+      supplier?: string | null;
+      /** @description Taux TVA en % (validé 0..=100 dans `Expense::new_with_vat`). */
+      vat_rate: string;
+    };
     /**
      * @description `deny_unknown_fields` : le rapport de test du 2026-09-01 (constat F16)
      *     signalait `operation_date` et `reference` « non persistes ». Les noms
@@ -3403,6 +3713,37 @@ export interface components {
       | "Administration"
       | "Works"
       | "Other";
+    ExpenseResponseDto: {
+      /** @description Belgian PCMN account code if linked to chart of accounts */
+      account_code?: string | null;
+      /**
+       * @description ACP propriétaire de la charge — clé de rattachement patrimonial.
+       *     Suit la copropriété lors des passations de syndic.
+       */
+      acp_id: string;
+      amount: string;
+      /** @description Montant hors TVA. */
+      amount_excl_vat?: string | null;
+      /** @description Montant TVA comprise. */
+      amount_incl_vat?: string | null;
+      approval_status: components["schemas"]["ApprovalStatus"];
+      building_id: string;
+      category: components["schemas"]["ExpenseCategory"];
+      /** @description Contractor report reference for Works category (Issue #309) */
+      contractor_report_id?: string | null;
+      description: string;
+      /** @description Échéance de règlement fournisseur (ISO 8601). */
+      due_date?: string | null;
+      expense_date: string;
+      id: string;
+      invoice_number?: string | null;
+      payment_status: components["schemas"]["PaymentStatus"];
+      supplier?: string | null;
+      /** @description Montant de TVA. */
+      vat_amount?: string | null;
+      /** @description Taux de TVA en POURCENTAGE (21.0 pour 21 %). */
+      vat_rate?: string | null;
+    };
     /**
      * @description Expertise level for skill proficiency
      * @enum {string}
@@ -3608,6 +3949,26 @@ export interface components {
       | "ResolutionVote"
       | "System";
     /**
+     * @description Une ligne de facture transmise **à la création** de la dépense.
+     *
+     *     Distincte de `CreateInvoiceLineItemDto`, qui exige un `expense_id` parce
+     *     qu'elle sert à ajouter une ligne à une facture déjà enregistrée. À la
+     *     création, la dépense n'a pas encore d'identifiant : le lien se fait après
+     *     coup, côté use-case.
+     *
+     *     Sans ce type, `InvoiceForm.svelte` envoyait `line_items` dans le corps et
+     *     serde les jetait en silence : la facture était créée avec ses totaux, et
+     *     le détail — description, quantité, prix unitaire, TVA de chaque ligne —
+     *     disparaissait sans le moindre avertissement. Un comptable saisissant une
+     *     facture ligne par ligne perdait son travail. Constaté le 2026-09-04.
+     */
+    NouvelleLigneDeFactureDto: {
+      description: string;
+      quantity: string;
+      unit_price: string;
+      vat_rate: string;
+    };
+    /**
      * @description Condition of shared object
      * @enum {string}
      */
@@ -3749,6 +4110,11 @@ export interface components {
       organization_id?: string | null;
       password: string;
       role: string;
+    };
+    /** @description Rejeter une facture avec raison (PendingApproval → Rejected). */
+    RejectInvoiceDto: {
+      rejected_by_user_id: string;
+      rejection_reason: string;
     };
     /**
      * @description Niveau de relance de paiement
@@ -3894,6 +4260,8 @@ export interface components {
      * @enum {string}
      */
     StoredPaymentMethodType: "card" | "sepa_debit";
+    /** @description Soumettre une facture pour validation (Draft → PendingApproval). */
+    SubmitForApprovalDto: Record<string, never>;
     SwitchRoleRequest: {
       /** Format: uuid */
       role_id: string;
@@ -4052,6 +4420,17 @@ export interface components {
       total_tantiemes?: number | null;
       /** Format: int32 */
       total_units: number;
+    };
+    /** @description Modifier une facture brouillon ou rejetée. */
+    UpdateInvoiceDraftDto: {
+      amount_excl_vat?: string | null;
+      category?: null | components["schemas"]["ExpenseCategory"];
+      description?: string | null;
+      due_date?: string | null;
+      invoice_date?: string | null;
+      invoice_number?: string | null;
+      supplier?: string | null;
+      vat_rate?: string | null;
     };
     /** @description Update payment method request DTO */
     UpdatePaymentMethodRequest: {
@@ -4823,6 +5202,47 @@ export interface operations {
       };
       /** @description Internal Server Error */
       500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  list_expenses_by_building: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        building_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Liste */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Non authentifié */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Immeuble hors de votre organisation */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Immeuble introuvable */
+      404: {
         headers: {
           [name: string]: unknown;
         };
@@ -5758,6 +6178,74 @@ export interface operations {
       };
     };
   };
+  list_expenses: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Liste paginée */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Non authentifié */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  create_expense: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["CreateExpenseDto"];
+      };
+    };
+    responses: {
+      /** @description Dépense créée */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Requête invalide */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Non authentifié */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Rôle sans droit d'encodage */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
   list_expense_payments: {
     parameters: {
       query?: never;
@@ -5807,6 +6295,244 @@ export interface operations {
       };
       /** @description Internal server error */
       500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  get_expense: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Dépense */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Non authentifié */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Introuvable */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  cancel_expense: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Dépense annulée */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Non authentifié */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Introuvable */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  export_work_quote_pdf: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description PDF */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Non authentifié */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Introuvable */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  mark_expense_overdue: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Dépense mise à jour */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Non authentifié */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Introuvable */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  mark_expense_paid: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Dépense mise à jour */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Non authentifié */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Introuvable */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  reactivate_expense: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Dépense réactivée */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Non authentifié */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Introuvable */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  unpay_expense: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Dépense remise en attente */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Non authentifié */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Introuvable */
+      404: {
         headers: {
           [name: string]: unknown;
         };
@@ -6120,6 +6846,281 @@ export interface operations {
       };
       /** @description Internal server error */
       500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  create_invoice_draft: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["CreateInvoiceDraftDto"];
+      };
+    };
+    responses: {
+      /** @description Brouillon créé */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Requête invalide */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Non authentifié */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Rôle sans droit d'encodage */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  get_pending_invoices: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Liste */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Non authentifié */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  get_invoice: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Facture */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Non authentifié */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Introuvable */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  update_invoice_draft: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["UpdateInvoiceDraftDto"];
+      };
+    };
+    responses: {
+      /** @description Brouillon modifié */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Requête invalide */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Non authentifié */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Introuvable */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  approve_invoice: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["ApproveInvoiceDto"];
+      };
+    };
+    responses: {
+      /** @description Facture approuvée */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Non authentifié */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Rôle sans droit d'approbation */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Introuvable */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  reject_invoice: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["RejectInvoiceDto"];
+      };
+    };
+    responses: {
+      /** @description Facture rejetée */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Motif manquant */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Non authentifié */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Introuvable */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  submit_invoice_for_approval: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["SubmitForApprovalDto"];
+      };
+    };
+    responses: {
+      /** @description Facture soumise */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Non authentifié */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Introuvable */
+      404: {
         headers: {
           [name: string]: unknown;
         };

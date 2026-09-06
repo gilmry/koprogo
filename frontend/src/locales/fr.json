@@ -1992,7 +1992,8 @@
       "action": "Demander l'effacement — irréversible",
       "checking": "Vérification de l'éligibilité…",
       "contactSupport": "Contactez le support pour en savoir plus.",
-      "desc": "Demandez l'anonymisation définitive de vos données personnelles. Cette action est IRRÉVERSIBLE : vos informations identifiantes seront remplacées par des marqueurs anonymes et ne pourront pas être restaurées."
+      "desc": "Demandez l'anonymisation définitive de vos données personnelles. Cette action est IRRÉVERSIBLE : vos informations identifiantes seront remplacées par des marqueurs anonymes et ne pourront pas être restaurées.",
+      "blocked": "Vos données ne peuvent pas être effacées pour l'instant : des obligations légales ou des opérations en cours s'y opposent."
     },
     "export": {
       "action": "Exporter mes données",
@@ -2001,7 +2002,25 @@
       "download": "Télécharger le JSON",
       "noOwners": "Aucune fiche de copropriétaire",
       "noUnits": "Aucun lot rattaché"
-    }
+    },
+    "checkingEligibility": "Vérification de l'éligibilité…",
+    "anonymizedSuccess": "Données anonymisées",
+    "anonymizedDetail": "Votre compte et {count} fiche(s) de copropriétaire ont été anonymisés.",
+    "loggedOutIn": "Vous allez être déconnecté dans 3 secondes…",
+    "exportDate": "Date d'export",
+    "userInformation": "Informations du compte",
+    "ownerRecords": "Fiches de copropriétaire",
+    "noOwnerRecords": "Aucune fiche de copropriétaire",
+    "unitOwnerships": "Détentions de lots",
+    "noUnitOwnerships": "Aucune détention de lot",
+    "totalItems": "Total des éléments",
+    "confirmErase": "Voulez-vous vraiment effacer vos données personnelles ? Cette action est irréversible et va :",
+    "eraseStepOwners": "anonymiser toutes vos fiches de copropriétaire",
+    "eraseStepReplace": "remplacer vos informations identifiantes par des mentions neutres",
+    "eraseStepLogout": "vous déconnecter immédiatement",
+    "cannotBeUndone": "Cette action est définitive.",
+    "firstName": "Prénom",
+    "lastName": "Nom"
   },
   "inspections": {
     "all": "Toutes",

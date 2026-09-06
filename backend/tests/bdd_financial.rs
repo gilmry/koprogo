@@ -3824,19 +3824,46 @@ async fn given_distribution_was_calculated(world: &mut FinancialWorld) {
 
 #[given("ownership percentages have changed")]
 async fn given_ownership_changed(world: &mut FinancialWorld) {
-    // Update ownership percentages in DB
+    // « Les quotes-parts ont changé » : c'est une CESSION DE QUOTITÉS entre
+    // copropriétaires, pas un démembrement du premier lot.
+    //
+    // L'étape écrivait `ownership_percentage = 0.30` sur le premier lot, ce que
+    // le domaine lit comme « le premier copropriétaire ne détient plus que 30 %
+    // de SON lot » — indivision, usufruit. Les 70 % restants n'appartenaient
+    // alors à personne, et la répartition ne couvrait plus que 720 des 1000
+    // millièmes. Le domaine avait raison de la refuser : on ne répartit pas une
+    // charge sur des quotités orphelines.
+    //
+    // Une modification d'acte de base transfère des quotités d'un lot à un
+    // autre, et la somme reste l'acte. Ici : le premier lot passe de 400 à 300
+    // millièmes, le dernier reçoit les 100.
     let pool = world.pool.as_ref().unwrap();
-    if let Some((_, owner_id)) = world.owner_by_name.first() {
-        if let Some(unit_id) = world.unit_ids.first() {
-            sqlx::query(
-                r#"UPDATE unit_owners SET ownership_percentage = 0.30 WHERE unit_id = $1 AND owner_id = $2"#,
-            )
-            .bind(unit_id)
-            .bind(owner_id)
+    if world.unit_ids.len() >= 2 {
+        let premier = world.unit_ids[0];
+        let dernier = world.unit_ids[world.unit_ids.len() - 1];
+
+        let (quota_premier,): (rust_decimal::Decimal,) =
+            sqlx::query_as("SELECT quota FROM units WHERE id = $1")
+                .bind(premier)
+                .fetch_one(pool)
+                .await
+                .expect("lire la quotite du premier lot");
+
+        let cede = quota_premier * dec!(0.25);
+
+        sqlx::query("UPDATE units SET quota = quota - $1 WHERE id = $2")
+            .bind(cede)
+            .bind(premier)
             .execute(pool)
             .await
-            .ok();
-        }
+            .expect("retirer les quotites cedees");
+
+        sqlx::query("UPDATE units SET quota = quota + $1 WHERE id = $2")
+            .bind(cede)
+            .bind(dernier)
+            .execute(pool)
+            .await
+            .expect("porter les quotites cedees");
     }
 }
 
@@ -4048,11 +4075,28 @@ async fn given_owner_contributions_exist(world: &mut FinancialWorld) {
     .await
     .expect("insert owner");
 
+    // La quote-part doit porter un lot : c'est par lui que le domaine résout
+    // l'ACP créancière (ADR-0045).
+    //
+    // Le fixture passait `None`, et le use case refusait avec « Impossible de
+    // déterminer l'ACP créancière ». Ce refus est juste : une quote-part qui ne
+    // désigne aucun lot ne dit pas à quelle copropriété elle est due, et une
+    // somme réclamée au nom de personne n'est pas réclamable.
+    let unit_id: Option<Uuid> = match world.unit_ids.first() {
+        Some(id) => Some(*id),
+        None => sqlx::query_as::<_, (Uuid,)>("SELECT id FROM units WHERE building_id = $1 LIMIT 1")
+            .bind(world.building_id.unwrap())
+            .fetch_optional(pool)
+            .await
+            .expect("chercher un lot")
+            .map(|(id,)| id),
+    };
+
     let uc = world.owner_contribution_use_cases.as_ref().unwrap().clone();
     uc.create_contribution(
         org_id,
         owner_id,
-        None,
+        unit_id,
         "Dashboard contrib".to_string(),
         dec!(500),
         ContributionType::Regular,
@@ -4277,14 +4321,34 @@ async fn given_unit_owner_relationships(world: &mut FinancialWorld) {
 
         if i < world.unit_ids.len() {
             let unit_id = world.unit_ids[i];
+
+            // Le pourcentage est la part du copropriétaire DANS L'IMMEUBLE.
+            //
+            // `invoices.feature` le dit par ses chiffres : sur une facture de
+            // 1210 EUR, « Owner 1 amount due should be 302.50 EUR » pour
+            // 0.25 — soit un quart de la facture entière. Le lot d'Owner 1
+            // porte donc 250 des 1000 millièmes, et il le possède en entier.
+            //
+            // Le fixture l'écrivait dans `ownership_percentage`, que le
+            // domaine lit comme la part du copropriétaire DANS SON LOT. Les
+            // 75 % restants n'appartenaient alors à personne, et la
+            // répartition ne couvrait pas la charge.
+            sqlx::query("UPDATE units SET quota = $1 WHERE id = $2")
+                .bind(rust_decimal::Decimal::from(
+                    (*pct * 1000.0_f64).round() as i64
+                ))
+                .bind(unit_id)
+                .execute(pool)
+                .await
+                .expect("porter le pourcentage sur les tantiemes du lot");
+
             sqlx::query(
                 r#"INSERT INTO unit_owners (id, unit_id, owner_id, ownership_percentage, start_date, is_primary_contact, created_at, updated_at)
-                   VALUES ($1, $2, $3, $4, NOW(), true, NOW(), NOW())"#,
+                   VALUES ($1, $2, $3, 1.0, NOW(), true, NOW(), NOW())"#,
             )
             .bind(Uuid::new_v4())
             .bind(unit_id)
             .bind(owner_id)
-            .bind(*pct)
             .execute(pool)
             .await
             .expect("insert unit_owner");

@@ -667,6 +667,45 @@
         ]
       }
     },
+    "/buildings/{building_id}/expenses": {
+      "get": {
+        "tags": [
+          "Expenses"
+        ],
+        "summary": "Lister les dépenses d'un immeuble",
+        "operationId": "list_expenses_by_building",
+        "parameters": [
+          {
+            "name": "building_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Liste"
+          },
+          "401": {
+            "description": "Non authentifié"
+          },
+          "403": {
+            "description": "Immeuble hors de votre organisation"
+          },
+          "404": {
+            "description": "Immeuble introuvable"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
     "/buildings/{building_id}/payments": {
       "get": {
         "tags": [
@@ -1756,6 +1795,64 @@
         }
       }
     },
+    "/expenses": {
+      "get": {
+        "tags": [
+          "Expenses"
+        ],
+        "summary": "Lister les dépenses de l'organisation",
+        "operationId": "list_expenses",
+        "responses": {
+          "200": {
+            "description": "Liste paginée"
+          },
+          "401": {
+            "description": "Non authentifié"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "Expenses"
+        ],
+        "summary": "Créer une dépense",
+        "operationId": "create_expense",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateExpenseDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Dépense créée"
+          },
+          "400": {
+            "description": "Requête invalide"
+          },
+          "401": {
+            "description": "Non authentifié"
+          },
+          "403": {
+            "description": "Rôle sans droit d'encodage"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
     "/expenses/{expense_id}/payments": {
       "get": {
         "tags": [
@@ -1815,6 +1912,258 @@
           },
           "500": {
             "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/expenses/{id}": {
+      "get": {
+        "tags": [
+          "Expenses"
+        ],
+        "summary": "Lire une dépense",
+        "operationId": "get_expense",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Dépense"
+          },
+          "401": {
+            "description": "Non authentifié"
+          },
+          "404": {
+            "description": "Introuvable"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/expenses/{id}/cancel": {
+      "post": {
+        "tags": [
+          "Expenses"
+        ],
+        "summary": "Annuler une dépense",
+        "operationId": "cancel_expense",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Dépense annulée"
+          },
+          "401": {
+            "description": "Non authentifié"
+          },
+          "404": {
+            "description": "Introuvable"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/expenses/{id}/export-quote-pdf": {
+      "get": {
+        "tags": [
+          "Expenses"
+        ],
+        "summary": "Exporter un devis en PDF",
+        "operationId": "export_work_quote_pdf",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "PDF"
+          },
+          "401": {
+            "description": "Non authentifié"
+          },
+          "404": {
+            "description": "Introuvable"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/expenses/{id}/mark-overdue": {
+      "post": {
+        "tags": [
+          "Expenses"
+        ],
+        "summary": "Marquer une dépense en retard",
+        "operationId": "mark_expense_overdue",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Dépense mise à jour"
+          },
+          "401": {
+            "description": "Non authentifié"
+          },
+          "404": {
+            "description": "Introuvable"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/expenses/{id}/mark-paid": {
+      "put": {
+        "tags": [
+          "Expenses"
+        ],
+        "summary": "Marquer une dépense comme payée",
+        "operationId": "mark_expense_paid",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Dépense mise à jour"
+          },
+          "401": {
+            "description": "Non authentifié"
+          },
+          "404": {
+            "description": "Introuvable"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/expenses/{id}/reactivate": {
+      "post": {
+        "tags": [
+          "Expenses"
+        ],
+        "summary": "Réactiver une dépense annulée",
+        "operationId": "reactivate_expense",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Dépense réactivée"
+          },
+          "401": {
+            "description": "Non authentifié"
+          },
+          "404": {
+            "description": "Introuvable"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/expenses/{id}/unpay": {
+      "post": {
+        "tags": [
+          "Expenses"
+        ],
+        "summary": "Annuler le paiement d'une dépense",
+        "operationId": "unpay_expense",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Dépense remise en attente"
+          },
+          "401": {
+            "description": "Non authentifié"
+          },
+          "404": {
+            "description": "Introuvable"
           }
         },
         "security": [
@@ -2056,6 +2405,293 @@
           },
           "500": {
             "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/invoices/draft": {
+      "post": {
+        "tags": [
+          "Expenses"
+        ],
+        "summary": "Créer une facture brouillon avec TVA",
+        "operationId": "create_invoice_draft",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateInvoiceDraftDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Brouillon créé"
+          },
+          "400": {
+            "description": "Requête invalide"
+          },
+          "401": {
+            "description": "Non authentifié"
+          },
+          "403": {
+            "description": "Rôle sans droit d'encodage"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/invoices/pending": {
+      "get": {
+        "tags": [
+          "Expenses"
+        ],
+        "summary": "Lister les factures en attente d'approbation",
+        "operationId": "get_pending_invoices",
+        "responses": {
+          "200": {
+            "description": "Liste"
+          },
+          "401": {
+            "description": "Non authentifié"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/invoices/{id}": {
+      "get": {
+        "tags": [
+          "Expenses"
+        ],
+        "summary": "Lire une facture",
+        "operationId": "get_invoice",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Facture"
+          },
+          "401": {
+            "description": "Non authentifié"
+          },
+          "404": {
+            "description": "Introuvable"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "Expenses"
+        ],
+        "summary": "Modifier une facture brouillon ou rejetée",
+        "operationId": "update_invoice_draft",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateInvoiceDraftDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Brouillon modifié"
+          },
+          "400": {
+            "description": "Requête invalide"
+          },
+          "401": {
+            "description": "Non authentifié"
+          },
+          "404": {
+            "description": "Introuvable"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/invoices/{id}/approve": {
+      "put": {
+        "tags": [
+          "Expenses"
+        ],
+        "summary": "Approuver une facture",
+        "operationId": "approve_invoice",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApproveInvoiceDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Facture approuvée"
+          },
+          "401": {
+            "description": "Non authentifié"
+          },
+          "403": {
+            "description": "Rôle sans droit d'approbation"
+          },
+          "404": {
+            "description": "Introuvable"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/invoices/{id}/reject": {
+      "put": {
+        "tags": [
+          "Expenses"
+        ],
+        "summary": "Rejeter une facture avec motif",
+        "operationId": "reject_invoice",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RejectInvoiceDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Facture rejetée"
+          },
+          "400": {
+            "description": "Motif manquant"
+          },
+          "401": {
+            "description": "Non authentifié"
+          },
+          "404": {
+            "description": "Introuvable"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/invoices/{id}/submit": {
+      "put": {
+        "tags": [
+          "Expenses"
+        ],
+        "summary": "Soumettre une facture pour validation",
+        "operationId": "submit_invoice_for_approval",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SubmitForApprovalDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Facture soumise"
+          },
+          "401": {
+            "description": "Non authentifié"
+          },
+          "404": {
+            "description": "Introuvable"
           }
         },
         "security": [
@@ -7212,6 +7848,18 @@
           "rejected"
         ]
       },
+      "ApproveInvoiceDto": {
+        "type": "object",
+        "description": "Approuver une facture (PendingApproval → Approved).",
+        "required": [
+          "approved_by_user_id"
+        ],
+        "properties": {
+          "approved_by_user_id": {
+            "type": "string"
+          }
+        }
+      },
       "AssignRoleRequest": {
         "type": "object",
         "required": [
@@ -7928,6 +8576,144 @@
             "format": "uuid"
           }
         }
+      },
+      "CreateExpenseDto": {
+        "type": "object",
+        "required": [
+          "building_id",
+          "category",
+          "description",
+          "amount",
+          "expense_date"
+        ],
+        "properties": {
+          "account_code": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Optional Belgian PCMN account code (e.g., \"604001\" for electricity)\nMust reference an existing account in the organization's chart of accounts"
+          },
+          "amount": {
+            "type": "string",
+            "description": "Montant TTC (validé > 0 dans Expense::new). Decimal exact (cf. ADR-0007)."
+          },
+          "amount_excl_vat": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Montant HT. Fourni avec `vat_rate`, la TVA est calculée et le TTC\ndéduit ; `amount` est alors ignoré au profit du calcul exact."
+          },
+          "building_id": {
+            "type": "string"
+          },
+          "category": {
+            "$ref": "#/components/schemas/ExpenseCategory"
+          },
+          "description": {
+            "type": "string"
+          },
+          "due_date": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Échéance de règlement fournisseur (ISO 8601)."
+          },
+          "expense_date": {
+            "type": "string"
+          },
+          "invoice_number": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "line_items": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/NouvelleLigneDeFactureDto"
+            },
+            "description": "Le détail de la facture, quand elle est saisie ligne par ligne.\n\nAbsent en saisie simple : la dépense ne porte alors que ses totaux."
+          },
+          "organization_id": {
+            "type": "string"
+          },
+          "supplier": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "vat_rate": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Taux de TVA en POURCENTAGE (21.0 pour 21 %), validé 0..=100."
+          }
+        },
+        "additionalProperties": false
+      },
+      "CreateInvoiceDraftDto": {
+        "type": "object",
+        "description": "Créer une facture brouillon avec gestion TVA.\nValidation des montants > 0 et taux 0-100 effectuée dans `Expense::new_with_vat`.",
+        "required": [
+          "building_id",
+          "category",
+          "description",
+          "amount_excl_vat",
+          "vat_rate",
+          "invoice_date"
+        ],
+        "properties": {
+          "amount_excl_vat": {
+            "type": "string",
+            "description": "Montant HT (validé > 0 dans `Expense::new_with_vat`)."
+          },
+          "building_id": {
+            "type": "string"
+          },
+          "category": {
+            "$ref": "#/components/schemas/ExpenseCategory"
+          },
+          "description": {
+            "type": "string"
+          },
+          "due_date": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "invoice_date": {
+            "type": "string"
+          },
+          "invoice_number": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "organization_id": {
+            "type": "string"
+          },
+          "supplier": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "vat_rate": {
+            "type": "string",
+            "description": "Taux TVA en % (validé 0..=100 dans `Expense::new_with_vat`)."
+          }
+        },
+        "additionalProperties": false
       },
       "CreateJournalEntryRequest": {
         "type": "object",
@@ -8679,6 +9465,111 @@
           "Other"
         ]
       },
+      "ExpenseResponseDto": {
+        "type": "object",
+        "required": [
+          "id",
+          "acp_id",
+          "building_id",
+          "category",
+          "description",
+          "amount",
+          "expense_date",
+          "payment_status",
+          "approval_status"
+        ],
+        "properties": {
+          "account_code": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Belgian PCMN account code if linked to chart of accounts"
+          },
+          "acp_id": {
+            "type": "string",
+            "description": "ACP propriétaire de la charge — clé de rattachement patrimonial.\nSuit la copropriété lors des passations de syndic."
+          },
+          "amount": {
+            "type": "string"
+          },
+          "amount_excl_vat": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Montant hors TVA."
+          },
+          "amount_incl_vat": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Montant TVA comprise."
+          },
+          "approval_status": {
+            "$ref": "#/components/schemas/ApprovalStatus"
+          },
+          "building_id": {
+            "type": "string"
+          },
+          "category": {
+            "$ref": "#/components/schemas/ExpenseCategory"
+          },
+          "contractor_report_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Contractor report reference for Works category (Issue #309)"
+          },
+          "description": {
+            "type": "string"
+          },
+          "due_date": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Échéance de règlement fournisseur (ISO 8601)."
+          },
+          "expense_date": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "invoice_number": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "payment_status": {
+            "$ref": "#/components/schemas/PaymentStatus"
+          },
+          "supplier": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "vat_amount": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Montant de TVA."
+          },
+          "vat_rate": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Taux de TVA en POURCENTAGE (21.0 pour 21 %)."
+          }
+        }
+      },
       "ExpertiseLevel": {
         "type": "string",
         "description": "Expertise level for skill proficiency",
@@ -9235,6 +10126,31 @@
           "System"
         ]
       },
+      "NouvelleLigneDeFactureDto": {
+        "type": "object",
+        "description": "Une ligne de facture transmise **à la création** de la dépense.\n\nDistincte de `CreateInvoiceLineItemDto`, qui exige un `expense_id` parce\nqu'elle sert à ajouter une ligne à une facture déjà enregistrée. À la\ncréation, la dépense n'a pas encore d'identifiant : le lien se fait après\ncoup, côté use-case.\n\nSans ce type, `InvoiceForm.svelte` envoyait `line_items` dans le corps et\nserde les jetait en silence : la facture était créée avec ses totaux, et\nle détail — description, quantité, prix unitaire, TVA de chaque ligne —\ndisparaissait sans le moindre avertissement. Un comptable saisissant une\nfacture ligne par ligne perdait son travail. Constaté le 2026-09-04.",
+        "required": [
+          "description",
+          "quantity",
+          "unit_price",
+          "vat_rate"
+        ],
+        "properties": {
+          "description": {
+            "type": "string"
+          },
+          "quantity": {
+            "type": "string"
+          },
+          "unit_price": {
+            "type": "string"
+          },
+          "vat_rate": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
       "ObjectCondition": {
         "type": "string",
         "description": "Condition of shared object",
@@ -9670,6 +10586,22 @@
           }
         }
       },
+      "RejectInvoiceDto": {
+        "type": "object",
+        "description": "Rejeter une facture avec raison (PendingApproval → Rejected).",
+        "required": [
+          "rejected_by_user_id",
+          "rejection_reason"
+        ],
+        "properties": {
+          "rejected_by_user_id": {
+            "type": "string"
+          },
+          "rejection_reason": {
+            "type": "string"
+          }
+        }
+      },
       "ReminderLevel": {
         "type": "string",
         "description": "Niveau de relance de paiement",
@@ -9901,6 +10833,10 @@
           "card",
           "sepa_debit"
         ]
+      },
+      "SubmitForApprovalDto": {
+        "type": "object",
+        "description": "Soumettre une facture pour validation (Draft → PendingApproval)."
       },
       "SwitchRoleRequest": {
         "type": "object",
@@ -10292,6 +11228,65 @@
             "format": "int32"
           }
         }
+      },
+      "UpdateInvoiceDraftDto": {
+        "type": "object",
+        "description": "Modifier une facture brouillon ou rejetée.",
+        "properties": {
+          "amount_excl_vat": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "category": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/ExpenseCategory"
+              }
+            ]
+          },
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "due_date": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "invoice_date": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "invoice_number": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "supplier": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "vat_rate": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "additionalProperties": false
       },
       "UpdatePaymentMethodRequest": {
         "type": "object",

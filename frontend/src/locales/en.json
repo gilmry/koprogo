@@ -1992,7 +1992,8 @@
       "action": "Request data erasure — irreversible",
       "checking": "Checking eligibility…",
       "contactSupport": "Please contact support for more information.",
-      "desc": "Request the permanent anonymization of your personal data. This action is IRREVERSIBLE: your identifiable information will be replaced with anonymized placeholders and cannot be restored."
+      "desc": "Request the permanent anonymization of your personal data. This action is IRREVERSIBLE: your identifiable information will be replaced with anonymized placeholders and cannot be restored.",
+      "blocked": "Your data cannot be erased at this time: legal holds or active obligations prevent it."
     },
     "export": {
       "action": "Export My Data",
@@ -2001,7 +2002,25 @@
       "download": "Download JSON",
       "noOwners": "No owner records",
       "noUnits": "No unit ownerships"
-    }
+    },
+    "checkingEligibility": "Checking eligibility...",
+    "anonymizedSuccess": "Data anonymized",
+    "anonymizedDetail": "Your account and {count} owner record(s) have been anonymized.",
+    "loggedOutIn": "You will be logged out in 3 seconds...",
+    "exportDate": "Export date",
+    "userInformation": "Account information",
+    "ownerRecords": "Owner records",
+    "noOwnerRecords": "No owner records",
+    "unitOwnerships": "Unit ownerships",
+    "noUnitOwnerships": "No unit ownerships",
+    "totalItems": "Total items",
+    "confirmErase": "Are you absolutely sure you want to erase your personal data? This action is irreversible and will:",
+    "eraseStepOwners": "anonymize all your owner records",
+    "eraseStepReplace": "replace identifiable information with placeholders",
+    "eraseStepLogout": "log you out immediately",
+    "cannotBeUndone": "This action cannot be undone.",
+    "firstName": "First name",
+    "lastName": "Last name"
   },
   "inspections": {
     "all": "All",

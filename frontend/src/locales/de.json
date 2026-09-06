@@ -1992,7 +1992,8 @@
       "action": "Löschung beantragen — unwiderruflich",
       "checking": "Berechtigung wird geprüft…",
       "contactSupport": "Bitte wenden Sie sich an den Support.",
-      "desc": "Beantragen Sie die dauerhafte Anonymisierung Ihrer personenbezogenen Daten. Diese Aktion ist UNWIDERRUFLICH: Ihre identifizierenden Angaben werden durch anonyme Platzhalter ersetzt."
+      "desc": "Beantragen Sie die dauerhafte Anonymisierung Ihrer personenbezogenen Daten. Diese Aktion ist UNWIDERRUFLICH: Ihre identifizierenden Angaben werden durch anonyme Platzhalter ersetzt.",
+      "blocked": "Ihre Daten können derzeit nicht gelöscht werden: gesetzliche Aufbewahrungspflichten oder laufende Vorgänge stehen dem entgegen."
     },
     "export": {
       "action": "Meine Daten exportieren",
@@ -2001,7 +2002,25 @@
       "download": "JSON herunterladen",
       "noOwners": "Keine Eigentümerdatensätze",
       "noUnits": "Keine zugeordneten Einheiten"
-    }
+    },
+    "checkingEligibility": "Berechtigung wird geprüft…",
+    "anonymizedSuccess": "Daten anonymisiert",
+    "anonymizedDetail": "Ihr Konto und {count} Eigentümerdatensatz/-sätze wurden anonymisiert.",
+    "loggedOutIn": "Sie werden in 3 Sekunden abgemeldet…",
+    "exportDate": "Exportdatum",
+    "userInformation": "Kontoinformationen",
+    "ownerRecords": "Eigentümerdatensätze",
+    "noOwnerRecords": "Keine Eigentümerdatensätze",
+    "unitOwnerships": "Losbesitz",
+    "noUnitOwnerships": "Kein Losbesitz",
+    "totalItems": "Elemente insgesamt",
+    "confirmErase": "Möchten Sie Ihre personenbezogenen Daten wirklich löschen? Diese Aktion ist unwiderruflich und wird:",
+    "eraseStepOwners": "alle Ihre Eigentümerdatensätze anonymisieren",
+    "eraseStepReplace": "identifizierbare Angaben durch Platzhalter ersetzen",
+    "eraseStepLogout": "Sie sofort abmelden",
+    "cannotBeUndone": "Diese Aktion kann nicht rückgängig gemacht werden.",
+    "firstName": "Vorname",
+    "lastName": "Nachname"
   },
   "inspections": {
     "all": "Alle",

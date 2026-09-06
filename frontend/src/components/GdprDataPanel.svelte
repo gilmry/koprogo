@@ -300,11 +300,11 @@
             {$_('gdpr.article17.desc')}
           </p>
           {#if checkingErasure}
-            <p class="mt-2 text-sm text-red-600">Checking eligibility...</p>
+            <p class="mt-2 text-sm text-red-600">{$_('gdpr.checkingEligibility')}</p>
           {:else if !canErase}
             <div class="mt-3 bg-yellow-50 border border-yellow-200 rounded-md p-3">
               <p class="text-sm text-yellow-800">
-                ⚠️ Your data cannot be erased at this time due to legal holds or active obligations.
+                ⚠️ {$_('gdpr.article17.blocked')}
                 {$_('gdpr.article17.contactSupport')}
               </p>
             </div>
@@ -332,11 +332,11 @@
             </svg>
           </div>
           <div class="ml-3">
-            <h3 class="text-sm font-medium text-green-800">Data Anonymized Successfully</h3>
+            <h3 class="text-sm font-medium text-green-800">{$_('gdpr.anonymizedSuccess')}</h3>
             <div class="mt-2 text-sm text-green-700">
-              <p>Your user account and {erasureResult.owners_anonymized} owner record(s) have been anonymized.</p>
+              <p>{$_('gdpr.anonymizedDetail', { values: { count: erasureResult.owners_anonymized } })}</p>
               <p class="mt-1">Anonymized at: {formatDateTime(erasureResult.anonymized_at)}</p>
-              <p class="mt-1 font-semibold">You will be logged out in 3 seconds...</p>
+              <p class="mt-1 font-semibold">{$_('gdpr.loggedOutIn')}</p>
             </div>
           </div>
         </div>
@@ -360,35 +360,35 @@
               </h3>
               <div class="mt-2 space-y-4 max-h-96 overflow-y-auto">
                 <div>
-                  <h4 class="font-semibold text-gray-700">Export Date:</h4>
+                  <h4 class="font-semibold text-gray-700">{$_('gdpr.exportDate')}</h4>
                   <p class="text-sm text-gray-600">{formatDateTime(exportData.export_date)}</p>
                 </div>
 
                 <div>
-                  <h4 class="font-semibold text-gray-700">User Information:</h4>
+                  <h4 class="font-semibold text-gray-700">{$_('gdpr.userInformation')}</h4>
                   <pre class="text-xs bg-gray-50 p-2 rounded overflow-x-auto">{JSON.stringify(exportData.user, null, 2)}</pre>
                 </div>
 
                 <div>
-                  <h4 class="font-semibold text-gray-700">Owner Records ({exportData.owners.length}):</h4>
+                  <h4 class="font-semibold text-gray-700">{$_('gdpr.ownerRecords')} ({exportData.owners.length})</h4>
                   {#if exportData.owners.length > 0}
                     <pre class="text-xs bg-gray-50 p-2 rounded overflow-x-auto">{JSON.stringify(exportData.owners, null, 2)}</pre>
                   {:else}
-                    <p class="text-sm text-gray-500 italic">No owner records</p>
+                    <p class="text-sm text-gray-500 italic">{$_('gdpr.noOwnerRecords')}</p>
                   {/if}
                 </div>
 
                 <div>
-                  <h4 class="font-semibold text-gray-700">Unit Ownerships ({exportData.units.length}):</h4>
+                  <h4 class="font-semibold text-gray-700">{$_('gdpr.unitOwnerships')} ({exportData.units.length})</h4>
                   {#if exportData.units.length > 0}
                     <pre class="text-xs bg-gray-50 p-2 rounded overflow-x-auto">{JSON.stringify(exportData.units, null, 2)}</pre>
                   {:else}
-                    <p class="text-sm text-gray-500 italic">No unit ownerships</p>
+                    <p class="text-sm text-gray-500 italic">{$_('gdpr.noUnitOwnerships')}</p>
                   {/if}
                 </div>
 
                 <div class="text-sm text-gray-600">
-                  <p><strong>Total Items:</strong> {exportData.total_items}</p>
+                  <p><strong>{$_('gdpr.totalItems')} :</strong> {exportData.total_items}</p>
                 </div>
               </div>
             </div>
@@ -437,16 +437,16 @@
               </h3>
               <div class="mt-2">
                 <p class="text-sm text-gray-500">
-                  Are you absolutely sure you want to erase your personal data? This action is <strong>irreversible</strong> and will:
+                  {$_('gdpr.confirmErase')}
                 </p>
                 <ul class="mt-2 text-sm text-gray-500 list-disc list-inside">
                   <li>{$_('gdpr.erase.item1')}</li>
-                  <li>Anonymize all your owner records</li>
-                  <li>Replace identifiable information with placeholders</li>
-                  <li>Log you out immediately</li>
+                  <li>{$_('gdpr.eraseStepOwners')}</li>
+                  <li>{$_('gdpr.eraseStepReplace')}</li>
+                  <li>{$_('gdpr.eraseStepLogout')}</li>
                 </ul>
                 <p class="mt-3 text-sm font-semibold text-red-600">
-                  This action cannot be undone!
+                  {$_('gdpr.cannotBeUndone')}
                 </p>
               </div>
             </div>
@@ -512,7 +512,7 @@
                   />
                 </div>
                 <div>
-                  <label for="rectify-firstname" class="block text-sm font-medium text-gray-700">First Name</label>
+                  <label for="rectify-firstname" class="block text-sm font-medium text-gray-700">{$_('gdpr.firstName')}</label>
                   <input
                     id="rectify-firstname"
                     type="text"
@@ -523,7 +523,7 @@
                   />
                 </div>
                 <div>
-                  <label for="rectify-lastname" class="block text-sm font-medium text-gray-700">Last Name</label>
+                  <label for="rectify-lastname" class="block text-sm font-medium text-gray-700">{$_('gdpr.lastName')}</label>
                   <input
                     id="rectify-lastname"
                     type="text"

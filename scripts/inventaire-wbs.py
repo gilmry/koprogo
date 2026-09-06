@@ -13,8 +13,8 @@ TRACKS = [
 motif dominant, confirmé six fois : **une capacité écrite, testée, et
 inatteignable**. Nos tests prouvent que le code marche tout en masquant qu'on
 ne peut pas y arriver.""",
-  [765,770,771,772,774,775,776,777,778,779,780,
-   784,786,788,789,790,791,792,793,794,796,804,814,819]),
+  [765,770,772,774,777,779,780,
+   790,791,792,793,794,796,804,814]),
 
  ("U", "Refonte UX/UI", """Revue de design du 2026-09-06. Entrée en 0.1.0 le même jour : un financeur ne
 lit pas du code, et l'ASBL se fonde sur ce que le produit montre. **U2 ne

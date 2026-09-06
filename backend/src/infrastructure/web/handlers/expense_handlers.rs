@@ -80,6 +80,20 @@ fn check_accountant_role(user: &AuthenticatedUser) -> Option<HttpResponse> {
     check_can_encode_invoices(user)
 }
 
+#[utoipa::path(
+    post,
+    path = "/expenses",
+    tag = "Expenses",
+    summary = "Créer une dépense",
+    request_body = CreateExpenseDto,
+    responses(
+        (status = 201, description = "Dépense créée"),
+        (status = 400, description = "Requête invalide"),
+        (status = 401, description = "Non authentifié"),
+        (status = 403, description = "Rôle sans droit d'encodage"),
+    ),
+    security(("bearer_auth" = []))
+)]
 #[post("/expenses")]
 pub async fn create_expense(
     state: web::Data<AppState>,
@@ -179,6 +193,18 @@ pub async fn create_expense(
     }
 }
 
+#[utoipa::path(
+    get,
+    path = "/expenses/{id}",
+    tag = "Expenses",
+    summary = "Lire une dépense",
+    responses(
+        (status = 200, description = "Dépense"),
+        (status = 401, description = "Non authentifié"),
+        (status = 404, description = "Introuvable"),
+    ),
+    security(("bearer_auth" = []))
+)]
 #[get("/expenses/{id}")]
 pub async fn get_expense(
     state: web::Data<AppState>,
@@ -217,6 +243,17 @@ pub async fn get_expense(
     }
 }
 
+#[utoipa::path(
+    get,
+    path = "/expenses",
+    tag = "Expenses",
+    summary = "Lister les dépenses de l'organisation",
+    responses(
+        (status = 200, description = "Liste paginée"),
+        (status = 401, description = "Non authentifié"),
+    ),
+    security(("bearer_auth" = []))
+)]
 #[get("/expenses")]
 pub async fn list_expenses(
     state: web::Data<AppState>,
@@ -241,6 +278,19 @@ pub async fn list_expenses(
     }
 }
 
+#[utoipa::path(
+    get,
+    path = "/buildings/{building_id}/expenses",
+    tag = "Expenses",
+    summary = "Lister les dépenses d'un immeuble",
+    responses(
+        (status = 200, description = "Liste"),
+        (status = 401, description = "Non authentifié"),
+        (status = 403, description = "Immeuble hors de votre organisation"),
+        (status = 404, description = "Immeuble introuvable"),
+    ),
+    security(("bearer_auth" = []))
+)]
 #[get("/buildings/{building_id}/expenses")]
 pub async fn list_expenses_by_building(
     state: web::Data<AppState>,
@@ -286,6 +336,18 @@ pub async fn list_expenses_by_building(
     }
 }
 
+#[utoipa::path(
+    put,
+    path = "/expenses/{id}/mark-paid",
+    tag = "Expenses",
+    summary = "Marquer une dépense comme payée",
+    responses(
+        (status = 200, description = "Dépense mise à jour"),
+        (status = 401, description = "Non authentifié"),
+        (status = 404, description = "Introuvable"),
+    ),
+    security(("bearer_auth" = []))
+)]
 #[put("/expenses/{id}/mark-paid")]
 pub async fn mark_expense_paid(
     state: web::Data<AppState>,
@@ -331,6 +393,18 @@ pub async fn mark_expense_paid(
     }
 }
 
+#[utoipa::path(
+    post,
+    path = "/expenses/{id}/mark-overdue",
+    tag = "Expenses",
+    summary = "Marquer une dépense en retard",
+    responses(
+        (status = 200, description = "Dépense mise à jour"),
+        (status = 401, description = "Non authentifié"),
+        (status = 404, description = "Introuvable"),
+    ),
+    security(("bearer_auth" = []))
+)]
 #[post("/expenses/{id}/mark-overdue")]
 pub async fn mark_expense_overdue(
     state: web::Data<AppState>,
@@ -355,6 +429,18 @@ pub async fn mark_expense_overdue(
     }
 }
 
+#[utoipa::path(
+    post,
+    path = "/expenses/{id}/cancel",
+    tag = "Expenses",
+    summary = "Annuler une dépense",
+    responses(
+        (status = 200, description = "Dépense annulée"),
+        (status = 401, description = "Non authentifié"),
+        (status = 404, description = "Introuvable"),
+    ),
+    security(("bearer_auth" = []))
+)]
 #[post("/expenses/{id}/cancel")]
 pub async fn cancel_expense(
     state: web::Data<AppState>,
@@ -379,6 +465,18 @@ pub async fn cancel_expense(
     }
 }
 
+#[utoipa::path(
+    post,
+    path = "/expenses/{id}/reactivate",
+    tag = "Expenses",
+    summary = "Réactiver une dépense annulée",
+    responses(
+        (status = 200, description = "Dépense réactivée"),
+        (status = 401, description = "Non authentifié"),
+        (status = 404, description = "Introuvable"),
+    ),
+    security(("bearer_auth" = []))
+)]
 #[post("/expenses/{id}/reactivate")]
 pub async fn reactivate_expense(
     state: web::Data<AppState>,
@@ -403,6 +501,18 @@ pub async fn reactivate_expense(
     }
 }
 
+#[utoipa::path(
+    post,
+    path = "/expenses/{id}/unpay",
+    tag = "Expenses",
+    summary = "Annuler le paiement d'une dépense",
+    responses(
+        (status = 200, description = "Dépense remise en attente"),
+        (status = 401, description = "Non authentifié"),
+        (status = 404, description = "Introuvable"),
+    ),
+    security(("bearer_auth" = []))
+)]
 #[post("/expenses/{id}/unpay")]
 pub async fn unpay_expense(
     state: web::Data<AppState>,
@@ -430,6 +540,20 @@ pub async fn unpay_expense(
 // ========== Invoice Workflow Endpoints (Issue #73) ==========
 
 /// POST /invoices/draft - Create a new invoice draft with VAT
+#[utoipa::path(
+    post,
+    path = "/invoices/draft",
+    tag = "Expenses",
+    summary = "Créer une facture brouillon avec TVA",
+    request_body = CreateInvoiceDraftDto,
+    responses(
+        (status = 201, description = "Brouillon créé"),
+        (status = 400, description = "Requête invalide"),
+        (status = 401, description = "Non authentifié"),
+        (status = 403, description = "Rôle sans droit d'encodage"),
+    ),
+    security(("bearer_auth" = []))
+)]
 #[post("/invoices/draft")]
 pub async fn create_invoice_draft(
     state: web::Data<AppState>,
@@ -521,6 +645,20 @@ pub async fn create_invoice_draft(
 }
 
 /// PUT /invoices/{id} - Update invoice draft (only if Draft or Rejected)
+#[utoipa::path(
+    put,
+    path = "/invoices/{id}",
+    tag = "Expenses",
+    summary = "Modifier une facture brouillon ou rejetée",
+    request_body = UpdateInvoiceDraftDto,
+    responses(
+        (status = 200, description = "Brouillon modifié"),
+        (status = 400, description = "Requête invalide"),
+        (status = 401, description = "Non authentifié"),
+        (status = 404, description = "Introuvable"),
+    ),
+    security(("bearer_auth" = []))
+)]
 #[put("/invoices/{id}")]
 pub async fn update_invoice_draft(
     state: web::Data<AppState>,
@@ -562,6 +700,19 @@ pub async fn update_invoice_draft(
 }
 
 /// PUT /invoices/{id}/submit - Submit invoice for approval (Draft → PendingApproval)
+#[utoipa::path(
+    put,
+    path = "/invoices/{id}/submit",
+    tag = "Expenses",
+    summary = "Soumettre une facture pour validation",
+    request_body = SubmitForApprovalDto,
+    responses(
+        (status = 200, description = "Facture soumise"),
+        (status = 401, description = "Non authentifié"),
+        (status = 404, description = "Introuvable"),
+    ),
+    security(("bearer_auth" = []))
+)]
 #[put("/invoices/{id}/submit")]
 pub async fn submit_invoice_for_approval(
     state: web::Data<AppState>,
@@ -596,6 +747,20 @@ pub async fn submit_invoice_for_approval(
 
 /// PUT /invoices/{id}/approve - Approve invoice (PendingApproval → Approved)
 /// Only syndic or superadmin can approve
+#[utoipa::path(
+    put,
+    path = "/invoices/{id}/approve",
+    tag = "Expenses",
+    summary = "Approuver une facture",
+    request_body = ApproveInvoiceDto,
+    responses(
+        (status = 200, description = "Facture approuvée"),
+        (status = 401, description = "Non authentifié"),
+        (status = 403, description = "Rôle sans droit d'approbation"),
+        (status = 404, description = "Introuvable"),
+    ),
+    security(("bearer_auth" = []))
+)]
 #[put("/invoices/{id}/approve")]
 pub async fn approve_invoice(
     state: web::Data<AppState>,
@@ -630,6 +795,20 @@ pub async fn approve_invoice(
 
 /// PUT /invoices/{id}/reject - Reject invoice with reason (PendingApproval → Rejected)
 /// Only syndic or superadmin can reject
+#[utoipa::path(
+    put,
+    path = "/invoices/{id}/reject",
+    tag = "Expenses",
+    summary = "Rejeter une facture avec motif",
+    request_body = RejectInvoiceDto,
+    responses(
+        (status = 200, description = "Facture rejetée"),
+        (status = 400, description = "Motif manquant"),
+        (status = 401, description = "Non authentifié"),
+        (status = 404, description = "Introuvable"),
+    ),
+    security(("bearer_auth" = []))
+)]
 #[put("/invoices/{id}/reject")]
 pub async fn reject_invoice(
     state: web::Data<AppState>,
@@ -675,6 +854,17 @@ pub async fn reject_invoice(
 
 /// GET /invoices/pending - Get all pending invoices (for syndic dashboard)
 /// Only syndic or superadmin can view pending invoices
+#[utoipa::path(
+    get,
+    path = "/invoices/pending",
+    tag = "Expenses",
+    summary = "Lister les factures en attente d'approbation",
+    responses(
+        (status = 200, description = "Liste"),
+        (status = 401, description = "Non authentifié"),
+    ),
+    security(("bearer_auth" = []))
+)]
 #[get("/invoices/pending")]
 pub async fn get_pending_invoices(
     state: web::Data<AppState>,
@@ -706,6 +896,18 @@ pub async fn get_pending_invoices(
 }
 
 /// GET /invoices/{id} - Get full invoice details (enriched with all fields)
+#[utoipa::path(
+    get,
+    path = "/invoices/{id}",
+    tag = "Expenses",
+    summary = "Lire une facture",
+    responses(
+        (status = 200, description = "Facture"),
+        (status = 401, description = "Non authentifié"),
+        (status = 404, description = "Introuvable"),
+    ),
+    security(("bearer_auth" = []))
+)]
 #[get("/invoices/{id}")]
 pub async fn get_invoice(
     state: web::Data<AppState>,
@@ -756,6 +958,18 @@ pub struct ExportWorkQuoteQuery {
     pub timeline: String, // e.g., "2-3 weeks" or "Délai: 15 jours ouvrables"
 }
 
+#[utoipa::path(
+    get,
+    path = "/expenses/{id}/export-quote-pdf",
+    tag = "Expenses",
+    summary = "Exporter un devis en PDF",
+    responses(
+        (status = 200, description = "PDF"),
+        (status = 401, description = "Non authentifié"),
+        (status = 404, description = "Introuvable"),
+    ),
+    security(("bearer_auth" = []))
+)]
 #[get("/expenses/{id}/export-quote-pdf")]
 pub async fn export_work_quote_pdf(
     state: web::Data<AppState>,

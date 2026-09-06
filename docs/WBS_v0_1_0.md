@@ -165,6 +165,36 @@ ses coordonnées de clic — qui lui faisait manquer toutes les petites cibles.
 | R18 | Le type `Vote` du frontend ne correspond pas au DTO servi ; clé `notices.draft` affichée en clair | #786 | **fait** |
 | R22 | **La PWA n'a jamais fonctionné** : le service worker échoue à l'installation depuis novembre 2025, deux icônes du manifeste répondent 404 | #804 | ouvert |
 
+#### R26 — les 17 routes de dépenses entrent au contrat (#765)
+
+`docs/api/openapi.json` ignorait toutes les routes `/expenses` et `/invoices` :
+zéro sur dix-sept. C'est la racine de la dérive de types qui a occupé toute la
+journée du 2026-09-06 — sans contrat, le frontend écrit ses types à la main, et
+`line_items` a pu diverger sans que rien ne le signale.
+
+Sept DTO reçoivent `utoipa::ToSchema`, les dix-sept gestionnaires leur
+annotation, et le registre les déclare. Le contrat passe de **143 à 158
+routes** et de **142 à 150 schémas**.
+
+#### R27 — 46 appels du frontend ne correspondent à aucune route (#779)
+
+Mesuré en comparant `frontend/src/lib/api/*.ts` aux attributs de route du
+backend. Deux abstractions dominent, et ce ne sont pas des renommages :
+
+| Le frontend suppose | Le serveur sert | Écart réel |
+|---|---|---|
+| `/bookable-resources` (17 appels) | `/resource-bookings` | une ressource décrite hors de ses réservations, ou pas |
+| `/loans` (15 appels) | `/shared-objects/{id}/borrow` et `/return` | un prêt-entité porte historique, échéance et deux notations |
+
+Un appel vers une route absente rend 404 ; le composant affiche « aucune
+donnée », et **aucun test ne distingue une liste vide d'une route
+inexistante**. Ces 404 en rafale sont aussi ce qui faisait bannir les testeurs
+par CrowdSec (#766).
+
+`garde-chemins-api.test.ts` borne l'écart à 46. Il ne tranche pas lequel des
+deux côtés a raison — c'est un arbitrage produit — mais il refuse que l'écart
+grandisse.
+
 #### R25 — le cycle de vie d'une AG : deux verrous levés sur trois (#780)
 
 | Verrou | État |
@@ -439,7 +469,7 @@ Ces deux actes ne sont pas délégables : cf. `docs/governance/RESPONSABILITE.md
 
 ## Inventaire complet du périmètre 0.1.0
 
-**88 issues ouvertes** portent l'étiquette `release:0.1.0`. Elles sont
+**79 issues ouvertes** portent l'étiquette `release:0.1.0`. Elles sont
 toutes ci-dessous, sans exception : une issue du périmètre absente du WBS est
 une issue que personne ne planifie.
 
@@ -451,12 +481,12 @@ cinq jours.
 | Priorité | Nombre |
 |---|---|
 | critical | 7 |
-| high | 33 |
-| medium | 23 |
+| high | 25 |
+| medium | 22 |
 | low | 2 |
 | — | 23 |
 
-### Track R — Défauts de recette navigateur (24)
+### Track R — Défauts de recette navigateur (15)
 
 Six recettes menées au navigateur entre le 2026-09-04 et le 2026-09-06. Le
 motif dominant, confirmé six fois : **une capacité écrite, testée, et
@@ -470,18 +500,9 @@ ne peut pas y arriver.
 | #780 | critical | Le cycle de vie d'une AG ne peut pas aboutir : trois verrous indépendants, aucun contournable depui… |
 | #814 | critical | Cinq rôles sur quatorze reçoivent une navigation entièrement vide : canSee() les fait tomber en fai… |
 | #765 | high | Contrat : les 17 routes /expenses et /invoices sont hors OpenAPI — c'est ce qui a laissé line_items… |
-| #771 | high | Surface publique : la page d'inscription existe mais n'est liée nulle part, et « mot de passe oubli… |
 | #774 | high | Page RGPD majoritairement en anglais : le copropriétaire lit ses droits et déclenche un effacement … |
-| #775 | high | Annonces : création sans effet ni retour, filtre Brouillon en chargement infini, et énumérations br… |
-| #776 | high | Le bouton « Clôturer le vote » est présent et sans effet : le cycle de vie d'une AG ne peut pas s'a… |
-| #778 | high | Bouton de création d'immeuble et de lot invisibles pour le syndic : la route serveur est ouverte, l… |
 | #779 | high | Rebrancher les six modules communautaires : 111 points d'entrée servis que le frontend n'appelle pa… |
-| #784 | high | L'envoi de convocation exige recipient_owner_ids que l'interface ne peut pas constituer |
-| #788 | high | Classes Tailwind interpolées dans le tableau de bord comptable : les styles ne sont jamais générés |
-| #789 | high | La grille à cinq colonnes des membres du conseil n'existe jamais : classe Tailwind interpolée |
-| #819 | high | Deux énumérations portent le même nom de schéma : le contrat interdit d'enregistrer un paiement en … |
 | #777 | medium | Le test negative_display_does_not_leak_business_internals échoue au hasard : un UUID aléatoire cont… |
-| #786 | medium | Le type Vote du frontend ne correspond pas au DTO servi : colonnes CHOIX et DATE vides, et clé noti… |
 | #790 | medium | tailwind.config.mjs n'est jamais chargé et annonce une couleur de marque qui n'existe plus |
 | #791 | medium | Le tableau de bord admin affiche une activité récente inventée, située à Paris et à Lyon |
 | #792 | medium | Les statuts de tickets s'affichent en valeurs internes : Open, InProgress, Resolved, Closed |
@@ -699,7 +720,7 @@ déclarerai pas mortes sans mesure.
 
 ### Le compte
 
-**106 issues au relevé ; 88 après les dix-huit fermetures du 2026-09-06.**
+**106 issues au relevé ; 79 après les fermetures du 2026-09-06.**
 
 Douze recouvrements ou caducités, validés par le porteur du projet, et six
 défauts critiques désormais corrigés, déployés et **gardés par un test
@@ -715,7 +736,7 @@ déplacé la date de leur retour.
 ### ⚠️ Le périmètre a doublé le 2026-09-06, et c'est une décision assumée
 
 **Tout ce qui restait en 0.2.0 entre en 0.1.0, avec la refonte UX/UI.** Le compte passe de
-**34 à 88 issues ouvertes** en `release:0.1.0` : les 31 ouvertes le 2026-09-06, les 24
+**34 à 79 issues ouvertes** en `release:0.1.0` : les 31 ouvertes le 2026-09-06, les 24
 qui étaient en 0.2.0, les 6 lots de la refonte, la documentation vivante et les défauts
 trouvés en vérifiant. Il ne reste plus rien en 0.2.0.
 
