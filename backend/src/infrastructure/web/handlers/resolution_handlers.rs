@@ -501,7 +501,10 @@ pub async fn close_voting(
     state: web::Data<AppState>,
     user: AuthenticatedUser,
     resolution_id: web::Path<Uuid>,
-    request: web::Json<CloseVotingRequest>,
+    // Corps accepté mais inutilisé : voir le commentaire du calcul ci-dessous.
+    // On le garde dans la signature pour continuer d'accepter les appelants
+    // qui envoient encore `total_voting_power`, sans jamais s'en servir.
+    _request: web::Json<CloseVotingRequest>,
 ) -> impl Responder {
     let organization_id = match user.require_organization() {
         Ok(org_id) => org_id,
@@ -510,9 +513,52 @@ pub async fn close_voting(
         }
     };
 
+    // Le dénominateur de la majorité est lu SUR L'IMMEUBLE, jamais reçu du
+    // client.
+    //
+    // `close_voting` le prenait dans le corps de la requête. Deux défauts d'un
+    // coup : le frontend envoyait `{}`, donc la désérialisation échouait en 400
+    // et le bouton « Clôturer le vote » paraissait inerte — rapporté trois fois
+    // en recette (R3-3, RN-8), et deuxième des trois verrous qui empêchent une
+    // AG d'aboutir (#780). Et surtout, un client qui aurait fourni un total
+    // erroné faisait proclamer une majorité qui n'existe pas.
+    //
+    // Les tantièmes de l'acte de base sont une donnée de l'immeuble. C'est là
+    // qu'on les prend.
+    let total_voting_power = {
+        let Ok(Some(resolution)) = state
+            .resolution_use_cases
+            .get_resolution(*resolution_id)
+            .await
+        else {
+            return HttpResponse::NotFound().json(serde_json::json!({
+                "error": "Resolution not found"
+            }));
+        };
+        let Ok(Some(meeting)) = state
+            .meeting_use_cases
+            .get_meeting(resolution.meeting_id)
+            .await
+        else {
+            return HttpResponse::NotFound().json(serde_json::json!({
+                "error": "Meeting not found"
+            }));
+        };
+        let Ok(Some(building)) = state
+            .building_use_cases
+            .get_building(meeting.building_id)
+            .await
+        else {
+            return HttpResponse::NotFound().json(serde_json::json!({
+                "error": "Building not found"
+            }));
+        };
+        rust_decimal::Decimal::from(building.total_tantiemes)
+    };
+
     match state
         .resolution_use_cases
-        .close_voting(*resolution_id, request.total_voting_power)
+        .close_voting(*resolution_id, total_voting_power)
         .await
     {
         Ok(resolution) => {

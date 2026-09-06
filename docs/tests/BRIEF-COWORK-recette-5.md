@@ -75,7 +75,13 @@ Les trois verrous que vous avez trouvés sont consignés dans l'issue **#780** e
 
 - **Le report d'AG.** Vous l'avez vu inerte sur une AG à date passée. L'est-il aussi sur une AG lointaine, où le report est anodin ? Si oui, le bouton est mort partout ; si non, il échoue seulement dans le cas qui compte.
 - **L'envoi de convocation.** Existe-t-il un autre écran — fiche de convocation, détail d'immeuble, liste des copropriétaires — où l'on peut désigner des destinataires ? Nous ne l'avons pas trouvé dans le code, mais un chemin d'interface nous a déjà échappé.
-- **La clôture de vote.** Le bouton réagit-il différemment selon l'état de la résolution, ou selon le rôle connecté ? Un comptable, un copropriétaire.
+- **La clôture de vote est corrigée**, et sa cause mérite d'être connue de vous. Le champ `total_voting_power` était obligatoire côté serveur et le frontend envoyait un corps vide : la requête échouait en `400` avant d'atteindre la moindre logique. Le total est désormais lu sur l'immeuble, jamais reçu du client.
+
+  **Mais votre observation avait une seconde cause, qui vous concerne directement.** Le bouton ouvre une boîte `confirm()` avant d'envoyer. Un navigateur piloté la rejette par défaut : **aucune requête ne partait**, ce qui explique mot pour mot « aucun dialogue, aucun changement, aucun message ». Un syndic humain aurait vu la boîte.
+
+  À retenir pour toutes vos recettes : **un bouton protégé par une confirmation paraîtra toujours inerte** si votre outil n'accepte pas le dialogue. Acceptez-le explicitement, et dites-nous quand un bouton en ouvre un.
+
+  À vérifier maintenant : clôturez une résolution de bout en bout, et regardez si la condition « 1 résolution en cours » disparaît de l'écran d'AG.
 
 ### 2. Le blocage de conformité, que vous proposiez de tester
 
@@ -104,7 +110,7 @@ R0-6 de votre première recette : « erreur technique affichée au lieu d'un onb
 
 | Réf | Sujet | Issue |
 |---|---|---|
-| RN-9, RN-10, RN-8 | Les trois verrous du cycle de vie d'une AG | #780 |
+| RN-9, RN-10 | Deux des trois verrous d'AG : report impossible, destinataires de convocation | #780 |
 | RN-13 | « API Error: 404 » à l'ouverture des Réservations | #766 |
 | — | Le syndic agissant pour le compte de l'ACP | #781, #588 |
 | R2-1 / R1-7 | `total_units` jamais recalculé | #770 |

@@ -1372,3 +1372,70 @@ async fn security_les_votes_dune_resolution_ne_fuient_pas_vers_une_autre_organis
          doivent pas être lisibles"
     );
 }
+
+// ─────────────────────────────────────────────────────────────────────────
+// Régression R3-3 / RN-8, rapportée trois fois : « Clôturer le vote » sans
+// effet.
+//
+// `CloseVotingRequest.total_voting_power` était OBLIGATOIRE et le frontend
+// envoyait `{}` : la requête échouait à la désérialisation, en 400, avant
+// d'atteindre le gestionnaire. Rien ne se passait à l'écran, et c'était le
+// deuxième des trois verrous empêchant une AG d'aboutir (#780).
+//
+// Le total est désormais lu sur l'immeuble, jamais reçu du client — un total
+// fourni par l'appelant permettait de faire proclamer une majorité qui
+// n'existe pas (#767).
+//
+// Ce test envoie exactement ce que le frontend envoie : un objet vide.
+// ─────────────────────────────────────────────────────────────────────────
+
+#[actix_web::test]
+#[serial]
+async fn test_cloturer_le_vote_accepte_un_corps_vide_comme_le_frontend() {
+    let (app_state, _container, org_id) = setup_app().await;
+    let (token, _org, _building, meeting_id, _o1, _o2, _u1) =
+        create_test_fixtures(&app_state, org_id).await;
+
+    let app = test::init_service(
+        App::new()
+            .app_data(app_state.clone())
+            .configure(configure_routes),
+    )
+    .await;
+
+    let req = test::TestRequest::post()
+        .uri(&format!("/api/v1/meetings/{}/resolutions", meeting_id))
+        .insert_header((header::AUTHORIZATION, format!("Bearer {}", token)))
+        .set_json(json!({
+            "meeting_id": meeting_id.to_string(),
+            "title": "Résolution à clôturer",
+            "description": "Contrôle du corps vide sur la clôture",
+            "resolution_type": "ordinary",
+            "majority_required": "absolute"
+        }))
+        .to_request();
+    let resp = test::call_service(&app, req).await;
+    assert_eq!(resp.status(), 201, "la résolution doit être créée");
+    let cree: serde_json::Value = test::read_body_json(resp).await;
+    let resolution_id = cree["id"].as_str().expect("identifiant rendu").to_string();
+
+    // Exactement le corps que `resolutionsApi.closeVoting` envoie.
+    let req = test::TestRequest::put()
+        .uri(&format!("/api/v1/resolutions/{}/close", resolution_id))
+        .insert_header((header::AUTHORIZATION, format!("Bearer {}", token)))
+        .set_json(json!({}))
+        .to_request();
+    let resp = test::call_service(&app, req).await;
+
+    assert_ne!(
+        resp.status(),
+        400,
+        "un corps vide ne doit plus être refusé à la désérialisation : c'est \
+         ce qui rendait le bouton « Clôturer le vote » inerte"
+    );
+    assert!(
+        resp.status().is_success(),
+        "la clôture doit aboutir, statut obtenu : {}",
+        resp.status()
+    );
+}
