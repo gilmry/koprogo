@@ -258,6 +258,26 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/auth/logout": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Logout
+     * @description Révoque tous les refresh tokens de l'utilisateur (déconnexion serveur) et expire le cookie HttpOnly `koprogo_refresh` (WP-FE1).
+     */
+    post: operations["logout"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/auth/me": {
     parameters: {
       query?: never;
@@ -1333,6 +1353,23 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/organizations/{organization_id}/payment-methods": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Lister les moyens de paiement d'une organisation */
+    get: operations["list_organization_payment_methods"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/organizations/{organization_id}/payments": {
     parameters: {
       query?: never;
@@ -1456,6 +1493,108 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/owners/{owner_id}/payment-methods": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Lister les moyens de paiement d'un copropriétaire */
+    get: operations["list_owner_payment_methods"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/owners/{owner_id}/payment-methods/active": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Lister les moyens de paiement actifs d'un copropriétaire */
+    get: operations["list_active_owner_payment_methods"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/owners/{owner_id}/payment-methods/count": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Compter les moyens de paiement actifs d'un copropriétaire */
+    get: operations["count_active_payment_methods"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/owners/{owner_id}/payment-methods/default": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Récupérer le moyen de paiement par défaut d'un copropriétaire */
+    get: operations["get_default_payment_method"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/owners/{owner_id}/payment-methods/has-active": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Indiquer si un copropriétaire a au moins un moyen de paiement actif */
+    get: operations["has_active_payment_methods"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/owners/{owner_id}/payment-methods/type/{method_type}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Lister les moyens de paiement d'un copropriétaire par type */
+    get: operations["list_payment_methods_by_type"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/owners/{owner_id}/payments": {
     parameters: {
       query?: never;
@@ -1500,6 +1639,110 @@ export interface paths {
     /** Get total amount paid by an owner */
     get: operations["get_owner_total_paid"];
     put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/payment-methods": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Enregistrer un moyen de paiement pour un copropriétaire */
+    post: operations["create_payment_method"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/payment-methods/stripe/{stripe_payment_method_id}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Récupérer un moyen de paiement par son identifiant Stripe */
+    get: operations["get_payment_method_by_stripe_id"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/payment-methods/{id}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Récupérer un moyen de paiement */
+    get: operations["get_payment_method"];
+    /** Mettre à jour un moyen de paiement */
+    put: operations["update_payment_method"];
+    post?: never;
+    /** Supprimer un moyen de paiement */
+    delete: operations["delete_payment_method"];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/payment-methods/{id}/deactivate": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /** Désactiver un moyen de paiement */
+    put: operations["deactivate_payment_method"];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/payment-methods/{id}/reactivate": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /** Réactiver un moyen de paiement */
+    put: operations["reactivate_payment_method"];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/payment-methods/{id}/set-default": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /** Désigner un moyen de paiement comme moyen par défaut */
+    put: operations["set_payment_method_as_default"];
     post?: never;
     delete?: never;
     options?: never;
@@ -1834,6 +2077,113 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/portfolios": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List portfolios visible to the authenticated user (owned + shared) */
+    get: operations["list_portfolios"];
+    put?: never;
+    /** Create a portfolio */
+    post: operations["create_portfolio"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/portfolios/{id}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get a portfolio by id (owner OR shared) */
+    get: operations["get_portfolio"];
+    /** Update a portfolio (owner OR shared can_edit) */
+    put: operations["update_portfolio"];
+    post?: never;
+    /** Delete a portfolio (owner only) */
+    delete: operations["delete_portfolio"];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/portfolios/{id}/buildings": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List buildings of a portfolio (favorites first) */
+    get: operations["list_portfolio_buildings"];
+    put?: never;
+    /** Add a building to a portfolio (owner OR shared can_edit) */
+    post: operations["add_portfolio_building"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/portfolios/{id}/buildings/{building_id}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    /** Remove a building from a portfolio */
+    delete: operations["remove_portfolio_building"];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/portfolios/{id}/shares": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List shares of a portfolio (owner only) */
+    get: operations["list_portfolio_shares"];
+    put?: never;
+    /** Share a portfolio with another user (owner only) */
+    post: operations["share_portfolio"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/portfolios/{id}/shares/{user_id}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    /** Unshare a portfolio (owner only) */
+    delete: operations["unshare_portfolio"];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/resolutions/{id}": {
     parameters: {
       query?: never;
@@ -2052,6 +2402,23 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/tickets/assignable-users": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List users assignable to tickets */
+    get: operations["list_assignable_users"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/tickets/assigned-to-me": {
     parameters: {
       query?: never;
@@ -2232,6 +2599,23 @@ export interface paths {
     get?: never;
     /** Mark a ticket as resolved */
     put: operations["resolve_ticket"];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/tickets/{id}/send-work-order": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /** Send work order to contractor (magic link PWA) */
+    put: operations["send_work_order"];
     post?: never;
     delete?: never;
     options?: never;
@@ -2432,6 +2816,11 @@ export interface components {
       total_tantiemes: number;
       updated_at: string;
     };
+    /** @description Ajout d'un building au portfolio. */
+    AddBuildingDto: {
+      building_id: string;
+      is_favorite?: boolean;
+    };
     /**
      * @description Statut d'approbation pour le workflow de validation
      * @enum {string}
@@ -2485,6 +2874,11 @@ export interface components {
     /** @description Response containing call for funds details */
     CallForFundsResponse: {
       account_code?: string | null;
+      /**
+       * Format: uuid
+       * @description L'ACP propriétaire de la pièce (ADR-0045).
+       */
+      acp_id: string;
       /** Format: uuid */
       building_id: string;
       /** Format: date-time */
@@ -2503,6 +2897,12 @@ export interface components {
       notes?: string | null;
       /** Format: uuid */
       organization_id: string;
+      /**
+       * @description Part affectée au fonds de réserve, communiquée avec l'appel
+       *     (Art. 3.86 § 3 al. 7). C'est ce que le copropriétaire ne récupérera pas
+       *     en vendant son lot : elle suit le lot, pas le vendeur.
+       */
+      reserve_fund_share: string;
       /** Format: date-time */
       sent_date?: string | null;
       status: string;
@@ -2562,8 +2962,22 @@ export interface components {
     };
     /** @description Request DTO for closing voting on a resolution */
     CloseVotingRequest: {
-      /** @description Total tantièmes du bâtiment — Decimal exact (ADR-0008), string JSON. */
-      total_voting_power: string;
+      /**
+       * @description Total des tantièmes de l'immeuble, **facultatif et ignoré**.
+       *
+       *     Ce champ était obligatoire, et le frontend envoyait `{}` : la requête
+       *     échouait donc à la désérialisation, en 400, avant même d'atteindre le
+       *     gestionnaire. Le bouton « Clôturer le vote » paraissait inerte, ce qui
+       *     a été rapporté trois fois en recette (R3-3, RN-8) et bloquait la
+       *     deuxième des trois conditions de clôture d'une AG.
+       *
+       *     Il est conservé pour ne pas casser les appelants existants, mais le
+       *     serveur ne s'en sert plus : le dénominateur de la majorité est
+       *     désormais lu sur l'immeuble. Le laisser fournir par le client
+       *     permettait de faire proclamer une majorité qui n'existe pas — signalé
+       *     dans l'issue #767.
+       */
+      total_voting_power?: string | null;
     };
     /** @description Response for successful consent recording */
     ConsentRecordedResponse: {
@@ -2687,6 +3101,14 @@ export interface components {
       description: string;
       /** Format: date-time */
       due_date: string;
+      /**
+       * @description Part du montant appelé affectée au fonds de réserve.
+       *
+       *     Art. 3.86 § 3 al. 7 : le syndic doit la communiquer **lors de l'appel**.
+       *     Absente, elle vaut zéro — ce qui reste une communication explicite,
+       *     contrairement au silence d'avant.
+       */
+      reserve_fund_share?: string;
       title: string;
       total_amount: string;
     };
@@ -2740,6 +3162,19 @@ export interface components {
       /** Format: uuid */
       unit_id?: string | null;
     };
+    /** @description Create payment method request DTO (from Stripe) */
+    CreatePaymentMethodRequest: {
+      display_label: string;
+      /** Format: date-time */
+      expires_at?: string | null;
+      is_default: boolean;
+      metadata?: string | null;
+      method_type: components["schemas"]["StoredPaymentMethodType"];
+      /** Format: uuid */
+      owner_id: string;
+      stripe_customer_id: string;
+      stripe_payment_method_id: string;
+    };
     /**
      * @description Create payment request DTO
      *
@@ -2789,6 +3224,16 @@ export interface components {
       display_order: number;
       id?: string | null;
       option_text: string;
+    };
+    /**
+     * @description Création d'un portfolio.
+     *
+     *     `owner_user_id` est inféré côté handler depuis `AuthenticatedUser`
+     *     — pas exposé dans le body pour éviter toute escalade.
+     */
+    CreatePortfolioDto: {
+      description?: string | null;
+      name: string;
     };
     /** @description Request DTO for creating a resolution */
     CreateResolutionRequest: {
@@ -3170,6 +3615,11 @@ export interface components {
     /** @description DTO for owner contribution response */
     OwnerContributionResponse: {
       account_code?: string | null;
+      /**
+       * Format: uuid
+       * @description L'ACP propriétaire de la pièce (ADR-0045).
+       */
+      acp_id: string;
       amount: string;
       /** Format: date-time */
       contribution_date: string;
@@ -3197,6 +3647,30 @@ export interface components {
     };
     /** @enum {string} */
     ParticipationLevel: "New" | "Beginner" | "Active" | "Veteran" | "Expert";
+    /** @description Payment method response DTO */
+    PaymentMethodResponse: {
+      /** Format: date-time */
+      created_at: string;
+      display_label: string;
+      /** Format: date-time */
+      expires_at?: string | null;
+      /** Format: uuid */
+      id: string;
+      is_active: boolean;
+      is_default: boolean;
+      is_expired: boolean;
+      is_usable: boolean;
+      metadata?: string | null;
+      method_type: components["schemas"]["StoredPaymentMethodType"];
+      /** Format: uuid */
+      organization_id: string;
+      /** Format: uuid */
+      owner_id: string;
+      stripe_customer_id: string;
+      stripe_payment_method_id: string;
+      /** Format: date-time */
+      updated_at: string;
+    };
     /**
      * @description Payment method type (extensible for future methods)
      * @enum {string}
@@ -3211,6 +3685,28 @@ export interface components {
     PollStatus: "draft" | "active" | "closed" | "cancelled";
     /** @enum {string} */
     PollType: "yes_no" | "multiple_choice" | "rating" | "open_ended";
+    /** @description Building du portfolio (élément du listing trié favoris d'abord). */
+    PortfolioBuildingResponseDto: {
+      building_id: string;
+      is_favorite: boolean;
+      portfolio_id: string;
+    };
+    /** @description Réponse JSON pour un portfolio. */
+    PortfolioResponseDto: {
+      created_at: string;
+      description?: string | null;
+      id: string;
+      name: string;
+      owner_user_id: string;
+      updated_at: string;
+    };
+    /** @description Partage du portfolio. */
+    PortfolioShareResponseDto: {
+      can_edit: boolean;
+      portfolio_id: string;
+      shared_at: string;
+      shared_with_user_id: string;
+    };
     /** @enum {string} */
     QuoteStatus:
       | "Requested"
@@ -3319,6 +3815,11 @@ export interface components {
       call_for_funds: components["schemas"]["CallForFundsResponse"];
       contributions_generated: number;
     };
+    /** @description Partage du portfolio avec un autre utilisateur. */
+    SharePortfolioDto: {
+      can_edit?: boolean;
+      shared_with_user_id: string;
+    };
     /**
      * @description Category for shared objects
      * @enum {string}
@@ -3368,6 +3869,31 @@ export interface components {
      * @enum {string}
      */
     SortOrder: "asc" | "desc";
+    /**
+     * @description Type d'un moyen de paiement **enregistré**, c'est-à-dire d'un instrument
+     *     conservé chez Stripe et réutilisable.
+     *
+     *     Deux variantes seulement, et c'est correct : on ne peut pas « enregistrer »
+     *     du liquide, ni un virement manuel. Un instrument enregistré porte un
+     *     `stripe_payment_method_id` et un `stripe_customer_id` — l'entité l'exige.
+     *
+     *     **À ne pas confondre avec `payment::PaymentMethodType`**, qui décrit
+     *     comment un paiement a été REÇU et compte quatre variantes, dont le
+     *     virement manuel et l'espèce.
+     *
+     *     Les deux types portaient le même nom Rust ET le même nom de schéma. utoipa
+     *     n'en publie qu'un sous un nom donné : le contrat annonçait donc
+     *     `["card", "sepa_debit"]` partout, y compris pour le champ
+     *     `CreatePaymentRequest.payment_method_type` — interdisant à tout client
+     *     engendré depuis le contrat d'enregistrer un paiement en espèces ou par
+     *     virement, deux façons parfaitement ordinaires de payer ses charges.
+     *
+     *     D'où le nom de schéma distinct. Le doc-comment précédent affirmait
+     *     « aligned with Payment entity » alors qu'il en avait deux variantes sur
+     *     quatre. Voir #819.
+     * @enum {string}
+     */
+    StoredPaymentMethodType: "card" | "sepa_debit";
     SwitchRoleRequest: {
       /** Format: uuid */
       role_id: string;
@@ -3483,6 +4009,10 @@ export interface components {
     };
     /**
      * @description Type de lot (appartement, cave, parking, etc.)
+     *
+     *     `Copy` parce que le décompte légal de l'Art. 3.89 § 5, 15° raisonne sur
+     *     des natures de lot, pas sur des lots : les cloner pour les compter serait
+     *     du bruit.
      * @enum {string}
      */
     UnitType: "Apartment" | "Parking" | "Cellar" | "Commercial" | "Other";
@@ -3523,6 +4053,12 @@ export interface components {
       /** Format: int32 */
       total_units: number;
     };
+    /** @description Update payment method request DTO */
+    UpdatePaymentMethodRequest: {
+      display_label?: string | null;
+      is_default?: boolean | null;
+      metadata?: string | null;
+    };
     /** @description Update poll (only draft polls can be updated) */
     UpdatePollDto: {
       allow_multiple_votes?: boolean | null;
@@ -3532,6 +4068,11 @@ export interface components {
       options?: components["schemas"]["CreatePollOptionDto"][] | null;
       require_all_owners?: boolean | null;
       title?: string | null;
+    };
+    /** @description Mise à jour d'un portfolio (PUT — état complet). */
+    UpdatePortfolioDto: {
+      description?: string | null;
+      name: string;
     };
     /** @description Update Notification Preference Request */
     UpdatePreferenceRequest: {
@@ -4013,6 +4554,38 @@ export interface operations {
       };
       /** @description Not Found */
       404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Internal Server Error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  logout: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Déconnecté, cookie expiré */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Access token absent ou invalide */
+      401: {
         headers: {
           [name: string]: unknown;
         };
@@ -6353,6 +6926,29 @@ export interface operations {
       };
     };
   };
+  list_organization_payment_methods: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Identifiant de l'organisation */
+        organization_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Liste des moyens de paiement */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["PaymentMethodResponse"][];
+        };
+      };
+    };
+  };
   list_organization_payments: {
     parameters: {
       query?: never;
@@ -6603,6 +7199,156 @@ export interface operations {
       };
     };
   };
+  list_owner_payment_methods: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Identifiant du copropriétaire */
+        owner_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Liste des moyens de paiement */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["PaymentMethodResponse"][];
+        };
+      };
+    };
+  };
+  list_active_owner_payment_methods: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Identifiant du copropriétaire */
+        owner_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Liste des moyens actifs */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["PaymentMethodResponse"][];
+        };
+      };
+    };
+  };
+  count_active_payment_methods: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Identifiant du copropriétaire */
+        owner_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Nombre de moyens actifs */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  get_default_payment_method: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Identifiant du copropriétaire */
+        owner_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Moyen par défaut */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["PaymentMethodResponse"];
+        };
+      };
+      /** @description Aucun moyen par défaut */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  has_active_payment_methods: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Identifiant du copropriétaire */
+        owner_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Présence d'un moyen actif */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  list_payment_methods_by_type: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Identifiant du copropriétaire */
+        owner_id: string;
+        /** @description Type de moyen : card, sepa_debit, bancontact */
+        method_type: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Liste filtrée */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["PaymentMethodResponse"][];
+        };
+      };
+      /** @description Type de moyen inconnu */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
   list_owner_payments: {
     parameters: {
       query?: never;
@@ -6680,6 +7426,267 @@ export interface operations {
       };
       /** @description Internal server error */
       500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  create_payment_method: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["CreatePaymentMethodRequest"];
+      };
+    };
+    responses: {
+      /** @description Moyen de paiement créé */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["PaymentMethodResponse"];
+        };
+      };
+      /** @description Requête invalide — champs manquants ou moyen déjà enregistré */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description L'utilisateur n'appartient à aucune organisation */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  get_payment_method_by_stripe_id: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Identifiant Stripe */
+        stripe_payment_method_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Moyen de paiement */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["PaymentMethodResponse"];
+        };
+      };
+      /** @description Introuvable */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  get_payment_method: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Identifiant du moyen de paiement */
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Moyen de paiement */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["PaymentMethodResponse"];
+        };
+      };
+      /** @description Introuvable */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  update_payment_method: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Identifiant du moyen de paiement */
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["UpdatePaymentMethodRequest"];
+      };
+    };
+    responses: {
+      /** @description Moyen mis à jour */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["PaymentMethodResponse"];
+        };
+      };
+      /** @description Requête invalide */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Introuvable */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  delete_payment_method: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Identifiant du moyen de paiement */
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Moyen supprimé */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Introuvable */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  deactivate_payment_method: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Identifiant du moyen de paiement */
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Moyen désactivé */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["PaymentMethodResponse"];
+        };
+      };
+      /** @description Introuvable */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  reactivate_payment_method: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Identifiant du moyen de paiement */
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Moyen réactivé */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["PaymentMethodResponse"];
+        };
+      };
+      /** @description Introuvable */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  set_payment_method_as_default: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Identifiant du moyen de paiement */
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": unknown;
+      };
+    };
+    responses: {
+      /** @description Moyen désigné par défaut */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["PaymentMethodResponse"];
+        };
+      };
+      /** @description Introuvable */
+      404: {
         headers: {
           [name: string]: unknown;
         };
@@ -7567,6 +8574,435 @@ export interface operations {
       };
     };
   };
+  list_portfolios: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description List of portfolios */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["PortfolioResponseDto"][];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  create_portfolio: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["CreatePortfolioDto"];
+      };
+    };
+    responses: {
+      /** @description Portfolio created */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["PortfolioResponseDto"];
+        };
+      };
+      /** @description Validation error */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  get_portfolio: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Portfolio UUID */
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Portfolio found */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["PortfolioResponseDto"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  update_portfolio: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Portfolio UUID */
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["UpdatePortfolioDto"];
+      };
+    };
+    responses: {
+      /** @description Portfolio updated */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["PortfolioResponseDto"];
+        };
+      };
+      /** @description Validation error */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Forbidden */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  delete_portfolio: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Portfolio UUID */
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Portfolio deleted */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Forbidden */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  list_portfolio_buildings: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Portfolio UUID */
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description List of buildings */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["PortfolioBuildingResponseDto"][];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Portfolio not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  add_portfolio_building: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Portfolio UUID */
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["AddBuildingDto"];
+      };
+    };
+    responses: {
+      /** @description Building added */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["PortfolioBuildingResponseDto"];
+        };
+      };
+      /** @description Validation error */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Forbidden */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Portfolio or Building not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  remove_portfolio_building: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Portfolio UUID */
+        id: string;
+        /** @description Building UUID */
+        building_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Building removed */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Forbidden */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  list_portfolio_shares: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Portfolio UUID */
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description List of shares */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["PortfolioShareResponseDto"][];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  share_portfolio: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Portfolio UUID */
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["SharePortfolioDto"];
+      };
+    };
+    responses: {
+      /** @description Portfolio shared */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["PortfolioShareResponseDto"];
+        };
+      };
+      /** @description Validation error */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Forbidden */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Portfolio or User not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  unshare_portfolio: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Portfolio UUID */
+        id: string;
+        /** @description Shared user UUID */
+        user_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Unshared */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Forbidden */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Share not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
   get_resolution: {
     parameters: {
       query?: never;
@@ -8168,6 +9604,38 @@ export interface operations {
       };
     };
   };
+  list_assignable_users: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description List of assignable users */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Forbidden — only syndic/superadmin */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
   list_assigned_tickets: {
     parameters: {
       query?: never;
@@ -8584,6 +10052,41 @@ export interface operations {
     };
     responses: {
       /** @description Ticket resolved */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Bad request */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  send_work_order: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Ticket ID */
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Work order sent */
       200: {
         headers: {
           [name: string]: unknown;

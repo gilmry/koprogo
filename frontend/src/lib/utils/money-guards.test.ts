@@ -58,7 +58,9 @@ describe("montants — garde-fous statiques", () => {
   it("n'additionne jamais un champ Decimal sans le convertir", () => {
     const motif = new RegExp(
       // `+ <qqch>.<champ>` sans passage par toNumber/parseFloat/Number.
-      String.raw`\+\s*\(?\s*[A-Za-z_$][\w$]*\.(` + CHAMPS_DECIMAUX.join("|") + String.raw`)\b`,
+      String.raw`\+\s*\(?\s*[A-Za-z_$][\w$]*\.(` +
+        CHAMPS_DECIMAUX.join("|") +
+        String.raw`)\b`,
       "g",
     );
 
@@ -69,10 +71,14 @@ describe("montants — garde-fous statiques", () => {
         // Les commentaires citent volontiers le motif fautif pour l'expliquer :
         // sans ce filtre, la documentation du défaut le fait rouvrir.
         const nue = ligne.trim();
-        if (nue.startsWith("//") || nue.startsWith("*") || nue.startsWith("/*")) return;
-        if (ligne.includes("toNumber(") || ligne.includes("parseFloat(")) return;
+        if (nue.startsWith("//") || nue.startsWith("*") || nue.startsWith("/*"))
+          return;
+        if (ligne.includes("toNumber(") || ligne.includes("parseFloat("))
+          return;
         if (motif.test(ligne)) {
-          fautes.push(`${relative(SRC, f)}:${i + 1}  ${ligne.trim().slice(0, 110)}`);
+          fautes.push(
+            `${relative(SRC, f)}:${i + 1}  ${ligne.trim().slice(0, 110)}`,
+          );
         }
         motif.lastIndex = 0;
       });
@@ -127,7 +133,10 @@ describe("montants — garde-fous statiques", () => {
    */
   it("rend toutes les valeurs d'énumération déclarées au contrat", () => {
     const contrat = JSON.parse(
-      readFileSync(join(SRC, "..", "..", "docs", "api", "openapi.json"), "utf-8"),
+      readFileSync(
+        join(SRC, "..", "..", "docs", "api", "openapi.json"),
+        "utf-8",
+      ),
     );
     const enums: Record<string, string[]> = {};
     for (const [nom, def] of Object.entries<any>(contrat.components.schemas)) {
@@ -141,7 +150,9 @@ describe("montants — garde-fous statiques", () => {
     const fautes: string[] = [];
     for (const f of badges) {
       const src = readFileSync(f, "utf-8");
-      const cles = [...src.matchAll(/^\s*['"]([A-Za-z_]+)['"]\s*:\s*\{/gm)].map((m) => m[1]);
+      const cles = [...src.matchAll(/^\s*['"]([A-Za-z_]+)['"]\s*:\s*\{/gm)].map(
+        (m) => m[1],
+      );
       if (cles.length === 0) continue;
 
       const normalise = /\.toLowerCase\(\)\]/.test(src);

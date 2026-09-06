@@ -63,10 +63,9 @@ test.describe("Workflows financiers 2026-09-01 — non-régression", () => {
     });
 
     // Le défaut d'origine : 200, et le champ perdu sans trace.
-    expect(
-      resp.status(),
-      "un champ inconnu doit être refusé, pas ignoré",
-    ).toBe(400);
+    expect(resp.status(), "un champ inconnu doit être refusé, pas ignoré").toBe(
+      400,
+    );
 
     // Et le refus doit être du JSON exploitable, pas le `text/plain` d'Actix :
     // un appelant faisant `.json()` dessus recevait « Unexpected token 'J' ».
@@ -75,7 +74,9 @@ test.describe("Workflows financiers 2026-09-01 — non-régression", () => {
     expect(JSON.stringify(corps)).toContain("owner_id");
   });
 
-  test("F1 — le même corps SANS `owner_id` passe toujours", async ({ page }) => {
+  test("F1 — le même corps SANS `owner_id` passe toujours", async ({
+    page,
+  }) => {
     // Contre-épreuve indispensable : `deny_unknown_fields` ne doit pas avoir
     // cassé la modification de lot pour tout le monde.
     const ctx = await loginAsSyndicWithUnit(page, "fin-f1b");
@@ -274,14 +275,17 @@ test.describe("Workflows financiers 2026-09-01 — non-régression", () => {
       expect(prop.status(), await prop.text()).toBe(201);
       const ownerId = (await prop.json()).id;
 
-      const det = await page.request.post(`${API_BASE}/units/${unitId}/owners`, {
-        data: {
-          owner_id: ownerId,
-          ownership_percentage: 1.0,
-          is_primary_contact: true,
+      const det = await page.request.post(
+        `${API_BASE}/units/${unitId}/owners`,
+        {
+          data: {
+            owner_id: ownerId,
+            ownership_percentage: 1.0,
+            is_primary_contact: true,
+          },
+          headers: admin,
         },
-        headers: admin,
-      });
+      );
       expect(det.status(), `détention ${i + 1}: ${await det.text()}`).toBe(201);
     }
 
@@ -738,21 +742,27 @@ test.describe("Workflows financiers 2026-09-01 — non-régression", () => {
     // 5. Rejet sans motif : un refus doit être motivé.
     const rejetee = await creerFacture();
     await soumettre(rejetee);
-    const r5 = await page.request.put(`${API_BASE}/invoices/${rejetee}/reject`, {
-      data: { rejected_by_user_id: ctx.userId, rejection_reason: "   " },
-      headers: syndic,
-    });
+    const r5 = await page.request.put(
+      `${API_BASE}/invoices/${rejetee}/reject`,
+      {
+        data: { rejected_by_user_id: ctx.userId, rejection_reason: "   " },
+        headers: syndic,
+      },
+    );
     expect(r5.status()).toBe(400);
     expect(await r5.text()).toContain("reason cannot be empty");
 
     // 6. Rejet motivé, puis approbation d'une facture rejetée.
-    const r6 = await page.request.put(`${API_BASE}/invoices/${rejetee}/reject`, {
-      data: {
-        rejected_by_user_id: ctx.userId,
-        rejection_reason: "Montant erroné",
+    const r6 = await page.request.put(
+      `${API_BASE}/invoices/${rejetee}/reject`,
+      {
+        data: {
+          rejected_by_user_id: ctx.userId,
+          rejection_reason: "Montant erroné",
+        },
+        headers: syndic,
       },
-      headers: syndic,
-    });
+    );
     expect(r6.status()).toBe(200);
     const r7 = await approuver(rejetee);
     expect(r7.status()).toBe(400);
@@ -873,18 +883,21 @@ test.describe("Workflows financiers 2026-09-01 — non-régression", () => {
       "un cabinet tiers ne doit pas pouvoir imputer une charge",
     ).toBe(403);
 
-    const intrusionAppel = await page.request.post(`${API_BASE}/call-for-funds`, {
-      data: {
-        building_id: a.buildingId,
-        title: `INTRUSION ${ts}`,
-        description: "x",
-        total_amount: 25000.0,
-        contribution_type: "regular",
-        call_date: new Date().toISOString(),
-        due_date: new Date(Date.now() + 30 * 864e5).toISOString(),
+    const intrusionAppel = await page.request.post(
+      `${API_BASE}/call-for-funds`,
+      {
+        data: {
+          building_id: a.buildingId,
+          title: `INTRUSION ${ts}`,
+          description: "x",
+          total_amount: 25000.0,
+          contribution_type: "regular",
+          call_date: new Date().toISOString(),
+          due_date: new Date(Date.now() + 30 * 864e5).toISOString(),
+        },
+        headers: synB,
       },
-      headers: synB,
-    });
+    );
     expect(
       intrusionAppel.status(),
       "un cabinet tiers ne doit pas pouvoir appeler des fonds",
@@ -1181,7 +1194,9 @@ test.describe("Workflows financiers 2026-09-01 — non-régression", () => {
 
     await page.goto("/payment-reminders");
     await page
-      .getByRole("button", { name: /relances automatiques|automatic reminders/i })
+      .getByRole("button", {
+        name: /relances automatiques|automatic reminders/i,
+      })
       .first()
       .click();
 
@@ -1243,8 +1258,18 @@ test.describe("Workflows financiers 2026-09-01 — non-régression", () => {
         description: `Non-regression F6 ${reference}`,
         document_ref: reference,
         lines: [
-          { account_code: "611002", debit: 100.0, credit: 0.0, description: "Charge" },
-          { account_code: "440", debit: 0.0, credit: 100.0, description: "Fournisseur" },
+          {
+            account_code: "611002",
+            debit: 100.0,
+            credit: 0.0,
+            description: "Charge",
+          },
+          {
+            account_code: "440",
+            debit: 0.0,
+            credit: 100.0,
+            description: "Fournisseur",
+          },
         ],
       },
       headers: { Authorization: `Bearer ${ctx.token}` },
@@ -1259,7 +1284,10 @@ test.describe("Workflows financiers 2026-09-01 — non-régression", () => {
     const ligne = page
       .getByTestId("journal-entry-row")
       .filter({ hasText: reference });
-    await expect(ligne, "l'écriture doit être retrouvable depuis l'UI").toBeVisible({
+    await expect(
+      ligne,
+      "l'écriture doit être retrouvable depuis l'UI",
+    ).toBeVisible({
       timeout: 15000,
     });
 
@@ -1284,7 +1312,12 @@ test.describe("Workflows financiers 2026-09-01 — non-régression", () => {
         reference: "REF-KO",
         description: "Non-regression F16",
         lines: [
-          { account_code: "611002", debit: 100.0, credit: 0.0, description: "x" },
+          {
+            account_code: "611002",
+            debit: 100.0,
+            credit: 0.0,
+            description: "x",
+          },
           { account_code: "440", debit: 0.0, credit: 100.0, description: "y" },
         ],
       },
@@ -1329,7 +1362,9 @@ test.describe("Workflows financiers 2026-09-01 — non-régression", () => {
   // F8 / F11 / F15 — libellés
   // ───────────────────────────────────────────────────────────────────────
 
-  test("F11 — le titre de la fiche budget porte son accent", async ({ page }) => {
+  test("F11 — le titre de la fiche budget porte son accent", async ({
+    page,
+  }) => {
     await loginAsSyndicWithBuilding(page, "fin-f11");
     await page.goto("/budget-detail?id=00000000-0000-0000-0000-000000000000");
     await expect(page).toHaveTitle(/Détail du Budget/);
@@ -1367,10 +1402,15 @@ test.describe("Workflows financiers 2026-09-01 — non-régression", () => {
     // La section n'était rendue QUE si des ventilations existaient déjà, et
     // rien dans l'interface ne permettait d'en créer : elle était donc
     // invisible en permanence.
-    await expect(section, "la section doit exister même sans ventilation").toBeVisible({
+    await expect(
+      section,
+      "la section doit exister même sans ventilation",
+    ).toBeVisible({
       timeout: 15000,
     });
-    await expect(page.getByTestId("calculate-distribution-button")).toBeVisible();
+    await expect(
+      page.getByTestId("calculate-distribution-button"),
+    ).toBeVisible();
   });
 
   test("F20 — la fiche dépense montre la décomposition HT / TVA", async ({
@@ -1397,7 +1437,9 @@ test.describe("Workflows financiers 2026-09-01 — non-régression", () => {
     await page.goto(`/expense-detail?id=${depense.id}`);
 
     const tva = page.getByTestId("vat-breakdown");
-    await expect(tva, "seul le TTC était affiché").toBeVisible({ timeout: 15000 });
+    await expect(tva, "seul le TTC était affiché").toBeVisible({
+      timeout: 15000,
+    });
     await expect(page.getByTestId("vat-excl")).toContainText("2");
     await expect(page.getByTestId("vat-incl")).toContainText("2");
     // Le montant de TVA se déduit du HT et du TTC quand il n'est pas persisté.

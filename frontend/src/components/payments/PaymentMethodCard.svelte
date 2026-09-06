@@ -3,7 +3,7 @@
   import { _ } from '../../lib/i18n';
   import {
     paymentMethodsApi,
-    PaymentMethodType,
+    StoredPaymentMethodType,
     type PaymentMethod,
   } from "../../lib/api/payments";
   import { withErrorHandling } from "../../lib/utils/error.utils";
@@ -19,14 +19,15 @@
   let showDeleteConfirm = $state(false);
   let actionLoading = $state(false);
 
-  const methodIcons: Record<PaymentMethodType, string> = {
-    [PaymentMethodType.Card]: "💳",
-    [PaymentMethodType.SepaDebit]: "🏦",
-    [PaymentMethodType.BankTransfer]: "🏧",
-    [PaymentMethodType.Cash]: "💵",
+  // Une carte affiche un instrument ENREGISTRÉ : deux types possibles, pas
+  // quatre. Le virement manuel et l'espèce décrivent la réception d'un
+  // paiement, jamais un moyen conservé (#819).
+  const methodIcons: Record<StoredPaymentMethodType, string> = {
+    [StoredPaymentMethodType.Card]: "💳",
+    [StoredPaymentMethodType.SepaDebit]: "🏦",
   };
 
-  function getIcon(type: PaymentMethodType): string {
+  function getIcon(type: StoredPaymentMethodType): string {
     return methodIcons[type] || "💳";
   }
 
@@ -103,7 +104,7 @@
       </h3>
 
       <div class="mt-1 space-y-1">
-        {#if paymentMethod.method_type === PaymentMethodType.Card}
+        {#if paymentMethod.method_type === StoredPaymentMethodType.Card}
           <p class="text-sm text-gray-600">
             {paymentMethod.brand || $_('payments.card')} •••• {paymentMethod.last4 || "****"}
           </p>
@@ -112,7 +113,7 @@
               {$_('payments.expires')}: {formatExpiryDate(paymentMethod.expires_at)}
             </p>
           {/if}
-        {:else if paymentMethod.method_type === PaymentMethodType.SepaDebit}
+        {:else if paymentMethod.method_type === StoredPaymentMethodType.SepaDebit}
           <p class="text-sm text-gray-600">
             {$_('payments.iban')} •••• {paymentMethod.last4 || "****"}
           </p>

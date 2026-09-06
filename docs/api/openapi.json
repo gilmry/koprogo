@@ -439,6 +439,27 @@
         }
       }
     },
+    "/auth/logout": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Logout",
+        "description": "Révoque tous les refresh tokens de l'utilisateur (déconnexion serveur) et expire le cookie HttpOnly `koprogo_refresh` (WP-FE1).",
+        "operationId": "logout",
+        "responses": {
+          "200": {
+            "description": "Déconnecté, cookie expiré"
+          },
+          "401": {
+            "description": "Access token absent ou invalide"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        }
+      }
+    },
     "/auth/me": {
       "get": {
         "tags": [
@@ -2918,6 +2939,47 @@
         ]
       }
     },
+    "/organizations/{organization_id}/payment-methods": {
+      "get": {
+        "tags": [
+          "PaymentMethods"
+        ],
+        "summary": "Lister les moyens de paiement d'une organisation",
+        "operationId": "list_organization_payment_methods",
+        "parameters": [
+          {
+            "name": "organization_id",
+            "in": "path",
+            "description": "Identifiant de l'organisation",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Liste des moyens de paiement",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PaymentMethodResponse"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
     "/organizations/{organization_id}/payments": {
       "get": {
         "tags": [
@@ -3232,6 +3294,244 @@
         ]
       }
     },
+    "/owners/{owner_id}/payment-methods": {
+      "get": {
+        "tags": [
+          "PaymentMethods"
+        ],
+        "summary": "Lister les moyens de paiement d'un copropriétaire",
+        "operationId": "list_owner_payment_methods",
+        "parameters": [
+          {
+            "name": "owner_id",
+            "in": "path",
+            "description": "Identifiant du copropriétaire",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Liste des moyens de paiement",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PaymentMethodResponse"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/owners/{owner_id}/payment-methods/active": {
+      "get": {
+        "tags": [
+          "PaymentMethods"
+        ],
+        "summary": "Lister les moyens de paiement actifs d'un copropriétaire",
+        "operationId": "list_active_owner_payment_methods",
+        "parameters": [
+          {
+            "name": "owner_id",
+            "in": "path",
+            "description": "Identifiant du copropriétaire",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Liste des moyens actifs",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PaymentMethodResponse"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/owners/{owner_id}/payment-methods/count": {
+      "get": {
+        "tags": [
+          "PaymentMethods"
+        ],
+        "summary": "Compter les moyens de paiement actifs d'un copropriétaire",
+        "operationId": "count_active_payment_methods",
+        "parameters": [
+          {
+            "name": "owner_id",
+            "in": "path",
+            "description": "Identifiant du copropriétaire",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Nombre de moyens actifs"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/owners/{owner_id}/payment-methods/default": {
+      "get": {
+        "tags": [
+          "PaymentMethods"
+        ],
+        "summary": "Récupérer le moyen de paiement par défaut d'un copropriétaire",
+        "operationId": "get_default_payment_method",
+        "parameters": [
+          {
+            "name": "owner_id",
+            "in": "path",
+            "description": "Identifiant du copropriétaire",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Moyen par défaut",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentMethodResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Aucun moyen par défaut"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/owners/{owner_id}/payment-methods/has-active": {
+      "get": {
+        "tags": [
+          "PaymentMethods"
+        ],
+        "summary": "Indiquer si un copropriétaire a au moins un moyen de paiement actif",
+        "operationId": "has_active_payment_methods",
+        "parameters": [
+          {
+            "name": "owner_id",
+            "in": "path",
+            "description": "Identifiant du copropriétaire",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Présence d'un moyen actif"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/owners/{owner_id}/payment-methods/type/{method_type}": {
+      "get": {
+        "tags": [
+          "PaymentMethods"
+        ],
+        "summary": "Lister les moyens de paiement d'un copropriétaire par type",
+        "operationId": "list_payment_methods_by_type",
+        "parameters": [
+          {
+            "name": "owner_id",
+            "in": "path",
+            "description": "Identifiant du copropriétaire",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "method_type",
+            "in": "path",
+            "description": "Type de moyen : card, sepa_debit, bancontact",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Liste filtrée",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PaymentMethodResponse"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Type de moyen inconnu"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
     "/owners/{owner_id}/payments": {
       "get": {
         "tags": [
@@ -3325,6 +3625,344 @@
           },
           "500": {
             "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/payment-methods": {
+      "post": {
+        "tags": [
+          "PaymentMethods"
+        ],
+        "summary": "Enregistrer un moyen de paiement pour un copropriétaire",
+        "operationId": "create_payment_method",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePaymentMethodRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Moyen de paiement créé",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentMethodResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Requête invalide — champs manquants ou moyen déjà enregistré"
+          },
+          "401": {
+            "description": "L'utilisateur n'appartient à aucune organisation"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/payment-methods/stripe/{stripe_payment_method_id}": {
+      "get": {
+        "tags": [
+          "PaymentMethods"
+        ],
+        "summary": "Récupérer un moyen de paiement par son identifiant Stripe",
+        "operationId": "get_payment_method_by_stripe_id",
+        "parameters": [
+          {
+            "name": "stripe_payment_method_id",
+            "in": "path",
+            "description": "Identifiant Stripe",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Moyen de paiement",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentMethodResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Introuvable"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/payment-methods/{id}": {
+      "get": {
+        "tags": [
+          "PaymentMethods"
+        ],
+        "summary": "Récupérer un moyen de paiement",
+        "operationId": "get_payment_method",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Identifiant du moyen de paiement",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Moyen de paiement",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentMethodResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Introuvable"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "PaymentMethods"
+        ],
+        "summary": "Mettre à jour un moyen de paiement",
+        "operationId": "update_payment_method",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Identifiant du moyen de paiement",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdatePaymentMethodRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Moyen mis à jour",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentMethodResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Requête invalide"
+          },
+          "404": {
+            "description": "Introuvable"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "PaymentMethods"
+        ],
+        "summary": "Supprimer un moyen de paiement",
+        "operationId": "delete_payment_method",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Identifiant du moyen de paiement",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Moyen supprimé"
+          },
+          "404": {
+            "description": "Introuvable"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/payment-methods/{id}/deactivate": {
+      "put": {
+        "tags": [
+          "PaymentMethods"
+        ],
+        "summary": "Désactiver un moyen de paiement",
+        "operationId": "deactivate_payment_method",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Identifiant du moyen de paiement",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Moyen désactivé",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentMethodResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Introuvable"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/payment-methods/{id}/reactivate": {
+      "put": {
+        "tags": [
+          "PaymentMethods"
+        ],
+        "summary": "Réactiver un moyen de paiement",
+        "operationId": "reactivate_payment_method",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Identifiant du moyen de paiement",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Moyen réactivé",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentMethodResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Introuvable"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/payment-methods/{id}/set-default": {
+      "put": {
+        "tags": [
+          "PaymentMethods"
+        ],
+        "summary": "Désigner un moyen de paiement comme moyen par défaut",
+        "operationId": "set_payment_method_as_default",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Identifiant du moyen de paiement",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {}
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Moyen désigné par défaut",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentMethodResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Introuvable"
           }
         },
         "security": [
@@ -4236,6 +4874,510 @@
         ]
       }
     },
+    "/portfolios": {
+      "get": {
+        "tags": [
+          "Portfolios"
+        ],
+        "summary": "List portfolios visible to the authenticated user (owned + shared)",
+        "operationId": "list_portfolios",
+        "responses": {
+          "200": {
+            "description": "List of portfolios",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PortfolioResponseDto"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "Portfolios"
+        ],
+        "summary": "Create a portfolio",
+        "operationId": "create_portfolio",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePortfolioDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Portfolio created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PortfolioResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/portfolios/{id}": {
+      "get": {
+        "tags": [
+          "Portfolios"
+        ],
+        "summary": "Get a portfolio by id (owner OR shared)",
+        "operationId": "get_portfolio",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Portfolio UUID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Portfolio found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PortfolioResponseDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "Portfolios"
+        ],
+        "summary": "Update a portfolio (owner OR shared can_edit)",
+        "operationId": "update_portfolio",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Portfolio UUID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdatePortfolioDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Portfolio updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PortfolioResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "Portfolios"
+        ],
+        "summary": "Delete a portfolio (owner only)",
+        "operationId": "delete_portfolio",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Portfolio UUID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Portfolio deleted"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/portfolios/{id}/buildings": {
+      "get": {
+        "tags": [
+          "Portfolios"
+        ],
+        "summary": "List buildings of a portfolio (favorites first)",
+        "operationId": "list_portfolio_buildings",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Portfolio UUID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of buildings",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PortfolioBuildingResponseDto"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Portfolio not found"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "Portfolios"
+        ],
+        "summary": "Add a building to a portfolio (owner OR shared can_edit)",
+        "operationId": "add_portfolio_building",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Portfolio UUID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddBuildingDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Building added",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PortfolioBuildingResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Portfolio or Building not found"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/portfolios/{id}/buildings/{building_id}": {
+      "delete": {
+        "tags": [
+          "Portfolios"
+        ],
+        "summary": "Remove a building from a portfolio",
+        "operationId": "remove_portfolio_building",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Portfolio UUID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "building_id",
+            "in": "path",
+            "description": "Building UUID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Building removed"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/portfolios/{id}/shares": {
+      "get": {
+        "tags": [
+          "Portfolios"
+        ],
+        "summary": "List shares of a portfolio (owner only)",
+        "operationId": "list_portfolio_shares",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Portfolio UUID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of shares",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PortfolioShareResponseDto"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "Portfolios"
+        ],
+        "summary": "Share a portfolio with another user (owner only)",
+        "operationId": "share_portfolio",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Portfolio UUID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SharePortfolioDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Portfolio shared",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PortfolioShareResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Portfolio or User not found"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/portfolios/{id}/shares/{user_id}": {
+      "delete": {
+        "tags": [
+          "Portfolios"
+        ],
+        "summary": "Unshare a portfolio (owner only)",
+        "operationId": "unshare_portfolio",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Portfolio UUID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "user_id",
+            "in": "path",
+            "description": "Shared user UUID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Unshared"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Share not found"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
     "/resolutions/{id}": {
       "get": {
         "tags": [
@@ -4879,6 +6021,31 @@
         ]
       }
     },
+    "/tickets/assignable-users": {
+      "get": {
+        "tags": [
+          "Tickets"
+        ],
+        "summary": "List users assignable to tickets",
+        "operationId": "list_assignable_users",
+        "responses": {
+          "200": {
+            "description": "List of assignable users"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden — only syndic/superadmin"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
     "/tickets/assigned-to-me": {
       "get": {
         "tags": [
@@ -5322,6 +6489,43 @@
         "responses": {
           "200": {
             "description": "Ticket resolved"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/tickets/{id}/send-work-order": {
+      "put": {
+        "tags": [
+          "Tickets"
+        ],
+        "summary": "Send work order to contractor (magic link PWA)",
+        "operationId": "send_work_order",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Ticket ID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Work order sent"
           },
           "400": {
             "description": "Bad request"
@@ -5983,6 +7187,21 @@
           }
         }
       },
+      "AddBuildingDto": {
+        "type": "object",
+        "description": "Ajout d'un building au portfolio.",
+        "required": [
+          "building_id"
+        ],
+        "properties": {
+          "building_id": {
+            "type": "string"
+          },
+          "is_favorite": {
+            "type": "boolean"
+          }
+        }
+      },
       "ApprovalStatus": {
         "type": "string",
         "description": "Statut d'approbation pour le workflow de validation",
@@ -6122,11 +7341,13 @@
         "description": "Response containing call for funds details",
         "required": [
           "id",
+          "acp_id",
           "organization_id",
           "building_id",
           "title",
           "description",
           "total_amount",
+          "reserve_fund_share",
           "contribution_type",
           "call_date",
           "due_date",
@@ -6141,6 +7362,11 @@
               "string",
               "null"
             ]
+          },
+          "acp_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "L'ACP propriétaire de la pièce (ADR-0045)."
           },
           "building_id": {
             "type": "string",
@@ -6187,6 +7413,10 @@
           "organization_id": {
             "type": "string",
             "format": "uuid"
+          },
+          "reserve_fund_share": {
+            "type": "string",
+            "description": "Part affectée au fonds de réserve, communiquée avec l'appel\n(Art. 3.86 § 3 al. 7). C'est ce que le copropriétaire ne récupérera pas\nen vendant son lot : elle suit le lot, pas le vendeur."
           },
           "sent_date": {
             "type": [
@@ -6343,13 +7573,13 @@
       "CloseVotingRequest": {
         "type": "object",
         "description": "Request DTO for closing voting on a resolution",
-        "required": [
-          "total_voting_power"
-        ],
         "properties": {
           "total_voting_power": {
-            "type": "string",
-            "description": "Total tantièmes du bâtiment — Decimal exact (ADR-0008), string JSON."
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Total des tantièmes de l'immeuble, **facultatif et ignoré**.\n\nCe champ était obligatoire, et le frontend envoyait `{}` : la requête\néchouait donc à la désérialisation, en 400, avant même d'atteindre le\ngestionnaire. Le bouton « Clôturer le vote » paraissait inerte, ce qui\na été rapporté trois fois en recette (R3-3, RN-8) et bloquait la\ndeuxième des trois conditions de clôture d'une AG.\n\nIl est conservé pour ne pas casser les appelants existants, mais le\nserveur ne s'en sert plus : le dénominateur de la majorité est\ndésormais lu sur l'immeuble. Le laisser fournir par le client\npermettait de faire proclamer une majorité qui n'existe pas — signalé\ndans l'issue #767."
           }
         }
       },
@@ -6654,6 +7884,10 @@
             "type": "string",
             "format": "date-time"
           },
+          "reserve_fund_share": {
+            "type": "string",
+            "description": "Part du montant appelé affectée au fonds de réserve.\n\nArt. 3.86 § 3 al. 7 : le syndic doit la communiquer **lors de l'appel**.\nAbsente, elle vaut zéro — ce qui reste une communication explicite,\ncontrairement au silence d'avant."
+          },
           "title": {
             "type": "string"
           },
@@ -6825,6 +8059,52 @@
         },
         "additionalProperties": false
       },
+      "CreatePaymentMethodRequest": {
+        "type": "object",
+        "description": "Create payment method request DTO (from Stripe)",
+        "required": [
+          "owner_id",
+          "method_type",
+          "stripe_payment_method_id",
+          "stripe_customer_id",
+          "display_label",
+          "is_default"
+        ],
+        "properties": {
+          "display_label": {
+            "type": "string"
+          },
+          "expires_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "is_default": {
+            "type": "boolean"
+          },
+          "metadata": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "method_type": {
+            "$ref": "#/components/schemas/StoredPaymentMethodType"
+          },
+          "owner_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "stripe_customer_id": {
+            "type": "string"
+          },
+          "stripe_payment_method_id": {
+            "type": "string"
+          }
+        }
+      },
       "CreatePaymentRequest": {
         "type": "object",
         "description": "Create payment request DTO\n\n`deny_unknown_fields` : un `POST /payments` portant `contribution_id`\nrepondait 201 en jetant le champ, laissant croire que la quote-part venait\nd'etre soldee. Le champ existe desormais ; tout AUTRE champ inconnu\n(`currency`, `stripe_payment_intent_id`, que le client TypeScript envoyait\nsans qu'ils existent cote serveur) produit un 400 explicite plutot qu'une\nperte silencieuse.",
@@ -6966,6 +8246,24 @@
             ]
           },
           "option_text": {
+            "type": "string"
+          }
+        }
+      },
+      "CreatePortfolioDto": {
+        "type": "object",
+        "description": "Création d'un portfolio.\n\n`owner_user_id` est inféré côté handler depuis `AuthenticatedUser`\n— pas exposé dans le body pour éviter toute escalade.",
+        "required": [
+          "name"
+        ],
+        "properties": {
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "name": {
             "type": "string"
           }
         }
@@ -7952,6 +9250,7 @@
         "description": "DTO for owner contribution response",
         "required": [
           "id",
+          "acp_id",
           "organization_id",
           "owner_id",
           "description",
@@ -7968,6 +9267,11 @@
               "string",
               "null"
             ]
+          },
+          "acp_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "L'ACP propriétaire de la pièce (ADR-0045)."
           },
           "amount": {
             "type": "string"
@@ -8053,6 +9357,84 @@
           "Expert"
         ]
       },
+      "PaymentMethodResponse": {
+        "type": "object",
+        "description": "Payment method response DTO",
+        "required": [
+          "id",
+          "organization_id",
+          "owner_id",
+          "method_type",
+          "stripe_payment_method_id",
+          "stripe_customer_id",
+          "display_label",
+          "is_default",
+          "is_active",
+          "is_expired",
+          "is_usable",
+          "created_at",
+          "updated_at"
+        ],
+        "properties": {
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "display_label": {
+            "type": "string"
+          },
+          "expires_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "is_active": {
+            "type": "boolean"
+          },
+          "is_default": {
+            "type": "boolean"
+          },
+          "is_expired": {
+            "type": "boolean"
+          },
+          "is_usable": {
+            "type": "boolean"
+          },
+          "metadata": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "method_type": {
+            "$ref": "#/components/schemas/StoredPaymentMethodType"
+          },
+          "organization_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "owner_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "stripe_customer_id": {
+            "type": "string"
+          },
+          "stripe_payment_method_id": {
+            "type": "string"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
       "PaymentMethodType": {
         "type": "string",
         "description": "Payment method type (extensible for future methods)",
@@ -8090,6 +9472,84 @@
           "rating",
           "open_ended"
         ]
+      },
+      "PortfolioBuildingResponseDto": {
+        "type": "object",
+        "description": "Building du portfolio (élément du listing trié favoris d'abord).",
+        "required": [
+          "portfolio_id",
+          "building_id",
+          "is_favorite"
+        ],
+        "properties": {
+          "building_id": {
+            "type": "string"
+          },
+          "is_favorite": {
+            "type": "boolean"
+          },
+          "portfolio_id": {
+            "type": "string"
+          }
+        }
+      },
+      "PortfolioResponseDto": {
+        "type": "object",
+        "description": "Réponse JSON pour un portfolio.",
+        "required": [
+          "id",
+          "owner_user_id",
+          "name",
+          "created_at",
+          "updated_at"
+        ],
+        "properties": {
+          "created_at": {
+            "type": "string"
+          },
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "owner_user_id": {
+            "type": "string"
+          },
+          "updated_at": {
+            "type": "string"
+          }
+        }
+      },
+      "PortfolioShareResponseDto": {
+        "type": "object",
+        "description": "Partage du portfolio.",
+        "required": [
+          "portfolio_id",
+          "shared_with_user_id",
+          "can_edit",
+          "shared_at"
+        ],
+        "properties": {
+          "can_edit": {
+            "type": "boolean"
+          },
+          "portfolio_id": {
+            "type": "string"
+          },
+          "shared_at": {
+            "type": "string"
+          },
+          "shared_with_user_id": {
+            "type": "string"
+          }
+        }
       },
       "QuoteStatus": {
         "type": "string",
@@ -8358,6 +9818,21 @@
           }
         }
       },
+      "SharePortfolioDto": {
+        "type": "object",
+        "description": "Partage du portfolio avec un autre utilisateur.",
+        "required": [
+          "shared_with_user_id"
+        ],
+        "properties": {
+          "can_edit": {
+            "type": "boolean"
+          },
+          "shared_with_user_id": {
+            "type": "string"
+          }
+        }
+      },
       "SharedObjectCategory": {
         "type": "string",
         "description": "Category for shared objects",
@@ -8417,6 +9892,14 @@
         "enum": [
           "asc",
           "desc"
+        ]
+      },
+      "StoredPaymentMethodType": {
+        "type": "string",
+        "description": "Type d'un moyen de paiement **enregistré**, c'est-à-dire d'un instrument\nconservé chez Stripe et réutilisable.\n\nDeux variantes seulement, et c'est correct : on ne peut pas « enregistrer »\ndu liquide, ni un virement manuel. Un instrument enregistré porte un\n`stripe_payment_method_id` et un `stripe_customer_id` — l'entité l'exige.\n\n**À ne pas confondre avec `payment::PaymentMethodType`**, qui décrit\ncomment un paiement a été REÇU et compte quatre variantes, dont le\nvirement manuel et l'espèce.\n\nLes deux types portaient le même nom Rust ET le même nom de schéma. utoipa\nn'en publie qu'un sous un nom donné : le contrat annonçait donc\n`[\"card\", \"sepa_debit\"]` partout, y compris pour le champ\n`CreatePaymentRequest.payment_method_type` — interdisant à tout client\nengendré depuis le contrat d'enregistrer un paiement en espèces ou par\nvirement, deux façons parfaitement ordinaires de payer ses charges.\n\nD'où le nom de schéma distinct. Le doc-comment précédent affirmait\n« aligned with Payment entity » alors qu'il en avait deux variantes sur\nquatre. Voir #818.",
+        "enum": [
+          "card",
+          "sepa_debit"
         ]
       },
       "SwitchRoleRequest": {
@@ -8703,7 +10186,7 @@
       },
       "UnitType": {
         "type": "string",
-        "description": "Type de lot (appartement, cave, parking, etc.)",
+        "description": "Type de lot (appartement, cave, parking, etc.)\n\n`Copy` parce que le décompte légal de l'Art. 3.89 § 5, 15° raisonne sur\ndes natures de lot, pas sur des lots : les cloner pour les compter serait\ndu bruit.",
         "enum": [
           "Apartment",
           "Parking",
@@ -8810,6 +10293,30 @@
           }
         }
       },
+      "UpdatePaymentMethodRequest": {
+        "type": "object",
+        "description": "Update payment method request DTO",
+        "properties": {
+          "display_label": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "is_default": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          },
+          "metadata": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
       "UpdatePollDto": {
         "type": "object",
         "description": "Update poll (only draft polls can be updated)",
@@ -8858,6 +10365,24 @@
               "string",
               "null"
             ]
+          }
+        }
+      },
+      "UpdatePortfolioDto": {
+        "type": "object",
+        "description": "Mise à jour d'un portfolio (PUT — état complet).",
+        "required": [
+          "name"
+        ],
+        "properties": {
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "name": {
+            "type": "string"
           }
         }
       },

@@ -823,7 +823,7 @@ async fn when_register_and_login(world: &mut BuildingWorld) {
     let org = world.org_id.unwrap();
     let reg = RegisterRequest {
         email: email.clone(),
-        password: "Passw0rd!".to_string(),
+        password: MOT_DE_PASSE_DE_RECETTE.to_string(),
         first_name: "BDD".to_string(),
         last_name: "User".to_string(),
         role: "syndic".to_string(),
@@ -832,7 +832,7 @@ async fn when_register_and_login(world: &mut BuildingWorld) {
     let _ = auth.register(reg).await.expect("register");
     let login = LoginRequest {
         email: email.clone(),
-        password: "Passw0rd!".to_string(),
+        password: MOT_DE_PASSE_DE_RECETTE.to_string(),
     };
     let res = auth.login(login).await;
     match res {
@@ -1173,7 +1173,7 @@ async fn given_alice_owns_unit_first_building(world: &mut BuildingWorld) {
     let alice_email = format!("alice+{}@iso.test", Uuid::new_v4());
     let reg = RegisterRequest {
         email: alice_email.clone(),
-        password: "Passw0rd!".to_string(),
+        password: MOT_DE_PASSE_DE_RECETTE.to_string(),
         first_name: "Alice".to_string(),
         last_name: "Owner".to_string(),
         role: "owner".to_string(),
@@ -1183,7 +1183,7 @@ async fn given_alice_owns_unit_first_building(world: &mut BuildingWorld) {
     auth_uc.register(reg).await.expect("register Alice");
     let login = LoginRequest {
         email: alice_email.clone(),
-        password: "Passw0rd!".to_string(),
+        password: MOT_DE_PASSE_DE_RECETTE.to_string(),
     };
     let login_resp = auth_uc.login(login).await.expect("login Alice");
     let alice_user_id = login_resp.user.id;
@@ -1282,10 +1282,28 @@ async fn then_alice_no_other_buildings(world: &mut BuildingWorld) {
 // GDPR BDD Steps (Articles 15 & 17)
 // ============================================================================
 
+/// Le mot de passe des comptes fabriqués par les scénarios.
+///
+/// Il est devenu significatif le 2026-09-06 : `erase_user_data` exige
+/// désormais le mot de passe en clair (« Exige le mot de passe pour
+/// l'effacement RGPD »), pour qu'un jeton d'accès volé ne suffise pas à
+/// effacer un compte.
+///
+/// Un scénario sur douze enregistrait son utilisateur avec `Password123!`
+/// pendant que l'effacement présentait `Passw0rd!` : l'effacement échouait, et
+/// le message d'échec disait « Erasure should succeed » sans jamais nommer la
+/// cause. La suite BDD est restée rouge en CI du 2026-09-04 au 2026-09-06 pour
+/// cette seule ligne.
+///
+/// D'où la constante : deux littéraux qui doivent être égaux et qu'on écrit
+/// deux fois finissent par diverger. Même remède que
+/// `REFUS_RESERVE_AUX_COPROPRIETAIRES`.
+const MOT_DE_PASSE_DE_RECETTE: &str = "Passw0rd!";
+
 #[given("I am an authenticated user")]
 async fn given_authenticated_user(world: &mut BuildingWorld) {
     let email = format!("gdpr+{}@test.com", Uuid::new_v4());
-    let password = "Passw0rd!".to_string();
+    let password = MOT_DE_PASSE_DE_RECETTE.to_string();
     let reg = RegisterRequest {
         email: email.clone(),
         password: password.clone(),
@@ -1330,7 +1348,7 @@ async fn given_authenticated_user(world: &mut BuildingWorld) {
 async fn given_authenticated_user_with_data(world: &mut BuildingWorld) {
     // Register a user
     let email = format!("gdpr+{}@test.com", Uuid::new_v4());
-    let password = "Passw0rd!".to_string();
+    let password = MOT_DE_PASSE_DE_RECETTE.to_string();
     let reg = RegisterRequest {
         email: email.clone(),
         password: password.clone(),
@@ -1503,7 +1521,12 @@ async fn when_request_erase_data(world: &mut BuildingWorld) {
     let user_id = world.last_user_id.unwrap();
 
     let result = gdpr_uc
-        .erase_user_data(user_id, user_id, world.org_id, Some("Passw0rd!"))
+        .erase_user_data(
+            user_id,
+            user_id,
+            world.org_id,
+            Some(MOT_DE_PASSE_DE_RECETTE),
+        )
         .await;
 
     match result {
@@ -3847,7 +3870,11 @@ async fn given_user_in_2_orgs(world: &mut BuildingWorld) {
         let auth_uc = world.auth_use_cases.as_ref().unwrap();
         let reg = RegisterRequest {
             email: format!("multiorg+{}@test.com", Uuid::new_v4()),
-            password: "Password123!".to_string(),
+            // Ce compte est effacé plus loin dans le même scénario, et
+            // l'effacement présente `MOT_DE_PASSE_DE_RECETTE`. Il enregistrait
+            // `Password123!` : l'effacement échouait pour cause de mot de
+            // passe faux, et l'assertion accusait l'effacement.
+            password: MOT_DE_PASSE_DE_RECETTE.to_string(),
             first_name: "Multi".to_string(),
             last_name: "Org".to_string(),
             role: "syndic".to_string(),

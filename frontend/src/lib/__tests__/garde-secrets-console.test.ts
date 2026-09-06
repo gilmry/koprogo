@@ -46,13 +46,22 @@ const MOTIFS_INTERDITS: Array<{ motif: RegExp; quoi: string }> = [
   { motif: /console\.\w+\([^)]*\btoken\b/i, quoi: "un jeton" },
   { motif: /console\.\w+\([^)]*localStorage/i, quoi: "le localStorage" },
   { motif: /console\.\w+\([^)]*\bpassword\b/i, quoi: "un mot de passe" },
-  { motif: /console\.\w+\([^)]*Authorization/i, quoi: "un en-tête Authorization" },
-  { motif: /console\.\w+\([^)]*authStore\b/i, quoi: "le store d'authentification" },
+  {
+    motif: /console\.\w+\([^)]*Authorization/i,
+    quoi: "un en-tête Authorization",
+  },
+  {
+    motif: /console\.\w+\([^)]*authStore\b/i,
+    quoi: "le store d'authentification",
+  },
 ];
 
 /** Remplace le contenu des chaînes par des blancs, en gardant les guillemets. */
 function sansChaines(ligne: string): string {
-  return ligne.replace(/(['"`])(?:\\.|(?!\1)[^\\])*\1/g, (m) => m[0] + " ".repeat(Math.max(0, m.length - 2)) + m[0]);
+  return ligne.replace(
+    /(['"`])(?:\\.|(?!\1)[^\\])*\1/g,
+    (m) => m[0] + " ".repeat(Math.max(0, m.length - 2)) + m[0],
+  );
 }
 
 function fichiersSources(repertoire: string): string[] {
@@ -78,7 +87,11 @@ describe("aucun secret n'est écrit dans la console (#787)", () => {
       lignes.forEach((ligne, i) => {
         // Les commentaires expliquant le défaut ne sont pas le défaut.
         const nue = ligne.trim();
-        if (nue.startsWith("//") || nue.startsWith("*") || nue.startsWith("/*")) {
+        if (
+          nue.startsWith("//") ||
+          nue.startsWith("*") ||
+          nue.startsWith("/*")
+        ) {
           return;
         }
         const sansTexte = sansChaines(ligne);

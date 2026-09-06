@@ -61,7 +61,9 @@ test.describe("Audit 2026-08-30 — non-régression", () => {
     await page.goto("/meetings");
 
     await page.getByTestId("btn-new-meeting").click();
-    const dialog = page.locator('[role="dialog"][aria-label="Créer une assemblée"]');
+    const dialog = page.locator(
+      '[role="dialog"][aria-label="Créer une assemblée"]',
+    );
     await expect(dialog).toBeVisible({ timeout: 5000 });
 
     await page.keyboard.press("Escape");
@@ -158,7 +160,9 @@ test.describe("Audit 2026-08-30 — non-régression", () => {
   });
 
   // UX1 : la liste admin n'offrait aucun moyen d'ouvrir une organisation.
-  test("le nom d'une organisation ouvre sa fiche de détail", async ({ page }) => {
+  test("le nom d'une organisation ouvre sa fiche de détail", async ({
+    page,
+  }) => {
     await loginAsAdmin(page);
     await page.goto("/admin/organizations");
 
@@ -169,13 +173,21 @@ test.describe("Audit 2026-08-30 — non-régression", () => {
 
     // Astro sert les pages statiques avec une barre oblique finale.
     await expect(page).toHaveURL(/\/admin\/organization-detail\/?\?id=/);
-    await expect(page.getByTestId("organization-detail-name")).toHaveText(name, {
-      timeout: 10000,
-    });
+    await expect(page.getByTestId("organization-detail-name")).toHaveText(
+      name,
+      {
+        timeout: 10000,
+      },
+    );
 
     // Les compteurs sont le cœur de la fiche : ils disent ce que
     // l'organisation contient, là où la liste ne montrait que les plafonds.
-    for (const stat of ["stat-acps", "stat-buildings", "stat-users", "stat-units"]) {
+    for (const stat of [
+      "stat-acps",
+      "stat-buildings",
+      "stat-users",
+      "stat-units",
+    ]) {
       await expect(page.getByTestId(stat)).toBeVisible();
     }
   });

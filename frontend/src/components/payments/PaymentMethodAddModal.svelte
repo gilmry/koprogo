@@ -3,7 +3,7 @@
   import { _ } from '../../lib/i18n';
   import {
     paymentMethodsApi,
-    PaymentMethodType,
+    StoredPaymentMethodType,
     type CreatePaymentMethodDto,
   } from "../../lib/api/payments";
   import { withErrorHandling } from "../../lib/utils/error.utils";
@@ -25,7 +25,7 @@
   // `last4` et `brand` n'existent pas cote serveur et ont ete retires.
   let formData: CreatePaymentMethodDto = $state({
     owner_id: "",
-    method_type: PaymentMethodType.Card,
+    method_type: StoredPaymentMethodType.Card,
     display_label: "",
     stripe_payment_method_id: "",
     stripe_customer_id: "",
@@ -68,7 +68,7 @@
     open = false;
     formData = {
       owner_id: ownerId,
-      method_type: PaymentMethodType.Card,
+      method_type: StoredPaymentMethodType.Card,
       display_label: "",
       stripe_payment_method_id: "",
       stripe_customer_id: "",
@@ -101,10 +101,24 @@
         required
         data-testid="method-type-select"
       >
-        <option value={PaymentMethodType.Card}>{$_('payments.typeCard')}</option>
-        <option value={PaymentMethodType.SepaDebit}>{$_('payments.typeSepa')}</option>
-        <option value={PaymentMethodType.BankTransfer}>{$_('payments.typeBankTransfer')}</option>
-        <option value={PaymentMethodType.Cash}>{$_('payments.typeCash')}</option>
+        <!--
+          Deux options seulement. « Virement » et « Espèces » figuraient ici
+          jusqu'au 2026-09-06 : les choisir produisait un 400, parce que
+          `CreatePaymentMethodRequest.method_type` n'a jamais accepté que
+          `card` et `sepa_debit`, et que l'endpoint exige de surcroît un
+          `stripe_payment_method_id` et un `stripe_customer_id`.
+
+          On n'enregistre pas du liquide. Ce que le produit voudra peut-être
+          offrir — qu'un copropriétaire DÉCLARE payer par virement, sans
+          instrument conservé — est une fonctionnalité à concevoir, pas deux
+          lignes à laisser dans un select. Voir #819.
+        -->
+        <option value={StoredPaymentMethodType.Card}
+          >{$_("payments.typeCard")}</option
+        >
+        <option value={StoredPaymentMethodType.SepaDebit}
+          >{$_("payments.typeSepa")}</option
+        >
       </FormSelect>
 
       <!-- Display Label -->
@@ -119,7 +133,7 @@
       />
 
       <!-- Stripe-specific fields for Card and SEPA -->
-      {#if formData.method_type === PaymentMethodType.Card || formData.method_type === PaymentMethodType.SepaDebit}
+      {#if formData.method_type === StoredPaymentMethodType.Card || formData.method_type === StoredPaymentMethodType.SepaDebit}
         <FormInput
           id="stripe-id"
           label={$_('payments.stripeMethodId')}
@@ -161,17 +175,7 @@
       {/if}
 
       <!-- Help Text -->
-      {#if formData.method_type === PaymentMethodType.BankTransfer || formData.method_type === PaymentMethodType.Cash}
-        <div class="text-sm text-gray-600">
-          <p>
-            {#if formData.method_type === PaymentMethodType.BankTransfer}
-              {$_('payments.bankTransferHelp')}
-            {:else}
-              {$_('payments.cashHelp')}
-            {/if}
-          </p>
-        </div>
-      {/if}
+
     </div>
 
     <!-- Actions -->

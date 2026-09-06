@@ -2,7 +2,7 @@ use crate::application::dto::{CreatePaymentRequest, RefundPaymentRequest};
 use crate::domain::entities::TransactionStatus;
 use crate::infrastructure::audit::{AuditEventType, AuditLogEntry};
 use crate::infrastructure::web::{AppState, AuthenticatedUser};
-use actix_web::{delete, get, post, put, web, HttpResponse, Responder};
+use actix_web::{delete, get, post, put, web, HttpResponse, Responder, ResponseError};
 use uuid::Uuid;
 
 // ==================== Payment CRUD Endpoints ====================
@@ -167,7 +167,23 @@ pub async fn list_owner_payments(
 pub async fn list_building_payments(
     state: web::Data<AppState>,
     building_id: web::Path<Uuid>,
+    user: AuthenticatedUser,
 ) -> impl Responder {
+    // Route imbriquee non gardee au releve du 2026-09-06 (issue #772) : elle
+    // servait une sous-collection d'un dossier d'ACP a quiconque connaissait
+    // un identifiant, sans demander d'identite.
+    if let Err(err) =
+        crate::infrastructure::web::middleware::scope_guard::verify_building_org_access(
+            &user,
+            *building_id,
+            &state.building_use_cases,
+            &state.acp_use_cases,
+        )
+        .await
+    {
+        return err.error_response();
+    }
+
     match state
         .payment_use_cases
         .list_building_payments(*building_id)
@@ -726,7 +742,23 @@ pub async fn get_owner_payment_stats(
 pub async fn get_building_payment_stats(
     state: web::Data<AppState>,
     building_id: web::Path<Uuid>,
+    user: AuthenticatedUser,
 ) -> impl Responder {
+    // Route imbriquee non gardee au releve du 2026-09-06 (issue #772) : elle
+    // servait une sous-collection d'un dossier d'ACP a quiconque connaissait
+    // un identifiant, sans demander d'identite.
+    if let Err(err) =
+        crate::infrastructure::web::middleware::scope_guard::verify_building_org_access(
+            &user,
+            *building_id,
+            &state.building_use_cases,
+            &state.acp_use_cases,
+        )
+        .await
+    {
+        return err.error_response();
+    }
+
     match state
         .payment_use_cases
         .get_building_payment_stats(*building_id)
@@ -813,7 +845,23 @@ pub async fn get_owner_total_paid(
 pub async fn get_building_total_paid(
     state: web::Data<AppState>,
     building_id: web::Path<Uuid>,
+    user: AuthenticatedUser,
 ) -> impl Responder {
+    // Route imbriquee non gardee au releve du 2026-09-06 (issue #772) : elle
+    // servait une sous-collection d'un dossier d'ACP a quiconque connaissait
+    // un identifiant, sans demander d'identite.
+    if let Err(err) =
+        crate::infrastructure::web::middleware::scope_guard::verify_building_org_access(
+            &user,
+            *building_id,
+            &state.building_use_cases,
+            &state.acp_use_cases,
+        )
+        .await
+    {
+        return err.error_response();
+    }
+
     match state
         .payment_use_cases
         .get_total_paid_for_building(*building_id)

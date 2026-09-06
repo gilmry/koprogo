@@ -101,7 +101,9 @@ describe("NoticeList — tolérance à une annonce sans contenu", () => {
 
     await waitFor(
       () => {
-        expect(screen.getByText(/RECETTE4-Entretien des communs/)).toBeInTheDocument();
+        expect(
+          screen.getByText(/RECETTE4-Entretien des communs/),
+        ).toBeInTheDocument();
       },
       { timeout: 3000 },
     );
@@ -112,5 +114,4 @@ describe("NoticeList — tolérance à une annonce sans contenu", () => {
       document.querySelector('[data-testid="notice-list-loading"]'),
     ).toBeNull();
   });
-
 });

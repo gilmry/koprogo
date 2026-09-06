@@ -35,8 +35,29 @@ pub struct PaymentMethod {
     pub updated_at: DateTime<Utc>,
 }
 
-/// Payment method type (aligned with Payment entity)
+/// Type d'un moyen de paiement **enregistré**, c'est-à-dire d'un instrument
+/// conservé chez Stripe et réutilisable.
+///
+/// Deux variantes seulement, et c'est correct : on ne peut pas « enregistrer »
+/// du liquide, ni un virement manuel. Un instrument enregistré porte un
+/// `stripe_payment_method_id` et un `stripe_customer_id` — l'entité l'exige.
+///
+/// **À ne pas confondre avec `payment::PaymentMethodType`**, qui décrit
+/// comment un paiement a été REÇU et compte quatre variantes, dont le
+/// virement manuel et l'espèce.
+///
+/// Les deux types portaient le même nom Rust ET le même nom de schéma. utoipa
+/// n'en publie qu'un sous un nom donné : le contrat annonçait donc
+/// `["card", "sepa_debit"]` partout, y compris pour le champ
+/// `CreatePaymentRequest.payment_method_type` — interdisant à tout client
+/// engendré depuis le contrat d'enregistrer un paiement en espèces ou par
+/// virement, deux façons parfaitement ordinaires de payer ses charges.
+///
+/// D'où le nom de schéma distinct. Le doc-comment précédent affirmait
+/// « aligned with Payment entity » alors qu'il en avait deux variantes sur
+/// quatre. Voir #819.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, utoipa::ToSchema)]
+#[schema(as = StoredPaymentMethodType)]
 #[serde(rename_all = "snake_case")]
 pub enum PaymentMethodType {
     /// Credit/debit card via Stripe

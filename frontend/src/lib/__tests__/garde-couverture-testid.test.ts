@@ -127,6 +127,9 @@ describe("la dette d'ancrage ne grossit pas (#803)", () => {
       ancres + sansAncre.length,
       "le recensement ne reconnaît plus les éléments interactifs",
     ).toBeGreaterThan(500);
-    expect(ancres, "plus aucun élément ancré : le motif a changé").toBeGreaterThan(200);
+    expect(
+      ancres,
+      "plus aucun élément ancré : le motif a changé",
+    ).toBeGreaterThan(200);
   });
 });

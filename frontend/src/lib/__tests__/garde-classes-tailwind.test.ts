@@ -55,12 +55,48 @@ const EXTENSIONS = new Set([".svelte", ".astro"]);
  * l'élargir quand une famille manque.
  */
 const RACINES_TAILWIND = [
-  "bg", "text", "border", "ring", "fill", "stroke", "from", "via", "to",
-  "grid-cols", "col-span", "row-span", "gap", "space-x", "space-y",
-  "p", "px", "py", "pt", "pb", "pl", "pr",
-  "m", "mx", "my", "mt", "mb", "ml", "mr",
-  "w", "h", "min-w", "min-h", "max-w", "max-h",
-  "rounded", "shadow", "opacity", "z", "order", "flex", "basis",
+  "bg",
+  "text",
+  "border",
+  "ring",
+  "fill",
+  "stroke",
+  "from",
+  "via",
+  "to",
+  "grid-cols",
+  "col-span",
+  "row-span",
+  "gap",
+  "space-x",
+  "space-y",
+  "p",
+  "px",
+  "py",
+  "pt",
+  "pb",
+  "pl",
+  "pr",
+  "m",
+  "mx",
+  "my",
+  "mt",
+  "mb",
+  "ml",
+  "mr",
+  "w",
+  "h",
+  "min-w",
+  "min-h",
+  "max-w",
+  "max-h",
+  "rounded",
+  "shadow",
+  "opacity",
+  "z",
+  "order",
+  "flex",
+  "basis",
 ];
 
 /**
@@ -70,7 +106,9 @@ const RACINES_TAILWIND = [
  * produisent un nom assemblé à l'exécution, que le scanner ne voit pas.
  */
 const INTERPOLATION_PARTIELLE = new RegExp(
-  "(?:^|\\s|:)(?:" + RACINES_TAILWIND.join("|") + ")-\\{" +
+  "(?:^|\\s|:)(?:" +
+    RACINES_TAILWIND.join("|") +
+    ")-\\{" +
     "|\\}-(?:\\d|[a-z]+-\\d)",
   "i",
 );
@@ -103,7 +141,11 @@ describe("aucune classe Tailwind n'est construite par interpolation (#788, #789)
       lignes.forEach((ligne, i) => {
         const nue = ligne.trim();
         // Les commentaires qui citent le défaut ne sont pas le défaut.
-        if (nue.startsWith("//") || nue.startsWith("*") || nue.startsWith("<!--")) {
+        if (
+          nue.startsWith("//") ||
+          nue.startsWith("*") ||
+          nue.startsWith("<!--")
+        ) {
           return;
         }
         for (const valeur of attributsDeClasse(ligne)) {

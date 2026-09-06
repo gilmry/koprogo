@@ -76,10 +76,14 @@ function emetLevenement(cheminComposant: string, evenement: string): boolean {
 }
 
 /** Resout `<Nom>` vers son fichier, via l'import qui l'amene. */
-function fichierDuComposant(source: string, nom: string, depuis: string): string | null {
-  const imp = new RegExp(
-    `import\\s+${nom}\\s+from\\s+["']([^"']+)["']`,
-  ).exec(source);
+function fichierDuComposant(
+  source: string,
+  nom: string,
+  depuis: string,
+): string | null {
+  const imp = new RegExp(`import\\s+${nom}\\s+from\\s+["']([^"']+)["']`).exec(
+    source,
+  );
   if (!imp) return null;
   const cible = imp[1];
   if (!cible.startsWith(".")) return null;

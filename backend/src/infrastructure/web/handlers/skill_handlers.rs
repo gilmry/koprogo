@@ -2,7 +2,7 @@ use crate::application::dto::{CreateSkillDto, UpdateSkillDto};
 use crate::domain::entities::{ExpertiseLevel, SkillCategory};
 use crate::infrastructure::web::app_state::AppState;
 use crate::infrastructure::web::middleware::AuthenticatedUser;
-use actix_web::{delete, get, post, put, web, HttpResponse, Responder};
+use actix_web::{delete, get, post, put, web, HttpResponse, Responder, ResponseError};
 use uuid::Uuid;
 
 /// Create a new skill
@@ -54,7 +54,23 @@ pub async fn get_skill(data: web::Data<AppState>, id: web::Path<Uuid>) -> impl R
 pub async fn list_building_skills(
     data: web::Data<AppState>,
     building_id: web::Path<Uuid>,
+    user: AuthenticatedUser,
 ) -> impl Responder {
+    // Route imbriquee non gardee au releve du 2026-09-06 (issue #772) : elle
+    // servait une sous-collection d'un dossier d'ACP a quiconque connaissait
+    // un identifiant, sans demander d'identite.
+    if let Err(err) =
+        crate::infrastructure::web::middleware::scope_guard::verify_building_org_access(
+            &user,
+            *building_id,
+            &data.building_use_cases,
+            &data.acp_use_cases,
+        )
+        .await
+    {
+        return err.error_response();
+    }
+
     match data
         .skill_use_cases
         .list_building_skills(building_id.into_inner())
@@ -72,7 +88,23 @@ pub async fn list_building_skills(
 pub async fn list_available_skills(
     data: web::Data<AppState>,
     building_id: web::Path<Uuid>,
+    user: AuthenticatedUser,
 ) -> impl Responder {
+    // Route imbriquee non gardee au releve du 2026-09-06 (issue #772) : elle
+    // servait une sous-collection d'un dossier d'ACP a quiconque connaissait
+    // un identifiant, sans demander d'identite.
+    if let Err(err) =
+        crate::infrastructure::web::middleware::scope_guard::verify_building_org_access(
+            &user,
+            *building_id,
+            &data.building_use_cases,
+            &data.acp_use_cases,
+        )
+        .await
+    {
+        return err.error_response();
+    }
+
     match data
         .skill_use_cases
         .list_available_skills(building_id.into_inner())
@@ -90,7 +122,23 @@ pub async fn list_available_skills(
 pub async fn list_free_skills(
     data: web::Data<AppState>,
     building_id: web::Path<Uuid>,
+    user: AuthenticatedUser,
 ) -> impl Responder {
+    // Route imbriquee non gardee au releve du 2026-09-06 (issue #772) : elle
+    // servait une sous-collection d'un dossier d'ACP a quiconque connaissait
+    // un identifiant, sans demander d'identite.
+    if let Err(err) =
+        crate::infrastructure::web::middleware::scope_guard::verify_building_org_access(
+            &user,
+            *building_id,
+            &data.building_use_cases,
+            &data.acp_use_cases,
+        )
+        .await
+    {
+        return err.error_response();
+    }
+
     match data
         .skill_use_cases
         .list_free_skills(building_id.into_inner())
@@ -108,7 +156,23 @@ pub async fn list_free_skills(
 pub async fn list_professional_skills(
     data: web::Data<AppState>,
     building_id: web::Path<Uuid>,
+    user: AuthenticatedUser,
 ) -> impl Responder {
+    // Route imbriquee non gardee au releve du 2026-09-06 (issue #772) : elle
+    // servait une sous-collection d'un dossier d'ACP a quiconque connaissait
+    // un identifiant, sans demander d'identite.
+    if let Err(err) =
+        crate::infrastructure::web::middleware::scope_guard::verify_building_org_access(
+            &user,
+            *building_id,
+            &data.building_use_cases,
+            &data.acp_use_cases,
+        )
+        .await
+    {
+        return err.error_response();
+    }
+
     match data
         .skill_use_cases
         .list_professional_skills(building_id.into_inner())
@@ -126,8 +190,23 @@ pub async fn list_professional_skills(
 pub async fn list_skills_by_category(
     data: web::Data<AppState>,
     path: web::Path<(Uuid, String)>,
+    user: AuthenticatedUser,
 ) -> impl Responder {
     let (building_id, category_str) = path.into_inner();
+    // Route imbriquee non gardee au releve du 2026-09-06 (issue #772) : elle
+    // servait une sous-collection d'un dossier d'ACP a quiconque connaissait
+    // un identifiant, sans demander d'identite.
+    if let Err(err) =
+        crate::infrastructure::web::middleware::scope_guard::verify_building_org_access(
+            &user,
+            building_id,
+            &data.building_use_cases,
+            &data.acp_use_cases,
+        )
+        .await
+    {
+        return err.error_response();
+    }
 
     // Parse skill category
     let category = match serde_json::from_str::<SkillCategory>(&format!("\"{}\"", category_str)) {
@@ -156,8 +235,23 @@ pub async fn list_skills_by_category(
 pub async fn list_skills_by_expertise(
     data: web::Data<AppState>,
     path: web::Path<(Uuid, String)>,
+    user: AuthenticatedUser,
 ) -> impl Responder {
     let (building_id, level_str) = path.into_inner();
+    // Route imbriquee non gardee au releve du 2026-09-06 (issue #772) : elle
+    // servait une sous-collection d'un dossier d'ACP a quiconque connaissait
+    // un identifiant, sans demander d'identite.
+    if let Err(err) =
+        crate::infrastructure::web::middleware::scope_guard::verify_building_org_access(
+            &user,
+            building_id,
+            &data.building_use_cases,
+            &data.acp_use_cases,
+        )
+        .await
+    {
+        return err.error_response();
+    }
 
     // Parse expertise level
     let level = match serde_json::from_str::<ExpertiseLevel>(&format!("\"{}\"", level_str)) {
@@ -337,7 +431,23 @@ pub async fn delete_skill(
 pub async fn get_skill_statistics(
     data: web::Data<AppState>,
     building_id: web::Path<Uuid>,
+    user: AuthenticatedUser,
 ) -> impl Responder {
+    // Route imbriquee non gardee au releve du 2026-09-06 (issue #772) : elle
+    // servait une sous-collection d'un dossier d'ACP a quiconque connaissait
+    // un identifiant, sans demander d'identite.
+    if let Err(err) =
+        crate::infrastructure::web::middleware::scope_guard::verify_building_org_access(
+            &user,
+            *building_id,
+            &data.building_use_cases,
+            &data.acp_use_cases,
+        )
+        .await
+    {
+        return err.error_response();
+    }
+
     match data
         .skill_use_cases
         .get_skill_statistics(building_id.into_inner())

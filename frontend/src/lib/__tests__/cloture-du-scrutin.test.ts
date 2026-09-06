@@ -53,7 +53,10 @@ describe("clôture du scrutin", () => {
     const blocBouton = source.match(
       /\{#if\s+([^}]+)\}\s*<button\s+onclick=\{handleCloseVoting\}/,
     );
-    expect(blocBouton, "le bouton de clôture doit être gardé par une condition").not.toBeNull();
+    expect(
+      blocBouton,
+      "le bouton de clôture doit être gardé par une condition",
+    ).not.toBeNull();
 
     const garde = blocBouton![1];
     expect(
@@ -64,7 +67,9 @@ describe("clôture du scrutin", () => {
   });
 
   it("ne fait pas dépendre canCloseVoting de la qualité de copropriétaire", () => {
-    const decl = source.match(/let\s+canCloseVoting\s*=\s*\$derived\(([\s\S]*?)\);/);
+    const decl = source.match(
+      /let\s+canCloseVoting\s*=\s*\$derived\(([\s\S]*?)\);/,
+    );
     expect(decl, "canCloseVoting doit être un $derived").not.toBeNull();
 
     const corps = decl![1];

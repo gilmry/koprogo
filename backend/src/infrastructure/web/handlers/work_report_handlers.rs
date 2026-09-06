@@ -117,7 +117,23 @@ pub async fn get_work_report(
 pub async fn list_building_work_reports(
     state: web::Data<AppState>,
     building_id: web::Path<Uuid>,
+    user: AuthenticatedUser,
 ) -> impl Responder {
+    // Route imbriquee non gardee au releve du 2026-09-06 (issue #772) : elle
+    // servait une sous-collection d'un dossier d'ACP a quiconque connaissait
+    // un identifiant, sans demander d'identite.
+    if let Err(err) =
+        crate::infrastructure::web::middleware::scope_guard::verify_building_org_access(
+            &user,
+            *building_id,
+            &state.building_use_cases,
+            &state.acp_use_cases,
+        )
+        .await
+    {
+        return err.error_response();
+    }
+
     match state
         .work_report_use_cases
         .list_work_reports_by_building(*building_id)
@@ -243,7 +259,23 @@ pub async fn delete_work_report(
 pub async fn get_active_warranties(
     state: web::Data<AppState>,
     building_id: web::Path<Uuid>,
+    user: AuthenticatedUser,
 ) -> impl Responder {
+    // Route imbriquee non gardee au releve du 2026-09-06 (issue #772) : elle
+    // servait une sous-collection d'un dossier d'ACP a quiconque connaissait
+    // un identifiant, sans demander d'identite.
+    if let Err(err) =
+        crate::infrastructure::web::middleware::scope_guard::verify_building_org_access(
+            &user,
+            *building_id,
+            &state.building_use_cases,
+            &state.acp_use_cases,
+        )
+        .await
+    {
+        return err.error_response();
+    }
+
     match state
         .work_report_use_cases
         .get_active_warranties(*building_id)
@@ -258,11 +290,27 @@ pub async fn get_active_warranties(
 #[get("/buildings/{building_id}/work-reports/warranties/expiring")]
 pub async fn get_expiring_warranties(
     state: web::Data<AppState>,
+    user: AuthenticatedUser,
     path: web::Path<Uuid>,
     query: web::Query<serde_json::Value>,
 ) -> impl Responder {
     let building_id = path.into_inner();
     let days = query.get("days").and_then(|v| v.as_i64()).unwrap_or(90) as i32;
+
+    // Route imbriquee non gardee au releve du 2026-09-06 (issue #772) : elle
+    // servait une sous-collection d'un dossier d'ACP a quiconque connaissait
+    // un identifiant, sans demander d'identite.
+    if let Err(err) =
+        crate::infrastructure::web::middleware::scope_guard::verify_building_org_access(
+            &user,
+            building_id,
+            &state.building_use_cases,
+            &state.acp_use_cases,
+        )
+        .await
+    {
+        return err.error_response();
+    }
 
     match state
         .work_report_use_cases

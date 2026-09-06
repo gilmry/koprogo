@@ -33,10 +33,17 @@ describe("toNumber — conversion des Decimal sérialisés en chaîne", () => {
   });
 
   it("répare la somme qui concaténait — défaut F14", () => {
-    const lots = [{ quota: "200.00" }, { quota: "200.00" }, { quota: "600.00" }];
+    const lots = [
+      { quota: "200.00" },
+      { quota: "200.00" },
+      { quota: "600.00" },
+    ];
 
     // Le comportement d'origine, reproduit pour mémoire.
-    const avant = lots.reduce((s, u) => s + ((u.quota as unknown as number) || 0), 0);
+    const avant = lots.reduce(
+      (s, u) => s + ((u.quota as unknown as number) || 0),
+      0,
+    );
     expect(typeof avant).toBe("string");
     expect(Math.round(avant as unknown as number)).toBeNaN();
 
@@ -50,11 +57,16 @@ describe("toNumber — conversion des Decimal sérialisés en chaîne", () => {
     const lots = [{ quota: "200.00" }, { quota: "700.00" }];
     const attendu = 1000;
 
-    const totalCasse = lots.reduce((s, u) => s + ((u.quota as unknown as number) || 0), 0);
+    const totalCasse = lots.reduce(
+      (s, u) => s + ((u.quota as unknown as number) || 0),
+      0,
+    );
     // Le cœur du défaut : la comparaison ne dit pas « écart », elle dit « rien
     // à signaler ». L'écran affichait donc « quotités correctes » sur un
     // immeuble en dérive.
-    expect(Math.abs((totalCasse as unknown as number) - attendu) > 0.5).toBe(false);
+    expect(Math.abs((totalCasse as unknown as number) - attendu) > 0.5).toBe(
+      false,
+    );
 
     const totalCorrige = lots.reduce((s, u) => s + toNumber(u.quota), 0);
     expect(Math.abs(totalCorrige - attendu) > 0.5).toBe(true);

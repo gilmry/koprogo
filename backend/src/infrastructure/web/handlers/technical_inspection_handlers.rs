@@ -4,7 +4,7 @@ use crate::application::dto::{
 };
 use crate::infrastructure::audit::{AuditEventType, AuditLogEntry};
 use crate::infrastructure::web::{AppState, AuthenticatedUser};
-use actix_web::{delete, get, post, put, web, HttpResponse, Responder};
+use actix_web::{delete, get, post, put, web, HttpResponse, Responder, ResponseError};
 use uuid::Uuid;
 
 // ==================== Technical Inspection CRUD Endpoints ====================
@@ -84,7 +84,23 @@ pub async fn get_technical_inspection(
 pub async fn list_building_technical_inspections(
     state: web::Data<AppState>,
     building_id: web::Path<Uuid>,
+    user: AuthenticatedUser,
 ) -> impl Responder {
+    // Route imbriquee non gardee au releve du 2026-09-06 (issue #772) : elle
+    // servait une sous-collection d'un dossier d'ACP a quiconque connaissait
+    // un identifiant, sans demander d'identite.
+    if let Err(err) =
+        crate::infrastructure::web::middleware::scope_guard::verify_building_org_access(
+            &user,
+            *building_id,
+            &state.building_use_cases,
+            &state.acp_use_cases,
+        )
+        .await
+    {
+        return err.error_response();
+    }
+
     match state
         .technical_inspection_use_cases
         .list_technical_inspections_by_building(*building_id)
@@ -214,7 +230,23 @@ pub async fn delete_technical_inspection(
 pub async fn get_overdue_inspections(
     state: web::Data<AppState>,
     building_id: web::Path<Uuid>,
+    user: AuthenticatedUser,
 ) -> impl Responder {
+    // Route imbriquee non gardee au releve du 2026-09-06 (issue #772) : elle
+    // servait une sous-collection d'un dossier d'ACP a quiconque connaissait
+    // un identifiant, sans demander d'identite.
+    if let Err(err) =
+        crate::infrastructure::web::middleware::scope_guard::verify_building_org_access(
+            &user,
+            *building_id,
+            &state.building_use_cases,
+            &state.acp_use_cases,
+        )
+        .await
+    {
+        return err.error_response();
+    }
+
     match state
         .technical_inspection_use_cases
         .get_overdue_inspections(*building_id)
@@ -231,9 +263,28 @@ pub async fn get_upcoming_inspections(
     state: web::Data<AppState>,
     path: web::Path<Uuid>,
     query: web::Query<serde_json::Value>,
+    user: AuthenticatedUser,
 ) -> impl Responder {
     let building_id = path.into_inner();
     let days = query.get("days").and_then(|v| v.as_i64()).unwrap_or(90) as i32;
+
+    // Route imbriquee non gardee au releve du 2026-09-06 (issue #772).
+    //
+    // Elle avait recu le parametre `user` sans la garde qui l'emploie : le
+    // cliquet, qui comptait la presence d'`AuthenticatedUser`, l'aurait donc
+    // declaree protegee alors qu'elle ne l'etait pas. Seul l'avertissement
+    // `unused variable` du compilateur l'a signalee. D'ou le second cliquet.
+    if let Err(err) =
+        crate::infrastructure::web::middleware::scope_guard::verify_building_org_access(
+            &user,
+            building_id,
+            &state.building_use_cases,
+            &state.acp_use_cases,
+        )
+        .await
+    {
+        return err.error_response();
+    }
 
     match state
         .technical_inspection_use_cases
@@ -250,8 +301,38 @@ pub async fn get_upcoming_inspections(
 pub async fn get_inspections_by_type(
     state: web::Data<AppState>,
     path: web::Path<(Uuid, String)>,
+    user: AuthenticatedUser,
 ) -> impl Responder {
     let (building_id, inspection_type) = path.into_inner();
+    // Route imbriquee non gardee au releve du 2026-09-06 (issue #772) : elle
+    // servait une sous-collection d'un dossier d'ACP a quiconque connaissait
+    // un identifiant, sans demander d'identite.
+    if let Err(err) =
+        crate::infrastructure::web::middleware::scope_guard::verify_building_org_access(
+            &user,
+            building_id,
+            &state.building_use_cases,
+            &state.acp_use_cases,
+        )
+        .await
+    {
+        return err.error_response();
+    }
+
+    // Route imbriquee non gardee au releve du 2026-09-06 (issue #772) : elle
+    // servait une sous-collection d'un dossier d'ACP a quiconque connaissait
+    // un identifiant, sans demander d'identite.
+    if let Err(err) =
+        crate::infrastructure::web::middleware::scope_guard::verify_building_org_access(
+            &user,
+            building_id,
+            &state.building_use_cases,
+            &state.acp_use_cases,
+        )
+        .await
+    {
+        return err.error_response();
+    }
 
     match state
         .technical_inspection_use_cases

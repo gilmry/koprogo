@@ -57,18 +57,65 @@ use std::path::{Path, PathBuf};
 /// fait partie de la correction — sans quoi le cliquet rend gratuites autant
 /// de régressions qu'il compte d'unités d'écart.
 ///
-/// 73 au relevé du 2026-09-06 ; **70** après avoir gardé les trois listes de
-/// documents, faites dans le même commit que ce cliquet. Un cliquet posé sans
-/// une première baisse n'est qu'une constatation.
+/// 73 au relevé du 2026-09-06 ; 70 après les trois listes de documents, puis
+/// **33** après avoir gardé les trente-six routes portées par un immeuble —
+/// annonces, objets partagés, compétences, inspections, tickets, rapports de
+/// travaux, paiements, états datés, convocations.
+///
+/// Un cliquet posé sans une première baisse n'est qu'une constatation.
 ///
 /// Ordre de traitement retenu, du plus exposé au moins : documents (actes de
 /// base, procès-verbaux, factures nominatives), paiements et états datés
 /// (montants par personne nommée), convocations, avis.
-const DETTE_AU_2026_09_06: usize = 70;
+const DETTE_AU_2026_09_06: usize = 33;
+
+/// Routes imbriquées qui **prennent** l'identité sans jamais la **vérifier**.
+///
+/// ── Pourquoi ce second compte existe ───────────────────────────────────────
+///
+/// Le premier compte le paramètre `AuthenticatedUser`. C'est nécessaire, et ce
+/// n'est pas suffisant : une route peut le recevoir et l'ignorer.
+///
+/// Ce n'est pas une hypothèse. En gardant les 36 routes du 2026-09-06, mon
+/// propre script a inséré le paramètre dans `get_upcoming_inspections` sans y
+/// insérer la garde — la forme de la fonction ne correspondait à aucun des deux
+/// motifs reconnus. Le premier cliquet l'aurait comptée **protégée**. Seul
+/// l'avertissement `unused variable` du compilateur l'a signalée.
+///
+/// Un cliquet qui mesure la présence d'un paramètre mesure une intention, pas
+/// un effet. Celui-ci mesure l'effet : la route appelle-t-elle quelque chose
+/// qui décide du droit d'accès ?
+///
+/// ── Attention en lisant ce chiffre ─────────────────────────────────────────
+///
+/// Toutes ces routes ne sont pas des fuites, et le compte est un **majorant**.
+/// Certaines s'adressent au superadmin seul, d'autres ne servent que des
+/// données de l'appelant lui-même. Le tri reste à faire, route par route, et
+/// c'est le travail de l'issue #772.
+///
+/// **Ce nombre ne doit que DIMINUER.**
+const IDENTITE_NON_VERIFIEE_AU_2026_09_06: usize = 109;
 
 fn racine_handlers() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("src/infrastructure/web/handlers")
 }
+
+/// Les appels qui décident réellement d'un droit d'accès.
+///
+/// `verify_*_org_access` remonte la chaîne jusqu'à l'organisation ;
+/// `verifier_mandat_sur_ag` fait de même depuis une assemblée ;
+/// `require_organization` et `is_superadmin` sont des décisions plus grossières
+/// mais réelles. Un corps qui n'en contient aucun ne décide de rien.
+const MARQUEURS_DE_GARDE: [&str; 8] = [
+    "verify_acp_org_access",
+    "verify_building_org_access",
+    "verify_meeting_org_access",
+    "verify_expense_org_access",
+    "verifier_mandat",
+    "require_organization",
+    "is_superadmin",
+    "user.organization_id",
+];
 
 /// Une route est-elle imbriquée, c'est-à-dire de la forme
 /// `/{parent}/{id}/{enfants}` ?
@@ -95,8 +142,17 @@ fn est_imbriquee(chemin: &str) -> bool {
     false
 }
 
-/// Les routes d'un module, avec le verdict d'identité.
-fn routes_imbriquees(source: &str) -> Vec<(String, bool)> {
+/// Ce qu'on sait d'une route imbriquée.
+struct Route {
+    nom: String,
+    /// Prend-elle `AuthenticatedUser` en paramètre ?
+    prend_identite: bool,
+    /// Appelle-t-elle quelque chose qui décide du droit d'accès ?
+    verifie_identite: bool,
+}
+
+/// Les routes d'un module, avec les deux verdicts.
+fn routes_imbriquees(source: &str) -> Vec<Route> {
     let mut trouvees = Vec::new();
     for verbe in ["get", "post", "put", "patch", "delete"] {
         let marqueur = format!("#[{verbe}(\"");
@@ -118,10 +174,11 @@ fn routes_imbriquees(source: &str) -> Vec<(String, bool)> {
             // pour ne pas attribuer à une route l'identité de sa voisine.
             let suite = &reste[decalage..];
             let corps = &suite[..suite.find("\n#[").unwrap_or(suite.len())];
-            trouvees.push((
-                format!("{} {}", verbe.to_uppercase(), chemin),
-                corps.contains("AuthenticatedUser"),
-            ));
+            trouvees.push(Route {
+                nom: format!("{} {}", verbe.to_uppercase(), chemin),
+                prend_identite: corps.contains("AuthenticatedUser"),
+                verifie_identite: MARQUEURS_DE_GARDE.iter().any(|m| corps.contains(m)),
+            });
         }
         let _ = reste;
         reste = source;
@@ -130,7 +187,7 @@ fn routes_imbriquees(source: &str) -> Vec<(String, bool)> {
     trouvees
 }
 
-fn recenser() -> BTreeMap<String, Vec<(String, bool)>> {
+fn recenser() -> BTreeMap<String, Vec<Route>> {
     let mut par_module = BTreeMap::new();
     let Ok(entrees) = fs::read_dir(racine_handlers()) else {
         return par_module;
@@ -156,9 +213,9 @@ fn la_dette_de_lecture_imbriquee_ne_grossit_pas() {
 
     let mut sans_identite: Vec<String> = Vec::new();
     for (module, routes) in &par_module {
-        for (route, a_identite) in routes {
-            if !a_identite {
-                sans_identite.push(format!("  {module}  {route}"));
+        for route in routes {
+            if !route.prend_identite {
+                sans_identite.push(format!("  {module}  {}", route.nom));
             }
         }
     }
@@ -198,5 +255,36 @@ fn le_recensement_trouve_bien_des_routes_imbriquees() {
         par_module.contains_key("resolution_handlers"),
         "les modules attendus ont changé de nom : {:?}",
         par_module.keys().collect::<Vec<_>>()
+    );
+}
+
+#[test]
+fn la_dette_didentite_non_verifiee_ne_grossit_pas() {
+    let par_module = recenser();
+
+    let mut non_verifiees: Vec<String> = Vec::new();
+    for (module, routes) in &par_module {
+        for route in routes {
+            if route.prend_identite && !route.verifie_identite {
+                non_verifiees.push(format!("  {module}  {}", route.nom));
+            }
+        }
+    }
+
+    assert!(
+        non_verifiees.len() <= IDENTITE_NON_VERIFIEE_AU_2026_09_06,
+        "La dette d'identité non vérifiée a GROSSI : {} routes prennent \
+         `AuthenticatedUser` sans jamais s'en servir, contre {} au \
+         2026-09-06.\n\n\
+         Prendre l'identité sans la vérifier est pire que de ne pas la prendre : \
+         le premier cliquet compte la route comme protégée, et la revue passe. \
+         C'est exactement ce qui est arrivé à `get_upcoming_inspections`, dont \
+         seul l'avertissement `unused variable` a trahi l'absence de garde.\n\n\
+         Appelez l'un des gardes de `scope_guard`, ou dites explicitement \
+         pourquoi la route n'en a pas besoin.\n\n\
+         Liste :\n{}",
+        non_verifiees.len(),
+        IDENTITE_NON_VERIFIEE_AU_2026_09_06,
+        non_verifiees.join("\n")
     );
 }

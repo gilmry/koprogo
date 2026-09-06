@@ -83,7 +83,10 @@ describe("BuildingForm — un syndic doit pouvoir désigner l'ACP (#783)", () =>
   /// création d'immeuble passent tous par un compte admin, et le test backend
   /// fournit `acp_id`. C'est le trou par lequel le défaut est passé.
   it("charge les ACP et affiche le select pour un syndic", async () => {
-    acpsServies.mockResolvedValue([ACP, { ...ACP, id: "autre", name: "Seconde ACP" }]);
+    acpsServies.mockResolvedValue([
+      ACP,
+      { ...ACP, id: "autre", name: "Seconde ACP" },
+    ]);
 
     render(BuildingForm, { props: { isOpen: true, mode: "create" } });
 
@@ -125,7 +128,9 @@ describe("BuildingForm — un syndic doit pouvoir désigner l'ACP (#783)", () =>
 
     await waitFor(
       () =>
-        expect(screen.getByText(/admin\.building\.noAcpAskAdmin/)).toBeInTheDocument(),
+        expect(
+          screen.getByText(/admin\.building\.noAcpAskAdmin/),
+        ).toBeInTheDocument(),
       { timeout: 3000 },
     );
   });

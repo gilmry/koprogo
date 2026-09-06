@@ -72,7 +72,10 @@ const SCOPES = [null, { selectedBuildingId: "b-1" }] as const;
 function rolesDuBackend(): string[] {
   const source = readFileSync(SOURCE_DES_ROLES, "utf8");
   const debut = source.indexOf("impl std::fmt::Display for UserRole");
-  expect(debut, "le `impl Display for UserRole` a changé de forme").toBeGreaterThan(0);
+  expect(
+    debut,
+    "le `impl Display for UserRole` a changé de forme",
+  ).toBeGreaterThan(0);
   const bloc = source.slice(debut, source.indexOf("\n}", debut));
   return [...bloc.matchAll(/write!\(f, "([a-z_.]+)"\)/g)].map((m) => m[1]);
 }
@@ -121,7 +124,9 @@ describe("aucun rôle du backend ne reçoit une navigation vide (#814)", () => {
   it("ne déclare aucun rôle sans interface qui n'existe pas côté serveur", () => {
     // Le registre doit rester une photographie du réel. Un rôle retiré du
     // backend et laissé ici masquerait la prochaine omission.
-    const fantomes = [...ROLES_SANS_INTERFACE].filter((r) => !roles.includes(r));
+    const fantomes = [...ROLES_SANS_INTERFACE].filter(
+      (r) => !roles.includes(r),
+    );
     expect(
       fantomes,
       `\`ROLES_SANS_INTERFACE\` cite des rôles que le backend ne sert plus : ` +

@@ -32,13 +32,17 @@
  * nulle. Zéro voudrait dire « ce lot ne vote pas », ce qui est une tout autre
  * affirmation.
  */
-export function valeurQuota(quota: string | number | null | undefined): number | null {
+export function valeurQuota(
+  quota: string | number | null | undefined,
+): number | null {
   if (quota === null || quota === undefined || quota === "") return null;
   const valeur = typeof quota === "number" ? quota : Number(quota);
   return Number.isFinite(valeur) ? valeur : null;
 }
 
-export function tantiemes(quota: string | number | null | undefined): number | null {
+export function tantiemes(
+  quota: string | number | null | undefined,
+): number | null {
   const valeur = valeurQuota(quota);
   return valeur === null ? null : Math.round(valeur);
 }

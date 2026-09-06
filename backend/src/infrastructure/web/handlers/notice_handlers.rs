@@ -2,7 +2,7 @@ use crate::application::dto::{CreateNoticeDto, SetExpirationDto, UpdateNoticeDto
 use crate::domain::entities::{NoticeCategory, NoticeStatus, NoticeType};
 use crate::infrastructure::web::app_state::AppState;
 use crate::infrastructure::web::middleware::AuthenticatedUser;
-use actix_web::{delete, get, post, put, web, HttpResponse, Responder};
+use actix_web::{delete, get, post, put, web, HttpResponse, Responder, ResponseError};
 use uuid::Uuid;
 
 /// Create a new notice (Draft status)
@@ -54,7 +54,23 @@ pub async fn get_notice(data: web::Data<AppState>, id: web::Path<Uuid>) -> impl 
 pub async fn list_building_notices(
     data: web::Data<AppState>,
     building_id: web::Path<Uuid>,
+    user: AuthenticatedUser,
 ) -> impl Responder {
+    // Route imbriquee non gardee au releve du 2026-09-06 (issue #772) : elle
+    // servait une sous-collection d'un dossier d'ACP a quiconque connaissait
+    // un identifiant, sans demander d'identite.
+    if let Err(err) =
+        crate::infrastructure::web::middleware::scope_guard::verify_building_org_access(
+            &user,
+            *building_id,
+            &data.building_use_cases,
+            &data.acp_use_cases,
+        )
+        .await
+    {
+        return err.error_response();
+    }
+
     match data
         .notice_use_cases
         .list_building_notices(building_id.into_inner())
@@ -72,7 +88,23 @@ pub async fn list_building_notices(
 pub async fn list_published_notices(
     data: web::Data<AppState>,
     building_id: web::Path<Uuid>,
+    user: AuthenticatedUser,
 ) -> impl Responder {
+    // Route imbriquee non gardee au releve du 2026-09-06 (issue #772) : elle
+    // servait une sous-collection d'un dossier d'ACP a quiconque connaissait
+    // un identifiant, sans demander d'identite.
+    if let Err(err) =
+        crate::infrastructure::web::middleware::scope_guard::verify_building_org_access(
+            &user,
+            *building_id,
+            &data.building_use_cases,
+            &data.acp_use_cases,
+        )
+        .await
+    {
+        return err.error_response();
+    }
+
     match data
         .notice_use_cases
         .list_published_notices(building_id.into_inner())
@@ -90,7 +122,23 @@ pub async fn list_published_notices(
 pub async fn list_pinned_notices(
     data: web::Data<AppState>,
     building_id: web::Path<Uuid>,
+    user: AuthenticatedUser,
 ) -> impl Responder {
+    // Route imbriquee non gardee au releve du 2026-09-06 (issue #772) : elle
+    // servait une sous-collection d'un dossier d'ACP a quiconque connaissait
+    // un identifiant, sans demander d'identite.
+    if let Err(err) =
+        crate::infrastructure::web::middleware::scope_guard::verify_building_org_access(
+            &user,
+            *building_id,
+            &data.building_use_cases,
+            &data.acp_use_cases,
+        )
+        .await
+    {
+        return err.error_response();
+    }
+
     match data
         .notice_use_cases
         .list_pinned_notices(building_id.into_inner())
@@ -108,8 +156,23 @@ pub async fn list_pinned_notices(
 pub async fn list_notices_by_type(
     data: web::Data<AppState>,
     path: web::Path<(Uuid, String)>,
+    user: AuthenticatedUser,
 ) -> impl Responder {
     let (building_id, notice_type_str) = path.into_inner();
+    // Route imbriquee non gardee au releve du 2026-09-06 (issue #772) : elle
+    // servait une sous-collection d'un dossier d'ACP a quiconque connaissait
+    // un identifiant, sans demander d'identite.
+    if let Err(err) =
+        crate::infrastructure::web::middleware::scope_guard::verify_building_org_access(
+            &user,
+            building_id,
+            &data.building_use_cases,
+            &data.acp_use_cases,
+        )
+        .await
+    {
+        return err.error_response();
+    }
 
     // Parse notice type
     let notice_type = match serde_json::from_str::<NoticeType>(&format!("\"{}\"", notice_type_str))
@@ -139,8 +202,23 @@ pub async fn list_notices_by_type(
 pub async fn list_notices_by_category(
     data: web::Data<AppState>,
     path: web::Path<(Uuid, String)>,
+    user: AuthenticatedUser,
 ) -> impl Responder {
     let (building_id, category_str) = path.into_inner();
+    // Route imbriquee non gardee au releve du 2026-09-06 (issue #772) : elle
+    // servait une sous-collection d'un dossier d'ACP a quiconque connaissait
+    // un identifiant, sans demander d'identite.
+    if let Err(err) =
+        crate::infrastructure::web::middleware::scope_guard::verify_building_org_access(
+            &user,
+            building_id,
+            &data.building_use_cases,
+            &data.acp_use_cases,
+        )
+        .await
+    {
+        return err.error_response();
+    }
 
     // Parse category
     let category = match serde_json::from_str::<NoticeCategory>(&format!("\"{}\"", category_str)) {
@@ -169,8 +247,23 @@ pub async fn list_notices_by_category(
 pub async fn list_notices_by_status(
     data: web::Data<AppState>,
     path: web::Path<(Uuid, String)>,
+    user: AuthenticatedUser,
 ) -> impl Responder {
     let (building_id, status_str) = path.into_inner();
+    // Route imbriquee non gardee au releve du 2026-09-06 (issue #772) : elle
+    // servait une sous-collection d'un dossier d'ACP a quiconque connaissait
+    // un identifiant, sans demander d'identite.
+    if let Err(err) =
+        crate::infrastructure::web::middleware::scope_guard::verify_building_org_access(
+            &user,
+            building_id,
+            &data.building_use_cases,
+            &data.acp_use_cases,
+        )
+        .await
+    {
+        return err.error_response();
+    }
 
     // Parse status
     let status = match serde_json::from_str::<NoticeStatus>(&format!("\"{}\"", status_str)) {
@@ -438,7 +531,23 @@ pub async fn delete_notice(
 pub async fn get_notice_statistics(
     data: web::Data<AppState>,
     building_id: web::Path<Uuid>,
+    user: AuthenticatedUser,
 ) -> impl Responder {
+    // Route imbriquee non gardee au releve du 2026-09-06 (issue #772) : elle
+    // servait une sous-collection d'un dossier d'ACP a quiconque connaissait
+    // un identifiant, sans demander d'identite.
+    if let Err(err) =
+        crate::infrastructure::web::middleware::scope_guard::verify_building_org_access(
+            &user,
+            *building_id,
+            &data.building_use_cases,
+            &data.acp_use_cases,
+        )
+        .await
+    {
+        return err.error_response();
+    }
+
     match data
         .notice_use_cases
         .get_statistics(building_id.into_inner())
