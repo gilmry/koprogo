@@ -2455,7 +2455,13 @@
     "created_success": "Assemblée créée avec succès",
     "convocationDeadline": "Convocation à envoyer avant le {date}",
     "convocationTooLate": "Le délai légal de convocation ne peut plus être tenu : il manque {jours} jour(s).",
-    "convocationTooLateAction": "Reportez l'assemblée d'autant, ou convoquez en urgence si le motif le justifie (Art. 3.87 § 3)."
+    "convocationTooLateAction": "Reportez l'assemblée d'autant, ou convoquez en urgence si le motif le justifie (Art. 3.87 § 3).",
+    "rescheduleTitle": "Reporter l'assemblée",
+    "completeTitle": "Clôturer l'assemblée",
+    "cancelTitle": "Annuler l'assemblée",
+    "newDateLabel": "Nouvelle date",
+    "attendeesLabel": "Nombre de participants présents",
+    "confirmCancelBody": "Cette assemblée sera marquée comme annulée. Les convocations déjà envoyées ne sont pas retirées."
   },
   "navigation": {
     "accounting": "Comptabilité",

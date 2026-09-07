@@ -2455,7 +2455,13 @@
     "created_success": "Vergadering succesvol aangemaakt",
     "convocationDeadline": "Oproeping te versturen vóór {date}",
     "convocationTooLate": "De wettelijke oproepingstermijn kan niet meer worden gehaald: {jours} dag(en) te kort.",
-    "convocationTooLateAction": "Stel de vergadering navenant uit, of roep dringend bijeen indien gerechtvaardigd (art. 3.87 § 3)."
+    "convocationTooLateAction": "Stel de vergadering navenant uit, of roep dringend bijeen indien gerechtvaardigd (art. 3.87 § 3).",
+    "rescheduleTitle": "Vergadering uitstellen",
+    "completeTitle": "Vergadering afsluiten",
+    "cancelTitle": "Vergadering annuleren",
+    "newDateLabel": "Nieuwe datum",
+    "attendeesLabel": "Aantal aanwezige deelnemers",
+    "confirmCancelBody": "Deze vergadering wordt als geannuleerd gemarkeerd. Reeds verzonden oproepingen worden niet ingetrokken."
   },
   "navigation": {
     "accounting": "Boekhouding",

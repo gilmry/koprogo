@@ -1,4 +1,10 @@
-import { render, screen, waitFor, cleanup } from "@testing-library/svelte";
+import {
+  render,
+  screen,
+  waitFor,
+  cleanup,
+  fireEvent,
+} from "@testing-library/svelte";
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
 /**
@@ -146,5 +152,70 @@ describe("l'écran d'assemblée annonce le délai de convocation (#780)", () => 
         screen.queryByTestId("meeting-convocation-too-late"),
       ).not.toBeInTheDocument(),
     );
+  });
+});
+
+/**
+ * Les trois actions d'assemblée ouvrent un dialogue qui existe.
+ *
+ * ── Ce que ces tests rattrapent ────────────────────────────────────────────
+ *
+ * Le report, la clôture et l'annulation passaient par `prompt()` et
+ * `confirm()`. Ce ne sont pas des composants : le navigateur peut les
+ * supprimer sans rien dire — Chrome le fait après un premier refus, et tout
+ * navigateur piloté le fait par défaut. `prompt()` rend alors `null`, et le
+ * `if (!valeur) return;` qui suit avale le clic EN SILENCE.
+ *
+ * C'est ce qu'a vu la recette 4 : « deux clics réels sur Reporter, aucun
+ * dialogue, aucun changement de date, aucun message » (#780, verrou 1). Le
+ * code était juste ; c'est le dialogue qui n'existait pas.
+ *
+ * Aucun test ne pouvait le voir non plus : `prompt()` est hors du DOM, donc
+ * hors de portée d'un test de rendu comme d'une spec Playwright.
+ */
+describe("les actions d'assemblée ouvrent un vrai dialogue (#780)", () => {
+  it("le bouton Reporter ouvre un dialogue avec un champ de date", async () => {
+    servir(assemblee({ convocation_encore_possible: true }));
+    render(MeetingDetail);
+
+    const bouton = await screen.findByTestId(
+      "meeting-reschedule-btn",
+      {},
+      { timeout: 3000 },
+    );
+    await fireEvent.click(bouton);
+
+    const champ = await screen.findByTestId("meeting-reschedule-date-input");
+    expect(champ).toBeInTheDocument();
+    // Le bouton de validation est inerte tant qu'aucune date n'est saisie :
+    // c'est ce qui remplace le `if (!newDate) return;` silencieux.
+    expect(screen.getByTestId("meeting-reschedule-submit")).toBeDisabled();
+  });
+
+  it("le bouton Annuler ouvre une confirmation qui dit ce qu'elle fait", async () => {
+    servir(assemblee({ convocation_encore_possible: true }));
+    render(MeetingDetail);
+
+    await fireEvent.click(await screen.findByTestId("meeting-cancel-btn"));
+
+    expect(
+      await screen.findByTestId("meeting-cancel-confirm"),
+    ).toBeInTheDocument();
+    expect(screen.getByTestId("meeting-cancel-dismiss")).toBeInTheDocument();
+  });
+
+  /// Sans ce contrôle, les dialogues pourraient être rendus en permanence —
+  /// ce qui passerait les deux tests ci-dessus sans rien prouver.
+  it("ne rend aucun dialogue tant qu'on ne l'a pas demandé", async () => {
+    servir(assemblee({ convocation_encore_possible: true }));
+    render(MeetingDetail);
+
+    await waitFor(() => expect(api.get).toHaveBeenCalled());
+    expect(
+      screen.queryByTestId("meeting-reschedule-date-input"),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByTestId("meeting-cancel-confirm"),
+    ).not.toBeInTheDocument();
   });
 });
