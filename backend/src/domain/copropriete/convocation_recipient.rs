@@ -72,6 +72,24 @@ pub struct ConvocationRecipient {
     pub updated_at: DateTime<Utc>,
 }
 
+/// Ce qu'est le mandataire pressenti, du point de vue de l'ACP.
+///
+/// Un booléen nu au site d'appel — `set_proxy(id, true)` — ne dit pas de quoi
+/// il parle. Cette énumération force l'appelant à nommer ce qu'il a résolu, et
+/// laissera place aux autres qualités si le besoin vient (le conjoint non
+/// copropriétaire, par exemple, que l'Art. 3.87 § 7 traite différemment).
+///
+/// Le domaine ne sait pas *comment* on l'établit : c'est au cas d'usage de
+/// remonter `owners.user_id` puis le rôle de cet utilisateur. La règle, elle,
+/// reste ici.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum QualiteDuMandataire {
+    /// Un copropriétaire, ou toute personne que rien n'écarte.
+    Coproprietaire,
+    /// Le syndic en fonction de cette ACP.
+    Syndic,
+}
+
 impl ConvocationRecipient {
     /// Create a new convocation recipient
     pub fn new(convocation_id: Uuid, owner_id: Uuid, email: String) -> Result<Self, String> {
@@ -170,10 +188,46 @@ impl ConvocationRecipient {
         Ok(())
     }
 
-    /// Set proxy delegation
-    pub fn set_proxy(&mut self, proxy_owner_id: Uuid) -> Result<(), String> {
+    /// Enregistre une procuration.
+    ///
+    /// # Art. 3.87 § 7, dernier alinéa
+    ///
+    /// > « Le syndic ne peut intervenir comme mandataire d'un copropriétaire à
+    /// > l'assemblée générale, nonobstant le droit pour lui, s'il est
+    /// > copropriétaire, de participer à ce titre aux délibérations. »
+    ///
+    /// La règle porte sur le **mandat**, pas sur le vote qui en découle : le
+    /// texte interdit d'« intervenir comme mandataire ». On refuse donc ici, à
+    /// l'enregistrement.
+    ///
+    /// C'est ce qui la distingue des deux autres règles du § 7 — le plafond de
+    /// trois procurations et celui des voix. Celles-là ne *peuvent pas* se
+    /// vérifier au moment du mandat : on ignore encore combien de procurations
+    /// le mandataire recevra et quel poids elles pèseront. Elles restent donc
+    /// dans `procurations.rs`, sur l'ensemble des voix d'une séance.
+    ///
+    /// L'enjeu est pratique. Une assemblée tenue sur un mandat prohibé est
+    /// attaquable, et ce sont ses décisions — travaux, budgets, mandats — qui
+    /// tombent avec elle. Refuser à l'enregistrement évite la séance entière ;
+    /// refuser au dépouillement ne fait que constater les dégâts.
+    ///
+    /// La seconde partie de l'alinéa est respectée : rien n'empêche le syndic
+    /// copropriétaire d'être **destinataire** et de voter pour lui-même. Ce
+    /// qu'on refuse, c'est qu'il soit le mandataire d'un autre.
+    pub fn set_proxy(
+        &mut self,
+        proxy_owner_id: Uuid,
+        qualite: QualiteDuMandataire,
+    ) -> Result<(), String> {
         if proxy_owner_id == self.owner_id {
             return Err("Cannot delegate to self".to_string());
+        }
+
+        if qualite == QualiteDuMandataire::Syndic {
+            return Err(
+                "Art. 3.87 § 7 : le syndic ne peut intervenir comme mandataire d'un copropriétaire"
+                    .to_string(),
+            );
         }
 
         self.proxy_owner_id = Some(proxy_owner_id);
@@ -360,15 +414,76 @@ mod tests {
         let proxy_owner = Uuid::new_v4();
 
         // Set proxy
-        assert!(recipient.set_proxy(proxy_owner).is_ok());
+        assert!(recipient
+            .set_proxy(proxy_owner, QualiteDuMandataire::Coproprietaire)
+            .is_ok());
         assert_eq!(recipient.proxy_owner_id, Some(proxy_owner));
 
         // Cannot delegate to self
-        assert!(recipient.set_proxy(recipient.owner_id).is_err());
+        assert!(recipient
+            .set_proxy(recipient.owner_id, QualiteDuMandataire::Coproprietaire)
+            .is_err());
 
         // Remove proxy
         recipient.remove_proxy();
         assert_eq!(recipient.proxy_owner_id, None);
+    }
+
+    /// Art. 3.87 § 7, dernier alinéa : le syndic ne peut intervenir comme
+    /// mandataire d'un copropriétaire à l'assemblée générale.
+    ///
+    /// La règle porte sur le mandat lui-même, donc sur cet appel, et non
+    /// seulement sur le vote qui en découlerait (#829).
+    #[test]
+    fn le_syndic_ne_peut_pas_recevoir_de_procuration() {
+        let mut destinataire = ConvocationRecipient::new(
+            Uuid::new_v4(),
+            Uuid::new_v4(),
+            "coproprietaire@example.be".to_string(),
+        )
+        .unwrap();
+
+        let syndic = Uuid::new_v4();
+        let erreur = destinataire
+            .set_proxy(syndic, QualiteDuMandataire::Syndic)
+            .expect_err("le mandat au syndic doit être refusé");
+
+        assert!(
+            erreur.contains("3.87"),
+            "le message doit citer l'article qui fonde le refus, reçu : {erreur}"
+        );
+        assert_eq!(
+            destinataire.proxy_owner_id, None,
+            "un mandat refusé ne doit rien laisser derrière lui"
+        );
+    }
+
+    /// Le § 7 réserve expressément au syndic copropriétaire le droit de
+    /// « participer à ce titre aux délibérations ». Être destinataire et voter
+    /// pour soi-même reste donc permis : ce qu'on refuse, c'est qu'il soit le
+    /// mandataire d'un AUTRE.
+    ///
+    /// Sans ce cas, la règle précédente passerait aussi avec une implémentation
+    /// qui écarterait le syndic de toute la convocation.
+    #[test]
+    fn le_syndic_coproprietaire_reste_destinataire_a_part_entiere() {
+        let syndic_coproprietaire = Uuid::new_v4();
+        let mut destinataire = ConvocationRecipient::new(
+            Uuid::new_v4(),
+            syndic_coproprietaire,
+            "syndic@example.be".to_string(),
+        )
+        .unwrap();
+
+        assert!(destinataire
+            .update_attendance_status(AttendanceStatus::WillAttend)
+            .is_ok());
+
+        // Et il peut donner procuration à un copropriétaire, comme n'importe
+        // qui : l'interdiction porte sur le fait de la RECEVOIR.
+        assert!(destinataire
+            .set_proxy(Uuid::new_v4(), QualiteDuMandataire::Coproprietaire)
+            .is_ok());
     }
 
     #[test]

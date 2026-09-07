@@ -81,7 +81,7 @@ pub use consignation_pv::{echeance as echeance_consignation_pv, EtatConsignation
 pub use contract_evaluation::ContractEvaluation;
 pub use contrat_lie::{autorisation_valable, ContratRefuse, LienAvecLeSyndic};
 pub use convocation::{Convocation, ConvocationStatus, ConvocationType};
-pub use convocation_recipient::{AttendanceStatus, ConvocationRecipient};
+pub use convocation_recipient::{AttendanceStatus, ConvocationRecipient, QualiteDuMandataire};
 pub use decompte_des_lots::{compte_dans_le_seuil, lots_comptes, SEUIL_LEGAL};
 pub use delai_de_convocation::{evaluer as evaluer_delai_de_convocation, DelaiDeConvocation};
 pub use document::{Document, DocumentType};

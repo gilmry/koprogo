@@ -118,13 +118,8 @@ const ACCOUNTING_ROLES: ReadonlySet<string> = new Set([
  * qu'il verra, c'est le message de `ROLES_SANS_INTERFACE` — pas une barre
  * vide.
  *
- * `board_member` reste **provisoire**. Ses écrans existent
- * (`pages/board-dashboard.astro`, `BoardDashboard.svelte`,
- * `DecisionTracker.svelte`) et ses routes serveur aussi — dix pour
- * `/board-members`, neuf pour `/board-decisions`. Ce qui manque est une
- * décision, pas du code : le conseil surveille le syndic (Art. 3.90 § 1er) et
- * a donc besoin de lecture large sans écriture, mais reste à dire QUELLE
- * lecture. Voir #816.
+ * `board_member` n'y figure plus depuis le 2026-09-07 : l'arbitrage de #816 est
+ * rendu, et le conseil voit désormais trois menus. Voir `BOARD_MENUS`.
  *
  * Cette liste est le **registre des rôles sans interface** : `garde-roles`
  * exige que chaque rôle du backend voie au moins un menu ou figure ici. Un rôle
@@ -133,13 +128,49 @@ const ACCOUNTING_ROLES: ReadonlySet<string> = new Set([
  */
 export const ROLES_SANS_INTERFACE: ReadonlySet<string> = new Set([
   "contractor",
-  "board_member",
   "lawyer",
   "notary",
   "amo",
   "architect",
   "bet",
   "warden",
+]);
+
+/**
+ * Ce que voit un membre du conseil de copropriété.
+ *
+ * ── Ce qui fonde ce choix ──────────────────────────────────────────────────
+ *
+ * **Il est copropriétaire avant d'être conseiller.** L'Art. 3.90 § 1er réserve
+ * le conseil aux « titulaires d'un droit réel disposant du droit de vote »,
+ * et `conseil_de_copropriete.rs:66` l'implémente. Lui retirer « Mes lots » et
+ * « Communauté » en le nommant au conseil serait lui faire perdre des droits
+ * en gagnant une charge.
+ *
+ * **Sa mission est le contrôle du syndic.** L'Art. 3.90 § 2 lui ouvre les
+ * pièces et documents se rapportant à la gestion — d'où `gouvernance`, qui
+ * porte assemblées, convocations, décisions et documents légaux.
+ *
+ * ── Ce qu'il ne voit pas, et pourquoi ──────────────────────────────────────
+ *
+ * Ni `gestion` ni `compta` ni `ticketing`. Ce sont les menus de l'exécution
+ * courante, celle qu'il surveille sans la conduire — lui en donner l'entrée
+ * inviterait à confondre contrôle et cogestion, ce que la loi distingue.
+ *
+ * ── Ce que cette liste ne décide pas ───────────────────────────────────────
+ *
+ * `canSee` gouverne la VISIBILITÉ d'un menu, jamais le droit d'écrire. Les
+ * gardes de route s'en chargent, et elles sont correctes :
+ * `get_board_dashboard` vérifie `has_active_board_mandate(owner_id,
+ * building_id)` avant de servir quoi que ce soit. Ouvrir un menu n'ouvre donc
+ * aucune écriture.
+ *
+ * Décision du 2026-09-07, #816.
+ */
+const BOARD_MENUS: ReadonlySet<Menu> = new Set([
+  "mes-lots",
+  "communaute",
+  "gouvernance",
 ]);
 
 /**
@@ -184,8 +215,16 @@ export function canSee(role: Role, menu: Menu, scope: Scope): boolean {
   }
 
   // 3. Menu mes-lots (portail copropriétaire).
+  //
+  // `board_member` y figure parce qu'un membre du conseil EST copropriétaire
+  // (Art. 3.90 § 1er) : la charge s'ajoute à sa qualité, elle ne la remplace
+  // pas.
   if (menu === "mes-lots") {
-    return role === "owner" || role === "community.moderator";
+    return (
+      role === "owner" ||
+      role === "community.moderator" ||
+      role === "board_member"
+    );
   }
 
   // 4. Menus business (gestion/compta/gouvernance/communaute/ticketing).
@@ -222,7 +261,10 @@ export function canSee(role: Role, menu: Menu, scope: Scope): boolean {
   // pas — il employait la même constante fautive que le code (#814).
   if (role === "community.moderator") return menu === "communaute";
 
-  // 4f. Rôle sans interface (cf. ROLES_SANS_INTERFACE) ou string inconnue →
+  // 4f. Membre du conseil de copropriété (#816).
+  if (role === "board_member") return BOARD_MENUS.has(menu);
+
+  // 4g. Rôle sans interface (cf. ROLES_SANS_INTERFACE) ou string inconnue →
   //     fail-closed. Story 3.4 introduira le scope mandat.
   return false;
 }

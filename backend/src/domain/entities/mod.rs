@@ -39,7 +39,7 @@ pub use crate::domain::copropriete::convocation::{
 };
 pub use crate::domain::copropriete::convocation_recipient;
 pub use crate::domain::copropriete::convocation_recipient::{
-    AttendanceStatus, ConvocationRecipient,
+    AttendanceStatus, ConvocationRecipient, QualiteDuMandataire,
 };
 pub use crate::domain::copropriete::document;
 pub use crate::domain::copropriete::document::{Document, DocumentType};

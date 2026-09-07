@@ -267,12 +267,14 @@
       selectedRoleId = roleId;
       const nextUser = get(authStore).user;
       if (nextUser?.role) {
-        const redirectMap = {
+        // Partiel : un membre du conseil ou un modérateur n'a pas de tableau
+        // de bord dédié, il reste où il est. Le repli `/` s'en charge.
+        const redirectMap: Partial<Record<UserRole, string>> = {
           [UserRole.SUPERADMIN]: "/admin",
           [UserRole.SYNDIC]: "/syndic",
           [UserRole.ACCOUNTANT]: "/accountant",
           [UserRole.OWNER]: "/owner",
-        } as const;
+        };
         const destination = redirectMap[nextUser.role] ?? "/";
         if (
           typeof window !== "undefined" &&

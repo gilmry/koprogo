@@ -4,9 +4,11 @@ use crate::application::dto::{
 };
 use crate::application::ports::{
     BuildingRepository, ConvocationRecipientRepository, ConvocationRepository, MeetingRepository,
-    OwnerRepository,
+    OwnerRepository, UserRepository,
 };
-use crate::domain::entities::{AttendanceStatus, Convocation, ConvocationRecipient};
+use crate::domain::entities::{
+    AttendanceStatus, Convocation, ConvocationRecipient, QualiteDuMandataire,
+};
 use crate::domain::services::ConvocationExporter;
 use chrono::Utc;
 use std::sync::Arc;
@@ -22,6 +24,12 @@ pub struct ConvocationUseCases {
     /// `OwnerRepository` ne sait pas lister par immeuble, et aucune route
     /// `GET /buildings/{id}/owners` n'existe.
     unit_owner_repository: Arc<dyn crate::application::ports::UnitOwnerRepository>,
+    /// Sert à établir la QUALITÉ d'un mandataire pressenti, pas son identité.
+    ///
+    /// L'Art. 3.87 § 7 interdit au syndic d'intervenir comme mandataire. Le
+    /// savoir demande de remonter `owners.user_id` puis le rôle de cet
+    /// utilisateur : le dépôt de copropriétaires seul ne le dit pas.
+    user_repository: Arc<dyn UserRepository>,
 }
 
 impl ConvocationUseCases {
@@ -32,6 +40,7 @@ impl ConvocationUseCases {
         building_repository: Arc<dyn BuildingRepository>,
         meeting_repository: Arc<dyn MeetingRepository>,
         unit_owner_repository: Arc<dyn crate::application::ports::UnitOwnerRepository>,
+        user_repository: Arc<dyn UserRepository>,
     ) -> Self {
         Self {
             convocation_repository,
@@ -40,6 +49,7 @@ impl ConvocationUseCases {
             building_repository,
             meeting_repository,
             unit_owner_repository,
+            user_repository,
         }
     }
 
@@ -330,11 +340,51 @@ impl ConvocationUseCases {
             .await?
             .ok_or_else(|| format!("Recipient not found: {}", recipient_id))?;
 
-        recipient.set_proxy(proxy_owner_id)?;
+        let qualite = self.qualite_du_mandataire(proxy_owner_id).await?;
+        recipient.set_proxy(proxy_owner_id, qualite)?;
 
         let updated = self.recipient_repository.update(&recipient).await?;
 
         Ok(ConvocationRecipientResponse::from(updated))
+    }
+
+    /// Établit ce qu'est un mandataire pressenti, pour l'Art. 3.87 § 7.
+    ///
+    /// La chaîne est en deux sauts : `owners.user_id`, puis le rôle de cet
+    /// utilisateur. Aucun des deux n'est garanti.
+    ///
+    /// **Un copropriétaire sans compte est un copropriétaire ordinaire.** C'est
+    /// le cas le plus fréquent — `Owner::user_id` est `Option`, renseigné
+    /// seulement quand un accès au portail est ouvert. En faire un refus
+    /// interdirait la procuration à presque tout le monde, ce que la loi
+    /// n'exige pas ; en faire un doute silencieux masquerait la règle. On
+    /// conclut donc `Coproprietaire`, ce qui est la vérité : rien n'établit
+    /// qu'il soit le syndic.
+    ///
+    /// Le mandataire introuvable, en revanche, est une erreur : on n'enregistre
+    /// pas une procuration au profit de quelqu'un qui n'existe pas.
+    async fn qualite_du_mandataire(
+        &self,
+        proxy_owner_id: Uuid,
+    ) -> Result<QualiteDuMandataire, String> {
+        let mandataire = self
+            .owner_repository
+            .find_by_id(proxy_owner_id)
+            .await?
+            .ok_or_else(|| format!("Mandataire introuvable : {}", proxy_owner_id))?;
+
+        let Some(user_id) = mandataire.user_id else {
+            return Ok(QualiteDuMandataire::Coproprietaire);
+        };
+
+        let Some(utilisateur) = self.user_repository.find_by_id(user_id).await? else {
+            return Ok(QualiteDuMandataire::Coproprietaire);
+        };
+
+        Ok(match utilisateur.role {
+            crate::domain::plateforme::user::UserRole::Syndic => QualiteDuMandataire::Syndic,
+            _ => QualiteDuMandataire::Coproprietaire,
+        })
     }
 
     /// Send reminders to recipients who haven't opened the convocation (J-3)
@@ -676,6 +726,25 @@ mod tests {
     }
 
     mock! {
+        UserRepo {}
+
+        #[async_trait]
+        impl UserRepository for UserRepo {
+            async fn create(&self, user: &crate::domain::plateforme::user::User) -> Result<crate::domain::plateforme::user::User, String>;
+            async fn find_by_id(&self, id: Uuid) -> Result<Option<crate::domain::plateforme::user::User>, String>;
+            async fn find_by_email(&self, email: &str) -> Result<Option<crate::domain::plateforme::user::User>, String>;
+            async fn find_all(&self) -> Result<Vec<crate::domain::plateforme::user::User>, String>;
+            async fn find_by_organization(&self, org_id: Uuid) -> Result<Vec<crate::domain::plateforme::user::User>, String>;
+            async fn update(&self, user: &crate::domain::plateforme::user::User) -> Result<crate::domain::plateforme::user::User, String>;
+            async fn update_password(&self, id: Uuid, password_hash: &str) -> Result<bool, String>;
+            async fn activate(&self, id: Uuid) -> Result<Option<crate::domain::plateforme::user::User>, String>;
+            async fn deactivate(&self, id: Uuid) -> Result<Option<crate::domain::plateforme::user::User>, String>;
+            async fn delete(&self, id: Uuid) -> Result<bool, String>;
+            async fn count_by_organization(&self, org_id: Uuid) -> Result<i64, String>;
+        }
+    }
+
+    mock! {
         MeetingRepo {}
 
         #[async_trait]
@@ -741,6 +810,13 @@ mod tests {
                 ])
             });
 
+        // Par défaut, aucun mandataire n'est rattaché à un compte : c'est le
+        // cas ordinaire (`Owner::user_id` est `Option`), et il conclut
+        // `Coproprietaire`. Les tests qui éprouvent l'Art. 3.87 § 7 posent
+        // leur propre `MockUserRepo` via `make_use_cases_avec_utilisateurs`.
+        let mut user_repo = MockUserRepo::new();
+        user_repo.expect_find_by_id().returning(|_| Ok(None));
+
         ConvocationUseCases::new(
             Arc::new(conv_repo),
             Arc::new(recip_repo),
@@ -748,6 +824,7 @@ mod tests {
             Arc::new(building_repo),
             Arc::new(meeting_repo),
             Arc::new(unit_owner_repo),
+            Arc::new(user_repo),
         )
     }
 
@@ -775,6 +852,68 @@ mod tests {
     }
 
     /// Create a valid ConvocationRecipient (email already sent).
+    /// Un jeu de cas d'usage où le mandataire `proxy_owner_id` existe et porte
+    /// le rôle demandé.
+    ///
+    /// La fabrique par défaut fait répondre `None` au dépôt d'utilisateurs, ce
+    /// qui conclut toujours `Coproprietaire`. Pour éprouver l'Art. 3.87 § 7 il
+    /// faut la chaîne complète : un copropriétaire rattaché à un compte, et ce
+    /// compte portant un rôle.
+    fn make_use_cases_mandataire(
+        recip_repo: MockRecipientRepo,
+        proxy_owner_id: Uuid,
+        role: crate::domain::plateforme::user::UserRole,
+    ) -> ConvocationUseCases {
+        let utilisateur = crate::domain::plateforme::user::User::new(
+            "mandataire@example.be".to_string(),
+            "hash".to_string(),
+            "Marcel".to_string(),
+            "Devos".to_string(),
+            role,
+            Some(Uuid::new_v4()),
+        )
+        .expect("utilisateur valide");
+        let user_id = utilisateur.id;
+
+        let mut mandataire = Owner::new(
+            Uuid::new_v4(),
+            "Marcel".to_string(),
+            "Devos".to_string(),
+            "mandataire@example.be".to_string(),
+            None,
+            "12 Rue de la Loi".to_string(),
+            "Bruxelles".to_string(),
+            "1000".to_string(),
+            "Belgium".to_string(),
+        )
+        .expect("copropriétaire valide");
+        mandataire.id = proxy_owner_id;
+        mandataire.user_id = Some(user_id);
+
+        let mut owner_repo = MockOwnerRepo::new();
+        owner_repo
+            .expect_find_by_id()
+            .returning(move |_| Ok(Some(mandataire.clone())));
+
+        let mut user_repo = MockUserRepo::new();
+        user_repo
+            .expect_find_by_id()
+            .returning(move |_| Ok(Some(utilisateur.clone())));
+
+        let mut building_repo = MockBuildingRepo::new();
+        building_repo.expect_find_by_id().returning(|_| Ok(None));
+
+        ConvocationUseCases::new(
+            Arc::new(MockConvRepo::new()),
+            Arc::new(recip_repo),
+            Arc::new(owner_repo),
+            Arc::new(building_repo),
+            Arc::new(MockMeetingRepo::new()),
+            Arc::new(MockUnitOwnerRepo::new()),
+            Arc::new(user_repo),
+        )
+    }
+
     fn make_recipient(convocation_id: Uuid, owner_id: Uuid) -> ConvocationRecipient {
         let mut r =
             ConvocationRecipient::new(convocation_id, owner_id, "owner@example.com".to_string())
@@ -1182,12 +1321,10 @@ mod tests {
             .returning(move |_| Ok(Some(recip_clone.clone())));
         recip_repo.expect_update().returning(|r| Ok(r.clone()));
 
-        let uc = make_use_cases(
-            MockConvRepo::new(),
+        let uc = make_use_cases_mandataire(
             recip_repo,
-            MockOwnerRepo::new(),
-            MockBuildingRepo::new(),
-            MockMeetingRepo::new(),
+            proxy_owner_id,
+            crate::domain::plateforme::user::UserRole::Owner,
         );
 
         let result = uc.set_recipient_proxy(recipient_id, proxy_owner_id).await;
@@ -1214,17 +1351,85 @@ mod tests {
             .expect_find_by_id()
             .returning(move |_| Ok(Some(recip_clone.clone())));
 
-        let uc = make_use_cases(
-            MockConvRepo::new(),
+        let uc = make_use_cases_mandataire(
             recip_repo,
-            MockOwnerRepo::new(),
-            MockBuildingRepo::new(),
-            MockMeetingRepo::new(),
+            self_owner_id,
+            crate::domain::plateforme::user::UserRole::Owner,
         );
 
         let result = uc.set_recipient_proxy(recipient_id, self_owner_id).await;
 
         assert!(result.is_err());
         assert!(result.unwrap_err().contains("Cannot delegate to self"));
+    }
+
+    // ---------------------------------------------------------------------------
+    // Art. 3.87 § 7 — le syndic ne peut intervenir comme mandataire
+    // ---------------------------------------------------------------------------
+
+    /// Le mandat au profit du syndic est refusé à l'ENREGISTREMENT.
+    ///
+    /// Avant le 2026-09-07, il était accepté ici et refusé au dépouillement par
+    /// `procurations.rs`. Le copropriétaire ne l'apprenait donc qu'une fois la
+    /// séance tenue — quand le vote est à reprendre et que les décisions prises
+    /// sont attaquables (#829).
+    #[tokio::test]
+    async fn le_syndic_ne_peut_pas_etre_mandataire() {
+        let conv_id = Uuid::new_v4();
+        let owner_id = Uuid::new_v4();
+        let syndic_owner_id = Uuid::new_v4();
+        let recipient = make_recipient(conv_id, owner_id);
+        let recipient_id = recipient.id;
+
+        let mut recip_repo = MockRecipientRepo::new();
+        let recip_clone = recipient.clone();
+        recip_repo
+            .expect_find_by_id()
+            .returning(move |_| Ok(Some(recip_clone.clone())));
+        // Aucune attente d'`update` : le refus doit intervenir AVANT l'écriture.
+        // Si le mock est appelé, mockall échoue — c'est le contrôle qu'on veut.
+
+        let uc = make_use_cases_mandataire(
+            recip_repo,
+            syndic_owner_id,
+            crate::domain::plateforme::user::UserRole::Syndic,
+        );
+
+        let result = uc.set_recipient_proxy(recipient_id, syndic_owner_id).await;
+
+        let erreur = result.expect_err("le mandat au syndic doit être refusé");
+        assert!(
+            erreur.contains("3.87"),
+            "le message doit citer l'article qui fonde le refus, reçu : {erreur}"
+        );
+    }
+
+    /// Le syndic reste copropriétaire, et un copropriétaire ordinaire reste un
+    /// mandataire valable. Sans ce cas, le test précédent passerait aussi avec
+    /// une règle qui refuserait TOUTE procuration.
+    #[tokio::test]
+    async fn un_coproprietaire_ordinaire_reste_un_mandataire_valable() {
+        let conv_id = Uuid::new_v4();
+        let owner_id = Uuid::new_v4();
+        let proxy_owner_id = Uuid::new_v4();
+        let recipient = make_recipient(conv_id, owner_id);
+        let recipient_id = recipient.id;
+
+        let mut recip_repo = MockRecipientRepo::new();
+        let recip_clone = recipient.clone();
+        recip_repo
+            .expect_find_by_id()
+            .returning(move |_| Ok(Some(recip_clone.clone())));
+        recip_repo.expect_update().returning(|r| Ok(r.clone()));
+
+        let uc = make_use_cases_mandataire(
+            recip_repo,
+            proxy_owner_id,
+            crate::domain::plateforme::user::UserRole::Owner,
+        );
+
+        let result = uc.set_recipient_proxy(recipient_id, proxy_owner_id).await;
+
+        assert!(result.is_ok(), "reçu : {:?}", result.err());
     }
 }

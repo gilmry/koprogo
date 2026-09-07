@@ -1,11 +1,38 @@
 import type { components } from "../types/api";
 
 // User roles in the SaaS platform
+/**
+ * Les rôles servis par le backend.
+ *
+ * **Cette liste doit couvrir `UserRole` de `domain/plateforme/user.rs`.** Elle
+ * n'en déclarait que quatre sur quatorze jusqu'au 2026-09-07, et
+ * `normalizeRole` (stores/auth.ts) rabattait silencieusement les dix autres
+ * sur `OWNER` par son `default`.
+ *
+ * Conséquence mesurée : un `contractor`, un `lawyer` ou un `warden` était
+ * traité par l'interface comme un copropriétaire, et le registre
+ * `ROLES_SANS_INTERFACE` ne pouvait jamais s'appliquer — le rôle était déjà
+ * écrasé quand `Navigation.svelte` le testait. Tout #814 était neutralisé, et
+ * `garde-roles` passait quand même parce qu'elle appelle `canSee()` avec la
+ * chaîne du backend, que la production ne lui transmet jamais telle quelle.
+ * Voir #836.
+ */
 export enum UserRole {
-  SUPERADMIN = "superadmin", // Platform administrator
-  SYNDIC = "syndic", // Property manager
-  ACCOUNTANT = "accountant", // Accountant
-  OWNER = "owner", // Co-owner
+  SUPERADMIN = "superadmin", // Administrateur de la plateforme
+  SYNDIC = "syndic", // Syndic
+  ACCOUNTANT = "accountant", // Comptable (générique)
+  ACCOUNTANT_ENCODEUR = "accountant.encodeur", // Saisie amont
+  ACCOUNTANT_EMETTEUR = "accountant.emetteur", // Sortie financière
+  OWNER = "owner", // Copropriétaire
+  BOARD_MEMBER = "board_member", // Membre du conseil de copropriété
+  CONTRACTOR = "contractor", // Prestataire externe (accès par lien magique)
+  COMMUNITY_MODERATOR = "community.moderator", // Modérateur communauté
+  LAWYER = "lawyer",
+  NOTARY = "notary",
+  AMO = "amo", // Assistant maître d'ouvrage
+  ARCHITECT = "architect",
+  BET = "bet", // Bureau d'études techniques
+  WARDEN = "warden", // Concierge
 }
 
 export interface UserRoleSummary {
@@ -277,14 +304,20 @@ export const hasPermission = (
 ): boolean => {
   if (!user) return false;
 
-  const roleHierarchy = {
+  // Hiérarchie PARTIELLE, et assumée comme telle.
+  //
+  // Les dix autres rôles n'ordonnent pas : un prestataire n'est pas « moins »
+  // qu'un comptable, il est ailleurs. Un rôle absent de cette table vaut donc
+  // 0 et n'obtient rien — refus explicite, là où le `Record` complet aurait
+  // exigé d'inventer un rang pour chacun.
+  const roleHierarchy: Partial<Record<UserRole, number>> = {
     [UserRole.SUPERADMIN]: 4,
     [UserRole.SYNDIC]: 3,
     [UserRole.ACCOUNTANT]: 2,
     [UserRole.OWNER]: 1,
   };
 
-  return roleHierarchy[user.role] >= roleHierarchy[requiredRole];
+  return (roleHierarchy[user.role] ?? 0) >= (roleHierarchy[requiredRole] ?? 0);
 };
 
 export const canAccessBuilding = (
