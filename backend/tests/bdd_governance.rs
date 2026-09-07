@@ -7606,9 +7606,15 @@ async fn then_threshold_reached(world: &mut GovernanceWorld, expected: String) {
         .expect("No AGE request response");
     let expected_bool = expected == "true";
     assert_eq!(
-        resp.threshold_reached, expected_bool,
-        "threshold_reached mismatch: expected {}, got {}",
-        expected_bool, resp.threshold_reached
+        resp.threshold_reached,
+        expected_bool,
+        "Art. 3.87 § 2 : le seuil est d'un cinquième des QUOTITÉS, pas des \
+         copropriétaires. Cinq personnes détenant chacune 1 % ne l'atteignent \
+         pas ; une seule détenant 20 % suffit.\n\n\
+         Cumul actuel : {} %. `threshold_reached` attendu {expected_bool}, \
+         obtenu {}.",
+        resp.total_shares_pct * Decimal::from(100),
+        resp.threshold_reached
     );
 }
 
@@ -7914,30 +7920,10 @@ async fn then_submitted_to_syndic_at_set(world: &mut GovernanceWorld) {
         .expect("No AGE request response");
     assert!(
         resp.submitted_to_syndic_at.is_some(),
-        "submitted_to_syndic_at should be set"
+        "La soumission n'est pas horodatée. C'est elle qui fait courir le \
+         délai de réponse du syndic : sans date de départ, l'auto-convocation \
+         ne peut pas se déclencher, et les copropriétaires restent sans recours."
     );
-}
-
-#[then("syndic_deadline_at should be 15 days after submission")]
-async fn then_syndic_deadline_15_days(world: &mut GovernanceWorld) {
-    let resp = world
-        .last_age_request_response
-        .as_ref()
-        .expect("No AGE request response");
-    assert!(
-        resp.syndic_deadline_at.is_some(),
-        "syndic_deadline_at should be set"
-    );
-    if let (Some(submitted), Some(deadline)) =
-        (resp.submitted_to_syndic_at, resp.syndic_deadline_at)
-    {
-        let diff = deadline - submitted;
-        assert!(
-            diff.num_days() >= 14 && diff.num_days() <= 16,
-            "syndic_deadline_at should be ~15 days after submission, got {} days",
-            diff.num_days()
-        );
-    }
 }
 
 #[given("an open AGE request without enough shares")]
@@ -8002,7 +7988,9 @@ async fn then_syndic_response_at_set(world: &mut GovernanceWorld) {
         .expect("No AGE request response");
     assert!(
         resp.syndic_response_at.is_some(),
-        "syndic_response_at should be set"
+        "La réponse du syndic n'est pas horodatée : on ne peut pas montrer \
+         qu'elle est intervenue dans le délai de quinze jours, ni donc si \
+         l'auto-convocation était ouverte."
     );
 }
 
@@ -9232,4 +9220,352 @@ async fn when_la_convocation_est_envoyee(world: &mut GovernanceWorld) {
         !world.convocation_recipient_ids.is_empty(),
         "aucun destinataire enregistré : la convocation n'a pas été envoyée"
     );
+}
+
+// ===========================================================================
+// Demande d'AGE par les copropriétaires — Art. 3.87 § 2
+// ===========================================================================
+//
+// Sept scénarios de `age_requests.feature` étaient SAUTÉS. Ils portent le
+// seuil du cinquième des quotités, et le parcours de Marcel les met en
+// situation avec une précision qui mérite d'être conservée : 4,5 % puis 9,0,
+// 15,6, **19,9** — si près — et enfin 25,7 % qui franchit la barre.
+//
+// Un test unitaire du seuil dirait la même chose en deux lignes. Ce qu'il ne
+// dirait pas, c'est qu'on peut approcher 20 % à un dixième de point sans
+// jamais l'atteindre, et qu'une demande à 19,9 % laisse cinq copropriétaires
+// sans recours.
+//
+// Voir #540.
+
+/// Les copropriétaires du parcours d'AGE, par prénom.
+fn age_owner_par_prenom(world: &GovernanceWorld, prenom: &str) -> Uuid {
+    world
+        .age_request_owner_ids
+        .iter()
+        .find(|(nom, _, _)| nom.starts_with(prenom))
+        .map(|(_, id, _)| *id)
+        .unwrap_or_else(|| {
+            panic!(
+                "« {prenom} » n'est pas un copropriétaire du parcours d'AGE. Connus : {:?}",
+                world
+                    .age_request_owner_ids
+                    .iter()
+                    .map(|(n, _, _)| n.as_str())
+                    .collect::<Vec<_>>()
+            )
+        })
+}
+
+#[given("the following owners exist with their tantiemes:")]
+async fn given_age_owners_avec_tantiemes(world: &mut GovernanceWorld, step: &Step) {
+    let pool = world.pool.as_ref().unwrap();
+    let org_id = world.org_id.unwrap();
+    world.age_request_owner_ids.clear();
+
+    let table = step.table().expect("le tableau des copropriétaires manque");
+    let entetes: Vec<&str> = table.rows[0].iter().map(|s| s.trim()).collect();
+    let i_nom = entetes
+        .iter()
+        .position(|e| *e == "name")
+        .expect("colonne name");
+    let i_part = entetes
+        .iter()
+        .position(|e| *e == "shares_pct")
+        .expect("colonne shares_pct");
+
+    for ligne in table.rows.iter().skip(1) {
+        let nom_complet = ligne[i_nom].trim().to_string();
+        let part: Decimal = ligne[i_part].trim().parse().expect("quote-part lisible");
+        let (prenom, nom) = nom_complet.split_once(' ').unwrap_or((&nom_complet, ""));
+
+        let owner_id = Uuid::new_v4();
+        sqlx::query(
+            r#"INSERT INTO owners (id, organization_id, first_name, last_name, email, phone,
+                                   address, city, postal_code, country, created_at, updated_at)
+               VALUES ($1, $2, $3, $4, $5, '+32470000000', 'Avenue du Parc 1',
+                       'Bruxelles', '1000', 'Belgique', NOW(), NOW())"#,
+        )
+        .bind(owner_id)
+        .bind(org_id)
+        .bind(prenom)
+        .bind(nom)
+        .bind(format!("{}@age-parc.be", prenom.to_lowercase()))
+        .execute(pool)
+        .await
+        .expect("insert copropriétaire du parcours AGE");
+
+        world
+            .age_request_owner_ids
+            .push((nom_complet, owner_id, part));
+    }
+}
+
+#[when(regex = r#"^([A-Z][a-z]+) creates an AGE request:$"#)]
+async fn when_prenom_cree_demande_age(world: &mut GovernanceWorld, step: &Step, prenom: String) {
+    let table = step.table.as_ref().expect("tableau attendu");
+    let mut titre = String::new();
+    let mut description = String::new();
+    for ligne in &table.rows {
+        match ligne[0].trim() {
+            "title" => titre = ligne[1].trim().to_string(),
+            "description" => description = ligne[1].trim().to_string(),
+            _ => {}
+        }
+    }
+
+    let uc = world.age_request_use_cases.as_ref().unwrap().clone();
+    let dto = CreateAgeRequestDto {
+        building_id: world.building_id.unwrap(),
+        title: titre,
+        description: if description.is_empty() {
+            None
+        } else {
+            Some(description)
+        },
+    };
+
+    match uc
+        .create(
+            world.org_id.unwrap(),
+            age_owner_par_prenom(world, &prenom),
+            dto,
+        )
+        .await
+    {
+        Ok(resp) => {
+            world.last_age_request_id = Some(resp.id);
+            world.last_age_request_response = Some(resp);
+            world.operation_success = true;
+            world.operation_error = None;
+        }
+        Err(e) => {
+            world.operation_success = false;
+            world.operation_error = Some(e);
+        }
+    }
+}
+
+#[when(regex = r#"^([A-Z][a-z]+) opens the request for signatures$"#)]
+async fn when_prenom_ouvre_les_signatures(world: &mut GovernanceWorld, prenom: String) {
+    let uc = world.age_request_use_cases.as_ref().unwrap().clone();
+    match uc
+        .open(
+            world.last_age_request_id.unwrap(),
+            world.org_id.unwrap(),
+            age_owner_par_prenom(world, &prenom),
+        )
+        .await
+    {
+        Ok(resp) => {
+            world.last_age_request_response = Some(resp);
+            world.operation_success = true;
+            world.operation_error = None;
+        }
+        Err(e) => {
+            world.operation_success = false;
+            world.operation_error = Some(e);
+        }
+    }
+}
+
+/// Une cosignature, avec sa quote-part.
+///
+/// Art. 3.87 § 2 : la demande doit réunir **un cinquième des quotités**. Ce
+/// n'est pas un cinquième des copropriétaires : cinq personnes détenant chacune
+/// 1 % ne l'atteignent pas, et une seule détenant 20 % suffit.
+#[when(regex = r#"^([A-Z][a-z]+) cosigns with shares ([\d.]+)$"#)]
+async fn when_prenom_cosigne(world: &mut GovernanceWorld, prenom: String, part: String) {
+    let uc = world.age_request_use_cases.as_ref().unwrap().clone();
+    let dto = AddCosignatoryDto {
+        owner_id: age_owner_par_prenom(world, &prenom),
+        shares_pct: part.parse().expect("quote-part lisible"),
+    };
+
+    match uc
+        .add_cosignatory(
+            world.last_age_request_id.unwrap(),
+            world.org_id.unwrap(),
+            dto,
+        )
+        .await
+    {
+        Ok(resp) => {
+            world.last_age_request_response = Some(resp);
+            world.operation_success = true;
+            world.operation_error = None;
+        }
+        Err(e) => {
+            world.operation_success = false;
+            world.operation_error = Some(e);
+        }
+    }
+}
+
+#[then(regex = r#"^total_shares_pct should be ([\d.]+)$"#)]
+async fn then_total_des_quotites(world: &mut GovernanceWorld, attendu: String) {
+    let attendu: Decimal = attendu.parse().expect("quote-part lisible");
+    let resp = world
+        .last_age_request_response
+        .as_ref()
+        .expect("aucune demande d'AGE en mémoire");
+    assert_eq!(
+        resp.total_shares_pct, attendu,
+        "Art. 3.87 § 2 : le cumul des quotités cosignataires doit être exact. \
+         Un centième de point sépare une demande recevable d'une demande qui \
+         ne l'est pas — la sixième cosignature du parcours fait passer de \
+         19,9 % à 25,7 %."
+    );
+}
+
+#[when(regex = r#"^([A-Z][a-z]+) submits the request to ([A-Z][a-z]+)$"#)]
+async fn when_prenom_soumet_au_syndic(
+    world: &mut GovernanceWorld,
+    initiateur: String,
+    _syndic: String,
+) {
+    let uc = world.age_request_use_cases.as_ref().unwrap().clone();
+    match uc
+        .submit_to_syndic(
+            world.last_age_request_id.unwrap(),
+            world.org_id.unwrap(),
+            age_owner_par_prenom(world, &initiateur),
+        )
+        .await
+    {
+        Ok(resp) => {
+            world.last_age_request_response = Some(resp);
+            world.operation_success = true;
+            world.operation_error = None;
+        }
+        Err(e) => {
+            world.operation_success = false;
+            world.operation_error = Some(e);
+        }
+    }
+}
+
+/// L'échéance de réponse du syndic, au jour près.
+///
+/// Cette étape remplace une version qui codait « 15 » en dur et tolérait un
+/// écart de 14 à 16 jours. La tolérance ne protégeait rien : `submit_to_syndic`
+/// capture `Utc::now()` UNE FOIS et s'en sert pour les deux champs, si bien que
+/// l'écart vaut exactement `Duration::days(15)`.
+///
+/// Elle masquait en revanche une erreur d'un jour, qui avance ou retarde
+/// l'auto-convocation d'autant — et l'auto-convocation est ce qui protège les
+/// copropriétaires d'un syndic qui laisserait passer le délai.
+///
+/// Le nombre vient désormais du scénario, ce qui l'empêche de diverger du
+/// feature file.
+#[then(regex = r#"^syndic_deadline_at should be (\d+) days after submission$"#)]
+async fn then_delai_du_syndic(world: &mut GovernanceWorld, jours: i64) {
+    let resp = world
+        .last_age_request_response
+        .as_ref()
+        .expect("aucune demande d'AGE en mémoire");
+    let soumis = resp
+        .submitted_to_syndic_at
+        .expect("soumission non horodatée");
+    let echeance = resp
+        .syndic_deadline_at
+        .expect("aucune échéance de réponse du syndic");
+    let ecart = (echeance - soumis).num_days();
+    assert_eq!(
+        ecart, jours,
+        "Le syndic dispose de {jours} jours pour répondre. Échéance calculée \\
+         à {ecart} jours de la soumission — un écart ici avance ou retarde \\
+         l'auto-convocation d'autant."
+    );
+}
+
+#[when(regex = r#"^([A-Z][a-z]+) accepts the request with notes "([^"]*)"$"#)]
+async fn when_syndic_accepte(world: &mut GovernanceWorld, _syndic: String, notes: String) {
+    let uc = world.age_request_use_cases.as_ref().unwrap().clone();
+    let dto = SyndicResponseDto {
+        accepted: true,
+        notes: Some(notes),
+    };
+    match uc
+        .syndic_response(
+            world.last_age_request_id.unwrap(),
+            world.org_id.unwrap(),
+            dto,
+        )
+        .await
+    {
+        Ok(resp) => {
+            world.last_age_request_response = Some(resp);
+            world.operation_success = true;
+            world.operation_error = None;
+        }
+        Err(e) => {
+            world.operation_success = false;
+            world.operation_error = Some(e);
+        }
+    }
+}
+
+/// Le refus sans motif, refusé.
+///
+/// Art. 3.87 § 2 : le syndic qui refuse doit dire pourquoi. Un refus muet ne
+/// laisse rien à contester — et ce sont cinq copropriétaires représentant
+/// 25,7 % des quotités qui ont signé. Le motif est ce qui rend le refus
+/// attaquable, donc ce qui rend le droit effectif.
+#[when(regex = r#"^([A-Z][a-z]+) tries to reject without providing a reason$"#)]
+async fn when_syndic_refuse_sans_motif(world: &mut GovernanceWorld, _syndic: String) {
+    let uc = world.age_request_use_cases.as_ref().unwrap().clone();
+    let dto = SyndicResponseDto {
+        accepted: false,
+        notes: None,
+    };
+    match uc
+        .syndic_response(
+            world.last_age_request_id.unwrap(),
+            world.org_id.unwrap(),
+            dto,
+        )
+        .await
+    {
+        Ok(resp) => {
+            world.last_age_request_response = Some(resp);
+            world.operation_success = true;
+            world.operation_error = None;
+        }
+        Err(e) => {
+            world.operation_success = false;
+            world.operation_error = Some(e);
+        }
+    }
+}
+
+#[when(regex = r#"^([A-Z][a-z]+) rejects with reason "([^"]*)"$"#)]
+async fn when_syndic_refuse_avec_motif(
+    world: &mut GovernanceWorld,
+    _syndic: String,
+    motif: String,
+) {
+    let uc = world.age_request_use_cases.as_ref().unwrap().clone();
+    let dto = SyndicResponseDto {
+        accepted: false,
+        notes: Some(motif),
+    };
+    match uc
+        .syndic_response(
+            world.last_age_request_id.unwrap(),
+            world.org_id.unwrap(),
+            dto,
+        )
+        .await
+    {
+        Ok(resp) => {
+            world.last_age_request_response = Some(resp);
+            world.operation_success = true;
+            world.operation_error = None;
+        }
+        Err(e) => {
+            world.operation_success = false;
+            world.operation_error = Some(e);
+        }
+    }
 }
