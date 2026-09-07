@@ -2040,7 +2040,14 @@
     "loadAuditFailed": "Kan het auditlogboek niet laden.",
     "exportSuccessArt15": "Gegevens geëxporteerd (AVG art. 15 — recht op inzage).",
     "eraseSuccessArt17": "Gegevens geanonimiseerd (AVG art. 17 — recht op wissing).",
-    "restrictSuccessArt18": "Verwerking beperkt (AVG art. 18 — recht op beperking)."
+    "restrictSuccessArt18": "Verwerking beperkt (AVG art. 18 — recht op beperking).",
+    "intro": "Op grond van de Algemene Verordening Gegevensbescherming hebt u de onderstaande rechten op uw persoonsgegevens.",
+    "marketingShort": "Marketing (art. 21)",
+    "marketingDesc": "Beheer uw voorkeuren voor marketingcommunicatie.",
+    "accessShortDesc": "Download een volledige kopie van al uw persoonsgegevens.",
+    "restrictShortDesc": "Beperk de verwerking van uw gegevens. Sommige functies worden beperkt.",
+    "eraseShortDesc": "Vraag de definitieve anonimisering van al uw gegevens. Deze actie is onomkeerbaar.",
+    "restrictConfirm": "De verwerking van uw gegevens beperken? Sommige functies kunnen beperkt worden."
   },
   "inspections": {
     "all": "Alle",
@@ -3130,7 +3137,17 @@
     "unlinkedSuccess": "Account succesvol ontkoppeld",
     "updateSuccess": "Profiel bijgewerkt (AVG art. 16 — recht op rectificatie).",
     "updateFailed": "Het bijwerken van het profiel is mislukt.",
-    "allFieldsRequired": "Alle velden zijn verplicht."
+    "allFieldsRequired": "Alle velden zijn verplicht.",
+    "loading": "Profiel laden…",
+    "personalInfo": "Persoonlijke gegevens",
+    "rectificationNotice": "Wijzigen valt onder het recht op rectificatie (AVG art. 16).",
+    "memberSince": "Lid sinds",
+    "rolesAndAccess": "Rollen en toegang",
+    "primaryRole": "Hoofdrol",
+    "activeBadge": "Actief",
+    "linkedBuildings": "Gekoppelde gebouwen",
+    "checkEligibility": "Controleer of dit kan",
+    "canBeErased": "Uw gegevens kunnen worden gewist."
   },
   "proxy": {
     "limitReached": "Volmachtlimiet bereikt (Art. 3.87 §6 BW)",

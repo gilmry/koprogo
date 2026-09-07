@@ -2040,7 +2040,14 @@
     "loadAuditFailed": "Failed to load the audit log.",
     "exportSuccessArt15": "Data exported (GDPR Art. 15 — right of access).",
     "eraseSuccessArt17": "Data anonymised (GDPR Art. 17 — right to erasure).",
-    "restrictSuccessArt18": "Processing restricted (GDPR Art. 18 — right to restriction)."
+    "restrictSuccessArt18": "Processing restricted (GDPR Art. 18 — right to restriction).",
+    "intro": "Under the General Data Protection Regulation, you have the following rights over your personal data.",
+    "marketingShort": "Marketing (Art. 21)",
+    "marketingDesc": "Manage your marketing communication preferences.",
+    "accessShortDesc": "Download a complete copy of all your personal data.",
+    "restrictShortDesc": "Restrict the processing of your data. Some features will be limited.",
+    "eraseShortDesc": "Request the permanent anonymisation of all your data. This action is irreversible.",
+    "restrictConfirm": "Restrict the processing of your data? Some features may be limited."
   },
   "inspections": {
     "all": "All",
@@ -3130,7 +3137,17 @@
     "unlinkedSuccess": "Account unlinked successfully",
     "updateSuccess": "Profile updated (GDPR Art. 16 — right to rectification).",
     "updateFailed": "Failed to update the profile.",
-    "allFieldsRequired": "All fields are required."
+    "allFieldsRequired": "All fields are required.",
+    "loading": "Loading profile…",
+    "personalInfo": "Personal information",
+    "rectificationNotice": "Editing exercises the right to rectification (GDPR Art. 16).",
+    "memberSince": "Member since",
+    "rolesAndAccess": "Roles and access",
+    "primaryRole": "Primary",
+    "activeBadge": "Active",
+    "linkedBuildings": "Linked buildings",
+    "checkEligibility": "Check eligibility",
+    "canBeErased": "Your data can be erased."
   },
   "proxy": {
     "limitReached": "Proxy mandate limit reached (Art. 3.87 §6 CC)",

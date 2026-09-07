@@ -2040,7 +2040,14 @@
     "loadAuditFailed": "Das Audit-Protokoll konnte nicht geladen werden.",
     "exportSuccessArt15": "Daten exportiert (DSGVO Art. 15 — Auskunftsrecht).",
     "eraseSuccessArt17": "Daten anonymisiert (DSGVO Art. 17 — Recht auf Löschung).",
-    "restrictSuccessArt18": "Verarbeitung eingeschränkt (DSGVO Art. 18 — Recht auf Einschränkung)."
+    "restrictSuccessArt18": "Verarbeitung eingeschränkt (DSGVO Art. 18 — Recht auf Einschränkung).",
+    "intro": "Nach der Datenschutz-Grundverordnung stehen Ihnen die folgenden Rechte an Ihren personenbezogenen Daten zu.",
+    "marketingShort": "Marketing (Art. 21)",
+    "marketingDesc": "Verwalten Sie Ihre Einstellungen für Marketingkommunikation.",
+    "accessShortDesc": "Laden Sie eine vollständige Kopie all Ihrer personenbezogenen Daten herunter.",
+    "restrictShortDesc": "Schränken Sie die Verarbeitung Ihrer Daten ein. Einige Funktionen sind dann eingeschränkt.",
+    "eraseShortDesc": "Fordern Sie die endgültige Anonymisierung all Ihrer Daten an. Diese Aktion ist unumkehrbar.",
+    "restrictConfirm": "Die Verarbeitung Ihrer Daten einschränken? Einige Funktionen könnten eingeschränkt sein."
   },
   "inspections": {
     "all": "Alle",
@@ -3130,7 +3137,17 @@
     "unlinkedSuccess": "Konto erfolgreich getrennt",
     "updateSuccess": "Profil aktualisiert (DSGVO Art. 16 — Recht auf Berichtigung).",
     "updateFailed": "Die Aktualisierung des Profils ist fehlgeschlagen.",
-    "allFieldsRequired": "Alle Felder sind erforderlich."
+    "allFieldsRequired": "Alle Felder sind erforderlich.",
+    "loading": "Profil wird geladen…",
+    "personalInfo": "Persönliche Angaben",
+    "rectificationNotice": "Die Änderung erfolgt im Rahmen des Rechts auf Berichtigung (DSGVO Art. 16).",
+    "memberSince": "Mitglied seit",
+    "rolesAndAccess": "Rollen und Zugriff",
+    "primaryRole": "Hauptrolle",
+    "activeBadge": "Aktiv",
+    "linkedBuildings": "Zugeordnete Gebäude",
+    "checkEligibility": "Berechtigung prüfen",
+    "canBeErased": "Ihre Daten können gelöscht werden."
   },
   "proxy": {
     "limitReached": "Vollmachtslimit erreicht (Art. 3.87 §6 ZGB)",

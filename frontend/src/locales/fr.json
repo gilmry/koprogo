@@ -2040,7 +2040,14 @@
     "loadAuditFailed": "Impossible de charger le journal d'audit.",
     "exportSuccessArt15": "Données exportées (Art. 15 RGPD — droit d'accès).",
     "eraseSuccessArt17": "Données anonymisées (Art. 17 RGPD — droit à l'effacement).",
-    "restrictSuccessArt18": "Traitement restreint (Art. 18 RGPD — droit à la limitation)."
+    "restrictSuccessArt18": "Traitement restreint (Art. 18 RGPD — droit à la limitation).",
+    "intro": "Conformément au Règlement Général sur la Protection des Données, vous disposez des droits ci-dessous sur vos données personnelles.",
+    "marketingShort": "Marketing (Art. 21)",
+    "marketingDesc": "Gérez vos préférences de communication marketing.",
+    "accessShortDesc": "Téléchargez une copie complète de toutes vos données personnelles.",
+    "restrictShortDesc": "Restreignez le traitement de vos données. Certaines fonctions seront limitées.",
+    "eraseShortDesc": "Demandez l'anonymisation définitive de toutes vos données. Cette action est irréversible.",
+    "restrictConfirm": "Restreindre le traitement de vos données ? Certaines fonctionnalités pourraient être limitées."
   },
   "inspections": {
     "all": "Toutes",
@@ -3130,7 +3137,17 @@
     "unlinkedSuccess": "Compte délié avec succès",
     "updateSuccess": "Profil mis à jour (Art. 16 RGPD — droit de rectification).",
     "updateFailed": "La mise à jour du profil a échoué.",
-    "allFieldsRequired": "Tous les champs sont obligatoires."
+    "allFieldsRequired": "Tous les champs sont obligatoires.",
+    "loading": "Chargement du profil…",
+    "personalInfo": "Informations personnelles",
+    "rectificationNotice": "La modification utilise le droit de rectification (Art. 16 RGPD).",
+    "memberSince": "Membre depuis",
+    "rolesAndAccess": "Rôles et accès",
+    "primaryRole": "Principal",
+    "activeBadge": "Actif",
+    "linkedBuildings": "Immeubles associés",
+    "checkEligibility": "Vérifier l'éligibilité",
+    "canBeErased": "Vos données peuvent être effacées."
   },
   "proxy": {
     "limitReached": "Limite de procurations atteinte (Art. 3.87 §6 CC)",

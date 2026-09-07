@@ -141,7 +141,7 @@
   }
 
   async function handleRestrictProcessing() {
-    if (!confirm('Restreindre le traitement de vos données ? Certaines fonctionnalités pourraient être limitées.')) return;
+    if (!confirm($_('gdpr.restrictConfirm'))) return;
 
     try {
       gdprRestricting = true;
@@ -184,7 +184,7 @@
 {#if !user}
   <div class="p-8 text-center">
     <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-amber-600"></div>
-    <p class="mt-2 text-sm text-gray-500">Chargement du profil...</p>
+    <p class="mt-2 text-sm text-gray-500">{$_('profile.loading')}</p>
   </div>
 {:else}
   <div class="space-y-6" data-testid="profile-panel">
@@ -192,11 +192,11 @@
     <div class="bg-white rounded-lg shadow-lg overflow-hidden">
       <div class="bg-gradient-to-r from-amber-600 to-amber-700 px-6 py-4">
         <div class="flex items-center justify-between">
-          <h2 class="text-xl font-semibold text-white">Informations personnelles</h2>
+          <h2 class="text-xl font-semibold text-white">{$_('profile.personalInfo')}</h2>
           {#if !editMode}
             <button on:click={startEdit}
               class="px-3 py-1.5 bg-white/20 text-white rounded-lg text-sm font-medium hover:bg-white/30 transition-colors">
-              Modifier
+              {$_('common.edit')}
             </button>
           {/if}
         </div>
@@ -207,17 +207,17 @@
           <div class="space-y-4">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label for="firstName" class="block text-sm font-medium text-gray-700 mb-1">Prénom</label>
+                <label for="firstName" class="block text-sm font-medium text-gray-700 mb-1">{$_('common.firstName')}</label>
                 <input id="firstName" type="text" bind:value={editFirstName}
                   class="w-full rounded-md border-gray-300 focus:border-amber-500 focus:ring-amber-500" />
               </div>
               <div>
-                <label for="lastName" class="block text-sm font-medium text-gray-700 mb-1">Nom</label>
+                <label for="lastName" class="block text-sm font-medium text-gray-700 mb-1">{$_('common.lastName')}</label>
                 <input id="lastName" type="text" bind:value={editLastName}
                   class="w-full rounded-md border-gray-300 focus:border-amber-500 focus:ring-amber-500" />
               </div>
               <div class="md:col-span-2">
-                <label for="email" class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                <label for="email" class="block text-sm font-medium text-gray-700 mb-1">{$_('common.email')}</label>
                 <input id="email" type="email" bind:value={editEmail}
                   class="w-full rounded-md border-gray-300 focus:border-amber-500 focus:ring-amber-500" />
               </div>
@@ -229,25 +229,25 @@
               </button>
               <button on:click={cancelEdit}
                 class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors">
-                Annuler
+                {$_('common.cancel')}
               </button>
             </div>
             <p class="text-xs text-gray-400">
-              La modification utilise le droit de rectification (Art. 16 RGPD).
+              {$_('profile.rectificationNotice')}.
             </p>
           </div>
         {:else}
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <p class="text-xs text-gray-500 uppercase tracking-wider mb-1">Prénom</p>
+              <p class="text-xs text-gray-500 uppercase tracking-wider mb-1">{$_('common.firstName')}</p>
               <p class="text-lg text-gray-900">{user.first_name || '-'}</p>
             </div>
             <div>
-              <p class="text-xs text-gray-500 uppercase tracking-wider mb-1">Nom</p>
+              <p class="text-xs text-gray-500 uppercase tracking-wider mb-1">{$_('common.lastName')}</p>
               <p class="text-lg text-gray-900">{user.last_name || '-'}</p>
             </div>
             <div>
-              <p class="text-xs text-gray-500 uppercase tracking-wider mb-1">Email</p>
+              <p class="text-xs text-gray-500 uppercase tracking-wider mb-1">{$_('common.email')}</p>
               <p class="text-lg text-gray-900">{user.email}</p>
             </div>
             <!-- La date n'est affichée que si l'API la fournit. Un compte
@@ -256,7 +256,7 @@
                  mieux vaut masquer la ligne qu'afficher « - ». -->
             {#if user.created_at}
               <div>
-                <p class="text-xs text-gray-500 uppercase tracking-wider mb-1">Membre depuis</p>
+                <p class="text-xs text-gray-500 uppercase tracking-wider mb-1">{$_('profile.memberSince')}</p>
                 <p class="text-lg text-gray-900">{formatDate(user.created_at)}</p>
               </div>
             {/if}
@@ -268,13 +268,13 @@
     <!-- Role Information -->
     <div class="bg-white rounded-lg shadow-lg overflow-hidden">
       <div class="px-6 py-4 border-b border-gray-200">
-        <h2 class="text-lg font-semibold text-gray-900">Rôles et accès</h2>
+        <h2 class="text-lg font-semibold text-gray-900">{$_('profile.rolesAndAccess')}</h2>
       </div>
       <div class="p-6">
         <div class="space-y-3">
           <div class="flex items-center justify-between">
             <div>
-              <p class="text-xs text-gray-500 uppercase tracking-wider mb-1">Rôle actif</p>
+              <p class="text-xs text-gray-500 uppercase tracking-wider mb-1">{$_('navigation.activeRole')}</p>
               <p class="text-lg text-gray-900">{getRoleLabel(user.role)}</p>
             </div>
             <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-amber-100 text-amber-800">
@@ -284,7 +284,7 @@
 
           {#if user.roles && user.roles.length > 1}
             <div class="mt-4">
-              <p class="text-xs text-gray-500 uppercase tracking-wider mb-2">Tous les rôles</p>
+              <p class="text-xs text-gray-500 uppercase tracking-wider mb-2">{$_('common.allRoles')}</p>
               <div class="space-y-2">
                 {#each user.roles as role}
                   <div class="flex items-center justify-between p-2 rounded-md {role.id === user.activeRole?.id ? 'bg-amber-50 border border-amber-200' : 'bg-gray-50'}">
@@ -294,10 +294,10 @@
                         <span class="text-xs text-gray-500">{role.organizationId.slice(0, 8)}...</span>
                       {/if}
                       {#if role.isPrimary}
-                        <span class="text-xs text-amber-600 font-medium">Principal</span>
+                        <span class="text-xs text-amber-600 font-medium">{$_('profile.primaryRole')}</span>
                       {/if}
                       {#if role.id === user.activeRole?.id}
-                        <span class="text-xs text-green-600 font-medium">Actif</span>
+                        <span class="text-xs text-green-600 font-medium">{$_('profile.activeBadge')}</span>
                       {/if}
                     </div>
                   </div>
@@ -308,7 +308,7 @@
 
           {#if user.buildingIds && user.buildingIds.length > 0}
             <div class="mt-4">
-              <p class="text-xs text-gray-500 uppercase tracking-wider mb-1">Immeubles associés</p>
+              <p class="text-xs text-gray-500 uppercase tracking-wider mb-1">{$_('profile.linkedBuildings')}</p>
               <p class="text-sm text-gray-700">{user.buildingIds.length} immeuble{user.buildingIds.length > 1 ? 's' : ''}</p>
             </div>
           {/if}
@@ -323,10 +323,10 @@
           <svg class="w-5 h-5 text-blue-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
           </svg>
-          <h2 class="text-lg font-semibold text-gray-900">RGPD - Mes données personnelles</h2>
+          <h2 class="text-lg font-semibold text-gray-900">{$_('gdpr.myPersonalData')}</h2>
         </div>
         <p class="mt-1 text-sm text-gray-500">
-          Conformément au Règlement Général sur la Protection des Données.
+          {$_('gdpr.intro')}
         </p>
       </div>
 
@@ -334,8 +334,8 @@
         <!-- Art. 15 - Right of Access -->
         <div class="flex items-start justify-between p-4 bg-blue-50 rounded-lg">
           <div class="flex-1">
-            <h3 class="text-sm font-medium text-gray-900">Droit d'accès (Art. 15)</h3>
-            <p class="text-xs text-gray-600 mt-1">Télécharger une copie complète de toutes vos données personnelles.</p>
+            <h3 class="text-sm font-medium text-gray-900">{$_('gdpr.article15.title')}</h3>
+            <p class="text-xs text-gray-600 mt-1">{$_('gdpr.accessShortDesc')}</p>
           </div>
           <button on:click={handleGdprExport} disabled={gdprExporting}
             class="ml-4 px-3 py-1.5 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors whitespace-nowrap">
@@ -346,8 +346,8 @@
         <!-- Art. 18 - Right to Restriction -->
         <div class="flex items-start justify-between p-4 bg-yellow-50 rounded-lg">
           <div class="flex-1">
-            <h3 class="text-sm font-medium text-gray-900">Droit à la limitation (Art. 18)</h3>
-            <p class="text-xs text-gray-600 mt-1">Restreindre le traitement de vos données. Certaines fonctionnalités seront limitées.</p>
+            <h3 class="text-sm font-medium text-gray-900">{$_('gdpr.article18.title')}</h3>
+            <p class="text-xs text-gray-600 mt-1">{$_('gdpr.restrictShortDesc')}</p>
           </div>
           <button on:click={handleRestrictProcessing} disabled={gdprRestricting}
             class="ml-4 px-3 py-1.5 bg-yellow-600 text-white rounded-lg text-sm font-medium hover:bg-yellow-700 disabled:opacity-50 transition-colors whitespace-nowrap">
@@ -358,8 +358,8 @@
         <!-- Art. 21 - Right to Object (Marketing) -->
         <div class="flex items-start justify-between p-4 bg-purple-50 rounded-lg">
           <div class="flex-1">
-            <h3 class="text-sm font-medium text-gray-900">Marketing (Art. 21)</h3>
-            <p class="text-xs text-gray-600 mt-1">Gérer vos préférences de communication marketing.</p>
+            <h3 class="text-sm font-medium text-gray-900">{$_('gdpr.marketingShort')}</h3>
+            <p class="text-xs text-gray-600 mt-1">{$_('gdpr.marketingDesc')}</p>
           </div>
           <div class="ml-4 flex gap-2">
             <button on:click={() => handleMarketingOptOut(true)} disabled={gdprMarketingLoading}
@@ -376,11 +376,11 @@
         <!-- Art. 17 - Right to Erasure -->
         <div class="flex items-start justify-between p-4 bg-red-50 rounded-lg border border-red-200">
           <div class="flex-1">
-            <h3 class="text-sm font-medium text-red-900">Droit à l'effacement (Art. 17)</h3>
-            <p class="text-xs text-red-700 mt-1">Demander l'anonymisation définitive de toutes vos données. Cette action est <strong>irréversible</strong>.</p>
+            <h3 class="text-sm font-medium text-red-900">{$_('gdpr.article17.title')}</h3>
+            <p class="text-xs text-red-700 mt-1">{$_('gdpr.eraseShortDesc')}</p>
             {#if canErase}
               {#if canErase.can_erase}
-                <p class="text-xs text-green-700 mt-2 font-medium">Vos données peuvent être effacées.</p>
+                <p class="text-xs text-green-700 mt-2 font-medium">{$_('profile.canBeErased')}</p>
               {:else}
                 <p class="text-xs text-red-700 mt-2 font-medium">Effacement impossible : {canErase.legal_holds} obligation(s) légale(s) en cours.</p>
               {/if}
@@ -389,7 +389,7 @@
           <div class="ml-4 flex flex-col gap-2">
             <button on:click={handleCheckCanErase}
               class="px-3 py-1.5 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors whitespace-nowrap">
-              Vérifier éligibilité
+              {$_('profile.checkEligibility')}
             </button>
             <button on:click={openEraseDialog} disabled={gdprErasing || (canErase !== null && !canErase.can_erase)}
               class="px-3 py-1.5 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 disabled:opacity-50 transition-colors whitespace-nowrap">

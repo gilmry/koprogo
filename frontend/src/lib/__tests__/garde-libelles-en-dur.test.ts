@@ -47,8 +47,19 @@ import { join, extname } from "node:path";
  * Suivi en #834.
  */
 
-/** Libellés de gabarit non traduits. **Ne doit que BAISSER.** */
-const DETTE_AU_2026_09_07 = 362;
+/**
+ * Libellés de gabarit non traduits. **Ne doit que BAISSER.**
+ *
+ * 380 au premier relevé ; 362 après la navigation ; **332** au 2026-09-07,
+ * après `ProfilePanel.svelte` — trente libellés, dont la moitié dupliquaient
+ * en dur des clés que `GdprDataPanel` traduisait déjà (`gdpr.article15.title`,
+ * `gdpr.myPersonalData`, `common.edit`…). Traduire cet écran a donc surtout
+ * consisté à le raccorder à ce qui existait.
+ *
+ * Un `confirm()` natif y portait aussi son message en dur, hors de portée du
+ * détecteur qui ne regarde que le gabarit.
+ */
+const DETTE_AU_2026_09_07 = 332;
 
 const RACINE = join(process.cwd(), "src");
 
@@ -106,7 +117,7 @@ describe("la dette de libellés non traduits ne grossit pas (#834)", () => {
     const fautes = recenser();
 
     expect(
-      fautes,
+      fautes.length,
       `La dette de traduction a GROSSI : ${fautes.length} libellés de gabarit ` +
         `écrits en dur, contre ${DETTE_AU_2026_09_07} au 2026-09-07.\n\n` +
         `Un libellé littéral s'affichera en français à un néerlandophone. ` +
@@ -116,7 +127,15 @@ describe("la dette de libellés non traduits ne grossit pas (#834)", () => {
         `le même commit.\n\n` +
         `Derniers relevés :\n` +
         fautes.slice(-12).join("\n"),
-    ).toHaveLength(DETTE_AU_2026_09_07);
+      // `toBeLessThanOrEqual`, et non `toHaveLength`.
+      //
+      // La première version employait l'égalité stricte : le test échouait
+      // aussi bien quand la dette montait que quand elle BAISSAIT. Découvert
+      // en traduisant `ProfilePanel.svelte` — trente libellés de moins, et le
+      // cliquet refusait le progrès qu'il était censé encourager.
+      //
+      // Un cliquet borne un maximum ; il ne fige pas une valeur.
+    ).toBeLessThanOrEqual(DETTE_AU_2026_09_07);
   });
 
   /// Sans ce contrôle, une refonte des gabarits rendrait le cliquet
