@@ -14,18 +14,31 @@
 
 {#if user}
   <!--
-    Positioning rationale :
-    - Mobile (< lg) : overlay `fixed` top-2 RIGHT-14 laisse la place au logo
-      KoproGo (gauche) + bouton hamburger (left:3) + zone cloche/notifs.
-      Ne chevauche pas le header mobile.
-    - Desktop (>= lg) : plus de `fixed` — la barre est rendue EN FLUX NORMAL
-      par `Layout.astro` (juste avant `ContextBanner`, dans le wrapper de
-      contenu décalé par la sidebar). Corrige le chevauchement avec le titre
-      de page (ex. `<h1>Organisations</h1>`) observé quand le sélecteur était
-      `fixed top-3 left-64` par-dessus le contenu sans espace réservé.
+    La barre est EN FLUX NORMAL, sur toutes les tailles.
+
+    ── Ce qu'elle était ──────────────────────────────────────────────────────
+
+    Un overlay `fixed top-2 right-14` sous `lg`, qui flottait entre le logo et
+    la cloche du header mobile, et redevenait statique au-dessus. Le
+    commentaire qui l'accompagnait décrivait avec soin comment il évitait de
+    chevaucher trois éléments — signe qu'il n'aurait pas dû être là.
+
+    ── Pourquoi il n'aurait pas dû être là ───────────────────────────────────
+
+    La remise de design le dit dans son correctif 0.10 : cet overlay
+    « n'existe que parce que le mobile a été traité en dernier ». Écrire une
+    application desktop-first oblige à replacer les éléments un par un sur
+    petit écran, et chaque replacement crée sa propre exception.
+
+    `Layout.astro` réserve déjà une gouttière de 56 px pour le header mobile
+    (`h-14 lg:hidden`) et rend cette barre juste après. En flux normal, elle se
+    place donc naturellement dessous — sans coordonnées, sans `z-index`, et
+    sans qu'il faille connaître la largeur du hamburger.
+
+    Les styles de base sont ceux du mobile ; `lg:` **ajoute** le bureau.
   -->
   <div
-    class="fixed top-2 right-14 z-40 lg:static lg:top-auto lg:right-auto lg:left-auto lg:z-auto lg:flex lg:w-full lg:justify-start lg:border-b lg:border-gray-200 lg:bg-white lg:px-6 lg:py-3"
+    class="flex w-full justify-start border-b border-gray-200 bg-white px-4 py-2 lg:px-6 lg:py-3"
     data-testid="building-selector-bar"
   >
     <BuildingSelector {user} />
