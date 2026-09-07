@@ -160,8 +160,23 @@
         if (report.status !== 'Draft') {
           document.getElementById('form-section').style.display = 'none';
           document.getElementById('success-msg').style.display = 'block';
+          // Le statut s'affichait en valeur interne : le prestataire lisait
+          // « Rapport Submitted » ou « Rapport UnderReview » (#792).
+          //
+          // Cette page est servie par un lien magique, donc à quelqu'un qui
+          // n'a pas de compte et ne connaît pas le vocabulaire du produit
+          // (#815). Lui montrer une énumération anglaise est le plus sûr
+          // moyen qu'il rappelle le syndic pour demander ce que ça veut dire.
+          const libelleDuStatut = {
+            Submitted: 'soumis',
+            UnderReview: 'en cours d\'examen',
+            Validated: 'validé',
+            Rejected: 'refusé',
+            RequiresCorrection: 'à corriger',
+          }[report.status] || 'déjà transmis';
+
           document.getElementById('success-msg').querySelector('.success').innerHTML =
-            `<p style="font-size:1.25rem;margin-bottom:0.5rem">📄 Rapport ${report.status}</p>
+            `<p style="font-size:1.25rem;margin-bottom:0.5rem">📄 Rapport ${libelleDuStatut}</p>
              <p style="font-size:0.875rem">Ce rapport a déjà été soumis.</p>`;
         }
 

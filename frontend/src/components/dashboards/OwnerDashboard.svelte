@@ -7,20 +7,33 @@
   import type { Building, Unit, Expense } from '../../lib/types';
 
   import { ticketsApi, type Ticket } from '../../lib/api/tickets';
+  import TicketStatusBadge from '../tickets/TicketStatusBadge.svelte';
+
+  /// La clé de traduction d'une catégorie de ticket.
+  ///
+  /// L'API sert `Plumbing`, `CommonAreas` ; les clés sont `plumbing`,
+  /// `commonAreas`. Une seule minuscule les sépare, et c'est bien assez pour
+  /// afficher « Plumbing » à un copropriétaire francophone — ce qui était le
+  /// cas jusqu'au 2026-09-07 (#792).
+  const cleDeCategorie = (categorie: string) =>
+    `tickets.categories.${categorie.charAt(0).toLowerCase()}${categorie.slice(1)}`;
   import { notificationsApi, type Notification as AppNotification } from '../../lib/api/notifications';
   import { formatDateShort, formatDate } from "../../lib/utils/date.utils";
   import { formatCurrency } from "../../lib/utils/finance.utils";
 
   let user = $derived($authStore.user);
 
-  interface OwnerTicket {
-    id: string;
-    title: string;
-    status: string;
-    priority: string;
-    category: string;
-    created_at: string;
-  }
+  // Le tableau de bord déclarait son propre `OwnerTicket` avec
+  // `status: string`, `priority: string` et `category: string` — un type écrit
+  // à la main à côté de celui que l'API sert.
+  //
+  // C'est la dérive qui a produit #786 (`choice` contre `vote_choice`) et #819
+  // (deux énumérations sous un même nom). Ici elle a permis d'afficher la
+  // valeur brute d'un statut : `string` accepte « InProgress » sans broncher,
+  // là où `TicketStatus` aurait obligé à passer par le badge.
+  //
+  // On emploie donc le type de l'API, qui est de toute façon ce que
+  // `ticketsApi` rend.
 
   interface OwnerNotification {
     id: string;
@@ -60,7 +73,7 @@
   let recentBuildings = $state<Building[]>([]);
   let recentUnits = $state<Unit[]>([]);
   let boardMandates = $state<BoardMandate[]>([]);
-  let myTickets = $state<OwnerTicket[]>([]);
+  let myTickets = $state<Ticket[]>([]);
   let unreadNotifications = $state<OwnerNotification[]>([]);
   let loading = $state(true);
   let error = $state<string | null>(null);
@@ -103,7 +116,7 @@
           ticketsApi.listMy(),
           notificationsApi.getUnread(),
         ]);
-        myTickets = (ticketsData as OwnerTicket[]).slice(0, 5);
+        myTickets = (ticketsData as Ticket[]).slice(0, 5);
         unreadNotifications = (notifData as OwnerNotification[]).slice(0, 5);
       } catch {
         // Non-critical, ignore errors
@@ -361,15 +374,22 @@
                 <a href="/ticket-detail?id={ticket.id}" class="block p-3 border border-gray-200 rounded-lg hover:border-primary-300 transition">
                   <div class="flex items-center justify-between mb-1">
                     <h3 class="text-sm font-medium text-gray-900 truncate">{ticket.title}</h3>
-                    <span class="text-xs px-2 py-0.5 rounded-full font-medium
-                      {ticket.status === 'Open' ? 'bg-blue-100 text-blue-800' :
-                       ticket.status === 'InProgress' ? 'bg-yellow-100 text-yellow-800' :
-                       ticket.status === 'Resolved' ? 'bg-green-100 text-green-800' :
-                       ticket.status === 'Assigned' ? 'bg-purple-100 text-purple-800' :
-                       'bg-gray-100 text-gray-800'}">{ticket.status}</span>
+                    <!-- Le statut passait par une cascade de conditions qui
+                         recopiait les couleurs de `TicketStatusBadge`, puis
+                         affichait la valeur BRUTE : le copropriétaire lisait
+                         « InProgress » (#792). Deux défauts d'un coup, sur
+                         l'écran du rôle que six recettes n'ont jamais éprouvé.
+
+                         Le composant porte les couleurs ET la traduction.
+                         Recopier l'un sans l'autre est ce qui a produit
+                         l'écart. -->
+                    <TicketStatusBadge status={ticket.status} />
                   </div>
                   <div class="flex items-center gap-2 text-xs text-gray-500">
-                    <span>{ticket.category}</span>
+                    <!-- La catégorie était brute également : « Plumbing »
+                         plutôt que « Plomberie ». Les clés existent dans les
+                         quatre langues. -->
+                    <span>{$_(cleDeCategorie(ticket.category))}</span>
                     <span>·</span>
                     <span>{formatDateShort(ticket.created_at)}</span>
                   </div>

@@ -514,7 +514,8 @@
     "success": {
       "created": "Réservation créée avec succès"
     },
-    "title": "Réservations"
+    "title": "Réservations",
+    "resourceUnavailable": "Cette ressource n'est pas disponible actuellement"
   },
   "budgets": {
     "actions": {

@@ -514,7 +514,8 @@
     "success": {
       "created": "Reservering succesvol aangemaakt"
     },
-    "title": "Reserveringen"
+    "title": "Reserveringen",
+    "resourceUnavailable": "Deze voorziening is momenteel niet beschikbaar"
   },
   "budgets": {
     "actions": {

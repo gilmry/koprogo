@@ -514,7 +514,8 @@
     "success": {
       "created": "Reservierung erfolgreich erstellt"
     },
-    "title": "Reservierungen"
+    "title": "Reservierungen",
+    "resourceUnavailable": "Diese Ressource ist derzeit nicht verfügbar"
   },
   "budgets": {
     "actions": {
