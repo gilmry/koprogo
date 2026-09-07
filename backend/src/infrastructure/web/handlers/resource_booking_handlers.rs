@@ -1,7 +1,9 @@
 use crate::application::dto::{CreateResourceBookingDto, UpdateResourceBookingDto};
 use crate::domain::entities::{BookingStatus, ResourceType};
 use crate::infrastructure::web::app_state::AppState;
-use crate::infrastructure::web::middleware::scope_guard::verify_building_org_access;
+use crate::infrastructure::web::middleware::scope_guard::{
+    verify_booking_org_access, verify_building_org_access,
+};
 use crate::infrastructure::web::middleware::AuthenticatedUser;
 use actix_web::{delete, get, post, put, web, HttpResponse, Responder, ResponseError};
 use chrono::{DateTime, Utc};
@@ -68,9 +70,25 @@ pub async fn create_booking(
 #[get("/resource-bookings/{id}")]
 pub async fn get_booking(
     data: web::Data<AppState>,
-    _auth: AuthenticatedUser,
+    auth: AuthenticatedUser,
     id: web::Path<Uuid>,
 ) -> impl Responder {
+    // Cloisonnement : la réservation visée doit relever d'une ACP que cet
+    // utilisateur a le droit de voir. Cette route n'ayant pas d'immeuble en
+    // chemin, la chaîne réservation → immeuble → ACP est remontée par le
+    // garde. L'identité était prise puis ignorée — `_auth` (#772).
+    if let Err(err) = verify_booking_org_access(
+        &auth,
+        *id,
+        &data.resource_booking_use_cases,
+        &data.building_use_cases,
+        &data.acp_use_cases,
+    )
+    .await
+    {
+        return err.error_response();
+    }
+
     match data
         .resource_booking_use_cases
         .get_booking(id.into_inner())
@@ -537,9 +555,25 @@ pub async fn cancel_booking(
 #[post("/resource-bookings/{id}/complete")]
 pub async fn complete_booking(
     data: web::Data<AppState>,
-    _auth: AuthenticatedUser,
+    auth: AuthenticatedUser,
     id: web::Path<Uuid>,
 ) -> impl Responder {
+    // Cloisonnement : la réservation visée doit relever d'une ACP que cet
+    // utilisateur a le droit de voir. Cette route n'ayant pas d'immeuble en
+    // chemin, la chaîne réservation → immeuble → ACP est remontée par le
+    // garde. L'identité était prise puis ignorée — `_auth` (#772).
+    if let Err(err) = verify_booking_org_access(
+        &auth,
+        *id,
+        &data.resource_booking_use_cases,
+        &data.building_use_cases,
+        &data.acp_use_cases,
+    )
+    .await
+    {
+        return err.error_response();
+    }
+
     match data
         .resource_booking_use_cases
         .complete_booking(id.into_inner())
@@ -567,9 +601,25 @@ pub async fn complete_booking(
 #[post("/resource-bookings/{id}/no-show")]
 pub async fn mark_no_show(
     data: web::Data<AppState>,
-    _auth: AuthenticatedUser,
+    auth: AuthenticatedUser,
     id: web::Path<Uuid>,
 ) -> impl Responder {
+    // Cloisonnement : la réservation visée doit relever d'une ACP que cet
+    // utilisateur a le droit de voir. Cette route n'ayant pas d'immeuble en
+    // chemin, la chaîne réservation → immeuble → ACP est remontée par le
+    // garde. L'identité était prise puis ignorée — `_auth` (#772).
+    if let Err(err) = verify_booking_org_access(
+        &auth,
+        *id,
+        &data.resource_booking_use_cases,
+        &data.building_use_cases,
+        &data.acp_use_cases,
+    )
+    .await
+    {
+        return err.error_response();
+    }
+
     match data
         .resource_booking_use_cases
         .mark_no_show(id.into_inner())
@@ -597,9 +647,25 @@ pub async fn mark_no_show(
 #[post("/resource-bookings/{id}/confirm")]
 pub async fn confirm_booking(
     data: web::Data<AppState>,
-    _auth: AuthenticatedUser,
+    auth: AuthenticatedUser,
     id: web::Path<Uuid>,
 ) -> impl Responder {
+    // Cloisonnement : la réservation visée doit relever d'une ACP que cet
+    // utilisateur a le droit de voir. Cette route n'ayant pas d'immeuble en
+    // chemin, la chaîne réservation → immeuble → ACP est remontée par le
+    // garde. L'identité était prise puis ignorée — `_auth` (#772).
+    if let Err(err) = verify_booking_org_access(
+        &auth,
+        *id,
+        &data.resource_booking_use_cases,
+        &data.building_use_cases,
+        &data.acp_use_cases,
+    )
+    .await
+    {
+        return err.error_response();
+    }
+
     match data
         .resource_booking_use_cases
         .confirm_booking(id.into_inner())

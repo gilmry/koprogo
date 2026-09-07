@@ -43,6 +43,7 @@ use crate::application::use_cases::building_use_cases::BuildingUseCases;
 use crate::application::use_cases::convocation_use_cases::ConvocationUseCases;
 use crate::application::use_cases::document_use_cases::DocumentUseCases;
 use crate::application::use_cases::owner_use_cases::OwnerUseCases;
+use crate::application::use_cases::resource_booking_use_cases::ResourceBookingUseCases;
 use crate::application::use_cases::unit_use_cases::UnitUseCases;
 use crate::infrastructure::web::app_state::AppState;
 use crate::infrastructure::web::AuthenticatedUser;
@@ -368,6 +369,48 @@ pub async fn verify_document_org_access(
 /// `GET /units/{id}/etats-dates` sert les états datés d'un lot : le document
 /// remis au notaire lors d'une vente, qui porte les arriérés du vendeur et
 /// l'état du fonds de réserve. C'est une pièce financière nominative.
+/// Vérifie le mandat de l'appelant sur l'organisation d'une **réservation**.
+///
+/// ── Ce que cette garde protège ─────────────────────────────────────────────
+///
+/// Une réservation de ressource commune dit qui a réservé la salle, la buanderie
+/// ou le parking visiteur, et **quand**. Ce n'est pas une donnée neutre : elle
+/// dit aussi qui n'était pas chez lui à ce moment-là.
+///
+/// Trois routes agissent sur une réservation par son seul identifiant —
+/// `complete`, `no-show`, `confirm` — et deux la lisent. Aucune ne reçoit
+/// d'immeuble : la chaîne réservation → immeuble → ACP → organisation doit
+/// donc être remontée ici.
+///
+/// Elles prenaient `_auth: AuthenticatedUser`, l'identité soulignée d'un
+/// underscore pour dire qu'on ne s'en sert pas (#772).
+///
+/// ── Pourquoi elle délègue plutôt que de comparer ──────────────────────────
+///
+/// Comme les huit autres, elle finit par appeler `verify_building_org_access`,
+/// qui remonte à l'ACP. Refaire la comparaison ici dupliquerait la règle de
+/// cloisonnement en un endroit de plus — et c'est cette duplication, recopiée
+/// à la main dans chaque gestionnaire, que l'issue #772 désigne comme la cause
+/// première de la fuite.
+pub async fn verify_booking_org_access(
+    user: &AuthenticatedUser,
+    booking_id: Uuid,
+    booking_use_cases: &ResourceBookingUseCases,
+    building_use_cases: &BuildingUseCases,
+    acp_use_cases: &AcpUseCases,
+) -> Result<(), AppError> {
+    if user.is_superadmin() {
+        return Ok(());
+    }
+
+    let booking = booking_use_cases
+        .get_booking(booking_id)
+        .await
+        .map_err(AppError::from)?;
+
+    verify_building_org_access(user, booking.building_id, building_use_cases, acp_use_cases).await
+}
+
 pub async fn verify_unit_org_access(
     user: &AuthenticatedUser,
     unit_id: Uuid,
