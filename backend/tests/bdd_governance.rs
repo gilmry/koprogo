@@ -449,6 +449,7 @@ impl GovernanceWorld {
             building_repo,
             meeting_repo,
             Arc::new(PostgresUnitOwnerRepository::new(pool.clone())),
+            user_repo.clone(),
         );
         let auth_use_cases = AuthUseCases::new(
             user_repo.clone(),

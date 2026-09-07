@@ -250,6 +250,7 @@ async fn setup_test_db() -> (
         building_repo.clone(),
         meeting_repo.clone(),
         unit_owner_repo.clone(),
+        user_repo.clone(),
     );
     let resolution_use_cases = ResolutionUseCases::new(
         resolution_repo,
