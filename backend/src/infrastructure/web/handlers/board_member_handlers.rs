@@ -323,7 +323,9 @@ pub async fn get_board_dashboard(
         Ok(Some(owner_dto)) => uuid::Uuid::parse_str(&owner_dto.id).unwrap_or(user.user_id),
         Ok(None) => {
             return HttpResponse::Forbidden().json(serde_json::json!({
-                "error": "User is not linked to an owner. Board dashboard is only accessible to board members."
+                "error": "Le tableau de bord du conseil est réservé à ses membres, \
+                          qui sont copropriétaires (Art. 3.90 § 1er). Votre compte \
+                          n'est rattaché à aucune fiche de copropriétaire."
             }));
         }
         Err(err) => {

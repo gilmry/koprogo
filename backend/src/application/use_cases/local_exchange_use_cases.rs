@@ -30,13 +30,20 @@ impl LocalExchangeUseCases {
         }
     }
 
-    /// Resolve a user_id (from auth) to an owner_id (from owners table)
+    /// Résout l'utilisateur authentifié en copropriétaire.
+    ///
+    /// Même refus que `create_exchange`, et donc même message : les échanges
+    /// locaux engagent une personne nommée, pas la copropriété. On emploie la
+    /// constante partagée plutôt qu'une formulation voisine — deux textes
+    /// différents pour un même refus font croire à deux causes.
     async fn resolve_owner_id(&self, user_id: Uuid) -> Result<Uuid, String> {
         let owner = self
             .owner_repo
             .find_by_user_id(user_id)
             .await?
-            .ok_or("User is not linked to an owner account".to_string())?;
+            .ok_or_else(|| {
+                crate::application::error::REFUS_RESERVE_AUX_COPROPRIETAIRES.to_string()
+            })?;
         Ok(owner.id)
     }
 
@@ -47,11 +54,28 @@ impl LocalExchangeUseCases {
         dto: CreateLocalExchangeDto,
     ) -> Result<LocalExchangeResponseDto, String> {
         // Resolve user_id → owner
+        //
+        // Refus LÉGITIME, message qui l'était moins.
+        //
+        // Proposer un échange local engage une personne nommée : cela suppose
+        // une fiche de copropriétaire. Un syndic n'en a pas, et c'est normal.
+        //
+        // Mais « Provider not found - user is not linked to an owner account »
+        // est en anglais, technique, et ne dit pas à l'utilisateur ce qu'il
+        // devrait faire. C'est le même défaut que celui corrigé pour les
+        // compétences après RN-11 (2026-09-06), où un message illisible avait
+        // été pris pour une panne bloquant quatre modules.
+        //
+        // Ce refus a coûté un échec Playwright muet
+        // (`SyndicLocalExchangesJourney`), que trois runs de CI n'ont pas su
+        // expliquer faute de rapporter le corps de la réponse (#832).
         let provider = self
             .owner_repo
             .find_by_user_id(user_id)
             .await?
-            .ok_or("Provider not found - user is not linked to an owner account".to_string())?;
+            .ok_or_else(|| {
+                crate::application::error::REFUS_RESERVE_AUX_COPROPRIETAIRES.to_string()
+            })?;
 
         // Create domain entity using owner's actual ID
         let exchange = LocalExchange::new(
@@ -83,11 +107,23 @@ impl LocalExchangeUseCases {
             .ok_or("Exchange not found".to_string())?;
 
         // Get provider name
+        //
+        // Cas DIFFÉRENT du précédent, malgré le message qu'ils partageaient :
+        // ici l'échange existe déjà et désigne un auteur introuvable. Ce n'est
+        // pas un refus d'autorisation mais une incohérence de données, et la
+        // confusion entre les deux envoie chercher un problème de droits là où
+        // il n'y en a pas.
         let provider = self
             .owner_repo
             .find_by_id(exchange.provider_id)
             .await?
-            .ok_or("Provider not found".to_string())?;
+            .ok_or_else(|| {
+                format!(
+                    "L'auteur de cet échange est introuvable (copropriétaire {}). \
+                     La fiche a peut-être été supprimée ou anonymisée.",
+                    exchange.provider_id
+                )
+            })?;
         let provider_name = format!("{} {}", provider.first_name, provider.last_name);
 
         // Get requester name if exists
