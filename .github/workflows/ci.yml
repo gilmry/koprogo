@@ -45,6 +45,9 @@ jobs:
   lint:
     name: Lint & Format Check
     runs-on: ubuntu-latest
+    # Observé 2 min le 2026-09-07 ; plafond à ~2x pour absorber la
+    # variance d'un runner sans laisser un job pendu six heures.
+    timeout-minutes: 20
     steps:
       - name: Checkout code
         uses: actions/checkout@v7
@@ -100,6 +103,9 @@ jobs:
   test-unit:
     name: Unit Tests
     runs-on: ubuntu-latest
+    # Observé 6 min le 2026-09-07 ; plafond à ~2x pour absorber la
+    # variance d'un runner sans laisser un job pendu six heures.
+    timeout-minutes: 30
     steps:
       - name: Checkout code
         uses: actions/checkout@v7
@@ -133,6 +139,9 @@ jobs:
   test-bdd:
     name: BDD Tests
     runs-on: ubuntu-latest
+    # Observé 21 min le 2026-09-07 ; plafond à ~2x pour absorber la
+    # variance d'un runner sans laisser un job pendu six heures.
+    timeout-minutes: 60
     services:
       postgres:
         image: postgres:16
@@ -235,6 +244,9 @@ jobs:
     # bloquant.
     name: Coverage (report only)
     runs-on: ubuntu-latest
+    # Observé 9 min le 2026-09-07 ; plafond à ~2x pour absorber la
+    # variance d'un runner sans laisser un job pendu six heures.
+    timeout-minutes: 40
     continue-on-error: true
     services:
       postgres:
@@ -344,6 +356,9 @@ jobs:
     # croire que 488 tests tournaient alors que la commande n'en jouait que 4.
     name: Integration Tests (API)
     runs-on: ubuntu-latest
+    # Observé 38 min le 2026-09-07 ; plafond à ~2x pour absorber la
+    # variance d'un runner sans laisser un job pendu six heures.
+    timeout-minutes: 90
     services:
       postgres:
         image: postgres:16
@@ -485,6 +500,9 @@ jobs:
   api-breaking-changes:
     name: API Breaking Change Detection (oasdiff)
     runs-on: ubuntu-latest
+    # Observé 1 min le 2026-09-07 ; plafond à ~2x pour absorber la
+    # variance d'un runner sans laisser un job pendu six heures.
+    timeout-minutes: 15
     if: github.event_name == 'pull_request'
     steps:
       - name: Checkout PR branch
@@ -541,6 +559,9 @@ jobs:
   contract-types:
     name: Contract Types Check (end-to-end anti-drift)
     runs-on: ubuntu-latest
+    # Observé 6 min le 2026-09-07 ; plafond à ~2x pour absorber la
+    # variance d'un runner sans laisser un job pendu six heures.
+    timeout-minutes: 30
     steps:
       - name: Checkout code
         uses: actions/checkout@v7
@@ -673,6 +694,9 @@ jobs:
   vitest:
     name: Frontend Unit Tests (vitest)
     runs-on: ubuntu-latest
+    # Observé 1 min le 2026-09-07 ; plafond à ~2x pour absorber la
+    # variance d'un runner sans laisser un job pendu six heures.
+    timeout-minutes: 20
     steps:
       - name: Checkout code
         uses: actions/checkout@v7
@@ -695,6 +719,9 @@ jobs:
   frontend-check:
     name: Frontend Check & Build
     runs-on: ubuntu-latest
+    # Observé 1 min le 2026-09-07 ; plafond à ~2x pour absorber la
+    # variance d'un runner sans laisser un job pendu six heures.
+    timeout-minutes: 20
     steps:
       - name: Checkout code
         uses: actions/checkout@v7
@@ -722,6 +749,9 @@ jobs:
   playwright:
     name: Playwright E2E Tests
     runs-on: ubuntu-latest
+    # Observé 44 min le 2026-09-07 ; plafond à ~2x pour absorber la
+    # variance d'un runner sans laisser un job pendu six heures.
+    timeout-minutes: 90
     needs: [frontend-check]
     services:
       postgres:
@@ -914,6 +944,9 @@ jobs:
   build:
     name: Build
     runs-on: ubuntu-latest
+    # Observé 15 min le 2026-09-07 ; plafond à ~2x pour absorber la
+    # variance d'un runner sans laisser un job pendu six heures.
+    timeout-minutes: 45
     needs:
       [
         lint,

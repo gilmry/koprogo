@@ -24,6 +24,25 @@ export default defineConfig({
   /* Opt out of parallel tests on CI. */
   workers: process.env.CI ? 1 : undefined,
 
+  /**
+   * Plafond pour la suite ENTIÈRE, pas pour un test.
+   *
+   * Le 2026-09-07, ce job a tourné **2 h 43** sans rendre la main, contre
+   * 36 minutes au run précédent, et rien ne l'a arrêté : `ci.yml` ne portait
+   * aucun `timeout-minutes`, la limite GitHub par défaut étant de six heures.
+   *
+   * Le timeout par test (30 s par défaut) ne suffit pas à borner l'ensemble :
+   * avec `retries: 2` et 319 tests, une dégradation multiplie les exécutions
+   * sans qu'aucune ne dépasse individuellement sa limite. Un job qui traîne
+   * devient alors indiscernable d'un job mort — et il occupe un runner
+   * pendant ce temps.
+   *
+   * 70 minutes, soit un peu moins que le `timeout-minutes: 90` du job : la
+   * suite doit rendre la main d'elle-même, avec son rapport, plutôt que
+   * d'être fauchée par GitHub sans rien laisser à lire.
+   */
+  globalTimeout: process.env.CI ? 70 * 60 * 1000 : undefined,
+
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
   reporter: [
     ["html", { outputFolder: "playwright-report", open: "never" }],
