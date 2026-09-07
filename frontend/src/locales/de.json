@@ -3972,7 +3972,7 @@
     "rating": "Bewertung (1 bis 5)"
   },
   "magicLink": {
-    "issued": "Magic-Link erstellt.",
+    "issued": "Link erstellt",
     "copied": "Link in die Zwischenablage kopiert.",
     "copyFailed": "Kopieren fehlgeschlagen, kopieren Sie den Link manuell.",
     "offlineMode": "Offline-Modus — Ihr Entwurf wird bei erneuter Verbindung synchronisiert.",
@@ -3985,10 +3985,26 @@
     "received": "Erhalten",
     "sent": "Ihre Antwort wurde übermittelt. Der Verwalter wird benachrichtigt.",
     "canClose": "Sie können diese Seite bedenkenlos schließen.",
-    "close": "Schließen"
+    "close": "Schließen",
+    "issueTitle": "Zugangslink erstellen",
+    "recipient": "Empfänger",
+    "resourceType": "Ressourcentyp",
+    "resource": "Ressource",
+    "validity": "Gültigkeitsdauer",
+    "copyNow": "Dieser Link wird nie wieder angezeigt. Kopieren Sie ihn jetzt und senden Sie ihn an den Empfänger.",
+    "copy": "Kopieren",
+    "issueAnother": "Weiteren Link erstellen"
   },
   "technicalSpecs": {
-    "submittedForSignature": "Datenblatt zur Unterschrift eingereicht."
+    "submittedForSignature": "Datenblatt zur Unterschrift eingereicht.",
+    "version": "Version",
+    "versionMajor": "Hauptversion",
+    "versionMinor": "Nebenversion",
+    "versionPatch": "Korrektur",
+    "deliverables": "Liefergegenstände",
+    "addDeliverable": "Liefergegenstand hinzufügen",
+    "requiredSignatures": "Erforderliche Unterschriften",
+    "attachments": "Anhänge — eine Adresse pro Eintrag, durch Kommas getrennt"
   },
   "acps": {
     "pageTitle": "Wohnungseigentümergemeinschaften (WEG)",

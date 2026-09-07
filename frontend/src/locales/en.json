@@ -3972,7 +3972,7 @@
     "rating": "Rating (1 to 5)"
   },
   "magicLink": {
-    "issued": "Magic link issued.",
+    "issued": "Link issued",
     "copied": "Link copied to the clipboard.",
     "copyFailed": "Copy failed, please copy the link manually.",
     "offlineMode": "Offline mode — your draft will sync when the connection returns.",
@@ -3985,10 +3985,26 @@
     "received": "Received",
     "sent": "Your reply has been sent. The building manager will be notified.",
     "canClose": "You can safely close this page.",
-    "close": "Close"
+    "close": "Close",
+    "issueTitle": "Issue an access link",
+    "recipient": "Recipient",
+    "resourceType": "Resource type",
+    "resource": "Resource",
+    "validity": "Validity period",
+    "copyNow": "This link will never be shown again. Copy it now and send it to its recipient.",
+    "copy": "Copy",
+    "issueAnother": "Issue another link"
   },
   "technicalSpecs": {
-    "submittedForSignature": "Specification submitted for signature."
+    "submittedForSignature": "Specification submitted for signature.",
+    "version": "Version",
+    "versionMajor": "Major",
+    "versionMinor": "Minor",
+    "versionPatch": "Patch",
+    "deliverables": "Deliverables",
+    "addDeliverable": "Add a deliverable",
+    "requiredSignatures": "Required signatures",
+    "attachments": "Attachments — one address per entry, separated by commas"
   },
   "acps": {
     "pageTitle": "Co-ownership associations (ACP)",

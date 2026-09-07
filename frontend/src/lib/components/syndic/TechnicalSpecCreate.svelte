@@ -40,6 +40,8 @@
   //   tech-spec-create-error-{field}
 
   import { toast } from "../../../stores/toast";
+
+  import { _ } from "../../i18n";
   import {
     SIGNATORY_ROLES,
     TECH_SPEC_MIN_DESCRIPTION_LENGTH,
@@ -280,7 +282,7 @@
   <!-- Title -->
   <div class="flex flex-col gap-1">
     <label for="tech-spec-title" class="text-sm font-medium text-gray-700">
-      Titre
+      {$_('common.title')}
     </label>
     <input
       id="tech-spec-title"
@@ -310,7 +312,7 @@
       for="tech-spec-description"
       class="text-sm font-medium text-gray-700"
     >
-      Description
+      {$_('common.description')}
     </label>
     <textarea
       id="tech-spec-description"
@@ -346,10 +348,10 @@
 
   <!-- Version (3 inputs major/minor/patch) -->
   <fieldset class="flex flex-col gap-1">
-    <legend class="text-sm font-medium text-gray-700">Version (SemVer)</legend>
+    <legend class="text-sm font-medium text-gray-700">{$_('technicalSpecs.version')}</legend>
     <div class="flex items-center gap-2">
       <label class="flex flex-col text-xs text-gray-600">
-        <span>Major</span>
+        <span>{$_('technicalSpecs.versionMajor')}</span>
         <input
           data-testid="tech-spec-version-major-input"
           type="number"
@@ -361,7 +363,7 @@
       </label>
       <span class="text-gray-400 mt-4">.</span>
       <label class="flex flex-col text-xs text-gray-600">
-        <span>Minor</span>
+        <span>{$_('technicalSpecs.versionMinor')}</span>
         <input
           data-testid="tech-spec-version-minor-input"
           type="number"
@@ -373,7 +375,7 @@
       </label>
       <span class="text-gray-400 mt-4">.</span>
       <label class="flex flex-col text-xs text-gray-600">
-        <span>Patch</span>
+        <span>{$_('technicalSpecs.versionPatch')}</span>
         <input
           data-testid="tech-spec-version-patch-input"
           type="number"
@@ -403,7 +405,7 @@
 
   <!-- Deliverables (array dynamique) -->
   <div class="flex flex-col gap-2">
-    <span class="text-sm font-medium text-gray-700">Livrables (deliverables)</span>
+    <span class="text-sm font-medium text-gray-700">{$_('technicalSpecs.deliverables')}</span>
     {#each deliverables as deliverable, idx (idx)}
       <div
         class="flex items-center gap-2"
@@ -435,7 +437,7 @@
       onclick={addDeliverable}
       class="self-start text-xs text-blue-600 hover:text-blue-800 underline"
     >
-      + Ajouter un livrable
+      + {$_('technicalSpecs.addDeliverable')}
     </button>
     {#if errors.deliverables}
       <p
@@ -456,7 +458,7 @@
       : undefined}
   >
     <legend class="text-sm font-medium text-gray-700">
-      Signatures requises
+      {$_('technicalSpecs.requiredSignatures')}
     </legend>
     <div
       class="flex flex-wrap gap-3"
@@ -498,7 +500,7 @@
       for="tech-spec-attach-upload"
       class="text-sm font-medium text-gray-700"
     >
-      Pièces jointes (URLs S3/MinIO — séparées par virgule)
+      {$_('technicalSpecs.attachments')}
     </label>
     <input
       id="tech-spec-attach-upload"
@@ -515,9 +517,6 @@
       }}
       class="border border-gray-300 rounded px-3 py-2 text-sm"
     />
-    <p class="text-xs text-gray-500">
-      Upload réel à brancher post-B7 (pattern EvidenceUpload B5).
-    </p>
   </div>
 
   <!-- Actions -->
@@ -530,7 +529,7 @@
         onclick={() => onCancel?.()}
         disabled={submitting}
       >
-        Annuler
+        {$_('common.cancel')}
       </button>
     {/if}
     <button

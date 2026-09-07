@@ -3972,7 +3972,7 @@
     "rating": "Beoordeling (1 tot 5)"
   },
   "magicLink": {
-    "issued": "Magische link aangemaakt.",
+    "issued": "Link aangemaakt",
     "copied": "Link naar het klembord gekopieerd.",
     "copyFailed": "Kopiëren mislukt, kopieer de link handmatig.",
     "offlineMode": "Offlinemodus — uw concept wordt gesynchroniseerd zodra u weer verbinding hebt.",
@@ -3985,10 +3985,26 @@
     "received": "Ontvangen",
     "sent": "Uw antwoord is verzonden. De syndicus wordt verwittigd.",
     "canClose": "U kunt deze pagina veilig sluiten.",
-    "close": "Sluiten"
+    "close": "Sluiten",
+    "issueTitle": "Toegangslink aanmaken",
+    "recipient": "Ontvanger",
+    "resourceType": "Type bron",
+    "resource": "Bron",
+    "validity": "Geldigheidsduur",
+    "copyNow": "Deze link wordt nooit meer getoond. Kopieer hem nu en bezorg hem aan de ontvanger.",
+    "copy": "Kopiëren",
+    "issueAnother": "Nieuwe link aanmaken"
   },
   "technicalSpecs": {
-    "submittedForSignature": "Fiche ingediend ter ondertekening."
+    "submittedForSignature": "Fiche ingediend ter ondertekening.",
+    "version": "Versie",
+    "versionMajor": "Hoofdversie",
+    "versionMinor": "Subversie",
+    "versionPatch": "Correctie",
+    "deliverables": "Op te leveren werk",
+    "addDeliverable": "Voeg een levering toe",
+    "requiredSignatures": "Vereiste handtekeningen",
+    "attachments": "Bijlagen — één adres per invoer, gescheiden door komma's"
   },
   "acps": {
     "pageTitle": "Verenigingen van Mede-eigenaars (VME)",

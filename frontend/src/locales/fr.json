@@ -3972,7 +3972,7 @@
     "rating": "Notation (1 à 5)"
   },
   "magicLink": {
-    "issued": "Lien magique émis avec succès.",
+    "issued": "Lien émis",
     "copied": "Lien copié dans le presse-papier.",
     "copyFailed": "Impossible de copier, copiez le lien manuellement.",
     "offlineMode": "Mode hors-ligne — votre brouillon sera synchronisé à la reconnexion.",
@@ -3985,10 +3985,26 @@
     "received": "Reçu",
     "sent": "Votre réponse a bien été transmise. Le syndic sera prévenu.",
     "canClose": "Vous pouvez fermer cette page en toute sécurité.",
-    "close": "Fermer"
+    "close": "Fermer",
+    "issueTitle": "Émettre un lien d'accès",
+    "recipient": "Destinataire",
+    "resourceType": "Type de ressource",
+    "resource": "Ressource",
+    "validity": "Durée de validité",
+    "copyNow": "Ce lien ne sera plus jamais affiché. Copiez-le maintenant et transmettez-le à son destinataire.",
+    "copy": "Copier",
+    "issueAnother": "Émettre un nouveau lien"
   },
   "technicalSpecs": {
-    "submittedForSignature": "Fiche soumise pour signatures."
+    "submittedForSignature": "Fiche soumise pour signatures.",
+    "version": "Version",
+    "versionMajor": "Majeure",
+    "versionMinor": "Mineure",
+    "versionPatch": "Correctif",
+    "deliverables": "Livrables",
+    "addDeliverable": "Ajouter un livrable",
+    "requiredSignatures": "Signatures requises",
+    "attachments": "Pièces jointes — une adresse par ligne, séparées par des virgules"
   },
   "acps": {
     "pageTitle": "Associations de Copropriétaires (ACP)",

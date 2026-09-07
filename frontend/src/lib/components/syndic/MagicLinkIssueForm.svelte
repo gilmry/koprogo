@@ -290,7 +290,7 @@
 >
   {#if view === "form"}
     <h2 id="magic-link-form-title" class="mb-4 text-xl font-semibold text-gray-900">
-      Émettre un lien magique
+      {$_('magicLink.issueTitle')}
     </h2>
 
     <form
@@ -303,7 +303,7 @@
       <!-- Destinataire (subject_user_id) -->
       <div>
         <label for="magic-link-target-input" class="block text-sm font-medium text-gray-700">
-          Destinataire
+          {$_('magicLink.recipient')}
         </label>
         <select
           id="magic-link-target-input"
@@ -314,7 +314,7 @@
             ? "magic-link-target-help"
             : undefined}
         >
-          <option value="">— Sélectionner —</option>
+          <option value="">{$_('common.select')}</option>
           {#each users as user (user.id)}
             <option
               data-testid={`magic-link-target-option-${user.id}`}
@@ -336,10 +336,10 @@
         {/if}
       </div>
 
-      <!-- Type de ressource (scope_kind) -->
+      <!-- {$_('magicLink.resourceType')} (scope_kind) -->
       <div>
         <label for="magic-link-scope-select" class="block text-sm font-medium text-gray-700">
-          Type de ressource
+          {$_('magicLink.resourceType')}
         </label>
         <select
           id="magic-link-scope-select"
@@ -356,7 +356,7 @@
       <!-- Ressource (scope_id) -->
       <div>
         <label for="magic-link-scope-id-select" class="block text-sm font-medium text-gray-700">
-          Ressource
+          {$_('magicLink.resource')}
         </label>
         <select
           id="magic-link-scope-id-select"
@@ -368,7 +368,7 @@
             ? "magic-link-scope-id-help"
             : undefined}
         >
-          <option value="">— Sélectionner —</option>
+          <option value="">{$_('common.select')}</option>
           {#each availableScopeIds as opt (opt.id)}
             <option
               data-testid={`magic-link-scope-id-option-${opt.id}`}
@@ -392,7 +392,7 @@
       <!-- Durée (expires_in_seconds) -->
       <div>
         <label for="magic-link-expires-in-input" class="block text-sm font-medium text-gray-700">
-          Validité
+          {$_('magicLink.validity')}
         </label>
         <input
           id="magic-link-expires-in-input"
@@ -445,7 +445,7 @@
   {:else}
     <!-- view === "issued" — écran récap.  -->
     <h2 id="magic-link-form-title" class="mb-2 text-xl font-semibold text-green-700">
-      ✅ Lien émis
+      ✅ {$_('magicLink.issued')}
     </h2>
 
     <p
@@ -454,8 +454,7 @@
       role="alert"
       aria-live="assertive"
     >
-      ⚠ Ce lien ne sera plus jamais affiché. Copiez-le maintenant et envoyez-le
-      au destinataire.
+      ⚠ {$_('magicLink.copyNow')}
     </p>
 
     <label for="magic-link-issued-url-input" class="block text-sm font-medium text-gray-700">
@@ -478,7 +477,7 @@
         class="min-h-[44px] rounded-md bg-blue-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-700 focus-visible:outline-2 focus-visible:outline-offset-2"
         aria-label="Copier le lien magique"
       >
-        Copier
+        {$_('magicLink.copy')}
       </button>
     </div>
 
@@ -494,7 +493,7 @@
       onclick={reset}
       class="mt-4 min-h-[44px] w-full rounded-md border border-gray-300 bg-white px-4 py-2 font-semibold text-gray-700 hover:bg-gray-50 focus-visible:outline-2 focus-visible:outline-offset-2"
     >
-      Émettre un nouveau lien
+      {$_('magicLink.issueAnother')}
     </button>
   {/if}
 </section>
