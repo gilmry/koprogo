@@ -1282,9 +1282,27 @@ mod assert_can_complete_tests {
         //
         // Un test dont l'échec ne dit rien du code est pire qu'absent : il
         // apprend à ignorer le rouge.
+        const IDENTIFIANT_DE_TEST: &str = "7bcd5e2f-8a9b-4c7d-9e5f-2a3b6c8d9e5f";
+
+        // Le commentaire ci-dessus dit de choisir un identifiant qui ne
+        // contienne aucune des deux sous-chaînes. Ce contrôle le VÉRIFIE, au
+        // lieu de compter sur la lecture.
+        //
+        // Sans lui, quiconque remettrait `Uuid::new_v4()` verrait l'ancien
+        // symptôme revenir — un échec sur cent trente disant
+        // `assertion failed: !s.contains("400")`, qui envoie chercher une
+        // fuite de quotas là où il n'y en a pas. Le message ci-dessous dit la
+        // vraie cause du premier coup.
+        assert!(
+            !IDENTIFIANT_DE_TEST.contains("400") && !IDENTIFIANT_DE_TEST.contains("1000"),
+            "l'identifiant de ce test contient une des sous-chaînes qu'on \
+             vérifie justement être absentes : l'échec porterait sur \
+             l'identifiant, pas sur le Display. Choisissez-en un autre, et \
+             surtout pas un identifiant tiré au hasard (#777)."
+        );
+
         let err = MeetingNotCompletableError {
-            meeting_id: Uuid::parse_str("7bcd5e2f-8a9b-4c7d-9e5f-2a3b6c8d9e5f")
-                .expect("UUID de test valide"),
+            meeting_id: Uuid::parse_str(IDENTIFIANT_DE_TEST).expect("UUID de test valide"),
             missing: vec![MissingInvariant::QuorumNotReached {
                 attended_quotas: dec!(400),
                 total_quotas: dec!(1000),
