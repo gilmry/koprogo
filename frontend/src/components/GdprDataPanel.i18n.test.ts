@@ -73,6 +73,34 @@ describe("l'écran RGPD est traduit (#774)", () => {
     ).toEqual([]);
   });
 
+  /// Le gabarit n'est pas le seul endroit où du texte atteint l'utilisateur.
+  ///
+  /// La première version de ce test ne scannait que le gabarit — ce qui est
+  /// entre `>` et `<`. Elle laissait donc passer **dix messages anglais** dans
+  /// la partie script, ceux que `withErrorHandling` affiche en toast :
+  ///
+  ///     successMessage: 'Your personal data has been exported successfully'
+  ///     errorMessage: 'Failed to erase data'
+  ///
+  /// Un utilisateur qui déclenche un effacement irréversible lisait la
+  /// confirmation en anglais. Le garde-fou passait, et le défaut restait —
+  /// exactement le motif qu'il existe pour empêcher (#774).
+  it("ne laisse aucun message de toast en dur", () => {
+    const enDur = [
+      ...source.matchAll(/(success|error)Message:\s*['"]([A-Z][^'"]{6,})['"]/g),
+    ].map((m) => `${m[1]}Message: "${m[2]}"`);
+
+    expect(
+      enDur,
+      `${enDur.length} message(s) de toast écrits en dur dans le script.\n\n` +
+        `Ils atteignent l'utilisateur comme le reste, mais échappent à un ` +
+        `contrôle qui ne regarde que le gabarit. Sur cet écran, l'un d'eux ` +
+        `confirme un effacement irréversible (#774).\n\n` +
+        `Passez par \`$_('gdpr.…')\` et ajoutez la clé aux QUATRE langues.\n\n` +
+        enDur.join("\n"),
+    ).toEqual([]);
+  });
+
   it("emploie bien l'internationalisation", () => {
     const appels = (source.match(/\$_\(/g) ?? []).length;
     expect(

@@ -2021,7 +2021,17 @@
     "eraseStepLogout": "u onmiddellijk afmelden",
     "cannotBeUndone": "Deze actie kan niet ongedaan worden gemaakt.",
     "firstName": "Voornaam",
-    "lastName": "Achternaam"
+    "lastName": "Achternaam",
+    "loadPreferencesFailed": "Kan uw voorkeuren niet laden.",
+    "checkErasureFailed": "Kan niet controleren of uw gegevens kunnen worden gewist.",
+    "exportSuccess": "Uw persoonsgegevens zijn geëxporteerd.",
+    "exportFailed": "Het exporteren van uw gegevens is mislukt.",
+    "eraseSuccess": "Uw persoonsgegevens zijn geanonimiseerd.",
+    "eraseFailed": "Het wissen van uw gegevens is mislukt.",
+    "rectifySuccess": "Uw gegevens zijn bijgewerkt.",
+    "rectifyFailed": "Het bijwerken van uw gegevens is mislukt.",
+    "restrictionFailed": "De beperking van de verwerking kon niet worden bijgewerkt.",
+    "marketingFailed": "Uw marketingvoorkeur kon niet worden bijgewerkt."
   },
   "inspections": {
     "all": "Alle",

@@ -2021,7 +2021,17 @@
     "eraseStepLogout": "Sie sofort abmelden",
     "cannotBeUndone": "Diese Aktion kann nicht rückgängig gemacht werden.",
     "firstName": "Vorname",
-    "lastName": "Nachname"
+    "lastName": "Nachname",
+    "loadPreferencesFailed": "Ihre Einstellungen konnten nicht geladen werden.",
+    "checkErasureFailed": "Es konnte nicht geprüft werden, ob Ihre Daten gelöscht werden können.",
+    "exportSuccess": "Ihre personenbezogenen Daten wurden exportiert.",
+    "exportFailed": "Der Export Ihrer Daten ist fehlgeschlagen.",
+    "eraseSuccess": "Ihre personenbezogenen Daten wurden anonymisiert.",
+    "eraseFailed": "Das Löschen Ihrer Daten ist fehlgeschlagen.",
+    "rectifySuccess": "Ihre Daten wurden aktualisiert.",
+    "rectifyFailed": "Die Aktualisierung Ihrer Daten ist fehlgeschlagen.",
+    "restrictionFailed": "Die Einschränkung der Verarbeitung konnte nicht aktualisiert werden.",
+    "marketingFailed": "Ihre Marketing-Einstellung konnte nicht aktualisiert werden."
   },
   "inspections": {
     "all": "Alle",

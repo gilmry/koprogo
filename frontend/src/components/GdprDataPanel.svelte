@@ -36,7 +36,7 @@
   async function loadUserPreferences() {
     const user = await withErrorHandling({
       action: () => api.get<any>('/auth/me'),
-      errorMessage: 'Failed to load user preferences',
+      errorMessage: $_('gdpr.loadPreferencesFailed'),
     });
     if (user) {
       processingRestricted = user.processing_restricted || false;
@@ -51,7 +51,7 @@
     checkingErasure = true;
     const data = await withErrorHandling({
       action: () => api.get<{ can_erase: boolean; user_id: string }>('/gdpr/can-erase'),
-      errorMessage: 'Failed to check erasure eligibility',
+      errorMessage: $_('gdpr.checkErasureFailed'),
     });
     if (data) {
       canErase = data.can_erase;
@@ -63,8 +63,8 @@
     const data = await withErrorHandling({
       action: () => api.get<GdprExport>('/gdpr/export'),
       setLoading: (v) => loading = v,
-      successMessage: 'Your personal data has been exported successfully',
-      errorMessage: 'Failed to export data',
+      successMessage: $_('gdpr.exportSuccess'),
+      errorMessage: $_('gdpr.exportFailed'),
     });
     if (data) {
       exportData = data;
@@ -76,8 +76,8 @@
     const result = await withErrorHandling({
       action: () => api.delete<GdprEraseResponse>('/gdpr/erase'),
       setLoading: (v) => loading = v,
-      successMessage: 'Your personal data has been anonymized',
-      errorMessage: 'Failed to erase data',
+      successMessage: $_('gdpr.eraseSuccess'),
+      errorMessage: $_('gdpr.eraseFailed'),
     });
     showEraseConfirmation = false;
     if (result) {
@@ -114,8 +114,8 @@
     const result = await withErrorHandling({
       action: () => api.put('/gdpr/rectify', requestBody),
       setLoading: (v) => loading = v,
-      successMessage: 'Your personal data has been updated successfully',
-      errorMessage: 'Failed to rectify data',
+      successMessage: $_('gdpr.rectifySuccess'),
+      errorMessage: $_('gdpr.rectifyFailed'),
     });
     if (result) {
       showRectifyModal = false;
@@ -128,7 +128,7 @@
       action: () => api.put('/gdpr/restrict-processing', {}),
       setLoading: (v) => loadingRestriction = v,
       successMessage: processingRestricted ? 'Data processing restriction has been lifted' : 'Data processing has been restricted',
-      errorMessage: 'Failed to update processing restriction',
+      errorMessage: $_('gdpr.restrictionFailed'),
     });
     if (result) {
       processingRestricted = !processingRestricted;
@@ -141,7 +141,7 @@
       action: () => api.put('/gdpr/marketing-preference', { opt_out: !marketingOptOut }),
       setLoading: (v) => loadingMarketing = v,
       successMessage: marketingOptOut ? 'You have opted in to marketing communications' : 'You have opted out of marketing communications',
-      errorMessage: 'Failed to update marketing preference',
+      errorMessage: $_('gdpr.marketingFailed'),
     });
     if (result) {
       marketingOptOut = !marketingOptOut;

@@ -2021,7 +2021,17 @@
     "eraseStepLogout": "log you out immediately",
     "cannotBeUndone": "This action cannot be undone.",
     "firstName": "First name",
-    "lastName": "Last name"
+    "lastName": "Last name",
+    "loadPreferencesFailed": "Failed to load user preferences.",
+    "checkErasureFailed": "Failed to check erasure eligibility.",
+    "exportSuccess": "Your personal data has been exported.",
+    "exportFailed": "Failed to export your data.",
+    "eraseSuccess": "Your personal data has been anonymized.",
+    "eraseFailed": "Failed to erase your data.",
+    "rectifySuccess": "Your data has been updated.",
+    "rectifyFailed": "Failed to update your data.",
+    "restrictionFailed": "Failed to update processing restriction.",
+    "marketingFailed": "Failed to update marketing preference."
   },
   "inspections": {
     "all": "All",

@@ -2021,7 +2021,17 @@
     "eraseStepLogout": "vous déconnecter immédiatement",
     "cannotBeUndone": "Cette action est définitive.",
     "firstName": "Prénom",
-    "lastName": "Nom"
+    "lastName": "Nom",
+    "loadPreferencesFailed": "Impossible de charger vos préférences.",
+    "checkErasureFailed": "Impossible de vérifier si vos données peuvent être effacées.",
+    "exportSuccess": "Vos données personnelles ont été exportées.",
+    "exportFailed": "L'export de vos données a échoué.",
+    "eraseSuccess": "Vos données personnelles ont été anonymisées.",
+    "eraseFailed": "L'effacement de vos données a échoué.",
+    "rectifySuccess": "Vos données ont été mises à jour.",
+    "rectifyFailed": "La mise à jour de vos données a échoué.",
+    "restrictionFailed": "La limitation du traitement n'a pas pu être mise à jour.",
+    "marketingFailed": "Votre préférence marketing n'a pas pu être mise à jour."
   },
   "inspections": {
     "all": "Toutes",
