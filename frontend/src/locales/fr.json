@@ -909,7 +909,7 @@
     "search": "Rechercher",
     "searchUsers": "Rechercher des utilisateurs",
     "seeAll": "Voir tout",
-    "select": "Sélectionner",
+    "select": "— Sélectionner —",
     "selectBuilding": "Sélectionner un immeuble",
     "select_acp": "Sélectionner une ACP",
     "select_building": "Sélectionner un immeuble",
@@ -963,7 +963,9 @@
     "street": "Rue",
     "slug": "Identifiant court",
     "enterpriseNumber": "Numéro BCE",
-    "place": "Lieu"
+    "place": "Lieu",
+    "comment": "Commentaire",
+    "actionColumn": "Action"
   },
   "common.error.loadData": "Erreur lors du chargement des données",
   "common.error.loadStats": "Erreur lors du chargement des statistiques",
@@ -2775,7 +2777,14 @@
     },
     "title": "Copropriétaires",
     "totalPercentage": "Total des quotes-parts",
-    "units": "Lots"
+    "units": "Lots",
+    "linkTitle": "Comptes et copropriétaires",
+    "linkSubtitle": "Associez un compte de connexion à la fiche du copropriétaire correspondant. Sans ce lien, le copropriétaire ne voit pas ses lots.",
+    "coOwner": "Copropriétaire",
+    "linkedAccount": "Compte lié",
+    "noLink": "Aucun compte lié",
+    "unlink": "Délier",
+    "selectAccount": "Choisir un compte…"
   },
   "owners.create.action": "Créer le copropriétaire",
   "owners.create.title": "Nouveau copropriétaire",
@@ -3952,7 +3961,15 @@
     "expired": "Session expirée. Veuillez vous reconnecter."
   },
   "contractors": {
-    "evaluationSaved": "Évaluation enregistrée."
+    "evaluationSaved": "Évaluation enregistrée.",
+    "newEvaluation": "Nouvelle évaluation de prestataire",
+    "cannotSelfEvaluate": "Un prestataire ne peut pas s'évaluer lui-même : votre propre fiche n'apparaît pas dans la liste.",
+    "evaluated": "Prestataire évalué",
+    "technicalSpec": "Fiche technique",
+    "onlyApprovedSpecs": "Seules les fiches techniques approuvées peuvent être évaluées.",
+    "motivatingTickets": "Tickets à l'origine de l'évaluation (facultatif)",
+    "noTicketAvailable": "Aucun ticket disponible pour cet immeuble.",
+    "rating": "Notation (1 à 5)"
   },
   "magicLink": {
     "issued": "Lien magique émis avec succès.",

@@ -909,7 +909,7 @@
     "search": "Suchen",
     "searchUsers": "Benutzer suchen",
     "seeAll": "Alle anzeigen",
-    "select": "Auswählen",
+    "select": "— Auswählen —",
     "selectBuilding": "Gebäude auswählen",
     "select_acp": "ACP auswählen",
     "select_building": "Gebäude auswählen",
@@ -963,7 +963,9 @@
     "street": "Straße",
     "slug": "Kurzkennung",
     "enterpriseNumber": "Unternehmensnummer",
-    "place": "Ort"
+    "place": "Ort",
+    "comment": "Kommentar",
+    "actionColumn": "Aktion"
   },
   "common.error.loadData": "Fehler beim Laden der Daten",
   "common.error.loadStats": "Fehler beim Laden der Statistiken",
@@ -2775,7 +2777,14 @@
     },
     "title": "Miteigentümer",
     "totalPercentage": "Gesamtanteile",
-    "units": "Einheiten"
+    "units": "Einheiten",
+    "linkTitle": "Konten und Miteigentümer",
+    "linkSubtitle": "Verknüpfen Sie ein Anmeldekonto mit dem passenden Miteigentümer-Eintrag. Ohne diese Verknüpfung sieht der Miteigentümer seine Lose nicht.",
+    "coOwner": "Miteigentümer",
+    "linkedAccount": "Verknüpftes Konto",
+    "noLink": "Kein verknüpftes Konto",
+    "unlink": "Trennen",
+    "selectAccount": "Konto wählen…"
   },
   "owners.create.action": "Miteigentümer erstellen",
   "owners.create.title": "Neuer Miteigentümer",
@@ -3952,7 +3961,15 @@
     "expired": "Ihre Sitzung ist abgelaufen. Bitte melden Sie sich erneut an."
   },
   "contractors": {
-    "evaluationSaved": "Bewertung gespeichert."
+    "evaluationSaved": "Bewertung gespeichert.",
+    "newEvaluation": "Neue Dienstleisterbewertung",
+    "cannotSelfEvaluate": "Ein Dienstleister kann sich nicht selbst bewerten: Ihr eigener Eintrag erscheint nicht in der Liste.",
+    "evaluated": "Bewerteter Dienstleister",
+    "technicalSpec": "Technisches Datenblatt",
+    "onlyApprovedSpecs": "Nur genehmigte technische Datenblätter können bewertet werden.",
+    "motivatingTickets": "Zugrunde liegende Tickets (optional)",
+    "noTicketAvailable": "Kein Ticket für dieses Gebäude verfügbar.",
+    "rating": "Bewertung (1 bis 5)"
   },
   "magicLink": {
     "issued": "Magic-Link erstellt.",

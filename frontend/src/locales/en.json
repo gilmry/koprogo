@@ -909,7 +909,7 @@
     "search": "Search",
     "searchUsers": "Search users",
     "seeAll": "See all",
-    "select": "Select",
+    "select": "— Select —",
     "selectBuilding": "Select a building",
     "select_acp": "Select an ACP",
     "select_building": "Select a building",
@@ -963,7 +963,9 @@
     "street": "Street",
     "slug": "Short identifier",
     "enterpriseNumber": "Enterprise number",
-    "place": "Place"
+    "place": "Place",
+    "comment": "Comment",
+    "actionColumn": "Action"
   },
   "common.error.loadData": "Error loading data",
   "common.error.loadStats": "Error loading statistics",
@@ -2775,7 +2777,14 @@
     },
     "title": "Co-owners",
     "totalPercentage": "Total shares",
-    "units": "Units"
+    "units": "Units",
+    "linkTitle": "Accounts and co-owners",
+    "linkSubtitle": "Link a login account to the matching co-owner record. Without this link, the co-owner cannot see their units.",
+    "coOwner": "Co-owner",
+    "linkedAccount": "Linked account",
+    "noLink": "No linked account",
+    "unlink": "Unlink",
+    "selectAccount": "Choose an account…"
   },
   "owners.create.action": "Create co-owner",
   "owners.create.title": "New co-owner",
@@ -3952,7 +3961,15 @@
     "expired": "Your session has expired. Please sign in again."
   },
   "contractors": {
-    "evaluationSaved": "Evaluation saved."
+    "evaluationSaved": "Evaluation saved.",
+    "newEvaluation": "New contractor evaluation",
+    "cannotSelfEvaluate": "A contractor cannot evaluate themselves: your own record does not appear in the list.",
+    "evaluated": "Contractor being evaluated",
+    "technicalSpec": "Technical specification",
+    "onlyApprovedSpecs": "Only approved technical specifications can be evaluated.",
+    "motivatingTickets": "Tickets behind this evaluation (optional)",
+    "noTicketAvailable": "No ticket available for this building.",
+    "rating": "Rating (1 to 5)"
   },
   "magicLink": {
     "issued": "Magic link issued.",

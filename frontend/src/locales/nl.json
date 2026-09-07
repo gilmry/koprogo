@@ -909,7 +909,7 @@
     "search": "Zoeken",
     "searchUsers": "Gebruikers zoeken",
     "seeAll": "Alles bekijken",
-    "select": "Selecteren",
+    "select": "— Selecteren —",
     "selectBuilding": "Selecteer een gebouw",
     "select_acp": "Selecteer een VME",
     "select_building": "Selecteer een gebouw",
@@ -963,7 +963,9 @@
     "street": "Straat",
     "slug": "Korte identificatie",
     "enterpriseNumber": "Ondernemingsnummer",
-    "place": "Plaats"
+    "place": "Plaats",
+    "comment": "Opmerking",
+    "actionColumn": "Actie"
   },
   "common.error.loadData": "Fout bij het laden van gegevens",
   "common.error.loadStats": "Fout bij het laden van statistieken",
@@ -2775,7 +2777,14 @@
     },
     "title": "Mede-eigenaars",
     "totalPercentage": "Totale aandelen",
-    "units": "Eenheden"
+    "units": "Eenheden",
+    "linkTitle": "Accounts en mede-eigenaars",
+    "linkSubtitle": "Koppel een aanmeldaccount aan de bijbehorende fiche van de mede-eigenaar. Zonder deze koppeling ziet de mede-eigenaar zijn kavels niet.",
+    "coOwner": "Mede-eigenaar",
+    "linkedAccount": "Gekoppeld account",
+    "noLink": "Geen gekoppeld account",
+    "unlink": "Ontkoppelen",
+    "selectAccount": "Kies een account…"
   },
   "owners.create.action": "Mede-eigenaar aanmaken",
   "owners.create.title": "Nieuwe mede-eigenaar",
@@ -3952,7 +3961,15 @@
     "expired": "Uw sessie is verlopen. Meld u opnieuw aan."
   },
   "contractors": {
-    "evaluationSaved": "Beoordeling opgeslagen."
+    "evaluationSaved": "Beoordeling opgeslagen.",
+    "newEvaluation": "Nieuwe beoordeling van dienstverlener",
+    "cannotSelfEvaluate": "Een dienstverlener kan zichzelf niet beoordelen: uw eigen fiche staat niet in de lijst.",
+    "evaluated": "Beoordeelde dienstverlener",
+    "technicalSpec": "Technische fiche",
+    "onlyApprovedSpecs": "Alleen goedgekeurde technische fiches kunnen worden beoordeeld.",
+    "motivatingTickets": "Tickets die aanleiding geven (optioneel)",
+    "noTicketAvailable": "Geen ticket beschikbaar voor dit gebouw.",
+    "rating": "Beoordeling (1 tot 5)"
   },
   "magicLink": {
     "issued": "Magische link aangemaakt.",

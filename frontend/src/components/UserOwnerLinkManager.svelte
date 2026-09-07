@@ -128,10 +128,10 @@
 <div class="bg-white rounded-lg shadow">
   <div class="p-6 border-b border-gray-200">
     <h2 class="text-xl font-semibold text-gray-900">
-      Gestion des liens User ↔ Owner
+      {$_('owners.linkTitle')}
     </h2>
     <p class="text-sm text-gray-600 mt-1">
-      Associez les comptes utilisateurs (role=owner) aux entités Owner pour donner accès au portail
+      {$_('owners.linkSubtitle')}
     </p>
   </div>
 
@@ -158,16 +158,16 @@
           <thead class="bg-gray-50">
             <tr>
               <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Owner
+                {$_('owners.coOwner')}
               </th>
               <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Email
+                {$_('common.email')}
               </th>
               <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                User lié
+                {$_('owners.linkedAccount')}
               </th>
               <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Action
+                {$_('common.actionColumn')}
               </th>
             </tr>
           </thead>
@@ -197,7 +197,7 @@
                     </div>
                   {:else}
                     <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                      Aucun lien
+                      {$_('owners.noLink')}
                     </span>
                   {/if}
                 </td>
@@ -207,7 +207,7 @@
                       on:click={() => linkOwnerToUser(owner.id, null)}
                       class="text-red-600 hover:text-red-900 font-medium"
                     >
-                      Délier
+                      {$_('owners.unlink')}
                     </button>
                   {:else}
                     <select
@@ -221,7 +221,7 @@
                       }}
                       class="block w-full pl-3 pr-10 py-2 text-sm border-gray-300 focus:outline-none focus:ring-primary-500 focus:border-primary-500 rounded-md"
                     >
-                      <option value="">Sélectionner un user...</option>
+                      <option value="">{$_('owners.selectAccount')}</option>
                       {#each getAvailableUsers(owner.id) as user (user.id)}
                         <option value={user.id}>
                           {user.first_name} {user.last_name} ({user.email})
@@ -248,14 +248,14 @@
               disabled={currentPage === 1}
               class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Précédent
+              {$_('common.previous')}
             </button>
             <button
               on:click={() => goToPage(currentPage + 1)}
               disabled={currentPage === totalPages}
               class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Suivant
+              {$_('common.next')}
             </button>
           </div>
         </div>
