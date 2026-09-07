@@ -4,6 +4,7 @@ import {
   loginAsSyndicWithUnit,
 } from "./helpers/auth";
 import { failOnPageErrors } from "./helpers/pageErrors";
+import { attendCode } from "./helpers/reponse";
 
 const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
 
@@ -55,7 +56,7 @@ test.describe("Syndic — parcours de création remplis jusqu'au bout", () => {
       ),
       page.getByTestId("contribution-submit-button").click(),
     ]);
-    expect(resp.status()).toBe(201);
+    await attendCode(resp, 201);
   });
 
   test("budgets: crée un budget de bout en bout", async ({ page }) => {
@@ -73,7 +74,7 @@ test.describe("Syndic — parcours de création remplis jusqu'au bout", () => {
       ),
       page.getByTestId("budget-submit-button").click(),
     ]);
-    expect(resp.status()).toBe(201);
+    await attendCode(resp, 201);
   });
 
   test("etats-dates: génère un état daté de bout en bout", async ({ page }) => {
@@ -161,6 +162,6 @@ test.describe("Syndic — parcours de création remplis jusqu'au bout", () => {
         .getByRole("button", { name: /^élire$|^confirmer$|^valider$/i })
         .click(),
     ]);
-    expect(resp.status()).toBe(201);
+    await attendCode(resp, 201);
   });
 });

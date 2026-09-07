@@ -1,6 +1,7 @@
 import { test, expect } from "@playwright/test";
 import { loginAsSyndicWithLinkedOwner, ensureAcp } from "./helpers/auth";
 import { failOnPageErrors } from "./helpers/pageErrors";
+import { attendCode } from "./helpers/reponse";
 
 const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
 
@@ -65,6 +66,6 @@ test.describe("Compétences — parcours de création rempli jusqu'au bout", () 
       ),
       page.getByTestId("submit-skill-offer-button").click(),
     ]);
-    expect(resp.status()).toBe(201);
+    await attendCode(resp, 201, "création d'une offre de compétence");
   });
 });
