@@ -84,8 +84,10 @@ beforeEach(() => {
   setupI18n();
   vi.clearAllMocks();
   api.get.mockImplementation((chemin: string) => {
-    if (chemin === "/auth/me") return Promise.resolve({ email: "test@example.be" });
-    if (chemin === "/gdpr/can-erase") return Promise.resolve({ can_erase: true, user_id: "u-1" });
+    if (chemin === "/auth/me")
+      return Promise.resolve({ email: "test@example.be" });
+    if (chemin === "/gdpr/can-erase")
+      return Promise.resolve({ can_erase: true, user_id: "u-1" });
     if (chemin === "/gdpr/export") return Promise.resolve(EXPORT_FICTIF);
     return Promise.resolve({});
   });
@@ -111,9 +113,7 @@ describe("le panneau RGPD réagit vraiment aux clics (#832)", () => {
 
     await fireEvent.click(bouton);
 
-    await waitFor(() =>
-      expect(api.get).toHaveBeenCalledWith("/gdpr/export"),
-    );
+    await waitFor(() => expect(api.get).toHaveBeenCalledWith("/gdpr/export"));
     await waitFor(
       () => expect(screen.getByTestId("gdpr-export-modal")).toBeInTheDocument(),
       {
@@ -121,7 +121,9 @@ describe("le panneau RGPD réagit vraiment aux clics (#832)", () => {
       },
     );
     expect(screen.getByTestId("gdpr-export-modal-content")).toBeInTheDocument();
-    expect(screen.getByTestId("gdpr-download-export-button")).toBeInTheDocument();
+    expect(
+      screen.getByTestId("gdpr-download-export-button"),
+    ).toBeInTheDocument();
   });
 
   it("referme le modal d'export sur le bouton de fermeture", async () => {

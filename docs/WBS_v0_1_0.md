@@ -552,9 +552,11 @@ runbook vide, parce qu'on se croit couvert.
 
 Ces deux actes ne sont pas délégables : cf. `docs/governance/RESPONSABILITE.md`.
 
+<!-- INVENTAIRE:DEBUT — engendré par scripts/inventaire-wbs.py, ne pas éditer à la main -->
+
 ## Inventaire complet du périmètre 0.1.0
 
-**74 issues ouvertes** portent l'étiquette `release:0.1.0`. Elles sont
+**72 issues ouvertes** portent l'étiquette `release:0.1.0`. Elles sont
 toutes ci-dessous, sans exception : une issue du périmètre absente du WBS est
 une issue que personne ne planifie.
 
@@ -566,12 +568,12 @@ cinq jours.
 | Priorité | Nombre |
 |---|---|
 | critical | 6 |
-| high | 25 |
+| high | 23 |
 | medium | 19 |
 | low | 1 |
 | — | 23 |
 
-### Track R — Défauts de recette navigateur (8)
+### Track R — Défauts de recette navigateur (7)
 
 Six recettes menées au navigateur entre le 2026-09-04 et le 2026-09-06. Le
 motif dominant, confirmé six fois : **une capacité écrite, testée, et
@@ -586,7 +588,6 @@ ne peut pas y arriver.
 | #779 | high | Rebrancher les six modules communautaires : 111 points d'entrée servis que le frontend n'appelle pa… |
 | #777 | medium | Le test negative_display_does_not_leak_business_internals échoue au hasard : un UUID aléatoire cont… |
 | #829 | medium | Art. 3.87 § 7 — le syndic ne peut être mandataire, mais rien n'empêche d'enregistrer le mandat |
-| #831 | medium | Le tiroir mobile piège le focus mais n'inerte pas l'arrière-plan : un lecteur d'écran le traverse e… |
 | #793 | low | « Precedent » sans accent dans la pagination, y compris dans le libellé lu par les lecteurs d'écran |
 
 ### Track U — Refonte UX/UI (14)
@@ -673,20 +674,28 @@ au-delà du strict Art. 3.87.
 | #582 | — | [Story 4.7] CdC membre élu + action create_alert |
 | #583 | — | [Story 4.8] [cluster-coord] CommissaireAuxComptes + VerificationCertificate |
 
-### Track T — Dette d'infrastructure de test (6)
+### Track T — Dette d'infrastructure de test (5)
 
-Ce qui empêche la CI de dire la vérité. **Quatre jobs sur dix sont rouges en
-continu depuis le 2026-09-04 au moins** : `prettier`, le contrat OpenAPI,
-`oasdiff` et la suite BDD. Une CI rouge en permanence ne garde rien — elle
-apprend seulement à ne plus la regarder.
+Ce qui empêche la CI de dire la vérité. Les quatre jobs rouges en continu du
+2026-09-04 — `prettier`, le contrat OpenAPI, `oasdiff` et la suite BDD — sont
+verts depuis le 2026-09-06. Ce qui reste est plus insidieux : **un job qui
+n'est ni vert ni rouge**, Playwright s'exécutant en `skipped` (#828), et **un
+garde-fou qui affiche sans bloquer**, `svelte-check --threshold warning` dont
+la CLI dit qu'il « filtre les diagnostics à AFFICHER » là où le commentaire
+de la CI prétendait qu'il bloquait. Sa référence de 0 warning avait dérivé à
+29 sans que rien ne l'annonce, masquant quinze variables non réactives et
+trois modals qui ne pouvaient pas s'ouvrir (#832). Corrigé en
+`--fail-on-warnings` le 2026-09-07.
+
+Une CI rouge en permanence n'apprend qu'à ne plus la regarder ; une CI qui
+affiche sans bloquer apprend à croire qu'on regarde.
 
 | Issue | Prio | Intitulé |
 |---|---|---|
 | #540 | high | bug(test-infra): inventaire consolidé des ~27 scénarios BDD pré-existants rouges (révélés post-#524) |
 | #548 | high | bug(e2e): WP-D1/FE1 — ripple Playwright (59 specs) après JWT→cookie : auth.ts init-ordering 'Databa… |
-| #828 | high | Playwright s'exécute de nouveau et révèle 25 échecs, dont 18 en 401 sur les parcours du comptable |
-| #830 | high | Cinquante-neuf sélecteurs e2e se rabattent sur un titre si l'ancrage manque : le test passe et ne v… |
 | #443 | medium | BDD-MIGRATION-001: Finalize Decimal cascade in BDD/E2E tests (~50 errors residual) |
+| #832 | medium | Quinze specs Playwright échouent sans erreur d'identité : les ancrages existent mais l'élément n'es… |
 | #696 | — | Instabilité smoke suite Playwright CI : 109 échecs sur specs pré-existantes (occurrence 2026-08-08) |
 
 ### Track K — Dette de code et de contrat (3)
@@ -739,6 +748,8 @@ laisser le doute dans le périmètre.
 | Issue | Prio | Intitulé |
 |---|---|---|
 | #635 | — | Fonds affectés / thésaurisation : entité Fund dédiée aux travaux d'ampleur (v0.2.0) |
+
+<!-- INVENTAIRE:FIN -->
 
 ## Recouvrements et issues caduques (revue du 2026-09-06)
 
@@ -816,7 +827,7 @@ déplacé la date de leur retour.
 ### ⚠️ Le périmètre a doublé le 2026-09-06, et c'est une décision assumée
 
 **Tout ce qui restait en 0.2.0 entre en 0.1.0, avec la refonte UX/UI.** Le compte passe de
-**34 à 74 issues ouvertes** en `release:0.1.0` : les 31 ouvertes le 2026-09-06, les 24
+**34 à 72 issues ouvertes** en `release:0.1.0` : les 31 ouvertes le 2026-09-06, les 24
 qui étaient en 0.2.0, les 6 lots de la refonte, la documentation vivante et les défauts
 trouvés en vérifiant. Il ne reste plus rien en 0.2.0.
 
@@ -831,8 +842,8 @@ peut présenter à quelqu'un qui décide d'y mettre de l'argent**.
 
 Quatre conséquences à assumer :
 
-- **La date recule nettement.** Soixante-dix-sept issues, dont plusieurs de fond : les 73
-  routes sans identité (#772), la migration `Result<_, String>` (#555, 1263 occurrences),
+- **La date recule nettement.** Soixante-douze issues ouvertes, dont plusieurs de fond : les
+  routes sans identité (#772, ramenées de 73 à 8 le 2026-09-06), la migration `Result<_, String>` (#555, 1263 occurrences),
   le périmètre ACP (#694, #798), et six lots de refonte.
 - **L'ordre compte plus que le compte.** R14 (#782) rend visibles les erreurs et donc tout
   le reste ; R1 (#772) et R19 (#787) exposent des données ; U2 (#798) ne peut pas commencer
@@ -865,8 +876,10 @@ exclut `feature/dev`. Mesuré le 2026-09-04, suivi en #540.
 
 ### Ce que la branche vérifie désormais avant de déployer
 
-`ci.yml` exclut nommément `feature/dev` — sa pipeline prend ~95 minutes et le
-déploiement ne l'attend pas. Le coût de ce choix a été chiffré : **45 régressions
+`ci.yml` exclut nommément `feature/dev` **sur l'événement `push`** — sa pipeline
+prend ~95 minutes et le déploiement ne l'attend pas. Elle s'exécute malgré tout
+sur cette branche via la PR ouverte, où elle bloque la fusion sans retarder la
+démo : c'est le seul endroit où la suite complète est observée. Le coût de ce choix a été chiffré : **45 régressions
 ont vécu sur la branche qui alimente la démo publique** sans qu'aucun signal
 n'apparaisse, parce que `cargo test --lib` ne compile pas `tests/`.
 

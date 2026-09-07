@@ -14,7 +14,7 @@ motif dominant, confirmé six fois : **une capacité écrite, testée, et
 inatteignable**. Nos tests prouvent que le code marche tout en masquant qu'on
 ne peut pas y arriver.""",
   [772,777,779,780,
-   793,814,829,831]),
+   793,814,829]),
 
  ("U", "Refonte UX/UI", """Revue de design du 2026-09-06. Entrée en 0.1.0 le même jour : un financeur ne
 lit pas du code, et l'ASBL se fonde sur ce que le produit montre. **U2 ne
@@ -40,11 +40,20 @@ comptes. C'est le track dont dépend la crédibilité juridique du produit
 au-delà du strict Art. 3.87.""",
   [576,577,578,579,581,582,583]),
 
- ("T", "Dette d'infrastructure de test", """Ce qui empêche la CI de dire la vérité. **Quatre jobs sur dix sont rouges en
-continu depuis le 2026-09-04 au moins** : `prettier`, le contrat OpenAPI,
-`oasdiff` et la suite BDD. Une CI rouge en permanence ne garde rien — elle
-apprend seulement à ne plus la regarder.""",
-  [443,540,548,696,828,830]),
+ ("T", "Dette d'infrastructure de test", """Ce qui empêche la CI de dire la vérité. Les quatre jobs rouges en continu du
+2026-09-04 — `prettier`, le contrat OpenAPI, `oasdiff` et la suite BDD — sont
+verts depuis le 2026-09-06. Ce qui reste est plus insidieux : **un job qui
+n'est ni vert ni rouge**, Playwright s'exécutant en `skipped` (#828), et **un
+garde-fou qui affiche sans bloquer**, `svelte-check --threshold warning` dont
+la CLI dit qu'il « filtre les diagnostics à AFFICHER » là où le commentaire
+de la CI prétendait qu'il bloquait. Sa référence de 0 warning avait dérivé à
+29 sans que rien ne l'annonce, masquant quinze variables non réactives et
+trois modals qui ne pouvaient pas s'ouvrir (#832). Corrigé en
+`--fail-on-warnings` le 2026-09-07.
+
+Une CI rouge en permanence n'apprend qu'à ne plus la regarder ; une CI qui
+affiche sans bloquer apprend à croire qu'on regarde.""",
+  [443,540,548,696,832]),
 
  ("K", "Dette de code et de contrat", """Les erreurs typées plutôt que classées par sous-chaîne, le contrat OpenAPI
 complet, et la suppression du repli qui fabrique une ACP inexistante.""",
@@ -123,4 +132,23 @@ for code, titre, chapeau, nums in TRACKS:
         lignes.append(f"| #{n} | {priorite(issues[n])} | {t} |")
     lignes.append("")
 
-print("\n".join(lignes))
+# ── Écriture en place ──────────────────────────────────────────────────────
+#
+# La section était recopiée à la main depuis la sortie standard. Une copie
+# manuelle se périme dès qu'on oublie de la refaire, et c'est précisément ce
+# que ce fichier reproche à `docs/api/openapi.json`. Le script substitue donc
+# lui-même, entre deux balises, et n'imprime plus rien à recopier.
+DEBUT = "<!-- INVENTAIRE:DEBUT — engendré par scripts/inventaire-wbs.py, ne pas éditer à la main -->"
+FIN = "<!-- INVENTAIRE:FIN -->"
+
+import pathlib as _pathlib
+
+wbs = _pathlib.Path("/home/ubuntu/koprogo/docs/WBS_v0_1_0.md")
+texte = wbs.read_text()
+assert DEBUT in texte and FIN in texte, (
+    "balises absentes du WBS : la section ne peut pas être remplacée sans risque"
+)
+avant = texte.split(DEBUT)[0]
+apres = texte.split(FIN)[1]
+wbs.write_text(avant + DEBUT + "\n\n" + "\n".join(lignes).strip() + "\n\n" + FIN + apres)
+print(f"docs/WBS_v0_1_0.md : {len(issues)} issues inventoriées")
