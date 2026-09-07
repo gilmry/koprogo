@@ -346,6 +346,64 @@ rend visible tout le reste. R15 empêche de créer un immeuble. R4 fait bannir l
 
 ### Track U — Refonte UX/UI (revue Claude Design du 2026-09-06)
 
+#### La remise de design est lisible depuis le dépôt
+
+Le projet **« Koprogo frontend review »** (`af8430c2-7cd9-494e-9b90-8b74c6e99217`,
+propriété de Farah) est accessible par le connecteur `claude_design`. Son
+`README.md` de remise fait autorité sur ce qui est demandé, et il corrige deux
+choses que le WBS supposait.
+
+**Les six maquettes sans issue ne sont pas du travail.** Le tableau « Files in
+this bundle » les classe comme des **recréations fidèles de l'existant** :
+`Syndic Dashboard (feature-dev)`, `Mobile (feature-dev)` et `KoproSidebarDev`
+reproduisent `feature/dev` ; `Landing`, `Login`, `Modules Lists`,
+`KoproSidebar` et les quatre `… Dashboard.dc.html` reproduisent `main`. Ce sont
+des références de comparaison — l'avant.
+
+**La page d'accueil et l'écran de connexion sont hors périmètre**, et la remise
+le dit : leurs défauts sont documentés dans la revue (G1–G4 pour l'accueil,
+dont l'absence des « 3 façons d'utiliser KoproGo » et du prix de 5 €/mois ;
+F1–F2 pour la connexion, dont une case « Se souvenir de moi » non
+fonctionnelle) mais **pas encore dessinés**.
+
+#### La Partie 0 de la remise est presque close
+
+La remise ouvre sur dix correctifs prérequis, « à faire d'abord, plusieurs
+éléments de la refonte en dépendent ». Neuf ont été traités le 2026-09-06 et
+le 2026-09-07, sans qu'on sache alors qu'ils formaient un bloc :
+
+| | Correctif | État |
+|---|---|---|
+| 0.1 | supprimer `tailwind.config.mjs` | fait (#790) |
+| 0.2 | aligner `theme-color` | fait (#796) |
+| 0.3 | classes Tailwind interpolées, tableau comptable | fait (#788) |
+| 0.4 | `md:grid-cols` interpolé, tableau copropriétaire | fait (#789) |
+| 0.5 | `console.log` du jeton et du `localStorage` | fait (#787) |
+| 0.6 | activité inventée à Paris et Lyon | fait (#791) |
+| 0.7 | énumérations brutes à l'écran | fait (#792) |
+| 0.8 | « Precedent » sans accent | fait (#793) |
+| 0.9 | piège de focus **+ `inert`** | **partiel** — piège fait (#794), `inert` ouvert (#831) |
+| 0.10 | inverser les points de rupture | ouvert — c'est #825 |
+
+#### Un arbitrage que la remise nomme elle-même
+
+Sa partie 6.3 signale qu'une proposition de design **contredit un test
+`@security` existant** : la barre latérale du comptable inclurait un groupe
+« Communauté », quand `Navigation.test.ts` affirme que « accountant n'a JAMAIS
+communaute ».
+
+La remise tranche par défaut : **« The test wins unless the product owner says
+otherwise. »** Et elle ajoute que si la règle doit changer, c'est une décision
+produit — mettre à jour `permissions.ts`, mettre à jour le test **avec un
+commentaire disant la nouvelle règle et son issue**, et le noter au changelog.
+Jamais supprimer l'assertion.
+
+Le même avertissement vaut pour le test qui compte **exactement cinq** menus
+métier chez le syndic : les deux entrées épinglées « Aujourd'hui » et « Mes
+ACP » ne doivent pas recevoir de `data-testid` en `navigation-menu-*`, sous
+peine de casser ce décompte.
+
+
 Entrée au périmètre 0.1.0 sur décision du 06. Dix-huit lots, dont l'ordre est
 contraint : U2 dépend de R1, et tout le reste dépend de U1.
 
@@ -496,7 +554,7 @@ Ces deux actes ne sont pas délégables : cf. `docs/governance/RESPONSABILITE.md
 
 ## Inventaire complet du périmètre 0.1.0
 
-**78 issues ouvertes** portent l'étiquette `release:0.1.0`. Elles sont
+**74 issues ouvertes** portent l'étiquette `release:0.1.0`. Elles sont
 toutes ci-dessous, sans exception : une issue du périmètre absente du WBS est
 une issue que personne ne planifie.
 
@@ -508,12 +566,12 @@ cinq jours.
 | Priorité | Nombre |
 |---|---|
 | critical | 6 |
-| high | 24 |
-| medium | 23 |
-| low | 2 |
+| high | 25 |
+| medium | 19 |
+| low | 1 |
 | — | 23 |
 
-### Track R — Défauts de recette navigateur (13)
+### Track R — Défauts de recette navigateur (8)
 
 Six recettes menées au navigateur entre le 2026-09-04 et le 2026-09-06. Le
 motif dominant, confirmé six fois : **une capacité écrite, testée, et
@@ -527,14 +585,9 @@ ne peut pas y arriver.
 | #814 | critical | Cinq rôles sur quatorze reçoivent une navigation entièrement vide : canSee() les fait tomber en fai… |
 | #779 | high | Rebrancher les six modules communautaires : 111 points d'entrée servis que le frontend n'appelle pa… |
 | #777 | medium | Le test negative_display_does_not_leak_business_internals échoue au hasard : un UUID aléatoire cont… |
-| #790 | medium | tailwind.config.mjs n'est jamais chargé et annonce une couleur de marque qui n'existe plus |
-| #791 | medium | Le tableau de bord admin affiche une activité récente inventée, située à Paris et à Lyon |
-| #792 | medium | Les statuts de tickets s'affichent en valeurs internes : Open, InProgress, Resolved, Closed |
-| #794 | medium | Le tiroir de navigation mobile n'a pas de piège de focus, et son overlay est un div déguisé en bout… |
-| #804 | medium | La PWA n'a jamais fonctionné : le service worker échoue à l'installation depuis novembre 2025 |
 | #829 | medium | Art. 3.87 § 7 — le syndic ne peut être mandataire, mais rien n'empêche d'enregistrer le mandat |
+| #831 | medium | Le tiroir mobile piège le focus mais n'inerte pas l'arrière-plan : un lecteur d'écran le traverse e… |
 | #793 | low | « Precedent » sans accent dans la pagination, y compris dans le libellé lu par les lecteurs d'écran |
-| #796 | low | La balise theme-color annonce un vert que l'application n'utilise plus |
 
 ### Track U — Refonte UX/UI (14)
 
@@ -620,7 +673,7 @@ au-delà du strict Art. 3.87.
 | #582 | — | [Story 4.7] CdC membre élu + action create_alert |
 | #583 | — | [Story 4.8] [cluster-coord] CommissaireAuxComptes + VerificationCertificate |
 
-### Track T — Dette d'infrastructure de test (5)
+### Track T — Dette d'infrastructure de test (6)
 
 Ce qui empêche la CI de dire la vérité. **Quatre jobs sur dix sont rouges en
 continu depuis le 2026-09-04 au moins** : `prettier`, le contrat OpenAPI,
@@ -632,6 +685,7 @@ apprend seulement à ne plus la regarder.
 | #540 | high | bug(test-infra): inventaire consolidé des ~27 scénarios BDD pré-existants rouges (révélés post-#524) |
 | #548 | high | bug(e2e): WP-D1/FE1 — ripple Playwright (59 specs) après JWT→cookie : auth.ts init-ordering 'Databa… |
 | #828 | high | Playwright s'exécute de nouveau et révèle 25 échecs, dont 18 en 401 sur les parcours du comptable |
+| #830 | high | Cinquante-neuf sélecteurs e2e se rabattent sur un titre si l'ancrage manque : le test passe et ne v… |
 | #443 | medium | BDD-MIGRATION-001: Finalize Decimal cascade in BDD/E2E tests (~50 errors residual) |
 | #696 | — | Instabilité smoke suite Playwright CI : 109 échecs sur specs pré-existantes (occurrence 2026-08-08) |
 
@@ -762,7 +816,7 @@ déplacé la date de leur retour.
 ### ⚠️ Le périmètre a doublé le 2026-09-06, et c'est une décision assumée
 
 **Tout ce qui restait en 0.2.0 entre en 0.1.0, avec la refonte UX/UI.** Le compte passe de
-**34 à 78 issues ouvertes** en `release:0.1.0` : les 31 ouvertes le 2026-09-06, les 24
+**34 à 74 issues ouvertes** en `release:0.1.0` : les 31 ouvertes le 2026-09-06, les 24
 qui étaient en 0.2.0, les 6 lots de la refonte, la documentation vivante et les défauts
 trouvés en vérifiant. Il ne reste plus rien en 0.2.0.
 
