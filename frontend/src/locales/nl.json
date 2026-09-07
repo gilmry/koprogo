@@ -1021,7 +1021,9 @@
     "typeAdvance": "Voorschot",
     "typeExtraordinary": "Buitengewoon",
     "typeRegular": "Gewoon",
-    "unit": "Kavel"
+    "unit": "Kavel",
+    "selectUnit": "-- Selecteer een kavel --",
+    "unitRequiredHint": "De bijdrage is verschuldigd aan de VME van de kavel: zonder kavel is zij aan niemand verschuldigd."
   },
   "convocations": {
     "actions": {

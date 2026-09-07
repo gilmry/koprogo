@@ -1021,7 +1021,9 @@
     "typeAdvance": "Provision",
     "typeExtraordinary": "Extraordinaire",
     "typeRegular": "Ordinaire",
-    "unit": "Lot"
+    "unit": "Lot",
+    "selectUnit": "-- Sélectionner un lot --",
+    "unitRequiredHint": "La quote-part est due à l'ACP du lot : sans lot, elle n'est due à personne."
   },
   "convocations": {
     "actions": {

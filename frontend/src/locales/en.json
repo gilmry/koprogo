@@ -1021,7 +1021,9 @@
     "typeAdvance": "Advance",
     "typeExtraordinary": "Extraordinary",
     "typeRegular": "Regular",
-    "unit": "Unit"
+    "unit": "Unit",
+    "selectUnit": "-- Select a unit --",
+    "unitRequiredHint": "The contribution is owed to the unit's association: without a unit, it is owed to no one."
   },
   "convocations": {
     "actions": {

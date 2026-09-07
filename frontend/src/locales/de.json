@@ -1021,7 +1021,9 @@
     "typeAdvance": "Vorschuss",
     "typeExtraordinary": "Außerordentlich",
     "typeRegular": "Ordentlich",
-    "unit": "Einheit"
+    "unit": "Einheit",
+    "selectUnit": "-- Los auswählen --",
+    "unitRequiredHint": "Der Beitrag ist der Eigentümergemeinschaft des Loses geschuldet: ohne Los ist er niemandem geschuldet."
   },
   "convocations": {
     "actions": {

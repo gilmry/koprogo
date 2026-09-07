@@ -44,7 +44,7 @@
     error = '';
     await withErrorHandling({
       action: async () => {
-        const payload = { owner_id: formData.owner_id, unit_id: formData.unit_id || null, description: formData.description, amount: parseFloat(formData.amount), contribution_type: formData.contribution_type, contribution_date: new Date(formData.contribution_date).toISOString(), account_code: formData.account_code };
+        const payload = { owner_id: formData.owner_id, unit_id: formData.unit_id, description: formData.description, amount: parseFloat(formData.amount), contribution_type: formData.contribution_type, contribution_date: new Date(formData.contribution_date).toISOString(), account_code: formData.account_code };
         return api.post('/owner-contributions', payload);
       },
       setLoading: (v: boolean) => loading = v,
@@ -66,11 +66,27 @@
       </select>
     </div>
     <div>
-      <label for="unit_id" class="block text-sm font-medium text-gray-700 mb-1">{$_('contributions.unit')}</label>
-      <select id="unit_id" bind:value={formData.unit_id} data-testid="contribution-unit-select" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-        <option value="">{$_('contributions.noSpecificUnit')}</option>
+      <!--
+        Le lot est OBLIGATOIRE, et il ne l'était pas.
+
+        Le serveur refuse toute quote-part sans lot : « Impossible de
+        déterminer l'ACP créancière ». Le rattachement vient de l'acte de base
+        et ne dépend ni de l'appelant ni du mandat en cours — une quote-part
+        due à personne n'est pas une quote-part (ADR-0045).
+
+        Ce formulaire offrait pourtant « Aucun lot spécifique », une option que
+        le serveur rejette SYSTÉMATIQUEMENT. Le syndic pouvait donc remplir
+        l'écran entier et n'apprendre qu'au dernier clic que ce choix n'existe
+        pas. Constaté par `SyndicCreationJourneys.spec.ts:36` (#832, #780).
+      -->
+      <label for="unit_id" class="block text-sm font-medium text-gray-700 mb-1">{$_('contributions.unit')} *</label>
+      <select id="unit_id" bind:value={formData.unit_id} required data-testid="contribution-unit-select" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+        <option value="" disabled>{$_('contributions.selectUnit')}</option>
         {#each units as unit}<option value={unit.id}>Lot {unit.unit_number} - {unit.floor}</option>{/each}
       </select>
+      <p class="mt-1 text-xs text-gray-500" data-testid="contribution-unit-hint">
+        {$_('contributions.unitRequiredHint')}
+      </p>
     </div>
     <div>
       <label for="contribution_type" class="block text-sm font-medium text-gray-700 mb-1">{$_('contributions.type')} *</label>
