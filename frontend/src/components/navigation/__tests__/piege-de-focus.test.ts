@@ -115,4 +115,61 @@ describe("le tiroir mobile retient le focus (#794)", () => {
     expect(source).toContain("drawerCloseButton?.focus()");
     expect(source).toContain("hamburgerButton?.focus()");
   });
+
+  /// `inert` fait ce que le piège ne peut pas faire (#831).
+  ///
+  /// Le piège intercepte Tab. Il n'intercepte ni la navigation par titres ou
+  /// par régions d'un lecteur d'écran — qui parcourt l'arbre d'accessibilité
+  /// entier —, ni la recherche dans la page, ni un clic hors de la zone
+  /// couverte par l'overlay.
+  it("rend le contenu de page inerte tiroir ouvert", () => {
+    expect(
+      source,
+      "L'inertie de l'arrière-plan a disparu. Un lecteur d'écran traverse de " +
+        "nouveau le contenu masqué : ce qu'il annonce n'est pas ce qui est " +
+        "affiché (#831).",
+    ).toContain("inerterLeFond");
+
+    const ouverture = source.slice(
+      source.indexOf("const openDrawer"),
+      source.indexOf("const closeDrawer"),
+    );
+    expect(ouverture, "`openDrawer` ne rend plus le fond inerte.").toContain(
+      "inerterLeFond(true)",
+    );
+
+    const fermeture = source.slice(
+      source.indexOf("const closeDrawer"),
+      source.indexOf("const handleNavClick"),
+    );
+    expect(
+      fermeture,
+      "**`closeDrawer` ne retire plus l'inertie.** C'est le pire des deux " +
+        "défauts possibles : un `inert` oublié rend l'application entière " +
+        "inutilisable au clavier, ce qui est plus grave que l'absence " +
+        "d'inertie qu'on cherchait à corriger.",
+    ).toContain("inerterLeFond(false)");
+  });
+
+  /// L'ordre compte, et il n'est pas intuitif.
+  ///
+  /// `focus()` sur un descendant d'un élément inerte ne fait rien. Rendre le
+  /// focus au hamburger avant d'avoir retiré l'inertie perdrait le curseur
+  /// clavier — précisément ce que ce lot cherche à éviter.
+  it("retire l'inertie AVANT de rendre le focus", () => {
+    const fermeture = source.slice(
+      source.indexOf("const closeDrawer"),
+      source.indexOf("const handleNavClick"),
+    );
+    const posInerte = fermeture.indexOf("inerterLeFond(false)");
+    const posFocus = fermeture.indexOf("hamburgerButton?.focus()");
+    expect(posInerte).toBeGreaterThan(-1);
+    expect(posFocus).toBeGreaterThan(-1);
+    expect(
+      posInerte,
+      "L'inertie est retirée APRÈS la remise du focus. `focus()` sur un " +
+        "descendant d'un élément inerte ne fait rien : l'utilisateur perdrait " +
+        "le curseur clavier à la fermeture du tiroir.",
+    ).toBeLessThan(posFocus);
+  });
 });

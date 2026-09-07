@@ -288,11 +288,47 @@
   // Drawer controls
   // ---------------------------------------------------------------------------
 
+  /// Rend le contenu de page inerte, ou le rend à la vie.
+  ///
+  /// ── Pourquoi `inert` en plus du piège de focus ───────────────────────────
+  ///
+  /// `piegerLeFocus` intercepte la touche Tab. Il n'intercepte pas :
+  ///
+  ///   — la navigation par titres ou par régions d'un lecteur d'écran (H, D, R
+  ///     sous NVDA), qui parcourt l'arbre d'accessibilité entier ;
+  ///   — la recherche dans la page du navigateur, qui trouve et met le focus
+  ///     sur du texte masqué ;
+  ///   — un clic sur une zone que l'overlay ne couvre pas.
+  ///
+  /// Le piège rend le tiroir difficile à quitter ; `inert` rend l'arrière-plan
+  /// **inexistant**. C'est le second que la spécification ARIA appelle un
+  /// dialogue modal (#831).
+  ///
+  /// ── La portée, et pourquoi elle n'est pas `<body>` ───────────────────────
+  ///
+  /// `inert` sur `<body>` neutraliserait aussi le tiroir, qui en est un
+  /// descendant. On vise donc son frère : `#app-content`, posé par
+  /// `Layout.astro` autour du contenu de page.
+  ///
+  /// `ToastContainer` en est délibérément exclu — un message d'erreur doit
+  /// rester annonçable tiroir ouvert.
+  const inerterLeFond = (inerte: boolean) => {
+    if (typeof document === "undefined") return;
+    const fond = document.getElementById("app-content");
+    if (!fond) return;
+    if (inerte) {
+      fond.setAttribute("inert", "");
+    } else {
+      fond.removeAttribute("inert");
+    }
+  };
+
   const openDrawer = () => {
     drawerOpen = true;
     if (typeof document !== "undefined") {
       document.body.style.overflow = "hidden";
     }
+    inerterLeFond(true);
     requestAnimationFrame(() => drawerCloseButton?.focus());
   };
 
@@ -301,6 +337,10 @@
     if (typeof document !== "undefined") {
       document.body.style.overflow = "";
     }
+    // Rendre la vie au fond AVANT de lui remettre le focus : `focus()` sur un
+    // descendant d'un élément inerte ne fait rien, et l'utilisateur perdrait
+    // le curseur clavier — précisément ce que ce lot cherche à éviter.
+    inerterLeFond(false);
     requestAnimationFrame(() => hamburgerButton?.focus());
   };
 
