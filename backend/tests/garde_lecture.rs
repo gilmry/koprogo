@@ -145,7 +145,7 @@ const DETTE_AU_2026_09_06: usize = 8;
 /// c'est le travail de l'issue #772.
 ///
 /// **Ce nombre ne doit que DIMINUER.**
-/// 109 au relevé du 2026-09-06 ; **89** au 2026-09-07.
+/// 109 au relevé du 2026-09-06 ; **73** au 2026-09-07.
 ///
 /// La baisse ne vient pas de gardes ajoutés mais d'une uniformisation :
 /// soixante-treize handlers comparaient `auth.role == "superadmin"` à la main,
@@ -158,13 +158,20 @@ const DETTE_AU_2026_09_06: usize = 8;
 /// exacte qui a produit #814 (`community-moderator` contre
 /// `community.moderator`) et #836.
 ///
-/// Les neuf dernières viennent d'un défaut du DÉTECTEUR, pas du code :
+/// Seize autres viennent d'un marqueur OUBLIÉ : `verify_org_access`, la
+/// primitive de cloisonnement elle-même, employée vingt-quatre fois et absente
+/// de la liste. Les dix routes de `gamification_handlers` l'appellent
+/// directement sur l'`organization_id` reçu en chemin — elles refusent bien
+/// une organisation étrangère, et étaient comptées comme si elles ne
+/// vérifiaient rien.
+///
+/// Les neuf précédentes viennent d'un défaut du DÉTECTEUR, pas du code :
 /// `rustfmt` coupe `user.organization_id` sur deux lignes, et le marqueur ne
 /// s'y retrouvait plus. `decrypt_consumption`, qui déchiffre une facture
 /// d'énergie, était ainsi comptée comme non protégée alors qu'elle compare
 /// bien l'organisation de l'appelant à celle de la ressource. Les espaces sont
 /// désormais normalisés avant la recherche.
-const IDENTITE_NON_VERIFIEE_AU_2026_09_06: usize = 89;
+const IDENTITE_NON_VERIFIEE_AU_2026_09_06: usize = 73;
 
 fn racine_handlers() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("src/infrastructure/web/handlers")
@@ -176,7 +183,17 @@ fn racine_handlers() -> PathBuf {
 /// `verifier_mandat_sur_ag` fait de même depuis une assemblée ;
 /// `require_organization` et `is_superadmin` sont des décisions plus grossières
 /// mais réelles. Un corps qui n'en contient aucun ne décide de rien.
-const MARQUEURS_DE_GARDE: [&str; 12] = [
+const MARQUEURS_DE_GARDE: [&str; 13] = [
+    // La primitive de cloisonnement elle-même — celle que les huit
+    // `verify_*_org_access` finissent tous par appeler après avoir remonté la
+    // chaîne jusqu'à l'organisation.
+    //
+    // Elle manquait à cette liste, alors qu'elle est employée vingt-quatre
+    // fois. Toutes les routes qui vérifient DIRECTEMENT un `organization_id`
+    // reçu en chemin — les dix de `gamification_handlers`, par exemple —
+    // étaient donc comptées comme non protégées, alors qu'elles refusent bel
+    // et bien une organisation étrangère.
+    "verify_org_access",
     "verify_acp_org_access",
     "verify_document_org_access",
     "verify_unit_org_access",
