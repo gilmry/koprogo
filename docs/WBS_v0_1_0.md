@@ -556,7 +556,7 @@ Ces deux actes ne sont pas délégables : cf. `docs/governance/RESPONSABILITE.md
 
 ## Inventaire complet du périmètre 0.1.0
 
-**68 issues ouvertes** portent l'étiquette `release:0.1.0`. Elles sont
+**67 issues ouvertes** portent l'étiquette `release:0.1.0`. Elles sont
 toutes ci-dessous, sans exception : une issue du périmètre absente du WBS est
 une issue que personne ne planifie.
 
@@ -569,7 +569,7 @@ cinq jours.
 |---|---|
 | critical | 5 |
 | high | 23 |
-| medium | 18 |
+| medium | 17 |
 | — | 22 |
 
 ### Track R — Défauts de recette navigateur (3)
@@ -671,7 +671,7 @@ au-delà du strict Art. 3.87.
 | #582 | — | [Story 4.7] CdC membre élu + action create_alert |
 | #583 | — | [Story 4.8] [cluster-coord] CommissaireAuxComptes + VerificationCertificate |
 
-### Track T — Dette d'infrastructure de test (4)
+### Track T — Dette d'infrastructure de test (3)
 
 Ce qui empêche la CI de dire la vérité. Les quatre jobs rouges en continu du
 2026-09-04 — `prettier`, le contrat OpenAPI, `oasdiff` et la suite BDD — sont
@@ -689,7 +689,6 @@ affiche sans bloquer apprend à croire qu'on regarde.
 
 | Issue | Prio | Intitulé |
 |---|---|---|
-| #443 | medium | BDD-MIGRATION-001: Finalize Decimal cascade in BDD/E2E tests (~50 errors residual) |
 | #832 | medium | Quinze specs Playwright échouent sans erreur d'identité : les ancrages existent mais l'élément n'es… |
 | #837 | medium | La matrice de conformité légale déclare manquantes des règles implémentées : périmée depuis le 2026… |
 | #696 | — | Instabilité smoke suite Playwright CI : 109 échecs sur specs pré-existantes (occurrence 2026-08-08) |
