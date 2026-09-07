@@ -1,7 +1,9 @@
 use crate::application::dto::{
     CreateQuoteDto, QuoteComparisonRequestDto, QuoteDecisionDto, SubmitQuoteDto,
 };
-use crate::infrastructure::web::middleware::scope_guard::verify_building_org_access;
+use crate::infrastructure::web::middleware::scope_guard::{
+    verify_building_org_access, verify_quote_org_access,
+};
 use crate::infrastructure::web::middleware::AuthenticatedUser;
 use crate::infrastructure::web::AppState;
 use actix_web::{delete, get, post, put, web, HttpResponse, Responder, ResponseError};
@@ -32,9 +34,28 @@ pub async fn create_quote(
 #[get("/quotes/{id}")]
 pub async fn get_quote(
     data: web::Data<AppState>,
-    _auth: AuthenticatedUser,
+    auth: AuthenticatedUser,
     id: web::Path<Uuid>,
 ) -> impl Responder {
+    // Cloisonnement : ce devis doit relever d'une ACP que cet utilisateur a le
+    // droit de voir. La route n'ayant pas d'immeuble en chemin, la chaîne
+    // devis → immeuble → ACP est remontée par le garde.
+    //
+    // Ce contrôle porte sur le PÉRIMÈTRE, pas sur le droit d'agir : il dit que
+    // ce devis n'est pas celui d'une autre copropriété, pas que cet
+    // utilisateur a qualité pour l'examiner (#772).
+    if let Err(err) = verify_quote_org_access(
+        &auth,
+        *id,
+        &data.quote_use_cases,
+        &data.building_use_cases,
+        &data.acp_use_cases,
+    )
+    .await
+    {
+        return err.error_response();
+    }
+
     match data.quote_use_cases.get_quote(id.into_inner()).await {
         Ok(Some(quote)) => HttpResponse::Ok().json(quote),
         Ok(None) => HttpResponse::NotFound().json(serde_json::json!({
@@ -141,10 +162,29 @@ pub async fn list_quotes_by_status(
 #[post("/quotes/{id}/submit")]
 pub async fn submit_quote(
     data: web::Data<AppState>,
-    _auth: AuthenticatedUser,
+    auth: AuthenticatedUser,
     id: web::Path<Uuid>,
     body: web::Bytes,
 ) -> impl Responder {
+    // Cloisonnement : ce devis doit relever d'une ACP que cet utilisateur a le
+    // droit de voir. La route n'ayant pas d'immeuble en chemin, la chaîne
+    // devis → immeuble → ACP est remontée par le garde.
+    //
+    // Ce contrôle porte sur le PÉRIMÈTRE, pas sur le droit d'agir : il dit que
+    // ce devis n'est pas celui d'une autre copropriété, pas que cet
+    // utilisateur a qualité pour l'examiner (#772).
+    if let Err(err) = verify_quote_org_access(
+        &auth,
+        *id,
+        &data.quote_use_cases,
+        &data.building_use_cases,
+        &data.acp_use_cases,
+    )
+    .await
+    {
+        return err.error_response();
+    }
+
     // No body = "confirm existing pricing" (use case rejects this unless the
     // quote already has a price). A non-empty body must parse as
     // SubmitQuoteDto — unlike Option<web::Json<T>>, a malformed body here
@@ -179,9 +219,28 @@ pub async fn submit_quote(
 #[post("/quotes/{id}/review")]
 pub async fn start_review(
     data: web::Data<AppState>,
-    _auth: AuthenticatedUser,
+    auth: AuthenticatedUser,
     id: web::Path<Uuid>,
 ) -> impl Responder {
+    // Cloisonnement : ce devis doit relever d'une ACP que cet utilisateur a le
+    // droit de voir. La route n'ayant pas d'immeuble en chemin, la chaîne
+    // devis → immeuble → ACP est remontée par le garde.
+    //
+    // Ce contrôle porte sur le PÉRIMÈTRE, pas sur le droit d'agir : il dit que
+    // ce devis n'est pas celui d'une autre copropriété, pas que cet
+    // utilisateur a qualité pour l'examiner (#772).
+    if let Err(err) = verify_quote_org_access(
+        &auth,
+        *id,
+        &data.quote_use_cases,
+        &data.building_use_cases,
+        &data.acp_use_cases,
+    )
+    .await
+    {
+        return err.error_response();
+    }
+
     match data.quote_use_cases.start_review(id.into_inner()).await {
         Ok(quote) => HttpResponse::Ok().json(quote),
         Err(e) => HttpResponse::BadRequest().json(serde_json::json!({
@@ -237,9 +296,28 @@ pub async fn reject_quote(
 #[post("/quotes/{id}/withdraw")]
 pub async fn withdraw_quote(
     data: web::Data<AppState>,
-    _auth: AuthenticatedUser,
+    auth: AuthenticatedUser,
     id: web::Path<Uuid>,
 ) -> impl Responder {
+    // Cloisonnement : ce devis doit relever d'une ACP que cet utilisateur a le
+    // droit de voir. La route n'ayant pas d'immeuble en chemin, la chaîne
+    // devis → immeuble → ACP est remontée par le garde.
+    //
+    // Ce contrôle porte sur le PÉRIMÈTRE, pas sur le droit d'agir : il dit que
+    // ce devis n'est pas celui d'une autre copropriété, pas que cet
+    // utilisateur a qualité pour l'examiner (#772).
+    if let Err(err) = verify_quote_org_access(
+        &auth,
+        *id,
+        &data.quote_use_cases,
+        &data.building_use_cases,
+        &data.acp_use_cases,
+    )
+    .await
+    {
+        return err.error_response();
+    }
+
     match data.quote_use_cases.withdraw_quote(id.into_inner()).await {
         Ok(quote) => HttpResponse::Ok().json(quote),
         Err(e) => HttpResponse::BadRequest().json(serde_json::json!({
@@ -274,10 +352,29 @@ pub async fn compare_quotes(
 #[put("/quotes/{id}/contractor-rating")]
 pub async fn update_contractor_rating(
     data: web::Data<AppState>,
-    _auth: AuthenticatedUser,
+    auth: AuthenticatedUser,
     id: web::Path<Uuid>,
     request: web::Json<serde_json::Value>,
 ) -> impl Responder {
+    // Cloisonnement : ce devis doit relever d'une ACP que cet utilisateur a le
+    // droit de voir. La route n'ayant pas d'immeuble en chemin, la chaîne
+    // devis → immeuble → ACP est remontée par le garde.
+    //
+    // Ce contrôle porte sur le PÉRIMÈTRE, pas sur le droit d'agir : il dit que
+    // ce devis n'est pas celui d'une autre copropriété, pas que cet
+    // utilisateur a qualité pour l'examiner (#772).
+    if let Err(err) = verify_quote_org_access(
+        &auth,
+        *id,
+        &data.quote_use_cases,
+        &data.building_use_cases,
+        &data.acp_use_cases,
+    )
+    .await
+    {
+        return err.error_response();
+    }
+
     let rating = match request.get("rating").and_then(|v| v.as_i64()) {
         Some(r) => r as i32,
         None => {
@@ -304,9 +401,28 @@ pub async fn update_contractor_rating(
 #[delete("/quotes/{id}")]
 pub async fn delete_quote(
     data: web::Data<AppState>,
-    _auth: AuthenticatedUser,
+    auth: AuthenticatedUser,
     id: web::Path<Uuid>,
 ) -> impl Responder {
+    // Cloisonnement : ce devis doit relever d'une ACP que cet utilisateur a le
+    // droit de voir. La route n'ayant pas d'immeuble en chemin, la chaîne
+    // devis → immeuble → ACP est remontée par le garde.
+    //
+    // Ce contrôle porte sur le PÉRIMÈTRE, pas sur le droit d'agir : il dit que
+    // ce devis n'est pas celui d'une autre copropriété, pas que cet
+    // utilisateur a qualité pour l'examiner (#772).
+    if let Err(err) = verify_quote_org_access(
+        &auth,
+        *id,
+        &data.quote_use_cases,
+        &data.building_use_cases,
+        &data.acp_use_cases,
+    )
+    .await
+    {
+        return err.error_response();
+    }
+
     match data.quote_use_cases.delete_quote(id.into_inner()).await {
         Ok(true) => HttpResponse::NoContent().finish(),
         Ok(false) => HttpResponse::NotFound().json(serde_json::json!({

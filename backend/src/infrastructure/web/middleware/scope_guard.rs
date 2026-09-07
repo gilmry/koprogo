@@ -43,6 +43,7 @@ use crate::application::use_cases::building_use_cases::BuildingUseCases;
 use crate::application::use_cases::convocation_use_cases::ConvocationUseCases;
 use crate::application::use_cases::document_use_cases::DocumentUseCases;
 use crate::application::use_cases::owner_use_cases::OwnerUseCases;
+use crate::application::use_cases::quote_use_cases::QuoteUseCases;
 use crate::application::use_cases::resource_booking_use_cases::ResourceBookingUseCases;
 use crate::application::use_cases::unit_use_cases::UnitUseCases;
 use crate::infrastructure::web::app_state::AppState;
@@ -392,6 +393,52 @@ pub async fn verify_document_org_access(
 /// cloisonnement en un endroit de plus — et c'est cette duplication, recopiée
 /// à la main dans chaque gestionnaire, que l'issue #772 désigne comme la cause
 /// première de la fuite.
+/// Vérifie le mandat de l'appelant sur l'organisation d'un **devis**.
+///
+/// ── Ce que cette garde protège ─────────────────────────────────────────────
+///
+/// Un devis dit qui a soumis quel prix pour quels travaux. Le lire hors de son
+/// ACP, c'est lire la concurrence — un entrepreneur ayant un compte sur la
+/// plateforme y verrait les offres de ses concurrents, montants compris.
+///
+/// Neuf routes agissent sur un devis par son seul identifiant : le lire, le
+/// soumettre, l'examiner, le retirer, le noter, le supprimer. Aucune ne reçoit
+/// d'immeuble, d'où la remontée devis → immeuble → ACP → organisation.
+///
+/// ── Ce qu'elle ne fait PAS ────────────────────────────────────────────────
+///
+/// Elle vérifie le **périmètre**, pas le droit d'agir. Examiner un devis
+/// (`review`) ou noter un prestataire n'appartient pas à tout membre de l'ACP —
+/// ce sont des actes de gestion. Ce garde ne dit donc pas « cet utilisateur
+/// peut le faire », il dit « ce devis n'est pas celui d'une autre
+/// copropriété ».
+///
+/// Confondre les deux serait le défaut que l'issue #772 décrit : un garde qui
+/// vérifie la mauvaise chose est pire qu'un garde absent, puisqu'il fait
+/// croire la route protégée.
+pub async fn verify_quote_org_access(
+    user: &AuthenticatedUser,
+    quote_id: Uuid,
+    quote_use_cases: &QuoteUseCases,
+    building_use_cases: &BuildingUseCases,
+    acp_use_cases: &AcpUseCases,
+) -> Result<(), AppError> {
+    if user.is_superadmin() {
+        return Ok(());
+    }
+
+    let quote = quote_use_cases
+        .get_quote(quote_id)
+        .await
+        .map_err(AppError::from)?
+        .ok_or(AppError::NotFound(format!("Quote not found: {quote_id}")))?;
+
+    let building_id = Uuid::parse_str(&quote.building_id)
+        .map_err(|_| AppError::Internal("Invalid quote.building_id format".to_string()))?;
+
+    verify_building_org_access(user, building_id, building_use_cases, acp_use_cases).await
+}
+
 pub async fn verify_booking_org_access(
     user: &AuthenticatedUser,
     booking_id: Uuid,
