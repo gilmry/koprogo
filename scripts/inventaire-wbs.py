@@ -67,7 +67,7 @@ runbook n'existent pas sur la machine.""",
  ("G", "Gate humain et gouvernance documentaire", """Les deux actes non délégables — la revue humaine et la pose du tag — et ce
 qui les prépare : la taxonomie des tests comme gate de release, et le
 désencombrement de la documentation.""",
-  [426,427]),
+  [427]),
 
  ("?", "À arbitrer — présence en 0.1.0 douteuse", """Une issue dont l'étiquette et le titre se contredisent. Il faut trancher, pas
 laisser le doute dans le périmètre.""",

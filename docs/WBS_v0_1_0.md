@@ -556,7 +556,7 @@ Ces deux actes ne sont pas délégables : cf. `docs/governance/RESPONSABILITE.md
 
 ## Inventaire complet du périmètre 0.1.0
 
-**67 issues ouvertes** portent l'étiquette `release:0.1.0`. Elles sont
+**66 issues ouvertes** portent l'étiquette `release:0.1.0`. Elles sont
 toutes ci-dessous, sans exception : une issue du périmètre absente du WBS est
 une issue que personne ne planifie.
 
@@ -568,7 +568,7 @@ cinq jours.
 | Priorité | Nombre |
 |---|---|
 | critical | 5 |
-| high | 23 |
+| high | 22 |
 | medium | 17 |
 | — | 22 |
 
@@ -723,7 +723,7 @@ runbook n'existent pas sur la machine.
 | #466 | — | RFC: Stratégie GitOps multi-environnement — branches infra/* + main + ApplicationSet refactor |
 | #718 | — | [BUG] 502 Bad Gateway / timeouts sur api.koprogo.com sous rafale de requêtes (constaté via run E2E … |
 
-### Track G — Gate humain et gouvernance documentaire (2)
+### Track G — Gate humain et gouvernance documentaire (1)
 
 Les deux actes non délégables — la revue humaine et la pose du tag — et ce
 qui les prépare : la taxonomie des tests comme gate de release, et le
@@ -732,7 +732,6 @@ désencombrement de la documentation.
 | Issue | Prio | Intitulé |
 |---|---|---|
 | #427 | critical | Validation — taxonomie tests 4 catégories + revue humaine+Cowork comme gate release |
-| #426 | high | Doc — Archiver binaires root, dédoublonner docs/, désinfler CLAUDE.md, mettre à jour .claude/ |
 
 ### Track ? — À arbitrer — présence en 0.1.0 douteuse (1)
 
