@@ -1,5 +1,6 @@
 pub mod app_state;
 pub mod auth_cookie;
+pub mod classification_erreurs;
 pub mod handlers;
 pub mod middleware;
 pub mod routes;

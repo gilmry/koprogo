@@ -1,6 +1,7 @@
 use crate::application::dto::{
     CastVoteDto, CreatePollDto, PageRequest, PollFilters, SortOrder, UpdatePollDto,
 };
+use crate::infrastructure::web::classification_erreurs::{est_interdit, est_introuvable};
 use crate::infrastructure::web::middleware::AuthenticatedUser;
 use crate::infrastructure::web::AppState;
 use actix_web::{delete, get, post, put, web, HttpRequest, HttpResponse};
@@ -79,7 +80,7 @@ pub async fn get_poll(
     match state.poll_use_cases.get_poll(poll_id).await {
         Ok(poll) => HttpResponse::Ok().json(poll),
         Err(e) => {
-            if e.contains("not found") {
+            if est_introuvable(&e) {
                 HttpResponse::NotFound().json(serde_json::json!({
                     "error": e
                 }))
@@ -134,11 +135,11 @@ pub async fn update_poll(
     {
         Ok(poll) => HttpResponse::Ok().json(poll),
         Err(e) => {
-            if e.contains("not found") {
+            if est_introuvable(&e) {
                 HttpResponse::NotFound().json(serde_json::json!({
                     "error": e
                 }))
-            } else if e.contains("Only the poll creator") {
+            } else if est_interdit(&e) {
                 HttpResponse::Forbidden().json(serde_json::json!({
                     "error": e
                 }))
@@ -296,11 +297,11 @@ pub async fn publish_poll(
     {
         Ok(poll) => HttpResponse::Ok().json(poll),
         Err(e) => {
-            if e.contains("not found") {
+            if est_introuvable(&e) {
                 HttpResponse::NotFound().json(serde_json::json!({
                     "error": e
                 }))
-            } else if e.contains("Only the poll creator") {
+            } else if est_interdit(&e) {
                 HttpResponse::Forbidden().json(serde_json::json!({
                     "error": e
                 }))
@@ -353,11 +354,11 @@ pub async fn close_poll(
     {
         Ok(poll) => HttpResponse::Ok().json(poll),
         Err(e) => {
-            if e.contains("not found") {
+            if est_introuvable(&e) {
                 HttpResponse::NotFound().json(serde_json::json!({
                     "error": e
                 }))
-            } else if e.contains("Only the poll creator") {
+            } else if est_interdit(&e) {
                 HttpResponse::Forbidden().json(serde_json::json!({
                     "error": e
                 }))
@@ -410,11 +411,11 @@ pub async fn cancel_poll(
     {
         Ok(poll) => HttpResponse::Ok().json(poll),
         Err(e) => {
-            if e.contains("not found") {
+            if est_introuvable(&e) {
                 HttpResponse::NotFound().json(serde_json::json!({
                     "error": e
                 }))
-            } else if e.contains("Only the poll creator") {
+            } else if est_interdit(&e) {
                 HttpResponse::Forbidden().json(serde_json::json!({
                     "error": e
                 }))
@@ -470,7 +471,7 @@ pub async fn delete_poll(
             "error": "Poll not found"
         })),
         Err(e) => {
-            if e.contains("Only the poll creator") {
+            if est_interdit(&e) {
                 HttpResponse::Forbidden().json(serde_json::json!({
                     "error": e
                 }))
@@ -532,7 +533,7 @@ pub async fn cast_poll_vote(
                 HttpResponse::Conflict().json(serde_json::json!({
                     "error": e
                 }))
-            } else if e.contains("not found") {
+            } else if est_introuvable(&e) {
                 HttpResponse::NotFound().json(serde_json::json!({
                     "error": e
                 }))
@@ -581,7 +582,7 @@ pub async fn get_poll_results(
     match state.poll_use_cases.get_poll_results(poll_id).await {
         Ok(results) => HttpResponse::Ok().json(results),
         Err(e) => {
-            if e.contains("not found") {
+            if est_introuvable(&e) {
                 HttpResponse::NotFound().json(serde_json::json!({
                     "error": e
                 }))
