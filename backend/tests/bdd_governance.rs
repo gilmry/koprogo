@@ -9169,6 +9169,36 @@ async fn then_proxy_owner_id(world: &mut GovernanceWorld, mandataire: String) {
     );
 }
 
+/// Retire les accents, pour comparer un message à un fragment de scénario.
+///
+/// Les fichiers `.feature` de ce dépôt sont écrits **sans accents** — « Rejet
+/// par Francois », « coproprietaires », « doit etre en statut Reached ». Les
+/// messages du domaine, eux, sont en français correct : ils s'adressent à un
+/// syndic, pas à un analyseur.
+///
+/// Comparer les deux sans précaution ferait échouer un scénario pour un accent
+/// circonflexe. Et les deux mauvaises réponses sont pires que le problème :
+/// retirer les accents des messages produits abîmerait ce que lit
+/// l'utilisateur, et relâcher la comparaison en `contains` partiel laisserait
+/// passer un message qui dit autre chose.
+///
+/// On normalise donc **les deux côtés**, et seulement sur les accents.
+fn sans_accents(s: &str) -> String {
+    s.chars()
+        .map(|c| match c {
+            'à' | 'â' | 'ä' => 'a',
+            'é' | 'è' | 'ê' | 'ë' => 'e',
+            'î' | 'ï' => 'i',
+            'ô' | 'ö' => 'o',
+            'ù' | 'û' | 'ü' => 'u',
+            'ç' => 'c',
+            'À' | 'Â' => 'A',
+            'É' | 'È' | 'Ê' => 'E',
+            autre => autre,
+        })
+        .collect()
+}
+
 #[then(regex = r#"^an error "([^"]*)" is returned$"#)]
 async fn then_erreur_attendue(world: &mut GovernanceWorld, message: String) {
     assert!(
@@ -9177,7 +9207,7 @@ async fn then_erreur_attendue(world: &mut GovernanceWorld, message: String) {
     );
     let erreur = world.operation_error.clone().unwrap_or_default();
     assert!(
-        erreur.contains(&message),
+        sans_accents(&erreur).contains(&sans_accents(&message)),
         "message attendu « {message} », obtenu « {erreur} »"
     );
 }
@@ -9568,4 +9598,238 @@ async fn when_syndic_refuse_avec_motif(
             world.operation_error = Some(e);
         }
     }
+}
+
+/// Monte le parcours d'AGE jusqu'à un état donné.
+///
+/// Les scénarios de retrait, d'expiration et de refus partent tous d'une
+/// demande déjà constituée. Les rejouer à la main dans chaque `Given`
+/// produirait cinq copies d'une même séquence — et cinq copies d'une même
+/// chose finissent par diverger, ce que cette journée a montré assez de fois.
+async fn monter_demande_age_parc_royal(
+    world: &mut GovernanceWorld,
+    cosignataires: &[(&str, &str)],
+) {
+    if world.pool.is_none() {
+        world.setup_database().await;
+    }
+    given_parc_royal_building(world, "Residence du Parc Royal".to_string(), 182, 10000).await;
+    given_parc_royal_syndic(world, "Francois Leroy".to_string()).await;
+
+    // Les cinq copropriétaires du parcours, avec leurs quotités réelles.
+    let pool = world.pool.as_ref().unwrap().clone();
+    let org_id = world.org_id.unwrap();
+    world.age_request_owner_ids.clear();
+    for (nom_complet, part) in [
+        ("Marcel Dupont", "0.045"),
+        ("Alice Dubois", "0.045"),
+        ("Charlie Martin", "0.066"),
+        ("Bob Janssen", "0.043"),
+        ("Diane Peeters", "0.058"),
+    ] {
+        let (prenom, nom) = nom_complet.split_once(' ').unwrap();
+        let owner_id = Uuid::new_v4();
+        sqlx::query(
+            r#"INSERT INTO owners (id, organization_id, first_name, last_name, email, phone,
+                                   address, city, postal_code, country, created_at, updated_at)
+               VALUES ($1, $2, $3, $4, $5, '+32470000000', 'Avenue du Parc 1',
+                       'Bruxelles', '1000', 'Belgique', NOW(), NOW())"#,
+        )
+        .bind(owner_id)
+        .bind(org_id)
+        .bind(prenom)
+        .bind(nom)
+        .bind(format!("{}@age-parc.be", prenom.to_lowercase()))
+        .execute(&pool)
+        .await
+        .expect("insert copropriétaire du parcours AGE");
+        world.age_request_owner_ids.push((
+            nom_complet.to_string(),
+            owner_id,
+            part.parse().unwrap(),
+        ));
+    }
+
+    let uc = world.age_request_use_cases.as_ref().unwrap().clone();
+    let marcel = age_owner_par_prenom(world, "Marcel");
+    let resp = uc
+        .create(
+            org_id,
+            marcel,
+            CreateAgeRequestDto {
+                building_id: world.building_id.unwrap(),
+                title: "Travaux urgents de renovation".to_string(),
+                description: Some("Toiture, facade, electricite des communs.".to_string()),
+            },
+        )
+        .await
+        .expect("création de la demande d'AGE");
+    world.last_age_request_id = Some(resp.id);
+
+    let ouverte = uc
+        .open(resp.id, org_id, marcel)
+        .await
+        .expect("ouverture aux signatures");
+    world.last_age_request_response = Some(ouverte);
+
+    for (prenom, part) in cosignataires {
+        let dto = AddCosignatoryDto {
+            owner_id: age_owner_par_prenom(world, prenom),
+            shares_pct: part.parse().expect("quote-part lisible"),
+        };
+        let r = uc
+            .add_cosignatory(resp.id, org_id, dto)
+            .await
+            .unwrap_or_else(|e| panic!("cosignature de {prenom} : {e}"));
+        world.last_age_request_response = Some(r);
+    }
+    world.operation_success = true;
+    world.operation_error = None;
+}
+
+#[given("an open AGE request created by Marcel")]
+async fn given_demande_age_ouverte_par_marcel(world: &mut GovernanceWorld) {
+    monter_demande_age_parc_royal(world, &[]).await;
+}
+
+#[given("an open AGE request by Marcel without cosignatories")]
+async fn given_demande_age_sans_cosignataire(world: &mut GovernanceWorld) {
+    monter_demande_age_parc_royal(world, &[]).await;
+}
+
+/// Neuf pour cent : la demande existe, le seuil n'est pas atteint.
+///
+/// C'est l'état où la soumission doit être refusée — un cinquième des quotités
+/// n'est pas réuni, et soumettre reviendrait à faire courir un délai que rien
+/// ne justifie.
+#[given("an open AGE request with Marcel (4.5%) and Alice (4.5%) = 9.0%")]
+async fn given_demande_age_a_neuf_pourcent(world: &mut GovernanceWorld) {
+    monter_demande_age_parc_royal(world, &[("Marcel", "0.045"), ("Alice", "0.045")]).await;
+}
+
+#[given(
+    "an AGE request with Marcel (4.5%), Alice (4.5%), Charlie (6.6%), Bob (4.3%), Diane (5.8%) as cosignatories"
+)]
+async fn given_demande_age_complete(world: &mut GovernanceWorld) {
+    monter_demande_age_parc_royal(
+        world,
+        &[
+            ("Marcel", "0.045"),
+            ("Alice", "0.045"),
+            ("Charlie", "0.066"),
+            ("Bob", "0.043"),
+            ("Diane", "0.058"),
+        ],
+    )
+    .await;
+}
+
+#[given(regex = r#"^the AGE request is in status "Reached" \(total 25\.7%\)$"#)]
+async fn given_demande_age_au_seuil(world: &mut GovernanceWorld) {
+    let resp = world
+        .last_age_request_response
+        .as_ref()
+        .expect("aucune demande d'AGE en mémoire");
+    assert!(
+        resp.threshold_reached,
+        "Le seuil devrait être atteint à 25,7 %, or `threshold_reached` est faux \
+         (cumul {}). Le scénario du retrait n'éprouverait alors rien.",
+        resp.total_shares_pct
+    );
+}
+
+#[given("a submitted AGE request by Marcel to Francois (status \"Submitted\")")]
+async fn given_demande_age_soumise(world: &mut GovernanceWorld) {
+    given_demande_age_complete(world).await;
+    let uc = world.age_request_use_cases.as_ref().unwrap().clone();
+    let resp = uc
+        .submit_to_syndic(
+            world.last_age_request_id.unwrap(),
+            world.org_id.unwrap(),
+            age_owner_par_prenom(world, "Marcel"),
+        )
+        .await
+        .expect("soumission au syndic");
+    world.last_age_request_response = Some(resp);
+}
+
+/// Le retrait d'une signature, et ce qu'il peut faire perdre.
+///
+/// Art. 3.87 § 2 : le seuil doit être atteint **au moment de la soumission**.
+/// Un cosignataire qui se rétracte fait donc retomber la demande sous la barre
+/// si son poids était décisif — c'est ce que le scénario éprouve en retirant
+/// Bob (21,4 %, encore au-dessus) puis Charlie (14,8 %, en dessous).
+#[when(regex = r#"^([A-Z][a-z]+) (?:also )?removes (?:his|her) signature$"#)]
+async fn when_retire_sa_signature(world: &mut GovernanceWorld, prenom: String) {
+    let uc = world.age_request_use_cases.as_ref().unwrap().clone();
+    match uc
+        .remove_cosignatory(
+            world.last_age_request_id.unwrap(),
+            age_owner_par_prenom(world, &prenom),
+            world.org_id.unwrap(),
+        )
+        .await
+    {
+        Ok(resp) => {
+            world.last_age_request_response = Some(resp);
+            world.operation_success = true;
+            world.operation_error = None;
+        }
+        Err(e) => {
+            world.operation_success = false;
+            world.operation_error = Some(e);
+        }
+    }
+}
+
+#[then("threshold_reached should still be true")]
+async fn then_seuil_toujours_atteint(world: &mut GovernanceWorld) {
+    let resp = world
+        .last_age_request_response
+        .as_ref()
+        .expect("aucune demande d'AGE en mémoire");
+    assert!(
+        resp.threshold_reached,
+        "Le retrait d'une signature a fait passer sous le seuil alors qu'il ne \\
+         devait pas : cumul {} %, seuil d'un cinquième.",
+        resp.total_shares_pct * Decimal::from(100)
+    );
+}
+
+#[when(regex = r#"^([A-Z][a-z]+) tries to submit to ([A-Z][a-z]+)$"#)]
+async fn when_tente_de_soumettre(world: &mut GovernanceWorld, initiateur: String, _syndic: String) {
+    when_prenom_soumet_au_syndic(world, initiateur, _syndic).await;
+}
+
+#[when(regex = r#"^([A-Z][a-z]+) tries to withdraw the request$"#)]
+async fn when_tente_de_retirer(world: &mut GovernanceWorld, prenom: String) {
+    let uc = world.age_request_use_cases.as_ref().unwrap().clone();
+    match uc
+        .withdraw(
+            world.last_age_request_id.unwrap(),
+            world.org_id.unwrap(),
+            age_owner_par_prenom(world, &prenom),
+        )
+        .await
+    {
+        Ok(resp) => {
+            world.last_age_request_response = Some(resp);
+            world.operation_success = true;
+            world.operation_error = None;
+        }
+        Err(e) => {
+            world.operation_success = false;
+            world.operation_error = Some(e);
+        }
+    }
+}
+
+#[when(regex = r#"^([A-Z][a-z]+) withdraws the request$"#)]
+async fn when_retire_la_demande(world: &mut GovernanceWorld, prenom: String) {
+    when_tente_de_retirer(world, prenom).await;
+    assert!(
+        world.operation_success,
+        "le retrait par l'initiateur a été refusé : {:?}",
+        world.operation_error
+    );
 }
