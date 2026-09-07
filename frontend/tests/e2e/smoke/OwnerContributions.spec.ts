@@ -10,9 +10,7 @@ test.describe("Owner Contributions - Payment Tracking", () => {
 
     await expect(page.locator("body")).toBeVisible();
     await expect(
-      page
-        .locator("main h1, main h2, [data-testid='contributions-list']")
-        .first(),
+      page.locator("[data-testid='contributions-list']").first(),
     ).toBeVisible({ timeout: 10000 });
   });
 

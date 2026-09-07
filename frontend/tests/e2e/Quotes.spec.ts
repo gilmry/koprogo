@@ -22,7 +22,7 @@ test.describe("Quotes - Contractor Quote Management", () => {
 
     await expect(page.locator("body")).toBeVisible();
     await expect(
-      page.locator("main h1, main h2, [data-testid='quotes-list']").first(),
+      page.locator("[data-testid='quotes-list']").first(),
     ).toBeVisible({ timeout: 10000 });
   });
 

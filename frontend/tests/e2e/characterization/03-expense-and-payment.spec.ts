@@ -51,7 +51,7 @@ test.describe("Characterization 03 — Expense + Payment", () => {
     await page.goto("/expenses");
     await expect(page.locator("body")).toBeVisible();
     await expect(
-      page.locator("main h1, main h2, [data-testid='expenses-list']").first(),
+      page.locator("[data-testid='expenses-list']").first(),
     ).toBeVisible({ timeout: 10000 });
   });
 

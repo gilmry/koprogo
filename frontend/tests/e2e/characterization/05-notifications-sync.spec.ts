@@ -24,9 +24,7 @@ test.describe("Characterization 05 — Notifications + sync", () => {
 
     await expect(page.locator("body")).toBeVisible();
     await expect(
-      page
-        .locator("main h1, main h2, [data-testid='notifications-list']")
-        .first(),
+      page.locator("[data-testid='notifications-list']").first(),
     ).toBeVisible({ timeout: 10000 });
   });
 
@@ -36,9 +34,7 @@ test.describe("Characterization 05 — Notifications + sync", () => {
 
     await expect(page.locator("body")).toBeVisible();
     await expect(
-      page
-        .locator("main h1, main h2, [data-testid='notification-preferences']")
-        .first(),
+      page.locator("[data-testid='notification-preferences']").first(),
     ).toBeVisible({ timeout: 10000 });
   });
 

@@ -73,7 +73,7 @@ test.describe("Polls - Board Decision Polling", () => {
 
     await expect(page.locator("body")).toBeVisible();
     await expect(
-      page.locator("main h1, main h2, [data-testid='polls-list']").first(),
+      page.locator("[data-testid='polls-list']").first(),
     ).toBeVisible({ timeout: 10000 });
   });
 

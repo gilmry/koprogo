@@ -18,9 +18,7 @@ test.describe("Energy Campaigns - Group Buying", () => {
 
     await expect(page.locator("body")).toBeVisible();
     await expect(
-      page
-        .locator("main h1, main h2, [data-testid='energy-campaigns-list']")
-        .first(),
+      page.locator("[data-testid='energy-campaigns-list']").first(),
     ).toBeVisible({ timeout: 10000 });
   });
 

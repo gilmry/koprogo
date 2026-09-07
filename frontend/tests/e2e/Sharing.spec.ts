@@ -21,7 +21,7 @@ test.describe("Sharing - Object Sharing Library", () => {
 
     await expect(page.locator("body")).toBeVisible();
     await expect(
-      page.locator("main h1, main h2, [data-testid='sharing-list']").first(),
+      page.locator("[data-testid='sharing-list']").first(),
     ).toBeVisible({ timeout: 10000 });
   });
 

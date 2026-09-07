@@ -19,7 +19,7 @@ test.describe("Local Exchanges - SEL Community System", () => {
 
     await expect(page.locator("body")).toBeVisible();
     await expect(
-      page.locator("main h1, main h2, [data-testid='exchanges-list']").first(),
+      page.locator("[data-testid='exchanges-list']").first(),
     ).toBeVisible({ timeout: 10000 });
   });
 

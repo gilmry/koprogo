@@ -98,7 +98,7 @@ test.describe("Characterization 04 — Owner view", () => {
     await page.goto("/owner");
     await expect(page.locator("body")).toBeVisible();
     await expect(
-      page.locator("main h1, main h2, [data-testid='owner-dashboard']").first(),
+      page.locator("[data-testid='owner-dashboard']").first(),
     ).toBeVisible({ timeout: 10000 });
   });
 
@@ -107,7 +107,7 @@ test.describe("Characterization 04 — Owner view", () => {
     await page.goto("/owner/units");
     await expect(page.locator("body")).toBeVisible();
     await expect(
-      page.locator("main h1, main h2, [data-testid='owner-units']").first(),
+      page.locator("[data-testid='owner-units']").first(),
     ).toBeVisible({ timeout: 10000 });
   });
 
@@ -116,7 +116,7 @@ test.describe("Characterization 04 — Owner view", () => {
     await page.goto("/owner/expenses");
     await expect(page.locator("body")).toBeVisible();
     await expect(
-      page.locator("main h1, main h2, [data-testid='owner-expenses']").first(),
+      page.locator("[data-testid='owner-expenses']").first(),
     ).toBeVisible({ timeout: 10000 });
   });
 
@@ -125,7 +125,7 @@ test.describe("Characterization 04 — Owner view", () => {
     await page.goto("/owner/payments");
     await expect(page.locator("body")).toBeVisible();
     await expect(
-      page.locator("main h1, main h2, [data-testid='owner-payments']").first(),
+      page.locator("[data-testid='owner-payments']").first(),
     ).toBeVisible({ timeout: 10000 });
   });
 
@@ -134,7 +134,7 @@ test.describe("Characterization 04 — Owner view", () => {
     await page.goto("/owner/profile");
     await expect(page.locator("body")).toBeVisible();
     await expect(
-      page.locator("main h1, main h2, [data-testid='owner-profile']").first(),
+      page.locator("[data-testid='owner-profile']").first(),
     ).toBeVisible({ timeout: 10000 });
   });
 
@@ -143,7 +143,7 @@ test.describe("Characterization 04 — Owner view", () => {
     await page.goto("/owner/tickets");
     await expect(page.locator("body")).toBeVisible();
     await expect(
-      page.locator("main h1, main h2, [data-testid='owner-tickets']").first(),
+      page.locator("[data-testid='owner-tickets']").first(),
     ).toBeVisible({ timeout: 10000 });
   });
 });

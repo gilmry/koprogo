@@ -18,7 +18,7 @@ test.describe("Budgets - Annual Budget Management", () => {
 
     await expect(page.locator("body")).toBeVisible();
     await expect(
-      page.locator("main h1, main h2, [data-testid='budgets-list']").first(),
+      page.locator("[data-testid='budgets-list']").first(),
     ).toBeVisible({ timeout: 10000 });
   });
 

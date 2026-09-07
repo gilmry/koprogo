@@ -19,9 +19,7 @@ test.describe("AG Sessions - Video Conference (Art. 3.87 §1 CC)", () => {
 
     await expect(page.locator("body")).toBeVisible();
     await expect(
-      page
-        .locator("main h1, main h2, [data-testid='ag-sessions-list']")
-        .first(),
+      page.locator("[data-testid='ag-sessions-list']").first(),
     ).toBeVisible({ timeout: 10000 });
   });
 

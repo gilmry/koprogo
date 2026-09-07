@@ -19,9 +19,7 @@ test.describe("AGE Requests - Demandes d'AGE (Art. 3.87 §2 CC)", () => {
 
     await expect(page.locator("body")).toBeVisible();
     await expect(
-      page
-        .locator("main h1, main h2, [data-testid='age-requests-list']")
-        .first(),
+      page.locator("[data-testid='age-requests-list']").first(),
     ).toBeVisible({ timeout: 10000 });
   });
 

@@ -15,9 +15,7 @@ test.describe("Work Reports - Digital Maintenance Logbook", () => {
 
     await expect(page.locator("body")).toBeVisible();
     await expect(
-      page
-        .locator("main h1, main h2, [data-testid='work-reports-list']")
-        .first(),
+      page.locator("[data-testid='work-reports-list']").first(),
     ).toBeVisible({ timeout: 10000 });
   });
 

@@ -47,7 +47,7 @@ test.describe("Characterization 00 — Login + Dashboards", () => {
     await expect(page).toHaveURL(/\/admin/, { timeout: 10000 });
     await expect(page.locator("body")).toBeVisible();
     await expect(
-      page.locator("main h1, main h2, [data-testid='admin-dashboard']").first(),
+      page.locator("[data-testid='admin-dashboard']").first(),
     ).toBeVisible({ timeout: 10000 });
 
     const elapsed = Date.now() - start;

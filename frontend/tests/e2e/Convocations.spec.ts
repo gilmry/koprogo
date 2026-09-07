@@ -20,9 +20,7 @@ test.describe("Convocations - AG Automatic Invitations", () => {
 
     await expect(page.locator("body")).toBeVisible();
     await expect(
-      page
-        .locator("main h1, main h2, [data-testid='convocations-list']")
-        .first(),
+      page.locator("[data-testid='convocations-list']").first(),
     ).toBeVisible({ timeout: 10000 });
   });
 

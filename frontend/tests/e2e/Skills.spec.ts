@@ -20,7 +20,7 @@ test.describe("Skills - Community Directory", () => {
 
     await expect(page.locator("body")).toBeVisible();
     await expect(
-      page.locator("main h1, main h2, [data-testid='skills-list']").first(),
+      page.locator("[data-testid='skills-list']").first(),
     ).toBeVisible({ timeout: 10000 });
   });
 

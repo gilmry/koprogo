@@ -15,7 +15,7 @@ test.describe("Notices - Community Board", () => {
 
     await expect(page.locator("body")).toBeVisible();
     await expect(
-      page.locator("main h1, main h2, [data-testid='notices-list']").first(),
+      page.locator("[data-testid='notices-list']").first(),
     ).toBeVisible({ timeout: 10000 });
   });
 

@@ -18,7 +18,7 @@ test.describe("Gamification - Achievements & Challenges", () => {
 
     await expect(page.locator("body")).toBeVisible();
     await expect(
-      page.locator("main h1, main h2, [data-testid='gamification']").first(),
+      page.locator("[data-testid='gamification']").first(),
     ).toBeVisible({ timeout: 10000 });
   });
 

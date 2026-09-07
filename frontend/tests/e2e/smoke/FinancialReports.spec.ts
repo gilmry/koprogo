@@ -36,9 +36,9 @@ test.describe("Financial Reports - Balance Sheet & Income Statement", () => {
     await page.goto("/reports");
 
     await expect(page.locator("body")).toBeVisible();
-    await expect(
-      page.locator("main h1, main h2, [data-testid='reports']").first(),
-    ).toBeVisible({ timeout: 10000 });
+    await expect(page.locator("[data-testid='reports']").first()).toBeVisible({
+      timeout: 10000,
+    });
   });
 
   test("should get balance sheet via API", async ({ page }) => {

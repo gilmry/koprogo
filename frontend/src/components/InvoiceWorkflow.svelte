@@ -191,7 +191,7 @@
   }
 </script>
 
-<div class="workflow-container">
+<div class="workflow-container" data-testid="invoice-workflow">
   <div class="header">
     <h1>{$_('invoices.workflow_title')}</h1>
     <p class="subtitle">{$_('invoices.workflow_subtitle')}</p>

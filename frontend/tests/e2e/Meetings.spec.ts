@@ -24,7 +24,7 @@ test.describe("Meetings - General Assembly", () => {
 
     await expect(page.locator("body")).toBeVisible();
     await expect(
-      page.locator("main h1, main h2, [data-testid='meetings-list']").first(),
+      page.locator("[data-testid='meetings-list']").first(),
     ).toBeVisible({ timeout: 10000 });
   });
 
@@ -90,9 +90,7 @@ test.describe("Meetings - General Assembly", () => {
 
     await expect(page.locator("body")).toBeVisible();
     await expect(
-      page
-        .locator("main h1, main h2, [data-testid='convocations-list']")
-        .first(),
+      page.locator("[data-testid='convocations-list']").first(),
     ).toBeVisible({ timeout: 10000 });
   });
 
@@ -102,7 +100,7 @@ test.describe("Meetings - General Assembly", () => {
 
     await expect(page.locator("body")).toBeVisible();
     await expect(
-      page.locator("main h1, main h2, [data-testid='polls-list']").first(),
+      page.locator("[data-testid='polls-list']").first(),
     ).toBeVisible({ timeout: 10000 });
   });
 });

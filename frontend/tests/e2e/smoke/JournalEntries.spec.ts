@@ -43,7 +43,7 @@ test.describe("Journal Entries - Double-Entry Accounting", () => {
 
     await expect(page.locator("body")).toBeVisible();
     await expect(
-      page.locator("main h1, main h2, [data-testid='journal-entries']").first(),
+      page.locator("[data-testid='journal-entries']").first(),
     ).toBeVisible({ timeout: 10000 });
   });
 

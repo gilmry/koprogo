@@ -21,7 +21,7 @@ test.describe("Bookings - Resource Reservation Calendar", () => {
 
     await expect(page.locator("body")).toBeVisible();
     await expect(
-      page.locator("main h1, main h2, [data-testid='bookings-list']").first(),
+      page.locator("[data-testid='bookings-list']").first(),
     ).toBeVisible({ timeout: 10000 });
   });
 
