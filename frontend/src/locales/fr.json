@@ -2452,7 +2452,10 @@
       "ordinary": "Ordinaire"
     },
     "upcoming": "À venir",
-    "created_success": "Assemblée créée avec succès"
+    "created_success": "Assemblée créée avec succès",
+    "convocationDeadline": "Convocation à envoyer avant le {date}",
+    "convocationTooLate": "Le délai légal de convocation ne peut plus être tenu : il manque {jours} jour(s).",
+    "convocationTooLateAction": "Reportez l'assemblée d'autant, ou convoquez en urgence si le motif le justifie (Art. 3.87 § 3)."
   },
   "navigation": {
     "accounting": "Comptabilité",

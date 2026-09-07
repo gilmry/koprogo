@@ -2452,7 +2452,10 @@
       "ordinary": "Ordinary"
     },
     "upcoming": "Upcoming",
-    "created_success": "Meeting created successfully"
+    "created_success": "Meeting created successfully",
+    "convocationDeadline": "Convocation must be sent before {date}",
+    "convocationTooLate": "The legal notice period can no longer be met: {jours} day(s) short.",
+    "convocationTooLateAction": "Postpone the meeting accordingly, or convene urgently if justified (Art. 3.87 § 3)."
   },
   "navigation": {
     "accounting": "Accounting",

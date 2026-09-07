@@ -2452,7 +2452,10 @@
       "ordinary": "Ordentlich"
     },
     "upcoming": "Bevorstehend",
-    "created_success": "Versammlung erfolgreich erstellt"
+    "created_success": "Versammlung erfolgreich erstellt",
+    "convocationDeadline": "Einberufung bis spätestens {date} zu versenden",
+    "convocationTooLate": "Die gesetzliche Einberufungsfrist kann nicht mehr eingehalten werden: {jours} Tag(e) fehlen.",
+    "convocationTooLateAction": "Verschieben Sie die Versammlung entsprechend oder berufen Sie dringend ein, sofern gerechtfertigt (Art. 3.87 § 3)."
   },
   "navigation": {
     "accounting": "Buchhaltung",

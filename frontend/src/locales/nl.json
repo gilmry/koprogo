@@ -2452,7 +2452,10 @@
       "ordinary": "Gewoon"
     },
     "upcoming": "Aankomend",
-    "created_success": "Vergadering succesvol aangemaakt"
+    "created_success": "Vergadering succesvol aangemaakt",
+    "convocationDeadline": "Oproeping te versturen vóór {date}",
+    "convocationTooLate": "De wettelijke oproepingstermijn kan niet meer worden gehaald: {jours} dag(en) te kort.",
+    "convocationTooLateAction": "Stel de vergadering navenant uit, of roep dringend bijeen indien gerechtvaardigd (art. 3.87 § 3)."
   },
   "navigation": {
     "accounting": "Boekhouding",

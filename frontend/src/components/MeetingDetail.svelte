@@ -349,6 +349,58 @@
                 {$_("meetings.upcoming")}
               </span>
             {/if}
+
+            <!--
+              Le délai de convocation, DIT avant qu'il ne soit trop tard.
+
+              Le serveur calcule et sert `date_limite_envoi_convocation`,
+              `convocation_encore_possible` et `jours_manquants_convocation`
+              depuis `delai_de_convocation.rs` (Art. 3.87 § 3). Le frontend les
+              déclarait dans son type `Meeting` — et aucun écran ne les
+              affichait.
+
+              Le syndic découvrait donc la règle des quinze jours au moment de
+              cliquer sur « Créer une convocation », dans un refus en anglais,
+              sans autre issue que de supprimer l'assemblée (#780, verrou 1).
+
+              Un refus qui arrive quand il ne reste plus qu'à le subir n'est pas
+              une garde, c'est une sanction.
+            -->
+            {#if meeting.status === "Scheduled" && meeting.convocation_encore_possible === true && meeting.date_limite_envoi_convocation}
+              <p
+                class="mt-2 text-sm text-gray-600"
+                data-testid="meeting-convocation-deadline"
+              >
+                {$_("meetings.convocationDeadline", {
+                  values: {
+                    date: formatDateTime(meeting.date_limite_envoi_convocation),
+                  },
+                })}
+              </p>
+            {:else if meeting.status === "Scheduled" && meeting.convocation_encore_possible === false}
+              <!--
+                Un avertissement, pas un blocage. L'urgence est prévue par le
+                texte lui-même (Art. 3.87 § 3), une assemblée peut être encodée
+                après coup, et une seconde convocation subit la date de l'échec
+                précédent. On informe, on ne décide pas à la place du syndic.
+              -->
+              <div
+                class="mt-2 rounded-md border border-amber-200 bg-amber-50 p-3"
+                data-testid="meeting-convocation-too-late"
+                role="status"
+              >
+                <p class="text-sm font-semibold text-amber-900">
+                  {$_("meetings.convocationTooLate", {
+                    values: {
+                      jours: meeting.jours_manquants_convocation ?? "?",
+                    },
+                  })}
+                </p>
+                <p class="mt-1 text-sm text-amber-800">
+                  {$_("meetings.convocationTooLateAction")}
+                </p>
+              </div>
+            {/if}
           </div>
 
           <div data-testid="meeting-info-location">
