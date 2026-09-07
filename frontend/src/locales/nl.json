@@ -2053,7 +2053,9 @@
     "accessShortDesc": "Download een volledige kopie van al uw persoonsgegevens.",
     "restrictShortDesc": "Beperk de verwerking van uw gegevens. Sommige functies worden beperkt.",
     "eraseShortDesc": "Vraag de definitieve anonimisering van al uw gegevens. Deze actie is onomkeerbaar.",
-    "restrictConfirm": "De verwerking van uw gegevens beperken? Sommige functies kunnen beperkt worden."
+    "restrictConfirm": "De verwerking van uw gegevens beperken? Sommige functies kunnen beperkt worden.",
+    "unsubscribe": "Uitschrijven",
+    "subscribe": "Inschrijven"
   },
   "inspections": {
     "all": "Alle",

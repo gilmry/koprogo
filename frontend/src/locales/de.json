@@ -2053,7 +2053,9 @@
     "accessShortDesc": "Laden Sie eine vollständige Kopie all Ihrer personenbezogenen Daten herunter.",
     "restrictShortDesc": "Schränken Sie die Verarbeitung Ihrer Daten ein. Einige Funktionen sind dann eingeschränkt.",
     "eraseShortDesc": "Fordern Sie die endgültige Anonymisierung all Ihrer Daten an. Diese Aktion ist unumkehrbar.",
-    "restrictConfirm": "Die Verarbeitung Ihrer Daten einschränken? Einige Funktionen könnten eingeschränkt sein."
+    "restrictConfirm": "Die Verarbeitung Ihrer Daten einschränken? Einige Funktionen könnten eingeschränkt sein.",
+    "unsubscribe": "Abbestellen",
+    "subscribe": "Abonnieren"
   },
   "inspections": {
     "all": "Alle",

@@ -2053,7 +2053,9 @@
     "accessShortDesc": "Download a complete copy of all your personal data.",
     "restrictShortDesc": "Restrict the processing of your data. Some features will be limited.",
     "eraseShortDesc": "Request the permanent anonymisation of all your data. This action is irreversible.",
-    "restrictConfirm": "Restrict the processing of your data? Some features may be limited."
+    "restrictConfirm": "Restrict the processing of your data? Some features may be limited.",
+    "unsubscribe": "Unsubscribe",
+    "subscribe": "Subscribe"
   },
   "inspections": {
     "all": "All",

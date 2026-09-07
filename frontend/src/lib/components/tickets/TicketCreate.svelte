@@ -222,6 +222,7 @@
 </script>
 
 <form
+  data-testid="ticket-create-form-element"
   class="ticket-create-form flex flex-col gap-4 rounded bg-white p-4 shadow-sm"
   onsubmit={handleSubmit}
   aria-labelledby="ticket-create-title-h"

@@ -194,7 +194,7 @@
         <div class="flex items-center justify-between">
           <h2 class="text-xl font-semibold text-white">{$_('profile.personalInfo')}</h2>
           {#if !editMode}
-            <button on:click={startEdit}
+            <button data-testid="profile-edit-start" on:click={startEdit}
               class="px-3 py-1.5 bg-white/20 text-white rounded-lg text-sm font-medium hover:bg-white/30 transition-colors">
               {$_('common.edit')}
             </button>
@@ -208,26 +208,26 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label for="firstName" class="block text-sm font-medium text-gray-700 mb-1">{$_('common.firstName')}</label>
-                <input id="firstName" type="text" bind:value={editFirstName}
+                <input data-testid="profile-first-name-input" id="firstName" type="text" bind:value={editFirstName}
                   class="w-full rounded-md border-gray-300 focus:border-amber-500 focus:ring-amber-500" />
               </div>
               <div>
                 <label for="lastName" class="block text-sm font-medium text-gray-700 mb-1">{$_('common.lastName')}</label>
-                <input id="lastName" type="text" bind:value={editLastName}
+                <input data-testid="profile-last-name-input" id="lastName" type="text" bind:value={editLastName}
                   class="w-full rounded-md border-gray-300 focus:border-amber-500 focus:ring-amber-500" />
               </div>
               <div class="md:col-span-2">
                 <label for="email" class="block text-sm font-medium text-gray-700 mb-1">{$_('common.email')}</label>
-                <input id="email" type="email" bind:value={editEmail}
+                <input data-testid="profile-email-input" id="email" type="email" bind:value={editEmail}
                   class="w-full rounded-md border-gray-300 focus:border-amber-500 focus:ring-amber-500" />
               </div>
             </div>
             <div class="flex gap-2">
-              <button on:click={saveProfile} disabled={saving}
+              <button data-testid="profile-edit-save" on:click={saveProfile} disabled={saving}
                 class="px-4 py-2 bg-amber-600 text-white rounded-lg text-sm font-medium hover:bg-amber-700 disabled:opacity-50 transition-colors">
                 {saving ? 'Enregistrement...' : 'Enregistrer'}
               </button>
-              <button on:click={cancelEdit}
+              <button data-testid="profile-edit-cancel" on:click={cancelEdit}
                 class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors">
                 {$_('common.cancel')}
               </button>
@@ -337,7 +337,7 @@
             <h3 class="text-sm font-medium text-gray-900">{$_('gdpr.article15.title')}</h3>
             <p class="text-xs text-gray-600 mt-1">{$_('gdpr.accessShortDesc')}</p>
           </div>
-          <button on:click={handleGdprExport} disabled={gdprExporting}
+          <button data-testid="profile-gdpr-export" on:click={handleGdprExport} disabled={gdprExporting}
             class="ml-4 px-3 py-1.5 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors whitespace-nowrap">
             {gdprExporting ? 'Export...' : 'Exporter mes données'}
           </button>
@@ -349,7 +349,7 @@
             <h3 class="text-sm font-medium text-gray-900">{$_('gdpr.article18.title')}</h3>
             <p class="text-xs text-gray-600 mt-1">{$_('gdpr.restrictShortDesc')}</p>
           </div>
-          <button on:click={handleRestrictProcessing} disabled={gdprRestricting}
+          <button data-testid="profile-gdpr-restrict" on:click={handleRestrictProcessing} disabled={gdprRestricting}
             class="ml-4 px-3 py-1.5 bg-yellow-600 text-white rounded-lg text-sm font-medium hover:bg-yellow-700 disabled:opacity-50 transition-colors whitespace-nowrap">
             {gdprRestricting ? 'En cours...' : 'Restreindre'}
           </button>
@@ -362,13 +362,13 @@
             <p class="text-xs text-gray-600 mt-1">{$_('gdpr.marketingDesc')}</p>
           </div>
           <div class="ml-4 flex gap-2">
-            <button on:click={() => handleMarketingOptOut(true)} disabled={gdprMarketingLoading}
+            <button data-testid="profile-marketing-opt-out" on:click={() => handleMarketingOptOut(true)} disabled={gdprMarketingLoading}
               class="px-3 py-1.5 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200 disabled:opacity-50 transition-colors whitespace-nowrap">
-              Se désabonner
+              {$_('gdpr.unsubscribe')}
             </button>
-            <button on:click={() => handleMarketingOptOut(false)} disabled={gdprMarketingLoading}
+            <button data-testid="profile-marketing-opt-in" on:click={() => handleMarketingOptOut(false)} disabled={gdprMarketingLoading}
               class="px-3 py-1.5 bg-purple-600 text-white rounded-lg text-sm font-medium hover:bg-purple-700 disabled:opacity-50 transition-colors whitespace-nowrap">
-              S'abonner
+              {$_('gdpr.subscribe')}
             </button>
           </div>
         </div>
@@ -387,11 +387,11 @@
             {/if}
           </div>
           <div class="ml-4 flex flex-col gap-2">
-            <button on:click={handleCheckCanErase}
+            <button data-testid="profile-gdpr-check-erasure" on:click={handleCheckCanErase}
               class="px-3 py-1.5 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors whitespace-nowrap">
               {$_('profile.checkEligibility')}
             </button>
-            <button on:click={openEraseDialog} disabled={gdprErasing || (canErase !== null && !canErase.can_erase)}
+            <button data-testid="profile-gdpr-erase-open" on:click={openEraseDialog} disabled={gdprErasing || (canErase !== null && !canErase.can_erase)}
               class="px-3 py-1.5 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 disabled:opacity-50 transition-colors whitespace-nowrap">
               {gdprErasing ? 'Anonymisation...' : 'Effacer mes données'}
             </button>
@@ -417,7 +417,7 @@
       <h3 class="text-lg font-bold text-gray-900">{$_('gdpr.erase.confirmTitle')}</h3>
       <p class="mt-2 text-sm text-gray-600">{$_('gdpr.erase.confirmBody')}</p>
 
-      <form class="mt-4" on:submit|preventDefault={handleGdprErase}>
+      <form data-testid="profile-gdpr-erase-form" class="mt-4" on:submit|preventDefault={handleGdprErase}>
         <label class="block text-sm font-medium text-gray-700" for="gdpr-erase-password">
           {$_('gdpr.erase.passwordLabel')}
         </label>
@@ -437,6 +437,7 @@
         <div class="mt-5 flex justify-end gap-2">
           <button
             type="button"
+            data-testid="profile-gdpr-erase-cancel"
             on:click={() => (showEraseDialog = false)}
             disabled={gdprErasing}
             class="px-4 py-2 text-sm font-medium rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 disabled:opacity-50"

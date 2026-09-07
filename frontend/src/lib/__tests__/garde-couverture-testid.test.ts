@@ -65,13 +65,53 @@ import { join, extname } from "node:path";
  * Baisser ce nombre fait partie de chaque lot de la refonte : celui qui touche
  * un écran l'ancre.
  */
-const DETTE_AU_2026_09_06 = 778;
+const DETTE_AU_2026_09_06 = 672;
 
 const RACINE = join(process.cwd(), "src");
 const EXTENSIONS = new Set([".svelte", ".astro"]);
 
-/** Balises ouvrantes d'éléments avec lesquels un utilisateur interagit. */
-const INTERACTIFS = /<(button|input|select|textarea|form|a)(\s[^>]*?)?>/gs;
+/**
+ * Balises ouvrantes d'éléments avec lesquels un utilisateur interagit.
+ *
+ * On ne peut PAS s'arrêter au premier `>` : une fonction fléchée en attribut
+ * en contient un.
+ *
+ *     <button onclick={() => close()} data-testid="x">
+ *                             ↑ ici
+ *
+ * Le motif `[^>]*?` tronquait la balise à cette flèche, et tout `data-testid`
+ * placé APRÈS devenait invisible. **Quatre-vingt-quatre éléments ancrés
+ * étaient ainsi comptés comme non ancrés** — 755 annoncés pour 671 réels.
+ *
+ * `balisesInteractives` suit donc les accolades et ne s'arrête qu'au `>` de
+ * fermeture réel.
+ *
+ * Un détecteur qui accuse à tort use la même chose qu'un détecteur aveugle :
+ * la confiance qu'on lui accorde. Ici, il poussait à ancrer une seconde fois
+ * un élément déjà ancré — j'ai créé un attribut en double avant de le voir.
+ */
+function* balisesInteractives(
+  texte: string,
+): Generator<{ nom: string; balise: string; index: number }> {
+  const debut = /<(button|input|select|textarea|form|a)(?=[\s>])/g;
+  let m: RegExpExecArray | null;
+  while ((m = debut.exec(texte)) !== null) {
+    let i = debut.lastIndex;
+    let profondeur = 0;
+    while (i < texte.length) {
+      const c = texte[i];
+      if (c === "{") profondeur += 1;
+      else if (c === "}") profondeur -= 1;
+      else if (c === ">" && profondeur === 0) break;
+      i += 1;
+    }
+    yield {
+      nom: m[1],
+      balise: texte.slice(m.index, i + 1),
+      index: m.index,
+    };
+  }
+}
 
 function fichiersDeGabarit(repertoire: string): string[] {
   const trouves: string[] = [];
@@ -93,15 +133,13 @@ function recenser(): { ancres: number; sansAncre: string[] } {
 
   for (const chemin of fichiersDeGabarit(RACINE)) {
     const texte = readFileSync(chemin, "utf8");
-    for (const m of texte.matchAll(INTERACTIFS)) {
-      const balise = m[0];
-      const nom = m[1];
+    for (const { nom, balise, index } of balisesInteractives(texte)) {
       // Une ancre sans `href` est décorative, pas un point d'interaction.
       if (nom === "a" && !balise.includes("href")) continue;
       if (balise.includes("data-testid")) {
         ancres += 1;
       } else {
-        const ligne = texte.slice(0, m.index).split("\n").length;
+        const ligne = texte.slice(0, index).split("\n").length;
         sansAncre.push(
           `${chemin.replace(process.cwd() + "/", "")}:${ligne} <${nom}>`,
         );

@@ -98,6 +98,7 @@
     <div class="flex justify-between items-center p-6 pb-4 border-b">
       <h2 class="text-xl font-bold text-gray-900">{$_('meetings.newMeeting')}</h2>
       <button
+        data-testid="meeting-create-close"
         onclick={handleClose}
         class="text-gray-400 hover:text-gray-600"
         aria-label="Fermer"
@@ -108,7 +109,7 @@
       </button>
     </div>
 
-    <form onsubmit={(e) => { e.preventDefault(); handleSubmit(); }} class="flex flex-col flex-1 overflow-hidden">
+    <form data-testid="meeting-create-form" onsubmit={(e) => { e.preventDefault(); handleSubmit(); }} class="flex flex-col flex-1 overflow-hidden">
       <div class="overflow-y-auto p-6 space-y-4 flex-1">
     {#if error}
       <div class="mb-4 p-3 bg-red-50 border border-red-200 rounded text-sm text-red-700">
@@ -229,6 +230,7 @@
 
       <div class="flex justify-end gap-3 p-6 pt-4 border-t bg-gray-50 rounded-b-lg">
         <button
+          data-testid="meeting-create-cancel"
           type="button"
           onclick={handleClose}
           class="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition"
