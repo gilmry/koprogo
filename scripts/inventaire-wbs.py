@@ -52,7 +52,7 @@ trois modals qui ne pouvaient pas s'ouvrir (#832). Corrigé en
 
 Une CI rouge en permanence n'apprend qu'à ne plus la regarder ; une CI qui
 affiche sans bloquer apprend à croire qu'on regarde.""",
-  [443,540,548,696,832]),
+  [443,540,696,832]),
 
  ("K", "Dette de code et de contrat", """Les erreurs typées plutôt que classées par sous-chaîne, le contrat OpenAPI
 complet, et la suppression du repli qui fabrique une ACP inexistante.""",
