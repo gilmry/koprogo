@@ -145,7 +145,7 @@ const DETTE_AU_2026_09_06: usize = 8;
 /// c'est le travail de l'issue #772.
 ///
 /// **Ce nombre ne doit que DIMINUER.**
-/// 109 au relevé du 2026-09-06 ; **56** au 2026-09-07.
+/// 109 au relevé du 2026-09-06 ; **49** au 2026-09-07.
 ///
 /// Les cinq dernières sont les premières à venir de VRAIES gardes ajoutées :
 /// les cinq routes de `local_exchange_handlers` qui listent les échanges, le
@@ -178,7 +178,7 @@ const DETTE_AU_2026_09_06: usize = 8;
 /// d'énergie, était ainsi comptée comme non protégée alors qu'elle compare
 /// bien l'organisation de l'appelant à celle de la ressource. Les espaces sont
 /// désormais normalisés avant la recherche.
-const IDENTITE_NON_VERIFIEE_AU_2026_09_06: usize = 56;
+const IDENTITE_NON_VERIFIEE_AU_2026_09_06: usize = 49;
 
 fn racine_handlers() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("src/infrastructure/web/handlers")
@@ -190,7 +190,7 @@ fn racine_handlers() -> PathBuf {
 /// `verifier_mandat_sur_ag` fait de même depuis une assemblée ;
 /// `require_organization` et `is_superadmin` sont des décisions plus grossières
 /// mais réelles. Un corps qui n'en contient aucun ne décide de rien.
-const MARQUEURS_DE_GARDE: [&str; 13] = [
+const MARQUEURS_DE_GARDE: [&str; 15] = [
     // La primitive de cloisonnement elle-même — celle que les huit
     // `verify_*_org_access` finissent tous par appeler après avoir remonté la
     // chaîne jusqu'à l'organisation.
@@ -202,6 +202,16 @@ const MARQUEURS_DE_GARDE: [&str; 13] = [
     // et bien une organisation étrangère.
     "verify_org_access",
     "verify_acp_org_access",
+    // Ajoutés le 2026-09-07 avec les gardes correspondantes. Les oublier
+    // aurait laissé cette liste mesurer un état périmé : dix routes de devis
+    // et de réservations venaient d'être cloisonnées, et le cliquet les
+    // comptait encore comme ouvertes.
+    //
+    // Toute garde neuve doit être inscrite ici DANS LE MÊME COMMIT. C'est la
+    // troisième fois que ce fichier l'apprend — `verify_org_access` y
+    // manquait aussi, et seize routes en étaient accusées à tort.
+    "verify_booking_org_access",
+    "verify_quote_org_access",
     "verify_document_org_access",
     "verify_unit_org_access",
     "verify_convocation_org_access",
