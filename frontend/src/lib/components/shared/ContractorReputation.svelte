@@ -32,7 +32,7 @@
 
   import {
     SCORE_DIMENSIONS,
-    SCORE_DIMENSION_LABELS_FR,
+    SCORE_DIMENSION_KEYS,
     averageScore,
     formatAverage,
     type ContractorEvaluationDto,
@@ -111,16 +111,23 @@
         class="flex flex-col items-center justify-center rounded border border-gray-200 bg-gray-50 px-3 py-2"
       >
         <span class="text-xs font-medium text-gray-600">
-          {SCORE_DIMENSION_LABELS_FR[dim]}
+          {$_(SCORE_DIMENSION_KEYS[dim])}
         </span>
         <span
           data-testid={testId(
             `contractor-reputation-avg-${scoreTestSuffix(dim)}`,
           )}
           class="text-lg font-semibold text-gray-900"
-          aria-label={`Moyenne ${SCORE_DIMENSION_LABELS_FR[dim]} : ${
-            avg !== null ? `${avg.toFixed(1)} sur 5` : "non disponible"
-          }`}
+          aria-label={avg !== null
+            ? $_("contractors.avgAria", {
+                values: {
+                  dimension: $_(SCORE_DIMENSION_KEYS[dim]),
+                  note: avg.toFixed(1),
+                },
+              })
+            : $_("contractors.avgAriaUnavailable", {
+                values: { dimension: $_(SCORE_DIMENSION_KEYS[dim]) },
+              })}
         >
           {formatAverage(avg)}
         </span>

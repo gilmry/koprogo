@@ -46,7 +46,7 @@
     EVAL_MIN_COMMENT_LENGTH,
     EVAL_MAX_COMMENT_LENGTH,
     SCORE_DIMENSIONS,
-    SCORE_DIMENSION_LABELS_FR,
+    SCORE_DIMENSION_KEYS,
     isValidScores,
     type CreateContractorEvaluationRequest,
     type ContractorEvaluationDto,
@@ -437,7 +437,7 @@
       >
         <ScoreInput
           name={`contractor-eval-score-${dim}`}
-          label={SCORE_DIMENSION_LABELS_FR[dim]}
+          label={$_(SCORE_DIMENSION_KEYS[dim])}
           value={getScore(dim)}
           onChange={(n) => setScore(dim, n)}
           required={true}

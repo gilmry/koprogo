@@ -3981,7 +3981,14 @@
     "scoreDeadlines": "Termijnen",
     "scoreCommunication": "Communicatie",
     "scoreBudget": "Budget",
-    "scoreOverall": "Algemeen"
+    "scoreOverall": "Algemeen",
+    "dimQuality": "Technische kwaliteit",
+    "dimTimeliness": "Naleving van termijnen",
+    "dimCommunication": "Communicatie",
+    "dimCostCompliance": "Naleving van het budget",
+    "dimOverall": "Algemene score",
+    "avgAria": "Gemiddelde {dimension}: {note} op 5",
+    "avgAriaUnavailable": "Gemiddelde {dimension}: niet beschikbaar"
   },
   "magicLink": {
     "issued": "Link aangemaakt",

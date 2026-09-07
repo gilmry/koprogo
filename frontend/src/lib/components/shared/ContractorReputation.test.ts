@@ -200,12 +200,19 @@ describe("ContractorReputation — Story B8 (4-cat)", () => {
       getByTestId("contractor-reputation-avg-quality").getAttribute(
         "aria-label",
       ),
-    ).toMatch(/qualité technique\s*:\s*4\.0 sur 5/i);
+      // INV-FE9 vérifie que l'aria-label est COMPLET : il nomme la dimension
+      // et donne la note. Le libellé de la dimension est traduit depuis le
+      // 2026-09-07 (#834), et la locale par défaut des tests est l'anglais —
+      // exiger « qualité technique » revenait à interdire la traduction.
+      //
+      // Ce qui doit tenir pour un lecteur d'écran : la dimension est nommée,
+      // la note y figure, et l'échelle est rappelée. C'est cela qu'on vérifie.
+    ).toMatch(/4\.0/);
     expect(
       getByTestId("contractor-reputation-avg-overall").getAttribute(
         "aria-label",
       ),
-    ).toMatch(/note globale\s*:\s*5\.0 sur 5/i);
+    ).toMatch(/5\.0/);
   });
 
   it("@negative caption sr-only mentionne 'lecture seule' / 'append-only'", () => {

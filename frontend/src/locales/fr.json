@@ -3981,7 +3981,14 @@
     "scoreDeadlines": "Délais",
     "scoreCommunication": "Communication",
     "scoreBudget": "Budget",
-    "scoreOverall": "Globale"
+    "scoreOverall": "Globale",
+    "dimQuality": "Qualité technique",
+    "dimTimeliness": "Respect des délais",
+    "dimCommunication": "Communication",
+    "dimCostCompliance": "Respect du budget",
+    "dimOverall": "Note globale",
+    "avgAria": "Moyenne {dimension} : {note} sur 5",
+    "avgAriaUnavailable": "Moyenne {dimension} : non disponible"
   },
   "magicLink": {
     "issued": "Lien émis",
