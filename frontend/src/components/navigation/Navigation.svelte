@@ -45,6 +45,8 @@
   let currentPath = $state("");
   let hamburgerButton = $state<HTMLButtonElement | undefined>(undefined);
   let drawerCloseButton = $state<HTMLButtonElement | undefined>(undefined);
+  /// Le tiroir lui-même, pour y enfermer le focus.
+  let drawerElement = $state<HTMLElement | undefined>(undefined);
 
   let user = $derived($authStore.user);
   let isAuthenticated = $derived($authStore.isAuthenticated);
@@ -303,6 +305,59 @@
   };
 
   const handleNavClick = () => closeDrawer();
+
+  /// Les éléments du tiroir qu'on peut atteindre au clavier.
+  ///
+  /// `:not([tabindex="-1"])` écarte l'overlay, qui est cliquable mais
+  /// délibérément hors de l'ordre de tabulation.
+  const elementsFocusables = (): HTMLElement[] => {
+    if (!drawerElement) return [];
+    return Array.from(
+      drawerElement.querySelectorAll<HTMLElement>(
+        'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+      ),
+    ).filter((el) => el.offsetParent !== null);
+  };
+
+  /// Enferme le focus dans le tiroir ouvert.
+  ///
+  /// ── Pourquoi c'est nécessaire ────────────────────────────────────────────
+  ///
+  /// Le focus était bien DÉPLACÉ à l'ouverture — sur le bouton de fermeture —
+  /// et rendu au bouton hamburger à la fermeture. Mais rien ne le RETENAIT :
+  /// une tabulation de plus l'emmenait derrière l'overlay, dans une page que
+  /// l'utilisateur ne voit pas et dont il ne peut pas sortir autrement qu'en
+  /// tabulant à l'aveugle jusqu'au bout.
+  ///
+  /// Pour quelqu'un qui navigue au clavier ou au lecteur d'écran, c'est
+  /// l'équivalent d'un cul-de-sac : le contenu annoncé n'est pas celui qui est
+  /// affiché. C'est le finding #794 de la revue du 2026-09-06, et il porte sur
+  /// le seul écran où ce produit vit vraiment — le téléphone.
+  ///
+  /// `AccessibleModal.svelte` implémentait déjà ce piège ; il n'y avait rien à
+  /// inventer, seulement à réemployer.
+  const piegerLeFocus = (e: KeyboardEvent) => {
+    if (!drawerOpen || e.key !== "Tab") return;
+    const elements = elementsFocusables();
+    if (elements.length === 0) return;
+
+    const premier = elements[0];
+    const dernier = elements[elements.length - 1];
+    const actif = document.activeElement;
+
+    if (e.shiftKey && actif === premier) {
+      e.preventDefault();
+      dernier.focus();
+    } else if (!e.shiftKey && actif === dernier) {
+      e.preventDefault();
+      premier.focus();
+    } else if (!elements.includes(actif as HTMLElement)) {
+      // Le focus s'est échappé — par un clic, ou parce qu'il était ailleurs à
+      // l'ouverture. On le ramène plutôt que de le laisser dehors.
+      e.preventDefault();
+      premier.focus();
+    }
+  };
 
   const logout = async () => {
     await authStore.logout();
@@ -621,17 +676,25 @@
 <!-- MOBILE DRAWER                                                      -->
 <!-- ================================================================== -->
 {#if drawerOpen && isAuthenticated && !hasNoRoleAssignment}
-  <div
+  <!-- L'overlay était un `<div role="button">` : un bouton déguisé, que les
+       technologies d'assistance annoncent comme tel sans qu'il en soit un
+       (#794). C'en est un vrai désormais.
+
+       `tabindex="-1"` le maintient hors de l'ordre de tabulation à dessein :
+       il se ferme au clic ou par Échap, et l'ajouter au parcours clavier
+       n'apporterait qu'un arrêt de plus avant le contenu. -->
+  <button
+    type="button"
     class="fixed inset-0 bg-black/40 z-40 lg:hidden"
     transition:fade={{ duration: 200 }}
     onclick={closeDrawer}
-    onkeydown={(e) => e.key === "Escape" && closeDrawer()}
-    role="button"
     tabindex="-1"
     aria-label="Fermer le menu"
-  ></div>
+    data-testid="mobile-drawer-overlay"
+  ></button>
 
   <aside
+    bind:this={drawerElement}
     class="fixed inset-y-0 left-0 w-72 bg-white shadow-xl z-50 flex flex-col lg:hidden"
     transition:fly={{ x: -288, duration: 300, easing: cubicOut }}
     role="navigation"
@@ -816,5 +879,8 @@
 {/if}
 
 <svelte:window
-  onkeydown={(e) => e.key === "Escape" && drawerOpen && closeDrawer()}
+  onkeydown={(e) => {
+    if (e.key === "Escape" && drawerOpen) closeDrawer();
+    piegerLeFocus(e);
+  }}
 />
