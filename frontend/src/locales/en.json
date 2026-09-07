@@ -962,7 +962,8 @@
     "you": "You",
     "street": "Street",
     "slug": "Short identifier",
-    "enterpriseNumber": "Enterprise number"
+    "enterpriseNumber": "Enterprise number",
+    "place": "Place"
   },
   "common.error.loadData": "Error loading data",
   "common.error.loadStats": "Error loading statistics",
@@ -2465,7 +2466,7 @@
     },
     "upcoming": "Upcoming",
     "created_success": "Meeting created successfully",
-    "convocationDeadline": "Convocation must be sent before {date}",
+    "convocationDeadline": "Deadline for sending the convocation:",
     "convocationTooLate": "The legal notice period can no longer be met: {jours} day(s) short.",
     "convocationTooLateAction": "Postpone the meeting accordingly, or convene urgently if justified (Art. 3.87 § 3).",
     "rescheduleTitle": "Postpone the meeting",
@@ -2473,7 +2474,15 @@
     "cancelTitle": "Cancel the meeting",
     "newDateLabel": "New date",
     "attendeesLabel": "Number of attendees present",
-    "confirmCancelBody": "This meeting will be marked as cancelled. Convocations already sent are not withdrawn."
+    "confirmCancelBody": "This meeting will be marked as cancelled. Convocations already sent are not withdrawn.",
+    "newMeeting": "New general meeting",
+    "meetingType": "Meeting type",
+    "ordinary": "Ordinary meeting",
+    "extraordinary": "Extraordinary meeting",
+    "dateTime": "Date and time",
+    "convocationImpossible": "Convening within the legal deadline is impossible.",
+    "convocationTooShort": "Art. 3.87 § 3 requires fifteen days' notice: the convocation should have been sent on {date}. Push the meeting back by {jours} day(s), or convene urgently — the law allows it.",
+    "legalBasis": "(Art. 3.87 § 3)"
   },
   "navigation": {
     "accounting": "Accounting",
@@ -3948,7 +3957,18 @@
   "magicLink": {
     "issued": "Magic link issued.",
     "copied": "Link copied to the clipboard.",
-    "copyFailed": "Copy failed, please copy the link manually."
+    "copyFailed": "Copy failed, please copy the link manually.",
+    "offlineMode": "Offline mode — your draft will sync when the connection returns.",
+    "install": "Install the app",
+    "loading": "Loading the shared resource…",
+    "empty": "Nothing to display.",
+    "message": "Message",
+    "amount": "Amount (EUR)",
+    "back": "Back",
+    "received": "Received",
+    "sent": "Your reply has been sent. The building manager will be notified.",
+    "canClose": "You can safely close this page.",
+    "close": "Close"
   },
   "technicalSpecs": {
     "submittedForSignature": "Specification submitted for signature."

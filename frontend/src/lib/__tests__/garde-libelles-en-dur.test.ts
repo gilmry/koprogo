@@ -51,7 +51,8 @@ import { join, extname } from "node:path";
  * Libellés de gabarit non traduits. **Ne doit que BAISSER.**
  *
  * 380 au premier relevé ; 362 après la navigation ; 332 après le profil ;
- * 309 après le formulaire de ticket ; **281** après la liste des ACP —
+ * 309 après le formulaire de ticket ; 281 après la liste des ACP ;
+ * **258** après l'écran du prestataire et la création d'assemblée —
  * vingt-trois libellés dont quinze réécrivaient en dur `tickets.categories.*`
  * et `tickets.priorities.*`, que `TicketPriorityBadge` employait déjà.
  *
@@ -69,7 +70,7 @@ import { join, extname } from "node:path";
  * Un `confirm()` natif y portait aussi son message en dur, hors de portée du
  * détecteur qui ne regarde que le gabarit.
  */
-const DETTE_AU_2026_09_07 = 281;
+const DETTE_AU_2026_09_07 = 258;
 
 const RACINE = join(process.cwd(), "src");
 

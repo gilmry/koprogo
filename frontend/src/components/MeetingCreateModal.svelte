@@ -4,6 +4,7 @@
   import { api } from '../lib/api';
   import BuildingSelector from './BuildingSelector.svelte';
   import { evaluerDelai } from '../lib/utils/delaiConvocation';
+  import { formatDateShort } from '../lib/utils/date.utils';
 
   let { oncreated, onclose }: {
     oncreated?: () => void;
@@ -95,7 +96,7 @@
 >
   <div class="bg-white rounded-lg shadow-xl max-w-lg w-full mx-4 max-h-[90vh] flex flex-col">
     <div class="flex justify-between items-center p-6 pb-4 border-b">
-      <h2 class="text-xl font-bold text-gray-900">Nouvelle assemblée générale</h2>
+      <h2 class="text-xl font-bold text-gray-900">{$_('meetings.newMeeting')}</h2>
       <button
         onclick={handleClose}
         class="text-gray-400 hover:text-gray-600"
@@ -123,7 +124,7 @@
 
       <div>
         <label for="meeting-title" class="block text-sm font-medium text-gray-700">
-          Titre <span class="text-red-500">*</span>
+          {$_('common.title')} <span class="text-red-500">*</span>
         </label>
         <input
           id="meeting-title"
@@ -138,7 +139,7 @@
 
       <div>
         <label for="meeting-type" class="block text-sm font-medium text-gray-700">
-          Type d'assemblée <span class="text-red-500">*</span>
+          {$_('meetings.meetingType')} <span class="text-red-500">*</span>
         </label>
         <select
           id="meeting-type"
@@ -146,14 +147,14 @@
           class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
           data-testid="select-meeting-type"
         >
-          <option value="Ordinary">Assemblée Ordinaire</option>
-          <option value="Extraordinary">Assemblée Extraordinaire</option>
+          <option value="Ordinary">{$_('meetings.ordinary')}</option>
+          <option value="Extraordinary">{$_('meetings.extraordinary')}</option>
         </select>
       </div>
 
       <div>
         <label for="meeting-date" class="block text-sm font-medium text-gray-700">
-          Date et heure <span class="text-red-500">*</span>
+          {$_('meetings.dateTime')} <span class="text-red-500">*</span>
         </label>
         <input
           id="meeting-date"
@@ -170,29 +171,35 @@
             data-testid="meeting-date-delai-trop-court"
             role="status"
           >
-            <strong>Convocation impossible dans les délais.</strong>
-            L'Art. 3.87 § 3 impose quinze jours de préavis : la convocation aurait
-            dû partir le {delaiConvocation.dateLimiteEnvoi.toLocaleDateString('fr-BE')}.
-            Reculez l'assemblée de {delaiConvocation.joursManquants} jour{delaiConvocation.joursManquants >
-            1
-              ? 's'
-              : ''}, ou convoquez dans l'urgence — le texte le prévoit.
+            <strong>{$_('meetings.convocationImpossible')}</strong>
+            {$_('meetings.convocationTooShort', {
+              values: {
+                date: formatDateShort(
+                  delaiConvocation.dateLimiteEnvoi.toISOString(),
+                ),
+                jours: delaiConvocation.joursManquants,
+              },
+            })}
           </p>
         {:else if delaiConvocation?.etat === 'tenable'}
           <p
             class="mt-2 text-sm text-gray-600"
             data-testid="meeting-date-delai-tenable"
           >
-            Date limite d'envoi de la convocation :
-            <strong>{delaiConvocation.dateLimiteEnvoi.toLocaleDateString('fr-BE')}</strong>
-            (Art. 3.87 § 3).
+            {$_('meetings.convocationDeadline')}
+            <strong
+              >{formatDateShort(
+                delaiConvocation.dateLimiteEnvoi.toISOString(),
+              )}</strong
+            >
+            {$_('meetings.legalBasis')}.
           </p>
         {/if}
       </div>
 
       <div>
         <label for="meeting-location" class="block text-sm font-medium text-gray-700">
-          Lieu <span class="text-red-500">*</span>
+          {$_('common.place')} <span class="text-red-500">*</span>
         </label>
         <input
           id="meeting-location"
@@ -207,7 +214,7 @@
 
       <div>
         <label for="meeting-description" class="block text-sm font-medium text-gray-700">
-          Description
+          {$_('common.description')}
         </label>
         <textarea
           id="meeting-description"
@@ -226,7 +233,7 @@
           onclick={handleClose}
           class="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition"
         >
-          Annuler
+          {$_('common.cancel')}
         </button>
         <button
           type="submit"

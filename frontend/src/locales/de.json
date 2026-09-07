@@ -962,7 +962,8 @@
     "you": "Sie",
     "street": "Straße",
     "slug": "Kurzkennung",
-    "enterpriseNumber": "Unternehmensnummer"
+    "enterpriseNumber": "Unternehmensnummer",
+    "place": "Ort"
   },
   "common.error.loadData": "Fehler beim Laden der Daten",
   "common.error.loadStats": "Fehler beim Laden der Statistiken",
@@ -2465,7 +2466,7 @@
     },
     "upcoming": "Bevorstehend",
     "created_success": "Versammlung erfolgreich erstellt",
-    "convocationDeadline": "Einberufung bis spätestens {date} zu versenden",
+    "convocationDeadline": "Frist für den Versand der Einberufung:",
     "convocationTooLate": "Die gesetzliche Einberufungsfrist kann nicht mehr eingehalten werden: {jours} Tag(e) fehlen.",
     "convocationTooLateAction": "Verschieben Sie die Versammlung entsprechend oder berufen Sie dringend ein, sofern gerechtfertigt (Art. 3.87 § 3).",
     "rescheduleTitle": "Versammlung verschieben",
@@ -2473,7 +2474,15 @@
     "cancelTitle": "Versammlung absagen",
     "newDateLabel": "Neues Datum",
     "attendeesLabel": "Anzahl der anwesenden Teilnehmer",
-    "confirmCancelBody": "Diese Versammlung wird als abgesagt markiert. Bereits versandte Einberufungen werden nicht zurückgezogen."
+    "confirmCancelBody": "Diese Versammlung wird als abgesagt markiert. Bereits versandte Einberufungen werden nicht zurückgezogen.",
+    "newMeeting": "Neue Eigentümerversammlung",
+    "meetingType": "Art der Versammlung",
+    "ordinary": "Ordentliche Versammlung",
+    "extraordinary": "Außerordentliche Versammlung",
+    "dateTime": "Datum und Uhrzeit",
+    "convocationImpossible": "Eine fristgerechte Einberufung ist nicht möglich.",
+    "convocationTooShort": "Art. 3.87 § 3 verlangt fünfzehn Tage Vorlauf: die Einberufung hätte am {date} versandt werden müssen. Verschieben Sie die Versammlung um {jours} Tag(e) oder berufen Sie dringend ein — das Gesetz sieht das vor.",
+    "legalBasis": "(Art. 3.87 § 3)"
   },
   "navigation": {
     "accounting": "Buchhaltung",
@@ -3948,7 +3957,18 @@
   "magicLink": {
     "issued": "Magic-Link erstellt.",
     "copied": "Link in die Zwischenablage kopiert.",
-    "copyFailed": "Kopieren fehlgeschlagen, kopieren Sie den Link manuell."
+    "copyFailed": "Kopieren fehlgeschlagen, kopieren Sie den Link manuell.",
+    "offlineMode": "Offline-Modus — Ihr Entwurf wird bei erneuter Verbindung synchronisiert.",
+    "install": "App installieren",
+    "loading": "Geteilte Ressource wird geladen…",
+    "empty": "Nichts anzuzeigen.",
+    "message": "Nachricht",
+    "amount": "Betrag (EUR)",
+    "back": "Zurück",
+    "received": "Erhalten",
+    "sent": "Ihre Antwort wurde übermittelt. Der Verwalter wird benachrichtigt.",
+    "canClose": "Sie können diese Seite bedenkenlos schließen.",
+    "close": "Schließen"
   },
   "technicalSpecs": {
     "submittedForSignature": "Datenblatt zur Unterschrift eingereicht."

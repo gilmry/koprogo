@@ -42,6 +42,8 @@
   import WitnessSelector from "./WitnessSelector.svelte";
   import type { WitnessCandidate } from "./WitnessSelector.svelte";
 
+  import { _ } from "../../i18n";
+
   // ---------------------------------------------------------------------------
   // Constantes métier (cf. backend Ticket entity)
   // ---------------------------------------------------------------------------

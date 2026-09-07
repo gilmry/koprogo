@@ -962,7 +962,8 @@
     "you": "Vous",
     "street": "Rue",
     "slug": "Identifiant court",
-    "enterpriseNumber": "Numéro BCE"
+    "enterpriseNumber": "Numéro BCE",
+    "place": "Lieu"
   },
   "common.error.loadData": "Erreur lors du chargement des données",
   "common.error.loadStats": "Erreur lors du chargement des statistiques",
@@ -2465,7 +2466,7 @@
     },
     "upcoming": "À venir",
     "created_success": "Assemblée créée avec succès",
-    "convocationDeadline": "Convocation à envoyer avant le {date}",
+    "convocationDeadline": "Date limite d'envoi de la convocation :",
     "convocationTooLate": "Le délai légal de convocation ne peut plus être tenu : il manque {jours} jour(s).",
     "convocationTooLateAction": "Reportez l'assemblée d'autant, ou convoquez en urgence si le motif le justifie (Art. 3.87 § 3).",
     "rescheduleTitle": "Reporter l'assemblée",
@@ -2473,7 +2474,15 @@
     "cancelTitle": "Annuler l'assemblée",
     "newDateLabel": "Nouvelle date",
     "attendeesLabel": "Nombre de participants présents",
-    "confirmCancelBody": "Cette assemblée sera marquée comme annulée. Les convocations déjà envoyées ne sont pas retirées."
+    "confirmCancelBody": "Cette assemblée sera marquée comme annulée. Les convocations déjà envoyées ne sont pas retirées.",
+    "newMeeting": "Nouvelle assemblée générale",
+    "meetingType": "Type d'assemblée",
+    "ordinary": "Assemblée ordinaire",
+    "extraordinary": "Assemblée extraordinaire",
+    "dateTime": "Date et heure",
+    "convocationImpossible": "Convocation impossible dans les délais.",
+    "convocationTooShort": "L'Art. 3.87 § 3 impose quinze jours de préavis : la convocation aurait dû partir le {date}. Reculez l'assemblée de {jours} jour(s), ou convoquez dans l'urgence — le texte le prévoit.",
+    "legalBasis": "(Art. 3.87 § 3)"
   },
   "navigation": {
     "accounting": "Comptabilité",
@@ -3948,7 +3957,18 @@
   "magicLink": {
     "issued": "Lien magique émis avec succès.",
     "copied": "Lien copié dans le presse-papier.",
-    "copyFailed": "Impossible de copier, copiez le lien manuellement."
+    "copyFailed": "Impossible de copier, copiez le lien manuellement.",
+    "offlineMode": "Mode hors-ligne — votre brouillon sera synchronisé à la reconnexion.",
+    "install": "Installer l'application",
+    "loading": "Chargement de la ressource partagée…",
+    "empty": "Aucune ressource à afficher.",
+    "message": "Message",
+    "amount": "Montant (EUR)",
+    "back": "Retour",
+    "received": "Reçu",
+    "sent": "Votre réponse a bien été transmise. Le syndic sera prévenu.",
+    "canClose": "Vous pouvez fermer cette page en toute sécurité.",
+    "close": "Fermer"
   },
   "technicalSpecs": {
     "submittedForSignature": "Fiche soumise pour signatures."

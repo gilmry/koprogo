@@ -962,7 +962,8 @@
     "you": "U",
     "street": "Straat",
     "slug": "Korte identificatie",
-    "enterpriseNumber": "Ondernemingsnummer"
+    "enterpriseNumber": "Ondernemingsnummer",
+    "place": "Plaats"
   },
   "common.error.loadData": "Fout bij het laden van gegevens",
   "common.error.loadStats": "Fout bij het laden van statistieken",
@@ -2465,7 +2466,7 @@
     },
     "upcoming": "Aankomend",
     "created_success": "Vergadering succesvol aangemaakt",
-    "convocationDeadline": "Oproeping te versturen vóór {date}",
+    "convocationDeadline": "Uiterste datum om de oproeping te versturen:",
     "convocationTooLate": "De wettelijke oproepingstermijn kan niet meer worden gehaald: {jours} dag(en) te kort.",
     "convocationTooLateAction": "Stel de vergadering navenant uit, of roep dringend bijeen indien gerechtvaardigd (art. 3.87 § 3).",
     "rescheduleTitle": "Vergadering uitstellen",
@@ -2473,7 +2474,15 @@
     "cancelTitle": "Vergadering annuleren",
     "newDateLabel": "Nieuwe datum",
     "attendeesLabel": "Aantal aanwezige deelnemers",
-    "confirmCancelBody": "Deze vergadering wordt als geannuleerd gemarkeerd. Reeds verzonden oproepingen worden niet ingetrokken."
+    "confirmCancelBody": "Deze vergadering wordt als geannuleerd gemarkeerd. Reeds verzonden oproepingen worden niet ingetrokken.",
+    "newMeeting": "Nieuwe algemene vergadering",
+    "meetingType": "Type vergadering",
+    "ordinary": "Gewone vergadering",
+    "extraordinary": "Buitengewone vergadering",
+    "dateTime": "Datum en tijd",
+    "convocationImpossible": "Oproeping binnen de wettelijke termijn is onmogelijk.",
+    "convocationTooShort": "Art. 3.87 § 3 vereist vijftien dagen opzegtermijn: de oproeping had op {date} moeten vertrekken. Verplaats de vergadering met {jours} dag(en), of roep dringend op — de wet voorziet dat.",
+    "legalBasis": "(art. 3.87 § 3)"
   },
   "navigation": {
     "accounting": "Boekhouding",
@@ -3948,7 +3957,18 @@
   "magicLink": {
     "issued": "Magische link aangemaakt.",
     "copied": "Link naar het klembord gekopieerd.",
-    "copyFailed": "Kopiëren mislukt, kopieer de link handmatig."
+    "copyFailed": "Kopiëren mislukt, kopieer de link handmatig.",
+    "offlineMode": "Offlinemodus — uw concept wordt gesynchroniseerd zodra u weer verbinding hebt.",
+    "install": "De app installeren",
+    "loading": "Gedeelde bron laden…",
+    "empty": "Niets om weer te geven.",
+    "message": "Bericht",
+    "amount": "Bedrag (EUR)",
+    "back": "Terug",
+    "received": "Ontvangen",
+    "sent": "Uw antwoord is verzonden. De syndicus wordt verwittigd.",
+    "canClose": "U kunt deze pagina veilig sluiten.",
+    "close": "Sluiten"
   },
   "technicalSpecs": {
     "submittedForSignature": "Fiche ingediend ter ondertekening."
