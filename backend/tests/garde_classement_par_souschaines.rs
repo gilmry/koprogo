@@ -38,15 +38,25 @@
 //! Un lexique dispersé sur cent vingt-six sites ne se corrige jamais
 //! entièrement : on corrige celui qui a fait mal, et on laisse les autres.
 //!
-//! Le compte part de **114** et non de 126 : `poll_handlers.rs` a été migré
+//! Le compte part de **118** et non de 130 : `poll_handlers.rs` a été migré
 //! dans le commit qui pose ce cliquet, parce qu'un cliquet posé sans une
 //! première baisse n'est qu'une constatation.
+//!
+//! ── Une leçon sur la mesure elle-même ─────────────────────────────────────
+//!
+//! La constante valait d'abord 114, chiffre obtenu par `grep -rn`. Le test a
+//! échoué du premier coup : `grep -rn` compte des LIGNES, ce test compte des
+//! OCCURRENCES, et quatre lignes en portent deux.
+//!
+//! Un écart de quatre, sans conséquence ici — mais il rappelle qu'une mesure
+//! non exécutée n'est qu'une estimation. Le cliquet a corrigé son propre
+//! chiffre de départ, ce qu'aucune relecture n'aurait fait.
 
 use std::fs;
 use std::path::Path;
 
 /// Occurrences de `.contains("` dans les gestionnaires. **Ne doit que BAISSER.**
-const DETTE_AU_2026_09_07: usize = 114;
+const DETTE_AU_2026_09_07: usize = 118;
 
 fn compter(repertoire: &Path) -> (usize, Vec<String>) {
     let mut total = 0;
