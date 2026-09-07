@@ -293,6 +293,32 @@ export async function loginAsSyndic(
   });
   const org = await expectOk(orgResp, "seed:org");
 
+  // Le cookie de l'ADMINISTRATEUR doit partir avant qu'on enregistre le syndic.
+  //
+  // ── Pourquoi ────────────────────────────────────────────────────────────
+  //
+  // `adminLogin` ci-dessus a posé un `koprogo_refresh` pour l'administrateur
+  // dans le pot à biscuits du contexte. `page.request` le partage, si bien que
+  // le `POST /auth/register` qui suit part AVEC ce cookie — alors même qu'il
+  // n'a pas d'en-tête `Authorization`.
+  //
+  // Depuis #769, le serveur ne pose pas de session quand l'appelant en a déjà
+  // une : c'est le correctif qui empêche un SuperAdmin créant trois comptes de
+  // se retrouver dans la peau du troisième. Conséquence ici : le syndic
+  // n'obtient PAS son cookie, et `injectAuth` — qui compte dessus pour son
+  // rafraîchissement silencieux — travaille avec celui de l'administrateur.
+  //
+  // Les jetons de rafraîchissement étant à usage unique
+  // (`auth_use_cases.rs:344`, rotation à chaque appel), la seconde navigation
+  // d'un parcours présente un jeton déjà révoqué : plus de jeton d'accès, et
+  // l'écriture qui suit rend 401. C'est #828, et cela touchait les quatre
+  // parcours les plus longs de la suite.
+  //
+  // Effacer le cookie rend `deja_authentifie` faux, donc le syndic reçoit bien
+  // le sien. Le jeton d'administrateur reste disponible dans `adminToken` pour
+  // les appels de préparation, qui le passent en en-tête.
+  await page.context().clearCookies();
+
   // Register syndic
   const regResp = await page.request.post(`${API_BASE}/auth/register`, {
     data: {
@@ -619,7 +645,13 @@ export async function loginAsSyndicWithLinkedOwner(
   const timestamp = Date.now();
   const ownerEmail = `owner-linked-${timestamp}@test.com`;
 
-  // Register an owner user account
+  // Ici on n'efface PAS les cookies, et c'est voulu.
+  //
+  // Ce helper enregistre un COMPTE de coproprietaire tout en continuant de
+  // naviguer en tant que syndic. Le garde-fou de #769 joue donc en notre
+  // faveur : l'enregistrement ne pose pas de session, et celle du syndic
+  // survit. C'est exactement le cas d'usage que ce garde-fou protege — un
+  // administrateur qui cree des comptes sans changer d'identite.
   const regResp = await page.request.post(`${API_BASE}/auth/register`, {
     data: {
       email: ownerEmail,
@@ -677,8 +709,21 @@ export async function loginAsAdmin(
   // (11 echecs sur refonte-ux/fix-admin-buttons-acp, tous en redirection
   // vers /login alors que les tests visaient des boutons Svelte 5).
   //
-  // `loginAsSyndic` n'a pas ce probleme : son POST /auth/register passe par
-  // `page.request` et depose bien le cookie du syndic dans le contexte.
+  // ATTENTION — cette derniere phrase a cesse d'etre vraie le 2026-09-06.
+  //
+  // Elle disait : « `loginAsSyndic` n'a pas ce probleme : son POST
+  // /auth/register passe par `page.request` et depose bien le cookie du syndic
+  // dans le contexte. »
+  //
+  // Depuis #769, le serveur ne pose PAS de session quand l'appelant en a deja
+  // une — et l'appelant en a une, puisque `adminLogin` vient de s'executer sur
+  // le meme contexte. Le syndic n'obtenait donc plus son cookie, et les quatre
+  // parcours les plus longs de la suite tombaient en 401 (#828).
+  //
+  // `loginAsSyndic` efface desormais le cookie de l'administrateur avant
+  // d'enregistrer le syndic. Le commentaire est corrige ici plutot que retire :
+  // une hypothese qui a ete fausse merite d'etre nommee, sans quoi quelqu'un la
+  // reformulera.
   const token = await performAdminLogin(page);
   // Une connexion reelle vient d'avoir lieu : autant en faire profiter le
   // cache partage plutot que d'en consommer une de plus juste apres.
@@ -740,6 +785,11 @@ async function registerScopedUser(
     headers: { Authorization: `Bearer ${adminToken}` },
   });
   const org = await expectOk(orgResp, "seed:org");
+
+  // Même raison que dans `loginAsSyndic` : le cookie de l'administrateur ferait
+  // croire au serveur que l'appelant a déjà une session, et le compte créé
+  // n'obtiendrait pas la sienne (#769, #828).
+  await page.context().clearCookies();
 
   const regResp = await page.request.post(`${API_BASE}/auth/register`, {
     data: {
