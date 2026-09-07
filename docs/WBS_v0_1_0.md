@@ -165,6 +165,33 @@ ses coordonnées de clic — qui lui faisait manquer toutes les petites cibles.
 | R18 | Le type `Vote` du frontend ne correspond pas au DTO servi ; clé `notices.draft` affichée en clair | #786 | **fait** |
 | R22 | **La PWA n'a jamais fonctionné** : le service worker échoue à l'installation depuis novembre 2025, deux icônes du manifeste répondent 404 | #804 | ouvert |
 
+#### R28 — la preuve était écrite et ne s'exécutait pas (#540, #828)
+
+Deux mesures faites le 2026-09-06, et elles se ressemblent.
+
+**32 scénarios BDD sur 688 étaient SAUTÉS** — vingt-deux étapes sans
+implémentation, dont douze dans `convocations.feature` et sept dans
+`age_requests.feature`, les deux fichiers les plus chargés juridiquement. Un
+scénario sauté ne compte ni comme succès ni comme échec : il est écrit, lu en
+revue, cité comme couverture, et n'exécute aucune assertion.
+
+Le parcours « Résidence du Parc Royal » est désormais implémenté : dix
+copropriétaires nommés avec leurs tantièmes, un syndic non copropriétaire, un
+locataire, et le cycle création → programmation → envoi. Il rend vérifiables
+l'Art. 3.87 § 3 (tous les copropriétaires, y compris Jeanne Devos qui n'a pas
+de courriel), le § 5, 6° (le locataire informé sans droit de vote) et le § 7
+(procurations).
+
+**25 specs Playwright sur 299 échouaient sans que rien ne le dise.** Le job
+était `skipped` — pas `failure` — parce qu'il dépend de jobs qui échouaient.
+Les rendre verts l'a rallumé. Les 25 échecs sont concentrés sur les parcours
+du comptable et rendent `401` : une absence d'identité, pas un refus de
+droits. Ils **précèdent** la correction de #769 (vérifié sur `45308a3`).
+
+C'est le motif dominant du produit appliqué à sa propre vérification : la
+preuve était écrite, elle ne s'exécutait pas, et son silence passait pour un
+succès.
+
 #### R26 — les 17 routes de dépenses entrent au contrat (#765)
 
 `docs/api/openapi.json` ignorait toutes les routes `/expenses` et `/invoices` :
@@ -469,7 +496,7 @@ Ces deux actes ne sont pas délégables : cf. `docs/governance/RESPONSABILITE.md
 
 ## Inventaire complet du périmètre 0.1.0
 
-**79 issues ouvertes** portent l'étiquette `release:0.1.0`. Elles sont
+**78 issues ouvertes** portent l'étiquette `release:0.1.0`. Elles sont
 toutes ci-dessous, sans exception : une issue du périmètre absente du WBS est
 une issue que personne ne planifie.
 
@@ -480,13 +507,13 @@ cinq jours.
 
 | Priorité | Nombre |
 |---|---|
-| critical | 7 |
-| high | 25 |
-| medium | 22 |
+| critical | 6 |
+| high | 24 |
+| medium | 23 |
 | low | 2 |
 | — | 23 |
 
-### Track R — Défauts de recette navigateur (15)
+### Track R — Défauts de recette navigateur (13)
 
 Six recettes menées au navigateur entre le 2026-09-04 et le 2026-09-06. Le
 motif dominant, confirmé six fois : **une capacité écrite, testée, et
@@ -495,12 +522,9 @@ ne peut pas y arriver.
 
 | Issue | Prio | Intitulé |
 |---|---|---|
-| #770 | critical | total_units est déclaré à la création et jamais recalculé : ajouter un lot rend l'immeuble non conf… |
 | #772 | critical | Fuite inter-organisations : 75 routes imbriquées sur 310 n'exigent aucune identité — des votes nomi… |
 | #780 | critical | Le cycle de vie d'une AG ne peut pas aboutir : trois verrous indépendants, aucun contournable depui… |
 | #814 | critical | Cinq rôles sur quatorze reçoivent une navigation entièrement vide : canSee() les fait tomber en fai… |
-| #765 | high | Contrat : les 17 routes /expenses et /invoices sont hors OpenAPI — c'est ce qui a laissé line_items… |
-| #774 | high | Page RGPD majoritairement en anglais : le copropriétaire lit ses droits et déclenche un effacement … |
 | #779 | high | Rebrancher les six modules communautaires : 111 points d'entrée servis que le frontend n'appelle pa… |
 | #777 | medium | Le test negative_display_does_not_leak_business_internals échoue au hasard : un UUID aléatoire cont… |
 | #790 | medium | tailwind.config.mjs n'est jamais chargé et annonce une couleur de marque qui n'existe plus |
@@ -508,6 +532,7 @@ ne peut pas y arriver.
 | #792 | medium | Les statuts de tickets s'affichent en valeurs internes : Open, InProgress, Resolved, Closed |
 | #794 | medium | Le tiroir de navigation mobile n'a pas de piège de focus, et son overlay est un div déguisé en bout… |
 | #804 | medium | La PWA n'a jamais fonctionné : le service worker échoue à l'installation depuis novembre 2025 |
+| #829 | medium | Art. 3.87 § 7 — le syndic ne peut être mandataire, mais rien n'empêche d'enregistrer le mandat |
 | #793 | low | « Precedent » sans accent dans la pagination, y compris dans le libellé lu par les lecteurs d'écran |
 | #796 | low | La balise theme-color annonce un vert que l'application n'utilise plus |
 
@@ -595,7 +620,7 @@ au-delà du strict Art. 3.87.
 | #582 | — | [Story 4.7] CdC membre élu + action create_alert |
 | #583 | — | [Story 4.8] [cluster-coord] CommissaireAuxComptes + VerificationCertificate |
 
-### Track T — Dette d'infrastructure de test (4)
+### Track T — Dette d'infrastructure de test (5)
 
 Ce qui empêche la CI de dire la vérité. **Quatre jobs sur dix sont rouges en
 continu depuis le 2026-09-04 au moins** : `prettier`, le contrat OpenAPI,
@@ -606,6 +631,7 @@ apprend seulement à ne plus la regarder.
 |---|---|---|
 | #540 | high | bug(test-infra): inventaire consolidé des ~27 scénarios BDD pré-existants rouges (révélés post-#524) |
 | #548 | high | bug(e2e): WP-D1/FE1 — ripple Playwright (59 specs) après JWT→cookie : auth.ts init-ordering 'Databa… |
+| #828 | high | Playwright s'exécute de nouveau et révèle 25 échecs, dont 18 en 401 sur les parcours du comptable |
 | #443 | medium | BDD-MIGRATION-001: Finalize Decimal cascade in BDD/E2E tests (~50 errors residual) |
 | #696 | — | Instabilité smoke suite Playwright CI : 109 échecs sur specs pré-existantes (occurrence 2026-08-08) |
 
@@ -720,7 +746,7 @@ déclarerai pas mortes sans mesure.
 
 ### Le compte
 
-**106 issues au relevé ; 79 après les fermetures du 2026-09-06.**
+**106 issues au relevé ; 78 après les fermetures du 2026-09-06 — et deux issues neuves, #828 et #829, trouvées en éprouvant la preuve elle-même.**
 
 Douze recouvrements ou caducités, validés par le porteur du projet, et six
 défauts critiques désormais corrigés, déployés et **gardés par un test
@@ -736,7 +762,7 @@ déplacé la date de leur retour.
 ### ⚠️ Le périmètre a doublé le 2026-09-06, et c'est une décision assumée
 
 **Tout ce qui restait en 0.2.0 entre en 0.1.0, avec la refonte UX/UI.** Le compte passe de
-**34 à 79 issues ouvertes** en `release:0.1.0` : les 31 ouvertes le 2026-09-06, les 24
+**34 à 78 issues ouvertes** en `release:0.1.0` : les 31 ouvertes le 2026-09-06, les 24
 qui étaient en 0.2.0, les 6 lots de la refonte, la documentation vivante et les défauts
 trouvés en vérifiant. Il ne reste plus rien en 0.2.0.
 

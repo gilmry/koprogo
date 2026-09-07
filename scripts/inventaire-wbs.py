@@ -13,8 +13,8 @@ TRACKS = [
 motif dominant, confirmé six fois : **une capacité écrite, testée, et
 inatteignable**. Nos tests prouvent que le code marche tout en masquant qu'on
 ne peut pas y arriver.""",
-  [765,770,772,774,777,779,780,
-   790,791,792,793,794,796,804,814]),
+  [772,777,779,780,
+   790,791,792,793,794,796,804,814,829]),
 
  ("U", "Refonte UX/UI", """Revue de design du 2026-09-06. Entrée en 0.1.0 le même jour : un financeur ne
 lit pas du code, et l'ASBL se fonde sur ce que le produit montre. **U2 ne
@@ -44,7 +44,7 @@ au-delà du strict Art. 3.87.""",
 continu depuis le 2026-09-04 au moins** : `prettier`, le contrat OpenAPI,
 `oasdiff` et la suite BDD. Une CI rouge en permanence ne garde rien — elle
 apprend seulement à ne plus la regarder.""",
-  [443,540,548,696]),
+  [443,540,548,696,828]),
 
  ("K", "Dette de code et de contrat", """Les erreurs typées plutôt que classées par sous-chaîne, le contrat OpenAPI
 complet, et la suppression du repli qui fabrique une ACP inexistante.""",
