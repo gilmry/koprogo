@@ -568,8 +568,8 @@ cinq jours.
 | Priorité | Nombre |
 |---|---|
 | critical | 5 |
-| high | 24 |
-| medium | 17 |
+| high | 23 |
+| medium | 18 |
 | — | 22 |
 
 ### Track R — Défauts de recette navigateur (3)
@@ -689,9 +689,9 @@ affiche sans bloquer apprend à croire qu'on regarde.
 
 | Issue | Prio | Intitulé |
 |---|---|---|
-| #540 | high | bug(test-infra): inventaire consolidé des ~27 scénarios BDD pré-existants rouges (révélés post-#524) |
 | #443 | medium | BDD-MIGRATION-001: Finalize Decimal cascade in BDD/E2E tests (~50 errors residual) |
 | #832 | medium | Quinze specs Playwright échouent sans erreur d'identité : les ancrages existent mais l'élément n'es… |
+| #837 | medium | La matrice de conformité légale déclare manquantes des règles implémentées : périmée depuis le 2026… |
 | #696 | — | Instabilité smoke suite Playwright CI : 109 échecs sur specs pré-existantes (occurrence 2026-08-08) |
 
 ### Track K — Dette de code et de contrat (2)
