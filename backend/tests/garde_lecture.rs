@@ -145,7 +145,7 @@ const DETTE_AU_2026_09_06: usize = 8;
 /// c'est le travail de l'issue #772.
 ///
 /// **Ce nombre ne doit que DIMINUER.**
-/// 109 au relevé du 2026-09-06 ; **98** au 2026-09-07.
+/// 109 au relevé du 2026-09-06 ; **89** au 2026-09-07.
 ///
 /// La baisse ne vient pas de gardes ajoutés mais d'une uniformisation :
 /// soixante-treize handlers comparaient `auth.role == "superadmin"` à la main,
@@ -157,7 +157,14 @@ const DETTE_AU_2026_09_06: usize = 8;
 /// se tromper de casse ou de survivre au renommage du rôle — la faiblesse
 /// exacte qui a produit #814 (`community-moderator` contre
 /// `community.moderator`) et #836.
-const IDENTITE_NON_VERIFIEE_AU_2026_09_06: usize = 98;
+///
+/// Les neuf dernières viennent d'un défaut du DÉTECTEUR, pas du code :
+/// `rustfmt` coupe `user.organization_id` sur deux lignes, et le marqueur ne
+/// s'y retrouvait plus. `decrypt_consumption`, qui déchiffre une facture
+/// d'énergie, était ainsi comptée comme non protégée alors qu'elle compare
+/// bien l'organisation de l'appelant à celle de la ressource. Les espaces sont
+/// désormais normalisés avant la recherche.
+const IDENTITE_NON_VERIFIEE_AU_2026_09_06: usize = 89;
 
 fn racine_handlers() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("src/infrastructure/web/handlers")
@@ -244,7 +251,27 @@ fn routes_imbriquees(source: &str) -> Vec<Route> {
             trouvees.push(Route {
                 nom: format!("{} {}", verbe.to_uppercase(), chemin),
                 prend_identite: corps.contains("AuthenticatedUser"),
-                verifie_identite: MARQUEURS_DE_GARDE.iter().any(|m| corps.contains(m)),
+                // Les espaces sont normalisés AVANT la recherche.
+                //
+                // `rustfmt` coupe volontiers une expression longue :
+                //
+                //     let user_org = user
+                //         .organization_id
+                //
+                // Le marqueur « user.organization_id » ne s'y retrouvait alors
+                // pas, et la route était comptée comme non vérifiée alors
+                // qu'elle l'est. `decrypt_consumption` — qui déchiffre une
+                // facture d'énergie — en était l'exemple le plus net.
+                //
+                // Un détecteur qui accuse à tort use la même chose qu'un
+                // détecteur aveugle : la confiance qu'on lui accorde.
+                verifie_identite: {
+                    let compact: String = corps.chars().filter(|c| !c.is_whitespace()).collect();
+                    MARQUEURS_DE_GARDE.iter().any(|m| {
+                        let m_compact: String = m.chars().filter(|c| !c.is_whitespace()).collect();
+                        compact.contains(&m_compact)
+                    })
+                },
             });
         }
         let _ = reste;
