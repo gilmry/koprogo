@@ -3761,7 +3761,13 @@
     "unitPlaceholder": "Lot concerné par le problème",
     "validationError": "Veuillez corriger les erreurs de validation",
     "work_started": "Travaux démarrés",
-    "responsePosted": "Réponse postée."
+    "responsePosted": "Réponse postée.",
+    "kindLabel": "Type de demande",
+    "kindRequest": "Demande (incident / intervention)",
+    "kindComplaint": "Plainte (nuisance / dossier)",
+    "fieldTitleLabel": "Titre",
+    "incidentDate": "Date de l'incident",
+    "missingEvidence": "Preuves manquantes — votre dossier est plus solide avec des photos, une date, des vidéos ou des témoins. Vous pouvez tout de même soumettre la plainte."
   },
   "units": {
     "acp": "ACP",

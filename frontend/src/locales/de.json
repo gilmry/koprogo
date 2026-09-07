@@ -3761,7 +3761,13 @@
     "unitPlaceholder": "Betroffene Einheit",
     "validationError": "Bitte korrigieren Sie die Validierungsfehler",
     "work_started": "Arbeiten begonnen",
-    "responsePosted": "Antwort veröffentlicht."
+    "responsePosted": "Antwort veröffentlicht.",
+    "kindLabel": "Art der Anfrage",
+    "kindRequest": "Anfrage (Vorfall / Eingriff)",
+    "kindComplaint": "Beschwerde (Belästigung / Vorgang)",
+    "fieldTitleLabel": "Titel",
+    "incidentDate": "Datum des Vorfalls",
+    "missingEvidence": "Fehlende Nachweise — Ihr Vorgang ist mit Fotos, einem Datum, Videos oder Zeugen belastbarer. Sie können die Beschwerde dennoch einreichen."
   },
   "units": {
     "acp": "ACP",

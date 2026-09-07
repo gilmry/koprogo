@@ -3761,7 +3761,13 @@
     "unitPlaceholder": "Kavel met het probleem",
     "validationError": "Corrigeer de validatiefouten",
     "work_started": "Werkzaamheden gestart",
-    "responsePosted": "Antwoord geplaatst."
+    "responsePosted": "Antwoord geplaatst.",
+    "kindLabel": "Type aanvraag",
+    "kindRequest": "Aanvraag (incident / interventie)",
+    "kindComplaint": "Klacht (overlast / dossier)",
+    "fieldTitleLabel": "Titel",
+    "incidentDate": "Datum van het incident",
+    "missingEvidence": "Ontbrekend bewijs — uw dossier is sterker met foto's, een datum, video's of getuigen. U kunt de klacht toch indienen."
   },
   "units": {
     "acp": "VME",

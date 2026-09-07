@@ -50,16 +50,26 @@ import { join, extname } from "node:path";
 /**
  * Libellés de gabarit non traduits. **Ne doit que BAISSER.**
  *
- * 380 au premier relevé ; 362 après la navigation ; **332** au 2026-09-07,
- * après `ProfilePanel.svelte` — trente libellés, dont la moitié dupliquaient
- * en dur des clés que `GdprDataPanel` traduisait déjà (`gdpr.article15.title`,
- * `gdpr.myPersonalData`, `common.edit`…). Traduire cet écran a donc surtout
- * consisté à le raccorder à ce qui existait.
+ * 380 au premier relevé ; 362 après la navigation ; 332 après le profil ;
+ * **309** au 2026-09-07 après le formulaire de ticket —
+ * vingt-trois libellés dont quinze réécrivaient en dur `tickets.categories.*`
+ * et `tickets.priorities.*`, que `TicketPriorityBadge` employait déjà.
+ *
+ * Le motif se répète : ces écrans ne manquaient pas de traductions, ils étaient
+ * DÉBRANCHÉS de celles qui existaient. `ProfilePanel` dupliquait de même
+ * `gdpr.article15.title`, `gdpr.myPersonalData` et `common.edit`. Traduire
+ * revient donc surtout à raccorder — ce qui explique qu'on puisse descendre
+ * vite au début, et pourquoi le reste sera plus lent.
+ *
+ * Un effet de bord notable : le formulaire affichait « Basse » là où la liste
+ * affiche « Basse (7 jours) ». Le même ticket portait deux libellés selon
+ * l'écran, et le délai que le produit s'engage à tenir n'apparaissait pas au
+ * moment où l'utilisateur choisit sa priorité.
  *
  * Un `confirm()` natif y portait aussi son message en dur, hors de portée du
  * détecteur qui ne regarde que le gabarit.
  */
-const DETTE_AU_2026_09_07 = 332;
+const DETTE_AU_2026_09_07 = 309;
 
 const RACINE = join(process.cwd(), "src");
 

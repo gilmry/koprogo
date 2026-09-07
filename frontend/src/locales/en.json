@@ -3761,7 +3761,13 @@
     "unitPlaceholder": "Unit affected by the issue",
     "validationError": "Please correct the validation errors",
     "work_started": "Work started",
-    "responsePosted": "Response posted."
+    "responsePosted": "Response posted.",
+    "kindLabel": "Request type",
+    "kindRequest": "Request (incident / works)",
+    "kindComplaint": "Complaint (nuisance / case file)",
+    "fieldTitleLabel": "Title",
+    "incidentDate": "Date of the incident",
+    "missingEvidence": "Missing evidence — your case is stronger with photos, a date, videos or witnesses. You may still submit the complaint."
   },
   "units": {
     "acp": "ACP",
