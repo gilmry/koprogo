@@ -13,7 +13,7 @@ pub async fn calculate_and_save_distribution(
     expense_id: web::Path<Uuid>,
 ) -> impl Responder {
     // Check permissions
-    if user.role != "accountant" && user.role != "syndic" && user.role != "superadmin" {
+    if user.role != "accountant" && user.role != "syndic" && !user.is_superadmin() {
         return HttpResponse::Forbidden().json(serde_json::json!({
             "error": "Only accountant, syndic, or superadmin can calculate charge distributions"
         }));

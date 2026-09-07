@@ -60,7 +60,7 @@ impl NormalizedRole {
 /// GET /api/v1/users — list all users (SuperAdmin only)
 #[get("/users")]
 pub async fn list_users(state: web::Data<AppState>, user: AuthenticatedUser) -> impl Responder {
-    if user.role != "superadmin" {
+    if !user.is_superadmin() {
         return HttpResponse::Forbidden().json(json!({
             "error": "Only SuperAdmin can access all users"
         }));
@@ -118,7 +118,7 @@ pub async fn create_user(
     user: AuthenticatedUser,
     req: web::Json<CreateUserRequest>,
 ) -> impl Responder {
-    if user.role != "superadmin" {
+    if !user.is_superadmin() {
         return HttpResponse::Forbidden().json(json!({
             "error": "Only SuperAdmin can create users"
         }));
@@ -196,7 +196,7 @@ pub async fn update_user(
     path: web::Path<Uuid>,
     req: web::Json<UpdateUserRequest>,
 ) -> impl Responder {
-    if user.role != "superadmin" {
+    if !user.is_superadmin() {
         return HttpResponse::Forbidden().json(json!({
             "error": "Only SuperAdmin can update users"
         }));
@@ -285,7 +285,7 @@ pub async fn activate_user(
     user: AuthenticatedUser,
     path: web::Path<Uuid>,
 ) -> impl Responder {
-    if user.role != "superadmin" {
+    if !user.is_superadmin() {
         return HttpResponse::Forbidden().json(json!({
             "error": "Only SuperAdmin can activate users"
         }));
@@ -308,7 +308,7 @@ pub async fn deactivate_user(
     user: AuthenticatedUser,
     path: web::Path<Uuid>,
 ) -> impl Responder {
-    if user.role != "superadmin" {
+    if !user.is_superadmin() {
         return HttpResponse::Forbidden().json(json!({
             "error": "Only SuperAdmin can deactivate users"
         }));
@@ -331,7 +331,7 @@ pub async fn delete_user(
     user: AuthenticatedUser,
     path: web::Path<Uuid>,
 ) -> impl Responder {
-    if user.role != "superadmin" {
+    if !user.is_superadmin() {
         return HttpResponse::Forbidden().json(json!({
             "error": "Only SuperAdmin can delete users"
         }));

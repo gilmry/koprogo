@@ -322,7 +322,7 @@ pub async fn update_unit(
     dto: web::Json<UpdateUnitDto>,
 ) -> impl Responder {
     // Only SuperAdmin can update units (structural data including quotités)
-    if user.role != "superadmin" {
+    if !user.is_superadmin() {
         return HttpResponse::Forbidden().json(serde_json::json!({
             "error": "Only SuperAdmin can update units (structural data including quotités)"
         }));
@@ -336,7 +336,7 @@ pub async fn update_unit(
     }
 
     // Verify the user owns the unit (via building organization check)
-    if user.role != "superadmin" {
+    if !user.is_superadmin() {
         match state.unit_use_cases.get_unit(*id).await {
             Ok(Some(unit)) => {
                 // Get the building to check organization
@@ -450,7 +450,7 @@ pub async fn delete_unit(
     id: web::Path<Uuid>,
 ) -> impl Responder {
     // Only SuperAdmin can delete units (structural data)
-    if user.role != "superadmin" {
+    if !user.is_superadmin() {
         return HttpResponse::Forbidden().json(serde_json::json!({
             "error": "Only SuperAdmin can delete units (structural data)"
         }));

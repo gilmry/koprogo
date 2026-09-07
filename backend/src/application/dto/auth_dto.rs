@@ -83,3 +83,21 @@ pub struct Claims {
     pub exp: i64, // expiration timestamp
     pub iat: i64, // issued at
 }
+
+impl Claims {
+    /// L'appelant est-il superadministrateur de la plateforme ?
+    ///
+    /// Même définition que `AuthenticatedUser::is_superadmin`, et pour la même
+    /// raison : la comparaison littérale `role == "superadmin"` était écrite à
+    /// la main en soixante-treize endroits. Une seule d'entre elles qui se
+    /// trompe de casse, ou qui survit au renommage du rôle, ouvre un accès
+    /// sans que rien ne le dise.
+    ///
+    /// C'est la faiblesse qui a produit #814 — `community-moderator` comparé à
+    /// `community.moderator`, un trait d'union contre un point — et #836, où
+    /// dix rôles sur quatorze étaient travestis en `owner` faute d'être
+    /// déclarés au même endroit.
+    pub fn is_superadmin(&self) -> bool {
+        self.role == "superadmin"
+    }
+}

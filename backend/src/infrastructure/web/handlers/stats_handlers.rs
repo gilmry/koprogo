@@ -8,7 +8,7 @@ pub async fn get_dashboard_stats(
     state: web::Data<AppState>,
     user: AuthenticatedUser,
 ) -> impl Responder {
-    if user.role != "superadmin" {
+    if !user.is_superadmin() {
         return HttpResponse::Forbidden().json(serde_json::json!({
             "error": "Only SuperAdmin can access dashboard statistics"
         }));
@@ -29,7 +29,7 @@ pub async fn get_owner_stats(
     state: web::Data<AppState>,
     user: AuthenticatedUser,
 ) -> impl Responder {
-    if user.role != "owner" && user.role != "superadmin" {
+    if user.role != "owner" && !user.is_superadmin() {
         return HttpResponse::Forbidden().json(serde_json::json!({
             "error": "Only Owner can access these statistics"
         }));
@@ -54,7 +54,7 @@ pub async fn get_syndic_stats(
     state: web::Data<AppState>,
     user: AuthenticatedUser,
 ) -> impl Responder {
-    if user.role != "syndic" && user.role != "accountant" && user.role != "superadmin" {
+    if user.role != "syndic" && user.role != "accountant" && !user.is_superadmin() {
         return HttpResponse::Forbidden().json(serde_json::json!({
             "error": "Only Syndic and Accountant can access these statistics"
         }));
@@ -81,7 +81,7 @@ pub async fn get_syndic_urgent_tasks(
     state: web::Data<AppState>,
     user: AuthenticatedUser,
 ) -> impl Responder {
-    if user.role != "syndic" && user.role != "accountant" && user.role != "superadmin" {
+    if user.role != "syndic" && user.role != "accountant" && !user.is_superadmin() {
         return HttpResponse::Forbidden().json(serde_json::json!({
             "error": "Only Syndic and Accountant can access these tasks"
         }));
@@ -108,7 +108,7 @@ pub async fn get_seed_data_stats(
     state: web::Data<AppState>,
     user: AuthenticatedUser,
 ) -> impl Responder {
-    if user.role != "superadmin" {
+    if !user.is_superadmin() {
         return HttpResponse::Forbidden().json(serde_json::json!({
             "error": "Only SuperAdmin can access seed data statistics"
         }));

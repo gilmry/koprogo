@@ -145,7 +145,19 @@ const DETTE_AU_2026_09_06: usize = 8;
 /// c'est le travail de l'issue #772.
 ///
 /// **Ce nombre ne doit que DIMINUER.**
-const IDENTITE_NON_VERIFIEE_AU_2026_09_06: usize = 109;
+/// 109 au relevé du 2026-09-06 ; **98** au 2026-09-07.
+///
+/// La baisse ne vient pas de gardes ajoutés mais d'une uniformisation :
+/// soixante-treize handlers comparaient `auth.role == "superadmin"` à la main,
+/// alors que `AuthenticatedUser::is_superadmin()` existait. Onze de ces routes
+/// vérifiaient donc bien l'identité, sans que ce cliquet puisse le voir.
+///
+/// L'uniformisation vaut au-delà du décompte. Une comparaison littérale écrite
+/// à la main en soixante-treize endroits, c'est soixante-treize occasions de
+/// se tromper de casse ou de survivre au renommage du rôle — la faiblesse
+/// exacte qui a produit #814 (`community-moderator` contre
+/// `community.moderator`) et #836.
+const IDENTITE_NON_VERIFIEE_AU_2026_09_06: usize = 98;
 
 fn racine_handlers() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("src/infrastructure/web/handlers")

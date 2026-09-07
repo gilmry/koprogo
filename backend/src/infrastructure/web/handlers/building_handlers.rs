@@ -262,7 +262,7 @@ pub async fn update_building(
     dto: web::Json<UpdateBuildingDto>,
 ) -> impl Responder {
     // Only SuperAdmin can update buildings (structural data)
-    if user.role != "superadmin" {
+    if !user.is_superadmin() {
         return HttpResponse::Forbidden().json(serde_json::json!({
             "error": "Only SuperAdmin can update buildings (structural data)"
         }));
@@ -276,7 +276,7 @@ pub async fn update_building(
     }
 
     // Story 1.2 — Only SuperAdmin can re-affect the parent ACP.
-    if dto.acp_id.is_some() && user.role != "superadmin" {
+    if dto.acp_id.is_some() && !user.is_superadmin() {
         return HttpResponse::Forbidden().json(serde_json::json!({
             "error": "Only SuperAdmins can change building ACP"
         }));
@@ -285,7 +285,7 @@ pub async fn update_building(
     // Hotfix #603 — defensive duplicate guard (branch unreachable as
     // superadmin-only guard above already returns 403, but kept in case
     // the upstream guard is relaxed in the future).
-    if user.role != "superadmin" {
+    if !user.is_superadmin() {
         return HttpResponse::Forbidden().json(serde_json::json!({
             "error": "Only SuperAdmin can update buildings (structural data)"
         }));
@@ -349,7 +349,7 @@ pub async fn delete_building(
     id: web::Path<Uuid>,
 ) -> impl Responder {
     // Only SuperAdmin can delete buildings
-    if user.role != "superadmin" {
+    if !user.is_superadmin() {
         return HttpResponse::Forbidden().json(serde_json::json!({
             "error": "Only SuperAdmin can delete buildings"
         }));

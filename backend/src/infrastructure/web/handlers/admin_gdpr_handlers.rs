@@ -105,7 +105,7 @@ pub async fn list_audit_logs(
     query: web::Query<AuditLogQuery>,
 ) -> impl Responder {
     // Only SuperAdmin can view audit logs
-    if auth.role != "superadmin" {
+    if !auth.is_superadmin() {
         return HttpResponse::Forbidden().json(serde_json::json!({
             "error": "Access denied. SuperAdmin role required."
         }));
@@ -218,7 +218,7 @@ pub async fn admin_export_user_data(
     path: web::Path<Uuid>,
 ) -> impl Responder {
     // Only SuperAdmin can perform admin exports
-    if auth.role != "superadmin" {
+    if !auth.is_superadmin() {
         return HttpResponse::Forbidden().json(serde_json::json!({
             "error": "Access denied. SuperAdmin role required."
         }));
@@ -335,7 +335,7 @@ pub async fn admin_erase_user_data(
     path: web::Path<Uuid>,
 ) -> impl Responder {
     // Only SuperAdmin can perform admin erasures
-    if auth.role != "superadmin" {
+    if !auth.is_superadmin() {
         return HttpResponse::Forbidden().json(serde_json::json!({
             "error": "Access denied. SuperAdmin role required."
         }));

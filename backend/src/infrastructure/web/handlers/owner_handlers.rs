@@ -38,7 +38,7 @@ pub async fn create_owner(
 
     // For SuperAdmin: allow specifying organization_id in DTO
     // For others: override with their JWT organization_id
-    let organization_id = if user.role == "superadmin" {
+    let organization_id = if user.is_superadmin() {
         // SuperAdmin can specify organization_id or it defaults to empty string
         if dto.organization_id.is_empty() {
             return HttpResponse::BadRequest().json(serde_json::json!({
@@ -112,7 +112,7 @@ pub async fn list_owners(
     page_request: web::Query<PageRequest>,
 ) -> impl Responder {
     // SuperAdmin can see all owners, others only see their organization's owners
-    let organization_id = if user.role == "superadmin" {
+    let organization_id = if user.is_superadmin() {
         None // SuperAdmin sees all organizations
     } else {
         user.organization_id // Other roles see only their organization
@@ -217,7 +217,7 @@ pub async fn update_owner(
     }
 
     // SuperAdmin can update any owner, others need organization check
-    let user_organization_id = if user.role != "superadmin" {
+    let user_organization_id = if !user.is_superadmin() {
         match user.require_organization() {
             Ok(org_id) => Some(org_id),
             Err(e) => {
@@ -302,7 +302,7 @@ pub async fn link_owner_to_user(
     dto: web::Json<LinkOwnerUserDto>,
 ) -> impl Responder {
     // Only SuperAdmin can link users to owners
-    if user.role != "superadmin" {
+    if !user.is_superadmin() {
         return HttpResponse::Forbidden().json(serde_json::json!({
             "error": "Only SuperAdmin can link users to owners"
         }));

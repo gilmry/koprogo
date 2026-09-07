@@ -77,7 +77,7 @@ pub async fn export_user_data(
     // Determine organization scope based on role
     // SuperAdmin can export across all organizations (organization_id = None)
     // Regular users are scoped to their organization
-    let organization_id = if auth.role == "superadmin" {
+    let organization_id = if auth.is_superadmin() {
         None
     } else {
         auth.organization_id
@@ -210,7 +210,7 @@ pub async fn erase_user_data(
     let user_agent = extract_user_agent(&req);
 
     // Determine organization scope based on role
-    let organization_id = if auth.role == "superadmin" {
+    let organization_id = if auth.is_superadmin() {
         None
     } else {
         auth.organization_id

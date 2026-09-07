@@ -52,7 +52,7 @@ pub async fn create_account(
     dto: web::Json<CreateAccountDto>,
 ) -> impl Responder {
     // Permission: Accountant or SuperAdmin can create accounts
-    if user.role != "accountant" && user.role != "superadmin" {
+    if user.role != "accountant" && !user.is_superadmin() {
         return HttpResponse::Forbidden().json(serde_json::json!({
             "error": "Only Accountant or SuperAdmin can create accounts"
         }));
@@ -77,7 +77,7 @@ pub async fn create_account(
     };
 
     // Authorization: Check user belongs to organization (unless SuperAdmin)
-    if user.role != "superadmin" {
+    if !user.is_superadmin() {
         if let Ok(user_org_id) = user.require_organization() {
             if user_org_id != organization_id {
                 return HttpResponse::Forbidden().json(serde_json::json!({
@@ -154,7 +154,7 @@ pub async fn list_accounts(
     query: web::Query<AccountSearchQuery>,
 ) -> impl Responder {
     // Get organization_id (SuperAdmin can query any org, others only their own)
-    let organization_id = if user.role == "superadmin" {
+    let organization_id = if user.is_superadmin() {
         // TODO: SuperAdmin could pass org_id as query param
         // For now, require organization
         match user.require_organization() {
@@ -247,7 +247,7 @@ pub async fn get_account(
     match state.account_use_cases.get_account(account_id).await {
         Ok(Some(account)) => {
             // Authorization: Check user belongs to organization (unless SuperAdmin)
-            if user.role != "superadmin" {
+            if !user.is_superadmin() {
                 if let Ok(user_org_id) = user.require_organization() {
                     if user_org_id != account.organization_id {
                         return HttpResponse::Forbidden().json(serde_json::json!({
@@ -314,7 +314,7 @@ pub async fn update_account(
     dto: web::Json<UpdateAccountDto>,
 ) -> impl Responder {
     // Permission: Accountant or SuperAdmin
-    if user.role != "accountant" && user.role != "superadmin" {
+    if user.role != "accountant" && !user.is_superadmin() {
         return HttpResponse::Forbidden().json(serde_json::json!({
             "error": "Only Accountant or SuperAdmin can update accounts"
         }));
@@ -353,7 +353,7 @@ pub async fn update_account(
     };
 
     // Authorization check
-    if user.role != "superadmin" {
+    if !user.is_superadmin() {
         if let Ok(user_org_id) = user.require_organization() {
             if user_org_id != existing_account.organization_id {
                 return HttpResponse::Forbidden().json(serde_json::json!({
@@ -429,7 +429,7 @@ pub async fn delete_account(
     id: web::Path<String>,
 ) -> impl Responder {
     // Permission: Accountant or SuperAdmin
-    if user.role != "accountant" && user.role != "superadmin" {
+    if user.role != "accountant" && !user.is_superadmin() {
         return HttpResponse::Forbidden().json(serde_json::json!({
             "error": "Only Accountant or SuperAdmin can delete accounts"
         }));
@@ -460,7 +460,7 @@ pub async fn delete_account(
     };
 
     // Authorization check
-    if user.role != "superadmin" {
+    if !user.is_superadmin() {
         if let Ok(user_org_id) = user.require_organization() {
             if user_org_id != existing_account.organization_id {
                 return HttpResponse::Forbidden().json(serde_json::json!({
@@ -512,7 +512,7 @@ pub async fn seed_belgian_pcmn(
     dto: web::Json<SeedBelgianPcmnDto>,
 ) -> impl Responder {
     // Permission: SuperAdmin or Accountant
-    if user.role != "superadmin" && user.role != "accountant" {
+    if !user.is_superadmin() && user.role != "accountant" {
         return HttpResponse::Forbidden().json(serde_json::json!({
             "error": "Only SuperAdmin or Accountant can seed PCMN"
         }));
@@ -529,7 +529,7 @@ pub async fn seed_belgian_pcmn(
     };
 
     // Authorization: Check user belongs to organization (unless SuperAdmin)
-    if user.role != "superadmin" {
+    if !user.is_superadmin() {
         if let Ok(user_org_id) = user.require_organization() {
             if user_org_id != organization_id {
                 return HttpResponse::Forbidden().json(serde_json::json!({
