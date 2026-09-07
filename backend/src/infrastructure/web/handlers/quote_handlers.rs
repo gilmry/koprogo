@@ -1,9 +1,10 @@
 use crate::application::dto::{
     CreateQuoteDto, QuoteComparisonRequestDto, QuoteDecisionDto, SubmitQuoteDto,
 };
+use crate::infrastructure::web::middleware::scope_guard::verify_building_org_access;
 use crate::infrastructure::web::middleware::AuthenticatedUser;
 use crate::infrastructure::web::AppState;
-use actix_web::{delete, get, post, put, web, HttpResponse, Responder};
+use actix_web::{delete, get, post, put, web, HttpResponse, Responder, ResponseError};
 use uuid::Uuid;
 
 /// POST /api/v1/quotes
@@ -50,9 +51,24 @@ pub async fn get_quote(
 #[get("/buildings/{building_id}/quotes")]
 pub async fn list_building_quotes(
     data: web::Data<AppState>,
-    _auth: AuthenticatedUser,
+    auth: AuthenticatedUser,
     building_id: web::Path<Uuid>,
 ) -> impl Responder {
+    // Cloisonnement : l'immeuble visé doit relever d'une ACP que cet
+    // utilisateur a le droit de voir. Un devis dit qui a soumis quel prix pour
+    // quels travaux — le lire hors de son ACP, c'est lire la concurrence.
+    // L'identité était prise puis ignorée — `_auth` (#772).
+    if let Err(err) = verify_building_org_access(
+        &auth,
+        *building_id,
+        &data.building_use_cases,
+        &data.acp_use_cases,
+    )
+    .await
+    {
+        return err.error_response();
+    }
+
     match data
         .quote_use_cases
         .list_by_building(building_id.into_inner())
@@ -90,9 +106,20 @@ pub async fn list_contractor_quotes(
 #[get("/buildings/{building_id}/quotes/status/{status}")]
 pub async fn list_quotes_by_status(
     data: web::Data<AppState>,
-    _auth: AuthenticatedUser,
+    auth: AuthenticatedUser,
     path: web::Path<(Uuid, String)>,
 ) -> impl Responder {
+    // Cloisonnement : l'immeuble visé doit relever d'une ACP que cet
+    // utilisateur a le droit de voir. Un devis dit qui a soumis quel prix pour
+    // quels travaux — le lire hors de son ACP, c'est lire la concurrence.
+    // L'identité était prise puis ignorée — `_auth` (#772).
+    if let Err(err) =
+        verify_building_org_access(&auth, path.0, &data.building_use_cases, &data.acp_use_cases)
+            .await
+    {
+        return err.error_response();
+    }
+
     let (building_id, status) = path.into_inner();
 
     match data
@@ -296,9 +323,24 @@ pub async fn delete_quote(
 #[get("/buildings/{building_id}/quotes/count")]
 pub async fn count_building_quotes(
     data: web::Data<AppState>,
-    _auth: AuthenticatedUser,
+    auth: AuthenticatedUser,
     building_id: web::Path<Uuid>,
 ) -> impl Responder {
+    // Cloisonnement : l'immeuble visé doit relever d'une ACP que cet
+    // utilisateur a le droit de voir. Un devis dit qui a soumis quel prix pour
+    // quels travaux — le lire hors de son ACP, c'est lire la concurrence.
+    // L'identité était prise puis ignorée — `_auth` (#772).
+    if let Err(err) = verify_building_org_access(
+        &auth,
+        *building_id,
+        &data.building_use_cases,
+        &data.acp_use_cases,
+    )
+    .await
+    {
+        return err.error_response();
+    }
+
     match data
         .quote_use_cases
         .count_by_building(building_id.into_inner())
@@ -318,9 +360,20 @@ pub async fn count_building_quotes(
 #[get("/buildings/{building_id}/quotes/status/{status}/count")]
 pub async fn count_quotes_by_status(
     data: web::Data<AppState>,
-    _auth: AuthenticatedUser,
+    auth: AuthenticatedUser,
     path: web::Path<(Uuid, String)>,
 ) -> impl Responder {
+    // Cloisonnement : l'immeuble visé doit relever d'une ACP que cet
+    // utilisateur a le droit de voir. Un devis dit qui a soumis quel prix pour
+    // quels travaux — le lire hors de son ACP, c'est lire la concurrence.
+    // L'identité était prise puis ignorée — `_auth` (#772).
+    if let Err(err) =
+        verify_building_org_access(&auth, path.0, &data.building_use_cases, &data.acp_use_cases)
+            .await
+    {
+        return err.error_response();
+    }
+
     let (building_id, status) = path.into_inner();
 
     match data
