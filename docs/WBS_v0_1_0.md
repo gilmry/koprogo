@@ -556,7 +556,7 @@ Ces deux actes ne sont pas délégables : cf. `docs/governance/RESPONSABILITE.md
 
 ## Inventaire complet du périmètre 0.1.0
 
-**72 issues ouvertes** portent l'étiquette `release:0.1.0`. Elles sont
+**73 issues ouvertes** portent l'étiquette `release:0.1.0`. Elles sont
 toutes ci-dessous, sans exception : une issue du périmètre absente du WBS est
 une issue que personne ne planifie.
 
@@ -568,7 +568,7 @@ cinq jours.
 | Priorité | Nombre |
 |---|---|
 | critical | 6 |
-| high | 24 |
+| high | 25 |
 | medium | 19 |
 | — | 23 |
 
@@ -613,7 +613,7 @@ d'avoir fermé la dette de cloisonnement serait l'ordre inverse du bon.
 | #822 | medium | Refonte UX — importer et implémenter la maquette Claude Design « Accountant Dashboard (modernisé) » |
 | #827 | medium | Refonte UX — importer et implémenter la maquette Claude Design « Lists (modernisé) » |
 
-### Track D — Documentation vivante multi-persona (13)
+### Track D — Documentation vivante multi-persona (14)
 
 Six personas, quatre workflows transverses, et la restructuration des cent
 specs e2e pour que les vidéos racontent le produit plutôt que ses modules.
@@ -626,6 +626,7 @@ vont changer produit une documentation périmée le jour de sa livraison.
 | #806 | high | Documentation vivante — parcours du SYNDIC, de la première connexion à la clôture d'une assemblée |
 | #807 | high | Documentation vivante — parcours du COPROPRIÉTAIRE, le rôle que cinq recettes n'ont jamais éprouvé |
 | #810 | high | Workflow multi-persona — le cycle de vie d'une assemblée générale, du syndic au copropriétaire |
+| #835 | high | Deux systèmes de liens magiques parallèles : le prestataire reçoit deux liens, sur deux PWA, pour u… |
 | #808 | medium | Documentation vivante — parcours du COMPTABLE, le rôle le mieux cadré du produit |
 | #809 | medium | Documentation vivante — parcours de l'ADMINISTRATEUR : ce qu'il crée, et ce qu'il ne doit pas pouvo… |
 | #811 | medium | Workflow multi-persona — le circuit d'une facture, du fournisseur au copropriétaire qui la paie |

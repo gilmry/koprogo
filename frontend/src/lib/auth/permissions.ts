@@ -107,14 +107,24 @@ const ACCOUNTING_ROLES: ReadonlySet<string> = new Set([
  * ne l'est pas, c'est de le leur montrer sous la forme d'une barre de
  * navigation vide — c'est le sujet de #814.
  *
- * `contractor` et `board_member` figurent ici **à titre provisoire**. Leurs
- * écrans existent (`pages/contractor/`, `pages/board-dashboard.astro`,
- * `BoardDashboard.svelte`, `DecisionTracker.svelte`) et leurs routes serveur
- * aussi — dix pour `/board-members`, neuf pour `/board-decisions`, quinze pour
- * `/contractor-reports`. Ce qui manque est une décision, pas du code : quels
- * menus, dans quel périmètre. Un prestataire est un tiers qui n'a rien à voir
- * du dossier d'ACP ; un membre du conseil surveille le syndic (Art. 3.90 § 1er)
- * et a donc besoin de lecture large sans écriture. Voir #815 et #816.
+ * `contractor` y figure **par décision, pas par oubli** (2026-09-07, #815). Un
+ * prestataire est un tiers extérieur à la copropriété : il intervient sur un
+ * ticket, dépose un rapport, et repart. La voie nominale est le **lien
+ * magique**, pas le compte — `pages/c.astro` et `pages/contractor/`, toutes
+ * deux `requireAuth={false}`. Lui ouvrir un menu de navigation reviendrait à
+ * le faire entrer dans le périmètre de l'ACP, ce qu'il ne doit jamais voir.
+ *
+ * Un compte portant ce rôle ne verra donc aucun menu, et c'est correct. Ce
+ * qu'il verra, c'est le message de `ROLES_SANS_INTERFACE` — pas une barre
+ * vide.
+ *
+ * `board_member` reste **provisoire**. Ses écrans existent
+ * (`pages/board-dashboard.astro`, `BoardDashboard.svelte`,
+ * `DecisionTracker.svelte`) et ses routes serveur aussi — dix pour
+ * `/board-members`, neuf pour `/board-decisions`. Ce qui manque est une
+ * décision, pas du code : le conseil surveille le syndic (Art. 3.90 § 1er) et
+ * a donc besoin de lecture large sans écriture, mais reste à dire QUELLE
+ * lecture. Voir #816.
  *
  * Cette liste est le **registre des rôles sans interface** : `garde-roles`
  * exige que chaque rôle du backend voie au moins un menu ou figure ici. Un rôle

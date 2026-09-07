@@ -26,7 +26,7 @@ d'avoir fermé la dette de cloisonnement serait l'ordre inverse du bon.""",
 specs e2e pour que les vidéos racontent le produit plutôt que ses modules.
 **Tout le track vient après #803 et après Track U** : filmer des écrans qui
 vont changer produit une documentation périmée le jour de sa livraison.""",
-  [805,806,807,808,809,810,811,812,813,815,816,817,595]),
+  [805,806,807,808,809,810,811,812,813,815,816,817,595,835]),
 
  ("M", "Modularité par ACP et RBAC communautaire", """Slice 5 de l'épopée #556. Une ACP active les modules dont elle a besoin ; le
 reste répond 403, pas 404. Ce track porte aussi les deux arbitrages ouverts
