@@ -91,6 +91,20 @@ jobs:
       - name: ADR-0008 gate — no f64 on money or quotas
         run: ./scripts/check-no-f64-money.sh
 
+      # Le gate ci-dessus ne scannait que `backend/src`. Les harnais de test
+      # manipulaient donc l'argent autrement que le produit : une TVA et un
+      # total de facture en `f64` dans le World de `bdd.rs`, et un montant
+      # d'euros lié tel quel à une colonne NUMERIC dans `bdd_financial.rs`.
+      #
+      # Un test qui traite l'argent en flottant ne prouve pas que le produit
+      # ne le fait pas — il prouve autre chose. Et c'est précisément ce que
+      # #443 cherchait à finir : la cascade Decimal jusque dans les tests.
+      #
+      # Le script prend un chemin en argument depuis l'origine ; il n'avait
+      # simplement jamais été appelé avec celui-là.
+      - name: ADR-0008 gate — same rule inside the test harnesses
+        run: ./scripts/check-no-f64-money.sh "$PWD/backend/tests"
+
       # Angle mort du job « Contract Types Check » : il compare la spec à la
       # source Rust, puis les types TS à la spec. Un endpoint ABSENT de la spec
       # est absent des deux côtés — donc cohérent, donc invisible. C'est ainsi

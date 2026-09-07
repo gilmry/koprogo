@@ -88,10 +88,17 @@ pub struct BuildingWorld {
     last_invoice_id: Option<Uuid>,
     #[allow(dead_code)]
     last_invoice_status: Option<String>,
+    // ADR-0008 §A : un montant est `Decimal` de bout en bout, jusque dans le
+    // World d'un harnais de test. Ces deux champs étaient en `f64` — une TVA
+    // et un total de facture, soit exactement ce que l'ADR interdit.
+    //
+    // Ils avaient échappé au gate parce que `check-no-f64-money.sh` ne
+    // scannait que `backend/src`. Un test qui manipule l'argent autrement que
+    // le produit ne prouve pas le produit : il prouve autre chose (#443).
     #[allow(dead_code)]
-    last_invoice_vat_amount: Option<f64>,
+    last_invoice_vat_amount: Option<rust_decimal::Decimal>,
     #[allow(dead_code)]
-    last_invoice_total: Option<f64>,
+    last_invoice_total: Option<rust_decimal::Decimal>,
     #[allow(dead_code)]
     accountant_user_id: Option<Uuid>,
     #[allow(dead_code)]

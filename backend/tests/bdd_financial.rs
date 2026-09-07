@@ -3734,7 +3734,11 @@ async fn then_all_distributions_for_alice(world: &mut FinancialWorld) {
 }
 
 #[given(regex = r#"^charge distributions exist for 2 expenses \((\d+) EUR and (\d+) EUR\)$"#)]
-async fn given_distributions_2_amounts(world: &mut FinancialWorld, _amount1: f64, amount2: f64) {
+// Les deux montants sont des ENTIERS d'euros dans le gabarit
+// (`\(\d+\) EUR`), et le second est lié tel quel à une colonne NUMERIC.
+// En `f64`, il traversait donc le flottant avant d'atteindre une colonne
+// exacte — ce que l'ADR-0008 §A proscrit, y compris dans un harnais.
+async fn given_distributions_2_amounts(world: &mut FinancialWorld, _amount1: u64, amount2: u64) {
     // Distribute first expense (already created in background)
     let uc = world
         .charge_distribution_use_cases
@@ -3758,7 +3762,7 @@ async fn given_distributions_2_amounts(world: &mut FinancialWorld, _amount1: f64
     .bind(id2)
     .bind(building_id)
     .bind(org_id)
-    .bind(amount2)
+    .bind(Decimal::from(amount2))
     .execute(pool)
     .await
     .expect("insert second expense");
