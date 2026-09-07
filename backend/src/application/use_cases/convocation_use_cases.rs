@@ -990,9 +990,8 @@ mod tests {
         assert!(result.is_err());
         let err = result.unwrap_err();
         assert!(
-            err.contains("Meeting date too soon"),
-            "Expected 'Meeting date too soon' error, got: {}",
-            err
+            err.contains("3.87"),
+            "le refus doit citer l'article qui le fonde, reçu : {err}"
         );
     }
 

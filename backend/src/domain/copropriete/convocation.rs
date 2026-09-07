@@ -182,15 +182,28 @@ impl Convocation {
         // Check if meeting date allows for legal notice period
         let now = Utc::now();
         if minimum_send_date < now {
+            // Message en français, et qui dit ce qu'il faut faire.
+            //
+            // « Meeting date too soon » était la version précédente : en
+            // anglais, dans un produit belge à quatre langues, et adressée à un
+            // syndic qui n'a plus aucun recours à ce stade. La recette 4 l'a
+            // relevé comme le premier des trois verrous du cycle d'AG (#780).
+            //
+            // La date limite d'envoi est déjà DÉPASSÉE quand ce refus tombe :
+            // dire « il aurait fallu envoyer avant le … » est la seule
+            // information utile, puisqu'elle nomme le recours — reporter
+            // l'assemblée.
             return Err(format!(
-                "Meeting date too soon. {} meeting requires {} days notice. Minimum send date would be {}",
+                "Art. 3.87 § 3 : une assemblée {} exige un préavis de {} jours. \
+                 La convocation aurait dû partir au plus tard le {}. \
+                 Reportez l'assemblée à une date plus lointaine.",
                 match meeting_type {
-                    ConvocationType::Ordinary => "Ordinary",
-                    ConvocationType::Extraordinary => "Extraordinary",
-                    ConvocationType::SecondConvocation => "Second convocation",
+                    ConvocationType::Ordinary => "ordinaire",
+                    ConvocationType::Extraordinary => "extraordinaire",
+                    ConvocationType::SecondConvocation => "sur seconde convocation",
                 },
                 minimum_notice_days,
-                minimum_send_date.format("%Y-%m-%d %H:%M")
+                minimum_send_date.format("%d/%m/%Y à %H:%M")
             ));
         }
 
@@ -462,7 +475,16 @@ mod tests {
         );
 
         assert!(result.is_err());
-        assert!(result.unwrap_err().contains("Meeting date too soon"));
+        let erreur = result.unwrap_err();
+        assert!(
+            erreur.contains("3.87"),
+            "le refus doit citer l'article qui le fonde, reçu : {erreur}"
+        );
+        assert!(
+            erreur.contains("Reportez"),
+            "le refus doit nommer le recours : à ce stade la date limite est \
+             dépassée, et reporter est la seule issue (#780). Reçu : {erreur}"
+        );
     }
 
     #[test]
