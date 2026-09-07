@@ -567,9 +567,9 @@ cinq jours.
 
 | Priorité | Nombre |
 |---|---|
-| critical | 6 |
+| critical | 7 |
 | high | 25 |
-| medium | 19 |
+| medium | 18 |
 | — | 23 |
 
 ### Track R — Défauts de recette navigateur (6)
@@ -584,9 +584,9 @@ ne peut pas y arriver.
 | #772 | critical | Fuite inter-organisations : 75 routes imbriquées sur 310 n'exigent aucune identité — des votes nomi… |
 | #780 | critical | Le cycle de vie d'une AG ne peut pas aboutir : trois verrous indépendants, aucun contournable depui… |
 | #814 | critical | Cinq rôles sur quatorze reçoivent une navigation entièrement vide : canSee() les fait tomber en fai… |
+| #836 | critical | normalizeRole transforme silencieusement dix rôles sur quatorze en « owner » : tout le travail de #… |
 | #779 | high | Rebrancher les six modules communautaires : 111 points d'entrée servis que le frontend n'appelle pa… |
 | #777 | medium | Le test negative_display_does_not_leak_business_internals échoue au hasard : un UUID aléatoire cont… |
-| #829 | medium | Art. 3.87 § 7 — le syndic ne peut être mandataire, mais rien n'empêche d'enregistrer le mandat |
 
 ### Track U — Refonte UX/UI (15)
 
