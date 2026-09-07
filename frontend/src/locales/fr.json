@@ -2234,7 +2234,9 @@
       "odsDesc": "Journal des opérations diverses",
       "ven": "Ventes",
       "venDesc": "Journal des ventes (clients)"
-    }
+    },
+    "selectBuildingTitle": "Sélectionnez un immeuble",
+    "selectBuildingBody": "Une écriture manuelle doit désigner l'immeuble dont elle relève : c'est lui qui détermine la copropriété à laquelle l'imputer. Choisissez-en un dans la barre de contexte."
   },
   "languages": {
     "de": "Allemand",

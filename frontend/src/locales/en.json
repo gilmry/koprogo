@@ -2234,7 +2234,9 @@
       "odsDesc": "Miscellaneous operations journal",
       "ven": "Sales",
       "venDesc": "Sales journal (customers)"
-    }
+    },
+    "selectBuildingTitle": "Select a building",
+    "selectBuildingBody": "A manual entry must designate the building it belongs to: that is what determines which co-ownership it is posted against. Pick one in the context bar."
   },
   "languages": {
     "de": "German",

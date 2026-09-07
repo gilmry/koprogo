@@ -2234,7 +2234,9 @@
       "odsDesc": "Journaal diverse verrichtingen",
       "ven": "Verkopen",
       "venDesc": "Verkoopjournaal (klanten)"
-    }
+    },
+    "selectBuildingTitle": "Selecteer een gebouw",
+    "selectBuildingBody": "Een handmatige boeking moet het gebouw aanduiden waartoe zij behoort: dat bepaalt aan welke vereniging zij wordt toegerekend. Kies er een in de contextbalk."
   },
   "languages": {
     "de": "Duits",

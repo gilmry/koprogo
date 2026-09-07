@@ -2234,7 +2234,9 @@
       "odsDesc": "Journal verschiedene Vorgänge",
       "ven": "Verkäufe",
       "venDesc": "Verkaufsjournal (Kunden)"
-    }
+    },
+    "selectBuildingTitle": "Wählen Sie ein Gebäude",
+    "selectBuildingBody": "Eine manuelle Buchung muss das Gebäude benennen, zu dem sie gehört: es bestimmt, welcher Eigentümergemeinschaft sie zugeordnet wird. Wählen Sie eines in der Kontextleiste."
   },
   "languages": {
     "de": "Deutsch",
