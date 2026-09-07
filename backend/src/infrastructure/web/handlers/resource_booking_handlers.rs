@@ -1,8 +1,9 @@
 use crate::application::dto::{CreateResourceBookingDto, UpdateResourceBookingDto};
 use crate::domain::entities::{BookingStatus, ResourceType};
 use crate::infrastructure::web::app_state::AppState;
+use crate::infrastructure::web::middleware::scope_guard::verify_building_org_access;
 use crate::infrastructure::web::middleware::AuthenticatedUser;
-use actix_web::{delete, get, post, put, web, HttpResponse, Responder};
+use actix_web::{delete, get, post, put, web, HttpResponse, Responder, ResponseError};
 use chrono::{DateTime, Utc};
 use serde::Deserialize;
 use uuid::Uuid;
@@ -89,9 +90,24 @@ pub async fn get_booking(
 #[get("/buildings/{building_id}/resource-bookings")]
 pub async fn list_building_bookings(
     data: web::Data<AppState>,
-    _auth: AuthenticatedUser,
+    auth: AuthenticatedUser,
     building_id: web::Path<Uuid>,
 ) -> impl Responder {
+    // Cloisonnement : l'immeuble visé doit relever d'une ACP que cet
+    // utilisateur a le droit de voir. L'identité était prise puis ignorée —
+    // `_auth` — et n'importe quel utilisateur authentifié lisait les
+    // réservations de n'importe quel immeuble (#772).
+    if let Err(err) = verify_building_org_access(
+        &auth,
+        *building_id,
+        &data.building_use_cases,
+        &data.acp_use_cases,
+    )
+    .await
+    {
+        return err.error_response();
+    }
+
     match data
         .resource_booking_use_cases
         .list_building_bookings(building_id.into_inner())
@@ -111,9 +127,20 @@ pub async fn list_building_bookings(
 #[get("/buildings/{building_id}/resource-bookings/type/{resource_type}")]
 pub async fn list_by_resource_type(
     data: web::Data<AppState>,
-    _auth: AuthenticatedUser,
+    auth: AuthenticatedUser,
     path: web::Path<(Uuid, String)>,
 ) -> impl Responder {
+    // Cloisonnement : l'immeuble visé doit relever d'une ACP que cet
+    // utilisateur a le droit de voir. L'identité était prise puis ignorée —
+    // `_auth` — et n'importe quel utilisateur authentifié lisait les
+    // réservations de n'importe quel immeuble (#772).
+    if let Err(err) =
+        verify_building_org_access(&auth, path.0, &data.building_use_cases, &data.acp_use_cases)
+            .await
+    {
+        return err.error_response();
+    }
+
     let (building_id, resource_type_str) = path.into_inner();
 
     // Parse resource_type from string
@@ -146,9 +173,20 @@ pub async fn list_by_resource_type(
 #[get("/buildings/{building_id}/resource-bookings/resource/{resource_type}/{resource_name}")]
 pub async fn list_by_resource(
     data: web::Data<AppState>,
-    _auth: AuthenticatedUser,
+    auth: AuthenticatedUser,
     path: web::Path<(Uuid, String, String)>,
 ) -> impl Responder {
+    // Cloisonnement : l'immeuble visé doit relever d'une ACP que cet
+    // utilisateur a le droit de voir. L'identité était prise puis ignorée —
+    // `_auth` — et n'importe quel utilisateur authentifié lisait les
+    // réservations de n'importe quel immeuble (#772).
+    if let Err(err) =
+        verify_building_org_access(&auth, path.0, &data.building_use_cases, &data.acp_use_cases)
+            .await
+    {
+        return err.error_response();
+    }
+
     let (building_id, resource_type_str, resource_name) = path.into_inner();
 
     // Parse resource_type from string
@@ -246,9 +284,20 @@ pub async fn list_my_bookings_by_status(
 #[get("/buildings/{building_id}/resource-bookings/status/{status}")]
 pub async fn list_building_bookings_by_status(
     data: web::Data<AppState>,
-    _auth: AuthenticatedUser,
+    auth: AuthenticatedUser,
     path: web::Path<(Uuid, String)>,
 ) -> impl Responder {
+    // Cloisonnement : l'immeuble visé doit relever d'une ACP que cet
+    // utilisateur a le droit de voir. L'identité était prise puis ignorée —
+    // `_auth` — et n'importe quel utilisateur authentifié lisait les
+    // réservations de n'importe quel immeuble (#772).
+    if let Err(err) =
+        verify_building_org_access(&auth, path.0, &data.building_use_cases, &data.acp_use_cases)
+            .await
+    {
+        return err.error_response();
+    }
+
     let (building_id, status_str) = path.into_inner();
 
     // Parse status from string
@@ -285,10 +334,25 @@ pub struct UpcomingQuery {
 #[get("/buildings/{building_id}/resource-bookings/upcoming")]
 pub async fn list_upcoming_bookings(
     data: web::Data<AppState>,
-    _auth: AuthenticatedUser,
+    auth: AuthenticatedUser,
     building_id: web::Path<Uuid>,
     query: web::Query<UpcomingQuery>,
 ) -> impl Responder {
+    // Cloisonnement : l'immeuble visé doit relever d'une ACP que cet
+    // utilisateur a le droit de voir. L'identité était prise puis ignorée —
+    // `_auth` — et n'importe quel utilisateur authentifié lisait les
+    // réservations de n'importe quel immeuble (#772).
+    if let Err(err) = verify_building_org_access(
+        &auth,
+        *building_id,
+        &data.building_use_cases,
+        &data.acp_use_cases,
+    )
+    .await
+    {
+        return err.error_response();
+    }
+
     match data
         .resource_booking_use_cases
         .list_upcoming_bookings(building_id.into_inner(), query.limit)
@@ -308,9 +372,24 @@ pub async fn list_upcoming_bookings(
 #[get("/buildings/{building_id}/resource-bookings/active")]
 pub async fn list_active_bookings(
     data: web::Data<AppState>,
-    _auth: AuthenticatedUser,
+    auth: AuthenticatedUser,
     building_id: web::Path<Uuid>,
 ) -> impl Responder {
+    // Cloisonnement : l'immeuble visé doit relever d'une ACP que cet
+    // utilisateur a le droit de voir. L'identité était prise puis ignorée —
+    // `_auth` — et n'importe quel utilisateur authentifié lisait les
+    // réservations de n'importe quel immeuble (#772).
+    if let Err(err) = verify_building_org_access(
+        &auth,
+        *building_id,
+        &data.building_use_cases,
+        &data.acp_use_cases,
+    )
+    .await
+    {
+        return err.error_response();
+    }
+
     match data
         .resource_booking_use_cases
         .list_active_bookings(building_id.into_inner())
@@ -335,10 +414,25 @@ pub struct PastQuery {
 #[get("/buildings/{building_id}/resource-bookings/past")]
 pub async fn list_past_bookings(
     data: web::Data<AppState>,
-    _auth: AuthenticatedUser,
+    auth: AuthenticatedUser,
     building_id: web::Path<Uuid>,
     query: web::Query<PastQuery>,
 ) -> impl Responder {
+    // Cloisonnement : l'immeuble visé doit relever d'une ACP que cet
+    // utilisateur a le droit de voir. L'identité était prise puis ignorée —
+    // `_auth` — et n'importe quel utilisateur authentifié lisait les
+    // réservations de n'importe quel immeuble (#772).
+    if let Err(err) = verify_building_org_access(
+        &auth,
+        *building_id,
+        &data.building_use_cases,
+        &data.acp_use_cases,
+    )
+    .await
+    {
+        return err.error_response();
+    }
+
     match data
         .resource_booking_use_cases
         .list_past_bookings(building_id.into_inner(), query.limit)
@@ -627,9 +721,24 @@ pub async fn check_conflicts(
 #[get("/buildings/{building_id}/resource-bookings/statistics")]
 pub async fn get_booking_statistics(
     data: web::Data<AppState>,
-    _auth: AuthenticatedUser,
+    auth: AuthenticatedUser,
     building_id: web::Path<Uuid>,
 ) -> impl Responder {
+    // Cloisonnement : l'immeuble visé doit relever d'une ACP que cet
+    // utilisateur a le droit de voir. L'identité était prise puis ignorée —
+    // `_auth` — et n'importe quel utilisateur authentifié lisait les
+    // réservations de n'importe quel immeuble (#772).
+    if let Err(err) = verify_building_org_access(
+        &auth,
+        *building_id,
+        &data.building_use_cases,
+        &data.acp_use_cases,
+    )
+    .await
+    {
+        return err.error_response();
+    }
+
     match data
         .resource_booking_use_cases
         .get_statistics(building_id.into_inner())
