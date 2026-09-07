@@ -887,6 +887,16 @@ jobs:
       # casserait toutes les PR sur un héritage inconnu. Objectif : établir un
       # plancher chiffré, puis basculer en bloquant (WP-D1 / #696).
       - name: Run Playwright smoke project (report only)
+        # `if: !cancelled()` — sans quoi ce step ne s'exécute JAMAIS.
+        #
+        # GitHub saute les steps qui suivent un échec, et le step chromium
+        # ci-dessus échoue en continu depuis #832. Ce « report only » ne
+        # rapportait donc plus rien : les 109 échecs de #696 n'étaient ni
+        # confirmés ni infirmés, faute d'exécution.
+        #
+        # `continue-on-error` protège CE step ; il ne le rend pas atteignable.
+        # Deux choses différentes, et c'est la seconde qui manquait.
+        if: ${{ !cancelled() }}
         continue-on-error: true
         env:
           PLAYWRIGHT_BASE_URL: http://localhost:3000
@@ -896,6 +906,12 @@ jobs:
           npx playwright test --project=smoke || true
 
       - name: Seed scenario world for Documentation Vivante
+        # Même cause : sauté avec le reste dès que chromium échoue.
+        #
+        # Le symptôme visible était dans le journal de nettoyage, qui LUI
+        # porte `if: always()` : « No scenario world found to clear ». Il
+        # nettoyait consciencieusement un monde que personne ne semait plus.
+        if: ${{ !cancelled() }}
         env:
           PLAYWRIGHT_API_BASE: http://localhost:8080/api/v1
         run: |
@@ -909,6 +925,10 @@ jobs:
             -H 'Content-Type: application/json' || echo "Seed already exists or failed"
 
       - name: Run Documentation Vivante scenarios (video generation)
+        # Et donc : les vidéos de documentation vivante ne sont plus générées
+        # depuis que chromium échoue. Tout le Track D du WBS repose sur ces
+        # enregistrements — treize lots qui attendaient une étape sautée.
+        if: ${{ !cancelled() }}
         # Phase C ouverte (issue #617) : les .scenario.ts (admin-setup,
         # budget-workflow, etc.) cassent sur seeds + auth multi-rôle au
         # même titre que les .spec.ts Phase B FE déjà exclus via testIgnore.
