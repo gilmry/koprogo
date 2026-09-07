@@ -51,10 +51,21 @@ import { join, extname } from "node:path";
  * d'accueil publique, faite dans le même commit que ce cliquet — parce qu'un
  * cliquet posé sans une première baisse n'est qu'une constatation.
  *
+ * **778** au 2026-09-07, après l'ancrage des deux écrans des personas que
+ * six recettes n'ont jamais éprouvés : la page à lien magique du prestataire
+ * (#815) et le tableau de bord du copropriétaire (#807).
+ *
+ * Le choix n'est pas arbitraire. Ancrer 806 éléments d'un coup serait
+ * invérifiable — personne ne relit 806 diffs de gabarit — et un identifiant
+ * mal nommé vaut moins que pas d'identifiant, puisqu'il fait croire à une
+ * couverture. On ancre donc les écrans dont on a besoin, quand on en a
+ * besoin, et ce sont ceux des rôles qu'on n'a jamais pu observer qui en ont
+ * le plus besoin.
+ *
  * Baisser ce nombre fait partie de chaque lot de la refonte : celui qui touche
  * un écran l'ancre.
  */
-const DETTE_AU_2026_09_06 = 806;
+const DETTE_AU_2026_09_06 = 778;
 
 const RACINE = join(process.cwd(), "src");
 const EXTENSIONS = new Set([".svelte", ".astro"]);

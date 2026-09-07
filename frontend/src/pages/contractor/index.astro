@@ -54,11 +54,11 @@ import Layout from "../../layouts/Layout.astro";
         <p class="text-xs text-blue-500 mt-1" id="report-expires"></p>
       </div>
 
-      <form id="contractor-form" class="space-y-6">
+      <form id="contractor-form" class="space-y-6" data-testid="contractor-report-form">
         <!-- Date d'intervention -->
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">Date d'intervention *</label>
-          <input type="date" id="work-date" required
+          <input type="date" id="work-date" required data-testid="contractor-work-date"
             class="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-base py-3 px-4" />
         </div>
 
@@ -66,10 +66,10 @@ import Layout from "../../layouts/Layout.astro";
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">Compte-rendu *</label>
           <div class="relative">
-            <textarea id="compte-rendu" rows="5" required placeholder="Décrivez les travaux réalisés..."
+            <textarea id="compte-rendu" rows="5" required data-testid="contractor-compte-rendu" placeholder="Décrivez les travaux réalisés..."
               class="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-base py-3 px-4 pr-12"></textarea>
             <!-- Voice-to-text button -->
-            <button type="button" id="btn-voice"
+            <button type="button" id="btn-voice" data-testid="contractor-voice-button"
               class="absolute bottom-3 right-3 p-2 rounded-full bg-blue-100 text-blue-600 hover:bg-blue-200 active:bg-blue-300 transition"
               title="Dictée vocale">
               <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -90,7 +90,7 @@ import Layout from "../../layouts/Layout.astro";
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path>
             </svg>
             <span class="text-sm text-gray-500">Ajouter photos</span>
-            <input type="file" id="photos-before-input" accept="image/*" capture="environment" multiple class="hidden" />
+            <input type="file" id="photos-before-input" data-testid="contractor-photos-before" accept="image/*" capture="environment" multiple class="hidden" />
           </label>
         </div>
 
@@ -104,7 +104,7 @@ import Layout from "../../layouts/Layout.astro";
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path>
             </svg>
             <span class="text-sm text-gray-500">Ajouter photos</span>
-            <input type="file" id="photos-after-input" accept="image/*" capture="environment" multiple class="hidden" />
+            <input type="file" id="photos-after-input" data-testid="contractor-photos-after" accept="image/*" capture="environment" multiple class="hidden" />
           </label>
         </div>
 
@@ -112,7 +112,7 @@ import Layout from "../../layouts/Layout.astro";
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-2">Pièces remplacées</label>
           <div id="parts-list" class="space-y-2 mb-2"></div>
-          <button type="button" id="btn-add-part"
+          <button type="button" id="btn-add-part" data-testid="contractor-add-part"
             class="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800 font-medium">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
@@ -126,11 +126,11 @@ import Layout from "../../layouts/Layout.astro";
     <!-- Fixed bottom submit bar -->
     <div id="submit-bar" class="hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-4 py-3 shadow-lg z-40">
       <div class="max-w-lg mx-auto flex gap-3">
-        <button type="button" id="btn-save-draft"
+        <button type="button" id="btn-save-draft" data-testid="contractor-save-draft"
           class="flex-1 py-3 px-4 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition text-sm">
           Sauvegarder brouillon
         </button>
-        <button type="button" id="btn-submit"
+        <button type="button" id="btn-submit" data-testid="contractor-submit"
           class="flex-1 py-3 px-4 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition text-sm">
           Soumettre au syndic
         </button>
@@ -298,7 +298,7 @@ import Layout from "../../layouts/Layout.astro";
           wrapper.className = 'relative';
           wrapper.innerHTML = `
             <img src="${e.target!.result}" class="w-full h-24 object-cover rounded-lg" />
-            <button type="button" class="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs shadow">&times;</button>
+            <button type="button" class="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs shadow" data-testid="contractor-remove-photo">&times;</button>
           `;
           wrapper.querySelector('button')!.addEventListener('click', () => {
             const idx = list.indexOf(file);
@@ -333,11 +333,11 @@ import Layout from "../../layouts/Layout.astro";
       div.className = 'flex items-center gap-2 bg-gray-50 rounded-lg p-3';
       div.innerHTML = `
         <div class="flex-1 grid grid-cols-3 gap-2">
-          <input type="text" value="${part.name}" placeholder="Nom" class="col-span-1 text-sm rounded border-gray-300 py-1 px-2" data-idx="${idx}" data-field="name" />
-          <input type="text" value="${part.reference}" placeholder="Réf." class="col-span-1 text-sm rounded border-gray-300 py-1 px-2" data-idx="${idx}" data-field="reference" />
-          <input type="number" value="${part.quantity}" min="1" placeholder="Qté" class="col-span-1 text-sm rounded border-gray-300 py-1 px-2" data-idx="${idx}" data-field="quantity" />
+          <input type="text" value="${part.name}" placeholder="Nom" data-testid="contractor-part-name-${idx}" class="col-span-1 text-sm rounded border-gray-300 py-1 px-2" data-idx="${idx}" data-field="name" />
+          <input type="text" value="${part.reference}" placeholder="Réf." data-testid="contractor-part-ref-${idx}" class="col-span-1 text-sm rounded border-gray-300 py-1 px-2" data-idx="${idx}" data-field="reference" />
+          <input type="number" value="${part.quantity}" min="1" placeholder="Qté" data-testid="contractor-part-qty-${idx}" class="col-span-1 text-sm rounded border-gray-300 py-1 px-2" data-idx="${idx}" data-field="quantity" />
         </div>
-        <button type="button" class="text-red-500 hover:text-red-700 p-1 remove-part" data-idx="${idx}">
+        <button type="button" class="text-red-500 hover:text-red-700 p-1 remove-part" data-idx="${idx}" data-testid="contractor-remove-part-${idx}">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
           </svg>

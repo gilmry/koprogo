@@ -277,6 +277,7 @@
 
                 <a
                   href="/board-dashboard?building_id={mandate.building_id}"
+                  data-testid="owner-board-mandate-link"
                   class="block w-full text-center bg-primary-600 hover:bg-primary-700 text-white font-medium py-2 px-4 rounded transition"
                 >
                   📊 {$_('dashboards.owner.mandate.boardDashboard')}
@@ -294,7 +295,8 @@
       <div class="bg-white rounded-lg shadow">
         <div class="p-6 border-b border-gray-200 flex justify-between items-center">
           <h2 class="text-lg font-semibold text-gray-900">{$_('dashboards.owner.myBuildings')}</h2>
-          <a href="/buildings" class="text-sm text-primary-600 hover:text-primary-700 font-medium">
+          <a href="/buildings" class="text-sm text-primary-600 hover:text-primary-700 font-medium"
+            data-testid="owner-buildings-see-all">
             {$_('common.seeAll')} →
           </a>
         </div>
@@ -325,7 +327,8 @@
       <div class="bg-white rounded-lg shadow">
         <div class="p-6 border-b border-gray-200 flex justify-between items-center">
           <h2 class="text-lg font-semibold text-gray-900">{$_('dashboards.owner.recentUnits')}</h2>
-          <a href="/units" class="text-sm text-primary-600 hover:text-primary-700 font-medium">
+          <a href="/units" class="text-sm text-primary-600 hover:text-primary-700 font-medium"
+            data-testid="owner-units-see-all">
             {$_('common.seeAll')} →
           </a>
         </div>
@@ -363,7 +366,8 @@
               <span class="px-2 py-0.5 bg-orange-100 text-orange-800 text-xs font-medium rounded-full">{openTicketsCount} {openTicketsCount > 1 ? $_('common.plural.open') : $_('common.singular.open')}</span>
             {/if}
           </div>
-          <a href="/owner/tickets" class="text-sm text-primary-600 hover:text-primary-700 font-medium">
+          <a href="/owner/tickets" class="text-sm text-primary-600 hover:text-primary-700 font-medium"
+            data-testid="owner-tickets-see-all">
             {$_('common.seeAll')} →
           </a>
         </div>
@@ -371,7 +375,8 @@
           {#if myTickets.length > 0}
             <div class="space-y-3">
               {#each myTickets as ticket}
-                <a href="/ticket-detail?id={ticket.id}" class="block p-3 border border-gray-200 rounded-lg hover:border-primary-300 transition">
+                <a href="/ticket-detail?id={ticket.id}" class="block p-3 border border-gray-200 rounded-lg hover:border-primary-300 transition"
+            data-testid="owner-ticket-row">
                   <div class="flex items-center justify-between mb-1">
                     <h3 class="text-sm font-medium text-gray-900 truncate">{ticket.title}</h3>
                     <!-- Le statut passait par une cascade de conditions qui
@@ -399,7 +404,8 @@
           {:else}
             <div class="text-center py-6">
               <p class="text-gray-500 text-sm">{$_('dashboards.owner.noMaintenanceTickets')}</p>
-              <a href="/owner/tickets" class="text-sm text-primary-600 hover:text-primary-700 mt-1 inline-block">{$_('dashboards.owner.createTicket')}</a>
+              <a href="/owner/tickets" class="text-sm text-primary-600 hover:text-primary-700 mt-1 inline-block"
+            data-testid="owner-tickets-empty-link">{$_('dashboards.owner.createTicket')}</a>
             </div>
           {/if}
         </div>
@@ -414,7 +420,8 @@
               <span class="px-2 py-0.5 bg-red-100 text-red-800 text-xs font-medium rounded-full">{unreadNotifications.length} {unreadNotifications.length > 1 ? $_('common.plural.unread') : $_('common.singular.unread')}</span>
             {/if}
           </div>
-          <a href="/notifications" class="text-sm text-primary-600 hover:text-primary-700 font-medium">
+          <a href="/notifications" class="text-sm text-primary-600 hover:text-primary-700 font-medium"
+            data-testid="owner-notifications-see-all">
             {$_('common.seeAll')} →
           </a>
         </div>
@@ -457,33 +464,40 @@
               ? 'md:grid-cols-5'
               : 'md:grid-cols-4'}"
           >
-            <a href="/buildings" class="flex flex-col items-center justify-center p-6 border-2 border-gray-200 rounded-lg hover:border-primary-500 hover:bg-primary-50 transition group">
+            <a href="/buildings" class="flex flex-col items-center justify-center p-6 border-2 border-gray-200 rounded-lg hover:border-primary-500 hover:bg-primary-50 transition group"
+            data-testid="owner-quick-buildings">
               <span class="text-4xl mb-2 group-hover:scale-110 transition">🏢</span>
               <span class="text-sm font-medium text-gray-700">{$_('navigation.buildings')}</span>
             </a>
-            <a href="/units" class="flex flex-col items-center justify-center p-6 border-2 border-gray-200 rounded-lg hover:border-primary-500 hover:bg-primary-50 transition group">
+            <a href="/units" class="flex flex-col items-center justify-center p-6 border-2 border-gray-200 rounded-lg hover:border-primary-500 hover:bg-primary-50 transition group"
+            data-testid="owner-quick-units">
               <span class="text-4xl mb-2 group-hover:scale-110 transition">🚪</span>
               <span class="text-sm font-medium text-gray-700">{$_('navigation.units')}</span>
             </a>
-            <a href="/expenses" class="flex flex-col items-center justify-center p-6 border-2 border-gray-200 rounded-lg hover:border-primary-500 hover:bg-primary-50 transition group">
+            <a href="/expenses" class="flex flex-col items-center justify-center p-6 border-2 border-gray-200 rounded-lg hover:border-primary-500 hover:bg-primary-50 transition group"
+            data-testid="owner-quick-expenses">
               <span class="text-4xl mb-2 group-hover:scale-110 transition">💰</span>
               <span class="text-sm font-medium text-gray-700">{$_('navigation.expenses')}</span>
             </a>
-            <a href="/meetings" class="flex flex-col items-center justify-center p-6 border-2 border-gray-200 rounded-lg hover:border-primary-500 hover:bg-primary-50 transition group">
+            <a href="/meetings" class="flex flex-col items-center justify-center p-6 border-2 border-gray-200 rounded-lg hover:border-primary-500 hover:bg-primary-50 transition group"
+            data-testid="owner-quick-meetings">
               <span class="text-4xl mb-2 group-hover:scale-110 transition">📅</span>
               <span class="text-sm font-medium text-gray-700">{$_('navigation.meetings')}</span>
             </a>
-            <a href="/owner/tickets" class="flex flex-col items-center justify-center p-6 border-2 border-gray-200 rounded-lg hover:border-primary-500 hover:bg-primary-50 transition group">
+            <a href="/owner/tickets" class="flex flex-col items-center justify-center p-6 border-2 border-gray-200 rounded-lg hover:border-primary-500 hover:bg-primary-50 transition group"
+            data-testid="owner-quick-tickets">
               <span class="text-4xl mb-2 group-hover:scale-110 transition">🎫</span>
               <span class="text-sm font-medium text-gray-700">{$_('navigation.tickets')}</span>
             </a>
-            <a href="/owner/payments" class="flex flex-col items-center justify-center p-6 border-2 border-gray-200 rounded-lg hover:border-primary-500 hover:bg-primary-50 transition group">
+            <a href="/owner/payments" class="flex flex-col items-center justify-center p-6 border-2 border-gray-200 rounded-lg hover:border-primary-500 hover:bg-primary-50 transition group"
+            data-testid="owner-quick-payments">
               <span class="text-4xl mb-2 group-hover:scale-110 transition">💳</span>
               <span class="text-sm font-medium text-gray-700">{$_('navigation.payments')}</span>
             </a>
             {#if boardMandates.length > 0}
               <a
                 href="/board-dashboard?building_id={boardMandates[0].building_id}"
+                data-testid="owner-quick-board"
                 class="flex flex-col items-center justify-center p-6 border-2 border-primary-300 bg-primary-50 rounded-lg hover:border-primary-500 hover:bg-primary-100 transition group"
               >
                 <span class="text-4xl mb-2 group-hover:scale-110 transition">🎖️</span>
