@@ -41,6 +41,7 @@
   // `authStore`.
 
   import { toast } from "../../../stores/toast";
+  import { _ } from "../../i18n";
   import {
     EVAL_MIN_COMMENT_LENGTH,
     EVAL_MAX_COMMENT_LENGTH,
@@ -267,7 +268,7 @@
         comment: comment.trim(),
       };
       await onSubmit(req);
-      toast.success("Évaluation enregistrée.");
+      toast.success($_('contractors.evaluationSaved'));
     } catch {
       // toast déjà émis par api.ts pour 4xx/5xx
     } finally {

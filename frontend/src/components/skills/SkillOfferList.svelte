@@ -30,7 +30,7 @@
     loading = true;
     const result = await withErrorHandling({
       action: () => skillsApi.listAvailableOffers(buildingId),
-      errorMessage: "Failed to load skill offers",
+      errorMessage: $_('skills.loadFailed'),
     });
     if (result) {
       offers = result;

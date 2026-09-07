@@ -20,6 +20,7 @@
   //   syndic-response-form-error
 
   import { toast } from "../../../stores/toast";
+  import { _ } from "../../i18n";
   import {
     respondToTicket,
     SYNDIC_RESPONSE_ACTIONS,
@@ -127,7 +128,7 @@
         action_proposed: actionProposed === "" ? null : actionProposed,
       };
       const created = await onRespond(ticketId, req);
-      toast.success("Réponse postée.");
+      toast.success($_('tickets.responsePosted'));
       onCreated?.(created);
       // Reset (append-only — pas de "draft" persistant).
       body = "";

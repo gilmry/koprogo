@@ -515,7 +515,8 @@
       "created": "Booking created successfully"
     },
     "title": "Bookings",
-    "resourceUnavailable": "This resource is currently unavailable"
+    "resourceUnavailable": "This resource is currently unavailable",
+    "loadResourcesFailed": "Failed to load bookable resources."
   },
   "budgets": {
     "actions": {
@@ -2031,7 +2032,13 @@
     "rectifySuccess": "Your data has been updated.",
     "rectifyFailed": "Failed to update your data.",
     "restrictionFailed": "Failed to update processing restriction.",
-    "marketingFailed": "Failed to update marketing preference."
+    "marketingFailed": "Failed to update marketing preference.",
+    "adminExportFailed": "Failed to export this user's data.",
+    "adminEraseFailed": "Failed to erase this user's data.",
+    "loadAuditFailed": "Failed to load the audit log.",
+    "exportSuccessArt15": "Data exported (GDPR Art. 15 — right of access).",
+    "eraseSuccessArt17": "Data anonymised (GDPR Art. 17 — right to erasure).",
+    "restrictSuccessArt18": "Processing restricted (GDPR Art. 18 — right to restriction)."
   },
   "inspections": {
     "all": "All",
@@ -2189,7 +2196,13 @@
     "vat_6": "6% (Reduced)",
     "vat_rate": "VAT rate",
     "workflow_subtitle": "Manage invoices and their approval process",
-    "workflow_title": "Invoice workflow"
+    "workflow_title": "Invoice workflow",
+    "loadBuildingsFailed": "Failed to load buildings.",
+    "loadAccountsFailed": "Failed to load the chart of accounts.",
+    "submitFailed": "Failed to submit the invoice.",
+    "approveFailed": "Failed to approve the invoice.",
+    "rejectFailed": "Failed to reject the invoice.",
+    "payFailed": "Failed to record the payment."
   },
   "journal": {
     "account": "Account",
@@ -2438,7 +2451,8 @@
       "extraordinary": "Extraordinary",
       "ordinary": "Ordinary"
     },
-    "upcoming": "Upcoming"
+    "upcoming": "Upcoming",
+    "created_success": "Meeting created successfully"
   },
   "navigation": {
     "accounting": "Accounting",
@@ -2596,7 +2610,8 @@
       "Parking": "Parking",
       "Other": "Other"
     },
-    "fieldTitle": "Title"
+    "fieldTitle": "Title",
+    "loadFailed": "Failed to load the notice."
   },
   "notifications": {
     "channels": {
@@ -3094,7 +3109,10 @@
     "noBuildings": "No buildings available",
     "noSyndicInfo": "Syndic information not available",
     "selectBuilding": "Select a building",
-    "unlinkedSuccess": "Account unlinked successfully"
+    "unlinkedSuccess": "Account unlinked successfully",
+    "updateSuccess": "Profile updated (GDPR Art. 16 — right to rectification).",
+    "updateFailed": "Failed to update the profile.",
+    "allFieldsRequired": "All fields are required."
   },
   "proxy": {
     "limitReached": "Proxy mandate limit reached (Art. 3.87 §6 CC)",
@@ -3493,7 +3511,8 @@
     "empty": "No shared objects found.",
     "allObjects": "All objects",
     "categoryLabel": "Category",
-    "allCategories": "All categories"
+    "allCategories": "All categories",
+    "loadFailed": "Failed to load shared objects."
   },
   "skills": {
     "availability": "Availability",
@@ -3549,7 +3568,8 @@
     "allCategories": "All categories",
     "expertiseLabel": "Expertise",
     "allLevels": "All levels",
-    "empty": "No skill offers found."
+    "empty": "No skill offers found.",
+    "loadFailed": "Failed to load skill offers."
   },
   "sync": {
     "ariaLabel": "Synchronise data",
@@ -3705,7 +3725,8 @@
     "unitOptional": "Unit number (optional)",
     "unitPlaceholder": "Unit affected by the issue",
     "validationError": "Please correct the validation errors",
-    "work_started": "Work started"
+    "work_started": "Work started",
+    "responsePosted": "Response posted."
   },
   "units": {
     "acp": "ACP",
@@ -3868,5 +3889,24 @@
     "warrantyExpired": "Warranty expired",
     "workDate": "Work date",
     "workType": "Work type"
+  },
+  "reminders": {
+    "loadFailed": "Failed to load the reminder."
+  },
+  "session": {
+    "tooManyAttempts": "Too many attempts. Try again in 15 minutes.",
+    "serverError": "Server error. Please try again.",
+    "expired": "Your session has expired. Please sign in again."
+  },
+  "contractors": {
+    "evaluationSaved": "Evaluation saved."
+  },
+  "magicLink": {
+    "issued": "Magic link issued.",
+    "copied": "Link copied to the clipboard.",
+    "copyFailed": "Copy failed, please copy the link manually."
+  },
+  "technicalSpecs": {
+    "submittedForSignature": "Specification submitted for signature."
   }
 }

@@ -102,7 +102,7 @@
           selectedBuildingId = buildings[0].id;
         }
       },
-      errorMessage: 'Failed to load buildings',
+      errorMessage: $_('invoices.loadBuildingsFailed'),
     });
   }
 
@@ -115,7 +115,7 @@
           .filter((acc: any) => acc.code.startsWith('6'))
           .sort((a: any, b: any) => a.code.localeCompare(b.code));
       },
-      errorMessage: 'Failed to load accounts',
+      errorMessage: $_('invoices.loadAccountsFailed'),
     });
   }
 

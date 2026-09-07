@@ -515,7 +515,8 @@
       "created": "Reservering succesvol aangemaakt"
     },
     "title": "Reserveringen",
-    "resourceUnavailable": "Deze voorziening is momenteel niet beschikbaar"
+    "resourceUnavailable": "Deze voorziening is momenteel niet beschikbaar",
+    "loadResourcesFailed": "Kan de reserveerbare voorzieningen niet laden."
   },
   "budgets": {
     "actions": {
@@ -2031,7 +2032,13 @@
     "rectifySuccess": "Uw gegevens zijn bijgewerkt.",
     "rectifyFailed": "Het bijwerken van uw gegevens is mislukt.",
     "restrictionFailed": "De beperking van de verwerking kon niet worden bijgewerkt.",
-    "marketingFailed": "Uw marketingvoorkeur kon niet worden bijgewerkt."
+    "marketingFailed": "Uw marketingvoorkeur kon niet worden bijgewerkt.",
+    "adminExportFailed": "Het exporteren van de gegevens van deze gebruiker is mislukt.",
+    "adminEraseFailed": "Het wissen van de gegevens van deze gebruiker is mislukt.",
+    "loadAuditFailed": "Kan het auditlogboek niet laden.",
+    "exportSuccessArt15": "Gegevens geëxporteerd (AVG art. 15 — recht op inzage).",
+    "eraseSuccessArt17": "Gegevens geanonimiseerd (AVG art. 17 — recht op wissing).",
+    "restrictSuccessArt18": "Verwerking beperkt (AVG art. 18 — recht op beperking)."
   },
   "inspections": {
     "all": "Alle",
@@ -2189,7 +2196,13 @@
     "vat_6": "6% (Verlaagd)",
     "vat_rate": "Btw-tarief",
     "workflow_subtitle": "Beheer facturen en hun goedkeuringsproces",
-    "workflow_title": "Factuurworkflow"
+    "workflow_title": "Factuurworkflow",
+    "loadBuildingsFailed": "Kan de gebouwen niet laden.",
+    "loadAccountsFailed": "Kan het rekeningstelsel niet laden.",
+    "submitFailed": "Het indienen van de factuur is mislukt.",
+    "approveFailed": "Het goedkeuren van de factuur is mislukt.",
+    "rejectFailed": "Het afwijzen van de factuur is mislukt.",
+    "payFailed": "Het registreren van de betaling is mislukt."
   },
   "journal": {
     "account": "Rekening",
@@ -2438,7 +2451,8 @@
       "extraordinary": "Buitengewoon",
       "ordinary": "Gewoon"
     },
-    "upcoming": "Aankomend"
+    "upcoming": "Aankomend",
+    "created_success": "Vergadering succesvol aangemaakt"
   },
   "navigation": {
     "accounting": "Boekhouding",
@@ -2596,7 +2610,8 @@
       "Parking": "Parkeren",
       "Other": "Andere"
     },
-    "fieldTitle": "Titel"
+    "fieldTitle": "Titel",
+    "loadFailed": "Kan de mededeling niet laden."
   },
   "notifications": {
     "channels": {
@@ -3094,7 +3109,10 @@
     "noBuildings": "Geen gebouwen beschikbaar",
     "noSyndicInfo": "Syndicusinformatie niet beschikbaar",
     "selectBuilding": "Selecteer een gebouw",
-    "unlinkedSuccess": "Account succesvol ontkoppeld"
+    "unlinkedSuccess": "Account succesvol ontkoppeld",
+    "updateSuccess": "Profiel bijgewerkt (AVG art. 16 — recht op rectificatie).",
+    "updateFailed": "Het bijwerken van het profiel is mislukt.",
+    "allFieldsRequired": "Alle velden zijn verplicht."
   },
   "proxy": {
     "limitReached": "Volmachtlimiet bereikt (Art. 3.87 §6 BW)",
@@ -3493,7 +3511,8 @@
     "empty": "Nog geen gedeelde voorwerpen.",
     "allObjects": "Alle voorwerpen",
     "categoryLabel": "Categorie",
-    "allCategories": "Alle categorieën"
+    "allCategories": "Alle categorieën",
+    "loadFailed": "Kan de gedeelde voorwerpen niet laden."
   },
   "skills": {
     "availability": "Beschikbaarheid",
@@ -3549,7 +3568,8 @@
     "allCategories": "Alle categorieën",
     "expertiseLabel": "Niveau",
     "allLevels": "Alle niveaus",
-    "empty": "Nog geen vaardigheden aangeboden."
+    "empty": "Nog geen vaardigheden aangeboden.",
+    "loadFailed": "Kan het aanbod van vaardigheden niet laden."
   },
   "sync": {
     "ariaLabel": "Gegevens synchroniseren",
@@ -3705,7 +3725,8 @@
     "unitOptional": "Kavelnummer (optioneel)",
     "unitPlaceholder": "Kavel met het probleem",
     "validationError": "Corrigeer de validatiefouten",
-    "work_started": "Werkzaamheden gestart"
+    "work_started": "Werkzaamheden gestart",
+    "responsePosted": "Antwoord geplaatst."
   },
   "units": {
     "acp": "VME",
@@ -3868,5 +3889,24 @@
     "warrantyExpired": "Garantie verlopen",
     "workDate": "Werkdatum",
     "workType": "Type werk"
+  },
+  "reminders": {
+    "loadFailed": "Kan de herinnering niet laden."
+  },
+  "session": {
+    "tooManyAttempts": "Te veel pogingen. Probeer het over 15 minuten opnieuw.",
+    "serverError": "Serverfout. Probeer het opnieuw.",
+    "expired": "Uw sessie is verlopen. Meld u opnieuw aan."
+  },
+  "contractors": {
+    "evaluationSaved": "Beoordeling opgeslagen."
+  },
+  "magicLink": {
+    "issued": "Magische link aangemaakt.",
+    "copied": "Link naar het klembord gekopieerd.",
+    "copyFailed": "Kopiëren mislukt, kopieer de link handmatig."
+  },
+  "technicalSpecs": {
+    "submittedForSignature": "Fiche ingediend ter ondertekening."
   }
 }

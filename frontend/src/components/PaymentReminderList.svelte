@@ -54,7 +54,7 @@
   function bulkCreateReminders() { if (confirm($_('paymentReminders.bulkCreateConfirm'))) createBulkReminders(); }
 
   async function createBulkReminders() {
-    try { loading = true; const response = await api.post('/payment-reminders/bulk-create', { min_days_overdue: 15 }); toast.success($_('paymentReminders.bulkCreateSuccess', { values: { created: response.created_count, skipped: response.skipped_count } })); await loadReminders(); await loadStats(); } catch (err: any) { toast.error('Erreur: ' + (err.message || $_('paymentReminders.bulkCreateError'))); } finally { loading = false; }
+    try { loading = true; const response = await api.post('/payment-reminders/bulk-create', { min_days_overdue: 15 }); toast.success($_('paymentReminders.bulkCreateSuccess', { values: { created: response.created_count, skipped: response.skipped_count } })); await loadReminders(); await loadStats(); } catch (err: any) { toast.error(err.message || $_('paymentReminders.bulkCreateError')); } finally { loading = false; }
   }
 </script>
 

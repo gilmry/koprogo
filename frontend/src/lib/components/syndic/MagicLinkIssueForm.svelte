@@ -40,6 +40,7 @@
     type IssuedMagicLink,
   } from "../../api/magic_links";
   import { toast } from "../../../stores/toast";
+  import { _ } from "../../i18n";
 
   // ---------------------------------------------------------------------------
   // Props (Svelte 5 runes) — typés pour tests Vitest déterministes.
@@ -214,7 +215,7 @@
       issuedToken = issued.token;
       issuedExpiresAt = issued.expires_at;
       view = "issued";
-      toast.success("Lien magique émis avec succès.");
+      toast.success($_('magicLink.issued'));
     } catch (err) {
       // Le wrapper `api.ts` toast déjà 401/403/429/5xx. On affiche en plus
       // un message inline pour 4xx-de-validation (422 typiquement) — cf. AC
@@ -236,7 +237,7 @@
         window.isSecureContext
       ) {
         await navigator.clipboard.writeText(publicUrl);
-        toast.success("Lien copié dans le presse-papier.");
+        toast.success($_('magicLink.copied'));
         return;
       }
       // Fallback dev HTTP — execCommand est deprecated mais fonctionne.
@@ -252,13 +253,13 @@
       const ok = document.execCommand("copy");
       document.body.removeChild(ta);
       if (ok) {
-        toast.success("Lien copié dans le presse-papier.");
+        toast.success($_('magicLink.copied'));
       } else {
-        toast.error("Impossible de copier — copiez le lien manuellement.");
+        toast.error($_('magicLink.copyFailed'));
       }
     } catch (err) {
       console.warn("[MagicLinkIssueForm] copy failed", err);
-      toast.error("Impossible de copier — copiez le lien manuellement.");
+      toast.error($_('magicLink.copyFailed'));
     }
   }
 

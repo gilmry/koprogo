@@ -1,4 +1,4 @@
-import { locale } from "svelte-i18n";
+import { locale, _ } from "svelte-i18n";
 import { get } from "svelte/store";
 import { toast } from "../stores/toast";
 import { authStore } from "../stores/auth";
@@ -211,9 +211,9 @@ export async function apiFetch<T = any>(
     // reads où un 4xx est une dégradation attendue, pas une erreur utilisateur).
     if (!options.silent) {
       if (response.status === 429) {
-        toast.error("Trop de tentatives. Réessayez dans 15 minutes.");
+        toast.error(get(_)("session.tooManyAttempts"));
       } else if (response.status >= 500) {
-        toast.error("Erreur serveur. Veuillez réessayer.");
+        toast.error(get(_)("session.serverError"));
       } else if (response.status === 401) {
         // Clear stale token and dedupe toast across parallel 401s
         if (typeof window !== "undefined") {
@@ -221,7 +221,7 @@ export async function apiFetch<T = any>(
           clearAccessToken();
           if (hadToken && !(window as any).__koprogo_session_expired_shown__) {
             (window as any).__koprogo_session_expired_shown__ = true;
-            toast.warning("Session expirée. Veuillez vous reconnecter.");
+            toast.warning(get(_)("session.expired"));
             setTimeout(() => {
               (window as any).__koprogo_session_expired_shown__ = false;
             }, 5000);

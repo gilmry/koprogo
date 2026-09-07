@@ -54,7 +54,7 @@
 
   async function saveProfile() {
     if (!editFirstName.trim() || !editLastName.trim() || !editEmail.trim()) {
-      toast.error('Tous les champs sont obligatoires');
+      toast.error($_('profile.allFieldsRequired'));
       return;
     }
     const result = await withErrorHandling({
@@ -64,8 +64,8 @@
         last_name: editLastName !== user?.last_name ? editLastName : undefined,
       }),
       setLoading: (v) => saving = v,
-      successMessage: 'Profil mis à jour (Art. 16 RGPD - Droit de rectification)',
-      errorMessage: 'Erreur lors de la mise à jour du profil',
+      successMessage: $_('profile.updateSuccess'),
+      errorMessage: $_('profile.updateFailed'),
     });
     if (result !== undefined) {
       if (user) {
@@ -94,7 +94,7 @@
       link.click();
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
-      toast.success('Données exportées (Art. 15 RGPD - Droit d\'accès)');
+      toast.success($_('gdpr.exportSuccessArt15'));
     } catch (err: any) {
       toast.error(err.message || 'Erreur lors de l\'export');
     } finally {
@@ -126,7 +126,7 @@
         body: JSON.stringify({ password: erasePassword }),
         headers: { 'Content-Type': 'application/json' },
       });
-      toast.success('Données anonymisées (Art. 17 RGPD - Droit à l\'effacement)');
+      toast.success($_('gdpr.eraseSuccessArt17'));
       await authStore.logout();
       window.location.href = '/login';
     } catch (err: any) {
@@ -146,7 +146,7 @@
     try {
       gdprRestricting = true;
       await api.put('/gdpr/restrict-processing', {});
-      toast.success('Traitement restreint (Art. 18 RGPD - Droit à la limitation)');
+      toast.success($_('gdpr.restrictSuccessArt18'));
     } catch (err: any) {
       toast.error(err.message || 'Erreur');
     } finally {

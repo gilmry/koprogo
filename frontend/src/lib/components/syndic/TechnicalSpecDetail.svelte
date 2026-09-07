@@ -35,6 +35,7 @@
   //   tech-spec-bump-cancel
 
   import { toast } from "../../../stores/toast";
+  import { _ } from "../../i18n";
   import {
     MANDATARY_ROLES,
     type SignatoryRole,
@@ -165,7 +166,7 @@
     submittingForSign = true;
     try {
       await onSubmitForSign(spec.id);
-      toast.success("Fiche soumise pour signatures.");
+      toast.success($_('technicalSpecs.submittedForSignature'));
     } catch {
       // toast déjà émis par api.ts
     } finally {

@@ -52,7 +52,7 @@
         await loadInvoices();
       },
       setLoading: (v) => submitting = v,
-      errorMessage: 'Erreur lors de la soumission',
+      errorMessage: $_('invoices.submitFailed'),
     });
   }
 
@@ -69,7 +69,7 @@
         await loadInvoices();
       },
       setLoading: (v) => submitting = v,
-      errorMessage: 'Erreur lors de l\'approbation',
+      errorMessage: $_('invoices.approveFailed'),
     });
   }
 
@@ -91,7 +91,7 @@
         await loadInvoices();
       },
       setLoading: (v) => submitting = v,
-      errorMessage: 'Erreur lors du rejet',
+      errorMessage: $_('invoices.rejectFailed'),
     });
   }
 
@@ -104,7 +104,7 @@
         await loadInvoices();
       },
       setLoading: (v) => submitting = v,
-      errorMessage: 'Erreur lors du paiement',
+      errorMessage: $_('invoices.payFailed'),
     });
   }
 

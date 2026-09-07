@@ -18,7 +18,7 @@
 
   function handleMeetingCreated() {
     showCreateModal = false;
-    toast.success('Assemblée créée avec succès');
+    toast.success($_('meetings.created_success'));
     loadMeetings();
   }
 

@@ -515,7 +515,8 @@
       "created": "Reservierung erfolgreich erstellt"
     },
     "title": "Reservierungen",
-    "resourceUnavailable": "Diese Ressource ist derzeit nicht verfügbar"
+    "resourceUnavailable": "Diese Ressource ist derzeit nicht verfügbar",
+    "loadResourcesFailed": "Buchbare Ressourcen konnten nicht geladen werden."
   },
   "budgets": {
     "actions": {
@@ -2031,7 +2032,13 @@
     "rectifySuccess": "Ihre Daten wurden aktualisiert.",
     "rectifyFailed": "Die Aktualisierung Ihrer Daten ist fehlgeschlagen.",
     "restrictionFailed": "Die Einschränkung der Verarbeitung konnte nicht aktualisiert werden.",
-    "marketingFailed": "Ihre Marketing-Einstellung konnte nicht aktualisiert werden."
+    "marketingFailed": "Ihre Marketing-Einstellung konnte nicht aktualisiert werden.",
+    "adminExportFailed": "Der Export der Daten dieses Nutzers ist fehlgeschlagen.",
+    "adminEraseFailed": "Das Löschen der Daten dieses Nutzers ist fehlgeschlagen.",
+    "loadAuditFailed": "Das Audit-Protokoll konnte nicht geladen werden.",
+    "exportSuccessArt15": "Daten exportiert (DSGVO Art. 15 — Auskunftsrecht).",
+    "eraseSuccessArt17": "Daten anonymisiert (DSGVO Art. 17 — Recht auf Löschung).",
+    "restrictSuccessArt18": "Verarbeitung eingeschränkt (DSGVO Art. 18 — Recht auf Einschränkung)."
   },
   "inspections": {
     "all": "Alle",
@@ -2189,7 +2196,13 @@
     "vat_6": "6% (Ermäßigt)",
     "vat_rate": "MwSt.-Satz",
     "workflow_subtitle": "Verwalten Sie Rechnungen und ihren Genehmigungsprozess",
-    "workflow_title": "Rechnungsworkflow"
+    "workflow_title": "Rechnungsworkflow",
+    "loadBuildingsFailed": "Gebäude konnten nicht geladen werden.",
+    "loadAccountsFailed": "Der Kontenplan konnte nicht geladen werden.",
+    "submitFailed": "Das Einreichen der Rechnung ist fehlgeschlagen.",
+    "approveFailed": "Die Genehmigung der Rechnung ist fehlgeschlagen.",
+    "rejectFailed": "Die Ablehnung der Rechnung ist fehlgeschlagen.",
+    "payFailed": "Die Erfassung der Zahlung ist fehlgeschlagen."
   },
   "journal": {
     "account": "Konto",
@@ -2438,7 +2451,8 @@
       "extraordinary": "Außerordentlich",
       "ordinary": "Ordentlich"
     },
-    "upcoming": "Bevorstehend"
+    "upcoming": "Bevorstehend",
+    "created_success": "Versammlung erfolgreich erstellt"
   },
   "navigation": {
     "accounting": "Buchhaltung",
@@ -2596,7 +2610,8 @@
       "Parking": "Parken",
       "Other": "Sonstiges"
     },
-    "fieldTitle": "Titel"
+    "fieldTitle": "Titel",
+    "loadFailed": "Die Mitteilung konnte nicht geladen werden."
   },
   "notifications": {
     "channels": {
@@ -3094,7 +3109,10 @@
     "noBuildings": "Keine Gebäude verfügbar",
     "noSyndicInfo": "Hausverwaltungsinformationen nicht verfügbar",
     "selectBuilding": "Gebäude auswählen",
-    "unlinkedSuccess": "Konto erfolgreich getrennt"
+    "unlinkedSuccess": "Konto erfolgreich getrennt",
+    "updateSuccess": "Profil aktualisiert (DSGVO Art. 16 — Recht auf Berichtigung).",
+    "updateFailed": "Die Aktualisierung des Profils ist fehlgeschlagen.",
+    "allFieldsRequired": "Alle Felder sind erforderlich."
   },
   "proxy": {
     "limitReached": "Vollmachtslimit erreicht (Art. 3.87 §6 ZGB)",
@@ -3493,7 +3511,8 @@
     "empty": "Noch keine geteilten Gegenstände.",
     "allObjects": "Alle Gegenstände",
     "categoryLabel": "Kategorie",
-    "allCategories": "Alle Kategorien"
+    "allCategories": "Alle Kategorien",
+    "loadFailed": "Geteilte Gegenstände konnten nicht geladen werden."
   },
   "skills": {
     "availability": "Verfügbarkeit",
@@ -3549,7 +3568,8 @@
     "allCategories": "Alle Kategorien",
     "expertiseLabel": "Niveau",
     "allLevels": "Alle Niveaus",
-    "empty": "Noch keine Kompetenzen angeboten."
+    "empty": "Noch keine Kompetenzen angeboten.",
+    "loadFailed": "Kompetenzangebote konnten nicht geladen werden."
   },
   "sync": {
     "ariaLabel": "Daten synchronisieren",
@@ -3705,7 +3725,8 @@
     "unitOptional": "Einheitsnummer (optional)",
     "unitPlaceholder": "Betroffene Einheit",
     "validationError": "Bitte korrigieren Sie die Validierungsfehler",
-    "work_started": "Arbeiten begonnen"
+    "work_started": "Arbeiten begonnen",
+    "responsePosted": "Antwort veröffentlicht."
   },
   "units": {
     "acp": "ACP",
@@ -3868,5 +3889,24 @@
     "warrantyExpired": "Garantie abgelaufen",
     "workDate": "Arbeitsdatum",
     "workType": "Arbeitstyp"
+  },
+  "reminders": {
+    "loadFailed": "Die Mahnung konnte nicht geladen werden."
+  },
+  "session": {
+    "tooManyAttempts": "Zu viele Versuche. Versuchen Sie es in 15 Minuten erneut.",
+    "serverError": "Serverfehler. Bitte versuchen Sie es erneut.",
+    "expired": "Ihre Sitzung ist abgelaufen. Bitte melden Sie sich erneut an."
+  },
+  "contractors": {
+    "evaluationSaved": "Bewertung gespeichert."
+  },
+  "magicLink": {
+    "issued": "Magic-Link erstellt.",
+    "copied": "Link in die Zwischenablage kopiert.",
+    "copyFailed": "Kopieren fehlgeschlagen, kopieren Sie den Link manuell."
+  },
+  "technicalSpecs": {
+    "submittedForSignature": "Datenblatt zur Unterschrift eingereicht."
   }
 }

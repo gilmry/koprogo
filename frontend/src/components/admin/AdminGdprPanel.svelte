@@ -65,7 +65,7 @@
       action: () => api.get<GdprExport>(`/admin/gdpr/users/${userId}/export`),
       setLoading: (v) => loading = v,
       successMessage: `Data exported for ${userEmail} - User will be notified`,
-      errorMessage: 'Failed to export data',
+      errorMessage: $_('gdpr.adminExportFailed'),
     });
     if (data) {
       exportData = data;
@@ -82,7 +82,7 @@
       action: () => api.delete<GdprEraseResponse>(`/admin/gdpr/users/${userId}/erase`),
       setLoading: (v) => loading = v,
       successMessage: `Data erased for ${userEmail} - User will be notified`,
-      errorMessage: 'Failed to erase data',
+      errorMessage: $_('gdpr.adminEraseFailed'),
     });
     showEraseConfirmation = false;
     if (result) {
@@ -101,7 +101,7 @@
     const data = await withErrorHandling({
       action: () => api.get<{ logs: any[]; total: number }>(`/admin/gdpr/audit-logs?${params}`),
       setLoading: (v) => loading = v,
-      errorMessage: 'Failed to load audit logs',
+      errorMessage: $_('gdpr.loadAuditFailed'),
     });
     if (data) {
       auditLogs = data.logs || [];

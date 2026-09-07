@@ -515,7 +515,8 @@
       "created": "Réservation créée avec succès"
     },
     "title": "Réservations",
-    "resourceUnavailable": "Cette ressource n'est pas disponible actuellement"
+    "resourceUnavailable": "Cette ressource n'est pas disponible actuellement",
+    "loadResourcesFailed": "Impossible de charger les ressources réservables."
   },
   "budgets": {
     "actions": {
@@ -2031,7 +2032,13 @@
     "rectifySuccess": "Vos données ont été mises à jour.",
     "rectifyFailed": "La mise à jour de vos données a échoué.",
     "restrictionFailed": "La limitation du traitement n'a pas pu être mise à jour.",
-    "marketingFailed": "Votre préférence marketing n'a pas pu être mise à jour."
+    "marketingFailed": "Votre préférence marketing n'a pas pu être mise à jour.",
+    "adminExportFailed": "L'export des données de cet utilisateur a échoué.",
+    "adminEraseFailed": "L'effacement des données de cet utilisateur a échoué.",
+    "loadAuditFailed": "Impossible de charger le journal d'audit.",
+    "exportSuccessArt15": "Données exportées (Art. 15 RGPD — droit d'accès).",
+    "eraseSuccessArt17": "Données anonymisées (Art. 17 RGPD — droit à l'effacement).",
+    "restrictSuccessArt18": "Traitement restreint (Art. 18 RGPD — droit à la limitation)."
   },
   "inspections": {
     "all": "Toutes",
@@ -2189,7 +2196,13 @@
     "vat_6": "6% (Réduit)",
     "vat_rate": "Taux de TVA",
     "workflow_subtitle": "Gérez les factures et leur processus d'approbation",
-    "workflow_title": "Workflow des factures"
+    "workflow_title": "Workflow des factures",
+    "loadBuildingsFailed": "Impossible de charger les immeubles.",
+    "loadAccountsFailed": "Impossible de charger le plan comptable.",
+    "submitFailed": "La soumission de la facture a échoué.",
+    "approveFailed": "L'approbation de la facture a échoué.",
+    "rejectFailed": "Le rejet de la facture a échoué.",
+    "payFailed": "L'enregistrement du paiement a échoué."
   },
   "journal": {
     "account": "Compte",
@@ -2438,7 +2451,8 @@
       "extraordinary": "Extraordinaire",
       "ordinary": "Ordinaire"
     },
-    "upcoming": "À venir"
+    "upcoming": "À venir",
+    "created_success": "Assemblée créée avec succès"
   },
   "navigation": {
     "accounting": "Comptabilité",
@@ -2596,7 +2610,8 @@
       "Parking": "Stationnement",
       "Other": "Autre"
     },
-    "fieldTitle": "Titre"
+    "fieldTitle": "Titre",
+    "loadFailed": "Impossible de charger l'annonce."
   },
   "notifications": {
     "channels": {
@@ -3094,7 +3109,10 @@
     "noBuildings": "Aucun immeuble disponible",
     "noSyndicInfo": "Informations syndic non disponibles",
     "selectBuilding": "Sélectionner un immeuble",
-    "unlinkedSuccess": "Compte délié avec succès"
+    "unlinkedSuccess": "Compte délié avec succès",
+    "updateSuccess": "Profil mis à jour (Art. 16 RGPD — droit de rectification).",
+    "updateFailed": "La mise à jour du profil a échoué.",
+    "allFieldsRequired": "Tous les champs sont obligatoires."
   },
   "proxy": {
     "limitReached": "Limite de procurations atteinte (Art. 3.87 §6 CC)",
@@ -3493,7 +3511,8 @@
     "empty": "Aucun objet partagé pour le moment.",
     "allObjects": "Tous les objets",
     "categoryLabel": "Catégorie",
-    "allCategories": "Toutes les catégories"
+    "allCategories": "Toutes les catégories",
+    "loadFailed": "Impossible de charger les objets partagés."
   },
   "skills": {
     "availability": "Disponibilité",
@@ -3549,7 +3568,8 @@
     "allCategories": "Toutes les catégories",
     "expertiseLabel": "Niveau",
     "allLevels": "Tous les niveaux",
-    "empty": "Aucune compétence proposée pour le moment."
+    "empty": "Aucune compétence proposée pour le moment.",
+    "loadFailed": "Impossible de charger les compétences proposées."
   },
   "sync": {
     "ariaLabel": "Synchroniser les données",
@@ -3705,7 +3725,8 @@
     "unitOptional": "Numéro de lot (optionnel)",
     "unitPlaceholder": "Lot concerné par le problème",
     "validationError": "Veuillez corriger les erreurs de validation",
-    "work_started": "Travaux démarrés"
+    "work_started": "Travaux démarrés",
+    "responsePosted": "Réponse postée."
   },
   "units": {
     "acp": "ACP",
@@ -3868,5 +3889,24 @@
     "warrantyExpired": "Garantie expirée",
     "workDate": "Date des travaux",
     "workType": "Type de travaux"
+  },
+  "reminders": {
+    "loadFailed": "Impossible de charger le rappel."
+  },
+  "session": {
+    "tooManyAttempts": "Trop de tentatives. Réessayez dans 15 minutes.",
+    "serverError": "Erreur serveur. Veuillez réessayer.",
+    "expired": "Session expirée. Veuillez vous reconnecter."
+  },
+  "contractors": {
+    "evaluationSaved": "Évaluation enregistrée."
+  },
+  "magicLink": {
+    "issued": "Lien magique émis avec succès.",
+    "copied": "Lien copié dans le presse-papier.",
+    "copyFailed": "Impossible de copier, copiez le lien manuellement."
+  },
+  "technicalSpecs": {
+    "submittedForSignature": "Fiche soumise pour signatures."
   }
 }

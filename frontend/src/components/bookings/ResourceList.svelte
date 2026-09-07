@@ -27,7 +27,7 @@
       action: () => selectedAvailability === "available-only"
         ? bookingsApi.listAvailableResources(buildingId)
         : bookingsApi.listResourcesByBuilding(buildingId),
-      errorMessage: "Failed to load resources",
+      errorMessage: $_('bookings.loadResourcesFailed'),
     });
     if (result) {
       resources = result;

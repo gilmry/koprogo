@@ -36,7 +36,7 @@
       setLoading: (v: boolean) => loading = v,
       setError: () => {},
       onSuccess: (data) => notice = data,
-      errorMessage: "Failed to load notice",
+      errorMessage: $_('notices.loadFailed'),
     });
   }
 

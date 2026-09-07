@@ -21,7 +21,7 @@
 
   async function loadReminder() {
     loading = true; error = '';
-    const result = await withErrorHandling({ action: () => api.get(`/payment-reminders/${reminderId}`), errorMessage: 'Erreur lors du chargement' });
+    const result = await withErrorHandling({ action: () => api.get(`/payment-reminders/${reminderId}`), errorMessage: $_('reminders.loadFailed') });
     if (result) { reminder = result; } else { error = 'Erreur lors du chargement'; }
     loading = false;
   }
@@ -48,14 +48,14 @@
 
   async function confirmCancel() {
     if (!cancelReason.trim()) { toast.error($_('paymentReminders.cancelReasonRequired')); return; }
-    try { loading = true; const updated = await api.put(`/payment-reminders/${reminderId}/cancel`, { reason: cancelReason }); reminder = updated; showCancelModal = false; if (onUpdated) onUpdated(updated); toast.success($_('paymentReminders.cancelled')); } catch (err: any) { toast.error('Erreur: ' + (err.message || $_('paymentReminders.cancelError'))); } finally { loading = false; }
+    try { loading = true; const updated = await api.put(`/payment-reminders/${reminderId}/cancel`, { reason: cancelReason }); reminder = updated; showCancelModal = false; if (onUpdated) onUpdated(updated); toast.success($_('paymentReminders.cancelled')); } catch (err: any) { toast.error(err.message || $_('paymentReminders.cancelError')); } finally { loading = false; }
   }
 
   function openTrackingModal() { showTrackingModal = true; trackingNumber = ''; }
 
   async function confirmAddTracking() {
     if (!trackingNumber.trim()) { toast.error($_('paymentReminders.trackingNumberRequired')); return; }
-    try { loading = true; const updated = await api.put(`/payment-reminders/${reminderId}/tracking-number`, { tracking_number: trackingNumber }); reminder = updated; showTrackingModal = false; if (onUpdated) onUpdated(updated); toast.success($_('paymentReminders.trackingAdded')); } catch (err: any) { toast.error('Erreur: ' + (err.message || $_('paymentReminders.trackingError'))); } finally { loading = false; }
+    try { loading = true; const updated = await api.put(`/payment-reminders/${reminderId}/tracking-number`, { tracking_number: trackingNumber }); reminder = updated; showTrackingModal = false; if (onUpdated) onUpdated(updated); toast.success($_('paymentReminders.trackingAdded')); } catch (err: any) { toast.error(err.message || $_('paymentReminders.trackingError')); } finally { loading = false; }
   }
 
   function getLevelInfo(level: string) { const levels: Record<string, { emoji: string; label: string; description: string; class: string }> = { 'FirstReminder': { emoji: '📧', label: $_('paymentReminders.kindReminder'), description: $_('paymentReminders.kindReminderDesc'), class: 'bg-yellow-100 text-yellow-800 border-yellow-200' }, 'SecondReminder': { emoji: '⚠️', label: $_('paymentReminders.firmReminder'), description: $_('paymentReminders.firmReminderDesc'), class: 'bg-orange-100 text-orange-800 border-orange-200' }, 'FormalNotice': { emoji: '🚨', label: $_('paymentReminders.formalNotice'), description: $_('paymentReminders.formalNoticeDesc'), class: 'bg-red-100 text-red-800 border-red-200' }, 'LegalAction': { emoji: '⚖️', label: $_('paymentReminders.legalAction'), description: $_('paymentReminders.legalActionDesc'), class: 'bg-purple-100 text-purple-800 border-purple-200' } }; return levels[level] || levels['FirstReminder']; }

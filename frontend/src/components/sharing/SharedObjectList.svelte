@@ -31,7 +31,7 @@
       action: () => selectedAvailability === "available-only"
         ? sharingApi.listAvailableObjects(buildingId)
         : sharingApi.listObjectsByBuilding(buildingId),
-      errorMessage: "Failed to load shared objects",
+      errorMessage: $_('sharing.loadFailed'),
     });
     if (result) {
       objects = result;

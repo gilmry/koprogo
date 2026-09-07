@@ -16,6 +16,7 @@
   import { authStore } from "../../../stores/auth";
   import { api } from "../../api";
   import { toast } from "../../../stores/toast";
+  import { _ } from "../../i18n";
   import TicketCreate from "./TicketCreate.svelte";
   import type { WitnessCandidate } from "./WitnessSelector.svelte";
   import type { Ticket } from "../../api/tickets";
@@ -91,7 +92,7 @@
   }
 
   function handleCreated(t: Ticket): void {
-    toast.success("Ticket créé.");
+    toast.success($_('tickets.createSuccess'));
     // Redirection vers le détail du ticket.
     window.location.href = `/ticket-detail?id=${t.id}`;
   }
