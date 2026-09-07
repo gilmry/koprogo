@@ -621,10 +621,19 @@ jobs:
       # This closes the loop — Rust is the single source of truth for every
       # enum value visible in the UI.
       #
-      # We use --threshold warning to also block on a11y warnings (form
-      # labels, click handlers without keyboard events, ARIA roles, etc.).
-      # As of commit a173848 the baseline is 0 warnings — any regression
-      # hides a potential accessibility bug.
+      # We use --fail-on-warnings to also block on a11y and runes warnings
+      # (form labels, click handlers without keyboard events, ARIA roles,
+      # `let` variables that should be `$state`).
+      #
+      # This step used to pass --threshold warning and claim it blocked. It
+      # did not: --threshold *filters what is displayed* and `warning` is
+      # already its default value; only --fail-on-warnings changes the exit
+      # code. The a173848 baseline of 0 warnings was therefore never enforced,
+      # and it had drifted to 29 — all in GdprDataPanel.svelte, where fifteen
+      # `let` declarations in a runes-mode component were silently
+      # non-reactive. Three modals could never open. See #832.
+      #
+      # A warning nobody reads is not a warning. Baseline is back to 0.
       - name: Run svelte-check (enforces frontend↔backend contract + a11y)
         run: |
           cd frontend
@@ -632,7 +641,7 @@ jobs:
           # required by svelte-check; without it, svelte-check trips on type
           # references it can't resolve (matches local `npm run build` behavior).
           npx astro sync
-          npx svelte-check --threshold warning
+          npx svelte-check --fail-on-warnings
 
       # Gate 4: No hand-written enum re-introductions in lib/api/*.ts
       # A small-surface safety net: we allow a documented allowlist of

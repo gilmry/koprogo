@@ -8,24 +8,24 @@
   import { withErrorHandling } from '../lib/utils/error.utils';
   import type { GdprExport, GdprEraseResponse } from '../lib/types';
 
-  let loading = false;
-  let canErase = true;
-  let checkingErasure = false;
-  let exportData: GdprExport | null = null;
-  let showExportModal = false;
-  let showEraseConfirmation = false;
-  let erasureResult: GdprEraseResponse | null = null;
+  let loading = $state(false);
+  let canErase = $state(true);
+  let checkingErasure = $state(false);
+  let exportData: GdprExport | null = $state(null);
+  let showExportModal = $state(false);
+  let showEraseConfirmation = $state(false);
+  let erasureResult: GdprEraseResponse | null = $state(null);
 
-  let showRectifyModal = false;
-  let rectifyEmail = '';
-  let rectifyFirstName = '';
-  let rectifyLastName = '';
+  let showRectifyModal = $state(false);
+  let rectifyEmail = $state('');
+  let rectifyFirstName = $state('');
+  let rectifyLastName = $state('');
 
-  let processingRestricted = false;
-  let loadingRestriction = false;
+  let processingRestricted = $state(false);
+  let loadingRestriction = $state(false);
 
-  let marketingOptOut = false;
-  let loadingMarketing = false;
+  let marketingOptOut = $state(false);
+  let loadingMarketing = $state(false);
 
   onMount(async () => {
     await authStore.init();
@@ -178,7 +178,7 @@
             {$_('gdpr.article15.desc')}
           </p>
           <button
-            on:click={handleExportData}
+            onclick={handleExportData}
             disabled={loading}
             data-testid="gdpr-export-button"
             class="mt-4 inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
@@ -211,7 +211,7 @@
             {$_('gdpr.article16.desc')}
           </p>
           <button
-            on:click={() => showRectifyModal = true}
+            onclick={() => showRectifyModal = true}
             disabled={loading}
             data-testid="gdpr-rectify-button"
             class="mt-4 inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50"
@@ -237,7 +237,7 @@
           </p>
           <div class="mt-4 flex items-center">
             <button
-              on:click={toggleProcessingRestriction}
+              onclick={toggleProcessingRestriction}
               disabled={loadingRestriction}
               data-testid="gdpr-restrict-toggle"
               aria-label="Toggle processing restriction"
@@ -269,7 +269,7 @@
           </p>
           <div class="mt-4 flex items-center">
             <button
-              on:click={toggleMarketingPreference}
+              onclick={toggleMarketingPreference}
               disabled={loadingMarketing}
               data-testid="gdpr-marketing-toggle"
               aria-label="Toggle marketing opt-out"
@@ -310,7 +310,7 @@
             </div>
           {:else}
             <button
-              on:click={() => showEraseConfirmation = true}
+              onclick={() => showEraseConfirmation = true}
               disabled={loading}
               data-testid="gdpr-erase-button"
               class="mt-4 inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50"
@@ -349,7 +349,7 @@
 {#if showExportModal && exportData}
   <div class="fixed z-50 inset-0 overflow-y-auto" data-testid="gdpr-export-modal">
     <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-      <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" on:click={() => showExportModal = false} aria-hidden="true"></div>
+      <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" onclick={() => showExportModal = false} aria-hidden="true"></div>
 
       <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-4xl sm:w-full relative z-10" data-testid="gdpr-export-modal-content">
         <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
@@ -397,7 +397,7 @@
         <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
           <button
             type="button"
-            on:click={downloadExport}
+            onclick={downloadExport}
             data-testid="gdpr-download-export-button"
             class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm"
           >
@@ -405,7 +405,7 @@
           </button>
           <button
             type="button"
-            on:click={() => showExportModal = false}
+            onclick={() => showExportModal = false}
             data-testid="gdpr-export-modal-close"
             class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
           >
@@ -421,7 +421,7 @@
 {#if showEraseConfirmation}
   <div class="fixed z-50 inset-0 overflow-y-auto" data-testid="gdpr-erase-confirm-modal">
     <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-      <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" on:click={() => showEraseConfirmation = false} aria-hidden="true"></div>
+      <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" onclick={() => showEraseConfirmation = false} aria-hidden="true"></div>
 
       <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full relative z-10" data-testid="gdpr-erase-confirm-content">
         <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
@@ -455,7 +455,7 @@
         <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
           <button
             type="button"
-            on:click={handleEraseData}
+            onclick={handleEraseData}
             disabled={loading}
             data-testid="gdpr-erase-confirm-button"
             class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-50"
@@ -468,7 +468,7 @@
           </button>
           <button
             type="button"
-            on:click={() => showEraseConfirmation = false}
+            onclick={() => showEraseConfirmation = false}
             disabled={loading}
             data-testid="gdpr-erase-cancel-button"
             class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:w-auto sm:text-sm disabled:opacity-50"
@@ -485,7 +485,7 @@
 {#if showRectifyModal}
   <div class="fixed z-50 inset-0 overflow-y-auto" data-testid="gdpr-rectify-modal">
     <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-      <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" on:click={() => showRectifyModal = false} aria-hidden="true"></div>
+      <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" onclick={() => showRectifyModal = false} aria-hidden="true"></div>
 
       <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full relative z-10" data-testid="gdpr-rectify-modal-content">
         <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
@@ -543,7 +543,7 @@
         <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
           <button
             type="button"
-            on:click={handleRectifyData}
+            onclick={handleRectifyData}
             disabled={loading}
             data-testid="gdpr-rectify-submit-button"
             class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-green-600 text-base font-medium text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-50"
@@ -556,7 +556,7 @@
           </button>
           <button
             type="button"
-            on:click={() => showRectifyModal = false}
+            onclick={() => showRectifyModal = false}
             disabled={loading}
             data-testid="gdpr-rectify-cancel-button"
             class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:w-auto sm:text-sm disabled:opacity-50"
