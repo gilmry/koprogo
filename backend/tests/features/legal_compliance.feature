@@ -17,8 +17,13 @@
 #   - Extraits de loi  : docs/legal/copropriete_art_3_84_3_92.rst
 #   - Audit complet    : docs/legal/audit_conformite.rst
 #
-# Dernière mise à jour : 2026-02-28
-# Score conformité : 25/37 CONFORME (67%)
+# Dernière mise à jour : 2026-09-07
+# Score conformité : 31/37 CONFORME (84%)
+#
+# Six scénarios portaient `@manquant` alors que la règle était
+# implémentée — matrice périmée de six mois, cf. #837. Chacun porte
+# désormais le module qui le satisfait, pour que la prochaine dérive
+# se voie.
 #
 # ═══════════════════════════════════════════════════════════════════════
 
@@ -97,7 +102,8 @@ Feature: Conformite Juridique Belge
     Then the vote must be recorded with proxy_owner_id set to "Bob"
     And the voting power must be Alice's tantiemes
 
-  @manquant @wip @copropriete @ag @critique
+  # Implémenté : domain/copropriete/procurations.rs — PROCURATIONS_MAX = 3
+  @conforme @copropriete @ag @critique
   Scenario: [Art. 3.87 §7] Maximum 3 procurations par mandataire
     # Code   : NON IMPLÉMENTÉ
     # Risque : Un mandataire représentant >3 copropriétaires → votes invalides
@@ -108,7 +114,8 @@ Feature: Conformite Juridique Belge
     Then the system must reject the proxy
     And the error must mention "maximum 3 proxies"
 
-  @manquant @wip @copropriete @ag @critique
+  # Implémenté : domain/copropriete/procurations.rs — plafonnement des voix, Art. 3.87 § 7 al. 4
+  @conforme @copropriete @ag @critique
   Scenario: [Art. 3.87 §7] Exception procurations si total < 10% voix
     # Code   : NON IMPLÉMENTÉ
     # Loi    : "sauf si le total des voix dont il dispose [...] ne dépasse pas
@@ -119,7 +126,8 @@ Feature: Conformite Juridique Belge
 
   # --- Art. 3.87 §5 : Quorum ---
 
-  @manquant @wip @copropriete @ag @critique
+  # Implémenté : domain/copropriete/meeting.rs — QuorumNotReached, quorum double
+  @conforme @copropriete @ag @critique
   Scenario: [Art. 3.87 §5] Quorum 50% requis en premiere convocation
     # Code   : NON IMPLÉMENTÉ
     # Risque : Décisions prises sans quorum sont NULLES (contestables 4 mois)
@@ -132,7 +140,8 @@ Feature: Conformite Juridique Belge
     Then the system must block the vote
     And the error must mention "quorum not reached (40% < 50%)"
 
-  @manquant @wip @copropriete @ag @critique
+  # Implémenté : domain/copropriete/convocation.rs — Convocation::new_second_convocation
+  @conforme @copropriete @ag @critique
   Scenario: [Art. 3.87 §5] Deuxieme convocation si quorum non atteint
     # Code   : NON IMPLÉMENTÉ
     # Phase  : Phase 1 critique
@@ -144,7 +153,8 @@ Feature: Conformite Juridique Belge
     And the second convocation must respect the 15-day notice period
     And no quorum requirement applies to the second convocation
 
-  @manquant @wip @copropriete @ag
+  # Implémenté : domain/copropriete/ag_session.rs — borne stricte des 3/4, majorites.rs
+  @conforme @copropriete @ag
   Scenario: [Art. 3.87 §5] Quorum 3/4 pour decisions qualifiees
     # Code   : NON IMPLÉMENTÉ
     # Loi    : Certaines décisions (Art. 3.88) exigent une présence de 3/4
@@ -209,7 +219,8 @@ Feature: Conformite Juridique Belge
 
   # --- Art. 3.87 §10 : PV distribution ---
 
-  @manquant @wip @copropriete @ag
+  # Implémenté : domain/copropriete/consignation_pv.rs — Art. 3.87 § 12, trente jours
+  @conforme @copropriete @ag
   Scenario: [Art. 3.87 §10] PV distribue dans les 30 jours
     # Code   : NON IMPLÉMENTÉ
     # Phase  : Phase 2
