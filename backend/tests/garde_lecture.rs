@@ -145,7 +145,14 @@ const DETTE_AU_2026_09_06: usize = 8;
 /// c'est le travail de l'issue #772.
 ///
 /// **Ce nombre ne doit que DIMINUER.**
-/// 109 au relevé du 2026-09-06 ; **73** au 2026-09-07.
+/// 109 au relevé du 2026-09-06 ; **68** au 2026-09-07.
+///
+/// Les cinq dernières sont les premières à venir de VRAIES gardes ajoutées :
+/// les cinq routes de `local_exchange_handlers` qui listent les échanges, le
+/// classement et les statistiques d'un immeuble. Elles écrivaient
+/// `_auth: AuthenticatedUser` — l'identité prise en paramètre puis
+/// délibérément ignorée, souligné d'un underscore. N'importe quel utilisateur
+/// authentifié lisait le SEL de n'importe quel immeuble.
 ///
 /// La baisse ne vient pas de gardes ajoutés mais d'une uniformisation :
 /// soixante-treize handlers comparaient `auth.role == "superadmin"` à la main,
@@ -171,7 +178,7 @@ const DETTE_AU_2026_09_06: usize = 8;
 /// d'énergie, était ainsi comptée comme non protégée alors qu'elle compare
 /// bien l'organisation de l'appelant à celle de la ressource. Les espaces sont
 /// désormais normalisés avant la recherche.
-const IDENTITE_NON_VERIFIEE_AU_2026_09_06: usize = 73;
+const IDENTITE_NON_VERIFIEE_AU_2026_09_06: usize = 68;
 
 fn racine_handlers() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("src/infrastructure/web/handlers")
