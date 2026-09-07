@@ -556,7 +556,7 @@ Ces deux actes ne sont pas délégables : cf. `docs/governance/RESPONSABILITE.md
 
 ## Inventaire complet du périmètre 0.1.0
 
-**73 issues ouvertes** portent l'étiquette `release:0.1.0`. Elles sont
+**69 issues ouvertes** portent l'étiquette `release:0.1.0`. Elles sont
 toutes ci-dessous, sans exception : une issue du périmètre absente du WBS est
 une issue que personne ne planifie.
 
@@ -567,12 +567,12 @@ cinq jours.
 
 | Priorité | Nombre |
 |---|---|
-| critical | 7 |
+| critical | 5 |
 | high | 25 |
-| medium | 18 |
-| — | 23 |
+| medium | 17 |
+| — | 22 |
 
-### Track R — Défauts de recette navigateur (6)
+### Track R — Défauts de recette navigateur (3)
 
 Six recettes menées au navigateur entre le 2026-09-04 et le 2026-09-06. Le
 motif dominant, confirmé six fois : **une capacité écrite, testée, et
@@ -583,10 +583,7 @@ ne peut pas y arriver.
 |---|---|---|
 | #772 | critical | Fuite inter-organisations : 75 routes imbriquées sur 310 n'exigent aucune identité — des votes nomi… |
 | #780 | critical | Le cycle de vie d'une AG ne peut pas aboutir : trois verrous indépendants, aucun contournable depui… |
-| #814 | critical | Cinq rôles sur quatorze reçoivent une navigation entièrement vide : canSee() les fait tomber en fai… |
-| #836 | critical | normalizeRole transforme silencieusement dix rôles sur quatorze en « owner » : tout le travail de #… |
 | #779 | high | Rebrancher les six modules communautaires : 111 points d'entrée servis que le frontend n'appelle pa… |
-| #777 | medium | Le test negative_display_does_not_leak_business_internals échoue au hasard : un UUID aléatoire cont… |
 
 ### Track U — Refonte UX/UI (15)
 
@@ -698,7 +695,7 @@ affiche sans bloquer apprend à croire qu'on regarde.
 | #832 | medium | Quinze specs Playwright échouent sans erreur d'identité : les ancrages existent mais l'élément n'es… |
 | #696 | — | Instabilité smoke suite Playwright CI : 109 échecs sur specs pré-existantes (occurrence 2026-08-08) |
 
-### Track K — Dette de code et de contrat (3)
+### Track K — Dette de code et de contrat (2)
 
 Les erreurs typées plutôt que classées par sous-chaîne, le contrat OpenAPI
 complet, et la suppression du repli qui fabrique une ACP inexistante.
@@ -706,7 +703,6 @@ complet, et la suppression du repli qui fabrique une ACP inexistante.
 | Issue | Prio | Intitulé |
 |---|---|---|
 | #555 | medium | EPIC: migrer Result<_, String> → Result<_, AppError> (1263 violations, CRITICAL.md rule 4) |
-| #761 | — | Supprimer le repli de resolve_acp_id, qui fabrique un ACP inexistant |
 | #762 | — | Typer les erreurs applicatives au lieu de les classer par sous-chaînes |
 
 ### Track F — Ops et infrastructure (10)
