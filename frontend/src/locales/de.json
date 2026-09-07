@@ -2511,7 +2511,14 @@
     "userOwnerLinks": "Benutzer-Eigentümer-Verknüpfungen",
     "users": "Benutzer",
     "workReports": "Arbeitsberichte",
-    "works": "Arbeiten"
+    "works": "Arbeiten",
+    "noScreenForRoleTitle": "Kein Bildschirm für diese Rolle",
+    "noScreenForRoleDesc": "Ihre Rolle wird erkannt, aber die Anwendung bietet dafür noch keinen Bildschirm. Wenden Sie sich an Ihren Verwalter, um zu erfahren, wie Sie vorgehen.",
+    "noRoleAssignedTitle": "Keine Rolle zugewiesen",
+    "noRoleAssignedDesc": "Wenden Sie sich an Ihren Administrator, um Zugang zu erhalten.",
+    "activeRole": "Aktive Rolle",
+    "gdprData": "DSGVO-Daten",
+    "tagline": "Plattform für die Verwaltung von Wohnungseigentum"
   },
   "notices": {
     "all_types": "Alle Typen",

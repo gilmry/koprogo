@@ -2511,7 +2511,14 @@
     "userOwnerLinks": "User-owner links",
     "users": "Users",
     "workReports": "Work reports",
-    "works": "Works"
+    "works": "Works",
+    "noScreenForRoleTitle": "No screen for this role",
+    "noScreenForRoleDesc": "Your role is recognised, but the application does not yet offer it any screen. Contact your building manager to find out how to proceed.",
+    "noRoleAssignedTitle": "No role assigned",
+    "noRoleAssignedDesc": "Contact your administrator to obtain access.",
+    "activeRole": "Active role",
+    "gdprData": "GDPR data",
+    "tagline": "Condominium management platform"
   },
   "notices": {
     "all_types": "All types",

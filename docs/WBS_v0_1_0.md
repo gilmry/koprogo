@@ -568,12 +568,11 @@ cinq jours.
 | Priorité | Nombre |
 |---|---|
 | critical | 6 |
-| high | 23 |
+| high | 24 |
 | medium | 19 |
-| low | 1 |
 | — | 23 |
 
-### Track R — Défauts de recette navigateur (7)
+### Track R — Défauts de recette navigateur (6)
 
 Six recettes menées au navigateur entre le 2026-09-04 et le 2026-09-06. Le
 motif dominant, confirmé six fois : **une capacité écrite, testée, et
@@ -588,9 +587,8 @@ ne peut pas y arriver.
 | #779 | high | Rebrancher les six modules communautaires : 111 points d'entrée servis que le frontend n'appelle pa… |
 | #777 | medium | Le test negative_display_does_not_leak_business_internals échoue au hasard : un UUID aléatoire cont… |
 | #829 | medium | Art. 3.87 § 7 — le syndic ne peut être mandataire, mais rien n'empêche d'enregistrer le mandat |
-| #793 | low | « Precedent » sans accent dans la pagination, y compris dans le libellé lu par les lecteurs d'écran |
 
-### Track U — Refonte UX/UI (14)
+### Track U — Refonte UX/UI (15)
 
 Revue de design du 2026-09-06. Entrée en 0.1.0 le même jour : un financeur ne
 lit pas du code, et l'ASBL se fonde sur ce que le produit montre. **U2 ne
@@ -609,6 +607,7 @@ d'avoir fermé la dette de cloisonnement serait l'ordre inverse du bon.
 | #824 | high | Refonte UX — importer et implémenter la maquette Claude Design « Owner Mobile First » |
 | #825 | high | Refonte UX — importer et implémenter la maquette Claude Design « Mobile First (modernisé) » |
 | #826 | high | Refonte UX — importer et implémenter la maquette Claude Design « Syndic Dashboard (modernisé) » |
+| #834 | high | 362 libellés de gabarit écrits en dur : les quatre langues s'arrêtent aux toasts |
 | #797 | medium | Refonte UX — jetons de design et jeu d'icônes SVG : remplacer les émojis qui collisionnent |
 | #821 | medium | Refonte UX — importer et implémenter la maquette Claude Design « Admin Dashboard (modernisé) » |
 | #822 | medium | Refonte UX — importer et implémenter la maquette Claude Design « Accountant Dashboard (modernisé) » |

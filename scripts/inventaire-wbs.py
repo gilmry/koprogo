@@ -14,13 +14,13 @@ motif dominant, confirmé six fois : **une capacité écrite, testée, et
 inatteignable**. Nos tests prouvent que le code marche tout en masquant qu'on
 ne peut pas y arriver.""",
   [772,777,779,780,
-   793,814,829]),
+   814,829]),
 
  ("U", "Refonte UX/UI", """Revue de design du 2026-09-06. Entrée en 0.1.0 le même jour : un financeur ne
 lit pas du code, et l'ASBL se fonde sur ce que le produit montre. **U2 ne
 commence qu'une fois #772 fermée** — remanier le périmètre applicatif avant
 d'avoir fermé la dette de cloisonnement serait l'ordre inverse du bon.""",
-  [556,818,820,821,822,823,824,825,826,827,797,798,802,803]),
+  [556,818,820,821,822,823,824,825,826,827,797,798,802,803,834]),
 
  ("D", "Documentation vivante multi-persona", """Six personas, quatre workflows transverses, et la restructuration des cent
 specs e2e pour que les vidéos racontent le produit plutôt que ses modules.

@@ -2511,7 +2511,14 @@
     "userOwnerLinks": "Gebruiker-eigenaar koppelingen",
     "users": "Gebruikers",
     "workReports": "Werkrapporten",
-    "works": "Werken"
+    "works": "Werken",
+    "noScreenForRoleTitle": "Geen scherm voor deze rol",
+    "noScreenForRoleDesc": "Uw rol wordt herkend, maar de toepassing biedt er nog geen scherm voor. Neem contact op met uw syndicus om te weten hoe u verder gaat.",
+    "noRoleAssignedTitle": "Geen rol toegewezen",
+    "noRoleAssignedDesc": "Neem contact op met uw beheerder om toegang te krijgen.",
+    "activeRole": "Actieve rol",
+    "gdprData": "AVG-gegevens",
+    "tagline": "Platform voor het beheer van mede-eigendom"
   },
   "notices": {
     "all_types": "Alle types",

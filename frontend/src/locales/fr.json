@@ -2511,7 +2511,14 @@
     "userOwnerLinks": "Liens utilisateur-propriétaire",
     "users": "Utilisateurs",
     "workReports": "Rapports de travaux",
-    "works": "Travaux"
+    "works": "Travaux",
+    "noScreenForRoleTitle": "Aucun écran pour ce rôle",
+    "noScreenForRoleDesc": "Votre rôle est bien reconnu, mais l'application ne lui propose pas encore d'écran. Contactez votre syndic pour savoir comment procéder.",
+    "noRoleAssignedTitle": "Aucun rôle attribué",
+    "noRoleAssignedDesc": "Contactez votre administrateur pour obtenir l'accès.",
+    "activeRole": "Rôle actif",
+    "gdprData": "Données RGPD",
+    "tagline": "Plateforme de gestion de copropriété"
   },
   "notices": {
     "all_types": "Tous les types",

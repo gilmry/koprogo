@@ -436,11 +436,10 @@
       data-testid="navigation-role-sans-interface"
     >
       <p class="text-sm font-semibold text-gray-800 mb-2">
-        Aucun écran pour ce rôle
+        {$_('navigation.noScreenForRoleTitle')}
       </p>
       <p class="text-xs text-gray-500">
-        Votre rôle est bien reconnu, mais l'application ne lui propose pas
-        encore d'écran. Contactez votre syndic pour savoir comment procéder.
+        {$_('navigation.noScreenForRoleDesc')}
       </p>
     </aside>
   {:else if hasNoRoleAssignment}
@@ -454,10 +453,10 @@
       data-testid="navigation-empty-no-role"
     >
       <p class="text-sm font-semibold text-gray-800 mb-2">
-        Aucun rôle attribué
+        {$_('navigation.noRoleAssignedTitle')}
       </p>
       <p class="text-xs text-gray-500">
-        Contactez votre administrateur pour obtenir l'accès.
+        {$_('navigation.noRoleAssignedDesc')}
       </p>
     </aside>
   {:else}
@@ -562,7 +561,7 @@
           <div class="mb-2">
             <label
               for="sidebar-role-selector"
-              class="text-[11px] text-gray-400 block mb-1">Rôle actif</label
+              class="text-[11px] text-gray-400 block mb-1">{$_('navigation.activeRole')}</label
             >
             <select
               id="sidebar-role-selector"
@@ -614,13 +613,13 @@
             href="/settings"
             class="flex items-center gap-2 px-2 py-1 text-xs text-gray-600 hover:bg-gray-50 rounded-lg transition-colors"
           >
-            ⚙️ Paramètres
+            ⚙️ {$_('navigation.settings')}
           </a>
           <a
             href="/settings/gdpr"
             class="flex items-center gap-2 px-2 py-1 text-xs text-gray-600 hover:bg-gray-50 rounded-lg transition-colors"
           >
-            🔒 Données RGPD
+            🔒 {$_('navigation.gdprData')}
           </a>
           <button
             onclick={logout}
@@ -686,7 +685,7 @@
       class="px-4 py-1.5 bg-primary-600 text-white rounded-lg hover:bg-primary-700 text-sm font-medium"
       data-testid="nav-login-button"
     >
-      Connexion
+      {$_('auth.login')}
     </a>
   {/if}
 </header>
@@ -700,14 +699,14 @@
   >
     <a href="/" class="text-2xl font-bold text-primary-600">KoproGo</a>
     <p class="text-sm text-gray-500 text-center px-6">
-      Plateforme de gestion de copropriété
+      {$_('navigation.tagline')}
     </p>
     <a
       href="/login"
       class="px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 font-medium"
       data-testid="nav-login-button"
     >
-      Connexion
+      {$_('auth.login')}
     </a>
   </aside>
 {/if}
@@ -846,7 +845,7 @@
         <div class="mb-3">
           <label
             for="drawer-role-selector"
-            class="text-[11px] text-gray-400 block mb-1">Rôle actif</label
+            class="text-[11px] text-gray-400 block mb-1">{$_('navigation.activeRole')}</label
           >
           <select
             id="drawer-role-selector"
@@ -897,14 +896,14 @@
           onclick={handleNavClick}
           class="flex items-center gap-2 px-2 py-1.5 text-xs text-gray-600 hover:bg-gray-50 rounded-lg transition-colors"
         >
-          ⚙️ Paramètres
+          ⚙️ {$_('navigation.settings')}
         </a>
         <a
           href="/settings/gdpr"
           onclick={handleNavClick}
           class="flex items-center gap-2 px-2 py-1.5 text-xs text-gray-600 hover:bg-gray-50 rounded-lg transition-colors"
         >
-          🔒 Données RGPD
+          🔒 {$_('navigation.gdprData')}
         </a>
         <button
           onclick={logout}
