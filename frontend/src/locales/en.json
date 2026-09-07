@@ -959,7 +959,10 @@
     "view_details": "View details",
     "welcome": "Welcome",
     "yes": "Yes",
-    "you": "You"
+    "you": "You",
+    "street": "Street",
+    "slug": "Short identifier",
+    "enterpriseNumber": "Enterprise number"
   },
   "common.error.loadData": "Error loading data",
   "common.error.loadStats": "Error loading statistics",
@@ -3949,5 +3952,15 @@
   },
   "technicalSpecs": {
     "submittedForSignature": "Specification submitted for signature."
+  },
+  "acps": {
+    "pageTitle": "Co-ownership associations (ACP)",
+    "pageSubtitle": "Root of the business tree: one association groups several buildings. The managing agent is optional — an association may be self-managed.",
+    "managingAgentOptional": "Managing agent (organisation, optional)",
+    "managingAgentEmpty": "Managing agent (empty = self-managed)",
+    "selfManaged": "None — self-managed association",
+    "empty": "No association yet. Create one with the button above.",
+    "managingAgent": "Managing agent",
+    "deleteConfirm": "Permanently delete “{nom}”? This action is irreversible. An association that still holds buildings will be refused."
   }
 }

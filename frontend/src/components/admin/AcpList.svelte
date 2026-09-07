@@ -187,10 +187,9 @@
 <div class="space-y-6" data-testid="admin-acps-page">
   <div class="flex items-center justify-between">
     <div>
-      <h1 class="text-2xl font-bold text-gray-900">Associations de Copropriétaires (ACP)</h1>
+      <h1 class="text-2xl font-bold text-gray-900">{$_('acps.pageTitle')}</h1>
       <p class="text-sm text-gray-600 mt-1">
-        Racine de l'arbre métier : 1 ACP regroupe N immeubles. Cabinet syndic
-        optionnel (auto-géré si vide).
+        {$_('acps.pageSubtitle')}
       </p>
     </div>
     <button
@@ -211,7 +210,7 @@
     >
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <label class="block">
-          <span class="text-sm font-medium text-gray-700">Nom *</span>
+          <span class="text-sm font-medium text-gray-700">{$_('common.name')} *</span>
           <input
             type="text"
             bind:value={form.name}
@@ -223,21 +222,21 @@
         </label>
         <label class="block">
           <span class="text-sm font-medium text-gray-700">
-            Cabinet syndic (organisation, optionnel)
+            {$_('acps.managingAgentOptional')}
           </span>
           <select
             bind:value={form.organization_id}
             class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg"
             data-testid="acp-form-org-id"
           >
-            <option value={null}>Aucun — ACP auto-gérée</option>
+            <option value={null}>{$_('acps.selfManaged')}</option>
             {#each organizations as org (org.id)}
               <option value={org.id}>{org.name}</option>
             {/each}
           </select>
         </label>
         <label class="block">
-          <span class="text-sm font-medium text-gray-700">Rue *</span>
+          <span class="text-sm font-medium text-gray-700">{$_('common.street')} *</span>
           <input
             type="text"
             bind:value={form.address_street}
@@ -247,7 +246,7 @@
           />
         </label>
         <label class="block">
-          <span class="text-sm font-medium text-gray-700">Code postal *</span>
+          <span class="text-sm font-medium text-gray-700">{$_('common.postalCode')} *</span>
           <input
             type="text"
             bind:value={form.address_postal_code}
@@ -257,7 +256,7 @@
           />
         </label>
         <label class="block">
-          <span class="text-sm font-medium text-gray-700">Ville *</span>
+          <span class="text-sm font-medium text-gray-700">{$_('common.city')} *</span>
           <input
             type="text"
             bind:value={form.address_city}
@@ -267,7 +266,7 @@
           />
         </label>
         <label class="block">
-          <span class="text-sm font-medium text-gray-700">Numéro BCE</span>
+          <span class="text-sm font-medium text-gray-700">{$_('common.enterpriseNumber')}</span>
           <input
             type="text"
             bind:value={form.bce_number}
@@ -282,7 +281,7 @@
           onclick={() => (showCreate = false)}
           class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700"
         >
-          Annuler
+          {$_('common.cancel')}
         </button>
         <button
           type="submit"
@@ -297,23 +296,23 @@
   {/if}
 
   {#if loading}
-    <p class="text-gray-500" data-testid="acps-loading">Chargement...</p>
+    <p class="text-gray-500" data-testid="acps-loading">{$_('common.loading')}</p>
   {:else if error}
     <p class="text-red-600" data-testid="acps-error">{error}</p>
   {:else if acps.length === 0}
     <p class="text-gray-500 italic" data-testid="acps-empty">
-      Aucune ACP. Créez-en une via le bouton ci-dessus.
+      {$_('acps.empty')}
     </p>
   {:else}
     <table class="min-w-full divide-y divide-gray-200" data-testid="acps-table">
       <thead class="bg-gray-50">
         <tr>
-          <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Nom</th>
-          <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Slug</th>
-          <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Cabinet</th>
-          <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Adresse</th>
+          <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">{$_('common.name')}</th>
+          <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">{$_('common.slug')}</th>
+          <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">{$_('acps.managingAgent')}</th>
+          <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">{$_('common.address')}</th>
           <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">BCE</th>
-          <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
+          <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">{$_('common.actions')}</th>
         </tr>
       </thead>
       <tbody class="bg-white divide-y divide-gray-200">
@@ -335,7 +334,7 @@
                 class="text-primary-600 hover:text-primary-800 mr-3"
                 data-testid="acp-edit-{acp.id}"
               >
-                Modifier
+                {$_('common.edit')}
               </button>
               <button
                 type="button"
@@ -343,7 +342,7 @@
                 class="text-red-600 hover:text-red-800"
                 data-testid="acp-archive-{acp.id}"
               >
-                Supprimer
+                {$_('common.delete')}
               </button>
             </td>
           </tr>
@@ -354,9 +353,7 @@
                 <!-- Le backend nomme ce geste « archive » mais il exécute un
                      DELETE : le libellé doit dire ce qui se passe vraiment. -->
                 <span class="text-red-800">
-                  Supprimer définitivement « {acp.name} » ? Cette action est
-                  irréversible. Une ACP portant encore des immeubles sera
-                  refusée.
+                  {$_('acps.deleteConfirm', { values: { nom: acp.name } })}
                 </span>
                 <span class="ml-3 inline-flex gap-2">
                   <button
@@ -374,7 +371,7 @@
                     class="px-3 py-1 border border-gray-300 rounded text-gray-700"
                     data-testid="acp-archive-cancel"
                   >
-                    Annuler
+                    {$_('common.cancel')}
                   </button>
                 </span>
               </td>
@@ -391,7 +388,7 @@
                 >
                   <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <label class="block">
-                      <span class="text-sm font-medium text-gray-700">Nom *</span>
+                      <span class="text-sm font-medium text-gray-700">{$_('common.name')} *</span>
                       <input
                         type="text"
                         bind:value={editForm.name}
@@ -403,21 +400,21 @@
                     </label>
                     <label class="block">
                       <span class="text-sm font-medium text-gray-700">
-                        Cabinet syndic (vide = ACP auto-gérée)
+                        {$_('acps.managingAgentEmpty')}
                       </span>
                       <select
                         bind:value={editForm.organization_id}
                         class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg"
                         data-testid="acp-edit-org-id"
                       >
-                        <option value={null}>Aucun — ACP auto-gérée</option>
+                        <option value={null}>{$_('acps.selfManaged')}</option>
                         {#each organizations as org (org.id)}
                           <option value={org.id}>{org.name}</option>
                         {/each}
                       </select>
                     </label>
                     <label class="block">
-                      <span class="text-sm font-medium text-gray-700">Rue *</span>
+                      <span class="text-sm font-medium text-gray-700">{$_('common.street')} *</span>
                       <input
                         type="text"
                         bind:value={editForm.address_street}
@@ -427,7 +424,7 @@
                       />
                     </label>
                     <label class="block">
-                      <span class="text-sm font-medium text-gray-700">Code postal *</span>
+                      <span class="text-sm font-medium text-gray-700">{$_('common.postalCode')} *</span>
                       <input
                         type="text"
                         bind:value={editForm.address_postal_code}
@@ -437,7 +434,7 @@
                       />
                     </label>
                     <label class="block">
-                      <span class="text-sm font-medium text-gray-700">Ville *</span>
+                      <span class="text-sm font-medium text-gray-700">{$_('common.city')} *</span>
                       <input
                         type="text"
                         bind:value={editForm.address_city}
@@ -447,7 +444,7 @@
                       />
                     </label>
                     <label class="block">
-                      <span class="text-sm font-medium text-gray-700">Numéro BCE</span>
+                      <span class="text-sm font-medium text-gray-700">{$_('common.enterpriseNumber')}</span>
                       <input
                         type="text"
                         bind:value={editForm.bce_number}
@@ -463,7 +460,7 @@
                       class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700"
                       data-testid="acp-edit-cancel"
                     >
-                      Annuler
+                      {$_('common.cancel')}
                     </button>
                     <button
                       type="submit"

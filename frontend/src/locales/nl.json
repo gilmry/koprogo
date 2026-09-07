@@ -959,7 +959,10 @@
     "view_details": "Details bekijken",
     "welcome": "Welkom",
     "yes": "Ja",
-    "you": "U"
+    "you": "U",
+    "street": "Straat",
+    "slug": "Korte identificatie",
+    "enterpriseNumber": "Ondernemingsnummer"
   },
   "common.error.loadData": "Fout bij het laden van gegevens",
   "common.error.loadStats": "Fout bij het laden van statistieken",
@@ -3949,5 +3952,15 @@
   },
   "technicalSpecs": {
     "submittedForSignature": "Fiche ingediend ter ondertekening."
+  },
+  "acps": {
+    "pageTitle": "Verenigingen van Mede-eigenaars (VME)",
+    "pageSubtitle": "Wortel van de bedrijfsboom: één vereniging groepeert meerdere gebouwen. Het syndicuskantoor is optioneel — een vereniging kan zichzelf beheren.",
+    "managingAgentOptional": "Syndicuskantoor (organisatie, optioneel)",
+    "managingAgentEmpty": "Syndicuskantoor (leeg = zelfbeheer)",
+    "selfManaged": "Geen — vereniging in zelfbeheer",
+    "empty": "Nog geen vereniging. Maak er een aan met de knop hierboven.",
+    "managingAgent": "Kantoor",
+    "deleteConfirm": "“{nom}” definitief verwijderen? Deze actie is onomkeerbaar. Een vereniging die nog gebouwen bevat, wordt geweigerd."
   }
 }

@@ -959,7 +959,10 @@
     "view_details": "Voir les détails",
     "welcome": "Bienvenue",
     "yes": "Oui",
-    "you": "Vous"
+    "you": "Vous",
+    "street": "Rue",
+    "slug": "Identifiant court",
+    "enterpriseNumber": "Numéro BCE"
   },
   "common.error.loadData": "Erreur lors du chargement des données",
   "common.error.loadStats": "Erreur lors du chargement des statistiques",
@@ -3949,5 +3952,15 @@
   },
   "technicalSpecs": {
     "submittedForSignature": "Fiche soumise pour signatures."
+  },
+  "acps": {
+    "pageTitle": "Associations de Copropriétaires (ACP)",
+    "pageSubtitle": "Racine de l'arbre métier : une ACP regroupe plusieurs immeubles. Le cabinet syndic est facultatif — une ACP peut s'auto-gérer.",
+    "managingAgentOptional": "Cabinet syndic (organisation, facultatif)",
+    "managingAgentEmpty": "Cabinet syndic (vide = ACP auto-gérée)",
+    "selfManaged": "Aucun — ACP auto-gérée",
+    "empty": "Aucune ACP. Créez-en une avec le bouton ci-dessus.",
+    "managingAgent": "Cabinet",
+    "deleteConfirm": "Supprimer définitivement « {nom} » ? Cette action est irréversible. Une ACP portant encore des immeubles sera refusée."
   }
 }

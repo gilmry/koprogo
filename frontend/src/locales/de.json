@@ -959,7 +959,10 @@
     "view_details": "Details anzeigen",
     "welcome": "Willkommen",
     "yes": "Ja",
-    "you": "Sie"
+    "you": "Sie",
+    "street": "Straße",
+    "slug": "Kurzkennung",
+    "enterpriseNumber": "Unternehmensnummer"
   },
   "common.error.loadData": "Fehler beim Laden der Daten",
   "common.error.loadStats": "Fehler beim Laden der Statistiken",
@@ -3949,5 +3952,15 @@
   },
   "technicalSpecs": {
     "submittedForSignature": "Datenblatt zur Unterschrift eingereicht."
+  },
+  "acps": {
+    "pageTitle": "Wohnungseigentümergemeinschaften (WEG)",
+    "pageSubtitle": "Wurzel der Fachstruktur: eine Gemeinschaft fasst mehrere Gebäude zusammen. Das Verwaltungsbüro ist optional — eine Gemeinschaft kann sich selbst verwalten.",
+    "managingAgentOptional": "Verwaltungsbüro (Organisation, optional)",
+    "managingAgentEmpty": "Verwaltungsbüro (leer = Selbstverwaltung)",
+    "selfManaged": "Keines — selbstverwaltete Gemeinschaft",
+    "empty": "Noch keine Gemeinschaft. Legen Sie eine über die Schaltfläche oben an.",
+    "managingAgent": "Büro",
+    "deleteConfirm": "„{nom}“ endgültig löschen? Diese Aktion ist unumkehrbar. Eine Gemeinschaft, die noch Gebäude enthält, wird abgelehnt."
   }
 }
