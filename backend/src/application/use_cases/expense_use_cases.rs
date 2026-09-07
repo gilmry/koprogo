@@ -102,14 +102,39 @@ impl ExpenseUseCases {
     /// Résout l'ACP propriétaire d'un immeuble.
     ///
     /// La comptabilité appartient à l'ACP, pas au syndic : c'est cette clé qui
-    /// doit être posée sur la charge. Le repository d'immeubles est optionnel
-    /// (constructeurs des tests unitaires) ; en son absence on retombe sur
-    /// l'organisation, ce qui préserve les tests à mocks sans introduire de
-    /// dérive en production, où `main.rs` le fournit toujours.
-    async fn resolve_acp_id(&self, building_id: Uuid, fallback: Uuid) -> Result<Uuid, String> {
-        let Some(building_repo) = &self.building_repository else {
-            return Ok(fallback);
-        };
+    /// doit être posée sur la charge.
+    ///
+    /// ── Ce que faisait ce code ──────────────────────────────────────────
+    ///
+    /// En l'absence de dépôt d'immeubles, il retombait sur l'identifiant
+    /// d'**organisation** — un identifiant présenté pour ce qu'il n'est pas.
+    /// La contrainte `fk_expenses_acp` le rejetait en base, et vingt-cinq
+    /// tests e2e sont tombés sur cette seule cause le 2026-09-03.
+    ///
+    /// Le commentaire justifiait le repli en disant qu'il « préservait les
+    /// tests à mocks sans introduire de dérive en production ». C'était faux
+    /// dans les deux termes : la dérive existait, et ce que le repli
+    /// préservait, ce n'étaient pas les tests mais leur silence.
+    ///
+    /// C'est le motif « `None` veut dire test » : la valeur fabriquée rend le
+    /// test unitaire vert **et** rend le défaut invisible exactement là où on
+    /// le cherche. Un test qui ne peut pas échouer ne prouve rien.
+    ///
+    /// ── Ce qu'il fait maintenant ───────────────────────────────────────
+    ///
+    /// Il refuse. Un appelant qui ne fournit pas de quoi résoudre l'ACP a une
+    /// erreur de câblage, pas un cas limite à absorber : `main.rs` fournit
+    /// toujours ce dépôt, et les quatre harnais d'intégration passent par
+    /// `with_acp_resolution`.
+    ///
+    /// Suivi en #761.
+    async fn resolve_acp_id(&self, building_id: Uuid) -> Result<Uuid, String> {
+        let building_repo = self.building_repository.as_ref().ok_or_else(|| {
+            "Câblage incomplet : ExpenseUseCases ne peut pas résoudre l'ACP de \
+             l'immeuble sans dépôt d'immeubles. Employez `with_acp_resolution` \
+             ou `with_full_wiring` (#761)."
+                .to_string()
+        })?;
         let building = building_repo
             .find_by_id(building_id)
             .await?
@@ -144,7 +169,7 @@ impl ExpenseUseCases {
         };
 
         // L'ACP propriétaire — clé de rattachement patrimonial de la charge.
-        let acp_id = self.resolve_acp_id(building_id, organization_id).await?;
+        let acp_id = self.resolve_acp_id(building_id).await?;
 
         // Deux constructeurs pour une seule route : `new_with_vat` dès que le
         // détail TVA est fourni, `new` sinon (montant TTC seul).
@@ -358,7 +383,7 @@ impl ExpenseUseCases {
             })
             .transpose()?;
 
-        let acp_id = self.resolve_acp_id(building_id, organization_id).await?;
+        let acp_id = self.resolve_acp_id(building_id).await?;
 
         let invoice = Expense::new_with_vat(
             acp_id,
@@ -636,7 +661,7 @@ mod tests {
     use super::*;
     use crate::application::dto::{ExpenseFilters, PageRequest};
     use crate::application::ports::ExpenseRepository;
-    use crate::domain::entities::{ApprovalStatus, ExpenseCategory, PaymentStatus};
+    use crate::domain::entities::{ApprovalStatus, Building, ExpenseCategory, PaymentStatus};
     use async_trait::async_trait;
     use std::collections::HashMap;
     use std::sync::Mutex;
@@ -729,8 +754,139 @@ mod tests {
 
     // ========== Helpers ==========
 
+    /// L'ACP que le dépôt d'immeubles de test attribue à tout immeuble.
+    ///
+    /// Une constante, et non un identifiant tiré au hasard : les assertions
+    /// peuvent ainsi vérifier que la charge porte bien CETTE clé, ce qui est
+    /// tout l'objet de #761.
+    fn acp_de_test() -> Uuid {
+        Uuid::parse_str("5f2a1c9d-3e4b-4a6c-8d7e-1b2c3d4e5f6a").expect("UUID valide")
+    }
+
+    /// Un dépôt d'immeubles qui répond à toute demande.
+    ///
+    /// Il existe parce que `resolve_acp_id` ne fabrique plus d'ACP quand le
+    /// dépôt manque : il refuse (#761). Les tests unitaires doivent donc
+    /// fournir de quoi résoudre l'ACP, comme le fait `main.rs`.
+    ///
+    /// C'est le point de cette correction. L'ancien repli rendait ces tests
+    /// verts en posant un identifiant d'organisation à la place d'un
+    /// identifiant d'ACP — la contrainte `fk_expenses_acp` s'en chargeait en
+    /// base, mais bien plus tard, et ailleurs.
+    struct DepotImmeublesDeTest;
+
+    #[async_trait]
+    impl BuildingRepository for DepotImmeublesDeTest {
+        async fn create(&self, building: &Building) -> Result<Building, String> {
+            Ok(building.clone())
+        }
+
+        async fn find_by_id(&self, id: Uuid) -> Result<Option<Building>, String> {
+            let mut b = Building::new(
+                acp_de_test(),
+                "Résidence de test".to_string(),
+                "12 Rue de la Loi".to_string(),
+                "Bruxelles".to_string(),
+                "1000".to_string(),
+                "Belgium".to_string(),
+                10,
+                1000,
+                None,
+            )
+            .expect("immeuble de test valide");
+            b.id = id;
+            Ok(Some(b))
+        }
+
+        async fn find_all(&self) -> Result<Vec<Building>, String> {
+            Ok(vec![])
+        }
+
+        async fn find_all_paginated(
+            &self,
+            _page_request: &crate::application::dto::PageRequest,
+            _filters: &crate::application::dto::BuildingFilters,
+        ) -> Result<(Vec<Building>, i64), String> {
+            Ok((vec![], 0))
+        }
+
+        async fn update(&self, building: &Building) -> Result<Building, String> {
+            Ok(building.clone())
+        }
+
+        async fn delete(&self, _id: Uuid) -> Result<bool, String> {
+            Ok(true)
+        }
+
+        async fn find_by_slug(&self, _slug: &str) -> Result<Option<Building>, String> {
+            Ok(None)
+        }
+
+        async fn find_by_id_with_metrics(
+            &self,
+            _id: Uuid,
+        ) -> Result<Option<(Building, crate::domain::entities::BuildingMetrics)>, String> {
+            Ok(None)
+        }
+    }
+
+    /// Câblé comme la production : `main.rs` fournit toujours ce dépôt.
+    ///
+    /// Le dépôt d'ACP reste absent, donc `assert_acp_conformant` demeure sans
+    /// effet — on ne câble QUE la résolution de l'ACP, pas le contrôle de
+    /// conformité, dont ces tests ne parlent pas.
     fn make_use_cases(repo: MockExpenseRepository) -> ExpenseUseCases {
-        ExpenseUseCases::new(Arc::new(repo))
+        ExpenseUseCases::new(Arc::new(repo)).with_acp_resolution(Arc::new(DepotImmeublesDeTest))
+    }
+
+    /// Sans dépôt d'immeubles, la création REFUSE au lieu de fabriquer une clé.
+    ///
+    /// C'est la garde de #761. L'ancien code retournait ici l'identifiant
+    /// d'organisation en le présentant comme un identifiant d'ACP : le test
+    /// unitaire passait, et la contrainte `fk_expenses_acp` rejetait
+    /// l'insertion bien plus tard, ailleurs, dans vingt-cinq tests e2e.
+    ///
+    /// On construit donc volontairement le cas de câblage incomplet — le seul
+    /// endroit du fichier qui n'emploie pas `make_use_cases`.
+    #[tokio::test]
+    async fn sans_depot_dimmeubles_la_charge_est_refusee_et_non_fabriquee() {
+        let uc = ExpenseUseCases::new(Arc::new(MockExpenseRepository::new()));
+        let dto = valid_create_dto(Uuid::new_v4(), Uuid::new_v4());
+
+        let erreur = uc
+            .create_expense(dto)
+            .await
+            .expect_err("un câblage incomplet doit refuser, pas inventer une ACP");
+
+        assert!(
+            erreur.contains("761") || erreur.to_lowercase().contains("câblage"),
+            "le message doit désigner le câblage comme cause, reçu : {erreur}"
+        );
+    }
+
+    /// La charge porte l'ACP de son IMMEUBLE, pas l'organisation de l'appelant.
+    ///
+    /// Sans ce cas, le test précédent passerait aussi avec une implémentation
+    /// qui refuserait toujours. Il faut les deux : l'un dit qu'on ne fabrique
+    /// plus, l'autre qu'on résout correctement.
+    #[tokio::test]
+    async fn la_charge_porte_lacp_de_son_immeuble() {
+        let uc = make_use_cases(MockExpenseRepository::new());
+        let organisation = Uuid::new_v4();
+        let dto = valid_create_dto(organisation, Uuid::new_v4());
+
+        let charge = uc.create_expense(dto).await.expect("création valide");
+
+        assert_eq!(
+            charge.acp_id,
+            acp_de_test().to_string(),
+            "la charge doit porter l'ACP de l'immeuble"
+        );
+        assert_ne!(
+            charge.acp_id,
+            organisation.to_string(),
+            "l'identifiant d'organisation n'est pas un identifiant d'ACP"
+        );
     }
 
     fn valid_create_dto(org_id: Uuid, building_id: Uuid) -> CreateExpenseDto {
