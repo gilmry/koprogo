@@ -109,10 +109,18 @@ describe("ContractorReputation — Story B8 (4-cat)", () => {
     });
 
     expect(getByTestId("contractor-reputation-count").textContent).toMatch(/0/);
+    // On vérifie que l'état vide EXISTE et porte un texte, pas ce qu'il dit
+    // mot pour mot : le libellé est passé par i18n le 2026-09-07 (#834), et
+    // la locale par défaut des tests est l'anglais.
+    //
+    // Un test qui affirme un libellé transforme une traduction en régression.
+    // L'invariant est ici : zéro évaluation → bandeau visible, moyennes à
+    // « — », aucun bouton de modification (INV-24, append-only).
     expect(getByTestId("contractor-reputation-empty")).not.toBeNull();
-    expect(getByTestId("contractor-reputation-empty").textContent).toMatch(
-      /aucune évaluation/i,
-    );
+    expect(
+      getByTestId("contractor-reputation-empty").textContent?.trim().length ??
+        0,
+    ).toBeGreaterThan(10);
 
     // Table absente.
     expect(queryByTestId("contractor-reputation-list")).toBeNull();

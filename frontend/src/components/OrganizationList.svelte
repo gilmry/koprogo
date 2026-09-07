@@ -137,7 +137,7 @@
   <!-- Search Bar -->
   <div class="bg-white rounded-lg shadow p-4">
     <div class="relative">
-      <label for="org-search" class="sr-only">Rechercher par nom, email ou slug</label>
+      <label for="org-search" class="sr-only">{$_('organizations.searchPlaceholder')}</label>
       <input
         id="org-search"
         type="text"
@@ -170,25 +170,25 @@
           <thead class="bg-gray-50">
             <tr>
               <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Organisation
+                {$_('common.organization')}
               </th>
               <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Contact
+                {$_('common.contact')}
               </th>
               <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Plan
+                {$_('organizations.plan')}
               </th>
               <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Limites
+                {$_('organizations.limits')}
               </th>
               <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Statut
+                {$_('common.status')}
               </th>
               <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Créée le
+                {$_('common.createdOnLabel')}
               </th>
               <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Actions
+                {$_('common.actionColumn')}
               </th>
             </tr>
           </thead>
@@ -231,11 +231,11 @@
                 <td class="px-6 py-4 whitespace-nowrap">
                   {#if org.is_active}
                     <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                      ✓ Active
+                      ✓ {$_('organizations.active')}
                     </span>
                   {:else}
                     <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
-                      ✗ Inactive
+                      ✗ {$_('organizations.inactive')}
                     </span>
                   {/if}
                 </td>

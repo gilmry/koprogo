@@ -965,7 +965,9 @@
     "enterpriseNumber": "Ondernemingsnummer",
     "place": "Plaats",
     "comment": "Opmerking",
-    "actionColumn": "Actie"
+    "actionColumn": "Actie",
+    "contact": "Contact",
+    "createdOnLabel": "Aangemaakt op"
   },
   "common.error.loadData": "Fout bij het laden van gegevens",
   "common.error.loadStats": "Fout bij het laden van statistieken",
@@ -3971,7 +3973,15 @@
     "onlyApprovedSpecs": "Alleen goedgekeurde technische fiches kunnen worden beoordeeld.",
     "motivatingTickets": "Tickets die aanleiding geven (optioneel)",
     "noTicketAvailable": "Geen ticket beschikbaar voor dit gebouw.",
-    "rating": "Beoordeling (1 tot 5)"
+    "rating": "Beoordeling (1 tot 5)",
+    "reputation": "Reputatie",
+    "cumulativeEvaluations": "Totaal beoordelingen:",
+    "noEvaluation": "Nog geen beoordeling voor deze dienstverlener.",
+    "scoreQuality": "Kwaliteit",
+    "scoreDeadlines": "Termijnen",
+    "scoreCommunication": "Communicatie",
+    "scoreBudget": "Budget",
+    "scoreOverall": "Algemeen"
   },
   "magicLink": {
     "issued": "Link aangemaakt",
@@ -4017,5 +4027,12 @@
     "empty": "Nog geen vereniging. Maak er een aan met de knop hierboven.",
     "managingAgent": "Kantoor",
     "deleteConfirm": "“{nom}” definitief verwijderen? Deze actie is onomkeerbaar. Een vereniging die nog gebouwen bevat, wordt geweigerd."
+  },
+  "organizations": {
+    "searchPlaceholder": "Zoeken op naam, e-mail of identificatie",
+    "plan": "Formule",
+    "limits": "Limieten",
+    "active": "Actief",
+    "inactive": "Inactief"
   }
 }

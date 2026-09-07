@@ -965,7 +965,9 @@
     "enterpriseNumber": "Numéro BCE",
     "place": "Lieu",
     "comment": "Commentaire",
-    "actionColumn": "Action"
+    "actionColumn": "Action",
+    "contact": "Contact",
+    "createdOnLabel": "Créée le"
   },
   "common.error.loadData": "Erreur lors du chargement des données",
   "common.error.loadStats": "Erreur lors du chargement des statistiques",
@@ -3971,7 +3973,15 @@
     "onlyApprovedSpecs": "Seules les fiches techniques approuvées peuvent être évaluées.",
     "motivatingTickets": "Tickets à l'origine de l'évaluation (facultatif)",
     "noTicketAvailable": "Aucun ticket disponible pour cet immeuble.",
-    "rating": "Notation (1 à 5)"
+    "rating": "Notation (1 à 5)",
+    "reputation": "Réputation",
+    "cumulativeEvaluations": "Évaluations cumulées :",
+    "noEvaluation": "Aucune évaluation pour ce prestataire pour le moment.",
+    "scoreQuality": "Qualité",
+    "scoreDeadlines": "Délais",
+    "scoreCommunication": "Communication",
+    "scoreBudget": "Budget",
+    "scoreOverall": "Globale"
   },
   "magicLink": {
     "issued": "Lien émis",
@@ -4017,5 +4027,12 @@
     "empty": "Aucune ACP. Créez-en une avec le bouton ci-dessus.",
     "managingAgent": "Cabinet",
     "deleteConfirm": "Supprimer définitivement « {nom} » ? Cette action est irréversible. Une ACP portant encore des immeubles sera refusée."
+  },
+  "organizations": {
+    "searchPlaceholder": "Rechercher par nom, courriel ou identifiant",
+    "plan": "Formule",
+    "limits": "Limites",
+    "active": "Active",
+    "inactive": "Inactive"
   }
 }

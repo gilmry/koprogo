@@ -965,7 +965,9 @@
     "enterpriseNumber": "Unternehmensnummer",
     "place": "Ort",
     "comment": "Kommentar",
-    "actionColumn": "Aktion"
+    "actionColumn": "Aktion",
+    "contact": "Kontakt",
+    "createdOnLabel": "Erstellt am"
   },
   "common.error.loadData": "Fehler beim Laden der Daten",
   "common.error.loadStats": "Fehler beim Laden der Statistiken",
@@ -3971,7 +3973,15 @@
     "onlyApprovedSpecs": "Nur genehmigte technische Datenblätter können bewertet werden.",
     "motivatingTickets": "Zugrunde liegende Tickets (optional)",
     "noTicketAvailable": "Kein Ticket für dieses Gebäude verfügbar.",
-    "rating": "Bewertung (1 bis 5)"
+    "rating": "Bewertung (1 bis 5)",
+    "reputation": "Reputation",
+    "cumulativeEvaluations": "Bewertungen insgesamt:",
+    "noEvaluation": "Noch keine Bewertung für diesen Dienstleister.",
+    "scoreQuality": "Qualität",
+    "scoreDeadlines": "Termine",
+    "scoreCommunication": "Kommunikation",
+    "scoreBudget": "Budget",
+    "scoreOverall": "Gesamt"
   },
   "magicLink": {
     "issued": "Link erstellt",
@@ -4017,5 +4027,12 @@
     "empty": "Noch keine Gemeinschaft. Legen Sie eine über die Schaltfläche oben an.",
     "managingAgent": "Büro",
     "deleteConfirm": "„{nom}“ endgültig löschen? Diese Aktion ist unumkehrbar. Eine Gemeinschaft, die noch Gebäude enthält, wird abgelehnt."
+  },
+  "organizations": {
+    "searchPlaceholder": "Suche nach Name, E-Mail oder Kennung",
+    "plan": "Tarif",
+    "limits": "Grenzen",
+    "active": "Aktiv",
+    "inactive": "Inaktiv"
   }
 }

@@ -965,7 +965,9 @@
     "enterpriseNumber": "Enterprise number",
     "place": "Place",
     "comment": "Comment",
-    "actionColumn": "Action"
+    "actionColumn": "Action",
+    "contact": "Contact",
+    "createdOnLabel": "Created on"
   },
   "common.error.loadData": "Error loading data",
   "common.error.loadStats": "Error loading statistics",
@@ -3971,7 +3973,15 @@
     "onlyApprovedSpecs": "Only approved technical specifications can be evaluated.",
     "motivatingTickets": "Tickets behind this evaluation (optional)",
     "noTicketAvailable": "No ticket available for this building.",
-    "rating": "Rating (1 to 5)"
+    "rating": "Rating (1 to 5)",
+    "reputation": "Reputation",
+    "cumulativeEvaluations": "Total evaluations:",
+    "noEvaluation": "No evaluation for this contractor yet.",
+    "scoreQuality": "Quality",
+    "scoreDeadlines": "Deadlines",
+    "scoreCommunication": "Communication",
+    "scoreBudget": "Budget",
+    "scoreOverall": "Overall"
   },
   "magicLink": {
     "issued": "Link issued",
@@ -4017,5 +4027,12 @@
     "empty": "No association yet. Create one with the button above.",
     "managingAgent": "Managing agent",
     "deleteConfirm": "Permanently delete “{nom}”? This action is irreversible. An association that still holds buildings will be refused."
+  },
+  "organizations": {
+    "searchPlaceholder": "Search by name, email or identifier",
+    "plan": "Plan",
+    "limits": "Limits",
+    "active": "Active",
+    "inactive": "Inactive"
   }
 }
