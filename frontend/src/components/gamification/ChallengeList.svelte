@@ -172,6 +172,7 @@
     <div class="flex gap-1">
       {#each [{ value: "active", label: $_("gamification.status_actives") }, { value: "all", label: $_("common.all") }, { value: "completed", label: $_("gamification.status_completed_plural") }] as f}
         <button
+          data-testid="challenge-list-status-filter-button"
           onclick={() =>
             (statusFilter = f.value as "active" | "all" | "completed")}
           class="px-2 py-1 rounded text-xs font-medium transition-colors
@@ -199,6 +200,7 @@
     >
       <p class="text-sm text-red-800">{error}</p>
       <button
+        data-testid="challenge-list-retry-button"
         onclick={loadData}
         class="mt-2 text-sm text-red-600 hover:text-red-800 underline"
         >{$_("common.retry")}</button

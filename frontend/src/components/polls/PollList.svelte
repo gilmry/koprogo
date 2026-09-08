@@ -130,6 +130,7 @@
     <div class="p-4 m-4 bg-red-50 border border-red-200 rounded-md">
       <p class="text-sm text-red-800">❌ {error}</p>
       <button
+        data-testid="poll-list-retry-button"
         onclick={loadPolls}
         class="mt-2 text-sm text-red-600 hover:text-red-800 underline"
       >
@@ -152,7 +153,11 @@
     <ul class="divide-y divide-gray-200">
       {#each filteredPolls as poll}
         <li class="hover:bg-gray-50" data-testid="poll-card">
-          <a href="/polls/detail?id={poll.id}" class="block px-4 py-4 sm:px-6">
+          <a
+            data-testid="poll-list-detail-link"
+            href="/polls/detail?id={poll.id}"
+            class="block px-4 py-4 sm:px-6"
+          >
             <div class="flex items-center justify-between">
               <div class="flex-1 min-w-0">
                 <div class="flex items-center space-x-3 mb-2">

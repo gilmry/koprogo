@@ -122,6 +122,7 @@
           {$_("bookings.startTime")} <span class="text-red-500">*</span>
         </label>
         <input
+          data-testid="booking-create-start-input"
           id="booking-start"
           type="datetime-local"
           bind:value={startTime}
@@ -141,6 +142,7 @@
           {$_("bookings.endLabel")} <span class="text-red-500">*</span>
         </label>
         <input
+          data-testid="booking-create-end-input"
           id="booking-end"
           type="datetime-local"
           value={endTime}
@@ -169,6 +171,7 @@
         >{$_("bookings.purpose")}</label
       >
       <input
+        data-testid="booking-create-purpose-input"
         id="booking-purpose"
         type="text"
         bind:value={purpose}
@@ -187,6 +190,7 @@
           Nombre de participants (max {resource.capacity})
         </label>
         <input
+          data-testid="booking-create-attendees-input"
           id="booking-attendees"
           type="number"
           bind:value={attendeesCount}
@@ -205,6 +209,7 @@
         >{$_("bookings.specialRequests")}</label
       >
       <textarea
+        data-testid="booking-create-requests-textarea"
         id="booking-requests"
         bind:value={specialRequests}
         rows="3"
@@ -224,6 +229,7 @@
     <!-- Actions -->
     <div class="flex justify-end gap-3 pt-2">
       <button
+        data-testid="booking-create-cancel-button"
         type="button"
         onclick={handleClose}
         class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition"

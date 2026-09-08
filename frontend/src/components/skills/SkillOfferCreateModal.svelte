@@ -261,6 +261,7 @@
                 : $_("skills.createModal.createButton")}
             </button>
             <button
+              data-testid="skill-create-cancel-button"
               type="button"
               onclick={handleCancel}
               disabled={submitting}

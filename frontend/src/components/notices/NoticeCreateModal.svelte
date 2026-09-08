@@ -111,6 +111,7 @@
         </h2>
 
         <form
+          data-testid="notice-create-form"
           onsubmit={(e) => {
             e.preventDefault();
             handleSubmit();
@@ -266,6 +267,7 @@
           <div>
             <div class="flex items-center mb-2">
               <input
+                data-testid="notice-create-expires-checkbox"
                 type="checkbox"
                 id="expires_enabled"
                 bind:checked={expiresEnabled}
@@ -302,6 +304,7 @@
                 : $_("notices.create_notice")}
             </button>
             <button
+              data-testid="notice-create-cancel-button"
               type="button"
               onclick={handleCancel}
               disabled={submitting}

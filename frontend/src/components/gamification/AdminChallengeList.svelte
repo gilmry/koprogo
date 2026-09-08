@@ -233,6 +233,7 @@
             ? challenges.length
             : challenges.filter((c) => c.status === f.value).length}
         <button
+          data-testid="admin-challenge-status-filter-button"
           onclick={() => (statusFilter = f.value)}
           class="px-2 py-1 rounded text-xs font-medium transition-colors
             {statusFilter === f.value
@@ -259,6 +260,7 @@
     >
       <p class="text-sm text-red-800">{error}</p>
       <button
+        data-testid="admin-challenge-retry-button"
         onclick={loadData}
         class="mt-2 text-sm text-red-600 hover:text-red-800 underline"
         >{$_("common.retry")}</button
@@ -268,6 +270,7 @@
     <div class="p-8 text-center">
       <p class="text-gray-500">{$_("gamification.no_challenges")}</p>
       <button
+        data-testid="admin-challenge-create-button"
         onclick={() => (showForm = true)}
         class="mt-2 text-sm text-amber-600 hover:text-amber-800 underline"
       >
@@ -321,28 +324,33 @@
             <div class="flex items-center gap-1 flex-shrink-0">
               {#if challenge.status === ChallengeStatus.Draft}
                 <button
+                  data-testid="admin-challenge-activate-button"
                   onclick={() => handleActivate(challenge)}
                   class="px-2 py-1 text-xs text-green-600 hover:bg-green-50 rounded"
                   >{$_("gamification.activate")}</button
                 >
                 <button
+                  data-testid="admin-challenge-delete-draft-button"
                   onclick={() => handleDelete(challenge)}
                   class="px-2 py-1 text-xs text-red-600 hover:bg-red-50 rounded"
                   >{$_("common.delete")}</button
                 >
               {:else if challenge.status === ChallengeStatus.Active}
                 <button
+                  data-testid="admin-challenge-complete-button"
                   onclick={() => handleComplete(challenge)}
                   class="px-2 py-1 text-xs text-blue-600 hover:bg-blue-50 rounded"
                   >{$_("gamification.complete")}</button
                 >
                 <button
+                  data-testid="admin-challenge-cancel-button"
                   onclick={() => handleCancelChallenge(challenge)}
                   class="px-2 py-1 text-xs text-red-600 hover:bg-red-50 rounded"
                   >{$_("common.cancel")}</button
                 >
               {:else}
                 <button
+                  data-testid="admin-challenge-delete-button"
                   onclick={() => handleDelete(challenge)}
                   class="px-2 py-1 text-xs text-red-600 hover:bg-red-50 rounded"
                   >{$_("common.delete")}</button

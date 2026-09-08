@@ -163,6 +163,7 @@
   <div class="px-4 py-3 bg-gray-50 border-b border-gray-200">
     <div class="flex flex-wrap gap-1">
       <button
+        data-testid="admin-achievement-all-filter-button"
         onclick={() => (categoryFilter = "all")}
         class="px-2 py-1 rounded text-xs font-medium transition-colors
           {categoryFilter === 'all'
@@ -175,6 +176,7 @@
         {@const count = achievements.filter((a) => a.category === cat).length}
         {#if count > 0}
           <button
+            data-testid="admin-achievement-category-filter-button"
             onclick={() => (categoryFilter = cat)}
             class="px-2 py-1 rounded text-xs font-medium transition-colors
               {categoryFilter === cat
@@ -202,6 +204,7 @@
     >
       <p class="text-sm text-red-800">{error}</p>
       <button
+        data-testid="admin-achievement-retry-button"
         onclick={loadData}
         class="mt-2 text-sm text-red-600 hover:text-red-800 underline"
         >{$_("common.retry")}</button
@@ -211,6 +214,7 @@
     <div class="p-8 text-center">
       <p class="text-gray-500">{$_("gamification.no_achievements")}</p>
       <button
+        data-testid="admin-achievement-create-button"
         onclick={handleCreate}
         class="mt-2 text-sm text-amber-600 hover:text-amber-800 underline"
       >

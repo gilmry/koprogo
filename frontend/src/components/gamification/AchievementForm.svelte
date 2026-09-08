@@ -166,6 +166,7 @@
         >{$_("gamification.category")} *</label
       >
       <select
+        data-testid="achievement-form-category-select"
         id="ach-category"
         bind:value={category}
         class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-amber-500 focus:ring-amber-500 sm:text-sm"
@@ -184,6 +185,7 @@
         >{$_("gamification.tier")} *</label
       >
       <select
+        data-testid="achievement-form-tier-select"
         id="ach-tier"
         bind:value={tier}
         class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-amber-500 focus:ring-amber-500 sm:text-sm"
@@ -200,6 +202,7 @@
         >{$_("gamification.icon")}</label
       >
       <input
+        data-testid="achievement-form-icon-input"
         id="ach-icon"
         type="text"
         bind:value={icon}
@@ -214,6 +217,7 @@
         >{$_("gamification.points")} *</label
       >
       <input
+        data-testid="achievement-form-points-input"
         id="ach-points"
         type="number"
         bind:value={pointsValue}
@@ -229,6 +233,7 @@
         >{$_("gamification.displayOrder")}</label
       >
       <input
+        data-testid="achievement-form-order-input"
         id="ach-order"
         type="number"
         bind:value={displayOrder}
@@ -243,6 +248,7 @@
     <div class="flex items-center gap-6">
       <label class="flex items-center gap-2 text-sm text-gray-700">
         <input
+          data-testid="achievement-form-secret-checkbox"
           type="checkbox"
           bind:checked={isSecret}
           class="rounded border-gray-300 text-amber-600 focus:ring-amber-500"
@@ -251,6 +257,7 @@
       </label>
       <label class="flex items-center gap-2 text-sm text-gray-700">
         <input
+          data-testid="achievement-form-repeatable-checkbox"
           type="checkbox"
           bind:checked={isRepeatable}
           class="rounded border-gray-300 text-amber-600 focus:ring-amber-500"
@@ -262,6 +269,7 @@
 
   <div class="flex justify-end gap-3 pt-4 border-t border-gray-200">
     <button
+      data-testid="achievement-form-cancel-button"
       type="button"
       onclick={handleCancel}
       class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"

@@ -67,7 +67,7 @@ import { join, extname } from "node:path";
  */
 /// Éléments interactifs sans ancrage. **Ne doit que BAISSER.**
 ///
-/// 672 au 2026-09-06, **440 au 2026-09-08**. Les deux cent quinze posés le sont
+/// 672 au 2026-09-06, **343 au 2026-09-08**. Les trois cent douze posés le sont
 /// sur les écrans que #803 nomme en priorité, et selon la convention relevée
 /// le même jour : `<domaine>-<objet>-<rôle>`, en casse kebab.
 ///
@@ -87,16 +87,30 @@ import { join, extname } from "node:path";
 /// copropriétaires, liens lot↔propriétaire, ACP et contributions ne comptent
 /// plus un seul élément interactif nu.
 ///
-/// Trois des quatre parcours de recette de #803 sont donc complets. Restent
-/// **les modules communautaires** — SEL, annonces, compétences, partage,
-/// réservations, gamification — et le portail du copropriétaire, qui n'est pas
-/// un parcours nommé mais que sept éléments séparent du compte.
+/// **Les modules communautaires le sont aussi** — SEL, annonces, compétences,
+/// partage, réservations, gamification.
+///
+/// ── Les quatre parcours de recette de #803 sont donc complets ────────────
+///
+/// L'issue demandait de « prioriser les parcours de recette : création
+/// d'immeuble et de lot, cycle de vie d'une AG, saisie comptable, modules
+/// communautaires. Ce sont ceux que Cowork parcourt, et où l'absence
+/// d'ancrage lui a déjà coûté. »
+///
+/// Les quatre ne comptent plus un seul élément interactif sans ancrage.
+/// Combiné aux dialogues natifs épuisés le même jour (#844), une recette
+/// pilotée peut désormais atteindre chaque bouton de ces parcours et lire
+/// chaque confirmation.
+///
+/// Les 343 restants sont ailleurs : tableaux de bord, administration,
+/// paramètres, portail du copropriétaire, tickets, documents. Ils ne sont pas
+/// moins réels, ils sont moins urgents.
 ///
 /// Aucune ancre n'a été inventée : chacune dérive du `bind:value` ou de l'`id`
 /// que le champ portait déjà. C'est ce qui rend la baisse relisible — un
 /// identifiant mal nommé vaut moins que pas d'identifiant, puisqu'il fera
 /// croire à une couverture.
-const DETTE_AU_2026_09_06 = 440;
+const DETTE_AU_2026_09_06 = 343;
 
 const RACINE = join(process.cwd(), "src");
 const EXTENSIONS = new Set([".svelte", ".astro"]);

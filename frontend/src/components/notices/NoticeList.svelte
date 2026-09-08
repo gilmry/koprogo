@@ -132,6 +132,7 @@
             >{$_("common.search")}</label
           >
           <input
+            data-testid="notice-list-search-input"
             type="text"
             id="search"
             bind:value={searchQuery}
@@ -146,6 +147,7 @@
             >{$_("notices.type")}</label
           >
           <select
+            data-testid="notice-list-type-select"
             id="type"
             bind:value={selectedType}
             class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
@@ -165,6 +167,7 @@
             >{$_("notices.status")}</label
           >
           <select
+            data-testid="notice-list-status-select"
             id="status"
             bind:value={selectedStatus}
             class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
@@ -209,6 +212,7 @@
         {#each filteredNotices as notice}
           <li data-testid="notice-list-row">
             <a
+              data-testid="notice-list-detail-link"
               href={`/notice-detail?id=${notice.id}`}
               class="block hover:bg-gray-50 transition-colors duration-150 p-4"
             >

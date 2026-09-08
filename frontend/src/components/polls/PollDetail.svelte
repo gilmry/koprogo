@@ -239,6 +239,7 @@
   <div class="p-4 bg-red-50 border border-red-200 rounded-md">
     <p class="text-sm text-red-800">❌ {error}</p>
     <button
+      data-testid="poll-detail-retry-button"
       onclick={loadPoll}
       class="mt-2 text-sm text-red-600 hover:text-red-800 underline"
     >
@@ -306,6 +307,7 @@
           </div>
         </div>
         <a
+          data-testid="poll-detail-back-link"
           href="/polls"
           class="text-sm text-gray-600 hover:text-gray-800 underline ml-4"
         >
@@ -387,6 +389,7 @@
                   : 'border-gray-200'}"
               >
                 <input
+                  data-testid="poll-detail-option-input"
                   type={poll.allow_multiple_votes ? "checkbox" : "radio"}
                   name="poll_option"
                   value={option.id}
@@ -414,6 +417,7 @@
               {#each Array(5) as _, i}
                 {@const value = i + 1}
                 <button
+                  data-testid="poll-detail-rating-button"
                   type="button"
                   onclick={() => (ratingValue = value)}
                   class="text-4xl transition-all {ratingValue !== null &&
@@ -437,6 +441,7 @@
               >{$_("polls.yourAnswer")}</label
             >
             <textarea
+              data-testid="poll-detail-open-ended-textarea"
               id="poll-open-ended-response"
               bind:value={openEndedText}
               rows="5"

@@ -85,6 +85,7 @@
             {$_("common.search")}
           </label>
           <input
+            data-testid="shared-object-search-input"
             type="text"
             id="search"
             bind:value={searchQuery}
@@ -102,6 +103,7 @@
             {$_("sharing.categoryLabel")}
           </label>
           <select
+            data-testid="shared-object-category-select"
             id="category"
             bind:value={selectedCategory}
             class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
@@ -122,6 +124,7 @@
             {$_("sharing.availability")}
           </label>
           <select
+            data-testid="shared-object-availability-select"
             id="availability"
             bind:value={selectedAvailability}
             onchange={loadObjects}

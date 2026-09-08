@@ -131,6 +131,7 @@
         <div class="flex gap-2">
           {#if offer.is_available_for_help}
             <button
+              data-testid="skill-detail-primary-action-button"
               onclick={async () => {
                 if (offer) {
                   await skillsApi.markUnavailable(offer.id);
@@ -143,6 +144,7 @@
             </button>
           {:else}
             <button
+              data-testid="skill-detail-secondary-action-button"
               onclick={async () => {
                 if (offer) {
                   await skillsApi.markAvailable(offer.id);

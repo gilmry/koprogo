@@ -135,6 +135,7 @@
             {$_("sharing.startDate")} <span class="text-red-500">*</span>
           </label>
           <input
+            data-testid="loan-request-start-input"
             id="loan-start-date"
             type="date"
             bind:value={loanStartDate}
@@ -154,6 +155,7 @@
             {$_("sharing.expectedReturn")} <span class="text-red-500">*</span>
           </label>
           <input
+            data-testid="loan-request-end-input"
             id="loan-end-date"
             type="date"
             value={loanEndDate}
@@ -176,6 +178,7 @@
           >{$_("sharing.notesOptional")}</label
         >
         <textarea
+          data-testid="loan-request-notes-textarea"
           id="loan-notes"
           bind:value={notes}
           rows="3"
@@ -196,6 +199,7 @@
       <!-- Actions -->
       <div class="flex justify-end gap-3 pt-2">
         <button
+          data-testid="loan-request-cancel-button"
           type="button"
           onclick={handleClose}
           class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition"

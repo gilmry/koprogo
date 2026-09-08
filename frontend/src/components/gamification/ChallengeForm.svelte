@@ -142,6 +142,7 @@
         >{$_("gamification.description")}</label
       >
       <textarea
+        data-testid="challenge-form-description-textarea"
         id="ch-desc"
         bind:value={description}
         rows="2"
@@ -154,6 +155,7 @@
         >{$_("gamification.type")}</label
       >
       <select
+        data-testid="challenge-form-type-select"
         id="ch-type"
         bind:value={challengeType}
         class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-amber-500 focus:ring-amber-500 sm:text-sm"
@@ -169,6 +171,7 @@
         >{$_("gamification.icon")}</label
       >
       <input
+        data-testid="challenge-form-icon-input"
         id="ch-icon"
         type="text"
         bind:value={icon}
@@ -182,6 +185,7 @@
         >{$_("gamification.start_date")} *</label
       >
       <input
+        data-testid="challenge-form-start-input"
         id="ch-start"
         type="datetime-local"
         bind:value={startDate}
@@ -195,6 +199,7 @@
         >{$_("gamification.end_date")} *</label
       >
       <input
+        data-testid="challenge-form-end-input"
         id="ch-end"
         type="datetime-local"
         bind:value={endDate}
@@ -208,6 +213,7 @@
         >{$_("gamification.metric")} *</label
       >
       <input
+        data-testid="challenge-form-metric-input"
         id="ch-metric"
         type="text"
         bind:value={targetMetric}
@@ -228,6 +234,7 @@
         >{$_("gamification.target_value")} *</label
       >
       <input
+        data-testid="challenge-form-target-input"
         id="ch-target"
         type="number"
         bind:value={targetValue}
@@ -242,6 +249,7 @@
         >{$_("gamification.reward_points")}</label
       >
       <input
+        data-testid="challenge-form-reward-input"
         id="ch-reward"
         type="number"
         bind:value={rewardPoints}
@@ -254,6 +262,7 @@
 
   <div class="flex justify-end gap-3 pt-4 border-t border-gray-200">
     <button
+      data-testid="challenge-form-cancel-button"
       type="button"
       onclick={handleCancel}
       class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"

@@ -160,6 +160,7 @@
   <div class="px-4 py-3 bg-gray-50 border-b border-gray-200">
     <div class="flex flex-wrap gap-1">
       <button
+        data-testid="achievement-list-all-filter-button"
         onclick={() => (categoryFilter = "all")}
         class="px-2 py-1 rounded text-xs font-medium transition-colors
           {categoryFilter === 'all'
@@ -170,6 +171,7 @@
       </button>
       {#each Object.values(AchievementCategory) as cat}
         <button
+          data-testid="achievement-list-category-filter-button"
           onclick={() => (categoryFilter = cat)}
           class="px-2 py-1 rounded text-xs font-medium transition-colors
             {categoryFilter === cat
@@ -193,6 +195,7 @@
     <div class="p-4 m-4 bg-red-50 border border-red-200 rounded-md">
       <p class="text-sm text-red-800">{error}</p>
       <button
+        data-testid="achievement-list-retry-button"
         onclick={loadData}
         class="mt-2 text-sm text-red-600 hover:text-red-800 underline"
         >{$_("common.retry")}</button

@@ -87,6 +87,7 @@
             {$_("skills.searchLabel")}
           </label>
           <input
+            data-testid="skill-list-search-input"
             type="text"
             id="search"
             bind:value={searchQuery}
@@ -104,6 +105,7 @@
             {$_("skills.categoryLabel")}
           </label>
           <select
+            data-testid="skill-list-category-select"
             id="category"
             bind:value={selectedCategory}
             class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
@@ -124,6 +126,7 @@
             {$_("skills.expertiseLabel")}
           </label>
           <select
+            data-testid="skill-list-expertise-select"
             id="expertise"
             bind:value={selectedExpertise}
             class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"

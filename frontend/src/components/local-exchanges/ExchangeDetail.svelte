@@ -327,6 +327,7 @@
       {#if canRate().canRateProvider || canRate().canRateRequester}
         {#if !showRatingForm}
           <button
+            data-testid="exchange-rate-open-button"
             onclick={() => {
               showRatingForm = true;
             }}
@@ -350,6 +351,7 @@
             <div class="flex items-center gap-2 mb-3">
               {#each [1, 2, 3, 4, 5] as star}
                 <button
+                  data-testid="exchange-rate-star-button"
                   type="button"
                   onclick={() => (ratingValue = star)}
                   class="text-3xl transition-colors {ratingValue >= star
@@ -362,6 +364,7 @@
             </div>
             <div class="flex gap-2">
               <button
+                data-testid="exchange-rate-submit-button"
                 onclick={() => handleRate(canRate().canRateRequester)}
                 disabled={actionLoading || ratingValue === 0}
                 class="px-4 py-2 bg-amber-600 text-white text-sm rounded-md hover:bg-amber-700 disabled:opacity-50"
@@ -369,6 +372,7 @@
                 {$_("common.confirm")}
               </button>
               <button
+                data-testid="exchange-rate-cancel-button"
                 onclick={() => {
                   showRatingForm = false;
                   ratingValue = 0;
@@ -443,6 +447,7 @@
               >{$_("exchanges.cancellation_reason")}</label
             >
             <textarea
+              data-testid="exchange-cancel-reason-textarea"
               id="exchange-cancel-reason"
               bind:value={cancelReason}
               rows="2"
@@ -450,6 +455,7 @@
               placeholder={$_("exchanges.reason_placeholder")}></textarea>
             <div class="flex gap-2 mt-2">
               <button
+                data-testid="exchange-cancel-submit-button"
                 onclick={handleCancel}
                 disabled={actionLoading}
                 class="px-4 py-2 bg-red-600 text-white text-sm rounded-md hover:bg-red-700 disabled:opacity-50"
@@ -457,6 +463,7 @@
                 {$_("exchanges.confirm_cancellation")}
               </button>
               <button
+                data-testid="exchange-cancel-dismiss-button"
                 onclick={() => {
                   showCancelForm = false;
                   cancelReason = "";

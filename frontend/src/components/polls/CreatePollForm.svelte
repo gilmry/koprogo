@@ -253,6 +253,7 @@
             <div class="flex items-center space-x-2">
               <span class="text-sm text-gray-500">{index + 1}.</span>
               <input
+                data-testid="poll-create-option-text-input"
                 type="text"
                 aria-label={`Option ${index + 1}`}
                 value={option.option_text}
@@ -260,6 +261,7 @@
                 class="flex-1 rounded-md border-gray-300 bg-gray-50"
               />
               <button
+                data-testid="poll-create-option-remove-button"
                 type="button"
                 onclick={() => removeOption(index)}
                 class="text-red-600 hover:text-red-800"
@@ -313,6 +315,7 @@
               >{$_("polls.createForm.minRating")}</label
             >
             <input
+              data-testid="poll-create-min-rating-input"
               id="create-poll-min-rating"
               type="number"
               value="1"
@@ -327,6 +330,7 @@
               >{$_("polls.createForm.maxRating")}</label
             >
             <input
+              data-testid="poll-create-max-rating-input"
               id="create-poll-max-rating"
               type="number"
               value="5"

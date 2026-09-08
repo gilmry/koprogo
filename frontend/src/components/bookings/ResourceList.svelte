@@ -86,6 +86,7 @@
             {$_("common.search")}
           </label>
           <input
+            data-testid="resource-list-search-input"
             type="text"
             id="search"
             bind:value={searchQuery}
@@ -103,6 +104,7 @@
             {$_("bookings.resource")}
           </label>
           <select
+            data-testid="resource-list-type-select"
             id="type"
             bind:value={selectedType}
             class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
@@ -124,6 +126,7 @@
             {$_("bookings.resources")}
           </label>
           <select
+            data-testid="resource-list-availability-select"
             id="availability"
             bind:value={selectedAvailability}
             onchange={loadResources}
