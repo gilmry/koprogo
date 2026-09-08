@@ -129,6 +129,70 @@ export function setScopeError(error: null | "forbidden" | "not_found"): void {
 }
 
 /**
+ * Réhydrate le périmètre depuis l'URL, en le faisant VALIDER par le serveur.
+ *
+ * ── Le défaut que cela corrige ────────────────────────────────────────────
+ *
+ * Ce module dit lui-même, en tête, que le périmètre « est dérivable d'un
+ * deep-link (?buildingId=...) ou d'un défaut serveur », et que « le rehydrate
+ * sur reload sera porté par Story 2.5 ». **Aucun des deux n'existait.**
+ *
+ * Or le frontend est une application Astro MULTI-PAGE : chaque navigation est
+ * un chargement de document complet, et un `$state` de module repart à zéro.
+ * Le périmètre était donc nul au premier rendu de CHAQUE page, sans exception,
+ * pour les douze composants qui le lisent.
+ *
+ * `/journal-entries` en est l'illustration : l'écran refuse à juste titre une
+ * écriture sans immeuble — une pièce comptable qui ne désigne pas sa
+ * copropriété n'est imputable à personne — mais **arriver par une URL ne
+ * permettait jamais de satisfaire ce refus**. Il fallait cliquer le sélecteur
+ * pendant ce même chargement ; recharger, revenir, ou ouvrir un signet
+ * ramenait l'écran vide. Cf. #841.
+ *
+ * ── Pourquoi cela ne rouvre pas le risque que l'en-tête écarte ────────────
+ *
+ * L'en-tête refuse la persistance parce qu'elle « crée un risque de scope
+ * violation post-rotation d'organisation ». Le raisonnement vaut, et il est
+ * respecté ici : **l'identifiant lu dans l'URL n'est jamais cru sur parole.**
+ * Il sert à demander l'immeuble au serveur, qui applique ses propres gardes de
+ * périmètre. Un 403 ou un 404 laisse le périmètre nul et lève `scopeError` —
+ * exactement le chemin qu'emprunte déjà une sélection refusée.
+ *
+ * Un lien partagé entre deux cabinets ne donne donc accès à rien.
+ *
+ * @param charger  Chargeur d'immeuble par identifiant. Injecté pour que le
+ *                 store reste testable sans réseau, et pour qu'il n'importe
+ *                 pas la couche API.
+ * @returns        L'immeuble adopté, ou `null` si l'URL n'en désignait aucun
+ *                 ou si le serveur l'a refusé.
+ */
+export async function rehydraterDepuisLurl(
+  charger: (id: string) => Promise<Building>,
+): Promise<Building | null> {
+  if (typeof window === "undefined") return null;
+
+  const params = new URLSearchParams(window.location.search);
+  // `buildingId` est la forme canonique ; `building_id` existe déjà dans
+  // `tickets.astro` et `tickets/new.astro`, et on l'accepte plutôt que de
+  // casser des liens qui circulent peut-être déjà.
+  const id = params.get("buildingId") ?? params.get("building_id");
+  if (!id) return null;
+
+  try {
+    const building = await charger(id);
+    setBuilding(building);
+    return building;
+  } catch (err: unknown) {
+    // Le serveur a refusé : on ne garde RIEN. `setScopeError` remet la
+    // sélection à zéro, ce qui évite d'afficher un immeuble que l'appelant
+    // n'a pas le droit de voir.
+    const statut = (err as { status?: number } | null)?.status;
+    setScopeError(statut === 403 ? "forbidden" : "not_found");
+    return null;
+  }
+}
+
+/**
  * Reset complet du scope (logout, switch organization, fin de session).
  */
 export function resetScope(): void {

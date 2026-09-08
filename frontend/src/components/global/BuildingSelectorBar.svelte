@@ -6,10 +6,29 @@
   // et le passe au composant — pattern habituel pour les composants
   // « top-bar » qui doivent reagir aux changements d'auth.
 
+  import { onMount } from "svelte";
   import { authStore } from "../../stores/auth";
+  import { rehydraterDepuisLurl } from "../../stores/scope.svelte";
+  import { getBuilding } from "../../lib/api/buildings";
   import BuildingSelector from "./BuildingSelector.svelte";
 
   let user = $derived($authStore.user);
+
+  // Réhydrate le périmètre depuis `?buildingId=`, à CHAQUE chargement de page.
+  //
+  // Le frontend est une application Astro multi-page : le `$state` de module
+  // du store repart à zéro à chaque navigation, et le périmètre était donc nul
+  // au premier rendu de chaque page. Cf. #841.
+  //
+  // C'est ici et pas dans `BuildingSelector` parce que ce dernier n'est
+  // visible que pour certains rôles, alors que le périmètre est lu par douze
+  // composants, dont ceux du portail copropriétaire.
+  //
+  // L'identifiant n'est pas cru sur parole : il sert à demander l'immeuble au
+  // serveur, qui applique ses gardes. Un refus laisse le périmètre nul.
+  onMount(() => {
+    void rehydraterDepuisLurl(getBuilding);
+  });
 </script>
 
 {#if user}
