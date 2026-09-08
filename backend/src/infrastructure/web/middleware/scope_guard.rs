@@ -42,6 +42,7 @@ use crate::application::use_cases::acp_use_cases::{AcpCaller, AcpUseCases};
 use crate::application::use_cases::building_use_cases::BuildingUseCases;
 use crate::application::use_cases::convocation_use_cases::ConvocationUseCases;
 use crate::application::use_cases::document_use_cases::DocumentUseCases;
+use crate::application::use_cases::local_exchange_use_cases::LocalExchangeUseCases;
 use crate::application::use_cases::owner_use_cases::OwnerUseCases;
 use crate::application::use_cases::quote_use_cases::QuoteUseCases;
 use crate::application::use_cases::resource_booking_use_cases::ResourceBookingUseCases;
@@ -437,6 +438,50 @@ pub async fn verify_quote_org_access(
         .map_err(|_| AppError::Internal("Invalid quote.building_id format".to_string()))?;
 
     verify_building_org_access(user, building_id, building_use_cases, acp_use_cases).await
+}
+
+/// Vérifie le mandat de l'appelant sur l'organisation d'un **échange local**.
+///
+/// ── Ce que cette garde protège ─────────────────────────────────────────────
+///
+/// Le système d'échange local — le SEL — enregistre qui rend quel service à
+/// qui, et pour combien de crédits. Six routes agissent sur un échange par son
+/// seul identifiant : le demander, le démarrer, le clore, l'annuler, noter le
+/// prestataire, noter le demandeur.
+///
+/// Les deux dernières comptent particulièrement : une note engage la
+/// réputation d'un voisin dans sa propre copropriété. La poser depuis une
+/// autre ACP n'a aucun sens légitime.
+///
+/// ── Pourquoi elle délègue ─────────────────────────────────────────────────
+///
+/// Comme les dix autres gardes du module, elle remonte jusqu'à l'immeuble puis
+/// confie la comparaison à `verify_building_org_access`. C'est la duplication
+/// de cette comparaison, recopiée à la main dans chaque gestionnaire, que
+/// l'issue #772 désigne comme la cause première de la fuite.
+pub async fn verify_exchange_org_access(
+    user: &AuthenticatedUser,
+    exchange_id: Uuid,
+    exchange_use_cases: &LocalExchangeUseCases,
+    building_use_cases: &BuildingUseCases,
+    acp_use_cases: &AcpUseCases,
+) -> Result<(), AppError> {
+    if user.is_superadmin() {
+        return Ok(());
+    }
+
+    let exchange = exchange_use_cases
+        .get_exchange(exchange_id)
+        .await
+        .map_err(AppError::from)?;
+
+    verify_building_org_access(
+        user,
+        exchange.building_id,
+        building_use_cases,
+        acp_use_cases,
+    )
+    .await
 }
 
 pub async fn verify_booking_org_access(
