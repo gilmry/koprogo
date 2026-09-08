@@ -46,6 +46,7 @@ use crate::application::use_cases::local_exchange_use_cases::LocalExchangeUseCas
 use crate::application::use_cases::owner_use_cases::OwnerUseCases;
 use crate::application::use_cases::quote_use_cases::QuoteUseCases;
 use crate::application::use_cases::resource_booking_use_cases::ResourceBookingUseCases;
+use crate::application::use_cases::technical_spec_use_cases::TechnicalSpecUseCases;
 use crate::application::use_cases::ticket_use_cases::TicketUseCases;
 use crate::application::use_cases::unit_use_cases::UnitUseCases;
 use crate::infrastructure::web::app_state::AppState;
@@ -519,6 +520,37 @@ pub async fn verify_ticket_org_access(
         .ok_or(AppError::NotFound(format!("Ticket not found: {ticket_id}")))?;
 
     verify_building_org_access(user, ticket.building_id, building_use_cases, acp_use_cases).await
+}
+
+/// Vérifie le mandat de l'appelant sur l'ACP d'une **fiche technique**.
+///
+/// ── Pourquoi l'ACP, et non l'immeuble ─────────────────────────────────────
+///
+/// `TechnicalSpec` porte `acp_id: Uuid` **obligatoire** et
+/// `building_id: Option<Uuid>`. Une fiche peut donc concerner l'ACP entière
+/// sans viser un immeuble précis — un marché d'entretien couvrant tout le
+/// patrimoine, par exemple.
+///
+/// Remonter par l'immeuble aurait laissé sans contrôle toutes les fiches dont
+/// il est absent. Le périmètre juste est celui que l'entité rend obligatoire,
+/// et c'est l'ACP.
+///
+/// C'est le genre de choix qu'on ne peut pas recopier d'un garde voisin : les
+/// onze autres remontent à l'immeuble parce que leurs entités le portent
+/// toujours. Ici, suivre le modèle aurait produit un trou pour les fiches sans
+/// immeuble — soit exactement les plus larges (#772).
+pub async fn verify_technical_spec_org_access(
+    user: &AuthenticatedUser,
+    spec_id: Uuid,
+    spec_use_cases: &TechnicalSpecUseCases,
+    acp_use_cases: &AcpUseCases,
+) -> Result<(), AppError> {
+    if user.is_superadmin() {
+        return Ok(());
+    }
+
+    let spec = spec_use_cases.get(spec_id).await?;
+    verify_acp_org_access(user, spec.acp_id, acp_use_cases).await
 }
 
 pub async fn verify_booking_org_access(
