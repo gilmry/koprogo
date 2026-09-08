@@ -125,6 +125,16 @@ pub const REGISTRE: &[InvariantLegal] = &[
         porte_par: "domain/copropriete/vote.rs",
         // Citait `vote::tests` — le module de tests ENTIER, pas un test. La
         // garde cherchait « tests » et trouvait `mod tests` (#847).
+        //
+        // ⚠ ATTESTATION ADJACENTE, ET C'EST ASSUMÉ. Le test vérifie qu'une
+        // voix SUPÉRIEURE au maximum est refusée : c'est un plafond, pas la
+        // CORRESPONDANCE entre le nombre de voix et la quote-part que
+        // l'article exige. Aucun test du dépôt n'atteste aujourd'hui que la
+        // voix d'un copropriétaire ÉGALE sa quote-part.
+        //
+        // Le noter ici plutôt que de laisser croire à une couverture pleine :
+        // c'est la leçon de #847, où trois invariants attestaient sur une
+        // sous-chaîne et un sur un test sans rapport.
         atteste_par: "vote::tests::test_create_vote_excessive_voting_power_fails",
     },
     InvariantLegal {
@@ -233,7 +243,11 @@ pub const REGISTRE: &[InvariantLegal] = &[
         article: "Art. 3.95",
         obligation: "Le notaire retient les arriérés de charges, les frais de récupération et les frais de transmission ; contestation en jours ouvrables.",
         porte_par: "domain/comptabilite/arrieres_mutation.rs",
-        atteste_par: "arrieres_mutation::tests::security_le_calcul_calendaire_libererait_les_fonds_trop_tot",
+        // Citait `security_le_calcul_calendaire_libererait_les_fonds_trop_tot`,
+        // qui atteste le calcul du DÉLAI de libération, pas ce que le notaire
+        // RETIENT. Le délai relève du même module, mais pas de la même
+        // obligation. Relevé le 2026-09-08 (#847).
+        atteste_par: "arrieres_mutation::tests::security_oublier_les_frais_de_recuperation_ampute_la_retenue",
     },
 ];
 
