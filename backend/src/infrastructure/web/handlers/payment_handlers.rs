@@ -113,6 +113,7 @@ pub async fn get_payment(
 #[get("/payments/stripe/{stripe_payment_intent_id}")]
 pub async fn get_payment_by_stripe_intent(
     state: web::Data<AppState>,
+    user: AuthenticatedUser,
     stripe_payment_intent_id: web::Path<String>,
 ) -> impl Responder {
     match state
@@ -120,7 +121,17 @@ pub async fn get_payment_by_stripe_intent(
         .get_payment_by_stripe_intent(&stripe_payment_intent_id)
         .await
     {
-        Ok(Some(payment)) => HttpResponse::Ok().json(payment),
+        Ok(Some(payment)) => {
+            // Cloisonnement multi-organisations : cette route ne prenait AUCUNE
+            // identité. N'importe qui pouvait lire ces données de paiement sur
+            // simple connaissance de l'identifiant Stripe. Le cliquet d'identité
+            // de #772 ne la voyait pas : il ne compte que les routes PRENANT une
+            // identité sans s'en servir. Cf. #845.
+            if let Err(e) = user.verify_org_access(payment.organization_id) {
+                return HttpResponse::Forbidden().json(serde_json::json!({ "error": e }));
+            }
+            HttpResponse::Ok().json(payment)
+        }
         Ok(None) => HttpResponse::NotFound().json(serde_json::json!({
             "error": "Payment not found"
         })),

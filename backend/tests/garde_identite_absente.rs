@@ -41,7 +41,7 @@ use std::fs;
 use std::path::{Path, PathBuf};
 
 /// Routes sans aucune vérification d'identité. **Ne doit que BAISSER.**
-const DETTE_AU_2026_09_08: usize = 24;
+const DETTE_AU_2026_09_08: usize = 19;
 
 /// Les routes publiques, et pourquoi.
 ///
@@ -251,6 +251,16 @@ fn security_les_routes_les_plus_exposees_restent_gardees() {
         "GET /pcn/export/pdf/{building_id}",
         "GET /pcn/export/excel/{building_id}",
         "POST /pcn/report/{building_id}",
+        // Seconde vague : deux routes de paiement et trois du communautaire.
+        // Une offre de compétence nomme une personne et décrit ce qu'elle sait
+        // faire ; une annonce d'objet prêté nomme son propriétaire et,
+        // indirectement, son adresse. Ce sont des données personnelles, pas un
+        // annuaire public.
+        "GET /payments/stripe/{stripe_payment_intent_id}",
+        "GET /payment-methods/stripe/{stripe_payment_method_id}",
+        "GET /notices/{id}",
+        "GET /skills/{id}",
+        "GET /shared-objects/{id}",
     ] {
         assert!(
             !sans_identite.contains(route),

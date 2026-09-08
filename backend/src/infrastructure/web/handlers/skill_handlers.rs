@@ -35,8 +35,30 @@ pub async fn create_skill(
 ///
 /// GET /skills/:id
 #[get("/skills/{id}")]
-pub async fn get_skill(data: web::Data<AppState>, id: web::Path<Uuid>) -> impl Responder {
-    match data.skill_use_cases.get_skill(id.into_inner()).await {
+pub async fn get_skill(
+    data: web::Data<AppState>,
+    user: AuthenticatedUser,
+    id: web::Path<Uuid>,
+) -> impl Responder {
+    let identifiant = id.into_inner();
+
+    // Cette route ne prenait AUCUNE identité : n'importe qui pouvait la lire
+    // sur simple connaissance de l'identifiant. Le cliquet de #772 ne la
+    // voyait pas — il ne compte que les routes PRENANT une identité sans
+    // s'en servir. Cf. #845.
+    if let Err(err) = crate::infrastructure::web::middleware::scope_guard::verify_skill_org_access(
+        &user,
+        identifiant,
+        &data.skill_use_cases,
+        &data.building_use_cases,
+        &data.acp_use_cases,
+    )
+    .await
+    {
+        return err.error_response();
+    }
+
+    match data.skill_use_cases.get_skill(identifiant).await {
         Ok(skill) => HttpResponse::Ok().json(skill),
         Err(e) => {
             if classification_erreurs::est_introuvable(&e) {

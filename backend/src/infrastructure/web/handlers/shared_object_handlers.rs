@@ -35,10 +35,33 @@ pub async fn create_shared_object(
 ///
 /// GET /shared-objects/:id
 #[get("/shared-objects/{id}")]
-pub async fn get_shared_object(data: web::Data<AppState>, id: web::Path<Uuid>) -> impl Responder {
+pub async fn get_shared_object(
+    data: web::Data<AppState>,
+    user: AuthenticatedUser,
+    id: web::Path<Uuid>,
+) -> impl Responder {
+    let identifiant = id.into_inner();
+
+    // Cette route ne prenait AUCUNE identité : n'importe qui pouvait la lire
+    // sur simple connaissance de l'identifiant. Le cliquet de #772 ne la
+    // voyait pas — il ne compte que les routes PRENANT une identité sans
+    // s'en servir. Cf. #845.
+    if let Err(err) =
+        crate::infrastructure::web::middleware::scope_guard::verify_shared_object_org_access(
+            &user,
+            identifiant,
+            &data.shared_object_use_cases,
+            &data.building_use_cases,
+            &data.acp_use_cases,
+        )
+        .await
+    {
+        return err.error_response();
+    }
+
     match data
         .shared_object_use_cases
-        .get_shared_object(id.into_inner())
+        .get_shared_object(identifiant)
         .await
     {
         Ok(object) => HttpResponse::Ok().json(object),

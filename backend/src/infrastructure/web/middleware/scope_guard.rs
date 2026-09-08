@@ -51,6 +51,8 @@ use crate::application::use_cases::owner_use_cases::OwnerUseCases;
 use crate::application::use_cases::poll_use_cases::PollUseCases;
 use crate::application::use_cases::quote_use_cases::QuoteUseCases;
 use crate::application::use_cases::resource_booking_use_cases::ResourceBookingUseCases;
+use crate::application::use_cases::shared_object_use_cases::SharedObjectUseCases;
+use crate::application::use_cases::skill_use_cases::SkillUseCases;
 use crate::application::use_cases::technical_spec_use_cases::TechnicalSpecUseCases;
 use crate::application::use_cases::ticket_use_cases::TicketUseCases;
 use crate::application::use_cases::unit_use_cases::UnitUseCases;
@@ -681,6 +683,57 @@ pub async fn verify_notice_org_access(
         .map_err(AppError::from)?;
 
     verify_building_org_access(user, notice.building_id, building_use_cases, acp_use_cases).await
+}
+
+/// Vérifie le mandat de l'appelant sur l'ACP dont relève une **compétence**.
+///
+/// Une offre de compétence nomme une personne et décrit ce qu'elle sait faire.
+/// C'est une donnée personnelle au sens du RGPD, et elle appartient à la
+/// communauté d'un immeuble, pas au premier venu qui en connaît l'identifiant.
+///
+/// `GET /skills/{id}` ne prenait AUCUNE identité (#845).
+pub async fn verify_skill_org_access(
+    user: &AuthenticatedUser,
+    skill_id: Uuid,
+    skill_use_cases: &SkillUseCases,
+    building_use_cases: &BuildingUseCases,
+    acp_use_cases: &AcpUseCases,
+) -> Result<(), AppError> {
+    if user.is_superadmin() {
+        return Ok(());
+    }
+
+    let skill = skill_use_cases
+        .get_skill(skill_id)
+        .await
+        .map_err(AppError::from)?;
+
+    verify_building_org_access(user, skill.building_id, building_use_cases, acp_use_cases).await
+}
+
+/// Vérifie le mandat de l'appelant sur l'ACP dont relève un **objet partagé**.
+///
+/// Prêter une perceuse à ses voisins ne revient pas à l'annoncer à qui connaît
+/// un UUID : l'annonce nomme son propriétaire et, indirectement, son adresse.
+///
+/// `GET /shared-objects/{id}` ne prenait AUCUNE identité (#845).
+pub async fn verify_shared_object_org_access(
+    user: &AuthenticatedUser,
+    object_id: Uuid,
+    shared_object_use_cases: &SharedObjectUseCases,
+    building_use_cases: &BuildingUseCases,
+    acp_use_cases: &AcpUseCases,
+) -> Result<(), AppError> {
+    if user.is_superadmin() {
+        return Ok(());
+    }
+
+    let objet = shared_object_use_cases
+        .get_shared_object(object_id)
+        .await
+        .map_err(AppError::from)?;
+
+    verify_building_org_access(user, objet.building_id, building_use_cases, acp_use_cases).await
 }
 
 /// Vérifie le mandat de l'appelant sur l'organisation d'un **défi**.

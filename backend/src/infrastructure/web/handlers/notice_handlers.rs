@@ -36,8 +36,30 @@ pub async fn create_notice(
 ///
 /// GET /notices/:id
 #[get("/notices/{id}")]
-pub async fn get_notice(data: web::Data<AppState>, id: web::Path<Uuid>) -> impl Responder {
-    match data.notice_use_cases.get_notice(id.into_inner()).await {
+pub async fn get_notice(
+    data: web::Data<AppState>,
+    user: AuthenticatedUser,
+    id: web::Path<Uuid>,
+) -> impl Responder {
+    let identifiant = id.into_inner();
+
+    // Cette route ne prenait AUCUNE identité : n'importe qui pouvait la lire
+    // sur simple connaissance de l'identifiant. Le cliquet de #772 ne la
+    // voyait pas — il ne compte que les routes PRENANT une identité sans
+    // s'en servir. Cf. #845.
+    if let Err(err) = crate::infrastructure::web::middleware::scope_guard::verify_notice_org_access(
+        &user,
+        identifiant,
+        &data.notice_use_cases,
+        &data.building_use_cases,
+        &data.acp_use_cases,
+    )
+    .await
+    {
+        return err.error_response();
+    }
+
+    match data.notice_use_cases.get_notice(identifiant).await {
         Ok(notice) => HttpResponse::Ok().json(notice),
         Err(e) => {
             if classification_erreurs::est_introuvable(&e) {

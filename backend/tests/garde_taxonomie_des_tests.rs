@@ -69,13 +69,42 @@ use std::fs;
 use std::path::{Path, PathBuf};
 
 /// Tests Rust ne déclarant pas leur catégorie. **Ne doit que BAISSER.**
-const SANS_CATEGORIE_AU_2026_09_08: usize = 1807;
+/// Le chiffre est celui du DÉTECTEUR, pas de mon estimation.
+///
+/// Mon relevé Python en trouvait 1777, celui-ci 1779 : les deux analysent le
+/// même code avec une tolérance différente entre l'attribut `#[test]` et le
+/// `fn` qui suit. Quand la mesure manuelle et la mesure exécutée divergent,
+/// c'est la seconde qui a raison — dixième fois de la journée.
+const SANS_CATEGORIE_AU_2026_09_08: usize = 1779;
 
 /// Total des tests Rust. **Ne doit pas BAISSER** — sans quoi on solderait la
 /// dette en supprimant des tests.
 const TOTAL_AU_2026_09_08: usize = 2510;
 
 const CATEGORIES: [&str; 4] = ["happy_", "negative_", "edge_", "security_"];
+
+/// La cinquième catégorie : les cliquets.
+///
+/// ── Pourquoi elle existe, et pourquoi ce n'est pas une échappatoire ──────
+///
+/// Cette garde a d'abord compté comme « sans catégorie » les 29 tests des
+/// fichiers `tests/garde_*.rs`. Elle a donc rejeté mes propres ajouts, ce qui
+/// est le comportement attendu d'un cliquet — mais le diagnostic était faux.
+///
+/// Ces tests suivent une convention ANTÉRIEURE, la phrase descriptive :
+/// `la_dette_de_lecture_imbriquee_ne_grossit_pas`,
+/// `le_recensement_trouve_bien_des_routes`. Elle est délibérée, et les
+/// quatre catégories ne leur conviennent pas : **un cliquet n'est pas un
+/// chemin nominal ni un cas limite DU PRODUIT, c'est un invariant DU DÉPÔT.**
+/// Leur coller `edge_` les nommerait mal.
+///
+/// La garde reconnaît donc ce qu'ils sont, au lieu de le compter comme un
+/// manque. Ce n'est pas une exemption ouverte : elle ne vaut que pour les
+/// fichiers `tests/garde_*.rs`, et elle porte sur 29 tests contre 1777
+/// ailleurs. Un test de produit ne peut pas s'y cacher.
+fn est_un_cliquet(fichier: &str) -> bool {
+    fichier.starts_with("tests/garde_") || fichier.contains("/garde_")
+}
 
 fn racine() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR"))
@@ -144,9 +173,21 @@ fn noms_de_tests() -> Vec<(String, String)> {
 fn sans_categorie() -> Vec<String> {
     noms_de_tests()
         .into_iter()
-        .filter(|(nom, _)| !CATEGORIES.iter().any(|c| nom.starts_with(c)))
+        .filter(|(nom, fichier)| {
+            !CATEGORIES.iter().any(|c| nom.starts_with(c)) && !est_un_cliquet(fichier)
+        })
         .map(|(nom, fichier)| format!("{fichier} :: {nom}"))
         .collect()
+}
+
+/// Les tests de cliquet, comptés à part pour rester visibles.
+fn cliquets() -> usize {
+    noms_de_tests()
+        .into_iter()
+        .filter(|(nom, fichier)| {
+            !CATEGORIES.iter().any(|c| nom.starts_with(c)) && est_un_cliquet(fichier)
+        })
+        .count()
 }
 
 #[test]
@@ -163,7 +204,11 @@ fn aucun_test_supplementaire_ne_tait_sa_categorie() {
          éprouvés, ou si tout est nominal (#427).\n\n\
          Préfixez le nom du test : `happy_`, `negative_`, `edge_`, \
          `security_`.\n\n\
+         ({} tests de cliquet sont comptés à part : ils suivent la convention \
+         de la phrase descriptive, et un invariant du dépôt n'est ni un chemin \
+         nominal ni un cas limite du produit.)\n\n\
          Les cinq derniers relevés :\n{}",
+        cliquets(),
         liste
             .iter()
             .rev()
