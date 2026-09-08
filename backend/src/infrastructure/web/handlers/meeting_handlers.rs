@@ -291,9 +291,25 @@ pub async fn add_agenda_item(
 #[get("/meetings/{id}/completion-checklist")]
 pub async fn get_meeting_completion_checklist(
     state: web::Data<AppState>,
-    _user: AuthenticatedUser,
+    user: AuthenticatedUser,
     id: web::Path<Uuid>,
 ) -> impl Responder {
+    // Cloisonnement : la liste des conditions de clôture d'une AG dit où en est
+    // la copropriété — convocations envoyées, résolutions votées, PV rédigé.
+    // L'identité était prise puis ignorée — `_user` (#772).
+    if let Err(err) =
+        crate::infrastructure::web::middleware::scope_guard::verify_meeting_org_access(
+            &user,
+            *id,
+            &state.meeting_use_cases,
+            &state.building_use_cases,
+            &state.acp_use_cases,
+        )
+        .await
+    {
+        return err.error_response();
+    }
+
     let meeting_id = id.into_inner();
     match state
         .meeting_use_cases

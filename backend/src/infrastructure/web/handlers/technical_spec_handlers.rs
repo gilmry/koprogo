@@ -290,6 +290,18 @@ pub async fn submit_technical_spec(
 ) -> Result<HttpResponse, AppError> {
     require_syndic_or_superadmin(&user)?;
     let id = path.into_inner();
+
+    // Cloisonnement : cette fiche doit relever d'une ACP que cet utilisateur a
+    // le droit de voir. `require_syndic_or_superadmin` ne vérifie que le RÔLE
+    // (#772). Périmètre = ACP, `building_id` étant optionnel sur l'entité.
+    verify_technical_spec_org_access(
+        &user,
+        id,
+        &state.technical_spec_use_cases,
+        &state.acp_use_cases,
+    )
+    .await?;
+
     let spec = state
         .technical_spec_use_cases
         .submit_for_signatures(id)
