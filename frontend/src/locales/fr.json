@@ -988,7 +988,8 @@
     "continue": "Continuer",
     "dashboard": "Tableau de bord",
     "seeLabel": "Voir",
-    "checkingAccess": "Vérification des accès…"
+    "checkingAccess": "Vérification des accès…",
+    "showingRange": "Affichage de {debut} à {fin} sur {total} résultat(s)"
   },
   "common.error.loadData": "Erreur lors du chargement des données",
   "common.error.loadStats": "Erreur lors du chargement des statistiques",
@@ -4105,7 +4106,10 @@
     "noMandateHint": "actif. Demandez au syndic d'émettre un mandat avant de signer.",
     "notFound": "Fiche technique introuvable, ou accès refusé.",
     "versionHistory": "Historique des versions",
-    "noVersion": "Aucune version pour cette fiche."
+    "noVersion": "Aucune version pour cette fiche.",
+    "signingViaMandate": "Vous signez en tant que {role} via le mandat #{mandat}, actif jusqu'au {date}.",
+    "signingDirectRole": "Vous signez en tant que {role} — aucun mandat requis.",
+    "noActiveMandate": "Aucun mandat {role} actif. Demandez au syndic d'en émettre un avant de signer."
   },
   "acps": {
     "pageTitle": "Associations de Copropriétaires (ACP)",

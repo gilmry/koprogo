@@ -114,7 +114,7 @@
       </div>
       <div>
         <label for="booking-end" class="block text-sm font-medium text-gray-700 mb-1">
-          Fin <span class="text-red-500">*</span>
+          {$_('bookings.endLabel')} <span class="text-red-500">*</span>
         </label>
         <input
           id="booking-end"
@@ -176,7 +176,7 @@
 
     {#if resource?.requires_approval}
       <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-sm text-yellow-800">
-        ⚠️ Cette ressource requiert une validation du syndic avant confirmation.
+        ⚠️ {$_('bookings.needsApproval')}
       </div>
     {/if}
 

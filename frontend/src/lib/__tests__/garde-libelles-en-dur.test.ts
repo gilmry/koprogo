@@ -70,7 +70,7 @@ import { join, extname } from "node:path";
  * Un `confirm()` natif y portait aussi son message en dur, hors de portée du
  * détecteur qui ne regarde que le gabarit.
  */
-const DETTE_AU_2026_09_07 = 54;
+const DETTE_AU_2026_09_07 = 43;
 
 const RACINE = join(process.cwd(), "src");
 
@@ -96,7 +96,15 @@ function fichiersDeGabarit(repertoire: string): string[] {
     const chemin = join(repertoire, entree);
     if (statSync(chemin).isDirectory()) {
       trouves.push(...fichiersDeGabarit(chemin));
-    } else if (extname(entree) === ".svelte" && !entree.includes(".test.")) {
+    } else if (
+      extname(entree) === ".svelte" &&
+      !entree.includes(".test.") &&
+      // Les harnais de test montés par un `.test.ts` voisin ne sont pas du
+      // produit : `ModalFocusTrapHarness.svelte` existe pour éprouver le piège
+      // de focus, et ses libellés « Middle » et « Last » nomment des boutons
+      // que personne ne verra jamais.
+      !chemin.includes("__tests__")
+    ) {
       trouves.push(chemin);
     }
   }

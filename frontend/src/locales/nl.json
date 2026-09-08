@@ -988,7 +988,8 @@
     "continue": "Doorgaan",
     "dashboard": "Dashboard",
     "seeLabel": "Bekijken",
-    "checkingAccess": "Toegang controleren…"
+    "checkingAccess": "Toegang controleren…",
+    "showingRange": "Weergave van {debut} tot {fin} van {total} resultaat/resultaten"
   },
   "common.error.loadData": "Fout bij het laden van gegevens",
   "common.error.loadStats": "Fout bij het laden van statistieken",
@@ -4105,7 +4106,10 @@
     "noMandateHint": "actief. Vraag de syndicus een mandaat uit te reiken vóór ondertekening.",
     "notFound": "Technische fiche niet gevonden, of toegang geweigerd.",
     "versionHistory": "Versiegeschiedenis",
-    "noVersion": "Geen versie voor deze fiche."
+    "noVersion": "Geen versie voor deze fiche.",
+    "signingViaMandate": "U ondertekent als {role} op grond van mandaat #{mandat}, geldig tot {date}.",
+    "signingDirectRole": "U ondertekent als {role} — geen mandaat vereist.",
+    "noActiveMandate": "Geen actief {role}-mandaat. Vraag de syndicus er een uit te reiken vóór ondertekening."
   },
   "acps": {
     "pageTitle": "Verenigingen van Mede-eigenaars (VME)",

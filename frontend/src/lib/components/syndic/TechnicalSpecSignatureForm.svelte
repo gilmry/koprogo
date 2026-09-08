@@ -109,9 +109,13 @@
       class="mb-3 text-xs text-blue-800"
       role="status"
     >
-      Vous signez en tant que <strong>{role}</strong> via mandat
-      <code class="font-mono">#{activeMandate.id.slice(0, 8)}</code>
-      actif jusqu'au {formatMandateExpiry(activeMandate.validUntil)}.
+      {$_('technicalSpecs.signingViaMandate', {
+        values: {
+          role,
+          mandat: activeMandate.id.slice(0, 8),
+          date: formatMandateExpiry(activeMandate.validUntil),
+        },
+      })}
     </p>
   {:else if !isMandataryRole}
     <p
@@ -119,8 +123,7 @@
       class="mb-3 text-xs text-blue-800"
       role="status"
     >
-      Vous signez en tant que <strong>{role}</strong> (rôle direct — aucun
-      mandat requis).
+      {$_('technicalSpecs.signingDirectRole', { values: { role } })}
     </p>
   {/if}
 
@@ -130,8 +133,7 @@
       class="mb-3 rounded-md border border-red-300 bg-red-50 p-3 text-sm text-red-700"
       role="alert"
     >
-      Aucun mandat <strong>{role}</strong> actif. Demandez au syndic d'émettre
-      un mandat avant de signer.
+      {$_('technicalSpecs.noActiveMandate', { values: { role } })}
     </p>
   {/if}
 

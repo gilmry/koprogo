@@ -107,7 +107,7 @@
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
           <label for="loan-start-date" class="block text-sm font-medium text-gray-700 mb-1">
-            Date de début <span class="text-red-500">*</span>
+            {$_('sharing.startDate')} <span class="text-red-500">*</span>
           </label>
           <input
             id="loan-start-date"
@@ -121,7 +121,7 @@
         </div>
         <div>
           <label for="loan-end-date" class="block text-sm font-medium text-gray-700 mb-1">
-            Date de retour prévue <span class="text-red-500">*</span>
+            {$_('sharing.expectedReturn')} <span class="text-red-500">*</span>
           </label>
           <input
             id="loan-end-date"

@@ -68,8 +68,9 @@
   <div class="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
     <div>
       <p class="text-sm text-gray-700">
-        Affichage de <span class="font-medium">{startItem}</span> à <span class="font-medium">{endItem}</span> sur{' '}
-        <span class="font-medium">{totalItems}</span> résultat{totalItems > 1 ? 's' : ''}
+        {$_('common.showingRange', {
+          values: { debut: startItem, fin: endItem, total: totalItems },
+        })}
       </p>
     </div>
     <div>

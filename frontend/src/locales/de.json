@@ -988,7 +988,8 @@
     "continue": "Fortfahren",
     "dashboard": "Übersicht",
     "seeLabel": "Ansehen",
-    "checkingAccess": "Zugriff wird geprüft…"
+    "checkingAccess": "Zugriff wird geprüft…",
+    "showingRange": "Anzeige von {debut} bis {fin} von {total} Ergebnis(sen)"
   },
   "common.error.loadData": "Fehler beim Laden der Daten",
   "common.error.loadStats": "Fehler beim Laden der Statistiken",
@@ -4105,7 +4106,10 @@
     "noMandateHint": "aktiv. Bitten Sie den Verwalter, vor der Unterschrift ein Mandat auszustellen.",
     "notFound": "Technisches Datenblatt nicht gefunden oder Zugriff verweigert.",
     "versionHistory": "Versionsverlauf",
-    "noVersion": "Keine Version für dieses Datenblatt."
+    "noVersion": "Keine Version für dieses Datenblatt.",
+    "signingViaMandate": "Sie unterschreiben als {role} aufgrund des Mandats #{mandat}, gültig bis {date}.",
+    "signingDirectRole": "Sie unterschreiben als {role} — kein Mandat erforderlich.",
+    "noActiveMandate": "Kein aktives {role}-Mandat. Bitten Sie den Verwalter, vor der Unterschrift eines auszustellen."
   },
   "acps": {
     "pageTitle": "Wohnungseigentümergemeinschaften (WEG)",

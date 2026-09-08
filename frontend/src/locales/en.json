@@ -988,7 +988,8 @@
     "continue": "Continue",
     "dashboard": "Dashboard",
     "seeLabel": "View",
-    "checkingAccess": "Checking access…"
+    "checkingAccess": "Checking access…",
+    "showingRange": "Showing {debut} to {fin} of {total} result(s)"
   },
   "common.error.loadData": "Error loading data",
   "common.error.loadStats": "Error loading statistics",
@@ -4105,7 +4106,10 @@
     "noMandateHint": "active. Ask the building manager to issue a mandate before signing.",
     "notFound": "Technical specification not found, or access denied.",
     "versionHistory": "Version history",
-    "noVersion": "No version for this specification."
+    "noVersion": "No version for this specification.",
+    "signingViaMandate": "You are signing as {role} under mandate #{mandat}, valid until {date}.",
+    "signingDirectRole": "You are signing as {role} — no mandate required.",
+    "noActiveMandate": "No active {role} mandate. Ask the building manager to issue one before signing."
   },
   "acps": {
     "pageTitle": "Co-ownership associations (ACP)",
