@@ -3962,6 +3962,72 @@ impl DatabaseSeeder {
 
         log::info!("✅ Resolution created: Approbation des comptes 2025");
 
+        // L'ACP doit être CONFORME à son acte de base, sinon rien ne s'y fait.
+        //
+        // `ensure_default_acp_for_org` insère `total_tantiemes = 1000` en dur.
+        // Le monde de scénario y attache ensuite trois immeubles dont les lots
+        // totalisent bien davantage. L'ACP naissait donc non conforme, et le
+        // portique « valider avant de calculer » (Art. 3.85, Story H2) refusait
+        // toute création de dépense :
+        //
+        //     POST /expenses → 422 ACP_NOT_CONFORMANT
+        //     quota_basis 1000, quota_delta -8390, units_delta 223
+        //
+        // Le refus est le bon comportement du produit. C'est le monde de
+        // démonstration qui violait son propre acte de base — et une
+        // documentation vivante ne peut pas montrer la comptabilité d'une
+        // copropriété où l'on ne peut rien comptabiliser.
+        //
+        // On aligne donc l'acte de base sur ce qui a été créé : la somme des
+        // quotités des lots, et le nombre réel de lots par immeuble. Aligner
+        // dans ce sens (l'acte suit les lots) est le seul possible ici,
+        // puisque les lots portent les données du scénario.
+        sqlx::query(
+            r#"
+            UPDATE acps SET total_tantiemes = sub.somme, updated_at = NOW()
+            FROM (
+                -- Même expression que la requête de métriques
+                -- (`acp_repository_impl.rs`) : `SUM(u.quota::NUMERIC)`. La
+                -- conformité se juge sur une ÉGALITÉ exacte, donc toute
+                -- divergence d'arrondi entre les deux calculs rendrait l'ACP
+                -- non conforme malgré la réconciliation.
+                SELECT b.acp_id,
+                       COALESCE(SUM(u.quota::NUMERIC), 0)::int AS somme
+                FROM buildings b
+                JOIN units u ON u.building_id = b.id
+                WHERE b.acp_id = (SELECT acp_id FROM buildings WHERE id = $1)
+                GROUP BY b.acp_id
+            ) AS sub
+            WHERE acps.id = sub.acp_id AND sub.somme > 0
+            "#,
+        )
+        .bind(building_id)
+        .execute(&self.pool)
+        .await
+        .map_err(|e| format!("Failed to reconcile scenario ACP tantiemes: {}", e))?;
+
+        // Et le nombre de lots déclaré par chaque immeuble sur le nombre réel :
+        // `units_delta` valait 223, ce qui rendait le contrôle bruyant même une
+        // fois les quotités alignées.
+        sqlx::query(
+            r#"
+            UPDATE buildings SET total_units = sub.n, updated_at = NOW()
+            FROM (
+                SELECT b.id, COUNT(u.id)::int AS n
+                FROM buildings b LEFT JOIN units u ON u.building_id = b.id
+                WHERE b.acp_id = (SELECT acp_id FROM buildings WHERE id = $1)
+                GROUP BY b.id
+            ) AS sub
+            WHERE buildings.id = sub.id
+            "#,
+        )
+        .bind(building_id)
+        .execute(&self.pool)
+        .await
+        .map_err(|e| format!("Failed to reconcile scenario building unit counts: {}", e))?;
+
+        log::info!("✅ ACP réconciliée avec son acte de base (quotités et lots)");
+
         let result = ScenarioWorldResult {
             organization_id: org_id,
             building_id,

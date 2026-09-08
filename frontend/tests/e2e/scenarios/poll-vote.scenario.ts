@@ -112,14 +112,19 @@ test.describe("Scenario: Sondage multi-role (Francois lance, Alice vote)", () =>
       const poll = await amorce(pollResp, "POST /polls");
       pollId = poll.id;
 
-      // Publish the poll (Draft -> Active)
-      const reponseAmorce1 = await request.put(
+      // Publier le sondage (Draft -> Active).
+      //
+      // POST, pas PUT : la route est `#[post("/polls/{id}/publish")]`
+      // (`poll_handlers.rs:318`). Le PUT rendait 404, le sondage restait en
+      // brouillon, et le scénario échouait plus loin sur `poll-card`
+      // introuvable — en accusant l'affichage d'une liste vide.
+      const publicationResp = await request.post(
         `${API_BASE}/polls/${pollId}/publish`,
         {
           headers: syndicHeaders,
         },
       );
-      await amorce(reponseAmorce1, "PUT /polls/{pollId}/publish");
+      await amorce(publicationResp, "POST /polls/{pollId}/publish");
     }
   });
 
