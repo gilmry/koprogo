@@ -145,7 +145,7 @@ const DETTE_AU_2026_09_06: usize = 8;
 /// c'est le travail de l'issue #772.
 ///
 /// **Ce nombre ne doit que DIMINUER.**
-/// 109 au relevé du 2026-09-06 ; **8** au 2026-09-08.
+/// 109 au relevé du 2026-09-06 ; **5** au 2026-09-08.
 ///
 /// Les cinq dernières sont les premières à venir de VRAIES gardes ajoutées :
 /// les cinq routes de `local_exchange_handlers` qui listent les échanges, le
@@ -178,7 +178,7 @@ const DETTE_AU_2026_09_06: usize = 8;
 /// d'énergie, était ainsi comptée comme non protégée alors qu'elle compare
 /// bien l'organisation de l'appelant à celle de la ressource. Les espaces sont
 /// désormais normalisés avant la recherche.
-const IDENTITE_NON_VERIFIEE_AU_2026_09_06: usize = 8;
+const IDENTITE_NON_VERIFIEE_AU_2026_09_06: usize = 5;
 
 fn racine_handlers() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("src/infrastructure/web/handlers")
@@ -190,7 +190,7 @@ fn racine_handlers() -> PathBuf {
 /// `verifier_mandat_sur_ag` fait de même depuis une assemblée ;
 /// `require_organization` et `is_superadmin` sont des décisions plus grossières
 /// mais réelles. Un corps qui n'en contient aucun ne décide de rien.
-const MARQUEURS_DE_GARDE: [&str; 24] = [
+const MARQUEURS_DE_GARDE: [&str; 25] = [
     // La primitive de cloisonnement elle-même — celle que les huit
     // `verify_*_org_access` finissent tous par appeler après avoir remonté la
     // chaîne jusqu'à l'organisation.
@@ -218,6 +218,16 @@ const MARQUEURS_DE_GARDE: [&str; 24] = [
     // Il fait le travail, et les trois routes d'attribution de rôles étaient
     // comptées comme ouvertes faute qu'il figure ici. Un garde local reste un
     // garde : ce qui compte est qu'il vérifie, pas qu'il soit partagé.
+    // Le portefeuille vérifie AILLEURS : le gestionnaire construit un
+    // `PortfolioCaller` depuis l'identité et le passe au cas d'usage, qui
+    // appelle `assert_can_read` avant de servir quoi que ce soit.
+    //
+    // C'est une architecture légitime — et même préférable, puisque la règle
+    // vit près de la donnée plutôt que recopiée dans chaque gestionnaire,
+    // ce que l'issue #772 reproche justement au reste du produit. Le cliquet
+    // ne pouvait pas le voir : il lit le corps du gestionnaire, pas ce que
+    // le cas d'usage fait ensuite.
+    "caller_from_user",
     "ensure_can_admin_target",
     "verify_booking_org_access",
     "verify_challenge_org_access",
