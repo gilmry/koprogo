@@ -124,6 +124,7 @@
         <div class="ml-3">
           <p class="text-sm text-red-700">{error}</p>
           <button
+            data-testid="accountant-retry-button"
             onclick={loadDashboardData}
             class="mt-2 text-sm font-medium text-red-700 hover:text-red-600"
           >
@@ -276,6 +277,7 @@
       <div class="p-6">
         <div class="grid grid-cols-2 gap-4">
           <a
+            data-testid="accountant-expenses-tile"
             href="/expenses"
             class="flex flex-col items-center justify-center p-6 border-2 border-gray-200 rounded-lg hover:border-primary-500 hover:bg-primary-50 transition group"
           >
@@ -287,6 +289,7 @@
             >
           </a>
           <a
+            data-testid="accountant-reports-tile"
             href="/reports"
             class="flex flex-col items-center justify-center p-6 border-2 border-gray-200 rounded-lg hover:border-primary-500 hover:bg-primary-50 transition group"
           >
@@ -298,7 +301,8 @@
             >
           </a>
           <a
-            href="/invoices"
+            data-testid="accountant-invoices-tile"
+            href="/invoice-workflow"
             class="flex flex-col items-center justify-center p-6 border-2 border-gray-200 rounded-lg hover:border-primary-500 hover:bg-primary-50 transition group"
           >
             <span class="text-4xl mb-2 group-hover:scale-110 transition"
@@ -309,6 +313,7 @@
             >
           </a>
           <a
+            data-testid="accountant-buildings-tile"
             href="/buildings"
             class="flex flex-col items-center justify-center p-6 border-2 border-gray-200 rounded-lg hover:border-primary-500 hover:bg-primary-50 transition group"
           >
