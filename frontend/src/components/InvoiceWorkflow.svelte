@@ -535,6 +535,7 @@
 <!-- Modal d'approbation -->
 {#if showApprovalModal && selectedInvoice}
   <button
+    data-testid="invoice-approve-modal-overlay"
     type="button"
     class="modal-overlay modal-overlay-btn"
     aria-label={$_("common.closeModal")}
@@ -544,7 +545,11 @@
     <div class="modal" role="presentation">
       <div class="modal-header">
         <h2>{$_("invoices.approve_invoice")}</h2>
-        <button on:click={closeModals} class="btn-close">×</button>
+        <button
+          data-testid="invoice-approve-modal-close-button"
+          on:click={closeModals}
+          class="btn-close">×</button
+        >
       </div>
       <div class="modal-body">
         <p>{$_("invoices.confirm_approve")}</p>
@@ -585,6 +590,7 @@
       </div>
       <div class="modal-footer">
         <button
+          data-testid="invoice-approve-cancel-button"
           on:click={closeModals}
           class="btn btn-secondary"
           disabled={submitting}
@@ -592,6 +598,7 @@
           {$_("common.cancel")}
         </button>
         <button
+          data-testid="invoice-approve-confirm-button"
           on:click={approveInvoice}
           class="btn btn-success"
           disabled={submitting}
@@ -606,6 +613,7 @@
 <!-- Modal de rejet -->
 {#if showRejectionModal && selectedInvoice}
   <button
+    data-testid="invoice-reject-modal-overlay"
     type="button"
     class="modal-overlay modal-overlay-btn"
     aria-label={$_("common.closeModal")}
@@ -615,7 +623,11 @@
     <div class="modal" role="presentation">
       <div class="modal-header">
         <h2>{$_("invoices.reject_invoice")}</h2>
-        <button on:click={closeModals} class="btn-close">×</button>
+        <button
+          data-testid="invoice-reject-modal-close-button"
+          on:click={closeModals}
+          class="btn-close">×</button
+        >
       </div>
       <div class="modal-body">
         <p>{$_("invoices.indicate_rejection_reason")}</p>
@@ -635,6 +647,7 @@
           >{$_("invoices.rejection_reason_placeholder")}</label
         >
         <textarea
+          data-testid="invoice-rejection-reason-textarea"
           id="invoice-rejection-reason"
           bind:value={rejectionReason}
           placeholder={$_("invoices.rejection_reason_placeholder")}
@@ -644,6 +657,7 @@
       </div>
       <div class="modal-footer">
         <button
+          data-testid="invoice-reject-cancel-button"
           on:click={closeModals}
           class="btn btn-secondary"
           disabled={submitting}
@@ -651,6 +665,7 @@
           {$_("common.cancel")}
         </button>
         <button
+          data-testid="invoice-reject-confirm-button"
           on:click={rejectInvoice}
           class="btn btn-danger"
           disabled={submitting || !rejectionReason.trim()}

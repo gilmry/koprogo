@@ -168,8 +168,10 @@
 {:else if error}
   <div class="bg-red-50 border border-red-200 rounded-lg p-4">
     <p class="text-red-700">{error}</p>
-    <button on:click={loadBudget} class="mt-2 text-sm text-red-600 underline"
-      >{$_("common.retry")}</button
+    <button
+      data-testid="budget-detail-retry-button"
+      on:click={loadBudget}
+      class="mt-2 text-sm text-red-600 underline">{$_("common.retry")}</button
     >
   </div>
 {:else if budget}
@@ -465,6 +467,7 @@
         {/if}
 
         <a
+          data-testid="budget-detail-back-link"
           href="/budgets"
           class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition"
         >
@@ -494,6 +497,7 @@
             {$_("budgets.meetingId")}
           </label>
           <input
+            data-testid="budget-approve-meeting-id-input"
             id="meeting-id"
             type="text"
             bind:value={meetingId}
@@ -503,12 +507,14 @@
         </div>
         <div class="flex justify-end space-x-3">
           <button
+            data-testid="budget-approve-cancel-button"
             on:click={() => (showApproveModal = false)}
             class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
           >
             {$_("common.cancel")}
           </button>
           <button
+            data-testid="budget-approve-confirm-button"
             on:click={approveBudget}
             disabled={actionLoading}
             class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
@@ -537,6 +543,7 @@
             {$_("budgets.rejectionReason")}
           </label>
           <textarea
+            data-testid="budget-reject-reason-textarea"
             id="reject-reason"
             bind:value={rejectReason}
             rows="3"
@@ -545,12 +552,14 @@
         </div>
         <div class="flex justify-end space-x-3">
           <button
+            data-testid="budget-reject-cancel-button"
             on:click={() => (showRejectModal = false)}
             class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
           >
             {$_("common.cancel")}
           </button>
           <button
+            data-testid="budget-reject-confirm-button"
             on:click={rejectBudget}
             disabled={actionLoading}
             class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50"

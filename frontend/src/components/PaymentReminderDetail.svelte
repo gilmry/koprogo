@@ -386,6 +386,7 @@
               >{reminder.tracking_number}</span
             >
           </div>{:else if reminder.delivery_method === "RegisteredLetter"}<button
+            data-testid="payment-reminder-tracking-open-button"
             onclick={openTrackingModal}
             class="text-sm text-primary-600 hover:text-primary-700"
             >+ {$_("paymentReminders.addTracking")}</button
@@ -394,6 +395,7 @@
           >
             <span class="text-gray-600">{$_("paymentReminders.letterPDF")}</span
             ><a
+              data-testid="payment-reminder-pdf-link"
               href={reminder.pdf_path}
               class="text-primary-600 hover:text-primary-700"
               >📄 {$_("common.download")}</a
@@ -413,34 +415,40 @@
       </h3>
       <div class="flex flex-wrap gap-3">
         {#if reminder.status === "Pending"}<button
+            data-testid="payment-reminder-mark-sent-button"
             onclick={markAsSent}
             disabled={loading}
             class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
             >📧 {$_("paymentReminders.markAsSent")}</button
           >{/if}
         {#if reminder.status === "Sent" || reminder.status === "Opened"}<button
+            data-testid="payment-reminder-mark-paid-button"
             onclick={markAsPaid}
             disabled={loading}
             class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50"
             >✅ {$_("paymentReminders.markAsPaid")}</button
           ><button
+            data-testid="payment-reminder-escalate-button"
             onclick={escalate}
             disabled={loading}
             class="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors disabled:opacity-50"
             >⬆️ {$_("paymentReminders.escalate")}</button
           >{/if}
         {#if reminder.status !== "Paid" && reminder.status !== "Cancelled"}<button
+            data-testid="payment-reminder-cancel-open-button"
             onclick={openCancelModal}
             disabled={loading}
             class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors disabled:opacity-50"
             >❌ {$_("paymentReminders.cancel")}</button
           >{/if}
         <a
+          data-testid="payment-reminder-expense-link"
           href="/expenses/{reminder.expense_id}"
           class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
           >📄 {$_("paymentReminders.viewInvoice")}</a
         >
         <a
+          data-testid="payment-reminder-owner-link"
           href="/owners/{reminder.owner_id}"
           class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
           >👤 {$_("paymentReminders.viewOwner")}</a
@@ -462,6 +470,7 @@
             class="block text-sm font-medium text-gray-700 mb-2"
             >{$_("paymentReminders.cancelReason")}</label
           ><textarea
+            data-testid="payment-reminder-cancel-reason-textarea"
             id="cancel-reason"
             bind:value={cancelReason}
             rows="4"
@@ -471,10 +480,12 @@
         </div>
         <div class="flex justify-end space-x-3">
           <button
+            data-testid="payment-reminder-cancel-dismiss-button"
             onclick={() => (showCancelModal = false)}
             class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
             >{$_("common.cancel")}</button
           ><button
+            data-testid="payment-reminder-cancel-confirm-button"
             onclick={confirmCancel}
             class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
             >{$_("paymentReminders.confirmCancel")}</button
@@ -495,6 +506,7 @@
             class="block text-sm font-medium text-gray-700 mb-2"
             >{$_("paymentReminders.trackingNumberLabel")}</label
           ><input
+            data-testid="payment-reminder-tracking-input"
             id="tracking-number"
             type="text"
             bind:value={trackingNumber}
@@ -504,10 +516,12 @@
         </div>
         <div class="flex justify-end space-x-3">
           <button
+            data-testid="payment-reminder-tracking-dismiss-button"
             onclick={() => (showTrackingModal = false)}
             class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
             >{$_("common.cancel")}</button
           ><button
+            data-testid="payment-reminder-tracking-confirm-button"
             onclick={confirmAddTracking}
             class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700"
             >{$_("paymentReminders.addButton")}</button
