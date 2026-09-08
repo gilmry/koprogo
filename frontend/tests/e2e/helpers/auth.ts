@@ -198,6 +198,19 @@ interface SyndicWithOwnerContext extends SyndicContext {
 interface OwnerContext extends SyndicContext {
   ownerId: string;
   ownerToken: string; // JWT for the owner user account
+  /**
+   * Identifiants du compte copropriétaire, pour les tests qui doivent AGIR
+   * en son nom.
+   *
+   * Ce helper laisse volontairement la session du syndic en place. Un test
+   * qui se dit « en tant que propriétaire lié » doit donc basculer
+   * explicitement, avec `uiLoginWithRetry(page, ownerEmail, ownerPassword,
+   * /\/owner/)`. Sans cette bascule il POSTe en tant que syndic, et le
+   * serveur refuse à raison : les modules communautaires engagent une
+   * personne nommée, pas la copropriété.
+   */
+  ownerEmail: string;
+  ownerPassword: string;
 }
 
 /**
@@ -684,7 +697,13 @@ export async function loginAsSyndicWithLinkedOwner(
   });
   const owner = await expectOk(ownerResp, "seed:owner");
 
-  return { ...ctx, ownerId: owner.id, ownerToken };
+  return {
+    ...ctx,
+    ownerId: owner.id,
+    ownerToken,
+    ownerEmail,
+    ownerPassword: "test123456",
+  };
 }
 
 /**
