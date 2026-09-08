@@ -977,7 +977,8 @@
     "loading2": "Loading…",
     "createdOnShort": "Created on",
     "errorLabel": "Error:",
-    "expiryDate": "Expiry date"
+    "expiryDate": "Expiry date",
+    "continue": "Continue"
   },
   "common.error.loadData": "Error loading data",
   "common.error.loadStats": "Error loading statistics",
@@ -4064,7 +4065,12 @@
     "pageTitle": "Technical specifications",
     "newSpec": "New technical specification",
     "empty": "No technical specification yet.",
-    "detail": "Details"
+    "detail": "Details",
+    "newVersionBump": "New version",
+    "confirmBumpTitle": "Create a new version?",
+    "bumpWarning": "If you raise the major number, all previous signatures are invalidated and signatories will have to sign again. Minor and patch versions preserve signatures.",
+    "attachmentsShort": "Attachments",
+    "bumpFrom": "You are about to create a new version from"
   },
   "acps": {
     "pageTitle": "Co-ownership associations (ACP)",
@@ -4088,5 +4094,12 @@
     "phone": "Phone",
     "openingHours": "Opening hours",
     "emergencies": "Emergencies"
+  },
+  "users": {
+    "assignedRoles": "Assigned roles",
+    "addRole": "Add a role",
+    "rolesHint": "Define one or more roles. Exactly one must be marked as primary.",
+    "noOrgForSuperadmin": "A superadmin is not attached to any organisation.",
+    "primaryRole": "Primary role"
   }
 }

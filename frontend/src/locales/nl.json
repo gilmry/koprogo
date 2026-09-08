@@ -977,7 +977,8 @@
     "loading2": "Laden…",
     "createdOnShort": "Aangemaakt op",
     "errorLabel": "Fout:",
-    "expiryDate": "Vervaldatum"
+    "expiryDate": "Vervaldatum",
+    "continue": "Doorgaan"
   },
   "common.error.loadData": "Fout bij het laden van gegevens",
   "common.error.loadStats": "Fout bij het laden van statistieken",
@@ -4064,7 +4065,12 @@
     "pageTitle": "Technische fiches",
     "newSpec": "Nieuwe technische fiche",
     "empty": "Nog geen technische fiche.",
-    "detail": "Detail"
+    "detail": "Detail",
+    "newVersionBump": "Nieuwe versie",
+    "confirmBumpTitle": "Nieuwe versie aanmaken?",
+    "bumpWarning": "Als u het hoofdnummer verhoogt, vervallen alle eerdere handtekeningen en moeten de ondertekenaars opnieuw tekenen. Sub- en correctieversies behouden de handtekeningen.",
+    "attachmentsShort": "Bijlagen",
+    "bumpFrom": "U maakt een nieuwe versie aan op basis van"
   },
   "acps": {
     "pageTitle": "Verenigingen van Mede-eigenaars (VME)",
@@ -4088,5 +4094,12 @@
     "phone": "Telefoon",
     "openingHours": "Openingsuren",
     "emergencies": "Noodgevallen"
+  },
+  "users": {
+    "assignedRoles": "Toegewezen rollen",
+    "addRole": "Rol toevoegen",
+    "rolesHint": "Definieer een of meer rollen. Precies één moet als hoofdrol worden aangeduid.",
+    "noOrgForSuperadmin": "Een superbeheerder is aan geen enkele organisatie gekoppeld.",
+    "primaryRole": "Hoofdrol"
   }
 }

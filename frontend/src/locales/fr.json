@@ -977,7 +977,8 @@
     "loading2": "Chargement…",
     "createdOnShort": "Créée le",
     "errorLabel": "Erreur :",
-    "expiryDate": "Date d'expiration"
+    "expiryDate": "Date d'expiration",
+    "continue": "Continuer"
   },
   "common.error.loadData": "Erreur lors du chargement des données",
   "common.error.loadStats": "Erreur lors du chargement des statistiques",
@@ -4064,7 +4065,12 @@
     "pageTitle": "Fiches techniques",
     "newSpec": "Nouvelle fiche technique",
     "empty": "Aucune fiche technique pour le moment.",
-    "detail": "Détail"
+    "detail": "Détail",
+    "newVersionBump": "Nouvelle version",
+    "confirmBumpTitle": "Créer une nouvelle version ?",
+    "bumpWarning": "Si vous augmentez le numéro majeur, toutes les signatures précédentes seront invalidées et les mandataires devront signer à nouveau. Les versions mineures et correctives préservent les signatures.",
+    "attachmentsShort": "Pièces jointes",
+    "bumpFrom": "Vous allez créer une nouvelle version à partir de"
   },
   "acps": {
     "pageTitle": "Associations de Copropriétaires (ACP)",
@@ -4088,5 +4094,12 @@
     "phone": "Téléphone",
     "openingHours": "Horaires",
     "emergencies": "Urgences"
+  },
+  "users": {
+    "assignedRoles": "Rôles attribués",
+    "addRole": "Ajouter un rôle",
+    "rolesHint": "Définissez un ou plusieurs rôles. Un seul doit être marqué comme principal.",
+    "noOrgForSuperadmin": "Un superadministrateur n'est rattaché à aucune organisation.",
+    "primaryRole": "Rôle principal"
   }
 }

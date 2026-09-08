@@ -468,18 +468,18 @@
 
     <div class="border-t border-gray-200 pt-4">
       <div class="flex items-center justify-between">
-        <h3 class="text-lg font-semibold text-gray-900">Roles attribues</h3>
+        <h3 class="text-lg font-semibold text-gray-900">{$_('users.assignedRoles')}</h3>
         <Button
           variant="secondary"
           type="button"
           onclick={addRoleEntry}
           data-testid="user-add-role-button"
         >
-          + Ajouter un role
+          {$_('users.addRole')}
         </Button>
       </div>
       <p class="text-sm text-gray-500 mt-1">
-        Definissez un ou plusieurs roles. Un unique role doit etre marque comme principal.
+        {$_('users.rolesHint')}
       </p>
       {#if errors.roles}
         <p class="text-sm text-red-600 mt-2">{errors.roles}</p>
@@ -493,7 +493,7 @@
           >
             <div class="md:col-span-4">
               <label for={`user-role-select-${index}`} class="block text-sm font-medium text-gray-700 mb-1">
-                Role <span class="text-red-500">*</span>
+                {$_('common.role')} <span class="text-red-500">*</span>
               </label>
               <select
                 id={`user-role-select-${index}`}
@@ -512,11 +512,11 @@
             <div class="md:col-span-5">
               {#if roleEntry.role === UserRole.SUPERADMIN}
                 <p class="text-sm text-gray-600 mt-8">
-                  Aucun rattachement d'organisation pour un SuperAdmin.
+                  {$_('users.noOrgForSuperadmin')}
                 </p>
               {:else}
                 <label for={`role-org-${index}`} class="block text-sm font-medium text-gray-700 mb-1">
-                  Organisation <span class="text-red-500">*</span>
+                  {$_('common.organization')} <span class="text-red-500">*</span>
                 </label>
                 <FormSelect
                   id={`role-org-${index}`}
@@ -538,7 +538,7 @@
                   onchange={() => setPrimaryRole(index)}
                   data-testid="user-primary-role-radio"
                 />
-                <span>Role principal</span>
+                <span>{$_('users.primaryRole')}</span>
               </label>
             </div>
 
@@ -570,7 +570,7 @@
         disabled={loading}
         data-testid="user-cancel-button"
       >
-        Annuler
+        {$_('common.cancel')}
       </Button>
       <Button
         variant="primary"

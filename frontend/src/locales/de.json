@@ -977,7 +977,8 @@
     "loading2": "Wird geladen…",
     "createdOnShort": "Erstellt am",
     "errorLabel": "Fehler:",
-    "expiryDate": "Ablaufdatum"
+    "expiryDate": "Ablaufdatum",
+    "continue": "Fortfahren"
   },
   "common.error.loadData": "Fehler beim Laden der Daten",
   "common.error.loadStats": "Fehler beim Laden der Statistiken",
@@ -4064,7 +4065,12 @@
     "pageTitle": "Technische Datenblätter",
     "newSpec": "Neues technisches Datenblatt",
     "empty": "Noch kein technisches Datenblatt.",
-    "detail": "Details"
+    "detail": "Details",
+    "newVersionBump": "Neue Version",
+    "confirmBumpTitle": "Neue Version erstellen?",
+    "bumpWarning": "Wenn Sie die Hauptnummer erhöhen, verfallen alle bisherigen Unterschriften und die Unterzeichner müssen erneut unterschreiben. Neben- und Korrekturversionen erhalten die Unterschriften.",
+    "attachmentsShort": "Anhänge",
+    "bumpFrom": "Sie erstellen eine neue Version ausgehend von"
   },
   "acps": {
     "pageTitle": "Wohnungseigentümergemeinschaften (WEG)",
@@ -4088,5 +4094,12 @@
     "phone": "Telefon",
     "openingHours": "Öffnungszeiten",
     "emergencies": "Notfälle"
+  },
+  "users": {
+    "assignedRoles": "Zugewiesene Rollen",
+    "addRole": "Rolle hinzufügen",
+    "rolesHint": "Definieren Sie eine oder mehrere Rollen. Genau eine muss als Hauptrolle markiert sein.",
+    "noOrgForSuperadmin": "Ein Superadministrator ist keiner Organisation zugeordnet.",
+    "primaryRole": "Hauptrolle"
   }
 }
