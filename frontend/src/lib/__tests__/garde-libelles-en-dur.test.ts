@@ -70,7 +70,18 @@ import { join, extname } from "node:path";
  * Un `confirm()` natif y portait aussi son message en dur, hors de portée du
  * détecteur qui ne regarde que le gabarit.
  */
-const DETTE_AU_2026_09_07 = 0;
+/// Libellés de gabarit écrits en dur, `.svelte` ET `.astro`.
+///
+/// Zéro dans les `.svelte`, **615** dans les `.astro` que le détecteur ne
+/// lisait pas. **Ne doit que BAISSER.**
+///
+/// Mon estimation à la main disait 267. Le détecteur en trouve 615, parce
+/// qu'il accepte un libellé réparti sur plusieurs lignes et que mon
+/// expression régulière exigeait une seule ligne. C'est le premier
+/// sur-comptage de la journée dans CE sens : les sept précédents
+/// exagéraient la dette, celui-ci la minimisait. On garde le chiffre du
+/// détecteur, pas le mien.
+const DETTE_AU_2026_09_07 = 615;
 
 const RACINE = join(process.cwd(), "src");
 
@@ -97,7 +108,16 @@ function fichiersDeGabarit(repertoire: string): string[] {
     if (statSync(chemin).isDirectory()) {
       trouves.push(...fichiersDeGabarit(chemin));
     } else if (
-      extname(entree) === ".svelte" &&
+      // `.astro` AUTANT que `.svelte`.
+      //
+      // Le détecteur ne lisait que les `.svelte`. J'ai fermé cette issue en
+      // annonçant « zéro », et le zéro portait sur la moitié du produit : les
+      // pages Astro rendent des titres, des boutons et des paragraphes
+      // visibles, et elles en portaient 267 en dur. Cf. #834.
+      //
+      // La garde avait été écrite en regardant le défaut trouvé — des
+      // libellés dans des `.svelte` — plutôt que la classe de défauts.
+      (extname(entree) === ".svelte" || extname(entree) === ".astro") &&
       !entree.includes(".test.") &&
       // Les harnais de test montés par un `.test.ts` voisin ne sont pas du
       // produit : `ModalFocusTrapHarness.svelte` existe pour éprouver le piège
