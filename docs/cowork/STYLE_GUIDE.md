@@ -45,7 +45,76 @@ Citer l'article de loi, l'ADR ou l'issue qui fonde une décision. Une règle don
 on ignore le fondement finit par céder devant une maquette qui semble plus
 jolie.
 
-## 3. Les commentaires
+## 3. Les ancres `data-testid`
+
+La convention n'est pas inventée : elle est **relevée** sur les 964 ancres du
+contrat figé (`data-testid.contrat.json`).
+
+### La forme
+
+```
+<domaine>-<objet>-<rôle>
+```
+
+Trois segments dans 516 cas sur 964, deux dans 210, quatre dans 190. Casse
+kebab stricte — minuscules, chiffres, tirets — dans 961 cas sur 964.
+
+```
+building-acp-select        notices-create-btn        login-email
+gdpr-erase-confirm-modal   owner-units               ticket-status-filter
+```
+
+Les trois exceptions (`mandate-error-scopeId`, `mandate-error-validUntil`,
+`tech-spec-create-error-requiredSignatures`) reprennent un nom de champ d'API
+en casse chameau. C'est un choix défendable — l'ancre désigne l'erreur d'un
+champ précis — mais il ne doit pas se répandre : la garde les liste nommément.
+
+### Le rôle, en dernier segment
+
+Les plus fréquents, relevés :
+
+```
+99 -button    81 -input    65 -list      63 -btn     39 -select
+32 -row       26 -loading  26 -error     24 -form    16 -submit
+16 -empty     13 -cancel   13 -filter    13 -detail
+```
+
+**`-button` et `-btn` sont deux orthographes du même rôle.** C'est une dette,
+pas un choix : elle oblige quiconque cherche un bouton à essayer les deux.
+`-button` l'emporte au nombre, et c'est lui qu'on écrit désormais. Un cliquet
+borne `-btn` à 63 et l'empêche de croître.
+
+### Ce qu'une ancre doit désigner
+
+**Un écran, pas un composant.** Une ancre posée sur le composant qui porte le
+bon NOM mais que l'écran testé ne monte pas fait paraître l'écran couvert : le
+décompte est bon, le test échoue, et on cherche la panne du côté du rendu.
+C'est ce qui a fait échouer le portique de caractérisation quarante fois de
+suite (#832) — `owner-units` vivait sur la liste repliée côté syndic, pas sur
+la page du copropriétaire.
+
+**Le conteneur, pas la branche peuplée.** Une ancre placée dans un `{:else}`
+ne mesure pas l'écran, elle mesure les données : `buildings-list` était à
+l'intérieur de « il y a des immeubles », donc un syndic sans immeuble ne la
+rendait jamais.
+
+**Un nom par écran.** Une même ancre sur deux composants rend
+`getByTestId` ambigu. Quinze doublons subsistent, bornés par
+`garde-ancres-ambigues`, et certains sont légitimes — `loading-spinner`
+désigne la même chose partout.
+
+### Pourquoi ancrer plutôt que nommer
+
+Une assertion peut exiger une **ancre**, une **valeur interpolée** ou une
+**structure**. Jamais une **formulation**. Sur un produit traduit en quatre
+langues, chercher un bouton par son libellé est un pari sur la langue résolue :
+`getByRole("button", { name: "Générer le rapport" })` ne trouve rien dès que
+l'écran rend « Generate report », le clic ne part pas, et c'est le
+`waitForResponse` d'à côté qui expire — un symptôme qui ne dit rien de sa
+cause.
+
+
+## 4. Les commentaires
 
 Ils disent **pourquoi**, jamais ce que le code fait déjà lire. Le format qui a
 tenu :
@@ -61,7 +130,7 @@ possible, le transformer en `assert!` — c'est ce qui a été fait pour
 l'identifiant de test de #777, dont le commentaire demandait « un identifiant
 qui ne contienne ni 400 ni 1000 » sans que rien ne le contrôle.
 
-## 4. Les tests
+## 5. Les tests
 
 **Un test qui ne peut pas échouer ne prouve rien.** Trois règles en découlent.
 
@@ -81,7 +150,7 @@ baisse, un cliquet n'est qu'une constatation. Et le chiffre vient d'une
 exécution, pas d'un `grep` — la constante de #762 valait 114 par estimation et
 118 en réalité.
 
-## 5. Les issues
+## 6. Les issues
 
 Décrire, mesurer, distinguer :
 
@@ -93,7 +162,7 @@ Décrire, mesurer, distinguer :
 Corriger publiquement une affirmation fausse dès qu'elle est identifiée. Une
 chronologie erronée a coûté une enquête entière sur #828.
 
-## 6. Ce qu'il ne faut pas faire
+## 7. Ce qu'il ne faut pas faire
 
 - Fermer une issue sur une lecture du code plutôt que sur une exécution.
 - Supprimer une assertion qui gêne. Si la règle change, elle change dans le
