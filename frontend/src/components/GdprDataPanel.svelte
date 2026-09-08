@@ -14,6 +14,13 @@
   let exportData: GdprExport | null = $state(null);
   let showExportModal = $state(false);
   let showEraseConfirmation = $state(false);
+  /// Mot de passe de confirmation de l'effacement (Art. 17 RGPD).
+  ///
+  /// Le serveur l'EXIGE — `GdprEraseRequestDto.password` est un `String`, pas
+  /// un `Option` — et l'interface n'en envoyait aucun. Le droit à
+  /// l'effacement était donc inatteignable pour tout le monde : la modale
+  /// existait, le bouton existait, et l'appel repartait en erreur. Cf. #832.
+  let motDePasseEffacement = $state("");
   let erasureResult: GdprEraseResponse | null = $state(null);
 
   let showRectifyModal = $state(false);
@@ -75,12 +82,17 @@
 
   async function handleEraseData() {
     const result = await withErrorHandling({
-      action: () => api.delete<GdprEraseResponse>("/gdpr/erase"),
+      action: () =>
+        api.delete<GdprEraseResponse>("/gdpr/erase", {
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ password: motDePasseEffacement }),
+        }),
       setLoading: (v) => (loading = v),
       successMessage: $_("gdpr.eraseSuccess"),
       errorMessage: $_("gdpr.eraseFailed"),
     });
     showEraseConfirmation = false;
+    motDePasseEffacement = "";
     if (result) {
       erasureResult = result;
       setTimeout(() => {
@@ -458,7 +470,7 @@
               />
             </svg>
           </div>
-          <div class="ml-3">
+          <div class="ml-3" data-testid="gdpr-erase-success">
             <h3 class="text-sm font-medium text-green-800">
               {$_("gdpr.anonymizedSuccess")}
             </h3>
@@ -468,8 +480,9 @@
                   values: { count: erasureResult.owners_anonymized },
                 })}
               </p>
-              <p class="mt-1">
-                Anonymized at: {formatDateTime(erasureResult.anonymized_at)}
+              <p class="mt-1" data-testid="gdpr-erase-anonymized-at">
+                {$_("gdpr.anonymizedAt")}
+                {formatDateTime(erasureResult.anonymized_at)}
               </p>
               <p class="mt-1 font-semibold">{$_("gdpr.loggedOutIn")}</p>
             </div>
@@ -651,6 +664,30 @@
                 <p class="mt-3 text-sm font-semibold text-red-600">
                   {$_("gdpr.cannotBeUndone")}
                 </p>
+
+                <!-- Le serveur vérifie ce mot de passe : deux `confirm()`
+                     côté navigateur ne prouvent rien, et un appel direct à
+                     l'API les ignore. C'est la seule preuve d'identité de
+                     l'action la plus irréversible du produit. -->
+                <!-- Ancre et identifiant distincts de ceux de
+                     `ProfilePanel.svelte`, qui porte le MÊME effacement avec
+                     le MÊME champ. Deux écrans, deux ancres : c'est ce que la
+                     garde `garde-ancres-ambigues` exige, et elle a mordu sur
+                     mon propre ajout. Le libellé, lui, est partagé. -->
+                <label
+                  class="mt-4 block text-sm font-medium text-gray-700"
+                  for="gdpr-panel-erase-password"
+                >
+                  {$_("gdpr.erase.passwordLabel")}
+                </label>
+                <input
+                  id="gdpr-panel-erase-password"
+                  type="password"
+                  autocomplete="current-password"
+                  bind:value={motDePasseEffacement}
+                  data-testid="gdpr-panel-erase-password"
+                  class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-red-500 focus:ring-red-500 sm:text-sm"
+                />
               </div>
             </div>
           </div>
@@ -659,7 +696,7 @@
           <button
             type="button"
             onclick={handleEraseData}
-            disabled={loading}
+            disabled={loading || motDePasseEffacement.length === 0}
             data-testid="gdpr-erase-confirm-button"
             class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-50"
           >
@@ -671,7 +708,10 @@
           </button>
           <button
             type="button"
-            onclick={() => (showEraseConfirmation = false)}
+            onclick={() => {
+              showEraseConfirmation = false;
+              motDePasseEffacement = "";
+            }}
             disabled={loading}
             data-testid="gdpr-erase-cancel-button"
             class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:w-auto sm:text-sm disabled:opacity-50"

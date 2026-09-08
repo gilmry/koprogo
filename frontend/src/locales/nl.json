@@ -2079,7 +2079,8 @@
     "eraseShortDesc": "Vraag de definitieve anonimisering van al uw gegevens. Deze actie is onomkeerbaar.",
     "restrictConfirm": "De verwerking van uw gegevens beperken? Sommige functies kunnen beperkt worden.",
     "unsubscribe": "Uitschrijven",
-    "subscribe": "Inschrijven"
+    "subscribe": "Inschrijven",
+    "anonymizedAt": "Geanonimiseerd op:"
   },
   "inspections": {
     "all": "Alle",

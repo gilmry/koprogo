@@ -274,7 +274,7 @@
       <p class="text-sm mt-2">{$_("documents.empty_help")}</p>
     </div>
   {:else}
-    <div class="space-y-3" data-testid="documents-list">
+    <div class="space-y-3" data-testid="expense-documents-list">
       {#each documents as doc (doc.id)}
         <div
           class="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition"

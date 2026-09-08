@@ -181,12 +181,21 @@ test.describe("GDPR - Complete User Journey (Idempotent)", () => {
       timeout: 10000,
     });
 
+    // Le serveur EXIGE le mot de passe (`GdprEraseRequestDto.password`).
+    // L'interface ne l'envoyait pas : l'effacement repartait en erreur, et
+    // ces deux tests échouaient là où le produit était réellement cassé.
+    // Cf. #832.
+    await page.getByTestId("gdpr-panel-erase-password").fill(user.password);
     await page.getByTestId("gdpr-erase-confirm-button").click();
 
     // Wait for success and auto-logout
-    await expect(
-      page.locator("text=/success|anonymi[sz]ed/i").first(),
-    ).toBeVisible({
+    //
+    // Ancré, et non formulé. Cette assertion cherchait
+    // `text=/success|anonymi[sz]ed/i`, qui ne correspond qu'à l'anglais :
+    // l'écran rend « Données anonymisées » en français, et « anonymisées »
+    // ne contient pas « anonymis + ed ». Le test exigeait donc une
+    // FORMULATION, dans une langue, sur un écran traduit en quatre. Cf. #832.
+    await expect(page.getByTestId("gdpr-erase-success")).toBeVisible({
       timeout: 10000,
     });
     await page.waitForURL(/\/login/, { timeout: 10000 });
@@ -349,6 +358,10 @@ test.describe("GDPR - Mixed Scenario: User Creates Data, Admin Exports", () => {
     await page.getByTestId("gdpr-export-modal-close").click();
     await expect(page.getByTestId("gdpr-export-modal")).not.toBeVisible();
     await page.getByTestId("gdpr-erase-button").click();
+    await expect(page.getByTestId("gdpr-erase-confirm-modal")).toBeVisible({
+      timeout: 10000,
+    });
+    await page.getByTestId("gdpr-panel-erase-password").fill(user.password);
     await page.getByTestId("gdpr-erase-confirm-button").click();
     await page.waitForURL(/\/login/, { timeout: 10000 });
   });

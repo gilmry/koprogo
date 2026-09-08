@@ -2079,7 +2079,8 @@
     "eraseShortDesc": "Request the permanent anonymisation of all your data. This action is irreversible.",
     "restrictConfirm": "Restrict the processing of your data? Some features may be limited.",
     "unsubscribe": "Unsubscribe",
-    "subscribe": "Subscribe"
+    "subscribe": "Subscribe",
+    "anonymizedAt": "Anonymized at:"
   },
   "inspections": {
     "all": "All",

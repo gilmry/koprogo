@@ -2079,7 +2079,8 @@
     "eraseShortDesc": "Fordern Sie die endgültige Anonymisierung all Ihrer Daten an. Diese Aktion ist unumkehrbar.",
     "restrictConfirm": "Die Verarbeitung Ihrer Daten einschränken? Einige Funktionen könnten eingeschränkt sein.",
     "unsubscribe": "Abbestellen",
-    "subscribe": "Abonnieren"
+    "subscribe": "Abonnieren",
+    "anonymizedAt": "Anonymisiert am:"
   },
   "inspections": {
     "all": "Alle",

@@ -50,7 +50,7 @@ test.describe("Syndic — documents liés à une dépense, upload puis télécha
     ).toBe(201);
 
     const row = page
-      .getByTestId("documents-list")
+      .getByTestId("expense-documents-list")
       .locator('[data-testid="document-row"]', {
         hasText: title,
       })

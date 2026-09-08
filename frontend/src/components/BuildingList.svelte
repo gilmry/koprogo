@@ -173,7 +173,16 @@
   {/if}
 
   <!-- Buildings Grid -->
-  <div class="bg-white rounded-lg shadow overflow-hidden">
+  <!-- `buildings-list` est sur le CONTENEUR, pas sur la branche peuplée.
+       Elle vivait à l'intérieur du `{:else}`, donc un syndic sans aucun
+       immeuble ne la rendait jamais : le test « la page de liste s'affiche »
+       échouait sur une page parfaitement affichée. Une ancre placée dans une
+       branche conditionnelle ne mesure pas l'écran, elle mesure les
+       données. -->
+  <div
+    class="bg-white rounded-lg shadow overflow-hidden"
+    data-testid="buildings-list"
+  >
     {#if loading}
       <div class="p-12 text-center">
         <div
@@ -182,11 +191,11 @@
         <p class="mt-2 text-gray-600">{$_("common.loading")}</p>
       </div>
     {:else if filteredBuildings.length === 0}
-      <div class="p-12 text-center text-gray-500">
+      <div class="p-12 text-center text-gray-500" data-testid="buildings-empty">
         {searchTerm ? $_("buildings.noResults") : $_("buildings.noBuildings")}
       </div>
     {:else}
-      <div class="divide-y divide-gray-200" data-testid="buildings-list">
+      <div class="divide-y divide-gray-200" data-testid="buildings-rows">
         {#each filteredBuildings as building (building.id)}
           <div
             class="p-6 hover:bg-gray-50 transition"

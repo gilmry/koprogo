@@ -163,3 +163,81 @@ describe("le panneau RGPD réagit vraiment aux clics (#832)", () => {
     );
   });
 });
+
+/**
+ * L'effacement RGPD envoie vraiment le mot de passe que le serveur exige.
+ *
+ * ── Le défaut ──────────────────────────────────────────────────────────────
+ *
+ * `GdprEraseRequestDto.password` est un `String`, pas un `Option` : le serveur
+ * REFUSE tout effacement sans mot de passe, et le vérifie au bcrypt. Son
+ * propre commentaire l'explique — « deux `confirm()` côté navigateur ne
+ * prouvent rien, et un appel direct à l'API les ignorait tout à fait ».
+ *
+ * L'interface appelait `api.delete("/gdpr/erase")` **sans aucun corps**, et la
+ * modale de confirmation ne demandait pas de mot de passe. Le droit à
+ * l'effacement de l'Article 17 était donc inatteignable pour tout le monde :
+ * la modale s'ouvrait, le bouton cliquait, et l'appel repartait en erreur.
+ *
+ * ── Pourquoi rien ne l'a vu ────────────────────────────────────────────────
+ *
+ * Deux specs Playwright couvraient ce parcours et échouaient toutes les deux
+ * (#832). Leur échec a été classé « l'élément n'est pas rendu » : on cherchait
+ * la panne du côté de l'affichage, alors qu'elle était dans le contrat entre
+ * les deux moitiés du produit. Le champ obligatoire a été ajouté au serveur
+ * sans être ajouté à l'écran — la même forme que RN-17, où le bouton avait été
+ * ouvert au syndic sans que le champ le soit.
+ */
+describe("l'effacement RGPD (Art. 17) envoie le mot de passe exigé (#832)", () => {
+  async function ouvrirLaModaleDeffacement() {
+    render(GdprDataPanel);
+    // `onMount` appelle `checkCanErase`, qui bascule `checkingErasure` puis
+    // le rebascule. La section d'effacement est donc rendue DEUX fois, et le
+    // second rendu remplace le nœud du bouton. Une référence capturée trop
+    // tôt pointe sur un nœud détaché : le clic part dans le vide, sans
+    // erreur. On attend que le va-et-vient soit fini, puis on requête.
+    await waitFor(() =>
+      expect(api.get).toHaveBeenCalledWith("/gdpr/can-erase"),
+    );
+    await waitFor(() =>
+      expect(screen.getByTestId("gdpr-erase-button")).toBeEnabled(),
+    );
+    await fireEvent.click(screen.getByTestId("gdpr-erase-button"));
+    return waitFor(() =>
+      expect(
+        screen.getByTestId("gdpr-erase-confirm-modal"),
+      ).toBeInTheDocument(),
+    );
+  }
+
+  it("laisse le bouton de confirmation inerte tant que le mot de passe est vide", async () => {
+    await ouvrirLaModaleDeffacement();
+    const confirmer = screen.getByTestId("gdpr-erase-confirm-button");
+    expect(confirmer).toBeDisabled();
+    expect(api.delete).not.toHaveBeenCalled();
+  });
+
+  /**
+   * LE test. Avec `api.delete("/gdpr/erase")` sans corps, il échoue : l'appel
+   * part bien, mais sans le mot de passe que le serveur exige.
+   */
+  it("transmet le mot de passe saisi dans le corps de la requête", async () => {
+    api.delete.mockResolvedValue({
+      owners_anonymized: 2,
+      anonymized_at: "2026-09-08T06:00:00Z",
+    });
+
+    await ouvrirLaModaleDeffacement();
+    const champ = screen.getByTestId("gdpr-panel-erase-password");
+    await fireEvent.input(champ, { target: { value: "MotDePasse!42" } });
+
+    await fireEvent.click(screen.getByTestId("gdpr-erase-confirm-button"));
+
+    await waitFor(() => expect(api.delete).toHaveBeenCalledTimes(1));
+    const [chemin, options] = api.delete.mock.calls[0];
+    expect(chemin).toBe("/gdpr/erase");
+    // On assert la VALEUR transmise, pas la forme du corps : c'est le contrat
+    // avec le serveur, et il ne doit pas dépendre de la sérialisation choisie.
+    expect(JSON.parse(options.body)).toEqual({ password: "MotDePasse!42" });
+  });
+});
