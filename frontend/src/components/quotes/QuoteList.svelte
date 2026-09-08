@@ -159,6 +159,7 @@
         <div class="flex gap-2">
           {#if compareMode}
             <button
+              data-testid="quotes-compare-button"
               onclick={goToCompare}
               class="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors disabled:opacity-50"
               disabled={selectedForCompare.size < 2}
@@ -166,6 +167,7 @@
               {$_("quotes.list.compare")} ({selectedForCompare.size})
             </button>
             <button
+              data-testid="quotes-compare-cancel-button"
               onclick={() => {
                 compareMode = false;
                 selectedForCompare = new Set();
@@ -275,6 +277,7 @@
             >{$_("quotes.list.contractorId")} *</label
           >
           <input
+            data-testid="quotes-contractor-input"
             id="contractorId"
             type="text"
             bind:value={newContractorId}
@@ -287,6 +290,7 @@
             >{$_("quotes.list.workCategory")} *</label
           >
           <select
+            data-testid="quotes-work-category-select"
             id="workCategory"
             bind:value={newWorkCategory}
             class="w-full text-sm rounded-md border-gray-300 focus:border-amber-500 focus:ring-amber-500"
@@ -307,6 +311,7 @@
             >{$_("quotes.list.projectTitle")} *</label
           >
           <input
+            data-testid="quotes-project-title-input"
             id="projectTitle"
             type="text"
             bind:value={newProjectTitle}
@@ -319,6 +324,7 @@
             >{$_("quotes.list.projectDescription")}</label
           >
           <textarea
+            data-testid="quotes-project-description-textarea"
             id="projectDesc"
             rows="2"
             bind:value={newProjectDescription}
@@ -329,6 +335,7 @@
       </div>
       <div class="mt-3 flex gap-2">
         <button
+          data-testid="quotes-create-submit-button"
           onclick={handleCreate}
           disabled={createLoading}
           class="px-4 py-2 bg-amber-600 text-white rounded-lg text-sm font-medium hover:bg-amber-700 disabled:opacity-50 transition-colors"
@@ -338,6 +345,7 @@
             : $_("quotes.list.createRequest")}
         </button>
         <button
+          data-testid="quotes-create-cancel-button"
           onclick={() => (showCreateForm = false)}
           class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors"
         >
@@ -361,6 +369,7 @@
     <div class="p-4 m-4 bg-red-50 border border-red-200 rounded-md">
       <p class="text-sm text-red-800">{error}</p>
       <button
+        data-testid="quotes-retry-button"
         onclick={loadQuotes}
         class="mt-2 text-sm text-red-600 hover:text-red-800 underline"
       >
@@ -382,6 +391,7 @@
         <li class="hover:bg-gray-50" data-testid="quote-row">
           <div class="px-4 py-4 sm:px-6">
             <button
+              data-testid="quotes-group-toggle-button"
               type="button"
               class="w-full flex items-center justify-between cursor-pointer text-left bg-transparent border-0 p-0"
               aria-expanded={expandedId === quote.id}
@@ -390,6 +400,7 @@
               <div class="flex items-center space-x-3 flex-1 min-w-0">
                 {#if compareMode}
                   <input
+                    data-testid="quotes-compare-checkbox"
                     type="checkbox"
                     checked={selectedForCompare.has(quote.id)}
                     onclick={(e) => {

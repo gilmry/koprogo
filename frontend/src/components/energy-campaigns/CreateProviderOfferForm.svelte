@@ -129,7 +129,11 @@
     </div>
   {/if}
 
-  <form onsubmit={handleSubmit} class="space-y-6">
+  <form
+    data-testid="provider-offer-form"
+    onsubmit={handleSubmit}
+    class="space-y-6"
+  >
     <!-- Provider Name -->
     <div>
       <label
@@ -159,6 +163,7 @@
           {$_("energy.offer.priceElectricity")}
         </label>
         <input
+          data-testid="provider-offer-electricity-price-input"
           type="number"
           id="price_kwh_electricity"
           bind:value={formData.price_kwh_electricity}
@@ -179,6 +184,7 @@
           {$_("energy.offer.priceGas")}
         </label>
         <input
+          data-testid="provider-offer-gas-price-input"
           type="number"
           id="price_kwh_gas"
           bind:value={formData.price_kwh_gas}
@@ -199,6 +205,7 @@
         {$_("energy.offer.fixedFee")} <span class="text-red-500">*</span>
       </label>
       <input
+        data-testid="provider-offer-fixed-fee-input"
         type="number"
         id="fixed_fee"
         bind:value={formData.fixed_monthly_fee}
@@ -220,6 +227,7 @@
         <span class="text-red-500">*</span>
       </label>
       <input
+        data-testid="provider-offer-duration-input"
         type="number"
         id="contract_duration"
         bind:value={formData.contract_duration_months}
@@ -244,6 +252,7 @@
       </label>
       <div class="flex items-center space-x-4">
         <input
+          data-testid="provider-offer-green-percentage-input"
           type="range"
           id="green_percentage"
           bind:value={formData.green_energy_pct}
@@ -290,6 +299,7 @@
         {$_("energy.offer.validityDate")} <span class="text-red-500">*</span>
       </label>
       <input
+        data-testid="provider-offer-valid-until-input"
         type="date"
         id="valid_until"
         bind:value={formData.offer_valid_until}
@@ -301,6 +311,7 @@
     <!-- Submit Button -->
     <div class="flex justify-end space-x-3">
       <button
+        data-testid="provider-offer-cancel-button"
         type="button"
         onclick={() => oncancel?.()}
         class="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"

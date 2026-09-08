@@ -127,6 +127,7 @@
 
       <div class="ml-auto">
         <button
+          data-testid="etats-dates-create-toggle-button"
           on:click={() => (showCreateForm = !showCreateForm)}
           class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition font-medium"
         >
@@ -156,6 +157,7 @@
     <div class="bg-red-50 border border-red-200 rounded-lg p-4">
       <p class="text-red-700">{error}</p>
       <button
+        data-testid="etats-dates-retry-button"
         on:click={loadEtatsDates}
         class="mt-2 text-sm text-red-600 underline">{$_("common.retry")}</button
       >
@@ -277,6 +279,7 @@
               </td>
               <td class="px-6 py-4 whitespace-nowrap">
                 <a
+                  data-testid="etats-dates-detail-link"
                   href="/etat-date-detail?id={ed.id}"
                   class="text-sm text-primary-600 hover:text-primary-700 font-medium"
                 >
@@ -294,6 +297,7 @@
       <div class="flex justify-center gap-2 mt-4">
         {#each Array(totalPages) as _, i}
           <button
+            data-testid="etats-dates-page-button"
             on:click={() => changePage(i + 1)}
             class="px-3 py-1 rounded-lg text-sm {currentPage === i + 1
               ? 'bg-primary-600 text-white'

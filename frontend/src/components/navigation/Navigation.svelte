@@ -607,18 +607,21 @@
 
         <div class="space-y-0.5">
           <a
+            data-testid="nav-profile-link"
             href="/profile"
             class="flex items-center gap-2 px-2 py-1 text-xs text-gray-600 hover:bg-gray-50 rounded-lg transition-colors"
           >
             👤 {$_("navigation.profile")}
           </a>
           <a
+            data-testid="nav-settings-link"
             href="/settings"
             class="flex items-center gap-2 px-2 py-1 text-xs text-gray-600 hover:bg-gray-50 rounded-lg transition-colors"
           >
             ⚙️ {$_("navigation.settings")}
           </a>
           <a
+            data-testid="nav-gdpr-link"
             href="/settings/gdpr"
             class="flex items-center gap-2 px-2 py-1 text-xs text-gray-600 hover:bg-gray-50 rounded-lg transition-colors"
           >
@@ -668,12 +671,15 @@
         />
       </svg>
     </button>
-    <a href={`/${user?.role ?? ""}`} class="text-lg font-bold text-primary-600"
-      >KoproGo</a
+    <a
+      data-testid="nav-mobile-home-link"
+      href={`/${user?.role ?? ""}`}
+      class="text-lg font-bold text-primary-600">KoproGo</a
     >
     <div class="flex items-center gap-1">
       <NotificationBell />
       <a
+        data-testid="nav-mobile-avatar-link"
         href="/profile"
         class="w-8 h-8 rounded-full bg-primary-600 text-white flex items-center justify-center font-semibold text-xs"
         aria-label="Profil"
@@ -682,7 +688,11 @@
       </a>
     </div>
   {:else}
-    <a href="/" class="text-lg font-bold text-primary-600">KoproGo</a>
+    <a
+      data-testid="nav-mobile-public-home-link"
+      href="/"
+      class="text-lg font-bold text-primary-600">KoproGo</a
+    >
     <a
       href="/login"
       class="px-4 py-1.5 bg-primary-600 text-white rounded-lg hover:bg-primary-700 text-sm font-medium"
@@ -700,7 +710,11 @@
   <aside
     class="hidden lg:flex lg:flex-col lg:fixed lg:inset-y-0 lg:left-0 lg:w-60 bg-white border-r border-gray-200 z-30 items-center justify-center gap-4"
   >
-    <a href="/" class="text-2xl font-bold text-primary-600">KoproGo</a>
+    <a
+      data-testid="nav-public-home-link"
+      href="/"
+      class="text-2xl font-bold text-primary-600">KoproGo</a
+    >
     <p class="text-sm text-gray-500 text-center px-6">
       {$_("navigation.tagline")}
     </p>
@@ -747,11 +761,13 @@
       class="flex items-center justify-between h-14 px-4 border-b border-gray-200 shrink-0"
     >
       <a
+        data-testid="nav-drawer-home-link"
         href={`/${user?.role ?? ""}`}
         class="text-xl font-bold text-primary-600"
         onclick={handleNavClick}>KoproGo</a
       >
       <button
+        data-testid="nav-drawer-close-button"
         bind:this={drawerCloseButton}
         onclick={closeDrawer}
         class="p-2 rounded-lg text-gray-500 hover:bg-gray-100"
@@ -890,6 +906,7 @@
 
       <div class="space-y-0.5">
         <a
+          data-testid="nav-drawer-profile-link"
           href="/profile"
           onclick={handleNavClick}
           class="flex items-center gap-2 px-2 py-1.5 text-xs text-gray-600 hover:bg-gray-50 rounded-lg transition-colors"
@@ -897,6 +914,7 @@
           👤 {$_("navigation.profile")}
         </a>
         <a
+          data-testid="nav-drawer-settings-link"
           href="/settings"
           onclick={handleNavClick}
           class="flex items-center gap-2 px-2 py-1.5 text-xs text-gray-600 hover:bg-gray-50 rounded-lg transition-colors"
@@ -904,6 +922,7 @@
           ⚙️ {$_("navigation.settings")}
         </a>
         <a
+          data-testid="nav-drawer-gdpr-link"
           href="/settings/gdpr"
           onclick={handleNavClick}
           class="flex items-center gap-2 px-2 py-1.5 text-xs text-gray-600 hover:bg-gray-50 rounded-lg transition-colors"

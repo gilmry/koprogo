@@ -137,6 +137,7 @@
         {$_("energy.upload.energyType")} <span class="text-red-500">*</span>
       </label>
       <select
+        data-testid="energy-bill-type-select"
         id="energy_type"
         bind:value={formData.energy_type}
         required
@@ -158,6 +159,7 @@
         <span class="text-red-500">*</span>
       </label>
       <input
+        data-testid="energy-bill-kwh-input"
         type="number"
         id="total_kwh"
         bind:value={formData.total_kwh}
@@ -182,6 +184,7 @@
           {$_("energy.upload.periodStart")} <span class="text-red-500">*</span>
         </label>
         <input
+          data-testid="energy-bill-period-start-input"
           type="date"
           id="period_start"
           bind:value={formData.billing_period_start}
@@ -194,6 +197,7 @@
           {$_("energy.upload.periodEnd")} <span class="text-red-500">*</span>
         </label>
         <input
+          data-testid="energy-bill-period-end-input"
           type="date"
           id="period_end"
           bind:value={formData.billing_period_end}
@@ -248,6 +252,7 @@
       </div>
       <label class="flex items-start">
         <input
+          data-testid="energy-bill-gdpr-consent-checkbox"
           type="checkbox"
           bind:checked={gdprConsent}
           required
@@ -271,6 +276,7 @@
     <!-- Submit Button -->
     <div class="flex justify-end space-x-3">
       <button
+        data-testid="energy-bill-cancel-button"
         type="button"
         onclick={() => oncancel?.()}
         class="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"

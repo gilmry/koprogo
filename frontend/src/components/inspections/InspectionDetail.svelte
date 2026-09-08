@@ -246,6 +246,7 @@
             </p>
             <div class="flex flex-wrap gap-2">
               <button
+                data-testid="inspection-mark-completed-button"
                 onclick={() =>
                   quickStatusUpdate(InspectionStatus.Completed, true)}
                 class="px-3 py-1.5 text-xs bg-green-600 text-white rounded hover:bg-green-700 transition"
@@ -253,6 +254,7 @@
                 ✅ {$_("inspections.compliant")}
               </button>
               <button
+                data-testid="inspection-mark-remarks-button"
                 onclick={() =>
                   quickStatusUpdate(InspectionStatus.PassedWithRemarks, true)}
                 class="px-3 py-1.5 text-xs bg-yellow-600 text-white rounded hover:bg-yellow-700 transition"
@@ -260,6 +262,7 @@
                 ⚠️ {$_("inspections.compliantWithRemarks")}
               </button>
               <button
+                data-testid="inspection-mark-failed-button"
                 onclick={() =>
                   quickStatusUpdate(InspectionStatus.Failed, false)}
                 class="px-3 py-1.5 text-xs bg-red-600 text-white rounded hover:bg-red-700 transition"
@@ -563,6 +566,7 @@
             {submitting ? $_("common.saving") : $_("common.save")}
           </button>
           <button
+            data-testid="inspection-edit-cancel-button"
             onclick={cancelEdit}
             class="px-4 py-1.5 bg-gray-200 text-gray-700 text-sm rounded hover:bg-gray-300 transition"
           >

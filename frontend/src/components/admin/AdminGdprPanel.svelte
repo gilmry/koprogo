@@ -447,6 +447,7 @@
           >
             <div class="flex-1 flex justify-between sm:hidden">
               <button
+                data-testid="gdpr-audit-mobile-previous-button"
                 on:click={() => loadAuditLogs(auditLogsPage - 1)}
                 disabled={auditLogsPage === 1 || loading}
                 class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
@@ -454,6 +455,7 @@
                 {$_("common.previous")}
               </button>
               <button
+                data-testid="gdpr-audit-mobile-next-button"
                 on:click={() => loadAuditLogs(auditLogsPage + 1)}
                 disabled={auditLogsPage === auditLogsTotalPages || loading}
                 class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
@@ -477,6 +479,7 @@
                   class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px"
                 >
                   <button
+                    data-testid="gdpr-audit-previous-button"
                     on:click={() => loadAuditLogs(auditLogsPage - 1)}
                     disabled={auditLogsPage === 1 || loading}
                     class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50"
@@ -484,6 +487,7 @@
                     ← {$_("common.previous")}
                   </button>
                   <button
+                    data-testid="gdpr-audit-next-button"
                     on:click={() => loadAuditLogs(auditLogsPage + 1)}
                     disabled={auditLogsPage === auditLogsTotalPages || loading}
                     class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50"
@@ -535,6 +539,7 @@
             </p>
           </div>
           <button
+            data-testid="gdpr-erasure-result-dismiss-button"
             on:click={() => (erasureResult = null)}
             class="mt-2 text-sm font-medium text-green-800 hover:text-green-900"
           >

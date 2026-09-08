@@ -307,6 +307,7 @@
         <div class="p-6">
           <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             <a
+              data-testid="syndic-buildings-tile"
               href="/buildings"
               class="flex flex-col items-center justify-center p-4 border-2 border-gray-200 rounded-lg hover:border-primary-500 hover:bg-primary-50 transition group"
             >
@@ -318,6 +319,7 @@
               >
             </a>
             <a
+              data-testid="syndic-owners-tile"
               href="/owners"
               class="flex flex-col items-center justify-center p-4 border-2 border-gray-200 rounded-lg hover:border-primary-500 hover:bg-primary-50 transition group"
             >
@@ -329,6 +331,7 @@
               >
             </a>
             <a
+              data-testid="syndic-expenses-tile"
               href="/expenses"
               class="flex flex-col items-center justify-center p-4 border-2 border-gray-200 rounded-lg hover:border-primary-500 hover:bg-primary-50 transition group"
             >
@@ -340,6 +343,7 @@
               >
             </a>
             <a
+              data-testid="syndic-meetings-tile"
               href="/meetings"
               class="flex flex-col items-center justify-center p-4 border-2 border-gray-200 rounded-lg hover:border-primary-500 hover:bg-primary-50 transition group"
             >
@@ -351,6 +355,7 @@
               >
             </a>
             <a
+              data-testid="syndic-tickets-tile"
               href="/tickets"
               class="relative flex flex-col items-center justify-center p-4 border-2 border-gray-200 rounded-lg hover:border-primary-500 hover:bg-primary-50 transition group"
             >
@@ -368,6 +373,7 @@
               {/if}
             </a>
             <a
+              data-testid="syndic-convocations-tile"
               href="/convocations"
               class="flex flex-col items-center justify-center p-4 border-2 border-gray-200 rounded-lg hover:border-primary-500 hover:bg-primary-50 transition group"
             >
@@ -379,6 +385,7 @@
               >
             </a>
             <a
+              data-testid="syndic-work-reports-tile"
               href="/work-reports"
               class="flex flex-col items-center justify-center p-4 border-2 border-gray-200 rounded-lg hover:border-primary-500 hover:bg-primary-50 transition group"
             >
@@ -390,6 +397,7 @@
               >
             </a>
             <a
+              data-testid="syndic-notifications-tile"
               href="/notifications"
               class="relative flex flex-col items-center justify-center p-4 border-2 border-gray-200 rounded-lg hover:border-primary-500 hover:bg-primary-50 transition group"
             >
@@ -421,6 +429,7 @@
             {$_("dashboards.syndic.recentOwners")}
           </h2>
           <a
+            data-testid="syndic-owners-all-link"
             href="/owners"
             class="text-sm text-primary-600 hover:text-primary-700 font-medium"
           >
@@ -449,6 +458,7 @@
                     {/if}
                   </div>
                   <button
+                    data-testid="syndic-owner-edit-button"
                     onclick={() => openEditModal(owner)}
                     class="ml-4 px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 transition"
                   >

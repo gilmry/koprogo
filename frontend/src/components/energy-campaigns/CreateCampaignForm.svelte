@@ -132,7 +132,11 @@
     </div>
   {/if}
 
-  <form onsubmit={handleSubmit} class="space-y-6">
+  <form
+    data-testid="energy-campaign-form"
+    onsubmit={handleSubmit}
+    class="space-y-6"
+  >
     <!-- Building Selector -->
     <BuildingSelector
       bind:selectedBuildingId
@@ -170,6 +174,7 @@
       <div class="space-y-2">
         <label class="flex items-center">
           <input
+            data-testid="energy-campaign-electricity-checkbox"
             type="checkbox"
             checked={formData.energy_types.includes(EnergyType.Electricity)}
             onchange={() => toggleEnergyType(EnergyType.Electricity)}
@@ -181,6 +186,7 @@
         </label>
         <label class="flex items-center">
           <input
+            data-testid="energy-campaign-gas-checkbox"
             type="checkbox"
             checked={formData.energy_types.includes(EnergyType.Gas)}
             onchange={() => toggleEnergyType(EnergyType.Gas)}
@@ -192,6 +198,7 @@
         </label>
         <label class="flex items-center">
           <input
+            data-testid="energy-campaign-heating-checkbox"
             type="checkbox"
             checked={formData.energy_types.includes(EnergyType.Heating)}
             onchange={() => toggleEnergyType(EnergyType.Heating)}
@@ -216,6 +223,7 @@
         {$_("energy.campaign.deadline")} <span class="text-red-500">*</span>
       </label>
       <input
+        data-testid="energy-campaign-deadline-input"
         type="date"
         id="deadline_participation"
         bind:value={formData.deadline_participation}
@@ -252,6 +260,7 @@
     <!-- Submit Button -->
     <div class="flex justify-end space-x-3">
       <button
+        data-testid="energy-campaign-cancel-button"
         type="button"
         onclick={() => onCancel && onCancel()}
         class="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"

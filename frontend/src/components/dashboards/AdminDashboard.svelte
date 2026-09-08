@@ -355,6 +355,7 @@
           </p>
         </div>
         <a
+          data-testid="admin-seed-header-link"
           href="/admin/seed"
           class="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition text-sm font-medium"
         >
@@ -420,6 +421,7 @@
             </li>
           </ul>
           <button
+            data-testid="admin-seed-demo-button"
             onclick={handleSeedDemoData}
             disabled={seedLoading || clearLoading}
             class="w-full bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 transition font-semibold disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
@@ -466,6 +468,7 @@
             </li>
           </ul>
           <button
+            data-testid="admin-clear-demo-button"
             onclick={handleClearDemoData}
             disabled={seedLoading || clearLoading}
             class="w-full bg-red-600 text-white py-3 rounded-lg hover:bg-red-700 transition font-semibold disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
@@ -483,6 +486,7 @@
           💡 <strong>{$_("dashboards.admin.seed.needDetails")}</strong>
           {$_("dashboards.admin.seed.consultPage")}
           <a
+            data-testid="admin-seed-advanced-link"
             href="/admin/seed"
             class="text-blue-600 hover:text-blue-800 underline font-medium"
             >{$_("dashboards.admin.seed.advancedPageLink")}</a
@@ -531,6 +535,7 @@
       <div class="p-6">
         <div class="grid grid-cols-2 gap-4">
           <a
+            data-testid="admin-organizations-tile"
             href="/admin/organizations"
             class="flex flex-col items-center justify-center p-6 border-2 border-gray-200 rounded-lg hover:border-primary-500 hover:bg-primary-50 transition group"
           >
@@ -554,6 +559,7 @@
             >
           </a>
           <a
+            data-testid="admin-users-tile"
             href="/admin/users"
             class="flex flex-col items-center justify-center p-6 border-2 border-gray-200 rounded-lg hover:border-primary-500 hover:bg-primary-50 transition group"
           >
@@ -565,6 +571,7 @@
             >
           </a>
           <a
+            data-testid="admin-buildings-tile"
             href="/buildings"
             class="flex flex-col items-center justify-center p-6 border-2 border-gray-200 rounded-lg hover:border-primary-500 hover:bg-primary-50 transition group"
           >
@@ -576,6 +583,7 @@
             >
           </a>
           <a
+            data-testid="admin-subscriptions-tile"
             href="/admin/subscriptions"
             class="flex flex-col items-center justify-center p-6 border-2 border-gray-200 rounded-lg hover:border-primary-500 hover:bg-primary-50 transition group"
           >
@@ -587,6 +595,7 @@
             >
           </a>
           <a
+            data-testid="admin-seed-tile"
             href="/admin/seed"
             class="flex flex-col items-center justify-center p-6 border-2 border-green-200 rounded-lg hover:border-green-500 hover:bg-green-50 transition group"
           >
@@ -598,6 +607,7 @@
             >
           </a>
           <a
+            data-testid="admin-user-owner-links-tile"
             href="/admin/user-owner-links"
             class="flex flex-col items-center justify-center p-6 border-2 border-blue-200 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition group"
           >

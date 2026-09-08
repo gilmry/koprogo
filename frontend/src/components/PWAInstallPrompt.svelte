@@ -86,12 +86,14 @@
           </p>
           <div class="flex gap-2">
             <button
+              data-testid="pwa-install-button"
               on:click={handleInstall}
               class="flex-1 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
             >
               {$_("pwa.install")}
             </button>
             <button
+              data-testid="pwa-install-dismiss-button"
               on:click={dismissPrompt}
               class="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors"
             >
@@ -100,6 +102,7 @@
           </div>
         </div>
         <button
+          data-testid="pwa-install-close-button"
           on:click={dismissPrompt}
           aria-label={$_("common.close")}
           class="flex-shrink-0 text-gray-400 hover:text-gray-600 transition-colors"
@@ -154,12 +157,14 @@
           </p>
           <div class="flex gap-2">
             <button
+              data-testid="pwa-update-reload-button"
               on:click={reloadForUpdate}
               class="flex-1 bg-white text-blue-600 hover:bg-blue-50 px-4 py-2 rounded-lg font-medium transition-colors"
             >
               {$_("pwa.refresh")}
             </button>
             <button
+              data-testid="pwa-update-dismiss-button"
               on:click={dismissUpdate}
               class="px-4 py-2 text-blue-100 hover:text-white transition-colors"
             >

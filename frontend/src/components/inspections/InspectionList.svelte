@@ -312,6 +312,7 @@
           data-testid="submit-inspection-button">{$_("common.create")}</button
         >
         <button
+          data-testid="inspections-create-cancel-button"
           onclick={() => (showCreateForm = false)}
           class="px-4 py-1.5 bg-gray-200 text-gray-700 text-sm rounded hover:bg-gray-300"
           >{$_("common.cancel")}</button
@@ -323,6 +324,7 @@
   <!-- Tabs -->
   <div class="flex gap-2 border-b border-gray-200">
     <button
+      data-testid="inspections-tab-all-button"
       onclick={() => switchTab("all")}
       class="px-3 py-2 text-sm border-b-2 {activeTab === 'all'
         ? 'border-blue-500 text-blue-600 font-medium'
@@ -331,6 +333,7 @@
       {$_("inspections.all")} ({inspections.length})
     </button>
     <button
+      data-testid="inspections-tab-overdue-button"
       onclick={() => switchTab("overdue")}
       class="px-3 py-2 text-sm border-b-2 {activeTab === 'overdue'
         ? 'border-red-500 text-red-600 font-medium'
@@ -343,6 +346,7 @@
         >{/if}
     </button>
     <button
+      data-testid="inspections-tab-upcoming-button"
       onclick={() => switchTab("upcoming")}
       class="px-3 py-2 text-sm border-b-2 {activeTab === 'upcoming'
         ? 'border-yellow-500 text-yellow-600 font-medium'
@@ -365,8 +369,10 @@
       class="bg-red-50 border border-red-200 rounded-lg p-4 text-sm text-red-700"
     >
       {error}
-      <button onclick={loadInspections} class="ml-2 underline"
-        >{$_("common.retry")}</button
+      <button
+        data-testid="inspections-retry-button"
+        onclick={loadInspections}
+        class="ml-2 underline">{$_("common.retry")}</button
       >
     </div>
   {:else if inspections.length === 0}

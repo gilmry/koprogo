@@ -127,6 +127,7 @@
   >
     <div class="bg-white rounded-2xl shadow-xl max-w-xl w-full">
       <form
+        data-testid="document-upload-form"
         onsubmit={(e: Event) => {
           e.preventDefault();
           submit(e);
@@ -144,6 +145,7 @@
               </p>
             </div>
             <button
+              data-testid="document-upload-close-button"
               type="button"
               class="text-gray-400 hover:text-gray-600"
               onclick={handleClose}
@@ -240,6 +242,7 @@
             >
             <div class="flex items-center gap-3">
               <input
+                data-testid="document-upload-file-input"
                 type="file"
                 class="hidden"
                 bind:this={fileInput}
@@ -247,6 +250,7 @@
                 onchange={handleFileChange}
               />
               <button
+                data-testid="document-upload-browse-button"
                 type="button"
                 class="px-3 py-2 rounded-lg border border-gray-300 text-sm font-medium text-gray-700 hover:bg-gray-100 transition"
                 onclick={() => fileInput?.click()}
@@ -274,6 +278,7 @@
 
         <div class="px-6 py-4 bg-gray-50 rounded-b-2xl flex justify-end gap-3">
           <button
+            data-testid="document-upload-cancel-button"
             type="button"
             class="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-100 transition"
             onclick={handleClose}
@@ -282,6 +287,7 @@
             {$_("common.cancel")}
           </button>
           <button
+            data-testid="document-upload-submit-button"
             type="submit"
             class="px-4 py-2 rounded-lg bg-primary-600 text-white hover:bg-primary-700 transition disabled:opacity-60"
             disabled={submitting || loadingBuildings || buildings.length === 0}

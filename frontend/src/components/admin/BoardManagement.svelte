@@ -226,6 +226,7 @@
             {$_("admin.board.selectBuilding")}
           </label>
           <select
+            data-testid="board-building-select"
             id="building-select"
             bind:value={selectedBuildingId}
             on:change={handleBuildingChange}
@@ -239,6 +240,7 @@
           </select>
         </div>
         <button
+          data-testid="board-elect-button"
           on:click={openElectModal}
           class="ml-4 px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 transition"
         >
@@ -258,6 +260,7 @@
       <div class="bg-gray-50 border border-gray-200 rounded-lg p-8 text-center">
         <p class="text-gray-500 text-lg">{$_("admin.board.noMembers")}</p>
         <button
+          data-testid="board-elect-empty-button"
           on:click={openElectModal}
           class="mt-4 px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 transition"
         >
@@ -325,12 +328,14 @@
 
             <div class="mt-4 pt-4 border-t border-gray-200 flex gap-2">
               <button
+                data-testid="board-member-remove-button"
                 on:click={() => handleRemove(member.id)}
                 class="flex-1 px-3 py-2 bg-red-50 text-red-700 rounded hover:bg-red-100 transition text-sm font-medium"
               >
                 🗑️ {$_("admin.board.remove")}
               </button>
               <a
+                data-testid="board-member-dashboard-link"
                 href="/board-dashboard?building_id={member.building_id}"
                 class="flex-1 px-3 py-2 bg-primary-50 text-primary-700 rounded hover:bg-primary-100 transition text-sm font-medium text-center"
               >
@@ -354,7 +359,11 @@
         {$_("admin.board.electMemberTitle")}
       </h2>
 
-      <form on:submit|preventDefault={handleElect} class="space-y-4">
+      <form
+        data-testid="board-elect-form"
+        on:submit|preventDefault={handleElect}
+        class="space-y-4"
+      >
         <div>
           <label
             for="board-elect-owner"
@@ -466,6 +475,7 @@
 
         <div class="flex gap-3 pt-4">
           <button
+            data-testid="board-elect-cancel-button"
             type="button"
             on:click={closeElectModal}
             class="flex-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition"
@@ -473,6 +483,7 @@
             {$_("common.cancel")}
           </button>
           <button
+            data-testid="board-elect-submit-button"
             type="submit"
             class="flex-1 px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 transition"
           >

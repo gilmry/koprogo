@@ -184,6 +184,7 @@
       <div></div>
     {/if}
     <button
+      data-testid="work-reports-create-toggle-button"
       onclick={() => (showCreateForm = !showCreateForm)}
       class="px-3 py-1.5 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700"
     >
@@ -333,11 +334,13 @@
       </div>
       <div class="mt-3 flex gap-2">
         <button
+          data-testid="work-reports-create-submit-button"
           onclick={createReport}
           class="px-4 py-1.5 bg-green-600 text-white text-sm rounded hover:bg-green-700"
           >{$_("common.create")}</button
         >
         <button
+          data-testid="work-reports-create-cancel-button"
           onclick={() => (showCreateForm = false)}
           class="px-4 py-1.5 bg-gray-200 text-gray-700 text-sm rounded hover:bg-gray-300"
           >{$_("common.cancel")}</button
@@ -349,6 +352,7 @@
   <!-- Filters -->
   <div class="flex flex-wrap gap-2">
     <button
+      data-testid="work-reports-filter-all-button"
       onclick={() => (filterType = "all")}
       class="px-3 py-1 text-xs rounded-full {filterType === 'all'
         ? 'bg-blue-100 text-blue-800 font-medium'
@@ -359,6 +363,7 @@
     {#each Object.entries(workTypeLabels) as [val, label]}
       {#if typeCounts[val]}
         <button
+          data-testid="work-reports-filter-button"
           onclick={() => (filterType = val)}
           class="px-3 py-1 text-xs rounded-full {filterType === val
             ? 'bg-blue-100 text-blue-800 font-medium'
@@ -384,8 +389,10 @@
       class="bg-red-50 border border-red-200 rounded-lg p-4 text-sm text-red-700"
     >
       {error}
-      <button onclick={loadReports} class="ml-2 underline"
-        >{$_("common.retry")}</button
+      <button
+        data-testid="work-reports-retry-button"
+        onclick={loadReports}
+        class="ml-2 underline">{$_("common.retry")}</button
       >
     </div>
   {:else if filteredReports.length === 0}
@@ -464,6 +471,7 @@
               </div>
             </div>
             <button
+              data-testid="work-reports-delete-button"
               onclick={(e) => {
                 e.stopPropagation();
                 deleteReport(report.id);

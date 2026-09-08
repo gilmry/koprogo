@@ -133,6 +133,7 @@
             <div class="text-center">
               <label class="inline-flex items-center cursor-pointer">
                 <input
+                  data-testid="notification-enabled-checkbox"
                   type="checkbox"
                   checked={preference.enabled}
                   onchange={() => handleToggle(preference, "enabled")}
@@ -149,6 +150,7 @@
             <div class="text-center">
               <label class="inline-flex items-center cursor-pointer">
                 <input
+                  data-testid="notification-email-checkbox"
                   type="checkbox"
                   checked={preference.email_enabled}
                   onchange={() => handleToggle(preference, "email_enabled")}
@@ -165,6 +167,7 @@
             <div class="text-center">
               <label class="inline-flex items-center cursor-pointer">
                 <input
+                  data-testid="notification-sms-checkbox"
                   type="checkbox"
                   checked={preference.sms_enabled}
                   onchange={() => handleToggle(preference, "sms_enabled")}
@@ -181,6 +184,7 @@
             <div class="text-center">
               <label class="inline-flex items-center cursor-pointer">
                 <input
+                  data-testid="notification-push-checkbox"
                   type="checkbox"
                   checked={preference.push_enabled}
                   onchange={() => handleToggle(preference, "push_enabled")}

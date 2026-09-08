@@ -364,6 +364,7 @@
           </li>
         </ul>
         <button
+          data-testid="seed-generate-button"
           on:click={generateSeed}
           disabled={loading}
           class="w-full bg-green-600 text-white py-3 px-6 rounded-lg hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition font-semibold text-lg shadow-md"
@@ -410,6 +411,7 @@
           </li>
         </ul>
         <button
+          data-testid="seed-clear-button"
           on:click={clearData}
           disabled={loading}
           class="w-full bg-red-600 text-white py-3 px-6 rounded-lg hover:bg-red-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition font-semibold text-lg shadow-md"
@@ -469,6 +471,7 @@
                       >{account.email}</code
                     >
                     <button
+                      data-testid="seed-copy-email-button"
                       on:click={() => copyToClipboard(account.email)}
                       class="text-blue-600 hover:text-blue-800 transition"
                       aria-label="Copier l'email"
@@ -488,6 +491,7 @@
                       >{account.password}</code
                     >
                     <button
+                      data-testid="seed-copy-password-button"
                       on:click={() => copyToClipboard(account.password)}
                       class="text-blue-600 hover:text-blue-800 transition"
                       aria-label="Copier le mot de passe"
