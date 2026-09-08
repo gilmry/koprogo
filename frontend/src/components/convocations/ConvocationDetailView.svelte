@@ -14,6 +14,9 @@
   import { withErrorHandling } from "../../lib/utils/error.utils";
   import ConvocationTrackingSummary from "./ConvocationTrackingSummary.svelte";
   import ConvocationRecipientList from "./ConvocationRecipientList.svelte";
+  import ConfirmDialog from "../ui/ConfirmDialog.svelte";
+  import Modal from "../ui/Modal.svelte";
+  import Button from "../ui/Button.svelte";
 
   let {
     convocation,
@@ -24,6 +27,37 @@
   let tracking = $state<TrackingSummary | null>(null);
   let showRecipients = $state(false);
   let actionLoading = $state(false);
+
+  /// L'action en attente de confirmation, ou `null`.
+  ///
+  /// ── Pourquoi ce détour ────────────────────────────────────────────────
+  ///
+  /// Cet écran passait par quatre `confirm()` et un `prompt()` natifs. Ce
+  /// sont des dialogues du NAVIGATEUR : un navigateur piloté les supprime, et
+  /// l'action prend alors la forme exacte d'une panne — aucun dialogue,
+  /// aucune requête, aucun message.
+  ///
+  /// C'est ce qui a fait déclarer mort le bouton « Reporter » d'une assemblée
+  /// pendant deux recettes, alors que sa source était correcte (#780). Cet
+  /// écran-ci est celui du deuxième verrou de la même issue : il ne peut pas
+  /// se permettre d'être intestable.
+  ///
+  /// Ils ne se traduisent pas non plus — « OK » et « Annuler » viennent de la
+  /// locale du navigateur — et ils n'offrent aucun piège de focus. Cf. #844.
+  type ActionEnAttente = "envoyer" | "annuler" | "rappels" | "supprimer";
+  let actionEnAttente = $state<ActionEnAttente | null>(null);
+
+  /// La date de mise en attente d'envoi, saisie dans une modale plutôt que
+  /// dans un `prompt()`.
+  let modaleProgrammation = $state(false);
+  let dateDenvoi = $state("");
+
+  const TITRES: Record<ActionEnAttente, string> = $derived({
+    envoyer: $_("convocations.confirms.sendToAll"),
+    annuler: $_("convocations.confirms.cancelConvocation"),
+    rappels: $_("convocations.confirms.sendReminders"),
+    supprimer: $_("convocations.confirms.deleteConvocation"),
+  });
 
   let isAdmin = $derived(
     $authStore.user?.role === UserRole.SYNDIC ||
@@ -104,7 +138,13 @@
   }
 
   async function handleSchedule() {
-    const sendDate = prompt($_("convocations.prompts.scheduledSendDate"));
+    modaleProgrammation = true;
+  }
+
+  async function confirmerLaProgrammation() {
+    const sendDate = dateDenvoi;
+    modaleProgrammation = false;
+    dateDenvoi = "";
     if (!sendDate) return;
     const result = await withErrorHandling({
       action: () => convocationsApi.schedule(convocation.id, sendDate),
@@ -115,8 +155,12 @@
     if (result) convocation = result;
   }
 
-  async function handleSend() {
-    if (!confirm($_("convocations.confirms.sendToAll"))) return;
+  function handleSend() {
+    actionEnAttente = "envoyer";
+  }
+
+  async function executer_envoyer() {
+    actionEnAttente = null;
     const result = await withErrorHandling({
       action: () => convocationsApi.send(convocation.id),
       setLoading: (v: boolean) => (actionLoading = v),
@@ -126,8 +170,12 @@
     if (result) convocation = result;
   }
 
-  async function handleCancel() {
-    if (!confirm($_("convocations.confirms.cancelConvocation"))) return;
+  function handleCancel() {
+    actionEnAttente = "annuler";
+  }
+
+  async function executer_annuler() {
+    actionEnAttente = null;
     const result = await withErrorHandling({
       action: () => convocationsApi.cancel(convocation.id),
       setLoading: (v: boolean) => (actionLoading = v),
@@ -137,8 +185,12 @@
     if (result) convocation = result;
   }
 
-  async function handleSendReminders() {
-    if (!confirm($_("convocations.confirms.sendReminders"))) return;
+  function handleSendReminders() {
+    actionEnAttente = "rappels";
+  }
+
+  async function executer_rappels() {
+    actionEnAttente = null;
     await withErrorHandling({
       action: () => convocationsApi.sendReminders(convocation.id),
       setLoading: (v: boolean) => (actionLoading = v),
@@ -147,8 +199,12 @@
     });
   }
 
-  async function handleDelete() {
-    if (!confirm($_("convocations.confirms.deleteConvocation"))) return;
+  function handleDelete() {
+    actionEnAttente = "supprimer";
+  }
+
+  async function executer_supprimer() {
+    actionEnAttente = null;
     await withErrorHandling({
       action: () => convocationsApi.delete(convocation.id),
       setLoading: (v: boolean) => (actionLoading = v),
@@ -349,3 +405,71 @@
     </div>
   {/if}
 </div>
+
+<!-- Les dialogues qui remplacent quatre `confirm()` et un `prompt()`.
+     Un navigateur piloté supprime les dialogues natifs : l'action prend alors
+     la forme exacte d'une panne. Ceux-ci sont dans la page, donc cliquables,
+     traduits, et dotés d'un piège de focus. Cf. #844, #780. -->
+<ConfirmDialog
+  isOpen={actionEnAttente !== null}
+  title={$_("common.confirm")}
+  message={actionEnAttente ? TITRES[actionEnAttente] : ""}
+  variant={actionEnAttente === "supprimer" || actionEnAttente === "annuler"
+    ? "danger"
+    : "primary"}
+  loading={actionLoading}
+  onconfirm={() => {
+    if (actionEnAttente === "envoyer") executer_envoyer();
+    else if (actionEnAttente === "annuler") executer_annuler();
+    else if (actionEnAttente === "rappels") executer_rappels();
+    else if (actionEnAttente === "supprimer") executer_supprimer();
+  }}
+  oncancel={() => (actionEnAttente = null)}
+/>
+
+<Modal
+  isOpen={modaleProgrammation}
+  title={$_("convocations.prompts.scheduledSendDate")}
+  size="sm"
+  onclose={() => {
+    modaleProgrammation = false;
+    dateDenvoi = "";
+  }}
+>
+  <label
+    class="block text-sm font-medium text-gray-700"
+    for="convocation-schedule-date"
+  >
+    {$_("convocations.prompts.scheduledSendDate")}
+  </label>
+  <input
+    id="convocation-schedule-date"
+    type="datetime-local"
+    bind:value={dateDenvoi}
+    data-testid="convocation-schedule-date-input"
+    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm sm:text-sm"
+  />
+
+  {#snippet footer()}
+    <div class="flex justify-end space-x-3">
+      <Button
+        variant="outline"
+        onclick={() => {
+          modaleProgrammation = false;
+          dateDenvoi = "";
+        }}
+        data-testid="convocation-schedule-cancel"
+      >
+        {$_("common.cancel")}
+      </Button>
+      <Button
+        variant="primary"
+        onclick={confirmerLaProgrammation}
+        disabled={dateDenvoi.length === 0 || actionLoading}
+        data-testid="convocation-schedule-submit"
+      >
+        {$_("common.confirm")}
+      </Button>
+    </div>
+  {/snippet}
+</Modal>

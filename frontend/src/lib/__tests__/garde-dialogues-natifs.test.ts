@@ -41,7 +41,7 @@ import { join } from "node:path";
 const RACINE = join(process.cwd(), "src");
 
 /** Appels aux dialogues natifs. **Ne doit que BAISSER.** */
-const DETTE_AU_2026_09_08 = 60;
+const DETTE_AU_2026_09_08 = 55;
 
 const APPEL_NATIF = /(?<![.\w$])(?:window\.)?(?:confirm|prompt|alert)\s*\(/g;
 
@@ -118,19 +118,28 @@ describe("les dialogues natifs ne se multiplient pas (#844)", () => {
   });
 
   /**
-   * Le fichier qui a fait le chemin en premier ne doit pas le refaire à
-   * l'envers.
+   * Les fichiers qui ont fait le chemin ne doivent pas le refaire à l'envers.
+   *
+   * `MeetingDetail.svelte` est celui dont les trois dialogues ont été
+   * remplacés après que le bouton « Reporter » a été déclaré mort deux
+   * recettes durant. `ConvocationDetailView.svelte` est l'écran du deuxième
+   * verrou de #780, et il en portait cinq — le plus chargé du dépôt.
+   *
+   * Un cliquet global se satisferait de n'importe quels autres fichiers :
+   * ceux-ci sont nommés.
    */
-  it("garde MeetingDetail.svelte exempt de dialogue natif", () => {
+  it.each([
+    "components/MeetingDetail.svelte",
+    "components/convocations/ConvocationDetailView.svelte",
+  ])("garde %s exempt de dialogue natif", (relatif) => {
     const source = sansCommentaires(
-      readFileSync(join(RACINE, "components/MeetingDetail.svelte"), "utf8"),
+      readFileSync(join(RACINE, relatif), "utf8"),
     );
     expect(
       source.match(APPEL_NATIF)?.length ?? 0,
-      "un dialogue natif est revenu dans MeetingDetail.svelte. C'est le " +
-        "fichier dont les trois `prompt()`/`confirm()` ont été remplacés " +
-        "par des modales après que le bouton « Reporter » a été déclaré " +
-        "mort deux recettes durant (#780).",
+      `un dialogue natif est revenu dans ${relatif}. Ces deux écrans sont ` +
+        `ceux des deux verrous de #780 : ils ne peuvent pas se permettre ` +
+        `d'être intestables par un navigateur piloté.`,
     ).toBe(0);
   });
 });
