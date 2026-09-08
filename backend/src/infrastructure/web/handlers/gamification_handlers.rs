@@ -3,7 +3,9 @@ use crate::application::dto::{
 };
 use crate::domain::entities::{AchievementCategory, ChallengeStatus};
 use crate::infrastructure::web::app_state::AppState;
-use crate::infrastructure::web::middleware::scope_guard::verify_building_org_access;
+use crate::infrastructure::web::middleware::scope_guard::{
+    verify_building_org_access, verify_challenge_org_access,
+};
 use crate::infrastructure::web::middleware::AuthenticatedUser;
 use actix_web::{delete, get, post, put, web, HttpResponse, Responder, ResponseError};
 use serde::Deserialize;
@@ -677,6 +679,16 @@ pub async fn get_challenge_progress(
     auth: AuthenticatedUser,
     challenge_id: web::Path<Uuid>,
 ) -> impl Responder {
+    // Cloisonnement : ce défi doit relever d'une organisation que cet
+    // utilisateur a le droit de voir. Le périmètre est l'ORGANISATION —
+    // `Challenge.building_id` est optionnel, « None = organization-wide »
+    // (#772).
+    if let Err(err) =
+        verify_challenge_org_access(&auth, *challenge_id, &data.challenge_use_cases).await
+    {
+        return err.error_response();
+    }
+
     match data
         .challenge_use_cases
         .get_challenge_progress(auth.user_id, challenge_id.into_inner())
@@ -696,9 +708,19 @@ pub async fn get_challenge_progress(
 #[get("/challenges/{challenge_id}/all-progress")]
 pub async fn list_challenge_progress(
     data: web::Data<AppState>,
-    _auth: AuthenticatedUser,
+    auth: AuthenticatedUser,
     challenge_id: web::Path<Uuid>,
 ) -> impl Responder {
+    // Cloisonnement : ce défi doit relever d'une organisation que cet
+    // utilisateur a le droit de voir. Le périmètre est l'ORGANISATION —
+    // `Challenge.building_id` est optionnel, « None = organization-wide »
+    // (#772).
+    if let Err(err) =
+        verify_challenge_org_access(&auth, *challenge_id, &data.challenge_use_cases).await
+    {
+        return err.error_response();
+    }
+
     match data
         .challenge_use_cases
         .list_challenge_progress(challenge_id.into_inner())
@@ -753,6 +775,16 @@ pub async fn increment_progress(
     challenge_id: web::Path<Uuid>,
     request: web::Json<IncrementProgressRequest>,
 ) -> impl Responder {
+    // Cloisonnement : ce défi doit relever d'une organisation que cet
+    // utilisateur a le droit de voir. Le périmètre est l'ORGANISATION —
+    // `Challenge.building_id` est optionnel, « None = organization-wide »
+    // (#772).
+    if let Err(err) =
+        verify_challenge_org_access(&auth, *challenge_id, &data.challenge_use_cases).await
+    {
+        return err.error_response();
+    }
+
     match data
         .challenge_use_cases
         .increment_progress(auth.user_id, challenge_id.into_inner(), request.increment)

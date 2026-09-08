@@ -43,7 +43,9 @@ use crate::application::use_cases::building_use_cases::BuildingUseCases;
 use crate::application::use_cases::call_for_funds_use_cases::CallForFundsUseCases;
 use crate::application::use_cases::convocation_use_cases::ConvocationUseCases;
 use crate::application::use_cases::document_use_cases::DocumentUseCases;
+use crate::application::use_cases::gamification_use_cases::ChallengeUseCases;
 use crate::application::use_cases::local_exchange_use_cases::LocalExchangeUseCases;
+use crate::application::use_cases::notice_use_cases::NoticeUseCases;
 use crate::application::use_cases::owner_contribution_use_cases::OwnerContributionUseCases;
 use crate::application::use_cases::owner_use_cases::OwnerUseCases;
 use crate::application::use_cases::poll_use_cases::PollUseCases;
@@ -655,6 +657,60 @@ pub async fn verify_poll_org_access(
         .map_err(|_| AppError::Internal("Invalid poll.building_id format".to_string()))?;
 
     verify_building_org_access(user, building_id, building_use_cases, acp_use_cases).await
+}
+
+/// Vérifie le mandat de l'appelant sur l'immeuble d'une **annonce**.
+///
+/// Épingler ou désépingler une annonce la met en tête du tableau d'affichage
+/// de la copropriété. Le faire depuis une autre ACP, c'est décider de ce que
+/// des voisins qui ne sont pas les vôtres verront en premier.
+pub async fn verify_notice_org_access(
+    user: &AuthenticatedUser,
+    notice_id: Uuid,
+    notice_use_cases: &NoticeUseCases,
+    building_use_cases: &BuildingUseCases,
+    acp_use_cases: &AcpUseCases,
+) -> Result<(), AppError> {
+    if user.is_superadmin() {
+        return Ok(());
+    }
+
+    let notice = notice_use_cases
+        .get_notice(notice_id)
+        .await
+        .map_err(AppError::from)?;
+
+    verify_building_org_access(user, notice.building_id, building_use_cases, acp_use_cases).await
+}
+
+/// Vérifie le mandat de l'appelant sur l'organisation d'un **défi**.
+///
+/// ── Pourquoi l'organisation, et non l'immeuble ────────────────────────────
+///
+/// `Challenge` porte `organization_id` obligatoire et `building_id: Option`,
+/// dont le commentaire d'origine dit tout : « None = organization-wide ». Un
+/// défi énergétique peut concerner tout un cabinet de syndic, plusieurs
+/// copropriétés à la fois.
+///
+/// Remonter par l'immeuble aurait laissé sans contrôle exactement les défis
+/// les plus larges — le même piège que pour les fiches techniques, dont
+/// `building_id` est optionnel aussi.
+pub async fn verify_challenge_org_access(
+    user: &AuthenticatedUser,
+    challenge_id: Uuid,
+    challenge_use_cases: &ChallengeUseCases,
+) -> Result<(), AppError> {
+    if user.is_superadmin() {
+        return Ok(());
+    }
+
+    let challenge = challenge_use_cases
+        .get_challenge(challenge_id)
+        .await
+        .map_err(AppError::from)?;
+
+    user.verify_org_access(challenge.organization_id)
+        .map_err(AppError::Forbidden)
 }
 
 pub async fn verify_booking_org_access(

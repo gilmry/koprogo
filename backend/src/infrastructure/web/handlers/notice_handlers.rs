@@ -1,6 +1,7 @@
 use crate::application::dto::{CreateNoticeDto, SetExpirationDto, UpdateNoticeDto};
 use crate::domain::entities::{NoticeCategory, NoticeStatus, NoticeType};
 use crate::infrastructure::web::app_state::AppState;
+use crate::infrastructure::web::middleware::scope_guard::verify_notice_org_access;
 use crate::infrastructure::web::middleware::AuthenticatedUser;
 use actix_web::{delete, get, post, put, web, HttpResponse, Responder, ResponseError};
 use uuid::Uuid;
@@ -426,6 +427,22 @@ pub async fn pin_notice(
     auth: AuthenticatedUser,
     id: web::Path<Uuid>,
 ) -> impl Responder {
+    // Cloisonnement : épingler une annonce la met en tête du tableau
+    // d'affichage de la copropriété. Le faire depuis une autre ACP, c'est
+    // décider de ce que des voisins qui ne sont pas les vôtres verront en
+    // premier (#772).
+    if let Err(err) = verify_notice_org_access(
+        &auth,
+        *id,
+        &data.notice_use_cases,
+        &data.building_use_cases,
+        &data.acp_use_cases,
+    )
+    .await
+    {
+        return err.error_response();
+    }
+
     match data
         .notice_use_cases
         .pin_notice(id.into_inner(), &auth.role)
@@ -453,6 +470,22 @@ pub async fn unpin_notice(
     auth: AuthenticatedUser,
     id: web::Path<Uuid>,
 ) -> impl Responder {
+    // Cloisonnement : épingler une annonce la met en tête du tableau
+    // d'affichage de la copropriété. Le faire depuis une autre ACP, c'est
+    // décider de ce que des voisins qui ne sont pas les vôtres verront en
+    // premier (#772).
+    if let Err(err) = verify_notice_org_access(
+        &auth,
+        *id,
+        &data.notice_use_cases,
+        &data.building_use_cases,
+        &data.acp_use_cases,
+    )
+    .await
+    {
+        return err.error_response();
+    }
+
     match data
         .notice_use_cases
         .unpin_notice(id.into_inner(), &auth.role)
