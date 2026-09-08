@@ -1,6 +1,6 @@
 <script lang="ts">
   // Svelte 5 runes mode
-  import { _ } from '../../lib/i18n';
+  import { _ } from "../../lib/i18n";
   import { bookingsApi, type BookableResource } from "../../lib/api/bookings";
   import Modal from "../ui/Modal.svelte";
   import { withErrorHandling } from "../../lib/utils/error.utils";
@@ -46,19 +46,21 @@
     const now = new Date();
 
     if (!startTime) {
-      errors.startTime = $_('bookings.error.startTimeRequired');
+      errors.startTime = $_("bookings.error.startTimeRequired");
     } else if (start < now) {
-      errors.startTime = $_('bookings.error.startTimeInFuture');
+      errors.startTime = $_("bookings.error.startTimeInFuture");
     }
 
     if (!endTime) {
-      errors.endTime = $_('bookings.error.endTimeRequired');
+      errors.endTime = $_("bookings.error.endTimeRequired");
     } else if (end <= start) {
-      errors.endTime = $_('bookings.error.endTimeAfterStart');
+      errors.endTime = $_("bookings.error.endTimeAfterStart");
     } else if (resource?.max_booking_duration_hours) {
       const durationHours = (end.getTime() - start.getTime()) / (1000 * 3600);
       if (durationHours > resource.max_booking_duration_hours) {
-        errors.endTime = $_('bookings.error.maxDuration', { values: { hours: resource.max_booking_duration_hours } });
+        errors.endTime = $_("bookings.error.maxDuration", {
+          values: { hours: resource.max_booking_duration_hours },
+        });
       }
     }
 
@@ -69,18 +71,19 @@
     if (!validate()) return;
 
     const booking = await withErrorHandling({
-      action: () => bookingsApi.createBooking({
-        resource_id: resource.id,
-        owner_id: ownerId,
-        start_time: new Date(startTime).toISOString(),
-        end_time: new Date(endTime).toISOString(),
-        purpose: purpose || undefined,
-        attendees_count: attendeesCount || undefined,
-        special_requests: specialRequests || undefined,
-      }),
-      setLoading: (v: boolean) => submitting = v,
-      successMessage: $_('bookings.success.created'),
-      errorMessage: $_('bookings.error.creationFailed'),
+      action: () =>
+        bookingsApi.createBooking({
+          resource_id: resource.id,
+          owner_id: ownerId,
+          start_time: new Date(startTime).toISOString(),
+          end_time: new Date(endTime).toISOString(),
+          purpose: purpose || undefined,
+          attendees_count: attendeesCount || undefined,
+          special_requests: specialRequests || undefined,
+        }),
+      setLoading: (v: boolean) => (submitting = v),
+      successMessage: $_("bookings.success.created"),
+      errorMessage: $_("bookings.error.creationFailed"),
     });
     if (booking) {
       oncreated?.(booking);
@@ -94,33 +97,56 @@
   }
 </script>
 
-<Modal {isOpen} title={$_('bookings.bookResource', { values: { name: resource?.resource_name ?? '' } })} onclose={handleClose}>
-  <form onsubmit={(e) => { e.preventDefault(); handleSubmit(); }} class="space-y-4" data-testid="booking-create-form">
+<Modal
+  {isOpen}
+  title={$_("bookings.bookResource", {
+    values: { name: resource?.resource_name ?? "" },
+  })}
+  onclose={handleClose}
+>
+  <form
+    onsubmit={(e) => {
+      e.preventDefault();
+      handleSubmit();
+    }}
+    class="space-y-4"
+    data-testid="booking-create-form"
+  >
     <!-- Dates -->
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
       <div>
-        <label for="booking-start" class="block text-sm font-medium text-gray-700 mb-1">
-          {$_('bookings.startTime')} <span class="text-red-500">*</span>
+        <label
+          for="booking-start"
+          class="block text-sm font-medium text-gray-700 mb-1"
+        >
+          {$_("bookings.startTime")} <span class="text-red-500">*</span>
         </label>
         <input
           id="booking-start"
           type="datetime-local"
           bind:value={startTime}
-          class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 {errors.startTime ? 'border-red-500' : 'border-gray-300'}"
+          class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 {errors.startTime
+            ? 'border-red-500'
+            : 'border-gray-300'}"
         />
         {#if errors.startTime}
           <p class="text-red-500 text-xs mt-1">{errors.startTime}</p>
         {/if}
       </div>
       <div>
-        <label for="booking-end" class="block text-sm font-medium text-gray-700 mb-1">
-          {$_('bookings.endLabel')} <span class="text-red-500">*</span>
+        <label
+          for="booking-end"
+          class="block text-sm font-medium text-gray-700 mb-1"
+        >
+          {$_("bookings.endLabel")} <span class="text-red-500">*</span>
         </label>
         <input
           id="booking-end"
           type="datetime-local"
           value={endTime}
-          class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 {errors.endTime ? 'border-red-500' : 'border-gray-300'}"
+          class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 {errors.endTime
+            ? 'border-red-500'
+            : 'border-gray-300'}"
         />
         {#if errors.endTime}
           <p class="text-red-500 text-xs mt-1">{errors.endTime}</p>
@@ -130,12 +156,18 @@
 
     <p class="text-xs text-gray-500">
       Durée max : {resource?.max_booking_duration_hours}h
-      {resource?.hourly_rate_credits ? ` · ${resource.hourly_rate_credits} crédit(s)/heure` : " · Gratuit"}
+      {resource?.hourly_rate_credits
+        ? ` · ${resource.hourly_rate_credits} crédit(s)/heure`
+        : " · Gratuit"}
     </p>
 
     <!-- Purpose -->
     <div>
-      <label for="booking-purpose" class="block text-sm font-medium text-gray-700 mb-1">{$_('bookings.purpose')}</label>
+      <label
+        for="booking-purpose"
+        class="block text-sm font-medium text-gray-700 mb-1"
+        >{$_("bookings.purpose")}</label
+      >
       <input
         id="booking-purpose"
         type="text"
@@ -148,7 +180,10 @@
     <!-- Attendees -->
     {#if resource?.capacity}
       <div>
-        <label for="booking-attendees" class="block text-sm font-medium text-gray-700 mb-1">
+        <label
+          for="booking-attendees"
+          class="block text-sm font-medium text-gray-700 mb-1"
+        >
           Nombre de participants (max {resource.capacity})
         </label>
         <input
@@ -164,7 +199,11 @@
 
     <!-- Special requests -->
     <div>
-      <label for="booking-requests" class="block text-sm font-medium text-gray-700 mb-1">{$_('bookings.specialRequests')}</label>
+      <label
+        for="booking-requests"
+        class="block text-sm font-medium text-gray-700 mb-1"
+        >{$_("bookings.specialRequests")}</label
+      >
       <textarea
         id="booking-requests"
         bind:value={specialRequests}
@@ -175,8 +214,10 @@
     </div>
 
     {#if resource?.requires_approval}
-      <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-sm text-yellow-800">
-        ⚠️ {$_('bookings.needsApproval')}
+      <div
+        class="bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-sm text-yellow-800"
+      >
+        ⚠️ {$_("bookings.needsApproval")}
       </div>
     {/if}
 
@@ -187,7 +228,7 @@
         onclick={handleClose}
         class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition"
       >
-        {$_('common.cancel')}
+        {$_("common.cancel")}
       </button>
       <button
         type="submit"

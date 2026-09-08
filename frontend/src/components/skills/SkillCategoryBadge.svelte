@@ -75,10 +75,14 @@
     },
   };
 
-  let config = $derived(categoryConfig[category] || categoryConfig[SkillCategory.Other]);
+  let config = $derived(
+    categoryConfig[category] || categoryConfig[SkillCategory.Other],
+  );
 </script>
 
-<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {config.class}">
+<span
+  class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {config.class}"
+>
   <span class="mr-1">{config.icon}</span>
   {config.label}
 </span>

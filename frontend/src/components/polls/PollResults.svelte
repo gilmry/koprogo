@@ -1,6 +1,6 @@
 <script lang="ts">
   // Svelte 5 runes mode
-  import { _ } from '../../lib/i18n';
+  import { _ } from "../../lib/i18n";
   import { type Poll, type PollResults, PollType } from "../../lib/api/polls";
 
   let {
@@ -37,7 +37,9 @@
 
 <div class="bg-white shadow-md rounded-lg p-6">
   <div class="flex items-center justify-between mb-4">
-    <h3 class="text-lg font-medium text-gray-900">📊 {$_("polls.results.title")}</h3>
+    <h3 class="text-lg font-medium text-gray-900">
+      📊 {$_("polls.results.title")}
+    </h3>
     {#if results.winning_option}
       <span class="text-sm text-green-600 font-medium">
         🏆 {$_("polls.results.winner")}: {results.winning_option.option_text}
@@ -49,15 +51,23 @@
   <div class="mb-6 p-4 bg-gray-50 rounded-lg">
     <div class="grid grid-cols-2 gap-4">
       <div>
-        <div class="text-xs text-gray-500">{$_("polls.results.totalVotes")}</div>
+        <div class="text-xs text-gray-500">
+          {$_("polls.results.totalVotes")}
+        </div>
         <div class="text-2xl font-bold text-gray-900">
           {results.total_votes_cast}
         </div>
       </div>
       <div>
-        <div class="text-xs text-gray-500">{$_("polls.results.participationRate")}</div>
+        <div class="text-xs text-gray-500">
+          {$_("polls.results.participationRate")}
+        </div>
         <div
-          class="text-2xl font-bold {results.participation_rate >= 50 ? 'text-green-600' : results.participation_rate >= 30 ? 'text-yellow-600' : 'text-red-600'}"
+          class="text-2xl font-bold {results.participation_rate >= 50
+            ? 'text-green-600'
+            : results.participation_rate >= 30
+              ? 'text-yellow-600'
+              : 'text-red-600'}"
         >
           {results.participation_rate.toFixed(1)}%
         </div>
@@ -96,14 +106,16 @@
   {:else if poll.poll_type === PollType.Rating}
     <div class="space-y-4">
       <!-- Average Rating -->
-      <div class="text-center p-6 bg-gradient-to-r from-yellow-50 to-orange-50 rounded-lg">
-        <div class="text-sm text-gray-600 mb-2">{$_("polls.results.averageRating")}</div>
+      <div
+        class="text-center p-6 bg-gradient-to-r from-yellow-50 to-orange-50 rounded-lg"
+      >
+        <div class="text-sm text-gray-600 mb-2">
+          {$_("polls.results.averageRating")}
+        </div>
         <div class="text-5xl mb-2">
           {getRatingStars(0, 5)}
         </div>
-        <div class="text-3xl font-bold text-gray-900">
-          — / 5
-        </div>
+        <div class="text-3xl font-bold text-gray-900">— / 5</div>
       </div>
 
       <!-- Rating Distribution (if available) -->
@@ -146,7 +158,8 @@
   <!-- Legal Notice -->
   <div class="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded-md">
     <p class="text-xs text-yellow-800">
-      ⚖️ <strong>{$_("polls.results.legalFramework")}:</strong> {$_("polls.results.legalText")}
+      ⚖️ <strong>{$_("polls.results.legalFramework")}:</strong>
+      {$_("polls.results.legalText")}
     </p>
   </div>
 </div>

@@ -7,7 +7,9 @@ import Layout from "../layouts/Layout.astro";
     <div class="mb-6 flex items-center justify-between">
       <div>
         <h1 class="text-3xl font-bold text-gray-900">📌 Annonces</h1>
-        <p class="text-gray-600 mt-1">Annonces communautaires et petites annonces</p>
+        <p class="text-gray-600 mt-1">
+          Annonces communautaires et petites annonces
+        </p>
       </div>
       <button
         id="create-notice-btn"
@@ -33,17 +35,26 @@ import Layout from "../layouts/Layout.astro";
 
   let currentOwnerId = "";
 
-  const selectorContainer = document.getElementById("building-selector-container");
+  const selectorContainer = document.getElementById(
+    "building-selector-container",
+  );
   const listContainer = document.getElementById("notice-list-container");
   const modalContainer = document.getElementById("create-modal-container");
   let listComponent: any = null;
   let createModalComponent: any = null;
   let currentBuildingId = "";
 
-  function mountList(buildingId: string, initialStatus: string = "active-only") {
+  function mountList(
+    buildingId: string,
+    initialStatus: string = "active-only",
+  ) {
     currentBuildingId = buildingId;
     if (!listContainer) return;
-    if (listComponent) { try { unmount(listComponent); } catch {} }
+    if (listComponent) {
+      try {
+        unmount(listComponent);
+      } catch {}
+    }
     listContainer.innerHTML = "";
     listComponent = mount(NoticeList as any, {
       target: listContainer,
@@ -53,7 +64,9 @@ import Layout from "../layouts/Layout.astro";
 
   function closeModal() {
     if (createModalComponent) {
-      try { unmount(createModalComponent); } catch {}
+      try {
+        unmount(createModalComponent);
+      } catch {}
       createModalComponent = null;
       if (modalContainer) modalContainer.innerHTML = "";
     }

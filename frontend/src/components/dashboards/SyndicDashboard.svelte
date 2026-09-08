@@ -1,12 +1,12 @@
 <script lang="ts">
   // Svelte 5 runes mode
-  import { _ } from '../../lib/i18n';
-  import { authStore } from '../../stores/auth';
-  import { api } from '../../lib/api';
-  import type { Owner } from '../../lib/types';
-  import OwnerEditModal from '../OwnerEditModal.svelte';
-  import { ticketsApi } from '../../lib/api/tickets';
-  import { notificationsApi } from '../../lib/api/notifications';
+  import { _ } from "../../lib/i18n";
+  import { authStore } from "../../stores/auth";
+  import { api } from "../../lib/api";
+  import type { Owner } from "../../lib/types";
+  import OwnerEditModal from "../OwnerEditModal.svelte";
+  import { ticketsApi } from "../../lib/api/tickets";
+  import { notificationsApi } from "../../lib/api/notifications";
   import { formatDateShort } from "../../lib/utils/date.utils";
   import { formatCurrency } from "../../lib/utils/finance.utils";
 
@@ -56,9 +56,9 @@
     try {
       loading = true;
       const [statsData, tasksData, ownersData] = await Promise.all([
-        api.get<SyndicStats>('/stats/syndic'),
-        api.get<UrgentTask[]>('/stats/syndic/urgent-tasks'),
-        api.get<{ data: Owner[] }>('/owners?page=1&per_page=5'),
+        api.get<SyndicStats>("/stats/syndic"),
+        api.get<UrgentTask[]>("/stats/syndic/urgent-tasks"),
+        api.get<{ data: Owner[] }>("/owners?page=1&per_page=5"),
       ]);
       stats = statsData;
       urgentTasks = tasksData;
@@ -72,14 +72,16 @@
           notificationsApi.getUnread(),
         ]);
         openTicketsCount = (ticketStats as any)?.open_count ?? 0;
-        unreadNotifCount = Array.isArray(unreadNotifs) ? unreadNotifs.length : 0;
+        unreadNotifCount = Array.isArray(unreadNotifs)
+          ? unreadNotifs.length
+          : 0;
       } catch {
         // Non-critical
       }
     } catch (err) {
-      error = err instanceof Error ? err.message : $_('common.error.loadStats');
+      error = err instanceof Error ? err.message : $_("common.error.loadStats");
       loading = false;
-      console.error('Error fetching stats:', err);
+      console.error("Error fetching stats:", err);
     }
   }
 
@@ -99,28 +101,50 @@
 
   function getTaskIcon(taskType: string): string {
     switch (taskType) {
-      case 'expense': return '💰';
-      case 'meeting': return '📄';
-      default: return '📋';
+      case "expense":
+        return "💰";
+      case "meeting":
+        return "📄";
+      default:
+        return "📋";
     }
   }
 
-  function getTaskStyles(priority: string): { bg: string; border: string; text: string } {
+  function getTaskStyles(priority: string): {
+    bg: string;
+    border: string;
+    text: string;
+  } {
     switch (priority) {
-      case 'urgent':
-        return { bg: 'bg-red-50', border: 'border-red-200', text: 'text-red-600' };
-      case 'high':
-        return { bg: 'bg-orange-50', border: 'border-orange-200', text: 'text-orange-600' };
+      case "urgent":
+        return {
+          bg: "bg-red-50",
+          border: "border-red-200",
+          text: "text-red-600",
+        };
+      case "high":
+        return {
+          bg: "bg-orange-50",
+          border: "border-orange-200",
+          text: "text-orange-600",
+        };
       default:
-        return { bg: 'bg-yellow-50', border: 'border-yellow-200', text: 'text-yellow-600' };
+        return {
+          bg: "bg-yellow-50",
+          border: "border-yellow-200",
+          text: "text-yellow-600",
+        };
     }
   }
 
   function getPriorityLabel(priority: string): string {
     switch (priority) {
-      case 'urgent': return $_('common.priority.urgent');
-      case 'high': return $_('common.priority.important');
-      default: return $_('common.priority.toProcess');
+      case "urgent":
+        return $_("common.priority.urgent");
+      case "high":
+        return $_("common.priority.important");
+      default:
+        return $_("common.priority.toProcess");
     }
   }
 </script>
@@ -128,20 +152,23 @@
 <div data-testid="syndic-dashboard">
   <div class="mb-8">
     <h1 class="text-3xl font-bold text-gray-900 mb-2">
-      {$_('common.welcome')}, {user?.first_name} 👋
+      {$_("common.welcome")}, {user?.first_name} 👋
     </h1>
     <p class="text-gray-600">
-      {$_('dashboards.syndic.title')} - {$_('dashboards.syndic.subtitle')}
+      {$_("dashboards.syndic.title")} - {$_("dashboards.syndic.subtitle")}
     </p>
   </div>
 
   {#if loading}
     <div class="flex items-center justify-center py-12">
-      <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600" data-testid="syndic-dashboard-spinner"></div>
+      <div
+        class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"
+        data-testid="syndic-dashboard-spinner"
+      ></div>
     </div>
   {:else if error}
     <div class="bg-red-50 border border-red-200 rounded-lg p-4 mb-8">
-      <p class="text-red-800 font-medium">{$_('common.error.title')}</p>
+      <p class="text-red-800 font-medium">{$_("common.error.title")}</p>
       <p class="text-red-600 text-sm">{error}</p>
     </div>
   {:else if stats}
@@ -149,7 +176,9 @@
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
       <div class="bg-white rounded-lg shadow p-6">
         <div class="flex items-center justify-between mb-2">
-          <span class="text-gray-600 text-sm font-medium">{$_('dashboards.syndic.stats.buildingsManaged')}</span>
+          <span class="text-gray-600 text-sm font-medium"
+            >{$_("dashboards.syndic.stats.buildingsManaged")}</span
+          >
           <span class="text-2xl">🏢</span>
         </div>
         <p class="text-3xl font-bold text-gray-900">{stats.total_buildings}</p>
@@ -160,41 +189,62 @@
              l'ambiguïté, et n'est affichée que lorsqu'il y a un écart. -->
         <p class="text-sm text-gray-500 mt-1">
           {stats.declared_units > stats.total_units
-            ? $_('dashboards.syndic.stats.unitsEncodedOfDeclared', {
-                values: { encoded: stats.total_units, declared: stats.declared_units },
+            ? $_("dashboards.syndic.stats.unitsEncodedOfDeclared", {
+                values: {
+                  encoded: stats.total_units,
+                  declared: stats.declared_units,
+                },
               })
-            : `${stats.total_units} ${$_('dashboards.syndic.stats.unitsEncoded')}`}
+            : `${stats.total_units} ${$_("dashboards.syndic.stats.unitsEncoded")}`}
         </p>
       </div>
 
       <div class="bg-white rounded-lg shadow p-6">
         <div class="flex items-center justify-between mb-2">
-          <span class="text-gray-600 text-sm font-medium">{$_('dashboards.syndic.stats.owners')}</span>
+          <span class="text-gray-600 text-sm font-medium"
+            >{$_("dashboards.syndic.stats.owners")}</span
+          >
           <span class="text-2xl">👥</span>
         </div>
         <p class="text-3xl font-bold text-gray-900">{stats.total_owners}</p>
-        <p class="text-sm text-gray-500 mt-1">{$_('dashboards.syndic.stats.active')}</p>
+        <p class="text-sm text-gray-500 mt-1">
+          {$_("dashboards.syndic.stats.active")}
+        </p>
       </div>
 
       <div class="bg-white rounded-lg shadow p-6">
         <div class="flex items-center justify-between mb-2">
-          <span class="text-gray-600 text-sm font-medium">{$_('dashboards.syndic.stats.pendingExpenses')}</span>
+          <span class="text-gray-600 text-sm font-medium"
+            >{$_("dashboards.syndic.stats.pendingExpenses")}</span
+          >
           <span class="text-2xl">💰</span>
         </div>
-        <p class="text-3xl font-bold text-gray-900">{stats.pending_expenses_count}</p>
-        <p class="text-sm text-orange-600 mt-1">{formatCurrency(stats.pending_expenses_amount)}</p>
+        <p class="text-3xl font-bold text-gray-900">
+          {stats.pending_expenses_count}
+        </p>
+        <p class="text-sm text-orange-600 mt-1">
+          {formatCurrency(stats.pending_expenses_amount)}
+        </p>
       </div>
 
       <div class="bg-white rounded-lg shadow p-6">
         <div class="flex items-center justify-between mb-2">
-          <span class="text-gray-600 text-sm font-medium">{$_('dashboards.syndic.stats.nextMeeting')}</span>
+          <span class="text-gray-600 text-sm font-medium"
+            >{$_("dashboards.syndic.stats.nextMeeting")}</span
+          >
           <span class="text-2xl">📅</span>
         </div>
         {#if stats.next_meeting}
-          <p class="text-xl font-bold text-gray-900">{formatDateShort(stats.next_meeting.date)}</p>
-          <p class="text-sm text-gray-500 mt-1">{stats.next_meeting.building_name}</p>
+          <p class="text-xl font-bold text-gray-900">
+            {formatDateShort(stats.next_meeting.date)}
+          </p>
+          <p class="text-sm text-gray-500 mt-1">
+            {stats.next_meeting.building_name}
+          </p>
         {:else}
-          <p class="text-lg font-medium text-gray-500">{$_('dashboards.syndic.stats.noMeetingsPlanned')}</p>
+          <p class="text-lg font-medium text-gray-500">
+            {$_("dashboards.syndic.stats.noMeetingsPlanned")}
+          </p>
         {/if}
       </div>
     </div>
@@ -204,102 +254,190 @@
       <!-- Urgent Tasks -->
       <div class="bg-white rounded-lg shadow">
         <div class="p-6 border-b border-gray-200">
-          <h2 class="text-lg font-semibold text-gray-900">{$_('dashboards.syndic.urgentTasks')}</h2>
+          <h2 class="text-lg font-semibold text-gray-900">
+            {$_("dashboards.syndic.urgentTasks")}
+          </h2>
         </div>
         <div class="p-6">
           {#if urgentTasks.length > 0}
             <div class="space-y-4">
               {#each urgentTasks as task}
                 {@const styles = getTaskStyles(task.priority)}
-                <div class="flex items-start space-x-3 p-4 {styles.bg} border {styles.border} rounded-lg">
+                <div
+                  class="flex items-start space-x-3 p-4 {styles.bg} border {styles.border} rounded-lg"
+                >
                   <span class="text-2xl">{getTaskIcon(task.task_type)}</span>
                   <div class="flex-1">
-                    <p class="text-sm font-medium text-gray-900">{task.title}</p>
+                    <p class="text-sm font-medium text-gray-900">
+                      {task.title}
+                    </p>
                     <p class="text-sm text-gray-600">{task.description}</p>
                     {#if task.building_name}
-                      <p class="text-xs text-gray-500 mt-1">{task.building_name}</p>
+                      <p class="text-xs text-gray-500 mt-1">
+                        {task.building_name}
+                      </p>
                     {/if}
-                    <p class="text-xs {styles.text} mt-1">{getPriorityLabel(task.priority)}</p>
+                    <p class="text-xs {styles.text} mt-1">
+                      {getPriorityLabel(task.priority)}
+                    </p>
                   </div>
                 </div>
               {/each}
             </div>
           {:else}
             <div class="text-center py-8">
-              <p class="text-gray-500">{$_('dashboards.syndic.noUrgentTasks')}</p>
-              <p class="text-sm text-gray-400 mt-2">{$_('dashboards.syndic.allUnderControl')}</p>
+              <p class="text-gray-500">
+                {$_("dashboards.syndic.noUrgentTasks")}
+              </p>
+              <p class="text-sm text-gray-400 mt-2">
+                {$_("dashboards.syndic.allUnderControl")}
+              </p>
             </div>
           {/if}
         </div>
       </div>
 
-    <!-- Quick Actions -->
-    <div class="bg-white rounded-lg shadow">
-      <div class="p-6 border-b border-gray-200">
-        <h2 class="text-lg font-semibold text-gray-900">{$_('dashboards.syndic.quickActions')}</h2>
-      </div>
-      <div class="p-6">
-        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-          <a href="/buildings" class="flex flex-col items-center justify-center p-4 border-2 border-gray-200 rounded-lg hover:border-primary-500 hover:bg-primary-50 transition group">
-            <span class="text-3xl mb-2 group-hover:scale-110 transition">🏢</span>
-            <span class="text-sm font-medium text-gray-700">{$_('navigation.buildings')}</span>
-          </a>
-          <a href="/owners" class="flex flex-col items-center justify-center p-4 border-2 border-gray-200 rounded-lg hover:border-primary-500 hover:bg-primary-50 transition group">
-            <span class="text-3xl mb-2 group-hover:scale-110 transition">👥</span>
-            <span class="text-sm font-medium text-gray-700">{$_('navigation.owners')}</span>
-          </a>
-          <a href="/expenses" class="flex flex-col items-center justify-center p-4 border-2 border-gray-200 rounded-lg hover:border-primary-500 hover:bg-primary-50 transition group">
-            <span class="text-3xl mb-2 group-hover:scale-110 transition">💰</span>
-            <span class="text-sm font-medium text-gray-700">{$_('navigation.expenses')}</span>
-          </a>
-          <a href="/meetings" class="flex flex-col items-center justify-center p-4 border-2 border-gray-200 rounded-lg hover:border-primary-500 hover:bg-primary-50 transition group">
-            <span class="text-3xl mb-2 group-hover:scale-110 transition">📅</span>
-            <span class="text-sm font-medium text-gray-700">{$_('navigation.meetings')}</span>
-          </a>
-          <a href="/tickets" class="relative flex flex-col items-center justify-center p-4 border-2 border-gray-200 rounded-lg hover:border-primary-500 hover:bg-primary-50 transition group">
-            <span class="text-3xl mb-2 group-hover:scale-110 transition">🎫</span>
-            <span class="text-sm font-medium text-gray-700">{$_('navigation.tickets')}</span>
-            {#if openTicketsCount > 0}
-              <span class="absolute top-2 right-2 px-1.5 py-0.5 bg-red-500 text-white text-xs font-bold rounded-full">{openTicketsCount}</span>
-            {/if}
-          </a>
-          <a href="/convocations" class="flex flex-col items-center justify-center p-4 border-2 border-gray-200 rounded-lg hover:border-primary-500 hover:bg-primary-50 transition group">
-            <span class="text-3xl mb-2 group-hover:scale-110 transition">📨</span>
-            <span class="text-sm font-medium text-gray-700">{$_('navigation.convocations')}</span>
-          </a>
-          <a href="/work-reports" class="flex flex-col items-center justify-center p-4 border-2 border-gray-200 rounded-lg hover:border-primary-500 hover:bg-primary-50 transition group">
-            <span class="text-3xl mb-2 group-hover:scale-110 transition">🔧</span>
-            <span class="text-sm font-medium text-gray-700">{$_('navigation.workReports')}</span>
-          </a>
-          <a href="/notifications" class="relative flex flex-col items-center justify-center p-4 border-2 border-gray-200 rounded-lg hover:border-primary-500 hover:bg-primary-50 transition group">
-            <span class="text-3xl mb-2 group-hover:scale-110 transition">🔔</span>
-            <span class="text-sm font-medium text-gray-700">{$_('navigation.notifications')}</span>
-            {#if unreadNotifCount > 0}
-              <span class="absolute top-2 right-2 px-1.5 py-0.5 bg-red-500 text-white text-xs font-bold rounded-full">{unreadNotifCount}</span>
-            {/if}
-          </a>
+      <!-- Quick Actions -->
+      <div class="bg-white rounded-lg shadow">
+        <div class="p-6 border-b border-gray-200">
+          <h2 class="text-lg font-semibold text-gray-900">
+            {$_("dashboards.syndic.quickActions")}
+          </h2>
+        </div>
+        <div class="p-6">
+          <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            <a
+              href="/buildings"
+              class="flex flex-col items-center justify-center p-4 border-2 border-gray-200 rounded-lg hover:border-primary-500 hover:bg-primary-50 transition group"
+            >
+              <span class="text-3xl mb-2 group-hover:scale-110 transition"
+                >🏢</span
+              >
+              <span class="text-sm font-medium text-gray-700"
+                >{$_("navigation.buildings")}</span
+              >
+            </a>
+            <a
+              href="/owners"
+              class="flex flex-col items-center justify-center p-4 border-2 border-gray-200 rounded-lg hover:border-primary-500 hover:bg-primary-50 transition group"
+            >
+              <span class="text-3xl mb-2 group-hover:scale-110 transition"
+                >👥</span
+              >
+              <span class="text-sm font-medium text-gray-700"
+                >{$_("navigation.owners")}</span
+              >
+            </a>
+            <a
+              href="/expenses"
+              class="flex flex-col items-center justify-center p-4 border-2 border-gray-200 rounded-lg hover:border-primary-500 hover:bg-primary-50 transition group"
+            >
+              <span class="text-3xl mb-2 group-hover:scale-110 transition"
+                >💰</span
+              >
+              <span class="text-sm font-medium text-gray-700"
+                >{$_("navigation.expenses")}</span
+              >
+            </a>
+            <a
+              href="/meetings"
+              class="flex flex-col items-center justify-center p-4 border-2 border-gray-200 rounded-lg hover:border-primary-500 hover:bg-primary-50 transition group"
+            >
+              <span class="text-3xl mb-2 group-hover:scale-110 transition"
+                >📅</span
+              >
+              <span class="text-sm font-medium text-gray-700"
+                >{$_("navigation.meetings")}</span
+              >
+            </a>
+            <a
+              href="/tickets"
+              class="relative flex flex-col items-center justify-center p-4 border-2 border-gray-200 rounded-lg hover:border-primary-500 hover:bg-primary-50 transition group"
+            >
+              <span class="text-3xl mb-2 group-hover:scale-110 transition"
+                >🎫</span
+              >
+              <span class="text-sm font-medium text-gray-700"
+                >{$_("navigation.tickets")}</span
+              >
+              {#if openTicketsCount > 0}
+                <span
+                  class="absolute top-2 right-2 px-1.5 py-0.5 bg-red-500 text-white text-xs font-bold rounded-full"
+                  >{openTicketsCount}</span
+                >
+              {/if}
+            </a>
+            <a
+              href="/convocations"
+              class="flex flex-col items-center justify-center p-4 border-2 border-gray-200 rounded-lg hover:border-primary-500 hover:bg-primary-50 transition group"
+            >
+              <span class="text-3xl mb-2 group-hover:scale-110 transition"
+                >📨</span
+              >
+              <span class="text-sm font-medium text-gray-700"
+                >{$_("navigation.convocations")}</span
+              >
+            </a>
+            <a
+              href="/work-reports"
+              class="flex flex-col items-center justify-center p-4 border-2 border-gray-200 rounded-lg hover:border-primary-500 hover:bg-primary-50 transition group"
+            >
+              <span class="text-3xl mb-2 group-hover:scale-110 transition"
+                >🔧</span
+              >
+              <span class="text-sm font-medium text-gray-700"
+                >{$_("navigation.workReports")}</span
+              >
+            </a>
+            <a
+              href="/notifications"
+              class="relative flex flex-col items-center justify-center p-4 border-2 border-gray-200 rounded-lg hover:border-primary-500 hover:bg-primary-50 transition group"
+            >
+              <span class="text-3xl mb-2 group-hover:scale-110 transition"
+                >🔔</span
+              >
+              <span class="text-sm font-medium text-gray-700"
+                >{$_("navigation.notifications")}</span
+              >
+              {#if unreadNotifCount > 0}
+                <span
+                  class="absolute top-2 right-2 px-1.5 py-0.5 bg-red-500 text-white text-xs font-bold rounded-full"
+                  >{unreadNotifCount}</span
+                >
+              {/if}
+            </a>
+          </div>
         </div>
       </div>
-    </div>
     </div>
 
     <!-- Recent Owners Section -->
     <div class="mt-8">
       <div class="bg-white rounded-lg shadow">
-        <div class="p-6 border-b border-gray-200 flex justify-between items-center">
-          <h2 class="text-lg font-semibold text-gray-900">{$_('dashboards.syndic.recentOwners')}</h2>
-          <a href="/owners" class="text-sm text-primary-600 hover:text-primary-700 font-medium">
-            {$_('common.seeAll')} →
+        <div
+          class="p-6 border-b border-gray-200 flex justify-between items-center"
+        >
+          <h2 class="text-lg font-semibold text-gray-900">
+            {$_("dashboards.syndic.recentOwners")}
+          </h2>
+          <a
+            href="/owners"
+            class="text-sm text-primary-600 hover:text-primary-700 font-medium"
+          >
+            {$_("common.seeAll")} →
           </a>
         </div>
         <div class="p-6">
           {#if recentOwners.length > 0}
             <div class="space-y-3">
               {#each recentOwners as owner}
-                <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition">
+                <div
+                  class="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition"
+                >
                   <div class="flex-1">
                     <h3 class="font-medium text-gray-900">
-                      {owner.first_name} {owner.last_name}
+                      {owner.first_name}
+                      {owner.last_name}
                     </h3>
                     <p class="text-sm text-gray-600">
                       📧 {owner.email}
@@ -314,14 +452,16 @@
                     onclick={() => openEditModal(owner)}
                     class="ml-4 px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 transition"
                   >
-                    {$_('common.edit')}
+                    {$_("common.edit")}
                   </button>
                 </div>
               {/each}
             </div>
           {:else}
             <div class="text-center py-8">
-              <p class="text-gray-500">{$_('dashboards.syndic.noOwnersRecorded')}</p>
+              <p class="text-gray-500">
+                {$_("dashboards.syndic.noOwnersRecorded")}
+              </p>
             </div>
           {/if}
         </div>

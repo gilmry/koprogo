@@ -1,6 +1,6 @@
 <script lang="ts">
   // Svelte 5 runes mode
-  import { _ } from '../../lib/i18n';
+  import { _ } from "../../lib/i18n";
   import {
     paymentMethodsApi,
     type PaymentMethod,
@@ -10,7 +10,11 @@
   import PaymentMethodAddModal from "./PaymentMethodAddModal.svelte";
   import Button from "../ui/Button.svelte";
 
-  let { ownerId, canManage = true, showHeader = true }: {
+  let {
+    ownerId,
+    canManage = true,
+    showHeader = true,
+  }: {
     ownerId: string;
     canManage?: boolean;
     // Masqué sur /owner/payment-methods, qui porte déjà le même H1.
@@ -29,10 +33,10 @@
   async function loadPaymentMethods() {
     await withLoadingState({
       action: () => paymentMethodsApi.listByOwner(ownerId),
-      setLoading: (v: boolean) => loading = v,
-      setError: (v: string) => error = v,
-      onSuccess: (data) => paymentMethods = data,
-      errorMessage: $_('payments.loadMethodsError'),
+      setLoading: (v: boolean) => (loading = v),
+      setError: (v: string) => (error = v),
+      onSuccess: (data) => (paymentMethods = data),
+      errorMessage: $_("payments.loadMethodsError"),
     });
   }
 
@@ -48,17 +52,22 @@
     <div class="flex items-center justify-between">
       {#if showHeader}
         <div>
-          <h2 class="text-xl font-semibold text-gray-900">{$_('payments.methodsTitle')}</h2>
+          <h2 class="text-xl font-semibold text-gray-900">
+            {$_("payments.methodsTitle")}
+          </h2>
           <p class="mt-1 text-sm text-gray-600">
-            {$_('payments.methodsDescription')}
+            {$_("payments.methodsDescription")}
           </p>
         </div>
       {:else}
         <div></div>
       {/if}
       {#if canManage}
-        <Button onclick={() => (showAddModal = true)} data-testid="add-payment-method-btn">
-          {$_('payments.addMethod')}
+        <Button
+          onclick={() => (showAddModal = true)}
+          data-testid="add-payment-method-btn"
+        >
+          {$_("payments.addMethod")}
         </Button>
       {/if}
     </div>
@@ -67,11 +76,14 @@
   <!-- Payment Methods Grid -->
   <div class="p-6">
     {#if loading}
-      <div class="text-center py-12 text-gray-500" data-testid="payment-method-list-loading">
+      <div
+        class="text-center py-12 text-gray-500"
+        data-testid="payment-method-list-loading"
+      >
         <div
           class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"
         ></div>
-        <p class="mt-4">{$_('common.loading')}</p>
+        <p class="mt-4">{$_("common.loading")}</p>
       </div>
     {:else if paymentMethods.length === 0}
       <div class="text-center py-12">
@@ -89,15 +101,15 @@
           />
         </svg>
         <h3 class="mt-4 text-lg font-medium text-gray-900">
-          {$_('payments.noMethods')}
+          {$_("payments.noMethods")}
         </h3>
         <p class="mt-2 text-sm text-gray-600">
-          {$_('payments.noMethodsDescription')}
+          {$_("payments.noMethodsDescription")}
         </p>
         {#if canManage}
           <div class="mt-6">
             <Button onclick={() => (showAddModal = true)}>
-              {$_('payments.addFirstMethod')}
+              {$_("payments.addFirstMethod")}
             </Button>
           </div>
         {/if}
@@ -132,11 +144,11 @@
           </div>
           <div class="ml-3">
             <h3 class="text-sm font-medium text-blue-800">
-              {$_('payments.secureProcessingTitle')}
+              {$_("payments.secureProcessingTitle")}
             </h3>
             <div class="mt-2 text-sm text-blue-700">
               <p>
-                {$_('payments.secureProcessingDescription')}
+                {$_("payments.secureProcessingDescription")}
               </p>
             </div>
           </div>

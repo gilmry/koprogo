@@ -1,9 +1,9 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
-  import { _ } from '../../lib/i18n';
-  import { api } from '../../lib/api';
-  import { toast } from '../../stores/toast';
-  import type { Building, Owner, BoardMemberResponse } from '../../lib/types';
+  import { onMount } from "svelte";
+  import { _ } from "../../lib/i18n";
+  import { api } from "../../lib/api";
+  import { toast } from "../../stores/toast";
+  import type { Building, Owner, BoardMemberResponse } from "../../lib/types";
   import { formatDate } from "../../lib/utils/date.utils";
   import { withErrorHandling } from "../../lib/utils/error.utils";
 
@@ -16,7 +16,7 @@
   }
 
   let buildings: Building[] = [];
-  let selectedBuildingId: string = '';
+  let selectedBuildingId: string = "";
   let boardMembers: BoardMemberResponse[] = [];
   let owners: Owner[] = [];
   let meetings: Meeting[] = [];
@@ -26,12 +26,12 @@
 
   // Election form
   let electForm = {
-    owner_id: '',
-    building_id: '',
-    meeting_id: '',
-    position: 'president' as 'president' | 'treasurer' | 'secretary',
-    mandate_start: '',
-    mandate_end: '',
+    owner_id: "",
+    building_id: "",
+    meeting_id: "",
+    position: "president" as "president" | "treasurer" | "secretary",
+    mandate_start: "",
+    mandate_end: "",
   };
 
   onMount(async () => {
@@ -41,8 +41,8 @@
   async function loadBuildings() {
     loading = true;
     const result = await withErrorHandling({
-      action: () => api.get<{ data: Building[] }>('/buildings?per_page=100'),
-      errorMessage: $_('admin.errors.failedToLoadBuildings'),
+      action: () => api.get<{ data: Building[] }>("/buildings?per_page=100"),
+      errorMessage: $_("admin.errors.failedToLoadBuildings"),
     });
     if (result) {
       buildings = result.data;
@@ -58,10 +58,11 @@
     if (!selectedBuildingId) return;
     loadingMembers = true;
     const result = await withErrorHandling({
-      action: () => api.get<BoardMemberResponse[]>(
-        `/buildings/${selectedBuildingId}/board-members/active`
-      ),
-      errorMessage: $_('admin.errors.failedToLoadBoardMembers'),
+      action: () =>
+        api.get<BoardMemberResponse[]>(
+          `/buildings/${selectedBuildingId}/board-members/active`,
+        ),
+      errorMessage: $_("admin.errors.failedToLoadBoardMembers"),
     });
     if (result) boardMembers = result;
     loadingMembers = false;
@@ -69,8 +70,8 @@
 
   async function loadOwners() {
     const result = await withErrorHandling({
-      action: () => api.get<{ data: Owner[] }>('/owners?per_page=100'),
-      errorMessage: $_('admin.errors.failedToLoadOwners'),
+      action: () => api.get<{ data: Owner[] }>("/owners?per_page=100"),
+      errorMessage: $_("admin.errors.failedToLoadOwners"),
     });
     if (result) owners = result.data;
   }
@@ -78,17 +79,22 @@
   async function loadMeetings() {
     if (!selectedBuildingId) return;
     const allMeetings = await withErrorHandling({
-      action: () => api.get<Meeting[]>(
-        `/buildings/${selectedBuildingId}/meetings?per_page=100`
-      ),
-      errorMessage: $_('admin.errors.failedToLoadMeetings'),
+      action: () =>
+        api.get<Meeting[]>(
+          `/buildings/${selectedBuildingId}/meetings?per_page=100`,
+        ),
+      errorMessage: $_("admin.errors.failedToLoadMeetings"),
     });
     if (allMeetings) {
-      meetings = allMeetings.filter(m => {
+      meetings = allMeetings.filter((m) => {
         const status = m.status.toLowerCase();
-        return status === 'completed' || status === 'scheduled';
+        return status === "completed" || status === "scheduled";
       });
-      meetings.sort((a, b) => new Date(b.scheduled_date).getTime() - new Date(a.scheduled_date).getTime());
+      meetings.sort(
+        (a, b) =>
+          new Date(b.scheduled_date).getTime() -
+          new Date(a.scheduled_date).getTime(),
+      );
     } else {
       meetings = [];
     }
@@ -100,12 +106,14 @@
 
   function openElectModal() {
     electForm = {
-      owner_id: '',
+      owner_id: "",
       building_id: selectedBuildingId,
-      meeting_id: '',
-      position: 'president',
-      mandate_start: new Date().toISOString().split('T')[0],
-      mandate_end: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // +1 year (Belgian law)
+      meeting_id: "",
+      position: "president",
+      mandate_start: new Date().toISOString().split("T")[0],
+      mandate_end: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)
+        .toISOString()
+        .split("T")[0], // +1 year (Belgian law)
     };
     loadOwners();
     loadMeetings();
@@ -126,9 +134,9 @@
       mandate_end: `${electForm.mandate_end}T23:59:59Z`,
     };
     const result = await withErrorHandling({
-      action: () => api.post('/board-members', payload),
-      successMessage: $_('admin.board.memberElectedSuccessfully'),
-      errorMessage: $_('admin.board.electionError'),
+      action: () => api.post("/board-members", payload),
+      successMessage: $_("admin.board.memberElectedSuccessfully"),
+      errorMessage: $_("admin.board.electionError"),
     });
     if (result !== undefined) {
       closeElectModal();
@@ -137,47 +145,50 @@
   }
 
   async function handleRemove(memberId: string) {
-    if (!confirm($_('admin.board.confirmRemove'))) return;
+    if (!confirm($_("admin.board.confirmRemove"))) return;
     const result = await withErrorHandling({
       action: () => api.delete(`/board-members/${memberId}`),
-      successMessage: $_('admin.board.memberRemovedSuccessfully'),
-      errorMessage: $_('admin.board.removalError'),
+      successMessage: $_("admin.board.memberRemovedSuccessfully"),
+      errorMessage: $_("admin.board.removalError"),
     });
     if (result !== undefined) await loadBoardMembers();
   }
 
   function getPositionLabel(position: string): string {
     const labels: Record<string, string> = {
-      president: 'Président',
-      treasurer: 'Trésorier',
-      secretary: 'Secrétaire',
+      president: "Président",
+      treasurer: "Trésorier",
+      secretary: "Secrétaire",
     };
     return labels[position] || position;
   }
 
   function getPositionIcon(position: string): string {
     const icons: Record<string, string> = {
-      president: '👑',
-      treasurer: '💰',
-      secretary: '📝',
+      president: "👑",
+      treasurer: "💰",
+      secretary: "📝",
     };
-    return icons[position] || '🎯';
+    return icons[position] || "🎯";
   }
-
-
 </script>
 
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8" data-testid="board-management">
+<div
+  class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8"
+  data-testid="board-management"
+>
   <div class="mb-8">
-    <h1 class="text-3xl font-bold text-gray-900">{$_('admin.board.title')}</h1>
-    <p class="mt-2 text-gray-600">{$_('admin.board.description')}</p>
+    <h1 class="text-3xl font-bold text-gray-900">{$_("admin.board.title")}</h1>
+    <p class="mt-2 text-gray-600">{$_("admin.board.description")}</p>
   </div>
 
   {#if loading}
     <div class="flex items-center justify-center min-h-screen">
       <div class="text-center">
-        <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
-        <p class="mt-4 text-gray-600">{$_('common.loading')}</p>
+        <div
+          class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"
+        ></div>
+        <p class="mt-4 text-gray-600">{$_("common.loading")}</p>
       </div>
     </div>
   {:else}
@@ -185,8 +196,11 @@
     <div class="bg-white shadow rounded-lg p-6 mb-6">
       <div class="flex items-center justify-between">
         <div class="flex-1 max-w-md">
-          <label for="building-select" class="block text-sm font-medium text-gray-700 mb-2">
-            {$_('admin.board.selectBuilding')}
+          <label
+            for="building-select"
+            class="block text-sm font-medium text-gray-700 mb-2"
+          >
+            {$_("admin.board.selectBuilding")}
           </label>
           <select
             id="building-select"
@@ -195,7 +209,9 @@
             class="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500"
           >
             {#each buildings as building}
-              <option value={building.id}>{building.name} - {building.address}</option>
+              <option value={building.id}
+                >{building.name} - {building.address}</option
+              >
             {/each}
           </select>
         </div>
@@ -203,7 +219,7 @@
           on:click={openElectModal}
           class="ml-4 px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 transition"
         >
-          ➕ {$_('admin.board.electMember')}
+          ➕ {$_("admin.board.electMember")}
         </button>
       </div>
     </div>
@@ -211,30 +227,40 @@
     <!-- Board Members List -->
     {#if loadingMembers}
       <div class="flex justify-center py-12">
-        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
+        <div
+          class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"
+        ></div>
       </div>
     {:else if boardMembers.length === 0}
       <div class="bg-gray-50 border border-gray-200 rounded-lg p-8 text-center">
-        <p class="text-gray-500 text-lg">{$_('admin.board.noMembers')}</p>
+        <p class="text-gray-500 text-lg">{$_("admin.board.noMembers")}</p>
         <button
           on:click={openElectModal}
           class="mt-4 px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 transition"
         >
-          {$_('admin.board.electFirstMember')}
+          {$_("admin.board.electFirstMember")}
         </button>
       </div>
     {:else}
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {#each boardMembers as member}
-          <div class="bg-white border border-gray-200 rounded-lg shadow p-6 hover:shadow-lg transition">
+          <div
+            class="bg-white border border-gray-200 rounded-lg shadow p-6 hover:shadow-lg transition"
+          >
             <div class="flex items-start justify-between mb-4">
               <div class="flex items-center gap-3">
                 <span class="text-4xl">{getPositionIcon(member.position)}</span>
                 <div>
-                  <h3 class="text-lg font-bold text-gray-900">{getPositionLabel(member.position)}</h3>
+                  <h3 class="text-lg font-bold text-gray-900">
+                    {getPositionLabel(member.position)}
+                  </h3>
                   {#if member.expires_soon}
-                    <span class="inline-block mt-1 px-2 py-0.5 bg-orange-100 text-orange-800 text-xs font-medium rounded">
-                      ⚠️ {$_('admin.board.expiresIn')} {member.days_remaining} {$_('common.days')}
+                    <span
+                      class="inline-block mt-1 px-2 py-0.5 bg-orange-100 text-orange-800 text-xs font-medium rounded"
+                    >
+                      ⚠️ {$_("admin.board.expiresIn")}
+                      {member.days_remaining}
+                      {$_("common.days")}
                     </span>
                   {/if}
                 </div>
@@ -243,20 +269,32 @@
 
             <div class="space-y-2 text-sm">
               <div class="flex justify-between">
-                <span class="text-gray-600">{$_('admin.board.ownerId')}:</span>
-                <span class="font-medium text-gray-900 text-xs">{member.owner_id}</span>
+                <span class="text-gray-600">{$_("admin.board.ownerId")}:</span>
+                <span class="font-medium text-gray-900 text-xs"
+                  >{member.owner_id}</span
+                >
               </div>
               <div class="flex justify-between">
-                <span class="text-gray-600">{$_('admin.board.start')}:</span>
-                <span class="font-medium text-gray-900">{formatDate(member.mandate_start)}</span>
+                <span class="text-gray-600">{$_("admin.board.start")}:</span>
+                <span class="font-medium text-gray-900"
+                  >{formatDate(member.mandate_start)}</span
+                >
               </div>
               <div class="flex justify-between">
-                <span class="text-gray-600">{$_('admin.board.end')}:</span>
-                <span class="font-medium text-gray-900">{formatDate(member.mandate_end)}</span>
+                <span class="text-gray-600">{$_("admin.board.end")}:</span>
+                <span class="font-medium text-gray-900"
+                  >{formatDate(member.mandate_end)}</span
+                >
               </div>
               <div class="flex justify-between">
-                <span class="text-gray-600">{$_('admin.board.daysRemaining')}:</span>
-                <span class="font-medium {member.expires_soon ? 'text-orange-600' : 'text-green-600'}">
+                <span class="text-gray-600"
+                  >{$_("admin.board.daysRemaining")}:</span
+                >
+                <span
+                  class="font-medium {member.expires_soon
+                    ? 'text-orange-600'
+                    : 'text-green-600'}"
+                >
                   {member.days_remaining}
                 </span>
               </div>
@@ -267,13 +305,13 @@
                 on:click={() => handleRemove(member.id)}
                 class="flex-1 px-3 py-2 bg-red-50 text-red-700 rounded hover:bg-red-100 transition text-sm font-medium"
               >
-                🗑️ {$_('admin.board.remove')}
+                🗑️ {$_("admin.board.remove")}
               </button>
               <a
                 href="/board-dashboard?building_id={member.building_id}"
                 class="flex-1 px-3 py-2 bg-primary-50 text-primary-700 rounded hover:bg-primary-100 transition text-sm font-medium text-center"
               >
-                {$_('common.dashboard')}
+                {$_("common.dashboard")}
               </a>
             </div>
           </div>
@@ -285,69 +323,95 @@
 
 <!-- Election Modal -->
 {#if showElectModal}
-  <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+  <div
+    class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+  >
     <div class="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
-      <h2 class="text-2xl font-bold text-gray-900 mb-4">{$_('admin.board.electMemberTitle')}</h2>
+      <h2 class="text-2xl font-bold text-gray-900 mb-4">
+        {$_("admin.board.electMemberTitle")}
+      </h2>
 
       <form on:submit|preventDefault={handleElect} class="space-y-4">
         <div>
-          <label for="board-elect-owner" class="block text-sm font-medium text-gray-700 mb-1">{$_('admin.board.owner')}</label>
+          <label
+            for="board-elect-owner"
+            class="block text-sm font-medium text-gray-700 mb-1"
+            >{$_("admin.board.owner")}</label
+          >
           <select
             id="board-elect-owner"
             bind:value={electForm.owner_id}
             required
             class="w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500"
           >
-            <option value="">-- {$_('admin.board.selectOwner')} --</option>
+            <option value="">-- {$_("admin.board.selectOwner")} --</option>
             {#each owners as owner}
-              <option value={owner.id}>{owner.first_name} {owner.last_name} ({owner.email})</option>
+              <option value={owner.id}
+                >{owner.first_name} {owner.last_name} ({owner.email})</option
+              >
             {/each}
           </select>
         </div>
 
         <div>
-          <label for="board-elect-position" class="block text-sm font-medium text-gray-700 mb-1">{$_('admin.board.position')}</label>
+          <label
+            for="board-elect-position"
+            class="block text-sm font-medium text-gray-700 mb-1"
+            >{$_("admin.board.position")}</label
+          >
           <select
             id="board-elect-position"
             bind:value={electForm.position}
             class="w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500"
           >
-            <option value="president">👑 {$_('admin.board.president')}</option>
-            <option value="treasurer">💰 {$_('admin.board.treasurer')}</option>
-            <option value="secretary">📝 {$_('admin.board.secretary')}</option>
+            <option value="president">👑 {$_("admin.board.president")}</option>
+            <option value="treasurer">💰 {$_("admin.board.treasurer")}</option>
+            <option value="secretary">📝 {$_("admin.board.secretary")}</option>
           </select>
         </div>
 
         <div>
-          <label for="board-elect-meeting" class="block text-sm font-medium text-gray-700 mb-1">{$_('admin.board.meeting')}</label>
+          <label
+            for="board-elect-meeting"
+            class="block text-sm font-medium text-gray-700 mb-1"
+            >{$_("admin.board.meeting")}</label
+          >
           <select
             id="board-elect-meeting"
             bind:value={electForm.meeting_id}
             required
             class="w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500"
           >
-            <option value="">-- {$_('admin.board.selectMeeting')} --</option>
+            <option value="">-- {$_("admin.board.selectMeeting")} --</option>
             {#each meetings as meeting}
               <option value={meeting.id}>
-                {#if meeting.status.toLowerCase() === 'completed'}✓{:else}📅{/if}
-                {meeting.title} - {new Date(meeting.scheduled_date).toLocaleDateString('fr-BE')}
-                ({meeting.meeting_type.toLowerCase() === 'ordinary' ? 'AGO' : 'AGE'})
-                {#if meeting.status.toLowerCase() === 'completed'}- Terminée{/if}
+                {#if meeting.status.toLowerCase() === "completed"}✓{:else}📅{/if}
+                {meeting.title} - {new Date(
+                  meeting.scheduled_date,
+                ).toLocaleDateString("fr-BE")}
+                ({meeting.meeting_type.toLowerCase() === "ordinary"
+                  ? "AGO"
+                  : "AGE"})
+                {#if meeting.status.toLowerCase() === "completed"}- Terminée{/if}
               </option>
             {/each}
           </select>
           <p class="mt-1 text-xs text-gray-500">
             {#if meetings && meetings.length === 0}
-              ⚠️ {$_('admin.board.noMeetings')}
+              ⚠️ {$_("admin.board.noMeetings")}
             {:else}
-              {$_('admin.board.meetingRequired')}
+              {$_("admin.board.meetingRequired")}
             {/if}
           </p>
         </div>
 
         <div class="grid grid-cols-2 gap-4">
           <div>
-            <label for="board-elect-mandate-start" class="block text-sm font-medium text-gray-700 mb-1">{$_('admin.board.mandateStart')}</label>
+            <label
+              for="board-elect-mandate-start"
+              class="block text-sm font-medium text-gray-700 mb-1"
+              >{$_("admin.board.mandateStart")}</label
+            >
             <input
               id="board-elect-mandate-start"
               type="date"
@@ -357,7 +421,11 @@
             />
           </div>
           <div>
-            <label for="board-elect-mandate-end" class="block text-sm font-medium text-gray-700 mb-1">{$_('admin.board.mandateEnd')}</label>
+            <label
+              for="board-elect-mandate-end"
+              class="block text-sm font-medium text-gray-700 mb-1"
+              >{$_("admin.board.mandateEnd")}</label
+            >
             <input
               id="board-elect-mandate-end"
               type="date"
@@ -374,13 +442,13 @@
             on:click={closeElectModal}
             class="flex-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition"
           >
-            {$_('common.cancel')}
+            {$_("common.cancel")}
           </button>
           <button
             type="submit"
             class="flex-1 px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 transition"
           >
-            {$_('admin.board.elect')}
+            {$_("admin.board.elect")}
           </button>
         </div>
       </form>

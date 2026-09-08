@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import { _ } from '../../lib/i18n';
+  import { _ } from "../../lib/i18n";
   import { ticketsApi, type TicketStatistics } from "../../lib/api/tickets";
   import { withLoadingState } from "../../lib/utils/error.utils";
 
@@ -15,9 +15,9 @@
   async function loadStatistics() {
     await withLoadingState({
       action: () => ticketsApi.getStatistics(),
-      setLoading: (v) => loading = v,
-      setError: (v) => error = v,
-      onSuccess: (data) => stats = data,
+      setLoading: (v) => (loading = v),
+      setError: (v) => (error = v),
+      onSuccess: (data) => (stats = data),
       errorMessage: $_("tickets.statistics_load_failed"),
     });
   }
@@ -32,7 +32,9 @@
 
 <div class="bg-white shadow rounded-lg p-6" data-testid="ticket-statistics">
   <div class="flex items-center justify-between mb-4">
-    <h2 class="text-lg font-semibold text-gray-900">{$_("tickets.statistics")}</h2>
+    <h2 class="text-lg font-semibold text-gray-900">
+      {$_("tickets.statistics")}
+    </h2>
     <button
       on:click={loadStatistics}
       class="text-sm text-blue-600 hover:text-blue-700"
@@ -43,32 +45,48 @@
   </div>
 
   {#if loading}
-    <div class="text-center py-8 text-gray-500" data-testid="loading-spinner">{$_("tickets.loadingStatistics")}</div>
+    <div class="text-center py-8 text-gray-500" data-testid="loading-spinner">
+      {$_("tickets.loadingStatistics")}
+    </div>
   {:else if stats}
     <dl class="grid grid-cols-2 md:grid-cols-4 gap-4">
       <!-- Total Tickets -->
       <div class="bg-gray-50 rounded-lg p-4" data-testid="ticket-stat-total">
-        <dt class="text-sm font-medium text-gray-500 mb-1">{$_("tickets.totalTickets")}</dt>
+        <dt class="text-sm font-medium text-gray-500 mb-1">
+          {$_("tickets.totalTickets")}
+        </dt>
         <dd class="text-2xl font-bold text-gray-900">{stats.total_tickets}</dd>
       </div>
 
       <!-- Open Tickets -->
       <div class="bg-blue-50 rounded-lg p-4" data-testid="ticket-stat-open">
-        <dt class="text-sm font-medium text-blue-700 mb-1">{$_("tickets.statusOpen")}</dt>
+        <dt class="text-sm font-medium text-blue-700 mb-1">
+          {$_("tickets.statusOpen")}
+        </dt>
         <dd class="text-2xl font-bold text-blue-900">{stats.open_tickets}</dd>
       </div>
 
       <!-- In Progress -->
-      <div class="bg-yellow-50 rounded-lg p-4" data-testid="ticket-stat-in-progress">
-        <dt class="text-sm font-medium text-yellow-700 mb-1">{$_("tickets.statusInProgress")}</dt>
+      <div
+        class="bg-yellow-50 rounded-lg p-4"
+        data-testid="ticket-stat-in-progress"
+      >
+        <dt class="text-sm font-medium text-yellow-700 mb-1">
+          {$_("tickets.statusInProgress")}
+        </dt>
         <dd class="text-2xl font-bold text-yellow-900">
           {stats.in_progress_tickets}
         </dd>
       </div>
 
       <!-- Resolved -->
-      <div class="bg-green-50 rounded-lg p-4" data-testid="ticket-stat-resolved">
-        <dt class="text-sm font-medium text-green-700 mb-1">{$_("tickets.statusResolved")}</dt>
+      <div
+        class="bg-green-50 rounded-lg p-4"
+        data-testid="ticket-stat-resolved"
+      >
+        <dt class="text-sm font-medium text-green-700 mb-1">
+          {$_("tickets.statusResolved")}
+        </dt>
         <dd class="text-2xl font-bold text-green-900">
           {stats.resolved_tickets}
         </dd>
@@ -76,13 +94,20 @@
 
       <!-- Closed -->
       <div class="bg-gray-50 rounded-lg p-4" data-testid="ticket-stat-closed">
-        <dt class="text-sm font-medium text-gray-500 mb-1">{$_("tickets.statusClosed")}</dt>
+        <dt class="text-sm font-medium text-gray-500 mb-1">
+          {$_("tickets.statusClosed")}
+        </dt>
         <dd class="text-2xl font-bold text-gray-900">{stats.closed_tickets}</dd>
       </div>
 
       <!-- Assigned -->
-      <div class="bg-purple-50 rounded-lg p-4" data-testid="ticket-stat-assigned">
-        <dt class="text-sm font-medium text-purple-700 mb-1">{$_("tickets.statusAssigned")}</dt>
+      <div
+        class="bg-purple-50 rounded-lg p-4"
+        data-testid="ticket-stat-assigned"
+      >
+        <dt class="text-sm font-medium text-purple-700 mb-1">
+          {$_("tickets.statusAssigned")}
+        </dt>
         <dd class="text-2xl font-bold text-purple-900">
           {stats.assigned_tickets}
         </dd>
@@ -90,12 +115,17 @@
 
       <!-- Overdue -->
       <div class="bg-red-50 rounded-lg p-4" data-testid="ticket-stat-overdue">
-        <dt class="text-sm font-medium text-red-700 mb-1">⚠️ {$_("tickets.overdue")}</dt>
+        <dt class="text-sm font-medium text-red-700 mb-1">
+          ⚠️ {$_("tickets.overdue")}
+        </dt>
         <dd class="text-2xl font-bold text-red-900">{stats.overdue_tickets}</dd>
       </div>
 
       <!-- Average Resolution Time -->
-      <div class="bg-indigo-50 rounded-lg p-4" data-testid="ticket-stat-avg-resolution">
+      <div
+        class="bg-indigo-50 rounded-lg p-4"
+        data-testid="ticket-stat-avg-resolution"
+      >
         <dt class="text-sm font-medium text-indigo-700 mb-1">
           {$_("tickets.avgResolution")}
         </dt>
@@ -105,6 +135,8 @@
       </div>
     </dl>
   {:else}
-    <div class="text-center py-8 text-gray-500">{$_("tickets.noStatistics")}</div>
+    <div class="text-center py-8 text-gray-500">
+      {$_("tickets.noStatistics")}
+    </div>
   {/if}
 </div>

@@ -39,9 +39,7 @@
     role,
     /** Mandate actif pour le rôle (UUID + date d'expiration ISO 8601).
      *  Obligatoire pour les rôles MANDATARY_ROLES. */
-    activeMandate = null as
-      | { id: string; validUntil: string }
-      | null,
+    activeMandate = null as { id: string; validUntil: string } | null,
     /** Callback de signature — le parent gère l'appel API + rafraîchissement
      *  de la liste de signatures. */
     onSign,
@@ -85,8 +83,7 @@
   async function handleSign(): Promise<void> {
     const req: SignTechnicalSpecRequest = {
       role,
-      mandate_id:
-        isMandataryRole && activeMandate ? activeMandate.id : null,
+      mandate_id: isMandataryRole && activeMandate ? activeMandate.id : null,
     };
     await onSign(specId, req);
   }
@@ -100,7 +97,7 @@
     id="tech-spec-sign-title"
     class="mb-2 text-sm font-semibold text-blue-900"
   >
-    {$_('technicalSpecs.signTitle')}
+    {$_("technicalSpecs.signTitle")}
   </h3>
 
   {#if isMandataryRole && activeMandate}
@@ -109,7 +106,7 @@
       class="mb-3 text-xs text-blue-800"
       role="status"
     >
-      {$_('technicalSpecs.signingViaMandate', {
+      {$_("technicalSpecs.signingViaMandate", {
         values: {
           role,
           mandat: activeMandate.id.slice(0, 8),
@@ -123,7 +120,7 @@
       class="mb-3 text-xs text-blue-800"
       role="status"
     >
-      {$_('technicalSpecs.signingDirectRole', { values: { role } })}
+      {$_("technicalSpecs.signingDirectRole", { values: { role } })}
     </p>
   {/if}
 
@@ -133,7 +130,7 @@
       class="mb-3 rounded-md border border-red-300 bg-red-50 p-3 text-sm text-red-700"
       role="alert"
     >
-      {$_('technicalSpecs.noActiveMandate', { values: { role } })}
+      {$_("technicalSpecs.noActiveMandate", { values: { role } })}
     </p>
   {/if}
 

@@ -75,7 +75,14 @@
 
   // Les kinds sont fixés par le backend (MandateKind enum — Story 3.4).
   // Ordre métier : juridique → technique.
-  const KINDS = ["lawyer", "notary", "amo", "architect", "bet", "warden"] as const;
+  const KINDS = [
+    "lawyer",
+    "notary",
+    "amo",
+    "architect",
+    "bet",
+    "warden",
+  ] as const;
   type Kind = (typeof KINDS)[number];
 
   let subjectUserId = $state<string>("");
@@ -368,8 +375,7 @@
       aria-invalid={errors.reason ? "true" : "false"}
       aria-describedby="mandate-reason-counter mandate-error-reason"
       class="border border-gray-300 rounded px-3 py-2 text-sm font-mono"
-      required
-    ></textarea>
+      required></textarea>
     <p
       id="mandate-reason-counter"
       data-testid="mandate-reason-counter"

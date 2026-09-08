@@ -1,48 +1,48 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
-  import { _ } from '../lib/i18n';
+  import { onMount } from "svelte";
+  import { _ } from "../lib/i18n";
   import { formatDate } from "../lib/utils/date.utils";
-import { api } from '../lib/api';
-import { toast } from '../stores/toast';
-import { authStore } from '../stores/auth';
-import type { User } from '../lib/types';
-import { mapUserFromBackend } from '../stores/auth';
-  import UserForm from './admin/UserForm.svelte';
-  import ConfirmDialog from './ui/ConfirmDialog.svelte';
-  import Button from './ui/Button.svelte';
+  import { api } from "../lib/api";
+  import { toast } from "../stores/toast";
+  import { authStore } from "../stores/auth";
+  import type { User } from "../lib/types";
+  import { mapUserFromBackend } from "../stores/auth";
+  import UserForm from "./admin/UserForm.svelte";
+  import ConfirmDialog from "./ui/ConfirmDialog.svelte";
+  import Button from "./ui/Button.svelte";
 
   // Composant réservé SuperAdmin uniquement (défense en profondeur)
-  $: isSuperAdmin = $authStore.user?.role === 'superadmin';
+  $: isSuperAdmin = $authStore.user?.role === "superadmin";
 
-interface BackendRole {
-  id: string;
-  role: string;
-  organization_id?: string | null;
-  is_primary: boolean;
-}
+  interface BackendRole {
+    id: string;
+    role: string;
+    organization_id?: string | null;
+    is_primary: boolean;
+  }
 
-interface BackendUser {
-  id: string;
-  email: string;
-  first_name: string;
-  last_name: string;
-  role: string;
-  organization_id?: string | null;
-  is_active: boolean;
-  created_at: string;
-  roles: BackendRole[];
-  active_role?: BackendRole | null;
-}
+  interface BackendUser {
+    id: string;
+    email: string;
+    first_name: string;
+    last_name: string;
+    role: string;
+    organization_id?: string | null;
+    is_active: boolean;
+    created_at: string;
+    roles: BackendRole[];
+    active_role?: BackendRole | null;
+  }
 
   let users: User[] = [];
   let loading = true;
-  let error = '';
-  let searchTerm = '';
-  let roleFilter = 'all';
+  let error = "";
+  let searchTerm = "";
+  let roleFilter = "all";
   let showFormModal = false;
   let showConfirmDialog = false;
   let selectedUser: User | null = null;
-  let formMode: 'create' | 'edit' = 'create';
+  let formMode: "create" | "edit" = "create";
   let actionLoading = false;
 
   onMount(async () => {
@@ -50,17 +50,19 @@ interface BackendUser {
   });
 
   async function loadUsers() {
-  try {
-    loading = true;
-    error = '';
-    const response = await api.get<{ data: BackendUser[] }>('/users?per_page=1000');
+    try {
+      loading = true;
+      error = "";
+      const response = await api.get<{ data: BackendUser[] }>(
+        "/users?per_page=1000",
+      );
 
-    users = response.data.map((backendUser) =>
-      mapUserFromBackend(backendUser)
-    );
+      users = response.data.map((backendUser) =>
+        mapUserFromBackend(backendUser),
+      );
     } catch (e) {
-      error = e instanceof Error ? e.message : $_('admin.users.loadError');
-      console.error('Error loading users:', e);
+      error = e instanceof Error ? e.message : $_("admin.users.loadError");
+      console.error("Error loading users:", e);
     } finally {
       loading = false;
     }
@@ -72,40 +74,40 @@ interface BackendUser {
       user.first_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       user.last_name.toLowerCase().includes(searchTerm.toLowerCase());
 
-    const matchesRole = roleFilter === 'all' || user.role === roleFilter;
+    const matchesRole = roleFilter === "all" || user.role === roleFilter;
 
     return matchesSearch && matchesRole;
   });
 
   function getRoleBadgeClass(role: string): string {
     const classes = {
-      superadmin: 'bg-purple-100 text-purple-800',
-      syndic: 'bg-blue-100 text-blue-800',
-      accountant: 'bg-green-100 text-green-800',
-      owner: 'bg-yellow-100 text-yellow-800',
+      superadmin: "bg-purple-100 text-purple-800",
+      syndic: "bg-blue-100 text-blue-800",
+      accountant: "bg-green-100 text-green-800",
+      owner: "bg-yellow-100 text-yellow-800",
     };
-    return classes[role as keyof typeof classes] || 'bg-gray-100 text-gray-800';
+    return classes[role as keyof typeof classes] || "bg-gray-100 text-gray-800";
   }
 
   function getRoleLabel(role: string): string {
     const labels: Record<string, string> = {
-      superadmin: '👑 ' + $_('admin.users.roles.superadmin'),
-      syndic: '🏢 ' + $_('admin.users.roles.syndic'),
-      accountant: '📊 ' + $_('admin.users.roles.accountant'),
-      owner: '👤 ' + $_('admin.users.roles.owner'),
+      superadmin: "👑 " + $_("admin.users.roles.superadmin"),
+      syndic: "🏢 " + $_("admin.users.roles.syndic"),
+      accountant: "📊 " + $_("admin.users.roles.accountant"),
+      owner: "👤 " + $_("admin.users.roles.owner"),
     };
     return labels[role as keyof typeof labels] || role;
   }
 
   const handleCreate = () => {
     selectedUser = null;
-    formMode = 'create';
+    formMode = "create";
     showFormModal = true;
   };
 
   const handleEdit = (user: User) => {
     selectedUser = user;
-    formMode = 'edit';
+    formMode = "edit";
     showFormModal = true;
   };
 
@@ -118,16 +120,19 @@ interface BackendUser {
 
       await api.put(endpoint, {});
 
-      const action = user.is_active ? $_('common.deactivated') : $_('common.activated');
+      const action = user.is_active
+        ? $_("common.deactivated")
+        : $_("common.activated");
       toast.show(
-        $_('admin.users.toggleSuccess', { values: { action } }),
-        'success'
+        $_("admin.users.toggleSuccess", { values: { action } }),
+        "success",
       );
 
       await loadUsers();
     } catch (e) {
-      const errorMessage = e instanceof Error ? e.message : 'Une erreur est survenue';
-      toast.show(errorMessage, 'error');
+      const errorMessage =
+        e instanceof Error ? e.message : "Une erreur est survenue";
+      toast.show(errorMessage, "error");
     } finally {
       actionLoading = false;
     }
@@ -144,13 +149,14 @@ interface BackendUser {
     actionLoading = true;
     try {
       await api.delete(`/users/${selectedUser.id}`);
-      toast.show($_('admin.users.deleteSuccess'), 'success');
+      toast.show($_("admin.users.deleteSuccess"), "success");
       showConfirmDialog = false;
       selectedUser = null;
       await loadUsers();
     } catch (e) {
-      const errorMessage = e instanceof Error ? e.message : 'Une erreur est survenue';
-      toast.show(errorMessage, 'error');
+      const errorMessage =
+        e instanceof Error ? e.message : "Une erreur est survenue";
+      toast.show(errorMessage, "error");
     } finally {
       actionLoading = false;
     }
@@ -165,13 +171,19 @@ interface BackendUser {
   <!-- Header -->
   <div class="flex justify-between items-center">
     <div>
-      <h1 class="text-3xl font-bold text-gray-900">{$_('admin.users.title')}</h1>
+      <h1 class="text-3xl font-bold text-gray-900">
+        {$_("admin.users.title")}
+      </h1>
       <p class="mt-1 text-sm text-gray-600">
-        {$_('admin.users.subtitle')}
+        {$_("admin.users.subtitle")}
       </p>
     </div>
-    <Button variant="primary" onclick={handleCreate} data-testid="create-user-button">
-      ➕ {$_('admin.users.createUser')}
+    <Button
+      variant="primary"
+      onclick={handleCreate}
+      data-testid="create-user-button"
+    >
+      ➕ {$_("admin.users.createUser")}
     </Button>
   </div>
 
@@ -179,30 +191,38 @@ interface BackendUser {
   <div class="bg-white rounded-lg shadow p-4">
     <div class="flex flex-col md:flex-row gap-4">
       <div class="flex-1 relative">
-        <label for="user-search" class="sr-only">{$_('admin.users.searchPlaceholder')}</label>
+        <label for="user-search" class="sr-only"
+          >{$_("admin.users.searchPlaceholder")}</label
+        >
         <input
           id="user-search"
           type="text"
           bind:value={searchTerm}
-          placeholder={$_('admin.users.searchPlaceholder')}
+          placeholder={$_("admin.users.searchPlaceholder")}
           data-testid="user-search-input"
           class="w-full px-4 py-2 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
         />
         <span class="absolute left-3 top-2.5 text-gray-400">🔍</span>
       </div>
       <div>
-        <label for="user-role-filter" class="sr-only">{$_('admin.users.roles.syndic')}</label>
+        <label for="user-role-filter" class="sr-only"
+          >{$_("admin.users.roles.syndic")}</label
+        >
         <select
           id="user-role-filter"
           bind:value={roleFilter}
           data-testid="user-role-filter"
           class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
         >
-          <option value="all">{$_('admin.users.allRoles')}</option>
-          <option value="superadmin">{$_('admin.users.roles.superadmin')}</option>
-          <option value="syndic">{$_('admin.users.roles.syndic')}</option>
-          <option value="accountant">{$_('admin.users.roles.accountant')}</option>
-          <option value="owner">{$_('admin.users.roles.owner')}</option>
+          <option value="all">{$_("admin.users.allRoles")}</option>
+          <option value="superadmin"
+            >{$_("admin.users.roles.superadmin")}</option
+          >
+          <option value="syndic">{$_("admin.users.roles.syndic")}</option>
+          <option value="accountant"
+            >{$_("admin.users.roles.accountant")}</option
+          >
+          <option value="owner">{$_("admin.users.roles.owner")}</option>
         </select>
       </div>
     </div>
@@ -210,7 +230,9 @@ interface BackendUser {
 
   <!-- Error Message -->
   {#if error}
-    <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+    <div
+      class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg"
+    >
       ⚠️ {error}
     </div>
   {/if}
@@ -219,149 +241,199 @@ interface BackendUser {
   <div class="bg-white rounded-lg shadow overflow-hidden">
     {#if loading}
       <div class="p-12 text-center">
-        <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
-        <p class="mt-2 text-gray-600">{$_('common.loading')}</p>
+        <div
+          class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"
+        ></div>
+        <p class="mt-2 text-gray-600">{$_("common.loading")}</p>
       </div>
     {:else}
       <div class="overflow-x-auto">
         <table class="min-w-full divide-y divide-gray-200">
           <thead class="bg-gray-50">
             <tr>
-              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                {$_('admin.users.table.user')}
+              <th
+                scope="col"
+                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+              >
+                {$_("admin.users.table.user")}
               </th>
-              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                {$_('admin.users.table.email')}
+              <th
+                scope="col"
+                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+              >
+                {$_("admin.users.table.email")}
               </th>
-              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                {$_('admin.users.table.roles')}
+              <th
+                scope="col"
+                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+              >
+                {$_("admin.users.table.roles")}
               </th>
-              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                {$_('admin.users.table.organization')}
+              <th
+                scope="col"
+                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+              >
+                {$_("admin.users.table.organization")}
               </th>
-              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                {$_('admin.users.table.status')}
+              <th
+                scope="col"
+                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+              >
+                {$_("admin.users.table.status")}
               </th>
-              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                {$_('admin.users.table.registeredAt')}
+              <th
+                scope="col"
+                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+              >
+                {$_("admin.users.table.registeredAt")}
               </th>
-              <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                {$_('admin.users.table.actions')}
+              <th
+                scope="col"
+                class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"
+              >
+                {$_("admin.users.table.actions")}
               </th>
             </tr>
           </thead>
-          <tbody class="bg-white divide-y divide-gray-200" data-testid="users-table-body">
+          <tbody
+            class="bg-white divide-y divide-gray-200"
+            data-testid="users-table-body"
+          >
             {#if filteredUsers.length === 0}
               <tr data-testid="users-empty-row">
                 <td colspan="7" class="p-12 text-center text-gray-500">
-                  {searchTerm || roleFilter !== 'all' ? $_('admin.users.noSearchResults') : $_('admin.users.noUsers')}
+                  {searchTerm || roleFilter !== "all"
+                    ? $_("admin.users.noSearchResults")
+                    : $_("admin.users.noUsers")}
                 </td>
               </tr>
             {:else}
-            {#each filteredUsers as user (user.id)}
-              <tr
-                class="hover:bg-gray-50"
-                data-testid="user-row"
-                data-user-id={user.id}
-                data-user-email={user.email}
-                data-user-name={`${user.first_name} ${user.last_name}`}
-              >
-                <td class="px-6 py-4 whitespace-nowrap">
-                  <div class="flex items-center">
-                    <div class="flex-shrink-0 h-10 w-10 bg-primary-100 rounded-full flex items-center justify-center">
-                      <span class="text-primary-600 font-semibold">
-                        {user.first_name[0]}{user.last_name[0]}
-                      </span>
-                    </div>
-                    <div class="ml-4">
-                      <div class="text-sm font-medium text-gray-900" data-testid="user-name">
-                        {user.first_name} {user.last_name}
+              {#each filteredUsers as user (user.id)}
+                <tr
+                  class="hover:bg-gray-50"
+                  data-testid="user-row"
+                  data-user-id={user.id}
+                  data-user-email={user.email}
+                  data-user-name={`${user.first_name} ${user.last_name}`}
+                >
+                  <td class="px-6 py-4 whitespace-nowrap">
+                    <div class="flex items-center">
+                      <div
+                        class="flex-shrink-0 h-10 w-10 bg-primary-100 rounded-full flex items-center justify-center"
+                      >
+                        <span class="text-primary-600 font-semibold">
+                          {user.first_name[0]}{user.last_name[0]}
+                        </span>
+                      </div>
+                      <div class="ml-4">
+                        <div
+                          class="text-sm font-medium text-gray-900"
+                          data-testid="user-name"
+                        >
+                          {user.first_name}
+                          {user.last_name}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap">
-                  <div class="text-sm text-gray-900" data-testid="user-email">{user.email}</div>
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap">
-                  <div class="flex flex-wrap gap-1">
-                    {#each user.roles as roleSummary (roleSummary.id)}
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap">
+                    <div class="text-sm text-gray-900" data-testid="user-email">
+                      {user.email}
+                    </div>
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap">
+                    <div class="flex flex-wrap gap-1">
+                      {#each user.roles as roleSummary (roleSummary.id)}
+                        <span
+                          class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {getRoleBadgeClass(
+                            roleSummary.role,
+                          )} {roleSummary.isPrimary
+                            ? 'ring-2 ring-primary-300'
+                            : ''}"
+                          data-testid="user-role-badge"
+                        >
+                          {getRoleLabel(roleSummary.role)}
+                          {#if roleSummary.organizationId}
+                            <span class="ml-1 text-gray-500">
+                              ({roleSummary.organizationId.substring(0, 8)}…)
+                            </span>
+                          {/if}
+                          {#if roleSummary.isPrimary}
+                            <span class="ml-1 text-primary-700">★</span>
+                          {/if}
+                        </span>
+                      {/each}
+                    </div>
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {user.organizationId
+                      ? user.organizationId.substring(0, 8) + "..."
+                      : "-"}
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap">
+                    {#if user.is_active}
                       <span
-                        class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {getRoleBadgeClass(roleSummary.role)} {roleSummary.isPrimary ? 'ring-2 ring-primary-300' : ''}"
-                        data-testid="user-role-badge"
+                        class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800"
+                        data-testid="user-status"
                       >
-                        {getRoleLabel(roleSummary.role)}
-                        {#if roleSummary.organizationId}
-                          <span class="ml-1 text-gray-500">
-                            ({roleSummary.organizationId.substring(0, 8)}…)
-                          </span>
-                        {/if}
-                        {#if roleSummary.isPrimary}
-                          <span class="ml-1 text-primary-700">★</span>
-                        {/if}
+                        ✓ {$_("common.active")}
                       </span>
-                    {/each}
-                  </div>
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {user.organizationId ? user.organizationId.substring(0, 8) + '...' : '-'}
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap">
-                  {#if user.is_active}
-                    <span
-                      class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800"
-                      data-testid="user-status"
-                    >
-                      ✓ {$_('common.active')}
-                    </span>
-                  {:else}
-                    <span
-                      class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800"
-                      data-testid="user-status"
-                    >
-                      ✗ {$_('common.inactive')}
-                    </span>
-                  {/if}
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {formatDate(user.created_at)}
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                  <div class="flex justify-end space-x-2">
-                    <button
-                      on:click={() => handleEdit(user)}
-                      class="text-primary-600 hover:text-primary-900"
-                      aria-label={$_('common.edit')}
-                      title={$_('common.edit')}
-                      disabled={actionLoading}
-                      data-testid="edit-user-button"
-                    >
-                      ✏️
-                    </button>
-                    <button
-                      on:click={() => handleToggleActive(user)}
-                      class={user.is_active ? 'text-orange-600 hover:text-orange-900' : 'text-green-600 hover:text-green-900'}
-                      aria-label={user.is_active ? $_('common.deactivate') : $_('common.activate')}
-                      title={user.is_active ? $_('common.deactivate') : $_('common.activate')}
-                      disabled={actionLoading}
-                      data-testid="toggle-user-button"
-                    >
-                      {user.is_active ? '⏸️' : '▶️'}
-                    </button>
-                    <button
-                      on:click={() => handleDeleteClick(user)}
-                      class="text-red-600 hover:text-red-900"
-                      aria-label={$_('common.delete')}
-                      title={$_('common.delete')}
-                      disabled={actionLoading}
-                      data-testid="delete-user-button"
-                    >
-                      🗑️
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            {/each}
+                    {:else}
+                      <span
+                        class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800"
+                        data-testid="user-status"
+                      >
+                        ✗ {$_("common.inactive")}
+                      </span>
+                    {/if}
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {formatDate(user.created_at)}
+                  </td>
+                  <td
+                    class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium"
+                  >
+                    <div class="flex justify-end space-x-2">
+                      <button
+                        on:click={() => handleEdit(user)}
+                        class="text-primary-600 hover:text-primary-900"
+                        aria-label={$_("common.edit")}
+                        title={$_("common.edit")}
+                        disabled={actionLoading}
+                        data-testid="edit-user-button"
+                      >
+                        ✏️
+                      </button>
+                      <button
+                        on:click={() => handleToggleActive(user)}
+                        class={user.is_active
+                          ? "text-orange-600 hover:text-orange-900"
+                          : "text-green-600 hover:text-green-900"}
+                        aria-label={user.is_active
+                          ? $_("common.deactivate")
+                          : $_("common.activate")}
+                        title={user.is_active
+                          ? $_("common.deactivate")
+                          : $_("common.activate")}
+                        disabled={actionLoading}
+                        data-testid="toggle-user-button"
+                      >
+                        {user.is_active ? "⏸️" : "▶️"}
+                      </button>
+                      <button
+                        on:click={() => handleDeleteClick(user)}
+                        class="text-red-600 hover:text-red-900"
+                        aria-label={$_("common.delete")}
+                        title={$_("common.delete")}
+                        disabled={actionLoading}
+                        data-testid="delete-user-button"
+                      >
+                        🗑️
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              {/each}
             {/if}
           </tbody>
         </table>
@@ -369,13 +441,17 @@ interface BackendUser {
 
       <!-- Footer -->
       {#if filteredUsers.length > 0}
-      <div class="bg-gray-50 px-6 py-3 border-t border-gray-200">
-        <p class="text-sm text-gray-700">
-          <span class="font-medium">{filteredUsers.length}</span>
-          {filteredUsers.length === 1 ? $_('admin.users.userCount') : $_('admin.users.usersCount')}
-          {searchTerm || roleFilter !== 'all' ? ' (' + $_('common.filtered') + ')' : ''}
-        </p>
-      </div>
+        <div class="bg-gray-50 px-6 py-3 border-t border-gray-200">
+          <p class="text-sm text-gray-700">
+            <span class="font-medium">{filteredUsers.length}</span>
+            {filteredUsers.length === 1
+              ? $_("admin.users.userCount")
+              : $_("admin.users.usersCount")}
+            {searchTerm || roleFilter !== "all"
+              ? " (" + $_("common.filtered") + ")"
+              : ""}
+          </p>
+        </div>
       {/if}
     {/if}
   </div>
@@ -396,10 +472,16 @@ interface BackendUser {
 <!-- Delete Confirmation Dialog -->
 <ConfirmDialog
   isOpen={showConfirmDialog}
-  title={$_('common.confirmDelete')}
-  message={$_('admin.users.confirmDeleteMessage', { values: { name: selectedUser ? selectedUser.first_name + ' ' + selectedUser.last_name : '' } })}
-  confirmText={$_('common.delete')}
-  cancelText={$_('common.cancel')}
+  title={$_("common.confirmDelete")}
+  message={$_("admin.users.confirmDeleteMessage", {
+    values: {
+      name: selectedUser
+        ? selectedUser.first_name + " " + selectedUser.last_name
+        : "",
+    },
+  })}
+  confirmText={$_("common.delete")}
+  cancelText={$_("common.cancel")}
   variant="danger"
   loading={actionLoading}
   onconfirm={handleDeleteConfirm}

@@ -97,7 +97,9 @@
   <div
     class="px-4 py-3 border-b border-gray-200 flex items-center justify-between"
   >
-    <h3 class="text-lg font-semibold text-gray-900">{$_("notifications.title")}</h3>
+    <h3 class="text-lg font-semibold text-gray-900">
+      {$_("notifications.title")}
+    </h3>
     {#if notifications.length > 0}
       <button
         onclick={handleMarkAllRead}
@@ -136,13 +138,14 @@
         <p class="mt-2">{$_("notifications.noNotifications")}</p>
       </div>
     {:else}
-      <ul class="divide-y divide-gray-100 list-none m-0 p-0" role="menu" aria-label="Notifications">
+      <ul
+        class="divide-y divide-gray-100 list-none m-0 p-0"
+        role="menu"
+        aria-label="Notifications"
+      >
         {#each notifications as notification (notification.id)}
           <li role="menuitem" tabindex="-1">
-            <NotificationItem
-              {notification}
-              onclick={() => onclose?.()}
-            />
+            <NotificationItem {notification} onclick={() => onclose?.()} />
           </li>
         {/each}
       </ul>

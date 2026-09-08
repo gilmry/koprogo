@@ -1,12 +1,15 @@
 <script lang="ts">
   // Svelte 5 runes mode
-  import { _ } from '../../lib/i18n';
+  import { _ } from "../../lib/i18n";
   import { noticesApi, type Notice, NoticeStatus } from "../../lib/api/notices";
   import { toast } from "../../stores/toast";
   import NoticeTypeBadge from "./NoticeTypeBadge.svelte";
   import NoticeStatusBadge from "./NoticeStatusBadge.svelte";
   import { formatDateTime } from "../../lib/utils/date.utils";
-  import { withLoadingState, withErrorHandling } from "../../lib/utils/error.utils";
+  import {
+    withLoadingState,
+    withErrorHandling,
+  } from "../../lib/utils/error.utils";
 
   let {
     noticeId,
@@ -33,10 +36,10 @@
   async function loadNotice() {
     await withLoadingState({
       action: () => noticesApi.getById(noticeId),
-      setLoading: (v: boolean) => loading = v,
+      setLoading: (v: boolean) => (loading = v),
       setError: () => {},
-      onSuccess: (data) => notice = data,
-      errorMessage: $_('notices.loadFailed'),
+      onSuccess: (data) => (notice = data),
+      errorMessage: $_("notices.loadFailed"),
     });
   }
 
@@ -44,10 +47,12 @@
     if (!confirm($_("notices.archive_confirmation"))) return;
     await withErrorHandling({
       action: () => noticesApi.archive(noticeId),
-      setLoading: (v: boolean) => archiving = v,
+      setLoading: (v: boolean) => (archiving = v),
       successMessage: $_("notices.archived_successfully"),
       errorMessage: $_("notices.archive_failed"),
-      onSuccess: () => { window.location.href = "/notices"; },
+      onSuccess: () => {
+        window.location.href = "/notices";
+      },
     });
   }
 
@@ -55,19 +60,29 @@
     if (!confirm($_("notices.delete_confirmation"))) return;
     await withErrorHandling({
       action: () => noticesApi.delete(noticeId),
-      setLoading: (v: boolean) => deleting = v,
+      setLoading: (v: boolean) => (deleting = v),
       successMessage: $_("notices.deleted_successfully"),
       errorMessage: $_("notices.delete_failed"),
-      onSuccess: () => { window.location.href = "/notices"; },
+      onSuccess: () => {
+        window.location.href = "/notices";
+      },
     });
   }
 
   let isAuthor = $derived(notice && notice.author_id === currentUserId);
 </script>
 
-<div class="bg-white shadow rounded-lg overflow-hidden" data-testid="notice-detail">
+<div
+  class="bg-white shadow rounded-lg overflow-hidden"
+  data-testid="notice-detail"
+>
   {#if loading}
-    <div class="text-center py-12 text-gray-500" data-testid="notice-detail-loading">{$_("notices.loading")}</div>
+    <div
+      class="text-center py-12 text-gray-500"
+      data-testid="notice-detail-loading"
+    >
+      {$_("notices.loading")}
+    </div>
   {:else if notice}
     <div class="p-6">
       <!-- Header -->
@@ -77,7 +92,9 @@
             <NoticeTypeBadge type={notice.notice_type} />
             <NoticeStatusBadge status={notice.status} />
             {#if notice.is_pinned}
-              <span class="text-xs text-gray-500">📌 {$_("notices.pinned")}</span>
+              <span class="text-xs text-gray-500"
+                >📌 {$_("notices.pinned")}</span
+              >
             {/if}
           </div>
           <h1 class="text-2xl font-bold text-gray-900">{notice.title}</h1>
@@ -106,23 +123,33 @@
       </div>
 
       <!-- Metadata -->
-      <div class="flex flex-wrap items-center gap-4 mb-4 text-sm text-gray-600 border-b border-gray-200 pb-4">
+      <div
+        class="flex flex-wrap items-center gap-4 mb-4 text-sm text-gray-600 border-b border-gray-200 pb-4"
+      >
         {#if notice.author_name}
           <span>👤 {$_("notices.posted_by")} {notice.author_name}</span>
         {/if}
         <span>📅 {formatDateTime(notice.created_at)}</span>
         {#if notice.published_at}
-          <span>📤 {$_("notices.published")} {formatDateTime(notice.published_at)}</span>
+          <span
+            >📤 {$_("notices.published")}
+            {formatDateTime(notice.published_at)}</span
+          >
         {/if}
         {#if notice.expires_at}
-          <span>⏰ {$_("notices.expires")} {formatDateTime(notice.expires_at)}</span>
+          <span
+            >⏰ {$_("notices.expires")}
+            {formatDateTime(notice.expires_at)}</span
+          >
         {/if}
       </div>
 
       <!-- Category -->
       {#if notice.category}
         <div class="mb-4">
-          <span class="inline-block px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded">
+          <span
+            class="inline-block px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded"
+          >
             {notice.category}
           </span>
         </div>
@@ -136,14 +163,24 @@
       <!-- Event Info -->
       {#if notice.event_date}
         <div class="bg-pink-50 border border-pink-200 rounded-lg p-4 mb-4">
-          <h3 class="text-sm font-semibold text-pink-900 mb-1">{$_("notices.event_details")}</h3>
-          <p class="text-sm text-pink-700">📅 {formatDateTime(notice.event_date)}</p>
+          <h3 class="text-sm font-semibold text-pink-900 mb-1">
+            {$_("notices.event_details")}
+          </h3>
+          <p class="text-sm text-pink-700">
+            📅 {formatDateTime(notice.event_date)}
+          </p>
           {#if notice.event_location}
             <p class="text-sm text-pink-700">📍 {notice.event_location}</p>
           {/if}
           {#if notice.days_until_event !== undefined && notice.days_until_event !== null}
             <p class="text-sm text-pink-600 mt-1">
-              {notice.days_until_event > 0 ? $_("notices.in_days", { values: { days: notice.days_until_event } }) : notice.days_until_event === 0 ? $_("notices.today") : $_("notices.past_event")}
+              {notice.days_until_event > 0
+                ? $_("notices.in_days", {
+                    values: { days: notice.days_until_event },
+                  })
+                : notice.days_until_event === 0
+                  ? $_("notices.today")
+                  : $_("notices.past_event")}
             </p>
           {/if}
         </div>
@@ -152,7 +189,9 @@
       <!-- Contact Info -->
       {#if notice.contact_info}
         <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
-          <h3 class="text-sm font-semibold text-blue-900 mb-1">{$_("notices.contact_information")}</h3>
+          <h3 class="text-sm font-semibold text-blue-900 mb-1">
+            {$_("notices.contact_information")}
+          </h3>
           <p class="text-sm text-blue-700">{notice.contact_info}</p>
         </div>
       {/if}

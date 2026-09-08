@@ -64,17 +64,14 @@
           const owners = await api.get<{ data: OwnerLike[] } | OwnerLike[]>(
             `/buildings/${buildingId}/owners`,
           );
-          const list = Array.isArray(owners)
-            ? owners
-            : (owners.data ?? []);
+          const list = Array.isArray(owners) ? owners : (owners.data ?? []);
           witnessCandidates = list
             .filter((o) => o.id !== currentUserId)
             .map((o) => ({
               id: o.id,
               label:
                 `${o.first_name ?? ""} ${o.last_name ?? ""}`.trim() +
-                (o.unit_number ? ` — Lot ${o.unit_number}` : "") ||
-                o.email,
+                  (o.unit_number ? ` — Lot ${o.unit_number}` : "") || o.email,
             }));
         } catch {
           // Pas bloquant : le form se rend, juste sans suggestion de témoins.
@@ -92,7 +89,7 @@
   }
 
   function handleCreated(t: Ticket): void {
-    toast.success($_('tickets.createSuccess'));
+    toast.success($_("tickets.createSuccess"));
     // Redirection vers le détail du ticket.
     window.location.href = `/ticket-detail?id=${t.id}`;
   }
@@ -106,7 +103,7 @@
 
 {#if loading}
   <p class="text-sm text-gray-500" role="status" aria-live="polite">
-    {$_('common.loading2')}
+    {$_("common.loading2")}
   </p>
 {:else if initError}
   <p

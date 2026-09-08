@@ -1,6 +1,6 @@
 <script lang="ts">
   // Svelte 5 runes mode
-  import { _ } from '../../lib/i18n';
+  import { _ } from "../../lib/i18n";
   import {
     localExchangesApi,
     type SelStatistics,
@@ -18,10 +18,10 @@
   async function loadStatistics() {
     await withLoadingState({
       action: () => localExchangesApi.getStatistics(buildingId),
-      setLoading: (v) => loading = v,
-      setError: (v) => error = v,
-      onSuccess: (data) => stats = data,
-      errorMessage: $_('exchanges.stats_load_error'),
+      setLoading: (v) => (loading = v),
+      setError: (v) => (error = v),
+      onSuccess: (data) => (stats = data),
+      errorMessage: $_("exchanges.stats_load_error"),
     });
   }
 
@@ -32,7 +32,7 @@
 
 <div class="bg-white shadow rounded-lg p-6" data-testid="sel-statistics">
   <h3 class="text-lg font-semibold text-gray-900 mb-4">
-    📊 {$_('exchanges.statistics_title')}
+    📊 {$_("exchanges.statistics_title")}
   </h3>
 
   {#if loading}
@@ -42,20 +42,27 @@
       ></div>
     </div>
   {:else if error}
-    <div class="bg-red-50 border border-red-200 rounded-md p-4" data-testid="sel-statistics-error">
+    <div
+      class="bg-red-50 border border-red-200 rounded-md p-4"
+      data-testid="sel-statistics-error"
+    >
       <p class="text-red-800">❌ {error}</p>
     </div>
   {:else if stats}
     <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
       <!-- Total Exchanges -->
       <div class="bg-blue-50 p-4 rounded-lg">
-        <p class="text-xs font-medium text-blue-700 mb-1">{$_('exchanges.stats_total')}</p>
+        <p class="text-xs font-medium text-blue-700 mb-1">
+          {$_("exchanges.stats_total")}
+        </p>
         <p class="text-3xl font-bold text-blue-900">{stats.total_exchanges}</p>
       </div>
 
       <!-- Active Exchanges -->
       <div class="bg-green-50 p-4 rounded-lg">
-        <p class="text-xs font-medium text-green-700 mb-1">{$_('exchanges.stats_active')}</p>
+        <p class="text-xs font-medium text-green-700 mb-1">
+          {$_("exchanges.stats_active")}
+        </p>
         <p class="text-3xl font-bold text-green-900">
           {stats.active_exchanges}
         </p>
@@ -63,7 +70,9 @@
 
       <!-- Completed Exchanges -->
       <div class="bg-purple-50 p-4 rounded-lg">
-        <p class="text-xs font-medium text-purple-700 mb-1">{$_('exchanges.stats_completed')}</p>
+        <p class="text-xs font-medium text-purple-700 mb-1">
+          {$_("exchanges.stats_completed")}
+        </p>
         <p class="text-3xl font-bold text-purple-900">
           {stats.completed_exchanges}
         </p>
@@ -72,7 +81,7 @@
       <!-- Total Credits Exchanged -->
       <div class="bg-yellow-50 p-4 rounded-lg">
         <p class="text-xs font-medium text-yellow-700 mb-1">
-          {$_('exchanges.stats_credits')}
+          {$_("exchanges.stats_credits")}
         </p>
         <p class="text-3xl font-bold text-yellow-900">
           {stats.total_credits_exchanged}h
@@ -81,7 +90,9 @@
 
       <!-- Active Participants -->
       <div class="bg-indigo-50 p-4 rounded-lg">
-        <p class="text-xs font-medium text-indigo-700 mb-1">{$_('exchanges.stats_participants')}</p>
+        <p class="text-xs font-medium text-indigo-700 mb-1">
+          {$_("exchanges.stats_participants")}
+        </p>
         <p class="text-3xl font-bold text-indigo-900">
           {stats.active_participants}
         </p>
@@ -89,7 +100,9 @@
 
       <!-- Average Rating -->
       <div class="bg-pink-50 p-4 rounded-lg">
-        <p class="text-xs font-medium text-pink-700 mb-1">{$_('exchanges.stats_rating')}</p>
+        <p class="text-xs font-medium text-pink-700 mb-1">
+          {$_("exchanges.stats_rating")}
+        </p>
         <p class="text-3xl font-bold text-pink-900">
           {stats.average_exchange_rating
             ? `${stats.average_exchange_rating.toFixed(1)} ⭐`
@@ -100,9 +113,11 @@
 
     <!-- Most Popular Type -->
     {#if stats.most_popular_exchange_type}
-      <div class="mt-6 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg">
+      <div
+        class="mt-6 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg"
+      >
         <p class="text-sm font-medium text-gray-700 mb-2">
-          {$_('exchanges.stats_popular_type')}
+          {$_("exchanges.stats_popular_type")}
         </p>
         <div class="flex items-center gap-2">
           <span class="text-3xl">
@@ -116,9 +131,14 @@
     {/if}
 
     <!-- Impact Message -->
-    <div class="mt-6 p-4 bg-green-50 border-l-4 border-green-400 text-sm text-green-800">
+    <div
+      class="mt-6 p-4 bg-green-50 border-l-4 border-green-400 text-sm text-green-800"
+    >
       <p>
-        🌱 <strong>{$_('exchanges.impact_title')}</strong> {$_('exchanges.impact_message', { values: { hours: stats.total_credits_exchanged } })}
+        🌱 <strong>{$_("exchanges.impact_title")}</strong>
+        {$_("exchanges.impact_message", {
+          values: { hours: stats.total_credits_exchanged },
+        })}
       </p>
     </div>
   {/if}

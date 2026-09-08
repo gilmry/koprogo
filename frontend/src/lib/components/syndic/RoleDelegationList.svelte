@@ -322,7 +322,7 @@
               >
                 {d.delegated_from_user_id
                   ? labelUser(d.delegated_from_user_id)
-                  : ($_("common.dash") || "—")}
+                  : $_("common.dash") || "—"}
               </td>
               <td class="px-3 py-2">
                 {#if d.valid_until}

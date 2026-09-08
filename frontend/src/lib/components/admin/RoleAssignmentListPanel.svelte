@@ -53,7 +53,7 @@
           d="M12 4v16m8-8H4"
         />
       </svg>
-      {$_('roles.newAssignment')}
+      {$_("roles.newAssignment")}
     </button>
   </div>
 

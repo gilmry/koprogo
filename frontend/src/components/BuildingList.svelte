@@ -1,16 +1,19 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
-  import { _ } from '../lib/i18n';
-  import { api } from '../lib/api';
-  import { authStore } from '../stores/auth';
-  import type { Building, PageResponse } from '../lib/types';
-  import BuildingForm from './admin/BuildingForm.svelte';
-  import ConfirmDialog from './ui/ConfirmDialog.svelte';
-  import Button from './ui/Button.svelte';
-  import Pagination from './Pagination.svelte';
-  import { withLoadingState, withErrorHandling } from '../lib/utils/error.utils';
+  import { onMount } from "svelte";
+  import { _ } from "../lib/i18n";
+  import { api } from "../lib/api";
+  import { authStore } from "../stores/auth";
+  import type { Building, PageResponse } from "../lib/types";
+  import BuildingForm from "./admin/BuildingForm.svelte";
+  import ConfirmDialog from "./ui/ConfirmDialog.svelte";
+  import Button from "./ui/Button.svelte";
+  import Pagination from "./Pagination.svelte";
+  import {
+    withLoadingState,
+    withErrorHandling,
+  } from "../lib/utils/error.utils";
 
-  $: isSuperAdmin = $authStore.user?.role === 'superadmin';
+  $: isSuperAdmin = $authStore.user?.role === "superadmin";
 
   // Le syndic retranscrit l'acte de base de SES copropriétés : il crée les
   // immeubles, comme le SuperAdmin. La route serveur a été ouverte le
@@ -27,17 +30,18 @@
   // `garde_ecriture.rs`). Ouvrir leur bouton exposerait des écritures
   // inter-organisations. C'est pourquoi la ligne 183 reste sur `isSuperAdmin`.
   $: peutCreerUnImmeuble =
-    $authStore.user?.role === 'superadmin' || $authStore.user?.role === 'syndic';
+    $authStore.user?.role === "superadmin" ||
+    $authStore.user?.role === "syndic";
 
   let buildings: Building[] = [];
   let loading = true;
-  let error = '';
+  let error = "";
   let showFormModal = false;
   let showConfirmDialog = false;
   let selectedBuilding: Building | null = null;
-  let formMode: 'create' | 'edit' = 'create';
+  let formMode: "create" | "edit" = "create";
   let actionLoading = false;
-  let searchTerm = '';
+  let searchTerm = "";
 
   let currentPage = 1;
   let perPage = 20;
@@ -50,12 +54,13 @@
 
   async function loadBuildings() {
     await withLoadingState({
-      action: () => api.get<PageResponse<Building>>(
-        `/buildings?page=${currentPage}&per_page=${perPage}`
-      ),
-      setLoading: (v) => loading = v,
-      setError: (v) => error = v,
-      errorMessage: $_('buildings.errorLoading'),
+      action: () =>
+        api.get<PageResponse<Building>>(
+          `/buildings?page=${currentPage}&per_page=${perPage}`,
+        ),
+      setLoading: (v) => (loading = v),
+      setError: (v) => (error = v),
+      errorMessage: $_("buildings.errorLoading"),
       onSuccess: (response) => {
         buildings = response.data;
         totalItems = response.pagination.total_items;
@@ -73,13 +78,13 @@
 
   const handleCreate = () => {
     selectedBuilding = null;
-    formMode = 'create';
+    formMode = "create";
     showFormModal = true;
   };
 
   const handleEdit = (building: Building) => {
     selectedBuilding = building;
-    formMode = 'edit';
+    formMode = "edit";
     showFormModal = true;
   };
 
@@ -93,9 +98,9 @@
 
     await withErrorHandling({
       action: () => api.delete(`/buildings/${selectedBuilding!.id}`),
-      setLoading: (v) => actionLoading = v,
-      successMessage: $_('buildings.deletedSuccess'),
-      errorMessage: $_('common.error'),
+      setLoading: (v) => (actionLoading = v),
+      successMessage: $_("buildings.deletedSuccess"),
+      errorMessage: $_("common.error"),
       onSuccess: async () => {
         showConfirmDialog = false;
         selectedBuilding = null;
@@ -124,14 +129,18 @@
   <!-- Header -->
   <div class="flex justify-between items-center">
     <div>
-      <h1 class="text-3xl font-bold text-gray-900">{$_('buildings.title')}</h1>
+      <h1 class="text-3xl font-bold text-gray-900">{$_("buildings.title")}</h1>
       <p class="mt-1 text-sm text-gray-600">
-        {$_('buildings.subtitle')}
+        {$_("buildings.subtitle")}
       </p>
     </div>
     {#if peutCreerUnImmeuble}
-      <Button variant="primary" onclick={handleCreate} data-testid="create-building-button">
-        ➕ {$_('buildings.new')}
+      <Button
+        variant="primary"
+        onclick={handleCreate}
+        data-testid="create-building-button"
+      >
+        ➕ {$_("buildings.new")}
       </Button>
     {/if}
   </div>
@@ -139,12 +148,14 @@
   <!-- Search -->
   <div class="bg-white rounded-lg shadow p-4">
     <div class="relative">
-      <label for="building-search" class="sr-only">{$_('buildings.searchLabel')}</label>
+      <label for="building-search" class="sr-only"
+        >{$_("buildings.searchLabel")}</label
+      >
       <input
         id="building-search"
         type="text"
         bind:value={searchTerm}
-        placeholder={$_('buildings.searchPlaceholder')}
+        placeholder={$_("buildings.searchPlaceholder")}
         data-testid="building-search-input"
         class="w-full px-4 py-2 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
       />
@@ -154,7 +165,9 @@
 
   <!-- Error Message -->
   {#if error}
-    <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+    <div
+      class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg"
+    >
       ⚠️ {error}
     </div>
   {/if}
@@ -163,12 +176,14 @@
   <div class="bg-white rounded-lg shadow overflow-hidden">
     {#if loading}
       <div class="p-12 text-center">
-        <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
-        <p class="mt-2 text-gray-600">{$_('common.loading')}</p>
+        <div
+          class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"
+        ></div>
+        <p class="mt-2 text-gray-600">{$_("common.loading")}</p>
       </div>
     {:else if filteredBuildings.length === 0}
       <div class="p-12 text-center text-gray-500">
-        {searchTerm ? $_('buildings.noResults') : $_('buildings.noBuildings')}
+        {searchTerm ? $_("buildings.noResults") : $_("buildings.noBuildings")}
       </div>
     {:else}
       <div class="divide-y divide-gray-200" data-testid="buildings-list">
@@ -181,17 +196,26 @@
           >
             <div class="flex justify-between items-start">
               <div class="flex-1">
-                <h3 class="text-lg font-semibold text-gray-900" data-testid="building-name">
+                <h3
+                  class="text-lg font-semibold text-gray-900"
+                  data-testid="building-name"
+                >
                   {building.name}
                 </h3>
                 <div class="mt-2 space-y-1">
-                  <p class="text-sm text-gray-600" data-testid="building-address">
-                    📍 {building.address}, {building.postal_code} {building.city}
+                  <p
+                    class="text-sm text-gray-600"
+                    data-testid="building-address"
+                  >
+                    📍 {building.address}, {building.postal_code}
+                    {building.city}
                   </p>
                   <p class="text-sm text-gray-500">
-                    🏢 {building.total_units} {$_('buildings.units')}
+                    🏢 {building.total_units}
+                    {$_("buildings.units")}
                     {#if building.construction_year}
-                      · 🏗️ {$_('buildings.builtIn')} {building.construction_year}
+                      · 🏗️ {$_("buildings.builtIn")}
+                      {building.construction_year}
                     {/if}
                   </p>
                 </div>
@@ -201,8 +225,8 @@
                   <button
                     on:click={() => handleEdit(building)}
                     class="text-primary-600 hover:text-primary-900"
-                    aria-label={$_('common.edit')}
-                    title={$_('common.edit')}
+                    aria-label={$_("common.edit")}
+                    title={$_("common.edit")}
                     disabled={actionLoading}
                     data-testid="edit-building-button"
                   >
@@ -211,8 +235,8 @@
                   <button
                     on:click={() => handleDeleteClick(building)}
                     class="text-red-600 hover:text-red-900"
-                    aria-label={$_('common.delete')}
-                    title={$_('common.delete')}
+                    aria-label={$_("common.delete")}
+                    title={$_("common.delete")}
                     disabled={actionLoading}
                     data-testid="delete-building-button"
                   >
@@ -223,7 +247,7 @@
                   href={`/building-detail?id=${building.id}`}
                   class="text-primary-600 hover:text-primary-900 text-sm font-medium"
                 >
-                  {$_('buildings.details')} →
+                  {$_("buildings.details")} →
                 </a>
               </div>
             </div>
@@ -235,8 +259,10 @@
       <div class="bg-gray-50 px-6 py-3 border-t border-gray-200">
         <p class="text-sm text-gray-700">
           <span class="font-medium">{filteredBuildings.length}</span>
-          {filteredBuildings.length === 1 ? $_('buildings.buildingSingular') : $_('buildings.buildingPlural')}
-          {searchTerm ? ` (${$_('common.filtered')})` : ''}
+          {filteredBuildings.length === 1
+            ? $_("buildings.buildingSingular")
+            : $_("buildings.buildingPlural")}
+          {searchTerm ? ` (${$_("common.filtered")})` : ""}
         </p>
       </div>
     {/if}
@@ -245,10 +271,10 @@
   <!-- Pagination -->
   {#if !loading && totalPages > 1 && !searchTerm}
     <Pagination
-      currentPage={currentPage}
-      totalPages={totalPages}
-      totalItems={totalItems}
-      perPage={perPage}
+      {currentPage}
+      {totalPages}
+      {totalItems}
+      {perPage}
       onPageChange={handlePageChange}
     />
   {/if}
@@ -269,10 +295,10 @@
 <!-- Delete Confirmation Dialog -->
 <ConfirmDialog
   isOpen={showConfirmDialog}
-  title={$_('buildings.confirmDeleteTitle')}
-  message={`${$_('buildings.confirmDeleteMessage', { values: { name: selectedBuilding?.name || '' } })}`}
-  confirmText={$_('common.delete')}
-  cancelText={$_('common.cancel')}
+  title={$_("buildings.confirmDeleteTitle")}
+  message={`${$_("buildings.confirmDeleteMessage", { values: { name: selectedBuilding?.name || "" } })}`}
+  confirmText={$_("common.delete")}
+  cancelText={$_("common.cancel")}
   variant="danger"
   loading={actionLoading}
   onconfirm={handleDeleteConfirm}

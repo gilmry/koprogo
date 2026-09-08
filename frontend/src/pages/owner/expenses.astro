@@ -1,5 +1,5 @@
 ---
-import Layout from '../../layouts/Layout.astro';
+import Layout from "../../layouts/Layout.astro";
 ---
 
 <Layout title="Mes Charges - KoproGo">
@@ -18,9 +18,21 @@ import Layout from '../../layouts/Layout.astro';
       <div id="expense-list-container"></div>
 
       <div class="mt-6">
-        <a href="/owner" class="inline-flex items-center text-primary-600 hover:text-primary-700">
-          <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+        <a
+          href="/owner"
+          class="inline-flex items-center text-primary-600 hover:text-primary-700"
+        >
+          <svg
+            class="w-5 h-5 mr-2"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
           </svg>
           Retour a mon espace
         </a>
@@ -30,20 +42,24 @@ import Layout from '../../layouts/Layout.astro';
 </Layout>
 
 <script>
-  import { mount, unmount } from 'svelte';
-  import ExpenseList from '../../components/ExpenseList.svelte';
-  import BuildingSelector from '../../components/BuildingSelector.svelte';
+  import { mount, unmount } from "svelte";
+  import ExpenseList from "../../components/ExpenseList.svelte";
+  import BuildingSelector from "../../components/BuildingSelector.svelte";
 
-  const selectorContainer = document.getElementById('building-selector-container');
-  const listContainer = document.getElementById('expense-list-container');
+  const selectorContainer = document.getElementById(
+    "building-selector-container",
+  );
+  const listContainer = document.getElementById("expense-list-container");
   let listComponent: any = null;
 
   function mountList(buildingId: string) {
     if (!listContainer) return;
     if (listComponent) {
-      try { unmount(listComponent); } catch {}
+      try {
+        unmount(listComponent);
+      } catch {}
     }
-    listContainer.innerHTML = '';
+    listContainer.innerHTML = "";
     listComponent = mount(ExpenseList as any, {
       target: listContainer,
       props: { buildingId, allowCreate: false },
@@ -54,7 +70,7 @@ import Layout from '../../layouts/Layout.astro';
     mount(BuildingSelector as any, {
       target: selectorContainer,
       props: {
-        label: 'Immeuble',
+        label: "Immeuble",
         onSelect: (id: string) => mountList(id),
       },
     });

@@ -7,7 +7,8 @@ import Layout from "../layouts/Layout.astro";
     <div class="mb-6">
       <h1 class="text-3xl font-bold text-gray-900">Rapports de travaux</h1>
       <p class="text-gray-600 mt-1">
-        Carnet d'entretien numérique : suivi des travaux, garanties et interventions
+        Carnet d'entretien numérique : suivi des travaux, garanties et
+        interventions
       </p>
     </div>
 
@@ -32,13 +33,19 @@ import Layout from "../layouts/Layout.astro";
   const organizationId =
     auth.user?.organizationId || auth.user?.activeRole?.organizationId || "";
 
-  const selectorContainer = document.getElementById("building-selector-container");
+  const selectorContainer = document.getElementById(
+    "building-selector-container",
+  );
   const listContainer = document.getElementById("work-reports-container");
   let listComponent: any = null;
 
   function mountList(buildingId: string) {
     if (!listContainer) return;
-    if (listComponent) { try { unmount(listComponent); } catch {} }
+    if (listComponent) {
+      try {
+        unmount(listComponent);
+      } catch {}
+    }
     listContainer.innerHTML = "";
     listComponent = mount(WorkReportList as any, {
       target: listContainer,

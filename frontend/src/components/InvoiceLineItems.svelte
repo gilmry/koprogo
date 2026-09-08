@@ -1,9 +1,16 @@
 <script lang="ts">
   // Svelte 5 runes mode
-  import { _ } from '../lib/i18n';
-  import { calculateLineItem, formatCurrency } from '../lib/utils/finance.utils';
+  import { _ } from "../lib/i18n";
+  import {
+    calculateLineItem,
+    formatCurrency,
+  } from "../lib/utils/finance.utils";
 
-  let { lineItems = $bindable([]), disabled = false, onchange = (_items: LineItem[]) => {} }: {
+  let {
+    lineItems = $bindable([]),
+    disabled = false,
+    onchange = (_items: LineItem[]) => {},
+  }: {
     lineItems?: LineItem[];
     disabled?: boolean;
     onchange?: (items: LineItem[]) => void;
@@ -21,21 +28,21 @@
   }
 
   const vatRates = [
-    { value: 0, label: $_('invoices.vat_0') },
-    { value: 6, label: $_('invoices.vat_6') },
-    { value: 12, label: $_('invoices.vat_12') },
-    { value: 21, label: $_('invoices.vat_21') }
+    { value: 0, label: $_("invoices.vat_0") },
+    { value: 6, label: $_("invoices.vat_6") },
+    { value: 12, label: $_("invoices.vat_12") },
+    { value: 21, label: $_("invoices.vat_21") },
   ];
 
   function createEmptyLine(): LineItem {
     return {
-      description: '',
+      description: "",
       quantity: 1,
       unit_price: 0,
       vat_rate: 21,
       amount_excl_vat: 0,
       vat_amount: 0,
-      amount_incl_vat: 0
+      amount_incl_vat: 0,
     };
   }
 
@@ -50,7 +57,11 @@
   }
 
   function calculateLine(line: LineItem) {
-    const result = calculateLineItem(line.quantity, line.unit_price, line.vat_rate);
+    const result = calculateLineItem(
+      line.quantity,
+      line.unit_price,
+      line.vat_rate,
+    );
     line.amount_excl_vat = result.amountExclVat;
     line.vat_amount = result.vatAmount;
     line.amount_incl_vat = result.amountInclVat;
@@ -69,9 +80,15 @@
   }
 
   // Calculate totals
-  let totalExclVat = $derived(lineItems.reduce((sum, item) => sum + item.amount_excl_vat, 0));
-  let totalVat = $derived(lineItems.reduce((sum, item) => sum + item.vat_amount, 0));
-  let totalInclVat = $derived(lineItems.reduce((sum, item) => sum + item.amount_incl_vat, 0));
+  let totalExclVat = $derived(
+    lineItems.reduce((sum, item) => sum + item.amount_excl_vat, 0),
+  );
+  let totalVat = $derived(
+    lineItems.reduce((sum, item) => sum + item.vat_amount, 0),
+  );
+  let totalInclVat = $derived(
+    lineItems.reduce((sum, item) => sum + item.amount_incl_vat, 0),
+  );
 
   // Initialize with one line if empty
   $effect(() => {
@@ -84,15 +101,15 @@
 
 <div class="line-items-container">
   <div class="header">
-    <h3>{$_('invoices.line_items_title')}</h3>
+    <h3>{$_("invoices.line_items_title")}</h3>
     <button
       type="button"
       class="btn-add"
       onclick={addLine}
-      disabled={disabled}
+      {disabled}
       data-testid="add-line-button"
     >
-      {$_('invoices.add_line')}
+      {$_("invoices.add_line")}
     </button>
   </div>
 
@@ -104,14 +121,14 @@
         <div class="line-content">
           <!-- Description -->
           <div class="form-group full-width">
-            <label for="desc-{index}">{$_('common.description')} *</label>
+            <label for="desc-{index}">{$_("common.description")} *</label>
             <input
               type="text"
               id="desc-{index}"
               bind:value={line.description}
               oninput={() => handleLineChange(index)}
-              placeholder={$_('invoices.line_description_placeholder')}
-              disabled={disabled}
+              placeholder={$_("invoices.line_description_placeholder")}
+              {disabled}
               required
               data-testid="line-description-{index}"
             />
@@ -120,7 +137,7 @@
           <div class="form-row">
             <!-- Quantity -->
             <div class="form-group">
-              <label for="qty-{index}">{$_('invoices.quantity')} *</label>
+              <label for="qty-{index}">{$_("invoices.quantity")} *</label>
               <input
                 type="number"
                 id="qty-{index}"
@@ -128,7 +145,7 @@
                 oninput={() => handleLineChange(index)}
                 step="0.01"
                 min="0.01"
-                disabled={disabled}
+                {disabled}
                 required
                 data-testid="line-quantity-{index}"
               />
@@ -136,7 +153,7 @@
 
             <!-- Unit Price -->
             <div class="form-group">
-              <label for="price-{index}">{$_('invoices.unit_price')} *</label>
+              <label for="price-{index}">{$_("invoices.unit_price")} *</label>
               <input
                 type="number"
                 id="price-{index}"
@@ -144,7 +161,7 @@
                 oninput={() => handleLineChange(index)}
                 step="0.01"
                 min="0"
-                disabled={disabled}
+                {disabled}
                 required
                 data-testid="line-unit-price-{index}"
               />
@@ -152,12 +169,12 @@
 
             <!-- VAT Rate -->
             <div class="form-group">
-              <label for="vat-{index}">{$_('invoices.vat')}</label>
+              <label for="vat-{index}">{$_("invoices.vat")}</label>
               <select
                 id="vat-{index}"
                 bind:value={line.vat_rate}
                 onchange={() => handleLineChange(index)}
-                disabled={disabled}
+                {disabled}
                 data-testid="line-vat-rate-{index}"
               >
                 {#each vatRates as rate}
@@ -168,17 +185,17 @@
 
             <!-- Calculated Amounts -->
             <div class="form-group calculated">
-              <span class="form-label-static">{$_('invoices.total_excl')}</span>
+              <span class="form-label-static">{$_("invoices.total_excl")}</span>
               <div class="amount">{formatCurrency(line.amount_excl_vat)}</div>
             </div>
 
             <div class="form-group calculated">
-              <span class="form-label-static">{$_('invoices.vat')}</span>
+              <span class="form-label-static">{$_("invoices.vat")}</span>
               <div class="amount">{formatCurrency(line.vat_amount)}</div>
             </div>
 
             <div class="form-group calculated total">
-              <span class="form-label-static">{$_('invoices.total_incl')}</span>
+              <span class="form-label-static">{$_("invoices.total_incl")}</span>
               <div class="amount">{formatCurrency(line.amount_incl_vat)}</div>
             </div>
           </div>
@@ -190,8 +207,8 @@
             type="button"
             class="btn-remove"
             onclick={() => removeLine(index)}
-            aria-label={$_('invoices.remove_line')}
-            title={$_('invoices.remove_line')}
+            aria-label={$_("invoices.remove_line")}
+            title={$_("invoices.remove_line")}
             data-testid="remove-line-{index}"
           >
             ✕
@@ -205,15 +222,15 @@
   {#if lineItems.length > 0}
     <div class="grand-total" data-testid="totals-display">
       <div class="total-row">
-        <span>{$_('invoices.total_excl')}:</span>
+        <span>{$_("invoices.total_excl")}:</span>
         <strong>{formatCurrency(totalExclVat)}</strong>
       </div>
       <div class="total-row">
-        <span>{$_('invoices.total_vat')}:</span>
+        <span>{$_("invoices.total_vat")}:</span>
         <strong>{formatCurrency(totalVat)}</strong>
       </div>
       <div class="total-row grand">
-        <span>{$_('invoices.total_incl')}:</span>
+        <span>{$_("invoices.total_incl")}:</span>
         <strong>{formatCurrency(totalInclVat)}</strong>
       </div>
     </div>

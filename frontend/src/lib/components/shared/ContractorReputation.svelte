@@ -83,13 +83,13 @@
       id="contractor-reputation-heading"
       class="text-xl font-semibold text-gray-900"
     >
-      {$_('contractors.reputation')} —
+      {$_("contractors.reputation")} —
       <span data-testid={testId("contractor-reputation-name")}>
         {contractorName}
       </span>
     </h2>
     <p class="text-sm text-gray-500">
-      {$_('contractors.cumulativeEvaluations')}
+      {$_("contractors.cumulativeEvaluations")}
       <span
         data-testid={testId("contractor-reputation-count")}
         class="font-semibold text-gray-700"
@@ -142,7 +142,7 @@
       class="text-sm text-gray-500"
       role="status"
     >
-      {$_('contractors.noEvaluation')}
+      {$_("contractors.noEvaluation")}
     </p>
   {:else}
     <div class="overflow-x-auto">
@@ -151,8 +151,7 @@
         class="min-w-full divide-y divide-gray-200 text-sm"
       >
         <caption class="sr-only">
-          Liste des évaluations de {contractorName} (lecture seule —
-          append-only).
+          Liste des évaluations de {contractorName} (lecture seule — append-only).
         </caption>
         <thead class="bg-gray-50">
           <tr>
@@ -160,51 +159,49 @@
               scope="col"
               class="px-3 py-2 text-left font-medium text-gray-700"
             >
-              {$_('common.date')}
+              {$_("common.date")}
             </th>
             <th
               scope="col"
               class="px-3 py-2 text-left font-medium text-gray-700"
             >
-              {$_('contractors.scoreQuality')}
+              {$_("contractors.scoreQuality")}
             </th>
             <th
               scope="col"
               class="px-3 py-2 text-left font-medium text-gray-700"
             >
-              {$_('contractors.scoreDeadlines')}
+              {$_("contractors.scoreDeadlines")}
             </th>
             <th
               scope="col"
               class="px-3 py-2 text-left font-medium text-gray-700"
             >
-              {$_('contractors.scoreCommunication')}
+              {$_("contractors.scoreCommunication")}
             </th>
             <th
               scope="col"
               class="px-3 py-2 text-left font-medium text-gray-700"
             >
-              {$_('contractors.scoreBudget')}
+              {$_("contractors.scoreBudget")}
             </th>
             <th
               scope="col"
               class="px-3 py-2 text-left font-medium text-gray-700"
             >
-              {$_('contractors.scoreOverall')}
+              {$_("contractors.scoreOverall")}
             </th>
             <th
               scope="col"
               class="px-3 py-2 text-left font-medium text-gray-700"
             >
-              {$_('common.comment')}
+              {$_("common.comment")}
             </th>
           </tr>
         </thead>
         <tbody class="bg-white divide-y divide-gray-100">
           {#each evaluations as ev (ev.id)}
-            <tr
-              data-testid={testId(`contractor-reputation-eval-row-${ev.id}`)}
-            >
+            <tr data-testid={testId(`contractor-reputation-eval-row-${ev.id}`)}>
               <td class="px-3 py-2 text-gray-600">
                 {formatDate(ev.created_at)}
               </td>

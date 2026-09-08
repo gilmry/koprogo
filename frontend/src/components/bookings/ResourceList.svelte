@@ -1,11 +1,18 @@
 <script lang="ts">
   // Svelte 5 runes mode
-  import { bookingsApi, type BookableResource, ResourceType } from "../../lib/api/bookings";
+  import {
+    bookingsApi,
+    type BookableResource,
+    ResourceType,
+  } from "../../lib/api/bookings";
   import { _ } from "../../lib/i18n";
   import ResourceCard from "./ResourceCard.svelte";
   import { withErrorHandling } from "../../lib/utils/error.utils";
 
-  let { buildingId, showFilters = true }: {
+  let {
+    buildingId,
+    showFilters = true,
+  }: {
     buildingId: string;
     showFilters?: boolean;
   } = $props();
@@ -24,10 +31,11 @@
   async function loadResources() {
     loading = true;
     const result = await withErrorHandling({
-      action: () => selectedAvailability === "available-only"
-        ? bookingsApi.listAvailableResources(buildingId)
-        : bookingsApi.listResourcesByBuilding(buildingId),
-      errorMessage: $_('bookings.loadResourcesFailed'),
+      action: () =>
+        selectedAvailability === "available-only"
+          ? bookingsApi.listAvailableResources(buildingId)
+          : bookingsApi.listResourcesByBuilding(buildingId),
+      errorMessage: $_("bookings.loadResourcesFailed"),
     });
     if (result) {
       resources = result;
@@ -40,7 +48,9 @@
     filteredResources = resources.filter((resource) => {
       const matchesSearch =
         searchQuery === "" ||
-        resource.resource_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        resource.resource_name
+          .toLowerCase()
+          .includes(searchQuery.toLowerCase()) ||
         resource.description.toLowerCase().includes(searchQuery.toLowerCase());
 
       const matchesType =
@@ -69,39 +79,49 @@
       <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
         <!-- Search -->
         <div>
-          <label for="search" class="block text-sm font-medium text-gray-700 mb-1">
-            {$_('common.search')}
+          <label
+            for="search"
+            class="block text-sm font-medium text-gray-700 mb-1"
+          >
+            {$_("common.search")}
           </label>
           <input
             type="text"
             id="search"
             bind:value={searchQuery}
-            placeholder={$_('common.search')}
+            placeholder={$_("common.search")}
             class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
           />
         </div>
 
         <!-- Type Filter -->
         <div>
-          <label for="type" class="block text-sm font-medium text-gray-700 mb-1">
-            {$_('bookings.resource')}
+          <label
+            for="type"
+            class="block text-sm font-medium text-gray-700 mb-1"
+          >
+            {$_("bookings.resource")}
           </label>
           <select
             id="type"
             bind:value={selectedType}
             class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
           >
-            <option value="all">{$_('common.all')}</option>
+            <option value="all">{$_("common.all")}</option>
             {#each Object.values(ResourceType) as type}
-              <option value={type}>{$_(`bookings.resourceType.${type}`)}</option>
+              <option value={type}>{$_(`bookings.resourceType.${type}`)}</option
+              >
             {/each}
           </select>
         </div>
 
         <!-- Availability Filter -->
         <div>
-          <label for="availability" class="block text-sm font-medium text-gray-700 mb-1">
-            {$_('bookings.resources')}
+          <label
+            for="availability"
+            class="block text-sm font-medium text-gray-700 mb-1"
+          >
+            {$_("bookings.resources")}
           </label>
           <select
             id="availability"
@@ -109,8 +129,8 @@
             onchange={loadResources}
             class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
           >
-            <option value="available-only">{$_('bookings.resources')}</option>
-            <option value="all">{$_('common.all')}</option>
+            <option value="available-only">{$_("bookings.resources")}</option>
+            <option value="all">{$_("common.all")}</option>
           </select>
         </div>
       </div>
@@ -119,15 +139,20 @@
 
   <!-- Resources Grid -->
   {#if loading}
-    <div class="text-center py-12 text-gray-500">{$_('bookings.loadError')}...</div>
+    <div class="text-center py-12 text-gray-500">
+      {$_("bookings.loadError")}...
+    </div>
   {:else if filteredResources.length === 0}
     <div class="bg-white shadow rounded-lg p-12 text-center">
-      <p class="text-gray-500">{$_('bookings.noResources')}</p>
+      <p class="text-gray-500">{$_("bookings.noResources")}</p>
     </div>
   {:else}
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
       {#each filteredResources as resource}
-        <ResourceCard {resource} onClick={() => handleResourceClick(resource.id)} />
+        <ResourceCard
+          {resource}
+          onClick={() => handleResourceClick(resource.id)}
+        />
       {/each}
     </div>
 

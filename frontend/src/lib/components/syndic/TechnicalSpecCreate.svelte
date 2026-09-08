@@ -117,7 +117,11 @@
 
   // Version inputs séparés (major/minor/patch) — UX plus claire que un seul
   // input string. En mode bump : prérempli avec MAJOR+1.0.0 par défaut.
-  function defaultVersionParts(): { major: number; minor: number; patch: number } {
+  function defaultVersionParts(): {
+    major: number;
+    minor: number;
+    patch: number;
+  } {
     if (mode === "bump" && previousVersion) {
       const p = parseSemver(previousVersion.version);
       if (p) {
@@ -212,7 +216,10 @@
     deliverables = deliverables.map((d, i) => (i === index ? value : d));
   }
 
-  function toggleRequiredSignature(role: SignatoryRole, checked: boolean): void {
+  function toggleRequiredSignature(
+    role: SignatoryRole,
+    checked: boolean,
+  ): void {
     if (checked) {
       if (!requiredSignatures.includes(role)) {
         requiredSignatures = [...requiredSignatures, role];
@@ -270,10 +277,7 @@
   aria-labelledby="tech-spec-create-title"
   novalidate
 >
-  <h2
-    id="tech-spec-create-title"
-    class="text-lg font-semibold text-gray-900"
-  >
+  <h2 id="tech-spec-create-title" class="text-lg font-semibold text-gray-900">
     {mode === "bump"
       ? `Nouvelle version (bump depuis ${previousVersion?.version ?? ""})`
       : "Nouvelle fiche technique"}
@@ -282,7 +286,7 @@
   <!-- Title -->
   <div class="flex flex-col gap-1">
     <label for="tech-spec-title" class="text-sm font-medium text-gray-700">
-      {$_('common.title')}
+      {$_("common.title")}
     </label>
     <input
       id="tech-spec-title"
@@ -290,7 +294,9 @@
       type="text"
       bind:value={title}
       aria-invalid={errors.title ? "true" : "false"}
-      aria-describedby={errors.title ? "tech-spec-create-error-title" : undefined}
+      aria-describedby={errors.title
+        ? "tech-spec-create-error-title"
+        : undefined}
       class="border border-gray-300 rounded px-3 py-2 text-sm"
       required
     />
@@ -312,7 +318,7 @@
       for="tech-spec-description"
       class="text-sm font-medium text-gray-700"
     >
-      {$_('common.description')}
+      {$_("common.description")}
     </label>
     <textarea
       id="tech-spec-description"
@@ -323,8 +329,7 @@
       aria-invalid={errors.description ? "true" : "false"}
       aria-describedby="tech-spec-description-counter tech-spec-create-error-description"
       class="border border-gray-300 rounded px-3 py-2 text-sm font-mono"
-      required
-    ></textarea>
+      required></textarea>
     <p
       id="tech-spec-description-counter"
       data-testid="tech-spec-description-counter"
@@ -348,10 +353,12 @@
 
   <!-- Version (3 inputs major/minor/patch) -->
   <fieldset class="flex flex-col gap-1">
-    <legend class="text-sm font-medium text-gray-700">{$_('technicalSpecs.version')}</legend>
+    <legend class="text-sm font-medium text-gray-700"
+      >{$_("technicalSpecs.version")}</legend
+    >
     <div class="flex items-center gap-2">
       <label class="flex flex-col text-xs text-gray-600">
-        <span>{$_('technicalSpecs.versionMajor')}</span>
+        <span>{$_("technicalSpecs.versionMajor")}</span>
         <input
           data-testid="tech-spec-version-major-input"
           type="number"
@@ -363,7 +370,7 @@
       </label>
       <span class="text-gray-400 mt-4">.</span>
       <label class="flex flex-col text-xs text-gray-600">
-        <span>{$_('technicalSpecs.versionMinor')}</span>
+        <span>{$_("technicalSpecs.versionMinor")}</span>
         <input
           data-testid="tech-spec-version-minor-input"
           type="number"
@@ -375,7 +382,7 @@
       </label>
       <span class="text-gray-400 mt-4">.</span>
       <label class="flex flex-col text-xs text-gray-600">
-        <span>{$_('technicalSpecs.versionPatch')}</span>
+        <span>{$_("technicalSpecs.versionPatch")}</span>
         <input
           data-testid="tech-spec-version-patch-input"
           type="number"
@@ -405,7 +412,9 @@
 
   <!-- Deliverables (array dynamique) -->
   <div class="flex flex-col gap-2">
-    <span class="text-sm font-medium text-gray-700">{$_('technicalSpecs.deliverables')}</span>
+    <span class="text-sm font-medium text-gray-700"
+      >{$_("technicalSpecs.deliverables")}</span
+    >
     {#each deliverables as deliverable, idx (idx)}
       <div
         class="flex items-center gap-2"
@@ -437,7 +446,7 @@
       onclick={addDeliverable}
       class="self-start text-xs text-blue-600 hover:text-blue-800 underline"
     >
-      + {$_('technicalSpecs.addDeliverable')}
+      + {$_("technicalSpecs.addDeliverable")}
     </button>
     {#if errors.deliverables}
       <p
@@ -458,7 +467,7 @@
       : undefined}
   >
     <legend class="text-sm font-medium text-gray-700">
-      {$_('technicalSpecs.requiredSignatures')}
+      {$_("technicalSpecs.requiredSignatures")}
     </legend>
     <div
       class="flex flex-wrap gap-3"
@@ -500,7 +509,7 @@
       for="tech-spec-attach-upload"
       class="text-sm font-medium text-gray-700"
     >
-      {$_('technicalSpecs.attachments')}
+      {$_("technicalSpecs.attachments")}
     </label>
     <input
       id="tech-spec-attach-upload"
@@ -529,7 +538,7 @@
         onclick={() => onCancel?.()}
         disabled={submitting}
       >
-        {$_('common.cancel')}
+        {$_("common.cancel")}
       </button>
     {/if}
     <button

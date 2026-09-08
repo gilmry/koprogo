@@ -33,9 +33,7 @@
     currentVersionId = undefined as string | undefined,
     /** Callback click sur une ligne — le parent peut router vers la version
      *  historique. Non fournie → ligne non cliquable. */
-    onSelect = undefined as
-      | undefined
-      | ((spec: TechnicalSpecDto) => void),
+    onSelect = undefined as undefined | ((spec: TechnicalSpecDto) => void),
   }: {
     versions?: TechnicalSpecDto[];
     currentVersionId?: string;
@@ -105,16 +103,13 @@
   class="tech-spec-version-timeline flex flex-col gap-2"
   aria-labelledby="tech-spec-timeline-title"
 >
-  <h3
-    id="tech-spec-timeline-title"
-    class="text-sm font-semibold text-gray-800"
-  >
-    {$_('technicalSpecs.versionHistory')}
+  <h3 id="tech-spec-timeline-title" class="text-sm font-semibold text-gray-800">
+    {$_("technicalSpecs.versionHistory")}
   </h3>
 
   {#if sorted.length === 0}
     <p class="text-xs text-gray-500" data-testid="tech-spec-timeline-empty">
-      {$_('technicalSpecs.noVersion')}
+      {$_("technicalSpecs.noVersion")}
     </p>
   {:else}
     <ol
@@ -175,7 +170,7 @@
               onclick={() => onSelect?.(spec)}
               aria-label={`Voir la version ${spec.version}`}
             >
-              {$_('common.seeLabel')}
+              {$_("common.seeLabel")}
             </button>
           {/if}
         </li>

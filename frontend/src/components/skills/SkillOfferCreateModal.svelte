@@ -1,6 +1,6 @@
 <script lang="ts">
   // Svelte 5 runes mode
-  import { _ } from '../../lib/i18n';
+  import { _ } from "../../lib/i18n";
   import {
     skillsApi,
     type CreateSkillOfferDto,
@@ -10,7 +10,12 @@
   import { toast } from "../../stores/toast";
   import { withErrorHandling } from "../../lib/utils/error.utils";
 
-  let { isOpen = false, buildingId, onClose, onSuccess }: {
+  let {
+    isOpen = false,
+    buildingId,
+    onClose,
+    onSuccess,
+  }: {
     isOpen?: boolean;
     buildingId: string;
     onClose: () => void;
@@ -27,7 +32,9 @@
     is_available_for_help: true,
   });
   // Sync with prop (live value via $effect, not stale initial capture)
-  $effect(() => { if (buildingId && !formData.building_id) formData.building_id = buildingId; });
+  $effect(() => {
+    if (buildingId && !formData.building_id) formData.building_id = buildingId;
+  });
 
   let certificationInput = $state("");
 
@@ -47,7 +54,7 @@
     }
     const result = await withErrorHandling({
       action: () => skillsApi.createOffer(payload),
-      setLoading: (v: boolean) => submitting = v,
+      setLoading: (v: boolean) => (submitting = v),
       successMessage: $_("skills.createModal.createSuccess"),
       errorMessage: $_("skills.createModal.createError"),
     });
@@ -77,16 +84,33 @@
 </script>
 
 {#if isOpen}
-  <div class="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50 p-4">
-    <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+  <div
+    class="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50 p-4"
+  >
+    <div
+      class="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+    >
       <div class="p-6">
-        <h2 class="text-2xl font-bold text-gray-900 mb-6">{$_("skills.createModal.title")}</h2>
+        <h2 class="text-2xl font-bold text-gray-900 mb-6">
+          {$_("skills.createModal.title")}
+        </h2>
 
-        <form onsubmit={(e) => { e.preventDefault(); handleSubmit(); }} class="space-y-4" data-testid="skill-offer-create-form">
+        <form
+          onsubmit={(e) => {
+            e.preventDefault();
+            handleSubmit();
+          }}
+          class="space-y-4"
+          data-testid="skill-offer-create-form"
+        >
           <!-- Category -->
           <div>
-            <label for="category" class="block text-sm font-medium text-gray-700 mb-1">
-              {$_("skills.createModal.category")} <span class="text-red-500">*</span>
+            <label
+              for="category"
+              class="block text-sm font-medium text-gray-700 mb-1"
+            >
+              {$_("skills.createModal.category")}
+              <span class="text-red-500">*</span>
             </label>
             <select
               id="category"
@@ -101,8 +125,12 @@
 
           <!-- Skill Name -->
           <div>
-            <label for="skill_name" class="block text-sm font-medium text-gray-700 mb-1">
-              {$_("skills.createModal.skillName")} <span class="text-red-500">*</span>
+            <label
+              for="skill_name"
+              class="block text-sm font-medium text-gray-700 mb-1"
+            >
+              {$_("skills.createModal.skillName")}
+              <span class="text-red-500">*</span>
             </label>
             <input
               type="text"
@@ -118,7 +146,10 @@
 
           <!-- Description -->
           <div>
-            <label for="description" class="block text-sm font-medium text-gray-700 mb-1">
+            <label
+              for="description"
+              class="block text-sm font-medium text-gray-700 mb-1"
+            >
               {$_("common.description")} <span class="text-red-500">*</span>
             </label>
             <textarea
@@ -134,8 +165,12 @@
 
           <!-- Expertise Level -->
           <div>
-            <label for="expertise" class="block text-sm font-medium text-gray-700 mb-1">
-              {$_("skills.createModal.expertiseLevel")} <span class="text-red-500">*</span>
+            <label
+              for="expertise"
+              class="block text-sm font-medium text-gray-700 mb-1"
+            >
+              {$_("skills.createModal.expertiseLevel")}
+              <span class="text-red-500">*</span>
             </label>
             <select
               id="expertise"
@@ -150,7 +185,10 @@
 
           <!-- Hourly Rate (Credits) -->
           <div>
-            <label for="hourly_rate" class="block text-sm font-medium text-gray-700 mb-1">
+            <label
+              for="hourly_rate"
+              class="block text-sm font-medium text-gray-700 mb-1"
+            >
               {$_("skills.createModal.hourlyRate")}
             </label>
             <input
@@ -162,12 +200,17 @@
               placeholder={$_("skills.createModal.hourlyRatePlaceholder")}
               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
             />
-            <p class="text-xs text-gray-500 mt-1">{$_("skills.createModal.hourlyRateHelp")}</p>
+            <p class="text-xs text-gray-500 mt-1">
+              {$_("skills.createModal.hourlyRateHelp")}
+            </p>
           </div>
 
           <!-- Years Experience -->
           <div>
-            <label for="years_exp" class="block text-sm font-medium text-gray-700 mb-1">
+            <label
+              for="years_exp"
+              class="block text-sm font-medium text-gray-700 mb-1"
+            >
               {$_("skills.createModal.yearsExperience")}
             </label>
             <input
@@ -183,7 +226,10 @@
 
           <!-- Certifications -->
           <div>
-            <label for="certifications" class="block text-sm font-medium text-gray-700 mb-1">
+            <label
+              for="certifications"
+              class="block text-sm font-medium text-gray-700 mb-1"
+            >
               {$_("skills.createModal.certifications")}
             </label>
             <input
@@ -203,7 +249,9 @@
               class="flex-1 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
               data-testid="submit-skill-offer-button"
             >
-              {submitting ? $_("skills.createModal.creating") : $_("skills.createModal.createButton")}
+              {submitting
+                ? $_("skills.createModal.creating")
+                : $_("skills.createModal.createButton")}
             </button>
             <button
               type="button"

@@ -119,8 +119,7 @@
       .map((it) => it.publicUrl as string);
     // Comparaison shallow pour éviter une boucle d'update.
     const sameLength = urls.length === value.length;
-    const allEqual =
-      sameLength && urls.every((u, i) => u === value[i]);
+    const allEqual = sameLength && urls.every((u, i) => u === value[i]);
     if (!allEqual) {
       value = urls;
     }
@@ -153,23 +152,20 @@
       // 1. Cap quantitatif AVANT validation MIME pour message clair.
       if (items.length >= EVIDENCE_MAX_FILES) {
         lastError = `Maximum ${EVIDENCE_MAX_FILES} preuves.`;
-        if (onError)
-          onError(new UploadError("max-files", lastError));
+        if (onError) onError(new UploadError("max-files", lastError));
         break;
       }
       // 2. MIME whitelisting.
       if (!isAcceptedMime(file.type)) {
         lastError = `Type non autorisé : ${file.type || "inconnu"}. Acceptés : image, vidéo, PDF.`;
-        if (onError)
-          onError(new UploadError("bad-mime", lastError));
+        if (onError) onError(new UploadError("bad-mime", lastError));
         continue;
       }
       // 3. Taille.
       if (!isAcceptedSize(file.size)) {
         const mb = (EVIDENCE_MAX_FILE_SIZE_BYTES / 1024 / 1024).toFixed(0);
         lastError = `Taille max ${mb} MB (vous avez ${(file.size / 1024 / 1024).toFixed(1)} MB).`;
-        if (onError)
-          onError(new UploadError("too-large", lastError));
+        if (onError) onError(new UploadError("too-large", lastError));
         continue;
       }
       // 4. OK — ajoute l'item en pending + lance l'upload.
@@ -193,9 +189,7 @@
     try {
       const publicUrl = await onUpload(file);
       items = items.map((it) =>
-        it.localId === item.localId
-          ? { ...it, status: "done", publicUrl }
-          : it,
+        it.localId === item.localId ? { ...it, status: "done", publicUrl } : it,
       );
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
@@ -266,7 +260,7 @@
       for="ticket-evidence-file-input"
       class="block text-sm font-medium text-gray-700"
     >
-      {$_('tickets.evidence')}
+      {$_("tickets.evidence")}
     </label>
     <span
       data-testid="ticket-evidence-count"
@@ -375,9 +369,7 @@
           {/if}
           <span class="truncate" title={it.filename}>{it.filename}</span>
           {#if it.status === "pending"}
-            <progress
-              aria-label={`Upload de ${it.filename}`}
-              class="h-1 w-full"
+            <progress aria-label={`Upload de ${it.filename}`} class="h-1 w-full"
             ></progress>
           {/if}
           {#if it.status === "error"}

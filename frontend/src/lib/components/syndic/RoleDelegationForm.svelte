@@ -179,9 +179,7 @@
         ...(organizationId ? { organization_id: organizationId } : {}),
       };
       const created = await delegateRole(req);
-      toast.success(
-        $_("roleDelegation.create.success") || "Délégation créée.",
-      );
+      toast.success($_("roleDelegation.create.success") || "Délégation créée.");
       onSuccess?.(created);
       // Reset partiel — on garde le rôle (UX : on délègue souvent en série).
       targetUserId = "";
@@ -210,10 +208,7 @@
 
   <!-- Target user -->
   <div class="flex flex-col gap-1">
-    <label
-      for="role-delegate-target"
-      class="text-sm font-medium text-gray-700"
-    >
+    <label for="role-delegate-target" class="text-sm font-medium text-gray-700">
       {$_("roleDelegation.field.target") || "Utilisateur cible"}
     </label>
     <select
@@ -221,7 +216,9 @@
       data-testid="role-delegate-target-input"
       bind:value={targetUserId}
       aria-invalid={errors.target ? "true" : "false"}
-      aria-describedby={errors.target ? "role-delegate-error-target" : undefined}
+      aria-describedby={errors.target
+        ? "role-delegate-error-target"
+        : undefined}
       class="border border-gray-300 rounded px-3 py-2 text-sm min-h-[44px]"
       required
     >
@@ -304,10 +301,7 @@
 
   <!-- valid_until -->
   <div class="flex flex-col gap-1">
-    <label
-      for="role-delegate-until"
-      class="text-sm font-medium text-gray-700"
-    >
+    <label for="role-delegate-until" class="text-sm font-medium text-gray-700">
       {$_("roleDelegation.field.validUntil") || "Valide jusqu'au"}
     </label>
     <input

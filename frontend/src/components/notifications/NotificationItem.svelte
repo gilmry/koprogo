@@ -1,8 +1,11 @@
 <script lang="ts">
   // Svelte 5 runes mode
-  import { _ } from '../../lib/i18n';
+  import { _ } from "../../lib/i18n";
   import { notificationStore } from "../../stores/notifications";
-  import type { Notification, NotificationType } from "../../lib/api/notifications";
+  import type {
+    Notification,
+    NotificationType,
+  } from "../../lib/api/notifications";
 
   let {
     notification,
@@ -54,8 +57,10 @@
     const days = Math.floor(diff / 86400000);
 
     if (minutes < 1) return $_("notifications.just_now");
-    if (minutes < 60) return $_("notifications.m_ago", { values: { count: minutes } });
-    if (hours < 24) return $_("notifications.h_ago", { values: { count: hours } });
+    if (minutes < 60)
+      return $_("notifications.m_ago", { values: { count: minutes } });
+    if (hours < 24)
+      return $_("notifications.h_ago", { values: { count: hours } });
     if (days < 7) return $_("notifications.d_ago", { values: { count: days } });
     return date.toLocaleDateString("nl-BE", {
       month: "short",
@@ -100,7 +105,9 @@
     ? 'cursor-pointer'
     : ''} {!notification.is_read ? 'bg-blue-50' : ''}"
   onclick={handleClick}
-  onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleClick(); }}
+  onkeydown={(e) => {
+    if (e.key === "Enter" || e.key === " ") handleClick();
+  }}
   role={clickable ? "button" : "article"}
   tabindex={clickable ? 0 : -1}
 >

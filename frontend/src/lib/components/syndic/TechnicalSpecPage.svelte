@@ -69,9 +69,7 @@
       // Charge spec + signatures en parallèle.
       const [s, sigs] = await Promise.all([
         getSpec(id),
-        listSignatures(id).catch(
-          () => [] as TechnicalSpecSignatureDto[],
-        ),
+        listSignatures(id).catch(() => [] as TechnicalSpecSignatureDto[]),
       ]);
       spec = s;
       signatures = sigs;
@@ -91,10 +89,7 @@
 
       // Détermine currentUserRole + activeMandate.
       const auth = get(authStore);
-      const user = auth.user as
-        | { id: string; role: string }
-        | null
-        | undefined;
+      const user = auth.user as { id: string; role: string } | null | undefined;
       if (user) {
         // Mapping rôle user → SignatoryRole.
         // - "syndic" et "superadmin" → syndic
@@ -155,10 +150,7 @@
     req: CreateTechnicalSpecRequest | BumpTechnicalSpecRequest,
   ): Promise<TechnicalSpecDto> {
     if (!spec) throw new Error("Spec source manquante.");
-    const created = await bumpVersion(
-      spec.id,
-      req as BumpTechnicalSpecRequest,
-    );
+    const created = await bumpVersion(spec.id, req as BumpTechnicalSpecRequest);
     // Optimistic update : on navigue vers la nouvelle version.
     if (typeof window !== "undefined") {
       window.location.href = `/syndic/technical-spec?id=${encodeURIComponent(created.id)}`;
@@ -184,7 +176,7 @@
 
 {#if loading}
   <p class="text-sm text-gray-500" role="status" aria-live="polite">
-    {$_('common.loading2')}
+    {$_("common.loading2")}
   </p>
 {:else if notFound}
   <div
@@ -192,7 +184,7 @@
     data-testid="tech-spec-not-found"
     role="alert"
   >
-    {$_('technicalSpecs.notFound')}
+    {$_("technicalSpecs.notFound")}
   </div>
 {:else if spec}
   <div class="flex flex-col gap-6 lg:flex-row">

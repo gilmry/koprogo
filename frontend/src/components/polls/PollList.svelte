@@ -1,6 +1,6 @@
 <script lang="ts">
   // Svelte 5 runes mode
-  import { _ } from '../../lib/i18n';
+  import { _ } from "../../lib/i18n";
   import {
     pollsApi,
     type Poll,
@@ -39,8 +39,8 @@
           return await pollsApi.list({ building_id: buildingId });
         }
       },
-      setLoading: (v: boolean) => loading = v,
-      setError: (v: string | null) => error = v ?? "",
+      setLoading: (v: boolean) => (loading = v),
+      setError: (v: string | null) => (error = v ?? ""),
       onSuccess: (data) => {
         polls = data;
         applyFilters();
@@ -96,7 +96,11 @@
   {#if !showOnlyActive}
     <div class="px-4 py-3 bg-gray-50 border-b border-gray-200">
       <div class="flex items-center space-x-4">
-        <label for="poll-status-filter" class="text-sm font-medium text-gray-700">{$_("common.status")}:</label>
+        <label
+          for="poll-status-filter"
+          class="text-sm font-medium text-gray-700"
+          >{$_("common.status")}:</label
+        >
         <select
           id="poll-status-filter"
           bind:value={statusFilter}
@@ -107,7 +111,9 @@
           <option value={PollStatus.Draft}>{$_("polls.list.draft")}</option>
           <option value={PollStatus.Active}>{$_("polls.list.active")}</option>
           <option value={PollStatus.Closed}>{$_("polls.list.closed")}</option>
-          <option value={PollStatus.Cancelled}>{$_("polls.list.cancelled")}</option>
+          <option value={PollStatus.Cancelled}
+            >{$_("polls.list.cancelled")}</option
+          >
         </select>
       </div>
     </div>
@@ -181,7 +187,9 @@
                     )}"
                   >
                     📊 {poll.total_votes_cast}/{poll.total_eligible_voters}
-                    {$_("polls.list.votes")} ({calculateParticipationRate(poll).toFixed(1)}%)
+                    {$_("polls.list.votes")} ({calculateParticipationRate(
+                      poll,
+                    ).toFixed(1)}%)
                   </span>
 
                   <!-- Dates -->
@@ -197,14 +205,17 @@
                   <!-- Created by -->
                   <span class="mx-2">•</span>
                   <span class="text-xs text-gray-400">
-                    {$_("polls.list.createdOn")} {formatDateShort(poll.created_at)}
+                    {$_("polls.list.createdOn")}
+                    {formatDateShort(poll.created_at)}
                   </span>
                 </div>
 
                 <!-- Options preview (for multiple choice) -->
                 {#if poll.poll_type === PollType.MultipleChoice && poll.options.length > 0}
                   <div class="mt-2 flex items-center space-x-2">
-                    <span class="text-xs text-gray-500">{$_("polls.list.options")}:</span>
+                    <span class="text-xs text-gray-500"
+                      >{$_("polls.list.options")}:</span
+                    >
                     {#each poll.options.slice(0, 3) as option}
                       <span
                         class="inline-flex items-center px-2 py-0.5 rounded text-xs bg-gray-100 text-gray-700"
@@ -214,7 +225,8 @@
                     {/each}
                     {#if poll.options.length > 3}
                       <span class="text-xs text-gray-400">
-                        +{poll.options.length - 3} {$_("polls.list.others")}
+                        +{poll.options.length - 3}
+                        {$_("polls.list.others")}
                       </span>
                     {/if}
                   </div>

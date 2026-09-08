@@ -68,8 +68,7 @@
       );
       assignments = items ?? [];
     } catch (err) {
-      loadError =
-        err instanceof Error ? err.message : "Erreur de chargement.";
+      loadError = err instanceof Error ? err.message : "Erreur de chargement.";
       assignments = [];
     } finally {
       loading = false;
@@ -99,7 +98,7 @@
       id="role-assignment-list-title"
       class="text-lg font-semibold text-gray-900"
     >
-      {$_('roles.assignmentsTitle')}
+      {$_("roles.assignmentsTitle")}
     </h2>
   </header>
 
@@ -109,7 +108,7 @@
       class="text-sm text-gray-500"
       aria-live="polite"
     >
-      {$_('common.loading2')}
+      {$_("common.loading2")}
     </p>
   {:else if loadError}
     <p
@@ -124,7 +123,7 @@
       data-testid="role-assignment-empty"
       class="text-sm text-gray-500 italic p-4 border border-dashed border-gray-300 rounded-lg"
     >
-      {$_('roles.assignmentsEmpty')}
+      {$_("roles.assignmentsEmpty")}
     </p>
   {:else}
     <div class="overflow-x-auto">
@@ -132,33 +131,33 @@
         data-testid="role-assignment-list"
         class="min-w-full divide-y divide-gray-200 text-sm"
       >
-        <caption class="sr-only">{$_('roles.assignmentsCaption')}</caption>
+        <caption class="sr-only">{$_("roles.assignmentsCaption")}</caption>
         <thead class="bg-gray-50">
           <tr>
             <th
               scope="col"
               class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-              >{$_('common.user')}</th
+              >{$_("common.user")}</th
             >
             <th
               scope="col"
               class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-              >{$_('common.role')}</th
+              >{$_("common.role")}</th
             >
             <th
               scope="col"
               class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-              >{$_('common.organization')}</th
+              >{$_("common.organization")}</th
             >
             <th
               scope="col"
               class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-              >{$_('roles.expiresOn')}</th
+              >{$_("roles.expiresOn")}</th
             >
             <th
               scope="col"
               class="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"
-              >{$_('common.actionColumn')}</th
+              >{$_("common.actionColumn")}</th
             >
           </tr>
         </thead>

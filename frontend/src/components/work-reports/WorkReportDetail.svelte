@@ -1,6 +1,6 @@
 <script lang="ts">
   // Svelte 5 runes mode
-  import { _ } from '../../lib/i18n';
+  import { _ } from "../../lib/i18n";
   import {
     workReportsApi,
     workTypeLabels,
@@ -15,7 +15,13 @@
   import { formatCurrency } from "../../lib/utils/finance.utils";
   import { withErrorHandling } from "../../lib/utils/error.utils";
 
-  let { isOpen = false, report, onupdated, ondeleted, onclose }: {
+  let {
+    isOpen = false,
+    report,
+    onupdated,
+    ondeleted,
+    onclose,
+  }: {
     isOpen?: boolean;
     report: WorkReport;
     onupdated?: (updated: WorkReport) => void;
@@ -73,20 +79,25 @@
       return;
     }
     const updated = await withErrorHandling({
-      action: () => workReportsApi.update(report.id, {
-        title: form.title,
-        description: form.description || undefined,
-        work_type: form.work_type,
-        contractor_name: form.contractor_name,
-        contractor_contact: form.contractor_contact || undefined,
-        work_date: form.work_date_str ? new Date(form.work_date_str).toISOString() : undefined,
-        completion_date: form.completion_date_str ? new Date(form.completion_date_str).toISOString() : undefined,
-        cost: form.cost,
-        invoice_number: form.invoice_number || undefined,
-        warranty_type: form.warranty_type,
-        notes: form.notes || undefined,
-      }),
-      setLoading: (v: boolean) => submitting = v,
+      action: () =>
+        workReportsApi.update(report.id, {
+          title: form.title,
+          description: form.description || undefined,
+          work_type: form.work_type,
+          contractor_name: form.contractor_name,
+          contractor_contact: form.contractor_contact || undefined,
+          work_date: form.work_date_str
+            ? new Date(form.work_date_str).toISOString()
+            : undefined,
+          completion_date: form.completion_date_str
+            ? new Date(form.completion_date_str).toISOString()
+            : undefined,
+          cost: form.cost,
+          invoice_number: form.invoice_number || undefined,
+          warranty_type: form.warranty_type,
+          notes: form.notes || undefined,
+        }),
+      setLoading: (v: boolean) => (submitting = v),
       successMessage: $_("workReports.updateSuccess"),
       errorMessage: $_("common.updateError"),
     });
@@ -116,7 +127,12 @@
   }
 </script>
 
-<Modal {isOpen} title={editMode ? $_("workReports.editTitle") : $_("workReports.detailTitle")} size="lg" onclose={handleClose}>
+<Modal
+  {isOpen}
+  title={editMode ? $_("workReports.editTitle") : $_("workReports.detailTitle")}
+  size="lg"
+  onclose={handleClose}
+>
   {#if report}
     {#if !editMode}
       <!-- Vue lecture -->
@@ -125,12 +141,18 @@
         <div class="flex items-start justify-between">
           <div>
             <h3 class="text-xl font-semibold text-gray-900">{report.title}</h3>
-            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-sm font-medium mt-1
-              {report.work_type === 'emergency' ? 'bg-red-100 text-red-800' :
-               report.work_type === 'repair' ? 'bg-orange-100 text-orange-800' :
-               report.work_type === 'renovation' ? 'bg-purple-100 text-purple-800' :
-               report.work_type === 'installation' ? 'bg-blue-100 text-blue-800' :
-               'bg-gray-100 text-gray-800'}">
+            <span
+              class="inline-flex items-center px-2.5 py-1 rounded-full text-sm font-medium mt-1
+              {report.work_type === 'emergency'
+                ? 'bg-red-100 text-red-800'
+                : report.work_type === 'repair'
+                  ? 'bg-orange-100 text-orange-800'
+                  : report.work_type === 'renovation'
+                    ? 'bg-purple-100 text-purple-800'
+                    : report.work_type === 'installation'
+                      ? 'bg-blue-100 text-blue-800'
+                      : 'bg-gray-100 text-gray-800'}"
+            >
               {workTypeLabels[report.work_type] || report.work_type}
             </span>
           </div>
@@ -158,36 +180,66 @@
             <p class="text-gray-500">{$_("workReports.contractor")}</p>
             <p class="font-medium text-gray-900">{report.contractor_name}</p>
             {#if report.contractor_contact}
-              <p class="text-gray-600 text-xs mt-0.5">{report.contractor_contact}</p>
+              <p class="text-gray-600 text-xs mt-0.5">
+                {report.contractor_contact}
+              </p>
             {/if}
           </div>
           <div>
             <p class="text-gray-500">{$_("workReports.workDate")}</p>
-            <p class="font-medium text-gray-900">{formatDate(report.work_date)}</p>
+            <p class="font-medium text-gray-900">
+              {formatDate(report.work_date)}
+            </p>
             {#if report.completion_date}
-              <p class="text-gray-600 text-xs mt-0.5">{$_("workReports.end")} {formatDate(report.completion_date)}</p>
+              <p class="text-gray-600 text-xs mt-0.5">
+                {$_("workReports.end")}
+                {formatDate(report.completion_date)}
+              </p>
             {/if}
           </div>
           <div>
             <p class="text-gray-500">{$_("workReports.cost")}</p>
-            <p class="font-medium text-gray-900">{formatCurrency(report.cost)}</p>
+            <p class="font-medium text-gray-900">
+              {formatCurrency(report.cost)}
+            </p>
             {#if report.invoice_number}
-              <p class="text-gray-600 text-xs mt-0.5">{$_("workReports.invoiceNumber")} {report.invoice_number}</p>
+              <p class="text-gray-600 text-xs mt-0.5">
+                {$_("workReports.invoiceNumber")}
+                {report.invoice_number}
+              </p>
             {/if}
           </div>
           <div>
             <p class="text-gray-500">{$_("workReports.warranty")}</p>
-            <p class="font-medium {report.is_warranty_valid ? 'text-green-700' : 'text-red-700'}">
+            <p
+              class="font-medium {report.is_warranty_valid
+                ? 'text-green-700'
+                : 'text-red-700'}"
+            >
               {typeof report.warranty_type === "string"
-                ? (warrantyTypeLabels[report.warranty_type] || report.warranty_type)
-                : "Personnalisé (" + report.warranty_type.custom.years + " ans)"}
+                ? warrantyTypeLabels[report.warranty_type] ||
+                  report.warranty_type
+                : "Personnalisé (" +
+                  report.warranty_type.custom.years +
+                  " ans)"}
             </p>
-            {#if report.warranty_type !== 'none'}
-              <p class="text-xs {report.is_warranty_valid ? 'text-green-600' : 'text-red-600'} mt-0.5">
+            {#if report.warranty_type !== "none"}
+              <p
+                class="text-xs {report.is_warranty_valid
+                  ? 'text-green-600'
+                  : 'text-red-600'} mt-0.5"
+              >
                 {#if report.is_warranty_valid}
-                  {$_("workReports.expiresIn", { values: { days: report.warranty_days_remaining, date: formatDate(report.warranty_expiry) } })}
+                  {$_("workReports.expiresIn", {
+                    values: {
+                      days: report.warranty_days_remaining,
+                      date: formatDate(report.warranty_expiry),
+                    },
+                  })}
                 {:else}
-                  {$_("workReports.expiredOn", { values: { date: formatDate(report.warranty_expiry) } })}
+                  {$_("workReports.expiredOn", {
+                    values: { date: formatDate(report.warranty_expiry) },
+                  })}
                 {/if}
               </p>
             {/if}
@@ -196,14 +248,20 @@
 
         {#if report.description}
           <div>
-            <p class="text-sm font-medium text-gray-700 mb-1">{$_("common.description")}</p>
-            <p class="text-sm text-gray-600 whitespace-pre-wrap">{report.description}</p>
+            <p class="text-sm font-medium text-gray-700 mb-1">
+              {$_("common.description")}
+            </p>
+            <p class="text-sm text-gray-600 whitespace-pre-wrap">
+              {report.description}
+            </p>
           </div>
         {/if}
 
         {#if report.notes}
           <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
-            <p class="text-sm font-medium text-yellow-800 mb-1">{$_("common.notes")}</p>
+            <p class="text-sm font-medium text-yellow-800 mb-1">
+              {$_("common.notes")}
+            </p>
             <p class="text-sm text-yellow-700">{report.notes}</p>
           </div>
         {/if}
@@ -215,70 +273,151 @@
           </p>
         {/if}
       </div>
-
     {:else}
       <!-- Vue edition -->
       <div class="space-y-3">
         <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div>
-            <label for="wr-title" class="block text-sm text-gray-600 mb-1">{$_("common.title")} *</label>
-            <input id="wr-title" bind:value={form.title} class="w-full border rounded px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+            <label for="wr-title" class="block text-sm text-gray-600 mb-1"
+              >{$_("common.title")} *</label
+            >
+            <input
+              id="wr-title"
+              bind:value={form.title}
+              class="w-full border rounded px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            />
           </div>
           <div>
-            <label for="wr-contractor" class="block text-sm text-gray-600 mb-1">{$_("workReports.contractor")} *</label>
-            <input id="wr-contractor" bind:value={form.contractor_name} class="w-full border rounded px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+            <label for="wr-contractor" class="block text-sm text-gray-600 mb-1"
+              >{$_("workReports.contractor")} *</label
+            >
+            <input
+              id="wr-contractor"
+              bind:value={form.contractor_name}
+              class="w-full border rounded px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            />
           </div>
           <div>
-            <label for="wr-type" class="block text-sm text-gray-600 mb-1">{$_("workReports.workType")}</label>
-            <select id="wr-type" bind:value={form.work_type} class="w-full border rounded px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+            <label for="wr-type" class="block text-sm text-gray-600 mb-1"
+              >{$_("workReports.workType")}</label
+            >
+            <select
+              id="wr-type"
+              bind:value={form.work_type}
+              class="w-full border rounded px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            >
               {#each Object.entries(workTypeLabels) as [val, label]}
                 <option value={val}>{label}</option>
               {/each}
             </select>
           </div>
           <div>
-            <label for="wr-date" class="block text-sm text-gray-600 mb-1">{$_("workReports.workDate")}</label>
-            <input id="wr-date" type="date" bind:value={form.work_date_str} class="w-full border rounded px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+            <label for="wr-date" class="block text-sm text-gray-600 mb-1"
+              >{$_("workReports.workDate")}</label
+            >
+            <input
+              id="wr-date"
+              type="date"
+              bind:value={form.work_date_str}
+              class="w-full border rounded px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            />
           </div>
           <div>
-            <label for="wr-completion" class="block text-sm text-gray-600 mb-1">{$_("workReports.completionDate")}</label>
-            <input id="wr-completion" type="date" bind:value={form.completion_date_str} class="w-full border rounded px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+            <label for="wr-completion" class="block text-sm text-gray-600 mb-1"
+              >{$_("workReports.completionDate")}</label
+            >
+            <input
+              id="wr-completion"
+              type="date"
+              bind:value={form.completion_date_str}
+              class="w-full border rounded px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            />
           </div>
           <div>
-            <label for="wr-cost" class="block text-sm text-gray-600 mb-1">{$_("workReports.cost")}</label>
-            <input id="wr-cost" type="number" bind:value={form.cost} min="0" step="0.01" class="w-full border rounded px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+            <label for="wr-cost" class="block text-sm text-gray-600 mb-1"
+              >{$_("workReports.cost")}</label
+            >
+            <input
+              id="wr-cost"
+              type="number"
+              bind:value={form.cost}
+              min="0"
+              step="0.01"
+              class="w-full border rounded px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            />
           </div>
           <div>
-            <label for="wr-warranty" class="block text-sm text-gray-600 mb-1">{$_("workReports.warranty")}</label>
-            <select id="wr-warranty" bind:value={form.warranty_type} class="w-full border rounded px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+            <label for="wr-warranty" class="block text-sm text-gray-600 mb-1"
+              >{$_("workReports.warranty")}</label
+            >
+            <select
+              id="wr-warranty"
+              bind:value={form.warranty_type}
+              class="w-full border rounded px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            >
               {#each Object.entries(warrantyTypeLabels) as [val, label]}
                 <option value={val}>{label}</option>
               {/each}
             </select>
           </div>
           <div>
-            <label for="wr-invoice" class="block text-sm text-gray-600 mb-1">{$_("workReports.invoiceNumber")}</label>
-            <input id="wr-invoice" bind:value={form.invoice_number} placeholder={$_("common.optional")} class="w-full border rounded px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+            <label for="wr-invoice" class="block text-sm text-gray-600 mb-1"
+              >{$_("workReports.invoiceNumber")}</label
+            >
+            <input
+              id="wr-invoice"
+              bind:value={form.invoice_number}
+              placeholder={$_("common.optional")}
+              class="w-full border rounded px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            />
           </div>
           <div>
-            <label for="wr-contact" class="block text-sm text-gray-600 mb-1">{$_("workReports.contactContractor")}</label>
-            <input id="wr-contact" bind:value={form.contractor_contact} placeholder={$_("workReports.phoneOrEmail")} class="w-full border rounded px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+            <label for="wr-contact" class="block text-sm text-gray-600 mb-1"
+              >{$_("workReports.contactContractor")}</label
+            >
+            <input
+              id="wr-contact"
+              bind:value={form.contractor_contact}
+              placeholder={$_("workReports.phoneOrEmail")}
+              class="w-full border rounded px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            />
           </div>
           <div class="md:col-span-2">
-            <label for="wr-description" class="block text-sm text-gray-600 mb-1">{$_("common.description")}</label>
-            <textarea id="wr-description" bind:value={form.description} rows="3" class="w-full border rounded px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"></textarea>
+            <label for="wr-description" class="block text-sm text-gray-600 mb-1"
+              >{$_("common.description")}</label
+            >
+            <textarea
+              id="wr-description"
+              bind:value={form.description}
+              rows="3"
+              class="w-full border rounded px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            ></textarea>
           </div>
           <div class="md:col-span-2">
-            <label for="wr-notes" class="block text-sm text-gray-600 mb-1">{$_("common.notes")}</label>
-            <textarea id="wr-notes" bind:value={form.notes} rows="2" class="w-full border rounded px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"></textarea>
+            <label for="wr-notes" class="block text-sm text-gray-600 mb-1"
+              >{$_("common.notes")}</label
+            >
+            <textarea
+              id="wr-notes"
+              bind:value={form.notes}
+              rows="2"
+              class="w-full border rounded px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            ></textarea>
           </div>
         </div>
 
         <div class="flex gap-2 pt-2">
-          <button onclick={saveEdit} disabled={submitting} class="px-4 py-1.5 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 disabled:opacity-50 transition">
+          <button
+            onclick={saveEdit}
+            disabled={submitting}
+            class="px-4 py-1.5 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 disabled:opacity-50 transition"
+          >
             {submitting ? $_("common.saving") : $_("common.save")}
           </button>
-          <button onclick={cancelEdit} class="px-4 py-1.5 bg-gray-200 text-gray-700 text-sm rounded hover:bg-gray-300 transition">
+          <button
+            onclick={cancelEdit}
+            class="px-4 py-1.5 bg-gray-200 text-gray-700 text-sm rounded hover:bg-gray-300 transition"
+          >
             {$_("common.cancel")}
           </button>
         </div>

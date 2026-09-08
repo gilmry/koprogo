@@ -1,17 +1,17 @@
 <script lang="ts">
   // Svelte 5 runes mode
-  import { _ } from '../../lib/i18n';
+  import { _ } from "../../lib/i18n";
   import { quotesApi, type QuoteComparison } from "../../lib/api/quotes";
   import QuoteStatusBadge from "./QuoteStatusBadge.svelte";
-  import { withLoadingState } from '../../lib/utils/error.utils';
-  import { formatDateShort } from '../../lib/utils/date.utils';
-  import { formatAmount } from '../../lib/utils/finance.utils';
+  import { withLoadingState } from "../../lib/utils/error.utils";
+  import { formatDateShort } from "../../lib/utils/date.utils";
+  import { formatAmount } from "../../lib/utils/finance.utils";
 
   let { quoteIds }: { quoteIds: string[] } = $props();
 
   let comparison: QuoteComparison | null = $state(null);
   let loading = $state(true);
-  let error = $state('');
+  let error = $state("");
 
   $effect(() => {
     loadComparison();
@@ -20,10 +20,12 @@
   async function loadComparison() {
     await withLoadingState({
       action: () => quotesApi.compare(quoteIds),
-      setLoading: (v: boolean) => loading = v,
-      setError: (v: string) => error = v,
+      setLoading: (v: boolean) => (loading = v),
+      setError: (v: string) => (error = v),
       errorMessage: $_("quotes.comparison.loadError"),
-      onSuccess: (data) => { comparison = data; },
+      onSuccess: (data) => {
+        comparison = data;
+      },
     });
   }
 
@@ -63,7 +65,11 @@
       </div>
     {:else}
       <!-- Belgian Law Compliance -->
-      <div class="mb-6 p-4 rounded-lg {comparison.complies_with_belgian_law ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'}">
+      <div
+        class="mb-6 p-4 rounded-lg {comparison.complies_with_belgian_law
+          ? 'bg-green-50 border border-green-200'
+          : 'bg-red-50 border border-red-200'}"
+      >
         <div class="flex items-start">
           <div class="flex-shrink-0">
             {#if comparison.complies_with_belgian_law}
@@ -93,14 +99,22 @@
             {/if}
           </div>
           <div class="ml-3">
-            <h3 class="text-sm font-medium {comparison.complies_with_belgian_law ? 'text-green-800' : 'text-red-800'}">
+            <h3
+              class="text-sm font-medium {comparison.complies_with_belgian_law
+                ? 'text-green-800'
+                : 'text-red-800'}"
+            >
               {#if comparison.complies_with_belgian_law}
                 ✅ {$_("quotes.comparison.compliant")}
               {:else}
                 ⚠️ {$_("quotes.comparison.recommendation")}
               {/if}
             </h3>
-            <p class="mt-1 text-sm {comparison.complies_with_belgian_law ? 'text-green-700' : 'text-red-700'}">
+            <p
+              class="mt-1 text-sm {comparison.complies_with_belgian_law
+                ? 'text-green-700'
+                : 'text-red-700'}"
+            >
               {comparison.recommendation}
             </p>
           </div>
@@ -109,7 +123,10 @@
 
       <!-- Comparison Table -->
       <div class="overflow-x-auto">
-        <table class="min-w-full divide-y divide-gray-200" data-testid="comparison-table">
+        <table
+          class="min-w-full divide-y divide-gray-200"
+          data-testid="comparison-table"
+        >
           <thead class="bg-gray-50">
             <tr>
               <th
@@ -146,7 +163,10 @@
           </thead>
           <tbody class="bg-white divide-y divide-gray-200">
             {#each comparison.quotes as item, index (item.quote.id)}
-              <tr class={index === 0 ? "bg-green-50" : ""} data-testid="comparison-row">
+              <tr
+                class={index === 0 ? "bg-green-50" : ""}
+                data-testid="comparison-row"
+              >
                 <td class="px-6 py-4 whitespace-nowrap">
                   <div class="flex items-center">
                     {#if index === 0}
@@ -190,11 +210,16 @@
                   <QuoteStatusBadge status={item.quote.status} />
                   {#if item.quote.validity_date}
                     <div class="text-xs text-gray-500 mt-1">
-                      {$_("quotes.comparison.validUntil")}: {formatDateShort(item.quote.validity_date)}
+                      {$_("quotes.comparison.validUntil")}: {formatDateShort(
+                        item.quote.validity_date,
+                      )}
                     </div>
                   {/if}
                 </td>
-                <td class="px-6 py-4 whitespace-nowrap text-center" data-testid="comparison-score">
+                <td
+                  class="px-6 py-4 whitespace-nowrap text-center"
+                  data-testid="comparison-score"
+                >
                   <div class="text-2xl font-bold {getScoreClass(item.score)}">
                     {item.score.toFixed(1)}
                   </div>
@@ -210,29 +235,41 @@
 
       <!-- Legend -->
       <div class="mt-6 pt-6 border-t border-gray-200">
-        <h3 class="text-sm font-medium text-gray-900 mb-2">{$_("quotes.comparison.methodology")}</h3>
+        <h3 class="text-sm font-medium text-gray-900 mb-2">
+          {$_("quotes.comparison.methodology")}
+        </h3>
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
           <div>
-            <span class="font-medium text-blue-600">{$_("quotes.comparison.priceWeight")}</span>
+            <span class="font-medium text-blue-600"
+              >{$_("quotes.comparison.priceWeight")}</span
+            >
             <p class="text-gray-600 text-xs mt-1">
               {$_("quotes.comparison.priceDesc")}
             </p>
           </div>
           <div>
-            <span class="font-medium text-yellow-600">{$_("quotes.comparison.delayWeight")}</span>
+            <span class="font-medium text-yellow-600"
+              >{$_("quotes.comparison.delayWeight")}</span
+            >
             <p class="text-gray-600 text-xs mt-1">
               {$_("quotes.comparison.delayDesc")}
             </p>
           </div>
           <div>
-            <span class="font-medium text-green-600">{$_("quotes.comparison.warrantyWeight")}</span>
+            <span class="font-medium text-green-600"
+              >{$_("quotes.comparison.warrantyWeight")}</span
+            >
             <p class="text-gray-600 text-xs mt-1">
               {$_("quotes.comparison.warrantyDesc")}
             </p>
           </div>
           <div>
-            <span class="font-medium text-purple-600">{$_("quotes.comparison.reputationWeight")}</span>
-            <p class="text-gray-600 text-xs mt-1">{$_("quotes.comparison.reputationDesc")}</p>
+            <span class="font-medium text-purple-600"
+              >{$_("quotes.comparison.reputationWeight")}</span
+            >
+            <p class="text-gray-600 text-xs mt-1">
+              {$_("quotes.comparison.reputationDesc")}
+            </p>
           </div>
         </div>
       </div>

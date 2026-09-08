@@ -88,9 +88,7 @@
   }
 
   /** Au moins une suggestion = self → on affiche le warning helper. */
-  let selfInSuggestions = $derived(
-    suggestions.some((s) => isSelf(s.id)),
-  );
+  let selfInSuggestions = $derived(suggestions.some((s) => isSelf(s.id)));
 
   // ---------------------------------------------------------------------------
   // Handlers
@@ -115,7 +113,7 @@
       for="ticket-witness-search"
       class="block text-sm font-medium text-gray-700"
     >
-      {$_('tickets.witnesses')}
+      {$_("tickets.witnesses")}
     </label>
     <span
       data-testid="ticket-witness-count"
@@ -151,7 +149,7 @@
       class="text-xs text-orange-700"
       role="note"
     >
-      {$_('tickets.cannotBeOwnWitness')}
+      {$_("tickets.cannotBeOwnWitness")}
     </p>
   {/if}
 
@@ -164,7 +162,11 @@
     >
       {#each suggestions as s (s.id)}
         {@const disabledOpt = isSelf(s.id)}
-        <li role="option" aria-selected="false" class="border-b last:border-b-0">
+        <li
+          role="option"
+          aria-selected="false"
+          class="border-b last:border-b-0"
+        >
           <button
             type="button"
             data-testid={`ticket-witness-option-${s.id}`}

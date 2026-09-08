@@ -30,13 +30,21 @@ import Layout from "../layouts/Layout.astro";
 
     <!-- Loading State -->
     <div id="loading-state" class="text-center py-12">
-      <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      <div
+        class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"
+      >
+      </div>
       <p class="mt-4 text-gray-600">Chargement du ticket...</p>
     </div>
 
     <!-- Error State -->
-    <div id="error-state" class="hidden bg-red-50 border border-red-200 rounded-lg p-6">
-      <h2 class="text-lg font-semibold text-red-900 mb-2">Erreur de chargement</h2>
+    <div
+      id="error-state"
+      class="hidden bg-red-50 border border-red-200 rounded-lg p-6"
+    >
+      <h2 class="text-lg font-semibold text-red-900 mb-2">
+        Erreur de chargement
+      </h2>
       <p class="text-red-700" id="error-message"></p>
       <a
         href="/tickets"
@@ -75,7 +83,8 @@ import Layout from "../layouts/Layout.astro";
       const ticket = await ticketsApi.getById(ticketId);
       const auth = get(authStore);
       const userRole = auth.user?.activeRole?.role || auth.user?.role;
-      const canManage = userRole === UserRole.SYNDIC || userRole === UserRole.SUPERADMIN;
+      const canManage =
+        userRole === UserRole.SYNDIC || userRole === UserRole.SUPERADMIN;
       const isContractor = ticket.assigned_to === auth.user?.id;
       // Story B6 — only syndic / superadmin peut poster une SyndicResponse.
       // INV-FE8 + AC @security stories.md §B6 : Owner ne voit PAS le bouton.
@@ -94,7 +103,9 @@ import Layout from "../layouts/Layout.astro";
 
       function mountDetail(ticketData: any) {
         if (ticketDetailComponent) {
-          try { unmount(ticketDetailComponent); } catch {}
+          try {
+            unmount(ticketDetailComponent);
+          } catch {}
           detailContainer!.innerHTML = "";
         }
         ticketDetailComponent = mount(TicketDetail as any, {

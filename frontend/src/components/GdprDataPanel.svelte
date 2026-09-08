@@ -1,12 +1,12 @@
 <script lang="ts">
   let { showHeader = true }: { showHeader?: boolean } = $props();
-  import { onMount } from 'svelte';
-  import { _ } from '../lib/i18n';
-  import { authStore } from '../stores/auth';
-  import { api } from '../lib/api';
-  import { formatDateTime } from '../lib/utils/date.utils';
-  import { withErrorHandling } from '../lib/utils/error.utils';
-  import type { GdprExport, GdprEraseResponse } from '../lib/types';
+  import { onMount } from "svelte";
+  import { _ } from "../lib/i18n";
+  import { authStore } from "../stores/auth";
+  import { api } from "../lib/api";
+  import { formatDateTime } from "../lib/utils/date.utils";
+  import { withErrorHandling } from "../lib/utils/error.utils";
+  import type { GdprExport, GdprEraseResponse } from "../lib/types";
 
   let loading = $state(false);
   let canErase = $state(true);
@@ -17,9 +17,9 @@
   let erasureResult: GdprEraseResponse | null = $state(null);
 
   let showRectifyModal = $state(false);
-  let rectifyEmail = $state('');
-  let rectifyFirstName = $state('');
-  let rectifyLastName = $state('');
+  let rectifyEmail = $state("");
+  let rectifyFirstName = $state("");
+  let rectifyLastName = $state("");
 
   let processingRestricted = $state(false);
   let loadingRestriction = $state(false);
@@ -35,23 +35,24 @@
 
   async function loadUserPreferences() {
     const user = await withErrorHandling({
-      action: () => api.get<any>('/auth/me'),
-      errorMessage: $_('gdpr.loadPreferencesFailed'),
+      action: () => api.get<any>("/auth/me"),
+      errorMessage: $_("gdpr.loadPreferencesFailed"),
     });
     if (user) {
       processingRestricted = user.processing_restricted || false;
       marketingOptOut = user.marketing_opt_out || false;
-      rectifyEmail = user.email || '';
-      rectifyFirstName = user.first_name || '';
-      rectifyLastName = user.last_name || '';
+      rectifyEmail = user.email || "";
+      rectifyFirstName = user.first_name || "";
+      rectifyLastName = user.last_name || "";
     }
   }
 
   async function checkCanErase() {
     checkingErasure = true;
     const data = await withErrorHandling({
-      action: () => api.get<{ can_erase: boolean; user_id: string }>('/gdpr/can-erase'),
-      errorMessage: $_('gdpr.checkErasureFailed'),
+      action: () =>
+        api.get<{ can_erase: boolean; user_id: string }>("/gdpr/can-erase"),
+      errorMessage: $_("gdpr.checkErasureFailed"),
     });
     if (data) {
       canErase = data.can_erase;
@@ -61,10 +62,10 @@
 
   async function handleExportData() {
     const data = await withErrorHandling({
-      action: () => api.get<GdprExport>('/gdpr/export'),
-      setLoading: (v) => loading = v,
-      successMessage: $_('gdpr.exportSuccess'),
-      errorMessage: $_('gdpr.exportFailed'),
+      action: () => api.get<GdprExport>("/gdpr/export"),
+      setLoading: (v) => (loading = v),
+      successMessage: $_("gdpr.exportSuccess"),
+      errorMessage: $_("gdpr.exportFailed"),
     });
     if (data) {
       exportData = data;
@@ -74,17 +75,17 @@
 
   async function handleEraseData() {
     const result = await withErrorHandling({
-      action: () => api.delete<GdprEraseResponse>('/gdpr/erase'),
-      setLoading: (v) => loading = v,
-      successMessage: $_('gdpr.eraseSuccess'),
-      errorMessage: $_('gdpr.eraseFailed'),
+      action: () => api.delete<GdprEraseResponse>("/gdpr/erase"),
+      setLoading: (v) => (loading = v),
+      successMessage: $_("gdpr.eraseSuccess"),
+      errorMessage: $_("gdpr.eraseFailed"),
     });
     showEraseConfirmation = false;
     if (result) {
       erasureResult = result;
       setTimeout(() => {
         authStore.logout();
-        window.location.href = '/login';
+        window.location.href = "/login";
       }, 3000);
     }
   }
@@ -93,10 +94,10 @@
     if (!exportData) return;
 
     const blob = new Blob([JSON.stringify(exportData, null, 2)], {
-      type: 'application/json',
+      type: "application/json",
     });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
+    const a = document.createElement("a");
     a.href = url;
     a.download = `gdpr-export-${new Date().toISOString()}.json`;
     document.body.appendChild(a);
@@ -112,10 +113,10 @@
     if (rectifyLastName) requestBody.last_name = rectifyLastName;
 
     const result = await withErrorHandling({
-      action: () => api.put('/gdpr/rectify', requestBody),
-      setLoading: (v) => loading = v,
-      successMessage: $_('gdpr.rectifySuccess'),
-      errorMessage: $_('gdpr.rectifyFailed'),
+      action: () => api.put("/gdpr/rectify", requestBody),
+      setLoading: (v) => (loading = v),
+      successMessage: $_("gdpr.rectifySuccess"),
+      errorMessage: $_("gdpr.rectifyFailed"),
     });
     if (result) {
       showRectifyModal = false;
@@ -125,10 +126,12 @@
 
   async function toggleProcessingRestriction() {
     const result = await withErrorHandling({
-      action: () => api.put('/gdpr/restrict-processing', {}),
-      setLoading: (v) => loadingRestriction = v,
-      successMessage: processingRestricted ? 'Data processing restriction has been lifted' : 'Data processing has been restricted',
-      errorMessage: $_('gdpr.restrictionFailed'),
+      action: () => api.put("/gdpr/restrict-processing", {}),
+      setLoading: (v) => (loadingRestriction = v),
+      successMessage: processingRestricted
+        ? "Data processing restriction has been lifted"
+        : "Data processing has been restricted",
+      errorMessage: $_("gdpr.restrictionFailed"),
     });
     if (result) {
       processingRestricted = !processingRestricted;
@@ -138,10 +141,13 @@
 
   async function toggleMarketingPreference() {
     const result = await withErrorHandling({
-      action: () => api.put('/gdpr/marketing-preference', { opt_out: !marketingOptOut }),
-      setLoading: (v) => loadingMarketing = v,
-      successMessage: marketingOptOut ? 'You have opted in to marketing communications' : 'You have opted out of marketing communications',
-      errorMessage: $_('gdpr.marketingFailed'),
+      action: () =>
+        api.put("/gdpr/marketing-preference", { opt_out: !marketingOptOut }),
+      setLoading: (v) => (loadingMarketing = v),
+      successMessage: marketingOptOut
+        ? "You have opted in to marketing communications"
+        : "You have opted out of marketing communications",
+      errorMessage: $_("gdpr.marketingFailed"),
     });
     if (result) {
       marketingOptOut = !marketingOptOut;
@@ -154,28 +160,51 @@
   <div class="flex items-center justify-between mb-6">
     <!-- Masqué quand la page porte déjà ce titre en H1. -->
     {#if showHeader}
-      <h2 class="text-2xl font-bold text-gray-900" data-testid="gdpr-panel-title">{$_('gdpr.myPersonalData')}</h2>
+      <h2
+        class="text-2xl font-bold text-gray-900"
+        data-testid="gdpr-panel-title"
+      >
+        {$_("gdpr.myPersonalData")}
+      </h2>
     {:else}
       <div></div>
     {/if}
-    <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800" data-testid="gdpr-rights-badge">
-      {$_('gdpr.rights')}
+    <span
+      class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800"
+      data-testid="gdpr-rights-badge"
+    >
+      {$_("gdpr.rights")}
     </span>
   </div>
 
   <div class="space-y-6">
     <!-- Export Data Section -->
-    <div class="border-l-4 border-blue-500 bg-blue-50 p-4" data-testid="gdpr-section-export">
+    <div
+      class="border-l-4 border-blue-500 bg-blue-50 p-4"
+      data-testid="gdpr-section-export"
+    >
       <div class="flex items-start">
         <div class="flex-shrink-0">
-          <svg class="h-6 w-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+          <svg
+            class="h-6 w-6 text-blue-600"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+            />
           </svg>
         </div>
         <div class="ml-3 flex-1">
-          <h3 class="text-lg font-medium text-blue-900">{$_('gdpr.article15.title')}</h3>
+          <h3 class="text-lg font-medium text-blue-900">
+            {$_("gdpr.article15.title")}
+          </h3>
           <p class="mt-2 text-sm text-blue-700">
-            {$_('gdpr.article15.desc')}
+            {$_("gdpr.article15.desc")}
           </p>
           <button
             onclick={handleExportData}
@@ -184,13 +213,28 @@
             class="mt-4 inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
           >
             {#if loading}
-              <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              <svg
+                class="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  class="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  stroke-width="4"
+                ></circle>
+                <path
+                  class="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                ></path>
               </svg>
-              {$_('gdpr.export.inProgress')}
+              {$_("gdpr.export.inProgress")}
             {:else}
-              {$_('gdpr.export.action')}
+              {$_("gdpr.export.action")}
             {/if}
           </button>
         </div>
@@ -198,42 +242,72 @@
     </div>
 
     <!-- Rectify Data Section -->
-    <div class="border-l-4 border-green-500 bg-green-50 p-4" data-testid="gdpr-section-rectify">
+    <div
+      class="border-l-4 border-green-500 bg-green-50 p-4"
+      data-testid="gdpr-section-rectify"
+    >
       <div class="flex items-start">
         <div class="flex-shrink-0">
-          <svg class="h-6 w-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+          <svg
+            class="h-6 w-6 text-green-600"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+            />
           </svg>
         </div>
         <div class="ml-3 flex-1">
-          <h3 class="text-lg font-medium text-green-900">{$_('gdpr.article16.title')}</h3>
+          <h3 class="text-lg font-medium text-green-900">
+            {$_("gdpr.article16.title")}
+          </h3>
           <p class="mt-2 text-sm text-green-700">
-            {$_('gdpr.article16.desc')}
+            {$_("gdpr.article16.desc")}
           </p>
           <button
-            onclick={() => showRectifyModal = true}
+            onclick={() => (showRectifyModal = true)}
             disabled={loading}
             data-testid="gdpr-rectify-button"
             class="mt-4 inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50"
           >
-            {$_('gdpr.article16.action')}
+            {$_("gdpr.article16.action")}
           </button>
         </div>
       </div>
     </div>
 
     <!-- Restrict Processing Section -->
-    <div class="border-l-4 border-yellow-500 bg-yellow-50 p-4" data-testid="gdpr-section-restrict">
+    <div
+      class="border-l-4 border-yellow-500 bg-yellow-50 p-4"
+      data-testid="gdpr-section-restrict"
+    >
       <div class="flex items-start">
         <div class="flex-shrink-0">
-          <svg class="h-6 w-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+          <svg
+            class="h-6 w-6 text-yellow-600"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+            />
           </svg>
         </div>
         <div class="ml-3 flex-1">
-          <h3 class="text-lg font-medium text-yellow-900">{$_('gdpr.article18.title')}</h3>
+          <h3 class="text-lg font-medium text-yellow-900">
+            {$_("gdpr.article18.title")}
+          </h3>
           <p class="mt-2 text-sm text-yellow-700">
-            {$_('gdpr.article18.desc')}
+            {$_("gdpr.article18.desc")}
           </p>
           <div class="mt-4 flex items-center">
             <button
@@ -242,12 +316,16 @@
               data-testid="gdpr-restrict-toggle"
               aria-label="Toggle processing restriction"
               aria-pressed={processingRestricted}
-              class={`${processingRestricted ? 'bg-yellow-600' : 'bg-gray-200'} relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-offset-2 disabled:opacity-50`}
+              class={`${processingRestricted ? "bg-yellow-600" : "bg-gray-200"} relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-offset-2 disabled:opacity-50`}
             >
-              <span class={`${processingRestricted ? 'translate-x-5' : 'translate-x-0'} pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out`}></span>
+              <span
+                class={`${processingRestricted ? "translate-x-5" : "translate-x-0"} pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out`}
+              ></span>
             </button>
             <span class="ml-3 text-sm font-medium text-gray-900">
-              {processingRestricted ? $_('gdpr.article18.restricted') : $_('gdpr.article18.active')}
+              {processingRestricted
+                ? $_("gdpr.article18.restricted")
+                : $_("gdpr.article18.active")}
             </span>
           </div>
         </div>
@@ -255,17 +333,32 @@
     </div>
 
     <!-- Marketing Preference Section -->
-    <div class="border-l-4 border-purple-500 bg-purple-50 p-4" data-testid="gdpr-section-marketing">
+    <div
+      class="border-l-4 border-purple-500 bg-purple-50 p-4"
+      data-testid="gdpr-section-marketing"
+    >
       <div class="flex items-start">
         <div class="flex-shrink-0">
-          <svg class="h-6 w-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+          <svg
+            class="h-6 w-6 text-purple-600"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+            />
           </svg>
         </div>
         <div class="ml-3 flex-1">
-          <h3 class="text-lg font-medium text-purple-900">{$_('gdpr.article21.title')}</h3>
+          <h3 class="text-lg font-medium text-purple-900">
+            {$_("gdpr.article21.title")}
+          </h3>
           <p class="mt-2 text-sm text-purple-700">
-            {$_('gdpr.article21.desc')}
+            {$_("gdpr.article21.desc")}
           </p>
           <div class="mt-4 flex items-center">
             <button
@@ -274,12 +367,16 @@
               data-testid="gdpr-marketing-toggle"
               aria-label="Toggle marketing opt-out"
               aria-pressed={marketingOptOut}
-              class={`${marketingOptOut ? 'bg-purple-600' : 'bg-gray-200'} relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 disabled:opacity-50`}
+              class={`${marketingOptOut ? "bg-purple-600" : "bg-gray-200"} relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 disabled:opacity-50`}
             >
-              <span class={`${marketingOptOut ? 'translate-x-5' : 'translate-x-0'} pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out`}></span>
+              <span
+                class={`${marketingOptOut ? "translate-x-5" : "translate-x-0"} pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out`}
+              ></span>
             </button>
             <span class="ml-3 text-sm font-medium text-gray-900">
-              {marketingOptOut ? $_('gdpr.article21.optedOut') : $_('gdpr.article21.optedIn')}
+              {marketingOptOut
+                ? $_("gdpr.article21.optedOut")
+                : $_("gdpr.article21.optedIn")}
             </span>
           </div>
         </div>
@@ -287,35 +384,54 @@
     </div>
 
     <!-- Erase Data Section -->
-    <div class="border-l-4 border-red-500 bg-red-50 p-4" data-testid="gdpr-section-erase">
+    <div
+      class="border-l-4 border-red-500 bg-red-50 p-4"
+      data-testid="gdpr-section-erase"
+    >
       <div class="flex items-start">
         <div class="flex-shrink-0">
-          <svg class="h-6 w-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+          <svg
+            class="h-6 w-6 text-red-600"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+            />
           </svg>
         </div>
         <div class="ml-3 flex-1">
-          <h3 class="text-lg font-medium text-red-900">{$_('gdpr.article17.title')}</h3>
+          <h3 class="text-lg font-medium text-red-900">
+            {$_("gdpr.article17.title")}
+          </h3>
           <p class="mt-2 text-sm text-red-700">
-            {$_('gdpr.article17.desc')}
+            {$_("gdpr.article17.desc")}
           </p>
           {#if checkingErasure}
-            <p class="mt-2 text-sm text-red-600">{$_('gdpr.checkingEligibility')}</p>
+            <p class="mt-2 text-sm text-red-600">
+              {$_("gdpr.checkingEligibility")}
+            </p>
           {:else if !canErase}
-            <div class="mt-3 bg-yellow-50 border border-yellow-200 rounded-md p-3">
+            <div
+              class="mt-3 bg-yellow-50 border border-yellow-200 rounded-md p-3"
+            >
               <p class="text-sm text-yellow-800">
-                ⚠️ {$_('gdpr.article17.blocked')}
-                {$_('gdpr.article17.contactSupport')}
+                ⚠️ {$_("gdpr.article17.blocked")}
+                {$_("gdpr.article17.contactSupport")}
               </p>
             </div>
           {:else}
             <button
-              onclick={() => showEraseConfirmation = true}
+              onclick={() => (showEraseConfirmation = true)}
               disabled={loading}
               data-testid="gdpr-erase-button"
               class="mt-4 inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50"
             >
-              {$_('gdpr.article17.action')}
+              {$_("gdpr.article17.action")}
             </button>
           {/if}
         </div>
@@ -324,19 +440,38 @@
 
     <!-- Erasure Result -->
     {#if erasureResult}
-      <div class="bg-green-50 border border-green-200 rounded-md p-4" data-testid="gdpr-erasure-result">
+      <div
+        class="bg-green-50 border border-green-200 rounded-md p-4"
+        data-testid="gdpr-erasure-result"
+      >
         <div class="flex">
           <div class="flex-shrink-0">
-            <svg class="h-5 w-5 text-green-400" fill="currentColor" viewBox="0 0 20 20">
-              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+            <svg
+              class="h-5 w-5 text-green-400"
+              fill="currentColor"
+              viewBox="0 0 20 20"
+            >
+              <path
+                fill-rule="evenodd"
+                d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                clip-rule="evenodd"
+              />
             </svg>
           </div>
           <div class="ml-3">
-            <h3 class="text-sm font-medium text-green-800">{$_('gdpr.anonymizedSuccess')}</h3>
+            <h3 class="text-sm font-medium text-green-800">
+              {$_("gdpr.anonymizedSuccess")}
+            </h3>
             <div class="mt-2 text-sm text-green-700">
-              <p>{$_('gdpr.anonymizedDetail', { values: { count: erasureResult.owners_anonymized } })}</p>
-              <p class="mt-1">Anonymized at: {formatDateTime(erasureResult.anonymized_at)}</p>
-              <p class="mt-1 font-semibold">{$_('gdpr.loggedOutIn')}</p>
+              <p>
+                {$_("gdpr.anonymizedDetail", {
+                  values: { count: erasureResult.owners_anonymized },
+                })}
+              </p>
+              <p class="mt-1">
+                Anonymized at: {formatDateTime(erasureResult.anonymized_at)}
+              </p>
+              <p class="mt-1 font-semibold">{$_("gdpr.loggedOutIn")}</p>
             </div>
           </div>
         </div>
@@ -347,48 +482,92 @@
 
 <!-- Export Modal -->
 {#if showExportModal && exportData}
-  <div class="fixed z-50 inset-0 overflow-y-auto" data-testid="gdpr-export-modal">
-    <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-      <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" onclick={() => showExportModal = false} aria-hidden="true"></div>
+  <div
+    class="fixed z-50 inset-0 overflow-y-auto"
+    data-testid="gdpr-export-modal"
+  >
+    <div
+      class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0"
+    >
+      <div
+        class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"
+        onclick={() => (showExportModal = false)}
+        aria-hidden="true"
+      ></div>
 
-      <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-4xl sm:w-full relative z-10" data-testid="gdpr-export-modal-content">
+      <div
+        class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-4xl sm:w-full relative z-10"
+        data-testid="gdpr-export-modal-content"
+      >
         <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
           <div class="sm:flex sm:items-start">
             <div class="mt-3 text-center sm:mt-0 sm:text-left w-full">
               <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">
-                {$_('gdpr.export.title')}
+                {$_("gdpr.export.title")}
               </h3>
               <div class="mt-2 space-y-4 max-h-96 overflow-y-auto">
                 <div>
-                  <h4 class="font-semibold text-gray-700">{$_('gdpr.exportDate')}</h4>
-                  <p class="text-sm text-gray-600">{formatDateTime(exportData.export_date)}</p>
+                  <h4 class="font-semibold text-gray-700">
+                    {$_("gdpr.exportDate")}
+                  </h4>
+                  <p class="text-sm text-gray-600">
+                    {formatDateTime(exportData.export_date)}
+                  </p>
                 </div>
 
                 <div>
-                  <h4 class="font-semibold text-gray-700">{$_('gdpr.userInformation')}</h4>
-                  <pre class="text-xs bg-gray-50 p-2 rounded overflow-x-auto">{JSON.stringify(exportData.user, null, 2)}</pre>
+                  <h4 class="font-semibold text-gray-700">
+                    {$_("gdpr.userInformation")}
+                  </h4>
+                  <pre
+                    class="text-xs bg-gray-50 p-2 rounded overflow-x-auto">{JSON.stringify(
+                      exportData.user,
+                      null,
+                      2,
+                    )}</pre>
                 </div>
 
                 <div>
-                  <h4 class="font-semibold text-gray-700">{$_('gdpr.ownerRecords')} ({exportData.owners.length})</h4>
+                  <h4 class="font-semibold text-gray-700">
+                    {$_("gdpr.ownerRecords")} ({exportData.owners.length})
+                  </h4>
                   {#if exportData.owners.length > 0}
-                    <pre class="text-xs bg-gray-50 p-2 rounded overflow-x-auto">{JSON.stringify(exportData.owners, null, 2)}</pre>
+                    <pre
+                      class="text-xs bg-gray-50 p-2 rounded overflow-x-auto">{JSON.stringify(
+                        exportData.owners,
+                        null,
+                        2,
+                      )}</pre>
                   {:else}
-                    <p class="text-sm text-gray-500 italic">{$_('gdpr.noOwnerRecords')}</p>
+                    <p class="text-sm text-gray-500 italic">
+                      {$_("gdpr.noOwnerRecords")}
+                    </p>
                   {/if}
                 </div>
 
                 <div>
-                  <h4 class="font-semibold text-gray-700">{$_('gdpr.unitOwnerships')} ({exportData.units.length})</h4>
+                  <h4 class="font-semibold text-gray-700">
+                    {$_("gdpr.unitOwnerships")} ({exportData.units.length})
+                  </h4>
                   {#if exportData.units.length > 0}
-                    <pre class="text-xs bg-gray-50 p-2 rounded overflow-x-auto">{JSON.stringify(exportData.units, null, 2)}</pre>
+                    <pre
+                      class="text-xs bg-gray-50 p-2 rounded overflow-x-auto">{JSON.stringify(
+                        exportData.units,
+                        null,
+                        2,
+                      )}</pre>
                   {:else}
-                    <p class="text-sm text-gray-500 italic">{$_('gdpr.noUnitOwnerships')}</p>
+                    <p class="text-sm text-gray-500 italic">
+                      {$_("gdpr.noUnitOwnerships")}
+                    </p>
                   {/if}
                 </div>
 
                 <div class="text-sm text-gray-600">
-                  <p><strong>{$_('gdpr.totalItems')} :</strong> {exportData.total_items}</p>
+                  <p>
+                    <strong>{$_("gdpr.totalItems")} :</strong>
+                    {exportData.total_items}
+                  </p>
                 </div>
               </div>
             </div>
@@ -401,15 +580,15 @@
             data-testid="gdpr-download-export-button"
             class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm"
           >
-            {$_('gdpr.export.download')}
+            {$_("gdpr.export.download")}
           </button>
           <button
             type="button"
-            onclick={() => showExportModal = false}
+            onclick={() => (showExportModal = false)}
             data-testid="gdpr-export-modal-close"
             class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
           >
-            {$_('common.close')}
+            {$_("common.close")}
           </button>
         </div>
       </div>
@@ -419,34 +598,58 @@
 
 <!-- Erase Confirmation Modal -->
 {#if showEraseConfirmation}
-  <div class="fixed z-50 inset-0 overflow-y-auto" data-testid="gdpr-erase-confirm-modal">
-    <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-      <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" onclick={() => showEraseConfirmation = false} aria-hidden="true"></div>
+  <div
+    class="fixed z-50 inset-0 overflow-y-auto"
+    data-testid="gdpr-erase-confirm-modal"
+  >
+    <div
+      class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0"
+    >
+      <div
+        class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"
+        onclick={() => (showEraseConfirmation = false)}
+        aria-hidden="true"
+      ></div>
 
-      <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full relative z-10" data-testid="gdpr-erase-confirm-content">
+      <div
+        class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full relative z-10"
+        data-testid="gdpr-erase-confirm-content"
+      >
         <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
           <div class="sm:flex sm:items-start">
-            <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100 sm:mx-0 sm:h-10 sm:w-10">
-              <svg class="h-6 w-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+            <div
+              class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100 sm:mx-0 sm:h-10 sm:w-10"
+            >
+              <svg
+                class="h-6 w-6 text-red-600"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                />
               </svg>
             </div>
             <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
               <h3 class="text-lg leading-6 font-medium text-gray-900">
-                {$_('gdpr.erase.confirmHeading')}
+                {$_("gdpr.erase.confirmHeading")}
               </h3>
               <div class="mt-2">
                 <p class="text-sm text-gray-500">
-                  {$_('gdpr.confirmErase')}
+                  {$_("gdpr.confirmErase")}
                 </p>
                 <ul class="mt-2 text-sm text-gray-500 list-disc list-inside">
-                  <li>{$_('gdpr.erase.item1')}</li>
-                  <li>{$_('gdpr.eraseStepOwners')}</li>
-                  <li>{$_('gdpr.eraseStepReplace')}</li>
-                  <li>{$_('gdpr.eraseStepLogout')}</li>
+                  <li>{$_("gdpr.erase.item1")}</li>
+                  <li>{$_("gdpr.eraseStepOwners")}</li>
+                  <li>{$_("gdpr.eraseStepReplace")}</li>
+                  <li>{$_("gdpr.eraseStepLogout")}</li>
                 </ul>
                 <p class="mt-3 text-sm font-semibold text-red-600">
-                  {$_('gdpr.cannotBeUndone')}
+                  {$_("gdpr.cannotBeUndone")}
                 </p>
               </div>
             </div>
@@ -461,19 +664,19 @@
             class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-50"
           >
             {#if loading}
-              {$_('gdpr.erase.inProgress')}
+              {$_("gdpr.erase.inProgress")}
             {:else}
-              {$_('gdpr.erase.confirmYes')}
+              {$_("gdpr.erase.confirmYes")}
             {/if}
           </button>
           <button
             type="button"
-            onclick={() => showEraseConfirmation = false}
+            onclick={() => (showEraseConfirmation = false)}
             disabled={loading}
             data-testid="gdpr-erase-cancel-button"
             class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:w-auto sm:text-sm disabled:opacity-50"
           >
-            {$_('common.cancel')}
+            {$_("common.cancel")}
           </button>
         </div>
       </div>
@@ -483,25 +686,53 @@
 
 <!-- Rectify Data Modal -->
 {#if showRectifyModal}
-  <div class="fixed z-50 inset-0 overflow-y-auto" data-testid="gdpr-rectify-modal">
-    <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-      <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" onclick={() => showRectifyModal = false} aria-hidden="true"></div>
+  <div
+    class="fixed z-50 inset-0 overflow-y-auto"
+    data-testid="gdpr-rectify-modal"
+  >
+    <div
+      class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0"
+    >
+      <div
+        class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"
+        onclick={() => (showRectifyModal = false)}
+        aria-hidden="true"
+      ></div>
 
-      <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full relative z-10" data-testid="gdpr-rectify-modal-content">
+      <div
+        class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full relative z-10"
+        data-testid="gdpr-rectify-modal-content"
+      >
         <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
           <div class="sm:flex sm:items-start">
-            <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-green-100 sm:mx-0 sm:h-10 sm:w-10">
-              <svg class="h-6 w-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+            <div
+              class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-green-100 sm:mx-0 sm:h-10 sm:w-10"
+            >
+              <svg
+                class="h-6 w-6 text-green-600"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                />
               </svg>
             </div>
             <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
               <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">
-                {$_('gdpr.article16.modalTitle')}
+                {$_("gdpr.article16.modalTitle")}
               </h3>
               <div class="mt-4 space-y-4">
                 <div>
-                  <label for="rectify-email" class="block text-sm font-medium text-gray-700">{$_('common.email')}</label>
+                  <label
+                    for="rectify-email"
+                    class="block text-sm font-medium text-gray-700"
+                    >{$_("common.email")}</label
+                  >
                   <input
                     id="rectify-email"
                     type="email"
@@ -512,7 +743,11 @@
                   />
                 </div>
                 <div>
-                  <label for="rectify-firstname" class="block text-sm font-medium text-gray-700">{$_('gdpr.firstName')}</label>
+                  <label
+                    for="rectify-firstname"
+                    class="block text-sm font-medium text-gray-700"
+                    >{$_("gdpr.firstName")}</label
+                  >
                   <input
                     id="rectify-firstname"
                     type="text"
@@ -523,7 +758,11 @@
                   />
                 </div>
                 <div>
-                  <label for="rectify-lastname" class="block text-sm font-medium text-gray-700">{$_('gdpr.lastName')}</label>
+                  <label
+                    for="rectify-lastname"
+                    class="block text-sm font-medium text-gray-700"
+                    >{$_("gdpr.lastName")}</label
+                  >
                   <input
                     id="rectify-lastname"
                     type="text"
@@ -534,8 +773,8 @@
                   />
                 </div>
                 <p class="text-xs text-gray-500">
-                  {$_('gdpr.article16.hint')}
-          </p>
+                  {$_("gdpr.article16.hint")}
+                </p>
               </div>
             </div>
           </div>
@@ -549,19 +788,19 @@
             class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-green-600 text-base font-medium text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-50"
           >
             {#if loading}
-              {$_('gdpr.article16.inProgress')}
+              {$_("gdpr.article16.inProgress")}
             {:else}
-              {$_('gdpr.article16.submit')}
+              {$_("gdpr.article16.submit")}
             {/if}
           </button>
           <button
             type="button"
-            onclick={() => showRectifyModal = false}
+            onclick={() => (showRectifyModal = false)}
             disabled={loading}
             data-testid="gdpr-rectify-cancel-button"
             class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:w-auto sm:text-sm disabled:opacity-50"
           >
-            {$_('common.cancel')}
+            {$_("common.cancel")}
           </button>
         </div>
       </div>

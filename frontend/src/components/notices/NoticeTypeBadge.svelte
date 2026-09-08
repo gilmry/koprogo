@@ -5,10 +5,7 @@
 
   let { type }: { type: NoticeType } = $props();
 
-  const typeConfig: Record<
-    NoticeType,
-    { class: string; icon: string }
-  > = {
+  const typeConfig: Record<NoticeType, { class: string; icon: string }> = {
     [NoticeType.Announcement]: {
       class: "bg-blue-100 text-blue-800",
       icon: "📢",
@@ -30,7 +27,9 @@
   let config = $derived(typeConfig[type]);
 </script>
 
-<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {config.class}">
+<span
+  class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {config.class}"
+>
   <span class="mr-1">{config.icon}</span>
   {$_(`notices.noticeType.${type}`)}
 </span>

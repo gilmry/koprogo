@@ -36,9 +36,10 @@
         listAcps().catch(() => []),
       ]);
       specs = s;
-      acps = (a ?? []).map(
-        (x: { id: string; name: string }) => ({ id: x.id, name: x.name }),
-      );
+      acps = (a ?? []).map((x: { id: string; name: string }) => ({
+        id: x.id,
+        name: x.name,
+      }));
       if (acps.length > 0 && selectedAcpId === "") {
         selectedAcpId = acps[0].id;
       }
@@ -79,7 +80,9 @@
 
 <div class="flex flex-col gap-6">
   <header class="flex items-center justify-between">
-    <h1 class="text-2xl font-semibold text-gray-900">{$_('technicalSpecs.pageTitle')}</h1>
+    <h1 class="text-2xl font-semibold text-gray-900">
+      {$_("technicalSpecs.pageTitle")}
+    </h1>
     <button
       type="button"
       data-testid="tech-spec-new-button"
@@ -87,17 +90,17 @@
       onclick={() => (showForm = true)}
       disabled={loading || acps.length === 0}
     >
-      {$_('technicalSpecs.newSpec')}
+      {$_("technicalSpecs.newSpec")}
     </button>
   </header>
 
   {#if loading}
     <p class="text-sm text-gray-500" role="status" aria-live="polite">
-      {$_('common.loading2')}
+      {$_("common.loading2")}
     </p>
   {:else if specs.length === 0}
     <p data-testid="tech-spec-list-empty" class="text-sm text-gray-500">
-      {$_('technicalSpecs.empty')}
+      {$_("technicalSpecs.empty")}
     </p>
   {:else}
     <div class="overflow-x-auto">
@@ -111,31 +114,31 @@
               scope="col"
               class="px-3 py-2 text-left font-medium text-gray-700"
             >
-              {$_('common.title')}
+              {$_("common.title")}
             </th>
             <th
               scope="col"
               class="px-3 py-2 text-left font-medium text-gray-700"
             >
-              {$_('technicalSpecs.version')}
+              {$_("technicalSpecs.version")}
             </th>
             <th
               scope="col"
               class="px-3 py-2 text-left font-medium text-gray-700"
             >
-              {$_('common.status')}
+              {$_("common.status")}
             </th>
             <th
               scope="col"
               class="px-3 py-2 text-left font-medium text-gray-700"
             >
-              {$_('common.createdOnShort')}
+              {$_("common.createdOnShort")}
             </th>
             <th
               scope="col"
               class="px-3 py-2 text-right font-medium text-gray-700"
             >
-              {$_('common.actionColumn')}
+              {$_("common.actionColumn")}
             </th>
           </tr>
         </thead>
@@ -160,7 +163,7 @@
                   data-testid={`tech-spec-detail-link-${s.id}`}
                   class="text-xs text-blue-600 hover:underline"
                 >
-                  {$_('technicalSpecs.detail')}
+                  {$_("technicalSpecs.detail")}
                 </a>
               </td>
             </tr>

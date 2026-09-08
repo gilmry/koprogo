@@ -9,7 +9,8 @@ import Layout from "../../layouts/Layout.astro";
         Gestion de la Gamification
       </h1>
       <p class="text-gray-600 mt-2">
-        Gerez les achievements et challenges pour encourager la participation communautaire.
+        Gerez les achievements et challenges pour encourager la participation
+        communautaire.
       </p>
     </div>
 
@@ -56,7 +57,8 @@ import Layout from "../../layouts/Layout.astro";
   import { get } from "svelte/store";
 
   const auth = get(authStore);
-  const organizationId = auth.user?.organizationId || auth.user?.activeRole?.organizationId || "";
+  const organizationId =
+    auth.user?.organizationId || auth.user?.activeRole?.organizationId || "";
 
   let currentTab = "achievements";
   const containers: Record<string, HTMLElement | null> = {

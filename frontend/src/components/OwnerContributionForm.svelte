@@ -1,31 +1,47 @@
 <script lang="ts">
   // Svelte 5 runes mode
-  import { _ } from '../lib/i18n';
-  import { api } from '../lib/api';
-  import { withErrorHandling } from '../lib/utils/error.utils';
+  import { _ } from "../lib/i18n";
+  import { api } from "../lib/api";
+  import { withErrorHandling } from "../lib/utils/error.utils";
 
-  let { organizationId, onSuccess = () => {} }: { organizationId: string; onSuccess?: () => void } = $props();
+  let {
+    organizationId,
+    onSuccess = () => {},
+  }: { organizationId: string; onSuccess?: () => void } = $props();
 
-  let formData = $state({ owner_id: '', unit_id: '', description: '', amount: '', contribution_type: 'regular', contribution_date: new Date().toISOString().split('T')[0], account_code: '700001' });
+  let formData = $state({
+    owner_id: "",
+    unit_id: "",
+    description: "",
+    amount: "",
+    contribution_type: "regular",
+    contribution_date: new Date().toISOString().split("T")[0],
+    account_code: "700001",
+  });
   let owners = $state<any[]>([]);
   let units = $state<any[]>([]);
   let loading = $state(false);
-  let error = $state('');
+  let error = $state("");
 
   async function loadData() {
     await withErrorHandling({
       action: async () => {
         const [ownersResp, unitsResp] = await Promise.all([
-          api.get<{ data: any[] }>('/owners?per_page=1000'),
-          api.get<{ data: any[] }>('/units?per_page=1000'),
+          api.get<{ data: any[] }>("/owners?per_page=1000"),
+          api.get<{ data: any[] }>("/units?per_page=1000"),
         ]);
         return { ownersData: ownersResp.data, unitsData: unitsResp.data };
       },
-      onSuccess: (result: any) => { owners = result.ownersData; units = result.unitsData; },
+      onSuccess: (result: any) => {
+        owners = result.ownersData;
+        units = result.unitsData;
+      },
     });
   }
 
-  $effect(() => { if (organizationId) loadData(); });
+  $effect(() => {
+    if (organizationId) loadData();
+  });
 
   // '7000'/'7100' n'existent pas dans le PCMN belge réellement seedé
   // (seul '700xxx', comptes feuilles direct_use=true, cf.
@@ -33,36 +49,76 @@
   // owner_contributions.account_code -> accounts(organization_id, code)
   // rejetait donc systématiquement toute création avec 400/500.
   $effect(() => {
-    if (formData.contribution_type === 'regular') { formData.account_code = '700001'; }
-    else if (formData.contribution_type === 'extraordinary') { formData.account_code = '700002'; }
-    else if (formData.contribution_type === 'advance') { formData.account_code = '700003'; }
-    else if (formData.contribution_type === 'adjustment') { formData.account_code = '700001'; }
+    if (formData.contribution_type === "regular") {
+      formData.account_code = "700001";
+    } else if (formData.contribution_type === "extraordinary") {
+      formData.account_code = "700002";
+    } else if (formData.contribution_type === "advance") {
+      formData.account_code = "700003";
+    } else if (formData.contribution_type === "adjustment") {
+      formData.account_code = "700001";
+    }
   });
 
   async function handleSubmit(e: Event) {
     e.preventDefault();
-    error = '';
+    error = "";
     await withErrorHandling({
       action: async () => {
-        const payload = { owner_id: formData.owner_id, unit_id: formData.unit_id, description: formData.description, amount: parseFloat(formData.amount), contribution_type: formData.contribution_type, contribution_date: new Date(formData.contribution_date).toISOString(), account_code: formData.account_code };
-        return api.post('/owner-contributions', payload);
+        const payload = {
+          owner_id: formData.owner_id,
+          unit_id: formData.unit_id,
+          description: formData.description,
+          amount: parseFloat(formData.amount),
+          contribution_type: formData.contribution_type,
+          contribution_date: new Date(formData.contribution_date).toISOString(),
+          account_code: formData.account_code,
+        };
+        return api.post("/owner-contributions", payload);
       },
-      setLoading: (v: boolean) => loading = v,
-      errorMessage: $_('contributions.createError'),
-      onSuccess: () => { formData = { owner_id: '', unit_id: '', description: '', amount: '', contribution_type: 'regular', contribution_date: new Date().toISOString().split('T')[0], account_code: '700001' }; onSuccess(); },
+      setLoading: (v: boolean) => (loading = v),
+      errorMessage: $_("contributions.createError"),
+      onSuccess: () => {
+        formData = {
+          owner_id: "",
+          unit_id: "",
+          description: "",
+          amount: "",
+          contribution_type: "regular",
+          contribution_date: new Date().toISOString().split("T")[0],
+          account_code: "700001",
+        };
+        onSuccess();
+      },
     });
   }
 </script>
 
 <div class="bg-white shadow-md rounded-lg p-6">
-  <h3 class="text-lg font-semibold text-gray-900 mb-4">{$_('contributions.newContribution')}</h3>
-  {#if error}<div class="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">{error}</div>{/if}
+  <h3 class="text-lg font-semibold text-gray-900 mb-4">
+    {$_("contributions.newContribution")}
+  </h3>
+  {#if error}<div
+      class="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded"
+    >
+      {error}
+    </div>{/if}
   <form onsubmit={handleSubmit} class="space-y-4">
     <div>
-      <label for="owner_id" class="block text-sm font-medium text-gray-700 mb-1">{$_('contributions.owner')} *</label>
-      <select id="owner_id" bind:value={formData.owner_id} required data-testid="contribution-owner-select" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-        <option value="">{$_('contributions.selectOwner')}</option>
-        {#each owners as owner}<option value={owner.id}>{owner.first_name} {owner.last_name}</option>{/each}
+      <label for="owner_id" class="block text-sm font-medium text-gray-700 mb-1"
+        >{$_("contributions.owner")} *</label
+      >
+      <select
+        id="owner_id"
+        bind:value={formData.owner_id}
+        required
+        data-testid="contribution-owner-select"
+        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+      >
+        <option value="">{$_("contributions.selectOwner")}</option>
+        {#each owners as owner}<option value={owner.id}
+            >{owner.first_name} {owner.last_name}</option
+          >{/each}
       </select>
     </div>
     <div>
@@ -79,43 +135,117 @@
         l'écran entier et n'apprendre qu'au dernier clic que ce choix n'existe
         pas. Constaté par `SyndicCreationJourneys.spec.ts:36` (#832, #780).
       -->
-      <label for="unit_id" class="block text-sm font-medium text-gray-700 mb-1">{$_('contributions.unit')} *</label>
-      <select id="unit_id" bind:value={formData.unit_id} required data-testid="contribution-unit-select" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-        <option value="" disabled>{$_('contributions.selectUnit')}</option>
-        {#each units as unit}<option value={unit.id}>Lot {unit.unit_number} - {unit.floor}</option>{/each}
+      <label for="unit_id" class="block text-sm font-medium text-gray-700 mb-1"
+        >{$_("contributions.unit")} *</label
+      >
+      <select
+        id="unit_id"
+        bind:value={formData.unit_id}
+        required
+        data-testid="contribution-unit-select"
+        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+      >
+        <option value="" disabled>{$_("contributions.selectUnit")}</option>
+        {#each units as unit}<option value={unit.id}
+            >Lot {unit.unit_number} - {unit.floor}</option
+          >{/each}
       </select>
-      <p class="mt-1 text-xs text-gray-500" data-testid="contribution-unit-hint">
-        {$_('contributions.unitRequiredHint')}
+      <p
+        class="mt-1 text-xs text-gray-500"
+        data-testid="contribution-unit-hint"
+      >
+        {$_("contributions.unitRequiredHint")}
       </p>
     </div>
     <div>
-      <label for="contribution_type" class="block text-sm font-medium text-gray-700 mb-1">{$_('contributions.type')} *</label>
-      <select id="contribution_type" bind:value={formData.contribution_type} required data-testid="contribution-type-select" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-        <option value="regular">{$_('contributions.typeRegular')}</option>
-        <option value="extraordinary">{$_('contributions.typeExtraordinary')}</option>
-        <option value="advance">{$_('contributions.typeAdvance')}</option>
-        <option value="adjustment">{$_('contributions.typeAdjustment')}</option>
+      <label
+        for="contribution_type"
+        class="block text-sm font-medium text-gray-700 mb-1"
+        >{$_("contributions.type")} *</label
+      >
+      <select
+        id="contribution_type"
+        bind:value={formData.contribution_type}
+        required
+        data-testid="contribution-type-select"
+        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+      >
+        <option value="regular">{$_("contributions.typeRegular")}</option>
+        <option value="extraordinary"
+          >{$_("contributions.typeExtraordinary")}</option
+        >
+        <option value="advance">{$_("contributions.typeAdvance")}</option>
+        <option value="adjustment">{$_("contributions.typeAdjustment")}</option>
       </select>
     </div>
     <div>
-      <label for="description" class="block text-sm font-medium text-gray-700 mb-1">{$_('common.description')} *</label>
-      <textarea id="description" bind:value={formData.description} required rows="3" placeholder="Ex: Appel de fonds T4 2025 - Charges courantes" data-testid="contribution-description" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+      <label
+        for="description"
+        class="block text-sm font-medium text-gray-700 mb-1"
+        >{$_("common.description")} *</label
+      >
+      <textarea
+        id="description"
+        bind:value={formData.description}
+        required
+        rows="3"
+        placeholder="Ex: Appel de fonds T4 2025 - Charges courantes"
+        data-testid="contribution-description"
+        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+      ></textarea>
     </div>
     <div>
-      <label for="amount" class="block text-sm font-medium text-gray-700 mb-1">{$_('contributions.amount')} *</label>
-      <input type="number" id="amount" bind:value={formData.amount} required min="0" step="0.01" placeholder="0.00" data-testid="contribution-amount" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
+      <label for="amount" class="block text-sm font-medium text-gray-700 mb-1"
+        >{$_("contributions.amount")} *</label
+      >
+      <input
+        type="number"
+        id="amount"
+        bind:value={formData.amount}
+        required
+        min="0"
+        step="0.01"
+        placeholder="0.00"
+        data-testid="contribution-amount"
+        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+      />
     </div>
     <div>
-      <label for="contribution_date" class="block text-sm font-medium text-gray-700 mb-1">{$_('contributions.date')} *</label>
-      <input type="date" id="contribution_date" bind:value={formData.contribution_date} required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
+      <label
+        for="contribution_date"
+        class="block text-sm font-medium text-gray-700 mb-1"
+        >{$_("contributions.date")} *</label
+      >
+      <input
+        type="date"
+        id="contribution_date"
+        bind:value={formData.contribution_date}
+        required
+        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+      />
     </div>
     <div>
-      <label for="account_code" class="block text-sm font-medium text-gray-700 mb-1">{$_('contributions.accountCode')}</label>
-      <input type="text" id="account_code" bind:value={formData.account_code} readonly class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-600" />
+      <label
+        for="account_code"
+        class="block text-sm font-medium text-gray-700 mb-1"
+        >{$_("contributions.accountCode")}</label
+      >
+      <input
+        type="text"
+        id="account_code"
+        bind:value={formData.account_code}
+        readonly
+        class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-600"
+      />
     </div>
     <div class="flex justify-end space-x-3 pt-4">
-      <button type="submit" disabled={loading} data-testid="contribution-submit-button" class="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed">
-        {loading ? $_('common.creating') : $_('contributions.create')}
+      <button
+        type="submit"
+        disabled={loading}
+        data-testid="contribution-submit-button"
+        class="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        {loading ? $_("common.creating") : $_("contributions.create")}
       </button>
     </div>
   </form>

@@ -40,14 +40,16 @@
       // docs/maury/syndic-org-users-endpoint). `organization_id` en fallback
       // pour rester tolérant à la forme brute stockée par authStore.
       const authUser = get(authStore).user as
-        | { organizationId?: string; organization_id?: string }
-        | undefined;
+        { organizationId?: string; organization_id?: string } | undefined;
       const organizationId =
         authUser?.organizationId ?? authUser?.organization_id ?? "";
 
       const [m, b, a, users] = await Promise.all([
         listMandates().catch(() => [] as MandateResponse[]),
-        listBuildings(1, 100).catch(() => ({ data: [], pagination: {} as never })),
+        listBuildings(1, 100).catch(() => ({
+          data: [],
+          pagination: {} as never,
+        })),
         listAcps().catch(() => []),
         organizationId
           ? listOrganizationUsers(organizationId).catch(() => ({ data: [] }))
@@ -70,7 +72,8 @@
       const newSubjectLabels: Record<string, string> = {};
       for (const u of usrs) {
         if (!ELIGIBLE_ROLES.has(u.role)) continue;
-        const label = `${u.first_name ?? ""} ${u.last_name ?? ""}`.trim() || u.email;
+        const label =
+          `${u.first_name ?? ""} ${u.last_name ?? ""}`.trim() || u.email;
         newSubjects.push({ id: u.id, label });
         newSubjectLabels[u.id] = label;
       }
@@ -130,7 +133,9 @@
       aria-modal="true"
       aria-labelledby="mandate-issue-modal-title"
     >
-      <div class="bg-white rounded shadow-lg max-w-2xl w-full max-h-full overflow-y-auto">
+      <div
+        class="bg-white rounded shadow-lg max-w-2xl w-full max-h-full overflow-y-auto"
+      >
         <MandateIssueForm
           {subjects}
           {scopes}

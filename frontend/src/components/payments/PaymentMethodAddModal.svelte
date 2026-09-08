@@ -1,6 +1,6 @@
 <script lang="ts">
   // Svelte 5 runes mode
-  import { _ } from '../../lib/i18n';
+  import { _ } from "../../lib/i18n";
   import {
     paymentMethodsApi,
     StoredPaymentMethodType,
@@ -14,7 +14,11 @@
   import FormSelect from "../ui/FormSelect.svelte";
   import Button from "../ui/Button.svelte";
 
-  let { open = $bindable(false), ownerId, onadded }: {
+  let {
+    open = $bindable(false),
+    ownerId,
+    onadded,
+  }: {
     open?: boolean;
     ownerId: string;
     onadded?: () => void;
@@ -32,30 +36,33 @@
     is_default: false,
   });
   // Sync with prop (live value via $effect, not stale initial capture)
-  $effect(() => { if (ownerId && !formData.owner_id) formData.owner_id = ownerId; });
+  $effect(() => {
+    if (ownerId && !formData.owner_id) formData.owner_id = ownerId;
+  });
 
   let submitting = $state(false);
   let errors: Record<string, string> = $state({});
 
   async function handleSubmit() {
     errors = validatePaymentMethod(formData, {
-      labelMinLength: $_('payments.validation.labelMinLength'),
-      stripeIdRequired: $_('payments.validation.stripeIdRequired'),
+      labelMinLength: $_("payments.validation.labelMinLength"),
+      stripeIdRequired: $_("payments.validation.stripeIdRequired"),
     });
 
     if (Object.keys(errors).length > 0) {
-      toast.error($_('payments.validation.fixErrors'));
+      toast.error($_("payments.validation.fixErrors"));
       return;
     }
 
     const result = await withErrorHandling({
-      action: () => paymentMethodsApi.create({
-        ...formData,
-        owner_id: ownerId,
-      }),
-      setLoading: (v: boolean) => submitting = v,
-      successMessage: $_('payments.methodAdded'),
-      errorMessage: $_('payments.failedAddMethod'),
+      action: () =>
+        paymentMethodsApi.create({
+          ...formData,
+          owner_id: ownerId,
+        }),
+      setLoading: (v: boolean) => (submitting = v),
+      successMessage: $_("payments.methodAdded"),
+      errorMessage: $_("payments.failedAddMethod"),
     });
 
     if (result !== undefined) {
@@ -82,20 +89,29 @@
   }
 </script>
 
-<Modal isOpen={open} onclose={handleClose} title={$_('payments.addMethodTitle')}>
-  <form onsubmit={(e) => { e.preventDefault(); handleSubmit(); }}>
+<Modal
+  isOpen={open}
+  onclose={handleClose}
+  title={$_("payments.addMethodTitle")}
+>
+  <form
+    onsubmit={(e) => {
+      e.preventDefault();
+      handleSubmit();
+    }}
+  >
     <div class="space-y-4">
       <!-- Info Banner -->
       <div class="bg-blue-50 border border-blue-200 rounded-lg p-3">
         <p class="text-sm text-blue-700">
-          {$_('payments.stripeNote')}
+          {$_("payments.stripeNote")}
         </p>
       </div>
 
       <!-- Method Type -->
       <FormSelect
         id="method-type"
-        label={$_('payments.methodType')}
+        label={$_("payments.methodType")}
         bind:value={formData.method_type}
         onchange={handleMethodTypeChange}
         required
@@ -124,11 +140,11 @@
       <!-- Display Label -->
       <FormInput
         id="display-label"
-        label={$_('payments.displayName')}
+        label={$_("payments.displayName")}
         bind:value={formData.display_label}
         error={errors.display_label}
         required
-        placeholder={$_('payments.displayNamePlaceholder')}
+        placeholder={$_("payments.displayNamePlaceholder")}
         data-testid="display-label-input"
       />
 
@@ -136,7 +152,7 @@
       {#if formData.method_type === StoredPaymentMethodType.Card || formData.method_type === StoredPaymentMethodType.SepaDebit}
         <FormInput
           id="stripe-id"
-          label={$_('payments.stripeMethodId')}
+          label={$_("payments.stripeMethodId")}
           bind:value={formData.stripe_payment_method_id}
           error={errors.stripe_payment_method_id}
           required
@@ -156,7 +172,7 @@
         -->
         <FormInput
           id="stripe-customer-id"
-          label={$_('payments.stripeCustomerId')}
+          label={$_("payments.stripeCustomerId")}
           bind:value={formData.stripe_customer_id}
           error={errors.stripe_customer_id}
           required
@@ -170,21 +186,25 @@
             bind:checked={formData.is_default}
             data-testid="is-default-input"
           />
-          <span>{$_('payments.setAsDefault')}</span>
+          <span>{$_("payments.setAsDefault")}</span>
         </label>
       {/if}
 
       <!-- Help Text -->
-
     </div>
 
     <!-- Actions -->
     <div class="mt-6 flex justify-end space-x-3">
-      <Button type="button" variant="outline" onclick={handleClose} data-testid="cancel-btn">
-        {$_('common.cancel')}
+      <Button
+        type="button"
+        variant="outline"
+        onclick={handleClose}
+        data-testid="cancel-btn"
+      >
+        {$_("common.cancel")}
       </Button>
       <Button type="submit" loading={submitting} data-testid="submit-btn">
-        {$_('payments.addMethod')}
+        {$_("payments.addMethod")}
       </Button>
     </div>
   </form>

@@ -86,7 +86,7 @@
 <div class="flex flex-col gap-4">
   {#if loading}
     <p class="text-sm text-gray-500" role="status" aria-live="polite">
-      {$_('contractors.loadingReputation')}
+      {$_("contractors.loadingReputation")}
     </p>
   {:else if error}
     <p

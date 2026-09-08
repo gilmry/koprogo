@@ -74,7 +74,7 @@
           const acp = await getAcp(building.acp_id);
           organizationId = acp.organization_id ?? "";
           organizationName = acp.organization_id
-            ? (await tryGetOrganizationName(acp.organization_id)) ?? ""
+            ? ((await tryGetOrganizationName(acp.organization_id)) ?? "")
             : "";
         } catch (e) {
           console.error("Error loading ACP/organization:", e);

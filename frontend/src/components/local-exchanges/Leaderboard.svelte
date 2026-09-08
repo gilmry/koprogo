@@ -1,6 +1,6 @@
 <script lang="ts">
   // Svelte 5 runes mode
-  import { _ } from '../../lib/i18n';
+  import { _ } from "../../lib/i18n";
   import {
     localExchangesApi,
     type OwnerCreditBalance,
@@ -10,7 +10,8 @@
   } from "../../lib/api/local-exchanges";
   import { withLoadingState } from "../../lib/utils/error.utils";
 
-  let { buildingId, limit = 10 }: { buildingId: string; limit?: number } = $props();
+  let { buildingId, limit = 10 }: { buildingId: string; limit?: number } =
+    $props();
 
   let leaderboard = $state<OwnerCreditBalance[]>([]);
   let loading = $state(true);
@@ -19,10 +20,10 @@
   async function loadLeaderboard() {
     await withLoadingState({
       action: () => localExchangesApi.getLeaderboard(buildingId, limit),
-      setLoading: (v) => loading = v,
-      setError: (v) => error = v,
-      onSuccess: (data) => leaderboard = data,
-      errorMessage: $_('exchanges.leaderboard_error'),
+      setLoading: (v) => (loading = v),
+      setError: (v) => (error = v),
+      onSuccess: (data) => (leaderboard = data),
+      errorMessage: $_("exchanges.leaderboard_error"),
     });
   }
 
@@ -33,7 +34,7 @@
 
 <div class="bg-white shadow rounded-lg p-6" data-testid="leaderboard">
   <h3 class="text-lg font-semibold text-gray-900 mb-4">
-    🏆 {$_('exchanges.leaderboard_title')}
+    🏆 {$_("exchanges.leaderboard_title")}
   </h3>
 
   {#if loading}
@@ -43,19 +44,23 @@
       ></div>
     </div>
   {:else if error}
-    <div class="bg-red-50 border border-red-200 rounded-md p-4" data-testid="leaderboard-error">
+    <div
+      class="bg-red-50 border border-red-200 rounded-md p-4"
+      data-testid="leaderboard-error"
+    >
       <p class="text-red-800">❌ {error}</p>
     </div>
   {:else if leaderboard.length === 0}
     <p class="text-gray-500 text-center py-8">
-      {$_('exchanges.no_contributors')}
+      {$_("exchanges.no_contributors")}
     </p>
   {:else}
     <div class="space-y-3">
       {#each leaderboard as owner, index (owner.owner_id)}
         {@const rank = index + 1}
         {@const isTopThree = rank <= 3}
-        {@const participationConfig = participationLevelColors[owner.participation_level]}
+        {@const participationConfig =
+          participationLevelColors[owner.participation_level]}
         {@const balanceColor = getCreditStatusColor(owner.credit_status)}
 
         <div
@@ -97,7 +102,11 @@
               <span class="font-medium {balanceColor}">
                 {owner.balance > 0 ? "+" : ""}{owner.balance}h
               </span>
-              <span>📊 {$_('exchanges.exchange_count', { values: { count: owner.total_exchanges } })}</span>
+              <span
+                >📊 {$_("exchanges.exchange_count", {
+                  values: { count: owner.total_exchanges },
+                })}</span
+              >
               {#if owner.average_rating}
                 <span>
                   ⭐ {owner.average_rating.toFixed(1)}
@@ -111,14 +120,14 @@
             <p class="text-lg font-bold {balanceColor}">
               {owner.balance > 0 ? "+" : ""}{owner.balance}
             </p>
-            <p class="text-xs text-gray-500">{$_('exchanges.credits')}</p>
+            <p class="text-xs text-gray-500">{$_("exchanges.credits")}</p>
           </div>
         </div>
       {/each}
     </div>
 
     <p class="mt-4 text-xs text-gray-500 text-center">
-      {$_('exchanges.leaderboard_info')}
+      {$_("exchanges.leaderboard_info")}
     </p>
   {/if}
 </div>

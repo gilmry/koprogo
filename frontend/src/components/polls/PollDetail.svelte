@@ -1,7 +1,7 @@
 <script lang="ts">
   import { SvelteSet } from "svelte/reactivity";
   // Svelte 5 runes mode
-  import { _ } from '../../lib/i18n';
+  import { _ } from "../../lib/i18n";
   import {
     pollsApi,
     type Poll,
@@ -24,7 +24,10 @@
   } = $props();
 
   // Reactively compute isAdmin from auth store
-  let isAdmin = $derived($authStore.user?.role === UserRole.SYNDIC || $authStore.user?.role === UserRole.SUPERADMIN);
+  let isAdmin = $derived(
+    $authStore.user?.role === UserRole.SYNDIC ||
+      $authStore.user?.role === UserRole.SUPERADMIN,
+  );
 
   let poll: Poll | null = $state(null);
   let results: PollResultsType | null = $state(null);
@@ -55,7 +58,10 @@
     });
     if (loaded) {
       poll = loaded;
-      if (poll.status === PollStatus.Closed || poll.status === PollStatus.Active) {
+      if (
+        poll.status === PollStatus.Closed ||
+        poll.status === PollStatus.Active
+      ) {
         try {
           results = await pollsApi.getResults(pollId);
         } catch {
@@ -78,7 +84,10 @@
     try {
       let voteData: any = { poll_id: poll.id };
 
-      if (poll.poll_type === PollType.YesNo || poll.poll_type === PollType.MultipleChoice) {
+      if (
+        poll.poll_type === PollType.YesNo ||
+        poll.poll_type === PollType.MultipleChoice
+      ) {
         if (poll.allow_multiple_votes) {
           if (selectedOptions.size === 0) {
             throw new Error($_("polls.detail.selectAtLeastOne"));
@@ -113,7 +122,11 @@
       }, 3000);
     } catch (err: any) {
       const msg = err.message || "";
-      if (msg.includes("already voted") || msg.includes("déjà voté") || msg.includes("duplicate")) {
+      if (
+        msg.includes("already voted") ||
+        msg.includes("déjà voté") ||
+        msg.includes("duplicate")
+      ) {
         hasVoted = true;
         votingError = $_("polls.detail.alreadyVoted");
       } else {
@@ -130,10 +143,11 @@
     }
 
     const result = await withErrorHandling({
-      action: () => pollsApi.publish(poll!.id, {
-        starts_at: poll!.starts_at,
-        ends_at: poll!.ends_at,
-      }),
+      action: () =>
+        pollsApi.publish(poll!.id, {
+          starts_at: poll!.starts_at,
+          ends_at: poll!.ends_at,
+        }),
       successMessage: $_("polls.detail.publishSuccess"),
       errorMessage: $_("polls.detail.publishError"),
     });
@@ -221,7 +235,7 @@
               <span
                 class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-200 text-gray-700"
               >
-                {$_('polls.anonymous')}
+                {$_("polls.anonymous")}
               </span>
             {/if}
           </div>
@@ -235,24 +249,33 @@
           <!-- Metadata -->
           <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
             <div class="p-3 bg-blue-50 rounded-lg">
-              <div class="text-xs text-blue-600 font-medium">{$_("polls.detail.period")}</div>
+              <div class="text-xs text-blue-600 font-medium">
+                {$_("polls.detail.period")}
+              </div>
               <div class="text-sm text-blue-900">
                 {#if poll.starts_at && poll.ends_at}
-                  {formatDateTime(poll.starts_at)} → {formatDateTime(poll.ends_at)}
+                  {formatDateTime(poll.starts_at)} → {formatDateTime(
+                    poll.ends_at,
+                  )}
                 {:else}
                   {$_("polls.detail.notDefined")}
                 {/if}
               </div>
             </div>
             <div class="p-3 bg-green-50 rounded-lg">
-              <div class="text-xs text-green-600 font-medium">{$_("polls.detail.participation")}</div>
+              <div class="text-xs text-green-600 font-medium">
+                {$_("polls.detail.participation")}
+              </div>
               <div class="text-sm text-green-900">
-                {poll.total_votes_cast}/{poll.total_eligible_voters} {$_("polls.detail.votes")}
+                {poll.total_votes_cast}/{poll.total_eligible_voters}
+                {$_("polls.detail.votes")}
                 ({calculateParticipationRate(poll).toFixed(1)}%)
               </div>
             </div>
             <div class="p-3 bg-purple-50 rounded-lg">
-              <div class="text-xs text-purple-600 font-medium">{$_("common.created")}</div>
+              <div class="text-xs text-purple-600 font-medium">
+                {$_("common.created")}
+              </div>
               <div class="text-sm text-purple-900">
                 {formatDateTime(poll.created_at)}
               </div>
@@ -269,7 +292,9 @@
 
       <!-- Admin Actions -->
       {#if isAdmin}
-        <div class="mt-4 flex items-center space-x-3 pt-4 border-t border-gray-200">
+        <div
+          class="mt-4 flex items-center space-x-3 pt-4 border-t border-gray-200"
+        >
           {#if poll.status === PollStatus.Draft}
             <button
               onclick={handlePublish}
@@ -303,8 +328,13 @@
 
     <!-- Voting Section -->
     {#if canVote()}
-      <div class="bg-white shadow-md rounded-lg p-6" data-testid="poll-voting-section">
-        <h3 class="text-lg font-medium text-gray-900 mb-4">🗳️ {$_("polls.detail.yourVote")}</h3>
+      <div
+        class="bg-white shadow-md rounded-lg p-6"
+        data-testid="poll-voting-section"
+      >
+        <h3 class="text-lg font-medium text-gray-900 mb-4">
+          🗳️ {$_("polls.detail.yourVote")}
+        </h3>
 
         {#if votingSuccess}
           <div class="mb-4 p-4 bg-green-50 border border-green-200 rounded-md">
@@ -324,12 +354,22 @@
         {#if poll.poll_type === PollType.YesNo || poll.poll_type === PollType.MultipleChoice}
           <div class="space-y-3">
             {#each poll.options as option}
-              <label class="flex items-center p-3 border-2 rounded-lg cursor-pointer hover:bg-gray-50 {(poll.allow_multiple_votes ? selectedOptions.has(option.id) : selectedOptionId === option.id) ? 'border-indigo-500 bg-indigo-50' : 'border-gray-200'}">
+              <label
+                class="flex items-center p-3 border-2 rounded-lg cursor-pointer hover:bg-gray-50 {(
+                  poll.allow_multiple_votes
+                    ? selectedOptions.has(option.id)
+                    : selectedOptionId === option.id
+                )
+                  ? 'border-indigo-500 bg-indigo-50'
+                  : 'border-gray-200'}"
+              >
                 <input
                   type={poll.allow_multiple_votes ? "checkbox" : "radio"}
                   name="poll_option"
                   value={option.id}
-                  checked={poll.allow_multiple_votes ? selectedOptions.has(option.id) : selectedOptionId === option.id}
+                  checked={poll.allow_multiple_votes
+                    ? selectedOptions.has(option.id)
+                    : selectedOptionId === option.id}
                   onchange={() => {
                     if (poll!.allow_multiple_votes) {
                       toggleMultipleOption(option.id);
@@ -353,7 +393,10 @@
                 <button
                   type="button"
                   onclick={() => (ratingValue = value)}
-                  class="text-4xl transition-all {ratingValue !== null && ratingValue >= value ? 'text-yellow-400' : 'text-gray-300'} hover:text-yellow-300"
+                  class="text-4xl transition-all {ratingValue !== null &&
+                  ratingValue >= value
+                    ? 'text-yellow-400'
+                    : 'text-gray-300'} hover:text-yellow-300"
                 >
                   ⭐
                 </button>
@@ -367,7 +410,9 @@
           </div>
         {:else if poll.poll_type === PollType.OpenEnded}
           <div>
-            <label for="poll-open-ended-response" class="sr-only">{$_('polls.yourAnswer')}</label>
+            <label for="poll-open-ended-response" class="sr-only"
+              >{$_("polls.yourAnswer")}</label
+            >
             <textarea
               id="poll-open-ended-response"
               bind:value={openEndedText}
@@ -376,7 +421,7 @@
               class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
             ></textarea>
             <p class="mt-1 text-xs text-gray-500">
-              {$_('polls.shareOpinion')}
+              {$_("polls.shareOpinion")}
             </p>
           </div>
         {/if}

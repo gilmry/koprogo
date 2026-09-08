@@ -81,7 +81,10 @@
   //     ou `1 - currentTotalPercentage` donnait NaN, cassant le calcul du
   //     pourcentage encore disponible et le garde-fou de depassement.
   let totalPercentage = $derived(
-    activeOwners.reduce((sum, uo) => sum + toNumber(uo.ownership_percentage), 0),
+    activeOwners.reduce(
+      (sum, uo) => sum + toNumber(uo.ownership_percentage),
+      0,
+    ),
   );
 
   function handleEditUnitOwner(unitOwner: UnitOwner & { owner?: Owner }) {
@@ -200,7 +203,8 @@
         {/each}
         <div class="mt-2 p-3 bg-gray-50 border border-gray-200 rounded-lg">
           <div class="flex justify-between items-center">
-            <span class="font-semibold text-gray-700">{$_('common.total')}</span><span
+            <span class="font-semibold text-gray-700">{$_("common.total")}</span
+            ><span
               class="text-xl font-bold"
               class:text-green-600={totalPercentage === 1}
               class:text-red-600={totalPercentage !== 1}

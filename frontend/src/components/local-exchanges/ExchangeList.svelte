@@ -1,6 +1,6 @@
 <script lang="ts">
   // Svelte 5 runes mode
-  import { _ } from '../../lib/i18n';
+  import { _ } from "../../lib/i18n";
   import {
     localExchangesApi,
     type LocalExchange,
@@ -13,7 +13,10 @@
   import ExchangeTypeBadge from "./ExchangeTypeBadge.svelte";
   import { toast } from "../../stores/toast";
   import { formatDateShort } from "../../lib/utils/date.utils";
-  import { withLoadingState, withErrorHandling } from "../../lib/utils/error.utils";
+  import {
+    withLoadingState,
+    withErrorHandling,
+  } from "../../lib/utils/error.utils";
 
   let {
     buildingId,
@@ -39,13 +42,17 @@
 
   async function loadExchanges() {
     await withLoadingState({
-      action: () => showOnlyAvailable
-        ? localExchangesApi.listAvailable(buildingId)
-        : localExchangesApi.listByBuilding(buildingId),
-      setLoading: (v: boolean) => loading = v,
-      setError: (v: string | null) => error = v,
-      onSuccess: (data) => { exchanges = data; applyFilters(); },
-      errorMessage: $_('exchanges.load_error'),
+      action: () =>
+        showOnlyAvailable
+          ? localExchangesApi.listAvailable(buildingId)
+          : localExchangesApi.listByBuilding(buildingId),
+      setLoading: (v: boolean) => (loading = v),
+      setError: (v: string | null) => (error = v),
+      onSuccess: (data) => {
+        exchanges = data;
+        applyFilters();
+      },
+      errorMessage: $_("exchanges.load_error"),
     });
   }
 
@@ -94,7 +101,7 @@
   async function handleRequest(exchangeId: string) {
     await withErrorHandling({
       action: () => localExchangesApi.request(exchangeId),
-      errorMessage: $_('common.error'),
+      errorMessage: $_("common.error"),
       onSuccess: () => loadExchanges(),
     });
   }
@@ -107,7 +114,10 @@
 <div class="space-y-4" data-testid="exchange-list">
   <!-- Filters (optional) -->
   {#if showFilters}
-    <div class="bg-white p-4 rounded-lg shadow" data-testid="exchange-list-filters">
+    <div
+      class="bg-white p-4 rounded-lg shadow"
+      data-testid="exchange-list-filters"
+    >
       <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
         <!-- Search -->
         <div>
@@ -115,14 +125,14 @@
             for="search"
             class="block text-sm font-medium text-gray-700 mb-1"
           >
-            {$_('common.search')}
+            {$_("common.search")}
           </label>
           <input
             id="search"
             type="text"
             bind:value={searchQuery}
             oninput={handleFilterChange}
-            placeholder={$_('exchanges.search_placeholder')}
+            placeholder={$_("exchanges.search_placeholder")}
             data-testid="exchange-search-input"
             class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
           />
@@ -134,7 +144,7 @@
             for="filter-type"
             class="block text-sm font-medium text-gray-700 mb-1"
           >
-            {$_('exchanges.type')}
+            {$_("exchanges.type")}
           </label>
           <select
             id="filter-type"
@@ -143,11 +153,15 @@
             data-testid="exchange-filter-type"
             class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
           >
-            <option value="all">{$_('exchanges.all_types')}</option>
-            <option value={ExchangeType.Service}>🛠️ {$_('exchanges.type_service')}</option>
-            <option value={ExchangeType.ObjectLoan}>📦 {$_('exchanges.type_loan')}</option>
+            <option value="all">{$_("exchanges.all_types")}</option>
+            <option value={ExchangeType.Service}
+              >🛠️ {$_("exchanges.type_service")}</option
+            >
+            <option value={ExchangeType.ObjectLoan}
+              >📦 {$_("exchanges.type_loan")}</option
+            >
             <option value={ExchangeType.SharedPurchase}
-              >🛒 {$_('exchanges.type_purchase')}</option
+              >🛒 {$_("exchanges.type_purchase")}</option
             >
           </select>
         </div>
@@ -158,7 +172,7 @@
             for="filter-status"
             class="block text-sm font-medium text-gray-700 mb-1"
           >
-            {$_('common.status')}
+            {$_("common.status")}
           </label>
           <select
             id="filter-status"
@@ -167,12 +181,22 @@
             data-testid="exchange-filter-status"
             class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
           >
-            <option value="all">{$_('exchanges.all_statuses')}</option>
-            <option value={ExchangeStatus.Offered}>{$_('exchanges.status_offered')}</option>
-            <option value={ExchangeStatus.Requested}>{$_('exchanges.status_requested')}</option>
-            <option value={ExchangeStatus.InProgress}>{$_('exchanges.status_in_progress')}</option>
-            <option value={ExchangeStatus.Completed}>{$_('exchanges.status_completed')}</option>
-            <option value={ExchangeStatus.Cancelled}>{$_('exchanges.status_cancelled')}</option>
+            <option value="all">{$_("exchanges.all_statuses")}</option>
+            <option value={ExchangeStatus.Offered}
+              >{$_("exchanges.status_offered")}</option
+            >
+            <option value={ExchangeStatus.Requested}
+              >{$_("exchanges.status_requested")}</option
+            >
+            <option value={ExchangeStatus.InProgress}
+              >{$_("exchanges.status_in_progress")}</option
+            >
+            <option value={ExchangeStatus.Completed}
+              >{$_("exchanges.status_completed")}</option
+            >
+            <option value={ExchangeStatus.Cancelled}
+              >{$_("exchanges.status_cancelled")}</option
+            >
           </select>
         </div>
       </div>
@@ -185,20 +209,26 @@
       <div
         class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"
       ></div>
-      <p class="mt-2 text-gray-600">{$_('common.loading')}</p>
+      <p class="mt-2 text-gray-600">{$_("common.loading")}</p>
     </div>
   {/if}
 
   <!-- Error State -->
   {#if error}
-    <div class="bg-red-50 border border-red-200 rounded-md p-4" data-testid="exchange-list-error">
+    <div
+      class="bg-red-50 border border-red-200 rounded-md p-4"
+      data-testid="exchange-list-error"
+    >
       <p class="text-red-800">❌ {error}</p>
     </div>
   {/if}
 
   <!-- Empty State -->
   {#if !loading && !error && filteredExchanges.length === 0}
-    <div class="text-center py-12 bg-gray-50 rounded-lg" data-testid="exchange-list-empty">
+    <div
+      class="text-center py-12 bg-gray-50 rounded-lg"
+      data-testid="exchange-list-empty"
+    >
       <svg
         class="mx-auto h-12 w-12 text-gray-400"
         fill="none"
@@ -213,10 +243,10 @@
         />
       </svg>
       <h3 class="mt-2 text-sm font-medium text-gray-900">
-        {$_('exchanges.no_found')}
+        {$_("exchanges.no_found")}
       </h3>
       <p class="mt-1 text-sm text-gray-500">
-        {$_('exchanges.create_new')}
+        {$_("exchanges.create_new")}
       </p>
     </div>
   {/if}
@@ -226,7 +256,10 @@
     <div class="bg-white shadow rounded-lg overflow-hidden">
       <ul class="divide-y divide-gray-200">
         {#each filteredExchanges as exchange (exchange.id)}
-          <li class="p-6 hover:bg-gray-50 transition-colors" data-testid="exchange-list-row">
+          <li
+            class="p-6 hover:bg-gray-50 transition-colors"
+            data-testid="exchange-list-row"
+          >
             <div class="flex items-start justify-between">
               <div class="flex-1">
                 <!-- Title + Type Badge -->
@@ -240,7 +273,7 @@
                     <span
                       class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800"
                     >
-                      {$_('exchanges.my_offer')}
+                      {$_("exchanges.my_offer")}
                     </span>
                   {/if}
                 </div>
@@ -262,7 +295,9 @@
                   <span>📅 {formatDateShort(exchange.offered_at)}</span>
                   {#if exchange.provider_rating || exchange.requester_rating}
                     <span>
-                      {formatRating(exchange.provider_rating || exchange.requester_rating)}
+                      {formatRating(
+                        exchange.provider_rating || exchange.requester_rating,
+                      )}
                     </span>
                   {/if}
                 </div>
@@ -275,7 +310,7 @@
                   data-testid="exchange-view-btn"
                   class="block w-full text-center px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
-                  {$_('common.view_details')}
+                  {$_("common.view_details")}
                 </a>
 
                 {#if canRequest(exchange)}
@@ -285,7 +320,7 @@
                     data-testid="exchange-request-btn"
                     class="w-full px-4 py-2 border border-transparent rounded-md text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
-                    {$_('exchanges.request_exchange')}
+                    {$_("exchanges.request_exchange")}
                   </button>
                 {/if}
               </div>
@@ -297,7 +332,9 @@
 
     <!-- Results Count -->
     <p class="text-sm text-gray-600 text-center">
-      {$_('exchanges.results_count', { values: { count: filteredExchanges.length } })}
+      {$_("exchanges.results_count", {
+        values: { count: filteredExchanges.length },
+      })}
     </p>
   {/if}
 </div>

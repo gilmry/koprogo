@@ -1,26 +1,29 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
-  import { _ } from '../lib/i18n';
-  import { authStore } from '../stores/auth';
-  import { api } from '../lib/api';
-  import { toast } from '../stores/toast';
-  import { formatDate } from '../lib/utils/date.utils';
-  import { formatCurrency } from '../lib/utils/finance.utils';
-  import { withErrorHandling, withLoadingState } from '../lib/utils/error.utils';
+  import { onMount } from "svelte";
+  import { _ } from "../lib/i18n";
+  import { authStore } from "../stores/auth";
+  import { api } from "../lib/api";
+  import { toast } from "../stores/toast";
+  import { formatDate } from "../lib/utils/date.utils";
+  import { formatCurrency } from "../lib/utils/finance.utils";
+  import {
+    withErrorHandling,
+    withLoadingState,
+  } from "../lib/utils/error.utils";
 
   let invoices: any[] = [];
   let filteredInvoices: any[] = [];
   let loading = true;
-  let error = '';
+  let error = "";
   let selectedInvoice: any = null;
   let showApprovalModal = false;
   let showRejectionModal = false;
-  let rejectionReason = '';
+  let rejectionReason = "";
   let submitting = false;
 
   // Filtres
-  let filterStatus: string = 'all';
-  let filterPaymentStatus: string = 'all';
+  let filterStatus: string = "all";
+  let filterPaymentStatus: string = "all";
 
   onMount(async () => {
     await authStore.init();
@@ -30,29 +33,33 @@
   async function loadInvoices() {
     await withLoadingState({
       action: async () => {
-        const response = await api.get('/expenses');
-        const data = Array.isArray(response) ? response : (response?.data || []);
-        return data.sort((a: any, b: any) =>
-          new Date(b.expense_date || b.created_at).getTime() - new Date(a.expense_date || a.created_at).getTime()
+        const response = await api.get("/expenses");
+        const data = Array.isArray(response) ? response : response?.data || [];
+        return data.sort(
+          (a: any, b: any) =>
+            new Date(b.expense_date || b.created_at).getTime() -
+            new Date(a.expense_date || a.created_at).getTime(),
         );
       },
-      setLoading: (v) => loading = v,
-      setError: (v) => error = v,
-      errorMessage: $_('invoices.load_error'),
-      onSuccess: (data: any) => { invoices = data; },
+      setLoading: (v) => (loading = v),
+      setError: (v) => (error = v),
+      errorMessage: $_("invoices.load_error"),
+      onSuccess: (data: any) => {
+        invoices = data;
+      },
     });
   }
 
   async function submitForApproval(invoiceId: string) {
-    if (!confirm($_('invoices.confirm_submit_approval'))) return;
+    if (!confirm($_("invoices.confirm_submit_approval"))) return;
 
     await withErrorHandling({
       action: async () => {
         await api.put(`/invoices/${invoiceId}/submit`, {});
         await loadInvoices();
       },
-      setLoading: (v) => submitting = v,
-      errorMessage: $_('invoices.submitFailed'),
+      setLoading: (v) => (submitting = v),
+      errorMessage: $_("invoices.submitFailed"),
     });
   }
 
@@ -62,49 +69,49 @@
     await withErrorHandling({
       action: async () => {
         await api.put(`/invoices/${selectedInvoice.id}/approve`, {
-          approved_by_user_id: $authStore.user?.id || '',
+          approved_by_user_id: $authStore.user?.id || "",
         });
         showApprovalModal = false;
         selectedInvoice = null;
         await loadInvoices();
       },
-      setLoading: (v) => submitting = v,
-      errorMessage: $_('invoices.approveFailed'),
+      setLoading: (v) => (submitting = v),
+      errorMessage: $_("invoices.approveFailed"),
     });
   }
 
   async function rejectInvoice() {
     if (!selectedInvoice || !rejectionReason.trim()) {
-      toast.error($_('invoices.rejection_reason_required'));
+      toast.error($_("invoices.rejection_reason_required"));
       return;
     }
 
     await withErrorHandling({
       action: async () => {
         await api.put(`/invoices/${selectedInvoice.id}/reject`, {
-          rejected_by_user_id: $authStore.user?.id || '',
+          rejected_by_user_id: $authStore.user?.id || "",
           rejection_reason: rejectionReason,
         });
         showRejectionModal = false;
         selectedInvoice = null;
-        rejectionReason = '';
+        rejectionReason = "";
         await loadInvoices();
       },
-      setLoading: (v) => submitting = v,
-      errorMessage: $_('invoices.rejectFailed'),
+      setLoading: (v) => (submitting = v),
+      errorMessage: $_("invoices.rejectFailed"),
     });
   }
 
   async function markAsPaid(invoiceId: string) {
-    if (!confirm($_('invoices.confirm_mark_paid'))) return;
+    if (!confirm($_("invoices.confirm_mark_paid"))) return;
 
     await withErrorHandling({
       action: async () => {
         await api.put(`/expenses/${invoiceId}/mark-paid`, {});
         await loadInvoices();
       },
-      setLoading: (v) => submitting = v,
-      errorMessage: $_('invoices.payFailed'),
+      setLoading: (v) => (submitting = v),
+      errorMessage: $_("invoices.payFailed"),
     });
   }
 
@@ -122,68 +129,99 @@
     showApprovalModal = false;
     showRejectionModal = false;
     selectedInvoice = null;
-    rejectionReason = '';
+    rejectionReason = "";
   }
 
   function getApprovalStatusBadge(status: string) {
     const badges: Record<string, { class: string; label: string }> = {
-      draft: { class: 'bg-gray-200 text-gray-800', label: $_('invoices.status_draft') },
-      pending_approval: { class: 'bg-yellow-200 text-yellow-900', label: $_('invoices.status_pending') },
-      approved: { class: 'bg-green-200 text-green-900', label: $_('invoices.status_approved') },
-      rejected: { class: 'bg-red-200 text-red-900', label: $_('invoices.status_rejected') },
+      draft: {
+        class: "bg-gray-200 text-gray-800",
+        label: $_("invoices.status_draft"),
+      },
+      pending_approval: {
+        class: "bg-yellow-200 text-yellow-900",
+        label: $_("invoices.status_pending"),
+      },
+      approved: {
+        class: "bg-green-200 text-green-900",
+        label: $_("invoices.status_approved"),
+      },
+      rejected: {
+        class: "bg-red-200 text-red-900",
+        label: $_("invoices.status_rejected"),
+      },
     };
-    return badges[status] || { class: 'bg-gray-200 text-gray-800', label: status };
+    return (
+      badges[status] || { class: "bg-gray-200 text-gray-800", label: status }
+    );
   }
 
   function getPaymentStatusBadge(status: string) {
     const badges: Record<string, { class: string; label: string }> = {
-      pending: { class: 'bg-blue-200 text-blue-900', label: $_('invoices.payment_pending') },
-      paid: { class: 'bg-green-200 text-green-900', label: $_('invoices.payment_paid') },
-      overdue: { class: 'bg-red-200 text-red-900', label: $_('invoices.payment_overdue') },
-      cancelled: { class: 'bg-gray-200 text-gray-800', label: $_('invoices.payment_cancelled') },
+      pending: {
+        class: "bg-blue-200 text-blue-900",
+        label: $_("invoices.payment_pending"),
+      },
+      paid: {
+        class: "bg-green-200 text-green-900",
+        label: $_("invoices.payment_paid"),
+      },
+      overdue: {
+        class: "bg-red-200 text-red-900",
+        label: $_("invoices.payment_overdue"),
+      },
+      cancelled: {
+        class: "bg-gray-200 text-gray-800",
+        label: $_("invoices.payment_cancelled"),
+      },
     };
-    return badges[status] || { class: 'bg-gray-200 text-gray-800', label: status };
+    return (
+      badges[status] || { class: "bg-gray-200 text-gray-800", label: status }
+    );
   }
 
   function canSubmitForApproval(invoice: any): boolean {
     const role = $authStore.user?.activeRole?.role ?? $authStore.user?.role;
     return (
-      invoice.approval_status === 'draft' &&
-      (role === 'accountant' || role === 'syndic' || role === 'superadmin')
+      invoice.approval_status === "draft" &&
+      (role === "accountant" || role === "syndic" || role === "superadmin")
     );
   }
 
   function canApprove(invoice: any): boolean {
     const role = $authStore.user?.activeRole?.role ?? $authStore.user?.role;
     return (
-      invoice.approval_status === 'pending_approval' &&
-      (role === 'syndic' || role === 'superadmin')
+      invoice.approval_status === "pending_approval" &&
+      (role === "syndic" || role === "superadmin")
     );
   }
 
   function canReject(invoice: any): boolean {
     const role = $authStore.user?.activeRole?.role ?? $authStore.user?.role;
     return (
-      invoice.approval_status === 'pending_approval' &&
-      (role === 'syndic' || role === 'superadmin')
+      invoice.approval_status === "pending_approval" &&
+      (role === "syndic" || role === "superadmin")
     );
   }
 
   function canMarkAsPaid(invoice: any): boolean {
     const role = $authStore.user?.activeRole?.role ?? $authStore.user?.role;
     return (
-      invoice.approval_status === 'approved' &&
-      invoice.payment_status === 'pending' &&
-      (role === 'accountant' || role === 'syndic' || role === 'superadmin')
+      invoice.approval_status === "approved" &&
+      invoice.payment_status === "pending" &&
+      (role === "accountant" || role === "syndic" || role === "superadmin")
     );
   }
 
   $: {
     filteredInvoices = invoices.filter((inv) => {
-      if (filterStatus !== 'all' && inv.approval_status !== filterStatus) {
+      if (filterStatus !== "all" && inv.approval_status !== filterStatus) {
         return false;
       }
-      if (filterPaymentStatus !== 'all' && inv.payment_status !== filterPaymentStatus) {
+      if (
+        filterPaymentStatus !== "all" &&
+        inv.payment_status !== filterPaymentStatus
+      ) {
         return false;
       }
       return true;
@@ -193,14 +231,19 @@
 
 <div class="workflow-container" data-testid="invoice-workflow">
   <div class="header">
-    <h1>{$_('invoices.workflow_title')}</h1>
-    <p class="subtitle">{$_('invoices.workflow_subtitle')}</p>
+    <h1>{$_("invoices.workflow_title")}</h1>
+    <p class="subtitle">{$_("invoices.workflow_subtitle")}</p>
   </div>
 
   {#if error}
     <div class="alert alert-error">
       <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+        />
       </svg>
       {error}
     </div>
@@ -208,46 +251,76 @@
 
   <div class="filters">
     <div class="filter-group">
-      <label for="filterStatus">{$_('invoices.approval_status')}</label>
-      <select id="filterStatus" bind:value={filterStatus} data-testid="approval-status-filter">
-        <option value="all">{$_('invoices.all')}</option>
-        <option value="draft">{$_('invoices.status_draft')}</option>
-        <option value="pending_approval">{$_('invoices.status_pending_approval')}</option>
-        <option value="approved">{$_('invoices.status_approved')}</option>
-        <option value="rejected">{$_('invoices.status_rejected')}</option>
+      <label for="filterStatus">{$_("invoices.approval_status")}</label>
+      <select
+        id="filterStatus"
+        bind:value={filterStatus}
+        data-testid="approval-status-filter"
+      >
+        <option value="all">{$_("invoices.all")}</option>
+        <option value="draft">{$_("invoices.status_draft")}</option>
+        <option value="pending_approval"
+          >{$_("invoices.status_pending_approval")}</option
+        >
+        <option value="approved">{$_("invoices.status_approved")}</option>
+        <option value="rejected">{$_("invoices.status_rejected")}</option>
       </select>
     </div>
 
     <div class="filter-group">
-      <label for="filterPaymentStatus">{$_('invoices.payment_status')}</label>
-      <select id="filterPaymentStatus" bind:value={filterPaymentStatus} data-testid="payment-status-filter">
-        <option value="all">{$_('invoices.all')}</option>
-        <option value="pending">{$_('invoices.payment_pending')}</option>
-        <option value="paid">{$_('invoices.payment_paid')}</option>
-        <option value="overdue">{$_('invoices.payment_overdue')}</option>
-        <option value="cancelled">{$_('invoices.payment_cancelled')}</option>
+      <label for="filterPaymentStatus">{$_("invoices.payment_status")}</label>
+      <select
+        id="filterPaymentStatus"
+        bind:value={filterPaymentStatus}
+        data-testid="payment-status-filter"
+      >
+        <option value="all">{$_("invoices.all")}</option>
+        <option value="pending">{$_("invoices.payment_pending")}</option>
+        <option value="paid">{$_("invoices.payment_paid")}</option>
+        <option value="overdue">{$_("invoices.payment_overdue")}</option>
+        <option value="cancelled">{$_("invoices.payment_cancelled")}</option>
       </select>
     </div>
 
-    <button on:click={loadInvoices} class="btn-refresh" disabled={loading} data-testid="refresh-button">
+    <button
+      on:click={loadInvoices}
+      class="btn-refresh"
+      disabled={loading}
+      data-testid="refresh-button"
+    >
       <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+        />
       </svg>
-      {$_('common.refresh')}
+      {$_("common.refresh")}
     </button>
   </div>
 
   {#if loading}
     <div class="loading">
       <div class="spinner"></div>
-      <p>{$_('invoices.loading')}</p>
+      <p>{$_("invoices.loading")}</p>
     </div>
   {:else if filteredInvoices.length === 0}
     <div class="empty-state">
-      <svg class="icon-large" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+      <svg
+        class="icon-large"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+        />
       </svg>
-      <p>{$_('invoices.no_invoices')}</p>
+      <p>{$_("invoices.no_invoices")}</p>
     </div>
   {:else}
     <div class="invoice-grid">
@@ -257,9 +330,9 @@
             <div>
               <h3 class="invoice-title">{invoice.description}</h3>
               <p class="invoice-meta">
-                {$_('common.date')}: {formatDate(invoice.expense_date)}
+                {$_("common.date")}: {formatDate(invoice.expense_date)}
                 {#if invoice.invoice_number}
-                  • {$_('invoices.invoice_number')} {invoice.invoice_number}
+                  • {$_("invoices.invoice_number")} {invoice.invoice_number}
                 {/if}
               </p>
             </div>
@@ -271,14 +344,20 @@
           <div class="card-body">
             <div class="status-row">
               <div class="status-item">
-                <span class="status-label">{$_('invoices.approval')}</span>
-                <span class="badge {getApprovalStatusBadge(invoice.approval_status).class}">
+                <span class="status-label">{$_("invoices.approval")}</span>
+                <span
+                  class="badge {getApprovalStatusBadge(invoice.approval_status)
+                    .class}"
+                >
                   {getApprovalStatusBadge(invoice.approval_status).label}
                 </span>
               </div>
               <div class="status-item">
-                <span class="status-label">{$_('invoices.payment')}</span>
-                <span class="badge {getPaymentStatusBadge(invoice.payment_status).class}">
+                <span class="status-label">{$_("invoices.payment")}</span>
+                <span
+                  class="badge {getPaymentStatusBadge(invoice.payment_status)
+                    .class}"
+                >
                   {getPaymentStatusBadge(invoice.payment_status).label}
                 </span>
               </div>
@@ -286,11 +365,21 @@
 
             {#if invoice.rejection_reason}
               <div class="rejection-info">
-                <svg class="icon-small" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                <svg
+                  class="icon-small"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                  />
                 </svg>
                 <div>
-                  <strong>{$_('invoices.rejection_reason')}:</strong>
+                  <strong>{$_("invoices.rejection_reason")}:</strong>
                   <p>{invoice.rejection_reason}</p>
                 </div>
               </div>
@@ -298,14 +387,14 @@
 
             {#if invoice.invoice_number}
               <div class="invoice-info">
-                <span class="info-label">{$_('invoices.invoice_number')}:</span>
+                <span class="info-label">{$_("invoices.invoice_number")}:</span>
                 <span>{invoice.invoice_number}</span>
               </div>
             {/if}
 
             {#if invoice.supplier_name}
               <div class="invoice-info">
-                <span class="info-label">{$_('invoices.supplier')}:</span>
+                <span class="info-label">{$_("invoices.supplier")}:</span>
                 <span>{invoice.supplier_name}</span>
               </div>
             {/if}
@@ -319,10 +408,20 @@
                 disabled={submitting}
                 data-testid="submit-approval-button"
               >
-                <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                <svg
+                  class="icon"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                  />
                 </svg>
-                {$_('invoices.submit_approval')}
+                {$_("invoices.submit_approval")}
               </button>
             {/if}
 
@@ -333,10 +432,20 @@
                 disabled={submitting}
                 data-testid="approve-button"
               >
-                <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                <svg
+                  class="icon"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                  />
                 </svg>
-                {$_('invoices.approve')}
+                {$_("invoices.approve")}
               </button>
             {/if}
 
@@ -347,10 +456,20 @@
                 disabled={submitting}
                 data-testid="reject-button"
               >
-                <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                <svg
+                  class="icon"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
+                  />
                 </svg>
-                {$_('invoices.reject')}
+                {$_("invoices.reject")}
               </button>
             {/if}
 
@@ -361,10 +480,20 @@
                 disabled={submitting}
                 data-testid="mark-paid-button"
               >
-                <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/>
+                <svg
+                  class="icon"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"
+                  />
                 </svg>
-                {$_('invoices.mark_paid')}
+                {$_("invoices.mark_paid")}
               </button>
             {/if}
           </div>
@@ -376,35 +505,69 @@
 
 <!-- Modal d'approbation -->
 {#if showApprovalModal && selectedInvoice}
-  <button type="button" class="modal-overlay modal-overlay-btn" aria-label={$_('common.closeModal')} on:click={closeModals}></button>
+  <button
+    type="button"
+    class="modal-overlay modal-overlay-btn"
+    aria-label={$_("common.closeModal")}
+    on:click={closeModals}
+  ></button>
   <div class="modal-wrapper" role="dialog" aria-modal="true">
     <div class="modal" role="presentation">
       <div class="modal-header">
-        <h2>{$_('invoices.approve_invoice')}</h2>
+        <h2>{$_("invoices.approve_invoice")}</h2>
         <button on:click={closeModals} class="btn-close">×</button>
       </div>
       <div class="modal-body">
-        <p>{$_('invoices.confirm_approve')}</p>
+        <p>{$_("invoices.confirm_approve")}</p>
         <div class="invoice-summary">
-          <p><strong>{$_('common.description')}:</strong> {selectedInvoice.description}</p>
-          <p><strong>{$_('common.amount')}:</strong> {formatCurrency(selectedInvoice.amount_incl_vat || selectedInvoice.amount || 0)}</p>
+          <p>
+            <strong>{$_("common.description")}:</strong>
+            {selectedInvoice.description}
+          </p>
+          <p>
+            <strong>{$_("common.amount")}:</strong>
+            {formatCurrency(
+              selectedInvoice.amount_incl_vat || selectedInvoice.amount || 0,
+            )}
+          </p>
           {#if selectedInvoice.supplier_name}
-            <p><strong>{$_('invoices.supplier')}:</strong> {selectedInvoice.supplier_name}</p>
+            <p>
+              <strong>{$_("invoices.supplier")}:</strong>
+              {selectedInvoice.supplier_name}
+            </p>
           {/if}
         </div>
         <div class="alert alert-info">
-          <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          <svg
+            class="icon"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+            />
           </svg>
-          {$_('invoices.auto_journal_entry')}
+          {$_("invoices.auto_journal_entry")}
         </div>
       </div>
       <div class="modal-footer">
-        <button on:click={closeModals} class="btn btn-secondary" disabled={submitting}>
-          {$_('common.cancel')}
+        <button
+          on:click={closeModals}
+          class="btn btn-secondary"
+          disabled={submitting}
+        >
+          {$_("common.cancel")}
         </button>
-        <button on:click={approveInvoice} class="btn btn-success" disabled={submitting}>
-          {submitting ? $_('invoices.approving') : $_('invoices.approve')}
+        <button
+          on:click={approveInvoice}
+          class="btn btn-success"
+          disabled={submitting}
+        >
+          {submitting ? $_("invoices.approving") : $_("invoices.approve")}
         </button>
       </div>
     </div>
@@ -413,35 +576,57 @@
 
 <!-- Modal de rejet -->
 {#if showRejectionModal && selectedInvoice}
-  <button type="button" class="modal-overlay modal-overlay-btn" aria-label={$_('common.closeModal')} on:click={closeModals}></button>
+  <button
+    type="button"
+    class="modal-overlay modal-overlay-btn"
+    aria-label={$_("common.closeModal")}
+    on:click={closeModals}
+  ></button>
   <div class="modal-wrapper" role="dialog" aria-modal="true">
     <div class="modal" role="presentation">
       <div class="modal-header">
-        <h2>{$_('invoices.reject_invoice')}</h2>
+        <h2>{$_("invoices.reject_invoice")}</h2>
         <button on:click={closeModals} class="btn-close">×</button>
       </div>
       <div class="modal-body">
-        <p>{$_('invoices.indicate_rejection_reason')}</p>
+        <p>{$_("invoices.indicate_rejection_reason")}</p>
         <div class="invoice-summary">
-          <p><strong>{$_('common.description')}:</strong> {selectedInvoice.description}</p>
-          <p><strong>{$_('common.amount')}:</strong> {formatCurrency(selectedInvoice.amount_incl_vat || selectedInvoice.amount || 0)}</p>
+          <p>
+            <strong>{$_("common.description")}:</strong>
+            {selectedInvoice.description}
+          </p>
+          <p>
+            <strong>{$_("common.amount")}:</strong>
+            {formatCurrency(
+              selectedInvoice.amount_incl_vat || selectedInvoice.amount || 0,
+            )}
+          </p>
         </div>
-        <label for="invoice-rejection-reason" class="sr-only">{$_('invoices.rejection_reason_placeholder')}</label>
+        <label for="invoice-rejection-reason" class="sr-only"
+          >{$_("invoices.rejection_reason_placeholder")}</label
+        >
         <textarea
           id="invoice-rejection-reason"
           bind:value={rejectionReason}
-          placeholder={$_('invoices.rejection_reason_placeholder')}
+          placeholder={$_("invoices.rejection_reason_placeholder")}
           rows="4"
           class="textarea"
-          disabled={submitting}
-        ></textarea>
+          disabled={submitting}></textarea>
       </div>
       <div class="modal-footer">
-        <button on:click={closeModals} class="btn btn-secondary" disabled={submitting}>
-          {$_('common.cancel')}
+        <button
+          on:click={closeModals}
+          class="btn btn-secondary"
+          disabled={submitting}
+        >
+          {$_("common.cancel")}
         </button>
-        <button on:click={rejectInvoice} class="btn btn-danger" disabled={submitting || !rejectionReason.trim()}>
-          {submitting ? $_('invoices.rejecting') : $_('invoices.reject')}
+        <button
+          on:click={rejectInvoice}
+          class="btn btn-danger"
+          disabled={submitting || !rejectionReason.trim()}
+        >
+          {submitting ? $_("invoices.rejecting") : $_("invoices.reject")}
         </button>
       </div>
     </div>
@@ -562,8 +747,12 @@
   }
 
   @keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
+    0% {
+      transform: rotate(0deg);
+    }
+    100% {
+      transform: rotate(360deg);
+    }
   }
 
   .empty-state {
@@ -607,7 +796,9 @@
   }
 
   .invoice-card:hover {
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    box-shadow:
+      0 4px 6px -1px rgba(0, 0, 0, 0.1),
+      0 2px 4px -1px rgba(0, 0, 0, 0.06);
   }
 
   .card-header {
@@ -804,7 +995,9 @@
   .modal {
     background: white;
     border-radius: 0.5rem;
-    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    box-shadow:
+      0 20px 25px -5px rgba(0, 0, 0, 0.1),
+      0 10px 10px -5px rgba(0, 0, 0, 0.04);
     max-width: 600px;
     width: 100%;
     max-height: 90vh;

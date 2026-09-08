@@ -4,15 +4,15 @@
   New code should import Modal directly from './Modal.svelte'.
 -->
 <script lang="ts">
-  import Modal from './Modal.svelte';
-  import type { Snippet } from 'svelte';
+  import Modal from "./Modal.svelte";
+  import type { Snippet } from "svelte";
 
   let {
     isOpen = false,
     title,
     description = undefined,
     onClose,
-    size = 'md',
+    size = "md",
     children,
     footer: footerSnippet,
   }: {
@@ -20,7 +20,7 @@
     title: string;
     description?: string | undefined;
     onClose: () => void;
-    size?: 'sm' | 'md' | 'lg' | 'xl';
+    size?: "sm" | "md" | "lg" | "xl";
     children?: Snippet;
     footer?: Snippet;
   } = $props();

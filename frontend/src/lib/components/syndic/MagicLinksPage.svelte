@@ -56,8 +56,7 @@
         .filter((u) => u.role === "contractor")
         .map((u) => ({
           id: u.id,
-          label:
-            `${u.first_name ?? ""} ${u.last_name ?? ""}`.trim() || u.email,
+          label: `${u.first_name ?? ""} ${u.last_name ?? ""}`.trim() || u.email,
         }));
 
       scopeIdsByKind = {
@@ -78,7 +77,7 @@
 
 {#if loading}
   <p class="text-sm text-gray-500" role="status" aria-live="polite">
-    {$_('common.loading2')}
+    {$_("common.loading2")}
   </p>
 {:else}
   <MagicLinkIssueForm {users} {scopeIdsByKind} {currentUserId} />

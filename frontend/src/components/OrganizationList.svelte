@@ -1,26 +1,26 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
-  import { _ } from '../lib/i18n';
+  import { onMount } from "svelte";
+  import { _ } from "../lib/i18n";
   import { formatDate } from "../lib/utils/date.utils";
-  import { api } from '../lib/api';
-  import { toast } from '../stores/toast';
-  import { authStore } from '../stores/auth';
-  import type { Organization } from '../lib/types';
-  import OrganizationForm from './admin/OrganizationForm.svelte';
-  import ConfirmDialog from './ui/ConfirmDialog.svelte';
-  import Button from './ui/Button.svelte';
+  import { api } from "../lib/api";
+  import { toast } from "../stores/toast";
+  import { authStore } from "../stores/auth";
+  import type { Organization } from "../lib/types";
+  import OrganizationForm from "./admin/OrganizationForm.svelte";
+  import ConfirmDialog from "./ui/ConfirmDialog.svelte";
+  import Button from "./ui/Button.svelte";
 
   // Composant réservé SuperAdmin uniquement (défense en profondeur)
-  $: isSuperAdmin = $authStore.user?.role === 'superadmin';
+  $: isSuperAdmin = $authStore.user?.role === "superadmin";
 
   let organizations: Organization[] = [];
   let loading = true;
-  let error = '';
-  let searchTerm = '';
+  let error = "";
+  let searchTerm = "";
   let showFormModal = false;
   let showConfirmDialog = false;
   let selectedOrganization: Organization | null = null;
-  let formMode: 'create' | 'edit' = 'create';
+  let formMode: "create" | "edit" = "create";
   let actionLoading = false;
 
   onMount(async () => {
@@ -30,42 +30,46 @@
   async function loadOrganizations() {
     try {
       loading = true;
-      error = '';
+      error = "";
       // Pour le SuperAdmin, on veut TOUTES les organisations sans filtre
-      const response = await api.get<{data: Organization[]}>('/organizations?per_page=1000');
+      const response = await api.get<{ data: Organization[] }>(
+        "/organizations?per_page=1000",
+      );
       organizations = response.data;
     } catch (e) {
-      error = e instanceof Error ? e.message : $_('admin.organization.loadError');
-      console.error('Error loading organizations:', e);
+      error =
+        e instanceof Error ? e.message : $_("admin.organization.loadError");
+      console.error("Error loading organizations:", e);
     } finally {
       loading = false;
     }
   }
 
-  $: filteredOrganizations = organizations.filter(org =>
-    org.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    org.contact_email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    org.slug.toLowerCase().includes(searchTerm.toLowerCase())
+  $: filteredOrganizations = organizations.filter(
+    (org) =>
+      org.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      org.contact_email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      org.slug.toLowerCase().includes(searchTerm.toLowerCase()),
   );
 
   function getPlanBadgeClass(plan: string): string {
     const classes = {
-      free: 'bg-gray-100 text-gray-800',
-      professional: 'bg-blue-100 text-blue-800',
-      enterprise: 'bg-purple-100 text-purple-800',
+      free: "bg-gray-100 text-gray-800",
+      professional: "bg-blue-100 text-blue-800",
+      enterprise: "bg-purple-100 text-purple-800",
     };
-    return classes[plan as keyof typeof classes] || 'bg-gray-100 text-gray-800';
+    return classes[plan as keyof typeof classes] || "bg-gray-100 text-gray-800";
   }
 
   const handleCreate = () => {
     selectedOrganization = null;
-    formMode = 'create';
+    formMode = "create";
     showFormModal = true;
   };
 
   const handleEdit = (org: Organization) => {
     selectedOrganization = org;
-    formMode = 'edit';
+    formMode = "edit";
     showFormModal = true;
   };
 
@@ -79,14 +83,17 @@
       await api.put(endpoint, {});
 
       toast.show(
-        org.is_active ? $_('admin.organization.deactivatedSuccessfully') : $_('admin.organization.activatedSuccessfully'),
-        'success'
+        org.is_active
+          ? $_("admin.organization.deactivatedSuccessfully")
+          : $_("admin.organization.activatedSuccessfully"),
+        "success",
       );
 
       await loadOrganizations();
     } catch (e) {
-      const errorMessage = e instanceof Error ? e.message : 'Une erreur est survenue';
-      toast.show(errorMessage, 'error');
+      const errorMessage =
+        e instanceof Error ? e.message : "Une erreur est survenue";
+      toast.show(errorMessage, "error");
     } finally {
       actionLoading = false;
     }
@@ -103,13 +110,14 @@
     actionLoading = true;
     try {
       await api.delete(`/organizations/${selectedOrganization.id}`);
-      toast.show($_('admin.organization.deletedSuccessfully'), 'success');
+      toast.show($_("admin.organization.deletedSuccessfully"), "success");
       showConfirmDialog = false;
       selectedOrganization = null;
       await loadOrganizations();
     } catch (e) {
-      const errorMessage = e instanceof Error ? e.message : 'Une erreur est survenue';
-      toast.show(errorMessage, 'error');
+      const errorMessage =
+        e instanceof Error ? e.message : "Une erreur est survenue";
+      toast.show(errorMessage, "error");
     } finally {
       actionLoading = false;
     }
@@ -124,25 +132,33 @@
   <!-- Header -->
   <div class="flex justify-between items-center">
     <div>
-      <h1 class="text-3xl font-bold text-gray-900">{$_('admin.organization.organizations')}</h1>
+      <h1 class="text-3xl font-bold text-gray-900">
+        {$_("admin.organization.organizations")}
+      </h1>
       <p class="mt-1 text-sm text-gray-600">
-        {$_('admin.organization.manageOrganizations')}
+        {$_("admin.organization.manageOrganizations")}
       </p>
     </div>
-    <Button variant="primary" onclick={handleCreate} data-testid="create-organization-button">
-      ➕ {$_('admin.organization.newOrganization')}
+    <Button
+      variant="primary"
+      onclick={handleCreate}
+      data-testid="create-organization-button"
+    >
+      ➕ {$_("admin.organization.newOrganization")}
     </Button>
   </div>
 
   <!-- Search Bar -->
   <div class="bg-white rounded-lg shadow p-4">
     <div class="relative">
-      <label for="org-search" class="sr-only">{$_('organizations.searchPlaceholder')}</label>
+      <label for="org-search" class="sr-only"
+        >{$_("organizations.searchPlaceholder")}</label
+      >
       <input
         id="org-search"
         type="text"
         bind:value={searchTerm}
-        placeholder={$_('admin.organization.searchPlaceholder')}
+        placeholder={$_("admin.organization.searchPlaceholder")}
         data-testid="organization-search-input"
         class="w-full px-4 py-2 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
       />
@@ -152,7 +168,9 @@
 
   <!-- Error Message -->
   {#if error}
-    <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+    <div
+      class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg"
+    >
       ⚠️ {error}
     </div>
   {/if}
@@ -161,123 +179,184 @@
   <div class="bg-white rounded-lg shadow overflow-hidden">
     {#if loading}
       <div class="p-12 text-center">
-        <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
-        <p class="mt-2 text-gray-600">{$_('common.loading')}</p>
+        <div
+          class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"
+        ></div>
+        <p class="mt-2 text-gray-600">{$_("common.loading")}</p>
       </div>
     {:else}
       <div class="overflow-x-auto">
         <table class="min-w-full divide-y divide-gray-200">
           <thead class="bg-gray-50">
             <tr>
-              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                {$_('common.organization')}
+              <th
+                scope="col"
+                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+              >
+                {$_("common.organization")}
               </th>
-              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                {$_('common.contact')}
+              <th
+                scope="col"
+                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+              >
+                {$_("common.contact")}
               </th>
-              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                {$_('organizations.plan')}
+              <th
+                scope="col"
+                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+              >
+                {$_("organizations.plan")}
               </th>
-              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                {$_('organizations.limits')}
+              <th
+                scope="col"
+                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+              >
+                {$_("organizations.limits")}
               </th>
-              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                {$_('common.status')}
+              <th
+                scope="col"
+                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+              >
+                {$_("common.status")}
               </th>
-              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                {$_('common.createdOnLabel')}
+              <th
+                scope="col"
+                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+              >
+                {$_("common.createdOnLabel")}
               </th>
-              <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                {$_('common.actionColumn')}
+              <th
+                scope="col"
+                class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"
+              >
+                {$_("common.actionColumn")}
               </th>
             </tr>
           </thead>
-          <tbody class="bg-white divide-y divide-gray-200" data-testid="organizations-table-body">
+          <tbody
+            class="bg-white divide-y divide-gray-200"
+            data-testid="organizations-table-body"
+          >
             {#if filteredOrganizations.length === 0}
               <tr data-testid="organizations-empty-row">
                 <td colspan="7" class="p-12 text-center text-gray-500">
-                  {searchTerm ? $_('admin.organization.noOrganizationsFound') : $_('admin.organization.noOrganizationsRegistered')}
+                  {searchTerm
+                    ? $_("admin.organization.noOrganizationsFound")
+                    : $_("admin.organization.noOrganizationsRegistered")}
                 </td>
               </tr>
             {:else}
-            {#each filteredOrganizations as org (org.id)}
-              <tr class="hover:bg-gray-50" data-testid="organization-row" data-org-id={org.id} data-org-name={org.name}>
-                <td class="px-6 py-4 whitespace-nowrap">
-                  <div>
-                    <a
-                      href={`/admin/organization-detail?id=${org.id}`}
-                      class="text-sm font-medium text-primary-600 hover:underline"
-                      data-testid="organization-name"
-                      title={$_('admin.organizations.detail.open')}
-                    >{org.name}</a>
-                    <div class="text-sm text-gray-500" data-testid="organization-slug">/{org.slug}</div>
-                  </div>
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap">
-                  <div class="text-sm text-gray-900" data-testid="organization-email">{org.contact_email}</div>
-                  {#if org.contact_phone}
-                    <div class="text-sm text-gray-500" data-testid="organization-phone">{org.contact_phone}</div>
-                  {/if}
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap">
-                  <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {getPlanBadgeClass(org.subscription_plan)}">
-                    {org.subscription_plan}
-                  </span>
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  <div>{org.max_buildings} immeubles</div>
-                  <div>{org.max_users} utilisateurs</div>
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap">
-                  {#if org.is_active}
-                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                      ✓ {$_('organizations.active')}
+              {#each filteredOrganizations as org (org.id)}
+                <tr
+                  class="hover:bg-gray-50"
+                  data-testid="organization-row"
+                  data-org-id={org.id}
+                  data-org-name={org.name}
+                >
+                  <td class="px-6 py-4 whitespace-nowrap">
+                    <div>
+                      <a
+                        href={`/admin/organization-detail?id=${org.id}`}
+                        class="text-sm font-medium text-primary-600 hover:underline"
+                        data-testid="organization-name"
+                        title={$_("admin.organizations.detail.open")}
+                        >{org.name}</a
+                      >
+                      <div
+                        class="text-sm text-gray-500"
+                        data-testid="organization-slug"
+                      >
+                        /{org.slug}
+                      </div>
+                    </div>
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap">
+                    <div
+                      class="text-sm text-gray-900"
+                      data-testid="organization-email"
+                    >
+                      {org.contact_email}
+                    </div>
+                    {#if org.contact_phone}
+                      <div
+                        class="text-sm text-gray-500"
+                        data-testid="organization-phone"
+                      >
+                        {org.contact_phone}
+                      </div>
+                    {/if}
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap">
+                    <span
+                      class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {getPlanBadgeClass(
+                        org.subscription_plan,
+                      )}"
+                    >
+                      {org.subscription_plan}
                     </span>
-                  {:else}
-                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
-                      ✗ {$_('organizations.inactive')}
-                    </span>
-                  {/if}
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {formatDate(org.created_at)}
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                  <div class="flex justify-end space-x-2">
-                    <button
-                      on:click={() => handleEdit(org)}
-                      class="text-primary-600 hover:text-primary-900"
-                      aria-label="Modifier"
-                      title="Modifier"
-                      data-testid="edit-organization-button"
-                      disabled={actionLoading}
-                    >
-                      ✏️
-                    </button>
-                    <button
-                      on:click={() => handleToggleActive(org)}
-                      class={org.is_active ? 'text-orange-600 hover:text-orange-900' : 'text-green-600 hover:text-green-900'}
-                      aria-label={org.is_active ? 'Désactiver' : 'Activer'}
-                      title={org.is_active ? 'Désactiver' : 'Activer'}
-                      data-testid="toggle-organization-button"
-                      disabled={actionLoading}
-                    >
-                      {org.is_active ? '⏸️' : '▶️'}
-                    </button>
-                    <button
-                      on:click={() => handleDeleteClick(org)}
-                      class="text-red-600 hover:text-red-900"
-                      aria-label="Supprimer"
-                      title="Supprimer"
-                      data-testid="delete-organization-button"
-                      disabled={actionLoading}
-                    >
-                      🗑️
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            {/each}
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <div>{org.max_buildings} immeubles</div>
+                    <div>{org.max_users} utilisateurs</div>
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap">
+                    {#if org.is_active}
+                      <span
+                        class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800"
+                      >
+                        ✓ {$_("organizations.active")}
+                      </span>
+                    {:else}
+                      <span
+                        class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800"
+                      >
+                        ✗ {$_("organizations.inactive")}
+                      </span>
+                    {/if}
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {formatDate(org.created_at)}
+                  </td>
+                  <td
+                    class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium"
+                  >
+                    <div class="flex justify-end space-x-2">
+                      <button
+                        on:click={() => handleEdit(org)}
+                        class="text-primary-600 hover:text-primary-900"
+                        aria-label="Modifier"
+                        title="Modifier"
+                        data-testid="edit-organization-button"
+                        disabled={actionLoading}
+                      >
+                        ✏️
+                      </button>
+                      <button
+                        on:click={() => handleToggleActive(org)}
+                        class={org.is_active
+                          ? "text-orange-600 hover:text-orange-900"
+                          : "text-green-600 hover:text-green-900"}
+                        aria-label={org.is_active ? "Désactiver" : "Activer"}
+                        title={org.is_active ? "Désactiver" : "Activer"}
+                        data-testid="toggle-organization-button"
+                        disabled={actionLoading}
+                      >
+                        {org.is_active ? "⏸️" : "▶️"}
+                      </button>
+                      <button
+                        on:click={() => handleDeleteClick(org)}
+                        class="text-red-600 hover:text-red-900"
+                        aria-label="Supprimer"
+                        title="Supprimer"
+                        data-testid="delete-organization-button"
+                        disabled={actionLoading}
+                      >
+                        🗑️
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              {/each}
             {/if}
           </tbody>
         </table>
@@ -285,13 +364,15 @@
 
       <!-- Footer -->
       {#if filteredOrganizations.length > 0}
-      <div class="bg-gray-50 px-6 py-3 border-t border-gray-200">
-        <p class="text-sm text-gray-700">
-          <span class="font-medium">{filteredOrganizations.length}</span>
-          {filteredOrganizations.length === 1 ? 'organisation' : 'organisations'}
-          {searchTerm ? ' (filtrées)' : ''}
-        </p>
-      </div>
+        <div class="bg-gray-50 px-6 py-3 border-t border-gray-200">
+          <p class="text-sm text-gray-700">
+            <span class="font-medium">{filteredOrganizations.length}</span>
+            {filteredOrganizations.length === 1
+              ? "organisation"
+              : "organisations"}
+            {searchTerm ? " (filtrées)" : ""}
+          </p>
+        </div>
       {/if}
     {/if}
   </div>

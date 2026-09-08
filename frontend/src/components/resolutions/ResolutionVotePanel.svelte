@@ -164,7 +164,9 @@
   /// l'Art. 3.87 § 7 compris depuis le 2026-09-06.
   function millièmes(valeur: string | number | undefined): string {
     const n = Number(valeur ?? 0);
-    return Number.isFinite(n) ? n.toLocaleString("fr-BE", { maximumFractionDigits: 2 }) : "0";
+    return Number.isFinite(n)
+      ? n.toLocaleString("fr-BE", { maximumFractionDigits: 2 })
+      : "0";
   }
 
   async function loadVotes() {
@@ -324,9 +326,10 @@
         >
         <span class="text-gray-600"
           >{votesAbstention}
-          {$_("resolutions.vote.votes", { values: { count: votesAbstention } })} · {millièmes(
-            resolution.total_voting_power_abstention,
-          )} ‰ ({partAbstention.toFixed(1)}%)</span
+          {$_("resolutions.vote.votes", { values: { count: votesAbstention } })} ·
+          {millièmes(resolution.total_voting_power_abstention)} ‰ ({partAbstention.toFixed(
+            1,
+          )}%)</span
         >
       </div>
       <div class="w-full bg-gray-100 rounded-full h-2.5">
@@ -514,7 +517,8 @@
                      plutôt que le nom n'a pas pu être résolu. Le vrai
                      correctif est d'enrichir le DTO — issues #786 et #765. -->
                 <span class="text-gray-900"
-                  >{vote.owner_name || $_("resolutions.vote.unknownOwner")}</span
+                  >{vote.owner_name ||
+                    $_("resolutions.vote.unknownOwner")}</span
                 >
                 {#if vote.proxy_owner_id}
                   <span class="text-xs text-gray-400 ml-1"

@@ -61,8 +61,7 @@
         const state = get(authStore);
         currentUserId = state.user?.id ?? null;
         const authUser = state.user as
-          | { organizationId?: string; organization_id?: string }
-          | undefined;
+          { organizationId?: string; organization_id?: string } | undefined;
         organizationId =
           authUser?.organizationId ?? authUser?.organization_id ?? "";
       } catch {
@@ -99,8 +98,7 @@
         .filter((u) => CONTRACTOR_ROLES.has(u.role))
         .map((u) => ({
           id: u.id,
-          label:
-            `${u.first_name ?? ""} ${u.last_name ?? ""}`.trim() || u.email,
+          label: `${u.first_name ?? ""} ${u.last_name ?? ""}`.trim() || u.email,
         }));
 
       // Tickets : pour l'instant on charge "my tickets" du syndic (liste
@@ -139,7 +137,7 @@
       class="text-2xl font-semibold text-gray-900"
       data-testid="contractor-evaluations-page-title"
     >
-      {$_('contractors.evaluationsTitle')}
+      {$_("contractors.evaluationsTitle")}
     </h1>
     <button
       type="button"
@@ -148,20 +146,17 @@
       onclick={() => (showForm = true)}
       disabled={loading || contractors.length === 0}
     >
-      {$_('contractors.newEval')}
+      {$_("contractors.newEval")}
     </button>
   </header>
 
   {#if loading}
     <p class="text-sm text-gray-500" role="status" aria-live="polite">
-      {$_('common.loading2')}
+      {$_("common.loading2")}
     </p>
   {:else if recentEvaluations.length === 0}
-    <p
-      data-testid="contractor-eval-list-empty"
-      class="text-sm text-gray-500"
-    >
-      {$_('contractors.evaluationsEmptySession')}
+    <p data-testid="contractor-eval-list-empty" class="text-sm text-gray-500">
+      {$_("contractors.evaluationsEmptySession")}
     </p>
   {:else}
     <div class="overflow-x-auto">
@@ -175,25 +170,25 @@
               scope="col"
               class="px-3 py-2 text-left font-medium text-gray-700"
             >
-              {$_('contractors.evaluated')}
+              {$_("contractors.evaluated")}
             </th>
             <th
               scope="col"
               class="px-3 py-2 text-left font-medium text-gray-700"
             >
-              {$_('contractors.scoreOverall')}
+              {$_("contractors.scoreOverall")}
             </th>
             <th
               scope="col"
               class="px-3 py-2 text-left font-medium text-gray-700"
             >
-              {$_('common.date')}
+              {$_("common.date")}
             </th>
             <th
               scope="col"
               class="px-3 py-2 text-left font-medium text-gray-700"
             >
-              {$_('common.comment')}
+              {$_("common.comment")}
             </th>
           </tr>
         </thead>
@@ -206,7 +201,7 @@
                   class="text-blue-600 hover:underline"
                   data-testid={`contractor-eval-reputation-link-${ev.id}`}
                 >
-                  {$_('contractors.seeReputation')}
+                  {$_("contractors.seeReputation")}
                 </a>
               </td>
               <td class="px-3 py-2 text-gray-900 font-mono font-semibold">

@@ -7,8 +7,8 @@
 // License: GPL-2.0-or-later (GNU General Public License version 2 or later)
 // Copyright: Dany De Bontridder <dany@alchimerys.eu>
 
-import Layout from '../layouts/Layout.astro';
-import JournalEntriesPanel from '../components/JournalEntriesPanel.svelte';
+import Layout from "../layouts/Layout.astro";
+import JournalEntriesPanel from "../components/JournalEntriesPanel.svelte";
 ---
 
 <Layout title="Écritures Comptables - KoproGo">
@@ -16,7 +16,8 @@ import JournalEntriesPanel from '../components/JournalEntriesPanel.svelte';
     <div class="page-header">
       <h1>📒 Écritures Comptables</h1>
       <p class="subtitle">
-        Saisie et consultation des opérations en partie double (inspirée de Noalyss)
+        Saisie et consultation des opérations en partie double (inspirée de
+        Noalyss)
       </p>
     </div>
 
@@ -31,22 +32,36 @@ import JournalEntriesPanel from '../components/JournalEntriesPanel.svelte';
         <div class="help-card">
           <h3>🎓 Types de Journaux (Noalyss)</h3>
           <ul>
-            <li><strong>ACH - Achats:</strong> Factures fournisseurs, achats de matériel</li>
-            <li><strong>VEN - Ventes:</strong> Factures clients, produits de gestion</li>
-            <li><strong>FIN - Financier:</strong> Opérations bancaires, paiements</li>
-            <li><strong>ODS - Opérations Diverses:</strong> Régularisations, transferts</li>
+            <li>
+              <strong>ACH - Achats:</strong> Factures fournisseurs, achats de matériel
+            </li>
+            <li>
+              <strong>VEN - Ventes:</strong> Factures clients, produits de gestion
+            </li>
+            <li>
+              <strong>FIN - Financier:</strong> Opérations bancaires, paiements
+            </li>
+            <li>
+              <strong>ODS - Opérations Diverses:</strong> Régularisations, transferts
+            </li>
           </ul>
         </div>
 
         <div class="help-card">
           <h3>📖 Principe de Partie Double</h3>
           <p>
-            Chaque opération doit être équilibrée : le total des débits doit égaler
-            le total des crédits.
+            Chaque opération doit être équilibrée : le total des débits doit
+            égaler le total des crédits.
           </p>
           <ul>
-            <li><strong>Débit:</strong> Augmente les actifs et charges, diminue les passifs et produits</li>
-            <li><strong>Crédit:</strong> Diminue les actifs et charges, augmente les passifs et produits</li>
+            <li>
+              <strong>Débit:</strong> Augmente les actifs et charges, diminue les
+              passifs et produits
+            </li>
+            <li>
+              <strong>Crédit:</strong> Diminue les actifs et charges, augmente les
+              passifs et produits
+            </li>
           </ul>
         </div>
 
@@ -94,18 +109,28 @@ import JournalEntriesPanel from '../components/JournalEntriesPanel.svelte';
           <h3>⚠️ Règles Importantes</h3>
           <ul>
             <li>Minimum 2 lignes par écriture</li>
-            <li>Chaque ligne doit avoir SOIT un débit SOIT un crédit (pas les deux)</li>
+            <li>
+              Chaque ligne doit avoir SOIT un débit SOIT un crédit (pas les
+              deux)
+            </li>
             <li>Total débits = Total crédits (tolérance 0.01€)</li>
             <li>Codes de compte: utiliser le plan comptable PCMN belge</li>
-            <li>Date d'opération: date réelle de l'opération (pas la date de saisie)</li>
+            <li>
+              Date d'opération: date réelle de l'opération (pas la date de
+              saisie)
+            </li>
           </ul>
         </div>
 
         <div class="help-card">
           <h3>🔗 Référence: Noalyss</h3>
           <p>
-            Cette interface est inspirée du logiciel libre <a href="https://gitlab.com/noalyss/noalyss" target="_blank" rel="noopener">Noalyss</a>,
-            un logiciel de comptabilité pour PME et ASBL en Belgique et France.
+            Cette interface est inspirée du logiciel libre <a
+              href="https://gitlab.com/noalyss/noalyss"
+              target="_blank"
+              rel="noopener">Noalyss</a
+            >, un logiciel de comptabilité pour PME et ASBL en Belgique et
+            France.
           </p>
           <p class="text-sm">
             Licence: GPL-2.0-or-later | Copyright: Dany De Bontridder

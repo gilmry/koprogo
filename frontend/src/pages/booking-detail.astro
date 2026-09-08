@@ -9,13 +9,17 @@ import Layout from "../layouts/Layout.astro";
         href="/bookings"
         class="text-blue-600 hover:text-blue-800 flex items-center gap-1"
       >
-        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg
+          class="h-4 w-4"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
           <path
             stroke-linecap="round"
             stroke-linejoin="round"
             stroke-width="2"
-            d="M15 19l-7-7 7-7"
-          />
+            d="M15 19l-7-7 7-7"></path>
         </svg>
         Back to Resources
       </a>
@@ -37,28 +41,33 @@ import Layout from "../layouts/Layout.astro";
   const resourceId = urlParams.get("id");
 
   // Get current user from localStorage
-  const storedUser = typeof window !== "undefined"
-    ? localStorage.getItem("koprogo_user")
-    : null;
+  const storedUser =
+    typeof window !== "undefined" ? localStorage.getItem("koprogo_user") : null;
   const currentUser = storedUser ? JSON.parse(storedUser) : null;
   const ownerId = currentUser?.id ?? "";
 
   if (!resourceId) {
     window.location.href = "/bookings";
   } else {
-    bookingsApi.getResourceById(resourceId).then((resource) => {
-      const container = document.getElementById("resource-detail-container");
-      if (!container) return;
+    bookingsApi
+      .getResourceById(resourceId)
+      .then((resource) => {
+        const container = document.getElementById("resource-detail-container");
+        if (!container) return;
 
-      container.innerHTML = `
+        container.innerHTML = `
         <div class="bg-white shadow rounded-lg overflow-hidden">
-          ${resource.image_urls && resource.image_urls.length > 0 ? `
+          ${
+            resource.image_urls && resource.image_urls.length > 0
+              ? `
             <img src="${resource.image_urls[0]}" alt="${resource.resource_name}" class="w-full h-64 object-cover" />
-          ` : `
+          `
+              : `
             <div class="w-full h-64 bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center">
               <span class="text-6xl">🏢</span>
             </div>
-          `}
+          `
+          }
           <div class="p-6">
             <div id="badge" class="mb-4"></div>
             <h1 class="text-3xl font-bold text-gray-900 mb-2">${resource.resource_name}</h1>
@@ -67,40 +76,52 @@ import Layout from "../layouts/Layout.astro";
             </div>
 
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6 bg-gray-50 rounded-lg p-4">
-              ${resource.capacity ? `
+              ${
+                resource.capacity
+                  ? `
                 <div>
                   <p class="text-sm text-gray-600">Capacity</p>
                   <p class="text-lg font-semibold text-gray-900">👥 ${resource.capacity}</p>
                 </div>
-              ` : ''}
+              `
+                  : ""
+              }
               <div>
                 <p class="text-sm text-gray-600">Max Duration</p>
                 <p class="text-lg font-semibold text-gray-900">⏱️ ${resource.max_booking_duration_hours}h</p>
               </div>
               <div>
                 <p class="text-sm text-gray-600">Cost</p>
-                <p class="text-lg font-semibold text-gray-900">${resource.hourly_rate_credits ? `${resource.hourly_rate_credits} credits/hr` : 'FREE'}</p>
+                <p class="text-lg font-semibold text-gray-900">${resource.hourly_rate_credits ? `${resource.hourly_rate_credits} credits/hr` : "FREE"}</p>
               </div>
               <div>
                 <p class="text-sm text-gray-600">Rating</p>
-                <p class="text-lg font-semibold text-gray-900">${resource.rating ? `⭐ ${resource.rating.toFixed(1)}/5` : 'No ratings'}</p>
+                <p class="text-lg font-semibold text-gray-900">${resource.rating ? `⭐ ${resource.rating.toFixed(1)}/5` : "No ratings"}</p>
               </div>
             </div>
 
-            ${resource.amenities && resource.amenities.length > 0 ? `
+            ${
+              resource.amenities && resource.amenities.length > 0
+                ? `
               <div class="mb-6">
                 <h3 class="text-lg font-semibold text-gray-900 mb-2">Amenities</h3>
                 <div class="flex flex-wrap gap-2">
-                  ${resource.amenities.map(a => `<span class="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">${a}</span>`).join('')}
+                  ${resource.amenities.map((a) => `<span class="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">${a}</span>`).join("")}
                 </div>
               </div>
-            ` : ''}
+            `
+                : ""
+            }
 
-            ${resource.requires_approval ? `
+            ${
+              resource.requires_approval
+                ? `
               <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
                 <p class="text-sm text-yellow-800">⚠️ This resource requires approval from building management</p>
               </div>
-            ` : ''}
+            `
+                : ""
+            }
 
             <div class="mb-4 text-sm text-gray-600">
               <p>📅 Advance booking: Up to ${resource.advance_booking_days} days</p>
@@ -110,28 +131,31 @@ import Layout from "../layouts/Layout.astro";
         </div>
       `;
 
-      // Mount resource type badge
-      const badgeContainer = document.getElementById("badge");
-      if (badgeContainer) {
-        mount(ResourceTypeBadge as any, {
-          target: badgeContainer,
-          props: { type: resource.resource_type },
-        });
-      }
+        // Mount resource type badge
+        const badgeContainer = document.getElementById("badge");
+        if (badgeContainer) {
+          mount(ResourceTypeBadge as any, {
+            target: badgeContainer,
+            props: { type: resource.resource_type },
+          });
+        }
 
-      // Mount booking panel (button + modal) below the detail card
-      const panelContainer = document.getElementById("booking-panel-container");
-      if (panelContainer) {
-        mount(BookingPanel as any, {
-          target: panelContainer,
-          props: { resource, ownerId },
-        });
-      }
-    }).catch(() => {
-      const container = document.getElementById("resource-detail-container");
-      if (container) {
-        container.innerHTML = `<div class="bg-white shadow rounded-lg p-12 text-center text-gray-500">Resource not found</div>`;
-      }
-    });
+        // Mount booking panel (button + modal) below the detail card
+        const panelContainer = document.getElementById(
+          "booking-panel-container",
+        );
+        if (panelContainer) {
+          mount(BookingPanel as any, {
+            target: panelContainer,
+            props: { resource, ownerId },
+          });
+        }
+      })
+      .catch(() => {
+        const container = document.getElementById("resource-detail-container");
+        if (container) {
+          container.innerHTML = `<div class="bg-white shadow rounded-lg p-12 text-center text-gray-500">Resource not found</div>`;
+        }
+      });
   }
 </script>

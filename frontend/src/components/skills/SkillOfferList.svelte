@@ -10,7 +10,10 @@
   import { _ } from "../../lib/i18n";
   import { withErrorHandling } from "../../lib/utils/error.utils";
 
-  let { buildingId, showFilters = true }: {
+  let {
+    buildingId,
+    showFilters = true,
+  }: {
     buildingId: string;
     showFilters?: boolean;
   } = $props();
@@ -30,7 +33,7 @@
     loading = true;
     const result = await withErrorHandling({
       action: () => skillsApi.listAvailableOffers(buildingId),
-      errorMessage: $_('skills.loadFailed'),
+      errorMessage: $_("skills.loadFailed"),
     });
     if (result) {
       offers = result;
@@ -51,7 +54,8 @@
         selectedCategory === "all" || offer.skill_category === selectedCategory;
 
       const matchesExpertise =
-        selectedExpertise === "all" || offer.expertise_level === selectedExpertise;
+        selectedExpertise === "all" ||
+        offer.expertise_level === selectedExpertise;
 
       return matchesSearch && matchesCategory && matchesExpertise;
     });
@@ -76,7 +80,10 @@
       <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
         <!-- Search -->
         <div>
-          <label for="search" class="block text-sm font-medium text-gray-700 mb-1">
+          <label
+            for="search"
+            class="block text-sm font-medium text-gray-700 mb-1"
+          >
             {$_("skills.searchLabel")}
           </label>
           <input
@@ -90,7 +97,10 @@
 
         <!-- Category Filter -->
         <div>
-          <label for="category" class="block text-sm font-medium text-gray-700 mb-1">
+          <label
+            for="category"
+            class="block text-sm font-medium text-gray-700 mb-1"
+          >
             {$_("skills.categoryLabel")}
           </label>
           <select
@@ -107,7 +117,10 @@
 
         <!-- Expertise Filter -->
         <div>
-          <label for="expertise" class="block text-sm font-medium text-gray-700 mb-1">
+          <label
+            for="expertise"
+            class="block text-sm font-medium text-gray-700 mb-1"
+          >
             {$_("skills.expertiseLabel")}
           </label>
           <select
@@ -127,7 +140,7 @@
 
   <!-- Offers Grid -->
   {#if loading}
-    <div class="text-center py-12 text-gray-500">{$_('skills.loading')}</div>
+    <div class="text-center py-12 text-gray-500">{$_("skills.loading")}</div>
   {:else if filteredOffers.length === 0}
     <div class="bg-white shadow rounded-lg p-12 text-center">
       <p class="text-gray-500">

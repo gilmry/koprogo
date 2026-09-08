@@ -1,18 +1,21 @@
 <script lang="ts">
   // Svelte 5 runes mode
-  import { _ } from '../../lib/i18n';
+  import { _ } from "../../lib/i18n";
   import {
     gamificationApi,
     type Challenge,
     type ChallengeProgress,
     ChallengeStatus,
     ChallengeType,
-  } from '../../lib/api/gamification';
-  import { authStore } from '../../stores/auth';
+  } from "../../lib/api/gamification";
+  import { authStore } from "../../stores/auth";
   import { formatDateShort } from "../../lib/utils/date.utils";
   import { withLoadingState } from "../../lib/utils/error.utils";
 
-  let { organizationId = '', buildingId = '' }: {
+  let {
+    organizationId = "",
+    buildingId = "",
+  }: {
     organizationId?: string;
     buildingId?: string;
   } = $props();
@@ -20,8 +23,8 @@
   let challenges = $state<Challenge[]>([]);
   let userProgress = $state<Map<string, ChallengeProgress>>(new Map());
   let loading = $state(true);
-  let error = $state('');
-  let statusFilter = $state<'active' | 'all' | 'completed'>('active');
+  let error = $state("");
+  let statusFilter = $state<"active" | "all" | "completed">("active");
 
   $effect(() => {
     loadData();
@@ -35,31 +38,41 @@
     let challengePromise: Promise<Challenge[]>;
     if (buildingId) {
       challengePromise = gamificationApi.listBuildingChallenges(buildingId);
-    } else if (statusFilter === 'active') {
+    } else if (statusFilter === "active") {
       challengePromise = gamificationApi.getActiveChallenges(organizationId);
-    } else if (statusFilter === 'completed') {
-      challengePromise = gamificationApi.listByStatus(organizationId, ChallengeStatus.Completed);
+    } else if (statusFilter === "completed") {
+      challengePromise = gamificationApi.listByStatus(
+        organizationId,
+        ChallengeStatus.Completed,
+      );
     } else {
       challengePromise = gamificationApi.listChallenges(organizationId);
     }
 
     await withLoadingState({
-      action: () => Promise.all([
-        challengePromise,
-        $authStore.user?.id
-          ? gamificationApi.getUserActiveChallenges($authStore.user.id)
-          : Promise.resolve([]),
-      ]),
-      setLoading: (v: boolean) => loading = v,
-      setError: (v: string) => error = v,
-      onSuccess: ([challengeList, userChallenges]: [Challenge[], ChallengeProgress[]]) => {
-        if (buildingId && statusFilter !== 'all') {
+      action: () =>
+        Promise.all([
+          challengePromise,
+          $authStore.user?.id
+            ? gamificationApi.getUserActiveChallenges($authStore.user.id)
+            : Promise.resolve([]),
+        ]),
+      setLoading: (v: boolean) => (loading = v),
+      setError: (v: string) => (error = v),
+      onSuccess: ([challengeList, userChallenges]: [
+        Challenge[],
+        ChallengeProgress[],
+      ]) => {
+        if (buildingId && statusFilter !== "all") {
           const now = new Date();
-          challenges = challengeList.filter(c => {
-            if (statusFilter === 'active') {
-              return c.status === ChallengeStatus.Active && new Date(c.end_date) > now;
+          challenges = challengeList.filter((c) => {
+            if (statusFilter === "active") {
+              return (
+                c.status === ChallengeStatus.Active &&
+                new Date(c.end_date) > now
+              );
             }
-            if (statusFilter === 'completed') {
+            if (statusFilter === "completed") {
               return c.status === ChallengeStatus.Completed;
             }
             return true;
@@ -67,9 +80,9 @@
         } else {
           challenges = challengeList;
         }
-        userProgress = new Map(userChallenges.map(p => [p.challenge_id, p]));
+        userProgress = new Map(userChallenges.map((p) => [p.challenge_id, p]));
       },
-      errorMessage: $_('gamification.load_error'),
+      errorMessage: $_("gamification.load_error"),
     });
   }
 
@@ -78,32 +91,67 @@
     loadData();
   });
 
-  function getStatusConfig(status: ChallengeStatus): { bg: string; text: string; label: string } {
+  function getStatusConfig(status: ChallengeStatus): {
+    bg: string;
+    text: string;
+    label: string;
+  } {
     switch (status) {
-      case ChallengeStatus.Draft: return { bg: 'bg-gray-100', text: 'text-gray-700', label: $_('gamification.status_draft') };
-      case ChallengeStatus.Active: return { bg: 'bg-green-100', text: 'text-green-700', label: $_('gamification.status_active') };
-      case ChallengeStatus.Completed: return { bg: 'bg-blue-100', text: 'text-blue-700', label: $_('gamification.status_completed') };
-      case ChallengeStatus.Cancelled: return { bg: 'bg-red-100', text: 'text-red-700', label: $_('gamification.status_cancelled') };
-      default: return { bg: 'bg-gray-100', text: 'text-gray-700', label: status };
+      case ChallengeStatus.Draft:
+        return {
+          bg: "bg-gray-100",
+          text: "text-gray-700",
+          label: $_("gamification.status_draft"),
+        };
+      case ChallengeStatus.Active:
+        return {
+          bg: "bg-green-100",
+          text: "text-green-700",
+          label: $_("gamification.status_active"),
+        };
+      case ChallengeStatus.Completed:
+        return {
+          bg: "bg-blue-100",
+          text: "text-blue-700",
+          label: $_("gamification.status_completed"),
+        };
+      case ChallengeStatus.Cancelled:
+        return {
+          bg: "bg-red-100",
+          text: "text-red-700",
+          label: $_("gamification.status_cancelled"),
+        };
+      default:
+        return { bg: "bg-gray-100", text: "text-gray-700", label: status };
     }
   }
 
   function getTypeLabel(type: ChallengeType): string {
     switch (type) {
-      case ChallengeType.Individual: return $_('gamification.type_individual');
-      case ChallengeType.Team: return $_('gamification.type_team');
-      case ChallengeType.Building: return $_('gamification.type_building');
-      default: return type;
+      case ChallengeType.Individual:
+        return $_("gamification.type_individual");
+      case ChallengeType.Team:
+        return $_("gamification.type_team");
+      case ChallengeType.Building:
+        return $_("gamification.type_building");
+      default:
+        return type;
     }
   }
 
   function getDaysRemaining(endDate: string): number {
     const end = new Date(endDate);
     const now = new Date();
-    return Math.max(0, Math.ceil((end.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
+    return Math.max(
+      0,
+      Math.ceil((end.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)),
+    );
   }
 
-  function getProgressPercent(progress: ChallengeProgress | undefined, target: number): number {
+  function getProgressPercent(
+    progress: ChallengeProgress | undefined,
+    target: number,
+  ): number {
     if (!progress || target <= 0) return 0;
     return Math.min(100, (progress.current_value / target) * 100);
   }
@@ -111,23 +159,26 @@
 
 <div class="bg-white shadow-md rounded-lg" data-testid="challenge-list">
   <div class="px-4 py-5 border-b border-gray-200 sm:px-6">
-    <h3 class="text-lg leading-6 font-medium text-gray-900">{$_('gamification.challenges_title')}</h3>
+    <h3 class="text-lg leading-6 font-medium text-gray-900">
+      {$_("gamification.challenges_title")}
+    </h3>
     <p class="mt-1 text-sm text-gray-500">
-      {$_('gamification.challenges_description')}
+      {$_("gamification.challenges_description")}
     </p>
   </div>
 
   <!-- Status filter -->
   <div class="px-4 py-3 bg-gray-50 border-b border-gray-200">
     <div class="flex gap-1">
-      {#each [
-        { value: 'active', label: $_('gamification.status_actives') },
-        { value: 'all', label: $_('common.all') },
-        { value: 'completed', label: $_('gamification.status_completed_plural') },
-      ] as f}
-        <button onclick={() => statusFilter = f.value as 'active' | 'all' | 'completed'}
+      {#each [{ value: "active", label: $_("gamification.status_actives") }, { value: "all", label: $_("common.all") }, { value: "completed", label: $_("gamification.status_completed_plural") }] as f}
+        <button
+          onclick={() =>
+            (statusFilter = f.value as "active" | "all" | "completed")}
           class="px-2 py-1 rounded text-xs font-medium transition-colors
-            {statusFilter === f.value ? 'bg-amber-600 text-white' : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'}">
+            {statusFilter === f.value
+            ? 'bg-amber-600 text-white'
+            : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'}"
+        >
           {f.label}
         </button>
       {/each}
@@ -136,35 +187,60 @@
 
   {#if loading}
     <div class="p-8 text-center" data-testid="challenge-list-loading">
-      <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-amber-600"></div>
-      <p class="mt-2 text-sm text-gray-500">{$_('common.loading')}</p>
+      <div
+        class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-amber-600"
+      ></div>
+      <p class="mt-2 text-sm text-gray-500">{$_("common.loading")}</p>
     </div>
   {:else if error}
-    <div class="p-4 m-4 bg-red-50 border border-red-200 rounded-md" data-testid="challenge-list-error">
+    <div
+      class="p-4 m-4 bg-red-50 border border-red-200 rounded-md"
+      data-testid="challenge-list-error"
+    >
       <p class="text-sm text-red-800">{error}</p>
-      <button onclick={loadData} class="mt-2 text-sm text-red-600 hover:text-red-800 underline">{$_('common.retry')}</button>
+      <button
+        onclick={loadData}
+        class="mt-2 text-sm text-red-600 hover:text-red-800 underline"
+        >{$_("common.retry")}</button
+      >
     </div>
   {:else if challenges.length === 0}
     <div class="p-8 text-center">
-      <p class="text-gray-500">{$_('gamification.no_challenges_filter', { values: { filter: statusFilter === 'active' ? $_('gamification.status_active') : '' } })}</p>
+      <p class="text-gray-500">
+        {$_("gamification.no_challenges_filter", {
+          values: {
+            filter:
+              statusFilter === "active" ? $_("gamification.status_active") : "",
+          },
+        })}
+      </p>
     </div>
   {:else}
     <ul class="divide-y divide-gray-200">
       {#each challenges as challenge (challenge.id)}
         {@const statusCfg = getStatusConfig(challenge.status)}
         {@const progress = userProgress.get(challenge.id)}
-        {@const progressPct = getProgressPercent(progress, challenge.target_value)}
+        {@const progressPct = getProgressPercent(
+          progress,
+          challenge.target_value,
+        )}
         {@const daysLeft = getDaysRemaining(challenge.end_date)}
         <li class="px-4 py-4 sm:px-6" data-testid="challenge-list-row">
           <div class="flex items-start gap-3">
-            <span class="text-2xl flex-shrink-0">{challenge.icon || '🎯'}</span>
+            <span class="text-2xl flex-shrink-0">{challenge.icon || "🎯"}</span>
             <div class="flex-1 min-w-0">
               <div class="flex items-center gap-2 mb-1">
-                <h4 class="text-sm font-semibold text-gray-900">{challenge.title}</h4>
-                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium {statusCfg.bg} {statusCfg.text}">
+                <h4 class="text-sm font-semibold text-gray-900">
+                  {challenge.title}
+                </h4>
+                <span
+                  class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium {statusCfg.bg} {statusCfg.text}"
+                >
                   {statusCfg.label}
                 </span>
-                <span class="text-xs text-gray-500">{getTypeLabel(challenge.challenge_type)}</span>
+                <span class="text-xs text-gray-500"
+                  >{getTypeLabel(challenge.challenge_type)}</span
+                >
               </div>
 
               <p class="text-xs text-gray-600 mb-2">{challenge.description}</p>
@@ -172,28 +248,47 @@
               <!-- Progress bar -->
               {#if challenge.status === ChallengeStatus.Active}
                 <div class="mb-2">
-                  <div class="flex items-center justify-between text-xs text-gray-500 mb-1">
-                    <span>{progress?.current_value || 0} / {challenge.target_value} {challenge.target_metric}</span>
+                  <div
+                    class="flex items-center justify-between text-xs text-gray-500 mb-1"
+                  >
+                    <span
+                      >{progress?.current_value || 0} / {challenge.target_value}
+                      {challenge.target_metric}</span
+                    >
                     <span>{progressPct.toFixed(0)}%</span>
                   </div>
                   <div class="w-full bg-gray-200 rounded-full h-2">
-                    <div class="h-2 rounded-full transition-all duration-500
+                    <div
+                      class="h-2 rounded-full transition-all duration-500
                       {progress?.completed ? 'bg-green-500' : 'bg-amber-500'}"
-                      style="width: {progressPct}%"></div>
+                      style="width: {progressPct}%"
+                    ></div>
                   </div>
                 </div>
               {/if}
 
               <div class="flex items-center gap-3 text-xs text-gray-500">
                 <span>{challenge.reward_points} pts</span>
-                <span>{formatDateShort(challenge.start_date)} - {formatDateShort(challenge.end_date)}</span>
+                <span
+                  >{formatDateShort(challenge.start_date)} - {formatDateShort(
+                    challenge.end_date,
+                  )}</span
+                >
                 {#if challenge.status === ChallengeStatus.Active && daysLeft > 0}
-                  <span class="font-medium {daysLeft <= 3 ? 'text-red-600' : 'text-gray-600'}">
-                    {$_('gamification.days_remaining', { values: { days: daysLeft } })}
+                  <span
+                    class="font-medium {daysLeft <= 3
+                      ? 'text-red-600'
+                      : 'text-gray-600'}"
+                  >
+                    {$_("gamification.days_remaining", {
+                      values: { days: daysLeft },
+                    })}
                   </span>
                 {/if}
                 {#if progress?.completed}
-                  <span class="text-green-600 font-medium">{$_('gamification.completed')}</span>
+                  <span class="text-green-600 font-medium"
+                    >{$_("gamification.completed")}</span
+                  >
                 {/if}
               </div>
             </div>

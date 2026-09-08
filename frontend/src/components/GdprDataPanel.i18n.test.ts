@@ -119,9 +119,13 @@ describe("l'écran RGPD est traduit (#774)", () => {
       ),
     );
 
-    const clesUtilisees = [...source.matchAll(/\$_\('gdpr\.([\w.]+)'/g)].map(
-      (m) => m[1],
-    );
+    // Guillemets simples OU doubles : Prettier normalise les expressions du
+    // balisage Svelte, et une garde ne doit pas dépendre d'un choix de mise
+    // en forme. Elle exigeait `'` seul, et a rendu 0 clé après le passage de
+    // Prettier sur les .svelte (#839).
+    const clesUtilisees = [
+      ...source.matchAll(/\$_\(\s*(['"])gdpr\.([\w.]+)\1/g),
+    ].map((m) => m[2]);
     expect(clesUtilisees.length).toBeGreaterThan(10);
 
     const manquantes: string[] = [];

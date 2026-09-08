@@ -1,7 +1,12 @@
 <script lang="ts">
   // Svelte 5 runes mode
-  import { _ } from '../../lib/i18n';
-  import { noticesApi, type CreateNoticeDto, NoticeType, NoticeCategory } from "../../lib/api/notices";
+  import { _ } from "../../lib/i18n";
+  import {
+    noticesApi,
+    type CreateNoticeDto,
+    NoticeType,
+    NoticeCategory,
+  } from "../../lib/api/notices";
   import { toast } from "../../stores/toast";
   import { withErrorHandling } from "../../lib/utils/error.utils";
 
@@ -29,7 +34,9 @@
     contact_info: "",
   });
   // Sync with prop (live value via $effect, not stale initial capture)
-  $effect(() => { if (buildingId && !formData.building_id) formData.building_id = buildingId; });
+  $effect(() => {
+    if (buildingId && !formData.building_id) formData.building_id = buildingId;
+  });
 
   let expiresEnabled = $state(false);
   let expiresDate = $state("");
@@ -58,10 +65,14 @@
 
     await withErrorHandling({
       action: () => noticesApi.create(payload),
-      setLoading: (v: boolean) => submitting = v,
+      setLoading: (v: boolean) => (submitting = v),
       successMessage: $_("notices.created_successfully"),
       errorMessage: $_("notices.create_failed"),
-      onSuccess: () => { resetForm(); onSuccess(); onClose(); },
+      onSuccess: () => {
+        resetForm();
+        onSuccess();
+        onClose();
+      },
     });
   }
 
@@ -87,15 +98,31 @@
 </script>
 
 {#if isOpen}
-  <div class="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50 p-4">
-    <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto" data-testid="notice-create-modal">
+  <div
+    class="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50 p-4"
+  >
+    <div
+      class="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+      data-testid="notice-create-modal"
+    >
       <div class="p-6">
-        <h2 class="text-2xl font-bold text-gray-900 mb-6">{$_("notices.create_notice")}</h2>
+        <h2 class="text-2xl font-bold text-gray-900 mb-6">
+          {$_("notices.create_notice")}
+        </h2>
 
-        <form onsubmit={(e) => { e.preventDefault(); handleSubmit(); }} class="space-y-4">
+        <form
+          onsubmit={(e) => {
+            e.preventDefault();
+            handleSubmit();
+          }}
+          class="space-y-4"
+        >
           <!-- Notice Type -->
           <div>
-            <label for="notice_type" class="block text-sm font-medium text-gray-700 mb-1">
+            <label
+              for="notice_type"
+              class="block text-sm font-medium text-gray-700 mb-1"
+            >
               {$_("notices.type")}
             </label>
             <select
@@ -116,7 +143,10 @@
 
           <!-- Category -->
           <div>
-            <label for="category" class="block text-sm font-medium text-gray-700 mb-1">
+            <label
+              for="category"
+              class="block text-sm font-medium text-gray-700 mb-1"
+            >
               {$_("notices.category")}
             </label>
             <select
@@ -128,14 +158,19 @@
                 <!-- `notices.categories` existait avec des clés minuscules qui
                      ne correspondaient à aucune valeur servie par l'API.
                      `noticeCategory` suit les sept valeurs réelles. -->
-                <option value={cat}>{$_(`notices.noticeCategory.${cat}`)}</option>
+                <option value={cat}
+                  >{$_(`notices.noticeCategory.${cat}`)}</option
+                >
               {/each}
             </select>
           </div>
 
           <!-- Title -->
           <div>
-            <label for="title" class="block text-sm font-medium text-gray-700 mb-1">
+            <label
+              for="title"
+              class="block text-sm font-medium text-gray-700 mb-1"
+            >
               <!-- `notices.title` est le titre de la PAGE (« Annonces ») ;
                    l'employer ici affichait « Annonces * » au lieu de « Titre * ». -->
               {$_("notices.fieldTitle")} <span class="text-red-500">*</span>
@@ -155,7 +190,10 @@
 
           <!-- Content -->
           <div>
-            <label for="content" class="block text-sm font-medium text-gray-700 mb-1">
+            <label
+              for="content"
+              class="block text-sm font-medium text-gray-700 mb-1"
+            >
               {$_("notices.content")} <span class="text-red-500">*</span>
             </label>
             <textarea
@@ -172,7 +210,10 @@
           <!-- Event Fields (shown only for Event type) -->
           {#if formData.notice_type === NoticeType.Event}
             <div>
-              <label for="event_date" class="block text-sm font-medium text-gray-700 mb-1">
+              <label
+                for="event_date"
+                class="block text-sm font-medium text-gray-700 mb-1"
+              >
                 {$_("notices.event_date")}
               </label>
               <input
@@ -183,7 +224,10 @@
               />
             </div>
             <div>
-              <label for="event_location" class="block text-sm font-medium text-gray-700 mb-1">
+              <label
+                for="event_location"
+                class="block text-sm font-medium text-gray-700 mb-1"
+              >
                 {$_("notices.event_location")}
               </label>
               <input
@@ -198,7 +242,10 @@
 
           <!-- Contact Info -->
           <div>
-            <label for="contact_info" class="block text-sm font-medium text-gray-700 mb-1">
+            <label
+              for="contact_info"
+              class="block text-sm font-medium text-gray-700 mb-1"
+            >
               {$_("notices.contact_info")}
             </label>
             <input
@@ -219,7 +266,10 @@
                 bind:checked={expiresEnabled}
                 class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
               />
-              <label for="expires_enabled" class="ml-2 text-sm font-medium text-gray-700">
+              <label
+                for="expires_enabled"
+                class="ml-2 text-sm font-medium text-gray-700"
+              >
                 {$_("notices.set_expiration_date")}
               </label>
             </div>
@@ -241,7 +291,9 @@
               data-testid="notice-submit-btn"
               class="flex-1 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {submitting ? $_("notices.creating") : $_("notices.create_notice")}
+              {submitting
+                ? $_("notices.creating")
+                : $_("notices.create_notice")}
             </button>
             <button
               type="button"

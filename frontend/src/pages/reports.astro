@@ -1,15 +1,18 @@
 ---
-import Layout from '../layouts/Layout.astro';
-import FinancialReports from '../components/FinancialReports.svelte';
+import Layout from "../layouts/Layout.astro";
+import FinancialReports from "../components/FinancialReports.svelte";
 ---
 
 <Layout title="Rapports Comptables - KoproGo">
   <div class="container mx-auto px-4 py-8" data-testid="reports">
     <div class="max-w-7xl mx-auto">
       <div class="mb-8">
-        <h1 class="text-3xl font-bold text-gray-900 mb-2">Rapports Comptables PCMN</h1>
+        <h1 class="text-3xl font-bold text-gray-900 mb-2">
+          Rapports Comptables PCMN
+        </h1>
         <p class="text-gray-600">
-          Rapports conformes au Plan Comptable Minimum Normalisé belge (AR 12/07/2012)
+          Rapports conformes au Plan Comptable Minimum Normalisé belge (AR
+          12/07/2012)
         </p>
       </div>
 
@@ -18,14 +21,20 @@ import FinancialReports from '../components/FinancialReports.svelte';
 
       <!-- Documentation Section -->
       <div class="mt-8 bg-blue-50 border-l-4 border-blue-400 p-6 rounded-r-lg">
-        <h3 class="text-lg font-semibold text-gray-900 mb-3">📚 À propos du PCMN Belge</h3>
+        <h3 class="text-lg font-semibold text-gray-900 mb-3">
+          📚 À propos du PCMN Belge
+        </h3>
         <p class="text-gray-700 mb-3">
-          Les rapports générés sont conformes au <strong>Plan Comptable Minimum Normalisé</strong> belge
-          (Arrêté Royal du 12/07/2012). Le PCMN organise les comptes en classes:
+          Les rapports générés sont conformes au <strong
+            >Plan Comptable Minimum Normalisé</strong
+          > belge (Arrêté Royal du 12/07/2012). Le PCMN organise les comptes en classes:
         </p>
         <ul class="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-gray-700">
           <li>• <strong>Classe 1</strong>: Capital, Réserves (Passif)</li>
-          <li>• <strong>Classes 2-5</strong>: Immobilisations, Créances, Trésorerie (Actif)</li>
+          <li>
+            • <strong>Classes 2-5</strong>: Immobilisations, Créances,
+            Trésorerie (Actif)
+          </li>
           <li>• <strong>Classe 6</strong>: Charges d'exploitation</li>
           <li>• <strong>Classe 7</strong>: Produits d'exploitation</li>
         </ul>

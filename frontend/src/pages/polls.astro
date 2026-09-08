@@ -28,11 +28,10 @@ import Layout from "../layouts/Layout.astro";
              consultation informelle. Une fonctionnalité utile n'a pas besoin
              d'un article de loi pour exister. -->
         <p class="text-blue-800">
-          <strong>ℹ️ Consultation informelle :</strong> les sondages recueillent
-          l'avis des copropriétaires entre deux assemblées. Ils n'ont pas valeur
-          de vote et ne remplacent aucune décision d'assemblée générale. Pour
-          qu'un avis recueilli ici produise un effet, il doit être repris et
-          voté en assemblée.
+          <strong>ℹ️ Consultation informelle :</strong> les sondages recueillent l'avis
+          des copropriétaires entre deux assemblées. Ils n'ont pas valeur de vote
+          et ne remplacent aucune décision d'assemblée générale. Pour qu'un avis recueilli
+          ici produise un effet, il doit être repris et voté en assemblée.
         </p>
       </div>
     </div>
@@ -47,13 +46,19 @@ import Layout from "../layouts/Layout.astro";
   import PollList from "../components/polls/PollList.svelte";
   import BuildingSelector from "../components/BuildingSelector.svelte";
 
-  const selectorContainer = document.getElementById("building-selector-container");
+  const selectorContainer = document.getElementById(
+    "building-selector-container",
+  );
   const listContainer = document.getElementById("poll-list-container");
   let listComponent: any = null;
 
   function mountList(buildingId: string) {
     if (!listContainer) return;
-    if (listComponent) { try { unmount(listComponent); } catch {} }
+    if (listComponent) {
+      try {
+        unmount(listComponent);
+      } catch {}
+    }
     listContainer.innerHTML = "";
     listComponent = mount(PollList as any, {
       target: listContainer,

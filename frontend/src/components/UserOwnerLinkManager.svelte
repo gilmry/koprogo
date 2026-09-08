@@ -1,8 +1,8 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
-  import { _ } from '../lib/i18n';
-  import { api } from '../lib/api';
-  import type { Owner, User } from '../lib/types';
+  import { onMount } from "svelte";
+  import { _ } from "../lib/i18n";
+  import { api } from "../lib/api";
+  import type { Owner, User } from "../lib/types";
 
   interface OwnerWithUser extends Owner {
     linkedUser?: {
@@ -35,48 +35,64 @@
 
       // Load owners (paginated)
       const ownersResponse = await api.get<{ data: Owner[]; pagination: any }>(
-        `/owners?page=${currentPage}&per_page=${perPage}`
+        `/owners?page=${currentPage}&per_page=${perPage}`,
       );
 
       totalPages = ownersResponse.pagination.total_pages;
 
       // Load all users with role='owner'
-      const usersResponse = await api.get<{ data: User[] }>('/users?per_page=1000');
-      // Filter users who have at least one 'owner' role in their roles array
-      ownerUsers = usersResponse.data.filter((u: User) =>
-        u.roles && u.roles.some(r => r.role === 'owner')
+      const usersResponse = await api.get<{ data: User[] }>(
+        "/users?per_page=1000",
       );
-      console.log('Users with owner role:', ownerUsers.length, 'out of', usersResponse.data.length);
+      // Filter users who have at least one 'owner' role in their roles array
+      ownerUsers = usersResponse.data.filter(
+        (u: User) => u.roles && u.roles.some((r) => r.role === "owner"),
+      );
+      console.log(
+        "Users with owner role:",
+        ownerUsers.length,
+        "out of",
+        usersResponse.data.length,
+      );
 
       // Enrich owners with linked user info
       const enrichedOwners = await Promise.all(
         ownersResponse.data.map(async (owner: Owner) => {
           if (owner.user_id) {
-            const linkedUser = ownerUsers.find(u => u.id === owner.user_id);
-            console.log('Owner with user_id:', owner.id, 'user_id:', owner.user_id, 'linkedUser found:', !!linkedUser);
+            const linkedUser = ownerUsers.find((u) => u.id === owner.user_id);
+            console.log(
+              "Owner with user_id:",
+              owner.id,
+              "user_id:",
+              owner.user_id,
+              "linkedUser found:",
+              !!linkedUser,
+            );
             return {
               ...owner,
-              linkedUser: linkedUser ? {
-                id: linkedUser.id,
-                email: linkedUser.email,
-                first_name: linkedUser.first_name,
-                last_name: linkedUser.last_name
-              } : undefined
+              linkedUser: linkedUser
+                ? {
+                    id: linkedUser.id,
+                    email: linkedUser.email,
+                    first_name: linkedUser.first_name,
+                    last_name: linkedUser.last_name,
+                  }
+                : undefined,
             };
           }
           return owner;
-        })
+        }),
       );
 
-      console.log('Enriched owners:', enrichedOwners);
-      console.log('Total owner users:', ownerUsers.length);
+      console.log("Enriched owners:", enrichedOwners);
+      console.log("Total owner users:", ownerUsers.length);
 
       // Force Svelte reactivity by creating a new array reference
       owners = [...enrichedOwners];
 
       loading = false;
     } catch (err) {
-      error = err instanceof Error ? err.message : $_('common.error.loadData');
+      error = err instanceof Error ? err.message : $_("common.error.loadData");
       loading = false;
     }
   }
@@ -86,18 +102,18 @@
       error = null;
       successMessage = null;
 
-      console.log('Linking owner:', ownerId, 'to user:', userId);
+      console.log("Linking owner:", ownerId, "to user:", userId);
 
       await api.put(`/owners/${ownerId}/link-user`, {
-        user_id: userId
+        user_id: userId,
       });
 
       successMessage = userId
-        ? $_('profile.linkedSuccess')
-        : $_('profile.unlinkedSuccess');
+        ? $_("profile.linkedSuccess")
+        : $_("profile.unlinkedSuccess");
 
       // Force reload with a small delay to ensure DB transaction is committed
-      await new Promise(resolve => setTimeout(resolve, 300));
+      await new Promise((resolve) => setTimeout(resolve, 300));
       await loadData();
 
       // Clear success message after 3 seconds
@@ -105,18 +121,19 @@
         successMessage = null;
       }, 3000);
     } catch (err) {
-      console.error('Link error:', err);
-      error = err instanceof Error ? err.message : $_('profile.error.linkFailed');
+      console.error("Link error:", err);
+      error =
+        err instanceof Error ? err.message : $_("profile.error.linkFailed");
     }
   }
 
   function getAvailableUsers(currentOwnerId: string): User[] {
     // Show only users that are not already linked to another owner
     const linkedUserIds = owners
-      .filter(o => o.id !== currentOwnerId && o.user_id)
-      .map(o => o.user_id);
+      .filter((o) => o.id !== currentOwnerId && o.user_id)
+      .map((o) => o.user_id);
 
-    return ownerUsers.filter(u => !linkedUserIds.includes(u.id));
+    return ownerUsers.filter((u) => !linkedUserIds.includes(u.id));
   }
 
   async function goToPage(page: number) {
@@ -128,46 +145,64 @@
 <div class="bg-white rounded-lg shadow">
   <div class="p-6 border-b border-gray-200">
     <h2 class="text-xl font-semibold text-gray-900">
-      {$_('owners.linkTitle')}
+      {$_("owners.linkTitle")}
     </h2>
     <p class="text-sm text-gray-600 mt-1">
-      {$_('owners.linkSubtitle')}
+      {$_("owners.linkSubtitle")}
     </p>
   </div>
 
   <div class="p-6">
     {#if error}
-      <div class="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+      <div
+        class="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded"
+      >
         {error}
       </div>
     {/if}
 
     {#if successMessage}
-      <div class="mb-4 bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded">
+      <div
+        class="mb-4 bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded"
+      >
         {successMessage}
       </div>
     {/if}
 
     {#if loading}
       <div class="flex items-center justify-center py-12">
-        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
+        <div
+          class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"
+        ></div>
       </div>
     {:else}
       <div class="overflow-x-auto">
         <table class="min-w-full divide-y divide-gray-200">
           <thead class="bg-gray-50">
             <tr>
-              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                {$_('owners.coOwner')}
+              <th
+                scope="col"
+                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+              >
+                {$_("owners.coOwner")}
               </th>
-              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                {$_('common.email')}
+              <th
+                scope="col"
+                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+              >
+                {$_("common.email")}
               </th>
-              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                {$_('owners.linkedAccount')}
+              <th
+                scope="col"
+                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+              >
+                {$_("owners.linkedAccount")}
               </th>
-              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                {$_('common.actionColumn')}
+              <th
+                scope="col"
+                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+              >
+                {$_("common.actionColumn")}
               </th>
             </tr>
           </thead>
@@ -176,7 +211,8 @@
               <tr class="hover:bg-gray-50">
                 <td class="px-6 py-4 whitespace-nowrap">
                   <div class="text-sm font-medium text-gray-900">
-                    {owner.first_name} {owner.last_name}
+                    {owner.first_name}
+                    {owner.last_name}
                   </div>
                   <div class="text-xs text-gray-500">
                     ID: {owner.id.substring(0, 8)}...
@@ -188,16 +224,21 @@
                 <td class="px-6 py-4 whitespace-nowrap">
                   {#if owner.linkedUser}
                     <div class="flex items-center">
-                      <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                        ✓ {owner.linkedUser.first_name} {owner.linkedUser.last_name}
+                      <span
+                        class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800"
+                      >
+                        ✓ {owner.linkedUser.first_name}
+                        {owner.linkedUser.last_name}
                       </span>
                     </div>
                     <div class="text-xs text-gray-500 mt-1">
                       {owner.linkedUser.email}
                     </div>
                   {:else}
-                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                      {$_('owners.noLink')}
+                    <span
+                      class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800"
+                    >
+                      {$_("owners.noLink")}
                     </span>
                   {/if}
                 </td>
@@ -207,7 +248,7 @@
                       on:click={() => linkOwnerToUser(owner.id, null)}
                       class="text-red-600 hover:text-red-900 font-medium"
                     >
-                      {$_('owners.unlink')}
+                      {$_("owners.unlink")}
                     </button>
                   {:else}
                     <select
@@ -216,15 +257,16 @@
                         const userId = e.currentTarget.value;
                         if (userId) {
                           linkOwnerToUser(owner.id, userId);
-                          e.currentTarget.value = ''; // Reset
+                          e.currentTarget.value = ""; // Reset
                         }
                       }}
                       class="block w-full pl-3 pr-10 py-2 text-sm border-gray-300 focus:outline-none focus:ring-primary-500 focus:border-primary-500 rounded-md"
                     >
-                      <option value="">{$_('owners.selectAccount')}</option>
+                      <option value="">{$_("owners.selectAccount")}</option>
                       {#each getAvailableUsers(owner.id) as user (user.id)}
                         <option value={user.id}>
-                          {user.first_name} {user.last_name} ({user.email})
+                          {user.first_name}
+                          {user.last_name} ({user.email})
                         </option>
                       {/each}
                     </select>
@@ -238,7 +280,9 @@
 
       <!-- Pagination -->
       {#if totalPages > 1}
-        <div class="mt-6 flex items-center justify-between border-t border-gray-200 pt-4">
+        <div
+          class="mt-6 flex items-center justify-between border-t border-gray-200 pt-4"
+        >
           <div class="text-sm text-gray-700">
             Page {currentPage} sur {totalPages}
           </div>
@@ -248,14 +292,14 @@
               disabled={currentPage === 1}
               class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {$_('common.previous')}
+              {$_("common.previous")}
             </button>
             <button
               on:click={() => goToPage(currentPage + 1)}
               disabled={currentPage === totalPages}
               class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {$_('common.next')}
+              {$_("common.next")}
             </button>
           </div>
         </div>

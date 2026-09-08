@@ -119,7 +119,7 @@
 
     const poll = await withErrorHandling({
       action: () => pollsApi.create(formData),
-      setLoading: (v: boolean) => loading = v,
+      setLoading: (v: boolean) => (loading = v),
       errorMessage: $_("polls.createForm.errors.creationFailed"),
       onSuccess: (created) => {
         success = true;
@@ -148,7 +148,10 @@
   </p>
 
   {#if success}
-    <div class="mb-4 p-4 bg-green-50 border border-green-200 rounded-md" data-testid="create-poll-success">
+    <div
+      class="mb-4 p-4 bg-green-50 border border-green-200 rounded-md"
+      data-testid="create-poll-success"
+    >
       <p class="text-sm text-green-800">
         ✅ {$_("polls.createForm.successMessage")}
       </p>
@@ -156,14 +159,24 @@
   {/if}
 
   {#if error}
-    <div class="mb-4 p-4 bg-red-50 border border-red-200 rounded-md" data-testid="create-poll-error">
+    <div
+      class="mb-4 p-4 bg-red-50 border border-red-200 rounded-md"
+      data-testid="create-poll-error"
+    >
       <p class="text-sm text-red-800">❌ {error}</p>
     </div>
   {/if}
 
-  <form onsubmit={handleSubmit} class="space-y-6" data-testid="create-poll-form">
+  <form
+    onsubmit={handleSubmit}
+    class="space-y-6"
+    data-testid="create-poll-form"
+  >
     <!-- Building Selector -->
-    <BuildingSelector bind:selectedBuildingId label={$_("polls.createForm.buildingLabel")} />
+    <BuildingSelector
+      bind:selectedBuildingId
+      label={$_("polls.createForm.buildingLabel")}
+    />
 
     <!-- Poll Type -->
     <div>
@@ -178,10 +191,18 @@
         class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
         data-testid="create-poll-type-select"
       >
-        <option value={PollType.YesNo}>👍👎 {$_("polls.createForm.typeYesNo")}</option>
-        <option value={PollType.MultipleChoice}>☑️ {$_("polls.createForm.typeMultiple")}</option>
-        <option value={PollType.Rating}>⭐ {$_("polls.createForm.typeRating")}</option>
-        <option value={PollType.OpenEnded}>💬 {$_("polls.createForm.typeOpenEnded")}</option>
+        <option value={PollType.YesNo}
+          >👍👎 {$_("polls.createForm.typeYesNo")}</option
+        >
+        <option value={PollType.MultipleChoice}
+          >☑️ {$_("polls.createForm.typeMultiple")}</option
+        >
+        <option value={PollType.Rating}
+          >⭐ {$_("polls.createForm.typeRating")}</option
+        >
+        <option value={PollType.OpenEnded}
+          >💬 {$_("polls.createForm.typeOpenEnded")}</option
+        >
       </select>
     </div>
 
@@ -212,8 +233,7 @@
         rows="3"
         placeholder={$_("polls.createForm.descriptionPlaceholder")}
         class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-        data-testid="create-poll-description-input"
-      ></textarea>
+        data-testid="create-poll-description-input"></textarea>
     </div>
 
     <!-- Options (for YesNo and MultipleChoice) -->
@@ -252,7 +272,9 @@
           {/each}
         </div>
         <div class="flex items-center space-x-2">
-          <label for="create-poll-new-option" class="sr-only">{$_("polls.createForm.newOptionPlaceholder")}</label>
+          <label for="create-poll-new-option" class="sr-only"
+            >{$_("polls.createForm.newOptionPlaceholder")}</label
+          >
           <input
             id="create-poll-new-option"
             type="text"
@@ -287,7 +309,9 @@
         </span>
         <div class="grid grid-cols-2 gap-4">
           <div>
-            <label for="create-poll-min-rating" class="text-xs text-gray-500">{$_("polls.createForm.minRating")}</label>
+            <label for="create-poll-min-rating" class="text-xs text-gray-500"
+              >{$_("polls.createForm.minRating")}</label
+            >
             <input
               id="create-poll-min-rating"
               type="number"
@@ -299,7 +323,9 @@
             />
           </div>
           <div>
-            <label for="create-poll-max-rating" class="text-xs text-gray-500">{$_("polls.createForm.maxRating")}</label>
+            <label for="create-poll-max-rating" class="text-xs text-gray-500"
+              >{$_("polls.createForm.maxRating")}</label
+            >
             <input
               id="create-poll-max-rating"
               type="number"
@@ -386,7 +412,8 @@
         ⚖️ {$_("polls.createForm.legalFramework")}
       </h4>
       <p class="text-xs text-yellow-800">
-        <strong>{$_("polls.createForm.legalReference")}:</strong> {$_("polls.createForm.legalText")}
+        <strong>{$_("polls.createForm.legalReference")}:</strong>
+        {$_("polls.createForm.legalText")}
       </p>
     </div>
 

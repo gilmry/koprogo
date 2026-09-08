@@ -68,7 +68,8 @@
   let error = $state("");
 
   onMount(async () => {
-    organizationId = new URLSearchParams(window.location.search).get("id") ?? "";
+    organizationId =
+      new URLSearchParams(window.location.search).get("id") ?? "";
     if (!organizationId) {
       error = $_("admin.organizations.detail.missingId");
       loading = false;
@@ -104,23 +105,35 @@
     }
   });
 
-  let encodedUnits = $derived(buildings.reduce((n, b) => n + (b.units_count ?? 0), 0));
-  let declaredUnits = $derived(buildings.reduce((n, b) => n + (b.total_units ?? 0), 0));
+  let encodedUnits = $derived(
+    buildings.reduce((n, b) => n + (b.units_count ?? 0), 0),
+  );
+  let declaredUnits = $derived(
+    buildings.reduce((n, b) => n + (b.total_units ?? 0), 0),
+  );
 </script>
 
 <div class="container mx-auto px-4 py-8" data-testid="organization-detail">
-  <a href="/admin/organizations" class="text-sm text-primary-600 hover:underline">
+  <a
+    href="/admin/organizations"
+    class="text-sm text-primary-600 hover:underline"
+  >
     ← {$_("admin.organizations.detail.backToList")}
   </a>
 
   {#if loading}
     <p class="mt-6 text-gray-500">{$_("common.loading")}</p>
   {:else if error}
-    <p class="mt-6 text-red-600" data-testid="organization-detail-error">{error}</p>
+    <p class="mt-6 text-red-600" data-testid="organization-detail-error">
+      {error}
+    </p>
   {:else if organization}
     <div class="mt-4 flex items-start justify-between">
       <div>
-        <h1 class="text-3xl font-bold text-gray-900" data-testid="organization-detail-name">
+        <h1
+          class="text-3xl font-bold text-gray-900"
+          data-testid="organization-detail-name"
+        >
           {organization.name}
         </h1>
         <p class="mt-1 text-sm text-gray-500">/{organization.slug}</p>
@@ -142,14 +155,22 @@
         <p class="text-xs uppercase tracking-wider text-gray-500">
           {$_("admin.organizations.detail.acps")}
         </p>
-        <p class="text-2xl font-bold text-gray-900" data-testid="stat-acps">{acps.length}</p>
+        <p class="text-2xl font-bold text-gray-900" data-testid="stat-acps">
+          {acps.length}
+        </p>
       </div>
       <div class="bg-white rounded-lg shadow p-4">
         <p class="text-xs uppercase tracking-wider text-gray-500">
           {$_("admin.organizations.detail.buildings")}
         </p>
-        <p class="text-2xl font-bold text-gray-900" data-testid="stat-buildings">
-          {buildings.length} <span class="text-sm font-normal text-gray-500">/ {organization.max_buildings}</span>
+        <p
+          class="text-2xl font-bold text-gray-900"
+          data-testid="stat-buildings"
+        >
+          {buildings.length}
+          <span class="text-sm font-normal text-gray-500"
+            >/ {organization.max_buildings}</span
+          >
         </p>
       </div>
       <div class="bg-white rounded-lg shadow p-4">
@@ -157,7 +178,10 @@
           {$_("admin.organizations.detail.users")}
         </p>
         <p class="text-2xl font-bold text-gray-900" data-testid="stat-users">
-          {users.length} <span class="text-sm font-normal text-gray-500">/ {organization.max_users}</span>
+          {users.length}
+          <span class="text-sm font-normal text-gray-500"
+            >/ {organization.max_users}</span
+          >
         </p>
       </div>
       <div class="bg-white rounded-lg shadow p-4">
@@ -165,7 +189,10 @@
           {$_("admin.organizations.detail.units")}
         </p>
         <p class="text-2xl font-bold text-gray-900" data-testid="stat-units">
-          {encodedUnits} <span class="text-sm font-normal text-gray-500">/ {declaredUnits}</span>
+          {encodedUnits}
+          <span class="text-sm font-normal text-gray-500"
+            >/ {declaredUnits}</span
+          >
         </p>
       </div>
     </div>
@@ -184,7 +211,9 @@
           <dd class="text-gray-900">{organization.contact_phone || "—"}</dd>
         </div>
         <div>
-          <dt class="text-gray-500">{$_("admin.organizations.detail.createdAt")}</dt>
+          <dt class="text-gray-500">
+            {$_("admin.organizations.detail.createdAt")}
+          </dt>
           <dd class="text-gray-900">{formatDate(organization.created_at)}</dd>
         </div>
       </dl>
@@ -195,15 +224,19 @@
         {$_("admin.organizations.detail.acps")}
       </h2>
       {#if acps.length === 0}
-        <p class="mt-3 text-sm text-gray-500">{$_("admin.organizations.detail.noAcp")}</p>
+        <p class="mt-3 text-sm text-gray-500">
+          {$_("admin.organizations.detail.noAcp")}
+        </p>
       {:else}
         <ul class="mt-3 divide-y divide-gray-200">
           {#each acps as acp (acp.id)}
             <li class="py-3" data-testid="organization-acp">
               <p class="text-sm font-medium text-gray-900">{acp.name}</p>
               <p class="text-sm text-gray-500">
-                {acp.address_street}, {acp.address_postal_code} {acp.address_city}
-                · {acp.total_tantiemes} {$_("admin.organizations.detail.tantiemes")}
+                {acp.address_street}, {acp.address_postal_code}
+                {acp.address_city}
+                · {acp.total_tantiemes}
+                {$_("admin.organizations.detail.tantiemes")}
               </p>
             </li>
           {/each}
@@ -216,17 +249,23 @@
         {$_("admin.organizations.detail.buildings")}
       </h2>
       {#if buildings.length === 0}
-        <p class="mt-3 text-sm text-gray-500">{$_("admin.organizations.detail.noBuilding")}</p>
+        <p class="mt-3 text-sm text-gray-500">
+          {$_("admin.organizations.detail.noBuilding")}
+        </p>
       {:else}
         <ul class="mt-3 divide-y divide-gray-200">
           {#each buildings as building (building.id)}
             <li class="py-3" data-testid="organization-building">
-              <a href={`/building-detail?id=${building.id}`} class="text-sm font-medium text-primary-600 hover:underline">
+              <a
+                href={`/building-detail?id=${building.id}`}
+                class="text-sm font-medium text-primary-600 hover:underline"
+              >
                 {building.name}
               </a>
               <p class="text-sm text-gray-500">
                 {building.address}, {building.city}
-                · {building.units_count}/{building.total_units} {$_("admin.organizations.detail.unitsEncoded")}
+                · {building.units_count}/{building.total_units}
+                {$_("admin.organizations.detail.unitsEncoded")}
               </p>
             </li>
           {/each}
@@ -239,16 +278,27 @@
         {$_("admin.organizations.detail.users")}
       </h2>
       {#if users.length === 0}
-        <p class="mt-3 text-sm text-gray-500">{$_("admin.organizations.detail.noUser")}</p>
+        <p class="mt-3 text-sm text-gray-500">
+          {$_("admin.organizations.detail.noUser")}
+        </p>
       {:else}
         <ul class="mt-3 divide-y divide-gray-200">
           {#each users as user (user.id)}
-            <li class="py-3 flex items-center justify-between" data-testid="organization-user">
+            <li
+              class="py-3 flex items-center justify-between"
+              data-testid="organization-user"
+            >
               <div>
-                <p class="text-sm font-medium text-gray-900">{user.first_name} {user.last_name}</p>
+                <p class="text-sm font-medium text-gray-900">
+                  {user.first_name}
+                  {user.last_name}
+                </p>
                 <p class="text-sm text-gray-500">{user.email}</p>
               </div>
-              <span class="text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-700">{user.role}</span>
+              <span
+                class="text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-700"
+                >{user.role}</span
+              >
             </li>
           {/each}
         </ul>

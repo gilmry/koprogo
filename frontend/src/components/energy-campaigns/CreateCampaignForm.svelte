@@ -1,6 +1,6 @@
 <script lang="ts">
   // Svelte 5 runes mode
-  import { _ } from '../../lib/i18n';
+  import { _ } from "../../lib/i18n";
   import {
     energyCampaignsApi,
     type CreateCampaignDto,
@@ -9,7 +9,11 @@
   import BuildingSelector from "../BuildingSelector.svelte";
   import { withErrorHandling } from "../../lib/utils/error.utils";
 
-  let { organizationId, onCreated = undefined, onCancel = undefined }: {
+  let {
+    organizationId,
+    onCreated = undefined,
+    onCancel = undefined,
+  }: {
     organizationId: string;
     onCreated?: ((campaign: any) => void) | undefined;
     onCancel?: (() => void) | undefined;
@@ -50,20 +54,38 @@
     error = "";
     success = false;
 
-    if (!formData.campaign_name.trim()) { error = $_("energy.campaign.nameRequired"); loading = false; return; }
-    if (formData.energy_types.length === 0) { error = $_("energy.campaign.typeRequired"); loading = false; return; }
-    if (!formData.deadline_participation) { error = $_("energy.campaign.deadlineRequired"); loading = false; return; }
+    if (!formData.campaign_name.trim()) {
+      error = $_("energy.campaign.nameRequired");
+      loading = false;
+      return;
+    }
+    if (formData.energy_types.length === 0) {
+      error = $_("energy.campaign.typeRequired");
+      loading = false;
+      return;
+    }
+    if (!formData.deadline_participation) {
+      error = $_("energy.campaign.deadlineRequired");
+      loading = false;
+      return;
+    }
     const today = new Date().toISOString().split("T")[0];
-    if (formData.deadline_participation <= today) { error = $_("energy.campaign.deadlineMustBeFuture"); loading = false; return; }
+    if (formData.deadline_participation <= today) {
+      error = $_("energy.campaign.deadlineMustBeFuture");
+      loading = false;
+      return;
+    }
 
     const payload = {
       ...formData,
-      deadline_participation: new Date(formData.deadline_participation).toISOString(),
+      deadline_participation: new Date(
+        formData.deadline_participation,
+      ).toISOString(),
     };
 
     await withErrorHandling({
       action: () => energyCampaignsApi.create(payload as any),
-      setLoading: (v: boolean) => loading = v,
+      setLoading: (v: boolean) => (loading = v),
       errorMessage: $_("energy.campaign.createError"),
       onSuccess: (campaign) => {
         error = "";
@@ -83,7 +105,10 @@
   }
 </script>
 
-<div class="bg-white shadow-md rounded-lg p-6" data-testid="create-campaign-form">
+<div
+  class="bg-white shadow-md rounded-lg p-6"
+  data-testid="create-campaign-form"
+>
   <h3 class="text-lg font-medium text-gray-900 mb-4">
     ➕ {$_("energy.campaign.create")}
   </h3>
@@ -109,7 +134,11 @@
 
   <form onsubmit={handleSubmit} class="space-y-6">
     <!-- Building Selector -->
-    <BuildingSelector bind:selectedBuildingId label={$_("energy.campaign.building")} required={false} />
+    <BuildingSelector
+      bind:selectedBuildingId
+      label={$_("energy.campaign.building")}
+      required={false}
+    />
 
     <!-- Campaign Name -->
     <div>

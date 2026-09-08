@@ -87,9 +87,7 @@
   let subjectUserId = $state<string>("");
   let scopeKind = $state<MagicLinkScopeKind>("ticket");
   let scopeId = $state<string>("");
-  let expiresInSeconds = $state<number>(
-    MAGIC_LINK_DEFAULT_EXPIRES_IN_SECONDS,
-  );
+  let expiresInSeconds = $state<number>(MAGIC_LINK_DEFAULT_EXPIRES_IN_SECONDS);
 
   /** Erreur backend ou validation — affichée inline sous le form. */
   let errorMessage = $state<string>("");
@@ -124,9 +122,7 @@
 
   /** Helper text affiché sous le sélecteur de scope quand vide. */
   let scopeHelperText = $derived(
-    availableScopeIds.length === 0
-      ? scopeKindLabel(scopeKind, true)
-      : "",
+    availableScopeIds.length === 0 ? scopeKindLabel(scopeKind, true) : "",
   );
 
   /** Helper text si subject = self (INV-13). */
@@ -215,7 +211,7 @@
       issuedToken = issued.token;
       issuedExpiresAt = issued.expires_at;
       view = "issued";
-      toast.success($_('magicLink.issued'));
+      toast.success($_("magicLink.issued"));
     } catch (err) {
       // Le wrapper `api.ts` toast déjà 401/403/429/5xx. On affiche en plus
       // un message inline pour 4xx-de-validation (422 typiquement) — cf. AC
@@ -237,7 +233,7 @@
         window.isSecureContext
       ) {
         await navigator.clipboard.writeText(publicUrl);
-        toast.success($_('magicLink.copied'));
+        toast.success($_("magicLink.copied"));
         return;
       }
       // Fallback dev HTTP — execCommand est deprecated mais fonctionne.
@@ -253,13 +249,13 @@
       const ok = document.execCommand("copy");
       document.body.removeChild(ta);
       if (ok) {
-        toast.success($_('magicLink.copied'));
+        toast.success($_("magicLink.copied"));
       } else {
-        toast.error($_('magicLink.copyFailed'));
+        toast.error($_("magicLink.copyFailed"));
       }
     } catch (err) {
       console.warn("[MagicLinkIssueForm] copy failed", err);
-      toast.error($_('magicLink.copyFailed'));
+      toast.error($_("magicLink.copyFailed"));
     }
   }
 
@@ -289,8 +285,11 @@
   aria-labelledby="magic-link-form-title"
 >
   {#if view === "form"}
-    <h2 id="magic-link-form-title" class="mb-4 text-xl font-semibold text-gray-900">
-      {$_('magicLink.issueTitle')}
+    <h2
+      id="magic-link-form-title"
+      class="mb-4 text-xl font-semibold text-gray-900"
+    >
+      {$_("magicLink.issueTitle")}
     </h2>
 
     <form
@@ -302,8 +301,11 @@
     >
       <!-- Destinataire (subject_user_id) -->
       <div>
-        <label for="magic-link-target-input" class="block text-sm font-medium text-gray-700">
-          {$_('magicLink.recipient')}
+        <label
+          for="magic-link-target-input"
+          class="block text-sm font-medium text-gray-700"
+        >
+          {$_("magicLink.recipient")}
         </label>
         <select
           id="magic-link-target-input"
@@ -314,7 +316,7 @@
             ? "magic-link-target-help"
             : undefined}
         >
-          <option value="">{$_('common.select')}</option>
+          <option value="">{$_("common.select")}</option>
           {#each users as user (user.id)}
             <option
               data-testid={`magic-link-target-option-${user.id}`}
@@ -338,8 +340,11 @@
 
       <!-- {$_('magicLink.resourceType')} (scope_kind) -->
       <div>
-        <label for="magic-link-scope-select" class="block text-sm font-medium text-gray-700">
-          {$_('magicLink.resourceType')}
+        <label
+          for="magic-link-scope-select"
+          class="block text-sm font-medium text-gray-700"
+        >
+          {$_("magicLink.resourceType")}
         </label>
         <select
           id="magic-link-scope-select"
@@ -355,8 +360,11 @@
 
       <!-- Ressource (scope_id) -->
       <div>
-        <label for="magic-link-scope-id-select" class="block text-sm font-medium text-gray-700">
-          {$_('magicLink.resource')}
+        <label
+          for="magic-link-scope-id-select"
+          class="block text-sm font-medium text-gray-700"
+        >
+          {$_("magicLink.resource")}
         </label>
         <select
           id="magic-link-scope-id-select"
@@ -368,7 +376,7 @@
             ? "magic-link-scope-id-help"
             : undefined}
         >
-          <option value="">{$_('common.select')}</option>
+          <option value="">{$_("common.select")}</option>
           {#each availableScopeIds as opt (opt.id)}
             <option
               data-testid={`magic-link-scope-id-option-${opt.id}`}
@@ -391,8 +399,11 @@
 
       <!-- Durée (expires_in_seconds) -->
       <div>
-        <label for="magic-link-expires-in-input" class="block text-sm font-medium text-gray-700">
-          {$_('magicLink.validity')}
+        <label
+          for="magic-link-expires-in-input"
+          class="block text-sm font-medium text-gray-700"
+        >
+          {$_("magicLink.validity")}
         </label>
         <input
           id="magic-link-expires-in-input"
@@ -408,7 +419,9 @@
           aria-valuenow={expiresInSeconds}
           aria-valuetext={expiresInDisplay}
         />
-        <div class="mt-1 flex items-center justify-between text-xs text-gray-500">
+        <div
+          class="mt-1 flex items-center justify-between text-xs text-gray-500"
+        >
           <span>1 min</span>
           <span
             data-testid="magic-link-expires-in-display"
@@ -444,8 +457,11 @@
     </form>
   {:else}
     <!-- view === "issued" — écran récap.  -->
-    <h2 id="magic-link-form-title" class="mb-2 text-xl font-semibold text-green-700">
-      ✅ {$_('magicLink.issued')}
+    <h2
+      id="magic-link-form-title"
+      class="mb-2 text-xl font-semibold text-green-700"
+    >
+      ✅ {$_("magicLink.issued")}
     </h2>
 
     <p
@@ -454,10 +470,13 @@
       role="alert"
       aria-live="assertive"
     >
-      ⚠ {$_('magicLink.copyNow')}
+      ⚠ {$_("magicLink.copyNow")}
     </p>
 
-    <label for="magic-link-issued-url-input" class="block text-sm font-medium text-gray-700">
+    <label
+      for="magic-link-issued-url-input"
+      class="block text-sm font-medium text-gray-700"
+    >
       URL d'accès magique
     </label>
     <div class="mt-1 flex items-stretch gap-2">
@@ -477,7 +496,7 @@
         class="min-h-[44px] rounded-md bg-blue-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-700 focus-visible:outline-2 focus-visible:outline-offset-2"
         aria-label="Copier le lien magique"
       >
-        {$_('magicLink.copy')}
+        {$_("magicLink.copy")}
       </button>
     </div>
 
@@ -493,7 +512,7 @@
       onclick={reset}
       class="mt-4 min-h-[44px] w-full rounded-md border border-gray-300 bg-white px-4 py-2 font-semibold text-gray-700 hover:bg-gray-50 focus-visible:outline-2 focus-visible:outline-offset-2"
     >
-      {$_('magicLink.issueAnother')}
+      {$_("magicLink.issueAnother")}
     </button>
   {/if}
 </section>

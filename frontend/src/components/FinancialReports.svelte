@@ -1,18 +1,18 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
-  import { _ } from '../lib/i18n';
-  import { api } from '../lib/api';
-  import { toast } from '../stores/toast';
+  import { onMount } from "svelte";
+  import { _ } from "../lib/i18n";
+  import { api } from "../lib/api";
+  import { toast } from "../stores/toast";
   import { formatDate } from "../lib/utils/date.utils";
   import { formatCurrency } from "../lib/utils/finance.utils";
   import { withErrorHandling } from "../lib/utils/error.utils";
 
   // Report type selection
-  let reportType: 'balance-sheet' | 'income-statement' = 'balance-sheet';
+  let reportType: "balance-sheet" | "income-statement" = "balance-sheet";
 
   // Date range for income statement
-  let periodStart = '';
-  let periodEnd = '';
+  let periodStart = "";
+  let periodEnd = "";
 
   // Report data
   let balanceSheet: any = null;
@@ -20,151 +20,174 @@
 
   // Loading states
   let loading = false;
-  let error = '';
+  let error = "";
 
   onMount(() => {
     // Set default period to current year
     const now = new Date();
     const yearStart = new Date(now.getFullYear(), 0, 1);
-    periodStart = yearStart.toISOString().split('T')[0];
-    periodEnd = now.toISOString().split('T')[0];
+    periodStart = yearStart.toISOString().split("T")[0];
+    periodEnd = now.toISOString().split("T")[0];
   });
 
   async function loadBalanceSheet() {
     loading = true;
-    error = '';
+    error = "";
     const result = await withErrorHandling({
-      action: () => api.get('/reports/balance-sheet'),
-      errorMessage: $_('reports.balance_sheet_error'),
+      action: () => api.get("/reports/balance-sheet"),
+      errorMessage: $_("reports.balance_sheet_error"),
     });
     if (result) {
       balanceSheet = result;
     } else {
-      error = $_('reports.balance_sheet_error');
+      error = $_("reports.balance_sheet_error");
     }
     loading = false;
   }
 
   async function loadIncomeStatement() {
     if (!periodStart || !periodEnd) {
-      error = $_('reports.select_period');
+      error = $_("reports.select_period");
       return;
     }
     loading = true;
-    error = '';
+    error = "";
     const startISO = `${periodStart}T00:00:00Z`;
     const endISO = `${periodEnd}T23:59:59Z`;
     const result = await withErrorHandling({
-      action: () => api.get(
-        `/reports/income-statement?period_start=${startISO}&period_end=${endISO}`
-      ),
-      errorMessage: $_('reports.income_statement_error'),
+      action: () =>
+        api.get(
+          `/reports/income-statement?period_start=${startISO}&period_end=${endISO}`,
+        ),
+      errorMessage: $_("reports.income_statement_error"),
     });
     if (result) {
       incomeStatement = result;
     } else {
-      error = $_('reports.income_statement_error');
+      error = $_("reports.income_statement_error");
     }
     loading = false;
   }
 
   function handleReportTypeChange() {
-    error = '';
+    error = "";
     balanceSheet = null;
     incomeStatement = null;
   }
 
   function exportToPDF() {
-    const data = reportType === 'balance-sheet' ? balanceSheet : incomeStatement;
+    const data =
+      reportType === "balance-sheet" ? balanceSheet : incomeStatement;
     if (!data) {
-      toast.error($_('reports.load_report_first'));
+      toast.error($_("reports.load_report_first"));
       return;
     }
     window.print();
   }
 
   function exportToExcel() {
-    const data = reportType === 'balance-sheet' ? balanceSheet : incomeStatement;
+    const data =
+      reportType === "balance-sheet" ? balanceSheet : incomeStatement;
     if (!data) {
-      toast.error($_('reports.load_report_first'));
+      toast.error($_("reports.load_report_first"));
       return;
     }
 
-    let csv = '';
-    const title = reportType === 'balance-sheet' ? $_('reports.balance_sheet') : $_('reports.income_statement');
+    let csv = "";
+    const title =
+      reportType === "balance-sheet"
+        ? $_("reports.balance_sheet")
+        : $_("reports.income_statement");
     csv += `${title}\n`;
-    csv += `${$_('reports.export_date')};${new Date().toLocaleDateString('fr-BE')}\n\n`;
+    csv += `${$_("reports.export_date")};${new Date().toLocaleDateString("fr-BE")}\n\n`;
 
-    if (reportType === 'balance-sheet' && balanceSheet) {
-      csv += `${$_('reports.section')};${$_('common.code')};${$_('common.account')};${$_('reports.amount_eur')}\n`;
+    if (reportType === "balance-sheet" && balanceSheet) {
+      csv += `${$_("reports.section")};${$_("common.code")};${$_("common.account")};${$_("reports.amount_eur")}\n`;
       for (const account of balanceSheet.assets?.accounts || []) {
-        csv += `${$_('reports.assets')};${account.code};${account.label};${account.amount.toFixed(2)}\n`;
+        csv += `${$_("reports.assets")};${account.code};${account.label};${account.amount.toFixed(2)}\n`;
       }
-      csv += `;;${$_('reports.total_assets')};${balanceSheet.total_assets.toFixed(2)}\n`;
+      csv += `;;${$_("reports.total_assets")};${balanceSheet.total_assets.toFixed(2)}\n`;
       for (const account of balanceSheet.liabilities?.accounts || []) {
-        csv += `${$_('reports.liabilities')};${account.code};${account.label};${account.amount.toFixed(2)}\n`;
+        csv += `${$_("reports.liabilities")};${account.code};${account.label};${account.amount.toFixed(2)}\n`;
       }
-      csv += `;;${$_('reports.total_liabilities')};${balanceSheet.total_liabilities.toFixed(2)}\n`;
+      csv += `;;${$_("reports.total_liabilities")};${balanceSheet.total_liabilities.toFixed(2)}\n`;
       for (const account of balanceSheet.equity?.accounts || []) {
-        csv += `${$_('reports.equity')};${account.code};${account.label};${account.amount.toFixed(2)}\n`;
+        csv += `${$_("reports.equity")};${account.code};${account.label};${account.amount.toFixed(2)}\n`;
       }
-      csv += `;;${$_('reports.total_equity')};${balanceSheet.total_equity.toFixed(2)}\n`;
+      csv += `;;${$_("reports.total_equity")};${balanceSheet.total_equity.toFixed(2)}\n`;
     } else if (incomeStatement) {
-      csv += `${$_('reports.section')};${$_('common.code')};${$_('common.account')};${$_('reports.amount_eur')}\n`;
+      csv += `${$_("reports.section")};${$_("common.code")};${$_("common.account")};${$_("reports.amount_eur")}\n`;
       for (const account of incomeStatement.expenses?.accounts || []) {
-        csv += `${$_('reports.expenses')};${account.code};${account.label};${account.amount.toFixed(2)}\n`;
+        csv += `${$_("reports.expenses")};${account.code};${account.label};${account.amount.toFixed(2)}\n`;
       }
-      csv += `;;${$_('reports.total_expenses')};${incomeStatement.total_expenses.toFixed(2)}\n`;
+      csv += `;;${$_("reports.total_expenses")};${incomeStatement.total_expenses.toFixed(2)}\n`;
       for (const account of incomeStatement.revenue?.accounts || []) {
-        csv += `${$_('reports.revenue')};${account.code};${account.label};${account.amount.toFixed(2)}\n`;
+        csv += `${$_("reports.revenue")};${account.code};${account.label};${account.amount.toFixed(2)}\n`;
       }
-      csv += `;;${$_('reports.total_revenue')};${incomeStatement.total_revenue.toFixed(2)}\n`;
-      csv += `;;${$_('reports.net_result')};${incomeStatement.net_result.toFixed(2)}\n`;
+      csv += `;;${$_("reports.total_revenue")};${incomeStatement.total_revenue.toFixed(2)}\n`;
+      csv += `;;${$_("reports.net_result")};${incomeStatement.net_result.toFixed(2)}\n`;
     }
 
-    const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
+    const blob = new Blob(["\ufeff" + csv], {
+      type: "text/csv;charset=utf-8;",
+    });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
+    const a = document.createElement("a");
     a.href = url;
-    a.download = `${title}_${new Date().toISOString().split('T')[0]}.csv`;
+    a.download = `${title}_${new Date().toISOString().split("T")[0]}.csv`;
     a.click();
     URL.revokeObjectURL(url);
-    toast.success($_('reports.export_success'));
+    toast.success($_("reports.export_success"));
   }
 </script>
 
 <div class="space-y-6" data-testid="financial-reports">
   <!-- Report Type Selection -->
   <div class="bg-white rounded-lg shadow p-6">
-    <h2 class="text-xl font-semibold text-gray-900 mb-4">{$_('reports.report_type')}</h2>
+    <h2 class="text-xl font-semibold text-gray-900 mb-4">
+      {$_("reports.report_type")}
+    </h2>
     <div class="flex space-x-4">
       <button
-        class="px-6 py-3 rounded-lg font-medium transition-colors {reportType === 'balance-sheet'
+        class="px-6 py-3 rounded-lg font-medium transition-colors {reportType ===
+        'balance-sheet'
           ? 'bg-primary-600 text-white'
           : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}"
-        on:click={() => { reportType = 'balance-sheet'; handleReportTypeChange(); }}
+        on:click={() => {
+          reportType = "balance-sheet";
+          handleReportTypeChange();
+        }}
       >
-        📊 {$_('reports.balance_sheet')}
+        📊 {$_("reports.balance_sheet")}
       </button>
       <button
-        class="px-6 py-3 rounded-lg font-medium transition-colors {reportType === 'income-statement'
+        class="px-6 py-3 rounded-lg font-medium transition-colors {reportType ===
+        'income-statement'
           ? 'bg-primary-600 text-white'
           : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}"
-        on:click={() => { reportType = 'income-statement'; handleReportTypeChange(); }}
+        on:click={() => {
+          reportType = "income-statement";
+          handleReportTypeChange();
+        }}
       >
-        📈 {$_('reports.income_statement')}
+        📈 {$_("reports.income_statement")}
       </button>
     </div>
   </div>
 
   <!-- Period Selection for Income Statement -->
-  {#if reportType === 'income-statement'}
+  {#if reportType === "income-statement"}
     <div class="bg-white rounded-lg shadow p-6">
-      <h3 class="text-lg font-semibold text-gray-900 mb-4">{$_('reports.period')}</h3>
+      <h3 class="text-lg font-semibold text-gray-900 mb-4">
+        {$_("reports.period")}
+      </h3>
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <label for="period-start" class="block text-sm font-medium text-gray-700 mb-2">
-            {$_('reports.start_date')}
+          <label
+            for="period-start"
+            class="block text-sm font-medium text-gray-700 mb-2"
+          >
+            {$_("reports.start_date")}
           </label>
           <input
             id="period-start"
@@ -174,8 +197,11 @@
           />
         </div>
         <div>
-          <label for="period-end" class="block text-sm font-medium text-gray-700 mb-2">
-            {$_('reports.end_date')}
+          <label
+            for="period-end"
+            class="block text-sm font-medium text-gray-700 mb-2"
+          >
+            {$_("reports.end_date")}
           </label>
           <input
             id="period-end"
@@ -192,19 +218,38 @@
   <div class="flex justify-center">
     <button
       class="px-8 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-      on:click={() => reportType === 'balance-sheet' ? loadBalanceSheet() : loadIncomeStatement()}
+      on:click={() =>
+        reportType === "balance-sheet"
+          ? loadBalanceSheet()
+          : loadIncomeStatement()}
       disabled={loading}
     >
       {#if loading}
         <span class="flex items-center">
-          <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          <svg
+            class="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+          >
+            <circle
+              class="opacity-25"
+              cx="12"
+              cy="12"
+              r="10"
+              stroke="currentColor"
+              stroke-width="4"
+            ></circle>
+            <path
+              class="opacity-75"
+              fill="currentColor"
+              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+            ></path>
           </svg>
-          {$_('common.loading')}
+          {$_("common.loading")}
         </span>
       {:else}
-        {$_('reports.generate_report')}
+        {$_("reports.generate_report")}
       {/if}
     </button>
   </div>
@@ -214,8 +259,16 @@
     <div class="bg-red-50 border-l-4 border-red-400 p-4">
       <div class="flex">
         <div class="flex-shrink-0">
-          <svg class="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
-            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
+          <svg
+            class="h-5 w-5 text-red-400"
+            viewBox="0 0 20 20"
+            fill="currentColor"
+          >
+            <path
+              fill-rule="evenodd"
+              d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+              clip-rule="evenodd"
+            />
           </svg>
         </div>
         <div class="ml-3">
@@ -226,24 +279,26 @@
   {/if}
 
   <!-- Balance Sheet Report -->
-  {#if balanceSheet && reportType === 'balance-sheet'}
+  {#if balanceSheet && reportType === "balance-sheet"}
     <div class="bg-white rounded-lg shadow overflow-hidden">
       <!-- Report Header -->
       <div class="bg-primary-600 text-white p-6">
-        <h2 class="text-2xl font-bold">{$_('reports.balance_sheet')}</h2>
-        <p class="text-primary-100 mt-1">{$_('common.date')}: {formatDate(balanceSheet.report_date)}</p>
+        <h2 class="text-2xl font-bold">{$_("reports.balance_sheet")}</h2>
+        <p class="text-primary-100 mt-1">
+          {$_("common.date")}: {formatDate(balanceSheet.report_date)}
+        </p>
         <div class="mt-4 flex space-x-4">
           <button
             on:click={exportToPDF}
             class="px-4 py-2 bg-white text-primary-600 rounded hover:bg-primary-50 transition-colors text-sm font-medium"
           >
-            📄 {$_('reports.export_pdf')}
+            📄 {$_("reports.export_pdf")}
           </button>
           <button
             on:click={exportToExcel}
             class="px-4 py-2 bg-white text-primary-600 rounded hover:bg-primary-50 transition-colors text-sm font-medium"
           >
-            📊 {$_('reports.export_csv')}
+            📊 {$_("reports.export_csv")}
           </button>
         </div>
       </div>
@@ -252,14 +307,20 @@
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
           <!-- Left Column: Assets -->
           <div>
-            <h3 class="text-lg font-semibold text-gray-900 mb-4 border-b-2 border-primary-600 pb-2">
-              {$_('reports.assets')} (Classes 2, 3, 4 & 5)
+            <h3
+              class="text-lg font-semibold text-gray-900 mb-4 border-b-2 border-primary-600 pb-2"
+            >
+              {$_("reports.assets")} (Classes 2, 3, 4 & 5)
             </h3>
             <div class="space-y-2">
               {#each balanceSheet.assets.accounts as account}
-                <div class="flex justify-between py-2 hover:bg-gray-50 px-2 rounded">
+                <div
+                  class="flex justify-between py-2 hover:bg-gray-50 px-2 rounded"
+                >
                   <div class="flex items-start">
-                    <span class="text-sm text-gray-600 mr-2 font-mono">{account.code}</span>
+                    <span class="text-sm text-gray-600 mr-2 font-mono"
+                      >{account.code}</span
+                    >
                     <span class="text-sm text-gray-900">{account.label}</span>
                   </div>
                   <span class="text-sm font-medium text-gray-900 font-mono">
@@ -268,8 +329,12 @@
                 </div>
               {/each}
             </div>
-            <div class="mt-4 pt-4 border-t-2 border-gray-300 flex justify-between items-center bg-green-50 p-3 rounded-lg">
-              <span class="font-bold text-gray-900">{$_('reports.total_assets')}</span>
+            <div
+              class="mt-4 pt-4 border-t-2 border-gray-300 flex justify-between items-center bg-green-50 p-3 rounded-lg"
+            >
+              <span class="font-bold text-gray-900"
+                >{$_("reports.total_assets")}</span
+              >
               <span class="text-xl font-bold text-green-600 font-mono">
                 {formatCurrency(balanceSheet.total_assets)}
               </span>
@@ -280,14 +345,20 @@
           <div class="space-y-6">
             <!-- Liabilities Section -->
             <div>
-              <h3 class="text-lg font-semibold text-gray-900 mb-4 border-b-2 border-primary-600 pb-2">
-                {$_('reports.liabilities')} (Classes 1 & 4)
+              <h3
+                class="text-lg font-semibold text-gray-900 mb-4 border-b-2 border-primary-600 pb-2"
+              >
+                {$_("reports.liabilities")} (Classes 1 & 4)
               </h3>
               <div class="space-y-2">
                 {#each balanceSheet.liabilities.accounts as account}
-                  <div class="flex justify-between py-2 hover:bg-gray-50 px-2 rounded">
+                  <div
+                    class="flex justify-between py-2 hover:bg-gray-50 px-2 rounded"
+                  >
                     <div class="flex items-start">
-                      <span class="text-sm text-gray-600 mr-2 font-mono">{account.code}</span>
+                      <span class="text-sm text-gray-600 mr-2 font-mono"
+                        >{account.code}</span
+                      >
                       <span class="text-sm text-gray-900">{account.label}</span>
                     </div>
                     <span class="text-sm font-medium text-gray-900 font-mono">
@@ -296,8 +367,12 @@
                   </div>
                 {/each}
               </div>
-              <div class="mt-4 pt-4 border-t-2 border-gray-300 flex justify-between items-center bg-blue-50 p-3 rounded-lg">
-                <span class="font-bold text-gray-900">{$_('reports.total_liabilities')}</span>
+              <div
+                class="mt-4 pt-4 border-t-2 border-gray-300 flex justify-between items-center bg-blue-50 p-3 rounded-lg"
+              >
+                <span class="font-bold text-gray-900"
+                  >{$_("reports.total_liabilities")}</span
+                >
                 <span class="text-xl font-bold text-blue-600 font-mono">
                   {formatCurrency(balanceSheet.total_liabilities)}
                 </span>
@@ -306,25 +381,43 @@
 
             <!-- Equity Section -->
             <div>
-              <h3 class="text-lg font-semibold text-gray-900 mb-4 border-b-2 border-purple-600 pb-2">
-                {$_('reports.equity')}
+              <h3
+                class="text-lg font-semibold text-gray-900 mb-4 border-b-2 border-purple-600 pb-2"
+              >
+                {$_("reports.equity")}
               </h3>
               <div class="space-y-2">
                 {#each balanceSheet.equity.accounts as account}
-                  <div class="flex justify-between py-2 hover:bg-gray-50 px-2 rounded">
+                  <div
+                    class="flex justify-between py-2 hover:bg-gray-50 px-2 rounded"
+                  >
                     <div class="flex items-start">
-                      <span class="text-sm text-gray-600 mr-2 font-mono">{account.code}</span>
+                      <span class="text-sm text-gray-600 mr-2 font-mono"
+                        >{account.code}</span
+                      >
                       <span class="text-sm text-gray-900">{account.label}</span>
                     </div>
-                    <span class="text-sm font-medium {account.amount >= 0 ? 'text-green-600' : 'text-red-600'} font-mono">
+                    <span
+                      class="text-sm font-medium {account.amount >= 0
+                        ? 'text-green-600'
+                        : 'text-red-600'} font-mono"
+                    >
                       {formatCurrency(account.amount)}
                     </span>
                   </div>
                 {/each}
               </div>
-              <div class="mt-4 pt-4 border-t-2 border-gray-300 flex justify-between items-center bg-purple-50 p-3 rounded-lg">
-                <span class="font-bold text-gray-900">{$_('reports.total_equity')}</span>
-                <span class="text-xl font-bold {balanceSheet.total_equity >= 0 ? 'text-green-600' : 'text-red-600'} font-mono">
+              <div
+                class="mt-4 pt-4 border-t-2 border-gray-300 flex justify-between items-center bg-purple-50 p-3 rounded-lg"
+              >
+                <span class="font-bold text-gray-900"
+                  >{$_("reports.total_equity")}</span
+                >
+                <span
+                  class="text-xl font-bold {balanceSheet.total_equity >= 0
+                    ? 'text-green-600'
+                    : 'text-red-600'} font-mono"
+                >
                   {formatCurrency(balanceSheet.total_equity)}
                 </span>
               </div>
@@ -333,23 +426,53 @@
         </div>
 
         <!-- Balance Check (Actif = Passif + Capitaux Propres) -->
-        <div class="mt-8 p-4 rounded-lg {Math.abs(balanceSheet.balance) < 0.01 ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'} border-2">
+        <div
+          class="mt-8 p-4 rounded-lg {Math.abs(balanceSheet.balance) < 0.01
+            ? 'bg-green-50 border-green-200'
+            : 'bg-red-50 border-red-200'} border-2"
+        >
           <div class="flex justify-between items-center">
-            <span class="font-bold text-gray-900">{$_('reports.balance_check')}</span>
-            <span class="text-xl font-bold {Math.abs(balanceSheet.balance) < 0.01 ? 'text-green-600' : 'text-red-600'} font-mono">
+            <span class="font-bold text-gray-900"
+              >{$_("reports.balance_check")}</span
+            >
+            <span
+              class="text-xl font-bold {Math.abs(balanceSheet.balance) < 0.01
+                ? 'text-green-600'
+                : 'text-red-600'} font-mono"
+            >
               {formatCurrency(balanceSheet.balance)}
             </span>
           </div>
           {#if Math.abs(balanceSheet.balance) < 0.01}
-            <p class="text-sm text-green-700 mt-2">✓ {$_('reports.balance_balanced')}</p>
+            <p class="text-sm text-green-700 mt-2">
+              ✓ {$_("reports.balance_balanced")}
+            </p>
           {:else}
-            <p class="text-sm text-red-700 mt-2">⚠ {$_('reports.balance_not_balanced')}</p>
+            <p class="text-sm text-red-700 mt-2">
+              ⚠ {$_("reports.balance_not_balanced")}
+            </p>
           {/if}
           <div class="mt-3 text-sm text-gray-700 font-mono">
-            <div>{$_('reports.assets')}: {formatCurrency(balanceSheet.total_assets)}</div>
-            <div>{$_('reports.liabilities')}: {formatCurrency(balanceSheet.total_liabilities)}</div>
-            <div>{$_('reports.equity')}: {formatCurrency(balanceSheet.total_equity)}</div>
-            <div class="font-bold mt-2">{$_('reports.liabilities_equity')}: {formatCurrency(balanceSheet.total_liabilities + balanceSheet.total_equity)}</div>
+            <div>
+              {$_("reports.assets")}: {formatCurrency(
+                balanceSheet.total_assets,
+              )}
+            </div>
+            <div>
+              {$_("reports.liabilities")}: {formatCurrency(
+                balanceSheet.total_liabilities,
+              )}
+            </div>
+            <div>
+              {$_("reports.equity")}: {formatCurrency(
+                balanceSheet.total_equity,
+              )}
+            </div>
+            <div class="font-bold mt-2">
+              {$_("reports.liabilities_equity")}: {formatCurrency(
+                balanceSheet.total_liabilities + balanceSheet.total_equity,
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -357,26 +480,28 @@
   {/if}
 
   <!-- Income Statement Report -->
-  {#if incomeStatement && reportType === 'income-statement'}
+  {#if incomeStatement && reportType === "income-statement"}
     <div class="bg-white rounded-lg shadow overflow-hidden">
       <!-- Report Header -->
       <div class="bg-primary-600 text-white p-6">
-        <h2 class="text-2xl font-bold">{$_('reports.income_statement')}</h2>
+        <h2 class="text-2xl font-bold">{$_("reports.income_statement")}</h2>
         <p class="text-primary-100 mt-1">
-          {$_('reports.period')}: {formatDate(incomeStatement.period_start)} - {formatDate(incomeStatement.period_end)}
+          {$_("reports.period")}: {formatDate(incomeStatement.period_start)} - {formatDate(
+            incomeStatement.period_end,
+          )}
         </p>
         <div class="mt-4 flex space-x-4">
           <button
             on:click={exportToPDF}
             class="px-4 py-2 bg-white text-primary-600 rounded hover:bg-primary-50 transition-colors text-sm font-medium"
           >
-            📄 {$_('reports.export_pdf')}
+            📄 {$_("reports.export_pdf")}
           </button>
           <button
             on:click={exportToExcel}
             class="px-4 py-2 bg-white text-primary-600 rounded hover:bg-primary-50 transition-colors text-sm font-medium"
           >
-            📊 {$_('reports.export_csv')}
+            📊 {$_("reports.export_csv")}
           </button>
         </div>
       </div>
@@ -385,14 +510,20 @@
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
           <!-- Expenses Section -->
           <div>
-            <h3 class="text-lg font-semibold text-gray-900 mb-4 border-b-2 border-red-600 pb-2">
-              {$_('reports.expenses')} (Classe 6)
+            <h3
+              class="text-lg font-semibold text-gray-900 mb-4 border-b-2 border-red-600 pb-2"
+            >
+              {$_("reports.expenses")} (Classe 6)
             </h3>
             <div class="space-y-2">
               {#each incomeStatement.expenses.accounts as account}
-                <div class="flex justify-between py-2 hover:bg-gray-50 px-2 rounded">
+                <div
+                  class="flex justify-between py-2 hover:bg-gray-50 px-2 rounded"
+                >
                   <div class="flex items-start">
-                    <span class="text-sm text-gray-600 mr-2 font-mono">{account.code}</span>
+                    <span class="text-sm text-gray-600 mr-2 font-mono"
+                      >{account.code}</span
+                    >
                     <span class="text-sm text-gray-900">{account.label}</span>
                   </div>
                   <span class="text-sm font-medium text-gray-900 font-mono">
@@ -401,8 +532,12 @@
                 </div>
               {/each}
             </div>
-            <div class="mt-4 pt-4 border-t-2 border-gray-300 flex justify-between items-center bg-red-50 p-3 rounded-lg">
-              <span class="font-bold text-gray-900">{$_('reports.total_expenses')}</span>
+            <div
+              class="mt-4 pt-4 border-t-2 border-gray-300 flex justify-between items-center bg-red-50 p-3 rounded-lg"
+            >
+              <span class="font-bold text-gray-900"
+                >{$_("reports.total_expenses")}</span
+              >
               <span class="text-xl font-bold text-red-600 font-mono">
                 {formatCurrency(incomeStatement.total_expenses)}
               </span>
@@ -411,14 +546,20 @@
 
           <!-- Revenue Section -->
           <div>
-            <h3 class="text-lg font-semibold text-gray-900 mb-4 border-b-2 border-green-600 pb-2">
-              {$_('reports.revenue')} (Classe 7)
+            <h3
+              class="text-lg font-semibold text-gray-900 mb-4 border-b-2 border-green-600 pb-2"
+            >
+              {$_("reports.revenue")} (Classe 7)
             </h3>
             <div class="space-y-2">
               {#each incomeStatement.revenue.accounts as account}
-                <div class="flex justify-between py-2 hover:bg-gray-50 px-2 rounded">
+                <div
+                  class="flex justify-between py-2 hover:bg-gray-50 px-2 rounded"
+                >
                   <div class="flex items-start">
-                    <span class="text-sm text-gray-600 mr-2 font-mono">{account.code}</span>
+                    <span class="text-sm text-gray-600 mr-2 font-mono"
+                      >{account.code}</span
+                    >
                     <span class="text-sm text-gray-900">{account.label}</span>
                   </div>
                   <span class="text-sm font-medium text-gray-900 font-mono">
@@ -427,8 +568,12 @@
                 </div>
               {/each}
             </div>
-            <div class="mt-4 pt-4 border-t-2 border-gray-300 flex justify-between items-center bg-green-50 p-3 rounded-lg">
-              <span class="font-bold text-gray-900">{$_('reports.total_revenue')}</span>
+            <div
+              class="mt-4 pt-4 border-t-2 border-gray-300 flex justify-between items-center bg-green-50 p-3 rounded-lg"
+            >
+              <span class="font-bold text-gray-900"
+                >{$_("reports.total_revenue")}</span
+              >
               <span class="text-xl font-bold text-green-600 font-mono">
                 {formatCurrency(incomeStatement.total_revenue)}
               </span>
@@ -437,17 +582,31 @@
         </div>
 
         <!-- Net Result -->
-        <div class="mt-8 p-4 rounded-lg {incomeStatement.net_result >= 0 ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'} border-2">
+        <div
+          class="mt-8 p-4 rounded-lg {incomeStatement.net_result >= 0
+            ? 'bg-green-50 border-green-200'
+            : 'bg-red-50 border-red-200'} border-2"
+        >
           <div class="flex justify-between items-center">
-            <span class="font-bold text-gray-900">{$_('reports.net_result')}</span>
-            <span class="text-2xl font-bold {incomeStatement.net_result >= 0 ? 'text-green-600' : 'text-red-600'} font-mono">
+            <span class="font-bold text-gray-900"
+              >{$_("reports.net_result")}</span
+            >
+            <span
+              class="text-2xl font-bold {incomeStatement.net_result >= 0
+                ? 'text-green-600'
+                : 'text-red-600'} font-mono"
+            >
               {formatCurrency(incomeStatement.net_result)}
             </span>
           </div>
           {#if incomeStatement.net_result >= 0}
-            <p class="text-sm text-green-700 mt-2">✓ {$_('reports.surplus_result')}</p>
+            <p class="text-sm text-green-700 mt-2">
+              ✓ {$_("reports.surplus_result")}
+            </p>
           {:else}
-            <p class="text-sm text-red-700 mt-2">⚠ {$_('reports.deficit_result')}</p>
+            <p class="text-sm text-red-700 mt-2">
+              ⚠ {$_("reports.deficit_result")}
+            </p>
           {/if}
         </div>
       </div>
@@ -458,6 +617,6 @@
 <style>
   /* Ensure font-mono for numbers */
   .font-mono {
-    font-family: 'Courier New', Courier, monospace;
+    font-family: "Courier New", Courier, monospace;
   }
 </style>

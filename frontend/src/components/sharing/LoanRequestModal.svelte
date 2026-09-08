@@ -1,6 +1,6 @@
 <script lang="ts">
   // Svelte 5 runes mode
-  import { _ } from '../../lib/i18n';
+  import { _ } from "../../lib/i18n";
   import { sharingApi, type SharedObject } from "../../lib/api/sharing";
   import Modal from "../ui/Modal.svelte";
   import { withErrorHandling } from "../../lib/utils/error.utils";
@@ -32,7 +32,9 @@
   }
 
   let loanStartDate = $state(getDefaultStart());
-  let loanEndDate = $derived(getDefaultEnd(loanStartDate, object?.loan_duration_days ?? 7));
+  let loanEndDate = $derived(
+    getDefaultEnd(loanStartDate, object?.loan_duration_days ?? 7),
+  );
   let notes = $state("");
   let submitting = $state(false);
   let errors = $state<Record<string, string>>({});
@@ -45,15 +47,15 @@
     today.setHours(0, 0, 0, 0);
 
     if (!loanStartDate) {
-      errors.startDate = $_('sharing.error.startDateRequired');
+      errors.startDate = $_("sharing.error.startDateRequired");
     } else if (start < today) {
-      errors.startDate = $_('sharing.error.startDateInPast');
+      errors.startDate = $_("sharing.error.startDateInPast");
     }
 
     if (!loanEndDate) {
-      errors.endDate = $_('sharing.error.endDateRequired');
+      errors.endDate = $_("sharing.error.endDateRequired");
     } else if (end <= start) {
-      errors.endDate = $_('sharing.error.endDateAfterStart');
+      errors.endDate = $_("sharing.error.endDateAfterStart");
     }
 
     return Object.keys(errors).length === 0;
@@ -63,16 +65,17 @@
     if (!validate()) return;
 
     const loan = await withErrorHandling({
-      action: () => sharingApi.createLoan({
-        shared_object_id: object.id,
-        borrower_id: borrowerId,
-        loan_start_date: loanStartDate,
-        loan_end_date: loanEndDate,
-        notes: notes || undefined,
-      }),
-      setLoading: (v: boolean) => submitting = v,
-      successMessage: $_('sharing.success.loanRequestSent'),
-      errorMessage: $_('sharing.error.loanRequestFailed'),
+      action: () =>
+        sharingApi.createLoan({
+          shared_object_id: object.id,
+          borrower_id: borrowerId,
+          loan_start_date: loanStartDate,
+          loan_end_date: loanEndDate,
+          notes: notes || undefined,
+        }),
+      setLoading: (v: boolean) => (submitting = v),
+      successMessage: $_("sharing.success.loanRequestSent"),
+      errorMessage: $_("sharing.error.loanRequestFailed"),
     });
     if (loan) {
       oncreated?.(loan);
@@ -86,48 +89,77 @@
   }
 </script>
 
-<Modal {isOpen} title={$_('sharing.borrowObject', { values: { name: object?.object_name ?? '' } })} onclose={handleClose}>
+<Modal
+  {isOpen}
+  title={$_("sharing.borrowObject", {
+    values: { name: object?.object_name ?? "" },
+  })}
+  onclose={handleClose}
+>
   <div class="space-y-4">
     <!-- Object summary -->
     <div class="bg-gray-50 rounded-lg p-3 text-sm space-y-1">
       {#if object?.owner_name}
-        <p><span class="font-medium">{$_('sharing.owner')}</span> {object.owner_name}</p>
+        <p>
+          <span class="font-medium">{$_("sharing.owner")}</span>
+          {object.owner_name}
+        </p>
       {/if}
-      <p><span class="font-medium">{$_('sharing.maxDuration')}</span> {object?.loan_duration_days} jours</p>
+      <p>
+        <span class="font-medium">{$_("sharing.maxDuration")}</span>
+        {object?.loan_duration_days} jours
+      </p>
       {#if object?.deposit_required_cents}
         <p>
-          <span class="font-medium">{$_('sharing.deposit')}</span>
+          <span class="font-medium">{$_("sharing.deposit")}</span>
           €{(object.deposit_required_cents / 100).toFixed(2)}
         </p>
       {/if}
     </div>
 
-    <form onsubmit={(e) => { e.preventDefault(); handleSubmit(); }} class="space-y-4" data-testid="loan-request-form">
+    <form
+      onsubmit={(e) => {
+        e.preventDefault();
+        handleSubmit();
+      }}
+      class="space-y-4"
+      data-testid="loan-request-form"
+    >
       <!-- Dates -->
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
-          <label for="loan-start-date" class="block text-sm font-medium text-gray-700 mb-1">
-            {$_('sharing.startDate')} <span class="text-red-500">*</span>
+          <label
+            for="loan-start-date"
+            class="block text-sm font-medium text-gray-700 mb-1"
+          >
+            {$_("sharing.startDate")} <span class="text-red-500">*</span>
           </label>
           <input
             id="loan-start-date"
             type="date"
             bind:value={loanStartDate}
-            class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 {errors.startDate ? 'border-red-500' : 'border-gray-300'}"
+            class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 {errors.startDate
+              ? 'border-red-500'
+              : 'border-gray-300'}"
           />
           {#if errors.startDate}
             <p class="text-red-500 text-xs mt-1">{errors.startDate}</p>
           {/if}
         </div>
         <div>
-          <label for="loan-end-date" class="block text-sm font-medium text-gray-700 mb-1">
-            {$_('sharing.expectedReturn')} <span class="text-red-500">*</span>
+          <label
+            for="loan-end-date"
+            class="block text-sm font-medium text-gray-700 mb-1"
+          >
+            {$_("sharing.expectedReturn")} <span class="text-red-500">*</span>
           </label>
           <input
             id="loan-end-date"
             type="date"
             value={loanEndDate}
-            class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 {errors.endDate ? 'border-red-500' : 'border-gray-300'}"
+            class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 {errors.endDate
+              ? 'border-red-500'
+              : 'border-gray-300'}"
             disabled
           />
           {#if errors.endDate}
@@ -138,7 +170,11 @@
 
       <!-- Notes -->
       <div>
-        <label for="loan-notes" class="block text-sm font-medium text-gray-700 mb-1">{$_('sharing.notesOptional')}</label>
+        <label
+          for="loan-notes"
+          class="block text-sm font-medium text-gray-700 mb-1"
+          >{$_("sharing.notesOptional")}</label
+        >
         <textarea
           id="loan-notes"
           bind:value={notes}
@@ -149,8 +185,10 @@
       </div>
 
       {#if object?.usage_instructions}
-        <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm text-blue-800">
-          <p class="font-medium mb-1">{$_('sharing.usageInstructions')}</p>
+        <div
+          class="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm text-blue-800"
+        >
+          <p class="font-medium mb-1">{$_("sharing.usageInstructions")}</p>
           <p>{object.usage_instructions}</p>
         </div>
       {/if}
@@ -162,7 +200,7 @@
           onclick={handleClose}
           class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition"
         >
-          {$_('common.cancel')}
+          {$_("common.cancel")}
         </button>
         <button
           type="submit"

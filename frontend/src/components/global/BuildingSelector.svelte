@@ -232,8 +232,7 @@
             aria-selected="false"
             class="px-3 py-2 text-sm text-gray-500"
           >
-            {$_("scope.noBuildings") ||
-              "Aucun immeuble dans votre périmètre"}
+            {$_("scope.noBuildings") || "Aucun immeuble dans votre périmètre"}
           </li>
         {:else}
           {#each results as b (b.id)}
@@ -273,7 +272,8 @@
 
     {#if portfolios.length > 0}
       <div class="mt-1 text-xs text-gray-500">
-        {portfolios.length} {$_("scope.portfolios") || "portefeuilles"}
+        {portfolios.length}
+        {$_("scope.portfolios") || "portefeuilles"}
       </div>
     {/if}
   </div>

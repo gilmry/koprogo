@@ -78,9 +78,7 @@
   let fetchError = $state<{ message: string; kind: string } | null>(null);
 
   // Effective values used downstream — props take precedence over fetch.
-  let scopeKind = $derived<ScopeKind | null>(
-    scopeKindProp ?? fetchedScopeKind,
-  );
+  let scopeKind = $derived<ScopeKind | null>(scopeKindProp ?? fetchedScopeKind);
   let scope = $derived<Record<string, unknown> | null>(
     scopeProp ?? fetchedScope,
   );
@@ -396,7 +394,7 @@
       aria-live="polite"
     >
       <p class="text-sm font-medium">
-        {$_('magicLink.offlineMode')}
+        {$_("magicLink.offlineMode")}
       </p>
     </div>
   {/if}
@@ -410,7 +408,7 @@
       aria-label="{$_('magicLink.install')} KoproGo Contractor"
       onclick={triggerInstall}
     >
-      {$_('magicLink.install')}
+      {$_("magicLink.install")}
     </button>
   {/if}
 
@@ -422,7 +420,7 @@
       role="status"
       aria-live="polite"
     >
-      <p class="text-sm">{$_('magicLink.loading')}</p>
+      <p class="text-sm">{$_("magicLink.loading")}</p>
     </div>
   {:else if fetchError}
     <div
@@ -439,7 +437,7 @@
       class="rounded-lg border border-gray-200 bg-white p-4 text-gray-700"
       data-testid="pwa-no-scope"
     >
-      <p class="text-sm">{$_('magicLink.empty')}</p>
+      <p class="text-sm">{$_("magicLink.empty")}</p>
     </div>
   {:else if screen === 1}
     <section
@@ -505,7 +503,7 @@
             for="pwa-action-message"
             class="block text-sm font-medium text-gray-800 mb-1"
           >
-            {$_('magicLink.message')}
+            {$_("magicLink.message")}
           </label>
           <textarea
             id="pwa-action-message"
@@ -524,7 +522,7 @@
               for="pwa-action-amount"
               class="block text-sm font-medium text-gray-800 mb-1"
             >
-              {$_('magicLink.amount')}
+              {$_("magicLink.amount")}
             </label>
             <input
               id="pwa-action-amount"
@@ -558,7 +556,7 @@
             aria-label="Revenir au résumé"
             onclick={() => (screen = 1)}
           >
-            {$_('magicLink.back')}
+            {$_("magicLink.back")}
           </button>
           <button
             type="submit"
@@ -587,16 +585,16 @@
         id="pwa-confirm-heading"
         class="text-xl font-semibold text-gray-900 mb-3"
       >
-        {$_('magicLink.received')}
+        {$_("magicLink.received")}
       </h1>
       <div
         class="rounded-lg border border-green-200 bg-green-50 p-4 text-green-900"
       >
         <p class="font-medium">
-          {$_('magicLink.sent')}
+          {$_("magicLink.sent")}
         </p>
         <p class="text-sm mt-2">
-          {$_('magicLink.canClose')}
+          {$_("magicLink.canClose")}
         </p>
       </div>
       <div class="mt-5 flex justify-end">
@@ -613,7 +611,7 @@
             }
           }}
         >
-          {$_('magicLink.close')}
+          {$_("magicLink.close")}
         </button>
       </div>
     </section>

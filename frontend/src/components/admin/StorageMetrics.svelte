@@ -1,7 +1,7 @@
 <script lang="ts">
-  import { onMount, onDestroy } from 'svelte';
-  import { _ } from '../../lib/i18n';
-  import { getMetricsUrl } from '../../lib/api';
+  import { onMount, onDestroy } from "svelte";
+  import { _ } from "../../lib/i18n";
+  import { getMetricsUrl } from "../../lib/api";
 
   interface OperationMetrics {
     provider: string;
@@ -28,7 +28,7 @@
 
       const response = await fetch(getMetricsUrl(), {
         headers: {
-          Accept: 'text/plain',
+          Accept: "text/plain",
         },
       });
 
@@ -40,8 +40,8 @@
       metrics = parseMetrics(text);
       lastUpdated = new Date();
     } catch (err) {
-      error = err instanceof Error ? err.message : 'Metrics fetch failed';
-      console.error('Failed to load metrics', err);
+      error = err instanceof Error ? err.message : "Metrics fetch failed";
+      console.error("Failed to load metrics", err);
     } finally {
       loading = false;
     }
@@ -59,28 +59,30 @@
 
     const aggregates = new Map<string, Aggregate>();
 
-    const lines = scrape.split('\n');
+    const lines = scrape.split("\n");
     for (const rawLine of lines) {
       const line = rawLine.trim();
-      if (!line || line.startsWith('#')) continue;
+      if (!line || line.startsWith("#")) continue;
 
-      let match = line.match(/^storage_operation_total\{([^}]*)\}\s+([0-9.]+)$/);
+      let match = line.match(
+        /^storage_operation_total\{([^}]*)\}\s+([0-9.]+)$/,
+      );
       if (match) {
         const labels = parseLabels(match[1]);
         const value = Number(match[2]);
-        const key = `${labels.provider || 'unknown'}|${labels.operation || 'unknown'}`;
+        const key = `${labels.provider || "unknown"}|${labels.operation || "unknown"}`;
         const entry = aggregates.get(key) ?? {
-          provider: labels.provider || 'unknown',
-          operation: labels.operation || 'unknown',
+          provider: labels.provider || "unknown",
+          operation: labels.operation || "unknown",
           success: 0,
           error: 0,
           durationSum: 0,
           durationCount: 0,
         };
 
-        if (labels.result === 'success') {
+        if (labels.result === "success") {
           entry.success = value;
-        } else if (labels.result === 'error') {
+        } else if (labels.result === "error") {
           entry.error = value;
         }
 
@@ -88,14 +90,16 @@
         continue;
       }
 
-      match = line.match(/^storage_operation_duration_seconds_sum\{([^}]*)\}\s+([0-9.]+)$/);
+      match = line.match(
+        /^storage_operation_duration_seconds_sum\{([^}]*)\}\s+([0-9.]+)$/,
+      );
       if (match) {
         const labels = parseLabels(match[1]);
         const value = Number(match[2]);
-        const key = `${labels.provider || 'unknown'}|${labels.operation || 'unknown'}`;
+        const key = `${labels.provider || "unknown"}|${labels.operation || "unknown"}`;
         const entry = aggregates.get(key) ?? {
-          provider: labels.provider || 'unknown',
-          operation: labels.operation || 'unknown',
+          provider: labels.provider || "unknown",
+          operation: labels.operation || "unknown",
           success: 0,
           error: 0,
           durationSum: 0,
@@ -107,14 +111,16 @@
         continue;
       }
 
-      match = line.match(/^storage_operation_duration_seconds_count\{([^}]*)\}\s+([0-9.]+)$/);
+      match = line.match(
+        /^storage_operation_duration_seconds_count\{([^}]*)\}\s+([0-9.]+)$/,
+      );
       if (match) {
         const labels = parseLabels(match[1]);
         const value = Number(match[2]);
-        const key = `${labels.provider || 'unknown'}|${labels.operation || 'unknown'}`;
+        const key = `${labels.provider || "unknown"}|${labels.operation || "unknown"}`;
         const entry = aggregates.get(key) ?? {
-          provider: labels.provider || 'unknown',
-          operation: labels.operation || 'unknown',
+          provider: labels.provider || "unknown",
+          operation: labels.operation || "unknown",
           success: 0,
           error: 0,
           durationSum: 0,
@@ -148,16 +154,16 @@
 
   function parseLabels(input: string): Record<string, string> {
     const labels: Record<string, string> = {};
-    for (const part of input.split(',')) {
-      const [key, rawValue] = part.split('=');
+    for (const part of input.split(",")) {
+      const [key, rawValue] = part.split("=");
       if (!key || !rawValue) continue;
-      labels[key.trim()] = rawValue.replace(/^"|"$/g, '');
+      labels[key.trim()] = rawValue.replace(/^"|"$/g, "");
     }
     return labels;
   }
 
   function formatDuration(ms: number | null): string {
-    if (ms === null) return '—';
+    if (ms === null) return "—";
     if (ms >= 1000) {
       return `${(ms / 1000).toFixed(2)} s`;
     }
@@ -165,12 +171,16 @@
   }
 
   function formatTimestamp(date: Date | null): string {
-    if (!date) return '—';
-    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    if (!date) return "—";
+    return date.toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+    });
   }
 
   function getStatusClass(errors: number): string {
-    return errors > 0 ? 'text-red-600 font-semibold' : 'text-green-600';
+    return errors > 0 ? "text-red-600 font-semibold" : "text-green-600";
   }
 
   onMount(() => {
@@ -185,20 +195,29 @@
   });
 </script>
 
-<section class="bg-white border border-gray-200 rounded-xl shadow-sm" data-testid="storage-metrics">
-  <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 p-6 border-b border-gray-100">
+<section
+  class="bg-white border border-gray-200 rounded-xl shadow-sm"
+  data-testid="storage-metrics"
+>
+  <div
+    class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 p-6 border-b border-gray-100"
+  >
     <div>
-      <h2 class="text-2xl font-semibold text-gray-900">{$_('admin.storage.title')}</h2>
-      <p class="text-sm text-gray-500">{$_('admin.storage.description')}</p>
+      <h2 class="text-2xl font-semibold text-gray-900">
+        {$_("admin.storage.title")}
+      </h2>
+      <p class="text-sm text-gray-500">{$_("admin.storage.description")}</p>
     </div>
     <div class="flex items-center gap-3">
-      <span class="text-sm text-gray-500">Dernière mise à jour : {formatTimestamp(lastUpdated)}</span>
+      <span class="text-sm text-gray-500"
+        >Dernière mise à jour : {formatTimestamp(lastUpdated)}</span
+      >
       <button
         class="px-4 py-2 rounded-lg bg-primary-600 text-white hover:bg-primary-700 transition text-sm font-medium"
         on:click={fetchMetrics}
         disabled={loading}
       >
-        {loading ? $_('common.refreshing') : $_('common.refresh')}
+        {loading ? $_("common.refreshing") : $_("common.refresh")}
       </button>
     </div>
   </div>
@@ -211,29 +230,40 @@
 
   <div class="p-6">
     {#if loading && !lastUpdated}
-      <p class="text-gray-500">{$_('admin.storage.loadingMetrics')}</p>
+      <p class="text-gray-500">{$_("admin.storage.loadingMetrics")}</p>
     {:else if metrics.length === 0}
-      <p class="text-gray-500">{$_('admin.storage.noMetrics')}</p>
+      <p class="text-gray-500">{$_("admin.storage.noMetrics")}</p>
     {:else}
       <div class="overflow-x-auto">
         <table class="min-w-full text-sm">
           <thead>
-            <tr class="text-left text-gray-500 uppercase text-xs tracking-wider">
-              <th scope="col" class="px-4 py-2">{$_('storage.provider')}</th>
-              <th scope="col" class="px-4 py-2">{$_('storage.operation')}</th>
-              <th scope="col" class="px-4 py-2">{$_('storage.success')}</th>
-              <th scope="col" class="px-4 py-2">{$_('storage.errors')}</th>
-              <th scope="col" class="px-4 py-2">{$_('storage.avgDuration')}</th>
+            <tr
+              class="text-left text-gray-500 uppercase text-xs tracking-wider"
+            >
+              <th scope="col" class="px-4 py-2">{$_("storage.provider")}</th>
+              <th scope="col" class="px-4 py-2">{$_("storage.operation")}</th>
+              <th scope="col" class="px-4 py-2">{$_("storage.success")}</th>
+              <th scope="col" class="px-4 py-2">{$_("storage.errors")}</th>
+              <th scope="col" class="px-4 py-2">{$_("storage.avgDuration")}</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-gray-100">
             {#each metrics as row}
               <tr class="hover:bg-gray-50">
-                <td class="px-4 py-2 font-medium text-gray-900 capitalize">{row.provider}</td>
-                <td class="px-4 py-2 text-gray-700">{row.operation.replace(/_/g, ' ')}</td>
-                <td class="px-4 py-2 text-gray-700">{row.success.toFixed(0)}</td>
-                <td class={`px-4 py-2 ${getStatusClass(row.error)}`}>{row.error.toFixed(0)}</td>
-                <td class="px-4 py-2 text-gray-700">{formatDuration(row.avgDurationMs)}</td>
+                <td class="px-4 py-2 font-medium text-gray-900 capitalize"
+                  >{row.provider}</td
+                >
+                <td class="px-4 py-2 text-gray-700"
+                  >{row.operation.replace(/_/g, " ")}</td
+                >
+                <td class="px-4 py-2 text-gray-700">{row.success.toFixed(0)}</td
+                >
+                <td class={`px-4 py-2 ${getStatusClass(row.error)}`}
+                  >{row.error.toFixed(0)}</td
+                >
+                <td class="px-4 py-2 text-gray-700"
+                  >{formatDuration(row.avgDurationMs)}</td
+                >
               </tr>
             {/each}
           </tbody>

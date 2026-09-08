@@ -1,18 +1,19 @@
 <script lang="ts">
-  import { locale } from '../lib/i18n';
-  import { languages, type LanguageCode } from '../lib/i18n';
+  import { locale } from "../lib/i18n";
+  import { languages, type LanguageCode } from "../lib/i18n";
 
   let isOpen = false;
 
   function selectLanguage(code: LanguageCode) {
     locale.set(code);
     // Save preference to localStorage
-    localStorage.setItem('preferred-language', code);
+    localStorage.setItem("preferred-language", code);
     isOpen = false;
   }
 
   // Get current language or default to NL
-  $: currentLang = languages.find((lang) => lang.code === $locale) || languages[0];
+  $: currentLang =
+    languages.find((lang) => lang.code === $locale) || languages[0];
 </script>
 
 <div class="relative inline-block text-left">

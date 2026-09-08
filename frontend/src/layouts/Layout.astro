@@ -1,24 +1,29 @@
 ---
-import '../styles/global.css';
-import '../lib/i18n';
-import Navigation from '../components/navigation/Navigation.svelte';
-import ToastContainer from '../components/ui/ToastContainer.svelte';
-import SessionManager from '../components/SessionManager.svelte';
-import LanguageSelector from '../components/LanguageSelector.svelte';
-import SyncStatus from '../components/SyncStatus.svelte';
-import PWAInstallPrompt from '../components/PWAInstallPrompt.svelte';
-import RouteGuard from '../components/RouteGuard.svelte';
-import BuildingSelectorBar from '../components/global/BuildingSelectorBar.svelte';
-import ContextBanner from '../components/global/ContextBanner.svelte';
+import "../styles/global.css";
+import "../lib/i18n";
+import Navigation from "../components/navigation/Navigation.svelte";
+import ToastContainer from "../components/ui/ToastContainer.svelte";
+import SessionManager from "../components/SessionManager.svelte";
+import LanguageSelector from "../components/LanguageSelector.svelte";
+import SyncStatus from "../components/SyncStatus.svelte";
+import PWAInstallPrompt from "../components/PWAInstallPrompt.svelte";
+import RouteGuard from "../components/RouteGuard.svelte";
+import BuildingSelectorBar from "../components/global/BuildingSelectorBar.svelte";
+import ContextBanner from "../components/global/ContextBanner.svelte";
 
 interface Props {
-	title: string;
-	showNav?: boolean;
-	requireAuth?: boolean;
-	showFooter?: boolean;
+  title: string;
+  showNav?: boolean;
+  requireAuth?: boolean;
+  showFooter?: boolean;
 }
 
-const { title, showNav = true, requireAuth = false, showFooter = true } = Astro.props;
+const {
+  title,
+  showNav = true,
+  requireAuth = false,
+  showFooter = true,
+} = Astro.props;
 
 // 40 des 53 pages passent déjà un titre contenant « KoproGo », les autres
 // non. Le layout ajoutait le suffixe systématiquement, d'où des onglets
@@ -32,122 +37,160 @@ const pageTitle = title.includes(SITE_NAME) ? title : `${title} - ${SITE_NAME}`;
 
 <!doctype html>
 <html lang="fr">
-	<head>
-		<meta charset="UTF-8" />
-		<meta name="description" content="KoproGo - Plateforme SaaS de Gestion de Copropriété" />
-		<meta name="viewport" content="width=device-width, initial-scale=1" />
-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<meta name="generator" content={Astro.generator} />
-		<title>{pageTitle}</title>
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="description"
+      content="KoproGo - Plateforme SaaS de Gestion de Copropriété"
+    />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="generator" content={Astro.generator} />
+    <title>{pageTitle}</title>
 
-		<!-- PWA Manifest -->
-		<link rel="manifest" href="/manifest.json" />
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="/manifest.json" />
 
-		<!-- PWA Meta Tags -->
-		<meta name="theme-color" content="#15803d" />
-		<meta name="mobile-web-app-capable" content="yes" />
-		<meta name="apple-mobile-web-app-capable" content="yes" />
-		<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-		<meta name="apple-mobile-web-app-title" content="KoproGo" />
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#15803d" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta
+      name="apple-mobile-web-app-status-bar-style"
+      content="black-translucent"
+    />
+    <meta name="apple-mobile-web-app-title" content="KoproGo" />
 
-		<!-- Apple Touch Icons -->
-		<link rel="apple-touch-icon" sizes="152x152" href="/icons/icon-152x152.png" />
-		<link rel="apple-touch-icon" sizes="192x192" href="/icons/icon-192x192.png" />
+    <!-- Apple Touch Icons -->
+    <link
+      rel="apple-touch-icon"
+      sizes="152x152"
+      href="/icons/icon-152x152.png"
+    />
+    <link
+      rel="apple-touch-icon"
+      sizes="192x192"
+      href="/icons/icon-192x192.png"
+    />
 
-		<!-- Startup Images (optional) -->
-		<link rel="apple-touch-startup-image" href="/icons/icon-512x512.png" />
-		<!-- Runtime configuration - loaded from external file for post-build configuration -->
-		<script is:inline src="/config.js"></script>
-		<!-- Privacy-friendly analytics by Plausible -->
-		<script is:inline async src="https://plausible.io/js/pa-cmW7nGIBSJKm4SoELOCgO.js"></script>
-		<script is:inline>
-			window.plausible=window.plausible||function(){(plausible.q=plausible.q||[]).push(arguments)},plausible.init=plausible.init||function(i){plausible.o=i||{}};
-			plausible.init()
-		</script>
+    <!-- Startup Images (optional) -->
+    <link rel="apple-touch-startup-image" href="/icons/icon-512x512.png" />
+    <!-- Runtime configuration - loaded from external file for post-build configuration -->
+    <script is:inline src="/config.js"></script>
+    <!-- Privacy-friendly analytics by Plausible -->
+    <script
+      is:inline
+      async
+      src="https://plausible.io/js/pa-cmW7nGIBSJKm4SoELOCgO.js"></script>
+    <script is:inline>
+      ((window.plausible =
+        window.plausible ||
+        function () {
+          (plausible.q = plausible.q || []).push(arguments);
+        }),
+        (plausible.init =
+          plausible.init ||
+          function (i) {
+            plausible.o = i || {};
+          }));
+      plausible.init();
+    </script>
 
-		<!-- PWA Initialization -->
-		<script>
-			import { initializePWA } from '../lib/pwa';
+    <!-- PWA Initialization -->
+    <script>
+      import { initializePWA } from "../lib/pwa";
 
-			// Initialize PWA when DOM is ready
-			if (document.readyState === 'loading') {
-				document.addEventListener('DOMContentLoaded', async () => {
-					await initializePWA({
-						onOnline: () => {
-							console.log('[App] Back online');
-							// Trigger sync or refresh data
-							window.dispatchEvent(new CustomEvent('app-online'));
-						},
-						onOffline: () => {
-							console.log('[App] Gone offline');
-							// Show offline indicator
-							window.dispatchEvent(new CustomEvent('app-offline'));
-						}
-					});
-				});
-			} else {
-				initializePWA({
-					onOnline: () => {
-						console.log('[App] Back online');
-						window.dispatchEvent(new CustomEvent('app-online'));
-					},
-					onOffline: () => {
-						console.log('[App] Gone offline');
-						window.dispatchEvent(new CustomEvent('app-offline'));
-					}
-				});
-			}
-		</script>
+      // Initialize PWA when DOM is ready
+      if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", async () => {
+          await initializePWA({
+            onOnline: () => {
+              console.log("[App] Back online");
+              // Trigger sync or refresh data
+              window.dispatchEvent(new CustomEvent("app-online"));
+            },
+            onOffline: () => {
+              console.log("[App] Gone offline");
+              // Show offline indicator
+              window.dispatchEvent(new CustomEvent("app-offline"));
+            },
+          });
+        });
+      } else {
+        initializePWA({
+          onOnline: () => {
+            console.log("[App] Back online");
+            window.dispatchEvent(new CustomEvent("app-online"));
+          },
+          onOffline: () => {
+            console.log("[App] Gone offline");
+            window.dispatchEvent(new CustomEvent("app-offline"));
+          },
+        });
+      }
+    </script>
 
-		<!-- Accessibility: Screen reader styles -->
-		<style is:global>
-			.sr-only {
-				position: absolute;
-				width: 1px;
-				height: 1px;
-				padding: 0;
-				margin: -1px;
-				overflow: hidden;
-				clip: rect(0, 0, 0, 0);
-				white-space: nowrap;
-				border-width: 0;
-			}
+    <!-- Accessibility: Screen reader styles -->
+    <style is:global>
+      .sr-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border-width: 0;
+      }
 
-			.skip-link {
-				position: absolute;
-				top: -40px;
-				left: 0;
-				background: #065f46;
-				color: white;
-				padding: 8px 16px;
-				text-decoration: none;
-				z-index: 100;
-				border-radius: 0 0 4px 0;
-			}
+      .skip-link {
+        position: absolute;
+        top: -40px;
+        left: 0;
+        background: #065f46;
+        color: white;
+        padding: 8px 16px;
+        text-decoration: none;
+        z-index: 100;
+        border-radius: 0 0 4px 0;
+      }
 
-			.skip-link:focus {
-				top: 0;
-			}
-		</style>
-	</head>
-	<body class="bg-gray-50 min-h-screen">
-		<!-- Skip navigation link for keyboard users -->
-		<a href="#main-content" class="skip-link">
-			Passer au contenu principal
-		</a>
+      .skip-link:focus {
+        top: 0;
+      }
+    </style>
+  </head>
+  <body class="bg-gray-50 min-h-screen">
+    <!-- Skip navigation link for keyboard users -->
+    <a href="#main-content" class="skip-link"> Passer au contenu principal </a>
 
-		<!-- Screen reader announcements -->
-		<div id="sr-announcer-polite" role="status" aria-live="polite" aria-atomic="true" class="sr-only"></div>
-		<div id="sr-announcer-assertive" role="alert" aria-live="assertive" aria-atomic="true" class="sr-only"></div>
+    <!-- Screen reader announcements -->
+    <div
+      id="sr-announcer-polite"
+      role="status"
+      aria-live="polite"
+      aria-atomic="true"
+      class="sr-only"
+    >
+    </div>
+    <div
+      id="sr-announcer-assertive"
+      role="alert"
+      aria-live="assertive"
+      aria-atomic="true"
+      class="sr-only"
+    >
+    </div>
 
-		<!-- Route Guard - Check access before rendering page -->
-		<RouteGuard client:load />
+    <!-- Route Guard - Check access before rendering page -->
+    <RouteGuard client:load />
 
-		{showNav && <Navigation client:load />}
-		{requireAuth && <SessionManager client:load />}
+    {showNav && <Navigation client:load />}
+    {requireAuth && <SessionManager client:load />}
 
-		<!-- Content wrapper: offset by sidebar on desktop, spacer for mobile header -->
-		<!--
+    <!-- Content wrapper: offset by sidebar on desktop, spacer for mobile header -->
+    <!--
 			`id="app-content"` est le point d'accroche de l'inertie (#831).
 
 			Quand le tiroir mobile s'ouvre, `Navigation.svelte` pose `inert` sur ce
@@ -161,49 +204,70 @@ const pageTitle = title.includes(SITE_NAME) ? title : `${title} - ${SITE_NAME}`;
 			`position: fixed`, sa place dans le document n'a donc aucun effet
 			visuel.
 		-->
-		<div id="app-content" class:list={['min-h-screen flex flex-col', showNav && 'lg:ml-60']}>
-			{showNav && <div class="h-14 lg:hidden" aria-hidden="true"></div>}
-			<!-- Story 2.2 — Building selector : overlay top-right en mobile, barre en flux normal
+    <div
+      id="app-content"
+      class:list={["min-h-screen flex flex-col", showNav && "lg:ml-60"]}
+    >
+      {showNav && <div class="h-14 lg:hidden" aria-hidden="true" />}
+      <!-- Story 2.2 — Building selector : overlay top-right en mobile, barre en flux normal
 			     en desktop (évite le chevauchement avec le contenu de page, cf. issue organisations) -->
-			{showNav && <BuildingSelectorBar client:load />}
-			{showNav && <ContextBanner client:load />}
-			<main id="main-content" class="flex-1" role="main" tabindex="-1">
-				<slot />
-			</main>
-			{showFooter && <footer class="bg-white mt-12 border-t" role="contentinfo">
-				<div class="container mx-auto px-4 py-6">
-					<div class="flex flex-col md:flex-row items-center justify-between gap-4">
-						<!-- Left: Language selector -->
-						<div class="flex items-center gap-2">
-							<LanguageSelector client:load />
-						</div>
+      {showNav && <BuildingSelectorBar client:load />}
+      {showNav && <ContextBanner client:load />}
+      <main id="main-content" class="flex-1" role="main" tabindex="-1">
+        <slot />
+      </main>
+      {
+        showFooter && (
+          <footer class="bg-white mt-12 border-t" role="contentinfo">
+            <div class="container mx-auto px-4 py-6">
+              <div class="flex flex-col md:flex-row items-center justify-between gap-4">
+                {/* Left: Language selector */}
+                <div class="flex items-center gap-2">
+                  <LanguageSelector client:load />
+                </div>
 
-						<!-- Center: Copyright and tech stack -->
-						<div class="text-center text-gray-600">
-							<p class="text-sm">&copy; {new Date().getFullYear()} KoproGo - Gestion de Copropriété SaaS</p>
-							<p class="text-xs mt-1 text-gray-500">
-								Architecture Hexagonale · Rust · Actix-web · PostgreSQL · GDPR · ISO 27001
-							</p>
-							<p class="text-xs mt-2 space-x-3">
-								<a href="/mentions-legales" class="text-primary-600 hover:underline">Mentions légales</a>
-								<span class="text-gray-400">·</span>
-								<a href="/mentions-legales#rgpd" class="text-primary-600 hover:underline">Confidentialité & RGPD</a>
-							</p>
-						</div>
+                {/* Center: Copyright and tech stack */}
+                <div class="text-center text-gray-600">
+                  <p class="text-sm">
+                    &copy; {new Date().getFullYear()} KoproGo - Gestion de
+                    Copropriété SaaS
+                  </p>
+                  <p class="text-xs mt-1 text-gray-500">
+                    Architecture Hexagonale · Rust · Actix-web · PostgreSQL ·
+                    GDPR · ISO 27001
+                  </p>
+                  <p class="text-xs mt-2 space-x-3">
+                    <a
+                      href="/mentions-legales"
+                      class="text-primary-600 hover:underline"
+                    >
+                      Mentions légales
+                    </a>
+                    <span class="text-gray-400">·</span>
+                    <a
+                      href="/mentions-legales#rgpd"
+                      class="text-primary-600 hover:underline"
+                    >
+                      Confidentialité & RGPD
+                    </a>
+                  </p>
+                </div>
 
-						<!-- Right: Sync status and online indicator -->
-						<div class="flex items-center gap-2">
-							<SyncStatus client:load />
-						</div>
-					</div>
-				</div>
-			</footer>}
-		</div>
+                {/* Right: Sync status and online indicator */}
+                <div class="flex items-center gap-2">
+                  <SyncStatus client:load />
+                </div>
+              </div>
+            </div>
+          </footer>
+        )
+      }
+    </div>
 
-		<!-- Hors du conteneur inertable : un toast doit rester annonçable
+    <!-- Hors du conteneur inertable : un toast doit rester annonçable
 		     tiroir ouvert, et l'invite d'installation ne fait pas partie du
 		     contenu de page. -->
-		<ToastContainer client:load />
-		<PWAInstallPrompt client:load />
-	</body>
+    <ToastContainer client:load />
+    <PWAInstallPrompt client:load />
+  </body>
 </html>

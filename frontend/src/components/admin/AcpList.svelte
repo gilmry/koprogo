@@ -189,9 +189,9 @@
 <div class="space-y-6" data-testid="admin-acps-page">
   <div class="flex items-center justify-between">
     <div>
-      <h1 class="text-2xl font-bold text-gray-900">{$_('acps.pageTitle')}</h1>
+      <h1 class="text-2xl font-bold text-gray-900">{$_("acps.pageTitle")}</h1>
       <p class="text-sm text-gray-600 mt-1">
-        {$_('acps.pageSubtitle')}
+        {$_("acps.pageSubtitle")}
       </p>
     </div>
     <button
@@ -212,7 +212,9 @@
     >
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <label class="block">
-          <span class="text-sm font-medium text-gray-700">{$_('common.name')} *</span>
+          <span class="text-sm font-medium text-gray-700"
+            >{$_("common.name")} *</span
+          >
           <input
             type="text"
             bind:value={form.name}
@@ -224,21 +226,23 @@
         </label>
         <label class="block">
           <span class="text-sm font-medium text-gray-700">
-            {$_('acps.managingAgentOptional')}
+            {$_("acps.managingAgentOptional")}
           </span>
           <select
             bind:value={form.organization_id}
             class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg"
             data-testid="acp-form-org-id"
           >
-            <option value={null}>{$_('acps.selfManaged')}</option>
+            <option value={null}>{$_("acps.selfManaged")}</option>
             {#each organizations as org (org.id)}
               <option value={org.id}>{org.name}</option>
             {/each}
           </select>
         </label>
         <label class="block">
-          <span class="text-sm font-medium text-gray-700">{$_('common.street')} *</span>
+          <span class="text-sm font-medium text-gray-700"
+            >{$_("common.street")} *</span
+          >
           <input
             type="text"
             bind:value={form.address_street}
@@ -248,7 +252,9 @@
           />
         </label>
         <label class="block">
-          <span class="text-sm font-medium text-gray-700">{$_('common.postalCode')} *</span>
+          <span class="text-sm font-medium text-gray-700"
+            >{$_("common.postalCode")} *</span
+          >
           <input
             type="text"
             bind:value={form.address_postal_code}
@@ -258,7 +264,9 @@
           />
         </label>
         <label class="block">
-          <span class="text-sm font-medium text-gray-700">{$_('common.city')} *</span>
+          <span class="text-sm font-medium text-gray-700"
+            >{$_("common.city")} *</span
+          >
           <input
             type="text"
             bind:value={form.address_city}
@@ -268,7 +276,9 @@
           />
         </label>
         <label class="block">
-          <span class="text-sm font-medium text-gray-700">{$_('common.enterpriseNumber')}</span>
+          <span class="text-sm font-medium text-gray-700"
+            >{$_("common.enterpriseNumber")}</span
+          >
           <input
             type="text"
             bind:value={form.bce_number}
@@ -283,7 +293,7 @@
           onclick={() => (showCreate = false)}
           class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700"
         >
-          {$_('common.cancel')}
+          {$_("common.cancel")}
         </button>
         <button
           type="submit"
@@ -298,37 +308,62 @@
   {/if}
 
   {#if loading}
-    <p class="text-gray-500" data-testid="acps-loading">{$_('common.loading')}</p>
+    <p class="text-gray-500" data-testid="acps-loading">
+      {$_("common.loading")}
+    </p>
   {:else if error}
     <p class="text-red-600" data-testid="acps-error">{error}</p>
   {:else if acps.length === 0}
     <p class="text-gray-500 italic" data-testid="acps-empty">
-      {$_('acps.empty')}
+      {$_("acps.empty")}
     </p>
   {:else}
     <table class="min-w-full divide-y divide-gray-200" data-testid="acps-table">
       <thead class="bg-gray-50">
         <tr>
-          <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">{$_('common.name')}</th>
-          <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">{$_('common.slug')}</th>
-          <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">{$_('acps.managingAgent')}</th>
-          <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">{$_('common.address')}</th>
-          <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">BCE</th>
-          <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">{$_('common.actions')}</th>
+          <th
+            class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase"
+            >{$_("common.name")}</th
+          >
+          <th
+            class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase"
+            >{$_("common.slug")}</th
+          >
+          <th
+            class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase"
+            >{$_("acps.managingAgent")}</th
+          >
+          <th
+            class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase"
+            >{$_("common.address")}</th
+          >
+          <th
+            class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase"
+            >BCE</th
+          >
+          <th
+            class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase"
+            >{$_("common.actions")}</th
+          >
         </tr>
       </thead>
       <tbody class="bg-white divide-y divide-gray-200">
         {#each acps as acp (acp.id)}
           <tr data-testid="acp-row-{acp.id}">
-            <td class="px-4 py-2 text-sm font-medium text-gray-900">{acp.name}</td>
+            <td class="px-4 py-2 text-sm font-medium text-gray-900"
+              >{acp.name}</td
+            >
             <td class="px-4 py-2 text-sm text-gray-500">{acp.slug}</td>
             <td class="px-4 py-2 text-sm text-gray-500">
               {organizationLabel(acp.organization_id)}
             </td>
             <td class="px-4 py-2 text-sm text-gray-500">
-              {acp.address_street}, {acp.address_postal_code} {acp.address_city}
+              {acp.address_street}, {acp.address_postal_code}
+              {acp.address_city}
             </td>
-            <td class="px-4 py-2 text-sm text-gray-500">{acp.bce_number ?? "—"}</td>
+            <td class="px-4 py-2 text-sm text-gray-500"
+              >{acp.bce_number ?? "—"}</td
+            >
             <td class="px-4 py-2 text-sm text-right whitespace-nowrap">
               <button
                 type="button"
@@ -336,7 +371,7 @@
                 class="text-primary-600 hover:text-primary-800 mr-3"
                 data-testid="acp-edit-{acp.id}"
               >
-                {$_('common.edit')}
+                {$_("common.edit")}
               </button>
               <button
                 type="button"
@@ -344,7 +379,7 @@
                 class="text-red-600 hover:text-red-800"
                 data-testid="acp-archive-{acp.id}"
               >
-                {$_('common.delete')}
+                {$_("common.delete")}
               </button>
             </td>
           </tr>
@@ -355,7 +390,7 @@
                 <!-- Le backend nomme ce geste « archive » mais il exécute un
                      DELETE : le libellé doit dire ce qui se passe vraiment. -->
                 <span class="text-red-800">
-                  {$_('acps.deleteConfirm', { values: { nom: acp.name } })}
+                  {$_("acps.deleteConfirm", { values: { nom: acp.name } })}
                 </span>
                 <span class="ml-3 inline-flex gap-2">
                   <button
@@ -373,7 +408,7 @@
                     class="px-3 py-1 border border-gray-300 rounded text-gray-700"
                     data-testid="acp-archive-cancel"
                   >
-                    {$_('common.cancel')}
+                    {$_("common.cancel")}
                   </button>
                 </span>
               </td>
@@ -390,7 +425,9 @@
                 >
                   <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <label class="block">
-                      <span class="text-sm font-medium text-gray-700">{$_('common.name')} *</span>
+                      <span class="text-sm font-medium text-gray-700"
+                        >{$_("common.name")} *</span
+                      >
                       <input
                         type="text"
                         bind:value={editForm.name}
@@ -402,21 +439,23 @@
                     </label>
                     <label class="block">
                       <span class="text-sm font-medium text-gray-700">
-                        {$_('acps.managingAgentEmpty')}
+                        {$_("acps.managingAgentEmpty")}
                       </span>
                       <select
                         bind:value={editForm.organization_id}
                         class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg"
                         data-testid="acp-edit-org-id"
                       >
-                        <option value={null}>{$_('acps.selfManaged')}</option>
+                        <option value={null}>{$_("acps.selfManaged")}</option>
                         {#each organizations as org (org.id)}
                           <option value={org.id}>{org.name}</option>
                         {/each}
                       </select>
                     </label>
                     <label class="block">
-                      <span class="text-sm font-medium text-gray-700">{$_('common.street')} *</span>
+                      <span class="text-sm font-medium text-gray-700"
+                        >{$_("common.street")} *</span
+                      >
                       <input
                         type="text"
                         bind:value={editForm.address_street}
@@ -426,7 +465,9 @@
                       />
                     </label>
                     <label class="block">
-                      <span class="text-sm font-medium text-gray-700">{$_('common.postalCode')} *</span>
+                      <span class="text-sm font-medium text-gray-700"
+                        >{$_("common.postalCode")} *</span
+                      >
                       <input
                         type="text"
                         bind:value={editForm.address_postal_code}
@@ -436,7 +477,9 @@
                       />
                     </label>
                     <label class="block">
-                      <span class="text-sm font-medium text-gray-700">{$_('common.city')} *</span>
+                      <span class="text-sm font-medium text-gray-700"
+                        >{$_("common.city")} *</span
+                      >
                       <input
                         type="text"
                         bind:value={editForm.address_city}
@@ -446,7 +489,9 @@
                       />
                     </label>
                     <label class="block">
-                      <span class="text-sm font-medium text-gray-700">{$_('common.enterpriseNumber')}</span>
+                      <span class="text-sm font-medium text-gray-700"
+                        >{$_("common.enterpriseNumber")}</span
+                      >
                       <input
                         type="text"
                         bind:value={editForm.bce_number}
@@ -462,7 +507,7 @@
                       class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700"
                       data-testid="acp-edit-cancel"
                     >
-                      {$_('common.cancel')}
+                      {$_("common.cancel")}
                     </button>
                     <button
                       type="submit"

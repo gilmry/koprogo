@@ -1,6 +1,6 @@
 <script lang="ts">
   // Svelte 5 runes mode
-  import { _ } from '../../lib/i18n';
+  import { _ } from "../../lib/i18n";
   import {
     energyCampaignsApi,
     type EnergyCampaign,
@@ -10,7 +10,10 @@
   import { formatDateShort } from "../../lib/utils/date.utils";
   import { withLoadingState } from "../../lib/utils/error.utils";
 
-  let { organizationId = undefined, showHeader = true }: {
+  let {
+    organizationId = undefined,
+    showHeader = true,
+  }: {
     organizationId?: string | undefined;
     showHeader?: boolean;
   } = $props();
@@ -26,9 +29,9 @@
   async function loadCampaigns() {
     await withLoadingState({
       action: () => energyCampaignsApi.list(organizationId),
-      setLoading: (v: boolean) => loading = v,
-      setError: (v: string) => error = v,
-      onSuccess: (data) => campaigns = data,
+      setLoading: (v: boolean) => (loading = v),
+      setError: (v: string) => (error = v),
+      onSuccess: (data) => (campaigns = data),
       errorMessage: $_("energy.campaign.loadError"),
     });
   }
@@ -61,7 +64,7 @@
 <div class="bg-white shadow-md rounded-lg" data-testid="energy-campaign-list">
   <div class="px-4 py-5 border-b border-gray-200 sm:px-6">
     <div class="flex items-center justify-between">
-    <!-- Masqué quand la page porte déjà un H1 identique ; le div vide
+      <!-- Masqué quand la page porte déjà un H1 identique ; le div vide
          conserve l'alignement de la rangée en justify-between. -->
       {#if showHeader}
         <h3 class="text-lg leading-6 font-medium text-gray-900">
@@ -85,7 +88,9 @@
 
   {#if loading}
     <div class="p-8 text-center" data-testid="energy-campaign-list-loading">
-      <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+      <div
+        class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"
+      ></div>
       <p class="mt-2 text-sm text-gray-500">{$_("common.loading")}</p>
     </div>
   {:else if error}
@@ -134,12 +139,14 @@
                 </div>
                 <div class="mt-2 flex items-center text-xs text-gray-400">
                   <span>
-                    {$_("energy.campaign.participationUntil")} {formatDateShort(campaign.deadline_participation)}
+                    {$_("energy.campaign.participationUntil")}
+                    {formatDateShort(campaign.deadline_participation)}
                   </span>
                   {#if campaign.offers_received.length > 0}
                     <span class="mx-2">•</span>
                     <span>
-                      💼 {campaign.offers_received.length} {$_("energy.campaign.offersReceivedLabel")}
+                      💼 {campaign.offers_received.length}
+                      {$_("energy.campaign.offersReceivedLabel")}
                     </span>
                   {/if}
                 </div>

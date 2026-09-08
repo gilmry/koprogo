@@ -1,10 +1,12 @@
 ---
-import Layout from '../layouts/Layout.astro';
-import RegisterForm from '../components/RegisterForm.svelte';
+import Layout from "../layouts/Layout.astro";
+import RegisterForm from "../components/RegisterForm.svelte";
 ---
 
 <Layout title="Inscription - KoproGo" showNav={false}>
-  <div class="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+  <div
+    class="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8"
+  >
     <div class="max-w-md w-full space-y-8">
       <div>
         <h1 class="text-center text-3xl font-bold text-gray-900">
@@ -12,7 +14,10 @@ import RegisterForm from '../components/RegisterForm.svelte';
         </h1>
         <p class="mt-2 text-center text-sm text-gray-600">
           Ou
-          <a href="/login" class="font-medium text-primary-600 hover:text-primary-500">
+          <a
+            href="/login"
+            class="font-medium text-primary-600 hover:text-primary-500"
+          >
             connectez-vous à votre compte existant
           </a>
         </p>

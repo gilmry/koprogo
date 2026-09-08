@@ -5,9 +5,7 @@ import Layout from "../layouts/Layout.astro";
 <Layout title="Convocations - KoproGo">
   <div class="container mx-auto px-4 py-8" data-testid="convocations-list">
     <div class="mb-6">
-      <h1 class="text-3xl font-bold text-gray-900">
-        📨 Convocations
-      </h1>
+      <h1 class="text-3xl font-bold text-gray-900">📨 Convocations</h1>
       <p class="text-gray-600 mt-2">
         Gérez les convocations aux assemblées générales de copropriété.
       </p>
@@ -32,13 +30,19 @@ import Layout from "../layouts/Layout.astro";
   import ConvocationList from "../components/convocations/ConvocationList.svelte";
   import BuildingSelector from "../components/BuildingSelector.svelte";
 
-  const selectorContainer = document.getElementById("building-selector-container");
+  const selectorContainer = document.getElementById(
+    "building-selector-container",
+  );
   const listContainer = document.getElementById("convocation-list-container");
   let listComponent: any = null;
 
   function mountList(buildingId: string) {
     if (!listContainer) return;
-    if (listComponent) { try { unmount(listComponent); } catch {} }
+    if (listComponent) {
+      try {
+        unmount(listComponent);
+      } catch {}
+    }
     listContainer.innerHTML = "";
     listComponent = mount(ConvocationList as any, {
       target: listContainer,

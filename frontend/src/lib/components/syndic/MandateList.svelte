@@ -218,7 +218,10 @@
             >
               {$_("mandate.col.expire") || "Expire"}
             </th>
-            <th scope="col" class="px-3 py-2 text-right font-medium text-gray-700">
+            <th
+              scope="col"
+              class="px-3 py-2 text-right font-medium text-gray-700"
+            >
               {$_("mandate.col.actions") || "Actions"}
             </th>
           </tr>
@@ -258,9 +261,9 @@
                     class="inline-flex items-center gap-1 rounded border bg-gray-200 text-gray-700 border-gray-300 px-2 py-1 text-xs font-medium"
                     data-testid={`mandate-expiration-badge-${m.id}`}
                     role="status"
-                    aria-label={$_('mandates.revoked')}
+                    aria-label={$_("mandates.revoked")}
                   >
-                    {$_('mandates.revoked')}
+                    {$_("mandates.revoked")}
                   </span>
                 {:else}
                   <ExpirationBadge

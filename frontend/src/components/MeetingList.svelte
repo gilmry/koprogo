@@ -1,24 +1,27 @@
 <script lang="ts">
   // Svelte 5 runes mode
-  import { _ } from '../lib/i18n';
-  import { api } from '../lib/api';
-  import { toast } from '../stores/toast';
-  import { type PageResponse, UserRole } from '../lib/types';
-  import Pagination from './Pagination.svelte';
-  import MeetingCreateModal from './MeetingCreateModal.svelte';
-  import { formatDateTime } from '../lib/utils/date.utils';
-  import { withLoadingState } from '../lib/utils/error.utils';
-  import { authStore } from '../stores/auth';
+  import { _ } from "../lib/i18n";
+  import { api } from "../lib/api";
+  import { toast } from "../stores/toast";
+  import { type PageResponse, UserRole } from "../lib/types";
+  import Pagination from "./Pagination.svelte";
+  import MeetingCreateModal from "./MeetingCreateModal.svelte";
+  import { formatDateTime } from "../lib/utils/date.utils";
+  import { withLoadingState } from "../lib/utils/error.utils";
+  import { authStore } from "../stores/auth";
 
   let { buildingId = null }: { buildingId?: string | null } = $props();
 
   let showCreateModal = $state(false);
 
-  let canCreate = $derived($authStore?.user?.role === UserRole.SYNDIC || $authStore?.user?.role === UserRole.SUPERADMIN);
+  let canCreate = $derived(
+    $authStore?.user?.role === UserRole.SYNDIC ||
+      $authStore?.user?.role === UserRole.SUPERADMIN,
+  );
 
   function handleMeetingCreated() {
     showCreateModal = false;
-    toast.success($_('meetings.created_success'));
+    toast.success($_("meetings.created_success"));
     loadMeetings();
   }
 
@@ -33,7 +36,7 @@
 
   let meetings: Meeting[] = $state([]);
   let loading = $state(true);
-  let error = $state('');
+  let error = $state("");
 
   let currentPage = $state(1);
   let perPage = $state(20);
@@ -43,15 +46,15 @@
   $effect(() => {
     loadMeetings();
 
-    if (typeof window !== 'undefined') {
-      window.addEventListener('pageshow', handlePageShow);
-      window.addEventListener('focus', handleWindowFocus);
+    if (typeof window !== "undefined") {
+      window.addEventListener("pageshow", handlePageShow);
+      window.addEventListener("focus", handleWindowFocus);
     }
 
     return () => {
-      if (typeof window !== 'undefined') {
-        window.removeEventListener('pageshow', handlePageShow);
-        window.removeEventListener('focus', handleWindowFocus);
+      if (typeof window !== "undefined") {
+        window.removeEventListener("pageshow", handlePageShow);
+        window.removeEventListener("focus", handleWindowFocus);
       }
     };
   });
@@ -70,7 +73,9 @@
     await withLoadingState({
       action: async () => {
         if (buildingId) {
-          const response = await api.get<Meeting[]>(`/buildings/${buildingId}/meetings`);
+          const response = await api.get<Meeting[]>(
+            `/buildings/${buildingId}/meetings`,
+          );
           return { data: response, total: response.length, pages: 1, page: 1 };
         } else {
           const endpoint = `/meetings?page=${currentPage}&per_page=${perPage}`;
@@ -83,15 +88,15 @@
           };
         }
       },
-      setLoading: (v: boolean) => loading = v,
-      setError: (v: string) => error = v,
+      setLoading: (v: boolean) => (loading = v),
+      setError: (v: string) => (error = v),
       onSuccess: (result) => {
         meetings = result.data;
         totalItems = result.total;
         totalPages = result.pages;
         currentPage = result.page;
       },
-      errorMessage: $_('meetings.error_loading_meetings'),
+      errorMessage: $_("meetings.error_loading_meetings"),
     });
   }
 
@@ -102,19 +107,30 @@
 
   function getStatusBadge(status: string): { class: string; label: string } {
     const badges: Record<string, { class: string; label: string }> = {
-      'Scheduled': { class: 'bg-blue-100 text-blue-800', label: $_('meetings.status_scheduled') },
-      'Completed': { class: 'bg-green-100 text-green-800', label: $_('meetings.status_completed') },
-      'Cancelled': { class: 'bg-red-100 text-red-800', label: $_('meetings.status_cancelled') }
+      Scheduled: {
+        class: "bg-blue-100 text-blue-800",
+        label: $_("meetings.status_scheduled"),
+      },
+      Completed: {
+        class: "bg-green-100 text-green-800",
+        label: $_("meetings.status_completed"),
+      },
+      Cancelled: {
+        class: "bg-red-100 text-red-800",
+        label: $_("meetings.status_cancelled"),
+      },
     };
-    return badges[status] || { class: 'bg-gray-100 text-gray-800', label: status };
+    return (
+      badges[status] || { class: "bg-gray-100 text-gray-800", label: status }
+    );
   }
 
   function getMeetingTypeLabel(type: string): string {
     const labels: Record<string, string> = {
-      'Ordinary': $_('meetings.type_ordinary'),
-      'Extraordinary': $_('meetings.type_extraordinary'),
-      'ordinary': $_('meetings.type_ordinary'),
-      'extraordinary': $_('meetings.type_extraordinary')
+      Ordinary: $_("meetings.type_ordinary"),
+      Extraordinary: $_("meetings.type_extraordinary"),
+      ordinary: $_("meetings.type_ordinary"),
+      extraordinary: $_("meetings.type_extraordinary"),
     };
     return labels[type] || type;
   }
@@ -123,45 +139,70 @@
 <div class="space-y-4" data-testid="meeting-list-container">
   <div class="flex justify-between items-center">
     <p class="text-gray-600">
-      {$_('meetings.count', { values: { count: totalItems } })}
+      {$_("meetings.count", { values: { count: totalItems } })}
     </p>
     {#if canCreate}
       <button
-        onclick={() => showCreateModal = true}
+        onclick={() => (showCreateModal = true)}
         class="inline-flex items-center px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition"
         data-testid="btn-new-meeting"
       >
-        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+        <svg
+          class="w-5 h-5 mr-2"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M12 4v16m8-8H4"
+          />
         </svg>
-        {$_('meetings.newMeetingShort')}
+        {$_("meetings.newMeetingShort")}
       </button>
     {/if}
   </div>
 
   {#if error}
-    <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+    <div
+      class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded"
+    >
       {error}
     </div>
   {/if}
 
   {#if loading}
-    <p class="text-center text-gray-600 py-8" data-testid="meeting-list-loading">{$_('common.loading')}</p>
+    <p
+      class="text-center text-gray-600 py-8"
+      data-testid="meeting-list-loading"
+    >
+      {$_("common.loading")}
+    </p>
   {:else if meetings.length === 0}
     <p class="text-center text-gray-600 py-8">
-      {$_('meetings.no_meetings')}
+      {$_("meetings.no_meetings")}
     </p>
   {:else}
     <div class="grid gap-4">
       {#each meetings as meeting (meeting.id)}
-        <div class="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition" data-testid="meeting-card">
+        <div
+          class="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition"
+          data-testid="meeting-card"
+        >
           <div class="flex justify-between items-start">
             <div>
               <div class="flex items-center gap-2 mb-2">
                 <h3 class="text-lg font-semibold text-gray-900">
                   {meeting.title}
                 </h3>
-                <span class="text-xs px-2 py-1 rounded-full {getStatusBadge(meeting.status).class}" data-testid="meeting-status-badge">
+                <span
+                  class="text-xs px-2 py-1 rounded-full {getStatusBadge(
+                    meeting.status,
+                  ).class}"
+                  data-testid="meeting-status-badge"
+                >
                   {getStatusBadge(meeting.status).label}
                 </span>
               </div>
@@ -173,12 +214,17 @@
               </p>
               {#if meeting.attendees_count}
                 <p class="text-gray-500 text-sm">
-                  👥 {$_('meetings.participants_count', { values: { count: meeting.attendees_count } })}
+                  👥 {$_("meetings.participants_count", {
+                    values: { count: meeting.attendees_count },
+                  })}
                 </p>
               {/if}
             </div>
-            <a href="/meeting-detail?id={meeting.id}" class="text-primary-600 hover:text-primary-700 text-sm font-medium">
-              {$_('common.details')} →
+            <a
+              href="/meeting-detail?id={meeting.id}"
+              class="text-primary-600 hover:text-primary-700 text-sm font-medium"
+            >
+              {$_("common.details")} →
             </a>
           </div>
         </div>
@@ -187,10 +233,10 @@
 
     {#if totalPages > 1}
       <Pagination
-        currentPage={currentPage}
-        totalPages={totalPages}
-        totalItems={totalItems}
-        perPage={perPage}
+        {currentPage}
+        {totalPages}
+        {totalItems}
+        {perPage}
         onPageChange={handlePageChange}
       />
     {/if}
@@ -200,6 +246,6 @@
 {#if showCreateModal}
   <MeetingCreateModal
     oncreated={handleMeetingCreated}
-    onclose={() => showCreateModal = false}
+    onclose={() => (showCreateModal = false)}
   />
 {/if}

@@ -1,13 +1,17 @@
 <script lang="ts">
   // Svelte 5 runes mode — migrated from legacy (STORY-P7-602)
   // Focus trap + focus restoration backported from AccessibleModal (STORY-P7-803)
-  import type { Snippet } from 'svelte';
-  import { trapFocus, FocusManager, getFocusableElements } from '../../lib/accessibility';
+  import type { Snippet } from "svelte";
+  import {
+    trapFocus,
+    FocusManager,
+    getFocusableElements,
+  } from "../../lib/accessibility";
 
   let {
     isOpen = false,
-    title = '',
-    size = 'md',
+    title = "",
+    size = "md",
     showClose = true,
     onclose,
     children,
@@ -15,7 +19,7 @@
   }: {
     isOpen?: boolean;
     title?: string;
-    size?: 'sm' | 'md' | 'lg' | 'xl';
+    size?: "sm" | "md" | "lg" | "xl";
     showClose?: boolean;
     onclose?: () => void;
     children?: Snippet;
@@ -23,10 +27,10 @@
   } = $props();
 
   const sizeClasses: Record<string, string> = {
-    sm: 'max-w-md',
-    md: 'max-w-2xl',
-    lg: 'max-w-4xl',
-    xl: 'max-w-6xl',
+    sm: "max-w-md",
+    md: "max-w-2xl",
+    lg: "max-w-4xl",
+    xl: "max-w-6xl",
   };
 
   let dialogEl = $state<HTMLElement | undefined>(undefined);
@@ -38,20 +42,20 @@
   // Keyboard: Escape closes the modal
   $effect(() => {
     const handleKeydown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && isOpen) {
+      if (e.key === "Escape" && isOpen) {
         handleClose();
       }
     };
-    document.addEventListener('keydown', handleKeydown);
+    document.addEventListener("keydown", handleKeydown);
     return () => {
-      document.removeEventListener('keydown', handleKeydown);
+      document.removeEventListener("keydown", handleKeydown);
     };
   });
 
   // Body scroll lock
   $effect(() => {
-    if (typeof window !== 'undefined') {
-      document.body.style.overflow = isOpen ? 'hidden' : 'auto';
+    if (typeof window !== "undefined") {
+      document.body.style.overflow = isOpen ? "hidden" : "auto";
     }
   });
 
@@ -91,10 +95,14 @@
   ></div>
 
   <!-- Modal -->
-  <div class="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto">
+  <div
+    class="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto"
+  >
     <div
       bind:this={dialogEl}
-      class="bg-white rounded-lg shadow-xl w-full {sizeClasses[size]} mx-auto my-8 max-h-[90vh] flex flex-col"
+      class="bg-white rounded-lg shadow-xl w-full {sizeClasses[
+        size
+      ]} mx-auto my-8 max-h-[90vh] flex flex-col"
       onclick={(e) => e.stopPropagation()}
       onkeydown={(e) => e.stopPropagation()}
       role="dialog"
@@ -103,7 +111,9 @@
       tabindex="-1"
     >
       <!-- Header -->
-      <div class="flex items-center justify-between p-6 border-b border-gray-200">
+      <div
+        class="flex items-center justify-between p-6 border-b border-gray-200"
+      >
         <h2 id="modal-title" class="text-xl font-semibold text-gray-900">
           {title}
         </h2>
@@ -113,8 +123,18 @@
             class="text-gray-400 hover:text-gray-600 transition"
             aria-label="Close"
           >
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            <svg
+              class="w-6 h-6"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M6 18L18 6M6 6l12 12"
+              />
             </svg>
           </button>
         {/if}

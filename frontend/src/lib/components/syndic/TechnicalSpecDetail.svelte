@@ -103,8 +103,7 @@
 
   /** Le user est-il en rôle mandataire qui requiert un mandate actif ? */
   let userIsMandataryRole = $derived(
-    currentUserRole !== null &&
-      MANDATARY_ROLES.includes(currentUserRole),
+    currentUserRole !== null && MANDATARY_ROLES.includes(currentUserRole),
   );
 
   /** Pré-requis mandate satisfait ? (si rôle mandataire → mandate actif requis) */
@@ -166,7 +165,7 @@
     submittingForSign = true;
     try {
       await onSubmitForSign(spec.id);
-      toast.success($_('technicalSpecs.submittedForSignature'));
+      toast.success($_("technicalSpecs.submittedForSignature"));
     } catch {
       // toast déjà émis par api.ts
     } finally {
@@ -256,7 +255,9 @@
 
   <!-- Deliverables -->
   <section class="flex flex-col gap-1">
-    <h3 class="text-sm font-medium text-gray-700">{$_('technicalSpecs.deliverables')}</h3>
+    <h3 class="text-sm font-medium text-gray-700">
+      {$_("technicalSpecs.deliverables")}
+    </h3>
     <ol class="list-decimal list-inside text-sm text-gray-800">
       {#each spec.deliverables as deliverable, idx (idx)}
         <li data-testid={`tech-spec-deliverable-list-${idx}`}>
@@ -269,7 +270,9 @@
   <!-- Attachments (URLs cliquables) -->
   {#if spec.attachments.length > 0}
     <section class="flex flex-col gap-1">
-      <h3 class="text-sm font-medium text-gray-700">{$_('technicalSpecs.attachmentsShort')}</h3>
+      <h3 class="text-sm font-medium text-gray-700">
+        {$_("technicalSpecs.attachmentsShort")}
+      </h3>
       <ul class="text-sm">
         {#each spec.attachments as att, idx (idx)}
           <li>
@@ -352,7 +355,7 @@
         onclick={openBumpModal}
         class="min-h-[44px] rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 focus-visible:outline-2 focus-visible:outline-offset-2"
       >
-        {$_('technicalSpecs.newVersionBump')}
+        {$_("technicalSpecs.newVersionBump")}
       </button>
     {/if}
   </footer>
@@ -378,21 +381,18 @@
     data-testid="tech-spec-bump-modal"
   >
     <div class="bg-white rounded shadow-lg p-6 max-w-md w-full">
-      <h3
-        id="tech-spec-bump-modal-title"
-        class="text-base font-semibold mb-2"
-      >
-        {$_('technicalSpecs.confirmBumpTitle')}
+      <h3 id="tech-spec-bump-modal-title" class="text-base font-semibold mb-2">
+        {$_("technicalSpecs.confirmBumpTitle")}
       </h3>
       <p class="text-sm text-gray-700 mb-2">
-        {$_('technicalSpecs.bumpFrom')}
+        {$_("technicalSpecs.bumpFrom")}
         <strong class="font-mono">v{spec.version}</strong>.
       </p>
       <p
         class="text-sm text-orange-700 mb-4"
         data-testid="tech-spec-bump-warning"
       >
-        ⚠ {$_('technicalSpecs.bumpWarning')}
+        ⚠ {$_("technicalSpecs.bumpWarning")}
       </p>
       <div class="flex justify-end gap-2">
         <button
@@ -401,7 +401,7 @@
           class="px-3 py-1 text-sm border border-gray-300 rounded text-gray-700"
           onclick={closeBumpModal}
         >
-          {$_('common.cancel')}
+          {$_("common.cancel")}
         </button>
         <!-- svelte-ignore a11y_autofocus -->
         <button
@@ -411,7 +411,7 @@
           onclick={() => void confirmBump()}
           autofocus
         >
-          {$_('common.continue')}
+          {$_("common.continue")}
         </button>
       </div>
     </div>

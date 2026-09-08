@@ -14,7 +14,10 @@
   import { toNumber } from "../lib/utils/decimal.utils";
   import { SvelteMap } from "svelte/reactivity";
 
-  let { buildingId = null, reloadToken = 0 }: {
+  let {
+    buildingId = null,
+    reloadToken = 0,
+  }: {
     buildingId?: string | null;
     /// Increment par le parent apres une creation pour rafraichir la liste.
     reloadToken?: number;
@@ -54,7 +57,10 @@
   // `SvelteMap` et non `Map` : `$state` rend reactifs les objets et les
   // tableaux, jamais les collections natives — muter une `Map` ne
   // redeclencherait aucun rendu.
-  let expanded = new SvelteMap<string, JournalEntryLine[] | "loading" | "error">();
+  let expanded = new SvelteMap<
+    string,
+    JournalEntryLine[] | "loading" | "error"
+  >();
 
   const journalTypes = $derived([
     { code: "ACH", label: $_("journal.types.ach") },
@@ -78,7 +84,8 @@
       if (buildingId) params.set("building_id", buildingId);
       if (filterJournalType) params.set("journal_type", filterJournalType);
       // L'API attend du RFC3339, pas la date nue du champ `<input type=date>`.
-      if (filterStartDate) params.set("start_date", `${filterStartDate}T00:00:00Z`);
+      if (filterStartDate)
+        params.set("start_date", `${filterStartDate}T00:00:00Z`);
       if (filterEndDate) params.set("end_date", `${filterEndDate}T23:59:59Z`);
 
       const response = await api.get<{ data: JournalEntry[] }>(
@@ -135,13 +142,20 @@
 
 <div class="bg-white rounded-lg shadow" data-testid="journal-entry-list">
   <div class="border-b border-gray-200 px-6 py-4">
-    <h2 class="text-lg font-semibold text-gray-900">{$_("journal.listTitle")}</h2>
+    <h2 class="text-lg font-semibold text-gray-900">
+      {$_("journal.listTitle")}
+    </h2>
     <p class="text-sm text-gray-500">{$_("journal.listSubtitle")}</p>
   </div>
 
-  <div class="border-b border-gray-200 px-6 py-4 grid grid-cols-1 gap-4 sm:grid-cols-4">
+  <div
+    class="border-b border-gray-200 px-6 py-4 grid grid-cols-1 gap-4 sm:grid-cols-4"
+  >
     <div>
-      <label for="journal-filter-type" class="block text-sm font-medium text-gray-700 mb-1">
+      <label
+        for="journal-filter-type"
+        class="block text-sm font-medium text-gray-700 mb-1"
+      >
         {$_("journal.journalType")}
       </label>
       <select
@@ -158,7 +172,10 @@
       </select>
     </div>
     <div>
-      <label for="journal-filter-start" class="block text-sm font-medium text-gray-700 mb-1">
+      <label
+        for="journal-filter-start"
+        class="block text-sm font-medium text-gray-700 mb-1"
+      >
         {$_("journal.from")}
       </label>
       <input
@@ -171,7 +188,10 @@
       />
     </div>
     <div>
-      <label for="journal-filter-end" class="block text-sm font-medium text-gray-700 mb-1">
+      <label
+        for="journal-filter-end"
+        class="block text-sm font-medium text-gray-700 mb-1"
+      >
         {$_("journal.to")}
       </label>
       <input
@@ -201,31 +221,63 @@
     {:else if error}
       <p class="text-red-600" data-testid="journal-list-error">{error}</p>
     {:else if entries.length === 0}
-      <p class="text-gray-500" data-testid="journal-list-empty">{$_("journal.noEntries")}</p>
+      <p class="text-gray-500" data-testid="journal-list-empty">
+        {$_("journal.noEntries")}
+      </p>
     {:else}
       <div class="overflow-x-auto">
         <table class="min-w-full divide-y divide-gray-200">
           <thead class="bg-gray-50">
             <tr>
-              <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{$_("journal.operationDate")}</th>
-              <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{$_("journal.journalType")}</th>
-              <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{$_("journal.description")}</th>
-              <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{$_("journal.documentRef")}</th>
-              <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">{$_("journal.accountingLines")}</th>
+              <th
+                scope="col"
+                class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase"
+                >{$_("journal.operationDate")}</th
+              >
+              <th
+                scope="col"
+                class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase"
+                >{$_("journal.journalType")}</th
+              >
+              <th
+                scope="col"
+                class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase"
+                >{$_("journal.description")}</th
+              >
+              <th
+                scope="col"
+                class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase"
+                >{$_("journal.documentRef")}</th
+              >
+              <th
+                scope="col"
+                class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase"
+                >{$_("journal.accountingLines")}</th
+              >
             </tr>
           </thead>
           <tbody class="divide-y divide-gray-200">
             {#each entries as entry (entry.id)}
               <tr data-testid="journal-entry-row">
-                <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900">{formatDate(entry.entry_date)}</td>
+                <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900"
+                  >{formatDate(entry.entry_date)}</td
+                >
                 <td class="px-4 py-3 whitespace-nowrap text-sm">
-                  <span class="inline-flex items-center rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-800">
+                  <span
+                    class="inline-flex items-center rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-800"
+                  >
                     {entry.journal_type || "—"}
                   </span>
-                  <span class="ml-2 text-gray-500">{journalLabel(entry.journal_type)}</span>
+                  <span class="ml-2 text-gray-500"
+                    >{journalLabel(entry.journal_type)}</span
+                  >
                 </td>
-                <td class="px-4 py-3 text-sm text-gray-900">{entry.description || "—"}</td>
-                <td class="px-4 py-3 text-sm text-gray-500">{entry.document_ref || $_("journal.noDocumentRef")}</td>
+                <td class="px-4 py-3 text-sm text-gray-900"
+                  >{entry.description || "—"}</td
+                >
+                <td class="px-4 py-3 text-sm text-gray-500"
+                  >{entry.document_ref || $_("journal.noDocumentRef")}</td
+                >
                 <td class="px-4 py-3 text-right text-sm">
                   <button
                     type="button"
@@ -233,45 +285,80 @@
                     data-testid="toggle-lines-button"
                     class="text-primary-600 hover:text-primary-800 font-medium"
                   >
-                    {expanded.has(entry.id) ? $_("journal.hideLines") : $_("journal.showLines")}
+                    {expanded.has(entry.id)
+                      ? $_("journal.hideLines")
+                      : $_("journal.showLines")}
                   </button>
                 </td>
               </tr>
               {#if expanded.has(entry.id)}
                 {@const lines = expanded.get(entry.id)}
                 <tr>
-                  <td colspan="5" class="bg-gray-50 px-4 py-3" data-testid="journal-entry-lines">
+                  <td
+                    colspan="5"
+                    class="bg-gray-50 px-4 py-3"
+                    data-testid="journal-entry-lines"
+                  >
                     {#if lines === "loading"}
-                      <p class="text-sm text-gray-500">{$_("common.loading")}</p>
+                      <p class="text-sm text-gray-500">
+                        {$_("common.loading")}
+                      </p>
                     {:else if lines === "error"}
-                      <p class="text-sm text-red-600">{$_("journal.linesLoadError")}</p>
+                      <p class="text-sm text-red-600">
+                        {$_("journal.linesLoadError")}
+                      </p>
                     {:else if lines}
                       <table class="min-w-full text-sm">
                         <thead>
                           <tr class="text-left text-xs uppercase text-gray-500">
-                            <th scope="col" class="py-1 pr-4">{$_("journal.account")}</th>
-                            <th scope="col" class="py-1 pr-4">{$_("journal.description")}</th>
-                            <th scope="col" class="py-1 pr-4 text-right">{$_("journal.debit")}</th>
-                            <th scope="col" class="py-1 text-right">{$_("journal.credit")}</th>
+                            <th scope="col" class="py-1 pr-4"
+                              >{$_("journal.account")}</th
+                            >
+                            <th scope="col" class="py-1 pr-4"
+                              >{$_("journal.description")}</th
+                            >
+                            <th scope="col" class="py-1 pr-4 text-right"
+                              >{$_("journal.debit")}</th
+                            >
+                            <th scope="col" class="py-1 text-right"
+                              >{$_("journal.credit")}</th
+                            >
                           </tr>
                         </thead>
                         <tbody>
                           {#each lines as line (line.id)}
                             <tr data-testid="journal-line-row">
-                              <td class="py-1 pr-4 font-mono text-gray-900">{line.account_code}</td>
-                              <td class="py-1 pr-4 text-gray-600">{line.description || "—"}</td>
-                              <td class="py-1 pr-4 text-right tabular-nums text-gray-900">
-                                {toNumber(line.debit) > 0 ? formatCurrency(toNumber(line.debit)) : "—"}
+                              <td class="py-1 pr-4 font-mono text-gray-900"
+                                >{line.account_code}</td
+                              >
+                              <td class="py-1 pr-4 text-gray-600"
+                                >{line.description || "—"}</td
+                              >
+                              <td
+                                class="py-1 pr-4 text-right tabular-nums text-gray-900"
+                              >
+                                {toNumber(line.debit) > 0
+                                  ? formatCurrency(toNumber(line.debit))
+                                  : "—"}
                               </td>
-                              <td class="py-1 text-right tabular-nums text-gray-900">
-                                {toNumber(line.credit) > 0 ? formatCurrency(toNumber(line.credit)) : "—"}
+                              <td
+                                class="py-1 text-right tabular-nums text-gray-900"
+                              >
+                                {toNumber(line.credit) > 0
+                                  ? formatCurrency(toNumber(line.credit))
+                                  : "—"}
                               </td>
                             </tr>
                           {/each}
                         </tbody>
                       </table>
-                      <p class="mt-2 text-xs text-gray-500" data-testid="journal-entry-total">
-                        {$_("journal.entryTotal")}: {formatCurrency(entryTotal(lines))}
+                      <p
+                        class="mt-2 text-xs text-gray-500"
+                        data-testid="journal-entry-total"
+                      >
+                        {$_("journal.entryTotal")}: {formatCurrency(
+                          entryTotal(lines),
+                        )}
                       </p>
                     {/if}
                   </td>
@@ -292,7 +379,9 @@
         >
           {$_("journal.previous")}
         </button>
-        <span class="text-sm text-gray-500">{$_("journal.page", { values: { page: String(page) } })}</span>
+        <span class="text-sm text-gray-500"
+          >{$_("journal.page", { values: { page: String(page) } })}</span
+        >
         <button
           type="button"
           disabled={entries.length < perPage}

@@ -1,24 +1,24 @@
 <script lang="ts">
   // Svelte 5 runes mode
-  import { _ } from '../../lib/i18n';
-  import { toast } from '../../stores/toast';
-  import { api } from '../../lib/api';
-  import { UserRole, type User, type Organization } from '../../lib/types';
-  import Modal from '../ui/Modal.svelte';
-  import FormInput from '../ui/FormInput.svelte';
-  import FormSelect from '../ui/FormSelect.svelte';
-  import Button from '../ui/Button.svelte';
+  import { _ } from "../../lib/i18n";
+  import { toast } from "../../stores/toast";
+  import { api } from "../../lib/api";
+  import { UserRole, type User, type Organization } from "../../lib/types";
+  import Modal from "../ui/Modal.svelte";
+  import FormInput from "../ui/FormInput.svelte";
+  import FormSelect from "../ui/FormSelect.svelte";
+  import Button from "../ui/Button.svelte";
 
   let {
     isOpen = false,
     user = null,
-    mode = 'create',
+    mode = "create",
     onclose,
     onsuccess,
   }: {
     isOpen?: boolean;
     user?: User | null;
-    mode?: 'create' | 'edit';
+    mode?: "create" | "edit";
     onclose?: () => void;
     onsuccess?: () => void;
   } = $props();
@@ -31,14 +31,14 @@
   }
 
   const generateId = () =>
-    typeof crypto !== 'undefined' && crypto.randomUUID
+    typeof crypto !== "undefined" && crypto.randomUUID
       ? crypto.randomUUID()
       : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 
   const createRoleEntry = (
     role: UserRole = UserRole.OWNER,
-    organizationId = '',
-    isPrimary = false
+    organizationId = "",
+    isPrimary = false,
   ): RoleFormEntry => ({
     id: generateId(),
     role,
@@ -47,22 +47,24 @@
   });
 
   let formData = $state({
-    email: '',
-    password: '',
-    confirmPassword: '',
-    first_name: '',
-    last_name: '',
+    email: "",
+    password: "",
+    confirmPassword: "",
+    first_name: "",
+    last_name: "",
   });
 
-  let formRoles = $state<RoleFormEntry[]>([createRoleEntry(UserRole.OWNER, '', true)]);
+  let formRoles = $state<RoleFormEntry[]>([
+    createRoleEntry(UserRole.OWNER, "", true),
+  ]);
 
   let errors = $state({
-    email: '',
-    password: '',
-    confirmPassword: '',
-    first_name: '',
-    last_name: '',
-    roles: '',
+    email: "",
+    password: "",
+    confirmPassword: "",
+    first_name: "",
+    last_name: "",
+    roles: "",
   });
 
   let organizations = $state<Organization[]>([]);
@@ -72,10 +74,10 @@
   let currentUserId = $state<string | null>(null);
 
   const roleOptions = [
-    { value: UserRole.OWNER, label: $_('admin.user.roleOwner') },
-    { value: UserRole.ACCOUNTANT, label: $_('admin.user.roleAccountant') },
-    { value: UserRole.SYNDIC, label: $_('admin.user.roleSyndic') },
-    { value: UserRole.SUPERADMIN, label: $_('admin.user.roleSuperAdmin') },
+    { value: UserRole.OWNER, label: $_("admin.user.roleOwner") },
+    { value: UserRole.ACCOUNTANT, label: $_("admin.user.roleAccountant") },
+    { value: UserRole.SYNDIC, label: $_("admin.user.roleSyndic") },
+    { value: UserRole.SUPERADMIN, label: $_("admin.user.roleSuperAdmin") },
   ];
 
   $effect(() => {
@@ -85,14 +87,16 @@
   async function loadOrganizations() {
     loadingOrgs = true;
     try {
-      const response = await api.get<{ data: Organization[] }>('/organizations?per_page=1000');
+      const response = await api.get<{ data: Organization[] }>(
+        "/organizations?per_page=1000",
+      );
       organizations = response.data;
       organizationOptions = organizations.map((org) => ({
         value: org.id,
         label: `${org.name} (${org.subscription_plan})`,
       }));
     } catch (e) {
-      console.error('Error loading organizations:', e);
+      console.error("Error loading organizations:", e);
     } finally {
       loadingOrgs = false;
     }
@@ -100,28 +104,28 @@
 
   function resetForm() {
     formData = {
-      email: '',
-      password: '',
-      confirmPassword: '',
-      first_name: '',
-      last_name: '',
+      email: "",
+      password: "",
+      confirmPassword: "",
+      first_name: "",
+      last_name: "",
     };
-    formRoles = [createRoleEntry(UserRole.OWNER, '', true)];
+    formRoles = [createRoleEntry(UserRole.OWNER, "", true)];
     errors = {
-      email: '',
-      password: '',
-      confirmPassword: '',
-      first_name: '',
-      last_name: '',
-      roles: '',
+      email: "",
+      password: "",
+      confirmPassword: "",
+      first_name: "",
+      last_name: "",
+      roles: "",
     };
   }
 
   function populateFormFromUser(existing: User) {
     formData = {
       email: existing.email,
-      password: '',
-      confirmPassword: '',
+      password: "",
+      confirmPassword: "",
       first_name: existing.first_name,
       last_name: existing.last_name,
     };
@@ -129,30 +133,26 @@
     const roles = existing.roles ?? [];
     if (roles.length > 0) {
       formRoles = roles.map((role) =>
-        createRoleEntry(
-          role.role,
-          role.organizationId ?? '',
-          role.isPrimary
-        )
+        createRoleEntry(role.role, role.organizationId ?? "", role.isPrimary),
       );
       ensureSinglePrimary();
     } else {
       const fallbackRole = existing.activeRole ?? {
         id: generateId(),
         role: existing.role,
-        organizationId: existing.organizationId ?? '',
+        organizationId: existing.organizationId ?? "",
         isPrimary: true,
       };
       formRoles = [
         createRoleEntry(
           fallbackRole.role,
-          fallbackRole.organizationId ?? '',
-          true
+          fallbackRole.organizationId ?? "",
+          true,
         ),
       ];
     }
 
-    errors.roles = '';
+    errors.roles = "";
   }
 
   function ensureSinglePrimary() {
@@ -166,15 +166,15 @@
 
   $effect(() => {
     if (isOpen) {
-      if (mode === 'edit' && user && currentUserId !== user.id) {
+      if (mode === "edit" && user && currentUserId !== user.id) {
         populateFormFromUser(user);
         currentUserId = user.id;
-      } else if (mode === 'create' && currentUserId !== null) {
+      } else if (mode === "create" && currentUserId !== null) {
         resetForm();
         currentUserId = null;
       }
     } else if (!isOpen) {
-      currentUserId = mode === 'edit' && user ? user.id : null;
+      currentUserId = mode === "edit" && user ? user.id : null;
     }
   });
 
@@ -192,25 +192,22 @@
       return {
         ...role,
         role: roleValue,
-        organizationId: roleValue === UserRole.SUPERADMIN ? '' : role.organizationId,
+        organizationId:
+          roleValue === UserRole.SUPERADMIN ? "" : role.organizationId,
       };
     });
   }
 
   function handleOrganizationChange(index: number, value: string) {
     formRoles = formRoles.map((role, idx) =>
-      idx === index ? { ...role, organizationId: value } : role
+      idx === index ? { ...role, organizationId: value } : role,
     );
   }
 
   function addRoleEntry() {
     formRoles = [
       ...formRoles,
-      createRoleEntry(
-        UserRole.OWNER,
-        '',
-        formRoles.length === 0
-      ),
+      createRoleEntry(UserRole.OWNER, "", formRoles.length === 0),
     ];
     ensureSinglePrimary();
   }
@@ -243,72 +240,71 @@
   const validateForm = (): boolean => {
     let isValid = true;
     errors = {
-      email: '',
-      password: '',
-      confirmPassword: '',
-      first_name: '',
-      last_name: '',
-      roles: '',
+      email: "",
+      password: "",
+      confirmPassword: "",
+      first_name: "",
+      last_name: "",
+      roles: "",
     };
 
     // Email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!formData.email) {
-      errors.email = $_('admin.user.emailRequired');
+      errors.email = $_("admin.user.emailRequired");
       isValid = false;
     } else if (!emailRegex.test(formData.email)) {
-      errors.email = $_('admin.user.emailFormatError');
+      errors.email = $_("admin.user.emailFormatError");
       isValid = false;
     }
 
     // Password validation
-    if (mode === 'create' || formData.password) {
+    if (mode === "create" || formData.password) {
       if (!formData.password) {
-        errors.password = $_('admin.user.passwordRequired');
+        errors.password = $_("admin.user.passwordRequired");
         isValid = false;
       } else if (formData.password.length < 6) {
-        errors.password = $_('admin.user.passwordMinError');
+        errors.password = $_("admin.user.passwordMinError");
         isValid = false;
       }
 
       if (formData.password !== formData.confirmPassword) {
-        errors.confirmPassword = $_('admin.user.passwordMismatch');
+        errors.confirmPassword = $_("admin.user.passwordMismatch");
         isValid = false;
       }
     }
 
     // First name validation
     if (!formData.first_name || formData.first_name.trim().length < 2) {
-      errors.first_name = $_('admin.user.firstNameError');
+      errors.first_name = $_("admin.user.firstNameError");
       isValid = false;
     }
 
     // Last name validation
     if (!formData.last_name || formData.last_name.trim().length < 2) {
-      errors.last_name = $_('admin.user.lastNameError');
+      errors.last_name = $_("admin.user.lastNameError");
       isValid = false;
     }
 
     // Roles validation
     if (formRoles.length === 0) {
-      errors.roles = $_('admin.user.roleRequired');
+      errors.roles = $_("admin.user.roleRequired");
       isValid = false;
     } else {
       const seen = new Set<string>();
       let primaryCount = 0;
       for (const entry of formRoles) {
         if (entry.role !== UserRole.SUPERADMIN && !entry.organizationId) {
-          errors.roles =
-            $_('admin.user.organizationRequired');
+          errors.roles = $_("admin.user.organizationRequired");
           isValid = false;
           break;
         }
         if (entry.isPrimary) {
           primaryCount += 1;
         }
-        const key = `${entry.role}-${entry.organizationId || 'none'}`;
+        const key = `${entry.role}-${entry.organizationId || "none"}`;
         if (seen.has(key)) {
-          errors.roles = $_('admin.user.duplicateRoleError');
+          errors.roles = $_("admin.user.duplicateRoleError");
           isValid = false;
           break;
         }
@@ -316,10 +312,10 @@
       }
       if (isValid) {
         if (primaryCount == 0) {
-          errors.roles = $_('admin.user.primaryRoleRequired');
+          errors.roles = $_("admin.user.primaryRoleRequired");
           isValid = false;
         } else if (primaryCount > 1) {
-          errors.roles = $_('admin.user.onlyOnePrimaryRole');
+          errors.roles = $_("admin.user.onlyOnePrimaryRole");
           isValid = false;
         }
       }
@@ -360,28 +356,29 @@
         payload.organization_id = null;
       }
 
-      if (mode === 'create') {
+      if (mode === "create") {
         payload.password = formData.password;
-        await api.post('/users', payload);
-        toast.show($_('admin.user.createdSuccessfully'), 'success');
+        await api.post("/users", payload);
+        toast.show($_("admin.user.createdSuccessfully"), "success");
       } else if (user) {
         if (formData.password) {
           payload.password = formData.password;
         }
         await api.put(`/users/${user.id}`, payload);
-        toast.show($_('admin.user.updatedSuccessfully'), 'success');
+        toast.show($_("admin.user.updatedSuccessfully"), "success");
       }
 
       loading = false;
       handleClose();
       onsuccess?.();
     } catch (e) {
-      const errorMessage = e instanceof Error ? e.message : 'Une erreur est survenue';
+      const errorMessage =
+        e instanceof Error ? e.message : "Une erreur est survenue";
 
-      if (errorMessage.includes('email')) {
-        errors.email = $_('admin.user.emailAlreadyUsed');
+      if (errorMessage.includes("email")) {
+        errors.email = $_("admin.user.emailAlreadyUsed");
       } else {
-        toast.show(errorMessage, 'error');
+        toast.show(errorMessage, "error");
       }
       loading = false;
     }
@@ -395,11 +392,21 @@
   };
 </script>
 
-<Modal {isOpen} onclose={handleClose} size="lg" title={mode === 'create' ? $_('admin.user.createUser') : $_('admin.user.editUser')}>
+<Modal
+  {isOpen}
+  onclose={handleClose}
+  size="lg"
+  title={mode === "create"
+    ? $_("admin.user.createUser")
+    : $_("admin.user.editUser")}
+>
   <form
     class="space-y-6"
     data-testid="user-form"
-    onsubmit={(e) => { e.preventDefault(); handleSubmit(); }}
+    onsubmit={(e) => {
+      e.preventDefault();
+      handleSubmit();
+    }}
   >
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
       <FormInput
@@ -413,7 +420,7 @@
       />
       <FormInput
         id="first_name"
-        label={$_('common.firstName')}
+        label={$_("common.firstName")}
         required
         bind:value={formData.first_name}
         error={errors.first_name}
@@ -421,13 +428,13 @@
       />
       <FormInput
         id="last_name"
-        label={$_('common.lastName')}
+        label={$_("common.lastName")}
         required
         bind:value={formData.last_name}
         error={errors.last_name}
         data-testid="user-lastname-input"
       />
-      {#if mode === 'create'}
+      {#if mode === "create"}
         <FormInput
           id="password"
           label="Mot de passe"
@@ -468,18 +475,20 @@
 
     <div class="border-t border-gray-200 pt-4">
       <div class="flex items-center justify-between">
-        <h3 class="text-lg font-semibold text-gray-900">{$_('users.assignedRoles')}</h3>
+        <h3 class="text-lg font-semibold text-gray-900">
+          {$_("users.assignedRoles")}
+        </h3>
         <Button
           variant="secondary"
           type="button"
           onclick={addRoleEntry}
           data-testid="user-add-role-button"
         >
-          {$_('users.addRole')}
+          {$_("users.addRole")}
         </Button>
       </div>
       <p class="text-sm text-gray-500 mt-1">
-        {$_('users.rolesHint')}
+        {$_("users.rolesHint")}
       </p>
       {#if errors.roles}
         <p class="text-sm text-red-600 mt-2">{errors.roles}</p>
@@ -492,15 +501,21 @@
             data-testid="user-role-row"
           >
             <div class="md:col-span-4">
-              <label for={`user-role-select-${index}`} class="block text-sm font-medium text-gray-700 mb-1">
-                {$_('common.role')} <span class="text-red-500">*</span>
+              <label
+                for={`user-role-select-${index}`}
+                class="block text-sm font-medium text-gray-700 mb-1"
+              >
+                {$_("common.role")} <span class="text-red-500">*</span>
               </label>
               <select
                 id={`user-role-select-${index}`}
                 class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                 bind:value={roleEntry.role}
                 onchange={(event) =>
-                  handleRoleChange(index, (event.target as HTMLSelectElement).value)}
+                  handleRoleChange(
+                    index,
+                    (event.target as HTMLSelectElement).value,
+                  )}
                 data-testid="user-role-select"
               >
                 {#each roleOptions as option}
@@ -512,11 +527,15 @@
             <div class="md:col-span-5">
               {#if roleEntry.role === UserRole.SUPERADMIN}
                 <p class="text-sm text-gray-600 mt-8">
-                  {$_('users.noOrgForSuperadmin')}
+                  {$_("users.noOrgForSuperadmin")}
                 </p>
               {:else}
-                <label for={`role-org-${index}`} class="block text-sm font-medium text-gray-700 mb-1">
-                  {$_('common.organization')} <span class="text-red-500">*</span>
+                <label
+                  for={`role-org-${index}`}
+                  class="block text-sm font-medium text-gray-700 mb-1"
+                >
+                  {$_("common.organization")}
+                  <span class="text-red-500">*</span>
                 </label>
                 <FormSelect
                   id={`role-org-${index}`}
@@ -530,7 +549,9 @@
             </div>
 
             <div class="md:col-span-2 flex items-center">
-              <label class="flex items-center space-x-2 text-sm text-gray-700 mt-6">
+              <label
+                class="flex items-center space-x-2 text-sm text-gray-700 mt-6"
+              >
                 <input
                   type="radio"
                   name="primaryRole"
@@ -538,7 +559,7 @@
                   onchange={() => setPrimaryRole(index)}
                   data-testid="user-primary-role-radio"
                 />
-                <span>{$_('users.primaryRole')}</span>
+                <span>{$_("users.primaryRole")}</span>
               </label>
             </div>
 
@@ -570,7 +591,7 @@
         disabled={loading}
         data-testid="user-cancel-button"
       >
-        {$_('common.cancel')}
+        {$_("common.cancel")}
       </Button>
       <Button
         variant="primary"
@@ -579,12 +600,12 @@
         data-testid="user-submit-button"
       >
         {loading
-          ? mode === 'create'
-            ? 'Creation...'
-            : 'Enregistrement...'
-          : mode === 'create'
-          ? 'Creer'
-          : 'Mettre a jour'}
+          ? mode === "create"
+            ? "Creation..."
+            : "Enregistrement..."
+          : mode === "create"
+            ? "Creer"
+            : "Mettre a jour"}
       </Button>
     </div>
   {/snippet}

@@ -1,10 +1,10 @@
 <script lang="ts">
   // Svelte 5 runes mode
-  import { _ } from '../lib/i18n';
-  import { api } from '../lib/api';
+  import { _ } from "../lib/i18n";
+  import { api } from "../lib/api";
   import { formatDate } from "../lib/utils/date.utils";
-  import Pagination from './Pagination.svelte';
-  import DocumentUploadModal from './DocumentUploadModal.svelte';
+  import Pagination from "./Pagination.svelte";
+  import DocumentUploadModal from "./DocumentUploadModal.svelte";
   import {
     DOCUMENT_TYPE_OPTIONS as DOCUMENT_TYPES,
     type Building,
@@ -12,10 +12,14 @@
     type PageResponse,
     UserRole,
     type User,
-  } from '../lib/types';
-  import { authStore } from '../stores/auth';
+  } from "../lib/types";
+  import { authStore } from "../stores/auth";
 
-  let { allowUpload = null, allowDelete = null, buildingId = null }: {
+  let {
+    allowUpload = null,
+    allowDelete = null,
+    buildingId = null,
+  }: {
     allowUpload?: boolean | null;
     allowDelete?: boolean | null;
     buildingId?: string | null;
@@ -23,10 +27,10 @@
 
   let documents = $state<Document[]>([]);
   let loading = $state(true);
-  let error = $state('');
-  let downloadError = $state('');
-  let deleteError = $state('');
-  let infoMessage = $state('');
+  let error = $state("");
+  let downloadError = $state("");
+  let deleteError = $state("");
+  let infoMessage = $state("");
 
   let currentPage = $state(1);
   let perPage = $state(20);
@@ -57,15 +61,22 @@
   });
 
   let computedAllowUpload = $derived(
-    allowUpload ?? (user?.role === UserRole.SUPERADMIN || user?.role === UserRole.SYNDIC)
+    allowUpload ??
+      (user?.role === UserRole.SUPERADMIN || user?.role === UserRole.SYNDIC),
   );
 
   let computedAllowDelete = $derived(
-    allowDelete ?? (user?.role === UserRole.SUPERADMIN || user?.role === UserRole.SYNDIC)
+    allowDelete ??
+      (user?.role === UserRole.SUPERADMIN || user?.role === UserRole.SYNDIC),
   );
 
   $effect(() => {
-    if (computedAllowUpload && user && buildings.length === 0 && !buildingsLoading) {
+    if (
+      computedAllowUpload &&
+      user &&
+      buildings.length === 0 &&
+      !buildingsLoading
+    ) {
       loadBuildings();
     }
   });
@@ -74,12 +85,17 @@
     try {
       buildingsLoading = true;
       buildingsError = null;
-      const response = await api.get<PageResponse<Building>>('/buildings?per_page=100');
+      const response = await api.get<PageResponse<Building>>(
+        "/buildings?per_page=100",
+      );
       buildings = response.data;
       buildingNameMap = new Map(response.data.map((b) => [b.id, b.name]));
     } catch (err) {
-      buildingsError = err instanceof Error ? err.message : 'Impossible de charger les bâtiments';
-      console.error('Failed to load buildings', err);
+      buildingsError =
+        err instanceof Error
+          ? err.message
+          : "Impossible de charger les bâtiments";
+      console.error("Failed to load buildings", err);
     } finally {
       buildingsLoading = false;
     }
@@ -88,10 +104,12 @@
   async function loadDocuments() {
     try {
       loading = true;
-      error = '';
+      error = "";
 
       if (buildingId) {
-        const response = await api.get<Document[]>(`/buildings/${buildingId}/documents`);
+        const response = await api.get<Document[]>(
+          `/buildings/${buildingId}/documents`,
+        );
         documents = response;
         totalItems = response.length;
         totalPages = 1;
@@ -106,9 +124,8 @@
         perPage = response.pagination.per_page;
       }
     } catch (e) {
-      error =
-        e instanceof Error ? e.message : $_('documents.loadError');
-      console.error('Error loading documents:', e);
+      error = e instanceof Error ? e.message : $_("documents.loadError");
+      console.error("Error loading documents:", e);
     } finally {
       loading = false;
     }
@@ -131,55 +148,61 @@
   }
 
   function getBuildingName(id: string): string {
-    return buildingNameMap.get(id) ?? buildings.find((b) => b.id === id)?.name ?? '—';
+    return (
+      buildingNameMap.get(id) ?? buildings.find((b) => b.id === id)?.name ?? "—"
+    );
   }
 
   function getDocumentIcon(mimeType: string): string {
-    if (mimeType.includes('pdf')) return '📄';
-    if (mimeType.includes('image')) return '🖼️';
-    if (mimeType.includes('word') || mimeType.includes('document')) return '📝';
-    if (mimeType.includes('excel') || mimeType.includes('spreadsheet')) return '📊';
-    return '📎';
+    if (mimeType.includes("pdf")) return "📄";
+    if (mimeType.includes("image")) return "🖼️";
+    if (mimeType.includes("word") || mimeType.includes("document")) return "📝";
+    if (mimeType.includes("excel") || mimeType.includes("spreadsheet"))
+      return "📊";
+    return "📎";
   }
 
   function getDownloadFilename(doc: Document): string {
-    const extension = doc.file_path.includes('.')
-      ? `.${doc.file_path.split('.').pop()}`
-      : '';
-    const safeTitle = doc.title.replace(/[^a-z0-9\-_]+/gi, '_');
-    return `${safeTitle || 'document'}${extension}`;
+    const extension = doc.file_path.includes(".")
+      ? `.${doc.file_path.split(".").pop()}`
+      : "";
+    const safeTitle = doc.title.replace(/[^a-z0-9\-_]+/gi, "_");
+    return `${safeTitle || "document"}${extension}`;
   }
 
   async function handleDownload(doc: Document) {
-    downloadError = '';
+    downloadError = "";
     try {
-      await api.download(`/documents/${doc.id}/download`, getDownloadFilename(doc));
+      await api.download(
+        `/documents/${doc.id}/download`,
+        getDownloadFilename(doc),
+      );
     } catch (err) {
       downloadError =
-        err instanceof Error ? err.message : $_('documents.downloadError');
-      console.error('Download failed', err);
+        err instanceof Error ? err.message : $_("documents.downloadError");
+      console.error("Download failed", err);
     }
   }
 
   async function handleDelete(doc: Document) {
     if (!computedAllowDelete) return;
     const confirmed = window.confirm(
-      $_('documents.deleteConfirm', { values: { title: doc.title } }),
+      $_("documents.deleteConfirm", { values: { title: doc.title } }),
     );
     if (!confirmed) return;
 
-    deleteError = '';
-    infoMessage = '';
+    deleteError = "";
+    infoMessage = "";
     deletingId = doc.id;
 
     try {
       await api.deleteDocument(doc.id);
-      infoMessage = $_('documents.deleteSuccess');
+      infoMessage = $_("documents.deleteSuccess");
       await loadDocuments();
     } catch (err) {
       deleteError =
-        err instanceof Error ? err.message : $_('documents.deleteError');
-      console.error('Delete failed', err);
+        err instanceof Error ? err.message : $_("documents.deleteError");
+      console.error("Delete failed", err);
     } finally {
       deletingId = null;
     }
@@ -187,7 +210,7 @@
 
   function handleUploadSuccess() {
     showUploadModal = false;
-    infoMessage = $_('documents.uploadSuccess');
+    infoMessage = $_("documents.uploadSuccess");
     loadDocuments();
   }
 
@@ -195,17 +218,19 @@
     if (!buildings.length && !buildingsLoading) {
       loadBuildings();
     }
-    infoMessage = '';
-    deleteError = '';
+    infoMessage = "";
+    deleteError = "";
     showUploadModal = true;
   }
 </script>
 
 <div class="space-y-6" data-testid="document-list">
-  <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+  <div
+    class="flex flex-col md:flex-row md:items-center md:justify-between gap-4"
+  >
     <div>
       <p class="text-gray-600">
-        {$_('documents.count', { values: { count: totalItems } })}
+        {$_("documents.count", { values: { count: totalItems } })}
       </p>
       {#if buildingsError}
         <p class="text-sm text-red-500">{buildingsError}</p>
@@ -217,52 +242,64 @@
         onclick={handleOpenUpload}
       >
         <span>📤</span>
-        <span>{$_('documents.upload')}</span>
+        <span>{$_("documents.upload")}</span>
       </button>
     {/if}
   </div>
 
   {#if error}
-    <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+    <div
+      class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded"
+    >
       {error}
     </div>
   {/if}
 
   {#if infoMessage}
-    <div class="bg-emerald-50 border border-emerald-200 text-emerald-700 px-4 py-3 rounded">
+    <div
+      class="bg-emerald-50 border border-emerald-200 text-emerald-700 px-4 py-3 rounded"
+    >
       {infoMessage}
     </div>
   {/if}
 
   {#if downloadError}
-    <div class="bg-yellow-50 border border-yellow-400 text-yellow-700 px-4 py-3 rounded">
+    <div
+      class="bg-yellow-50 border border-yellow-400 text-yellow-700 px-4 py-3 rounded"
+    >
       {downloadError}
     </div>
   {/if}
 
   {#if deleteError}
-    <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+    <div
+      class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded"
+    >
       {deleteError}
     </div>
   {/if}
 
   {#if loading}
-    <p class="text-center text-gray-600 py-8">{$_('common.loading')}</p>
+    <p class="text-center text-gray-600 py-8">{$_("common.loading")}</p>
   {:else if documents.length === 0}
     <p class="text-center text-gray-600 py-8">
-      {$_('documents.empty')}
+      {$_("documents.empty")}
     </p>
   {:else}
-    <div class="overflow-x-auto bg-white border border-gray-200 rounded-xl shadow-sm">
+    <div
+      class="overflow-x-auto bg-white border border-gray-200 rounded-xl shadow-sm"
+    >
       <table class="min-w-full divide-y divide-gray-100 text-sm">
         <thead class="bg-gray-50">
           <tr class="text-left text-gray-500 uppercase text-xs tracking-wider">
-            <th scope="col" class="px-5 py-3">{$_('documents.title')}</th>
-            <th scope="col" class="px-5 py-3">{$_('documents.building')}</th>
-            <th scope="col" class="px-5 py-3">{$_('documents.type')}</th>
-            <th scope="col" class="px-5 py-3">{$_('documents.size')}</th>
-            <th scope="col" class="px-5 py-3">{$_('documents.createdAt')}</th>
-            <th scope="col" class="px-5 py-3 text-right">{$_('common.actions')}</th>
+            <th scope="col" class="px-5 py-3">{$_("documents.title")}</th>
+            <th scope="col" class="px-5 py-3">{$_("documents.building")}</th>
+            <th scope="col" class="px-5 py-3">{$_("documents.type")}</th>
+            <th scope="col" class="px-5 py-3">{$_("documents.size")}</th>
+            <th scope="col" class="px-5 py-3">{$_("documents.createdAt")}</th>
+            <th scope="col" class="px-5 py-3 text-right"
+              >{$_("common.actions")}</th
+            >
           </tr>
         </thead>
         <tbody class="divide-y divide-gray-100">
@@ -279,10 +316,18 @@
                   </div>
                 </div>
               </td>
-              <td class="px-5 py-3 text-gray-700">{getBuildingName(doc.building_id)}</td>
-              <td class="px-5 py-3 text-gray-700">{getDocumentLabel(doc.document_type)}</td>
-              <td class="px-5 py-3 text-gray-700">{formatFileSize(doc.file_size)}</td>
-              <td class="px-5 py-3 text-gray-700">{formatDate(doc.created_at)}</td>
+              <td class="px-5 py-3 text-gray-700"
+                >{getBuildingName(doc.building_id)}</td
+              >
+              <td class="px-5 py-3 text-gray-700"
+                >{getDocumentLabel(doc.document_type)}</td
+              >
+              <td class="px-5 py-3 text-gray-700"
+                >{formatFileSize(doc.file_size)}</td
+              >
+              <td class="px-5 py-3 text-gray-700"
+                >{formatDate(doc.created_at)}</td
+              >
               <td class="px-5 py-3 text-right">
                 <div class="flex justify-end gap-2">
                   <button
@@ -290,7 +335,7 @@
                     onclick={() => handleDownload(doc)}
                   >
                     <span>⬇️</span>
-                    <span>{$_('common.download')}</span>
+                    <span>{$_("common.download")}</span>
                   </button>
                   {#if computedAllowDelete}
                     <button
@@ -299,7 +344,11 @@
                       disabled={deletingId === doc.id}
                     >
                       <span>🗑️</span>
-                      <span>{deletingId === doc.id ? $_('common.deleting') : $_('common.delete')}</span>
+                      <span
+                        >{deletingId === doc.id
+                          ? $_("common.deleting")
+                          : $_("common.delete")}</span
+                      >
                     </button>
                   {/if}
                 </div>
@@ -312,10 +361,10 @@
 
     {#if totalPages > 1}
       <Pagination
-        currentPage={currentPage}
-        totalPages={totalPages}
-        totalItems={totalItems}
-        perPage={perPage}
+        {currentPage}
+        {totalPages}
+        {totalItems}
+        {perPage}
         onPageChange={handlePageChange}
       />
     {/if}

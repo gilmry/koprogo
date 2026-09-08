@@ -8,8 +8,8 @@
 //
 // Le composant `RoleAssignmentListPanel.svelte` (côté JS) orchestre le
 // Form + List + refresh trigger après création.
-import Layout from '../../layouts/Layout.astro';
-import RoleAssignmentListPanel from '../../lib/components/admin/RoleAssignmentListPanel.svelte';
+import Layout from "../../layouts/Layout.astro";
+import RoleAssignmentListPanel from "../../lib/components/admin/RoleAssignmentListPanel.svelte";
 ---
 
 <Layout title="Rôles - Admin KoproGo">
@@ -18,17 +18,31 @@ import RoleAssignmentListPanel from '../../lib/components/admin/RoleAssignmentLi
       <div class="mb-6">
         <h1 class="text-2xl font-bold text-gray-900">Gestion des rôles</h1>
         <p class="text-sm text-gray-600 mt-1">
-          Assignations de sous-rôles métier (comptabilité, modération communauté)
-          et mandataires (avocat, notaire, AMO, architecte, BET, gardien).
+          Assignations de sous-rôles métier (comptabilité, modération
+          communauté) et mandataires (avocat, notaire, AMO, architecte, BET,
+          gardien).
         </p>
       </div>
 
       <RoleAssignmentListPanel client:load />
 
       <div class="mt-8">
-        <a href="/admin" class="inline-flex items-center text-primary-600 hover:text-primary-700">
-          <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+        <a
+          href="/admin"
+          class="inline-flex items-center text-primary-600 hover:text-primary-700"
+        >
+          <svg
+            class="w-5 h-5 mr-2"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
           </svg>
           Retour au dashboard
         </a>
