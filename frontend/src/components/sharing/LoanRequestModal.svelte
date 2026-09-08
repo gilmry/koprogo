@@ -91,12 +91,12 @@
     <!-- Object summary -->
     <div class="bg-gray-50 rounded-lg p-3 text-sm space-y-1">
       {#if object?.owner_name}
-        <p><span class="font-medium">Propriétaire :</span> {object.owner_name}</p>
+        <p><span class="font-medium">{$_('sharing.owner')}</span> {object.owner_name}</p>
       {/if}
-      <p><span class="font-medium">Durée max :</span> {object?.loan_duration_days} jours</p>
+      <p><span class="font-medium">{$_('sharing.maxDuration')}</span> {object?.loan_duration_days} jours</p>
       {#if object?.deposit_required_cents}
         <p>
-          <span class="font-medium">Caution :</span>
+          <span class="font-medium">{$_('sharing.deposit')}</span>
           €{(object.deposit_required_cents / 100).toFixed(2)}
         </p>
       {/if}
@@ -138,7 +138,7 @@
 
       <!-- Notes -->
       <div>
-        <label for="loan-notes" class="block text-sm font-medium text-gray-700 mb-1">Notes (facultatif)</label>
+        <label for="loan-notes" class="block text-sm font-medium text-gray-700 mb-1">{$_('sharing.notesOptional')}</label>
         <textarea
           id="loan-notes"
           bind:value={notes}
@@ -150,7 +150,7 @@
 
       {#if object?.usage_instructions}
         <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm text-blue-800">
-          <p class="font-medium mb-1">Instructions d'utilisation :</p>
+          <p class="font-medium mb-1">{$_('sharing.usageInstructions')}</p>
           <p>{object.usage_instructions}</p>
         </div>
       {/if}
@@ -162,7 +162,7 @@
           onclick={handleClose}
           class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition"
         >
-          Annuler
+          {$_('common.cancel')}
         </button>
         <button
           type="submit"

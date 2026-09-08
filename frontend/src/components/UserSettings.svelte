@@ -68,7 +68,7 @@
         href="/profile"
         class="shrink-0 text-sm text-primary-600 hover:text-primary-700 font-medium"
       >
-        Voir le profil →
+        {$_('settings.viewProfile')}
       </a>
     </div>
   {/if}
@@ -103,24 +103,24 @@
   <!-- Upcoming features -->
   <div class="bg-gray-50 rounded-lg border border-gray-200 p-5">
     <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">
-      Fonctionnalités à venir
+      {$_('settings.comingSoon')}
     </h3>
     <ul class="space-y-2 text-sm text-gray-500">
       <li class="flex items-center gap-2">
         <span class="w-1.5 h-1.5 rounded-full bg-gray-300"></span>
-        Langue de l'interface (Français, English, Nederlands)
+        {$_('settings.interfaceLanguage')}
       </li>
       <li class="flex items-center gap-2">
         <span class="w-1.5 h-1.5 rounded-full bg-gray-300"></span>
-        Authentification à deux facteurs (2FA)
+        {$_('settings.twoFactor')}
       </li>
       <li class="flex items-center gap-2">
         <span class="w-1.5 h-1.5 rounded-full bg-gray-300"></span>
-        Changement de mot de passe
+        {$_('settings.passwordChange')}
       </li>
       <li class="flex items-center gap-2">
         <span class="w-1.5 h-1.5 rounded-full bg-gray-300"></span>
-        Intégrations (API, SMTP, services cloud)
+        {$_('settings.integrations')}
       </li>
     </ul>
   </div>

@@ -3561,7 +3561,13 @@
       "description": "Verwalten Sie Ihre persönlichen Daten",
       "label": "Mein Profil",
       "title": "Profil"
-    }
+    },
+    "viewProfile": "Profil ansehen →",
+    "comingSoon": "Demnächst verfügbar",
+    "interfaceLanguage": "Sprache der Oberfläche (français, English, Nederlands, Deutsch)",
+    "twoFactor": "Zwei-Faktor-Authentifizierung (2FA)",
+    "passwordChange": "Passwortänderung",
+    "integrations": "Integrationen (API, SMTP, Cloud-Dienste)"
   },
   "sharing": {
     "available": "Verfügbar",
@@ -3591,7 +3597,14 @@
     "allObjects": "Alle Gegenstände",
     "categoryLabel": "Kategorie",
     "allCategories": "Alle Kategorien",
-    "loadFailed": "Geteilte Gegenstände konnten nicht geladen werden."
+    "loadFailed": "Geteilte Gegenstände konnten nicht geladen werden.",
+    "owner": "Eigentümer:",
+    "maxDuration": "Maximale Dauer:",
+    "deposit": "Kaution:",
+    "startDate": "Startdatum",
+    "expectedReturn": "Voraussichtliches Rückgabedatum",
+    "notesOptional": "Notizen (optional)",
+    "usageInstructions": "Gebrauchsanweisung:"
   },
   "skills": {
     "availability": "Verfügbarkeit",
@@ -4069,5 +4082,11 @@
     "limits": "Grenzen",
     "active": "Aktiv",
     "inactive": "Inaktiv"
+  },
+  "syndic": {
+    "contactTitle": "Verwalter",
+    "phone": "Telefon",
+    "openingHours": "Öffnungszeiten",
+    "emergencies": "Notfälle"
   }
 }

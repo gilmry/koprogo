@@ -70,7 +70,7 @@ import { join, extname } from "node:path";
  * Un `confirm()` natif y portait aussi son message en dur, hors de portée du
  * détecteur qui ne regarde que le gabarit.
  */
-const DETTE_AU_2026_09_07 = 147;
+const DETTE_AU_2026_09_07 = 128;
 
 const RACINE = join(process.cwd(), "src");
 

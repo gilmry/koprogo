@@ -3561,7 +3561,13 @@
       "description": "Beheer uw persoonlijke gegevens",
       "label": "Mijn profiel",
       "title": "Profiel"
-    }
+    },
+    "viewProfile": "Profiel bekijken →",
+    "comingSoon": "Binnenkort beschikbaar",
+    "interfaceLanguage": "Taal van de interface (français, English, Nederlands, Deutsch)",
+    "twoFactor": "Tweefactorauthenticatie (2FA)",
+    "passwordChange": "Wachtwoord wijzigen",
+    "integrations": "Integraties (API, SMTP, clouddiensten)"
   },
   "sharing": {
     "available": "Beschikbaar",
@@ -3591,7 +3597,14 @@
     "allObjects": "Alle voorwerpen",
     "categoryLabel": "Categorie",
     "allCategories": "Alle categorieën",
-    "loadFailed": "Kan de gedeelde voorwerpen niet laden."
+    "loadFailed": "Kan de gedeelde voorwerpen niet laden.",
+    "owner": "Eigenaar:",
+    "maxDuration": "Maximale duur:",
+    "deposit": "Waarborg:",
+    "startDate": "Begindatum",
+    "expectedReturn": "Verwachte retourdatum",
+    "notesOptional": "Notities (optioneel)",
+    "usageInstructions": "Gebruiksaanwijzing:"
   },
   "skills": {
     "availability": "Beschikbaarheid",
@@ -4069,5 +4082,11 @@
     "limits": "Limieten",
     "active": "Actief",
     "inactive": "Inactief"
+  },
+  "syndic": {
+    "contactTitle": "Syndicus",
+    "phone": "Telefoon",
+    "openingHours": "Openingsuren",
+    "emergencies": "Noodgevallen"
   }
 }

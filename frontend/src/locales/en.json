@@ -3561,7 +3561,13 @@
       "description": "Manage your personal information",
       "label": "My profile",
       "title": "Profile"
-    }
+    },
+    "viewProfile": "View profile →",
+    "comingSoon": "Coming soon",
+    "interfaceLanguage": "Interface language (français, English, Nederlands, Deutsch)",
+    "twoFactor": "Two-factor authentication (2FA)",
+    "passwordChange": "Password change",
+    "integrations": "Integrations (API, SMTP, cloud services)"
   },
   "sharing": {
     "available": "Available",
@@ -3591,7 +3597,14 @@
     "allObjects": "All objects",
     "categoryLabel": "Category",
     "allCategories": "All categories",
-    "loadFailed": "Failed to load shared objects."
+    "loadFailed": "Failed to load shared objects.",
+    "owner": "Owner:",
+    "maxDuration": "Maximum duration:",
+    "deposit": "Deposit:",
+    "startDate": "Start date",
+    "expectedReturn": "Expected return date",
+    "notesOptional": "Notes (optional)",
+    "usageInstructions": "Usage instructions:"
   },
   "skills": {
     "availability": "Availability",
@@ -4069,5 +4082,11 @@
     "limits": "Limits",
     "active": "Active",
     "inactive": "Inactive"
+  },
+  "syndic": {
+    "contactTitle": "Building manager",
+    "phone": "Phone",
+    "openingHours": "Opening hours",
+    "emergencies": "Emergencies"
   }
 }

@@ -3561,7 +3561,13 @@
       "description": "Gérez vos informations personnelles",
       "label": "Mon profil",
       "title": "Profil"
-    }
+    },
+    "viewProfile": "Voir le profil →",
+    "comingSoon": "Fonctionnalités à venir",
+    "interfaceLanguage": "Langue de l'interface (français, English, Nederlands, Deutsch)",
+    "twoFactor": "Authentification à deux facteurs (2FA)",
+    "passwordChange": "Changement de mot de passe",
+    "integrations": "Intégrations (API, SMTP, services infonuagiques)"
   },
   "sharing": {
     "available": "Disponible",
@@ -3591,7 +3597,14 @@
     "allObjects": "Tous les objets",
     "categoryLabel": "Catégorie",
     "allCategories": "Toutes les catégories",
-    "loadFailed": "Impossible de charger les objets partagés."
+    "loadFailed": "Impossible de charger les objets partagés.",
+    "owner": "Propriétaire :",
+    "maxDuration": "Durée maximale :",
+    "deposit": "Caution :",
+    "startDate": "Date de début",
+    "expectedReturn": "Date de retour prévue",
+    "notesOptional": "Notes (facultatif)",
+    "usageInstructions": "Instructions d'utilisation :"
   },
   "skills": {
     "availability": "Disponibilité",
@@ -4069,5 +4082,11 @@
     "limits": "Limites",
     "active": "Active",
     "inactive": "Inactive"
+  },
+  "syndic": {
+    "contactTitle": "Syndic",
+    "phone": "Téléphone",
+    "openingHours": "Horaires",
+    "emergencies": "Urgences"
   }
 }
