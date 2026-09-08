@@ -15,17 +15,13 @@ test.describe("Owner Contributions - Payment Tracking", () => {
   });
 
   test("should create a contribution via API", async ({ page }) => {
-    const { token, ownerId, orgId } = await loginAsSyndicWithOwner(
-      page,
-      "contrib",
-    );
+    const { token, ownerId } = await loginAsSyndicWithOwner(page, "contrib");
     const timestamp = Date.now();
 
     const contribResp = await page.request.post(
       `${API_BASE}/owner-contributions`,
       {
         data: {
-          organization_id: orgId,
           owner_id: ownerId,
           description: `Provision T2 2026 ${timestamp}`,
           amount: 800.0,
@@ -59,17 +55,13 @@ test.describe("Owner Contributions - Payment Tracking", () => {
   });
 
   test("should mark a contribution as paid", async ({ page }) => {
-    const { token, ownerId, orgId } = await loginAsSyndicWithOwner(
-      page,
-      "contrib",
-    );
+    const { token, ownerId } = await loginAsSyndicWithOwner(page, "contrib");
     const timestamp = Date.now();
 
     const contribResp = await page.request.post(
       `${API_BASE}/owner-contributions`,
       {
         data: {
-          organization_id: orgId,
           owner_id: ownerId,
           description: `Provision T3 2026 ${timestamp}`,
           amount: 600.0,

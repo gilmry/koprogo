@@ -48,12 +48,11 @@ test.describe("Journal Entries - Double-Entry Accounting", () => {
   });
 
   test("should create a balanced journal entry via API", async ({ page }) => {
-    const { accountantToken, buildingId, orgId } = await setupAccountant(page);
+    const { accountantToken, buildingId } = await setupAccountant(page);
     const timestamp = Date.now();
 
     const entryResp = await page.request.post(`${API_BASE}/journal-entries`, {
       data: {
-        organization_id: orgId,
         building_id: buildingId,
         journal_type: "ODS",
         entry_date: new Date().toISOString(),
@@ -79,11 +78,10 @@ test.describe("Journal Entries - Double-Entry Accounting", () => {
   });
 
   test("should reject unbalanced journal entry", async ({ page }) => {
-    const { accountantToken, buildingId, orgId } = await setupAccountant(page);
+    const { accountantToken, buildingId } = await setupAccountant(page);
 
     const entryResp = await page.request.post(`${API_BASE}/journal-entries`, {
       data: {
-        organization_id: orgId,
         building_id: buildingId,
         journal_type: "ODS",
         entry_date: new Date().toISOString(),

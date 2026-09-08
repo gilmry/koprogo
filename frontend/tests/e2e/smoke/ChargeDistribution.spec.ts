@@ -27,7 +27,6 @@ test.describe("Charge Distribution - Invoice Allocation", () => {
     const unitsBody = await unitsResp.json();
     const units = Array.isArray(unitsBody) ? unitsBody : (unitsBody.data ?? []);
     expect(units.length).toBeGreaterThan(0);
-    const unit = units[0];
 
     // Create an owner
     const ownerResp = await page.request.post(`${API_BASE}/owners`, {
@@ -46,20 +45,37 @@ test.describe("Charge Distribution - Invoice Allocation", () => {
     expect(ownerResp.status()).toBe(201);
     const owner = await ownerResp.json();
 
-    // Assign owner to unit (100% ownership)
-    const assignResp = await page.request.post(
-      `${API_BASE}/units/${unit.id}/owners`,
-      {
-        data: {
-          owner_id: owner.id,
-          ownership_percentage: 1.0,
-          start_date: new Date().toISOString(),
-          is_primary_contact: true,
+    // TOUS les lots recoivent un detenteur, pas seulement le premier.
+    //
+    // `find_active_quota_shares_by_building` ne renvoie que les lots detenus,
+    // et la part d'un lot vaut `unit.quota / building.total_tantiemes`. Avec un
+    // seul lot rattache sur les douze de l'immeuble de recette, la somme des
+    // parts valait un douzieme : 41,665 EUR repartis pour 500 EUR dus, et un
+    // refus « Distribution does not cover the charge ».
+    //
+    // Le produit avait raison de refuser — repartir 41,665 EUR au lieu de 500
+    // aurait ete pire. C'est le test qui construisait un immeuble ou onze lots
+    // sur douze n'appartiennent a personne, ce qu'aucun acte de base ne permet.
+    for (const unit of units) {
+      const assignResp = await page.request.post(
+        `${API_BASE}/units/${unit.id}/owners`,
+        {
+          data: {
+            owner_id: owner.id,
+            ownership_percentage: 1.0,
+            start_date: new Date().toISOString(),
+            is_primary_contact: true,
+          },
+          headers: { Authorization: `Bearer ${token}` },
         },
-        headers: { Authorization: `Bearer ${token}` },
-      },
-    );
-    expect(assignResp.status()).toBe(201);
+      );
+      expect(
+        assignResp.status(),
+        `rattachement du lot ${unit.id} : ${await assignResp
+          .text()
+          .catch(() => "<corps illisible>")}`,
+      ).toBe(201);
+    }
 
     // Expense must be Approved before calculating distribution
     await page.request.put(`${API_BASE}/invoices/${expenseId}/submit`, {

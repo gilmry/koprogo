@@ -15,17 +15,13 @@ test.describe("Call For Funds - Revenue Management", () => {
   });
 
   test("should create a call for funds via API", async ({ page }) => {
-    const { token, buildingId, orgId } = await loginAsSyndicWithBuilding(
-      page,
-      "cff",
-    );
+    const { token, buildingId } = await loginAsSyndicWithBuilding(page, "cff");
     const timestamp = Date.now();
     const dueDate = new Date();
     dueDate.setDate(dueDate.getDate() + 30);
 
     const cffResp = await page.request.post(`${API_BASE}/call-for-funds`, {
       data: {
-        organization_id: orgId,
         building_id: buildingId,
         title: `Appel fonds T1 2026 ${timestamp}`,
         total_amount: 5000.0,
@@ -54,17 +50,13 @@ test.describe("Call For Funds - Revenue Management", () => {
   });
 
   test("should get call for funds by ID", async ({ page }) => {
-    const { token, buildingId, orgId } = await loginAsSyndicWithBuilding(
-      page,
-      "cff",
-    );
+    const { token, buildingId } = await loginAsSyndicWithBuilding(page, "cff");
     const timestamp = Date.now();
     const dueDate = new Date();
     dueDate.setDate(dueDate.getDate() + 30);
 
     const cffResp = await page.request.post(`${API_BASE}/call-for-funds`, {
       data: {
-        organization_id: orgId,
         building_id: buildingId,
         title: `Appel fonds T3 ${timestamp}`,
         description: "Provision charges courantes T3",
