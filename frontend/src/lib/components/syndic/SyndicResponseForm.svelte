@@ -152,7 +152,7 @@
     id="syndic-response-form-title"
     class="mb-3 text-base font-semibold text-gray-900"
   >
-    Répondre au ticket
+    {$_('tickets.respondTitle')}
   </h3>
 
   <form
@@ -168,7 +168,7 @@
         for="syndic-response-body-textarea"
         class="block text-sm font-medium text-gray-700"
       >
-        Message
+        {$_('magicLink.message')}
       </label>
       <textarea
         id="syndic-response-body-textarea"
@@ -198,7 +198,7 @@
         for="syndic-response-action-proposed-select"
         class="block text-sm font-medium text-gray-700"
       >
-        Action proposée (optionnel)
+        {$_('tickets.proposedAction')}
       </label>
       <select
         id="syndic-response-action-proposed-select"
@@ -206,7 +206,7 @@
         bind:value={actionProposed}
         class="mt-1 min-h-[44px] w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus-visible:outline-2 focus-visible:outline-offset-2"
       >
-        <option value="">— Aucune action —</option>
+        <option value="">{$_('tickets.noAction')}</option>
         {#each SYNDIC_RESPONSE_ACTIONS as a (a)}
           <option value={a}>{actionLabel(a)}</option>
         {/each}

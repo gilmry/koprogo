@@ -482,7 +482,7 @@
     "loadError": "Fehler beim Laden der Reservierungen",
     "noBookings": "Keine Reservierungen.",
     "noResources": "Keine Ressourcen verfügbar.",
-    "purpose": "Zweck",
+    "purpose": "Zweck der Buchung",
     "resource": "Ressource",
     "resourceType": {
       "CoworkingSpace": "Coworking-Raum",
@@ -522,7 +522,10 @@
     },
     "title": "Reservierungen",
     "resourceUnavailable": "Diese Ressource ist derzeit nicht verfügbar",
-    "loadResourcesFailed": "Buchbare Ressourcen konnten nicht geladen werden."
+    "loadResourcesFailed": "Buchbare Ressourcen konnten nicht geladen werden.",
+    "endLabel": "Ende",
+    "specialRequests": "Besondere Wünsche",
+    "needsApproval": "Diese Ressource erfordert vor der Bestätigung die Zustimmung des Verwalters."
   },
   "budgets": {
     "actions": {
@@ -3825,7 +3828,10 @@
     "kindComplaint": "Beschwerde (Belästigung / Vorgang)",
     "fieldTitleLabel": "Titel",
     "incidentDate": "Datum des Vorfalls",
-    "missingEvidence": "Fehlende Nachweise — Ihr Vorgang ist mit Fotos, einem Datum, Videos oder Zeugen belastbarer. Sie können die Beschwerde dennoch einreichen."
+    "missingEvidence": "Fehlende Nachweise — Ihr Vorgang ist mit Fotos, einem Datum, Videos oder Zeugen belastbarer. Sie können die Beschwerde dennoch einreichen.",
+    "respondTitle": "Auf das Ticket antworten",
+    "proposedAction": "Vorgeschlagene Maßnahme (optional)",
+    "noAction": "— Keine Maßnahme —"
   },
   "units": {
     "acp": "ACP",
@@ -4070,7 +4076,11 @@
     "confirmBumpTitle": "Neue Version erstellen?",
     "bumpWarning": "Wenn Sie die Hauptnummer erhöhen, verfallen alle bisherigen Unterschriften und die Unterzeichner müssen erneut unterschreiben. Neben- und Korrekturversionen erhalten die Unterschriften.",
     "attachmentsShort": "Anhänge",
-    "bumpFrom": "Sie erstellen eine neue Version ausgehend von"
+    "bumpFrom": "Sie erstellen eine neue Version ausgehend von",
+    "signTitle": "Dieses technische Datenblatt unterschreiben",
+    "signingAs": "Sie unterschreiben als",
+    "noMandate": "Kein Mandat",
+    "noMandateHint": "aktiv. Bitten Sie den Verwalter, vor der Unterschrift ein Mandat auszustellen."
   },
   "acps": {
     "pageTitle": "Wohnungseigentümergemeinschaften (WEG)",

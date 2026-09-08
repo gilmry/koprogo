@@ -409,7 +409,7 @@
             data-testid="gdpr-export-modal-close"
             class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
           >
-            Close
+            {$_('common.close')}
           </button>
         </div>
       </div>
@@ -473,7 +473,7 @@
             data-testid="gdpr-erase-cancel-button"
             class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:w-auto sm:text-sm disabled:opacity-50"
           >
-            Cancel
+            {$_('common.cancel')}
           </button>
         </div>
       </div>
@@ -501,7 +501,7 @@
               </h3>
               <div class="mt-4 space-y-4">
                 <div>
-                  <label for="rectify-email" class="block text-sm font-medium text-gray-700">Email</label>
+                  <label for="rectify-email" class="block text-sm font-medium text-gray-700">{$_('common.email')}</label>
                   <input
                     id="rectify-email"
                     type="email"
@@ -561,7 +561,7 @@
             data-testid="gdpr-rectify-cancel-button"
             class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:w-auto sm:text-sm disabled:opacity-50"
           >
-            Cancel
+            {$_('common.cancel')}
           </button>
         </div>
       </div>

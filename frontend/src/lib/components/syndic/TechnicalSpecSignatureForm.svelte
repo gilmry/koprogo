@@ -26,6 +26,7 @@
     type TechnicalSpecSignatureDto,
   } from "../../api/technical_specs";
   import SignatureForm from "../shared/SignatureForm.svelte";
+  import { _ } from "../../i18n";
 
   // ---------------------------------------------------------------------------
   // Props
@@ -99,7 +100,7 @@
     id="tech-spec-sign-title"
     class="mb-2 text-sm font-semibold text-blue-900"
   >
-    Signer cette fiche technique
+    {$_('technicalSpecs.signTitle')}
   </h3>
 
   {#if isMandataryRole && activeMandate}

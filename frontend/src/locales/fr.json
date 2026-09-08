@@ -482,7 +482,7 @@
     "loadError": "Erreur lors du chargement des réservations",
     "noBookings": "Aucune réservation.",
     "noResources": "Aucune ressource disponible.",
-    "purpose": "Objet",
+    "purpose": "Objet de la réservation",
     "resource": "Ressource",
     "resourceType": {
       "CoworkingSpace": "Espace de coworking",
@@ -522,7 +522,10 @@
     },
     "title": "Réservations",
     "resourceUnavailable": "Cette ressource n'est pas disponible actuellement",
-    "loadResourcesFailed": "Impossible de charger les ressources réservables."
+    "loadResourcesFailed": "Impossible de charger les ressources réservables.",
+    "endLabel": "Fin",
+    "specialRequests": "Demandes particulières",
+    "needsApproval": "Cette ressource demande l'accord du syndic avant confirmation."
   },
   "budgets": {
     "actions": {
@@ -3825,7 +3828,10 @@
     "kindComplaint": "Plainte (nuisance / dossier)",
     "fieldTitleLabel": "Titre",
     "incidentDate": "Date de l'incident",
-    "missingEvidence": "Preuves manquantes — votre dossier est plus solide avec des photos, une date, des vidéos ou des témoins. Vous pouvez tout de même soumettre la plainte."
+    "missingEvidence": "Preuves manquantes — votre dossier est plus solide avec des photos, une date, des vidéos ou des témoins. Vous pouvez tout de même soumettre la plainte.",
+    "respondTitle": "Répondre au ticket",
+    "proposedAction": "Action proposée (facultatif)",
+    "noAction": "— Aucune action —"
   },
   "units": {
     "acp": "ACP",
@@ -4070,7 +4076,11 @@
     "confirmBumpTitle": "Créer une nouvelle version ?",
     "bumpWarning": "Si vous augmentez le numéro majeur, toutes les signatures précédentes seront invalidées et les mandataires devront signer à nouveau. Les versions mineures et correctives préservent les signatures.",
     "attachmentsShort": "Pièces jointes",
-    "bumpFrom": "Vous allez créer une nouvelle version à partir de"
+    "bumpFrom": "Vous allez créer une nouvelle version à partir de",
+    "signTitle": "Signer cette fiche technique",
+    "signingAs": "Vous signez en tant que",
+    "noMandate": "Aucun mandat",
+    "noMandateHint": "actif. Demandez au syndic d'émettre un mandat avant de signer."
   },
   "acps": {
     "pageTitle": "Associations de Copropriétaires (ACP)",

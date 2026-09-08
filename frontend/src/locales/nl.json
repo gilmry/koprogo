@@ -482,7 +482,7 @@
     "loadError": "Fout bij het laden van reserveringen",
     "noBookings": "Geen reserveringen.",
     "noResources": "Geen faciliteiten beschikbaar.",
-    "purpose": "Doel",
+    "purpose": "Doel van de reservering",
     "resource": "Faciliteit",
     "resourceType": {
       "CoworkingSpace": "Coworkingruimte",
@@ -522,7 +522,10 @@
     },
     "title": "Reserveringen",
     "resourceUnavailable": "Deze voorziening is momenteel niet beschikbaar",
-    "loadResourcesFailed": "Kan de reserveerbare voorzieningen niet laden."
+    "loadResourcesFailed": "Kan de reserveerbare voorzieningen niet laden.",
+    "endLabel": "Einde",
+    "specialRequests": "Bijzondere verzoeken",
+    "needsApproval": "Deze voorziening vereist de goedkeuring van de syndicus vóór bevestiging."
   },
   "budgets": {
     "actions": {
@@ -3825,7 +3828,10 @@
     "kindComplaint": "Klacht (overlast / dossier)",
     "fieldTitleLabel": "Titel",
     "incidentDate": "Datum van het incident",
-    "missingEvidence": "Ontbrekend bewijs — uw dossier is sterker met foto's, een datum, video's of getuigen. U kunt de klacht toch indienen."
+    "missingEvidence": "Ontbrekend bewijs — uw dossier is sterker met foto's, een datum, video's of getuigen. U kunt de klacht toch indienen.",
+    "respondTitle": "Antwoorden op het ticket",
+    "proposedAction": "Voorgestelde actie (optioneel)",
+    "noAction": "— Geen actie —"
   },
   "units": {
     "acp": "VME",
@@ -4070,7 +4076,11 @@
     "confirmBumpTitle": "Nieuwe versie aanmaken?",
     "bumpWarning": "Als u het hoofdnummer verhoogt, vervallen alle eerdere handtekeningen en moeten de ondertekenaars opnieuw tekenen. Sub- en correctieversies behouden de handtekeningen.",
     "attachmentsShort": "Bijlagen",
-    "bumpFrom": "U maakt een nieuwe versie aan op basis van"
+    "bumpFrom": "U maakt een nieuwe versie aan op basis van",
+    "signTitle": "Deze technische fiche ondertekenen",
+    "signingAs": "U ondertekent als",
+    "noMandate": "Geen mandaat",
+    "noMandateHint": "actief. Vraag de syndicus een mandaat uit te reiken vóór ondertekening."
   },
   "acps": {
     "pageTitle": "Verenigingen van Mede-eigenaars (VME)",

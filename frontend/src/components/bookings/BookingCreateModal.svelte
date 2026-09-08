@@ -135,7 +135,7 @@
 
     <!-- Purpose -->
     <div>
-      <label for="booking-purpose" class="block text-sm font-medium text-gray-700 mb-1">Objet de la réservation</label>
+      <label for="booking-purpose" class="block text-sm font-medium text-gray-700 mb-1">{$_('bookings.purpose')}</label>
       <input
         id="booking-purpose"
         type="text"
@@ -164,7 +164,7 @@
 
     <!-- Special requests -->
     <div>
-      <label for="booking-requests" class="block text-sm font-medium text-gray-700 mb-1">Demandes particulières</label>
+      <label for="booking-requests" class="block text-sm font-medium text-gray-700 mb-1">{$_('bookings.specialRequests')}</label>
       <textarea
         id="booking-requests"
         bind:value={specialRequests}
@@ -187,7 +187,7 @@
         onclick={handleClose}
         class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition"
       >
-        Annuler
+        {$_('common.cancel')}
       </button>
       <button
         type="submit"

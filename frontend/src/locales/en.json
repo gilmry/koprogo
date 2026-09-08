@@ -482,7 +482,7 @@
     "loadError": "Error loading bookings",
     "noBookings": "No bookings.",
     "noResources": "No resources available.",
-    "purpose": "Purpose",
+    "purpose": "Purpose of the booking",
     "resource": "Resource",
     "resourceType": {
       "CoworkingSpace": "Coworking space",
@@ -522,7 +522,10 @@
     },
     "title": "Bookings",
     "resourceUnavailable": "This resource is currently unavailable",
-    "loadResourcesFailed": "Failed to load bookable resources."
+    "loadResourcesFailed": "Failed to load bookable resources.",
+    "endLabel": "End",
+    "specialRequests": "Special requests",
+    "needsApproval": "This resource requires the building manager's approval before confirmation."
   },
   "budgets": {
     "actions": {
@@ -3825,7 +3828,10 @@
     "kindComplaint": "Complaint (nuisance / case file)",
     "fieldTitleLabel": "Title",
     "incidentDate": "Date of the incident",
-    "missingEvidence": "Missing evidence — your case is stronger with photos, a date, videos or witnesses. You may still submit the complaint."
+    "missingEvidence": "Missing evidence — your case is stronger with photos, a date, videos or witnesses. You may still submit the complaint.",
+    "respondTitle": "Reply to the ticket",
+    "proposedAction": "Proposed action (optional)",
+    "noAction": "— No action —"
   },
   "units": {
     "acp": "ACP",
@@ -4070,7 +4076,11 @@
     "confirmBumpTitle": "Create a new version?",
     "bumpWarning": "If you raise the major number, all previous signatures are invalidated and signatories will have to sign again. Minor and patch versions preserve signatures.",
     "attachmentsShort": "Attachments",
-    "bumpFrom": "You are about to create a new version from"
+    "bumpFrom": "You are about to create a new version from",
+    "signTitle": "Sign this technical specification",
+    "signingAs": "You are signing as",
+    "noMandate": "No mandate",
+    "noMandateHint": "active. Ask the building manager to issue a mandate before signing."
   },
   "acps": {
     "pageTitle": "Co-ownership associations (ACP)",
