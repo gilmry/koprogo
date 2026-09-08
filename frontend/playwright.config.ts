@@ -19,7 +19,26 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
 
   /* Retry on CI only */
-  retries: process.env.CI ? 2 : 0,
+  /**
+   * Une seule reprise en CI, plus deux.
+   *
+   * Une reprise sert à distinguer un aléa d'un défaut. Elle ne le fait que si
+   * elle réussit parfois. Mesuré sur les runs du 2026-09-07 et du 2026-09-08 :
+   * **40 reprises exécutées, zéro test « flaky »** — pas une seule n'a
+   * transformé un échec en réussite. Les durées sont identiques à la seconde
+   * près d'une tentative à l'autre (55,7 s / 56,8 s / 55,7 s), ce qui est la
+   * signature d'un échec déterministe.
+   *
+   * Ce qu'elles coûtaient : le temps qui a manqué à `chromium` pour finir ses
+   * 19 derniers tests avant son plafond. Une reprise qui n'apprend rien prend
+   * la place d'un test qu'on n'a pas mesuré.
+   *
+   * On en garde UNE plutôt que zéro : l'absence de flake sur deux runs ne
+   * prouve pas qu'il n'y en aura jamais, et un vrai aléa mérite encore d'être
+   * distingué d'un défaut. Si un « flaky » réapparaît, c'est le signal qu'il
+   * faut le corriger, pas remonter ce nombre.
+   */
+  retries: process.env.CI ? 1 : 0,
 
   /* Opt out of parallel tests on CI. */
   workers: process.env.CI ? 1 : undefined,
