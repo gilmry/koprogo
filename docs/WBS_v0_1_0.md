@@ -841,6 +841,12 @@ déplacé la date de leur retour.
 
 ## Ce qui reste, et ce qui le bloque
 
+> **Six arbitrages bloquent trois tracks entiers.** Ils sont regroupés dans
+> [`docs/ARBITRAGES_EN_ATTENTE.md`](ARBITRAGES_EN_ATTENTE.md), avec une
+> recommandation pour chacun. Aucun ne se tranche en écrivant du code, et les
+> laisser dispersés dans six issues coûte plus cher que d'y répondre en une
+> passe.
+
 ### ⚠️ Le périmètre a doublé le 2026-09-06, et c'est une décision assumée
 
 **Tout ce qui restait en 0.2.0 entre en 0.1.0, avec la refonte UX/UI.** Le compte est
