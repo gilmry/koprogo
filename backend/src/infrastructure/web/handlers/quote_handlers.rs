@@ -258,6 +258,21 @@ pub async fn accept_quote(
     id: web::Path<Uuid>,
     request: web::Json<QuoteDecisionDto>,
 ) -> impl Responder {
+    // Cloisonnement : accepter ou rejeter un devis engage l'ACP sur un marché.
+    // Le contrôle porte sur le PÉRIMÈTRE — ce devis n'est pas celui d'une autre
+    // copropriété — et non sur la qualité pour décider (#772).
+    if let Err(err) = verify_quote_org_access(
+        &auth,
+        *id,
+        &data.quote_use_cases,
+        &data.building_use_cases,
+        &data.acp_use_cases,
+    )
+    .await
+    {
+        return err.error_response();
+    }
+
     match data
         .quote_use_cases
         .accept_quote(id.into_inner(), auth.user_id, request.into_inner())
@@ -279,6 +294,21 @@ pub async fn reject_quote(
     id: web::Path<Uuid>,
     request: web::Json<QuoteDecisionDto>,
 ) -> impl Responder {
+    // Cloisonnement : accepter ou rejeter un devis engage l'ACP sur un marché.
+    // Le contrôle porte sur le PÉRIMÈTRE — ce devis n'est pas celui d'une autre
+    // copropriété — et non sur la qualité pour décider (#772).
+    if let Err(err) = verify_quote_org_access(
+        &auth,
+        *id,
+        &data.quote_use_cases,
+        &data.building_use_cases,
+        &data.acp_use_cases,
+    )
+    .await
+    {
+        return err.error_response();
+    }
+
     match data
         .quote_use_cases
         .reject_quote(id.into_inner(), auth.user_id, request.into_inner())

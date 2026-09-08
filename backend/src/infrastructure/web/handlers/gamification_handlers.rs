@@ -3,8 +3,9 @@ use crate::application::dto::{
 };
 use crate::domain::entities::{AchievementCategory, ChallengeStatus};
 use crate::infrastructure::web::app_state::AppState;
+use crate::infrastructure::web::middleware::scope_guard::verify_building_org_access;
 use crate::infrastructure::web::middleware::AuthenticatedUser;
-use actix_web::{delete, get, post, put, web, HttpResponse, Responder};
+use actix_web::{delete, get, post, put, web, HttpResponse, Responder, ResponseError};
 use serde::Deserialize;
 use uuid::Uuid;
 
@@ -451,9 +452,22 @@ pub async fn list_challenges_by_status(
 #[get("/buildings/{building_id}/challenges")]
 pub async fn list_building_challenges(
     data: web::Data<AppState>,
-    _auth: AuthenticatedUser,
+    auth: AuthenticatedUser,
     building_id: web::Path<Uuid>,
 ) -> impl Responder {
+    // Cloisonnement : l'immeuble visé doit relever d'une ACP que cet
+    // utilisateur a le droit de voir (#772).
+    if let Err(err) = verify_building_org_access(
+        &auth,
+        *building_id,
+        &data.building_use_cases,
+        &data.acp_use_cases,
+    )
+    .await
+    {
+        return err.error_response();
+    }
+
     match data
         .challenge_use_cases
         .list_building_challenges(building_id.into_inner())

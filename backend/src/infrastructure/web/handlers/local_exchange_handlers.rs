@@ -3,7 +3,9 @@ use crate::application::dto::{
     RequestExchangeDto,
 };
 use crate::domain::entities::ExchangeType;
-use crate::infrastructure::web::middleware::scope_guard::verify_building_org_access;
+use crate::infrastructure::web::middleware::scope_guard::{
+    verify_building_org_access, verify_owner_org_access,
+};
 use crate::infrastructure::web::{AppState, AuthenticatedUser};
 use actix_web::{delete, get, post, put, web, HttpResponse, Responder, ResponseError};
 use uuid::Uuid;
@@ -118,6 +120,14 @@ pub async fn list_owner_exchanges(
     auth: AuthenticatedUser,
     owner_id: web::Path<Uuid>,
 ) -> impl Responder {
+    // Cloisonnement : le copropriétaire visé doit relever d'une organisation
+    // que cet utilisateur a le droit de voir. Ces routes disent ce qu'une
+    // personne nommée a échangé, rendu, et combien de crédits elle détient —
+    // son activité dans la copropriété, jour après jour (#772).
+    if let Err(err) = verify_owner_org_access(&auth, *owner_id, &data.owner_use_cases).await {
+        return err.error_response();
+    }
+
     let owner_id = owner_id.into_inner();
 
     // Authorization: users can only see their own exchanges
@@ -342,6 +352,14 @@ pub async fn get_credit_balance(
     auth: AuthenticatedUser,
     path: web::Path<(Uuid, Uuid)>,
 ) -> impl Responder {
+    // Cloisonnement : le copropriétaire visé doit relever d'une organisation
+    // que cet utilisateur a le droit de voir. Ces routes disent ce qu'une
+    // personne nommée a échangé, rendu, et combien de crédits elle détient —
+    // son activité dans la copropriété, jour après jour (#772).
+    if let Err(err) = verify_owner_org_access(&auth, path.0, &data.owner_use_cases).await {
+        return err.error_response();
+    }
+
     let (path_id, building_id) = path.into_inner();
 
     // Try to find owner by ID first, then by user_id as fallback
@@ -481,6 +499,14 @@ pub async fn get_owner_summary(
     auth: AuthenticatedUser,
     owner_id: web::Path<Uuid>,
 ) -> impl Responder {
+    // Cloisonnement : le copropriétaire visé doit relever d'une organisation
+    // que cet utilisateur a le droit de voir. Ces routes disent ce qu'une
+    // personne nommée a échangé, rendu, et combien de crédits elle détient —
+    // son activité dans la copropriété, jour après jour (#772).
+    if let Err(err) = verify_owner_org_access(&auth, *owner_id, &data.owner_use_cases).await {
+        return err.error_response();
+    }
+
     let owner_id = owner_id.into_inner();
 
     // Authorization: users can only view their own exchange summary
