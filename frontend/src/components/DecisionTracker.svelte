@@ -163,7 +163,7 @@
   {:else if error}
     <div class="p-6">
       <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded relative" role="alert">
-        <strong class="font-bold">Erreur :</strong>
+        <strong class="font-bold">{$_('common.errorLabel')}</strong>
         <span class="block sm:inline">{error}</span>
       </div>
     </div>
@@ -202,7 +202,7 @@
                   </p>
                   {#if decision.deadline}
                     <p class:text-red-600={isOverdue(decision)}>
-                      <strong>Deadline :</strong> {formatDate(decision.deadline)}
+                      <strong>{$_('board.deadline')}</strong> {formatDate(decision.deadline)}
                       {#if !isOverdue(decision) && decision.status !== 'completed' && decision.status !== 'cancelled'}
                         <span class="ml-1 text-xs">
                           (dans {getDaysUntilDeadline(decision.deadline)} jours)
@@ -212,14 +212,14 @@
                   {/if}
                   {#if decision.status === 'completed'}
                     <p class="text-green-600">
-                      <strong>Terminée le :</strong> {formatDate((decision as any).completed_at ?? decision.updated_at)}
+                      <strong>{$_('board.completedOn')}</strong> {formatDate((decision as any).completed_at ?? decision.updated_at)}
                     </p>
                   {/if}
                 </div>
 
                 {#if decision.notes}
                   <div class="mt-3 bg-gray-50 border border-gray-200 rounded-md p-3">
-                    <p class="text-xs font-medium text-gray-700 mb-1">Notes de suivi :</p>
+                    <p class="text-xs font-medium text-gray-700 mb-1">{$_('board.followUpNotes')}</p>
                     <p class="text-sm text-gray-600">{decision.notes}</p>
                   </div>
                 {/if}
@@ -232,14 +232,14 @@
                   onclick={() => updateDecisionStatus(decision.id, 'in_progress')}
                   class="px-3 py-1.5 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md"
                 >
-                  Démarrer
+                  {$_('board.start')}
                 </button>
               {:else if decision.status === 'in_progress'}
                 <button
                   onclick={() => completeDecision(decision.id)}
                   class="px-3 py-1.5 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded-md"
                 >
-                  Terminer
+                  {$_('board.finish')}
                 </button>
               {/if}
             </div>
@@ -250,7 +250,7 @@
               <div class="flex">
                 <span class="text-lg mr-2">🚨</span>
                 <p class="text-sm text-red-800">
-                  <strong>Attention :</strong> Cette décision est en retard.
+                  <strong>{$_('board.warning')}</strong> Cette décision est en retard.
                   La deadline était le {formatDate(decision.deadline)}.
                 </p>
               </div>
@@ -263,7 +263,7 @@
 
   <div class="px-6 py-4 bg-gray-50 border-t border-gray-200">
     <p class="text-sm text-gray-600">
-      <strong>Rôle du conseil :</strong> Le conseil de copropriété surveille l'exécution des décisions de l'AG par le syndic et peut demander des comptes.
+      <strong>{$_('board.councilRole')}</strong> Le conseil de copropriété surveille l'exécution des décisions de l'AG par le syndic et peut demander des comptes.
     </p>
   </div>
 </div>

@@ -381,7 +381,7 @@
     }
   },
   "board": {
-    "deadline": "Deadline",
+    "deadline": "Deadline:",
     "decisionCount": "{count} decision(s)",
     "decisionStats": "Decision Statistics",
     "decisionTracker": "Decision Tracker",
@@ -454,7 +454,13 @@
       "statusUpdated": "Status updated successfully"
     },
     "title": "Board Dashboard",
-    "upcomingDeadlines": "{count} upcoming deadline(s)"
+    "upcomingDeadlines": "{count} upcoming deadline(s)",
+    "completedOn": "Completed on:",
+    "followUpNotes": "Follow-up notes:",
+    "start": "Start",
+    "finish": "Finish",
+    "warning": "Warning:",
+    "councilRole": "Council's role:"
   },
   "bookings": {
     "bookResource": "Book {name}",
@@ -967,7 +973,10 @@
     "comment": "Comment",
     "actionColumn": "Action",
     "contact": "Contact",
-    "createdOnLabel": "Created on"
+    "createdOnLabel": "Created on",
+    "loading2": "Loading…",
+    "createdOnShort": "Created on",
+    "errorLabel": "Error:"
   },
   "common.error.loadData": "Error loading data",
   "common.error.loadStats": "Error loading statistics",
@@ -3988,7 +3997,12 @@
     "dimCostCompliance": "Budget compliance",
     "dimOverall": "Overall score",
     "avgAria": "Average {dimension}: {note} out of 5",
-    "avgAriaUnavailable": "Average {dimension}: not available"
+    "avgAriaUnavailable": "Average {dimension}: not available",
+    "evaluationsTitle": "Contractor evaluations",
+    "newEval": "New evaluation",
+    "evaluationsEmpty": "No evaluation recorded yet.",
+    "seeReputation": "View reputation",
+    "evaluationsEmptySession": "No evaluation recorded in this session. See the “Contractor reputation” page for the full history."
   },
   "magicLink": {
     "issued": "Link issued",
@@ -4023,7 +4037,11 @@
     "deliverables": "Deliverables",
     "addDeliverable": "Add a deliverable",
     "requiredSignatures": "Required signatures",
-    "attachments": "Attachments — one address per entry, separated by commas"
+    "attachments": "Attachments — one address per entry, separated by commas",
+    "pageTitle": "Technical specifications",
+    "newSpec": "New technical specification",
+    "empty": "No technical specification yet.",
+    "detail": "Details"
   },
   "acps": {
     "pageTitle": "Co-ownership associations (ACP)",

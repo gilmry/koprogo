@@ -381,7 +381,7 @@
     }
   },
   "board": {
-    "deadline": "Deadline",
+    "deadline": "Deadline:",
     "decisionCount": "{count} beslissing(en)",
     "decisionStats": "Beslissingsstatistieken",
     "decisionTracker": "Beslissingstracker",
@@ -454,7 +454,13 @@
       "statusUpdated": "Status succesvol bijgewerkt"
     },
     "title": "Bestuursdashboard",
-    "upcomingDeadlines": "{count} aankomende deadline(s)"
+    "upcomingDeadlines": "{count} aankomende deadline(s)",
+    "completedOn": "Voltooid op:",
+    "followUpNotes": "Opvolgingsnotities:",
+    "start": "Starten",
+    "finish": "Beëindigen",
+    "warning": "Let op:",
+    "councilRole": "Rol van de raad:"
   },
   "bookings": {
     "bookResource": "{name} reserveren",
@@ -967,7 +973,10 @@
     "comment": "Opmerking",
     "actionColumn": "Actie",
     "contact": "Contact",
-    "createdOnLabel": "Aangemaakt op"
+    "createdOnLabel": "Aangemaakt op",
+    "loading2": "Laden…",
+    "createdOnShort": "Aangemaakt op",
+    "errorLabel": "Fout:"
   },
   "common.error.loadData": "Fout bij het laden van gegevens",
   "common.error.loadStats": "Fout bij het laden van statistieken",
@@ -3988,7 +3997,12 @@
     "dimCostCompliance": "Naleving van het budget",
     "dimOverall": "Algemene score",
     "avgAria": "Gemiddelde {dimension}: {note} op 5",
-    "avgAriaUnavailable": "Gemiddelde {dimension}: niet beschikbaar"
+    "avgAriaUnavailable": "Gemiddelde {dimension}: niet beschikbaar",
+    "evaluationsTitle": "Beoordelingen van dienstverleners",
+    "newEval": "Nieuwe beoordeling",
+    "evaluationsEmpty": "Nog geen beoordeling geregistreerd.",
+    "seeReputation": "Reputatie bekijken",
+    "evaluationsEmptySession": "Geen beoordeling geregistreerd in deze sessie. Raadpleeg de pagina “Reputatie van de dienstverlener” voor de volledige geschiedenis."
   },
   "magicLink": {
     "issued": "Link aangemaakt",
@@ -4023,7 +4037,11 @@
     "deliverables": "Op te leveren werk",
     "addDeliverable": "Voeg een levering toe",
     "requiredSignatures": "Vereiste handtekeningen",
-    "attachments": "Bijlagen — één adres per invoer, gescheiden door komma's"
+    "attachments": "Bijlagen — één adres per invoer, gescheiden door komma's",
+    "pageTitle": "Technische fiches",
+    "newSpec": "Nieuwe technische fiche",
+    "empty": "Nog geen technische fiche.",
+    "detail": "Detail"
   },
   "acps": {
     "pageTitle": "Verenigingen van Mede-eigenaars (VME)",

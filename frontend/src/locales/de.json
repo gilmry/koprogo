@@ -381,7 +381,7 @@
     }
   },
   "board": {
-    "deadline": "Frist",
+    "deadline": "Frist:",
     "decisionCount": "{count} Beschluss/Beschlüsse",
     "decisionStats": "Entscheidungsstatistiken",
     "decisionTracker": "Entscheidungstracker",
@@ -454,7 +454,13 @@
       "statusUpdated": "Status erfolgreich aktualisiert"
     },
     "title": "Vorstandsdashboard",
-    "upcomingDeadlines": "{count} anstehende Frist(en)"
+    "upcomingDeadlines": "{count} anstehende Frist(en)",
+    "completedOn": "Abgeschlossen am:",
+    "followUpNotes": "Nachverfolgungsnotizen:",
+    "start": "Starten",
+    "finish": "Abschließen",
+    "warning": "Achtung:",
+    "councilRole": "Rolle des Beirats:"
   },
   "bookings": {
     "bookResource": "{name} reservieren",
@@ -967,7 +973,10 @@
     "comment": "Kommentar",
     "actionColumn": "Aktion",
     "contact": "Kontakt",
-    "createdOnLabel": "Erstellt am"
+    "createdOnLabel": "Erstellt am",
+    "loading2": "Wird geladen…",
+    "createdOnShort": "Erstellt am",
+    "errorLabel": "Fehler:"
   },
   "common.error.loadData": "Fehler beim Laden der Daten",
   "common.error.loadStats": "Fehler beim Laden der Statistiken",
@@ -3988,7 +3997,12 @@
     "dimCostCompliance": "Budgettreue",
     "dimOverall": "Gesamtnote",
     "avgAria": "Durchschnitt {dimension}: {note} von 5",
-    "avgAriaUnavailable": "Durchschnitt {dimension}: nicht verfügbar"
+    "avgAriaUnavailable": "Durchschnitt {dimension}: nicht verfügbar",
+    "evaluationsTitle": "Dienstleisterbewertungen",
+    "newEval": "Neue Bewertung",
+    "evaluationsEmpty": "Noch keine Bewertung erfasst.",
+    "seeReputation": "Reputation ansehen",
+    "evaluationsEmptySession": "In dieser Sitzung wurde keine Bewertung erfasst. Die vollständige Historie finden Sie auf der Seite „Reputation des Dienstleisters“."
   },
   "magicLink": {
     "issued": "Link erstellt",
@@ -4023,7 +4037,11 @@
     "deliverables": "Liefergegenstände",
     "addDeliverable": "Liefergegenstand hinzufügen",
     "requiredSignatures": "Erforderliche Unterschriften",
-    "attachments": "Anhänge — eine Adresse pro Eintrag, durch Kommas getrennt"
+    "attachments": "Anhänge — eine Adresse pro Eintrag, durch Kommas getrennt",
+    "pageTitle": "Technische Datenblätter",
+    "newSpec": "Neues technisches Datenblatt",
+    "empty": "Noch kein technisches Datenblatt.",
+    "detail": "Details"
   },
   "acps": {
     "pageTitle": "Wohnungseigentümergemeinschaften (WEG)",

@@ -381,7 +381,7 @@
     }
   },
   "board": {
-    "deadline": "Échéance",
+    "deadline": "Échéance :",
     "decisionCount": "{count} décision(s)",
     "decisionStats": "Statistiques des décisions",
     "decisionTracker": "Suivi des décisions",
@@ -454,7 +454,13 @@
       "statusUpdated": "Statut mis à jour avec succès"
     },
     "title": "Tableau de bord du conseil",
-    "upcomingDeadlines": "{count} échéance(s) à venir"
+    "upcomingDeadlines": "{count} échéance(s) à venir",
+    "completedOn": "Terminée le :",
+    "followUpNotes": "Notes de suivi :",
+    "start": "Démarrer",
+    "finish": "Terminer",
+    "warning": "Attention :",
+    "councilRole": "Rôle du conseil :"
   },
   "bookings": {
     "bookResource": "Réserver {name}",
@@ -967,7 +973,10 @@
     "comment": "Commentaire",
     "actionColumn": "Action",
     "contact": "Contact",
-    "createdOnLabel": "Créée le"
+    "createdOnLabel": "Créée le",
+    "loading2": "Chargement…",
+    "createdOnShort": "Créée le",
+    "errorLabel": "Erreur :"
   },
   "common.error.loadData": "Erreur lors du chargement des données",
   "common.error.loadStats": "Erreur lors du chargement des statistiques",
@@ -3988,7 +3997,12 @@
     "dimCostCompliance": "Respect du budget",
     "dimOverall": "Note globale",
     "avgAria": "Moyenne {dimension} : {note} sur 5",
-    "avgAriaUnavailable": "Moyenne {dimension} : non disponible"
+    "avgAriaUnavailable": "Moyenne {dimension} : non disponible",
+    "evaluationsTitle": "Évaluations de prestataires",
+    "newEval": "Nouvelle évaluation",
+    "evaluationsEmpty": "Aucune évaluation enregistrée pour le moment.",
+    "seeReputation": "Voir la réputation",
+    "evaluationsEmptySession": "Aucune évaluation enregistrée dans cette session. Consultez la page « Réputation du prestataire » pour l'historique complet."
   },
   "magicLink": {
     "issued": "Lien émis",
@@ -4023,7 +4037,11 @@
     "deliverables": "Livrables",
     "addDeliverable": "Ajouter un livrable",
     "requiredSignatures": "Signatures requises",
-    "attachments": "Pièces jointes — une adresse par ligne, séparées par des virgules"
+    "attachments": "Pièces jointes — une adresse par ligne, séparées par des virgules",
+    "pageTitle": "Fiches techniques",
+    "newSpec": "Nouvelle fiche technique",
+    "empty": "Aucune fiche technique pour le moment.",
+    "detail": "Détail"
   },
   "acps": {
     "pageTitle": "Associations de Copropriétaires (ACP)",

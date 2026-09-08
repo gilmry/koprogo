@@ -25,6 +25,8 @@
   } from "../../api/contractor_evaluations";
   import ContractorEvaluationForm from "./ContractorEvaluationForm.svelte";
 
+  import { _ } from "../../i18n";
+
   type SpecLike = {
     id: string;
     title: string;
@@ -137,7 +139,7 @@
       class="text-2xl font-semibold text-gray-900"
       data-testid="contractor-evaluations-page-title"
     >
-      Évaluations contractor
+      {$_('contractors.evaluationsTitle')}
     </h1>
     <button
       type="button"
@@ -146,21 +148,20 @@
       onclick={() => (showForm = true)}
       disabled={loading || contractors.length === 0}
     >
-      Nouvelle évaluation
+      {$_('contractors.newEval')}
     </button>
   </header>
 
   {#if loading}
     <p class="text-sm text-gray-500" role="status" aria-live="polite">
-      Chargement…
+      {$_('common.loading2')}
     </p>
   {:else if recentEvaluations.length === 0}
     <p
       data-testid="contractor-eval-list-empty"
       class="text-sm text-gray-500"
     >
-      Aucune évaluation enregistrée pour le moment dans cette session.
-      Consultez la page « Réputation contractor » pour l'historique complet.
+      {$_('contractors.evaluationsEmptySession')}
     </p>
   {:else}
     <div class="overflow-x-auto">
@@ -174,25 +175,25 @@
               scope="col"
               class="px-3 py-2 text-left font-medium text-gray-700"
             >
-              Contractor
+              {$_('contractors.evaluated')}
             </th>
             <th
               scope="col"
               class="px-3 py-2 text-left font-medium text-gray-700"
             >
-              Globale
+              {$_('contractors.scoreOverall')}
             </th>
             <th
               scope="col"
               class="px-3 py-2 text-left font-medium text-gray-700"
             >
-              Date
+              {$_('common.date')}
             </th>
             <th
               scope="col"
               class="px-3 py-2 text-left font-medium text-gray-700"
             >
-              Commentaire
+              {$_('common.comment')}
             </th>
           </tr>
         </thead>
@@ -205,7 +206,7 @@
                   class="text-blue-600 hover:underline"
                   data-testid={`contractor-eval-reputation-link-${ev.id}`}
                 >
-                  Voir réputation
+                  {$_('contractors.seeReputation')}
                 </a>
               </td>
               <td class="px-3 py-2 text-gray-900 font-mono font-semibold">
