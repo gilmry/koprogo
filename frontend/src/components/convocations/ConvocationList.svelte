@@ -130,6 +130,7 @@
       >
       <select
         id="convocation-status-filter"
+        data-testid="convocation-status-filter-select"
         bind:value={statusFilter}
         class="text-sm rounded-md border-gray-300 focus:border-amber-500 focus:ring-amber-500"
       >
@@ -163,6 +164,7 @@
       <p class="text-sm text-red-800">{error}</p>
       <button
         onclick={loadConvocations}
+        data-testid="convocation-list-retry-button"
         class="mt-2 text-sm text-red-600 hover:text-red-800 underline"
       >
         {$_("common.retry")}
@@ -185,6 +187,7 @@
         >
           <a
             href="/convocation-detail?id={convocation.id}"
+            data-testid="convocation-list-detail-link"
             class="block px-4 py-4 sm:px-6"
           >
             <div class="flex items-center justify-between">

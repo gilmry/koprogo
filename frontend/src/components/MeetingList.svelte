@@ -222,6 +222,7 @@
             </div>
             <a
               href="/meeting-detail?id={meeting.id}"
+              data-testid="meeting-list-detail-link"
               class="text-primary-600 hover:text-primary-700 text-sm font-medium"
             >
               {$_("common.details")} →

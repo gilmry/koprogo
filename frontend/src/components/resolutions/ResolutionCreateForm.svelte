@@ -58,6 +58,7 @@
     e.preventDefault();
     handleSubmit();
   }}
+  data-testid="resolution-create-form"
   class="bg-gray-50 border border-gray-200 rounded-lg p-4"
 >
   <h4 class="text-sm font-semibold text-gray-900 mb-3">

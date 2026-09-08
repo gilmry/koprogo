@@ -259,6 +259,7 @@
         <div class="flex items-center space-x-4">
           <button
             onclick={handleGoBack}
+            data-testid="meeting-detail-back-button"
             class="text-gray-600 hover:text-gray-900"
           >
             {$_("common.back")}
@@ -436,6 +437,7 @@
               </h3>
               <a
                 href="/building-detail?id={building.id}"
+                data-testid="meeting-detail-building-link"
                 class="text-lg text-primary-600 hover:text-primary-700 hover:underline"
               >
                 {building.name}

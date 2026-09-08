@@ -67,17 +67,21 @@ import { join, extname } from "node:path";
  */
 /// Éléments interactifs sans ancrage. **Ne doit que BAISSER.**
 ///
-/// 672 au 2026-09-06, **635 au 2026-09-08**. Les trente-sept posés le sont sur
-/// les écrans que #803 nomme en priorité — création de lot, saisie comptable,
-/// création de copropriétaire, annonces et compétences — et selon la
-/// convention relevée le même jour : `<domaine>-<objet>-<rôle>`, en casse
-/// kebab.
+/// 672 au 2026-09-06, **620 au 2026-09-08**. Les cinquante-deux posés le sont
+/// sur les écrans que #803 nomme en priorité, et selon la convention relevée
+/// le même jour : `<domaine>-<objet>-<rôle>`, en casse kebab.
+///
+/// **Le cycle de vie d'une AG est intégralement ancré** : assemblées,
+/// résolutions, votes, convocations et destinataires ne comptent plus un seul
+/// élément interactif nu. C'est le premier des quatre parcours de recette de
+/// #803 à être complet, et c'est celui de #780 — les trois verrous qu'une
+/// recette navigateur doit pouvoir franchir.
 ///
 /// Aucune ancre n'a été inventée : chacune dérive du `bind:value` ou de l'`id`
 /// que le champ portait déjà. C'est ce qui rend la baisse relisible — un
 /// identifiant mal nommé vaut moins que pas d'identifiant, puisqu'il fera
 /// croire à une couverture.
-const DETTE_AU_2026_09_06 = 635;
+const DETTE_AU_2026_09_06 = 620;
 
 const RACINE = join(process.cwd(), "src");
 const EXTENSIONS = new Set([".svelte", ".astro"]);

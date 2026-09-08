@@ -181,6 +181,7 @@
         <p class="text-sm text-red-800">{error}</p>
         <button
           onclick={loadResolutions}
+          data-testid="resolution-list-retry-button"
           class="mt-2 text-sm text-red-600 hover:text-red-800 underline"
         >
           {$_("common.retry")}

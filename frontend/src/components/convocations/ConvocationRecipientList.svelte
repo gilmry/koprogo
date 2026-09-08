@@ -139,6 +139,7 @@
           <button
             onclick={() =>
               (filter = f.value as "all" | "confirmed" | "pending" | "absent")}
+            data-testid="convocation-recipient-filter-button"
             class="px-2 py-1 rounded text-xs font-medium transition-colors
               {filter === f.value
               ? 'bg-amber-600 text-white'
