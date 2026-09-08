@@ -97,20 +97,27 @@ import { join, extname } from "node:path";
 /// communautaires. Ce sont ceux que Cowork parcourt, et où l'absence
 /// d'ancrage lui a déjà coûté. »
 ///
-/// Les quatre ne comptent plus un seul élément interactif sans ancrage.
-/// Combiné aux dialogues natifs épuisés le même jour (#844), une recette
-/// pilotée peut désormais atteindre chaque bouton de ces parcours et lire
-/// chaque confirmation.
+/// La dette est à zéro. Chaque élément interactif du produit porte une
+/// ancre : boutons, champs, listes déroulantes, formulaires et liens, sur
+/// l'application comme sur les pages publiques. 755 au premier relevé.
 ///
-/// Les 343 restants sont ailleurs : tableaux de bord, administration,
-/// paramètres, portail du copropriétaire, tickets, documents. Ils ne sont pas
-/// moins réels, ils sont moins urgents.
+/// Le cliquet devient donc une interdiction. Il reste écrit avec
+/// `toBeLessThanOrEqual` et non `toBe` : la forme du cliquet vaut par
+/// elle-même, et un décompte qui baisserait pour une bonne raison — un écran
+/// retiré — ne doit pas faire échouer la garde.
 ///
-/// Aucune ancre n'a été inventée : chacune dérive du `bind:value` ou de l'`id`
-/// que le champ portait déjà. C'est ce qui rend la baisse relisible — un
-/// identifiant mal nommé vaut moins que pas d'identifiant, puisqu'il fera
-/// croire à une couverture.
-const DETTE_AU_2026_09_06 = 251;
+/// Trois exclusions, chacune avec sa raison écrite plus bas :
+///
+///   - les liens `mailto:` et `tel:`, qu'aucune recette ne pilote ;
+///   - les primitives qui répandent `{...restProps}`, ancrables par leur
+///     appelant, et tenues de le rester par le test de passe-plat ;
+///   - les éléments cités en commentaire, qui ne sont pas du code.
+///
+/// Aucune ancre n'a été inventée au hasard : chacune nomme l'écran, l'objet
+/// et le rôle, ou dérive de l'`id` que l'élément portait déjà. Un identifiant
+/// mal nommé vaut moins que pas d'identifiant, puisqu'il fait croire à une
+/// couverture.
+const DETTE_AU_2026_09_06 = 0;
 
 const RACINE = join(process.cwd(), "src");
 const EXTENSIONS = new Set([".svelte", ".astro"]);
@@ -255,6 +262,17 @@ function recenser(): { ancres: number; sansAncre: string[] } {
       // les fiches de contact du syndic. Le lien reste utile à l'utilisateur ;
       // il n'est simplement pas un point d'interaction mesurable.
       if (nom === "a" && /href=[{"'`]*(mailto|tel):/.test(balise)) continue;
+      // Une primitive qui répand `{...restProps}` est ancrable par son
+      // appelant : `<Button data-testid="x">` arrive jusqu'au `<button>`.
+      // Lui poser une ancre fixe donnerait le même identifiant à chaque
+      // bouton de l'application, ce qui est pire que pas d'ancre du tout —
+      // `getByTestId` deviendrait ambigu partout à la fois.
+      //
+      // L'exclusion a une contrepartie, dans le test qui suit : ces cinq
+      // primitives doivent CONTINUER de transmettre. Sans lui, il suffirait
+      // de retirer le `{...restProps}` pour sortir du décompte en cassant
+      // l'ancrage de tous les appelants.
+      if (/\{\.\.\.[a-zA-Z_$][\w$]*\}/.test(balise)) continue;
       if (balise.includes("data-testid")) {
         ancres += 1;
       } else {
@@ -299,5 +317,40 @@ describe("la dette d'ancrage ne grossit pas (#803)", () => {
       ancres,
       "plus aucun élément ancré : le motif a changé",
     ).toBeGreaterThan(200);
+  });
+});
+
+/**
+ * Les primitives exclues du décompte ci-dessus le sont parce qu'elles
+ * transmettent `{...restProps}` : leur appelant peut y passer une ancre. Ce
+ * test est la contrepartie de l'exclusion. Sans lui, retirer le
+ * `{...restProps}` ferait sortir la primitive du décompte tout en cassant
+ * l'ancrage de tous ses appelants d'un coup.
+ */
+const PRIMITIVES_A_PASSE_PLAT = [
+  "src/components/ui/AccessibleButton.svelte",
+  "src/components/ui/Button.svelte",
+  "src/components/ui/FormInput.svelte",
+  "src/components/ui/FormSelect.svelte",
+  "src/components/ui/FormTextarea.svelte",
+];
+
+describe("les primitives restent ancrables par leur appelant (#803)", () => {
+  it("transmet encore les attributs jusqu'à l'élément interactif", () => {
+    const fautives: string[] = [];
+    for (const chemin of PRIMITIVES_A_PASSE_PLAT) {
+      const source = readFileSync(join(process.cwd(), chemin), "utf-8");
+      const transmet = [...balisesInteractives(source)].some((b) =>
+        /\{\.\.\.[a-zA-Z_$][\w$]*\}/.test(b.balise),
+      );
+      if (!transmet) fautives.push(chemin);
+    }
+    expect(
+      fautives.join("\n"),
+      "Ces primitives ne répandent plus leurs attributs sur leur élément " +
+        "interactif. Elles sortent du décompte d'ancrage PARCE QU'ELLES le " +
+        'font : sans cela, `<Button data-testid="x">` n\'atteint plus le ' +
+        "`<button>`, et tous leurs appelants perdent leur ancre en silence.",
+    ).toBe("");
   });
 });

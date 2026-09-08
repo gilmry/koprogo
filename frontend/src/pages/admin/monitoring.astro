@@ -6,7 +6,10 @@ import StorageMetrics from "../../components/admin/StorageMetrics.svelte";
 <Layout title="Monitoring - KoproGo">
   <main class="container mx-auto px-4 py-10 space-y-6">
     <div class="flex flex-col gap-2">
-      <a href="/admin" class="text-sm text-primary-600 hover:text-primary-700"
+      <a
+        data-testid="admin-monitoring-back-link"
+        href="/admin"
+        class="text-sm text-primary-600 hover:text-primary-700"
         >← Retour à l'administration</a
       >
       <h1 class="text-3xl font-bold text-gray-900">Monitoring du stockage</h1>

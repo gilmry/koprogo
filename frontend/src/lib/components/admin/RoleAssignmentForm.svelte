@@ -288,7 +288,11 @@
         </button>
       </div>
 
-      <form onsubmit={handleSubmit} class="flex-1 overflow-y-auto p-6">
+      <form
+        data-testid="role-assignment-form"
+        onsubmit={handleSubmit}
+        class="flex-1 overflow-y-auto p-6"
+      >
         <!-- User -->
         <div class="mb-4">
           <label

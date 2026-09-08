@@ -7,6 +7,7 @@ import Layout from "../../layouts/Layout.astro";
     <div class="mb-6">
       <div class="flex items-center space-x-3 mb-2">
         <a
+          data-testid="notification-settings-back-link"
           href="/notifications"
           class="text-gray-500 hover:text-gray-700"
           aria-label="Back to notifications"
@@ -104,7 +105,7 @@ import Layout from "../../layouts/Layout.astro";
         <div class="bg-red-50 border border-red-200 rounded-lg p-6">
           <h3 class="text-lg font-semibold text-red-900 mb-2">Not Authenticated</h3>
           <p class="text-red-700">Please log in to manage your notification settings.</p>
-          <a href="/login" class="mt-4 inline-block px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700">
+          <a data-testid="notification-settings-login-link" href="/login" class="mt-4 inline-block px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700">
             Log In
           </a>
         </div>

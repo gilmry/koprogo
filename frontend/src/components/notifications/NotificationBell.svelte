@@ -58,6 +58,7 @@
 <div class="notification-bell relative inline-block">
   <!-- Bell Icon Button -->
   <button
+    data-testid="notifications-bell-button"
     onclick={toggleDropdown}
     class="relative p-2 text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 rounded-full"
     aria-label="Notifications"

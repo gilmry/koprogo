@@ -197,6 +197,7 @@
 </script>
 
 <form
+  data-testid="role-delegation-form"
   class="role-delegation-form flex flex-col gap-4 p-4 bg-white rounded shadow-sm"
   onsubmit={handleSubmit}
   aria-labelledby="role-delegate-title"

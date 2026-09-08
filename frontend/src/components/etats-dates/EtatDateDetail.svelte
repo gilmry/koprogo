@@ -136,8 +136,10 @@
 {:else if error}
   <div class="bg-red-50 border border-red-200 rounded-lg p-4">
     <p class="text-red-700">{error}</p>
-    <button on:click={loadEtatDate} class="mt-2 text-sm text-red-600 underline"
-      >{$_("common.retry")}</button
+    <button
+      data-testid="etat-date-retry-button"
+      on:click={loadEtatDate}
+      class="mt-2 text-sm text-red-600 underline">{$_("common.retry")}</button
     >
   </div>
 {:else if etatDate}
@@ -347,6 +349,7 @@
           {$_("etatsDate.pdfDocument")}
         </h2>
         <a
+          data-testid="etat-date-pdf-link"
           href={etatDate.pdf_file_path}
           class="text-primary-600 hover:text-primary-700 font-medium"
         >
@@ -405,6 +408,7 @@
         {/if}
 
         <a
+          data-testid="etat-date-back-link"
           href="/etats-dates"
           class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition"
         >

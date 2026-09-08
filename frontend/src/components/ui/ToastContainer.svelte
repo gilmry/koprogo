@@ -60,6 +60,7 @@
       </div>
 
       <button
+        data-testid="toast-dismiss-button"
         on:click={() => handleDismiss(item.id)}
         class="ml-3 flex-shrink-0 hover:opacity-75 transition"
         aria-label="Close"

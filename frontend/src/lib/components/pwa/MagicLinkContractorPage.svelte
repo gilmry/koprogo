@@ -492,6 +492,7 @@
       </h1>
 
       <form
+        data-testid="magic-link-contractor-form"
         class="space-y-4"
         onsubmit={(e) => {
           e.preventDefault();

@@ -83,6 +83,7 @@
       </div>
 
       <button
+        data-testid="toast-close-button"
         onclick={handleClose}
         class="ml-3 flex-shrink-0 hover:opacity-75 transition"
         aria-label="Close"

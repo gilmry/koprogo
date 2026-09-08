@@ -77,6 +77,7 @@
         </span>
       </div>
       <a
+        data-testid="settings-profile-link"
         href="/profile"
         class="shrink-0 text-sm text-primary-600 hover:text-primary-700 font-medium"
       >
@@ -89,6 +90,7 @@
   <div class="space-y-3">
     {#each settingsSections as section}
       <a
+        data-testid="settings-section-link"
         href={section.href}
         class="block bg-white rounded-lg border {section.color.split(
           ' ',

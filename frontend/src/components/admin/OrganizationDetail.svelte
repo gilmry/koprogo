@@ -115,6 +115,7 @@
 
 <div class="container mx-auto px-4 py-8" data-testid="organization-detail">
   <a
+    data-testid="organization-back-link"
     href="/admin/organizations"
     class="text-sm text-primary-600 hover:underline"
   >
@@ -257,6 +258,7 @@
           {#each buildings as building (building.id)}
             <li class="py-3" data-testid="organization-building">
               <a
+                data-testid="organization-building-link"
                 href={`/building-detail?id=${building.id}`}
                 class="text-sm font-medium text-primary-600 hover:underline"
               >

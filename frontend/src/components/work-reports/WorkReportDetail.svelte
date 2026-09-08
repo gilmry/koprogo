@@ -438,6 +438,7 @@
 
         <div class="flex gap-2 pt-2">
           <button
+            data-testid="work-report-save-button"
             onclick={saveEdit}
             disabled={submitting}
             class="px-4 py-1.5 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 disabled:opacity-50 transition"
@@ -445,6 +446,7 @@
             {submitting ? $_("common.saving") : $_("common.save")}
           </button>
           <button
+            data-testid="work-report-cancel-button"
             onclick={cancelEdit}
             class="px-4 py-1.5 bg-gray-200 text-gray-700 text-sm rounded hover:bg-gray-300 transition"
           >

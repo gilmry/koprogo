@@ -293,6 +293,7 @@
     </h2>
 
     <form
+      data-testid="magic-link-issue-form"
       class="space-y-4"
       onsubmit={(e: SubmitEvent) => {
         e.preventDefault();

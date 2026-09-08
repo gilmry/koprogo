@@ -277,6 +277,7 @@
 </script>
 
 <form
+  data-testid="contractor-evaluation-form"
   class="contractor-eval-form flex flex-col gap-4 p-4 bg-white rounded shadow-sm"
   onsubmit={handleSubmit}
   aria-labelledby="contractor-eval-form-title"

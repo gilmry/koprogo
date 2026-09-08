@@ -63,6 +63,7 @@
           class="block text-sm font-medium text-gray-700 mb-1"
           >{$_("profile.selectBuilding")}</label
         ><select
+          data-testid="syndic-contact-building-select"
           id="building-select"
           bind:value={selectedBuildingId}
           class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500"
@@ -84,6 +85,7 @@
         class="bg-red-50 border border-red-200 rounded-lg p-4 text-sm text-red-700"
       >
         {error}<button
+          data-testid="syndic-contact-retry-button"
           onclick={() => loadBuilding(selectedBuildingId)}
           class="ml-2 underline">{$_("common.retry")}</button
         >

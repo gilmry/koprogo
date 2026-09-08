@@ -135,6 +135,7 @@
 
         <!-- Delete button -->
         <button
+          data-testid="notification-delete-button"
           onclick={handleDelete}
           class="ml-2 text-gray-400 hover:text-red-600 transition-colors"
           aria-label={$_("notifications.delete_notification")}

@@ -231,6 +231,7 @@
 </script>
 
 <form
+  data-testid="mandate-issue-form"
   class="mandate-form flex flex-col gap-4 p-4 bg-white rounded shadow-sm"
   onsubmit={handleSubmit}
   aria-labelledby="mandate-issue-title"

@@ -273,6 +273,7 @@
             <div class="ml-4 flex-shrink-0 flex flex-col space-y-2">
               {#if decision.status === "pending"}
                 <button
+                  data-testid="decision-start-button"
                   onclick={() =>
                     updateDecisionStatus(decision.id, "in_progress")}
                   class="px-3 py-1.5 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md"
@@ -281,6 +282,7 @@
                 </button>
               {:else if decision.status === "in_progress"}
                 <button
+                  data-testid="decision-complete-button"
                   onclick={() => completeDecision(decision.id)}
                   class="px-3 py-1.5 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded-md"
                 >

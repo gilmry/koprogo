@@ -165,6 +165,7 @@
           <!-- Click handler -->
           {#if onSelect}
             <button
+              data-testid="technical-spec-version-button"
               type="button"
               class="min-h-[32px] text-xs text-blue-600 hover:underline"
               onclick={() => onSelect?.(spec)}

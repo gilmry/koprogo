@@ -272,6 +272,7 @@
 </script>
 
 <form
+  data-testid="technical-spec-create-form"
   class="tech-spec-form flex flex-col gap-4 p-4 bg-white rounded shadow-sm"
   onsubmit={handleSubmit}
   aria-labelledby="tech-spec-create-title"

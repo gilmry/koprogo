@@ -74,6 +74,7 @@
         <div></div>
       {/if}
       <a
+        data-testid="campaigns-create-link"
         href="/energy-campaigns/new"
         class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700"
       >
@@ -97,6 +98,7 @@
     <div class="p-4 m-4 bg-red-50 border border-red-200 rounded-md">
       <p class="text-sm text-red-800">❌ {error}</p>
       <button
+        data-testid="campaigns-retry-button"
         onclick={loadCampaigns}
         class="mt-2 text-sm text-red-600 hover:text-red-800 underline"
       >
@@ -115,6 +117,7 @@
       {#each campaigns as campaign}
         <li class="hover:bg-gray-50" data-testid="energy-campaign-row">
           <a
+            data-testid="campaigns-detail-link"
             href="/energy-campaigns/detail?id={campaign.id}"
             class="block px-4 py-4 sm:px-6"
           >

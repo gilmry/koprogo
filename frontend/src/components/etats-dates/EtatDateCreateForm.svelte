@@ -282,6 +282,7 @@
 
   <div class="flex justify-end space-x-3">
     <button
+      data-testid="etat-date-create-cancel-button"
       type="button"
       on:click={() => dispatch("cancel")}
       class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition"

@@ -104,6 +104,7 @@
     <div class="p-4 m-4 bg-red-50 border border-red-200 rounded-md">
       <p class="text-sm text-red-800">❌ {error}</p>
       <button
+        data-testid="provider-offers-retry-button"
         onclick={loadOffers}
         class="mt-2 text-sm text-red-600 hover:text-red-800 underline"
       >

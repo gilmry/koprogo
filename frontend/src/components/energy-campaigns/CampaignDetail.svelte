@@ -165,6 +165,7 @@
   >
     <p class="text-sm text-red-800">❌ {error}</p>
     <button
+      data-testid="campaign-retry-button"
       onclick={loadData}
       class="mt-2 text-sm text-red-600 hover:text-red-800 underline"
     >
@@ -186,6 +187,7 @@
           <CampaignStatusBadge status={campaign.status} />
         </div>
         <a
+          data-testid="campaign-back-link"
           href="/energy-campaigns"
           class="text-sm text-gray-600 hover:text-gray-800 underline"
         >
@@ -284,6 +286,7 @@
           </h3>
           {#if canUpload()}
             <button
+              data-testid="campaign-upload-toggle-button"
               onclick={() => (showUploadForm = !showUploadForm)}
               class="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-md hover:bg-indigo-700"
             >

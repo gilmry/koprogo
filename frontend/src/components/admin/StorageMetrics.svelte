@@ -213,6 +213,7 @@
         >Dernière mise à jour : {formatTimestamp(lastUpdated)}</span
       >
       <button
+        data-testid="storage-metrics-action-button"
         class="px-4 py-2 rounded-lg bg-primary-600 text-white hover:bg-primary-700 transition text-sm font-medium"
         on:click={fetchMetrics}
         disabled={loading}

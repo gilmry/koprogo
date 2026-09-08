@@ -102,6 +102,7 @@
     </h3>
     {#if notifications.length > 0}
       <button
+        data-testid="notifications-mark-all-read-button"
         onclick={handleMarkAllRead}
         class="text-sm text-blue-600 hover:text-blue-700 font-medium"
       >
@@ -156,6 +157,7 @@
   {#if notifications.length > 0}
     <div class="px-4 py-3 border-t border-gray-200">
       <button
+        data-testid="notifications-view-all-button"
         onclick={handleViewAll}
         class="w-full text-center text-sm text-blue-600 hover:text-blue-700 font-medium"
       >

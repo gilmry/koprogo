@@ -154,6 +154,7 @@
   </h3>
 
   <form
+    data-testid="syndic-response-form"
     class="space-y-3"
     onsubmit={(e: SubmitEvent) => {
       e.preventDefault();

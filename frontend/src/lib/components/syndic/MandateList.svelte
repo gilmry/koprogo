@@ -314,6 +314,7 @@
         </p>
         <div class="flex justify-end gap-2">
           <button
+            data-testid="mandate-list-action-button"
             type="button"
             class="px-3 py-1 text-sm border border-gray-300 rounded text-gray-700"
             onclick={cancelRevoke}

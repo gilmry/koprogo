@@ -203,6 +203,7 @@
         {$_("board.legalRequirement")}
       </p>
       <button
+        data-testid="board-members-toggle-inactive-button"
         onclick={() => {
           showInactive = !showInactive;
           loadMembers();

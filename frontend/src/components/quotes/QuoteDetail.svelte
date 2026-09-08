@@ -365,6 +365,7 @@
       </div>
       <div class="flex gap-2">
         <button
+          data-testid="quote-submit-button"
           onclick={handleSubmitQuote}
           disabled={actionLoading}
           class="px-3 py-1.5 bg-amber-600 text-white rounded-lg text-sm font-medium hover:bg-amber-700 disabled:opacity-50 transition-colors"
@@ -374,6 +375,7 @@
             : $_("quotes.detail.submit")}
         </button>
         <button
+          data-testid="quote-submit-cancel-button"
           onclick={() => (showSubmitForm = false)}
           class="px-3 py-1.5 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors"
         >
