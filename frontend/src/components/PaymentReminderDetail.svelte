@@ -6,6 +6,7 @@
   import { formatDateTime } from "../lib/utils/date.utils";
   import { formatCurrency } from "../lib/utils/finance.utils";
   import { withErrorHandling } from "../lib/utils/error.utils";
+  import ConfirmDialog from "./ui/ConfirmDialog.svelte";
 
   let {
     reminderId,
@@ -20,6 +21,18 @@
   let cancelReason = $state("");
   let showTrackingModal = $state(false);
   let trackingNumber = $state("");
+
+  /// L'action en attente de confirmation, ou `null`.
+  ///
+  /// Les trois `confirm()` remplacés étaient des dialogues du NAVIGATEUR : un
+  /// navigateur piloté les supprime, et l'action prend la forme exacte d'une
+  /// panne (#844).
+  ///
+  /// Une relance de paiement marquée envoyée fait courir un délai, marquée
+  /// payée solde une dette, et une escalade engage la procédure de
+  /// recouvrement. Trois actes datés qui méritent une confirmation
+  /// atteignable.
+  let actionEnAttente = $state<"envoyee" | "payee" | "escalade" | null>(null);
 
   $effect(() => {
     loadReminder();
@@ -40,8 +53,12 @@
     loading = false;
   }
 
-  async function markAsSent() {
-    if (!confirm($_("paymentReminders.markSentConfirm"))) return;
+  function markAsSent() {
+    actionEnAttente = "envoyee";
+  }
+
+  async function executer_envoyee() {
+    actionEnAttente = null;
     const updated = await withErrorHandling({
       action: () =>
         api.put(`/payment-reminders/${reminderId}/mark-sent`, {
@@ -57,8 +74,12 @@
     }
   }
 
-  async function markAsPaid() {
-    if (!confirm($_("paymentReminders.markPaidConfirm"))) return;
+  function markAsPaid() {
+    actionEnAttente = "payee";
+  }
+
+  async function executer_payee() {
+    actionEnAttente = null;
     const updated = await withErrorHandling({
       action: () => api.put(`/payment-reminders/${reminderId}/mark-paid`, {}),
       setLoading: (v: boolean) => (loading = v),
@@ -71,8 +92,12 @@
     }
   }
 
-  async function escalate() {
-    if (!confirm($_("paymentReminders.escalateConfirm"))) return;
+  function escalate() {
+    actionEnAttente = "escalade";
+  }
+
+  async function executer_escalade() {
+    actionEnAttente = null;
     const result = await withErrorHandling({
       action: async () => {
         await api.post(`/payment-reminders/${reminderId}/escalate`, {
@@ -491,3 +516,24 @@
       </div>
     </div>{/if}
 {/if}
+
+<!-- Le dialogue qui remplace trois `confirm()` natifs (#844). -->
+<ConfirmDialog
+  isOpen={actionEnAttente !== null}
+  title={$_("common.confirm")}
+  message={actionEnAttente === "envoyee"
+    ? $_("paymentReminders.markSentConfirm")
+    : actionEnAttente === "payee"
+      ? $_("paymentReminders.markPaidConfirm")
+      : actionEnAttente === "escalade"
+        ? $_("paymentReminders.escalateConfirm")
+        : ""}
+  variant={actionEnAttente === "escalade" ? "danger" : "primary"}
+  {loading}
+  onconfirm={() => {
+    if (actionEnAttente === "envoyee") executer_envoyee();
+    else if (actionEnAttente === "payee") executer_payee();
+    else if (actionEnAttente === "escalade") executer_escalade();
+  }}
+  oncancel={() => (actionEnAttente = null)}
+/>

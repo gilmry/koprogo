@@ -12,6 +12,7 @@
     buildConformityStatus,
     showConformityToast,
   } from "../lib/utils/conformity";
+  import ConfirmDialog from "./ui/ConfirmDialog.svelte";
 
   let {
     buildingId = undefined,
@@ -25,6 +26,20 @@
 
   let calls = $state<any[]>([]);
   let loading = $state(true);
+
+  /// L'action en attente, et l'appel de fonds qu'elle vise.
+  ///
+  /// Les trois `confirm()` remplacés étaient des dialogues du NAVIGATEUR : un
+  /// navigateur piloté les supprime, et l'action prend la forme exacte d'une
+  /// panne (#844).
+  ///
+  /// Envoyer un appel de fonds le notifie à tous les copropriétaires,
+  /// l'annuler défait cette notification, le supprimer l'efface. Trois actes
+  /// qui engagent la trésorerie de la copropriété.
+  let actionEnAttente = $state<"envoyer" | "annuler" | "supprimer" | null>(
+    null,
+  );
+  let cibleEnAttente = $state<string | null>(null);
   // Track H Story H2 — building enrichi pour gating UI.
   let building = $state<Building | null>(null);
 
@@ -83,8 +98,16 @@
     loading = false;
   }
 
-  async function handleSend(id: string) {
-    if (!confirm($_("callForFunds.sendConfirm"))) return;
+  function handleSend(id: string) {
+    cibleEnAttente = id;
+    actionEnAttente = "envoyer";
+  }
+
+  async function executer_envoyer() {
+    const id = cibleEnAttente;
+    actionEnAttente = null;
+    cibleEnAttente = null;
+    if (!id) return;
     try {
       await callForFundsApi.send(id);
       await loadCalls();
@@ -98,8 +121,16 @@
     }
   }
 
-  async function handleCancel(id: string) {
-    if (!confirm($_("callForFunds.cancelConfirm"))) return;
+  function handleCancel(id: string) {
+    cibleEnAttente = id;
+    actionEnAttente = "annuler";
+  }
+
+  async function executer_annuler() {
+    const id = cibleEnAttente;
+    actionEnAttente = null;
+    cibleEnAttente = null;
+    if (!id) return;
     const result = await withErrorHandling({
       action: () => callForFundsApi.cancel(id),
       successMessage: $_("callForFunds.cancelled"),
@@ -108,8 +139,16 @@
     if (result !== undefined) await loadCalls();
   }
 
-  async function handleDelete(id: string) {
-    if (!confirm($_("callForFunds.deleteConfirm"))) return;
+  function handleDelete(id: string) {
+    cibleEnAttente = id;
+    actionEnAttente = "supprimer";
+  }
+
+  async function executer_supprimer() {
+    const id = cibleEnAttente;
+    actionEnAttente = null;
+    cibleEnAttente = null;
+    if (!id) return;
     const result = await withErrorHandling({
       action: () => callForFundsApi.delete(id),
       successMessage: $_("callForFunds.deleted"),
@@ -337,3 +376,26 @@
     </div>
   {/if}
 </div>
+
+<!-- Le dialogue qui remplace trois `confirm()` natifs (#844). -->
+<ConfirmDialog
+  isOpen={actionEnAttente !== null}
+  title={$_("common.confirm")}
+  message={actionEnAttente === "envoyer"
+    ? $_("callForFunds.sendConfirm")
+    : actionEnAttente === "annuler"
+      ? $_("callForFunds.cancelConfirm")
+      : actionEnAttente === "supprimer"
+        ? $_("callForFunds.deleteConfirm")
+        : ""}
+  variant={actionEnAttente === "envoyer" ? "primary" : "danger"}
+  onconfirm={() => {
+    if (actionEnAttente === "envoyer") executer_envoyer();
+    else if (actionEnAttente === "annuler") executer_annuler();
+    else if (actionEnAttente === "supprimer") executer_supprimer();
+  }}
+  oncancel={() => {
+    actionEnAttente = null;
+    cibleEnAttente = null;
+  }}
+/>

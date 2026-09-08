@@ -16,6 +16,7 @@
   import PollStatusBadge from "./PollStatusBadge.svelte";
   import PollTypeBadge from "./PollTypeBadge.svelte";
   import PollResults from "./PollResults.svelte";
+  import ConfirmDialog from "../ui/ConfirmDialog.svelte";
 
   let {
     pollId,
@@ -33,6 +34,16 @@
   let results: PollResultsType | null = $state(null);
   let loading = $state(true);
   let error = $state("");
+
+  /// L'action en attente de confirmation, ou `null`.
+  ///
+  /// Les trois `confirm()` remplacés étaient des dialogues du NAVIGATEUR : un
+  /// navigateur piloté les supprime, et l'action prend alors la forme exacte
+  /// d'une panne — aucun dialogue, aucune requête, aucun message (#844).
+  ///
+  /// Publier un sondage l'ouvre aux votes, le clôturer fige ses résultats,
+  /// l'annuler le retire : trois actes qui engagent la communauté.
+  let actionEnAttente = $state<"publier" | "cloturer" | "annuler" | null>(null);
 
   let selectedOptionId: string | null = $state(null);
   // Même défaut que UnitList : un Set natif n'est pas rendu réactif par
@@ -137,10 +148,14 @@
     }
   }
 
-  async function handlePublish() {
-    if (!poll || !confirm($_("polls.detail.publishConfirm"))) {
-      return;
-    }
+  function handlePublish() {
+    if (!poll) return;
+    actionEnAttente = "publier";
+  }
+
+  async function executer_publier() {
+    actionEnAttente = null;
+    if (!poll) return;
 
     const result = await withErrorHandling({
       action: () =>
@@ -156,10 +171,14 @@
     }
   }
 
-  async function handleClose() {
-    if (!poll || !confirm($_("polls.detail.closeConfirm"))) {
-      return;
-    }
+  function handleClose() {
+    if (!poll) return;
+    actionEnAttente = "cloturer";
+  }
+
+  async function executer_cloturer() {
+    actionEnAttente = null;
+    if (!poll) return;
 
     const result = await withErrorHandling({
       action: () => pollsApi.close(poll!.id),
@@ -172,10 +191,14 @@
     }
   }
 
-  async function handleCancel() {
-    if (!poll || !confirm($_("polls.detail.cancelConfirm"))) {
-      return;
-    }
+  function handleCancel() {
+    if (!poll) return;
+    actionEnAttente = "annuler";
+  }
+
+  async function executer_annuler() {
+    actionEnAttente = null;
+    if (!poll) return;
 
     const result = await withErrorHandling({
       action: () => pollsApi.cancel(poll!.id),
@@ -480,3 +503,23 @@
     {/if}
   </div>
 {/if}
+
+<!-- Le dialogue qui remplace trois `confirm()` natifs (#844). -->
+<ConfirmDialog
+  isOpen={actionEnAttente !== null}
+  title={$_("common.confirm")}
+  message={actionEnAttente === "publier"
+    ? $_("polls.detail.publishConfirm")
+    : actionEnAttente === "cloturer"
+      ? $_("polls.detail.closeConfirm")
+      : actionEnAttente === "annuler"
+        ? $_("polls.detail.cancelConfirm")
+        : ""}
+  variant={actionEnAttente === "annuler" ? "danger" : "primary"}
+  onconfirm={() => {
+    if (actionEnAttente === "publier") executer_publier();
+    else if (actionEnAttente === "cloturer") executer_cloturer();
+    else if (actionEnAttente === "annuler") executer_annuler();
+  }}
+  oncancel={() => (actionEnAttente = null)}
+/>
