@@ -80,6 +80,19 @@ pub async fn get_poll(
         }
     };
 
+    // Cloisonnement : ce sondage relève d'une ACP précise (#772).
+    if let Err(err) = verify_poll_org_access(
+        &auth_user,
+        poll_id,
+        &state.poll_use_cases,
+        &state.building_use_cases,
+        &state.acp_use_cases,
+    )
+    .await
+    {
+        return err.error_response();
+    }
+
     match state.poll_use_cases.get_poll(poll_id).await {
         Ok(poll) => HttpResponse::Ok().json(poll),
         Err(e) => {
@@ -179,7 +192,14 @@ pub async fn update_poll(
 #[get("/polls")]
 pub async fn list_polls(
     state: web::Data<AppState>,
-    auth_user: AuthenticatedUser,
+    // `_auth_user` : cette route ne reçoit AUCUN identifiant de périmètre en
+    // chemin, et c'est le cas d'usage qui filtre. L'underscore dit ici que
+    // l'absence de garde est DÉLIBÉRÉE, et non oubliée.
+    //
+    // La distinction compte : #772 reproche aux routes de prendre l'identité
+    // sans s'en servir, parce que la revue les compte alors comme protégées.
+    // Un underscore commenté est l'inverse — il signale qu'on a regardé.
+    _auth_user: AuthenticatedUser,
     query: web::Query<ListPollsQuery>,
 ) -> HttpResponse {
     let page_request = PageRequest {

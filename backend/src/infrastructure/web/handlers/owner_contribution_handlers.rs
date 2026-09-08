@@ -78,6 +78,18 @@ pub async fn get_contribution(
     user: AuthenticatedUser,
     id: web::Path<Uuid>,
 ) -> HttpResponse {
+    // Cloisonnement : cette quote-part relève d'une ACP précise (#772).
+    if let Err(err) = verify_contribution_org_access(
+        &user,
+        *id,
+        &state.owner_contribution_use_cases,
+        &state.acp_use_cases,
+    )
+    .await
+    {
+        return err.error_response();
+    }
+
     match state
         .owner_contribution_use_cases
         .get_contribution(*id)

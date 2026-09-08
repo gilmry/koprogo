@@ -141,6 +141,18 @@ pub async fn get_call_for_funds(
     user: AuthenticatedUser,
     id: web::Path<Uuid>,
 ) -> HttpResponse {
+    // Cloisonnement : cet appel de fonds relève d'une ACP précise (#772).
+    if let Err(err) = verify_call_for_funds_org_access(
+        &user,
+        *id,
+        &state.call_for_funds_use_cases,
+        &state.acp_use_cases,
+    )
+    .await
+    {
+        return err.error_response();
+    }
+
     match state.call_for_funds_use_cases.get_call_for_funds(*id).await {
         Ok(Some(call)) => {
             let response = CallForFundsResponse::from(call);
@@ -397,6 +409,18 @@ pub async fn delete_call_for_funds(
     user: AuthenticatedUser,
     id: web::Path<Uuid>,
 ) -> HttpResponse {
+    // Cloisonnement : cet appel de fonds relève d'une ACP précise (#772).
+    if let Err(err) = verify_call_for_funds_org_access(
+        &user,
+        *id,
+        &state.call_for_funds_use_cases,
+        &state.acp_use_cases,
+    )
+    .await
+    {
+        return err.error_response();
+    }
+
     match state
         .call_for_funds_use_cases
         .delete_call_for_funds(*id)

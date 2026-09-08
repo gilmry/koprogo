@@ -36,6 +36,19 @@ pub async fn get_exchange(
     auth: AuthenticatedUser,
     id: web::Path<Uuid>,
 ) -> impl Responder {
+    // Cloisonnement : cet échange relève d'une ACP précise (#772).
+    if let Err(err) = verify_exchange_org_access(
+        &auth,
+        *id,
+        &data.local_exchange_use_cases,
+        &data.building_use_cases,
+        &data.acp_use_cases,
+    )
+    .await
+    {
+        return err.error_response();
+    }
+
     match data
         .local_exchange_use_cases
         .get_exchange(id.into_inner())

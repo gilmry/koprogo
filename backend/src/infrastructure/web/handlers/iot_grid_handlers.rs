@@ -6,6 +6,15 @@ use actix_web::{delete, get, post, web, HttpRequest, HttpResponse, ResponseError
 use serde::Deserialize;
 use uuid::Uuid;
 
+/// L'appelant peut-il agir au nom de cette organisation ?
+///
+/// Les routes de calcul distribué reçoivent leur `organization_id` dans le
+/// CORPS de la requête, et non en chemin : aucun garde de `scope_guard` ne
+/// s'applique, puisqu'ils partent tous d'un identifiant de ressource.
+fn user_ne_peut_pas(auth: &AuthenticatedUser, organisation: uuid::Uuid) -> bool {
+    auth.verify_org_access(organisation).is_err()
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // MQTT Control Endpoints
 // ─────────────────────────────────────────────────────────────────────────────
@@ -124,6 +133,18 @@ pub async fn update_grid_consent(
     req: HttpRequest,
     auth: AuthenticatedUser,
 ) -> Result<HttpResponse> {
+    // Cloisonnement : l'organisation visée est celle du CORPS de la requête,
+    // et rien ne vérifiait qu'elle soit celle de l'appelant. On pouvait donc
+    // enregistrer un consentement, ou soumettre un calcul, au nom d'une autre
+    // organisation (#772).
+    if user_ne_peut_pas(&auth, body.organization_id) {
+        return Ok(
+            actix_web::HttpResponse::Forbidden().json(serde_json::json!({
+                "error": "Cette organisation n'est pas la vôtre"
+            })),
+        );
+    }
+
     let ip = req
         .connection_info()
         .realip_remote_addr()
@@ -200,6 +221,18 @@ pub async fn submit_grid_task(
     body: web::Json<SubmitOptimisationTaskDto>,
     auth: AuthenticatedUser,
 ) -> Result<HttpResponse> {
+    // Cloisonnement : l'organisation visée est celle du CORPS de la requête,
+    // et rien ne vérifiait qu'elle soit celle de l'appelant. On pouvait donc
+    // enregistrer un consentement, ou soumettre un calcul, au nom d'une autre
+    // organisation (#772).
+    if user_ne_peut_pas(&auth, body.organization_id) {
+        return Ok(
+            actix_web::HttpResponse::Forbidden().json(serde_json::json!({
+                "error": "Cette organisation n'est pas la vôtre"
+            })),
+        );
+    }
+
     match state
         .boinc_use_cases
         .submit_optimisation_task(body.into_inner())
@@ -227,6 +260,18 @@ pub async fn get_task_status(
     path: web::Path<String>,
     auth: AuthenticatedUser,
 ) -> Result<HttpResponse> {
+    // Cette route agit sur une tâche de calcul distribué identifiée par un
+    // jeton EXTERNE (BOINC), sans périmètre de copropriété : il n'y a pas de
+    // chaîne à remonter. Le contrôle qui vaut est donc celui du rôle — c'est
+    // une opération d'infrastructure, comme la passerelle MQTT (#772).
+    if !auth.is_superadmin() && auth.role != "syndic" {
+        return Ok(
+            actix_web::HttpResponse::Forbidden().json(serde_json::json!({
+                "error": "Réservé au syndic et à l'administration de la plateforme"
+            })),
+        );
+    }
+
     match state.boinc_use_cases.poll_task(&path).await {
         Ok(status) => Ok(HttpResponse::Ok().json(status)),
         Err(e) if e.contains("not found") => Ok(HttpResponse::NotFound().json(serde_json::json!({
@@ -247,6 +292,18 @@ pub async fn cancel_grid_task(
     path: web::Path<String>,
     auth: AuthenticatedUser,
 ) -> Result<HttpResponse> {
+    // Cette route agit sur une tâche de calcul distribué identifiée par un
+    // jeton EXTERNE (BOINC), sans périmètre de copropriété : il n'y a pas de
+    // chaîne à remonter. Le contrôle qui vaut est donc celui du rôle — c'est
+    // une opération d'infrastructure, comme la passerelle MQTT (#772).
+    if !auth.is_superadmin() && auth.role != "syndic" {
+        return Ok(
+            actix_web::HttpResponse::Forbidden().json(serde_json::json!({
+                "error": "Réservé au syndic et à l'administration de la plateforme"
+            })),
+        );
+    }
+
     match state.boinc_use_cases.cancel_task(&path).await {
         Ok(()) => Ok(HttpResponse::Ok().json(serde_json::json!({
             "status": "cancelled",
