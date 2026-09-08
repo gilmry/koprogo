@@ -2,9 +2,9 @@
 //!
 //! ── Le constat ─────────────────────────────────────────────────────────────
 //!
-//! `tests/features/` contient 91 fichiers. Les harnais en chargent 63.
+//! `tests/features/` contenait 91 fichiers. Les harnais en chargeaient 63.
 //!
-//! **28 fichiers, soit 412 scénarios, ne sont chargés par personne.**
+//! **28 fichiers, soit 419 scénarios, n'étaient chargés par personne.**
 //!
 //! Ce chiffre vient de l'exécution de ce test, pas d'un `grep`. QUATRE
 //! estimations successives ont donné 27, 26, 25 puis 28 ; les trois premières
@@ -31,29 +31,27 @@
 //! implémentée (bloquant pour production) » pendant six mois alors qu'elles
 //! l'étaient (#837). Rien ne pouvait le démentir.
 //!
-//! ── Pourquoi ce cliquet ne baisse pas dans le commit qui le pose ──────────
+//! ── Pourquoi il est à zéro ────────────────────────────────────────────────
 //!
-//! C'est contraire à la règle habituelle du dépôt, et c'est délibéré.
+//! Aucun des 28 fichiers n'était un oubli de liste. Mesure exécutée : les
+//! harnais déclarent 1 056 pas ; sur les 1 387 phrases uniques de ces 28
+//! fichiers, 39 seulement correspondaient à un pas existant, soit 2 %. Les
+//! brancher demandait d'écrire environ 1 348 définitions de pas.
 //!
-//! Aucun des 27 fichiers n'est un simple oubli de liste : leurs steps
-//! n'existent pas. Le meilleur candidat, `resolution_agenda.feature`, a
-//! environ vingt-sept de ses quarante-quatre phrases sans step déclaré. Les
-//! brancher ferait passer la suite BDD au rouge sans qu'on sache quoi
-//! corriger.
+//! Ce ne sont donc pas des tests oubliés, ce sont des scénarios qui n'ont
+//! jamais eu de code. Ils sont partis dans `backend/specs/bdd-non-ecrits/`,
+//! avec le coût mesuré fichier par fichier, où leur statut de spécification
+//! est lisible.
 //!
-//! Ce ne sont donc pas des tests oubliés, ce sont **des scénarios qui n'ont
-//! jamais eu de code**. La baisse demande, fichier par fichier, d'écrire les
-//! steps ou d'assumer que le fichier est un document et de le sortir de
-//! `tests/features/`. Cela ne se fait pas en passant.
-//!
-//! Ce cliquet empêche seulement le 29ᵉ. Suivi en #838.
+//! `tests/features/` veut désormais dire une seule chose : chargé, donc
+//! exécuté. Suivi en #838.
 
 use std::collections::HashSet;
 use std::fs;
 use std::path::Path;
 
 /// Fichiers `.feature` chargés par aucun harnais. **Ne doit que BAISSER.**
-const DETTE_AU_2026_09_07: usize = 28;
+const DETTE_AU_2026_09_07: usize = 0;
 
 fn orphelines() -> (Vec<String>, usize, usize) {
     let racine = Path::new(env!("CARGO_MANIFEST_DIR")).join("tests");
