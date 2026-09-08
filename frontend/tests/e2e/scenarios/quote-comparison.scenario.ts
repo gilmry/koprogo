@@ -183,7 +183,7 @@ test.describe("Scenario: Comparaison de devis entrepreneurs (Francois)", () => {
     // ============================================================
     // ETAPE 2 : Navigation vers les Devis via le menu lateral
     // ============================================================
-    await humanClick(page, "nav-link-devis");
+    await humanClick(page, "nav-link-quotes");
     await waitForSpinner(page);
     await page.waitForTimeout(PACE.AFTER_NAVIGATION);
 

@@ -124,7 +124,7 @@ test.describe("Scenario: Tableau d'affichage communautaire (multi-role)", () => 
     await humanLogin(page, "francois@syndic-leroy.be", "francois123");
     await stepPause(page);
 
-    await humanClick(page, "nav-link-annonces");
+    await humanClick(page, "nav-link-notices");
     await waitForSpinner(page);
     await page.waitForTimeout(PACE.AFTER_NAVIGATION);
 
@@ -200,7 +200,7 @@ test.describe("Scenario: Tableau d'affichage communautaire (multi-role)", () => 
     await stepPause(page);
 
     // Naviguer vers les annonces (community section, shared nav)
-    await humanClick(page, "nav-link-annonces");
+    await humanClick(page, "nav-link-notices");
     await waitForSpinner(page);
     await page.waitForTimeout(PACE.AFTER_NAVIGATION);
 

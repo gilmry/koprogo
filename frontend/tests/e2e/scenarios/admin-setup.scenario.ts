@@ -74,7 +74,7 @@ test.describe("Scenario: Le SuperAdmin explore la plateforme", () => {
     // ============================================================
     // ETAPE 2 : Navigation vers les Organisations
     // ============================================================
-    await humanClick(page, "nav-link-organisations");
+    await humanClick(page, "nav-link-admin-organizations");
     await waitForSpinner(page);
     await page.waitForTimeout(PACE.AFTER_NAVIGATION);
 
@@ -93,7 +93,7 @@ test.describe("Scenario: Le SuperAdmin explore la plateforme", () => {
     // ============================================================
     // ETAPE 3 : Navigation vers les Immeubles
     // ============================================================
-    await humanClick(page, "nav-link-immeubles");
+    await humanClick(page, "nav-link-buildings");
     await waitForSpinner(page);
     await page.waitForTimeout(PACE.AFTER_NAVIGATION);
 
@@ -107,7 +107,7 @@ test.describe("Scenario: Le SuperAdmin explore la plateforme", () => {
     // ============================================================
     // ETAPE 4 : Navigation vers les Utilisateurs
     // ============================================================
-    await humanClick(page, "nav-link-utilisateurs");
+    await humanClick(page, "nav-link-admin-users");
     await waitForSpinner(page);
     await page.waitForTimeout(PACE.AFTER_NAVIGATION);
 

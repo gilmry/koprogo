@@ -104,7 +104,7 @@ test.describe("Scenario: Workflow d'approbation d'une facture", () => {
     // ============================================================
     // ETAPE 2 : Navigation vers le Workflow Factures via le menu
     // ============================================================
-    await humanClick(page, "nav-link-workflow-factures");
+    await humanClick(page, "nav-link-invoice-workflow");
     await waitForSpinner(page);
     await page.waitForTimeout(PACE.AFTER_NAVIGATION);
 

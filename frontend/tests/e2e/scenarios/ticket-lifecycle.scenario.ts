@@ -72,7 +72,7 @@ test.describe("Scenario: Cycle de vie d'un ticket de maintenance", () => {
     // ============================================================
     // ETAPE 2 : Navigation vers Mes Tickets via le menu lateral
     // ============================================================
-    await humanClick(page, "nav-link-mes-tickets");
+    await humanClick(page, "nav-link-owner-tickets");
     await waitForSpinner(page);
     await page.waitForTimeout(PACE.AFTER_NAVIGATION);
 
@@ -126,7 +126,7 @@ test.describe("Scenario: Cycle de vie d'un ticket de maintenance", () => {
     await page.waitForLoadState("domcontentloaded");
     await page.waitForTimeout(PACE.AFTER_NAVIGATION);
 
-    await humanClick(page, "nav-link-mes-tickets");
+    await humanClick(page, "nav-link-owner-tickets");
     await waitForSpinner(page);
     await page.waitForTimeout(PACE.AFTER_NAVIGATION);
 

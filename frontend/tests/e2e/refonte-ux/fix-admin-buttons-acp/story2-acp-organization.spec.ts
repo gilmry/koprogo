@@ -118,12 +118,17 @@ test.describe("Story 2 (#698) — ACP au lieu d'Organisation", () => {
     //    et non la mécanique du menu.
     await page.goto("/admin");
 
-    // Ciblage par `href` et non par `data-testid` : `RoleSubmenu.svelte`
-    // génère `nav-link-{slugify(item.label)}` à partir du libellé TRADUIT, donc
-    // `nav-link-acp` en fr, `nav-link-acps` en en, `nav-link-vme-s` en nl. Son
-    // propre en-tête documente pourtant un `stableSlug`, et la config
-    // Playwright force `fr-BE` en admettant « so nav testids match hardcoded
-    // expectations ». Le `href`, lui, ne dépend d'aucune locale.
+    // Ciblage par `href`. C'était à l'origine un contournement :
+    // `RoleSubmenu.svelte` dérivait `nav-link-{...}` du libellé TRADUIT, d'où
+    // `nav-link-acp` en fr, `nav-link-acps` en en, `nav-link-vme-s` en nl —
+    // une ancre qui changeait avec la langue, alors que son propre en-tête
+    // promettait un `stableSlug`.
+    //
+    // La racine est corrigée depuis le 2026-09-08 : l'ancre se dérive de
+    // l'`href` et vaut `nav-link-admin-acps` dans les quatre langues. Le
+    // ciblage par `href` est conservé parce qu'il reste juste, et qu'il ne
+    // sert à rien de modifier une recette qui passe ; les deux désignent
+    // désormais la même chose.
     const navLink = page.locator('nav a[href="/admin/acps"]').first();
     await expect(navLink).toBeVisible({ timeout: 15_000 });
     await navLink.click();

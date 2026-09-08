@@ -70,7 +70,7 @@ test.describe("Scenario: Gestion des moyens de paiement (Alice)", () => {
     // ============================================================
     // ETAPE 2 : Navigation vers Moyens de paiement via le menu
     // ============================================================
-    await humanClick(page, "nav-link-moyens-paiement");
+    await humanClick(page, "nav-link-owner-payment-methods");
     await waitForSpinner(page);
     await page.waitForTimeout(PACE.AFTER_NAVIGATION);
 

@@ -121,7 +121,7 @@ test.describe("Scenario: Sondage multi-role (Francois lance, Alice vote)", () =>
     await humanLogin(page, "francois@syndic-leroy.be", "francois123");
     await stepPause(page);
 
-    await humanClick(page, "nav-link-sondages");
+    await humanClick(page, "nav-link-polls");
     await waitForSpinner(page);
     await page.waitForTimeout(PACE.AFTER_NAVIGATION);
 
@@ -170,7 +170,7 @@ test.describe("Scenario: Sondage multi-role (Francois lance, Alice vote)", () =>
     await stepPause(page);
 
     // Naviguer vers les sondages (community section)
-    await humanClick(page, "nav-link-sondages");
+    await humanClick(page, "nav-link-polls");
     await waitForSpinner(page);
     await page.waitForTimeout(PACE.AFTER_NAVIGATION);
 
@@ -238,7 +238,7 @@ test.describe("Scenario: Sondage multi-role (Francois lance, Alice vote)", () =>
     await stepPause(page);
 
     // Naviguer vers les sondages
-    await humanClick(page, "nav-link-sondages");
+    await humanClick(page, "nav-link-polls");
     await waitForSpinner(page);
     await page.waitForTimeout(PACE.AFTER_NAVIGATION);
 

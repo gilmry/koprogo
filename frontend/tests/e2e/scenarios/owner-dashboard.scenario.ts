@@ -111,7 +111,7 @@ test.describe("Scenario: Alice consulte son tableau de bord", () => {
     // ============================================================
     // ETAPE 4 : Navigation vers la section Paiements
     // ============================================================
-    await humanClick(page, "nav-link-paiements");
+    await humanClick(page, "nav-link-owner-payments");
     await waitForSpinner(page);
     await page.waitForTimeout(PACE.AFTER_NAVIGATION);
 
@@ -125,7 +125,7 @@ test.describe("Scenario: Alice consulte son tableau de bord", () => {
     // ============================================================
     // ETAPE 5 : Retour au tableau de bord
     // ============================================================
-    await humanClick(page, "nav-link-tableau-de-bord");
+    await humanClick(page, "nav-link-owner");
     await waitForSpinner(page);
     await page.waitForTimeout(PACE.AFTER_NAVIGATION);
 

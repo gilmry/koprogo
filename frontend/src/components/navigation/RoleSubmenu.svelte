@@ -14,7 +14,7 @@
   // data-testid (memory data-testid-systematic) :
   // - navigation-menu-{key}            sur le <details> racine
   // - navigation-submenu-{key}         sur la liste <ul> deroulee
-  // - nav-link-{stableSlug}            sur chaque <a>
+  // - nav-link-{href sans les /}       sur chaque <a>
   //
   // Pourquoi <details> et pas un bouton custom avec aria-expanded :
   // - <details> est natif WCAG 4.1.2 (Name/Role/Value) sans effort
@@ -66,13 +66,32 @@
     return currentPath === href || currentPath.startsWith(href + "/");
   };
 
-  const slugify = (s: string): string =>
-    s
-      .toLowerCase()
-      .normalize("NFD")
-      .replace(/[̀-ͯ]/g, "")
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/^-|-$/g, "");
+  /**
+   * L'ancre d'un lien de navigation se dérive de son `href`, jamais de son
+   * libellé.
+   *
+   * Elle se dérivait du libellé, qui est TRADUIT. `nav-link-immeubles` en
+   * français devenait `nav-link-buildings` en anglais et
+   * `nav-link-gebouwen` en néerlandais : l'ancre elle-même changeait avec la
+   * langue. C'est exactement ce qu'une ancre existe pour éviter, et le pari
+   * y était déguisé — un lecteur voit `getByTestId(...)` et croit être à
+   * l'abri. L'en-tête de ce composant promettait d'ailleurs déjà un
+   * `stableSlug`.
+   *
+   * Le libellé produisait aussi des collisions, parce que trois clés i18n
+   * servent deux écrans chacune :
+   *
+   *     nav-link-lots       →  /units      ET  /owner/units
+   *     nav-link-charges    →  /expenses   ET  /owner/expenses
+   *     nav-link-documents  →  /documents  ET  /owner/documents
+   *
+   * Une ancre sur deux écrans rend `getByTestId` ambigu, et c'est le piège
+   * qui a fait échouer quarante fois le portique de caractérisation (#832).
+   * L'`href` lève les deux problèmes d'un seul geste : il ne dépend d'aucune
+   * locale, et il distingue les écrans par construction.
+   */
+  const ancre = (href: string): string =>
+    href.replace(/^\/+|\/+$/g, "").replace(/\//g, "-") || "racine";
 </script>
 
 <details
@@ -101,7 +120,7 @@
             ? 'bg-primary-50 text-primary-700 font-semibold'
             : 'text-gray-700 hover:bg-gray-50 hover:text-primary-600'}"
           aria-current={isActive(item.href) ? "page" : undefined}
-          data-testid="nav-link-{slugify(item.label)}"
+          data-testid="nav-link-{ancre(item.href)}"
         >
           {#if item.icon}
             <span class="text-base shrink-0 w-5 text-center" aria-hidden="true"
