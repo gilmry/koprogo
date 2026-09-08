@@ -94,8 +94,15 @@ confort d'écriture. **Trente routes sur 604 ne vérifiaient aucune identité**
 (#845) — ni `AuthenticatedUser`, ni jeton lu à la main : supprimer une
 assemblée générale ne demandait qu'un UUID. Et **onze tables existent en base
 que rien ne lit** (#846), dont celle dont la vue se déclare outil de
-vérification des procurations et renvoie toujours zéro ligne.""",
-  [555,762,845,846]),
+vérification des procurations et renvoie toujours zéro ligne.
+
+S'y ajoute le 2026-09-08 une confusion d'identifiants qui rendait une
+fonctionnalité entière inatteignable : **aucun copropriétaire ne pouvait
+voter à une consultation** (#849), parce que le handler comparait un
+`users.id` à des `owners.id`. Le commentaire du code avouait le provisoire
+— « for now, we use the authenticated user's ID » — et il n'a jamais été
+remplacé.""",
+  [555,762,845,846,849]),
 
  ("F", "Ops et infrastructure", """Sauvegardes, TLS, GitOps, et les vulnérabilités de dépendances. F3 a été joué
 le 2026-09-04 et son résultat est **négatif sur deux volets sur trois** : le

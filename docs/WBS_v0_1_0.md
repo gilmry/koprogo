@@ -556,7 +556,7 @@ Ces deux actes ne sont pas délégables : cf. `docs/governance/RESPONSABILITE.md
 
 ## Inventaire complet du périmètre 0.1.0
 
-**71 issues ouvertes** portent l'étiquette `release:0.1.0`. Elles sont
+**72 issues ouvertes** portent l'étiquette `release:0.1.0`. Elles sont
 toutes ci-dessous, sans exception : une issue du périmètre absente du WBS est
 une issue que personne ne planifie.
 
@@ -568,7 +568,7 @@ cinq jours.
 | Priorité | Nombre |
 |---|---|
 | critical | 7 |
-| high | 24 |
+| high | 25 |
 | medium | 18 |
 | — | 22 |
 
@@ -727,7 +727,7 @@ présent qui atteste d'autre chose que ce qu'il prétend.
 | #832 | medium | Quinze specs Playwright échouent sans erreur d'identité : les ancrages existent mais l'élément n'es… |
 | #696 | — | Instabilité smoke suite Playwright CI : 109 échecs sur specs pré-existantes (occurrence 2026-08-08) |
 
-### Track K — Dette de code et de contrat (4)
+### Track K — Dette de code et de contrat (5)
 
 Les erreurs typées plutôt que classées par sous-chaîne, le contrat OpenAPI
 complet, et la suppression du repli qui fabrique une ACP inexistante.
@@ -739,9 +739,17 @@ assemblée générale ne demandait qu'un UUID. Et **onze tables existent en base
 que rien ne lit** (#846), dont celle dont la vue se déclare outil de
 vérification des procurations et renvoie toujours zéro ligne.
 
+S'y ajoute le 2026-09-08 une confusion d'identifiants qui rendait une
+fonctionnalité entière inatteignable : **aucun copropriétaire ne pouvait
+voter à une consultation** (#849), parce que le handler comparait un
+`users.id` à des `owners.id`. Le commentaire du code avouait le provisoire
+— « for now, we use the authenticated user's ID » — et il n'a jamais été
+remplacé.
+
 | Issue | Prio | Intitulé |
 |---|---|---|
 | #845 | critical | Trente routes ne vérifient aucune identité : modifier ou supprimer une assemblée générale ne demand… |
+| #849 | high | Aucun copropriétaire ne peut voter à une consultation : le handler compare un identifiant d'utilisa… |
 | #555 | medium | EPIC: migrer Result<_, String> → Result<_, AppError> (1263 violations, CRITICAL.md rule 4) |
 | #846 | medium | Onze tables et une vue existent en base et ne sont lues par aucun code, dont celle qui devait valid… |
 | #762 | — | Typer les erreurs applicatives au lieu de les classer par sous-chaînes |

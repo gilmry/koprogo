@@ -602,10 +602,52 @@ pub async fn cast_poll_vote(
     dto: web::Json<CastVoteDto>,
     _req: HttpRequest,
 ) -> HttpResponse {
-    // Owner ID is optional (anonymous votes)
-    // For now, we use the authenticated user's ID
-    // In production, you'd have logic to determine if vote is anonymous
-    let owner_id = Some(auth_user.user_id);
+    // On vote en tant que COPROPRIÉTAIRE, pas en tant qu'utilisateur.
+    //
+    // Cette ligne passait `auth_user.user_id`. Le commentaire l'avouait — « for
+    // now, we use the authenticated user's ID » — et le provisoire n'a jamais
+    // été remplacé. `cast_vote` compare ensuite cette valeur aux `owner_id`
+    // que rend `find_active_by_building`, qui sont des `owners.id`.
+    //
+    // Deux entités distinctes, deux UUID différents : la comparaison ne
+    // pouvait JAMAIS être vraie. Tout copropriétaire recevait « You are not
+    // authorized to vote on this poll ». La consultation communautaire était
+    // donc écrite, testée, et inatteignable par les seules personnes à qui
+    // elle s'adresse.
+    //
+    // `find_owner_by_user_id` existait déjà et n'était appelé par aucun
+    // handler.
+    let owner_id = match state
+        .owner_use_cases
+        .find_owner_by_user_id(auth_user.user_id)
+        .await
+    {
+        // `OwnerResponseDto.id` est une `String` : la conversion doit être
+        // explicite, et son échec dit ce qui ne va pas plutôt que de rendre
+        // « non autorisé ».
+        Ok(Some(owner)) => match Uuid::parse_str(&owner.id) {
+            Ok(id) => Some(id),
+            Err(e) => {
+                return HttpResponse::InternalServerError().json(serde_json::json!({
+                    "error": format!("Identifiant de copropriétaire illisible : {}", e)
+                }));
+            }
+        },
+        Ok(None) => {
+            // Un utilisateur sans fiche de copropriétaire n'est pas un
+            // copropriétaire : le dire, plutôt que de le laisser buter sur une
+            // autorisation qui ne le nommera pas.
+            return HttpResponse::Forbidden().json(serde_json::json!({
+                "error": "Aucune fiche de copropriétaire n'est rattachée à ce compte :                           le vote à une consultation est réservé aux copropriétaires.",
+                "kind": "owner_not_linked"
+            }));
+        }
+        Err(e) => {
+            return HttpResponse::InternalServerError().json(serde_json::json!({
+                "error": format!("Failed to resolve owner for user: {}", e)
+            }));
+        }
+    };
 
     match state
         .poll_use_cases
