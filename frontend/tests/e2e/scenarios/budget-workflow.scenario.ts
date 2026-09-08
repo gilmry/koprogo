@@ -15,7 +15,7 @@
  * Duree video attendue : ~50-70 secondes (rythme humain)
  */
 import { test, expect } from "@playwright/test";
-import { amorce } from "../helpers/amorcage";
+import { amorce, aucuneErreurAffichee } from "../helpers/amorcage";
 import { selectOptionByName } from "../helpers/name-match";
 import {
   humanLogin,
@@ -152,6 +152,7 @@ test.describe("Scenario: Francois cree et soumet un budget annuel", () => {
     // ETAPE 6 : Soumettre le formulaire de creation
     // ============================================================
     await humanClick(page, "budget-submit-button");
+    await aucuneErreurAffichee(page, "création du budget 2026");
     await waitForSpinner(page);
     await page.waitForTimeout(PACE.AFTER_NAVIGATION);
 

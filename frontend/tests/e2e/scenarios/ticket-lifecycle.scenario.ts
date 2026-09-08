@@ -83,7 +83,11 @@ test.describe("Scenario: Cycle de vie d'un ticket de maintenance", () => {
     // ============================================================
     // ETAPE 3 : Ouvrir le formulaire de creation de ticket
     // ============================================================
-    await humanClick(page, "tickets-create-btn");
+    // `owner-tickets-create-button`, pas `tickets-create-btn` : Charlie est
+    // sur `/owner/tickets`, et `tickets-create-btn` vit sur `/tickets`, la
+    // page du syndic. Deux ecrans, deux boutons, deux ancres — c'est
+    // exactement la regle « un nom par ecran » du guide de style.
+    await humanClick(page, "owner-tickets-create-button");
     await page.waitForTimeout(PACE.AFTER_NAVIGATION);
 
     await expect(page.getByTestId("ticket-create-form")).toBeVisible({

@@ -635,8 +635,16 @@
                 >{$_("navigation.units")}</span
               >
             </a>
+            <!--
+              `/owner/expenses`, pas `/expenses` : `guards.ts` réserve
+              `/expenses` au syndic et au comptable. Un copropriétaire qui
+              cliquait cette tuile était REDIRIGÉ EN SILENCE vers son propre
+              tableau de bord par `RouteGuard.svelte:68` — il revenait d'où il
+              venait, sans message. La page `/owner/expenses` existe et lui est
+              réservée.
+            -->
             <a
-              href="/expenses"
+              href="/owner/expenses"
               class="flex flex-col items-center justify-center p-6 border-2 border-gray-200 rounded-lg hover:border-primary-500 hover:bg-primary-50 transition group"
               data-testid="owner-quick-expenses"
             >

@@ -111,8 +111,19 @@ test.describe("Scenario: Vote multi-role sur une resolution en AG", () => {
     await humanLogin(page, "alice@residence-parc.be", "alice123");
     await stepPause(page);
 
-    // Alice navigue vers les assemblees
-    await humanClick(page, "nav-link-meetings");
+    // Alice navigue vers les assemblees par SA TUILE, pas par la barre
+    // laterale.
+    //
+    // `canSee` (permissions.ts) ne donne au coproprietaire que les menus
+    // `communaute` et `mes-lots` : ni `/meetings` ni `/convocations` n'y
+    // figurent. `nav-link-meetings` n'existe donc pas dans son DOM, et le
+    // scenario attendait trente secondes un lien reserve au syndic.
+    //
+    // Le chemin prevu existe : `guards.ts:42` ouvre `/meetings` au role
+    // OWNER, et `OwnerDashboard.svelte` porte la tuile
+    // `owner-quick-meetings`. C'est par la qu'un coproprietaire rejoint son
+    // assemblee.
+    await humanClick(page, "owner-quick-meetings");
     await waitForSpinner(page);
     await page.waitForTimeout(PACE.AFTER_NAVIGATION);
 

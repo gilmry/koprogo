@@ -29,6 +29,7 @@
         item.type
       ]}"
       role="alert"
+      data-testid="toast-{item.type}"
     >
       <svg
         class="w-5 h-5 mr-3 flex-shrink-0"

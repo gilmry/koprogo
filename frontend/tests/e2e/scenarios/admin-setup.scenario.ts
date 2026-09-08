@@ -94,7 +94,24 @@ test.describe("Scenario: Le SuperAdmin explore la plateforme", () => {
     // ============================================================
     // ETAPE 3 : Navigation vers les Immeubles
     // ============================================================
-    await humanClick(page, "nav-link-buildings");
+    //
+    // Par le tableau de bord, pas par la barre laterale.
+    //
+    // `canSee` (permissions.ts) ne montre les menus METIER — gestion,
+    // compta, gouvernance, communaute, ticketing — a un superadmin QUE
+    // s'il a selectionne un immeuble (« mode in-context »). Sans
+    // selection, il est en mode plateforme et ne voit que le menu `admin`.
+    // `nav-link-buildings` n'existe donc pas dans son DOM, et le scenario
+    // attendait trente secondes un lien que la refonte a rendu
+    // conditionnel.
+    //
+    // Le chemin prevu est la tuile `admin-buildings-tile` du tableau de
+    // bord admin. On y retourne d'abord, ce qui est aussi le geste reel :
+    // un superadmin revient a son tableau de bord entre deux ecrans.
+    await humanClick(page, "nav-link-admin");
+    await waitForSpinner(page);
+    await page.waitForTimeout(PACE.AFTER_NAVIGATION);
+    await humanClick(page, "admin-buildings-tile");
     await waitForSpinner(page);
     await page.waitForTimeout(PACE.AFTER_NAVIGATION);
 

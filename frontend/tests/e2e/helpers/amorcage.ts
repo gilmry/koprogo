@@ -1,4 +1,4 @@
-import type { APIResponse } from "@playwright/test";
+import { expect, type APIResponse, type Page } from "@playwright/test";
 
 /**
  * Vérifie qu'un appel d'amorçage a réussi, et dit pourquoi sinon.
@@ -55,4 +55,41 @@ export async function amorceToleree(
     return {};
   }
   return reponse.json().catch(() => ({}));
+}
+
+/**
+ * Refuse qu'une écriture pilotée à l'écran échoue en silence.
+ *
+ * Les scénarios cliquent « soumettre » et enchaînent sans rien vérifier.
+ * `budget-workflow` créait ainsi son budget, ne regardait pas le résultat, et
+ * échouait quinze lignes plus loin sur `text=2026` introuvable — en accusant
+ * la liste, alors que le budget n'avait jamais été enregistré.
+ *
+ * `ToastContainer.svelte` porte désormais `toast-{type}`, donc `toast-error`
+ * pour un échec. On lit son message ET son détail (`toast-details`, où le
+ * serveur nomme le champ fautif) pour que l'échec dise ce qui s'est passé.
+ *
+ * À appeler après chaque geste d'écriture. Ne remplace pas l'assertion sur le
+ * résultat attendu : elle explique celle-ci quand elle tombe.
+ */
+export async function aucuneErreurAffichee(
+  page: Page,
+  quoi: string,
+): Promise<void> {
+  const erreur = page.getByTestId("toast-error").first();
+  if (await erreur.isVisible({ timeout: 2000 }).catch(() => false)) {
+    const message = (await erreur.textContent().catch(() => "")) ?? "";
+    const detail =
+      (await page
+        .getByTestId("toast-details")
+        .first()
+        .textContent()
+        .catch(() => "")) ?? "";
+    expect(
+      false,
+      `« ${quoi} » a échoué à l'écran : ${message.trim()}\n${detail.trim()}\n\n` +
+        `Sans cette vérification, le scénario aurait continué et échoué plus ` +
+        `loin sur une liste vide, en accusant l'affichage.`,
+    ).toBe(true);
+  }
 }
