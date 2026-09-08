@@ -11,6 +11,7 @@
  * Duree video attendue : ~90-120 secondes (rythme humain, multi-role)
  */
 import { test, expect } from "@playwright/test";
+import { amorce } from "../helpers/amorcage";
 import {
   humanLogin,
   humanClick,
@@ -33,7 +34,7 @@ test.describe("Scenario: Vote multi-role sur une resolution en AG", () => {
     const adminResp = await request.post(`${API_BASE}/auth/login`, {
       data: { email: "admin@koprogo.com", password: "admin123" },
     });
-    const admin = await adminResp.json();
+    const admin = await amorce(adminResp, "POST /auth/login");
     const adminHeaders = { Authorization: `Bearer ${admin.token}` };
 
     // 2. Seed the world (creates meeting + resolution)

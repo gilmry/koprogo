@@ -11,6 +11,7 @@
  * Duree video attendue : ~40-50 secondes (rythme humain)
  */
 import { test, expect } from "@playwright/test";
+import { amorce } from "../helpers/amorcage";
 import {
   humanLogin,
   humanFill,
@@ -33,7 +34,7 @@ test.describe("Scenario: Gestion des moyens de paiement (Alice)", () => {
     const adminResp = await request.post(`${API_BASE}/auth/login`, {
       data: { email: "admin@koprogo.com", password: "admin123" },
     });
-    const admin = await adminResp.json();
+    const admin = await amorce(adminResp, "POST /auth/login");
     const adminHeaders = { Authorization: `Bearer ${admin.token}` };
 
     // 2. Seed the world

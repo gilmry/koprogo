@@ -9,6 +9,7 @@
  * Duree video attendue : ~70-90 secondes (rythme humain, multi-role)
  */
 import { test, expect } from "@playwright/test";
+import { amorce } from "../helpers/amorcage";
 import { nameContains, selectOptionByName } from "../helpers/name-match";
 import {
   humanLogin,
@@ -33,7 +34,7 @@ test.describe("Scenario: Tableau d'affichage communautaire (multi-role)", () => 
     const adminResp = await request.post(`${API_BASE}/auth/login`, {
       data: { email: "admin@koprogo.com", password: "admin123" },
     });
-    const admin = await adminResp.json();
+    const admin = await amorce(adminResp, "POST /auth/login");
     const adminHeaders = { Authorization: `Bearer ${admin.token}` };
 
     // 2. Seed the world
@@ -51,21 +52,37 @@ test.describe("Scenario: Tableau d'affichage communautaire (multi-role)", () => 
     const syndicResp = await request.post(`${API_BASE}/auth/login`, {
       data: { email: "francois@syndic-leroy.be", password: "francois123" },
     });
-    const syndic = await syndicResp.json();
+    const syndic = await amorce(syndicResp, "POST /auth/login");
     const syndicHeaders = { Authorization: `Bearer ${syndic.token}` };
 
     // Get building ID for Residence du Parc
     const buildingsResp = await request.get(`${API_BASE}/buildings`, {
       headers: syndicHeaders,
     });
-    const buildings = await buildingsResp.json();
-    const building = Array.isArray(buildings)
-      ? buildings.find(
-          (b: any) => b.name && nameContains(b.name, "Résidence du Parc"),
-        )
-      : null;
+    const buildings = await amorce(buildingsResp, "GET /buildings");
+    // `GET /buildings` rend un `PageResponse` — `{ data, pagination }`,
+    // jamais un tableau nu. `Array.isArray` valait donc TOUJOURS faux,
+    // `building` TOUJOURS null, et le `if (building)` ci-dessous sautait
+    // l'amorçage entier sans rien dire. Le scénario échouait 150 lignes
+    // plus loin sur une liste vide, en accusant l'affichage.
+    const listeImmeubles = Array.isArray(buildings)
+      ? buildings
+      : (buildings?.data ?? []);
+    const building = listeImmeubles.find(
+      (b: any) => b.name && nameContains(b.name, "Résidence du Parc"),
+    );
 
-    if (building) {
+    if (!building) {
+      throw new Error(
+        `Amorçage : immeuble introuvable parmi ${listeImmeubles.length} ` +
+          `renvoyé(s) par GET /buildings : ` +
+          `${listeImmeubles.map((b: any) => b.name).join(", ") || "(aucun)"}. ` +
+          `Sans lui, aucune donnée n'est créée et le scénario échouera ` +
+          `plus loin sur une liste vide.`,
+      );
+    }
+
+    {
       const notice1Resp = await request.post(`${API_BASE}/notices`, {
         data: {
           building_id: building.id,
@@ -78,10 +95,14 @@ test.describe("Scenario: Tableau d'affichage communautaire (multi-role)", () => 
         },
         headers: syndicHeaders,
       });
-      const notice1 = await notice1Resp.json();
-      await request.post(`${API_BASE}/notices/${notice1.id}/publish`, {
-        headers: syndicHeaders,
-      });
+      const notice1 = await amorce(notice1Resp, "POST /notices");
+      const reponseAmorce1 = await request.post(
+        `${API_BASE}/notices/${notice1.id}/publish`,
+        {
+          headers: syndicHeaders,
+        },
+      );
+      await amorce(reponseAmorce1, "POST /notices/{notice1.id}/publish");
 
       const notice2Resp = await request.post(`${API_BASE}/notices`, {
         data: {
@@ -100,10 +121,14 @@ test.describe("Scenario: Tableau d'affichage communautaire (multi-role)", () => 
         },
         headers: syndicHeaders,
       });
-      const notice2 = await notice2Resp.json();
-      await request.post(`${API_BASE}/notices/${notice2.id}/publish`, {
-        headers: syndicHeaders,
-      });
+      const notice2 = await amorce(notice2Resp, "POST /notices");
+      const reponseAmorce2 = await request.post(
+        `${API_BASE}/notices/${notice2.id}/publish`,
+        {
+          headers: syndicHeaders,
+        },
+      );
+      await amorce(reponseAmorce2, "POST /notices/{notice2.id}/publish");
     }
   });
 

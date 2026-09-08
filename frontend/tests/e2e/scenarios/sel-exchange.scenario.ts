@@ -11,6 +11,7 @@
  * Duree video attendue : ~70-90 secondes (rythme humain, multi-role)
  */
 import { test, expect } from "@playwright/test";
+import { amorce } from "../helpers/amorcage";
 import { nameContains, selectOptionByName } from "../helpers/name-match";
 import {
   humanLogin,
@@ -34,7 +35,7 @@ test.describe("Scenario: SEL multi-role (Alice offre, Bob parcourt)", () => {
     const adminResp = await request.post(`${API_BASE}/auth/login`, {
       data: { email: "admin@koprogo.com", password: "admin123" },
     });
-    const admin = await adminResp.json();
+    const admin = await amorce(adminResp, "POST /auth/login");
     const adminHeaders = { Authorization: `Bearer ${admin.token}` };
 
     // 2. Seed the world
@@ -52,29 +53,45 @@ test.describe("Scenario: SEL multi-role (Alice offre, Bob parcourt)", () => {
     const aliceResp = await request.post(`${API_BASE}/auth/login`, {
       data: { email: "alice@residence-parc.be", password: "alice123" },
     });
-    const alice = await aliceResp.json();
+    const alice = await amorce(aliceResp, "POST /auth/login");
     const aliceHeaders = { Authorization: `Bearer ${alice.token}` };
 
     const bobResp = await request.post(`${API_BASE}/auth/login`, {
       data: { email: "bob@residence-parc.be", password: "bob123" },
     });
-    const bob = await bobResp.json();
+    const bob = await amorce(bobResp, "POST /auth/login");
     const bobHeaders = { Authorization: `Bearer ${bob.token}` };
 
     // Get building ID for Residence du Parc
     const buildingsResp = await request.get(`${API_BASE}/buildings`, {
       headers: aliceHeaders,
     });
-    const buildings = await buildingsResp.json();
-    const building = Array.isArray(buildings)
-      ? buildings.find(
-          (b: any) => b.name && nameContains(b.name, "Résidence du Parc"),
-        )
-      : null;
+    const buildings = await amorce(buildingsResp, "GET /buildings");
+    // `GET /buildings` rend un `PageResponse` — `{ data, pagination }`,
+    // jamais un tableau nu. `Array.isArray` valait donc TOUJOURS faux,
+    // `building` TOUJOURS null, et le `if (building)` ci-dessous sautait
+    // l'amorçage entier sans rien dire. Le scénario échouait 150 lignes
+    // plus loin sur une liste vide, en accusant l'affichage.
+    const listeImmeubles = Array.isArray(buildings)
+      ? buildings
+      : (buildings?.data ?? []);
+    const building = listeImmeubles.find(
+      (b: any) => b.name && nameContains(b.name, "Résidence du Parc"),
+    );
 
-    if (building) {
+    if (!building) {
+      throw new Error(
+        `Amorçage : immeuble introuvable parmi ${listeImmeubles.length} ` +
+          `renvoyé(s) par GET /buildings : ` +
+          `${listeImmeubles.map((b: any) => b.name).join(", ") || "(aucun)"}. ` +
+          `Sans lui, aucune donnée n'est créée et le scénario échouera ` +
+          `plus loin sur une liste vide.`,
+      );
+    }
+
+    {
       // Alice creates exchange offers
-      await request.post(`${API_BASE}/exchanges`, {
+      const reponseAmorce1 = await request.post(`${API_BASE}/exchanges`, {
         data: {
           building_id: building.id,
           exchange_type: "Service",
@@ -86,8 +103,9 @@ test.describe("Scenario: SEL multi-role (Alice offre, Bob parcourt)", () => {
         },
         headers: aliceHeaders,
       });
+      await amorce(reponseAmorce1, "POST /exchanges");
 
-      await request.post(`${API_BASE}/exchanges`, {
+      const reponseAmorce2 = await request.post(`${API_BASE}/exchanges`, {
         data: {
           building_id: building.id,
           exchange_type: "ObjectLoan",
@@ -99,9 +117,10 @@ test.describe("Scenario: SEL multi-role (Alice offre, Bob parcourt)", () => {
         },
         headers: aliceHeaders,
       });
+      await amorce(reponseAmorce2, "POST /exchanges");
 
       // Bob creates an exchange offer
-      await request.post(`${API_BASE}/exchanges`, {
+      const reponseAmorce3 = await request.post(`${API_BASE}/exchanges`, {
         data: {
           building_id: building.id,
           exchange_type: "SharedPurchase",
@@ -113,6 +132,7 @@ test.describe("Scenario: SEL multi-role (Alice offre, Bob parcourt)", () => {
         },
         headers: bobHeaders,
       });
+      await amorce(reponseAmorce3, "POST /exchanges");
     }
   });
 

@@ -14,6 +14,7 @@
  * Duree video attendue : ~50-70 secondes (rythme humain)
  */
 import { test, expect } from "@playwright/test";
+import { amorce } from "../helpers/amorcage";
 import { nameContains, selectOptionByName } from "../helpers/name-match";
 import {
   humanLogin,
@@ -37,7 +38,7 @@ test.describe("Scenario: Comparaison de devis entrepreneurs (Francois)", () => {
     const adminResp = await request.post(`${API_BASE}/auth/login`, {
       data: { email: "admin@koprogo.com", password: "admin123" },
     });
-    const admin = await adminResp.json();
+    const admin = await amorce(adminResp, "POST /auth/login");
     const adminHeaders = { Authorization: `Bearer ${admin.token}` };
 
     // 2. Seed the world
@@ -55,21 +56,37 @@ test.describe("Scenario: Comparaison de devis entrepreneurs (Francois)", () => {
     const syndicResp = await request.post(`${API_BASE}/auth/login`, {
       data: { email: "francois@syndic-leroy.be", password: "francois123" },
     });
-    const syndic = await syndicResp.json();
+    const syndic = await amorce(syndicResp, "POST /auth/login");
     const syndicHeaders = { Authorization: `Bearer ${syndic.token}` };
 
     // Get building ID for Residence du Parc
     const buildingsResp = await request.get(`${API_BASE}/buildings`, {
       headers: syndicHeaders,
     });
-    const buildings = await buildingsResp.json();
-    const building = Array.isArray(buildings)
-      ? buildings.find(
-          (b: any) => b.name && nameContains(b.name, "Résidence du Parc"),
-        )
-      : null;
+    const buildings = await amorce(buildingsResp, "GET /buildings");
+    // `GET /buildings` rend un `PageResponse` — `{ data, pagination }`,
+    // jamais un tableau nu. `Array.isArray` valait donc TOUJOURS faux,
+    // `building` TOUJOURS null, et le `if (building)` ci-dessous sautait
+    // l'amorçage entier sans rien dire. Le scénario échouait 150 lignes
+    // plus loin sur une liste vide, en accusant l'affichage.
+    const listeImmeubles = Array.isArray(buildings)
+      ? buildings
+      : (buildings?.data ?? []);
+    const building = listeImmeubles.find(
+      (b: any) => b.name && nameContains(b.name, "Résidence du Parc"),
+    );
 
-    if (building) {
+    if (!building) {
+      throw new Error(
+        `Amorçage : immeuble introuvable parmi ${listeImmeubles.length} ` +
+          `renvoyé(s) par GET /buildings : ` +
+          `${listeImmeubles.map((b: any) => b.name).join(", ") || "(aucun)"}. ` +
+          `Sans lui, aucune donnée n'est créée et le scénario échouera ` +
+          `plus loin sur une liste vide.`,
+      );
+    }
+
+    {
       // Create 3 contractors and their quotes
       const ts = Date.now();
       const contractorIds: string[] = [];
@@ -102,7 +119,7 @@ test.describe("Scenario: Comparaison de devis entrepreneurs (Francois)", () => {
             organization_id: building.organization_id,
           },
         });
-        const user = await resp.json();
+        const user = await amorce(resp, "POST /auth/register");
         contractorIds.push(user.id || user.user_id || user.user?.id);
       }
 
@@ -152,13 +169,17 @@ test.describe("Scenario: Comparaison de devis entrepreneurs (Francois)", () => {
           },
           headers: syndicHeaders,
         });
-        const quote = await createResp.json();
+        const quote = await amorce(createResp, "POST /quotes");
         quoteIds.push(quote.id);
 
         // Submit quote (Requested -> Received)
-        await request.post(`${API_BASE}/quotes/${quote.id}/submit`, {
-          headers: syndicHeaders,
-        });
+        const reponseAmorce1 = await request.post(
+          `${API_BASE}/quotes/${quote.id}/submit`,
+          {
+            headers: syndicHeaders,
+          },
+        );
+        await amorce(reponseAmorce1, "POST /quotes/{quote.id}/submit");
       }
     }
   });
