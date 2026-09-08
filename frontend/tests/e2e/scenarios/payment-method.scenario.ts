@@ -109,11 +109,17 @@ test.describe("Scenario: Gestion des moyens de paiement (Alice)", () => {
     // Stripe Payment Method ID
     await humanFill(page, "stripe-id-input", "pm_test_alice_4242");
 
-    // Card Brand
-    await humanFill(page, "brand-input", "Visa");
-
-    // Last 4
-    await humanFill(page, "last4-input", "4242");
+    // Identifiant client Stripe.
+    //
+    // Le scénario remplissait auparavant `brand-input` et `last4-input` — la
+    // marque de la carte et ses quatre derniers chiffres. Ces champs
+    // n'existent plus dans `PaymentMethodAddModal.svelte`, qui porte
+    // désormais des identifiants Stripe. La recette attendait donc un écran
+    // disparu, et échouait sur `brand-input` introuvable.
+    //
+    // Conserver la marque dans le libellé (« Visa Alice ****4242 » plus haut)
+    // garde la vidéo lisible sans redemander un champ qui n'est plus là.
+    await humanFill(page, "stripe-customer-id-input", "cus_test_alice");
 
     await stepPause(page);
 
