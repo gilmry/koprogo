@@ -6,6 +6,7 @@
   import type { Building, Owner, BoardMemberResponse } from "../../lib/types";
   import { formatDate } from "../../lib/utils/date.utils";
   import { withErrorHandling } from "../../lib/utils/error.utils";
+  import ConfirmDialog from "../ui/ConfirmDialog.svelte";
 
   interface Meeting {
     id: string;
@@ -16,6 +17,20 @@
   }
 
   let buildings: Building[] = [];
+
+  // L'action en attente de confirmation.
+  //
+  // Composant en mode LEGACY : ses `let` sont réactifs tels quels, et un seul
+  // `$state` le basculerait en runes en rendant tous les autres NON réactifs
+  // (#832).
+  //
+  // Le `confirm()` remplacé était un dialogue du NAVIGATEUR : un navigateur
+  // piloté le supprime, et l'action prend la forme exacte d'une panne (#844).
+  //
+  // Retirer un membre du conseil de copropriété touche à un mandat élu
+  // (Art. 3.90).
+  let suppressionEnAttente = false;
+  let cibleEnAttente: string | null = null;
   let selectedBuildingId: string = "";
   let boardMembers: BoardMemberResponse[] = [];
   let owners: Owner[] = [];
@@ -144,8 +159,16 @@
     }
   }
 
-  async function handleRemove(memberId: string) {
-    if (!confirm($_("admin.board.confirmRemove"))) return;
+  function handleRemove(memberId: string) {
+    cibleEnAttente = memberId;
+    suppressionEnAttente = true;
+  }
+
+  async function executerSuppression() {
+    suppressionEnAttente = false;
+    const memberId = cibleEnAttente;
+    cibleEnAttente = null;
+    if (!memberId) return;
     const result = await withErrorHandling({
       action: () => api.delete(`/board-members/${memberId}`),
       successMessage: $_("admin.board.memberRemovedSuccessfully"),
@@ -455,3 +478,16 @@
     </div>
   </div>
 {/if}
+
+<!-- Le dialogue qui remplace un `confirm()` natif (#844). -->
+<ConfirmDialog
+  isOpen={suppressionEnAttente}
+  title={$_("common.confirm")}
+  message={$_("admin.board.confirmRemove")}
+  variant="danger"
+  onconfirm={executerSuppression}
+  oncancel={() => {
+    suppressionEnAttente = false;
+    cibleEnAttente = null;
+  }}
+/>

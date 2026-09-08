@@ -17,6 +17,7 @@
   import { formatDate, formatDateShort } from "../../lib/utils/date.utils";
   import { formatCurrency } from "../../lib/utils/finance.utils";
   import { withErrorHandling } from "../../lib/utils/error.utils";
+  import ConfirmDialog from "../ui/ConfirmDialog.svelte";
 
   let {
     buildingId,
@@ -32,6 +33,22 @@
   } = $props();
 
   let inspections: TechnicalInspection[] = $state([]);
+
+  // L'action en attente de confirmation.
+  //
+  // Ce composant est en mode RUNES : un `let` simple n'y est PAS réactif.
+  // `svelte-check --fail-on-warnings` l'a dit — « is updated, but is not
+  // declared with $state(...) » — après que je l'avais pris pour du legacy.
+  // C'est très exactement le défaut de #832, attrapé cette fois par le
+  // barrage plutôt qu'en recette.
+  //
+  // Le `confirm()` remplacé était un dialogue du NAVIGATEUR : un navigateur
+  // piloté le supprime, et l'action prend la forme exacte d'une panne (#844).
+  //
+  // Même acte que sur la fiche de détail : le contrôle technique est une
+  // obligation datée.
+  let suppressionEnAttente = $state(false);
+  let cibleEnAttente = $state<string | null>(null);
   let loading = $state(true);
   let error = $state("");
   let showCreateForm = $state(false);
@@ -106,8 +123,16 @@
     if (result) await loadInspections();
   }
 
-  async function deleteInspection(id: string) {
-    if (!confirm($_("inspections.deleteConfirm"))) return;
+  function deleteInspection(id: string) {
+    cibleEnAttente = id;
+    suppressionEnAttente = true;
+  }
+
+  async function executerSuppression() {
+    suppressionEnAttente = false;
+    const id = cibleEnAttente;
+    cibleEnAttente = null;
+    if (!id) return;
     const result = await withErrorHandling({
       action: () => inspectionsApi.delete(id),
       successMessage: $_("inspections.deleteSuccess"),
@@ -473,3 +498,16 @@
     ondeleted={(id) => handleDetailDeleted(id)}
   />
 {/if}
+
+<!-- Le dialogue qui remplace un `confirm()` natif (#844). -->
+<ConfirmDialog
+  isOpen={suppressionEnAttente}
+  title={$_("common.confirm")}
+  message={$_("inspections.deleteConfirm")}
+  variant="danger"
+  onconfirm={executerSuppression}
+  oncancel={() => {
+    suppressionEnAttente = false;
+    cibleEnAttente = null;
+  }}
+/>

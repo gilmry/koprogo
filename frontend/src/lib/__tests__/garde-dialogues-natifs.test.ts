@@ -41,7 +41,7 @@ import { join } from "node:path";
 const RACINE = join(process.cwd(), "src");
 
 /** Appels aux dialogues natifs. **Ne doit que BAISSER.** */
-const DETTE_AU_2026_09_08 = 21;
+const DETTE_AU_2026_09_08 = 11;
 
 const APPEL_NATIF = /(?<![.\w$])(?:window\.)?(?:confirm|prompt|alert)\s*\(/g;
 

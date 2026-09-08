@@ -6,6 +6,7 @@
   import { toast } from "../stores/toast";
   import { formatDate } from "../lib/utils/date.utils";
   import { formatCurrency } from "../lib/utils/finance.utils";
+  import ConfirmDialog from "./ui/ConfirmDialog.svelte";
   import {
     withErrorHandling,
     withLoadingState,
@@ -24,6 +25,18 @@
   // Filtres
   let filterStatus: string = "all";
   let filterPaymentStatus: string = "all";
+
+  // L'action en attente, et la facture qu'elle vise.
+  //
+  // Composant en mode LEGACY : ses `let` sont réactifs tels quels, et un seul
+  // `$state` le basculerait en runes en rendant tous les autres NON réactifs
+  // (#832).
+  //
+  // Les deux `confirm()` remplacés étaient des dialogues du NAVIGATEUR (#844).
+  // Soumettre une facture à l'approbation engage le circuit de validation ;
+  // la marquer payée solde une dette fournisseur.
+  let actionEnAttente: "soumettre" | "payer" | null = null;
+  let factureEnAttente: string | null = null;
 
   onMount(async () => {
     await authStore.init();
@@ -50,8 +63,16 @@
     });
   }
 
-  async function submitForApproval(invoiceId: string) {
-    if (!confirm($_("invoices.confirm_submit_approval"))) return;
+  function submitForApproval(invoiceId: string) {
+    factureEnAttente = invoiceId;
+    actionEnAttente = "soumettre";
+  }
+
+  async function executer_soumettre() {
+    const invoiceId = factureEnAttente;
+    actionEnAttente = null;
+    factureEnAttente = null;
+    if (!invoiceId) return;
 
     await withErrorHandling({
       action: async () => {
@@ -102,8 +123,16 @@
     });
   }
 
-  async function markAsPaid(invoiceId: string) {
-    if (!confirm($_("invoices.confirm_mark_paid"))) return;
+  function markAsPaid(invoiceId: string) {
+    factureEnAttente = invoiceId;
+    actionEnAttente = "payer";
+  }
+
+  async function executer_payer() {
+    const invoiceId = factureEnAttente;
+    actionEnAttente = null;
+    factureEnAttente = null;
+    if (!invoiceId) return;
 
     await withErrorHandling({
       action: async () => {
@@ -632,6 +661,26 @@
     </div>
   </div>
 {/if}
+
+<!-- Le dialogue qui remplace deux `confirm()` natifs (#844). -->
+<ConfirmDialog
+  isOpen={actionEnAttente !== null}
+  title={$_("common.confirm")}
+  message={actionEnAttente === "soumettre"
+    ? $_("invoices.confirm_submit_approval")
+    : actionEnAttente === "payer"
+      ? $_("invoices.confirm_mark_paid")
+      : ""}
+  variant="primary"
+  onconfirm={() => {
+    if (actionEnAttente === "soumettre") executer_soumettre();
+    else if (actionEnAttente === "payer") executer_payer();
+  }}
+  oncancel={() => {
+    actionEnAttente = null;
+    factureEnAttente = null;
+  }}
+/>
 
 <style>
   .workflow-container {

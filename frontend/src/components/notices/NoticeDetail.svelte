@@ -10,6 +10,7 @@
     withLoadingState,
     withErrorHandling,
   } from "../../lib/utils/error.utils";
+  import ConfirmDialog from "../ui/ConfirmDialog.svelte";
 
   let {
     noticeId,
@@ -22,6 +23,17 @@
   let notice = $state<Notice | null>(null);
   let loading = $state(true);
   let deleting = $state(false);
+
+  /// L'action en attente de confirmation, ou `null`.
+  ///
+  /// Les deux `confirm()` remplacés étaient des dialogues du NAVIGATEUR : un
+  /// navigateur piloté les supprime, et l'action prend la forme exacte d'une
+  /// panne (#844).
+  ///
+  /// Archiver une annonce la retire du tableau d'affichage de la copropriété,
+  /// la supprimer l'efface. Les deux redirigent ensuite vers la liste, donc
+  /// sans confirmation atteignable l'utilisateur ne voit qu'un bouton inerte.
+  let actionEnAttente = $state<"archiver" | "supprimer" | null>(null);
   let archiving = $state(false);
 
   $effect(() => {
@@ -43,8 +55,12 @@
     });
   }
 
-  async function handleArchive() {
-    if (!confirm($_("notices.archive_confirmation"))) return;
+  function handleArchive() {
+    actionEnAttente = "archiver";
+  }
+
+  async function executer_archiver() {
+    actionEnAttente = null;
     await withErrorHandling({
       action: () => noticesApi.archive(noticeId),
       setLoading: (v: boolean) => (archiving = v),
@@ -56,8 +72,12 @@
     });
   }
 
-  async function handleDelete() {
-    if (!confirm($_("notices.delete_confirmation"))) return;
+  function handleDelete() {
+    actionEnAttente = "supprimer";
+  }
+
+  async function executer_supprimer() {
+    actionEnAttente = null;
     await withErrorHandling({
       action: () => noticesApi.delete(noticeId),
       setLoading: (v: boolean) => (deleting = v),
@@ -200,3 +220,20 @@
     <div class="text-center py-12 text-gray-500">{$_("notices.not_found")}</div>
   {/if}
 </div>
+
+<!-- Le dialogue qui remplace deux `confirm()` natifs (#844). -->
+<ConfirmDialog
+  isOpen={actionEnAttente !== null}
+  title={$_("common.confirm")}
+  message={actionEnAttente === "archiver"
+    ? $_("notices.archive_confirmation")
+    : actionEnAttente === "supprimer"
+      ? $_("notices.delete_confirmation")
+      : ""}
+  variant="danger"
+  onconfirm={() => {
+    if (actionEnAttente === "archiver") executer_archiver();
+    else if (actionEnAttente === "supprimer") executer_supprimer();
+  }}
+  oncancel={() => (actionEnAttente = null)}
+/>

@@ -14,6 +14,7 @@
   import { formatDate } from "../../lib/utils/date.utils";
   import { formatCurrency } from "../../lib/utils/finance.utils";
   import { withErrorHandling } from "../../lib/utils/error.utils";
+  import ConfirmDialog from "../ui/ConfirmDialog.svelte";
 
   let {
     isOpen = false,
@@ -30,6 +31,21 @@
   } = $props();
 
   let editMode = $state(false);
+
+  // L'action en attente de confirmation.
+  //
+  // Ce composant est en mode RUNES : un `let` simple n'y est PAS réactif.
+  // `svelte-check --fail-on-warnings` l'a dit — « is updated, but is not
+  // declared with $state(...) » — après que je l'avais pris pour du legacy.
+  // C'est très exactement le défaut de #832, attrapé cette fois par le
+  // barrage plutôt qu'en recette.
+  //
+  // Le `confirm()` remplacé était un dialogue du NAVIGATEUR : un navigateur
+  // piloté le supprime, et l'action prend la forme exacte d'une panne (#844).
+  //
+  // Supprimer un contrôle technique efface la trace d'une obligation de
+  // sécurité datée.
+  let suppressionEnAttente = $state(false);
   let submitting = $state(false);
 
   interface InspectionEditForm {
@@ -137,8 +153,12 @@
     }
   }
 
-  async function handleDelete() {
-    if (!confirm($_("inspections.deleteConfirm"))) return;
+  function handleDelete() {
+    suppressionEnAttente = true;
+  }
+
+  async function executerSuppression() {
+    suppressionEnAttente = false;
     const result = await withErrorHandling({
       action: () => inspectionsApi.delete(inspection.id),
       successMessage: $_("inspections.deleteSuccess"),
@@ -541,3 +561,13 @@
     {/if}
   {/if}
 </Modal>
+
+<!-- Le dialogue qui remplace un `confirm()` natif (#844). -->
+<ConfirmDialog
+  isOpen={suppressionEnAttente}
+  title={$_("common.confirm")}
+  message={$_("inspections.deleteConfirm")}
+  variant="danger"
+  onconfirm={executerSuppression}
+  oncancel={() => (suppressionEnAttente = false)}
+/>

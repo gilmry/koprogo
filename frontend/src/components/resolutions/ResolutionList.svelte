@@ -11,6 +11,7 @@
   import { UserRole } from "../../lib/types";
   import ResolutionVotePanel from "./ResolutionVotePanel.svelte";
   import ResolutionCreateForm from "./ResolutionCreateForm.svelte";
+  import ConfirmDialog from "../ui/ConfirmDialog.svelte";
   import {
     withErrorHandling,
     withLoadingState,
@@ -25,6 +26,21 @@
   } = $props();
 
   let resolutions = $state<Resolution[]>([]);
+
+  // L'action en attente de confirmation.
+  //
+  // Ce composant est en mode RUNES : un `let` simple n'y est PAS réactif.
+  // `svelte-check --fail-on-warnings` l'a dit — « is updated, but is not
+  // declared with $state(...) » — après que je l'avais pris pour du legacy.
+  // C'est très exactement le défaut de #832, attrapé cette fois par le
+  // barrage plutôt qu'en recette.
+  //
+  // Le `confirm()` remplacé était un dialogue du NAVIGATEUR : un navigateur
+  // piloté le supprime, et l'action prend la forme exacte d'une panne (#844).
+  //
+  // Supprimer une résolution retire un point soumis au vote de l'assemblée.
+  let suppressionEnAttente = $state(false);
+  let cibleEnAttente = $state<string | null>(null);
   let loading = $state(true);
   let error = $state("");
   let showCreateForm = $state(false);
@@ -58,8 +74,16 @@
     }
   }
 
-  async function handleDeleteResolution(id: string) {
-    if (!confirm($_("resolutions.list.deleteConfirm"))) return;
+  function handleDeleteResolution(id: string) {
+    cibleEnAttente = id;
+    suppressionEnAttente = true;
+  }
+
+  async function executerSuppression() {
+    suppressionEnAttente = false;
+    const id = cibleEnAttente;
+    cibleEnAttente = null;
+    if (!id) return;
 
     await withErrorHandling({
       action: () => resolutionsApi.delete(id),
@@ -221,3 +245,16 @@
     {/if}
   </div>
 </div>
+
+<!-- Le dialogue qui remplace un `confirm()` natif (#844). -->
+<ConfirmDialog
+  isOpen={suppressionEnAttente}
+  title={$_("common.confirm")}
+  message={$_("resolutions.list.deleteConfirm")}
+  variant="danger"
+  onconfirm={executerSuppression}
+  oncancel={() => {
+    suppressionEnAttente = false;
+    cibleEnAttente = null;
+  }}
+/>
