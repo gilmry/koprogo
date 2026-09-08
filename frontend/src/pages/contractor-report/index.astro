@@ -295,6 +295,7 @@
             <div class="card">
               <h2>Photos avant travaux</h2>
               <input
+                data-testid="contractor-report-photos-before-input"
                 type="file"
                 id="photos_before"
                 multiple
@@ -315,6 +316,7 @@
             <div class="card">
               <h2>Photos après travaux</h2>
               <input
+                data-testid="contractor-report-photos-after-input"
                 type="file"
                 id="photos_after"
                 multiple
@@ -427,9 +429,9 @@
         const div = document.createElement("div");
         div.className = "parts-item";
         div.innerHTML = `
-        <input type="text" placeholder="Référence pièce" />
-        <input type="text" placeholder="Description" />
-        <button type="button" onclick="this.parentElement.remove()">✕</button>
+        <input data-testid="contractor-report-part-reference-input" type="text" placeholder="Référence pièce" />
+        <input data-testid="contractor-report-part-description-input" type="text" placeholder="Description" />
+        <button data-testid="contractor-report-part-remove-button" type="button" onclick="this.parentElement.remove()">✕</button>
       `;
         document.getElementById("parts-list").appendChild(div);
       }

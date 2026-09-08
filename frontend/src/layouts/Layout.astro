@@ -163,7 +163,13 @@ const pageTitle = title.includes(SITE_NAME) ? title : `${title} - ${SITE_NAME}`;
   </head>
   <body class="bg-gray-50 min-h-screen">
     <!-- Skip navigation link for keyboard users -->
-    <a href="#main-content" class="skip-link"> Passer au contenu principal </a>
+    <a
+      data-testid="skip-to-content-link"
+      href="#main-content"
+      class="skip-link"
+    >
+      Passer au contenu principal
+    </a>
 
     <!-- Screen reader announcements -->
     <div
@@ -238,6 +244,7 @@ const pageTitle = title.includes(SITE_NAME) ? title : `${title} - ${SITE_NAME}`;
                   </p>
                   <p class="text-xs mt-2 space-x-3">
                     <a
+                      data-testid="layout-footer-legal-link"
                       href="/mentions-legales"
                       class="text-primary-600 hover:underline"
                     >
@@ -245,6 +252,7 @@ const pageTitle = title.includes(SITE_NAME) ? title : `${title} - ${SITE_NAME}`;
                     </a>
                     <span class="text-gray-400">·</span>
                     <a
+                      data-testid="layout-footer-privacy-link"
                       href="/mentions-legales#rgpd"
                       class="text-primary-600 hover:underline"
                     >

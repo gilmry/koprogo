@@ -253,6 +253,7 @@
     </div>
     {#if computedAllowUpload}
       <button
+        data-testid="documents-upload-button"
         class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary-600 text-white hover:bg-primary-700 transition"
         onclick={handleOpenUpload}
       >
@@ -346,6 +347,7 @@
               <td class="px-5 py-3 text-right">
                 <div class="flex justify-end gap-2">
                   <button
+                    data-testid="documents-download-button"
                     class="inline-flex items-center gap-1 text-primary-600 hover:text-primary-700 font-medium"
                     onclick={() => handleDownload(doc)}
                   >
@@ -354,6 +356,7 @@
                   </button>
                   {#if computedAllowDelete}
                     <button
+                      data-testid="documents-delete-button"
                       class="inline-flex items-center gap-1 text-red-600 hover:text-red-700 font-medium disabled:opacity-60"
                       onclick={() => handleDelete(doc)}
                       disabled={deletingId === doc.id}

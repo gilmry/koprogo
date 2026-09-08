@@ -45,15 +45,24 @@ const categories = [...new Set(sortedPosts.map((p) => p.data.category))];
 >
   <header class="bg-primary-700 text-white">
     <div class="container mx-auto px-4 py-6 flex items-center justify-between">
-      <a href="/" class="text-2xl font-bold hover:text-primary-200 transition"
-        >KoproGo</a
+      <a
+        data-testid="blog-header-home-link"
+        href="/"
+        class="text-2xl font-bold hover:text-primary-200 transition">KoproGo</a
       >
       <nav class="flex items-center gap-6">
-        <a href="/" class="text-primary-100 hover:text-white transition"
-          >Accueil</a
-        >
-        <a href="/blog" class="text-white font-semibold">Blog</a>
         <a
+          data-testid="blog-nav-home-link"
+          href="/"
+          class="text-primary-100 hover:text-white transition">Accueil</a
+        >
+        <a
+          data-testid="blog-nav-blog-link"
+          href="/blog"
+          class="text-white font-semibold">Blog</a
+        >
+        <a
+          data-testid="blog-nav-login-link"
           href="/login"
           class="bg-white text-primary-700 px-4 py-2 rounded-lg font-medium hover:bg-primary-50 transition"
         >
@@ -91,6 +100,7 @@ const categories = [...new Set(sortedPosts.map((p) => p.data.category))];
       {
         sortedPosts.map((post) => (
           <a
+            data-testid="blog-post-link"
             href={`/blog/${post.id}`}
             class="group bg-white rounded-xl shadow-md hover:shadow-xl transition-shadow overflow-hidden"
           >
@@ -151,11 +161,17 @@ const categories = [...new Set(sortedPosts.map((p) => p.data.category))];
         &copy; {new Date().getFullYear()} KoproGo - Gestion de Copropriété SaaS
       </p>
       <p class="mt-2">
-        <a href="/mentions-legales" class="hover:text-white transition"
-          >Mentions légales</a
+        <a
+          data-testid="blog-footer-legal-link"
+          href="/mentions-legales"
+          class="hover:text-white transition">Mentions légales</a
         >
         <span class="mx-2">·</span>
-        <a href="/settings/gdpr" class="hover:text-white transition">RGPD</a>
+        <a
+          data-testid="blog-footer-gdpr-link"
+          href="/settings/gdpr"
+          class="hover:text-white transition">RGPD</a
+        >
       </p>
     </div>
   </footer>

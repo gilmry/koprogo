@@ -68,6 +68,7 @@
           </button>
         {/if}
         <button
+          data-testid="notifications-retry-button"
           on:click={loadNotifications}
           class="px-3 py-1 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
         >
@@ -79,6 +80,7 @@
     <!-- Filter -->
     <div class="flex space-x-2">
       <button
+        data-testid="notifications-filter-all-button"
         on:click={() => (filter = "all")}
         class="px-4 py-2 text-sm font-medium rounded-md {filter === 'all'
           ? 'bg-blue-100 text-blue-700'
@@ -87,6 +89,7 @@
         {$_("notifications.filterAll")}
       </button>
       <button
+        data-testid="notifications-filter-unread-button"
         on:click={() => (filter = "unread")}
         class="px-4 py-2 text-sm font-medium rounded-md {filter === 'unread'
           ? 'bg-blue-100 text-blue-700'

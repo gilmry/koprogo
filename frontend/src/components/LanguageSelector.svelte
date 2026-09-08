@@ -19,6 +19,7 @@
 <div class="relative inline-block text-left">
   <!-- Language Button -->
   <button
+    data-testid="language-selector-button"
     type="button"
     onclick={() => (isOpen = !isOpen)}
     class="inline-flex items-center gap-1.5 rounded-md bg-white px-2.5 py-1.5 text-sm font-medium text-gray-700 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 transition-colors"
@@ -47,6 +48,7 @@
   {#if isOpen}
     <!-- Overlay to close when clicking outside -->
     <button
+      data-testid="language-selector-overlay"
       class="fixed inset-0 z-10"
       onclick={() => (isOpen = false)}
       aria-hidden="true"
@@ -62,6 +64,7 @@
       <div class="py-1" role="none">
         {#each languages as lang}
           <button
+            data-testid="language-selector-option"
             type="button"
             onclick={() => selectLanguage(lang.code)}
             class="flex w-full items-center gap-2.5 px-3 py-2 text-sm text-gray-700 hover:bg-primary-50 hover:text-primary-700 transition-colors {$locale ===

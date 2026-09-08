@@ -135,8 +135,10 @@
           </option>
         {/each}
       </select>
-      <button on:click={clearChat} class="btn-clear"
-        >🗑️ {$_("common.clear")}</button
+      <button
+        data-testid="chatbot-clear-button"
+        on:click={clearChat}
+        class="btn-clear">🗑️ {$_("common.clear")}</button
       >
     </div>
   </div>
@@ -150,6 +152,7 @@
   <div class="quick-actions">
     {#each quickActions as action}
       <button
+        data-testid="chatbot-quick-action-button"
         on:click={() => useQuickAction(action)}
         class="quick-action-btn"
         disabled={isLoading}
@@ -228,6 +231,7 @@
       disabled={isLoading}
       class="message-input"></textarea>
     <button
+      data-testid="chatbot-send-button"
       on:click={sendMessage}
       disabled={isLoading || !inputMessage.trim()}
       class="btn-send"
