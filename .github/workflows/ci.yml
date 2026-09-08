@@ -894,7 +894,14 @@ jobs:
           PLAYWRIGHT_API_BASE: http://localhost:8080/api/v1
         run: |
           cd frontend
-          npx playwright test --project=chromium
+          # Budget explicite. `globalTimeout` de playwright.config.ts vaut 70
+          # minutes et s'applique à CHAQUE invocation ; ce job en lance trois
+          # (chromium, smoke, scenarios), soit 210 minutes possibles sous un
+          # `timeout-minutes: 90`. Le 2026-09-08, chromium a pris 46 min et
+          # scenarios 40, et GitHub a fauché le job à 90 — sans rapport, sans
+          # détail d'erreur, sans vidéo. Un budget par étape, dont la somme
+          # tient sous le plafond, rend cette fin impossible.
+          npx playwright test --project=chromium --global-timeout=2400000
 
       # Le projet `smoke` (98 tests) est réintroduit en non bloquant : son état
       # réel n'a jamais été mesuré en CI, et le rendre bloquant d'emblée
@@ -917,7 +924,7 @@ jobs:
           PLAYWRIGHT_API_BASE: http://localhost:8080/api/v1
         run: |
           cd frontend
-          npx playwright test --project=smoke || true
+          npx playwright test --project=smoke --global-timeout=600000 || true
 
       - name: Seed scenario world for Documentation Vivante
         # Même cause : sauté avec le reste dès que chromium échoue.
@@ -955,7 +962,13 @@ jobs:
           PLAYWRIGHT_API_BASE: http://localhost:8080/api/v1
         run: |
           cd frontend
-          npx playwright test --project=scenarios
+          # `--retries=0` : les échecs de ce projet ne sont pas des flakes.
+          # Le 2026-09-08, onze scénarios sur douze ont échoué, chacun trois
+          # fois, avec des durées identiques à la seconde près (55,7 s /
+          # 56,8 s / 55,7 s pour admin-setup). Rejouer un échec déterministe
+          # triple le coût et n'apprend rien ; ici, c'est ce qui a fait
+          # dépasser le plafond du job et perdre le rapport.
+          npx playwright test --project=scenarios --global-timeout=1500000 --retries=0
 
       - name: Cleanup scenario world
         if: always()

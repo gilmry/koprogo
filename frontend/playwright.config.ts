@@ -40,6 +40,21 @@ export default defineConfig({
    * 70 minutes, soit un peu moins que le `timeout-minutes: 90` du job : la
    * suite doit rendre la main d'elle-même, avec son rapport, plutôt que
    * d'être fauchée par GitHub sans rien laisser à lire.
+   *
+   * ATTENTION — ce plafond s'applique à CHAQUE invocation de `playwright
+   * test`, pas au job. Or `ci.yml` en lance trois : `--project=chromium`,
+   * `--project=smoke`, `--project=scenarios`. Trois fois 70 minutes font 210
+   * minutes possibles sous un plafond de 90, et le garde-fou écrit ici ne
+   * peut structurellement pas jouer.
+   *
+   * C'est arrivé le 2026-09-08 : chromium 46 min, scenarios 40 min, GitHub a
+   * fauché le job à 90 min. Aucun rapport, aucun détail d'erreur pour onze
+   * scénarios en échec, aucune vidéo. La CI n'a rien pu dire.
+   *
+   * Chaque étape de `ci.yml` porte désormais son propre `--global-timeout`,
+   * dont la somme tient sous le plafond du job. Cette valeur-ci reste comme
+   * filet pour les exécutions locales et pour toute invocation qui n'en
+   * passerait pas.
    */
   globalTimeout: process.env.CI ? 70 * 60 * 1000 : undefined,
 
