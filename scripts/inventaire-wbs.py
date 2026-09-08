@@ -20,7 +20,15 @@ lit pas du code, et l'ASBL se fonde sur ce que le produit montre. **U2 ne
 commençait qu'une fois #772 fermée. **Elle l'est depuis le 2026-09-08** : la
 dette de cloisonnement est passée de 109 routes imbriquées sans identité à
 trois, et un test end-to-end prouve qu'aucune donnée ne traverse d'une
-organisation à l'autre, en lecture comme en écriture. U2 n'est plus bloquée.""",
+organisation à l'autre, en lecture comme en écriture. U2 n'est plus bloquée.
+
+Les quatre maquettes U0a à U0d dépendaient de #803. **Sa dette est à zéro
+depuis le 2026-09-08** : les 755 éléments interactifs sans ancrage relevés au
+départ sont tous ancrés, et le cliquet est devenu une interdiction. La
+refonte peut désormais déplacer n'importe quel écran sans qu'on perde le
+moyen de vérifier qu'il a survécu — ce qui était l'argument entier de
+l'issue. Le seul critère de fin qu'elle porte encore est une règle de
+processus pour les lots à venir, qu'aucun commit ne peut satisfaire.""",
   [556,818,820,821,822,823,824,825,826,827,797,798,802,803,834,841]),
 
  ("D", "Documentation vivante multi-persona", """Six personas, quatre workflows transverses, et la restructuration des cent
@@ -59,8 +67,16 @@ S'y ajoute depuis le 2026-09-08 ce qui empêche la RECETTE de dire la vérité :
 soixante dialogues natifs du navigateur (#844). Un navigateur piloté les
 supprime, et l'action prend alors la forme exacte d'une panne. C'est ce qui a
 fait déclarer mort le bouton « Reporter » d'une assemblée pendant deux
-recettes, alors que sa source était correcte.""",
-  [696,832,844]),
+recettes, alors que sa source était correcte.
+
+Et le cas le plus retors du track : **une attestation qui ne vérifie rien**
+(#847). Le registre légal déclare l'Art. 3.89 § 1er couvert et cite un test
+à l'appui ; la citation désignait une méthode de production, un mot courant
+et un module `tests`, pas une vérification de la durée de mandat. La garde
+constatait que la preuve EXISTE, jamais qu'elle est PERTINENTE. C'est la
+forme la plus coûteuse du motif : non pas un test absent, mais un test
+présent qui atteste d'autre chose que ce qu'il prétend.""",
+  [696,832,847]),
 
  ("K", "Dette de code et de contrat", """Les erreurs typées plutôt que classées par sous-chaîne, le contrat OpenAPI
 complet, et la suppression du repli qui fabrique une ACP inexistante.
