@@ -62,7 +62,11 @@
   }
 </script>
 
-<form on:submit|preventDefault={handleSubmit} class="space-y-6">
+<form
+  data-testid="budget-create-form"
+  on:submit|preventDefault={handleSubmit}
+  class="space-y-6"
+>
   {#if error}
     <div class="bg-red-50 border border-red-200 rounded-lg p-3">
       <p class="text-sm text-red-700">{error}</p>
@@ -171,6 +175,7 @@
       >{$_("budgets.notes")}</label
     >
     <textarea
+      data-testid="budget-create-notes-textarea"
       id="notes"
       bind:value={notes}
       rows="3"

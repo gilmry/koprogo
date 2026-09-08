@@ -83,6 +83,7 @@
         </span>
       </h2>
       <button
+        data-testid="payment-list-retry-button"
         onclick={loadPayments}
         class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
       >
@@ -98,6 +99,7 @@
           >{$_("payments.search")}</label
         >
         <input
+          data-testid="payment-list-search-input"
           id="payment-search"
           type="text"
           bind:value={searchQuery}
@@ -232,6 +234,7 @@
               </td>
               <td class="px-6 py-4 whitespace-nowrap text-right text-sm">
                 <a
+                  data-testid="payment-list-detail-link"
                   href={getPaymentUrl(payment.id)}
                   class="text-blue-600 hover:text-blue-900"
                 >

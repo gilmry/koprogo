@@ -192,6 +192,7 @@
             {$_("reports.start_date")}
           </label>
           <input
+            data-testid="financial-reports-period-start-input"
             id="period-start"
             type="date"
             bind:value={periodStart}
@@ -206,6 +207,7 @@
             {$_("reports.end_date")}
           </label>
           <input
+            data-testid="financial-reports-period-end-input"
             id="period-end"
             type="date"
             bind:value={periodEnd}
@@ -292,12 +294,14 @@
         </p>
         <div class="mt-4 flex space-x-4">
           <button
+            data-testid="financial-reports-balance-export-pdf-button"
             on:click={exportToPDF}
             class="px-4 py-2 bg-white text-primary-600 rounded hover:bg-primary-50 transition-colors text-sm font-medium"
           >
             📄 {$_("reports.export_pdf")}
           </button>
           <button
+            data-testid="financial-reports-balance-export-excel-button"
             on:click={exportToExcel}
             class="px-4 py-2 bg-white text-primary-600 rounded hover:bg-primary-50 transition-colors text-sm font-medium"
           >
@@ -495,12 +499,14 @@
         </p>
         <div class="mt-4 flex space-x-4">
           <button
+            data-testid="financial-reports-income-export-pdf-button"
             on:click={exportToPDF}
             class="px-4 py-2 bg-white text-primary-600 rounded hover:bg-primary-50 transition-colors text-sm font-medium"
           >
             📄 {$_("reports.export_pdf")}
           </button>
           <button
+            data-testid="financial-reports-income-export-excel-button"
             on:click={exportToExcel}
             class="px-4 py-2 bg-white text-primary-600 rounded hover:bg-primary-50 transition-colors text-sm font-medium"
           >

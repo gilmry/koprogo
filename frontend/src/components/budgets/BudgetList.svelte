@@ -120,6 +120,7 @@
           >{$_("budgets.building")}</label
         >
         <select
+          data-testid="budget-list-building-filter-select"
           id="filter-building"
           bind:value={filterBuildingId}
           on:change={() => {
@@ -189,8 +190,10 @@
   {#if error}
     <div class="bg-red-50 border border-red-200 rounded-lg p-4">
       <p class="text-red-700">{error}</p>
-      <button on:click={loadBudgets} class="mt-2 text-sm text-red-600 underline"
-        >{$_("common.retry")}</button
+      <button
+        data-testid="budget-list-retry-button"
+        on:click={loadBudgets}
+        class="mt-2 text-sm text-red-600 underline">{$_("common.retry")}</button
       >
     </div>
   {/if}
@@ -291,6 +294,7 @@
               </td>
               <td class="px-6 py-4 whitespace-nowrap">
                 <a
+                  data-testid="budget-list-detail-link"
                   href="/budget-detail?id={budget.id}"
                   class="text-sm text-primary-600 hover:text-primary-700 font-medium"
                 >
@@ -308,6 +312,7 @@
       <div class="flex justify-center gap-2 mt-4">
         {#each Array(totalPages) as _, i}
           <button
+            data-testid="budget-list-page-button"
             on:click={() => changePage(i + 1)}
             class="px-3 py-1 rounded-lg text-sm {currentPage === i + 1
               ? 'bg-primary-600 text-white'

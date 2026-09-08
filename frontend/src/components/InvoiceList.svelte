@@ -309,6 +309,7 @@
               <td>{formatDate(invoice.due_date, "short")}</td>
               <td>
                 <button
+                  data-testid="invoice-list-row-action-button"
                   class="btn btn-sm btn-secondary"
                   onclick={(e: MouseEvent) => {
                     e.stopPropagation();
@@ -327,6 +328,7 @@
     {#if totalPages > 1}
       <div class="pagination">
         <button
+          data-testid="invoice-list-prev-page-button"
           class="btn btn-sm"
           onclick={() => handlePageChange(currentPage - 1)}
           disabled={currentPage === 1}
@@ -345,6 +347,7 @@
         </span>
 
         <button
+          data-testid="invoice-list-next-page-button"
           class="btn btn-sm"
           onclick={() => handlePageChange(currentPage + 1)}
           disabled={currentPage === totalPages}

@@ -227,6 +227,7 @@
             class="block text-sm font-medium text-gray-700 mb-1"
             >{$_("paymentReminders.status")}</label
           ><select
+            data-testid="payment-reminder-status-filter-select"
             id="filter-status"
             bind:value={filterStatus}
             class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
@@ -247,6 +248,7 @@
             class="block text-sm font-medium text-gray-700 mb-1"
             >{$_("paymentReminders.level")}</label
           ><select
+            data-testid="payment-reminder-level-filter-select"
             id="filter-level"
             bind:value={filterLevel}
             class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
@@ -262,6 +264,7 @@
         </div>
       </div>
       {#if !ownerId && !expenseId}<button
+          data-testid="payment-reminder-bulk-create-button"
           onclick={bulkCreateReminders}
           class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors font-medium"
           >🤖 {$_("paymentReminders.createAutomatic")}</button
@@ -361,12 +364,14 @@
               >
               <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900"
                 >{#if reminder.owner_name}<a
+                    data-testid="payment-reminder-owner-name-link"
                     href="/owners/{reminder.owner_id}"
                     class="text-primary-600 hover:text-primary-700"
                     >{reminder.owner_name}</a
                   >{#if reminder.owner_email}<br /><span
                       class="text-xs text-gray-500">{reminder.owner_email}</span
                     >{/if}{:else}<a
+                    data-testid="payment-reminder-owner-id-link"
                     href="/owners/{reminder.owner_id}"
                     class="text-primary-600 hover:text-primary-700"
                     >Propriétaire #{reminder.owner_id.substring(0, 8)}</a

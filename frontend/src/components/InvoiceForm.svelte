@@ -326,6 +326,7 @@
   {/if}
 
   <form
+    data-testid="invoice-form"
     onsubmit={(e: Event) => {
       e.preventDefault();
       handleSubmit();
@@ -382,7 +383,12 @@
 
       <div class="form-group">
         <label for="accountCode">{$_("invoices.account_code")}</label>
-        <select id="accountCode" bind:value={accountCode} disabled={loading}>
+        <select
+          data-testid="invoice-form-account-code-select"
+          id="accountCode"
+          bind:value={accountCode}
+          disabled={loading}
+        >
           <option value="">{$_("invoices.select_account")}</option>
           {#each accounts as account}
             <option value={account.code}>
@@ -456,7 +462,12 @@
 
       <div class="form-group">
         <label for="accountCode">{$_("invoices.account_code")}</label>
-        <select id="accountCode" bind:value={accountCode} disabled={loading}>
+        <select
+          data-testid="invoice-form-account-code-alt-select"
+          id="accountCode"
+          bind:value={accountCode}
+          disabled={loading}
+        >
           <option value="">{$_("invoices.select_account")}</option>
           {#each accounts as account}
             <option value={account.code}>
@@ -505,6 +516,7 @@
       <div class="form-group">
         <label for="supplier">{$_("invoices.supplier")}</label>
         <input
+          data-testid="invoice-form-supplier-input"
           type="text"
           id="supplier"
           bind:value={supplier}
@@ -516,6 +528,7 @@
       <div class="form-group">
         <label for="invoiceNumber">{$_("invoices.invoice_number")}</label>
         <input
+          data-testid="invoice-form-number-input"
           type="text"
           id="invoiceNumber"
           bind:value={invoiceNumber}

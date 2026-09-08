@@ -95,6 +95,7 @@
   title={$_("payments.addMethodTitle")}
 >
   <form
+    data-testid="payment-method-add-form"
     onsubmit={(e) => {
       e.preventDefault();
       handleSubmit();

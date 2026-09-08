@@ -184,6 +184,7 @@
   {/if}
 
   <form
+    data-testid="journal-entry-form"
     onsubmit={(e: Event) => {
       e.preventDefault();
       handleSubmit();
@@ -285,6 +286,7 @@
                     class="sr-only">{$_("journal.account")}</label
                   >
                   <input
+                    data-testid="journal-line-account-code-input"
                     id={`journal-line-${index}-account-code`}
                     type="text"
                     bind:value={line.accountCode}
@@ -299,6 +301,7 @@
                     class="sr-only">{$_("journal.description")}</label
                   >
                   <input
+                    data-testid="journal-line-description-input"
                     id={`journal-line-${index}-description`}
                     type="text"
                     bind:value={line.description}
@@ -311,6 +314,7 @@
                     >{$_("journal.debit")}</label
                   >
                   <input
+                    data-testid="journal-line-debit-input"
                     id={`journal-line-${index}-debit`}
                     type="number"
                     bind:value={line.debit}
@@ -326,6 +330,7 @@
                     >{$_("journal.credit")}</label
                   >
                   <input
+                    data-testid="journal-line-credit-input"
                     id={`journal-line-${index}-credit`}
                     type="number"
                     bind:value={line.credit}
