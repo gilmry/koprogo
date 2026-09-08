@@ -116,6 +116,14 @@ impl ChargeDistributionUseCases {
             return Err("No active unit-owner relationships found for this building".to_string());
         }
 
+        // Relevé AVANT le calcul, qui consomme `unit_ownerships` : ce sont les
+        // deux nombres qui disent pourquoi une répartition ne couvre pas.
+        let lots_detenus: std::collections::HashSet<Uuid> = unit_ownerships
+            .iter()
+            .map(|(unit_id, _, _)| *unit_id)
+            .collect();
+        let somme_des_parts: Decimal = unit_ownerships.iter().map(|(_, _, part)| *part).sum();
+
         // 5. Calculer les distributions
         let distributions =
             ChargeDistribution::calculate_distributions(expense_id, total_amount, unit_ownerships)?;
@@ -126,7 +134,16 @@ impl ChargeDistributionUseCases {
         // troisième garde-fou dormant de ce module, après `resolve_owner_quota`
         // et `expense_has_journal_entries`.
         //
-        // Ce qu'il rattrape concrètement : la base de tantièmes est stockée
+        // Ce qu'il rattrape le plus souvent : des lots SANS DÉTENTEUR ACTIF.
+        // `find_active_quota_shares_by_building` ne renvoie que les lots
+        // détenus ; la quote-part des autres n'est réclamée à personne et la
+        // somme tombe sous 1. Un immeuble de douze lots dont un seul est
+        // rattaché répartit un douzième de la charge. Le message le dit
+        // maintenant, avec la somme des parts et le nombre de lots — il
+        // n'accusait auparavant que la seconde cause, envoyant vérifier des
+        // tantièmes parfaitement corrects.
+        //
+        // Ce qu'il rattrape aussi : la base de tantièmes est stockée
         // DEUX FOIS — `acps.total_tantiemes`, qui fonde le contrôle de
         // conformité, et `buildings.total_tantiemes`, qui fonde le calcul des
         // quotes-parts. Les deux sont saisissables séparément par un
@@ -139,12 +156,22 @@ impl ChargeDistributionUseCases {
         if !ChargeDistribution::verify_distribution(&distributions, total_amount) {
             let reparti = ChargeDistribution::total_distributed(&distributions);
             return Err(format!(
-                "Distribution does not cover the charge: {} distributed for {} due \
-                 (delta {}). Check that the ACP base (acps.total_tantiemes) and the \
-                 building base (buildings.total_tantiemes) agree.",
-                reparti,
-                total_amount,
-                reparti - total_amount,
+                "Distribution does not cover the charge: {reparti} distributed for \
+                 {total_amount} due (delta {delta}). La somme des quotes-parts \
+                 actives vaut {somme_des_parts} pour 1 attendu, répartie sur \
+                 {nb_lots} lot(s) détenu(s).\n\
+                 \n\
+                 Deux causes possibles, dans cet ordre de fréquence :\n\
+                 1. des lots sans détenteur actif — leur quote-part n'est alors \
+                 réclamée à personne, et la somme des parts tombe sous 1 ;\n\
+                 2. une divergence entre `acps.total_tantiemes` et \
+                 `buildings.total_tantiemes`, qui sont saisis séparément et que \
+                 rien ne tient ensemble.",
+                reparti = reparti,
+                total_amount = total_amount,
+                delta = reparti - total_amount,
+                somme_des_parts = somme_des_parts,
+                nb_lots = lots_detenus.len(),
             ));
         }
 
@@ -675,6 +702,26 @@ mod tests {
         assert!(
             err.contains("700"),
             "le message doit chiffrer ce qui a été réparti : {err}"
+        );
+        // Le message doit DIAGNOSTIQUER, pas seulement constater.
+        //
+        // Il n'accusait qu'une seule cause — la divergence entre
+        // `acps.total_tantiemes` et `buildings.total_tantiemes` — alors que la
+        // plus fréquente est ailleurs : des lots sans détenteur actif. Un
+        // immeuble de douze lots dont un seul est rattaché répartit un douzième
+        // de la charge, et le message envoyait vérifier des tantièmes
+        // parfaitement corrects. C'est exactement ce qui se passe dans
+        // `smoke/ChargeDistribution.spec.ts`, et j'ai commencé par regarder les
+        // tantièmes avant de comprendre.
+        assert!(
+            err.contains("0.70") && err.contains("2 lot"),
+            "le message doit donner la somme des parts et le nombre de lots \
+             détenus, qui sont ce qu'on peut vérifier : {err}"
+        );
+        assert!(
+            err.contains("sans détenteur actif"),
+            "le message doit nommer la cause la plus fréquente en premier : \
+             {err}"
         );
     }
 
