@@ -18,7 +18,7 @@
 #   - Audit complet    : docs/legal/audit_conformite.rst
 #
 # Dernière mise à jour : 2026-09-08
-# Score conformité : 37 conformes / 3 partiels / 1 manquant, sur 41 scénarios
+# Score conformité : 38 conformes / 3 partiels / 0 manquant, sur 41 scénarios
 #
 # Douze scénarios portaient `@manquant`. Ils ont été vérifiés un par un dans
 # le code, en deux passes (#837). ONZE étaient faux : neuf règles étaient
@@ -26,7 +26,8 @@
 # décisions qualifiées » — n'existe pas en droit belge. L'Art. 3.88 § 1
 # connaît 2/3, 4/5 et l'unanimité, et ce sont des MAJORITÉS, pas des quorums.
 #
-# Un seul `@manquant` subsiste : le plafond de trois ans du mandat de syndic.
+# Le dernier `@manquant` — le plafond de trois ans du mandat de syndic — a
+# été implémenté le 2026-09-08. Il ne reste que trois partiels.
 #
 # Chaque ligne conforme nomme désormais le module qui la satisfait. Ce n'est
 # pas une politesse : `garde_conformite_legale.rs` l'EXIGE et vérifie que le
@@ -237,12 +238,14 @@ Feature: Conformite Juridique Belge
 
   # --- Art. 3.89 : Syndic ---
 
-  @manquant @wip @copropriete
+  @conforme @corrige @wip @copropriete
   Scenario: [Art. 3.89] Mandat syndic maximum 3 ans
-    # Code   : NON IMPLÉMENTÉ — vérifié le 2026-09-08, c'est le SEUL @manquant
-    #          des douze qui le reste (#837).
-    # Ce qui existe : domain/copropriete/syndic_mandate.rs porte le mandat daté,
-    #          `covers`, `revoke`, `holder_at`. Aucun plafond de durée.
+    # Implémenté : domain/copropriete/syndic_mandate.rs — DUREE_MAXIMALE_JOURS,
+    #          `echeance_legale`, `est_expire_de_plein_droit`, et `revoke` qui
+    #          refuse une clôture datée au-delà des trois ans.
+    # Corrigé le 2026-09-08 : c'était le DERNIER @manquant des douze (#837).
+    #          Le registre légal exécuté le déclarait pourtant couvert, attesté
+    #          par un test qui ne disait rien du plafond (#847).
     # Piège    : `MAX_MANDATE_DURATION_DAYS = 365 * 5` dans mandate.rs ne contredit
     #          PAS cette règle. `MandateKind` y couvre Lawyer, Notary, Amo, Architect,
     #          Bet, Warden — les mandats de professionnels externes, pas celui du

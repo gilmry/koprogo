@@ -16,9 +16,38 @@
 // Cette entité rend le mandat explicite et daté. Elle n'enlève rien à
 // `Acp::organization_id`, qui reste la lecture rapide du mandataire courant.
 
-use chrono::{DateTime, Utc};
+use chrono::{DateTime, Duration, Utc};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
+
+/// La durée maximale d'un mandat de syndic, en jours.
+///
+/// ── Art. 3.89 § 1er, alinéa 2 ─────────────────────────────────────────────
+///
+/// > « Le syndic est désigné par le règlement de copropriété ou par une
+/// > décision de l'assemblée générale. **La durée de son mandat ne peut
+/// > excéder trois ans**, mais est renouvelable par décision expresse de
+/// > l'assemblée générale. »
+///
+/// Trois ans, et **renouvelable par décision EXPRESSE**. C'est cette dernière
+/// précision qui donne son sens au plafond : sans elle, un mandat se
+/// reconduirait tacitement et l'assemblée perdrait le seul rendez-vous où elle
+/// juge son mandataire. Le plafond n'est pas une formalité de durée, c'est un
+/// rendez-vous imposé.
+///
+/// ── Pourquoi 3 × 365 et non une arithmétique de calendrier ───────────────
+///
+/// Trois années civiles comptent une ou deux journées bissextiles selon la
+/// date de départ. Prendre 1095 jours donne un plafond LÉGÈREMENT plus court
+/// que trois années calendaires dans le cas bissextile — donc plus strict que
+/// la loi, jamais plus permissif. C'est le bon sens de l'arrondi pour une
+/// borne maximale : on ne dépasse pas par erreur de calcul.
+///
+/// Ne pas confondre avec `MAX_MANDATE_DURATION_DAYS = 365 * 5` de
+/// `mandate.rs` : celui-là borne les mandats de professionnels externes —
+/// avocat, notaire, architecte — et c'est une hygiène anti-abus, pas cet
+/// article. La confusion a déjà été faite (#837).
+pub const DUREE_MAXIMALE_JOURS: i64 = 3 * 365;
 
 /// Erreurs de validation d'un mandat de gestion.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -29,6 +58,8 @@ pub enum SyndicMandateError {
     AlreadyEnded,
     /// La révocation précède la prise d'effet.
     RevocationBeforeStart,
+    /// La fin proposée dépasse les trois ans de l'Art. 3.89 § 1er.
+    DureeExcedeTroisAns,
 }
 
 impl std::fmt::Display for SyndicMandateError {
@@ -41,6 +72,12 @@ impl std::fmt::Display for SyndicMandateError {
             Self::RevocationBeforeStart => {
                 write!(f, "Mandate cannot be revoked before it takes effect")
             }
+            Self::DureeExcedeTroisAns => write!(
+                f,
+                "La durée du mandat de syndic ne peut excéder trois ans \
+                 (Art. 3.89 § 1er). Il est renouvelable par décision expresse \
+                 de l'assemblée générale."
+            ),
         }
     }
 }
@@ -124,7 +161,31 @@ impl SyndicMandate {
         }
     }
 
+    /// L'échéance légale du mandat : trois ans après sa prise d'effet.
+    ///
+    /// Au-delà, le mandat est expiré de plein droit — l'assemblée doit l'avoir
+    /// renouvelé par décision expresse (Art. 3.89 § 1er).
+    pub fn echeance_legale(&self) -> DateTime<Utc> {
+        self.started_at + Duration::days(DUREE_MAXIMALE_JOURS)
+    }
+
+    /// Le mandat a-t-il dépassé ses trois ans à cette date ?
+    ///
+    /// Un mandat sans date de fin qui franchit son échéance N'EST PLUS
+    /// valable : le silence de l'assemblée ne le reconduit pas. C'est
+    /// précisément ce que le plafond empêche.
+    ///
+    /// Vrai aussi pour un mandat clos APRÈS son échéance : la clôture tardive
+    /// ne régularise pas la période excédentaire.
+    pub fn est_expire_de_plein_droit(&self, moment: DateTime<Utc>) -> bool {
+        moment >= self.echeance_legale()
+    }
+
     /// Met fin au mandat.
+    ///
+    /// Refuse une fin postérieure à l'échéance légale : dater la clôture d'un
+    /// mandat au-delà de ses trois ans reviendrait à écrire dans le registre
+    /// qu'il a couvert une période qu'il ne pouvait pas couvrir.
     pub fn revoke(
         &mut self,
         ended_at: DateTime<Utc>,
@@ -136,6 +197,9 @@ impl SyndicMandate {
         }
         if ended_at < self.started_at {
             return Err(SyndicMandateError::RevocationBeforeStart);
+        }
+        if ended_at > self.echeance_legale() {
+            return Err(SyndicMandateError::DureeExcedeTroisAns);
         }
         self.ended_at = Some(ended_at);
         self.revoked_by_meeting_id = revoked_by_meeting_id;
@@ -287,5 +351,71 @@ mod tests {
     #[test]
     fn edge_acp_sans_mandataire() {
         assert_eq!(SyndicMandate::holder_at(&[], Utc::now()), None);
+    }
+
+    // ── Art. 3.89 § 1er : la durée du mandat n'excède pas trois ans ────────
+    //
+    // Le registre légal déclarait cet article couvert et attesté par
+    // `happy_un_mandat_neuf_est_en_cours` — un test qui vérifie qu'un mandat
+    // de trente jours est en cours, et qui ne dit rien d'un plafond. Le
+    // plafond n'existait pas (#847, #837).
+    //
+    // Ces tests-ci attestent l'obligation elle-même, et leur nom le dit.
+
+    #[test]
+    fn happy_lecheance_legale_tombe_trois_ans_apres_la_prise_deffet() {
+        let m = mandat(0);
+        assert_eq!(
+            m.echeance_legale(),
+            m.started_at + Duration::days(DUREE_MAXIMALE_JOURS)
+        );
+    }
+
+    #[test]
+    fn security_un_mandat_de_plus_de_trois_ans_est_expire_de_plein_droit() {
+        // Le silence de l'assemblée ne reconduit pas : l'Art. 3.89 § 1er veut
+        // une décision EXPRESSE de renouvellement.
+        let m = mandat(DUREE_MAXIMALE_JOURS + 1);
+        assert!(
+            m.est_expire_de_plein_droit(Utc::now()),
+            "un mandat entamé il y a plus de trois ans doit être expiré, \
+             même si personne ne l'a clos"
+        );
+    }
+
+    #[test]
+    fn edge_un_mandat_de_trois_ans_moins_un_jour_court_encore() {
+        let m = mandat(DUREE_MAXIMALE_JOURS - 1);
+        assert!(!m.est_expire_de_plein_droit(Utc::now()));
+    }
+
+    #[test]
+    fn edge_le_jour_de_lecheance_le_mandat_est_expire() {
+        // Borne INCLUSE : « ne peut excéder trois ans » — le trois-millième
+        // quatre-vingt-quinzième jour est déjà de trop.
+        let m = mandat(DUREE_MAXIMALE_JOURS);
+        assert!(m.est_expire_de_plein_droit(Utc::now()));
+    }
+
+    #[test]
+    fn negative_une_cloture_datee_au_dela_des_trois_ans_est_refusee() {
+        // Dater la clôture au-delà de l'échéance reviendrait à écrire dans le
+        // registre que le mandat a couvert une période qu'il ne pouvait pas
+        // couvrir.
+        let mut m = mandat(10);
+        let trop_tard = m.echeance_legale() + Duration::days(1);
+        assert_eq!(
+            m.revoke(trop_tard, None, None),
+            Err(SyndicMandateError::DureeExcedeTroisAns)
+        );
+        assert!(m.is_active(), "le mandat refusé ne doit pas être clos");
+    }
+
+    #[test]
+    fn happy_une_cloture_dans_les_trois_ans_est_acceptee() {
+        let mut m = mandat(10);
+        let dans_les_temps = m.echeance_legale() - Duration::days(1);
+        assert!(m.revoke(dans_les_temps, None, None).is_ok());
+        assert!(!m.is_active());
     }
 }

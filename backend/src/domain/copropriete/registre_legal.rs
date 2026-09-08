@@ -160,7 +160,13 @@ pub const REGISTRE: &[InvariantLegal] = &[
         article: "Art. 3.89 § 1er",
         obligation: "Le mandat de syndic n'excède pas trois ans.",
         porte_par: "domain/copropriete/syndic_mandate.rs",
-        atteste_par: "syndic_mandate::tests::happy_un_mandat_neuf_est_en_cours",
+        // Le test cité jusqu'au 2026-09-08 était
+        // `happy_un_mandat_neuf_est_en_cours` : il vérifie qu'un mandat de
+        // trente jours est en cours, et ne dit RIEN d'un plafond de trois ans.
+        // Le plafond n'existait pas non plus. L'invariant se déclarait attesté
+        // par une preuve sans rapport (#847).
+        atteste_par:
+            "syndic_mandate::tests::security_un_mandat_de_plus_de_trois_ans_est_expire_de_plein_droit",
     },
     InvariantLegal {
         article: "Art. 3.89 § 5, 5°",
