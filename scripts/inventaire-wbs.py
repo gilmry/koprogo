@@ -46,8 +46,16 @@ sur les droits communautaires — le syndic peut-il réserver au nom de l'ACP
  ("S", "Gouvernance d'assemblée avancée", """Slice 4 de #556 : assemblée hybride, vote à distance authentifié fort,
 procès-verbal signé eIDAS, conseil de copropriété élu, commissaire aux
 comptes. C'est le track dont dépend la crédibilité juridique du produit
-au-delà du strict Art. 3.87.""",
-  [576,577,578,579,581,582,583]),
+au-delà du strict Art. 3.87.
+
+S'y ajoute depuis le 2026-09-08 un défaut qui, lui, porte sur le strict
+Art. 3.87 § 1er : **un lot détenu à deux ne peut jamais voter** (#848). La
+suspension du vote d'une indivision est implémentée et câblée au portique ;
+la désignation d'un représentant, qui est le remède prévu par la loi, n'existe
+nulle part — `is_voting_representative` n'est écrite par aucun code. Un couple
+propriétaire de son appartement ne peut voter à aucune assemblée, et une
+décision prise sans son vote est attaquable.""",
+  [576,577,578,579,581,582,583,848]),
 
  ("T", "Dette d'infrastructure de test", """Ce qui empêche la CI de dire la vérité. Les quatre jobs rouges en continu du
 2026-09-04 — `prettier`, le contrat OpenAPI, `oasdiff` et la suite BDD — sont

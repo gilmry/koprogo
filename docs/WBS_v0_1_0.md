@@ -556,7 +556,7 @@ Ces deux actes ne sont pas délégables : cf. `docs/governance/RESPONSABILITE.md
 
 ## Inventaire complet du périmètre 0.1.0
 
-**70 issues ouvertes** portent l'étiquette `release:0.1.0`. Elles sont
+**71 issues ouvertes** portent l'étiquette `release:0.1.0`. Elles sont
 toutes ci-dessous, sans exception : une issue du périmètre absente du WBS est
 une issue que personne ne planifie.
 
@@ -567,7 +567,7 @@ cinq jours.
 
 | Priorité | Nombre |
 |---|---|
-| critical | 6 |
+| critical | 7 |
 | high | 24 |
 | medium | 18 |
 | — | 22 |
@@ -665,15 +665,24 @@ sur les droits communautaires — le syndic peut-il réserver au nom de l'ACP
 | #591 | — | [Story 5.7] Onboarding modulaire wizard ≤ 5 min |
 | #592 | — | [Story 5.8] Gate CI a11y axe-core + data-testid + Lighthouse |
 
-### Track S — Gouvernance d'assemblée avancée (7)
+### Track S — Gouvernance d'assemblée avancée (8)
 
 Slice 4 de #556 : assemblée hybride, vote à distance authentifié fort,
 procès-verbal signé eIDAS, conseil de copropriété élu, commissaire aux
 comptes. C'est le track dont dépend la crédibilité juridique du produit
 au-delà du strict Art. 3.87.
 
+S'y ajoute depuis le 2026-09-08 un défaut qui, lui, porte sur le strict
+Art. 3.87 § 1er : **un lot détenu à deux ne peut jamais voter** (#848). La
+suspension du vote d'une indivision est implémentée et câblée au portique ;
+la désignation d'un représentant, qui est le remède prévu par la loi, n'existe
+nulle part — `is_voting_representative` n'est écrite par aucun code. Un couple
+propriétaire de son appartement ne peut voter à aucune assemblée, et une
+décision prise sans son vote est attaquable.
+
 | Issue | Prio | Intitulé |
 |---|---|---|
+| #848 | critical | Un lot détenu à deux ne peut jamais voter : la suspension de l'Art. 3.87 § 1er est appliquée, sa le… |
 | #576 | — | [Story 4.1] [cluster-coord] Meeting.mode hybrid + quorum agrégé Decimal |
 | #577 | — | [Story 4.2] Vote distant auth_method strong (itsme/eID) — closes #48 |
 | #578 | — | [Story 4.3] Minutes (PV) + 2 signatures eIDAS qualifiées |
