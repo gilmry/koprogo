@@ -460,7 +460,8 @@
     "start": "Démarrer",
     "finish": "Terminer",
     "warning": "Attention :",
-    "councilRole": "Rôle du conseil :"
+    "councilRole": "Rôle du conseil :",
+    "loadingDashboard": "Chargement du tableau de bord…"
   },
   "bookings": {
     "bookResource": "Réserver {name}",
@@ -525,7 +526,10 @@
     "loadResourcesFailed": "Impossible de charger les ressources réservables.",
     "endLabel": "Fin",
     "specialRequests": "Demandes particulières",
-    "needsApproval": "Cette ressource demande l'accord du syndic avant confirmation."
+    "needsApproval": "Cette ressource demande l'accord du syndic avant confirmation.",
+    "bookThis": "Réserver cette ressource",
+    "available": "Disponible",
+    "requiresApproval": "Accord du syndic requis"
   },
   "budgets": {
     "actions": {
@@ -981,7 +985,10 @@
     "createdOnShort": "Créée le",
     "errorLabel": "Erreur :",
     "expiryDate": "Date d'expiration",
-    "continue": "Continuer"
+    "continue": "Continuer",
+    "dashboard": "Tableau de bord",
+    "seeLabel": "Voir",
+    "checkingAccess": "Vérification des accès…"
   },
   "common.error.loadData": "Erreur lors du chargement des données",
   "common.error.loadStats": "Erreur lors du chargement des statistiques",
@@ -2502,7 +2509,8 @@
     "dateTime": "Date et heure",
     "convocationImpossible": "Convocation impossible dans les délais.",
     "convocationTooShort": "L'Art. 3.87 § 3 impose quinze jours de préavis : la convocation aurait dû partir le {date}. Reculez l'assemblée de {jours} jour(s), ou convoquez dans l'urgence — le texte le prévoit.",
-    "legalBasis": "(Art. 3.87 § 3)"
+    "legalBasis": "(Art. 3.87 § 3)",
+    "newMeetingShort": "Nouvelle assemblée"
   },
   "navigation": {
     "accounting": "Comptabilité",
@@ -2742,7 +2750,8 @@
     "type_ticket_updates": "Mise à jour de ticket",
     "unread": "Non lues",
     "update_preference_failed": "Erreur lors de la mise à jour",
-    "viewAll": "Voir toutes les notifications"
+    "viewAll": "Voir toutes les notifications",
+    "loading": "Chargement des notifications…"
   },
   "owners": {
     "action": {
@@ -3009,7 +3018,7 @@
   "polls": {
     "addOption": "Ajouter une option",
     "alreadyVoted": "Vous avez déjà voté pour ce sondage",
-    "anonymous": "Vote anonyme",
+    "anonymous": "Anonyme",
     "close": "Clôturer",
     "create": "Créer un sondage",
     "createError": "Erreur lors de la création du sondage",
@@ -3144,7 +3153,9 @@
     "vote": "Voter",
     "voteError": "Erreur lors du vote",
     "voteSuccess": "Vote enregistré avec succès",
-    "votes": "votes"
+    "votes": "votes",
+    "yourAnswer": "Votre réponse",
+    "shareOpinion": "Partagez votre avis, vos suggestions ou vos remarques."
   },
   "polls.results.averageRating": "Note moyenne",
   "polls.results.legalFramework": "Cadre légal",
@@ -3608,7 +3619,11 @@
     "startDate": "Date de début",
     "expectedReturn": "Date de retour prévue",
     "notesOptional": "Notes (facultatif)",
-    "usageInstructions": "Instructions d'utilisation :"
+    "usageInstructions": "Instructions d'utilisation :",
+    "requestToBorrow": "Demander à emprunter",
+    "unavailableNow": "Cet objet n'est pas disponible pour le moment.",
+    "availability": "Disponibilité",
+    "loading": "Chargement des objets partagés…"
   },
   "skills": {
     "availability": "Disponibilité",
@@ -3665,7 +3680,10 @@
     "expertiseLabel": "Niveau",
     "allLevels": "Tous les niveaux",
     "empty": "Aucune compétence proposée pour le moment.",
-    "loadFailed": "Impossible de charger les compétences proposées."
+    "loadFailed": "Impossible de charger les compétences proposées.",
+    "professional": "Professionnel",
+    "unavailable": "Indisponible",
+    "loading": "Chargement des compétences…"
   },
   "sync": {
     "ariaLabel": "Synchroniser les données",
@@ -3831,7 +3849,10 @@
     "missingEvidence": "Preuves manquantes — votre dossier est plus solide avec des photos, une date, des vidéos ou des témoins. Vous pouvez tout de même soumettre la plainte.",
     "respondTitle": "Répondre au ticket",
     "proposedAction": "Action proposée (facultatif)",
-    "noAction": "— Aucune action —"
+    "noAction": "— Aucune action —",
+    "evidence": "Preuves (photos, vidéos, PDF)",
+    "witnesses": "Témoins",
+    "cannotBeOwnWitness": "Vous ne pouvez pas vous désigner comme témoin de votre propre plainte."
   },
   "units": {
     "acp": "ACP",
@@ -4032,7 +4053,8 @@
     "newEval": "Nouvelle évaluation",
     "evaluationsEmpty": "Aucune évaluation enregistrée pour le moment.",
     "seeReputation": "Voir la réputation",
-    "evaluationsEmptySession": "Aucune évaluation enregistrée dans cette session. Consultez la page « Réputation du prestataire » pour l'historique complet."
+    "evaluationsEmptySession": "Aucune évaluation enregistrée dans cette session. Consultez la page « Réputation du prestataire » pour l'historique complet.",
+    "loadingReputation": "Chargement de la réputation…"
   },
   "magicLink": {
     "issued": "Lien émis",
@@ -4080,7 +4102,10 @@
     "signTitle": "Signer cette fiche technique",
     "signingAs": "Vous signez en tant que",
     "noMandate": "Aucun mandat",
-    "noMandateHint": "actif. Demandez au syndic d'émettre un mandat avant de signer."
+    "noMandateHint": "actif. Demandez au syndic d'émettre un mandat avant de signer.",
+    "notFound": "Fiche technique introuvable, ou accès refusé.",
+    "versionHistory": "Historique des versions",
+    "noVersion": "Aucune version pour cette fiche."
   },
   "acps": {
     "pageTitle": "Associations de Copropriétaires (ACP)",
@@ -4111,5 +4136,15 @@
     "rolesHint": "Définissez un ou plusieurs rôles. Un seul doit être marqué comme principal.",
     "noOrgForSuperadmin": "Un superadministrateur n'est rattaché à aucune organisation.",
     "primaryRole": "Rôle principal"
+  },
+  "storage": {
+    "provider": "Fournisseur",
+    "operation": "Opération",
+    "success": "Réussies",
+    "errors": "Échecs",
+    "avgDuration": "Durée moyenne"
+  },
+  "mandates": {
+    "revoked": "Révoqué"
   }
 }

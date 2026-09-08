@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { _ } from "../../i18n";
   // Story B5 (Phase B FE) — EvidenceUpload (drag&drop, multi-fichiers).
   //
   // Réutilisé par :
@@ -265,7 +266,7 @@
       for="ticket-evidence-file-input"
       class="block text-sm font-medium text-gray-700"
     >
-      Preuves (photos, vidéos, PDF)
+      {$_('tickets.evidence')}
     </label>
     <span
       data-testid="ticket-evidence-count"

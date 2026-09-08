@@ -460,7 +460,8 @@
     "start": "Starten",
     "finish": "Abschließen",
     "warning": "Achtung:",
-    "councilRole": "Rolle des Beirats:"
+    "councilRole": "Rolle des Beirats:",
+    "loadingDashboard": "Übersicht wird geladen…"
   },
   "bookings": {
     "bookResource": "{name} reservieren",
@@ -525,7 +526,10 @@
     "loadResourcesFailed": "Buchbare Ressourcen konnten nicht geladen werden.",
     "endLabel": "Ende",
     "specialRequests": "Besondere Wünsche",
-    "needsApproval": "Diese Ressource erfordert vor der Bestätigung die Zustimmung des Verwalters."
+    "needsApproval": "Diese Ressource erfordert vor der Bestätigung die Zustimmung des Verwalters.",
+    "bookThis": "Diese Ressource buchen",
+    "available": "Verfügbar",
+    "requiresApproval": "Zustimmung des Verwalters erforderlich"
   },
   "budgets": {
     "actions": {
@@ -981,7 +985,10 @@
     "createdOnShort": "Erstellt am",
     "errorLabel": "Fehler:",
     "expiryDate": "Ablaufdatum",
-    "continue": "Fortfahren"
+    "continue": "Fortfahren",
+    "dashboard": "Übersicht",
+    "seeLabel": "Ansehen",
+    "checkingAccess": "Zugriff wird geprüft…"
   },
   "common.error.loadData": "Fehler beim Laden der Daten",
   "common.error.loadStats": "Fehler beim Laden der Statistiken",
@@ -2502,7 +2509,8 @@
     "dateTime": "Datum und Uhrzeit",
     "convocationImpossible": "Eine fristgerechte Einberufung ist nicht möglich.",
     "convocationTooShort": "Art. 3.87 § 3 verlangt fünfzehn Tage Vorlauf: die Einberufung hätte am {date} versandt werden müssen. Verschieben Sie die Versammlung um {jours} Tag(e) oder berufen Sie dringend ein — das Gesetz sieht das vor.",
-    "legalBasis": "(Art. 3.87 § 3)"
+    "legalBasis": "(Art. 3.87 § 3)",
+    "newMeetingShort": "Neue Versammlung"
   },
   "navigation": {
     "accounting": "Buchhaltung",
@@ -2742,7 +2750,8 @@
     "type_ticket_updates": "Ticket-Update",
     "unread": "Ungelesen",
     "update_preference_failed": "Fehler beim Aktualisieren der Einstellung",
-    "viewAll": "Alle Benachrichtigungen anzeigen"
+    "viewAll": "Alle Benachrichtigungen anzeigen",
+    "loading": "Benachrichtigungen werden geladen…"
   },
   "owners": {
     "action": {
@@ -3009,7 +3018,7 @@
   "polls": {
     "addOption": "Option hinzufügen",
     "alreadyVoted": "Sie haben bereits an dieser Umfrage teilgenommen",
-    "anonymous": "Anonyme Abstimmung",
+    "anonymous": "Anonym",
     "close": "Schließen",
     "create": "Umfrage erstellen",
     "createError": "Fehler beim Erstellen der Umfrage",
@@ -3144,7 +3153,9 @@
     "vote": "Abstimmen",
     "voteError": "Fehler bei der Abstimmung",
     "voteSuccess": "Stimme erfolgreich abgegeben",
-    "votes": "Stimmen"
+    "votes": "Stimmen",
+    "yourAnswer": "Ihre Antwort",
+    "shareOpinion": "Teilen Sie Ihre Meinung, Vorschläge oder Anmerkungen."
   },
   "polls.results.averageRating": "Durchschnittliche Bewertung",
   "polls.results.legalFramework": "Rechtlicher Rahmen",
@@ -3608,7 +3619,11 @@
     "startDate": "Startdatum",
     "expectedReturn": "Voraussichtliches Rückgabedatum",
     "notesOptional": "Notizen (optional)",
-    "usageInstructions": "Gebrauchsanweisung:"
+    "usageInstructions": "Gebrauchsanweisung:",
+    "requestToBorrow": "Ausleihe anfragen",
+    "unavailableNow": "Dieser Gegenstand ist derzeit nicht verfügbar.",
+    "availability": "Verfügbarkeit",
+    "loading": "Geteilte Gegenstände werden geladen…"
   },
   "skills": {
     "availability": "Verfügbarkeit",
@@ -3665,7 +3680,10 @@
     "expertiseLabel": "Niveau",
     "allLevels": "Alle Niveaus",
     "empty": "Noch keine Kompetenzen angeboten.",
-    "loadFailed": "Kompetenzangebote konnten nicht geladen werden."
+    "loadFailed": "Kompetenzangebote konnten nicht geladen werden.",
+    "professional": "Beruflich",
+    "unavailable": "Nicht verfügbar",
+    "loading": "Kompetenzen werden geladen…"
   },
   "sync": {
     "ariaLabel": "Daten synchronisieren",
@@ -3831,7 +3849,10 @@
     "missingEvidence": "Fehlende Nachweise — Ihr Vorgang ist mit Fotos, einem Datum, Videos oder Zeugen belastbarer. Sie können die Beschwerde dennoch einreichen.",
     "respondTitle": "Auf das Ticket antworten",
     "proposedAction": "Vorgeschlagene Maßnahme (optional)",
-    "noAction": "— Keine Maßnahme —"
+    "noAction": "— Keine Maßnahme —",
+    "evidence": "Nachweise (Fotos, Videos, PDF)",
+    "witnesses": "Zeugen",
+    "cannotBeOwnWitness": "Sie können sich nicht als Zeuge Ihrer eigenen Beschwerde angeben."
   },
   "units": {
     "acp": "ACP",
@@ -4032,7 +4053,8 @@
     "newEval": "Neue Bewertung",
     "evaluationsEmpty": "Noch keine Bewertung erfasst.",
     "seeReputation": "Reputation ansehen",
-    "evaluationsEmptySession": "In dieser Sitzung wurde keine Bewertung erfasst. Die vollständige Historie finden Sie auf der Seite „Reputation des Dienstleisters“."
+    "evaluationsEmptySession": "In dieser Sitzung wurde keine Bewertung erfasst. Die vollständige Historie finden Sie auf der Seite „Reputation des Dienstleisters“.",
+    "loadingReputation": "Reputation wird geladen…"
   },
   "magicLink": {
     "issued": "Link erstellt",
@@ -4080,7 +4102,10 @@
     "signTitle": "Dieses technische Datenblatt unterschreiben",
     "signingAs": "Sie unterschreiben als",
     "noMandate": "Kein Mandat",
-    "noMandateHint": "aktiv. Bitten Sie den Verwalter, vor der Unterschrift ein Mandat auszustellen."
+    "noMandateHint": "aktiv. Bitten Sie den Verwalter, vor der Unterschrift ein Mandat auszustellen.",
+    "notFound": "Technisches Datenblatt nicht gefunden oder Zugriff verweigert.",
+    "versionHistory": "Versionsverlauf",
+    "noVersion": "Keine Version für dieses Datenblatt."
   },
   "acps": {
     "pageTitle": "Wohnungseigentümergemeinschaften (WEG)",
@@ -4111,5 +4136,15 @@
     "rolesHint": "Definieren Sie eine oder mehrere Rollen. Genau eine muss als Hauptrolle markiert sein.",
     "noOrgForSuperadmin": "Ein Superadministrator ist keiner Organisation zugeordnet.",
     "primaryRole": "Hauptrolle"
+  },
+  "storage": {
+    "provider": "Anbieter",
+    "operation": "Vorgang",
+    "success": "Erfolgreich",
+    "errors": "Fehlgeschlagen",
+    "avgDuration": "Durchschnittsdauer"
+  },
+  "mandates": {
+    "revoked": "Widerrufen"
   }
 }

@@ -51,7 +51,7 @@
   <div class="px-6 py-4 border-b border-gray-200">
     <div class="flex items-center justify-between mb-4">
       <h2 class="text-xl font-semibold text-gray-900">
-        Notifications
+        {$_('notifications.title')}
         <span class="ml-2 text-sm text-gray-500">
           ({notifications.length})
         </span>
@@ -104,7 +104,7 @@
           class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"
           data-testid="notification-list-spinner"
         ></div>
-        <p class="mt-4">Loading notifications...</p>
+        <p class="mt-4">{$_('notifications.loading')}</p>
       </div>
     {:else if notifications.length === 0}
       <div class="px-6 py-12 text-center text-gray-500">

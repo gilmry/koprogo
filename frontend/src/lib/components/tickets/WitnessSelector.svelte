@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { _ } from "../../i18n";
   // Story B5 (Phase B FE) — WitnessSelector (chip-input + autocomplete).
   //
   // Réutilisé par :
@@ -114,7 +115,7 @@
       for="ticket-witness-search"
       class="block text-sm font-medium text-gray-700"
     >
-      Témoins
+      {$_('tickets.witnesses')}
     </label>
     <span
       data-testid="ticket-witness-count"
@@ -150,7 +151,7 @@
       class="text-xs text-orange-700"
       role="note"
     >
-      Vous ne pouvez pas vous lister comme témoin de votre propre plainte.
+      {$_('tickets.cannotBeOwnWitness')}
     </p>
   {/if}
 

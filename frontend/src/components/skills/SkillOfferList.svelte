@@ -127,7 +127,7 @@
 
   <!-- Offers Grid -->
   {#if loading}
-    <div class="text-center py-12 text-gray-500">Loading skill offers...</div>
+    <div class="text-center py-12 text-gray-500">{$_('skills.loading')}</div>
   {:else if filteredOffers.length === 0}
     <div class="bg-white shadow rounded-lg p-12 text-center">
       <p class="text-gray-500">

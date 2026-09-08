@@ -21,6 +21,8 @@
   import { ticketsApi } from "../../api/tickets";
   import MagicLinkIssueForm from "./MagicLinkIssueForm.svelte";
 
+  import { _ } from "../../i18n";
+
   type UserOption = { id: string; label: string };
   type ScopeIdOption = { id: string; label: string };
 
@@ -76,7 +78,7 @@
 
 {#if loading}
   <p class="text-sm text-gray-500" role="status" aria-live="polite">
-    Chargement…
+    {$_('common.loading2')}
   </p>
 {:else}
   <MagicLinkIssueForm {users} {scopeIdsByKind} {currentUserId} />

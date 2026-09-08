@@ -1,6 +1,7 @@
 <script lang="ts">
   import { authStore } from '../stores/auth';
   import { canAccessRoute, getDefaultRedirect, isPublicRoute } from '../lib/guards';
+  import { _ } from "../lib/i18n";
 
   // Get current route from window.location
   let currentRoute = $state('');
@@ -89,9 +90,9 @@
   <div class="fixed inset-0 bg-white z-50 flex items-center justify-center">
     <div class="text-center">
       <div class="inline-block h-12 w-12 animate-spin rounded-full border-4 border-solid border-primary-600 border-r-transparent align-[-0.125em] motion-reduce:animate-[spin_1.5s_linear_infinite]" role="status">
-        <span class="sr-only">Vérification des accès...</span>
+        <span class="sr-only">{$_('common.checkingAccess')}</span>
       </div>
-      <p class="mt-4 text-gray-600 text-sm">Vérification des accès...</p>
+      <p class="mt-4 text-gray-600 text-sm">{$_('common.checkingAccess')}</p>
     </div>
   </div>
 {/if}

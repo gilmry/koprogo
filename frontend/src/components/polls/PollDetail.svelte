@@ -221,7 +221,7 @@
               <span
                 class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-200 text-gray-700"
               >
-                🔒 Anonyme
+                {$_('polls.anonymous')}
               </span>
             {/if}
           </div>
@@ -367,7 +367,7 @@
           </div>
         {:else if poll.poll_type === PollType.OpenEnded}
           <div>
-            <label for="poll-open-ended-response" class="sr-only">Votre réponse</label>
+            <label for="poll-open-ended-response" class="sr-only">{$_('polls.yourAnswer')}</label>
             <textarea
               id="poll-open-ended-response"
               bind:value={openEndedText}
@@ -376,7 +376,7 @@
               class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
             ></textarea>
             <p class="mt-1 text-xs text-gray-500">
-              Partagez votre avis, suggestions ou commentaires.
+              {$_('polls.shareOpinion')}
             </p>
           </div>
         {/if}

@@ -34,6 +34,8 @@
   import TechnicalSpecCreate from "./TechnicalSpecCreate.svelte";
   import TechnicalSpecVersionTimeline from "./TechnicalSpecVersionTimeline.svelte";
 
+  import { _ } from "../../i18n";
+
   let spec = $state<TechnicalSpecDto | null>(null);
   let signatures = $state<TechnicalSpecSignatureDto[]>([]);
   let historyVersions = $state<TechnicalSpecDto[]>([]);
@@ -182,7 +184,7 @@
 
 {#if loading}
   <p class="text-sm text-gray-500" role="status" aria-live="polite">
-    Chargement…
+    {$_('common.loading2')}
   </p>
 {:else if notFound}
   <div
@@ -190,7 +192,7 @@
     data-testid="tech-spec-not-found"
     role="alert"
   >
-    Fiche technique introuvable ou accès refusé.
+    {$_('technicalSpecs.notFound')}
   </div>
 {:else if spec}
   <div class="flex flex-col gap-6 lg:flex-row">

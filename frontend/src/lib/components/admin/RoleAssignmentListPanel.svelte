@@ -12,6 +12,8 @@
   import RoleAssignmentForm from "./RoleAssignmentForm.svelte";
   import RoleAssignmentList from "./RoleAssignmentList.svelte";
 
+  import { _ } from "../../i18n";
+
   let isFormOpen = $state(false);
   let refreshTrigger = $state(0);
 
@@ -51,7 +53,7 @@
           d="M12 4v16m8-8H4"
         />
       </svg>
-      Nouvelle assignation
+      {$_('roles.newAssignment')}
     </button>
   </div>
 

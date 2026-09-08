@@ -273,7 +273,7 @@
                 href="/board-dashboard?building_id={member.building_id}"
                 class="flex-1 px-3 py-2 bg-primary-50 text-primary-700 rounded hover:bg-primary-100 transition text-sm font-medium text-center"
               >
-                📊 Dashboard
+                {$_('common.dashboard')}
               </a>
             </div>
           </div>

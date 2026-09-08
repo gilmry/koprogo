@@ -19,6 +19,8 @@
 
   import type { TechnicalSpecDto } from "../../api/technical_specs";
 
+  import { _ } from "../../i18n";
+
   // ---------------------------------------------------------------------------
   // Props
   // ---------------------------------------------------------------------------
@@ -107,12 +109,12 @@
     id="tech-spec-timeline-title"
     class="text-sm font-semibold text-gray-800"
   >
-    Historique des versions
+    {$_('technicalSpecs.versionHistory')}
   </h3>
 
   {#if sorted.length === 0}
     <p class="text-xs text-gray-500" data-testid="tech-spec-timeline-empty">
-      Aucune version pour cette spec.
+      {$_('technicalSpecs.noVersion')}
     </p>
   {:else}
     <ol
@@ -173,7 +175,7 @@
               onclick={() => onSelect?.(spec)}
               aria-label={`Voir la version ${spec.version}`}
             >
-              Voir
+              {$_('common.seeLabel')}
             </button>
           {/if}
         </li>

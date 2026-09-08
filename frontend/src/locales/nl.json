@@ -460,7 +460,8 @@
     "start": "Starten",
     "finish": "Beëindigen",
     "warning": "Let op:",
-    "councilRole": "Rol van de raad:"
+    "councilRole": "Rol van de raad:",
+    "loadingDashboard": "Dashboard laden…"
   },
   "bookings": {
     "bookResource": "{name} reserveren",
@@ -525,7 +526,10 @@
     "loadResourcesFailed": "Kan de reserveerbare voorzieningen niet laden.",
     "endLabel": "Einde",
     "specialRequests": "Bijzondere verzoeken",
-    "needsApproval": "Deze voorziening vereist de goedkeuring van de syndicus vóór bevestiging."
+    "needsApproval": "Deze voorziening vereist de goedkeuring van de syndicus vóór bevestiging.",
+    "bookThis": "Deze voorziening reserveren",
+    "available": "Beschikbaar",
+    "requiresApproval": "Goedkeuring syndicus vereist"
   },
   "budgets": {
     "actions": {
@@ -981,7 +985,10 @@
     "createdOnShort": "Aangemaakt op",
     "errorLabel": "Fout:",
     "expiryDate": "Vervaldatum",
-    "continue": "Doorgaan"
+    "continue": "Doorgaan",
+    "dashboard": "Dashboard",
+    "seeLabel": "Bekijken",
+    "checkingAccess": "Toegang controleren…"
   },
   "common.error.loadData": "Fout bij het laden van gegevens",
   "common.error.loadStats": "Fout bij het laden van statistieken",
@@ -2502,7 +2509,8 @@
     "dateTime": "Datum en tijd",
     "convocationImpossible": "Oproeping binnen de wettelijke termijn is onmogelijk.",
     "convocationTooShort": "Art. 3.87 § 3 vereist vijftien dagen opzegtermijn: de oproeping had op {date} moeten vertrekken. Verplaats de vergadering met {jours} dag(en), of roep dringend op — de wet voorziet dat.",
-    "legalBasis": "(art. 3.87 § 3)"
+    "legalBasis": "(art. 3.87 § 3)",
+    "newMeetingShort": "Nieuwe vergadering"
   },
   "navigation": {
     "accounting": "Boekhouding",
@@ -2742,7 +2750,8 @@
     "type_ticket_updates": "Ticketupdate",
     "unread": "Ongelezen",
     "update_preference_failed": "Fout bij bijwerken voorkeur",
-    "viewAll": "Alle meldingen bekijken"
+    "viewAll": "Alle meldingen bekijken",
+    "loading": "Meldingen laden…"
   },
   "owners": {
     "action": {
@@ -3009,7 +3018,7 @@
   "polls": {
     "addOption": "Optie toevoegen",
     "alreadyVoted": "U hebt al gestemd voor deze enquête",
-    "anonymous": "Anonieme stemming",
+    "anonymous": "Anoniem",
     "close": "Sluiten",
     "create": "Enquête aanmaken",
     "createError": "Fout bij het aanmaken van de enquête",
@@ -3144,7 +3153,9 @@
     "vote": "Stemmen",
     "voteError": "Fout bij het stemmen",
     "voteSuccess": "Stem succesvol geregistreerd",
-    "votes": "stemmen"
+    "votes": "stemmen",
+    "yourAnswer": "Uw antwoord",
+    "shareOpinion": "Deel uw mening, suggesties of opmerkingen."
   },
   "polls.results.averageRating": "Gemiddelde beoordeling",
   "polls.results.legalFramework": "Juridisch kader",
@@ -3608,7 +3619,11 @@
     "startDate": "Begindatum",
     "expectedReturn": "Verwachte retourdatum",
     "notesOptional": "Notities (optioneel)",
-    "usageInstructions": "Gebruiksaanwijzing:"
+    "usageInstructions": "Gebruiksaanwijzing:",
+    "requestToBorrow": "Aanvraag tot lenen",
+    "unavailableNow": "Dit voorwerp is momenteel niet beschikbaar.",
+    "availability": "Beschikbaarheid",
+    "loading": "Gedeelde voorwerpen laden…"
   },
   "skills": {
     "availability": "Beschikbaarheid",
@@ -3665,7 +3680,10 @@
     "expertiseLabel": "Niveau",
     "allLevels": "Alle niveaus",
     "empty": "Nog geen vaardigheden aangeboden.",
-    "loadFailed": "Kan het aanbod van vaardigheden niet laden."
+    "loadFailed": "Kan het aanbod van vaardigheden niet laden.",
+    "professional": "Professioneel",
+    "unavailable": "Niet beschikbaar",
+    "loading": "Vaardigheden laden…"
   },
   "sync": {
     "ariaLabel": "Gegevens synchroniseren",
@@ -3831,7 +3849,10 @@
     "missingEvidence": "Ontbrekend bewijs — uw dossier is sterker met foto's, een datum, video's of getuigen. U kunt de klacht toch indienen.",
     "respondTitle": "Antwoorden op het ticket",
     "proposedAction": "Voorgestelde actie (optioneel)",
-    "noAction": "— Geen actie —"
+    "noAction": "— Geen actie —",
+    "evidence": "Bewijs (foto's, video's, pdf)",
+    "witnesses": "Getuigen",
+    "cannotBeOwnWitness": "U kunt uzelf niet als getuige van uw eigen klacht opgeven."
   },
   "units": {
     "acp": "VME",
@@ -4032,7 +4053,8 @@
     "newEval": "Nieuwe beoordeling",
     "evaluationsEmpty": "Nog geen beoordeling geregistreerd.",
     "seeReputation": "Reputatie bekijken",
-    "evaluationsEmptySession": "Geen beoordeling geregistreerd in deze sessie. Raadpleeg de pagina “Reputatie van de dienstverlener” voor de volledige geschiedenis."
+    "evaluationsEmptySession": "Geen beoordeling geregistreerd in deze sessie. Raadpleeg de pagina “Reputatie van de dienstverlener” voor de volledige geschiedenis.",
+    "loadingReputation": "Reputatie laden…"
   },
   "magicLink": {
     "issued": "Link aangemaakt",
@@ -4080,7 +4102,10 @@
     "signTitle": "Deze technische fiche ondertekenen",
     "signingAs": "U ondertekent als",
     "noMandate": "Geen mandaat",
-    "noMandateHint": "actief. Vraag de syndicus een mandaat uit te reiken vóór ondertekening."
+    "noMandateHint": "actief. Vraag de syndicus een mandaat uit te reiken vóór ondertekening.",
+    "notFound": "Technische fiche niet gevonden, of toegang geweigerd.",
+    "versionHistory": "Versiegeschiedenis",
+    "noVersion": "Geen versie voor deze fiche."
   },
   "acps": {
     "pageTitle": "Verenigingen van Mede-eigenaars (VME)",
@@ -4111,5 +4136,15 @@
     "rolesHint": "Definieer een of meer rollen. Precies één moet als hoofdrol worden aangeduid.",
     "noOrgForSuperadmin": "Een superbeheerder is aan geen enkele organisatie gekoppeld.",
     "primaryRole": "Hoofdrol"
+  },
+  "storage": {
+    "provider": "Aanbieder",
+    "operation": "Bewerking",
+    "success": "Geslaagd",
+    "errors": "Mislukt",
+    "avgDuration": "Gemiddelde duur"
+  },
+  "mandates": {
+    "revoked": "Ingetrokken"
   }
 }

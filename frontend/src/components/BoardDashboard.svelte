@@ -83,12 +83,12 @@
     <div class="flex items-center justify-center min-h-screen">
       <div class="text-center">
         <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
-        <p class="mt-4 text-gray-600">Chargement du tableau de bord...</p>
+        <p class="mt-4 text-gray-600">{$_('board.loadingDashboard')}</p>
       </div>
     </div>
   {:else if error}
     <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded relative" role="alert">
-      <strong class="font-bold">Erreur :</strong>
+      <strong class="font-bold">{$_('common.errorLabel')}</strong>
       <span class="block sm:inline">{error}</span>
     </div>
   {:else if dashboard}

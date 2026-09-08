@@ -200,7 +200,7 @@
         {/each}
         <div class="mt-2 p-3 bg-gray-50 border border-gray-200 rounded-lg">
           <div class="flex justify-between items-center">
-            <span class="font-semibold text-gray-700">Total</span><span
+            <span class="font-semibold text-gray-700">{$_('common.total')}</span><span
               class="text-xl font-bold"
               class:text-green-600={totalPercentage === 1}
               class:text-red-600={totalPercentage !== 1}

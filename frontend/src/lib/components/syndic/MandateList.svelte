@@ -258,9 +258,9 @@
                     class="inline-flex items-center gap-1 rounded border bg-gray-200 text-gray-700 border-gray-300 px-2 py-1 text-xs font-medium"
                     data-testid={`mandate-expiration-badge-${m.id}`}
                     role="status"
-                    aria-label="Révoqué"
+                    aria-label={$_('mandates.revoked')}
                   >
-                    Révoqué
+                    {$_('mandates.revoked')}
                   </span>
                 {:else}
                   <ExpirationBadge

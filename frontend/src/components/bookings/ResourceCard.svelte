@@ -2,6 +2,7 @@
   // Svelte 5 runes mode
   import { type BookableResource } from "../../lib/api/bookings";
   import ResourceTypeBadge from "./ResourceTypeBadge.svelte";
+  import { _ } from "../../lib/i18n";
 
   let { resource, onClick }: {
     resource: BookableResource;
@@ -46,7 +47,7 @@
       </div>
       {#if resource.status === "Available"}
         <span class="bg-green-100 text-green-800 px-2 py-1 rounded text-xs font-medium">
-          ✅ Available
+          {$_('bookings.available')}
         </span>
       {:else}
         <span class="bg-red-100 text-red-800 px-2 py-1 rounded text-xs font-medium">
@@ -85,7 +86,7 @@
 
     {#if resource.requires_approval}
       <div class="mt-2 text-xs text-yellow-700 bg-yellow-50 px-2 py-1 rounded">
-        ⚠️ Requires approval
+        {$_('bookings.requiresApproval')}
       </div>
     {/if}
   </div>

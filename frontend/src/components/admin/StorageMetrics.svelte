@@ -219,11 +219,11 @@
         <table class="min-w-full text-sm">
           <thead>
             <tr class="text-left text-gray-500 uppercase text-xs tracking-wider">
-              <th scope="col" class="px-4 py-2">Provider</th>
-              <th scope="col" class="px-4 py-2">Operation</th>
-              <th scope="col" class="px-4 py-2">Success</th>
-              <th scope="col" class="px-4 py-2">Errors</th>
-              <th scope="col" class="px-4 py-2">Avg Duration</th>
+              <th scope="col" class="px-4 py-2">{$_('storage.provider')}</th>
+              <th scope="col" class="px-4 py-2">{$_('storage.operation')}</th>
+              <th scope="col" class="px-4 py-2">{$_('storage.success')}</th>
+              <th scope="col" class="px-4 py-2">{$_('storage.errors')}</th>
+              <th scope="col" class="px-4 py-2">{$_('storage.avgDuration')}</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-gray-100">

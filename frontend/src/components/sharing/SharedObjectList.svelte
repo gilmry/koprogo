@@ -75,7 +75,7 @@
         <!-- Search -->
         <div>
           <label for="search" class="block text-sm font-medium text-gray-700 mb-1">
-            Search
+            {$_('common.search')}
           </label>
           <input
             type="text"
@@ -106,7 +106,7 @@
         <!-- Availability Filter -->
         <div>
           <label for="availability" class="block text-sm font-medium text-gray-700 mb-1">
-            Availability
+            {$_('sharing.availability')}
           </label>
           <select
             id="availability"
@@ -124,7 +124,7 @@
 
   <!-- Objects Grid -->
   {#if loading}
-    <div class="text-center py-12 text-gray-500">Loading shared objects...</div>
+    <div class="text-center py-12 text-gray-500">{$_('sharing.loading')}</div>
   {:else if filteredObjects.length === 0}
     <div class="bg-white shadow rounded-lg p-12 text-center">
       <p class="text-gray-500">

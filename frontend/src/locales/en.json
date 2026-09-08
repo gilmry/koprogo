@@ -460,7 +460,8 @@
     "start": "Start",
     "finish": "Finish",
     "warning": "Warning:",
-    "councilRole": "Council's role:"
+    "councilRole": "Council's role:",
+    "loadingDashboard": "Loading dashboard…"
   },
   "bookings": {
     "bookResource": "Book {name}",
@@ -525,7 +526,10 @@
     "loadResourcesFailed": "Failed to load bookable resources.",
     "endLabel": "End",
     "specialRequests": "Special requests",
-    "needsApproval": "This resource requires the building manager's approval before confirmation."
+    "needsApproval": "This resource requires the building manager's approval before confirmation.",
+    "bookThis": "Book this resource",
+    "available": "Available",
+    "requiresApproval": "Manager's approval required"
   },
   "budgets": {
     "actions": {
@@ -981,7 +985,10 @@
     "createdOnShort": "Created on",
     "errorLabel": "Error:",
     "expiryDate": "Expiry date",
-    "continue": "Continue"
+    "continue": "Continue",
+    "dashboard": "Dashboard",
+    "seeLabel": "View",
+    "checkingAccess": "Checking access…"
   },
   "common.error.loadData": "Error loading data",
   "common.error.loadStats": "Error loading statistics",
@@ -2502,7 +2509,8 @@
     "dateTime": "Date and time",
     "convocationImpossible": "Convening within the legal deadline is impossible.",
     "convocationTooShort": "Art. 3.87 § 3 requires fifteen days' notice: the convocation should have been sent on {date}. Push the meeting back by {jours} day(s), or convene urgently — the law allows it.",
-    "legalBasis": "(Art. 3.87 § 3)"
+    "legalBasis": "(Art. 3.87 § 3)",
+    "newMeetingShort": "New meeting"
   },
   "navigation": {
     "accounting": "Accounting",
@@ -2742,7 +2750,8 @@
     "type_ticket_updates": "Ticket update",
     "unread": "Unread",
     "update_preference_failed": "Failed to update preference",
-    "viewAll": "View all notifications"
+    "viewAll": "View all notifications",
+    "loading": "Loading notifications…"
   },
   "owners": {
     "action": {
@@ -3009,7 +3018,7 @@
   "polls": {
     "addOption": "Add option",
     "alreadyVoted": "You have already voted on this poll",
-    "anonymous": "Anonymous vote",
+    "anonymous": "Anonymous",
     "close": "Close",
     "create": "Create Poll",
     "createError": "Error creating poll",
@@ -3144,7 +3153,9 @@
     "vote": "Vote",
     "voteError": "Error voting",
     "voteSuccess": "Vote recorded successfully",
-    "votes": "votes"
+    "votes": "votes",
+    "yourAnswer": "Your answer",
+    "shareOpinion": "Share your opinion, suggestions or remarks."
   },
   "polls.results.averageRating": "Average rating",
   "polls.results.legalFramework": "Legal framework",
@@ -3608,7 +3619,11 @@
     "startDate": "Start date",
     "expectedReturn": "Expected return date",
     "notesOptional": "Notes (optional)",
-    "usageInstructions": "Usage instructions:"
+    "usageInstructions": "Usage instructions:",
+    "requestToBorrow": "Request to borrow",
+    "unavailableNow": "This object is currently unavailable.",
+    "availability": "Availability",
+    "loading": "Loading shared objects…"
   },
   "skills": {
     "availability": "Availability",
@@ -3665,7 +3680,10 @@
     "expertiseLabel": "Expertise",
     "allLevels": "All levels",
     "empty": "No skill offers found.",
-    "loadFailed": "Failed to load skill offers."
+    "loadFailed": "Failed to load skill offers.",
+    "professional": "Professional",
+    "unavailable": "Unavailable",
+    "loading": "Loading skill offers…"
   },
   "sync": {
     "ariaLabel": "Synchronise data",
@@ -3831,7 +3849,10 @@
     "missingEvidence": "Missing evidence — your case is stronger with photos, a date, videos or witnesses. You may still submit the complaint.",
     "respondTitle": "Reply to the ticket",
     "proposedAction": "Proposed action (optional)",
-    "noAction": "— No action —"
+    "noAction": "— No action —",
+    "evidence": "Evidence (photos, videos, PDF)",
+    "witnesses": "Witnesses",
+    "cannotBeOwnWitness": "You cannot list yourself as a witness to your own complaint."
   },
   "units": {
     "acp": "ACP",
@@ -4032,7 +4053,8 @@
     "newEval": "New evaluation",
     "evaluationsEmpty": "No evaluation recorded yet.",
     "seeReputation": "View reputation",
-    "evaluationsEmptySession": "No evaluation recorded in this session. See the “Contractor reputation” page for the full history."
+    "evaluationsEmptySession": "No evaluation recorded in this session. See the “Contractor reputation” page for the full history.",
+    "loadingReputation": "Loading reputation…"
   },
   "magicLink": {
     "issued": "Link issued",
@@ -4080,7 +4102,10 @@
     "signTitle": "Sign this technical specification",
     "signingAs": "You are signing as",
     "noMandate": "No mandate",
-    "noMandateHint": "active. Ask the building manager to issue a mandate before signing."
+    "noMandateHint": "active. Ask the building manager to issue a mandate before signing.",
+    "notFound": "Technical specification not found, or access denied.",
+    "versionHistory": "Version history",
+    "noVersion": "No version for this specification."
   },
   "acps": {
     "pageTitle": "Co-ownership associations (ACP)",
@@ -4111,5 +4136,15 @@
     "rolesHint": "Define one or more roles. Exactly one must be marked as primary.",
     "noOrgForSuperadmin": "A superadmin is not attached to any organisation.",
     "primaryRole": "Primary role"
+  },
+  "storage": {
+    "provider": "Provider",
+    "operation": "Operation",
+    "success": "Successful",
+    "errors": "Failures",
+    "avgDuration": "Average duration"
+  },
+  "mandates": {
+    "revoked": "Revoked"
   }
 }

@@ -106,7 +106,7 @@
 
 {#if loading}
   <p class="text-sm text-gray-500" role="status" aria-live="polite">
-    Chargement…
+    {$_('common.loading2')}
   </p>
 {:else if initError}
   <p

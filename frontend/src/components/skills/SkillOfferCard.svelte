@@ -3,6 +3,7 @@
   import { type SkillOffer } from "../../lib/api/skills";
   import SkillCategoryBadge from "./SkillCategoryBadge.svelte";
   import ProficiencyBadge from "./ProficiencyBadge.svelte";
+  import { _ } from "../../lib/i18n";
 
   let { offer, onClick }: {
     offer: SkillOffer;
@@ -46,10 +47,10 @@
   <div class="flex items-center justify-between text-xs text-gray-500">
     <div class="flex items-center gap-3">
       {#if offer.is_professional}
-        <span class="text-purple-600 font-medium">Professional</span>
+        <span class="text-purple-600 font-medium">{$_('skills.professional')}</span>
       {/if}
       {#if !offer.is_available_for_help}
-        <span class="text-orange-600 font-medium">Unavailable</span>
+        <span class="text-orange-600 font-medium">{$_('skills.unavailable')}</span>
       {/if}
     </div>
   </div>
