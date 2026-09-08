@@ -21,7 +21,12 @@ import { join } from "node:path";
  *   - On ne peut pas les ouvrir sans retirer d'abord ces formulations : un
  *     projet `nl-BE` ferait échouer chaque spec qui cherche « Approuver ».
  *
- * Sur les 79 relevés, 72 visent un mot traduit — c'est la part qui tient les
+ * 79 au premier relevé, 78 après avoir étendu la garde à
+ * `filter({ hasText: ... })` — qui en ajoutait un — et corrigé les deux
+ * sélecteurs par libellé de `SyndicDocumentsJourney.spec.ts`, dont les ancres
+ * existaient depuis l'ancrage du même jour.
+ *
+ * Sur les 79 relevés d'origine, 72 visent un mot traduit — c'est la part qui tient les
  * trois langues fermées. Les 7 autres visent un emoji (`text=🔴`, `text=💰`) :
  * ceux-là ne parient pas sur la langue, ils parient sur la présentation, et
  * la revue de design a justement relevé que cinq emojis de navigation servent
@@ -34,7 +39,7 @@ import { join } from "node:path";
 const RACINE_E2E = "tests/e2e";
 
 /** Le décompte relevé le 2026-09-08. Il ne doit que baisser. */
-const DETTE_AU_2026_09_08 = 79;
+const DETTE_AU_2026_09_08 = 78;
 
 /** Le nombre de specs ce jour-là : on ne solde pas la dette en les supprimant. */
 const SPECS_AU_2026_09_08 = 100;
@@ -93,6 +98,37 @@ const MOTIFS: { nom: string; motif: RegExp }[] = [
   },
 ];
 
+/**
+ * `filter({ hasText: "..." })` était l'angle mort de cette garde.
+ *
+ * C'est le même pari sur la langue que `getByText`, et il mordait : le
+ * scénario `poll-vote` cherchait un `button` contenant « Oui ». Douze usages
+ * existaient sans qu'aucun ne soit compté.
+ *
+ * Mais dix d'entre eux sont LÉGITIMES : ils visent une donnée que le test
+ * vient lui-même de créer — « Reparation toiture », « Barbecue de quartier »,
+ * « repeindre le hall ». Le guide de style autorise expressément une valeur ;
+ * ce qu'il interdit est une formulation du produit.
+ *
+ * Le discriminant est mécanique : une valeur créée par le test apparaît
+ * AILLEURS dans le même fichier — dans le `data:` du POST qui l'a créée. Un
+ * libellé du produit n'apparaît qu'ici. Sur les douze, un seul est dans ce
+ * cas : « Nouveau document ».
+ */
+function hasTextDeLibelle(code: string): RegExpMatchArray[] {
+  const trouves: RegExpMatchArray[] = [];
+  for (const m of code.matchAll(/hasText:\s*(["'`])([^"'`\n$]+)\1/g)) {
+    const valeur = m[2];
+    const echappee = valeur.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const total = (code.match(new RegExp(echappee, "g")) ?? []).length;
+    const dansHasText = (
+      code.match(new RegExp(`hasText:\\s*["'\`]${echappee}`, "g")) ?? []
+    ).length;
+    if (total - dansHasText === 0) trouves.push(m);
+  }
+  return trouves;
+}
+
 function infractions(): { fichier: string; motif: string; extrait: string }[] {
   const trouvees: { fichier: string; motif: string; extrait: string }[] = [];
   for (const fichier of specs(RACINE_E2E)) {
@@ -101,6 +137,13 @@ function infractions(): { fichier: string; motif: string; extrait: string }[] {
       for (const m of code.matchAll(motif)) {
         trouvees.push({ fichier, motif: nom, extrait: m[0].slice(0, 60) });
       }
+    }
+    for (const m of hasTextDeLibelle(code)) {
+      trouvees.push({
+        fichier,
+        motif: "filter({ hasText: ... })",
+        extrait: m[0].slice(0, 60),
+      });
     }
   }
   return trouvees;

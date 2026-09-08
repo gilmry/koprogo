@@ -13,9 +13,18 @@ test.describe("Syndic — parcours de gestion documentaire rempli jusqu'au bout"
 
     const title = `PV AGO ${Date.now()}`;
 
-    await page.getByRole("button", { name: "Téléverser un document" }).click();
+    // Par les ancres, pas par les libellés.
+    //
+    // Ces deux sélecteurs pariaient sur la langue : « Téléverser un
+    // document » et « Nouveau document » ne trouvent rien dès que l'écran
+    // rend en néerlandais. Ils ne tenaient que parce que les quatre projets
+    // Playwright sont épinglés à `fr-BE`, ce que la configuration admet
+    // elle-même ligne 172.
+    //
+    // Les deux ancres existent depuis l'ancrage du 2026-09-08.
+    await page.getByTestId("documents-upload-button").click();
 
-    const modal = page.locator("form").filter({ hasText: "Nouveau document" });
+    const modal = page.getByTestId("document-upload-form");
     await expect(modal).toBeVisible();
 
     await modal.locator("#doc-upload-title").fill(title);

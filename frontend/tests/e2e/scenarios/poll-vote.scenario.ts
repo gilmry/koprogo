@@ -11,7 +11,7 @@
  * Duree video attendue : ~90-120 secondes (rythme humain, multi-role)
  */
 import { test, expect } from "@playwright/test";
-import { amorce } from "../helpers/amorcage";
+import { amorce, aucuneErreurAffichee } from "../helpers/amorcage";
 import { nameContains, selectOptionByName } from "../helpers/name-match";
 import {
   humanLogin,
@@ -249,9 +249,21 @@ test.describe("Scenario: Sondage multi-role (Francois lance, Alice vote)", () =>
       timeout: 10000,
     });
 
-    // Voter "Oui"
-    const voteOui = page.locator("button").filter({ hasText: /Oui/i }).first();
-    await humanClickLocator(page, voteOui);
+    // Voter « Oui », qui est la PREMIERE option semee (`display_order: 1`).
+    //
+    // Le scenario cherchait `button` contenant /Oui/i. Les options ne sont pas
+    // des boutons : `PollDetail.svelte:392` rend des `<input type="radio">`
+    // portant `poll-detail-option-input`. Le selecteur ne pouvait donc jamais
+    // correspondre, quel que soit le libelle — et chercher par le libelle
+    // aurait de toute facon parie sur la langue, ce que le guide de style
+    // interdit.
+    //
+    // On vise la premiere option par sa position dans la liste, puis le
+    // bouton de soumission par son ancre.
+    const optionOui = page.getByTestId("poll-detail-option-input").first();
+    await humanClickLocator(page, optionOui);
+    await humanClick(page, "poll-vote-button");
+    await aucuneErreurAffichee(page, "vote d'Alice sur le sondage");
     await waitForSpinner(page);
     await page.waitForTimeout(PACE.AFTER_NAVIGATION);
 
