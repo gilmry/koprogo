@@ -6,6 +6,7 @@
   import { formatDate } from "../lib/utils/date.utils";
   import { formatCurrency } from "../lib/utils/finance.utils";
   import { withErrorHandling } from "../lib/utils/error.utils";
+  import ConfirmDialog from "./ui/ConfirmDialog.svelte";
 
   let {
     ownerId = null,
@@ -13,6 +14,14 @@
   }: { ownerId?: string | null; expenseId?: string | null } = $props();
 
   let reminders = $state<any[]>([]);
+
+  // La création en masse en attente de confirmation.
+  //
+  // Le `confirm()` remplacé était un dialogue du NAVIGATEUR (#844). Créer des
+  // relances en masse écrit une lettre à chaque copropriétaire en retard de
+  // plus de quinze jours : ce n'est pas un geste qu'on veut voir échouer en
+  // silence, ni déclencher par mégarde.
+  let creationEnMasseEnAttente = $state(false);
   let loading = $state(true);
   let error = $state("");
   let filterStatus = $state("all");
@@ -137,8 +146,7 @@
   );
 
   function bulkCreateReminders() {
-    if (confirm($_("paymentReminders.bulkCreateConfirm")))
-      createBulkReminders();
+    creationEnMasseEnAttente = true;
   }
 
   async function createBulkReminders() {
@@ -399,3 +407,16 @@
     </div>
   {/if}
 </div>
+
+<!-- Le dialogue qui remplace un `confirm()` natif (#844). -->
+<ConfirmDialog
+  isOpen={creationEnMasseEnAttente}
+  title={$_("common.confirm")}
+  message={$_("paymentReminders.bulkCreateConfirm")}
+  variant="primary"
+  onconfirm={() => {
+    creationEnMasseEnAttente = false;
+    createBulkReminders();
+  }}
+  oncancel={() => (creationEnMasseEnAttente = false)}
+/>

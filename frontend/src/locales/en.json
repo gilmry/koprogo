@@ -4197,6 +4197,7 @@
     "generatedAccounts": "Generated test accounts",
     "afterGeneration": "After generation, the credentials appear below. You can sign in with these accounts to try the system.",
     "generating": "⏳ Generating...",
-    "deleting": "⏳ Deleting..."
+    "deleting": "⏳ Deleting...",
+    "clearConfirm": "⚠️ WARNING: this will delete ONLY the demo data (marked is_seed_data=true). Production data will be preserved. Are you sure you want to continue?"
   }
 }

@@ -14,6 +14,7 @@
   import ProviderOffersList from "./ProviderOffersList.svelte";
   import EnergyBillUpload from "./EnergyBillUpload.svelte";
   import { formatDateShort } from "../../lib/utils/date.utils";
+  import ConfirmDialog from "../ui/ConfirmDialog.svelte";
   import {
     withLoadingState,
     withErrorHandling,
@@ -32,6 +33,18 @@
   } = $props();
 
   let campaign: EnergyCampaign | null = $state(null);
+
+  // L'action en attente de confirmation.
+  //
+  // Ce composant est en mode RUNES : un `let` simple n'y serait PAS
+  // réactif, et l'écran ne se redessinerait jamais (#832).
+  //
+  // Le `confirm()` remplacé était un dialogue du NAVIGATEUR : un navigateur
+  // piloté le supprime, et l'action prend la forme exacte d'une panne (#844).
+  //
+  // Retirer un consentement est un droit RGPD : le geste doit aboutir.
+  let suppressionEnAttente = $state(false);
+  let cibleEnAttente = $state<string | null>(null);
   let stats: CampaignStatistics | null = $state(null);
   let myUploads: EnergyBillUploadType[] = $state([]);
   let loading = $state(true);
@@ -119,8 +132,16 @@
     await loadData();
   }
 
-  async function withdrawConsent(uploadId: string) {
-    if (!confirm($_("energy.withdrawConsentConfirm"))) return;
+  function withdrawConsent(uploadId: string) {
+    cibleEnAttente = uploadId;
+    suppressionEnAttente = true;
+  }
+
+  async function executerLaction() {
+    suppressionEnAttente = false;
+    const uploadId = cibleEnAttente;
+    cibleEnAttente = null;
+    if (!uploadId) return;
     await withErrorHandling({
       action: () => energyBillsApi.withdrawConsent(uploadId),
       successMessage: $_("energy.withdrawConsentSuccess"),
@@ -370,3 +391,16 @@
     {/if}
   </div>
 {/if}
+
+<!-- Le dialogue qui remplace un `confirm()` natif (#844). -->
+<ConfirmDialog
+  isOpen={suppressionEnAttente}
+  title={$_("common.confirm")}
+  message={$_("energy.withdrawConsentConfirm")}
+  variant="danger"
+  onconfirm={executerLaction}
+  oncancel={() => {
+    suppressionEnAttente = false;
+    cibleEnAttente = null;
+  }}
+/>

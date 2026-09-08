@@ -5,6 +5,7 @@
   import { apiEndpoint } from "../../lib/config";
   import { api } from "../../lib/api";
   import { withErrorHandling } from "../../lib/utils/error.utils";
+  import ConfirmDialog from "../ui/ConfirmDialog.svelte";
 
   interface Stats {
     totalOrganizations: number;
@@ -33,6 +34,16 @@
   let clearLoading = $state(false);
   let seedMessage = $state("");
   let seedError = $state("");
+
+  /// La purge du jeu de démonstration, en attente de confirmation.
+  ///
+  /// Le `confirm()` remplacé était un dialogue du NAVIGATEUR (#844). C'est le
+  /// même geste que dans `SeedManager`, depuis un autre écran : effacer les
+  /// données marquées `is_seed_data=true`.
+  ///
+  /// Deux écrans pour le même acte destructeur, tous deux intestables — le
+  /// même motif que les deux écrans de convocation traités plus tôt.
+  let purgeEnAttente = $state(false);
 
   let user = $derived($authStore.user);
 
@@ -123,10 +134,12 @@
     }
   };
 
-  const handleClearDemoData = async () => {
-    if (!confirm($_("dashboards.admin.seed.confirmDelete"))) {
-      return;
-    }
+  const handleClearDemoData = () => {
+    purgeEnAttente = true;
+  };
+
+  const executerLaPurge = async () => {
+    purgeEnAttente = false;
 
     clearLoading = true;
     seedMessage = "";
@@ -600,3 +613,13 @@
     </div>
   </div>
 </div>
+
+<!-- Le dialogue qui remplace un `confirm()` natif (#844). -->
+<ConfirmDialog
+  isOpen={purgeEnAttente}
+  title={$_("common.confirm")}
+  message={$_("dashboards.admin.seed.confirmDelete")}
+  variant="danger"
+  onconfirm={executerLaPurge}
+  oncancel={() => (purgeEnAttente = false)}
+/>

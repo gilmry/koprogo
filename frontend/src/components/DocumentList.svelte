@@ -14,6 +14,7 @@
     type User,
   } from "../lib/types";
   import { authStore } from "../stores/auth";
+  import ConfirmDialog from "./ui/ConfirmDialog.svelte";
 
   let {
     allowUpload = null,
@@ -26,6 +27,17 @@
   } = $props();
 
   let documents = $state<Document[]>([]);
+
+  // Le document en attente de suppression, ou `null`.
+  //
+  // `window.confirm` interpolait le TITRE du document dans son message. Un
+  // dialogue du navigateur ne sait le montrer qu'en texte brut, et un
+  // navigateur piloté le supprime : l'action prend alors la forme exacte
+  // d'une panne (#844).
+  //
+  // Supprimer un document de la copropriété est irréversible, et le titre est
+  // la seule chose qui distingue celui qu'on vise des autres.
+  let documentEnAttente = $state<Document | null>(null);
   let loading = $state(true);
   let error = $state("");
   let downloadError = $state("");
@@ -184,12 +196,15 @@
     }
   }
 
-  async function handleDelete(doc: Document) {
+  function handleDelete(doc: Document) {
     if (!computedAllowDelete) return;
-    const confirmed = window.confirm(
-      $_("documents.deleteConfirm", { values: { title: doc.title } }),
-    );
-    if (!confirmed) return;
+    documentEnAttente = doc;
+  }
+
+  async function executerLaSuppression() {
+    const doc = documentEnAttente;
+    documentEnAttente = null;
+    if (!doc) return;
 
     deleteError = "";
     infoMessage = "";
@@ -381,3 +396,19 @@
     />
   {/if}
 </div>
+
+<!-- Le dialogue qui remplace un `window.confirm` natif (#844). Le titre du
+     document est interpolé dans le message : c'est la seule chose qui
+     distingue celui qu'on supprime des autres. -->
+<ConfirmDialog
+  isOpen={documentEnAttente !== null}
+  title={$_("common.confirm")}
+  message={documentEnAttente
+    ? $_("documents.deleteConfirm", {
+        values: { title: documentEnAttente.title },
+      })
+    : ""}
+  variant="danger"
+  onconfirm={executerLaSuppression}
+  oncancel={() => (documentEnAttente = null)}
+/>

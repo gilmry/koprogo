@@ -114,6 +114,21 @@ import Layout from "../../layouts/Layout.astro";
         <p class="text-xs text-blue-500 mt-1" id="report-expires"></p>
       </div>
 
+      <!-- Le message d'erreur, DANS la page.
+           Cet écran employait trois `alert()` natifs. Un navigateur piloté
+           les supprime : le prestataire hors ligne ou dont la soumission est
+           refusée ne voyait alors STRICTEMENT rien, et la recette non plus.
+           C'est l'écran du prestataire, atteint par lien magique, souvent
+           depuis un chantier avec une connexion incertaine — c'est
+           précisément là qu'un message doit s'afficher. Cf. #844, #815. -->
+      <div
+        id="contractor-message"
+        role="alert"
+        data-testid="contractor-message"
+        class="hidden rounded-md border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900"
+      >
+      </div>
+
       <form
         id="contractor-form"
         class="space-y-6"
@@ -643,6 +658,19 @@ import Layout from "../../layouts/Layout.astro";
       }, 2000);
     });
 
+  // === Messages, dans la page plutôt que dans une boîte du navigateur ===
+  //
+  // `alert()` est un dialogue du NAVIGATEUR : un navigateur piloté le
+  // supprime, et le message n'existe alors pour personne — ni pour le
+  // prestataire, ni pour la recette (#844).
+  function afficherMessage(texte: string) {
+    const zone = document.getElementById("contractor-message");
+    if (!zone) return;
+    zone.textContent = texte;
+    zone.classList.remove("hidden");
+    zone.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }
+
   // === Submit report ===
   document.getElementById("btn-submit")!.addEventListener("click", async () => {
     const workDate = (document.getElementById("work-date") as HTMLInputElement)
@@ -652,7 +680,7 @@ import Layout from "../../layouts/Layout.astro";
     ).value;
 
     if (!workDate || !compteRendu.trim()) {
-      alert("Veuillez remplir la date et le compte-rendu.");
+      afficherMessage("Veuillez remplir la date et le compte-rendu.");
       return;
     }
 
@@ -681,7 +709,7 @@ import Layout from "../../layouts/Layout.astro";
         try {
           msg = JSON.parse(body).error || msg;
         } catch {}
-        alert(msg);
+        afficherMessage(msg);
         btn.disabled = false;
         btn.textContent = "Soumettre au syndic";
         return;
@@ -693,7 +721,7 @@ import Layout from "../../layouts/Layout.astro";
     } catch (err) {
       // Save offline for later sync
       await saveDraft();
-      alert(
+      afficherMessage(
         "Vous êtes hors ligne. Le brouillon a été sauvegardé et sera envoyé automatiquement une fois la connexion rétablie.",
       );
       btn.disabled = false;

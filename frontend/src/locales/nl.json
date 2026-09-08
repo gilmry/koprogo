@@ -4197,6 +4197,7 @@
     "generatedAccounts": "Gegenereerde testaccounts",
     "afterGeneration": "Na het genereren verschijnen de inloggegevens hieronder. U kunt met deze accounts inloggen om het systeem te testen.",
     "generating": "⏳ Bezig met genereren...",
-    "deleting": "⏳ Bezig met verwijderen..."
+    "deleting": "⏳ Bezig met verwijderen...",
+    "clearConfirm": "⚠️ LET OP: dit verwijdert ALLEEN de demogegevens (gemarkeerd met is_seed_data=true). Productiegegevens blijven behouden. Weet u het zeker?"
   }
 }

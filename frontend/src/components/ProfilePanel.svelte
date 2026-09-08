@@ -8,8 +8,21 @@
   import { toast } from "../stores/toast";
   import { formatDate } from "../lib/utils/date.utils";
   import { withErrorHandling } from "../lib/utils/error.utils";
+  import ConfirmDialog from "./ui/ConfirmDialog.svelte";
 
   let editMode = false;
+
+  // L'action en attente de confirmation.
+  //
+  // Ce composant est en mode LEGACY : ses `let` sont réactifs tels quels,
+  // et un seul `$state` le basculerait en runes en rendant tous les autres
+  // NON réactifs (#832).
+  //
+  // Le `confirm()` remplacé était un dialogue du NAVIGATEUR : un navigateur
+  // piloté le supprime, et l'action prend la forme exacte d'une panne (#844).
+  //
+  // Restreindre le traitement est un droit RGPD (Art. 18).
+  let suppressionEnAttente = false;
   let saving = false;
   let editEmail = "";
   let editFirstName = "";
@@ -145,8 +158,12 @@
     }
   }
 
-  async function handleRestrictProcessing() {
-    if (!confirm($_("gdpr.restrictConfirm"))) return;
+  function handleRestrictProcessing() {
+    suppressionEnAttente = true;
+  }
+
+  async function executerLaction() {
+    suppressionEnAttente = false;
 
     try {
       gdprRestricting = true;
@@ -617,3 +634,13 @@
     </div>
   </div>
 {/if}
+
+<!-- Le dialogue qui remplace un `confirm()` natif (#844). -->
+<ConfirmDialog
+  isOpen={suppressionEnAttente}
+  title={$_("common.confirm")}
+  message={$_("gdpr.restrictConfirm")}
+  variant="danger"
+  onconfirm={executerLaction}
+  oncancel={() => (suppressionEnAttente = false)}
+/>

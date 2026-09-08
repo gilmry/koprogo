@@ -4197,6 +4197,7 @@
     "generatedAccounts": "Erzeugte Testkonten",
     "afterGeneration": "Nach der Erzeugung erscheinen die Zugangsdaten unten. Sie können sich mit diesen Konten anmelden, um das System zu testen.",
     "generating": "⏳ Wird generiert...",
-    "deleting": "⏳ Wird gelöscht..."
+    "deleting": "⏳ Wird gelöscht...",
+    "clearConfirm": "⚠️ ACHTUNG: Dies löscht NUR die Demodaten (markiert mit is_seed_data=true). Produktionsdaten bleiben erhalten. Sind Sie sicher?"
   }
 }

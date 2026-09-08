@@ -40,8 +40,13 @@ import { join } from "node:path";
 
 const RACINE = join(process.cwd(), "src");
 
-/** Appels aux dialogues natifs. **Ne doit que BAISSER.** */
-const DETTE_AU_2026_09_08 = 11;
+/**
+ * Appels aux dialogues natifs. **Zéro, et cela ne remonte pas.**
+ *
+ * La dette était de soixante le matin du 2026-09-08, répartie sur vingt-huit
+ * fichiers. Elle est épuisée le soir même.
+ */
+const DETTE_AU_2026_09_08 = 0;
 
 const APPEL_NATIF = /(?<![.\w$])(?:window\.)?(?:confirm|prompt|alert)\s*\(/g;
 
@@ -107,14 +112,24 @@ describe("les dialogues natifs ne se multiplient pas (#844)", () => {
     ).toBeLessThanOrEqual(DETTE_AU_2026_09_08);
   });
 
-  /** Sans quoi une expression régulière cassée rendrait le cliquet vert. */
-  it("voit encore les appels du dépôt", () => {
+  /**
+   * Le contrôle d'aveuglement, refait pour un cliquet à ZÉRO.
+   *
+   * Il exigeait « au moins un appel natif », ce qui prouvait que le détecteur
+   * lisait encore les gabarits. À zéro, cette formulation punirait le succès —
+   * l'erreur que `garde_classement_par_souschaines` a commise le même jour, et
+   * qui a fait échouer sa propre correction.
+   *
+   * Il vérifie donc que les fichiers sont LUS, par leur nombre, sans rien
+   * exiger du compte de violations.
+   */
+  it("lit encore les gabarits du dépôt", () => {
     expect(
-      total(),
-      "aucun appel natif trouvé : le détecteur ne lit plus les gabarits, " +
-        "ou la dette est réellement à zéro — auquel cas abaissez le seuil " +
-        "et supprimez ce contrôle.",
-    ).toBeGreaterThan(0);
+      fichiersDeGabarit(RACINE).length,
+      "moins de trois cents gabarits lus : le détecteur ne parcourt plus " +
+        "`src/`, et le cliquet serait vert faute de matière. Vérifiez avant " +
+        "de vous réjouir.",
+    ).toBeGreaterThan(300);
   });
 
   /**

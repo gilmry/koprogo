@@ -4197,6 +4197,7 @@
     "generatedAccounts": "Comptes de test générés",
     "afterGeneration": "Après génération, les identifiants s'affichent ci-dessous. Vous pouvez vous connecter avec ces comptes pour éprouver le système.",
     "generating": "⏳ Génération en cours...",
-    "deleting": "⏳ Suppression..."
+    "deleting": "⏳ Suppression...",
+    "clearConfirm": "⚠️ ATTENTION : ceci va SUPPRIMER UNIQUEMENT les données de démonstration (marquées is_seed_data=true). Les données de production seront préservées. Êtes-vous sûr de vouloir continuer ?"
   }
 }

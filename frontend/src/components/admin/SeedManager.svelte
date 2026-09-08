@@ -2,6 +2,7 @@
   import { onMount } from "svelte";
   import { _ } from "../../lib/i18n";
   import { api } from "../../lib/api";
+  import ConfirmDialog from "../ui/ConfirmDialog.svelte";
 
   interface SeedStats {
     seed_organizations: number;
@@ -23,6 +24,17 @@
   }
 
   let loading = false;
+
+  // La purge du jeu de démonstration, en attente de confirmation.
+  //
+  // Le `confirm()` remplacé portait un texte FRANÇAIS écrit en dur, dans un
+  // écran par ailleurs traduit en quatre langues — et il était doublement
+  // invisible : un navigateur piloté le supprime (#844), et le cliquet de
+  // libellés ne regardait pas les chaînes passées à `confirm()` (#834).
+  //
+  // La purge efface les données marquées `is_seed_data=true`. Le message le
+  // dit, et il doit être lisible.
+  let purgeEnAttente = false;
   let message = "";
   let messageType: "success" | "error" | "info" = "info";
   let seedAccounts: TestAccount[] = [];
@@ -113,14 +125,12 @@
     await executeSeed("/seed/demo", "Seed Data");
   }
 
-  async function clearData() {
-    if (
-      !confirm(
-        "⚠️ ATTENTION: Ceci va SUPPRIMER UNIQUEMENT les données SEED (marquées is_seed_data=true)!\n\nLes données de production seront préservées.\n\nÊtes-vous sûr de vouloir continuer?",
-      )
-    ) {
-      return;
-    }
+  function clearData() {
+    purgeEnAttente = true;
+  }
+
+  async function executerLaPurge() {
+    purgeEnAttente = false;
 
     loading = true;
     message = "";
@@ -549,6 +559,17 @@
     </div>
   </div>
 </div>
+
+<!-- Le dialogue qui remplace un `confirm()` natif au texte écrit en dur
+     (#844, #834). -->
+<ConfirmDialog
+  isOpen={purgeEnAttente}
+  title={$_("common.confirm")}
+  message={$_("seed.clearConfirm")}
+  variant="danger"
+  onconfirm={executerLaPurge}
+  oncancel={() => (purgeEnAttente = false)}
+/>
 
 <style>
   /* Custom styles if needed */

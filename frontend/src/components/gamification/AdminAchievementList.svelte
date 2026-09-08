@@ -8,6 +8,7 @@
     AchievementTier,
   } from "../../lib/api/gamification";
   import AchievementForm from "./AchievementForm.svelte";
+  import ConfirmDialog from "../ui/ConfirmDialog.svelte";
   import {
     withLoadingState,
     withErrorHandling,
@@ -16,6 +17,13 @@
   let { organizationId }: { organizationId: string } = $props();
 
   let achievements = $state<Achievement[]>([]);
+
+  // Le haut fait en attente de suppression, ou `null`.
+  //
+  // Le `confirm()` remplacé interpolait le NOM du haut fait, ce qu'un dialogue
+  // du navigateur ne sait montrer qu'en texte brut — et qu'un navigateur
+  // piloté supprime entièrement (#844).
+  let hautFaitEnAttente = $state<Achievement | null>(null);
   let loading = $state(true);
   let error = $state("");
   let showForm = $state(false);
@@ -57,15 +65,14 @@
     showForm = true;
   }
 
-  async function handleDelete(achievement: Achievement) {
-    if (
-      !confirm(
-        $_("gamification.confirm_delete", {
-          values: { name: achievement.name },
-        }),
-      )
-    )
-      return;
+  function handleDelete(achievement: Achievement) {
+    hautFaitEnAttente = achievement;
+  }
+
+  async function executerLaSuppression() {
+    const achievement = hautFaitEnAttente;
+    hautFaitEnAttente = null;
+    if (!achievement) return;
     await withErrorHandling({
       action: () => gamificationApi.deleteAchievement(achievement.id),
       successMessage: $_("gamification.delete_success"),
@@ -323,3 +330,17 @@
     </div>
   {/if}
 </div>
+
+<!-- Le dialogue qui remplace un `confirm()` natif (#844). -->
+<ConfirmDialog
+  isOpen={hautFaitEnAttente !== null}
+  title={$_("common.confirm")}
+  message={hautFaitEnAttente
+    ? $_("gamification.confirm_delete", {
+        values: { name: hautFaitEnAttente.name },
+      })
+    : ""}
+  variant="danger"
+  onconfirm={executerLaSuppression}
+  oncancel={() => (hautFaitEnAttente = null)}
+/>

@@ -15,6 +15,7 @@
   import { formatDateTime } from "../../lib/utils/date.utils";
   import { withErrorHandling } from "../../lib/utils/error.utils";
   import { toNumber } from "../../lib/utils/decimal.utils";
+  import ConfirmDialog from "../ui/ConfirmDialog.svelte";
 
   let {
     resolution,
@@ -27,6 +28,17 @@
   } = $props();
 
   let votes = $state<Vote[]>([]);
+
+  // L'action en attente de confirmation.
+  //
+  // Ce composant est en mode RUNES : un `let` simple n'y serait PAS
+  // réactif, et l'écran ne se redessinerait jamais (#832).
+  //
+  // Le `confirm()` remplacé était un dialogue du NAVIGATEUR : un navigateur
+  // piloté le supprime, et l'action prend la forme exacte d'une panne (#844).
+  //
+  // Clôturer un vote fige le résultat d'une résolution d'assemblée.
+  let suppressionEnAttente = $state(false);
   let loadingVotes = $state(false);
   let showVotes = $state(false);
 
@@ -212,8 +224,12 @@
     });
   }
 
-  async function handleCloseVoting() {
-    if (!confirm($_("resolutions.vote.closeConfirm"))) return;
+  function handleCloseVoting() {
+    suppressionEnAttente = true;
+  }
+
+  async function executerLaction() {
+    suppressionEnAttente = false;
 
     await withErrorHandling({
       action: () => resolutionsApi.closeVoting(resolution.id),
@@ -552,3 +568,13 @@
     </p>
   {/if}
 </div>
+
+<!-- Le dialogue qui remplace un `confirm()` natif (#844). -->
+<ConfirmDialog
+  isOpen={suppressionEnAttente}
+  title={$_("common.confirm")}
+  message={$_("resolutions.vote.closeConfirm")}
+  variant="danger"
+  onconfirm={executerLaction}
+  oncancel={() => (suppressionEnAttente = false)}
+/>
