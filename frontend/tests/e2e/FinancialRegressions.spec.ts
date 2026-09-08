@@ -1,6 +1,7 @@
 import { test, expect } from "@playwright/test";
 import {
   loginAsAccountantEmetteur,
+  loginAsAccountantAvecImmeuble,
   loginAsSyndicWithBuilding,
   loginAsSyndicWithExpense,
   loginAsSyndicWithUnit,
@@ -1233,8 +1234,11 @@ test.describe("Workflows financiers 2026-09-01 — non-régression", () => {
     // organisation et reçoit un 401 sur toute route scopée. C'est très
     // exactement la cause du constat F3, que le rapport attribuait à des noms
     // de paramètres erronés.
-    await loginAsAccountantEmetteur(page, "fin-f6a");
-    await page.goto("/journal-entries");
+    // Un immeuble, et l'URL qui le désigne : les écrans comptables lisent le
+    // périmètre, et il est nul au premier rendu de chaque page dans une
+    // application Astro multi-page. Cf. #841.
+    const { buildingId } = await loginAsAccountantAvecImmeuble(page, "fin-f6a");
+    await page.goto(`/journal-entries?buildingId=${buildingId}`);
 
     const liste = page.getByTestId("journal-entry-list");
     await expect(liste, "la vue liste manquait entièrement").toBeVisible({
@@ -1248,11 +1252,15 @@ test.describe("Workflows financiers 2026-09-01 — non-régression", () => {
   test("F6 — une écriture créée est retrouvable dans la liste, avec ses lignes", async ({
     page,
   }) => {
-    const ctx = await loginAsAccountantEmetteur(page, "fin-f6b");
+    const ctx = await loginAsAccountantAvecImmeuble(page, "fin-f6b");
     const reference = `NR-${Date.now()}`;
 
     const creation = await page.request.post(`${API_BASE}/journal-entries`, {
       data: {
+        // Le serveur refuse à raison une écriture manuelle qui ne désigne pas
+        // son immeuble : sans lui il ne peut pas déduire l'ACP, et une pièce
+        // comptable non imputable n'existe pas (#770, ADR-0045).
+        building_id: ctx.buildingId,
         journal_type: "ODS",
         entry_date: new Date().toISOString(),
         description: `Non-regression F6 ${reference}`,
@@ -1276,7 +1284,7 @@ test.describe("Workflows financiers 2026-09-01 — non-régression", () => {
     });
     expect(creation.status(), await creation.text()).toBe(201);
 
-    await page.goto("/journal-entries");
+    await page.goto(`/journal-entries?buildingId=${ctx.buildingId}`);
     await expect(page.getByTestId("journal-entry-list")).toBeVisible({
       timeout: 15000,
     });

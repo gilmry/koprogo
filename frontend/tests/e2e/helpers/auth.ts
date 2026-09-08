@@ -892,6 +892,52 @@ export async function loginAsAccountantEmetteur(
 }
 
 /**
+ * Comptable émetteur, AVEC un immeuble et son ACP.
+ *
+ * ── Pourquoi ce helper existe ─────────────────────────────────────────────
+ *
+ * Les écrans comptables lisent le périmètre d'immeuble, et le frontend est une
+ * application Astro MULTI-PAGE : le `$state` de module du store repart à zéro à
+ * chaque navigation. Naviguer directement vers `/journal-entries` donnait donc
+ * un périmètre nul, et l'écran affichait à juste titre « sélectionnez un
+ * immeuble » — le formulaire et la liste n'existaient pas.
+ *
+ * Le serveur refuse pour la même raison une écriture manuelle sans immeuble :
+ * une pièce comptable qui ne désigne pas sa copropriété n'est imputable à
+ * personne (#770). Les deux refus sont justes ; ce qui manquait, c'était un
+ * immeuble à désigner.
+ *
+ * Naviguez ensuite avec `?buildingId=${buildingId}` : le store réhydrate
+ * depuis l'URL en faisant VALIDER l'immeuble par le serveur (#841).
+ */
+export async function loginAsAccountantAvecImmeuble(
+  page: Page,
+  prefix: string = "accountant-immeuble",
+): Promise<AuthContext & { buildingId: string; acpId: string }> {
+  const ctx = await registerScopedUser(page, prefix, "accountant");
+  const timestamp = Date.now();
+  const acpId = await ensureAcp(page, ctx.orgId, ctx.adminToken, prefix);
+
+  const buildingResp = await page.request.post(`${API_BASE}/buildings`, {
+    data: {
+      name: `${prefix} Building ${timestamp}`,
+      address: `${timestamp} Rue Test`,
+      city: "Brussels",
+      postal_code: "1000",
+      country: "Belgium",
+      total_units: 4,
+      total_tantiemes: 1000,
+      construction_year: 2010,
+      acp_id: acpId,
+    },
+    headers: { Authorization: `Bearer ${ctx.adminToken}` },
+  });
+  const building = await expectOk(buildingResp, "seed:building");
+
+  return { ...ctx, buildingId: building.id, acpId };
+}
+
+/**
  * Login as a member of the Conseil de copropriété (CdC).
  * TODO: replace "owner" with "cdc" when story 3.1 lands; today CdC members
  *       are owners with an elected mandate, which is the closest analogue.
