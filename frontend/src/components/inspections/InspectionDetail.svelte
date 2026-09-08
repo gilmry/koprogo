@@ -402,6 +402,7 @@
               >{$_("common.title")} *</label
             >
             <input
+              data-testid="insp-title"
               id="insp-title"
               bind:value={form.title}
               class="w-full border rounded px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -412,6 +413,7 @@
               >{$_("common.status")}</label
             >
             <select
+              data-testid="insp-status"
               id="insp-status"
               bind:value={form.status}
               class="w-full border rounded px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -426,6 +428,7 @@
               >{$_("inspections.inspector")} *</label
             >
             <input
+              data-testid="insp-inspector"
               id="insp-inspector"
               bind:value={form.inspector_name}
               class="w-full border rounded px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -436,6 +439,7 @@
               >{$_("inspections.company")}</label
             >
             <input
+              data-testid="insp-company"
               id="insp-company"
               bind:value={form.inspector_company}
               placeholder={$_("common.optional")}
@@ -447,6 +451,7 @@
               >{$_("inspections.inspectionDate")}</label
             >
             <input
+              data-testid="insp-date"
               id="insp-date"
               type="date"
               bind:value={form.inspection_date_str}
@@ -458,6 +463,7 @@
               >{$_("inspections.compliance")}</label
             >
             <select
+              data-testid="insp-compliant"
               id="insp-compliant"
               bind:value={form.compliant}
               class="w-full border rounded px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -472,6 +478,7 @@
               >{$_("inspections.cost")}</label
             >
             <input
+              data-testid="insp-cost"
               id="insp-cost"
               type="number"
               bind:value={form.cost}
@@ -486,6 +493,7 @@
               >{$_("inspections.certificateNumber")}</label
             >
             <input
+              data-testid="insp-cert"
               id="insp-cert"
               bind:value={form.compliance_certificate_number}
               placeholder={$_("common.optional")}
@@ -497,6 +505,7 @@
               >{$_("inspections.resultSummary")}</label
             >
             <textarea
+              data-testid="insp-result"
               id="insp-result"
               bind:value={form.result_summary}
               rows="2"
@@ -509,6 +518,7 @@
               >{$_("inspections.defectsFound")}</label
             >
             <textarea
+              data-testid="insp-defects"
               id="insp-defects"
               bind:value={form.defects_found}
               rows="2"
@@ -521,6 +531,7 @@
               >{$_("inspections.recommendations")}</label
             >
             <textarea
+              data-testid="insp-reco"
               id="insp-reco"
               bind:value={form.recommendations}
               rows="2"
@@ -533,6 +544,7 @@
               >{$_("common.notes")}</label
             >
             <textarea
+              data-testid="insp-notes"
               id="insp-notes"
               bind:value={form.notes}
               rows="2"

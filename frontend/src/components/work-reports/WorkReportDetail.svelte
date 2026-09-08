@@ -301,6 +301,7 @@
               >{$_("common.title")} *</label
             >
             <input
+              data-testid="wr-title"
               id="wr-title"
               bind:value={form.title}
               class="w-full border rounded px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -311,6 +312,7 @@
               >{$_("workReports.contractor")} *</label
             >
             <input
+              data-testid="wr-contractor"
               id="wr-contractor"
               bind:value={form.contractor_name}
               class="w-full border rounded px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -321,6 +323,7 @@
               >{$_("workReports.workType")}</label
             >
             <select
+              data-testid="wr-type"
               id="wr-type"
               bind:value={form.work_type}
               class="w-full border rounded px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -335,6 +338,7 @@
               >{$_("workReports.workDate")}</label
             >
             <input
+              data-testid="wr-date"
               id="wr-date"
               type="date"
               bind:value={form.work_date_str}
@@ -346,6 +350,7 @@
               >{$_("workReports.completionDate")}</label
             >
             <input
+              data-testid="wr-completion"
               id="wr-completion"
               type="date"
               bind:value={form.completion_date_str}
@@ -357,6 +362,7 @@
               >{$_("workReports.cost")}</label
             >
             <input
+              data-testid="wr-cost"
               id="wr-cost"
               type="number"
               bind:value={form.cost}
@@ -370,6 +376,7 @@
               >{$_("workReports.warranty")}</label
             >
             <select
+              data-testid="wr-warranty"
               id="wr-warranty"
               bind:value={form.warranty_type}
               class="w-full border rounded px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -384,6 +391,7 @@
               >{$_("workReports.invoiceNumber")}</label
             >
             <input
+              data-testid="wr-invoice"
               id="wr-invoice"
               bind:value={form.invoice_number}
               placeholder={$_("common.optional")}
@@ -395,6 +403,7 @@
               >{$_("workReports.contactContractor")}</label
             >
             <input
+              data-testid="wr-contact"
               id="wr-contact"
               bind:value={form.contractor_contact}
               placeholder={$_("workReports.phoneOrEmail")}
@@ -406,6 +415,7 @@
               >{$_("common.description")}</label
             >
             <textarea
+              data-testid="wr-description"
               id="wr-description"
               bind:value={form.description}
               rows="3"
@@ -417,6 +427,7 @@
               >{$_("common.notes")}</label
             >
             <textarea
+              data-testid="wr-notes"
               id="wr-notes"
               bind:value={form.notes}
               rows="2"

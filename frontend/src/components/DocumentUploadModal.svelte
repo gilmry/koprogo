@@ -169,6 +169,7 @@
               <p class="text-sm text-red-500">{$_("documents.noBuildings")}</p>
             {:else}
               <select
+                data-testid="doc-upload-building"
                 id="doc-upload-building"
                 class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500"
                 bind:value={buildingId}
@@ -189,6 +190,7 @@
               >{$_("documents.documentType")}</label
             >
             <select
+              data-testid="doc-upload-type"
               id="doc-upload-type"
               class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500"
               bind:value={documentType}
@@ -206,6 +208,7 @@
               >{$_("documents.title")}</label
             >
             <input
+              data-testid="doc-upload-title"
               id="doc-upload-title"
               type="text"
               class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500"
@@ -222,6 +225,7 @@
               >{$_("documents.description")}</label
             >
             <textarea
+              data-testid="doc-upload-description"
               id="doc-upload-description"
               class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500"
               rows={3}

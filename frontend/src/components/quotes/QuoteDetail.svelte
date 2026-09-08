@@ -289,6 +289,7 @@
             >{$_("quotes.detail.amountExclVat")} (EUR) *</label
           >
           <input
+            data-testid="amount"
             id="amount"
             type="number"
             step="0.01"
@@ -302,6 +303,7 @@
             >{$_("quotes.detail.vatRate")}</label
           >
           <select
+            data-testid="vat"
             id="vat"
             bind:value={vatRate}
             class="w-full text-sm rounded-md border-gray-300 focus:border-amber-500 focus:ring-amber-500"
@@ -316,6 +318,7 @@
             >{$_("quotes.detail.validityDate")} *</label
           >
           <input
+            data-testid="validity"
             id="validity"
             type="date"
             bind:value={validityDate}
@@ -327,6 +330,7 @@
             >{$_("quotes.detail.estimatedDurationDays")} *</label
           >
           <input
+            data-testid="duration"
             id="duration"
             type="number"
             min="1"
@@ -339,6 +343,7 @@
             >{$_("quotes.detail.warrantyYears")}</label
           >
           <select
+            data-testid="warranty"
             id="warranty"
             bind:value={warrantyYears}
             class="w-full text-sm rounded-md border-gray-300 focus:border-amber-500 focus:ring-amber-500"

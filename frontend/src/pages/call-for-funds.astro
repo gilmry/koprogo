@@ -64,6 +64,7 @@ import Layout from "../layouts/Layout.astro";
     <div class="border-b border-gray-200 mb-6">
       <nav class="-mb-px flex space-x-8" aria-label="Tabs">
         <button
+          data-testid="tab-all"
           id="tab-all"
           class="tab-button border-blue-500 text-blue-600 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm"
           data-tab="all"
@@ -71,6 +72,7 @@ import Layout from "../layouts/Layout.astro";
           Tous les appels
         </button>
         <button
+          data-testid="tab-draft"
           id="tab-draft"
           class="tab-button border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm"
           data-tab="draft"
@@ -78,6 +80,7 @@ import Layout from "../layouts/Layout.astro";
           Brouillons
         </button>
         <button
+          data-testid="tab-sent"
           id="tab-sent"
           class="tab-button border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm"
           data-tab="sent"
@@ -85,6 +88,7 @@ import Layout from "../layouts/Layout.astro";
           Envoyés
         </button>
         <button
+          data-testid="tab-overdue"
           id="tab-overdue"
           class="tab-button border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm"
           data-tab="overdue"
@@ -109,7 +113,11 @@ import Layout from "../layouts/Layout.astro";
           <h3 class="text-lg font-medium text-gray-900">
             Nouvel Appel de Fonds
           </h3>
-          <button id="close-modal" class="text-gray-400 hover:text-gray-500">
+          <button
+            data-testid="close-modal"
+            id="close-modal"
+            class="text-gray-400 hover:text-gray-500"
+          >
             <svg
               class="h-6 w-6"
               fill="none"

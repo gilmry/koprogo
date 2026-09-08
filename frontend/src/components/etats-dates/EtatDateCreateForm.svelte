@@ -147,6 +147,7 @@
         >{$_("etatsDate.building")}</label
       >
       <select
+        data-testid="building"
         id="building"
         bind:value={buildingId}
         class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
@@ -166,6 +167,7 @@
         >{$_("etatsDate.unit")}</label
       >
       <select
+        data-testid="unit"
         id="unit"
         bind:value={unitId}
         class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
@@ -197,6 +199,7 @@
         >{$_("etatsDate.referenceDate")}</label
       >
       <input
+        data-testid="reference-date"
         id="reference-date"
         type="date"
         bind:value={referenceDate}
@@ -210,6 +213,7 @@
         >{$_("etatsDate.documentLanguage")}</label
       >
       <select
+        data-testid="language"
         id="language"
         bind:value={language}
         class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
@@ -233,6 +237,7 @@
           >{$_("common.name")}</label
         >
         <input
+          data-testid="notary-name"
           id="notary-name"
           type="text"
           bind:value={notaryName}
@@ -248,6 +253,7 @@
           >{$_("common.email")}</label
         >
         <input
+          data-testid="notary-email"
           id="notary-email"
           type="email"
           bind:value={notaryEmail}
@@ -263,6 +269,7 @@
           >{$_("common.phone")}</label
         >
         <input
+          data-testid="notary-phone"
           id="notary-phone"
           type="tel"
           bind:value={notaryPhone}

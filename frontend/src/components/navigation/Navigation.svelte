@@ -852,6 +852,7 @@
             >{$_("navigation.activeRole")}</label
           >
           <select
+            data-testid="drawer-role-selector"
             id="drawer-role-selector"
             class="w-full px-2 py-1.5 border border-gray-300 rounded-lg text-xs focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
             onchange={handleRoleChange}

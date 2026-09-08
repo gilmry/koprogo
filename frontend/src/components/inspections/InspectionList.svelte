@@ -213,6 +213,7 @@
             >{$_("inspections.title")} *</label
           >
           <input
+            data-testid="insp-new-title"
             id="insp-new-title"
             bind:value={form.title}
             class="w-full border rounded px-3 py-1.5 text-sm"
@@ -224,6 +225,7 @@
             >{$_("inspections.type")}</label
           >
           <select
+            data-testid="insp-new-type"
             id="insp-new-type"
             bind:value={form.inspection_type}
             class="w-full border rounded px-3 py-1.5 text-sm"
@@ -244,6 +246,7 @@
             >{$_("inspections.inspector")} *</label
           >
           <input
+            data-testid="insp-new-inspector"
             id="insp-new-inspector"
             bind:value={form.inspector_name}
             class="w-full border rounded px-3 py-1.5 text-sm"
@@ -255,6 +258,7 @@
             >{$_("inspections.company")}</label
           >
           <input
+            data-testid="insp-new-company"
             id="insp-new-company"
             bind:value={form.inspector_company}
             class="w-full border rounded px-3 py-1.5 text-sm"
@@ -266,6 +270,7 @@
             >{$_("inspections.date")}</label
           >
           <input
+            data-testid="insp-new-date"
             id="insp-new-date"
             type="date"
             bind:value={form.inspection_date}
@@ -277,6 +282,7 @@
             >{$_("inspections.cost")}</label
           >
           <input
+            data-testid="insp-new-cost"
             id="insp-new-cost"
             type="number"
             bind:value={form.cost}
@@ -291,6 +297,7 @@
             >{$_("inspections.description")}</label
           >
           <textarea
+            data-testid="insp-new-desc"
             id="insp-new-desc"
             bind:value={form.description}
             rows="2"

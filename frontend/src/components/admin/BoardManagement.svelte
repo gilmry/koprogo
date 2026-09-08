@@ -362,6 +362,7 @@
             >{$_("admin.board.owner")}</label
           >
           <select
+            data-testid="board-elect-owner"
             id="board-elect-owner"
             bind:value={electForm.owner_id}
             required
@@ -383,6 +384,7 @@
             >{$_("admin.board.position")}</label
           >
           <select
+            data-testid="board-elect-position"
             id="board-elect-position"
             bind:value={electForm.position}
             class="w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500"
@@ -400,6 +402,7 @@
             >{$_("admin.board.meeting")}</label
           >
           <select
+            data-testid="board-elect-meeting"
             id="board-elect-meeting"
             bind:value={electForm.meeting_id}
             required
@@ -436,6 +439,7 @@
               >{$_("admin.board.mandateStart")}</label
             >
             <input
+              data-testid="board-elect-mandate-start"
               id="board-elect-mandate-start"
               type="date"
               bind:value={electForm.mandate_start}
@@ -450,6 +454,7 @@
               >{$_("admin.board.mandateEnd")}</label
             >
             <input
+              data-testid="board-elect-mandate-end"
               id="board-elect-mandate-end"
               type="date"
               bind:value={electForm.mandate_end}

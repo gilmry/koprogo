@@ -110,7 +110,7 @@ import { join, extname } from "node:path";
 /// que le champ portait déjà. C'est ce qui rend la baisse relisible — un
 /// identifiant mal nommé vaut moins que pas d'identifiant, puisqu'il fera
 /// croire à une couverture.
-const DETTE_AU_2026_09_06 = 343;
+const DETTE_AU_2026_09_06 = 251;
 
 const RACINE = join(process.cwd(), "src");
 const EXTENSIONS = new Set([".svelte", ".astro"]);
@@ -247,6 +247,14 @@ function recenser(): { ancres: number; sansAncre: string[] } {
     for (const { nom, balise, index } of balisesInteractives(texte)) {
       // Une ancre sans `href` est décorative, pas un point d'interaction.
       if (nom === "a" && !balise.includes("href")) continue;
+      // `mailto:` et `tel:` sortent du produit : cliquer y ouvre un client de
+      // messagerie ou un téléphone, qu'aucune recette ne pilote. Les ancrer
+      // reviendrait à promettre un test qu'on ne peut pas écrire.
+      //
+      // Onze `mailto:` et un `tel:`, presque tous dans les pages juridiques et
+      // les fiches de contact du syndic. Le lien reste utile à l'utilisateur ;
+      // il n'est simplement pas un point d'interaction mesurable.
+      if (nom === "a" && /href=[{"'`]*(mailto|tel):/.test(balise)) continue;
       if (balise.includes("data-testid")) {
         ancres += 1;
       } else {

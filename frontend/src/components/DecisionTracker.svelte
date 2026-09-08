@@ -156,6 +156,7 @@
           {$_("board.filterByStatus")}:
         </label>
         <select
+          data-testid="decision-status-filter"
           id="decision-status-filter"
           bind:value={statusFilter}
           onchange={handleStatusFilterChange}

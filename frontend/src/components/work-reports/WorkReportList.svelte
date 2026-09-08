@@ -205,6 +205,7 @@
             >{$_("common.title")} *</label
           >
           <input
+            data-testid="wr-new-title"
             id="wr-new-title"
             bind:value={form.title}
             class="w-full border rounded px-3 py-1.5 text-sm"
@@ -218,6 +219,7 @@
             >{$_("workReports.contractor")} *</label
           >
           <input
+            data-testid="wr-new-contractor"
             id="wr-new-contractor"
             bind:value={form.contractor_name}
             class="w-full border rounded px-3 py-1.5 text-sm"
@@ -229,6 +231,7 @@
             >{$_("workReports.workType")}</label
           >
           <select
+            data-testid="wr-new-type"
             id="wr-new-type"
             bind:value={form.work_type}
             class="w-full border rounded px-3 py-1.5 text-sm"
@@ -243,6 +246,7 @@
             >{$_("workReports.workDate")}</label
           >
           <input
+            data-testid="wr-new-date"
             id="wr-new-date"
             type="date"
             bind:value={form.work_date}
@@ -254,6 +258,7 @@
             >{$_("workReports.cost")}</label
           >
           <input
+            data-testid="wr-new-cost"
             id="wr-new-cost"
             type="number"
             bind:value={form.cost}
@@ -267,6 +272,7 @@
             >{$_("workReports.warranty")}</label
           >
           <select
+            data-testid="wr-new-warranty"
             id="wr-new-warranty"
             bind:value={form.warranty_type}
             class="w-full border rounded px-3 py-1.5 text-sm"
@@ -281,6 +287,7 @@
             >{$_("workReports.invoiceNumber")}</label
           >
           <input
+            data-testid="wr-new-invoice"
             id="wr-new-invoice"
             bind:value={form.invoice_number}
             class="w-full border rounded px-3 py-1.5 text-sm"
@@ -292,6 +299,7 @@
             >{$_("workReports.contactContractor")}</label
           >
           <input
+            data-testid="wr-new-contact"
             id="wr-new-contact"
             bind:value={form.contractor_contact}
             class="w-full border rounded px-3 py-1.5 text-sm"
@@ -303,6 +311,7 @@
             >{$_("common.description")}</label
           >
           <textarea
+            data-testid="wr-new-desc"
             id="wr-new-desc"
             bind:value={form.description}
             rows="2"
@@ -314,6 +323,7 @@
             >{$_("common.notes")}</label
           >
           <textarea
+            data-testid="wr-new-notes"
             id="wr-new-notes"
             bind:value={form.notes}
             rows="2"

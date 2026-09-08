@@ -123,6 +123,7 @@
     <div class="header-controls">
       <label for="mcp-model-select" class="sr-only">{$_("mcp.title")}</label>
       <select
+        data-testid="mcp-model-select"
         id="mcp-model-select"
         bind:value={selectedModel}
         class="model-select"
@@ -218,6 +219,7 @@
       >{$_("mcp.inputPlaceholder")}</label
     >
     <textarea
+      data-testid="mcp-input-message"
       id="mcp-input-message"
       bind:value={inputMessage}
       on:keydown={handleKeydown}

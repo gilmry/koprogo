@@ -105,6 +105,7 @@
           >{$_("common.status")}</label
         >
         <select
+          data-testid="filter-status"
           id="filter-status"
           bind:value={filterStatus}
           on:change={() => {

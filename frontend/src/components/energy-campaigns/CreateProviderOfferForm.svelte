@@ -268,6 +268,7 @@
         <span class="text-red-500">*</span>
       </label>
       <input
+        data-testid="savings"
         type="number"
         id="savings"
         bind:value={formData.estimated_savings_pct}
