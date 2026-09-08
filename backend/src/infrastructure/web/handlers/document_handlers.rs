@@ -134,8 +134,32 @@ pub async fn upload_document(
 
 /// Get document metadata by ID
 #[get("/documents/{id}")]
-pub async fn get_document(app_state: web::Data<AppState>, path: web::Path<Uuid>) -> impl Responder {
+pub async fn get_document(
+    app_state: web::Data<AppState>,
+    user: AuthenticatedUser,
+    path: web::Path<Uuid>,
+) -> impl Responder {
     let id = path.into_inner();
+
+    // Aucune identité n'était exigée ici : ni `AuthenticatedUser`, ni jeton
+    // lu à la main. N'importe qui pouvait lire n'importe quel document de
+    // n'importe quelle copropriété, sur simple connaissance de son identifiant.
+    //
+    // Le cliquet d'identité de #772 ne pouvait pas le voir : il compte les
+    // routes qui PRENNENT `AuthenticatedUser` sans s'en servir. Une route qui
+    // ne le prend pas du tout lui échappait entièrement. Cf. #845.
+    if let Err(err) =
+        crate::infrastructure::web::middleware::scope_guard::verify_document_org_access(
+            &user,
+            id,
+            &app_state.document_use_cases,
+            &app_state.building_use_cases,
+            &app_state.acp_use_cases,
+        )
+        .await
+    {
+        return err.error_response();
+    }
 
     match app_state.document_use_cases.get_document(id).await {
         Ok(document) => HttpResponse::Ok().json(document),

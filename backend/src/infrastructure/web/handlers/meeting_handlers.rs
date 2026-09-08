@@ -237,9 +237,30 @@ pub async fn list_meetings_by_building(
 #[put("/meetings/{id}")]
 pub async fn update_meeting(
     state: web::Data<AppState>,
+    user: AuthenticatedUser,
     id: web::Path<Uuid>,
     request: web::Json<UpdateMeetingRequest>,
 ) -> impl Responder {
+    // Aucune identité n'était exigée ici : ce gestionnaire ne prenait ni
+    // `AuthenticatedUser`, ni jeton lu à la main. N'importe qui pouvait donc
+    // modifier n'importe quelle assemblée générale sur simple connaissance de son identifiant.
+    //
+    // Le cliquet d'identité de #772 ne pouvait pas le voir : il compte les
+    // routes qui PRENNENT `AuthenticatedUser` sans s'en servir. Une route qui
+    // ne le prend pas du tout lui échappait entièrement. Cf. #845.
+    if let Err(err) =
+        crate::infrastructure::web::middleware::scope_guard::verify_meeting_org_access(
+            &user,
+            *id,
+            &state.meeting_use_cases,
+            &state.building_use_cases,
+            &state.acp_use_cases,
+        )
+        .await
+    {
+        return err.error_response();
+    }
+
     match state
         .meeting_use_cases
         .update_meeting(*id, request.into_inner())
@@ -433,7 +454,31 @@ pub async fn reschedule_meeting(
 }
 
 #[delete("/meetings/{id}")]
-pub async fn delete_meeting(state: web::Data<AppState>, id: web::Path<Uuid>) -> impl Responder {
+pub async fn delete_meeting(
+    state: web::Data<AppState>,
+    user: AuthenticatedUser,
+    id: web::Path<Uuid>,
+) -> impl Responder {
+    // Aucune identité n'était exigée ici : ce gestionnaire ne prenait ni
+    // `AuthenticatedUser`, ni jeton lu à la main. N'importe qui pouvait donc
+    // supprimer n'importe quelle assemblée générale sur simple connaissance de son identifiant.
+    //
+    // Le cliquet d'identité de #772 ne pouvait pas le voir : il compte les
+    // routes qui PRENNENT `AuthenticatedUser` sans s'en servir. Une route qui
+    // ne le prend pas du tout lui échappait entièrement. Cf. #845.
+    if let Err(err) =
+        crate::infrastructure::web::middleware::scope_guard::verify_meeting_org_access(
+            &user,
+            *id,
+            &state.meeting_use_cases,
+            &state.building_use_cases,
+            &state.acp_use_cases,
+        )
+        .await
+    {
+        return err.error_response();
+    }
+
     match state.meeting_use_cases.delete_meeting(*id).await {
         Ok(true) => HttpResponse::NoContent().finish(),
         Ok(false) => HttpResponse::NotFound().json(serde_json::json!({
