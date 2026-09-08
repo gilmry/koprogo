@@ -71,7 +71,7 @@
   let inactiveUnits = $derived(ownerUnits.filter((uo) => !uo.is_active));
 </script>
 
-<div class="space-y-4" data-testid="owner-units">
+<div class="space-y-4" data-testid="owner-units-inline">
   {#if error}<div
       class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded"
     >

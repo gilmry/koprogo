@@ -76,7 +76,10 @@
   }
 </script>
 
-<div class="space-y-4">
+<!-- Ancre de la page « Mes lots » (/owner/units). Elle vivait sur
+     OwnerUnits.svelte, qui est la liste repliée dans le tableau des
+     copropriétaires côté syndic : le nom correspondait, pas l'écran. -->
+<div class="space-y-4" data-testid="owner-units">
   {#if buildingIds.length > 1}
     <div class="flex items-center gap-3">
       <label

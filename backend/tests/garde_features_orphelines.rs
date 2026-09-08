@@ -120,8 +120,16 @@ fn orphelines() -> (Vec<String>, usize, usize) {
 fn aucun_fichier_feature_supplementaire_ne_devient_orphelin() {
     let (liste, total, n) = orphelines();
 
+    // `<=` et non `==`, même à zéro. Un cliquet ne demande jamais l'égalité :
+    // il borne une dette. Clippy signale ici `absurd_extreme_comparisons`,
+    // parce que zéro est le minimum d'un `usize` et que la comparaison est
+    // donc dégénérée AUJOURD'HUI. Elle cessera de l'être à la première
+    // remontée du seuil, et passer à `==` transformerait ce cliquet en test
+    // d'égalité, qui échoue aussi quand la dette BAISSE.
+    #[allow(clippy::absurd_extreme_comparisons)]
+    let dette_tenue = n <= DETTE_AU_2026_09_07;
     assert!(
-        n <= DETTE_AU_2026_09_07,
+        dette_tenue,
         "{n} fichiers `.feature` ne sont chargés par aucun harnais, contre \
          {DETTE_AU_2026_09_07} au 2026-09-07 (sur {total} présents).\n\n\
          Un fichier non chargé ne produit AUCUN signal : ni vert, ni rouge, ni \
