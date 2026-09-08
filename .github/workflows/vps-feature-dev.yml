@@ -122,27 +122,44 @@ jobs:
           SQLX_OFFLINE: "true"
         run: cargo test --lib
 
-      - name: Garde d'architecture — frontières entre contextes bornés
+      # LES TREIZE GARDES, pas trois.
+      #
+      # Le 2026-09-08, le dépôt portait treize cliquets et ce portail n'en
+      # jouait que trois : `architecture`, `garde_ecriture` et
+      # `garde_champs_ignores`. Les onze autres n'étaient exécutés par AUCUN
+      # portail — ni ici, ni dans `ci.yml`, qui énumèrent tous deux leurs
+      # harnais un par un et qu'on oublie d'allonger.
+      #
+      # Le commentaire de `garde_champs_ignores` énonçait déjà la règle sans
+      # qu'on la généralise : « un cliquet que rien n'exécute ne freine rien,
+      # il décore ». Les gardes étaient donc elles-mêmes le motif qu'elles
+      # traquent — une capacité écrite, testée, et jamais atteinte.
+      #
+      # Elles sont statiques : elles lisent des sources, des migrations et des
+      # `.feature`, sans base de données. Le coût est celui de la compilation
+      # des harnais, pas de leur exécution.
+      #
+      # Une seule étape et une seule liste : deux listes divergent.
+      - name: Les treize gardes — aucune dette ne grossit
         working-directory: backend
         env:
           SQLX_OFFLINE: "true"
-        run: cargo test --test architecture
-
-      - name: Garde d'écriture — la dette ne grossit pas
-        working-directory: backend
-        env:
-          SQLX_OFFLINE: "true"
-        run: cargo test --test garde_ecriture
-
-      # `garde_champs_ignores` est né le 2026-09-04 et n'était joué par AUCUN
-      # portail : ni ici, ni dans ci.yml, qui énumèrent tous deux leurs
-      # harnais un par un. Un cliquet que rien n'exécute ne freine rien, il
-      # décore. Il coûte 0,02 s et ne demande pas de base.
-      - name: Garde des champs ignorés — la dette ne grossit pas
-        working-directory: backend
-        env:
-          SQLX_OFFLINE: "true"
-        run: cargo test --test garde_champs_ignores
+        run: |
+          cargo test --no-fail-fast \
+            --test architecture \
+            --test garde_champs_ignores \
+            --test garde_classement_par_souschaines \
+            --test garde_conformite_legale \
+            --test garde_controles_dormants \
+            --test garde_ecriture \
+            --test garde_features_orphelines \
+            --test garde_identite_absente \
+            --test garde_lecture \
+            --test garde_paniques_en_production \
+            --test garde_perimetre_wbs \
+            --test garde_schema_mort \
+            --test garde_taxonomie_bdd \
+            --test garde_taxonomie_des_tests
 
       - uses: actions/setup-node@v4
         with:
@@ -166,7 +183,13 @@ jobs:
 
       - name: svelte-check
         working-directory: frontend
-        run: npx svelte-check --threshold error
+        # `--fail-on-warnings`, comme `ci.yml`.
+        #
+        # Ce portail décidait de ce qui atteint le VPS avec un critère PLUS
+        # FAIBLE que celui des PR : `--threshold error` filtre ce qui est
+        # AFFICHÉ, il ne bloque pas sur les avertissements. La porte qui
+        # compte le plus était la moins gardée.
+        run: npx svelte-check --fail-on-warnings
 
       - name: Tests unitaires frontend
         working-directory: frontend

@@ -150,6 +150,39 @@ jobs:
           cd backend
           cargo test --lib --all-features
 
+      # LES TREIZE GARDES, qu'aucun portail ne jouait entièrement.
+      #
+      # Le 2026-09-08, `ci.yml` n'en exécutait AUCUNE et
+      # `vps-feature-dev.yml` trois sur treize. Les deux fichiers énumèrent
+      # leurs harnais un par un, et on oublie d'allonger la liste : un cliquet
+      # neuf naît donc dormant par défaut.
+      #
+      # Le commentaire de `garde_champs_ignores` disait déjà pourquoi c'est
+      # grave — « un cliquet que rien n'exécute ne freine rien, il décore » —
+      # mais ne l'avait généralisé qu'à lui-même.
+      #
+      # Elles sont statiques : sources, migrations, `.feature`. Pas de base.
+      - name: Les treize gardes — aucune dette ne grossit
+        working-directory: backend
+        env:
+          SQLX_OFFLINE: "true"
+        run: |
+          cargo test --no-fail-fast \
+            --test architecture \
+            --test garde_champs_ignores \
+            --test garde_classement_par_souschaines \
+            --test garde_conformite_legale \
+            --test garde_controles_dormants \
+            --test garde_ecriture \
+            --test garde_features_orphelines \
+            --test garde_identite_absente \
+            --test garde_lecture \
+            --test garde_paniques_en_production \
+            --test garde_perimetre_wbs \
+            --test garde_schema_mort \
+            --test garde_taxonomie_bdd \
+            --test garde_taxonomie_des_tests
+
   test-bdd:
     name: BDD Tests
     runs-on: ubuntu-latest
