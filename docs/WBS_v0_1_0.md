@@ -567,12 +567,12 @@ cinq jours.
 
 | Priorité | Nombre |
 |---|---|
-| critical | 5 |
-| high | 22 |
+| critical | 4 |
+| high | 23 |
 | medium | 17 |
 | — | 22 |
 
-### Track R — Défauts de recette navigateur (3)
+### Track R — Défauts de recette navigateur (2)
 
 Six recettes menées au navigateur entre le 2026-09-04 et le 2026-09-06. Le
 motif dominant, confirmé six fois : **une capacité écrite, testée, et
@@ -581,7 +581,6 @@ ne peut pas y arriver.
 
 | Issue | Prio | Intitulé |
 |---|---|---|
-| #772 | critical | Fuite inter-organisations : 75 routes imbriquées sur 310 n'exigent aucune identité — des votes nomi… |
 | #780 | critical | Le cycle de vie d'une AG ne peut pas aboutir : trois verrous indépendants, aucun contournable depui… |
 | #779 | high | Rebrancher les six modules communautaires : 111 points d'entrée servis que le frontend n'appelle pa… |
 
@@ -589,8 +588,10 @@ ne peut pas y arriver.
 
 Revue de design du 2026-09-06. Entrée en 0.1.0 le même jour : un financeur ne
 lit pas du code, et l'ASBL se fonde sur ce que le produit montre. **U2 ne
-commence qu'une fois #772 fermée** — remanier le périmètre applicatif avant
-d'avoir fermé la dette de cloisonnement serait l'ordre inverse du bon.
+commençait qu'une fois #772 fermée. **Elle l'est depuis le 2026-09-08** : la
+dette de cloisonnement est passée de 109 routes imbriquées sans identité à
+trois, et un test end-to-end prouve qu'aucune donnée ne traverse d'une
+organisation à l'autre, en lecture comme en écriture. U2 n'est plus bloquée.
 
 | Issue | Prio | Intitulé |
 |---|---|---|
@@ -671,7 +672,7 @@ au-delà du strict Art. 3.87.
 | #582 | — | [Story 4.7] CdC membre élu + action create_alert |
 | #583 | — | [Story 4.8] [cluster-coord] CommissaireAuxComptes + VerificationCertificate |
 
-### Track T — Dette d'infrastructure de test (3)
+### Track T — Dette d'infrastructure de test (4)
 
 Ce qui empêche la CI de dire la vérité. Les quatre jobs rouges en continu du
 2026-09-04 — `prettier`, le contrat OpenAPI, `oasdiff` et la suite BDD — sont
@@ -689,6 +690,7 @@ affiche sans bloquer apprend à croire qu'on regarde.
 
 | Issue | Prio | Intitulé |
 |---|---|---|
+| #838 | high | 389 scénarios BDD dans 27 fichiers ne sont chargés par aucun harnais : ni verts, ni rouges |
 | #832 | medium | Quinze specs Playwright échouent sans erreur d'identité : les ancrages existent mais l'élément n'es… |
 | #837 | medium | La matrice de conformité légale déclare manquantes des règles implémentées : périmée depuis le 2026… |
 | #696 | — | Instabilité smoke suite Playwright CI : 109 échecs sur specs pré-existantes (occurrence 2026-08-08) |

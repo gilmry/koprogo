@@ -13,12 +13,14 @@ TRACKS = [
 motif dominant, confirmé six fois : **une capacité écrite, testée, et
 inatteignable**. Nos tests prouvent que le code marche tout en masquant qu'on
 ne peut pas y arriver.""",
-  [772,779,780]),
+  [779,780]),
 
  ("U", "Refonte UX/UI", """Revue de design du 2026-09-06. Entrée en 0.1.0 le même jour : un financeur ne
 lit pas du code, et l'ASBL se fonde sur ce que le produit montre. **U2 ne
-commence qu'une fois #772 fermée** — remanier le périmètre applicatif avant
-d'avoir fermé la dette de cloisonnement serait l'ordre inverse du bon.""",
+commençait qu'une fois #772 fermée. **Elle l'est depuis le 2026-09-08** : la
+dette de cloisonnement est passée de 109 routes imbriquées sans identité à
+trois, et un test end-to-end prouve qu'aucune donnée ne traverse d'une
+organisation à l'autre, en lecture comme en écriture. U2 n'est plus bloquée.""",
   [556,818,820,821,822,823,824,825,826,827,797,798,802,803,834]),
 
  ("D", "Documentation vivante multi-persona", """Six personas, quatre workflows transverses, et la restructuration des cent
