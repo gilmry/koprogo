@@ -41,7 +41,17 @@ use std::fs;
 use std::path::{Path, PathBuf};
 
 /// Routes sans aucune vérification d'identité. **Ne doit que BAISSER.**
-const DETTE_AU_2026_09_08: usize = 19;
+/// Six routes, TOUTES en attente d'arbitrage (docs/ARBITRAGES_EN_ATTENTE.md).
+///
+/// Le chiffre précédent, 19, était FAUX : je l'avais obtenu en soustrayant
+/// 5 de 24 plutôt qu'en mesurant. Le détecteur en trouvait 9. Douzième écart
+/// de mesure de la journée, et le mien.
+///
+/// Les six qui restent attendent une décision, pas du code : quatre routes de
+/// campagne énergétique qui s'ouvrent peut-être à des particuliers hors
+/// copropriété, l'état daté consulté par référence par un notaire sans compte,
+/// et le pixel de suivi d'ouverture appelé par un client de messagerie.
+const DETTE_AU_2026_09_08: usize = 6;
 
 /// Les routes publiques, et pourquoi.
 ///
@@ -119,9 +129,15 @@ fn routes() -> Vec<(String, String, String, String)> {
 
     let mut sortie = Vec::new();
     for chemin in fichiers {
-        let Ok(source) = fs::read_to_string(&chemin) else {
+        let Ok(source_brute) = fs::read_to_string(&chemin) else {
             continue;
         };
+        // Dépouillé AVANT l'extraction : sans cela le relevé compte les
+        // déclarations de route COMMENTÉES. `POST /seed/realistic` est dans ce
+        // cas — son gestionnaire entier est en commentaire — et il apparaissait
+        // comme une route nue alors qu'il n'existe pas.
+        let source = sans_commentaires(&source_brute);
+        let source = source.as_str();
         let fichier = chemin
             .file_name()
             .map(|n| n.to_string_lossy().to_string())
@@ -173,6 +189,60 @@ fn routes() -> Vec<(String, String, String, String)> {
                 format!("{params}{corps}"),
             ));
         }
+    }
+    sortie
+}
+
+/// Le code, commentaires retirés.
+///
+/// ── Pourquoi ce dépouillement est indispensable ──────────────────────────
+///
+/// Sans lui, la garde lit les COMMENTAIRES comme du code. Et les commentaires
+/// qui expliquent ce défaut nomment forcément `AuthenticatedUser` :
+///
+/// ```text
+/// // Cette route ne prenait AUCUNE identité : ni `AuthenticatedUser`, ni
+/// // jeton lu à la main.
+/// ```
+///
+/// Un gestionnaire portant cette note passait donc pour gardé **du seul fait
+/// de documenter qu'il ne l'était pas**. Constaté le 2026-09-08 en vérifiant
+/// par témoin : le paramètre retiré de `list_work_reports_paginated`, la garde
+/// restait verte.
+///
+/// Le dépouillement s'applique AVANT l'extraction des routes, et pas seulement
+/// avant la vérification. Sinon le relevé compte les déclarations COMMENTÉES :
+/// `POST /seed/realistic` est dans ce cas, son gestionnaire entier étant en
+/// commentaire, et il ressortait comme une route nue alors qu'il n'existe
+/// pas.
+///
+/// C'est le sixième angle mort de garde de la journée, et le plus retors :
+/// les cinq autres ne voyaient pas un défaut, celui-ci se laissait convaincre
+/// par sa propre documentation.
+fn sans_commentaires(code: &str) -> String {
+    let mut sortie = String::with_capacity(code.len());
+    let mut dans_bloc = false;
+    for ligne in code.lines() {
+        let mut reste = ligne;
+        if dans_bloc {
+            match reste.find("*/") {
+                Some(i) => {
+                    dans_bloc = false;
+                    reste = &reste[i + 2..];
+                }
+                None => continue,
+            }
+        }
+        if let Some(i) = reste.find("/*") {
+            dans_bloc = !reste[i..].contains("*/");
+            reste = &reste[..i];
+        }
+        let sans_ligne = match reste.find("//") {
+            Some(i) => &reste[..i],
+            None => reste,
+        };
+        sortie.push_str(sans_ligne);
+        sortie.push('\n');
     }
     sortie
 }

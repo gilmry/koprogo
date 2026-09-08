@@ -64,14 +64,31 @@ pub async fn create_technical_inspection(
 #[get("/technical-inspections/{id}")]
 pub async fn get_technical_inspection(
     state: web::Data<AppState>,
+    user: AuthenticatedUser,
     id: web::Path<Uuid>,
 ) -> impl Responder {
+    // Cette route ne prenait AUCUNE identité : ni `AuthenticatedUser`, ni
+    // jeton lu à la main. Le cliquet de #772 ne la voyait pas — il ne
+    // compte que les routes PRENANT une identité sans s'en servir.
+    // Cf. #845.
+
     match state
         .technical_inspection_use_cases
         .get_technical_inspection(*id)
         .await
     {
-        Ok(Some(inspection)) => HttpResponse::Ok().json(inspection),
+        Ok(Some(inspection)) => {
+            // Un contrôle technique porte l'organisation de son immeuble : on
+            // refuse celui d'une autre copropriété plutôt que de le servir.
+            match Uuid::parse_str(&inspection.organization_id) {
+                Ok(org) => match user.verify_org_access(org) {
+                    Ok(()) => HttpResponse::Ok().json(inspection),
+                    Err(e) => HttpResponse::Forbidden().json(serde_json::json!({ "error": e })),
+                },
+                Err(_) => HttpResponse::InternalServerError()
+                    .json(serde_json::json!({"error": "Invalid organization_id"})),
+            }
+        }
         Ok(None) => HttpResponse::NotFound().json(serde_json::json!({
             "error": "Technical inspection not found"
         })),
@@ -135,9 +152,21 @@ pub async fn list_organization_technical_inspections(
 #[get("/technical-inspections")]
 pub async fn list_technical_inspections_paginated(
     state: web::Data<AppState>,
+    _user: AuthenticatedUser,
     page_request: web::Query<PageRequest>,
     filters: web::Query<TechnicalInspectionFilters>,
 ) -> impl Responder {
+    // Cette route ne prenait AUCUNE identité : ni `AuthenticatedUser`, ni
+    // jeton lu à la main. Le cliquet de #772 ne la voyait pas — il ne
+    // compte que les routes PRENANT une identité sans s'en servir.
+    // Cf. #845.
+    //
+    // L'identité est EXIGÉE mais pas encore employée à filtrer : la liste
+    // paginée ne porte pas de périmètre, et l'y ajouter demande de savoir si
+    // elle doit être bornée par organisation ou par immeuble. Exiger un jeton
+    // ferme la porte anonyme sans préjuger de ce filtrage — la dette de
+    // lecture imbriquée reste suivie par `garde_lecture`.
+
     match state
         .technical_inspection_use_cases
         .list_technical_inspections_paginated(&page_request.into_inner(), &filters.into_inner())

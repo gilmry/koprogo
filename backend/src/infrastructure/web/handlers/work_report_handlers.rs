@@ -168,9 +168,18 @@ pub async fn list_organization_work_reports(
 #[get("/work-reports")]
 pub async fn list_work_reports_paginated(
     state: web::Data<AppState>,
+    _user: AuthenticatedUser,
     page_request: web::Query<PageRequest>,
     filters: web::Query<WorkReportFilters>,
 ) -> impl Responder {
+    // Cette route ne prenait AUCUNE identité : ni `AuthenticatedUser`, ni
+    // jeton lu à la main. Le cliquet de #772 ne la voyait pas — il ne
+    // compte que les routes PRENANT une identité sans s'en servir.
+    // Cf. #845.
+    //
+    // Même remarque que pour les contrôles techniques : l'identité est exigée,
+    // le filtrage par périmètre de cette liste reste à décider.
+
     match state
         .work_report_use_cases
         .list_work_reports_paginated(&page_request.into_inner(), &filters.into_inner())
