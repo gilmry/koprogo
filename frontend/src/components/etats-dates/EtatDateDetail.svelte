@@ -7,12 +7,40 @@
   import { formatDate } from "../../lib/utils/date.utils";
   import { formatCurrency } from "../../lib/utils/finance.utils";
   import { withErrorHandling } from "../../lib/utils/error.utils";
+  import ConfirmDialog from "../ui/ConfirmDialog.svelte";
+  import Modal from "../ui/Modal.svelte";
+  import Button from "../ui/Button.svelte";
 
   let etatDate: EtatDate | null = null;
   let loading = true;
   let error = "";
   let actionLoading = false;
   let etatDateId = "";
+
+  // L'action en attente de confirmation, ou `null`.
+  //
+  // ── Pourquoi des `let` simples et non des `$state` ──────────────────────
+  //
+  // Ce composant est en mode LEGACY : il n'appelle pas `$props()`, et ses
+  // `let` sont donc réactifs tels quels. Y introduire un seul `$state`
+  // basculerait le fichier en mode runes et rendrait tous les autres `let`
+  // NON réactifs — c'est très exactement le défaut de #832, où quinze
+  // variables de `GdprDataPanel` avaient cessé de redessiner l'écran et où
+  // trois modales ne pouvaient plus s'ouvrir.
+  //
+  // ── Pourquoi remplacer les dialogues natifs ─────────────────────────────
+  //
+  // Trois `confirm()` et un `prompt()` du NAVIGATEUR. Un navigateur piloté les
+  // supprime, et l'action prend alors la forme exacte d'une panne : aucun
+  // dialogue, aucune requête, aucun message. C'est ce qui a fait déclarer mort
+  // le bouton « Reporter » d'une assemblée pendant deux recettes (#780).
+  //
+  // L'état daté est demandé par un notaire à la vente d'un lot, sous quinze
+  // jours ouvrables (Art. 3.94). Un écran dont les actions sont intestables
+  // sur ce chemin-là ne peut pas rester en l'état. Cf. #844.
+  let actionEnAttente: "traiter" | "livrer" | "supprimer" | null = null;
+  let modaleGeneration = false;
+  let cheminDuPdf = "";
 
   onMount(() => {
     const params = new URLSearchParams(window.location.search);
@@ -39,8 +67,12 @@
     return `${value.toFixed(2)}%`;
   }
 
-  async function markInProgress() {
-    if (!confirm($_("etatsDate.confirms.startProcessing"))) return;
+  function markInProgress() {
+    actionEnAttente = "traiter";
+  }
+
+  async function executerTraiter() {
+    actionEnAttente = null;
     const result = await withErrorHandling({
       action: () => etatsDatesApi.markInProgress(etatDateId),
       setLoading: (v) => (actionLoading = v),
@@ -49,8 +81,14 @@
     if (result) etatDate = result;
   }
 
-  async function markGenerated() {
-    const pdfPath = prompt($_("etatsDate.prompts.pdfPath"));
+  function markGenerated() {
+    modaleGeneration = true;
+  }
+
+  async function executerGeneration() {
+    const pdfPath = cheminDuPdf;
+    modaleGeneration = false;
+    cheminDuPdf = "";
     if (!pdfPath) return;
     const result = await withErrorHandling({
       action: () => etatsDatesApi.markGenerated(etatDateId, pdfPath),
@@ -60,8 +98,12 @@
     if (result) etatDate = result;
   }
 
-  async function markDelivered() {
-    if (!confirm($_("etatsDate.confirms.confirmDelivery"))) return;
+  function markDelivered() {
+    actionEnAttente = "livrer";
+  }
+
+  async function executerLivrer() {
+    actionEnAttente = null;
     const result = await withErrorHandling({
       action: () => etatsDatesApi.markDelivered(etatDateId),
       setLoading: (v) => (actionLoading = v),
@@ -70,8 +112,12 @@
     if (result) etatDate = result;
   }
 
-  async function deleteEtatDate() {
-    if (!confirm($_("etatsDate.confirms.deleteEtatDate"))) return;
+  function deleteEtatDate() {
+    actionEnAttente = "supprimer";
+  }
+
+  async function executerSupprimer() {
+    actionEnAttente = null;
     const result = await withErrorHandling({
       action: () => etatsDatesApi.delete(etatDateId),
       errorMessage: $_("etatsDate.errors.deletion"),
@@ -368,3 +414,73 @@
     </div>
   </div>
 {/if}
+
+<!-- Les dialogues qui remplacent trois `confirm()` et un `prompt()`.
+     Dans la page, donc cliquables par un navigateur piloté, traduits, et
+     dotés d'un piège de focus. Cf. #844, #780. -->
+<ConfirmDialog
+  isOpen={actionEnAttente !== null}
+  title={$_("common.confirm")}
+  message={actionEnAttente === "traiter"
+    ? $_("etatsDate.confirms.startProcessing")
+    : actionEnAttente === "livrer"
+      ? $_("etatsDate.confirms.confirmDelivery")
+      : actionEnAttente === "supprimer"
+        ? $_("etatsDate.confirms.deleteEtatDate")
+        : ""}
+  variant={actionEnAttente === "supprimer" ? "danger" : "primary"}
+  loading={actionLoading}
+  onconfirm={() => {
+    if (actionEnAttente === "traiter") executerTraiter();
+    else if (actionEnAttente === "livrer") executerLivrer();
+    else if (actionEnAttente === "supprimer") executerSupprimer();
+  }}
+  oncancel={() => (actionEnAttente = null)}
+/>
+
+<Modal
+  isOpen={modaleGeneration}
+  title={$_("etatsDate.prompts.pdfPath")}
+  size="sm"
+  onclose={() => {
+    modaleGeneration = false;
+    cheminDuPdf = "";
+  }}
+>
+  <label
+    class="block text-sm font-medium text-gray-700"
+    for="etat-date-pdf-path"
+  >
+    {$_("etatsDate.prompts.pdfPath")}
+  </label>
+  <input
+    id="etat-date-pdf-path"
+    type="text"
+    bind:value={cheminDuPdf}
+    data-testid="etat-date-pdf-path-input"
+    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm sm:text-sm"
+  />
+
+  {#snippet footer()}
+    <div class="flex justify-end space-x-3">
+      <Button
+        variant="outline"
+        onclick={() => {
+          modaleGeneration = false;
+          cheminDuPdf = "";
+        }}
+        data-testid="etat-date-pdf-cancel"
+      >
+        {$_("common.cancel")}
+      </Button>
+      <Button
+        variant="primary"
+        onclick={executerGeneration}
+        disabled={cheminDuPdf.length === 0 || actionLoading}
+        data-testid="etat-date-pdf-submit"
+      >
+        {$_("common.confirm")}
+      </Button>
+    </div>
+  {/snippet}
+</Modal>

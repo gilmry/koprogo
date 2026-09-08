@@ -41,7 +41,7 @@ import { join } from "node:path";
 const RACINE = join(process.cwd(), "src");
 
 /** Appels aux dialogues natifs. **Ne doit que BAISSER.** */
-const DETTE_AU_2026_09_08 = 55;
+const DETTE_AU_2026_09_08 = 51;
 
 const APPEL_NATIF = /(?<![.\w$])(?:window\.)?(?:confirm|prompt|alert)\s*\(/g;
 
@@ -131,15 +131,18 @@ describe("les dialogues natifs ne se multiplient pas (#844)", () => {
   it.each([
     "components/MeetingDetail.svelte",
     "components/convocations/ConvocationDetailView.svelte",
+    "components/etats-dates/EtatDateDetail.svelte",
   ])("garde %s exempt de dialogue natif", (relatif) => {
     const source = sansCommentaires(
       readFileSync(join(RACINE, relatif), "utf8"),
     );
     expect(
       source.match(APPEL_NATIF)?.length ?? 0,
-      `un dialogue natif est revenu dans ${relatif}. Ces deux écrans sont ` +
-        `ceux des deux verrous de #780 : ils ne peuvent pas se permettre ` +
-        `d'être intestables par un navigateur piloté.`,
+      `un dialogue natif est revenu dans ${relatif}. Les deux premiers sont ` +
+        `les écrans des deux verrous de #780 ; le troisième est l'état daté, ` +
+        `que le notaire demande à la vente d'un lot sous quinze jours ` +
+        `ouvrables (Art. 3.94). Aucun ne peut se permettre d'être intestable ` +
+        `par un navigateur piloté.`,
     ).toBe(0);
   });
 });
