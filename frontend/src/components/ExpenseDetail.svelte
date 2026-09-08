@@ -15,6 +15,7 @@
   import { formatCurrency, formatAmount } from "../lib/utils/finance.utils";
   import { withErrorHandling } from "../lib/utils/error.utils";
   import { toNumber } from "../lib/utils/decimal.utils";
+  import ConfirmDialog from "./ui/ConfirmDialog.svelte";
 
   let expense: Expense | null = null;
   let building: Building | null = null;
@@ -25,6 +26,23 @@
   let loading = true;
   let error = "";
   let expenseId: string = "";
+
+  // L'action en attente de confirmation, ou `null`.
+  //
+  // Ce composant est en mode LEGACY — pas de `$props()` — et ses `let` sont
+  // donc réactifs tels quels. Y introduire un `$state` basculerait le fichier
+  // en mode runes et rendrait tous les autres NON réactifs : c'est le défaut
+  // de #832.
+  //
+  // Les trois `confirm()` remplacés étaient des dialogues du NAVIGATEUR, qu'un
+  // navigateur piloté supprime. L'action prenait alors la forme exacte d'une
+  // panne : aucun dialogue, aucune requête, aucun message (#844).
+  //
+  // Les trois gardent des actions destructrices sur des montants déjà notifiés
+  // aux copropriétaires — recalculer une ventilation, annuler une dépense,
+  // dépointer un paiement. Elles méritent une confirmation, et surtout une
+  // confirmation ATTEIGNABLE.
+  let actionEnAttente: "recalculer" | "annuler" | "depointer" | null = null;
 
   onMount(() => {
     const urlParams = new URLSearchParams(window.location.search);
@@ -137,11 +155,15 @@
     // Recalculer ecrase des montants dus potentiellement deja notifies :
     // on ne le fait pas sans confirmation. Le premier calcul, lui, ne detruit
     // rien et part directement.
-    if (
-      distributions.length > 0 &&
-      !confirm($_("expenses.confirm_recalculate_distribution"))
-    )
+    if (distributions.length > 0) {
+      actionEnAttente = "recalculer";
       return;
+    }
+    await executerLeCalcul();
+  };
+
+  const executerLeCalcul = async () => {
+    if (!expenseId) return;
     calculatingDistribution = true;
     await withErrorHandling({
       action: async () => {
@@ -178,9 +200,14 @@
     });
   };
 
-  const handleCancel = async () => {
+  const handleCancel = () => {
     if (!expense) return;
-    if (!confirm($_("expenses.confirm_cancel"))) return;
+    actionEnAttente = "annuler";
+  };
+
+  const executerAnnulation = async () => {
+    actionEnAttente = null;
+    if (!expense) return;
     await withErrorHandling({
       action: async () => {
         await api.post(`/expenses/${expense!.id}/cancel`, {});
@@ -203,9 +230,14 @@
     });
   };
 
-  const handleUnpay = async () => {
+  const handleUnpay = () => {
     if (!expense) return;
-    if (!confirm($_("expenses.confirm_unpay"))) return;
+    actionEnAttente = "depointer";
+  };
+
+  const executerDepointage = async () => {
+    actionEnAttente = null;
+    if (!expense) return;
     await withErrorHandling({
       action: async () => {
         await api.post(`/expenses/${expense!.id}/unpay`, {});
@@ -769,3 +801,27 @@
     </div>
   {/if}
 </div>
+
+<!-- Le dialogue qui remplace trois `confirm()` natifs. Dans la page, donc
+     cliquable par un navigateur piloté, traduit, et doté d'un piège de focus.
+     Cf. #844. -->
+<ConfirmDialog
+  isOpen={actionEnAttente !== null}
+  title={$_("common.confirm")}
+  message={actionEnAttente === "recalculer"
+    ? $_("expenses.confirm_recalculate_distribution")
+    : actionEnAttente === "annuler"
+      ? $_("expenses.confirm_cancel")
+      : actionEnAttente === "depointer"
+        ? $_("expenses.confirm_unpay")
+        : ""}
+  variant="danger"
+  onconfirm={() => {
+    if (actionEnAttente === "recalculer") {
+      actionEnAttente = null;
+      executerLeCalcul();
+    } else if (actionEnAttente === "annuler") executerAnnulation();
+    else if (actionEnAttente === "depointer") executerDepointage();
+  }}
+  oncancel={() => (actionEnAttente = null)}
+/>

@@ -15,8 +15,22 @@
   import { formatCurrency } from "../../lib/utils/finance.utils";
   import { toast } from "../../stores/toast";
   import { api } from "../../lib/api";
+  import ConfirmDialog from "../ui/ConfirmDialog.svelte";
 
   let budget: Budget | null = null;
+
+  // L'action en attente de confirmation, ou `null`.
+  //
+  // Composant en mode LEGACY : ses `let` sont réactifs tels quels, et un seul
+  // `$state` le basculerait en mode runes en rendant tous les autres NON
+  // réactifs (#832).
+  //
+  // Les trois `confirm()` remplacés étaient des dialogues du NAVIGATEUR, qu'un
+  // navigateur piloté supprime : l'action prenait la forme exacte d'une panne
+  // (#844). Soumettre un budget à l'approbation de l'assemblée, l'archiver ou
+  // le supprimer sont des actes de gestion qui méritent une confirmation
+  // atteignable.
+  let actionEnAttente: "soumettre" | "archiver" | "supprimer" | null = null;
   let variance: BudgetVariance | null = null;
   let loading = true;
   let error = "";
@@ -73,8 +87,12 @@
     }
   }
 
-  async function submitBudget() {
-    if (!confirm($_("budgets.confirms.submitForApproval"))) return;
+  function submitBudget() {
+    actionEnAttente = "soumettre";
+  }
+
+  async function executerSoumission() {
+    actionEnAttente = null;
     const result = await withErrorHandling({
       action: () => budgetsApi.submit(budgetId),
       setLoading: (v) => (actionLoading = v),
@@ -111,8 +129,12 @@
     }
   }
 
-  async function archiveBudget() {
-    if (!confirm($_("budgets.confirms.archiveBudget"))) return;
+  function archiveBudget() {
+    actionEnAttente = "archiver";
+  }
+
+  async function executerArchivage() {
+    actionEnAttente = null;
     const result = await withErrorHandling({
       action: () => budgetsApi.archive(budgetId),
       setLoading: (v) => (actionLoading = v),
@@ -121,8 +143,12 @@
     if (result) budget = result;
   }
 
-  async function deleteBudget() {
-    if (!confirm($_("budgets.confirms.deleteBudget"))) return;
+  function deleteBudget() {
+    actionEnAttente = "supprimer";
+  }
+
+  async function executerSuppression() {
+    actionEnAttente = null;
     await withErrorHandling({
       action: () => budgetsApi.delete(budgetId),
       errorMessage: $_("budgets.errors.delete"),
@@ -536,3 +562,24 @@
     </div>
   {/if}
 {/if}
+
+<!-- Le dialogue qui remplace trois `confirm()` natifs (#844). -->
+<ConfirmDialog
+  isOpen={actionEnAttente !== null}
+  title={$_("common.confirm")}
+  message={actionEnAttente === "soumettre"
+    ? $_("budgets.confirms.submitForApproval")
+    : actionEnAttente === "archiver"
+      ? $_("budgets.confirms.archiveBudget")
+      : actionEnAttente === "supprimer"
+        ? $_("budgets.confirms.deleteBudget")
+        : ""}
+  variant={actionEnAttente === "supprimer" ? "danger" : "primary"}
+  loading={actionLoading}
+  onconfirm={() => {
+    if (actionEnAttente === "soumettre") executerSoumission();
+    else if (actionEnAttente === "archiver") executerArchivage();
+    else if (actionEnAttente === "supprimer") executerSuppression();
+  }}
+  oncancel={() => (actionEnAttente = null)}
+/>

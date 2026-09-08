@@ -41,7 +41,7 @@ import { join } from "node:path";
 const RACINE = join(process.cwd(), "src");
 
 /** Appels aux dialogues natifs. **Ne doit que BAISSER.** */
-const DETTE_AU_2026_09_08 = 51;
+const DETTE_AU_2026_09_08 = 45;
 
 const APPEL_NATIF = /(?<![.\w$])(?:window\.)?(?:confirm|prompt|alert)\s*\(/g;
 
@@ -132,6 +132,8 @@ describe("les dialogues natifs ne se multiplient pas (#844)", () => {
     "components/MeetingDetail.svelte",
     "components/convocations/ConvocationDetailView.svelte",
     "components/etats-dates/EtatDateDetail.svelte",
+    "components/ExpenseDetail.svelte",
+    "components/budgets/BudgetDetail.svelte",
   ])("garde %s exempt de dialogue natif", (relatif) => {
     const source = sansCommentaires(
       readFileSync(join(RACINE, relatif), "utf8"),
@@ -141,8 +143,9 @@ describe("les dialogues natifs ne se multiplient pas (#844)", () => {
       `un dialogue natif est revenu dans ${relatif}. Les deux premiers sont ` +
         `les écrans des deux verrous de #780 ; le troisième est l'état daté, ` +
         `que le notaire demande à la vente d'un lot sous quinze jours ` +
-        `ouvrables (Art. 3.94). Aucun ne peut se permettre d'être intestable ` +
-        `par un navigateur piloté.`,
+        `ouvrables (Art. 3.94). Les deux derniers gardent des actes ` +
+        `destructeurs sur des montants notifiés aux copropriétaires. Aucun ne ` +
+        `peut se permettre d'être intestable par un navigateur piloté.`,
     ).toBe(0);
   });
 });
