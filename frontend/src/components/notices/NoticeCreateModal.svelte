@@ -128,6 +128,7 @@
             <select
               id="notice_type"
               bind:value={formData.notice_type}
+              data-testid="notice-create-type-select"
               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
             >
               {#each Object.values(NoticeType) as type}
@@ -152,6 +153,7 @@
             <select
               id="category"
               bind:value={formData.category}
+              data-testid="notice-create-category-select"
               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
             >
               {#each Object.values(NoticeCategory) as cat}
@@ -220,6 +222,7 @@
                 type="datetime-local"
                 id="event_date"
                 bind:value={eventDate}
+                data-testid="notice-create-event-date-input"
                 class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
@@ -234,6 +237,7 @@
                 type="text"
                 id="event_location"
                 bind:value={eventLocation}
+                data-testid="notice-create-event-location-input"
                 placeholder={$_("notices.event_location_placeholder")}
                 class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
               />
@@ -252,6 +256,7 @@
               type="text"
               id="contact_info"
               bind:value={formData.contact_info}
+              data-testid="notice-create-contact-input"
               placeholder={$_("notices.contact_info_placeholder")}
               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
             />
@@ -278,6 +283,7 @@
                 type="datetime-local"
                 id="expires_at"
                 bind:value={expiresDate}
+                data-testid="notice-create-expires-date-input"
                 class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
               />
             {/if}

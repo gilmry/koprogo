@@ -115,6 +115,7 @@
             <select
               id="category"
               bind:value={formData.skill_category}
+              data-testid="skill-create-category-select"
               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
             >
               {#each Object.values(SkillCategory) as category}
@@ -136,6 +137,7 @@
               type="text"
               id="skill_name"
               bind:value={formData.skill_name}
+              data-testid="skill-create-name-input"
               required
               minlength="3"
               maxlength="100"
@@ -155,6 +157,7 @@
             <textarea
               id="description"
               bind:value={formData.description}
+              data-testid="skill-create-description-textarea"
               required
               rows="4"
               maxlength="1000"
@@ -175,6 +178,7 @@
             <select
               id="expertise"
               bind:value={formData.expertise_level}
+              data-testid="skill-create-level-select"
               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
             >
               {#each Object.values(ExpertiseLevel) as level}
@@ -195,6 +199,7 @@
               type="number"
               id="hourly_rate"
               bind:value={formData.hourly_rate_credits}
+              data-testid="skill-create-rate-input"
               min="0"
               max="100"
               placeholder={$_("skills.createModal.hourlyRatePlaceholder")}
@@ -217,6 +222,7 @@
               type="number"
               id="years_exp"
               bind:value={formData.years_of_experience}
+              data-testid="skill-create-experience-input"
               min="0"
               max="50"
               placeholder={$_("skills.createModal.yearsExperiencePlaceholder")}
@@ -236,6 +242,7 @@
               type="text"
               id="certifications"
               bind:value={certificationInput}
+              data-testid="skill-create-certification-input"
               placeholder={$_("skills.createModal.certificationsPlaceholder")}
               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
             />
