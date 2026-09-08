@@ -65,7 +65,18 @@ import { join, extname } from "node:path";
  * Baisser ce nombre fait partie de chaque lot de la refonte : celui qui touche
  * un écran l'ancre.
  */
-const DETTE_AU_2026_09_06 = 672;
+/// Éléments interactifs sans ancrage. **Ne doit que BAISSER.**
+///
+/// 672 au 2026-09-06, **648 au 2026-09-08**. Les vingt-quatre posés le sont
+/// sur les trois écrans que #803 nomme en priorité — création de lot, saisie
+/// comptable, création de copropriétaire — et selon la convention relevée le
+/// même jour : `<domaine>-<objet>-<rôle>`, en casse kebab.
+///
+/// Aucune ancre n'a été inventée : chacune dérive du `bind:value` ou de l'`id`
+/// que le champ portait déjà. C'est ce qui rend la baisse relisible — un
+/// identifiant mal nommé vaut moins que pas d'identifiant, puisqu'il fera
+/// croire à une couverture.
+const DETTE_AU_2026_09_06 = 648;
 
 const RACINE = join(process.cwd(), "src");
 const EXTENSIONS = new Set([".svelte", ".astro"]);

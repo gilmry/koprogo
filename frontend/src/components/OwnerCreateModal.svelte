@@ -131,6 +131,7 @@
             <select
               id="organization_id"
               bind:value={formData.organization_id}
+              data-testid="owner-create-organization-select"
               required
               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
               ><option value=""
@@ -151,6 +152,7 @@
               type="text"
               id="first_name"
               bind:value={formData.first_name}
+              data-testid="owner-create-first-name-input"
               required
               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
             />
@@ -164,6 +166,7 @@
               type="text"
               id="last_name"
               bind:value={formData.last_name}
+              data-testid="owner-create-last-name-input"
               required
               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
             />
@@ -178,6 +181,7 @@
             type="email"
             id="email"
             bind:value={formData.email}
+            data-testid="owner-create-email-input"
             required
             class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
           />
@@ -191,6 +195,7 @@
             type="tel"
             id="phone"
             bind:value={formData.phone}
+            data-testid="owner-create-phone-input"
             class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
           />
         </div>
@@ -203,6 +208,7 @@
             type="text"
             id="address"
             bind:value={formData.address}
+            data-testid="owner-create-address-input"
             class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
           />
         </div>
@@ -216,6 +222,7 @@
               type="text"
               id="postal_code"
               bind:value={formData.postal_code}
+              data-testid="owner-create-postal-code-input"
               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
             />
           </div>
@@ -228,6 +235,7 @@
               type="text"
               id="city"
               bind:value={formData.city}
+              data-testid="owner-create-city-input"
               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
             />
           </div>
@@ -240,6 +248,7 @@
               type="text"
               id="country"
               bind:value={formData.country}
+              data-testid="owner-create-country-input"
               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
             />
           </div>

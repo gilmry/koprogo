@@ -195,6 +195,7 @@
           <label for="journal-type">{$_("journal.journalType")} *</label>
           <select
             id="journal-type"
+            data-testid="journal-entry-type-select"
             bind:value={journalType}
             class="form-control"
             required
@@ -213,6 +214,7 @@
           <input
             type="date"
             id="entry-date"
+            data-testid="journal-entry-date-input"
             bind:value={entryDate}
             class="form-control"
             required
@@ -225,6 +227,7 @@
         <input
           type="text"
           id="description"
+          data-testid="journal-entry-description-input"
           bind:value={description}
           class="form-control"
           placeholder="Ex: Facture eau janvier 2025"
@@ -237,6 +240,7 @@
         <input
           type="text"
           id="document-ref"
+          data-testid="journal-entry-document-ref-input"
           bind:value={documentRef}
           class="form-control"
           placeholder="Ex: FA-2025-001"
@@ -251,6 +255,7 @@
           type="button"
           class="btn btn-secondary btn-sm"
           onclick={addLine}
+          data-testid="journal-entry-add-line-button"
         >
           ➕ {$_("journal.addLine")}
         </button>
@@ -337,6 +342,7 @@
                       type="button"
                       class="btn-icon-danger"
                       onclick={() => removeLine(index)}
+                      data-testid="journal-entry-remove-line-button"
                       aria-label="Supprimer cette ligne"
                       title="Supprimer cette ligne"
                     >
@@ -392,6 +398,7 @@
         class="btn btn-secondary"
         onclick={resetForm}
         disabled={loading}
+        data-testid="journal-entry-reset-button"
       >
         🔄 {$_("journal.reset")}
       </button>

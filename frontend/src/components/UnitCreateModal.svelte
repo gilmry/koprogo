@@ -199,6 +199,7 @@
               ><select
                 id="acpSelect"
                 bind:value={selectedAcpId}
+                data-testid="unit-create-acp-select"
                 disabled={loadingAcps}
                 required
                 class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
@@ -215,6 +216,7 @@
               ><select
                 id="buildingSelect"
                 bind:value={selectedBuildingId}
+                data-testid="unit-create-building-select"
                 disabled={!selectedAcpId || loadingBuildings}
                 required
                 class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
@@ -236,6 +238,7 @@
               id="unitNumber"
               type="text"
               bind:value={unitNumber}
+              data-testid="unit-create-number-input"
               placeholder={$_("units.unit_number_example")}
               required
               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
@@ -249,6 +252,7 @@
             ><select
               id="unitType"
               bind:value={unitType}
+              data-testid="unit-create-type-select"
               required
               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
               ><option value="Apartment">{$_("units.apartment")}</option><option
@@ -265,6 +269,7 @@
               id="floor"
               type="number"
               bind:value={floor}
+              data-testid="unit-create-floor-input"
               placeholder={$_("units.floor_example")}
               required
               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
@@ -281,6 +286,7 @@
               step="0.01"
               min="0.01"
               bind:value={surfaceArea}
+              data-testid="unit-create-surface-input"
               placeholder={$_("units.surface_area_example")}
               required
               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
@@ -299,6 +305,7 @@
               min="1"
               max={totalTantiemes}
               bind:value={quota}
+              data-testid="unit-create-quota-input"
               placeholder={$_("units.quota_example")}
               required
               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
