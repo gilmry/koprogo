@@ -80,7 +80,12 @@ test.describe("Comptable — Rapports PCMN, parcours rempli jusqu'au bout", () =
           r.url().includes("/reports/balance-sheet") &&
           r.request().method() === "GET",
       ),
-      page.getByRole("button", { name: "Générer le rapport" }).click(),
+      // Ancré, et non formulé. Cette assertion cherchait le bouton par son
+      // libellé FRANÇAIS, sur un composant traduit en quatre langues : dès
+      // que la langue résolue n'est pas le français, le bouton est
+      // introuvable, le clic ne part jamais, et c'est `waitForResponse` qui
+      // expire — un symptôme qui ne dit rien de la cause. Cf. #832.
+      page.getByTestId("financial-reports-generate").click(),
     ]);
     expect(resp.status()).toBe(200);
 

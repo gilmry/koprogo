@@ -217,6 +217,7 @@
   <!-- Generate Report Button -->
   <div class="flex justify-center">
     <button
+      data-testid="financial-reports-generate"
       class="px-8 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
       on:click={() =>
         reportType === "balance-sheet"
