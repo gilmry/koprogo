@@ -67,7 +67,7 @@ import { join, extname } from "node:path";
  */
 /// Éléments interactifs sans ancrage. **Ne doit que BAISSER.**
 ///
-/// 672 au 2026-09-06, **560 au 2026-09-08**. Les cent douze posés le sont
+/// 672 au 2026-09-06, **557 au 2026-09-08**. Les cent douze posés le sont
 /// sur les écrans que #803 nomme en priorité, et selon la convention relevée
 /// le même jour : `<domaine>-<objet>-<rôle>`, en casse kebab.
 ///
@@ -87,7 +87,7 @@ import { join, extname } from "node:path";
 /// que le champ portait déjà. C'est ce qui rend la baisse relisible — un
 /// identifiant mal nommé vaut moins que pas d'identifiant, puisqu'il fera
 /// croire à une couverture.
-const DETTE_AU_2026_09_06 = 560;
+const DETTE_AU_2026_09_06 = 557;
 
 const RACINE = join(process.cwd(), "src");
 const EXTENSIONS = new Set([".svelte", ".astro"]);
@@ -149,12 +149,45 @@ function fichiersDeGabarit(repertoire: string): string[] {
   return trouves;
 }
 
+/**
+ * Retire les commentaires avant de chercher des balises.
+ *
+ * ── Pourquoi ────────────────────────────────────────────────────────────────
+ *
+ * Sans cela le détecteur compte les balises CITÉES dans un commentaire.
+ * `JournalEntryList.svelte` en portait une :
+ *
+ * ```ts
+ * // L'API attend du RFC3339, pas la date nue du champ `<input type=date>`.
+ * ```
+ *
+ * Ce commentaire était relevé comme un `<input>` sans ancrage, et il aurait
+ * fallu l'ancrer pour faire baisser le cliquet — c'est-à-dire ancrer une
+ * phrase.
+ *
+ * C'est le même défaut que la garde d'identité du backend, qui comptait un
+ * commentaire mentionnant `AuthenticatedUser` comme une preuve d'identité.
+ * Deux gardes, deux jours, la même cause : **elles lisaient ce que le code
+ * DIT au lieu de ce qu'il FAIT.**
+ *
+ * Les lignes sont conservées — on ne remplace que le contenu — pour que les
+ * numéros de ligne du relevé restent justes.
+ */
+function sansCommentaires(source: string): string {
+  return source
+    .replace(/<!--[\s\S]*?-->/g, (bloc) => bloc.replace(/[^\n]/g, " "))
+    .replace(/\/\*[\s\S]*?\*\//g, (bloc) => bloc.replace(/[^\n]/g, " "))
+    .split("\n")
+    .map((ligne) => (ligne.trim().startsWith("//") ? "" : ligne))
+    .join("\n");
+}
+
 function recenser(): { ancres: number; sansAncre: string[] } {
   let ancres = 0;
   const sansAncre: string[] = [];
 
   for (const chemin of fichiersDeGabarit(RACINE)) {
-    const texte = readFileSync(chemin, "utf8");
+    const texte = sansCommentaires(readFileSync(chemin, "utf8"));
     for (const { nom, balise, index } of balisesInteractives(texte)) {
       // Une ancre sans `href` est décorative, pas un point d'interaction.
       if (nom === "a" && !balise.includes("href")) continue;
