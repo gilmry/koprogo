@@ -52,7 +52,10 @@ pub const REGISTRE: &[InvariantLegal] = &[
         article: "Art. 3.85 § 1er al. 2",
         obligation: "Les quotités sont fixées par l'acte de base ; leur somme est le dénominateur.",
         porte_par: "domain/copropriete/acp.rs",
-        atteste_par: "acp::tests::is_conformant",
+        // Citait `acp::tests::is_conformant` — une MÉTHODE de production, pas
+        // un test. La garde l'acceptait parce qu'elle cherchait le nom par
+        // simple sous-chaîne dans le module (#847).
+        atteste_par: "acp::tests::happy_acp_conformant_base_1000_mono_bloc",
     },
     InvariantLegal {
         article: "Art. 3.85 § 3, 3°",
@@ -112,13 +115,17 @@ pub const REGISTRE: &[InvariantLegal] = &[
         article: "Art. 3.87 § 5",
         obligation: "Double quorum : plus de la moitié des copropriétaires détenant la moitié des quotités, ou trois quarts des quotités.",
         porte_par: "domain/copropriete/ag_session.rs",
-        atteste_par: "ag_session::tests::quorum",
+        // Citait `ag_session::tests::quorum` : le mot « quorum » apparaît des
+        // dizaines de fois dans ce module, et la garde s'en satisfaisait.
+        atteste_par: "ag_session::tests::test_quotas_alone_do_not_carry_the_quorum",
     },
     InvariantLegal {
         article: "Art. 3.87 § 6",
         obligation: "Chaque copropriétaire dispose d'un nombre de voix correspondant à sa quote-part.",
         porte_par: "domain/copropriete/vote.rs",
-        atteste_par: "vote::tests",
+        // Citait `vote::tests` — le module de tests ENTIER, pas un test. La
+        // garde cherchait « tests » et trouvait `mod tests` (#847).
+        atteste_par: "vote::tests::test_create_vote_excessive_voting_power_fails",
     },
     InvariantLegal {
         article: "Art. 3.87 § 7",
@@ -284,11 +291,37 @@ mod tests {
         );
     }
 
-    /// Le nom du test attesté doit se retrouver dans le module désigné.
+    /// Le test attesté existe, et c'est un TEST.
     ///
     /// Sans cette vérification, un test supprimé laisserait le registre
     /// affirmer une couverture qui n'existe plus — exactement ce qu'un
     /// document en prose fait, et qu'on veut éviter ici.
+    ///
+    /// ── Ce que cette garde acceptait avant le 2026-09-08 ──────────────────
+    ///
+    /// Elle prenait le dernier segment du chemin et faisait un
+    /// `source.contains(nom)`. Trois invariants sur vingt-neuf en profitaient :
+    ///
+    /// ```text
+    /// Art. 3.85 § 1er al. 2 → acp::tests::is_conformant
+    ///     `is_conformant` est une MÉTHODE DE PRODUCTION, pas un test.
+    ///
+    /// Art. 3.87 § 5 → ag_session::tests::quorum
+    ///     le mot « quorum » apparaît des dizaines de fois dans le module.
+    ///
+    /// Art. 3.87 § 6 → vote::tests
+    ///     le dernier segment est « tests » : la recherche trouvait `mod tests`.
+    /// ```
+    ///
+    /// Dix pour cent du registre attestait donc sur une sous-chaîne. Le message
+    /// d'erreur affirmait pourtant : « un invariant sans test qui le nomme
+    /// n'est pas un invariant, c'est une intention » — la garde disait le bon
+    /// principe et ne le tenait pas.
+    ///
+    /// Elle exige désormais `fn <nom>` précédé d'un `#[test]` proche. Ce n'est
+    /// toujours pas une preuve que le test ATTESTE l'obligation — c'est l'objet
+    /// de #847, et cela demande une relecture humaine — mais il ne peut plus
+    /// s'agir d'autre chose qu'un test.
     #[test]
     fn chaque_invariant_designe_un_test_qui_existe() {
         let mut introuvables = Vec::new();
@@ -304,7 +337,30 @@ mod tests {
                 .rsplit("::")
                 .next()
                 .unwrap_or(invariant.atteste_par);
-            if !source.contains(nom) {
+            // `fn <nom>` — et non le nom seul, qui matcherait une méthode de
+            // production, un mot courant, ou `mod tests`.
+            let declaration = format!("fn {nom}(");
+            let est_un_test = match source.find(&declaration) {
+                None => false,
+                Some(pos) => {
+                    // `#[test]` doit précéder de peu : on tolère les attributs
+                    // et commentaires intercalés, pas cinq cents lignes.
+                    //
+                    // Le recul se fait en OCTETS, et ce dépôt écrit en
+                    // français : un décalage brut tombe tôt ou tard au milieu
+                    // d'un caractère multi-octets et fait paniquer le
+                    // découpage. C'est arrivé sur une flèche « → » d'un
+                    // commentaire. On redescend donc jusqu'à la première
+                    // frontière de caractère.
+                    let mut debut = pos.saturating_sub(300);
+                    while debut > 0 && !source.is_char_boundary(debut) {
+                        debut -= 1;
+                    }
+                    let avant = &source[debut..pos];
+                    avant.contains("#[test]") || avant.contains("::test]")
+                }
+            };
+            if !est_un_test {
                 introuvables.push(format!("{} → {}", invariant.article, invariant.atteste_par));
             }
         }
@@ -312,7 +368,9 @@ mod tests {
         assert!(
             introuvables.is_empty(),
             "le registre atteste des tests introuvables dans leur module :\n  {}\n\n\
-             Un invariant sans test qui le nomme n'est pas un invariant, c'est une intention.",
+             Un invariant sans test qui le nomme n'est pas un invariant, c'est \
+             une intention. Le nom doit désigner une `fn` annotée `#[test]`, \
+             pas une méthode de production ni un module.",
             introuvables.join("\n  ")
         );
     }
