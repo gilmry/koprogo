@@ -13,6 +13,7 @@
   import { withErrorHandling } from "../../lib/utils/error.utils";
   import ConvocationTrackingSummary from "./ConvocationTrackingSummary.svelte";
   import ConvocationRecipientList from "./ConvocationRecipientList.svelte";
+  import ConfirmDialog from "../ui/ConfirmDialog.svelte";
 
   let {
     meetingId,
@@ -33,6 +34,19 @@
   let error = $state("");
   let showRecipients = $state(false);
   let actionLoading = $state(false);
+
+  /// L'action en attente de confirmation, ou `null`.
+  ///
+  /// Les trois `confirm()` remplacés étaient des dialogues du NAVIGATEUR : un
+  /// navigateur piloté les supprime, et l'action prend la forme exacte d'une
+  /// panne (#844).
+  ///
+  /// Ce panneau est le pendant, dans la fiche d'assemblée, de l'écran de
+  /// convocation traité plus tôt : envoyer une convocation la notifie à tous
+  /// les copropriétaires et fait courir le délai légal de l'Art. 3.87 § 3.
+  let actionEnAttente = $state<"envoyer" | "annuler" | "supprimer" | null>(
+    null,
+  );
 
   let isAdmin = $derived(
     $authStore.user?.role === UserRole.SYNDIC ||
@@ -80,9 +94,14 @@
     if (result) convocation = result;
   }
 
-  async function handleSend() {
+  function handleSend() {
     if (!convocation) return;
-    if (!confirm($_("convocations.confirms.sendToAll"))) return;
+    actionEnAttente = "envoyer";
+  }
+
+  async function executer_envoyer() {
+    actionEnAttente = null;
+    if (!convocation) return;
     const result = await withErrorHandling({
       action: () => convocationsApi.send(convocation!.id),
       setLoading: (v: boolean) => (actionLoading = v),
@@ -92,9 +111,14 @@
     if (result) convocation = result;
   }
 
-  async function handleCancel() {
+  function handleCancel() {
     if (!convocation) return;
-    if (!confirm($_("convocations.confirms.cancelConvocation"))) return;
+    actionEnAttente = "annuler";
+  }
+
+  async function executer_annuler() {
+    actionEnAttente = null;
+    if (!convocation) return;
     const result = await withErrorHandling({
       action: () => convocationsApi.cancel(convocation!.id),
       setLoading: (v: boolean) => (actionLoading = v),
@@ -117,9 +141,14 @@
     });
   }
 
-  async function handleDelete() {
+  function handleDelete() {
     if (!convocation) return;
-    if (!confirm($_("convocations.confirms.deleteConvocation"))) return;
+    actionEnAttente = "supprimer";
+  }
+
+  async function executer_supprimer() {
+    actionEnAttente = null;
+    if (!convocation) return;
     await withErrorHandling({
       action: () => convocationsApi.delete(convocation!.id),
       setLoading: (v: boolean) => (actionLoading = v),
@@ -390,3 +419,24 @@
     {/if}
   </div>
 </div>
+
+<!-- Le dialogue qui remplace trois `confirm()` natifs (#844). -->
+<ConfirmDialog
+  isOpen={actionEnAttente !== null}
+  title={$_("common.confirm")}
+  message={actionEnAttente === "envoyer"
+    ? $_("convocations.confirms.sendToAll")
+    : actionEnAttente === "annuler"
+      ? $_("convocations.confirms.cancelConvocation")
+      : actionEnAttente === "supprimer"
+        ? $_("convocations.confirms.deleteConvocation")
+        : ""}
+  variant={actionEnAttente === "envoyer" ? "primary" : "danger"}
+  loading={actionLoading}
+  onconfirm={() => {
+    if (actionEnAttente === "envoyer") executer_envoyer();
+    else if (actionEnAttente === "annuler") executer_annuler();
+    else if (actionEnAttente === "supprimer") executer_supprimer();
+  }}
+  oncancel={() => (actionEnAttente = null)}
+/>

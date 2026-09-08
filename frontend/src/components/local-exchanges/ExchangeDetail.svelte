@@ -15,6 +15,7 @@
   import { toast } from "../../stores/toast";
   import { formatDateTime, formatDate } from "../../lib/utils/date.utils";
   import { withErrorHandling } from "../../lib/utils/error.utils";
+  import ConfirmDialog from "../ui/ConfirmDialog.svelte";
 
   let {
     exchange = $bindable(),
@@ -30,12 +31,28 @@
   let cancelReason = $state("");
   let showCancelForm = $state(false);
 
+  /// L'action en attente de confirmation, ou `null`.
+  ///
+  /// Les `confirm()` remplacés étaient des dialogues du NAVIGATEUR : un
+  /// navigateur piloté les supprime, et l'action prend la forme exacte d'une
+  /// panne — aucun dialogue, aucune requête, aucun message (#844).
+  ///
+  /// Demander un échange engage une personne auprès d'une autre ; le
+  /// démarrer et le terminer jalonnent un service rendu entre voisins.
+  let actionEnAttente = $state<
+    "demander" | "demarrer" | "terminer" | "supprimer" | null
+  >(null);
+
   let isProvider = $derived(exchange.provider_id === currentUserId);
   let isRequester = $derived(exchange.requester_id === currentUserId);
   let statusColors = $derived(exchangeStatusColors[exchange.status]);
 
-  async function handleRequest() {
-    if (!confirm($_("exchanges.confirm_request"))) return;
+  function handleRequest() {
+    actionEnAttente = "demander";
+  }
+
+  async function executer_demander() {
+    actionEnAttente = null;
     const result = await withErrorHandling({
       action: () => localExchangesApi.request(exchange.id),
       setLoading: (v: boolean) => (actionLoading = v),
@@ -45,8 +62,12 @@
     if (result) exchange = result;
   }
 
-  async function handleStart() {
-    if (!confirm($_("exchanges.confirm_start"))) return;
+  function handleStart() {
+    actionEnAttente = "demarrer";
+  }
+
+  async function executer_demarrer() {
+    actionEnAttente = null;
     const result = await withErrorHandling({
       action: () => localExchangesApi.start(exchange.id),
       setLoading: (v: boolean) => (actionLoading = v),
@@ -56,8 +77,12 @@
     if (result) exchange = result;
   }
 
-  async function handleComplete() {
-    if (!confirm($_("exchanges.confirm_complete"))) return;
+  function handleComplete() {
+    actionEnAttente = "terminer";
+  }
+
+  async function executer_terminer() {
+    actionEnAttente = null;
     const result = await withErrorHandling({
       action: () => localExchangesApi.complete(exchange.id),
       setLoading: (v: boolean) => (actionLoading = v),
@@ -114,8 +139,12 @@
     }
   }
 
-  async function handleDelete() {
-    if (!confirm($_("exchanges.confirm_delete"))) return;
+  function handleDelete() {
+    actionEnAttente = "supprimer";
+  }
+
+  async function executer_supprimer() {
+    actionEnAttente = null;
     await withErrorHandling({
       action: () => localExchangesApi.delete(exchange.id),
       setLoading: (v: boolean) => (actionLoading = v),
@@ -454,3 +483,27 @@
     </div>
   </div>
 </div>
+
+<!-- Le dialogue qui remplace quatre `confirm()` natifs (#844). -->
+<ConfirmDialog
+  isOpen={actionEnAttente !== null}
+  title={$_("common.confirm")}
+  message={actionEnAttente === "demander"
+    ? $_("exchanges.confirm_request")
+    : actionEnAttente === "demarrer"
+      ? $_("exchanges.confirm_start")
+      : actionEnAttente === "terminer"
+        ? $_("exchanges.confirm_complete")
+        : actionEnAttente === "supprimer"
+          ? $_("exchanges.confirm_delete")
+          : ""}
+  variant={actionEnAttente === "supprimer" ? "danger" : "primary"}
+  loading={actionLoading}
+  onconfirm={() => {
+    if (actionEnAttente === "demander") executer_demander();
+    else if (actionEnAttente === "demarrer") executer_demarrer();
+    else if (actionEnAttente === "terminer") executer_terminer();
+    else if (actionEnAttente === "supprimer") executer_supprimer();
+  }}
+  oncancel={() => (actionEnAttente = null)}
+/>

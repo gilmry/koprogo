@@ -41,7 +41,7 @@ import { join } from "node:path";
 const RACINE = join(process.cwd(), "src");
 
 /** Appels aux dialogues natifs. **Ne doit que BAISSER.** */
-const DETTE_AU_2026_09_08 = 36;
+const DETTE_AU_2026_09_08 = 29;
 
 const APPEL_NATIF = /(?<![.\w$])(?:window\.)?(?:confirm|prompt|alert)\s*\(/g;
 
@@ -137,6 +137,8 @@ describe("les dialogues natifs ne se multiplient pas (#844)", () => {
     "components/CallForFundsList.svelte",
     "components/PaymentReminderDetail.svelte",
     "components/polls/PollDetail.svelte",
+    "components/local-exchanges/ExchangeDetail.svelte",
+    "components/convocations/ConvocationPanel.svelte",
   ])("garde %s exempt de dialogue natif", (relatif) => {
     const source = sansCommentaires(
       readFileSync(join(RACINE, relatif), "utf8"),
