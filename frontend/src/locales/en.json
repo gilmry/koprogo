@@ -976,7 +976,8 @@
     "createdOnLabel": "Created on",
     "loading2": "Loading…",
     "createdOnShort": "Created on",
-    "errorLabel": "Error:"
+    "errorLabel": "Error:",
+    "expiryDate": "Expiry date"
   },
   "common.error.loadData": "Error loading data",
   "common.error.loadStats": "Error loading statistics",
@@ -3524,7 +3525,16 @@
     "owner": "Co-owner",
     "superadmin": "Super Administrator",
     "syndic": "Property Manager",
-    "user": "User"
+    "user": "User",
+    "newAssignment": "New role assignment",
+    "assignmentsTitle": "Role assignments",
+    "assignmentsEmpty": "No assignment yet.",
+    "assignmentsCaption": "List of active role assignments",
+    "subRole": "Sub-role",
+    "selectUser": "Choose a user…",
+    "selectSubRole": "Choose a sub-role…",
+    "selectOrganization": "Choose an organisation…",
+    "expiresOn": "Expires on"
   },
   "scope": {
     "clear": "Clear selection",

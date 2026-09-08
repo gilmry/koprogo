@@ -976,7 +976,8 @@
     "createdOnLabel": "Créée le",
     "loading2": "Chargement…",
     "createdOnShort": "Créée le",
-    "errorLabel": "Erreur :"
+    "errorLabel": "Erreur :",
+    "expiryDate": "Date d'expiration"
   },
   "common.error.loadData": "Erreur lors du chargement des données",
   "common.error.loadStats": "Erreur lors du chargement des statistiques",
@@ -3524,7 +3525,16 @@
     "owner": "Copropriétaire",
     "superadmin": "Super Administrateur",
     "syndic": "Syndic",
-    "user": "Utilisateur"
+    "user": "Utilisateur",
+    "newAssignment": "Nouvelle attribution de rôle",
+    "assignmentsTitle": "Attributions de rôles",
+    "assignmentsEmpty": "Aucune attribution pour le moment.",
+    "assignmentsCaption": "Liste des attributions de rôles actives",
+    "subRole": "Sous-rôle",
+    "selectUser": "Choisir un utilisateur…",
+    "selectSubRole": "Choisir un sous-rôle…",
+    "selectOrganization": "Choisir une organisation…",
+    "expiresOn": "Expire le"
   },
   "scope": {
     "clear": "Effacer la sélection",

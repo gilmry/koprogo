@@ -976,7 +976,8 @@
     "createdOnLabel": "Aangemaakt op",
     "loading2": "Laden…",
     "createdOnShort": "Aangemaakt op",
-    "errorLabel": "Fout:"
+    "errorLabel": "Fout:",
+    "expiryDate": "Vervaldatum"
   },
   "common.error.loadData": "Fout bij het laden van gegevens",
   "common.error.loadStats": "Fout bij het laden van statistieken",
@@ -3524,7 +3525,16 @@
     "owner": "Mede-eigenaar",
     "superadmin": "Superbeheerder",
     "syndic": "Syndicus",
-    "user": "Gebruiker"
+    "user": "Gebruiker",
+    "newAssignment": "Nieuwe roltoewijzing",
+    "assignmentsTitle": "Roltoewijzingen",
+    "assignmentsEmpty": "Nog geen toewijzing.",
+    "assignmentsCaption": "Lijst van actieve roltoewijzingen",
+    "subRole": "Subrol",
+    "selectUser": "Kies een gebruiker…",
+    "selectSubRole": "Kies een subrol…",
+    "selectOrganization": "Kies een organisatie…",
+    "expiresOn": "Verloopt op"
   },
   "scope": {
     "clear": "Selectie wissen",

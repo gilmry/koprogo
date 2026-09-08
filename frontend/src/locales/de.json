@@ -976,7 +976,8 @@
     "createdOnLabel": "Erstellt am",
     "loading2": "Wird geladen…",
     "createdOnShort": "Erstellt am",
-    "errorLabel": "Fehler:"
+    "errorLabel": "Fehler:",
+    "expiryDate": "Ablaufdatum"
   },
   "common.error.loadData": "Fehler beim Laden der Daten",
   "common.error.loadStats": "Fehler beim Laden der Statistiken",
@@ -3524,7 +3525,16 @@
     "owner": "Miteigentümer",
     "superadmin": "Superadministrator",
     "syndic": "Hausverwalter",
-    "user": "Benutzer"
+    "user": "Benutzer",
+    "newAssignment": "Neue Rollenzuweisung",
+    "assignmentsTitle": "Rollenzuweisungen",
+    "assignmentsEmpty": "Noch keine Zuweisung.",
+    "assignmentsCaption": "Liste der aktiven Rollenzuweisungen",
+    "subRole": "Unterrolle",
+    "selectUser": "Benutzer wählen…",
+    "selectSubRole": "Unterrolle wählen…",
+    "selectOrganization": "Organisation wählen…",
+    "expiresOn": "Läuft ab am"
   },
   "scope": {
     "clear": "Auswahl löschen",

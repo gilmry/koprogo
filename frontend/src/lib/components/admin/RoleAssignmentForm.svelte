@@ -36,6 +36,7 @@
     type AssignRoleRequest,
   } from "../../api/role_assignments";
   import { api } from "../../api";
+  import { _ } from "../../i18n";
 
   // ---------------------------------------------------------------------------
   // Props (cf. UserForm.svelte pour le pattern Modal callbacks)
@@ -258,7 +259,7 @@
           id="role-assignment-form-title"
           class="text-xl font-semibold text-gray-900"
         >
-          Nouvelle assignation de rôle
+          {$_('roles.newAssignment')}
         </h2>
         <button
           type="button"
@@ -291,7 +292,7 @@
             for="role-assignment-user"
             class="block text-sm font-medium text-gray-700 mb-2"
           >
-            Utilisateur
+            {$_('common.user')}
             <span class="text-red-500" aria-hidden="true">*</span>
             <span class="sr-only">(obligatoire)</span>
           </label>
@@ -309,7 +310,7 @@
               ? 'border-red-500'
               : 'border-gray-300'}"
           >
-            <option value="" disabled>Sélectionner un utilisateur…</option>
+            <option value="" disabled>{$_('roles.selectUser')}</option>
             {#each users as u (u.id)}
               <option
                 value={u.id}
@@ -338,7 +339,7 @@
             for="role-assignment-role"
             class="block text-sm font-medium text-gray-700 mb-2"
           >
-            Sous-rôle
+            {$_('roles.subRole')}
             <span class="text-red-500" aria-hidden="true">*</span>
           </label>
           <select
@@ -354,7 +355,7 @@
               ? 'border-red-500'
               : 'border-gray-300'}"
           >
-            <option value="" disabled>Sélectionner un sous-rôle…</option>
+            <option value="" disabled>{$_('roles.selectSubRole')}</option>
             {#each ASSIGNABLE_ROLES as r (r)}
               <option value={r}>{r}</option>
             {/each}
@@ -378,7 +379,7 @@
             for="role-assignment-org"
             class="block text-sm font-medium text-gray-700 mb-2"
           >
-            Organisation
+            {$_('common.organization')}
             <span class="text-red-500" aria-hidden="true">*</span>
           </label>
           <select
@@ -395,7 +396,7 @@
               ? 'border-red-500'
               : 'border-gray-300'}"
           >
-            <option value="" disabled>Sélectionner une organisation…</option>
+            <option value="" disabled>{$_('roles.selectOrganization')}</option>
             {#each orgs as o (o.id)}
               <option value={o.id}>{o.name}</option>
             {/each}
@@ -419,7 +420,7 @@
             for="role-assignment-valid-until"
             class="block text-sm font-medium text-gray-700 mb-2"
           >
-            Date d'expiration
+            {$_('common.expiryDate')}
             <span class="text-gray-500 text-xs ml-1">
               (optionnel — vide = permanent)
             </span>
@@ -471,7 +472,7 @@
             data-testid="role-assignment-cancel-bottom"
             class="min-h-[44px] px-4 py-2 rounded-lg border border-gray-300 text-gray-700 bg-white hover:bg-gray-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-500"
           >
-            Annuler
+            {$_('common.cancel')}
           </button>
           <button
             type="submit"
