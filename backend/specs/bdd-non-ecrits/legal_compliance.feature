@@ -17,13 +17,21 @@
 #   - Extraits de loi  : docs/legal/copropriete_art_3_84_3_92.rst
 #   - Audit complet    : docs/legal/audit_conformite.rst
 #
-# Dernière mise à jour : 2026-09-07
-# Score conformité : 31/37 CONFORME (84%)
+# Dernière mise à jour : 2026-09-08
+# Score conformité : 37 conformes / 3 partiels / 1 manquant, sur 41 scénarios
 #
-# Six scénarios portaient `@manquant` alors que la règle était
-# implémentée — matrice périmée de six mois, cf. #837. Chacun porte
-# désormais le module qui le satisfait, pour que la prochaine dérive
-# se voie.
+# Douze scénarios portaient `@manquant`. Ils ont été vérifiés un par un dans
+# le code, en deux passes (#837). ONZE étaient faux : neuf règles étaient
+# implémentées, une était partielle, et une ligne — « quorum 3/4 pour
+# décisions qualifiées » — n'existe pas en droit belge. L'Art. 3.88 § 1
+# connaît 2/3, 4/5 et l'unanimité, et ce sont des MAJORITÉS, pas des quorums.
+#
+# Un seul `@manquant` subsiste : le plafond de trois ans du mandat de syndic.
+#
+# Chaque ligne conforme nomme désormais le module qui la satisfait. Ce n'est
+# pas une politesse : `garde_conformite_legale.rs` l'EXIGE et vérifie que le
+# fichier existe. Une matrice qui n'est pas exécutée se périme en silence,
+# c'est ce qui lui est arrivé pendant six mois.
 #
 # ═══════════════════════════════════════════════════════════════════════
 
@@ -64,11 +72,14 @@ Feature: Conformite Juridique Belge
     When a convocation is created for that meeting
     Then the convocation must include the meeting agenda
 
-  @manquant @wip @copropriete @ag @critique
+  @partiel @corrige @wip @copropriete @ag @critique
   Scenario: [Art. 3.87 §2] Decisions hors agenda sont nulles
-    # Code   : NON IMPLÉMENTÉ
-    # Risque : Toute décision sur un point absent de l'ordre du jour est nulle
-    # Phase  : Phase 1 critique
+    # Implémenté : application/use_cases/resolution_use_cases.rs — l'index d'ordre du
+    #              jour est validé (bornes, libellé non vide) LORSQU'IL EST FOURNI.
+    # Ce qui manque : `agenda_item_index` est un `Option`, et `None` est accepté.
+    #                 Une résolution rattachée à AUCUN point de l'ordre du jour passe.
+    #                 La loi la rend nulle. Suivi en #840.
+    # Corrigé le 2026-09-08 : la ligne portait « NON IMPLÉMENTÉ », c'est un partiel (#837)
     Given a meeting with agenda items "A, B, C"
     And a resolution exists for agenda item "D" which is NOT on the agenda
     When voting is closed on that resolution
@@ -102,10 +113,9 @@ Feature: Conformite Juridique Belge
     Then the vote must be recorded with proxy_owner_id set to "Bob"
     And the voting power must be Alice's tantiemes
 
-  # Implémenté : domain/copropriete/procurations.rs — PROCURATIONS_MAX = 3
   @conforme @copropriete @ag @critique
   Scenario: [Art. 3.87 §7] Maximum 3 procurations par mandataire
-    # Code   : NON IMPLÉMENTÉ
+    # Implémenté : domain/copropriete/procurations.rs — PROCURATIONS_MAX = 3
     # Risque : Un mandataire représentant >3 copropriétaires → votes invalides
     # Phase  : Phase 1 critique
     # Loi    : "Nul ne peut accepter plus de trois procurations de vote"
@@ -114,10 +124,9 @@ Feature: Conformite Juridique Belge
     Then the system must reject the proxy
     And the error must mention "maximum 3 proxies"
 
-  # Implémenté : domain/copropriete/procurations.rs — plafonnement des voix, Art. 3.87 § 7 al. 4
   @conforme @copropriete @ag @critique
   Scenario: [Art. 3.87 §7] Exception procurations si total < 10% voix
-    # Code   : NON IMPLÉMENTÉ
+    # Implémenté : domain/copropriete/procurations.rs — plafonnement des voix, Art. 3.87 § 7 al. 4
     # Loi    : "sauf si le total des voix dont il dispose [...] ne dépasse pas
     #           10 pour cent du total des voix"
     Given owner "Bob" holds proxies for 4 owners
@@ -126,10 +135,9 @@ Feature: Conformite Juridique Belge
 
   # --- Art. 3.87 §5 : Quorum ---
 
-  # Implémenté : domain/copropriete/meeting.rs — QuorumNotReached, quorum double
   @conforme @copropriete @ag @critique
   Scenario: [Art. 3.87 §5] Quorum 50% requis en premiere convocation
-    # Code   : NON IMPLÉMENTÉ
+    # Implémenté : domain/copropriete/meeting.rs — QuorumNotReached, quorum double
     # Risque : Décisions prises sans quorum sont NULLES (contestables 4 mois)
     # Phase  : Phase 1 critique
     # Loi    : "L'assemblée générale ne délibère valablement que si plus de la
@@ -140,10 +148,9 @@ Feature: Conformite Juridique Belge
     Then the system must block the vote
     And the error must mention "quorum not reached (40% < 50%)"
 
-  # Implémenté : domain/copropriete/convocation.rs — Convocation::new_second_convocation
   @conforme @copropriete @ag @critique
   Scenario: [Art. 3.87 §5] Deuxieme convocation si quorum non atteint
-    # Code   : NON IMPLÉMENTÉ
+    # Implémenté : domain/copropriete/convocation.rs — Convocation::new_second_convocation
     # Phase  : Phase 1 critique
     # Loi    : "Si ce quorum n'est pas atteint, une deuxième assemblée [...]
     #           pourra délibérer [...] quel que soit le nombre"
@@ -153,10 +160,9 @@ Feature: Conformite Juridique Belge
     And the second convocation must respect the 15-day notice period
     And no quorum requirement applies to the second convocation
 
-  # Implémenté : domain/copropriete/ag_session.rs — borne stricte des 3/4, majorites.rs
   @conforme @copropriete @ag
   Scenario: [Art. 3.87 §5] Quorum 3/4 pour decisions qualifiees
-    # Code   : NON IMPLÉMENTÉ
+    # Implémenté : domain/copropriete/ag_session.rs — borne stricte des 3/4, majorites.rs
     # Loi    : Certaines décisions (Art. 3.88) exigent une présence de 3/4
     Given a resolution requiring qualified majority (3/4)
     And fewer than 75% of tantiemes are present or represented
@@ -219,10 +225,9 @@ Feature: Conformite Juridique Belge
 
   # --- Art. 3.87 §10 : PV distribution ---
 
-  # Implémenté : domain/copropriete/consignation_pv.rs — Art. 3.87 § 12, trente jours
   @conforme @copropriete @ag
   Scenario: [Art. 3.87 §10] PV distribue dans les 30 jours
-    # Code   : NON IMPLÉMENTÉ
+    # Implémenté : domain/copropriete/consignation_pv.rs — Art. 3.87 § 12, trente jours
     # Phase  : Phase 2
     # Loi    : "Le procès-verbal est communiqué [...] dans les trente jours"
     Given a meeting took place on "2026-03-15"
@@ -234,7 +239,14 @@ Feature: Conformite Juridique Belge
 
   @manquant @wip @copropriete
   Scenario: [Art. 3.89] Mandat syndic maximum 3 ans
-    # Code   : NON IMPLÉMENTÉ
+    # Code   : NON IMPLÉMENTÉ — vérifié le 2026-09-08, c'est le SEUL @manquant
+    #          des douze qui le reste (#837).
+    # Ce qui existe : domain/copropriete/syndic_mandate.rs porte le mandat daté,
+    #          `covers`, `revoke`, `holder_at`. Aucun plafond de durée.
+    # Piège    : `MAX_MANDATE_DURATION_DAYS = 365 * 5` dans mandate.rs ne contredit
+    #          PAS cette règle. `MandateKind` y couvre Lawyer, Notary, Amo, Architect,
+    #          Bet, Warden — les mandats de professionnels externes, pas celui du
+    #          syndic. Les cinq ans sont une hygiène anti-abus. Ne pas crier au défaut.
     # Phase  : Phase 2
     # Loi    : "Le mandat du syndic ne peut excéder trois ans"
     Given a syndic mandate started on "2024-01-01"
@@ -426,30 +438,31 @@ Feature: Conformite Juridique Belge
     Then each operation must be logged in audit_logs
     And the log must include user_id, action, ip_address, user_agent
 
-  @manquant @wip @rgpd
+  @conforme @corrige @wip @rgpd
   Scenario: [RGPD Art. 13-14] Information des personnes concernees
-    # Code   : NON IMPLÉMENTÉ
-    # Phase  : Phase 2
+    # Implémenté : domain/plateforme/consent.rs — ConsentRecord::is_privacy_policy,
+    #              et frontend/src/pages/privacy-policy.astro, mentions-legales.astro
+    # Corrigé le 2026-09-08 : la ligne portait « NON IMPLÉMENTÉ » (#837)
     # Loi    : politique de confidentialité, information sur les traitements
     # Risque : amende APD, non-conformité de base
     Given a new user registers on the platform
     Then a privacy policy must be presented before data collection
     And the policy must detail: purposes, legal basis, retention periods, rights
 
-  @manquant @wip @rgpd
+  @conforme @corrige @wip @rgpd
   Scenario: [RGPD Art. 28] DPA avec sous-traitants
-    # Code   : NON IMPLÉMENTÉ
-    # Phase  : Phase 2
+    # Implémenté : domain/plateforme/gdpr_art30.rs — ProcessorAgreement::has_signed_dpa
+    # Corrigé le 2026-09-08 : la ligne portait « NON IMPLÉMENTÉ » (#837)
     # Loi    : contrat obligatoire avec tout sous-traitant traitant des données
     # Sous-traitants KoproGo : hébergeur VPS, Stripe, email provider
     Given the system uses external processors (hosting, Stripe, email)
     Then a Data Processing Agreement must exist for each processor
     And each DPA must specify: subject, duration, nature, purpose
 
-  @manquant @wip @rgpd @critique
+  @conforme @corrige @wip @rgpd @critique
   Scenario: [RGPD Art. 33] Notification violation de donnees sous 72h
-    # Code   : NON IMPLÉMENTÉ
-    # Phase  : Phase 1
+    # Implémenté : domain/plateforme/security_incident.rs — is_overdue_for_apd, seuil 72h
+    # Corrigé le 2026-09-08 : la ligne portait « NON IMPLÉMENTÉ » (#837)
     # Loi    : "le responsable du traitement en notifie la violation [...]
     #           dans les meilleurs délais et, si possible, 72 heures au plus
     #           tard après en avoir pris connaissance"
