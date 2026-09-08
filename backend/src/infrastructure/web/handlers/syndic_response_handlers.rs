@@ -13,6 +13,7 @@
 
 use crate::application::error::AppError;
 use crate::domain::entities::SyndicResponse;
+use crate::infrastructure::web::middleware::scope_guard::verify_ticket_org_access;
 use crate::infrastructure::web::{AppState, AuthenticatedUser};
 use actix_web::{get, post, web, HttpResponse};
 use chrono::{DateTime, Utc};
@@ -94,6 +95,19 @@ pub async fn create_syndic_response(
 ) -> Result<HttpResponse, AppError> {
     require_syndic_or_superadmin(&user)?;
     let ticket_id = path.into_inner();
+
+    // Cloisonnement : ce ticket doit relever d'une ACP que cet utilisateur a le
+    // droit de voir. `require_syndic_or_superadmin` ci-dessus vérifie le RÔLE
+    // et rien d'autre — un syndic de l'organisation A y passait pour répondre
+    // au ticket d'un copropriétaire de l'organisation B (#772).
+    verify_ticket_org_access(
+        &user,
+        ticket_id,
+        &state.ticket_use_cases,
+        &state.building_use_cases,
+        &state.acp_use_cases,
+    )
+    .await?;
     let payload = body.into_inner();
 
     let response = state
@@ -125,10 +139,23 @@ pub async fn create_syndic_response(
 #[get("/tickets/{id}/syndic-responses")]
 pub async fn list_syndic_responses(
     state: web::Data<AppState>,
-    _user: AuthenticatedUser,
+    user: AuthenticatedUser,
     path: web::Path<Uuid>,
 ) -> Result<HttpResponse, AppError> {
     let ticket_id = path.into_inner();
+
+    // Cloisonnement : ce ticket doit relever d'une ACP que cet utilisateur a le
+    // droit de voir. `require_syndic_or_superadmin` ci-dessus vérifie le RÔLE
+    // et rien d'autre — un syndic de l'organisation A y passait pour répondre
+    // au ticket d'un copropriétaire de l'organisation B (#772).
+    verify_ticket_org_access(
+        &user,
+        ticket_id,
+        &state.ticket_use_cases,
+        &state.building_use_cases,
+        &state.acp_use_cases,
+    )
+    .await?;
     let responses = state
         .syndic_response_use_cases
         .list_for_ticket(ticket_id)

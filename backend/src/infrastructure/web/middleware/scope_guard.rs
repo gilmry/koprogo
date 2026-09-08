@@ -46,6 +46,7 @@ use crate::application::use_cases::local_exchange_use_cases::LocalExchangeUseCas
 use crate::application::use_cases::owner_use_cases::OwnerUseCases;
 use crate::application::use_cases::quote_use_cases::QuoteUseCases;
 use crate::application::use_cases::resource_booking_use_cases::ResourceBookingUseCases;
+use crate::application::use_cases::ticket_use_cases::TicketUseCases;
 use crate::application::use_cases::unit_use_cases::UnitUseCases;
 use crate::infrastructure::web::app_state::AppState;
 use crate::infrastructure::web::AuthenticatedUser;
@@ -482,6 +483,42 @@ pub async fn verify_exchange_org_access(
         acp_use_cases,
     )
     .await
+}
+
+/// Vérifie le mandat de l'appelant sur l'organisation d'un **ticket**.
+///
+/// ── Ce que cette garde ajoute à ce qui existait ───────────────────────────
+///
+/// `syndic_response_handlers` appelait déjà `require_syndic_or_superadmin`, et
+/// ce contrôle est juste : répondre à un ticket est un acte de gestion, pas de
+/// copropriétaire.
+///
+/// Mais il vérifie le RÔLE, et rien d'autre. Un syndic de l'organisation A y
+/// passait pour répondre au ticket d'un copropriétaire de l'organisation B —
+/// et sa réponse s'y inscrivait, signée de son nom.
+///
+/// Les deux contrôles sont donc nécessaires et ne se remplacent pas : l'un dit
+/// « vous avez qualité pour cela », l'autre « ce ticket est bien le vôtre ».
+/// C'est la distinction que l'issue #772 demande de tenir, et que le tableau
+/// de bord du conseil (#816) illustrait déjà.
+pub async fn verify_ticket_org_access(
+    user: &AuthenticatedUser,
+    ticket_id: Uuid,
+    ticket_use_cases: &TicketUseCases,
+    building_use_cases: &BuildingUseCases,
+    acp_use_cases: &AcpUseCases,
+) -> Result<(), AppError> {
+    if user.is_superadmin() {
+        return Ok(());
+    }
+
+    let ticket = ticket_use_cases
+        .get_ticket(ticket_id)
+        .await
+        .map_err(AppError::from)?
+        .ok_or(AppError::NotFound(format!("Ticket not found: {ticket_id}")))?;
+
+    verify_building_org_access(user, ticket.building_id, building_use_cases, acp_use_cases).await
 }
 
 pub async fn verify_booking_org_access(
