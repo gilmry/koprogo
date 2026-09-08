@@ -144,8 +144,8 @@
 
 		<div class="mb-8">
 			<p class="text-gray-600 mb-4">
-				Générer et gérer les données de test pour le développement et les tests de charge.
-				<span class="text-red-600 font-semibold">SuperAdmin uniquement.</span>
+				{$_('seed.title')}
+				<span class="text-red-600 font-semibold">{$_('seed.superAdminOnly')}</span>
 			</p>
 		</div>
 
@@ -158,53 +158,53 @@
 
 		{#if statsLoading}
 			<div class="mb-8 bg-gray-50 border border-gray-200 rounded-lg p-6">
-				<p class="text-center text-gray-600">Chargement des statistiques...</p>
+				<p class="text-center text-gray-600">{$_('seed.loadingStats')}</p>
 			</div>
 		{:else if seedStats}
 			<div class="mb-8 bg-gradient-to-r from-blue-50 to-green-50 border border-blue-200 rounded-lg p-6">
 				<h2 class="text-xl font-semibold mb-4 text-gray-800 flex items-center gap-2">
-					📊 État de la base de données
+					{$_('seed.dbState')}
 				</h2>
 
 				<div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
 					<div class="bg-white rounded-lg p-4 shadow-sm">
 						<div class="text-2xl font-bold text-green-600">{seedStats.seed_organizations}</div>
-						<div class="text-xs text-gray-600 mt-1">Organisations SEED</div>
+						<div class="text-xs text-gray-600 mt-1">{$_('seed.orgsSeed')}</div>
 					</div>
 					<div class="bg-white rounded-lg p-4 shadow-sm">
 						<div class="text-2xl font-bold text-blue-600">{seedStats.production_organizations}</div>
-						<div class="text-xs text-gray-600 mt-1">Organisations PROD</div>
+						<div class="text-xs text-gray-600 mt-1">{$_('seed.orgsProd')}</div>
 					</div>
 					<div class="bg-white rounded-lg p-4 shadow-sm">
 						<div class="text-2xl font-bold text-green-600">{seedStats.seed_buildings}</div>
-						<div class="text-xs text-gray-600 mt-1">Immeubles SEED</div>
+						<div class="text-xs text-gray-600 mt-1">{$_('seed.buildingsSeed')}</div>
 					</div>
 					<div class="bg-white rounded-lg p-4 shadow-sm">
 						<div class="text-2xl font-bold text-green-600">{seedStats.seed_units}</div>
-						<div class="text-xs text-gray-600 mt-1">Lots SEED</div>
+						<div class="text-xs text-gray-600 mt-1">{$_('seed.unitsSeed')}</div>
 					</div>
 				</div>
 
 				<div class="grid grid-cols-2 md:grid-cols-5 gap-4">
 					<div class="bg-white rounded-lg p-3 shadow-sm">
 						<div class="text-lg font-semibold text-green-600">{seedStats.seed_owners}</div>
-						<div class="text-xs text-gray-600">Copropriétaires</div>
+						<div class="text-xs text-gray-600">{$_('seed.coOwners')}</div>
 					</div>
 					<div class="bg-white rounded-lg p-3 shadow-sm">
 						<div class="text-lg font-semibold text-green-600">{seedStats.seed_unit_owners}</div>
-						<div class="text-xs text-gray-600">Relations lot-proprio</div>
+						<div class="text-xs text-gray-600">{$_('seed.unitOwnerLinks')}</div>
 					</div>
 					<div class="bg-white rounded-lg p-3 shadow-sm">
 						<div class="text-lg font-semibold text-green-600">{seedStats.seed_expenses}</div>
-						<div class="text-xs text-gray-600">Charges</div>
+						<div class="text-xs text-gray-600">{$_('seed.charges')}</div>
 					</div>
 					<div class="bg-white rounded-lg p-3 shadow-sm">
 						<div class="text-lg font-semibold text-green-600">{seedStats.seed_meetings}</div>
-						<div class="text-xs text-gray-600">Assemblées</div>
+						<div class="text-xs text-gray-600">{$_('seed.meetings')}</div>
 					</div>
 					<div class="bg-white rounded-lg p-3 shadow-sm">
 						<div class="text-lg font-semibold text-green-600">{seedStats.seed_users}</div>
-						<div class="text-xs text-gray-600">Utilisateurs</div>
+						<div class="text-xs text-gray-600">{$_('seed.users')}</div>
 					</div>
 				</div>
 
@@ -218,7 +218,7 @@
 				{:else}
 					<div class="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded">
 						<p class="text-sm text-yellow-800">
-							ℹ️ Aucune donnée seed actuellement. Cliquez sur "Generate Demo" pour créer des données de test.
+							ℹ️ {$_('seed.noneYet')}
 						</p>
 					</div>
 				{/if}
@@ -238,10 +238,10 @@
 			<!-- Generate Seed -->
 			<div class="border-2 border-green-200 rounded-lg p-6 bg-green-50">
 				<h3 class="font-semibold text-xl mb-3 text-green-800 flex items-center gap-2">
-					<span class="text-2xl">🌱</span> Générer le Seed
+					<span class="text-2xl">🌱</span> {$_('seed.generate')}
 				</h3>
 				<p class="text-sm text-gray-700 mb-4">
-					Génère UN jeu de données complet pour les tests et démonstrations.
+					{$_('seed.generateDesc')}
 				</p>
 				<ul class="text-sm text-gray-600 mb-4 space-y-2">
 					<li class="flex items-start gap-2">
@@ -250,19 +250,19 @@
 					</li>
 					<li class="flex items-start gap-2">
 						<span class="text-green-600">✓</span>
-						<span>Immeubles avec lots (incluant copropriété multiple)</span>
+						<span>{$_('seed.genBuildings')}</span>
 					</li>
 					<li class="flex items-start gap-2">
 						<span class="text-green-600">✓</span>
-						<span>Copropriétaires, charges, assemblées</span>
+						<span>{$_('seed.genOwners')}</span>
 					</li>
 					<li class="flex items-start gap-2">
 						<span class="text-green-600">✓</span>
-						<span>Utilisateurs: Syndics, Comptables, Propriétaires</span>
+						<span>{$_('seed.genUsers')}</span>
 					</li>
 					<li class="flex items-start gap-2">
 						<span class="text-green-600">✓</span>
-						<span>Marqué automatiquement comme <code class="bg-green-100 px-1 rounded text-xs">is_seed_data=true</code></span>
+						<span>{$_('seed.markedAs')} <code class="bg-green-100 px-1 rounded text-xs">is_seed_data=true</code></span>
 					</li>
 				</ul>
 				<button
@@ -270,34 +270,34 @@
 					disabled={loading}
 					class="w-full bg-green-600 text-white py-3 px-6 rounded-lg hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition font-semibold text-lg shadow-md"
 				>
-					{loading ? '⏳ Génération en cours...' : '🚀 Générer le Seed'}
+					{loading ? $_('seed.generating') : `🚀 ${$_('seed.generate')}`}
 				</button>
 			</div>
 
 			<!-- Clear Seed Data -->
 			<div class="border-2 border-red-200 rounded-lg p-6 bg-red-50">
 				<h3 class="font-semibold text-xl mb-3 text-red-800 flex items-center gap-2">
-					<span class="text-2xl">🗑️</span> Supprimer le Seed
+					<span class="text-2xl">🗑️</span> {$_('seed.delete')}
 				</h3>
 				<p class="text-sm text-gray-700 mb-4">
-					Supprime UNIQUEMENT les données seed. Les données de production sont préservées.
+					{$_('seed.deleteDesc')}
 				</p>
 				<ul class="text-sm text-gray-600 mb-4 space-y-2">
 					<li class="flex items-start gap-2">
 						<span class="text-blue-600">🛡️</span>
-						<span><strong>Préserve</strong> toutes les organisations de production</span>
+						<span><strong>{$_('seed.preserves')}</strong> toutes les organisations de production</span>
 					</li>
 					<li class="flex items-start gap-2">
 						<span class="text-red-600">🗑️</span>
-						<span>Supprime uniquement les orgs avec <code class="bg-red-100 px-1 rounded text-xs">is_seed_data=true</code></span>
+						<span>{$_('seed.deletesOnly')} <code class="bg-red-100 px-1 rounded text-xs">is_seed_data=true</code></span>
 					</li>
 					<li class="flex items-start gap-2">
 						<span class="text-blue-600">🔒</span>
-						<span>SuperAdmin toujours préservé</span>
+						<span>{$_('seed.superAdminKept')}</span>
 					</li>
 					<li class="flex items-start gap-2">
 						<span class="text-red-600">⚠️</span>
-						<span><strong>Action irréversible</strong></span>
+						<span><strong>{$_('seed.irreversible')}</strong></span>
 					</li>
 				</ul>
 				<button
@@ -305,7 +305,7 @@
 					disabled={loading}
 					class="w-full bg-red-600 text-white py-3 px-6 rounded-lg hover:bg-red-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition font-semibold text-lg shadow-md"
 				>
-					{loading ? '⏳ Suppression...' : '🗑️ Supprimer le Seed'}
+					{loading ? $_('seed.deleting') : `🗑️ ${$_('seed.delete')}`}
 				</button>
 			</div>
 		</div>
@@ -327,10 +327,10 @@
 		{#if showAccounts && seedAccounts.length > 0}
 			<div class="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6">
 				<h2 class="text-xl font-semibold mb-4 text-blue-900">
-					🔑 Comptes de test disponibles
+					{$_('seed.testAccounts')}
 				</h2>
 				<p class="text-sm text-gray-600 mb-4">
-					Utilisez ces credentials pour tester les différents rôles et organisations:
+					{$_('seed.useTheseCreds')}
 				</p>
 
 				<div class="space-y-3">
@@ -347,7 +347,7 @@
 							</div>
 							<div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
 								<div>
-									<span class="text-gray-600 text-xs font-medium block mb-1">Email:</span>
+									<span class="text-gray-600 text-xs font-medium block mb-1">{$_('seed.emailLabel')}</span>
 									<div class="flex items-center gap-2">
 										<code class="bg-gray-50 px-3 py-1.5 rounded border border-gray-200 flex-1 text-xs">{account.email}</code>
 										<button
@@ -361,7 +361,7 @@
 									</div>
 								</div>
 								<div>
-									<span class="text-gray-600 text-xs font-medium block mb-1">Mot de passe:</span>
+									<span class="text-gray-600 text-xs font-medium block mb-1">{$_('seed.passwordLabel')}</span>
 									<div class="flex items-center gap-2">
 										<code class="bg-gray-50 px-3 py-1.5 rounded border border-gray-200 flex-1 text-xs">{account.password}</code>
 										<button
@@ -381,7 +381,7 @@
 
 				<div class="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded">
 					<p class="text-xs text-yellow-800">
-						<strong>⚠️ Note:</strong> Ces credentials sont pour les tests uniquement.
+						<strong>{$_('seed.noteLabel')}</strong> {$_('seed.credsWarning')}
 						Changez les mots de passe en production!
 					</p>
 				</div>
@@ -391,32 +391,32 @@
 		<!-- Info Section -->
 		<div class="mt-8 bg-gray-50 rounded-lg p-6">
 			<h2 class="font-semibold text-lg mb-3 text-gray-800">
-				ℹ️ À propos du Seed
+				{$_('seed.about')}
 			</h2>
 			<div class="space-y-3 text-sm text-gray-600">
 				<div class="p-4 bg-blue-50 border-l-4 border-blue-500 rounded">
-					<p class="font-semibold text-blue-900 mb-2">🛡️ Protection des données de production</p>
+					<p class="font-semibold text-blue-900 mb-2">{$_('seed.prodProtection')}</p>
 					<p>
-						Toutes les organisations seed sont automatiquement marquées avec <code class="bg-blue-100 px-1 rounded font-mono">is_seed_data=true</code>.
+						{$_('seed.allMarked')} <code class="bg-blue-100 px-1 rounded font-mono">is_seed_data=true</code>.
 						La suppression ne touche QUE ces organisations, préservant <strong>toutes les données de production</strong>.
 					</p>
 				</div>
 				<div class="p-4 bg-white border border-gray-200 rounded">
-					<p class="font-semibold text-gray-900 mb-2">🌱 Le Seed unique</p>
+					<p class="font-semibold text-gray-900 mb-2">{$_('seed.theSeed')}</p>
 					<p>
-						Il existe <strong>UN SEUL seed</strong> pour KoproGo. Il génère 3 organisations belges complètes avec :
+						{$_('seed.theSeed')} {$_('seed.forKoprogo')}
 					</p>
 					<ul class="mt-2 ml-4 space-y-1 list-disc">
-						<li>Immeubles et lots (avec copropriété multiple via <code class="bg-gray-100 px-1 rounded text-xs">unit_owners</code>)</li>
-						<li>Copropriétaires avec quotes-parts et contacts principaux</li>
-						<li>Charges, assemblées générales, et documents</li>
-						<li>Utilisateurs avec différents rôles (Syndic, Comptable, Propriétaire)</li>
+						<li>{$_('seed.aboutBuildings')} <code class="bg-gray-100 px-1 rounded text-xs">unit_owners</code>)</li>
+						<li>{$_('seed.aboutOwners')}</li>
+						<li>{$_('seed.aboutCharges')}</li>
+						<li>{$_('seed.aboutUsers')}</li>
 					</ul>
 				</div>
 				<div class="p-4 bg-white border border-gray-200 rounded">
-					<p class="font-semibold text-gray-900 mb-2">🔑 Comptes de test générés</p>
+					<p class="font-semibold text-gray-900 mb-2">{$_('seed.generatedAccounts')}</p>
 					<p>
-						Après génération du seed, les credentials des comptes s'affichent ci-dessous.
+						{$_('seed.afterGeneration')}
 						Vous pouvez vous connecter avec ces comptes pour tester le système.
 					</p>
 				</div>
