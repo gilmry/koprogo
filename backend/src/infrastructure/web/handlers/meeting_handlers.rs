@@ -383,8 +383,10 @@ pub async fn cancel_meeting(
 ) -> impl Responder {
     match state.meeting_use_cases.cancel_meeting(*id).await {
         Ok(meeting) => {
+            // `MeetingCancelled`, et non `MeetingCompleted` : une assemblée
+            // annulée n'a pas eu lieu. Cf. #780.
             AuditLogEntry::new(
-                AuditEventType::MeetingCompleted,
+                AuditEventType::MeetingCancelled,
                 Some(user.user_id),
                 user.organization_id,
             )
@@ -412,8 +414,10 @@ pub async fn reschedule_meeting(
         .await
     {
         Ok(meeting) => {
+            // `MeetingRescheduled`, et non `MeetingCompleted` : reporter une
+            // assemblée n'est pas la clôturer. Cf. #780.
             AuditLogEntry::new(
-                AuditEventType::MeetingCompleted,
+                AuditEventType::MeetingRescheduled,
                 Some(user.user_id),
                 user.organization_id,
             )
