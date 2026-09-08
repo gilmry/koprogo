@@ -348,6 +348,7 @@
   <button
     type="button"
     aria-label={$_("common.closeModal")}
+    data-testid="expense-modal-close-button"
     class="fixed inset-0 bg-black bg-opacity-50 z-40 cursor-default"
     onclick={handleCancel}
   ></button>
@@ -369,6 +370,7 @@
         <button
           onclick={handleCancel}
           aria-label={$_("common.close")}
+          data-testid="expense-form-cancel-button"
           class="text-gray-400 hover:text-gray-600 transition"
         >
           <svg

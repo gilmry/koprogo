@@ -108,6 +108,7 @@
       <select
         id="building"
         bind:value={selectedBuildingId}
+        data-testid="call-for-funds-building-select"
         required
         disabled={loading}
         class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
@@ -131,6 +132,7 @@
       type="text"
       id="title"
       bind:value={title}
+      data-testid="call-for-funds-title-input"
       required
       placeholder="Ex: Charges du 1er trimestre 2025"
       class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
@@ -145,6 +147,7 @@
     <textarea
       id="description"
       bind:value={description}
+      data-testid="call-for-funds-description-textarea"
       required
       rows="3"
       placeholder={$_("callForFunds.descriptionPlaceholder")}
@@ -163,6 +166,7 @@
     <select
       id="contribution-type"
       bind:value={contributionType}
+      data-testid="call-for-funds-type-select"
       required
       class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
     >
@@ -196,6 +200,7 @@
         type="number"
         id="total-amount"
         bind:value={totalAmount}
+        data-testid="call-for-funds-amount-input"
         required
         min="0.01"
         step="0.01"
@@ -222,6 +227,7 @@
       type="date"
       id="call-date"
       bind:value={callDate}
+      data-testid="call-for-funds-call-date-input"
       required
       class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
     />
@@ -236,6 +242,7 @@
       type="date"
       id="due-date"
       bind:value={dueDate}
+      data-testid="call-for-funds-due-date-input"
       required
       class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
     />
@@ -250,6 +257,7 @@
       type="text"
       id="account-code"
       bind:value={accountCode}
+      data-testid="call-for-funds-account-input"
       placeholder="Ex: 7000"
       class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
     />
@@ -288,6 +296,7 @@
     <button
       type="button"
       onclick={onCancel}
+      data-testid="call-for-funds-cancel-button"
       disabled={submitting}
       class="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
     >
@@ -295,6 +304,7 @@
     </button>
     <button
       type="submit"
+      data-testid="call-for-funds-submit-button"
       disabled={submitting}
       class="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
     >

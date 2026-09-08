@@ -238,7 +238,11 @@
         />
       </svg>
       <p class="mt-2 text-gray-600">{$_("callForFunds.none")}</p>
-      <button onclick={onCreate} class="mt-4 text-blue-600 hover:text-blue-800">
+      <button
+        onclick={onCreate}
+        data-testid="call-for-funds-create-first-button"
+        class="mt-4 text-blue-600 hover:text-blue-800"
+      >
         {$_("callForFunds.createFirst")}
       </button>
     </div>
@@ -336,6 +340,7 @@
                 {#if call.status === "draft"}
                   <button
                     onclick={() => handleSend(call.id)}
+                    data-testid="call-for-funds-send-button"
                     class="text-blue-600 hover:text-blue-900"
                     aria-label={$_("callForFunds.sendTitle")}
                     title={$_("callForFunds.sendTitle")}
@@ -344,6 +349,7 @@
                   </button>
                   <button
                     onclick={() => handleDelete(call.id)}
+                    data-testid="call-for-funds-delete-button"
                     class="text-red-600 hover:text-red-900"
                     aria-label={$_("callForFunds.deleteTitle")}
                     title={$_("callForFunds.deleteTitle")}
@@ -353,6 +359,7 @@
                 {:else if call.status === "sent" || call.status === "partial"}
                   <button
                     onclick={() => handleCancel(call.id)}
+                    data-testid="call-for-funds-cancel-row-button"
                     class="text-orange-600 hover:text-orange-900"
                     aria-label={$_("callForFunds.cancelTitle")}
                     title={$_("callForFunds.cancelTitle")}
@@ -361,6 +368,7 @@
                   </button>
                   <a
                     href="/owner-contributions?call_for_funds_id={call.id}"
+                    data-testid="call-for-funds-contributions-link"
                     class="text-green-600 hover:text-green-900"
                     aria-label={$_("callForFunds.viewContributions")}
                     title={$_("callForFunds.viewContributions")}

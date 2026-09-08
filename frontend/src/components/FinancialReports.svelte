@@ -149,6 +149,7 @@
     </h2>
     <div class="flex space-x-4">
       <button
+        data-testid="financial-reports-balance-tab-button"
         class="px-6 py-3 rounded-lg font-medium transition-colors {reportType ===
         'balance-sheet'
           ? 'bg-primary-600 text-white'
@@ -161,6 +162,7 @@
         📊 {$_("reports.balance_sheet")}
       </button>
       <button
+        data-testid="financial-reports-income-tab-button"
         class="px-6 py-3 rounded-lg font-medium transition-colors {reportType ===
         'income-statement'
           ? 'bg-primary-600 text-white'

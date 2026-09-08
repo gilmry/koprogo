@@ -577,6 +577,7 @@
               </h3>
               <a
                 href="/building-detail?id={building.id}"
+                data-testid="expense-detail-building-link"
                 class="text-lg text-primary-600 hover:text-primary-700 hover:underline"
               >
                 {building.name}

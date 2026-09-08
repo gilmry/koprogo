@@ -169,6 +169,7 @@
     </h2>
     <div class="flex space-x-4">
       <button
+        data-testid="building-report-balance-tab-button"
         class="px-6 py-3 rounded-lg font-medium transition-colors {reportType ===
         'balance-sheet'
           ? 'bg-primary-600 text-white'
@@ -181,6 +182,7 @@
         📊 {$_("buildings.balanceSheet")}
       </button>
       <button
+        data-testid="building-report-income-tab-button"
         class="px-6 py-3 rounded-lg font-medium transition-colors {reportType ===
         'income-statement'
           ? 'bg-primary-600 text-white'
@@ -210,6 +212,7 @@
             {$_("buildings.startDate")}
           </label>
           <input
+            data-testid="building-report-period-start-input"
             id="period-start"
             type="date"
             bind:value={periodStart}
@@ -224,6 +227,7 @@
             {$_("buildings.endDate")}
           </label>
           <input
+            data-testid="building-report-period-end-input"
             id="period-end"
             type="date"
             bind:value={periodEnd}
@@ -237,6 +241,7 @@
   <!-- Generate Report Button -->
   <div class="flex justify-center">
     <button
+      data-testid="building-report-generate-button"
       class="px-8 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
       onclick={() =>
         reportType === "balance-sheet"
@@ -312,12 +317,14 @@
         </p>
         <div class="mt-4 flex space-x-4">
           <button
+            data-testid="building-report-balance-export-pdf-button"
             onclick={exportToPDF}
             class="px-4 py-2 bg-white text-primary-600 rounded hover:bg-primary-50 transition-colors text-sm font-medium"
           >
             📄 {$_("buildings.exportPDF")}
           </button>
           <button
+            data-testid="building-report-balance-export-excel-button"
             onclick={exportToExcel}
             class="px-4 py-2 bg-white text-primary-600 rounded hover:bg-primary-50 transition-colors text-sm font-medium"
           >
@@ -518,12 +525,14 @@
         </p>
         <div class="mt-4 flex space-x-4">
           <button
+            data-testid="building-report-income-export-pdf-button"
             onclick={exportToPDF}
             class="px-4 py-2 bg-white text-primary-600 rounded hover:bg-primary-50 transition-colors text-sm font-medium"
           >
             📄 {$_("buildings.exportPDF")}
           </button>
           <button
+            data-testid="building-report-income-export-excel-button"
             onclick={exportToExcel}
             class="px-4 py-2 bg-white text-primary-600 rounded hover:bg-primary-50 transition-colors text-sm font-medium"
           >
