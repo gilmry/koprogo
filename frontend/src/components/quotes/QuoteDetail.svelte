@@ -14,6 +14,9 @@
   import { withErrorHandling } from "../../lib/utils/error.utils";
   import { formatDate } from "../../lib/utils/date.utils";
   import { formatAmount } from "../../lib/utils/finance.utils";
+  import ConfirmDialog from "../ui/ConfirmDialog.svelte";
+  import Modal from "../ui/Modal.svelte";
+  import Button from "../ui/Button.svelte";
 
   let {
     quote,
@@ -26,6 +29,20 @@
   } = $props();
 
   let actionLoading = $state(false);
+
+  /// L'action en attente, et la note de décision saisie.
+  ///
+  /// Deux `prompt()` et deux `confirm()` NATIFS. Un navigateur piloté les
+  /// supprime, et l'action prend la forme exacte d'une panne — aucun dialogue,
+  /// aucune requête, aucun message (#844).
+  ///
+  /// Accepter ou refuser un devis est une DÉCISION du syndic sur un marché,
+  /// et la note qui l'accompagne est la trace de son motif. La perdre dans un
+  /// dialogue que l'outil de recette avale, c'est perdre la justification
+  /// d'un choix engageant la copropriété.
+  let actionEnAttente = $state<"retirer" | "supprimer" | null>(null);
+  let decisionEnAttente = $state<"accepter" | "refuser" | null>(null);
+  let noteDeDecision = $state("");
   let showSubmitForm = $state(false);
 
   let amountExclVat = $state("");
@@ -81,8 +98,14 @@
     if (updated) onupdated?.(updated);
   }
 
-  async function handleAccept() {
-    const notes = prompt($_("quotes.detail.decisionNotesPrompt")) || "";
+  function handleAccept() {
+    decisionEnAttente = "accepter";
+  }
+
+  async function executerAcceptation() {
+    const notes = noteDeDecision;
+    decisionEnAttente = null;
+    noteDeDecision = "";
     const updated = await withErrorHandling({
       action: () =>
         quotesApi.accept(quote.id, {
@@ -96,8 +119,14 @@
     if (updated) onupdated?.(updated);
   }
 
-  async function handleReject() {
-    const notes = prompt($_("quotes.detail.rejectReasonPrompt"));
+  function handleReject() {
+    decisionEnAttente = "refuser";
+  }
+
+  async function executerRefus() {
+    const notes = noteDeDecision;
+    decisionEnAttente = null;
+    noteDeDecision = "";
     if (!notes) return;
     const updated = await withErrorHandling({
       action: () =>
@@ -112,8 +141,12 @@
     if (updated) onupdated?.(updated);
   }
 
-  async function handleWithdraw() {
-    if (!confirm($_("quotes.detail.withdrawConfirm"))) return;
+  function handleWithdraw() {
+    actionEnAttente = "retirer";
+  }
+
+  async function executerRetrait() {
+    actionEnAttente = null;
     const updated = await withErrorHandling({
       action: () => quotesApi.withdraw(quote.id),
       setLoading: (v: boolean) => (actionLoading = v),
@@ -123,8 +156,12 @@
     if (updated) onupdated?.(updated);
   }
 
-  async function handleDelete() {
-    if (!confirm($_("quotes.detail.deleteConfirm"))) return;
+  function handleDelete() {
+    actionEnAttente = "supprimer";
+  }
+
+  async function executerSuppression() {
+    actionEnAttente = null;
     await withErrorHandling({
       action: () => quotesApi.delete(quote.id),
       setLoading: (v: boolean) => (actionLoading = v),
@@ -409,3 +446,79 @@
     {/if}
   </div>
 </div>
+
+<!-- Les dialogues qui remplacent deux `confirm()` et deux `prompt()` natifs
+     (#844). La note de décision se saisit dans la page : c'est la trace du
+     motif d'un choix qui engage la copropriété, elle ne peut pas vivre dans
+     une boîte que l'outil de recette fait disparaître. -->
+<ConfirmDialog
+  isOpen={actionEnAttente !== null}
+  title={$_("common.confirm")}
+  message={actionEnAttente === "retirer"
+    ? $_("quotes.detail.withdrawConfirm")
+    : actionEnAttente === "supprimer"
+      ? $_("quotes.detail.deleteConfirm")
+      : ""}
+  variant="danger"
+  loading={actionLoading}
+  onconfirm={() => {
+    if (actionEnAttente === "retirer") executerRetrait();
+    else if (actionEnAttente === "supprimer") executerSuppression();
+  }}
+  oncancel={() => (actionEnAttente = null)}
+/>
+
+<Modal
+  isOpen={decisionEnAttente !== null}
+  title={decisionEnAttente === "accepter"
+    ? $_("quotes.detail.decisionNotesPrompt")
+    : $_("quotes.detail.rejectReasonPrompt")}
+  size="sm"
+  onclose={() => {
+    decisionEnAttente = null;
+    noteDeDecision = "";
+  }}
+>
+  <label
+    class="block text-sm font-medium text-gray-700"
+    for="quote-decision-notes"
+  >
+    {decisionEnAttente === "accepter"
+      ? $_("quotes.detail.decisionNotesPrompt")
+      : $_("quotes.detail.rejectReasonPrompt")}
+  </label>
+  <textarea
+    id="quote-decision-notes"
+    rows="3"
+    bind:value={noteDeDecision}
+    data-testid="quote-decision-notes-input"
+    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm sm:text-sm"
+  ></textarea>
+
+  {#snippet footer()}
+    <div class="flex justify-end space-x-3">
+      <Button
+        variant="outline"
+        onclick={() => {
+          decisionEnAttente = null;
+          noteDeDecision = "";
+        }}
+        data-testid="quote-decision-cancel"
+      >
+        {$_("common.cancel")}
+      </Button>
+      <Button
+        variant="primary"
+        onclick={() => {
+          if (decisionEnAttente === "accepter") executerAcceptation();
+          else executerRefus();
+        }}
+        disabled={actionLoading ||
+          (decisionEnAttente === "refuser" && noteDeDecision.length === 0)}
+        data-testid="quote-decision-submit"
+      >
+        {$_("common.confirm")}
+      </Button>
+    </div>
+  {/snippet}
+</Modal>

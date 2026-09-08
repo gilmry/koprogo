@@ -8,6 +8,7 @@
     ChallengeType,
   } from "../../lib/api/gamification";
   import ChallengeForm from "./ChallengeForm.svelte";
+  import ConfirmDialog from "../ui/ConfirmDialog.svelte";
   import { formatDateShort } from "../../lib/utils/date.utils";
   import {
     withLoadingState,
@@ -23,6 +24,20 @@
   } = $props();
 
   let challenges = $state<Challenge[]>([]);
+
+  /// L'action en attente, et le défi qu'elle vise.
+  ///
+  /// Quatre `confirm()` NATIFS. Un navigateur piloté les supprime, et l'action
+  /// prend la forme exacte d'une panne (#844).
+  ///
+  /// Les messages interpolent le titre du défi — `{ values: { title } }` — et
+  /// c'est précisément ce qu'un dialogue du navigateur ne sait pas montrer
+  /// autrement qu'en texte brut, sans mise en forme et sans traduction des
+  /// boutons.
+  let actionEnAttente = $state<
+    "activer" | "terminer" | "annuler" | "supprimer" | null
+  >(null);
+  let defiEnAttente = $state<Challenge | null>(null);
   let loading = $state(true);
   let error = $state("");
   let showForm = $state(false);
@@ -53,15 +68,16 @@
     });
   }
 
-  async function handleActivate(challenge: Challenge) {
-    if (
-      !confirm(
-        $_("gamification.confirm_activate", {
-          values: { title: challenge.title },
-        }),
-      )
-    )
-      return;
+  function handleActivate(challenge: Challenge) {
+    defiEnAttente = challenge;
+    actionEnAttente = "activer";
+  }
+
+  async function executer_activer() {
+    const challenge = defiEnAttente;
+    actionEnAttente = null;
+    defiEnAttente = null;
+    if (!challenge) return;
     await withErrorHandling({
       action: () => gamificationApi.activateChallenge(challenge.id),
       successMessage: $_("gamification.activate_success"),
@@ -70,15 +86,16 @@
     });
   }
 
-  async function handleComplete(challenge: Challenge) {
-    if (
-      !confirm(
-        $_("gamification.confirm_complete", {
-          values: { title: challenge.title },
-        }),
-      )
-    )
-      return;
+  function handleComplete(challenge: Challenge) {
+    defiEnAttente = challenge;
+    actionEnAttente = "terminer";
+  }
+
+  async function executer_terminer() {
+    const challenge = defiEnAttente;
+    actionEnAttente = null;
+    defiEnAttente = null;
+    if (!challenge) return;
     await withErrorHandling({
       action: () => gamificationApi.completeChallenge(challenge.id),
       successMessage: $_("gamification.complete_success"),
@@ -87,15 +104,16 @@
     });
   }
 
-  async function handleCancelChallenge(challenge: Challenge) {
-    if (
-      !confirm(
-        $_("gamification.confirm_cancel", {
-          values: { title: challenge.title },
-        }),
-      )
-    )
-      return;
+  function handleCancelChallenge(challenge: Challenge) {
+    defiEnAttente = challenge;
+    actionEnAttente = "annuler";
+  }
+
+  async function executer_annuler() {
+    const challenge = defiEnAttente;
+    actionEnAttente = null;
+    defiEnAttente = null;
+    if (!challenge) return;
     await withErrorHandling({
       action: () => gamificationApi.cancelChallenge(challenge.id),
       successMessage: $_("gamification.cancel_success"),
@@ -104,15 +122,16 @@
     });
   }
 
-  async function handleDelete(challenge: Challenge) {
-    if (
-      !confirm(
-        $_("gamification.confirm_delete_challenge", {
-          values: { title: challenge.title },
-        }),
-      )
-    )
-      return;
+  function handleDelete(challenge: Challenge) {
+    defiEnAttente = challenge;
+    actionEnAttente = "supprimer";
+  }
+
+  async function executer_supprimer() {
+    const challenge = defiEnAttente;
+    actionEnAttente = null;
+    defiEnAttente = null;
+    if (!challenge) return;
     await withErrorHandling({
       action: () => gamificationApi.deleteChallenge(challenge.id),
       successMessage: $_("gamification.delete_success"),
@@ -336,3 +355,41 @@
     </ul>
   {/if}
 </div>
+
+<!-- Le dialogue qui remplace quatre `confirm()` natifs (#844). Le titre du
+     défi est interpolé dans le message, ce qu'un dialogue du navigateur ne
+     sait montrer qu'en texte brut. -->
+<ConfirmDialog
+  isOpen={actionEnAttente !== null}
+  title={$_("common.confirm")}
+  message={defiEnAttente && actionEnAttente === "activer"
+    ? $_("gamification.confirm_activate", {
+        values: { title: defiEnAttente.title },
+      })
+    : defiEnAttente && actionEnAttente === "terminer"
+      ? $_("gamification.confirm_complete", {
+          values: { title: defiEnAttente.title },
+        })
+      : defiEnAttente && actionEnAttente === "annuler"
+        ? $_("gamification.confirm_cancel", {
+            values: { title: defiEnAttente.title },
+          })
+        : defiEnAttente && actionEnAttente === "supprimer"
+          ? $_("gamification.confirm_delete", {
+              values: { title: defiEnAttente.title },
+            })
+          : ""}
+  variant={actionEnAttente === "supprimer" || actionEnAttente === "annuler"
+    ? "danger"
+    : "primary"}
+  onconfirm={() => {
+    if (actionEnAttente === "activer") executer_activer();
+    else if (actionEnAttente === "terminer") executer_terminer();
+    else if (actionEnAttente === "annuler") executer_annuler();
+    else if (actionEnAttente === "supprimer") executer_supprimer();
+  }}
+  oncancel={() => {
+    actionEnAttente = null;
+    defiEnAttente = null;
+  }}
+/>
