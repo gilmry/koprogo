@@ -4,7 +4,9 @@ use crate::application::dto::{
 };
 use crate::domain::entities::{ContributionType, UserRole};
 use crate::infrastructure::web::handlers::conformity_response::try_build_conformity_response;
-use crate::infrastructure::web::middleware::scope_guard::verify_building_org_access;
+use crate::infrastructure::web::middleware::scope_guard::{
+    verify_building_org_access, verify_call_for_funds_org_access,
+};
 use crate::infrastructure::web::{AppState, AuthenticatedUser};
 use actix_web::{delete, get, post, put, web, HttpResponse, ResponseError};
 use std::str::FromStr;
@@ -136,7 +138,7 @@ pub async fn create_call_for_funds(
 #[get("/call-for-funds/{id}")]
 pub async fn get_call_for_funds(
     state: web::Data<AppState>,
-    _user: AuthenticatedUser,
+    user: AuthenticatedUser,
     id: web::Path<Uuid>,
 ) -> HttpResponse {
     match state.call_for_funds_use_cases.get_call_for_funds(*id).await {
@@ -271,10 +273,25 @@ enregistre la echoue avec « No active owners found for this building ».",
 #[post("/call-for-funds/{id}/send")]
 pub async fn send_call_for_funds(
     state: web::Data<AppState>,
-    _user: AuthenticatedUser,
+    user: AuthenticatedUser,
     id: web::Path<Uuid>,
     _req: web::Json<SendCallForFundsRequest>,
 ) -> HttpResponse {
+    // Cloisonnement : cet appel de fonds engage l'argent des copropriétaires
+    // d'une ACP précise. L'envoyer hors de la sienne écrirait à des personnes
+    // qu'on n'a pas à contacter, au nom d'une copropriété qui n'est pas la
+    // sienne. L'identité était prise puis ignorée — `_user` (#772).
+    if let Err(err) = verify_call_for_funds_org_access(
+        &user,
+        *id,
+        &state.call_for_funds_use_cases,
+        &state.acp_use_cases,
+    )
+    .await
+    {
+        return err.error_response();
+    }
+
     match state
         .call_for_funds_use_cases
         .send_call_for_funds(*id)
@@ -328,9 +345,24 @@ pub async fn send_call_for_funds(
 #[put("/call-for-funds/{id}/cancel")]
 pub async fn cancel_call_for_funds(
     state: web::Data<AppState>,
-    _user: AuthenticatedUser,
+    user: AuthenticatedUser,
     id: web::Path<Uuid>,
 ) -> HttpResponse {
+    // Cloisonnement : cet appel de fonds engage l'argent des copropriétaires
+    // d'une ACP précise. L'envoyer hors de la sienne écrirait à des personnes
+    // qu'on n'a pas à contacter, au nom d'une copropriété qui n'est pas la
+    // sienne. L'identité était prise puis ignorée — `_user` (#772).
+    if let Err(err) = verify_call_for_funds_org_access(
+        &user,
+        *id,
+        &state.call_for_funds_use_cases,
+        &state.acp_use_cases,
+    )
+    .await
+    {
+        return err.error_response();
+    }
+
     match state
         .call_for_funds_use_cases
         .cancel_call_for_funds(*id)
@@ -362,7 +394,7 @@ pub async fn cancel_call_for_funds(
 #[delete("/call-for-funds/{id}")]
 pub async fn delete_call_for_funds(
     state: web::Data<AppState>,
-    _user: AuthenticatedUser,
+    user: AuthenticatedUser,
     id: web::Path<Uuid>,
 ) -> HttpResponse {
     match state

@@ -1,8 +1,9 @@
 use crate::application::dto::{
     CreateOwnerContributionRequest, OwnerContributionResponse, RecordPaymentRequest,
 };
+use crate::infrastructure::web::middleware::scope_guard::verify_contribution_org_access;
 use crate::infrastructure::web::{AppState, AuthenticatedUser};
-use actix_web::{get, post, put, web, HttpResponse};
+use actix_web::{get, post, put, web, HttpResponse, ResponseError};
 use uuid::Uuid;
 
 /// POST /api/v1/owner-contributions
@@ -74,7 +75,7 @@ pub async fn create_contribution(
 #[get("/owner-contributions/{id}")]
 pub async fn get_contribution(
     state: web::Data<AppState>,
-    _user: AuthenticatedUser,
+    user: AuthenticatedUser,
     id: web::Path<Uuid>,
 ) -> HttpResponse {
     match state
@@ -232,10 +233,24 @@ le paiement atteint `succeeded`.",
 #[put("/owner-contributions/{id}/mark-paid")]
 pub async fn record_payment(
     state: web::Data<AppState>,
-    _user: AuthenticatedUser,
+    user: AuthenticatedUser,
     id: web::Path<Uuid>,
     req: web::Json<RecordPaymentRequest>,
 ) -> HttpResponse {
+    // Cloisonnement : déclarer qu'un copropriétaire a payé éteint une dette.
+    // Sans ce contrôle, on pouvait le faire dans la comptabilité d'une autre
+    // copropriété. L'identité était prise puis ignorée — `_user` (#772).
+    if let Err(err) = verify_contribution_org_access(
+        &user,
+        *id,
+        &state.owner_contribution_use_cases,
+        &state.acp_use_cases,
+    )
+    .await
+    {
+        return err.error_response();
+    }
+
     match state
         .owner_contribution_use_cases
         .record_payment(

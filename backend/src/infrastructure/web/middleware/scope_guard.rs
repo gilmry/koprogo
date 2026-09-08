@@ -40,9 +40,11 @@ use uuid::Uuid;
 use crate::application::error::AppError;
 use crate::application::use_cases::acp_use_cases::{AcpCaller, AcpUseCases};
 use crate::application::use_cases::building_use_cases::BuildingUseCases;
+use crate::application::use_cases::call_for_funds_use_cases::CallForFundsUseCases;
 use crate::application::use_cases::convocation_use_cases::ConvocationUseCases;
 use crate::application::use_cases::document_use_cases::DocumentUseCases;
 use crate::application::use_cases::local_exchange_use_cases::LocalExchangeUseCases;
+use crate::application::use_cases::owner_contribution_use_cases::OwnerContributionUseCases;
 use crate::application::use_cases::owner_use_cases::OwnerUseCases;
 use crate::application::use_cases::quote_use_cases::QuoteUseCases;
 use crate::application::use_cases::resource_booking_use_cases::ResourceBookingUseCases;
@@ -551,6 +553,70 @@ pub async fn verify_technical_spec_org_access(
 
     let spec = spec_use_cases.get(spec_id).await?;
     verify_acp_org_access(user, spec.acp_id, acp_use_cases).await
+}
+
+/// Vérifie le mandat de l'appelant sur l'ACP d'un **appel de fonds**.
+///
+/// Un appel de fonds engage l'argent des copropriétaires : il dit combien
+/// chacun doit, et pour quoi. `POST /call-for-funds/{id}/send` le leur envoie
+/// — un acte qui, hors de son ACP, écrirait à des personnes qu'on n'a pas à
+/// contacter, au nom d'une copropriété qui n'est pas la sienne.
+///
+/// Le périmètre est l'ACP : `CallForFunds` porte `acp_id` obligatoire et ne
+/// vise pas d'immeuble. C'est cohérent avec l'Art. 3.86, où le fonds de
+/// roulement et le fonds de réserve appartiennent à l'association, non aux
+/// immeubles qu'elle regroupe.
+/// Vérifie le mandat de l'appelant sur l'ACP d'une **quote-part**.
+///
+/// `PUT /owner-contributions/{id}/mark-paid` déclare qu'un copropriétaire
+/// nommé a payé. C'est l'écriture la plus lourde de conséquence du produit
+/// après la clôture d'un vote : elle éteint une dette, et son absence de
+/// contrôle permettait de le faire dans la comptabilité d'une autre
+/// copropriété.
+///
+/// Le périmètre est l'ACP : `OwnerContribution` porte `acp_id` obligatoire et
+/// `unit_id: Option<Uuid>` — une quote-part peut n'être rattachée à aucun lot
+/// précis, notamment lors d'une régularisation.
+pub async fn verify_contribution_org_access(
+    user: &AuthenticatedUser,
+    contribution_id: Uuid,
+    contribution_use_cases: &OwnerContributionUseCases,
+    acp_use_cases: &AcpUseCases,
+) -> Result<(), AppError> {
+    if user.is_superadmin() {
+        return Ok(());
+    }
+
+    let contribution = contribution_use_cases
+        .get_contribution(contribution_id)
+        .await
+        .map_err(AppError::from)?
+        .ok_or(AppError::NotFound(format!(
+            "Contribution not found: {contribution_id}"
+        )))?;
+
+    verify_acp_org_access(user, contribution.acp_id, acp_use_cases).await
+}
+
+pub async fn verify_call_for_funds_org_access(
+    user: &AuthenticatedUser,
+    cff_id: Uuid,
+    cff_use_cases: &CallForFundsUseCases,
+    acp_use_cases: &AcpUseCases,
+) -> Result<(), AppError> {
+    if user.is_superadmin() {
+        return Ok(());
+    }
+
+    let cff = cff_use_cases
+        .get_call_for_funds(cff_id)
+        .await
+        .map_err(AppError::from)?
+        .ok_or(AppError::NotFound(format!(
+            "Call for funds not found: {cff_id}"
+        )))?;
+
+    verify_acp_org_access(user, cff.acp_id, acp_use_cases).await
 }
 
 pub async fn verify_booking_org_access(
