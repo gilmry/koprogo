@@ -4,6 +4,7 @@ use crate::application::dto::{
     ValidateQuorumRequest,
 };
 use crate::infrastructure::audit::{AuditEventType, AuditLogEntry};
+use crate::infrastructure::web::classification_erreurs;
 use crate::infrastructure::web::middleware::scope_guard::verify_acp_org_access;
 use crate::infrastructure::web::middleware::scope_guard::verify_building_org_access;
 use crate::infrastructure::web::{AppState, AuthenticatedUser};
@@ -347,7 +348,9 @@ pub async fn get_meeting_completion_checklist(
             "minutes_draft_exists": checklist.minutes_draft_exists,
             "missing": missing_json,
         })),
-        Err(err) if err.contains("not found") || err.contains("not configured") => {
+        Err(err)
+            if classification_erreurs::est_introuvable(&err) || err.contains("not configured") =>
+        {
             HttpResponse::NotFound().json(serde_json::json!({ "error": err }))
         }
         Err(err) => HttpResponse::BadRequest().json(serde_json::json!({ "error": err })),

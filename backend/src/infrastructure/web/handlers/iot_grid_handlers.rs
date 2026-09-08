@@ -1,4 +1,5 @@
 use crate::application::use_cases::boinc_use_cases::SubmitOptimisationTaskDto;
+use crate::infrastructure::web::classification_erreurs;
 use crate::infrastructure::web::middleware::scope_guard::verify_owner_org_access;
 use crate::infrastructure::web::middleware::AuthenticatedUser;
 use crate::infrastructure::web::AppState;
@@ -274,9 +275,11 @@ pub async fn get_task_status(
 
     match state.boinc_use_cases.poll_task(&path).await {
         Ok(status) => Ok(HttpResponse::Ok().json(status)),
-        Err(e) if e.contains("not found") => Ok(HttpResponse::NotFound().json(serde_json::json!({
-            "error": e
-        }))),
+        Err(e) if classification_erreurs::est_introuvable(&e) => {
+            Ok(HttpResponse::NotFound().json(serde_json::json!({
+                "error": e
+            })))
+        }
         Err(e) => Ok(HttpResponse::InternalServerError().json(serde_json::json!({
             "error": e
         }))),

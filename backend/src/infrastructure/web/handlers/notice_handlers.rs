@@ -1,6 +1,7 @@
 use crate::application::dto::{CreateNoticeDto, SetExpirationDto, UpdateNoticeDto};
 use crate::domain::entities::{NoticeCategory, NoticeStatus, NoticeType};
 use crate::infrastructure::web::app_state::AppState;
+use crate::infrastructure::web::classification_erreurs;
 use crate::infrastructure::web::middleware::scope_guard::verify_notice_org_access;
 use crate::infrastructure::web::middleware::AuthenticatedUser;
 use actix_web::{delete, get, post, put, web, HttpResponse, Responder, ResponseError};
@@ -39,7 +40,7 @@ pub async fn get_notice(data: web::Data<AppState>, id: web::Path<Uuid>) -> impl 
     match data.notice_use_cases.get_notice(id.into_inner()).await {
         Ok(notice) => HttpResponse::Ok().json(notice),
         Err(e) => {
-            if e.contains("not found") {
+            if classification_erreurs::est_introuvable(&e) {
                 HttpResponse::NotFound().json(serde_json::json!({"error": e}))
             } else {
                 HttpResponse::InternalServerError().json(serde_json::json!({"error": e}))
@@ -341,9 +342,9 @@ pub async fn update_notice(
     {
         Ok(notice) => HttpResponse::Ok().json(notice),
         Err(e) => {
-            if e.contains("Unauthorized") {
+            if classification_erreurs::est_interdit(&e) {
                 HttpResponse::Forbidden().json(serde_json::json!({"error": e}))
-            } else if e.contains("not found") {
+            } else if classification_erreurs::est_introuvable(&e) {
                 HttpResponse::NotFound().json(serde_json::json!({"error": e}))
             } else {
                 HttpResponse::BadRequest().json(serde_json::json!({"error": e}))
@@ -374,9 +375,9 @@ pub async fn publish_notice(
     {
         Ok(notice) => HttpResponse::Ok().json(notice),
         Err(e) => {
-            if e.contains("Unauthorized") {
+            if classification_erreurs::est_interdit(&e) {
                 HttpResponse::Forbidden().json(serde_json::json!({"error": e}))
-            } else if e.contains("not found") {
+            } else if classification_erreurs::est_introuvable(&e) {
                 HttpResponse::NotFound().json(serde_json::json!({"error": e}))
             } else {
                 HttpResponse::BadRequest().json(serde_json::json!({"error": e}))
@@ -407,9 +408,9 @@ pub async fn archive_notice(
     {
         Ok(notice) => HttpResponse::Ok().json(notice),
         Err(e) => {
-            if e.contains("Unauthorized") {
+            if classification_erreurs::est_interdit(&e) {
                 HttpResponse::Forbidden().json(serde_json::json!({"error": e}))
-            } else if e.contains("not found") {
+            } else if classification_erreurs::est_introuvable(&e) {
                 HttpResponse::NotFound().json(serde_json::json!({"error": e}))
             } else {
                 HttpResponse::BadRequest().json(serde_json::json!({"error": e}))
@@ -450,9 +451,9 @@ pub async fn pin_notice(
     {
         Ok(notice) => HttpResponse::Ok().json(notice),
         Err(e) => {
-            if e.contains("Unauthorized") {
+            if classification_erreurs::est_interdit(&e) {
                 HttpResponse::Forbidden().json(serde_json::json!({"error": e}))
-            } else if e.contains("not found") {
+            } else if classification_erreurs::est_introuvable(&e) {
                 HttpResponse::NotFound().json(serde_json::json!({"error": e}))
             } else {
                 HttpResponse::BadRequest().json(serde_json::json!({"error": e}))
@@ -493,9 +494,9 @@ pub async fn unpin_notice(
     {
         Ok(notice) => HttpResponse::Ok().json(notice),
         Err(e) => {
-            if e.contains("Unauthorized") {
+            if classification_erreurs::est_interdit(&e) {
                 HttpResponse::Forbidden().json(serde_json::json!({"error": e}))
-            } else if e.contains("not found") {
+            } else if classification_erreurs::est_introuvable(&e) {
                 HttpResponse::NotFound().json(serde_json::json!({"error": e}))
             } else {
                 HttpResponse::BadRequest().json(serde_json::json!({"error": e}))
@@ -527,9 +528,9 @@ pub async fn set_expiration(
     {
         Ok(notice) => HttpResponse::Ok().json(notice),
         Err(e) => {
-            if e.contains("Unauthorized") {
+            if classification_erreurs::est_interdit(&e) {
                 HttpResponse::Forbidden().json(serde_json::json!({"error": e}))
-            } else if e.contains("not found") {
+            } else if classification_erreurs::est_introuvable(&e) {
                 HttpResponse::NotFound().json(serde_json::json!({"error": e}))
             } else {
                 HttpResponse::BadRequest().json(serde_json::json!({"error": e}))
@@ -560,9 +561,9 @@ pub async fn delete_notice(
     {
         Ok(_) => HttpResponse::NoContent().finish(),
         Err(e) => {
-            if e.contains("Unauthorized") {
+            if classification_erreurs::est_interdit(&e) {
                 HttpResponse::Forbidden().json(serde_json::json!({"error": e}))
-            } else if e.contains("not found") {
+            } else if classification_erreurs::est_introuvable(&e) {
                 HttpResponse::NotFound().json(serde_json::json!({"error": e}))
             } else {
                 HttpResponse::BadRequest().json(serde_json::json!({"error": e}))

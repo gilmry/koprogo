@@ -56,7 +56,7 @@ use std::fs;
 use std::path::Path;
 
 /// Occurrences de `.contains("` dans les gestionnaires. **Ne doit que BAISSER.**
-const DETTE_AU_2026_09_07: usize = 118;
+const DETTE_AU_2026_09_07: usize = 39;
 
 fn compter(repertoire: &Path) -> (usize, Vec<String>) {
     let mut total = 0;
@@ -106,13 +106,45 @@ fn le_classement_par_souschaines_ne_grossit_pas() {
 
 /// Sans ce contrôle, déplacer le répertoire des gestionnaires rendrait le
 /// cliquet définitivement vert en ne trouvant plus rien à compter.
+///
+/// ── Ce que ce contrôle exigeait, et pourquoi c'était faux ────────────────
+///
+/// Il demandait « plus de cinquante occurrences de `.contains(\"` ». C'était
+/// confondre deux choses : que le détecteur LISE encore les fichiers, et que
+/// la dette soit encore grosse.
+///
+/// La conséquence s'est vue le 2026-09-08 : le routage des occurrences
+/// génériques vers `classification_erreurs` a fait tomber la dette de 118 à
+/// 39, et **ce contrôle a échoué pour cette raison**. Une garde qui punit la
+/// disparition de ce qu'elle traque décourage exactement le travail qu'elle
+/// réclame.
+///
+/// Il vérifie désormais que les gestionnaires sont lus — leur nombre, et la
+/// présence de réponses HTTP — sans rien exiger du compte de violations. La
+/// dette peut donc légitimement atteindre zéro.
 #[test]
-fn le_cliquet_trouve_encore_des_gestionnaires_a_examiner() {
+fn le_cliquet_lit_encore_les_gestionnaires() {
     let racine = Path::new(env!("CARGO_MANIFEST_DIR")).join("src/infrastructure/web/handlers");
-    let (total, _) = compter(&racine);
+
+    let mut fichiers = 0usize;
+    let mut reponses_http = 0usize;
+    for entree in fs::read_dir(&racine)
+        .expect("répertoire des gestionnaires lisible")
+        .flatten()
+    {
+        let chemin = entree.path();
+        if chemin.extension().and_then(|e| e.to_str()) != Some("rs") {
+            continue;
+        }
+        fichiers += 1;
+        let contenu = fs::read_to_string(&chemin).expect("fichier lisible");
+        reponses_http += contenu.matches("HttpResponse::").count();
+    }
+
     assert!(
-        total > 50,
-        "plus aucun classement par sous-chaîne trouvé : le motif a changé, ou \
-         le répertoire a bougé. Vérifiez avant de vous réjouir."
+        fichiers > 40 && reponses_http > 500,
+        "{fichiers} gestionnaires lus, {reponses_http} réponses HTTP trouvées. \
+         Le répertoire a bougé, ou l'analyse ne lit plus rien : le cliquet \
+         serait alors vert faute de matière. Vérifiez avant de vous réjouir."
     );
 }

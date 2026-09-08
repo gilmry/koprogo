@@ -3,6 +3,7 @@ use crate::application::dto::{
 };
 use crate::domain::entities::{AchievementCategory, ChallengeStatus};
 use crate::infrastructure::web::app_state::AppState;
+use crate::infrastructure::web::classification_erreurs;
 use crate::infrastructure::web::middleware::scope_guard::{
     verify_building_org_access, verify_challenge_org_access,
 };
@@ -192,7 +193,7 @@ pub async fn update_achievement(
         .await
     {
         Ok(achievement) => HttpResponse::Ok().json(achievement),
-        Err(e) if e.contains("not found") => {
+        Err(e) if classification_erreurs::est_introuvable(&e) => {
             HttpResponse::NotFound().json(serde_json::json!({"error": e}))
         }
         Err(e) => HttpResponse::BadRequest().json(serde_json::json!({"error": e})),
@@ -262,7 +263,7 @@ pub async fn award_achievement(
         .await
     {
         Ok(user_achievement) => HttpResponse::Created().json(user_achievement),
-        Err(e) if e.contains("not found") => {
+        Err(e) if classification_erreurs::est_introuvable(&e) => {
             HttpResponse::NotFound().json(serde_json::json!({"error": e}))
         }
         Err(e) => HttpResponse::BadRequest().json(serde_json::json!({"error": e})),
@@ -531,7 +532,7 @@ pub async fn update_challenge(
         .await
     {
         Ok(challenge) => HttpResponse::Ok().json(challenge),
-        Err(e) if e.contains("not found") => {
+        Err(e) if classification_erreurs::est_introuvable(&e) => {
             HttpResponse::NotFound().json(serde_json::json!({"error": e}))
         }
         Err(e) => HttpResponse::BadRequest().json(serde_json::json!({"error": e})),
@@ -563,7 +564,7 @@ pub async fn activate_challenge(
         .await
     {
         Ok(challenge) => HttpResponse::Ok().json(challenge),
-        Err(e) if e.contains("not found") => {
+        Err(e) if classification_erreurs::est_introuvable(&e) => {
             HttpResponse::NotFound().json(serde_json::json!({"error": e}))
         }
         Err(e) => HttpResponse::BadRequest().json(serde_json::json!({"error": e})),
@@ -595,7 +596,7 @@ pub async fn complete_challenge(
         .await
     {
         Ok(challenge) => HttpResponse::Ok().json(challenge),
-        Err(e) if e.contains("not found") => {
+        Err(e) if classification_erreurs::est_introuvable(&e) => {
             HttpResponse::NotFound().json(serde_json::json!({"error": e}))
         }
         Err(e) => HttpResponse::BadRequest().json(serde_json::json!({"error": e})),
@@ -627,7 +628,7 @@ pub async fn cancel_challenge(
         .await
     {
         Ok(challenge) => HttpResponse::Ok().json(challenge),
-        Err(e) if e.contains("not found") => {
+        Err(e) if classification_erreurs::est_introuvable(&e) => {
             HttpResponse::NotFound().json(serde_json::json!({"error": e}))
         }
         Err(e) => HttpResponse::BadRequest().json(serde_json::json!({"error": e})),
@@ -791,7 +792,7 @@ pub async fn increment_progress(
         .await
     {
         Ok(progress) => HttpResponse::Ok().json(progress),
-        Err(e) if e.contains("not found") => {
+        Err(e) if classification_erreurs::est_introuvable(&e) => {
             HttpResponse::NotFound().json(serde_json::json!({"error": e}))
         }
         Err(e) => HttpResponse::BadRequest().json(serde_json::json!({"error": e})),

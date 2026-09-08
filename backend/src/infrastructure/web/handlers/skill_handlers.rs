@@ -1,6 +1,7 @@
 use crate::application::dto::{CreateSkillDto, UpdateSkillDto};
 use crate::domain::entities::{ExpertiseLevel, SkillCategory};
 use crate::infrastructure::web::app_state::AppState;
+use crate::infrastructure::web::classification_erreurs;
 use crate::infrastructure::web::middleware::AuthenticatedUser;
 use actix_web::{delete, get, post, put, web, HttpResponse, Responder, ResponseError};
 use uuid::Uuid;
@@ -38,7 +39,7 @@ pub async fn get_skill(data: web::Data<AppState>, id: web::Path<Uuid>) -> impl R
     match data.skill_use_cases.get_skill(id.into_inner()).await {
         Ok(skill) => HttpResponse::Ok().json(skill),
         Err(e) => {
-            if e.contains("not found") {
+            if classification_erreurs::est_introuvable(&e) {
                 HttpResponse::NotFound().json(serde_json::json!({"error": e}))
             } else {
                 HttpResponse::InternalServerError().json(serde_json::json!({"error": e}))
@@ -328,9 +329,9 @@ pub async fn update_skill(
     {
         Ok(skill) => HttpResponse::Ok().json(skill),
         Err(e) => {
-            if e.contains("Unauthorized") {
+            if classification_erreurs::est_interdit(&e) {
                 HttpResponse::Forbidden().json(serde_json::json!({"error": e}))
-            } else if e.contains("not found") {
+            } else if classification_erreurs::est_introuvable(&e) {
                 HttpResponse::NotFound().json(serde_json::json!({"error": e}))
             } else {
                 HttpResponse::BadRequest().json(serde_json::json!({"error": e}))
@@ -361,9 +362,9 @@ pub async fn mark_skill_available(
     {
         Ok(skill) => HttpResponse::Ok().json(skill),
         Err(e) => {
-            if e.contains("Unauthorized") {
+            if classification_erreurs::est_interdit(&e) {
                 HttpResponse::Forbidden().json(serde_json::json!({"error": e}))
-            } else if e.contains("not found") {
+            } else if classification_erreurs::est_introuvable(&e) {
                 HttpResponse::NotFound().json(serde_json::json!({"error": e}))
             } else {
                 HttpResponse::BadRequest().json(serde_json::json!({"error": e}))
@@ -394,9 +395,9 @@ pub async fn mark_skill_unavailable(
     {
         Ok(skill) => HttpResponse::Ok().json(skill),
         Err(e) => {
-            if e.contains("Unauthorized") {
+            if classification_erreurs::est_interdit(&e) {
                 HttpResponse::Forbidden().json(serde_json::json!({"error": e}))
-            } else if e.contains("not found") {
+            } else if classification_erreurs::est_introuvable(&e) {
                 HttpResponse::NotFound().json(serde_json::json!({"error": e}))
             } else {
                 HttpResponse::BadRequest().json(serde_json::json!({"error": e}))
@@ -427,9 +428,9 @@ pub async fn delete_skill(
     {
         Ok(_) => HttpResponse::NoContent().finish(),
         Err(e) => {
-            if e.contains("Unauthorized") {
+            if classification_erreurs::est_interdit(&e) {
                 HttpResponse::Forbidden().json(serde_json::json!({"error": e}))
-            } else if e.contains("not found") {
+            } else if classification_erreurs::est_introuvable(&e) {
                 HttpResponse::NotFound().json(serde_json::json!({"error": e}))
             } else {
                 HttpResponse::BadRequest().json(serde_json::json!({"error": e}))

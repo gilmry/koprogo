@@ -1,5 +1,6 @@
 use crate::application::dto::PageRequest;
 use crate::application::ports::AuditLogFilters;
+use crate::infrastructure::web::classification_erreurs;
 use crate::infrastructure::web::{AppState, AuthenticatedUser};
 use actix_web::{delete, get, web, HttpRequest, HttpResponse, Responder};
 use serde::{Deserialize, Serialize};
@@ -303,7 +304,7 @@ pub async fn admin_export_user_data(
                 audit_logger.log(&audit_entry).await;
             });
 
-            if e.contains("not found") {
+            if classification_erreurs::est_introuvable(&e) {
                 HttpResponse::NotFound().json(serde_json::json!({
                     "error": e
                 }))
@@ -423,7 +424,7 @@ pub async fn admin_erase_user_data(
                 audit_logger.log(&audit_entry).await;
             });
 
-            if e.contains("Unauthorized") {
+            if classification_erreurs::est_interdit(&e) {
                 HttpResponse::Forbidden().json(serde_json::json!({
                     "error": e
                 }))
@@ -436,7 +437,7 @@ pub async fn admin_erase_user_data(
                     "error": e,
                     "message": "Cannot erase data due to legal obligations. Please resolve pending issues before requesting erasure."
                 }))
-            } else if e.contains("not found") {
+            } else if classification_erreurs::est_introuvable(&e) {
                 HttpResponse::NotFound().json(serde_json::json!({
                     "error": e
                 }))

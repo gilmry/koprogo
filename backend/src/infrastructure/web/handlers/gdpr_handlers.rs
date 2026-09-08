@@ -3,6 +3,7 @@ use crate::application::dto::{
     GdprRestrictProcessingRequest,
 };
 use crate::infrastructure::audit::{AuditEventType, AuditLogEntry};
+use crate::infrastructure::web::classification_erreurs;
 use crate::infrastructure::web::{AppState, AuthenticatedUser};
 use actix_web::{delete, get, put, web, HttpRequest, HttpResponse, Responder};
 use chrono::Utc;
@@ -144,11 +145,11 @@ pub async fn export_user_data(
                 audit_logger.log(&audit_entry).await;
             });
 
-            if e.contains("not found") {
+            if classification_erreurs::est_introuvable(&e) {
                 HttpResponse::NotFound().json(serde_json::json!({
                     "error": e
                 }))
-            } else if e.contains("Unauthorized") {
+            } else if classification_erreurs::est_interdit(&e) {
                 HttpResponse::Forbidden().json(serde_json::json!({
                     "error": e
                 }))
@@ -278,7 +279,7 @@ pub async fn erase_user_data(
                 audit_logger.log(&audit_entry).await;
             });
 
-            if e.contains("Unauthorized") {
+            if classification_erreurs::est_interdit(&e) {
                 HttpResponse::Forbidden().json(serde_json::json!({
                     "error": e
                 }))
@@ -291,7 +292,7 @@ pub async fn erase_user_data(
                     "error": e,
                     "message": "Cannot erase data due to legal obligations. Please resolve pending issues before requesting erasure."
                 }))
-            } else if e.contains("not found") {
+            } else if classification_erreurs::est_introuvable(&e) {
                 HttpResponse::NotFound().json(serde_json::json!({
                     "error": e
                 }))
@@ -473,11 +474,11 @@ pub async fn rectify_user_data(
                 audit_logger.log(&audit_entry).await;
             });
 
-            if e.contains("Unauthorized") {
+            if classification_erreurs::est_interdit(&e) {
                 HttpResponse::Forbidden().json(serde_json::json!({
                     "error": e
                 }))
-            } else if e.contains("not found") {
+            } else if classification_erreurs::est_introuvable(&e) {
                 HttpResponse::NotFound().json(serde_json::json!({
                     "error": e
                 }))
@@ -588,11 +589,11 @@ pub async fn restrict_user_processing(
                 audit_logger.log(&audit_entry).await;
             });
 
-            if e.contains("Unauthorized") {
+            if classification_erreurs::est_interdit(&e) {
                 HttpResponse::Forbidden().json(serde_json::json!({
                     "error": e
                 }))
-            } else if e.contains("not found") {
+            } else if classification_erreurs::est_introuvable(&e) {
                 HttpResponse::NotFound().json(serde_json::json!({
                     "error": e
                 }))
@@ -713,11 +714,11 @@ pub async fn set_marketing_preference(
                 audit_logger.log(&audit_entry).await;
             });
 
-            if e.contains("Unauthorized") {
+            if classification_erreurs::est_interdit(&e) {
                 HttpResponse::Forbidden().json(serde_json::json!({
                     "error": e
                 }))
-            } else if e.contains("not found") {
+            } else if classification_erreurs::est_introuvable(&e) {
                 HttpResponse::NotFound().json(serde_json::json!({
                     "error": e
                 }))

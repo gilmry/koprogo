@@ -10,6 +10,7 @@
 // API endpoints for manual journal entry creation and management
 
 use crate::infrastructure::audit::{AuditEventType, AuditLogEntry};
+use crate::infrastructure::web::classification_erreurs;
 use crate::infrastructure::web::middleware::scope_guard::verify_building_org_access;
 use crate::infrastructure::web::{AppState, AuthenticatedUser};
 use actix_web::ResponseError;
@@ -248,17 +249,22 @@ pub async fn create_journal_entry(
 
             // Return 400 for business rule violations, 500 for unexpected errors
             //
-            // « Impossible de déterminer l'ACP » et « Immeuble introuvable »
-            // sont des saisies incomplètes ou erronées, pas des pannes : une
-            // écriture manuelle doit désigner l'immeuble dont on déduit l'ACP
-            // (ADR-0045). Sans ces deux cas, la requête ressortait en 500 et
-            // laissait croire à un défaut du serveur.
+            // « Impossible de déterminer l'ACP » est une saisie incomplète,
+            // pas une panne : une écriture manuelle doit désigner l'immeuble
+            // dont on déduit l'ACP (ADR-0045). Sans ce cas, la requête
+            // ressortait en 500 et laissait croire à un défaut du serveur.
+            //
+            // « Immeuble introuvable » a été retiré de cette liste : le
+            // lexique bilingue de `classification_erreurs` le couvre
+            // désormais, comme il couvrira le prochain message français sans
+            // qu'on ait à revenir ici. C'était tout l'objet de #762 — un
+            // lexique dispersé sur cent dix-huit sites ne se corrige jamais
+            // entièrement, on corrige celui qui a fait mal.
             if err.contains("unbalanced")
                 || err.contains("foreign key")
                 || err.contains("violates")
-                || err.contains("not found")
+                || classification_erreurs::est_introuvable(&err)
                 || err.contains("Impossible de déterminer l'ACP")
-                || err.contains("Immeuble introuvable")
             {
                 HttpResponse::BadRequest().json(serde_json::json!({
                     "error": err

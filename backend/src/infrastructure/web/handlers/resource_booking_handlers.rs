@@ -1,6 +1,7 @@
 use crate::application::dto::{CreateResourceBookingDto, UpdateResourceBookingDto};
 use crate::domain::entities::{BookingStatus, ResourceType};
 use crate::infrastructure::web::app_state::AppState;
+use crate::infrastructure::web::classification_erreurs;
 use crate::infrastructure::web::middleware::scope_guard::{
     verify_booking_org_access, verify_building_org_access,
 };
@@ -51,7 +52,7 @@ pub async fn create_booking(
         Err(e) => {
             if e.contains("conflicts with") {
                 HttpResponse::Conflict().json(serde_json::json!({"error": e}))
-            } else if e.contains("not found") {
+            } else if classification_erreurs::est_introuvable(&e) {
                 HttpResponse::NotFound().json(serde_json::json!({"error": e}))
             } else {
                 HttpResponse::BadRequest().json(serde_json::json!({"error": e}))
@@ -496,7 +497,7 @@ pub async fn update_booking(
         Err(e) => {
             if e.contains("Only the booking owner") {
                 HttpResponse::Forbidden().json(serde_json::json!({"error": e}))
-            } else if e.contains("not found") {
+            } else if classification_erreurs::est_introuvable(&e) {
                 HttpResponse::NotFound().json(serde_json::json!({"error": e}))
             } else {
                 HttpResponse::BadRequest().json(serde_json::json!({"error": e}))
@@ -535,7 +536,7 @@ pub async fn cancel_booking(
         Err(e) => {
             if e.contains("Only the booking owner") {
                 HttpResponse::Forbidden().json(serde_json::json!({"error": e}))
-            } else if e.contains("not found") {
+            } else if classification_erreurs::est_introuvable(&e) {
                 HttpResponse::NotFound().json(serde_json::json!({"error": e}))
             } else {
                 HttpResponse::BadRequest().json(serde_json::json!({"error": e}))
@@ -581,7 +582,7 @@ pub async fn complete_booking(
     {
         Ok(booking) => HttpResponse::Ok().json(booking),
         Err(e) => {
-            if e.contains("not found") {
+            if classification_erreurs::est_introuvable(&e) {
                 HttpResponse::NotFound().json(serde_json::json!({"error": e}))
             } else {
                 HttpResponse::BadRequest().json(serde_json::json!({"error": e}))
@@ -627,7 +628,7 @@ pub async fn mark_no_show(
     {
         Ok(booking) => HttpResponse::Ok().json(booking),
         Err(e) => {
-            if e.contains("not found") {
+            if classification_erreurs::est_introuvable(&e) {
                 HttpResponse::NotFound().json(serde_json::json!({"error": e}))
             } else {
                 HttpResponse::BadRequest().json(serde_json::json!({"error": e}))
@@ -673,7 +674,7 @@ pub async fn confirm_booking(
     {
         Ok(booking) => HttpResponse::Ok().json(booking),
         Err(e) => {
-            if e.contains("not found") {
+            if classification_erreurs::est_introuvable(&e) {
                 HttpResponse::NotFound().json(serde_json::json!({"error": e}))
             } else {
                 HttpResponse::BadRequest().json(serde_json::json!({"error": e}))
@@ -711,7 +712,7 @@ pub async fn delete_booking(
         Err(e) => {
             if e.contains("Only the booking owner") {
                 HttpResponse::Forbidden().json(serde_json::json!({"error": e}))
-            } else if e.contains("not found") {
+            } else if classification_erreurs::est_introuvable(&e) {
                 HttpResponse::NotFound().json(serde_json::json!({"error": e}))
             } else {
                 HttpResponse::InternalServerError().json(serde_json::json!({"error": e}))

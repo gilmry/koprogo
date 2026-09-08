@@ -1,6 +1,7 @@
 use crate::application::dto::{BorrowObjectDto, CreateSharedObjectDto, UpdateSharedObjectDto};
 use crate::domain::entities::SharedObjectCategory;
 use crate::infrastructure::web::app_state::AppState;
+use crate::infrastructure::web::classification_erreurs;
 use crate::infrastructure::web::middleware::AuthenticatedUser;
 use actix_web::{delete, get, post, put, web, HttpResponse, Responder, ResponseError};
 use uuid::Uuid;
@@ -42,7 +43,7 @@ pub async fn get_shared_object(data: web::Data<AppState>, id: web::Path<Uuid>) -
     {
         Ok(object) => HttpResponse::Ok().json(object),
         Err(e) => {
-            if e.contains("not found") {
+            if classification_erreurs::est_introuvable(&e) {
                 HttpResponse::NotFound().json(serde_json::json!({"error": e}))
             } else {
                 HttpResponse::InternalServerError().json(serde_json::json!({"error": e}))
@@ -348,9 +349,9 @@ pub async fn update_shared_object(
     {
         Ok(object) => HttpResponse::Ok().json(object),
         Err(e) => {
-            if e.contains("Unauthorized") {
+            if classification_erreurs::est_interdit(&e) {
                 HttpResponse::Forbidden().json(serde_json::json!({"error": e}))
-            } else if e.contains("not found") {
+            } else if classification_erreurs::est_introuvable(&e) {
                 HttpResponse::NotFound().json(serde_json::json!({"error": e}))
             } else {
                 HttpResponse::BadRequest().json(serde_json::json!({"error": e}))
@@ -381,9 +382,9 @@ pub async fn mark_object_available(
     {
         Ok(object) => HttpResponse::Ok().json(object),
         Err(e) => {
-            if e.contains("Unauthorized") {
+            if classification_erreurs::est_interdit(&e) {
                 HttpResponse::Forbidden().json(serde_json::json!({"error": e}))
-            } else if e.contains("not found") {
+            } else if classification_erreurs::est_introuvable(&e) {
                 HttpResponse::NotFound().json(serde_json::json!({"error": e}))
             } else {
                 HttpResponse::BadRequest().json(serde_json::json!({"error": e}))
@@ -414,9 +415,9 @@ pub async fn mark_object_unavailable(
     {
         Ok(object) => HttpResponse::Ok().json(object),
         Err(e) => {
-            if e.contains("Unauthorized") {
+            if classification_erreurs::est_interdit(&e) {
                 HttpResponse::Forbidden().json(serde_json::json!({"error": e}))
-            } else if e.contains("not found") {
+            } else if classification_erreurs::est_introuvable(&e) {
                 HttpResponse::NotFound().json(serde_json::json!({"error": e}))
             } else {
                 HttpResponse::BadRequest().json(serde_json::json!({"error": e}))
@@ -450,7 +451,7 @@ pub async fn borrow_object(
         Err(e) => {
             if e.contains("Owner cannot borrow") {
                 HttpResponse::Forbidden().json(serde_json::json!({"error": e}))
-            } else if e.contains("not found") {
+            } else if classification_erreurs::est_introuvable(&e) {
                 HttpResponse::NotFound().json(serde_json::json!({"error": e}))
             } else {
                 HttpResponse::BadRequest().json(serde_json::json!({"error": e}))
@@ -483,7 +484,7 @@ pub async fn return_object(
         Err(e) => {
             if e.contains("Only borrower can return") {
                 HttpResponse::Forbidden().json(serde_json::json!({"error": e}))
-            } else if e.contains("not found") {
+            } else if classification_erreurs::est_introuvable(&e) {
                 HttpResponse::NotFound().json(serde_json::json!({"error": e}))
             } else {
                 HttpResponse::BadRequest().json(serde_json::json!({"error": e}))
@@ -514,9 +515,9 @@ pub async fn delete_shared_object(
     {
         Ok(_) => HttpResponse::NoContent().finish(),
         Err(e) => {
-            if e.contains("Unauthorized") {
+            if classification_erreurs::est_interdit(&e) {
                 HttpResponse::Forbidden().json(serde_json::json!({"error": e}))
-            } else if e.contains("not found") {
+            } else if classification_erreurs::est_introuvable(&e) {
                 HttpResponse::NotFound().json(serde_json::json!({"error": e}))
             } else {
                 HttpResponse::BadRequest().json(serde_json::json!({"error": e}))
