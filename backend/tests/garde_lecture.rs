@@ -145,7 +145,22 @@ const DETTE_AU_2026_09_06: usize = 8;
 /// c'est le travail de l'issue #772.
 ///
 /// **Ce nombre ne doit que DIMINUER.**
-/// 109 au relevé du 2026-09-06 ; **5** au 2026-09-08.
+/// 109 au relevé du 2026-09-06 ; **3** au 2026-09-08.
+///
+/// ── Les trois qui restent, et pourquoi ────────────────────────────────────
+///
+/// `POST /api-keys/{id}/rotate` — protégée, mais AILLEURS : elle filtre par
+/// `organization_id` dans son `WHERE` SQL. Le cliquet lit le corps de la
+/// fonction, pas la requête. On pourrait inscrire un marqueur, mais un
+/// `WHERE organization_id = $2` n'est pas un nom stable : la reconnaître
+/// demanderait de lire du SQL, ce qu'un détecteur syntaxique fait mal.
+///
+/// `GET /contractors/{id}/evaluations` et `GET /contractors/{id}/quotes` —
+/// leur périmètre est un PRESTATAIRE, tiers extérieur à la copropriété. La
+/// décision de #815 dit que sa voie nominale est le lien magique, pas le
+/// compte : ces deux routes servent donc une vue « côté syndic » sur un tiers,
+/// et leur périmètre légitime reste à arbitrer. Un garde posé sans cet
+/// arbitrage serait soit trop large, soit faux.
 ///
 /// Les cinq dernières sont les premières à venir de VRAIES gardes ajoutées :
 /// les cinq routes de `local_exchange_handlers` qui listent les échanges, le
@@ -178,7 +193,7 @@ const DETTE_AU_2026_09_06: usize = 8;
 /// d'énergie, était ainsi comptée comme non protégée alors qu'elle compare
 /// bien l'organisation de l'appelant à celle de la ressource. Les espaces sont
 /// désormais normalisés avant la recherche.
-const IDENTITE_NON_VERIFIEE_AU_2026_09_06: usize = 5;
+const IDENTITE_NON_VERIFIEE_AU_2026_09_06: usize = 3;
 
 fn racine_handlers() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("src/infrastructure/web/handlers")
