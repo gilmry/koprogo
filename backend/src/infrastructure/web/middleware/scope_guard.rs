@@ -46,6 +46,7 @@ use crate::application::use_cases::document_use_cases::DocumentUseCases;
 use crate::application::use_cases::local_exchange_use_cases::LocalExchangeUseCases;
 use crate::application::use_cases::owner_contribution_use_cases::OwnerContributionUseCases;
 use crate::application::use_cases::owner_use_cases::OwnerUseCases;
+use crate::application::use_cases::poll_use_cases::PollUseCases;
 use crate::application::use_cases::quote_use_cases::QuoteUseCases;
 use crate::application::use_cases::resource_booking_use_cases::ResourceBookingUseCases;
 use crate::application::use_cases::technical_spec_use_cases::TechnicalSpecUseCases;
@@ -617,6 +618,43 @@ pub async fn verify_call_for_funds_org_access(
         )))?;
 
     verify_acp_org_access(user, cff.acp_id, acp_use_cases).await
+}
+
+/// Vérifie le mandat de l'appelant sur l'organisation d'un **sondage**.
+///
+/// Un sondage recueille l'avis des copropriétaires sur une question qui les
+/// concerne. Quatre routes agissent sur lui par son seul identifiant : lire
+/// ses résultats, le publier, le clore, l'annuler.
+///
+/// Lire les résultats d'un sondage d'une autre ACP, c'est apprendre ce que des
+/// voisins qui ne sont pas les vôtres pensent d'un sujet qui ne vous regarde
+/// pas. Le publier ou le clore depuis l'extérieur serait pire : cela
+/// interromprait une consultation en cours.
+///
+/// Le périmètre est l'immeuble — `Poll.building_id` est obligatoire — et non
+/// l'ACP, contrairement aux appels de fonds et aux fiches techniques. Une
+/// consultation porte sur la vie d'un bâtiment, pas sur le patrimoine d'une
+/// association.
+pub async fn verify_poll_org_access(
+    user: &AuthenticatedUser,
+    poll_id: Uuid,
+    poll_use_cases: &PollUseCases,
+    building_use_cases: &BuildingUseCases,
+    acp_use_cases: &AcpUseCases,
+) -> Result<(), AppError> {
+    if user.is_superadmin() {
+        return Ok(());
+    }
+
+    let poll = poll_use_cases
+        .get_poll(poll_id)
+        .await
+        .map_err(AppError::from)?;
+
+    let building_id = Uuid::parse_str(&poll.building_id)
+        .map_err(|_| AppError::Internal("Invalid poll.building_id format".to_string()))?;
+
+    verify_building_org_access(user, building_id, building_use_cases, acp_use_cases).await
 }
 
 pub async fn verify_booking_org_access(

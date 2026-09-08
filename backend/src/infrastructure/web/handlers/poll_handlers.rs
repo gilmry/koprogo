@@ -2,7 +2,9 @@ use crate::application::dto::{
     CastVoteDto, CreatePollDto, PageRequest, PollFilters, SortOrder, UpdatePollDto,
 };
 use crate::infrastructure::web::classification_erreurs::{est_interdit, est_introuvable};
-use crate::infrastructure::web::middleware::scope_guard::verify_building_org_access;
+use crate::infrastructure::web::middleware::scope_guard::{
+    verify_building_org_access, verify_poll_org_access,
+};
 use crate::infrastructure::web::middleware::AuthenticatedUser;
 use crate::infrastructure::web::AppState;
 use actix_web::{delete, get, post, put, web, HttpRequest, HttpResponse, ResponseError};
@@ -308,6 +310,23 @@ pub async fn publish_poll(
         }
     };
 
+    // Cloisonnement : ce sondage doit relever d'une ACP que cet utilisateur a
+    // le droit de voir. Lire les résultats d'un sondage d'une autre
+    // copropriété, c'est apprendre ce que des voisins qui ne sont pas les
+    // vôtres pensent d'un sujet qui ne vous regarde pas ; le publier ou le
+    // clore depuis l'extérieur interromprait une consultation en cours (#772).
+    if let Err(err) = verify_poll_org_access(
+        &auth_user,
+        poll_id,
+        &state.poll_use_cases,
+        &state.building_use_cases,
+        &state.acp_use_cases,
+    )
+    .await
+    {
+        return err.error_response();
+    }
+
     match state
         .poll_use_cases
         .publish_poll(poll_id, auth_user.user_id)
@@ -365,6 +384,23 @@ pub async fn close_poll(
         }
     };
 
+    // Cloisonnement : ce sondage doit relever d'une ACP que cet utilisateur a
+    // le droit de voir. Lire les résultats d'un sondage d'une autre
+    // copropriété, c'est apprendre ce que des voisins qui ne sont pas les
+    // vôtres pensent d'un sujet qui ne vous regarde pas ; le publier ou le
+    // clore depuis l'extérieur interromprait une consultation en cours (#772).
+    if let Err(err) = verify_poll_org_access(
+        &auth_user,
+        poll_id,
+        &state.poll_use_cases,
+        &state.building_use_cases,
+        &state.acp_use_cases,
+    )
+    .await
+    {
+        return err.error_response();
+    }
+
     match state
         .poll_use_cases
         .close_poll(poll_id, auth_user.user_id)
@@ -421,6 +457,23 @@ pub async fn cancel_poll(
             }))
         }
     };
+
+    // Cloisonnement : ce sondage doit relever d'une ACP que cet utilisateur a
+    // le droit de voir. Lire les résultats d'un sondage d'une autre
+    // copropriété, c'est apprendre ce que des voisins qui ne sont pas les
+    // vôtres pensent d'un sujet qui ne vous regarde pas ; le publier ou le
+    // clore depuis l'extérieur interromprait une consultation en cours (#772).
+    if let Err(err) = verify_poll_org_access(
+        &auth_user,
+        poll_id,
+        &state.poll_use_cases,
+        &state.building_use_cases,
+        &state.acp_use_cases,
+    )
+    .await
+    {
+        return err.error_response();
+    }
 
     match state
         .poll_use_cases
@@ -596,6 +649,23 @@ pub async fn get_poll_results(
             }))
         }
     };
+
+    // Cloisonnement : ce sondage doit relever d'une ACP que cet utilisateur a
+    // le droit de voir. Lire les résultats d'un sondage d'une autre
+    // copropriété, c'est apprendre ce que des voisins qui ne sont pas les
+    // vôtres pensent d'un sujet qui ne vous regarde pas ; le publier ou le
+    // clore depuis l'extérieur interromprait une consultation en cours (#772).
+    if let Err(err) = verify_poll_org_access(
+        &auth_user,
+        poll_id,
+        &state.poll_use_cases,
+        &state.building_use_cases,
+        &state.acp_use_cases,
+    )
+    .await
+    {
+        return err.error_response();
+    }
 
     match state.poll_use_cases.get_poll_results(poll_id).await {
         Ok(results) => HttpResponse::Ok().json(results),
