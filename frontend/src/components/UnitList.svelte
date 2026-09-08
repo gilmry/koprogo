@@ -210,12 +210,14 @@
               <div class="flex gap-2 ml-4">
                 {#if buildingId && isSuperAdmin}
                   <button
+                    data-testid="unit-list-edit-button"
                     onclick={() => handleEditUnit(unit)}
                     class="px-3 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 transition"
                     aria-label={$_("units.editUnit")}
                     title={$_("units.editUnit")}>✏️</button
                   >
                   <button
+                    data-testid="unit-list-delete-button"
                     onclick={() => handleDeleteClick(unit)}
                     class="px-3 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 transition"
                     aria-label={$_("units.deleteUnit")}
@@ -312,6 +314,7 @@
     <div class="fixed inset-0 z-50 overflow-y-auto">
       <div class="flex min-h-screen items-center justify-center p-4">
         <button
+          data-testid="unit-list-modal-overlay-close-button"
           type="button"
           aria-label={$_("common.closeModal")}
           class="fixed inset-0 bg-black bg-opacity-50 transition-opacity cursor-default"

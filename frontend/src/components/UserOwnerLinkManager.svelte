@@ -245,6 +245,7 @@
                 <td class="px-6 py-4 whitespace-nowrap text-sm">
                   {#if owner.linkedUser}
                     <button
+                      data-testid="user-owner-unlink-button"
                       on:click={() => linkOwnerToUser(owner.id, null)}
                       class="text-red-600 hover:text-red-900 font-medium"
                     >
@@ -252,6 +253,7 @@
                     </button>
                   {:else}
                     <select
+                      data-testid="user-owner-select"
                       aria-label="Sélectionner un utilisateur à lier"
                       on:change={(e) => {
                         const userId = e.currentTarget.value;
@@ -288,6 +290,7 @@
           </div>
           <div class="flex gap-2">
             <button
+              data-testid="user-owner-prev-page-button"
               on:click={() => goToPage(currentPage - 1)}
               disabled={currentPage === 1}
               class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -295,6 +298,7 @@
               {$_("common.previous")}
             </button>
             <button
+              data-testid="user-owner-next-page-button"
               on:click={() => goToPage(currentPage + 1)}
               disabled={currentPage === totalPages}
               class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"

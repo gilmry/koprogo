@@ -67,7 +67,7 @@ import { join, extname } from "node:path";
  */
 /// Éléments interactifs sans ancrage. **Ne doit que BAISSER.**
 ///
-/// 672 au 2026-09-06, **517 au 2026-09-08**. Les cent cinquante-deux posés le sont
+/// 672 au 2026-09-06, **440 au 2026-09-08**. Les deux cent quinze posés le sont
 /// sur les écrans que #803 nomme en priorité, et selon la convention relevée
 /// le même jour : `<domaine>-<objet>-<rôle>`, en casse kebab.
 ///
@@ -83,13 +83,20 @@ import { join, extname } from "node:path";
 /// un parcours bien plus large que celui de l'AG — cent un éléments contre
 /// quinze — et le second des quatre de #803 à être complet.
 ///
-/// Restent la création d'immeuble et de lot, et les modules communautaires.
+/// **La création d'immeuble et de lot l'est également** : immeubles, lots,
+/// copropriétaires, liens lot↔propriétaire, ACP et contributions ne comptent
+/// plus un seul élément interactif nu.
+///
+/// Trois des quatre parcours de recette de #803 sont donc complets. Restent
+/// **les modules communautaires** — SEL, annonces, compétences, partage,
+/// réservations, gamification — et le portail du copropriétaire, qui n'est pas
+/// un parcours nommé mais que sept éléments séparent du compte.
 ///
 /// Aucune ancre n'a été inventée : chacune dérive du `bind:value` ou de l'`id`
 /// que le champ portait déjà. C'est ce qui rend la baisse relisible — un
 /// identifiant mal nommé vaut moins que pas d'identifiant, puisqu'il fera
 /// croire à une couverture.
-const DETTE_AU_2026_09_06 = 517;
+const DETTE_AU_2026_09_06 = 440;
 
 const RACINE = join(process.cwd(), "src");
 const EXTENSIONS = new Set([".svelte", ".astro"]);
@@ -144,7 +151,11 @@ function fichiersDeGabarit(repertoire: string): string[] {
     const chemin = join(repertoire, entree);
     if (statSync(chemin).isDirectory()) {
       trouves.push(...fichiersDeGabarit(chemin));
-    } else if (EXTENSIONS.has(extname(entree)) && !entree.includes(".test.")) {
+    } else if (
+      EXTENSIONS.has(extname(entree)) &&
+      !entree.includes(".test.") &&
+      !HORS_PRODUIT.has(entree)
+    ) {
       trouves.push(chemin);
     }
   }
@@ -183,6 +194,35 @@ function sansCommentaires(source: string): string {
     .map((ligne) => (ligne.trim().startsWith("//") ? "" : ligne))
     .join("\n");
 }
+
+/**
+ * Les fichiers qui vivent dans `src/` sans être du produit.
+ *
+ * ── Pourquoi une liste NOMMÉE et non un motif ────────────────────────────
+ *
+ * `BuildingListExample.svelte` porte quatorze éléments interactifs sans
+ * ancrage, et son en-tête dit ce qu'il est :
+ *
+ * ```
+ * Example: Translated Building List Component
+ * This component demonstrates: …
+ * ```
+ *
+ * **Il n'est monté nulle part.** Aucun `.astro`, aucun `.svelte`, aucun `.ts`
+ * ne l'importe. Ses quatorze éléments ne seront jamais à l'écran, et les
+ * ancrer reviendrait à ancrer de la documentation pour faire baisser un
+ * chiffre.
+ *
+ * Une liste nommée plutôt qu'un motif `*Example*` : un motif se remplirait
+ * tout seul, et il suffirait de renommer un composant pour le sortir de la
+ * mesure. Chaque entrée est un engagement à vérifier — ce fichier n'est pas
+ * du produit, et on peut le contrôler.
+ *
+ * C'est le même choix que la liste `PUBLIQUES` de `garde_identite_absente`,
+ * et pour la même raison : une exemption sans justification se remplit
+ * d'elle-même.
+ */
+const HORS_PRODUIT = new Set(["BuildingListExample.svelte"]);
 
 function recenser(): { ancres: number; sansAncre: string[] } {
   let ancres = 0;

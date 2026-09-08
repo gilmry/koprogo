@@ -140,6 +140,7 @@
             {$_("units.add_owner")}
           </h2>
           <button
+            data-testid="unit-owner-add-close-button"
             onclick={handleClose}
             class="text-gray-400 hover:text-gray-500"
             aria-label={$_("common.close")}
@@ -152,6 +153,7 @@
             {error}
           </div>{/if}
         <form
+          data-testid="unit-owner-add-form"
           onsubmit={(e: Event) => {
             e.preventDefault();
             handleSubmit();
@@ -172,6 +174,7 @@
                 >{$_("units.search_owner")}</label
               >
               <input
+                data-testid="unit-owner-add-search-input"
                 id="owner-search"
                 type="text"
                 bind:value={searchQuery}
@@ -179,6 +182,7 @@
                 class="w-full px-3 py-2 mb-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
               />
               <select
+                data-testid="unit-owner-add-owner-select"
                 id="ownerId"
                 bind:value={selectedOwnerId}
                 required
@@ -214,6 +218,7 @@
               >{$_("units.ownership_percentage")} *</label
             >
             <input
+              data-testid="unit-owner-add-percentage-input"
               id="ownershipPercentage"
               type="number"
               step="0.01"
@@ -253,6 +258,7 @@
           </div>
           <div class="flex items-center">
             <input
+              data-testid="unit-owner-add-primary-checkbox"
               id="isPrimaryContact"
               type="checkbox"
               bind:checked={isPrimaryContact}

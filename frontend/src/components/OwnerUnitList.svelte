@@ -88,6 +88,7 @@
         >{$_("owners.filter.by_building")}</label
       >
       <select
+        data-testid="owner-unit-building-filter-select"
         id="unit-building-filter"
         bind:value={selectedBuildingId}
         class="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500"
@@ -111,8 +112,10 @@
     <div
       class="bg-red-50 border border-red-200 rounded-lg p-4 text-sm text-red-700"
     >
-      {error}<button onclick={loadUnits} class="ml-2 underline"
-        >{$_("common.action.retry")}</button
+      {error}<button
+        data-testid="owner-unit-retry-button"
+        onclick={loadUnits}
+        class="ml-2 underline">{$_("common.action.retry")}</button
       >
     </div>
   {:else if units.length === 0}

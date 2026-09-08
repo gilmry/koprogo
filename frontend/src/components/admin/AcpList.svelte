@@ -289,6 +289,7 @@
       </div>
       <div class="flex justify-end gap-2">
         <button
+          data-testid="acp-create-cancel-button"
           type="button"
           onclick={() => (showCreate = false)}
           class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700"

@@ -289,6 +289,7 @@
   <div class="fixed inset-0 z-50 overflow-y-auto">
     <div class="flex min-h-screen items-center justify-center p-4">
       <button
+        data-testid="unit-owners-modal-overlay-close-button"
         type="button"
         aria-label={$_("common.closeModal")}
         class="fixed inset-0 bg-black bg-opacity-50 transition-opacity cursor-default"

@@ -93,6 +93,7 @@
 
 {#if isOpen}
   <button
+    data-testid="owner-create-overlay-close-button"
     type="button"
     aria-label={$_("common.closeModal")}
     class="fixed inset-0 bg-black bg-opacity-50 z-40 cursor-default"
@@ -112,6 +113,7 @@
         </h2>
       </div>
       <form
+        data-testid="owner-create-form"
         onsubmit={(e: Event) => {
           e.preventDefault();
           handleSubmit();
@@ -255,6 +257,7 @@
         </div>
         <div class="flex justify-end space-x-3 pt-4">
           <button
+            data-testid="owner-create-cancel-button"
             type="button"
             onclick={closeModal}
             disabled={loading}
@@ -262,6 +265,7 @@
             >{$_("common.action.cancel")}</button
           >
           <button
+            data-testid="owner-create-submit-button"
             type="submit"
             disabled={loading}
             class="px-4 py-2 text-white bg-primary-600 rounded-lg hover:bg-primary-700 transition disabled:opacity-50"

@@ -108,6 +108,7 @@
   <div class="fixed inset-0 z-50 overflow-y-auto">
     <div class="flex min-h-screen items-center justify-center p-4">
       <button
+        data-testid="unit-edit-overlay-close-button"
         type="button"
         aria-label={$_("common.closeModal")}
         class="fixed inset-0 bg-black bg-opacity-50 transition-opacity cursor-default"
@@ -121,6 +122,7 @@
             {$_("units.edit_unit")}
           </h2>
           <button
+            data-testid="unit-edit-close-button"
             onclick={handleClose}
             class="text-gray-400 hover:text-gray-500"
             ><span class="text-2xl">&times;</span></button
@@ -132,6 +134,7 @@
             {error}
           </div>{/if}
         <form
+          data-testid="unit-edit-form"
           onsubmit={(e: Event) => {
             e.preventDefault();
             handleSubmit();
@@ -144,6 +147,7 @@
               class="block text-sm font-medium text-gray-700 mb-1"
               >{$_("units.unit_number")} *</label
             ><input
+              data-testid="unit-edit-number-input"
               id="unitNumber"
               type="text"
               bind:value={unitNumber}
@@ -158,6 +162,7 @@
               class="block text-sm font-medium text-gray-700 mb-1"
               >{$_("units.unit_type")} *</label
             ><select
+              data-testid="unit-edit-type-select"
               id="unitType"
               bind:value={unitType}
               required
@@ -175,6 +180,7 @@
               class="block text-sm font-medium text-gray-700 mb-1"
               >{$_("units.floor")} *</label
             ><input
+              data-testid="unit-edit-floor-input"
               id="floor"
               type="number"
               bind:value={floor}
@@ -189,6 +195,7 @@
               class="block text-sm font-medium text-gray-700 mb-1"
               >{$_("units.surface_area")} *</label
             ><input
+              data-testid="unit-edit-surface-input"
               id="surfaceArea"
               type="number"
               step="0.01"
@@ -207,6 +214,7 @@
               <span class="text-sm text-gray-500">/ {totalTantiemes}</span
               ></label
             ><input
+              data-testid="unit-edit-quota-input"
               id="quota"
               type="number"
               min="1"

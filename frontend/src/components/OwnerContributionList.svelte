@@ -233,6 +233,7 @@
           </p>
         </div>
         <form
+          data-testid="owner-contribution-payment-form"
           onsubmit={(e: Event) => {
             e.preventDefault();
             recordPayment();
@@ -245,6 +246,7 @@
               class="block text-sm font-medium text-gray-700 mb-1"
               >{$_("contributions.paymentDate")}</label
             ><input
+              data-testid="owner-contribution-payment-date-input"
               type="date"
               id="payment_date"
               bind:value={paymentData.payment_date}
@@ -258,6 +260,7 @@
               class="block text-sm font-medium text-gray-700 mb-1"
               >{$_("contributions.paymentMethod")}</label
             ><select
+              data-testid="owner-contribution-payment-method-select"
               id="payment_method"
               bind:value={paymentData.payment_method}
               required
@@ -277,6 +280,7 @@
               class="block text-sm font-medium text-gray-700 mb-1"
               >{$_("contributions.reference")}</label
             ><input
+              data-testid="owner-contribution-payment-reference-input"
               type="text"
               id="payment_reference"
               bind:value={paymentData.payment_reference}
@@ -286,12 +290,14 @@
           </div>
           <div class="flex justify-end space-x-3 pt-4">
             <button
+              data-testid="owner-contribution-payment-cancel-button"
               type="button"
               onclick={closePaymentModal}
               class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300"
               >{$_("common.cancel")}</button
             >
             <button
+              data-testid="owner-contribution-payment-submit-button"
               type="submit"
               class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
               >{$_("contributions.recordButton")}</button

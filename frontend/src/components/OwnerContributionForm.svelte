@@ -103,7 +103,11 @@
     >
       {error}
     </div>{/if}
-  <form onsubmit={handleSubmit} class="space-y-4">
+  <form
+    data-testid="owner-contribution-owner-select"
+    onsubmit={handleSubmit}
+    class="space-y-4"
+  >
     <div>
       <label for="owner_id" class="block text-sm font-medium text-gray-700 mb-1"
         >{$_("contributions.owner")} *</label
@@ -217,6 +221,7 @@
         >{$_("contributions.date")} *</label
       >
       <input
+        data-testid="owner-contribution-date-input"
         type="date"
         id="contribution_date"
         bind:value={formData.contribution_date}
@@ -231,6 +236,7 @@
         >{$_("contributions.accountCode")}</label
       >
       <input
+        data-testid="owner-contribution-account-code-input"
         type="text"
         id="account_code"
         bind:value={formData.account_code}

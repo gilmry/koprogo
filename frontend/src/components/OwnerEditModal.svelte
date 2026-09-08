@@ -59,6 +59,7 @@
 
 {#if isOpen}
   <button
+    data-testid="owner-edit-overlay-close-button"
     type="button"
     aria-label={$_("common.closeModal")}
     class="fixed inset-0 bg-black bg-opacity-50 z-40 cursor-default"
@@ -78,6 +79,7 @@
         </h2>
       </div>
       <form
+        data-testid="owner-edit-form"
         onsubmit={(e: Event) => {
           e.preventDefault();
           handleSubmit();
@@ -93,6 +95,7 @@
             class="block text-sm font-medium text-gray-700 mb-1"
             >{$_("common.first_name")} *</label
           ><input
+            data-testid="owner-edit-first-name-input"
             type="text"
             id="first_name"
             bind:value={formData.first_name}
@@ -106,6 +109,7 @@
             class="block text-sm font-medium text-gray-700 mb-1"
             >{$_("common.last_name")} *</label
           ><input
+            data-testid="owner-edit-last-name-input"
             type="text"
             id="last_name"
             bind:value={formData.last_name}
@@ -119,6 +123,7 @@
             class="block text-sm font-medium text-gray-700 mb-1"
             >{$_("common.email")} *</label
           ><input
+            data-testid="owner-edit-email-input"
             type="email"
             id="email"
             bind:value={formData.email}
@@ -132,6 +137,7 @@
             class="block text-sm font-medium text-gray-700 mb-1"
             >{$_("common.phone")}</label
           ><input
+            data-testid="owner-edit-phone-input"
             type="tel"
             id="phone"
             bind:value={formData.phone}
@@ -140,6 +146,7 @@
         </div>
         <div class="flex justify-end space-x-3 pt-4">
           <button
+            data-testid="owner-edit-cancel-button"
             type="button"
             onclick={closeModal}
             disabled={loading}
@@ -147,6 +154,7 @@
             >{$_("common.action.cancel")}</button
           >
           <button
+            data-testid="owner-edit-submit-button"
             type="submit"
             disabled={loading}
             class="px-4 py-2 text-white bg-primary-600 rounded-lg hover:bg-primary-700 transition disabled:opacity-50"

@@ -140,6 +140,7 @@
       <div class="flex items-center justify-between">
         <div class="flex items-center space-x-4">
           <button
+            data-testid="building-detail-back-button"
             onclick={handleGoBack}
             class="text-gray-600 hover:text-gray-900"
           >

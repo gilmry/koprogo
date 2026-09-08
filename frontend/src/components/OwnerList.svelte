@@ -101,6 +101,7 @@
     </p>
     {#if canManageOwners}
       <button
+        data-testid="owner-list-create-button"
         type="button"
         on:click={openCreateModal}
         class="px-4 py-2 text-white bg-primary-600 rounded-lg hover:bg-primary-700 transition font-medium"
@@ -148,6 +149,7 @@
               </div>
               <div class="flex gap-2 ml-4">
                 <button
+                  data-testid="owner-list-toggle-button"
                   on:click={() => toggleOwnerExpanded(owner.id)}
                   class="px-3 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition"
                   aria-label={expandedOwners.has(owner.id)
@@ -162,6 +164,7 @@
                 </button>
                 {#if canManageOwners}
                   <button
+                    data-testid="owner-list-edit-button"
                     on:click={() => openEditModal(owner)}
                     class="px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 transition"
                   >

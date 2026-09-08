@@ -253,6 +253,7 @@
                   </button>
                 {/if}
                 <a
+                  data-testid="building-list-detail-link"
                   href={`/building-detail?id=${building.id}`}
                   class="text-primary-600 hover:text-primary-900 text-sm font-medium"
                 >
