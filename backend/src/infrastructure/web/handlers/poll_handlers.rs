@@ -2,9 +2,10 @@ use crate::application::dto::{
     CastVoteDto, CreatePollDto, PageRequest, PollFilters, SortOrder, UpdatePollDto,
 };
 use crate::infrastructure::web::classification_erreurs::{est_interdit, est_introuvable};
+use crate::infrastructure::web::middleware::scope_guard::verify_building_org_access;
 use crate::infrastructure::web::middleware::AuthenticatedUser;
 use crate::infrastructure::web::AppState;
-use actix_web::{delete, get, post, put, web, HttpRequest, HttpResponse};
+use actix_web::{delete, get, post, put, web, HttpRequest, HttpResponse, ResponseError};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -65,7 +66,7 @@ pub async fn create_poll(
 #[get("/polls/{id}")]
 pub async fn get_poll(
     state: web::Data<AppState>,
-    _auth_user: AuthenticatedUser,
+    auth_user: AuthenticatedUser,
     path: web::Path<String>,
 ) -> HttpResponse {
     let poll_id = match Uuid::parse_str(&path.into_inner()) {
@@ -176,7 +177,7 @@ pub async fn update_poll(
 #[get("/polls")]
 pub async fn list_polls(
     state: web::Data<AppState>,
-    _auth_user: AuthenticatedUser,
+    auth_user: AuthenticatedUser,
     query: web::Query<ListPollsQuery>,
 ) -> HttpResponse {
     let page_request = PageRequest {
@@ -237,7 +238,7 @@ pub struct ListPollsQuery {
 #[get("/buildings/{building_id}/polls/active")]
 pub async fn find_active_polls(
     state: web::Data<AppState>,
-    _auth_user: AuthenticatedUser,
+    auth_user: AuthenticatedUser,
     path: web::Path<String>,
 ) -> HttpResponse {
     let building_id = match Uuid::parse_str(&path.into_inner()) {
@@ -248,6 +249,23 @@ pub async fn find_active_polls(
             }))
         }
     };
+
+    // Cloisonnement : l'immeuble visé doit relever d'une ACP que cet
+    // utilisateur a le droit de voir. Un sondage dit ce que les
+    // copropriétaires pensent d'une question — le lire hors de son ACP, c'est
+    // lire une délibération qui ne vous regarde pas.
+    //
+    // L'identité était prise puis ignorée — `_auth_user` (#772).
+    if let Err(err) = verify_building_org_access(
+        &auth_user,
+        building_id,
+        &state.building_use_cases,
+        &state.acp_use_cases,
+    )
+    .await
+    {
+        return err.error_response();
+    }
 
     match state.poll_use_cases.find_active_polls(building_id).await {
         Ok(polls) => HttpResponse::Ok().json(polls),
@@ -567,7 +585,7 @@ pub async fn cast_poll_vote(
 #[get("/polls/{id}/results")]
 pub async fn get_poll_results(
     state: web::Data<AppState>,
-    _auth_user: AuthenticatedUser,
+    auth_user: AuthenticatedUser,
     path: web::Path<String>,
 ) -> HttpResponse {
     let poll_id = match Uuid::parse_str(&path.into_inner()) {
@@ -619,7 +637,7 @@ pub async fn get_poll_results(
 #[get("/buildings/{building_id}/polls/statistics")]
 pub async fn get_poll_building_statistics(
     state: web::Data<AppState>,
-    _auth_user: AuthenticatedUser,
+    auth_user: AuthenticatedUser,
     path: web::Path<String>,
 ) -> HttpResponse {
     let building_id = match Uuid::parse_str(&path.into_inner()) {
@@ -630,6 +648,21 @@ pub async fn get_poll_building_statistics(
             }))
         }
     };
+
+    // Cloisonnement : l'immeuble visé doit relever d'une ACP que cet
+    // utilisateur a le droit de voir. Les statistiques de sondage disent ce
+    // que les copropriétaires ont répondu, en agrégé — cela reste une
+    // délibération d'ACP (#772).
+    if let Err(err) = verify_building_org_access(
+        &auth_user,
+        building_id,
+        &state.building_use_cases,
+        &state.acp_use_cases,
+    )
+    .await
+    {
+        return err.error_response();
+    }
 
     match state
         .poll_use_cases
