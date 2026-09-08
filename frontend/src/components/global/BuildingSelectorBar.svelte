@@ -6,29 +6,31 @@
   // et le passe au composant — pattern habituel pour les composants
   // « top-bar » qui doivent reagir aux changements d'auth.
 
-  import { onMount } from "svelte";
   import { authStore } from "../../stores/auth";
-  import { rehydraterDepuisLurl } from "../../stores/scope.svelte";
-  import { getBuilding } from "../../lib/api/buildings";
   import BuildingSelector from "./BuildingSelector.svelte";
 
   let user = $derived($authStore.user);
 
-  // Réhydrate le périmètre depuis `?buildingId=`, à CHAQUE chargement de page.
+  // ── La réhydratation depuis `?buildingId=` est DÉBRANCHÉE ────────────────
   //
-  // Le frontend est une application Astro multi-page : le `$state` de module
-  // du store repart à zéro à chaque navigation, et le périmètre était donc nul
-  // au premier rendu de chaque page. Cf. #841.
+  // `rehydraterDepuisLurl` existe dans `scope.svelte.ts`, elle est testée, et
+  // sa propriété de sécurité est vérifiée par témoin : l'identifiant de l'URL
+  // n'est jamais cru sur parole, il est validé par le serveur.
   //
-  // C'est ici et pas dans `BuildingSelector` parce que ce dernier n'est
-  // visible que pour certains rôles, alors que le périmètre est lu par douze
-  // composants, dont ceux du portail copropriétaire.
+  // Mais l'appeler ici a CASSÉ trois specs Playwright, mesuré sur `ba78cd88` :
   //
-  // L'identifiant n'est pas cru sur parole : il sert à demander l'immeuble au
-  // serveur, qui applique ses gardes. Un refus laisse le périmètre nul.
-  onMount(() => {
-    void rehydraterDepuisLurl(getBuilding);
-  });
+  //     ticket-complaint.spec.ts:200        page.goto networkidle, 30 s
+  //     AccountantJournalEntriesJourney:109 page.goto networkidle, 30 s
+  //     AccountantReportsJourney:106        waitForResponse, 10 s
+  //
+  // Les trois naviguent vers une URL portant `?buildingId=`, et
+  // `ticket-complaint` PASSAIT avant. Le symptôme — `networkidle` qui n'arrive
+  // jamais — dit que l'activité réseau ne s'arrête plus : un appel qui boucle,
+  // ou qui déclenche un rafraîchissement de jeton en cascade.
+  //
+  // Je débranche plutôt que de laisser une régression sur la branche qui
+  // alimente la démo. La fonction reste, avec ses tests ; ce qui manque est le
+  // diagnostic de la boucle, pas la fonction. Suivi en #841.
 </script>
 
 {#if user}
