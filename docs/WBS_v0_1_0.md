@@ -556,7 +556,7 @@ Ces deux actes ne sont pas délégables : cf. `docs/governance/RESPONSABILITE.md
 
 ## Inventaire complet du périmètre 0.1.0
 
-**66 issues ouvertes** portent l'étiquette `release:0.1.0`. Elles sont
+**70 issues ouvertes** portent l'étiquette `release:0.1.0`. Elles sont
 toutes ci-dessous, sans exception : une issue du périmètre absente du WBS est
 une issue que personne ne planifie.
 
@@ -567,12 +567,12 @@ cinq jours.
 
 | Priorité | Nombre |
 |---|---|
-| critical | 4 |
+| critical | 6 |
 | high | 23 |
-| medium | 17 |
-| — | 22 |
+| medium | 18 |
+| — | 23 |
 
-### Track R — Défauts de recette navigateur (2)
+### Track R — Défauts de recette navigateur (4)
 
 Six recettes menées au navigateur entre le 2026-09-04 et le 2026-09-06. Le
 motif dominant, confirmé six fois : **une capacité écrite, testée, et
@@ -582,9 +582,11 @@ ne peut pas y arriver.
 | Issue | Prio | Intitulé |
 |---|---|---|
 | #780 | critical | Le cycle de vie d'une AG ne peut pas aboutir : trois verrous indépendants, aucun contournable depui… |
+| #842 | critical | Le droit à l'effacement RGPD est inatteignable : le serveur exige un mot de passe que l'interface n… |
 | #779 | high | Rebrancher les six modules communautaires : 111 points d'entrée servis que le frontend n'appelle pa… |
+| #840 | medium | Une résolution sans point d'ordre du jour est acceptée, alors que la loi la rend nulle (Art. 3.87 §… |
 
-### Track U — Refonte UX/UI (15)
+### Track U — Refonte UX/UI (16)
 
 Revue de design du 2026-09-06. Entrée en 0.1.0 le même jour : un financeur ne
 lit pas du code, et l'ASBL se fonde sur ce que le produit montre. **U2 ne
@@ -606,6 +608,7 @@ organisation à l'autre, en lecture comme en écriture. U2 n'est plus bloquée.
 | #825 | high | Refonte UX — importer et implémenter la maquette Claude Design « Mobile First (modernisé) » |
 | #826 | high | Refonte UX — importer et implémenter la maquette Claude Design « Syndic Dashboard (modernisé) » |
 | #834 | high | 362 libellés de gabarit écrits en dur : les quatre langues s'arrêtent aux toasts |
+| #841 | high | Le périmètre d'immeuble ne survit à aucune navigation : douze écrans le lisent, il est toujours nul… |
 | #797 | medium | Refonte UX — jetons de design et jeu d'icônes SVG : remplacer les émojis qui collisionnent |
 | #821 | medium | Refonte UX — importer et implémenter la maquette Claude Design « Admin Dashboard (modernisé) » |
 | #822 | medium | Refonte UX — importer et implémenter la maquette Claude Design « Accountant Dashboard (modernisé) » |
@@ -635,7 +638,7 @@ vont changer produit une documentation périmée le jour de sa livraison.
 | #817 | medium | Workflow multi-persona — le ticket, du copropriétaire qui signale au prestataire qui est payé |
 | #595 | — | [Story Tx.3] Documentation docs/agent-activity/ (Tier 2 log) |
 
-### Track M — Modularité par ACP et RBAC communautaire (10)
+### Track M — Modularité par ACP et RBAC communautaire (9)
 
 Slice 5 de l'épopée #556. Une ACP active les modules dont elle a besoin ; le
 reste répond 403, pas 404. Ce track porte aussi les deux arbitrages ouverts
@@ -653,7 +656,6 @@ sur les droits communautaires — le syndic peut-il réserver au nom de l'ACP
 | #590 | — | [Story 5.6] Activation/désactivation modules audité + archivage data (jamais delete) |
 | #591 | — | [Story 5.7] Onboarding modulaire wizard ≤ 5 min |
 | #592 | — | [Story 5.8] Gate CI a11y axe-core + data-testid + Lighthouse |
-| #694 | — | Scoping user↔ACP absent : un syndic/comptable voit toute l'organisation, pas seulement ses ACPs |
 
 ### Track S — Gouvernance d'assemblée avancée (7)
 
@@ -672,7 +674,7 @@ au-delà du strict Art. 3.87.
 | #582 | — | [Story 4.7] CdC membre élu + action create_alert |
 | #583 | — | [Story 4.8] [cluster-coord] CommissaireAuxComptes + VerificationCertificate |
 
-### Track T — Dette d'infrastructure de test (4)
+### Track T — Dette d'infrastructure de test (3)
 
 Ce qui empêche la CI de dire la vérité. Les quatre jobs rouges en continu du
 2026-09-04 — `prettier`, le contrat OpenAPI, `oasdiff` et la suite BDD — sont
@@ -688,21 +690,35 @@ trois modals qui ne pouvaient pas s'ouvrir (#832). Corrigé en
 Une CI rouge en permanence n'apprend qu'à ne plus la regarder ; une CI qui
 affiche sans bloquer apprend à croire qu'on regarde.
 
+S'y ajoute depuis le 2026-09-08 ce qui empêche la RECETTE de dire la vérité :
+soixante dialogues natifs du navigateur (#844). Un navigateur piloté les
+supprime, et l'action prend alors la forme exacte d'une panne. C'est ce qui a
+fait déclarer mort le bouton « Reporter » d'une assemblée pendant deux
+recettes, alors que sa source était correcte.
+
 | Issue | Prio | Intitulé |
 |---|---|---|
-| #838 | high | 389 scénarios BDD dans 27 fichiers ne sont chargés par aucun harnais : ni verts, ni rouges |
 | #832 | medium | Quinze specs Playwright échouent sans erreur d'identité : les ancrages existent mais l'élément n'es… |
-| #837 | medium | La matrice de conformité légale déclare manquantes des règles implémentées : périmée depuis le 2026… |
 | #696 | — | Instabilité smoke suite Playwright CI : 109 échecs sur specs pré-existantes (occurrence 2026-08-08) |
+| #844 | — | Soixante dialogues natifs du navigateur : invisibles à toute recette pilotée, non traduits, non acc… |
 
-### Track K — Dette de code et de contrat (2)
+### Track K — Dette de code et de contrat (4)
 
 Les erreurs typées plutôt que classées par sous-chaîne, le contrat OpenAPI
 complet, et la suppression du repli qui fabrique une ACP inexistante.
 
+Deux constats du 2026-09-08 s'y ajoutent, et ils portent plus loin que le
+confort d'écriture. **Trente routes sur 604 ne vérifiaient aucune identité**
+(#845) — ni `AuthenticatedUser`, ni jeton lu à la main : supprimer une
+assemblée générale ne demandait qu'un UUID. Et **onze tables existent en base
+que rien ne lit** (#846), dont celle dont la vue se déclare outil de
+vérification des procurations et renvoie toujours zéro ligne.
+
 | Issue | Prio | Intitulé |
 |---|---|---|
+| #845 | critical | Trente routes ne vérifient aucune identité : modifier ou supprimer une assemblée générale ne demand… |
 | #555 | medium | EPIC: migrer Result<_, String> → Result<_, AppError> (1263 violations, CRITICAL.md rule 4) |
+| #846 | medium | Onze tables et une vue existent en base et ne sont lues par aucun code, dont celle qui devait valid… |
 | #762 | — | Typer les erreurs applicatives au lieu de les classer par sous-chaînes |
 
 ### Track F — Ops et infrastructure (10)
@@ -735,14 +751,20 @@ désencombrement de la documentation.
 |---|---|---|
 | #427 | critical | Validation — taxonomie tests 4 catégories + revue humaine+Cowork comme gate release |
 
-### Track ? — À arbitrer — présence en 0.1.0 douteuse (1)
+### Track ? — À arbitrer — présence en 0.1.0 douteuse (2)
 
-Une issue dont l'étiquette et le titre se contredisent. Il faut trancher, pas
-laisser le doute dans le périmètre.
+Deux issues qui se contredisent elles-mêmes. #635 porte « (v0.2.0) » dans son
+titre et l'étiquette `release:0.1.0`. #694 écrit noir sur blanc dans son corps
+« Non bloquant pour v0.1.0 (bêta fermée) », et demande par ailleurs un brief
+Maury signé avant tout code.
+
+Il faut trancher, pas laisser le doute dans le périmètre : chacune pèse sur le
+décompte de ce qui reste, et donc sur la date du tag.
 
 | Issue | Prio | Intitulé |
 |---|---|---|
 | #635 | — | Fonds affectés / thésaurisation : entité Fund dédiée aux travaux d'ampleur (v0.2.0) |
+| #694 | — | Scoping user↔ACP absent : un syndic/comptable voit toute l'organisation, pas seulement ses ACPs |
 
 <!-- INVENTAIRE:FIN -->
 
@@ -821,10 +843,15 @@ déplacé la date de leur retour.
 
 ### ⚠️ Le périmètre a doublé le 2026-09-06, et c'est une décision assumée
 
-**Tout ce qui restait en 0.2.0 entre en 0.1.0, avec la refonte UX/UI.** Le compte passe de
-**34 à 72 issues ouvertes** en `release:0.1.0` : les 31 ouvertes le 2026-09-06, les 24
-qui étaient en 0.2.0, les 6 lots de la refonte, la documentation vivante et les défauts
-trouvés en vérifiant. Il ne reste plus rien en 0.2.0.
+**Tout ce qui restait en 0.2.0 entre en 0.1.0, avec la refonte UX/UI.** Le compte est
+passé de **34 à 72 issues ouvertes** en `release:0.1.0` le 2026-09-06 : les 31 ouvertes
+alors, les 24 qui étaient en 0.2.0, les 6 lots de la refonte, la documentation vivante et
+les défauts trouvés en vérifiant. Il ne reste plus rien en 0.2.0.
+
+**Au 2026-09-08 le compte est de 70**, et ce chiffre stable masque un mouvement : cinq
+issues fermées dans la journée, six ouvertes, une rouverte. Le solde ne baisse pas parce
+que **vérifier trouve plus vite qu'on ne corrige** — et c'est le comportement attendu
+d'un périmètre qu'on mesure au lieu de l'estimer.
 
 **La raison est stratégique et elle est écrite ici pour qu'on s'en souvienne.** Le produit
 doit être bon **avant** la fondation de l'ASBL, parce que c'est sur lui que reposera la
@@ -837,15 +864,24 @@ peut présenter à quelqu'un qui décide d'y mettre de l'argent**.
 
 Quatre conséquences à assumer :
 
-- **La date recule nettement.** Soixante-douze issues ouvertes, dont plusieurs de fond : les
-  routes sans identité (#772, ramenées de 73 à 8 le 2026-09-06), la migration `Result<_, String>` (#555, 1263 occurrences),
-  le périmètre ACP (#694, #798), et six lots de refonte.
-- **L'ordre compte plus que le compte.** R14 (#782) rend visibles les erreurs et donc tout
-  le reste ; R1 (#772) et R19 (#787) exposent des données ; U2 (#798) ne peut pas commencer
-  avant R1. Ces dépendances sont dures, pas indicatives.
-- **Trois arbitrages produit bloquent** : #770 (conformité et `total_units`), #779
-  (périmètre des modules communautaires), #781 (le syndic agissant pour l'ACP). Aucun ne se
-  tranche en écrivant du code.
+- **La date recule nettement.** Soixante-dix issues ouvertes, dont plusieurs de fond : la
+  migration `Result<_, String>` (#555, 1263 occurrences), le périmètre ACP (#694, #798), et
+  six lots de refonte.
+- **Les dépendances dures sont levées.** #782 (les erreurs 400 lisibles), #772 (les routes
+  imbriquées sans identité) et #787 (le JWT en console) sont **fermées**. U2 n'est plus
+  bloquée. Ce qui les remplace est d'un autre ordre : #845 relève **trente routes qui ne
+  vérifient AUCUNE identité** — ni `AuthenticatedUser`, ni jeton lu à la main — un angle
+  mort que les deux cliquets de #772 ne pouvaient pas voir, puisqu'ils ne comptent que les
+  routes prenant une identité sans s'en servir. Six corrigées, vingt-quatre bornées.
+- **Trois arbitrages produit bloquent, et ce ne sont plus les mêmes.** #770 est fermée.
+  Restent #779 (le porteur du périmètre communautaire : ACP, immeuble ou organisation ?),
+  #781 (le syndic agissant pour l'ACP), et désormais #841 (le périmètre d'immeuble ne
+  survit à aucune navigation : faut-il un lien profond, un défaut serveur, ou les deux ?).
+  Aucun ne se tranche en écrivant du code.
+- **Deux issues contredisent leur propre étiquette** et pèsent pourtant sur le décompte :
+  #635 porte « (v0.2.0) » dans son titre, #694 écrit « Non bloquant pour v0.1.0 » dans son
+  corps. Elles sont rassemblées dans le track « ? » : il faut trancher, pas laisser le
+  doute dans le périmètre.
 - **G1 devient le vrai jalon.** La revue humaine portera sur un produit complet, ce qui est
   la seule façon d'en tirer un avis qui vaille pour un financeur.
 

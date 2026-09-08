@@ -13,7 +13,7 @@ TRACKS = [
 motif dominant, confirmé six fois : **une capacité écrite, testée, et
 inatteignable**. Nos tests prouvent que le code marche tout en masquant qu'on
 ne peut pas y arriver.""",
-  [779,780]),
+  [779,780,840,842]),
 
  ("U", "Refonte UX/UI", """Revue de design du 2026-09-06. Entrée en 0.1.0 le même jour : un financeur ne
 lit pas du code, et l'ASBL se fonde sur ce que le produit montre. **U2 ne
@@ -21,7 +21,7 @@ commençait qu'une fois #772 fermée. **Elle l'est depuis le 2026-09-08** : la
 dette de cloisonnement est passée de 109 routes imbriquées sans identité à
 trois, et un test end-to-end prouve qu'aucune donnée ne traverse d'une
 organisation à l'autre, en lecture comme en écriture. U2 n'est plus bloquée.""",
-  [556,818,820,821,822,823,824,825,826,827,797,798,802,803,834]),
+  [556,818,820,821,822,823,824,825,826,827,797,798,802,803,834,841]),
 
  ("D", "Documentation vivante multi-persona", """Six personas, quatre workflows transverses, et la restructuration des cent
 specs e2e pour que les vidéos racontent le produit plutôt que ses modules.
@@ -33,7 +33,7 @@ vont changer produit une documentation périmée le jour de sa livraison.""",
 reste répond 403, pas 404. Ce track porte aussi les deux arbitrages ouverts
 sur les droits communautaires — le syndic peut-il réserver au nom de l'ACP
 (#781, #588), et le comptable doit-il être exclu du communautaire (#589).""",
-  [585,586,587,588,589,590,591,592,694,781]),
+  [585,586,587,588,589,590,591,592,781]),
 
  ("S", "Gouvernance d'assemblée avancée", """Slice 4 de #556 : assemblée hybride, vote à distance authentifié fort,
 procès-verbal signé eIDAS, conseil de copropriété élu, commissaire aux
@@ -53,12 +53,25 @@ trois modals qui ne pouvaient pas s'ouvrir (#832). Corrigé en
 `--fail-on-warnings` le 2026-09-07.
 
 Une CI rouge en permanence n'apprend qu'à ne plus la regarder ; une CI qui
-affiche sans bloquer apprend à croire qu'on regarde.""",
-  [696,832,837,838]),
+affiche sans bloquer apprend à croire qu'on regarde.
+
+S'y ajoute depuis le 2026-09-08 ce qui empêche la RECETTE de dire la vérité :
+soixante dialogues natifs du navigateur (#844). Un navigateur piloté les
+supprime, et l'action prend alors la forme exacte d'une panne. C'est ce qui a
+fait déclarer mort le bouton « Reporter » d'une assemblée pendant deux
+recettes, alors que sa source était correcte.""",
+  [696,832,844]),
 
  ("K", "Dette de code et de contrat", """Les erreurs typées plutôt que classées par sous-chaîne, le contrat OpenAPI
-complet, et la suppression du repli qui fabrique une ACP inexistante.""",
-  [555,762]),
+complet, et la suppression du repli qui fabrique une ACP inexistante.
+
+Deux constats du 2026-09-08 s'y ajoutent, et ils portent plus loin que le
+confort d'écriture. **Trente routes sur 604 ne vérifiaient aucune identité**
+(#845) — ni `AuthenticatedUser`, ni jeton lu à la main : supprimer une
+assemblée générale ne demandait qu'un UUID. Et **onze tables existent en base
+que rien ne lit** (#846), dont celle dont la vue se déclare outil de
+vérification des procurations et renvoie toujours zéro ligne.""",
+  [555,762,845,846]),
 
  ("F", "Ops et infrastructure", """Sauvegardes, TLS, GitOps, et les vulnérabilités de dépendances. F3 a été joué
 le 2026-09-04 et son résultat est **négatif sur deux volets sur trois** : le
@@ -71,9 +84,14 @@ qui les prépare : la taxonomie des tests comme gate de release, et le
 désencombrement de la documentation.""",
   [427]),
 
- ("?", "À arbitrer — présence en 0.1.0 douteuse", """Une issue dont l'étiquette et le titre se contredisent. Il faut trancher, pas
-laisser le doute dans le périmètre.""",
-  [635]),
+ ("?", "À arbitrer — présence en 0.1.0 douteuse", """Deux issues qui se contredisent elles-mêmes. #635 porte « (v0.2.0) » dans son
+titre et l'étiquette `release:0.1.0`. #694 écrit noir sur blanc dans son corps
+« Non bloquant pour v0.1.0 (bêta fermée) », et demande par ailleurs un brief
+Maury signé avant tout code.
+
+Il faut trancher, pas laisser le doute dans le périmètre : chacune pèse sur le
+décompte de ce qui reste, et donc sur la date du tag.""",
+  [635,694]),
 ]
 
 classees = set()
