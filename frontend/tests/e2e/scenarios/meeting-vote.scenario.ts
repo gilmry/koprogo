@@ -178,11 +178,24 @@ test.describe("Scenario: Vote multi-role sur une resolution en AG", () => {
     await votingPowerInput.fill("150");
     await page.waitForTimeout(PACE.AFTER_TYPE);
 
-    // Soumettre le vote
-    const submitVoteBtn = resolutionItem2
-      .locator("button")
-      .filter({ hasText: /vote/i })
-      .last();
+    // Soumettre le vote, par son ancre.
+    //
+    // Le scenario prenait `.locator("button").filter({ hasText: /vote/i })
+    // .last()`. La carte de resolution contient DEUX boutons dont le texte
+    // correspond : « Soumettre le vote » et « Voir les votes (0) ». Le second
+    // vient apres dans le DOM (`ResolutionVotePanel.svelte:487` contre 471),
+    // donc `.last()` choisissait le mauvais.
+    //
+    // Resultat : le scenario depliait la liste des votes au lieu de voter.
+    // Aucune erreur, aucun toast, et « Total : 0 vote » sur la capture — puis
+    // un echec cent lignes plus loin sur le bouton de cloture, absent parce
+    // qu'aucun vote n'avait ete emis.
+    //
+    // Chercher un bouton par son texte est un pari sur la langue ; ici il
+    // etait meme ambigu DANS la langue choisie.
+    const submitVoteBtn = resolutionItem2.locator(
+      '[data-testid="resolution-vote-submit-button"]',
+    );
     await humanClickLocator(page, submitVoteBtn);
     await confirmerSiDemande(page);
     await aucuneErreurAffichee(page, "soumission du vote d'Alice");

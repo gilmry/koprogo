@@ -21,6 +21,19 @@ import { join } from "node:path";
  *   - On ne peut pas les ouvrir sans retirer d'abord ces formulations : un
  *     projet `nl-BE` ferait échouer chaque spec qui cherche « Approuver ».
  *
+ * **Ce cliquet a dû être élargi deux fois, et chaque fois parce qu'un échec
+ * réel a montré ce qu'il ne voyait pas.** Écrit en regardant `getByText`,
+ * `getByRole` et `text=`, il ignorait `filter({ hasText })` puis les
+ * expressions régulières. Le chiffre monte donc en corrigeant la garde, pas
+ * en dégradant le dépôt : 79 relevés, 78 après deux corrections de
+ * sélecteurs, 106 une fois les expressions régulières comptées, sous LEURS DEUX formes — la
+ * propriété `hasText: /.../` et l'appel `getByText(/.../)`, que mon premier
+ * motif manquait.
+ *
+ * C'est le reproche que cette journée a fait à six gardes existantes —
+ * écrites en regardant le défaut trouvé, pas la classe de défauts — et il
+ * valait pour celle-ci.
+ *
  * 79 au premier relevé, 78 après avoir étendu la garde à
  * `filter({ hasText: ... })` — qui en ajoutait un — et corrigé les deux
  * sélecteurs par libellé de `SyndicDocumentsJourney.spec.ts`, dont les ancres
@@ -39,7 +52,7 @@ import { join } from "node:path";
 const RACINE_E2E = "tests/e2e";
 
 /** Le décompte relevé le 2026-09-08. Il ne doit que baisser. */
-const DETTE_AU_2026_09_08 = 78;
+const DETTE_AU_2026_09_08 = 106;
 
 /** Le nombre de specs ce jour-là : on ne solde pas la dette en les supprimant. */
 const SPECS_AU_2026_09_08 = 100;
@@ -137,6 +150,34 @@ function infractions(): { fichier: string; motif: string; extrait: string }[] {
       for (const m of code.matchAll(motif)) {
         trouvees.push({ fichier, motif: nom, extrait: m[0].slice(0, 60) });
       }
+    }
+    // Les EXPRESSIONS RÉGULIÈRES sur du texte visible étaient exclues, au
+    // motif qu'elles ne sont pas une formulation figée. C'est faux :
+    // `/démarrer|start/i` est un pari sur la langue, simplement étalé sur
+    // deux d'entre elles. Plusieurs de ces motifs sont d'ailleurs des
+    // contournements bilingues explicites — quelqu'un avait vu le problème et
+    // l'a évité au lieu d'ancrer. Aucun ne survit au néerlandais.
+    //
+    // Le cas qui a forcé cette extension : `meeting-vote` prenait
+    // `filter({ hasText: /vote/i }).last()` pour soumettre un vote, et
+    // attrapait « Voir les votes (0) » — ambigu jusque DANS la langue choisie.
+    //
+    // Un motif sans aucune lettre (`/^\d+$/`) est structurel, pas une
+    // formulation : il ne compte pas.
+    // Deux formes : la propriété (`hasText: /.../`, `name: /.../`) et l'appel
+    // (`getByText(/.../)`, `filter({ hasText: /.../ })`). Mon premier motif
+    // n'acceptait que la propriété, à cause du `:` — c'est un témoin qui l'a
+    // montré, en ajoutant un `getByText(/inexistant/i)` que la garde n'a pas
+    // vu.
+    for (const m of code.matchAll(
+      /(?:(?:hasText|name):\s*|getBy(?:Text|Label|Placeholder)\(\s*)(\/[^/\n]+\/[gimsuy]*)/g,
+    )) {
+      if (!/[a-zA-ZÀ-ÿ]/.test(m[1])) continue;
+      trouvees.push({
+        fichier,
+        motif: "expression régulière sur du texte visible",
+        extrait: m[0].slice(0, 60),
+      });
     }
     for (const m of hasTextDeLibelle(code)) {
       trouvees.push({
