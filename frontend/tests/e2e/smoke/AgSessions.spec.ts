@@ -44,7 +44,10 @@ test.describe("AG Sessions - Video Conference (Art. 3.87 §1 CC)", () => {
         headers: { Authorization: `Bearer ${token}` },
       },
     );
-    expect(sessionResp.status()).toBe(201);
+    expect(
+      sessionResp.status(),
+      `sessionResp : ${await sessionResp.text().catch(() => "<corps illisible>")}`,
+    ).toBe(201);
 
     const session = await sessionResp.json();
     expect(session.id).toBeTruthy();
@@ -55,7 +58,10 @@ test.describe("AG Sessions - Video Conference (Art. 3.87 §1 CC)", () => {
       `${API_BASE}/ag-sessions/${session.id}`,
       { headers: { Authorization: `Bearer ${token}` } },
     );
-    expect(getResp.status()).toBe(200);
+    expect(
+      getResp.status(),
+      `getResp : ${await getResp.text().catch(() => "<corps illisible>")}`,
+    ).toBe(200);
     const retrieved = await getResp.json();
     expect(retrieved.id).toBe(session.id);
   });
@@ -80,14 +86,20 @@ test.describe("AG Sessions - Video Conference (Art. 3.87 §1 CC)", () => {
       },
     );
 
-    expect(sessionResp.status()).toBe(201);
+    expect(
+      sessionResp.status(),
+      `sessionResp : ${await sessionResp.text().catch(() => "<corps illisible>")}`,
+    ).toBe(201);
     const session = await sessionResp.json();
 
     const startResp = await page.request.put(
       `${API_BASE}/ag-sessions/${session.id}/start`,
       { headers: { Authorization: `Bearer ${token}` } },
     );
-    expect(startResp.status()).toBe(200);
+    expect(
+      startResp.status(),
+      `startResp : ${await startResp.text().catch(() => "<corps illisible>")}`,
+    ).toBe(200);
 
     const started = await startResp.json();
     expect(started.status).toBe("live");
@@ -113,7 +125,10 @@ test.describe("AG Sessions - Video Conference (Art. 3.87 §1 CC)", () => {
       },
     );
 
-    expect(sessionResp.status()).toBe(201);
+    expect(
+      sessionResp.status(),
+      `sessionResp : ${await sessionResp.text().catch(() => "<corps illisible>")}`,
+    ).toBe(201);
     const session = await sessionResp.json();
 
     // Session must be Live before recording a remote join
@@ -121,7 +136,10 @@ test.describe("AG Sessions - Video Conference (Art. 3.87 §1 CC)", () => {
       `${API_BASE}/ag-sessions/${session.id}/start`,
       { headers: { Authorization: `Bearer ${token}` } },
     );
-    expect(startResp.status()).toBe(200);
+    expect(
+      startResp.status(),
+      `startResp : ${await startResp.text().catch(() => "<corps illisible>")}`,
+    ).toBe(200);
 
     const joinResp = await page.request.post(
       `${API_BASE}/ag-sessions/${session.id}/join`,
@@ -130,7 +148,10 @@ test.describe("AG Sessions - Video Conference (Art. 3.87 §1 CC)", () => {
         headers: { Authorization: `Bearer ${token}` },
       },
     );
-    expect(joinResp.status()).toBe(200);
+    expect(
+      joinResp.status(),
+      `joinResp : ${await joinResp.text().catch(() => "<corps illisible>")}`,
+    ).toBe(200);
   });
 
   test("should get combined quorum for AG session", async ({ page }) => {
@@ -153,7 +174,10 @@ test.describe("AG Sessions - Video Conference (Art. 3.87 §1 CC)", () => {
       },
     );
 
-    expect(sessionResp.status()).toBe(201);
+    expect(
+      sessionResp.status(),
+      `sessionResp : ${await sessionResp.text().catch(() => "<corps illisible>")}`,
+    ).toBe(201);
     const session = await sessionResp.json();
 
     // Start session and add a remote participant so quorum has data
@@ -161,7 +185,10 @@ test.describe("AG Sessions - Video Conference (Art. 3.87 §1 CC)", () => {
       `${API_BASE}/ag-sessions/${session.id}/start`,
       { headers: { Authorization: `Bearer ${token}` } },
     );
-    expect(startResp.status()).toBe(200);
+    expect(
+      startResp.status(),
+      `startResp : ${await startResp.text().catch(() => "<corps illisible>")}`,
+    ).toBe(200);
 
     await page.request.post(`${API_BASE}/ag-sessions/${session.id}/join`, {
       data: { voting_power: 150.0, total_building_quotas: 1000.0 },
@@ -173,7 +200,10 @@ test.describe("AG Sessions - Video Conference (Art. 3.87 §1 CC)", () => {
       `${API_BASE}/ag-sessions/${session.id}/quorum?physical_quotas=300&total_building_quotas=1000`,
       { headers: { Authorization: `Bearer ${token}` } },
     );
-    expect(quorumResp.status()).toBe(200);
+    expect(
+      quorumResp.status(),
+      `quorumResp : ${await quorumResp.text().catch(() => "<corps illisible>")}`,
+    ).toBe(200);
   });
 
   test("should get AG session by meeting ID", async ({ page }) => {
@@ -197,7 +227,10 @@ test.describe("AG Sessions - Video Conference (Art. 3.87 §1 CC)", () => {
       `${API_BASE}/meetings/${meetingId}/ag-session`,
       { headers: { Authorization: `Bearer ${token}` } },
     );
-    expect(byMeetingResp.status()).toBe(200);
+    expect(
+      byMeetingResp.status(),
+      `byMeetingResp : ${await byMeetingResp.text().catch(() => "<corps illisible>")}`,
+    ).toBe(200);
   });
 
   test("should require auth for AG sessions API", async ({ page }) => {

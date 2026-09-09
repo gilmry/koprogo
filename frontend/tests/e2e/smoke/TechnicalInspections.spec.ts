@@ -39,7 +39,10 @@ test.describe("Technical Inspections - Mandatory Compliance", () => {
         headers: { Authorization: `Bearer ${token}` },
       },
     );
-    expect(inspResp.status()).toBe(201);
+    expect(
+      inspResp.status(),
+      `inspResp : ${await inspResp.text().catch(() => "<corps illisible>")}`,
+    ).toBe(201);
     const inspection = await inspResp.json();
     expect(inspection.building_id).toBe(buildingId);
   });

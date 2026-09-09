@@ -48,7 +48,10 @@ test.describe("Financial Reports - Balance Sheet & Income Statement", () => {
       `${API_BASE}/reports/balance-sheet?building_id=${buildingId}`,
       { headers: { Authorization: `Bearer ${accountantToken}` } },
     );
-    expect(bsResp.status()).toBe(200);
+    expect(
+      bsResp.status(),
+      `bsResp : ${await bsResp.text().catch(() => "<corps illisible>")}`,
+    ).toBe(200);
   });
 
   test("should get income statement via API", async ({ page }) => {
@@ -58,11 +61,17 @@ test.describe("Financial Reports - Balance Sheet & Income Statement", () => {
       `${API_BASE}/reports/income-statement?period_start=2026-01-01T00:00:00Z&period_end=2026-12-31T23:59:59Z`,
       { headers: { Authorization: `Bearer ${accountantToken}` } },
     );
-    expect(isResp.status()).toBe(200);
+    expect(
+      isResp.status(),
+      `isResp : ${await isResp.text().catch(() => "<corps illisible>")}`,
+    ).toBe(200);
   });
 
   test("should require auth for financial reports", async ({ page }) => {
     const resp = await page.request.get(`${API_BASE}/reports/balance-sheet`);
-    expect(resp.status()).toBe(401);
+    expect(
+      resp.status(),
+      `resp : ${await resp.text().catch(() => "<corps illisible>")}`,
+    ).toBe(401);
   });
 });

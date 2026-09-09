@@ -43,14 +43,20 @@ test.describe("Marketplace - Service Provider Directory", () => {
         headers: { Authorization: `Bearer ${token}` },
       },
     );
-    expect(createResp.status()).toBe(201);
+    expect(
+      createResp.status(),
+      `createResp : ${await createResp.text().catch(() => "<corps illisible>")}`,
+    ).toBe(201);
 
     // Now filter — must return 200 with results
     const resp = await page.request.get(
       `${API_BASE}/marketplace/providers?trade_category=Plombier`,
     );
 
-    expect(resp.status()).toBe(200);
+    expect(
+      resp.status(),
+      `resp : ${await resp.text().catch(() => "<corps illisible>")}`,
+    ).toBe(200);
     const providers = await resp.json();
     expect(Array.isArray(providers)).toBeTruthy();
     expect(providers.length).toBeGreaterThanOrEqual(1);
@@ -61,7 +67,10 @@ test.describe("Marketplace - Service Provider Directory", () => {
       `${API_BASE}/marketplace/providers/non-existent-provider-slug`,
     );
 
-    expect(resp.status()).toBe(404);
+    expect(
+      resp.status(),
+      `resp : ${await resp.text().catch(() => "<corps illisible>")}`,
+    ).toBe(404);
   });
 
   test("should create a service provider as syndic", async ({ page }) => {
@@ -85,7 +94,10 @@ test.describe("Marketplace - Service Provider Directory", () => {
       },
     );
 
-    expect(createResp.status()).toBe(201);
+    expect(
+      createResp.status(),
+      `createResp : ${await createResp.text().catch(() => "<corps illisible>")}`,
+    ).toBe(201);
   });
 
   test("should not require auth for marketplace search endpoint", async ({

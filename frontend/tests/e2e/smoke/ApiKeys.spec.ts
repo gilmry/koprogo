@@ -30,7 +30,10 @@ test.describe("API Keys - Management", () => {
       headers: { Authorization: `Bearer ${token}` },
     });
 
-    expect(createResp.status()).toBe(201);
+    expect(
+      createResp.status(),
+      `createResp : ${await createResp.text().catch(() => "<corps illisible>")}`,
+    ).toBe(201);
     const apiKey = await createResp.json();
     expect(apiKey.name).toBe(`Integration Key ${timestamp}`);
     expect(apiKey.key).toBeTruthy(); // Full key shown only once
@@ -73,7 +76,10 @@ test.describe("API Keys - Management", () => {
       headers: { Authorization: `Bearer ${token}` },
     });
 
-    expect(createResp.status()).toBe(201);
+    expect(
+      createResp.status(),
+      `createResp : ${await createResp.text().catch(() => "<corps illisible>")}`,
+    ).toBe(201);
     const created = await createResp.json();
 
     // Get key by ID
@@ -100,7 +106,10 @@ test.describe("API Keys - Management", () => {
       headers: { Authorization: `Bearer ${token}` },
     });
 
-    expect(createResp.status()).toBe(201);
+    expect(
+      createResp.status(),
+      `createResp : ${await createResp.text().catch(() => "<corps illisible>")}`,
+    ).toBe(201);
     const created = await createResp.json();
 
     // Revoke key
@@ -109,7 +118,10 @@ test.describe("API Keys - Management", () => {
       { headers: { Authorization: `Bearer ${token}` } },
     );
 
-    expect(revokeResp.status()).toBe(200);
+    expect(
+      revokeResp.status(),
+      `revokeResp : ${await revokeResp.text().catch(() => "<corps illisible>")}`,
+    ).toBe(200);
   });
 
   test.skip("should reject unauthorized access to API keys endpoint", async ({
@@ -117,7 +129,10 @@ test.describe("API Keys - Management", () => {
   }) => {
     // No auth header - should return 401
     const resp = await page.request.get(`${API_BASE}/api-keys`);
-    expect(resp.status()).toBe(401);
+    expect(
+      resp.status(),
+      `resp : ${await resp.text().catch(() => "<corps illisible>")}`,
+    ).toBe(401);
   });
 
   test.skip("should rotate an API key", async ({ page }) => {
@@ -133,7 +148,10 @@ test.describe("API Keys - Management", () => {
       headers: { Authorization: `Bearer ${token}` },
     });
 
-    expect(createResp.status()).toBe(201);
+    expect(
+      createResp.status(),
+      `createResp : ${await createResp.text().catch(() => "<corps illisible>")}`,
+    ).toBe(201);
     const created = await createResp.json();
 
     // Rotate key
@@ -142,6 +160,9 @@ test.describe("API Keys - Management", () => {
       { headers: { Authorization: `Bearer ${token}` } },
     );
 
-    expect(rotateResp.status()).toBe(200);
+    expect(
+      rotateResp.status(),
+      `rotateResp : ${await rotateResp.text().catch(() => "<corps illisible>")}`,
+    ).toBe(200);
   });
 });

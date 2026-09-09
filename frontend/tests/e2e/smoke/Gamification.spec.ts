@@ -43,7 +43,10 @@ test.describe("Gamification - Achievements & Challenges", () => {
       },
       headers: { Authorization: `Bearer ${token}` },
     });
-    expect(achResp.status()).toBe(201);
+    expect(
+      achResp.status(),
+      `achResp : ${await achResp.text().catch(() => "<corps illisible>")}`,
+    ).toBe(201);
 
     const achievement = await achResp.json();
     expect(achievement.id).toBeTruthy();
@@ -55,7 +58,10 @@ test.describe("Gamification - Achievements & Challenges", () => {
       `${API_BASE}/achievements/${achievement.id}`,
       { headers: { Authorization: `Bearer ${token}` } },
     );
-    expect(getResp.status()).toBe(200);
+    expect(
+      getResp.status(),
+      `getResp : ${await getResp.text().catch(() => "<corps illisible>")}`,
+    ).toBe(200);
     const retrieved = await getResp.json();
     expect(retrieved.id).toBe(achievement.id);
   });
@@ -107,7 +113,10 @@ test.describe("Gamification - Achievements & Challenges", () => {
       },
       headers: { Authorization: `Bearer ${token}` },
     });
-    expect(challengeResp.status()).toBe(201);
+    expect(
+      challengeResp.status(),
+      `challengeResp : ${await challengeResp.text().catch(() => "<corps illisible>")}`,
+    ).toBe(201);
 
     const challenge = await challengeResp.json();
     expect(challenge.id).toBeTruthy();
@@ -118,7 +127,10 @@ test.describe("Gamification - Achievements & Challenges", () => {
       `${API_BASE}/challenges/${challenge.id}/activate`,
       { headers: { Authorization: `Bearer ${token}` } },
     );
-    expect(activateResp.status()).toBe(200);
+    expect(
+      activateResp.status(),
+      `activateResp : ${await activateResp.text().catch(() => "<corps illisible>")}`,
+    ).toBe(200);
 
     const activated = await activateResp.json();
     expect(activated.status).toBe("Active");
@@ -143,7 +155,10 @@ test.describe("Gamification - Achievements & Challenges", () => {
       `${API_BASE}/organizations/${orgId}/gamification/leaderboard`,
       { headers: { Authorization: `Bearer ${token}` } },
     );
-    expect(leaderboardResp.status()).toBe(200);
+    expect(
+      leaderboardResp.status(),
+      `leaderboardResp : ${await leaderboardResp.text().catch(() => "<corps illisible>")}`,
+    ).toBe(200);
   });
 
   test("should require auth for gamification API", async ({ page }) => {

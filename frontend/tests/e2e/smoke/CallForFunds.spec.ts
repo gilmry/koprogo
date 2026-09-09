@@ -32,7 +32,10 @@ test.describe("Call For Funds - Revenue Management", () => {
       },
       headers: { Authorization: `Bearer ${token}` },
     });
-    expect(cffResp.status()).toBe(201);
+    expect(
+      cffResp.status(),
+      `cffResp : ${await cffResp.text().catch(() => "<corps illisible>")}`,
+    ).toBe(201);
     const cff = await cffResp.json();
     expect(cff.building_id).toBe(buildingId);
   });
@@ -68,13 +71,19 @@ test.describe("Call For Funds - Revenue Management", () => {
       headers: { Authorization: `Bearer ${token}` },
     });
 
-    expect(cffResp.status()).toBe(201);
+    expect(
+      cffResp.status(),
+      `cffResp : ${await cffResp.text().catch(() => "<corps illisible>")}`,
+    ).toBe(201);
     const cff = await cffResp.json();
     const getResp = await page.request.get(
       `${API_BASE}/call-for-funds/${cff.id}`,
       { headers: { Authorization: `Bearer ${token}` } },
     );
-    expect(getResp.status()).toBe(200);
+    expect(
+      getResp.status(),
+      `getResp : ${await getResp.text().catch(() => "<corps illisible>")}`,
+    ).toBe(200);
     const retrieved = await getResp.json();
     expect(retrieved.id).toBe(cff.id);
   });

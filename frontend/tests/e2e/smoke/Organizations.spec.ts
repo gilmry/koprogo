@@ -38,7 +38,10 @@ test.describe("Organizations - SuperAdmin Management", () => {
       },
       headers: { Authorization: `Bearer ${adminToken}` },
     });
-    expect(createResp.status()).toBe(201);
+    expect(
+      createResp.status(),
+      `createResp : ${await createResp.text().catch(() => "<corps illisible>")}`,
+    ).toBe(201);
     const org = await createResp.json();
     expect(org.name).toBe(`New Org ${timestamp}`);
   });
@@ -74,6 +77,9 @@ test.describe("Organizations - SuperAdmin Management", () => {
     const listResp = await page.request.get(`${API_BASE}/organizations`, {
       headers: { Authorization: `Bearer ${userData.token}` },
     });
-    expect(listResp.status()).toBe(403);
+    expect(
+      listResp.status(),
+      `listResp : ${await listResp.text().catch(() => "<corps illisible>")}`,
+    ).toBe(403);
   });
 });

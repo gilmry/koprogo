@@ -77,7 +77,10 @@ test.describe("Etats Dates - Belgian Property Sales Document", () => {
       },
       headers: { Authorization: `Bearer ${token}` },
     });
-    expect(etatResp.status()).toBe(201);
+    expect(
+      etatResp.status(),
+      `etatResp : ${await etatResp.text().catch(() => "<corps illisible>")}`,
+    ).toBe(201);
 
     const etat = await etatResp.json();
     expect(etat.id).toBeTruthy();
@@ -89,7 +92,10 @@ test.describe("Etats Dates - Belgian Property Sales Document", () => {
       `${API_BASE}/etats-dates/${etat.id}`,
       { headers: { Authorization: `Bearer ${token}` } },
     );
-    expect(getResp.status()).toBe(200);
+    expect(
+      getResp.status(),
+      `getResp : ${await getResp.text().catch(() => "<corps illisible>")}`,
+    ).toBe(200);
     const retrieved = await getResp.json();
     expect(retrieved.id).toBe(etat.id);
   });
@@ -126,14 +132,20 @@ test.describe("Etats Dates - Belgian Property Sales Document", () => {
       headers: { Authorization: `Bearer ${token}` },
     });
 
-    expect(etatResp.status()).toBe(201);
+    expect(
+      etatResp.status(),
+      `etatResp : ${await etatResp.text().catch(() => "<corps illisible>")}`,
+    ).toBe(201);
     const etat = await etatResp.json();
 
     const progressResp = await page.request.put(
       `${API_BASE}/etats-dates/${etat.id}/mark-in-progress`,
       { headers: { Authorization: `Bearer ${token}` } },
     );
-    expect(progressResp.status()).toBe(200);
+    expect(
+      progressResp.status(),
+      `progressResp : ${await progressResp.text().catch(() => "<corps illisible>")}`,
+    ).toBe(200);
 
     const updated = await progressResp.json();
     expect(updated.status).toBe("in_progress"); // EtatDateStatus uses serde snake_case
@@ -158,7 +170,10 @@ test.describe("Etats Dates - Belgian Property Sales Document", () => {
       `${API_BASE}/etats-dates/overdue`,
       { headers: { Authorization: `Bearer ${token}` } },
     );
-    expect(overdueResp.status()).toBe(200);
+    expect(
+      overdueResp.status(),
+      `overdueResp : ${await overdueResp.text().catch(() => "<corps illisible>")}`,
+    ).toBe(200);
   });
 
   test("should require auth for etats-dates API", async ({ page }) => {

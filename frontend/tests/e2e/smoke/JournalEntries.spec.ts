@@ -74,7 +74,10 @@ test.describe("Journal Entries - Double-Entry Accounting", () => {
       },
       headers: { Authorization: `Bearer ${accountantToken}` },
     });
-    expect(entryResp.status()).toBe(201);
+    expect(
+      entryResp.status(),
+      `entryResp : ${await entryResp.text().catch(() => "<corps illisible>")}`,
+    ).toBe(201);
   });
 
   test("should reject unbalanced journal entry", async ({ page }) => {

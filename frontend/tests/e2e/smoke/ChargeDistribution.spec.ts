@@ -23,7 +23,10 @@ test.describe("Charge Distribution - Invoice Allocation", () => {
       `${API_BASE}/buildings/${buildingId}/units`,
       { headers: { Authorization: `Bearer ${adminToken}` } },
     );
-    expect(unitsResp.status()).toBe(200);
+    expect(
+      unitsResp.status(),
+      `unitsResp : ${await unitsResp.text().catch(() => "<corps illisible>")}`,
+    ).toBe(200);
     const unitsBody = await unitsResp.json();
     const units = Array.isArray(unitsBody) ? unitsBody : (unitsBody.data ?? []);
     expect(units.length).toBeGreaterThan(0);
@@ -42,7 +45,10 @@ test.describe("Charge Distribution - Invoice Allocation", () => {
       },
       headers: { Authorization: `Bearer ${token}` },
     });
-    expect(ownerResp.status()).toBe(201);
+    expect(
+      ownerResp.status(),
+      `ownerResp : ${await ownerResp.text().catch(() => "<corps illisible>")}`,
+    ).toBe(201);
     const owner = await ownerResp.json();
 
     // TOUS les lots recoivent un detenteur, pas seulement le premier.
@@ -118,7 +124,10 @@ test.describe("Charge Distribution - Invoice Allocation", () => {
     const resp = await page.request.get(
       `${API_BASE}/invoices/some-id/distribution`,
     );
-    expect(resp.status()).toBe(401);
+    expect(
+      resp.status(),
+      `resp : ${await resp.text().catch(() => "<corps illisible>")}`,
+    ).toBe(401);
   });
 
   test("should display accountant page where distributions are shown", async ({

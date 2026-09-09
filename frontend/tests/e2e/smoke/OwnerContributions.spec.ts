@@ -31,7 +31,10 @@ test.describe("Owner Contributions - Payment Tracking", () => {
         headers: { Authorization: `Bearer ${token}` },
       },
     );
-    expect(contribResp.status()).toBe(201);
+    expect(
+      contribResp.status(),
+      `contribResp : ${await contribResp.text().catch(() => "<corps illisible>")}`,
+    ).toBe(201);
   });
 
   test("should list contributions for owner", async ({ page }) => {
@@ -51,7 +54,10 @@ test.describe("Owner Contributions - Payment Tracking", () => {
       `${API_BASE}/owner-contributions/outstanding?owner_id=${ownerId}`,
       { headers: { Authorization: `Bearer ${token}` } },
     );
-    expect(outstandingResp.status()).toBe(200);
+    expect(
+      outstandingResp.status(),
+      `outstandingResp : ${await outstandingResp.text().catch(() => "<corps illisible>")}`,
+    ).toBe(200);
   });
 
   test("should mark a contribution as paid", async ({ page }) => {
@@ -72,7 +78,10 @@ test.describe("Owner Contributions - Payment Tracking", () => {
       },
     );
 
-    expect(contribResp.status()).toBe(201);
+    expect(
+      contribResp.status(),
+      `contribResp : ${await contribResp.text().catch(() => "<corps illisible>")}`,
+    ).toBe(201);
     const contrib = await contribResp.json();
     const paidResp = await page.request.put(
       `${API_BASE}/owner-contributions/${contrib.id}/mark-paid`,
@@ -84,7 +93,10 @@ test.describe("Owner Contributions - Payment Tracking", () => {
         headers: { Authorization: `Bearer ${token}` },
       },
     );
-    expect(paidResp.status()).toBe(200);
+    expect(
+      paidResp.status(),
+      `paidResp : ${await paidResp.text().catch(() => "<corps illisible>")}`,
+    ).toBe(200);
   });
 
   test("should require auth for owner contributions API", async ({ page }) => {

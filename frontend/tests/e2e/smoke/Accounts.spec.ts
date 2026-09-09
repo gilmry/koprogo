@@ -59,6 +59,9 @@ test.describe("Accounts - PCMN Belgian Chart of Accounts", () => {
     const findResp = await page.request.get(`${API_BASE}/accounts/code/612`, {
       headers: { Authorization: `Bearer ${token}` },
     });
-    expect(findResp.status()).toBe(200);
+    expect(
+      findResp.status(),
+      `findResp : ${await findResp.text().catch(() => "<corps illisible>")}`,
+    ).toBe(200);
   });
 });
