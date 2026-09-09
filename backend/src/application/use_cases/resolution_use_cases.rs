@@ -211,6 +211,61 @@ impl ResolutionUseCases {
             .ok_or_else(|| format!("Meeting not found: {}", resolution.meeting_id))?;
         meeting.check_quorum_for_voting()?;
 
+        // Art. 3.87 § 2 CC — une décision portant sur un point ABSENT de l'ordre
+        // du jour est nulle. On refuse donc le VOTE, pas la rédaction.
+        //
+        // La validation existait déjà à la création, et elle est correcte :
+        //
+        //     if let Some(index) = agenda_item_index { … }
+        //
+        // Mais `None` traverse le `if let` sans rien déclencher. La garde ne
+        // s'appliquait qu'à ceux qui se déclarent, alors que la nullité, elle,
+        // n'est pas optionnelle. Une résolution rattachée à aucun point était
+        // créée, votée et clôturée normalement — exactement le cas que
+        // l'article annule.
+        //
+        // POURQUOI AU VOTE ET NON À LA CRÉATION (#840, voie 2 sur 3).
+        //
+        // L'article annule la DÉCISION, pas la proposition. Refuser à la
+        // création casserait `meeting_handlers.rs:633` et
+        // `meeting_minutes_exporter.rs:407`, qui construisent légitimement des
+        // résolutions sans index, et exigerait une migration des lignes dont la
+        // colonne est NULL. Refuser au vote suit le texte au plus près et ne
+        // casse ni appelant ni donnée : une résolution hors ordre du jour peut
+        // exister en brouillon, elle ne peut simplement pas être mise aux voix.
+        //
+        // Les deux autres voies restent ouvertes — champ obligatoire avec
+        // migration, ou refus à la clôture — si l'usage montre que celle-ci ne
+        // suffit pas.
+        let Some(index) = resolution.agenda_item_index else {
+            return Err(
+                "Cette résolution n'est rattachée à aucun point de l'ordre du jour : \
+                 la mettre aux voix produirait une décision nulle (Art. 3.87 § 2 CC). \
+                 Rattachez-la à un point, ou inscrivez le point à l'ordre du jour."
+                    .to_string(),
+            );
+        };
+        // Le point doit exister ET porter un intitulé : un point vide ne
+        // renseigne personne sur ce qui est mis aux voix.
+        match meeting.agenda.get(index) {
+            None => {
+                return Err(format!(
+                    "Le point d'ordre du jour n° {index} n'existe pas dans cette \
+                     assemblée, qui en compte {} : la décision serait nulle \
+                     (Art. 3.87 § 2 CC).",
+                    meeting.agenda.len()
+                ))
+            }
+            Some(intitule) if intitule.trim().is_empty() => {
+                return Err(format!(
+                    "Le point d'ordre du jour n° {index} est vide : une décision ne \
+                     peut pas porter sur un point qui n'énonce rien \
+                     (Art. 3.87 § 2 CC)."
+                ))
+            }
+            Some(_) => {}
+        }
+
         // Story H17 — Art. 3.87 §1 CC : un lot démembré (usufruit/nue-propriété,
         // emphytéose, superficie) ou en indivision a son droit de vote SUSPENDU
         // tant qu'un représentant unique n'est pas désigné. Gate → rejet
@@ -1364,6 +1419,13 @@ mod tests {
                 rust_decimal_macros::dec!(1000),
             )
             .unwrap();
+        // Un point d'ordre du jour, sans quoi aucune résolution ne peut être
+        // mise aux voix : Art. 3.87 § 2 CC annule une décision portant sur un
+        // point absent. Ces tests votaient jusqu'ici sur des résolutions
+        // rattachées à rien — le cas exact que l'article annule.
+        meeting
+            .add_agenda_item("Approbation des comptes".to_string())
+            .unwrap();
         meeting_repo.create(&meeting).await.unwrap();
 
         let result = use_cases
@@ -1373,7 +1435,7 @@ mod tests {
                 "Description".to_string(),
                 ResolutionType::Ordinary,
                 MajorityType::Absolute,
-                None,
+                Some(0),
             )
             .await;
 
@@ -1419,6 +1481,13 @@ mod tests {
                 rust_decimal_macros::dec!(1000),
             )
             .unwrap();
+        // Un point d'ordre du jour, sans quoi aucune résolution ne peut être
+        // mise aux voix : Art. 3.87 § 2 CC annule une décision portant sur un
+        // point absent. Ces tests votaient jusqu'ici sur des résolutions
+        // rattachées à rien — le cas exact que l'article annule.
+        meeting
+            .add_agenda_item("Approbation des comptes".to_string())
+            .unwrap();
         meeting_repo.create(&meeting).await.unwrap();
 
         let result = use_cases
@@ -1428,7 +1497,7 @@ mod tests {
                 "Description".to_string(),
                 ResolutionType::Ordinary,
                 MajorityType::Absolute,
-                None,
+                Some(0),
             )
             .await;
 
@@ -1473,6 +1542,13 @@ mod tests {
                 rust_decimal_macros::dec!(1000),
             )
             .unwrap();
+        // Un point d'ordre du jour, sans quoi aucune résolution ne peut être
+        // mise aux voix : Art. 3.87 § 2 CC annule une décision portant sur un
+        // point absent. Ces tests votaient jusqu'ici sur des résolutions
+        // rattachées à rien — le cas exact que l'article annule.
+        meeting
+            .add_agenda_item("Approbation des comptes".to_string())
+            .unwrap();
         meeting_repo.create(&meeting).await.unwrap();
 
         let resolution = use_cases
@@ -1482,7 +1558,7 @@ mod tests {
                 "Description".to_string(),
                 ResolutionType::Ordinary,
                 MajorityType::Absolute,
-                None,
+                Some(0),
             )
             .await
             .unwrap();
@@ -1552,6 +1628,13 @@ mod tests {
                 rust_decimal_macros::dec!(1000),
             )
             .unwrap();
+        // Un point d'ordre du jour, sans quoi aucune résolution ne peut être
+        // mise aux voix : Art. 3.87 § 2 CC annule une décision portant sur un
+        // point absent. Ces tests votaient jusqu'ici sur des résolutions
+        // rattachées à rien — le cas exact que l'article annule.
+        meeting
+            .add_agenda_item("Approbation des comptes".to_string())
+            .unwrap();
         meeting_repo.create(&meeting).await.unwrap();
 
         let resolution = use_cases
@@ -1561,7 +1644,7 @@ mod tests {
                 "Desc".to_string(),
                 ResolutionType::Ordinary,
                 MajorityType::Absolute,
-                None,
+                Some(0),
             )
             .await
             .unwrap();
@@ -1633,6 +1716,13 @@ mod tests {
                 rust_decimal_macros::dec!(1000),
             )
             .unwrap();
+        // Un point d'ordre du jour, sans quoi aucune résolution ne peut être
+        // mise aux voix : Art. 3.87 § 2 CC annule une décision portant sur un
+        // point absent. Ces tests votaient jusqu'ici sur des résolutions
+        // rattachées à rien — le cas exact que l'article annule.
+        meeting
+            .add_agenda_item("Approbation des comptes".to_string())
+            .unwrap();
         meeting_repo.create(&meeting).await.unwrap();
 
         let resolution = use_cases
@@ -1642,7 +1732,7 @@ mod tests {
                 "Description".to_string(),
                 ResolutionType::Ordinary,
                 MajorityType::Absolute,
-                None,
+                Some(0),
             )
             .await
             .unwrap();
@@ -1727,6 +1817,13 @@ mod tests {
                 rust_decimal_macros::dec!(1000),
             )
             .unwrap();
+        // Un point d'ordre du jour, sans quoi aucune résolution ne peut être
+        // mise aux voix : Art. 3.87 § 2 CC annule une décision portant sur un
+        // point absent. Ces tests votaient jusqu'ici sur des résolutions
+        // rattachées à rien — le cas exact que l'article annule.
+        meeting
+            .add_agenda_item("Approbation des comptes".to_string())
+            .unwrap();
         meeting_repo.create(&meeting).await.unwrap();
 
         let resolution = use_cases
@@ -1736,7 +1833,7 @@ mod tests {
                 "Description".to_string(),
                 ResolutionType::Ordinary,
                 MajorityType::Absolute,
-                None,
+                Some(0),
             )
             .await
             .unwrap();
@@ -1812,6 +1909,13 @@ mod tests {
         .unwrap();
         meeting.id = meeting_id;
         // PAS de validate_quorum → quorum_percentage = None.
+        // Un point d'ordre du jour, sans quoi aucune résolution ne peut être
+        // mise aux voix : Art. 3.87 § 2 CC annule une décision portant sur un
+        // point absent. Ces tests votaient jusqu'ici sur des résolutions
+        // rattachées à rien — le cas exact que l'article annule.
+        meeting
+            .add_agenda_item("Approbation des comptes".to_string())
+            .unwrap();
         meeting_repo.create(&meeting).await.unwrap();
 
         let mut resolution = Resolution::new(
@@ -1820,7 +1924,11 @@ mod tests {
             "D".to_string(),
             ResolutionType::Ordinary,
             MajorityType::Absolute,
-            None,
+            // Rattachée au point 0, sans quoi elle ne peut pas être mise aux
+            // voix (Art. 3.87 § 2 CC). Ces deux tests éprouvent le droit de
+            // vote d'un lot, pas l'ordre du jour : leur donner un point valide
+            // évite qu'ils échouent pour une autre raison que la leur.
+            Some(0),
         )
         .unwrap();
         resolution.status = ResolutionStatus::Pending;
@@ -1864,7 +1972,10 @@ mod tests {
             "D".to_string(),
             ResolutionType::Ordinary,
             MajorityType::Absolute,
-            None,
+            // Rattachée au point 0 : Art. 3.87 § 2 CC interdit de mettre aux
+            // voix une résolution hors ordre du jour. Ces tests éprouvent
+            // autre chose, et doivent donc franchir cette garde.
+            Some(0),
         )
         .unwrap();
         resolution.status = ResolutionStatus::Pending;
@@ -1916,6 +2027,13 @@ mod tests {
                 rust_decimal_macros::dec!(1000),
             )
             .unwrap();
+        // Un point d'ordre du jour, sans quoi aucune résolution ne peut être
+        // mise aux voix : Art. 3.87 § 2 CC annule une décision portant sur un
+        // point absent. Ces tests votaient jusqu'ici sur des résolutions
+        // rattachées à rien — le cas exact que l'article annule.
+        meeting
+            .add_agenda_item("Approbation des comptes".to_string())
+            .unwrap();
         meeting_repo.create(&meeting).await.unwrap();
 
         let mut resolution = Resolution::new(
@@ -1924,12 +2042,71 @@ mod tests {
             "D".to_string(),
             ResolutionType::Ordinary,
             MajorityType::Absolute,
-            None,
+            // Rattachée au point 0 : Art. 3.87 § 2 CC interdit de mettre aux
+            // voix une résolution hors ordre du jour. Ces tests éprouvent
+            // autre chose, et doivent donc franchir cette garde.
+            Some(0),
         )
         .unwrap();
         resolution.status = ResolutionStatus::Pending;
         resolution_repo.create(&resolution).await.unwrap();
         resolution
+    }
+
+    /// @security — une résolution hors ordre du jour ne peut pas être mise aux
+    /// voix (Art. 3.87 § 2 CC).
+    ///
+    /// La validation existait à la création et ne s'appliquait qu'aux
+    /// résolutions qui DÉCLARENT un point : `if let Some(index)` laissait
+    /// passer `None`. Une résolution rattachée à rien était créée, votée et
+    /// clôturée — le cas exact que l'article annule.
+    ///
+    /// Le refus est au VOTE et non à la création : l'article annule la
+    /// décision, pas la proposition (#840, voie 2 sur 3).
+    #[tokio::test]
+    async fn security_vote_refuse_sur_resolution_hors_ordre_du_jour() {
+        let resolution_repo = Arc::new(MockResolutionRepository::new());
+        let vote_repo = Arc::new(MockVoteRepository::new());
+        let meeting_repo = Arc::new(MockMeetingRepository::new());
+        let resolution = meeting_with_quorum_and_resolution(&resolution_repo, &meeting_repo).await;
+
+        // On détache la résolution de son point d'ordre du jour.
+        let mut orpheline = resolution.clone();
+        orpheline.agenda_item_index = None;
+        resolution_repo.create(&orpheline).await.unwrap();
+
+        let unit_id = Uuid::new_v4();
+        let unit_owner_repo = Arc::new(MockUnitOwnerRepository::with_holders(
+            unit_id,
+            vec![LotHolder::new(OwnershipType::FullOwner, false)],
+        ));
+        let use_cases = ResolutionUseCases::new(
+            resolution_repo.clone(),
+            vote_repo,
+            meeting_repo,
+            unit_owner_repo,
+        );
+
+        let erreur = use_cases
+            .cast_vote(
+                orpheline.id,
+                Uuid::new_v4(),
+                unit_id,
+                VoteChoice::Pour,
+                rust_decimal_macros::dec!(100),
+                None,
+            )
+            .await
+            .expect_err("une résolution hors ordre du jour ne doit pas être votable");
+
+        assert!(
+            erreur.contains("ordre du jour") && erreur.contains("3.87"),
+            "le refus doit citer l'ordre du jour et l'article : {erreur}"
+        );
+        assert!(
+            erreur.contains("nulle"),
+            "le refus doit dire POURQUOI — la décision serait nulle : {erreur}"
+        );
     }
 
     /// @security — un lot en indivision SANS représentant unique désigné a son

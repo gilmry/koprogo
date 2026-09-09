@@ -18,7 +18,7 @@
 #   - Audit complet    : docs/legal/audit_conformite.rst
 #
 # Dernière mise à jour : 2026-09-08
-# Score conformité : 38 conformes / 3 partiels / 0 manquant, sur 41 scénarios
+# Score conformité : 39 conformes / 2 partiels / 0 manquant, sur 41 scénarios
 #
 # Douze scénarios portaient `@manquant`. Ils ont été vérifiés un par un dans
 # le code, en deux passes (#837). ONZE étaient faux : neuf règles étaient
@@ -73,14 +73,22 @@ Feature: Conformite Juridique Belge
     When a convocation is created for that meeting
     Then the convocation must include the meeting agenda
 
-  @partiel @corrige @wip @copropriete @ag @critique
+  @conforme @corrige @copropriete @ag @critique
   Scenario: [Art. 3.87 §2] Decisions hors agenda sont nulles
-    # Implémenté : application/use_cases/resolution_use_cases.rs — l'index d'ordre du
-    #              jour est validé (bornes, libellé non vide) LORSQU'IL EST FOURNI.
-    # Ce qui manque : `agenda_item_index` est un `Option`, et `None` est accepté.
-    #                 Une résolution rattachée à AUCUN point de l'ordre du jour passe.
-    #                 La loi la rend nulle. Suivi en #840.
-    # Corrigé le 2026-09-08 : la ligne portait « NON IMPLÉMENTÉ », c'est un partiel (#837)
+    # Implémenté : application/use_cases/resolution_use_cases.rs — `cast_vote` refuse
+    #              toute résolution dont `agenda_item_index` est `None`, ainsi que
+    #              celles qui désignent un point inexistant ou vide.
+    # Test : security_vote_refuse_sur_resolution_hors_ordre_du_jour, vérifié par témoin
+    #        (garde retirée → le vote passe et le test échoue).
+    #
+    # Le refus est au VOTE, pas à la création : l'article annule la DÉCISION, pas la
+    # proposition. Une résolution hors ordre du jour peut exister en brouillon ; elle
+    # ne peut pas être mise aux voix. C'est la voie 2 des trois que #840 posait ; les
+    # deux autres — champ obligatoire avec migration, ou refus à la clôture — restent
+    # ouvertes si l'usage montre que celle-ci ne suffit pas.
+    #
+    # Corrigé le 2026-09-08 : la ligne portait « NON IMPLÉMENTÉ », c'était un partiel
+    # (#837). Complété le 2026-09-09 (#840).
     Given a meeting with agenda items "A, B, C"
     And a resolution exists for agenda item "D" which is NOT on the agenda
     When voting is closed on that resolution
