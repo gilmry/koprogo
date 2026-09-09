@@ -1,4 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
+import { uiLoginWithRetry } from "./helpers/auth";
 import { failOnPageErrors } from "./helpers/pageErrors";
 import { adminLogin, ensureAcp } from "./helpers/auth";
 
@@ -34,36 +35,23 @@ async function loginAsAccountant(page: Page, prefix: string) {
     },
   });
 
-  await page.addInitScript(
-    (value) => {
-      try {
-        localStorage.setItem("koprogo_user", value);
-      } catch {
-        /* ignore */
-      }
-    },
-    JSON.stringify({
-      id: "injected-user",
-      email,
-      first_name: "Accountant",
-      last_name: `Test${timestamp}`,
-      role: "accountant",
-      roles: [
-        {
-          id: "injected-role-1",
-          role: "accountant",
-          organization_id: null,
-          is_primary: true,
-        },
-      ],
-      active_role: {
-        id: "injected-role-1",
-        role: "accountant",
-        organization_id: null,
-        is_primary: true,
-      },
-    }),
-  );
+  // Connexion RÉELLE, pas une injection dans `localStorage`.
+  //
+  // L'injection ci-dessous ne pouvait rien établir : `auth.ts:182` dit que
+  // `koprogo_user` est « un cache d'affichage NON sensible, jamais une preuve
+  // d'authentification », et qu'`init()` fait un silent-refresh via le cookie
+  // HttpOnly pour confirmer la session. Le cache injecté était donc écrasé
+  // par le VRAI utilisateur — l'admin, dont le cookie était encore posé.
+  //
+  // L'instantané de page du run 34347631686 le montre : « Admin System »,
+  // « Bienvenue, Admin », tableau de bord administrateur. Le test n'était ni
+  // comptable ni sur la page des écritures ; il attendait `#description` sur
+  // un écran qui ne le porte pas.
+  //
+  // Le comptable est créé plus haut avec un mot de passe : on s'en sert. On
+  // ne peut pas changer de rôle en modifiant `localStorage`, et c'est
+  // exactement ce qu'on veut d'un produit.
+  await uiLoginWithRetry(page, email, TEST_PASSWORD, /\/accountant/);
   await page.goto("/accountant", { waitUntil: "networkidle" });
 
   // Un immeuble, et son identifiant rendu à l'appelant.
