@@ -66,12 +66,22 @@ test.describe("Comptable — Workflow factures, cycle de vie rempli jusqu'au bou
     expect(approveResp.status()).toBe(200);
     await expect(card.getByTestId("mark-paid-button")).toBeVisible();
 
-    const [paidResp] = await Promise.all([
-      page.waitForResponse(
-        (r) => r.url().includes("/mark-paid") && r.request().method() === "PUT",
-      ),
-      card.getByTestId("mark-paid-button").click(),
-    ]);
+    // Troisième confirmation du parcours, et la dernière qui manquait.
+    //
+    // La capture du run 34377060293 montre la modale OUVERTE — « Annuler »,
+    // « Confirmer » — au-dessus d'une carte qui propose « Marquer comme
+    // payée ». La soumission et l'approbation avaient abouti ; c'est le
+    // paiement qui restait en suspens.
+    //
+    // Comme pour la soumission : l'attente est armée AVANT le clic, la
+    // confirmation vient entre les deux. Un `Promise.all` ne laisse aucune
+    // place à ce geste.
+    const attentePaiement = page.waitForResponse(
+      (r) => r.url().includes("/mark-paid") && r.request().method() === "PUT",
+    );
+    await card.getByTestId("mark-paid-button").click();
+    await confirmerSiDemande(page);
+    const paidResp = await attentePaiement;
     expect(paidResp.status()).toBe(200);
   });
 });
