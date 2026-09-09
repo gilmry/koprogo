@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { confirmerSiDemande } from "./helpers/amorcage";
 import { loginAsSyndicWithBuilding } from "./helpers/auth";
 import { failOnPageErrors } from "./helpers/pageErrors";
 
@@ -55,20 +56,27 @@ test.describe("Syndic — parcours de gestion documentaire rempli jusqu'au bout"
     const row = page.locator("tr", { hasText: title });
     await expect(row).toBeVisible();
 
+    // Par les ancres, posées le 2026-09-08, plutôt que par les libellés :
+    // « Télécharger » et « Supprimer » ne trouvent rien dès que l'écran rend
+    // en néerlandais.
     const [downloadResp] = await Promise.all([
       page.waitForResponse((r) => r.url().includes("/download")),
-      row.getByRole("button", { name: "Télécharger" }).click(),
+      row.getByTestId("documents-download-button").click(),
     ]);
     expect(downloadResp.status()).toBe(200);
 
-    page.once("dialog", (dialog) => dialog.accept());
-    const [deleteResp] = await Promise.all([
-      page.waitForResponse(
-        (r) =>
-          r.url().includes("/documents/") && r.request().method() === "DELETE",
-      ),
-      row.getByRole("button", { name: "Supprimer" }).click(),
-    ]);
+    // Plus de dialogue natif depuis #844 : la suppression demande une modale.
+    // Le gestionnaire installé ici ne se déclenchait plus.
+    // Attente armée AVANT le clic, confirmation entre les deux : la
+    // suppression ouvre une modale depuis #844, et le `Promise.all` ne
+    // laissait aucune place à ce geste.
+    const attenteSuppression = page.waitForResponse(
+      (r) =>
+        r.url().includes("/documents/") && r.request().method() === "DELETE",
+    );
+    await row.getByTestId("documents-delete-button").click();
+    await confirmerSiDemande(page);
+    const deleteResp = await attenteSuppression;
     expect(deleteResp.status()).toBe(204);
 
     await expect(page.locator("tr", { hasText: title })).toHaveCount(0);

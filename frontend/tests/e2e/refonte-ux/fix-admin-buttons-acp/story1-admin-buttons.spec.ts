@@ -8,6 +8,7 @@
  * `onclick={...}`.
  */
 import { test, expect, type Page } from "@playwright/test";
+import { confirmerSiDemande } from "../../helpers/amorcage";
 import { loginAsAdmin, loginAsSyndicWithExpense } from "../../helpers/auth";
 
 const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
@@ -142,8 +143,14 @@ test.describe("Story 1 (#697) — boutons admin morts (Svelte 5)", () => {
       /overdue|retard/i,
     );
 
-    page.once("dialog", (d) => d.accept());
+    // La confirmation est une MODALE, plus un dialogue natif.
+    //
+    // `page.once("dialog", ...)` attendait un `confirm()` que #844 a remplacé
+    // par `AccessibleModal`. Le gestionnaire ne se déclenche donc jamais, la
+    // modale reste ouverte, et l'annulation n'a pas lieu : le badge affichait
+    // « En retard » là où le test attend « annulé ».
     await page.getByTestId("cancel-button").click();
+    await confirmerSiDemande(page);
 
     await expect(page.getByTestId("status-badge")).toContainText(
       /cancelled|annul/i,
