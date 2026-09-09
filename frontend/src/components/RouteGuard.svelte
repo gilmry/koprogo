@@ -16,8 +16,50 @@
     let unsubscribe: (() => void) | undefined;
 
     (async () => {
-      // Initialize auth store first
-      await authStore.init();
+      // L'initialisation peut ÉCHOUER, et il faut alors le dire.
+      //
+      // `await authStore.init()` n'était pas protégé. Si l'appel rejette — un
+      // réseau qui hoquette, un backend lent, un rafraîchissement silencieux
+      // qui n'aboutit pas — la promesse de cette fonction rejette, `isChecking`
+      // reste `true`, et l'écran affiche « Vérification des accès… » POUR
+      // TOUJOURS. Ni message, ni redirection, ni délai : la page ne dit rien
+      // et n'aboutit jamais.
+      //
+      // Constaté le 2026-09-09 sur la capture d'écran de
+      // `quote-comparison.scenario.ts` : un spinner et ce libellé, vingt
+      // secondes durant, sur un scénario vert aux quatre runs précédents.
+      //
+      // On échoue FERMÉ : une session qu'on n'a pas pu confirmer n'est pas une
+      // session. `checkAccess` redirige alors vers `/login` pour toute route
+      // protégée, ce qui est le comportement déjà écrit plus bas — et le même
+      // choix que `canAccessRoute`, qui se ferme sur un rôle inconnu.
+      // Un `try`/`catch` ne suffit pas : `init()` peut ne JAMAIS aboutir,
+      // et une promesse qui ne se résout pas ne lève rien. C'est le cas
+      // observé — le spinner tournait, sans erreur.
+      //
+      // Quinze secondes, puis on considère la session absente. C'est un
+      // arbitrage : sur un réseau très lent, un rafraîchissement qui aurait
+      // fini par réussir renvoie l'utilisateur vers `/login`, où il se
+      // reconnecte. L'alternative est un écran qui ne répond plus jamais, ce
+      // qui est strictement pire — et il n'a aucun moyen de le savoir.
+      const DELAI_INIT_MS = 15_000;
+      try {
+        await Promise.race([
+          authStore.init(),
+          new Promise((_, rejeter) =>
+            setTimeout(
+              () => rejeter(new Error("init() n'a pas abouti en 15 s")),
+              DELAI_INIT_MS,
+            ),
+          ),
+        ]);
+      } catch (erreur) {
+        console.warn(
+          "[RouteGuard] init() a échoué ou n'a pas abouti ; session traitée " +
+            "comme absente",
+          erreur,
+        );
+      }
       if (cancelled) return;
 
       currentRoute = window.location.pathname;
