@@ -60,7 +60,51 @@ function interceptionsFragiles(): string[] {
   return trouvees;
 }
 
+/**
+ * Une interception d'API exige de bloquer le service worker.
+ *
+ * `public/service-worker.js:118` intercepte TOUT ce qui commence par `/api/`
+ * et refait le `fetch` lui-même (`networkFirstStrategy`). La requête part donc
+ * du service worker, pas de la page, et `page.route` ne la voit jamais.
+ *
+ * L'interception est alors sans effet, **sans que rien ne le signale**. Deux
+ * recettes en dépendaient : l'une échouait en accusant l'affichage, l'autre
+ * PASSAIT en croyant éprouver une branche qu'elle n'atteignait pas.
+ *
+ * Le remède est `test.use({ serviceWorkers: "block" })` au niveau du bloc.
+ * `pwa-contractor.spec.ts` est la seule exception légitime : elle éprouve
+ * précisément la PWA, et intercepte une URL de PAGE (`/c/…`), pas d'API.
+ */
+function interceptionsApiSansBlocage(): string[] {
+  const fautives: string[] = [];
+  for (const fichier of recettes(RACINE)) {
+    const code = readFileSync(fichier, "utf-8")
+      .replace(/\/\*[\s\S]*?\*\//g, "")
+      .replace(/\/\/[^\n]*/g, "");
+    const intercepteUneApi =
+      /page\.route\([^)]*(?:api|organizations|buildings|acps|tickets|invoices|expenses)/.test(
+        code,
+      );
+    if (!intercepteUneApi) continue;
+    if (/serviceWorkers:\s*["']block["']/.test(code)) continue;
+    fautives.push(`  ${relative(process.cwd(), fichier)}`);
+  }
+  return fautives;
+}
+
 describe("les interceptions réseau visent l'URL complète", () => {
+  it("bloque le service worker quand elle intercepte une API", () => {
+    expect(
+      interceptionsApiSansBlocage().join("\n"),
+      "Ces recettes interceptent une route d'API sans bloquer le service " +
+        "worker. `service-worker.js` refait le `fetch` lui-même pour tout " +
+        "`/api/`, si bien que `page.route` ne voit jamais la requête : " +
+        "l'interception est sans effet, et le test croit éprouver un cas " +
+        "qu'il n'atteint pas.\n\n" +
+        'Ajoutez `test.use({ serviceWorkers: "block" })` au bloc.',
+    ).toBe("");
+  });
+
   it("n'emploie aucun motif en chaîne", () => {
     expect(
       interceptionsFragiles().join("\n"),

@@ -316,6 +316,22 @@ test.describe("Story 2 (#698) — ACP au lieu d'Organisation", () => {
     await expect(dialog.getByTestId("building-acp-select")).toHaveValue(acpId);
   });
 
+  // Le SERVICE WORKER doit être bloqué pour que l'interception s'applique.
+  //
+  // Playwright n'intercepte PAS ce qu'un service worker sert. L'application
+  // en enregistre un (`pwa.ts:18`, chargé dans la trace du run 34389409872 :
+  // `GET /service-worker.js → 200`), si bien que `page.route` sur une URL
+  // d'API n'a aucun effet — silencieusement.
+  //
+  // C'est la SECONDE cause de la même panne. J'avais d'abord converti le
+  // motif en expression régulière, parce qu'un motif en chaîne est résolu
+  // contre `baseURL` : c'était vrai, et insuffisant. La réponse réelle
+  // faisait encore 56 236 octets au lieu des deux du `[]` simulé.
+  //
+  // Bloqué ICI seulement : `pwa-contractor.spec.ts` éprouve précisément la
+  // PWA et a besoin de son service worker.
+  test.use({ serviceWorkers: "block" });
+
   test("@edge (bis) aucune ACP disponible — état vide explicite, submit bloqué", async ({
     page,
   }) => {
