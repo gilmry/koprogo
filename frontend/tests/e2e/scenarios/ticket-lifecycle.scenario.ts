@@ -10,7 +10,7 @@
  * Duree video attendue : ~70-90 secondes (rythme humain, multi-role)
  */
 import { test, expect } from "@playwright/test";
-import { amorce } from "../helpers/amorcage";
+import { amorce, aucuneErreurAffichee } from "../helpers/amorcage";
 import { selectOptionByName } from "../helpers/name-match";
 import {
   humanLogin,
@@ -88,6 +88,7 @@ test.describe("Scenario: Cycle de vie d'un ticket de maintenance", () => {
     // page du syndic. Deux ecrans, deux boutons, deux ancres — c'est
     // exactement la regle « un nom par ecran » du guide de style.
     await humanClick(page, "owner-tickets-create-button");
+    await aucuneErreurAffichee(page, "owner-tickets-create-button");
     await page.waitForTimeout(PACE.AFTER_NAVIGATION);
 
     await expect(page.getByTestId("ticket-create-form")).toBeVisible({
@@ -122,6 +123,7 @@ test.describe("Scenario: Cycle de vie d'un ticket de maintenance", () => {
     // ETAPE 5 : Soumettre le ticket
     // ============================================================
     await humanClick(page, "ticket-submit-btn");
+    await aucuneErreurAffichee(page, "ticket-submit-btn");
     await waitForSpinner(page);
     await page.waitForTimeout(PACE.AFTER_NAVIGATION);
 

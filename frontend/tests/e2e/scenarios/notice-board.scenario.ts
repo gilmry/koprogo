@@ -9,7 +9,7 @@
  * Duree video attendue : ~70-90 secondes (rythme humain, multi-role)
  */
 import { test, expect } from "@playwright/test";
-import { amorce } from "../helpers/amorcage";
+import { amorce, aucuneErreurAffichee } from "../helpers/amorcage";
 import { nameContains, selectOptionByName } from "../helpers/name-match";
 import {
   humanLogin,
@@ -186,6 +186,7 @@ test.describe("Scenario: Tableau d'affichage communautaire (multi-role)", () => 
     // ETAPE 3 : Francois cree une nouvelle annonce via le formulaire
     // ============================================================
     await humanClick(page, "notices-create-btn");
+    await aucuneErreurAffichee(page, "notices-create-btn");
     await page.waitForTimeout(PACE.AFTER_NAVIGATION);
 
     await expect(page.getByTestId("notice-create-modal")).toBeVisible({
@@ -211,6 +212,7 @@ test.describe("Scenario: Tableau d'affichage communautaire (multi-role)", () => 
 
     // Soumettre l'annonce
     await humanClick(page, "notice-submit-btn");
+    await aucuneErreurAffichee(page, "notice-submit-btn");
     await waitForSpinner(page);
     await page.waitForTimeout(PACE.AFTER_NAVIGATION);
 

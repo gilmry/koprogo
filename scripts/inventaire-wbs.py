@@ -101,8 +101,15 @@ fonctionnalité entière inatteignable : **aucun copropriétaire ne pouvait
 voter à une consultation** (#849), parce que le handler comparait un
 `users.id` à des `owners.id`. Le commentaire du code avouait le provisoire
 — « for now, we use the authenticated user's ID » — et il n'a jamais été
-remplacé.""",
-  [555,762,845,846,849]),
+remplacé.
+
+La même question posée au vote d'ASSEMBLÉE a trouvé pire : le handler y
+accepte `owner_id`, `unit_id` et `voting_power` **depuis le corps de la
+requête**, sans les vérifier (#850). On peut donc voter au nom d'autrui, et
+déclarer soi-même son poids de vote — alors que la puissance d'un lot est sa
+quotité dans l'acte de base (Art. 3.87 § 2 et § 8). La limite de trois
+procurations n'est vérifiée que pour qui se déclare mandataire.""",
+  [555,762,845,846,849,850]),
 
  ("F", "Ops et infrastructure", """Sauvegardes, TLS, GitOps, et les vulnérabilités de dépendances. F3 a été joué
 le 2026-09-04 et son résultat est **négatif sur deux volets sur trois** : le

@@ -327,6 +327,7 @@ test.describe("Scenario: Sondage multi-role (Francois lance, Alice vote)", () =>
     page.on("dialog", (dialog) => dialog.accept());
 
     await humanClick(page, "poll-close-button");
+    await aucuneErreurAffichee(page, "poll-close-button");
     await waitForSpinner(page);
     await page.waitForTimeout(PACE.AFTER_NAVIGATION);
 

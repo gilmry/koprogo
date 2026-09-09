@@ -90,6 +90,7 @@ test.describe("Scenario: Francois cree et soumet un budget annuel", () => {
     // ETAPE 3 : Ouvrir le formulaire de creation
     // ============================================================
     await humanClick(page, "create-budget-button");
+    await aucuneErreurAffichee(page, "create-budget-button");
     await page.waitForTimeout(PACE.AFTER_NAVIGATION);
 
     await expect(page.getByTestId("budget-building-select")).toBeVisible({
@@ -203,6 +204,7 @@ test.describe("Scenario: Francois cree et soumet un budget annuel", () => {
         page.on("dialog", (dialog) => dialog.accept());
 
         await humanClickLocator(page, submitButton);
+        await aucuneErreurAffichee(page, "submitButton");
         await waitForSpinner(page);
         await page.waitForTimeout(PACE.AFTER_NAVIGATION);
 

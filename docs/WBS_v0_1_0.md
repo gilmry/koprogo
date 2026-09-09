@@ -556,7 +556,7 @@ Ces deux actes ne sont pas délégables : cf. `docs/governance/RESPONSABILITE.md
 
 ## Inventaire complet du périmètre 0.1.0
 
-**72 issues ouvertes** portent l'étiquette `release:0.1.0`. Elles sont
+**73 issues ouvertes** portent l'étiquette `release:0.1.0`. Elles sont
 toutes ci-dessous, sans exception : une issue du périmètre absente du WBS est
 une issue que personne ne planifie.
 
@@ -567,7 +567,7 @@ cinq jours.
 
 | Priorité | Nombre |
 |---|---|
-| critical | 7 |
+| critical | 8 |
 | high | 25 |
 | medium | 18 |
 | — | 22 |
@@ -727,7 +727,7 @@ présent qui atteste d'autre chose que ce qu'il prétend.
 | #832 | medium | Quinze specs Playwright échouent sans erreur d'identité : les ancrages existent mais l'élément n'es… |
 | #696 | — | Instabilité smoke suite Playwright CI : 109 échecs sur specs pré-existantes (occurrence 2026-08-08) |
 
-### Track K — Dette de code et de contrat (5)
+### Track K — Dette de code et de contrat (6)
 
 Les erreurs typées plutôt que classées par sous-chaîne, le contrat OpenAPI
 complet, et la suppression du repli qui fabrique une ACP inexistante.
@@ -746,9 +746,17 @@ voter à une consultation** (#849), parce que le handler comparait un
 — « for now, we use the authenticated user's ID » — et il n'a jamais été
 remplacé.
 
+La même question posée au vote d'ASSEMBLÉE a trouvé pire : le handler y
+accepte `owner_id`, `unit_id` et `voting_power` **depuis le corps de la
+requête**, sans les vérifier (#850). On peut donc voter au nom d'autrui, et
+déclarer soi-même son poids de vote — alors que la puissance d'un lot est sa
+quotité dans l'acte de base (Art. 3.87 § 2 et § 8). La limite de trois
+procurations n'est vérifiée que pour qui se déclare mandataire.
+
 | Issue | Prio | Intitulé |
 |---|---|---|
 | #845 | critical | Trente routes ne vérifient aucune identité : modifier ou supprimer une assemblée générale ne demand… |
+| #850 | critical | Le vote en assemblée accepte l'identité du votant, son lot et sa puissance de vote depuis le corps … |
 | #849 | high | Aucun copropriétaire ne peut voter à une consultation : le handler compare un identifiant d'utilisa… |
 | #555 | medium | EPIC: migrer Result<_, String> → Result<_, AppError> (1263 violations, CRITICAL.md rule 4) |
 | #846 | medium | Onze tables et une vue existent en base et ne sont lues par aucun code, dont celle qui devait valid… |

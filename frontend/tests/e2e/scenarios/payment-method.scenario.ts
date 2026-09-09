@@ -11,7 +11,7 @@
  * Duree video attendue : ~40-50 secondes (rythme humain)
  */
 import { test, expect } from "@playwright/test";
-import { amorce } from "../helpers/amorcage";
+import { amorce, aucuneErreurAffichee } from "../helpers/amorcage";
 import {
   humanLogin,
   humanFill,
@@ -93,6 +93,7 @@ test.describe("Scenario: Gestion des moyens de paiement (Alice)", () => {
     // ETAPE 4 : Cliquer sur "Ajouter un moyen de paiement"
     // ============================================================
     await humanClick(page, "add-payment-method-btn");
+    await aucuneErreurAffichee(page, "add-payment-method-btn");
     await page.waitForTimeout(PACE.AFTER_NAVIGATION);
 
     await expect(page.getByTestId("method-type-select")).toBeVisible({
@@ -127,6 +128,7 @@ test.describe("Scenario: Gestion des moyens de paiement (Alice)", () => {
     // ETAPE 6 : Soumettre le formulaire
     // ============================================================
     await humanClick(page, "submit-btn");
+    await aucuneErreurAffichee(page, "submit-btn");
     await waitForSpinner(page);
     await page.waitForTimeout(PACE.AFTER_NAVIGATION);
 
