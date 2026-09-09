@@ -30,8 +30,8 @@
       $authStore.user?.role === UserRole.SUPERADMIN,
   );
 
-  let poll: Poll | null = $state(null);
-  let results: PollResultsType | null = $state(null);
+  let poll = $state<Poll | null>(null);
+  let results = $state<PollResultsType | null>(null);
   let loading = $state(true);
   let error = $state("");
 
@@ -45,11 +45,11 @@
   /// l'annuler le retire : trois actes qui engagent la communauté.
   let actionEnAttente = $state<"publier" | "cloturer" | "annuler" | null>(null);
 
-  let selectedOptionId: string | null = $state(null);
+  let selectedOptionId = $state<string | null>(null);
   // Même défaut que UnitList : un Set natif n'est pas rendu réactif par
   // `$state`, et la réaffectation à soi-même ne déclenche rien en mode runes.
   let selectedOptions = new SvelteSet<string>();
-  let ratingValue: number | null = $state(null);
+  let ratingValue = $state<number | null>(null);
   let openEndedText = $state("");
   let votingInProgress = $state(false);
   let votingError = $state("");

@@ -3245,7 +3245,9 @@
       "validUntil": "Valable jusqu'au",
       "warranty": "Garantie",
       "warrantyDesc": "Durée de garantie en années",
-      "warrantyWeight": "Garantie (20%)"
+      "warrantyWeight": "Garantie (20%)",
+      "compliantDetail": "Trois devis au moins ont été comparés, comme le recommande la pratique professionnelle belge pour des travaux supérieurs à 5 000 €.",
+      "recommendationDetail": "La pratique professionnelle belge recommande de comparer au moins trois devis pour des travaux supérieurs à 5 000 €."
     },
     "contractor": "Prestataire",
     "create": "Demander un devis",

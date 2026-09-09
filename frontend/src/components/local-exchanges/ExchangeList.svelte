@@ -33,7 +33,7 @@
   let exchanges: LocalExchange[] = $state([]);
   let filteredExchanges: LocalExchange[] = $state([]);
   let loading: boolean = $state(true);
-  let error: string | null = $state(null);
+  let error = $state<string | null>(null);
 
   // Filters
   let filterType: ExchangeType | "all" = $state("all");

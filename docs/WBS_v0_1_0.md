@@ -556,7 +556,7 @@ Ces deux actes ne sont pas délégables : cf. `docs/governance/RESPONSABILITE.md
 
 ## Inventaire complet du périmètre 0.1.0
 
-**73 issues ouvertes** portent l'étiquette `release:0.1.0`. Elles sont
+**74 issues ouvertes** portent l'étiquette `release:0.1.0`. Elles sont
 toutes ci-dessous, sans exception : une issue du périmètre absente du WBS est
 une issue que personne ne planifie.
 
@@ -568,7 +568,7 @@ cinq jours.
 | Priorité | Nombre |
 |---|---|
 | critical | 8 |
-| high | 25 |
+| high | 26 |
 | medium | 18 |
 | — | 22 |
 
@@ -727,7 +727,7 @@ présent qui atteste d'autre chose que ce qu'il prétend.
 | #832 | medium | Quinze specs Playwright échouent sans erreur d'identité : les ancrages existent mais l'élément n'es… |
 | #696 | — | Instabilité smoke suite Playwright CI : 109 échecs sur specs pré-existantes (occurrence 2026-08-08) |
 
-### Track K — Dette de code et de contrat (6)
+### Track K — Dette de code et de contrat (7)
 
 Les erreurs typées plutôt que classées par sous-chaîne, le contrat OpenAPI
 complet, et la suppression du repli qui fabrique une ACP inexistante.
@@ -753,11 +753,19 @@ déclarer soi-même son poids de vote — alors que la puissance d'un lot est sa
 quotité dans l'acte de base (Art. 3.87 § 2 et § 8). La limite de trois
 procurations n'est vérifiée que pour qui se déclare mandataire.
 
+Et une divergence de contrat que rien ne pouvait voir : **la table de
+comparaison de devis n'a jamais affiché une ligne** (#851), parce qu'aucun
+nom de champ du frontend ne correspond au DTO servi. `svelte-check` n'avait
+rien à dire, une annotation inopérante — `let x: T | null = $state(null)`,
+que l'outil réduit à `never` — ayant chassé le type hors du bloc script, où
+il aurait mordu.
+
 | Issue | Prio | Intitulé |
 |---|---|---|
 | #845 | critical | Trente routes ne vérifient aucune identité : modifier ou supprimer une assemblée générale ne demand… |
 | #850 | critical | Le vote en assemblée accepte l'identité du votant, son lot et sa puissance de vote depuis le corps … |
 | #849 | high | Aucun copropriétaire ne peut voter à une consultation : le handler compare un identifiant d'utilisa… |
+| #851 | high | La table de comparaison de devis n'a jamais affiché une ligne : aucun nom de champ ne correspond au… |
 | #555 | medium | EPIC: migrer Result<_, String> → Result<_, AppError> (1263 violations, CRITICAL.md rule 4) |
 | #846 | medium | Onze tables et une vue existent en base et ne sont lues par aucun code, dont celle qui devait valid… |
 | #762 | — | Typer les erreurs applicatives au lieu de les classer par sous-chaînes |

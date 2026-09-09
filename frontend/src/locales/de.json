@@ -3245,7 +3245,9 @@
       "validUntil": "Gültig bis",
       "warranty": "Garantie",
       "warrantyDesc": "Garantiedauer in Jahren",
-      "warrantyWeight": "Garantie (20%)"
+      "warrantyWeight": "Garantie (20%)",
+      "compliantDetail": "Mindestens drei Angebote wurden verglichen, wie es die belgische Fachpraxis für Arbeiten über 5 000 € empfiehlt.",
+      "recommendationDetail": "Die belgische Fachpraxis empfiehlt, für Arbeiten über 5 000 € mindestens drei Angebote zu vergleichen."
     },
     "contractor": "Auftragnehmer",
     "create": "Angebot anfordern",

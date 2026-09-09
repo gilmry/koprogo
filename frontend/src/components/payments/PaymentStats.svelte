@@ -13,7 +13,7 @@
     buildingId?: string | undefined;
   } = $props();
 
-  let stats: PaymentStats | null = $state(null);
+  let stats = $state<PaymentStats | null>(null);
   let loading = $state(true);
   let error = $state("");
 

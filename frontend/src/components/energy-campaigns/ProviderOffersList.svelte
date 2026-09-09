@@ -21,7 +21,7 @@
   let offers: ProviderOffer[] = $state([]);
   let loading = $state(true);
   let error = $state("");
-  let bestOffer: ProviderOffer | null = $state(null);
+  let bestOffer = $state<ProviderOffer | null>(null);
 
   $effect(() => {
     loadOffers();

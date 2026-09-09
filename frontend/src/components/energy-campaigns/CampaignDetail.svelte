@@ -32,7 +32,7 @@
     isAdmin?: boolean;
   } = $props();
 
-  let campaign: EnergyCampaign | null = $state(null);
+  let campaign = $state<EnergyCampaign | null>(null);
 
   // L'action en attente de confirmation.
   //
@@ -45,7 +45,7 @@
   // Retirer un consentement est un droit RGPD : le geste doit aboutir.
   let suppressionEnAttente = $state(false);
   let cibleEnAttente = $state<string | null>(null);
-  let stats: CampaignStatistics | null = $state(null);
+  let stats = $state<CampaignStatistics | null>(null);
   let myUploads: EnergyBillUploadType[] = $state([]);
   let loading = $state(true);
   let error = $state("");

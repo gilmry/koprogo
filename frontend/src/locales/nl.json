@@ -3245,7 +3245,9 @@
       "validUntil": "Geldig tot",
       "warranty": "Garantie",
       "warrantyDesc": "Garantieduur in jaren",
-      "warrantyWeight": "Garantie (20%)"
+      "warrantyWeight": "Garantie (20%)",
+      "compliantDetail": "Er werden minstens drie offertes vergeleken, zoals de Belgische professionele praktijk aanbeveelt voor werken boven 5 000 €.",
+      "recommendationDetail": "De Belgische professionele praktijk beveelt aan minstens drie offertes te vergelijken voor werken boven 5 000 €."
     },
     "contractor": "Aannemer",
     "create": "Offerte aanvragen",

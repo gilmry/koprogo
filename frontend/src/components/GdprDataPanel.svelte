@@ -11,7 +11,7 @@
   let loading = $state(false);
   let canErase = $state(true);
   let checkingErasure = $state(false);
-  let exportData: GdprExport | null = $state(null);
+  let exportData = $state<GdprExport | null>(null);
   let showExportModal = $state(false);
   let showEraseConfirmation = $state(false);
   /// Mot de passe de confirmation de l'effacement (Art. 17 RGPD).
@@ -21,7 +21,7 @@
   /// l'effacement était donc inatteignable pour tout le monde : la modale
   /// existait, le bouton existait, et l'appel repartait en erreur. Cf. #832.
   let motDePasseEffacement = $state("");
-  let erasureResult: GdprEraseResponse | null = $state(null);
+  let erasureResult = $state<GdprEraseResponse | null>(null);
 
   let showRectifyModal = $state(false);
   let rectifyEmail = $state("");

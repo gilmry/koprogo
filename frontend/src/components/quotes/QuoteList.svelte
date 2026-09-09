@@ -25,7 +25,7 @@
   let loading = $state(true);
   let error = $state("");
   let statusFilter: QuoteStatus | "all" = $state("all");
-  let expandedId: string | null = $state(null);
+  let expandedId = $state<string | null>(null);
   let showCreateForm = $state(false);
   let createLoading = $state(false);
 

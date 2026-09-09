@@ -83,7 +83,7 @@
   /** Dernière erreur de validation client (pré-upload). */
   let lastError = $state<string>("");
   /** Référence au file input — déclenché par click sur dropzone. */
-  let fileInputEl: HTMLInputElement | null = $state(null);
+  let fileInputEl = $state<HTMLInputElement | null>(null);
 
   // ---------------------------------------------------------------------------
   // Derivations

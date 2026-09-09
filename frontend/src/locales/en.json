@@ -3245,7 +3245,9 @@
       "validUntil": "Valid until",
       "warranty": "Warranty",
       "warrantyDesc": "Warranty duration in years",
-      "warrantyWeight": "Warranty (20%)"
+      "warrantyWeight": "Warranty (20%)",
+      "compliantDetail": "At least three quotes were compared, as Belgian professional practice recommends for works above €5,000.",
+      "recommendationDetail": "Belgian professional practice recommends comparing at least three quotes for works above €5,000."
     },
     "contractor": "Contractor",
     "create": "Request Quote",

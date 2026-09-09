@@ -34,7 +34,7 @@
   });
 
   let loading: boolean = $state(false);
-  let error: string | null = $state(null);
+  let error = $state<string | null>(null);
   let success: boolean = $state(false);
 
   async function handleSubmit(e: Event) {

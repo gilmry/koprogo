@@ -53,7 +53,7 @@
   let error = $state("");
   let showCreateForm = $state(false);
   let activeTab: "all" | "overdue" | "upcoming" = $state("all");
-  let selectedInspection: TechnicalInspection | null = $state(null);
+  let selectedInspection = $state<TechnicalInspection | null>(null);
   let detailOpen = $state(false);
 
   let form: Partial<CreateInspectionDto> = $state(resetForm());

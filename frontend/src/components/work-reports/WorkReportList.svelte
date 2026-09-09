@@ -51,7 +51,7 @@
   let error = $state("");
   let showCreateForm = $state(false);
   let filterType = $state("all");
-  let selectedReport: WorkReport | null = $state(null);
+  let selectedReport = $state<WorkReport | null>(null);
   let detailOpen = $state(false);
 
   // Create form

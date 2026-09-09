@@ -108,8 +108,15 @@ accepte `owner_id`, `unit_id` et `voting_power` **depuis le corps de la
 requête**, sans les vérifier (#850). On peut donc voter au nom d'autrui, et
 déclarer soi-même son poids de vote — alors que la puissance d'un lot est sa
 quotité dans l'acte de base (Art. 3.87 § 2 et § 8). La limite de trois
-procurations n'est vérifiée que pour qui se déclare mandataire.""",
-  [555,762,845,846,849,850]),
+procurations n'est vérifiée que pour qui se déclare mandataire.
+
+Et une divergence de contrat que rien ne pouvait voir : **la table de
+comparaison de devis n'a jamais affiché une ligne** (#851), parce qu'aucun
+nom de champ du frontend ne correspond au DTO servi. `svelte-check` n'avait
+rien à dire, une annotation inopérante — `let x: T | null = $state(null)`,
+que l'outil réduit à `never` — ayant chassé le type hors du bloc script, où
+il aurait mordu.""",
+  [555,762,845,846,849,850,851]),
 
  ("F", "Ops et infrastructure", """Sauvegardes, TLS, GitOps, et les vulnérabilités de dépendances. F3 a été joué
 le 2026-09-04 et son résultat est **négatif sur deux volets sur trois** : le
