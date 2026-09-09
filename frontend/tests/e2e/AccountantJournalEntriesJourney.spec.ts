@@ -98,11 +98,38 @@ test.describe("Comptable — Écritures comptables, parcours de création rempli
     page,
   }) => {
     const { buildingId } = await loginAsAccountant(page, "journey-journal");
-    await page.goto(`/journal-entries?buildingId=${buildingId}`, {
-      waitUntil: "networkidle",
-    });
+    await page.goto("/journal-entries", { waitUntil: "networkidle" });
 
-    await page.locator("#description").fill(`Facture eau ${Date.now()}`);
+    // L'immeuble est choisi dans la BARRE DE CONTEXTE, pas par l'URL.
+    //
+    // Le test naviguait vers `/journal-entries?buildingId=…`. Le paramètre
+    // n'est pas lu : `JournalEntriesPanel` dérive son immeuble du périmètre
+    // sélectionné (`buildingId ?? scope.selectedBuildingId`), et
+    // `stores/scope.svelte.ts` annonce que « le rehydrate sur reload sera
+    // porté par Story 2.5 (deep-links) ». C'est l'arbitrage #841, non tranché.
+    //
+    // L'instantané de page du run 34354176811 le montre : le comptable est
+    // bien connecté, la page est bien celle des écritures, et elle affiche
+    // « Sélectionnez un immeuble — choisissez-en un dans la barre de
+    // contexte ». Le formulaire n'est donc pas monté, et `#description`
+    // n'existe pas.
+    //
+    // On emprunte le chemin supporté aujourd'hui. À simplifier en un
+    // deep-link le jour où #841 sera tranchée.
+    const selecteur = page.getByTestId("building-selector-input");
+    await expect(selecteur).toBeVisible({ timeout: 15_000 });
+    await selecteur.click();
+    await selecteur.fill("journey-journal");
+    const resultat = page.getByTestId(`building-selector-result-${buildingId}`);
+    await expect(resultat).toBeVisible({ timeout: 10_000 });
+    await resultat.click();
+
+    await expect(page.getByTestId("journal-entry-form")).toBeVisible({
+      timeout: 15_000,
+    });
+    await page
+      .getByTestId("journal-entry-description-input")
+      .fill(`Facture eau ${Date.now()}`);
 
     // 604002 "Eau" / 440 "Fournisseurs" — comptes PCMN réels du seed belge
     // (get_belgian_pcmn_seed_data), contrairement au "6100" du placeholder

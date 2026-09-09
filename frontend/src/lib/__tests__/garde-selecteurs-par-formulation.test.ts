@@ -54,7 +54,7 @@ const RACINE_E2E = "tests/e2e";
 /** Le décompte relevé le 2026-09-08. Il ne doit que baisser. */
 // 106 → 121 : la garde ne lisait que `.spec.ts` et manquait les douze
 // `.scenario.ts`. Quatrième fois que ce cliquet monte en se corrigeant.
-const DETTE_AU_2026_09_08 = 119;
+const DETTE_AU_2026_09_08 = 118;
 
 /** Le nombre de specs ce jour-là : on ne solde pas la dette en les supprimant. */
 const SPECS_AU_2026_09_08 = 100;

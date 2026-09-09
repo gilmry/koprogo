@@ -111,10 +111,12 @@ export async function aucuneErreurAffichee(
  * ces scénarios sont enregistrés en vidéo comme documentation vivante, et la
  * confirmation fait partie du parcours réel.
  */
-export async function confirmerSiDemande(page: Page): Promise<void> {
+export async function confirmerSiDemande(page: Page): Promise<boolean> {
   const bouton = page.getByTestId("confirm-dialog-confirm");
   if (await bouton.isVisible({ timeout: 2000 }).catch(() => false)) {
     await bouton.click();
     await page.waitForTimeout(300);
+    return true;
   }
+  return false;
 }

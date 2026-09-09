@@ -1,4 +1,5 @@
-import { test, expect } from "@playwright/test";
+import { test, expect, type Page } from "@playwright/test";
+import { confirmerSiDemande } from "./helpers/amorcage";
 import {
   loginAsAccountantEmetteur,
   loginAsAccountantAvecImmeuble,
@@ -6,6 +7,35 @@ import {
   loginAsSyndicWithExpense,
   loginAsSyndicWithUnit,
 } from "./helpers/auth";
+
+/**
+ * Choisit un immeuble dans la BARRE DE CONTEXTE, seul chemin supporté.
+ *
+ * Les écrans comptables lisent le périmètre sélectionné, jamais le paramètre
+ * d'URL : `stores/scope.svelte.ts` annonce que « le rehydrate sur reload sera
+ * porté par Story 2.5 (deep-links) ». Les tests écrivaient pourtant
+ * `?buildingId=…` en citant #841 dans leur commentaire — ils connaissaient le
+ * problème et espéraient que le deep-link marche.
+ *
+ * L'instantané de page du run 34354176811 le montre : la page des écritures
+ * s'affiche bien, et dit « Sélectionnez un immeuble — choisissez-en un dans
+ * la barre de contexte ». Le formulaire et la liste ne sont donc pas montés.
+ *
+ * À remplacer par un deep-link le jour où #841 sera tranchée.
+ */
+async function choisirImmeuble(
+  page: Page,
+  buildingId: string,
+  prefixe: string,
+): Promise<void> {
+  const selecteur = page.getByTestId("building-selector-input");
+  await expect(selecteur).toBeVisible({ timeout: 15_000 });
+  await selecteur.click();
+  await selecteur.fill(prefixe);
+  const resultat = page.getByTestId(`building-selector-result-${buildingId}`);
+  await expect(resultat).toBeVisible({ timeout: 10_000 });
+  await resultat.click();
+}
 
 const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
 
@@ -1178,14 +1208,16 @@ test.describe("Workflows financiers 2026-09-01 — non-régression", () => {
   }) => {
     await loginAsSyndicWithBuilding(page, "fin-f5a");
 
-    // SANS ceci, Playwright rejette le `confirm()` et rien ne part : c'est
-    // très exactement le faux positif du rapport.
-    let dialogueVu = false;
-    page.on("dialog", async (d) => {
-      dialogueVu = true;
-      await d.accept();
-    });
-
+    // La confirmation est une MODALE depuis #844, plus un `confirm()` natif.
+    //
+    // Le test installait `page.on("dialog", …)` et vérifiait `dialogueVu`.
+    // Le gestionnaire ne se déclenche plus, la modale n'est jamais confirmée,
+    // et la requête ne part pas : `waitForRequest` expirait au bout de quinze
+    // secondes.
+    //
+    // L'INTENTION du test reste bonne — « le bouton est gardé par une
+    // confirmation » — et c'est elle qu'on préserve : `confirmerSiDemande`
+    // renvoie désormais si une confirmation a bien été présentée.
     const appel = page.waitForRequest(
       (r) =>
         r.url().includes("/payment-reminders/bulk-create") &&
@@ -1194,15 +1226,17 @@ test.describe("Workflows financiers 2026-09-01 — non-régression", () => {
     );
 
     await page.goto("/payment-reminders");
-    await page
-      .getByRole("button", {
-        name: /relances automatiques|automatic reminders/i,
-      })
-      .first()
-      .click();
+    // Par l'ancre : le libellé bilingue `/relances automatiques|automatic
+    // reminders/i` était un pari sur la langue étalé sur deux d'entre elles,
+    // et il ne survit ni au néerlandais ni à l'allemand.
+    await page.getByTestId("payment-reminder-bulk-create-button").click();
+    const confirmationPresentee = await confirmerSiDemande(page);
 
     await appel;
-    expect(dialogueVu, "le bouton est gardé par une confirmation").toBe(true);
+    expect(
+      confirmationPresentee,
+      "le bouton doit être gardé par une confirmation",
+    ).toBe(true);
   });
 
   test("F5 — « Nouveau budget » ouvre bien le formulaire", async ({ page }) => {
@@ -1238,7 +1272,8 @@ test.describe("Workflows financiers 2026-09-01 — non-régression", () => {
     // périmètre, et il est nul au premier rendu de chaque page dans une
     // application Astro multi-page. Cf. #841.
     const { buildingId } = await loginAsAccountantAvecImmeuble(page, "fin-f6a");
-    await page.goto(`/journal-entries?buildingId=${buildingId}`);
+    await page.goto("/journal-entries");
+    await choisirImmeuble(page, buildingId, "fin-f6a");
 
     const liste = page.getByTestId("journal-entry-list");
     await expect(liste, "la vue liste manquait entièrement").toBeVisible({
@@ -1284,7 +1319,8 @@ test.describe("Workflows financiers 2026-09-01 — non-régression", () => {
     });
     expect(creation.status(), await creation.text()).toBe(201);
 
-    await page.goto(`/journal-entries?buildingId=${ctx.buildingId}`);
+    await page.goto("/journal-entries");
+    await choisirImmeuble(page, ctx.buildingId, "fin-f6b");
     await expect(page.getByTestId("journal-entry-list")).toBeVisible({
       timeout: 15000,
     });

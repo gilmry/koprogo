@@ -34,7 +34,7 @@ import { join, relative } from "node:path";
 const RACINE = join(process.cwd(), "tests/e2e");
 
 /** Le décompte relevé le 2026-09-09, après correction des quatre en échec. */
-const DETTE_AU_2026_09_09 = 7;
+const DETTE_AU_2026_09_09 = 6;
 
 const GESTIONNAIRE = /page\.(?:on|once)\(\s*["']dialog["']/g;
 
