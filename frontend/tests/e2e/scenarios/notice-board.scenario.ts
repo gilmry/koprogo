@@ -298,7 +298,17 @@ test.describe("Scenario: Tableau d'affichage communautaire (multi-role)", () => 
       timeout: 15000,
     });
 
-    await expect(page.locator("h1")).toContainText("Barbecue de quartier");
+    // Le `h1` est cherche DANS le detail de l'annonce, pas dans la page.
+    //
+    // `locator("h1")` resolvait quatre elements et Playwright refusait en mode
+    // strict : trois venaient de la barre d'outils de developpement d'Astro
+    // (« Audit », « No accessibility or performance issues detected »,
+    // « Settings »). Elle est desormais retiree sous Playwright, mais porter
+    // l'assertion sur le conteneur reste plus juste : c'est le titre de CETTE
+    // annonce qu'on verifie, pas le premier titre de la page.
+    await expect(page.getByTestId("notice-detail").locator("h1")).toContainText(
+      "Barbecue de quartier",
+    );
     await stepPause(page);
 
     // ============================================================

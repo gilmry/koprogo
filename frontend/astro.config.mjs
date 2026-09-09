@@ -5,6 +5,26 @@ import AstroPWA from "@vite-pwa/astro";
 
 export default defineConfig({
   output: "static",
+
+  /**
+   * La barre d'outils de développement est retirée dès qu'on pilote le
+   * navigateur.
+   *
+   * Elle injecte ses propres `<h1>` dans la page — « Audit », « No
+   * accessibility or performance issues detected », « Settings ». Le 2026-09-09,
+   * `notice-board` a échoué dessus : `locator("h1")` résolvait QUATRE éléments,
+   * dont trois de la barre, et Playwright refuse en mode strict. Le titre de
+   * l'annonce était pourtant le bon.
+   *
+   * Elle est surtout VISIBLE : les scénarios `scenarios` sont enregistrés en
+   * vidéo comme documentation vivante, et la barre apparaît au bas de chaque
+   * image. Filmer le produit pour des copropriétaires en y laissant un outil
+   * de développeur, c'est montrer autre chose que le produit.
+   *
+   * Conditionnée à `PLAYWRIGHT`, pour ne rien retirer au développement
+   * quotidien.
+   */
+  devToolbar: { enabled: !process.env.PLAYWRIGHT },
   integrations: [
     svelte(),
     AstroPWA({

@@ -130,10 +130,24 @@ test.describe("Scenario: Comparaison de devis entrepreneurs (Francois)", () => {
       const validityDate = new Date();
       validityDate.setMonth(validityDate.getMonth() + 3);
 
+      // UN SEUL titre de projet pour les trois devis.
+      //
+      // Le scenario mettait le nom de l'entrepreneur dans `project_title` —
+      // « Renovation toiture - Entreprise Peeters », « - Vermeersch & Fils »,
+      // « - Claessens SPRL ». `POST /quotes/compare` refusait alors avec
+      // « All quotes must be for the same project »
+      // (`quote_use_cases.rs:189`), et la page affichait « Erreur lors du
+      // chargement de la comparaison » sans dire pourquoi.
+      //
+      // La regle du produit est juste, et c'est la pratique belge : comparer
+      // trois devis suppose le MEME chantier. C'est le scenario qui melangeait
+      // le projet et son soumissionnaire. L'entrepreneur est deja porte par
+      // `contractor_id`.
+      const PROJET = "Renovation toiture";
+
       const quoteSpecs = [
         {
           contractor_idx: 0,
-          title: "Renovation toiture - Entreprise Peeters",
           amount_excl_vat: 12500.0,
           vat_rate: 0.06,
           estimated_duration_days: 21,
@@ -141,7 +155,6 @@ test.describe("Scenario: Comparaison de devis entrepreneurs (Francois)", () => {
         },
         {
           contractor_idx: 1,
-          title: "Renovation toiture - Vermeersch & Fils",
           amount_excl_vat: 14800.0,
           vat_rate: 0.06,
           estimated_duration_days: 14,
@@ -149,7 +162,6 @@ test.describe("Scenario: Comparaison de devis entrepreneurs (Francois)", () => {
         },
         {
           contractor_idx: 2,
-          title: "Renovation toiture - Claessens SPRL",
           amount_excl_vat: 11500.0,
           vat_rate: 0.06,
           estimated_duration_days: 28,
@@ -162,7 +174,7 @@ test.describe("Scenario: Comparaison de devis entrepreneurs (Francois)", () => {
           data: {
             building_id: building.id,
             contractor_id: contractorIds[spec.contractor_idx],
-            project_title: spec.title,
+            project_title: PROJET,
             project_description:
               "Renovation complete de la toiture incluant isolation, etancheite et remplacement des tuiles.",
             amount_excl_vat: spec.amount_excl_vat,

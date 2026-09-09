@@ -897,6 +897,11 @@ jobs:
       - name: Start frontend dev server
         env:
           PUBLIC_API_URL: http://localhost:8080/api/v1
+          # Retire la barre d'outils de développement d'Astro : elle injecte
+          # ses propres `<h1>` (« Audit », « Settings »), ce qui fait échouer
+          # les sélecteurs en mode strict, et elle apparaît au bas de chaque
+          # vidéo de documentation vivante.
+          PLAYWRIGHT: "1"
         run: |
           cd frontend
           node scripts/generate-config.js
