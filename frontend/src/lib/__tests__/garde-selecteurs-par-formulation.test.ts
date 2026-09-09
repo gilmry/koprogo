@@ -52,7 +52,9 @@ import { join } from "node:path";
 const RACINE_E2E = "tests/e2e";
 
 /** Le décompte relevé le 2026-09-08. Il ne doit que baisser. */
-const DETTE_AU_2026_09_08 = 106;
+// 106 → 121 : la garde ne lisait que `.spec.ts` et manquait les douze
+// `.scenario.ts`. Quatrième fois que ce cliquet monte en se corrigeant.
+const DETTE_AU_2026_09_08 = 121;
 
 /** Le nombre de specs ce jour-là : on ne solde pas la dette en les supprimant. */
 const SPECS_AU_2026_09_08 = 100;
@@ -62,7 +64,19 @@ function specs(racine: string): string[] {
   for (const entree of readdirSync(racine)) {
     const chemin = join(racine, entree);
     if (statSync(chemin).isDirectory()) trouvees.push(...specs(chemin));
-    else if (entree.endsWith(".spec.ts")) trouvees.push(chemin);
+    // `.scenario.ts` AUTANT que `.spec.ts`.
+    //
+    // Le filtre ne retenait que `.spec.ts`, et les douze fichiers du projet
+    // `scenarios` s'appellent `.scenario.ts` : la garde ne les lisait pas.
+    // Elle a donc laissé passer `filter({ hasText: /vote/i }).last()`, qui a
+    // fait cliquer « Voir les votes » au lieu de « Soumettre le vote », et
+    // `text=2026` qui résolvait deux éléments dont le copyright du pied de
+    // page.
+    //
+    // Ce sont précisément les recettes filmées comme documentation vivante :
+    // les moins surveillées étaient les plus visibles.
+    else if (entree.endsWith(".spec.ts") || entree.endsWith(".scenario.ts"))
+      trouvees.push(chemin);
   }
   return trouvees;
 }

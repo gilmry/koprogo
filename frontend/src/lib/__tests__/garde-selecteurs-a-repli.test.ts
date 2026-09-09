@@ -55,7 +55,9 @@ function specs(repertoire: string): string[] {
     const chemin = join(repertoire, entree);
     if (statSync(chemin).isDirectory()) {
       trouves.push(...specs(chemin));
-    } else if (entree.endsWith(".spec.ts")) {
+      // `.scenario.ts` autant que `.spec.ts` : les douze fichiers du projet
+      // `scenarios` échappaient au relevé.
+    } else if (entree.endsWith(".spec.ts") || entree.endsWith(".scenario.ts")) {
       trouves.push(chemin);
     }
   }

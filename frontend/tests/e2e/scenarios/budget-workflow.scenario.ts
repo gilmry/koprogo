@@ -172,7 +172,18 @@ test.describe("Scenario: Francois cree et soumet un budget annuel", () => {
       timeout: 15000,
     });
 
-    await expect(page.locator("text=2026")).toBeVisible({ timeout: 10000 });
+    // L'annee est cherchee DANS la ligne du budget, pas dans la page.
+    //
+    // `locator("text=2026")` resolvait deux elements et Playwright refusait en
+    // mode strict : la cellule du budget, et « © 2026 KoproGo » du pied de
+    // page. La capture montre pourtant le budget parfaitement affiche —
+    // 2026, Residence du Parc Royal, 60 000 €, Brouillon.
+    //
+    // C'est le meme piege que le `h1` de `notice-board` : une assertion posee
+    // sur la page entiere, la ou seule une partie est en cause.
+    await expect(page.getByTestId("budget-row").first()).toContainText("2026", {
+      timeout: 10000,
+    });
 
     await stepPause(page);
 

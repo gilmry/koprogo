@@ -52,10 +52,15 @@ import { join } from "node:path";
 const RACINE = join(process.cwd(), "tests/e2e");
 
 /** Specs Playwright sans étiquette de catégorie. **Ne doit que BAISSER.** */
-const SANS_ETIQUETTE_AU_2026_09_08 = 354;
+// 354 → 366 le 2026-09-09. **Le chiffre monte parce que la garde voit plus,
+// pas parce que le dépôt s'est dégradé** : son filtre ne retenait que
+// `.spec.ts` et ignorait les douze `.scenario.ts` du projet de documentation
+// vivante — ceux qu'on filme, donc les plus visibles.
+const SANS_ETIQUETTE_AU_2026_09_08 = 366;
 
 /** Total des specs. **Ne doit pas BAISSER.** */
-const TOTAL_AU_2026_09_08 = 420;
+// 420 → 432, même cause : les douze scénarios entrent dans le décompte.
+const TOTAL_AU_2026_09_08 = 432;
 
 const CATEGORIES = ["@happy", "@edge", "@security", "@negative"];
 
@@ -68,7 +73,9 @@ function specs(dossier: string): string[] {
     const chemin = join(dossier, entree);
     if (statSync(chemin).isDirectory()) {
       trouves.push(...specs(chemin));
-    } else if (chemin.endsWith(".spec.ts")) {
+      // `.scenario.ts` autant que `.spec.ts`. Le total de 420 excluait les
+      // douze scénarios de documentation vivante — ceux qu'on filme.
+    } else if (chemin.endsWith(".spec.ts") || chemin.endsWith(".scenario.ts")) {
       trouves.push(chemin);
     }
   }

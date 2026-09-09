@@ -284,9 +284,22 @@ test.describe("Scenario: SEL multi-role (Alice offre, Bob parcourt)", () => {
       await humanFill(page, "exchange-search-input", "perceuse");
       await page.waitForTimeout(PACE.BETWEEN_STEPS);
 
-      await expect(page.locator("text=perceuse-visseuse")).toBeVisible({
-        timeout: 10000,
-      });
+      // Le resultat de recherche est cherche DANS la ligne d'echange.
+      //
+      // `locator("text=perceuse-visseuse")` resolvait deux elements — le titre
+      // « Pret de perceuse-visseuse » ET la description « Perceuse-visseuse
+      // sans fil Bosch… » — et Playwright refusait en mode strict. La capture
+      // montre pourtant la recherche parfaitement filtree : « 1 resultat(s) ».
+      //
+      // Troisieme occurrence du meme piege apres le `h1` de `notice-board` et
+      // le « 2026 » de `budget-workflow` : une assertion posee sur la page
+      // entiere la ou seule une partie est en cause. Ce que la recherche doit
+      // prouver, c'est qu'il reste UNE ligne, et qu'elle porte le bon objet.
+      await expect(page.getByTestId("exchange-list-row")).toHaveCount(1);
+      await expect(page.getByTestId("exchange-list-row").first()).toContainText(
+        "perceuse-visseuse",
+        { timeout: 10000 },
+      );
 
       // Effacer la recherche
       await humanFill(page, "exchange-search-input", "");
