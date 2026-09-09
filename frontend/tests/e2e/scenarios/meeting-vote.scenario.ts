@@ -11,7 +11,11 @@
  * Duree video attendue : ~90-120 secondes (rythme humain, multi-role)
  */
 import { test, expect } from "@playwright/test";
-import { amorce, aucuneErreurAffichee } from "../helpers/amorcage";
+import {
+  amorce,
+  aucuneErreurAffichee,
+  confirmerSiDemande,
+} from "../helpers/amorcage";
 import {
   humanLogin,
   humanClick,
@@ -160,6 +164,7 @@ test.describe("Scenario: Vote multi-role sur une resolution en AG", () => {
     await voteBtnPour.scrollIntoViewIfNeeded();
     await page.waitForTimeout(PACE.BEFORE_CLICK);
     await humanClickLocator(page, voteBtnPour);
+    await confirmerSiDemande(page);
     await aucuneErreurAffichee(page, "choix « Pour » d'Alice");
     await page.waitForTimeout(PACE.AFTER_CLICK);
 
@@ -179,6 +184,7 @@ test.describe("Scenario: Vote multi-role sur une resolution en AG", () => {
       .filter({ hasText: /vote/i })
       .last();
     await humanClickLocator(page, submitVoteBtn);
+    await confirmerSiDemande(page);
     await aucuneErreurAffichee(page, "soumission du vote d'Alice");
     await waitForSpinner(page);
     await page.waitForTimeout(PACE.AFTER_NAVIGATION);
@@ -236,6 +242,7 @@ test.describe("Scenario: Vote multi-role sur une resolution en AG", () => {
     page.on("dialog", (dialog) => dialog.accept());
 
     await humanClickLocator(page, closeBtn);
+    await confirmerSiDemande(page);
     await aucuneErreurAffichee(page, "closeBtn");
     await waitForSpinner(page);
     await page.waitForTimeout(PACE.AFTER_NAVIGATION);

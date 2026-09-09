@@ -32,6 +32,9 @@ test.describe("Scenario: Comparaison de devis entrepreneurs (Francois)", () => {
 
   let seedData: any;
   let quoteIds: string[] = [];
+  // Le jeton du syndic survit au `beforeAll` : le corps du test en a besoin
+  // pour interroger l'API de comparaison avant d'ouvrir la page.
+  let syndicToken = "";
 
   test.beforeAll(async ({ request }) => {
     // 1. Login admin
@@ -57,7 +60,8 @@ test.describe("Scenario: Comparaison de devis entrepreneurs (Francois)", () => {
       data: { email: "francois@syndic-leroy.be", password: "francois123" },
     });
     const syndic = await amorce(syndicResp, "POST /auth/login");
-    const syndicHeaders = { Authorization: `Bearer ${syndic.token}` };
+    syndicToken = syndic.token;
+    const syndicHeaders = { Authorization: `Bearer ${syndicToken}` };
 
     // Get building ID for Residence du Parc
     const buildingsResp = await request.get(`${API_BASE}/buildings`, {
@@ -251,6 +255,26 @@ test.describe("Scenario: Comparaison de devis entrepreneurs (Francois)", () => {
     // ============================================================
     // ETAPE 5 : Naviguer vers la page de comparaison
     // ============================================================
+    // L'API de comparaison est interrogee AVANT d'ouvrir la page.
+    //
+    // `QuoteComparisonTable.svelte:64` affiche un libelle fige — « Erreur lors
+    // du chargement de la comparaison » — et jette la reponse du serveur. La
+    // capture d'ecran du run du 2026-09-08 montre exactement cela : la page
+    // chargee, le cadre legal belge affiche, et ce message rouge a la place du
+    // tableau. Le scenario echouait ensuite sur `comparison-table` absent, en
+    // accusant l'affichage.
+    //
+    // En appelant l'API ici, la cause remonte telle quelle dans le rapport,
+    // comme pour l'amorcage. Si la comparaison est refusee, on saura pourquoi.
+    const comparaison = await page.request.post(`${API_BASE}/quotes/compare`, {
+      data: { quote_ids: quoteIds },
+      headers: { Authorization: `Bearer ${syndicToken}` },
+    });
+    await amorce(
+      comparaison,
+      `comparaison de ${quoteIds.length} devis (POST /quotes/compare)`,
+    );
+
     const compareUrl = `/quotes/compare?ids=${quoteIds.join(",")}`;
     await page.goto(compareUrl, { waitUntil: "domcontentloaded" });
     await waitForSpinner(page);

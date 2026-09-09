@@ -11,7 +11,11 @@
  * Duree video attendue : ~90-120 secondes (rythme humain, multi-role)
  */
 import { test, expect } from "@playwright/test";
-import { amorce, aucuneErreurAffichee } from "../helpers/amorcage";
+import {
+  amorce,
+  aucuneErreurAffichee,
+  confirmerSiDemande,
+} from "../helpers/amorcage";
 import { nameContains, selectOptionByName } from "../helpers/name-match";
 import {
   humanLogin,
@@ -263,6 +267,7 @@ test.describe("Scenario: Sondage multi-role (Francois lance, Alice vote)", () =>
     const optionOui = page.getByTestId("poll-detail-option-input").first();
     await humanClickLocator(page, optionOui);
     await humanClick(page, "poll-vote-button");
+    await confirmerSiDemande(page);
     await aucuneErreurAffichee(page, "vote d'Alice sur le sondage");
     await waitForSpinner(page);
     await page.waitForTimeout(PACE.AFTER_NAVIGATION);
@@ -327,6 +332,7 @@ test.describe("Scenario: Sondage multi-role (Francois lance, Alice vote)", () =>
     page.on("dialog", (dialog) => dialog.accept());
 
     await humanClick(page, "poll-close-button");
+    await confirmerSiDemande(page);
     await aucuneErreurAffichee(page, "poll-close-button");
     await waitForSpinner(page);
     await page.waitForTimeout(PACE.AFTER_NAVIGATION);

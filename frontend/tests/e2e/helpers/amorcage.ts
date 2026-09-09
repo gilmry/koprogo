@@ -93,3 +93,28 @@ export async function aucuneErreurAffichee(
     ).toBe(true);
   }
 }
+
+/**
+ * Confirme la boîte de dialogue si l'écran en ouvre une.
+ *
+ * #844 a remplacé soixante `confirm()` natifs par de vraies modales. Un
+ * navigateur piloté SUPPRIME les dialogues natifs — le geste passait donc
+ * tout seul, et les scénarios n'ont jamais eu à confirmer quoi que ce soit.
+ * Depuis la conversion, la modale reste ouverte et bloque la page.
+ *
+ * Constaté sur la capture d'écran d'`expense-approval` : « Êtes-vous sûr de
+ * vouloir soumettre cette facture pour approbation ? », Annuler / Confirmer,
+ * et le scénario qui attend derrière un bouton d'approbation qu'il ne verra
+ * jamais.
+ *
+ * Le clic est fait comme un utilisateur le ferait, pas en forçant l'état :
+ * ces scénarios sont enregistrés en vidéo comme documentation vivante, et la
+ * confirmation fait partie du parcours réel.
+ */
+export async function confirmerSiDemande(page: Page): Promise<void> {
+  const bouton = page.getByTestId("confirm-dialog-confirm");
+  if (await bouton.isVisible({ timeout: 2000 }).catch(() => false)) {
+    await bouton.click();
+    await page.waitForTimeout(300);
+  }
+}

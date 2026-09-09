@@ -13,7 +13,11 @@
  * Duree video attendue : ~45-60 secondes (rythme humain)
  */
 import { test, expect } from "@playwright/test";
-import { amorce } from "../helpers/amorcage";
+import {
+  amorce,
+  confirmerSiDemande,
+  aucuneErreurAffichee,
+} from "../helpers/amorcage";
 import { nameContains } from "../helpers/name-match";
 import {
   humanLogin,
@@ -156,6 +160,23 @@ test.describe("Scenario: Workflow d'approbation d'une facture", () => {
     await page.waitForTimeout(PACE.BEFORE_CLICK);
     await submitButton.click();
     await page.waitForTimeout(PACE.AFTER_CLICK);
+
+    // La soumission demande confirmation, et le scenario ne confirmait pas.
+    //
+    // Capture d'ecran du run du 2026-09-08 : « Êtes-vous sûr de vouloir
+    // soumettre cette facture pour approbation ? », Annuler / Confirmer, et le
+    // scenario qui attend derriere `approve-button` un bouton qu'il ne verra
+    // jamais.
+    //
+    // #844 a remplace soixante `confirm()` natifs par de vraies modales. Un
+    // navigateur pilote SUPPRIME les dialogues natifs : le geste passait donc
+    // tout seul avant la conversion. L'etape d'approbation, plus bas, gere
+    // bien sa modale — celle de la soumission avait ete oubliee.
+    await confirmerSiDemande(page);
+    await aucuneErreurAffichee(
+      page,
+      "soumission de la facture pour approbation",
+    );
 
     await waitForSpinner(page);
     await page.waitForTimeout(PACE.AFTER_NAVIGATION);

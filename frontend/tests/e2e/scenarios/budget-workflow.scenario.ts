@@ -15,7 +15,11 @@
  * Duree video attendue : ~50-70 secondes (rythme humain)
  */
 import { test, expect } from "@playwright/test";
-import { amorce, aucuneErreurAffichee } from "../helpers/amorcage";
+import {
+  amorce,
+  aucuneErreurAffichee,
+  confirmerSiDemande,
+} from "../helpers/amorcage";
 import { selectOptionByName } from "../helpers/name-match";
 import {
   humanLogin,
@@ -90,6 +94,7 @@ test.describe("Scenario: Francois cree et soumet un budget annuel", () => {
     // ETAPE 3 : Ouvrir le formulaire de creation
     // ============================================================
     await humanClick(page, "create-budget-button");
+    await confirmerSiDemande(page);
     await aucuneErreurAffichee(page, "create-budget-button");
     await page.waitForTimeout(PACE.AFTER_NAVIGATION);
 
@@ -153,6 +158,7 @@ test.describe("Scenario: Francois cree et soumet un budget annuel", () => {
     // ETAPE 6 : Soumettre le formulaire de creation
     // ============================================================
     await humanClick(page, "budget-submit-button");
+    await confirmerSiDemande(page);
     await aucuneErreurAffichee(page, "création du budget 2026");
     await waitForSpinner(page);
     await page.waitForTimeout(PACE.AFTER_NAVIGATION);
@@ -204,6 +210,7 @@ test.describe("Scenario: Francois cree et soumet un budget annuel", () => {
         page.on("dialog", (dialog) => dialog.accept());
 
         await humanClickLocator(page, submitButton);
+        await confirmerSiDemande(page);
         await aucuneErreurAffichee(page, "submitButton");
         await waitForSpinner(page);
         await page.waitForTimeout(PACE.AFTER_NAVIGATION);
