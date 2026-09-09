@@ -115,8 +115,13 @@ comparaison de devis n'a jamais affiché une ligne** (#851), parce qu'aucun
 nom de champ du frontend ne correspond au DTO servi. `svelte-check` n'avait
 rien à dire, une annotation inopérante — `let x: T | null = $state(null)`,
 que l'outil réduit à `never` — ayant chassé le type hors du bloc script, où
-il aurait mordu.""",
-  [555,762,845,846,849,850,851]),
+il aurait mordu.
+
+Et un contrat qui ment sur lui-même : `unit_id` est déclaré `Option` sur la
+création d'une quote-part, et refusé quand il manque (#852). La règle est
+juste — le lot porte son ACP depuis l'acte de base, et une quote-part due à
+personne n'est pas une quote-part — c'est sa déclaration qui l'ignore.""",
+  [555,762,845,846,849,850,851,852]),
 
  ("F", "Ops et infrastructure", """Sauvegardes, TLS, GitOps, et les vulnérabilités de dépendances. F3 a été joué
 le 2026-09-04 et son résultat est **négatif sur deux volets sur trois** : le

@@ -1,6 +1,33 @@
 import { test, expect } from "@playwright/test";
 import { loginAsSyndicWithOwner } from "../helpers/auth";
 
+/**
+ * Un lot de l'immeuble, réutilisé plutôt que créé.
+ *
+ * `loginAsSyndicWithOwner` sème douze lots conformes ; en ajouter un
+ * romprait la somme des quotités et rendrait l'immeuble non conforme à son
+ * acte de base — le produit refuserait alors, à juste titre.
+ */
+async function premierLot(
+  page: import("@playwright/test").Page,
+  token: string,
+  buildingId: string,
+): Promise<string> {
+  const resp = await page.request.get(
+    `${API_BASE}/buildings/${buildingId}/units`,
+    { headers: { Authorization: `Bearer ${token}` } },
+  );
+  const corps = await resp.json();
+  const lots = Array.isArray(corps) ? corps : (corps?.data ?? []);
+  if (lots.length === 0) {
+    throw new Error(
+      `Aucun lot dans l'immeuble ${buildingId} : la quote-part ne peut pas ` +
+        `désigner son ACP créancière.`,
+    );
+  }
+  return lots[0].id;
+}
+
 const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
 
 test.describe("Owner Contributions - Payment Tracking", () => {
@@ -15,14 +42,25 @@ test.describe("Owner Contributions - Payment Tracking", () => {
   });
 
   test("should create a contribution via API", async ({ page }) => {
-    const { token, ownerId } = await loginAsSyndicWithOwner(page, "contrib");
+    const { token, ownerId, buildingId } = await loginAsSyndicWithOwner(
+      page,
+      "contrib",
+    );
     const timestamp = Date.now();
+    const unitId = await premierLot(page, token, buildingId);
 
     const contribResp = await page.request.post(
       `${API_BASE}/owner-contributions`,
       {
         data: {
           owner_id: ownerId,
+          // `unit_id` est OBLIGATOIRE en pratique, malgré son `Option<Uuid>`
+          // dans le DTO : `resoudre_lacp_creanciere` refuse `None` avec
+          // « Impossible de déterminer l'ACP créancière : la quote-part doit
+          // porter un lot ». Le lot porte son ACP depuis l'acte de base
+          // (Story H15, ADR-0045), et une quote-part due à personne n'est pas
+          // une quote-part.
+          unit_id: unitId,
           description: `Provision T2 2026 ${timestamp}`,
           amount: 800.0,
           contribution_type: "regular",
@@ -61,14 +99,25 @@ test.describe("Owner Contributions - Payment Tracking", () => {
   });
 
   test("should mark a contribution as paid", async ({ page }) => {
-    const { token, ownerId } = await loginAsSyndicWithOwner(page, "contrib");
+    const { token, ownerId, buildingId } = await loginAsSyndicWithOwner(
+      page,
+      "contrib",
+    );
     const timestamp = Date.now();
+    const unitId = await premierLot(page, token, buildingId);
 
     const contribResp = await page.request.post(
       `${API_BASE}/owner-contributions`,
       {
         data: {
           owner_id: ownerId,
+          // `unit_id` est OBLIGATOIRE en pratique, malgré son `Option<Uuid>`
+          // dans le DTO : `resoudre_lacp_creanciere` refuse `None` avec
+          // « Impossible de déterminer l'ACP créancière : la quote-part doit
+          // porter un lot ». Le lot porte son ACP depuis l'acte de base
+          // (Story H15, ADR-0045), et une quote-part due à personne n'est pas
+          // une quote-part.
+          unit_id: unitId,
           description: `Provision T3 2026 ${timestamp}`,
           amount: 600.0,
           contribution_type: "regular",

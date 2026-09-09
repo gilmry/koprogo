@@ -556,7 +556,7 @@ Ces deux actes ne sont pas délégables : cf. `docs/governance/RESPONSABILITE.md
 
 ## Inventaire complet du périmètre 0.1.0
 
-**74 issues ouvertes** portent l'étiquette `release:0.1.0`. Elles sont
+**75 issues ouvertes** portent l'étiquette `release:0.1.0`. Elles sont
 toutes ci-dessous, sans exception : une issue du périmètre absente du WBS est
 une issue que personne ne planifie.
 
@@ -569,7 +569,7 @@ cinq jours.
 |---|---|
 | critical | 8 |
 | high | 26 |
-| medium | 18 |
+| medium | 19 |
 | — | 22 |
 
 ### Track R — Défauts de recette navigateur (4)
@@ -727,7 +727,7 @@ présent qui atteste d'autre chose que ce qu'il prétend.
 | #832 | medium | Quinze specs Playwright échouent sans erreur d'identité : les ancrages existent mais l'élément n'es… |
 | #696 | — | Instabilité smoke suite Playwright CI : 109 échecs sur specs pré-existantes (occurrence 2026-08-08) |
 
-### Track K — Dette de code et de contrat (7)
+### Track K — Dette de code et de contrat (8)
 
 Les erreurs typées plutôt que classées par sous-chaîne, le contrat OpenAPI
 complet, et la suppression du repli qui fabrique une ACP inexistante.
@@ -760,6 +760,11 @@ rien à dire, une annotation inopérante — `let x: T | null = $state(null)`,
 que l'outil réduit à `never` — ayant chassé le type hors du bloc script, où
 il aurait mordu.
 
+Et un contrat qui ment sur lui-même : `unit_id` est déclaré `Option` sur la
+création d'une quote-part, et refusé quand il manque (#852). La règle est
+juste — le lot porte son ACP depuis l'acte de base, et une quote-part due à
+personne n'est pas une quote-part — c'est sa déclaration qui l'ignore.
+
 | Issue | Prio | Intitulé |
 |---|---|---|
 | #845 | critical | Trente routes ne vérifient aucune identité : modifier ou supprimer une assemblée générale ne demand… |
@@ -768,6 +773,7 @@ il aurait mordu.
 | #851 | high | La table de comparaison de devis n'a jamais affiché une ligne : aucun nom de champ ne correspond au… |
 | #555 | medium | EPIC: migrer Result<_, String> → Result<_, AppError> (1263 violations, CRITICAL.md rule 4) |
 | #846 | medium | Onze tables et une vue existent en base et ne sont lues par aucun code, dont celle qui devait valid… |
+| #852 | medium | Le champ unit_id est déclaré optionnel sur la création d'une quote-part, et refusé quand il manque |
 | #762 | — | Typer les erreurs applicatives au lieu de les classer par sous-chaînes |
 
 ### Track F — Ops et infrastructure (10)
