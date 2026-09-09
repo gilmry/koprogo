@@ -189,11 +189,27 @@ async function uiLogin(
   page: Page,
   email: string,
   password: string,
+  motifUrl?: RegExp,
 ): Promise<void> {
   // Delegue au helper partage : il reprend sur echec, ce qui absorbe le
   // plafond Traefik de 5 connexions/minute sur `/api/v1/auth/login`.
-  await uiLoginWithRetry(page, email, password);
+  await uiLoginWithRetry(page, email, password, motifUrl);
 }
+
+/**
+ * Un NOTAIRE n'a pas de tableau de bord : il atterrit sur `/`.
+ *
+ * `uiLoginWithRetry` attend par defaut
+ * `/(admin|syndic|owner|accountant)/`. Pour un notaire, cette URL ne vient
+ * jamais — non parce que la connexion echoue, mais parce que
+ * `getDefaultRedirect` renvoie `/` pour tout role hors des quatre qui ont un
+ * tableau de bord (`guards.ts:129`, « Partiel : seuls quatre roles… »).
+ *
+ * Le test echouait donc sur `waitForURL`, et le message de l'aide accusait un
+ * rate limit. La trace du run 34377060293 le dement : quatre
+ * `POST /auth/login` ont rendu 200. La connexion reussissait a chaque fois.
+ */
+const URL_APRES_CONNEXION_NOTAIRE = /localhost:\d+\/($|\?)/;
 
 async function logoutUi(page: Page): Promise<void> {
   const btn = page.getByTestId("user-menu-logout");
@@ -315,7 +331,12 @@ test.describe("Story B3 — MandateIssueForm + List (multi-rôle 3 acteurs)", ()
 
     // ─── Phase 6 : logout syndic → login notaire ─────────────────────────
     await logoutUi(page);
-    await uiLogin(page, notary.email, TEST_PASSWORD);
+    await uiLogin(
+      page,
+      notary.email,
+      TEST_PASSWORD,
+      URL_APRES_CONNEXION_NOTAIRE,
+    );
 
     // Le notaire arrive sur son dashboard (route par rôle — on vérifie juste
     // qu'il est bien loggé et redirigé hors /login).

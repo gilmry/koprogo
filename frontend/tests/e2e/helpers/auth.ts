@@ -1071,8 +1071,25 @@ export async function uiLoginWithRetry(
     }
   }
 
+  // Le message dit ce qu'on a OBSERVE, pas ce qu'on suppose.
+  //
+  // Il annoncait « rate limit /auth/login probable ». C'etait une conjecture,
+  // et elle a tenu lieu d'explication pendant des semaines. La trace du run
+  // 34377060293 la dement : les quatre `POST /auth/login` ont rendu 200. La
+  // connexion REUSSISSAIT ; c'est l'URL attendue qui ne venait jamais, parce
+  // qu'un notaire n'a pas de tableau de bord et atterrit sur `/`
+  // (`guards.ts:129` — « seuls quatre roles ont un tableau de bord a eux »).
+  //
+  // Une aide qui nomme une cause qu'elle n'a pas mesuree envoie chaque
+  // lecteur au mauvais endroit. On donne donc l'URL finale, qui suffit a
+  // trancher.
+  const urlFinale = page.url();
   throw new Error(
-    `uiLoginWithRetry: echec apres ${MAX_TRIES} tentatives pour ${email} ` +
-      `(rate limit /auth/login probable) — ${String(lastErr).slice(0, 200)}`,
+    `uiLoginWithRetry: echec apres ${MAX_TRIES} tentatives pour ${email}.\n` +
+      `URL au moment de l'echec : ${urlFinale}\n` +
+      `Motif attendu : ${urlPattern}\n` +
+      `Si la connexion a reussi mais que l'URL ne correspond pas, c'est le ` +
+      `MOTIF qu'il faut corriger, pas la connexion.\n` +
+      `${String(lastErr).slice(0, 200)}`,
   );
 }
