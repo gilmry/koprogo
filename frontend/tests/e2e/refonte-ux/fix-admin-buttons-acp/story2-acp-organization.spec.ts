@@ -37,16 +37,6 @@ const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
  * Un nombre fixe reste par nature fragile : il repousse le seuil, il ne le
  * supprime pas. Le seul correctif de fond est une recherche cote serveur.
  */
-async function forceLargePageSize(
-  page: import("@playwright/test").Page,
-): Promise<void> {
-  await page.route("**/buildings?*", (route) => {
-    const url = new URL(route.request().url());
-    url.searchParams.set("per_page", "10000");
-    route.continue({ url: url.toString() });
-  });
-}
-
 async function createOrgAndAcp(
   page: import("@playwright/test").Page,
   adminToken: string,
@@ -165,7 +155,6 @@ test.describe("Story 2 (#698) — ACP au lieu d'Organisation", () => {
     const { token } = await loginAsAdmin(page);
     const { acpId } = await createOrgAndAcp(page, token, "s2happy1");
 
-    await forceLargePageSize(page);
     await page.goto("/buildings");
     const createBtn = page.getByTestId("create-building-button");
     await expect(createBtn).toBeVisible({ timeout: 15_000 });
@@ -313,7 +302,6 @@ test.describe("Story 2 (#698) — ACP au lieu d'Organisation", () => {
     });
     expect(buildingResp.status()).toBe(201);
 
-    await forceLargePageSize(page);
     await page.goto("/buildings");
     await expect(page.getByTestId("building-search-input")).toBeVisible({
       timeout: 15_000,
@@ -332,7 +320,21 @@ test.describe("Story 2 (#698) — ACP au lieu d'Organisation", () => {
     page,
   }) => {
     await loginAsAdmin(page);
-    await page.route("**/api/v1/acps", (route) => {
+    // Une EXPRESSION RÉGULIÈRE, pas un motif en chaîne.
+    //
+    // Playwright résout un motif sans schéma contre `baseURL`
+    // (`http://localhost:3000` en CI). L'API est sur le port 8080 :
+    // `"**/api/v1/acps"` ne correspondait donc JAMAIS, et l'interception
+    // n'avait aucun effet.
+    //
+    // La trace du run 34377060293 le prouve : `GET /api/v1/acps` a rendu
+    // 56 706 octets — la vraie liste — là où la simulation devait rendre deux
+    // octets. Le test croyait éprouver l'état vide et exerçait la liste
+    // réelle, qui n'est pas vide. **Il n'a jamais testé ce qu'il annonce.**
+    //
+    // Une expression régulière est comparée à l'URL complète, sans résolution
+    // relative.
+    await page.route(/\/api\/v1\/acps$/, (route) => {
       if (route.request().method() === "GET") {
         route.fulfill({
           status: 200,
