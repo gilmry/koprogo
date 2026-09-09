@@ -13,6 +13,7 @@
  * Duree video attendue : ~45-60 secondes (rythme humain)
  */
 import { test, expect } from "@playwright/test";
+import { ADMIN_PASSWORD } from "../helpers/identifiants";
 import { amorce } from "../helpers/amorcage";
 import { nameContains, selectOptionByName } from "../helpers/name-match";
 import {
@@ -35,7 +36,7 @@ test.describe("Scenario: Francois consulte une convocation d'AG", () => {
   test.beforeAll(async ({ request }) => {
     // 1. Login admin
     const adminResp = await request.post(`${API_BASE}/auth/login`, {
-      data: { email: "admin@koprogo.com", password: "admin123" },
+      data: { email: "admin@koprogo.com", password: ADMIN_PASSWORD },
     });
     const admin = await amorce(adminResp, "POST /auth/login");
     const adminHeaders = { Authorization: `Bearer ${admin.token}` };
@@ -119,7 +120,7 @@ test.describe("Scenario: Francois consulte une convocation d'AG", () => {
 
   test.afterAll(async ({ request }) => {
     const adminResp = await request.post(`${API_BASE}/auth/login`, {
-      data: { email: "admin@koprogo.com", password: "admin123" },
+      data: { email: "admin@koprogo.com", password: ADMIN_PASSWORD },
     });
     const admin = await adminResp.json();
     await request.delete(`${API_BASE}/seed/scenario/world`, {

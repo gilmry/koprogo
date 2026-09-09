@@ -13,6 +13,7 @@
  * Duree video attendue : ~45-60 secondes (rythme humain)
  */
 import { test, expect } from "@playwright/test";
+import { ADMIN_PASSWORD } from "../helpers/identifiants";
 import {
   amorce,
   confirmerSiDemande,
@@ -39,7 +40,7 @@ test.describe("Scenario: Workflow d'approbation d'une facture", () => {
   test.beforeAll(async ({ request }) => {
     // 1. Login admin
     const adminResp = await request.post(`${API_BASE}/auth/login`, {
-      data: { email: "admin@koprogo.com", password: "admin123" },
+      data: { email: "admin@koprogo.com", password: ADMIN_PASSWORD },
     });
     const admin = await amorce(adminResp, "POST /auth/login");
     const adminHeaders = { Authorization: `Bearer ${admin.token}` };
@@ -106,7 +107,7 @@ test.describe("Scenario: Workflow d'approbation d'une facture", () => {
 
   test.afterAll(async ({ request }) => {
     const adminResp = await request.post(`${API_BASE}/auth/login`, {
-      data: { email: "admin@koprogo.com", password: "admin123" },
+      data: { email: "admin@koprogo.com", password: ADMIN_PASSWORD },
     });
     const admin = await adminResp.json();
     await request.delete(`${API_BASE}/seed/scenario/world`, {

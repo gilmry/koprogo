@@ -20,6 +20,7 @@
  * SOURCE : docs/maury/refonte-ux-multi-role-acp/stories.md §2 Story 0.1
  */
 import { test, expect } from "@playwright/test";
+import { ADMIN_PASSWORD } from "../helpers/identifiants";
 import { setupContainerApiUrl } from "../helpers/video-pace";
 import { ensureAcp } from "../helpers/auth";
 
@@ -42,7 +43,7 @@ test.describe("Characterization 02 — AG Full Cycle (multi-rôle)", () => {
 
     // ---- SETUP : admin crée org + building (préconditions hors caractérisation)
     const adminLoginResp = await page.request.post(`${API_BASE}/auth/login`, {
-      data: { email: "admin@koprogo.com", password: "admin123" },
+      data: { email: "admin@koprogo.com", password: ADMIN_PASSWORD },
     });
     const { token: adminToken } = await adminLoginResp.json();
 

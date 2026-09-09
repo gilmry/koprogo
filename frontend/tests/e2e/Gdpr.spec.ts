@@ -21,6 +21,7 @@
  */
 
 import { test, expect } from "@playwright/test";
+import { ADMIN_PASSWORD } from "./helpers/identifiants";
 import type { Page } from "@playwright/test";
 import { adminLogin } from "./helpers/auth";
 
@@ -132,7 +133,7 @@ async function clearBrowserState(page: Page) {
 // Helper: Login as SuperAdmin
 async function loginAsSuperAdmin(page: Page) {
   await clearBrowserState(page);
-  await loginViaUI(page, "admin@koprogo.com", "admin123");
+  await loginViaUI(page, "admin@koprogo.com", ADMIN_PASSWORD);
 }
 
 test.describe("GDPR - Complete User Journey (Idempotent)", () => {

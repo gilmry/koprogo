@@ -13,6 +13,7 @@
  * SOURCE : docs/maury/refonte-ux-multi-role-acp/stories.md §2 Story 0.1
  */
 import { test, expect } from "@playwright/test";
+import { ADMIN_PASSWORD } from "../helpers/identifiants";
 import {
   loginAsAdmin,
   loginAsSyndic,
@@ -37,7 +38,7 @@ test.describe("Characterization 00 — Login + Dashboards", () => {
     // Login via UI (real flow) — caractérise le path complet form -> redirect
     await page.goto("/login");
     await page.getByTestId("login-email").fill("admin@koprogo.com");
-    await page.getByTestId("login-password").fill("admin123");
+    await page.getByTestId("login-password").fill(ADMIN_PASSWORD);
     await page.getByTestId("login-submit").click();
     await page.waitForURL(/\/(admin|syndic|owner|accountant)/, {
       timeout: 15000,
@@ -76,7 +77,7 @@ test.describe("Characterization 00 — Login + Dashboards", () => {
 
     // Setup org via admin (API) puis register syndic (API) puis login UI
     const adminLoginResp = await page.request.post(`${API_BASE}/auth/login`, {
-      data: { email: "admin@koprogo.com", password: "admin123" },
+      data: { email: "admin@koprogo.com", password: ADMIN_PASSWORD },
     });
     const { token: adminToken } = await adminLoginResp.json();
 
@@ -130,7 +131,7 @@ test.describe("Characterization 00 — Login + Dashboards", () => {
 
     // Owner peut se register sans organization_id (rôle public)
     const adminLoginResp = await page.request.post(`${API_BASE}/auth/login`, {
-      data: { email: "admin@koprogo.com", password: "admin123" },
+      data: { email: "admin@koprogo.com", password: ADMIN_PASSWORD },
     });
     const { token: adminToken } = await adminLoginResp.json();
 

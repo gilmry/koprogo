@@ -12,6 +12,7 @@
  * Like the BDD World pattern but for Playwright.
  */
 import { request } from "@playwright/test";
+import { ADMIN_PASSWORD } from "./helpers/identifiants";
 import { saveWorld, type TestWorld } from "./helpers/test-world";
 
 const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
@@ -22,7 +23,7 @@ export default async function globalSetup() {
 
   // 1. Login as admin
   const adminResp = await ctx.post(`${API_BASE}/auth/login`, {
-    data: { email: "admin@koprogo.com", password: "admin123" },
+    data: { email: "admin@koprogo.com", password: ADMIN_PASSWORD },
   });
   const admin = await adminResp.json();
   const adminToken = admin.token;

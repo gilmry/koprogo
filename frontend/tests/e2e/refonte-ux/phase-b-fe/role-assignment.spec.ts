@@ -18,6 +18,7 @@
  *   @negative : role invalide → 422 → message inline.
  */
 import { test, expect, type APIRequestContext } from "@playwright/test";
+import { ADMIN_PASSWORD } from "../../helpers/identifiants";
 // Connexion admin mutualisee : `/auth/login` est plafonne a 5/min par
 // Traefik en production. Chaque copie locale de ce helper relogue sans
 // cache et epuise le seau (constate : « adminLogin failed: 429 »).
@@ -25,7 +26,6 @@ import { adminLogin } from "../../helpers/auth";
 
 const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
 const ADMIN_EMAIL = "admin@koprogo.com";
-const ADMIN_PASSWORD = "admin123";
 const TEST_PASSWORD = process.env.PLAYWRIGHT_TEST_PASSWORD || "test123456";
 
 // ---------------------------------------------------------------------------

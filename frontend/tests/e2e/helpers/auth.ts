@@ -6,6 +6,7 @@
  * on the actual feature being tested.
  */
 import { test } from "@playwright/test";
+import { ADMIN_PASSWORD } from "./identifiants";
 import type { APIRequestContext, Page } from "@playwright/test";
 
 const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
@@ -118,7 +119,7 @@ export async function performAdminLogin(
 
   for (let attempt = 1; attempt <= MAX_TRIES; attempt++) {
     const resp = await api.post(`${API_BASE}/auth/login`, {
-      data: { email: "admin@koprogo.com", password: "admin123" },
+      data: { email: "admin@koprogo.com", password: ADMIN_PASSWORD },
     });
     lastStatus = resp.status();
 
