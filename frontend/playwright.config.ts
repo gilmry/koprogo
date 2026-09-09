@@ -79,7 +79,23 @@ export default defineConfig({
 
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
   reporter: [
-    ["html", { outputFolder: "playwright-report", open: "never" }],
+    [
+      "html",
+      {
+        // `PLAYWRIGHT_HTML_REPORT` plutôt qu'un chemin en dur.
+        //
+        // `ci.yml` lance Playwright trois fois, et chaque exécution ÉCRASE le
+        // rapport précédent : les captures d'écran et les traces de
+        // `chromium` étaient détruites par `smoke`, puis par `scenarios`.
+        // L'artefact téléversé ne contenait que le dernier.
+        //
+        // Laisser la variable décider permet à chaque invocation d'écrire
+        // dans son propre dossier. La valeur par défaut reste celle d'avant
+        // pour les exécutions locales.
+        outputFolder: process.env.PLAYWRIGHT_HTML_REPORT ?? "playwright-report",
+        open: "never",
+      },
+    ],
     ["json", { outputFile: "test-results/results.json" }],
     ["list"],
   ],

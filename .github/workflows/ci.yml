@@ -926,6 +926,18 @@ jobs:
       # EXCLUT donc précisément smoke. Les 98 tests du projet `smoke` n'ont
       # jamais tourné, et le diagnostic de #696 (« 109 échecs sur la smoke
       # suite ») portait en réalité sur les specs de la racine.
+      # CHAQUE invocation écrit dans SON dossier.
+      #
+      # Playwright vide `test-results/` et écrase `playwright-report/` à
+      # chaque exécution. Le job en lance trois : les captures d'écran et les
+      # traces de `chromium` étaient donc détruites par `smoke`, puis par
+      # `scenarios`. Le rapport téléversé ne contenait que le dernier.
+      #
+      # Constaté le 2026-09-09 : douze échecs `chromium` annonçaient chacun
+      # « attachment #1: screenshot », et l'artefact ne contenait que les
+      # douze vidéos des scénarios. Or ce sont les captures qui ont permis de
+      # résoudre les scénarios — modale non confirmée, barre d'outils d'Astro,
+      # table vide sous un bandeau rouge. On jetait l'outil qui marche.
       - name: Run Playwright tests (chromium project)
         env:
           PLAYWRIGHT_BASE_URL: http://localhost:3000
@@ -944,7 +956,8 @@ jobs:
           # scenarios 40, et GitHub a fauché le job à 90 — sans rapport, sans
           # détail d'erreur, sans vidéo. Un budget par étape, dont la somme
           # tient sous le plafond, rend cette fin impossible.
-          npx playwright test --project=chromium --global-timeout=2700000
+          PLAYWRIGHT_HTML_REPORT=playwright-report/chromium \
+            npx playwright test --project=chromium --global-timeout=2700000 --output=test-results/chromium
 
       # Le projet `smoke` (98 tests) devient BLOQUANT le 2026-09-09.
       #
@@ -986,7 +999,8 @@ jobs:
           PLAYWRIGHT_API_BASE: http://localhost:8080/api/v1
         run: |
           cd frontend
-          npx playwright test --project=smoke --global-timeout=600000
+          PLAYWRIGHT_HTML_REPORT=playwright-report/smoke \
+            npx playwright test --project=smoke --global-timeout=600000 --output=test-results/smoke
 
       - name: Seed scenario world for Documentation Vivante
         # Même cause : sauté avec le reste dès que chromium échoue.
@@ -1030,7 +1044,8 @@ jobs:
           # 56,8 s / 55,7 s pour admin-setup). Rejouer un échec déterministe
           # triple le coût et n'apprend rien ; ici, c'est ce qui a fait
           # dépasser le plafond du job et perdre le rapport.
-          npx playwright test --project=scenarios --global-timeout=1500000 --retries=0
+          PLAYWRIGHT_HTML_REPORT=playwright-report/scenarios \
+            npx playwright test --project=scenarios --global-timeout=1500000 --retries=0 --output=test-results/scenarios
 
       - name: Cleanup scenario world
         if: always()
