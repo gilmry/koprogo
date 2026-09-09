@@ -120,8 +120,14 @@ il aurait mordu.
 Et un contrat qui ment sur lui-même : `unit_id` est déclaré `Option` sur la
 création d'une quote-part, et refusé quand il manque (#852). La règle est
 juste — le lot porte son ACP depuis l'acte de base, et une quote-part due à
-personne n'est pas une quote-part — c'est sa déclaration qui l'ignore.""",
-  [555,762,845,846,849,850,851,852]),
+personne n'est pas une quote-part — c'est sa déclaration qui l'ignore.
+
+Et une recherche qui ment sur son résultat : sur `/buildings`, chercher un
+immeuble absent de la première page rend « Aucun immeuble trouvé pour cette
+recherche » (#853). Le composant filtrait les vingt éléments chargés alors
+que le serveur offre `?search=` en ILIKE — capacité écrite EN RÉPONSE à ce
+problème, et que le frontend n'appelait pas.""",
+  [555,762,845,846,849,850,851,852,853]),
 
  ("F", "Ops et infrastructure", """Sauvegardes, TLS, GitOps, et les vulnérabilités de dépendances. F3 a été joué
 le 2026-09-04 et son résultat est **négatif sur deux volets sur trois** : le

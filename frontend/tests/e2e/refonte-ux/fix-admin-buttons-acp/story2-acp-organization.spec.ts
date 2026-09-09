@@ -196,6 +196,16 @@ test.describe("Story 2 (#698) — ACP au lieu d'Organisation", () => {
     expect(created).not.toHaveProperty("organization_id");
 
     await expect(dialog).not.toBeVisible();
+
+    // L'immeuble est CHERCHÉ, pas attendu sur la première page.
+    //
+    // La liste est paginée à vingt. L'instantané du run 34362096248 le dit :
+    // « Affichage de 1 à 20 sur 129 résultat(s) », et l'immeuble qui vient
+    // d'être créé est sur une page ultérieure. Le test supposait une liste
+    // entière ; la pagination du produit n'a rien de fautif.
+    //
+    // Chercher est aussi ce qu'un utilisateur fait après avoir créé.
+    await page.getByTestId("building-search-input").fill(`S2 Building ${ts}`);
     await expect(page.getByText(`S2 Building ${ts}`)).toBeVisible({
       timeout: 15_000,
     });

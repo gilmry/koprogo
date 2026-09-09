@@ -170,15 +170,23 @@ test.describe("Story 1 (#697) — boutons admin morts (Svelte 5)", () => {
     await page.getByTestId("mark-paid-button").click();
     await expect(page.getByTestId("status-badge")).toContainText(/paid|payé/i);
 
-    page.once("dialog", (d) => d.accept());
+    // Confirmation par MODALE depuis #844 : le gestionnaire de dialogue
+    // natif installé ici ne se déclenchait plus, et le geste restait en
+    // suspens — le badge affichait « Payée » là où le test attend « en
+    // attente ».
     await page.getByTestId("unpay-button").click();
+    await confirmerSiDemande(page);
     await expect(page.getByTestId("status-badge")).toContainText(
       /pending|attente/i,
     );
 
     // Repasse par "annuler" pour pouvoir tester "réactiver".
-    page.once("dialog", (d) => d.accept());
+    // Confirmation par MODALE depuis #844 : le gestionnaire de dialogue
+    // natif installé ici ne se déclenchait plus, et le geste restait en
+    // suspens — le badge affichait « Payée » là où le test attend « en
+    // attente ».
     await page.getByTestId("cancel-button").click();
+    await confirmerSiDemande(page);
     await expect(page.getByTestId("status-badge")).toContainText(
       /cancelled|annul/i,
     );

@@ -81,7 +81,11 @@ import { join, extname } from "node:path";
 /// sur-comptage de la journée dans CE sens : les sept précédents
 /// exagéraient la dette, celui-ci la minimisait. On garde le chiffre du
 /// détecteur, pas le mien.
-const DETTE_AU_2026_09_07 = 615;
+// 615 → 613 le 2026-09-09. **Le chiffre baisse parce que la garde cesse de
+// compter le texte des commentaires HTML**, pas parce que deux libellés ont
+// été traduits. Deux commentaires du dépôt étaient comptés comme de la dette
+// de traduction.
+const DETTE_AU_2026_09_07 = 613;
 
 const RACINE = join(process.cwd(), "src");
 
@@ -137,6 +141,17 @@ function recenser(): string[] {
     let texte = readFileSync(chemin, "utf8");
     texte = texte.replace(/<script[\s\S]*?<\/script>/g, "");
     texte = texte.replace(/<style[\s\S]*?<\/style>/g, "");
+    // Les COMMENTAIRES HTML ne sont pas des libellés.
+    //
+    // Sans cette ligne, `<!-- Le conteneur porte tel nom -->` était compté
+    // comme du texte non traduit. Le 2026-09-09, un commentaire d'explication
+    // ajouté dans `JournalEntryForm.svelte` a fait passer la dette de 615 à
+    // 616 et échouer la garde — alors qu'il n'y avait rien à traduire.
+    //
+    // C'est le troisième détecteur de ce dépôt à lire ses propres
+    // commentaires comme du code. Un faux positif use la confiance aussi
+    // sûrement qu'un angle mort : ici, il décourageait d'expliquer.
+    texte = texte.replace(/<!--[\s\S]*?-->/g, "");
     for (const m of texte.matchAll(TEXTE_DE_GABARIT)) {
       const libelle = m[1].split(/\s+/).filter(Boolean).join(" ");
       if (libelle.length < 3) continue;

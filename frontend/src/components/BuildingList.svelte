@@ -56,7 +56,22 @@
     await withLoadingState({
       action: () =>
         api.get<PageResponse<Building>>(
-          `/buildings?page=${currentPage}&per_page=${perPage}`,
+          // La recherche part au SERVEUR, elle ne filtre plus la page chargée.
+          //
+          // `filteredBuildings` filtrait `buildings`, c'est-à-dire les vingt
+          // immeubles de la page courante. Sur 129 immeubles, chercher un nom
+          // absent de la première page rendait « Aucun immeuble trouvé pour
+          // cette recherche » — un message qui AFFIRME que l'immeuble n'existe
+          // pas, alors qu'il est simplement page 4.
+          //
+          // Le serveur savait déjà le faire :
+          // `building_repository_impl.rs:193` porte
+          // `name ILIKE $1 OR city ILIKE $1 OR address ILIKE $1`, lié en
+          // `%terme%`. C'est le frontend qui ne le lui demandait pas.
+          `/buildings?page=${currentPage}&per_page=${perPage}` +
+            (rechercheEnvoyee
+              ? `&search=${encodeURIComponent(rechercheEnvoyee)}`
+              : ""),
         ),
       setLoading: (v) => (loading = v),
       setError: (v) => (error = v),
@@ -113,16 +128,28 @@
     await loadBuildings();
   };
 
-  $: filteredBuildings = buildings.filter((building) => {
-    if (!searchTerm) return true;
-    const search = searchTerm.toLowerCase();
-    return (
-      building.name.toLowerCase().includes(search) ||
-      building.address.toLowerCase().includes(search) ||
-      building.city.toLowerCase().includes(search) ||
-      building.postal_code.toLowerCase().includes(search)
-    );
-  });
+  // La liste affichée est celle que le serveur renvoie : il a déjà filtré.
+  //
+  // Un second filtrage client serait au mieux redondant, au pire faux — le
+  // serveur cherche aussi dans l'adresse et la ville, et sa casse est gérée
+  // par `ILIKE`.
+  $: filteredBuildings = buildings;
+
+  // Anti-rebond : on n'interroge pas le serveur à chaque touche.
+  let rechercheEnvoyee = "";
+  let minuterieRecherche: ReturnType<typeof setTimeout> | undefined;
+  $: {
+    const terme = searchTerm;
+    clearTimeout(minuterieRecherche);
+    minuterieRecherche = setTimeout(() => {
+      if (terme === rechercheEnvoyee) return;
+      rechercheEnvoyee = terme;
+      // Toute nouvelle recherche repart de la première page : rester page 4
+      // sur un résultat qui en compte une seule afficherait un vide trompeur.
+      currentPage = 1;
+      void loadBuildings();
+    }, 250);
+  }
 </script>
 
 <div class="space-y-6">

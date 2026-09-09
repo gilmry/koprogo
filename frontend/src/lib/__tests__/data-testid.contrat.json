@@ -749,6 +749,7 @@
     "journal-entry-form",
     "journal-entry-lines",
     "journal-entry-list",
+    "journal-entry-panel",
     "journal-entry-remove-line-button",
     "journal-entry-reset-button",
     "journal-entry-row",

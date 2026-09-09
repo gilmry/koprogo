@@ -165,7 +165,19 @@
   }
 </script>
 
-<div class="journal-entry-form" data-testid="journal-entry-form">
+<!--
+  Le conteneur porte `journal-entry-panel`, le `<form>` garde
+  `journal-entry-form`.
+
+  Les deux portaient la MÊME ancre, si bien que
+  `getByTestId("journal-entry-form")` résolvait deux éléments et que
+  Playwright refusait en mode strict — sans jamais dire que le défaut était
+  dans le produit. Le guide de style le formule ainsi : un nom par écran, et
+  ici un seul nom pour deux éléments.
+
+  Le `<form>` garde le nom parce que c'est lui qu'on soumet.
+-->
+<div class="journal-entry-form" data-testid="journal-entry-panel">
   <div class="form-header">
     <h3>🧾 {$_("journal.title")}</h3>
     <p class="text-sm text-gray-600">{$_("journal.subtitle")}</p>

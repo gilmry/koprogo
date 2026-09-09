@@ -556,7 +556,7 @@ Ces deux actes ne sont pas délégables : cf. `docs/governance/RESPONSABILITE.md
 
 ## Inventaire complet du périmètre 0.1.0
 
-**75 issues ouvertes** portent l'étiquette `release:0.1.0`. Elles sont
+**76 issues ouvertes** portent l'étiquette `release:0.1.0`. Elles sont
 toutes ci-dessous, sans exception : une issue du périmètre absente du WBS est
 une issue que personne ne planifie.
 
@@ -568,7 +568,7 @@ cinq jours.
 | Priorité | Nombre |
 |---|---|
 | critical | 8 |
-| high | 26 |
+| high | 27 |
 | medium | 19 |
 | — | 22 |
 
@@ -727,7 +727,7 @@ présent qui atteste d'autre chose que ce qu'il prétend.
 | #832 | medium | Quinze specs Playwright échouent sans erreur d'identité : les ancrages existent mais l'élément n'es… |
 | #696 | — | Instabilité smoke suite Playwright CI : 109 échecs sur specs pré-existantes (occurrence 2026-08-08) |
 
-### Track K — Dette de code et de contrat (8)
+### Track K — Dette de code et de contrat (9)
 
 Les erreurs typées plutôt que classées par sous-chaîne, le contrat OpenAPI
 complet, et la suppression du repli qui fabrique une ACP inexistante.
@@ -765,12 +765,19 @@ création d'une quote-part, et refusé quand il manque (#852). La règle est
 juste — le lot porte son ACP depuis l'acte de base, et une quote-part due à
 personne n'est pas une quote-part — c'est sa déclaration qui l'ignore.
 
+Et une recherche qui ment sur son résultat : sur `/buildings`, chercher un
+immeuble absent de la première page rend « Aucun immeuble trouvé pour cette
+recherche » (#853). Le composant filtrait les vingt éléments chargés alors
+que le serveur offre `?search=` en ILIKE — capacité écrite EN RÉPONSE à ce
+problème, et que le frontend n'appelait pas.
+
 | Issue | Prio | Intitulé |
 |---|---|---|
 | #845 | critical | Trente routes ne vérifient aucune identité : modifier ou supprimer une assemblée générale ne demand… |
 | #850 | critical | Le vote en assemblée accepte l'identité du votant, son lot et sa puissance de vote depuis le corps … |
 | #849 | high | Aucun copropriétaire ne peut voter à une consultation : le handler compare un identifiant d'utilisa… |
 | #851 | high | La table de comparaison de devis n'a jamais affiché une ligne : aucun nom de champ ne correspond au… |
+| #853 | high | La recherche d'immeubles ne cherche que la page affichée, et son état vide affirme que l'immeuble n… |
 | #555 | medium | EPIC: migrer Result<_, String> → Result<_, AppError> (1263 violations, CRITICAL.md rule 4) |
 | #846 | medium | Onze tables et une vue existent en base et ne sont lues par aucun code, dont celle qui devait valid… |
 | #852 | medium | Le champ unit_id est déclaré optionnel sur la création d'une quote-part, et refusé quand il manque |
