@@ -946,11 +946,26 @@ jobs:
           # tient sous le plafond, rend cette fin impossible.
           npx playwright test --project=chromium --global-timeout=2700000
 
-      # Le projet `smoke` (98 tests) est réintroduit en non bloquant : son état
-      # réel n'a jamais été mesuré en CI, et le rendre bloquant d'emblée
-      # casserait toutes les PR sur un héritage inconnu. Objectif : établir un
-      # plancher chiffré, puis basculer en bloquant (WP-D1 / #696).
-      - name: Run Playwright smoke project (report only)
+      # Le projet `smoke` (98 tests) devient BLOQUANT le 2026-09-09.
+      #
+      # Il avait été réintroduit en « report only » parce que son état réel
+      # n'avait jamais été mesuré en CI, et que le rendre bloquant d'emblée
+      # aurait cassé toutes les PR sur un héritage inconnu. L'objectif était
+      # d'établir un plancher chiffré, puis de basculer (WP-D1 / #696).
+      #
+      # Le plancher a été établi, puis remonté :
+      #
+      #     2026-09-08   92 / 98   six échecs
+      #     2026-09-09   98 / 98
+      #
+      # Les six étaient des tests périmés, pas des défauts produit : trois
+      # envoyaient un `organization_id` que les DTO refusent depuis l'ajout de
+      # `deny_unknown_fields`, un construisait un immeuble dont onze lots sur
+      # douze n'appartenaient à personne, et deux omettaient un `unit_id`
+      # déclaré facultatif mais toujours exigé (#852).
+      #
+      # Mesurer sans bloquer n'apprend que tant que quelqu'un lit. C'est fait.
+      - name: Run Playwright smoke project
         # `if: !cancelled()` — sans quoi ce step ne s'exécute JAMAIS.
         #
         # GitHub saute les steps qui suivent un échec, et le step chromium
@@ -961,13 +976,17 @@ jobs:
         # `continue-on-error` protège CE step ; il ne le rend pas atteignable.
         # Deux choses différentes, et c'est la seconde qui manquait.
         if: ${{ !cancelled() }}
-        continue-on-error: true
+        # `continue-on-error` retiré le 2026-09-09 : le step est bloquant.
+        # `if: !cancelled()` reste, sans quoi il ne s'exécuterait jamais —
+        # GitHub saute les steps qui suivent un échec, et le step chromium
+        # échoue en continu (#832). Protéger un step et le rendre atteignable
+        # sont deux choses différentes ; seule la première disparaît ici.
         env:
           PLAYWRIGHT_BASE_URL: http://localhost:3000
           PLAYWRIGHT_API_BASE: http://localhost:8080/api/v1
         run: |
           cd frontend
-          npx playwright test --project=smoke --global-timeout=600000 || true
+          npx playwright test --project=smoke --global-timeout=600000
 
       - name: Seed scenario world for Documentation Vivante
         # Même cause : sauté avec le reste dès que chromium échoue.
