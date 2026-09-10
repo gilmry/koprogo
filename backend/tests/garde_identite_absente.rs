@@ -41,17 +41,29 @@ use std::fs;
 use std::path::{Path, PathBuf};
 
 /// Routes sans aucune vérification d'identité. **Ne doit que BAISSER.**
-/// Six routes, TOUTES en attente d'arbitrage (docs/ARBITRAGES_EN_ATTENTE.md).
 ///
 /// Le chiffre précédent, 19, était FAUX : je l'avais obtenu en soustrayant
 /// 5 de 24 plutôt qu'en mesurant. Le détecteur en trouvait 9. Douzième écart
 /// de mesure de la journée, et le mien.
 ///
-/// Les six qui restent attendent une décision, pas du code : quatre routes de
-/// campagne énergétique qui s'ouvrent peut-être à des particuliers hors
-/// copropriété, l'état daté consulté par référence par un notaire sans compte,
-/// et le pixel de suivi d'ouverture appelé par un client de messagerie.
-const DETTE_AU_2026_09_08: usize = 6;
+/// ── L'arbitrage a été rendu le 2026-09-10 (ADR 0048) ────────────────────
+///
+/// Les six routes qui restaient attendaient une décision, pas du code. Elle
+/// est tombée, et elle n'est PAS uniforme :
+///
+/// - les quatre routes de campagne énergétique sont **publiques** :
+///   « l'achat groupé d'énergie sera ouvert à tout le monde » ;
+/// - le pixel de suivi d'ouverture est **public** : un client de messagerie
+///   ne porte aucun jeton ;
+/// - l'état daté par référence ne l'est **pas**. La réponse n'a pas été « on
+///   la laisse ouverte » mais « le notaire aura son tableau de bord ». Une
+///   référence circule dans des courriels et des dossiers de vente : ce n'est
+///   pas un secret, et derrière elle il y a les dettes d'un copropriétaire
+///   nommé.
+///
+/// Reste donc **une** route non gardée, et elle a une issue : l'identité
+/// notaire est à créer (#845, ADR 0048).
+const DETTE_AU_2026_09_10: usize = 1;
 
 /// Les routes publiques, et pourquoi.
 ///
@@ -94,6 +106,34 @@ const PUBLIQUES: &[(&str, &str)] = &[
     (
         "/marketplace/providers/{slug}",
         "annuaire de prestataires, public",
+    ),
+    // ── ADR 0048, tranché le 2026-09-10 ──────────────────────────────────
+    //
+    // « L'achat groupé d'énergie sera ouvert à tout le monde. » Un particulier
+    // hors copropriété rejoint une campagne, y consent, y déclare sa
+    // consommation et s'en retire — sans compte KoproGo. C'est le sens même
+    // d'un achat groupé : plus il y a de monde, meilleur est le prix.
+    (
+        "/energy-campaigns/{campaign_id}/join-as-individual",
+        "achat groupé ouvert aux particuliers hors copropriété (ADR 0048)",
+    ),
+    (
+        "/energy-campaigns/{campaign_id}/members/{member_id}/consent",
+        "consentement d'un participant individuel sans compte (ADR 0048)",
+    ),
+    (
+        "/energy-campaigns/{campaign_id}/members/{member_id}/consumption",
+        "déclaration de consommation d'un participant individuel (ADR 0048)",
+    ),
+    (
+        "/energy-campaigns/{campaign_id}/members/{member_id}/withdraw",
+        "retrait d'un participant individuel : exiger un compte pour partir \
+         serait un piège (ADR 0048)",
+    ),
+    (
+        "/convocation-recipients/{id}/email-opened",
+        "pixel de suivi d'ouverture : l'appelant est un client de messagerie, \
+         qui ne porte aucun jeton (ADR 0048)",
     ),
 ];
 
@@ -276,8 +316,8 @@ fn aucune_route_supplementaire_ne_se_passe_didentite() {
     let n = liste.len();
 
     assert!(
-        n <= DETTE_AU_2026_09_08,
-        "{n} routes ne vérifient AUCUNE identité, contre {DETTE_AU_2026_09_08} \
+        n <= DETTE_AU_2026_09_10,
+        "{n} routes ne vérifient AUCUNE identité, contre {DETTE_AU_2026_09_10} \
          au 2026-09-08.\n\n\
          Ni `AuthenticatedUser`, ni lecture de l'en-tête `Authorization`. Le \
          seul obstacle pour l'appeler est de connaître un UUID.\n\n\

@@ -49,6 +49,91 @@ pub fn perimetre_du_mandataire<'a>(
         .collect()
 }
 
+/// Le délai de l'Art. 3.89 § 5, 7°, en jours calendaires.
+///
+/// Calendaires, comme les autres délais de ce chapitre : l'Art. 3.31 § 2 dit
+/// « jour ouvrable » quand il le veut, et son silence ailleurs est délibéré.
+/// Même choix que `releve_notaire::DELAI_JOURS`, pour la même raison.
+pub const DELAI_PASSATION_JOURS: i64 = 30;
+
+/// L'état d'une passation, du point de vue du syndic sortant.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum EtatPassation {
+    /// Dossier remis dans les trente jours.
+    RemisATemps,
+    /// Remis, mais après l'échéance.
+    RemisEnRetard,
+    /// Pas encore remis, délai non écoulé.
+    EnCours,
+    /// Pas remis, délai écoulé. Le successeur gère sans les archives.
+    EnDefaut,
+}
+
+/// La remise du dossier au syndic successeur, et son échéance.
+///
+/// ── Pourquoi cet objet existe ────────────────────────────────────────────
+///
+/// Le module documentait le délai de trente jours depuis toujours, en tête de
+/// fichier, et ne le tenait **nulle part** : aucune échéance, aucun état, rien
+/// qui puisse être dépassé. Le registre légal déclarait pourtant l'obligation
+/// attestée par un test qui vérifie que le successeur voit l'ensemble des
+/// pièces — ce qui est vrai, et ne dit rien du délai (#847).
+///
+/// Un dossier remis en retard n'est pas une formalité manquée : le successeur
+/// gère une copropriété dont il ignore les dettes, les procédures en cours et
+/// les décisions d'assemblée. Il engage sa responsabilité sur des faits qu'il
+/// n'a pas pu connaître.
+#[derive(Debug, Clone, PartialEq)]
+pub struct PassationDeDossier {
+    pub acp_id: Uuid,
+    pub syndic_sortant: Uuid,
+    pub syndic_entrant: Uuid,
+    /// Fin du mandat sortant — c'est elle qui fait courir le délai.
+    pub fin_de_mandat: DateTime<Utc>,
+    pub echeance: DateTime<Utc>,
+    /// Date de remise effective, si elle a eu lieu.
+    pub remis_le: Option<DateTime<Utc>>,
+}
+
+impl PassationDeDossier {
+    pub fn nouvelle(
+        acp_id: Uuid,
+        syndic_sortant: Uuid,
+        syndic_entrant: Uuid,
+        fin_de_mandat: DateTime<Utc>,
+    ) -> Self {
+        Self {
+            acp_id,
+            syndic_sortant,
+            syndic_entrant,
+            fin_de_mandat,
+            echeance: fin_de_mandat + chrono::Duration::days(DELAI_PASSATION_JOURS),
+            remis_le: None,
+        }
+    }
+
+    pub fn remettre(&mut self, le: DateTime<Utc>) {
+        self.remis_le = Some(le);
+    }
+
+    pub fn etat(&self, moment: DateTime<Utc>) -> EtatPassation {
+        match self.remis_le {
+            Some(remis) if remis <= self.echeance => EtatPassation::RemisATemps,
+            Some(_) => EtatPassation::RemisEnRetard,
+            None if moment <= self.echeance => EtatPassation::EnCours,
+            None => EtatPassation::EnDefaut,
+        }
+    }
+
+    /// Combien de jours restent avant l'échéance ? Négatif une fois dépassée.
+    ///
+    /// Sert à prévenir **avant** plutôt qu'à constater après : c'est la seule
+    /// forme utile d'un délai légal dans un logiciel de gestion.
+    pub fn jours_restants(&self, moment: DateTime<Utc>) -> i64 {
+        (self.echeance - moment).num_days()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -225,6 +310,58 @@ mod tests {
 
     /// Art. 3.89 § 5, 7° : à la passation, le dossier passe en entier au
     /// successeur, et cesse d'être accessible au sortant.
+    /// Art. 3.89 § 5, 7° : le dossier est transmis **dans les trente jours**.
+    ///
+    /// Le module portait ce délai en commentaire de tête depuis toujours et ne
+    /// le tenait nulle part. Le registre légal le déclarait pourtant attesté,
+    /// par un test qui vérifie que le successeur voit l'ensemble des pièces —
+    /// vrai, et muet sur le délai (#847). C'est la variante la plus sournoise
+    /// du motif : une preuve qui existe, qui passe, et qui prouve autre chose.
+    #[test]
+    fn negative_passe_trente_jours_sans_remise_le_syndic_sortant_est_en_defaut() {
+        let acp = Uuid::new_v4();
+        let sortant = Uuid::new_v4();
+        let entrant = Uuid::new_v4();
+        let fin = Utc::now() - Duration::days(40);
+
+        let passation = PassationDeDossier::nouvelle(acp, sortant, entrant, fin);
+
+        // L'échéance tombe trente jours après la fin du mandat, pas un de plus.
+        assert_eq!(
+            passation.echeance,
+            fin + Duration::days(30),
+            "le délai court depuis la fin du mandat"
+        );
+
+        // Le vingt-neuvième jour, le sortant est encore dans les temps.
+        assert_eq!(
+            passation.etat(fin + Duration::days(29)),
+            EtatPassation::EnCours
+        );
+        assert_eq!(passation.jours_restants(fin + Duration::days(29)), 1);
+
+        // Le trente et unième, il est en défaut : le successeur gère une
+        // copropriété dont il ignore les dettes et les procédures en cours.
+        assert_eq!(
+            passation.etat(fin + Duration::days(31)),
+            EtatPassation::EnDefaut
+        );
+
+        // Une remise tardive ne rétroagit pas : elle est constatée en retard.
+        let mut tardive = passation.clone();
+        tardive.remettre(fin + Duration::days(45));
+        assert_eq!(
+            tardive.etat(Utc::now()),
+            EtatPassation::RemisEnRetard,
+            "remettre après l'échéance ne régularise rien"
+        );
+
+        // Remise dans les temps : honorée, quel que soit le moment où on juge.
+        let mut a_temps = passation.clone();
+        a_temps.remettre(fin + Duration::days(10));
+        assert_eq!(a_temps.etat(Utc::now()), EtatPassation::RemisATemps);
+    }
+
     #[test]
     fn le_dossier_de_gestion_suit_lacp_lors_dune_passation() {
         let acp = Uuid::new_v4();

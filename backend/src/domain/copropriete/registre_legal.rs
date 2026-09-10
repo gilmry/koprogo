@@ -205,7 +205,12 @@ pub const REGISTRE: &[InvariantLegal] = &[
         article: "Art. 3.89 § 5, 7°",
         obligation: "L'ensemble du dossier de gestion est transmis au successeur dans les trente jours.",
         porte_par: "domain/services/dossier_de_gestion.rs",
-        atteste_par: "dossier_de_gestion::tests::le_dossier_de_gestion_suit_lacp_lors_dune_passation",
+        // Le test cité jusqu'au 2026-09-10 vérifiait que le successeur voit
+        // l'ensemble des pièces. C'est vrai, et ça ne dit rien du DÉLAI, qui
+        // n'existait alors nulle part dans le module (#847). Celui-ci éprouve
+        // l'échéance des trente jours et le défaut qui suit son dépassement.
+        atteste_par:
+            "dossier_de_gestion::tests::negative_passe_trente_jours_sans_remise_le_syndic_sortant_est_en_defaut",
     },
     InvariantLegal {
         article: "Art. 3.89 § 5, 12°",

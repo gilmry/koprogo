@@ -41,7 +41,7 @@ vont changer produit une documentation périmée le jour de sa livraison.""",
 reste répond 403, pas 404. Ce track porte aussi les deux arbitrages ouverts
 sur les droits communautaires — le syndic peut-il réserver au nom de l'ACP
 (#781, #588), et le comptable doit-il être exclu du communautaire (#589).""",
-  [585,586,587,588,589,590,591,592,781]),
+  [585,586,587,588,589,590,591,592,781,694]),
 
  ("S", "Gouvernance d'assemblée avancée", """Slice 4 de #556 : assemblée hybride, vote à distance authentifié fort,
 procès-verbal signé eIDAS, conseil de copropriété élu, commissaire aux
@@ -55,7 +55,7 @@ la désignation d'un représentant, qui est le remède prévu par la loi, n'exis
 nulle part — `is_voting_representative` n'est écrite par aucun code. Un couple
 propriétaire de son appartement ne peut voter à aucune assemblée, et une
 décision prise sans son vote est attaquable.""",
-  [576,577,578,579,581,582,583,848]),
+  [576,577,578,579,581,582,583,848,635]),
 
  ("T", "Dette d'infrastructure de test", """Ce qui empêche la CI de dire la vérité. Les quatre jobs rouges en continu du
 2026-09-04 — `prettier`, le contrat OpenAPI, `oasdiff` et la suite BDD — sont
@@ -127,7 +127,7 @@ immeuble absent de la première page rend « Aucun immeuble trouvé pour cette
 recherche » (#853). Le composant filtrait les vingt éléments chargés alors
 que le serveur offre `?search=` en ILIKE — capacité écrite EN RÉPONSE à ce
 problème, et que le frontend n'appelait pas.""",
-  [555,762,845,846,849,850,851,852,853]),
+  [555,762,845,846,850,852,855]),
 
  ("F", "Ops et infrastructure", """Sauvegardes, TLS, GitOps, et les vulnérabilités de dépendances. F3 a été joué
 le 2026-09-04 et son résultat est **négatif sur deux volets sur trois** : le
@@ -138,16 +138,8 @@ runbook n'existent pas sur la machine.""",
  ("G", "Gate humain et gouvernance documentaire", """Les deux actes non délégables — la revue humaine et la pose du tag — et ce
 qui les prépare : la taxonomie des tests comme gate de release, et le
 désencombrement de la documentation.""",
-  [427]),
+  [427,854]),
 
- ("?", "À arbitrer — présence en 0.1.0 douteuse", """Deux issues qui se contredisent elles-mêmes. #635 porte « (v0.2.0) » dans son
-titre et l'étiquette `release:0.1.0`. #694 écrit noir sur blanc dans son corps
-« Non bloquant pour v0.1.0 (bêta fermée) », et demande par ailleurs un brief
-Maury signé avant tout code.
-
-Il faut trancher, pas laisser le doute dans le périmètre : chacune pèse sur le
-décompte de ce qui reste, et donc sur la date du tag.""",
-  [635,694]),
 ]
 
 classees = set()

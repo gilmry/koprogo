@@ -556,7 +556,7 @@ Ces deux actes ne sont pas délégables : cf. `docs/governance/RESPONSABILITE.md
 
 ## Inventaire complet du périmètre 0.1.0
 
-**76 issues ouvertes** portent l'étiquette `release:0.1.0`. Elles sont
+**75 issues ouvertes** portent l'étiquette `release:0.1.0`. Elles sont
 toutes ci-dessous, sans exception : une issue du périmètre absente du WBS est
 une issue que personne ne planifie.
 
@@ -568,8 +568,9 @@ cinq jours.
 | Priorité | Nombre |
 |---|---|
 | critical | 8 |
-| high | 27 |
+| high | 25 |
 | medium | 19 |
+| low | 1 |
 | — | 22 |
 
 ### Track R — Défauts de recette navigateur (4)
@@ -646,7 +647,7 @@ vont changer produit une documentation périmée le jour de sa livraison.
 | #817 | medium | Workflow multi-persona — le ticket, du copropriétaire qui signale au prestataire qui est payé |
 | #595 | — | [Story Tx.3] Documentation docs/agent-activity/ (Tier 2 log) |
 
-### Track M — Modularité par ACP et RBAC communautaire (9)
+### Track M — Modularité par ACP et RBAC communautaire (10)
 
 Slice 5 de l'épopée #556. Une ACP active les modules dont elle a besoin ; le
 reste répond 403, pas 404. Ce track porte aussi les deux arbitrages ouverts
@@ -664,8 +665,9 @@ sur les droits communautaires — le syndic peut-il réserver au nom de l'ACP
 | #590 | — | [Story 5.6] Activation/désactivation modules audité + archivage data (jamais delete) |
 | #591 | — | [Story 5.7] Onboarding modulaire wizard ≤ 5 min |
 | #592 | — | [Story 5.8] Gate CI a11y axe-core + data-testid + Lighthouse |
+| #694 | — | Scoping user↔ACP absent : un syndic/comptable voit toute l'organisation, pas seulement ses ACPs |
 
-### Track S — Gouvernance d'assemblée avancée (8)
+### Track S — Gouvernance d'assemblée avancée (9)
 
 Slice 4 de #556 : assemblée hybride, vote à distance authentifié fort,
 procès-verbal signé eIDAS, conseil de copropriété élu, commissaire aux
@@ -690,6 +692,7 @@ décision prise sans son vote est attaquable.
 | #581 | — | [Story 4.6] Résolution EvaluationContractors AGO auto non retirable |
 | #582 | — | [Story 4.7] CdC membre élu + action create_alert |
 | #583 | — | [Story 4.8] [cluster-coord] CommissaireAuxComptes + VerificationCertificate |
+| #635 | — | Fonds affectés / thésaurisation : entité Fund dédiée aux travaux d'ampleur (v0.2.0) |
 
 ### Track T — Dette d'infrastructure de test (3)
 
@@ -727,7 +730,7 @@ présent qui atteste d'autre chose que ce qu'il prétend.
 | #832 | medium | Quinze specs Playwright échouent sans erreur d'identité : les ancrages existent mais l'élément n'es… |
 | #696 | — | Instabilité smoke suite Playwright CI : 109 échecs sur specs pré-existantes (occurrence 2026-08-08) |
 
-### Track K — Dette de code et de contrat (9)
+### Track K — Dette de code et de contrat (7)
 
 Les erreurs typées plutôt que classées par sous-chaîne, le contrat OpenAPI
 complet, et la suppression du repli qui fabrique une ACP inexistante.
@@ -775,9 +778,7 @@ problème, et que le frontend n'appelait pas.
 |---|---|---|
 | #845 | critical | Trente routes ne vérifient aucune identité : modifier ou supprimer une assemblée générale ne demand… |
 | #850 | critical | Le vote en assemblée accepte l'identité du votant, son lot et sa puissance de vote depuis le corps … |
-| #849 | high | Aucun copropriétaire ne peut voter à une consultation : le handler compare un identifiant d'utilisa… |
-| #851 | high | La table de comparaison de devis n'a jamais affiché une ligne : aucun nom de champ ne correspond au… |
-| #853 | high | La recherche d'immeubles ne cherche que la page affichée, et son état vide affirme que l'immeuble n… |
+| #855 | high | Le notaire n'a pas d'identité : l'état daté est servi à qui connaît la référence, et le suivi des r… |
 | #555 | medium | EPIC: migrer Result<_, String> → Result<_, AppError> (1263 violations, CRITICAL.md rule 4) |
 | #846 | medium | Onze tables et une vue existent en base et ne sont lues par aucun code, dont celle qui devait valid… |
 | #852 | medium | Le champ unit_id est déclaré optionnel sur la création d'une quote-part, et refusé quand il manque |
@@ -803,7 +804,7 @@ runbook n'existent pas sur la machine.
 | #466 | — | RFC: Stratégie GitOps multi-environnement — branches infra/* + main + ApplicationSet refactor |
 | #718 | — | [BUG] 502 Bad Gateway / timeouts sur api.koprogo.com sous rafale de requêtes (constaté via run E2E … |
 
-### Track G — Gate humain et gouvernance documentaire (1)
+### Track G — Gate humain et gouvernance documentaire (2)
 
 Les deux actes non délégables — la revue humaine et la pose du tag — et ce
 qui les prépare : la taxonomie des tests comme gate de release, et le
@@ -812,21 +813,7 @@ désencombrement de la documentation.
 | Issue | Prio | Intitulé |
 |---|---|---|
 | #427 | critical | Validation — taxonomie tests 4 catégories + revue humaine+Cowork comme gate release |
-
-### Track ? — À arbitrer — présence en 0.1.0 douteuse (2)
-
-Deux issues qui se contredisent elles-mêmes. #635 porte « (v0.2.0) » dans son
-titre et l'étiquette `release:0.1.0`. #694 écrit noir sur blanc dans son corps
-« Non bloquant pour v0.1.0 (bêta fermée) », et demande par ailleurs un brief
-Maury signé avant tout code.
-
-Il faut trancher, pas laisser le doute dans le périmètre : chacune pèse sur le
-décompte de ce qui reste, et donc sur la date du tag.
-
-| Issue | Prio | Intitulé |
-|---|---|---|
-| #635 | — | Fonds affectés / thésaurisation : entité Fund dédiée aux travaux d'ampleur (v0.2.0) |
-| #694 | — | Scoping user↔ACP absent : un syndic/comptable voit toute l'organisation, pas seulement ses ACPs |
+| #854 | low | Ranger la documentation avant la release : 29 markdown à la racine de docs/, aucun publié par le si… |
 
 <!-- INVENTAIRE:FIN -->
 
@@ -903,11 +890,21 @@ déplacé la date de leur retour.
 
 ## Ce qui reste, et ce qui le bloque
 
-> **Six arbitrages bloquent trois tracks entiers.** Ils sont regroupés dans
-> [`docs/ARBITRAGES_EN_ATTENTE.md`](ARBITRAGES_EN_ATTENTE.md), avec une
-> recommandation pour chacun. Aucun ne se tranche en écrivant du code, et les
-> laisser dispersés dans six issues coûte plus cher que d'y répondre en une
-> passe.
+> **Les sept arbitrages ont été tranchés le 2026-09-10.** Leurs réponses sont
+> en ADR : [0046](adr/0046-lacp-porte-le-perimetre-communautaire.md) pour le
+> porteur du périmètre communautaire,
+> [0047](adr/0047-migration-initiale-unique-jusqua-la-premiere-release.md) pour
+> le régime des migrations d'ici la release, et
+> [0048](adr/0048-identite-notaire-et-routes-publiques.md) pour l'identité
+> notaire et les routes publiques.
+>
+> Le fichier `ARBITRAGES_EN_ATTENTE.md` qui les portait a été supprimé : une
+> question posée dans un markdown inventé pour l'occasion n'a ni numéro, ni
+> statut, ni cycle de vie. Les questions vont désormais au registre RFC
+> (`docs/governance/rfc/`) ou en issue. C'est l'objet du
+> [RFC 0003](governance/rfc/0003-ranger-la-documentation-eparpillee.rst), qui
+> relève au passage vingt-neuf markdown à la racine de `docs/` dont le site
+> Sphinx ne référence aucun.
 
 ### ⚠️ Le périmètre a doublé le 2026-09-06, et c'est une décision assumée
 
