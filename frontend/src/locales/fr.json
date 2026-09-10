@@ -1298,7 +1298,13 @@
       },
       "subtitle": "Gestion de vos copropriétés",
       "title": "Tableau de bord syndic",
-      "urgentTasks": "Tâches urgentes"
+      "urgentTasks": "Tâches urgentes",
+      "integrity": {
+        "action": "Compléter l'encodage",
+        "consequence": "Les quotités ne totaliseront pas le montant de l'acte tant que l'écart persiste : les appels de fonds sont calculés sur une base incomplète, et les copropriétaires encodés portent la part des autres.",
+        "detail": "{encodes} lots encodés pour {declares} déclarés à l'acte de base.",
+        "title": "{manquants} lots non encodés"
+      }
     }
   },
   "documents": {

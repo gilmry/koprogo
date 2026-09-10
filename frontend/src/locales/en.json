@@ -1298,7 +1298,13 @@
       },
       "subtitle": "Manage your co-ownerships",
       "title": "Syndic Dashboard",
-      "urgentTasks": "Urgent Tasks"
+      "urgentTasks": "Urgent Tasks",
+      "integrity": {
+        "action": "Complete the records",
+        "consequence": "Shares cannot add up to the deed total while the gap remains: calls for funds are computed on an incomplete base, and recorded co-owners carry the others' share.",
+        "detail": "{encodes} units recorded out of {declares} declared in the deed.",
+        "title": "{manquants} units not recorded"
+      }
     }
   },
   "documents": {

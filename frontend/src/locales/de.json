@@ -1298,7 +1298,13 @@
       },
       "subtitle": "Verwalten Sie Ihre Miteigentümergemeinschaften",
       "title": "Verwalter-Dashboard",
-      "urgentTasks": "Dringende Aufgaben"
+      "urgentTasks": "Dringende Aufgaben",
+      "integrity": {
+        "action": "Erfassung vervollständigen",
+        "consequence": "Die Anteile erreichen die Summe der Urkunde nicht, solange die Lücke besteht: Die Mittelabrufe werden auf unvollständiger Grundlage berechnet, und die erfassten Miteigentümer tragen den Anteil der anderen.",
+        "detail": "{encodes} Lose erfasst von {declares} in der Basisurkunde erklärten.",
+        "title": "{manquants} Lose nicht erfasst"
+      }
     }
   },
   "documents": {

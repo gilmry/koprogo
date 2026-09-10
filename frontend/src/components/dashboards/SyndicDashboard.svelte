@@ -1,4 +1,5 @@
 <script lang="ts">
+  import EncartIntegriteDonnees from "./EncartIntegriteDonnees.svelte";
   import DecompteLegal from "./DecompteLegal.svelte";
   // Svelte 5 runes mode
   import { _ } from "../../lib/i18n";
@@ -263,6 +264,24 @@
 
     <!-- Main Content -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <!--
+        L'écart entre lots encodés et déclarés, avec sa CONSÉQUENCE.
+
+        La fraction « 23/32 » était déjà affichée, en gris, sous le nombre
+        d'immeubles. Le fait était donc connu ; ce qui manquait, c'est ce
+        qu'il coûte — les quotités se répartissant sur les lots encodés, les
+        appels de fonds portent sur une base incomplète et les copropriétaires
+        encodés paient la part des absents.
+      -->
+      {#if stats}
+        <div class="mb-6">
+          <EncartIntegriteDonnees
+            encodes={stats.total_units}
+            declares={stats.declared_units}
+          />
+        </div>
+      {/if}
+
       <!-- Urgent Tasks -->
       <div class="bg-white rounded-lg shadow">
         <div class="p-6 border-b border-gray-200">
