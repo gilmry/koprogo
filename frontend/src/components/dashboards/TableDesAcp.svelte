@@ -111,88 +111,133 @@
       {$_("dashboards.syndic.noAcp")}
     </p>
   {:else}
-    <table class="w-full">
-      <thead>
-        <tr class="bg-surface-alt">
-          <th
-            class="px-4 py-2.5 text-left text-[10.5px] font-bold uppercase tracking-[0.06em] text-muted-strong"
-          >
-            {$_("dashboards.syndic.acpColumns.name")}
-          </th>
-          <th
-            class="px-4 py-2.5 text-right text-[10.5px] font-bold uppercase tracking-[0.06em] text-muted-strong"
-          >
-            {$_("dashboards.syndic.acpColumns.buildings")}
-          </th>
-          <th
-            class="px-4 py-2.5 text-right text-[10.5px] font-bold uppercase tracking-[0.06em] text-muted-strong"
-          >
-            {$_("dashboards.syndic.acpColumns.units")}
-          </th>
-          <th
-            class="px-4 py-2.5 text-right text-[10.5px] font-bold uppercase tracking-[0.06em] text-muted-strong"
-          >
-            {$_("dashboards.syndic.acpColumns.shares")}
-          </th>
-        </tr>
-      </thead>
-      <tbody>
-        {#each acps as acp (acp.id)}
-          {@const completes = quotitesCompletes(
-            acp.quota_sum,
-            acp.total_tantiemes,
-          )}
-          {@const lotsComplets = acp.units_count === acp.declared_units_total}
-          <tr
-            data-testid="acp-row"
-            data-acp-id={acp.id}
-            data-acp-name={acp.name}
-            data-quotites-completes={completes ? "true" : "false"}
-            class="border-t border-line-soft"
-          >
-            <td class="px-4 py-3">
-              <p class="text-[14px] font-semibold text-ink">{acp.name}</p>
-              {#if acp.bce_number}
-                <!--
+    <!--
+      ── Le débordement à 390 px ────────────────────────────────────────────
+      
+      Quatre colonnes, un nom d'ACP et un numéro BCE : la table déborde de son
+      conteneur sur un téléphone. Deux façons de le traiter, et une seule est
+      honnête.
+      
+      **Empiler les colonnes en cartes** perdrait l'alignement des chiffres,
+      qui est tout l'intérêt d'un tableau — on compare des quotités et des
+      lots d'une ligne à l'autre, et cette comparaison se fait à l'œil, en
+      colonne.
+      
+      **Défiler horizontalement** conserve l'alignement et laisse l'utilisateur
+      voir qu'il y a plus à droite. `min-w` garantit que les colonnes ne se
+      compriment pas au point d'être illisibles, ce qui serait la pire des
+      deux : une table qui tient dans l'écran mais qu'on ne peut pas lire.
+      
+      `tabindex="0"` : une zone défilante doit être atteignable au clavier,
+      sinon son contenu est inaccessible à qui ne peut pas glisser du doigt.
+    -->
+    <!--
+      `svelte-ignore` assumé, et voici pourquoi.
+
+      Svelte refuse un `tabindex` sur un élément non interactif. C'est une
+      heuristique qui ne connaît pas les zones DÉFILANTES : axe-core, lui,
+      porte une règle `scrollable-region-focusable` qui exige exactement
+      l'inverse — une zone qui défile doit être atteignable au clavier, sinon
+      son contenu est inaccessible à qui ne peut pas glisser du doigt.
+
+      Les deux linters se contredisent, et c'est la règle WCAG 2.1.1 qui
+      tranche : retirer ce `tabindex` rendrait les colonnes de droite
+      inatteignables au clavier sur un téléphone.
+
+      Note pour plus tard : `Accessibility.spec.ts` n'exécute aujourd'hui que
+      `color-contrast`. Élargir son `runOnly` ferait remonter cette règle-là,
+      et bien d'autres.
+    -->
+    <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+    <div
+      class="overflow-x-auto"
+      tabindex="0"
+      role="region"
+      aria-label={$_("dashboards.syndic.myAcps")}
+    >
+      <table class="w-full min-w-[520px]">
+        <thead>
+          <tr class="bg-surface-alt">
+            <th
+              class="px-4 py-2.5 text-left text-[10.5px] font-bold uppercase tracking-[0.06em] text-muted-strong"
+            >
+              {$_("dashboards.syndic.acpColumns.name")}
+            </th>
+            <th
+              class="px-4 py-2.5 text-right text-[10.5px] font-bold uppercase tracking-[0.06em] text-muted-strong"
+            >
+              {$_("dashboards.syndic.acpColumns.buildings")}
+            </th>
+            <th
+              class="px-4 py-2.5 text-right text-[10.5px] font-bold uppercase tracking-[0.06em] text-muted-strong"
+            >
+              {$_("dashboards.syndic.acpColumns.units")}
+            </th>
+            <th
+              class="px-4 py-2.5 text-right text-[10.5px] font-bold uppercase tracking-[0.06em] text-muted-strong"
+            >
+              {$_("dashboards.syndic.acpColumns.shares")}
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          {#each acps as acp (acp.id)}
+            {@const completes = quotitesCompletes(
+              acp.quota_sum,
+              acp.total_tantiemes,
+            )}
+            {@const lotsComplets = acp.units_count === acp.declared_units_total}
+            <tr
+              data-testid="acp-row"
+              data-acp-id={acp.id}
+              data-acp-name={acp.name}
+              data-quotites-completes={completes ? "true" : "false"}
+              class="border-t border-line-soft"
+            >
+              <td class="px-4 py-3">
+                <p class="text-[14px] font-semibold text-ink">{acp.name}</p>
+                {#if acp.bce_number}
+                  <!--
                   Le BCE en monospace : c'est un identifiant, et il se lit
                   chiffre par chiffre quand on le recopie sur un virement.
                 -->
-                <p class="font-mono text-[11.5px] text-muted-strong">
-                  {acp.bce_number}
-                </p>
-              {/if}
-            </td>
-            <td class="tabular px-4 py-3 text-right text-[14px] text-ink-2">
-              {acp.buildings_count}
-            </td>
-            <td class="tabular px-4 py-3 text-right text-[14px]">
-              <!--
+                  <p class="font-mono text-[11.5px] text-muted-strong">
+                    {acp.bce_number}
+                  </p>
+                {/if}
+              </td>
+              <td class="tabular px-4 py-3 text-right text-[14px] text-ink-2">
+                {acp.buildings_count}
+              </td>
+              <td class="tabular px-4 py-3 text-right text-[14px]">
+                <!--
                 Les deux nombres ENSEMBLE quand ils diffèrent. Afficher le seul
                 encodé ferait croire l'immeuble complet ; afficher le seul
                 déclaré ferait croire les lots saisis.
               -->
-              <span class={lotsComplets ? "text-ink-2" : "text-warn"}>
-                {acp.units_count}{lotsComplets
-                  ? ""
-                  : `/${acp.declared_units_total}`}
-              </span>
-            </td>
-            <td class="tabular px-4 py-3 text-right text-[14px]">
-              <span
-                data-testid="acp-quotites"
-                class="inline-flex items-center gap-1.5 {completes
-                  ? 'text-success-text'
-                  : 'text-warn'}"
-              >
-                {#if !completes}
-                  <Icone nom="alert" taille={14} class="shrink-0" />
-                {/if}
-                {acp.quota_sum}/{acp.total_tantiemes}
-              </span>
-            </td>
-          </tr>
-        {/each}
-      </tbody>
-    </table>
+                <span class={lotsComplets ? "text-ink-2" : "text-warn"}>
+                  {acp.units_count}{lotsComplets
+                    ? ""
+                    : `/${acp.declared_units_total}`}
+                </span>
+              </td>
+              <td class="tabular px-4 py-3 text-right text-[14px]">
+                <span
+                  data-testid="acp-quotites"
+                  class="inline-flex items-center gap-1.5 {completes
+                    ? 'text-success-text'
+                    : 'text-warn'}"
+                >
+                  {#if !completes}
+                    <Icone nom="alert" taille={14} class="shrink-0" />
+                  {/if}
+                  {acp.quota_sum}/{acp.total_tantiemes}
+                </span>
+              </td>
+            </tr>
+          {/each}
+        </tbody>
+      </table>
+    </div>
   {/if}
 </section>
