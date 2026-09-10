@@ -1,4 +1,5 @@
 <script lang="ts">
+  import DettesParAcp from "./DettesParAcp.svelte";
   import { formatTantiemes } from "../../lib/utils/tantiemes";
   // Svelte 5 runes mode
   import { _ } from "../../lib/i18n";
@@ -190,6 +191,18 @@
 </script>
 
 <div data-testid="owner-dashboard">
+  <!--
+    « À payer » en PREMIÈRE position.
+
+    La remise inverse la hiérarchie de cet écran : la bannière « Membre du
+    conseil » — dégradé, bordure de 2 px, médaille de 36 px — était l'élément
+    le plus voyant de la page pour un fait STATUTAIRE. Un mandat de conseil
+    n'est pas actionnable ; une échéance de paiement l'est.
+  -->
+  <div class="mb-6">
+    <DettesParAcp />
+  </div>
+
   <div class="mb-8">
     <h1 class="text-3xl font-bold text-gray-900 mb-2">
       {$_("common.welcome")}, {user?.first_name} 👋

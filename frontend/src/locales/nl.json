@@ -4260,5 +4260,16 @@
   "tasks": {
     "daysOverdue": "te laat",
     "outOfDays": "van {total} d"
+  },
+  "owner": {
+    "dues": {
+      "chargesCount": "{count} openstaande lasten",
+      "nothingDue": "U heeft geen openstaande lasten.",
+      "pay": "Betalen",
+      "separateLegalEntities": "Elke vereniging is een afzonderlijke rechtspersoon met een eigen bankrekening: één betaling per vereniging, op haar eigen rekening. Eén enkele overschrijving zou voor een deel van het bedrag de verkeerde vereniging betalen.",
+      "summary": "{charges} lasten · {acps} verenigingen",
+      "title": "Te betalen",
+      "unavailable": "Uw lasten zijn momenteel niet bereikbaar."
+    }
   }
 }

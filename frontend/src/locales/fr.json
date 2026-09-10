@@ -4260,5 +4260,16 @@
   "tasks": {
     "daysOverdue": "de retard",
     "outOfDays": "sur {total} j"
+  },
+  "owner": {
+    "dues": {
+      "chargesCount": "{count} charges en attente",
+      "nothingDue": "Vous n'avez aucune charge en attente.",
+      "pay": "Payer",
+      "separateLegalEntities": "Chaque copropriété est une personne morale distincte, avec son propre compte bancaire : un paiement par association, sur son compte. Un virement unique paierait la mauvaise association pour une partie de la somme.",
+      "summary": "{charges} charges · {acps} associations",
+      "title": "À payer",
+      "unavailable": "Vos charges ne sont pas accessibles pour le moment."
+    }
   }
 }

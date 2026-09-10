@@ -4260,5 +4260,16 @@
   "tasks": {
     "daysOverdue": "overdue",
     "outOfDays": "of {total} d"
+  },
+  "owner": {
+    "dues": {
+      "chargesCount": "{count} pending charges",
+      "nothingDue": "You have no pending charges.",
+      "pay": "Pay",
+      "separateLegalEntities": "Each association is a distinct legal person with its own bank account: one payment per association, to its own account. A single transfer would pay the wrong association for part of the amount.",
+      "summary": "{charges} charges · {acps} associations",
+      "title": "To pay",
+      "unavailable": "Your charges are not reachable right now."
+    }
   }
 }

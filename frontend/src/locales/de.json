@@ -4260,5 +4260,16 @@
   "tasks": {
     "daysOverdue": "überfällig",
     "outOfDays": "von {total} T"
+  },
+  "owner": {
+    "dues": {
+      "chargesCount": "{count} offene Kosten",
+      "nothingDue": "Sie haben keine offenen Kosten.",
+      "pay": "Zahlen",
+      "separateLegalEntities": "Jede Gemeinschaft ist eine eigene juristische Person mit eigenem Bankkonto: eine Zahlung je Gemeinschaft, auf ihr eigenes Konto. Eine einzige Überweisung würde für einen Teil des Betrags die falsche Gemeinschaft bezahlen.",
+      "summary": "{charges} Kosten · {acps} Vereinigungen",
+      "title": "Zu zahlen",
+      "unavailable": "Ihre Kosten sind derzeit nicht erreichbar."
+    }
   }
 }
