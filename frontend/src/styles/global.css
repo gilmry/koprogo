@@ -83,6 +83,19 @@
   --shadow-sheet: 0 -8px 30px rgb(0 0 0 / 0.18);
   --shadow-fab: 0 8px 18px rgb(21 128 61 / 0.35);
 
+  /* ── Zones sûres ──────────────────────────────────────────────────── */
+  /*
+   * L'en-tête mobile mesure 56 px PLUS l'encoche. Un seul jeton, parce que
+   * deux fichiers doivent s'accorder dessus : la barre elle-même
+   * (`Navigation.svelte`, en `fixed top-0`) et la cale qui lui réserve sa
+   * place dans le flux (`Layout.astro`). Écrits séparément, ils dérivent, et
+   * la page glisse sous l'en-tête de la hauteur exacte de l'encoche.
+   *
+   * Le repli `0px` compte : sur un écran sans encoche, et partout où
+   * `viewport-fit=cover` n'est pas posé, `env()` ne résout rien.
+   */
+  --spacing-entete-mobile: calc(3.5rem + env(safe-area-inset-top, 0px));
+
   /* ── Typographie ──────────────────────────────────────────────────── */
   --font-mono:
     ui-monospace, Menlo, Monaco, "Cascadia Mono", "Segoe UI Mono", monospace;

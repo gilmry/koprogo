@@ -44,7 +44,20 @@ const pageTitle = title.includes(SITE_NAME) ? title : `${title} - ${SITE_NAME}`;
       name="description"
       content="KoproGo - Plateforme SaaS de Gestion de Copropriété"
     />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <!--
+      `viewport-fit=cover` n'est pas décoratif : sans lui, `env(safe-area-inset-*)`
+      vaut ZÉRO sur tous les appareils, et les deux composants qui s'en servent
+      (la barre d'onglets et la feuille du bas) réservent une marge de zéro pixel
+      sous l'indicateur d'accueil de l'iPhone.
+
+      Les deux étaient donc écrits juste et inertes. La garde
+      `garde-zone-sure` tient désormais l'appariement, parce que ces fichiers
+      n'ont aucune autre raison de se connaître.
+    -->
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
     <link rel="icon" type="image/png" href="/icons/icon-192x192.png" />
     <meta name="generator" content={Astro.generator} />
     <title>{pageTitle}</title>
@@ -215,7 +228,11 @@ const pageTitle = title.includes(SITE_NAME) ? title : `${title} - ${SITE_NAME}`;
       id="app-content"
       class:list={["min-h-screen flex flex-col", showNav && "lg:ml-60"]}
     >
-      {showNav && <div class="h-14 lg:hidden" aria-hidden="true" />}
+      {
+        /* Même jeton que l'en-tête : `h-14` en dur laissait la page glisser
+         dessous de la hauteur de l'encoche. */
+      }
+      {showNav && <div class="h-entete-mobile lg:hidden" aria-hidden="true" />}
       {
         /*
         UNE barre de contexte, et non deux empilées.

@@ -795,7 +795,7 @@
 <!-- MOBILE TOP HEADER (<lg)                                            -->
 <!-- ================================================================== -->
 <header
-  class="lg:hidden fixed top-0 left-0 right-0 h-14 bg-white border-b border-gray-200 z-40 flex items-center justify-between px-3"
+  class="lg:hidden fixed top-0 left-0 right-0 h-entete-mobile pt-[env(safe-area-inset-top,0px)] bg-white border-b border-gray-200 z-40 flex items-center justify-between px-3"
   data-testid="mobile-header"
 >
   {#if isAuthenticated}
