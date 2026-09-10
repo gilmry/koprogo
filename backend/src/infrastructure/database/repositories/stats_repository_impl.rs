@@ -1,5 +1,6 @@
 use crate::application::dto::{
-    AdminDashboardStats, NextMeetingInfo, SeedDataStats, SyndicDashboardStats, UrgentTask,
+    AdminDashboardStats, DuAupresDuneAcp, NextMeetingInfo, SeedDataStats, SyndicDashboardStats,
+    UrgentTask,
 };
 use crate::application::error::AppError;
 use crate::application::ports::StatsRepository;
@@ -358,6 +359,58 @@ impl StatsRepository for PostgresStatsRepository {
             .await
             .map_err(|e| e.to_string())?;
         Ok(row.map(|r| r.get("id")))
+    }
+
+    async fn get_owner_dues_by_acp(
+        &self,
+        owner_id: Uuid,
+    ) -> Result<Vec<DuAupresDuneAcp>, AppError> {
+        // Le groupement se fait sur l'ACP, pas sur l'immeuble : une ACP peut
+        // compter plusieurs blocs, et c'est ELLE qui a le compte bancaire.
+        //
+        // `DISTINCT u.building_id` dans la sous-requête : sans lui, un
+        // copropriétaire détenant deux lots dans le même immeuble compterait
+        // ses charges deux fois.
+        let lignes = sqlx::query(
+            r#"
+            SELECT
+                a.id                                          AS acp_id,
+                a.name                                        AS acp_name,
+                a.bce_number                                  AS bce_number,
+                COUNT(e.id)                                   AS charges_en_attente,
+                COALESCE(SUM(e.amount), 0::NUMERIC)           AS montant
+            FROM acps a
+            INNER JOIN buildings b ON b.acp_id = a.id
+            INNER JOIN expenses e  ON e.building_id = b.id
+            WHERE e.payment_status = 'pending'
+              AND b.id IN (
+                  SELECT DISTINCT u.building_id
+                  FROM units u
+                  INNER JOIN unit_owners uo ON uo.unit_id = u.id
+                  WHERE uo.owner_id = $1 AND uo.end_date IS NULL
+              )
+            GROUP BY a.id, a.name, a.bce_number
+            HAVING COALESCE(SUM(e.amount), 0::NUMERIC) > 0
+            ORDER BY a.name
+            "#,
+        )
+        .bind(owner_id)
+        .fetch_all(&self.pool)
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?;
+
+        Ok(lignes
+            .into_iter()
+            .map(|ligne| DuAupresDuneAcp {
+                acp_id: ligne.get::<Uuid, _>("acp_id").to_string(),
+                acp_name: ligne.get("acp_name"),
+                bce_number: ligne.try_get("bce_number").unwrap_or(None),
+                charges_en_attente: ligne.try_get("charges_en_attente").unwrap_or(0),
+                montant: ligne
+                    .try_get("montant")
+                    .unwrap_or(rust_decimal::Decimal::ZERO),
+            })
+            .collect())
     }
 
     async fn get_syndic_urgent_tasks(

@@ -66,6 +66,47 @@ pub struct SyndicDashboardStats {
     pub next_meeting: Option<NextMeetingInfo>,
 }
 
+/// Ce qu'un copropriétaire doit à UNE copropriété.
+///
+/// ── Pourquoi par ACP, et pas un montant global ──────────────────────────
+///
+/// Un copropriétaire peut détenir des lots dans plusieurs ACP — situation
+/// ordinaire d'un investisseur, et `unit_owners` est une relation n:n sans
+/// contrainte d'ACP unique.
+///
+/// Or **chaque ACP est une personne morale distincte, avec son propre compte
+/// bancaire** : l'Art. 3.86 § 1er lui donne la personnalité juridique, le § 3
+/// impose des comptes ouverts à son nom.
+///
+/// L'écran servait jusqu'ici un `SyndicDashboardStats` — un compte, un
+/// montant, rien qui distingue les copropriétés. Un copropriétaire qui lit
+/// « 1 262,50 € à payer » et fait un seul virement PAIE LA MAUVAISE PERSONNE
+/// MORALE pour une partie de la somme : l'argent atterrit sur le compte de
+/// l'ACP A pour des charges dues à l'ACP B. Le syndic de B devra réclamer,
+/// celui de A rembourser.
+///
+/// Ce n'est donc pas un défaut d'affichage mais un paiement mal imputé.
+/// Agréger pour informer, séparer pour agir (#867).
+#[derive(Debug, Clone, Serialize)]
+pub struct DuAupresDuneAcp {
+    pub acp_id: String,
+    pub acp_name: String,
+    /// Le numéro d'entreprise, à recopier sur le virement.
+    ///
+    /// C'est lui qui identifie la personne morale créancière — l'Art. 3.86
+    /// § 1er al. 4 impose d'ailleurs qu'il figure sur tous les documents qui
+    /// émanent de l'association.
+    pub bce_number: Option<String>,
+    pub charges_en_attente: i64,
+    /// Montant dû à CETTE association.
+    ///
+    /// `Decimal` sérialisé en flottant JSON, comme `pending_expenses_amount` :
+    /// le contrat frontend type ce champ `number`, et le changer ici créerait
+    /// une dérive silencieuse.
+    #[serde(with = "rust_decimal::serde::float")]
+    pub montant: Decimal,
+}
+
 #[derive(Debug, Clone, Serialize)]
 pub struct UrgentTask {
     pub task_type: String,

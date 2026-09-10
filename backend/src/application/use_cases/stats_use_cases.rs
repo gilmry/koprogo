@@ -1,5 +1,5 @@
 use crate::application::dto::{
-    AdminDashboardStats, SeedDataStats, SyndicDashboardStats, UrgentTask,
+    AdminDashboardStats, DuAupresDuneAcp, SeedDataStats, SyndicDashboardStats, UrgentTask,
 };
 use crate::application::error::AppError;
 use crate::application::ports::StatsRepository;
@@ -47,6 +47,22 @@ impl StatsUseCases {
                 next_meeting: None,
             }),
             Some(owner_id) => self.repo.get_owner_stats(owner_id).await,
+        }
+    }
+
+    /// Ce que le copropriétaire doit, ventilé par association.
+    ///
+    /// Liste vide si l'utilisateur n'est rattaché à aucune fiche de
+    /// copropriétaire : ce n'est pas une erreur, c'est un compte qui n'a pas
+    /// encore de lot. Rendre une erreur ferait afficher une panne là où il n'y
+    /// a rien à payer.
+    pub async fn get_owner_dues_by_acp(
+        &self,
+        user_id: Uuid,
+    ) -> Result<Vec<DuAupresDuneAcp>, AppError> {
+        match self.repo.find_owner_id_by_user_id(user_id).await? {
+            None => Ok(Vec::new()),
+            Some(owner_id) => self.repo.get_owner_dues_by_acp(owner_id).await,
         }
     }
 
@@ -109,6 +125,31 @@ mod tests {
                 next_meeting: None,
             })
         }
+        async fn get_owner_dues_by_acp(
+            &self,
+            _owner_id: Uuid,
+        ) -> Result<Vec<crate::application::dto::DuAupresDuneAcp>, AppError> {
+            // DEUX associations : c'est le cas qui compte. Une doublure à une
+            // seule ACP laisserait passer un écran qui additionne les dettes
+            // de personnes morales distinctes — le défaut de #867.
+            Ok(vec![
+                crate::application::dto::DuAupresDuneAcp {
+                    acp_id: "acp-1".to_string(),
+                    acp_name: "Les Érables".to_string(),
+                    bce_number: Some("0123.456.789".to_string()),
+                    charges_en_attente: 2,
+                    montant: dec!(842.50),
+                },
+                crate::application::dto::DuAupresDuneAcp {
+                    acp_id: "acp-2".to_string(),
+                    acp_name: "Les Glycines".to_string(),
+                    bce_number: Some("0987.654.321".to_string()),
+                    charges_en_attente: 1,
+                    montant: dec!(420.00),
+                },
+            ])
+        }
+
         async fn get_owner_stats(&self, _owner_id: Uuid) -> Result<SyndicDashboardStats, AppError> {
             Ok(SyndicDashboardStats {
                 total_buildings: 1,

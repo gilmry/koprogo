@@ -561,6 +561,10 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig) {
             .service(get_syndic_stats)
             .service(get_syndic_urgent_tasks)
             // Stats (Owner)
+            // AVANT `get_owner_stats` n'est pas requis ici — `/stats/owner` et
+            // `/stats/owner/dues-by-acp` ne se recouvrent pas, la seconde ayant
+            // un segment de plus. Mais `garde_ordre_des_routes` veille.
+            .service(get_owner_dues_by_acp)
             .service(get_owner_stats)
             // Organizations (SuperAdmin only)
             .service(list_organizations)
