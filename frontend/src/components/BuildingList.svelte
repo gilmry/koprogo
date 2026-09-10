@@ -1,4 +1,5 @@
 <script lang="ts">
+  import BoutonAction from "./ui/BoutonAction.svelte";
   import { onMount } from "svelte";
   import { _ } from "../lib/i18n";
   import { api } from "../lib/api";
@@ -258,26 +259,30 @@
               </div>
               <div class="flex items-center space-x-2 ml-4">
                 {#if isSuperAdmin}
-                  <button
-                    on:click={() => handleEdit(building)}
-                    class="text-primary-600 hover:text-primary-900"
-                    aria-label={$_("common.edit")}
-                    title={$_("common.edit")}
+                  <!--
+                    Ces deux boutons ne contenaient qu'un émoji, sans
+                    remplissage : leur zone de tap effective était d'environ
+                    20 px, contre 36 px de cible sur une ligne de tableau.
+
+                    Et l'émoji était ANNONCÉ en plus de l'`aria-label` : le
+                    bouton s'appelait « crayon Modifier ». Les ancrages de
+                    recette sont conservés tels quels.
+                  -->
+                  <BoutonAction
+                    nom="edit"
+                    ariaLabel={$_("common.edit")}
                     disabled={actionLoading}
-                    data-testid="edit-building-button"
-                  >
-                    ✏️
-                  </button>
-                  <button
-                    on:click={() => handleDeleteClick(building)}
-                    class="text-red-600 hover:text-red-900"
-                    aria-label={$_("common.delete")}
-                    title={$_("common.delete")}
+                    testId="edit-building-button"
+                    onclick={() => handleEdit(building)}
+                  />
+                  <BoutonAction
+                    nom="trash"
+                    ton="danger"
+                    ariaLabel={$_("common.delete")}
                     disabled={actionLoading}
-                    data-testid="delete-building-button"
-                  >
-                    🗑️
-                  </button>
+                    testId="delete-building-button"
+                    onclick={() => handleDeleteClick(building)}
+                  />
                 {/if}
                 <a
                   data-testid="building-list-detail-link"

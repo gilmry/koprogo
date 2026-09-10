@@ -233,6 +233,19 @@ export const ICONES: Record<string, Icone> = {
   ],
   search: ["M11 4a7 7 0 1 0 0 14 7 7 0 0 0 0-14z", "M20 20l-4.5-4.5"],
 
+  // ── Actions de ligne ──────────────────────────────────────────────────
+  //
+  // Elles remplacent ✏️ et 🗑️, dont la zone de tap effective était d'environ
+  // 20 px — un bouton sans remplissage autour d'un caractère. La cible
+  // minimale est de 44 px.
+  edit: ["M4 20h4l10.5-10.5a2.8 2.8 0 1 0-4-4L4 16z", "M13.5 6.5l4 4"],
+  trash: [
+    "M4 7h16",
+    "M10 4h4a1 1 0 0 1 1 1v2H9V5a1 1 0 0 1 1-1z",
+    "M6 7l1 13a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-13",
+    "M10 11v7M14 11v7",
+  ],
+
   // ── Signes d'état et de direction ─────────────────────────────────────
   chevronRight: ["M9 6l6 6-6 6"],
   chevronDown: ["M6 9l6 6 6-6"],

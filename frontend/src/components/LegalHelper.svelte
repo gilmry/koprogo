@@ -38,10 +38,26 @@
   let legalRules: LegalRule[] = [];
   let majorityTypes: MajorityType[] = [];
 
+  /**
+   * Les règles n'ont été chargées qu'une fois, et seulement si on ouvre.
+   *
+   * Le chargement était fait `onMount`, donc TROIS requêtes sur chaque page
+   * de l'application, pour un panneau que la plupart des visites n'ouvriront
+   * jamais. Le composant n'était monté nulle part, si bien que ce coût
+   * n'était payé par personne — mais il l'aurait été dès qu'on le branche.
+   *
+   * Le rendre paresseux avant de le monter, plutôt qu'après avoir constaté la
+   * dépense : c'est le même arbitrage que le préchargement du sélecteur
+   * d'immeuble, et il vaut pour la même raison. Un logiciel sobre ne demande
+   * pas ce dont il n'a pas besoin.
+   */
+  let dejaCharge = false;
+
   onMount(() => {
-    // Get current page path
+    // Le chemin décide du contenu contextuel : il se lit au montage, et il ne
+    // change pas ensuite — l'application est multi-page, chaque navigation
+    // recharge le document.
     currentPath = window.location.pathname;
-    loadLegalData();
   });
 
   async function loadLegalData() {
@@ -74,6 +90,10 @@
 
   function togglePanel() {
     isOpen = !isOpen;
+    if (isOpen && !dejaCharge) {
+      dejaCharge = true;
+      loadLegalData();
+    }
   }
 
   function closePanel() {

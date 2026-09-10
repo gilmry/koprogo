@@ -59,10 +59,29 @@ export type Role =
   | null;
 
 /**
- * Subset minimal du `ScopeSnapshot` consommé par `canSee`. On ne dépend QUE
- * de `selectedBuildingId` ici — les autres champs (acpId, portfolioId) sont
- * orthogonaux au menu visibility. Une story future pourra étendre si
- * `selectedPortfolioId` débloque des menus spécifiques.
+ * Sous-ensemble du `ScopeSnapshot` que `canSee` consomme.
+ *
+ * ── Le périmètre bascule de l'immeuble vers l'ACP ───────────────────────
+ *
+ * `canSee` ne dépendait que de `selectedBuildingId`. C'est le mauvais porteur,
+ * et l'ADR 0046 comme la remise de design le disent indépendamment l'une de
+ * l'autre : **un syndic est mandaté par une ACP, jamais par un immeuble.** Une
+ * ACP est une personne morale — numéro BCE, compte propre, assemblée, budget —
+ * et elle peut compter plusieurs immeubles. La comptabilité y est attachée
+ * (ADR-0045), les appels de fonds aussi.
+ *
+ * ── Pourquoi les DEUX pendant la transition ─────────────────────────────
+ *
+ * Le périmètre d'immeuble ne disparaît pas : il devient le **filtre
+ * secondaire**, à l'intérieur de l'ACP. Il reste donc un porteur de contexte
+ * légitime.
+ *
+ * Et il y a une raison de méthode : six répertoires de recettes Playwright et
+ * trois fichiers de tests unitaires pilotent aujourd'hui `setBuilding()`.
+ * Basculer d'un coup les casserait tous, et on ne saurait plus distinguer une
+ * régression d'un ancrage à déplacer. La remise impose cette prudence :
+ * « Only remove the building-scoped code path once every spec has an ACP
+ * equivalent, in a separate commit. »
  */
 export type Scope = {
   selectedBuildingId: string | null;
@@ -204,7 +223,12 @@ export function canSee(role: Role, menu: Menu, scope: Scope): boolean {
   // 1. Rôle null/undefined/vide → fail-closed.
   if (!role || typeof role !== "string") return false;
 
-  const hasBuildingScope = scope?.selectedBuildingId != null;
+  // « En contexte » = l'utilisateur travaille DANS une copropriété donnée.
+  // L'ACP est le porteur ; l'immeuble reste accepté le temps que les recettes
+  // migrent, et parce qu'il désigne toujours une ACP unique par son
+  // rattachement (`setBuilding` renseigne `selectedAcpId` au passage).
+  const hasBuildingScope =
+    scope?.selectedAcpId != null || scope?.selectedBuildingId != null;
 
   // 2. Menu admin (gestion plateforme).
   if (menu === "admin") {

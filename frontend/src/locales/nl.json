@@ -2335,9 +2335,15 @@
     "meetings": {
       "title": "Regels van de algemene vergadering"
     },
+    "noRuleFound": "Geen enkele regel komt overeen.",
     "resolutions": {
       "title": "Stemmingen en meerderheden"
     },
+    "rulesSubtitle": "Het Belgische mede-eigendomsrecht, zoals het product het toepast.",
+    "rulesTitle": "Wettelijke regels",
+    "rulesUnavailable": "De regels zijn momenteel niet bereikbaar.",
+    "searchRules": "Zoek een regel",
+    "seeRule": "Bekijk de regel",
     "travaux": {
       "description": "Regels voor werken en uitgaven"
     }
@@ -4212,5 +4218,9 @@
     "generating": "⏳ Bezig met genereren...",
     "deleting": "⏳ Bezig met verwijderen...",
     "clearConfirm": "⚠️ LET OP: dit verwijdert ALLEEN de demogegevens (gemarkeerd met is_seed_data=true). Productiegegevens blijven behouden. Weet u het zeker?"
+  },
+  "localExchanges": {
+    "selLegalBody": "LETS zijn legaal en erkend in België, en onbelast zolang ze niet-commercieel blijven (ruilhandel). Tijdmunt: één uur is één krediet. Een negatief saldo is toegestaan — het is een model van gemeenschapsvertrouwen.",
+    "selLegalTitle": "Belgisch wettelijk kader"
   }
 }

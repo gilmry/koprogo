@@ -68,7 +68,19 @@ function contratActuel(): { litteraux: Set<string>; prefixes: Set<string> } {
   const prefixes = new Set<string>();
   for (const chemin of fichiersDeGabarit(RACINE)) {
     const texte = readFileSync(chemin, "utf8");
-    for (const m of texte.matchAll(/data-testid="([^"]+)"/g)) {
+    // Deux formes portent le MÊME contrat, et la seconde manquait.
+    //
+    // `data-testid="x"` pose l'attribut directement. `testId="x"` le passe à
+    // un composant qui le repose sur son élément racine — motif que
+    // `Button.svelte` emploie depuis longtemps via
+    // `export { testId as 'data-testid' }`, et que `BoutonAction` et
+    // `CadreLegal` reprennent.
+    //
+    // Ne lire que la première faisait disparaître du « contrat » des ancrages
+    // qui vivent toujours dans le DOM rendu. La garde a signalé deux
+    // identifiants perdus alors qu'ils ne l'étaient pas : elle mesurait le
+    // texte du source, quand le contrat porte sur ce que le navigateur voit.
+    for (const m of texte.matchAll(/(?:data-testid|testId)="([^"]+)"/g)) {
       const valeur = m[1];
       if (valeur.includes("{")) {
         const prefixe = valeur.split("{")[0].replace(/-+$/, "");

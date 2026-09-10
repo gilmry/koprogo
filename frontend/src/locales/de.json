@@ -2335,9 +2335,15 @@
     "meetings": {
       "title": "Regeln der Generalversammlung"
     },
+    "noRuleFound": "Keine Regel passt.",
     "resolutions": {
       "title": "Abstimmungen und Mehrheiten"
     },
+    "rulesSubtitle": "Belgisches Miteigentumsrecht, wie es die Anwendung umsetzt.",
+    "rulesTitle": "Rechtsvorschriften",
+    "rulesUnavailable": "Die Regeln sind derzeit nicht erreichbar.",
+    "searchRules": "Regel suchen",
+    "seeRule": "Regel ansehen",
     "travaux": {
       "description": "Regeln für Arbeiten und Ausgaben"
     }
@@ -4212,5 +4218,9 @@
     "generating": "⏳ Wird generiert...",
     "deleting": "⏳ Wird gelöscht...",
     "clearConfirm": "⚠️ ACHTUNG: Dies löscht NUR die Demodaten (markiert mit is_seed_data=true). Produktionsdaten bleiben erhalten. Sind Sie sicher?"
+  },
+  "localExchanges": {
+    "selLegalBody": "Tauschringe sind in Belgien legal und anerkannt und steuerfrei, solange sie nicht gewerblich sind (Tausch). Zeitwährung: eine Stunde ist ein Guthaben. Ein negativer Saldo ist zulässig — das ist ein Modell des Gemeinschaftsvertrauens.",
+    "selLegalTitle": "Belgischer Rechtsrahmen"
   }
 }

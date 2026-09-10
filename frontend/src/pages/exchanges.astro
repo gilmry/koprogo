@@ -1,4 +1,5 @@
 ---
+import CadreLegalSel from "../components/legal/CadreLegalSel.svelte";
 import Layout from "../layouts/Layout.astro";
 ---
 
@@ -24,14 +25,15 @@ import Layout from "../layouts/Layout.astro";
         </a>
       </div>
 
-      <!-- Legal Notice (Belgian Context) -->
-      <div class="p-4 bg-blue-50 border-l-4 border-blue-400 rounded-md text-sm">
-        <p class="text-blue-800">
-          <strong>⚖️ Cadre légal belge:</strong> Les SEL sont légaux et reconnus en
-          Belgique. Non-taxables si non-commerciaux (troc). Monnaie temps: 1 heure
-          = 1 crédit. Solde négatif autorisé (modèle de confiance communautaire).
-        </p>
-      </div>
+      {
+        /*
+        Encart de cadre légal, composant unique. Il était écrit à la main ici,
+        en bleu, avec un émoji que les lecteurs d'écran annoncent — et son
+        texte était en français dans le source, donc identique dans les quatre
+        langues du produit.
+      */
+      }
+      <CadreLegalSel client:load />
     </div>
 
     <div id="building-selector-container" class="mb-6"></div>

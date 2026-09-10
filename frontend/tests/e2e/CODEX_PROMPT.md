@@ -235,14 +235,24 @@ Les composants suivants ont **déjà** été mis à jour et servent de référen
 
 ```svelte
 <!-- BuildingList.svelte -->
-<Button data-testid="create-building-button">➕ Nouvel immeuble</Button>
-<input data-testid="building-search-input" placeholder="Rechercher..." />
+<Button data-testid="create-building-button">{$_("buildings.create")}</Button>
+<input data-testid="building-search-input" placeholder={$_("common.search")} />
 <div data-testid="buildings-list">
   <div data-testid="building-card" data-building-id={building.id} data-building-name={building.name}>
     <h3 data-testid="building-name">{building.name}</h3>
     <div data-testid="building-address">{building.address}</div>
-    <button data-testid="edit-building-button">✏️</button>
-    <button data-testid="delete-building-button">🗑️</button>
+    <!--
+      Les actions de ligne passent par `BoutonAction`, jamais par un émoji.
+
+      Un émoji dans un bouton est annoncé EN PLUS de l'`aria-label` : le
+      bouton s'appelle « crayon Modifier » pour un lecteur d'écran. Et sans
+      remplissage, sa zone de tap tombe à ~20 px contre 36 px de cible.
+
+      `garde-boutons-emoji` tient un cliquet là-dessus, et cet exemple
+      enseignait exactement ce qu'elle interdit.
+    -->
+    <BoutonAction nom="edit" ariaLabel={$_("common.edit")} testId="edit-building-button" onclick={…} />
+    <BoutonAction nom="trash" ton="danger" ariaLabel={$_("common.delete")} testId="delete-building-button" onclick={…} />
   </div>
 </div>
 ```

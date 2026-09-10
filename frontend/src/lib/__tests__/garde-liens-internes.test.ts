@@ -86,10 +86,24 @@ function liensMorts(): { lien: string; ou: string[] }[] {
     const code = readFileSync(f, "utf-8")
       .replace(/<!--[\s\S]*?-->/g, "")
       .replace(/\/\*[\s\S]*?\*\//g, "");
-    // Seuls les `href` littéraux : un `href={...}` porte une expression que
-    // l'analyse statique ne peut pas résoudre sans se mentir.
-    for (const m of code.matchAll(/href="(\/[^"{}\s#?]*)"/g)) {
-      const lien = m[1].replace(/\/+$/, "") || "/";
+    // ── Le CHEMIN se vérifie même quand la suite ne se vérifie pas ───────
+    //
+    // Le motif excluait `?` et `{`, si bien qu'un lien comme
+    // `href="/legal-rules?code={regle}"` échappait DEUX FOIS. Or le chemin,
+    // `/legal-rules`, est parfaitement vérifiable : c'est la chaîne de
+    // requête qui ne l'est pas, et elle ne décide pas de la page servie.
+    //
+    // Je l'ai découvert en écrivant exactement ce lien : le témoin — page
+    // supprimée, garde relancée — n'a PAS mordu. Sans lui j'aurais livré un
+    // lien mort, et l'hébergement l'aurait servi en 200.
+    //
+    // Ce qu'on ne peut toujours pas vérifier, et qu'on saute donc : un chemin
+    // qui contient lui-même une interpolation (`/buildings/{id}`), parce
+    // qu'il n'est pas connu avant l'exécution.
+    for (const m of code.matchAll(/href="(\/[^"\s#]*)"/g)) {
+      const chemin = m[1].split("?")[0];
+      if (chemin.includes("{") || chemin.includes("}")) continue;
+      const lien = chemin.replace(/\/+$/, "") || "/";
       par.set(
         lien,
         (par.get(lien) ?? new Set()).add(relative(process.cwd(), f)),
@@ -150,7 +164,7 @@ describe("les liens internes mènent quelque part (#803)", () => {
     )
       .map((f) => readFileSync(f, "utf-8"))
       .join("\n")
-      .match(/href="\/[^"{}\s#?]*"/g);
+      .match(/href="\/[^"\s#]*"/g);
     expect(
       liens?.length ?? 0,
       "plus aucun lien interne littéral : le motif a changé, ou le " +

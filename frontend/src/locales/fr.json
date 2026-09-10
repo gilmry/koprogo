@@ -2335,9 +2335,15 @@
     "meetings": {
       "title": "Règles de l'assemblée générale"
     },
+    "noRuleFound": "Aucune règle ne correspond.",
     "resolutions": {
       "title": "Votes et majorités"
     },
+    "rulesSubtitle": "Le droit belge de la copropriété, tel que le produit l'applique.",
+    "rulesTitle": "Règles légales",
+    "rulesUnavailable": "Les règles ne sont pas accessibles pour le moment.",
+    "searchRules": "Rechercher une règle",
+    "seeRule": "Voir la règle",
     "travaux": {
       "description": "Règles applicables aux travaux et aux dépenses"
     }
@@ -4212,5 +4218,9 @@
     "generating": "⏳ Génération en cours...",
     "deleting": "⏳ Suppression...",
     "clearConfirm": "⚠️ ATTENTION : ceci va SUPPRIMER UNIQUEMENT les données de démonstration (marquées is_seed_data=true). Les données de production seront préservées. Êtes-vous sûr de vouloir continuer ?"
+  },
+  "localExchanges": {
+    "selLegalBody": "Les SEL sont légaux et reconnus en Belgique, et non taxables tant qu'ils restent non commerciaux (troc). Monnaie temps : une heure vaut un crédit. Le solde négatif est autorisé — c'est un modèle de confiance communautaire.",
+    "selLegalTitle": "Cadre légal belge"
   }
 }

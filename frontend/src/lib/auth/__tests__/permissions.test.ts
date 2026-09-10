@@ -33,6 +33,24 @@ const SCOPE_EMPTY: Scope = {
   selectedPortfolioId: null,
 };
 
+/**
+ * Une ACP SANS immeuble sélectionné.
+ *
+ * C'est le cas que le modèle recentré rend courant : le syndic choisit sa
+ * copropriété, et le filtre d'immeuble reste sur « tous les immeubles ». Une
+ * ACP peut en compter plusieurs (blocs A et B d'une même résidence), et le
+ * droit belge connaît même les ACP principales et secondaires.
+ *
+ * Avant ce changement, ce périmètre-là ne débloquait AUCUN menu métier : le
+ * syndic devait descendre à l'immeuble pour voir sa comptabilité, alors que
+ * la comptabilité appartient à l'ACP (ADR-0045).
+ */
+const SCOPE_WITH_ACP_ONLY: Scope = {
+  selectedBuildingId: null,
+  selectedAcpId: "acp-001",
+  selectedPortfolioId: null,
+};
+
 const BUSINESS_MENUS: Menu[] = [
   "gestion",
   "compta",
@@ -113,6 +131,52 @@ describe("canSee @edge admin in-context", () => {
     for (const menu of BUSINESS_MENUS) {
       expect(canSee("superadmin", menu, SCOPE_WITH_BUILDING)).toBe(true);
       expect(canSee("superadmin", menu, SCOPE_EMPTY)).toBe(false);
+    }
+  });
+
+  /**
+   * L'ACP porte le contexte, pas seulement l'immeuble.
+   *
+   * Ces trois cas sont l'équivalent ACP des trois précédents. Les tests
+   * pilotés par `selectedBuildingId` restent tels quels : le périmètre
+   * d'immeuble devient le filtre secondaire, il ne disparaît pas, et six
+   * répertoires de recettes le pilotent encore.
+   *
+   * « Only remove the building-scoped code path once every spec has an ACP
+   * equivalent, in a separate commit. » — remise de design, §6.4.
+   */
+  it("admin AVEC ACP seule → voit menus business + masque admin", () => {
+    for (const menu of BUSINESS_MENUS) {
+      expect(canSee("admin", menu, SCOPE_WITH_ACP_ONLY)).toBe(true);
+    }
+    expect(canSee("admin", "admin", SCOPE_WITH_ACP_ONLY)).toBe(false);
+  });
+
+  it("syndic voit ses menus sans dépendre d'aucun périmètre", () => {
+    // ⚠️ Ce test NE GARDE PAS le passage à l'ACP, et son témoin ne mord pas.
+    //
+    // Je l'avais d'abord décrit comme « le cas qui motive tout le
+    // changement ». C'était faux : `BUSINESS_ROLES_ALWAYS` donne au syndic
+    // tous les menus métier INCONDITIONNELLEMENT, avant que le périmètre soit
+    // même consulté. Retirer la lecture de `selectedAcpId` ne le fait pas
+    // tomber.
+    //
+    // Il vaut quand même d'être écrit, mais pour ce qu'il dit vraiment : la
+    // bascule vers l'ACP ne concerne QUE l'administrateur et le superadmin,
+    // les deux seuls rôles dont les menus dépendent du contexte. C'est une
+    // portée plus étroite que « le périmètre passe à l'ACP » ne le laisse
+    // croire, et il valait mieux le mesurer que le supposer.
+    for (const menu of BUSINESS_MENUS) {
+      expect(canSee("syndic", menu, SCOPE_WITH_ACP_ONLY)).toBe(true);
+      expect(canSee("syndic", menu, SCOPE_EMPTY)).toBe(true);
+      expect(canSee("syndic", menu, null)).toBe(true);
+    }
+  });
+
+  it("superadmin a le même comportement avec une ACP seule", () => {
+    expect(canSee("superadmin", "admin", SCOPE_WITH_ACP_ONLY)).toBe(false);
+    for (const menu of BUSINESS_MENUS) {
+      expect(canSee("superadmin", menu, SCOPE_WITH_ACP_ONLY)).toBe(true);
     }
   });
 

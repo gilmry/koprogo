@@ -10,6 +10,7 @@ import PWAInstallPrompt from "../components/PWAInstallPrompt.svelte";
 import RouteGuard from "../components/RouteGuard.svelte";
 import BuildingSelectorBar from "../components/global/BuildingSelectorBar.svelte";
 import TabBarMobileBar from "../components/navigation/TabBarMobileBar.svelte";
+import LegalHelper from "../components/LegalHelper.svelte";
 import ContextBanner from "../components/global/ContextBanner.svelte";
 
 interface Props {
@@ -245,6 +246,24 @@ const pageTitle = title.includes(SITE_NAME) ? title : `${title} - ${SITE_NAME}`;
       */
       }
       {showNav && <TabBarMobileBar client:load />}
+      {
+        /*
+        Le panneau de droit belge contextuel — 322 lignes qui n'étaient
+        montées NULLE PART.
+
+        `LegalHelper.spec.ts` le disait depuis toujours, et sautait ses trois
+        tests d'interface avec le remède écrit dans son en-tête : « To enable:
+        add <LegalHelper client:load /> to Layout.astro or syndic pages ».
+        Personne ne l'avait fait.
+
+        C'est le motif dominant de ce périmètre — une capacité écrite, testée,
+        inatteignable — appliqué à ce que la remise de design appelle « the
+        product's best differentiator ». Le chargement a été rendu paresseux
+        avant le branchement : trois requêtes par page pour un panneau
+        rarement ouvert auraient été payées par tout le monde.
+      */
+      }
+      {showNav && <LegalHelper client:load />}
       {
         showFooter && (
           <footer class="bg-white mt-12 border-t" role="contentinfo">

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import BoutonAction from "./ui/BoutonAction.svelte";
   // Svelte 5 runes mode
   import { _ } from "../lib/i18n";
   import { api } from "../lib/api";
@@ -182,20 +183,24 @@
                   </p>
                 </div>
                 {#if canModifyOwnership}
-                  <button
+                  <!--
+                    L'émoji était annoncé en plus de l'`aria-label` : le
+                    bouton s'appelait « crayon Modifier la quotité ».
+                    Ancrages conservés.
+                  -->
+                  <BoutonAction
+                    nom="edit"
+                    ariaLabel={$_("units.edit_quota")}
+                    testId="edit-owner-button"
                     onclick={() => handleEditUnitOwner(unitOwner)}
-                    class="px-2 py-1.5 text-sm font-medium text-white bg-primary-600 rounded hover:bg-primary-700 transition"
-                    aria-label={$_("units.edit_quota")}
-                    title={$_("units.edit_quota")}
-                    data-testid="edit-owner-button">✏️</button
-                  >
-                  <button
+                  />
+                  <BoutonAction
+                    nom="trash"
+                    ton="danger"
+                    ariaLabel={$_("units.remove_owner")}
+                    testId="remove-owner-button"
                     onclick={() => handleDeleteClick(unitOwner)}
-                    class="px-2 py-1.5 text-sm font-medium text-white bg-red-600 rounded hover:bg-red-700 transition"
-                    aria-label={$_("units.remove_owner")}
-                    title={$_("units.remove_owner")}
-                    data-testid="remove-owner-button">🗑️</button
-                  >
+                  />
                 {/if}
               </div>
             </div>

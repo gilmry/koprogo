@@ -1,4 +1,5 @@
 <script lang="ts">
+  import BoutonAction from "./ui/BoutonAction.svelte";
   import { SvelteSet } from "svelte/reactivity";
   // Svelte 5 runes mode
   import { _ } from "../lib/i18n";
@@ -209,20 +210,30 @@
               </div>
               <div class="flex gap-2 ml-4">
                 {#if buildingId && isSuperAdmin}
-                  <button
-                    data-testid="unit-list-edit-button"
+                  <!--
+                    L'émoji était ANNONCÉ en plus de l'`aria-label` : le
+                    bouton s'appelait « crayon Modifier » pour un lecteur
+                    d'écran. Une icône SVG `aria-hidden` laisse l'étiquette
+                    seule porter le nom, et `getByRole("button", { name })`
+                    continue de fonctionner dans les recettes.
+
+                    Ces deux-ci avaient `px-3 py-2`, donc une zone de tap
+                    correcte — contrairement à ceux de `BuildingList`, nus.
+                    Ancrages conservés.
+                  -->
+                  <BoutonAction
+                    nom="edit"
+                    ariaLabel={$_("units.editUnit")}
+                    testId="unit-list-edit-button"
                     onclick={() => handleEditUnit(unit)}
-                    class="px-3 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 transition"
-                    aria-label={$_("units.editUnit")}
-                    title={$_("units.editUnit")}>✏️</button
-                  >
-                  <button
-                    data-testid="unit-list-delete-button"
+                  />
+                  <BoutonAction
+                    nom="trash"
+                    ton="danger"
+                    ariaLabel={$_("units.deleteUnit")}
+                    testId="unit-list-delete-button"
                     onclick={() => handleDeleteClick(unit)}
-                    class="px-3 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 transition"
-                    aria-label={$_("units.deleteUnit")}
-                    title={$_("units.deleteUnit")}>🗑️</button
-                  >
+                  />
                 {/if}
                 <button
                   onclick={() => toggleUnitExpanded(unit.id)}

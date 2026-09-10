@@ -1,4 +1,5 @@
 <script lang="ts">
+  import CadreLegal from "../ui/CadreLegal.svelte";
   // Svelte 5 runes mode
   import { _ } from "../../lib/i18n";
   import { type Poll, type PollResults, PollType } from "../../lib/api/polls";
@@ -155,11 +156,12 @@
     </div>
   {/if}
 
-  <!-- Legal Notice -->
-  <div class="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded-md">
-    <p class="text-xs text-yellow-800">
-      ⚖️ <strong>{$_("polls.results.legalFramework")}:</strong>
-      {$_("polls.results.legalText")}
-    </p>
+  <!-- Encart de cadre légal, composant unique — cf. `ui/CadreLegal.svelte`. -->
+  <div class="mt-6">
+    <CadreLegal
+      titre={$_("polls.results.legalFramework")}
+      corps={$_("polls.results.legalText")}
+      testId="poll-results-cadre-legal"
+    />
   </div>
 </div>

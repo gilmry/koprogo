@@ -1,4 +1,5 @@
 <script lang="ts">
+  import CadreLegal from "../ui/CadreLegal.svelte";
   // Svelte 5 runes mode
   import { _ } from "svelte-i18n";
   import {
@@ -410,16 +411,24 @@
       {/if}
     </div>
 
-    <!-- Legal Notice -->
-    <div class="p-4 bg-yellow-50 border border-yellow-200 rounded-md">
-      <h4 class="text-sm font-medium text-yellow-900 mb-2">
-        ⚖️ {$_("polls.createForm.legalFramework")}
-      </h4>
-      <p class="text-xs text-yellow-800">
-        <strong>{$_("polls.createForm.legalReference")}:</strong>
-        {$_("polls.createForm.legalText")}
-      </p>
-    </div>
+    <!--
+      L'encart de cadre légal, composant unique.
+
+      Il était écrit à la main ici, en jaune, avec un émoji ⚖️ que les
+      lecteurs d'écran annoncent et dont le rendu change selon le système.
+      Cinq autres modules en avaient un, chacun de sa couleur.
+
+      Le composant apporte plus que la cohérence : le lien « Voir la règle → »
+      vers le registre. Un article cité sans moyen de le lire demande de
+      croire sur parole, ce qui est le contraire de ce que ces encarts
+      promettent.
+    -->
+    <CadreLegal
+      titre={$_("polls.createForm.legalFramework")}
+      corps={$_("polls.createForm.legalText")}
+      article={$_("polls.createForm.legalReference")}
+      testId="poll-create-cadre-legal"
+    />
 
     <!-- Submit Button -->
     <div class="flex justify-end space-x-3">
