@@ -215,96 +215,114 @@
     </div>
   {:else}
     <div class="bg-white rounded-lg shadow overflow-hidden">
-      <table
-        class="min-w-full divide-y divide-gray-200"
-        data-testid="budget-list"
-      >
-        <thead class="bg-gray-50">
-          <tr>
-            <th
-              scope="col"
-              class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase"
-              >{$_("budgets.year")}</th
-            >
-            <th
-              scope="col"
-              class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase"
-              >{$_("budgets.building")}</th
-            >
-            <th
-              scope="col"
-              class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase"
-              >{$_("budgets.ordinary")}</th
-            >
-            <th
-              scope="col"
-              class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase"
-              >{$_("budgets.extraordinary")}</th
-            >
-            <th
-              scope="col"
-              class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase"
-              >{$_("budgets.total")}</th
-            >
-            <th
-              scope="col"
-              class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase"
-              >{$_("budgets.monthlyProvision")}</th
-            >
-            <th
-              scope="col"
-              class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase"
-              >{$_("common.status")}</th
-            >
-            <th
-              scope="col"
-              class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase"
-              >{$_("common.actions")}</th
-            >
-          </tr>
-        </thead>
-        <tbody class="divide-y divide-gray-200">
-          {#each budgets as budget}
-            {@const buildingName =
-              buildings.find((b) => b.id === budget.building_id)?.name ||
-              budget.building_id.substring(0, 8)}
-            <tr class="hover:bg-gray-50 transition" data-testid="budget-row">
-              <td
-                class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900"
-                >{budget.fiscal_year}</td
+      <!--
+        `overflow-hidden` arrondissait les coins de la carte, et COUPAIT le
+        tableau au passage : sur un téléphone, les colonnes de droite
+        disparaissaient sans barre, sans ombre, sans signe qu'il y avait plus.
+        Un débordement se voit ; un découpage se croit complet (#866).
+
+        Le défilement va sur un conteneur INTÉRIEUR : la carte garde son
+        arrondi, le tableau retrouve sa largeur. `min-w` empêche les colonnes
+        de se comprimer jusqu'à l'illisible — une table qui tient dans l'écran
+        mais qu'on ne peut pas lire est pire que celle qui défile.
+
+        `tabindex="0"` : une zone défilante doit être atteignable au clavier
+        (WCAG 2.1.1). Svelte le refuse sur un élément non interactif, axe-core
+        l'exige par `scrollable-region-focusable` — c'est WCAG qui tranche.
+      -->
+      <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+      <div class="overflow-x-auto" tabindex="0" role="region">
+        <table
+          class="min-w-[640px] w-full divide-y divide-gray-200"
+          data-testid="budget-list"
+        >
+          <thead class="bg-gray-50">
+            <tr>
+              <th
+                scope="col"
+                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase"
+                >{$_("budgets.year")}</th
               >
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700"
-                >{buildingName}</td
+              <th
+                scope="col"
+                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase"
+                >{$_("budgets.building")}</th
               >
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700"
-                >{formatCurrency(budget.ordinary_budget)}</td
+              <th
+                scope="col"
+                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase"
+                >{$_("budgets.ordinary")}</th
               >
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700"
-                >{formatCurrency(budget.extraordinary_budget)}</td
+              <th
+                scope="col"
+                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase"
+                >{$_("budgets.extraordinary")}</th
               >
-              <td
-                class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900"
-                >{formatCurrency(budget.total_budget)}</td
+              <th
+                scope="col"
+                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase"
+                >{$_("budgets.total")}</th
               >
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-primary-600"
-                >{formatCurrency(budget.monthly_provision_amount)}</td
+              <th
+                scope="col"
+                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase"
+                >{$_("budgets.monthlyProvision")}</th
               >
-              <td class="px-6 py-4 whitespace-nowrap">
-                <BudgetStatusBadge status={budget.status} />
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap">
-                <a
-                  data-testid="budget-list-detail-link"
-                  href="/budget-detail?id={budget.id}"
-                  class="text-sm text-primary-600 hover:text-primary-700 font-medium"
-                >
-                  {$_("common.details")}
-                </a>
-              </td>
+              <th
+                scope="col"
+                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase"
+                >{$_("common.status")}</th
+              >
+              <th
+                scope="col"
+                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase"
+                >{$_("common.actions")}</th
+              >
             </tr>
-          {/each}
-        </tbody>
-      </table>
+          </thead>
+          <tbody class="divide-y divide-gray-200">
+            {#each budgets as budget}
+              {@const buildingName =
+                buildings.find((b) => b.id === budget.building_id)?.name ||
+                budget.building_id.substring(0, 8)}
+              <tr class="hover:bg-gray-50 transition" data-testid="budget-row">
+                <td
+                  class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900"
+                  >{budget.fiscal_year}</td
+                >
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700"
+                  >{buildingName}</td
+                >
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700"
+                  >{formatCurrency(budget.ordinary_budget)}</td
+                >
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700"
+                  >{formatCurrency(budget.extraordinary_budget)}</td
+                >
+                <td
+                  class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900"
+                  >{formatCurrency(budget.total_budget)}</td
+                >
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-primary-600"
+                  >{formatCurrency(budget.monthly_provision_amount)}</td
+                >
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <BudgetStatusBadge status={budget.status} />
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <a
+                    data-testid="budget-list-detail-link"
+                    href="/budget-detail?id={budget.id}"
+                    class="text-sm text-primary-600 hover:text-primary-700 font-medium"
+                  >
+                    {$_("common.details")}
+                  </a>
+                </td>
+              </tr>
+            {/each}
+          </tbody>
+        </table>
+      </div>
     </div>
 
     <!-- Pagination -->

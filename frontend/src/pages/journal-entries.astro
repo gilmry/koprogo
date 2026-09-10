@@ -68,41 +68,43 @@ import JournalEntriesPanel from "../components/JournalEntriesPanel.svelte";
         <div class="help-card">
           <h3>💡 Exemple Pratique</h3>
           <p><strong>Facture eau 1,210€ (1,000€ + 210€ TVA 21%):</strong></p>
-          <table class="example-table">
-            <thead>
-              <tr>
-                <th>Compte</th>
-                <th>Libellé</th>
-                <th class="text-right">Débit</th>
-                <th class="text-right">Crédit</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td>6100</td>
-                <td>Eau et chauffage</td>
-                <td class="text-right">1,000.00</td>
-                <td class="text-right">-</td>
-              </tr>
-              <tr>
-                <td>4110</td>
-                <td>TVA récupérable</td>
-                <td class="text-right">210.00</td>
-                <td class="text-right">-</td>
-              </tr>
-              <tr>
-                <td>4400</td>
-                <td>Fournisseur (eau)</td>
-                <td class="text-right">-</td>
-                <td class="text-right">1,210.00</td>
-              </tr>
-              <tr class="total-row">
-                <td colspan="2"><strong>Total</strong></td>
-                <td class="text-right"><strong>1,210.00</strong></td>
-                <td class="text-right"><strong>1,210.00</strong></td>
-              </tr>
-            </tbody>
-          </table>
+          <div class="example-table-wrapper" tabindex="0" role="region">
+            <table class="example-table">
+              <thead>
+                <tr>
+                  <th>Compte</th>
+                  <th>Libellé</th>
+                  <th class="text-right">Débit</th>
+                  <th class="text-right">Crédit</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>6100</td>
+                  <td>Eau et chauffage</td>
+                  <td class="text-right">1,000.00</td>
+                  <td class="text-right">-</td>
+                </tr>
+                <tr>
+                  <td>4110</td>
+                  <td>TVA récupérable</td>
+                  <td class="text-right">210.00</td>
+                  <td class="text-right">-</td>
+                </tr>
+                <tr>
+                  <td>4400</td>
+                  <td>Fournisseur (eau)</td>
+                  <td class="text-right">-</td>
+                  <td class="text-right">1,210.00</td>
+                </tr>
+                <tr class="total-row">
+                  <td colspan="2"><strong>Total</strong></td>
+                  <td class="text-right"><strong>1,210.00</strong></td>
+                  <td class="text-right"><strong>1,210.00</strong></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
 
         <div class="help-card">
@@ -221,8 +223,21 @@ import JournalEntriesPanel from "../components/JournalEntriesPanel.svelte";
     text-decoration: underline;
   }
 
+  /*
+    Le tableau d'exemple sert à être LU : c'est une page d'aide qui explique
+    l'écriture d'une facture avec sa TVA. À 390 px, cinq colonnes se
+    compriment jusqu'à l'illisible.
+
+    `min-width` sur le tableau, `overflow-x` sur son conteneur : la page reste
+    dans l'écran, le tableau défile (#866).
+  */
+  .example-table-wrapper {
+    overflow-x: auto;
+  }
+
   .example-table {
     width: 100%;
+    min-width: 420px;
     border-collapse: collapse;
     margin-top: 0.5rem;
     font-size: 0.875rem;

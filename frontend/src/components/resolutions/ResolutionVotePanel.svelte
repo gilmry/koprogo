@@ -515,54 +515,61 @@
 
   {#if showVotes && votes.length > 0}
     <div class="mt-3 border-t border-gray-100 pt-3">
-      <table class="w-full text-sm" data-testid="votes-table">
-        <thead>
-          <tr class="text-left text-xs text-gray-500 uppercase">
-            <th scope="col" class="pb-2">{$_("resolutions.vote.voter")}</th>
-            <th scope="col" class="pb-2">{$_("resolutions.vote.choice")}</th>
-            <th scope="col" class="pb-2 text-right"
-              >{$_("resolutions.vote.thousandths")}</th
-            >
-            <th scope="col" class="pb-2 text-right">{$_("common.date")}</th>
-          </tr>
-        </thead>
-        <tbody class="divide-y divide-gray-50">
-          {#each votes as vote}
-            <tr>
-              <td class="py-1.5">
-                <!-- `owner_name` n'est pas servi par l'API. Afficher huit
+      <!--
+        Cinq colonnes — votant, lot, choix, puissance, date — dans un panneau
+        déjà imbriqué. À 390 px elles se compriment jusqu'à l'illisible (#866).
+      -->
+      <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+      <div class="overflow-x-auto" tabindex="0" role="region">
+        <table class="min-w-[440px] w-full text-sm" data-testid="votes-table">
+          <thead>
+            <tr class="text-left text-xs text-gray-500 uppercase">
+              <th scope="col" class="pb-2">{$_("resolutions.vote.voter")}</th>
+              <th scope="col" class="pb-2">{$_("resolutions.vote.choice")}</th>
+              <th scope="col" class="pb-2 text-right"
+                >{$_("resolutions.vote.thousandths")}</th
+              >
+              <th scope="col" class="pb-2 text-right">{$_("common.date")}</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-50">
+            {#each votes as vote}
+              <tr>
+                <td class="py-1.5">
+                  <!-- `owner_name` n'est pas servi par l'API. Afficher huit
                      caractères d'UUID à un syndic ne l'aide en rien : on dit
                      plutôt que le nom n'a pas pu être résolu. Le vrai
                      correctif est d'enrichir le DTO — issues #786 et #765. -->
-                <span class="text-gray-900"
-                  >{vote.owner_name ||
-                    $_("resolutions.vote.unknownOwner")}</span
-                >
-                {#if vote.proxy_owner_id}
-                  <span class="text-xs text-muted ml-1"
-                    >({$_("resolutions.vote.proxy")})</span
+                  <span class="text-gray-900"
+                    >{vote.owner_name ||
+                      $_("resolutions.vote.unknownOwner")}</span
                   >
-                {/if}
-              </td>
-              <td class="py-1.5">
-                <span
-                  class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium {getChoiceColor(
-                    vote.vote_choice,
-                  )}"
+                  {#if vote.proxy_owner_id}
+                    <span class="text-xs text-muted ml-1"
+                      >({$_("resolutions.vote.proxy")})</span
+                    >
+                  {/if}
+                </td>
+                <td class="py-1.5">
+                  <span
+                    class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium {getChoiceColor(
+                      vote.vote_choice,
+                    )}"
+                  >
+                    {getChoiceLabel(vote.vote_choice)}
+                  </span>
+                </td>
+                <td class="py-1.5 text-right text-gray-600"
+                  >{vote.voting_power}</td
                 >
-                  {getChoiceLabel(vote.vote_choice)}
-                </span>
-              </td>
-              <td class="py-1.5 text-right text-gray-600"
-                >{vote.voting_power}</td
-              >
-              <td class="py-1.5 text-right text-xs text-muted"
-                >{formatDateTime(vote.voted_at)}</td
-              >
-            </tr>
-          {/each}
-        </tbody>
-      </table>
+                <td class="py-1.5 text-right text-xs text-muted"
+                  >{formatDateTime(vote.voted_at)}</td
+                >
+              </tr>
+            {/each}
+          </tbody>
+        </table>
+      </div>
     </div>
   {:else if showVotes && votes.length === 0}
     <p class="mt-3 text-xs text-muted text-center">

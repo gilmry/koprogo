@@ -182,114 +182,132 @@
     </div>
   {:else}
     <div class="bg-white rounded-lg shadow overflow-hidden">
-      <table class="min-w-full divide-y divide-gray-200">
-        <thead class="bg-gray-50">
-          <tr>
-            <th
-              scope="col"
-              class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase"
-              >{$_("etatsDate.reference")}</th
-            >
-            <th
-              scope="col"
-              class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase"
-              >{$_("etatsDate.buildingUnit")}</th
-            >
-            <th
-              scope="col"
-              class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase"
-              >{$_("etatsDate.notary")}</th
-            >
-            <th
-              scope="col"
-              class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase"
-              >{$_("etatsDate.refDate")}</th
-            >
-            <th
-              scope="col"
-              class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase"
-              >{$_("etatsDate.balance")}</th
-            >
-            <th
-              scope="col"
-              class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase"
-              >{$_("common.status")}</th
-            >
-            <th
-              scope="col"
-              class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase"
-              >{$_("etatsDate.delay")}</th
-            >
-            <th
-              scope="col"
-              class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase"
-              >{$_("common.actions")}</th
-            >
-          </tr>
-        </thead>
-        <tbody class="divide-y divide-gray-200">
-          {#each etatsDates as ed}
-            <tr
-              class="hover:bg-gray-50 transition {ed.is_overdue
-                ? 'bg-red-50'
-                : ''}"
-              data-testid="etat-date-row"
-            >
-              <td
-                class="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-900"
-                >{ed.reference_number}</td
+      <!--
+        `overflow-hidden` arrondissait les coins de la carte, et COUPAIT le
+        tableau au passage : sur un téléphone, les colonnes de droite
+        disparaissaient sans barre, sans ombre, sans signe qu'il y avait plus.
+        Un débordement se voit ; un découpage se croit complet (#866).
+
+        Le défilement va sur un conteneur INTÉRIEUR : la carte garde son
+        arrondi, le tableau retrouve sa largeur. `min-w` empêche les colonnes
+        de se comprimer jusqu'à l'illisible — une table qui tient dans l'écran
+        mais qu'on ne peut pas lire est pire que celle qui défile.
+
+        `tabindex="0"` : une zone défilante doit être atteignable au clavier
+        (WCAG 2.1.1). Svelte le refuse sur un élément non interactif, axe-core
+        l'exige par `scrollable-region-focusable` — c'est WCAG qui tranche.
+      -->
+      <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+      <div class="overflow-x-auto" tabindex="0" role="region">
+        <table class="min-w-[520px] w-full divide-y divide-gray-200">
+          <thead class="bg-gray-50">
+            <tr>
+              <th
+                scope="col"
+                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase"
+                >{$_("etatsDate.reference")}</th
               >
-              <td class="px-6 py-4 whitespace-nowrap text-sm">
-                <p class="font-medium text-gray-900">{ed.building_name}</p>
-                <p class="text-gray-500 text-xs">
-                  {$_("etatsDate.unit")}
-                  {ed.unit_number}
-                </p>
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700"
-                >{ed.notary_name}</td
+              <th
+                scope="col"
+                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase"
+                >{$_("etatsDate.buildingUnit")}</th
               >
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700"
-                >{formatDate(ed.reference_date)}</td
+              <th
+                scope="col"
+                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase"
+                >{$_("etatsDate.notary")}</th
               >
-              <td
-                class="px-6 py-4 whitespace-nowrap text-sm font-medium {ed.total_balance >=
-                0
-                  ? 'text-green-600'
-                  : 'text-red-600'}"
+              <th
+                scope="col"
+                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase"
+                >{$_("etatsDate.refDate")}</th
               >
-                {formatCurrency(ed.total_balance)}
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap">
-                <EtatDateStatusBadge status={ed.status} />
-                {#if ed.is_overdue}
-                  <span
-                    class="ml-1 px-1.5 py-0.5 bg-red-500 text-white text-xs rounded"
-                    >{$_("etatsDate.overdue")}</span
-                  >
-                {/if}
-              </td>
-              <td
-                class="px-6 py-4 whitespace-nowrap text-sm {ed.days_since_request >
-                10
-                  ? 'text-red-600 font-bold'
-                  : 'text-gray-700'}"
+              <th
+                scope="col"
+                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase"
+                >{$_("etatsDate.balance")}</th
               >
-                {ed.days_since_request}j
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap">
-                <a
-                  data-testid="etats-dates-detail-link"
-                  href="/etat-date-detail?id={ed.id}"
-                  class="text-sm text-primary-600 hover:text-primary-700 font-medium"
-                >
-                  {$_("common.details")}
-                </a>
-              </td>
+              <th
+                scope="col"
+                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase"
+                >{$_("common.status")}</th
+              >
+              <th
+                scope="col"
+                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase"
+                >{$_("etatsDate.delay")}</th
+              >
+              <th
+                scope="col"
+                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase"
+                >{$_("common.actions")}</th
+              >
             </tr>
-          {/each}
-        </tbody>
-      </table>
+          </thead>
+          <tbody class="divide-y divide-gray-200">
+            {#each etatsDates as ed}
+              <tr
+                class="hover:bg-gray-50 transition {ed.is_overdue
+                  ? 'bg-red-50'
+                  : ''}"
+                data-testid="etat-date-row"
+              >
+                <td
+                  class="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-900"
+                  >{ed.reference_number}</td
+                >
+                <td class="px-6 py-4 whitespace-nowrap text-sm">
+                  <p class="font-medium text-gray-900">{ed.building_name}</p>
+                  <p class="text-gray-500 text-xs">
+                    {$_("etatsDate.unit")}
+                    {ed.unit_number}
+                  </p>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700"
+                  >{ed.notary_name}</td
+                >
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700"
+                  >{formatDate(ed.reference_date)}</td
+                >
+                <td
+                  class="px-6 py-4 whitespace-nowrap text-sm font-medium {ed.total_balance >=
+                  0
+                    ? 'text-green-600'
+                    : 'text-red-600'}"
+                >
+                  {formatCurrency(ed.total_balance)}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <EtatDateStatusBadge status={ed.status} />
+                  {#if ed.is_overdue}
+                    <span
+                      class="ml-1 px-1.5 py-0.5 bg-red-500 text-white text-xs rounded"
+                      >{$_("etatsDate.overdue")}</span
+                    >
+                  {/if}
+                </td>
+                <td
+                  class="px-6 py-4 whitespace-nowrap text-sm {ed.days_since_request >
+                  10
+                    ? 'text-red-600 font-bold'
+                    : 'text-gray-700'}"
+                >
+                  {ed.days_since_request}j
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <a
+                    data-testid="etats-dates-detail-link"
+                    href="/etat-date-detail?id={ed.id}"
+                    class="text-sm text-primary-600 hover:text-primary-700 font-medium"
+                  >
+                    {$_("common.details")}
+                  </a>
+                </td>
+              </tr>
+            {/each}
+          </tbody>
+        </table>
+      </div>
     </div>
 
     <!-- Pagination -->

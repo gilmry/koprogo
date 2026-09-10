@@ -310,98 +310,117 @@
     </div>
   {:else}
     <div class="bg-white rounded-lg shadow overflow-hidden">
-      <table class="min-w-full divide-y divide-gray-200">
-        <thead class="bg-gray-50"
-          ><tr>
-            <th
-              scope="col"
-              class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-              >{$_("paymentReminders.level")}</th
-            >
-            <th
-              scope="col"
-              class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-              >{$_("paymentReminders.owner")}</th
-            >
-            <th
-              scope="col"
-              class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-              >{$_("paymentReminders.amount")}</th
-            >
-            <th
-              scope="col"
-              class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-              >{$_("paymentReminders.penalties")}</th
-            >
-            <th
-              scope="col"
-              class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-              >{$_("paymentReminders.daysOverdue")}</th
-            >
-            <th
-              scope="col"
-              class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-              >{$_("paymentReminders.status")}</th
-            >
-            <th
-              scope="col"
-              class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-              >{$_("paymentReminders.sentDate")}</th
-            >
-          </tr></thead
-        >
-        <tbody class="bg-white divide-y divide-gray-200">
-          {#each filteredReminders as reminder}
-            {@const levelBadge = getLevelBadge(reminder.level)}
-            {@const statusBadge = getStatusBadge(reminder.status)}
-            <tr class="hover:bg-gray-50 transition-colors">
-              <td class="px-6 py-4 whitespace-nowrap"
-                ><span
-                  class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium {levelBadge.class}"
-                  ><span class="mr-1">{levelBadge.emoji}</span
-                  >{levelBadge.label}</span
-                ></td
+      <!--
+        `overflow-hidden` arrondissait les coins de la carte, et COUPAIT le
+        tableau au passage : sur un téléphone, les colonnes de droite
+        disparaissaient sans barre, sans ombre, sans signe qu'il y avait plus.
+        Un débordement se voit ; un découpage se croit complet (#866).
+
+        Le défilement va sur un conteneur INTÉRIEUR : la carte garde son
+        arrondi, le tableau retrouve sa largeur. `min-w` empêche les colonnes
+        de se comprimer jusqu'à l'illisible — une table qui tient dans l'écran
+        mais qu'on ne peut pas lire est pire que celle qui défile.
+
+        `tabindex="0"` : une zone défilante doit être atteignable au clavier
+        (WCAG 2.1.1). Svelte le refuse sur un élément non interactif, axe-core
+        l'exige par `scrollable-region-focusable` — c'est WCAG qui tranche.
+      -->
+      <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+      <div class="overflow-x-auto" tabindex="0" role="region">
+        <table class="min-w-[620px] w-full divide-y divide-gray-200">
+          <thead class="bg-gray-50"
+            ><tr>
+              <th
+                scope="col"
+                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                >{$_("paymentReminders.level")}</th
               >
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900"
-                >{#if reminder.owner_name}<a
-                    data-testid="payment-reminder-owner-name-link"
-                    href="/owners/{reminder.owner_id}"
-                    class="text-primary-600 hover:text-primary-700"
-                    >{reminder.owner_name}</a
-                  >{#if reminder.owner_email}<br /><span
-                      class="text-xs text-gray-500">{reminder.owner_email}</span
-                    >{/if}{:else}<a
-                    data-testid="payment-reminder-owner-id-link"
-                    href="/owners/{reminder.owner_id}"
-                    class="text-primary-600 hover:text-primary-700"
-                    >Propriétaire #{reminder.owner_id.substring(0, 8)}</a
-                  >{/if}</td
+              <th
+                scope="col"
+                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                >{$_("paymentReminders.owner")}</th
               >
-              <td
-                class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900"
-                >{formatCurrency(reminder.amount_owed)}</td
+              <th
+                scope="col"
+                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                >{$_("paymentReminders.amount")}</th
               >
-              <td
-                class="px-6 py-4 whitespace-nowrap text-sm font-medium text-red-600"
-                >+{formatCurrency(reminder.penalty_amount)}</td
+              <th
+                scope="col"
+                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                >{$_("paymentReminders.penalties")}</th
               >
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900"
-                ><span class="font-bold">{reminder.days_overdue}</span>
-                {$_("paymentReminders.days")}</td
+              <th
+                scope="col"
+                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                >{$_("paymentReminders.daysOverdue")}</th
               >
-              <td class="px-6 py-4 whitespace-nowrap"
-                ><span
-                  class="inline-flex px-3 py-1 rounded-full text-sm font-medium {statusBadge.class}"
-                  >{statusBadge.label}</span
-                ></td
+              <th
+                scope="col"
+                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                >{$_("paymentReminders.status")}</th
               >
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600"
-                >{formatDate(reminder.sent_date)}</td
+              <th
+                scope="col"
+                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                >{$_("paymentReminders.sentDate")}</th
               >
-            </tr>
-          {/each}
-        </tbody>
-      </table>
+            </tr></thead
+          >
+          <tbody class="bg-white divide-y divide-gray-200">
+            {#each filteredReminders as reminder}
+              {@const levelBadge = getLevelBadge(reminder.level)}
+              {@const statusBadge = getStatusBadge(reminder.status)}
+              <tr class="hover:bg-gray-50 transition-colors">
+                <td class="px-6 py-4 whitespace-nowrap"
+                  ><span
+                    class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium {levelBadge.class}"
+                    ><span class="mr-1">{levelBadge.emoji}</span
+                    >{levelBadge.label}</span
+                  ></td
+                >
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900"
+                  >{#if reminder.owner_name}<a
+                      data-testid="payment-reminder-owner-name-link"
+                      href="/owners/{reminder.owner_id}"
+                      class="text-primary-600 hover:text-primary-700"
+                      >{reminder.owner_name}</a
+                    >{#if reminder.owner_email}<br /><span
+                        class="text-xs text-gray-500"
+                        >{reminder.owner_email}</span
+                      >{/if}{:else}<a
+                      data-testid="payment-reminder-owner-id-link"
+                      href="/owners/{reminder.owner_id}"
+                      class="text-primary-600 hover:text-primary-700"
+                      >Propriétaire #{reminder.owner_id.substring(0, 8)}</a
+                    >{/if}</td
+                >
+                <td
+                  class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900"
+                  >{formatCurrency(reminder.amount_owed)}</td
+                >
+                <td
+                  class="px-6 py-4 whitespace-nowrap text-sm font-medium text-red-600"
+                  >+{formatCurrency(reminder.penalty_amount)}</td
+                >
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900"
+                  ><span class="font-bold">{reminder.days_overdue}</span>
+                  {$_("paymentReminders.days")}</td
+                >
+                <td class="px-6 py-4 whitespace-nowrap"
+                  ><span
+                    class="inline-flex px-3 py-1 rounded-full text-sm font-medium {statusBadge.class}"
+                    >{statusBadge.label}</span
+                  ></td
+                >
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600"
+                  >{formatDate(reminder.sent_date)}</td
+                >
+              </tr>
+            {/each}
+          </tbody>
+        </table>
+      </div>
     </div>
     <div class="bg-white rounded-lg shadow p-4">
       <p class="text-sm text-gray-600">
