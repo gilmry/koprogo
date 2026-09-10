@@ -1288,6 +1288,13 @@
       },
       "acpsUnavailable": "Die Liste der WEGs ist derzeit nicht erreichbar.",
       "allUnderControl": "Alles ist unter Kontrolle.",
+      "collection": {
+        "overdueOwners": "{count} Miteigentümer im Rückstand",
+        "paid": "Eingezogen",
+        "pending": "Ausstehend",
+        "title": "Einzug",
+        "unavailable": "Die Einzugszahlen sind nicht erreichbar."
+      },
       "integrity": {
         "action": "Erfassung vervollständigen",
         "consequence": "Die Anteile erreichen die Summe der Urkunde nicht, solange die Lücke besteht: Die Mittelabrufe werden auf unvollständiger Grundlage berechnet, und die erfassten Miteigentümer tragen den Anteil der anderen.",

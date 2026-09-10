@@ -1288,6 +1288,13 @@
       },
       "acpsUnavailable": "The list of associations is not reachable right now.",
       "allUnderControl": "Everything is under control.",
+      "collection": {
+        "overdueOwners": "{count} co-owners overdue",
+        "paid": "Collected",
+        "pending": "Pending",
+        "title": "Collection",
+        "unavailable": "Collection figures are not reachable."
+      },
       "integrity": {
         "action": "Complete the records",
         "consequence": "Shares cannot add up to the deed total while the gap remains: calls for funds are computed on an incomplete base, and recorded co-owners carry the others' share.",

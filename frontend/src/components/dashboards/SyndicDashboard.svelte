@@ -1,4 +1,5 @@
 <script lang="ts">
+  import CarteEncaissement from "./CarteEncaissement.svelte";
   import Icone from "../ui/Icone.svelte";
   import TableDesAcp from "./TableDesAcp.svelte";
   import EncartIntegriteDonnees from "./EncartIntegriteDonnees.svelte";
@@ -305,6 +306,15 @@
         le total de l'acte. Un syndic gère plusieurs copropriétés, et sa
         première question en ouvrant l'écran est « laquelle a un problème ».
       -->
+      <!--
+        Encaissement et intégrité côte à côte : les deux chiffres qui décident
+        si la copropriété va bien. Le premier dit ce qui rentre, le second si
+        la base de calcul est complète — et le second conditionne le premier.
+      -->
+      <div class="mb-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <CarteEncaissement />
+      </div>
+
       <div class="mb-6">
         <TableDesAcp />
       </div>

@@ -1288,6 +1288,13 @@
       },
       "acpsUnavailable": "De lijst met VME's is momenteel niet bereikbaar.",
       "allUnderControl": "Alles is onder controle.",
+      "collection": {
+        "overdueOwners": "{count} mede-eigenaars te laat",
+        "paid": "Geïnd",
+        "pending": "In afwachting",
+        "title": "Inning",
+        "unavailable": "De inningscijfers zijn niet bereikbaar."
+      },
       "integrity": {
         "action": "De invoer aanvullen",
         "consequence": "De aandelen kunnen het totaal van de akte niet bereiken zolang het verschil bestaat: de oproepen tot fondsen worden op een onvolledige basis berekend, en de ingevoerde mede-eigenaars dragen het deel van de anderen.",
