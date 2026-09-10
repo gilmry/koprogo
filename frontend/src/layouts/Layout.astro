@@ -250,13 +250,13 @@ const pageTitle = title.includes(SITE_NAME) ? title : `${title} - ${SITE_NAME}`;
       {showNav && <BarreDeContexte client:load />}
       <main
         id="main-content"
-        class="flex-1 pb-[74px] lg:pb-0"
+        class="flex-1 pb-barre-onglets lg:pb-0"
         role="main"
         tabindex="-1"
       >
         {
           /*
-          `pb-[74px]` réserve la hauteur de la barre d'onglets, qui est en
+          `pb-barre-onglets` réserve la hauteur de la barre, qui est en
           position fixe : sans cela, le dernier élément de chaque page vivrait
           DERRIÈRE elle. `lg:pb-0` la retire au bureau, où la barre n'existe
           pas.

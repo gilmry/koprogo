@@ -73,7 +73,7 @@
   <nav
     data-testid="tabbar"
     aria-label={$_("navigation.mainMobile") || "Navigation principale"}
-    class="fixed inset-x-0 bottom-0 z-40 flex h-[74px] items-start border-t border-border-soft bg-surface/95 pb-[env(safe-area-inset-bottom)] backdrop-blur lg:hidden"
+    class="fixed inset-x-0 bottom-0 z-40 flex h-barre-onglets items-start border-t border-border-soft bg-surface/95 pb-[env(safe-area-inset-bottom,0px)] backdrop-blur lg:hidden"
   >
     {#each onglets as onglet (onglet.cle)}
       {@const actif = estActif(onglet)}

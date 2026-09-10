@@ -171,6 +171,38 @@ describe("les zones sûres sont effectivement activées", () => {
     }
   });
 
+  it("fait grandir la barre d'onglets ET la réserve de `main` du même jeton", () => {
+    const barre = readFileSync(
+      join(RACINE, "src/components/navigation/TabBarMobile.svelte"),
+      "utf8",
+    );
+    const gabarit = readFileSync(join(RACINE, LAYOUT), "utf8");
+
+    // Le défaut d'origine : `h-[74px]` avec `pb-[env(...)]` DEDANS. Tailwind
+    // pose `box-sizing: border-box`, donc la marge de zone sûre était prise
+    // SUR les 74 px au lieu de s'y ajouter. Sur un iPhone sans bouton, l'inset
+    // vaut ~34 px : les cibles retombaient à ~40 px, sous le minimum de 44,
+    // pendant que le commentaire du composant promettait « 56 px utilisables ».
+    for (const [nom, source] of [
+      ["la barre d'onglets", barre],
+      ["la réserve de `main` dans Layout.astro", gabarit],
+    ] as const) {
+      expect(
+        source,
+        `${nom} n'utilise plus \`barre-onglets\`.\n\n` +
+          "Une hauteur en dur des deux côtés se désaccorde dès que l'encoche " +
+          "entre en jeu : soit les cibles rétrécissent, soit le dernier " +
+          "élément de chaque page revit derrière la barre.",
+      ).toContain("barre-onglets");
+    }
+
+    expect(
+      barre,
+      "La barre d'onglets ne pousse plus son contenu au-dessus de " +
+        "l'indicateur d'accueil (`pb-[env(safe-area-inset-bottom,0px)]`).",
+    ).toContain("pb-[env(safe-area-inset-bottom,0px)]");
+  });
+
   it("donne un repli à tout `env()` enfermé dans un `calc()`", () => {
     // Hors `calc()`, un `env()` non résolu invalide sa seule déclaration :
     // une marge disparaît, ce qui est bénin. DANS un `calc()`, il invalide

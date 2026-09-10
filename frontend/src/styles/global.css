@@ -96,6 +96,20 @@
    */
   --spacing-entete-mobile: calc(3.5rem + env(safe-area-inset-top, 0px));
 
+  /*
+   * La barre d'onglets : 74 px de cibles, PLUS l'indicateur d'accueil.
+   *
+   * Le `+` compte. `h-[74px]` avec `pb-[env(...)]` à l'intérieur ne grandit
+   * pas : Tailwind pose `box-sizing: border-box`, donc la marge de zone sûre
+   * est PRISE SUR les 74 px. Sur un iPhone sans bouton, l'inset vaut ~34 px et
+   * les cibles retombent à ~40 px — sous le minimum de 44, alors que le
+   * commentaire du composant promet « 56 px de cibles utilisables ».
+   *
+   * Même jeton pour la barre et pour la réserve de `<main>`, sans quoi le
+   * dernier élément de chaque page revit derrière la barre.
+   */
+  --spacing-barre-onglets: calc(74px + env(safe-area-inset-bottom, 0px));
+
   /* ── Typographie ──────────────────────────────────────────────────── */
   --font-mono:
     ui-monospace, Menlo, Monaco, "Cascadia Mono", "Segoe UI Mono", monospace;
