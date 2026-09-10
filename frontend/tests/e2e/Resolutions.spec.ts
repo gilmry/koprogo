@@ -41,6 +41,9 @@ test.describe("Resolutions - AG Voting System", () => {
           description: "Approbation du budget annuel 2026",
           resolution_type: "ordinary",
           majority_required: "absolute",
+          // Rattachée au point 0 de l'ordre du jour : une résolution qui n'y
+          // est pas rattachée n'est pas votable (Art. 3.87 § 2 CC, #840).
+          agenda_item_index: 0,
         },
         headers: { Authorization: `Bearer ${token}` },
       },
@@ -131,6 +134,9 @@ test.describe("Resolutions - AG Voting System", () => {
           description: "Résolution pour test de vote",
           resolution_type: "ordinary",
           majority_required: "absolute",
+          // Rattachée au point 0 de l'ordre du jour : une résolution qui n'y
+          // est pas rattachée n'est pas votable (Art. 3.87 § 2 CC, #840).
+          agenda_item_index: 0,
         },
         headers: { Authorization: `Bearer ${token}` },
       },
@@ -171,6 +177,9 @@ test.describe("Resolutions - AG Voting System", () => {
           description: "Test",
           resolution_type: "ordinary",
           majority_required: "absolute",
+          // Rattachée au point 0 de l'ordre du jour : une résolution qui n'y
+          // est pas rattachée n'est pas votable (Art. 3.87 § 2 CC, #840).
+          agenda_item_index: 0,
         },
         headers: { Authorization: `Bearer ${token}` },
       },
@@ -233,6 +242,9 @@ test.describe("Resolutions - AG Voting System", () => {
           description: "Test clôture vote",
           resolution_type: "ordinary",
           majority_required: "absolute",
+          // Rattachée au point 0 de l'ordre du jour : une résolution qui n'y
+          // est pas rattachée n'est pas votable (Art. 3.87 § 2 CC, #840).
+          agenda_item_index: 0,
         },
         headers: { Authorization: `Bearer ${token}` },
       },

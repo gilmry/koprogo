@@ -3944,8 +3944,13 @@ impl DatabaseSeeder {
         let resolution_id = Uuid::new_v4();
         sqlx::query(
             r#"
-            INSERT INTO resolutions (id, meeting_id, title, description, resolution_type, majority_required, status, created_at)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+            -- `agenda_item_index` est OBLIGATOIRE pour qu'une résolution soit
+            -- votable : Art. 3.87 § 2 CC annule une décision portant sur un
+            -- point absent de l'ordre du jour, et `cast_vote` la refuse depuis
+            -- #840. Le point 0 de cette assemblée est « Approbation des comptes
+            -- annuels », que cette résolution met précisément aux voix.
+            INSERT INTO resolutions (id, meeting_id, title, description, resolution_type, majority_required, status, agenda_item_index, created_at)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
             "#,
         )
         .bind(resolution_id)
@@ -3955,6 +3960,7 @@ impl DatabaseSeeder {
         .bind("Ordinary")
         .bind("Absolute")
         .bind("Pending")
+        .bind(0_i32)
         .bind(now)
         .execute(&self.pool)
         .await

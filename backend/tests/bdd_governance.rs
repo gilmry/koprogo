@@ -556,7 +556,9 @@ impl GovernanceWorld {
                 format!("Description for {}", title),
                 ResolutionType::Ordinary,
                 majority,
-                None,
+                // Point 0 : une resolution hors ordre du jour n'est pas
+                // votable (Art. 3.87 § 2 CC, #840).
+                Some(0),
             )
             .await;
         match result {
@@ -667,8 +669,12 @@ async fn given_meeting_exists(world: &mut GovernanceWorld, title: String) {
     let org_id = world.org_id.unwrap();
 
     sqlx::query(
-        r#"INSERT INTO meetings (id, acp_id, organization_id, building_id, meeting_type, title, scheduled_date, location, status, created_at, updated_at)
-             VALUES ($1, (SELECT acp_id FROM buildings WHERE id = $3), $2, $3, 'ordinary', $4, NOW() + interval '30 days', 'Salle AG', 'scheduled', NOW(), NOW())"#,
+        // Un point d'ordre du jour, sans quoi aucune resolution n'est votable :
+        // Art. 3.87 § 2 CC annule une decision portant sur un point absent, et
+        // `cast_vote` la refuse depuis #840. Ces scenarios votaient jusqu'ici
+        // sur des resolutions rattachees a rien.
+        r#"INSERT INTO meetings (id, acp_id, organization_id, building_id, meeting_type, title, scheduled_date, location, status, agenda, created_at, updated_at)
+             VALUES ($1, (SELECT acp_id FROM buildings WHERE id = $3), $2, $3, 'ordinary', $4, NOW() + interval '30 days', 'Salle AG', 'scheduled', '["Approbation des comptes"]'::jsonb, NOW(), NOW())"#,
     )
     .bind(meeting_id)
     .bind(org_id)
@@ -980,7 +986,9 @@ async fn when_create_resolution(world: &mut GovernanceWorld, step: &Step) {
             description,
             ResolutionType::Ordinary,
             majority,
-            None,
+            // Point 0 : une resolution hors ordre du jour n'est pas votable
+            // (Art. 3.87 § 2 CC, #840).
+            Some(0),
         )
         .await;
 
@@ -1315,8 +1323,8 @@ async fn given_meeting_in_n_days(world: &mut GovernanceWorld, _title: String, da
     let meeting_date = Utc::now() + ChronoDuration::days(days);
 
     sqlx::query(
-        r#"INSERT INTO meetings (id, acp_id, organization_id, building_id, meeting_type, title, scheduled_date, location, status, created_at, updated_at)
-             VALUES ($1, (SELECT acp_id FROM buildings WHERE id = $3), $2, $3, 'ordinary', $4, $5, 'Salle AG', 'scheduled', NOW(), NOW())"#,
+        r#"INSERT INTO meetings (id, acp_id, organization_id, building_id, meeting_type, title, scheduled_date, location, status, agenda, created_at, updated_at)
+             VALUES ($1, (SELECT acp_id FROM buildings WHERE id = $3), $2, $3, 'ordinary', $4, $5, 'Salle AG', 'scheduled', '["Point unique"]'::jsonb, NOW(), NOW())"#,
     )
     .bind(meeting_id)
     .bind(org_id)
@@ -1525,8 +1533,8 @@ async fn given_n_convocations(world: &mut GovernanceWorld, count: i32) {
         let meeting_date = Utc::now() + ChronoDuration::days(20 + i as i64 * 5);
 
         sqlx::query(
-            r#"INSERT INTO meetings (id, acp_id, organization_id, building_id, meeting_type, title, scheduled_date, location, status, created_at, updated_at)
-             VALUES ($1, (SELECT acp_id FROM buildings WHERE id = $3), $2, $3, 'ordinary', $4, $5, 'Salle AG', 'scheduled', NOW(), NOW())"#,
+            r#"INSERT INTO meetings (id, acp_id, organization_id, building_id, meeting_type, title, scheduled_date, location, status, agenda, created_at, updated_at)
+             VALUES ($1, (SELECT acp_id FROM buildings WHERE id = $3), $2, $3, 'ordinary', $4, $5, 'Salle AG', 'scheduled', '["Point unique"]'::jsonb, NOW(), NOW())"#,
         )
         .bind(meeting_id)
         .bind(org_id)
@@ -6864,8 +6872,8 @@ async fn given_scheduled_ag_session(world: &mut GovernanceWorld) {
     let new_meeting_id = Uuid::new_v4();
     let building_id = world.building_id.unwrap();
     sqlx::query(
-        r#"INSERT INTO meetings (id, acp_id, organization_id, building_id, meeting_type, title, scheduled_date, location, status, created_at, updated_at)
-             VALUES ($1, (SELECT acp_id FROM buildings WHERE id = $3), $2, $3, 'ordinary', 'Meeting for AG Session', NOW() + interval '10 days', 'Online', 'scheduled', NOW(), NOW())"#,
+        r#"INSERT INTO meetings (id, acp_id, organization_id, building_id, meeting_type, title, scheduled_date, location, status, agenda, created_at, updated_at)
+             VALUES ($1, (SELECT acp_id FROM buildings WHERE id = $3), $2, $3, 'ordinary', 'Meeting for AG Session', NOW() + interval '10 days', 'Online', 'scheduled', '["Point unique"]'::jsonb, NOW(), NOW())"#,
     )
     .bind(new_meeting_id)
     .bind(org_id)
@@ -7249,8 +7257,8 @@ async fn given_n_ag_sessions_in_org(world: &mut GovernanceWorld, count: usize) {
         // Create a unique meeting for each session
         let new_meeting_id = Uuid::new_v4();
         sqlx::query(
-            r#"INSERT INTO meetings (id, acp_id, organization_id, building_id, meeting_type, title, scheduled_date, location, status, created_at, updated_at)
-             VALUES ($1, (SELECT acp_id FROM buildings WHERE id = $3), $2, $3, 'ordinary', $4, NOW() + interval '20 days', 'Online', 'scheduled', NOW(), NOW())"#,
+            r#"INSERT INTO meetings (id, acp_id, organization_id, building_id, meeting_type, title, scheduled_date, location, status, agenda, created_at, updated_at)
+             VALUES ($1, (SELECT acp_id FROM buildings WHERE id = $3), $2, $3, 'ordinary', $4, NOW() + interval '20 days', 'Online', 'scheduled', '["Point unique"]'::jsonb, NOW(), NOW())"#,
         )
         .bind(new_meeting_id)
         .bind(org_id)
@@ -8211,8 +8219,9 @@ async fn given_gd_resolution_with_votes(world: &mut GovernanceWorld, p1: String,
     // Meeting
     let meeting_id = Uuid::new_v4();
     sqlx::query(
-        r#"INSERT INTO meetings (id, acp_id, organization_id, building_id, meeting_type, title, scheduled_date, location, status, created_at, updated_at)
-             VALUES ($1, (SELECT acp_id FROM buildings WHERE id = $3), $2, $3, 'ordinary', 'GD vote meeting', NOW() + interval '30 days', 'Salle', 'scheduled', NOW(), NOW())"#,
+        // Ordre du jour non vide : Art. 3.87 § 2 CC, cf. #840.
+        r#"INSERT INTO meetings (id, acp_id, organization_id, building_id, meeting_type, title, scheduled_date, location, status, agenda, created_at, updated_at)
+             VALUES ($1, (SELECT acp_id FROM buildings WHERE id = $3), $2, $3, 'ordinary', 'GD vote meeting', NOW() + interval '30 days', 'Salle', 'scheduled', '["Point unique"]'::jsonb, NOW(), NOW())"#,
     )
     .bind(meeting_id)
     .bind(org_id)
@@ -8224,8 +8233,9 @@ async fn given_gd_resolution_with_votes(world: &mut GovernanceWorld, p1: String,
     // Resolution
     let resolution_id = Uuid::new_v4();
     sqlx::query(
-        r#"INSERT INTO resolutions (id, meeting_id, title, description, resolution_type, majority_required, status, created_at)
-           VALUES ($1, $2, 'GD resolution', 'desc', 'Ordinary', 'Simple', 'Pending', NOW())"#,
+        // Rattachée au point 0 : sans index, la résolution n'est pas votable.
+        r#"INSERT INTO resolutions (id, meeting_id, title, description, resolution_type, majority_required, status, agenda_item_index, created_at)
+           VALUES ($1, $2, 'GD resolution', 'desc', 'Ordinary', 'Simple', 'Pending', 0, NOW())"#,
     )
     .bind(resolution_id)
     .bind(meeting_id)
@@ -8650,9 +8660,9 @@ async fn given_parc_royal_ag(world: &mut GovernanceWorld, jours: i64) {
     let date = Utc::now() + ChronoDuration::days(jours);
     sqlx::query(
         r#"INSERT INTO meetings (id, acp_id, organization_id, building_id, meeting_type,
-                                 title, scheduled_date, location, status, created_at, updated_at)
+                                 title, scheduled_date, location, status, agenda, created_at, updated_at)
            VALUES ($1, (SELECT acp_id FROM buildings WHERE id = $3), $2, $3, 'ordinary',
-                   'AG Ordinaire', $4, 'Salle des fetes', 'scheduled', NOW(), NOW())"#,
+                   'AG Ordinaire', $4, 'Salle des fetes', 'scheduled', '["Point unique"]'::jsonb, NOW(), NOW())"#,
     )
     .bind(meeting_id)
     .bind(org_id)

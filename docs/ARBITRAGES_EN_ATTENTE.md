@@ -2,7 +2,7 @@
 
 État au 2026-09-08. **70 issues ouvertes** en `release:0.1.0`.
 
-Ce document existe parce que six décisions dispersées dans autant d'issues
+Ce document existe parce que sept décisions dispersées dans autant d'issues
 bloquent, à elles seules, trois tracks entiers. Les regrouper permet d'y
 répondre en une passe.
 
@@ -132,6 +132,37 @@ potentielles (`api_key_usage`, `mqtt_messages`) qu'il faudrait vérifier vides.
 
 **Le cas urgent est `proxy_mandate_stats`** : une vue qui se déclare outil de
 conformité et rend toujours zéro doit être branchée ou disparaître.
+
+---
+
+## 7. Les résolutions déjà en base, que le correctif #840 rend invotables
+
+**La question.** Le refus de voter une résolution non rattachée à un point de
+l'ordre du jour est posé (Art. 3.87 § 2 CC). Mais la migration qui a ajouté
+`agenda_item_index` ne reprend pas les données : **toute résolution antérieure
+porte `NULL`**. Au déploiement, aucune d'elles ne pourra plus être mise aux voix,
+y compris dans des assemblées déjà convoquées.
+
+**Ce qui en dépend.** Rien dans le code. C'est une décision sur des données que
+la loi rend opposables, et c'est pour cela qu'elle te revient.
+
+**Les trois voies :**
+
+| Voie | Ce qu'elle coûte |
+|---|---|
+| Reprise rattachant chaque résolution au point 0 de son assemblée | inscrit une **supposition** dans les données : que le point 0 est bien celui que la résolution met aux voix |
+| Ne refuser que les résolutions créées après la migration | laisse subsister des décisions que l'article annule |
+| Refuser tout | les assemblées en cours sont à refaire |
+
+**Ma recommandation : la deuxième**, avec la première réservée aux assemblées
+dont l'ordre du jour ne compte qu'un seul point, où la supposition n'en est pas
+une. Refuser tout serait juste, mais la justesse ici se paierait par des
+assemblées annulées pour un défaut que nous avons laissé s'installer.
+
+**Le point annexe, sans arbitrage :** `update_resolution` existe dans les use
+cases mais n'est exposé par aucune route. On ne peut donc pas rattacher une
+résolution existante à un point : il faut la supprimer et la recréer, ce qui
+perd les votes déjà exprimés. Un endpoint de rattachement est à écrire.
 
 ---
 

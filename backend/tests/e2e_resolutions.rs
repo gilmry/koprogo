@@ -130,7 +130,25 @@ async fn create_test_fixtures(
         .await
         .expect("Failed to create meeting");
 
-    // 3 bis. Valider le quorum AVANT toute resolution.
+    // 3 bis. UN POINT D'ORDRE DU JOUR, avant toute resolution.
+    //
+    // Art. 3.87 § 2 CC : une decision portant sur un point absent de l'ordre du
+    // jour est nulle, et `cast_vote` refuse donc de mettre aux voix une
+    // resolution qui n'y est pas rattachee (#840). Ces tests votaient jusqu'ici
+    // sur des resolutions rattachees a rien — le cas exact que l'article
+    // annule.
+    app_state
+        .meeting_use_cases
+        .add_agenda_item(
+            meeting.id,
+            AddAgendaItemRequest {
+                item: "Approbation des comptes".to_string(),
+            },
+        )
+        .await
+        .expect("Failed to add agenda item");
+
+    // 3 ter. Valider le quorum AVANT toute resolution.
     //
     // `Resolution::create` passe par `Meeting::check_quorum_for_voting()`
     // (Art. 3.87 §5 CC) : sans quorum valide, la creation est refusee avec
@@ -323,7 +341,8 @@ async fn test_create_resolution_success() {
             "title": "Approve Annual Budget",
             "description": "Vote to approve the budget for next fiscal year",
             "resolution_type": "ordinary",
-            "majority_required": "absolute"
+            "majority_required": "absolute",
+            "agenda_item_index": 0
         }))
         .to_request();
 
@@ -360,7 +379,8 @@ async fn test_create_resolution_without_auth_fails() {
             "title": "Test Resolution",
             "description": "Should fail without auth",
             "resolution_type": "ordinary",
-            "majority_required": "absolute"
+            "majority_required": "absolute",
+            "agenda_item_index": 0
         }))
         .to_request();
 
@@ -391,7 +411,8 @@ async fn test_get_resolution_success() {
             "title": "Test Get Resolution",
             "description": "Resolution for testing GET endpoint",
             "resolution_type": "ordinary",
-            "majority_required": "absolute"
+            "majority_required": "absolute",
+            "agenda_item_index": 0
         }))
         .to_request();
 
@@ -514,7 +535,8 @@ async fn test_delete_resolution_success() {
             "title": "Resolution to Delete",
             "description": "This resolution will be deleted",
             "resolution_type": "ordinary",
-            "majority_required": "absolute"
+            "majority_required": "absolute",
+            "agenda_item_index": 0
         }))
         .to_request();
 
@@ -566,7 +588,8 @@ async fn test_cast_vote_pour_success() {
             "title": "Resolution for Voting",
             "description": "Test vote casting",
             "resolution_type": "ordinary",
-            "majority_required": "absolute"
+            "majority_required": "absolute",
+            "agenda_item_index": 0
         }))
         .to_request();
 
@@ -621,7 +644,8 @@ async fn test_cast_vote_contre_and_abstention() {
             "title": "Resolution with Mixed Votes",
             "description": "Testing Contre and Abstention",
             "resolution_type": "ordinary",
-            "majority_required": "absolute"
+            "majority_required": "absolute",
+            "agenda_item_index": 0
         }))
         .to_request();
 
@@ -690,7 +714,8 @@ async fn test_list_resolution_votes() {
             "title": "Resolution with Multiple Votes",
             "description": "Test vote listing",
             "resolution_type": "ordinary",
-            "majority_required": "absolute"
+            "majority_required": "absolute",
+            "agenda_item_index": 0
         }))
         .to_request();
 
@@ -754,7 +779,8 @@ async fn test_change_vote_success() {
             "title": "Resolution for Vote Change",
             "description": "Test changing vote",
             "resolution_type": "ordinary",
-            "majority_required": "absolute"
+            "majority_required": "absolute",
+            "agenda_item_index": 0
         }))
         .to_request();
 
@@ -823,7 +849,8 @@ async fn test_close_voting_simple_majority() {
             "title": "Resolution with Simple Majority",
             "description": "50% + 1 of votes cast",
             "resolution_type": "ordinary",
-            "majority_required": "absolute"
+            "majority_required": "absolute",
+            "agenda_item_index": 0
         }))
         .to_request();
 
@@ -923,7 +950,8 @@ async fn test_close_voting_absolute_majority() {
             "title": "Resolution with Absolute Majority",
             "description": "50% + 1 of all possible votes",
             "resolution_type": "extraordinary",
-            "majority_required": "absolute"
+            "majority_required": "absolute",
+            "agenda_item_index": 0
         }))
         .to_request();
 
@@ -1159,7 +1187,8 @@ async fn test_complete_voting_lifecycle() {
             "title": "Complete Lifecycle Resolution",
             "description": "Testing full voting workflow",
             "resolution_type": "ordinary",
-            "majority_required": "absolute"
+            "majority_required": "absolute",
+            "agenda_item_index": 0
         }))
         .to_request();
 
@@ -1337,7 +1366,8 @@ async fn security_les_votes_dune_resolution_ne_fuient_pas_vers_une_autre_organis
             "title": "Résolution confidentielle",
             "description": "Son décompte ne regarde pas les autres cabinets",
             "resolution_type": "ordinary",
-            "majority_required": "absolute"
+            "majority_required": "absolute",
+            "agenda_item_index": 0
         }))
         .to_request();
     let resp = test::call_service(&app, req).await;
@@ -1411,7 +1441,8 @@ async fn test_cloturer_le_vote_accepte_un_corps_vide_comme_le_frontend() {
             "title": "Résolution à clôturer",
             "description": "Contrôle du corps vide sur la clôture",
             "resolution_type": "ordinary",
-            "majority_required": "absolute"
+            "majority_required": "absolute",
+            "agenda_item_index": 0
         }))
         .to_request();
     let resp = test::call_service(&app, req).await;

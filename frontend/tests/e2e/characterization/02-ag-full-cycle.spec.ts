@@ -126,6 +126,17 @@ test.describe("Characterization 02 — AG Full Cycle (multi-rôle)", () => {
     expect(meetingResp.ok()).toBeTruthy();
     const meeting = await meetingResp.json();
 
+    // Un point d'ordre du jour : une résolution qui n'y est rattachée à aucun
+    // point n'est pas votable (Art. 3.87 § 2 CC, #840).
+    const pointResp = await page.request.post(
+      `${API_BASE}/meetings/${meeting.id}/agenda`,
+      {
+        data: { item: "Budget annuel" },
+        headers: { Authorization: `Bearer ${syndicToken}` },
+      },
+    );
+    expect(pointResp.ok()).toBeTruthy();
+
     // Résolution
     const resolutionResp = await page.request.post(
       `${API_BASE}/meetings/${meeting.id}/resolutions`,
@@ -136,6 +147,7 @@ test.describe("Characterization 02 — AG Full Cycle (multi-rôle)", () => {
           description: "Budget annuel — caractérisation",
           resolution_type: "ordinary",
           majority_required: "absolute",
+          agenda_item_index: 0,
         },
         headers: { Authorization: `Bearer ${syndicToken}` },
       },

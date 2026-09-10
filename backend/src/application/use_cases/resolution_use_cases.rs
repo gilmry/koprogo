@@ -239,9 +239,14 @@ impl ResolutionUseCases {
         // suffit pas.
         let Some(index) = resolution.agenda_item_index else {
             return Err(
+                // Le remède nommé doit être atteignable : aucune route HTTP ne
+                // rattache une résolution existante à un point (`update_resolution`
+                // n'est pas exposé), donc la seule voie est de la recréer. Dire
+                // « rattachez-la » enverrait le syndic chercher un bouton absent.
                 "Cette résolution n'est rattachée à aucun point de l'ordre du jour : \
                  la mettre aux voix produirait une décision nulle (Art. 3.87 § 2 CC). \
-                 Rattachez-la à un point, ou inscrivez le point à l'ordre du jour."
+                 Inscrivez le point à l'ordre du jour, puis recréez la résolution \
+                 en la rattachant à ce point."
                     .to_string(),
             );
         };
@@ -2106,6 +2111,103 @@ mod tests {
         assert!(
             erreur.contains("nulle"),
             "le refus doit dire POURQUOI — la décision serait nulle : {erreur}"
+        );
+    }
+
+    /// @security — la garde a trois branches ; une seule était éprouvée.
+    ///
+    /// Un index qui désigne un point INEXISTANT est aussi grave qu'un index
+    /// absent : la résolution prétend porter sur un point de l'ordre du jour,
+    /// et ce point n'existe pas. Sans ce test, la branche serait du code que
+    /// rien n'exécute, et qui pourrait être supprimé sans qu'un test bronche.
+    #[tokio::test]
+    async fn security_vote_refuse_sur_point_inexistant() {
+        let resolution_repo = Arc::new(MockResolutionRepository::new());
+        let vote_repo = Arc::new(MockVoteRepository::new());
+        let meeting_repo = Arc::new(MockMeetingRepository::new());
+        let resolution = meeting_with_quorum_and_resolution(&resolution_repo, &meeting_repo).await;
+
+        // L'assemblée ne compte qu'un point (n° 0) : le n° 7 n'existe pas.
+        let mut hors_bornes = resolution.clone();
+        hors_bornes.agenda_item_index = Some(7);
+        resolution_repo.create(&hors_bornes).await.unwrap();
+
+        let unit_id = Uuid::new_v4();
+        let unit_owner_repo = Arc::new(MockUnitOwnerRepository::with_holders(
+            unit_id,
+            vec![LotHolder::new(OwnershipType::FullOwner, false)],
+        ));
+        let use_cases = ResolutionUseCases::new(
+            resolution_repo.clone(),
+            vote_repo,
+            meeting_repo,
+            unit_owner_repo,
+        );
+
+        let erreur = use_cases
+            .cast_vote(
+                hors_bornes.id,
+                Uuid::new_v4(),
+                unit_id,
+                VoteChoice::Pour,
+                rust_decimal_macros::dec!(100),
+                None,
+            )
+            .await
+            .expect_err("un point d'ordre du jour inexistant ne doit pas être votable");
+
+        assert!(
+            erreur.contains("n'existe pas") && erreur.contains("3.87"),
+            "le refus doit dire que le point n'existe pas, et citer l'article : {erreur}"
+        );
+    }
+
+    /// @security — un point d'ordre du jour VIDE ne renseigne personne sur ce
+    /// qui est mis aux voix. La convocation doit énoncer l'objet des décisions
+    /// (Art. 3.87 § 2 CC) ; un intitulé blanc n'énonce rien.
+    #[tokio::test]
+    async fn security_vote_refuse_sur_point_dordre_du_jour_vide() {
+        let resolution_repo = Arc::new(MockResolutionRepository::new());
+        let vote_repo = Arc::new(MockVoteRepository::new());
+        let meeting_repo = Arc::new(MockMeetingRepository::new());
+        let resolution = meeting_with_quorum_and_resolution(&resolution_repo, &meeting_repo).await;
+
+        // On blanchit l'intitulé du point 0, auquel la résolution est rattachée.
+        let mut reunion = meeting_repo
+            .find_by_id(resolution.meeting_id)
+            .await
+            .unwrap()
+            .expect("l'assemblée du helper doit exister");
+        reunion.agenda = vec!["   ".to_string()];
+        meeting_repo.update(&reunion).await.unwrap();
+
+        let unit_id = Uuid::new_v4();
+        let unit_owner_repo = Arc::new(MockUnitOwnerRepository::with_holders(
+            unit_id,
+            vec![LotHolder::new(OwnershipType::FullOwner, false)],
+        ));
+        let use_cases = ResolutionUseCases::new(
+            resolution_repo.clone(),
+            vote_repo,
+            meeting_repo,
+            unit_owner_repo,
+        );
+
+        let erreur = use_cases
+            .cast_vote(
+                resolution.id,
+                Uuid::new_v4(),
+                unit_id,
+                VoteChoice::Pour,
+                rust_decimal_macros::dec!(100),
+                None,
+            )
+            .await
+            .expect_err("un point vide ne doit pas être votable");
+
+        assert!(
+            erreur.contains("vide") && erreur.contains("3.87"),
+            "le refus doit dire que le point est vide, et citer l'article : {erreur}"
         );
     }
 

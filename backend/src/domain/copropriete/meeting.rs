@@ -102,8 +102,17 @@ impl Meeting {
     }
 
     pub fn add_agenda_item(&mut self, item: String) -> Result<(), String> {
-        if item.is_empty() {
-            return Err("Agenda item cannot be empty".to_string());
+        // `is_empty()` seul laissait passer un intitule fait d'espaces : le
+        // point s'inscrivait sans un mot de refus, et le defaut n'apparaissait
+        // qu'au vote, ou `cast_vote` le rejette — trop tard pour convoquer
+        // autrement. La convocation doit enoncer l'objet des decisions
+        // (Art. 3.87 § 2 CC) ; un intitule blanc n'enonce rien.
+        if item.trim().is_empty() {
+            return Err(
+                "Un point d'ordre du jour doit énoncer ce qui sera mis aux voix : \
+                 un intitulé vide n'informe aucun copropriétaire (Art. 3.87 § 2 CC)."
+                    .to_string(),
+            );
         }
         self.agenda.push(item);
         self.updated_at = Utc::now();
@@ -567,6 +576,42 @@ mod tests {
         let result = meeting.add_agenda_item("Approbation des comptes".to_string());
         assert!(result.is_ok());
         assert_eq!(meeting.agenda.len(), 1);
+    }
+
+    /// Un point d'ordre du jour fait d'espaces n'enonce rien.
+    ///
+    /// Le refus etait pose sur `is_empty()`, qui laisse passer « \t » comme
+    /// «\u{a0}\u{a0}». Le point s'inscrivait donc sans un mot, et le defaut ne se
+    /// revelait qu'au vote — quand `cast_vote` le rejette, trop tard pour
+    /// convoquer autrement (Art. 3.87 § 2 CC).
+    #[test]
+    fn negative_un_point_dordre_du_jour_blanc_est_refuse_a_linscription() {
+        let mut meeting = Meeting::new(
+            Uuid::new_v4(),
+            Uuid::new_v4(),
+            Uuid::new_v4(),
+            MeetingType::Ordinary,
+            "AGO 2026".to_string(),
+            None,
+            Utc::now() + Duration::days(30),
+            "Salle des fêtes".to_string(),
+        )
+        .unwrap();
+
+        for blanc in ["", "   ", "\t", "\n", " \t \n "] {
+            let erreur = meeting
+                .add_agenda_item(blanc.to_string())
+                .expect_err("un intitulé blanc ne doit pas s'inscrire : {blanc:?}");
+            assert!(
+                erreur.contains("3.87"),
+                "le refus doit citer l'article qui le fonde : {erreur}"
+            );
+        }
+        assert!(
+            meeting.agenda.is_empty(),
+            "aucun point blanc ne doit avoir ete inscrit : {:?}",
+            meeting.agenda
+        );
     }
 
     #[test]

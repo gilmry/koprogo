@@ -591,6 +591,22 @@ export async function loginAsSyndicWithMeeting(
   });
   const meeting = await expectOk(meetingResp, "seed:meeting");
 
+  // Un point d'ordre du jour, sans quoi aucune résolution de cette assemblée
+  // ne sera votable.
+  //
+  // Art. 3.87 § 2 CC annule une décision portant sur un point absent de
+  // l'ordre du jour, et `cast_vote` la refuse depuis #840. Le semis créait des
+  // assemblées à l'ordre du jour VIDE : toute recette qui y votait exerçait le
+  // cas que l'article annule.
+  const pointResp = await page.request.post(
+    `${API_BASE}/meetings/${meeting.id}/agenda`,
+    {
+      data: { item: "Approbation des comptes" },
+      headers: { Authorization: `Bearer ${ctx.token}` },
+    },
+  );
+  await expectOk(pointResp, "seed:agenda");
+
   return { ...ctx, meetingId: meeting.id };
 }
 
