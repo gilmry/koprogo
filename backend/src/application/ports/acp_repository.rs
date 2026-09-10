@@ -48,6 +48,28 @@ pub trait AcpRepository: Send + Sync {
     /// Liste filtrée par scope. Tri implémentation : `created_at DESC`.
     async fn list(&self, scope: ListScope) -> Result<Vec<Acp>, AppError>;
 
+    /// La même liste, **avec les métriques de chaque ACP**.
+    ///
+    /// ── Pourquoi une seconde méthode plutôt qu'un enrichissement ────────
+    ///
+    /// `find_by_id_with_metrics` existait déjà, mais par identifiant : afficher
+    /// une table de quatre ACP demandait quatre allers-retours, et cinquante
+    /// en demandaient cinquante. Le tableau de bord du syndic montre ses ACP
+    /// avec leurs blocs, leurs lots encodés et déclarés, et la somme de leurs
+    /// quotités — c'est une lecture de liste, pas quatre lectures unitaires.
+    ///
+    /// Elle est SÉPARÉE de `list` parce que les métriques coûtent quatre
+    /// sous-requêtes par ligne : les appelants qui n'ont besoin que des noms
+    /// — un sélecteur, une liste déroulante — ne doivent pas les payer.
+    ///
+    /// Les sous-requêtes sont **identiques** à celles de
+    /// `find_by_id_with_metrics`. Deux définitions divergentes de « lots
+    /// encodés » seraient pires que pas de table du tout : la fiche d'une ACP
+    /// et la ligne de la même ACP dans la liste afficheraient des nombres
+    /// différents, sans qu'on sache lequel croire.
+    async fn list_with_metrics(&self, scope: ListScope)
+        -> Result<Vec<(Acp, AcpMetrics)>, AppError>;
+
     /// Met à jour une ACP existante (UPDATE … WHERE id = $1).
     /// Retourne `AppError::NotFound` si aucune ligne affectée.
     async fn update(&self, acp: &Acp) -> Result<Acp, AppError>;

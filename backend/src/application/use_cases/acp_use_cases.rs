@@ -12,7 +12,7 @@
 //! handler (pattern existant — cf. `building_handlers.rs`). Ce use-case
 //! reste pur logique métier + permission.
 
-use crate::application::dto::{AcpResponseDto, CreateAcpDto, UpdateAcpDto};
+use crate::application::dto::{AcpAvecMetriquesDto, AcpResponseDto, CreateAcpDto, UpdateAcpDto};
 use crate::application::error::AppError;
 use crate::application::ports::{AcpRepository, ListScope, OrganizationRepository};
 use crate::domain::entities::Acp;
@@ -163,6 +163,31 @@ impl AcpUseCases {
         let scope = caller.list_scope();
         let acps = self.repository.list(scope).await?;
         Ok(acps.iter().map(Self::to_response_dto).collect())
+    }
+
+    /// Les ACP du périmètre, **avec leurs métriques**.
+    ///
+    /// Sert la table « Mes ACP » du tableau de bord syndic : blocs, lots
+    /// encodés et déclarés, somme des quotités. Le cloisonnement est celui de
+    /// `list_acps` — `caller.list_scope()` —, donc un syndic ne voit que les
+    /// ACP de son cabinet et un copropriétaire que les siennes.
+    pub async fn list_acps_with_metrics(
+        &self,
+        caller: &AcpCaller,
+    ) -> Result<Vec<AcpAvecMetriquesDto>, AppError> {
+        let scope = caller.list_scope();
+        let avec_metriques = self.repository.list_with_metrics(scope).await?;
+        Ok(avec_metriques
+            .iter()
+            .map(|(acp, m)| AcpAvecMetriquesDto {
+                acp: Self::to_response_dto(acp),
+                buildings_count: m.buildings_count,
+                units_count: m.units_count,
+                declared_units_total: m.declared_units_total,
+                // Chaîne, pas flottant : une quotité est opposable.
+                quota_sum: m.quota_sum.to_string(),
+            })
+            .collect())
     }
 
     /// Met à jour une ACP. Admin only.
@@ -354,6 +379,10 @@ mod tests {
             async fn find_by_id(&self, id: Uuid) -> Result<Option<Acp>, AppError>;
             async fn find_by_id_with_metrics(&self, id: Uuid) -> Result<Option<(Acp, crate::domain::entities::AcpMetrics)>, AppError>;
             async fn list(&self, scope: ListScope) -> Result<Vec<Acp>, AppError>;
+            async fn list_with_metrics(
+                &self,
+                scope: ListScope,
+            ) -> Result<Vec<(Acp, crate::domain::entities::AcpMetrics)>, AppError>;
             async fn update(&self, acp: &Acp) -> Result<Acp, AppError>;
             async fn archive(&self, id: Uuid) -> Result<(), AppError>;
             async fn count_buildings(&self, id: Uuid) -> Result<i64, AppError>;

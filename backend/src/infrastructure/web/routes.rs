@@ -36,6 +36,10 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig) {
             .service(get_current_user)
             // ACPs (Story 1.1 — Association des Copropriétaires, ADR-0010)
             .service(create_acp)
+            // AVANT `get_acp` : `/acps/with-metrics` serait sinon capté par
+            // `/acps/{id}`, qui tenterait de lire « with-metrics » comme un
+            // UUID et rendrait un 400 au lieu de la liste.
+            .service(list_acps_with_metrics)
             .service(list_acps)
             .service(get_acp)
             .service(update_acp)
@@ -86,9 +90,10 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig) {
             .service(record_payment)
             // Call for Funds (Collective payment requests)
             .service(create_call_for_funds)
+            // Même piège : `/call-for-funds/overdue` avant `/call-for-funds/{id}`.
+            .service(get_overdue_calls)
             .service(get_call_for_funds)
             .service(list_call_for_funds)
-            .service(get_overdue_calls)
             .service(send_call_for_funds)
             .service(cancel_call_for_funds)
             .service(delete_call_for_funds)
@@ -498,12 +503,16 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig) {
             // Accounts (Belgian PCMN)
             .service(create_account)
             .service(list_accounts)
+            // `count_accounts` AVANT `get_account` : `/accounts/count` serait
+            // sinon capté par `/accounts/{id}`, qui tenterait de lire « count »
+            // comme un UUID. La route était donc inatteignable, et rendait un
+            // 400 sur un identifiant mal formé plutôt que le décompte.
+            .service(count_accounts)
             .service(get_account)
             .service(get_account_by_code)
             .service(update_account)
             .service(delete_account)
             .service(seed_belgian_pcmn)
-            .service(count_accounts)
             // PCN (Belgian Chart of Accounts - Legacy)
             .service(generate_pcn_report)
             .service(export_pcn_pdf)

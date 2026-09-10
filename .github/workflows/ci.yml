@@ -162,7 +162,7 @@ jobs:
       # mais ne l'avait généralisé qu'à lui-même.
       #
       # Elles sont statiques : sources, migrations, `.feature`. Pas de base.
-      - name: Les treize gardes — aucune dette ne grossit
+      - name: Les quinze gardes — aucune dette ne grossit
         working-directory: backend
         env:
           SQLX_OFFLINE: "true"
@@ -177,6 +177,7 @@ jobs:
             --test garde_features_orphelines \
             --test garde_identite_absente \
             --test garde_lecture \
+            --test garde_ordre_des_routes \
             --test garde_paniques_en_production \
             --test garde_perimetre_wbs \
             --test garde_schema_mort \
