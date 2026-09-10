@@ -30,7 +30,7 @@
     <span class="text-base leading-none">{currentLang.flag}</span>
     <span class="text-xs font-semibold">{currentLang.code.toUpperCase()}</span>
     <svg
-      class="h-4 w-4 text-gray-400 transition-transform"
+      class="h-4 w-4 text-muted transition-transform"
       class:rotate-180={isOpen}
       viewBox="0 0 20 20"
       fill="currentColor"

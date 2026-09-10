@@ -102,7 +102,7 @@
   {/if}
 
   {#if loading}
-    <div class="flex items-center justify-center gap-2 text-gray-400 py-8">
+    <div class="flex items-center justify-center gap-2 text-muted py-8">
       <div
         class="animate-spin w-5 h-5 border-2 border-primary-500 border-t-transparent rounded-full"
       ></div>
@@ -167,7 +167,7 @@
                 >{getUnitTypeLabel(unit.unit_type)}</span
               >
             </div>
-            <span class="text-xs text-gray-400">{unit.id.slice(0, 8)}...</span>
+            <span class="text-xs text-muted">{unit.id.slice(0, 8)}...</span>
           </div>
           <h3 class="text-lg font-semibold text-gray-900 mb-2">
             {$_("common.unit")}
@@ -206,7 +206,7 @@
           </dl>
           {#if unit.owners && unit.owners.length > 0}
             <div class="mt-3 pt-3 border-t border-gray-100">
-              <p class="text-xs text-gray-400 uppercase tracking-wider mb-1">
+              <p class="text-xs text-muted uppercase tracking-wider mb-1">
                 {$_("common.owners")}
               </p>
               <ul class="space-y-1">

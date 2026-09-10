@@ -356,7 +356,7 @@
                   onclick={() => (ratingValue = star)}
                   class="text-3xl transition-colors {ratingValue >= star
                     ? 'text-yellow-400'
-                    : 'text-gray-300'} hover:text-yellow-300"
+                    : 'text-muted'} hover:text-yellow-300"
                 >
                   &#9733;
                 </button>

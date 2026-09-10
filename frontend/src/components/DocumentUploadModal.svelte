@@ -147,7 +147,7 @@
             <button
               data-testid="document-upload-close-button"
               type="button"
-              class="text-gray-400 hover:text-gray-600"
+              class="text-muted hover:text-gray-600"
               onclick={handleClose}
               aria-label={$_("common.close")}
             >

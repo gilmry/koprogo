@@ -107,7 +107,7 @@
           <button
             data-testid="unit-owner-edit-close-button"
             onclick={handleClose}
-            class="text-gray-400 hover:text-gray-500"
+            class="text-muted hover:text-gray-500"
             ><span class="text-2xl">&times;</span></button
           >
         </div>

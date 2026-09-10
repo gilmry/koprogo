@@ -300,7 +300,7 @@
                 {$_("common.cancel")}
               </button>
             </div>
-            <p class="text-xs text-gray-400">
+            <p class="text-xs text-muted">
               {$_("profile.rectificationNotice")}.
             </p>
           </div>

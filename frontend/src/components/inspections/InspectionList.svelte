@@ -376,7 +376,7 @@
       >
     </div>
   {:else if inspections.length === 0}
-    <div class="text-center py-8 text-gray-400 text-sm">
+    <div class="text-center py-8 text-muted text-sm">
       {activeTab === "overdue"
         ? $_("inspections.noOverdue")
         : activeTab === "upcoming"

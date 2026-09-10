@@ -39,7 +39,7 @@
     />
   {:else}
     <div class="w-full h-48 bg-gray-200 flex items-center justify-center">
-      <span class="text-4xl text-gray-400">📦</span>
+      <span class="text-4xl text-muted">📦</span>
     </div>
   {/if}
 

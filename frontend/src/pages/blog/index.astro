@@ -112,7 +112,7 @@ const categories = [...new Set(sortedPosts.map((p) => p.data.category))];
                   {categoryLabels[post.data.category] || post.data.category}
                 </span>
                 <time
-                  class="text-xs text-gray-400"
+                  class="text-xs text-muted"
                   datetime={post.data.publishedAt.toISOString()}
                 >
                   {post.data.publishedAt.toLocaleDateString("fr-BE", {

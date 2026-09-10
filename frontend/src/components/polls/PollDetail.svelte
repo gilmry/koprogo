@@ -423,7 +423,7 @@
                   class="text-4xl transition-all {ratingValue !== null &&
                   ratingValue >= value
                     ? 'text-yellow-400'
-                    : 'text-gray-300'} hover:text-yellow-300"
+                    : 'text-muted'} hover:text-yellow-300"
                 >
                   ⭐
                 </button>

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Icone from "../ui/Icone.svelte";
   // Story 2.4 — RoleSubmenu (sous-menu collapsible reutilisable).
   //
   // Compose un groupe de liens de navigation pour un menu (gestion/compta/...).
@@ -100,7 +101,7 @@
   data-testid="navigation-menu-{menuKey}"
 >
   <summary
-    class="px-3 py-1 text-[11px] font-semibold text-gray-400 uppercase tracking-wider cursor-pointer hover:text-gray-600 list-none flex items-center justify-between"
+    class="px-3 py-1 text-[11px] font-semibold text-muted uppercase tracking-wider cursor-pointer hover:text-gray-600 list-none flex items-center justify-between"
   >
     <span>{title}</span>
     <span aria-hidden="true" class="text-xs">▾</span>
@@ -123,9 +124,16 @@
           data-testid="nav-link-{ancre(item.href)}"
         >
           {#if item.icon}
-            <span class="text-base shrink-0 w-5 text-center" aria-hidden="true"
-              >{item.icon}</span
-            >
+            <!--
+              L'icône est décorative : `Icone` pose `aria-hidden` et
+              `focusable="false"` lui-même. Le nom accessible du lien reste le
+              libellé traduit qui suit, ce qui laisse
+              `getByRole("link", { name })` fonctionner dans les recettes.
+
+              Un émoji ne pouvait pas être `aria-hidden` : il était annoncé,
+              et le lien s'appelait « bâtiment Immeubles ».
+            -->
+            <Icone nom={item.icon} taille={18} class="shrink-0" />
           {/if}
           <span class="truncate">{item.label}</span>
         </a>

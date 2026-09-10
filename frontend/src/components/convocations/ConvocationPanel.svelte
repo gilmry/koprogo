@@ -268,11 +268,11 @@
               ? $_("common.creating")
               : "📨 " + $_("convocations.actions.create")}
           </button>
-          <p class="mt-3 text-xs text-gray-400">
+          <p class="mt-3 text-xs text-muted">
             {$_("convocations.legalDeadlineHint")}
           </p>
         {:else}
-          <p class="text-sm text-gray-400">
+          <p class="text-sm text-muted">
             {$_("convocations.syndicNotCreatedYet")}
           </p>
         {/if}

@@ -289,7 +289,7 @@
               <p class="text-gray-500">
                 {$_("dashboards.syndic.noUrgentTasks")}
               </p>
-              <p class="text-sm text-gray-400 mt-2">
+              <p class="text-sm text-muted mt-2">
                 {$_("dashboards.syndic.allUnderControl")}
               </p>
             </div>

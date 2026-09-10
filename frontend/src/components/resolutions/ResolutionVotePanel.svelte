@@ -288,7 +288,7 @@
       {#if resolution.description}
         <p class="text-sm text-gray-600 mt-1">{resolution.description}</p>
       {/if}
-      <p class="text-xs text-gray-400 mt-1">
+      <p class="text-xs text-muted mt-1">
         {getMajorityLabel(resolution.majority_required)}
       </p>
     </div>
@@ -539,7 +539,7 @@
                     $_("resolutions.vote.unknownOwner")}</span
                 >
                 {#if vote.proxy_owner_id}
-                  <span class="text-xs text-gray-400 ml-1"
+                  <span class="text-xs text-muted ml-1"
                     >({$_("resolutions.vote.proxy")})</span
                   >
                 {/if}
@@ -556,7 +556,7 @@
               <td class="py-1.5 text-right text-gray-600"
                 >{vote.voting_power}</td
               >
-              <td class="py-1.5 text-right text-xs text-gray-400"
+              <td class="py-1.5 text-right text-xs text-muted"
                 >{formatDateTime(vote.voted_at)}</td
               >
             </tr>
@@ -565,7 +565,7 @@
       </table>
     </div>
   {:else if showVotes && votes.length === 0}
-    <p class="mt-3 text-xs text-gray-400 text-center">
+    <p class="mt-3 text-xs text-muted text-center">
       {$_("resolutions.vote.noVotes")}
     </p>
   {/if}

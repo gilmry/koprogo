@@ -188,7 +188,7 @@
                     />
                   </span>
                 {:else}
-                  <span class="text-gray-400" aria-label="Permanent">∞</span>
+                  <span class="text-muted" aria-label="Permanent">∞</span>
                 {/if}
               </td>
               <td class="px-3 py-2 text-right">

@@ -247,7 +247,7 @@
                 </div>
                 <div class="ml-4 flex-shrink-0">
                   <svg
-                    class="h-5 w-5 text-gray-400"
+                    class="h-5 w-5 text-muted"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"

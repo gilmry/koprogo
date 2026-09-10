@@ -369,7 +369,7 @@
           class="w-20 border border-gray-300 rounded px-2 py-1 text-sm"
         />
       </label>
-      <span class="text-gray-400 mt-4">.</span>
+      <span class="text-muted mt-4">.</span>
       <label class="flex flex-col text-xs text-gray-600">
         <span>{$_("technicalSpecs.versionMinor")}</span>
         <input
@@ -381,7 +381,7 @@
           class="w-20 border border-gray-300 rounded px-2 py-1 text-sm"
         />
       </label>
-      <span class="text-gray-400 mt-4">.</span>
+      <span class="text-muted mt-4">.</span>
       <label class="flex flex-col text-xs text-gray-600">
         <span>{$_("technicalSpecs.versionPatch")}</span>
         <input

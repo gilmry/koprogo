@@ -396,7 +396,7 @@
       >
     </div>
   {:else if filteredReports.length === 0}
-    <div class="text-center py-8 text-gray-400 text-sm">
+    <div class="text-center py-8 text-muted text-sm">
       {$_("workReports.none")}
     </div>
   {:else}

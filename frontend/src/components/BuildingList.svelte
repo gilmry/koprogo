@@ -186,7 +186,7 @@
         data-testid="building-search-input"
         class="w-full px-4 py-2 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
       />
-      <span class="absolute left-3 top-2.5 text-gray-400">🔍</span>
+      <span class="absolute left-3 top-2.5 text-muted">🔍</span>
     </div>
   </div>
 

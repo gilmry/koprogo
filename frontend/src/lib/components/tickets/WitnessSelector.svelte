@@ -173,7 +173,7 @@
             onclick={() => addWitness(s.id)}
             disabled={disabledOpt}
             aria-disabled={disabledOpt}
-            class="block w-full px-3 py-2 text-left text-sm hover:bg-blue-50 focus-visible:bg-blue-50 disabled:cursor-not-allowed disabled:text-gray-400"
+            class="block w-full px-3 py-2 text-left text-sm hover:bg-blue-50 focus-visible:bg-blue-50 disabled:cursor-not-allowed disabled:text-muted"
           >
             {s.label}{disabledOpt ? " (vous-même)" : ""}
           </button>

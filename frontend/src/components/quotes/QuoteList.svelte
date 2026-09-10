@@ -352,7 +352,7 @@
           {$_("common.cancel")}
         </button>
       </div>
-      <p class="mt-2 text-xs text-gray-400">
+      <p class="mt-2 text-xs text-muted">
         {$_("quotes.list.bestPractice")}
       </p>
     </div>
@@ -380,7 +380,7 @@
     <div class="p-8 text-center">
       <p class="text-gray-500">{$_("quotes.list.notFound")}</p>
       {#if isAdmin}
-        <p class="mt-2 text-sm text-gray-400">
+        <p class="mt-2 text-sm text-muted">
           {$_("quotes.list.emptyMessage")}
         </p>
       {/if}
@@ -430,7 +430,7 @@
                         >{formatQuoteAmount(quote.amount_incl_vat_cents)}</span
                       >
                     {/if}
-                    <span class="text-xs text-gray-400"
+                    <span class="text-xs text-muted"
                       >{formatDate(quote.created_at)}</span
                     >
                   </div>
@@ -438,7 +438,7 @@
               </div>
               <div class="ml-4">
                 <svg
-                  class="h-5 w-5 text-gray-400 transition-transform {expandedId ===
+                  class="h-5 w-5 text-muted transition-transform {expandedId ===
                   quote.id
                     ? 'rotate-90'
                     : ''}"

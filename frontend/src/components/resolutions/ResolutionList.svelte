@@ -191,7 +191,7 @@
       <div class="py-8 text-center">
         <p class="text-gray-500">{$_("resolutions.list.notFound")}</p>
         {#if canAddResolution}
-          <p class="mt-2 text-sm text-gray-400">
+          <p class="mt-2 text-sm text-muted">
             {$_("resolutions.list.emptyMessage")}
           </p>
         {/if}
@@ -201,8 +201,7 @@
         {#each resolutions as resolution, index (resolution.id)}
           <div class="relative" data-testid="resolution-item">
             <div class="flex items-start gap-2 mb-2">
-              <span class="text-xs text-gray-400 font-mono mt-1"
-                >#{index + 1}</span
+              <span class="text-xs text-muted font-mono mt-1">#{index + 1}</span
               >
               <div class="flex-1">
                 <ResolutionVotePanel {resolution} {meetingStatus} {isAdmin} />
@@ -210,7 +209,7 @@
               {#if isAdmin && resolution.status === ResolutionStatus.Pending}
                 <button
                   onclick={() => handleDeleteResolution(resolution.id)}
-                  class="text-gray-400 hover:text-red-500 p-1 shrink-0"
+                  class="text-muted hover:text-red-500 p-1 shrink-0"
                   aria-label={$_("common.delete")}
                   title={$_("common.delete")}
                   data-testid="resolution-delete-btn"

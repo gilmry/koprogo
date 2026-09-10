@@ -227,7 +227,7 @@
                   {payment.id.slice(0, 8)}
                 </div>
                 {#if payment.stripe_payment_intent_id}
-                  <div class="text-xs text-gray-400 font-mono">
+                  <div class="text-xs text-muted font-mono">
                     {payment.stripe_payment_intent_id.slice(0, 12)}...
                   </div>
                 {/if}

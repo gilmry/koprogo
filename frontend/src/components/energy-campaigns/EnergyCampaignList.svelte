@@ -108,7 +108,7 @@
   {:else if campaigns.length === 0}
     <div class="p-8 text-center">
       <p class="text-gray-500">{$_("energy.campaign.noCampaigns")}</p>
-      <p class="mt-2 text-sm text-gray-400">
+      <p class="mt-2 text-sm text-muted">
         {$_("energy.campaign.emptyStateMessage")}
       </p>
     </div>
@@ -140,7 +140,7 @@
                     </span>
                   {/if}
                 </div>
-                <div class="mt-2 flex items-center text-xs text-gray-400">
+                <div class="mt-2 flex items-center text-xs text-muted">
                   <span>
                     {$_("energy.campaign.participationUntil")}
                     {formatDateShort(campaign.deadline_participation)}
@@ -156,7 +156,7 @@
               </div>
               <div class="ml-4">
                 <svg
-                  class="h-5 w-5 text-gray-400"
+                  class="h-5 w-5 text-muted"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"

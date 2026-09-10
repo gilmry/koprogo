@@ -173,7 +173,7 @@
   {:else if filteredConvocations.length === 0}
     <div class="p-8 text-center">
       <p class="text-gray-500">{$_("convocations.noFound")}</p>
-      <p class="mt-2 text-sm text-gray-400">
+      <p class="mt-2 text-sm text-muted">
         {$_("convocations.noFoundHint")}
       </p>
     </div>
@@ -242,7 +242,7 @@
                       })}</span
                     >
                   {/if}
-                  <span class="text-xs text-gray-400"
+                  <span class="text-xs text-muted"
                     >{$_("common.createdOn")}
                     {formatDate(convocation.created_at)}</span
                   >
@@ -251,7 +251,7 @@
 
               <div class="ml-4 flex flex-col items-center gap-2">
                 <svg
-                  class="h-5 w-5 text-gray-400"
+                  class="h-5 w-5 text-muted"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"

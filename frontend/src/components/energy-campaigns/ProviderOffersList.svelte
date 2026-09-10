@@ -114,7 +114,7 @@
   {:else if offers.length === 0}
     <div class="p-8 text-center">
       <p class="text-gray-500">{$_("energy.offer.noOffers")}</p>
-      <p class="mt-2 text-sm text-gray-400">
+      <p class="mt-2 text-sm text-muted">
         {$_("energy.offer.emptyStateMessage")}
       </p>
     </div>

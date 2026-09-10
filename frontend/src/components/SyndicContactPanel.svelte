@@ -95,13 +95,11 @@
         <div class="bg-gray-50 border border-gray-200 rounded-lg p-5">
           <p class="font-medium text-gray-700 mb-1">{building.name}</p>
           <p class="text-sm text-gray-500">{$_("profile.noSyndicInfo")}</p>
-          <p class="text-xs text-gray-400 mt-1">{$_("profile.contactAdmin")}</p>
+          <p class="text-xs text-muted mt-1">{$_("profile.contactAdmin")}</p>
         </div>
       {:else}
         <div class="bg-white rounded-lg border border-gray-200 p-5 space-y-4">
-          <p
-            class="text-xs font-semibold text-gray-400 uppercase tracking-wider"
-          >
+          <p class="text-xs font-semibold text-muted uppercase tracking-wider">
             {building.name}
           </p>
           <ul class="space-y-4">
@@ -121,7 +119,7 @@
                   ></span
                 >
                 <div>
-                  <p class="text-xs text-gray-400 uppercase tracking-wider">
+                  <p class="text-xs text-muted uppercase tracking-wider">
                     {$_("syndic.contactTitle")}
                   </p>
                   <p class="font-medium text-gray-900">
@@ -145,7 +143,7 @@
                   ></span
                 >
                 <div>
-                  <p class="text-xs text-gray-400 uppercase tracking-wider">
+                  <p class="text-xs text-muted uppercase tracking-wider">
                     {$_("common.email")}
                   </p>
                   <a
@@ -171,7 +169,7 @@
                   ></span
                 >
                 <div>
-                  <p class="text-xs text-gray-400 uppercase tracking-wider">
+                  <p class="text-xs text-muted uppercase tracking-wider">
                     {$_("syndic.phone")}
                   </p>
                   <a
@@ -202,7 +200,7 @@
                   ></span
                 >
                 <div>
-                  <p class="text-xs text-gray-400 uppercase tracking-wider">
+                  <p class="text-xs text-muted uppercase tracking-wider">
                     {$_("common.address")}
                   </p>
                   <p class="text-gray-900">{building.syndic_address}</p>
@@ -226,7 +224,7 @@
                   ></span
                 >
                 <div>
-                  <p class="text-xs text-gray-400 uppercase tracking-wider">
+                  <p class="text-xs text-muted uppercase tracking-wider">
                     {$_("syndic.openingHours")}
                   </p>
                   <p class="text-gray-900">{building.syndic_office_hours}</p>

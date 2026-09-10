@@ -113,7 +113,7 @@
       <button
         data-testid="meeting-create-close"
         onclick={handleClose}
-        class="text-gray-400 hover:text-gray-600"
+        class="text-muted hover:text-gray-600"
         aria-label="Fermer"
       >
         <svg

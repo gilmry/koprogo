@@ -121,7 +121,7 @@
           <button
             data-testid="modal-close-button"
             onclick={handleClose}
-            class="text-gray-400 hover:text-gray-600 transition"
+            class="text-muted hover:text-gray-600 transition"
             aria-label="Close"
           >
             <svg

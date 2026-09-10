@@ -268,7 +268,7 @@
           type="button"
           onclick={handleCancel}
           data-testid="role-assignment-cancel"
-          class="min-h-[44px] min-w-[44px] flex items-center justify-center text-gray-400 hover:text-gray-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-500"
+          class="min-h-[44px] min-w-[44px] flex items-center justify-center text-muted hover:text-gray-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-500"
           aria-label="Fermer le formulaire"
         >
           <svg

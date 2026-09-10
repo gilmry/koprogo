@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Icone from "../ui/Icone.svelte";
   // Story 2.4 — Navigation latérale contextualisée par rôle + scope.
   //
   // ADR-0012 (Navigation contextualisée).
@@ -81,57 +82,70 @@
   interface NavItem {
     href: string;
     label: string;
+    /** Nom d'un tracé de `lib/icones.ts`, jamais un émoji. */
     icon: string;
   }
 
   // Menus business — items partages syndic/admin in-context.
   const getGestionItems = (t: any): NavItem[] => [
-    { href: "/owners", label: t("navigation.owners"), icon: "👤" },
-    { href: "/units", label: t("navigation.units"), icon: "🚪" },
-    { href: "/buildings", label: t("navigation.buildings"), icon: "🏢" },
+    { href: "/owners", label: t("navigation.owners"), icon: "owners" },
+    { href: "/units", label: t("navigation.units"), icon: "units" },
+    { href: "/buildings", label: t("navigation.buildings"), icon: "buildings" },
     {
       href: "/call-for-funds",
       label: t("navigation.callForFunds"),
-      icon: "📢",
+      icon: "callForFunds",
     },
     {
       href: "/owner-contributions",
       label: t("navigation.contributions"),
-      icon: "💶",
+      icon: "contributions",
     },
     {
       href: "/payment-reminders",
       label: t("navigation.reminders"),
-      icon: "📧",
+      icon: "reminders",
     },
   ];
 
   const getComptaItems = (t: any): NavItem[] => [
-    { href: "/expenses", label: t("navigation.expenses"), icon: "💰" },
+    { href: "/expenses", label: t("navigation.expenses"), icon: "expenses" },
     {
       href: "/invoice-workflow",
       label: t("navigation.invoiceWorkflow"),
-      icon: "✅",
+      icon: "invoiceWorkflow",
     },
-    { href: "/budgets", label: t("navigation.budgets"), icon: "📊" },
-    { href: "/etats-dates", label: t("navigation.etatsDates"), icon: "📋" },
+    { href: "/budgets", label: t("navigation.budgets"), icon: "budgets" },
+    {
+      href: "/etats-dates",
+      label: t("navigation.etatsDates"),
+      icon: "etatsDates",
+    },
     {
       href: "/journal-entries",
       label: t("navigation.journalEntries"),
-      icon: "📒",
+      icon: "journalEntries",
     },
-    { href: "/reports", label: t("navigation.reportsPcmn"), icon: "📈" },
+    {
+      href: "/reports",
+      label: t("navigation.reportsPcmn"),
+      icon: "reportsPcmn",
+    },
   ];
 
   const getGouvernanceItems = (t: any): NavItem[] => [
-    { href: "/meetings", label: t("navigation.meetings"), icon: "📅" },
-    { href: "/convocations", label: t("navigation.convocations"), icon: "📨" },
+    { href: "/meetings", label: t("navigation.meetings"), icon: "meetings" },
+    {
+      href: "/convocations",
+      label: t("navigation.convocations"),
+      icon: "convocations",
+    },
     {
       href: "/syndic/board-members",
       label: t("navigation.council"),
-      icon: "👑",
+      icon: "council",
     },
-    { href: "/documents", label: t("navigation.documents"), icon: "📄" },
+    { href: "/documents", label: t("navigation.documents"), icon: "documents" },
   ];
 
   // Les huit modules communautaires restent au menu.
@@ -158,57 +172,89 @@
   // points d'entrée déjà écrits, testés et enregistrés. Le travail à faire
   // est de rebrancher, pas de masquer.
   const getCommunauteItems = (t: any): NavItem[] => [
-    { href: "/exchanges", label: t("navigation.sel"), icon: "🔄" },
-    { href: "/polls", label: t("navigation.polls"), icon: "📊" },
-    { href: "/notices", label: t("navigation.notices"), icon: "📌" },
-    { href: "/bookings", label: t("navigation.bookings"), icon: "📅" },
-    { href: "/sharing", label: t("navigation.sharing_short"), icon: "🎁" },
-    { href: "/skills", label: t("navigation.skills"), icon: "🎓" },
-    { href: "/energy-campaigns", label: t("navigation.energy"), icon: "⚡" },
-    { href: "/gamification", label: t("navigation.gamification"), icon: "🏆" },
+    { href: "/exchanges", label: t("navigation.sel"), icon: "sel" },
+    { href: "/polls", label: t("navigation.polls"), icon: "polls" },
+    { href: "/notices", label: t("navigation.notices"), icon: "notices" },
+    { href: "/bookings", label: t("navigation.bookings"), icon: "bookings" },
+    {
+      href: "/sharing",
+      label: t("navigation.sharing_short"),
+      icon: "sharing_short",
+    },
+    { href: "/skills", label: t("navigation.skills"), icon: "skills" },
+    {
+      href: "/energy-campaigns",
+      label: t("navigation.energy"),
+      icon: "energy",
+    },
+    {
+      href: "/gamification",
+      label: t("navigation.gamification"),
+      icon: "gamification",
+    },
   ];
 
   const getTicketingItems = (t: any): NavItem[] => [
-    { href: "/tickets", label: t("navigation.tickets"), icon: "🎫" },
-    { href: "/quotes", label: t("navigation.quotes"), icon: "📋" },
-    { href: "/work-reports", label: t("navigation.works"), icon: "🔧" },
-    { href: "/inspections", label: t("navigation.inspections"), icon: "🔍" },
+    { href: "/tickets", label: t("navigation.tickets"), icon: "tickets" },
+    { href: "/quotes", label: t("navigation.quotes"), icon: "quotes" },
+    { href: "/work-reports", label: t("navigation.works"), icon: "works" },
+    {
+      href: "/inspections",
+      label: t("navigation.inspections"),
+      icon: "inspections",
+    },
   ];
 
   const getMesLotsItems = (t: any): NavItem[] => [
-    { href: "/owner", label: t("navigation.dashboard"), icon: "🏠" },
-    { href: "/owner/units", label: t("navigation.units"), icon: "🚪" },
-    { href: "/owner/expenses", label: t("navigation.expenses"), icon: "💰" },
-    { href: "/owner/payments", label: t("navigation.payments"), icon: "💳" },
+    { href: "/owner", label: t("navigation.dashboard"), icon: "dashboard" },
+    { href: "/owner/units", label: t("navigation.units"), icon: "units" },
+    {
+      href: "/owner/expenses",
+      label: t("navigation.expenses"),
+      icon: "expenses",
+    },
+    {
+      href: "/owner/payments",
+      label: t("navigation.payments"),
+      icon: "payments",
+    },
     {
       href: "/owner/payment-methods",
       label: t("navigation.paymentMethods"),
-      icon: "🏦",
+      icon: "paymentMethods",
     },
-    { href: "/owner/tickets", label: t("navigation.myTickets"), icon: "🎫" },
-    { href: "/owner/documents", label: t("navigation.documents"), icon: "📄" },
-    { href: "/owner/profile", label: t("navigation.profile"), icon: "👤" },
+    {
+      href: "/owner/tickets",
+      label: t("navigation.myTickets"),
+      icon: "myTickets",
+    },
+    {
+      href: "/owner/documents",
+      label: t("navigation.documents"),
+      icon: "documents",
+    },
+    { href: "/owner/profile", label: t("navigation.profile"), icon: "profile" },
   ];
 
   const getAdminItems = (t: any): NavItem[] => [
-    { href: "/admin", label: t("navigation.admin"), icon: "⚙️" },
+    { href: "/admin", label: t("navigation.admin"), icon: "admin" },
     {
       href: "/admin/organizations",
       label: t("navigation.organizations"),
-      icon: "🏛️",
+      icon: "organizations",
     },
     // `/admin/acps` existait depuis 7d9aab08 (« ACPs invisibles ») mais n'était
     // liée depuis nulle part : ni ici, ni depuis AdminDashboard. La page n'était
     // atteignable qu'en tapant l'URL, et `admin.building.noAcpAvailable`
     // renvoyait l'utilisateur vers un « Administration > ACP » inexistant.
-    { href: "/admin/acps", label: t("navigation.acps"), icon: "🏘️" },
-    { href: "/admin/users", label: t("navigation.users"), icon: "👥" },
+    { href: "/admin/acps", label: t("navigation.acps"), icon: "acps" },
+    { href: "/admin/users", label: t("navigation.users"), icon: "users" },
     {
       href: "/admin/monitoring",
       label: t("navigation.monitoring"),
-      icon: "📈",
+      icon: "monitoring",
     },
-    { href: "/admin/gdpr", label: t("navigation.gdpr"), icon: "🔒" },
+    { href: "/admin/gdpr", label: t("navigation.gdpr"), icon: "gdpr" },
   ];
 
   // ---------------------------------------------------------------------------
@@ -563,7 +609,7 @@
           <div class="mb-2">
             <label
               for="sidebar-role-selector"
-              class="text-[11px] text-gray-400 block mb-1"
+              class="text-[11px] text-muted block mb-1"
               >{$_("navigation.activeRole")}</label
             >
             <select
@@ -611,7 +657,8 @@
             href="/profile"
             class="flex items-center gap-2 px-2 py-1 text-xs text-gray-600 hover:bg-gray-50 rounded-lg transition-colors"
           >
-            👤 {$_("navigation.profile")}
+            <Icone nom="profile" taille={17} class="shrink-0" />
+            {$_("navigation.profile")}
           </a>
           <a
             data-testid="nav-settings-link"
@@ -625,14 +672,16 @@
             href="/settings/gdpr"
             class="flex items-center gap-2 px-2 py-1 text-xs text-gray-600 hover:bg-gray-50 rounded-lg transition-colors"
           >
-            🔒 {$_("navigation.gdprData")}
+            <Icone nom="gdpr" taille={17} class="shrink-0" />
+            {$_("navigation.gdprData")}
           </a>
           <button
             onclick={logout}
             class="w-full flex items-center gap-2 px-2 py-1 text-xs text-red-600 hover:bg-red-50 rounded-lg transition-colors"
             data-testid="user-menu-logout"
           >
-            🚪 {$_("navigation.logout")}
+            <Icone nom="logout" taille={17} class="shrink-0" />
+            {$_("navigation.logout")}
           </button>
         </div>
       </div>
@@ -864,7 +913,7 @@
         <div class="mb-3">
           <label
             for="drawer-role-selector"
-            class="text-[11px] text-gray-400 block mb-1"
+            class="text-[11px] text-muted block mb-1"
             >{$_("navigation.activeRole")}</label
           >
           <select
@@ -911,7 +960,8 @@
           onclick={handleNavClick}
           class="flex items-center gap-2 px-2 py-1.5 text-xs text-gray-600 hover:bg-gray-50 rounded-lg transition-colors"
         >
-          👤 {$_("navigation.profile")}
+          <Icone nom="profile" taille={17} class="shrink-0" />
+          {$_("navigation.profile")}
         </a>
         <a
           data-testid="nav-drawer-settings-link"
@@ -927,14 +977,16 @@
           onclick={handleNavClick}
           class="flex items-center gap-2 px-2 py-1.5 text-xs text-gray-600 hover:bg-gray-50 rounded-lg transition-colors"
         >
-          🔒 {$_("navigation.gdprData")}
+          <Icone nom="gdpr" taille={17} class="shrink-0" />
+          {$_("navigation.gdprData")}
         </a>
         <button
           onclick={logout}
           class="w-full flex items-center gap-2 px-2 py-1.5 text-xs text-red-600 hover:bg-red-50 rounded-lg transition-colors"
           data-testid="mobile-drawer-logout"
         >
-          🚪 {$_("navigation.logout")}
+          <Icone nom="logout" taille={17} class="shrink-0" />
+          {$_("navigation.logout")}
         </button>
       </div>
     </div>

@@ -205,14 +205,14 @@
           data-testid="building-selector-clear"
           onclick={onClear}
           aria-label={$_("scope.clear") || "Effacer la sélection"}
-          class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700"
+          class="absolute right-2 top-1/2 -translate-y-1/2 text-muted hover:text-gray-700"
         >
           ×
         </button>
       {:else}
         <span
           aria-hidden="true"
-          class="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-xs text-gray-400"
+          class="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted"
         >
           ▾
         </span>

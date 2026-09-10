@@ -209,7 +209,7 @@
 
                   <!-- Created by -->
                   <span class="mx-2">•</span>
-                  <span class="text-xs text-gray-400">
+                  <span class="text-xs text-muted">
                     {$_("polls.list.createdOn")}
                     {formatDateShort(poll.created_at)}
                   </span>
@@ -229,7 +229,7 @@
                       </span>
                     {/each}
                     {#if poll.options.length > 3}
-                      <span class="text-xs text-gray-400">
+                      <span class="text-xs text-muted">
                         +{poll.options.length - 3}
                         {$_("polls.list.others")}
                       </span>
@@ -241,7 +241,7 @@
               <!-- Arrow -->
               <div class="ml-4">
                 <svg
-                  class="h-5 w-5 text-gray-400"
+                  class="h-5 w-5 text-muted"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"

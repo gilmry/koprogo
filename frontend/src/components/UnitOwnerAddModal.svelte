@@ -142,7 +142,7 @@
           <button
             data-testid="unit-owner-add-close-button"
             onclick={handleClose}
-            class="text-gray-400 hover:text-gray-500"
+            class="text-muted hover:text-gray-500"
             aria-label={$_("common.close")}
             ><span class="text-2xl" aria-hidden="true">&times;</span></button
           >

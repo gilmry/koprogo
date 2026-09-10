@@ -290,7 +290,11 @@
       dragOver
         ? "border-blue-500 bg-blue-50"
         : atMax
-          ? "cursor-not-allowed border-gray-200 bg-gray-50 text-gray-400"
+          ? // `text-gray-400` ici : la zone pleine PORTE l'explication de son
+            // indisponibilité. WCAG 1.4.3 exempte les contrôles désactivés,
+            // pas le texte qui dit pourquoi ils le sont — et c'est
+            // précisément ce texte que l'utilisateur doit lire.
+            "cursor-not-allowed border-gray-200 bg-gray-50 text-muted"
           : "border-gray-300 bg-white text-gray-600 hover:border-blue-400"
     }`}
   >

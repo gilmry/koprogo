@@ -390,7 +390,7 @@
                   <p class="text-sm text-gray-500 mt-1">
                     {building.city}, {building.postal_code}
                   </p>
-                  <p class="text-xs text-gray-400 mt-1">
+                  <p class="text-xs text-muted mt-1">
                     {building.total_units} lots
                   </p>
                 </div>
@@ -573,7 +573,7 @@
                   <p class="text-xs text-gray-600 mt-0.5 line-clamp-2">
                     {notif.message}
                   </p>
-                  <p class="text-xs text-gray-400 mt-1">
+                  <p class="text-xs text-muted mt-1">
                     {formatDateShort(notif.created_at)}
                   </p>
                 </div>

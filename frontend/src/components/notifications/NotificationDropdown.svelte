@@ -123,7 +123,7 @@
     {:else if notifications.length === 0}
       <div class="px-4 py-8 text-center text-gray-500">
         <svg
-          class="mx-auto h-12 w-12 text-gray-400"
+          class="mx-auto h-12 w-12 text-muted"
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"

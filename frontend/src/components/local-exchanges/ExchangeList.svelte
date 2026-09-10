@@ -230,7 +230,7 @@
       data-testid="exchange-list-empty"
     >
       <svg
-        class="mx-auto h-12 w-12 text-gray-400"
+        class="mx-auto h-12 w-12 text-muted"
         fill="none"
         viewBox="0 0 24 24"
         stroke="currentColor"

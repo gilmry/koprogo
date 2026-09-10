@@ -125,7 +125,7 @@
             <p class="text-sm text-gray-500 mt-0.5">{section.description}</p>
           </div>
           <svg
-            class="w-5 h-5 text-gray-400 group-hover:text-primary-500 transition-colors shrink-0 mt-0.5"
+            class="w-5 h-5 text-muted group-hover:text-primary-500 transition-colors shrink-0 mt-0.5"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"

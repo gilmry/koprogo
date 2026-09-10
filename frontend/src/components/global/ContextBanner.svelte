@@ -190,7 +190,7 @@
         {cabinetName}
       </span>
       {#if showAcp}
-        <span aria-hidden="true" class="text-gray-400">·</span>
+        <span aria-hidden="true" class="text-muted">·</span>
       {/if}
     {/if}
 
@@ -199,7 +199,7 @@
       <span data-testid="context-banner-acp" class="font-medium text-gray-800">
         {acpNameDisplay}
       </span>
-      <span aria-hidden="true" class="text-gray-400">·</span>
+      <span aria-hidden="true" class="text-muted">·</span>
     {/if}
 
     <!-- Niveau 3 — Immeuble (toujours présent quand banner visible) -->

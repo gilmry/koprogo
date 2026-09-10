@@ -371,7 +371,7 @@
           onclick={handleCancel}
           aria-label={$_("common.close")}
           data-testid="expense-form-cancel-button"
-          class="text-gray-400 hover:text-gray-600 transition"
+          class="text-muted hover:text-gray-600 transition"
         >
           <svg
             class="w-6 h-6"

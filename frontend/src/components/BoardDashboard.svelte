@@ -205,7 +205,7 @@
           <p class="text-sm text-gray-500">{$_("board.stats.overdue")}</p>
         </div>
         <div class="text-center">
-          <p class="text-3xl font-bold text-gray-400">
+          <p class="text-3xl font-bold text-muted">
             {dashboard.decisions_stats.cancelled}
           </p>
           <p class="text-sm text-gray-500">{$_("board.stats.cancelled")}</p>

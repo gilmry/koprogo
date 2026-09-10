@@ -209,7 +209,7 @@
                     >{formatDateTime(recipient.email_sent_at)}</span
                   >
                 {:else}
-                  <span class="text-gray-400 text-xs">-</span>
+                  <span class="text-muted text-xs">-</span>
                 {/if}
               </td>
               <td class="px-4 py-2">
@@ -218,7 +218,7 @@
                     >{formatDateTime(recipient.email_opened_at)}</span
                   >
                 {:else}
-                  <span class="text-gray-400 text-xs">-</span>
+                  <span class="text-muted text-xs">-</span>
                 {/if}
               </td>
               <td class="px-4 py-2">
@@ -236,7 +236,7 @@
                       recipient.proxy_owner_id.slice(0, 8)}
                   </span>
                 {:else}
-                  <span class="text-gray-400 text-xs">-</span>
+                  <span class="text-muted text-xs">-</span>
                 {/if}
               </td>
               <td class="px-4 py-2">

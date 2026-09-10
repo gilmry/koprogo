@@ -242,7 +242,7 @@
                         {transaction.related_entity}
                       </p>
                     {/if}
-                    <p class="text-xs text-gray-400 mt-1">
+                    <p class="text-xs text-muted mt-1">
                       {formatDate(transaction.date)}
                     </p>
                   </div>

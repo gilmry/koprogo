@@ -105,7 +105,7 @@
           data-testid="pwa-install-close-button"
           on:click={dismissPrompt}
           aria-label={$_("common.close")}
-          class="flex-shrink-0 text-gray-400 hover:text-gray-600 transition-colors"
+          class="flex-shrink-0 text-muted hover:text-gray-600 transition-colors"
         >
           <svg
             class="w-5 h-5"

@@ -88,7 +88,7 @@
     {:else if paymentMethods.length === 0}
       <div class="text-center py-12">
         <svg
-          class="mx-auto h-16 w-16 text-gray-400"
+          class="mx-auto h-16 w-16 text-muted"
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"
