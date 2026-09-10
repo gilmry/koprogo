@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Icone from "../ui/Icone.svelte";
   import TableDesAcp from "./TableDesAcp.svelte";
   import EncartIntegriteDonnees from "./EncartIntegriteDonnees.svelte";
   import DecompteLegal from "./DecompteLegal.svelte";
@@ -188,12 +189,16 @@
   {:else if stats}
     <!-- Stats Cards -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-      <div class="bg-white rounded-lg shadow p-6">
+      <a
+        href="/buildings"
+        data-testid="syndic-kpi-buildings"
+        class="block rounded-lg bg-white p-6 shadow transition-colors hover:bg-chip-bg"
+      >
         <div class="flex items-center justify-between mb-2">
           <span class="text-gray-600 text-sm font-medium"
             >{$_("dashboards.syndic.stats.buildingsManaged")}</span
           >
-          <span class="text-2xl">🏢</span>
+          <Icone nom="buildings" taille={20} class="shrink-0 text-muted" />
         </div>
         <p class="text-3xl font-bold text-gray-900">{stats.total_buildings}</p>
         <!-- « 0 lots au total » à côté de « 8 Lots » sur la liste des
@@ -211,27 +216,35 @@
               })
             : `${stats.total_units} ${$_("dashboards.syndic.stats.unitsEncoded")}`}
         </p>
-      </div>
+      </a>
 
-      <div class="bg-white rounded-lg shadow p-6">
+      <a
+        href="/owners"
+        data-testid="syndic-kpi-owners"
+        class="block rounded-lg bg-white p-6 shadow transition-colors hover:bg-chip-bg"
+      >
         <div class="flex items-center justify-between mb-2">
           <span class="text-gray-600 text-sm font-medium"
             >{$_("dashboards.syndic.stats.owners")}</span
           >
-          <span class="text-2xl">👥</span>
+          <Icone nom="owners" taille={20} class="shrink-0 text-muted" />
         </div>
         <p class="text-3xl font-bold text-gray-900">{stats.total_owners}</p>
         <p class="text-sm text-gray-500 mt-1">
           {$_("dashboards.syndic.stats.active")}
         </p>
-      </div>
+      </a>
 
-      <div class="bg-white rounded-lg shadow p-6">
+      <a
+        href="/expenses"
+        data-testid="syndic-kpi-expenses"
+        class="block rounded-lg bg-white p-6 shadow transition-colors hover:bg-chip-bg"
+      >
         <div class="flex items-center justify-between mb-2">
           <span class="text-gray-600 text-sm font-medium"
             >{$_("dashboards.syndic.stats.pendingExpenses")}</span
           >
-          <span class="text-2xl">💰</span>
+          <Icone nom="expenses" taille={20} class="shrink-0 text-muted" />
         </div>
         <p class="text-3xl font-bold text-gray-900">
           {stats.pending_expenses_count}
@@ -239,14 +252,18 @@
         <p class="text-sm text-orange-600 mt-1">
           {formatCurrency(stats.pending_expenses_amount)}
         </p>
-      </div>
+      </a>
 
-      <div class="bg-white rounded-lg shadow p-6">
+      <a
+        href="/meetings"
+        data-testid="syndic-kpi-meetings"
+        class="block rounded-lg bg-white p-6 shadow transition-colors hover:bg-chip-bg"
+      >
         <div class="flex items-center justify-between mb-2">
           <span class="text-gray-600 text-sm font-medium"
             >{$_("dashboards.syndic.stats.nextMeeting")}</span
           >
-          <span class="text-2xl">📅</span>
+          <Icone nom="meetings" taille={20} class="shrink-0 text-muted" />
         </div>
         {#if stats.next_meeting}
           <p class="text-xl font-bold text-gray-900">
@@ -260,7 +277,7 @@
             {$_("dashboards.syndic.stats.noMeetingsPlanned")}
           </p>
         {/if}
-      </div>
+      </a>
     </div>
 
     <!-- Main Content -->
