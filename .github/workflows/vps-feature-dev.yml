@@ -195,6 +195,40 @@ jobs:
         working-directory: frontend
         run: npx vitest run --reporter=dot
 
+      # Le build entre au barrage, et pas seulement parce que le banc mobile
+      # en a besoin : jusqu'ici, une régression de compilation du frontend
+      # n'apparaissait qu'à la construction des images, APRÈS que le barrage
+      # se soit déclaré vert.
+      #
+      # Le banc éprouve le BUILD, ce qui est le point : les classes Tailwind
+      # interpolées, les jetons `@theme` et les valeurs arbitraires n'existent
+      # qu'après passage du scanner.
+      - name: Build frontend
+        working-directory: frontend
+        run: npm run build
+
+      - name: Navigateur du banc mobile
+        uses: actions/cache@v4
+        id: cache-navigateur
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ hashFiles('frontend/package-lock.json') }}
+
+      - name: Installer le navigateur
+        if: steps.cache-navigateur.outputs.cache-hit != 'true'
+        working-directory: frontend
+        run: npx playwright install --with-deps chromium
+
+      # Le seul endroit du projet où un navigateur s'ouvre à une largeur de
+      # téléphone (#869). Tout le Track U est mobile ; jsdom n'a ni mise en
+      # page, ni défilement, ni encoche, et ne peut donc rien en dire.
+      #
+      # Il ne parle pas à la démo : il sert `dist/` et simule `/api/v1/`. Ni
+      # compte, ni base, ni limite de débit — il tient sur un exécuteur nu.
+      - name: Banc mobile — 393 px
+        working-directory: frontend
+        run: npx playwright test -c playwright.mobile.config.ts
+
   images:
     needs: barrage
     runs-on: ubuntu-latest
