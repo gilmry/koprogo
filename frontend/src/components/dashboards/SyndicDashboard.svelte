@@ -1,4 +1,5 @@
 <script lang="ts">
+  import TableDesAcp from "./TableDesAcp.svelte";
   import EncartIntegriteDonnees from "./EncartIntegriteDonnees.svelte";
   import DecompteLegal from "./DecompteLegal.svelte";
   // Svelte 5 runes mode
@@ -281,6 +282,15 @@
           />
         </div>
       {/if}
+
+      <!--
+        La table « Mes ACP » : blocs, lots encodés sur déclarés, quotités sur
+        le total de l'acte. Un syndic gère plusieurs copropriétés, et sa
+        première question en ouvrant l'écran est « laquelle a un problème ».
+      -->
+      <div class="mb-6">
+        <TableDesAcp />
+      </div>
 
       <!-- Urgent Tasks -->
       <div class="bg-white rounded-lg shadow">

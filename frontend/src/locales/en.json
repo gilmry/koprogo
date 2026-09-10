@@ -1280,7 +1280,22 @@
       "title": "My Co-owner Dashboard"
     },
     "syndic": {
+      "acpColumns": {
+        "buildings": "Blocks",
+        "name": "Association",
+        "shares": "Shares",
+        "units": "Units"
+      },
+      "acpsUnavailable": "The list of associations is not reachable right now.",
       "allUnderControl": "Everything is under control.",
+      "integrity": {
+        "action": "Complete the records",
+        "consequence": "Shares cannot add up to the deed total while the gap remains: calls for funds are computed on an incomplete base, and recorded co-owners carry the others' share.",
+        "detail": "{encodes} units recorded out of {declares} declared in the deed.",
+        "title": "{manquants} units not recorded"
+      },
+      "myAcps": "My associations",
+      "noAcp": "No association linked to your practice.",
       "noOwnersRecorded": "No co-owners recorded.",
       "noUrgentTasks": "No urgent tasks",
       "quickActions": "Quick Actions",
@@ -1298,13 +1313,7 @@
       },
       "subtitle": "Manage your co-ownerships",
       "title": "Syndic Dashboard",
-      "urgentTasks": "Urgent Tasks",
-      "integrity": {
-        "action": "Complete the records",
-        "consequence": "Shares cannot add up to the deed total while the gap remains: calls for funds are computed on an incomplete base, and recorded co-owners carry the others' share.",
-        "detail": "{encodes} units recorded out of {declares} declared in the deed.",
-        "title": "{manquants} units not recorded"
-      }
+      "urgentTasks": "Urgent Tasks"
     }
   },
   "documents": {

@@ -1280,7 +1280,22 @@
       "title": "Mijn mede-eigenaarsdashboard"
     },
     "syndic": {
+      "acpColumns": {
+        "buildings": "Blokken",
+        "name": "VME",
+        "shares": "Aandelen",
+        "units": "Kavels"
+      },
+      "acpsUnavailable": "De lijst met VME's is momenteel niet bereikbaar.",
       "allUnderControl": "Alles is onder controle.",
+      "integrity": {
+        "action": "De invoer aanvullen",
+        "consequence": "De aandelen kunnen het totaal van de akte niet bereiken zolang het verschil bestaat: de oproepen tot fondsen worden op een onvolledige basis berekend, en de ingevoerde mede-eigenaars dragen het deel van de anderen.",
+        "detail": "{encodes} kavels ingevoerd op {declares} verklaard in de basisakte.",
+        "title": "{manquants} kavels niet ingevoerd"
+      },
+      "myAcps": "Mijn VME's",
+      "noAcp": "Geen VME gekoppeld aan uw kantoor.",
       "noOwnersRecorded": "Geen mede-eigenaars geregistreerd.",
       "noUrgentTasks": "Geen dringende taken",
       "quickActions": "Snelle acties",
@@ -1298,13 +1313,7 @@
       },
       "subtitle": "Beheer uw mede-eigendommen",
       "title": "Syndicusdashboard",
-      "urgentTasks": "Dringende taken",
-      "integrity": {
-        "action": "De invoer aanvullen",
-        "consequence": "De aandelen kunnen het totaal van de akte niet bereiken zolang het verschil bestaat: de oproepen tot fondsen worden op een onvolledige basis berekend, en de ingevoerde mede-eigenaars dragen het deel van de anderen.",
-        "detail": "{encodes} kavels ingevoerd op {declares} verklaard in de basisakte.",
-        "title": "{manquants} kavels niet ingevoerd"
-      }
+      "urgentTasks": "Dringende taken"
     }
   },
   "documents": {
