@@ -4,7 +4,6 @@
   import Icone from "../ui/Icone.svelte";
   import { canSee, type Menu } from "../../lib/auth/permissions";
   import { scope } from "../../stores/scope.svelte";
-  import { ongletsPour } from "../../lib/onglets-mobiles";
 
   /**
    * L'écran « Plus » — ce que la barre d'onglets ne montre pas.
@@ -35,8 +34,28 @@
   let user = $derived($authStore.user);
   let role = $derived(user?.role ?? null);
 
-  /** Les onglets déjà visibles en bas : inutile de les répéter ici. */
-  let dejaEnBas = $derived(new Set(ongletsPour(role).map((o) => o.href)));
+  /**
+   * ── Pourquoi cet écran ne masque PAS ce qui est déjà en bas ─────────────
+   *
+   * ── Pourquoi ce filtre a été RETIRÉ ─────────────────────────────────────
+   *
+   * Il masquait le groupe « Comptabilité » du syndic, parce que ce groupe
+   * pointe vers `/expenses` — qui est aussi son onglet « Charges ».
+   *
+   * Le raccourci était le mien : un groupe contient PLUSIEURS pages
+   * (`/expenses`, `/invoice-workflow`, `/budgets`, `/etats-dates`,
+   * `/journal-entries`, `/reports`), et le faire pointer vers la première est
+   * arbitraire. Masquer le groupe entier parce que sa première page est un
+   * onglet privait le syndic de cinq destinations.
+   *
+   * La bonne correction serait d'extraire les `get*Items` de
+   * `Navigation.svelte` pour que cet écran liste les vraies destinations. Ce
+   * remaniement touche un composant que six répertoires de recettes visent,
+   * et il mérite d'être fait à part.
+   *
+   * D'ici là, l'écran liste les groupes SANS les masquer : mieux vaut un
+   * doublon apparent qu'une destination inatteignable.
+   */
 
   interface Groupe {
     cle: Menu;
@@ -97,9 +116,7 @@
     },
   ];
 
-  let visibles = $derived(
-    GROUPES.filter((g) => canSee(role, g.cle, scope) && !dejaEnBas.has(g.href)),
-  );
+  let visibles = $derived(GROUPES.filter((g) => canSee(role, g.cle, scope)));
 </script>
 
 <h1 class="text-[24px] font-bold tracking-[-0.02em] text-ink">
