@@ -99,11 +99,21 @@ pub const REGISTRE: &[InvariantLegal] = &[
         porte_par: "domain/copropriete/solidarite.rs",
         atteste_par: "solidarite::tests::happy_lusufruit_rend_les_deux_titulaires_tenus_du_tout",
     },
+    // L'Art. 3.87 § 2 porte DEUX obligations distinctes, et le registre n'en
+    // déclarait qu'une sous le nom de l'article entier. Un article couvert à
+    // moitié paraissait couvert (#847). Chaque alinéa est désormais nommé.
     InvariantLegal {
-        article: "Art. 3.87 § 2",
+        article: "Art. 3.87 § 2 (convocation sur requête)",
         obligation: "AG sur requête d'un cinquième des parts ; convocation sous trente jours, à défaut de quoi un cosignataire convoque lui-même.",
         porte_par: "domain/copropriete/requete_ag.rs",
         atteste_par: "requete_ag::tests::happy_le_cosignataire_recupere_le_pouvoir_de_convoquer",
+    },
+    InvariantLegal {
+        article: "Art. 3.87 § 2 (ordre du jour)",
+        obligation: "Une décision portant sur un point absent de l'ordre du jour est nulle : une résolution non rattachée à un point ne peut être mise aux voix.",
+        porte_par: "application/use_cases/resolution_use_cases.rs",
+        atteste_par:
+            "resolution_use_cases::tests::security_vote_refuse_sur_resolution_hors_ordre_du_jour",
     },
     InvariantLegal {
         article: "Art. 3.87 § 3",
@@ -252,7 +262,7 @@ pub const REGISTRE: &[InvariantLegal] = &[
 ];
 
 /// Le nombre d'obligations computables recensées par le RFC-0002.
-pub const OBLIGATIONS_RECENSEES: usize = 29;
+pub const OBLIGATIONS_RECENSEES: usize = 30;
 
 /// Rend le registre lisible par un juriste, dans l'ordre des articles.
 pub fn rapport_de_conformite() -> String {
