@@ -203,7 +203,7 @@
 
 {#if visible}
   <div
-    class="context-banner flex items-center gap-2 px-4 py-2 border-b border-gray-200 bg-white text-sm"
+    class="context-banner flex flex-wrap items-center gap-x-2 gap-y-1 text-sm"
     data-testid="context-banner"
     role="region"
     aria-label={$_("contextBanner.label") || "Contexte courant"}

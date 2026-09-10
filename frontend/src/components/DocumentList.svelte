@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Icone from "./ui/Icone.svelte";
   // Svelte 5 runes mode
   import { _ } from "../lib/i18n";
   import { api } from "../lib/api";
@@ -361,7 +362,7 @@
                       onclick={() => handleDelete(doc)}
                       disabled={deletingId === doc.id}
                     >
-                      <span>🗑️</span>
+                      <Icone nom="trash" taille={15} class="shrink-0" />
                       <span
                         >{deletingId === doc.id
                           ? $_("common.deleting")

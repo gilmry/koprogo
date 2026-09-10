@@ -1,4 +1,5 @@
 <script lang="ts">
+  import BoutonAction from "./ui/BoutonAction.svelte";
   import { onMount } from "svelte";
   import { _ } from "../lib/i18n";
   import { formatDate } from "../lib/utils/date.utils";
@@ -394,16 +395,13 @@
                     class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium"
                   >
                     <div class="flex justify-end space-x-2">
-                      <button
-                        on:click={() => handleEdit(user)}
-                        class="text-primary-600 hover:text-primary-900"
-                        aria-label={$_("common.edit")}
-                        title={$_("common.edit")}
-                        disabled={actionLoading}
-                        data-testid="edit-user-button"
-                      >
-                        ✏️
-                      </button>
+                      <!-- Bouton nu : cible d'environ 20 px. Ancrage conservé. -->
+                      <BoutonAction
+                        nom="edit"
+                        ariaLabel={$_("common.edit")}
+                        testId="edit-user-button"
+                        onclick={() => handleEdit(user)}
+                      />
                       <button
                         on:click={() => handleToggleActive(user)}
                         class={user.is_active
@@ -420,16 +418,13 @@
                       >
                         {user.is_active ? "⏸️" : "▶️"}
                       </button>
-                      <button
-                        on:click={() => handleDeleteClick(user)}
-                        class="text-red-600 hover:text-red-900"
-                        aria-label={$_("common.delete")}
-                        title={$_("common.delete")}
-                        disabled={actionLoading}
-                        data-testid="delete-user-button"
-                      >
-                        🗑️
-                      </button>
+                      <BoutonAction
+                        nom="trash"
+                        ton="danger"
+                        ariaLabel={$_("common.delete")}
+                        testId="delete-user-button"
+                        onclick={() => handleDeleteClick(user)}
+                      />
                     </div>
                   </td>
                 </tr>

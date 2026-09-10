@@ -36,8 +36,34 @@ import { join } from "node:path";
 
 const RACINE = join(process.cwd(), "src");
 
-/** Mesuré le 2026-09-10, après conversion de BuildingList, UnitList, UnitOwners. */
-const EMOJIS_DACTION_AU_2026_09_10 = 17;
+/**
+ * ZÉRO. Ce n'est plus un cliquet, c'est une interdiction.
+ *
+ * Les vingt-trois occurrences ont toutes été traitées le 2026-09-10, en
+ * TROIS transformations distinctes selon la forme — les confondre aurait
+ * cassé des écrans corrects :
+ *
+ * Deux transformations distinctes, selon la forme :
+ *
+ * 1. **Bouton à icône seule** → `BoutonAction` : cible de 36 px et nom
+ *    accessible obligatoire. Sept composants, dont deux dont l'`aria-label`
+ *    était en français écrit en dur.
+ * 2. **Émoji à côté d'un libellé** → `Icone` en ligne, texte conservé. La
+ *    cible et le nom accessible étaient déjà bons ; seule l'annonce parasite
+ *    posait problème. Cinq composants.
+ * 3. **Émoji DANS une chaîne de gabarit** — `` `🗑️ ${…}` `` — le cas le plus
+ *    coriace : aucun `aria-hidden` ne peut s'appliquer à un caractère
+ *    concaténé. Il a fallu sortir l'icône de la chaîne pour qu'elle redevienne
+ *    un élément. Deux composants.
+ *
+ * Traiter (2) comme (1) aurait remplacé des boutons corrects par des boutons
+ * à icône seule, donc supprimé des libellés lisibles pour corriger un défaut
+ * d'accessibilité.
+ *
+ * Un sablier ⏳ a disparu sans remplacement au passage : un état de chargement
+ * se dit par le mot « Suppression… », pas par un pictogramme que rien n'anime.
+ */
+const EMOJIS_DACTION_AU_2026_09_10 = 0;
 
 function sources(dossier: string, sortie: string[] = []): string[] {
   for (const entree of readdirSync(dossier)) {

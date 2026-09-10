@@ -128,6 +128,39 @@ describe("les onglets ne cassent aucun contrat de test existant", () => {
     ).toBe("");
   });
 
+  it("les entrées épinglées de la colonne latérale ne sont pas des menus", () => {
+    // La remise de design met en garde : les deux entrées épinglées
+    // — « Aujourd'hui » et la collection principale du rôle — ne doivent pas
+    // porter d'ancrage `navigation-menu-*`, sous peine de fausser tout compte
+    // de menus métier.
+    //
+    // Ce dépôt n'a pas d'assertion de compte stricte aujourd'hui, et c'est
+    // précisément pour ça que cette garde existe : le jour où quelqu'un en
+    // écrit une, elle doit compter des menus, pas des raccourcis.
+    //
+    // Un ancrage dit ce qu'une chose EST. Une entrée épinglée n'est pas un
+    // groupe.
+    const source = readFileSync(
+      join(RACINE, "src/components/navigation/Navigation.svelte"),
+      "utf-8",
+    );
+
+    for (const ancrage of ["navigation-link-today", "navigation-link-acps"]) {
+      expect(source, `${ancrage} manque`).toContain(`data-testid="${ancrage}"`);
+    }
+
+    // Et aucun ancrage de menu ne doit vivre dans le bloc épinglé.
+    const debut = source.indexOf('data-testid="navigation-link-today"');
+    const fin = source.indexOf('{#if see("admin")}', debut);
+    expect(debut).toBeGreaterThan(-1);
+    expect(fin).toBeGreaterThan(debut);
+    expect(
+      source.slice(debut, fin),
+      "Une entrée épinglée porte un ancrage `navigation-menu-*` : elle " +
+        "serait comptée comme un menu métier.",
+    ).not.toContain("navigation-menu-");
+  });
+
   it("donne un ancrage tabbar-* à chaque onglet, et une icône qui existe", () => {
     const source = readFileSync(
       join(RACINE, "src/components/navigation/TabBarMobile.svelte"),

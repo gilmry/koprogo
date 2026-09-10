@@ -2562,6 +2562,7 @@
     "myExpenses": "Kosten",
     "mySpace": "Mein Bereich",
     "myTickets": "Meine Tickets",
+    "myUnits": "Meine Lose",
     "neighbourhood": "Nachbarn",
     "noRoleAssignedDesc": "Wenden Sie sich an Ihren Administrator, um Zugang zu erhalten.",
     "noRoleAssignedTitle": "Keine Rolle zugewiesen",
@@ -4222,5 +4223,8 @@
   "localExchanges": {
     "selLegalBody": "Tauschringe sind in Belgien legal und anerkannt und steuerfrei, solange sie nicht gewerblich sind (Tausch). Zeitwährung: eine Stunde ist ein Guthaben. Ein negativer Saldo ist zulässig — das ist ein Modell des Gemeinschaftsvertrauens.",
     "selLegalTitle": "Belgischer Rechtsrahmen"
+  },
+  "journalEntries": {
+    "removeLine": "Diese Zeile entfernen"
   }
 }

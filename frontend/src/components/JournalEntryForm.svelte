@@ -1,4 +1,5 @@
 <script lang="ts">
+  import BoutonAction from "./ui/BoutonAction.svelte";
   // Svelte 5 runes mode
   // Journal Entry Form Component (Noalyss-inspired)
   //
@@ -355,16 +356,18 @@
                 </td>
                 <td class="text-center">
                   {#if lines.length > 2}
-                    <button
-                      type="button"
-                      class="btn-icon-danger"
+                    <!--
+                      Bouton à icône seule : cible d'environ 20 px, et
+                      `aria-label` en français écrit en dur dans un produit
+                      servi en quatre langues. Ancrage conservé.
+                    -->
+                    <BoutonAction
+                      nom="trash"
+                      ton="danger"
+                      ariaLabel={$_("journalEntries.removeLine")}
+                      testId="journal-entry-remove-line-button"
                       onclick={() => removeLine(index)}
-                      data-testid="journal-entry-remove-line-button"
-                      aria-label="Supprimer cette ligne"
-                      title="Supprimer cette ligne"
-                    >
-                      🗑️
-                    </button>
+                    />
                   {/if}
                 </td>
               </tr>
@@ -522,16 +525,6 @@
   .balance-row td {
     padding: 0.75rem;
     font-size: 1rem;
-  }
-  .btn-icon-danger {
-    background: transparent;
-    border: none;
-    cursor: pointer;
-    font-size: 1.25rem;
-    padding: 0.25rem;
-  }
-  .btn-icon-danger:hover {
-    opacity: 0.7;
   }
   .form-actions {
     display: flex;

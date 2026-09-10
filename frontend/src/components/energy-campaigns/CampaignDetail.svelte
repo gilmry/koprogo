@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Icone from "../ui/Icone.svelte";
   // Svelte 5 runes mode
   import { _ } from "../../lib/i18n";
   import {
@@ -339,7 +340,8 @@
                   aria-label={$_("energy.withdrawConsentTitle")}
                   title={$_("energy.withdrawConsentTitle")}
                 >
-                  🗑️ {$_("energy.withdraw")}
+                  <Icone nom="trash" taille={14} class="shrink-0" />
+                  {$_("energy.withdraw")}
                 </button>
               </div>
             {/each}

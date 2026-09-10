@@ -50,6 +50,53 @@
   let drawerElement = $state<HTMLElement | undefined>(undefined);
 
   let user = $derived($authStore.user);
+
+  /**
+   * La collection que le rôle ouvre le plus, épinglée sous « Aujourd'hui ».
+   *
+   * Ce n'est pas la même pour tous, et c'est le point : un syndic vit dans
+   * ses ACP, un copropriétaire dans ses lots, un comptable dans ses écritures.
+   * Épingler la même entrée pour tous obligerait trois rôles sur quatre à
+   * déplier un groupe plusieurs fois par jour.
+   *
+   * `null` pour un rôle sans collection évidente : mieux vaut une entrée de
+   * moins qu'une entrée qui vise à côté.
+   */
+  let collectionPrincipale = $derived.by(() => {
+    switch (user?.role) {
+      case "syndic":
+        return {
+          href: "/admin/acps",
+          icone: "acps",
+          libelle: "navigation.acps",
+        };
+      case "owner":
+        return {
+          href: "/owner/units",
+          icone: "units",
+          libelle: "navigation.myUnits",
+        };
+      case "accountant":
+      case "accountant.encodeur":
+      case "accountant.emetteur":
+        return {
+          href: "/journal-entries",
+          icone: "journalEntries",
+          libelle: "navigation.journalEntries",
+        };
+      // `permissions.ts` connaît un rôle « admin » que `UserRole` ne déclare
+      // pas. Ne pas élargir le type sur une supposition : `superadmin` est le
+      // seul membre réel, et un rôle absent tombe dans le `default`.
+      case "superadmin":
+        return {
+          href: "/admin/organizations",
+          icone: "organizations",
+          libelle: "navigation.organizations",
+        };
+      default:
+        return null;
+    }
+  });
   let isAuthenticated = $derived($authStore.isAuthenticated);
 
   // Role courant pour canSee() — string lowercase. null si non assigne.
@@ -478,7 +525,7 @@
     <!-- Rôle connu du serveur, sans écran dédié — cf. #814, #815, #816     -->
     <!-- ================================================================== -->
     <aside
-      class="hidden lg:flex lg:flex-col lg:fixed lg:inset-y-0 lg:left-0 lg:w-60 bg-white border-r border-gray-200 z-30 items-center justify-center p-6 text-center"
+      class="hidden lg:flex lg:flex-col lg:fixed lg:inset-y-0 lg:left-0 lg:w-[248px] bg-white border-r border-gray-200 z-30 items-center justify-center p-6 text-center"
       role="navigation"
       aria-label="Navigation principale"
       data-testid="navigation-role-sans-interface"
@@ -495,7 +542,7 @@
     <!-- @negative — user authentifie sans aucun UserRoleAssignment         -->
     <!-- ================================================================== -->
     <aside
-      class="hidden lg:flex lg:flex-col lg:fixed lg:inset-y-0 lg:left-0 lg:w-60 bg-white border-r border-gray-200 z-30 items-center justify-center p-6 text-center"
+      class="hidden lg:flex lg:flex-col lg:fixed lg:inset-y-0 lg:left-0 lg:w-[248px] bg-white border-r border-gray-200 z-30 items-center justify-center p-6 text-center"
       role="navigation"
       aria-label="Navigation principale"
       data-testid="navigation-empty-no-role"
@@ -512,18 +559,18 @@
     <!-- DESKTOP SIDEBAR (lg+) — Navigation principale role-conditionnee    -->
     <!-- ================================================================== -->
     <aside
-      class="hidden lg:flex lg:flex-col lg:fixed lg:inset-y-0 lg:left-0 lg:w-60 bg-white border-r border-gray-200 z-30"
+      class="hidden lg:flex lg:flex-col lg:fixed lg:inset-y-0 lg:left-0 lg:w-[248px] bg-white border-r border-gray-200 z-30"
       role="navigation"
       aria-label="Navigation principale"
       data-testid="sidebar-desktop"
     >
       <!-- Logo + Notification -->
       <div
-        class="flex items-center justify-between h-14 px-4 border-b border-gray-200 shrink-0"
+        class="flex h-[60px] shrink-0 items-center justify-between border-b border-border-soft px-4"
       >
         <a
           href={`/${user?.role ?? ""}`}
-          class="text-xl font-bold text-primary-600"
+          class="text-[19px] font-bold tracking-[-0.02em] text-primary"
           data-testid="nav-logo"
         >
           KoproGo
@@ -536,6 +583,65 @@
         class="flex-1 overflow-y-auto py-3 px-3"
         aria-label="Menus principaux"
       >
+        <!--
+          Deux entrées ÉPINGLÉES, au-dessus des groupes.
+
+          « Aujourd'hui » et la collection principale du rôle sont ouvertes
+          plusieurs fois par jour ; les enfouir dans un groupe repliable coûte
+          un clic à chaque fois.
+
+          ── Le piège de test que la remise signale ──────────────────────────
+
+          Ces deux entrées NE SONT PAS des menus, et ne doivent jamais porter
+          un ancrage en `navigation-menu-*`. La remise met en garde : un
+          compte de menus métier s'en trouverait faussé. Ce dépôt n'a pas
+          d'assertion de compte stricte aujourd'hui, mais la règle vaut
+          indépendamment — un ancrage dit ce qu'une chose EST, et une entrée
+          épinglée n'est pas un groupe.
+
+          Elles ont donc leur propre espace de noms : `navigation-link-*`.
+        -->
+        <ul class="mb-2 space-y-0.5">
+          <li>
+            <a
+              href={`/${user?.role ?? ""}`}
+              data-testid="navigation-link-today"
+              aria-current={currentPath === `/${user?.role ?? ""}`
+                ? "page"
+                : undefined}
+              class="flex items-center gap-2.5 rounded-nav px-3 py-2 text-sm transition-colors {currentPath ===
+              `/${user?.role ?? ''}`
+                ? 'bg-primary-tint font-semibold text-success-text accent-primary'
+                : 'text-ink-2 hover:bg-chip-bg'}"
+            >
+              <Icone nom="today" taille={18} class="shrink-0" />
+              <span class="truncate">{$_("navigation.today")}</span>
+            </a>
+          </li>
+          {#if collectionPrincipale}
+            <li>
+              <a
+                href={collectionPrincipale.href}
+                data-testid="navigation-link-acps"
+                aria-current={currentPath === collectionPrincipale.href
+                  ? "page"
+                  : undefined}
+                class="flex items-center gap-2.5 rounded-nav px-3 py-2 text-sm transition-colors {currentPath ===
+                collectionPrincipale.href
+                  ? 'bg-primary-tint font-semibold text-success-text accent-primary'
+                  : 'text-ink-2 hover:bg-chip-bg'}"
+              >
+                <Icone
+                  nom={collectionPrincipale.icone}
+                  taille={18}
+                  class="shrink-0"
+                />
+                <span class="truncate">{$_(collectionPrincipale.libelle)}</span>
+              </a>
+            </li>
+          {/if}
+        </ul>
+
         {#if see("admin")}
           <RoleSubmenu
             menuKey="admin"
@@ -757,7 +863,7 @@
 <!-- ================================================================== -->
 {#if !isAuthenticated}
   <aside
-    class="hidden lg:flex lg:flex-col lg:fixed lg:inset-y-0 lg:left-0 lg:w-60 bg-white border-r border-gray-200 z-30 items-center justify-center gap-4"
+    class="hidden lg:flex lg:flex-col lg:fixed lg:inset-y-0 lg:left-0 lg:w-[248px] bg-white border-r border-gray-200 z-30 items-center justify-center gap-4"
   >
     <a
       data-testid="nav-public-home-link"

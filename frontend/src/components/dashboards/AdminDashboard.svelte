@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Icone from "../ui/Icone.svelte";
   // Svelte 5 runes mode
   import { _ } from "../../lib/i18n";
   import { authStore } from "../../stores/auth";
@@ -435,7 +436,7 @@
         <!-- Clear Seed -->
         <div class="border-2 border-red-200 rounded-lg p-6 bg-red-50">
           <div class="flex items-center gap-3 mb-4">
-            <span class="text-4xl">🗑️</span>
+            <Icone nom="trash" taille={34} class="shrink-0 text-danger" />
             <div>
               <h3 class="font-semibold text-lg text-red-900">
                 {$_("dashboards.admin.seed.deleteTitle")}
@@ -454,7 +455,11 @@
               >
             </li>
             <li class="flex items-start gap-2">
-              <span class="text-red-600 font-bold">🗑️</span>
+              <Icone
+                nom="trash"
+                taille={15}
+                class="mt-0.5 shrink-0 text-danger"
+              />
               <span
                 >{$_("dashboards.admin.seed.deleteOnly")}
                 <code class="bg-red-100 px-1 rounded text-xs"
@@ -473,9 +478,19 @@
             disabled={seedLoading || clearLoading}
             class="w-full bg-red-600 text-white py-3 rounded-lg hover:bg-red-700 transition font-semibold disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
           >
-            {clearLoading
-              ? "⏳ " + $_("dashboards.admin.seed.deleting")
-              : "🗑️ " + $_("dashboards.admin.seed.deleteButton")}
+            <!--
+              Les deux émojis vivaient DANS une concaténation de chaînes : ils
+              étaient donc annoncés avec le libellé, et aucun `aria-hidden` ne
+              pouvait s'y appliquer. Le sablier disparaît sans remplacement —
+              un état de chargement se dit par le mot « Suppression… », pas
+              par un pictogramme que rien n'anime.
+            -->
+            {#if clearLoading}
+              {$_("dashboards.admin.seed.deleting")}
+            {:else}
+              <Icone nom="trash" taille={17} class="shrink-0" />
+              {$_("dashboards.admin.seed.deleteButton")}
+            {/if}
           </button>
         </div>
       </div>

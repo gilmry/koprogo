@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { readFileSync, readdirSync, statSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { join, extname } from "node:path";
 
 /**
@@ -36,7 +36,9 @@ import { join, extname } from "node:path";
  */
 
 const CIBLES = [
-  "src/components/global/BuildingSelectorBar.svelte",
+  // `BarreDeContexte` a remplacé `BuildingSelectorBar` le 2026-09-10 : les
+  // deux barres empilées (57 px + 41 px) n'en font plus qu'une de 56 px.
+  "src/components/global/BarreDeContexte.svelte",
   "src/components/global/ContextBanner.svelte",
 ];
 
@@ -44,6 +46,26 @@ const CIBLES = [
 const HORS_FLUX = /class="[^"]*\b(fixed|absolute)\s+(top|bottom|left|right)-/;
 
 describe("les barres de contexte restent en flux normal (#825)", () => {
+  it("lit bien ses cibles, et ne passe pas faute d'en trouver", () => {
+    // Vérification d'aveuglement.
+    //
+    // Le test suivant saute une cible absente — « le composant peut
+    // disparaître dans la refonte », ce qui est vrai et nécessaire. Mais si
+    // les DEUX disparaissaient, ou si un renommage les manquait toutes les
+    // deux, il passerait au vert en n'ayant rien regardé.
+    //
+    // Ce n'est pas théorique : `BuildingSelectorBar` a été remplacé par
+    // `BarreDeContexte`, et sans cette assertion la garde aurait continué de
+    // se déclarer verte sur une seule cible sur deux.
+    const lues = CIBLES.filter((c) => existsSync(join(process.cwd(), c)));
+    expect(
+      lues.length,
+      `Aucune des cibles de cette garde n'existe :\n  ${CIBLES.join("\n  ")}\n\n` +
+        "Elles ont été renommées ou déplacées. Mettez `CIBLES` à jour — un " +
+        "vert obtenu sur zéro fichier ne dit rien.",
+    ).toBeGreaterThan(0);
+  });
+
   it("ne repositionne aucune barre par coordonnées", () => {
     const fautes: string[] = [];
 

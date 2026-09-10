@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Icone from "./ui/Icone.svelte";
   import { onMount } from "svelte";
   import { _ } from "../lib/i18n";
   import { api } from "../lib/api";
@@ -159,7 +160,8 @@
           onclick={handleEdit}
           data-testid="building-edit-submit"
         >
-          ✏️ {$_("common.edit")}
+          <Icone nom="edit" taille={16} class="shrink-0" />
+          {$_("common.edit")}
         </Button>
       </div>
     </div>

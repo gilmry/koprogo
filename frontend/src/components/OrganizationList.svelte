@@ -1,4 +1,5 @@
 <script lang="ts">
+  import BoutonAction from "./ui/BoutonAction.svelte";
   import { onMount } from "svelte";
   import { _ } from "../lib/i18n";
   import { formatDate } from "../lib/utils/date.utils";
@@ -321,16 +322,18 @@
                     class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium"
                   >
                     <div class="flex justify-end space-x-2">
-                      <button
-                        on:click={() => handleEdit(org)}
-                        class="text-primary-600 hover:text-primary-900"
-                        aria-label="Modifier"
-                        title="Modifier"
-                        data-testid="edit-organization-button"
+                      <!--
+                        Bouton nu : cible d'environ 20 px, et `aria-label` en
+                        français écrit en dur dans un produit à quatre
+                        langues. Ancrage conservé.
+                      -->
+                      <BoutonAction
+                        nom="edit"
+                        ariaLabel={$_("common.edit")}
                         disabled={actionLoading}
-                      >
-                        ✏️
-                      </button>
+                        testId="edit-organization-button"
+                        onclick={() => handleEdit(org)}
+                      />
                       <button
                         on:click={() => handleToggleActive(org)}
                         class={org.is_active
@@ -343,16 +346,14 @@
                       >
                         {org.is_active ? "⏸️" : "▶️"}
                       </button>
-                      <button
-                        on:click={() => handleDeleteClick(org)}
-                        class="text-red-600 hover:text-red-900"
-                        aria-label="Supprimer"
-                        title="Supprimer"
-                        data-testid="delete-organization-button"
+                      <BoutonAction
+                        nom="trash"
+                        ton="danger"
+                        ariaLabel={$_("common.delete")}
                         disabled={actionLoading}
-                      >
-                        🗑️
-                      </button>
+                        testId="delete-organization-button"
+                        onclick={() => handleDeleteClick(org)}
+                      />
                     </div>
                   </td>
                 </tr>

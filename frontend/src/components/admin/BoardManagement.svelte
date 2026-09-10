@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Icone from "../ui/Icone.svelte";
   import { onMount } from "svelte";
   import { _ } from "../../lib/i18n";
   import { api } from "../../lib/api";
@@ -332,7 +333,8 @@
                 on:click={() => handleRemove(member.id)}
                 class="flex-1 px-3 py-2 bg-red-50 text-red-700 rounded hover:bg-red-100 transition text-sm font-medium"
               >
-                🗑️ {$_("admin.board.remove")}
+                <Icone nom="trash" taille={15} class="shrink-0" />
+                {$_("admin.board.remove")}
               </button>
               <a
                 data-testid="board-member-dashboard-link"

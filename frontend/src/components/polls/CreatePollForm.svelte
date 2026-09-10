@@ -1,4 +1,5 @@
 <script lang="ts">
+  import BoutonAction from "../ui/BoutonAction.svelte";
   import CadreLegal from "../ui/CadreLegal.svelte";
   // Svelte 5 runes mode
   import { _ } from "svelte-i18n";
@@ -261,16 +262,14 @@
                 readonly
                 class="flex-1 rounded-md border-gray-300 bg-gray-50"
               />
-              <button
-                data-testid="poll-create-option-remove-button"
-                type="button"
+              <!-- Bouton nu : cible d'environ 20 px. Ancrage conservé. -->
+              <BoutonAction
+                nom="trash"
+                ton="danger"
+                ariaLabel={$_("common.delete")}
+                testId="poll-create-option-remove-button"
                 onclick={() => removeOption(index)}
-                class="text-red-600 hover:text-red-800"
-                aria-label={$_("common.delete")}
-                title={$_("common.delete")}
-              >
-                🗑️
-              </button>
+              />
             </div>
           {/each}
         </div>

@@ -2562,6 +2562,7 @@
     "myExpenses": "Charges",
     "mySpace": "My space",
     "myTickets": "My tickets",
+    "myUnits": "My units",
     "neighbourhood": "Neighbours",
     "noRoleAssignedDesc": "Contact your administrator to obtain access.",
     "noRoleAssignedTitle": "No role assigned",
@@ -4222,5 +4223,8 @@
   "localExchanges": {
     "selLegalBody": "Local exchange systems are legal and recognised in Belgium, and untaxed as long as they stay non-commercial (barter). Time currency: one hour is one credit. A negative balance is allowed — it is a community trust model.",
     "selLegalTitle": "Belgian legal framework"
+  },
+  "journalEntries": {
+    "removeLine": "Remove this line"
   }
 }

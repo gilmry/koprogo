@@ -2562,6 +2562,7 @@
     "myExpenses": "Lasten",
     "mySpace": "Mijn ruimte",
     "myTickets": "Mijn tickets",
+    "myUnits": "Mijn kavels",
     "neighbourhood": "Buurt",
     "noRoleAssignedDesc": "Neem contact op met uw beheerder om toegang te krijgen.",
     "noRoleAssignedTitle": "Geen rol toegewezen",
@@ -4222,5 +4223,8 @@
   "localExchanges": {
     "selLegalBody": "LETS zijn legaal en erkend in België, en onbelast zolang ze niet-commercieel blijven (ruilhandel). Tijdmunt: één uur is één krediet. Een negatief saldo is toegestaan — het is een model van gemeenschapsvertrouwen.",
     "selLegalTitle": "Belgisch wettelijk kader"
+  },
+  "journalEntries": {
+    "removeLine": "Deze regel verwijderen"
   }
 }

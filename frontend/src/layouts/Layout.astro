@@ -8,10 +8,9 @@ import LanguageSelector from "../components/LanguageSelector.svelte";
 import SyncStatus from "../components/SyncStatus.svelte";
 import PWAInstallPrompt from "../components/PWAInstallPrompt.svelte";
 import RouteGuard from "../components/RouteGuard.svelte";
-import BuildingSelectorBar from "../components/global/BuildingSelectorBar.svelte";
+import BarreDeContexte from "../components/global/BarreDeContexte.svelte";
 import TabBarMobileBar from "../components/navigation/TabBarMobileBar.svelte";
 import LegalHelper from "../components/LegalHelper.svelte";
-import ContextBanner from "../components/global/ContextBanner.svelte";
 
 interface Props {
   title: string;
@@ -217,10 +216,21 @@ const pageTitle = title.includes(SITE_NAME) ? title : `${title} - ${SITE_NAME}`;
       class:list={["min-h-screen flex flex-col", showNav && "lg:ml-60"]}
     >
       {showNav && <div class="h-14 lg:hidden" aria-hidden="true" />}
-      <!-- Story 2.2 — Building selector : overlay top-right en mobile, barre en flux normal
-			     en desktop (évite le chevauchement avec le contenu de page, cf. issue organisations) -->
-      {showNav && <BuildingSelectorBar client:load />}
-      {showNav && <ContextBanner client:load />}
+      {
+        /*
+        UNE barre de contexte, et non deux empilées.
+
+        `BuildingSelectorBar` (57 px) et `ContextBanner` (41 px) se suivaient
+        ici : environ 100 px de chrome avant le contenu propre de la page, et
+        sur mobile avant le premier mot de l'écran. Elles disaient en outre la
+        même chose deux fois, l'immeuble courant apparaissant dans le champ du
+        sélecteur ET dans le fil d'Ariane.
+
+        Les deux composants subsistent, côte à côte plutôt qu'empilés : leurs
+        sept ancrages de recette survivent tels quels.
+      */
+      }
+      {showNav && <BarreDeContexte client:load />}
       <main
         id="main-content"
         class="flex-1 pb-[74px] lg:pb-0"

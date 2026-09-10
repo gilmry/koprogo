@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Icone from "./ui/Icone.svelte";
   import { onMount } from "svelte";
   import { _ } from "../lib/i18n";
   import {
@@ -138,7 +139,9 @@
       <button
         data-testid="chatbot-clear-button"
         on:click={clearChat}
-        class="btn-clear">🗑️ {$_("common.clear")}</button
+        class="btn-clear"
+        ><Icone nom="trash" taille={14} class="shrink-0" />
+        {$_("common.clear")}</button
       >
     </div>
   </div>

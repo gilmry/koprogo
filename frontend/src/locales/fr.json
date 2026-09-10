@@ -2562,6 +2562,7 @@
     "myExpenses": "Charges",
     "mySpace": "Mon espace",
     "myTickets": "Mes tickets",
+    "myUnits": "Mes lots",
     "neighbourhood": "Voisinage",
     "noRoleAssignedDesc": "Contactez votre administrateur pour obtenir l'accès.",
     "noRoleAssignedTitle": "Aucun rôle attribué",
@@ -4222,5 +4223,8 @@
   "localExchanges": {
     "selLegalBody": "Les SEL sont légaux et reconnus en Belgique, et non taxables tant qu'ils restent non commerciaux (troc). Monnaie temps : une heure vaut un crédit. Le solde négatif est autorisé — c'est un modèle de confiance communautaire.",
     "selLegalTitle": "Cadre légal belge"
+  },
+  "journalEntries": {
+    "removeLine": "Supprimer cette ligne"
   }
 }

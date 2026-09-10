@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Icone from "../ui/Icone.svelte";
   import { onMount } from "svelte";
   import { _ } from "../../lib/i18n";
   import { api } from "../../lib/api";
@@ -378,7 +379,7 @@
         <h3
           class="font-semibold text-xl mb-3 text-red-800 flex items-center gap-2"
         >
-          <span class="text-2xl">🗑️</span>
+          <Icone nom="trash" taille={22} class="shrink-0" />
           {$_("seed.delete")}
         </h3>
         <p class="text-sm text-gray-700 mb-4">
@@ -393,7 +394,11 @@
             >
           </li>
           <li class="flex items-start gap-2">
-            <span class="text-red-600">🗑️</span>
+            <Icone
+              nom="trash"
+              taille={15}
+              class="mt-0.5 shrink-0 text-danger"
+            />
             <span
               >{$_("seed.deletesOnly")}
               <code class="bg-red-100 px-1 rounded text-xs"
@@ -416,7 +421,17 @@
           disabled={loading}
           class="w-full bg-red-600 text-white py-3 px-6 rounded-lg hover:bg-red-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition font-semibold text-lg shadow-md"
         >
-          {loading ? $_("seed.deleting") : `🗑️ ${$_("seed.delete")}`}
+          <!--
+            L'émoji vivait DANS une chaîne de gabarit : il était donc annoncé
+            avec le libellé, et aucun `aria-hidden` ne pouvait s'y appliquer.
+            L'icône sort de la chaîne pour redevenir un élément.
+          -->
+          {#if loading}
+            {$_("seed.deleting")}
+          {:else}
+            <Icone nom="trash" taille={17} class="shrink-0" />
+            {$_("seed.delete")}
+          {/if}
         </button>
       </div>
     </div>
