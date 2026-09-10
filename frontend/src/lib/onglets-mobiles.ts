@@ -62,7 +62,7 @@ const PAR_ROLE: Record<string, OngletMobile[]> = {
   [UserRole.SYNDIC]: [
     {
       cle: "today",
-      href: "/dashboard",
+      href: "/syndic",
       icone: "today",
       libelle: "navigation.today",
     },
@@ -89,7 +89,7 @@ const PAR_ROLE: Record<string, OngletMobile[]> = {
   [UserRole.OWNER]: [
     {
       cle: "today",
-      href: "/owner/dashboard",
+      href: "/owner",
       icone: "today",
       libelle: "navigation.home",
     },
@@ -110,7 +110,7 @@ const PAR_ROLE: Record<string, OngletMobile[]> = {
     // emploie. Personne n'appelle son palier une communauté.
     {
       cle: "community",
-      href: "/local-exchanges",
+      href: "/exchanges",
       icone: "localExchanges",
       libelle: "navigation.neighbourhood",
     },
@@ -121,7 +121,7 @@ const PAR_ROLE: Record<string, OngletMobile[]> = {
     // tolérée sur mobile est la relance groupée, qui vit dans « Impayés ».
     {
       cle: "today",
-      href: "/dashboard",
+      href: "/accountant",
       icone: "today",
       libelle: "navigation.today",
     },
@@ -133,13 +133,13 @@ const PAR_ROLE: Record<string, OngletMobile[]> = {
     },
     {
       cle: "arrears",
-      href: "/payment-recovery",
+      href: "/payment-reminders",
       icone: "reminders",
       libelle: "navigation.arrears",
     },
     {
       cle: "reports",
-      href: "/reports-pcmn",
+      href: "/reports",
       icone: "reportsPcmn",
       libelle: "navigation.reportsPcmn",
     },
@@ -151,7 +151,7 @@ const PAR_ROLE: Record<string, OngletMobile[]> = {
     // le DIT, plutôt que de laisser découvrir l'absence.
     {
       cle: "health",
-      href: "/monitoring",
+      href: "/admin/monitoring",
       icone: "monitoring",
       libelle: "navigation.health",
     },
@@ -169,7 +169,7 @@ const PAR_ROLE: Record<string, OngletMobile[]> = {
     },
     {
       cle: "auditLog",
-      href: "/admin/audit",
+      href: "/admin/gdpr",
       icone: "auditLog",
       libelle: "navigation.auditLog",
     },

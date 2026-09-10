@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { ongletsPour, rolesAvecOnglets } from "../onglets-mobiles";
 import { iconeConnue } from "../icones";
@@ -215,6 +215,45 @@ describe("les onglets ne cassent aucun contrat de test existant", () => {
     // les deux listes seraient vides et le test passerait sans rien comparer.
     expect(epinglees.length).toBeGreaterThan(0);
     expect(metiers.size).toBeGreaterThan(10);
+  });
+
+  it("chaque destination d'onglet correspond à une page qui existe", () => {
+    // ── Le défaut que ce test empêche, et que j'ai commis ────────────────
+    //
+    // Ma barre d'onglets pointait vers dix-sept destinations. NEUF
+    // n'existaient pas : `/dashboard`, `/owner/dashboard`, `/local-exchanges`,
+    // `/payment-recovery`, `/reports-pcmn`, `/monitoring`, `/admin/audit`, et
+    // `/menu` deux fois.
+    //
+    // Dans le composant même que j'avais écrit pour rendre trente-neuf écrans
+    // atteignables.
+    //
+    // `garde-liens-internes` ne pouvait pas le voir : elle lit les `href`
+    // LITTÉRAUX des gabarits, or ceux-ci sont interpolés depuis une table de
+    // destinations. Et l'hébergement rend 200 sur n'importe quelle URL — les
+    // liens morts auraient servi la page d'accueil, sans erreur, sans trace.
+    const fautives: string[] = [];
+
+    for (const role of rolesAvecOnglets()) {
+      for (const onglet of ongletsPour(role)) {
+        const chemin = onglet.href.replace(/^\/+|\/+$/g, "");
+        const page = join(RACINE, "src/pages", `${chemin}.astro`);
+        const index = join(RACINE, "src/pages", chemin, "index.astro");
+        if (!existsSync(page) && !existsSync(index)) {
+          fautives.push(`  ${role} → ${onglet.cle} : ${onglet.href}`);
+        }
+      }
+    }
+
+    expect(
+      fautives.join("\n"),
+      "Ces onglets pointent vers une page qui n'existe pas.\n\n" +
+        "L'hébergement rend 200 sur n'importe quelle URL : le lien servira " +
+        "la page d'accueil, sans erreur et sans trace. Ni l'utilisateur ni " +
+        "la supervision ne le verront.\n\n" +
+        "`garde-liens-internes` ne les attrape pas : elle lit les `href` " +
+        "littéraux des gabarits, et ceux-ci sont interpolés.",
+    ).toBe("");
   });
 
   it("donne un ancrage tabbar-* à chaque onglet, et une icône qui existe", () => {
