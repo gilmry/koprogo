@@ -1305,6 +1305,11 @@
       "noAcp": "Keine WEG mit Ihrem Büro verknüpft.",
       "noOwnersRecorded": "Keine Miteigentümer registriert.",
       "noUrgentTasks": "Keine dringenden Aufgaben",
+      "pressure": {
+        "clear": "Keine gesetzliche Frist und keine überfällige Zahlung.",
+        "deadlines": "{count} gesetzliche Fristen laufen ab",
+        "overdue": "{count} überfällige Zahlungen"
+      },
       "quickActions": "Schnellaktionen",
       "recentOwners": "Letzte Miteigentümer",
       "stats": {
@@ -1320,6 +1325,7 @@
       },
       "subtitle": "Verwalten Sie Ihre Miteigentümergemeinschaften",
       "title": "Verwalter-Dashboard",
+      "today": "Heute",
       "urgentTasks": "Dringende Aufgaben"
     }
   },

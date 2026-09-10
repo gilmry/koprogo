@@ -1305,6 +1305,11 @@
       "noAcp": "Aucune copropriété rattachée à votre cabinet.",
       "noOwnersRecorded": "Aucun copropriétaire enregistré.",
       "noUrgentTasks": "Aucune tâche urgente",
+      "pressure": {
+        "clear": "Aucune échéance légale ni paiement en retard.",
+        "deadlines": "{count} délais légaux arrivent à échéance",
+        "overdue": "{count} paiements en retard"
+      },
       "quickActions": "Actions rapides",
       "recentOwners": "Copropriétaires récents",
       "stats": {
@@ -1320,6 +1325,7 @@
       },
       "subtitle": "Gestion de vos copropriétés",
       "title": "Tableau de bord syndic",
+      "today": "Aujourd'hui",
       "urgentTasks": "Tâches urgentes"
     }
   },

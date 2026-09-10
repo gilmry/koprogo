@@ -52,6 +52,22 @@
     delai_legal_jours?: number | null;
   }
 
+  /**
+   * Ce qui presse aujourd'hui, compté sur les tâches urgentes.
+   *
+   * Deux natures qu'il ne faut pas mêler : une ÉCHÉANCE LÉGALE engage la
+   * responsabilité du syndic (Art. 3.87 § 12 pour le procès-verbal), un
+   * RETARD DE PAIEMENT est contractuel. Les additionner sous un même « 3
+   * choses à faire » effacerait la seule distinction qui décide de l'ordre
+   * dans lequel on s'y prend.
+   */
+  let pression = $derived.by(() => ({
+    echeances: urgentTasks.filter((t) => t.article && t.delai_legal_jours)
+      .length,
+    retards: urgentTasks.filter((t) => !t.article && t.priority === "urgent")
+      .length,
+  }));
+
   let stats = $state<SyndicStats | null>(null);
   let urgentTasks = $state<UrgentTask[]>([]);
   let recentOwners = $state<Owner[]>([]);
@@ -167,11 +183,59 @@
 
 <div data-testid="syndic-dashboard">
   <div class="mb-8">
-    <h1 class="text-3xl font-bold text-gray-900 mb-2">
-      {$_("common.welcome")}, {user?.first_name} 👋
+    <!--
+      « Aujourd'hui », et non « Tableau de bord syndic ».
+
+      Le sidebar dit déjà que l'utilisateur est syndic, et « Bienvenue,
+      Prénom » n'apporte rien qu'on ne sache : il occupe la ligne la plus
+      visible de l'écran pour saluer quelqu'un qui vient travailler.
+
+      Le titre nomme désormais l'ÉCHÉANCE — ce qui se joue aujourd'hui — et la
+      sous-ligne énonce la pression en mots plutôt qu'en libellé de section.
+    -->
+    <h1
+      data-testid="syndic-dashboard-titre"
+      class="text-[27px] font-bold tracking-[-0.02em] text-ink"
+    >
+      {$_("dashboards.syndic.today")}
     </h1>
-    <p class="text-gray-600">
-      {$_("dashboards.syndic.title")} - {$_("dashboards.syndic.subtitle")}
+    <p
+      data-testid="syndic-dashboard-pression"
+      class="mt-1 text-[13px] text-ink-3"
+    >
+      {#if pression.echeances > 0}
+        <!--
+          Le nombre d'échéances légales en ambre : c'est le seul chiffre de
+          cette ligne qui engage une responsabilité, et il doit se distinguer
+          du reste sans être crié.
+        -->
+        <span class="tabular font-semibold text-warn"
+          >{$_("dashboards.syndic.pressure.deadlines", {
+            values: { count: pression.echeances },
+          })}</span
+        >
+        {#if pression.retards > 0}
+          <span class="text-muted">·</span>
+          <span class="tabular"
+            >{$_("dashboards.syndic.pressure.overdue", {
+              values: { count: pression.retards },
+            })}</span
+          >
+        {/if}
+      {:else if pression.retards > 0}
+        <span class="tabular"
+          >{$_("dashboards.syndic.pressure.overdue", {
+            values: { count: pression.retards },
+          })}</span
+        >
+      {:else}
+        <!--
+          Rien à signaler EST une information, et la plus utile de la journée.
+          Un tableau de bord qui ne sait pas dire « tout va bien » oblige à
+          lire chaque section pour s'en assurer.
+        -->
+        {$_("dashboards.syndic.pressure.clear")}
+      {/if}
     </p>
   </div>
 

@@ -1305,6 +1305,11 @@
       "noAcp": "Geen VME gekoppeld aan uw kantoor.",
       "noOwnersRecorded": "Geen mede-eigenaars geregistreerd.",
       "noUrgentTasks": "Geen dringende taken",
+      "pressure": {
+        "clear": "Geen wettelijke termijn en geen achterstallige betaling.",
+        "deadlines": "{count} wettelijke termijnen verstrijken",
+        "overdue": "{count} betalingen te laat"
+      },
       "quickActions": "Snelle acties",
       "recentOwners": "Recente mede-eigenaars",
       "stats": {
@@ -1320,6 +1325,7 @@
       },
       "subtitle": "Beheer uw mede-eigendommen",
       "title": "Syndicusdashboard",
+      "today": "Vandaag",
       "urgentTasks": "Dringende taken"
     }
   },

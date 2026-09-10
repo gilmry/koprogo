@@ -1305,6 +1305,11 @@
       "noAcp": "No association linked to your practice.",
       "noOwnersRecorded": "No co-owners recorded.",
       "noUrgentTasks": "No urgent tasks",
+      "pressure": {
+        "clear": "No legal deadline and no overdue payment.",
+        "deadlines": "{count} legal deadlines are coming due",
+        "overdue": "{count} overdue payments"
+      },
       "quickActions": "Quick Actions",
       "recentOwners": "Recent Co-owners",
       "stats": {
@@ -1320,6 +1325,7 @@
       },
       "subtitle": "Manage your co-ownerships",
       "title": "Syndic Dashboard",
+      "today": "Today",
       "urgentTasks": "Urgent Tasks"
     }
   },
