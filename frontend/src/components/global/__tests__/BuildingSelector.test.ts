@@ -136,6 +136,42 @@ describe("BuildingSelector @happy", () => {
     expect(input.tagName.toLowerCase()).toBe("input");
   });
 
+  /**
+   * Ouvrir le sélecteur montre quelque chose, sans avoir tapé.
+   *
+   * L'état de repos était `isOpen = results.length > 0`, et rien ne
+   * remplissait `results` avant la première frappe : cliquer le champ
+   * n'ouvrait donc JAMAIS rien. Un syndic qui gère quatre immeubles voulait
+   * voir ses quatre au clic ; il obtenait un champ muet.
+   *
+   * La remise de design en fait une demande explicite : « Preload the first N
+   * (or load on focus). A syndic with 4 ACPs wants to see all 4 on click. »
+   */
+  it("ouvre la liste au focus, sans avoir tapé", async () => {
+    const quatre = [
+      makeBuilding({ id: "b-a", name: "Les Érables" }),
+      makeBuilding({ id: "b-b", name: "Les Glycines" }),
+      makeBuilding({ id: "b-c", name: "Les Tilleuls" }),
+      makeBuilding({ id: "b-d", name: "Les Peupliers" }),
+    ];
+    mockedSearchBuildings.mockResolvedValue(quatre);
+
+    render(BuildingSelector, { props: { user: syndicUser } });
+
+    const input = await screen.findByTestId("building-selector-input");
+    // Aucun `fireEvent.input` : on ne tape rien, on se contente d'entrer
+    // dans le champ, comme un utilisateur qui clique dessus.
+    await fireEvent.focus(input);
+
+    await waitFor(() => {
+      expect(screen.queryByTestId("building-selector-result-b-a")).toBeTruthy();
+    });
+    expect(
+      screen.getByTestId("building-selector-result-b-d"),
+    ).toBeInTheDocument();
+    expect(input).toHaveAttribute("aria-expanded", "true");
+  });
+
   it("renders 3 results after typing query (autocomplete)", async () => {
     const results = [
       makeBuilding({ id: "b-1", name: "Immeuble Alpha" }),

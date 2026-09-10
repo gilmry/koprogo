@@ -181,6 +181,42 @@ describe("ContextBanner @happy", () => {
     expect(icon.className).toMatch(/green/);
   });
 
+  /**
+   * La pastille de conformité porte le NOMBRE, pas seulement un signe.
+   *
+   * Elle rendait `✓`, `!` ou `✕` dans un rond, et le sens vivait uniquement
+   * dans son `aria-label`. Un syndic voyant un point d'exclamation orange
+   * savait qu'il y avait un problème, sans savoir lequel ni de combien.
+   *
+   * La donnée était pourtant là — `quota_sum` et `total_tantiemes` arrivent
+   * avec l'immeuble. « 742/1000 » dit qu'il manque 258 millièmes, donc que
+   * des lots ne sont pas encodés, donc que les appels de fonds sont calculés
+   * sur une base incomplète. Un signe ne dit rien de tel.
+   */
+  it("affiche les quotités chiffrées, pas seulement un signe", async () => {
+    const building = makeBuildingDetail({
+      id: "b-incomplet",
+      is_conformant: false,
+      quota_sum: "742",
+      quota_delta: "-258",
+      total_tantiemes: 1000,
+    });
+    mockedGetBuilding.mockResolvedValue(building);
+    mockedGetAcp.mockResolvedValue(makeAcp({ id: "acp-i" }));
+    mockedTryGetOrgName.mockResolvedValue(null);
+
+    setBuilding(building);
+    render(ContextBanner);
+
+    const quotites = await screen.findByTestId("context-banner-quotites");
+    expect(quotites.textContent ?? "").toContain("742/1000");
+
+    // Les attributs de donnée permettent aux recettes de viser le chiffre
+    // sans dépendre du libellé traduit qui l'entoure.
+    expect(quotites).toHaveAttribute("data-quota-sum", "742");
+    expect(quotites).toHaveAttribute("data-quota-basis", "1000");
+  });
+
   it("shows orange icon when building has positive quota delta (warning)", async () => {
     const building = makeBuildingDetail({
       id: "b-warn",

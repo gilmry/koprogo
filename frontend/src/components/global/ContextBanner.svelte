@@ -135,6 +135,43 @@
     return "!";
   });
 
+  /**
+   * Le chiffre lui-même, et non un signe qui le remplace.
+   *
+   * ── Ce que la pastille disait, et ne disait pas ─────────────────────────
+   *
+   * Elle rendait `✓`, `!` ou `✕` dans un rond de 24 px, et **le sens vivait
+   * uniquement dans son `aria-label`**. Un syndic voyant un point
+   * d'exclamation orange savait qu'il y avait un problème, sans savoir
+   * lequel, ni de combien.
+   *
+   * Or la donnée était là : `quota_sum` et `total_tantiemes` arrivent avec
+   * l'immeuble. On la jetait avant l'écran — le motif dominant de tout ce
+   * périmètre, ici sous sa forme la plus coûteuse, parce que ce chiffre-là
+   * décide de la validité des appels de fonds.
+   *
+   * ── Pourquoi le chiffre, et pas seulement une couleur ───────────────────
+   *
+   * « 742/1000 » dit qu'il manque 258 millièmes, donc que des lots ne sont
+   * pas encodés. Un point d'exclamation ne dit rien de tel. La remise de
+   * design en fait la première exigence de la barre de contexte : « the data
+   * is too important for that ».
+   *
+   * Un état porté par la couleur seule est aussi un défaut d'accessibilité :
+   * le mot et le nombre le portent maintenant tous les deux.
+   */
+  let quotitesAffichees = $derived.by(() => {
+    const b = buildingDetail;
+    if (!b) return null;
+    // Décimal servi comme chaîne : jamais de `parseFloat`, qui introduirait
+    // une erreur de représentation sur une valeur juridiquement opposable.
+    const somme = (b.quota_sum ?? "").trim();
+    if (somme === "") return null;
+    const base = b.total_tantiemes;
+    if (!base) return null;
+    return { somme, base };
+  });
+
   let iconAriaLabel = $derived.by(() => {
     const b = buildingDetail;
     if (!b)
@@ -172,6 +209,13 @@
     aria-label={$_("contextBanner.label") || "Contexte courant"}
   >
     <!-- Icône conformité (toujours présente quand banner visible) -->
+    <!--
+      La pastille de conformité porte le NOMBRE, pas seulement un signe.
+
+      `context-banner-conformity-icon` est conservé tel quel : c'est un
+      ancrage de recette, et une restructuration ne le déplace pas. Le
+      chiffre s'ajoute à côté, dans son propre ancrage.
+    -->
     <span
       data-testid="context-banner-conformity-icon"
       class="inline-flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold {iconColorClass}"
@@ -180,6 +224,18 @@
     >
       <span aria-hidden="true">{iconSymbol}</span>
     </span>
+
+    {#if quotitesAffichees}
+      <span
+        data-testid="context-banner-quotites"
+        class="tabular text-xs font-semibold text-ink-3"
+        data-quota-sum={quotitesAffichees.somme}
+        data-quota-basis={quotitesAffichees.base}
+      >
+        {$_("contextBanner.quotites") || "Quotités"}
+        {quotitesAffichees.somme}/{quotitesAffichees.base}
+      </span>
+    {/if}
 
     <!-- Niveau 1 — Cabinet (peut être absent si ACP auto-gérée ou cross-tenant) -->
     {#if showCabinet}

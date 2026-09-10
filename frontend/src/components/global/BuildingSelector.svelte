@@ -120,6 +120,33 @@
       });
   }
 
+  /**
+   * Ouvrir le sélecteur montre quelque chose, même sans avoir tapé.
+   *
+   * L'état de repos était `isOpen = results.length > 0`, et RIEN ne
+   * remplissait `results` avant la première frappe : cliquer le champ
+   * n'ouvrait donc jamais rien. Un syndic qui gère quatre immeubles voulait
+   * voir ses quatre au clic ; il obtenait un champ muet, qui lisait comme
+   * cassé.
+   *
+   * C'est le motif dominant de ce produit sous une forme discrète : la
+   * capacité existe — la recherche marche —, mais son point d'entrée ne mène
+   * à rien tant qu'on n'a pas deviné qu'il fallait taper.
+   *
+   * Le préchargement se fait AU FOCUS, pas au montage : la barre de périmètre
+   * est présente sur chaque page, et une requête par page pour une liste que
+   * la plupart des visites n'ouvriront pas serait payée par tout le monde
+   * pour servir quelques-uns.
+   */
+  function auPremierFocus(): void {
+    if (results.length > 0) {
+      isOpen = true;
+      return;
+    }
+    // Recherche vide = les N premiers, que `searchBuildings` sert déjà.
+    doSearch(query);
+  }
+
   function onInput(event: Event): void {
     const target = event.target as HTMLInputElement;
     query = target.value;
@@ -187,9 +214,7 @@
         data-testid="building-selector-input"
         value={query}
         oninput={onInput}
-        onfocus={() => {
-          isOpen = results.length > 0;
-        }}
+        onfocus={auPremierFocus}
         role="combobox"
         aria-autocomplete="list"
         aria-expanded={isOpen}
