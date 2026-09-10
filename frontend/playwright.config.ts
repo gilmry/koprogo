@@ -152,7 +152,16 @@ export default defineConfig({
       // role-delegation.spec.ts (C4) ✅ — même endpoint câblé sur
       // `RoleDelegationsPage.svelte`, dernière exclusion Phase C levée
       // (#617 clos, 8/8 sub-tasks).
-      testIgnore: [/scenarios\//, /smoke\//, /characterization\//],
+      // Chaque répertoire revendiqué AILLEURS doit être écarté ici, sinon
+      // le projet de bureau ramasse des specs qui ne le visent pas. C'est ce
+      // qui vient d'arriver à `mobile/` : ses sept tests ont tourné à
+      // 1280×720 contre la démo, où ils n'ont aucun sens, et ont fait rougir
+      // la CI d'un défaut inexistant.
+      //
+      // La liste est tenue par `garde-projets-playwright`, qui la recalcule
+      // depuis les `testDir` déclarés plutôt que de faire confiance à la
+      // mémoire du prochain qui ajoutera un répertoire.
+      testIgnore: [/scenarios\//, /smoke\//, /characterization\//, /mobile\//],
     },
 
     /**
