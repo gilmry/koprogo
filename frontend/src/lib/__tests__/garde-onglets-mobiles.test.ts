@@ -161,6 +161,62 @@ describe("les onglets ne cassent aucun contrat de test existant", () => {
     ).not.toContain("navigation-menu-");
   });
 
+  it("aucune entrée épinglée ne double un menu du même rôle", () => {
+    // ── Le défaut que ce test empêche, et que j'ai commis ────────────────
+    //
+    // La remise n'épingle qu'une entrée, et pour le SYNDIC seulement :
+    // « Mes ACP ». J'avais étendu le motif aux quatre rôles, et les QUATRE
+    // entrées se sont révélées être des doublons de leur propre menu — même
+    // destination, même libellé, deux fois dans la même navigation.
+    //
+    // Une seule a fait échouer la CI : `AdminDashBoard.improved.spec.ts`
+    // clique « Organisations » par son nom de lien et en a trouvé deux
+    // (« strict mode violation »). Les trois autres attendaient leur tour,
+    // faute d'une recette qui clique par nom.
+    //
+    // Un lien en double n'est pas qu'un ennui de recette : un lecteur d'écran
+    // annonce deux fois la même destination, et l'utilisateur ne sait pas
+    // laquelle prendre.
+    const source = readFileSync(
+      join(RACINE, "src/components/navigation/Navigation.svelte"),
+      "utf-8",
+    );
+
+    // Les destinations épinglées : `libelle:` les distingue des menus, qui
+    // emploient `label:`.
+    const epinglees = [
+      ...source.matchAll(
+        /href:\s*"([^"]+)",\s*\n\s*icone:\s*"[^"]+",\s*\n\s*libelle:/g,
+      ),
+    ].map((m) => m[1]);
+
+    // Les destinations des menus MÉTIER, hors `getAdminItems` : ce dernier est
+    // réservé au superadmin par `canSee("admin", …)`, et le syndic ne le voit
+    // pas — c'est ce qui rend « Mes ACP » légitime pour lui.
+    const finDesMetiers = source.indexOf("const getAdminItems");
+    const metiers = new Set(
+      [
+        ...source
+          .slice(0, finDesMetiers > 0 ? finDesMetiers : undefined)
+          .matchAll(/\{\s*href:\s*"([^"]+)",\s*label:\s*t\(/g),
+      ].map((m) => m[1]),
+    );
+
+    const doublons = epinglees.filter((h) => metiers.has(h));
+    expect(
+      doublons.join("\n"),
+      "Ces entrées épinglées visent la même destination qu'un menu métier " +
+        "du même rôle. Le lien apparaît deux fois dans la navigation : un " +
+        "lecteur d'écran l'annonce deux fois, et `getByRole('link', { name })` " +
+        "lève une « strict mode violation ».",
+    ).toBe("");
+
+    // Vérification d'aveuglement : si les motifs cessaient de correspondre,
+    // les deux listes seraient vides et le test passerait sans rien comparer.
+    expect(epinglees.length).toBeGreaterThan(0);
+    expect(metiers.size).toBeGreaterThan(10);
+  });
+
   it("donne un ancrage tabbar-* à chaque onglet, et une icône qui existe", () => {
     const source = readFileSync(
       join(RACINE, "src/components/navigation/TabBarMobile.svelte"),

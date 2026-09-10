@@ -4226,5 +4226,9 @@
   },
   "journalEntries": {
     "removeLine": "Diese Zeile entfernen"
+  },
+  "tasks": {
+    "daysOverdue": "überfällig",
+    "outOfDays": "von {total} T"
   }
 }

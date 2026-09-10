@@ -1,4 +1,5 @@
 <script lang="ts">
+  import DecompteLegal from "./DecompteLegal.svelte";
   // Svelte 5 runes mode
   import { _ } from "../../lib/i18n";
   import { authStore } from "../../stores/auth";
@@ -34,6 +35,17 @@
     building_name: string | null;
     entity_id: string | null;
     due_date: string | null;
+    /**
+     * L'article qui fonde l'échéance, quand il y en a un.
+     *
+     * `null` pour les tâches sans origine légale : un retard de paiement est
+     * contractuel, une assemblée à venir est un rendez-vous. Seule la
+     * transmission du procès-verbal porte aujourd'hui un délai imposé par la
+     * loi (Art. 3.87 § 12), et rien ne la suivait avant le 2026-09-10.
+     */
+    article?: string | null;
+    /** Le délai que l'article accorde — le dénominateur du décompte. */
+    delai_legal_jours?: number | null;
   }
 
   let stats = $state<SyndicStats | null>(null);
@@ -263,10 +275,31 @@
             <div class="space-y-4">
               {#each urgentTasks as task}
                 {@const styles = getTaskStyles(task.priority)}
+                <!--
+                  `task-row` et `data-task-kind` : la remise les impose pour
+                  que les recettes visent une tâche par sa NATURE plutôt que
+                  par sa position dans la liste, qui dépend des données.
+                -->
                 <div
+                  data-testid="task-row"
+                  data-task-kind={task.task_type}
+                  data-task-priority={task.priority}
                   class="flex items-start space-x-3 p-4 {styles.bg} border {styles.border} rounded-lg"
                 >
-                  <span class="text-2xl">{getTaskIcon(task.task_type)}</span>
+                  <!--
+                    Le décompte d'échéance légale prend la place de l'icône
+                    quand la tâche en a une : un article et une marge en jours
+                    informent plus qu'un pictogramme de catégorie.
+                  -->
+                  {#if task.due_date && task.article && task.delai_legal_jours}
+                    <DecompteLegal
+                      echeance={task.due_date}
+                      article={task.article}
+                      delaiJours={task.delai_legal_jours}
+                    />
+                  {:else}
+                    <span class="text-2xl">{getTaskIcon(task.task_type)}</span>
+                  {/if}
                   <div class="flex-1">
                     <p class="text-sm font-medium text-gray-900">
                       {task.title}

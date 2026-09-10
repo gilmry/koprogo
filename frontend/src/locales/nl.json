@@ -4226,5 +4226,9 @@
   },
   "journalEntries": {
     "removeLine": "Deze regel verwijderen"
+  },
+  "tasks": {
+    "daysOverdue": "te laat",
+    "outOfDays": "van {total} d"
   }
 }

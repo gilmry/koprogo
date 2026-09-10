@@ -4226,5 +4226,9 @@
   },
   "journalEntries": {
     "removeLine": "Remove this line"
+  },
+  "tasks": {
+    "daysOverdue": "overdue",
+    "outOfDays": "of {total} d"
   }
 }

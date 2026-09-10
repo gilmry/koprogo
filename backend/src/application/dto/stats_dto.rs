@@ -75,4 +75,24 @@ pub struct UrgentTask {
     pub building_name: Option<String>,
     pub entity_id: Option<String>,
     pub due_date: Option<DateTime<Utc>>,
+
+    // ── Le décompte d'échéance légale ─────────────────────────────────────
+    //
+    // La remise de design en fait le différenciateur du produit : à côté de
+    // chaque tâche, « 18 j sur 30 » et la référence de l'article. Aucun
+    // concurrent ne dit sur quel fondement il réclame une action.
+    //
+    // Ces deux champs viennent du REGISTRE LÉGAL, jamais d'une chaîne écrite
+    // dans un composant. La remise met en garde sur ce point précis, et sa
+    // raison est bonne : un « 30 » recopié à l'écran est un nombre que rien
+    // ne relie à la loi. Le jour où l'on corrige le domaine — parce qu'on
+    // avait mal lu l'article — l'écran continue d'annoncer l'ancien délai, et
+    // le syndic agit sur une échéance fausse en croyant lire le produit.
+    /// L'article qui fonde l'échéance, tel qu'on le cite dans un courrier.
+    /// `None` quand la tâche n'est pas d'origine légale.
+    pub article: Option<String>,
+    /// Le délai que cet article accorde, en jours. C'est le DÉNOMINATEUR du
+    /// décompte : « 18 j sur 30 » n'a de sens que si l'on sait d'où vient le
+    /// 30.
+    pub delai_legal_jours: Option<i64>,
 }

@@ -391,6 +391,11 @@ impl StatsRepository for PostgresStatsRepository {
                 building_name: Some(expense.get("building_name")),
                 entity_id: Some(id.to_string()),
                 due_date: Some(expense.get("expense_date")),
+                // Un retard de paiement est contractuel, pas légal : aucun
+                // article ne fixe d'échéance ici, et prétendre le contraire
+                // afficherait un décompte sans fondement.
+                article: None,
+                delai_legal_jours: None,
             });
         }
 
@@ -422,6 +427,68 @@ impl StatsRepository for PostgresStatsRepository {
                 building_name: Some(meeting.get("building_name")),
                 entity_id: Some(id.to_string()),
                 due_date: Some(scheduled_date),
+                // Une assemblée à venir est un rendez-vous, pas une échéance
+                // légale. Le délai de convocation de l'Art. 3.87 § 3, lui, en
+                // est une — mais il porte sur la convocation, pas sur la
+                // tenue.
+                article: None,
+                delai_legal_jours: None,
+            });
+        }
+
+        // ── Procès-verbaux à transmettre — Art. 3.87 § 12 CC ─────────────
+        //
+        // Le PV est consigné au registre et transmis à chaque destinataire
+        // **dans les trente jours** de l'assemblée. C'est la seule des tâches
+        // de ce tableau de bord qui porte une échéance LÉGALE, et rien ne la
+        // suivait : les colonnes `minutes_document_id` et `minutes_sent_at`
+        // existent depuis la migration du 2026-03-23, dont le commentaire
+        // annonce « Track when AG minutes are sent to owners (within 30
+        // days) ». Personne ne les lisait.
+        //
+        // Une capacité écrite, migrée, et inatteignable — le motif dominant de
+        // ce périmètre.
+        let pv_en_attente = sqlx::query(
+            "SELECT m.id, m.title, m.scheduled_date, b.name as building_name
+             FROM meetings m
+             INNER JOIN buildings b ON m.building_id = b.id
+             WHERE b.acp_id IN (SELECT id FROM acps WHERE organization_id = $1)
+             AND m.status = 'completed'
+             AND m.minutes_sent_at IS NULL
+             AND m.scheduled_date > NOW() - INTERVAL '90 days'
+             ORDER BY m.scheduled_date ASC
+             LIMIT 5",
+        )
+        .bind(organization_id)
+        .fetch_all(&self.pool)
+        .await
+        .map_err(|e| e.to_string())?;
+
+        for reunion in pv_en_attente {
+            let tenue_le: chrono::DateTime<Utc> = reunion.get("scheduled_date");
+            let delai = crate::domain::copropriete::consignation_pv::DELAI_JOURS;
+            let echeance = tenue_le + chrono::Duration::days(delai);
+            let jours_restants = (echeance - Utc::now()).num_days();
+            let id: Uuid = reunion.get("id");
+            let titre: String = reunion.get("title");
+
+            tasks.push(UrgentTask {
+                task_type: "minutes".to_string(),
+                title: titre,
+                description: if jours_restants < 0 {
+                    format!("PV non transmis, {} jours de retard", -jours_restants)
+                } else {
+                    format!("PV à transmettre sous {jours_restants} jours")
+                },
+                // Dépassé, c'est un manquement constaté, pas une urgence à
+                // venir : la distinction change ce que le syndic doit faire.
+                priority: if jours_restants < 0 { "urgent" } else { "high" }.to_string(),
+                building_name: Some(reunion.get("building_name")),
+                entity_id: Some(id.to_string()),
+                due_date: Some(echeance),
+                article: Some("Art. 3.87 § 12 CC".to_string()),
+                // Le délai est LU depuis le domaine, jamais recopié.
+                delai_legal_jours: Some(delai),
             });
         }
 
@@ -450,6 +517,8 @@ impl StatsRepository for PostgresStatsRepository {
                 building_name: None,
                 entity_id: None,
                 due_date: None,
+                article: None,
+                delai_legal_jours: None,
             });
         }
 

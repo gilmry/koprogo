@@ -62,40 +62,36 @@
    * `null` pour un rôle sans collection évidente : mieux vaut une entrée de
    * moins qu'une entrée qui vise à côté.
    */
+  /**
+   * La collection épinglée sous « Aujourd'hui » — pour le SYNDIC seulement.
+   *
+   * ── Pourquoi seulement lui ──────────────────────────────────────────────
+   *
+   * La remise de design n'épingle qu'une chose, et seulement pour le syndic :
+   * « Mes ACP ». J'avais étendu le motif aux quatre rôles de mon propre chef,
+   * et les QUATRE entrées se sont révélées être des doublons de leur propre
+   * menu — même destination, même libellé, deux fois dans la même navigation.
+   *
+   * Une seule a fait échouer la CI (`AdminDashBoard.improved.spec.ts` clique
+   * « Organisations » par son nom de lien et en a trouvé deux), parce qu'une
+   * seule recette clique par nom. Les trois autres attendaient leur tour : un
+   * symptôme visible, une cause générale.
+   *
+   * Le syndic échappe au doublon parce que « Mes ACP » vise `/admin/acps`, que
+   * son menu ne lui propose pas — l'entrée `acps` du groupe *Gestion* est
+   * réservée à l'administration.
+   *
+   * `null` pour tous les autres : mieux vaut une entrée de moins qu'un lien
+   * en double qui rend la navigation ambiguë pour un lecteur d'écran comme
+   * pour une recette.
+   */
   let collectionPrincipale = $derived.by(() => {
-    switch (user?.role) {
-      case "syndic":
-        return {
-          href: "/admin/acps",
-          icone: "acps",
-          libelle: "navigation.acps",
-        };
-      case "owner":
-        return {
-          href: "/owner/units",
-          icone: "units",
-          libelle: "navigation.myUnits",
-        };
-      case "accountant":
-      case "accountant.encodeur":
-      case "accountant.emetteur":
-        return {
-          href: "/journal-entries",
-          icone: "journalEntries",
-          libelle: "navigation.journalEntries",
-        };
-      // `permissions.ts` connaît un rôle « admin » que `UserRole` ne déclare
-      // pas. Ne pas élargir le type sur une supposition : `superadmin` est le
-      // seul membre réel, et un rôle absent tombe dans le `default`.
-      case "superadmin":
-        return {
-          href: "/admin/organizations",
-          icone: "organizations",
-          libelle: "navigation.organizations",
-        };
-      default:
-        return null;
-    }
+    if (user?.role !== "syndic") return null;
+    return {
+      href: "/admin/acps",
+      icone: "acps",
+      libelle: "navigation.acps",
+    };
   });
   let isAuthenticated = $derived($authStore.isAuthenticated);
 
