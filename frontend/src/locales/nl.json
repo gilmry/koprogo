@@ -4273,5 +4273,12 @@
       "title": "Te betalen",
       "unavailable": "Uw lasten zijn momenteel niet bereikbaar."
     }
+  },
+  "layout": {
+    "skipToContent": "Naar hoofdinhoud",
+    "footerTagline": "KoproGo - Beheer van mede-eigendom",
+    "footerStack": "Hexagonale architectuur · Rust · Actix-web · PostgreSQL · AVG · ISO 27001",
+    "legalNotice": "Wettelijke vermeldingen",
+    "privacy": "Privacy & AVG"
   }
 }

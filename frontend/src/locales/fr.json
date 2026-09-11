@@ -4273,5 +4273,12 @@
       "title": "À payer",
       "unavailable": "Vos charges ne sont pas accessibles pour le moment."
     }
+  },
+  "layout": {
+    "skipToContent": "Passer au contenu principal",
+    "footerTagline": "KoproGo - Gestion de copropriété",
+    "footerStack": "Architecture hexagonale · Rust · Actix-web · PostgreSQL · RGPD · ISO 27001",
+    "legalNotice": "Mentions légales",
+    "privacy": "Confidentialité & RGPD"
   }
 }

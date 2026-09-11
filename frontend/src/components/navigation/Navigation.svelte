@@ -317,18 +317,31 @@
   // Role helpers (preserves de l'historique pour ne pas casser le selector)
   // ---------------------------------------------------------------------------
 
+  /**
+   * Le rôle, dans la langue de l'utilisateur.
+   *
+   * Ces quatre libellés étaient écrits en français dans le code. Mesuré en
+   * chargeant le même écran en `fr` puis en `nl` : ils sortaient identiques,
+   * sur les vingt destinations. Un copropriétaire néerlandophone lisait donc
+   * « Copropriétaire » sur chacun de ses écrans.
+   *
+   * `roles.*` existe déjà dans les quatre catalogues — il n'y avait qu'à s'en
+   * servir. « Admin plateforme » devient « Super Administrateur », la valeur
+   * que le catalogue porte déjà : mieux vaut un libellé cohérent avec le reste
+   * du produit qu'une cinquième formulation.
+   */
   const getRoleLabel = (role: UserRole | undefined): string => {
     switch (role) {
       case UserRole.SUPERADMIN:
-        return "Admin plateforme";
+        return $_("roles.superadmin");
       case UserRole.SYNDIC:
-        return "Syndic";
+        return $_("roles.syndic");
       case UserRole.ACCOUNTANT:
-        return "Comptable";
+        return $_("roles.accountant");
       case UserRole.OWNER:
-        return "Copropriétaire";
+        return $_("roles.owner");
       default:
-        return "Rôle";
+        return $_("common.role");
     }
   };
 

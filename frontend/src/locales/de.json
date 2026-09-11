@@ -4273,5 +4273,12 @@
       "title": "Zu zahlen",
       "unavailable": "Ihre Kosten sind derzeit nicht erreichbar."
     }
+  },
+  "layout": {
+    "skipToContent": "Zum Hauptinhalt springen",
+    "footerTagline": "KoproGo - Verwaltung von Wohnungseigentum",
+    "footerStack": "Hexagonale Architektur · Rust · Actix-web · PostgreSQL · DSGVO · ISO 27001",
+    "legalNotice": "Impressum",
+    "privacy": "Datenschutz & DSGVO"
   }
 }

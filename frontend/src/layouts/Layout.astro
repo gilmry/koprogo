@@ -10,6 +10,8 @@ import PWAInstallPrompt from "../components/PWAInstallPrompt.svelte";
 import RouteGuard from "../components/RouteGuard.svelte";
 import BarreDeContexte from "../components/global/BarreDeContexte.svelte";
 import TabBarMobileBar from "../components/navigation/TabBarMobileBar.svelte";
+import PiedDePage from "../components/global/PiedDePage.svelte";
+import LienEvitement from "../components/global/LienEvitement.svelte";
 import LegalHelper from "../components/LegalHelper.svelte";
 
 interface Props {
@@ -177,13 +179,7 @@ const pageTitle = title.includes(SITE_NAME) ? title : `${title} - ${SITE_NAME}`;
   </head>
   <body class="bg-gray-50 min-h-screen">
     <!-- Skip navigation link for keyboard users -->
-    <a
-      data-testid="skip-to-content-link"
-      href="#main-content"
-      class="skip-link"
-    >
-      Passer au contenu principal
-    </a>
+    <LienEvitement client:load />
 
     <!-- Screen reader announcements -->
     <div
@@ -301,34 +297,13 @@ const pageTitle = title.includes(SITE_NAME) ? title : `${title} - ${SITE_NAME}`;
                   <LanguageSelector client:load />
                 </div>
 
-                {/* Center: Copyright and tech stack */}
-                <div class="text-center text-gray-600">
-                  <p class="text-sm">
-                    &copy; {new Date().getFullYear()} KoproGo - Gestion de
-                    Copropriété SaaS
-                  </p>
-                  <p class="text-xs mt-1 text-gray-500">
-                    Architecture Hexagonale · Rust · Actix-web · PostgreSQL ·
-                    GDPR · ISO 27001
-                  </p>
-                  <p class="text-xs mt-2 space-x-3">
-                    <a
-                      data-testid="layout-footer-legal-link"
-                      href="/mentions-legales"
-                      class="text-primary-600 hover:underline"
-                    >
-                      Mentions légales
-                    </a>
-                    <span class="text-muted">·</span>
-                    <a
-                      data-testid="layout-footer-privacy-link"
-                      href="/mentions-legales#rgpd"
-                      class="text-primary-600 hover:underline"
-                    >
-                      Confidentialité & RGPD
-                    </a>
-                  </p>
-                </div>
+                {/*
+                  Le pied de page passe par une île Svelte : le texte d'un
+                  gabarit Astro est figé à la construction, alors que la langue
+                  se choisit dans le navigateur. Mesuré, il sortait identique
+                  en `fr` et en `nl` sur les vingt destinations.
+                */}
+                <PiedDePage client:load />
 
                 {/* Right: Sync status and online indicator */}
                 <div class="flex items-center gap-2">

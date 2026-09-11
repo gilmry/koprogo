@@ -4273,5 +4273,12 @@
       "title": "To pay",
       "unavailable": "Your charges are not reachable right now."
     }
+  },
+  "layout": {
+    "skipToContent": "Skip to main content",
+    "footerTagline": "KoproGo - Condominium management",
+    "footerStack": "Hexagonal architecture · Rust · Actix-web · PostgreSQL · GDPR · ISO 27001",
+    "legalNotice": "Legal notice",
+    "privacy": "Privacy & GDPR"
   }
 }
