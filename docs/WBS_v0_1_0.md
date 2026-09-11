@@ -404,6 +404,53 @@ ACP » ne doivent pas recevoir de `data-testid` en `navigation-menu-*`, sous
 peine de casser ce décompte.
 
 
+#### Le banc mobile, sans quoi rien du Track U n'était vérifié
+
+**Ajouté le 2026-09-11.** Les quatre projets de `playwright.config.ts` fixent
+tous `1280×720`, et les projets mobiles étaient en commentaire depuis toujours.
+Tout ce track est pourtant mobile : barre d'onglets, écran « Plus », tableaux
+défilants, zones sûres, feuille du bas. Ces composants n'étaient éprouvés que
+par Vitest, c'est-à-dire dans jsdom — **sans mise en page, sans défilement,
+sans encoche**. jsdom ne peut ni voir une cible de 14 px, ni une barre qui
+recouvre une liste : tout `getBoundingClientRect()` y rend zéro.
+
+C'est le motif dominant du dépôt vu d'un cran plus haut. Non pas une capacité
+inatteignable, mais **une capacité vérifiée dans une forme qui n'est pas la
+sienne**. Un composant mobile validé dans un DOM sans mise en page est un
+composant non validé, quelle que soit la qualité de ses tests.
+
+`playwright.mobile.config.ts` ouvre un navigateur à 393 px. Il sert `dist/` et
+simule `/api/v1/` : ni compte, ni base, ni réseau, ni démo. Cette indépendance
+n'est pas un raffinement — c'est ce qui le rend exécutable en CI, et il tourne
+au barrage depuis `2561b4dc`. La suite existante, elle, vise `koprogo.com` à
+travers une limite de débit et un bouncer, et elle est hors service depuis que
+le repli `admin123` ne vaut plus rien sur la démo (#870).
+
+Il éprouve **le build**, pas le serveur de développement. Les classes Tailwind
+interpolées, les jetons `@theme` et les valeurs arbitraires n'existent qu'après
+passage du scanner, et plusieurs défauts de ce track étaient exactement de
+cette nature.
+
+**Ce qu'il a trouvé dès sa naissance**, et qu'aucun test unitaire ne pouvait
+voir :
+
+| Mesuré | Conséquence |
+|---|---|
+| barre d'onglets `h-[74px]` avec `pb-[env(...)]` DEDANS | `box-sizing: border-box` : la zone sûre était prise SUR les 74 px, pas ajoutée. Cibles à ~40 px sur iPhone sans bouton, contre les « 56 px utilisables » promis par le commentaire |
+| `<main>` réservait `pb-[74px]` en dur | second 74 écrit ailleurs, désaccordé dès que l'encoche entre en jeu |
+| étoile « favori » du sélecteur : **14 × 20 px** | dans une ligne de 52 px qui fait autre chose, et qui arrête la propagation du clic : viser à côté AJOUTAIT UN FAVORI au lieu d'ouvrir la copropriété |
+| champ de recherche du sélecteur : 38 px | sous le minimum de 44, sur le contrôle touché en premier à chaque écran |
+
+Et une correction de ma propre lecture : j'avais déduit des classes que les
+lignes de résultat faisaient 36 px. Le navigateur a répondu 52. Lire des
+classes est une hypothèse, pas une mesure.
+
+**Ce qu'il a permis de NE PAS faire.** La liste du sélecteur devait, pensais-je,
+passer dans une feuille du bas pour sortir de sous le clavier. Mesurée, elle
+s'ouvre à 106 px et descend à 264 dans une fenêtre de 727 : elle tient
+largement au-dessus. `FeuilleDuBas` reste donc sans emploi, ce qui est dit
+plutôt que corrigé par un usage inventé.
+
 Entrée au périmètre 0.1.0 sur décision du 06. Dix-huit lots, dont l'ordre est
 contraint : U2 dépend de R1, et tout le reste dépend de U1.
 
@@ -587,7 +634,7 @@ ne peut pas y arriver.
 | #779 | high | Rebrancher les six modules communautaires : 111 points d'entrée servis que le frontend n'appelle pa… |
 | #840 | medium | Une résolution sans point d'ordre du jour est acceptée, alors que la loi la rend nulle (Art. 3.87 §… |
 
-### Track U — Refonte UX/UI (16)
+### Track U — Refonte UX/UI (18)
 
 Revue de design du 2026-09-06. Entrée en 0.1.0 le même jour : un financeur ne
 lit pas du code, et l'ASBL se fonde sur ce que le produit montre. **U2 ne
@@ -622,6 +669,8 @@ processus pour les lots à venir, qu'aucun commit ne peut satisfaire.
 | #821 | medium | Refonte UX — importer et implémenter la maquette Claude Design « Admin Dashboard (modernisé) » |
 | #822 | medium | Refonte UX — importer et implémenter la maquette Claude Design « Accountant Dashboard (modernisé) » |
 | #827 | medium | Refonte UX — importer et implémenter la maquette Claude Design « Lists (modernisé) » |
+| #869 | — | Aucune spec Playwright ne s'exécute à une largeur de téléphone, alors que tout le Track U est mobile |
+| #870 | — | La suite e2e ne peut plus se connecter à la démo : le repli admin123 est mort, exactement comme annoncé |
 
 ### Track D — Documentation vivante multi-persona (14)
 
@@ -917,6 +966,16 @@ les défauts trouvés en vérifiant. Il ne reste plus rien en 0.2.0.
 issues fermées dans la journée, six ouvertes, une rouverte. Le solde ne baisse pas parce
 que **vérifier trouve plus vite qu'on ne corrige** — et c'est le comportement attendu
 d'un périmètre qu'on mesure au lieu de l'estimer.
+
+**Au 2026-09-11 il est de 83.** La hausse n'est pas un dérapage : elle vient d'avoir
+ouvert un moyen de vérification qui n'existait pas. Le banc mobile (#869) ouvre un
+navigateur à 393 px pour la première fois du projet, et chaque défaut qu'il mesure
+était déjà là, invisible. Un périmètre qui grossit quand on installe un instrument est
+un périmètre qui devient honnête, pas un périmètre qui se dégrade.
+
+C'est aussi la limite de l'exercice qu'il faut dire : tant qu'un instrument manque, le
+compte d'issues **sous-estime** ce qui reste. Il n'y a pas de raison de croire que le
+mobile était le dernier angle mort.
 
 **La raison est stratégique et elle est écrite ici pour qu'on s'en souvienne.** Le produit
 doit être bon **avant** la fondation de l'ASBL, parce que c'est sur lui que reposera la
