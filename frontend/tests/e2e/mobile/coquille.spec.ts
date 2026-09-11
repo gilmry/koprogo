@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { ACCUEIL, ouvreEnTantQue, ROLES } from "./socle";
+import { ACCUEIL, largeurDuDocument, ouvreEnTantQue, ROLES } from "./socle";
 
 /**
  * La coquille mobile, mesurée par un navigateur.
@@ -114,23 +114,24 @@ test.describe("@edge la coquille ne recouvre pas le contenu", () => {
 });
 
 test.describe("@edge rien ne déborde à 393 px", () => {
-  test("@edge le corps ne défile pas horizontalement", async ({ page }) => {
+  test("@edge le document ne dépasse pas la largeur de l'appareil", async ({
+    page,
+  }) => {
     await ouvreEnTantQue(page, "syndic", ACCUEIL.syndic);
 
-    // Un débordement horizontal du CORPS est toujours un défaut : il fait
-    // glisser toute la page de côté au moindre geste, et la barre d'onglets
-    // fixe reste, elle, en place. Les tableaux qui débordent le font dans
-    // leur propre conteneur (#866) — c'est voulu, et invisible ici.
-    const debordement = await page.evaluate(() => ({
-      largeurDocument: document.documentElement.scrollWidth,
-      largeurFenetre: window.innerWidth,
-    }));
+    // Comparé à la largeur de l'APPAREIL, jamais à `innerWidth` : sous
+    // émulation mobile, la fenêtre de mise en page s'élargit pour contenir ce
+    // qui déborde, si bien que `scrollWidth <= innerWidth` est toujours vrai.
+    // La première version de ce test comparait les deux et ne pouvait pas
+    // échouer. Voir `largeurDuDocument` dans `socle.ts`.
+    const appareil = page.viewportSize()!.width;
+    const document = await largeurDuDocument(page);
 
     expect(
-      debordement.largeurDocument,
-      `Le document mesure ${debordement.largeurDocument} px pour une fenêtre ` +
-        `de ${debordement.largeurFenetre} px. Quelque chose déborde, et toute ` +
-        `la page glissera de côté.`,
-    ).toBeLessThanOrEqual(debordement.largeurFenetre + 1);
+      document,
+      `Le document mesure ${document} px pour un appareil de ${appareil} px. ` +
+        `Quelque chose déborde : la page se dézoomera pour tout contenir, et ` +
+        `chaque texte de l'écran rétrécira d'autant.`,
+    ).toBeLessThanOrEqual(appareil);
   });
 });

@@ -220,7 +220,18 @@
 
   <div class="bg-white rounded-lg shadow p-6">
     <div class="flex flex-wrap items-center justify-between gap-4">
-      <div class="flex items-center space-x-4">
+      <!--
+        `flex-wrap` et `gap`, pas `space-x`. Deux filtres côte à côte ne
+        tiennent pas dans 393 px : mesuré, la rangée sortait à 406 px, et la
+        page entière se dézoomait pour la contenir — tous les textes de
+        l'écran rétrécissant d'autant.
+
+        `space-x-4` pose une marge à gauche de chaque enfant sauf le premier :
+        dès qu'une ligne passe à la ligne, le premier élément de la seconde
+        rangée hérite d'un décalage qui n'a plus de sens. `gap` ne s'applique
+        qu'entre voisins réels.
+      -->
+      <div class="flex flex-wrap items-center gap-4">
         <div>
           <label
             for="filter-status"

@@ -198,3 +198,28 @@ export const DEUX_IMMEUBLES = {
   page: 1,
   per_page: 20,
 };
+
+/**
+ * Mesure la largeur réelle du document, contre la largeur de l'APPAREIL.
+ *
+ * ── Pourquoi pas `innerWidth` ──────────────────────────────────────────────
+ *
+ * Parce que `document.scrollWidth <= window.innerWidth` **ne peut pas
+ * échouer**. Mesuré : en insérant un élément de 900 px dans une page de
+ * 393 px, `innerWidth` répond `900`. Sous émulation mobile, la fenêtre de mise
+ * en page s'élargit pour contenir ce qui déborde — la page se dézoome au lieu
+ * de déborder.
+ *
+ * J'avais écrit cette comparaison et l'avais livrée deux fois en la disant
+ * gardienne de quelque chose. C'est exactement le défaut que ce chantier
+ * reproche aux autres : une assertion écrite de telle sorte qu'elle ne peut
+ * pas tomber. Un premier témoin ne l'avait pas révélé parce qu'il utilisait un
+ * `width` dans une boîte flexible, que le navigateur a simplement comprimé :
+ * il ne créait aucun débordement, donc son silence ne prouvait rien.
+ *
+ * La largeur de l'appareil, elle, est une constante posée par la
+ * configuration. Elle ne bouge pas avec le contenu.
+ */
+export async function largeurDuDocument(page: Page): Promise<number> {
+  return page.evaluate(() => document.documentElement.scrollWidth);
+}
