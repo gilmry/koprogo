@@ -172,6 +172,23 @@ import JournalEntriesPanel from "../components/JournalEntriesPanel.svelte";
     align-items: start;
   }
 
+  /*
+    `min-width: 0` sur les enfants de la grille, sans quoi le conteneur
+    défilant plus bas ne défile JAMAIS.
+ 
+    Un enfant de grille vaut `min-width: auto` par défaut : il refuse de
+    devenir plus étroit que son contenu. `.help-card` s'élargissait donc à
+    468 px dans une piste de 329, `.example-table-wrapper` suivait à 420, et
+    son `overflow-x: auto` n'avait plus rien à faire — mesuré, le tableau
+    était coupé sans barre ni ombre alors que tout était correctement écrit.
+
+    C'est le même motif que les zones sûres : la règle était juste et inerte,
+    parce que quelque chose au-dessus l'empêchait de servir.
+  */
+  .content-grid > * {
+    min-width: 0;
+  }
+
   @media (max-width: 1200px) {
     .content-grid {
       grid-template-columns: 1fr;
