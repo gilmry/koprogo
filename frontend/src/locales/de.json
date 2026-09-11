@@ -2627,7 +2627,8 @@
     "userOwnerLinks": "Benutzer-Eigentümer-Verknüpfungen",
     "users": "Benutzer",
     "workReports": "Arbeitsberichte",
-    "works": "Arbeiten"
+    "works": "Arbeiten",
+    "auditLog": "Prüfprotokoll"
   },
   "notices": {
     "all_types": "Alle Typen",

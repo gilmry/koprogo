@@ -2627,7 +2627,8 @@
     "userOwnerLinks": "Gebruiker-eigenaar koppelingen",
     "users": "Gebruikers",
     "workReports": "Werkrapporten",
-    "works": "Werken"
+    "works": "Werken",
+    "auditLog": "Auditlogboek"
   },
   "notices": {
     "all_types": "Alle types",

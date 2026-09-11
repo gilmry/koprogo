@@ -2627,7 +2627,8 @@
     "userOwnerLinks": "Liens utilisateur-propriétaire",
     "users": "Utilisateurs",
     "workReports": "Rapports de travaux",
-    "works": "Travaux"
+    "works": "Travaux",
+    "auditLog": "Journal d'audit"
   },
   "notices": {
     "all_types": "Tous les types",

@@ -2627,7 +2627,8 @@
     "userOwnerLinks": "User-owner links",
     "users": "Users",
     "workReports": "Work reports",
-    "works": "Works"
+    "works": "Works",
+    "auditLog": "Audit log"
   },
   "notices": {
     "all_types": "All types",

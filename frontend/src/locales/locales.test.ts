@@ -47,18 +47,41 @@ function sourceFiles(dir: string, acc: string[] = []): string[] {
 /// Ne retient que les clés littérales : `$_('a.b')` ou `_('a.b')`. Les clés
 /// construites dynamiquement (`$_(\`prefix.${x}\`)`) ne sont pas vérifiables
 /// statiquement et sont ignorées à dessein.
+///
+/// ── Les clés déclarées en DONNÉE ──────────────────────────────────────────
+///
+/// Toutes les clés ne passent pas par un appel. `lib/onglets-mobiles.ts`
+/// déclare les libellés de la barre d'onglets comme des données :
+///
+///     { cle: "auditLog", href: "/admin/audit", libelle: "navigation.auditLog" }
+///
+/// et c'est le composant qui les résout plus tard. Une garde qui ne cherche
+/// que `$_("…")` ne les voit pas : quinze libellés d'onglets lui échappaient,
+/// dont `navigation.auditLog`, absente des QUATRE catalogues et affichée telle
+/// quelle sur les cinq écrans du superadministrateur.
+///
+/// Le banc mobile l'a trouvée en lisant le texte rendu. Ce contrôle-ci la
+/// trouve désormais sans ouvrir de navigateur, ce qui est mieux : il tourne en
+/// une seconde et ne dépend d'aucun écran visité.
 function usedKeys(): Map<string, string[]> {
   // La quote fermante DOIT être suivie de `,` ou `)` : sans cela,
   // `$_("notices." + status)` serait pris pour la clé littérale `notices.`.
   const pattern = /\$?_\(\s*['"]([a-zA-Z0-9_.]+)['"]\s*[,)]/g;
+  /// Une clé posée comme donnée, que le composant résoudra.
+  const declaration = /\blibelle:\s*["']([a-zA-Z0-9_.]+)["']/g;
   const found = new Map<string, string[]>();
   for (const file of sourceFiles(SRC)) {
     if (file.endsWith(".test.ts")) continue;
     const text = readFileSync(file, "utf8");
-    for (const match of text.matchAll(pattern)) {
-      const key = match[1];
-      if (!found.has(key)) found.set(key, []);
-      found.get(key)!.push(file.slice(SRC.length + 1));
+    for (const source of [pattern, declaration]) {
+      for (const match of text.matchAll(source)) {
+        const key = match[1];
+        // Une clé i18n porte toujours un point : `libelle: "Immeuble"` est un
+        // libellé écrit en dur, pas une clé, et relève de #834.
+        if (!key.includes(".")) continue;
+        if (!found.has(key)) found.set(key, []);
+        found.get(key)!.push(file.slice(SRC.length + 1));
+      }
     }
   }
   return found;

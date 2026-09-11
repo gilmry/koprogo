@@ -1,5 +1,11 @@
 import { test, expect } from "@playwright/test";
-import { ACCUEIL, largeurDuDocument, ouvreEnTantQue, ROLES } from "./socle";
+import {
+  ACCUEIL,
+  largeurDuDocument,
+  ouvreEnTantQue,
+  ROLES,
+  type Role,
+} from "./socle";
 
 /**
  * La coquille mobile, mesurée par un navigateur.
@@ -134,4 +140,50 @@ test.describe("@edge rien ne déborde à 393 px", () => {
         `chaque texte de l'écran rétrécira d'autant.`,
     ).toBeLessThanOrEqual(appareil);
   });
+});
+
+test.describe("@edge aucune clé de traduction ne s'affiche telle quelle", () => {
+  for (const role of ROLES) {
+    test(`@edge ${role} — aucun texte de la forme « section.cle »`, async ({
+      page,
+    }) => {
+      await ouvreEnTantQue(page, role as Role, ACCUEIL[role]);
+
+      // Complément de la garde statique `locales.test.ts`, pas un doublon.
+      //
+      // Celle-ci lit le code et ne voit que les clés LITTÉRALES. Une clé
+      // assemblée à l'exécution — `$_("notices." + statut)` — lui échappe par
+      // construction, et c'est précisément le cas qui a produit
+      // `notices.draft` à l'écran.
+      //
+      // Ici c'est le texte RENDU qui est lu : peu importe comment la clé a
+      // été fabriquée.
+      const brutes = await page.evaluate(() => {
+        const vues = new Set<string>();
+        document.querySelectorAll("body *").forEach((element) => {
+          for (const noeud of Array.from(element.childNodes)) {
+            if (noeud.nodeType !== Node.TEXT_NODE) continue;
+            const texte = (noeud.textContent ?? "").trim();
+            // `section.cle` ou `section.sous.cle` : minuscule initiale, pas
+            // d'espace, au moins un point. Une phrase française finit par un
+            // point mais contient des espaces ; un nombre décimal n'a pas de
+            // lettre après le point.
+            if (/^[a-z][a-zA-Z0-9_]*(\.[a-zA-Z][a-zA-Z0-9_]*)+$/.test(texte)) {
+              vues.add(texte);
+            }
+          }
+        });
+        return [...vues];
+      });
+
+      expect(
+        brutes,
+        `Des clés de traduction sont affichées telles quelles : ` +
+          `${brutes.join(", ")}. Le catalogue ne les contient pas, et ` +
+          `svelte-i18n rend alors la clé elle-même — ce qui rend inopérant ` +
+          `tout repli écrit \`$_("x") || "texte"\`, la clé étant une chaîne ` +
+          `non vide.`,
+      ).toEqual([]);
+    });
+  }
 });
