@@ -989,7 +989,8 @@
     "dashboard": "Übersicht",
     "seeLabel": "Ansehen",
     "checkingAccess": "Zugriff wird geprüft…",
-    "showingRange": "Anzeige von {debut} bis {fin} von {total} Ergebnis(sen)"
+    "showingRange": "Anzeige von {debut} bis {fin} von {total} Ergebnis(sen)",
+    "scrollableTable": "Tabelle, horizontal scrollbar"
   },
   "common.error.loadData": "Fehler beim Laden der Daten",
   "common.error.loadStats": "Fehler beim Laden der Statistiken",

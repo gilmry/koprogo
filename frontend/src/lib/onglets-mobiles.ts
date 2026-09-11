@@ -66,11 +66,22 @@ const PAR_ROLE: Record<string, OngletMobile[]> = {
       icone: "today",
       libelle: "navigation.today",
     },
+    // « Mes ACP » envoyait le syndic sur `/admin/acps`, que
+    // `canAccessRoute("/admin/acps", SYNDIC)` refuse : `RouteGuard` le
+    // renvoyait aussitôt sur `/syndic`. L'onglet peignait donc sa page une
+    // fraction de seconde avant de rebondir.
+    //
+    // C'était deux fois redondant : la table « Mes ACP » vit déjà sur le
+    // tableau de bord, c'est-à-dire sur le PREMIER onglet.
+    //
+    // Vérifier qu'une page existe ne suffit pas — il faut vérifier que le rôle
+    // peut l'ouvrir. C'est ce que la correction des neuf destinations avait
+    // manqué, et ce que le banc mobile a fini par voir.
     {
-      cle: "acps",
-      href: "/admin/acps",
-      icone: "acps",
-      libelle: "navigation.acps",
+      cle: "buildings",
+      href: "/buildings",
+      icone: "buildings",
+      libelle: "navigation.buildings",
     },
     {
       cle: "expenses",

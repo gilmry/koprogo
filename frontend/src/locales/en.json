@@ -989,7 +989,8 @@
     "dashboard": "Dashboard",
     "seeLabel": "View",
     "checkingAccess": "Checking access…",
-    "showingRange": "Showing {debut} to {fin} of {total} result(s)"
+    "showingRange": "Showing {debut} to {fin} of {total} result(s)",
+    "scrollableTable": "Table, scrolls horizontally"
   },
   "common.error.loadData": "Error loading data",
   "common.error.loadStats": "Error loading statistics",

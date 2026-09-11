@@ -51,14 +51,30 @@ for (const role of ROLES) {
         page,
       }) => {
         // La barre oblique finale évite une redirection du serveur de fichiers.
-        await ouvreEnTantQue(page, role as Role, `${href.replace(/\/$/, "")}/`);
+        const chemin = `${href.replace(/\/$/, "")}/`;
+        await ouvreEnTantQue(page, role as Role, chemin);
+
+        // Lue APRÈS que la page se soit posée, pas à la peinture de la
+        // coquille. `RouteGuard` décide de l'accès dans un effet, donc le
+        // rebond arrive une fraction de seconde APRÈS que la barre d'onglets
+        // soit visible.
+        //
+        // La première version lisait l'URL tout de suite et déclarait
+        // `/admin/acps` bonne pour le syndic, alors qu'elle le renvoyait sur
+        // `/syndic`. C'est l'audit d'accessibilité qui l'a trouvé, en
+        // échouant sur « Execution context was destroyed » — un test qui
+        // tombe pour une raison qui n'est pas la sienne dit quand même
+        // quelque chose.
+        await page.waitForLoadState("networkidle");
+        await page.waitForTimeout(700);
 
         expect(
-          page.url(),
-          `${href} a renvoyé vers ${page.url()} : la destination n'existe pas, ` +
-            `ou elle refuse ce rôle. Un onglet qui ne mène nulle part est un ` +
-            `onglet qui ment.`,
-        ).not.toContain("/login");
+          new URL(page.url()).pathname,
+          `${href} a conduit à ${new URL(page.url()).pathname}. Un onglet doit ` +
+            `mener où il annonce : soit la page n'existe pas, soit ` +
+            `\`canAccessRoute\` la refuse à ce rôle et \`RouteGuard\` renvoie ` +
+            `ailleurs. Vérifier que la page EXISTE ne suffit pas.`,
+        ).toBe(chemin);
 
         await expect(page.getByTestId("tabbar")).toBeVisible();
 

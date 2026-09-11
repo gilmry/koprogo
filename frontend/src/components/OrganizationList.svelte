@@ -186,7 +186,26 @@
         <p class="mt-2 text-gray-600">{$_("common.loading")}</p>
       </div>
     {:else}
-      <div class="overflow-x-auto">
+      <!--
+        `tabindex` et `role="region"` ensemble : un conteneur qui défile doit
+        être atteignable au clavier (WCAG 2.1.1), sinon les colonnes de droite
+        sont simplement hors de portée de qui n'a pas de souris.
+
+        Svelte refuse `tabindex` sur un élément non interactif, axe-core
+        l'exige par `scrollable-region-focusable` : c'est WCAG qui tranche, et
+        l'avertissement se tait explicitement. `role="region"` ne suffit pas à
+        le lever — vérifié, il avertit quand même.
+
+        Le rôle reste utile pour une autre raison : il donne à la zone un nom
+        annoncé, sans quoi un lecteur d'écran arrive dans un conteneur muet.
+      -->
+      <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+      <div
+        class="overflow-x-auto"
+        tabindex="0"
+        role="region"
+        aria-label={$_("common.scrollableTable")}
+      >
         <table class="min-w-full divide-y divide-gray-200">
           <thead class="bg-gray-50">
             <tr>

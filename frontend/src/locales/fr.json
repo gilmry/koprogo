@@ -989,7 +989,8 @@
     "dashboard": "Tableau de bord",
     "seeLabel": "Voir",
     "checkingAccess": "Vérification des accès…",
-    "showingRange": "Affichage de {debut} à {fin} sur {total} résultat(s)"
+    "showingRange": "Affichage de {debut} à {fin} sur {total} résultat(s)",
+    "scrollableTable": "Tableau, défilement horizontal"
   },
   "common.error.loadData": "Erreur lors du chargement des données",
   "common.error.loadStats": "Erreur lors du chargement des statistiques",

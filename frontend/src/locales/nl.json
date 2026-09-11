@@ -989,7 +989,8 @@
     "dashboard": "Dashboard",
     "seeLabel": "Bekijken",
     "checkingAccess": "Toegang controleren…",
-    "showingRange": "Weergave van {debut} tot {fin} van {total} resultaat/resultaten"
+    "showingRange": "Weergave van {debut} tot {fin} van {total} resultaat/resultaten",
+    "scrollableTable": "Tabel, horizontaal scrollen"
   },
   "common.error.loadData": "Fout bij het laden van gegevens",
   "common.error.loadStats": "Fout bij het laden van statistieken",
