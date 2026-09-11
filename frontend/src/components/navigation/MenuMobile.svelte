@@ -145,7 +145,15 @@
         {user.first_name}
         {user.last_name}
       </span>
-      <span class="block text-[11.5px] text-muted">{user.role}</span>
+      <!--
+        Le rôle TRADUIT, pas la valeur d'énumération du serveur. Mesuré au
+        banc : cet écran affichait « accountant », « owner », « syndic »,
+        « superadmin » tels quels, alors que `roles.*` existe dans les quatre
+        catalogues. Même motif que #792, sur un écran neuf.
+      -->
+      <span class="block text-[11.5px] text-muted"
+        >{$_(`roles.${user.role}`)}</span
+      >
     </span>
     <Icone
       nom="chevronRight"

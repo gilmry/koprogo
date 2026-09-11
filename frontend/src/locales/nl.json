@@ -4280,5 +4280,8 @@
     "footerStack": "Hexagonale architectuur · Rust · Actix-web · PostgreSQL · AVG · ISO 27001",
     "legalNotice": "Wettelijke vermeldingen",
     "privacy": "Privacy & AVG"
+  },
+  "monitoring": {
+    "metricsUnreachable": "De opslagmetrieken zijn onbereikbaar. De Prometheus-dienst antwoordt niet, of de export staat uit op deze omgeving."
   }
 }

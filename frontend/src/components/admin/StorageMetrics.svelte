@@ -40,8 +40,17 @@
       metrics = parseMetrics(text);
       lastUpdated = new Date();
     } catch (err) {
-      error = err instanceof Error ? err.message : "Metrics fetch failed";
-      console.error("Failed to load metrics", err);
+      // Le message BRUT du navigateur n'est pas un texte d'interface.
+      //
+      // Mesuré au banc : cet écran affichait « Failed to fetch » tel quel —
+      // en anglais, sans dire quoi faire, et identique dans les quatre
+      // langues. C'est ce que `err.message` vaut quand `fetch` échoue au
+      // niveau réseau.
+      //
+      // Le détail technique reste, mais dans la console, là où il sert à
+      // quelqu'un qui peut l'utiliser.
+      error = $_("monitoring.metricsUnreachable");
+      console.error("Échec du chargement des métriques de stockage", err);
     } finally {
       loading = false;
     }

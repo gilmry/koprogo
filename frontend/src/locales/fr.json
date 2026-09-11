@@ -4280,5 +4280,8 @@
     "footerStack": "Architecture hexagonale · Rust · Actix-web · PostgreSQL · RGPD · ISO 27001",
     "legalNotice": "Mentions légales",
     "privacy": "Confidentialité & RGPD"
+  },
+  "monitoring": {
+    "metricsUnreachable": "Les métriques de stockage sont injoignables. Le service Prometheus ne répond pas, ou l'export est désactivé sur ce déploiement."
   }
 }

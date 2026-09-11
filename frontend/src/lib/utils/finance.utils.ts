@@ -52,7 +52,30 @@ export function formatAmount(cents: number): string {
 /**
  * Format a currency amount using Belgian locale: "1 234,56 €"
  */
+/**
+ * Ce qu'on affiche quand le montant n'existe pas.
+ *
+ * Pas « 0,00 € » : un budget non renseigné n'est pas un budget nul, et
+ * l'écrire ainsi affirme au comptable quelque chose de faux. Le tiret cadratin
+ * dit « pas de valeur », ce qui est l'information exacte.
+ */
+const MONTANT_ABSENT = "—";
+
+/**
+ * Un montant, ou un tiret s'il n'y en a pas.
+ *
+ * ── Pourquoi la garde, alors que le type dit `number` ────────────────────
+ *
+ * Parce que ce `number` vient d'une réponse d'API désérialisée, où TypeScript
+ * ne vérifie rien. Un champ absent arrive en `undefined`, et
+ * `Intl.NumberFormat.format(undefined)` rend **« NaN € »**.
+ *
+ * Mesuré au banc mobile le 2026-09-11 : `NaN €` s'affichait sur l'écran des
+ * budgets, au comptable. Cette fonction a 105 appelants, tous sur des
+ * montants ; aucun test ne la couvrait.
+ */
 export function formatCurrency(amount: number): string {
+  if (!Number.isFinite(amount)) return MONTANT_ABSENT;
   return new Intl.NumberFormat("fr-BE", {
     style: "currency",
     currency: "EUR",

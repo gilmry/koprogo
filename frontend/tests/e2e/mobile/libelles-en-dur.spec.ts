@@ -63,9 +63,12 @@ const LEGITIMES = new Set([
  * un nouveaux libellés en dur sans rien dire — c'est précisément le genre de
  * vert qui ne garde rien.
  *
- * Il ne peut que descendre.
+ * Il ne peut que descendre, et il est descendu le jour même : 97 puis **91**,
+ * après avoir traduit le rôle affiché sur l'écran « Plus » et remplacé deux
+ * messages bruts. Un cliquet qu'on ne rabaisse pas après une correction
+ * cesse de garder le terrain qu'on vient de gagner.
  */
-const CLIQUET = 97;
+const CLIQUET = 91;
 
 async function textesRendus(
   page: import("@playwright/test").Page,

@@ -4280,5 +4280,8 @@
     "footerStack": "Hexagonal architecture · Rust · Actix-web · PostgreSQL · GDPR · ISO 27001",
     "legalNotice": "Legal notice",
     "privacy": "Privacy & GDPR"
+  },
+  "monitoring": {
+    "metricsUnreachable": "Storage metrics are unreachable. The Prometheus service is not responding, or the export is disabled on this deployment."
   }
 }
