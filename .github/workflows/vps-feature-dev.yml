@@ -160,7 +160,8 @@ jobs:
             --test garde_schema_mort \
             --test garde_taxonomie_bdd \
             --test garde_taxonomie_des_tests \
-            --test garde_harnais_executes
+            --test garde_harnais_executes \
+            --test garde_identite_sans_decision
 
       - uses: actions/setup-node@v4
         with:

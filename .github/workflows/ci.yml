@@ -179,6 +179,7 @@ jobs:
             --test garde_lecture \
             --test garde_ordre_des_routes \
             --test garde_harnais_executes \
+            --test garde_identite_sans_decision \
             --test garde_paniques_en_production \
             --test garde_perimetre_wbs \
             --test garde_schema_mort \
