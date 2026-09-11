@@ -250,7 +250,7 @@ async fn le_meme_syndic_lit_bien_son_propre_immeuble() {
 /// demande une lecture cas par cas. Quatre étaient vérifiées, quatre sont ici.
 #[actix_web::test]
 #[serial]
-async fn la_suppression_inter_organisations_est_refusee() {
+async fn security_la_suppression_inter_organisations_est_refusee() {
     let contexte = preparer().await;
     let app = test::init_service(
         App::new()
