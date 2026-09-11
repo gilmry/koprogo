@@ -367,6 +367,30 @@ pub async fn cast_vote(
             .with_error(err.clone())
             .log();
 
+            // Le refus de l'Art. 3.87 § 1er porte son code, et repart en 422.
+            //
+            // `AppError::VotingRightSuspended` existe, avec son statut 422 et
+            // son payload `{code, unit_id}` que l'interface consomme pour dire
+            // au syndic QUEL lot est concerné. Le pont
+            // `From<VotingRightSuspendedError> for String` existe aussi, et son
+            // commentaire annonce un préfixe « parsable par le gate vote ».
+            //
+            // Les deux bouts étaient écrits. Personne ne les avait reliés : le
+            // refus repartait en 400 avec une chaîne plate, et le badge du
+            // frontend n'avait jamais rien à consommer. Mesuré en exerçant le
+            // scénario d'indivision de #848 pour la première fois.
+            //
+            // Classer par préfixe est ce que #762 veut faire disparaître. Ici
+            // le préfixe a été posé EXPRÈS comme pont vers `Result<_, String>`,
+            // et s'en passer suppose de typer l'erreur du cas d'usage — soit la
+            // migration des 1263 `Result<_, String>` de #555.
+            if let Some(reste) = err.strip_prefix("VOTING_RIGHT_SUSPENDED: unit ") {
+                if let Ok(unit_id) = uuid::Uuid::parse_str(reste.trim()) {
+                    return crate::application::error::AppError::VotingRightSuspended { unit_id }
+                        .error_response();
+                }
+            }
+
             HttpResponse::BadRequest().json(serde_json::json!({"error": err}))
         }
     }
