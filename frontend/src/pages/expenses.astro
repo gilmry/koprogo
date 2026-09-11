@@ -1,16 +1,18 @@
 ---
 import Layout from "../layouts/Layout.astro";
 import ExpenseList from "../components/ExpenseList.svelte";
+import EnTeteDePage from "../components/global/EnTeteDePage.svelte";
 ---
 
 <Layout title="Charges - KoproGo">
   <div class="container mx-auto px-4 py-8" data-testid="expenses-list">
     <div class="max-w-7xl mx-auto">
       <div class="mb-6">
-        <h1 class="text-3xl font-bold text-gray-900">Gestion des Charges</h1>
-        <p class="text-gray-600 mt-2">
-          Liste complète des charges et dépenses avec pagination
-        </p>
+        <EnTeteDePage
+          client:load
+          titre="pages.expenses.title"
+          description="pages.expenses.description"
+        />
       </div>
 
       <ExpenseList client:load />

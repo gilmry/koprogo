@@ -4283,5 +4283,39 @@
   },
   "monitoring": {
     "metricsUnreachable": "Die Speichermetriken sind nicht erreichbar. Der Prometheus-Dienst antwortet nicht, oder der Export ist in dieser Umgebung deaktiviert."
+  },
+  "pages": {
+    "expenses": {
+      "title": "Verwaltung der Lasten",
+      "description": "Vollständige Liste der Lasten und Ausgaben, mit Seitennummerierung"
+    },
+    "meetings": {
+      "title": "Verwaltung der Versammlungen",
+      "description": "Vollständige Liste der Generalversammlungen, mit Seitennummerierung"
+    },
+    "budgets": {
+      "title": "Verwaltung der Budgets",
+      "description": "Jährliche Budgets pro Gebäude, in der Generalversammlung nach belgischem Wohnungseigentumsrecht genehmigt"
+    },
+    "buildings": {
+      "title": "Verwaltung der Gebäude",
+      "description": "Verwalten Sie Ihre Eigentümergemeinschaften einfach"
+    },
+    "exchanges": {
+      "title": "Lokales Tauschsystem",
+      "description": "Tauschen Sie Dienste, Gegenstände und Sammelbestellungen mit Ihren Nachbarn über Zeitwährung: Eine Stunde ist ein Guthaben."
+    },
+    "paymentReminders": {
+      "title": "Zahlungserinnerungen",
+      "description": "Verwaltung von Zahlungsrückständen, in vier Stufen"
+    },
+    "reports": {
+      "title": "PCMN-Buchhaltungsberichte",
+      "description": "Berichte gemäß dem belgischen normalisierten Mindestkontenplan (KE 12.07.2012)"
+    },
+    "ownerExpenses": {
+      "title": "Meine Lasten",
+      "description": "Sehen Sie die Lasten Ihrer Eigentümergemeinschaft"
+    }
   }
 }

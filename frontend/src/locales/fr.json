@@ -4283,5 +4283,39 @@
   },
   "monitoring": {
     "metricsUnreachable": "Les métriques de stockage sont injoignables. Le service Prometheus ne répond pas, ou l'export est désactivé sur ce déploiement."
+  },
+  "pages": {
+    "expenses": {
+      "title": "Gestion des charges",
+      "description": "Liste complète des charges et dépenses, avec pagination"
+    },
+    "meetings": {
+      "title": "Gestion des assemblées",
+      "description": "Liste complète des assemblées générales, avec pagination"
+    },
+    "budgets": {
+      "title": "Gestion des budgets",
+      "description": "Budgets annuels par immeuble, approuvés en assemblée générale conformément au droit belge de la copropriété"
+    },
+    "buildings": {
+      "title": "Gestion des immeubles",
+      "description": "Gérez vos copropriétés en toute simplicité"
+    },
+    "exchanges": {
+      "title": "Système d'échange local",
+      "description": "Échangez services, objets et achats groupés avec vos voisins grâce à la monnaie temps : une heure vaut un crédit."
+    },
+    "paymentReminders": {
+      "title": "Relances de paiement",
+      "description": "Gestion des impayés, en quatre niveaux"
+    },
+    "reports": {
+      "title": "Rapports comptables PCMN",
+      "description": "Rapports conformes au Plan comptable minimum normalisé belge (AR du 12/07/2012)"
+    },
+    "ownerExpenses": {
+      "title": "Mes charges",
+      "description": "Consultez les charges de votre copropriété"
+    }
   }
 }

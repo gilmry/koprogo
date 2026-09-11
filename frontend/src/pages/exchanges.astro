@@ -1,6 +1,7 @@
 ---
 import CadreLegalSel from "../components/legal/CadreLegalSel.svelte";
 import Layout from "../layouts/Layout.astro";
+import EnTeteDePage from "../components/global/EnTeteDePage.svelte";
 ---
 
 <Layout title="SEL - Système d'Échange Local - KoproGo">
@@ -8,13 +9,11 @@ import Layout from "../layouts/Layout.astro";
     <div class="mb-6">
       <div class="flex items-center justify-between mb-4">
         <div>
-          <h1 class="text-3xl font-bold text-gray-900">
-            🤝 SEL - Système d'Échange Local
-          </h1>
-          <p class="text-gray-600 mt-2">
-            Échangez services, objets et achats groupés avec vos voisins grâce à
-            la monnaie temps (1 heure = 1 crédit).
-          </p>
+          <EnTeteDePage
+            client:load
+            titre="pages.exchanges.title"
+            description="pages.exchanges.description"
+          />
         </div>
         <a
           data-testid="exchanges-create-link"

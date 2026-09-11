@@ -4283,5 +4283,39 @@
   },
   "monitoring": {
     "metricsUnreachable": "De opslagmetrieken zijn onbereikbaar. De Prometheus-dienst antwoordt niet, of de export staat uit op deze omgeving."
+  },
+  "pages": {
+    "expenses": {
+      "title": "Beheer van de lasten",
+      "description": "Volledige lijst van lasten en uitgaven, met paginering"
+    },
+    "meetings": {
+      "title": "Beheer van de vergaderingen",
+      "description": "Volledige lijst van algemene vergaderingen, met paginering"
+    },
+    "budgets": {
+      "title": "Beheer van de begrotingen",
+      "description": "Jaarlijkse begrotingen per gebouw, goedgekeurd in de algemene vergadering volgens het Belgische recht inzake mede-eigendom"
+    },
+    "buildings": {
+      "title": "Beheer van de gebouwen",
+      "description": "Beheer uw mede-eigendommen eenvoudig"
+    },
+    "exchanges": {
+      "title": "Lokaal ruilsysteem",
+      "description": "Ruil diensten, spullen en groepsaankopen met uw buren via tijdmunt: één uur is één krediet."
+    },
+    "paymentReminders": {
+      "title": "Betalingsherinneringen",
+      "description": "Beheer van achterstallige betalingen, in vier niveaus"
+    },
+    "reports": {
+      "title": "PCMN-boekhoudrapporten",
+      "description": "Rapporten conform het Belgische minimum genormaliseerd rekeningstelsel (KB 12/07/2012)"
+    },
+    "ownerExpenses": {
+      "title": "Mijn lasten",
+      "description": "Bekijk de lasten van uw mede-eigendom"
+    }
   }
 }

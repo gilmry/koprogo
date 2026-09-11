@@ -63,12 +63,15 @@ const LEGITIMES = new Set([
  * un nouveaux libellés en dur sans rien dire — c'est précisément le genre de
  * vert qui ne garde rien.
  *
- * Il ne peut que descendre, et il est descendu le jour même : 97 puis **91**,
- * après avoir traduit le rôle affiché sur l'écran « Plus » et remplacé deux
- * messages bruts. Un cliquet qu'on ne rabaisse pas après une correction
- * cesse de garder le terrain qu'on vient de gagner.
+ * Il ne peut que descendre, et il descend : 97, puis **91**, puis **73**,
+ * après la coquille, puis le rôle affiché sur l'écran « Plus », puis les
+ * en-têtes de onze pages passés par `EnTeteDePage`.
+ *
+ * Un cliquet qu'on ne rabaisse pas après une correction cesse de garder le
+ * terrain qu'on vient de gagner : il autorise en silence le retour de ce qu'on
+ * vient de corriger.
  */
-const CLIQUET = 91;
+const CLIQUET = 73;
 
 async function textesRendus(
   page: import("@playwright/test").Page,

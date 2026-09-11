@@ -4283,5 +4283,39 @@
   },
   "monitoring": {
     "metricsUnreachable": "Storage metrics are unreachable. The Prometheus service is not responding, or the export is disabled on this deployment."
+  },
+  "pages": {
+    "expenses": {
+      "title": "Charges management",
+      "description": "Full list of charges and expenses, with pagination"
+    },
+    "meetings": {
+      "title": "Meetings management",
+      "description": "Full list of general meetings, with pagination"
+    },
+    "budgets": {
+      "title": "Budgets management",
+      "description": "Annual budgets per building, approved in general meeting under Belgian condominium law"
+    },
+    "buildings": {
+      "title": "Buildings management",
+      "description": "Manage your condominiums simply"
+    },
+    "exchanges": {
+      "title": "Local exchange system",
+      "description": "Exchange services, goods and group purchases with your neighbours using time currency: one hour is one credit."
+    },
+    "paymentReminders": {
+      "title": "Payment reminders",
+      "description": "Arrears management, in four levels"
+    },
+    "reports": {
+      "title": "PCMN accounting reports",
+      "description": "Reports compliant with the Belgian minimum standardised chart of accounts (RD 12/07/2012)"
+    },
+    "ownerExpenses": {
+      "title": "My charges",
+      "description": "View the charges of your condominium"
+    }
   }
 }
