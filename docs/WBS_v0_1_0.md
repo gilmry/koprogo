@@ -603,7 +603,7 @@ Ces deux actes ne sont pas délégables : cf. `docs/governance/RESPONSABILITE.md
 
 ## Inventaire complet du périmètre 0.1.0
 
-**75 issues ouvertes** portent l'étiquette `release:0.1.0`. Elles sont
+**83 issues ouvertes** portent l'étiquette `release:0.1.0`. Elles sont
 toutes ci-dessous, sans exception : une issue du périmètre absente du WBS est
 une issue que personne ne planifie.
 
@@ -614,11 +614,11 @@ cinq jours.
 
 | Priorité | Nombre |
 |---|---|
-| critical | 8 |
-| high | 25 |
-| medium | 19 |
+| critical | 9 |
+| high | 27 |
+| medium | 22 |
 | low | 1 |
-| — | 22 |
+| — | 24 |
 
 ### Track R — Défauts de recette navigateur (4)
 
@@ -634,7 +634,7 @@ ne peut pas y arriver.
 | #779 | high | Rebrancher les six modules communautaires : 111 points d'entrée servis que le frontend n'appelle pa… |
 | #840 | medium | Une résolution sans point d'ordre du jour est acceptée, alors que la loi la rend nulle (Art. 3.87 §… |
 
-### Track U — Refonte UX/UI (18)
+### Track U — Refonte UX/UI (17)
 
 Revue de design du 2026-09-06. Entrée en 0.1.0 le même jour : un financeur ne
 lit pas du code, et l'ASBL se fonde sur ce que le produit montre. **U2 ne
@@ -669,8 +669,7 @@ processus pour les lots à venir, qu'aucun commit ne peut satisfaire.
 | #821 | medium | Refonte UX — importer et implémenter la maquette Claude Design « Admin Dashboard (modernisé) » |
 | #822 | medium | Refonte UX — importer et implémenter la maquette Claude Design « Accountant Dashboard (modernisé) » |
 | #827 | medium | Refonte UX — importer et implémenter la maquette Claude Design « Lists (modernisé) » |
-| #869 | — | Aucune spec Playwright ne s'exécute à une largeur de téléphone, alors que tout le Track U est mobile |
-| #870 | — | La suite e2e ne peut plus se connecter à la démo : le repli admin123 est mort, exactement comme annoncé |
+| #866 | medium | Six tableaux illisibles sur téléphone, dont trois qui coupent leurs colonnes en silence |
 
 ### Track D — Documentation vivante multi-persona (14)
 
@@ -696,7 +695,7 @@ vont changer produit une documentation périmée le jour de sa livraison.
 | #817 | medium | Workflow multi-persona — le ticket, du copropriétaire qui signale au prestataire qui est payé |
 | #595 | — | [Story Tx.3] Documentation docs/agent-activity/ (Tier 2 log) |
 
-### Track M — Modularité par ACP et RBAC communautaire (10)
+### Track M — Modularité par ACP et RBAC communautaire (12)
 
 Slice 5 de l'épopée #556. Une ACP active les modules dont elle a besoin ; le
 reste répond 403, pas 404. Ce track porte aussi les deux arbitrages ouverts
@@ -705,7 +704,9 @@ sur les droits communautaires — le syndic peut-il réserver au nom de l'ACP
 
 | Issue | Prio | Intitulé |
 |---|---|---|
+| #867 | high | Un copropriétaire multi-ACP voit un montant unique : un virement groupé serait juridiquement faux |
 | #781 | medium | Les modules communautaires supposent que l'utilisateur est copropriétaire : le syndic ne peut rien … |
+| #856 | medium | Décision produit : le comptable doit-il voir un groupe « Communauté » réduit ? La remise de design … |
 | #585 | — | [Story 5.1] Table acp_enabled_modules + ModuleGuard middleware + ModuleDisabledError |
 | #586 | — | [Story 5.2] UI ModuleGate.svelte + store enabled_modules |
 | #587 | — | [Story 5.3] Syndic = community.moderator (RBAC Community SEL/Poll/Notice/SharedObject) |
@@ -743,7 +744,7 @@ décision prise sans son vote est attaquable.
 | #583 | — | [Story 4.8] [cluster-coord] CommissaireAuxComptes + VerificationCertificate |
 | #635 | — | Fonds affectés / thésaurisation : entité Fund dédiée aux travaux d'ampleur (v0.2.0) |
 
-### Track T — Dette d'infrastructure de test (3)
+### Track T — Dette d'infrastructure de test (7)
 
 Ce qui empêche la CI de dire la vérité. Les quatre jobs rouges en continu du
 2026-09-04 — `prettier`, le contrat OpenAPI, `oasdiff` et la suite BDD — sont
@@ -776,10 +777,14 @@ présent qui atteste d'autre chose que ce qu'il prétend.
 | Issue | Prio | Intitulé |
 |---|---|---|
 | #847 | high | Le registre légal atteste des obligations que ses tests ne vérifient pas : l'Art. 3.89 § 1er est dé… |
+| #865 | high | L'audit d'accessibilité n'examine que l'écran de connexion : aucun écran authentifié n'est vérifié |
 | #832 | medium | Quinze specs Playwright échouent sans erreur d'identité : les ancrages existent mais l'élément n'es… |
+| #868 | medium | Deux sélecteurs d'immeuble coexistent, et partagent un ancrage de recette |
 | #696 | — | Instabilité smoke suite Playwright CI : 109 échecs sur specs pré-existantes (occurrence 2026-08-08) |
+| #869 | — | Aucune spec Playwright ne s'exécute à une largeur de téléphone, alors que tout le Track U est mobile |
+| #870 | — | La suite e2e ne peut plus se connecter à la démo : le repli admin123 est mort, exactement comme ann… |
 
-### Track K — Dette de code et de contrat (7)
+### Track K — Dette de code et de contrat (8)
 
 Les erreurs typées plutôt que classées par sous-chaîne, le contrat OpenAPI
 complet, et la suppression du repli qui fabrique une ACP inexistante.
@@ -827,6 +832,7 @@ problème, et que le frontend n'appelait pas.
 |---|---|---|
 | #845 | critical | Trente routes ne vérifient aucune identité : modifier ou supprimer une assemblée générale ne demand… |
 | #850 | critical | Le vote en assemblée accepte l'identité du votant, son lot et sa puissance de vote depuis le corps … |
+| #864 | critical | 87 routes prennent une identité sans s'en servir pour décider : supprimer le budget d'une autre cop… |
 | #855 | high | Le notaire n'a pas d'identité : l'état daté est servi à qui connaît la référence, et le suivi des r… |
 | #555 | medium | EPIC: migrer Result<_, String> → Result<_, AppError> (1263 violations, CRITICAL.md rule 4) |
 | #846 | medium | Onze tables et une vue existent en base et ne sont lues par aucun code, dont celle qui devait valid… |

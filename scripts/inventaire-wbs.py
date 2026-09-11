@@ -29,7 +29,7 @@ refonte peut désormais déplacer n'importe quel écran sans qu'on perde le
 moyen de vérifier qu'il a survécu — ce qui était l'argument entier de
 l'issue. Le seul critère de fin qu'elle porte encore est une règle de
 processus pour les lots à venir, qu'aucun commit ne peut satisfaire.""",
-  [556,818,820,821,822,823,824,825,826,827,797,798,802,803,834,841]),
+  [556,818,820,821,822,823,824,825,826,827,797,798,802,803,834,841,866]),
 
  ("D", "Documentation vivante multi-persona", """Six personas, quatre workflows transverses, et la restructuration des cent
 specs e2e pour que les vidéos racontent le produit plutôt que ses modules.
@@ -41,7 +41,7 @@ vont changer produit une documentation périmée le jour de sa livraison.""",
 reste répond 403, pas 404. Ce track porte aussi les deux arbitrages ouverts
 sur les droits communautaires — le syndic peut-il réserver au nom de l'ACP
 (#781, #588), et le comptable doit-il être exclu du communautaire (#589).""",
-  [585,586,587,588,589,590,591,592,781,694]),
+  [585,586,587,588,589,590,591,592,781,694,856,867]),
 
  ("S", "Gouvernance d'assemblée avancée", """Slice 4 de #556 : assemblée hybride, vote à distance authentifié fort,
 procès-verbal signé eIDAS, conseil de copropriété élu, commissaire aux
@@ -84,7 +84,7 @@ et un module `tests`, pas une vérification de la durée de mandat. La garde
 constatait que la preuve EXISTE, jamais qu'elle est PERTINENTE. C'est la
 forme la plus coûteuse du motif : non pas un test absent, mais un test
 présent qui atteste d'autre chose que ce qu'il prétend.""",
-  [696,832,847]),
+  [696,832,847,865,868,869,870]),
 
  ("K", "Dette de code et de contrat", """Les erreurs typées plutôt que classées par sous-chaîne, le contrat OpenAPI
 complet, et la suppression du repli qui fabrique une ACP inexistante.
@@ -127,7 +127,7 @@ immeuble absent de la première page rend « Aucun immeuble trouvé pour cette
 recherche » (#853). Le composant filtrait les vingt éléments chargés alors
 que le serveur offre `?search=` en ILIKE — capacité écrite EN RÉPONSE à ce
 problème, et que le frontend n'appelait pas.""",
-  [555,762,845,846,850,852,855]),
+  [555,762,845,846,850,852,855,864]),
 
  ("F", "Ops et infrastructure", """Sauvegardes, TLS, GitOps, et les vulnérabilités de dépendances. F3 a été joué
 le 2026-09-04 et son résultat est **négatif sur deux volets sur trois** : le
