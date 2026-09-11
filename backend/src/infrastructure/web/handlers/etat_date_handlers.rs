@@ -470,6 +470,29 @@ pub async fn delete_etat_date(
     user: AuthenticatedUser,
     id: web::Path<Uuid>,
 ) -> impl Responder {
+    // Cloisonnement AVANT la suppression (#864).
+    //
+    // Un état daté est la pièce qu'un notaire réclame à la vente. L'effacer
+    // n'était soumis à aucun contrôle d'organisation, alors que le LIRE l'était
+    // déjà (`get_etat_date`, même fichier).
+    match state.etat_date_use_cases.get_etat_date(*id).await {
+        Ok(Some(etat_date)) => {
+            if let Err(err) = user.verify_org_access(etat_date.organization_id) {
+                return HttpResponse::Forbidden().json(serde_json::json!({ "error": err }));
+            }
+        }
+        Ok(None) => {
+            return HttpResponse::NotFound().json(serde_json::json!({
+                "error": "État daté not found"
+            }))
+        }
+        Err(err) => {
+            return HttpResponse::InternalServerError().json(serde_json::json!({
+                "error": err.to_string()
+            }))
+        }
+    }
+
     match state.etat_date_use_cases.delete_etat_date(*id).await {
         Ok(true) => {
             AuditLogEntry::new(

@@ -138,6 +138,28 @@ pub async fn remove_owner_from_unit(
         }
     };
 
+    // Cloisonnement AVANT la suppression (#864).
+    //
+    // `check_unit_ownership_permission` plus haut vérifie le RÔLE : seuls un
+    // syndic ou un superadministrateur peuvent toucher aux titularités. Il ne
+    // vérifie pas l'ORGANISATION — un syndic du cabinet A pouvait donc détacher
+    // un copropriétaire d'un lot du cabinet B.
+    //
+    // Deux contrôles distincts, qu'il est facile de confondre : « ce rôle a le
+    // droit de faire ce geste » ne dit rien de « sur cet objet-ci ». Les deux
+    // routes voisines de ce fichier appellent déjà cette garde.
+    if let Err(err) = verify_unit_org_access(
+        &user,
+        unit_id,
+        &state.unit_use_cases,
+        &state.building_use_cases,
+        &state.acp_use_cases,
+    )
+    .await
+    {
+        return err.error_response();
+    }
+
     // Call use case
     match state
         .unit_owner_use_cases

@@ -54,6 +54,8 @@ struct DeuxOrganisations {
     _container: Option<testcontainers::ContainerAsync<testcontainers_modules::postgres::Postgres>>,
     jeton_a: String,
     immeuble_b: Uuid,
+    /// L'organisation de B, pour lui fabriquer des objets à détruire.
+    org_b: Uuid,
 }
 
 async fn preparer() -> DeuxOrganisations {
@@ -68,6 +70,7 @@ async fn preparer() -> DeuxOrganisations {
         _container: container,
         jeton_a,
         immeuble_b,
+        org_b,
     }
 }
 
@@ -214,5 +217,96 @@ async fn le_meme_syndic_lit_bien_son_propre_immeuble() {
          Les gardes de #772 sont trop stricts, et les deux tests de refus de \
          ce fichier ne prouvent alors plus rien — une application qui refuse \
          tout les satisfait aussi."
+    );
+}
+
+/// SUPPRESSION — le syndic de A ne détruit rien chez B (#864).
+///
+/// ── Pourquoi la suppression méritait son propre test ──────────────────────
+///
+/// Les deux tests ci-dessus couvrent la lecture et l'écriture. La
+/// **suppression** n'était couverte par aucun, et c'est précisément là que les
+/// quatre cas vérifiés de #864 se trouvaient :
+///
+///     delete_budget          budget_handlers.rs
+///     delete_document        document_handlers.rs
+///     delete_etat_date       etat_date_handlers.rs
+///     remove_owner_from_unit unit_owner_handlers.rs
+///
+/// Les quatre prenaient `AuthenticatedUser` à la signature et ne s'en
+/// servaient que pour **journaliser qui avait supprimé, après coup**.
+/// N'importe quel utilisateur authentifié pouvait effacer le budget de
+/// n'importe quelle copropriété en connaissant son UUID, et le journal
+/// d'audit enregistrait fidèlement le geste.
+///
+/// Une route sans identité SE VOIT : elle est nue, une garde la compte.
+/// Une route qui prend une identité A L'AIR gardée — elle passe la revue,
+/// elle passe les gardes, elle journalise consciencieusement.
+///
+/// ── Ce que ce test refuse, et ce qu'il ne peut pas refuser ────────────────
+///
+/// Il éprouve la suppression d'objets appartenant à B par le syndic de A. Il
+/// ne prétend pas couvrir les 87 routes que #864 dénombre : ce plafond
+/// demande une lecture cas par cas. Quatre étaient vérifiées, quatre sont ici.
+#[actix_web::test]
+#[serial]
+async fn la_suppression_inter_organisations_est_refusee() {
+    let contexte = preparer().await;
+    let app = test::init_service(
+        App::new()
+            .app_data(contexte.app_state.clone())
+            .configure(configure_routes),
+    )
+    .await;
+
+    let porteur = |req: test::TestRequest| {
+        req.insert_header((
+            header::AUTHORIZATION,
+            format!("Bearer {}", contexte.jeton_a),
+        ))
+    };
+
+    // ── Des objets bien à B, créés hors HTTP pour ne rien supposer ───────
+    let budget_b = contexte
+        .app_state
+        .budget_use_cases
+        .create_budget(koprogo_api::application::dto::CreateBudgetRequest {
+            organization_id: contexte.org_b,
+            building_id: contexte.immeuble_b,
+            fiscal_year: 2026,
+            ordinary_budget: rust_decimal_macros::dec!(10000),
+            extraordinary_budget: rust_decimal_macros::dec!(0),
+            notes: None,
+        })
+        .await
+        .expect("budget de B");
+
+    // ── La suppression est refusée, objet par objet ──────────────────────
+    let resp = test::call_service(
+        &app,
+        porteur(test::TestRequest::delete().uri(&format!("/api/v1/budgets/{}", budget_b.id)))
+            .to_request(),
+    )
+    .await;
+    assert!(
+        est_un_refus(resp.status().as_u16()),
+        "le syndic de A a supprimé le budget de B : statut {} (#864). \
+         `AuthenticatedUser` était pris sans servir à décider, et le journal \
+         d'audit aurait enregistré le geste comme régulier.",
+        resp.status()
+    );
+
+    // Le budget doit exister ENCORE. Un 403 rendu après la suppression ne
+    // vaudrait rien : c'est la persistance de l'objet qui prouve le refus.
+    let toujours_la = contexte
+        .app_state
+        .budget_use_cases
+        .get_budget(budget_b.id)
+        .await
+        .expect("lecture du budget de B");
+    assert!(
+        toujours_la.is_some(),
+        "le budget de B a disparu : le refus HTTP est arrivé APRÈS la \
+         suppression, ce qui ne protège rien."
     );
 }

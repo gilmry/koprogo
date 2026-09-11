@@ -571,6 +571,35 @@ pub async fn delete_budget(
     user: AuthenticatedUser,
     id: web::Path<Uuid>,
 ) -> impl Responder {
+    // Cloisonnement AVANT la suppression (#864).
+    //
+    // `AuthenticatedUser` était pris à la signature et ne servait qu'à
+    // journaliser QUI avait supprimé, après coup. N'importe quel utilisateur
+    // authentifié pouvait donc effacer le budget de n'importe quelle
+    // copropriété — y compris d'un autre cabinet — en connaissant son UUID, et
+    // le journal d'audit enregistrait fidèlement le geste.
+    //
+    // Le contrôle existe dans ce fichier depuis toujours : `get_budget` le fait
+    // trois cents lignes plus haut. Il manquait ici, sur l'opération
+    // irréversible.
+    match state.budget_use_cases.get_budget(*id).await {
+        Ok(Some(budget)) => {
+            if let Err(e) = user.verify_org_access(budget.organization_id) {
+                return HttpResponse::Forbidden().json(serde_json::json!({ "error": e }));
+            }
+        }
+        Ok(None) => {
+            return HttpResponse::NotFound().json(serde_json::json!({
+                "error": "Budget not found"
+            }))
+        }
+        Err(err) => {
+            return HttpResponse::InternalServerError().json(serde_json::json!({
+                "error": err.to_string()
+            }))
+        }
+    }
+
     match state.budget_use_cases.delete_budget(*id).await {
         Ok(true) => {
             AuditLogEntry::new(

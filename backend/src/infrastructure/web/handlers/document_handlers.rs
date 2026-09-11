@@ -405,6 +405,25 @@ pub async fn delete_document(
 ) -> impl Responder {
     let id = path.into_inner();
 
+    // Cloisonnement AVANT la suppression (#864).
+    //
+    // `verify_document_org_access` existe et `get_document` l'appelle trois
+    // cents lignes plus haut. La LECTURE était donc cloisonnée, et la
+    // SUPPRESSION ne l'était pas : `AuthenticatedUser` n'y servait qu'à
+    // journaliser le geste après coup.
+    if let Err(err) =
+        crate::infrastructure::web::middleware::scope_guard::verify_document_org_access(
+            &user,
+            id,
+            &app_state.document_use_cases,
+            &app_state.building_use_cases,
+            &app_state.acp_use_cases,
+        )
+        .await
+    {
+        return err.error_response();
+    }
+
     match app_state.document_use_cases.delete_document(id).await {
         Ok(true) => {
             // Audit log: successful document deletion
