@@ -8159,8 +8159,7 @@
         "required": [
           "owner_id",
           "unit_id",
-          "vote_choice",
-          "voting_power"
+          "vote_choice"
         ],
         "properties": {
           "owner_id": {
@@ -8182,8 +8181,11 @@
             "$ref": "#/components/schemas/VoteChoice"
           },
           "voting_power": {
-            "type": "string",
-            "description": "Tantièmes/millièmes — Decimal exact (ADR-0008), sérialisé en string JSON."
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "**Ignoré par le serveur depuis #850.**\n\nLa puissance de vote d'un lot est sa quotité dans l'acte de base\n(Art. 3.87 § 2 et § 8 CC) : elle n'est pas déclarative. Le serveur la\nrelit sur le lot et n'accorde aucune valeur à ce champ.\n\nIl reste accepté pour ne pas casser les appelants existants, et sera\nretiré du contrat quand l'arbitrage de #850 — qui peut saisir un vote,\net pour qui — aura tranché le reste de la route."
           }
         }
       },

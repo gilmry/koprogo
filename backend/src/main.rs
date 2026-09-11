@@ -299,6 +299,9 @@ async fn main() -> std::io::Result<()> {
         vote_repo,
         meeting_repo.clone(),
         unit_owner_repo.clone(),
+        // #850 — la quotité du lot se lit sur l'acte de base, elle n'arrive
+        // plus dans le corps de la requête.
+        unit_repo.clone(),
     );
     let ticket_use_cases = TicketUseCases::new(ticket_repo);
     let two_factor_use_cases =

@@ -81,6 +81,21 @@ async function textesRendus(
     langue,
   );
   await ouvreEnTantQue(page, role, chemin);
+
+  // La page doit être POSÉE avant d'être lue.
+  //
+  // Sans cette attente, la mesure est instable : exécutée seule elle donnait
+  // 91, exécutée en parallèle du reste du banc elle donnait 92. Sous charge,
+  // un écran n'a pas fini de s'hydrater et montre encore un état de
+  // chargement — identique dans les deux langues, donc compté comme un
+  // libellé en dur.
+  //
+  // Un cliquet qui varie selon la charge de la machine ne garde rien : il
+  // crie au loup, on finit par le relever « pour qu'il passe », et il cesse
+  // d'être une mesure.
+  await page.waitForLoadState("networkidle").catch(() => {});
+  await page.waitForTimeout(400);
+
   return page.evaluate(() => {
     const vus: string[] = [];
     // `<script>` et `<style>` portent du texte qui n'est pas de l'interface :

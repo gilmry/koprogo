@@ -439,6 +439,8 @@ impl GovernanceWorld {
             vote_repo,
             meeting_repo.clone(),
             Arc::new(PostgresUnitOwnerRepository::new(pool.clone())),
+            // #850 — la quotité du lot se lit sur l'acte de base.
+            Arc::new(PostgresUnitRepository::new(pool.clone())),
         );
         let quote_use_cases = QuoteUseCases::new(quote_repo);
         let building_use_cases = BuildingUseCases::new(building_repo.clone());
@@ -603,7 +605,9 @@ impl GovernanceWorld {
 
         let owner_id = self.get_owner_id(actual_voter);
         let unit_id = self.get_unit_id(actual_voter);
-        let voting_power = self.get_voting_power(actual_voter);
+        // #850 — la puissance de vote n'est plus transmise : le cas d'usage la
+        // lit sur le lot. `get_voting_power` reste utile aux assertions du
+        // scénario, qui vérifient le décompte final.
 
         let result = uc
             .cast_vote(
@@ -611,7 +615,8 @@ impl GovernanceWorld {
                 owner_id,
                 unit_id,
                 choice.clone(),
-                voting_power,
+                // #850 — `voting_power` n'est plus transmise : le cas d'usage
+                // relit la quotité sur le lot.
                 proxy_id,
             )
             .await;

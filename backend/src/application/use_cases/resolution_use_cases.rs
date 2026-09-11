@@ -1,5 +1,5 @@
 use crate::application::ports::{
-    MeetingRepository, ResolutionRepository, UnitOwnerRepository, VoteRepository,
+    MeetingRepository, ResolutionRepository, UnitOwnerRepository, UnitRepository, VoteRepository,
 };
 use crate::domain::entities::{
     assert_voting_right_active, MajorityType, Resolution, ResolutionStatus, ResolutionType, Vote,
@@ -14,6 +14,8 @@ pub struct ResolutionUseCases {
     meeting_repository: Arc<dyn MeetingRepository>,
     // Story H17 — résolution du droit de vote du lot (Art. 3.87 §1).
     unit_owner_repository: Arc<dyn UnitOwnerRepository>,
+    // #850 — la quotité du lot, lue sur l'acte de base plutôt que déclarée.
+    unit_repository: Arc<dyn UnitRepository>,
 }
 
 impl ResolutionUseCases {
@@ -22,12 +24,14 @@ impl ResolutionUseCases {
         vote_repository: Arc<dyn VoteRepository>,
         meeting_repository: Arc<dyn MeetingRepository>,
         unit_owner_repository: Arc<dyn UnitOwnerRepository>,
+        unit_repository: Arc<dyn UnitRepository>,
     ) -> Self {
         Self {
             resolution_repository,
             vote_repository,
             meeting_repository,
             unit_owner_repository,
+            unit_repository,
         }
     }
 
@@ -186,7 +190,6 @@ impl ResolutionUseCases {
         owner_id: Uuid,
         unit_id: Uuid,
         vote_choice: VoteChoice,
-        voting_power: rust_decimal::Decimal,
         proxy_owner_id: Option<Uuid>,
     ) -> Result<Vote, String> {
         // Check if resolution exists and is pending
@@ -291,6 +294,41 @@ impl ResolutionUseCases {
         {
             return Err("This unit has already voted on this resolution".to_string());
         }
+
+        // #850 — la puissance de vote se LIT, elle ne se déclare pas.
+        //
+        // Elle arrivait jusqu'ici depuis le corps de la requête et partait
+        // telle quelle dans `Vote::new`. Or la voix d'un lot est sa quotité
+        // dans l'acte de base (Art. 3.87 § 2 et § 8 CC) : un copropriétaire ne
+        // choisit pas son poids, pas plus qu'il ne choisit ses tantièmes.
+        //
+        // POURQUOI `unit.quota` ET NON LA QUOTE-PART DE CHARGE.
+        //
+        // `find_active_quota_shares_by_building` rend
+        // `(unit.quota / total) × ownership_percentage`, qui est la formule de
+        // RÉPARTITION des charges (Art. 3.84). Elle ne convient pas au vote :
+        // un lot en indivision vote par son représentant unique (Art. 3.87 §1,
+        // vérifié plus haut) et vote la quotité ENTIÈRE du lot, pas la fraction
+        // détenue par ce représentant. Diviser la voix entre indivisaires
+        // reviendrait à affaiblir un lot parce qu'il est détenu à plusieurs.
+        let unit = self
+            .unit_repository
+            .find_by_id(unit_id)
+            .await?
+            .ok_or_else(|| format!("Lot introuvable : {unit_id}"))?;
+
+        // Un lot d'un AUTRE immeuble n'a rien à voter ici. Rien ne l'empêchait :
+        // la route acceptait n'importe quel `unit_id`, et le seul contrôle
+        // portait sur la titularité de ce lot, pas sur son rattachement à
+        // l'assemblée.
+        if unit.building_id != meeting.building_id {
+            return Err(format!(
+                "Le lot {unit_id} n'appartient pas à l'immeuble de cette \
+                 assemblée : il ne peut pas prendre part à ce vote."
+            ));
+        }
+
+        let voting_power = unit.quota;
 
         // Art. 3.87 §7 CC — un mandataire ne peut détenir plus de 3 procurations
         // Exception : si le total des voix de ses procurations < 10% du total général
@@ -604,12 +642,13 @@ pub struct VoteStatistics {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::application::dto::PageRequest;
+    use crate::application::dto::{PageRequest, UnitFilters};
     use crate::application::ports::{
-        MeetingRepository, ResolutionRepository, UnitOwnerRepository, VoteRepository,
+        MeetingRepository, ResolutionRepository, UnitOwnerRepository, UnitRepository,
+        VoteRepository,
     };
     use crate::domain::entities::{
-        LotHolder, Meeting, MeetingType, OwnershipType, UnitOwner, VoteChoice,
+        LotHolder, Meeting, MeetingType, OwnershipType, Unit, UnitOwner, UnitType, VoteChoice,
     };
     use async_trait::async_trait;
     use chrono::Utc;
@@ -716,6 +755,120 @@ mod tests {
     }
 
     // Mock repositories for testing
+    /// Les lots, pour que la quotité se LISE (#850).
+    ///
+    /// `defaut` sert les tests écrits avant #850 : ils votent sur des lots
+    /// qu'ils n'ont jamais créés, parce que la puissance de vote arrivait
+    /// alors dans l'appel. Plutôt que de réécrire quarante scénarios, le mock
+    /// fabrique un lot à la demande, rattaché à l'immeuble qu'on lui indique.
+    ///
+    /// Les tests qui éprouvent PRÉCISÉMENT la quotité, eux, enregistrent leur
+    /// lot explicitement.
+    struct MockUnitRepository {
+        units: Mutex<HashMap<Uuid, Unit>>,
+        defaut: Mutex<Option<(Uuid, rust_decimal::Decimal)>>,
+    }
+
+    impl MockUnitRepository {
+        fn new() -> Self {
+            Self {
+                units: Mutex::new(HashMap::new()),
+                defaut: Mutex::new(None),
+            }
+        }
+
+        fn enregistre(&self, unit: Unit) {
+            self.units.lock().unwrap().insert(unit.id, unit);
+        }
+
+        /// Pose le lot par défaut une fois l'immeuble connu.
+        ///
+        /// Le constructeur est appelé avant que le test n'ait tiré son
+        /// `building_id` ; cette méthode permet de le lui donner ensuite.
+        fn pose_defaut(&self, building_id: Uuid, quota: rust_decimal::Decimal) {
+            *self.defaut.lock().unwrap() = Some((building_id, quota));
+        }
+
+        /// Enregistre un lot d'une quotité donnée, dans l'immeuble donné.
+        fn lot(&self, unit_id: Uuid, building_id: Uuid, quota: rust_decimal::Decimal) {
+            let mut unit = Unit::new(
+                Uuid::new_v4(),
+                building_id,
+                format!("L{}", &unit_id.to_string()[..4]),
+                UnitType::Apartment,
+                Some(0),
+                50.0,
+                quota,
+            )
+            .expect("lot de test");
+            unit.id = unit_id;
+            self.enregistre(unit);
+        }
+    }
+
+    #[async_trait]
+    impl UnitRepository for MockUnitRepository {
+        async fn create(&self, unit: &Unit) -> Result<Unit, String> {
+            self.units.lock().unwrap().insert(unit.id, unit.clone());
+            Ok(unit.clone())
+        }
+
+        async fn find_by_id(&self, id: Uuid) -> Result<Option<Unit>, String> {
+            if let Some(unit) = self.units.lock().unwrap().get(&id).cloned() {
+                return Ok(Some(unit));
+            }
+            let defaut = *self.defaut.lock().unwrap();
+            Ok(defaut.map(|(building_id, quota)| {
+                let mut unit = Unit::new(
+                    Uuid::new_v4(),
+                    building_id,
+                    format!("L{}", &id.to_string()[..4]),
+                    UnitType::Apartment,
+                    Some(0),
+                    50.0,
+                    quota,
+                )
+                .expect("lot de test");
+                unit.id = id;
+                unit
+            }))
+        }
+
+        async fn find_by_building(&self, building_id: Uuid) -> Result<Vec<Unit>, String> {
+            Ok(self
+                .units
+                .lock()
+                .unwrap()
+                .values()
+                .filter(|u| u.building_id == building_id)
+                .cloned()
+                .collect())
+        }
+
+        async fn find_by_owner(&self, _owner_id: Uuid) -> Result<Vec<Unit>, String> {
+            Ok(vec![])
+        }
+
+        async fn find_all_paginated(
+            &self,
+            _page_request: &PageRequest,
+            _filters: &UnitFilters,
+        ) -> Result<(Vec<Unit>, i64), String> {
+            let units: Vec<_> = self.units.lock().unwrap().values().cloned().collect();
+            let total = units.len() as i64;
+            Ok((units, total))
+        }
+
+        async fn update(&self, unit: &Unit) -> Result<Unit, String> {
+            self.units.lock().unwrap().insert(unit.id, unit.clone());
+            Ok(unit.clone())
+        }
+
+        async fn delete(&self, id: Uuid) -> Result<bool, String> {
+            Ok(self.units.lock().unwrap().remove(&id).is_some())
+        }
+    }
+
     struct MockMeetingRepository {
         meetings: Mutex<HashMap<Uuid, Meeting>>,
     }
@@ -1053,6 +1206,7 @@ mod tests {
             vote_repo.clone(),
             Arc::new(MockMeetingRepository::new()),
             Arc::new(MockUnitOwnerRepository::new()),
+            Arc::new(MockUnitRepository::new()),
         );
 
         let resolution = Resolution::new(
@@ -1132,6 +1286,7 @@ mod tests {
             vote_repo.clone(),
             Arc::new(MockMeetingRepository::new()),
             Arc::new(MockUnitOwnerRepository::new()),
+            Arc::new(MockUnitRepository::new()),
         );
 
         let resolution = Resolution::new(
@@ -1201,6 +1356,7 @@ mod tests {
             vote_repo.clone(),
             Arc::new(MockMeetingRepository::new()),
             Arc::new(MockUnitOwnerRepository::new()),
+            Arc::new(MockUnitRepository::new()),
         );
 
         let resolution = Resolution::new(
@@ -1282,6 +1438,7 @@ mod tests {
             vote_repo.clone(),
             Arc::new(MockMeetingRepository::new()),
             Arc::new(MockUnitOwnerRepository::new()),
+            Arc::new(MockUnitRepository::new()),
         );
 
         let resolution = Resolution::new(
@@ -1348,6 +1505,7 @@ mod tests {
             vote_repo.clone(),
             Arc::new(MockMeetingRepository::new()),
             Arc::new(MockUnitOwnerRepository::new()),
+            Arc::new(MockUnitRepository::new()),
         );
 
         let resolution = Resolution::new(
@@ -1398,6 +1556,7 @@ mod tests {
             vote_repo,
             meeting_repo.clone(),
             Arc::new(MockUnitOwnerRepository::new()),
+            Arc::new(MockUnitRepository::new()),
         );
 
         let org_id = Uuid::new_v4();
@@ -1460,6 +1619,7 @@ mod tests {
             vote_repo,
             meeting_repo.clone(),
             Arc::new(MockUnitOwnerRepository::new()),
+            Arc::new(MockUnitRepository::new()),
         );
 
         let org_id = Uuid::new_v4();
@@ -1511,21 +1671,159 @@ mod tests {
         assert!(result.unwrap_err().contains("second convocation"));
     }
 
+    /// #850 — Art. 3.87 § 2 et § 8 CC : la voix d'un lot est sa quotité dans
+    /// l'acte de base. Elle ne se déclare pas.
+    ///
+    /// Le serveur acceptait `voting_power` depuis le corps de la requête et
+    /// l'enregistrait sans la recalculer. Un copropriétaire pouvait donc
+    /// choisir son propre poids dans l'assemblée.
     #[tokio::test]
-    async fn test_cast_vote_updates_counts() {
+    async fn security_la_puissance_de_vote_vient_du_lot_pas_de_lappelant() {
         let resolution_repo = Arc::new(MockResolutionRepository::new());
         let vote_repo = Arc::new(MockVoteRepository::new());
         let meeting_repo = Arc::new(MockMeetingRepository::new());
+        let unit_repo = Arc::new(MockUnitRepository::new());
+        let resolution =
+            meeting_with_quorum_and_resolution(&resolution_repo, &meeting_repo, &unit_repo).await;
+
+        // Le lot vaut 42 millièmes à l'acte de base. L'appelant n'a plus aucun
+        // moyen d'en proposer d'autres : le paramètre a disparu de la
+        // signature, ce qui est plus sûr que de l'ignorer en silence.
+        let meeting = meeting_repo
+            .find_by_id(resolution.meeting_id)
+            .await
+            .unwrap()
+            .unwrap();
+        let unit_id = Uuid::new_v4();
+        unit_repo.lot(unit_id, meeting.building_id, dec!(42));
+
         let use_cases = ResolutionUseCases::new(
             resolution_repo.clone(),
             vote_repo.clone(),
             meeting_repo.clone(),
             Arc::new(MockUnitOwnerRepository::new()),
+            unit_repo.clone(),
+        );
+
+        let vote = use_cases
+            .cast_vote(
+                resolution.id,
+                Uuid::new_v4(),
+                unit_id,
+                VoteChoice::Pour,
+                None,
+            )
+            .await
+            .expect("le vote doit aboutir");
+
+        assert_eq!(
+            vote.voting_power,
+            dec!(42),
+            "la voix enregistrée doit être la quotité du lot (Art. 3.87 § 8 CC), \
+             pas une valeur choisie par l'appelant"
+        );
+    }
+
+    /// #850 — un lot d'un AUTRE immeuble n'a rien à voter dans cette assemblée.
+    ///
+    /// La route acceptait n'importe quel `unit_id` : le seul contrôle portait
+    /// sur la titularité du lot, jamais sur son rattachement à l'assemblée.
+    /// Un lot d'un immeuble voisin pouvait donc peser sur une décision qui ne
+    /// le concerne pas.
+    #[tokio::test]
+    async fn security_un_lot_dun_autre_immeuble_ne_peut_pas_voter() {
+        let resolution_repo = Arc::new(MockResolutionRepository::new());
+        let vote_repo = Arc::new(MockVoteRepository::new());
+        let meeting_repo = Arc::new(MockMeetingRepository::new());
+        let unit_repo = Arc::new(MockUnitRepository::new());
+        let resolution =
+            meeting_with_quorum_and_resolution(&resolution_repo, &meeting_repo, &unit_repo).await;
+
+        let lot_etranger = Uuid::new_v4();
+        unit_repo.lot(lot_etranger, Uuid::new_v4(), dec!(100));
+
+        let use_cases = ResolutionUseCases::new(
+            resolution_repo.clone(),
+            vote_repo.clone(),
+            meeting_repo.clone(),
+            Arc::new(MockUnitOwnerRepository::new()),
+            unit_repo.clone(),
+        );
+
+        let erreur = use_cases
+            .cast_vote(
+                resolution.id,
+                Uuid::new_v4(),
+                lot_etranger,
+                VoteChoice::Pour,
+                None,
+            )
+            .await
+            .expect_err("un lot d'un autre immeuble ne peut pas voter ici");
+
+        assert!(
+            erreur.contains("n'appartient pas à l'immeuble"),
+            "le refus doit dire POURQUOI, got: {erreur}"
+        );
+    }
+
+    /// #850 — un lot qui n'existe pas ne vote pas.
+    ///
+    /// Avant, la puissance de vote arrivant dans l'appel, rien n'obligeait le
+    /// lot à exister : un `unit_id` inventé produisait un vote valide, compté
+    /// dans la majorité.
+    #[tokio::test]
+    async fn negative_un_lot_inexistant_ne_peut_pas_voter() {
+        let resolution_repo = Arc::new(MockResolutionRepository::new());
+        let vote_repo = Arc::new(MockVoteRepository::new());
+        let meeting_repo = Arc::new(MockMeetingRepository::new());
+        // Sans lot par défaut : le dépôt ne connaît aucun lot.
+        let unit_repo = Arc::new(MockUnitRepository::new());
+        let resolution =
+            meeting_with_quorum_and_resolution(&resolution_repo, &meeting_repo, &unit_repo).await;
+        *unit_repo.defaut.lock().unwrap() = None;
+
+        let use_cases = ResolutionUseCases::new(
+            resolution_repo.clone(),
+            vote_repo.clone(),
+            meeting_repo.clone(),
+            Arc::new(MockUnitOwnerRepository::new()),
+            unit_repo.clone(),
+        );
+
+        let erreur = use_cases
+            .cast_vote(
+                resolution.id,
+                Uuid::new_v4(),
+                Uuid::new_v4(),
+                VoteChoice::Pour,
+                None,
+            )
+            .await
+            .expect_err("un lot inexistant ne peut pas voter");
+
+        assert!(erreur.contains("Lot introuvable"), "got: {erreur}");
+    }
+
+    #[tokio::test]
+    async fn test_cast_vote_updates_counts() {
+        let resolution_repo = Arc::new(MockResolutionRepository::new());
+        let vote_repo = Arc::new(MockVoteRepository::new());
+        let meeting_repo = Arc::new(MockMeetingRepository::new());
+        let unit_repo = Arc::new(MockUnitRepository::new());
+        let use_cases = ResolutionUseCases::new(
+            resolution_repo.clone(),
+            vote_repo.clone(),
+            meeting_repo.clone(),
+            Arc::new(MockUnitOwnerRepository::new()),
+            unit_repo.clone(),
         );
 
         // Create a resolution
         let org_id = Uuid::new_v4();
         let building_id = Uuid::new_v4();
+        // #850 — chaque lot voté existe désormais, et porte sa quotité.
+        unit_repo.pose_defaut(building_id, dec!(100));
         let meeting_id = Uuid::new_v4();
 
         // Create a meeting with quorum reached
@@ -1572,14 +1870,7 @@ mod tests {
         let owner_id = Uuid::new_v4();
         let unit_id = Uuid::new_v4();
         let result = use_cases
-            .cast_vote(
-                resolution.id,
-                owner_id,
-                unit_id,
-                VoteChoice::Pour,
-                rust_decimal_macros::dec!(100),
-                None,
-            )
+            .cast_vote(resolution.id, owner_id, unit_id, VoteChoice::Pour, None)
             .await;
 
         assert!(result.is_ok());
@@ -1602,16 +1893,20 @@ mod tests {
         let resolution_repo = Arc::new(MockResolutionRepository::new());
         let vote_repo = Arc::new(MockVoteRepository::new());
         let meeting_repo = Arc::new(MockMeetingRepository::new());
+        let unit_repo = Arc::new(MockUnitRepository::new());
         let use_cases = ResolutionUseCases::new(
             resolution_repo.clone(),
             vote_repo,
             meeting_repo.clone(),
             Arc::new(MockUnitOwnerRepository::new()),
+            unit_repo.clone(),
         );
 
         // Create resolution
         let org_id = Uuid::new_v4();
         let building_id = Uuid::new_v4();
+        // #850 — chaque lot voté existe désormais, et porte sa quotité.
+        unit_repo.pose_defaut(building_id, dec!(100));
         let meeting_id = Uuid::new_v4();
 
         // Create a meeting with quorum reached
@@ -1659,27 +1954,13 @@ mod tests {
 
         // First vote succeeds
         let result1 = use_cases
-            .cast_vote(
-                resolution.id,
-                owner_id,
-                unit_id,
-                VoteChoice::Pour,
-                rust_decimal_macros::dec!(100),
-                None,
-            )
+            .cast_vote(resolution.id, owner_id, unit_id, VoteChoice::Pour, None)
             .await;
         assert!(result1.is_ok());
 
         // Second vote from same unit fails
         let result2 = use_cases
-            .cast_vote(
-                resolution.id,
-                owner_id,
-                unit_id,
-                VoteChoice::Contre,
-                rust_decimal_macros::dec!(100),
-                None,
-            )
+            .cast_vote(resolution.id, owner_id, unit_id, VoteChoice::Contre, None)
             .await;
         assert!(result2.is_err());
         assert!(result2.unwrap_err().contains("already voted"));
@@ -1691,15 +1972,19 @@ mod tests {
         let resolution_repo = Arc::new(MockResolutionRepository::new());
         let vote_repo = Arc::new(MockVoteRepository::new());
         let meeting_repo = Arc::new(MockMeetingRepository::new());
+        let unit_repo = Arc::new(MockUnitRepository::new());
         let use_cases = ResolutionUseCases::new(
             resolution_repo.clone(),
             vote_repo.clone(),
             meeting_repo.clone(),
             Arc::new(MockUnitOwnerRepository::new()),
+            unit_repo.clone(),
         );
 
         let org_id = Uuid::new_v4();
         let building_id = Uuid::new_v4();
+        // #850 — chaque lot voté existe désormais, et porte sa quotité.
+        unit_repo.pose_defaut(building_id, dec!(100));
         let meeting_id = Uuid::new_v4();
 
         // Create a meeting with quorum reached
@@ -1753,8 +2038,7 @@ mod tests {
                     resolution.id,
                     owner_id,
                     unit_id,
-                    VoteChoice::Pour,
-                    rust_decimal_macros::dec!(100), // 100 millièmes chacun = 300 total
+                    VoteChoice::Pour, // 100 millièmes chacun = 300 total
                     Some(mandataire_id),
                 )
                 .await;
@@ -1775,7 +2059,6 @@ mod tests {
                 owner_id_4,
                 unit_id_4,
                 VoteChoice::Pour,
-                rust_decimal_macros::dec!(100),
                 Some(mandataire_id),
             )
             .await;
@@ -1792,15 +2075,19 @@ mod tests {
         let resolution_repo = Arc::new(MockResolutionRepository::new());
         let vote_repo = Arc::new(MockVoteRepository::new());
         let meeting_repo = Arc::new(MockMeetingRepository::new());
+        let unit_repo = Arc::new(MockUnitRepository::new());
         let use_cases = ResolutionUseCases::new(
             resolution_repo.clone(),
             vote_repo.clone(),
             meeting_repo.clone(),
             Arc::new(MockUnitOwnerRepository::new()),
+            unit_repo.clone(),
         );
 
         let org_id = Uuid::new_v4();
         let building_id = Uuid::new_v4();
+        // #850 — chaque lot voté existe désormais, et porte sa quotité.
+        unit_repo.pose_defaut(building_id, dec!(100));
         let meeting_id = Uuid::new_v4();
 
         // Create a meeting with quorum reached
@@ -1853,22 +2140,27 @@ mod tests {
                     Uuid::new_v4(),
                     Uuid::new_v4(),
                     VoteChoice::Pour,
-                    rust_decimal_macros::dec!(100), // 100 millièmes each, 9 × 100 = 900 total direct
                     None,
                 )
                 .await;
         }
 
-        // Now add 4 proxy votes of 5 millièmes each = 20 millièmes proxy
-        // Total votes = 900 + 20 = 920 → 20/920 = 2.2% < 10% → exception applies
+        // Quatre procurations sur de PETITS lots : 5 millièmes chacun, soit
+        // 20 sur 920 → 2,2 % < 10 %, l'exception de l'Art. 3.87 § 7 s'applique.
+        //
+        // Le scénario passait auparavant par une puissance de vote déclarée
+        // dans l'appel. Il passe désormais par la quotité RÉELLE de lots
+        // modestes — ce qui est précisément le fait que l'exception vise : un
+        // mandataire de petits lots ne pèse pas sur l'assemblée.
         for i in 0..4 {
+            let petit_lot = Uuid::new_v4();
+            unit_repo.lot(petit_lot, building_id, dec!(5));
             let result = use_cases
                 .cast_vote(
                     resolution.id,
                     Uuid::new_v4(),
-                    Uuid::new_v4(),
+                    petit_lot,
                     VoteChoice::Pour,
-                    rust_decimal_macros::dec!(5), // 5 millièmes chacun
                     Some(mandataire_id),
                 )
                 .await;
@@ -1898,6 +2190,7 @@ mod tests {
             vote_repo,
             meeting_repo.clone(),
             Arc::new(MockUnitOwnerRepository::new()),
+            Arc::new(MockUnitRepository::new()),
         );
 
         let meeting_id = Uuid::new_v4();
@@ -1945,7 +2238,6 @@ mod tests {
                 Uuid::new_v4(),
                 Uuid::new_v4(),
                 VoteChoice::Pour,
-                rust_decimal_macros::dec!(100),
                 None,
             )
             .await
@@ -1969,6 +2261,7 @@ mod tests {
             vote_repo,
             meeting_repo,
             Arc::new(MockUnitOwnerRepository::new()),
+            Arc::new(MockUnitRepository::new()),
         );
 
         let mut resolution = Resolution::new(
@@ -1992,7 +2285,6 @@ mod tests {
                 Uuid::new_v4(),
                 Uuid::new_v4(),
                 VoteChoice::Pour,
-                rust_decimal_macros::dec!(100),
                 None,
             )
             .await
@@ -2009,15 +2301,26 @@ mod tests {
     // ------------------------------------------------------------------------
 
     /// Helper — réunion avec quorum validé + résolution Pending prête à voter.
+    /// Une assemblée en quorum, avec sa résolution — et **les lots de son
+    /// immeuble** (#850).
+    ///
+    /// Le dépôt de lots entre dans la signature parce que voter exige
+    /// désormais un lot qui existe, rattaché à l'immeuble de l'assemblée. Le
+    /// passer en paramètre plutôt que de laisser chaque test y penser évite
+    /// qu'un scénario futur échoue sur « Lot introuvable » sans rapport avec
+    /// ce qu'il éprouve.
     async fn meeting_with_quorum_and_resolution(
         resolution_repo: &Arc<MockResolutionRepository>,
         meeting_repo: &Arc<MockMeetingRepository>,
+        unit_repo: &Arc<MockUnitRepository>,
     ) -> Resolution {
         let meeting_id = Uuid::new_v4();
+        let building_id = Uuid::new_v4();
+        unit_repo.pose_defaut(building_id, dec!(100));
         let mut meeting = Meeting::new(
             Uuid::new_v4(), // acp_id
             Uuid::new_v4(),
-            Uuid::new_v4(),
+            building_id,
             MeetingType::Ordinary,
             "AGO".to_string(),
             None,
@@ -2073,7 +2376,9 @@ mod tests {
         let resolution_repo = Arc::new(MockResolutionRepository::new());
         let vote_repo = Arc::new(MockVoteRepository::new());
         let meeting_repo = Arc::new(MockMeetingRepository::new());
-        let resolution = meeting_with_quorum_and_resolution(&resolution_repo, &meeting_repo).await;
+        let unit_repo = Arc::new(MockUnitRepository::new());
+        let resolution =
+            meeting_with_quorum_and_resolution(&resolution_repo, &meeting_repo, &unit_repo).await;
 
         // On détache la résolution de son point d'ordre du jour.
         let mut orpheline = resolution.clone();
@@ -2090,6 +2395,8 @@ mod tests {
             vote_repo,
             meeting_repo,
             unit_owner_repo,
+            // #850 — la quotité du lot se lit sur l'acte de base.
+            Arc::new(MockUnitRepository::new()),
         );
 
         let erreur = use_cases
@@ -2098,7 +2405,6 @@ mod tests {
                 Uuid::new_v4(),
                 unit_id,
                 VoteChoice::Pour,
-                rust_decimal_macros::dec!(100),
                 None,
             )
             .await
@@ -2125,7 +2431,9 @@ mod tests {
         let resolution_repo = Arc::new(MockResolutionRepository::new());
         let vote_repo = Arc::new(MockVoteRepository::new());
         let meeting_repo = Arc::new(MockMeetingRepository::new());
-        let resolution = meeting_with_quorum_and_resolution(&resolution_repo, &meeting_repo).await;
+        let unit_repo = Arc::new(MockUnitRepository::new());
+        let resolution =
+            meeting_with_quorum_and_resolution(&resolution_repo, &meeting_repo, &unit_repo).await;
 
         // L'assemblée ne compte qu'un point (n° 0) : le n° 7 n'existe pas.
         let mut hors_bornes = resolution.clone();
@@ -2142,6 +2450,8 @@ mod tests {
             vote_repo,
             meeting_repo,
             unit_owner_repo,
+            // #850 — la quotité du lot se lit sur l'acte de base.
+            Arc::new(MockUnitRepository::new()),
         );
 
         let erreur = use_cases
@@ -2150,7 +2460,6 @@ mod tests {
                 Uuid::new_v4(),
                 unit_id,
                 VoteChoice::Pour,
-                rust_decimal_macros::dec!(100),
                 None,
             )
             .await
@@ -2170,7 +2479,9 @@ mod tests {
         let resolution_repo = Arc::new(MockResolutionRepository::new());
         let vote_repo = Arc::new(MockVoteRepository::new());
         let meeting_repo = Arc::new(MockMeetingRepository::new());
-        let resolution = meeting_with_quorum_and_resolution(&resolution_repo, &meeting_repo).await;
+        let unit_repo = Arc::new(MockUnitRepository::new());
+        let resolution =
+            meeting_with_quorum_and_resolution(&resolution_repo, &meeting_repo, &unit_repo).await;
 
         // On blanchit l'intitulé du point 0, auquel la résolution est rattachée.
         let mut reunion = meeting_repo
@@ -2191,6 +2502,8 @@ mod tests {
             vote_repo,
             meeting_repo,
             unit_owner_repo,
+            // #850 — la quotité du lot se lit sur l'acte de base.
+            Arc::new(MockUnitRepository::new()),
         );
 
         let erreur = use_cases
@@ -2199,7 +2512,6 @@ mod tests {
                 Uuid::new_v4(),
                 unit_id,
                 VoteChoice::Pour,
-                rust_decimal_macros::dec!(100),
                 None,
             )
             .await
@@ -2219,7 +2531,9 @@ mod tests {
         let resolution_repo = Arc::new(MockResolutionRepository::new());
         let vote_repo = Arc::new(MockVoteRepository::new());
         let meeting_repo = Arc::new(MockMeetingRepository::new());
-        let resolution = meeting_with_quorum_and_resolution(&resolution_repo, &meeting_repo).await;
+        let unit_repo = Arc::new(MockUnitRepository::new());
+        let resolution =
+            meeting_with_quorum_and_resolution(&resolution_repo, &meeting_repo, &unit_repo).await;
 
         let unit_id = Uuid::new_v4();
         // Lot indivis (2 indivisaires), aucun représentant désigné → suspendu.
@@ -2235,6 +2549,8 @@ mod tests {
             vote_repo,
             meeting_repo,
             unit_owner_repo,
+            // #850 — la quotité du lot se lit sur l'acte de base.
+            Arc::new(MockUnitRepository::new()),
         );
 
         let err = use_cases
@@ -2243,7 +2559,6 @@ mod tests {
                 Uuid::new_v4(),
                 unit_id,
                 VoteChoice::Pour,
-                rust_decimal_macros::dec!(100),
                 None,
             )
             .await
@@ -2262,7 +2577,9 @@ mod tests {
         let resolution_repo = Arc::new(MockResolutionRepository::new());
         let vote_repo = Arc::new(MockVoteRepository::new());
         let meeting_repo = Arc::new(MockMeetingRepository::new());
-        let resolution = meeting_with_quorum_and_resolution(&resolution_repo, &meeting_repo).await;
+        let unit_repo = Arc::new(MockUnitRepository::new());
+        let resolution =
+            meeting_with_quorum_and_resolution(&resolution_repo, &meeting_repo, &unit_repo).await;
 
         let unit_id = Uuid::new_v4();
         // Usufruit + nue-propriété, l'usufruitier est le représentant → actif.
@@ -2278,6 +2595,8 @@ mod tests {
             vote_repo,
             meeting_repo,
             unit_owner_repo,
+            // #850 — la quotité du lot se lit sur l'acte de base.
+            unit_repo.clone(),
         );
 
         let result = use_cases
@@ -2286,7 +2605,6 @@ mod tests {
                 Uuid::new_v4(),
                 unit_id,
                 VoteChoice::Pour,
-                rust_decimal_macros::dec!(100),
                 None,
             )
             .await;

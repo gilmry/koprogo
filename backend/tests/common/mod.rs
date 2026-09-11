@@ -307,6 +307,8 @@ pub async fn setup_test_db() -> (
         vote_repo,
         meeting_repo.clone(),
         unit_owner_repo.clone(),
+        // #850 — la quotité du lot se lit sur l'acte de base.
+        unit_repo.clone(),
     );
     let ticket_use_cases = TicketUseCases::new(ticket_repo);
     let encryption_key: [u8; 32] = *b"test-encryption-key-32bytes!!!!!";

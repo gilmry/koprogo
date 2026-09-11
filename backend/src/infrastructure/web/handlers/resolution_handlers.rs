@@ -335,7 +335,10 @@ pub async fn cast_vote(
             request.owner_id,
             request.unit_id,
             request.vote_choice.clone(),
-            request.voting_power,
+            // `request.voting_power` n'est PAS transmis : le cas d'usage relit
+            // la quotité du lot. Accepter ici une puissance déclarée sans s'en
+            // servir ressemblerait à un contrôle — c'est exactement ce que #850
+            // reproche à cette route.
             request.proxy_owner_id,
         )
         .await

@@ -3204,8 +3204,18 @@ export interface components {
       /** Format: uuid */
       unit_id: string;
       vote_choice: components["schemas"]["VoteChoice"];
-      /** @description Tantièmes/millièmes — Decimal exact (ADR-0008), sérialisé en string JSON. */
-      voting_power: string;
+      /**
+       * @description **Ignoré par le serveur depuis #850.**
+       *
+       *     La puissance de vote d'un lot est sa quotité dans l'acte de base
+       *     (Art. 3.87 § 2 et § 8 CC) : elle n'est pas déclarative. Le serveur la
+       *     relit sur le lot et n'accorde aucune valeur à ce champ.
+       *
+       *     Il reste accepté pour ne pas casser les appelants existants, et sera
+       *     retiré du contrat quand l'arbitrage de #850 — qui peut saisir un vote,
+       *     et pour qui — aura tranché le reste de la route.
+       */
+      voting_power?: string | null;
     };
     /**
      * @description Challenge status lifecycle
