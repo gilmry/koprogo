@@ -221,7 +221,7 @@
         aria-controls="building-selector-listbox"
         aria-label={$_("scope.selectBuilding") || "Sélectionner un immeuble"}
         placeholder={$_("scope.searchPlaceholder") || "Rechercher un immeuble…"}
-        class="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+        class="min-h-11 w-full rounded border border-gray-300 py-2 pl-3 pr-12 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
       />
 
       {#if scope.selectedBuildingId !== null}
@@ -230,7 +230,7 @@
           data-testid="building-selector-clear"
           onclick={onClear}
           aria-label={$_("scope.clear") || "Effacer la sélection"}
-          class="absolute right-2 top-1/2 -translate-y-1/2 text-muted hover:text-gray-700"
+          class="absolute right-0 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center text-muted hover:text-gray-700"
         >
           ×
         </button>
@@ -285,7 +285,7 @@
                   ? $_("scope.unfavorite") || "Retirer des favoris"
                   : $_("scope.favorite") || "Ajouter aux favoris"}
                 aria-pressed={favorites.has(b.id)}
-                class="ml-2 text-yellow-500 hover:text-yellow-700"
+                class="-mr-1 ml-2 flex h-11 w-11 shrink-0 items-center justify-center rounded text-yellow-500 hover:bg-gray-100 hover:text-yellow-700"
               >
                 {favorites.has(b.id) ? "★" : "☆"}
               </button>

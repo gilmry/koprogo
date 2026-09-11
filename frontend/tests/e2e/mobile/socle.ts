@@ -154,3 +154,47 @@ export async function plusPetiteDimension(
   if (!boite) throw new Error(`Cible sans boîte : ${ancre}`);
   return Math.min(boite.width, boite.height);
 }
+
+/**
+ * Ajoute une réponse PARTICULIÈRE, après le socle.
+ *
+ * À appeler APRÈS `ouvreEnTantQue`. Playwright essaie les interceptions dans
+ * l'ordre inverse d'enregistrement : posée avant, celle-ci serait recouverte
+ * par le fourre-tout du socle et n'aurait aucun effet — silencieusement, ce
+ * qui est le piège que `garde-interception-reseau` décrit déjà.
+ *
+ * C'est arrivé à la première mesure du sélecteur : la liste sortait vide, et
+ * le test aurait conclu « aucune ligne à mesurer, donc rien à redire ».
+ */
+export async function repond(
+  page: Page,
+  motif: RegExp,
+  corps: unknown,
+): Promise<void> {
+  await page.route(motif, (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify(corps),
+    }),
+  );
+}
+
+/** Deux immeubles : assez pour mesurer une ligne, sans décrire un jeu de données. */
+export const DEUX_IMMEUBLES = {
+  data: [
+    {
+      id: "11111111-1111-1111-1111-111111111111",
+      name: "Résidence Les Érables",
+      city: "Bruxelles",
+    },
+    {
+      id: "22222222-2222-2222-2222-222222222222",
+      name: "Le Clos du Parc",
+      city: "Ixelles",
+    },
+  ],
+  total: 2,
+  page: 1,
+  per_page: 20,
+};
