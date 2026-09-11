@@ -178,6 +178,7 @@ jobs:
             --test garde_identite_absente \
             --test garde_lecture \
             --test garde_ordre_des_routes \
+            --test garde_harnais_executes \
             --test garde_paniques_en_production \
             --test garde_perimetre_wbs \
             --test garde_schema_mort \
@@ -517,7 +518,9 @@ jobs:
             --test e2e_notifications --test e2e_payment_recovery \
             --test e2e_budget --test e2e_notices --test e2e_skills \
             --test e2e_invoices --test e2e_local_exchange \
-            --test e2e_documents --test storage_s3
+            --test e2e_documents --test storage_s3 \
+            --test e2e_cloisonnement_inter_organisations \
+            --test e2e_cycle_ag_complet
           # Lot 3 et 4 — 41 harnais supplementaires, mesures verts les
           # 2026-08-26/27. Aucun n'avait jamais ete execute. Leur premiere
           # execution a mis au jour quatre defauts produit de plus, dont deux

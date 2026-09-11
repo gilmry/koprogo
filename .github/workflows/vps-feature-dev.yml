@@ -159,7 +159,8 @@ jobs:
             --test garde_perimetre_wbs \
             --test garde_schema_mort \
             --test garde_taxonomie_bdd \
-            --test garde_taxonomie_des_tests
+            --test garde_taxonomie_des_tests \
+            --test garde_harnais_executes
 
       - uses: actions/setup-node@v4
         with:
