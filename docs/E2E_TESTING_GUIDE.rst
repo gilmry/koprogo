@@ -236,9 +236,10 @@ cas en CI.
 
 Contre un hôte que la campagne **n'amorce pas** — la démo, une préproduction —
 le superadministrateur est créé par ``seed_superadmin``, qui fait un *upsert à
-chaque démarrage* depuis l'environnement de cet hôte. Le repli n'y vaut donc
-rien, et la connexion rend ``401 Invalid credentials`` : un message qui parle
-d'identifiants là où le défaut est de configuration.
+chaque démarrage* depuis l'environnement de cet hôte. Ce que vaut le repli
+dépend donc de ce que l'exploitant a posé là-bas, et vous ne pouvez pas le
+deviner : sans choix explicite, la connexion rend ``401 Invalid credentials``,
+un message qui parle d'identifiants là où le défaut est de configuration.
 
 .. code-block:: bash
 
@@ -251,11 +252,24 @@ celle qui manque (``tests/e2e/helpers/identifiants.ts``). C'est délibéré : le
 2026-09-10, le ``401`` muet a coûté une demi-journée d'enquête sur un défaut
 produit qui n'existait pas (#870).
 
+Le garde regarde si la variable est **posée**, pas ce qu'elle contient. Choisir
+une valeur faible en connaissance de cause est une décision d'exploitation, et
+le serveur l'avertit déjà de son côté au démarrage. Ce qu'il refuse, c'est de
+partir vers un hôte distant sans que personne n'ait choisi.
+
 .. warning::
 
-   Rétablir le mot de passe sur l'hôte distant ne referme pas le sujet :
-   l'upsert repart de l'environnement au prochain démarrage, et le piège se
-   réarme sans que personne ne l'ait touché.
+   Corriger le mot de passe **en base** ne tient pas : l'upsert repart de
+   l'environnement au prochain démarrage et l'écrase. C'est
+   ``KOPROGO_SUPERADMIN_PASSWORD`` de l'hôte qu'il faut changer, pas la ligne.
+
+.. note::
+
+   Sur la démo (``api.koprogo.com``), la variable porte ``admin123`` depuis le
+   2026-09-12, par décision d'exploitation : le mot de passe survit désormais
+   aux redéploiements, au prix d'être celui que le dépôt publie. Le backend
+   l'annonce à chaque démarrage — « SÉCURITÉ : le superadmin utilise le mot de
+   passe par défaut, lisible dans le dépôt public ».
 
 .. note::
 

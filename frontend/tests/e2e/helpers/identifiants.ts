@@ -55,26 +55,49 @@ function estDistant(adresse: string | undefined): boolean {
 }
 
 /**
- * S'arrête AVANT la première requête si la campagne vise un hôte distant avec
- * le mot de passe de repli.
+ * S'arrête AVANT la première requête si la campagne vise un hôte distant sans
+ * que l'opérateur ait choisi d'identifiants.
  *
- * Le message nomme les deux variables. Il ne recopie jamais la valeur : un
- * message d'erreur atterrit dans les journaux de CI, qui se conservent.
+ * ── Ce que ce garde surveille VRAIMENT ─────────────────────────────────
+ *
+ * Sa première version comparait le mot de passe à `admin123`. C'était une
+ * erreur de conception, et le 2026-09-12 l'a rendue visible : la démo a reçu
+ * `KOPROGO_SUPERADMIN_PASSWORD=admin123` dans son environnement, pour que
+ * l'upsert du seed cesse d'effacer la valeur à chaque redémarrage. Le garde
+ * aurait alors refusé une campagne parfaitement légitime, parce que la bonne
+ * valeur ressemblait à la mauvaise.
+ *
+ * Le danger n'est pas la VALEUR, c'est de **ne pas avoir choisi**. Un repli
+ * silencieux contre un hôte qu'on n'amorce pas rend un `401` qui parle
+ * d'identifiants là où le défaut est de configuration — une demi-journée
+ * d'enquête sur un défaut produit qui n'existe pas (#870).
+ *
+ * Le garde regarde donc si la variable est POSÉE, pas ce qu'elle contient.
+ * Choisir `admin123` en connaissance de cause est une décision d'exploitation ;
+ * elle ne regarde pas ce fichier. Le serveur, lui, la signale déjà :
+ *
+ * > SÉCURITÉ : le superadmin utilise le mot de passe par défaut, lisible dans
+ * > le dépôt public.
+ *
+ * Le message ne recopie jamais la valeur : une erreur atterrit dans les
+ * journaux de CI, qui se conservent.
  */
 export function verifieLesIdentifiants(
   adresse: string | undefined = process.env.PLAYWRIGHT_BASE_URL,
-  motDePasse: string = ADMIN_PASSWORD,
+  motDePasseChoisi: string | undefined = process.env
+    .KOPROGO_SUPERADMIN_PASSWORD,
 ): void {
   if (!estDistant(adresse)) return;
-  if (motDePasse !== REPLI_DU_SEED) return;
+  if (motDePasseChoisi) return;
 
   throw new Error(
     `PLAYWRIGHT_BASE_URL désigne « ${adresse} », un hôte que cette suite ` +
-      `n'amorce pas, et le mot de passe est resté au repli du seed.\n\n` +
+      `n'amorce pas, et aucun identifiant n'a été choisi.\n\n` +
       `Cet hôte reçoit son superadministrateur par upsert au démarrage, ` +
-      `depuis son propre environnement : le repli n'y vaut rien, et la ` +
-      `connexion rendra « 401 Invalid credentials » — un message qui parle ` +
-      `d'identifiants là où le défaut est de configuration.\n\n` +
+      `depuis son propre environnement : le repli du seed n'y vaut que si ` +
+      `l'exploitant l'y a lui-même posé. Sinon la connexion rendra ` +
+      `« 401 Invalid credentials » — un message qui parle d'identifiants là ` +
+      `où le défaut est de configuration.\n\n` +
       `Exportez les deux variables avant de lancer la campagne :\n` +
       `    KOPROGO_SUPERADMIN_EMAIL\n` +
       `    KOPROGO_SUPERADMIN_PASSWORD\n\n` +

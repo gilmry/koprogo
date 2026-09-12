@@ -28,32 +28,63 @@ import { verifieLesIdentifiants } from "../../../tests/e2e/helpers/identifiants"
  *
  * ── Pourquoi ce garde ne doit PAS se déclencher en CI ──────────────────
  *
- * La CI amorce sa propre base sans la variable : `admin123` y est légitime.
+ * La CI amorce sa propre base sans la variable : le repli y est légitime.
  * Un garde qui casserait la CI pour protéger la démo serait pire que le
  * défaut qu'il corrige. Il ne mord donc que sur un hôte DISTANT.
+ *
+ * ── Ce qu'il surveille : le CHOIX, pas la valeur ───────────────────────
+ *
+ * Sa première version comparait le mot de passe à `admin123`. Le 2026-09-12 a
+ * montré l'erreur : la démo a reçu `KOPROGO_SUPERADMIN_PASSWORD=admin123` dans
+ * son environnement, pour que l'upsert du seed cesse d'effacer la valeur à
+ * chaque redémarrage. Le garde aurait refusé une campagne légitime parce que
+ * la bonne valeur ressemblait à la mauvaise.
+ *
+ * Le danger est de **ne pas avoir choisi**. Choisir `admin123` sciemment est
+ * une décision d'exploitation — le serveur la signale déjà de son côté, et ce
+ * n'est pas à ce fichier d'en juger.
  */
 
-const REPLI = "admin123";
+/** Le cas dangereux : la variable n'est pas posée du tout. */
+const AUCUN_CHOIX = undefined;
 
 describe("les identifiants de recette refusent l'hôte distant au repli", () => {
-  it("@happy — laisse passer un hôte distant avec un vrai mot de passe", () => {
+  it("@happy — laisse passer un hôte distant quand un mot de passe est choisi", () => {
     expect(() =>
       verifieLesIdentifiants("https://koprogo.com", "un-vrai-secret"),
     ).not.toThrow();
   });
 
-  it("@negative — s'arrête sur un hôte distant resté au repli", () => {
+  it("@happy — laisse passer même si le choix EST le repli du seed", () => {
+    // C'est le cas de la démo depuis le 2026-09-12 : l'exploitant a posé
+    // `admin123` dans l'environnement pour que l'upsert cesse de l'effacer.
+    // La valeur est faible, et c'est son affaire ; le serveur l'avertit
+    // lui-même au démarrage. Ce garde n'a pas à refuser un choix explicite.
     expect(() =>
-      verifieLesIdentifiants("https://koprogo.com", REPLI),
+      verifieLesIdentifiants("https://koprogo.com", "admin123"),
+    ).not.toThrow();
+  });
+
+  it("@negative — s'arrête sur un hôte distant sans aucun choix", () => {
+    expect(() =>
+      verifieLesIdentifiants("https://koprogo.com", AUCUN_CHOIX),
     ).toThrow(/KOPROGO_SUPERADMIN_PASSWORD/);
+  });
+
+  it("@negative — une variable vide ne compte pas comme un choix", () => {
+    // `export KOPROGO_SUPERADMIN_PASSWORD=` est la façon la plus courante de
+    // croire avoir posé la variable sans l'avoir fait.
+    expect(() => verifieLesIdentifiants("https://koprogo.com", "")).toThrow(
+      /KOPROGO_SUPERADMIN_PASSWORD/,
+    );
   });
 
   it("@negative — le message nomme AUSSI la variable d'adresse", () => {
     // Sans elle, le lecteur ne sait pas pourquoi le garde s'est déclenché
     // chez lui et pas en CI.
-    expect(() => verifieLesIdentifiants("https://koprogo.com", REPLI)).toThrow(
-      /PLAYWRIGHT_BASE_URL/,
-    );
+    expect(() =>
+      verifieLesIdentifiants("https://koprogo.com", AUCUN_CHOIX),
+    ).toThrow(/PLAYWRIGHT_BASE_URL/);
   });
 
   it("@edge — ne mord sur aucune forme d'hôte local", () => {
@@ -67,7 +98,7 @@ describe("les identifiants de recette refusent l'hôte distant au repli", () => 
       "http://[::1]:3000",
     ]) {
       expect(
-        () => verifieLesIdentifiants(local, REPLI),
+        () => verifieLesIdentifiants(local, AUCUN_CHOIX),
         `${local ?? "(non défini)"} est local : la CI doit continuer`,
       ).not.toThrow();
     }
@@ -83,7 +114,7 @@ describe("les identifiants de recette refusent l'hôte distant au repli", () => 
     // « une ». Les vraies entrées illisibles sont celles sans autorité.
     for (const illisible of ["pas-une-url", "://", "http://"]) {
       expect(
-        () => verifieLesIdentifiants(illisible, REPLI),
+        () => verifieLesIdentifiants(illisible, AUCUN_CHOIX),
         `${illisible} est illisible : le garde laisse passer`,
       ).not.toThrow();
     }
@@ -92,7 +123,7 @@ describe("les identifiants de recette refusent l'hôte distant au repli", () => 
   it("@edge — un schéma exotique mais lisible compte comme distant", () => {
     // `pas://une/url` porte un hôte, donc la campagne vise bien quelque chose
     // qu'elle n'amorce pas. Le garde mord, et c'est le comportement voulu.
-    expect(() => verifieLesIdentifiants("pas://une/url", REPLI)).toThrow(
+    expect(() => verifieLesIdentifiants("pas://une/url", AUCUN_CHOIX)).toThrow(
       /KOPROGO_SUPERADMIN_PASSWORD/,
     );
   });
@@ -107,12 +138,13 @@ describe("les identifiants de recette refusent l'hôte distant au repli", () => 
     // Un vrai mot de passe ne déclenche rien, donc rien à fuiter ici…
     expect(message).toBe("");
 
-    // …et sur le cas qui DÉCLENCHE, le repli ne doit pas non plus être
-    // recopié : un message d'erreur atterrit dans les journaux de CI.
+    // …et sur le cas qui DÉCLENCHE, le message nomme la variable sans jamais
+    // citer une valeur : une erreur atterrit dans les journaux de CI, qui se
+    // conservent.
     try {
-      verifieLesIdentifiants("https://koprogo.com", REPLI);
+      verifieLesIdentifiants("https://koprogo.com", AUCUN_CHOIX);
     } catch (e) {
-      expect((e as Error).message).not.toContain(REPLI);
+      expect((e as Error).message).not.toContain("admin123");
     }
   });
 });
