@@ -142,7 +142,7 @@ CAPACITES = [
      {866: "M", 869: "M", 871: "S"}),
 
     ("C7.1", "T3", "La recette peut se connecter et s'exécuter", "Must",
-     {870: "S", 832: "M", 696: "M"}),
+     {872: "L", 870: "S", 832: "M", 696: "M"}),
     ("C7.2", "T3", "La taxonomie des tests est la gate de release", "Should",
      {427: "L"}),
 

@@ -15,7 +15,7 @@ signature_humaine:
 *Épopées et capacités. Généré par `scripts/backlog-structure.py` : ne pas
 éditer à la main, la prochaine génération écraserait la correction.*
 
-**84 issues ouvertes**, 10 épopées, 32 capacités. Classement exhaustif et exclusif : chaque issue appartient à exactement
+**85 issues ouvertes**, 10 épopées, 32 capacités. Classement exhaustif et exclusif : chaque issue appartient à exactement
 une capacité, et une issue non classée fait échouer la génération.
 
 ## Comment lire ce document
@@ -57,7 +57,7 @@ fabrication ; le Scrum Master de conception l'écrit sans détour :
 | Couche(s) | où le code atterrit, donc quelles gardes s'appliquent |
 | Taille + tours | le coût, sur les deux axes |
 
-**5 issues sur 84** portent les huit. Le relevé
+**6 issues sur 85** portent les huit. Le relevé
 d'origine, avant ce travail, donnait **zéro**.
 
 Le chiffre n'est pas écrit à la main : `scripts/backlog-pret.py` le relève
@@ -336,19 +336,20 @@ La cible est mobile-first et l'application est écrite desktop-first. L'écart n
 
 ## T3 — Harnais de recette
 
-`epic:recette` · 4 issues · 3.00 j · 12 tours
+`epic:recette` · 5 issues · 4.00 j · 16 tours
 
 Sprint 0 continué. Ce qui permet de BOUCLER : sans lui, aucune autre capacité ne peut être déclarée tenue.
 
 ### C7.1 — La recette peut se connecter et s'exécuter
 
-**Must** · `cap:C7.1` · 3 issues · 2.00 j · 8 tours · **3/3 prêtes**
+**Must** · `cap:C7.1` · 4 issues · 3.00 j · 12 tours · **4/4 prêtes**
 
 | Issue | Titre | Taille | Prête |
 |---|---|---|---|
 | [#696](https://github.com/gilmry/koprogo/issues/696) | Instabilité smoke suite Playwright CI : 109 échecs sur specs pré-existantes (… | M | oui |
 | [#832](https://github.com/gilmry/koprogo/issues/832) | Quinze specs Playwright échouent sans erreur d'identité : les ancrages existe… | M | oui |
 | [#870](https://github.com/gilmry/koprogo/issues/870) | La suite e2e ne peut plus se connecter à la démo : le repli admin123 est mort… | S | oui |
+| [#872](https://github.com/gilmry/koprogo/issues/872) | La pile de développement revendique les conteneurs de la démo : `docker compo… | L | oui |
 
 ### C7.2 — La taxonomie des tests est la gate de release
 
@@ -474,11 +475,11 @@ Des questions ouvertes, pas des défauts. La Méthode Foyer les veut en RFC, dis
 | E4 — Plateforme | 10 | 9.00 | 36 |
 | T1 — Refonte UX | 14 | 13.25 | 53 |
 | T2 — Accessibilité et mobile | 5 | 3.50 | 14 |
-| T3 — Harnais de recette | 4 | 3.00 | 12 |
+| T3 — Harnais de recette | 5 | 4.00 | 16 |
 | T4 — Documentation vivante multi-persona | 14 | 11.25 | 45 |
 | T5 — Ops et infrastructure | 10 | 9.00 | 36 |
 | T6 — Arbitrages produit en attente | 1 | 0.50 | 2 |
-| **Total** | **84** | **72.25** | **289** |
+| **Total** | **85** | **73.25** | **293** |
 
 `S` = 0,5 j · `M` = 0,75 j · `L` = 1 j — wall-clock du superviseur, pas
 temps machine. Les tours mesurent l'autre axe, le coût en tokens.
