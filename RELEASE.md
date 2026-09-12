@@ -13,7 +13,7 @@
 - **Archétype** : full-stack *(Rust hexagonal + Astro/Svelte 5 en îlots, PostgreSQL)*
 - **Substrat d'exécution** : conteneur — `~/bin/kcargo` pour Rust, jamais `cargo` sur l'hôte
 - **Démarré le** : 2026-09-12
-- **Dernière mise à jour** : 2026-09-12 (par : Claude — rangs 2 à 5 portés à « Agent IA Ready »)
+- **Dernière mise à jour** : 2026-09-12 (par : Claude — rangs 2 à 6 portés à « Agent IA Ready »)
 
 ## Répartition des rôles
 
@@ -34,10 +34,11 @@ appelle une signature et non une validation.
 
 - **Phase / étape** : Phase A · conception BMAD ciblée sur la release · étape 4
   (Validateur → backlog « Agent IA Ready »)
-- **Prochaine action attendue** : poursuivre l'étape 4 — rang 6 (les `Should`,
-  23 issues) puis rang 7 (les `Could`, 39). Les rangs 1 à 5 sont prêts ; restent
-  59 issues. **Mais voir d'abord l'arbitrage 🔴 sur le dialecte des stories** :
-  il change ce que le compteur mesure.
+- **Prochaine action attendue** : poursuivre l'étape 4 — rang 7 (les `Could`,
+  39 issues) et les **3 issues sans rang** signalées ci-dessous. Les rangs 1 à 6
+  sont prêts ; restent 42 issues, dont **12 dans le dialecte Maury d'origine**
+  (arbitrage 🔴 en attente : les traduire, ou apprendre les deux dialectes au
+  compteur).
 - **La fabrication n'ouvre pas encore.** Le PO a choisi une signature unique
   **après** la préparation complète ; ni #872 (harnais, ADR 0050) ni #855 ni
   #802 n'entrent en fabrication avant. L'ADR 0050 attend, elle n'est pas
@@ -54,16 +55,16 @@ appelle une signature et non une validation.
   (`backend/tests/architecture.rs`), les dépendances croisées sont interdites.
 - **Chiffrage** : 73,25 j de wall-clock superviseur · 293 tours. **Bornes hautes
   de première passe**, à resserrer sur le réel par le CSI.
-- **Validateur** : ⏳ **en cours**. **25 issues sur 84** portent les huit
-  éléments d'une story prête, et 40 portent les quatre classes de tests
-  (`scripts/backlog-pret.py`, mesuré le 2026-09-12 après le rang 5). Le
+- **Validateur** : ⏳ **en cours**. **42 issues sur 84** — la moitié — portent
+  les huit éléments d'une story prête, et 56 portent les quatre classes de tests
+  (`scripts/backlog-pret.py`, mesuré le 2026-09-12 après le rang 6). Le
   livrable porte `NON SIGNÉ` — la signature vient après la préparation.
 
-> **Rangs 1 à 5 prêts.** C7.1 l'était (4/4) ; puis C4.1/C4.2/C4.3 (7), #856
-> (C10.1), #803 / #834 (C5.2 / C5.1 — #802 et #797 l'étaient déjà), et les huit
-> du noyau légal C1.1 / C1.3. Le contrôle est **de forme** : le script cherche
-> des marqueurs, pas du sens. Il l'écrit lui-même — « une borne haute de la
-> préparation, jamais un verdict ».
+> **Rangs 1 à 6 prêts.** C7.1 l'était (4/4) ; puis C4.1/C4.2/C4.3 (7), #856
+> (C10.1), #803 / #834 (C5.2 / C5.1 — #802 et #797 l'étaient déjà), les huit du
+> noyau légal C1.1 / C1.3, et les 17 `Should` du rang 6. Le contrôle est **de
+> forme** : le script cherche des marqueurs, pas du sens. Il l'écrit lui-même —
+> « une borne haute de la préparation, jamais un verdict ».
 
 > **84, et non 85.** Le backlog structuré a été généré à 85 issues ouvertes ;
 > #840 a été fermée le même jour, après la génération. Le document n'est pas
@@ -103,7 +104,7 @@ un défaut de structure. Seul l'ordre des capacités est repris.
 | 3 | C10.1 — arbitrage du groupe « Communauté » | ✅ tranché (ADR 0052) · story prête |
 | 4 | C5.2 puis C5.1 — contrat de tests, socle visuel | ✅ 4/4 stories prêtes |
 | 5 | C1.1 / C1.3 — le noyau légal | ✅ 8/8 stories prêtes · #840 fermée |
-| 6 | les `Should`, parallélisables | |
+| 6 | les `Should`, parallélisables | ✅ 17/17 stories prêtes |
 | 7 | les `Could` | |
 | 8 | G1 puis G2 — revue humaine signée, puis le tag | hors périmètre agent |
 
@@ -111,14 +112,26 @@ un défaut de structure. Seul l'ordre des capacités est repris.
 
 ### 🔴 En attente (le PO doit trancher une MODALITÉ)
 
+- **Point** : trois issues sont classées mais **ordonnancées nulle part**
+  - **Preuve jointe** : le tableau « Ordre » du backlog énumère, au rang 6,
+    dix des **treize** capacités `Should`. **C1.2** (#578, #579) et **C7.2**
+    (#427) n'apparaissent dans aucun rang, du 1 au 8. Le classement se dit
+    « exhaustif et exclusif » — il l'est pour la *classification*, pas pour
+    l'*ordonnancement*, et rien ne gardait cette seconde propriété.
+  - **Question de modalité** : à quel rang les place-t-on ? Le 6 avec les autres
+    `Should`, ou ailleurs si leur dépendance l'impose ?
+  - **Conséquence si on ne tranche pas** : une capacité sans rang n'est jamais
+    planifiée, et sortira du radar sans qu'aucun contrôle ne s'en aperçoive.
+
 - **Point** : deux dialectes de story coexistent, et le compteur n'en lit qu'un
   - **Preuve jointe** : **16 issues sur 84** portent `## Goal` + `Acceptance
     Criteria (4 catégories)` + `Effort` + `Files` — le dialecte Maury d'origine.
     Elles ont **la substance** d'une story prête (les quatre classes y sont, et
     un effort), mais pas le vocabulaire que `scripts/backlog-pret.py` cherche
     (« En tant que », « Étant donné », « Couche », « Taille »). Elles comptent
-    donc pour non prêtes. Trois d'entre elles (#576, #577, #581) ont été
-    traduites au rang 5 ; **13 restent**, toutes aux rangs 6 et 7.
+    donc pour non prêtes. Quatre ont été traduites depuis (#576, #577, #581 au
+    rang 5, #592 au rang 6) ; **12 restent** : #578, #579, #582, #583, #585,
+    #586, #587, #588, #589, #590, #591, #595.
   - **Question de modalité** : A) traduire les 13 comme les trois autres ·
     B) apprendre les deux dialectes au script · C) les laisser et assumer que le
     compteur sous-estime.
@@ -162,6 +175,11 @@ un défaut de structure. Seul l'ordre des capacités est repris.
 
 ## Journal (chronologie courte)
 
+- 2026-09-12 — **rang 6 porté à « Agent IA Ready »** : les 17 `Should` de
+  C2.1, C2.2, C3.1, C4.4, C4.5, C6.1, C6.2, C9.1 et C9.3 (#855 l'était déjà).
+  **42/84 — la moitié.** En les listant, découverte que le rang 6 en comptait
+  **18 et non 23** : mon compte précédent était faux, et trois issues (#578,
+  #579, #427) ne figurent dans **aucun** rang. Inscrit en 🔴.
 - 2026-09-12 — **rang 5, le noyau légal, porté à « Agent IA Ready »** : #780,
   #848, #850, #576, #577, #581 (C1.1) et #847, #846 (C1.3). 25/84. #840 étant
   de C1.1, sa fermeture explique le 85 → 84.
