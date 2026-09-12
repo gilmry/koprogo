@@ -54,6 +54,7 @@ mod tests {
         let building_id = Uuid::new_v4();
 
         let expense = Expense::new(
+            Uuid::new_v4(), // acp_id
             org_id,
             building_id,
             ExpenseCategory::Maintenance,
@@ -88,6 +89,7 @@ mod tests {
 
         let expenses = vec![
             Expense::new(
+                Uuid::new_v4(), // acp_id
                 org_id,
                 building_id,
                 ExpenseCategory::Maintenance,
@@ -100,6 +102,7 @@ mod tests {
             )
             .unwrap(),
             Expense::new(
+                Uuid::new_v4(), // acp_id
                 org_id,
                 building_id,
                 ExpenseCategory::Repairs,
@@ -124,6 +127,7 @@ mod tests {
         let syndic_id = Uuid::new_v4();
 
         let mut expense1 = Expense::new(
+            Uuid::new_v4(), // acp_id
             org_id,
             building_id,
             ExpenseCategory::Maintenance,
@@ -141,6 +145,7 @@ mod tests {
         let _ = expense1.mark_as_paid();
 
         let expense2 = Expense::new(
+            Uuid::new_v4(), // acp_id
             org_id,
             building_id,
             ExpenseCategory::Repairs,

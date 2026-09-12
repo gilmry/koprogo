@@ -214,9 +214,41 @@ impl OwnerRepository for PostgresOwnerRepository {
         let mut where_clauses = Vec::new();
         let mut param_count = 0;
 
+        // Portée par DÉTENTION, pas par estampille de saisie.
+        //
+        // Un copropriétaire est, en droit, une personne qui DÉTIENT UN LOT :
+        // l'Art. 3.84 CC répartit le droit de propriété « par lots », et
+        // l'Art. 3.86 § 1er fait naître l'ACP par « la cession ou
+        // l'attribution d'un lot au moins ». La notion de copropriétaire sans
+        // lot n'existe pas. Son rattachement à une copropriété passe donc par
+        // ses détentions, jamais par le cabinet qui a saisi sa fiche.
+        //
+        // PAS de colonne `owners.acp_id` : une même personne peut détenir des
+        // lots dans PLUSIEURS copropriétés — un appartement ici, un garage
+        // ailleurs. Une clé singulière serait fausse dès le premier
+        // investisseur. La jointure dit la vérité, une colonne mentirait.
+        //
+        // La détention est prise SANS filtrer sur `end_date` : un vendeur
+        // reste débiteur de ses arriérés après la mutation (Art. 3.94 § 2),
+        // et le syndic doit pouvoir les poursuivre. Un ancien copropriétaire
+        // sort du présent, pas des livres.
+        //
+        // Le repli sur `organization_id` ne vaut que pour une fiche pas
+        // encore rattachée à un lot : entre sa création et l'enregistrement
+        // de la détention, elle disparaîtrait autrement de toutes les listes.
+        // C'est un brouillon, visible de son seul auteur.
         if filters.organization_id.is_some() {
             param_count += 1;
-            where_clauses.push(format!("organization_id = ${}", param_count));
+            where_clauses.push(format!(
+                "(EXISTS (SELECT 1 FROM unit_owners uo \
+                          JOIN units u ON u.id = uo.unit_id \
+                          JOIN buildings b ON b.id = u.building_id \
+                          JOIN acps a ON a.id = b.acp_id \
+                          WHERE uo.owner_id = owners.id AND a.organization_id = ${p}) \
+                  OR (NOT EXISTS (SELECT 1 FROM unit_owners uo WHERE uo.owner_id = owners.id) \
+                      AND owners.organization_id = ${p}))",
+                p = param_count
+            ));
         }
 
         if filters.email.is_some() {

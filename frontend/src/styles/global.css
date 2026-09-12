@@ -1,7 +1,25 @@
 @import "tailwindcss";
 @plugin "@tailwindcss/typography";
 
+/*
+ * Jetons de design — remise « KoproGo frontend modernisation », section
+ * « Design tokens ». Ils sont la source de vérité : `tailwind.config.mjs` a
+ * été supprimé parce que Tailwind v4 ne le charge pas sans directive
+ * `@config`, et qu'il MENTAIT — il déclarait `primary-600: #059669` là où ce
+ * bloc dit `#15803d`. Le vert réel du produit est `#15803d`.
+ *
+ * ── La règle de contraste, qui n'est pas décorative ──────────────────────
+ *
+ * `#a8a29e` (stone-400) et `#c4c0bb` sont des couleurs de TRAIT — bordures,
+ * séparateurs, contours. Jamais de texte. Chevrons compris : un chevron porte
+ * l'affordance du tap, il doit atteindre le contraste d'icône.
+ *
+ * Tout texte sous 14px passe par `muted` (4,80:1) ou `muted-strong` (5,4:1).
+ * Ces deux neutres existent précisément pour franchir `Accessibility.spec.ts`,
+ * qui exécute axe-core avec `runOnly: ['color-contrast']`.
+ */
 @theme {
+  /* ── Vert de marque ────────────────────────────────────────────────── */
   --color-primary-50: #f0fdf4;
   --color-primary-100: #dcfce7;
   --color-primary-200: #bbf7d0;
@@ -12,4 +30,120 @@
   --color-primary-700: #166534;
   --color-primary-800: #14532d;
   --color-primary-900: #0f3d1b;
+
+  /* Alias nommés de la remise, pour que le code dise l'intention plutôt
+     qu'un numéro de nuance. */
+  --color-primary: #15803d;
+  --color-primary-hover: #166534;
+  --color-primary-tint: #f0fdf4;
+  --color-primary-tint-border: #bbf7d0;
+  --color-success-text: #166534;
+
+  /* ── Encres : les neutres sont la rampe « stone » (chaude), pas slate ── */
+  --color-ink: #1c1917;
+  --color-ink-2: #44403c;
+  --color-ink-3: #57534e;
+
+  /* Les deux seuls neutres autorisés pour du texte sous 14px. */
+  --color-muted: #78716c;
+  --color-muted-strong: #6b6660;
+
+  /* ── Traits et surfaces : couleurs de trait, jamais de texte ───────── */
+  --color-line-soft: #f5f4f2;
+  --color-line: #f0efed;
+  --color-border-soft: #e7e5e4;
+  --color-border-strong: #d6d3d1;
+
+  --color-page: #fafaf9;
+  --color-surface: #ffffff;
+  --color-surface-alt: #fcfcfb;
+  --color-chip-bg: #f5f5f4;
+
+  /* ── États ────────────────────────────────────────────────────────── */
+  --color-danger: #b91c1c;
+  --color-danger-tint: #fef2f2;
+
+  --color-warn: #b45309;
+  --color-warn-tint: #fffbeb;
+  --color-warn-border: #fde68a;
+  /* Second segment des barres d'encaissement. */
+  --color-warn-bar: #fbbf24;
+
+  /* ── Rayons ───────────────────────────────────────────────────────── */
+  --radius-chip: 6px;
+  --radius-button: 8px;
+  --radius-nav: 9px;
+  --radius-card: 12px;
+  --radius-hero: 15px;
+  --radius-sheet: 20px;
+
+  /* ── Élévations ───────────────────────────────────────────────────── */
+  --shadow-card: 0 1px 2px rgb(0 0 0 / 0.04);
+  --shadow-sticky: 0 -4px 14px rgb(0 0 0 / 0.05);
+  --shadow-sheet: 0 -8px 30px rgb(0 0 0 / 0.18);
+  --shadow-fab: 0 8px 18px rgb(21 128 61 / 0.35);
+
+  /* ── Zones sûres ──────────────────────────────────────────────────── */
+  /*
+   * L'en-tête mobile mesure 56 px PLUS l'encoche. Un seul jeton, parce que
+   * deux fichiers doivent s'accorder dessus : la barre elle-même
+   * (`Navigation.svelte`, en `fixed top-0`) et la cale qui lui réserve sa
+   * place dans le flux (`Layout.astro`). Écrits séparément, ils dérivent, et
+   * la page glisse sous l'en-tête de la hauteur exacte de l'encoche.
+   *
+   * Le repli `0px` compte : sur un écran sans encoche, et partout où
+   * `viewport-fit=cover` n'est pas posé, `env()` ne résout rien.
+   */
+  --spacing-entete-mobile: calc(3.5rem + env(safe-area-inset-top, 0px));
+
+  /*
+   * La barre d'onglets : 74 px de cibles, PLUS l'indicateur d'accueil.
+   *
+   * Le `+` compte. `h-[74px]` avec `pb-[env(...)]` à l'intérieur ne grandit
+   * pas : Tailwind pose `box-sizing: border-box`, donc la marge de zone sûre
+   * est PRISE SUR les 74 px. Sur un iPhone sans bouton, l'inset vaut ~34 px et
+   * les cibles retombent à ~40 px — sous le minimum de 44, alors que le
+   * commentaire du composant promet « 56 px de cibles utilisables ».
+   *
+   * Même jeton pour la barre et pour la réserve de `<main>`, sans quoi le
+   * dernier élément de chaque page revit derrière la barre.
+   */
+  --spacing-barre-onglets: calc(74px + env(safe-area-inset-bottom, 0px));
+
+  /* ── Typographie ──────────────────────────────────────────────────── */
+  --font-mono:
+    ui-monospace, Menlo, Monaco, "Cascadia Mono", "Segoe UI Mono", monospace;
+}
+
+/*
+ * Tout ce qui est chiffre — montants, quotités, métriques, colonnes de
+ * tableau — s'aligne en colonnes. Sans cela, comparer deux montants dans une
+ * liste demande de les lire, pas de les regarder.
+ */
+@utility tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+/*
+ * La barre d'accent — signature visuelle unique, partagée par les lignes de
+ * tableau, les cartes de tâche et les cartes mobiles.
+ *
+ * Elle remplace tous les fonds de ligne teintés. Un fond teinté transmet
+ * l'état par la couleur seule ; l'accent laisse le fond neutre et laisse le
+ * mot d'état porter le sens à côté de la pastille.
+ */
+@utility accent-primary {
+  box-shadow: inset 3px 0 0 var(--color-primary);
+}
+
+@utility accent-danger {
+  box-shadow: inset 3px 0 0 var(--color-danger);
+}
+
+@utility accent-warn {
+  box-shadow: inset 3px 0 0 var(--color-warn);
+}
+
+@utility accent-neutral {
+  box-shadow: inset 3px 0 0 var(--color-border-strong);
 }

@@ -1,7 +1,7 @@
 import { test, expect } from "@playwright/test";
 import { loginAsSyndic } from "./helpers/auth";
 
-const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
+import { API_BASE } from "./helpers/adresses";
 
 test.describe("Dashboard - Admin & Syndic Views", () => {
   test("should display admin dashboard page", async ({ page }) => {
@@ -10,7 +10,7 @@ test.describe("Dashboard - Admin & Syndic Views", () => {
 
     await expect(page.locator("body")).toBeVisible();
     await expect(
-      page.locator("main h1, main h2, [data-testid='admin-dashboard']").first(),
+      page.locator("[data-testid='admin-dashboard']").first(),
     ).toBeVisible({ timeout: 10000 });
   });
 

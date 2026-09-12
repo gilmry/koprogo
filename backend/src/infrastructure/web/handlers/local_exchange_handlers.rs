@@ -3,8 +3,11 @@ use crate::application::dto::{
     RequestExchangeDto,
 };
 use crate::domain::entities::ExchangeType;
+use crate::infrastructure::web::middleware::scope_guard::{
+    verify_building_org_access, verify_exchange_org_access, verify_owner_org_access,
+};
 use crate::infrastructure::web::{AppState, AuthenticatedUser};
-use actix_web::{delete, get, post, put, web, HttpResponse, Responder};
+use actix_web::{delete, get, post, put, web, HttpResponse, Responder, ResponseError};
 use uuid::Uuid;
 
 /// POST /api/v1/exchanges
@@ -30,9 +33,22 @@ pub async fn create_exchange(
 #[get("/exchanges/{id}")]
 pub async fn get_exchange(
     data: web::Data<AppState>,
-    _auth: AuthenticatedUser,
+    auth: AuthenticatedUser,
     id: web::Path<Uuid>,
 ) -> impl Responder {
+    // Cloisonnement : cet échange relève d'une ACP précise (#772).
+    if let Err(err) = verify_exchange_org_access(
+        &auth,
+        *id,
+        &data.local_exchange_use_cases,
+        &data.building_use_cases,
+        &data.acp_use_cases,
+    )
+    .await
+    {
+        return err.error_response();
+    }
+
     match data
         .local_exchange_use_cases
         .get_exchange(id.into_inner())
@@ -48,9 +64,24 @@ pub async fn get_exchange(
 #[get("/buildings/{building_id}/exchanges")]
 pub async fn list_building_exchanges(
     data: web::Data<AppState>,
-    _auth: AuthenticatedUser,
+    auth: AuthenticatedUser,
     building_id: web::Path<Uuid>,
 ) -> impl Responder {
+    // Cloisonnement : l'immeuble visé doit relever d'une ACP que cet
+    // utilisateur a le droit de voir. Sans ce contrôle, l'identité était prise
+    // en paramètre puis ignorée — `_auth` — et n'importe quel utilisateur
+    // authentifié lisait les échanges de n'importe quel immeuble (#772).
+    if let Err(err) = verify_building_org_access(
+        &auth,
+        *building_id,
+        &data.building_use_cases,
+        &data.acp_use_cases,
+    )
+    .await
+    {
+        return err.error_response();
+    }
+
     match data
         .local_exchange_use_cases
         .list_building_exchanges(building_id.into_inner())
@@ -66,9 +97,24 @@ pub async fn list_building_exchanges(
 #[get("/buildings/{building_id}/exchanges/available")]
 pub async fn list_available_exchanges(
     data: web::Data<AppState>,
-    _auth: AuthenticatedUser,
+    auth: AuthenticatedUser,
     building_id: web::Path<Uuid>,
 ) -> impl Responder {
+    // Cloisonnement : l'immeuble visé doit relever d'une ACP que cet
+    // utilisateur a le droit de voir. Sans ce contrôle, l'identité était prise
+    // en paramètre puis ignorée — `_auth` — et n'importe quel utilisateur
+    // authentifié lisait les échanges de n'importe quel immeuble (#772).
+    if let Err(err) = verify_building_org_access(
+        &auth,
+        *building_id,
+        &data.building_use_cases,
+        &data.acp_use_cases,
+    )
+    .await
+    {
+        return err.error_response();
+    }
+
     match data
         .local_exchange_use_cases
         .list_available_exchanges(building_id.into_inner())
@@ -87,6 +133,14 @@ pub async fn list_owner_exchanges(
     auth: AuthenticatedUser,
     owner_id: web::Path<Uuid>,
 ) -> impl Responder {
+    // Cloisonnement : le copropriétaire visé doit relever d'une organisation
+    // que cet utilisateur a le droit de voir. Ces routes disent ce qu'une
+    // personne nommée a échangé, rendu, et combien de crédits elle détient —
+    // son activité dans la copropriété, jour après jour (#772).
+    if let Err(err) = verify_owner_org_access(&auth, *owner_id, &data.owner_use_cases).await {
+        return err.error_response();
+    }
+
     let owner_id = owner_id.into_inner();
 
     // Authorization: users can only see their own exchanges
@@ -131,9 +185,20 @@ pub async fn list_owner_exchanges(
 #[get("/buildings/{building_id}/exchanges/type/{exchange_type}")]
 pub async fn list_exchanges_by_type(
     data: web::Data<AppState>,
-    _auth: AuthenticatedUser,
+    auth: AuthenticatedUser,
     path: web::Path<(Uuid, String)>,
 ) -> impl Responder {
+    // Cloisonnement : l'immeuble visé doit relever d'une ACP que cet
+    // utilisateur a le droit de voir. Sans ce contrôle, l'identité était prise
+    // en paramètre puis ignorée — `_auth` — et n'importe quel utilisateur
+    // authentifié lisait les échanges de n'importe quel immeuble (#772).
+    if let Err(err) =
+        verify_building_org_access(&auth, path.0, &data.building_use_cases, &data.acp_use_cases)
+            .await
+    {
+        return err.error_response();
+    }
+
     let (building_id, exchange_type_str) = path.into_inner();
 
     // Parse exchange type
@@ -167,6 +232,24 @@ pub async fn request_exchange(
     id: web::Path<Uuid>,
     request: web::Json<RequestExchangeDto>,
 ) -> impl Responder {
+    // Cloisonnement : cet échange doit relever d'une ACP que cet utilisateur a
+    // le droit de voir. La route n'ayant pas d'immeuble en chemin, la chaîne
+    // échange → immeuble → ACP est remontée par le garde.
+    //
+    // Les deux notations comptent particulièrement : une note engage la
+    // réputation d'un voisin dans sa propre copropriété (#772).
+    if let Err(err) = verify_exchange_org_access(
+        &auth,
+        *id,
+        &data.local_exchange_use_cases,
+        &data.building_use_cases,
+        &data.acp_use_cases,
+    )
+    .await
+    {
+        return err.error_response();
+    }
+
     match data
         .local_exchange_use_cases
         .request_exchange(id.into_inner(), auth.user_id, request.into_inner())
@@ -186,6 +269,24 @@ pub async fn start_exchange(
     auth: AuthenticatedUser,
     id: web::Path<Uuid>,
 ) -> impl Responder {
+    // Cloisonnement : cet échange doit relever d'une ACP que cet utilisateur a
+    // le droit de voir. La route n'ayant pas d'immeuble en chemin, la chaîne
+    // échange → immeuble → ACP est remontée par le garde.
+    //
+    // Les deux notations comptent particulièrement : une note engage la
+    // réputation d'un voisin dans sa propre copropriété (#772).
+    if let Err(err) = verify_exchange_org_access(
+        &auth,
+        *id,
+        &data.local_exchange_use_cases,
+        &data.building_use_cases,
+        &data.acp_use_cases,
+    )
+    .await
+    {
+        return err.error_response();
+    }
+
     match data
         .local_exchange_use_cases
         .start_exchange(id.into_inner(), auth.user_id)
@@ -206,6 +307,24 @@ pub async fn complete_exchange(
     id: web::Path<Uuid>,
     request: web::Json<CompleteExchangeDto>,
 ) -> impl Responder {
+    // Cloisonnement : cet échange doit relever d'une ACP que cet utilisateur a
+    // le droit de voir. La route n'ayant pas d'immeuble en chemin, la chaîne
+    // échange → immeuble → ACP est remontée par le garde.
+    //
+    // Les deux notations comptent particulièrement : une note engage la
+    // réputation d'un voisin dans sa propre copropriété (#772).
+    if let Err(err) = verify_exchange_org_access(
+        &auth,
+        *id,
+        &data.local_exchange_use_cases,
+        &data.building_use_cases,
+        &data.acp_use_cases,
+    )
+    .await
+    {
+        return err.error_response();
+    }
+
     match data
         .local_exchange_use_cases
         .complete_exchange(id.into_inner(), auth.user_id, request.into_inner())
@@ -225,6 +344,24 @@ pub async fn cancel_exchange(
     id: web::Path<Uuid>,
     request: web::Json<CancelExchangeDto>,
 ) -> impl Responder {
+    // Cloisonnement : cet échange doit relever d'une ACP que cet utilisateur a
+    // le droit de voir. La route n'ayant pas d'immeuble en chemin, la chaîne
+    // échange → immeuble → ACP est remontée par le garde.
+    //
+    // Les deux notations comptent particulièrement : une note engage la
+    // réputation d'un voisin dans sa propre copropriété (#772).
+    if let Err(err) = verify_exchange_org_access(
+        &auth,
+        *id,
+        &data.local_exchange_use_cases,
+        &data.building_use_cases,
+        &data.acp_use_cases,
+    )
+    .await
+    {
+        return err.error_response();
+    }
+
     match data
         .local_exchange_use_cases
         .cancel_exchange(id.into_inner(), auth.user_id, request.into_inner())
@@ -244,6 +381,24 @@ pub async fn rate_provider(
     id: web::Path<Uuid>,
     request: web::Json<RateExchangeDto>,
 ) -> impl Responder {
+    // Cloisonnement : cet échange doit relever d'une ACP que cet utilisateur a
+    // le droit de voir. La route n'ayant pas d'immeuble en chemin, la chaîne
+    // échange → immeuble → ACP est remontée par le garde.
+    //
+    // Les deux notations comptent particulièrement : une note engage la
+    // réputation d'un voisin dans sa propre copropriété (#772).
+    if let Err(err) = verify_exchange_org_access(
+        &auth,
+        *id,
+        &data.local_exchange_use_cases,
+        &data.building_use_cases,
+        &data.acp_use_cases,
+    )
+    .await
+    {
+        return err.error_response();
+    }
+
     match data
         .local_exchange_use_cases
         .rate_provider(id.into_inner(), auth.user_id, request.into_inner())
@@ -263,6 +418,24 @@ pub async fn rate_requester(
     id: web::Path<Uuid>,
     request: web::Json<RateExchangeDto>,
 ) -> impl Responder {
+    // Cloisonnement : cet échange doit relever d'une ACP que cet utilisateur a
+    // le droit de voir. La route n'ayant pas d'immeuble en chemin, la chaîne
+    // échange → immeuble → ACP est remontée par le garde.
+    //
+    // Les deux notations comptent particulièrement : une note engage la
+    // réputation d'un voisin dans sa propre copropriété (#772).
+    if let Err(err) = verify_exchange_org_access(
+        &auth,
+        *id,
+        &data.local_exchange_use_cases,
+        &data.building_use_cases,
+        &data.acp_use_cases,
+    )
+    .await
+    {
+        return err.error_response();
+    }
+
     match data
         .local_exchange_use_cases
         .rate_requester(id.into_inner(), auth.user_id, request.into_inner())
@@ -300,6 +473,14 @@ pub async fn get_credit_balance(
     auth: AuthenticatedUser,
     path: web::Path<(Uuid, Uuid)>,
 ) -> impl Responder {
+    // Cloisonnement : le copropriétaire visé doit relever d'une organisation
+    // que cet utilisateur a le droit de voir. Ces routes disent ce qu'une
+    // personne nommée a échangé, rendu, et combien de crédits elle détient —
+    // son activité dans la copropriété, jour après jour (#772).
+    if let Err(err) = verify_owner_org_access(&auth, path.0, &data.owner_use_cases).await {
+        return err.error_response();
+    }
+
     let (path_id, building_id) = path.into_inner();
 
     // Try to find owner by ID first, then by user_id as fallback
@@ -364,10 +545,25 @@ pub async fn get_credit_balance(
 #[get("/buildings/{building_id}/leaderboard")]
 pub async fn get_leaderboard(
     data: web::Data<AppState>,
-    _auth: AuthenticatedUser,
+    auth: AuthenticatedUser,
     building_id: web::Path<Uuid>,
     query: web::Query<std::collections::HashMap<String, String>>,
 ) -> impl Responder {
+    // Cloisonnement : l'immeuble visé doit relever d'une ACP que cet
+    // utilisateur a le droit de voir. Sans ce contrôle, l'identité était prise
+    // en paramètre puis ignorée — `_auth` — et n'importe quel utilisateur
+    // authentifié lisait les échanges de n'importe quel immeuble (#772).
+    if let Err(err) = verify_building_org_access(
+        &auth,
+        *building_id,
+        &data.building_use_cases,
+        &data.acp_use_cases,
+    )
+    .await
+    {
+        return err.error_response();
+    }
+
     let limit = query
         .get("limit")
         .and_then(|l| l.parse::<i32>().ok())
@@ -388,9 +584,24 @@ pub async fn get_leaderboard(
 #[get("/buildings/{building_id}/sel-statistics")]
 pub async fn get_sel_statistics(
     data: web::Data<AppState>,
-    _auth: AuthenticatedUser,
+    auth: AuthenticatedUser,
     building_id: web::Path<Uuid>,
 ) -> impl Responder {
+    // Cloisonnement : l'immeuble visé doit relever d'une ACP que cet
+    // utilisateur a le droit de voir. Sans ce contrôle, l'identité était prise
+    // en paramètre puis ignorée — `_auth` — et n'importe quel utilisateur
+    // authentifié lisait les échanges de n'importe quel immeuble (#772).
+    if let Err(err) = verify_building_org_access(
+        &auth,
+        *building_id,
+        &data.building_use_cases,
+        &data.acp_use_cases,
+    )
+    .await
+    {
+        return err.error_response();
+    }
+
     match data
         .local_exchange_use_cases
         .get_statistics(building_id.into_inner())
@@ -409,6 +620,14 @@ pub async fn get_owner_summary(
     auth: AuthenticatedUser,
     owner_id: web::Path<Uuid>,
 ) -> impl Responder {
+    // Cloisonnement : le copropriétaire visé doit relever d'une organisation
+    // que cet utilisateur a le droit de voir. Ces routes disent ce qu'une
+    // personne nommée a échangé, rendu, et combien de crédits elle détient —
+    // son activité dans la copropriété, jour après jour (#772).
+    if let Err(err) = verify_owner_org_access(&auth, *owner_id, &data.owner_use_cases).await {
+        return err.error_response();
+    }
+
     let owner_id = owner_id.into_inner();
 
     // Authorization: users can only view their own exchange summary

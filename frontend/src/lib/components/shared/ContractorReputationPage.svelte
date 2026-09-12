@@ -19,6 +19,8 @@
   } from "../../api/contractor_evaluations";
   import ContractorReputation from "./ContractorReputation.svelte";
 
+  import { _ } from "../../i18n";
+
   type UserLike = {
     id: string;
     email: string;
@@ -84,7 +86,7 @@
 <div class="flex flex-col gap-4">
   {#if loading}
     <p class="text-sm text-gray-500" role="status" aria-live="polite">
-      Chargement de la réputation…
+      {$_("contractors.loadingReputation")}
     </p>
   {:else if error}
     <p

@@ -1,8 +1,9 @@
 use crate::application::dto::{
-    GdprActionResponse, GdprMarketingPreferenceRequest, GdprRectifyRequest,
+    GdprActionResponse, GdprEraseRequestDto, GdprMarketingPreferenceRequest, GdprRectifyRequest,
     GdprRestrictProcessingRequest,
 };
 use crate::infrastructure::audit::{AuditEventType, AuditLogEntry};
+use crate::infrastructure::web::classification_erreurs;
 use crate::infrastructure::web::{AppState, AuthenticatedUser};
 use actix_web::{delete, get, put, web, HttpRequest, HttpResponse, Responder};
 use chrono::Utc;
@@ -77,7 +78,7 @@ pub async fn export_user_data(
     // Determine organization scope based on role
     // SuperAdmin can export across all organizations (organization_id = None)
     // Regular users are scoped to their organization
-    let organization_id = if auth.role == "superadmin" {
+    let organization_id = if auth.is_superadmin() {
         None
     } else {
         auth.organization_id
@@ -144,11 +145,11 @@ pub async fn export_user_data(
                 audit_logger.log(&audit_entry).await;
             });
 
-            if e.contains("not found") {
+            if classification_erreurs::est_introuvable(&e) {
                 HttpResponse::NotFound().json(serde_json::json!({
                     "error": e
                 }))
-            } else if e.contains("Unauthorized") {
+            } else if classification_erreurs::est_interdit(&e) {
                 HttpResponse::Forbidden().json(serde_json::json!({
                     "error": e
                 }))
@@ -200,6 +201,7 @@ pub async fn erase_user_data(
     req: HttpRequest,
     data: web::Data<AppState>,
     auth: AuthenticatedUser,
+    body: web::Json<GdprEraseRequestDto>,
 ) -> impl Responder {
     // Extract user_id from authenticated user
     let user_id = auth.user_id;
@@ -209,7 +211,7 @@ pub async fn erase_user_data(
     let user_agent = extract_user_agent(&req);
 
     // Determine organization scope based on role
-    let organization_id = if auth.role == "superadmin" {
+    let organization_id = if auth.is_superadmin() {
         None
     } else {
         auth.organization_id
@@ -218,7 +220,7 @@ pub async fn erase_user_data(
     // Call use case to erase data
     match data
         .gdpr_use_cases
-        .erase_user_data(user_id, user_id, organization_id)
+        .erase_user_data(user_id, user_id, organization_id, Some(&body.password))
         .await
     {
         Ok(erase_response) => {
@@ -277,7 +279,7 @@ pub async fn erase_user_data(
                 audit_logger.log(&audit_entry).await;
             });
 
-            if e.contains("Unauthorized") {
+            if classification_erreurs::est_interdit(&e) {
                 HttpResponse::Forbidden().json(serde_json::json!({
                     "error": e
                 }))
@@ -290,7 +292,7 @@ pub async fn erase_user_data(
                     "error": e,
                     "message": "Cannot erase data due to legal obligations. Please resolve pending issues before requesting erasure."
                 }))
-            } else if e.contains("not found") {
+            } else if classification_erreurs::est_introuvable(&e) {
                 HttpResponse::NotFound().json(serde_json::json!({
                     "error": e
                 }))
@@ -472,11 +474,11 @@ pub async fn rectify_user_data(
                 audit_logger.log(&audit_entry).await;
             });
 
-            if e.contains("Unauthorized") {
+            if classification_erreurs::est_interdit(&e) {
                 HttpResponse::Forbidden().json(serde_json::json!({
                     "error": e
                 }))
-            } else if e.contains("not found") {
+            } else if classification_erreurs::est_introuvable(&e) {
                 HttpResponse::NotFound().json(serde_json::json!({
                     "error": e
                 }))
@@ -587,11 +589,11 @@ pub async fn restrict_user_processing(
                 audit_logger.log(&audit_entry).await;
             });
 
-            if e.contains("Unauthorized") {
+            if classification_erreurs::est_interdit(&e) {
                 HttpResponse::Forbidden().json(serde_json::json!({
                     "error": e
                 }))
-            } else if e.contains("not found") {
+            } else if classification_erreurs::est_introuvable(&e) {
                 HttpResponse::NotFound().json(serde_json::json!({
                     "error": e
                 }))
@@ -712,11 +714,11 @@ pub async fn set_marketing_preference(
                 audit_logger.log(&audit_entry).await;
             });
 
-            if e.contains("Unauthorized") {
+            if classification_erreurs::est_interdit(&e) {
                 HttpResponse::Forbidden().json(serde_json::json!({
                     "error": e
                 }))
-            } else if e.contains("not found") {
+            } else if classification_erreurs::est_introuvable(&e) {
                 HttpResponse::NotFound().json(serde_json::json!({
                     "error": e
                 }))

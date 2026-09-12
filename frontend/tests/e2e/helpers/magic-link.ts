@@ -9,7 +9,7 @@
  */
 import type { Page } from "@playwright/test";
 
-const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
+import { API_BASE } from "./adresses";
 
 /**
  * Scope of a magic link — narrows the set of resources / actions the bearer

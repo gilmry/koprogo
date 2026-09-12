@@ -17,7 +17,7 @@ pub struct PostgresBudgetRepository {
 /// Budget SELECT columns. Monetary columns are NUMERIC → lus directement en
 /// `Decimal` (cf. ADR-0007, Story H11). Seul l'enum statut est casté en texte.
 const BUDGET_COLUMNS: &str = r#"
-    id, organization_id, building_id, fiscal_year,
+    id, acp_id, organization_id, building_id, fiscal_year,
     ordinary_budget,
     extraordinary_budget,
     total_budget,
@@ -46,6 +46,7 @@ impl PostgresBudgetRepository {
 
         Budget {
             id: row.get("id"),
+            acp_id: row.get("acp_id"),
             organization_id: row.get("organization_id"),
             building_id: row.get("building_id"),
             fiscal_year: row.get("fiscal_year"),
@@ -78,16 +79,16 @@ impl BudgetRepository for PostgresBudgetRepository {
         let row = sqlx::query(
             r#"
             INSERT INTO budgets (
-                id, organization_id, building_id, fiscal_year,
+                id, acp_id, organization_id, building_id, fiscal_year,
                 ordinary_budget, extraordinary_budget, total_budget,
                 status, submitted_date, approved_date, approved_by_meeting_id,
                 monthly_provision_amount, notes,
                 created_at, updated_at
             ) VALUES (
-                $1, $2, $3, $4, $5, $6, $7, $8::budget_status,
-                $9, $10, $11, $12, $13, $14, $15
+                $1, $2, $3, $4, $5, $6, $7, $8, $9::budget_status,
+                $10, $11, $12, $13, $14, $15, $16
             )
-            RETURNING id, organization_id, building_id, fiscal_year,
+            RETURNING id, acp_id, organization_id, building_id, fiscal_year,
                 ordinary_budget,
                 extraordinary_budget,
                 total_budget,
@@ -98,6 +99,7 @@ impl BudgetRepository for PostgresBudgetRepository {
             "#,
         )
         .bind(budget.id)
+        .bind(budget.acp_id)
         .bind(budget.organization_id)
         .bind(budget.building_id)
         .bind(budget.fiscal_year)
@@ -182,7 +184,7 @@ impl BudgetRepository for PostgresBudgetRepository {
         organization_id: Uuid,
         fiscal_year: i32,
     ) -> Result<Vec<Budget>, AppError> {
-        let sql = format!("SELECT {} FROM budgets WHERE organization_id = $1 AND fiscal_year = $2 ORDER BY created_at DESC", BUDGET_COLUMNS);
+        let sql = format!("SELECT {} FROM budgets WHERE acp_id IN (SELECT id FROM acps WHERE organization_id = $1) AND fiscal_year = $2 ORDER BY created_at DESC", BUDGET_COLUMNS);
         let rows = sqlx::query(&sql)
             .bind(organization_id)
             .bind(fiscal_year)
@@ -209,7 +211,7 @@ impl BudgetRepository for PostgresBudgetRepository {
             BudgetStatus::Archived => "archived",
         };
 
-        let sql = format!("SELECT {} FROM budgets WHERE organization_id = $1 AND status = $2::budget_status ORDER BY created_at DESC", BUDGET_COLUMNS);
+        let sql = format!("SELECT {} FROM budgets WHERE acp_id IN (SELECT id FROM acps WHERE organization_id = $1) AND status = $2::budget_status ORDER BY created_at DESC", BUDGET_COLUMNS);
         let rows = sqlx::query(&sql)
             .bind(organization_id)
             .bind(status_str)
@@ -240,8 +242,14 @@ impl BudgetRepository for PostgresBudgetRepository {
         let mut bindings: Vec<String> = Vec::new();
 
         if let Some(org_id) = organization_id {
-            query.push_str(&format!(" AND organization_id = ${}::uuid", bind_index));
-            count_query.push_str(&format!(" AND organization_id = ${}::uuid", bind_index));
+            query.push_str(&format!(
+                " AND acp_id IN (SELECT id FROM acps WHERE organization_id = ${}::uuid)",
+                bind_index
+            ));
+            count_query.push_str(&format!(
+                " AND acp_id IN (SELECT id FROM acps WHERE organization_id = ${}::uuid)",
+                bind_index
+            ));
             bindings.push(org_id.to_string());
             bind_index += 1;
         }
@@ -329,7 +337,7 @@ impl BudgetRepository for PostgresBudgetRepository {
                 notes = $10,
                 updated_at = $11
             WHERE id = $1
-            RETURNING id, organization_id, building_id, fiscal_year,
+            RETURNING id, acp_id, organization_id, building_id, fiscal_year,
                 ordinary_budget,
                 extraordinary_budget,
                 total_budget,
@@ -380,7 +388,7 @@ impl BudgetRepository for PostgresBudgetRepository {
                 COALESCE(AVG(total_budget), 0) as average_total_budget,
                 COALESCE(AVG(monthly_provision_amount), 0) as average_monthly_provision
             FROM budgets
-            WHERE organization_id = $1
+            WHERE acp_id IN (SELECT id FROM acps WHERE organization_id = $1)
             "#,
         )
         .bind(organization_id)
@@ -423,16 +431,42 @@ impl BudgetRepository for PostgresBudgetRepository {
         let fiscal_year_start = format!("{}-01-01", budget.fiscal_year);
         let fiscal_year_end = format!("{}-12-31", budget.fiscal_year);
 
+        // `category::text` — et non `category` nu.
+        //
+        // La colonne est de type énuméré PostgreSQL `expense_category`. La lue
+        // en `String` sans transtypage échoue au décodage, et `row.get()`
+        // PANIQUE sur cette erreur : le worker actix meurt et l'appelant reçoit
+        // un 502. Le défaut ne se voyait qu'une fois l'immeuble doté d'au moins
+        // une dépense correspondant au filtre — sans ligne, la boucle ne
+        // s'exécute pas et la route répond 200 avec un réalisé à zéro.
+        //
+        // Le transtypage explicite est le motif déjà suivi ailleurs dans le
+        // dépôt (`notice_repository_impl`, `expense_repository_impl`).
+        //
+        // ── Ce que « réalisé » compte ──────────────────────────────────────
+        //
+        // Le filtre portait sur `payment_status = 'paid'` : seul le décaissé.
+        // Le grand livre, lui, comptabilise la charge à l'APPROBATION de la
+        // facture (écriture ACH : D 6xxxxx / C 440). Les deux rapports
+        // divergeaient donc sur le même engagement — mesuré le 2026-09-02 :
+        // grand livre 2 420 € de charges, suivi budgétaire 0 consommé.
+        //
+        // Pour un syndic, la question utile est « combien du budget voté est
+        // déjà engagé ? », pas « combien est sorti de la banque ». Une facture
+        // approuvée sera réclamée aux copropriétaires qu'elle soit payée ou
+        // non. Le réalisé s'aligne donc sur ce que le grand livre enregistre,
+        // en excluant les factures annulées.
         let expense_rows = sqlx::query(
             r#"
             SELECT
-                category,
+                category::text AS category,
                 COALESCE(SUM(amount), 0) as total_amount
             FROM expenses
             WHERE building_id = $1
               AND expense_date >= $2::date
               AND expense_date <= $3::date
-              AND payment_status = 'paid'
+              AND approval_status = 'approved'
+              AND payment_status <> 'cancelled'
             GROUP BY category
             "#,
         )
@@ -448,7 +482,9 @@ impl BudgetRepository for PostgresBudgetRepository {
         let mut overrun_categories = Vec::new();
 
         for row in expense_rows {
-            let category_str: String = row.get("category");
+            // `try_get` et non `get` : ce dernier panique sur une erreur de
+            // décodage au lieu de la remonter.
+            let category_str: String = row.try_get("category")?;
             let amount: Decimal = row.try_get("total_amount")?;
 
             let category = match category_str.as_str() {

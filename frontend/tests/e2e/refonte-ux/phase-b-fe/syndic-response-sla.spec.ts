@@ -36,12 +36,12 @@ import {
   type APIRequestContext,
   type Page,
 } from "@playwright/test";
+import { ADMIN_PASSWORD } from "../../helpers/identifiants";
 import { setupContainerApiUrl } from "../../helpers/video-pace";
 import { uiLoginWithRetry, adminLogin } from "../../helpers/auth";
 
-const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
+import { API_BASE } from "../../helpers/adresses";
 const ADMIN_EMAIL = "admin@koprogo.com";
-const ADMIN_PASSWORD = "admin123";
 const TEST_PASSWORD = process.env.PLAYWRIGHT_TEST_PASSWORD || "test123456";
 
 // ---------------------------------------------------------------------------

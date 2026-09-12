@@ -38,6 +38,21 @@ pub enum AuditEventType {
     InvoiceRejected,
     MeetingCreated,
     MeetingCompleted,
+    /// L'assemblée est annulée : elle N'A PAS eu lieu.
+    ///
+    /// Distincte de `MeetingCompleted`, qui affirme le contraire. Les deux
+    /// gestionnaires — annulation et report — journalisaient `MeetingCompleted`,
+    /// copié-collé depuis la clôture. Le registre de l'ACP disait donc qu'une
+    /// assemblée s'était tenue là où elle avait été annulée ou déplacée.
+    ///
+    /// Ce registre n'est pas décoratif : l'Art. 3.89 § 5 7° impose au syndic
+    /// de tenir le dossier de la copropriété, et un procès-verbal introuvable
+    /// pour une assemblée déclarée « tenue » est une non-conformité qui se
+    /// découvre au pire moment. Constaté en instruisant #780.
+    MeetingCancelled,
+    /// L'assemblée est reportée à une autre date : elle n'a pas eu lieu à la
+    /// date initiale, et se tiendra plus tard. Voir `MeetingCancelled`.
+    MeetingRescheduled,
     MeetingQuorumValidated,
     MeetingMinutesSent,
     DocumentUploaded,
@@ -289,6 +304,19 @@ pub enum AuditEventType {
     PortfolioBuildingRemoved,
     PortfolioShared,
     PortfolioUnshared,
+
+    /// Type d'évènement lu en base et inconnu du code courant.
+    ///
+    /// Utilisé UNIQUEMENT à la relecture, jamais à l'écriture. Il existe pour
+    /// qu'une ligne d'audit ancienne ou écrite par une version plus récente
+    /// se lise pour ce qu'elle est — inconnue — plutôt que de se déguiser en
+    /// autre chose.
+    ///
+    /// La relecture repliait auparavant tout type non reconnu sur
+    /// `UnauthorizedAccess`. Voir `string_to_event_type` : la table de
+    /// correspondance couvrait 29 des 223 variantes, si bien que le registre
+    /// relisait 194 types d'évènements comme des accès non autorisés.
+    UnknownLegacyEvent,
 }
 
 /// Audit log entry

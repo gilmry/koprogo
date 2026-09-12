@@ -4,7 +4,7 @@
 **URL** : http://localhost (dev) ou https://staging.koprogo.com (staging)
 **Durée estimée** : 3-4 sessions de 2-3h (total ~8-10h)
 **Date** : 2026-04-01
-**WBS** : Phase 8 de `docs/WBS_RELEASE_0_1_0.md`
+**WBS** : Phase 8 de `docs/archive/WBS_RELEASE_0_1_0.md`
 
 ---
 

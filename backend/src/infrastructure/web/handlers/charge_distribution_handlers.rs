@@ -1,6 +1,7 @@
 use crate::infrastructure::web::handlers::conformity_response::try_build_conformity_response;
+use crate::infrastructure::web::middleware::scope_guard::verify_expense_org_access;
 use crate::infrastructure::web::{AppState, AuthenticatedUser};
-use actix_web::{get, post, web, HttpResponse, Responder};
+use actix_web::{get, post, web, HttpResponse, Responder, ResponseError};
 use uuid::Uuid;
 
 /// POST /invoices/{id}/calculate-distribution - Calculate and save charge distribution
@@ -13,7 +14,7 @@ pub async fn calculate_and_save_distribution(
     expense_id: web::Path<Uuid>,
 ) -> impl Responder {
     // Check permissions
-    if user.role != "accountant" && user.role != "syndic" && user.role != "superadmin" {
+    if user.role != "accountant" && user.role != "syndic" && !user.is_superadmin() {
         return HttpResponse::Forbidden().json(serde_json::json!({
             "error": "Only accountant, syndic, or superadmin can calculate charge distributions"
         }));
@@ -45,9 +46,24 @@ pub async fn calculate_and_save_distribution(
 #[get("/invoices/{expense_id}/distribution")]
 pub async fn get_distribution_by_expense(
     state: web::Data<AppState>,
-    _user: AuthenticatedUser,
+    user: AuthenticatedUser,
     expense_id: web::Path<Uuid>,
 ) -> impl Responder {
+    // Cloisonnement : la distribution d'une charge dit ce que CHAQUE
+    // copropriétaire doit pour cette dépense, nominativement et au centime.
+    // L'identité était prise puis ignorée — `_user` (#772).
+    if let Err(err) = verify_expense_org_access(
+        &user,
+        *expense_id,
+        &state.expense_use_cases,
+        &state.building_use_cases,
+        &state.acp_use_cases,
+    )
+    .await
+    {
+        return err.error_response();
+    }
+
     match state
         .charge_distribution_use_cases
         .get_distribution_by_expense(*expense_id)
@@ -65,7 +81,21 @@ pub async fn get_distribution_by_expense(
 pub async fn get_distributions_by_owner(
     state: web::Data<AppState>,
     owner_id: web::Path<Uuid>,
+    user: AuthenticatedUser,
 ) -> impl Responder {
+    // Route imbriquee non gardee au releve du 2026-09-06 (issue #772) : elle
+    // servait la situation financiere NOMINATIVE d'une personne a quiconque
+    // connaissait son identifiant.
+    if let Err(err) = crate::infrastructure::web::middleware::scope_guard::verify_owner_org_access(
+        &user,
+        *owner_id,
+        &state.owner_use_cases,
+    )
+    .await
+    {
+        return err.error_response();
+    }
+
     match state
         .charge_distribution_use_cases
         .get_distributions_by_owner(*owner_id)
@@ -83,7 +113,21 @@ pub async fn get_distributions_by_owner(
 pub async fn get_total_due_by_owner(
     state: web::Data<AppState>,
     owner_id: web::Path<Uuid>,
+    user: AuthenticatedUser,
 ) -> impl Responder {
+    // Route imbriquee non gardee au releve du 2026-09-06 (issue #772) : elle
+    // servait la situation financiere NOMINATIVE d'une personne a quiconque
+    // connaissait son identifiant.
+    if let Err(err) = crate::infrastructure::web::middleware::scope_guard::verify_owner_org_access(
+        &user,
+        *owner_id,
+        &state.owner_use_cases,
+    )
+    .await
+    {
+        return err.error_response();
+    }
+
     match state
         .charge_distribution_use_cases
         .get_total_due_by_owner(*owner_id)

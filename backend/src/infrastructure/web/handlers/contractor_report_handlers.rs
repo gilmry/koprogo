@@ -2,6 +2,7 @@ use crate::application::dto::contractor_report_dto::{
     CreateContractorReportDto, GenerateMagicLinkDto, RejectReportDto, RequestCorrectionsDto,
     UpdateContractorReportDto,
 };
+use crate::infrastructure::web::classification_erreurs;
 use crate::infrastructure::web::{AppState, AuthenticatedUser};
 use actix_web::{delete, get, post, put, web, HttpRequest, HttpResponse, Responder};
 use serde::Deserialize;
@@ -56,9 +57,9 @@ pub async fn get_contractor_report(
     {
         Ok(r) => HttpResponse::Ok().json(r),
         Err(e) => {
-            if e.contains("introuvable") {
+            if classification_erreurs::est_introuvable(&e) {
                 HttpResponse::NotFound().json(serde_json::json!({"error": e}))
-            } else if e.contains("refusé") {
+            } else if classification_erreurs::est_interdit(&e) {
                 HttpResponse::Forbidden().json(serde_json::json!({"error": e}))
             } else {
                 HttpResponse::InternalServerError().json(serde_json::json!({"error": e}))
@@ -295,9 +296,9 @@ pub async fn delete_contractor_report(
     {
         Ok(()) => HttpResponse::NoContent().finish(),
         Err(e) => {
-            if e.contains("introuvable") {
+            if classification_erreurs::est_introuvable(&e) {
                 HttpResponse::NotFound().json(serde_json::json!({"error": e}))
-            } else if e.contains("refusé") {
+            } else if classification_erreurs::est_interdit(&e) {
                 HttpResponse::Forbidden().json(serde_json::json!({"error": e}))
             } else {
                 HttpResponse::BadRequest().json(serde_json::json!({"error": e}))

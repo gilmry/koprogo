@@ -1,4 +1,4 @@
-import { locale } from "svelte-i18n";
+import { locale, _ } from "svelte-i18n";
 import { get } from "svelte/store";
 import { toast } from "../stores/toast";
 import { authStore } from "../stores/auth";
@@ -65,6 +65,71 @@ export interface ApiFetchOptions extends RequestInit {
 }
 
 /**
+ * Le détail d'une réponse d'erreur, quand il est présentable à l'écran.
+ *
+ * Le backend sert `details` tantôt en chaîne (erreur de désérialisation
+ * serde), tantôt en objet typé (`{code, ...}` des erreurs métier). On
+ * n'affiche que la première forme : un objet brut ne dirait rien à un
+ * utilisateur, et les erreurs typées ont déjà leurs gestionnaires dédiés
+ * dans `lib/utils/conformity.ts` et `lib/utils/meetingCompletion.ts`.
+ */
+function detailsPresentables(body: any): string | undefined {
+  if (typeof body?.details === "string") return body.details;
+  if (typeof body?.details?.message === "string") return body.details.message;
+  return undefined;
+}
+
+/**
+ * Erreur d'API qui **conserve le corps de la réponse**.
+ *
+ * Le serveur répond aux 400 avec une précision remarquable :
+ *
+ *     {"error": "Invalid request body",
+ *      "details": "Json deserialize error: missing field `acp_id` at line 1 column 192"}
+ *
+ * `apiFetch` ne retenait que `error` et levait une `Error` **nue**. Tout le
+ * reste — le nom du champ fautif, sa position, le code HTTP — était perdu
+ * avant d'atteindre le premier appelant.
+ *
+ * Coût mesuré : en cinq recettes navigateur, trois actions d'écriture ont
+ * échoué en silence — `acp_id` à la création d'immeuble, `recipient_owner_ids`
+ * à l'envoi de convocation, `total_voting_power` à la clôture d'un vote. À
+ * chaque fois le serveur nommait le champ, et à chaque fois l'écran affichait
+ * « Invalid request body ». Il a fallu lire le code pour diagnostiquer ce que
+ * le premier utilisateur venu aurait vu.
+ *
+ * Coût invisible, plus gênant : `lib/utils/conformity.ts` et
+ * `lib/utils/meetingCompletion.ts` savent tous deux extraire `details` et
+ * **ne pouvaient jamais correspondre**, faute de trouver la propriété sur une
+ * `Error` nue. Deux fonctionnalités mortes sous des tests verts, parce que
+ * ces tests fabriquaient l'objet d'erreur à la main sans jamais exercer
+ * `apiFetch`.
+ *
+ * Voir l'issue #782.
+ */
+export class ApiError extends Error {
+  constructor(
+    message: string,
+    readonly status: number,
+    readonly details?: unknown,
+    readonly body?: unknown,
+  ) {
+    super(message);
+    this.name = "ApiError";
+  }
+
+  /** Le détail servi par le serveur, quand il est présentable à l'écran. */
+  get detailsText(): string | undefined {
+    if (typeof this.details === "string") return this.details;
+    if (this.details && typeof this.details === "object") {
+      const message = (this.details as Record<string, unknown>).message;
+      if (typeof message === "string") return message;
+    }
+    return undefined;
+  }
+}
+
+/**
  * Enhanced fetch with automatic language headers and error handling
  */
 export async function apiFetch<T = any>(
@@ -99,11 +164,14 @@ export async function apiFetch<T = any>(
 
   if (!response.ok) {
     let errorMessage = `API Error: ${response.status}`;
+    // Le corps parsé est CONSERVÉ jusqu'au `throw` : c'est lui qui porte
+    // `details`, et c'est sa perte ici qui rendait les 400 indéchiffrables.
+    let errorBody: any;
     try {
       const errorText = await response.text();
       try {
-        const errorData = JSON.parse(errorText);
-        errorMessage = errorData.error || errorData.message || errorMessage;
+        errorBody = JSON.parse(errorText);
+        errorMessage = errorBody.error || errorBody.message || errorMessage;
       } catch {
         if (errorText) errorMessage = errorText;
       }
@@ -138,13 +206,14 @@ export async function apiFetch<T = any>(
       if (mapped) errorMessage = mapped;
     }
 
+    let toastEmis = false;
     // Toast automatique selon le code HTTP — sauf si `silent: true` (best-effort
     // reads où un 4xx est une dégradation attendue, pas une erreur utilisateur).
     if (!options.silent) {
       if (response.status === 429) {
-        toast.error("Trop de tentatives. Réessayez dans 15 minutes.");
+        toast.error(get(_)("session.tooManyAttempts"));
       } else if (response.status >= 500) {
-        toast.error("Erreur serveur. Veuillez réessayer.");
+        toast.error(get(_)("session.serverError"));
       } else if (response.status === 401) {
         // Clear stale token and dedupe toast across parallel 401s
         if (typeof window !== "undefined") {
@@ -152,7 +221,7 @@ export async function apiFetch<T = any>(
           clearAccessToken();
           if (hadToken && !(window as any).__koprogo_session_expired_shown__) {
             (window as any).__koprogo_session_expired_shown__ = true;
-            toast.warning("Session expirée. Veuillez vous reconnecter.");
+            toast.warning(get(_)("session.expired"));
             setTimeout(() => {
               (window as any).__koprogo_session_expired_shown__ = false;
             }, 5000);
@@ -163,7 +232,12 @@ export async function apiFetch<T = any>(
           "Accès refusé. Vous n'avez pas les permissions nécessaires.",
         );
       } else if (response.status >= 400) {
-        toast.error(errorMessage);
+        // Le détail du serveur en seconde ligne : c'est lui qui nomme le
+        // champ fautif. `toastEmis` évite le doublon avec
+        // `withErrorHandling`, qui émettait un second toast au libellé
+        // différent — la déduplication du store ne les fusionnait pas.
+        toast.error(errorMessage, 7000, detailsPresentables(errorBody));
+        toastEmis = true;
       }
     } else if (response.status === 401 && typeof window !== "undefined") {
       // Silent 401 : on clear quand même le token périmé (cohérence session)
@@ -171,7 +245,11 @@ export async function apiFetch<T = any>(
       clearAccessToken();
     }
 
-    throw new Error(errorMessage);
+    throw new ApiError(errorMessage, response.status, errorBody?.details, {
+      ...errorBody,
+      // L'appelant sait ainsi qu'un toast est déjà parti et n'en ajoute pas.
+      __toastEmis: toastEmis,
+    });
   }
 
   // Handle 204 No Content responses (empty body)

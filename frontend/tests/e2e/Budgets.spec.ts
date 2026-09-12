@@ -9,7 +9,7 @@ import { loginAsSyndicWithBuilding } from "./helpers/auth";
  * Mirrors workflows from backend/tests/e2e_budget.rs.
  */
 
-const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
+import { API_BASE } from "./helpers/adresses";
 
 test.describe("Budgets - Annual Budget Management", () => {
   test("should display budgets page", async ({ page }) => {
@@ -18,7 +18,7 @@ test.describe("Budgets - Annual Budget Management", () => {
 
     await expect(page.locator("body")).toBeVisible();
     await expect(
-      page.locator("main h1, main h2, [data-testid='budgets-list']").first(),
+      page.locator("[data-testid='budgets-list']").first(),
     ).toBeVisible({ timeout: 10000 });
   });
 

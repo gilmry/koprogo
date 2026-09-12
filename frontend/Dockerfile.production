@@ -34,6 +34,7 @@ RUN rm -rf /etc/nginx/nginx.conf /usr/share/nginx/html/*
 
 # Copy custom nginx configuration
 COPY nginx.conf /etc/nginx/nginx.conf
+COPY nginx-securite.conf /etc/nginx/snippets/securite.conf
 
 # Copy built static files from builder
 COPY --from=builder /app/dist /usr/share/nginx/html

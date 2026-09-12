@@ -32,12 +32,13 @@
 
   import {
     SCORE_DIMENSIONS,
-    SCORE_DIMENSION_LABELS_FR,
+    SCORE_DIMENSION_KEYS,
     averageScore,
     formatAverage,
     type ContractorEvaluationDto,
     type ScoreDimension,
   } from "../../api/contractor_evaluations";
+  import { _ } from "../../i18n";
 
   let {
     /** Nom affiché du contractor (le backend ne renvoie qu'un user_id —
@@ -82,13 +83,13 @@
       id="contractor-reputation-heading"
       class="text-xl font-semibold text-gray-900"
     >
-      Réputation —
+      {$_("contractors.reputation")} —
       <span data-testid={testId("contractor-reputation-name")}>
         {contractorName}
       </span>
     </h2>
     <p class="text-sm text-gray-500">
-      Évaluations cumulées :
+      {$_("contractors.cumulativeEvaluations")}
       <span
         data-testid={testId("contractor-reputation-count")}
         class="font-semibold text-gray-700"
@@ -110,16 +111,23 @@
         class="flex flex-col items-center justify-center rounded border border-gray-200 bg-gray-50 px-3 py-2"
       >
         <span class="text-xs font-medium text-gray-600">
-          {SCORE_DIMENSION_LABELS_FR[dim]}
+          {$_(SCORE_DIMENSION_KEYS[dim])}
         </span>
         <span
           data-testid={testId(
             `contractor-reputation-avg-${scoreTestSuffix(dim)}`,
           )}
           class="text-lg font-semibold text-gray-900"
-          aria-label={`Moyenne ${SCORE_DIMENSION_LABELS_FR[dim]} : ${
-            avg !== null ? `${avg.toFixed(1)} sur 5` : "non disponible"
-          }`}
+          aria-label={avg !== null
+            ? $_("contractors.avgAria", {
+                values: {
+                  dimension: $_(SCORE_DIMENSION_KEYS[dim]),
+                  note: avg.toFixed(1),
+                },
+              })
+            : $_("contractors.avgAriaUnavailable", {
+                values: { dimension: $_(SCORE_DIMENSION_KEYS[dim]) },
+              })}
         >
           {formatAverage(avg)}
         </span>
@@ -134,7 +142,7 @@
       class="text-sm text-gray-500"
       role="status"
     >
-      Aucune évaluation pour ce contractor pour le moment.
+      {$_("contractors.noEvaluation")}
     </p>
   {:else}
     <div class="overflow-x-auto">
@@ -143,8 +151,7 @@
         class="min-w-full divide-y divide-gray-200 text-sm"
       >
         <caption class="sr-only">
-          Liste des évaluations de {contractorName} (lecture seule —
-          append-only).
+          Liste des évaluations de {contractorName} (lecture seule — append-only).
         </caption>
         <thead class="bg-gray-50">
           <tr>
@@ -152,51 +159,49 @@
               scope="col"
               class="px-3 py-2 text-left font-medium text-gray-700"
             >
-              Date
+              {$_("common.date")}
             </th>
             <th
               scope="col"
               class="px-3 py-2 text-left font-medium text-gray-700"
             >
-              Qualité
+              {$_("contractors.scoreQuality")}
             </th>
             <th
               scope="col"
               class="px-3 py-2 text-left font-medium text-gray-700"
             >
-              Délais
+              {$_("contractors.scoreDeadlines")}
             </th>
             <th
               scope="col"
               class="px-3 py-2 text-left font-medium text-gray-700"
             >
-              Comm.
+              {$_("contractors.scoreCommunication")}
             </th>
             <th
               scope="col"
               class="px-3 py-2 text-left font-medium text-gray-700"
             >
-              Budget
+              {$_("contractors.scoreBudget")}
             </th>
             <th
               scope="col"
               class="px-3 py-2 text-left font-medium text-gray-700"
             >
-              Globale
+              {$_("contractors.scoreOverall")}
             </th>
             <th
               scope="col"
               class="px-3 py-2 text-left font-medium text-gray-700"
             >
-              Commentaire
+              {$_("common.comment")}
             </th>
           </tr>
         </thead>
         <tbody class="bg-white divide-y divide-gray-100">
           {#each evaluations as ev (ev.id)}
-            <tr
-              data-testid={testId(`contractor-reputation-eval-row-${ev.id}`)}
-            >
+            <tr data-testid={testId(`contractor-reputation-eval-row-${ev.id}`)}>
               <td class="px-3 py-2 text-gray-600">
                 {formatDate(ev.created_at)}
               </td>

@@ -72,16 +72,16 @@ impl PaymentRepository for PostgresPaymentRepository {
         let row = sqlx::query!(
             r#"
             INSERT INTO payments (
-                id, organization_id, building_id, owner_id, expense_id,
+                id, organization_id, building_id, owner_id, expense_id, contribution_id,
                 amount_cents, currency, status, payment_method_type,
                 stripe_payment_intent_id, stripe_customer_id, payment_method_id,
                 idempotency_key, description, metadata, failure_reason,
                 refunded_amount_cents, succeeded_at, failed_at, cancelled_at,
                 created_at, updated_at
             )
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8::TEXT::transaction_status, $9::TEXT::payment_method_type,
-                    $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22)
-            RETURNING id, organization_id, building_id, owner_id, expense_id,
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9::TEXT::transaction_status, $10::TEXT::payment_method_type,
+                    $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23)
+            RETURNING id, organization_id, building_id, owner_id, expense_id, contribution_id,
                       amount_cents, currency, status AS "status: String",
                       payment_method_type AS "payment_method_type: String",
                       stripe_payment_intent_id, stripe_customer_id, payment_method_id,
@@ -94,6 +94,7 @@ impl PaymentRepository for PostgresPaymentRepository {
             payment.building_id,
             payment.owner_id,
             payment.expense_id,
+            payment.contribution_id,
             payment.amount_cents,
             &payment.currency,
             status_str,
@@ -122,6 +123,7 @@ impl PaymentRepository for PostgresPaymentRepository {
             building_id: row.building_id,
             owner_id: row.owner_id,
             expense_id: row.expense_id,
+            contribution_id: row.contribution_id,
             amount_cents: row.amount_cents,
             currency: row.currency,
             status: Self::status_from_db(&row.status)?,
@@ -145,7 +147,7 @@ impl PaymentRepository for PostgresPaymentRepository {
     async fn find_by_id(&self, id: Uuid) -> Result<Option<Payment>, String> {
         let row = sqlx::query!(
             r#"
-            SELECT id, organization_id, building_id, owner_id, expense_id,
+            SELECT id, organization_id, building_id, owner_id, expense_id, contribution_id,
                    amount_cents, currency, status AS "status: String",
                    payment_method_type AS "payment_method_type: String",
                    stripe_payment_intent_id, stripe_customer_id, payment_method_id,
@@ -168,6 +170,7 @@ impl PaymentRepository for PostgresPaymentRepository {
                 building_id: row.building_id,
                 owner_id: row.owner_id,
                 expense_id: row.expense_id,
+                contribution_id: row.contribution_id,
                 amount_cents: row.amount_cents,
                 currency: row.currency,
                 status: Self::status_from_db(&row.status)?,
@@ -196,7 +199,7 @@ impl PaymentRepository for PostgresPaymentRepository {
     ) -> Result<Option<Payment>, String> {
         let row = sqlx::query!(
             r#"
-            SELECT id, organization_id, building_id, owner_id, expense_id,
+            SELECT id, organization_id, building_id, owner_id, expense_id, contribution_id,
                    amount_cents, currency, status AS "status: String",
                    payment_method_type AS "payment_method_type: String",
                    stripe_payment_intent_id, stripe_customer_id, payment_method_id,
@@ -219,6 +222,7 @@ impl PaymentRepository for PostgresPaymentRepository {
                 building_id: row.building_id,
                 owner_id: row.owner_id,
                 expense_id: row.expense_id,
+                contribution_id: row.contribution_id,
                 amount_cents: row.amount_cents,
                 currency: row.currency,
                 status: Self::status_from_db(&row.status)?,
@@ -248,7 +252,7 @@ impl PaymentRepository for PostgresPaymentRepository {
     ) -> Result<Option<Payment>, String> {
         let row = sqlx::query!(
             r#"
-            SELECT id, organization_id, building_id, owner_id, expense_id,
+            SELECT id, organization_id, building_id, owner_id, expense_id, contribution_id,
                    amount_cents, currency, status AS "status: String",
                    payment_method_type AS "payment_method_type: String",
                    stripe_payment_intent_id, stripe_customer_id, payment_method_id,
@@ -272,6 +276,7 @@ impl PaymentRepository for PostgresPaymentRepository {
                 building_id: row.building_id,
                 owner_id: row.owner_id,
                 expense_id: row.expense_id,
+                contribution_id: row.contribution_id,
                 amount_cents: row.amount_cents,
                 currency: row.currency,
                 status: Self::status_from_db(&row.status)?,
@@ -297,7 +302,7 @@ impl PaymentRepository for PostgresPaymentRepository {
     async fn find_by_owner(&self, owner_id: Uuid) -> Result<Vec<Payment>, String> {
         let rows = sqlx::query!(
             r#"
-            SELECT id, organization_id, building_id, owner_id, expense_id,
+            SELECT id, organization_id, building_id, owner_id, expense_id, contribution_id,
                    amount_cents, currency, status AS "status: String",
                    payment_method_type AS "payment_method_type: String",
                    stripe_payment_intent_id, stripe_customer_id, payment_method_id,
@@ -322,6 +327,7 @@ impl PaymentRepository for PostgresPaymentRepository {
                     building_id: row.building_id,
                     owner_id: row.owner_id,
                     expense_id: row.expense_id,
+                    contribution_id: row.contribution_id,
                     amount_cents: row.amount_cents,
                     currency: row.currency,
                     status: Self::status_from_db(&row.status)?,
@@ -347,7 +353,7 @@ impl PaymentRepository for PostgresPaymentRepository {
     async fn find_by_building(&self, building_id: Uuid) -> Result<Vec<Payment>, String> {
         let rows = sqlx::query!(
             r#"
-            SELECT id, organization_id, building_id, owner_id, expense_id,
+            SELECT id, organization_id, building_id, owner_id, expense_id, contribution_id,
                    amount_cents, currency, status AS "status: String",
                    payment_method_type AS "payment_method_type: String",
                    stripe_payment_intent_id, stripe_customer_id, payment_method_id,
@@ -372,6 +378,7 @@ impl PaymentRepository for PostgresPaymentRepository {
                     building_id: row.building_id,
                     owner_id: row.owner_id,
                     expense_id: row.expense_id,
+                    contribution_id: row.contribution_id,
                     amount_cents: row.amount_cents,
                     currency: row.currency,
                     status: Self::status_from_db(&row.status)?,
@@ -397,7 +404,7 @@ impl PaymentRepository for PostgresPaymentRepository {
     async fn find_by_expense(&self, expense_id: Uuid) -> Result<Vec<Payment>, String> {
         let rows = sqlx::query!(
             r#"
-            SELECT id, organization_id, building_id, owner_id, expense_id,
+            SELECT id, organization_id, building_id, owner_id, expense_id, contribution_id,
                    amount_cents, currency, status AS "status: String",
                    payment_method_type AS "payment_method_type: String",
                    stripe_payment_intent_id, stripe_customer_id, payment_method_id,
@@ -422,6 +429,7 @@ impl PaymentRepository for PostgresPaymentRepository {
                     building_id: row.building_id,
                     owner_id: row.owner_id,
                     expense_id: row.expense_id,
+                    contribution_id: row.contribution_id,
                     amount_cents: row.amount_cents,
                     currency: row.currency,
                     status: Self::status_from_db(&row.status)?,
@@ -447,7 +455,7 @@ impl PaymentRepository for PostgresPaymentRepository {
     async fn find_by_organization(&self, organization_id: Uuid) -> Result<Vec<Payment>, String> {
         let rows = sqlx::query!(
             r#"
-            SELECT id, organization_id, building_id, owner_id, expense_id,
+            SELECT id, organization_id, building_id, owner_id, expense_id, contribution_id,
                    amount_cents, currency, status AS "status: String",
                    payment_method_type AS "payment_method_type: String",
                    stripe_payment_intent_id, stripe_customer_id, payment_method_id,
@@ -472,6 +480,7 @@ impl PaymentRepository for PostgresPaymentRepository {
                     building_id: row.building_id,
                     owner_id: row.owner_id,
                     expense_id: row.expense_id,
+                    contribution_id: row.contribution_id,
                     amount_cents: row.amount_cents,
                     currency: row.currency,
                     status: Self::status_from_db(&row.status)?,
@@ -503,7 +512,7 @@ impl PaymentRepository for PostgresPaymentRepository {
 
         let rows = sqlx::query!(
             r#"
-            SELECT id, organization_id, building_id, owner_id, expense_id,
+            SELECT id, organization_id, building_id, owner_id, expense_id, contribution_id,
                    amount_cents, currency, status AS "status: String",
                    payment_method_type AS "payment_method_type: String",
                    stripe_payment_intent_id, stripe_customer_id, payment_method_id,
@@ -529,6 +538,7 @@ impl PaymentRepository for PostgresPaymentRepository {
                     building_id: row.building_id,
                     owner_id: row.owner_id,
                     expense_id: row.expense_id,
+                    contribution_id: row.contribution_id,
                     amount_cents: row.amount_cents,
                     currency: row.currency,
                     status: Self::status_from_db(&row.status)?,
@@ -560,7 +570,7 @@ impl PaymentRepository for PostgresPaymentRepository {
 
         let rows = sqlx::query!(
             r#"
-            SELECT id, organization_id, building_id, owner_id, expense_id,
+            SELECT id, organization_id, building_id, owner_id, expense_id, contribution_id,
                    amount_cents, currency, status AS "status: String",
                    payment_method_type AS "payment_method_type: String",
                    stripe_payment_intent_id, stripe_customer_id, payment_method_id,
@@ -586,6 +596,7 @@ impl PaymentRepository for PostgresPaymentRepository {
                     building_id: row.building_id,
                     owner_id: row.owner_id,
                     expense_id: row.expense_id,
+                    contribution_id: row.contribution_id,
                     amount_cents: row.amount_cents,
                     currency: row.currency,
                     status: Self::status_from_db(&row.status)?,
@@ -629,24 +640,25 @@ impl PaymentRepository for PostgresPaymentRepository {
                 building_id = $3,
                 owner_id = $4,
                 expense_id = $5,
-                amount_cents = $6,
-                currency = $7,
-                status = $8::TEXT::transaction_status,
-                payment_method_type = $9::TEXT::payment_method_type,
-                stripe_payment_intent_id = $10,
-                stripe_customer_id = $11,
-                payment_method_id = $12,
-                idempotency_key = $13,
-                description = $14,
-                metadata = $15,
-                failure_reason = $16,
-                refunded_amount_cents = $17,
-                succeeded_at = $18,
-                failed_at = $19,
-                cancelled_at = $20,
-                updated_at = $21
+                contribution_id = $6,
+                amount_cents = $7,
+                currency = $8,
+                status = $9::TEXT::transaction_status,
+                payment_method_type = $10::TEXT::payment_method_type,
+                stripe_payment_intent_id = $11,
+                stripe_customer_id = $12,
+                payment_method_id = $13,
+                idempotency_key = $14,
+                description = $15,
+                metadata = $16,
+                failure_reason = $17,
+                refunded_amount_cents = $18,
+                succeeded_at = $19,
+                failed_at = $20,
+                cancelled_at = $21,
+                updated_at = $22
             WHERE id = $1
-            RETURNING id, organization_id, building_id, owner_id, expense_id,
+            RETURNING id, organization_id, building_id, owner_id, expense_id, contribution_id,
                       amount_cents, currency, status AS "status: String",
                       payment_method_type AS "payment_method_type: String",
                       stripe_payment_intent_id, stripe_customer_id, payment_method_id,
@@ -659,6 +671,7 @@ impl PaymentRepository for PostgresPaymentRepository {
             payment.building_id,
             payment.owner_id,
             payment.expense_id,
+            payment.contribution_id,
             payment.amount_cents,
             &payment.currency,
             status_str,
@@ -689,6 +702,7 @@ impl PaymentRepository for PostgresPaymentRepository {
             building_id: row.building_id,
             owner_id: row.owner_id,
             expense_id: row.expense_id,
+            contribution_id: row.contribution_id,
             amount_cents: row.amount_cents,
             currency: row.currency,
             status: Self::status_from_db(&row.status)?,

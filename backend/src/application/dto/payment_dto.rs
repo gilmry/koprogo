@@ -11,6 +11,7 @@ pub struct PaymentResponse {
     pub building_id: Uuid,
     pub owner_id: Uuid,
     pub expense_id: Option<Uuid>,
+    pub contribution_id: Option<Uuid>,
     pub amount_cents: i64,
     pub currency: String,
     pub status: TransactionStatus,
@@ -41,6 +42,7 @@ impl From<Payment> for PaymentResponse {
             building_id: payment.building_id,
             owner_id: payment.owner_id,
             expense_id: payment.expense_id,
+            contribution_id: payment.contribution_id,
             amount_cents: payment.amount_cents,
             currency: payment.currency,
             status: payment.status,
@@ -64,11 +66,23 @@ impl From<Payment> for PaymentResponse {
 }
 
 /// Create payment request DTO
+///
+/// `deny_unknown_fields` : un `POST /payments` portant `contribution_id`
+/// repondait 201 en jetant le champ, laissant croire que la quote-part venait
+/// d'etre soldee. Le champ existe desormais ; tout AUTRE champ inconnu
+/// (`currency`, `stripe_payment_intent_id`, que le client TypeScript envoyait
+/// sans qu'ils existent cote serveur) produit un 400 explicite plutot qu'une
+/// perte silencieuse.
 #[derive(Debug, Clone, Serialize, Deserialize, utoipa::ToSchema)]
+#[serde(deny_unknown_fields)]
 pub struct CreatePaymentRequest {
     pub building_id: Uuid,
     pub owner_id: Uuid,
     pub expense_id: Option<Uuid>,
+    /// Quote-part soldee par ce paiement. La contribution ne passe a `paid`
+    /// qu'a la reussite du paiement, pas a sa creation.
+    #[serde(default)]
+    pub contribution_id: Option<Uuid>,
     pub amount_cents: i64,
     pub payment_method_type: PaymentMethodType,
     pub payment_method_id: Option<Uuid>, // If using saved payment method

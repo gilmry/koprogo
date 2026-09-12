@@ -1,6 +1,6 @@
 <script lang="ts">
   // Svelte 5 runes mode
-  import { _ } from '../../lib/i18n';
+  import { _ } from "../../lib/i18n";
   import {
     localExchangesApi,
     type CreateLocalExchangeDto,
@@ -34,7 +34,7 @@
   });
 
   let loading: boolean = $state(false);
-  let error: string | null = $state(null);
+  let error = $state<string | null>(null);
   let success: boolean = $state(false);
 
   async function handleSubmit(e: Event) {
@@ -62,7 +62,7 @@
 
     const result = await withErrorHandling({
       action: () => localExchangesApi.create(formData),
-      setLoading: (v: boolean) => loading = v,
+      setLoading: (v: boolean) => (loading = v),
       errorMessage: $_("exchanges.createError"),
       onSuccess: (exchange) => {
         error = null;
@@ -76,7 +76,11 @@
   }
 </script>
 
-<form onsubmit={handleSubmit} class="space-y-6" data-testid="create-exchange-form">
+<form
+  onsubmit={handleSubmit}
+  class="space-y-6"
+  data-testid="create-exchange-form"
+>
   <!-- Success Message -->
   {#if success}
     <div
@@ -111,15 +115,22 @@
 
   <!-- Exchange Type -->
   <div>
-    <label for="exchange-type" class="block text-sm font-medium text-gray-700 mb-2">
+    <label
+      for="exchange-type"
+      class="block text-sm font-medium text-gray-700 mb-2"
+    >
       {$_("exchanges.exchangeType")} <span class="text-red-500">*</span>
     </label>
     <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
       {#each Object.values(ExchangeType) as type}
         <label
-          class="relative flex items-center p-4 border-2 rounded-lg cursor-pointer hover:bg-gray-50 {formData.exchange_type === type ? 'border-blue-500 bg-blue-50' : 'border-gray-200'}"
+          class="relative flex items-center p-4 border-2 rounded-lg cursor-pointer hover:bg-gray-50 {formData.exchange_type ===
+          type
+            ? 'border-blue-500 bg-blue-50'
+            : 'border-gray-200'}"
         >
           <input
+            data-testid="exchange-create-type-radio"
             type="radio"
             name="exchange-type"
             value={type}
@@ -210,7 +221,13 @@
       </div>
     </div>
     <p class="mt-2 text-sm text-gray-600">
-      ⏱️ {$_("exchanges.estimatedTime")} <strong>{formData.credits} {formData.credits > 1 ? $_("exchanges.hours") : $_("exchanges.hour")}</strong>
+      ⏱️ {$_("exchanges.estimatedTime")}
+      <strong
+        >{formData.credits}
+        {formData.credits > 1
+          ? $_("exchanges.hours")
+          : $_("exchanges.hour")}</strong
+      >
       ({$_("exchanges.creditHour")})
     </p>
     <p class="text-xs text-gray-500 mt-1">
@@ -228,6 +245,7 @@
   <!-- Submit Button -->
   <div class="flex justify-end gap-3">
     <button
+      data-testid="exchange-create-cancel-button"
       type="button"
       onclick={() => oncancel?.()}
       class="px-6 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"

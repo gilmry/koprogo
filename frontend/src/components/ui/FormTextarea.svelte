@@ -3,12 +3,12 @@
   let {
     id,
     label,
-    value = $bindable(''),
-    placeholder = '',
+    value = $bindable(""),
+    placeholder = "",
     required = false,
     disabled = false,
-    error = '',
-    hint = '',
+    error = "",
+    hint = "",
     rows = 4,
     ...restProps
   }: {
@@ -48,8 +48,7 @@
     oninput={handleInput}
     {...restProps}
     class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 disabled:bg-gray-100 disabled:cursor-not-allowed transition resize-y
-      {error ? 'border-red-500' : 'border-gray-300'}"
-  ></textarea>
+      {error ? 'border-red-500' : 'border-gray-300'}"></textarea>
 
   {#if error}
     <p class="mt-1 text-sm text-red-600">{error}</p>

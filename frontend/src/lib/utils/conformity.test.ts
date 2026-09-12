@@ -186,3 +186,50 @@ beforeEach(() => {
   // s'assure que setupI18n a tourné (idempotent).
   // L'import dans `conformity.ts` indirectement load `i18n.ts`.
 });
+
+/**
+ * Régression #782 — l'extracteur doit correspondre à une VRAIE erreur d'API.
+ *
+ * Les cas ci-dessus fabriquent l'objet d'erreur à la main. C'est ce qui a
+ * laissé cette fonctionnalité morte pendant des mois : `apiFetch` levait une
+ * `Error` NUE, sans `.details`, sans `.body`, sans `.response`. Aucun de ces
+ * trois chemins ne pouvait aboutir en production, et le seul appelant réel
+ * — `MeetingDetail.svelte` pour son équivalent AG — retombait toujours sur un
+ * message générique.
+ *
+ * Ce test-ci passe l'erreur telle que `apiFetch` la lève désormais. Il est le
+ * cas qui manquait.
+ */
+describe("isConformityError avec une ApiError réelle (#782)", () => {
+  it("reconnaît le 422 tel que apiFetch le lève", async () => {
+    const { ApiError } = await import("../api");
+    const corps = {
+      error: "L'immeuble n'est pas conforme à son acte de base",
+      kind: "building_not_conformant",
+      details: {
+        code: "BUILDING_NOT_CONFORMANT",
+        building_id: "914f219e-057a-4cb2-8619-ddf8b3ce2dae",
+        units_delta: 2,
+        quota_delta: "150.0000",
+        quota_basis: 1000,
+      },
+    };
+    const erreur = new ApiError(corps.error, 422, corps.details, corps);
+
+    expect(isConformityError(erreur)).toBe(true);
+    const charge = extractConformityPayload(erreur as any);
+    expect(charge?.units_delta).toBe(2);
+    expect(charge?.quota_basis).toBe(1000);
+  });
+
+  it("ignore une erreur d'API qui n'est pas une non-conformité", async () => {
+    const { ApiError } = await import("../api");
+    const erreur = new ApiError(
+      "Invalid request body",
+      400,
+      "missing field `acp_id`",
+      { error: "Invalid request body", details: "missing field `acp_id`" },
+    );
+    expect(isConformityError(erreur)).toBe(false);
+  });
+});

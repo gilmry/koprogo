@@ -1,430 +1,595 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
-	import { _ } from '../../lib/i18n';
-	import { api } from '../../lib/api';
+  import Icone from "../ui/Icone.svelte";
+  import { onMount } from "svelte";
+  import { _ } from "../../lib/i18n";
+  import { api } from "../../lib/api";
+  import ConfirmDialog from "../ui/ConfirmDialog.svelte";
 
-	interface SeedStats {
-		seed_organizations: number;
-		production_organizations: number;
-		seed_buildings: number;
-		seed_units: number;
-		seed_owners: number;
-		seed_unit_owners: number;
-		seed_expenses: number;
-		seed_meetings: number;
-		seed_users: number;
-	}
+  interface SeedStats {
+    seed_organizations: number;
+    production_organizations: number;
+    seed_buildings: number;
+    seed_units: number;
+    seed_owners: number;
+    seed_unit_owners: number;
+    seed_expenses: number;
+    seed_meetings: number;
+    seed_users: number;
+  }
 
-	interface TestAccount {
-		role: string;
-		org: string;
-		email: string;
-		password: string;
-	}
+  interface TestAccount {
+    role: string;
+    org: string;
+    email: string;
+    password: string;
+  }
 
-	let loading = false;
-	let message = '';
-	let messageType: 'success' | 'error' | 'info' = 'info';
-	let seedAccounts: TestAccount[] = [];
-	let showAccounts = false;
+  let loading = false;
 
-	// Seed statistics
-	let seedStats: SeedStats | null = null;
-	let statsLoading = true;
-	let statsError = '';
+  // La purge du jeu de démonstration, en attente de confirmation.
+  //
+  // Le `confirm()` remplacé portait un texte FRANÇAIS écrit en dur, dans un
+  // écran par ailleurs traduit en quatre langues — et il était doublement
+  // invisible : un navigateur piloté le supprime (#844), et le cliquet de
+  // libellés ne regardait pas les chaînes passées à `confirm()` (#834).
+  //
+  // La purge efface les données marquées `is_seed_data=true`. Le message le
+  // dit, et il doit être lisible.
+  let purgeEnAttente = false;
+  let message = "";
+  let messageType: "success" | "error" | "info" = "info";
+  let seedAccounts: TestAccount[] = [];
+  let showAccounts = false;
 
-	onMount(async () => {
-		await loadSeedStats();
-	});
+  // Seed statistics
+  let seedStats: SeedStats | null = null;
+  let statsLoading = true;
+  let statsError = "";
 
-	async function loadSeedStats() {
-		try {
-			statsLoading = true;
-			statsError = '';
-			seedStats = await api.get<SeedStats>('/stats/seed-data');
+  onMount(async () => {
+    await loadSeedStats();
+  });
 
-			// Show accounts if there are seed organizations
-			if (seedStats && seedStats.seed_organizations > 0) {
-				seedAccounts = [
-					// SuperAdmin
-					{ role: '👑 SuperAdmin', org: 'KoproGo Platform', email: 'admin@koprogo.com', password: 'admin123' },
-					// Syndics
-					{ role: '🏢 Syndic', org: 'Résidence Grand Place', email: 'syndic@grandplace.be', password: 'syndic123' },
-					{ role: '🏢 Syndic', org: 'Copropriété Bruxelles', email: 'syndic@copro-bruxelles.be', password: 'syndic123' },
-					{ role: '🏢 Syndic', org: 'Syndic Liège', email: 'syndic@syndic-liege.be', password: 'syndic123' },
-					// Comptable
-					{ role: '📊 Comptable', org: 'Résidence Grand Place', email: 'comptable@grandplace.be', password: 'comptable123' },
-					// Propriétaires
-					{ role: '👤 Propriétaire', org: 'Résidence Grand Place', email: 'proprietaire1@grandplace.be', password: 'owner123' },
-					{ role: '👤 Propriétaire', org: 'Résidence Grand Place', email: 'proprietaire2@grandplace.be', password: 'owner123' }
-				];
-				showAccounts = true;
-			} else {
-				showAccounts = false;
-				seedAccounts = [];
-			}
-		} catch (error) {
-			console.error('Failed to load seed stats:', error);
-			statsError = error instanceof Error ? error.message : 'Erreur lors du chargement des statistiques';
-		} finally {
-			statsLoading = false;
-		}
-	}
+  async function loadSeedStats() {
+    try {
+      statsLoading = true;
+      statsError = "";
+      seedStats = await api.get<SeedStats>("/stats/seed-data");
 
-	async function generateSeed() {
-		await executeSeed('/seed/demo', 'Seed Data');
-	}
+      // Show accounts if there are seed organizations
+      if (seedStats && seedStats.seed_organizations > 0) {
+        seedAccounts = [
+          // SuperAdmin
+          {
+            role: "👑 SuperAdmin",
+            org: "KoproGo Platform",
+            email: "admin@koprogo.com",
+            password: "admin123",
+          },
+          // Syndics
+          {
+            role: "🏢 Syndic",
+            org: "Résidence Grand Place",
+            email: "syndic@grandplace.be",
+            password: "syndic123",
+          },
+          {
+            role: "🏢 Syndic",
+            org: "Copropriété Bruxelles",
+            email: "syndic@copro-bruxelles.be",
+            password: "syndic123",
+          },
+          {
+            role: "🏢 Syndic",
+            org: "Syndic Liège",
+            email: "syndic@syndic-liege.be",
+            password: "syndic123",
+          },
+          // Comptable
+          {
+            role: "📊 Comptable",
+            org: "Résidence Grand Place",
+            email: "comptable@grandplace.be",
+            password: "comptable123",
+          },
+          // Propriétaires
+          {
+            role: "👤 Propriétaire",
+            org: "Résidence Grand Place",
+            email: "proprietaire1@grandplace.be",
+            password: "owner123",
+          },
+          {
+            role: "👤 Propriétaire",
+            org: "Résidence Grand Place",
+            email: "proprietaire2@grandplace.be",
+            password: "owner123",
+          },
+        ];
+        showAccounts = true;
+      } else {
+        showAccounts = false;
+        seedAccounts = [];
+      }
+    } catch (error) {
+      console.error("Failed to load seed stats:", error);
+      statsError =
+        error instanceof Error
+          ? error.message
+          : "Erreur lors du chargement des statistiques";
+    } finally {
+      statsLoading = false;
+    }
+  }
 
-	async function clearData() {
-		if (!confirm('⚠️ ATTENTION: Ceci va SUPPRIMER UNIQUEMENT les données SEED (marquées is_seed_data=true)!\n\nLes données de production seront préservées.\n\nÊtes-vous sûr de vouloir continuer?')) {
-			return;
-		}
+  async function generateSeed() {
+    await executeSeed("/seed/demo", "Seed Data");
+  }
 
-		loading = true;
-		message = '';
+  function clearData() {
+    purgeEnAttente = true;
+  }
 
-		try {
-			const data = await api.post<{success: boolean, message?: string, error?: string}>('/seed/clear');
+  async function executerLaPurge() {
+    purgeEnAttente = false;
 
-			if (data.success) {
-				message = data.message || 'Données seed supprimées avec succès';
-				messageType = 'success';
-				// Reload stats after clearing (this will hide accounts if no seed data)
-				await loadSeedStats();
-			} else {
-				message = data.error || 'Échec de la suppression';
-				messageType = 'error';
-			}
-		} catch (error) {
-			const errMsg = error instanceof Error ? error.message : String(error);
-			message = `Error: ${errMsg}`;
-			messageType = 'error';
-		} finally {
-			loading = false;
-		}
-	}
+    loading = true;
+    message = "";
 
-	async function executeSeed(endpoint: string, seedType: string) {
-		loading = true;
-		message = '';
+    try {
+      const data = await api.post<{
+        success: boolean;
+        message?: string;
+        error?: string;
+      }>("/seed/clear");
 
-		try {
-			const data = await api.post<{success: boolean, message?: string, error?: string}>(endpoint);
+      if (data.success) {
+        message = data.message || "Données seed supprimées avec succès";
+        messageType = "success";
+        // Reload stats after clearing (this will hide accounts if no seed data)
+        await loadSeedStats();
+      } else {
+        message = data.error || "Échec de la suppression";
+        messageType = "error";
+      }
+    } catch (error) {
+      const errMsg = error instanceof Error ? error.message : String(error);
+      message = `Error: ${errMsg}`;
+      messageType = "error";
+    } finally {
+      loading = false;
+    }
+  }
 
-			if (data.success) {
-				message = data.message || `${seedType} généré avec succès`;
-				messageType = 'success';
+  async function executeSeed(endpoint: string, seedType: string) {
+    loading = true;
+    message = "";
 
-				// Reload stats after seeding (this will show accounts)
-				await loadSeedStats();
-			} else {
-				message = data.error || `Échec de la génération`;
-				messageType = 'error';
-			}
-		} catch (error) {
-			console.error('Seed error:', error);
-			const errMsg = error instanceof Error ? error.message : String(error);
-			message = `Error: ${errMsg}`;
-			messageType = 'error';
-		} finally {
-			loading = false;
-		}
-	}
+    try {
+      const data = await api.post<{
+        success: boolean;
+        message?: string;
+        error?: string;
+      }>(endpoint);
 
-	function copyToClipboard(text: string) {
-		navigator.clipboard.writeText(text);
-	}
+      if (data.success) {
+        message = data.message || `${seedType} généré avec succès`;
+        messageType = "success";
+
+        // Reload stats after seeding (this will show accounts)
+        await loadSeedStats();
+      } else {
+        message = data.error || `Échec de la génération`;
+        messageType = "error";
+      }
+    } catch (error) {
+      console.error("Seed error:", error);
+      const errMsg = error instanceof Error ? error.message : String(error);
+      message = `Error: ${errMsg}`;
+      messageType = "error";
+    } finally {
+      loading = false;
+    }
+  }
+
+  function copyToClipboard(text: string) {
+    navigator.clipboard.writeText(text);
+  }
 </script>
 
 <div class="max-w-6xl mx-auto" data-testid="seed-manager">
-	<div class="bg-white rounded-lg shadow-lg p-6">
-		<h1 class="text-3xl font-bold mb-6 text-gray-800">
-			🌱 {$_('admin.seed.title')}
-		</h1>
+  <div class="bg-white rounded-lg shadow-lg p-6">
+    <h1 class="text-3xl font-bold mb-6 text-gray-800">
+      🌱 {$_("admin.seed.title")}
+    </h1>
 
-		<div class="mb-8">
-			<p class="text-gray-600 mb-4">
-				Générer et gérer les données de test pour le développement et les tests de charge.
-				<span class="text-red-600 font-semibold">SuperAdmin uniquement.</span>
-			</p>
-		</div>
+    <div class="mb-8">
+      <p class="text-gray-600 mb-4">
+        {$_("seed.title")}
+        <span class="text-red-600 font-semibold"
+          >{$_("seed.superAdminOnly")}</span
+        >
+      </p>
+    </div>
 
-		<!-- Seed vs Production Statistics -->
-		{#if statsError}
-			<div class="mb-8 p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg">
-				⚠️ {statsError}
-			</div>
-		{/if}
+    <!-- Seed vs Production Statistics -->
+    {#if statsError}
+      <div
+        class="mb-8 p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg"
+      >
+        ⚠️ {statsError}
+      </div>
+    {/if}
 
-		{#if statsLoading}
-			<div class="mb-8 bg-gray-50 border border-gray-200 rounded-lg p-6">
-				<p class="text-center text-gray-600">Chargement des statistiques...</p>
-			</div>
-		{:else if seedStats}
-			<div class="mb-8 bg-gradient-to-r from-blue-50 to-green-50 border border-blue-200 rounded-lg p-6">
-				<h2 class="text-xl font-semibold mb-4 text-gray-800 flex items-center gap-2">
-					📊 État de la base de données
-				</h2>
+    {#if statsLoading}
+      <div class="mb-8 bg-gray-50 border border-gray-200 rounded-lg p-6">
+        <p class="text-center text-gray-600">{$_("seed.loadingStats")}</p>
+      </div>
+    {:else if seedStats}
+      <div
+        class="mb-8 bg-gradient-to-r from-blue-50 to-green-50 border border-blue-200 rounded-lg p-6"
+      >
+        <h2
+          class="text-xl font-semibold mb-4 text-gray-800 flex items-center gap-2"
+        >
+          {$_("seed.dbState")}
+        </h2>
 
-				<div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-					<div class="bg-white rounded-lg p-4 shadow-sm">
-						<div class="text-2xl font-bold text-green-600">{seedStats.seed_organizations}</div>
-						<div class="text-xs text-gray-600 mt-1">Organisations SEED</div>
-					</div>
-					<div class="bg-white rounded-lg p-4 shadow-sm">
-						<div class="text-2xl font-bold text-blue-600">{seedStats.production_organizations}</div>
-						<div class="text-xs text-gray-600 mt-1">Organisations PROD</div>
-					</div>
-					<div class="bg-white rounded-lg p-4 shadow-sm">
-						<div class="text-2xl font-bold text-green-600">{seedStats.seed_buildings}</div>
-						<div class="text-xs text-gray-600 mt-1">Immeubles SEED</div>
-					</div>
-					<div class="bg-white rounded-lg p-4 shadow-sm">
-						<div class="text-2xl font-bold text-green-600">{seedStats.seed_units}</div>
-						<div class="text-xs text-gray-600 mt-1">Lots SEED</div>
-					</div>
-				</div>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+          <div class="bg-white rounded-lg p-4 shadow-sm">
+            <div class="text-2xl font-bold text-green-600">
+              {seedStats.seed_organizations}
+            </div>
+            <div class="text-xs text-gray-600 mt-1">{$_("seed.orgsSeed")}</div>
+          </div>
+          <div class="bg-white rounded-lg p-4 shadow-sm">
+            <div class="text-2xl font-bold text-blue-600">
+              {seedStats.production_organizations}
+            </div>
+            <div class="text-xs text-gray-600 mt-1">{$_("seed.orgsProd")}</div>
+          </div>
+          <div class="bg-white rounded-lg p-4 shadow-sm">
+            <div class="text-2xl font-bold text-green-600">
+              {seedStats.seed_buildings}
+            </div>
+            <div class="text-xs text-gray-600 mt-1">
+              {$_("seed.buildingsSeed")}
+            </div>
+          </div>
+          <div class="bg-white rounded-lg p-4 shadow-sm">
+            <div class="text-2xl font-bold text-green-600">
+              {seedStats.seed_units}
+            </div>
+            <div class="text-xs text-gray-600 mt-1">{$_("seed.unitsSeed")}</div>
+          </div>
+        </div>
 
-				<div class="grid grid-cols-2 md:grid-cols-5 gap-4">
-					<div class="bg-white rounded-lg p-3 shadow-sm">
-						<div class="text-lg font-semibold text-green-600">{seedStats.seed_owners}</div>
-						<div class="text-xs text-gray-600">Copropriétaires</div>
-					</div>
-					<div class="bg-white rounded-lg p-3 shadow-sm">
-						<div class="text-lg font-semibold text-green-600">{seedStats.seed_unit_owners}</div>
-						<div class="text-xs text-gray-600">Relations lot-proprio</div>
-					</div>
-					<div class="bg-white rounded-lg p-3 shadow-sm">
-						<div class="text-lg font-semibold text-green-600">{seedStats.seed_expenses}</div>
-						<div class="text-xs text-gray-600">Charges</div>
-					</div>
-					<div class="bg-white rounded-lg p-3 shadow-sm">
-						<div class="text-lg font-semibold text-green-600">{seedStats.seed_meetings}</div>
-						<div class="text-xs text-gray-600">Assemblées</div>
-					</div>
-					<div class="bg-white rounded-lg p-3 shadow-sm">
-						<div class="text-lg font-semibold text-green-600">{seedStats.seed_users}</div>
-						<div class="text-xs text-gray-600">Utilisateurs</div>
-					</div>
-				</div>
+        <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
+          <div class="bg-white rounded-lg p-3 shadow-sm">
+            <div class="text-lg font-semibold text-green-600">
+              {seedStats.seed_owners}
+            </div>
+            <div class="text-xs text-gray-600">{$_("seed.coOwners")}</div>
+          </div>
+          <div class="bg-white rounded-lg p-3 shadow-sm">
+            <div class="text-lg font-semibold text-green-600">
+              {seedStats.seed_unit_owners}
+            </div>
+            <div class="text-xs text-gray-600">{$_("seed.unitOwnerLinks")}</div>
+          </div>
+          <div class="bg-white rounded-lg p-3 shadow-sm">
+            <div class="text-lg font-semibold text-green-600">
+              {seedStats.seed_expenses}
+            </div>
+            <div class="text-xs text-gray-600">{$_("seed.charges")}</div>
+          </div>
+          <div class="bg-white rounded-lg p-3 shadow-sm">
+            <div class="text-lg font-semibold text-green-600">
+              {seedStats.seed_meetings}
+            </div>
+            <div class="text-xs text-gray-600">{$_("seed.meetings")}</div>
+          </div>
+          <div class="bg-white rounded-lg p-3 shadow-sm">
+            <div class="text-lg font-semibold text-green-600">
+              {seedStats.seed_users}
+            </div>
+            <div class="text-xs text-gray-600">{$_("seed.users")}</div>
+          </div>
+        </div>
 
-				{#if seedStats.seed_organizations > 0}
-					<div class="mt-4 p-3 bg-green-50 border border-green-200 rounded">
-						<p class="text-sm text-green-800">
-							✅ <strong>{seedStats.seed_organizations}</strong> organisation(s) seed active(s) avec
-							<strong>{seedStats.seed_unit_owners}</strong> relation(s) copropriétaire-lot
-						</p>
-					</div>
-				{:else}
-					<div class="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded">
-						<p class="text-sm text-yellow-800">
-							ℹ️ Aucune donnée seed actuellement. Cliquez sur "Generate Demo" pour créer des données de test.
-						</p>
-					</div>
-				{/if}
+        {#if seedStats.seed_organizations > 0}
+          <div class="mt-4 p-3 bg-green-50 border border-green-200 rounded">
+            <p class="text-sm text-green-800">
+              ✅ <strong>{seedStats.seed_organizations}</strong> organisation(s)
+              seed active(s) avec
+              <strong>{seedStats.seed_unit_owners}</strong> relation(s) copropriétaire-lot
+            </p>
+          </div>
+        {:else}
+          <div class="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded">
+            <p class="text-sm text-yellow-800">
+              ℹ️ {$_("seed.noneYet")}
+            </p>
+          </div>
+        {/if}
 
-				{#if seedStats.production_organizations > 0}
-					<div class="mt-3 p-3 bg-blue-50 border border-blue-200 rounded">
-						<p class="text-sm text-blue-800">
-							🔒 <strong>{seedStats.production_organizations}</strong> organisation(s) de production protégée(s)
-						</p>
-					</div>
-				{/if}
-			</div>
-		{/if}
+        {#if seedStats.production_organizations > 0}
+          <div class="mt-3 p-3 bg-blue-50 border border-blue-200 rounded">
+            <p class="text-sm text-blue-800">
+              🔒 <strong>{seedStats.production_organizations}</strong> organisation(s)
+              de production protégée(s)
+            </p>
+          </div>
+        {/if}
+      </div>
+    {/if}
 
-		<!-- Actions -->
-		<div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-			<!-- Generate Seed -->
-			<div class="border-2 border-green-200 rounded-lg p-6 bg-green-50">
-				<h3 class="font-semibold text-xl mb-3 text-green-800 flex items-center gap-2">
-					<span class="text-2xl">🌱</span> Générer le Seed
-				</h3>
-				<p class="text-sm text-gray-700 mb-4">
-					Génère UN jeu de données complet pour les tests et démonstrations.
-				</p>
-				<ul class="text-sm text-gray-600 mb-4 space-y-2">
-					<li class="flex items-start gap-2">
-						<span class="text-green-600">✓</span>
-						<span>3 organisations belges complètes</span>
-					</li>
-					<li class="flex items-start gap-2">
-						<span class="text-green-600">✓</span>
-						<span>Immeubles avec lots (incluant copropriété multiple)</span>
-					</li>
-					<li class="flex items-start gap-2">
-						<span class="text-green-600">✓</span>
-						<span>Copropriétaires, charges, assemblées</span>
-					</li>
-					<li class="flex items-start gap-2">
-						<span class="text-green-600">✓</span>
-						<span>Utilisateurs: Syndics, Comptables, Propriétaires</span>
-					</li>
-					<li class="flex items-start gap-2">
-						<span class="text-green-600">✓</span>
-						<span>Marqué automatiquement comme <code class="bg-green-100 px-1 rounded text-xs">is_seed_data=true</code></span>
-					</li>
-				</ul>
-				<button
-					on:click={generateSeed}
-					disabled={loading}
-					class="w-full bg-green-600 text-white py-3 px-6 rounded-lg hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition font-semibold text-lg shadow-md"
-				>
-					{loading ? '⏳ Génération en cours...' : '🚀 Générer le Seed'}
-				</button>
-			</div>
+    <!-- Actions -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+      <!-- Generate Seed -->
+      <div class="border-2 border-green-200 rounded-lg p-6 bg-green-50">
+        <h3
+          class="font-semibold text-xl mb-3 text-green-800 flex items-center gap-2"
+        >
+          <span class="text-2xl">🌱</span>
+          {$_("seed.generate")}
+        </h3>
+        <p class="text-sm text-gray-700 mb-4">
+          {$_("seed.generateDesc")}
+        </p>
+        <ul class="text-sm text-gray-600 mb-4 space-y-2">
+          <li class="flex items-start gap-2">
+            <span class="text-green-600">✓</span>
+            <span>3 organisations belges complètes</span>
+          </li>
+          <li class="flex items-start gap-2">
+            <span class="text-green-600">✓</span>
+            <span>{$_("seed.genBuildings")}</span>
+          </li>
+          <li class="flex items-start gap-2">
+            <span class="text-green-600">✓</span>
+            <span>{$_("seed.genOwners")}</span>
+          </li>
+          <li class="flex items-start gap-2">
+            <span class="text-green-600">✓</span>
+            <span>{$_("seed.genUsers")}</span>
+          </li>
+          <li class="flex items-start gap-2">
+            <span class="text-green-600">✓</span>
+            <span
+              >{$_("seed.markedAs")}
+              <code class="bg-green-100 px-1 rounded text-xs"
+                >is_seed_data=true</code
+              ></span
+            >
+          </li>
+        </ul>
+        <button
+          data-testid="seed-generate-button"
+          on:click={generateSeed}
+          disabled={loading}
+          class="w-full bg-green-600 text-white py-3 px-6 rounded-lg hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition font-semibold text-lg shadow-md"
+        >
+          {loading ? $_("seed.generating") : `🚀 ${$_("seed.generate")}`}
+        </button>
+      </div>
 
-			<!-- Clear Seed Data -->
-			<div class="border-2 border-red-200 rounded-lg p-6 bg-red-50">
-				<h3 class="font-semibold text-xl mb-3 text-red-800 flex items-center gap-2">
-					<span class="text-2xl">🗑️</span> Supprimer le Seed
-				</h3>
-				<p class="text-sm text-gray-700 mb-4">
-					Supprime UNIQUEMENT les données seed. Les données de production sont préservées.
-				</p>
-				<ul class="text-sm text-gray-600 mb-4 space-y-2">
-					<li class="flex items-start gap-2">
-						<span class="text-blue-600">🛡️</span>
-						<span><strong>Préserve</strong> toutes les organisations de production</span>
-					</li>
-					<li class="flex items-start gap-2">
-						<span class="text-red-600">🗑️</span>
-						<span>Supprime uniquement les orgs avec <code class="bg-red-100 px-1 rounded text-xs">is_seed_data=true</code></span>
-					</li>
-					<li class="flex items-start gap-2">
-						<span class="text-blue-600">🔒</span>
-						<span>SuperAdmin toujours préservé</span>
-					</li>
-					<li class="flex items-start gap-2">
-						<span class="text-red-600">⚠️</span>
-						<span><strong>Action irréversible</strong></span>
-					</li>
-				</ul>
-				<button
-					on:click={clearData}
-					disabled={loading}
-					class="w-full bg-red-600 text-white py-3 px-6 rounded-lg hover:bg-red-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition font-semibold text-lg shadow-md"
-				>
-					{loading ? '⏳ Suppression...' : '🗑️ Supprimer le Seed'}
-				</button>
-			</div>
-		</div>
+      <!-- Clear Seed Data -->
+      <div class="border-2 border-red-200 rounded-lg p-6 bg-red-50">
+        <h3
+          class="font-semibold text-xl mb-3 text-red-800 flex items-center gap-2"
+        >
+          <Icone nom="trash" taille={22} class="shrink-0" />
+          {$_("seed.delete")}
+        </h3>
+        <p class="text-sm text-gray-700 mb-4">
+          {$_("seed.deleteDesc")}
+        </p>
+        <ul class="text-sm text-gray-600 mb-4 space-y-2">
+          <li class="flex items-start gap-2">
+            <span class="text-blue-600">🛡️</span>
+            <span
+              ><strong>{$_("seed.preserves")}</strong> toutes les organisations de
+              production</span
+            >
+          </li>
+          <li class="flex items-start gap-2">
+            <Icone
+              nom="trash"
+              taille={15}
+              class="mt-0.5 shrink-0 text-danger"
+            />
+            <span
+              >{$_("seed.deletesOnly")}
+              <code class="bg-red-100 px-1 rounded text-xs"
+                >is_seed_data=true</code
+              ></span
+            >
+          </li>
+          <li class="flex items-start gap-2">
+            <span class="text-blue-600">🔒</span>
+            <span>{$_("seed.superAdminKept")}</span>
+          </li>
+          <li class="flex items-start gap-2">
+            <span class="text-red-600">⚠️</span>
+            <span><strong>{$_("seed.irreversible")}</strong></span>
+          </li>
+        </ul>
+        <button
+          data-testid="seed-clear-button"
+          on:click={clearData}
+          disabled={loading}
+          class="w-full bg-red-600 text-white py-3 px-6 rounded-lg hover:bg-red-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition font-semibold text-lg shadow-md"
+        >
+          <!--
+            L'émoji vivait DANS une chaîne de gabarit : il était donc annoncé
+            avec le libellé, et aucun `aria-hidden` ne pouvait s'y appliquer.
+            L'icône sort de la chaîne pour redevenir un élément.
+          -->
+          {#if loading}
+            {$_("seed.deleting")}
+          {:else}
+            <Icone nom="trash" taille={17} class="shrink-0" />
+            {$_("seed.delete")}
+          {/if}
+        </button>
+      </div>
+    </div>
 
-		<!-- Message Display -->
-		{#if message}
-			<div
-				class="mb-6 p-4 rounded-lg {messageType === 'success'
-					? 'bg-green-100 border border-green-400 text-green-800'
-					: messageType === 'error'
-					? 'bg-red-100 border border-red-400 text-red-800'
-					: 'bg-blue-100 border border-blue-400 text-blue-800'}"
-			>
-				<pre class="whitespace-pre-wrap text-sm font-mono">{message}</pre>
-			</div>
-		{/if}
+    <!-- Message Display -->
+    {#if message}
+      <div
+        class="mb-6 p-4 rounded-lg {messageType === 'success'
+          ? 'bg-green-100 border border-green-400 text-green-800'
+          : messageType === 'error'
+            ? 'bg-red-100 border border-red-400 text-red-800'
+            : 'bg-blue-100 border border-blue-400 text-blue-800'}"
+      >
+        <pre class="whitespace-pre-wrap text-sm font-mono">{message}</pre>
+      </div>
+    {/if}
 
-		<!-- Test Accounts Display -->
-		{#if showAccounts && seedAccounts.length > 0}
-			<div class="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6">
-				<h2 class="text-xl font-semibold mb-4 text-blue-900">
-					🔑 Comptes de test disponibles
-				</h2>
-				<p class="text-sm text-gray-600 mb-4">
-					Utilisez ces credentials pour tester les différents rôles et organisations:
-				</p>
+    <!-- Test Accounts Display -->
+    {#if showAccounts && seedAccounts.length > 0}
+      <div class="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6">
+        <h2 class="text-xl font-semibold mb-4 text-blue-900">
+          {$_("seed.testAccounts")}
+        </h2>
+        <p class="text-sm text-gray-600 mb-4">
+          {$_("seed.useTheseCreds")}
+        </p>
 
-				<div class="space-y-3">
-					{#each seedAccounts as account}
-						<div class="bg-white rounded-lg p-4 shadow-sm border border-gray-200">
-							<div class="flex items-center justify-between mb-3">
-								<div>
-									<h3 class="font-semibold text-gray-900">{account.org}</h3>
-									<p class="text-xs text-gray-500 mt-0.5">{account.role}</p>
-								</div>
-								<span class="text-xs bg-blue-100 text-blue-800 px-3 py-1 rounded-full font-medium">
-									{account.role.replace(/[^\p{L}\s]/gu, '').trim()}
-								</span>
-							</div>
-							<div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-								<div>
-									<span class="text-gray-600 text-xs font-medium block mb-1">Email:</span>
-									<div class="flex items-center gap-2">
-										<code class="bg-gray-50 px-3 py-1.5 rounded border border-gray-200 flex-1 text-xs">{account.email}</code>
-										<button
-											on:click={() => copyToClipboard(account.email)}
-											class="text-blue-600 hover:text-blue-800 transition"
-											aria-label="Copier l'email"
-											title="Copier l'email"
-										>
-											📋
-										</button>
-									</div>
-								</div>
-								<div>
-									<span class="text-gray-600 text-xs font-medium block mb-1">Mot de passe:</span>
-									<div class="flex items-center gap-2">
-										<code class="bg-gray-50 px-3 py-1.5 rounded border border-gray-200 flex-1 text-xs">{account.password}</code>
-										<button
-											on:click={() => copyToClipboard(account.password)}
-											class="text-blue-600 hover:text-blue-800 transition"
-											aria-label="Copier le mot de passe"
-											title="Copier le mot de passe"
-										>
-											📋
-										</button>
-									</div>
-								</div>
-							</div>
-						</div>
-					{/each}
-				</div>
+        <div class="space-y-3">
+          {#each seedAccounts as account}
+            <div
+              class="bg-white rounded-lg p-4 shadow-sm border border-gray-200"
+            >
+              <div class="flex items-center justify-between mb-3">
+                <div>
+                  <h3 class="font-semibold text-gray-900">{account.org}</h3>
+                  <p class="text-xs text-gray-500 mt-0.5">{account.role}</p>
+                </div>
+                <span
+                  class="text-xs bg-blue-100 text-blue-800 px-3 py-1 rounded-full font-medium"
+                >
+                  {account.role.replace(/[^\p{L}\s]/gu, "").trim()}
+                </span>
+              </div>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                <div>
+                  <span class="text-gray-600 text-xs font-medium block mb-1"
+                    >{$_("seed.emailLabel")}</span
+                  >
+                  <div class="flex items-center gap-2">
+                    <code
+                      class="bg-gray-50 px-3 py-1.5 rounded border border-gray-200 flex-1 text-xs"
+                      >{account.email}</code
+                    >
+                    <button
+                      data-testid="seed-copy-email-button"
+                      on:click={() => copyToClipboard(account.email)}
+                      class="text-blue-600 hover:text-blue-800 transition"
+                      aria-label="Copier l'email"
+                      title="Copier l'email"
+                    >
+                      📋
+                    </button>
+                  </div>
+                </div>
+                <div>
+                  <span class="text-gray-600 text-xs font-medium block mb-1"
+                    >{$_("seed.passwordLabel")}</span
+                  >
+                  <div class="flex items-center gap-2">
+                    <code
+                      class="bg-gray-50 px-3 py-1.5 rounded border border-gray-200 flex-1 text-xs"
+                      >{account.password}</code
+                    >
+                    <button
+                      data-testid="seed-copy-password-button"
+                      on:click={() => copyToClipboard(account.password)}
+                      class="text-blue-600 hover:text-blue-800 transition"
+                      aria-label="Copier le mot de passe"
+                      title="Copier le mot de passe"
+                    >
+                      📋
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          {/each}
+        </div>
 
-				<div class="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded">
-					<p class="text-xs text-yellow-800">
-						<strong>⚠️ Note:</strong> Ces credentials sont pour les tests uniquement.
-						Changez les mots de passe en production!
-					</p>
-				</div>
-			</div>
-		{/if}
+        <div class="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded">
+          <p class="text-xs text-yellow-800">
+            <strong>{$_("seed.noteLabel")}</strong>
+            {$_("seed.credsWarning")}
+            Changez les mots de passe en production!
+          </p>
+        </div>
+      </div>
+    {/if}
 
-		<!-- Info Section -->
-		<div class="mt-8 bg-gray-50 rounded-lg p-6">
-			<h2 class="font-semibold text-lg mb-3 text-gray-800">
-				ℹ️ À propos du Seed
-			</h2>
-			<div class="space-y-3 text-sm text-gray-600">
-				<div class="p-4 bg-blue-50 border-l-4 border-blue-500 rounded">
-					<p class="font-semibold text-blue-900 mb-2">🛡️ Protection des données de production</p>
-					<p>
-						Toutes les organisations seed sont automatiquement marquées avec <code class="bg-blue-100 px-1 rounded font-mono">is_seed_data=true</code>.
-						La suppression ne touche QUE ces organisations, préservant <strong>toutes les données de production</strong>.
-					</p>
-				</div>
-				<div class="p-4 bg-white border border-gray-200 rounded">
-					<p class="font-semibold text-gray-900 mb-2">🌱 Le Seed unique</p>
-					<p>
-						Il existe <strong>UN SEUL seed</strong> pour KoproGo. Il génère 3 organisations belges complètes avec :
-					</p>
-					<ul class="mt-2 ml-4 space-y-1 list-disc">
-						<li>Immeubles et lots (avec copropriété multiple via <code class="bg-gray-100 px-1 rounded text-xs">unit_owners</code>)</li>
-						<li>Copropriétaires avec quotes-parts et contacts principaux</li>
-						<li>Charges, assemblées générales, et documents</li>
-						<li>Utilisateurs avec différents rôles (Syndic, Comptable, Propriétaire)</li>
-					</ul>
-				</div>
-				<div class="p-4 bg-white border border-gray-200 rounded">
-					<p class="font-semibold text-gray-900 mb-2">🔑 Comptes de test générés</p>
-					<p>
-						Après génération du seed, les credentials des comptes s'affichent ci-dessous.
-						Vous pouvez vous connecter avec ces comptes pour tester le système.
-					</p>
-				</div>
-			</div>
-		</div>
-	</div>
+    <!-- Info Section -->
+    <div class="mt-8 bg-gray-50 rounded-lg p-6">
+      <h2 class="font-semibold text-lg mb-3 text-gray-800">
+        {$_("seed.about")}
+      </h2>
+      <div class="space-y-3 text-sm text-gray-600">
+        <div class="p-4 bg-blue-50 border-l-4 border-blue-500 rounded">
+          <p class="font-semibold text-blue-900 mb-2">
+            {$_("seed.prodProtection")}
+          </p>
+          <p>
+            {$_("seed.allMarked")}
+            <code class="bg-blue-100 px-1 rounded font-mono"
+              >is_seed_data=true</code
+            >. La suppression ne touche QUE ces organisations, préservant
+            <strong>toutes les données de production</strong>.
+          </p>
+        </div>
+        <div class="p-4 bg-white border border-gray-200 rounded">
+          <p class="font-semibold text-gray-900 mb-2">{$_("seed.theSeed")}</p>
+          <p>
+            {$_("seed.theSeed")}
+            {$_("seed.forKoprogo")}
+          </p>
+          <ul class="mt-2 ml-4 space-y-1 list-disc">
+            <li>
+              {$_("seed.aboutBuildings")}
+              <code class="bg-gray-100 px-1 rounded text-xs">unit_owners</code>)
+            </li>
+            <li>{$_("seed.aboutOwners")}</li>
+            <li>{$_("seed.aboutCharges")}</li>
+            <li>{$_("seed.aboutUsers")}</li>
+          </ul>
+        </div>
+        <div class="p-4 bg-white border border-gray-200 rounded">
+          <p class="font-semibold text-gray-900 mb-2">
+            {$_("seed.generatedAccounts")}
+          </p>
+          <p>
+            {$_("seed.afterGeneration")}
+            Vous pouvez vous connecter avec ces comptes pour tester le système.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
 
+<!-- Le dialogue qui remplace un `confirm()` natif au texte écrit en dur
+     (#844, #834). -->
+<ConfirmDialog
+  isOpen={purgeEnAttente}
+  title={$_("common.confirm")}
+  message={$_("seed.clearConfirm")}
+  variant="danger"
+  onconfirm={executerLaPurge}
+  oncancel={() => (purgeEnAttente = false)}
+/>
+
 <style>
-	/* Custom styles if needed */
+  /* Custom styles if needed */
 </style>

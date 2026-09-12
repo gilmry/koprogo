@@ -11,7 +11,7 @@ import { loginAsSyndicWithMeeting } from "./helpers/auth";
  * Belgian law (Art. 3.87 §3 CC): minimum 15-day notice for Ordinary AG.
  */
 
-const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
+import { API_BASE } from "./helpers/adresses";
 
 test.describe("Convocations - AG Automatic Invitations", () => {
   test("should display convocations page", async ({ page }) => {
@@ -20,9 +20,7 @@ test.describe("Convocations - AG Automatic Invitations", () => {
 
     await expect(page.locator("body")).toBeVisible();
     await expect(
-      page
-        .locator("main h1, main h2, [data-testid='convocations-list']")
-        .first(),
+      page.locator("[data-testid='convocations-list']").first(),
     ).toBeVisible({ timeout: 10000 });
   });
 

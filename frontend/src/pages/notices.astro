@@ -3,11 +3,13 @@ import Layout from "../layouts/Layout.astro";
 ---
 
 <Layout title="Tableau d'affichage - KoproGo">
-  <div class="container mx-auto px-4 py-8">
+  <div class="container mx-auto px-4 py-8" data-testid="notices-list">
     <div class="mb-6 flex items-center justify-between">
       <div>
         <h1 class="text-3xl font-bold text-gray-900">📌 Annonces</h1>
-        <p class="text-gray-600 mt-1">Annonces communautaires et petites annonces</p>
+        <p class="text-gray-600 mt-1">
+          Annonces communautaires et petites annonces
+        </p>
       </div>
       <button
         id="create-notice-btn"
@@ -33,27 +35,38 @@ import Layout from "../layouts/Layout.astro";
 
   let currentOwnerId = "";
 
-  const selectorContainer = document.getElementById("building-selector-container");
+  const selectorContainer = document.getElementById(
+    "building-selector-container",
+  );
   const listContainer = document.getElementById("notice-list-container");
   const modalContainer = document.getElementById("create-modal-container");
   let listComponent: any = null;
   let createModalComponent: any = null;
   let currentBuildingId = "";
 
-  function mountList(buildingId: string) {
+  function mountList(
+    buildingId: string,
+    initialStatus: string = "active-only",
+  ) {
     currentBuildingId = buildingId;
     if (!listContainer) return;
-    if (listComponent) { try { unmount(listComponent); } catch {} }
+    if (listComponent) {
+      try {
+        unmount(listComponent);
+      } catch {}
+    }
     listContainer.innerHTML = "";
     listComponent = mount(NoticeList as any, {
       target: listContainer,
-      props: { buildingId, showFilters: true },
+      props: { buildingId, showFilters: true, initialStatus },
     });
   }
 
   function closeModal() {
     if (createModalComponent) {
-      try { unmount(createModalComponent); } catch {}
+      try {
+        unmount(createModalComponent);
+      } catch {}
       createModalComponent = null;
       if (modalContainer) modalContainer.innerHTML = "";
     }
@@ -70,8 +83,23 @@ import Layout from "../layouts/Layout.astro";
           buildingId: currentBuildingId,
           authorId: currentOwnerId,
           onClose: closeModal,
+          // Ne PAS recharger la page.
+          //
+          // `window.location.reload()` détruisait le message de succès avant
+          // qu'il soit lisible, et ramenait le filtre à « publiées seulement ».
+          // Or `Notice::new` crée en BROUILLON : l'annonce venait d'être créée
+          // — le serveur rendait 201 — et disparaissait de l'écran.
+          //
+          // Le testeur en a conclu « aucun retour visuel, aucune annonce créée
+          // après rechargement » (recette du 2026-09-06, RN-6). Trois défauts
+          // se cachaient derrière un seul symptôme : pas de retour, mauvais
+          // filtre, et un rechargement qui effaçait la preuve.
+          //
+          // On ferme la fenêtre et on remonte la liste sur les brouillons,
+          // c'est-à-dire là où l'annonce se trouve réellement.
           onSuccess: () => {
-            window.location.reload();
+            closeModal();
+            mountList(currentBuildingId, "Draft");
           },
         },
       });

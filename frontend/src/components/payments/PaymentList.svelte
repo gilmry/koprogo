@@ -1,6 +1,6 @@
 <script lang="ts">
   // Svelte 5 runes mode
-  import { _ } from '../../lib/i18n';
+  import { _ } from "../../lib/i18n";
   import {
     paymentsApi,
     PaymentStatus,
@@ -11,7 +11,11 @@
   import { withLoadingState } from "../../lib/utils/error.utils";
   import PaymentStatusBadge from "./PaymentStatusBadge.svelte";
 
-  let { ownerId = undefined, buildingId = undefined, expenseId = undefined }: {
+  let {
+    ownerId = undefined,
+    buildingId = undefined,
+    expenseId = undefined,
+  }: {
     ownerId?: string | undefined;
     buildingId?: string | undefined;
     expenseId?: string | undefined;
@@ -40,25 +44,28 @@
           return [];
         }
       },
-      setLoading: (v: boolean) => loading = v,
-      setError: (v: string) => error = v,
-      onSuccess: (data) => payments = data,
-      errorMessage: $_('payments.loadError'),
+      setLoading: (v: boolean) => (loading = v),
+      setError: (v: string) => (error = v),
+      onSuccess: (data) => (payments = data),
+      errorMessage: $_("payments.loadError"),
     });
   }
 
-  let filteredPayments = $derived(payments.filter((payment) => {
-    if (statusFilter !== "all" && payment.status !== statusFilter) return false;
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      return (
-        payment.id.toLowerCase().includes(query) ||
-        payment.stripe_payment_intent_id?.toLowerCase().includes(query) ||
-        payment.idempotency_key.toLowerCase().includes(query)
-      );
-    }
-    return true;
-  }));
+  let filteredPayments = $derived(
+    payments.filter((payment) => {
+      if (statusFilter !== "all" && payment.status !== statusFilter)
+        return false;
+      if (searchQuery) {
+        const query = searchQuery.toLowerCase();
+        return (
+          payment.id.toLowerCase().includes(query) ||
+          payment.stripe_payment_intent_id?.toLowerCase().includes(query) ||
+          payment.idempotency_key.toLowerCase().includes(query)
+        );
+      }
+      return true;
+    }),
+  );
 
   function getPaymentUrl(paymentId: string): string {
     return `/payment-detail?id=${paymentId}`;
@@ -70,16 +77,17 @@
   <div class="px-6 py-4 border-b border-gray-200">
     <div class="flex items-center justify-between mb-4">
       <h2 class="text-xl font-semibold text-gray-900">
-        {$_('payments.title')}
+        {$_("payments.title")}
         <span class="ml-2 text-sm text-gray-500">
           ({filteredPayments.length})
         </span>
       </h2>
       <button
+        data-testid="payment-list-retry-button"
         onclick={loadPayments}
         class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
       >
-        {$_('common.refresh')}
+        {$_("common.refresh")}
       </button>
     </div>
 
@@ -87,32 +95,46 @@
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
       <!-- Search -->
       <div>
-        <label for="payment-search" class="sr-only">{$_('payments.search')}</label>
+        <label for="payment-search" class="sr-only"
+          >{$_("payments.search")}</label
+        >
         <input
+          data-testid="payment-list-search-input"
           id="payment-search"
           type="text"
           bind:value={searchQuery}
-          placeholder={$_('payments.searchPlaceholder')}
+          placeholder={$_("payments.searchPlaceholder")}
           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
         />
       </div>
 
       <!-- Status filter -->
       <div>
-        <label for="payment-status-filter" class="sr-only">{$_('payments.allStatuses')}</label>
+        <label for="payment-status-filter" class="sr-only"
+          >{$_("payments.allStatuses")}</label
+        >
         <select
           id="payment-status-filter"
           bind:value={statusFilter}
           data-testid="payment-status-filter"
           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
         >
-          <option value="all">{$_('payments.allStatuses')}</option>
-          <option value={PaymentStatus.Pending}>{$_('payments.pending')}</option>
-          <option value={PaymentStatus.Processing}>{$_('payments.processing')}</option>
-          <option value={PaymentStatus.RequiresAction}>{$_('payments.requiresAction')}</option>
-          <option value={PaymentStatus.Succeeded}>{$_('payments.succeeded')}</option>
-          <option value={PaymentStatus.Failed}>{$_('payments.failed')}</option>
-          <option value={PaymentStatus.Refunded}>{$_('payments.refunded')}</option>
+          <option value="all">{$_("payments.allStatuses")}</option>
+          <option value={PaymentStatus.Pending}>{$_("payments.pending")}</option
+          >
+          <option value={PaymentStatus.Processing}
+            >{$_("payments.processing")}</option
+          >
+          <option value={PaymentStatus.RequiresAction}
+            >{$_("payments.requiresAction")}</option
+          >
+          <option value={PaymentStatus.Succeeded}
+            >{$_("payments.succeeded")}</option
+          >
+          <option value={PaymentStatus.Failed}>{$_("payments.failed")}</option>
+          <option value={PaymentStatus.Refunded}
+            >{$_("payments.refunded")}</option
+          >
         </select>
       </div>
     </div>
@@ -121,15 +143,18 @@
   <!-- Payments table -->
   <div class="overflow-x-auto">
     {#if loading}
-      <div class="px-6 py-12 text-center text-gray-500" data-testid="payment-list-loading">
+      <div
+        class="px-6 py-12 text-center text-gray-500"
+        data-testid="payment-list-loading"
+      >
         <div
           class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"
         ></div>
-        <p class="mt-4">{$_('common.loading')}</p>
+        <p class="mt-4">{$_("common.loading")}</p>
       </div>
     {:else if filteredPayments.length === 0}
       <div class="px-6 py-12 text-center text-gray-500">
-        {$_('payments.noPayments')}
+        {$_("payments.noPayments")}
       </div>
     {:else}
       <table class="min-w-full divide-y divide-gray-200">
@@ -139,34 +164,37 @@
               scope="col"
               class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
             >
-              {$_('payments.date')}
+              {$_("payments.date")}
             </th>
             <th
               scope="col"
               class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
             >
-              {$_('payments.amount')}
+              {$_("payments.amount")}
             </th>
             <th
               scope="col"
               class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
             >
-              {$_('payments.status')}
+              {$_("payments.status")}
             </th>
             <th
               scope="col"
               class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
             >
-              {$_('payments.method')}
+              {$_("payments.method")}
             </th>
             <th
               scope="col"
               class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
             >
-              {$_('payments.id')}
+              {$_("payments.id")}
             </th>
-            <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-              {$_('common.actions')}
+            <th
+              scope="col"
+              class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"
+            >
+              {$_("common.actions")}
             </th>
           </tr>
         </thead>
@@ -182,7 +210,9 @@
                 </div>
                 {#if payment.refunded_amount_cents > 0}
                   <div class="text-xs text-purple-600">
-                    {$_('payments.refunded')}: {formatAmount(payment.refunded_amount_cents)}
+                    {$_("payments.refunded")}: {formatAmount(
+                      payment.refunded_amount_cents,
+                    )}
                   </div>
                 {/if}
               </td>
@@ -197,17 +227,18 @@
                   {payment.id.slice(0, 8)}
                 </div>
                 {#if payment.stripe_payment_intent_id}
-                  <div class="text-xs text-gray-400 font-mono">
+                  <div class="text-xs text-muted font-mono">
                     {payment.stripe_payment_intent_id.slice(0, 12)}...
                   </div>
                 {/if}
               </td>
               <td class="px-6 py-4 whitespace-nowrap text-right text-sm">
                 <a
+                  data-testid="payment-list-detail-link"
                   href={getPaymentUrl(payment.id)}
                   class="text-blue-600 hover:text-blue-900"
                 >
-                  {$_('common.view')}
+                  {$_("common.view")}
                 </a>
               </td>
             </tr>

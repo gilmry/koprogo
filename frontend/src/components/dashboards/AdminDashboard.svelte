@@ -1,10 +1,12 @@
 <script lang="ts">
+  import Icone from "../ui/Icone.svelte";
   // Svelte 5 runes mode
   import { _ } from "../../lib/i18n";
   import { authStore } from "../../stores/auth";
   import { apiEndpoint } from "../../lib/config";
   import { api } from "../../lib/api";
   import { withErrorHandling } from "../../lib/utils/error.utils";
+  import ConfirmDialog from "../ui/ConfirmDialog.svelte";
 
   interface Stats {
     totalOrganizations: number;
@@ -33,6 +35,16 @@
   let clearLoading = $state(false);
   let seedMessage = $state("");
   let seedError = $state("");
+
+  /// La purge du jeu de démonstration, en attente de confirmation.
+  ///
+  /// Le `confirm()` remplacé était un dialogue du NAVIGATEUR (#844). C'est le
+  /// même geste que dans `SeedManager`, depuis un autre écran : effacer les
+  /// données marquées `is_seed_data=true`.
+  ///
+  /// Deux écrans pour le même acte destructeur, tous deux intestables — le
+  /// même motif que les deux écrans de convocation traités plus tôt.
+  let purgeEnAttente = $state(false);
 
   let user = $derived($authStore.user);
 
@@ -78,19 +90,21 @@
     seedMessage = "";
     seedError = "";
 
-    // DEBUG: Log token state
-    console.log("=== DEBUG: Seed Demo Data ===");
-    console.log("Auth Store State:", $authStore);
-    console.log("Token:", $authStore.token);
-    console.log("Is Authenticated:", $authStore.isAuthenticated);
-    if (typeof window !== "undefined") {
-      // WP-FE1 : access token en mémoire (jamais localStorage) ;
-      // refresh = cookie HttpOnly (illisible par JS).
-      console.log("In-memory access token present:", $authStore.token !== null);
-      console.log("LocalStorage User:", localStorage.getItem("koprogo_user"));
-    }
-    console.log("API Endpoint:", apiEndpoint("/seed/demo"));
-    console.log("============================");
+    // Aucune trace de débogage ici, et surtout pas du jeton.
+    //
+    // Ce bloc écrivait `console.log("Token:", $authStore.token)`, l'état
+    // complet du store d'authentification, et le contenu du `localStorage`.
+    // Le jeton d'accès d'un compte ADMINISTRATEUR se retrouvait en clair dans
+    // la console du navigateur, lisible par toute personne devant l'écran,
+    // toute extension de navigateur, toute capture d'écran et tout outil de
+    // collecte de journaux. Le rendre invisible au JavaScript (WP-FE1, jeton
+    // en mémoire et cookie HttpOnly) ne sert à rien si on le recopie ensuite.
+    //
+    // Une action d'administration se trace au JOURNAL D'AUDIT, côté serveur,
+    // où elle est datée, attribuée et conservée. Pas dans la console du
+    // client, qui n'appartient à personne.
+    //
+    // Voir l'issue #787.
 
     try {
       const response = await fetch(apiEndpoint("/seed/demo"), {
@@ -121,10 +135,12 @@
     }
   };
 
-  const handleClearDemoData = async () => {
-    if (!confirm($_("dashboards.admin.seed.confirmDelete"))) {
-      return;
-    }
+  const handleClearDemoData = () => {
+    purgeEnAttente = true;
+  };
+
+  const executerLaPurge = async () => {
+    purgeEnAttente = false;
 
     clearLoading = true;
     seedMessage = "";
@@ -340,6 +356,7 @@
           </p>
         </div>
         <a
+          data-testid="admin-seed-header-link"
           href="/admin/seed"
           class="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition text-sm font-medium"
         >
@@ -405,6 +422,7 @@
             </li>
           </ul>
           <button
+            data-testid="admin-seed-demo-button"
             onclick={handleSeedDemoData}
             disabled={seedLoading || clearLoading}
             class="w-full bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 transition font-semibold disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
@@ -418,7 +436,7 @@
         <!-- Clear Seed -->
         <div class="border-2 border-red-200 rounded-lg p-6 bg-red-50">
           <div class="flex items-center gap-3 mb-4">
-            <span class="text-4xl">🗑️</span>
+            <Icone nom="trash" taille={34} class="shrink-0 text-danger" />
             <div>
               <h3 class="font-semibold text-lg text-red-900">
                 {$_("dashboards.admin.seed.deleteTitle")}
@@ -437,7 +455,11 @@
               >
             </li>
             <li class="flex items-start gap-2">
-              <span class="text-red-600 font-bold">🗑️</span>
+              <Icone
+                nom="trash"
+                taille={15}
+                class="mt-0.5 shrink-0 text-danger"
+              />
               <span
                 >{$_("dashboards.admin.seed.deleteOnly")}
                 <code class="bg-red-100 px-1 rounded text-xs"
@@ -451,13 +473,24 @@
             </li>
           </ul>
           <button
+            data-testid="admin-clear-demo-button"
             onclick={handleClearDemoData}
             disabled={seedLoading || clearLoading}
             class="w-full bg-red-600 text-white py-3 rounded-lg hover:bg-red-700 transition font-semibold disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
           >
-            {clearLoading
-              ? "⏳ " + $_("dashboards.admin.seed.deleting")
-              : "🗑️ " + $_("dashboards.admin.seed.deleteButton")}
+            <!--
+              Les deux émojis vivaient DANS une concaténation de chaînes : ils
+              étaient donc annoncés avec le libellé, et aucun `aria-hidden` ne
+              pouvait s'y appliquer. Le sablier disparaît sans remplacement —
+              un état de chargement se dit par le mot « Suppression… », pas
+              par un pictogramme que rien n'anime.
+            -->
+            {#if clearLoading}
+              {$_("dashboards.admin.seed.deleting")}
+            {:else}
+              <Icone nom="trash" taille={17} class="shrink-0" />
+              {$_("dashboards.admin.seed.deleteButton")}
+            {/if}
           </button>
         </div>
       </div>
@@ -468,6 +501,7 @@
           💡 <strong>{$_("dashboards.admin.seed.needDetails")}</strong>
           {$_("dashboards.admin.seed.consultPage")}
           <a
+            data-testid="admin-seed-advanced-link"
             href="/admin/seed"
             class="text-blue-600 hover:text-blue-800 underline font-medium"
             >{$_("dashboards.admin.seed.advancedPageLink")}</a
@@ -488,48 +522,21 @@
         </h2>
       </div>
       <div class="p-6">
-        <div class="space-y-4">
-          <div class="flex items-start space-x-3">
-            <span class="text-2xl">🏛️</span>
-            <div class="flex-1">
-              <p class="text-sm font-medium text-gray-900">
-                {$_("dashboards.admin.activity.newOrganization")}
-              </p>
-              <p class="text-sm text-gray-600">
-                Copropriété Les Jardins - Paris 15e
-              </p>
-              <p class="text-xs text-gray-400 mt-1">
-                {$_("dashboards.admin.activity.twoHoursAgo")}
-              </p>
-            </div>
-          </div>
-          <div class="flex items-start space-x-3">
-            <span class="text-2xl">👤</span>
-            <div class="flex-1">
-              <p class="text-sm font-medium text-gray-900">
-                {$_("dashboards.admin.activity.newUser")}
-              </p>
-              <p class="text-sm text-gray-600">
-                jean.dupont@example.com (Syndic)
-              </p>
-              <p class="text-xs text-gray-400 mt-1">
-                {$_("dashboards.admin.activity.fiveHoursAgo")}
-              </p>
-            </div>
-          </div>
-          <div class="flex items-start space-x-3">
-            <span class="text-2xl">🏢</span>
-            <div class="flex-1">
-              <p class="text-sm font-medium text-gray-900">
-                {$_("dashboards.admin.activity.buildingAdded")}
-              </p>
-              <p class="text-sm text-gray-600">Résidence Le Parc - Lyon 3e</p>
-              <p class="text-xs text-gray-400 mt-1">
-                {$_("dashboards.admin.activity.yesterday")}
-              </p>
-            </div>
-          </div>
-        </div>
+        <!-- Aucune activité inventée.
+             Cette section affichait trois événements CODÉS EN DUR — une
+             copropriété « Paris 15e », un immeuble « Lyon 3e », une adresse
+             `jean.dupont@example.com` — dans un produit dont tout le reste est
+             belge : PCMN, Art. 3.87, BCE, tantièmes en millièmes.
+             Un administrateur ne pouvait pas distinguer, en regardant l'écran,
+             ce qui était réel de ce qui ne l'était pas.
+             La source légitime est le journal d'audit (`AuditLogEntry`,
+             `AuditEventType`), qui existe côté serveur mais n'est pas encore
+             exposé en lecture. En attendant, un état vide honnête vaut mieux
+             qu'une activité fictive. Revue de design du 2026-09-06, issue
+             #791. -->
+        <p class="text-sm text-gray-500" data-testid="admin-activity-empty">
+          {$_("dashboards.admin.activity.notAvailableYet")}
+        </p>
       </div>
     </div>
 
@@ -543,6 +550,7 @@
       <div class="p-6">
         <div class="grid grid-cols-2 gap-4">
           <a
+            data-testid="admin-organizations-tile"
             href="/admin/organizations"
             class="flex flex-col items-center justify-center p-6 border-2 border-gray-200 rounded-lg hover:border-primary-500 hover:bg-primary-50 transition group"
           >
@@ -566,6 +574,7 @@
             >
           </a>
           <a
+            data-testid="admin-users-tile"
             href="/admin/users"
             class="flex flex-col items-center justify-center p-6 border-2 border-gray-200 rounded-lg hover:border-primary-500 hover:bg-primary-50 transition group"
           >
@@ -577,6 +586,7 @@
             >
           </a>
           <a
+            data-testid="admin-buildings-tile"
             href="/buildings"
             class="flex flex-col items-center justify-center p-6 border-2 border-gray-200 rounded-lg hover:border-primary-500 hover:bg-primary-50 transition group"
           >
@@ -588,6 +598,7 @@
             >
           </a>
           <a
+            data-testid="admin-subscriptions-tile"
             href="/admin/subscriptions"
             class="flex flex-col items-center justify-center p-6 border-2 border-gray-200 rounded-lg hover:border-primary-500 hover:bg-primary-50 transition group"
           >
@@ -599,6 +610,7 @@
             >
           </a>
           <a
+            data-testid="admin-seed-tile"
             href="/admin/seed"
             class="flex flex-col items-center justify-center p-6 border-2 border-green-200 rounded-lg hover:border-green-500 hover:bg-green-50 transition group"
           >
@@ -610,6 +622,7 @@
             >
           </a>
           <a
+            data-testid="admin-user-owner-links-tile"
             href="/admin/user-owner-links"
             class="flex flex-col items-center justify-center p-6 border-2 border-blue-200 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition group"
           >
@@ -625,3 +638,13 @@
     </div>
   </div>
 </div>
+
+<!-- Le dialogue qui remplace un `confirm()` natif (#844). -->
+<ConfirmDialog
+  isOpen={purgeEnAttente}
+  title={$_("common.confirm")}
+  message={$_("dashboards.admin.seed.confirmDelete")}
+  variant="danger"
+  onconfirm={executerLaPurge}
+  oncancel={() => (purgeEnAttente = false)}
+/>

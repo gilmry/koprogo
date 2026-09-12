@@ -81,6 +81,19 @@ pub struct UpdateResolutionRequest {
 /// Request DTO for closing voting on a resolution
 #[derive(Debug, Deserialize, utoipa::ToSchema)]
 pub struct CloseVotingRequest {
-    /// Total tantièmes du bâtiment — Decimal exact (ADR-0008), string JSON.
-    pub total_voting_power: Decimal,
+    /// Total des tantièmes de l'immeuble, **facultatif et ignoré**.
+    ///
+    /// Ce champ était obligatoire, et le frontend envoyait `{}` : la requête
+    /// échouait donc à la désérialisation, en 400, avant même d'atteindre le
+    /// gestionnaire. Le bouton « Clôturer le vote » paraissait inerte, ce qui
+    /// a été rapporté trois fois en recette (R3-3, RN-8) et bloquait la
+    /// deuxième des trois conditions de clôture d'une AG.
+    ///
+    /// Il est conservé pour ne pas casser les appelants existants, mais le
+    /// serveur ne s'en sert plus : le dénominateur de la majorité est
+    /// désormais lu sur l'immeuble. Le laisser fournir par le client
+    /// permettait de faire proclamer une majorité qui n'existe pas — signalé
+    /// dans l'issue #767.
+    #[serde(default)]
+    pub total_voting_power: Option<Decimal>,
 }

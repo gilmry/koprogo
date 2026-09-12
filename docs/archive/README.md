@@ -1,23 +1,19 @@
-# docs/archive/
+# Documents périmés, conservés comme trace
 
-Snapshots historiques préservés pour référence chronologique (cleanup #426, 2026-04-29).
+Ce répertoire garde ce qui a été vrai un jour et ne l'est plus. On ne les supprime
+pas : ils portent le journal de ce qui a été vérifié, quand, et par qui — c'est la
+seule chose qui permette de refaire le chemin.
 
-Politique : **les nouveaux documents ne vont PAS ici**. Cette directory contient uniquement des snapshots à un instant T qui ont drifté avec le code (FRONTEND_INVENTORY, IMPLEMENTATION_SUMMARY, etc.).
+**Aucun de ces documents ne décrit l'état courant.** La seule vérité courante pour la
+0.1.0 est [`docs/WBS_v0_1_0.md`](../WBS_v0_1_0.md), et le suivi vivant est l'issue
+[#736](https://github.com/gilmry/koprogo/issues/736).
 
-## Pourquoi archiver et pas supprimer
+| Document | Ce qu'il était | Périmé par |
+|---|---|---|
+| `WBS_GO_LIVE_v0.1.0.md` | WBS de mise en ligne, 2026-05-16 au 2026-08-29 | `WBS_v0_1_0.md`, qui a repris ses items ouverts (D1, F3, G1, G2, cascade `AppError`, reliquat `f64`) |
+| `WBS_RELEASE_0_1_0.md` | premier WBS de release, 2026-03-30 | `WBS_GO_LIVE_v0.1.0.md` |
+| `WBS_BUGFIX_UI_v0.1.0.md` | 16 bugs de la revue humaine du 2026-04-01 | `WBS_GO_LIVE_v0.1.0.md` (correctifs livrés ou vérifiés déjà corrigés) |
+| `WBS_CORRECTIONS_v0.1.0.md` | variante du précédent | idem |
 
-Ces fichiers gardent une valeur de témoignage historique :
-- `2026-04-29-frontend-inventory.md` — inventaire des composants Svelte au moment du big audit qualité.
-- `2026-04-29-implementation-summary.md` — état de l'implémentation backend à la même date.
-- `2026-04-29-infrastructure-deployment-summary.md` — snapshot infra (avant les recettes #425-#429).
-- `2026-04-29-mcp-integration-summary.md` — état MCP integration.
-
-Pour la **vérité actuelle** sur ces sujets, lire les sources :
-- Inventaire frontend : `find frontend/src/components -name '*.svelte' | wc -l` ou WBS auto-régénéré (cf. #428).
-- Implementation status : issues GitHub ouvertes/fermées + `git log`.
-- Infrastructure : `infrastructure/SECURITY.md` + issues #425/#429.
-- MCP integration : voir `docker-compose.mcp.yml` + repo MCP servers liés.
-
-## Convention de nommage
-
-`YYYY-MM-DD-<topic>.md` — date du snapshot prefixée pour tri chronologique.
+Le journal de sessions de `WBS_GO_LIVE_v0.1.0.md` (2026-08-21, 08-26, 08-29) reste la
+référence de ce qui a été réellement exécuté et constaté à ces dates.

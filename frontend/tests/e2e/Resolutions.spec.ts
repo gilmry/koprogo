@@ -11,7 +11,7 @@ import { loginAsSyndicWithMeeting } from "./helpers/auth";
  * Belgian law (Art. 3.88 CC): 3 majority types.
  */
 
-const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
+import { API_BASE } from "./helpers/adresses";
 
 test.describe("Resolutions - AG Voting System", () => {
   test("should display meetings page", async ({ page }) => {
@@ -20,7 +20,7 @@ test.describe("Resolutions - AG Voting System", () => {
 
     await expect(page.locator("body")).toBeVisible();
     await expect(
-      page.locator("main h1, main h2, [data-testid='meetings-list']").first(),
+      page.locator("[data-testid='meetings-list']").first(),
     ).toBeVisible({ timeout: 10000 });
   });
 
@@ -41,6 +41,9 @@ test.describe("Resolutions - AG Voting System", () => {
           description: "Approbation du budget annuel 2026",
           resolution_type: "ordinary",
           majority_required: "absolute",
+          // Rattachée au point 0 de l'ordre du jour : une résolution qui n'y
+          // est pas rattachée n'est pas votable (Art. 3.87 § 2 CC, #840).
+          agenda_item_index: 0,
         },
         headers: { Authorization: `Bearer ${token}` },
       },
@@ -131,6 +134,9 @@ test.describe("Resolutions - AG Voting System", () => {
           description: "Résolution pour test de vote",
           resolution_type: "ordinary",
           majority_required: "absolute",
+          // Rattachée au point 0 de l'ordre du jour : une résolution qui n'y
+          // est pas rattachée n'est pas votable (Art. 3.87 § 2 CC, #840).
+          agenda_item_index: 0,
         },
         headers: { Authorization: `Bearer ${token}` },
       },
@@ -171,6 +177,9 @@ test.describe("Resolutions - AG Voting System", () => {
           description: "Test",
           resolution_type: "ordinary",
           majority_required: "absolute",
+          // Rattachée au point 0 de l'ordre du jour : une résolution qui n'y
+          // est pas rattachée n'est pas votable (Art. 3.87 § 2 CC, #840).
+          agenda_item_index: 0,
         },
         headers: { Authorization: `Bearer ${token}` },
       },
@@ -233,6 +242,9 @@ test.describe("Resolutions - AG Voting System", () => {
           description: "Test clôture vote",
           resolution_type: "ordinary",
           majority_required: "absolute",
+          // Rattachée au point 0 de l'ordre du jour : une résolution qui n'y
+          // est pas rattachée n'est pas votable (Art. 3.87 § 2 CC, #840).
+          agenda_item_index: 0,
         },
         headers: { Authorization: `Bearer ${token}` },
       },

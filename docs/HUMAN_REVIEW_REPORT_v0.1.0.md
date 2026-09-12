@@ -4,7 +4,7 @@
 > `feature/dev`. Re-vérification : WP-B1 (PR #536 — fuite cross-org
 > closed) + WP-FE2 (PR #547 — boutons/payloads/listes UI confirmés
 > existants). Conservé comme trace de la revue mais **plus une vérité
-> courante**. Source de vérité go-live : [`WBS_GO_LIVE_v0.1.0.md`](WBS_GO_LIVE_v0.1.0.md).
+> courante**. Source de vérité go-live : [`archive/WBS_GO_LIVE_v0.1.0.md`](archive/WBS_GO_LIVE_v0.1.0.md).
 
 # Rapport de Revue Humaine — KoproGo v0.1.0
 

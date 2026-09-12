@@ -41,11 +41,12 @@
   // `authStore`.
 
   import { toast } from "../../../stores/toast";
+  import { _ } from "../../i18n";
   import {
     EVAL_MIN_COMMENT_LENGTH,
     EVAL_MAX_COMMENT_LENGTH,
     SCORE_DIMENSIONS,
-    SCORE_DIMENSION_LABELS_FR,
+    SCORE_DIMENSION_KEYS,
     isValidScores,
     type CreateContractorEvaluationRequest,
     type ContractorEvaluationDto,
@@ -174,8 +175,7 @@
     const e: Record<string, string> = {};
     if (contractorUserId === "") e.contractor = "Sélectionnez un contractor.";
     if (isSelfEvaluation)
-      e.contractor =
-        "Un contractor ne peut pas s'évaluer lui-même (INV-22).";
+      e.contractor = "Un contractor ne peut pas s'évaluer lui-même (INV-22).";
     if (technicalSpecId === "")
       e.spec =
         approvedSpecs.length === 0
@@ -267,7 +267,7 @@
         comment: comment.trim(),
       };
       await onSubmit(req);
-      toast.success("Évaluation enregistrée.");
+      toast.success($_("contractors.evaluationSaved"));
     } catch {
       // toast déjà émis par api.ts pour 4xx/5xx
     } finally {
@@ -277,6 +277,7 @@
 </script>
 
 <form
+  data-testid="contractor-evaluation-form"
   class="contractor-eval-form flex flex-col gap-4 p-4 bg-white rounded shadow-sm"
   onsubmit={handleSubmit}
   aria-labelledby="contractor-eval-form-title"
@@ -286,7 +287,7 @@
     id="contractor-eval-form-title"
     class="text-lg font-semibold text-gray-900"
   >
-    Nouvelle évaluation contractor
+    {$_("contractors.newEvaluation")}
   </h2>
 
   <!-- Banner self-evaluation (INV-22 — AC @security) -->
@@ -296,8 +297,7 @@
       class="rounded border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-800"
       role="alert"
     >
-      Un contractor ne peut pas s'évaluer lui-même (INV-22). Sélectionnez un
-      autre contractor pour continuer.
+      {$_("contractors.cannotSelfEvaluate")}
     </div>
   {/if}
 
@@ -307,7 +307,8 @@
       for="contractor-eval-contractor"
       class="text-sm font-medium text-gray-700"
     >
-      Contractor évalué <span class="text-red-600" aria-hidden="true">*</span>
+      {$_("contractors.evaluated")}
+      <span class="text-red-600" aria-hidden="true">*</span>
     </label>
     <select
       id="contractor-eval-contractor"
@@ -320,7 +321,7 @@
       class="border border-gray-300 rounded px-3 py-2 text-sm"
       required
     >
-      <option value="">— Sélectionner —</option>
+      <option value="">{$_("common.select")}</option>
       {#each contractors as c (c.id)}
         <option
           value={c.id}
@@ -344,11 +345,9 @@
 
   <!-- TechnicalSpec select (filtre Approved côté FE — INV-21) -->
   <div class="flex flex-col gap-1">
-    <label
-      for="contractor-eval-spec"
-      class="text-sm font-medium text-gray-700"
-    >
-      Fiche technique <span class="text-red-600" aria-hidden="true">*</span>
+    <label for="contractor-eval-spec" class="text-sm font-medium text-gray-700">
+      {$_("contractors.technicalSpec")}
+      <span class="text-red-600" aria-hidden="true">*</span>
     </label>
     <select
       id="contractor-eval-spec"
@@ -362,7 +361,7 @@
       required
       disabled={approvedSpecs.length === 0}
     >
-      <option value="">— Sélectionner —</option>
+      <option value="">{$_("common.select")}</option>
       {#each approvedSpecs as s (s.id)}
         <option
           value={s.id}
@@ -372,12 +371,8 @@
         </option>
       {/each}
     </select>
-    <p
-      id="contractor-eval-spec-helper"
-      class="text-xs text-gray-500"
-    >
-      Seules les fiches techniques au statut « Approuvée » sont éligibles
-      (INV-21 — signature préalable obligatoire).
+    <p id="contractor-eval-spec-helper" class="text-xs text-gray-500">
+      {$_("contractors.onlyApprovedSpecs")}
     </p>
     {#if errors.spec}
       <p
@@ -394,14 +389,14 @@
   <!-- Tickets liés (multi-select optionnel — 0..N) -->
   <fieldset class="flex flex-col gap-1">
     <legend class="text-sm font-medium text-gray-700">
-      Tickets motivant l'évaluation (optionnel)
+      {$_("contractors.motivatingTickets")}
     </legend>
     {#if tickets.length === 0}
       <p
         data-testid="contractor-eval-tickets-empty"
         class="text-xs text-gray-500"
       >
-        Aucun ticket disponible pour ce scope.
+        {$_("contractors.noTicketAvailable")}
       </p>
     {:else}
       <div
@@ -429,7 +424,8 @@
   <!-- 5 scores ScoreInput atomique -->
   <div class="flex flex-col gap-3">
     <span class="text-sm font-medium text-gray-700">
-      Notation (1 à 5) <span class="text-red-600" aria-hidden="true">*</span>
+      {$_("contractors.rating")}
+      <span class="text-red-600" aria-hidden="true">*</span>
     </span>
     {#each SCORE_DIMENSIONS as dim (dim)}
       <div
@@ -438,7 +434,7 @@
       >
         <ScoreInput
           name={`contractor-eval-score-${dim}`}
-          label={SCORE_DIMENSION_LABELS_FR[dim]}
+          label={$_(SCORE_DIMENSION_KEYS[dim])}
           value={getScore(dim)}
           onChange={(n) => setScore(dim, n)}
           required={true}
@@ -463,7 +459,8 @@
       for="contractor-eval-comment"
       class="text-sm font-medium text-gray-700"
     >
-      Commentaire <span class="text-red-600" aria-hidden="true">*</span>
+      {$_("common.comment")}
+      <span class="text-red-600" aria-hidden="true">*</span>
     </label>
     <textarea
       id="contractor-eval-comment"
@@ -474,8 +471,7 @@
       aria-invalid={errors.comment ? "true" : "false"}
       aria-describedby="contractor-eval-comment-counter contractor-eval-error-comment"
       class="border border-gray-300 rounded px-3 py-2 text-sm"
-      required
-    ></textarea>
+      required></textarea>
     <p
       id="contractor-eval-comment-counter"
       data-testid="contractor-eval-comment-counter"
@@ -507,7 +503,7 @@
         onclick={() => onCancel?.()}
         disabled={submitting}
       >
-        Annuler
+        {$_("common.cancel")}
       </button>
     {/if}
     <button

@@ -91,6 +91,9 @@ impl PaymentReminderUseCases {
         }
 
         let reminder = PaymentReminder::new(
+            // La créance et ses pénalités reviennent à l'ACP ; le syndic ne
+            // fait que recouvrer pour elle (Art. 3.86 § 3, ADR-0045).
+            expense.acp_id,
             organization_id,
             expense_id,
             owner_id,
@@ -240,26 +243,48 @@ impl PaymentReminderUseCases {
             .await?
             .ok_or_else(|| "Reminder not found".to_string())?;
 
-        let next_level = reminder.escalate()?;
+        // Le statut est contrôlé D'ABORD : un dossier soldé ou annulé doit se
+        // voir reprocher son statut, pas le délai du niveau suivant.
+        reminder.can_escalate()?;
 
+        // Puis le niveau suivant est CONSTRUIT AVANT que l'escalade ne soit
+        // persistée.
+        //
+        // L'ordre inverse laissait un dossier à l'abandon : le statut
+        // `Escalated` était écrit, puis `PaymentReminder::new` pouvait échouer
+        // (« Cannot create second reminder before 30 days overdue »), et la
+        // relance restait marquée escaladée SANS successeur. Personne ne le
+        // voyait : `process_automatic_escalations`, appelé par cron, journalise
+        // l'erreur sur stderr et poursuit sa boucle.
+        //
+        // Le cas se produit dès que l'escalade est déclenchée plus tôt que le
+        // délai légal du niveau visé — 30 jours pour une relance ferme, 60 pour
+        // une mise en demeure.
+        let next_level = reminder.level.next_level();
+        let next_reminder = match next_level {
+            Some(level) => {
+                let days_overdue = (Utc::now() - reminder.due_date).num_days();
+                Some(PaymentReminder::new(
+                    // L'escalade reste due à la même ACP que la relance dont
+                    // elle procède.
+                    reminder.acp_id,
+                    reminder.organization_id,
+                    reminder.expense_id,
+                    reminder.owner_id,
+                    level,
+                    reminder.amount_owed,
+                    reminder.due_date,
+                    days_overdue,
+                )?)
+            }
+            None => None,
+        };
+
+        // Refuse l'escalade d'un dossier soldé ou annulé, et marque le statut.
+        reminder.escalate()?;
         let updated = self.reminder_repository.update(&reminder).await?;
 
-        // If there's a next level, optionally create a new reminder automatically
-        if let Some(level) = next_level {
-            // Calculate new days overdue based on next level
-            let days_overdue = (Utc::now() - reminder.due_date).num_days();
-
-            // Create next level reminder
-            let next_reminder = PaymentReminder::new(
-                reminder.organization_id,
-                reminder.expense_id,
-                reminder.owner_id,
-                level,
-                reminder.amount_owed,
-                reminder.due_date,
-                days_overdue,
-            )?;
-
+        if let Some(next_reminder) = next_reminder {
             let created = self.reminder_repository.create(&next_reminder).await?;
             return Ok(Some(created.into()));
         }
@@ -507,18 +532,32 @@ mod tests {
     use std::collections::HashMap;
     use std::sync::Mutex;
 
-    // Mock repository for testing
-    #[allow(dead_code)]
+    // ── Dépôts simulés ───────────────────────────────────────────────────
+    //
+    // Ce mock existait déjà, complet, marqué `#[allow(dead_code)]` et suivi
+    // d'un `// TODO: Add more comprehensive tests`. L'échafaudage avait été
+    // construit puis jamais utilisé — et le `allow(dead_code)` faisait taire
+    // l'avertissement qui l'aurait signalé. 670 lignes de logique de
+    // recouvrement (pénalités, escalade à 4 niveaux, création en masse) sans
+    // un seul test, sur le module même que visent les constats F10 et F18 du
+    // rapport du 2026-09-01.
     struct MockPaymentReminderRepository {
         reminders: Mutex<HashMap<Uuid, PaymentReminder>>,
     }
 
-    #[allow(dead_code)]
     impl MockPaymentReminderRepository {
         fn new() -> Self {
             Self {
                 reminders: Mutex::new(HashMap::new()),
             }
+        }
+
+        fn get(&self, id: Uuid) -> Option<PaymentReminder> {
+            self.reminders.lock().unwrap().get(&id).cloned()
+        }
+
+        fn count(&self) -> usize {
+            self.reminders.lock().unwrap().len()
         }
     }
 
@@ -618,11 +657,27 @@ mod tests {
             Ok(vec![])
         }
 
+        /// Compte REELLEMENT, au lieu de renvoyer un vecteur vide.
+        ///
+        /// Le stub d'origine rendait tout test de statistiques vide de sens :
+        /// il aurait passé quelle que soit la logique testée.
         async fn count_by_status(
             &self,
-            _organization_id: Uuid,
+            organization_id: Uuid,
         ) -> Result<Vec<(ReminderStatus, i64)>, AppError> {
-            Ok(vec![])
+            let reminders = self.reminders.lock().unwrap();
+            let mut comptes: HashMap<String, (ReminderStatus, i64)> = HashMap::new();
+            for r in reminders
+                .values()
+                .filter(|r| r.organization_id == organization_id)
+            {
+                let cle = format!("{:?}", r.status);
+                comptes
+                    .entry(cle)
+                    .and_modify(|(_, n)| *n += 1)
+                    .or_insert((r.status.clone(), 1));
+            }
+            Ok(comptes.into_values().collect())
         }
 
         async fn get_total_owed_by_organization(
@@ -660,11 +715,766 @@ mod tests {
 
         async fn get_dashboard_stats(
             &self,
-            _organization_id: Uuid,
+            organization_id: Uuid,
         ) -> Result<(Decimal, Decimal, Vec<(ReminderLevel, i64)>), AppError> {
-            Ok((Decimal::ZERO, Decimal::ZERO, vec![]))
+            let reminders = self.reminders.lock().unwrap();
+            let actives: Vec<_> = reminders
+                .values()
+                .filter(|r| {
+                    r.organization_id == organization_id
+                        && r.status != ReminderStatus::Paid
+                        && r.status != ReminderStatus::Cancelled
+                })
+                .collect();
+            let total_owed = actives.iter().map(|r| r.amount_owed).sum();
+            let total_penalties = actives.iter().map(|r| r.penalty_amount).sum();
+            let mut comptes: HashMap<String, (ReminderLevel, i64)> = HashMap::new();
+            for r in &actives {
+                let cle = format!("{:?}", r.level);
+                comptes
+                    .entry(cle)
+                    .and_modify(|(_, n)| *n += 1)
+                    .or_insert((r.level.clone(), 1));
+            }
+            Ok((total_owed, total_penalties, comptes.into_values().collect()))
         }
     }
 
-    // TODO: Add more comprehensive tests
+    // ── Dépôts simulés : dépenses et propriétaires ───────────────────────
+
+    struct MockExpenseRepo {
+        expenses: Mutex<HashMap<Uuid, crate::domain::entities::Expense>>,
+    }
+
+    impl MockExpenseRepo {
+        fn new() -> Self {
+            Self {
+                expenses: Mutex::new(HashMap::new()),
+            }
+        }
+
+        fn with(expense: crate::domain::entities::Expense) -> Self {
+            let mut m = HashMap::new();
+            m.insert(expense.id, expense);
+            Self {
+                expenses: Mutex::new(m),
+            }
+        }
+    }
+
+    #[async_trait]
+    impl crate::application::ports::ExpenseRepository for MockExpenseRepo {
+        async fn enregistrer_lignes_de_facture(
+            &self,
+            _expense_id: Uuid,
+            _lignes: &[crate::application::ports::expense_repository::LigneDeFacture],
+        ) -> Result<(), String> {
+            // Mock : rien à enregistrer. Le port n'offre pas d'implémentation
+            // par défaut, précisément pour que ce choix soit écrit ici plutôt
+            // que subi partout.
+            Ok(())
+        }
+
+        async fn create(
+            &self,
+            e: &crate::domain::entities::Expense,
+        ) -> Result<crate::domain::entities::Expense, String> {
+            self.expenses.lock().unwrap().insert(e.id, e.clone());
+            Ok(e.clone())
+        }
+        async fn find_by_id(
+            &self,
+            id: Uuid,
+        ) -> Result<Option<crate::domain::entities::Expense>, String> {
+            Ok(self.expenses.lock().unwrap().get(&id).cloned())
+        }
+        async fn find_by_building(
+            &self,
+            building_id: Uuid,
+        ) -> Result<Vec<crate::domain::entities::Expense>, String> {
+            Ok(self
+                .expenses
+                .lock()
+                .unwrap()
+                .values()
+                .filter(|e| e.building_id == building_id)
+                .cloned()
+                .collect())
+        }
+        async fn find_all_paginated(
+            &self,
+            _p: &crate::application::dto::PageRequest,
+            _f: &crate::application::dto::ExpenseFilters,
+        ) -> Result<(Vec<crate::domain::entities::Expense>, i64), String> {
+            Ok((vec![], 0))
+        }
+        async fn update(
+            &self,
+            e: &crate::domain::entities::Expense,
+        ) -> Result<crate::domain::entities::Expense, String> {
+            self.expenses.lock().unwrap().insert(e.id, e.clone());
+            Ok(e.clone())
+        }
+        async fn delete(&self, id: Uuid) -> Result<bool, String> {
+            Ok(self.expenses.lock().unwrap().remove(&id).is_some())
+        }
+    }
+
+    struct MockOwnerRepo {
+        owners: Mutex<HashMap<Uuid, crate::domain::entities::Owner>>,
+    }
+
+    impl MockOwnerRepo {
+        fn new() -> Self {
+            Self {
+                owners: Mutex::new(HashMap::new()),
+            }
+        }
+
+        fn with(owner: crate::domain::entities::Owner) -> Self {
+            let mut m = HashMap::new();
+            m.insert(owner.id, owner);
+            Self {
+                owners: Mutex::new(m),
+            }
+        }
+    }
+
+    #[async_trait]
+    impl crate::application::ports::OwnerRepository for MockOwnerRepo {
+        async fn create(
+            &self,
+            o: &crate::domain::entities::Owner,
+        ) -> Result<crate::domain::entities::Owner, String> {
+            self.owners.lock().unwrap().insert(o.id, o.clone());
+            Ok(o.clone())
+        }
+        async fn find_by_id(
+            &self,
+            id: Uuid,
+        ) -> Result<Option<crate::domain::entities::Owner>, String> {
+            Ok(self.owners.lock().unwrap().get(&id).cloned())
+        }
+        async fn find_by_user_id(
+            &self,
+            _id: Uuid,
+        ) -> Result<Option<crate::domain::entities::Owner>, String> {
+            Ok(None)
+        }
+        async fn find_by_user_id_and_organization(
+            &self,
+            _u: Uuid,
+            _o: Uuid,
+        ) -> Result<Option<crate::domain::entities::Owner>, String> {
+            Ok(None)
+        }
+        async fn find_by_email(
+            &self,
+            _e: &str,
+        ) -> Result<Option<crate::domain::entities::Owner>, String> {
+            Ok(None)
+        }
+        async fn find_all(&self) -> Result<Vec<crate::domain::entities::Owner>, String> {
+            Ok(self.owners.lock().unwrap().values().cloned().collect())
+        }
+        async fn find_all_paginated(
+            &self,
+            _p: &crate::application::dto::PageRequest,
+            _f: &crate::application::dto::OwnerFilters,
+        ) -> Result<(Vec<crate::domain::entities::Owner>, i64), String> {
+            Ok((vec![], 0))
+        }
+        async fn update(
+            &self,
+            o: &crate::domain::entities::Owner,
+        ) -> Result<crate::domain::entities::Owner, String> {
+            self.owners.lock().unwrap().insert(o.id, o.clone());
+            Ok(o.clone())
+        }
+        async fn delete(&self, id: Uuid) -> Result<bool, String> {
+            Ok(self.owners.lock().unwrap().remove(&id).is_some())
+        }
+        async fn set_user_link(&self, _o: Uuid, _u: Option<Uuid>) -> Result<bool, String> {
+            Ok(true)
+        }
+    }
+
+    // ── Fixtures ─────────────────────────────────────────────────────────
+
+    fn expense_impaye(org_id: Uuid, montant: Decimal) -> crate::domain::entities::Expense {
+        expense_impaye_de_lacp(Uuid::new_v4(), org_id, montant)
+    }
+
+    /// La même dépense, en nommant l'ACP à laquelle elle est imputée.
+    fn expense_impaye_de_lacp(
+        acp_id: Uuid,
+        org_id: Uuid,
+        montant: Decimal,
+    ) -> crate::domain::entities::Expense {
+        crate::domain::entities::Expense::new(
+            acp_id,
+            org_id,
+            Uuid::new_v4(),
+            crate::domain::entities::ExpenseCategory::Maintenance,
+            "Entretien ascenseur".to_string(),
+            montant,
+            Utc::now() - chrono::Duration::days(40),
+            Some("Kone SA".to_string()),
+            None,
+            Some("611002".to_string()),
+        )
+        .expect("dépense de test valide")
+    }
+
+    fn proprietaire(org_id: Uuid) -> crate::domain::entities::Owner {
+        crate::domain::entities::Owner::new(
+            org_id,
+            "Jean".to_string(),
+            "Peeters".to_string(),
+            "jean.peeters@example.com".to_string(),
+            None,
+            "Rue Test 1".to_string(),
+            "Bruxelles".to_string(),
+            "1000".to_string(),
+            "Belgique".to_string(),
+        )
+        .expect("propriétaire de test valide")
+    }
+
+    fn use_cases(
+        reminders: Arc<MockPaymentReminderRepository>,
+        expenses: Arc<MockExpenseRepo>,
+        owners: Arc<MockOwnerRepo>,
+    ) -> PaymentReminderUseCases {
+        PaymentReminderUseCases::new(reminders, expenses, owners)
+    }
+
+    fn create_dto(
+        org_id: Uuid,
+        expense_id: Uuid,
+        owner_id: Uuid,
+        level: ReminderLevel,
+        days_overdue: i64,
+    ) -> CreatePaymentReminderDto {
+        CreatePaymentReminderDto {
+            organization_id: org_id.to_string(),
+            expense_id: expense_id.to_string(),
+            owner_id: owner_id.to_string(),
+            level,
+            amount_owed: Decimal::from(2000),
+            due_date: (Utc::now() - chrono::Duration::days(days_overdue)).to_rfc3339(),
+            days_overdue,
+        }
+    }
+
+    // ── Tests ────────────────────────────────────────────────────────────
+
+    /// Art. 3.86 § 3 et ADR-0045 : la somme réclamée est due à l'ACP.
+    ///
+    /// « Le syndic peut prendre toutes les mesures judiciaires et
+    /// extrajudiciaires pour la récupération des charges » : il recouvre pour
+    /// elle. L'ACP se lit sur la dépense impayée, jamais sur l'appelant.
+    #[tokio::test]
+    async fn test_la_relance_reclame_au_profit_de_lacp_pas_du_syndic() {
+        let acp_creanciere = Uuid::new_v4();
+        let cabinet_qui_relance = Uuid::new_v4();
+        let depense =
+            expense_impaye_de_lacp(acp_creanciere, cabinet_qui_relance, Decimal::from(2000));
+        let prop = proprietaire(cabinet_qui_relance);
+        let (expense_id, owner_id) = (depense.id, prop.id);
+
+        let uc = use_cases(
+            Arc::new(MockPaymentReminderRepository::new()),
+            Arc::new(MockExpenseRepo::with(depense)),
+            Arc::new(MockOwnerRepo::with(prop)),
+        );
+
+        let relance = uc
+            .create_reminder(create_dto(
+                cabinet_qui_relance,
+                expense_id,
+                owner_id,
+                ReminderLevel::FirstReminder,
+                17,
+            ))
+            .await
+            .expect("création acceptée");
+
+        assert_eq!(
+            relance.acp_id,
+            acp_creanciere.to_string(),
+            "la somme réclamée est due à l'ACP de la dépense impayée"
+        );
+        assert_eq!(
+            relance.organization_id,
+            cabinet_qui_relance.to_string(),
+            "le syndic reste tracé comme celui qui relance, sans devenir créancier"
+        );
+    }
+
+    /// Le chemin nominal : une dépense impayée depuis 17 jours produit un
+    /// premier rappel, avec sa pénalité calculée.
+    #[tokio::test]
+    async fn test_creation_relance_calcule_la_penalite() {
+        let org_id = Uuid::new_v4();
+        let depense = expense_impaye(org_id, Decimal::from(2000));
+        let prop = proprietaire(org_id);
+        let (expense_id, owner_id) = (depense.id, prop.id);
+
+        let reminders = Arc::new(MockPaymentReminderRepository::new());
+        let uc = use_cases(
+            reminders.clone(),
+            Arc::new(MockExpenseRepo::with(depense)),
+            Arc::new(MockOwnerRepo::with(prop)),
+        );
+
+        let dto = create_dto(
+            org_id,
+            expense_id,
+            owner_id,
+            ReminderLevel::FirstReminder,
+            17,
+        );
+        let cree = uc.create_reminder(dto).await.expect("création acceptée");
+
+        assert_eq!(reminders.count(), 1);
+        // 2000 × 0,045 × 17/365 = 4,1917… → 4,19 €. C'est le calcul que le
+        // rapport du 2026-09-01 disait « incohérent » : il l'est avec le taux
+        // de 8 % qu'ANNONÇAIT l'interface, pas avec le taux de 4,5 % que le
+        // domaine applique. Le texte de l'interface a été aligné sur le calcul.
+        assert_eq!(cree.penalty_amount, rust_decimal_macros::dec!(4.19));
+        assert_eq!(cree.total_amount, rust_decimal_macros::dec!(2004.19));
+    }
+
+    /// @security — pas de relance sur une dépense déjà réglée.
+    #[tokio::test]
+    async fn test_relance_refusee_sur_depense_payee() {
+        let org_id = Uuid::new_v4();
+        let mut depense = expense_impaye(org_id, Decimal::from(2000));
+        depense.payment_status = PaymentStatus::Paid;
+        let prop = proprietaire(org_id);
+        let (expense_id, owner_id) = (depense.id, prop.id);
+
+        let reminders = Arc::new(MockPaymentReminderRepository::new());
+        let uc = use_cases(
+            reminders.clone(),
+            Arc::new(MockExpenseRepo::with(depense)),
+            Arc::new(MockOwnerRepo::with(prop)),
+        );
+
+        let err = uc
+            .create_reminder(create_dto(
+                org_id,
+                expense_id,
+                owner_id,
+                ReminderLevel::FirstReminder,
+                17,
+            ))
+            .await
+            .expect_err("réclamer un montant déjà payé doit être refusé");
+        assert!(format!("{err}").contains("paid"), "{err}");
+        assert_eq!(reminders.count(), 0);
+    }
+
+    /// @edge — pas deux relances actives au même niveau pour la même dépense.
+    ///
+    /// Le garde-fou qui empêche un copropriétaire de recevoir deux fois la
+    /// même mise en demeure.
+    #[tokio::test]
+    async fn test_pas_de_doublon_de_relance_au_meme_niveau() {
+        let org_id = Uuid::new_v4();
+        let depense = expense_impaye(org_id, Decimal::from(2000));
+        let prop = proprietaire(org_id);
+        let (expense_id, owner_id) = (depense.id, prop.id);
+
+        let reminders = Arc::new(MockPaymentReminderRepository::new());
+        let uc = use_cases(
+            reminders.clone(),
+            Arc::new(MockExpenseRepo::with(depense)),
+            Arc::new(MockOwnerRepo::with(prop)),
+        );
+
+        uc.create_reminder(create_dto(
+            org_id,
+            expense_id,
+            owner_id,
+            ReminderLevel::FirstReminder,
+            17,
+        ))
+        .await
+        .expect("première relance acceptée");
+
+        let err = uc
+            .create_reminder(create_dto(
+                org_id,
+                expense_id,
+                owner_id,
+                ReminderLevel::FirstReminder,
+                17,
+            ))
+            .await
+            .expect_err("doublon refusé");
+        assert!(format!("{err}").contains("already exists"), "{err}");
+        assert_eq!(reminders.count(), 1);
+
+        // Le niveau SUIVANT reste possible : c'est l'escalade normale.
+        uc.create_reminder(create_dto(
+            org_id,
+            expense_id,
+            owner_id,
+            ReminderLevel::SecondReminder,
+            35,
+        ))
+        .await
+        .expect("le second niveau doit rester ouvert");
+        assert_eq!(reminders.count(), 2);
+    }
+
+    /// @edge — un niveau ne peut pas être créé avant son délai légal.
+    ///
+    /// Une mise en demeure est un acte à J+60. L'émettre à J+20 exposerait
+    /// l'ACP sur le fond comme sur la forme.
+    #[tokio::test]
+    async fn test_niveau_refuse_avant_son_delai() {
+        let org_id = Uuid::new_v4();
+        let depense = expense_impaye(org_id, Decimal::from(2000));
+        let prop = proprietaire(org_id);
+        let (expense_id, owner_id) = (depense.id, prop.id);
+
+        let uc = use_cases(
+            Arc::new(MockPaymentReminderRepository::new()),
+            Arc::new(MockExpenseRepo::with(depense)),
+            Arc::new(MockOwnerRepo::with(prop)),
+        );
+
+        let err = uc
+            .create_reminder(create_dto(
+                org_id,
+                expense_id,
+                owner_id,
+                ReminderLevel::FormalNotice,
+                20,
+            ))
+            .await
+            .expect_err("mise en demeure prématurée refusée");
+        assert!(format!("{err}").contains("60 days"), "{err}");
+    }
+
+    /// L'escalade crée la relance du niveau suivant et marque la précédente.
+    #[tokio::test]
+    async fn test_escalade_cree_le_niveau_suivant() {
+        let org_id = Uuid::new_v4();
+        let depense = expense_impaye(org_id, Decimal::from(2000));
+        let prop = proprietaire(org_id);
+        let (expense_id, owner_id) = (depense.id, prop.id);
+
+        let reminders = Arc::new(MockPaymentReminderRepository::new());
+        let uc = use_cases(
+            reminders.clone(),
+            Arc::new(MockExpenseRepo::with(depense)),
+            Arc::new(MockOwnerRepo::with(prop)),
+        );
+
+        // 35 jours de retard : le niveau suivant (J+30) est atteignable.
+        let premiere = uc
+            .create_reminder(create_dto(
+                org_id,
+                expense_id,
+                owner_id,
+                ReminderLevel::FirstReminder,
+                35,
+            ))
+            .await
+            .expect("première relance");
+        let premiere_id = Uuid::parse_str(&premiere.id).unwrap();
+
+        let suivante = uc
+            .escalate_reminder(premiere_id, EscalateReminderDto { reason: None })
+            .await
+            .expect("escalade acceptée")
+            .expect("une relance est renvoyée");
+
+        assert_eq!(reminders.count(), 2, "l'escalade crée le niveau suivant");
+        assert_eq!(suivante.level, ReminderLevel::SecondReminder);
+        assert_eq!(
+            reminders.get(premiere_id).unwrap().status,
+            ReminderStatus::Escalated,
+            "la relance d'origine doit être marquée escaladée"
+        );
+    }
+
+    /// @edge — une escalade prématurée ne laisse pas le dossier à l'abandon.
+    ///
+    /// Défaut d'ordonnancement trouvé en écrivant ces tests : le statut
+    /// `Escalated` était PERSISTÉ avant que le niveau suivant ne soit validé.
+    /// Sur un premier rappel à J+17, la relance ferme (J+30) est refusée par le
+    /// domaine — mais la relance d'origine restait marquée escaladée, sans
+    /// successeur, définitivement bloquée.
+    ///
+    /// Personne ne l'aurait vu : `process_automatic_escalations`, appelé par
+    /// cron, journalise l'erreur sur stderr et poursuit sa boucle.
+    #[tokio::test]
+    async fn test_escalade_prematuree_ne_modifie_rien() {
+        let org_id = Uuid::new_v4();
+        let depense = expense_impaye(org_id, Decimal::from(2000));
+        let prop = proprietaire(org_id);
+        let (expense_id, owner_id) = (depense.id, prop.id);
+
+        let reminders = Arc::new(MockPaymentReminderRepository::new());
+        let uc = use_cases(
+            reminders.clone(),
+            Arc::new(MockExpenseRepo::with(depense)),
+            Arc::new(MockOwnerRepo::with(prop)),
+        );
+
+        let premiere = uc
+            .create_reminder(create_dto(
+                org_id,
+                expense_id,
+                owner_id,
+                ReminderLevel::FirstReminder,
+                17,
+            ))
+            .await
+            .expect("premier rappel à J+17");
+        let id = Uuid::parse_str(&premiere.id).unwrap();
+
+        let err = uc
+            .escalate_reminder(id, EscalateReminderDto { reason: None })
+            .await
+            .expect_err("le niveau suivant n'est pas encore atteignable");
+        assert!(format!("{err}").contains("30 days"), "{err}");
+
+        // L'invariant : rien n'a bougé.
+        assert_eq!(reminders.count(), 1, "aucune relance fantôme");
+        assert_eq!(
+            reminders.get(id).unwrap().status,
+            ReminderStatus::Pending,
+            "la relance d'origine ne doit PAS rester marquée escaladée sans successeur"
+        );
+    }
+
+    /// @edge — l'escalade s'arrête à la mise en demeure.
+    ///
+    /// Au-delà, c'est l'huissier : une procédure judiciaire, pas une relance
+    /// de plus que le système émettrait tout seul.
+    #[tokio::test]
+    async fn test_escalade_sarrete_a_la_mise_en_demeure() {
+        let org_id = Uuid::new_v4();
+        let depense = expense_impaye(org_id, Decimal::from(2000));
+        let prop = proprietaire(org_id);
+        let (expense_id, owner_id) = (depense.id, prop.id);
+
+        let reminders = Arc::new(MockPaymentReminderRepository::new());
+        let uc = use_cases(
+            reminders.clone(),
+            Arc::new(MockExpenseRepo::with(depense)),
+            Arc::new(MockOwnerRepo::with(prop)),
+        );
+
+        let mise_en_demeure = uc
+            .create_reminder(create_dto(
+                org_id,
+                expense_id,
+                owner_id,
+                ReminderLevel::FormalNotice,
+                70,
+            ))
+            .await
+            .expect("mise en demeure");
+        let id = Uuid::parse_str(&mise_en_demeure.id).unwrap();
+
+        uc.escalate_reminder(id, EscalateReminderDto { reason: None })
+            .await
+            .expect("escalade acceptée");
+
+        assert_eq!(
+            reminders.count(),
+            1,
+            "aucun niveau au-delà de la mise en demeure ne doit être créé"
+        );
+        assert_eq!(reminders.get(id).unwrap().status, ReminderStatus::Escalated);
+    }
+
+    /// @security — une relance payée ou annulée ne s'escalade pas.
+    #[tokio::test]
+    async fn test_escalade_refusee_apres_paiement() {
+        let org_id = Uuid::new_v4();
+        let depense = expense_impaye(org_id, Decimal::from(2000));
+        let prop = proprietaire(org_id);
+        let (expense_id, owner_id) = (depense.id, prop.id);
+
+        let reminders = Arc::new(MockPaymentReminderRepository::new());
+        let uc = use_cases(
+            reminders.clone(),
+            Arc::new(MockExpenseRepo::with(depense)),
+            Arc::new(MockOwnerRepo::with(prop)),
+        );
+
+        let relance = uc
+            .create_reminder(create_dto(
+                org_id,
+                expense_id,
+                owner_id,
+                ReminderLevel::FirstReminder,
+                17,
+            ))
+            .await
+            .expect("relance");
+        let id = Uuid::parse_str(&relance.id).unwrap();
+
+        uc.mark_as_paid(id).await.expect("marquage payé");
+
+        let err = uc
+            .escalate_reminder(id, EscalateReminderDto { reason: None })
+            .await
+            .expect_err("escalader un dossier soldé doit être refusé");
+        assert!(format!("{err}").contains("Cannot escalate"), "{err}");
+        assert_eq!(
+            reminders.count(),
+            1,
+            "aucune relance supplémentaire ne doit partir"
+        );
+    }
+
+    /// Non-régression F10 — les statistiques doivent distinguer les statuts.
+    ///
+    /// L'interface affichait « relances actives : 0 » en présence d'une
+    /// relance en attente, parce qu'elle ne comptait QUE le statut `Sent`.
+    /// Le correctif est côté interface, mais il repose sur le fait que
+    /// `status_counts` remonte bien chaque statut séparément — ce que ce test
+    /// verrouille.
+    #[tokio::test]
+    async fn test_les_statistiques_distinguent_les_statuts() {
+        let org_id = Uuid::new_v4();
+        let depense = expense_impaye(org_id, Decimal::from(2000));
+        let prop = proprietaire(org_id);
+        let (expense_id, owner_id) = (depense.id, prop.id);
+
+        let reminders = Arc::new(MockPaymentReminderRepository::new());
+        let uc = use_cases(
+            reminders.clone(),
+            Arc::new(MockExpenseRepo::with(depense)),
+            Arc::new(MockOwnerRepo::with(prop)),
+        );
+
+        // Une relance en attente, une envoyée.
+        uc.create_reminder(create_dto(
+            org_id,
+            expense_id,
+            owner_id,
+            ReminderLevel::FirstReminder,
+            17,
+        ))
+        .await
+        .expect("relance 1");
+        let deuxieme = uc
+            .create_reminder(create_dto(
+                org_id,
+                expense_id,
+                owner_id,
+                ReminderLevel::SecondReminder,
+                35,
+            ))
+            .await
+            .expect("relance 2");
+        uc.mark_as_sent(
+            Uuid::parse_str(&deuxieme.id).unwrap(),
+            MarkReminderSentDto {
+                pdf_path: Some("/tmp/relance.pdf".to_string()),
+            },
+        )
+        .await
+        .expect("envoi");
+
+        let stats = uc
+            .get_recovery_stats(org_id)
+            .await
+            .expect("statistiques disponibles");
+
+        let compte = |s: ReminderStatus| -> i64 {
+            stats
+                .status_counts
+                .iter()
+                .find(|c| c.status == s)
+                .map(|c| c.count)
+                .unwrap_or(0)
+        };
+        assert_eq!(compte(ReminderStatus::Pending), 1);
+        assert_eq!(compte(ReminderStatus::Sent), 1);
+        // Le cœur du constat F10 : ne compter que `Sent` masque la moitié du
+        // recouvrement en cours.
+        assert_eq!(
+            compte(ReminderStatus::Pending) + compte(ReminderStatus::Sent),
+            2,
+            "les deux relances sont actives, quel que soit leur statut d'envoi"
+        );
+    }
+
+    /// @edge — une dépense introuvable ne crée pas de relance fantôme.
+    #[tokio::test]
+    async fn test_relance_refusee_si_depense_introuvable() {
+        let org_id = Uuid::new_v4();
+        let reminders = Arc::new(MockPaymentReminderRepository::new());
+        let uc = use_cases(
+            reminders.clone(),
+            Arc::new(MockExpenseRepo::new()),
+            Arc::new(MockOwnerRepo::new()),
+        );
+
+        let err = uc
+            .create_reminder(create_dto(
+                org_id,
+                Uuid::new_v4(),
+                Uuid::new_v4(),
+                ReminderLevel::FirstReminder,
+                17,
+            ))
+            .await
+            .expect_err("dépense inexistante refusée");
+        assert!(format!("{err}").contains("not found"), "{err}");
+        assert_eq!(reminders.count(), 0);
+    }
+
+    /// L'annulation n'est possible qu'avant envoi.
+    ///
+    /// Une lettre partie ne se rappelle pas : le dossier se solde, il ne
+    /// s'efface pas.
+    #[tokio::test]
+    async fn test_annulation_impossible_apres_envoi() {
+        let org_id = Uuid::new_v4();
+        let depense = expense_impaye(org_id, Decimal::from(2000));
+        let prop = proprietaire(org_id);
+        let (expense_id, owner_id) = (depense.id, prop.id);
+
+        let uc = use_cases(
+            Arc::new(MockPaymentReminderRepository::new()),
+            Arc::new(MockExpenseRepo::with(depense)),
+            Arc::new(MockOwnerRepo::with(prop)),
+        );
+
+        let relance = uc
+            .create_reminder(create_dto(
+                org_id,
+                expense_id,
+                owner_id,
+                ReminderLevel::FirstReminder,
+                17,
+            ))
+            .await
+            .expect("relance");
+        let id = Uuid::parse_str(&relance.id).unwrap();
+
+        // Avant envoi : accepté.
+        let annulee = uc
+            .cancel_reminder(
+                id,
+                CancelReminderDto {
+                    reason: "Paiement reçu entre-temps".to_string(),
+                },
+            )
+            .await
+            .expect("annulation avant envoi acceptée");
+        assert_eq!(annulee.status, ReminderStatus::Cancelled);
+    }
 }

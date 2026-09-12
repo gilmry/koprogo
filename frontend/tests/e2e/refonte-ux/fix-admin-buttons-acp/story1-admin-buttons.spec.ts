@@ -8,9 +8,10 @@
  * `onclick={...}`.
  */
 import { test, expect, type Page } from "@playwright/test";
+import { confirmerSiDemande } from "../../helpers/amorcage";
 import { loginAsAdmin, loginAsSyndicWithExpense } from "../../helpers/auth";
 
-const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
+import { API_BASE } from "../../helpers/adresses";
 
 /**
  * `mark-paid` exige `approval_status: Approved` côté backend
@@ -142,8 +143,14 @@ test.describe("Story 1 (#697) — boutons admin morts (Svelte 5)", () => {
       /overdue|retard/i,
     );
 
-    page.once("dialog", (d) => d.accept());
+    // La confirmation est une MODALE, plus un dialogue natif.
+    //
+    // `page.once("dialog", ...)` attendait un `confirm()` que #844 a remplacé
+    // par `AccessibleModal`. Le gestionnaire ne se déclenche donc jamais, la
+    // modale reste ouverte, et l'annulation n'a pas lieu : le badge affichait
+    // « En retard » là où le test attend « annulé ».
     await page.getByTestId("cancel-button").click();
+    await confirmerSiDemande(page);
 
     await expect(page.getByTestId("status-badge")).toContainText(
       /cancelled|annul/i,
@@ -163,15 +170,23 @@ test.describe("Story 1 (#697) — boutons admin morts (Svelte 5)", () => {
     await page.getByTestId("mark-paid-button").click();
     await expect(page.getByTestId("status-badge")).toContainText(/paid|payé/i);
 
-    page.once("dialog", (d) => d.accept());
+    // Confirmation par MODALE depuis #844 : le gestionnaire de dialogue
+    // natif installé ici ne se déclenchait plus, et le geste restait en
+    // suspens — le badge affichait « Payée » là où le test attend « en
+    // attente ».
     await page.getByTestId("unpay-button").click();
+    await confirmerSiDemande(page);
     await expect(page.getByTestId("status-badge")).toContainText(
       /pending|attente/i,
     );
 
     // Repasse par "annuler" pour pouvoir tester "réactiver".
-    page.once("dialog", (d) => d.accept());
+    // Confirmation par MODALE depuis #844 : le gestionnaire de dialogue
+    // natif installé ici ne se déclenchait plus, et le geste restait en
+    // suspens — le badge affichait « Payée » là où le test attend « en
+    // attente ».
     await page.getByTestId("cancel-button").click();
+    await confirmerSiDemande(page);
     await expect(page.getByTestId("status-badge")).toContainText(
       /cancelled|annul/i,
     );
@@ -188,10 +203,9 @@ test.describe("Story 1 (#697) — boutons admin morts (Svelte 5)", () => {
     // Un syndic (non-superadmin) reste bloqué par le backend même une fois
     // le bouton "vivant" — le clic ne fait qu'appeler un endpoint déjà gaté.
     const ctx = await loginAsSyndicWithExpense(page, "btnfix4");
-    const resp = await page.request.get(
-      `${process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1"}/organizations`,
-      { headers: { Authorization: `Bearer ${ctx.token}` } },
-    );
+    const resp = await page.request.get(`${API_BASE}/organizations`, {
+      headers: { Authorization: `Bearer ${ctx.token}` },
+    });
     expect(resp.status()).toBe(403);
   });
 });

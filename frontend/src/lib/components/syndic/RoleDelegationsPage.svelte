@@ -60,8 +60,7 @@
         const state = get(authStore);
         currentUserId = state.user?.id ?? undefined;
         const authUser = state.user as
-          | { organizationId?: string; organization_id?: string }
-          | undefined;
+          { organizationId?: string; organization_id?: string } | undefined;
         organizationId =
           authUser?.organizationId ?? authUser?.organization_id ?? "";
         currentOrganizationId = organizationId;
@@ -74,9 +73,9 @@
           () => [] as RoleDelegationResponse[],
         ),
         organizationId
-          ? listOrganizationUsers(organizationId).catch(
-              () => ({ data: [] as UserLike[] }),
-            )
+          ? listOrganizationUsers(organizationId).catch(() => ({
+              data: [] as UserLike[],
+            }))
           : Promise.resolve({ data: [] as UserLike[] }),
         api
           .get<{ data: OrgLike[] }>("/organizations?per_page=1000", {

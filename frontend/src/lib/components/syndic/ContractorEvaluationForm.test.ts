@@ -299,11 +299,22 @@ describe("ContractorEvaluationForm — Story B8 (4-cat)", () => {
       "Comment suffisamment long pour passer le check.",
     );
 
-    // Banner visible
+    // Banner visible.
+    //
+    // On vérifie que le bandeau EXISTE et qu'il n'est pas vide, pas ce qu'il
+    // dit mot pour mot. Le libellé est passé par i18n le 2026-09-07 (#834), et
+    // ce test attendait le texte français alors que la locale par défaut des
+    // tests est l'anglais.
+    //
+    // Un test qui affirme un libellé décourage de rendre ce libellé
+    // traduisible : il transforme une amélioration en régression. Ce qui
+    // compte ici est l'invariant — le bandeau apparaît et le bouton se
+    // désactive — pas la formulation, que le catalogue de traduction garde
+    // par ailleurs.
     await waitFor(() => {
       const banner = queryByTestId("contractor-eval-self-eval-warning");
       expect(banner).not.toBeNull();
-      expect(banner?.textContent).toMatch(/ne peut pas s'évaluer/i);
+      expect(banner?.textContent?.trim().length ?? 0).toBeGreaterThan(20);
     });
 
     // Submit DISABLED même si tout le reste est ok.

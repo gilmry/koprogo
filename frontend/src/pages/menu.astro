@@ -1,0 +1,36 @@
+---
+import Layout from "../layouts/Layout.astro";
+import MenuMobile from "../components/navigation/MenuMobile.svelte";
+
+/**
+ * L'écran « Plus » de la barre d'onglets mobile.
+ *
+ * ── Pourquoi une PAGE et non un tiroir ────────────────────────────────────
+ *
+ * La remise de design est explicite : « "Plus" is a destination, not a
+ * drawer ». La différence n'est pas de vocabulaire.
+ *
+ * Un tiroir se superpose : il faut le fermer pour revenir, il n'a pas
+ * d'adresse, le bouton « précédent » du téléphone en sort de façon
+ * imprévisible, et son contenu n'est pas partageable. Une page a une URL, un
+ * historique, et se comporte comme le reste du produit.
+ *
+ * ── Ce que cette page ferme comme défaut ──────────────────────────────────
+ *
+ * Ma barre d'onglets pointait « Plus » vers `/menu`, qui N'EXISTAIT PAS. Le
+ * lien aurait servi la page d'accueil en 200 — l'hébergement rend un 200 sur
+ * n'importe quelle URL — sans que rien ne le signale.
+ *
+ * Et `garde-liens-internes` ne pouvait pas le voir : elle lit les `href`
+ * LITTÉRAUX, or celui-ci est interpolé depuis une table de destinations.
+ * J'avais écrit une barre d'onglets dont NEUF destinations sur dix-sept
+ * n'existaient pas, dans le composant même censé rendre trente-neuf écrans
+ * atteignables.
+ */
+---
+
+<Layout title="Menu — KoproGo" showNav={true}>
+  <div class="mx-auto max-w-2xl px-4 py-6">
+    <MenuMobile client:load />
+  </div>
+</Layout>

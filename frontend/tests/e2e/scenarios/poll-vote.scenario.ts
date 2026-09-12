@@ -11,6 +11,12 @@
  * Duree video attendue : ~90-120 secondes (rythme humain, multi-role)
  */
 import { test, expect } from "@playwright/test";
+import { ADMIN_PASSWORD } from "../helpers/identifiants";
+import {
+  amorce,
+  aucuneErreurAffichee,
+  confirmerSiDemande,
+} from "../helpers/amorcage";
 import { nameContains, selectOptionByName } from "../helpers/name-match";
 import {
   humanLogin,
@@ -22,7 +28,7 @@ import {
   PACE,
 } from "../helpers/video-pace";
 
-const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
+import { API_BASE } from "../helpers/adresses";
 
 test.describe("Scenario: Sondage multi-role (Francois lance, Alice vote)", () => {
   test.setTimeout(180_000);
@@ -33,9 +39,9 @@ test.describe("Scenario: Sondage multi-role (Francois lance, Alice vote)", () =>
   test.beforeAll(async ({ request }) => {
     // 1. Login admin
     const adminResp = await request.post(`${API_BASE}/auth/login`, {
-      data: { email: "admin@koprogo.com", password: "admin123" },
+      data: { email: "admin@koprogo.com", password: ADMIN_PASSWORD },
     });
-    const admin = await adminResp.json();
+    const admin = await amorce(adminResp, "POST /auth/login");
     const adminHeaders = { Authorization: `Bearer ${admin.token}` };
 
     // 2. Seed the world
@@ -53,21 +59,37 @@ test.describe("Scenario: Sondage multi-role (Francois lance, Alice vote)", () =>
     const syndicResp = await request.post(`${API_BASE}/auth/login`, {
       data: { email: "francois@syndic-leroy.be", password: "francois123" },
     });
-    const syndic = await syndicResp.json();
+    const syndic = await amorce(syndicResp, "POST /auth/login");
     const syndicHeaders = { Authorization: `Bearer ${syndic.token}` };
 
     // Get buildings to find Residence du Parc
     const buildingsResp = await request.get(`${API_BASE}/buildings`, {
       headers: syndicHeaders,
     });
-    const buildings = await buildingsResp.json();
-    const building = Array.isArray(buildings)
-      ? buildings.find(
-          (b: any) => b.name && nameContains(b.name, "Résidence du Parc"),
-        )
-      : null;
+    const buildings = await amorce(buildingsResp, "GET /buildings");
+    // `GET /buildings` rend un `PageResponse` — `{ data, pagination }`,
+    // jamais un tableau nu. `Array.isArray` valait donc TOUJOURS faux,
+    // `building` TOUJOURS null, et le `if (building)` ci-dessous sautait
+    // l'amorçage entier sans rien dire. Le scénario échouait 150 lignes
+    // plus loin sur une liste vide, en accusant l'affichage.
+    const listeImmeubles = Array.isArray(buildings)
+      ? buildings
+      : (buildings?.data ?? []);
+    const building = listeImmeubles.find(
+      (b: any) => b.name && nameContains(b.name, "Résidence du Parc"),
+    );
 
-    if (building) {
+    if (!building) {
+      throw new Error(
+        `Amorçage : immeuble introuvable parmi ${listeImmeubles.length} ` +
+          `renvoyé(s) par GET /buildings : ` +
+          `${listeImmeubles.map((b: any) => b.name).join(", ") || "(aucun)"}. ` +
+          `Sans lui, aucune donnée n'est créée et le scénario échouera ` +
+          `plus loin sur une liste vide.`,
+      );
+    }
+
+    {
       const startsAt = new Date();
       const endsAt = new Date();
       endsAt.setDate(endsAt.getDate() + 7);
@@ -92,19 +114,28 @@ test.describe("Scenario: Sondage multi-role (Francois lance, Alice vote)", () =>
         },
         headers: syndicHeaders,
       });
-      const poll = await pollResp.json();
+      const poll = await amorce(pollResp, "POST /polls");
       pollId = poll.id;
 
-      // Publish the poll (Draft -> Active)
-      await request.put(`${API_BASE}/polls/${pollId}/publish`, {
-        headers: syndicHeaders,
-      });
+      // Publier le sondage (Draft -> Active).
+      //
+      // POST, pas PUT : la route est `#[post("/polls/{id}/publish")]`
+      // (`poll_handlers.rs:318`). Le PUT rendait 404, le sondage restait en
+      // brouillon, et le scénario échouait plus loin sur `poll-card`
+      // introuvable — en accusant l'affichage d'une liste vide.
+      const publicationResp = await request.post(
+        `${API_BASE}/polls/${pollId}/publish`,
+        {
+          headers: syndicHeaders,
+        },
+      );
+      await amorce(publicationResp, "POST /polls/{pollId}/publish");
     }
   });
 
   test.afterAll(async ({ request }) => {
     const adminResp = await request.post(`${API_BASE}/auth/login`, {
-      data: { email: "admin@koprogo.com", password: "admin123" },
+      data: { email: "admin@koprogo.com", password: ADMIN_PASSWORD },
     });
     const admin = await adminResp.json();
     await request.delete(`${API_BASE}/seed/scenario/world`, {
@@ -121,7 +152,7 @@ test.describe("Scenario: Sondage multi-role (Francois lance, Alice vote)", () =>
     await humanLogin(page, "francois@syndic-leroy.be", "francois123");
     await stepPause(page);
 
-    await humanClick(page, "nav-link-sondages");
+    await humanClick(page, "nav-link-polls");
     await waitForSpinner(page);
     await page.waitForTimeout(PACE.AFTER_NAVIGATION);
 
@@ -170,7 +201,7 @@ test.describe("Scenario: Sondage multi-role (Francois lance, Alice vote)", () =>
     await stepPause(page);
 
     // Naviguer vers les sondages (community section)
-    await humanClick(page, "nav-link-sondages");
+    await humanClick(page, "nav-link-polls");
     await waitForSpinner(page);
     await page.waitForTimeout(PACE.AFTER_NAVIGATION);
 
@@ -223,9 +254,22 @@ test.describe("Scenario: Sondage multi-role (Francois lance, Alice vote)", () =>
       timeout: 10000,
     });
 
-    // Voter "Oui"
-    const voteOui = page.locator("button").filter({ hasText: /Oui/i }).first();
-    await humanClickLocator(page, voteOui);
+    // Voter « Oui », qui est la PREMIERE option semee (`display_order: 1`).
+    //
+    // Le scenario cherchait `button` contenant /Oui/i. Les options ne sont pas
+    // des boutons : `PollDetail.svelte:392` rend des `<input type="radio">`
+    // portant `poll-detail-option-input`. Le selecteur ne pouvait donc jamais
+    // correspondre, quel que soit le libelle — et chercher par le libelle
+    // aurait de toute facon parie sur la langue, ce que le guide de style
+    // interdit.
+    //
+    // On vise la premiere option par sa position dans la liste, puis le
+    // bouton de soumission par son ancre.
+    const optionOui = page.getByTestId("poll-detail-option-input").first();
+    await humanClickLocator(page, optionOui);
+    await humanClick(page, "poll-vote-button");
+    await confirmerSiDemande(page);
+    await aucuneErreurAffichee(page, "vote d'Alice sur le sondage");
     await waitForSpinner(page);
     await page.waitForTimeout(PACE.AFTER_NAVIGATION);
 
@@ -238,7 +282,7 @@ test.describe("Scenario: Sondage multi-role (Francois lance, Alice vote)", () =>
     await stepPause(page);
 
     // Naviguer vers les sondages
-    await humanClick(page, "nav-link-sondages");
+    await humanClick(page, "nav-link-polls");
     await waitForSpinner(page);
     await page.waitForTimeout(PACE.AFTER_NAVIGATION);
 
@@ -289,6 +333,8 @@ test.describe("Scenario: Sondage multi-role (Francois lance, Alice vote)", () =>
     page.on("dialog", (dialog) => dialog.accept());
 
     await humanClick(page, "poll-close-button");
+    await confirmerSiDemande(page);
+    await aucuneErreurAffichee(page, "poll-close-button");
     await waitForSpinner(page);
     await page.waitForTimeout(PACE.AFTER_NAVIGATION);
 

@@ -1,15 +1,32 @@
 <script lang="ts">
   // Svelte 5 runes mode
-  import { _ } from '../lib/i18n';
-  import { api } from '../lib/api';
-  import { authStore } from '../stores/auth';
-  import InvoiceLineItems from './InvoiceLineItems.svelte';
-  import { todayISO, defaultDueDate, toISODateNoon } from '../lib/utils/date.utils';
-  import { calculateVAT as calcVAT, formatCurrency, aggregateLineItems } from '../lib/utils/finance.utils';
-  import { withLoadingState, withErrorHandling } from '../lib/utils/error.utils';
-  import { extractArray } from '../lib/utils/response.utils';
+  import { _ } from "../lib/i18n";
+  import { api } from "../lib/api";
+  import { authStore } from "../stores/auth";
+  import InvoiceLineItems from "./InvoiceLineItems.svelte";
+  import {
+    todayISO,
+    defaultDueDate,
+    toISODateNoon,
+  } from "../lib/utils/date.utils";
+  import {
+    calculateVAT as calcVAT,
+    formatCurrency,
+    aggregateLineItems,
+  } from "../lib/utils/finance.utils";
+  import {
+    withLoadingState,
+    withErrorHandling,
+  } from "../lib/utils/error.utils";
+  import { extractArray } from "../lib/utils/response.utils";
 
-  let { buildingId = '', organizationId = '', invoiceId = null, onSaved = null, onCancel = null }: {
+  let {
+    buildingId = "",
+    organizationId = "",
+    invoiceId = null,
+    onSaved = null,
+    onCancel = null,
+  }: {
     buildingId?: string;
     organizationId?: string;
     invoiceId?: string | null;
@@ -18,18 +35,25 @@
   } = $props();
 
   // Form mode: 'simple' for single amount, 'detailed' for line items
-  let mode = $state<'simple' | 'detailed'>('simple');
+  let mode = $state<"simple" | "detailed">("simple");
 
   // Form fields
-  let description = $state('');
-  let category = $state('Maintenance');
-  let amountExclVat = $state('');
-  let vatRate = $state('21.00');
-  let invoiceDate = $state('');
-  let dueDate = $state('');
-  let supplier = $state('');
-  let invoiceNumber = $state('');
-  let accountCode = $state('');
+  let description = $state("");
+  let category = $state("Maintenance");
+  let amountExclVat = $state("");
+  let vatRate = $state("21.00");
+  let invoiceDate = $state("");
+  let dueDate = $state("");
+  // Le millesime du placeholder de numero de facture etait fige a 2024 dans
+  // les quatre catalogues : interpole plutot que reecrit chaque janvier.
+  //
+  // Passe en CHAINE : svelte-i18n formate les arguments via ICU MessageFormat,
+  // et un nombre y recoit le groupement de milliers de la locale — `{year}`
+  // avec 2026 afficherait « 2 026 » en francais.
+  const currentYear = String(new Date().getFullYear());
+  let supplier = $state("");
+  let invoiceNumber = $state("");
+  let accountCode = $state("");
 
   // Line items for detailed mode
   let lineItems = $state<any[]>([]);
@@ -39,9 +63,11 @@
 
   // Liste des bâtiments (si buildingId n'est pas fourni)
   let buildings = $state<any[]>([]);
-  let selectedBuildingId = $state('');
+  let selectedBuildingId = $state("");
   // Sync with prop (live value via $effect, not stale initial capture)
-  $effect(() => { if (buildingId && !selectedBuildingId) selectedBuildingId = buildingId; });
+  $effect(() => {
+    if (buildingId && !selectedBuildingId) selectedBuildingId = buildingId;
+  });
 
   // Calculated fields
   let vatAmount = $state(0);
@@ -49,32 +75,32 @@
 
   // State
   let loading = $state(false);
-  let error = $state('');
+  let error = $state("");
   let isEditMode = $state(false);
 
   const categories = [
-    { value: 'Maintenance', label: $_('invoices.category_maintenance') },
-    { value: 'Repairs', label: $_('invoices.category_repairs') },
-    { value: 'Insurance', label: $_('invoices.category_insurance') },
-    { value: 'Utilities', label: $_('invoices.category_utilities') },
-    { value: 'Cleaning', label: $_('invoices.category_cleaning') },
-    { value: 'Administration', label: $_('invoices.category_admin') },
-    { value: 'Works', label: $_('invoices.category_works') },
-    { value: 'Other', label: $_('invoices.category_other') }
+    { value: "Maintenance", label: $_("invoices.category_maintenance") },
+    { value: "Repairs", label: $_("invoices.category_repairs") },
+    { value: "Insurance", label: $_("invoices.category_insurance") },
+    { value: "Utilities", label: $_("invoices.category_utilities") },
+    { value: "Cleaning", label: $_("invoices.category_cleaning") },
+    { value: "Administration", label: $_("invoices.category_admin") },
+    { value: "Works", label: $_("invoices.category_works") },
+    { value: "Other", label: $_("invoices.category_other") },
   ];
 
   const vatRates = [
-    { value: '0.00', label: $_('invoices.vat_0') },
-    { value: '6.00', label: $_('invoices.vat_6') },
-    { value: '12.00', label: $_('invoices.vat_12') },
-    { value: '21.00', label: $_('invoices.vat_21') }
+    { value: "0.00", label: $_("invoices.vat_0") },
+    { value: "6.00", label: $_("invoices.vat_6") },
+    { value: "12.00", label: $_("invoices.vat_12") },
+    { value: "21.00", label: $_("invoices.vat_21") },
   ];
 
   $effect(() => {
     invoiceDate = todayISO();
     dueDate = defaultDueDate();
 
-    if (!buildingId || buildingId === '') {
+    if (!buildingId || buildingId === "") {
       loadBuildings();
     }
 
@@ -89,45 +115,45 @@
   async function loadBuildings() {
     await withErrorHandling({
       action: async () => {
-        const response = await api.get('/buildings');
-        buildings = extractArray(response, 'buildings');
+        const response = await api.get("/buildings");
+        buildings = extractArray(response, "buildings");
         if (buildings.length > 0 && !selectedBuildingId) {
           selectedBuildingId = buildings[0].id;
         }
       },
-      errorMessage: 'Failed to load buildings',
+      errorMessage: $_("invoices.loadBuildingsFailed"),
     });
   }
 
   async function loadAccounts() {
     await withErrorHandling({
       action: async () => {
-        const response = await api.get('/accounts');
+        const response = await api.get("/accounts");
         const data = Array.isArray(response) ? response : [];
         accounts = data
-          .filter((acc: any) => acc.code.startsWith('6'))
+          .filter((acc: any) => acc.code.startsWith("6"))
           .sort((a: any, b: any) => a.code.localeCompare(b.code));
       },
-      errorMessage: 'Failed to load accounts',
+      errorMessage: $_("invoices.loadAccountsFailed"),
     });
   }
 
   async function loadInvoice() {
     await withLoadingState({
       action: () => api.get(`/invoices/${invoiceId}`),
-      setLoading: (v: boolean) => loading = v,
-      setError: (v: string) => error = v,
-      errorMessage: $_('invoices.load_error'),
+      setLoading: (v: boolean) => (loading = v),
+      setError: (v: string) => (error = v),
+      errorMessage: $_("invoices.load_error"),
       onSuccess: (invoice: any) => {
         description = invoice.description;
         category = invoice.category;
-        amountExclVat = invoice.amount_excl_vat?.toString() || '';
-        vatRate = invoice.vat_rate?.toString() || '21.00';
-        invoiceDate = invoice.invoice_date?.split('T')[0] || '';
-        dueDate = invoice.due_date?.split('T')[0] || '';
-        supplier = invoice.supplier || '';
-        invoiceNumber = invoice.invoice_number || '';
-        accountCode = invoice.account_code || '';
+        amountExclVat = invoice.amount_excl_vat?.toString() || "";
+        vatRate = invoice.vat_rate?.toString() || "21.00";
+        invoiceDate = invoice.invoice_date?.split("T")[0] || "";
+        dueDate = invoice.due_date?.split("T")[0] || "";
+        supplier = invoice.supplier || "";
+        invoiceNumber = invoice.invoice_number || "";
+        accountCode = invoice.account_code || "";
         recalculateVAT();
       },
     });
@@ -153,62 +179,67 @@
   }
 
   function toggleMode() {
-    if (mode === 'simple') {
-      mode = 'detailed';
+    if (mode === "simple") {
+      mode = "detailed";
     } else {
-      mode = 'simple';
+      mode = "simple";
       lineItems = [];
     }
   }
 
   async function handleSubmit() {
     loading = true;
-    error = '';
+    error = "";
 
     if (!selectedBuildingId && buildingId) {
       selectedBuildingId = buildingId;
     }
     if (!selectedBuildingId) {
       if (buildings.length === 0) {
-        error = $_('invoices.select_building') || 'Veuillez sélectionner un immeuble.';
+        error =
+          $_("invoices.select_building") ||
+          "Veuillez sélectionner un immeuble.";
       } else {
-        error = $_('invoices.select_building') || 'Veuillez sélectionner un immeuble dans la liste.';
+        error =
+          $_("invoices.select_building") ||
+          "Veuillez sélectionner un immeuble dans la liste.";
       }
       loading = false;
       return;
     }
 
     // Validation
-    if (mode === 'simple') {
+    if (mode === "simple") {
       if (!description.trim()) {
-        error = $_('invoices.description_required');
+        error = $_("invoices.description_required");
         loading = false;
         return;
       }
       if (parseFloat(amountExclVat) <= 0) {
-        error = $_('invoices.amount_required');
+        error = $_("invoices.amount_required");
         loading = false;
         return;
       }
     } else {
       if (lineItems.length === 0) {
-        error = $_('invoices.add_line_item');
+        error = $_("invoices.add_line_item");
         loading = false;
         return;
       }
       for (const item of lineItems) {
         if (!item.description.trim()) {
-          error = $_('invoices.line_description_required');
+          error = $_("invoices.line_description_required");
           loading = false;
           return;
         }
       }
     }
 
-    const orgId = organizationId || $authStore.user?.activeRole?.organizationId || '';
+    const orgId =
+      organizationId || $authStore.user?.activeRole?.organizationId || "";
 
     if (!orgId) {
-      error = $_('common.org_id_missing');
+      error = $_("common.org_id_missing");
       loading = false;
       return;
     }
@@ -216,15 +247,23 @@
     let dto: any = {
       organization_id: orgId,
       building_id: selectedBuildingId,
-      description: mode === 'simple' ? description : lineItems.map(l => l.description).join(', '),
+      description:
+        mode === "simple"
+          ? description
+          : lineItems.map((l) => l.description).join(", "),
       category,
       expense_date: toISODateNoon(invoiceDate),
+      // Le champ etait saisi (pre-rempli par `defaultDueDate()`), relu en
+      // edition, mais jamais envoye : la fiche depense affichait « - » pour une
+      // echeance que l'utilisateur venait de renseigner, et aucun retard
+      // fournisseur ne pouvait etre calcule.
+      due_date: dueDate ? toISODateNoon(dueDate) : null,
       supplier: supplier || null,
       invoice_number: invoiceNumber || null,
-      account_code: accountCode || null
+      account_code: accountCode || null,
     };
 
-    if (mode === 'simple') {
+    if (mode === "simple") {
       const amountHT = parseFloat(amountExclVat);
       const vat = parseFloat(vatRate);
       const result = calcVAT(amountHT, vat);
@@ -235,12 +274,13 @@
       const totals = aggregateLineItems(lineItems);
       dto.amount = totals.totalTTC;
       dto.amount_excl_vat = totals.totalHT;
-      dto.vat_rate = totals.totalHT > 0 ? (totals.totalVAT / totals.totalHT) * 100 : 0;
-      dto.line_items = lineItems.map(item => ({
+      dto.vat_rate =
+        totals.totalHT > 0 ? (totals.totalVAT / totals.totalHT) * 100 : 0;
+      dto.line_items = lineItems.map((item) => ({
         description: item.description,
         quantity: item.quantity,
         unit_price: item.unit_price,
-        vat_rate: item.vat_rate
+        vat_rate: item.vat_rate,
       }));
     }
 
@@ -250,22 +290,33 @@
           const updated = await api.put(`/expenses/${invoiceId}`, dto);
           if (onSaved) onSaved(updated);
         } else {
-          const created = await api.post('/expenses', dto);
+          const created = await api.post("/expenses", dto);
           if (onSaved) onSaved(created);
         }
       },
-      setLoading: (v: boolean) => loading = v,
-      errorMessage: $_('invoices.save_error'),
+      setLoading: (v: boolean) => (loading = v),
+      errorMessage: $_("invoices.save_error"),
     });
   }
 </script>
 
 <div class="invoice-form">
   <div class="form-header">
-    <h2>{isEditMode ? $_('invoices.edit') : $_('invoices.create')} {$_('invoices.invoice')}</h2>
+    <h2>
+      {isEditMode ? $_("invoices.edit") : $_("invoices.create")}
+      {$_("invoices.invoice")}
+    </h2>
     {#if !isEditMode}
-      <button type="button" class="btn-mode-toggle" onclick={toggleMode} disabled={loading} data-testid="mode-toggle">
-        {mode === 'simple' ? $_('invoices.detailed_mode') : $_('invoices.simple_mode')}
+      <button
+        type="button"
+        class="btn-mode-toggle"
+        onclick={toggleMode}
+        disabled={loading}
+        data-testid="mode-toggle"
+      >
+        {mode === "simple"
+          ? $_("invoices.detailed_mode")
+          : $_("invoices.simple_mode")}
       </button>
     {/if}
   </div>
@@ -274,28 +325,42 @@
     <div class="alert alert-error">{error}</div>
   {/if}
 
-  <form onsubmit={(e: Event) => { e.preventDefault(); handleSubmit(); }}>
-    {#if mode === 'simple'}
+  <form
+    data-testid="invoice-form"
+    onsubmit={(e: Event) => {
+      e.preventDefault();
+      handleSubmit();
+    }}
+  >
+    {#if mode === "simple"}
       <!-- Simple Mode: Single Amount -->
       {#if buildings.length > 0 && !buildingId}
-      <div class="form-group">
-        <label for="buildingSelect">{$_('common.building')} *</label>
-        <select id="buildingSelect" bind:value={selectedBuildingId} disabled={loading} required data-testid="building-select">
-          <option value="">{$_('invoices.select_building')}</option>
-          {#each buildings as building}
-            <option value={building.id}>{building.name} - {building.address}</option>
-          {/each}
-        </select>
-      </div>
+        <div class="form-group">
+          <label for="buildingSelect">{$_("common.building")} *</label>
+          <select
+            id="buildingSelect"
+            bind:value={selectedBuildingId}
+            disabled={loading}
+            required
+            data-testid="building-select"
+          >
+            <option value="">{$_("invoices.select_building")}</option>
+            {#each buildings as building}
+              <option value={building.id}
+                >{building.name} - {building.address}</option
+              >
+            {/each}
+          </select>
+        </div>
       {/if}
 
       <div class="form-group">
-        <label for="description">{$_('common.description')} *</label>
+        <label for="description">{$_("common.description")} *</label>
         <input
           type="text"
           id="description"
           bind:value={description}
-          placeholder={$_('invoices.description_placeholder')}
+          placeholder={$_("invoices.description_placeholder")}
           required
           disabled={loading}
           data-testid="description-input"
@@ -303,8 +368,13 @@
       </div>
 
       <div class="form-group">
-        <label for="category">{$_('common.category')}</label>
-        <select id="category" bind:value={category} disabled={loading} data-testid="category-select">
+        <label for="category">{$_("common.category")}</label>
+        <select
+          id="category"
+          bind:value={category}
+          disabled={loading}
+          data-testid="category-select"
+        >
           {#each categories as cat}
             <option value={cat.value}>{cat.label}</option>
           {/each}
@@ -312,21 +382,26 @@
       </div>
 
       <div class="form-group">
-        <label for="accountCode">{$_('invoices.account_code')}</label>
-        <select id="accountCode" bind:value={accountCode} disabled={loading}>
-          <option value="">{$_('invoices.select_account')}</option>
+        <label for="accountCode">{$_("invoices.account_code")}</label>
+        <select
+          data-testid="invoice-form-account-code-select"
+          id="accountCode"
+          bind:value={accountCode}
+          disabled={loading}
+        >
+          <option value="">{$_("invoices.select_account")}</option>
           {#each accounts as account}
             <option value={account.code}>
               {account.code} - {account.label}
             </option>
           {/each}
         </select>
-        <small class="form-help">{$_('invoices.account_help')}</small>
+        <small class="form-help">{$_("invoices.account_help")}</small>
       </div>
 
       <div class="form-row">
         <div class="form-group">
-          <label for="amountExclVat">{$_('invoices.amount_excl_vat')} *</label>
+          <label for="amountExclVat">{$_("invoices.amount_excl_vat")} *</label>
           <input
             type="number"
             id="amountExclVat"
@@ -341,8 +416,13 @@
         </div>
 
         <div class="form-group">
-          <label for="vatRate">{$_('invoices.vat_rate')}</label>
-          <select id="vatRate" bind:value={vatRate} disabled={loading} data-testid="vat-rate-select">
+          <label for="vatRate">{$_("invoices.vat_rate")}</label>
+          <select
+            id="vatRate"
+            bind:value={vatRate}
+            disabled={loading}
+            data-testid="vat-rate-select"
+          >
             {#each vatRates as rate}
               <option value={rate.value}>{rate.label}</option>
             {/each}
@@ -352,23 +432,28 @@
 
       <div class="calculated-amounts">
         <div class="amount-row">
-          <span>{$_('invoices.amount_excl_vat')}:</span>
-          <strong>{formatCurrency(parseFloat(amountExclVat || '0'))}</strong>
+          <span>{$_("invoices.amount_excl_vat")}:</span>
+          <strong>{formatCurrency(parseFloat(amountExclVat || "0"))}</strong>
         </div>
         <div class="amount-row">
-          <span>{$_('invoices.vat')} ({vatRate}%):</span>
+          <span>{$_("invoices.vat")} ({vatRate}%):</span>
           <strong>{formatCurrency(vatAmount)}</strong>
         </div>
         <div class="amount-row total">
-          <span>{$_('invoices.amount_incl_vat')}:</span>
+          <span>{$_("invoices.amount_incl_vat")}:</span>
           <strong>{formatCurrency(amountInclVat)}</strong>
         </div>
       </div>
     {:else}
       <!-- Detailed Mode: Line Items -->
       <div class="form-group">
-        <label for="category">{$_('common.category')}</label>
-        <select id="category" bind:value={category} disabled={loading} data-testid="category-select">
+        <label for="category">{$_("common.category")}</label>
+        <select
+          id="category"
+          bind:value={category}
+          disabled={loading}
+          data-testid="category-select"
+        >
           {#each categories as cat}
             <option value={cat.value}>{cat.label}</option>
           {/each}
@@ -376,20 +461,25 @@
       </div>
 
       <div class="form-group">
-        <label for="accountCode">{$_('invoices.account_code')}</label>
-        <select id="accountCode" bind:value={accountCode} disabled={loading}>
-          <option value="">{$_('invoices.select_account')}</option>
+        <label for="accountCode">{$_("invoices.account_code")}</label>
+        <select
+          data-testid="invoice-form-account-code-alt-select"
+          id="accountCode"
+          bind:value={accountCode}
+          disabled={loading}
+        >
+          <option value="">{$_("invoices.select_account")}</option>
           {#each accounts as account}
             <option value={account.code}>
               {account.code} - {account.label}
             </option>
           {/each}
         </select>
-        <small class="form-help">{$_('invoices.account_help')}</small>
+        <small class="form-help">{$_("invoices.account_help")}</small>
       </div>
 
       <InvoiceLineItems
-        bind:lineItems={lineItems}
+        bind:lineItems
         disabled={loading}
         onchange={handleLineItemsChange}
       />
@@ -398,7 +488,7 @@
     <!-- Dates -->
     <div class="form-row">
       <div class="form-group">
-        <label for="invoiceDate">{$_('invoices.invoice_date')} *</label>
+        <label for="invoiceDate">{$_("invoices.invoice_date")} *</label>
         <input
           type="date"
           id="invoiceDate"
@@ -410,7 +500,7 @@
       </div>
 
       <div class="form-group">
-        <label for="dueDate">{$_('invoices.due_date')}</label>
+        <label for="dueDate">{$_("invoices.due_date")}</label>
         <input
           type="date"
           id="dueDate"
@@ -424,23 +514,27 @@
     <!-- Supplier and Invoice Number -->
     <div class="form-row">
       <div class="form-group">
-        <label for="supplier">{$_('invoices.supplier')}</label>
+        <label for="supplier">{$_("invoices.supplier")}</label>
         <input
+          data-testid="invoice-form-supplier-input"
           type="text"
           id="supplier"
           bind:value={supplier}
-          placeholder={$_('invoices.supplier_placeholder')}
+          placeholder={$_("invoices.supplier_placeholder")}
           disabled={loading}
         />
       </div>
 
       <div class="form-group">
-        <label for="invoiceNumber">{$_('invoices.invoice_number')}</label>
+        <label for="invoiceNumber">{$_("invoices.invoice_number")}</label>
         <input
+          data-testid="invoice-form-number-input"
           type="text"
           id="invoiceNumber"
           bind:value={invoiceNumber}
-          placeholder={$_('invoices.invoice_number_placeholder')}
+          placeholder={$_("invoices.invoice_number_placeholder", {
+            values: { year: currentYear },
+          })}
           disabled={loading}
         />
       </div>
@@ -449,15 +543,26 @@
     <!-- Actions -->
     <div class="form-actions">
       {#if onCancel}
-        <button type="button" class="btn btn-secondary" onclick={onCancel} disabled={loading} data-testid="cancel-button">
-          {$_('common.cancel')}
+        <button
+          type="button"
+          class="btn btn-secondary"
+          onclick={onCancel}
+          disabled={loading}
+          data-testid="cancel-button"
+        >
+          {$_("common.cancel")}
         </button>
       {/if}
-      <button type="submit" class="btn btn-primary" disabled={loading} data-testid="submit-button">
+      <button
+        type="submit"
+        class="btn btn-primary"
+        disabled={loading}
+        data-testid="submit-button"
+      >
         {#if loading}
-          {$_('invoices.saving')}
+          {$_("invoices.saving")}
         {:else}
-          {isEditMode ? $_('invoices.update') : $_('invoices.create_draft')}
+          {isEditMode ? $_("invoices.update") : $_("invoices.create_draft")}
         {/if}
       </button>
     </div>

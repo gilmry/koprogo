@@ -1,13 +1,17 @@
 <script lang="ts">
   // Svelte 5 runes mode
-  import { _ } from '../../lib/i18n';
+  import { _ } from "../../lib/i18n";
   import {
     energyCampaignsApi,
     type CreateProviderOfferDto,
   } from "../../lib/api/energy-campaigns";
   import { withErrorHandling } from "../../lib/utils/error.utils";
 
-  let { campaignId, oncreated, oncancel }: {
+  let {
+    campaignId,
+    oncreated,
+    oncancel,
+  }: {
     campaignId: string;
     oncreated?: (offer: any) => void;
     oncancel?: () => void;
@@ -39,12 +43,33 @@
     error = "";
     success = false;
 
-    if (!formData.provider_name.trim()) { error = $_("energy.offer.providerNameRequired"); return; }
-    if (!formData.price_kwh_electricity && !formData.price_kwh_gas) { error = $_("energy.offer.priceRequired"); return; }
-    if (formData.contract_duration_months <= 0) { error = $_("energy.offer.durationRequired"); return; }
-    if (!formData.offer_valid_until) { error = $_("energy.offer.validityRequired"); return; }
-    if (formData.green_energy_pct < 0 || formData.green_energy_pct > 100) { error = $_("energy.offer.greenPercentageInvalid"); return; }
-    if (formData.estimated_savings_pct < 0 || formData.estimated_savings_pct > 100) { error = $_("energy.offer.savingsPercentageInvalid"); return; }
+    if (!formData.provider_name.trim()) {
+      error = $_("energy.offer.providerNameRequired");
+      return;
+    }
+    if (!formData.price_kwh_electricity && !formData.price_kwh_gas) {
+      error = $_("energy.offer.priceRequired");
+      return;
+    }
+    if (formData.contract_duration_months <= 0) {
+      error = $_("energy.offer.durationRequired");
+      return;
+    }
+    if (!formData.offer_valid_until) {
+      error = $_("energy.offer.validityRequired");
+      return;
+    }
+    if (formData.green_energy_pct < 0 || formData.green_energy_pct > 100) {
+      error = $_("energy.offer.greenPercentageInvalid");
+      return;
+    }
+    if (
+      formData.estimated_savings_pct < 0 ||
+      formData.estimated_savings_pct > 100
+    ) {
+      error = $_("energy.offer.savingsPercentageInvalid");
+      return;
+    }
 
     const payload = {
       ...formData,
@@ -53,7 +78,7 @@
 
     await withErrorHandling({
       action: () => energyCampaignsApi.addOffer(campaignId, payload as any),
-      setLoading: (v: boolean) => loading = v,
+      setLoading: (v: boolean) => (loading = v),
       errorMessage: $_("energy.offer.createError"),
       onSuccess: (offer) => {
         error = "";
@@ -80,7 +105,10 @@
   setDefaultValidityDate();
 </script>
 
-<div class="bg-white shadow-md rounded-lg p-6" data-testid="create-provider-offer-form">
+<div
+  class="bg-white shadow-md rounded-lg p-6"
+  data-testid="create-provider-offer-form"
+>
   <h3 class="text-lg font-medium text-gray-900 mb-4">
     💼 {$_("energy.offer.add")}
   </h3>
@@ -101,7 +129,11 @@
     </div>
   {/if}
 
-  <form onsubmit={handleSubmit} class="space-y-6">
+  <form
+    data-testid="provider-offer-form"
+    onsubmit={handleSubmit}
+    class="space-y-6"
+  >
     <!-- Provider Name -->
     <div>
       <label
@@ -131,6 +163,7 @@
           {$_("energy.offer.priceElectricity")}
         </label>
         <input
+          data-testid="provider-offer-electricity-price-input"
           type="number"
           id="price_kwh_electricity"
           bind:value={formData.price_kwh_electricity}
@@ -151,6 +184,7 @@
           {$_("energy.offer.priceGas")}
         </label>
         <input
+          data-testid="provider-offer-gas-price-input"
           type="number"
           id="price_kwh_gas"
           bind:value={formData.price_kwh_gas}
@@ -167,13 +201,11 @@
 
     <!-- Fixed Fee -->
     <div>
-      <label
-        for="fixed_fee"
-        class="block text-sm font-medium text-gray-700"
-      >
+      <label for="fixed_fee" class="block text-sm font-medium text-gray-700">
         {$_("energy.offer.fixedFee")} <span class="text-red-500">*</span>
       </label>
       <input
+        data-testid="provider-offer-fixed-fee-input"
         type="number"
         id="fixed_fee"
         bind:value={formData.fixed_monthly_fee}
@@ -191,9 +223,11 @@
         for="contract_duration"
         class="block text-sm font-medium text-gray-700"
       >
-        {$_("energy.offer.contractDuration")} <span class="text-red-500">*</span>
+        {$_("energy.offer.contractDuration")}
+        <span class="text-red-500">*</span>
       </label>
       <input
+        data-testid="provider-offer-duration-input"
         type="number"
         id="contract_duration"
         bind:value={formData.contract_duration_months}
@@ -203,7 +237,9 @@
         placeholder="12"
         class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
       />
-      <p class="mt-1 text-xs text-gray-500">{$_("energy.offer.contractDurationHelp")}</p>
+      <p class="mt-1 text-xs text-gray-500">
+        {$_("energy.offer.contractDurationHelp")}
+      </p>
     </div>
 
     <!-- Green Energy Percentage -->
@@ -216,6 +252,7 @@
       </label>
       <div class="flex items-center space-x-4">
         <input
+          data-testid="provider-offer-green-percentage-input"
           type="range"
           id="green_percentage"
           bind:value={formData.green_energy_pct}
@@ -236,9 +273,11 @@
     <!-- Estimated Savings -->
     <div>
       <label for="savings" class="block text-sm font-medium text-gray-700">
-        {$_("energy.offer.estimatedSavings")} <span class="text-red-500">*</span>
+        {$_("energy.offer.estimatedSavings")}
+        <span class="text-red-500">*</span>
       </label>
       <input
+        data-testid="savings"
         type="number"
         id="savings"
         bind:value={formData.estimated_savings_pct}
@@ -256,13 +295,11 @@
 
     <!-- Validity Date -->
     <div>
-      <label
-        for="valid_until"
-        class="block text-sm font-medium text-gray-700"
-      >
+      <label for="valid_until" class="block text-sm font-medium text-gray-700">
         {$_("energy.offer.validityDate")} <span class="text-red-500">*</span>
       </label>
       <input
+        data-testid="provider-offer-valid-until-input"
         type="date"
         id="valid_until"
         bind:value={formData.offer_valid_until}
@@ -274,6 +311,7 @@
     <!-- Submit Button -->
     <div class="flex justify-end space-x-3">
       <button
+        data-testid="provider-offer-cancel-button"
         type="button"
         onclick={() => oncancel?.()}
         class="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"

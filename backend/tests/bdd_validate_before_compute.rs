@@ -59,6 +59,17 @@ impl MockExpenseRepo {
 
 #[async_trait]
 impl ExpenseRepository for MockExpenseRepo {
+    async fn enregistrer_lignes_de_facture(
+        &self,
+        _expense_id: Uuid,
+        _lignes: &[koprogo_api::application::ports::expense_repository::LigneDeFacture],
+    ) -> Result<(), String> {
+        // Mock : rien à enregistrer. Le port n'offre pas d'implémentation
+        // par défaut, précisément pour que ce choix soit écrit ici plutôt
+        // que subi partout.
+        Ok(())
+    }
+
     async fn create(&self, e: &Expense) -> Result<Expense, String> {
         self.store.lock().unwrap().insert(e.id, e.clone());
         Ok(e.clone())
@@ -226,6 +237,19 @@ impl UnitOwnerRepository for MockUnitOwnerRepo {
     ) -> Result<Option<UnitOwner>, String> {
         Ok(None)
     }
+    async fn find_active_quota_shares_by_building(
+        &self,
+        bid: Uuid,
+    ) -> Result<Vec<OwnerTriple>, String> {
+        Ok(self
+            .by_building
+            .lock()
+            .unwrap()
+            .get(&bid)
+            .cloned()
+            .unwrap_or_default())
+    }
+
     async fn find_active_by_building(&self, bid: Uuid) -> Result<Vec<OwnerTriple>, String> {
         Ok(self
             .by_building
@@ -600,6 +624,10 @@ async fn when_create_expense(world: &mut VbcWorld, name: String) {
         supplier: Some("Supp".to_string()),
         invoice_number: Some("INV-X".to_string()),
         account_code: None,
+        amount_excl_vat: None,
+        vat_rate: None,
+        due_date: None,
+        line_items: None,
     };
     match world.expense_uc.as_ref().unwrap().create_expense(dto).await {
         Ok(_) => {
@@ -628,6 +656,10 @@ async fn when_create_expense_unknown(world: &mut VbcWorld) {
         supplier: None,
         invoice_number: None,
         account_code: None,
+        amount_excl_vat: None,
+        vat_rate: None,
+        due_date: None,
+        line_items: None,
     };
     match world.expense_uc.as_ref().unwrap().create_expense(dto).await {
         Ok(_) => {
@@ -661,6 +693,7 @@ async fn when_create_cff(world: &mut VbcWorld, name: String) {
             now + Duration::days(30),
             None,
             None,
+            rust_decimal::Decimal::ZERO, // part fonds de réserve (Art. 3.86 § 3 al. 7)
         )
         .await
     {

@@ -11,7 +11,7 @@
 import { test, expect } from "@playwright/test";
 import { loginAsAdmin } from "../../helpers/auth";
 
-const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
+import { API_BASE } from "../../helpers/adresses";
 
 /**
  * `GET /buildings` trie par défaut `created_at ASC` (le plus ancien en
@@ -37,16 +37,6 @@ const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
  * Un nombre fixe reste par nature fragile : il repousse le seuil, il ne le
  * supprime pas. Le seul correctif de fond est une recherche cote serveur.
  */
-async function forceLargePageSize(
-  page: import("@playwright/test").Page,
-): Promise<void> {
-  await page.route("**/buildings?*", (route) => {
-    const url = new URL(route.request().url());
-    url.searchParams.set("per_page", "10000");
-    route.continue({ url: url.toString() });
-  });
-}
-
 async function createOrgAndAcp(
   page: import("@playwright/test").Page,
   adminToken: string,
@@ -118,12 +108,17 @@ test.describe("Story 2 (#698) — ACP au lieu d'Organisation", () => {
     //    et non la mécanique du menu.
     await page.goto("/admin");
 
-    // Ciblage par `href` et non par `data-testid` : `RoleSubmenu.svelte`
-    // génère `nav-link-{slugify(item.label)}` à partir du libellé TRADUIT, donc
-    // `nav-link-acp` en fr, `nav-link-acps` en en, `nav-link-vme-s` en nl. Son
-    // propre en-tête documente pourtant un `stableSlug`, et la config
-    // Playwright force `fr-BE` en admettant « so nav testids match hardcoded
-    // expectations ». Le `href`, lui, ne dépend d'aucune locale.
+    // Ciblage par `href`. C'était à l'origine un contournement :
+    // `RoleSubmenu.svelte` dérivait `nav-link-{...}` du libellé TRADUIT, d'où
+    // `nav-link-acp` en fr, `nav-link-acps` en en, `nav-link-vme-s` en nl —
+    // une ancre qui changeait avec la langue, alors que son propre en-tête
+    // promettait un `stableSlug`.
+    //
+    // La racine est corrigée depuis le 2026-09-08 : l'ancre se dérive de
+    // l'`href` et vaut `nav-link-admin-acps` dans les quatre langues. Le
+    // ciblage par `href` est conservé parce qu'il reste juste, et qu'il ne
+    // sert à rien de modifier une recette qui passe ; les deux désignent
+    // désormais la même chose.
     const navLink = page.locator('nav a[href="/admin/acps"]').first();
     await expect(navLink).toBeVisible({ timeout: 15_000 });
     await navLink.click();
@@ -160,7 +155,6 @@ test.describe("Story 2 (#698) — ACP au lieu d'Organisation", () => {
     const { token } = await loginAsAdmin(page);
     const { acpId } = await createOrgAndAcp(page, token, "s2happy1");
 
-    await forceLargePageSize(page);
     await page.goto("/buildings");
     const createBtn = page.getByTestId("create-building-button");
     await expect(createBtn).toBeVisible({ timeout: 15_000 });
@@ -191,6 +185,16 @@ test.describe("Story 2 (#698) — ACP au lieu d'Organisation", () => {
     expect(created).not.toHaveProperty("organization_id");
 
     await expect(dialog).not.toBeVisible();
+
+    // L'immeuble est CHERCHÉ, pas attendu sur la première page.
+    //
+    // La liste est paginée à vingt. L'instantané du run 34362096248 le dit :
+    // « Affichage de 1 à 20 sur 129 résultat(s) », et l'immeuble qui vient
+    // d'être créé est sur une page ultérieure. Le test supposait une liste
+    // entière ; la pagination du produit n'a rien de fautif.
+    //
+    // Chercher est aussi ce qu'un utilisateur fait après avoir créé.
+    await page.getByTestId("building-search-input").fill(`S2 Building ${ts}`);
     await expect(page.getByText(`S2 Building ${ts}`)).toBeVisible({
       timeout: 15_000,
     });
@@ -298,7 +302,6 @@ test.describe("Story 2 (#698) — ACP au lieu d'Organisation", () => {
     });
     expect(buildingResp.status()).toBe(201);
 
-    await forceLargePageSize(page);
     await page.goto("/buildings");
     await expect(page.getByTestId("building-search-input")).toBeVisible({
       timeout: 15_000,
@@ -313,11 +316,41 @@ test.describe("Story 2 (#698) — ACP au lieu d'Organisation", () => {
     await expect(dialog.getByTestId("building-acp-select")).toHaveValue(acpId);
   });
 
+  // Le SERVICE WORKER doit être bloqué pour que l'interception s'applique.
+  //
+  // Playwright n'intercepte PAS ce qu'un service worker sert. L'application
+  // en enregistre un (`pwa.ts:18`, chargé dans la trace du run 34389409872 :
+  // `GET /service-worker.js → 200`), si bien que `page.route` sur une URL
+  // d'API n'a aucun effet — silencieusement.
+  //
+  // C'est la SECONDE cause de la même panne. J'avais d'abord converti le
+  // motif en expression régulière, parce qu'un motif en chaîne est résolu
+  // contre `baseURL` : c'était vrai, et insuffisant. La réponse réelle
+  // faisait encore 56 236 octets au lieu des deux du `[]` simulé.
+  //
+  // Bloqué ICI seulement : `pwa-contractor.spec.ts` éprouve précisément la
+  // PWA et a besoin de son service worker.
+  test.use({ serviceWorkers: "block" });
+
   test("@edge (bis) aucune ACP disponible — état vide explicite, submit bloqué", async ({
     page,
   }) => {
     await loginAsAdmin(page);
-    await page.route("**/api/v1/acps", (route) => {
+    // Une EXPRESSION RÉGULIÈRE, pas un motif en chaîne.
+    //
+    // Playwright résout un motif sans schéma contre `baseURL`
+    // (`http://localhost:3000` en CI). L'API est sur le port 8080 :
+    // `"**/api/v1/acps"` ne correspondait donc JAMAIS, et l'interception
+    // n'avait aucun effet.
+    //
+    // La trace du run 34377060293 le prouve : `GET /api/v1/acps` a rendu
+    // 56 706 octets — la vraie liste — là où la simulation devait rendre deux
+    // octets. Le test croyait éprouver l'état vide et exerçait la liste
+    // réelle, qui n'est pas vide. **Il n'a jamais testé ce qu'il annonce.**
+    //
+    // Une expression régulière est comparée à l'URL complète, sans résolution
+    // relative.
+    await page.route(/\/api\/v1\/acps$/, (route) => {
       if (route.request().method() === "GET") {
         route.fulfill({
           status: 200,

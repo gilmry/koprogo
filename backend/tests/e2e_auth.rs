@@ -645,3 +645,114 @@ async fn fe1_edge_old_refresh_cookie_revoked_after_rotation() {
         "reused/rotated refresh token must be rejected (replay)"
     );
 }
+
+/// `POST /auth/register` ne doit pas reposer la session de l'appelant (#769).
+///
+/// ── Ce qui a été trouvé ────────────────────────────────────────────────────
+///
+/// Recette du 2026-09-04 (R1-4). L'acte 1 demande de créer trois comptes
+/// d'affilée depuis un compte SuperAdmin. **À chaque création, la session
+/// basculait sur le compte fraîchement créé** : le troisième utilisateur
+/// terminait connecté à sa propre place, sans que rien à l'écran ne l'explique.
+///
+/// La cause est qu'un seul endpoint sert deux usages opposés :
+///
+///   — l'inscription de soi-même, où poser la session du compte créé est
+///     exactement ce qu'on veut ;
+///   — la création d'un utilisateur par un administrateur, où c'est
+///     précisément ce qu'on ne veut pas.
+///
+/// Ce n'est pas une escalade de privilège : le compte créé est en général moins
+/// doté. C'est une confusion de session — et rien ne garantit que le sens
+/// restera toujours favorable.
+///
+/// ── Ce que ce test vérifie ─────────────────────────────────────────────────
+///
+/// Les deux branches, parce que ne garder que la seconde laisserait casser
+/// l'inscription publique sans qu'on le voie :
+///
+///   1. appel **authentifié** → `201`, et **aucun** cookie `Set-Cookie` ;
+///   2. appel **anonyme**     → `201`, et le cookie de rafraîchissement posé.
+#[actix_web::test]
+#[serial]
+async fn register_authentifie_ne_repose_pas_la_session_de_lappelant() {
+    let (app_state, _container, org_id) = common::setup_test_db().await;
+    let token = common::register_and_login(&app_state, org_id).await;
+
+    let app = test::init_service(
+        App::new()
+            .app_data(app_state.clone())
+            .configure(configure_routes),
+    )
+    .await;
+
+    let corps = json!({
+        "email": format!("cree-par-admin+{}@test.com", Uuid::new_v4()),
+        "password": "Passw0rd!",
+        "first_name": "Créé",
+        "last_name": "ParAdmin",
+        "role": "syndic",
+        "organization_id": org_id,
+    });
+
+    let req = test::TestRequest::post()
+        .uri("/api/v1/auth/register")
+        .insert_header((header::AUTHORIZATION, format!("Bearer {token}")))
+        .set_json(&corps)
+        .to_request();
+    let resp = test::call_service(&app, req).await;
+
+    assert_eq!(
+        resp.status(),
+        201,
+        "un administrateur doit pouvoir créer un compte"
+    );
+    assert!(
+        resp.headers().get(header::SET_COOKIE).is_none(),
+        "La création d'un compte par un appelant DÉJÀ authentifié a reposé un \
+         cookie de session.\n\n\
+         L'appelant se retrouve connecté en tant que le compte qu'il vient de \
+         créer. Un SuperAdmin qui en crée trois d'affilée termine dans la peau \
+         du troisième (#769, recette R1-4 du 2026-09-04)."
+    );
+}
+
+/// Le pendant du précédent : l'inscription publique doit continuer de marcher.
+///
+/// Sans ce second cas, on pourrait fermer #769 en retirant le cookie
+/// inconditionnellement — et casser l'inscription de soi-même sans qu'aucun
+/// test ne s'en aperçoive.
+#[actix_web::test]
+#[serial]
+async fn register_anonyme_pose_bien_la_session() {
+    let (app_state, _container, org_id) = common::setup_test_db().await;
+
+    let app = test::init_service(
+        App::new()
+            .app_data(app_state.clone())
+            .configure(configure_routes),
+    )
+    .await;
+
+    let corps = json!({
+        "email": format!("inscription-libre+{}@test.com", Uuid::new_v4()),
+        "password": "Passw0rd!",
+        "first_name": "Libre",
+        "last_name": "Inscrit",
+        "role": "syndic",
+        "organization_id": org_id,
+    });
+
+    let req = test::TestRequest::post()
+        .uri("/api/v1/auth/register")
+        .set_json(&corps)
+        .to_request();
+    let resp = test::call_service(&app, req).await;
+
+    assert_eq!(resp.status(), 201);
+    assert!(
+        resp.headers().get(header::SET_COOKIE).is_some(),
+        "L'inscription publique ne pose plus de session : le nouvel inscrit \
+         devrait se connecter séparément, alors que rien ne le lui dit."
+    );
+}

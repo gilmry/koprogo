@@ -1,6 +1,6 @@
 use crate::application::dto::PcnReportRequest;
-use crate::infrastructure::web::AppState;
-use actix_web::{get, post, web, HttpResponse, Responder};
+use crate::infrastructure::web::{AppState, AuthenticatedUser};
+use actix_web::{get, post, web, HttpResponse, Responder, ResponseError};
 use uuid::Uuid;
 
 /// Generate PCN report for a building (JSON)
@@ -8,8 +8,28 @@ use uuid::Uuid;
 #[post("/pcn/report/{building_id}")]
 pub async fn generate_pcn_report(
     app_state: web::Data<AppState>,
+    user: AuthenticatedUser,
     building_id: web::Path<Uuid>,
 ) -> impl Responder {
+    // Aucune identité n'était exigée ici : ni `AuthenticatedUser`, ni jeton
+    // lu à la main. N'importe qui pouvait exporter la comptabilité complète
+    // de n'importe quel immeuble.
+    //
+    // Le cliquet d'identité de #772 ne pouvait pas le voir : il compte les
+    // routes qui PRENNENT `AuthenticatedUser` sans s'en servir. Une route qui
+    // ne le prend pas du tout lui échappait entièrement. Cf. #845.
+    if let Err(err) =
+        crate::infrastructure::web::middleware::scope_guard::verify_building_org_access(
+            &user,
+            *building_id,
+            &app_state.building_use_cases,
+            &app_state.acp_use_cases,
+        )
+        .await
+    {
+        return err.error_response();
+    }
+
     let request = PcnReportRequest {
         building_id: *building_id,
         start_date: None,
@@ -27,9 +47,29 @@ pub async fn generate_pcn_report(
 #[get("/pcn/export/pdf/{building_id}")]
 pub async fn export_pcn_pdf(
     app_state: web::Data<AppState>,
+    user: AuthenticatedUser,
     building_id: web::Path<Uuid>,
     query: web::Query<std::collections::HashMap<String, String>>,
 ) -> impl Responder {
+    // Aucune identité n'était exigée ici : ni `AuthenticatedUser`, ni jeton
+    // lu à la main. N'importe qui pouvait exporter la comptabilité complète
+    // de n'importe quel immeuble.
+    //
+    // Le cliquet d'identité de #772 ne pouvait pas le voir : il compte les
+    // routes qui PRENNENT `AuthenticatedUser` sans s'en servir. Une route qui
+    // ne le prend pas du tout lui échappait entièrement. Cf. #845.
+    if let Err(err) =
+        crate::infrastructure::web::middleware::scope_guard::verify_building_org_access(
+            &user,
+            *building_id,
+            &app_state.building_use_cases,
+            &app_state.acp_use_cases,
+        )
+        .await
+    {
+        return err.error_response();
+    }
+
     let building_name = query
         .get("name")
         .cloned()
@@ -62,9 +102,29 @@ pub async fn export_pcn_pdf(
 #[get("/pcn/export/excel/{building_id}")]
 pub async fn export_pcn_excel(
     app_state: web::Data<AppState>,
+    user: AuthenticatedUser,
     building_id: web::Path<Uuid>,
     query: web::Query<std::collections::HashMap<String, String>>,
 ) -> impl Responder {
+    // Aucune identité n'était exigée ici : ni `AuthenticatedUser`, ni jeton
+    // lu à la main. N'importe qui pouvait exporter la comptabilité complète
+    // de n'importe quel immeuble.
+    //
+    // Le cliquet d'identité de #772 ne pouvait pas le voir : il compte les
+    // routes qui PRENNENT `AuthenticatedUser` sans s'en servir. Une route qui
+    // ne le prend pas du tout lui échappait entièrement. Cf. #845.
+    if let Err(err) =
+        crate::infrastructure::web::middleware::scope_guard::verify_building_org_access(
+            &user,
+            *building_id,
+            &app_state.building_use_cases,
+            &app_state.acp_use_cases,
+        )
+        .await
+    {
+        return err.error_response();
+    }
+
     let building_name = query
         .get("name")
         .cloned()

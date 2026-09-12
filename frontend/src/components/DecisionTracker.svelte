@@ -1,35 +1,40 @@
 <script lang="ts">
   // Svelte 5 runes mode
-  import { _ } from '../lib/i18n';
-  import { api } from '../lib/api';
-  import type { BoardDecisionResponse } from '../lib/types';
+  import { _ } from "../lib/i18n";
+  import { api } from "../lib/api";
+  import type { BoardDecisionResponse } from "../lib/types";
   import { formatDate } from "../lib/utils/date.utils";
   import { withErrorHandling } from "../lib/utils/error.utils";
 
-  let { buildingId = '', filterStatus = '' }: {
+  let {
+    buildingId = "",
+    filterStatus = "",
+  }: {
     buildingId?: string;
     filterStatus?: string;
   } = $props();
 
   let decisions = $state<BoardDecisionResponse[]>([]);
   let loading = $state(true);
-  let error = $state('');
-  let statusFilter = $state('all');
+  let error = $state("");
+  let statusFilter = $state("all");
   // Sync with prop (live value via $effect, not stale initial capture)
-  $effect(() => { if (filterStatus) statusFilter = filterStatus; });
+  $effect(() => {
+    if (filterStatus) statusFilter = filterStatus;
+  });
 
   let statusOptions = $derived([
-    { value: 'all', label: $_('common.all') },
-    { value: 'pending', label: $_('board.status.pending') },
-    { value: 'in_progress', label: $_('board.status.inProgress') },
-    { value: 'completed', label: $_('board.status.completed') },
-    { value: 'overdue', label: $_('board.status.overdue') },
-    { value: 'cancelled', label: $_('board.status.cancelled') }
+    { value: "all", label: $_("common.all") },
+    { value: "pending", label: $_("board.status.pending") },
+    { value: "in_progress", label: $_("board.status.inProgress") },
+    { value: "completed", label: $_("board.status.completed") },
+    { value: "overdue", label: $_("board.status.overdue") },
+    { value: "cancelled", label: $_("board.status.cancelled") },
   ]);
 
   $effect(() => {
     if (!buildingId) {
-      error = $_('board.error.buildingIdMissing');
+      error = $_("board.error.buildingIdMissing");
       loading = false;
       return;
     }
@@ -38,28 +43,29 @@
 
   async function loadDecisions() {
     loading = true;
-    error = '';
+    error = "";
     let endpoint = `/board-decisions/building/${buildingId}`;
-    if (statusFilter !== 'all') {
+    if (statusFilter !== "all") {
       endpoint = `/board-decisions/building/${buildingId}/status/${statusFilter}`;
     }
     const result = await withErrorHandling({
       action: () => api.get<BoardDecisionResponse[]>(endpoint),
-      errorMessage: $_('board.error.loadDecisions'),
+      errorMessage: $_("board.error.loadDecisions"),
     });
     if (result) {
       decisions = result;
     } else {
-      error = $_('board.error.loadDecisions');
+      error = $_("board.error.loadDecisions");
     }
     loading = false;
   }
 
   async function updateDecisionStatus(decisionId: string, newStatus: string) {
     await withErrorHandling({
-      action: () => api.put(`/board-decisions/${decisionId}/status`, { status: newStatus }),
-      successMessage: $_('board.success.statusUpdated'),
-      errorMessage: $_('board.error.updateStatus'),
+      action: () =>
+        api.put(`/board-decisions/${decisionId}/status`, { status: newStatus }),
+      successMessage: $_("board.success.statusUpdated"),
+      errorMessage: $_("board.error.updateStatus"),
       onSuccess: () => loadDecisions(),
     });
   }
@@ -67,49 +73,53 @@
   async function completeDecision(decisionId: string) {
     await withErrorHandling({
       action: () => api.put(`/board-decisions/${decisionId}/complete`, {}),
-      successMessage: $_('board.success.decisionCompleted'),
-      errorMessage: $_('board.error.completeDecision'),
+      successMessage: $_("board.success.decisionCompleted"),
+      errorMessage: $_("board.error.completeDecision"),
       onSuccess: () => loadDecisions(),
     });
   }
 
   function getStatusColor(status: string): string {
     const colors: Record<string, string> = {
-      'pending': 'bg-blue-100 text-blue-800 border-blue-300',
-      'in_progress': 'bg-yellow-100 text-yellow-800 border-yellow-300',
-      'completed': 'bg-green-100 text-green-800 border-green-300',
-      'overdue': 'bg-red-100 text-red-800 border-red-300',
-      'cancelled': 'bg-gray-100 text-gray-800 border-gray-300'
+      pending: "bg-blue-100 text-blue-800 border-blue-300",
+      in_progress: "bg-yellow-100 text-yellow-800 border-yellow-300",
+      completed: "bg-green-100 text-green-800 border-green-300",
+      overdue: "bg-red-100 text-red-800 border-red-300",
+      cancelled: "bg-gray-100 text-gray-800 border-gray-300",
     };
-    return colors[status] || 'bg-gray-100 text-gray-800';
+    return colors[status] || "bg-gray-100 text-gray-800";
   }
 
   function getStatusLabel(status: string): string {
     const labels: Record<string, string> = {
-      'pending': $_('board.status.pending'),
-      'in_progress': $_('board.status.inProgress'),
-      'completed': $_('board.status.completed'),
-      'overdue': $_('board.status.overdue'),
-      'cancelled': $_('board.status.cancelled')
+      pending: $_("board.status.pending"),
+      in_progress: $_("board.status.inProgress"),
+      completed: $_("board.status.completed"),
+      overdue: $_("board.status.overdue"),
+      cancelled: $_("board.status.cancelled"),
     };
     return labels[status] || status;
   }
 
   function getStatusIcon(status: string): string {
     const icons: Record<string, string> = {
-      'pending': '⏳',
-      'in_progress': '🔄',
-      'completed': '✅',
-      'overdue': '🚨',
-      'cancelled': '❌'
+      pending: "⏳",
+      in_progress: "🔄",
+      completed: "✅",
+      overdue: "🚨",
+      cancelled: "❌",
     };
-    return icons[status] || '📋';
+    return icons[status] || "📋";
   }
 
   function isOverdue(decision: BoardDecisionResponse): boolean {
     if (!decision.deadline) return false;
     const deadline = new Date(decision.deadline);
-    return deadline < new Date() && decision.status !== 'completed' && decision.status !== 'cancelled';
+    return (
+      deadline < new Date() &&
+      decision.status !== "completed" &&
+      decision.status !== "cancelled"
+    );
   }
 
   function getDaysUntilDeadline(deadlineStr: string): number {
@@ -124,22 +134,29 @@
   }
 </script>
 
-<div class="bg-white shadow rounded-lg overflow-hidden" data-testid="decision-tracker">
+<div
+  class="bg-white shadow rounded-lg overflow-hidden"
+  data-testid="decision-tracker"
+>
   <div class="px-6 py-4 border-b border-gray-200">
     <div class="flex items-center justify-between">
       <div>
         <h2 class="text-xl font-semibold text-gray-900">
-          {$_('board.decisionTracker')}
+          {$_("board.decisionTracker")}
         </h2>
         <p class="mt-1 text-sm text-gray-600">
-          {$_('board.decisionCount', { values: { count: decisions.length } })}
+          {$_("board.decisionCount", { values: { count: decisions.length } })}
         </p>
       </div>
       <div class="flex items-center space-x-4">
-        <label for="decision-status-filter" class="text-sm font-medium text-gray-700">
-          {$_('board.filterByStatus')}:
+        <label
+          for="decision-status-filter"
+          class="text-sm font-medium text-gray-700"
+        >
+          {$_("board.filterByStatus")}:
         </label>
         <select
+          data-testid="decision-status-filter"
           id="decision-status-filter"
           bind:value={statusFilter}
           onchange={handleStatusFilterChange}
@@ -156,25 +173,34 @@
   {#if loading}
     <div class="flex items-center justify-center py-12">
       <div class="text-center">
-        <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
-        <p class="mt-4 text-gray-600">{$_('common.loading')}</p>
+        <div
+          class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"
+        ></div>
+        <p class="mt-4 text-gray-600">{$_("common.loading")}</p>
       </div>
     </div>
   {:else if error}
     <div class="p-6">
-      <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded relative" role="alert">
-        <strong class="font-bold">Erreur :</strong>
+      <div
+        class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded relative"
+        role="alert"
+      >
+        <strong class="font-bold">{$_("common.errorLabel")}</strong>
         <span class="block sm:inline">{error}</span>
       </div>
     </div>
   {:else if decisions.length === 0}
     <div class="p-12 text-center">
       <span class="text-6xl">📋</span>
-      <h3 class="mt-4 text-lg font-medium text-gray-900">{$_('board.noDecisions')}</h3>
+      <h3 class="mt-4 text-lg font-medium text-gray-900">
+        {$_("board.noDecisions")}
+      </h3>
       <p class="mt-2 text-sm text-gray-600">
-        {statusFilter === 'all'
-          ? $_('board.noDecisionsToTrack')
-          : $_('board.noDecisionsWithStatus', { values: { status: getStatusLabel(statusFilter) } })}
+        {statusFilter === "all"
+          ? $_("board.noDecisionsToTrack")
+          : $_("board.noDecisionsWithStatus", {
+              values: { status: getStatusLabel(statusFilter) },
+            })}
       </p>
     </div>
   {:else}
@@ -183,43 +209,61 @@
         <li class="px-6 py-4 hover:bg-gray-50">
           <div class="flex items-start justify-between">
             <div class="flex items-start flex-1">
-              <span class="text-2xl mr-4">{getStatusIcon(decision.status)}</span>
+              <span class="text-2xl mr-4">{getStatusIcon(decision.status)}</span
+              >
               <div class="flex-1">
                 <div class="flex items-center">
                   <h3 class="text-lg font-medium text-gray-900">
                     {decision.subject}
                   </h3>
-                  <span class="ml-3 inline-flex items-center px-3 py-0.5 rounded-full text-sm font-medium {getStatusColor(decision.status)}">
+                  <span
+                    class="ml-3 inline-flex items-center px-3 py-0.5 rounded-full text-sm font-medium {getStatusColor(
+                      decision.status,
+                    )}"
+                  >
                     {getStatusLabel(decision.status)}
                   </span>
                 </div>
                 <p class="mt-2 text-sm text-gray-700">
                   {decision.decision_text}
                 </p>
-                <div class="mt-3 flex flex-wrap items-center gap-4 text-sm text-gray-600">
+                <div
+                  class="mt-3 flex flex-wrap items-center gap-4 text-sm text-gray-600"
+                >
                   <p>
-                    <strong>AG :</strong> {formatDate((decision as any).meeting_date ?? decision.created_at)}
+                    <strong>AG :</strong>
+                    {formatDate(
+                      (decision as any).meeting_date ?? decision.created_at,
+                    )}
                   </p>
                   {#if decision.deadline}
                     <p class:text-red-600={isOverdue(decision)}>
-                      <strong>Deadline :</strong> {formatDate(decision.deadline)}
-                      {#if !isOverdue(decision) && decision.status !== 'completed' && decision.status !== 'cancelled'}
+                      <strong>{$_("board.deadline")}</strong>
+                      {formatDate(decision.deadline)}
+                      {#if !isOverdue(decision) && decision.status !== "completed" && decision.status !== "cancelled"}
                         <span class="ml-1 text-xs">
                           (dans {getDaysUntilDeadline(decision.deadline)} jours)
                         </span>
                       {/if}
                     </p>
                   {/if}
-                  {#if decision.status === 'completed'}
+                  {#if decision.status === "completed"}
                     <p class="text-green-600">
-                      <strong>Terminée le :</strong> {formatDate((decision as any).completed_at ?? decision.updated_at)}
+                      <strong>{$_("board.completedOn")}</strong>
+                      {formatDate(
+                        (decision as any).completed_at ?? decision.updated_at,
+                      )}
                     </p>
                   {/if}
                 </div>
 
                 {#if decision.notes}
-                  <div class="mt-3 bg-gray-50 border border-gray-200 rounded-md p-3">
-                    <p class="text-xs font-medium text-gray-700 mb-1">Notes de suivi :</p>
+                  <div
+                    class="mt-3 bg-gray-50 border border-gray-200 rounded-md p-3"
+                  >
+                    <p class="text-xs font-medium text-gray-700 mb-1">
+                      {$_("board.followUpNotes")}
+                    </p>
                     <p class="text-sm text-gray-600">{decision.notes}</p>
                   </div>
                 {/if}
@@ -227,19 +271,22 @@
             </div>
 
             <div class="ml-4 flex-shrink-0 flex flex-col space-y-2">
-              {#if decision.status === 'pending'}
+              {#if decision.status === "pending"}
                 <button
-                  onclick={() => updateDecisionStatus(decision.id, 'in_progress')}
+                  data-testid="decision-start-button"
+                  onclick={() =>
+                    updateDecisionStatus(decision.id, "in_progress")}
                   class="px-3 py-1.5 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md"
                 >
-                  Démarrer
+                  {$_("board.start")}
                 </button>
-              {:else if decision.status === 'in_progress'}
+              {:else if decision.status === "in_progress"}
                 <button
+                  data-testid="decision-complete-button"
                   onclick={() => completeDecision(decision.id)}
                   class="px-3 py-1.5 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded-md"
                 >
-                  Terminer
+                  {$_("board.finish")}
                 </button>
               {/if}
             </div>
@@ -250,8 +297,8 @@
               <div class="flex">
                 <span class="text-lg mr-2">🚨</span>
                 <p class="text-sm text-red-800">
-                  <strong>Attention :</strong> Cette décision est en retard.
-                  La deadline était le {formatDate(decision.deadline)}.
+                  <strong>{$_("board.warning")}</strong> Cette décision est en
+                  retard. La deadline était le {formatDate(decision.deadline)}.
                 </p>
               </div>
             </div>
@@ -263,7 +310,8 @@
 
   <div class="px-6 py-4 bg-gray-50 border-t border-gray-200">
     <p class="text-sm text-gray-600">
-      <strong>Rôle du conseil :</strong> Le conseil de copropriété surveille l'exécution des décisions de l'AG par le syndic et peut demander des comptes.
+      <strong>{$_("board.councilRole")}</strong> Le conseil de copropriété surveille
+      l'exécution des décisions de l'AG par le syndic et peut demander des comptes.
     </p>
   </div>
 </div>

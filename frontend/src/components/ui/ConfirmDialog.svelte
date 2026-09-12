@@ -1,16 +1,16 @@
 <script lang="ts">
   // Svelte 5 runes mode — migrated from legacy (STORY-P7-602)
-  import { _ } from '../../lib/i18n';
-  import Modal from './Modal.svelte';
-  import Button from './Button.svelte';
+  import { _ } from "../../lib/i18n";
+  import Modal from "./Modal.svelte";
+  import Button from "./Button.svelte";
 
   let {
     isOpen = false,
-    title = 'Confirmer',
-    message = 'Êtes-vous sûr ?',
-    confirmText = 'Confirmer',
-    cancelText = 'Annuler',
-    variant = 'primary',
+    title = "Confirmer",
+    message = "Êtes-vous sûr ?",
+    confirmText = "Confirmer",
+    cancelText = "Annuler",
+    variant = "primary",
     loading = false,
     onconfirm,
     oncancel,
@@ -20,7 +20,7 @@
     message?: string;
     confirmText?: string;
     cancelText?: string;
-    variant?: 'danger' | 'primary';
+    variant?: "danger" | "primary";
     loading?: boolean;
     onconfirm?: () => void;
     oncancel?: () => void;
@@ -42,10 +42,20 @@
 
   {#snippet footer()}
     <div class="flex justify-end space-x-3">
-      <Button variant="outline" onclick={handleCancel} disabled={loading} data-testid="confirm-dialog-cancel">
+      <Button
+        variant="outline"
+        onclick={handleCancel}
+        disabled={loading}
+        data-testid="confirm-dialog-cancel"
+      >
         {cancelText}
       </Button>
-      <Button {variant} onclick={handleConfirm} {loading} data-testid="confirm-dialog-confirm">
+      <Button
+        {variant}
+        onclick={handleConfirm}
+        {loading}
+        data-testid="confirm-dialog-confirm"
+      >
         {confirmText}
       </Button>
     </div>

@@ -85,6 +85,7 @@ impl PostgresPaymentReminderRepository {
 
         PaymentReminder {
             id: row.get("id"),
+            acp_id: row.get("acp_id"),
             organization_id: row.get("organization_id"),
             expense_id: row.get("expense_id"),
             owner_id: row.get("owner_id"),
@@ -113,20 +114,21 @@ impl PaymentReminderRepository for PostgresPaymentReminderRepository {
         sqlx::query(
             r#"
             INSERT INTO payment_reminders (
-                id, organization_id, expense_id, owner_id, level, status,
+                id, acp_id, organization_id, expense_id, owner_id, level, status,
                 amount_owed, penalty_amount, total_amount, due_date, days_overdue,
                 delivery_method, sent_date, opened_date, pdf_path, tracking_number, notes,
                 created_at, updated_at
             )
             VALUES (
-                $1, $2, $3, $4, CAST($5 AS reminder_level), CAST($6 AS reminder_status),
-                $7, $8, $9, $10, $11,
-                CAST($12 AS delivery_method), $13, $14, $15, $16, $17,
-                $18, $19
+                $1, $2, $3, $4, $5, CAST($6 AS reminder_level), CAST($7 AS reminder_status),
+                $8, $9, $10, $11, $12,
+                CAST($13 AS delivery_method), $14, $15, $16, $17, $18,
+                $19, $20
             )
             "#,
         )
         .bind(reminder.id)
+        .bind(reminder.acp_id)
         .bind(reminder.organization_id)
         .bind(reminder.expense_id)
         .bind(reminder.owner_id)
@@ -155,7 +157,7 @@ impl PaymentReminderRepository for PostgresPaymentReminderRepository {
     async fn find_by_id(&self, id: Uuid) -> Result<Option<PaymentReminder>, AppError> {
         let row = sqlx::query(
             r#"
-            SELECT id, organization_id, expense_id, owner_id,
+            SELECT id, acp_id, organization_id, expense_id, owner_id,
                    level::text AS level, status::text AS status,
                    amount_owed, penalty_amount, total_amount, due_date, days_overdue,
                    delivery_method::text AS delivery_method,
@@ -176,7 +178,7 @@ impl PaymentReminderRepository for PostgresPaymentReminderRepository {
     async fn find_by_expense(&self, expense_id: Uuid) -> Result<Vec<PaymentReminder>, AppError> {
         let rows = sqlx::query(
             r#"
-            SELECT id, organization_id, expense_id, owner_id,
+            SELECT id, acp_id, organization_id, expense_id, owner_id,
                    level::text AS level, status::text AS status,
                    amount_owed, penalty_amount, total_amount, due_date, days_overdue,
                    delivery_method::text AS delivery_method,
@@ -198,7 +200,7 @@ impl PaymentReminderRepository for PostgresPaymentReminderRepository {
     async fn find_by_owner(&self, owner_id: Uuid) -> Result<Vec<PaymentReminder>, AppError> {
         let rows = sqlx::query(
             r#"
-            SELECT id, organization_id, expense_id, owner_id,
+            SELECT id, acp_id, organization_id, expense_id, owner_id,
                    level::text AS level, status::text AS status,
                    amount_owed, penalty_amount, total_amount, due_date, days_overdue,
                    delivery_method::text AS delivery_method,
@@ -223,14 +225,14 @@ impl PaymentReminderRepository for PostgresPaymentReminderRepository {
     ) -> Result<Vec<PaymentReminder>, AppError> {
         let rows = sqlx::query(
             r#"
-            SELECT id, organization_id, expense_id, owner_id,
+            SELECT id, acp_id, organization_id, expense_id, owner_id,
                    level::text AS level, status::text AS status,
                    amount_owed, penalty_amount, total_amount, due_date, days_overdue,
                    delivery_method::text AS delivery_method,
                    sent_date, opened_date, pdf_path, tracking_number, notes,
                    created_at, updated_at
             FROM payment_reminders
-            WHERE organization_id = $1
+            WHERE acp_id IN (SELECT id FROM acps WHERE organization_id = $1)
             ORDER BY created_at DESC
             "#,
         )
@@ -248,7 +250,7 @@ impl PaymentReminderRepository for PostgresPaymentReminderRepository {
     ) -> Result<Vec<PaymentReminder>, AppError> {
         let rows = sqlx::query(
             r#"
-            SELECT id, organization_id, expense_id, owner_id,
+            SELECT id, acp_id, organization_id, expense_id, owner_id,
                    level::text AS level, status::text AS status,
                    amount_owed, penalty_amount, total_amount, due_date, days_overdue,
                    delivery_method::text AS delivery_method,
@@ -274,14 +276,14 @@ impl PaymentReminderRepository for PostgresPaymentReminderRepository {
     ) -> Result<Vec<PaymentReminder>, AppError> {
         let rows = sqlx::query(
             r#"
-            SELECT id, organization_id, expense_id, owner_id,
+            SELECT id, acp_id, organization_id, expense_id, owner_id,
                    level::text AS level, status::text AS status,
                    amount_owed, penalty_amount, total_amount, due_date, days_overdue,
                    delivery_method::text AS delivery_method,
                    sent_date, opened_date, pdf_path, tracking_number, notes,
                    created_at, updated_at
             FROM payment_reminders
-            WHERE organization_id = $1 AND status = CAST($2 AS reminder_status)
+            WHERE acp_id IN (SELECT id FROM acps WHERE organization_id = $1) AND status = CAST($2 AS reminder_status)
             ORDER BY created_at DESC
             "#,
         )
@@ -297,7 +299,7 @@ impl PaymentReminderRepository for PostgresPaymentReminderRepository {
     async fn find_pending_reminders(&self) -> Result<Vec<PaymentReminder>, AppError> {
         let rows = sqlx::query(
             r#"
-            SELECT id, organization_id, expense_id, owner_id,
+            SELECT id, acp_id, organization_id, expense_id, owner_id,
                    level::text AS level, status::text AS status,
                    amount_owed, penalty_amount, total_amount, due_date, days_overdue,
                    delivery_method::text AS delivery_method,
@@ -321,7 +323,7 @@ impl PaymentReminderRepository for PostgresPaymentReminderRepository {
     ) -> Result<Vec<PaymentReminder>, AppError> {
         let rows = sqlx::query(
             r#"
-            SELECT id, organization_id, expense_id, owner_id,
+            SELECT id, acp_id, organization_id, expense_id, owner_id,
                    level::text AS level, status::text AS status,
                    amount_owed, penalty_amount, total_amount, due_date, days_overdue,
                    delivery_method::text AS delivery_method,
@@ -348,7 +350,7 @@ impl PaymentReminderRepository for PostgresPaymentReminderRepository {
     ) -> Result<Option<PaymentReminder>, AppError> {
         let row = sqlx::query(
             r#"
-            SELECT id, organization_id, expense_id, owner_id,
+            SELECT id, acp_id, organization_id, expense_id, owner_id,
                    level::text AS level, status::text AS status,
                    amount_owed, penalty_amount, total_amount, due_date, days_overdue,
                    delivery_method::text AS delivery_method,
@@ -371,7 +373,7 @@ impl PaymentReminderRepository for PostgresPaymentReminderRepository {
     async fn find_active_by_owner(&self, owner_id: Uuid) -> Result<Vec<PaymentReminder>, AppError> {
         let rows = sqlx::query(
             r#"
-            SELECT id, organization_id, expense_id, owner_id,
+            SELECT id, acp_id, organization_id, expense_id, owner_id,
                    level::text AS level, status::text AS status,
                    amount_owed, penalty_amount, total_amount, due_date, days_overdue,
                    delivery_method::text AS delivery_method,
@@ -399,7 +401,7 @@ impl PaymentReminderRepository for PostgresPaymentReminderRepository {
             r#"
             SELECT status::text AS status, COUNT(*) as count
             FROM payment_reminders
-            WHERE organization_id = $1
+            WHERE acp_id IN (SELECT id FROM acps WHERE organization_id = $1)
             GROUP BY status
             "#,
         )
@@ -426,7 +428,7 @@ impl PaymentReminderRepository for PostgresPaymentReminderRepository {
             r#"
             SELECT COALESCE(SUM(amount_owed), 0) as total
             FROM payment_reminders
-            WHERE organization_id = $1
+            WHERE acp_id IN (SELECT id FROM acps WHERE organization_id = $1)
               AND status NOT IN ('Paid'::reminder_status, 'Cancelled'::reminder_status)
             "#,
         )
@@ -446,7 +448,7 @@ impl PaymentReminderRepository for PostgresPaymentReminderRepository {
             r#"
             SELECT COALESCE(SUM(penalty_amount), 0) as total
             FROM payment_reminders
-            WHERE organization_id = $1
+            WHERE acp_id IN (SELECT id FROM acps WHERE organization_id = $1)
               AND status NOT IN ('Paid'::reminder_status, 'Cancelled'::reminder_status)
             "#,
         )
@@ -564,7 +566,7 @@ impl PaymentReminderRepository for PostgresPaymentReminderRepository {
             r#"
             SELECT level::text AS level, COUNT(*) as count
             FROM payment_reminders
-            WHERE organization_id = $1
+            WHERE acp_id IN (SELECT id FROM acps WHERE organization_id = $1)
               AND status NOT IN ('Paid'::reminder_status, 'Cancelled'::reminder_status)
             GROUP BY level
             "#,

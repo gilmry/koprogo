@@ -26,6 +26,16 @@ impl PostgresAcpRepository {
     fn row_to_acp(row: &sqlx::postgres::PgRow) -> Acp {
         let legal_status_str: String = row.get("legal_status");
         Acp {
+            // Le ROI n'est pas encore persisté : la fenêtre statutaire de l'AG
+            // ordinaire (Art. 3.85 § 3, 3°) reste à saisir. Voir #747.
+            fenetre_ag_ordinaire: None,
+            // Pas encore persistée non plus : elle fait courir le délai de
+            // cinq ans du fonds de réserve (Art. 3.86 § 3 al. 4). Voir #738.
+            reception_provisoire_parties_communes: None,
+            // Ni les deux conditions de l'Art. 3.86 § 1er : sans elles, la
+            // personnalité juridique se lit `Inexistante`. Voir #740.
+            premiere_cession_de_lot: None,
+            transcription_statuts: None,
             id: row.get("id"),
             organization_id: row.get("organization_id"),
             name: row.get("name"),
@@ -157,6 +167,85 @@ impl AcpRepository for PostgresAcpRepository {
             };
             (acp, metrics)
         }))
+    }
+
+    async fn list_with_metrics(
+        &self,
+        scope: ListScope,
+    ) -> Result<Vec<(Acp, AcpMetrics)>, AppError> {
+        // Les quatre sous-requêtes sont MOT POUR MOT celles de
+        // `find_by_id_with_metrics`. Les réécrire autrement ferait diverger la
+        // fiche d'une ACP et sa ligne dans la liste, et personne ne saurait
+        // lequel des deux nombres croire.
+        //
+        // Sous-requêtes indépendantes, pas de JOIN : `buildings × units`
+        // multiplierait `total_units` par le nombre de lots.
+        const METRIQUES: &str = r#"
+                (SELECT COALESCE(COUNT(u.id), 0)::INT
+                   FROM buildings b JOIN units u ON u.building_id = b.id
+                   WHERE b.acp_id = a.id)                                   AS units_count,
+                (SELECT COALESCE(SUM(u.quota::NUMERIC), 0::NUMERIC)
+                   FROM buildings b JOIN units u ON u.building_id = b.id
+                   WHERE b.acp_id = a.id)                                   AS quota_sum,
+                (SELECT COALESCE(SUM(b.total_units), 0)::INT
+                   FROM buildings b WHERE b.acp_id = a.id)                  AS declared_units_total,
+                (SELECT COALESCE(COUNT(*), 0)::INT
+                   FROM buildings b WHERE b.acp_id = a.id)                  AS buildings_count"#;
+
+        const COLONNES: &str = r#"
+                a.id, a.organization_id, a.name, a.slug, a.legal_status, a.bce_number,
+                a.address_street, a.address_postal_code, a.address_city,
+                a.total_tantiemes, a.created_at, a.updated_at,
+                a.reserve_fund_balance, a.working_capital_balance, a.reserve_fund_waived"#;
+
+        let rows = match scope {
+            ListScope::All => {
+                let sql =
+                    format!("SELECT {COLONNES},{METRIQUES} FROM acps a ORDER BY a.created_at DESC");
+                sqlx::query(&sql)
+                    .fetch_all(&self.pool)
+                    .await
+                    .map_err(|e| AppError::Database(e.to_string()))?
+            }
+            ListScope::Organization(org_id) => {
+                let sql = format!(
+                    "SELECT {COLONNES},{METRIQUES} FROM acps a \
+                     WHERE a.organization_id = $1 ORDER BY a.created_at DESC"
+                );
+                sqlx::query(&sql)
+                    .bind(org_id)
+                    .fetch_all(&self.pool)
+                    .await
+                    .map_err(|e| AppError::Database(e.to_string()))?
+            }
+            ListScope::Owner(user_id) => {
+                let sql = format!(
+                    "SELECT {COLONNES},{METRIQUES} FROM acps a \
+                     INNER JOIN user_role_assignments ura \
+                        ON ura.scope = 'acp' AND ura.scope_id = a.id \
+                     WHERE ura.user_id = $1 ORDER BY a.created_at DESC"
+                );
+                sqlx::query(&sql)
+                    .bind(user_id)
+                    .fetch_all(&self.pool)
+                    .await
+                    .map_err(|e| AppError::Database(e.to_string()))?
+            }
+        };
+
+        Ok(rows
+            .into_iter()
+            .map(|row| {
+                let acp = Self::row_to_acp(&row);
+                let metrics = AcpMetrics {
+                    units_count: row.try_get("units_count").unwrap_or(0),
+                    declared_units_total: row.try_get("declared_units_total").unwrap_or(0),
+                    quota_sum: row.try_get("quota_sum").unwrap_or(Decimal::ZERO),
+                    buildings_count: row.try_get("buildings_count").unwrap_or(0),
+                };
+                (acp, metrics)
+            })
+            .collect())
     }
 
     async fn list(&self, scope: ListScope) -> Result<Vec<Acp>, AppError> {

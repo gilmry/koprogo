@@ -3,6 +3,14 @@
 > **Première lecture pour tout nouvel agent** (Claude Code, Cowork, agents distants) :
 > [`Maury/README.md`](Maury/README.md) — la méthode + positionnement.
 >
+> **Pilotage — LIRE AVANT D'AGIR** : [`RELEASE.md`](RELEASE.md), le registre d'état
+> Foyer. Source de vérité partagée PO ↔ dev : où on en est, quels gates sont rouges,
+> quels arbitrages 🔴 attendent une décision humaine. Se met à jour à chaque étape
+> conclusive, jamais après coup.
+> Commandes : `/foyer-status` (lecture) · `/foyer-next` (étape suivante) ·
+> `/foyer-bascule` (point irréversible). La méthode est le submodule `.foyer` ;
+> s'il est vide : `git submodule update --init --recursive`.
+>
 > **Garde-fous actifs** : [`.claude/AGENT_GUARDRAILS.md`](.claude/AGENT_GUARDRAILS.md)
 > **Règles non négociables** (injectées à chaque prompt) : [`.claude/rules/CRITICAL.md`](.claude/rules/CRITICAL.md)
 >
@@ -34,12 +42,17 @@ make ci                 # CI complet (lint + check + test + secret-scan)
 make claude-check       # valider la config guardrails IA
 ```
 
-### URLs dev (mode localhost)
+### URLs dev (ports décalés — ADR 0050)
 
-- Frontend : `http://localhost`
-- Backend API : `http://localhost/api/v1`
-- Traefik UI : `http://localhost:8081`
-- Postgres : `localhost:5432` (user `koprogo`, db `koprogo_db`)
+La pile de dev/recette ne réclame plus le port 80 : il est tenu par le Traefik
+de la démo, et le viser faisait écrire la recette dans les données vivantes
+(#872). Une garde vérifie qu'aucune pile suivie ne reprend le port d'une autre.
+
+- Frontend : `http://localhost:8090`
+- Backend API : `http://localhost:8090/api/v1`
+- Traefik UI : `http://localhost:8091`
+- Postgres : `localhost:15432` (user `koprogo`, db `koprogo_db`)
+- MinIO : `localhost:19000` (S3) / `localhost:19001` (console)
 
 ### Logs backend
 
@@ -163,7 +176,7 @@ Pas un seul login pour tout le scénario. Voir [`docs/E2E_TESTING_GUIDE.rst`](do
 ## DB / Environnement
 
 - **PostgreSQL 15** via Docker (dev), Vault/SealedSecrets en prod (cf. #429).
-- Connection dev : `postgresql://koprogo:koprogo123@localhost:5432/koprogo_db`.
+- Connection dev : `postgresql://koprogo:koprogo123@localhost:15432/koprogo_db`.
 - Migrations : `cd backend && sqlx migrate run` ou `make migrate`.
 - SQLX offline (compile sans DB live) : `export SQLX_OFFLINE=true` (auto avec `make lint` / `make docs`).
 

@@ -14,6 +14,8 @@
  * Duree video attendue : ~50-70 secondes (rythme humain)
  */
 import { test, expect } from "@playwright/test";
+import { ADMIN_PASSWORD } from "../helpers/identifiants";
+import { amorce } from "../helpers/amorcage";
 import { nameContains, selectOptionByName } from "../helpers/name-match";
 import {
   humanLogin,
@@ -24,20 +26,23 @@ import {
   PACE,
 } from "../helpers/video-pace";
 
-const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
+import { API_BASE } from "../helpers/adresses";
 
 test.describe("Scenario: Comparaison de devis entrepreneurs (Francois)", () => {
   test.setTimeout(120_000);
 
   let seedData: any;
   let quoteIds: string[] = [];
+  // Le jeton du syndic survit au `beforeAll` : le corps du test en a besoin
+  // pour interroger l'API de comparaison avant d'ouvrir la page.
+  let syndicToken = "";
 
   test.beforeAll(async ({ request }) => {
     // 1. Login admin
     const adminResp = await request.post(`${API_BASE}/auth/login`, {
-      data: { email: "admin@koprogo.com", password: "admin123" },
+      data: { email: "admin@koprogo.com", password: ADMIN_PASSWORD },
     });
-    const admin = await adminResp.json();
+    const admin = await amorce(adminResp, "POST /auth/login");
     const adminHeaders = { Authorization: `Bearer ${admin.token}` };
 
     // 2. Seed the world
@@ -55,21 +60,38 @@ test.describe("Scenario: Comparaison de devis entrepreneurs (Francois)", () => {
     const syndicResp = await request.post(`${API_BASE}/auth/login`, {
       data: { email: "francois@syndic-leroy.be", password: "francois123" },
     });
-    const syndic = await syndicResp.json();
-    const syndicHeaders = { Authorization: `Bearer ${syndic.token}` };
+    const syndic = await amorce(syndicResp, "POST /auth/login");
+    syndicToken = syndic.token;
+    const syndicHeaders = { Authorization: `Bearer ${syndicToken}` };
 
     // Get building ID for Residence du Parc
     const buildingsResp = await request.get(`${API_BASE}/buildings`, {
       headers: syndicHeaders,
     });
-    const buildings = await buildingsResp.json();
-    const building = Array.isArray(buildings)
-      ? buildings.find(
-          (b: any) => b.name && nameContains(b.name, "Résidence du Parc"),
-        )
-      : null;
+    const buildings = await amorce(buildingsResp, "GET /buildings");
+    // `GET /buildings` rend un `PageResponse` — `{ data, pagination }`,
+    // jamais un tableau nu. `Array.isArray` valait donc TOUJOURS faux,
+    // `building` TOUJOURS null, et le `if (building)` ci-dessous sautait
+    // l'amorçage entier sans rien dire. Le scénario échouait 150 lignes
+    // plus loin sur une liste vide, en accusant l'affichage.
+    const listeImmeubles = Array.isArray(buildings)
+      ? buildings
+      : (buildings?.data ?? []);
+    const building = listeImmeubles.find(
+      (b: any) => b.name && nameContains(b.name, "Résidence du Parc"),
+    );
 
-    if (building) {
+    if (!building) {
+      throw new Error(
+        `Amorçage : immeuble introuvable parmi ${listeImmeubles.length} ` +
+          `renvoyé(s) par GET /buildings : ` +
+          `${listeImmeubles.map((b: any) => b.name).join(", ") || "(aucun)"}. ` +
+          `Sans lui, aucune donnée n'est créée et le scénario échouera ` +
+          `plus loin sur une liste vide.`,
+      );
+    }
+
+    {
       // Create 3 contractors and their quotes
       const ts = Date.now();
       const contractorIds: string[] = [];
@@ -102,17 +124,31 @@ test.describe("Scenario: Comparaison de devis entrepreneurs (Francois)", () => {
             organization_id: building.organization_id,
           },
         });
-        const user = await resp.json();
+        const user = await amorce(resp, "POST /auth/register");
         contractorIds.push(user.id || user.user_id || user.user?.id);
       }
 
       const validityDate = new Date();
       validityDate.setMonth(validityDate.getMonth() + 3);
 
+      // UN SEUL titre de projet pour les trois devis.
+      //
+      // Le scenario mettait le nom de l'entrepreneur dans `project_title` —
+      // « Renovation toiture - Entreprise Peeters », « - Vermeersch & Fils »,
+      // « - Claessens SPRL ». `POST /quotes/compare` refusait alors avec
+      // « All quotes must be for the same project »
+      // (`quote_use_cases.rs:189`), et la page affichait « Erreur lors du
+      // chargement de la comparaison » sans dire pourquoi.
+      //
+      // La regle du produit est juste, et c'est la pratique belge : comparer
+      // trois devis suppose le MEME chantier. C'est le scenario qui melangeait
+      // le projet et son soumissionnaire. L'entrepreneur est deja porte par
+      // `contractor_id`.
+      const PROJET = "Renovation toiture";
+
       const quoteSpecs = [
         {
           contractor_idx: 0,
-          title: "Renovation toiture - Entreprise Peeters",
           amount_excl_vat: 12500.0,
           vat_rate: 0.06,
           estimated_duration_days: 21,
@@ -120,7 +156,6 @@ test.describe("Scenario: Comparaison de devis entrepreneurs (Francois)", () => {
         },
         {
           contractor_idx: 1,
-          title: "Renovation toiture - Vermeersch & Fils",
           amount_excl_vat: 14800.0,
           vat_rate: 0.06,
           estimated_duration_days: 14,
@@ -128,7 +163,6 @@ test.describe("Scenario: Comparaison de devis entrepreneurs (Francois)", () => {
         },
         {
           contractor_idx: 2,
-          title: "Renovation toiture - Claessens SPRL",
           amount_excl_vat: 11500.0,
           vat_rate: 0.06,
           estimated_duration_days: 28,
@@ -141,7 +175,7 @@ test.describe("Scenario: Comparaison de devis entrepreneurs (Francois)", () => {
           data: {
             building_id: building.id,
             contractor_id: contractorIds[spec.contractor_idx],
-            project_title: spec.title,
+            project_title: PROJET,
             project_description:
               "Renovation complete de la toiture incluant isolation, etancheite et remplacement des tuiles.",
             amount_excl_vat: spec.amount_excl_vat,
@@ -152,20 +186,24 @@ test.describe("Scenario: Comparaison de devis entrepreneurs (Francois)", () => {
           },
           headers: syndicHeaders,
         });
-        const quote = await createResp.json();
+        const quote = await amorce(createResp, "POST /quotes");
         quoteIds.push(quote.id);
 
         // Submit quote (Requested -> Received)
-        await request.post(`${API_BASE}/quotes/${quote.id}/submit`, {
-          headers: syndicHeaders,
-        });
+        const reponseAmorce1 = await request.post(
+          `${API_BASE}/quotes/${quote.id}/submit`,
+          {
+            headers: syndicHeaders,
+          },
+        );
+        await amorce(reponseAmorce1, "POST /quotes/{quote.id}/submit");
       }
     }
   });
 
   test.afterAll(async ({ request }) => {
     const adminResp = await request.post(`${API_BASE}/auth/login`, {
-      data: { email: "admin@koprogo.com", password: "admin123" },
+      data: { email: "admin@koprogo.com", password: ADMIN_PASSWORD },
     });
     const admin = await adminResp.json();
     await request.delete(`${API_BASE}/seed/scenario/world`, {
@@ -183,7 +221,7 @@ test.describe("Scenario: Comparaison de devis entrepreneurs (Francois)", () => {
     // ============================================================
     // ETAPE 2 : Navigation vers les Devis via le menu lateral
     // ============================================================
-    await humanClick(page, "nav-link-devis");
+    await humanClick(page, "nav-link-quotes");
     await waitForSpinner(page);
     await page.waitForTimeout(PACE.AFTER_NAVIGATION);
 
@@ -230,6 +268,26 @@ test.describe("Scenario: Comparaison de devis entrepreneurs (Francois)", () => {
     // ============================================================
     // ETAPE 5 : Naviguer vers la page de comparaison
     // ============================================================
+    // L'API de comparaison est interrogee AVANT d'ouvrir la page.
+    //
+    // `QuoteComparisonTable.svelte:64` affiche un libelle fige — « Erreur lors
+    // du chargement de la comparaison » — et jette la reponse du serveur. La
+    // capture d'ecran du run du 2026-09-08 montre exactement cela : la page
+    // chargee, le cadre legal belge affiche, et ce message rouge a la place du
+    // tableau. Le scenario echouait ensuite sur `comparison-table` absent, en
+    // accusant l'affichage.
+    //
+    // En appelant l'API ici, la cause remonte telle quelle dans le rapport,
+    // comme pour l'amorcage. Si la comparaison est refusee, on saura pourquoi.
+    const comparaison = await page.request.post(`${API_BASE}/quotes/compare`, {
+      data: { quote_ids: quoteIds },
+      headers: { Authorization: `Bearer ${syndicToken}` },
+    });
+    await amorce(
+      comparaison,
+      `comparaison de ${quoteIds.length} devis (POST /quotes/compare)`,
+    );
+
     const compareUrl = `/quotes/compare?ids=${quoteIds.join(",")}`;
     await page.goto(compareUrl, { waitUntil: "domcontentloaded" });
     await waitForSpinner(page);

@@ -224,6 +224,10 @@ mod tests {
             async fn find_by_id(&self, id: Uuid) -> Result<Option<Acp>, AppError>;
             async fn find_by_id_with_metrics(&self, id: Uuid) -> Result<Option<(Acp, crate::domain::entities::AcpMetrics)>, AppError>;
             async fn list(&self, scope: ListScope) -> Result<Vec<Acp>, AppError>;
+            async fn list_with_metrics(
+                &self,
+                scope: ListScope,
+            ) -> Result<Vec<(Acp, crate::domain::entities::AcpMetrics)>, AppError>;
             async fn update(&self, acp: &Acp) -> Result<Acp, AppError>;
             async fn archive(&self, id: Uuid) -> Result<(), AppError>;
             async fn count_buildings(&self, id: Uuid) -> Result<i64, AppError>;

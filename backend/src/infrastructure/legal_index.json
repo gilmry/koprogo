@@ -25,7 +25,10 @@
         "Doit être notifiée par écrit",
         "Le syndic prépare l'ordre du jour"
       ],
-      "applicable_to": ["AG Ordinaire", "AGE (Assemblée Générale Extraordinaire)"]
+      "applicable_to": [
+        "AG Ordinaire",
+        "AGE (Assemblée Générale Extraordinaire)"
+      ]
     },
     {
       "id": "art_3_87_5",
@@ -124,7 +127,11 @@
         "Codes comptes standardisés (ex: 4100 pour Copropriétaires/Associés)",
         "Rapports obligatoires: Bilan, Compte de résultats, Annexes"
       ],
-      "applicable_entities": ["ASBL", "Copropriétés", "Organisations à but non lucratif"]
+      "applicable_entities": [
+        "ASBL",
+        "Copropriétés",
+        "Organisations à but non lucratif"
+      ]
     },
     {
       "id": "bc15_ag_session",
@@ -137,7 +144,13 @@
         "Quorum combiné: présents physiques + distants",
         "Plateforme certifiée RGPD obligatoire"
       ],
-      "platforms": ["Zoom", "Teams", "Meet", "Whereby", "Jitsi"]
+      "platforms": [
+        "Zoom",
+        "Teams",
+        "Meet",
+        "Whereby",
+        "Jitsi"
+      ]
     },
     {
       "id": "bc16_contractor_reports",
@@ -250,10 +263,165 @@
     }
   ],
   "metadata": {
-    "total_rules": 21,
+    "total_rules": 20,
     "jurisdiction": "Belgium",
-    "compliance_focus": ["copropriété", "GDPR", "PCMN", "transparency"],
+    "compliance_focus": [
+      "copropriété",
+      "GDPR",
+      "PCMN",
+      "transparency"
+    ],
     "contact": "legal@koprogo.be",
     "disclaimer": "This legal index is provided for informational purposes. Always consult with a qualified Belgian legal professional for specific legal advice."
-  }
+  },
+  "majority_types": [
+    {
+      "decision_type": "ordinary",
+      "label": "Majorité absolue",
+      "threshold_description": "Plus de 50 % des voix des présents et représentés, abstentions, blancs et nuls EXCLUS du calcul.",
+      "article": "Art. 3.88 § 1er CC",
+      "percentage": 50,
+      "examples": [
+        "Approbation des comptes",
+        "Budget",
+        "Désignation du syndic",
+        "Commissaire aux comptes",
+        "Entretien courant",
+        "Travaux imposés par la loi"
+      ]
+    },
+    {
+      "decision_type": "qualified_two_thirds",
+      "label": "Majorité des deux tiers",
+      "threshold_description": "Au moins 2/3 des voix des présents et représentés, abstentions EXCLUES.",
+      "article": "Art. 3.88 § 1er, 1° CC",
+      "percentage": 67,
+      "examples": [
+        "Modification des statuts quant à la jouissance ou l'usage",
+        "Travaux aux parties communes",
+        "Mise en concurrence"
+      ]
+    },
+    {
+      "decision_type": "qualified_four_fifths",
+      "label": "Majorité des quatre cinquièmes",
+      "threshold_description": "Au moins 4/5 des voix des présents et représentés, abstentions EXCLUES.",
+      "article": "Art. 3.88 § 1er, 2° CC",
+      "percentage": 80,
+      "examples": [
+        "Modification de la répartition des charges",
+        "Modification de la destination de l'immeuble",
+        "Reconstruction partielle",
+        "Aliénation de parties communes"
+      ]
+    },
+    {
+      "decision_type": "unanimity",
+      "label": "Unanimité",
+      "threshold_description": "100 % de TOUS les tantièmes, y compris ceux des copropriétaires absents. C'est la seule majorité qui ne se calcule pas sur les présents.",
+      "article": "Art. 3.88 § 1er, 3° CC",
+      "percentage": 100,
+      "examples": [
+        "Modification des quotités de copropriété",
+        "Reconstruction totale de l'immeuble"
+      ]
+    },
+    {
+      "decision_type": "proxy_limit",
+      "label": "Limite de procurations",
+      "threshold_description": "Trois procurations au plus par mandataire, sauf si le total des voix du mandataire et de ses mandants reste sous 10 % des voix de l'ACP. Nul ne peut peser plus que les autres présents réunis, et le syndic ne peut être mandataire.",
+      "article": "Art. 3.87 § 7 CC",
+      "percentage": null,
+      "examples": [
+        "Un copropriétaire porteur de 3 procurations",
+        "Un porteur de 4 procurations sous le seuil de 10 %"
+      ]
+    }
+  ],
+  "ag_sequence": [
+    {
+      "step": 1,
+      "point_odj": "Ouverture de la séance et vérification du quorum",
+      "mandatory": true,
+      "majority": null,
+      "notes": "Double quorum de l'Art. 3.87 § 5 : plus de la moitié des copropriétaires détenant la moitié des quotités, OU trois quarts des quotités."
+    },
+    {
+      "step": 2,
+      "point_odj": "Désignation du président et du secrétaire",
+      "mandatory": true,
+      "majority": "ordinary",
+      "notes": "Le président doit être copropriétaire (Art. 3.87 § 10). Le secrétaire est désigné à l'ouverture."
+    },
+    {
+      "step": 3,
+      "point_odj": "Approbation du procès-verbal de l'assemblée précédente",
+      "mandatory": false,
+      "majority": "ordinary",
+      "notes": null
+    },
+    {
+      "step": 4,
+      "point_odj": "Rapport du commissaire aux comptes",
+      "mandatory": true,
+      "majority": null,
+      "notes": "Le commissaire est désigné annuellement (Art. 3.91) et ne peut être le syndic (Art. 3.89 § 9)."
+    },
+    {
+      "step": 5,
+      "point_odj": "Approbation des comptes de l'exercice écoulé",
+      "mandatory": true,
+      "majority": "ordinary",
+      "notes": null
+    },
+    {
+      "step": 6,
+      "point_odj": "Décharge au syndic",
+      "mandatory": true,
+      "majority": "ordinary",
+      "notes": null
+    },
+    {
+      "step": 7,
+      "point_odj": "Approbation du budget prévisionnel",
+      "mandatory": true,
+      "majority": "ordinary",
+      "notes": "La part affectée au fonds de réserve doit être communiquée lors de l'appel de fonds (Art. 3.86 § 3 al. 7)."
+    },
+    {
+      "step": 8,
+      "point_odj": "Rapport d'évaluation des contrats de fournitures régulières",
+      "mandatory": true,
+      "majority": null,
+      "notes": "Obligatoire à CHAQUE assemblée générale ordinaire (Art. 3.89 § 5, 12°)."
+    },
+    {
+      "step": 9,
+      "point_odj": "Désignation ou renouvellement du syndic",
+      "mandatory": false,
+      "majority": "ordinary",
+      "notes": "Le mandat n'excède pas trois ans, et le renouvellement est EXPRÈS (Art. 3.89 § 1er)."
+    },
+    {
+      "step": 10,
+      "point_odj": "Désignation du conseil de copropriété",
+      "mandatory": false,
+      "majority": "ordinary",
+      "notes": "Obligatoire dès vingt lots (Art. 3.90)."
+    },
+    {
+      "step": 11,
+      "point_odj": "Travaux et devis",
+      "mandatory": false,
+      "majority": "qualified_two_thirds",
+      "notes": "La majorité dépend de la nature des travaux (Art. 3.88)."
+    },
+    {
+      "step": 12,
+      "point_odj": "Questions diverses",
+      "mandatory": false,
+      "majority": null,
+      "notes": "Aucune DÉCISION ne peut être prise sur un point absent de l'ordre du jour (Art. 3.87 § 2)."
+    }
+  ]
 }

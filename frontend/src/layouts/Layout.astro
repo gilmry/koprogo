@@ -1,182 +1,325 @@
 ---
-import '../styles/global.css';
-import '../lib/i18n';
-import Navigation from '../components/navigation/Navigation.svelte';
-import ToastContainer from '../components/ui/ToastContainer.svelte';
-import SessionManager from '../components/SessionManager.svelte';
-import LanguageSelector from '../components/LanguageSelector.svelte';
-import SyncStatus from '../components/SyncStatus.svelte';
-import PWAInstallPrompt from '../components/PWAInstallPrompt.svelte';
-import RouteGuard from '../components/RouteGuard.svelte';
-import BuildingSelectorBar from '../components/global/BuildingSelectorBar.svelte';
-import ContextBanner from '../components/global/ContextBanner.svelte';
+import "../styles/global.css";
+import "../lib/i18n";
+import Navigation from "../components/navigation/Navigation.svelte";
+import ToastContainer from "../components/ui/ToastContainer.svelte";
+import SessionManager from "../components/SessionManager.svelte";
+import LanguageSelector from "../components/LanguageSelector.svelte";
+import SyncStatus from "../components/SyncStatus.svelte";
+import PWAInstallPrompt from "../components/PWAInstallPrompt.svelte";
+import RouteGuard from "../components/RouteGuard.svelte";
+import BarreDeContexte from "../components/global/BarreDeContexte.svelte";
+import TabBarMobileBar from "../components/navigation/TabBarMobileBar.svelte";
+import PiedDePage from "../components/global/PiedDePage.svelte";
+import LienEvitement from "../components/global/LienEvitement.svelte";
+import LegalHelper from "../components/LegalHelper.svelte";
 
 interface Props {
-	title: string;
-	showNav?: boolean;
-	requireAuth?: boolean;
-	showFooter?: boolean;
+  title: string;
+  showNav?: boolean;
+  requireAuth?: boolean;
+  showFooter?: boolean;
 }
 
-const { title, showNav = true, requireAuth = false, showFooter = true } = Astro.props;
+const {
+  title,
+  showNav = true,
+  requireAuth = false,
+  showFooter = true,
+} = Astro.props;
+
+// 40 des 53 pages passent déjà un titre contenant « KoproGo », les autres
+// non. Le layout ajoutait le suffixe systématiquement, d'où des onglets
+// nommés « Réservations - KoproGo - KoproGo » ou « KoproGo - Gestion de
+// Copropriété SaaS - KoproGo ». On normalise ici plutôt que de retoucher
+// quarante pages : le suffixe n'est ajouté que si la marque est absente, ce
+// qui rend les deux conventions d'appel équivalentes.
+const SITE_NAME = "KoproGo";
+const pageTitle = title.includes(SITE_NAME) ? title : `${title} - ${SITE_NAME}`;
 ---
 
 <!doctype html>
 <html lang="fr">
-	<head>
-		<meta charset="UTF-8" />
-		<meta name="description" content="KoproGo - Plateforme SaaS de Gestion de Copropriété" />
-		<meta name="viewport" content="width=device-width, initial-scale=1" />
-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<meta name="generator" content={Astro.generator} />
-		<title>{title} - KoproGo</title>
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="description"
+      content="KoproGo - Plateforme SaaS de Gestion de Copropriété"
+    />
+    <!--
+      `viewport-fit=cover` n'est pas décoratif : sans lui, `env(safe-area-inset-*)`
+      vaut ZÉRO sur tous les appareils, et les deux composants qui s'en servent
+      (la barre d'onglets et la feuille du bas) réservent une marge de zéro pixel
+      sous l'indicateur d'accueil de l'iPhone.
 
-		<!-- PWA Manifest -->
-		<link rel="manifest" href="/manifest.json" />
+      Les deux étaient donc écrits juste et inertes. La garde
+      `garde-zone-sure` tient désormais l'appariement, parce que ces fichiers
+      n'ont aucune autre raison de se connaître.
+    -->
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <link rel="icon" type="image/png" href="/icons/icon-192x192.png" />
+    <meta name="generator" content={Astro.generator} />
+    <title>{pageTitle}</title>
 
-		<!-- PWA Meta Tags -->
-		<meta name="theme-color" content="#059669" />
-		<meta name="mobile-web-app-capable" content="yes" />
-		<meta name="apple-mobile-web-app-capable" content="yes" />
-		<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-		<meta name="apple-mobile-web-app-title" content="KoproGo" />
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="/manifest.json" />
 
-		<!-- Apple Touch Icons -->
-		<link rel="apple-touch-icon" sizes="152x152" href="/icons/icon-152x152.png" />
-		<link rel="apple-touch-icon" sizes="192x192" href="/icons/icon-192x192.png" />
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#15803d" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta
+      name="apple-mobile-web-app-status-bar-style"
+      content="black-translucent"
+    />
+    <meta name="apple-mobile-web-app-title" content="KoproGo" />
 
-		<!-- Startup Images (optional) -->
-		<link rel="apple-touch-startup-image" href="/icons/icon-512x512.png" />
-		<!-- Runtime configuration - loaded from external file for post-build configuration -->
-		<script is:inline src="/config.js"></script>
-		<!-- Privacy-friendly analytics by Plausible -->
-		<script is:inline async src="https://plausible.io/js/pa-cmW7nGIBSJKm4SoELOCgO.js"></script>
-		<script is:inline>
-			window.plausible=window.plausible||function(){(plausible.q=plausible.q||[]).push(arguments)},plausible.init=plausible.init||function(i){plausible.o=i||{}};
-			plausible.init()
-		</script>
+    <!-- Apple Touch Icons -->
+    <link
+      rel="apple-touch-icon"
+      sizes="152x152"
+      href="/icons/icon-152x152.png"
+    />
+    <link
+      rel="apple-touch-icon"
+      sizes="192x192"
+      href="/icons/icon-192x192.png"
+    />
 
-		<!-- PWA Initialization -->
-		<script>
-			import { initializePWA } from '../lib/pwa';
+    <!-- Startup Images (optional) -->
+    <link rel="apple-touch-startup-image" href="/icons/icon-512x512.png" />
+    <!-- Runtime configuration - loaded from external file for post-build configuration -->
+    <script is:inline src="/config.js"></script>
+    <!-- Privacy-friendly analytics by Plausible -->
+    <script
+      is:inline
+      async
+      src="https://plausible.io/js/pa-cmW7nGIBSJKm4SoELOCgO.js"></script>
+    <script is:inline>
+      ((window.plausible =
+        window.plausible ||
+        function () {
+          (plausible.q = plausible.q || []).push(arguments);
+        }),
+        (plausible.init =
+          plausible.init ||
+          function (i) {
+            plausible.o = i || {};
+          }));
+      plausible.init();
+    </script>
 
-			// Initialize PWA when DOM is ready
-			if (document.readyState === 'loading') {
-				document.addEventListener('DOMContentLoaded', async () => {
-					await initializePWA({
-						onOnline: () => {
-							console.log('[App] Back online');
-							// Trigger sync or refresh data
-							window.dispatchEvent(new CustomEvent('app-online'));
-						},
-						onOffline: () => {
-							console.log('[App] Gone offline');
-							// Show offline indicator
-							window.dispatchEvent(new CustomEvent('app-offline'));
-						}
-					});
-				});
-			} else {
-				initializePWA({
-					onOnline: () => {
-						console.log('[App] Back online');
-						window.dispatchEvent(new CustomEvent('app-online'));
-					},
-					onOffline: () => {
-						console.log('[App] Gone offline');
-						window.dispatchEvent(new CustomEvent('app-offline'));
-					}
-				});
-			}
-		</script>
+    <!-- PWA Initialization -->
+    <script>
+      import { initializePWA } from "../lib/pwa";
 
-		<!-- Accessibility: Screen reader styles -->
-		<style is:global>
-			.sr-only {
-				position: absolute;
-				width: 1px;
-				height: 1px;
-				padding: 0;
-				margin: -1px;
-				overflow: hidden;
-				clip: rect(0, 0, 0, 0);
-				white-space: nowrap;
-				border-width: 0;
-			}
+      // Initialize PWA when DOM is ready
+      if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", async () => {
+          await initializePWA({
+            onOnline: () => {
+              console.log("[App] Back online");
+              // Trigger sync or refresh data
+              window.dispatchEvent(new CustomEvent("app-online"));
+            },
+            onOffline: () => {
+              console.log("[App] Gone offline");
+              // Show offline indicator
+              window.dispatchEvent(new CustomEvent("app-offline"));
+            },
+          });
+        });
+      } else {
+        initializePWA({
+          onOnline: () => {
+            console.log("[App] Back online");
+            window.dispatchEvent(new CustomEvent("app-online"));
+          },
+          onOffline: () => {
+            console.log("[App] Gone offline");
+            window.dispatchEvent(new CustomEvent("app-offline"));
+          },
+        });
+      }
+    </script>
 
-			.skip-link {
-				position: absolute;
-				top: -40px;
-				left: 0;
-				background: #065f46;
-				color: white;
-				padding: 8px 16px;
-				text-decoration: none;
-				z-index: 100;
-				border-radius: 0 0 4px 0;
-			}
+    <!-- Accessibility: Screen reader styles -->
+    <style is:global>
+      .sr-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border-width: 0;
+      }
 
-			.skip-link:focus {
-				top: 0;
-			}
-		</style>
-	</head>
-	<body class="bg-gray-50 min-h-screen">
-		<!-- Skip navigation link for keyboard users -->
-		<a href="#main-content" class="skip-link">
-			Passer au contenu principal
-		</a>
+      .skip-link {
+        position: absolute;
+        top: -40px;
+        left: 0;
+        background: #065f46;
+        color: white;
+        padding: 8px 16px;
+        text-decoration: none;
+        z-index: 100;
+        border-radius: 0 0 4px 0;
+      }
 
-		<!-- Screen reader announcements -->
-		<div id="sr-announcer-polite" role="status" aria-live="polite" aria-atomic="true" class="sr-only"></div>
-		<div id="sr-announcer-assertive" role="alert" aria-live="assertive" aria-atomic="true" class="sr-only"></div>
+      .skip-link:focus {
+        top: 0;
+      }
+    </style>
+  </head>
+  <body class="bg-gray-50 min-h-screen">
+    <!-- Skip navigation link for keyboard users -->
+    <LienEvitement client:load />
 
-		<!-- Route Guard - Check access before rendering page -->
-		<RouteGuard client:load />
+    <!-- Screen reader announcements -->
+    <div
+      id="sr-announcer-polite"
+      role="status"
+      aria-live="polite"
+      aria-atomic="true"
+      class="sr-only"
+    >
+    </div>
+    <div
+      id="sr-announcer-assertive"
+      role="alert"
+      aria-live="assertive"
+      aria-atomic="true"
+      class="sr-only"
+    >
+    </div>
 
-		{showNav && <Navigation client:load />}
-		{requireAuth && <SessionManager client:load />}
+    <!-- Route Guard - Check access before rendering page -->
+    <RouteGuard client:load />
 
-		<!-- Content wrapper: offset by sidebar on desktop, spacer for mobile header -->
-		<div class:list={['min-h-screen flex flex-col', showNav && 'lg:ml-60']}>
-			{showNav && <div class="h-14 lg:hidden" aria-hidden="true"></div>}
-			<!-- Story 2.2 — Building selector : overlay top-right en mobile, barre en flux normal
-			     en desktop (évite le chevauchement avec le contenu de page, cf. issue organisations) -->
-			{showNav && <BuildingSelectorBar client:load />}
-			{showNav && <ContextBanner client:load />}
-			<main id="main-content" class="flex-1" role="main" tabindex="-1">
-				<slot />
-			</main>
-			<ToastContainer client:load />
-			<PWAInstallPrompt client:load />
-			{showFooter && <footer class="bg-white mt-12 border-t" role="contentinfo">
-				<div class="container mx-auto px-4 py-6">
-					<div class="flex flex-col md:flex-row items-center justify-between gap-4">
-						<!-- Left: Language selector -->
-						<div class="flex items-center gap-2">
-							<LanguageSelector client:load />
-						</div>
+    {showNav && <Navigation client:load />}
+    {requireAuth && <SessionManager client:load />}
 
-						<!-- Center: Copyright and tech stack -->
-						<div class="text-center text-gray-600">
-							<p class="text-sm">&copy; {new Date().getFullYear()} KoproGo - Gestion de Copropriété SaaS</p>
-							<p class="text-xs mt-1 text-gray-500">
-								Architecture Hexagonale · Rust · Actix-web · PostgreSQL · GDPR · ISO 27001
-							</p>
-							<p class="text-xs mt-2 space-x-3">
-								<a href="/mentions-legales" class="text-primary-600 hover:underline">Mentions légales</a>
-								<span class="text-gray-400">·</span>
-								<a href="/settings/gdpr" class="text-primary-600 hover:underline">Confidentialité & RGPD</a>
-							</p>
-						</div>
+    <!-- Content wrapper: offset by sidebar on desktop, spacer for mobile header -->
+    <!--
+			`id="app-content"` est le point d'accroche de l'inertie (#831).
 
-						<!-- Right: Sync status and online indicator -->
-						<div class="flex items-center gap-2">
-							<SyncStatus client:load />
-						</div>
-					</div>
-				</div>
-			</footer>}
-		</div>
-	</body>
+			Quand le tiroir mobile s'ouvre, `Navigation.svelte` pose `inert` sur ce
+			conteneur. Le piège de focus ne suffit pas : il intercepte Tab, mais
+			pas la navigation par titres ou par régions d'un lecteur d'écran, qui
+			parcourt l'arbre d'accessibilité entier — y compris ce qui est caché
+			derrière l'overlay.
+
+			`ToastContainer` est délibérément SORTI de ce conteneur : un message
+			d'erreur doit rester annonçable même tiroir ouvert. Il est en
+			`position: fixed`, sa place dans le document n'a donc aucun effet
+			visuel.
+		-->
+    <div
+      id="app-content"
+      class:list={["min-h-screen flex flex-col", showNav && "lg:ml-60"]}
+    >
+      {
+        /* Même jeton que l'en-tête : `h-14` en dur laissait la page glisser
+         dessous de la hauteur de l'encoche. */
+      }
+      {showNav && <div class="h-entete-mobile lg:hidden" aria-hidden="true" />}
+      {
+        /*
+        UNE barre de contexte, et non deux empilées.
+
+        `BuildingSelectorBar` (57 px) et `ContextBanner` (41 px) se suivaient
+        ici : environ 100 px de chrome avant le contenu propre de la page, et
+        sur mobile avant le premier mot de l'écran. Elles disaient en outre la
+        même chose deux fois, l'immeuble courant apparaissant dans le champ du
+        sélecteur ET dans le fil d'Ariane.
+
+        Les deux composants subsistent, côte à côte plutôt qu'empilés : leurs
+        sept ancrages de recette survivent tels quels.
+      */
+      }
+      {showNav && <BarreDeContexte client:load />}
+      <main
+        id="main-content"
+        class="flex-1 pb-barre-onglets lg:pb-0"
+        role="main"
+        tabindex="-1"
+      >
+        {
+          /*
+          `pb-barre-onglets` réserve la hauteur de la barre, qui est en
+          position fixe : sans cela, le dernier élément de chaque page vivrait
+          DERRIÈRE elle. `lg:pb-0` la retire au bureau, où la barre n'existe
+          pas.
+        */
+        }
+        <slot />
+      </main>
+      {
+        /*
+        La barre d'onglets remplace le tiroir comme chemin principal sur
+        téléphone. Le tiroir reste, sous « Plus » : il cesse d'être le SEUL
+        chemin vers trente-neuf destinations, ce qu'il était depuis un tap
+        dans le coin le moins atteignable au pouce.
+      */
+      }
+      {showNav && <TabBarMobileBar client:load />}
+      {
+        /*
+        Le panneau de droit belge contextuel — 322 lignes qui n'étaient
+        montées NULLE PART.
+
+        `LegalHelper.spec.ts` le disait depuis toujours, et sautait ses trois
+        tests d'interface avec le remède écrit dans son en-tête : « To enable:
+        add <LegalHelper client:load /> to Layout.astro or syndic pages ».
+        Personne ne l'avait fait.
+
+        C'est le motif dominant de ce périmètre — une capacité écrite, testée,
+        inatteignable — appliqué à ce que la remise de design appelle « the
+        product's best differentiator ». Le chargement a été rendu paresseux
+        avant le branchement : trois requêtes par page pour un panneau
+        rarement ouvert auraient été payées par tout le monde.
+      */
+      }
+      {showNav && <LegalHelper client:load />}
+      {
+        showFooter && (
+          <footer class="bg-white mt-12 border-t" role="contentinfo">
+            <div class="container mx-auto px-4 py-6">
+              <div class="flex flex-col md:flex-row items-center justify-between gap-4">
+                {/* Left: Language selector */}
+                <div class="flex items-center gap-2">
+                  <LanguageSelector client:load />
+                </div>
+
+                {/*
+                  Le pied de page passe par une île Svelte : le texte d'un
+                  gabarit Astro est figé à la construction, alors que la langue
+                  se choisit dans le navigateur. Mesuré, il sortait identique
+                  en `fr` et en `nl` sur les vingt destinations.
+                */}
+                <PiedDePage client:load />
+
+                {/* Right: Sync status and online indicator */}
+                <div class="flex items-center gap-2">
+                  <SyncStatus client:load />
+                </div>
+              </div>
+            </div>
+          </footer>
+        )
+      }
+    </div>
+
+    <!-- Hors du conteneur inertable : un toast doit rester annonçable
+		     tiroir ouvert, et l'invite d'installation ne fait pas partie du
+		     contenu de page. -->
+    <ToastContainer client:load />
+    <PWAInstallPrompt client:load />
+  </body>
 </html>

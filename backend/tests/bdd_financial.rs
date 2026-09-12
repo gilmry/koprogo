@@ -320,10 +320,26 @@ impl FinancialWorld {
 
         let building_repo: Arc<dyn BuildingRepository> =
             Arc::new(PostgresBuildingRepository::new(pool.clone()));
+        // La quote-part résout son ACP créancière depuis le lot (ADR-0045).
+        let unit_repo: Arc<dyn koprogo_api::application::ports::UnitRepository> = Arc::new(
+            koprogo_api::infrastructure::database::repositories::PostgresUnitRepository::new(
+                pool.clone(),
+            ),
+        );
         {
             use koprogo_api::domain::entities::Building;
             // Hotfix #602 — Building.acp_id (FK acps.id) replaces organization_id.
             let acp_id = ensure_default_acp_for_org(&pool, org_id).await;
+            // L'immeuble est declare CONFORME des sa creation : un lot,
+            // mille tantiemes, et ce lot existe reellement.
+            //
+            // Il declarait auparavant dix lots et mille tantiemes sans en
+            // creer aucun. Le garde-fou « valider avant de calculer » refusait
+            // alors toute operation financiere avec
+            // `ACP_NOT_CONFORMANT: units_delta=6 quota_delta=600`, et la suite
+            // BDD est restee rouge en CI. Le fixture declarait autre chose que
+            // ce qu'il fabriquait — c'est le meme defaut que l'issue #770
+            // decrit pour le produit, reproduit dans son harnais de test.
             let b = Building::new(
                 acp_id,
                 "Residence Financiere".to_string(),
@@ -331,13 +347,25 @@ impl FinancialWorld {
                 "Bruxelles".to_string(),
                 "1000".to_string(),
                 "Belgique".to_string(),
-                10,
+                1,
                 1000,
                 Some(2000),
             )
             .unwrap();
             building_repo.create(&b).await.expect("create building");
             self.building_id = Some(b.id);
+
+            sqlx::query(
+                r#"INSERT INTO units (id, building_id, acp_id, unit_number, unit_type, floor,
+                                      surface_area, quota, created_at, updated_at)
+                   VALUES ($1, $2, $3, 'Lot-initial', 'apartment', 0, 60.0, 1000.0, NOW(), NOW())"#,
+            )
+            .bind(Uuid::new_v4())
+            .bind(b.id)
+            .bind(acp_id)
+            .execute(&pool)
+            .await
+            .expect("insert lot initial");
         }
 
         let payment_repo = Arc::new(PostgresPaymentRepository::new(pool.clone()));
@@ -352,22 +380,36 @@ impl FinancialWorld {
         let expense_repo = Arc::new(PostgresExpenseRepository::new(pool.clone()));
         let payment_reminder_repo = Arc::new(PostgresPaymentReminderRepository::new(pool.clone()));
 
-        let payment_use_cases = PaymentUseCases::new(payment_repo, payment_method_repo.clone());
+        let payment_use_cases = PaymentUseCases::new(
+            payment_repo,
+            payment_method_repo.clone(),
+            owner_contribution_repo.clone(),
+        );
         let payment_method_use_cases = PaymentMethodUseCases::new(payment_method_repo);
-        let journal_entry_use_cases = JournalEntryUseCases::new(journal_entry_repo);
-        let call_for_funds_use_cases = CallForFundsUseCases::new(
+        let journal_entry_use_cases = JournalEntryUseCases::new(journal_entry_repo)
+            .with_acp_resolution(building_repo.clone());
+        let acp_repo = Arc::new(
+            koprogo_api::infrastructure::database::repositories::PostgresAcpRepository::new(
+                pool.clone(),
+            ),
+        );
+        let call_for_funds_use_cases = CallForFundsUseCases::with_full_wiring(
             call_for_funds_repo,
             owner_contribution_repo.clone(),
             unit_owner_repo.clone(),
+            building_repo.clone(),
+            acp_repo,
         );
         let owner_contribution_use_cases =
-            OwnerContributionUseCases::new(owner_contribution_repo.clone());
+            OwnerContributionUseCases::new(owner_contribution_repo.clone())
+                .with_acp_resolution(unit_repo.clone());
         let charge_distribution_use_cases = ChargeDistributionUseCases::new(
             charge_distribution_repo,
             expense_repo.clone(),
             unit_owner_repo,
         );
-        let expense_use_cases = ExpenseUseCases::new(expense_repo.clone());
+        let expense_use_cases =
+            ExpenseUseCases::new(expense_repo.clone()).with_acp_resolution(building_repo.clone());
         let account_repo: Arc<dyn koprogo_api::application::ports::AccountRepository> =
             Arc::new(PostgresAccountRepository::new(pool.clone()));
         let account_use_cases = AccountUseCases::new(account_repo);
@@ -460,8 +502,8 @@ impl FinancialWorld {
         let org_id = self.org_id.unwrap();
         let id = Uuid::new_v4();
         sqlx::query(
-            r#"INSERT INTO expenses (id, building_id, organization_id, category, description, amount, expense_date, payment_status, created_at, updated_at)
-               VALUES ($1, $2, $3, 'maintenance', 'BDD test expense', $4, NOW(), 'pending', NOW(), NOW())"#
+            r#"INSERT INTO expenses (id, acp_id, building_id, organization_id, category, description, amount, expense_date, payment_status, created_at, updated_at)
+             VALUES ($1, (SELECT acp_id FROM buildings WHERE id = $2), $2, $3, 'maintenance', 'BDD test expense', $4, NOW(), 'pending', NOW(), NOW())"#
         )
         .bind(id)
         .bind(building_id)
@@ -487,6 +529,7 @@ impl FinancialWorld {
             building_id: self.building_id.unwrap(),
             owner_id,
             expense_id,
+            contribution_id: None,
             amount_cents,
             payment_method_type: method_type,
             payment_method_id: None,
@@ -2134,22 +2177,59 @@ async fn given_building_with_units(
 
     // H15 — units.organization_id dropped, units.acp_id NOT NULL (same ACP as the building).
     let acp_id = ensure_default_acp_for_org(pool, org_id).await;
+
+    // Le lot de mise en place cede la place aux lots du scenario.
+    sqlx::query("DELETE FROM units WHERE building_id = $1 AND unit_number = 'Lot-initial'")
+        .bind(building_id)
+        .execute(pool)
+        .await
+        .expect("retirer le lot initial");
+
+    // Les quotites somment EXACTEMENT les mille tantiemes de l'acte, le reste
+    // de la division allant au dernier lot.
+    //
+    // Ce n'est pas une commodite de test : c'est la pratique reelle. Un acte de
+    // base qui repartit mille tantiemes entre six lots ne peut pas donner
+    // 166,66 a chacun — il doit tomber juste, sans quoi la repartition des
+    // charges perd des centimes a chaque appel de fonds (ADR-0008).
+    let quota_unitaire = 1000 / unit_count as i64;
+    let reste = 1000 - quota_unitaire * unit_count as i64;
+
     for i in 1..=unit_count {
         let unit_id = Uuid::new_v4();
+        let quota = if i == unit_count {
+            quota_unitaire + reste
+        } else {
+            quota_unitaire
+        };
         sqlx::query(
             r#"INSERT INTO units (id, building_id, acp_id, unit_number, unit_type, floor, surface_area, quota, created_at, updated_at)
-               VALUES ($1, $2, $3, $4, 'apartment', $5, 60.0, 100.0, NOW(), NOW())"#,
+               VALUES ($1, $2, $3, $4, 'apartment', $5, 60.0, $6, NOW(), NOW())"#,
         )
         .bind(unit_id)
         .bind(building_id)
         .bind(acp_id)
         .bind(format!("Unit-{}", i))
         .bind(i as i32)
+        .bind(rust_decimal::Decimal::from(quota))
         .execute(pool)
         .await
         .expect("insert unit");
         world.unit_ids.push(unit_id);
     }
+
+    // La declaration suit ce qui a ete encode.
+    //
+    // C'est precisement ce que le PRODUIT ne fait pas, et c'est l'objet de
+    // #770 : `total_units` est saisi a la creation de l'immeuble et n'evolue
+    // plus, si bien qu'un syndic qui encode son acte de base progressivement
+    // se retrouve non conforme, donc prive de toute comptabilite.
+    sqlx::query("UPDATE buildings SET total_units = $1 WHERE id = $2")
+        .bind(unit_count as i32)
+        .bind(building_id)
+        .execute(pool)
+        .await
+        .expect("aligner la declaration sur les lots encodes");
 }
 
 #[given(regex = r#"^(\d+) owners with ownership percentages exist$"#)]
@@ -2233,6 +2313,7 @@ async fn when_create_call_for_funds(world: &mut FinancialWorld, step: &Step) {
             due_date,
             account_code,
             None,
+            rust_decimal::Decimal::ZERO, // part fonds de réserve (Art. 3.86 § 3 al. 7)
         )
         .await;
 
@@ -2284,6 +2365,7 @@ async fn given_draft_call_for_funds(world: &mut FinancialWorld, amount: Decimal)
             Utc::now() + ChronoDuration::days(30),
             Some("701000".to_string()),
             None,
+            rust_decimal::Decimal::ZERO, // part fonds de réserve (Art. 3.86 § 3 al. 7)
         )
         .await
         .expect("create draft call");
@@ -2361,6 +2443,7 @@ async fn given_n_calls_for_funds(world: &mut FinancialWorld, count: usize) {
             Utc::now() + ChronoDuration::days(30),
             None,
             None,
+            rust_decimal::Decimal::ZERO, // part fonds de réserve (Art. 3.86 § 3 al. 7)
         )
         .await
         .expect("create call");
@@ -2402,6 +2485,7 @@ async fn given_sent_overdue_call(world: &mut FinancialWorld) {
             Utc::now() - ChronoDuration::days(30),
             None,
             None,
+            rust_decimal::Decimal::ZERO, // part fonds de réserve (Art. 3.86 § 3 al. 7)
         )
         .await
         .expect("create call");
@@ -2444,6 +2528,7 @@ async fn given_draft_call_exists(world: &mut FinancialWorld) {
             Utc::now() + ChronoDuration::days(30),
             None,
             None,
+            rust_decimal::Decimal::ZERO, // part fonds de réserve (Art. 3.86 § 3 al. 7)
         )
         .await
         .expect("create draft call");
@@ -2509,6 +2594,7 @@ async fn given_sent_call_exists(world: &mut FinancialWorld) {
             Utc::now() + ChronoDuration::days(30),
             None,
             None,
+            rust_decimal::Decimal::ZERO, // part fonds de réserve (Art. 3.86 § 3 al. 7)
         )
         .await
         .expect("create call");
@@ -2647,6 +2733,7 @@ async fn given_call_of_amount_sent(world: &mut FinancialWorld, amount: Decimal) 
             Utc::now() + ChronoDuration::days(30),
             None,
             None,
+            rust_decimal::Decimal::ZERO, // part fonds de réserve (Art. 3.86 § 3 al. 7)
         )
         .await
         .expect("create call");
@@ -2741,6 +2828,7 @@ async fn given_sent_call_with_contributions(world: &mut FinancialWorld) {
             Utc::now() + ChronoDuration::days(30),
             None,
             None,
+            rust_decimal::Decimal::ZERO, // part fonds de réserve (Art. 3.86 § 3 al. 7)
         )
         .await
         .expect("create call");
@@ -3342,22 +3430,54 @@ async fn given_building_with_n_units(world: &mut FinancialWorld, _name: String, 
 
     // H15 — units.organization_id dropped, units.acp_id NOT NULL (same ACP as the building).
     let acp_id = ensure_default_acp_for_org(pool, org_id).await;
+
+    // Meme correction que `given_building_with_units` : le lot de mise en
+    // place cede la place, et les quotites somment EXACTEMENT l'acte.
+    //
+    // Ces scenarios echouaient avec « Distribution does not cover the charge:
+    // 100.00 distributed for 1000.00 due » : trois lots a 100 sur une base de
+    // 1000 ne repartissent que 30 % de la charge. La repartition des charges
+    // se fait aux tantiemes (Art. 3.87 § 6) ; si les tantiemes ne totalisent
+    // pas l'acte, elle ne peut pas couvrir la depense — et c'est le domaine
+    // qui a raison de le refuser.
+    sqlx::query("DELETE FROM units WHERE building_id = $1 AND unit_number = 'Lot-initial'")
+        .bind(building_id)
+        .execute(pool)
+        .await
+        .expect("retirer le lot initial");
+
+    let quota_unitaire = 1000 / count as i64;
+    let reste = 1000 - quota_unitaire * count as i64;
+
     for i in 1..=count {
         let unit_id = Uuid::new_v4();
+        let quota = if i == count {
+            quota_unitaire + reste
+        } else {
+            quota_unitaire
+        };
         sqlx::query(
             r#"INSERT INTO units (id, building_id, acp_id, unit_number, unit_type, floor, surface_area, quota, created_at, updated_at)
-               VALUES ($1, $2, $3, $4, 'apartment', $5, 60.0, 100.0, NOW(), NOW())"#,
+               VALUES ($1, $2, $3, $4, 'apartment', $5, 60.0, $6, NOW(), NOW())"#,
         )
         .bind(unit_id)
         .bind(building_id)
         .bind(acp_id)
         .bind(format!("CD-Unit-{}", i))
         .bind(i as i32)
+        .bind(rust_decimal::Decimal::from(quota))
         .execute(pool)
         .await
         .expect("insert unit");
         world.unit_ids.push(unit_id);
     }
+
+    sqlx::query("UPDATE buildings SET total_units = $1 WHERE id = $2")
+        .bind(count as i32)
+        .bind(building_id)
+        .execute(pool)
+        .await
+        .expect("aligner la declaration sur les lots encodes");
 }
 
 #[given(regex = r#"^unit (\d+) owned by "([^"]*)" at (\d+)%$"#)]
@@ -3381,14 +3501,36 @@ async fn given_unit_owned_by(world: &mut FinancialWorld, unit_num: usize, name: 
     .await
     .expect("insert owner");
 
+    // « unit 1 owned by "Alice" at 40% » : le pourcentage est la part
+    // d'ALICE DANS L'IMMEUBLE, pas sa part dans le lot.
+    //
+    // Le feature file le dit sans ambiguïté : sur une dépense de 333 EUR,
+    // « Alice should owe 133.20 EUR (40%) », soit 333 × 0,40. Et sur 1000 EUR,
+    // 400 EUR. Le pourcentage porte donc sur la dépense entière.
+    //
+    // Le fixture l'écrivait dans `ownership_percentage`, que le domaine lit
+    // comme la part d'Alice DANS SON LOT — indivision, usufruit. Alice se
+    // retrouvait avec 40 % d'un lot qui pèse un tiers de l'immeuble, les 60 %
+    // restants n'appartenant à personne. La répartition ne couvrait alors que
+    // 333,25 EUR sur 1000, et le domaine avait raison de la refuser : on ne
+    // répartit pas une charge sur des quotités orphelines.
+    //
+    // Traduction juste : le lot porte 40 % des tantièmes, et Alice le possède
+    // en entier.
+    sqlx::query("UPDATE units SET quota = $1 WHERE id = $2")
+        .bind(rust_decimal::Decimal::from((pct * 10.0) as i64))
+        .bind(unit_id)
+        .execute(pool)
+        .await
+        .expect("porter le pourcentage sur les tantiemes du lot");
+
     sqlx::query(
         r#"INSERT INTO unit_owners (id, unit_id, owner_id, ownership_percentage, is_primary_contact, start_date, created_at, updated_at)
-           VALUES ($1, $2, $3, $4, true, NOW(), NOW(), NOW())"#,
+           VALUES ($1, $2, $3, 1.0, true, NOW(), NOW(), NOW())"#,
     )
     .bind(Uuid::new_v4())
     .bind(unit_id)
     .bind(owner_id)
-    .bind(pct / 100.0)
     .execute(pool)
     .await
     .expect("link owner to unit");
@@ -3405,8 +3547,8 @@ async fn given_expense_for_building(world: &mut FinancialWorld, amount: Decimal)
 
     // Create an approved expense (charge distribution requires approved status)
     sqlx::query(
-        r#"INSERT INTO expenses (id, building_id, organization_id, category, description, amount, expense_date, payment_status, approval_status, created_at, updated_at)
-           VALUES ($1, $2, $3, 'maintenance', 'BDD charge test', $4, NOW(), 'pending', 'approved', NOW(), NOW())"#,
+        r#"INSERT INTO expenses (id, acp_id, building_id, organization_id, category, description, amount, expense_date, payment_status, approval_status, created_at, updated_at)
+             VALUES ($1, (SELECT acp_id FROM buildings WHERE id = $2), $2, $3, 'maintenance', 'BDD charge test', $4, NOW(), 'pending', 'approved', NOW(), NOW())"#,
     )
     .bind(id)
     .bind(building_id)
@@ -3540,8 +3682,8 @@ async fn given_distributions_multiple_expenses(world: &mut FinancialWorld) {
     let org_id = world.org_id.unwrap();
     let id2 = Uuid::new_v4();
     sqlx::query(
-        r#"INSERT INTO expenses (id, building_id, organization_id, category, description, amount, expense_date, payment_status, approval_status, created_at, updated_at)
-           VALUES ($1, $2, $3, 'maintenance', 'Second expense', 500.0, NOW(), 'pending', 'approved', NOW(), NOW())"#,
+        r#"INSERT INTO expenses (id, acp_id, building_id, organization_id, category, description, amount, expense_date, payment_status, approval_status, created_at, updated_at)
+             VALUES ($1, (SELECT acp_id FROM buildings WHERE id = $2), $2, $3, 'maintenance', 'Second expense', 500.0, NOW(), 'pending', 'approved', NOW(), NOW())"#,
     )
     .bind(id2)
     .bind(building_id)
@@ -3592,7 +3734,11 @@ async fn then_all_distributions_for_alice(world: &mut FinancialWorld) {
 }
 
 #[given(regex = r#"^charge distributions exist for 2 expenses \((\d+) EUR and (\d+) EUR\)$"#)]
-async fn given_distributions_2_amounts(world: &mut FinancialWorld, _amount1: f64, amount2: f64) {
+// Les deux montants sont des ENTIERS d'euros dans le gabarit
+// (`\(\d+\) EUR`), et le second est lié tel quel à une colonne NUMERIC.
+// En `f64`, il traversait donc le flottant avant d'atteindre une colonne
+// exacte — ce que l'ADR-0008 §A proscrit, y compris dans un harnais.
+async fn given_distributions_2_amounts(world: &mut FinancialWorld, _amount1: u64, amount2: u64) {
     // Distribute first expense (already created in background)
     let uc = world
         .charge_distribution_use_cases
@@ -3610,13 +3756,13 @@ async fn given_distributions_2_amounts(world: &mut FinancialWorld, _amount1: f64
     let org_id = world.org_id.unwrap();
     let id2 = Uuid::new_v4();
     sqlx::query(
-        r#"INSERT INTO expenses (id, building_id, organization_id, category, description, amount, expense_date, payment_status, approval_status, created_at, updated_at)
-           VALUES ($1, $2, $3, 'maintenance', 'Second expense', $4, NOW(), 'pending', 'approved', NOW(), NOW())"#,
+        r#"INSERT INTO expenses (id, acp_id, building_id, organization_id, category, description, amount, expense_date, payment_status, approval_status, created_at, updated_at)
+             VALUES ($1, (SELECT acp_id FROM buildings WHERE id = $2), $2, $3, 'maintenance', 'Second expense', $4, NOW(), 'pending', 'approved', NOW(), NOW())"#,
     )
     .bind(id2)
     .bind(building_id)
     .bind(org_id)
-    .bind(amount2)
+    .bind(Decimal::from(amount2))
     .execute(pool)
     .await
     .expect("insert second expense");
@@ -3682,19 +3828,46 @@ async fn given_distribution_was_calculated(world: &mut FinancialWorld) {
 
 #[given("ownership percentages have changed")]
 async fn given_ownership_changed(world: &mut FinancialWorld) {
-    // Update ownership percentages in DB
+    // « Les quotes-parts ont changé » : c'est une CESSION DE QUOTITÉS entre
+    // copropriétaires, pas un démembrement du premier lot.
+    //
+    // L'étape écrivait `ownership_percentage = 0.30` sur le premier lot, ce que
+    // le domaine lit comme « le premier copropriétaire ne détient plus que 30 %
+    // de SON lot » — indivision, usufruit. Les 70 % restants n'appartenaient
+    // alors à personne, et la répartition ne couvrait plus que 720 des 1000
+    // millièmes. Le domaine avait raison de la refuser : on ne répartit pas une
+    // charge sur des quotités orphelines.
+    //
+    // Une modification d'acte de base transfère des quotités d'un lot à un
+    // autre, et la somme reste l'acte. Ici : le premier lot passe de 400 à 300
+    // millièmes, le dernier reçoit les 100.
     let pool = world.pool.as_ref().unwrap();
-    if let Some((_, owner_id)) = world.owner_by_name.first() {
-        if let Some(unit_id) = world.unit_ids.first() {
-            sqlx::query(
-                r#"UPDATE unit_owners SET ownership_percentage = 0.30 WHERE unit_id = $1 AND owner_id = $2"#,
-            )
-            .bind(unit_id)
-            .bind(owner_id)
+    if world.unit_ids.len() >= 2 {
+        let premier = world.unit_ids[0];
+        let dernier = world.unit_ids[world.unit_ids.len() - 1];
+
+        let (quota_premier,): (rust_decimal::Decimal,) =
+            sqlx::query_as("SELECT quota FROM units WHERE id = $1")
+                .bind(premier)
+                .fetch_one(pool)
+                .await
+                .expect("lire la quotite du premier lot");
+
+        let cede = quota_premier * dec!(0.25);
+
+        sqlx::query("UPDATE units SET quota = quota - $1 WHERE id = $2")
+            .bind(cede)
+            .bind(premier)
             .execute(pool)
             .await
-            .ok();
-        }
+            .expect("retirer les quotites cedees");
+
+        sqlx::query("UPDATE units SET quota = quota + $1 WHERE id = $2")
+            .bind(cede)
+            .bind(dernier)
+            .execute(pool)
+            .await
+            .expect("porter les quotites cedees");
     }
 }
 
@@ -3758,8 +3931,8 @@ async fn given_building_with_expenses(world: &mut FinancialWorld) {
 
     for i in 1..=3 {
         sqlx::query(
-            r#"INSERT INTO expenses (id, building_id, organization_id, category, description, amount, expense_date, payment_status, created_at, updated_at)
-               VALUES ($1, $2, $3, 'maintenance', $4, $5, NOW(), 'pending', NOW(), NOW())"#,
+            r#"INSERT INTO expenses (id, acp_id, building_id, organization_id, category, description, amount, expense_date, payment_status, created_at, updated_at)
+             VALUES ($1, (SELECT acp_id FROM buildings WHERE id = $2), $2, $3, 'maintenance', $4, $5, NOW(), 'pending', NOW(), NOW())"#,
         )
         .bind(Uuid::new_v4())
         .bind(building_id)
@@ -3834,8 +4007,8 @@ async fn given_n_transactions(world: &mut FinancialWorld, count: usize) {
 
     for i in 0..count {
         sqlx::query(
-            r#"INSERT INTO expenses (id, building_id, organization_id, category, description, amount, expense_date, payment_status, created_at, updated_at)
-               VALUES ($1, $2, $3, 'maintenance', $4, $5, NOW() - interval '1 day' * $6, 'pending', NOW(), NOW())"#,
+            r#"INSERT INTO expenses (id, acp_id, building_id, organization_id, category, description, amount, expense_date, payment_status, created_at, updated_at)
+             VALUES ($1, (SELECT acp_id FROM buildings WHERE id = $2), $2, $3, 'maintenance', $4, $5, NOW() - interval '1 day' * $6, 'pending', NOW(), NOW())"#,
         )
         .bind(Uuid::new_v4())
         .bind(building_id)
@@ -3906,11 +4079,28 @@ async fn given_owner_contributions_exist(world: &mut FinancialWorld) {
     .await
     .expect("insert owner");
 
+    // La quote-part doit porter un lot : c'est par lui que le domaine résout
+    // l'ACP créancière (ADR-0045).
+    //
+    // Le fixture passait `None`, et le use case refusait avec « Impossible de
+    // déterminer l'ACP créancière ». Ce refus est juste : une quote-part qui ne
+    // désigne aucun lot ne dit pas à quelle copropriété elle est due, et une
+    // somme réclamée au nom de personne n'est pas réclamable.
+    let unit_id: Option<Uuid> = match world.unit_ids.first() {
+        Some(id) => Some(*id),
+        None => sqlx::query_as::<_, (Uuid,)>("SELECT id FROM units WHERE building_id = $1 LIMIT 1")
+            .bind(world.building_id.unwrap())
+            .fetch_optional(pool)
+            .await
+            .expect("chercher un lot")
+            .map(|(id,)| id),
+    };
+
     let uc = world.owner_contribution_use_cases.as_ref().unwrap().clone();
     uc.create_contribution(
         org_id,
         owner_id,
-        None,
+        unit_id,
         "Dashboard contrib".to_string(),
         dec!(500),
         ContributionType::Regular,
@@ -4135,14 +4325,34 @@ async fn given_unit_owner_relationships(world: &mut FinancialWorld) {
 
         if i < world.unit_ids.len() {
             let unit_id = world.unit_ids[i];
+
+            // Le pourcentage est la part du copropriétaire DANS L'IMMEUBLE.
+            //
+            // `invoices.feature` le dit par ses chiffres : sur une facture de
+            // 1210 EUR, « Owner 1 amount due should be 302.50 EUR » pour
+            // 0.25 — soit un quart de la facture entière. Le lot d'Owner 1
+            // porte donc 250 des 1000 millièmes, et il le possède en entier.
+            //
+            // Le fixture l'écrivait dans `ownership_percentage`, que le
+            // domaine lit comme la part du copropriétaire DANS SON LOT. Les
+            // 75 % restants n'appartenaient alors à personne, et la
+            // répartition ne couvrait pas la charge.
+            sqlx::query("UPDATE units SET quota = $1 WHERE id = $2")
+                .bind(rust_decimal::Decimal::from(
+                    (*pct * 1000.0_f64).round() as i64
+                ))
+                .bind(unit_id)
+                .execute(pool)
+                .await
+                .expect("porter le pourcentage sur les tantiemes du lot");
+
             sqlx::query(
                 r#"INSERT INTO unit_owners (id, unit_id, owner_id, ownership_percentage, start_date, is_primary_contact, created_at, updated_at)
-                   VALUES ($1, $2, $3, $4, NOW(), true, NOW(), NOW())"#,
+                   VALUES ($1, $2, $3, 1.0, NOW(), true, NOW(), NOW())"#,
             )
             .bind(Uuid::new_v4())
             .bind(unit_id)
             .bind(owner_id)
-            .bind(*pct)
             .execute(pool)
             .await
             .expect("insert unit_owner");
@@ -5071,8 +5281,8 @@ async fn given_overdue_expense(world: &mut FinancialWorld, amount: Decimal, days
     let id = Uuid::new_v4();
     let due_date = Utc::now() - ChronoDuration::days(days_ago);
     sqlx::query(
-        r#"INSERT INTO expenses (id, building_id, organization_id, category, description, amount, expense_date, due_date, payment_status, created_at, updated_at)
-           VALUES ($1, $2, $3, 'maintenance', 'Overdue expense', $4, $5, $5, 'overdue', NOW(), NOW())"#,
+        r#"INSERT INTO expenses (id, acp_id, building_id, organization_id, category, description, amount, expense_date, due_date, payment_status, created_at, updated_at)
+             VALUES ($1, (SELECT acp_id FROM buildings WHERE id = $2), $2, $3, 'maintenance', 'Overdue expense', $4, $5, $5, 'overdue', NOW(), NOW())"#,
     )
     .bind(id)
     .bind(building_id)
@@ -5771,8 +5981,8 @@ async fn given_meeting(world: &mut FinancialWorld, _meeting_id: String) {
     let org_id = world.org_id.unwrap();
     let meeting_id = Uuid::new_v4();
     sqlx::query(
-        r#"INSERT INTO meetings (id, building_id, organization_id, title, scheduled_date, location, meeting_type, status, created_at, updated_at)
-           VALUES ($1, $2, $3, 'AG Budget', NOW() + INTERVAL '30 days', 'Online', 'ordinary', 'scheduled', NOW(), NOW())"#,
+        r#"INSERT INTO meetings (id, acp_id, building_id, organization_id, title, scheduled_date, location, meeting_type, status, created_at, updated_at)
+             VALUES ($1, (SELECT acp_id FROM buildings WHERE id = $2), $2, $3, 'AG Budget', NOW() + INTERVAL '30 days', 'Online', 'ordinary', 'scheduled', NOW(), NOW())"#,
     )
     .bind(meeting_id)
     .bind(building_id)
@@ -6773,6 +6983,10 @@ async fn when_create_simple_expense(world: &mut FinancialWorld, step: &Step) {
         supplier: None,
         invoice_number: None,
         account_code: None,
+        amount_excl_vat: None,
+        vat_rate: None,
+        due_date: None,
+        line_items: None,
     };
     match uc.create_expense(dto).await {
         Ok(resp) => {
@@ -6907,6 +7121,10 @@ async fn when_create_expense_bad_amount(world: &mut FinancialWorld, amount: Deci
         supplier: None,
         invoice_number: None,
         account_code: None,
+        amount_excl_vat: None,
+        vat_rate: None,
+        due_date: None,
+        line_items: None,
     };
     match uc.create_expense(dto).await {
         Ok(resp) => {
@@ -7168,6 +7386,10 @@ async fn given_n_expenses_for_building(world: &mut FinancialWorld, count: usize)
             supplier: None,
             invoice_number: None,
             account_code: None,
+            amount_excl_vat: None,
+            vat_rate: None,
+            due_date: None,
+            line_items: None,
         };
         uc.create_expense(dto).await.expect("create expense");
     }
@@ -7477,8 +7699,8 @@ async fn given_named_expense_exists_for_building(
     let org_id = world.org_id.expect("org_id");
     let id = Uuid::new_v4();
     sqlx::query(
-        r#"INSERT INTO expenses (id, building_id, organization_id, category, description, amount, expense_date, payment_status, created_at, updated_at)
-           VALUES ($1, $2, $3, 'maintenance', $4, $5, NOW(), 'pending', NOW(), NOW())"#
+        r#"INSERT INTO expenses (id, acp_id, building_id, organization_id, category, description, amount, expense_date, payment_status, created_at, updated_at)
+             VALUES ($1, (SELECT acp_id FROM buildings WHERE id = $2), $2, $3, 'maintenance', $4, $5, NOW(), 'pending', NOW(), NOW())"#
     )
     .bind(id)
     .bind(building_id)
@@ -7507,8 +7729,8 @@ async fn when_create_expense_attempted(
     let org_id = world.org_id.expect("org_id");
     let id = Uuid::new_v4();
     let res = sqlx::query(
-        r#"INSERT INTO expenses (id, building_id, organization_id, category, description, amount, expense_date, payment_status, created_at, updated_at)
-           VALUES ($1, $2, $3, 'maintenance', $4, $5, NOW(), 'pending', NOW(), NOW())"#,
+        r#"INSERT INTO expenses (id, acp_id, building_id, organization_id, category, description, amount, expense_date, payment_status, created_at, updated_at)
+             VALUES ($1, (SELECT acp_id FROM buildings WHERE id = $2), $2, $3, 'maintenance', $4, $5, NOW(), 'pending', NOW(), NOW())"#,
     )
     .bind(id)
     .bind(building_id)

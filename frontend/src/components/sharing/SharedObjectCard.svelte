@@ -5,7 +5,10 @@
   import ObjectConditionBadge from "./ObjectConditionBadge.svelte";
   import AvailabilityStatusBadge from "./AvailabilityStatusBadge.svelte";
 
-  let { object, onClick }: {
+  let {
+    object,
+    onClick,
+  }: {
     object: SharedObject;
     onClick?: () => void;
   } = $props();
@@ -36,7 +39,7 @@
     />
   {:else}
     <div class="w-full h-48 bg-gray-200 flex items-center justify-center">
-      <span class="text-4xl text-gray-400">📦</span>
+      <span class="text-4xl text-muted">📦</span>
     </div>
   {/if}
 
@@ -47,7 +50,9 @@
           <ObjectCategoryBadge category={object.object_category} />
           <ObjectConditionBadge condition={object.condition} />
         </div>
-        <h3 class="text-lg font-semibold text-gray-900">{object.object_name}</h3>
+        <h3 class="text-lg font-semibold text-gray-900">
+          {object.object_name}
+        </h3>
         {#if object.owner_name}
           <p class="text-sm text-gray-600">by {object.owner_name}</p>
         {/if}

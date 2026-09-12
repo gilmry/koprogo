@@ -3,7 +3,8 @@ use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 use validator::Validate;
 
-#[derive(Debug, Deserialize, Validate, Clone)]
+#[derive(Debug, Deserialize, Validate, Clone, utoipa::ToSchema)]
+#[serde(deny_unknown_fields)]
 pub struct CreateUnitDto {
     /// Story H15 — FK vers `acps.id` (anciennement `organization_id`).
     /// Le lot dérive son ACP de son building parent (cf. #602) ; le scoping
@@ -45,7 +46,15 @@ pub struct CreateUnitDto {
     pub quota: Decimal,
 }
 
-#[derive(Debug, Deserialize, Validate, Clone)]
+/// `deny_unknown_fields` : un `PUT /units/{id}` portant `owner_id` repondait
+/// 200 en jetant le champ, laissant croire que le lot venait d'etre rattache a
+/// un proprietaire. `units.owner_id` est DEPRECIE depuis la migration
+/// `20250127000000_refactor_owners_multitenancy` — la relation vit dans
+/// `unit_owners` (API `/unit-owners`), qui porte les quotites et les dates.
+/// Le refus explicite renvoie desormais vers la bonne route au lieu de perdre
+/// la donnee en silence.
+#[derive(Debug, Deserialize, Validate, Clone, utoipa::ToSchema)]
+#[serde(deny_unknown_fields)]
 pub struct UpdateUnitDto {
     #[validate(length(min = 1))]
     pub unit_number: String,
@@ -60,7 +69,7 @@ pub struct UpdateUnitDto {
     pub quota: Decimal,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, utoipa::ToSchema)]
 pub struct UnitResponseDto {
     pub id: String,
     pub building_id: String,

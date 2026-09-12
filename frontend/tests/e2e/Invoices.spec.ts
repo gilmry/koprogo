@@ -8,7 +8,7 @@ import { loginAsSyndicWithBuilding } from "./helpers/auth";
  * Mirrors workflows from backend/tests/e2e_invoices.rs.
  */
 
-const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
+import { API_BASE } from "./helpers/adresses";
 
 test.describe("Invoices - Expense Approval Workflow", () => {
   test("should display invoice workflow page", async ({ page }) => {
@@ -16,9 +16,9 @@ test.describe("Invoices - Expense Approval Workflow", () => {
     await page.goto("/invoice-workflow");
 
     await expect(page.locator("body")).toBeVisible();
-    await expect(
-      page.locator("main h1, main h2, [data-testid='invoices-list']").first(),
-    ).toBeVisible({ timeout: 10000 });
+    await expect(page.locator("[data-testid='invoice-workflow']")).toBeVisible({
+      timeout: 10000,
+    });
   });
 
   test("should display expenses page", async ({ page }) => {

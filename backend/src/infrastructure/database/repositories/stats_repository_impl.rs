@@ -1,5 +1,6 @@
 use crate::application::dto::{
-    AdminDashboardStats, NextMeetingInfo, SeedDataStats, SyndicDashboardStats, UrgentTask,
+    AdminDashboardStats, DuAupresDuneAcp, NextMeetingInfo, SeedDataStats, SyndicDashboardStats,
+    UrgentTask,
 };
 use crate::application::error::AppError;
 use crate::application::ports::StatsRepository;
@@ -205,6 +206,16 @@ impl StatsRepository for PostgresStatsRepository {
         .await
         .map_err(|e| e.to_string())?;
 
+        // COALESCE : SUM sur un ensemble vide rend NULL, pas 0.
+        let declared_units = sqlx::query_scalar::<_, i64>(
+            "SELECT COALESCE(SUM(b.total_units), 0)::bigint FROM buildings b
+             WHERE b.acp_id IN (SELECT id FROM acps WHERE organization_id = $1)",
+        )
+        .bind(organization_id)
+        .fetch_one(&self.pool)
+        .await
+        .map_err(|e| e.to_string())?;
+
         let total_owners = sqlx::query_scalar::<_, i64>(
             "SELECT COUNT(DISTINCT o.id) FROM owners o
              INNER JOIN unit_owners uo ON o.id = uo.owner_id
@@ -246,6 +257,7 @@ impl StatsRepository for PostgresStatsRepository {
         Ok(SyndicDashboardStats {
             total_buildings,
             total_units,
+            declared_units,
             total_owners,
             pending_expenses_count: pending_count,
             pending_expenses_amount: pending_total,
@@ -328,6 +340,7 @@ impl StatsRepository for PostgresStatsRepository {
         Ok(SyndicDashboardStats {
             total_buildings,
             total_units,
+            declared_units: total_units,
             total_owners,
             pending_expenses_count: pending_count,
             pending_expenses_amount: pending_total,
@@ -346,6 +359,58 @@ impl StatsRepository for PostgresStatsRepository {
             .await
             .map_err(|e| e.to_string())?;
         Ok(row.map(|r| r.get("id")))
+    }
+
+    async fn get_owner_dues_by_acp(
+        &self,
+        owner_id: Uuid,
+    ) -> Result<Vec<DuAupresDuneAcp>, AppError> {
+        // Le groupement se fait sur l'ACP, pas sur l'immeuble : une ACP peut
+        // compter plusieurs blocs, et c'est ELLE qui a le compte bancaire.
+        //
+        // `DISTINCT u.building_id` dans la sous-requête : sans lui, un
+        // copropriétaire détenant deux lots dans le même immeuble compterait
+        // ses charges deux fois.
+        let lignes = sqlx::query(
+            r#"
+            SELECT
+                a.id                                          AS acp_id,
+                a.name                                        AS acp_name,
+                a.bce_number                                  AS bce_number,
+                COUNT(e.id)                                   AS charges_en_attente,
+                COALESCE(SUM(e.amount), 0::NUMERIC)           AS montant
+            FROM acps a
+            INNER JOIN buildings b ON b.acp_id = a.id
+            INNER JOIN expenses e  ON e.building_id = b.id
+            WHERE e.payment_status = 'pending'
+              AND b.id IN (
+                  SELECT DISTINCT u.building_id
+                  FROM units u
+                  INNER JOIN unit_owners uo ON uo.unit_id = u.id
+                  WHERE uo.owner_id = $1 AND uo.end_date IS NULL
+              )
+            GROUP BY a.id, a.name, a.bce_number
+            HAVING COALESCE(SUM(e.amount), 0::NUMERIC) > 0
+            ORDER BY a.name
+            "#,
+        )
+        .bind(owner_id)
+        .fetch_all(&self.pool)
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?;
+
+        Ok(lignes
+            .into_iter()
+            .map(|ligne| DuAupresDuneAcp {
+                acp_id: ligne.get::<Uuid, _>("acp_id").to_string(),
+                acp_name: ligne.get("acp_name"),
+                bce_number: ligne.try_get("bce_number").unwrap_or(None),
+                charges_en_attente: ligne.try_get("charges_en_attente").unwrap_or(0),
+                montant: ligne
+                    .try_get("montant")
+                    .unwrap_or(rust_decimal::Decimal::ZERO),
+            })
+            .collect())
     }
 
     async fn get_syndic_urgent_tasks(
@@ -379,6 +444,11 @@ impl StatsRepository for PostgresStatsRepository {
                 building_name: Some(expense.get("building_name")),
                 entity_id: Some(id.to_string()),
                 due_date: Some(expense.get("expense_date")),
+                // Un retard de paiement est contractuel, pas légal : aucun
+                // article ne fixe d'échéance ici, et prétendre le contraire
+                // afficherait un décompte sans fondement.
+                article: None,
+                delai_legal_jours: None,
             });
         }
 
@@ -410,6 +480,68 @@ impl StatsRepository for PostgresStatsRepository {
                 building_name: Some(meeting.get("building_name")),
                 entity_id: Some(id.to_string()),
                 due_date: Some(scheduled_date),
+                // Une assemblée à venir est un rendez-vous, pas une échéance
+                // légale. Le délai de convocation de l'Art. 3.87 § 3, lui, en
+                // est une — mais il porte sur la convocation, pas sur la
+                // tenue.
+                article: None,
+                delai_legal_jours: None,
+            });
+        }
+
+        // ── Procès-verbaux à transmettre — Art. 3.87 § 12 CC ─────────────
+        //
+        // Le PV est consigné au registre et transmis à chaque destinataire
+        // **dans les trente jours** de l'assemblée. C'est la seule des tâches
+        // de ce tableau de bord qui porte une échéance LÉGALE, et rien ne la
+        // suivait : les colonnes `minutes_document_id` et `minutes_sent_at`
+        // existent depuis la migration du 2026-03-23, dont le commentaire
+        // annonce « Track when AG minutes are sent to owners (within 30
+        // days) ». Personne ne les lisait.
+        //
+        // Une capacité écrite, migrée, et inatteignable — le motif dominant de
+        // ce périmètre.
+        let pv_en_attente = sqlx::query(
+            "SELECT m.id, m.title, m.scheduled_date, b.name as building_name
+             FROM meetings m
+             INNER JOIN buildings b ON m.building_id = b.id
+             WHERE b.acp_id IN (SELECT id FROM acps WHERE organization_id = $1)
+             AND m.status = 'completed'
+             AND m.minutes_sent_at IS NULL
+             AND m.scheduled_date > NOW() - INTERVAL '90 days'
+             ORDER BY m.scheduled_date ASC
+             LIMIT 5",
+        )
+        .bind(organization_id)
+        .fetch_all(&self.pool)
+        .await
+        .map_err(|e| e.to_string())?;
+
+        for reunion in pv_en_attente {
+            let tenue_le: chrono::DateTime<Utc> = reunion.get("scheduled_date");
+            let delai = crate::domain::copropriete::consignation_pv::DELAI_JOURS;
+            let echeance = tenue_le + chrono::Duration::days(delai);
+            let jours_restants = (echeance - Utc::now()).num_days();
+            let id: Uuid = reunion.get("id");
+            let titre: String = reunion.get("title");
+
+            tasks.push(UrgentTask {
+                task_type: "minutes".to_string(),
+                title: titre,
+                description: if jours_restants < 0 {
+                    format!("PV non transmis, {} jours de retard", -jours_restants)
+                } else {
+                    format!("PV à transmettre sous {jours_restants} jours")
+                },
+                // Dépassé, c'est un manquement constaté, pas une urgence à
+                // venir : la distinction change ce que le syndic doit faire.
+                priority: if jours_restants < 0 { "urgent" } else { "high" }.to_string(),
+                building_name: Some(reunion.get("building_name")),
+                entity_id: Some(id.to_string()),
+                due_date: Some(echeance),
+                article: Some("Art. 3.87 § 12 CC".to_string()),
+                // Le délai est LU depuis le domaine, jamais recopié.
+                delai_legal_jours: Some(delai),
             });
         }
 
@@ -438,6 +570,8 @@ impl StatsRepository for PostgresStatsRepository {
                 building_name: None,
                 entity_id: None,
                 due_date: None,
+                article: None,
+                delai_legal_jours: None,
             });
         }
 

@@ -184,10 +184,36 @@ pub async fn verify_upload(
 ) -> Result<HttpResponse, actix_web::Error> {
     let upload_id = path.into_inner();
 
-    // TODO: Add admin role check
-    // if !user.is_admin() {
-    //     return Err(actix_web::error::ErrorForbidden("Admin access required"));
-    // }
+    // Le contrôle qui suit existait, ÉCRIT PUIS COMMENTÉ, sous un « TODO » :
+    //
+    //     // if !user.is_admin() {
+    //     //     return Err(...ErrorForbidden("Admin access required"));
+    //     // }
+    //
+    // Vérifier une facture d'énergie valide une pièce que l'ACP paiera. Le
+    // laisser ouvert à tout utilisateur authentifié était le trou ; le laisser
+    // en commentaire donnait l'illusion qu'il ne l'était pas (#772).
+    //
+    // Deux contrôles, et non un : le RÔLE — syndic ou administration — et le
+    // PÉRIMÈTRE, cette facture devant relever de l'organisation de l'appelant.
+    if !user.is_superadmin() && user.role != "syndic" {
+        return Err(actix_web::error::ErrorForbidden(
+            "Réservé au syndic et à l'administration de la plateforme",
+        ));
+    }
+
+    let upload = state
+        .energy_bill_upload_use_cases
+        .get_upload(upload_id)
+        .await
+        .map_err(actix_web::error::ErrorInternalServerError)?
+        .ok_or_else(|| actix_web::error::ErrorNotFound("Upload not found"))?;
+
+    if user.verify_org_access(upload.organization_id).is_err() {
+        return Err(actix_web::error::ErrorForbidden(
+            "Cette facture relève d'une autre organisation",
+        ));
+    }
 
     let updated = state
         .energy_bill_upload_use_cases

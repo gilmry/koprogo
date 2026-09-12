@@ -1,0 +1,155 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            SELECT id, acp_id, organization_id, building_id, meeting_id, meeting_type::text AS \"meeting_type!\", meeting_date,\n                   status::text AS \"status!\", minimum_send_date, actual_send_date, scheduled_send_date,\n                   pdf_file_path, language, total_recipients, opened_count,\n                   will_attend_count, will_not_attend_count, reminder_sent_at,\n                   first_meeting_id, no_quorum_required, created_at, updated_at, created_by\n            FROM convocations\n            WHERE status = 'sent'\n              AND meeting_date >= $1\n              AND meeting_date <= $2\n              AND reminder_sent_at IS NULL\n            ORDER BY meeting_date ASC\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "acp_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 2,
+        "name": "organization_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 3,
+        "name": "building_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 4,
+        "name": "meeting_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 5,
+        "name": "meeting_type!",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 6,
+        "name": "meeting_date",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 7,
+        "name": "status!",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 8,
+        "name": "minimum_send_date",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 9,
+        "name": "actual_send_date",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 10,
+        "name": "scheduled_send_date",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 11,
+        "name": "pdf_file_path",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 12,
+        "name": "language",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 13,
+        "name": "total_recipients",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 14,
+        "name": "opened_count",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 15,
+        "name": "will_attend_count",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 16,
+        "name": "will_not_attend_count",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 17,
+        "name": "reminder_sent_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 18,
+        "name": "first_meeting_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 19,
+        "name": "no_quorum_required",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 20,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 21,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 22,
+        "name": "created_by",
+        "type_info": "Uuid"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Timestamptz",
+        "Timestamptz"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      null,
+      false,
+      null,
+      false,
+      true,
+      true,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "930587d6ac3fd839954818f90d544e52ab1e77d8a4244187cda33cbcbcd4d1e0"
+}

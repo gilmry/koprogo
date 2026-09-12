@@ -1,10 +1,11 @@
-use actix_web::{get, post, web, HttpResponse};
+use actix_web::{get, post, web, HttpResponse, ResponseError};
 use chrono::Datelike;
 use uuid::Uuid;
 
 use crate::application::dto::{
     ContractEvaluationsAnnualReportDto, CreateServiceProviderDto, SearchServiceProvidersQuery,
 };
+use crate::infrastructure::web::middleware::scope_guard::verify_building_org_access;
 use crate::infrastructure::web::middleware::AuthenticatedUser;
 use crate::infrastructure::web::AppState;
 
@@ -69,12 +70,29 @@ pub async fn create_service_provider(
 /// Get annual contract evaluations report (L13 legal report)
 #[get("/buildings/{building_id}/reports/contract-evaluations/annual")]
 pub async fn get_contract_evaluations_annual(
-    _state: web::Data<AppState>,
+    state: web::Data<AppState>,
     building_id: web::Path<Uuid>,
     web::Query(params): web::Query<std::collections::HashMap<String, String>>,
-    _user: AuthenticatedUser,
+    user: AuthenticatedUser,
 ) -> Result<HttpResponse, actix_web::Error> {
     let building_id = building_id.into_inner();
+
+    // Cloisonnement : ce rapport annuel d'évaluation des contrats est celui
+    // d'un immeuble précis — l'obligation de l'Art. 3.89 § 5, 12° porte sur
+    // les contrats de fournitures régulières d'UNE copropriété.
+    //
+    // L'identité était prise puis ignorée, tout comme l'état applicatif :
+    // `_state` ET `_user`, deux underscores sur la même signature (#772).
+    if let Err(err) = verify_building_org_access(
+        &user,
+        building_id,
+        &state.building_use_cases,
+        &state.acp_use_cases,
+    )
+    .await
+    {
+        return Ok(err.error_response());
+    }
     let year = params
         .get("year")
         .and_then(|y| y.parse::<i32>().ok())

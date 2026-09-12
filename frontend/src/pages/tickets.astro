@@ -3,9 +3,11 @@ import Layout from "../layouts/Layout.astro";
 ---
 
 <Layout title="Tickets - Demandes de maintenance">
-  <div class="container mx-auto px-4 py-8">
+  <div class="container mx-auto px-4 py-8" data-testid="tickets-list">
     <div class="mb-6">
-      <h1 class="text-3xl font-bold text-gray-900">🎫 Tickets de maintenance</h1>
+      <h1 class="text-3xl font-bold text-gray-900">
+        🎫 Tickets de maintenance
+      </h1>
       <p class="mt-2 text-gray-600">
         Gérez les demandes de maintenance et suivez les résolutions
       </p>
@@ -40,7 +42,10 @@ import Layout from "../layouts/Layout.astro";
         </svg>
         Créer un nouveau ticket
       </button>
-      <div id="building-warning" class="mt-2 p-3 bg-yellow-50 border border-yellow-200 rounded-md hidden">
+      <div
+        id="building-warning"
+        class="mt-2 p-3 bg-yellow-50 border border-yellow-200 rounded-md hidden"
+      >
         <p class="text-sm text-yellow-800">
           ⚠️ Veuillez d'abord sélectionner un immeuble avant de créer un ticket
         </p>
@@ -62,8 +67,16 @@ import Layout from "../layouts/Layout.astro";
   import TicketCreateModal from "../components/tickets/TicketCreateModal.svelte";
   import BuildingSelector from "../components/BuildingSelector.svelte";
 
-  function showPageToast(message: string, type: "success" | "error" | "warning" | "info" = "info") {
-    const colors = { success: "bg-green-600", error: "bg-red-600", warning: "bg-yellow-500", info: "bg-blue-600" };
+  function showPageToast(
+    message: string,
+    type: "success" | "error" | "warning" | "info" = "info",
+  ) {
+    const colors = {
+      success: "bg-green-600",
+      error: "bg-red-600",
+      warning: "bg-yellow-500",
+      info: "bg-blue-600",
+    };
     const el = document.createElement("div");
     el.className = `fixed top-4 right-4 z-50 px-4 py-3 rounded-lg shadow-lg text-white text-sm ${colors[type]}`;
     el.textContent = message;
@@ -71,12 +84,17 @@ import Layout from "../layouts/Layout.astro";
     setTimeout(() => el.remove(), 3500);
   }
 
-  let selectedBuildingId = new URLSearchParams(window.location.search).get("building_id") || "";
-  const createButton = document.getElementById("create-ticket-btn") as HTMLButtonElement | null;
+  let selectedBuildingId =
+    new URLSearchParams(window.location.search).get("building_id") || "";
+  const createButton = document.getElementById(
+    "create-ticket-btn",
+  ) as HTMLButtonElement | null;
   const warningDiv = document.getElementById("building-warning");
 
   // Mount building selector
-  const selectorContainer = document.getElementById("building-selector-container");
+  const selectorContainer = document.getElementById(
+    "building-selector-container",
+  );
   if (selectorContainer) {
     mount(BuildingSelector as any, {
       target: selectorContainer,
@@ -91,7 +109,9 @@ import Layout from "../layouts/Layout.astro";
           // Reload ticket list with new building
           const listContainer = document.getElementById("tickets-list");
           if (listContainer) {
-            try { unmount(listComponent); } catch {}
+            try {
+              unmount(listComponent);
+            } catch {}
             listContainer.innerHTML = "";
             listComponent = mount(TicketList as any, {
               target: listContainer,
@@ -116,7 +136,9 @@ import Layout from "../layouts/Layout.astro";
   const listContainer = document.getElementById("tickets-list");
   let listComponent: any = null;
   if (listContainer) {
-    const urlBuildingId = new URLSearchParams(window.location.search).get("building_id") || undefined;
+    const urlBuildingId =
+      new URLSearchParams(window.location.search).get("building_id") ||
+      undefined;
     listComponent = mount(TicketList as any, {
       target: listContainer,
       props: {
@@ -130,7 +152,9 @@ import Layout from "../layouts/Layout.astro";
 
     function closeModal() {
       if (createModal) {
-        try { unmount(createModal); } catch {}
+        try {
+          unmount(createModal);
+        } catch {}
         createModal = null;
         if (modalContainer) modalContainer.innerHTML = "";
       }
@@ -145,7 +169,7 @@ import Layout from "../layouts/Layout.astro";
     createButton?.addEventListener("click", () => {
       const buildingId = selectedBuildingId;
       const userJson = localStorage.getItem("koprogo_user");
-      const userId = userJson ? (JSON.parse(userJson).id || "") : "";
+      const userId = userJson ? JSON.parse(userJson).id || "" : "";
 
       if (!buildingId) {
         showPageToast("Veuillez d'abord sélectionner un immeuble.", "warning");

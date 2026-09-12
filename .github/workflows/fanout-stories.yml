@@ -1,0 +1,385 @@
+# Fan-out — un agent par story, un runner par agent
+#
+# ── Pourquoi ce workflow existe ───────────────────────────────────────────
+#
+# Le Gantt de la v0.1.0 (docs/GANTT_PASSES_v0_1_0.md) demande une largeur de
+# dix agents simultanés. L'hôte `ecosolva` en tient DEUX : quatre cœurs dont la
+# moitié déjà prise par 31 conteneurs, et un `target` Rust en volume Docker
+# partagé qui sérialise les compilations.
+#
+# La CI lève les trois contraintes d'un coup : chaque runner a ses propres
+# cœurs, son propre `target`, son propre disque.
+#
+# ── Ce qu'il fait, et ce qu'il ne fait PAS ────────────────────────────────
+#
+# Il crée UNE BRANCHE PAR STORY et ouvre une PULL REQUEST EN BROUILLON.
+# Il ne fusionne rien. La promotion vers `feature/dev` reste le geste humain
+# qui porte le *répondre-de*, instruit par les gates et la vitrine — c'est la
+# modalité que le PO a choisie le 2026-09-12.
+#
+# `ci.yml` se déclenche déjà sur `story/**` : les gates partent donc seuls sur
+# chaque branche produite ici. Ce workflow n'a pas à les rejouer.
+#
+# ── Ce que ça coûte, et c'est un choix ────────────────────────────────────
+#
+# Deux voies d'authentification, et AUCUNE ne donne du parallélisme gratuit :
+#
+#   CLAUDE_CODE_OAUTH_TOKEN  (défaut) — `claude setup-token`, adossé à
+#     l'abonnement. Pas de facture au token, mais les limites de débit sont
+#     PARTAGÉES avec les sessions interactives : un fan-out large ralentit le
+#     travail humain en cours.
+#
+#   ANTHROPIC_API_KEY  (option `facturation: api`) — facturé à l'usage. Ordre
+#     de grandeur pour les 84 stories, reprises comprises : ~170 $ en Haiku,
+#     ~340 $ en Sonnet, ~850 $ en Opus. Estimation à CALER sur la première
+#     vague réelle, pas un engagement.
+#
+# Les deux secrets se posent à la main. Un secret ne se crée pas par un agent.
+
+name: Fan-out stories (agents)
+
+on:
+  workflow_dispatch:
+    inputs:
+      vague:
+        description: "Vague du plan (1 à 4). Vide = toutes."
+        required: false
+        type: string
+      creneau:
+        description: "Créneau dans la vague (1, 2, …). Vide = tous."
+        required: false
+        type: string
+      max_parallel:
+        description: "Agents simultanés. Commencer petit : le débit se partage."
+        required: false
+        default: "2"
+        type: string
+      dry_run:
+        description: "Afficher le plan sans lancer un seul agent."
+        required: true
+        default: true
+        type: boolean
+      facturation:
+        description: "abonnement = jeton OAuth · api = facturé au token"
+        required: true
+        default: "abonnement"
+        type: choice
+        options: ["abonnement", "api"]
+      modele:
+        description: "Modèle des agents."
+        required: false
+        default: "sonnet"
+        type: choice
+        options: ["sonnet", "opus", "haiku"]
+
+# Deux fan-out concurrents produiraient des branches qui se recouvrent.
+concurrency:
+  group: fanout-stories
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: read
+
+jobs:
+  # ── 1. Le plan, lu depuis la source de vérité ───────────────────────────
+  plan:
+    name: Plan (depuis gantt-passes.py)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      matrice: ${{ steps.calcul.outputs.matrice }}
+      nombre: ${{ steps.calcul.outputs.nombre }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Vérifier que le secret attendu existe
+        if: ${{ inputs.dry_run == false }}
+        env:
+          JETON: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          CLE: ${{ secrets.ANTHROPIC_API_KEY }}
+          MODE: ${{ inputs.facturation }}
+        run: |
+          set -euo pipefail
+          if [ "$MODE" = "abonnement" ] && [ -z "$JETON" ]; then
+            echo "::error::Secret CLAUDE_CODE_OAUTH_TOKEN absent."
+            echo "Le produire avec 'claude setup-token', puis le poser à la"
+            echo "main : Settings → Secrets and variables → Actions."
+            exit 1
+          fi
+          if [ "$MODE" = "api" ] && [ -z "$CLE" ]; then
+            echo "::error::Secret ANTHROPIC_API_KEY absent."
+            echo "Attention : ce mode est facturé au token, pas sur"
+            echo "l'abonnement. Cf. l'en-tête de ce workflow."
+            exit 1
+          fi
+          echo "Secret présent pour le mode '$MODE'."
+
+      - name: Calculer le créneau
+        id: calcul
+        env:
+          VAGUE: ${{ inputs.vague }}
+          CRENEAU: ${{ inputs.creneau }}
+        run: |
+          set -euo pipefail
+          ARGS=""
+          if [ -n "${VAGUE}" ]; then
+            ARGS="${VAGUE}"
+            [ -n "${CRENEAU}" ] && ARGS="${VAGUE} ${CRENEAU}"
+          fi
+          # shellcheck disable=SC2086
+          python3 scripts/gantt-passes.py --creneaux-json $ARGS > plan.json
+          N=$(python3 -c "import json;print(len(json.load(open('plan.json'))))")
+          echo "nombre=$N" >> "$GITHUB_OUTPUT"
+          echo "matrice=$(cat plan.json)" >> "$GITHUB_OUTPUT"
+
+      - name: Résumé lisible
+        run: |
+          set -euo pipefail
+          {
+            echo "## Plan de fan-out"
+            echo ""
+            echo "- Mode : **${{ inputs.facturation }}** · modèle : \
+          **${{ inputs.modele }}** · largeur : **${{ inputs.max_parallel }}**"
+            echo "- Stories : **${{ steps.calcul.outputs.nombre }}**"
+            echo ""
+            echo "| Issue | Vague.Créneau | Capacité | Domaine | Taille |"
+            echo "|---|---|---|---|---|"
+            python3 -c "
+          import json
+          for e in json.load(open('plan.json')):
+              print('| #%s | %s | %s | \`%s\` | %s |' % (
+                  e['issue'], e['cle'], e['capacite'],
+                  e['domaine'], e['taille']))
+          "
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Garde — un domaine, un agent par créneau
+        run: |
+          set -euo pipefail
+          python3 -c "
+          import json, collections, sys
+          plan = json.load(open('plan.json'))
+          par = collections.defaultdict(collections.Counter)
+          for e in plan:
+              par[e['cle']][e['domaine']] += 1
+          faute = False
+          for cle, doms in par.items():
+              for d, n in doms.items():
+                  if n > 1:
+                      print('::error::%s lance %d agents sur le domaine %s '
+                            '— conflit de fusion garanti.' % (cle, n, d))
+                      faute = True
+          sys.exit(1 if faute else 0)
+          "
+          echo "Aucun domaine dupliqué dans un créneau."
+
+      - name: Arrêt si simulation
+        if: ${{ inputs.dry_run == true }}
+        run: echo "::notice::Simulation — plan au résumé, aucun agent lancé."
+
+  # ── 2. Un agent par story, un runner par agent ──────────────────────────
+  agent:
+    name: "#${{ matrix.entree.issue }} · ${{ matrix.entree.cle }}"
+    needs: plan
+    if: ${{ inputs.dry_run == false && needs.plan.outputs.nombre != '0' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      max-parallel: ${{ fromJson(inputs.max_parallel) }}
+      matrix:
+        entree: ${{ fromJson(needs.plan.outputs.matrice) }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Ouvrir la branche
+        env:
+          BRANCHE: ${{ matrix.entree.branche }}
+        run: |
+          set -euo pipefail
+          git config user.name "koprogo-agent"
+          git config user.email "noreply@koprogo.com"
+          if git ls-remote --exit-code --heads origin "$BRANCHE" >/dev/null 2>&1
+          then
+            echo "::warning::$BRANCHE existe déjà — reprise sur place."
+            git fetch origin "$BRANCHE"
+            git checkout "$BRANCHE"
+          else
+            git checkout -b "$BRANCHE"
+          fi
+
+      - name: Récupérer la story depuis l'issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          NUM: ${{ matrix.entree.issue }}
+        run: |
+          set -euo pipefail
+          gh issue view "$NUM" --json title,body \
+            --jq '"# Issue #\(.number // "'"$NUM"'") — \(.title)\n\n\(.body)"' \
+            > /tmp/story.md 2>/dev/null \
+            || gh issue view "$NUM" --json body --jq .body > /tmp/story.md
+          if ! grep -q "Story Agent IA Ready" /tmp/story.md; then
+            echo "::error::#$NUM ne porte pas de story « Agent IA Ready »."
+            echo "La fabrication n'ouvre pas sans directive. Cf. règle 5."
+            exit 1
+          fi
+          wc -c /tmp/story.md
+
+      - name: Installer Claude Code
+        run: npm install -g @anthropic-ai/claude-code
+
+      - name: Lancer l'agent
+        env:
+          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          ANTHROPIC_API_KEY: ${{ inputs.facturation == 'api' && secrets.ANTHROPIC_API_KEY || '' }}
+          MODELE: ${{ inputs.modele }}
+          NUM: ${{ matrix.entree.issue }}
+        run: |
+          set -euo pipefail
+          {
+            echo "Tu implémentes l'issue #$NUM de KoproGo. Sa story est"
+            echo "reproduite plus bas : c'est la directive, elle fait autorité."
+            echo ""
+            echo "Contraintes non négociables (.claude/rules/CRITICAL.md) :"
+            echo "- TDD : le test rouge AVANT le code, et les quatre classes"
+            echo "  @happy @negative @edge @security que la story énonce."
+            echo "- Result<_, AppError> typé, jamais Result<_, String>."
+            echo "  unwrap()/expect() interdits hors tests."
+            echo "- Pureté hexagonale : backend/src/domain/ n'importe ni sqlx"
+            echo "  ni actix_web."
+            echo "- Ne JAMAIS supprimer une assertion pour faire passer un"
+            echo "  test. La comprendre, ou l'adapter avec sa justification"
+            echo "  écrite en commentaire."
+            echo "- Aucun secret en clair. Aucune mutation de production."
+            echo "- Les outils (cargo, npm, sqlx) vivent dans les conteneurs"
+            echo "  du docker-compose, pas dans le shell."
+            echo ""
+            echo "Tu ne pousses rien et tu ne fusionnes rien : tu modifies les"
+            echo "fichiers, c'est tout. La promotion est un geste humain."
+            echo ""
+            echo "Si la story te paraît fausse ou infaisable, ARRÊTE-TOI et"
+            echo "explique pourquoi plutôt que de produire du code approximatif."
+            echo ""
+            cat /tmp/story.md
+          } > /tmp/prompt.md
+
+          set +e
+          claude -p "$(cat /tmp/prompt.md)" \
+            --model "$MODELE" \
+            --permission-mode acceptEdits \
+            --output-format json \
+            > /tmp/agent.json
+          CODE=$?
+          set -e
+          [ $CODE -ne 0 ] && echo "::warning::Agent sorti en code $CODE."
+
+          python3 -c "
+          import json
+          try:
+              d = json.load(open('/tmp/agent.json'))
+          except Exception as e:
+              print('### Sortie illisible\n\n\`%s\`' % e)
+          else:
+              r = d.get('result') or d.get('text') or ''
+              print('### Ce que l agent rapporte\n')
+              print(str(r)[:4000])
+          " >> "$GITHUB_STEP_SUMMARY" || true
+
+      - name: Committer si l'agent a produit quelque chose
+        id: commit
+        env:
+          NUM: ${{ matrix.entree.issue }}
+          CLE: ${{ matrix.entree.cle }}
+        run: |
+          set -euo pipefail
+          if [ -z "$(git status --porcelain)" ]; then
+            echo "vide=true" >> "$GITHUB_OUTPUT"
+            echo "::warning::Aucun changement produit pour #$NUM."
+            exit 0
+          fi
+          echo "vide=false" >> "$GITHUB_OUTPUT"
+          git add -A
+          git commit -F - <<EOF
+          feat(#${NUM}): implémentation par agent — créneau ${CLE}
+
+          Produit par le fan-out CI, à partir de la story « Agent IA Ready »
+          portée par l'issue #${NUM}.
+
+          NON RELU. La promotion vers feature/dev est le gate humain : elle
+          s'instruit des gates de ci.yml et de la vitrine, pas de ce message.
+
+          Refs: #${NUM}
+          EOF
+
+      - name: Pousser et ouvrir la PR en brouillon
+        if: ${{ steps.commit.outputs.vide == 'false' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BRANCHE: ${{ matrix.entree.branche }}
+          NUM: ${{ matrix.entree.issue }}
+          CLE: ${{ matrix.entree.cle }}
+          DOM: ${{ matrix.entree.domaine }}
+        run: |
+          set -euo pipefail
+          git push -u origin "$BRANCHE"
+          if gh pr view "$BRANCHE" >/dev/null 2>&1; then
+            echo "::notice::PR déjà ouverte pour $BRANCHE."
+            exit 0
+          fi
+          cat > /tmp/pr.md <<EOF
+          Produit par le **fan-out CI**, créneau \`${CLE}\`, domaine \`${DOM}\`.
+
+          ## Ce qui reste à faire, et qui n'est pas automatisable
+
+          Cette PR est en **brouillon** et le reste jusqu'à la revue humaine.
+          Le *répondre-de* est porté par la **promotion**, instruite par :
+
+          - [ ] les **gates** de \`ci.yml\`, qui partent seuls sur \`story/**\`
+          - [ ] la **vitrine** — parcours filmé, preuve de valeur
+          - [ ] la relecture des assertions : aucune supprimée pour faire
+                passer un test
+
+          ## Ce que l'agent n'a pas vérifié
+
+          Il a suivi la story. Il n'a pas jugé si la story était bonne — le
+          contrôle « Agent IA Ready » est de forme, pas de fond (cf. #427).
+
+          Closes #${NUM}
+          EOF
+          gh pr create \
+            --draft \
+            --base feature/dev \
+            --head "$BRANCHE" \
+            --title "feat(#${NUM}): ${CLE} — implémentation par agent" \
+            --body-file /tmp/pr.md \
+            --label "agent" \
+            || echo "::warning::Création de PR refusée."
+
+  # ── 3. Le récapitulatif pour la revue de promotion ──────────────────────
+  recapitulatif:
+    name: Récapitulatif
+    needs: [plan, agent]
+    if: ${{ always() && inputs.dry_run == false }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Lister les branches produites
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          {
+            echo "## Branches à promouvoir"
+            echo ""
+            echo "Chacune attend ses gates et sa vitrine avant relecture."
+            echo ""
+            gh pr list --label agent --state open \
+              --json number,headRefName,title \
+              --jq '.[] | "- #\(.number) `\(.headRefName)` — \(.title)"' \
+              || echo "_aucune_"
+          } >> "$GITHUB_STEP_SUMMARY"

@@ -1,15 +1,20 @@
 <script lang="ts">
   // Svelte 5 runes mode
-  import { _ } from '../../lib/i18n';
+  import { _ } from "../../lib/i18n";
   import {
     paymentMethodsApi,
-    PaymentMethodType,
+    StoredPaymentMethodType,
     type PaymentMethod,
   } from "../../lib/api/payments";
   import { withErrorHandling } from "../../lib/utils/error.utils";
   import ConfirmDialog from "../ui/ConfirmDialog.svelte";
 
-  let { paymentMethod, canManage = true, onupdated, ondeleted }: {
+  let {
+    paymentMethod,
+    canManage = true,
+    onupdated,
+    ondeleted,
+  }: {
     paymentMethod: PaymentMethod;
     canManage?: boolean;
     onupdated?: () => void;
@@ -19,14 +24,15 @@
   let showDeleteConfirm = $state(false);
   let actionLoading = $state(false);
 
-  const methodIcons: Record<PaymentMethodType, string> = {
-    [PaymentMethodType.Card]: "💳",
-    [PaymentMethodType.SepaDebit]: "🏦",
-    [PaymentMethodType.BankTransfer]: "🏧",
-    [PaymentMethodType.Cash]: "💵",
+  // Une carte affiche un instrument ENREGISTRÉ : deux types possibles, pas
+  // quatre. Le virement manuel et l'espèce décrivent la réception d'un
+  // paiement, jamais un moyen conservé (#819).
+  const methodIcons: Record<StoredPaymentMethodType, string> = {
+    [StoredPaymentMethodType.Card]: "💳",
+    [StoredPaymentMethodType.SepaDebit]: "🏦",
   };
 
-  function getIcon(type: PaymentMethodType): string {
+  function getIcon(type: StoredPaymentMethodType): string {
     return methodIcons[type] || "💳";
   }
 
@@ -41,21 +47,24 @@
   async function handleSetDefault() {
     const result = await withErrorHandling({
       action: () => paymentMethodsApi.setAsDefault(paymentMethod.id),
-      setLoading: (v: boolean) => actionLoading = v,
-      successMessage: $_('payments.setDefault'),
-      errorMessage: $_('payments.failedSetDefault'),
+      setLoading: (v: boolean) => (actionLoading = v),
+      successMessage: $_("payments.setDefault"),
+      errorMessage: $_("payments.failedSetDefault"),
     });
     if (result !== undefined) onupdated?.();
   }
 
   async function handleToggleActive() {
     const result = await withErrorHandling({
-      action: () => paymentMethod.is_active
-        ? paymentMethodsApi.deactivate(paymentMethod.id)
-        : paymentMethodsApi.reactivate(paymentMethod.id),
-      setLoading: (v: boolean) => actionLoading = v,
-      successMessage: paymentMethod.is_active ? $_('payments.deactivated') : $_('payments.reactivated'),
-      errorMessage: $_('payments.failedUpdate'),
+      action: () =>
+        paymentMethod.is_active
+          ? paymentMethodsApi.deactivate(paymentMethod.id)
+          : paymentMethodsApi.reactivate(paymentMethod.id),
+      setLoading: (v: boolean) => (actionLoading = v),
+      successMessage: paymentMethod.is_active
+        ? $_("payments.deactivated")
+        : $_("payments.reactivated"),
+      errorMessage: $_("payments.failedUpdate"),
     });
     if (result !== undefined) onupdated?.();
   }
@@ -63,9 +72,9 @@
   async function handleDelete() {
     const result = await withErrorHandling({
       action: () => paymentMethodsApi.delete(paymentMethod.id),
-      setLoading: (v: boolean) => actionLoading = v,
-      successMessage: $_('payments.deleted'),
-      errorMessage: $_('payments.failedDelete'),
+      setLoading: (v: boolean) => (actionLoading = v),
+      successMessage: $_("payments.deleted"),
+      errorMessage: $_("payments.failedDelete"),
     });
     if (result !== undefined) {
       showDeleteConfirm = false;
@@ -88,7 +97,7 @@
       <span
         class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
       >
-        ⭐ {$_('payments.default')}
+        ⭐ {$_("payments.default")}
       </span>
     </div>
   {/if}
@@ -103,25 +112,33 @@
       </h3>
 
       <div class="mt-1 space-y-1">
-        {#if paymentMethod.method_type === PaymentMethodType.Card}
+        {#if paymentMethod.method_type === StoredPaymentMethodType.Card}
           <p class="text-sm text-gray-600">
-            {paymentMethod.brand || $_('payments.card')} •••• {paymentMethod.last4 || "****"}
+            {paymentMethod.brand || $_("payments.card")} •••• {paymentMethod.last4 ||
+              "****"}
           </p>
           {#if paymentMethod.expires_at}
-            <p class="text-sm text-gray-500" data-testid="payment-method-expiry">
-              {$_('payments.expires')}: {formatExpiryDate(paymentMethod.expires_at)}
+            <p
+              class="text-sm text-gray-500"
+              data-testid="payment-method-expiry"
+            >
+              {$_("payments.expires")}: {formatExpiryDate(
+                paymentMethod.expires_at,
+              )}
             </p>
           {/if}
-        {:else if paymentMethod.method_type === PaymentMethodType.SepaDebit}
+        {:else if paymentMethod.method_type === StoredPaymentMethodType.SepaDebit}
           <p class="text-sm text-gray-600">
-            {$_('payments.iban')} •••• {paymentMethod.last4 || "****"}
+            {$_("payments.iban")} •••• {paymentMethod.last4 || "****"}
           </p>
         {:else}
           <p class="text-sm text-gray-600">{paymentMethod.method_type}</p>
         {/if}
 
         <p class="text-xs text-gray-500">
-          {$_('payments.added')}: {new Date(paymentMethod.created_at).toLocaleDateString("nl-BE")}
+          {$_("payments.added")}: {new Date(
+            paymentMethod.created_at,
+          ).toLocaleDateString("nl-BE")}
         </p>
       </div>
 
@@ -135,7 +152,7 @@
               data-testid="set-default-btn"
               class="text-sm text-blue-600 hover:text-blue-700 font-medium disabled:opacity-50"
             >
-              {$_('payments.setDefault')}
+              {$_("payments.setDefault")}
             </button>
           {/if}
 
@@ -145,7 +162,9 @@
             data-testid="toggle-active-btn"
             class="text-sm text-gray-600 hover:text-gray-700 font-medium disabled:opacity-50"
           >
-            {paymentMethod.is_active ? $_('payments.deactivate') : $_('payments.reactivate')}
+            {paymentMethod.is_active
+              ? $_("payments.deactivate")
+              : $_("payments.reactivate")}
           </button>
 
           {#if !paymentMethod.is_default}
@@ -155,7 +174,7 @@
               data-testid="delete-method-btn"
               class="text-sm text-red-600 hover:text-red-700 font-medium disabled:opacity-50"
             >
-              {$_('common.delete')}
+              {$_("common.delete")}
             </button>
           {/if}
         </div>
@@ -167,9 +186,9 @@
 <!-- Delete Confirmation -->
 <ConfirmDialog
   isOpen={showDeleteConfirm}
-  title={$_('payments.deleteTitle')}
-  message={$_('payments.deleteConfirm')}
-  confirmText={$_('common.delete')}
+  title={$_("payments.deleteTitle")}
+  message={$_("payments.deleteConfirm")}
+  confirmText={$_("common.delete")}
   variant="danger"
   onconfirm={handleDelete}
   oncancel={() => (showDeleteConfirm = false)}

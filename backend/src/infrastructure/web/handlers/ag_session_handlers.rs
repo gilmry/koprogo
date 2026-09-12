@@ -1,6 +1,7 @@
 use crate::application::dto::ag_session_dto::{
     CreateAgSessionDto, EndAgSessionDto, RecordRemoteJoinDto,
 };
+use crate::infrastructure::web::classification_erreurs;
 use crate::infrastructure::web::{AppState, AuthenticatedUser};
 use actix_web::{delete, get, post, put, web, HttpResponse, Responder};
 use rust_decimal::Decimal;
@@ -104,9 +105,9 @@ pub async fn get_ag_session(
     {
         Ok(session) => HttpResponse::Ok().json(session),
         Err(e) => {
-            if e.contains("introuvable") {
+            if classification_erreurs::est_introuvable(&e) {
                 HttpResponse::NotFound().json(serde_json::json!({"error": e}))
-            } else if e.contains("refusé") {
+            } else if classification_erreurs::est_interdit(&e) {
                 HttpResponse::Forbidden().json(serde_json::json!({"error": e}))
             } else {
                 HttpResponse::InternalServerError().json(serde_json::json!({"error": e}))
@@ -266,9 +267,9 @@ pub async fn delete_ag_session(
     {
         Ok(()) => HttpResponse::NoContent().finish(),
         Err(e) => {
-            if e.contains("introuvable") {
+            if classification_erreurs::est_introuvable(&e) {
                 HttpResponse::NotFound().json(serde_json::json!({"error": e}))
-            } else if e.contains("refusé") {
+            } else if classification_erreurs::est_interdit(&e) {
                 HttpResponse::Forbidden().json(serde_json::json!({"error": e}))
             } else {
                 HttpResponse::BadRequest().json(serde_json::json!({"error": e}))

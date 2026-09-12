@@ -8,7 +8,7 @@ import { adminLogin } from "./helpers/auth";
  * Tests notification listing, read marking, and preference management.
  */
 
-const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
+import { API_BASE } from "./helpers/adresses";
 
 async function registerAndLogin(
   page: Page,
@@ -61,9 +61,7 @@ test.describe("Notifications - Multi-Channel System", () => {
 
     await expect(page.locator("body")).toBeVisible();
     await expect(
-      page
-        .locator("main h1, main h2, [data-testid='notifications-list']")
-        .first(),
+      page.locator("[data-testid='notifications-list']").first(),
     ).toBeVisible({ timeout: 10000 });
   });
 
@@ -108,9 +106,7 @@ test.describe("Notifications - Multi-Channel System", () => {
 
     await expect(page.locator("body")).toBeVisible();
     await expect(
-      page
-        .locator("main h1, main h2, [data-testid='notification-preferences']")
-        .first(),
+      page.locator("[data-testid='notification-preferences']").first(),
     ).toBeVisible({ timeout: 10000 });
   });
 

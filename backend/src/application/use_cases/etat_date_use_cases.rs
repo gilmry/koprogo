@@ -96,6 +96,9 @@ impl EtatDateUseCases {
 
         // Create état daté
         let etat_date = EtatDate::new(
+            // Les sommes attestées sont dues à l'ACP (Art. 3.94), le syndic
+            // ne fait que les certifier. Cf. ADR-0045.
+            building.acp_id,
             request.organization_id,
             request.building_id,
             request.unit_id,
@@ -383,6 +386,7 @@ mod tests {
             async fn get_total_ownership_percentage(&self, unit_id: Uuid) -> Result<rust_decimal::Decimal, String>;
             async fn find_active_by_unit_and_owner(&self, unit_id: Uuid, owner_id: Uuid) -> Result<Option<UnitOwner>, String>;
             async fn find_active_by_building(&self, building_id: Uuid) -> Result<Vec<(Uuid, Uuid, rust_decimal::Decimal)>, String>;
+            async fn find_active_quota_shares_by_building(&self, building_id: Uuid) -> Result<Vec<(Uuid, Uuid, rust_decimal::Decimal)>, String>;
             async fn find_voting_holders_by_unit(&self, unit_id: Uuid) -> Result<Vec<crate::domain::entities::LotHolder>, String>;
         }
     }
@@ -429,6 +433,7 @@ mod tests {
 
     fn make_etat_date(org_id: Uuid, building_id: Uuid, unit_id: Uuid) -> EtatDate {
         EtatDate::new(
+            Uuid::new_v4(), // acp_id
             org_id,
             building_id,
             unit_id,

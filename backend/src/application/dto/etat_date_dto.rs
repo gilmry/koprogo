@@ -40,6 +40,8 @@ pub struct UpdateEtatDateAdditionalDataRequest {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct EtatDateResponse {
     pub id: Uuid,
+    /// L'ACP propriétaire de la pièce (ADR-0045).
+    pub acp_id: Uuid,
     pub organization_id: Uuid,
     pub building_id: Uuid,
     pub unit_id: Uuid,
@@ -85,6 +87,7 @@ impl From<EtatDate> for EtatDateResponse {
 
         Self {
             id: etat_date.id,
+            acp_id: etat_date.acp_id,
             organization_id: etat_date.organization_id,
             building_id: etat_date.building_id,
             unit_id: etat_date.unit_id,

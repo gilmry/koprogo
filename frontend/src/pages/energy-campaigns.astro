@@ -3,22 +3,22 @@ import Layout from "../layouts/Layout.astro";
 ---
 
 <Layout title="Achats Groupés d'Énergie - KoproGo">
-  <div class="container mx-auto px-4 py-8">
+  <div class="container mx-auto px-4 py-8" data-testid="energy-campaigns-list">
     <div class="mb-6">
       <h1 class="text-3xl font-bold text-gray-900">
         ⚡ Achats Groupés d'Énergie
       </h1>
       <p class="text-gray-600 mt-2">
-        Négociez collectivement vos contrats d'énergie et économisez jusqu'à
-        25% sur vos factures d'électricité et de gaz.
+        Négociez collectivement vos contrats d'énergie et économisez jusqu'à 25%
+        sur vos factures d'électricité et de gaz.
       </p>
       <div
         class="mt-4 p-4 bg-blue-50 border-l-4 border-blue-400 rounded-md text-sm"
       >
         <p class="text-blue-800">
-          <strong>🔒 GDPR-compliant:</strong> Toutes vos données sont chiffrées
-          avec AES-256-GCM. K-anonymité garantie (minimum 5 participants). Conforme
-          CREG belge.
+          <strong>🔒 GDPR-compliant:</strong> Toutes vos données sont chiffrées avec
+          AES-256-GCM. K-anonymité garantie (minimum 5 participants). Conforme CREG
+          belge.
         </p>
       </div>
     </div>
@@ -42,9 +42,7 @@ import Layout from "../layouts/Layout.astro";
   if (listContainer) {
     mount(EnergyCampaignList as any, {
       target: listContainer,
-      props: {
-        organizationId: organizationId,
-      },
+      props: { organizationId: organizationId, showHeader: false },
     });
   }
 </script>

@@ -215,6 +215,10 @@ impl From<MeetingData> for MeetingDataDto {
 /// Request DTO for GDPR data erasure (Article 17)
 #[derive(Debug, Clone, Serialize, Deserialize, utoipa::ToSchema)]
 pub struct GdprEraseRequestDto {
+    /// Mot de passe de la personne qui demande l'effacement de ses propres
+    /// données. L'action est irréversible : deux `confirm()` côté navigateur
+    /// ne prouvent rien, et un appel direct à l'API les ignorait tout à fait.
+    pub password: String,
     /// Optional confirmation token for security
     pub confirmation: Option<String>,
 }
@@ -361,6 +365,7 @@ mod tests {
     #[test]
     fn test_erase_request_dto() {
         let request = GdprEraseRequestDto {
+            password: "s3cret".to_string(),
             confirmation: Some("CONFIRM_DELETE".to_string()),
         };
 

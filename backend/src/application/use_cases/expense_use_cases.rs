@@ -49,6 +49,17 @@ impl ExpenseUseCases {
     /// validate-before-compute ACP-level). Utilisé par `main.rs`. Les tests
     /// unitaires continuent d'utiliser `new()` / `with_accounting_service()`
     /// sans repos (pre-check no-op).
+    /// Ne câble que la résolution de l'ACP, sans le service comptable ni le
+    /// dépôt d'ACP. Les harnais d'intégration montent l'application sans
+    /// comptabilité, mais écrivent en base réelle : sans ce câblage,
+    /// `resolve_acp_id` retombait sur l'organisation et l'insertion violait
+    /// `fk_expenses_acp`. Vingt-cinq tests e2e rouges le 2026-09-03, tous de
+    /// cette seule cause. Même nom que `MeetingUseCases::with_acp_resolution`.
+    pub fn with_acp_resolution(mut self, building_repository: Arc<dyn BuildingRepository>) -> Self {
+        self.building_repository = Some(building_repository);
+        self
+    }
+
     pub fn with_full_wiring(
         repository: Arc<dyn ExpenseRepository>,
         accounting_service: Arc<ExpenseAccountingService>,
@@ -88,6 +99,49 @@ impl ExpenseUseCases {
         Ok(())
     }
 
+    /// Résout l'ACP propriétaire d'un immeuble.
+    ///
+    /// La comptabilité appartient à l'ACP, pas au syndic : c'est cette clé qui
+    /// doit être posée sur la charge.
+    ///
+    /// ── Ce que faisait ce code ──────────────────────────────────────────
+    ///
+    /// En l'absence de dépôt d'immeubles, il retombait sur l'identifiant
+    /// d'**organisation** — un identifiant présenté pour ce qu'il n'est pas.
+    /// La contrainte `fk_expenses_acp` le rejetait en base, et vingt-cinq
+    /// tests e2e sont tombés sur cette seule cause le 2026-09-03.
+    ///
+    /// Le commentaire justifiait le repli en disant qu'il « préservait les
+    /// tests à mocks sans introduire de dérive en production ». C'était faux
+    /// dans les deux termes : la dérive existait, et ce que le repli
+    /// préservait, ce n'étaient pas les tests mais leur silence.
+    ///
+    /// C'est le motif « `None` veut dire test » : la valeur fabriquée rend le
+    /// test unitaire vert **et** rend le défaut invisible exactement là où on
+    /// le cherche. Un test qui ne peut pas échouer ne prouve rien.
+    ///
+    /// ── Ce qu'il fait maintenant ───────────────────────────────────────
+    ///
+    /// Il refuse. Un appelant qui ne fournit pas de quoi résoudre l'ACP a une
+    /// erreur de câblage, pas un cas limite à absorber : `main.rs` fournit
+    /// toujours ce dépôt, et les quatre harnais d'intégration passent par
+    /// `with_acp_resolution`.
+    ///
+    /// Suivi en #761.
+    async fn resolve_acp_id(&self, building_id: Uuid) -> Result<Uuid, String> {
+        let building_repo = self.building_repository.as_ref().ok_or_else(|| {
+            "Câblage incomplet : ExpenseUseCases ne peut pas résoudre l'ACP de \
+             l'immeuble sans dépôt d'immeubles. Employez `with_acp_resolution` \
+             ou `with_full_wiring` (#761)."
+                .to_string()
+        })?;
+        let building = building_repo
+            .find_by_id(building_id)
+            .await?
+            .ok_or_else(|| "Building not found".to_string())?;
+        Ok(building.acp_id)
+    }
+
     pub async fn create_expense(
         &self,
         dto: CreateExpenseDto,
@@ -105,19 +159,82 @@ impl ExpenseUseCases {
             .map_err(|_| "Invalid date format".to_string())?
             .with_timezone(&chrono::Utc);
 
-        let expense = Expense::new(
-            organization_id,
-            building_id,
-            dto.category,
-            dto.description,
-            dto.amount,
-            expense_date,
-            dto.supplier,
-            dto.invoice_number,
-            dto.account_code,
-        )?;
+        let due_date = match dto.due_date.as_deref() {
+            Some(d) => Some(
+                DateTime::parse_from_rfc3339(d)
+                    .map_err(|_| "Invalid due_date format".to_string())?
+                    .with_timezone(&chrono::Utc),
+            ),
+            None => None,
+        };
+
+        // L'ACP propriétaire — clé de rattachement patrimonial de la charge.
+        let acp_id = self.resolve_acp_id(building_id).await?;
+
+        // Deux constructeurs pour une seule route : `new_with_vat` dès que le
+        // détail TVA est fourni, `new` sinon (montant TTC seul).
+        //
+        // Le montant TTC est alors CALCULÉ à partir du HT et du taux, et non
+        // repris de `amount` : c'est le seul moyen d'avoir des lignes
+        // comptables qui s'équilibrent au centime. Un client qui envoie les
+        // trois avec un `amount` incohérent verra donc le calcul l'emporter.
+        let expense = match (dto.amount_excl_vat, dto.vat_rate) {
+            (Some(amount_excl_vat), Some(vat_rate)) => Expense::new_with_vat(
+                acp_id,
+                organization_id,
+                building_id,
+                dto.category,
+                dto.description,
+                amount_excl_vat,
+                vat_rate,
+                expense_date,
+                due_date,
+                dto.supplier,
+                dto.invoice_number,
+                dto.account_code,
+            )?,
+            _ => {
+                let mut expense = Expense::new(
+                    acp_id,
+                    organization_id,
+                    building_id,
+                    dto.category,
+                    dto.description,
+                    dto.amount,
+                    expense_date,
+                    dto.supplier,
+                    dto.invoice_number,
+                    dto.account_code,
+                )?;
+                // `Expense::new` ne prend pas d'échéance : elle serait perdue
+                // pour toute dépense saisie sans détail TVA.
+                expense.due_date = due_date;
+                expense
+            }
+        };
 
         let created = self.repository.create(&expense).await?;
+
+        // Le détail de la facture, quand elle est saisie ligne par ligne.
+        // Sans cet appel, `line_items` était accepté par le DTO puis perdu :
+        // la facture gardait ses totaux et le comptable perdait sa saisie.
+        if let Some(lignes) = &dto.line_items {
+            let lignes: Vec<_> = lignes
+                .iter()
+                .map(
+                    |l| crate::application::ports::expense_repository::LigneDeFacture {
+                        description: l.description.clone(),
+                        quantity: l.quantity,
+                        unit_price: l.unit_price,
+                        vat_rate: l.vat_rate,
+                    },
+                )
+                .collect();
+            self.repository
+                .enregistrer_lignes_de_facture(created.id, &lignes)
+                .await?;
+        }
+
         Ok(self.to_response_dto(&created))
     }
 
@@ -266,7 +383,10 @@ impl ExpenseUseCases {
             })
             .transpose()?;
 
+        let acp_id = self.resolve_acp_id(building_id).await?;
+
         let invoice = Expense::new_with_vat(
+            acp_id,
             organization_id,
             building_id,
             dto.category,
@@ -475,6 +595,7 @@ impl ExpenseUseCases {
     fn to_response_dto(&self, expense: &Expense) -> ExpenseResponseDto {
         ExpenseResponseDto {
             id: expense.id.to_string(),
+            acp_id: expense.acp_id.to_string(),
             building_id: expense.building_id.to_string(),
             category: expense.category.clone(),
             description: expense.description.clone(),
@@ -486,6 +607,11 @@ impl ExpenseUseCases {
             invoice_number: expense.invoice_number.clone(),
             account_code: expense.account_code.clone(),
             contractor_report_id: expense.contractor_report_id.map(|id| id.to_string()),
+            due_date: expense.due_date.map(|d| d.to_rfc3339()),
+            amount_excl_vat: expense.amount_excl_vat,
+            vat_rate: expense.vat_rate,
+            vat_amount: expense.vat_amount,
+            amount_incl_vat: expense.amount_incl_vat,
         }
     }
 
@@ -535,7 +661,7 @@ mod tests {
     use super::*;
     use crate::application::dto::{ExpenseFilters, PageRequest};
     use crate::application::ports::ExpenseRepository;
-    use crate::domain::entities::{ApprovalStatus, ExpenseCategory, PaymentStatus};
+    use crate::domain::entities::{ApprovalStatus, Building, ExpenseCategory, PaymentStatus};
     use async_trait::async_trait;
     use std::collections::HashMap;
     use std::sync::Mutex;
@@ -556,6 +682,17 @@ mod tests {
 
     #[async_trait]
     impl ExpenseRepository for MockExpenseRepository {
+        async fn enregistrer_lignes_de_facture(
+            &self,
+            _expense_id: Uuid,
+            _lignes: &[crate::application::ports::expense_repository::LigneDeFacture],
+        ) -> Result<(), String> {
+            // Mock : rien à enregistrer. Le port n'offre pas d'implémentation
+            // par défaut, précisément pour que ce choix soit écrit ici plutôt
+            // que subi partout.
+            Ok(())
+        }
+
         async fn create(&self, expense: &Expense) -> Result<Expense, String> {
             let mut expenses = self.expenses.lock().unwrap();
             expenses.insert(expense.id, expense.clone());
@@ -617,8 +754,139 @@ mod tests {
 
     // ========== Helpers ==========
 
+    /// L'ACP que le dépôt d'immeubles de test attribue à tout immeuble.
+    ///
+    /// Une constante, et non un identifiant tiré au hasard : les assertions
+    /// peuvent ainsi vérifier que la charge porte bien CETTE clé, ce qui est
+    /// tout l'objet de #761.
+    fn acp_de_test() -> Uuid {
+        Uuid::parse_str("5f2a1c9d-3e4b-4a6c-8d7e-1b2c3d4e5f6a").expect("UUID valide")
+    }
+
+    /// Un dépôt d'immeubles qui répond à toute demande.
+    ///
+    /// Il existe parce que `resolve_acp_id` ne fabrique plus d'ACP quand le
+    /// dépôt manque : il refuse (#761). Les tests unitaires doivent donc
+    /// fournir de quoi résoudre l'ACP, comme le fait `main.rs`.
+    ///
+    /// C'est le point de cette correction. L'ancien repli rendait ces tests
+    /// verts en posant un identifiant d'organisation à la place d'un
+    /// identifiant d'ACP — la contrainte `fk_expenses_acp` s'en chargeait en
+    /// base, mais bien plus tard, et ailleurs.
+    struct DepotImmeublesDeTest;
+
+    #[async_trait]
+    impl BuildingRepository for DepotImmeublesDeTest {
+        async fn create(&self, building: &Building) -> Result<Building, String> {
+            Ok(building.clone())
+        }
+
+        async fn find_by_id(&self, id: Uuid) -> Result<Option<Building>, String> {
+            let mut b = Building::new(
+                acp_de_test(),
+                "Résidence de test".to_string(),
+                "12 Rue de la Loi".to_string(),
+                "Bruxelles".to_string(),
+                "1000".to_string(),
+                "Belgium".to_string(),
+                10,
+                1000,
+                None,
+            )
+            .expect("immeuble de test valide");
+            b.id = id;
+            Ok(Some(b))
+        }
+
+        async fn find_all(&self) -> Result<Vec<Building>, String> {
+            Ok(vec![])
+        }
+
+        async fn find_all_paginated(
+            &self,
+            _page_request: &crate::application::dto::PageRequest,
+            _filters: &crate::application::dto::BuildingFilters,
+        ) -> Result<(Vec<Building>, i64), String> {
+            Ok((vec![], 0))
+        }
+
+        async fn update(&self, building: &Building) -> Result<Building, String> {
+            Ok(building.clone())
+        }
+
+        async fn delete(&self, _id: Uuid) -> Result<bool, String> {
+            Ok(true)
+        }
+
+        async fn find_by_slug(&self, _slug: &str) -> Result<Option<Building>, String> {
+            Ok(None)
+        }
+
+        async fn find_by_id_with_metrics(
+            &self,
+            _id: Uuid,
+        ) -> Result<Option<(Building, crate::domain::entities::BuildingMetrics)>, String> {
+            Ok(None)
+        }
+    }
+
+    /// Câblé comme la production : `main.rs` fournit toujours ce dépôt.
+    ///
+    /// Le dépôt d'ACP reste absent, donc `assert_acp_conformant` demeure sans
+    /// effet — on ne câble QUE la résolution de l'ACP, pas le contrôle de
+    /// conformité, dont ces tests ne parlent pas.
     fn make_use_cases(repo: MockExpenseRepository) -> ExpenseUseCases {
-        ExpenseUseCases::new(Arc::new(repo))
+        ExpenseUseCases::new(Arc::new(repo)).with_acp_resolution(Arc::new(DepotImmeublesDeTest))
+    }
+
+    /// Sans dépôt d'immeubles, la création REFUSE au lieu de fabriquer une clé.
+    ///
+    /// C'est la garde de #761. L'ancien code retournait ici l'identifiant
+    /// d'organisation en le présentant comme un identifiant d'ACP : le test
+    /// unitaire passait, et la contrainte `fk_expenses_acp` rejetait
+    /// l'insertion bien plus tard, ailleurs, dans vingt-cinq tests e2e.
+    ///
+    /// On construit donc volontairement le cas de câblage incomplet — le seul
+    /// endroit du fichier qui n'emploie pas `make_use_cases`.
+    #[tokio::test]
+    async fn sans_depot_dimmeubles_la_charge_est_refusee_et_non_fabriquee() {
+        let uc = ExpenseUseCases::new(Arc::new(MockExpenseRepository::new()));
+        let dto = valid_create_dto(Uuid::new_v4(), Uuid::new_v4());
+
+        let erreur = uc
+            .create_expense(dto)
+            .await
+            .expect_err("un câblage incomplet doit refuser, pas inventer une ACP");
+
+        assert!(
+            erreur.contains("761") || erreur.to_lowercase().contains("câblage"),
+            "le message doit désigner le câblage comme cause, reçu : {erreur}"
+        );
+    }
+
+    /// La charge porte l'ACP de son IMMEUBLE, pas l'organisation de l'appelant.
+    ///
+    /// Sans ce cas, le test précédent passerait aussi avec une implémentation
+    /// qui refuserait toujours. Il faut les deux : l'un dit qu'on ne fabrique
+    /// plus, l'autre qu'on résout correctement.
+    #[tokio::test]
+    async fn la_charge_porte_lacp_de_son_immeuble() {
+        let uc = make_use_cases(MockExpenseRepository::new());
+        let organisation = Uuid::new_v4();
+        let dto = valid_create_dto(organisation, Uuid::new_v4());
+
+        let charge = uc.create_expense(dto).await.expect("création valide");
+
+        assert_eq!(
+            charge.acp_id,
+            acp_de_test().to_string(),
+            "la charge doit porter l'ACP de l'immeuble"
+        );
+        assert_ne!(
+            charge.acp_id,
+            organisation.to_string(),
+            "l'identifiant d'organisation n'est pas un identifiant d'ACP"
+        );
     }
 
     fn valid_create_dto(org_id: Uuid, building_id: Uuid) -> CreateExpenseDto {
@@ -632,6 +900,10 @@ mod tests {
             supplier: Some("Schindler SA".to_string()),
             invoice_number: Some("INV-2026-001".to_string()),
             account_code: Some("611002".to_string()),
+            amount_excl_vat: None,
+            vat_rate: None,
+            due_date: None,
+            line_items: None,
         }
     }
 
@@ -672,6 +944,103 @@ mod tests {
         assert_eq!(dto.approval_status, ApprovalStatus::Draft);
         assert_eq!(dto.supplier, Some("Schindler SA".to_string()));
         assert_eq!(dto.account_code, Some("611002".to_string()));
+    }
+
+    /// Non-régression F12 / F20 — l'échéance et le détail TVA doivent survivre
+    /// à l'aller-retour.
+    ///
+    /// `InvoiceForm.svelte` envoyait déjà `amount_excl_vat`, `vat_rate` et
+    /// `due_date` à `POST /expenses`. Ces champs n'existaient que sur
+    /// `CreateInvoiceDraftDto`, servi par une AUTRE route que l'interface
+    /// n'appelle pas : serde les jetait en silence.
+    ///
+    /// Trois couches manquaient les mêmes champs — le DTO d'entrée, le
+    /// constructeur, et le DTO de réponse. Corriger une seule n'aurait rien
+    /// changé de visible, ce qui est précisément pourquoi ce test les traverse
+    /// toutes les trois.
+    #[tokio::test]
+    async fn test_echeance_et_tva_survivent_a_la_creation() {
+        let repo = MockExpenseRepository::new();
+        let uc = make_use_cases(repo);
+        let org_id = Uuid::new_v4();
+        let building_id = Uuid::new_v4();
+
+        let mut dto = valid_create_dto(org_id, building_id);
+        dto.amount_excl_vat = Some(rust_decimal_macros::dec!(2000));
+        dto.vat_rate = Some(rust_decimal_macros::dec!(21));
+        dto.due_date = Some("2026-10-31T12:00:00Z".to_string());
+
+        let cree = uc.create_expense(dto).await.expect("création acceptée");
+
+        // Le TTC est CALCULÉ à partir du HT et du taux, pas repris de
+        // `amount` (1500 dans la fixture) : sans quoi les lignes comptables
+        // ne s'équilibreraient pas au centime.
+        assert_eq!(cree.amount, rust_decimal_macros::dec!(2420));
+        assert_eq!(cree.amount_excl_vat, Some(rust_decimal_macros::dec!(2000)));
+        assert_eq!(cree.vat_rate, Some(rust_decimal_macros::dec!(21)));
+        assert_eq!(cree.vat_amount, Some(rust_decimal_macros::dec!(420)));
+        assert_eq!(cree.amount_incl_vat, Some(rust_decimal_macros::dec!(2420)));
+        assert!(
+            cree.due_date.is_some(),
+            "l'échéance saisie ne doit pas être perdue"
+        );
+        assert!(cree.due_date.unwrap().starts_with("2026-10-31"));
+    }
+
+    /// @edge — une dépense SANS détail TVA garde son échéance.
+    ///
+    /// `Expense::new` ne prend pas d'échéance en paramètre : sans traitement
+    /// explicite, elle serait perdue pour toute dépense saisie en TTC seul,
+    /// c'est-à-dire le cas le plus courant.
+    #[tokio::test]
+    async fn test_echeance_conservee_sans_detail_tva() {
+        let repo = MockExpenseRepository::new();
+        let uc = make_use_cases(repo);
+
+        let mut dto = valid_create_dto(Uuid::new_v4(), Uuid::new_v4());
+        dto.due_date = Some("2026-11-15T12:00:00Z".to_string());
+
+        let cree = uc.create_expense(dto).await.expect("création acceptée");
+
+        assert_eq!(cree.amount, rust_decimal_macros::dec!(1500));
+        assert_eq!(cree.amount_excl_vat, None, "aucune TVA n'est inventée");
+        assert!(cree.due_date.unwrap().starts_with("2026-11-15"));
+    }
+
+    /// La charge appartient à l'ACP, pas au syndic qui l'encode.
+    ///
+    /// Deux faits distincts, tous deux réels, tous deux conservés :
+    ///   `acp_id`          — À QUI la charge appartient. Clé de portée.
+    ///   `organization_id` — QUI l'a encodée. Traçabilité.
+    ///
+    /// Le second ne doit jamais servir de critère de portée. Mesuré le
+    /// 2026-09-02 sur une passation de syndic : filtrer sur l'organisation
+    /// laissait le cabinet ENTRANT sans grand livre, sans budget et sans
+    /// copropriétaires, pendant que le cabinet SORTANT continuait de les
+    /// voir — noms, adresses et arriérés compris, sans base légale.
+    ///
+    /// L'ACP se déduit de l'immeuble, qui la porte. Le cas d'usage la résout
+    /// donc à la création plutôt que de la faire porter par l'appelant : un
+    /// client ne doit pas pouvoir déclarer à quelle copropriété appartient la
+    /// charge qu'il saisit.
+    #[tokio::test]
+    async fn test_la_charge_appartient_a_lacp_pas_au_syndic() {
+        let repo = MockExpenseRepository::new();
+        let uc = make_use_cases(repo);
+        let org_id = Uuid::new_v4();
+        let building_id = Uuid::new_v4();
+
+        let cree = uc
+            .create_expense(valid_create_dto(org_id, building_id))
+            .await
+            .expect("création acceptée");
+
+        assert!(
+            !cree.acp_id.is_empty(),
+            "la charge doit porter l'ACP à laquelle elle appartient"
+        );
+        // La traçabilité du saisisseur reste, distincte de la propriété.
+        assert_eq!(cree.building_id, building_id.to_string());
     }
 
     #[tokio::test]

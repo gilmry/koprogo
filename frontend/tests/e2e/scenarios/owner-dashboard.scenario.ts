@@ -12,6 +12,8 @@
  * Duree video attendue : ~40-50 secondes (rythme humain)
  */
 import { test, expect } from "@playwright/test";
+import { ADMIN_PASSWORD } from "../helpers/identifiants";
+import { amorce } from "../helpers/amorcage";
 import {
   humanLogin,
   humanClick,
@@ -21,7 +23,7 @@ import {
   PACE,
 } from "../helpers/video-pace";
 
-const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
+import { API_BASE } from "../helpers/adresses";
 
 test.describe("Scenario: Alice consulte son tableau de bord", () => {
   test.setTimeout(120_000);
@@ -31,9 +33,9 @@ test.describe("Scenario: Alice consulte son tableau de bord", () => {
   test.beforeAll(async ({ request }) => {
     // 1. Login admin
     const adminResp = await request.post(`${API_BASE}/auth/login`, {
-      data: { email: "admin@koprogo.com", password: "admin123" },
+      data: { email: "admin@koprogo.com", password: ADMIN_PASSWORD },
     });
-    const admin = await adminResp.json();
+    const admin = await amorce(adminResp, "POST /auth/login");
     const adminHeaders = { Authorization: `Bearer ${admin.token}` };
 
     // 2. Seed the world
@@ -50,7 +52,7 @@ test.describe("Scenario: Alice consulte son tableau de bord", () => {
 
   test.afterAll(async ({ request }) => {
     const adminResp = await request.post(`${API_BASE}/auth/login`, {
-      data: { email: "admin@koprogo.com", password: "admin123" },
+      data: { email: "admin@koprogo.com", password: ADMIN_PASSWORD },
     });
     const admin = await adminResp.json();
     await request.delete(`${API_BASE}/seed/scenario/world`, {
@@ -111,7 +113,7 @@ test.describe("Scenario: Alice consulte son tableau de bord", () => {
     // ============================================================
     // ETAPE 4 : Navigation vers la section Paiements
     // ============================================================
-    await humanClick(page, "nav-link-paiements");
+    await humanClick(page, "nav-link-owner-payments");
     await waitForSpinner(page);
     await page.waitForTimeout(PACE.AFTER_NAVIGATION);
 
@@ -125,7 +127,7 @@ test.describe("Scenario: Alice consulte son tableau de bord", () => {
     // ============================================================
     // ETAPE 5 : Retour au tableau de bord
     // ============================================================
-    await humanClick(page, "nav-link-tableau-de-bord");
+    await humanClick(page, "nav-link-owner");
     await waitForSpinner(page);
     await page.waitForTimeout(PACE.AFTER_NAVIGATION);
 

@@ -389,6 +389,7 @@ impl AuthUseCases {
             role: active_role.role.to_string(),
             organization_id: active_role.organization_id,
             is_active: user.is_active,
+            created_at: user.created_at,
             roles: roles.iter().map(Self::summarize_role).collect(),
             active_role: Some(Self::summarize_role(active_role)),
         }

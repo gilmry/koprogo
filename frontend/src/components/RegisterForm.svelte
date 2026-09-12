@@ -137,7 +137,7 @@
         toast.show($_("auth.registerSuccess"), "success");
 
         // Redirect based on role
-        const redirectMap = {
+        const redirectMap: Partial<Record<UserRole, string>> = {
           [UserRole.SUPERADMIN]: "/admin",
           [UserRole.SYNDIC]: "/syndic",
           [UserRole.ACCOUNTANT]: "/accountant",

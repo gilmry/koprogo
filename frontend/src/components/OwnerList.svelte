@@ -1,20 +1,22 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
-  import { _ } from '../lib/i18n';
-  import { api } from '../lib/api';
-  import { authStore } from '../stores/auth';
-  import type { Owner, PageResponse } from '../lib/types';
-  import Pagination from './Pagination.svelte';
-  import OwnerEditModal from './OwnerEditModal.svelte';
-  import OwnerCreateModal from './OwnerCreateModal.svelte';
-  import OwnerUnits from './OwnerUnits.svelte';
+  import { onMount } from "svelte";
+  import { _ } from "../lib/i18n";
+  import { api } from "../lib/api";
+  import { authStore } from "../stores/auth";
+  import type { Owner, PageResponse } from "../lib/types";
+  import Pagination from "./Pagination.svelte";
+  import OwnerEditModal from "./OwnerEditModal.svelte";
+  import OwnerCreateModal from "./OwnerCreateModal.svelte";
+  import OwnerUnits from "./OwnerUnits.svelte";
 
   // Syndic et superadmin peuvent gérer les copropriétaires
-  $: canManageOwners = $authStore.user?.role === 'superadmin' || $authStore.user?.role === 'syndic';
+  $: canManageOwners =
+    $authStore.user?.role === "superadmin" ||
+    $authStore.user?.role === "syndic";
 
   let owners: Owner[] = [];
   let loading = true;
-  let error = '';
+  let error = "";
 
   // Pagination state
   let currentPage = 1;
@@ -47,7 +49,7 @@
     try {
       loading = true;
       const response = await api.get<PageResponse<Owner>>(
-        `/owners?page=${currentPage}&per_page=${perPage}`
+        `/owners?page=${currentPage}&per_page=${perPage}`,
       );
 
       owners = response.data;
@@ -55,10 +57,10 @@
       totalPages = response.pagination.total_pages;
       currentPage = response.pagination.current_page;
       perPage = response.pagination.per_page;
-      error = '';
+      error = "";
     } catch (e) {
-      error = e instanceof Error ? e.message : $_('common.error.loading');
-      console.error('Error loading owners:', e);
+      error = e instanceof Error ? e.message : $_("common.error.loading");
+      console.error("Error loading owners:", e);
     } finally {
       loading = false;
     }
@@ -95,40 +97,46 @@
 <div class="space-y-4">
   <div class="flex justify-between items-center">
     <p class="text-gray-600">
-      {$_('owners.count', { values: { count: totalItems } })}
+      {$_("owners.count", { values: { count: totalItems } })}
     </p>
     {#if canManageOwners}
       <button
+        data-testid="owner-list-create-button"
         type="button"
         on:click={openCreateModal}
         class="px-4 py-2 text-white bg-primary-600 rounded-lg hover:bg-primary-700 transition font-medium"
       >
-        {$_('owners.action.add')}
+        {$_("owners.action.add")}
       </button>
     {/if}
   </div>
 
   {#if error}
-    <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+    <div
+      class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded"
+    >
       {error}
     </div>
   {/if}
 
   {#if loading}
-    <p class="text-center text-gray-600 py-8">{$_('common.loading')}</p>
+    <p class="text-center text-gray-600 py-8">{$_("common.loading")}</p>
   {:else if owners.length === 0}
     <p class="text-center text-gray-600 py-8">
-      {$_('owners.empty')}
+      {$_("owners.empty")}
     </p>
   {:else}
     <div class="grid gap-4">
       {#each owners as owner (owner.id)}
-        <div class="bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-md transition">
+        <div
+          class="bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-md transition"
+        >
           <div class="p-4">
             <div class="flex justify-between items-start">
               <div class="flex-1">
                 <h3 class="text-lg font-semibold text-gray-900">
-                  {owner.first_name} {owner.last_name}
+                  {owner.first_name}
+                  {owner.last_name}
                 </h3>
                 <p class="text-gray-600 text-sm mt-1">
                   📧 {owner.email}
@@ -141,19 +149,26 @@
               </div>
               <div class="flex gap-2 ml-4">
                 <button
+                  data-testid="owner-list-toggle-button"
                   on:click={() => toggleOwnerExpanded(owner.id)}
                   class="px-3 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition"
-                  aria-label={expandedOwners.has(owner.id) ? $_('owners.action.hide_units') : $_('owners.action.show_units')}
-                  title={expandedOwners.has(owner.id) ? $_('owners.action.hide_units') : $_('owners.action.show_units')}
+                  aria-label={expandedOwners.has(owner.id)
+                    ? $_("owners.action.hide_units")
+                    : $_("owners.action.show_units")}
+                  title={expandedOwners.has(owner.id)
+                    ? $_("owners.action.hide_units")
+                    : $_("owners.action.show_units")}
                 >
-                  {expandedOwners.has(owner.id) ? '▼' : '▶'} {$_('owners.units')}
+                  {expandedOwners.has(owner.id) ? "▼" : "▶"}
+                  {$_("owners.units")}
                 </button>
                 {#if canManageOwners}
                   <button
+                    data-testid="owner-list-edit-button"
                     on:click={() => openEditModal(owner)}
                     class="px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 transition"
                   >
-                    {$_('common.action.edit')}
+                    {$_("common.action.edit")}
                   </button>
                 {/if}
               </div>
@@ -172,10 +187,10 @@
 
     {#if totalPages > 1}
       <Pagination
-        currentPage={currentPage}
-        totalPages={totalPages}
-        totalItems={totalItems}
-        perPage={perPage}
+        {currentPage}
+        {totalPages}
+        {totalItems}
+        {perPage}
         onPageChange={handlePageChange}
       />
     {/if}

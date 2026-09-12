@@ -78,13 +78,14 @@ impl JournalEntryRepository for PostgresJournalEntryRepository {
             JournalEntryRow,
             r#"
             INSERT INTO journal_entries (
-                organization_id, building_id, entry_date, description, document_ref,
+                acp_id, organization_id, building_id, entry_date, description, document_ref,
                 journal_type, expense_id, contribution_id, created_by
             )
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-            RETURNING id, organization_id, building_id, entry_date, description, document_ref,
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+            RETURNING id, acp_id, organization_id, building_id, entry_date, description, document_ref,
                       journal_type, expense_id, contribution_id, created_at, updated_at, created_by
             "#,
+            entry.acp_id,
             entry.organization_id,
             entry.building_id,
             entry.entry_date,
@@ -140,10 +141,10 @@ impl JournalEntryRepository for PostgresJournalEntryRepository {
             JournalEntryRow,
             r#"
             SELECT
-                id, organization_id, building_id, entry_date, description, document_ref,
+                id, acp_id, organization_id, building_id, entry_date, description, document_ref,
                 journal_type, expense_id, contribution_id, created_at, updated_at, created_by
             FROM journal_entries
-            WHERE organization_id = $1
+            WHERE acp_id IN (SELECT id FROM acps WHERE organization_id = $1)
             ORDER BY entry_date DESC, created_at DESC
             "#,
             organization_id
@@ -161,12 +162,41 @@ impl JournalEntryRepository for PostgresJournalEntryRepository {
         Ok(entries)
     }
 
+    async fn find_by_contribution(
+        &self,
+        contribution_id: Uuid,
+    ) -> Result<Vec<JournalEntry>, String> {
+        let entry_rows = sqlx::query_as!(
+            JournalEntryRow,
+            r#"
+            SELECT
+                id, acp_id, organization_id, building_id, entry_date, description, document_ref,
+                journal_type, expense_id, contribution_id, created_at, updated_at, created_by
+            FROM journal_entries
+            WHERE contribution_id = $1
+            ORDER BY entry_date DESC, created_at DESC
+            "#,
+            contribution_id
+        )
+        .fetch_all(&self.pool)
+        .await
+        .map_err(|e| format!("Failed to find journal entries for contribution: {}", e))?;
+
+        let mut entries = Vec::new();
+        for row in entry_rows {
+            let lines = self.load_lines(row.id).await?;
+            entries.push(row.into_journal_entry(lines));
+        }
+
+        Ok(entries)
+    }
+
     async fn find_by_expense(&self, expense_id: Uuid) -> Result<Vec<JournalEntry>, String> {
         let entry_rows = sqlx::query_as!(
             JournalEntryRow,
             r#"
             SELECT
-                id, organization_id, building_id, entry_date, description, document_ref,
+                id, acp_id, organization_id, building_id, entry_date, description, document_ref,
                 journal_type, expense_id, contribution_id, created_at, updated_at, created_by
             FROM journal_entries
             WHERE expense_id = $1
@@ -197,10 +227,10 @@ impl JournalEntryRepository for PostgresJournalEntryRepository {
             JournalEntryRow,
             r#"
             SELECT
-                id, organization_id, building_id, entry_date, description, document_ref,
+                id, acp_id, organization_id, building_id, entry_date, description, document_ref,
                 journal_type, expense_id, contribution_id, created_at, updated_at, created_by
             FROM journal_entries
-            WHERE organization_id = $1
+            WHERE acp_id IN (SELECT id FROM acps WHERE organization_id = $1)
               AND entry_date >= $2
               AND entry_date <= $3
             ORDER BY entry_date, created_at
@@ -231,7 +261,7 @@ impl JournalEntryRepository for PostgresJournalEntryRepository {
             r#"
             SELECT account_code, balance
             FROM account_balances
-            WHERE organization_id = $1
+            WHERE acp_id IN (SELECT id FROM acps WHERE organization_id = $1)
             "#,
             organization_id
         )
@@ -267,7 +297,7 @@ impl JournalEntryRepository for PostgresJournalEntryRepository {
             JOIN journal_entries je ON je.id = jel.journal_entry_id
             JOIN accounts a ON a.organization_id = jel.organization_id
                            AND a.code = jel.account_code
-            WHERE jel.organization_id = $1
+            WHERE je.acp_id IN (SELECT id FROM acps WHERE organization_id = $1)
               AND je.entry_date >= $2
               AND je.entry_date <= $3
             GROUP BY jel.account_code, a.account_type
@@ -316,7 +346,8 @@ impl JournalEntryRepository for PostgresJournalEntryRepository {
                 jel.description,
                 jel.created_at
             FROM journal_entry_lines jel
-            WHERE jel.organization_id = $1
+            JOIN journal_entries je ON je.id = jel.journal_entry_id
+            WHERE je.acp_id IN (SELECT id FROM acps WHERE organization_id = $1)
               AND jel.account_code = $2
             ORDER BY jel.created_at
             "#,
@@ -366,7 +397,7 @@ impl JournalEntryRepository for PostgresJournalEntryRepository {
             FROM journal_entry_lines jel
             JOIN journal_entries je ON jel.journal_entry_id = je.id
             LEFT JOIN expenses e ON je.expense_id = e.id
-            WHERE jel.organization_id = $1
+            WHERE je.acp_id IN (SELECT id FROM acps WHERE organization_id = $1)
               AND (e.building_id = $2 OR e.building_id IS NULL)
             GROUP BY jel.account_code
             "#,
@@ -420,7 +451,7 @@ impl JournalEntryRepository for PostgresJournalEntryRepository {
             FROM journal_entry_lines jel
             JOIN journal_entries je ON jel.journal_entry_id = je.id
             LEFT JOIN expenses e ON je.expense_id = e.id
-            WHERE jel.organization_id = $1
+            WHERE je.acp_id IN (SELECT id FROM acps WHERE organization_id = $1)
               AND (e.building_id = $2 OR e.building_id IS NULL)
               AND je.entry_date >= $3
               AND je.entry_date <= $4
@@ -479,12 +510,13 @@ impl JournalEntryRepository for PostgresJournalEntryRepository {
         sqlx::query!(
             r#"
             INSERT INTO journal_entries (
-                id, organization_id, building_id, entry_date, description,
+                id, acp_id, organization_id, building_id, entry_date, description,
                 document_ref, journal_type, expense_id, contribution_id, created_at, updated_at, created_by
             )
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
             "#,
             entry.id,
+            entry.acp_id,
             entry.organization_id,
             entry.building_id,
             entry.entry_date,
@@ -547,10 +579,10 @@ impl JournalEntryRepository for PostgresJournalEntryRepository {
             JournalEntryRow,
             r#"
             SELECT
-                id, organization_id, building_id, entry_date, description,
+                id, acp_id, organization_id, building_id, entry_date, description,
                 document_ref, journal_type, expense_id, contribution_id, created_at, updated_at, created_by
             FROM journal_entries
-            WHERE organization_id = $1
+            WHERE acp_id IN (SELECT id FROM acps WHERE organization_id = $1)
               AND ($2::uuid IS NULL OR building_id = $2)
               AND ($3::text IS NULL OR journal_type = $3)
               AND ($4::timestamptz IS NULL OR entry_date >= $4)
@@ -585,7 +617,7 @@ impl JournalEntryRepository for PostgresJournalEntryRepository {
             JournalEntryRow,
             r#"
             SELECT
-                id, organization_id, building_id, entry_date, description,
+                id, acp_id, organization_id, building_id, entry_date, description,
                 document_ref, journal_type, expense_id, contribution_id, created_at, updated_at, created_by
             FROM journal_entries
             WHERE id = $1 AND organization_id = $2
@@ -676,6 +708,7 @@ impl JournalEntryRepository for PostgresJournalEntryRepository {
 #[derive(Debug)]
 struct JournalEntryRow {
     id: Uuid,
+    acp_id: Uuid,
     organization_id: Uuid,
     building_id: Option<Uuid>,
     entry_date: DateTime<Utc>,
@@ -693,6 +726,7 @@ impl JournalEntryRow {
     fn into_journal_entry(self, lines: Vec<JournalEntryLine>) -> JournalEntry {
         JournalEntry {
             id: self.id,
+            acp_id: self.acp_id,
             organization_id: self.organization_id,
             building_id: self.building_id,
             entry_date: self.entry_date,

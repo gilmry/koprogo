@@ -4,7 +4,30 @@
 # Include infrastructure deployment targets
 -include infrastructure/Makefile.infra
 
-.PHONY: help dev up down logs test test-unit test-int test-bdd codegen lint format build clean install setup migrate reset-db docs docs-serve audit ci pre-commit deploy-prod deploy-staging
+.PHONY: help dev up down logs test test-unit test-int test-bdd codegen vitrine lint format build clean install setup migrate reset-db docs docs-serve audit ci pre-commit deploy-prod deploy-staging
+
+# L'adresse de la pile de DÉVELOPPEMENT et de RECETTE — jamais celle de la démo.
+#
+# ── Pourquoi ce n'est plus `http://localhost` ────────────────────────────────
+#
+# Sur l'hôte qui porte la démo, le port 80 est tenu par SON Traefik, qui route
+# vers `Host(api.koprogo.com)`. `make test-e2e` visait donc la démo : 480 appels
+# d'écriture, 130 connexions contre une limite de 5/min, et `make seed-reset`
+# qui POSTe sur /seed/scenario/world. Ce n'est pas un risque à encadrer, c'est
+# la procédure de la recette qui détruit la démo (ADR 0050, #872).
+#
+# La pile de recette publie donc le 8090. Surchargeable pour viser ailleurs :
+#   make test-e2e RECETTE=http://localhost:3000
+#
+# DEUX variables, pas une. `PLAYWRIGHT_BASE_URL` dit où le NAVIGATEUR va ;
+# `PLAYWRIGHT_API_BASE` dit où les helpers AMORCENT leur monde (organisations,
+# immeubles, comptes). Les quatre fichiers de `tests/e2e/helpers/` retombent
+# sinon sur `http://localhost/api/v1` — le port 80, donc la démo.
+#
+# Mesuré le 2026-09-12 : n'exporter que la première a fait échouer 57 specs
+# sur 106. Le port 80 rend un `301 → https://localhost` qui n'aboutit pas,
+# donc rien n'a été écrit dans la démo. C'est une chance, pas une garde.
+RECETTE ?= http://localhost:8090
 
 # Couleurs pour output
 GREEN  := \033[0;32m
@@ -24,9 +47,9 @@ help: ## 📖 Afficher cette aide
 
 dev: ## 🔥 Démarrer dev avec hot reload (Traefik + backend + frontend)
 	@echo "$(GREEN)🚀 Démarrage environnement dev avec hot reload...$(NC)"
-	@echo "  📍 Frontend: http://localhost"
-	@echo "  📍 API:      http://localhost/api/v1"
-	@echo "  📍 Traefik:  http://localhost:8081"
+	@echo "  📍 Frontend: $(RECETTE)"
+	@echo "  📍 API:      $(RECETTE)/api/v1"
+	@echo "  📍 Traefik:  http://localhost:8091"
 	@echo ""
 	docker compose up
 
@@ -75,7 +98,7 @@ test-bdd: ## 🥒 Tests BDD/Cucumber (backend)
 
 test-e2e: ## 🌐 Tests E2E Playwright (frontend + backend)
 	@echo "$(GREEN)🌐 Tests E2E...$(NC)"
-	cd frontend && PLAYWRIGHT_BASE_URL=http://localhost npm run test:e2e
+	cd frontend && PLAYWRIGHT_BASE_URL=$(RECETTE) PLAYWRIGHT_API_BASE=$(RECETTE)/api/v1 npm run test:e2e
 
 codegen: ## 🎬 Playwright codegen interactif (DEVICE=mobile pour iPhone 13)
 	@echo "$(GREEN)🎬 Playwright codegen ($(YELLOW)DEVICE=$(DEVICE)$(GREEN))...$(NC)"
@@ -86,18 +109,17 @@ codegen: ## 🎬 Playwright codegen interactif (DEVICE=mobile pour iPhone 13)
 		npm run codegen; \
 	fi
 
-test-e2e-slow: ## 🐌 Tests E2E ralentis (1s entre chaque action - pour vidéos)
-	@echo "$(GREEN)🐌 Ralentissement des tests E2E...$(NC)"
-	bash .claude/scripts/slow-down-tests.sh 1000
+vitrine: ## 🎬 Vitrine — le parcours narré + la galerie (preuve de valeur, NON bloquant)
+	@echo "$(GREEN)🎬 Enregistrement du parcours de référence...$(NC)"
+	@# Harnais SÉPARÉ, par construction : il ne touche pas aux fichiers du
+	@# gate. C'est ce que `slow-down-tests.sh` faisait, et que le skill
+	@# `documentation-vivante.md` nomme comme l'anti-patron à éviter.
+	cd frontend && node tests/e2e/journeys/enregistrer-vitrine.mjs || true
 	@echo ""
-	@echo "$(GREEN)🎥 Lancement des tests ralentis...$(NC)"
-	cd frontend && PLAYWRIGHT_BASE_URL=http://localhost npm run test:e2e || true
+	@echo "$(GREEN)🖼  Assemblage de la galerie...$(NC)"
+	cd frontend && node tests/e2e/journeys/assembler-vitrine.mjs
 	@echo ""
-	@echo "$(GREEN)⚡ Restauration de la vitesse normale...$(NC)"
-	bash .claude/scripts/restore-test-speed.sh
-
-test-e2e-restore-speed: ## ⚡ Restaurer la vitesse normale des tests
-	bash .claude/scripts/restore-test-speed.sh
+	@echo "$(GREEN)✅ Vitrine : frontend/tests/e2e/journeys/vitrine/index.html$(NC)"
 
 test-watch: ## 👀 Tests en mode watch (auto-reload)
 	cd backend && cargo watch -x "test --lib"
@@ -229,10 +251,10 @@ seed: ## 🌱 Seed DB avec données de test
 	cd backend && cargo run --bin seed
 
 seed-reset: ## 🔄 Reset le scénario world via API (idempotent)
-	@TOKEN=$$(curl -s -X POST http://localhost/api/v1/auth/login \
+	@TOKEN=$$(curl -s -X POST $(RECETTE)/api/v1/auth/login \
 		-H 'Content-Type: application/json' \
 		-d '{"email":"admin@koprogo.com","password":"admin123"}' | python3 -c "import sys,json; print(json.load(sys.stdin).get('token',''))"); \
-	curl -s -X POST http://localhost/api/v1/seed/scenario/world \
+	curl -s -X POST $(RECETTE)/api/v1/seed/scenario/world \
 		-H "Authorization: Bearer $$TOKEN" | head -c 200; \
 	echo "\n$(GREEN)✅ Seed world reset$(NC)"
 
@@ -371,16 +393,14 @@ docs-with-videos: ## 🎥 Générer docs Sphinx avec vidéos E2E (tests ralentis
 	docker compose up -d postgres minio backend traefik frontend
 	@sleep 3
 	@echo ""
-	@echo "1️⃣ Ralentissement des tests (1 s entre chaque action)..."
-	bash .claude/scripts/slow-down-tests.sh 1000
+	@echo "1️⃣ Vitrine — parcours narré, harnais séparé..."
+	cd frontend && node tests/e2e/journeys/enregistrer-vitrine.mjs || true
+	cd frontend && node tests/e2e/journeys/assembler-vitrine.mjs
 	@echo ""
-	@echo "2️⃣ Lancement des tests E2E..."
+	@echo "2️⃣ Lancement des tests E2E (le gate, à la vitesse)..."
 	@{ \
-		cd frontend && PLAYWRIGHT_BASE_URL=http://localhost npm run test:e2e; \
+		cd frontend && PLAYWRIGHT_BASE_URL=$(RECETTE) PLAYWRIGHT_API_BASE=$(RECETTE)/api/v1 npm run test:e2e; \
 	} || echo "$(YELLOW)⚠️  Certains tests ont échoué$(NC)"
-	@echo ""
-	@echo "3️⃣ Restauration de la vitesse normale..."
-	bash .claude/scripts/restore-test-speed.sh
 	@echo ""
 	@echo "4️⃣ Synchronisation des vidéos..."
 	bash .claude/scripts/copy-videos.sh
@@ -422,7 +442,11 @@ ci: ## ✅ Vérifications CI locales via containers Docker (tout dans Docker, pa
 	@echo "$(GREEN)🔧 Compilation tests BDD backend...$(NC)"
 	docker compose exec -T backend sh -c "SQLX_OFFLINE=true cargo test --test bdd --test bdd_governance --test bdd_financial --test bdd_operations --test bdd_community --no-run"
 	@echo "$(GREEN)🎭 Playwright smoke tests (chromium)...$(NC)"
-	docker compose exec -T -e PLAYWRIGHT_BASE_URL=http://localhost:3000 -e PLAYWRIGHT_API_BASE=http://koprogo-backend:8080/api/v1 frontend sh -c "npx playwright test --project=chromium" || echo "$(YELLOW)⚠️  Playwright: certains tests échouent en Docker local (networking). Vérifier en CI.$(NC)"
+	@# `koprogo-backend` est le conteneur de la DÉMO. Depuis le réseau de la
+	@# pile de recette il n'est même pas résolvable, mais l'écrire ici laissait
+	@# croire le contraire — et sur un hôte où les deux réseaux se rejoindraient,
+	@# la campagne aurait amorcé son monde dans la base vivante (ADR 0050, #872).
+	docker compose exec -T -e PLAYWRIGHT_BASE_URL=http://localhost:3000 -e PLAYWRIGHT_API_BASE=http://koprogo-dev-backend:8080/api/v1 frontend sh -c "npx playwright test --project=chromium" || echo "$(YELLOW)⚠️  Playwright: certains tests échouent en Docker local (networking). Vérifier en CI.$(NC)"
 	@echo ""
 	@echo "$(GREEN)🎉 Tous les checks CI passés!$(NC)"
 	@echo "$(GREEN)✅ Prêt à push$(NC)"
@@ -452,7 +476,7 @@ mcp-up: ## 🤖 Démarrer stack MCP complète (backend + edge node + postgres)
 	@echo "$(GREEN)🤖 Démarrage stack MCP...$(NC)"
 	@echo "  📍 Backend MCP: http://localhost:8080/mcp/v1"
 	@echo "  📍 Edge Node:   http://localhost:3031"
-	@echo "  📍 MCP Chat:    http://localhost/mcp-chat"
+	@echo "  📍 MCP Chat:    $(RECETTE)/mcp-chat"
 	@echo ""
 	docker compose -f docker-compose.mcp.yml up
 
@@ -529,10 +553,10 @@ info: ## ℹ️  Infos projet
 	@echo "  - Proxy:    Traefik"
 	@echo ""
 	@echo "🌐 URLs Dev:"
-	@echo "  - Frontend: http://localhost"
-	@echo "  - API:      http://localhost/api/v1"
-	@echo "  - Traefik:  http://localhost:8081"
-	@echo "  - DB:       localhost:5432"
+	@echo "  - Frontend: $(RECETTE)"
+	@echo "  - API:      $(RECETTE)/api/v1"
+	@echo "  - Traefik:  http://localhost:8091"
+	@echo "  - DB:       localhost:15432"
 	@echo ""
 	@echo "📚 Docs:"
 	@echo "  - README:   ./README.md"

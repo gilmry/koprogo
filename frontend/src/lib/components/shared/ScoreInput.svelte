@@ -68,10 +68,7 @@
   }
 </script>
 
-<fieldset
-  class="flex flex-col gap-1"
-  disabled={disabled}
->
+<fieldset class="flex flex-col gap-1" {disabled}>
   <legend class="text-sm font-medium text-gray-700">
     {label}
     {#if required}

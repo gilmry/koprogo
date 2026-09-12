@@ -1,8 +1,10 @@
 use crate::application::dto::{CreateNoticeDto, SetExpirationDto, UpdateNoticeDto};
 use crate::domain::entities::{NoticeCategory, NoticeStatus, NoticeType};
 use crate::infrastructure::web::app_state::AppState;
+use crate::infrastructure::web::classification_erreurs;
+use crate::infrastructure::web::middleware::scope_guard::verify_notice_org_access;
 use crate::infrastructure::web::middleware::AuthenticatedUser;
-use actix_web::{delete, get, post, put, web, HttpResponse, Responder};
+use actix_web::{delete, get, post, put, web, HttpResponse, Responder, ResponseError};
 use uuid::Uuid;
 
 /// Create a new notice (Draft status)
@@ -34,11 +36,33 @@ pub async fn create_notice(
 ///
 /// GET /notices/:id
 #[get("/notices/{id}")]
-pub async fn get_notice(data: web::Data<AppState>, id: web::Path<Uuid>) -> impl Responder {
-    match data.notice_use_cases.get_notice(id.into_inner()).await {
+pub async fn get_notice(
+    data: web::Data<AppState>,
+    user: AuthenticatedUser,
+    id: web::Path<Uuid>,
+) -> impl Responder {
+    let identifiant = id.into_inner();
+
+    // Cette route ne prenait AUCUNE identité : n'importe qui pouvait la lire
+    // sur simple connaissance de l'identifiant. Le cliquet de #772 ne la
+    // voyait pas — il ne compte que les routes PRENANT une identité sans
+    // s'en servir. Cf. #845.
+    if let Err(err) = crate::infrastructure::web::middleware::scope_guard::verify_notice_org_access(
+        &user,
+        identifiant,
+        &data.notice_use_cases,
+        &data.building_use_cases,
+        &data.acp_use_cases,
+    )
+    .await
+    {
+        return err.error_response();
+    }
+
+    match data.notice_use_cases.get_notice(identifiant).await {
         Ok(notice) => HttpResponse::Ok().json(notice),
         Err(e) => {
-            if e.contains("not found") {
+            if classification_erreurs::est_introuvable(&e) {
                 HttpResponse::NotFound().json(serde_json::json!({"error": e}))
             } else {
                 HttpResponse::InternalServerError().json(serde_json::json!({"error": e}))
@@ -54,7 +78,23 @@ pub async fn get_notice(data: web::Data<AppState>, id: web::Path<Uuid>) -> impl 
 pub async fn list_building_notices(
     data: web::Data<AppState>,
     building_id: web::Path<Uuid>,
+    user: AuthenticatedUser,
 ) -> impl Responder {
+    // Route imbriquee non gardee au releve du 2026-09-06 (issue #772) : elle
+    // servait une sous-collection d'un dossier d'ACP a quiconque connaissait
+    // un identifiant, sans demander d'identite.
+    if let Err(err) =
+        crate::infrastructure::web::middleware::scope_guard::verify_building_org_access(
+            &user,
+            *building_id,
+            &data.building_use_cases,
+            &data.acp_use_cases,
+        )
+        .await
+    {
+        return err.error_response();
+    }
+
     match data
         .notice_use_cases
         .list_building_notices(building_id.into_inner())
@@ -72,7 +112,23 @@ pub async fn list_building_notices(
 pub async fn list_published_notices(
     data: web::Data<AppState>,
     building_id: web::Path<Uuid>,
+    user: AuthenticatedUser,
 ) -> impl Responder {
+    // Route imbriquee non gardee au releve du 2026-09-06 (issue #772) : elle
+    // servait une sous-collection d'un dossier d'ACP a quiconque connaissait
+    // un identifiant, sans demander d'identite.
+    if let Err(err) =
+        crate::infrastructure::web::middleware::scope_guard::verify_building_org_access(
+            &user,
+            *building_id,
+            &data.building_use_cases,
+            &data.acp_use_cases,
+        )
+        .await
+    {
+        return err.error_response();
+    }
+
     match data
         .notice_use_cases
         .list_published_notices(building_id.into_inner())
@@ -90,7 +146,23 @@ pub async fn list_published_notices(
 pub async fn list_pinned_notices(
     data: web::Data<AppState>,
     building_id: web::Path<Uuid>,
+    user: AuthenticatedUser,
 ) -> impl Responder {
+    // Route imbriquee non gardee au releve du 2026-09-06 (issue #772) : elle
+    // servait une sous-collection d'un dossier d'ACP a quiconque connaissait
+    // un identifiant, sans demander d'identite.
+    if let Err(err) =
+        crate::infrastructure::web::middleware::scope_guard::verify_building_org_access(
+            &user,
+            *building_id,
+            &data.building_use_cases,
+            &data.acp_use_cases,
+        )
+        .await
+    {
+        return err.error_response();
+    }
+
     match data
         .notice_use_cases
         .list_pinned_notices(building_id.into_inner())
@@ -108,8 +180,23 @@ pub async fn list_pinned_notices(
 pub async fn list_notices_by_type(
     data: web::Data<AppState>,
     path: web::Path<(Uuid, String)>,
+    user: AuthenticatedUser,
 ) -> impl Responder {
     let (building_id, notice_type_str) = path.into_inner();
+    // Route imbriquee non gardee au releve du 2026-09-06 (issue #772) : elle
+    // servait une sous-collection d'un dossier d'ACP a quiconque connaissait
+    // un identifiant, sans demander d'identite.
+    if let Err(err) =
+        crate::infrastructure::web::middleware::scope_guard::verify_building_org_access(
+            &user,
+            building_id,
+            &data.building_use_cases,
+            &data.acp_use_cases,
+        )
+        .await
+    {
+        return err.error_response();
+    }
 
     // Parse notice type
     let notice_type = match serde_json::from_str::<NoticeType>(&format!("\"{}\"", notice_type_str))
@@ -139,8 +226,23 @@ pub async fn list_notices_by_type(
 pub async fn list_notices_by_category(
     data: web::Data<AppState>,
     path: web::Path<(Uuid, String)>,
+    user: AuthenticatedUser,
 ) -> impl Responder {
     let (building_id, category_str) = path.into_inner();
+    // Route imbriquee non gardee au releve du 2026-09-06 (issue #772) : elle
+    // servait une sous-collection d'un dossier d'ACP a quiconque connaissait
+    // un identifiant, sans demander d'identite.
+    if let Err(err) =
+        crate::infrastructure::web::middleware::scope_guard::verify_building_org_access(
+            &user,
+            building_id,
+            &data.building_use_cases,
+            &data.acp_use_cases,
+        )
+        .await
+    {
+        return err.error_response();
+    }
 
     // Parse category
     let category = match serde_json::from_str::<NoticeCategory>(&format!("\"{}\"", category_str)) {
@@ -169,8 +271,23 @@ pub async fn list_notices_by_category(
 pub async fn list_notices_by_status(
     data: web::Data<AppState>,
     path: web::Path<(Uuid, String)>,
+    user: AuthenticatedUser,
 ) -> impl Responder {
     let (building_id, status_str) = path.into_inner();
+    // Route imbriquee non gardee au releve du 2026-09-06 (issue #772) : elle
+    // servait une sous-collection d'un dossier d'ACP a quiconque connaissait
+    // un identifiant, sans demander d'identite.
+    if let Err(err) =
+        crate::infrastructure::web::middleware::scope_guard::verify_building_org_access(
+            &user,
+            building_id,
+            &data.building_use_cases,
+            &data.acp_use_cases,
+        )
+        .await
+    {
+        return err.error_response();
+    }
 
     // Parse status
     let status = match serde_json::from_str::<NoticeStatus>(&format!("\"{}\"", status_str)) {
@@ -199,7 +316,21 @@ pub async fn list_notices_by_status(
 pub async fn list_author_notices(
     data: web::Data<AppState>,
     author_id: web::Path<Uuid>,
+    user: AuthenticatedUser,
 ) -> impl Responder {
+    // Route imbriquee non gardee au releve du 2026-09-06 (issue #772) : elle
+    // servait la situation financiere NOMINATIVE d'une personne a quiconque
+    // connaissait son identifiant.
+    if let Err(err) = crate::infrastructure::web::middleware::scope_guard::verify_owner_org_access(
+        &user,
+        *author_id,
+        &data.owner_use_cases,
+    )
+    .await
+    {
+        return err.error_response();
+    }
+
     match data
         .notice_use_cases
         .list_author_notices(author_id.into_inner())
@@ -233,9 +364,9 @@ pub async fn update_notice(
     {
         Ok(notice) => HttpResponse::Ok().json(notice),
         Err(e) => {
-            if e.contains("Unauthorized") {
+            if classification_erreurs::est_interdit(&e) {
                 HttpResponse::Forbidden().json(serde_json::json!({"error": e}))
-            } else if e.contains("not found") {
+            } else if classification_erreurs::est_introuvable(&e) {
                 HttpResponse::NotFound().json(serde_json::json!({"error": e}))
             } else {
                 HttpResponse::BadRequest().json(serde_json::json!({"error": e}))
@@ -266,9 +397,9 @@ pub async fn publish_notice(
     {
         Ok(notice) => HttpResponse::Ok().json(notice),
         Err(e) => {
-            if e.contains("Unauthorized") {
+            if classification_erreurs::est_interdit(&e) {
                 HttpResponse::Forbidden().json(serde_json::json!({"error": e}))
-            } else if e.contains("not found") {
+            } else if classification_erreurs::est_introuvable(&e) {
                 HttpResponse::NotFound().json(serde_json::json!({"error": e}))
             } else {
                 HttpResponse::BadRequest().json(serde_json::json!({"error": e}))
@@ -299,9 +430,9 @@ pub async fn archive_notice(
     {
         Ok(notice) => HttpResponse::Ok().json(notice),
         Err(e) => {
-            if e.contains("Unauthorized") {
+            if classification_erreurs::est_interdit(&e) {
                 HttpResponse::Forbidden().json(serde_json::json!({"error": e}))
-            } else if e.contains("not found") {
+            } else if classification_erreurs::est_introuvable(&e) {
                 HttpResponse::NotFound().json(serde_json::json!({"error": e}))
             } else {
                 HttpResponse::BadRequest().json(serde_json::json!({"error": e}))
@@ -319,6 +450,22 @@ pub async fn pin_notice(
     auth: AuthenticatedUser,
     id: web::Path<Uuid>,
 ) -> impl Responder {
+    // Cloisonnement : épingler une annonce la met en tête du tableau
+    // d'affichage de la copropriété. Le faire depuis une autre ACP, c'est
+    // décider de ce que des voisins qui ne sont pas les vôtres verront en
+    // premier (#772).
+    if let Err(err) = verify_notice_org_access(
+        &auth,
+        *id,
+        &data.notice_use_cases,
+        &data.building_use_cases,
+        &data.acp_use_cases,
+    )
+    .await
+    {
+        return err.error_response();
+    }
+
     match data
         .notice_use_cases
         .pin_notice(id.into_inner(), &auth.role)
@@ -326,9 +473,9 @@ pub async fn pin_notice(
     {
         Ok(notice) => HttpResponse::Ok().json(notice),
         Err(e) => {
-            if e.contains("Unauthorized") {
+            if classification_erreurs::est_interdit(&e) {
                 HttpResponse::Forbidden().json(serde_json::json!({"error": e}))
-            } else if e.contains("not found") {
+            } else if classification_erreurs::est_introuvable(&e) {
                 HttpResponse::NotFound().json(serde_json::json!({"error": e}))
             } else {
                 HttpResponse::BadRequest().json(serde_json::json!({"error": e}))
@@ -346,6 +493,22 @@ pub async fn unpin_notice(
     auth: AuthenticatedUser,
     id: web::Path<Uuid>,
 ) -> impl Responder {
+    // Cloisonnement : épingler une annonce la met en tête du tableau
+    // d'affichage de la copropriété. Le faire depuis une autre ACP, c'est
+    // décider de ce que des voisins qui ne sont pas les vôtres verront en
+    // premier (#772).
+    if let Err(err) = verify_notice_org_access(
+        &auth,
+        *id,
+        &data.notice_use_cases,
+        &data.building_use_cases,
+        &data.acp_use_cases,
+    )
+    .await
+    {
+        return err.error_response();
+    }
+
     match data
         .notice_use_cases
         .unpin_notice(id.into_inner(), &auth.role)
@@ -353,9 +516,9 @@ pub async fn unpin_notice(
     {
         Ok(notice) => HttpResponse::Ok().json(notice),
         Err(e) => {
-            if e.contains("Unauthorized") {
+            if classification_erreurs::est_interdit(&e) {
                 HttpResponse::Forbidden().json(serde_json::json!({"error": e}))
-            } else if e.contains("not found") {
+            } else if classification_erreurs::est_introuvable(&e) {
                 HttpResponse::NotFound().json(serde_json::json!({"error": e}))
             } else {
                 HttpResponse::BadRequest().json(serde_json::json!({"error": e}))
@@ -387,9 +550,9 @@ pub async fn set_expiration(
     {
         Ok(notice) => HttpResponse::Ok().json(notice),
         Err(e) => {
-            if e.contains("Unauthorized") {
+            if classification_erreurs::est_interdit(&e) {
                 HttpResponse::Forbidden().json(serde_json::json!({"error": e}))
-            } else if e.contains("not found") {
+            } else if classification_erreurs::est_introuvable(&e) {
                 HttpResponse::NotFound().json(serde_json::json!({"error": e}))
             } else {
                 HttpResponse::BadRequest().json(serde_json::json!({"error": e}))
@@ -420,9 +583,9 @@ pub async fn delete_notice(
     {
         Ok(_) => HttpResponse::NoContent().finish(),
         Err(e) => {
-            if e.contains("Unauthorized") {
+            if classification_erreurs::est_interdit(&e) {
                 HttpResponse::Forbidden().json(serde_json::json!({"error": e}))
-            } else if e.contains("not found") {
+            } else if classification_erreurs::est_introuvable(&e) {
                 HttpResponse::NotFound().json(serde_json::json!({"error": e}))
             } else {
                 HttpResponse::BadRequest().json(serde_json::json!({"error": e}))
@@ -438,7 +601,23 @@ pub async fn delete_notice(
 pub async fn get_notice_statistics(
     data: web::Data<AppState>,
     building_id: web::Path<Uuid>,
+    user: AuthenticatedUser,
 ) -> impl Responder {
+    // Route imbriquee non gardee au releve du 2026-09-06 (issue #772) : elle
+    // servait une sous-collection d'un dossier d'ACP a quiconque connaissait
+    // un identifiant, sans demander d'identite.
+    if let Err(err) =
+        crate::infrastructure::web::middleware::scope_guard::verify_building_org_access(
+            &user,
+            *building_id,
+            &data.building_use_cases,
+            &data.acp_use_cases,
+        )
+        .await
+    {
+        return err.error_response();
+    }
+
     match data
         .notice_use_cases
         .get_statistics(building_id.into_inner())

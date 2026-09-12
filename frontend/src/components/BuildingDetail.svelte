@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Icone from "./ui/Icone.svelte";
   import { onMount } from "svelte";
   import { _ } from "../lib/i18n";
   import { api } from "../lib/api";
@@ -74,7 +75,7 @@
           const acp = await getAcp(building.acp_id);
           organizationId = acp.organization_id ?? "";
           organizationName = acp.organization_id
-            ? (await tryGetOrganizationName(acp.organization_id)) ?? ""
+            ? ((await tryGetOrganizationName(acp.organization_id)) ?? "")
             : "";
         } catch (e) {
           console.error("Error loading ACP/organization:", e);
@@ -140,7 +141,8 @@
       <div class="flex items-center justify-between">
         <div class="flex items-center space-x-4">
           <button
-            on:click={handleGoBack}
+            data-testid="building-detail-back-button"
+            onclick={handleGoBack}
             class="text-gray-600 hover:text-gray-900"
           >
             ← {$_("common.back")}
@@ -155,10 +157,11 @@
         </div>
         <Button
           variant="primary"
-          on:click={handleEdit}
+          onclick={handleEdit}
           data-testid="building-edit-submit"
         >
-          ✏️ {$_("common.edit")}
+          <Icone nom="edit" taille={16} class="shrink-0" />
+          {$_("common.edit")}
         </Button>
       </div>
     </div>

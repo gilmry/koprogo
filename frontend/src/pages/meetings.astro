@@ -1,24 +1,39 @@
 ---
-import Layout from '../layouts/Layout.astro';
-import MeetingList from '../components/MeetingList.svelte';
+import Layout from "../layouts/Layout.astro";
+import MeetingList from "../components/MeetingList.svelte";
+import EnTeteDePage from "../components/global/EnTeteDePage.svelte";
 ---
 
 <Layout title="Assemblées - KoproGo">
-  <div class="container mx-auto px-4 py-8">
+  <div class="container mx-auto px-4 py-8" data-testid="meetings-list">
     <div class="max-w-7xl mx-auto">
       <div class="mb-6">
-        <h1 class="text-3xl font-bold text-gray-900">Gestion des Assemblées</h1>
-        <p class="text-gray-600 mt-2">
-          Liste complète des assemblées générales avec pagination
-        </p>
+        <EnTeteDePage
+          client:load
+          titre="pages.meetings.title"
+          description="pages.meetings.description"
+        />
       </div>
 
       <MeetingList client:load />
 
       <div class="mt-6">
-        <a href="/syndic" class="inline-flex items-center text-primary-600 hover:text-primary-700">
-          <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+        <a
+          href="/syndic"
+          class="inline-flex items-center text-primary-600 hover:text-primary-700"
+          data-testid="meetings-back-link"
+        >
+          <svg
+            class="w-5 h-5 mr-2"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
           </svg>
           Retour au dashboard
         </a>

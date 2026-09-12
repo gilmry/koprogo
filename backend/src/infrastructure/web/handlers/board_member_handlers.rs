@@ -12,7 +12,7 @@ pub async fn elect_board_member(
     request: web::Json<CreateBoardMemberDto>,
 ) -> impl Responder {
     // SuperAdmin can elect members for any organization, others need to belong to an organization
-    let organization_id = if user.role == "superadmin" {
+    let organization_id = if user.is_superadmin() {
         // For superadmin, get organization_id from the building
         None // Will be determined by the use case
     } else {
@@ -97,7 +97,7 @@ pub async fn list_active_board_members(
     building_id: web::Path<Uuid>,
 ) -> impl Responder {
     // SuperAdmin can access all buildings, others need to belong to an organization
-    if user.role != "superadmin" {
+    if !user.is_superadmin() {
         if let Err(e) = user.require_organization() {
             return HttpResponse::Unauthorized().json(serde_json::json!({
                 "error": e.to_string()
@@ -125,7 +125,7 @@ pub async fn list_all_board_members(
     building_id: web::Path<Uuid>,
 ) -> impl Responder {
     // SuperAdmin can access all buildings, others need to belong to an organization
-    if user.role != "superadmin" {
+    if !user.is_superadmin() {
         if let Err(e) = user.require_organization() {
             return HttpResponse::Unauthorized().json(serde_json::json!({
                 "error": e.to_string()
@@ -284,7 +284,7 @@ pub async fn get_board_dashboard(
     query: web::Query<std::collections::HashMap<String, String>>,
 ) -> impl Responder {
     // SuperAdmin can access dashboard for any building, others need to belong to an organization
-    let _organization_id = if user.role != "superadmin" {
+    let _organization_id = if !user.is_superadmin() {
         match user.require_organization() {
             Ok(org_id) => Some(org_id),
             Err(e) => {
@@ -323,7 +323,9 @@ pub async fn get_board_dashboard(
         Ok(Some(owner_dto)) => uuid::Uuid::parse_str(&owner_dto.id).unwrap_or(user.user_id),
         Ok(None) => {
             return HttpResponse::Forbidden().json(serde_json::json!({
-                "error": "User is not linked to an owner. Board dashboard is only accessible to board members."
+                "error": "Le tableau de bord du conseil est réservé à ses membres, \
+                          qui sont copropriétaires (Art. 3.90 § 1er). Votre compte \
+                          n'est rattaché à aucune fiche de copropriétaire."
             }));
         }
         Err(err) => {
@@ -334,7 +336,7 @@ pub async fn get_board_dashboard(
     };
 
     // Authorization: Verify user is an active board member for this building (unless superadmin)
-    let is_superadmin = user.role == "superadmin";
+    let is_superadmin = user.is_superadmin();
     if !is_superadmin {
         match state
             .board_member_use_cases

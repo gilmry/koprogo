@@ -19,6 +19,8 @@
 
   import type { TechnicalSpecDto } from "../../api/technical_specs";
 
+  import { _ } from "../../i18n";
+
   // ---------------------------------------------------------------------------
   // Props
   // ---------------------------------------------------------------------------
@@ -31,9 +33,7 @@
     currentVersionId = undefined as string | undefined,
     /** Callback click sur une ligne — le parent peut router vers la version
      *  historique. Non fournie → ligne non cliquable. */
-    onSelect = undefined as
-      | undefined
-      | ((spec: TechnicalSpecDto) => void),
+    onSelect = undefined as undefined | ((spec: TechnicalSpecDto) => void),
   }: {
     versions?: TechnicalSpecDto[];
     currentVersionId?: string;
@@ -103,16 +103,13 @@
   class="tech-spec-version-timeline flex flex-col gap-2"
   aria-labelledby="tech-spec-timeline-title"
 >
-  <h3
-    id="tech-spec-timeline-title"
-    class="text-sm font-semibold text-gray-800"
-  >
-    Historique des versions
+  <h3 id="tech-spec-timeline-title" class="text-sm font-semibold text-gray-800">
+    {$_("technicalSpecs.versionHistory")}
   </h3>
 
   {#if sorted.length === 0}
     <p class="text-xs text-gray-500" data-testid="tech-spec-timeline-empty">
-      Aucune version pour cette spec.
+      {$_("technicalSpecs.noVersion")}
     </p>
   {:else}
     <ol
@@ -168,12 +165,13 @@
           <!-- Click handler -->
           {#if onSelect}
             <button
+              data-testid="technical-spec-version-button"
               type="button"
               class="min-h-[32px] text-xs text-blue-600 hover:underline"
               onclick={() => onSelect?.(spec)}
               aria-label={`Voir la version ${spec.version}`}
             >
-              Voir
+              {$_("common.seeLabel")}
             </button>
           {/if}
         </li>

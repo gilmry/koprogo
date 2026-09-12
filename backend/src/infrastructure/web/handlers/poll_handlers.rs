@@ -1,9 +1,13 @@
 use crate::application::dto::{
     CastVoteDto, CreatePollDto, PageRequest, PollFilters, SortOrder, UpdatePollDto,
 };
+use crate::infrastructure::web::classification_erreurs::{est_interdit, est_introuvable};
+use crate::infrastructure::web::middleware::scope_guard::{
+    verify_building_org_access, verify_poll_org_access,
+};
 use crate::infrastructure::web::middleware::AuthenticatedUser;
 use crate::infrastructure::web::AppState;
-use actix_web::{delete, get, post, put, web, HttpRequest, HttpResponse};
+use actix_web::{delete, get, post, put, web, HttpRequest, HttpResponse, ResponseError};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -64,7 +68,7 @@ pub async fn create_poll(
 #[get("/polls/{id}")]
 pub async fn get_poll(
     state: web::Data<AppState>,
-    _auth_user: AuthenticatedUser,
+    auth_user: AuthenticatedUser,
     path: web::Path<String>,
 ) -> HttpResponse {
     let poll_id = match Uuid::parse_str(&path.into_inner()) {
@@ -76,10 +80,23 @@ pub async fn get_poll(
         }
     };
 
+    // Cloisonnement : ce sondage relève d'une ACP précise (#772).
+    if let Err(err) = verify_poll_org_access(
+        &auth_user,
+        poll_id,
+        &state.poll_use_cases,
+        &state.building_use_cases,
+        &state.acp_use_cases,
+    )
+    .await
+    {
+        return err.error_response();
+    }
+
     match state.poll_use_cases.get_poll(poll_id).await {
         Ok(poll) => HttpResponse::Ok().json(poll),
         Err(e) => {
-            if e.contains("not found") {
+            if est_introuvable(&e) {
                 HttpResponse::NotFound().json(serde_json::json!({
                     "error": e
                 }))
@@ -134,11 +151,11 @@ pub async fn update_poll(
     {
         Ok(poll) => HttpResponse::Ok().json(poll),
         Err(e) => {
-            if e.contains("not found") {
+            if est_introuvable(&e) {
                 HttpResponse::NotFound().json(serde_json::json!({
                     "error": e
                 }))
-            } else if e.contains("Only the poll creator") {
+            } else if est_interdit(&e) {
                 HttpResponse::Forbidden().json(serde_json::json!({
                     "error": e
                 }))
@@ -175,6 +192,13 @@ pub async fn update_poll(
 #[get("/polls")]
 pub async fn list_polls(
     state: web::Data<AppState>,
+    // `_auth_user` : cette route ne reçoit AUCUN identifiant de périmètre en
+    // chemin, et c'est le cas d'usage qui filtre. L'underscore dit ici que
+    // l'absence de garde est DÉLIBÉRÉE, et non oubliée.
+    //
+    // La distinction compte : #772 reproche aux routes de prendre l'identité
+    // sans s'en servir, parce que la revue les compte alors comme protégées.
+    // Un underscore commenté est l'inverse — il signale qu'on a regardé.
     _auth_user: AuthenticatedUser,
     query: web::Query<ListPollsQuery>,
 ) -> HttpResponse {
@@ -236,7 +260,7 @@ pub struct ListPollsQuery {
 #[get("/buildings/{building_id}/polls/active")]
 pub async fn find_active_polls(
     state: web::Data<AppState>,
-    _auth_user: AuthenticatedUser,
+    auth_user: AuthenticatedUser,
     path: web::Path<String>,
 ) -> HttpResponse {
     let building_id = match Uuid::parse_str(&path.into_inner()) {
@@ -247,6 +271,23 @@ pub async fn find_active_polls(
             }))
         }
     };
+
+    // Cloisonnement : l'immeuble visé doit relever d'une ACP que cet
+    // utilisateur a le droit de voir. Un sondage dit ce que les
+    // copropriétaires pensent d'une question — le lire hors de son ACP, c'est
+    // lire une délibération qui ne vous regarde pas.
+    //
+    // L'identité était prise puis ignorée — `_auth_user` (#772).
+    if let Err(err) = verify_building_org_access(
+        &auth_user,
+        building_id,
+        &state.building_use_cases,
+        &state.acp_use_cases,
+    )
+    .await
+    {
+        return err.error_response();
+    }
 
     match state.poll_use_cases.find_active_polls(building_id).await {
         Ok(polls) => HttpResponse::Ok().json(polls),
@@ -289,6 +330,23 @@ pub async fn publish_poll(
         }
     };
 
+    // Cloisonnement : ce sondage doit relever d'une ACP que cet utilisateur a
+    // le droit de voir. Lire les résultats d'un sondage d'une autre
+    // copropriété, c'est apprendre ce que des voisins qui ne sont pas les
+    // vôtres pensent d'un sujet qui ne vous regarde pas ; le publier ou le
+    // clore depuis l'extérieur interromprait une consultation en cours (#772).
+    if let Err(err) = verify_poll_org_access(
+        &auth_user,
+        poll_id,
+        &state.poll_use_cases,
+        &state.building_use_cases,
+        &state.acp_use_cases,
+    )
+    .await
+    {
+        return err.error_response();
+    }
+
     match state
         .poll_use_cases
         .publish_poll(poll_id, auth_user.user_id)
@@ -296,11 +354,11 @@ pub async fn publish_poll(
     {
         Ok(poll) => HttpResponse::Ok().json(poll),
         Err(e) => {
-            if e.contains("not found") {
+            if est_introuvable(&e) {
                 HttpResponse::NotFound().json(serde_json::json!({
                     "error": e
                 }))
-            } else if e.contains("Only the poll creator") {
+            } else if est_interdit(&e) {
                 HttpResponse::Forbidden().json(serde_json::json!({
                     "error": e
                 }))
@@ -346,6 +404,23 @@ pub async fn close_poll(
         }
     };
 
+    // Cloisonnement : ce sondage doit relever d'une ACP que cet utilisateur a
+    // le droit de voir. Lire les résultats d'un sondage d'une autre
+    // copropriété, c'est apprendre ce que des voisins qui ne sont pas les
+    // vôtres pensent d'un sujet qui ne vous regarde pas ; le publier ou le
+    // clore depuis l'extérieur interromprait une consultation en cours (#772).
+    if let Err(err) = verify_poll_org_access(
+        &auth_user,
+        poll_id,
+        &state.poll_use_cases,
+        &state.building_use_cases,
+        &state.acp_use_cases,
+    )
+    .await
+    {
+        return err.error_response();
+    }
+
     match state
         .poll_use_cases
         .close_poll(poll_id, auth_user.user_id)
@@ -353,11 +428,11 @@ pub async fn close_poll(
     {
         Ok(poll) => HttpResponse::Ok().json(poll),
         Err(e) => {
-            if e.contains("not found") {
+            if est_introuvable(&e) {
                 HttpResponse::NotFound().json(serde_json::json!({
                     "error": e
                 }))
-            } else if e.contains("Only the poll creator") {
+            } else if est_interdit(&e) {
                 HttpResponse::Forbidden().json(serde_json::json!({
                     "error": e
                 }))
@@ -403,6 +478,23 @@ pub async fn cancel_poll(
         }
     };
 
+    // Cloisonnement : ce sondage doit relever d'une ACP que cet utilisateur a
+    // le droit de voir. Lire les résultats d'un sondage d'une autre
+    // copropriété, c'est apprendre ce que des voisins qui ne sont pas les
+    // vôtres pensent d'un sujet qui ne vous regarde pas ; le publier ou le
+    // clore depuis l'extérieur interromprait une consultation en cours (#772).
+    if let Err(err) = verify_poll_org_access(
+        &auth_user,
+        poll_id,
+        &state.poll_use_cases,
+        &state.building_use_cases,
+        &state.acp_use_cases,
+    )
+    .await
+    {
+        return err.error_response();
+    }
+
     match state
         .poll_use_cases
         .cancel_poll(poll_id, auth_user.user_id)
@@ -410,11 +502,11 @@ pub async fn cancel_poll(
     {
         Ok(poll) => HttpResponse::Ok().json(poll),
         Err(e) => {
-            if e.contains("not found") {
+            if est_introuvable(&e) {
                 HttpResponse::NotFound().json(serde_json::json!({
                     "error": e
                 }))
-            } else if e.contains("Only the poll creator") {
+            } else if est_interdit(&e) {
                 HttpResponse::Forbidden().json(serde_json::json!({
                     "error": e
                 }))
@@ -470,7 +562,7 @@ pub async fn delete_poll(
             "error": "Poll not found"
         })),
         Err(e) => {
-            if e.contains("Only the poll creator") {
+            if est_interdit(&e) {
                 HttpResponse::Forbidden().json(serde_json::json!({
                     "error": e
                 }))
@@ -510,10 +602,52 @@ pub async fn cast_poll_vote(
     dto: web::Json<CastVoteDto>,
     _req: HttpRequest,
 ) -> HttpResponse {
-    // Owner ID is optional (anonymous votes)
-    // For now, we use the authenticated user's ID
-    // In production, you'd have logic to determine if vote is anonymous
-    let owner_id = Some(auth_user.user_id);
+    // On vote en tant que COPROPRIÉTAIRE, pas en tant qu'utilisateur.
+    //
+    // Cette ligne passait `auth_user.user_id`. Le commentaire l'avouait — « for
+    // now, we use the authenticated user's ID » — et le provisoire n'a jamais
+    // été remplacé. `cast_vote` compare ensuite cette valeur aux `owner_id`
+    // que rend `find_active_by_building`, qui sont des `owners.id`.
+    //
+    // Deux entités distinctes, deux UUID différents : la comparaison ne
+    // pouvait JAMAIS être vraie. Tout copropriétaire recevait « You are not
+    // authorized to vote on this poll ». La consultation communautaire était
+    // donc écrite, testée, et inatteignable par les seules personnes à qui
+    // elle s'adresse.
+    //
+    // `find_owner_by_user_id` existait déjà et n'était appelé par aucun
+    // handler.
+    let owner_id = match state
+        .owner_use_cases
+        .find_owner_by_user_id(auth_user.user_id)
+        .await
+    {
+        // `OwnerResponseDto.id` est une `String` : la conversion doit être
+        // explicite, et son échec dit ce qui ne va pas plutôt que de rendre
+        // « non autorisé ».
+        Ok(Some(owner)) => match Uuid::parse_str(&owner.id) {
+            Ok(id) => Some(id),
+            Err(e) => {
+                return HttpResponse::InternalServerError().json(serde_json::json!({
+                    "error": format!("Identifiant de copropriétaire illisible : {}", e)
+                }));
+            }
+        },
+        Ok(None) => {
+            // Un utilisateur sans fiche de copropriétaire n'est pas un
+            // copropriétaire : le dire, plutôt que de le laisser buter sur une
+            // autorisation qui ne le nommera pas.
+            return HttpResponse::Forbidden().json(serde_json::json!({
+                "error": "Aucune fiche de copropriétaire n'est rattachée à ce compte :                           le vote à une consultation est réservé aux copropriétaires.",
+                "kind": "owner_not_linked"
+            }));
+        }
+        Err(e) => {
+            return HttpResponse::InternalServerError().json(serde_json::json!({
+                "error": format!("Failed to resolve owner for user: {}", e)
+            }));
+        }
+    };
 
     match state
         .poll_use_cases
@@ -532,7 +666,7 @@ pub async fn cast_poll_vote(
                 HttpResponse::Conflict().json(serde_json::json!({
                     "error": e
                 }))
-            } else if e.contains("not found") {
+            } else if est_introuvable(&e) {
                 HttpResponse::NotFound().json(serde_json::json!({
                     "error": e
                 }))
@@ -566,7 +700,7 @@ pub async fn cast_poll_vote(
 #[get("/polls/{id}/results")]
 pub async fn get_poll_results(
     state: web::Data<AppState>,
-    _auth_user: AuthenticatedUser,
+    auth_user: AuthenticatedUser,
     path: web::Path<String>,
 ) -> HttpResponse {
     let poll_id = match Uuid::parse_str(&path.into_inner()) {
@@ -578,10 +712,27 @@ pub async fn get_poll_results(
         }
     };
 
+    // Cloisonnement : ce sondage doit relever d'une ACP que cet utilisateur a
+    // le droit de voir. Lire les résultats d'un sondage d'une autre
+    // copropriété, c'est apprendre ce que des voisins qui ne sont pas les
+    // vôtres pensent d'un sujet qui ne vous regarde pas ; le publier ou le
+    // clore depuis l'extérieur interromprait une consultation en cours (#772).
+    if let Err(err) = verify_poll_org_access(
+        &auth_user,
+        poll_id,
+        &state.poll_use_cases,
+        &state.building_use_cases,
+        &state.acp_use_cases,
+    )
+    .await
+    {
+        return err.error_response();
+    }
+
     match state.poll_use_cases.get_poll_results(poll_id).await {
         Ok(results) => HttpResponse::Ok().json(results),
         Err(e) => {
-            if e.contains("not found") {
+            if est_introuvable(&e) {
                 HttpResponse::NotFound().json(serde_json::json!({
                     "error": e
                 }))
@@ -618,7 +769,7 @@ pub async fn get_poll_results(
 #[get("/buildings/{building_id}/polls/statistics")]
 pub async fn get_poll_building_statistics(
     state: web::Data<AppState>,
-    _auth_user: AuthenticatedUser,
+    auth_user: AuthenticatedUser,
     path: web::Path<String>,
 ) -> HttpResponse {
     let building_id = match Uuid::parse_str(&path.into_inner()) {
@@ -629,6 +780,21 @@ pub async fn get_poll_building_statistics(
             }))
         }
     };
+
+    // Cloisonnement : l'immeuble visé doit relever d'une ACP que cet
+    // utilisateur a le droit de voir. Les statistiques de sondage disent ce
+    // que les copropriétaires ont répondu, en agrégé — cela reste une
+    // délibération d'ACP (#772).
+    if let Err(err) = verify_building_org_access(
+        &auth_user,
+        building_id,
+        &state.building_use_cases,
+        &state.acp_use_cases,
+    )
+    .await
+    {
+        return err.error_response();
+    }
 
     match state
         .poll_use_cases

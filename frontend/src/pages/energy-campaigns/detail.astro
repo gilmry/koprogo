@@ -6,6 +6,7 @@ import Layout from "../../layouts/Layout.astro";
   <div class="container mx-auto px-4 py-8 max-w-6xl">
     <div class="mb-6">
       <a
+        data-testid="campaign-detail-back-link"
         href="/energy-campaigns"
         class="inline-flex items-center text-blue-600 hover:text-blue-800"
       >
@@ -27,7 +28,9 @@ import Layout from "../../layouts/Layout.astro";
   const auth = get(authStore);
   const currentUserId = auth.user?.id || "";
   const currentUnitId = undefined; // TODO: Get unit_id from context
-  const isAdmin = auth.user?.role === UserRole.SUPERADMIN || auth.user?.role === UserRole.SYNDIC;
+  const isAdmin =
+    auth.user?.role === UserRole.SUPERADMIN ||
+    auth.user?.role === UserRole.SYNDIC;
 
   // Extract campaign ID from query parameter
   const params = new URLSearchParams(window.location.search);

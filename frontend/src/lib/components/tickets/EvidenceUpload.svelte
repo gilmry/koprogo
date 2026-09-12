@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { _ } from "../../i18n";
   // Story B5 (Phase B FE) — EvidenceUpload (drag&drop, multi-fichiers).
   //
   // Réutilisé par :
@@ -82,7 +83,7 @@
   /** Dernière erreur de validation client (pré-upload). */
   let lastError = $state<string>("");
   /** Référence au file input — déclenché par click sur dropzone. */
-  let fileInputEl: HTMLInputElement | null = $state(null);
+  let fileInputEl = $state<HTMLInputElement | null>(null);
 
   // ---------------------------------------------------------------------------
   // Derivations
@@ -118,8 +119,7 @@
       .map((it) => it.publicUrl as string);
     // Comparaison shallow pour éviter une boucle d'update.
     const sameLength = urls.length === value.length;
-    const allEqual =
-      sameLength && urls.every((u, i) => u === value[i]);
+    const allEqual = sameLength && urls.every((u, i) => u === value[i]);
     if (!allEqual) {
       value = urls;
     }
@@ -152,23 +152,20 @@
       // 1. Cap quantitatif AVANT validation MIME pour message clair.
       if (items.length >= EVIDENCE_MAX_FILES) {
         lastError = `Maximum ${EVIDENCE_MAX_FILES} preuves.`;
-        if (onError)
-          onError(new UploadError("max-files", lastError));
+        if (onError) onError(new UploadError("max-files", lastError));
         break;
       }
       // 2. MIME whitelisting.
       if (!isAcceptedMime(file.type)) {
         lastError = `Type non autorisé : ${file.type || "inconnu"}. Acceptés : image, vidéo, PDF.`;
-        if (onError)
-          onError(new UploadError("bad-mime", lastError));
+        if (onError) onError(new UploadError("bad-mime", lastError));
         continue;
       }
       // 3. Taille.
       if (!isAcceptedSize(file.size)) {
         const mb = (EVIDENCE_MAX_FILE_SIZE_BYTES / 1024 / 1024).toFixed(0);
         lastError = `Taille max ${mb} MB (vous avez ${(file.size / 1024 / 1024).toFixed(1)} MB).`;
-        if (onError)
-          onError(new UploadError("too-large", lastError));
+        if (onError) onError(new UploadError("too-large", lastError));
         continue;
       }
       // 4. OK — ajoute l'item en pending + lance l'upload.
@@ -192,9 +189,7 @@
     try {
       const publicUrl = await onUpload(file);
       items = items.map((it) =>
-        it.localId === item.localId
-          ? { ...it, status: "done", publicUrl }
-          : it,
+        it.localId === item.localId ? { ...it, status: "done", publicUrl } : it,
       );
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
@@ -265,7 +260,7 @@
       for="ticket-evidence-file-input"
       class="block text-sm font-medium text-gray-700"
     >
-      Preuves (photos, vidéos, PDF)
+      {$_("tickets.evidence")}
     </label>
     <span
       data-testid="ticket-evidence-count"
@@ -295,7 +290,11 @@
       dragOver
         ? "border-blue-500 bg-blue-50"
         : atMax
-          ? "cursor-not-allowed border-gray-200 bg-gray-50 text-gray-400"
+          ? // `text-gray-400` ici : la zone pleine PORTE l'explication de son
+            // indisponibilité. WCAG 1.4.3 exempte les contrôles désactivés,
+            // pas le texte qui dit pourquoi ils le sont — et c'est
+            // précisément ce texte que l'utilisateur doit lire.
+            "cursor-not-allowed border-gray-200 bg-gray-50 text-muted"
           : "border-gray-300 bg-white text-gray-600 hover:border-blue-400"
     }`}
   >
@@ -374,9 +373,7 @@
           {/if}
           <span class="truncate" title={it.filename}>{it.filename}</span>
           {#if it.status === "pending"}
-            <progress
-              aria-label={`Upload de ${it.filename}`}
-              class="h-1 w-full"
+            <progress aria-label={`Upload de ${it.filename}`} class="h-1 w-full"
             ></progress>
           {/if}
           {#if it.status === "error"}

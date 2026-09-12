@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Icone from "../ui/Icone.svelte";
   // Story 2.4 — Navigation latérale contextualisée par rôle + scope.
   //
   // ADR-0012 (Navigation contextualisée).
@@ -7,7 +8,7 @@
   // - Visibilité des menus pilotee par `lib/auth/permissions.canSee(role, menu, scope)`
   //   (helper TypeScript pur testable en Vitest sans render).
   // - 5 menus business stables (gestion, compta, gouvernance, communaute, ticketing)
-  //   + mes-lots (owner/community-moderator) + admin (super/cabinet hors in-context).
+  //   + mes-lots (owner/community.moderator) + admin (super/cabinet hors in-context).
   // - Sous-menus collapsibles via `RoleSubmenu` (composant reutilisable, <details> a11y native).
   // - data-testid i18n-safe (cf. memory data-testid-systematic).
   //
@@ -27,7 +28,11 @@
   import { authStore } from "../../stores/auth";
   import { UserRole } from "../../lib/types";
   import { scope } from "../../stores/scope.svelte";
-  import { canSee, type Menu } from "../../lib/auth/permissions";
+  import {
+    canSee,
+    ROLES_SANS_INTERFACE,
+    type Menu,
+  } from "../../lib/auth/permissions";
   import RoleSubmenu from "./RoleSubmenu.svelte";
   import NotificationBell from "../notifications/NotificationBell.svelte";
 
@@ -41,12 +46,72 @@
   let currentPath = $state("");
   let hamburgerButton = $state<HTMLButtonElement | undefined>(undefined);
   let drawerCloseButton = $state<HTMLButtonElement | undefined>(undefined);
+  /// Le tiroir lui-même, pour y enfermer le focus.
+  let drawerElement = $state<HTMLElement | undefined>(undefined);
 
   let user = $derived($authStore.user);
+
+  /**
+   * La collection que le rôle ouvre le plus, épinglée sous « Aujourd'hui ».
+   *
+   * Ce n'est pas la même pour tous, et c'est le point : un syndic vit dans
+   * ses ACP, un copropriétaire dans ses lots, un comptable dans ses écritures.
+   * Épingler la même entrée pour tous obligerait trois rôles sur quatre à
+   * déplier un groupe plusieurs fois par jour.
+   *
+   * `null` pour un rôle sans collection évidente : mieux vaut une entrée de
+   * moins qu'une entrée qui vise à côté.
+   */
+  /**
+   * La collection épinglée sous « Aujourd'hui » — pour le SYNDIC seulement.
+   *
+   * ── Pourquoi seulement lui ──────────────────────────────────────────────
+   *
+   * La remise de design n'épingle qu'une chose, et seulement pour le syndic :
+   * « Mes ACP ». J'avais étendu le motif aux quatre rôles de mon propre chef,
+   * et les QUATRE entrées se sont révélées être des doublons de leur propre
+   * menu — même destination, même libellé, deux fois dans la même navigation.
+   *
+   * Une seule a fait échouer la CI (`AdminDashBoard.improved.spec.ts` clique
+   * « Organisations » par son nom de lien et en a trouvé deux), parce qu'une
+   * seule recette clique par nom. Les trois autres attendaient leur tour : un
+   * symptôme visible, une cause générale.
+   *
+   * Le syndic échappe au doublon parce que « Mes ACP » vise `/admin/acps`, que
+   * son menu ne lui propose pas — l'entrée `acps` du groupe *Gestion* est
+   * réservée à l'administration.
+   *
+   * `null` pour tous les autres : mieux vaut une entrée de moins qu'un lien
+   * en double qui rend la navigation ambiguë pour un lecteur d'écran comme
+   * pour une recette.
+   */
+  let collectionPrincipale = $derived.by(() => {
+    if (user?.role !== "syndic") return null;
+    return {
+      href: "/admin/acps",
+      icone: "acps",
+      libelle: "navigation.acps",
+    };
+  });
   let isAuthenticated = $derived($authStore.isAuthenticated);
 
   // Role courant pour canSee() — string lowercase. null si non assigne.
   let activeRole = $derived(user?.role ?? null);
+  // Un rôle SANS INTERFACE n'est pas un rôle absent.
+  //
+  // Jusqu'au 2026-09-06, cinq rôles servis par le backend tombaient en
+  // fail-closed dans `canSee()` : les huit blocs de menu rendaient `false`, et
+  // le message de secours ci-dessous ne se déclenchait pas — il teste
+  // l'ABSENCE de rôle, or ces comptes en ont un. Ils recevaient une barre avec
+  // un logo et un bouton de déconnexion, sans un mot d'explication (#814).
+  //
+  // Trois de ces cinq sont désormais mappés. Les autres — prestataire, membre
+  // du conseil, et six rôles professionnels sans écran — figurent au registre
+  // `ROLES_SANS_INTERFACE`. Ceux-là méritent une phrase, pas un vide.
+  let aUnRoleSansInterface = $derived(
+    !!activeRole && ROLES_SANS_INTERFACE.has(activeRole),
+  );
+
   let hasNoRoleAssignment = $derived(
     isAuthenticated && (!activeRole || (user?.roles?.length ?? 0) === 0),
   );
@@ -60,111 +125,179 @@
   interface NavItem {
     href: string;
     label: string;
+    /** Nom d'un tracé de `lib/icones.ts`, jamais un émoji. */
     icon: string;
   }
 
   // Menus business — items partages syndic/admin in-context.
   const getGestionItems = (t: any): NavItem[] => [
-    { href: "/owners", label: t("navigation.owners"), icon: "👤" },
-    { href: "/units", label: t("navigation.units"), icon: "🚪" },
-    { href: "/buildings", label: t("navigation.buildings"), icon: "🏢" },
+    { href: "/owners", label: t("navigation.owners"), icon: "owners" },
+    { href: "/units", label: t("navigation.units"), icon: "units" },
+    { href: "/buildings", label: t("navigation.buildings"), icon: "buildings" },
     {
       href: "/call-for-funds",
       label: t("navigation.callForFunds"),
-      icon: "📢",
+      icon: "callForFunds",
     },
     {
       href: "/owner-contributions",
       label: t("navigation.contributions"),
-      icon: "💶",
+      icon: "contributions",
     },
     {
       href: "/payment-reminders",
       label: t("navigation.reminders"),
-      icon: "📧",
+      icon: "reminders",
     },
   ];
 
   const getComptaItems = (t: any): NavItem[] => [
-    { href: "/expenses", label: t("navigation.expenses"), icon: "💰" },
+    { href: "/expenses", label: t("navigation.expenses"), icon: "expenses" },
     {
       href: "/invoice-workflow",
       label: t("navigation.invoiceWorkflow"),
-      icon: "✅",
+      icon: "invoiceWorkflow",
     },
-    { href: "/budgets", label: t("navigation.budgets"), icon: "📊" },
-    { href: "/etats-dates", label: t("navigation.etatsDates"), icon: "📋" },
+    { href: "/budgets", label: t("navigation.budgets"), icon: "budgets" },
+    {
+      href: "/etats-dates",
+      label: t("navigation.etatsDates"),
+      icon: "etatsDates",
+    },
     {
       href: "/journal-entries",
       label: t("navigation.journalEntries"),
-      icon: "📒",
+      icon: "journalEntries",
     },
-    { href: "/reports", label: t("navigation.reportsPcmn"), icon: "📈" },
+    {
+      href: "/reports",
+      label: t("navigation.reportsPcmn"),
+      icon: "reportsPcmn",
+    },
   ];
 
   const getGouvernanceItems = (t: any): NavItem[] => [
-    { href: "/meetings", label: t("navigation.meetings"), icon: "📅" },
-    { href: "/convocations", label: t("navigation.convocations"), icon: "📨" },
+    { href: "/meetings", label: t("navigation.meetings"), icon: "meetings" },
+    {
+      href: "/convocations",
+      label: t("navigation.convocations"),
+      icon: "convocations",
+    },
     {
       href: "/syndic/board-members",
       label: t("navigation.council"),
-      icon: "👑",
+      icon: "council",
     },
-    { href: "/documents", label: t("navigation.documents"), icon: "📄" },
+    { href: "/documents", label: t("navigation.documents"), icon: "documents" },
   ];
 
+  // Les huit modules communautaires restent au menu.
+  //
+  // Ils ont TOUS un backend, contrairement à ce que la recette du 2026-09-04
+  // (R4-3) et un premier sondage laissaient croire. Vérifié le 2026-09-06 en
+  // interrogeant le serveur depuis son conteneur :
+  //
+  //   GET /buildings/{id}/notices            → servi
+  //   GET /buildings/{id}/exchanges          → servi
+  //   GET /buildings/{id}/skills             → servi
+  //   GET /buildings/{id}/shared-objects     → servi
+  //   GET /buildings/{id}/resource-bookings  → servi
+  //   GET /organizations/{id}/achievements   → servi
+  //
+  // Le défaut est un DÉSACCORD DE CHEMIN : le frontend appelle des routes
+  // portées par l'ACP (`/acps/{id}/sel`, `/acps/{id}/skills`…), le serveur
+  // sert des routes portées par l'immeuble ou l'organisation. Les premières
+  // n'existent pas, d'où les 404 — et le bannissement CrowdSec qu'ils
+  // déclenchent (issues #766 et #768).
+  //
+  // J'avais d'abord retiré six entrées du menu. C'était une erreur, fondée
+  // sur un sondage qui visait les mauvais chemins : cela aurait enterré 111
+  // points d'entrée déjà écrits, testés et enregistrés. Le travail à faire
+  // est de rebrancher, pas de masquer.
   const getCommunauteItems = (t: any): NavItem[] => [
-    { href: "/exchanges", label: t("navigation.sel"), icon: "🔄" },
-    { href: "/polls", label: t("navigation.polls"), icon: "📊" },
-    { href: "/notices", label: t("navigation.notices"), icon: "📌" },
-    { href: "/bookings", label: t("navigation.bookings"), icon: "📅" },
-    { href: "/sharing", label: t("navigation.sharing_short"), icon: "🎁" },
-    { href: "/skills", label: t("navigation.skills"), icon: "🎓" },
-    { href: "/energy-campaigns", label: t("navigation.energy"), icon: "⚡" },
-    { href: "/gamification", label: t("navigation.gamification"), icon: "🏆" },
+    { href: "/exchanges", label: t("navigation.sel"), icon: "sel" },
+    { href: "/polls", label: t("navigation.polls"), icon: "polls" },
+    { href: "/notices", label: t("navigation.notices"), icon: "notices" },
+    { href: "/bookings", label: t("navigation.bookings"), icon: "bookings" },
+    {
+      href: "/sharing",
+      label: t("navigation.sharing_short"),
+      icon: "sharing_short",
+    },
+    { href: "/skills", label: t("navigation.skills"), icon: "skills" },
+    {
+      href: "/energy-campaigns",
+      label: t("navigation.energy"),
+      icon: "energy",
+    },
+    {
+      href: "/gamification",
+      label: t("navigation.gamification"),
+      icon: "gamification",
+    },
   ];
 
   const getTicketingItems = (t: any): NavItem[] => [
-    { href: "/tickets", label: t("navigation.tickets"), icon: "🎫" },
-    { href: "/quotes", label: t("navigation.quotes"), icon: "📋" },
-    { href: "/work-reports", label: t("navigation.works"), icon: "🔧" },
-    { href: "/inspections", label: t("navigation.inspections"), icon: "🔍" },
+    { href: "/tickets", label: t("navigation.tickets"), icon: "tickets" },
+    { href: "/quotes", label: t("navigation.quotes"), icon: "quotes" },
+    { href: "/work-reports", label: t("navigation.works"), icon: "works" },
+    {
+      href: "/inspections",
+      label: t("navigation.inspections"),
+      icon: "inspections",
+    },
   ];
 
   const getMesLotsItems = (t: any): NavItem[] => [
-    { href: "/owner", label: t("navigation.dashboard"), icon: "🏠" },
-    { href: "/owner/units", label: t("navigation.units"), icon: "🚪" },
-    { href: "/owner/expenses", label: t("navigation.expenses"), icon: "💰" },
-    { href: "/owner/payments", label: t("navigation.payments"), icon: "💳" },
+    { href: "/owner", label: t("navigation.dashboard"), icon: "dashboard" },
+    { href: "/owner/units", label: t("navigation.units"), icon: "units" },
+    {
+      href: "/owner/expenses",
+      label: t("navigation.expenses"),
+      icon: "expenses",
+    },
+    {
+      href: "/owner/payments",
+      label: t("navigation.payments"),
+      icon: "payments",
+    },
     {
       href: "/owner/payment-methods",
       label: t("navigation.paymentMethods"),
-      icon: "🏦",
+      icon: "paymentMethods",
     },
-    { href: "/owner/tickets", label: t("navigation.myTickets"), icon: "🎫" },
-    { href: "/owner/documents", label: t("navigation.documents"), icon: "📄" },
-    { href: "/owner/profile", label: t("navigation.profile"), icon: "👤" },
+    {
+      href: "/owner/tickets",
+      label: t("navigation.myTickets"),
+      icon: "myTickets",
+    },
+    {
+      href: "/owner/documents",
+      label: t("navigation.documents"),
+      icon: "documents",
+    },
+    { href: "/owner/profile", label: t("navigation.profile"), icon: "profile" },
   ];
 
   const getAdminItems = (t: any): NavItem[] => [
-    { href: "/admin", label: t("navigation.admin"), icon: "⚙️" },
+    { href: "/admin", label: t("navigation.admin"), icon: "admin" },
     {
       href: "/admin/organizations",
       label: t("navigation.organizations"),
-      icon: "🏛️",
+      icon: "organizations",
     },
     // `/admin/acps` existait depuis 7d9aab08 (« ACPs invisibles ») mais n'était
     // liée depuis nulle part : ni ici, ni depuis AdminDashboard. La page n'était
     // atteignable qu'en tapant l'URL, et `admin.building.noAcpAvailable`
     // renvoyait l'utilisateur vers un « Administration > ACP » inexistant.
-    { href: "/admin/acps", label: t("navigation.acps"), icon: "🏘️" },
-    { href: "/admin/users", label: t("navigation.users"), icon: "👥" },
+    { href: "/admin/acps", label: t("navigation.acps"), icon: "acps" },
+    { href: "/admin/users", label: t("navigation.users"), icon: "users" },
     {
       href: "/admin/monitoring",
       label: t("navigation.monitoring"),
-      icon: "📈",
+      icon: "monitoring",
     },
-    { href: "/admin/gdpr", label: t("navigation.gdpr"), icon: "🔒" },
+    { href: "/admin/gdpr", label: t("navigation.gdpr"), icon: "gdpr" },
   ];
 
   // ---------------------------------------------------------------------------
@@ -184,18 +317,31 @@
   // Role helpers (preserves de l'historique pour ne pas casser le selector)
   // ---------------------------------------------------------------------------
 
+  /**
+   * Le rôle, dans la langue de l'utilisateur.
+   *
+   * Ces quatre libellés étaient écrits en français dans le code. Mesuré en
+   * chargeant le même écran en `fr` puis en `nl` : ils sortaient identiques,
+   * sur les vingt destinations. Un copropriétaire néerlandophone lisait donc
+   * « Copropriétaire » sur chacun de ses écrans.
+   *
+   * `roles.*` existe déjà dans les quatre catalogues — il n'y avait qu'à s'en
+   * servir. « Admin plateforme » devient « Super Administrateur », la valeur
+   * que le catalogue porte déjà : mieux vaut un libellé cohérent avec le reste
+   * du produit qu'une cinquième formulation.
+   */
   const getRoleLabel = (role: UserRole | undefined): string => {
     switch (role) {
       case UserRole.SUPERADMIN:
-        return "Admin plateforme";
+        return $_("roles.superadmin");
       case UserRole.SYNDIC:
-        return "Syndic";
+        return $_("roles.syndic");
       case UserRole.ACCOUNTANT:
-        return "Comptable";
+        return $_("roles.accountant");
       case UserRole.OWNER:
-        return "Copropriétaire";
+        return $_("roles.owner");
       default:
-        return "Rôle";
+        return $_("common.role");
     }
   };
 
@@ -223,12 +369,14 @@
       selectedRoleId = roleId;
       const nextUser = get(authStore).user;
       if (nextUser?.role) {
-        const redirectMap = {
+        // Partiel : un membre du conseil ou un modérateur n'a pas de tableau
+        // de bord dédié, il reste où il est. Le repli `/` s'en charge.
+        const redirectMap: Partial<Record<UserRole, string>> = {
           [UserRole.SUPERADMIN]: "/admin",
           [UserRole.SYNDIC]: "/syndic",
           [UserRole.ACCOUNTANT]: "/accountant",
           [UserRole.OWNER]: "/owner",
-        } as const;
+        };
         const destination = redirectMap[nextUser.role] ?? "/";
         if (
           typeof window !== "undefined" &&
@@ -244,11 +392,47 @@
   // Drawer controls
   // ---------------------------------------------------------------------------
 
+  /// Rend le contenu de page inerte, ou le rend à la vie.
+  ///
+  /// ── Pourquoi `inert` en plus du piège de focus ───────────────────────────
+  ///
+  /// `piegerLeFocus` intercepte la touche Tab. Il n'intercepte pas :
+  ///
+  ///   — la navigation par titres ou par régions d'un lecteur d'écran (H, D, R
+  ///     sous NVDA), qui parcourt l'arbre d'accessibilité entier ;
+  ///   — la recherche dans la page du navigateur, qui trouve et met le focus
+  ///     sur du texte masqué ;
+  ///   — un clic sur une zone que l'overlay ne couvre pas.
+  ///
+  /// Le piège rend le tiroir difficile à quitter ; `inert` rend l'arrière-plan
+  /// **inexistant**. C'est le second que la spécification ARIA appelle un
+  /// dialogue modal (#831).
+  ///
+  /// ── La portée, et pourquoi elle n'est pas `<body>` ───────────────────────
+  ///
+  /// `inert` sur `<body>` neutraliserait aussi le tiroir, qui en est un
+  /// descendant. On vise donc son frère : `#app-content`, posé par
+  /// `Layout.astro` autour du contenu de page.
+  ///
+  /// `ToastContainer` en est délibérément exclu — un message d'erreur doit
+  /// rester annonçable tiroir ouvert.
+  const inerterLeFond = (inerte: boolean) => {
+    if (typeof document === "undefined") return;
+    const fond = document.getElementById("app-content");
+    if (!fond) return;
+    if (inerte) {
+      fond.setAttribute("inert", "");
+    } else {
+      fond.removeAttribute("inert");
+    }
+  };
+
   const openDrawer = () => {
     drawerOpen = true;
     if (typeof document !== "undefined") {
       document.body.style.overflow = "hidden";
     }
+    inerterLeFond(true);
     requestAnimationFrame(() => drawerCloseButton?.focus());
   };
 
@@ -257,10 +441,67 @@
     if (typeof document !== "undefined") {
       document.body.style.overflow = "";
     }
+    // Rendre la vie au fond AVANT de lui remettre le focus : `focus()` sur un
+    // descendant d'un élément inerte ne fait rien, et l'utilisateur perdrait
+    // le curseur clavier — précisément ce que ce lot cherche à éviter.
+    inerterLeFond(false);
     requestAnimationFrame(() => hamburgerButton?.focus());
   };
 
   const handleNavClick = () => closeDrawer();
+
+  /// Les éléments du tiroir qu'on peut atteindre au clavier.
+  ///
+  /// `:not([tabindex="-1"])` écarte l'overlay, qui est cliquable mais
+  /// délibérément hors de l'ordre de tabulation.
+  const elementsFocusables = (): HTMLElement[] => {
+    if (!drawerElement) return [];
+    return Array.from(
+      drawerElement.querySelectorAll<HTMLElement>(
+        'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+      ),
+    ).filter((el) => el.offsetParent !== null);
+  };
+
+  /// Enferme le focus dans le tiroir ouvert.
+  ///
+  /// ── Pourquoi c'est nécessaire ────────────────────────────────────────────
+  ///
+  /// Le focus était bien DÉPLACÉ à l'ouverture — sur le bouton de fermeture —
+  /// et rendu au bouton hamburger à la fermeture. Mais rien ne le RETENAIT :
+  /// une tabulation de plus l'emmenait derrière l'overlay, dans une page que
+  /// l'utilisateur ne voit pas et dont il ne peut pas sortir autrement qu'en
+  /// tabulant à l'aveugle jusqu'au bout.
+  ///
+  /// Pour quelqu'un qui navigue au clavier ou au lecteur d'écran, c'est
+  /// l'équivalent d'un cul-de-sac : le contenu annoncé n'est pas celui qui est
+  /// affiché. C'est le finding #794 de la revue du 2026-09-06, et il porte sur
+  /// le seul écran où ce produit vit vraiment — le téléphone.
+  ///
+  /// `AccessibleModal.svelte` implémentait déjà ce piège ; il n'y avait rien à
+  /// inventer, seulement à réemployer.
+  const piegerLeFocus = (e: KeyboardEvent) => {
+    if (!drawerOpen || e.key !== "Tab") return;
+    const elements = elementsFocusables();
+    if (elements.length === 0) return;
+
+    const premier = elements[0];
+    const dernier = elements[elements.length - 1];
+    const actif = document.activeElement;
+
+    if (e.shiftKey && actif === premier) {
+      e.preventDefault();
+      dernier.focus();
+    } else if (!e.shiftKey && actif === dernier) {
+      e.preventDefault();
+      premier.focus();
+    } else if (!elements.includes(actif as HTMLElement)) {
+      // Le focus s'est échappé — par un clic, ou parce qu'il était ailleurs à
+      // l'ouverture. On le ramène plutôt que de le laisser dehors.
+      e.preventDefault();
+      premier.focus();
+    }
+  };
 
   const logout = async () => {
     await authStore.logout();
@@ -288,21 +529,38 @@
 </script>
 
 {#if isAuthenticated}
-  {#if hasNoRoleAssignment}
+  {#if aUnRoleSansInterface}
+    <!-- ================================================================== -->
+    <!-- Rôle connu du serveur, sans écran dédié — cf. #814, #815, #816     -->
+    <!-- ================================================================== -->
+    <aside
+      class="hidden lg:flex lg:flex-col lg:fixed lg:inset-y-0 lg:left-0 lg:w-[248px] bg-white border-r border-gray-200 z-30 items-center justify-center p-6 text-center"
+      role="navigation"
+      aria-label="Navigation principale"
+      data-testid="navigation-role-sans-interface"
+    >
+      <p class="text-sm font-semibold text-gray-800 mb-2">
+        {$_("navigation.noScreenForRoleTitle")}
+      </p>
+      <p class="text-xs text-gray-500">
+        {$_("navigation.noScreenForRoleDesc")}
+      </p>
+    </aside>
+  {:else if hasNoRoleAssignment}
     <!-- ================================================================== -->
     <!-- @negative — user authentifie sans aucun UserRoleAssignment         -->
     <!-- ================================================================== -->
     <aside
-      class="hidden lg:flex lg:flex-col lg:fixed lg:inset-y-0 lg:left-0 lg:w-60 bg-white border-r border-gray-200 z-30 items-center justify-center p-6 text-center"
+      class="hidden lg:flex lg:flex-col lg:fixed lg:inset-y-0 lg:left-0 lg:w-[248px] bg-white border-r border-gray-200 z-30 items-center justify-center p-6 text-center"
       role="navigation"
       aria-label="Navigation principale"
       data-testid="navigation-empty-no-role"
     >
       <p class="text-sm font-semibold text-gray-800 mb-2">
-        Aucun rôle attribué
+        {$_("navigation.noRoleAssignedTitle")}
       </p>
       <p class="text-xs text-gray-500">
-        Contactez votre administrateur pour obtenir l'accès.
+        {$_("navigation.noRoleAssignedDesc")}
       </p>
     </aside>
   {:else}
@@ -310,18 +568,18 @@
     <!-- DESKTOP SIDEBAR (lg+) — Navigation principale role-conditionnee    -->
     <!-- ================================================================== -->
     <aside
-      class="hidden lg:flex lg:flex-col lg:fixed lg:inset-y-0 lg:left-0 lg:w-60 bg-white border-r border-gray-200 z-30"
+      class="hidden lg:flex lg:flex-col lg:fixed lg:inset-y-0 lg:left-0 lg:w-[248px] bg-white border-r border-gray-200 z-30"
       role="navigation"
       aria-label="Navigation principale"
       data-testid="sidebar-desktop"
     >
       <!-- Logo + Notification -->
       <div
-        class="flex items-center justify-between h-14 px-4 border-b border-gray-200 shrink-0"
+        class="flex h-[60px] shrink-0 items-center justify-between border-b border-border-soft px-4"
       >
         <a
           href={`/${user?.role ?? ""}`}
-          class="text-xl font-bold text-primary-600"
+          class="text-[19px] font-bold tracking-[-0.02em] text-primary"
           data-testid="nav-logo"
         >
           KoproGo
@@ -334,6 +592,65 @@
         class="flex-1 overflow-y-auto py-3 px-3"
         aria-label="Menus principaux"
       >
+        <!--
+          Deux entrées ÉPINGLÉES, au-dessus des groupes.
+
+          « Aujourd'hui » et la collection principale du rôle sont ouvertes
+          plusieurs fois par jour ; les enfouir dans un groupe repliable coûte
+          un clic à chaque fois.
+
+          ── Le piège de test que la remise signale ──────────────────────────
+
+          Ces deux entrées NE SONT PAS des menus, et ne doivent jamais porter
+          un ancrage en `navigation-menu-*`. La remise met en garde : un
+          compte de menus métier s'en trouverait faussé. Ce dépôt n'a pas
+          d'assertion de compte stricte aujourd'hui, mais la règle vaut
+          indépendamment — un ancrage dit ce qu'une chose EST, et une entrée
+          épinglée n'est pas un groupe.
+
+          Elles ont donc leur propre espace de noms : `navigation-link-*`.
+        -->
+        <ul class="mb-2 space-y-0.5">
+          <li>
+            <a
+              href={`/${user?.role ?? ""}`}
+              data-testid="navigation-link-today"
+              aria-current={currentPath === `/${user?.role ?? ""}`
+                ? "page"
+                : undefined}
+              class="flex items-center gap-2.5 rounded-nav px-3 py-2 text-sm transition-colors {currentPath ===
+              `/${user?.role ?? ''}`
+                ? 'bg-primary-tint font-semibold text-success-text accent-primary'
+                : 'text-ink-2 hover:bg-chip-bg'}"
+            >
+              <Icone nom="today" taille={18} class="shrink-0" />
+              <span class="truncate">{$_("navigation.today")}</span>
+            </a>
+          </li>
+          {#if collectionPrincipale}
+            <li>
+              <a
+                href={collectionPrincipale.href}
+                data-testid="navigation-link-acps"
+                aria-current={currentPath === collectionPrincipale.href
+                  ? "page"
+                  : undefined}
+                class="flex items-center gap-2.5 rounded-nav px-3 py-2 text-sm transition-colors {currentPath ===
+                collectionPrincipale.href
+                  ? 'bg-primary-tint font-semibold text-success-text accent-primary'
+                  : 'text-ink-2 hover:bg-chip-bg'}"
+              >
+                <Icone
+                  nom={collectionPrincipale.icone}
+                  taille={18}
+                  class="shrink-0"
+                />
+                <span class="truncate">{$_(collectionPrincipale.libelle)}</span>
+              </a>
+            </li>
+          {/if}
+        </ul>
+
         {#if see("admin")}
           <RoleSubmenu
             menuKey="admin"
@@ -407,7 +724,8 @@
           <div class="mb-2">
             <label
               for="sidebar-role-selector"
-              class="text-[11px] text-gray-400 block mb-1">Rôle actif</label
+              class="text-[11px] text-muted block mb-1"
+              >{$_("navigation.activeRole")}</label
             >
             <select
               id="sidebar-role-selector"
@@ -450,29 +768,35 @@
 
         <div class="space-y-0.5">
           <a
+            data-testid="nav-profile-link"
             href="/profile"
             class="flex items-center gap-2 px-2 py-1 text-xs text-gray-600 hover:bg-gray-50 rounded-lg transition-colors"
           >
-            👤 {$_("navigation.profile")}
+            <Icone nom="profile" taille={17} class="shrink-0" />
+            {$_("navigation.profile")}
           </a>
           <a
+            data-testid="nav-settings-link"
             href="/settings"
             class="flex items-center gap-2 px-2 py-1 text-xs text-gray-600 hover:bg-gray-50 rounded-lg transition-colors"
           >
-            ⚙️ Paramètres
+            ⚙️ {$_("navigation.settings")}
           </a>
           <a
+            data-testid="nav-gdpr-link"
             href="/settings/gdpr"
             class="flex items-center gap-2 px-2 py-1 text-xs text-gray-600 hover:bg-gray-50 rounded-lg transition-colors"
           >
-            🔒 Données RGPD
+            <Icone nom="gdpr" taille={17} class="shrink-0" />
+            {$_("navigation.gdprData")}
           </a>
           <button
             onclick={logout}
             class="w-full flex items-center gap-2 px-2 py-1 text-xs text-red-600 hover:bg-red-50 rounded-lg transition-colors"
             data-testid="user-menu-logout"
           >
-            🚪 {$_("navigation.logout")}
+            <Icone nom="logout" taille={17} class="shrink-0" />
+            {$_("navigation.logout")}
           </button>
         </div>
       </div>
@@ -484,7 +808,7 @@
 <!-- MOBILE TOP HEADER (<lg)                                            -->
 <!-- ================================================================== -->
 <header
-  class="lg:hidden fixed top-0 left-0 right-0 h-14 bg-white border-b border-gray-200 z-40 flex items-center justify-between px-3"
+  class="lg:hidden fixed top-0 left-0 right-0 h-entete-mobile pt-[env(safe-area-inset-top,0px)] bg-white border-b border-gray-200 z-40 flex items-center justify-between px-3"
   data-testid="mobile-header"
 >
   {#if isAuthenticated}
@@ -511,12 +835,15 @@
         />
       </svg>
     </button>
-    <a href={`/${user?.role ?? ""}`} class="text-lg font-bold text-primary-600"
-      >KoproGo</a
+    <a
+      data-testid="nav-mobile-home-link"
+      href={`/${user?.role ?? ""}`}
+      class="text-lg font-bold text-primary-600">KoproGo</a
     >
     <div class="flex items-center gap-1">
       <NotificationBell />
       <a
+        data-testid="nav-mobile-avatar-link"
         href="/profile"
         class="w-8 h-8 rounded-full bg-primary-600 text-white flex items-center justify-center font-semibold text-xs"
         aria-label="Profil"
@@ -525,13 +852,17 @@
       </a>
     </div>
   {:else}
-    <a href="/" class="text-lg font-bold text-primary-600">KoproGo</a>
+    <a
+      data-testid="nav-mobile-public-home-link"
+      href="/"
+      class="text-lg font-bold text-primary-600">KoproGo</a
+    >
     <a
       href="/login"
       class="px-4 py-1.5 bg-primary-600 text-white rounded-lg hover:bg-primary-700 text-sm font-medium"
       data-testid="nav-login-button"
     >
-      Connexion
+      {$_("auth.login")}
     </a>
   {/if}
 </header>
@@ -541,18 +872,22 @@
 <!-- ================================================================== -->
 {#if !isAuthenticated}
   <aside
-    class="hidden lg:flex lg:flex-col lg:fixed lg:inset-y-0 lg:left-0 lg:w-60 bg-white border-r border-gray-200 z-30 items-center justify-center gap-4"
+    class="hidden lg:flex lg:flex-col lg:fixed lg:inset-y-0 lg:left-0 lg:w-[248px] bg-white border-r border-gray-200 z-30 items-center justify-center gap-4"
   >
-    <a href="/" class="text-2xl font-bold text-primary-600">KoproGo</a>
+    <a
+      data-testid="nav-public-home-link"
+      href="/"
+      class="text-2xl font-bold text-primary-600">KoproGo</a
+    >
     <p class="text-sm text-gray-500 text-center px-6">
-      Plateforme de gestion de copropriété
+      {$_("navigation.tagline")}
     </p>
     <a
       href="/login"
       class="px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 font-medium"
       data-testid="nav-login-button"
     >
-      Connexion
+      {$_("auth.login")}
     </a>
   </aside>
 {/if}
@@ -561,17 +896,25 @@
 <!-- MOBILE DRAWER                                                      -->
 <!-- ================================================================== -->
 {#if drawerOpen && isAuthenticated && !hasNoRoleAssignment}
-  <div
+  <!-- L'overlay était un `<div role="button">` : un bouton déguisé, que les
+       technologies d'assistance annoncent comme tel sans qu'il en soit un
+       (#794). C'en est un vrai désormais.
+
+       `tabindex="-1"` le maintient hors de l'ordre de tabulation à dessein :
+       il se ferme au clic ou par Échap, et l'ajouter au parcours clavier
+       n'apporterait qu'un arrêt de plus avant le contenu. -->
+  <button
+    type="button"
     class="fixed inset-0 bg-black/40 z-40 lg:hidden"
     transition:fade={{ duration: 200 }}
     onclick={closeDrawer}
-    onkeydown={(e) => e.key === "Escape" && closeDrawer()}
-    role="button"
     tabindex="-1"
     aria-label="Fermer le menu"
-  ></div>
+    data-testid="mobile-drawer-overlay"
+  ></button>
 
   <aside
+    bind:this={drawerElement}
     class="fixed inset-y-0 left-0 w-72 bg-white shadow-xl z-50 flex flex-col lg:hidden"
     transition:fly={{ x: -288, duration: 300, easing: cubicOut }}
     role="navigation"
@@ -582,11 +925,13 @@
       class="flex items-center justify-between h-14 px-4 border-b border-gray-200 shrink-0"
     >
       <a
+        data-testid="nav-drawer-home-link"
         href={`/${user?.role ?? ""}`}
         class="text-xl font-bold text-primary-600"
         onclick={handleNavClick}>KoproGo</a
       >
       <button
+        data-testid="nav-drawer-close-button"
         bind:this={drawerCloseButton}
         onclick={closeDrawer}
         class="p-2 rounded-lg text-gray-500 hover:bg-gray-100"
@@ -683,9 +1028,11 @@
         <div class="mb-3">
           <label
             for="drawer-role-selector"
-            class="text-[11px] text-gray-400 block mb-1">Rôle actif</label
+            class="text-[11px] text-muted block mb-1"
+            >{$_("navigation.activeRole")}</label
           >
           <select
+            data-testid="drawer-role-selector"
             id="drawer-role-selector"
             class="w-full px-2 py-1.5 border border-gray-300 rounded-lg text-xs focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
             onchange={handleRoleChange}
@@ -723,32 +1070,38 @@
 
       <div class="space-y-0.5">
         <a
+          data-testid="nav-drawer-profile-link"
           href="/profile"
           onclick={handleNavClick}
           class="flex items-center gap-2 px-2 py-1.5 text-xs text-gray-600 hover:bg-gray-50 rounded-lg transition-colors"
         >
-          👤 {$_("navigation.profile")}
+          <Icone nom="profile" taille={17} class="shrink-0" />
+          {$_("navigation.profile")}
         </a>
         <a
+          data-testid="nav-drawer-settings-link"
           href="/settings"
           onclick={handleNavClick}
           class="flex items-center gap-2 px-2 py-1.5 text-xs text-gray-600 hover:bg-gray-50 rounded-lg transition-colors"
         >
-          ⚙️ Paramètres
+          ⚙️ {$_("navigation.settings")}
         </a>
         <a
+          data-testid="nav-drawer-gdpr-link"
           href="/settings/gdpr"
           onclick={handleNavClick}
           class="flex items-center gap-2 px-2 py-1.5 text-xs text-gray-600 hover:bg-gray-50 rounded-lg transition-colors"
         >
-          🔒 Données RGPD
+          <Icone nom="gdpr" taille={17} class="shrink-0" />
+          {$_("navigation.gdprData")}
         </a>
         <button
           onclick={logout}
           class="w-full flex items-center gap-2 px-2 py-1.5 text-xs text-red-600 hover:bg-red-50 rounded-lg transition-colors"
           data-testid="mobile-drawer-logout"
         >
-          🚪 {$_("navigation.logout")}
+          <Icone nom="logout" taille={17} class="shrink-0" />
+          {$_("navigation.logout")}
         </button>
       </div>
     </div>
@@ -756,5 +1109,8 @@
 {/if}
 
 <svelte:window
-  onkeydown={(e) => e.key === "Escape" && drawerOpen && closeDrawer()}
+  onkeydown={(e) => {
+    if (e.key === "Escape" && drawerOpen) closeDrawer();
+    piegerLeFocus(e);
+  }}
 />

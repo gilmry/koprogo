@@ -2,7 +2,7 @@ use crate::application::dto::{CreatePaymentRequest, RefundPaymentRequest};
 use crate::domain::entities::TransactionStatus;
 use crate::infrastructure::audit::{AuditEventType, AuditLogEntry};
 use crate::infrastructure::web::{AppState, AuthenticatedUser};
-use actix_web::{delete, get, post, put, web, HttpResponse, Responder};
+use actix_web::{delete, get, post, put, web, HttpResponse, Responder, ResponseError};
 use uuid::Uuid;
 
 // ==================== Payment CRUD Endpoints ====================
@@ -113,6 +113,7 @@ pub async fn get_payment(
 #[get("/payments/stripe/{stripe_payment_intent_id}")]
 pub async fn get_payment_by_stripe_intent(
     state: web::Data<AppState>,
+    user: AuthenticatedUser,
     stripe_payment_intent_id: web::Path<String>,
 ) -> impl Responder {
     match state
@@ -120,7 +121,17 @@ pub async fn get_payment_by_stripe_intent(
         .get_payment_by_stripe_intent(&stripe_payment_intent_id)
         .await
     {
-        Ok(Some(payment)) => HttpResponse::Ok().json(payment),
+        Ok(Some(payment)) => {
+            // Cloisonnement multi-organisations : cette route ne prenait AUCUNE
+            // identité. N'importe qui pouvait lire ces données de paiement sur
+            // simple connaissance de l'identifiant Stripe. Le cliquet d'identité
+            // de #772 ne la voyait pas : il ne compte que les routes PRENANT une
+            // identité sans s'en servir. Cf. #845.
+            if let Err(e) = user.verify_org_access(payment.organization_id) {
+                return HttpResponse::Forbidden().json(serde_json::json!({ "error": e }));
+            }
+            HttpResponse::Ok().json(payment)
+        }
         Ok(None) => HttpResponse::NotFound().json(serde_json::json!({
             "error": "Payment not found"
         })),
@@ -144,7 +155,21 @@ pub async fn get_payment_by_stripe_intent(
 pub async fn list_owner_payments(
     state: web::Data<AppState>,
     owner_id: web::Path<Uuid>,
+    user: AuthenticatedUser,
 ) -> impl Responder {
+    // Route imbriquee non gardee au releve du 2026-09-06 (issue #772) : elle
+    // servait la situation financiere NOMINATIVE d'une personne a quiconque
+    // connaissait son identifiant.
+    if let Err(err) = crate::infrastructure::web::middleware::scope_guard::verify_owner_org_access(
+        &user,
+        *owner_id,
+        &state.owner_use_cases,
+    )
+    .await
+    {
+        return err.error_response();
+    }
+
     match state.payment_use_cases.list_owner_payments(*owner_id).await {
         Ok(payments) => HttpResponse::Ok().json(payments),
         Err(err) => HttpResponse::InternalServerError().json(serde_json::json!({"error": err})),
@@ -167,7 +192,23 @@ pub async fn list_owner_payments(
 pub async fn list_building_payments(
     state: web::Data<AppState>,
     building_id: web::Path<Uuid>,
+    user: AuthenticatedUser,
 ) -> impl Responder {
+    // Route imbriquee non gardee au releve du 2026-09-06 (issue #772) : elle
+    // servait une sous-collection d'un dossier d'ACP a quiconque connaissait
+    // un identifiant, sans demander d'identite.
+    if let Err(err) =
+        crate::infrastructure::web::middleware::scope_guard::verify_building_org_access(
+            &user,
+            *building_id,
+            &state.building_use_cases,
+            &state.acp_use_cases,
+        )
+        .await
+    {
+        return err.error_response();
+    }
+
     match state
         .payment_use_cases
         .list_building_payments(*building_id)
@@ -194,7 +235,23 @@ pub async fn list_building_payments(
 pub async fn list_expense_payments(
     state: web::Data<AppState>,
     expense_id: web::Path<Uuid>,
+    user: AuthenticatedUser,
 ) -> impl Responder {
+    // Route imbriquee non gardee au releve du 2026-09-06 (issue #772) : les
+    // paiements d'une depense nomment qui a paye quoi.
+    if let Err(err) =
+        crate::infrastructure::web::middleware::scope_guard::verify_expense_org_access(
+            &user,
+            *expense_id,
+            &state.expense_use_cases,
+            &state.building_use_cases,
+            &state.acp_use_cases,
+        )
+        .await
+    {
+        return err.error_response();
+    }
+
     match state
         .payment_use_cases
         .list_expense_payments(*expense_id)
@@ -699,7 +756,21 @@ pub async fn delete_payment(
 pub async fn get_owner_payment_stats(
     state: web::Data<AppState>,
     owner_id: web::Path<Uuid>,
+    user: AuthenticatedUser,
 ) -> impl Responder {
+    // Route imbriquee non gardee au releve du 2026-09-06 (issue #772) : elle
+    // servait la situation financiere NOMINATIVE d'une personne a quiconque
+    // connaissait son identifiant.
+    if let Err(err) = crate::infrastructure::web::middleware::scope_guard::verify_owner_org_access(
+        &user,
+        *owner_id,
+        &state.owner_use_cases,
+    )
+    .await
+    {
+        return err.error_response();
+    }
+
     match state
         .payment_use_cases
         .get_owner_payment_stats(*owner_id)
@@ -726,7 +797,23 @@ pub async fn get_owner_payment_stats(
 pub async fn get_building_payment_stats(
     state: web::Data<AppState>,
     building_id: web::Path<Uuid>,
+    user: AuthenticatedUser,
 ) -> impl Responder {
+    // Route imbriquee non gardee au releve du 2026-09-06 (issue #772) : elle
+    // servait une sous-collection d'un dossier d'ACP a quiconque connaissait
+    // un identifiant, sans demander d'identite.
+    if let Err(err) =
+        crate::infrastructure::web::middleware::scope_guard::verify_building_org_access(
+            &user,
+            *building_id,
+            &state.building_use_cases,
+            &state.acp_use_cases,
+        )
+        .await
+    {
+        return err.error_response();
+    }
+
     match state
         .payment_use_cases
         .get_building_payment_stats(*building_id)
@@ -753,7 +840,23 @@ pub async fn get_building_payment_stats(
 pub async fn get_expense_total_paid(
     state: web::Data<AppState>,
     expense_id: web::Path<Uuid>,
+    user: AuthenticatedUser,
 ) -> impl Responder {
+    // Route imbriquee non gardee au releve du 2026-09-06 (issue #772) : les
+    // paiements d'une depense nomment qui a paye quoi.
+    if let Err(err) =
+        crate::infrastructure::web::middleware::scope_guard::verify_expense_org_access(
+            &user,
+            *expense_id,
+            &state.expense_use_cases,
+            &state.building_use_cases,
+            &state.acp_use_cases,
+        )
+        .await
+    {
+        return err.error_response();
+    }
+
     match state
         .payment_use_cases
         .get_total_paid_for_expense(*expense_id)
@@ -783,7 +886,21 @@ pub async fn get_expense_total_paid(
 pub async fn get_owner_total_paid(
     state: web::Data<AppState>,
     owner_id: web::Path<Uuid>,
+    user: AuthenticatedUser,
 ) -> impl Responder {
+    // Route imbriquee non gardee au releve du 2026-09-06 (issue #772) : elle
+    // servait la situation financiere NOMINATIVE d'une personne a quiconque
+    // connaissait son identifiant.
+    if let Err(err) = crate::infrastructure::web::middleware::scope_guard::verify_owner_org_access(
+        &user,
+        *owner_id,
+        &state.owner_use_cases,
+    )
+    .await
+    {
+        return err.error_response();
+    }
+
     match state
         .payment_use_cases
         .get_total_paid_by_owner(*owner_id)
@@ -813,7 +930,23 @@ pub async fn get_owner_total_paid(
 pub async fn get_building_total_paid(
     state: web::Data<AppState>,
     building_id: web::Path<Uuid>,
+    user: AuthenticatedUser,
 ) -> impl Responder {
+    // Route imbriquee non gardee au releve du 2026-09-06 (issue #772) : elle
+    // servait une sous-collection d'un dossier d'ACP a quiconque connaissait
+    // un identifiant, sans demander d'identite.
+    if let Err(err) =
+        crate::infrastructure::web::middleware::scope_guard::verify_building_org_access(
+            &user,
+            *building_id,
+            &state.building_use_cases,
+            &state.acp_use_cases,
+        )
+        .await
+    {
+        return err.error_response();
+    }
+
     match state
         .payment_use_cases
         .get_total_paid_for_building(*building_id)

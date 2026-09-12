@@ -55,14 +55,39 @@ Feature: Building Conformity (Story 1.4 — Refonte UX multi-rôle ACP)
     And the building quota_delta should be "1000"
 
   @edge
-  Scenario: Building with declared_units mismatch is not conformant even with quota_sum 1000
+  Scenario: Un ecart de LOTS ne rend plus l'immeuble non conforme
+    # Issue #770. Ce scenario disait l'inverse jusqu'au 2026-09-06 : trois lots
+    # declares, deux encodes, quotites justes, et l'immeuble etait refuse.
+    #
+    # C'est ce refus qui fermait la comptabilite d'un syndic encodant son acte
+    # de base progressivement — le seul chemin realiste. `total_units` n'etait
+    # mis a jour par rien : on comparait un compte vivant a un chiffre mort.
+    #
+    # La conformite ne porte desormais que sur les QUOTITES, seul axe que
+    # l'acte de base fixe et que le registre legal enregistre
+    # (Art. 3.85 § 1er al. 2 : « Les quotites sont fixees par l'acte de base ;
+    # leur somme est le denominateur »). L'ecart de lots reste RAPPORTE — il
+    # renseigne — mais il ne bloque plus.
     Given an existing organization "Cabinet Maury" with a building "Mismatch Tower" of declared 3 units
     And the building "Mismatch Tower" has a unit "A1" with quota 500
     And the building "Mismatch Tower" has a unit "A2" with quota 500
     When admin gets building "Mismatch Tower" by id
     Then the building units_count should be 2
     And the building quota_sum should be "1000"
+    And the building is_conformant should be true
+
+  @negative
+  Scenario: Un ecart de QUOTITES reste bloquant
+    # Le pendant du scenario precedent, et il ne doit pas bouger : repartir des
+    # charges sur une base fausse produit des appels de fonds faux. Refuser de
+    # calculer est ici la bonne reponse.
+    Given an existing organization "Cabinet Maury" with a building "Short Tower" of declared 2 units
+    And the building "Short Tower" has a unit "B1" with quota 500
+    And the building "Short Tower" has a unit "B2" with quota 400
+    When admin gets building "Short Tower" by id
+    Then the building quota_sum should be "900"
     And the building is_conformant should be false
+    And the building quota_delta should be "100"
 
   # ==========================================================================
   # @security — RBAC & response invariant

@@ -10,7 +10,7 @@ import { loginAsSyndicWithBuilding } from "./helpers/auth";
  * Mirrors workflows from backend/tests/e2e_payment_recovery.rs.
  */
 
-const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
+import { API_BASE } from "./helpers/adresses";
 
 test.describe("Payment Recovery - Reminder Workflow", () => {
   test("should display payment reminders page", async ({ page }) => {
@@ -18,9 +18,9 @@ test.describe("Payment Recovery - Reminder Workflow", () => {
     await page.goto("/payment-reminders");
 
     await expect(page.locator("body")).toBeVisible();
-    await expect(
-      page.locator("main h1, main h2, [data-testid='reminders-list']").first(),
-    ).toBeVisible({ timeout: 10000 });
+    await expect(page.locator("[data-testid='payment-reminders']")).toBeVisible(
+      { timeout: 10000 },
+    );
   });
 
   test("should get payment reminder stats", async ({ page }) => {

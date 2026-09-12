@@ -3,11 +3,9 @@ import Layout from "../../layouts/Layout.astro";
 ---
 
 <Layout title="Devis - KoproGo">
-  <div class="container mx-auto px-4 py-8">
+  <div class="container mx-auto px-4 py-8" data-testid="quotes-list">
     <div class="mb-6">
-      <h1 class="text-3xl font-bold text-gray-900">
-        Devis entrepreneurs
-      </h1>
+      <h1 class="text-3xl font-bold text-gray-900">Devis entrepreneurs</h1>
       <p class="text-gray-600 mt-2">
         Gérez les demandes de devis et comparez les offres des entrepreneurs.
       </p>
@@ -15,8 +13,10 @@ import Layout from "../../layouts/Layout.astro";
         class="mt-4 p-4 bg-blue-50 border-l-4 border-blue-400 rounded-md text-sm"
       >
         <p class="text-blue-800">
-          <strong>Obligation légale belge :</strong> Pour les travaux de construction ou
-          réparation dépassant 5 000 EUR, la loi belge exige l'obtention d'au minimum
+          <strong>Obligation légale belge :</strong> Pour les travaux de construction
+          ou réparation dépassant 5 000 EUR, la loi belge exige l'obtention d'au minimum{
+            " "
+          }
           <strong>3 devis comparables</strong> d'entrepreneurs différents, garantissant
           transparence et juste prix pour les copropriétaires.
         </p>
@@ -33,13 +33,19 @@ import Layout from "../../layouts/Layout.astro";
   import QuoteList from "../../components/quotes/QuoteList.svelte";
   import BuildingSelector from "../../components/BuildingSelector.svelte";
 
-  const selectorContainer = document.getElementById("building-selector-container");
+  const selectorContainer = document.getElementById(
+    "building-selector-container",
+  );
   const listContainer = document.getElementById("quote-list-container");
   let listComponent: any = null;
 
   function mountList(buildingId: string) {
     if (!listContainer) return;
-    if (listComponent) { try { unmount(listComponent); } catch {} }
+    if (listComponent) {
+      try {
+        unmount(listComponent);
+      } catch {}
+    }
     listContainer.innerHTML = "";
     listComponent = mount(QuoteList as any, {
       target: listContainer,

@@ -638,7 +638,7 @@ Jalon 3: Features Différenciantes ⏳ (~56%)
 
 **Conformité légale**: 80%
 
-**Effort restant estimé**: ~90h (voir `WBS_RELEASE_0_1_0.md <WBS_RELEASE_0_1_0.md>`_)
+**Effort restant estimé**: ~90h (voir `WBS_RELEASE_0_1_0.md <archive/WBS_RELEASE_0_1_0.md>`_)
 
 Jalon 4: Automation & Intégrations ⏳ (~54%)
 ----------------------------------------------

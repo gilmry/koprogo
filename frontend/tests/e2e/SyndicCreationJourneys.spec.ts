@@ -4,8 +4,9 @@ import {
   loginAsSyndicWithUnit,
 } from "./helpers/auth";
 import { failOnPageErrors } from "./helpers/pageErrors";
+import { attendCode } from "./helpers/reponse";
 
-const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
+import { API_BASE } from "./helpers/adresses";
 
 async function seedOwner(
   page: Page,
@@ -35,13 +36,23 @@ test.describe("Syndic — parcours de création remplis jusqu'au bout", () => {
   test("owner-contributions: crée une contribution de bout en bout", async ({
     page,
   }) => {
-    const ctx = await loginAsSyndicWithBuilding(page, "journey-contrib");
+    // Un LOT est nécessaire, pas seulement un immeuble.
+    //
+    // Le serveur refuse toute quote-part sans lot : « Impossible de déterminer
+    // l'ACP créancière ». Le rattachement vient de l'acte de base, et une
+    // quote-part due à personne n'est pas une quote-part (ADR-0045).
+    //
+    // Ce test échouait en 400 avec ce message exact — que l'assertion nue
+    // `expect(resp.status()).toBe(201)` taisait, coûtant trois runs de CI de
+    // trente-cinq minutes pour n'apprendre que « 400 » (#832).
+    const ctx = await loginAsSyndicWithUnit(page, "journey-contrib");
     await seedOwner(page, ctx.token, ctx.buildingId, "journey-contrib");
 
     await page.goto("/owner-contributions", { waitUntil: "networkidle" });
     await page
       .getByTestId("contribution-owner-select")
       .selectOption({ index: 1 });
+    await page.getByTestId("contribution-unit-select").selectOption(ctx.unitId);
     await page
       .getByTestId("contribution-description")
       .fill("Test contribution E2E");
@@ -55,7 +66,7 @@ test.describe("Syndic — parcours de création remplis jusqu'au bout", () => {
       ),
       page.getByTestId("contribution-submit-button").click(),
     ]);
-    expect(resp.status()).toBe(201);
+    await attendCode(resp, 201);
   });
 
   test("budgets: crée un budget de bout en bout", async ({ page }) => {
@@ -73,7 +84,7 @@ test.describe("Syndic — parcours de création remplis jusqu'au bout", () => {
       ),
       page.getByTestId("budget-submit-button").click(),
     ]);
-    expect(resp.status()).toBe(201);
+    await attendCode(resp, 201);
   });
 
   test("etats-dates: génère un état daté de bout en bout", async ({ page }) => {
@@ -161,6 +172,6 @@ test.describe("Syndic — parcours de création remplis jusqu'au bout", () => {
         .getByRole("button", { name: /^élire$|^confirmer$|^valider$/i })
         .click(),
     ]);
-    expect(resp.status()).toBe(201);
+    await attendCode(resp, 201);
   });
 });

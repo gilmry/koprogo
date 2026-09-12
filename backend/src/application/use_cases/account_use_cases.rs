@@ -253,7 +253,9 @@ impl AccountUseCases {
 ///
 /// This is a curated subset of the Belgian PCMN relevant for property management.
 /// Full PCMN has 100+ accounts; we focus on the most common for syndic operations.
-fn get_belgian_pcmn_seed_data() -> Vec<(
+/// `pub(crate)` : `ExpenseAccountingService` s'en sert pour prouver, en test,
+/// que les comptes qu'il utilise existent bel et bien dans le plan.
+pub(crate) fn get_belgian_pcmn_seed_data() -> Vec<(
     &'static str,
     &'static str,
     Option<&'static str>,

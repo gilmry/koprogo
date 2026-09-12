@@ -26,7 +26,24 @@ pub async fn create_work_report(
 
     match state
         .work_report_use_cases
-        .create_work_report(request.into_inner())
+        // L'organisation vient du JETON, jamais du corps de la requête.
+        //
+        // Elle y était pourtant attendue, et le client ne l'avait pas toujours :
+        // sur `/building-detail`, `organizationId` est résolu via
+        // `getAcp(building.acp_id)`, qui **dégrade silencieusement en 403** pour
+        // un syndic ou un copropriétaire. Le formulaire postait alors une chaîne
+        // vide, `Uuid::parse_str("")` échouait, et le serveur répondait 400 sans
+        // que rien n'indique quel champ posait problème (#552).
+        //
+        // Le handler calculait déjà cette organisation — `require_organization()`
+        // ci-dessus — puis la jetait. La lire du jeton corrige le 400 **et**
+        // ferme une porte : un client ne peut plus estampiller un rapport de travaux
+        // au nom d'une autre organisation (même famille que l'ADR-0045).
+        .create_work_report({
+            let mut dto = request.into_inner();
+            dto.organization_id = organization_id.to_string();
+            dto
+        })
         .await
     {
         Ok(work_report) => {
@@ -100,7 +117,23 @@ pub async fn get_work_report(
 pub async fn list_building_work_reports(
     state: web::Data<AppState>,
     building_id: web::Path<Uuid>,
+    user: AuthenticatedUser,
 ) -> impl Responder {
+    // Route imbriquee non gardee au releve du 2026-09-06 (issue #772) : elle
+    // servait une sous-collection d'un dossier d'ACP a quiconque connaissait
+    // un identifiant, sans demander d'identite.
+    if let Err(err) =
+        crate::infrastructure::web::middleware::scope_guard::verify_building_org_access(
+            &user,
+            *building_id,
+            &state.building_use_cases,
+            &state.acp_use_cases,
+        )
+        .await
+    {
+        return err.error_response();
+    }
+
     match state
         .work_report_use_cases
         .list_work_reports_by_building(*building_id)
@@ -135,9 +168,18 @@ pub async fn list_organization_work_reports(
 #[get("/work-reports")]
 pub async fn list_work_reports_paginated(
     state: web::Data<AppState>,
+    _user: AuthenticatedUser,
     page_request: web::Query<PageRequest>,
     filters: web::Query<WorkReportFilters>,
 ) -> impl Responder {
+    // Cette route ne prenait AUCUNE identité : ni `AuthenticatedUser`, ni
+    // jeton lu à la main. Le cliquet de #772 ne la voyait pas — il ne
+    // compte que les routes PRENANT une identité sans s'en servir.
+    // Cf. #845.
+    //
+    // Même remarque que pour les contrôles techniques : l'identité est exigée,
+    // le filtrage par périmètre de cette liste reste à décider.
+
     match state
         .work_report_use_cases
         .list_work_reports_paginated(&page_request.into_inner(), &filters.into_inner())
@@ -226,7 +268,23 @@ pub async fn delete_work_report(
 pub async fn get_active_warranties(
     state: web::Data<AppState>,
     building_id: web::Path<Uuid>,
+    user: AuthenticatedUser,
 ) -> impl Responder {
+    // Route imbriquee non gardee au releve du 2026-09-06 (issue #772) : elle
+    // servait une sous-collection d'un dossier d'ACP a quiconque connaissait
+    // un identifiant, sans demander d'identite.
+    if let Err(err) =
+        crate::infrastructure::web::middleware::scope_guard::verify_building_org_access(
+            &user,
+            *building_id,
+            &state.building_use_cases,
+            &state.acp_use_cases,
+        )
+        .await
+    {
+        return err.error_response();
+    }
+
     match state
         .work_report_use_cases
         .get_active_warranties(*building_id)
@@ -241,11 +299,27 @@ pub async fn get_active_warranties(
 #[get("/buildings/{building_id}/work-reports/warranties/expiring")]
 pub async fn get_expiring_warranties(
     state: web::Data<AppState>,
+    user: AuthenticatedUser,
     path: web::Path<Uuid>,
     query: web::Query<serde_json::Value>,
 ) -> impl Responder {
     let building_id = path.into_inner();
     let days = query.get("days").and_then(|v| v.as_i64()).unwrap_or(90) as i32;
+
+    // Route imbriquee non gardee au releve du 2026-09-06 (issue #772) : elle
+    // servait une sous-collection d'un dossier d'ACP a quiconque connaissait
+    // un identifiant, sans demander d'identite.
+    if let Err(err) =
+        crate::infrastructure::web::middleware::scope_guard::verify_building_org_access(
+            &user,
+            building_id,
+            &state.building_use_cases,
+            &state.acp_use_cases,
+        )
+        .await
+    {
+        return err.error_response();
+    }
 
     match state
         .work_report_use_cases

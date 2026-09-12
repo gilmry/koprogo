@@ -58,6 +58,7 @@ impl PostgresOwnerContributionRepository {
 
         Ok(OwnerContribution {
             id: row.get("id"),
+            acp_id: row.get("acp_id"),
             organization_id: row.get("organization_id"),
             owner_id: row.get("owner_id"),
             unit_id: row.get("unit_id"),
@@ -106,18 +107,19 @@ impl OwnerContributionRepository for PostgresOwnerContributionRepository {
         let row = sqlx::query(
             r#"
             INSERT INTO owner_contributions (
-                id, organization_id, owner_id, unit_id,
+                id, acp_id, organization_id, owner_id, unit_id,
                 description, amount, account_code,
                 contribution_type, contribution_date, payment_date,
                 payment_method, payment_reference, payment_status,
                 call_for_funds_id, notes, created_at, updated_at, created_by
             ) VALUES (
-                $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18
+                $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19
             )
             RETURNING *
             "#,
         )
         .bind(contribution.id)
+        .bind(contribution.acp_id)
         .bind(contribution.organization_id)
         .bind(contribution.owner_id)
         .bind(contribution.unit_id)
@@ -160,7 +162,7 @@ impl OwnerContributionRepository for PostgresOwnerContributionRepository {
         organization_id: Uuid,
     ) -> Result<Vec<OwnerContribution>, String> {
         let rows = sqlx::query(
-            "SELECT * FROM owner_contributions WHERE organization_id = $1 ORDER BY contribution_date DESC",
+            "SELECT * FROM owner_contributions WHERE acp_id IN (SELECT id FROM acps WHERE organization_id = $1) ORDER BY contribution_date DESC",
         )
         .bind(organization_id)
         .fetch_all(&self.pool)

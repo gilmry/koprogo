@@ -31,6 +31,8 @@
   import { onMount } from "svelte";
   import { apiEndpoint } from "../../config";
 
+  import { _ } from "../../i18n";
+
   type ScopeKind = "ticket" | "quote" | "invoice" | "contractor_evaluation";
 
   type Props = {
@@ -76,9 +78,7 @@
   let fetchError = $state<{ message: string; kind: string } | null>(null);
 
   // Effective values used downstream — props take precedence over fetch.
-  let scopeKind = $derived<ScopeKind | null>(
-    scopeKindProp ?? fetchedScopeKind,
-  );
+  let scopeKind = $derived<ScopeKind | null>(scopeKindProp ?? fetchedScopeKind);
   let scope = $derived<Record<string, unknown> | null>(
     scopeProp ?? fetchedScope,
   );
@@ -394,7 +394,7 @@
       aria-live="polite"
     >
       <p class="text-sm font-medium">
-        Mode hors-ligne — votre brouillon sera synchronisé à la reconnexion.
+        {$_("magicLink.offlineMode")}
       </p>
     </div>
   {/if}
@@ -405,10 +405,10 @@
       type="button"
       class="mb-4 w-full min-h-[44px] rounded-lg bg-sky-600 px-4 py-2 text-white font-medium hover:bg-sky-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-700"
       data-testid="pwa-install-prompt"
-      aria-label="Installer l'application KoproGo Contractor"
+      aria-label="{$_('magicLink.install')} KoproGo Contractor"
       onclick={triggerInstall}
     >
-      Installer l'application
+      {$_("magicLink.install")}
     </button>
   {/if}
 
@@ -420,7 +420,7 @@
       role="status"
       aria-live="polite"
     >
-      <p class="text-sm">Chargement de la ressource partagée…</p>
+      <p class="text-sm">{$_("magicLink.loading")}</p>
     </div>
   {:else if fetchError}
     <div
@@ -437,7 +437,7 @@
       class="rounded-lg border border-gray-200 bg-white p-4 text-gray-700"
       data-testid="pwa-no-scope"
     >
-      <p class="text-sm">Aucune ressource à afficher.</p>
+      <p class="text-sm">{$_("magicLink.empty")}</p>
     </div>
   {:else if screen === 1}
     <section
@@ -492,6 +492,7 @@
       </h1>
 
       <form
+        data-testid="magic-link-contractor-form"
         class="space-y-4"
         onsubmit={(e) => {
           e.preventDefault();
@@ -503,7 +504,7 @@
             for="pwa-action-message"
             class="block text-sm font-medium text-gray-800 mb-1"
           >
-            Message
+            {$_("magicLink.message")}
           </label>
           <textarea
             id="pwa-action-message"
@@ -522,7 +523,7 @@
               for="pwa-action-amount"
               class="block text-sm font-medium text-gray-800 mb-1"
             >
-              Montant (EUR)
+              {$_("magicLink.amount")}
             </label>
             <input
               id="pwa-action-amount"
@@ -556,7 +557,7 @@
             aria-label="Revenir au résumé"
             onclick={() => (screen = 1)}
           >
-            Retour
+            {$_("magicLink.back")}
           </button>
           <button
             type="submit"
@@ -585,16 +586,16 @@
         id="pwa-confirm-heading"
         class="text-xl font-semibold text-gray-900 mb-3"
       >
-        Reçu
+        {$_("magicLink.received")}
       </h1>
       <div
         class="rounded-lg border border-green-200 bg-green-50 p-4 text-green-900"
       >
         <p class="font-medium">
-          Votre réponse a bien été transmise. Le syndic sera notifié.
+          {$_("magicLink.sent")}
         </p>
         <p class="text-sm mt-2">
-          Vous pouvez fermer cette page en toute sécurité.
+          {$_("magicLink.canClose")}
         </p>
       </div>
       <div class="mt-5 flex justify-end">
@@ -611,7 +612,7 @@
             }
           }}
         >
-          Fermer
+          {$_("magicLink.close")}
         </button>
       </div>
     </section>

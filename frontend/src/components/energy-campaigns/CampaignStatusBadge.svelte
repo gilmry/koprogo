@@ -1,6 +1,6 @@
 <script lang="ts">
   // Svelte 5 runes mode
-  import { _ } from '../../lib/i18n';
+  import { _ } from "../../lib/i18n";
   import { CampaignStatus } from "../../lib/api/energy-campaigns";
 
   let { status }: { status: CampaignStatus } = $props();

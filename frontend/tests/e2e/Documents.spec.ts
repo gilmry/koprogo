@@ -1,7 +1,7 @@
 import { test, expect } from "@playwright/test";
 import { loginAsSyndic } from "./helpers/auth";
 
-const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
+import { API_BASE } from "./helpers/adresses";
 
 test.describe("Documents - File Storage", () => {
   test("should display documents page", async ({ page }) => {
@@ -10,7 +10,7 @@ test.describe("Documents - File Storage", () => {
 
     await expect(page.locator("body")).toBeVisible();
     await expect(
-      page.locator("main h1, main h2, [data-testid='documents-list']").first(),
+      page.locator("[data-testid='documents-list']").first(),
     ).toBeVisible({ timeout: 10000 });
   });
 

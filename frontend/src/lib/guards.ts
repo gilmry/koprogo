@@ -123,7 +123,10 @@ export function canAccessRoute(route: string, userRole: UserRole): boolean {
  * @returns The default dashboard path for the role
  */
 export function getDefaultRedirect(userRole: UserRole): string {
-  const redirectMap: Record<UserRole, string> = {
+  // Partiel : seuls quatre rôles ont un tableau de bord à eux. Les autres
+  // retombent sur `/`, d'où la navigation dira ce qu'ils peuvent faire — ou
+  // qu'aucun écran ne leur est destiné (cf. ROLES_SANS_INTERFACE).
+  const redirectMap: Partial<Record<UserRole, string>> = {
     superadmin: "/admin",
     syndic: "/syndic",
     accountant: "/accountant",

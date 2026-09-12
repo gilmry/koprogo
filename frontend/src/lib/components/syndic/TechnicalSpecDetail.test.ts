@@ -236,10 +236,20 @@ describe("TechnicalSpecDetail — Story B7 (4-cat)", () => {
       expect(modal?.getAttribute("role")).toBe("dialog");
     });
 
-    // Warning bump major visible.
+    // L'avertissement de version majeure est présent.
+    //
+    // On l'ancre plutôt que de citer ses mots : le libellé est passé par i18n
+    // le 2026-09-08 (#834), et ce test exigeait « MAJOR » et « invalidées » en
+    // français alors que la locale par défaut des tests est l'anglais.
+    //
+    // L'invariant est que l'utilisateur soit AVERTI avant de créer une version
+    // qui invalide les signatures — pas que l'avertissement emploie tel mot.
+    // L'ancrage traverse les quatre langues ; la formulation, non.
     const modal = getByTestId("tech-spec-bump-modal");
-    expect(modal.textContent).toMatch(/MAJOR/);
-    expect(modal.textContent).toMatch(/invalidées/i);
+    const avertissement = getByTestId("tech-spec-bump-warning");
+    expect(avertissement).toBeInTheDocument();
+    expect(avertissement.textContent?.trim().length ?? 0).toBeGreaterThan(40);
+    expect(modal.contains(avertissement)).toBe(true);
 
     // Confirm → onBump appelé avec la spec source.
     (getByTestId("tech-spec-bump-confirm") as HTMLButtonElement).click();

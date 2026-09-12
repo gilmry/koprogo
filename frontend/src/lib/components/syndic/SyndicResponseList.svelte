@@ -142,7 +142,9 @@
           data-testid={`syndic-response-row-${r.id}`}
           class="rounded-md border border-gray-200 bg-gray-50 p-3 text-sm"
         >
-          <div class="mb-1 flex items-center justify-between gap-2 text-xs text-gray-600">
+          <div
+            class="mb-1 flex items-center justify-between gap-2 text-xs text-gray-600"
+          >
             <span
               data-testid={`syndic-response-row-author-${r.id}`}
               class="font-medium text-gray-900"

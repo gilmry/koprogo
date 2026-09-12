@@ -486,6 +486,7 @@ mod tests {
 
     fn create_test_meeting() -> Meeting {
         let mut meeting = Meeting::new(
+            Uuid::new_v4(), // acp_id
             Uuid::new_v4(),
             Uuid::new_v4(),
             crate::domain::entities::MeetingType::Ordinary,
@@ -514,6 +515,7 @@ mod tests {
 
     fn create_test_convocation(building_id: Uuid, meeting_id: Uuid) -> Convocation {
         Convocation::new(
+            Uuid::new_v4(), // acp_id
             Uuid::new_v4(),
             building_id,
             meeting_id,
@@ -546,6 +548,7 @@ mod tests {
 
         for lang in &["FR", "NL", "DE", "EN"] {
             let convocation = Convocation::new(
+                Uuid::new_v4(), // acp_id
                 Uuid::new_v4(),
                 building.id,
                 meeting.id,
@@ -574,6 +577,7 @@ mod tests {
         let building = create_test_building();
         let meeting = create_test_meeting();
         let convocation = Convocation::new(
+            Uuid::new_v4(), // acp_id
             Uuid::new_v4(),
             building.id,
             meeting.id,

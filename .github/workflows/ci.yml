@@ -11,6 +11,17 @@ on:
       - "claude/**"
       - "release/**"
       - "feature/**"
+      # `feature/dev` est la branche que le VPS ecosolva déploie en continu
+      # sur koprogo.com. Elle a son propre circuit, volontairement court :
+      # .github/workflows/vps-feature-dev.yml construit les deux images et
+      # les publie sous `sha-<court>`, et deploy-ecosolva.sh attend qu'elles
+      # existent avant de déployer.
+      #
+      # Cette pipeline-ci prend environ 95 minutes : la laisser tourner sur
+      # chaque commit de la branche allongeait la boucle sans rien bloquer,
+      # puisque le déploiement ne l'attend pas. L'exclusion doit rester APRÈS
+      # `feature/**`, les motifs étant évalués dans l'ordre.
+      - "!feature/dev"
       - "story/**"
       - "chore/**"
   pull_request:
@@ -34,6 +45,9 @@ jobs:
   lint:
     name: Lint & Format Check
     runs-on: ubuntu-latest
+    # Observé 2 min le 2026-09-07 ; plafond à ~2x pour absorber la
+    # variance d'un runner sans laisser un job pendu six heures.
+    timeout-minutes: 20
     steps:
       - name: Checkout code
         uses: actions/checkout@v7
@@ -77,6 +91,20 @@ jobs:
       - name: ADR-0008 gate — no f64 on money or quotas
         run: ./scripts/check-no-f64-money.sh
 
+      # Le gate ci-dessus ne scannait que `backend/src`. Les harnais de test
+      # manipulaient donc l'argent autrement que le produit : une TVA et un
+      # total de facture en `f64` dans le World de `bdd.rs`, et un montant
+      # d'euros lié tel quel à une colonne NUMERIC dans `bdd_financial.rs`.
+      #
+      # Un test qui traite l'argent en flottant ne prouve pas que le produit
+      # ne le fait pas — il prouve autre chose. Et c'est précisément ce que
+      # #443 cherchait à finir : la cascade Decimal jusque dans les tests.
+      #
+      # Le script prend un chemin en argument depuis l'origine ; il n'avait
+      # simplement jamais été appelé avec celui-là.
+      - name: ADR-0008 gate — same rule inside the test harnesses
+        run: ./scripts/check-no-f64-money.sh "$PWD/backend/tests"
+
       # Angle mort du job « Contract Types Check » : il compare la spec à la
       # source Rust, puis les types TS à la spec. Un endpoint ABSENT de la spec
       # est absent des deux côtés — donc cohérent, donc invisible. C'est ainsi
@@ -89,6 +117,9 @@ jobs:
   test-unit:
     name: Unit Tests
     runs-on: ubuntu-latest
+    # Observé 6 min le 2026-09-07 ; plafond à ~2x pour absorber la
+    # variance d'un runner sans laisser un job pendu six heures.
+    timeout-minutes: 30
     steps:
       - name: Checkout code
         uses: actions/checkout@v7
@@ -119,9 +150,48 @@ jobs:
           cd backend
           cargo test --lib --all-features
 
+      # LES TREIZE GARDES, qu'aucun portail ne jouait entièrement.
+      #
+      # Le 2026-09-08, `ci.yml` n'en exécutait AUCUNE et
+      # `vps-feature-dev.yml` trois sur treize. Les deux fichiers énumèrent
+      # leurs harnais un par un, et on oublie d'allonger la liste : un cliquet
+      # neuf naît donc dormant par défaut.
+      #
+      # Le commentaire de `garde_champs_ignores` disait déjà pourquoi c'est
+      # grave — « un cliquet que rien n'exécute ne freine rien, il décore » —
+      # mais ne l'avait généralisé qu'à lui-même.
+      #
+      # Elles sont statiques : sources, migrations, `.feature`. Pas de base.
+      - name: Les quinze gardes — aucune dette ne grossit
+        working-directory: backend
+        env:
+          SQLX_OFFLINE: "true"
+        run: |
+          cargo test --no-fail-fast \
+            --test architecture \
+            --test garde_champs_ignores \
+            --test garde_classement_par_souschaines \
+            --test garde_conformite_legale \
+            --test garde_controles_dormants \
+            --test garde_ecriture \
+            --test garde_features_orphelines \
+            --test garde_identite_absente \
+            --test garde_lecture \
+            --test garde_ordre_des_routes \
+            --test garde_harnais_executes \
+            --test garde_identite_sans_decision \
+            --test garde_paniques_en_production \
+            --test garde_perimetre_wbs \
+            --test garde_schema_mort \
+            --test garde_taxonomie_bdd \
+            --test garde_taxonomie_des_tests
+
   test-bdd:
     name: BDD Tests
     runs-on: ubuntu-latest
+    # Observé 21 min le 2026-09-07 ; plafond à ~2x pour absorber la
+    # variance d'un runner sans laisser un job pendu six heures.
+    timeout-minutes: 60
     services:
       postgres:
         image: postgres:16
@@ -224,6 +294,9 @@ jobs:
     # bloquant.
     name: Coverage (report only)
     runs-on: ubuntu-latest
+    # Observé 9 min le 2026-09-07 ; plafond à ~2x pour absorber la
+    # variance d'un runner sans laisser un job pendu six heures.
+    timeout-minutes: 40
     continue-on-error: true
     services:
       postgres:
@@ -333,6 +406,9 @@ jobs:
     # croire que 488 tests tournaient alors que la commande n'en jouait que 4.
     name: Integration Tests (API)
     runs-on: ubuntu-latest
+    # Observé 38 min le 2026-09-07 ; plafond à ~2x pour absorber la
+    # variance d'un runner sans laisser un job pendu six heures.
+    timeout-minutes: 90
     services:
       postgres:
         image: postgres:16
@@ -443,7 +519,10 @@ jobs:
             --test e2e_notifications --test e2e_payment_recovery \
             --test e2e_budget --test e2e_notices --test e2e_skills \
             --test e2e_invoices --test e2e_local_exchange \
-            --test e2e_documents --test storage_s3
+            --test e2e_documents --test storage_s3 \
+            --test e2e_cloisonnement_inter_organisations \
+            --test e2e_cycle_ag_complet \
+            --test e2e_indivision_vote
           # Lot 3 et 4 — 41 harnais supplementaires, mesures verts les
           # 2026-08-26/27. Aucun n'avait jamais ete execute. Leur premiere
           # execution a mis au jour quatre defauts produit de plus, dont deux
@@ -474,6 +553,9 @@ jobs:
   api-breaking-changes:
     name: API Breaking Change Detection (oasdiff)
     runs-on: ubuntu-latest
+    # Observé 1 min le 2026-09-07 ; plafond à ~2x pour absorber la
+    # variance d'un runner sans laisser un job pendu six heures.
+    timeout-minutes: 15
     if: github.event_name == 'pull_request'
     steps:
       - name: Checkout PR branch
@@ -530,6 +612,9 @@ jobs:
   contract-types:
     name: Contract Types Check (end-to-end anti-drift)
     runs-on: ubuntu-latest
+    # Observé 6 min le 2026-09-07 ; plafond à ~2x pour absorber la
+    # variance d'un runner sans laisser un job pendu six heures.
+    timeout-minutes: 30
     steps:
       - name: Checkout code
         uses: actions/checkout@v7
@@ -610,10 +695,19 @@ jobs:
       # This closes the loop — Rust is the single source of truth for every
       # enum value visible in the UI.
       #
-      # We use --threshold warning to also block on a11y warnings (form
-      # labels, click handlers without keyboard events, ARIA roles, etc.).
-      # As of commit a173848 the baseline is 0 warnings — any regression
-      # hides a potential accessibility bug.
+      # We use --fail-on-warnings to also block on a11y and runes warnings
+      # (form labels, click handlers without keyboard events, ARIA roles,
+      # `let` variables that should be `$state`).
+      #
+      # This step used to pass --threshold warning and claim it blocked. It
+      # did not: --threshold *filters what is displayed* and `warning` is
+      # already its default value; only --fail-on-warnings changes the exit
+      # code. The a173848 baseline of 0 warnings was therefore never enforced,
+      # and it had drifted to 29 — all in GdprDataPanel.svelte, where fifteen
+      # `let` declarations in a runes-mode component were silently
+      # non-reactive. Three modals could never open. See #832.
+      #
+      # A warning nobody reads is not a warning. Baseline is back to 0.
       - name: Run svelte-check (enforces frontend↔backend contract + a11y)
         run: |
           cd frontend
@@ -621,7 +715,7 @@ jobs:
           # required by svelte-check; without it, svelte-check trips on type
           # references it can't resolve (matches local `npm run build` behavior).
           npx astro sync
-          npx svelte-check --threshold warning
+          npx svelte-check --fail-on-warnings
 
       # Gate 4: No hand-written enum re-introductions in lib/api/*.ts
       # A small-surface safety net: we allow a documented allowlist of
@@ -653,6 +747,9 @@ jobs:
   vitest:
     name: Frontend Unit Tests (vitest)
     runs-on: ubuntu-latest
+    # Observé 1 min le 2026-09-07 ; plafond à ~2x pour absorber la
+    # variance d'un runner sans laisser un job pendu six heures.
+    timeout-minutes: 20
     steps:
       - name: Checkout code
         uses: actions/checkout@v7
@@ -675,6 +772,9 @@ jobs:
   frontend-check:
     name: Frontend Check & Build
     runs-on: ubuntu-latest
+    # Observé 1 min le 2026-09-07 ; plafond à ~2x pour absorber la
+    # variance d'un runner sans laisser un job pendu six heures.
+    timeout-minutes: 20
     steps:
       - name: Checkout code
         uses: actions/checkout@v7
@@ -702,6 +802,9 @@ jobs:
   playwright:
     name: Playwright E2E Tests
     runs-on: ubuntu-latest
+    # Observé 44 min le 2026-09-07 ; plafond à ~2x pour absorber la
+    # variance d'un runner sans laisser un job pendu six heures.
+    timeout-minutes: 90
     needs: [frontend-check]
     services:
       postgres:
@@ -800,6 +903,11 @@ jobs:
       - name: Start frontend dev server
         env:
           PUBLIC_API_URL: http://localhost:8080/api/v1
+          # Retire la barre d'outils de développement d'Astro : elle injecte
+          # ses propres `<h1>` (« Audit », « Settings »), ce qui fait échouer
+          # les sélecteurs en mode strict, et elle apparaît au bas de chaque
+          # vidéo de documentation vivante.
+          PLAYWRIGHT: "1"
         run: |
           cd frontend
           node scripts/generate-config.js
@@ -824,28 +932,89 @@ jobs:
       # EXCLUT donc précisément smoke. Les 98 tests du projet `smoke` n'ont
       # jamais tourné, et le diagnostic de #696 (« 109 échecs sur la smoke
       # suite ») portait en réalité sur les specs de la racine.
+      # CHAQUE invocation écrit dans SON dossier.
+      #
+      # Playwright vide `test-results/` et écrase `playwright-report/` à
+      # chaque exécution. Le job en lance trois : les captures d'écran et les
+      # traces de `chromium` étaient donc détruites par `smoke`, puis par
+      # `scenarios`. Le rapport téléversé ne contenait que le dernier.
+      #
+      # Constaté le 2026-09-09 : douze échecs `chromium` annonçaient chacun
+      # « attachment #1: screenshot », et l'artefact ne contenait que les
+      # douze vidéos des scénarios. Or ce sont les captures qui ont permis de
+      # résoudre les scénarios — modale non confirmée, barre d'outils d'Astro,
+      # table vide sous un bandeau rouge. On jetait l'outil qui marche.
       - name: Run Playwright tests (chromium project)
         env:
           PLAYWRIGHT_BASE_URL: http://localhost:3000
           PLAYWRIGHT_API_BASE: http://localhost:8080/api/v1
         run: |
           cd frontend
-          npx playwright test --project=chromium
+          # 45 minutes. Le premier budget valait 40 : la suite s'est arrêtée
+          # dessus avec 1 test interrompu et 5 qui n'ont pas tourné sur 319.
+          # Mieux vaut un rapport complet qu'un rapport tronqué, et le total
+          # des trois étapes (45 + 10 + 25) tient sous le plafond du job.
+          #
+          # Budget explicite. `globalTimeout` de playwright.config.ts vaut 70
+          # minutes et s'applique à CHAQUE invocation ; ce job en lance trois
+          # (chromium, smoke, scenarios), soit 210 minutes possibles sous un
+          # `timeout-minutes: 90`. Le 2026-09-08, chromium a pris 46 min et
+          # scenarios 40, et GitHub a fauché le job à 90 — sans rapport, sans
+          # détail d'erreur, sans vidéo. Un budget par étape, dont la somme
+          # tient sous le plafond, rend cette fin impossible.
+          PLAYWRIGHT_HTML_REPORT=playwright-report/chromium \
+            npx playwright test --project=chromium --global-timeout=2700000 --output=test-results/chromium
 
-      # Le projet `smoke` (98 tests) est réintroduit en non bloquant : son état
-      # réel n'a jamais été mesuré en CI, et le rendre bloquant d'emblée
-      # casserait toutes les PR sur un héritage inconnu. Objectif : établir un
-      # plancher chiffré, puis basculer en bloquant (WP-D1 / #696).
-      - name: Run Playwright smoke project (report only)
-        continue-on-error: true
+      # Le projet `smoke` (98 tests) devient BLOQUANT le 2026-09-09.
+      #
+      # Il avait été réintroduit en « report only » parce que son état réel
+      # n'avait jamais été mesuré en CI, et que le rendre bloquant d'emblée
+      # aurait cassé toutes les PR sur un héritage inconnu. L'objectif était
+      # d'établir un plancher chiffré, puis de basculer (WP-D1 / #696).
+      #
+      # Le plancher a été établi, puis remonté :
+      #
+      #     2026-09-08   92 / 98   six échecs
+      #     2026-09-09   98 / 98
+      #
+      # Les six étaient des tests périmés, pas des défauts produit : trois
+      # envoyaient un `organization_id` que les DTO refusent depuis l'ajout de
+      # `deny_unknown_fields`, un construisait un immeuble dont onze lots sur
+      # douze n'appartenaient à personne, et deux omettaient un `unit_id`
+      # déclaré facultatif mais toujours exigé (#852).
+      #
+      # Mesurer sans bloquer n'apprend que tant que quelqu'un lit. C'est fait.
+      - name: Run Playwright smoke project
+        # `if: !cancelled()` — sans quoi ce step ne s'exécute JAMAIS.
+        #
+        # GitHub saute les steps qui suivent un échec, et le step chromium
+        # ci-dessus échoue en continu depuis #832. Ce « report only » ne
+        # rapportait donc plus rien : les 109 échecs de #696 n'étaient ni
+        # confirmés ni infirmés, faute d'exécution.
+        #
+        # `continue-on-error` protège CE step ; il ne le rend pas atteignable.
+        # Deux choses différentes, et c'est la seconde qui manquait.
+        if: ${{ !cancelled() }}
+        # `continue-on-error` retiré le 2026-09-09 : le step est bloquant.
+        # `if: !cancelled()` reste, sans quoi il ne s'exécuterait jamais —
+        # GitHub saute les steps qui suivent un échec, et le step chromium
+        # échoue en continu (#832). Protéger un step et le rendre atteignable
+        # sont deux choses différentes ; seule la première disparaît ici.
         env:
           PLAYWRIGHT_BASE_URL: http://localhost:3000
           PLAYWRIGHT_API_BASE: http://localhost:8080/api/v1
         run: |
           cd frontend
-          npx playwright test --project=smoke || true
+          PLAYWRIGHT_HTML_REPORT=playwright-report/smoke \
+            npx playwright test --project=smoke --global-timeout=600000 --output=test-results/smoke
 
       - name: Seed scenario world for Documentation Vivante
+        # Même cause : sauté avec le reste dès que chromium échoue.
+        #
+        # Le symptôme visible était dans le journal de nettoyage, qui LUI
+        # porte `if: always()` : « No scenario world found to clear ». Il
+        # nettoyait consciencieusement un monde que personne ne semait plus.
+        if: ${{ !cancelled() }}
         env:
           PLAYWRIGHT_API_BASE: http://localhost:8080/api/v1
         run: |
@@ -859,6 +1028,10 @@ jobs:
             -H 'Content-Type: application/json' || echo "Seed already exists or failed"
 
       - name: Run Documentation Vivante scenarios (video generation)
+        # Et donc : les vidéos de documentation vivante ne sont plus générées
+        # depuis que chromium échoue. Tout le Track D du WBS repose sur ces
+        # enregistrements — treize lots qui attendaient une étape sautée.
+        if: ${{ !cancelled() }}
         # Phase C ouverte (issue #617) : les .scenario.ts (admin-setup,
         # budget-workflow, etc.) cassent sur seeds + auth multi-rôle au
         # même titre que les .spec.ts Phase B FE déjà exclus via testIgnore.
@@ -871,7 +1044,14 @@ jobs:
           PLAYWRIGHT_API_BASE: http://localhost:8080/api/v1
         run: |
           cd frontend
-          npx playwright test --project=scenarios
+          # `--retries=0` : les échecs de ce projet ne sont pas des flakes.
+          # Le 2026-09-08, onze scénarios sur douze ont échoué, chacun trois
+          # fois, avec des durées identiques à la seconde près (55,7 s /
+          # 56,8 s / 55,7 s pour admin-setup). Rejouer un échec déterministe
+          # triple le coût et n'apprend rien ; ici, c'est ce qui a fait
+          # dépasser le plafond du job et perdre le rapport.
+          PLAYWRIGHT_HTML_REPORT=playwright-report/scenarios \
+            npx playwright test --project=scenarios --global-timeout=1500000 --retries=0 --output=test-results/scenarios
 
       - name: Cleanup scenario world
         if: always()
@@ -891,9 +1071,62 @@ jobs:
           path: frontend/playwright-report/
           retention-days: 7
 
+      # La vitrine — la preuve de valeur, attachée à la branche.
+      #
+      # `playwright.config.ts:115` enregistre TOUTES les vidéos depuis
+      # toujours, et son commentaire le revendique : « DOCUMENTATION
+      # VIVANTE! ». Elles atterrissaient dans `test-results/` et repartaient
+      # avec le runner : produites à chaque run, téléversées nulle part.
+      #
+      # Or le répondre-de de ce dépôt est porté par la revue de promotion de
+      # branche, instruite par les gates ET la vitrine. Sans cet artefact, le
+      # relecteur n'a rien à regarder — le mécanisme n'a pas de support. Cf.
+      # #873 et docs/GANTT_PASSES_v0_1_0.md.
+      #
+      # On ne téléverse QUE les `video.webm`, pas `test-results/` entier :
+      # les traces et captures d'écran pèsent lourd et ne servent pas à
+      # juger la valeur.
+      # Le harnais de valeur — SÉPARÉ du gate, non bloquant par construction.
+      # Il rejoue le parcours partagé en cadence, narré, et assemble la
+      # galerie. `continue-on-error` n'est pas une précaution : c'est
+      # l'élément 3 du skill — « la preuve de valeur n'est PAS un test :
+      # elle ne doit pas faire tomber le build ». Cf. #876.
+      - name: Enregistrer la vitrine (preuve de valeur)
+        if: ${{ !cancelled() }}
+        continue-on-error: true
+        env:
+          PLAYWRIGHT_BASE_URL: http://localhost:3000
+          PLAYWRIGHT_API_BASE: http://localhost:8080/api/v1
+        run: |
+          cd frontend
+          node tests/e2e/journeys/enregistrer-vitrine.mjs || true
+          node tests/e2e/journeys/assembler-vitrine.mjs || true
+
+      - name: Upload vitrine (galerie + vidéos narrées)
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: vitrine
+          # La galerie d'abord : c'est elle que l'arbitre ouvre. Les vidéos
+          # brutes du gate suivent, utiles au diagnostic d'un échec.
+          path: |
+            frontend/tests/e2e/journeys/vitrine/
+            frontend/test-results/**/video.webm
+          # Un run sans vidéo n'est pas une faute : il arrive que tous les
+          # parcours soient ignorés. Échouer ici masquerait le vrai résultat
+          # du job derrière un artefact manquant.
+          if-no-files-found: warn
+          # Alignée sur le rapport ci-dessus. Des vidéos 1280x720 conservées
+          # longtemps remplissent le quota du dépôt sans que personne ne s'en
+          # aperçoive avant le blocage.
+          retention-days: 7
+
   build:
     name: Build
     runs-on: ubuntu-latest
+    # Observé 15 min le 2026-09-07 ; plafond à ~2x pour absorber la
+    # variance d'un runner sans laisser un job pendu six heures.
+    timeout-minutes: 45
     needs:
       [
         lint,

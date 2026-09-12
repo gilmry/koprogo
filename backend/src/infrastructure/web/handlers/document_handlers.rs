@@ -5,7 +5,7 @@ use crate::domain::entities::DocumentType;
 use crate::infrastructure::audit::{AuditEventType, AuditLogEntry};
 use crate::infrastructure::web::{app_state::AppState, AuthenticatedUser};
 use actix_multipart::form::{tempfile::TempFile, text::Text, MultipartForm};
-use actix_web::{delete, get, post, put, web, HttpResponse, Responder};
+use actix_web::{delete, get, post, put, web, HttpResponse, Responder, ResponseError};
 use uuid::Uuid;
 
 #[derive(Debug, MultipartForm)]
@@ -134,8 +134,32 @@ pub async fn upload_document(
 
 /// Get document metadata by ID
 #[get("/documents/{id}")]
-pub async fn get_document(app_state: web::Data<AppState>, path: web::Path<Uuid>) -> impl Responder {
+pub async fn get_document(
+    app_state: web::Data<AppState>,
+    user: AuthenticatedUser,
+    path: web::Path<Uuid>,
+) -> impl Responder {
     let id = path.into_inner();
+
+    // Aucune identité n'était exigée ici : ni `AuthenticatedUser`, ni jeton
+    // lu à la main. N'importe qui pouvait lire n'importe quel document de
+    // n'importe quelle copropriété, sur simple connaissance de son identifiant.
+    //
+    // Le cliquet d'identité de #772 ne pouvait pas le voir : il compte les
+    // routes qui PRENNENT `AuthenticatedUser` sans s'en servir. Une route qui
+    // ne le prend pas du tout lui échappait entièrement. Cf. #845.
+    if let Err(err) =
+        crate::infrastructure::web::middleware::scope_guard::verify_document_org_access(
+            &user,
+            id,
+            &app_state.document_use_cases,
+            &app_state.building_use_cases,
+            &app_state.acp_use_cases,
+        )
+        .await
+    {
+        return err.error_response();
+    }
 
     match app_state.document_use_cases.get_document(id).await {
         Ok(document) => HttpResponse::Ok().json(document),
@@ -171,7 +195,22 @@ pub async fn list_documents(
 pub async fn download_document(
     app_state: web::Data<AppState>,
     path: web::Path<Uuid>,
+    user: AuthenticatedUser,
 ) -> impl Responder {
+    // Route imbriquee non gardee au releve du 2026-09-06 (issue #772).
+    if let Err(err) =
+        crate::infrastructure::web::middleware::scope_guard::verify_document_org_access(
+            &user,
+            *path,
+            &app_state.document_use_cases,
+            &app_state.building_use_cases,
+            &app_state.acp_use_cases,
+        )
+        .await
+    {
+        return err.error_response();
+    }
+
     let id = path.into_inner();
 
     match app_state.document_use_cases.download_document(id).await {
@@ -190,9 +229,26 @@ pub async fn download_document(
 #[get("/buildings/{building_id}/documents")]
 pub async fn list_documents_by_building(
     app_state: web::Data<AppState>,
+    user: AuthenticatedUser,
     path: web::Path<Uuid>,
 ) -> impl Responder {
     let building_id = path.into_inner();
+
+    // Les documents d'un immeuble portent l'acte de base, les procès-verbaux
+    // et des factures nominatives. Cette route les servait à quiconque
+    // connaissait un identifiant d'immeuble, sans demander d'identité — l'une
+    // des 73 routes imbriquées non gardées de l'issue #772.
+    if let Err(err) =
+        crate::infrastructure::web::middleware::scope_guard::verify_building_org_access(
+            &user,
+            building_id,
+            &app_state.building_use_cases,
+            &app_state.acp_use_cases,
+        )
+        .await
+    {
+        return err.error_response();
+    }
 
     match app_state
         .document_use_cases
@@ -208,9 +264,25 @@ pub async fn list_documents_by_building(
 #[get("/meetings/{meeting_id}/documents")]
 pub async fn list_documents_by_meeting(
     app_state: web::Data<AppState>,
+    user: AuthenticatedUser,
     path: web::Path<Uuid>,
 ) -> impl Responder {
     let meeting_id = path.into_inner();
+
+    // Convocations, procès-verbaux, pièces annexées : le dossier d'une
+    // assemblée d'une autre copropriété n'a pas à être lisible. Issue #772.
+    if let Err(err) =
+        crate::infrastructure::web::middleware::scope_guard::verify_meeting_org_access(
+            &user,
+            meeting_id,
+            &app_state.meeting_use_cases,
+            &app_state.building_use_cases,
+            &app_state.acp_use_cases,
+        )
+        .await
+    {
+        return err.error_response();
+    }
 
     match app_state
         .document_use_cases
@@ -226,9 +298,25 @@ pub async fn list_documents_by_meeting(
 #[get("/expenses/{expense_id}/documents")]
 pub async fn list_documents_by_expense(
     app_state: web::Data<AppState>,
+    user: AuthenticatedUser,
     path: web::Path<Uuid>,
 ) -> impl Responder {
     let expense_id = path.into_inner();
+
+    // Une dépense porte ses factures et ses devis, avec des noms de
+    // fournisseurs et des montants. Issue #772.
+    if let Err(err) =
+        crate::infrastructure::web::middleware::scope_guard::verify_expense_org_access(
+            &user,
+            expense_id,
+            &app_state.expense_use_cases,
+            &app_state.building_use_cases,
+            &app_state.acp_use_cases,
+        )
+        .await
+    {
+        return err.error_response();
+    }
 
     match app_state
         .document_use_cases
@@ -246,7 +334,22 @@ pub async fn link_document_to_meeting(
     app_state: web::Data<AppState>,
     path: web::Path<Uuid>,
     request: web::Json<LinkDocumentToMeetingRequest>,
+    user: AuthenticatedUser,
 ) -> impl Responder {
+    // Route imbriquee non gardee au releve du 2026-09-06 (issue #772).
+    if let Err(err) =
+        crate::infrastructure::web::middleware::scope_guard::verify_document_org_access(
+            &user,
+            *path,
+            &app_state.document_use_cases,
+            &app_state.building_use_cases,
+            &app_state.acp_use_cases,
+        )
+        .await
+    {
+        return err.error_response();
+    }
+
     let id = path.into_inner();
 
     match app_state
@@ -265,7 +368,22 @@ pub async fn link_document_to_expense(
     app_state: web::Data<AppState>,
     path: web::Path<Uuid>,
     request: web::Json<LinkDocumentToExpenseRequest>,
+    user: AuthenticatedUser,
 ) -> impl Responder {
+    // Route imbriquee non gardee au releve du 2026-09-06 (issue #772).
+    if let Err(err) =
+        crate::infrastructure::web::middleware::scope_guard::verify_document_org_access(
+            &user,
+            *path,
+            &app_state.document_use_cases,
+            &app_state.building_use_cases,
+            &app_state.acp_use_cases,
+        )
+        .await
+    {
+        return err.error_response();
+    }
+
     let id = path.into_inner();
 
     match app_state
@@ -286,6 +404,25 @@ pub async fn delete_document(
     path: web::Path<Uuid>,
 ) -> impl Responder {
     let id = path.into_inner();
+
+    // Cloisonnement AVANT la suppression (#864).
+    //
+    // `verify_document_org_access` existe et `get_document` l'appelle trois
+    // cents lignes plus haut. La LECTURE était donc cloisonnée, et la
+    // SUPPRESSION ne l'était pas : `AuthenticatedUser` n'y servait qu'à
+    // journaliser le geste après coup.
+    if let Err(err) =
+        crate::infrastructure::web::middleware::scope_guard::verify_document_org_access(
+            &user,
+            id,
+            &app_state.document_use_cases,
+            &app_state.building_use_cases,
+            &app_state.acp_use_cases,
+        )
+        .await
+    {
+        return err.error_response();
+    }
 
     match app_state.document_use_cases.delete_document(id).await {
         Ok(true) => {

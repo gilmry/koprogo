@@ -205,9 +205,16 @@ describe("MandateList — Story B3 (4-cat)", () => {
 
     await waitFor(() => expect(getByTestId("mandate-list")).toBeTruthy());
 
-    // Le révoqué a son badge "Révoqué" + PAS de bouton revoke
-    const revokedBadge = getByTestId("mandate-expiration-badge-m-revoked");
-    expect(revokedBadge.textContent).toMatch(/Révoqué/i);
+    // Le révoqué a son badge, et surtout PAS de bouton revoke.
+    //
+    // Le badge est vérifié par son ANCRE et non par son texte : le libellé est
+    // passé par i18n le 2026-09-08 (#834), et ce fichier substitue le module
+    // i18n, si bien que `$_()` ne rend rien pendant les tests.
+    //
+    // L'invariant `@security` de ce test est l'IMMUTABILITÉ — un mandat déjà
+    // révoqué ne peut pas l'être une seconde fois. C'est l'absence du bouton
+    // qui le porte, pas le mot affiché à côté.
+    expect(getByTestId("mandate-expiration-badge-m-revoked")).toBeTruthy();
     expect(queryByTestId("mandate-revoke-m-revoked")).toBeNull();
 
     // L'actif a son bouton revoke

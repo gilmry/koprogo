@@ -8,7 +8,7 @@ pub async fn get_dashboard_stats(
     state: web::Data<AppState>,
     user: AuthenticatedUser,
 ) -> impl Responder {
-    if user.role != "superadmin" {
+    if !user.is_superadmin() {
         return HttpResponse::Forbidden().json(serde_json::json!({
             "error": "Only SuperAdmin can access dashboard statistics"
         }));
@@ -29,7 +29,7 @@ pub async fn get_owner_stats(
     state: web::Data<AppState>,
     user: AuthenticatedUser,
 ) -> impl Responder {
-    if user.role != "owner" && user.role != "superadmin" {
+    if user.role != "owner" && !user.is_superadmin() {
         return HttpResponse::Forbidden().json(serde_json::json!({
             "error": "Only Owner can access these statistics"
         }));
@@ -47,6 +47,42 @@ pub async fn get_owner_stats(
     }
 }
 
+/// GET /api/v1/stats/owner/dues-by-acp
+///
+/// Ce que le copropriétaire doit, **ventilé par association**.
+///
+/// Séparée de `/stats/owner` parce qu'elle répond à une autre question : celle
+/// -là dit « combien », celle-ci dit « à QUI ». Un copropriétaire peut détenir
+/// des lots dans plusieurs ACP, et chacune est une personne morale avec son
+/// propre compte bancaire (Art. 3.86 § 1er et § 3).
+///
+/// Un montant global laisse croire qu'un virement unique suffit ; il paierait
+/// la mauvaise personne morale pour une partie de la somme (#867).
+#[get("/stats/owner/dues-by-acp")]
+pub async fn get_owner_dues_by_acp(
+    state: web::Data<AppState>,
+    user: AuthenticatedUser,
+) -> impl Responder {
+    // Même garde que `/stats/owner` : ce sont les dettes d'une personne
+    // nommée, et personne d'autre n'a à les lire.
+    if user.role != "owner" && !user.is_superadmin() {
+        return HttpResponse::Forbidden().json(serde_json::json!({
+            "error": "Only Owner can access these statistics"
+        }));
+    }
+
+    match state
+        .stats_use_cases
+        .get_owner_dues_by_acp(user.user_id)
+        .await
+    {
+        Ok(dues) => HttpResponse::Ok().json(dues),
+        Err(e) => HttpResponse::InternalServerError().json(serde_json::json!({
+            "error": format!("Failed to fetch owner dues by ACP: {}", e)
+        })),
+    }
+}
+
 /// GET /api/v1/stats/syndic
 /// Get Syndic dashboard statistics (Syndic and Accountant roles)
 #[get("/stats/syndic")]
@@ -54,7 +90,7 @@ pub async fn get_syndic_stats(
     state: web::Data<AppState>,
     user: AuthenticatedUser,
 ) -> impl Responder {
-    if user.role != "syndic" && user.role != "accountant" && user.role != "superadmin" {
+    if user.role != "syndic" && user.role != "accountant" && !user.is_superadmin() {
         return HttpResponse::Forbidden().json(serde_json::json!({
             "error": "Only Syndic and Accountant can access these statistics"
         }));
@@ -81,7 +117,7 @@ pub async fn get_syndic_urgent_tasks(
     state: web::Data<AppState>,
     user: AuthenticatedUser,
 ) -> impl Responder {
-    if user.role != "syndic" && user.role != "accountant" && user.role != "superadmin" {
+    if user.role != "syndic" && user.role != "accountant" && !user.is_superadmin() {
         return HttpResponse::Forbidden().json(serde_json::json!({
             "error": "Only Syndic and Accountant can access these tasks"
         }));
@@ -108,7 +144,7 @@ pub async fn get_seed_data_stats(
     state: web::Data<AppState>,
     user: AuthenticatedUser,
 ) -> impl Responder {
-    if user.role != "superadmin" {
+    if !user.is_superadmin() {
         return HttpResponse::Forbidden().json(serde_json::json!({
             "error": "Only SuperAdmin can access seed data statistics"
         }));

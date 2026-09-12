@@ -11,7 +11,7 @@ import type { Page } from "@playwright/test";
 import { loginAsSyndic, ensureAcp } from "./auth";
 import { createApiClient } from "./api-client";
 
-const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
+import { API_BASE } from "./adresses";
 
 interface SyndicScopedContext {
   token: string;
@@ -214,7 +214,6 @@ export async function seedBuildingWithUnits(
       method: "POST",
       headers,
       body: JSON.stringify({
-        organization_id: organizationId,
         building_id: building.id,
         unit_number: `${i + 1}A`,
         floor: Math.floor(i / 2),

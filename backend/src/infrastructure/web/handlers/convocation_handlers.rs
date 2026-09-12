@@ -3,7 +3,9 @@ use crate::application::dto::{
     SendConvocationRequest, SetProxyRequest, UpdateAttendanceRequest,
 };
 use crate::infrastructure::audit::{AuditEventType, AuditLogEntry};
+use crate::infrastructure::web::middleware::scope_guard::verify_building_org_access;
 use crate::infrastructure::web::{AppState, AuthenticatedUser};
+use actix_web::ResponseError;
 use actix_web::{delete, get, post, put, web, HttpResponse, Responder};
 use uuid::Uuid;
 
@@ -21,6 +23,20 @@ pub async fn create_convocation(
             return HttpResponse::Unauthorized().json(serde_json::json!({"error": e.to_string()}))
         }
     };
+
+    // Isolation multi-tenant à l'ÉCRITURE (ADR-0045) : la convocation est un
+    // acte de l'ACP, dont elle supporte les frais (Art. 3.87 § 3). L'immeuble
+    // visé doit relever d'une ACP confiée à ce syndic.
+    if let Err(err) = verify_building_org_access(
+        &user,
+        request.building_id,
+        &state.building_use_cases,
+        &state.acp_use_cases,
+    )
+    .await
+    {
+        return err.error_response();
+    }
 
     let created_by = user.user_id;
 
@@ -76,7 +92,24 @@ pub async fn get_convocation(
 pub async fn get_convocation_by_meeting(
     state: web::Data<AppState>,
     meeting_id: web::Path<Uuid>,
+    user: AuthenticatedUser,
 ) -> impl Responder {
+    // Route imbriquee non gardee au releve du 2026-09-06 (issue #772). C'est
+    // par ce genre de route qu'un cabinet a lu les bulletins NOMINATIFS d'une
+    // autre copropriete (RN-2).
+    if let Err(err) =
+        crate::infrastructure::web::middleware::scope_guard::verify_meeting_org_access(
+            &user,
+            *meeting_id,
+            &state.meeting_use_cases,
+            &state.building_use_cases,
+            &state.acp_use_cases,
+        )
+        .await
+    {
+        return err.error_response();
+    }
+
     match state
         .convocation_use_cases
         .get_convocation_by_meeting(*meeting_id)
@@ -94,7 +127,23 @@ pub async fn get_convocation_by_meeting(
 pub async fn list_building_convocations(
     state: web::Data<AppState>,
     building_id: web::Path<Uuid>,
+    user: AuthenticatedUser,
 ) -> impl Responder {
+    // Route imbriquee non gardee au releve du 2026-09-06 (issue #772) : elle
+    // servait une sous-collection d'un dossier d'ACP a quiconque connaissait
+    // un identifiant, sans demander d'identite.
+    if let Err(err) =
+        crate::infrastructure::web::middleware::scope_guard::verify_building_org_access(
+            &user,
+            *building_id,
+            &state.building_use_cases,
+            &state.acp_use_cases,
+        )
+        .await
+    {
+        return err.error_response();
+    }
+
     match state
         .convocation_use_cases
         .list_building_convocations(*building_id)
@@ -263,7 +312,23 @@ pub async fn cancel_convocation(
 pub async fn list_convocation_recipients(
     state: web::Data<AppState>,
     id: web::Path<Uuid>,
+    user: AuthenticatedUser,
 ) -> impl Responder {
+    // Route imbriquee non gardee au releve du 2026-09-06 (issue #772) : elle
+    // sert la liste NOMINATIVE des copropriétaires convoqués.
+    if let Err(err) =
+        crate::infrastructure::web::middleware::scope_guard::verify_convocation_org_access(
+            &user,
+            *id,
+            &state.convocation_use_cases,
+            &state.building_use_cases,
+            &state.acp_use_cases,
+        )
+        .await
+    {
+        return err.error_response();
+    }
+
     match state
         .convocation_use_cases
         .list_convocation_recipients(*id)
@@ -278,7 +343,23 @@ pub async fn list_convocation_recipients(
 pub async fn get_convocation_tracking_summary(
     state: web::Data<AppState>,
     id: web::Path<Uuid>,
+    user: AuthenticatedUser,
 ) -> impl Responder {
+    // Route imbriquee non gardee au releve du 2026-09-06 (issue #772) : elle
+    // sert la liste NOMINATIVE des copropriétaires convoqués.
+    if let Err(err) =
+        crate::infrastructure::web::middleware::scope_guard::verify_convocation_org_access(
+            &user,
+            *id,
+            &state.convocation_use_cases,
+            &state.building_use_cases,
+            &state.acp_use_cases,
+        )
+        .await
+    {
+        return err.error_response();
+    }
+
     match state.convocation_use_cases.get_tracking_summary(*id).await {
         Ok(summary) => HttpResponse::Ok().json(summary),
         Err(err) => HttpResponse::InternalServerError().json(serde_json::json!({"error": err})),
@@ -416,6 +497,20 @@ pub async fn schedule_second_convocation(
     };
 
     let req = request.into_inner();
+
+    // Isolation multi-tenant à l'ÉCRITURE (ADR-0045) : la seconde convocation
+    // crée une assemblée ET une convocation dans le dossier de l'ACP. Sans
+    // garde, un cabinet tiers convoquerait les copropriétaires d'un autre.
+    if let Err(err) = verify_building_org_access(
+        &user,
+        req.building_id,
+        &state.building_use_cases,
+        &state.acp_use_cases,
+    )
+    .await
+    {
+        return err.error_response();
+    }
 
     // Create a new meeting for the second convocation
     let new_meeting_req = crate::application::dto::CreateMeetingRequest {

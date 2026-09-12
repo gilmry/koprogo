@@ -12,7 +12,7 @@ import { test, expect } from "@playwright/test";
  * - /contractor/?token=xxx         (Astro+Svelte PWA page)
  */
 
-const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
+import { API_BASE } from "./helpers/adresses";
 
 test.describe("Contractor Report - Magic Link PWA", () => {
   test("should show error state for invalid magic link token", async ({

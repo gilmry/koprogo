@@ -2,7 +2,7 @@ import { test, expect } from "@playwright/test";
 import type { Page } from "@playwright/test";
 import { loginAsSyndicWithBuilding } from "../helpers/auth";
 
-const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
+import { API_BASE } from "../helpers/adresses";
 
 async function setupAccountant(page: Page) {
   const ctx = await loginAsSyndicWithBuilding(page, "journal");
@@ -43,17 +43,16 @@ test.describe("Journal Entries - Double-Entry Accounting", () => {
 
     await expect(page.locator("body")).toBeVisible();
     await expect(
-      page.locator("main h1, main h2, [data-testid='journal-entries']").first(),
+      page.locator("[data-testid='journal-entries']").first(),
     ).toBeVisible({ timeout: 10000 });
   });
 
   test("should create a balanced journal entry via API", async ({ page }) => {
-    const { accountantToken, buildingId, orgId } = await setupAccountant(page);
+    const { accountantToken, buildingId } = await setupAccountant(page);
     const timestamp = Date.now();
 
     const entryResp = await page.request.post(`${API_BASE}/journal-entries`, {
       data: {
-        organization_id: orgId,
         building_id: buildingId,
         journal_type: "ODS",
         entry_date: new Date().toISOString(),
@@ -75,15 +74,17 @@ test.describe("Journal Entries - Double-Entry Accounting", () => {
       },
       headers: { Authorization: `Bearer ${accountantToken}` },
     });
-    expect(entryResp.status()).toBe(201);
+    expect(
+      entryResp.status(),
+      `entryResp : ${await entryResp.text().catch(() => "<corps illisible>")}`,
+    ).toBe(201);
   });
 
   test("should reject unbalanced journal entry", async ({ page }) => {
-    const { accountantToken, buildingId, orgId } = await setupAccountant(page);
+    const { accountantToken, buildingId } = await setupAccountant(page);
 
     const entryResp = await page.request.post(`${API_BASE}/journal-entries`, {
       data: {
-        organization_id: orgId,
         building_id: buildingId,
         journal_type: "ODS",
         entry_date: new Date().toISOString(),

@@ -31,7 +31,12 @@
   //
   // Pattern d'injection : `onCreate` injectable pour Vitest (pas vi.mock global).
 
-  import { ticketsApi, TicketPriority, TicketCategory, TicketKind } from "../../api/tickets";
+  import {
+    ticketsApi,
+    TicketPriority,
+    TicketCategory,
+    TicketKind,
+  } from "../../api/tickets";
   import type {
     CreateTicketDto,
     Ticket,
@@ -41,6 +46,8 @@
   import EvidenceUpload from "./EvidenceUpload.svelte";
   import WitnessSelector from "./WitnessSelector.svelte";
   import type { WitnessCandidate } from "./WitnessSelector.svelte";
+
+  import { _ } from "../../i18n";
 
   // ---------------------------------------------------------------------------
   // Constantes métier (cf. backend Ticket entity)
@@ -145,16 +152,15 @@
 
   /** Affiche le badge "Preuves manquantes" — Complaint text-only. */
   let evidenceWarning = $derived(
-    isComplaint &&
-      evidenceAttachments.length === 0 &&
-      witnesses.length === 0,
+    isComplaint && evidenceAttachments.length === 0 && witnesses.length === 0,
   );
 
   let titleValid = $derived(
     titleLength >= TICKET_TITLE_MIN && titleLength <= TICKET_TITLE_MAX,
   );
   let descValid = $derived(
-    descLength >= TICKET_DESCRIPTION_MIN && descLength <= TICKET_DESCRIPTION_MAX,
+    descLength >= TICKET_DESCRIPTION_MIN &&
+      descLength <= TICKET_DESCRIPTION_MAX,
   );
   let complaintFieldsValid = $derived(
     !isComplaint ||
@@ -193,8 +199,7 @@
         // severity garanti non-vide par submitDisabled — narrow type.
         if (severity !== "") dto.severity = severity;
         // incident_date en début de jour UTC.
-        if (incidentDate)
-          dto.incident_date = `${incidentDate}T00:00:00Z`;
+        if (incidentDate) dto.incident_date = `${incidentDate}T00:00:00Z`;
         if (evidenceAttachments.length > 0)
           dto.evidence_attachments = evidenceAttachments;
         if (witnesses.length > 0) dto.witnesses = witnesses;
@@ -220,15 +225,13 @@
 </script>
 
 <form
+  data-testid="ticket-create-form-element"
   class="ticket-create-form flex flex-col gap-4 rounded bg-white p-4 shadow-sm"
   onsubmit={handleSubmit}
   aria-labelledby="ticket-create-title-h"
   novalidate
 >
-  <h2
-    id="ticket-create-title-h"
-    class="text-lg font-semibold text-gray-900"
-  >
+  <h2 id="ticket-create-title-h" class="text-lg font-semibold text-gray-900">
     {isComplaint ? "Déposer une plainte" : "Créer un ticket"}
   </h2>
 
@@ -238,7 +241,7 @@
       for="ticket-create-kind-select"
       class="text-sm font-medium text-gray-700"
     >
-      Type
+      {$_("tickets.kindLabel")}
     </label>
     <select
       id="ticket-create-kind-select"
@@ -246,8 +249,9 @@
       bind:value={kind}
       class="rounded border border-gray-300 px-3 py-2 text-sm focus-visible:outline-2 focus-visible:outline-offset-2"
     >
-      <option value={TicketKind.Request}>Demande (incident / intervention)</option>
-      <option value={TicketKind.Complaint}>Plainte (nuisance / dossier)</option>
+      <option value={TicketKind.Request}>{$_("tickets.kindRequest")}</option>
+      <option value={TicketKind.Complaint}>{$_("tickets.kindComplaint")}</option
+      >
     </select>
   </div>
 
@@ -257,7 +261,7 @@
       for="ticket-create-title-input"
       class="text-sm font-medium text-gray-700"
     >
-      Titre
+      {$_("tickets.fieldTitleLabel")}
     </label>
     <input
       id="ticket-create-title-input"
@@ -278,7 +282,7 @@
       for="ticket-create-description-textarea"
       class="text-sm font-medium text-gray-700"
     >
-      Description
+      {$_("tickets.description")}
     </label>
     <textarea
       id="ticket-create-description-textarea"
@@ -291,8 +295,7 @@
       aria-describedby="ticket-create-description-counter"
       aria-invalid={descTooShort || descTooLong ? "true" : "false"}
       class="rounded border border-gray-300 px-3 py-2 text-sm focus-visible:outline-2 focus-visible:outline-offset-2"
-      required
-    ></textarea>
+      required></textarea>
     <p
       id="ticket-create-description-counter"
       data-testid="ticket-create-description-counter"
@@ -309,7 +312,7 @@
       for="ticket-create-category-select"
       class="text-sm font-medium text-gray-700"
     >
-      Catégorie
+      {$_("tickets.category")}
     </label>
     <select
       id="ticket-create-category-select"
@@ -317,15 +320,33 @@
       bind:value={category}
       class="rounded border border-gray-300 px-3 py-2 text-sm focus-visible:outline-2 focus-visible:outline-offset-2"
     >
-      <option value={TicketCategory.Plumbing}>Plomberie</option>
-      <option value={TicketCategory.Electrical}>Électricité</option>
-      <option value={TicketCategory.Heating}>Chauffage</option>
-      <option value={TicketCategory.CommonAreas}>Parties communes</option>
-      <option value={TicketCategory.Elevator}>Ascenseur</option>
-      <option value={TicketCategory.Security}>Sécurité</option>
-      <option value={TicketCategory.Cleaning}>Nettoyage</option>
-      <option value={TicketCategory.Landscaping}>Espaces verts</option>
-      <option value={TicketCategory.Other}>Autre</option>
+      <option value={TicketCategory.Plumbing}
+        >{$_("tickets.categories.plumbing")}</option
+      >
+      <option value={TicketCategory.Electrical}
+        >{$_("tickets.categories.electrical")}</option
+      >
+      <option value={TicketCategory.Heating}
+        >{$_("tickets.categories.heating")}</option
+      >
+      <option value={TicketCategory.CommonAreas}
+        >{$_("tickets.categories.commonAreas")}</option
+      >
+      <option value={TicketCategory.Elevator}
+        >{$_("tickets.categories.elevator")}</option
+      >
+      <option value={TicketCategory.Security}
+        >{$_("tickets.categories.security")}</option
+      >
+      <option value={TicketCategory.Cleaning}
+        >{$_("tickets.categories.cleaning")}</option
+      >
+      <option value={TicketCategory.Landscaping}
+        >{$_("tickets.categories.landscaping")}</option
+      >
+      <option value={TicketCategory.Other}
+        >{$_("tickets.categories.other")}</option
+      >
     </select>
   </div>
 
@@ -335,7 +356,7 @@
       for="ticket-create-priority-select"
       class="text-sm font-medium text-gray-700"
     >
-      Priorité
+      {$_("tickets.priority")}
     </label>
     <select
       id="ticket-create-priority-select"
@@ -343,10 +364,16 @@
       bind:value={priority}
       class="rounded border border-gray-300 px-3 py-2 text-sm focus-visible:outline-2 focus-visible:outline-offset-2"
     >
-      <option value={TicketPriority.Low}>Basse</option>
-      <option value={TicketPriority.Medium}>Moyenne</option>
-      <option value={TicketPriority.High}>Haute</option>
-      <option value={TicketPriority.Critical}>Critique</option>
+      <option value={TicketPriority.Low}>{$_("tickets.priorities.low")}</option>
+      <option value={TicketPriority.Medium}
+        >{$_("tickets.priorities.medium")}</option
+      >
+      <option value={TicketPriority.High}
+        >{$_("tickets.priorities.high")}</option
+      >
+      <option value={TicketPriority.Critical}
+        >{$_("tickets.priorities.critical")}</option
+      >
     </select>
   </div>
 
@@ -359,7 +386,7 @@
         for="ticket-create-incident-date-input"
         class="text-sm font-medium text-gray-700"
       >
-        Date de l'incident
+        {$_("tickets.incidentDate")}
       </label>
       <input
         id="ticket-create-incident-date-input"
@@ -400,8 +427,7 @@
         class="rounded border border-orange-300 bg-orange-50 p-3 text-xs text-orange-800"
         role="note"
       >
-        Preuves manquantes — votre dossier est plus solide avec des photos,
-        vidéos ou témoins. Vous pouvez tout de même soumettre la plainte.
+        {$_("tickets.missingEvidence")}
       </p>
     {/if}
   {/if}
@@ -427,7 +453,7 @@
         onclick={() => onCancel?.()}
         disabled={submitting}
       >
-        Annuler
+        {$_("common.cancel")}
       </button>
     {/if}
     <button

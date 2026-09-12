@@ -8,10 +8,11 @@
  * SOURCE : docs/maury/refonte-ux-multi-role-acp/stories.md §2 Story 0.1 (@edge)
  */
 import { test, expect } from "@playwright/test";
+import { ADMIN_PASSWORD } from "../helpers/identifiants";
 import { setupContainerApiUrl } from "../helpers/video-pace";
 import { ensureAcp } from "../helpers/auth";
 
-const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
+import { API_BASE } from "../helpers/adresses";
 
 test.describe("Characterization 01 — Building Creation Flow", () => {
   test.beforeEach(async ({ page }) => {
@@ -27,7 +28,7 @@ test.describe("Characterization 01 — Building Creation Flow", () => {
 
     // 1) Admin login (API)
     const adminLoginResp = await page.request.post(`${API_BASE}/auth/login`, {
-      data: { email: "admin@koprogo.com", password: "admin123" },
+      data: { email: "admin@koprogo.com", password: ADMIN_PASSWORD },
     });
     expect(adminLoginResp.ok()).toBeTruthy();
     const { token: adminToken } = await adminLoginResp.json();
@@ -122,7 +123,7 @@ test.describe("Characterization 01 — Building Creation Flow", () => {
     // rouge sur HEAD. On fige ici l'API contract, pas le UI page detail.
     const timestamp = Date.now();
     const adminLoginResp = await page.request.post(`${API_BASE}/auth/login`, {
-      data: { email: "admin@koprogo.com", password: "admin123" },
+      data: { email: "admin@koprogo.com", password: ADMIN_PASSWORD },
     });
     const { token: adminToken } = await adminLoginResp.json();
 

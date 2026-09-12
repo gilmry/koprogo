@@ -163,3 +163,112 @@ describe("apiFetch awaits refresh when cached user exists but no token (#550 str
     );
   });
 });
+
+/**
+ * Régression #782 — le corps de la réponse d'erreur doit survivre au `throw`.
+ *
+ * `apiFetch` levait `new Error(errorMessage)` : une exception NUE. Ni le code
+ * HTTP, ni `details`, ni le corps ne survivaient. Trois actions d'écriture ont
+ * échoué en silence pendant cinq recettes — `acp_id`, `recipient_owner_ids`,
+ * `total_voting_power` — parce que le nom du champ fautif, que le serveur
+ * donne pourtant, n'atteignait jamais l'écran.
+ *
+ * Conséquence moins visible et plus grave : `lib/utils/conformity.ts` et
+ * `lib/utils/meetingCompletion.ts` interrogent `err.details` et ne pouvaient
+ * JAMAIS correspondre. Deux fonctionnalités mortes sous des tests verts, parce
+ * que ces tests fabriquaient l'objet d'erreur à la main sans jamais exercer
+ * `apiFetch`. C'est précisément ce trou que ces cas-ci comblent.
+ */
+describe("apiFetch — le corps d'une réponse d'erreur survit au throw (#782)", () => {
+  /// Ce que le serveur répond réellement, relevé en recette le 2026-09-06.
+  const reponse400 = {
+    error: "Invalid request body",
+    details:
+      "Json deserialize error: missing field `acp_id` at line 1 column 192",
+  };
+
+  const repondre = (statut: number, corps: unknown) =>
+    ({
+      ok: false,
+      status: statut,
+      text: async () => JSON.stringify(corps),
+    }) as any;
+
+  beforeEach(() => {
+    vi.resetModules();
+    vi.clearAllMocks();
+    if (typeof window !== "undefined") localStorage.clear();
+  });
+
+  it("lève une ApiError qui porte le statut, le détail et le corps", async () => {
+    global.fetch = vi.fn().mockImplementation(async (url: string) => {
+      if (url.includes("/auth/refresh")) return okRefreshResponse();
+      return repondre(400, reponse400);
+    }) as unknown as typeof fetch;
+
+    const { api, ApiError } = await import("./api");
+    const erreur = await api.post("/buildings", {}).catch((e: any) => e);
+
+    expect(erreur).toBeInstanceOf(ApiError);
+    expect(erreur.status).toBe(400);
+    expect(erreur.message).toBe("Invalid request body");
+    // La propriété que les deux extracteurs existants interrogent.
+    expect(erreur.details).toContain("acp_id");
+  });
+
+  it("affiche le nom du champ fautif sous le titre du toast", async () => {
+    global.fetch = vi.fn().mockImplementation(async (url: string) => {
+      if (url.includes("/auth/refresh")) return okRefreshResponse();
+      return repondre(400, reponse400);
+    }) as unknown as typeof fetch;
+
+    const { api } = await import("./api");
+    const { toast } = await import("../stores/toast");
+    await api.post("/buildings", {}).catch(() => undefined);
+
+    expect(toast.error).toHaveBeenCalledWith(
+      "Invalid request body",
+      expect.any(Number),
+      expect.stringContaining("acp_id"),
+    );
+  });
+
+  it("n'invente pas de détail quand le serveur n'en donne pas", async () => {
+    global.fetch = vi.fn().mockImplementation(async (url: string) => {
+      if (url.includes("/auth/refresh")) return okRefreshResponse();
+      return repondre(400, { error: "Trop court" });
+    }) as unknown as typeof fetch;
+
+    const { api } = await import("./api");
+    const { toast } = await import("../stores/toast");
+    await api.post("/x", {}).catch(() => undefined);
+
+    expect(toast.error).toHaveBeenCalledWith(
+      "Trop court",
+      expect.any(Number),
+      undefined,
+    );
+  });
+
+  /// Les erreurs métier typées gardent leur forme d'objet : elles ont leurs
+  /// propres gestionnaires (`conformity.ts`, `meetingCompletion.ts`) et ne
+  /// doivent pas être aplaties en chaîne.
+  it("conserve un détail structuré tel quel", async () => {
+    global.fetch = vi.fn().mockImplementation(async (url: string) => {
+      if (url.includes("/auth/refresh")) return okRefreshResponse();
+      return repondre(422, {
+        error: "Immeuble non conforme",
+        kind: "building_not_conformant",
+        details: { code: "BUILDING_NOT_CONFORMANT", units_delta: 2 },
+      });
+    }) as unknown as typeof fetch;
+
+    const { api } = await import("./api");
+    const erreur = await api.post("/expenses", {}).catch((e: any) => e);
+
+    expect(erreur.details).toEqual({
+      code: "BUILDING_NOT_CONFORMANT",
+      units_delta: 2,
+    });
+  });
+});

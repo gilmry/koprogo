@@ -7,18 +7,24 @@ Ce dossier contient la configuration et les guides pour utiliser Claude Code eff
 ```
 .claude/
 ├── README.md                      # Ce fichier
-├── settings.local.json            # Permissions Claude Code
+├── settings.json                  # Permissions Claude Code
+├── AGENT_GUARDRAILS.md            # Garde-fous applicables aux agents
+├── agents/                        # 16 définitions d'agents spécialisés
 ├── guides/                        # Guides de développement
 │   ├── feature-workflow.md       # Workflow pour nouvelles features
 │   ├── bugfix-workflow.md        # Workflow pour corrections de bugs
-│   ├── testing-guide.md          # Guide des tests
 │   └── architecture-guide.md     # Guide architecture hexagonale
-└── templates/                     # Templates réutilisables
-    ├── entity-template.md        # Template pour nouvelle entité
-    ├── use-case-template.md      # Template pour use case
-    ├── repository-template.md    # Template pour repository
-    └── handler-template.md       # Template pour handler HTTP
+├── hooks/                         # 8 hooks (PreToolUse, Stop, …)
+├── plans/                         # Plans de travail conservés
+├── rules/                         # Règles de projet
+└── scripts/                       # 7 scripts d'appui
 ```
+
+> **Ce bloc décrit le contenu réel.** Il annonçait auparavant un répertoire
+> `templates/` de quatre fichiers et un `guides/testing-guide.md` qui
+> n'existent pas, tout en taisant `agents/`, `hooks/`, `rules/` et `scripts/`.
+> Une documentation qui décrit un dépôt imaginaire ne guide personne, et
+> décourage d'explorer celui qui existe (#426).
 
 ## Quick Start
 
@@ -51,18 +57,19 @@ Consultez [guides/architecture-guide.md](guides/architecture-guide.md) pour :
 - Règles de dépendance entre layers
 - Patterns et bonnes pratiques
 
-## Utilisation des Templates
+## Agents spécialisés
 
-Les templates dans `templates/` sont des guides réutilisables pour créer de nouveaux composants.
+`agents/` contient seize définitions d'agents, chacune décrivant un rôle et ses
+limites. C'est là qu'il faut regarder avant d'en écrire un nouveau.
 
-Exemple pour créer une nouvelle entité :
-```
-Claude, utilise le template .claude/templates/entity-template.md pour créer une entité Payment
-```
+Cette section décrivait auparavant des « templates » à réutiliser pour créer
+une entité, un cas d'usage ou un dépôt. Ces fichiers n'existent pas, et
+l'exemple donné — `utilise le template .claude/templates/entity-template.md` —
+ne pouvait qu'échouer.
 
 ## Permissions
 
-Le fichier `settings.local.json` contient les permissions pré-approuvées pour Claude Code :
+Le fichier `settings.json` contient les permissions pré-approuvées pour Claude Code :
 
 - Commandes `make` (dev, test, lint, format, etc.)
 - Commandes Cargo (build, test, clippy, fmt)

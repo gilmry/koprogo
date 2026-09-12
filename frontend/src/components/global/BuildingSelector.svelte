@@ -120,6 +120,33 @@
       });
   }
 
+  /**
+   * Ouvrir le sélecteur montre quelque chose, même sans avoir tapé.
+   *
+   * L'état de repos était `isOpen = results.length > 0`, et RIEN ne
+   * remplissait `results` avant la première frappe : cliquer le champ
+   * n'ouvrait donc jamais rien. Un syndic qui gère quatre immeubles voulait
+   * voir ses quatre au clic ; il obtenait un champ muet, qui lisait comme
+   * cassé.
+   *
+   * C'est le motif dominant de ce produit sous une forme discrète : la
+   * capacité existe — la recherche marche —, mais son point d'entrée ne mène
+   * à rien tant qu'on n'a pas deviné qu'il fallait taper.
+   *
+   * Le préchargement se fait AU FOCUS, pas au montage : la barre de périmètre
+   * est présente sur chaque page, et une requête par page pour une liste que
+   * la plupart des visites n'ouvriront pas serait payée par tout le monde
+   * pour servir quelques-uns.
+   */
+  function auPremierFocus(): void {
+    if (results.length > 0) {
+      isOpen = true;
+      return;
+    }
+    // Recherche vide = les N premiers, que `searchBuildings` sert déjà.
+    doSearch(query);
+  }
+
   function onInput(event: Event): void {
     const target = event.target as HTMLInputElement;
     query = target.value;
@@ -187,16 +214,14 @@
         data-testid="building-selector-input"
         value={query}
         oninput={onInput}
-        onfocus={() => {
-          isOpen = results.length > 0;
-        }}
+        onfocus={auPremierFocus}
         role="combobox"
         aria-autocomplete="list"
         aria-expanded={isOpen}
         aria-controls="building-selector-listbox"
         aria-label={$_("scope.selectBuilding") || "Sélectionner un immeuble"}
         placeholder={$_("scope.searchPlaceholder") || "Rechercher un immeuble…"}
-        class="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+        class="min-h-11 w-full rounded border border-gray-300 py-2 pl-3 pr-12 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
       />
 
       {#if scope.selectedBuildingId !== null}
@@ -205,14 +230,14 @@
           data-testid="building-selector-clear"
           onclick={onClear}
           aria-label={$_("scope.clear") || "Effacer la sélection"}
-          class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700"
+          class="absolute right-0 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center text-muted hover:text-gray-700"
         >
           ×
         </button>
       {:else}
         <span
           aria-hidden="true"
-          class="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-xs text-gray-400"
+          class="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted"
         >
           ▾
         </span>
@@ -232,8 +257,7 @@
             aria-selected="false"
             class="px-3 py-2 text-sm text-gray-500"
           >
-            {$_("scope.noBuildings") ||
-              "Aucun immeuble dans votre périmètre"}
+            {$_("scope.noBuildings") || "Aucun immeuble dans votre périmètre"}
           </li>
         {:else}
           {#each results as b (b.id)}
@@ -261,7 +285,7 @@
                   ? $_("scope.unfavorite") || "Retirer des favoris"
                   : $_("scope.favorite") || "Ajouter aux favoris"}
                 aria-pressed={favorites.has(b.id)}
-                class="ml-2 text-yellow-500 hover:text-yellow-700"
+                class="-mr-1 ml-2 flex h-11 w-11 shrink-0 items-center justify-center rounded text-yellow-500 hover:bg-gray-100 hover:text-yellow-700"
               >
                 {favorites.has(b.id) ? "★" : "☆"}
               </button>
@@ -273,7 +297,8 @@
 
     {#if portfolios.length > 0}
       <div class="mt-1 text-xs text-gray-500">
-        {portfolios.length} {$_("scope.portfolios") || "portefeuilles"}
+        {portfolios.length}
+        {$_("scope.portfolios") || "portefeuilles"}
       </div>
     {/if}
   </div>
