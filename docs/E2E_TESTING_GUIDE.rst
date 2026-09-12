@@ -44,24 +44,24 @@ Démarrer les services
    # Depuis la racine du projet
    make up
 
-   # Les services démarrent automatiquement via Docker Compose + Traefik
-   # Frontend: http://localhost
-   # API: http://localhost/api/v1
+   # Les services démarrent via Docker Compose + Traefik, sur des ports
+   # DÉCALÉS pour ne pas entrer en collision avec la démo (ADR 0050) :
+   # Frontend: http://localhost:8090
+   # API:      http://localhost:8090/api/v1
+   # Traefik:  http://localhost:8091
+   # Postgres: localhost:15432    MinIO: localhost:19000 / 19001
 
 Lancer les tests
 ----------------
 
 .. code-block:: bash
 
-   # Tests normaux (rapides)
-   cd frontend
-   npm run test:e2e
-
-   # OU depuis la racine
+   # Le gate, à la vitesse
    make test-e2e
 
-   # Tests ralentis (pour vidéos plus lisibles) ⭐
-   make test-e2e-slow
+   # La vitrine : le MÊME parcours, en cadence, narré, avec sa galerie.
+   # Harnais séparé — il ne rend aucun verdict et ne touche pas au gate.
+   make vitrine
 
 📹 Enregistrer de Nouveaux Tests
 =================================
@@ -89,7 +89,7 @@ Méthode 1 : Playwright Codegen (⭐ Recommandé)
 
 **Ce qui se passe :**
 
-1. Un navigateur s'ouvre sur ``http://localhost``
+1. Un navigateur s'ouvre sur ``http://localhost:8090``
 2. Une fenêtre **"Playwright Inspector"** s'ouvre à côté
 3. Vous naviguez dans l'app (clic, remplissage de formulaires, etc.)
 4. Le code du test apparaît en temps réel dans l'Inspector
@@ -200,7 +200,7 @@ Commandes npm (depuis ``frontend/``)
 
    # Tests
    npm run test:e2e             # Tous les tests (headless)
-   PLAYWRIGHT_BASE_URL=http://localhost npm run test:e2e -- AdminDashBoard.improved.spec.ts  # Suite admin
+   PLAYWRIGHT_BASE_URL=http://localhost:8090 npm run test:e2e -- AdminDashBoard.improved.spec.ts  # Suite admin
    npm run test:e2e -- mon-test.spec.ts  # Un test spécifique
    npm run test:e2e:ui          # Mode UI (interface graphique)
    npm run test:e2e:headed      # Voir le navigateur
@@ -215,9 +215,8 @@ Commandes make (depuis la racine)
 .. code-block:: bash
 
    # Tests E2E
-   make test-e2e                # Tests normaux (rapides)
-   make test-e2e-slow           # Tests ralentis (vidéos lisibles)
-   make test-e2e-restore-speed  # Restaurer vitesse normale
+   make test-e2e                # Le gate, à la vitesse
+   make vitrine                 # La preuve de valeur : parcours narré + galerie
 
    # Documentation
    make docs-sync-videos        # Copier vidéos + générer RST (local)
@@ -225,7 +224,32 @@ Commandes make (depuis la racine)
    make docs-sphinx             # Générer doc Sphinx seule
    make codegen                 # Playwright codegen (DEVICE=mobile pour iPhone 13)
 
-Les cibles ``make test-e2e`` et ``make docs-with-videos`` exportent automatiquement ``PLAYWRIGHT_BASE_URL=http://localhost`` pour cibler l'environnement Traefik local.
+Les cibles ``make test-e2e`` et ``make docs-with-videos`` exportent
+``PLAYWRIGHT_BASE_URL=$(RECETTE)``, dont le défaut est ``http://localhost:8090``
+— la pile de recette, jamais la démo. Pour viser ailleurs, surchargez la
+variable plutôt que d'éditer la cible :
+
+.. code-block:: bash
+
+   make test-e2e RECETTE=http://localhost:3000
+
+.. danger::
+
+   **Ne visez jamais ``http://localhost`` sur un hôte qui porte la démo.**
+
+   Le port 80 y est tenu par le Traefik de la démo, qui route vers
+   ``Host(api.koprogo.com)``. La suite e2e écrit — 480 appels ``POST``/``PUT``/
+   ``DELETE`` — et ``make seed-reset`` POSTe sur ``/seed/scenario/world``
+   pendant que ``make reset-db`` annonce « SUPPRIME TOUTES LES DONNÉES ».
+
+   Ce n'est pas un risque à entourer de précautions : la **précondition de
+   reproductibilité** de la recette est exactement ce qui détruirait la démo.
+   S'y ajoutent 130 connexions sur ``/auth/login`` contre une limite de
+   5/minute, qui ont déjà valu un bannissement CrowdSec de l'adresse source
+   le 2026-09-01.
+
+   C'est l'objet de l'`ADR 0050 <adr/0050-pile-de-recette-sur-le-vps-ports-decales.html>`_
+   et de l'issue #872.
 
 Viser un hôte distant : deux variables obligatoires
 ----------------------------------------------------
@@ -386,9 +410,11 @@ Le navigateur s'affiche pendant l'exécution des tests.
 
 .. code-block:: bash
 
-   # Vérifier que les services tournent
-   curl http://localhost
-   curl http://localhost/api/v1/health
+   # Vérifier que les services tournent — sur le port de la RECETTE.
+   # Un curl sur http://localhost interrogerait la démo et répondrait 200,
+   # ce qui ferait croire que votre pile tourne alors qu'elle est éteinte.
+   curl http://localhost:8090
+   curl http://localhost:8090/api/v1/health
 
    # Si pas de réponse, démarrer :
    make up
@@ -516,8 +542,8 @@ Helper ``injectAuth`` (chokepoint unique)
 qui rote le cookie, puis un 2e refresh au goto dashboard avec le cookie
 révoqué → 401). Une seule navigation = un seul refresh.
 
-Pré-requis env (E2E sur ``http://localhost``)
-----------------------------------------------
+Pré-requis env (E2E sur ``http://localhost:8090``)
+---------------------------------------------------
 
 * ``COOKIE_SECURE=false`` côté backend (sinon le navigateur rejette le
   cookie hors HTTPS). Cf. ``docker-compose.yml`` et ``.env.example``

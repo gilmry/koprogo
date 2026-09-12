@@ -1,4 +1,4 @@
-# Pile de DÉVELOPPEMENT.
+# Pile de DÉVELOPPEMENT et de RECETTE.
 #
 # `name:` n'est pas décoratif. Sans lui, Compose déduit le nom de projet du
 # répertoire — « koprogo » — qui est AUSSI celui de la pile déployée
@@ -8,10 +8,35 @@
 # vivantes (#872).
 name: koprogo-dev
 
+# ── Les ports sont DÉCALÉS, et c'est la moitié du correctif ────────────────
+#
+# Le `name:` séparait les conteneurs et les volumes ; il ne séparait pas les
+# PORTS, qui sont globaux à l'hôte. Cette pile réclamait encore le 80, tenu
+# par le Traefik de la démo : soit elle refusait de démarrer, soit elle le
+# prenait. Et `make test-e2e` visait `http://localhost`, qui traverse ce
+# Traefik jusqu'à `Host(api.koprogo.com)` — la démo.
+#
+# Ce n'est pas un risque à entourer de précautions, c'est la PROCÉDURE : la
+# recette exige un état initial connu (`make seed-reset` POSTe sur
+# /seed/scenario/world, `make reset-db` annonce « SUPPRIME TOUTES LES
+# DONNÉES »). Sa précondition de reproductibilité est exactement ce qui
+# détruirait la démo.
+#
+# Ports retenus par l'ADR 0050, vérifiés libres sur `ecosolva` le 2026-09-12
+# (occupés : 22, 25, 53, 80, 443, 5432, 8095, 9000, 9001, 9090, 9093, 9100) :
+#
+#   service            démo    recette
+#   HTTP (Traefik)     80      8090
+#   Dashboard Traefik  —       8091
+#   PostgreSQL         5432    15432   (localhost)
+#   MinIO S3/console   9000/1  19000/1 (localhost)
+#
+# `garde-ports-piles-distinctes` interdit désormais qu'une pile suivie
+# réclame un port déjà tenu par une autre.
+
 # KoproGo - Development Environment
 # Usage: docker compose up
-# - Backend: http://localhost:8080/api/v1
-# - Frontend: http://localhost:3000
+# - Frontend + API: http://localhost:8090
 # - Hot reload enabled for both backend and frontend
 
 services:
@@ -27,8 +52,8 @@ services:
       - "--entrypoints.web.address=:80"
       - "--log.level=INFO"
     ports:
-      - "80:80" # HTTP
-      - "8081:8080" # Traefik Dashboard
+      - "8090:80" # HTTP — 80 est tenu par le Traefik de la démo (ADR 0050)
+      - "8091:8080" # Traefik Dashboard
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
     networks:
@@ -43,7 +68,7 @@ services:
       POSTGRES_USER: koprogo
       POSTGRES_PASSWORD: koprogo123
     ports:
-      - "127.0.0.1:5432:5432" # Localhost only - not exposed to network
+      - "127.0.0.1:15432:5432" # Localhost only — 5432 est celui de la démo
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./backend/migrations:/docker-entrypoint-initdb.d/migrations:ro
@@ -109,7 +134,11 @@ services:
       dockerfile: Dockerfile.dev
     container_name: koprogo-dev-frontend
     environment:
-      PUBLIC_API_URL: http://localhost/api/v1
+      # Lue par le NAVIGATEUR, donc depuis l'hôte : c'est le port publié qu'il
+      # faut, pas celui du réseau Compose. Laisser `http://localhost/api/v1`
+      # ici aurait envoyé chaque appel de la recette au Traefik de la démo —
+      # le défaut même que le décalage de ports corrige (ADR 0050, #872).
+      PUBLIC_API_URL: http://localhost:8090/api/v1
     volumes:
       # Hot reload: mount source code
       - ./frontend:/app
@@ -136,8 +165,8 @@ services:
       MINIO_ROOT_PASSWORD: ${S3_SECRET_KEY:-minioadmin}
     # MinIO n'est exposé qu'en loopback. Utilisez un tunnel SSH si vous avez besoin d'y accéder à distance.
     ports:
-      - "127.0.0.1:9000:9000" # S3 API (localhost uniquement)
-      - "127.0.0.1:9001:9001" # Console (localhost uniquement)
+      - "127.0.0.1:19000:9000" # S3 API (localhost uniquement)
+      - "127.0.0.1:19001:9001" # Console (localhost uniquement)
     volumes:
       - minio_data:/data
     healthcheck:

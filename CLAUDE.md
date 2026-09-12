@@ -42,12 +42,17 @@ make ci                 # CI complet (lint + check + test + secret-scan)
 make claude-check       # valider la config guardrails IA
 ```
 
-### URLs dev (mode localhost)
+### URLs dev (ports décalés — ADR 0050)
 
-- Frontend : `http://localhost`
-- Backend API : `http://localhost/api/v1`
-- Traefik UI : `http://localhost:8081`
-- Postgres : `localhost:5432` (user `koprogo`, db `koprogo_db`)
+La pile de dev/recette ne réclame plus le port 80 : il est tenu par le Traefik
+de la démo, et le viser faisait écrire la recette dans les données vivantes
+(#872). Une garde vérifie qu'aucune pile suivie ne reprend le port d'une autre.
+
+- Frontend : `http://localhost:8090`
+- Backend API : `http://localhost:8090/api/v1`
+- Traefik UI : `http://localhost:8091`
+- Postgres : `localhost:15432` (user `koprogo`, db `koprogo_db`)
+- MinIO : `localhost:19000` (S3) / `localhost:19001` (console)
 
 ### Logs backend
 
@@ -171,7 +176,7 @@ Pas un seul login pour tout le scénario. Voir [`docs/E2E_TESTING_GUIDE.rst`](do
 ## DB / Environnement
 
 - **PostgreSQL 15** via Docker (dev), Vault/SealedSecrets en prod (cf. #429).
-- Connection dev : `postgresql://koprogo:koprogo123@localhost:5432/koprogo_db`.
+- Connection dev : `postgresql://koprogo:koprogo123@localhost:15432/koprogo_db`.
 - Migrations : `cd backend && sqlx migrate run` ou `make migrate`.
 - SQLX offline (compile sans DB live) : `export SQLX_OFFLINE=true` (auto avec `make lint` / `make docs`).
 

@@ -6,6 +6,20 @@
 
 .PHONY: help dev up down logs test test-unit test-int test-bdd codegen vitrine lint format build clean install setup migrate reset-db docs docs-serve audit ci pre-commit deploy-prod deploy-staging
 
+# L'adresse de la pile de DÉVELOPPEMENT et de RECETTE — jamais celle de la démo.
+#
+# ── Pourquoi ce n'est plus `http://localhost` ────────────────────────────────
+#
+# Sur l'hôte qui porte la démo, le port 80 est tenu par SON Traefik, qui route
+# vers `Host(api.koprogo.com)`. `make test-e2e` visait donc la démo : 480 appels
+# d'écriture, 130 connexions contre une limite de 5/min, et `make seed-reset`
+# qui POSTe sur /seed/scenario/world. Ce n'est pas un risque à encadrer, c'est
+# la procédure de la recette qui détruit la démo (ADR 0050, #872).
+#
+# La pile de recette publie donc le 8090. Surchargeable pour viser ailleurs :
+#   make test-e2e RECETTE=http://localhost:3000
+RECETTE ?= http://localhost:8090
+
 # Couleurs pour output
 GREEN  := \033[0;32m
 YELLOW := \033[1;33m
@@ -24,9 +38,9 @@ help: ## 📖 Afficher cette aide
 
 dev: ## 🔥 Démarrer dev avec hot reload (Traefik + backend + frontend)
 	@echo "$(GREEN)🚀 Démarrage environnement dev avec hot reload...$(NC)"
-	@echo "  📍 Frontend: http://localhost"
-	@echo "  📍 API:      http://localhost/api/v1"
-	@echo "  📍 Traefik:  http://localhost:8081"
+	@echo "  📍 Frontend: $(RECETTE)"
+	@echo "  📍 API:      $(RECETTE)/api/v1"
+	@echo "  📍 Traefik:  http://localhost:8091"
 	@echo ""
 	docker compose up
 
@@ -75,7 +89,7 @@ test-bdd: ## 🥒 Tests BDD/Cucumber (backend)
 
 test-e2e: ## 🌐 Tests E2E Playwright (frontend + backend)
 	@echo "$(GREEN)🌐 Tests E2E...$(NC)"
-	cd frontend && PLAYWRIGHT_BASE_URL=http://localhost npm run test:e2e
+	cd frontend && PLAYWRIGHT_BASE_URL=$(RECETTE) npm run test:e2e
 
 codegen: ## 🎬 Playwright codegen interactif (DEVICE=mobile pour iPhone 13)
 	@echo "$(GREEN)🎬 Playwright codegen ($(YELLOW)DEVICE=$(DEVICE)$(GREEN))...$(NC)"
@@ -228,10 +242,10 @@ seed: ## 🌱 Seed DB avec données de test
 	cd backend && cargo run --bin seed
 
 seed-reset: ## 🔄 Reset le scénario world via API (idempotent)
-	@TOKEN=$$(curl -s -X POST http://localhost/api/v1/auth/login \
+	@TOKEN=$$(curl -s -X POST $(RECETTE)/api/v1/auth/login \
 		-H 'Content-Type: application/json' \
 		-d '{"email":"admin@koprogo.com","password":"admin123"}' | python3 -c "import sys,json; print(json.load(sys.stdin).get('token',''))"); \
-	curl -s -X POST http://localhost/api/v1/seed/scenario/world \
+	curl -s -X POST $(RECETTE)/api/v1/seed/scenario/world \
 		-H "Authorization: Bearer $$TOKEN" | head -c 200; \
 	echo "\n$(GREEN)✅ Seed world reset$(NC)"
 
@@ -376,7 +390,7 @@ docs-with-videos: ## 🎥 Générer docs Sphinx avec vidéos E2E (tests ralentis
 	@echo ""
 	@echo "2️⃣ Lancement des tests E2E (le gate, à la vitesse)..."
 	@{ \
-		cd frontend && PLAYWRIGHT_BASE_URL=http://localhost npm run test:e2e; \
+		cd frontend && PLAYWRIGHT_BASE_URL=$(RECETTE) npm run test:e2e; \
 	} || echo "$(YELLOW)⚠️  Certains tests ont échoué$(NC)"
 	@echo ""
 	@echo "4️⃣ Synchronisation des vidéos..."
@@ -449,7 +463,7 @@ mcp-up: ## 🤖 Démarrer stack MCP complète (backend + edge node + postgres)
 	@echo "$(GREEN)🤖 Démarrage stack MCP...$(NC)"
 	@echo "  📍 Backend MCP: http://localhost:8080/mcp/v1"
 	@echo "  📍 Edge Node:   http://localhost:3031"
-	@echo "  📍 MCP Chat:    http://localhost/mcp-chat"
+	@echo "  📍 MCP Chat:    $(RECETTE)/mcp-chat"
 	@echo ""
 	docker compose -f docker-compose.mcp.yml up
 
@@ -526,10 +540,10 @@ info: ## ℹ️  Infos projet
 	@echo "  - Proxy:    Traefik"
 	@echo ""
 	@echo "🌐 URLs Dev:"
-	@echo "  - Frontend: http://localhost"
-	@echo "  - API:      http://localhost/api/v1"
-	@echo "  - Traefik:  http://localhost:8081"
-	@echo "  - DB:       localhost:5432"
+	@echo "  - Frontend: $(RECETTE)"
+	@echo "  - API:      $(RECETTE)/api/v1"
+	@echo "  - Traefik:  http://localhost:8091"
+	@echo "  - DB:       localhost:15432"
 	@echo ""
 	@echo "📚 Docs:"
 	@echo "  - README:   ./README.md"
