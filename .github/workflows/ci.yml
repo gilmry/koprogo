@@ -1086,12 +1086,32 @@ jobs:
       # On ne téléverse QUE les `video.webm`, pas `test-results/` entier :
       # les traces et captures d'écran pèsent lourd et ne servent pas à
       # juger la valeur.
-      - name: Upload vitrine (vidéos des parcours)
+      # Le harnais de valeur — SÉPARÉ du gate, non bloquant par construction.
+      # Il rejoue le parcours partagé en cadence, narré, et assemble la
+      # galerie. `continue-on-error` n'est pas une précaution : c'est
+      # l'élément 3 du skill — « la preuve de valeur n'est PAS un test :
+      # elle ne doit pas faire tomber le build ». Cf. #876.
+      - name: Enregistrer la vitrine (preuve de valeur)
+        if: ${{ !cancelled() }}
+        continue-on-error: true
+        env:
+          PLAYWRIGHT_BASE_URL: http://localhost:3000
+          PLAYWRIGHT_API_BASE: http://localhost:8080/api/v1
+        run: |
+          cd frontend
+          node tests/e2e/journeys/enregistrer-vitrine.mjs || true
+          node tests/e2e/journeys/assembler-vitrine.mjs || true
+
+      - name: Upload vitrine (galerie + vidéos narrées)
         if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: vitrine-videos
-          path: frontend/test-results/**/video.webm
+          name: vitrine
+          # La galerie d'abord : c'est elle que l'arbitre ouvre. Les vidéos
+          # brutes du gate suivent, utiles au diagnostic d'un échec.
+          path: |
+            frontend/tests/e2e/journeys/vitrine/
+            frontend/test-results/**/video.webm
           # Un run sans vidéo n'est pas une faute : il arrive que tous les
           # parcours soient ignorés. Échouer ici masquerait le vrai résultat
           # du job derrière un artefact manquant.

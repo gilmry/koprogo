@@ -4,7 +4,7 @@
 # Include infrastructure deployment targets
 -include infrastructure/Makefile.infra
 
-.PHONY: help dev up down logs test test-unit test-int test-bdd codegen lint format build clean install setup migrate reset-db docs docs-serve audit ci pre-commit deploy-prod deploy-staging
+.PHONY: help dev up down logs test test-unit test-int test-bdd codegen vitrine lint format build clean install setup migrate reset-db docs docs-serve audit ci pre-commit deploy-prod deploy-staging
 
 # Couleurs pour output
 GREEN  := \033[0;32m
@@ -86,18 +86,17 @@ codegen: ## 🎬 Playwright codegen interactif (DEVICE=mobile pour iPhone 13)
 		npm run codegen; \
 	fi
 
-test-e2e-slow: ## 🐌 Tests E2E ralentis (1s entre chaque action - pour vidéos)
-	@echo "$(GREEN)🐌 Ralentissement des tests E2E...$(NC)"
-	bash .claude/scripts/slow-down-tests.sh 1000
+vitrine: ## 🎬 Vitrine — le parcours narré + la galerie (preuve de valeur, NON bloquant)
+	@echo "$(GREEN)🎬 Enregistrement du parcours de référence...$(NC)"
+	@# Harnais SÉPARÉ, par construction : il ne touche pas aux fichiers du
+	@# gate. C'est ce que `slow-down-tests.sh` faisait, et que le skill
+	@# `documentation-vivante.md` nomme comme l'anti-patron à éviter.
+	cd frontend && node tests/e2e/journeys/enregistrer-vitrine.mjs || true
 	@echo ""
-	@echo "$(GREEN)🎥 Lancement des tests ralentis...$(NC)"
-	cd frontend && PLAYWRIGHT_BASE_URL=http://localhost npm run test:e2e || true
+	@echo "$(GREEN)🖼  Assemblage de la galerie...$(NC)"
+	cd frontend && node tests/e2e/journeys/assembler-vitrine.mjs
 	@echo ""
-	@echo "$(GREEN)⚡ Restauration de la vitesse normale...$(NC)"
-	bash .claude/scripts/restore-test-speed.sh
-
-test-e2e-restore-speed: ## ⚡ Restaurer la vitesse normale des tests
-	bash .claude/scripts/restore-test-speed.sh
+	@echo "$(GREEN)✅ Vitrine : frontend/tests/e2e/journeys/vitrine/index.html$(NC)"
 
 test-watch: ## 👀 Tests en mode watch (auto-reload)
 	cd backend && cargo watch -x "test --lib"
@@ -371,16 +370,14 @@ docs-with-videos: ## 🎥 Générer docs Sphinx avec vidéos E2E (tests ralentis
 	docker compose up -d postgres minio backend traefik frontend
 	@sleep 3
 	@echo ""
-	@echo "1️⃣ Ralentissement des tests (1 s entre chaque action)..."
-	bash .claude/scripts/slow-down-tests.sh 1000
+	@echo "1️⃣ Vitrine — parcours narré, harnais séparé..."
+	cd frontend && node tests/e2e/journeys/enregistrer-vitrine.mjs || true
+	cd frontend && node tests/e2e/journeys/assembler-vitrine.mjs
 	@echo ""
-	@echo "2️⃣ Lancement des tests E2E..."
+	@echo "2️⃣ Lancement des tests E2E (le gate, à la vitesse)..."
 	@{ \
 		cd frontend && PLAYWRIGHT_BASE_URL=http://localhost npm run test:e2e; \
 	} || echo "$(YELLOW)⚠️  Certains tests ont échoué$(NC)"
-	@echo ""
-	@echo "3️⃣ Restauration de la vitesse normale..."
-	bash .claude/scripts/restore-test-speed.sh
 	@echo ""
 	@echo "4️⃣ Synchronisation des vidéos..."
 	bash .claude/scripts/copy-videos.sh
