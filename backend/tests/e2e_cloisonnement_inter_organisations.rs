@@ -310,3 +310,104 @@ async fn security_la_suppression_inter_organisations_est_refusee() {
          suppression, ce qui ne protège rien."
     );
 }
+
+/// LECTURE IoT — le syndic de A ne lit aucun relevé de l'immeuble de B.
+///
+/// Ces six routes portaient `let _ = auth; // Authentication required` (#864).
+/// La ligne disait vrai et ne protégeait rien : l'extracteur refusait bien un
+/// appel anonyme, mais l'immeuble arrivait dans l'URL ou la requête, sans que
+/// personne ne vérifie qu'il relevait du mandat de l'appelant.
+///
+/// Ce n'est pas une fuite comme une autre. Une courbe de consommation dit
+/// quand un logement est occupé, et quand il ne l'est pas.
+#[actix_web::test]
+#[serial]
+async fn security_les_releves_iot_inter_organisations_sont_refuses() {
+    let ctx = preparer().await;
+    let app = test::init_service(
+        App::new()
+            .app_data(ctx.app_state.clone())
+            .configure(configure_routes),
+    )
+    .await;
+
+    let routes = [
+        // `start_date` et `end_date` sont OBLIGATOIRES dans `QueryIoTReadingsDto`.
+        // Sans elles, `web::Query` rend 400 AVANT d'atteindre le garde : le test
+        // passerait au vert sans avoir rien traversé. Un attaquant, lui, envoie
+        // une requête bien formée.
+        format!(
+            "/api/v1/iot/readings?building_id={}\
+             &start_date=2020-01-01T00:00:00Z&end_date=2030-01-01T00:00:00Z",
+            ctx.immeuble_b
+        ),
+        format!("/api/v1/iot/buildings/{}/consumption/stats", ctx.immeuble_b),
+        format!("/api/v1/iot/buildings/{}/consumption/daily", ctx.immeuble_b),
+        format!(
+            "/api/v1/iot/buildings/{}/consumption/monthly",
+            ctx.immeuble_b
+        ),
+        format!(
+            "/api/v1/iot/buildings/{}/consumption/anomalies",
+            ctx.immeuble_b
+        ),
+        format!("/api/v1/iot/linky/buildings/{}/device", ctx.immeuble_b),
+    ];
+
+    for route in routes {
+        let req = test::TestRequest::get()
+            .uri(&route)
+            .insert_header((header::AUTHORIZATION, format!("Bearer {}", ctx.jeton_a)))
+            .to_request();
+        let resp = test::call_service(&app, req).await;
+        let statut = resp.status().as_u16();
+
+        assert!(
+            est_un_refus(statut),
+            "FUITE DE RELEVÉS IoT : {route} a rendu {statut} au syndic d'une \
+             AUTRE organisation.\n\n\
+             Une courbe de consommation électrique dit quand le logement est \
+             occupé. Un 2xx ici rend ce rythme de vie lisible par n'importe \
+             quel utilisateur authentifié du produit (#864)."
+        );
+    }
+}
+
+/// BALAYAGE IoT — les deux routes sans immeuble traversent toutes les
+/// organisations, elles sont donc réservées au superadministrateur.
+///
+/// Un syndic est légitime sur SES immeubles ; ces routes n'en portent aucun et
+/// rendent la liste des installations de tous les cabinets. Le refus attendu
+/// est un `403` : la ressource existe, c'est l'appelant qui n'y a pas droit.
+#[actix_web::test]
+#[serial]
+async fn security_le_balayage_iot_est_reserve_au_superadministrateur() {
+    let ctx = preparer().await;
+    let app = test::init_service(
+        App::new()
+            .app_data(ctx.app_state.clone())
+            .configure(configure_routes),
+    )
+    .await;
+
+    for route in [
+        "/api/v1/iot/linky/devices/needing-sync",
+        "/api/v1/iot/linky/devices/expired-tokens",
+    ] {
+        let req = test::TestRequest::get()
+            .uri(route)
+            .insert_header((header::AUTHORIZATION, format!("Bearer {}", ctx.jeton_a)))
+            .to_request();
+        let resp = test::call_service(&app, req).await;
+        let statut = resp.status().as_u16();
+
+        assert!(
+            est_un_refus(statut),
+            "BALAYAGE INTER-ORGANISATIONS OUVERT : {route} a rendu {statut} à un \
+             syndic.\n\n\
+             Cette route ne porte pas d'immeuble : elle parcourt les appareils \
+             de TOUTES les organisations. Un 2xx ici livre au premier cabinet \
+             venu la liste des installations de ses concurrents (#864)."
+        );
+    }
+}

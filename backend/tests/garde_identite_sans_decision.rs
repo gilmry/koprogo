@@ -56,10 +56,10 @@ const DECISION: [&str; 9] = [
     ".role ==",
 ];
 
-/// Mesuré le 2026-09-11, après correction des quatre `DELETE` de #864.
+/// Mesuré le 2026-09-12, après l'isolement des huit routes IoT de #864.
 ///
 /// Relevé, jamais estimé. Il ne peut que descendre.
-const SANS_DECISION_AU_2026_09_11: usize = 103;
+const SANS_DECISION_AU_2026_09_12: usize = 95;
 
 /// Les handlers qui prennent `AuthenticatedUser` sans trace de décision.
 fn sans_decision() -> BTreeMap<String, String> {
@@ -150,9 +150,9 @@ fn la_dette_didentite_sans_decision_ne_grossit_pas() {
         .collect();
 
     assert!(
-        n <= SANS_DECISION_AU_2026_09_11,
+        n <= SANS_DECISION_AU_2026_09_12,
         "{n} routes prennent `AuthenticatedUser` sans trace de décision, contre \
-         {SANS_DECISION_AU_2026_09_11} mesurées le 2026-09-11.\n\n\
+         {SANS_DECISION_AU_2026_09_12} mesurées le 2026-09-12.\n\n\
          Une route qui prend une identité et ne s'en sert que pour journaliser \
          A L'AIR gardée : elle passe la revue, elle passe les autres gardes, et \
          elle laisse passer le geste.\n\n\
