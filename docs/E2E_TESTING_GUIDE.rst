@@ -227,6 +227,43 @@ Commandes make (depuis la racine)
 
 Les cibles ``make test-e2e`` et ``make docs-with-videos`` exportent automatiquement ``PLAYWRIGHT_BASE_URL=http://localhost`` pour cibler l'environnement Traefik local.
 
+Viser un hôte distant : deux variables obligatoires
+----------------------------------------------------
+
+Contre ``localhost``, rien à faire : la campagne amorce sa propre base et le
+mot de passe de repli du seed (``admin123``) y est légitime. C'est aussi le
+cas en CI.
+
+Contre un hôte que la campagne **n'amorce pas** — la démo, une préproduction —
+le superadministrateur est créé par ``seed_superadmin``, qui fait un *upsert à
+chaque démarrage* depuis l'environnement de cet hôte. Le repli n'y vaut donc
+rien, et la connexion rend ``401 Invalid credentials`` : un message qui parle
+d'identifiants là où le défaut est de configuration.
+
+.. code-block:: bash
+
+   export KOPROGO_SUPERADMIN_EMAIL=...
+   export KOPROGO_SUPERADMIN_PASSWORD=...
+   PLAYWRIGHT_BASE_URL=https://koprogo.com npm run test:e2e
+
+Sans ces variables, la suite **s'arrête avant la première requête** et nomme
+celle qui manque (``tests/e2e/helpers/identifiants.ts``). C'est délibéré : le
+2026-09-10, le ``401`` muet a coûté une demi-journée d'enquête sur un défaut
+produit qui n'existait pas (#870).
+
+.. warning::
+
+   Rétablir le mot de passe sur l'hôte distant ne referme pas le sujet :
+   l'upsert repart de l'environnement au prochain démarrage, et le piège se
+   réarme sans que personne ne l'ait touché.
+
+.. note::
+
+   Une campagne complète contre la production a déjà provoqué un bannissement
+   CrowdSec de l'adresse source. Une exception existe depuis le 2026-09-02,
+   mais ``/api/v1/auth/login`` reste limité à 5 requêtes par minute et par
+   adresse : commencer par un parcours étroit, pas par la suite entière.
+
 📂 Structure des Fichiers
 ==========================
 
