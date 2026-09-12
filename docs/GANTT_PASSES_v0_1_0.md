@@ -11,12 +11,11 @@ signature_humaine:
   amendement: >-
     Le ratio_supervision ne bride plus l'éventail. Le répondre-de est porté
     par la revue de promotion de branche, instruite par les gates et la
-    vitrine. Objectif : paralléliser au maximum, orchestration Claude Code
-    multiagent.
+    vitrine. Orchestration retenue : fan-out en CI.
   reserve_inscrite: >-
-    Le mécanisme de preuve choisi n'est pas encore opérationnel (e2e et
-    doc-vivante sont rouges, #872). Et l'hôte plafonne à 2 agents quand le
-    plan en demande 10. Les deux sont écrits ci-dessous, non résolus.
+    Le mécanisme de preuve n'est pas encore opérationnel (e2e et doc-vivante
+    rouges, #872). Et aucune voie d'authentification ne donne du parallélisme
+    gratuit : l'API se paie en argent, l'abonnement en débit partagé.
 ---
 
 # Gantt de la v0.1.0 — en passes d'agent
@@ -253,10 +252,36 @@ n'est pas l'expérience qu'on voulait mener.
 | Agents distants | orchestration en nuage | facturation à l'usage |
 | Fan-out en CI | un job par story | temps de CI, pas de worktree |
 
-La troisième mérite d'être regardée en premier : elle ne demande pas de
-machine, elle isole naturellement les `target` Rust, et elle produit
-déjà les artefacts — gates et vitrine — que la revue de promotion
-attend. Le parallélisme y est borné par les *runners*, pas par cet hôte.
+La troisième est **retenue et implémentée** :
+`.github/workflows/fanout-stories.yml`. Elle ne demande pas de machine,
+isole naturellement les `target` Rust, et produit déjà les artefacts —
+gates et vitrine — que la revue de promotion attend. Le parallélisme y
+est borné par les *runners*, pas par cet hôte.
+
+### Ce que le fan-out coûte, et c'est un choix
+
+Deux voies d'authentification, et **aucune ne donne du parallélisme
+gratuit** :
+
+| Voie | Facturation | Ce qui borne |
+|---|---|---|
+| `CLAUDE_CODE_OAUTH_TOKEN` *(défaut)* | l'abonnement | les limites de débit, **partagées avec les sessions interactives** |
+| `ANTHROPIC_API_KEY` | à l'usage | le budget |
+
+Ordre de grandeur pour les 84 stories, reprises comprises — hypothèses
+visibles : ~5 M tokens d'entrée par story dont ~90 % en lecture de
+cache, ~80 k en sortie. **À caler sur la première vague réelle.**
+
+| Modèle | par story | 84 stories | avec reprises (×1,5) |
+|---|---:|---:|---:|
+| Haiku 4.5 | ~1,4 $ | ~115 $ | **~170 $** |
+| Sonnet 5 | ~2,7 $ | ~227 $ | **~340 $** |
+| Opus 5 | ~6,8 $ | ~567 $ | **~850 $** |
+
+Le jeton d'abonnement évite la facture mais pas la contrainte : un
+fan-out large consomme les limites de débit et **ralentit le travail
+humain en cours**. Le défaut de `max_parallel` est donc **2**, à monter
+une fois la première vague mesurée — pas avant.
 
 ## Le protocole — une branche, une preuve, une revue
 

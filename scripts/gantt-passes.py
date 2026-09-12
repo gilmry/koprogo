@@ -24,10 +24,17 @@ résultat — le graphe est donc une **hypothèse falsifiable**, à corriger dè
 qu'une passe réelle la contredit.
 
 Usage :
-    python3 scripts/gantt-passes.py            # le livrable Markdown
+    python3 scripts/gantt-passes.py            # le livrable sur stdout
+    python3 scripts/gantt-passes.py --ecrire   # ... ou dans docs/
+        # NE PAS faire `... > docs/GANTT...md` : le shell tronque le fichier
+        # AVANT que le script le lise, donc la signature serait perdue.
     python3 scripts/gantt-passes.py --verifier # cohérence du graphe seulement
+    python3 scripts/gantt-passes.py --creneaux-json [vague] [creneau]
+        # le plan en JSON, pour que la CI lise CETTE source de vérité
+        # plutôt que d'en tenir une seconde qui dérivera.
 """
 import importlib.util
+import json
 import os
 import sys
 
@@ -627,10 +634,36 @@ def livrable(mod):
     w("| Agents distants | orchestration en nuage | facturation à l'usage |")
     w("| Fan-out en CI | un job par story | temps de CI, pas de worktree |")
     w("")
-    w("La troisième mérite d'être regardée en premier : elle ne demande pas de")
-    w("machine, elle isole naturellement les `target` Rust, et elle produit")
-    w("déjà les artefacts — gates et vitrine — que la revue de promotion")
-    w("attend. Le parallélisme y est borné par les *runners*, pas par cet hôte.")
+    w("La troisième est **retenue et implémentée** :")
+    w("`.github/workflows/fanout-stories.yml`. Elle ne demande pas de machine,")
+    w("isole naturellement les `target` Rust, et produit déjà les artefacts —")
+    w("gates et vitrine — que la revue de promotion attend. Le parallélisme y")
+    w("est borné par les *runners*, pas par cet hôte.")
+    w("")
+    w("### Ce que le fan-out coûte, et c'est un choix")
+    w("")
+    w("Deux voies d'authentification, et **aucune ne donne du parallélisme")
+    w("gratuit** :")
+    w("")
+    w("| Voie | Facturation | Ce qui borne |")
+    w("|---|---|---|")
+    w("| `CLAUDE_CODE_OAUTH_TOKEN` *(défaut)* | l'abonnement | les limites de débit, **partagées avec les sessions interactives** |")
+    w("| `ANTHROPIC_API_KEY` | à l'usage | le budget |")
+    w("")
+    w("Ordre de grandeur pour les 84 stories, reprises comprises — hypothèses")
+    w("visibles : ~5 M tokens d'entrée par story dont ~90 % en lecture de")
+    w("cache, ~80 k en sortie. **À caler sur la première vague réelle.**")
+    w("")
+    w("| Modèle | par story | 84 stories | avec reprises (×1,5) |")
+    w("|---|---:|---:|---:|")
+    w("| Haiku 4.5 | ~1,4 $ | ~115 $ | **~170 $** |")
+    w("| Sonnet 5 | ~2,7 $ | ~227 $ | **~340 $** |")
+    w("| Opus 5 | ~6,8 $ | ~567 $ | **~850 $** |")
+    w("")
+    w("Le jeton d'abonnement évite la facture mais pas la contrainte : un")
+    w("fan-out large consomme les limites de débit et **ralentit le travail")
+    w("humain en cours**. Le défaut de `max_parallel` est donc **2**, à monter")
+    w("une fois la première vague mesurée — pas avant.")
     w("")
 
     # ── Le protocole de promotion ──
@@ -751,6 +784,33 @@ def livrable(mod):
 
 def main():
     mod = charger_backlog()
+    if "--creneaux-json" in sys.argv:
+        passe, meta, _ = calculer(mod)
+        orch = orchestrer_multiagent(passe, meta)
+        reste = [a for a in sys.argv[sys.argv.index("--creneaux-json") + 1:]
+                 if not a.startswith("-")]
+        f_vague = int(reste[0]) if len(reste) > 0 else None
+        f_cren = int(reste[1]) if len(reste) > 1 else None
+        sortie = []
+        for v, creneaux in orch:
+            if f_vague is not None and v != f_vague:
+                continue
+            for k, lot in enumerate(creneaux, 1):
+                if f_cren is not None and k != f_cren:
+                    continue
+                for num in lot:
+                    sortie.append({
+                        "issue": num,
+                        "vague": v,
+                        "creneau": k,
+                        "cle": f"V{v}.{k}",
+                        "capacite": meta[num]["cap"],
+                        "domaine": domaine(num, meta),
+                        "taille": meta[num]["taille"],
+                        "branche": f"story/{num}",
+                    })
+        print(json.dumps(sortie, ensure_ascii=False))
+        return 0
     if "--verifier" in sys.argv:
         passe, meta, alertes = calculer(mod)
         for a in alertes:
@@ -758,7 +818,13 @@ def main():
         print(f"Graphe cohérent : {len(passe)} issues, "
               f"{max(passe.values())} passes.")
         return 1 if any("CYCLE" in a for a in alertes) else 0
-    print(livrable(mod), end="")
+    texte = livrable(mod)          # lit SORTIE (donc la signature) AVANT
+    if "--ecrire" in sys.argv:     # d'écrire quoi que ce soit
+        with open(SORTIE, "w", encoding="utf-8") as f:
+            f.write(texte)
+        print(f"écrit : {SORTIE}", file=sys.stderr)
+        return 0
+    print(texte, end="")
     return 0
 
 
