@@ -7,7 +7,7 @@ signature_humaine:
   date: 2026-09-12
   nom: Gilles Maury
   role: Product Owner / superviseur
-  etat: SIGNÉ — 86/86 issues « Agent IA Ready », préparation close
+  etat: SIGNÉ — 87/87 issues « Agent IA Ready », préparation close
   ecart_depuis_signature: >-
     Signé le 2026-09-12 à 84 issues. Deux stories habilitantes (#873, #874)
     ont été ajoutées le même jour SUR INSTRUCTION DU PO, formant la capacité
@@ -27,7 +27,7 @@ signature_humaine:
 *Épopées et capacités. Généré par `scripts/backlog-structure.py` : ne pas
 éditer à la main, la prochaine génération écraserait la correction.*
 
-**86 issues ouvertes**, 10 épopées, 33 capacités. Classement exhaustif et exclusif : chaque issue appartient à exactement
+**87 issues ouvertes**, 10 épopées, 33 capacités. Classement exhaustif et exclusif : chaque issue appartient à exactement
 une capacité, et une issue non classée fait échouer la génération.
 
 ## Comment lire ce document
@@ -69,7 +69,7 @@ fabrication ; le Scrum Master de conception l'écrit sans détour :
 | Couche(s) | où le code atterrit, donc quelles gardes s'appliquent |
 | Taille + tours | le coût, sur les deux axes |
 
-**86 issues sur 86** portent les huit. Le relevé
+**87 issues sur 87** portent les huit. Le relevé
 d'origine, avant ce travail, donnait **zéro**.
 
 Le chiffre n'est pas écrit à la main : `scripts/backlog-pret.py` le relève
@@ -347,7 +347,7 @@ La cible est mobile-first et l'application est écrite desktop-first. L'écart n
 
 ## T3 — Harnais de recette
 
-`epic:recette` · 7 issues · 5.25 j · 21 tours
+`epic:recette` · 8 issues · 6.25 j · 25 tours
 
 Sprint 0 continué. Ce qui permet de BOUCLER : sans lui, aucune autre capacité ne peut être déclarée tenue.
 
@@ -372,12 +372,13 @@ Sprint 0 continué. Ce qui permet de BOUCLER : sans lui, aucune autre capacité 
 
 ### C7.3 — La boucle d'agents peut tourner
 
-**Must** · `cap:C7.3` · 2 issues · 1.25 j · 5 tours · **2/2 prêtes**
+**Must** · `cap:C7.3` · 3 issues · 2.25 j · 9 tours · **3/3 prêtes**
 
 | Issue | Titre | Taille | Prête |
 |---|---|---|---|
 | [#873](https://github.com/gilmry/koprogo/issues/873) | La vitrine n'est publiée nulle part : la CI enregistre les vidéos et ne télév… | S | oui |
 | [#874](https://github.com/gilmry/koprogo/issues/874) | Le fan-out CI n'a jamais tourné : trois réglages manquent et aucune passe ne … | M | oui |
+| [#876](https://github.com/gilmry/koprogo/issues/876) | La vitrine ne suit pas le moule Foyer : ni parcours partagé, ni narration, ni… | L | oui |
 
 ## T4 — Documentation vivante multi-persona
 
@@ -495,11 +496,11 @@ Des questions ouvertes, pas des défauts. La Méthode Foyer les veut en RFC, dis
 | E4 — Plateforme | 10 | 9.00 | 36 |
 | T1 — Refonte UX | 14 | 13.25 | 53 |
 | T2 — Accessibilité et mobile | 5 | 3.50 | 14 |
-| T3 — Harnais de recette | 7 | 5.25 | 21 |
+| T3 — Harnais de recette | 8 | 6.25 | 25 |
 | T4 — Documentation vivante multi-persona | 14 | 11.25 | 45 |
 | T5 — Ops et infrastructure | 10 | 9.00 | 36 |
 | T6 — Arbitrages produit en attente | 1 | 0.50 | 2 |
-| **Total** | **86** | **73.75** | **295** |
+| **Total** | **87** | **74.75** | **299** |
 
 `S` = 0,5 j · `M` = 0,75 j · `L` = 1 j — wall-clock du superviseur, pas
 temps machine. Les tours mesurent l'autre axe, le coût en tokens.

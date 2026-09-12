@@ -47,45 +47,45 @@ passes réelles.
 
 ## Le diagramme — ce qui est *possible*
 
-Colonnes : couches 1 à 6. `█` = la capacité est ouvrable,
+Colonnes : couches 1 à 7. `█` = la capacité est ouvrable,
 `·` = elle attend.
 
 ```text
-capacité  rang moscow  123456
---------- ---- ------- ------
-C7.3         0 Must    ██····
-C7.1         1 Must    ··██··
-C4.1         2 Must    ··██··
-C4.2         2 Must    ··█···
-C4.3         2 Must    ··█···
-C10.1        3 Must    ··█···
-C5.1         4 Should  ··█···
-C5.2         4 Must    ··█···
-C1.1         5 Must    ··██··
-C1.3         5 Must    ··██··
-C1.2         6 Should  ··███·
-C1.5         6 Should  ··█···
-C2.1         6 Should  ··█···
-C2.2         6 Should  ··█···
-C3.1         6 Should  ··██··
-C4.4         6 Should  ··█···
-C4.5         6 Should  ··██··
-C6.2         6 Should  ··██··
-C9.1         6 Should  ··██··
-C9.3         6 Should  ··█···
-C6.1         6 Should  ···██·
-C7.2         6 Should  ···█··
-C2.3         7 Could   ··█···
-C3.3         7 Could   ··███·
-C5.3         7 Could   ··██··
-C8.1         7 Could   ··███·
-C8.4         7 Could   ··█···
-C9.2         7 Could   ··██··
-C9.4         7 Could   ··█···
-C1.4         7 Could   ···██·
-C3.2         7 Could   ···██·
-C8.2         7 Could   ···██·
-C8.3         7 Could   ·····█
+capacité  rang moscow  1234567
+--------- ---- ------- -------
+C7.3         0 Must    ███····
+C7.1         1 Must    ···██··
+C4.1         2 Must    ···██··
+C4.2         2 Must    ···█···
+C4.3         2 Must    ···█···
+C10.1        3 Must    ···█···
+C5.1         4 Should  ···█···
+C5.2         4 Must    ···█···
+C1.1         5 Must    ···██··
+C1.3         5 Must    ···██··
+C1.2         6 Should  ···███·
+C1.5         6 Should  ···█···
+C2.1         6 Should  ···█···
+C2.2         6 Should  ···█···
+C3.1         6 Should  ···██··
+C4.4         6 Should  ···█···
+C4.5         6 Should  ···██··
+C6.2         6 Should  ···██··
+C9.1         6 Should  ···██··
+C9.3         6 Should  ···█···
+C6.1         6 Should  ····██·
+C7.2         6 Should  ····█··
+C2.3         7 Could   ···█···
+C3.3         7 Could   ···███·
+C5.3         7 Could   ···██··
+C8.1         7 Could   ···███·
+C8.4         7 Could   ···█···
+C9.2         7 Could   ···██··
+C9.4         7 Could   ···█···
+C1.4         7 Could   ····██·
+C3.2         7 Could   ····██·
+C8.2         7 Could   ····██·
+C8.3         7 Could   ······█
 ```
 
 ## Points de concours et de divergence
@@ -95,12 +95,12 @@ les issues à ne pas laisser traîner : chacune tient une file.
 
 | Issue | Capacité | Couche | Chantiers débloqués |
 |---|---|---:|---:|
-| `#803` | C5.2 | 3 | **11** |
-| `#805` | C8.1 | 3 | **10** |
-| `#797` | C5.1 | 3 | **9** |
-| `#802` | C5.2 | 3 | **9** |
-| `#872` | C7.1 | 3 | **5** |
-| `#780` | C1.1 | 4 | **4** |
+| `#803` | C5.2 | 4 | **11** |
+| `#805` | C8.1 | 4 | **10** |
+| `#797` | C5.1 | 4 | **9** |
+| `#802` | C5.2 | 4 | **9** |
+| `#872` | C7.1 | 4 | **5** |
+| `#780` | C1.1 | 5 | **4** |
 
 **Concours** — ce qui attend plusieurs chemins. Ce sont les points où
 un retard sur *n'importe laquelle* des amont décale l'aval.
@@ -116,11 +116,11 @@ un retard sur *n'importe laquelle* des amont décale l'aval.
 
 ## Ce que la largeur révèle
 
-**3 des 6 couches dépassent le plafond de 3** : L3 (39 chantiers), L4 (36 chantiers), L5 (8 chantiers).
+**3 des 7 couches dépassent le plafond de 3** : L4 (39 chantiers), L5 (36 chantiers), L6 (8 chantiers).
 
 C'est le résultat le plus utile du diagramme, et il est
 contre-intuitif : **les dépendances ne sont pas le goulot.** Les
-chaînes sont courtes — 6 couches seulement — et l'essentiel
+chaînes sont courtes — 7 couches seulement — et l'essentiel
 du travail est parallélisable. Ce qui borne la release n'est donc
 pas l'ordre des choses, c'est la capacité à *répondre de* ce qui est
 produit.
@@ -157,7 +157,7 @@ Ce qui bride encore, et qui est **physique** :
    son *worktree*.
 3. **La concurrence de l'hôte** — `min(16, CPU-2)` = **2** sur cette machine. Mesurée, pas supposée.
 
-Résultat : **6 vagues**, **25 créneaux**, largeur
+Résultat : **7 vagues**, **26 créneaux**, largeur
 maximale **10 agents simultanés** — contre 29
 passes en séquentiel supervisé.
 
@@ -189,50 +189,62 @@ passes en séquentiel supervisé.
 
 | Créneau | Agents | Domaines |
 |---|---|---|
-| V2.1 | 1 — #874 | `harnais` |
+| V2.1 | 1 — #876 | `harnais` |
 
-### Vague 3
+### Vague 3 — **habilitation**
+
+> **Exécutée en session, pas par le fan-out.** Les habilitantes
+> sont toutes dans le domaine `harnais` : le fan-out les
+> sérialiserait sans gain. Et c'est un œuf et une poule — la
+> valeur du fan-out est que les gates et la vitrine instruisent
+> la revue, et ce sont précisément eux qu'on construit ici.
 
 | Créneau | Agents | Domaines |
 |---|---|---|
-| V3.1 | 10 — #872, #694, #798, #576, #515, #869, #781, #852, #805, #425 | `harnais`, `back/plateforme`, `front/composants`, `back/copropriete`, `iac`, `front/mobile-a11y`, `back/communaute`, `back/comptabilite`, `docs-vivante`, `meta` |
-| V3.2 | 10 — #870, #864, #841, #850, #432, #871, #585, #429, #635, #854 | `harnais`, `back/plateforme`, `front/composants`, `back/copropriete`, `iac`, `front/mobile-a11y`, `back/communaute`, `meta`, `back/comptabilite`, `docs-vivante` |
-| V3.3 | 6 — #842, #847, #835, #453, #556, #595 | `front/composants`, `back/copropriete`, `back/plateforme`, `iac`, `meta`, `docs-vivante` |
-| V3.4 | 4 — #868, #848, #762, #731 | `front/composants`, `back/copropriete`, `back/plateforme`, `iac` |
-| V3.5 | 3 — #856, #579, #354 | `front/composants`, `back/copropriete`, `iac` |
-| V3.6 | 2 — #803, #855 | `front/composants`, `back/copropriete` |
-| V3.7 | 1 — #802 | `front/composants` |
-| V3.8 | 1 — #797 | `front/composants` |
-| V3.9 | 1 — #834 | `front/composants` |
-| V3.10 | 1 — #867 | `front/composants` |
+| V3.1 | 1 — #874 | `harnais` |
 
 ### Vague 4
 
 | Créneau | Agents | Domaines |
 |---|---|---|
-| V4.1 | 8 — #696, #845, #780, #865, #718, #779, #807, #818 | `harnais`, `back/plateforme`, `back/copropriete`, `front/mobile-a11y`, `iac`, `back/communaute`, `docs-vivante`, `front/composants` |
-| V4.2 | 8 — #832, #577, #555, #866, #587, #808, #355, #820 | `harnais`, `back/copropriete`, `back/plateforme`, `front/mobile-a11y`, `back/communaute`, `docs-vivante`, `iac`, `front/composants` |
-| V4.3 | 6 — #581, #427, #586, #809, #823, #466 | `back/copropriete`, `harnais`, `back/communaute`, `docs-vivante`, `front/composants`, `iac` |
-| V4.4 | 4 — #846, #811, #824, #590 | `back/copropriete`, `docs-vivante`, `front/composants`, `back/communaute` |
-| V4.5 | 3 — #812, #583, #825 | `docs-vivante`, `back/copropriete`, `front/composants` |
-| V4.6 | 2 — #815, #826 | `docs-vivante`, `front/composants` |
-| V4.7 | 2 — #816, #821 | `docs-vivante`, `front/composants` |
-| V4.8 | 2 — #817, #822 | `docs-vivante`, `front/composants` |
-| V4.9 | 1 — #827 | `front/composants` |
+| V4.1 | 10 — #872, #694, #798, #576, #515, #869, #781, #852, #805, #425 | `harnais`, `back/plateforme`, `front/composants`, `back/copropriete`, `iac`, `front/mobile-a11y`, `back/communaute`, `back/comptabilite`, `docs-vivante`, `meta` |
+| V4.2 | 10 — #870, #864, #841, #850, #432, #871, #585, #429, #635, #854 | `harnais`, `back/plateforme`, `front/composants`, `back/copropriete`, `iac`, `front/mobile-a11y`, `back/communaute`, `meta`, `back/comptabilite`, `docs-vivante` |
+| V4.3 | 6 — #842, #847, #835, #453, #556, #595 | `front/composants`, `back/copropriete`, `back/plateforme`, `iac`, `meta`, `docs-vivante` |
+| V4.4 | 4 — #868, #848, #762, #731 | `front/composants`, `back/copropriete`, `back/plateforme`, `iac` |
+| V4.5 | 3 — #856, #579, #354 | `front/composants`, `back/copropriete`, `iac` |
+| V4.6 | 2 — #803, #855 | `front/composants`, `back/copropriete` |
+| V4.7 | 1 — #802 | `front/composants` |
+| V4.8 | 1 — #797 | `front/composants` |
+| V4.9 | 1 — #834 | `front/composants` |
+| V4.10 | 1 — #867 | `front/composants` |
 
 ### Vague 5
 
 | Créneau | Agents | Domaines |
 |---|---|---|
-| V5.1 | 4 — #578, #592, #806, #591 | `back/copropriete`, `front/mobile-a11y`, `docs-vivante`, `back/communaute` |
-| V5.2 | 3 — #810, #582, #588 | `docs-vivante`, `back/copropriete`, `back/communaute` |
-| V5.3 | 1 — #589 | `back/communaute` |
+| V5.1 | 8 — #696, #845, #780, #865, #718, #779, #807, #818 | `harnais`, `back/plateforme`, `back/copropriete`, `front/mobile-a11y`, `iac`, `back/communaute`, `docs-vivante`, `front/composants` |
+| V5.2 | 8 — #832, #577, #555, #866, #587, #808, #355, #820 | `harnais`, `back/copropriete`, `back/plateforme`, `front/mobile-a11y`, `back/communaute`, `docs-vivante`, `iac`, `front/composants` |
+| V5.3 | 6 — #581, #427, #586, #809, #823, #466 | `back/copropriete`, `harnais`, `back/communaute`, `docs-vivante`, `front/composants`, `iac` |
+| V5.4 | 4 — #846, #811, #824, #590 | `back/copropriete`, `docs-vivante`, `front/composants`, `back/communaute` |
+| V5.5 | 3 — #812, #583, #825 | `docs-vivante`, `back/copropriete`, `front/composants` |
+| V5.6 | 2 — #815, #826 | `docs-vivante`, `front/composants` |
+| V5.7 | 2 — #816, #821 | `docs-vivante`, `front/composants` |
+| V5.8 | 2 — #817, #822 | `docs-vivante`, `front/composants` |
+| V5.9 | 1 — #827 | `front/composants` |
 
 ### Vague 6
 
 | Créneau | Agents | Domaines |
 |---|---|---|
-| V6.1 | 1 — #813 | `docs-vivante` |
+| V6.1 | 4 — #578, #592, #806, #591 | `back/copropriete`, `front/mobile-a11y`, `docs-vivante`, `back/communaute` |
+| V6.2 | 3 — #810, #582, #588 | `docs-vivante`, `back/copropriete`, `back/communaute` |
+| V6.3 | 1 — #589 | `back/communaute` |
+
+### Vague 7
+
+| Créneau | Agents | Domaines |
+|---|---|---|
+| V7.1 | 1 — #813 | `docs-vivante` |
 
 ## Parallélisme maximal — par rapport à l'hôte
 
@@ -266,7 +278,7 @@ Deux aggravations que la formule ne voit pas :
 Le plan demande une largeur de **10**. L'hôte en tient
 **2**. L'expérimentation s'exécuterait donc à **un
 cinquième** de la largeur pour laquelle elle est conçue :
-~43 créneaux réels au lieu de 25.
+~44 créneaux réels au lieu de 26.
 
 À 2 de front, le parallélisme n'apporte presque rien :
 le gain vient alors de la **suppression de l'attente humaine entre
@@ -353,11 +365,11 @@ est la condition d'existence de l'expérimentation, pas sa première
 
 | Axe | Valeur | Ce que ça mesure |
 |---|---:|---|
-| Issues | 86 | le périmètre, intégral (ADR 0049) |
+| Issues | 87 | le périmètre, intégral (ADR 0049) |
 | Passes séquentielles | 29 | régime supervisé, 3 de front |
-| Créneaux multiagent | 25 | régime parallèle, revue à la promotion |
-| Jours | 73.75 | wall-clock **superviseur** |
-| Tours | 295 | coût **tokens** |
+| Créneaux multiagent | 26 | régime parallèle, revue à la promotion |
+| Jours | 74.75 | wall-clock **superviseur** |
+| Tours | 299 | coût **tokens** |
 
 L'abaque est formelle sur la lecture de ces deux dernières lignes : le
 **poste dominant est le superviseur, pas le modèle**. Optimiser les

@@ -13,7 +13,7 @@
 - **Archétype** : full-stack *(Rust hexagonal + Astro/Svelte 5 en îlots, PostgreSQL)*
 - **Substrat d'exécution** : conteneur — `~/bin/kcargo` pour Rust, jamais `cargo` sur l'hôte
 - **Démarré le** : 2026-09-12
-- **Dernière mise à jour** : 2026-09-12 (par : Claude — l'arbitre de promotion tracé)
+- **Dernière mise à jour** : 2026-09-12 (par : Claude — #876, la vitrine au moule Foyer)
 
 ## Répartition des rôles
 
@@ -44,6 +44,14 @@ appelle une signature et non une validation.
   - **#873** — la CI enregistre toutes les vidéos et **ne les téléverse nulle
     part** : la vitrine n'existe pas comme artefact de branche, donc la revue
     de promotion n'a rien à relire.
+  - **#876** — la vitrine **ne suit pas le moule Foyer**. `kit-actix` en
+    donne le patron pour cette pile exacte : parcours partagé, cadence en
+    constante nommée, **narration incrustée** visible dans la vidéo,
+    **chapitres horodatés**, galerie autonome, invariant anti-dette.
+    KoproGo n'en a aucun des quatre — et `slow-down-tests.sh` **mute les
+    specs du gate** pour enregistrer, exactement l'anti-patron que le skill
+    nomme. Sans narration ni chapitres, arbitrer coûte un visionnage
+    complet : le modèle à arbitre unique s'effondre (#875).
   - **#874** — le fan-out **n'a jamais tourné** : permissions Actions à
     `read`, secret absent, label absent, zéro run.
 
@@ -111,10 +119,10 @@ issues tiennent chacune une file — **#803** en débloque 11, **#805** dix,
   tests (`scripts/backlog-pret.py`, mesuré le 2026-09-12). Le livrable porte
   **`SIGNÉ`** — Gilles Maury, 2026-09-12, Product Owner / superviseur.
 
-> **84 → 86.** Deux stories habilitantes ajoutées le même jour sur instruction
+> **84 → 87.** Trois stories habilitantes ajoutées le même jour sur instruction
 > du PO. Le champ `ecart_depuis_signature` du livrable le trace : le périmètre
 > a bougé **sous** une signature qui attestait 84. La préparation reste close —
-> les deux nouvelles portent les huit éléments d'emblée. Si le PO conteste
+> les trois nouvelles portent les huit éléments d'emblée. 74,75 j / 299 tours. Si le PO conteste
 > l'ajout, c'est la signature qu'il reprend, pas ce champ.
 
 > **Ce que la signature atteste, et ce qu'elle n'atteste pas.** Sa `portee`
@@ -204,6 +212,14 @@ un défaut de structure. Seul l'ordre des capacités est repris.
 
 ## Journal (chronologie courte)
 
+- 2026-09-12 — **#876 : la vitrine au moule Foyer.** #873 rend les vidéos
+  téléchargeables, pas lisibles. `skills/documentation-vivante.md` pose quatre
+  éléments non optionnels et `kit-actix` en donne le patron pour cette pile ;
+  KoproGo n'en a **aucun**. La barrière d'habilitation passe à trois couches :
+  #873 → #876 → #874. 87 issues, 74,75 j, 299 tours.
+- 2026-09-12 — **CI débloquée** : `playwright` était **sauté depuis cinq runs**,
+  `frontend-check` échouant sur un Prettier dans un fichier non touché par le
+  pilote. Le gate `e2e` n'était pas rouge — il n'était pas exécuté.
 - 2026-09-12 — **l'arbitre de promotion tracé, des deux côtés.** #875 (hors
   jalon) relève le coût réel d'un arbitrage sur la première vague ; l'issue
   `gilmry/foyer#7` porte la persona `arbitre-de-promotion`, **qui n'existe

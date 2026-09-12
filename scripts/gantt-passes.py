@@ -56,7 +56,10 @@ DEPS = {
     # boucler » ; sur un projet existant, elle « bloque le reste du backlog
     # tant qu'elle n'est pas fermée ». D'où la BARRIÈRE ci-dessous.
     873: ([], "la vitrine devient un artefact de branche"),
-    874: ([873], "prouver le fan-out suppose une PR relisible, donc la vitrine"),
+    876: ([873], "un artefact ne suffit pas : sans narration ni chapitres, "
+                 "la preuve n'est pas lisible"),
+    874: ([876], "prouver le fan-out suppose une preuve ARBITRABLE, "
+                 "pas seulement téléchargeable"),
 
     # Rang 1 — le harnais. Rien ne se DÉCLARE tenu avant lui.
     872: ([], "pile de recette jetable — ADR 0050"),
@@ -214,7 +217,7 @@ DOMAINES_ISSUE = {
     841: "front/composants", 868: "front/composants", 842: "front/composants",
     798: "front/composants", 867: "front/composants", 871: "front/mobile-a11y",
     781: "back/communaute", 427: "harnais", 432: "iac",
-    873: "harnais", 874: "harnais",
+    873: "harnais", 874: "harnais", 876: "harnais",
     854: "docs-vivante", 595: "docs-vivante", 425: "meta", 429: "meta",
     556: "meta",
 }

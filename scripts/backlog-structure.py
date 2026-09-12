@@ -153,7 +153,10 @@ CAPACITES = [
     # story de correction structurelle dédiée qui BLOQUE le reste du backlog
     # tant qu'elle n'est pas fermée ». Ajoutée le 2026-09-12.
     ("C7.3", "T3", "La boucle d'agents peut tourner", "Must",
-     {873: "S", 874: "M"}),
+     # #876 ajoutée le 2026-09-12 : #873 rend les vidéos téléchargeables, elle
+     # ne les rend pas LISIBLES. Sans narration ni chapitres, arbitrer une
+     # branche coûte un visionnage complet — et l'arbitre unique s'effondre.
+     {873: "S", 876: "L", 874: "M"}),
 
     ("C8.1", "T4", "Les six parcours par persona sont filmés", "Could",
      {805: "M", 806: "L", 807: "L", 808: "M", 809: "M", 815: "M", 816: "M"}),
