@@ -607,7 +607,7 @@
     color: #2563eb;
   }
   .text-green-600 {
-    color: #059669;
+    color: var(--color-primary);
   }
   .text-red-600 {
     color: #dc2626;

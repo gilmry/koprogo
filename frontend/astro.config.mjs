@@ -38,7 +38,7 @@ export default defineConfig({
         short_name: "KoproGo",
         description:
           "Application de gestion de copropriété avec synchronisation offline",
-        theme_color: "#0F766E",
+        theme_color: "#15803d",
         background_color: "#ffffff",
         display: "standalone",
         orientation: "portrait",

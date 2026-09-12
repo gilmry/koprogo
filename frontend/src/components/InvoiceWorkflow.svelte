@@ -889,7 +889,7 @@
   .invoice-amount {
     font-size: 1.25rem;
     font-weight: bold;
-    color: #059669;
+    color: var(--color-primary);
   }
 
   .card-body {
@@ -993,12 +993,12 @@
   }
 
   .btn-success {
-    background-color: #059669;
+    background-color: var(--color-primary);
     color: white;
   }
 
   .btn-success:hover:not(:disabled) {
-    background-color: #059669;
+    background-color: var(--color-primary-hover);
   }
 
   .btn-danger {

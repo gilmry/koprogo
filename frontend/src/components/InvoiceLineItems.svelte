@@ -261,7 +261,7 @@
 
   .btn-add {
     padding: 0.5rem 1rem;
-    background-color: #059669;
+    background-color: var(--color-primary);
     color: white;
     border: none;
     border-radius: 6px;
@@ -272,7 +272,7 @@
   }
 
   .btn-add:hover:not(:disabled) {
-    background-color: #059669;
+    background-color: var(--color-primary-hover);
   }
 
   .btn-add:disabled {
