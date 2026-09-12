@@ -34,7 +34,7 @@ import { devices } from "@playwright/test";
 // cache et epuise le seau (constate : « adminLogin failed: 429 »).
 import { adminLogin } from "../../helpers/auth";
 
-const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
+import { API_BASE } from "../../helpers/adresses";
 const TEST_PASSWORD = process.env.PLAYWRIGHT_TEST_PASSWORD || "test123456";
 
 // ---------------------------------------------------------------------------

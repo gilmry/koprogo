@@ -12,7 +12,7 @@ import { loginAsSyndic, ensureAcp } from "./helpers/auth";
  * l'ancien UI-login local. Cf. Meetings.spec.ts pour détails.
  */
 
-const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
+import { API_BASE } from "./helpers/adresses";
 
 test.describe("Buildings - List and Detail", () => {
   test("should display buildings list page", async ({ page }) => {

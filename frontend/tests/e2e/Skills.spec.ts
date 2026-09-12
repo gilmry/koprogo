@@ -1,7 +1,7 @@
 import { test, expect } from "@playwright/test";
 import { loginAsSyndicWithLinkedOwner } from "./helpers/auth";
 
-const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
+import { API_BASE } from "./helpers/adresses";
 
 async function setupOwnerWithBuilding(page: import("@playwright/test").Page) {
   const ctx = await loginAsSyndicWithLinkedOwner(page, "skill");

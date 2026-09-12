@@ -11,7 +11,7 @@ import { loginAsSyndicWithMeeting } from "./helpers/auth";
  * Belgian law (Art. 3.88 CC): 3 majority types.
  */
 
-const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
+import { API_BASE } from "./helpers/adresses";
 
 test.describe("Resolutions - AG Voting System", () => {
   test("should display meetings page", async ({ page }) => {

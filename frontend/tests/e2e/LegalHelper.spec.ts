@@ -22,7 +22,7 @@ import { loginAsSyndic } from "./helpers/auth";
  * `/legal/ag-sequence` sont publics et fonctionnels.
  */
 
-const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
+import { API_BASE } from "./helpers/adresses";
 
 test.describe("Legal Helper - Belgian Law Panel", () => {
   // Les trois tests d'interface étaient sautés parce que le composant n'était

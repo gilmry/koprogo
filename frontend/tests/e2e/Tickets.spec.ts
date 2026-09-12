@@ -8,7 +8,7 @@ import { loginAsSyndicWithBuilding } from "./helpers/auth";
  * Covers owner and syndic perspectives.
  */
 
-const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
+import { API_BASE } from "./helpers/adresses";
 
 test.describe("Tickets - Maintenance Requests", () => {
   test("should display tickets list page", async ({ page }) => {

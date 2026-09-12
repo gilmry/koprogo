@@ -8,7 +8,7 @@ import { loginAsSyndic } from "../helpers/auth";
  * Mirrors workflows from backend/tests/e2e_two_factor.rs.
  */
 
-const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
+import { API_BASE } from "../helpers/adresses";
 
 test.describe("Two-Factor Authentication (2FA)", () => {
   test("should display settings page", async ({ page }) => {

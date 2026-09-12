@@ -10,7 +10,7 @@ import { loginAsSyndic } from "../helpers/auth";
  * Uses Traefik on http://localhost.
  */
 
-const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
+import { API_BASE } from "../helpers/adresses";
 
 test.describe("Marketplace - Service Provider Directory", () => {
   test("should search providers without authentication", async ({ page }) => {

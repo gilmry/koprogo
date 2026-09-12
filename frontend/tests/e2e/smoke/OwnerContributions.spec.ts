@@ -28,7 +28,7 @@ async function premierLot(
   return lots[0].id;
 }
 
-const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
+import { API_BASE } from "../helpers/adresses";
 
 test.describe("Owner Contributions - Payment Tracking", () => {
   test("should display owner contributions page", async ({ page }) => {

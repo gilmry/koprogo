@@ -18,6 +18,15 @@
 #
 # La pile de recette publie donc le 8090. Surchargeable pour viser ailleurs :
 #   make test-e2e RECETTE=http://localhost:3000
+#
+# DEUX variables, pas une. `PLAYWRIGHT_BASE_URL` dit où le NAVIGATEUR va ;
+# `PLAYWRIGHT_API_BASE` dit où les helpers AMORCENT leur monde (organisations,
+# immeubles, comptes). Les quatre fichiers de `tests/e2e/helpers/` retombent
+# sinon sur `http://localhost/api/v1` — le port 80, donc la démo.
+#
+# Mesuré le 2026-09-12 : n'exporter que la première a fait échouer 57 specs
+# sur 106. Le port 80 rend un `301 → https://localhost` qui n'aboutit pas,
+# donc rien n'a été écrit dans la démo. C'est une chance, pas une garde.
 RECETTE ?= http://localhost:8090
 
 # Couleurs pour output
@@ -89,7 +98,7 @@ test-bdd: ## 🥒 Tests BDD/Cucumber (backend)
 
 test-e2e: ## 🌐 Tests E2E Playwright (frontend + backend)
 	@echo "$(GREEN)🌐 Tests E2E...$(NC)"
-	cd frontend && PLAYWRIGHT_BASE_URL=$(RECETTE) npm run test:e2e
+	cd frontend && PLAYWRIGHT_BASE_URL=$(RECETTE) PLAYWRIGHT_API_BASE=$(RECETTE)/api/v1 npm run test:e2e
 
 codegen: ## 🎬 Playwright codegen interactif (DEVICE=mobile pour iPhone 13)
 	@echo "$(GREEN)🎬 Playwright codegen ($(YELLOW)DEVICE=$(DEVICE)$(GREEN))...$(NC)"
@@ -390,7 +399,7 @@ docs-with-videos: ## 🎥 Générer docs Sphinx avec vidéos E2E (tests ralentis
 	@echo ""
 	@echo "2️⃣ Lancement des tests E2E (le gate, à la vitesse)..."
 	@{ \
-		cd frontend && PLAYWRIGHT_BASE_URL=$(RECETTE) npm run test:e2e; \
+		cd frontend && PLAYWRIGHT_BASE_URL=$(RECETTE) PLAYWRIGHT_API_BASE=$(RECETTE)/api/v1 npm run test:e2e; \
 	} || echo "$(YELLOW)⚠️  Certains tests ont échoué$(NC)"
 	@echo ""
 	@echo "4️⃣ Synchronisation des vidéos..."
@@ -433,7 +442,11 @@ ci: ## ✅ Vérifications CI locales via containers Docker (tout dans Docker, pa
 	@echo "$(GREEN)🔧 Compilation tests BDD backend...$(NC)"
 	docker compose exec -T backend sh -c "SQLX_OFFLINE=true cargo test --test bdd --test bdd_governance --test bdd_financial --test bdd_operations --test bdd_community --no-run"
 	@echo "$(GREEN)🎭 Playwright smoke tests (chromium)...$(NC)"
-	docker compose exec -T -e PLAYWRIGHT_BASE_URL=http://localhost:3000 -e PLAYWRIGHT_API_BASE=http://koprogo-backend:8080/api/v1 frontend sh -c "npx playwright test --project=chromium" || echo "$(YELLOW)⚠️  Playwright: certains tests échouent en Docker local (networking). Vérifier en CI.$(NC)"
+	@# `koprogo-backend` est le conteneur de la DÉMO. Depuis le réseau de la
+	@# pile de recette il n'est même pas résolvable, mais l'écrire ici laissait
+	@# croire le contraire — et sur un hôte où les deux réseaux se rejoindraient,
+	@# la campagne aurait amorcé son monde dans la base vivante (ADR 0050, #872).
+	docker compose exec -T -e PLAYWRIGHT_BASE_URL=http://localhost:3000 -e PLAYWRIGHT_API_BASE=http://koprogo-dev-backend:8080/api/v1 frontend sh -c "npx playwright test --project=chromium" || echo "$(YELLOW)⚠️  Playwright: certains tests échouent en Docker local (networking). Vérifier en CI.$(NC)"
 	@echo ""
 	@echo "$(GREEN)🎉 Tous les checks CI passés!$(NC)"
 	@echo "$(GREEN)✅ Prêt à push$(NC)"

@@ -6,7 +6,7 @@ import {
 } from "./helpers/auth";
 import { failOnPageErrors } from "./helpers/pageErrors";
 
-const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
+import { API_BASE } from "./helpers/adresses";
 
 // OwnerDashboard.spec.ts (préexistant) ne teste que l'état vide (owner sans
 // lot lié). Ce test vérifie les écrans en lecture seule du portail

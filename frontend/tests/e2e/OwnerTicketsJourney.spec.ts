@@ -2,7 +2,7 @@ import { test, expect } from "@playwright/test";
 import { loginAsSyndicWithLinkedOwner, uiLoginWithRetry } from "./helpers/auth";
 import { failOnPageErrors } from "./helpers/pageErrors";
 
-const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
+import { API_BASE } from "./helpers/adresses";
 
 test.describe("Copropriétaire — Tickets de maintenance, parcours de création rempli jusqu'au bout", () => {
   test.beforeEach(async ({ page }) => failOnPageErrors(page));

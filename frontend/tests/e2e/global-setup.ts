@@ -15,7 +15,7 @@ import { request } from "@playwright/test";
 import { ADMIN_PASSWORD } from "./helpers/identifiants";
 import { saveWorld, type TestWorld } from "./helpers/test-world";
 
-const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
+import { API_BASE } from "./helpers/adresses";
 
 export default async function globalSetup() {
   const ts = Date.now();

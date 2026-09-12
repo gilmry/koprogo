@@ -1,7 +1,7 @@
 import { test, expect } from "@playwright/test";
 import { ensureAcp, adminLogin } from "../helpers/auth";
 
-const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
+import { API_BASE } from "../helpers/adresses";
 
 test.describe("Public Syndic Info - Belgian Legal Requirement", () => {
   test("should return 404 for non-existent building slug", async ({ page }) => {

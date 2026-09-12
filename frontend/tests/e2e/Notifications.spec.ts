@@ -8,7 +8,7 @@ import { adminLogin } from "./helpers/auth";
  * Tests notification listing, read marking, and preference management.
  */
 
-const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
+import { API_BASE } from "./helpers/adresses";
 
 async function registerAndLogin(
   page: Page,

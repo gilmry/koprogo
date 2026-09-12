@@ -37,7 +37,7 @@ async function choisirImmeuble(
   await resultat.click();
 }
 
-const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
+import { API_BASE } from "./helpers/adresses";
 
 /**
  * Non-régression du rapport « workflows financiers » du 2026-09-01.

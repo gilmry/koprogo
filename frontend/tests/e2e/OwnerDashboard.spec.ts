@@ -9,7 +9,7 @@ import { adminLogin, uiLoginWithRetry } from "./helpers/auth";
  * units, tickets, payments, and payment methods.
  */
 
-const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
+import { API_BASE } from "./helpers/adresses";
 
 async function registerAndLoginAsOwner(page: Page): Promise<{
   token: string;

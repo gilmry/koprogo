@@ -9,7 +9,7 @@ import { test } from "@playwright/test";
 import { ADMIN_PASSWORD } from "./identifiants";
 import type { APIRequestContext, Page } from "@playwright/test";
 
-const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
+import { API_BASE } from "./adresses";
 
 // ---------------------------------------------------------------------------
 // Connexion admin mutualisée (anti-429)

@@ -12,7 +12,7 @@ import { ADMIN_PASSWORD } from "../helpers/identifiants";
 import { setupContainerApiUrl } from "../helpers/video-pace";
 import { ensureAcp } from "../helpers/auth";
 
-const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
+import { API_BASE } from "../helpers/adresses";
 
 test.describe("Characterization 01 — Building Creation Flow", () => {
   test.beforeEach(async ({ page }) => {

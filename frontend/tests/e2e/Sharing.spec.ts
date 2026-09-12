@@ -1,7 +1,7 @@
 import { test, expect } from "@playwright/test";
 import { loginAsSyndicWithLinkedOwner } from "./helpers/auth";
 
-const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
+import { API_BASE } from "./helpers/adresses";
 
 // Shared objects are created by owners (not syndics) — owners lend to other owners/tenants.
 // We need an owner with a linked user account so resolve_owner can find them by user_id.

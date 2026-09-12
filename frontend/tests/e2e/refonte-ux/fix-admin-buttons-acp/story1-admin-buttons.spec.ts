@@ -11,7 +11,7 @@ import { test, expect, type Page } from "@playwright/test";
 import { confirmerSiDemande } from "../../helpers/amorcage";
 import { loginAsAdmin, loginAsSyndicWithExpense } from "../../helpers/auth";
 
-const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
+import { API_BASE } from "../../helpers/adresses";
 
 /**
  * `mark-paid` exige `approval_status: Approved` côté backend
@@ -203,10 +203,9 @@ test.describe("Story 1 (#697) — boutons admin morts (Svelte 5)", () => {
     // Un syndic (non-superadmin) reste bloqué par le backend même une fois
     // le bouton "vivant" — le clic ne fait qu'appeler un endpoint déjà gaté.
     const ctx = await loginAsSyndicWithExpense(page, "btnfix4");
-    const resp = await page.request.get(
-      `${process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1"}/organizations`,
-      { headers: { Authorization: `Bearer ${ctx.token}` } },
-    );
+    const resp = await page.request.get(`${API_BASE}/organizations`, {
+      headers: { Authorization: `Bearer ${ctx.token}` },
+    });
     expect(resp.status()).toBe(403);
   });
 });

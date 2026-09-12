@@ -33,7 +33,7 @@ import { adminLogin } from "./helpers/auth";
  * Tests mix user and admin actors for realistic scenarios.
  */
 
-const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
+import { API_BASE } from "./helpers/adresses";
 
 // Helper: Register and login a new user (with organization for proper auth)
 async function registerAndLogin(

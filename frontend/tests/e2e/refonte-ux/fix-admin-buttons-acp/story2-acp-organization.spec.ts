@@ -11,7 +11,7 @@
 import { test, expect } from "@playwright/test";
 import { loginAsAdmin } from "../../helpers/auth";
 
-const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
+import { API_BASE } from "../../helpers/adresses";
 
 /**
  * `GET /buildings` trie par défaut `created_at ASC` (le plus ancien en

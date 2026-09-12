@@ -9,7 +9,7 @@ import { loginAsSyndicWithOwner, ensureAcp } from "../helpers/auth";
  * Mirrors workflows from backend/tests/e2e_board.rs.
  */
 
-const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
+import { API_BASE } from "../helpers/adresses";
 
 test.describe("Board Management - Conseil de Copropriété", () => {
   test("should display board dashboard page", async ({ page }) => {

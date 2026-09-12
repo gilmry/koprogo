@@ -25,7 +25,7 @@ import {
   uiLoginWithRetry,
 } from "../../helpers/auth";
 
-const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
+import { API_BASE } from "../../helpers/adresses";
 
 test.describe("Story 2.2 — BuildingSelector (top-left)", () => {
   test("@happy syndic sees selector, types query, selects a building", async ({

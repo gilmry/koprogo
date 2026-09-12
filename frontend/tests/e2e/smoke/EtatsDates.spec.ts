@@ -10,7 +10,7 @@ import { loginAsSyndicWithUnit } from "../helpers/auth";
  * Mirrors workflows from backend/tests/e2e_etat_date.rs.
  */
 
-const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
+import { API_BASE } from "../helpers/adresses";
 
 async function setupWithUnitAndOwner(page: Page) {
   const ctx = await loginAsSyndicWithUnit(page, "etat");

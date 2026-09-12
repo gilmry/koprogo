@@ -10,7 +10,7 @@ import { loginAsSyndicWithBuilding } from "./helpers/auth";
  * Mirrors workflows from backend/tests/e2e_quotes.rs.
  */
 
-const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
+import { API_BASE } from "./helpers/adresses";
 
 // Arbitrary UUID for contractor (no FK constraint in DB — future table)
 const CONTRACTOR_UUID = "a1b2c3d4-e5f6-7890-abcd-ef1234567890";

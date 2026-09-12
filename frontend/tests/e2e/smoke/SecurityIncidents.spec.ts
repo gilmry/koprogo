@@ -16,7 +16,7 @@ import { loginAsAdmin, loginAsSyndic } from "../helpers/auth";
  * Fix: backend should handle NULL org_id for superadmin (e.g., require org_id in request body).
  */
 
-const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
+import { API_BASE } from "../helpers/adresses";
 
 test.describe("Security Incidents - GDPR Art. 33 Breach Notification", () => {
   // Skipped: superadmin has no organization_id, causing NOT NULL violation

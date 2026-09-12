@@ -9,7 +9,7 @@ import { loginAsSyndic } from "../helpers/auth";
  * Mirrors workflows from backend/tests/e2e_gamification.rs (via gamification_handlers).
  */
 
-const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
+import { API_BASE } from "../helpers/adresses";
 
 test.describe("Gamification - Achievements & Challenges", () => {
   test("should display gamification page", async ({ page }) => {

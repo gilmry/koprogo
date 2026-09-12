@@ -9,7 +9,7 @@ import { loginAsSyndicWithBuilding } from "./helpers/auth";
  * Mirrors workflows from backend/tests/e2e_energy_campaigns.rs.
  */
 
-const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
+import { API_BASE } from "./helpers/adresses";
 
 test.describe("Energy Campaigns - Group Buying", () => {
   test("should display energy campaigns page", async ({ page }) => {

@@ -12,7 +12,7 @@ import { loginAsSyndicWithBuilding } from "./helpers/auth";
  * causée par l'ancien UI-login local. Cf. Meetings.spec.ts pour détails.
  */
 
-const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
+import { API_BASE } from "./helpers/adresses";
 
 test.describe("Expenses - Invoice Management", () => {
   test("should display expenses list page", async ({ page }) => {

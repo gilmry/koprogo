@@ -16,7 +16,7 @@
 import { test, expect } from "@playwright/test";
 import { loginAsAdmin, ensureAcp } from "../../helpers/auth";
 
-const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
+import { API_BASE } from "../../helpers/adresses";
 
 test.describe("Track H Story H2 — validate-before-compute", () => {
   test("@security syndic POST /expenses on non-conformant building → 422 BUILDING_NOT_CONFORMANT", async ({

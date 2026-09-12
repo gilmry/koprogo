@@ -12,7 +12,7 @@ import { loginAsSyndic } from "../helpers/auth";
  * Fix the backend role comparison before enabling these tests.
  */
 
-const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
+import { API_BASE } from "../helpers/adresses";
 
 test.describe("API Keys - Management", () => {
   // All tests skipped due to backend role case mismatch bug (see comment above)

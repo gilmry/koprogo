@@ -24,7 +24,7 @@ import { ADMIN_PASSWORD } from "../../helpers/identifiants";
 // cache et epuise le seau (constate : « adminLogin failed: 429 »).
 import { adminLogin } from "../../helpers/auth";
 
-const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
+import { API_BASE } from "../../helpers/adresses";
 const ADMIN_EMAIL = "admin@koprogo.com";
 const TEST_PASSWORD = process.env.PLAYWRIGHT_TEST_PASSWORD || "test123456";
 

@@ -14,7 +14,7 @@
 import type { Page } from "@playwright/test";
 import type { paths, components } from "../../../src/types/api.d.ts";
 
-const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
+import { API_BASE } from "./adresses";
 
 export type Schemas = components["schemas"];
 export type { paths, components };

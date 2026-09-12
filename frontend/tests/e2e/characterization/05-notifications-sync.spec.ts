@@ -11,7 +11,7 @@ import { test, expect } from "@playwright/test";
 import { loginAsSyndic } from "../helpers/auth";
 import { setupContainerApiUrl } from "../helpers/video-pace";
 
-const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
+import { API_BASE } from "../helpers/adresses";
 
 test.describe("Characterization 05 — Notifications + sync", () => {
   test.beforeEach(async ({ page }) => {
