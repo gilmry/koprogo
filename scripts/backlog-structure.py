@@ -144,8 +144,13 @@ CAPACITES = [
     ("C6.2", "T2", "Le produit est utilisable à une largeur de téléphone", "Should",
      {866: "M", 869: "M", 871: "S"}),
 
+    # #877 ajoutée le 2026-09-12, relevée en exécutant le Gantt : le gate
+    # `integration` est rouge sur UN test, `s3_storage_roundtrip`, parce que
+    # le tag `minio/minio:RELEASE.2025-02-28T09-55-16Z` n'est plus servi par
+    # Docker Hub. Un verdict de CI qui dépend d'une décision de publication
+    # tierce n'est pas un verdict — et le registre le déclarait 🟢.
     ("C7.1", "T3", "La recette peut se connecter et s'exécuter", "Must",
-     {872: "L", 870: "S", 832: "M", 696: "M"}),
+     {872: "L", 870: "S", 832: "M", 696: "M", 877: "S"}),
     ("C7.2", "T3", "La taxonomie des tests est la gate de release", "Should",
      {427: "L"}),
     # Story habilitante (Sprint 0). La Méthode Foyer : « sans elle, aucune
