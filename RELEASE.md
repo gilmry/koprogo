@@ -13,7 +13,7 @@
 - **Archétype** : full-stack *(Rust hexagonal + Astro/Svelte 5 en îlots, PostgreSQL)*
 - **Substrat d'exécution** : conteneur — `~/bin/kcargo` pour Rust, jamais `cargo` sur l'hôte
 - **Démarré le** : 2026-09-12
-- **Dernière mise à jour** : 2026-09-12 (par : Claude — story habilitante posée, rang 0)
+- **Dernière mise à jour** : 2026-09-12 (par : Claude — l'arbitre de promotion tracé)
 
 ## Répartition des rôles
 
@@ -204,6 +204,19 @@ un défaut de structure. Seul l'ordre des capacités est repris.
 
 ## Journal (chronologie courte)
 
+- 2026-09-12 — **l'arbitre de promotion tracé, des deux côtés.** #875 (hors
+  jalon) relève le coût réel d'un arbitrage sur la première vague ; l'issue
+  `gilmry/foyer#7` porte la persona `arbitre-de-promotion`, **qui n'existe
+  pas** dans la méthode — Foyer a des rôles qui produisent et qui mesurent,
+  personne qui juge sur preuve. L'ordre est écrit dans les deux : on mesure
+  sur le dogfood, on généralise ensuite.
+
+  Ce que la mesure doit établir : le `ratio_supervision` de l'abaque ne
+  disparaît pas quand on déplace la supervision vers la promotion — **il
+  change d'unité**, et devient pour la première fois mesurable (minutes par
+  branche). Le signal le plus important n'est pas la durée mais **le nombre
+  de fois où l'arbitre a dû ouvrir le diff** : chaque occurrence est un échec
+  de la preuve, pas de l'arbitre.
 - 2026-09-12 — **story habilitante posée** : #873 (vitrine en artefact CI) et
   #874 (fan-out prouvé) forment `cap:C7.3`, rang **0**, et bloquent le reste
   du backlog. Le Gantt gagne une **barrière** : rien ne se fanne-out avant
