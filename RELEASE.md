@@ -13,7 +13,7 @@
 - **Archétype** : full-stack *(Rust hexagonal + Astro/Svelte 5 en îlots, PostgreSQL)*
 - **Substrat d'exécution** : conteneur — `~/bin/kcargo` pour Rust, jamais `cargo` sur l'hôte
 - **Démarré le** : 2026-09-12
-- **Dernière mise à jour** : 2026-09-12 (par : Claude — rangs 2 à 7 portés à « Agent IA Ready »)
+- **Dernière mise à jour** : 2026-09-12 (par : Claude — étape 4 close, 84/84)
 
 ## Répartition des rôles
 
@@ -32,21 +32,25 @@ appelle une signature et non une validation.
 
 ## Position courante
 
-- **Phase / étape** : Phase A · conception BMAD ciblée sur la release · étape 4
-  (Validateur → backlog « Agent IA Ready »)
-- **Prochaine action attendue** : préparer les **3 dernières** (#578, #579,
-  #427) — leur périmètre est acquis ([ADR 0049](docs/adr/0049-perimetre-v0-1-0-integral.md)),
-  seul leur **rang** attend un arbitrage, et préparer leur story ne préjuge pas
-  de ce rang. Puis l'étape 4 est close et la **signature du livrable BMAD**
-  devient la prochaine étape — c'est la modalité que le PO a choisie.
+- **Phase / étape** : Phase A · conception BMAD ciblée sur la release · **étape 4
+  terminée côté agent** — en attente de la signature du PO, qui la clôt.
+- **Prochaine action attendue — et elle est humaine** : le PO relit et **signe**
+  `docs/BACKLOG_STRUCTURE_v0_1_0.md`. C'est la modalité qu'il a choisie : une
+  seule signature, après la préparation complète. Elle clôt la phase A.
+- **Ensuite, phase B** : vérifier le socle avant d'ajouter. Elle commence par
+  exécuter [ADR 0050](docs/adr/0050-pile-de-recette-sur-le-vps-ports-decales.md)
+  — décaler les quatre ports, faire viser `http://localhost:8090` à
+  `make test-e2e`, corriger `docs/E2E_TESTING_GUIDE.rst`. Tant que `e2e` est
+  🔴, le parcours interdit d'empiler la release.
 - **Le 🔴 sur les dialectes est éteint par le travail** : les 12 issues
-  restantes ont été traduites au rang 7. L'option « apprendre les deux dialectes
-  au compteur » n'a plus d'objet ; l'instrument de mesure n'a pas été touché.
+  restantes ont été traduites au rang 7. L'instrument de mesure n'a pas été
+  touché — c'est le travail qui a fait monter le chiffre, pas sa définition.
 - **La fabrication n'ouvre pas encore.** Le PO a choisi une signature unique
   **après** la préparation complète ; ni #872 (harnais, ADR 0050) ni #855 ni
   #802 n'entrent en fabrication avant. L'ADR 0050 attend, elle n'est pas
   perdue.
-- **Rôle à jouer** : `.foyer/pilote/roles/conception-bmad.md`
+- **Rôle à jouer** : `.foyer/pilote/roles/conception-bmad.md` — puis
+  `.foyer/pilote/roles/gate-runner.md` une fois la signature acquise.
 
 ### Ce qui est déjà produit de la phase A
 
@@ -58,21 +62,22 @@ appelle une signature et non une validation.
   (`backend/tests/architecture.rs`), les dépendances croisées sont interdites.
 - **Chiffrage** : 73,25 j de wall-clock superviseur · 293 tours. **Bornes hautes
   de première passe**, à resserrer sur le réel par le CSI.
-- **Validateur** : ⏳ **presque**. **81 issues sur 84** portent les huit
-  éléments d'une story prête, et **84 sur 84 — la totalité** portent les quatre
-  classes de tests (`scripts/backlog-pret.py`, mesuré le 2026-09-12 après le
-  rang 7). Le livrable porte `NON SIGNÉ` — la signature vient après la
-  préparation.
+- **Validateur** : ✅ **fait côté agent**. **84 issues sur 84** portent les huit
+  éléments d'une story prête, et **84 sur 84** portent les quatre classes de
+  tests (`scripts/backlog-pret.py`, mesuré le 2026-09-12). Le livrable porte
+  encore `NON SIGNÉ` : **la signature est l'acte du PO**, pas de l'agent.
 
-> **Rangs 1 à 7 prêts.** Les trois restantes sont **exactement les orphelines
-> sans rang** — #578, #579 (C1.2) et #427 (C7.2) : elles ne sont pas bloquées
-> par un manque de travail, mais par l'arbitrage 🔴 sur leur ordonnancement.
+> **Les huit rangs sont couverts**, orphelines comprises — #578, #579 (C1.2) et
+> #427 (C7.2) ont leur story même si leur **rang** attend encore un arbitrage.
+> Préparer ne préjuge pas d'ordonnancer.
 >
-> Le contrôle est **de forme** : le script cherche des marqueurs, pas du sens.
-> Il l'écrit lui-même — « une borne haute de la préparation, jamais un
-> verdict ». 81/84 mesure la couverture du gabarit, pas la qualité du contenu :
-> c'est la relecture humaine qui tranchera, et c'est ce que la signature
-> atteste.
+> ⚠️ **Ce que 84/84 ne dit pas.** Le contrôle est **de forme** : le script
+> cherche des marqueurs, pas du sens, et l'écrit lui-même — « une borne haute de
+> la préparation, jamais un verdict ». Une story creuse sous un `@security`
+> compterait. **84/84 mesure la couverture du gabarit, pas la qualité du
+> contenu.** C'est exactement ce que la relecture et la signature humaines
+> doivent trancher — et c'est le sujet de #427, qui demande que la taxonomie
+> soit mesurée sur le **code livré**, pas sur l'intention écrite.
 
 > **84, et non 85.** Le backlog structuré a été généré à 85 issues ouvertes ;
 > #840 a été fermée le même jour, après la génération. Le document n'est pas
@@ -181,6 +186,10 @@ un défaut de structure. Seul l'ordre des capacités est repris.
 
 ## Journal (chronologie courte)
 
+- 2026-09-12 — **étape 4 close côté agent : 84/84.** Les trois orphelines
+  (#578, #579, #427) préparées sans préjuger de leur rang. Le backlog v0.1.0
+  est intégralement outillé pour la fabrication ; reste la signature du PO,
+  qui est un acte humain et le seul qui atteste du **fond**.
 - 2026-09-12 — **rang 7 porté à « Agent IA Ready »** : les 39 `Could`.
   **81/84**, et **84/84 portent les quatre classes de tests**. Les 12 issues en
   dialecte Maury ont été traduites plutôt que de modifier le compteur. Les 3
