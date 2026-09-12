@@ -4,10 +4,15 @@ projet: KoproGo
 jalon: v0.1.0
 genere_par: scripts/backlog-structure.py
 signature_humaine:
-  date: null
-  nom: null
-  role: null
-  etat: NON SIGNÉ — en attente de validation du superviseur
+  date: 2026-09-12
+  nom: Gilles Maury
+  role: Product Owner / superviseur
+  etat: SIGNÉ — 84/84 issues « Agent IA Ready », préparation close
+  portee: >-
+    Atteste le classement (exhaustif et exclusif), le chiffrage en bornes
+    hautes de première passe, et que la préparation des stories est close.
+    N'atteste PAS la qualité de chaque story : le contrôle automatique est
+    de forme, et c'est le sujet de #427.
 ---
 
 # Backlog structuré — v0.1.0
@@ -15,7 +20,7 @@ signature_humaine:
 *Épopées et capacités. Généré par `scripts/backlog-structure.py` : ne pas
 éditer à la main, la prochaine génération écraserait la correction.*
 
-**85 issues ouvertes**, 10 épopées, 32 capacités. Classement exhaustif et exclusif : chaque issue appartient à exactement
+**84 issues ouvertes**, 10 épopées, 32 capacités. Classement exhaustif et exclusif : chaque issue appartient à exactement
 une capacité, et une issue non classée fait échouer la génération.
 
 ## Comment lire ce document
@@ -57,7 +62,7 @@ fabrication ; le Scrum Master de conception l'écrit sans détour :
 | Couche(s) | où le code atterrit, donc quelles gardes s'appliquent |
 | Taille + tours | le coût, sur les deux axes |
 
-**6 issues sur 85** portent les huit. Le relevé
+**84 issues sur 84** portent les huit. Le relevé
 d'origine, avant ce travail, donnait **zéro**.
 
 Le chiffre n'est pas écrit à la main : `scripts/backlog-pret.py` le relève
@@ -98,58 +103,57 @@ silence — y sont. Le backlog n'est pas bloqué à ce titre.
 
 ## E1 — Copropriété — le jumeau juridique
 
-`epic:copropriete` · 14 issues · 13.00 j · 52 tours
+`epic:copropriete` · 13 issues · 12.25 j · 49 tours
 
 Le contexte borné qui ne dépend de rien : ce que la loi belge dit d'une assemblée, d'un lot, d'une voix. Une erreur ici n'est pas un défaut d'affichage, c'est une décision annulable.
 
 ### C1.1 — Une assemblée générale aboutit, de la convocation au PV
 
-**Must** · `cap:C1.1` · 7 issues · 6.50 j · 26 tours · **0/7 prêtes**
+**Must** · `cap:C1.1` · 6 issues · 5.75 j · 23 tours · **6/6 prêtes**
 
 | Issue | Titre | Taille | Prête |
 |---|---|---|---|
-| [#576](https://github.com/gilmry/koprogo/issues/576) | [Story 4.1] [cluster-coord] Meeting.mode hybrid + quorum agrégé Decimal | L | manque 4/8 |
-| [#577](https://github.com/gilmry/koprogo/issues/577) | [Story 4.2] Vote distant auth_method strong (itsme/eID) — closes #48 | L | manque 4/8 |
-| [#581](https://github.com/gilmry/koprogo/issues/581) | [Story 4.6] Résolution EvaluationContractors AGO auto non retirable | M | manque 4/8 |
-| [#780](https://github.com/gilmry/koprogo/issues/780) | Le cycle de vie d'une AG ne peut pas aboutir : trois verrous indépendants, au… | L | manque 8/8 |
-| [#840](https://github.com/gilmry/koprogo/issues/840) | Une résolution sans point d'ordre du jour est acceptée, alors que la loi la r… | M | manque 8/8 |
-| [#848](https://github.com/gilmry/koprogo/issues/848) | Un lot détenu à deux ne peut jamais voter : la suspension de l'Art. 3.87 § 1e… | L | manque 8/8 |
-| [#850](https://github.com/gilmry/koprogo/issues/850) | Le vote en assemblée accepte l'identité du votant, son lot et sa puissance de… | L | manque 7/8 |
+| [#576](https://github.com/gilmry/koprogo/issues/576) | [Story 4.1] [cluster-coord] Meeting.mode hybrid + quorum agrégé Decimal | L | oui |
+| [#577](https://github.com/gilmry/koprogo/issues/577) | [Story 4.2] Vote distant auth_method strong (itsme/eID) — closes #48 | L | oui |
+| [#581](https://github.com/gilmry/koprogo/issues/581) | [Story 4.6] Résolution EvaluationContractors AGO auto non retirable | M | oui |
+| [#780](https://github.com/gilmry/koprogo/issues/780) | Le cycle de vie d'une AG ne peut pas aboutir : trois verrous indépendants, au… | L | oui |
+| [#848](https://github.com/gilmry/koprogo/issues/848) | Un lot détenu à deux ne peut jamais voter : la suspension de l'Art. 3.87 § 1e… | L | oui |
+| [#850](https://github.com/gilmry/koprogo/issues/850) | Le vote en assemblée accepte l'identité du votant, son lot et sa puissance de… | L | oui |
 
 ### C1.2 — Le procès-verbal fait foi
 
-**Should** · `cap:C1.2` · 2 issues · 2.00 j · 8 tours · **0/2 prêtes**
+**Should** · `cap:C1.2` · 2 issues · 2.00 j · 8 tours · **2/2 prêtes**
 
 | Issue | Titre | Taille | Prête |
 |---|---|---|---|
-| [#578](https://github.com/gilmry/koprogo/issues/578) | [Story 4.3] Minutes (PV) + 2 signatures eIDAS qualifiées | L | manque 4/8 |
-| [#579](https://github.com/gilmry/koprogo/issues/579) | [Story 4.4] Adapter ElectronicSignatureProvider (port + 3 adapters eID/itsme/… | L | manque 4/8 |
+| [#578](https://github.com/gilmry/koprogo/issues/578) | [Story 4.3] Minutes (PV) + 2 signatures eIDAS qualifiées | L | oui |
+| [#579](https://github.com/gilmry/koprogo/issues/579) | [Story 4.4] Adapter ElectronicSignatureProvider (port + 3 adapters eID/itsme/… | L | oui |
 
 ### C1.3 — Le registre légal atteste ce qu'il déclare
 
-**Must** · `cap:C1.3` · 2 issues · 1.75 j · 7 tours · **0/2 prêtes**
+**Must** · `cap:C1.3` · 2 issues · 1.75 j · 7 tours · **2/2 prêtes**
 
 | Issue | Titre | Taille | Prête |
 |---|---|---|---|
-| [#846](https://github.com/gilmry/koprogo/issues/846) | Onze tables et une vue existent en base et ne sont lues par aucun code, dont … | M | manque 8/8 |
-| [#847](https://github.com/gilmry/koprogo/issues/847) | Le registre légal atteste des obligations que ses tests ne vérifient pas : l'… | L | manque 8/8 |
+| [#846](https://github.com/gilmry/koprogo/issues/846) | Onze tables et une vue existent en base et ne sont lues par aucun code, dont … | M | oui |
+| [#847](https://github.com/gilmry/koprogo/issues/847) | Le registre légal atteste des obligations que ses tests ne vérifient pas : l'… | L | oui |
 
 ### C1.4 — Les organes de contrôle existent
 
-**Could** · `cap:C1.4` · 2 issues · 1.75 j · 7 tours · **0/2 prêtes**
+**Could** · `cap:C1.4` · 2 issues · 1.75 j · 7 tours · **2/2 prêtes**
 
 | Issue | Titre | Taille | Prête |
 |---|---|---|---|
-| [#582](https://github.com/gilmry/koprogo/issues/582) | [Story 4.7] CdC membre élu + action create_alert | M | manque 4/8 |
-| [#583](https://github.com/gilmry/koprogo/issues/583) | [Story 4.8] [cluster-coord] CommissaireAuxComptes + VerificationCertificate | L | manque 4/8 |
+| [#582](https://github.com/gilmry/koprogo/issues/582) | [Story 4.7] CdC membre élu + action create_alert | M | oui |
+| [#583](https://github.com/gilmry/koprogo/issues/583) | [Story 4.8] [cluster-coord] CommissaireAuxComptes + VerificationCertificate | L | oui |
 
 ### C1.5 — L'état daté a un destinataire identifié
 
-**Should** · `cap:C1.5` · 1 issues · 1.00 j · 4 tours · **0/1 prêtes**
+**Should** · `cap:C1.5` · 1 issues · 1.00 j · 4 tours · **1/1 prêtes**
 
 | Issue | Titre | Taille | Prête |
 |---|---|---|---|
-| [#855](https://github.com/gilmry/koprogo/issues/855) | Le notaire n'a pas d'identité : l'état daté est servi à qui connaît la référe… | L | manque 8/8 |
+| [#855](https://github.com/gilmry/koprogo/issues/855) | Le notaire n'a pas d'identité : l'état daté est servi à qui connaît la référe… | L | oui |
 
 ## E2 — Comptabilité — la charge et sa répartition
 
@@ -159,27 +163,27 @@ Connaît `copropriete` : une charge se répartit sur des quotités, elle ne peut
 
 ### C2.1 — Une quote-part se saisit sans ambiguïté
 
-**Should** · `cap:C2.1` · 1 issues · 0.50 j · 2 tours · **0/1 prêtes**
+**Should** · `cap:C2.1` · 1 issues · 0.50 j · 2 tours · **1/1 prêtes**
 
 | Issue | Titre | Taille | Prête |
 |---|---|---|---|
-| [#852](https://github.com/gilmry/koprogo/issues/852) | Le champ unit_id est déclaré optionnel sur la création d'une quote-part, et r… | S | manque 8/8 |
+| [#852](https://github.com/gilmry/koprogo/issues/852) | Le champ unit_id est déclaré optionnel sur la création d'une quote-part, et r… | S | oui |
 
 ### C2.2 — Un copropriétaire multi-ACP voit ses montants séparés
 
-**Should** · `cap:C2.2` · 1 issues · 1.00 j · 4 tours · **0/1 prêtes**
+**Should** · `cap:C2.2` · 1 issues · 1.00 j · 4 tours · **1/1 prêtes**
 
 | Issue | Titre | Taille | Prête |
 |---|---|---|---|
-| [#867](https://github.com/gilmry/koprogo/issues/867) | Un copropriétaire multi-ACP voit un montant unique : un virement groupé serai… | L | manque 7/8 |
+| [#867](https://github.com/gilmry/koprogo/issues/867) | Un copropriétaire multi-ACP voit un montant unique : un virement groupé serai… | L | oui |
 
 ### C2.3 — Les fonds affectés sont une entité, pas une convention
 
-**Could** · `cap:C2.3` · 1 issues · 1.00 j · 4 tours · **0/1 prêtes**
+**Could** · `cap:C2.3` · 1 issues · 1.00 j · 4 tours · **1/1 prêtes**
 
 | Issue | Titre | Taille | Prête |
 |---|---|---|---|
-| [#635](https://github.com/gilmry/koprogo/issues/635) | Fonds affectés / thésaurisation : entité Fund dédiée aux travaux d'ampleur (v… | L | manque 8/8 |
+| [#635](https://github.com/gilmry/koprogo/issues/635) | Fonds affectés / thésaurisation : entité Fund dédiée aux travaux d'ampleur (v… | L | oui |
 
 ## E3 — Économie circulaire — les modules communautaires
 
@@ -189,33 +193,33 @@ Connaît `copropriete`. SEL, sondages, objets partagés, énergie : la partie du
 
 ### C3.1 — Les modules communautaires sont atteignables
 
-**Should** · `cap:C3.1` · 2 issues · 1.75 j · 7 tours · **0/2 prêtes**
+**Should** · `cap:C3.1` · 2 issues · 1.75 j · 7 tours · **2/2 prêtes**
 
 | Issue | Titre | Taille | Prête |
 |---|---|---|---|
-| [#779](https://github.com/gilmry/koprogo/issues/779) | Rebrancher les six modules communautaires : 111 points d'entrée servis que le… | L | manque 8/8 |
-| [#781](https://github.com/gilmry/koprogo/issues/781) | Les modules communautaires supposent que l'utilisateur est copropriétaire : l… | M | manque 8/8 |
+| [#779](https://github.com/gilmry/koprogo/issues/779) | Rebrancher les six modules communautaires : 111 points d'entrée servis que le… | L | oui |
+| [#781](https://github.com/gilmry/koprogo/issues/781) | Les modules communautaires supposent que l'utilisateur est copropriétaire : l… | M | oui |
 
 ### C3.2 — Le syndic a un rôle dans la communauté
 
-**Could** · `cap:C3.2` · 3 issues · 2.00 j · 8 tours · **0/3 prêtes**
+**Could** · `cap:C3.2` · 3 issues · 2.00 j · 8 tours · **3/3 prêtes**
 
 | Issue | Titre | Taille | Prête |
 |---|---|---|---|
-| [#587](https://github.com/gilmry/koprogo/issues/587) | [Story 5.3] Syndic = community.moderator (RBAC Community SEL/Poll/Notice/Shar… | M | manque 4/8 |
-| [#588](https://github.com/gilmry/koprogo/issues/588) | [Story 5.4] Reservation.on_behalf_of_acp (exception syndic) | M | manque 4/8 |
-| [#589](https://github.com/gilmry/koprogo/issues/589) | [Story 5.5] Comptable (encodeur ET émetteur) 403 sur /community/* | S | manque 3/8 |
+| [#587](https://github.com/gilmry/koprogo/issues/587) | [Story 5.3] Syndic = community.moderator (RBAC Community SEL/Poll/Notice/Shar… | M | oui |
+| [#588](https://github.com/gilmry/koprogo/issues/588) | [Story 5.4] Reservation.on_behalf_of_acp (exception syndic) | M | oui |
+| [#589](https://github.com/gilmry/koprogo/issues/589) | [Story 5.5] Comptable (encodeur ET émetteur) 403 sur /community/* | S | oui |
 
 ### C3.3 — Une ACP active les modules qu'elle veut
 
-**Could** · `cap:C3.3` · 4 issues · 3.50 j · 14 tours · **0/4 prêtes**
+**Could** · `cap:C3.3` · 4 issues · 3.50 j · 14 tours · **4/4 prêtes**
 
 | Issue | Titre | Taille | Prête |
 |---|---|---|---|
-| [#585](https://github.com/gilmry/koprogo/issues/585) | [Story 5.1] Table acp_enabled_modules + ModuleGuard middleware + ModuleDisabl… | L | manque 4/8 |
-| [#586](https://github.com/gilmry/koprogo/issues/586) | [Story 5.2] UI ModuleGate.svelte + store enabled_modules | M | manque 4/8 |
-| [#590](https://github.com/gilmry/koprogo/issues/590) | [Story 5.6] Activation/désactivation modules audité + archivage data (jamais … | M | manque 4/8 |
-| [#591](https://github.com/gilmry/koprogo/issues/591) | [Story 5.7] Onboarding modulaire wizard ≤ 5 min | L | manque 4/8 |
+| [#585](https://github.com/gilmry/koprogo/issues/585) | [Story 5.1] Table acp_enabled_modules + ModuleGuard middleware + ModuleDisabl… | L | oui |
+| [#586](https://github.com/gilmry/koprogo/issues/586) | [Story 5.2] UI ModuleGate.svelte + store enabled_modules | M | oui |
+| [#590](https://github.com/gilmry/koprogo/issues/590) | [Story 5.6] Activation/désactivation modules audité + archivage data (jamais … | M | oui |
+| [#591](https://github.com/gilmry/koprogo/issues/591) | [Story 5.7] Onboarding modulaire wizard ≤ 5 min | L | oui |
 
 ## E4 — Plateforme — identité, périmètre, droits
 
@@ -225,48 +229,48 @@ Ne dépend de rien. Qui est l'appelant, ce qu'il a le droit de voir, et ce qu'il
 
 ### C4.1 — Toute route décide de l'identité qu'elle reçoit
 
-**Must** · `cap:C4.1` · 2 issues · 2.00 j · 8 tours · **0/2 prêtes**
+**Must** · `cap:C4.1` · 2 issues · 2.00 j · 8 tours · **2/2 prêtes**
 
 | Issue | Titre | Taille | Prête |
 |---|---|---|---|
-| [#845](https://github.com/gilmry/koprogo/issues/845) | Trente routes ne vérifient aucune identité : modifier ou supprimer une assemb… | L | manque 8/8 |
-| [#864](https://github.com/gilmry/koprogo/issues/864) | 87 routes prennent une identité sans s'en servir pour décider : supprimer le … | L | manque 8/8 |
+| [#845](https://github.com/gilmry/koprogo/issues/845) | Trente routes ne vérifient aucune identité : modifier ou supprimer une assemb… | L | oui |
+| [#864](https://github.com/gilmry/koprogo/issues/864) | 87 routes prennent une identité sans s'en servir pour décider : supprimer le … | L | oui |
 
 ### C4.2 — Le périmètre est l'ACP, et il survit à la navigation
 
-**Must** · `cap:C4.2` · 4 issues · 3.25 j · 13 tours · **0/4 prêtes**
+**Must** · `cap:C4.2` · 4 issues · 3.25 j · 13 tours · **4/4 prêtes**
 
 | Issue | Titre | Taille | Prête |
 |---|---|---|---|
-| [#694](https://github.com/gilmry/koprogo/issues/694) | Scoping user↔ACP absent : un syndic/comptable voit toute l'organisation, pas … | L | manque 8/8 |
-| [#798](https://github.com/gilmry/koprogo/issues/798) | Refonte UX — le périmètre devient l'ACP dans le modèle de données et permissi… | L | manque 7/8 |
-| [#841](https://github.com/gilmry/koprogo/issues/841) | Le périmètre d'immeuble ne survit à aucune navigation : douze écrans le lisen… | M | manque 7/8 |
-| [#868](https://github.com/gilmry/koprogo/issues/868) | Deux sélecteurs d'immeuble coexistent, et partagent un ancrage de recette | S | manque 8/8 |
+| [#694](https://github.com/gilmry/koprogo/issues/694) | Scoping user↔ACP absent : un syndic/comptable voit toute l'organisation, pas … | L | oui |
+| [#798](https://github.com/gilmry/koprogo/issues/798) | Refonte UX — le périmètre devient l'ACP dans le modèle de données et permissi… | L | oui |
+| [#841](https://github.com/gilmry/koprogo/issues/841) | Le périmètre d'immeuble ne survit à aucune navigation : douze écrans le lisen… | M | oui |
+| [#868](https://github.com/gilmry/koprogo/issues/868) | Deux sélecteurs d'immeuble coexistent, et partagent un ancrage de recette | S | oui |
 
 ### C4.3 — Les droits RGPD sont exerçables depuis l'interface
 
-**Must** · `cap:C4.3` · 1 issues · 0.75 j · 3 tours · **0/1 prêtes**
+**Must** · `cap:C4.3` · 1 issues · 0.75 j · 3 tours · **1/1 prêtes**
 
 | Issue | Titre | Taille | Prête |
 |---|---|---|---|
-| [#842](https://github.com/gilmry/koprogo/issues/842) | Le droit à l'effacement RGPD est inatteignable : le serveur exige un mot de p… | M | manque 8/8 |
+| [#842](https://github.com/gilmry/koprogo/issues/842) | Le droit à l'effacement RGPD est inatteignable : le serveur exige un mot de p… | M | oui |
 
 ### C4.4 — Un prestataire reçoit un seul lien
 
-**Should** · `cap:C4.4` · 1 issues · 1.00 j · 4 tours · **0/1 prêtes**
+**Should** · `cap:C4.4` · 1 issues · 1.00 j · 4 tours · **1/1 prêtes**
 
 | Issue | Titre | Taille | Prête |
 |---|---|---|---|
-| [#835](https://github.com/gilmry/koprogo/issues/835) | Deux systèmes de liens magiques parallèles : le prestataire reçoit deux liens… | L | manque 8/8 |
+| [#835](https://github.com/gilmry/koprogo/issues/835) | Deux systèmes de liens magiques parallèles : le prestataire reçoit deux liens… | L | oui |
 
 ### C4.5 — Les erreurs sont typées, pas classées par sous-chaînes
 
-**Should** · `cap:C4.5` · 2 issues · 2.00 j · 8 tours · **0/2 prêtes**
+**Should** · `cap:C4.5` · 2 issues · 2.00 j · 8 tours · **2/2 prêtes**
 
 | Issue | Titre | Taille | Prête |
 |---|---|---|---|
-| [#555](https://github.com/gilmry/koprogo/issues/555) | EPIC: migrer Result<_, String> → Result<_, AppError> (1263 violations, CRITIC… | L | manque 7/8 |
-| [#762](https://github.com/gilmry/koprogo/issues/762) | Typer les erreurs applicatives au lieu de les classer par sous-chaînes | L | manque 8/8 |
+| [#555](https://github.com/gilmry/koprogo/issues/555) | EPIC: migrer Result<_, String> → Result<_, AppError> (1263 violations, CRITIC… | L | oui |
+| [#762](https://github.com/gilmry/koprogo/issues/762) | Typer les erreurs applicatives au lieu de les classer par sous-chaînes | L | oui |
 
 ## T1 — Refonte UX — épopée habilitante
 
@@ -276,38 +280,38 @@ Ne livre aucune capacité métier : elle rend les autres atteignables. BMAD la r
 
 ### C5.1 — Le socle visuel : jetons, icônes, libellés traduits
 
-**Should** · `cap:C5.1` · 2 issues · 2.00 j · 8 tours · **1/2 prêtes**
+**Should** · `cap:C5.1` · 2 issues · 2.00 j · 8 tours · **2/2 prêtes**
 
 | Issue | Titre | Taille | Prête |
 |---|---|---|---|
 | [#797](https://github.com/gilmry/koprogo/issues/797) | Refonte UX — jetons de design et jeu d'icônes SVG : remplacer les émojis qui … | L | oui |
-| [#834](https://github.com/gilmry/koprogo/issues/834) | 362 libellés de gabarit écrits en dur : les quatre langues s'arrêtent aux toasts | L | manque 8/8 |
+| [#834](https://github.com/gilmry/koprogo/issues/834) | 362 libellés de gabarit écrits en dur : les quatre langues s'arrêtent aux toasts | L | oui |
 
 ### C5.2 — Le contrat de tests tient la refonte
 
-**Must** · `cap:C5.2` · 2 issues · 2.00 j · 8 tours · **1/2 prêtes**
+**Must** · `cap:C5.2` · 2 issues · 2.00 j · 8 tours · **2/2 prêtes**
 
 | Issue | Titre | Taille | Prête |
 |---|---|---|---|
 | [#802](https://github.com/gilmry/koprogo/issues/802) | Refonte UX — adapter les tests sans en supprimer les règles produit qu'ils en… | L | oui |
-| [#803](https://github.com/gilmry/koprogo/issues/803) | Poser des data-testid là où il n'y en a pas : 29 % de couverture avant une re… | L | manque 8/8 |
+| [#803](https://github.com/gilmry/koprogo/issues/803) | Poser des data-testid là où il n'y en a pas : 29 % de couverture avant une re… | L | oui |
 
 ### C5.3 — Les huit maquettes sont implémentées
 
-**Could** · `cap:C5.3` · 10 issues · 9.25 j · 37 tours · **0/10 prêtes**
+**Could** · `cap:C5.3` · 10 issues · 9.25 j · 37 tours · **10/10 prêtes**
 
 | Issue | Titre | Taille | Prête |
 |---|---|---|---|
-| [#556](https://github.com/gilmry/koprogo/issues/556) | [EPIC] Refonte UX multi-rôle + modèle ACP — pipeline Maury (39 stories, 7 sli… | L | manque 8/8 |
-| [#818](https://github.com/gilmry/koprogo/issues/818) | Refonte UX — importer et implémenter la maquette Claude Design « Koprogo Revi… | L | manque 8/8 |
-| [#820](https://github.com/gilmry/koprogo/issues/820) | Refonte UX — importer et implémenter la maquette Claude Design « Roles Mobile… | L | manque 8/8 |
-| [#821](https://github.com/gilmry/koprogo/issues/821) | Refonte UX — importer et implémenter la maquette Claude Design « Admin Dashbo… | M | manque 8/8 |
-| [#822](https://github.com/gilmry/koprogo/issues/822) | Refonte UX — importer et implémenter la maquette Claude Design « Accountant D… | M | manque 8/8 |
-| [#823](https://github.com/gilmry/koprogo/issues/823) | Refonte UX — importer et implémenter la maquette Claude Design « KoproSidebar… | L | manque 8/8 |
-| [#824](https://github.com/gilmry/koprogo/issues/824) | Refonte UX — importer et implémenter la maquette Claude Design « Owner Mobile… | L | manque 8/8 |
-| [#825](https://github.com/gilmry/koprogo/issues/825) | Refonte UX — importer et implémenter la maquette Claude Design « Mobile First… | L | manque 8/8 |
-| [#826](https://github.com/gilmry/koprogo/issues/826) | Refonte UX — importer et implémenter la maquette Claude Design « Syndic Dashb… | L | manque 8/8 |
-| [#827](https://github.com/gilmry/koprogo/issues/827) | Refonte UX — importer et implémenter la maquette Claude Design « Lists (moder… | M | manque 8/8 |
+| [#556](https://github.com/gilmry/koprogo/issues/556) | [EPIC] Refonte UX multi-rôle + modèle ACP — pipeline Maury (39 stories, 7 sli… | L | oui |
+| [#818](https://github.com/gilmry/koprogo/issues/818) | Refonte UX — importer et implémenter la maquette Claude Design « Koprogo Revi… | L | oui |
+| [#820](https://github.com/gilmry/koprogo/issues/820) | Refonte UX — importer et implémenter la maquette Claude Design « Roles Mobile… | L | oui |
+| [#821](https://github.com/gilmry/koprogo/issues/821) | Refonte UX — importer et implémenter la maquette Claude Design « Admin Dashbo… | M | oui |
+| [#822](https://github.com/gilmry/koprogo/issues/822) | Refonte UX — importer et implémenter la maquette Claude Design « Accountant D… | M | oui |
+| [#823](https://github.com/gilmry/koprogo/issues/823) | Refonte UX — importer et implémenter la maquette Claude Design « KoproSidebar… | L | oui |
+| [#824](https://github.com/gilmry/koprogo/issues/824) | Refonte UX — importer et implémenter la maquette Claude Design « Owner Mobile… | L | oui |
+| [#825](https://github.com/gilmry/koprogo/issues/825) | Refonte UX — importer et implémenter la maquette Claude Design « Mobile First… | L | oui |
+| [#826](https://github.com/gilmry/koprogo/issues/826) | Refonte UX — importer et implémenter la maquette Claude Design « Syndic Dashb… | L | oui |
+| [#827](https://github.com/gilmry/koprogo/issues/827) | Refonte UX — importer et implémenter la maquette Claude Design « Lists (moder… | M | oui |
 
 ## T2 — Accessibilité et mobile
 
@@ -317,22 +321,22 @@ La cible est mobile-first et l'application est écrite desktop-first. L'écart n
 
 ### C6.1 — L'audit d'accessibilité voit les écrans authentifiés
 
-**Should** · `cap:C6.1` · 2 issues · 1.50 j · 6 tours · **0/2 prêtes**
+**Should** · `cap:C6.1` · 2 issues · 1.50 j · 6 tours · **2/2 prêtes**
 
 | Issue | Titre | Taille | Prête |
 |---|---|---|---|
-| [#592](https://github.com/gilmry/koprogo/issues/592) | [Story 5.8] Gate CI a11y axe-core + data-testid + Lighthouse | M | manque 4/8 |
-| [#865](https://github.com/gilmry/koprogo/issues/865) | L'audit d'accessibilité n'examine que l'écran de connexion : aucun écran auth… | M | manque 8/8 |
+| [#592](https://github.com/gilmry/koprogo/issues/592) | [Story 5.8] Gate CI a11y axe-core + data-testid + Lighthouse | M | oui |
+| [#865](https://github.com/gilmry/koprogo/issues/865) | L'audit d'accessibilité n'examine que l'écran de connexion : aucun écran auth… | M | oui |
 
 ### C6.2 — Le produit est utilisable à une largeur de téléphone
 
-**Should** · `cap:C6.2` · 3 issues · 2.00 j · 8 tours · **0/3 prêtes**
+**Should** · `cap:C6.2` · 3 issues · 2.00 j · 8 tours · **3/3 prêtes**
 
 | Issue | Titre | Taille | Prête |
 |---|---|---|---|
-| [#866](https://github.com/gilmry/koprogo/issues/866) | Six tableaux illisibles sur téléphone, dont trois qui coupent leurs colonnes … | M | manque 8/8 |
-| [#869](https://github.com/gilmry/koprogo/issues/869) | Aucune spec Playwright ne s'exécute à une largeur de téléphone, alors que tou… | M | manque 8/8 |
-| [#871](https://github.com/gilmry/koprogo/issues/871) | Quatre défauts d'affichage relevés au banc mobile : NaN €, « Failed to fetch … | S | manque 8/8 |
+| [#866](https://github.com/gilmry/koprogo/issues/866) | Six tableaux illisibles sur téléphone, dont trois qui coupent leurs colonnes … | M | oui |
+| [#869](https://github.com/gilmry/koprogo/issues/869) | Aucune spec Playwright ne s'exécute à une largeur de téléphone, alors que tou… | M | oui |
+| [#871](https://github.com/gilmry/koprogo/issues/871) | Quatre défauts d'affichage relevés au banc mobile : NaN €, « Failed to fetch … | S | oui |
 
 ## T3 — Harnais de recette
 
@@ -353,11 +357,11 @@ Sprint 0 continué. Ce qui permet de BOUCLER : sans lui, aucune autre capacité 
 
 ### C7.2 — La taxonomie des tests est la gate de release
 
-**Should** · `cap:C7.2` · 1 issues · 1.00 j · 4 tours · **0/1 prêtes**
+**Should** · `cap:C7.2` · 1 issues · 1.00 j · 4 tours · **1/1 prêtes**
 
 | Issue | Titre | Taille | Prête |
 |---|---|---|---|
-| [#427](https://github.com/gilmry/koprogo/issues/427) | Validation — taxonomie tests 4 catégories + revue humaine+Cowork comme gate r… | L | manque 4/8 |
+| [#427](https://github.com/gilmry/koprogo/issues/427) | Validation — taxonomie tests 4 catégories + revue humaine+Cowork comme gate r… | L | oui |
 
 ## T4 — Documentation vivante multi-persona
 
@@ -367,45 +371,45 @@ Vient après que les parcours fonctionnent : filmer un écran qui casse produit 
 
 ### C8.1 — Les six parcours par persona sont filmés
 
-**Could** · `cap:C8.1` · 7 issues · 5.75 j · 23 tours · **0/7 prêtes**
+**Could** · `cap:C8.1` · 7 issues · 5.75 j · 23 tours · **7/7 prêtes**
 
 | Issue | Titre | Taille | Prête |
 |---|---|---|---|
-| [#805](https://github.com/gilmry/koprogo/issues/805) | Documentation vivante multi-persona : expliquer le logiciel par rôle, sur le … | M | manque 8/8 |
-| [#806](https://github.com/gilmry/koprogo/issues/806) | Documentation vivante — parcours du SYNDIC, de la première connexion à la clô… | L | manque 8/8 |
-| [#807](https://github.com/gilmry/koprogo/issues/807) | Documentation vivante — parcours du COPROPRIÉTAIRE, le rôle que cinq recettes… | L | manque 8/8 |
-| [#808](https://github.com/gilmry/koprogo/issues/808) | Documentation vivante — parcours du COMPTABLE, le rôle le mieux cadré du produit | M | manque 7/8 |
-| [#809](https://github.com/gilmry/koprogo/issues/809) | Documentation vivante — parcours de l'ADMINISTRATEUR : ce qu'il crée, et ce q… | M | manque 8/8 |
-| [#815](https://github.com/gilmry/koprogo/issues/815) | Documentation vivante — parcours du prestataire : du ticket reçu au rapport d… | M | manque 8/8 |
-| [#816](https://github.com/gilmry/koprogo/issues/816) | Documentation vivante — parcours du conseil de copropriété : surveiller le sy… | M | manque 8/8 |
+| [#805](https://github.com/gilmry/koprogo/issues/805) | Documentation vivante multi-persona : expliquer le logiciel par rôle, sur le … | M | oui |
+| [#806](https://github.com/gilmry/koprogo/issues/806) | Documentation vivante — parcours du SYNDIC, de la première connexion à la clô… | L | oui |
+| [#807](https://github.com/gilmry/koprogo/issues/807) | Documentation vivante — parcours du COPROPRIÉTAIRE, le rôle que cinq recettes… | L | oui |
+| [#808](https://github.com/gilmry/koprogo/issues/808) | Documentation vivante — parcours du COMPTABLE, le rôle le mieux cadré du produit | M | oui |
+| [#809](https://github.com/gilmry/koprogo/issues/809) | Documentation vivante — parcours de l'ADMINISTRATEUR : ce qu'il crée, et ce q… | M | oui |
+| [#815](https://github.com/gilmry/koprogo/issues/815) | Documentation vivante — parcours du prestataire : du ticket reçu au rapport d… | M | oui |
+| [#816](https://github.com/gilmry/koprogo/issues/816) | Documentation vivante — parcours du conseil de copropriété : surveiller le sy… | M | oui |
 
 ### C8.2 — Les quatre workflows transverses sont filmés
 
-**Could** · `cap:C8.2` · 4 issues · 3.25 j · 13 tours · **0/4 prêtes**
+**Could** · `cap:C8.2` · 4 issues · 3.25 j · 13 tours · **4/4 prêtes**
 
 | Issue | Titre | Taille | Prête |
 |---|---|---|---|
-| [#810](https://github.com/gilmry/koprogo/issues/810) | Workflow multi-persona — le cycle de vie d'une assemblée générale, du syndic … | L | manque 8/8 |
-| [#811](https://github.com/gilmry/koprogo/issues/811) | Workflow multi-persona — le circuit d'une facture, du fournisseur au copropri… | M | manque 8/8 |
-| [#812](https://github.com/gilmry/koprogo/issues/812) | Workflow multi-persona — la naissance d'une copropriété, de l'administrateur … | M | manque 8/8 |
-| [#817](https://github.com/gilmry/koprogo/issues/817) | Workflow multi-persona — le ticket, du copropriétaire qui signale au prestata… | M | manque 8/8 |
+| [#810](https://github.com/gilmry/koprogo/issues/810) | Workflow multi-persona — le cycle de vie d'une assemblée générale, du syndic … | L | oui |
+| [#811](https://github.com/gilmry/koprogo/issues/811) | Workflow multi-persona — le circuit d'une facture, du fournisseur au copropri… | M | oui |
+| [#812](https://github.com/gilmry/koprogo/issues/812) | Workflow multi-persona — la naissance d'une copropriété, de l'administrateur … | M | oui |
+| [#817](https://github.com/gilmry/koprogo/issues/817) | Workflow multi-persona — le ticket, du copropriétaire qui signale au prestata… | M | oui |
 
 ### C8.3 — Les cent specs e2e racontent le produit par persona
 
-**Could** · `cap:C8.3` · 1 issues · 1.00 j · 4 tours · **0/1 prêtes**
+**Could** · `cap:C8.3` · 1 issues · 1.00 j · 4 tours · **1/1 prêtes**
 
 | Issue | Titre | Taille | Prête |
 |---|---|---|---|
-| [#813](https://github.com/gilmry/koprogo/issues/813) | Documentation vivante — restructurer les 100 tests e2e par persona pour que l… | L | manque 8/8 |
+| [#813](https://github.com/gilmry/koprogo/issues/813) | Documentation vivante — restructurer les 100 tests e2e par persona pour que l… | L | oui |
 
 ### C8.4 — La documentation est rangée et publiée
 
-**Could** · `cap:C8.4` · 2 issues · 1.25 j · 5 tours · **0/2 prêtes**
+**Could** · `cap:C8.4` · 2 issues · 1.25 j · 5 tours · **2/2 prêtes**
 
 | Issue | Titre | Taille | Prête |
 |---|---|---|---|
-| [#595](https://github.com/gilmry/koprogo/issues/595) | [Story Tx.3] Documentation docs/agent-activity/ (Tier 2 log) | S | manque 4/8 |
-| [#854](https://github.com/gilmry/koprogo/issues/854) | Ranger la documentation avant la release : 29 markdown à la racine de docs/, … | M | manque 8/8 |
+| [#595](https://github.com/gilmry/koprogo/issues/595) | [Story Tx.3] Documentation docs/agent-activity/ (Tier 2 log) | S | oui |
+| [#854](https://github.com/gilmry/koprogo/issues/854) | Ranger la documentation avant la release : 29 markdown à la racine de docs/, … | M | oui |
 
 ## T5 — Ops et infrastructure
 
@@ -415,41 +419,41 @@ Le déploiement, l'IaC, les vulnérabilités, et les garde-fous des agents.
 
 ### C9.1 — Le déploiement tient la charge et le partage du réseau
 
-**Should** · `cap:C9.1` · 4 issues · 3.50 j · 14 tours · **0/4 prêtes**
+**Should** · `cap:C9.1` · 4 issues · 3.50 j · 14 tours · **4/4 prêtes**
 
 | Issue | Titre | Taille | Prête |
 |---|---|---|---|
-| [#453](https://github.com/gilmry/koprogo/issues/453) | Pipeline TLS dispatch dev/integration/staging via OVH DNS-01 | M | manque 8/8 |
-| [#515](https://github.com/gilmry/koprogo/issues/515) | infra: ArgoCD GitOps fresh-cluster deployment fails on 5 gaps (dry-run Docker… | L | manque 8/8 |
-| [#718](https://github.com/gilmry/koprogo/issues/718) | [BUG] 502 Bad Gateway / timeouts sur api.koprogo.com sous rafale de requêtes … | L | manque 8/8 |
-| [#731](https://github.com/gilmry/koprogo/issues/731) | Collision d'alias DNS sur le réseau partagé ecosolva-web : 4 projets exposent… | M | manque 8/8 |
+| [#453](https://github.com/gilmry/koprogo/issues/453) | Pipeline TLS dispatch dev/integration/staging via OVH DNS-01 | M | oui |
+| [#515](https://github.com/gilmry/koprogo/issues/515) | infra: ArgoCD GitOps fresh-cluster deployment fails on 5 gaps (dry-run Docker… | L | oui |
+| [#718](https://github.com/gilmry/koprogo/issues/718) | [BUG] 502 Bad Gateway / timeouts sur api.koprogo.com sous rafale de requêtes … | L | oui |
+| [#731](https://github.com/gilmry/koprogo/issues/731) | Collision d'alias DNS sur le réseau partagé ecosolva-web : 4 projets exposent… | M | oui |
 
 ### C9.2 — L'IaC est testée et relue
 
-**Could** · `cap:C9.2` · 3 issues · 2.75 j · 11 tours · **0/3 prêtes**
+**Could** · `cap:C9.2` · 3 issues · 2.75 j · 11 tours · **3/3 prêtes**
 
 | Issue | Titre | Taille | Prête |
 |---|---|---|---|
-| [#354](https://github.com/gilmry/koprogo/issues/354) | refactor(infra): Tests IaC manquants — terraform validate, ansible-lint, mole… | L | manque 8/8 |
-| [#355](https://github.com/gilmry/koprogo/issues/355) | refactor(infra): Restructuration IaC — repo séparé, tests, policy-as-code | L | manque 8/8 |
-| [#466](https://github.com/gilmry/koprogo/issues/466) | RFC: Stratégie GitOps multi-environnement — branches infra/* + main + Applica… | M | manque 8/8 |
+| [#354](https://github.com/gilmry/koprogo/issues/354) | refactor(infra): Tests IaC manquants — terraform validate, ansible-lint, mole… | L | oui |
+| [#355](https://github.com/gilmry/koprogo/issues/355) | refactor(infra): Restructuration IaC — repo séparé, tests, policy-as-code | L | oui |
+| [#466](https://github.com/gilmry/koprogo/issues/466) | RFC: Stratégie GitOps multi-environnement — branches infra/* + main + Applica… | M | oui |
 
 ### C9.3 — Les vulnérabilités connues sont fermées
 
-**Should** · `cap:C9.3` · 1 issues · 0.75 j · 3 tours · **0/1 prêtes**
+**Should** · `cap:C9.3` · 1 issues · 0.75 j · 3 tours · **1/1 prêtes**
 
 | Issue | Titre | Taille | Prête |
 |---|---|---|---|
-| [#432](https://github.com/gilmry/koprogo/issues/432) | Security — 14 dependabot vulnerabilities sur main (5 high / 3 moderate / 6 low) | M | manque 8/8 |
+| [#432](https://github.com/gilmry/koprogo/issues/432) | Security — 14 dependabot vulnerabilities sur main (5 high / 3 moderate / 6 low) | M | oui |
 
 ### C9.4 — Les garde-fous des agents sont audités
 
-**Could** · `cap:C9.4` · 2 issues · 2.00 j · 8 tours · **0/2 prêtes**
+**Could** · `cap:C9.4` · 2 issues · 2.00 j · 8 tours · **2/2 prêtes**
 
 | Issue | Titre | Taille | Prête |
 |---|---|---|---|
-| [#425](https://github.com/gilmry/koprogo/issues/425) | Méta — Garde-fous IA: audit qualité+sécurité IaC, cause racine, plan de reméd… | L | manque 8/8 |
-| [#429](https://github.com/gilmry/koprogo/issues/429) | Méta — Operations runtime: deploy IaC en prod + agents DevOps/SRE/Support/CSI… | L | manque 4/8 |
+| [#425](https://github.com/gilmry/koprogo/issues/425) | Méta — Garde-fous IA: audit qualité+sécurité IaC, cause racine, plan de reméd… | L | oui |
+| [#429](https://github.com/gilmry/koprogo/issues/429) | Méta — Operations runtime: deploy IaC en prod + agents DevOps/SRE/Support/CSI… | L | oui |
 
 ## T6 — Arbitrages produit en attente
 
@@ -459,17 +463,17 @@ Des questions ouvertes, pas des défauts. La Méthode Foyer les veut en RFC, dis
 
 ### C10.1 — Le groupe « Communauté » du comptable est tranché
 
-**Must** · `cap:C10.1` · 1 issues · 0.50 j · 2 tours · **0/1 prêtes**
+**Must** · `cap:C10.1` · 1 issues · 0.50 j · 2 tours · **1/1 prêtes**
 
 | Issue | Titre | Taille | Prête |
 |---|---|---|---|
-| [#856](https://github.com/gilmry/koprogo/issues/856) | Décision produit : le comptable doit-il voir un groupe « Communauté » réduit … | S | manque 6/8 |
+| [#856](https://github.com/gilmry/koprogo/issues/856) | Décision produit : le comptable doit-il voir un groupe « Communauté » réduit … | S | oui |
 
 ## Estimation
 
 | Épopée | Issues | Jours | Tours |
 |---|---:|---:|---:|
-| E1 — Copropriété | 14 | 13.00 | 52 |
+| E1 — Copropriété | 13 | 12.25 | 49 |
 | E2 — Comptabilité | 3 | 2.50 | 10 |
 | E3 — Économie circulaire | 9 | 7.25 | 29 |
 | E4 — Plateforme | 10 | 9.00 | 36 |
@@ -479,7 +483,7 @@ Des questions ouvertes, pas des défauts. La Méthode Foyer les veut en RFC, dis
 | T4 — Documentation vivante multi-persona | 14 | 11.25 | 45 |
 | T5 — Ops et infrastructure | 10 | 9.00 | 36 |
 | T6 — Arbitrages produit en attente | 1 | 0.50 | 2 |
-| **Total** | **85** | **73.25** | **293** |
+| **Total** | **84** | **72.50** | **290** |
 
 `S` = 0,5 j · `M` = 0,75 j · `L` = 1 j — wall-clock du superviseur, pas
 temps machine. Les tours mesurent l'autre axe, le coût en tokens.

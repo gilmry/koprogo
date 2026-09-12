@@ -13,7 +13,7 @@
 - **Archétype** : full-stack *(Rust hexagonal + Astro/Svelte 5 en îlots, PostgreSQL)*
 - **Substrat d'exécution** : conteneur — `~/bin/kcargo` pour Rust, jamais `cargo` sur l'hôte
 - **Démarré le** : 2026-09-12
-- **Dernière mise à jour** : 2026-09-12 (par : Claude — étape 4 close, 84/84)
+- **Dernière mise à jour** : 2026-09-12 (par : Claude — **phase A close, livrable SIGNÉ**)
 
 ## Répartition des rôles
 
@@ -32,16 +32,14 @@ appelle une signature et non une validation.
 
 ## Position courante
 
-- **Phase / étape** : Phase A · conception BMAD ciblée sur la release · **étape 4
-  terminée côté agent** — en attente de la signature du PO, qui la clôt.
-- **Prochaine action attendue — et elle est humaine** : le PO relit et **signe**
-  `docs/BACKLOG_STRUCTURE_v0_1_0.md`. C'est la modalité qu'il a choisie : une
-  seule signature, après la préparation complète. Elle clôt la phase A.
-- **Ensuite, phase B** : vérifier le socle avant d'ajouter. Elle commence par
-  exécuter [ADR 0050](docs/adr/0050-pile-de-recette-sur-le-vps-ports-decales.md)
-  — décaler les quatre ports, faire viser `http://localhost:8090` à
-  `make test-e2e`, corriger `docs/E2E_TESTING_GUIDE.rst`. Tant que `e2e` est
-  🔴, le parcours interdit d'empiler la release.
+- **Phase / étape** : **Phase A close.** Livrable BMAD **SIGNÉ** le 2026-09-12
+  par Gilles Maury. Passage à la **phase B — vérifier le socle avant d'ajouter**.
+- **Prochaine action attendue** : exécuter
+  [ADR 0050](docs/adr/0050-pile-de-recette-sur-le-vps-ports-decales.md) —
+  décaler les quatre ports, faire viser `http://localhost:8090` à
+  `make test-e2e` et `make docs-with-videos`, corriger
+  `docs/E2E_TESTING_GUIDE.rst`. C'est le premier pas de la phase B : tant que
+  `e2e` est 🔴, le parcours interdit d'empiler la release.
 - **Le 🔴 sur les dialectes est éteint par le travail** : les 12 issues
   restantes ont été traduites au rang 7. L'instrument de mesure n'a pas été
   touché — c'est le travail qui a fait monter le chiffre, pas sa définition.
@@ -49,8 +47,7 @@ appelle une signature et non une validation.
   **après** la préparation complète ; ni #872 (harnais, ADR 0050) ni #855 ni
   #802 n'entrent en fabrication avant. L'ADR 0050 attend, elle n'est pas
   perdue.
-- **Rôle à jouer** : `.foyer/pilote/roles/conception-bmad.md` — puis
-  `.foyer/pilote/roles/gate-runner.md` une fois la signature acquise.
+- **Rôle à jouer** : `.foyer/pilote/roles/gate-runner.md`.
 
 ### Ce qui est déjà produit de la phase A
 
@@ -65,7 +62,15 @@ appelle une signature et non une validation.
 - **Validateur** : ✅ **fait côté agent**. **84 issues sur 84** portent les huit
   éléments d'une story prête, et **84 sur 84** portent les quatre classes de
   tests (`scripts/backlog-pret.py`, mesuré le 2026-09-12). Le livrable porte
-  encore `NON SIGNÉ` : **la signature est l'acte du PO**, pas de l'agent.
+  **`SIGNÉ`** — Gilles Maury, 2026-09-12, Product Owner / superviseur.
+
+> **Ce que la signature atteste, et ce qu'elle n'atteste pas.** Sa `portee`
+> l'écrit dans le livrable : le classement, le chiffrage en bornes hautes, et la
+> clôture de la préparation. **Pas** la qualité de chaque story.
+>
+> Le script préserve désormais ce bloc à la régénération : une signature est un
+> fait humain, tout le reste est généré, et l'écraser obligerait le superviseur
+> à re-signer un document qu'il a déjà relu.
 
 > **Les huit rangs sont couverts**, orphelines comprises — #578, #579 (C1.2) et
 > #427 (C7.2) ont leur story même si leur **rang** attend encore un arbitrage.
@@ -117,7 +122,7 @@ un défaut de structure. Seul l'ordre des capacités est repris.
 | 3 | C10.1 — arbitrage du groupe « Communauté » | ✅ tranché (ADR 0052) · story prête |
 | 4 | C5.2 puis C5.1 — contrat de tests, socle visuel | ✅ 4/4 stories prêtes |
 | 5 | C1.1 / C1.3 — le noyau légal | ✅ 8/8 stories prêtes · #840 fermée |
-| 6 | les `Should`, parallélisables | ✅ 17/17 stories prêtes |
+| 6 | les `Should`, parallélisables **+ C1.2 et C7.2** | ✅ 20/20 stories prêtes |
 | 7 | les `Could` | ✅ 39/39 stories prêtes |
 | 8 | G1 puis G2 — revue humaine signée, puis le tag | hors périmètre agent |
 
@@ -125,51 +130,7 @@ un défaut de structure. Seul l'ordre des capacités est repris.
 
 ### 🔴 En attente (le PO doit trancher une MODALITÉ)
 
-- **Point** : trois issues sont classées mais **ordonnancées nulle part**
-  - **Preuve jointe** : le tableau « Ordre » du backlog énumère, au rang 6,
-    dix des **treize** capacités `Should`. **C1.2** (#578, #579) et **C7.2**
-    (#427) n'apparaissent dans aucun rang, du 1 au 8. Le classement se dit
-    « exhaustif et exclusif » — il l'est pour la *classification*, pas pour
-    l'*ordonnancement*, et rien ne gardait cette seconde propriété.
-  - **Question de modalité** : à quel rang les place-t-on ? Le 6 avec les autres
-    `Should`, ou ailleurs si leur dépendance l'impose ?
-  - **Conséquence si on ne tranche pas** : une capacité sans rang n'est jamais
-    planifiée, et sortira du radar sans qu'aucun contrôle ne s'en aperçoive.
-
-- **Point** : deux dialectes de story coexistent, et le compteur n'en lit qu'un
-  - **Preuve jointe** : **16 issues sur 84** portent `## Goal` + `Acceptance
-    Criteria (4 catégories)` + `Effort` + `Files` — le dialecte Maury d'origine.
-    Elles ont **la substance** d'une story prête (les quatre classes y sont, et
-    un effort), mais pas le vocabulaire que `scripts/backlog-pret.py` cherche
-    (« En tant que », « Étant donné », « Couche », « Taille »). Elles comptent
-    donc pour non prêtes. Quatre ont été traduites depuis (#576, #577, #581 au
-    rang 5, #592 au rang 6) ; **12 restent** : #578, #579, #582, #583, #585,
-    #586, #587, #588, #589, #590, #591, #595.
-  - **✅ Éteint le 2026-09-12 par l'option A** : les 12 restantes ont été
-    traduites au fil du rang 7. L'instrument de mesure n'a **pas** été modifié —
-    c'est le travail qui a fait monter le chiffre, pas sa définition. L'option B
-    aurait fait passer le compteur de 25 à 38 sans qu'une seule story soit
-    préparée ; elle n'a plus d'objet.
-
-- **Point** : #694 — son rang contredit ce qu'elle dit d'elle-même
-  - **Preuve jointe** : l'issue écrit « **non bloquant pour v0.1.0** (bêta
-    fermée) », et elle est classée `cap:C4.2` — **Must**, **rang 2**. Les deux
-    ne peuvent pas être vrais ensemble. Relevé en rédigeant sa story.
-  - **Question de modalité** : l'ordre de release est une décision de PO. Soit
-    l'issue est périmée sur ce point, soit son rang l'est.
-  - **Options** : A) elle reste au rang 2, la mention « non bloquant » est
-    retirée · B) elle descend au rang 6 avec les `Should` · C) elle reste au
-    rang 2 et sa mention est justifiée dans l'issue.
-  - **Borne** : [ADR 0049](docs/adr/0049-perimetre-v0-1-0-integral.md) a fixé
-    qu'elle ne sort **pas** du périmètre. Seul son rang est en question.
-
-- **Point** : #694 — une question de **destination**, pas de modalité
-  - **Preuve jointe** : la story le pose explicitement et bloque dessus.
-  - **Question** : un syndic a-t-il accès à l'organisation entière par défaut,
-    avec restriction optionnelle — ou refus par défaut et accès ACP explicite ?
-    Le refus par défaut est plus sûr et plus coûteux à déployer sur l'existant.
-  - **Borne** : ne se tranche pas au moment du code. La story n'entre pas en
-    fabrication avant.
+**Aucun.** Tous les arbitrages ouverts ont été tranchés le 2026-09-12.
 
 ### ✅ Tranchés
 
@@ -183,9 +144,20 @@ un défaut de structure. Seul l'ordre des capacités est repris.
 | **#855 — lien du notaire** | **sept jours, plusieurs lectures, renouvelable** par le syndic ; chaque consultation journalisée | Gilles Maury | 2026-09-12 | [ADR 0051](docs/adr/0051-lien-notaire-sept-jours-renouvelable.md) |
 | **#856 — « Communauté » et le comptable** | **la maquette est corrigée** ; `permissions.ts` et le test `@security` ne bougent pas. Débloque #802 intégralement | Gilles Maury | 2026-09-12 | [ADR 0052](docs/adr/0052-le-comptable-ne-voit-pas-communaute.md) |
 | **Signature du livrable BMAD** | **une seule signature, après** que les stories portent les huit éléments. Elle attestera que la fabrication peut commencer, pas seulement que le classement tient | Gilles Maury | 2026-09-12 | ce registre |
+| **Livrable BMAD — SIGNÉ** | signé au terme de la préparation (84/84). Portée explicite : classement + chiffrage + clôture de la préparation, **pas** la qualité story par story | Gilles Maury | 2026-09-12 | `docs/BACKLOG_STRUCTURE_v0_1_0.md` |
+| **#694 — accès d'un collaborateur à une ACP** | **refus par défaut**, accès explicite par table d'association. Rend #694 structurellement requise : sa mention « non bloquant » est périmée et son rang 2 confirmé | Gilles Maury | 2026-09-12 | [ADR 0053](docs/adr/0053-acces-acp-refus-par-defaut.md) |
+| **Rang des 3 orphelines** | C1.2 (#578, #579) et C7.2 (#427) rejoignent le **rang 6**, avec les autres `Should`. Leurs stories étaient déjà prêtes | Gilles Maury | 2026-09-12 | ce registre |
+| **Dialecte des stories** | **option A — traduire**, jamais modifier le compteur. Les 12 restantes traduites au rang 7 | Gilles Maury | 2026-09-12 | ce registre |
 
 ## Journal (chronologie courte)
 
+- 2026-09-12 — **PHASE A CLOSE.** Livrable BMAD **signé** par Gilles Maury.
+  #694 tranchée en **refus par défaut** (ADR 0053), ce qui rend la table
+  d'association structurellement requise et périme sa mention « non bloquant ».
+  Les 3 orphelines placées au rang 6. **Plus aucun arbitrage 🔴.**
+- 2026-09-12 — **le script de backlog préserve désormais la signature** à la
+  régénération, et #840 (fermée) retirée des capacités — sa propre garde
+  l'exigeait. Totaux : 84 issues, 72,50 j, 290 tours.
 - 2026-09-12 — **étape 4 close côté agent : 84/84.** Les trois orphelines
   (#578, #579, #427) préparées sans préjuger de leur rang. Le backlog v0.1.0
   est intégralement outillé pour la fabrication ; reste la signature du PO,

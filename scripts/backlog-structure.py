@@ -93,7 +93,10 @@ EPOPEES = [
 # les 84 au périmètre du tag ; seul le superviseur peut la défaire.
 CAPACITES = [
     ("C1.1", "E1", "Une assemblée générale aboutit, de la convocation au PV", "Must",
-     {780: "L", 840: "M", 848: "L", 850: "L", 576: "L", 577: "L", 581: "M"}),
+     # #840 retirée le 2026-09-12 : fermée (Art. 3.87 §2, résolution sans point
+     # d'ordre du jour). La garde du script l'exigeait — un backlog qui cite des
+     # tickets fermés cesse d'être lu.
+     {780: "L", 848: "L", 850: "L", 576: "L", 577: "L", 581: "M"}),
     ("C1.2", "E1", "Le procès-verbal fait foi", "Should",
      {578: "L", 579: "L"}),
     ("C1.3", "E1", "Le registre légal atteste ce qu'il déclare", "Must",
@@ -224,6 +227,51 @@ def corps_des_issues():
     return {i["number"]: i["body"] or "" for i in json.loads(brut)}
 
 
+SORTIE = os.path.join(DEPOT, "docs", "BACKLOG_STRUCTURE_v0_1_0.md")
+
+NON_SIGNE = [
+    "signature_humaine:",
+    "  date: null",
+    "  nom: null",
+    "  role: null",
+    "  etat: NON SIGNÉ — en attente de validation du superviseur",
+]
+
+
+def signature_existante():
+    """Relit le bloc `signature_humaine` du livrable déjà écrit.
+
+    Le reste du document se régénère ; la signature, non. C'est la seule
+    ligne que le script n'a pas produite, et l'écraser à chaque génération
+    obligerait le superviseur à re-signer un document qu'il a déjà relu —
+    ce qui viderait la signature de son sens.
+
+    On ne reporte QUE le bloc, tel quel, sans l'interpréter : un état signé
+    reste signé, un état vide reste vide. Le script ne signe jamais.
+    """
+    try:
+        with open(SORTIE, encoding="utf-8") as f:
+            lignes = f.read().split("\n")
+    except OSError:
+        return NON_SIGNE
+
+    if not lignes or lignes[0].strip() != "---":
+        return NON_SIGNE
+
+    bloc, dedans = [], False
+    for ligne in lignes[1:]:
+        if ligne.strip() == "---":
+            break
+        if ligne.startswith("signature_humaine:"):
+            dedans = True
+            bloc.append(ligne)
+        elif dedans and ligne.startswith("  "):
+            bloc.append(ligne)
+        elif dedans:
+            break
+    return bloc if bloc else NON_SIGNE
+
+
 def livrable(vivantes, classees):
     corps = corps_des_issues()
     par_epopee = {}
@@ -240,16 +288,17 @@ def livrable(vivantes, classees):
     # humaine — trace obligatoire pour le répondre-de. » Il reste VIDE tant
     # que le superviseur n'a pas relu : déclarer signé un livrable qui ne
     # l'est pas serait précisément la faute que la signature doit empêcher.
+    #
+    # Mais une signature est un fait HUMAIN, et tout le reste est généré :
+    # la régénérer à `null` effacerait le seul élément que le script n'a pas
+    # produit. On la relit donc dans le fichier existant et on la reporte.
     w("---")
     w("livrable: Epics & User Stories (BMAD phase E — TOGAF Solutions)")
     w("projet: KoproGo")
     w("jalon: v0.1.0")
     w("genere_par: scripts/backlog-structure.py")
-    w("signature_humaine:")
-    w("  date: null")
-    w("  nom: null")
-    w("  role: null")
-    w("  etat: NON SIGNÉ — en attente de validation du superviseur")
+    for ligne in signature_existante():
+        w(ligne)
     w("---")
     w("")
     w("# Backlog structuré — v0.1.0")
