@@ -13,7 +13,7 @@
 - **Archétype** : full-stack *(Rust hexagonal + Astro/Svelte 5 en îlots, PostgreSQL)*
 - **Substrat d'exécution** : conteneur — `~/bin/kcargo` pour Rust, jamais `cargo` sur l'hôte
 - **Démarré le** : 2026-09-12
-- **Dernière mise à jour** : 2026-09-12 (par : Claude — les cinq arbitrages 🔴 tranchés par le PO)
+- **Dernière mise à jour** : 2026-09-12 (par : Claude — rang 2 porté à « Agent IA Ready »)
 
 ## Répartition des rôles
 
@@ -34,16 +34,13 @@ appelle une signature et non une validation.
 
 - **Phase / étape** : Phase A · conception BMAD ciblée sur la release · étape 4
   (Validateur → backlog « Agent IA Ready »)
-- **Prochaine action attendue** : exécuter [ADR 0050](docs/adr/0050-pile-de-recette-sur-le-vps-ports-decales.md)
-  — livrables 2, 3 et 5 de #872 : décaler les quatre ports, faire viser
-  `http://localhost:8090` à `make test-e2e` et `make docs-with-videos`,
-  corriger `docs/E2E_TESTING_GUIDE.rst`. C'est du **harnais**, que le parcours
-  place avant le métier ; ça rend `e2e` vert, donc `cap:C7.1` (rang 1) tenable,
-  donc la phase B franchissable.
-- **Après**, et pas avant : porter les stories à « Agent IA Ready ». Le PO a
-  choisi une signature unique **après** cette préparation — la fabrication des
-  fonctionnalités (#855, #802) n'ouvre donc pas tant que les stories ne sont
-  pas prêtes.
+- **Prochaine action attendue** : poursuivre l'étape 4 — rang 3 (C10.1, dont
+  l'arbitrage est tranché par [ADR 0052](docs/adr/0052-le-comptable-ne-voit-pas-communaute.md)),
+  puis rang 4 (C5.2 puis C5.1). Les rangs 1 et 2 sont prêts.
+- **La fabrication n'ouvre pas encore.** Le PO a choisi une signature unique
+  **après** la préparation complète ; ni #872 (harnais, ADR 0050) ni #855 ni
+  #802 n'entrent en fabrication avant. L'ADR 0050 attend, elle n'est pas
+  perdue.
 - **Rôle à jouer** : `.foyer/pilote/roles/conception-bmad.md`
 
 ### Ce qui est déjà produit de la phase A
@@ -56,10 +53,15 @@ appelle une signature et non une validation.
   (`backend/tests/architecture.rs`), les dépendances croisées sont interdites.
 - **Chiffrage** : 73,25 j de wall-clock superviseur · 293 tours. **Bornes hautes
   de première passe**, à resserrer sur le réel par le CSI.
-- **Validateur** : ⚠️ **non fait**. **7 issues sur 84** portent les huit
-  éléments d'une story prête, et 25 portent les quatre classes de tests
-  (`scripts/backlog-pret.py`, mesuré le 2026-09-12). Le livrable porte
-  `NON SIGNÉ`.
+- **Validateur** : ⏳ **en cours**. **14 issues sur 84** portent les huit
+  éléments d'une story prête, et 32 portent les quatre classes de tests
+  (`scripts/backlog-pret.py`, mesuré le 2026-09-12 après le rang 2). Le
+  livrable porte `NON SIGNÉ` — la signature vient après la préparation.
+
+> **Rangs 1 et 2 prêts.** C7.1 l'était (4/4) ; les sept issues de C4.1, C4.2 et
+> C4.3 ont reçu leur story le 2026-09-12. Le contrôle est **de forme** : le
+> script cherche des marqueurs, pas du sens. Il l'écrit lui-même — « une borne
+> haute de la préparation, jamais un verdict ».
 
 > **84, et non 85.** Le backlog structuré a été généré à 85 issues ouvertes ;
 > #840 a été fermée le même jour, après la génération. Le document n'est pas
@@ -107,8 +109,25 @@ un défaut de structure. Seul l'ordre des capacités est repris.
 
 ### 🔴 En attente (le PO doit trancher une MODALITÉ)
 
-**Aucun.** Les cinq arbitrages ouverts ont été tranchés le 2026-09-12. Ce qui
-reste est du travail, pas une décision — et se lit dans « Position courante ».
+- **Point** : #694 — son rang contredit ce qu'elle dit d'elle-même
+  - **Preuve jointe** : l'issue écrit « **non bloquant pour v0.1.0** (bêta
+    fermée) », et elle est classée `cap:C4.2` — **Must**, **rang 2**. Les deux
+    ne peuvent pas être vrais ensemble. Relevé en rédigeant sa story.
+  - **Question de modalité** : l'ordre de release est une décision de PO. Soit
+    l'issue est périmée sur ce point, soit son rang l'est.
+  - **Options** : A) elle reste au rang 2, la mention « non bloquant » est
+    retirée · B) elle descend au rang 6 avec les `Should` · C) elle reste au
+    rang 2 et sa mention est justifiée dans l'issue.
+  - **Borne** : [ADR 0049](docs/adr/0049-perimetre-v0-1-0-integral.md) a fixé
+    qu'elle ne sort **pas** du périmètre. Seul son rang est en question.
+
+- **Point** : #694 — une question de **destination**, pas de modalité
+  - **Preuve jointe** : la story le pose explicitement et bloque dessus.
+  - **Question** : un syndic a-t-il accès à l'organisation entière par défaut,
+    avec restriction optionnelle — ou refus par défaut et accès ACP explicite ?
+    Le refus par défaut est plus sûr et plus coûteux à déployer sur l'existant.
+  - **Borne** : ne se tranche pas au moment du code. La story n'entre pas en
+    fabrication avant.
 
 ### ✅ Tranchés
 
@@ -125,6 +144,10 @@ reste est du travail, pas une décision — et se lit dans « Position courante 
 
 ## Journal (chronologie courte)
 
+- 2026-09-12 — **rang 2 porté à « Agent IA Ready »** : sept stories écrites
+  sur #845, #864 (C4.1), #868, #841, #798, #694 (C4.2) et #842 (C4.3). La
+  préparation passe de 7/84 à **14/84**, mesuré. #772 étant fermée, la
+  précondition de #798 est levée.
 - 2026-09-12 — **les quatre arbitrages restants tranchés** : #872 recette sur
   le VPS à ports décalés (ADR 0050), #855 lien notaire sept jours renouvelable
   (ADR 0051), #856 la maquette cède au test `@security` (ADR 0052), signature
