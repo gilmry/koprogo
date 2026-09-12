@@ -4,10 +4,19 @@ projet: KoproGo
 jalon: v0.1.0
 genere_par: scripts/gantt-passes.py
 signature_humaine:
-  date: null
-  nom: null
-  role: null
-  etat: NON SIGNÉ — en attente de validation du superviseur
+  date: 2026-09-12
+  nom: Gilles Maury
+  role: Product Owner / superviseur
+  etat: VALIDÉ — avec amendement d'orchestration multiagent
+  amendement: >-
+    Le ratio_supervision ne bride plus l'éventail. Le répondre-de est porté
+    par la revue de promotion de branche, instruite par les gates et la
+    vitrine. Objectif : paralléliser au maximum, orchestration Claude Code
+    multiagent.
+  reserve_inscrite: >-
+    Le mécanisme de preuve choisi n'est pas encore opérationnel (e2e et
+    doc-vivante sont rouges, #872). Et l'hôte plafonne à 2 agents quand le
+    plan en demande 10. Les deux sont écrits ci-dessous, non résolus.
 ---
 
 # Gantt de la v0.1.0 — en passes d'agent
@@ -128,57 +137,171 @@ Ce qu'il ne faut **pas** faire est réduire le binôme à une personne
 seule pour tenir la largeur : on gagne du wall-clock et on rachète
 du *bus factor* 1.
 
-## Le plan exécutable — dépendances *et* plafond de supervision
+## Le plan d'orchestration — multiagent, parallélisme maximal
 
-À 3 chantiers de front, la release demande
-**28 passes**. C'est ce plan qui se pilote ; la couche
-topologique ci-dessus dit seulement ce qui *pourrait* être mené de
-front si la supervision était infinie.
+**Amendement du 2026-09-12.** Le `ratio_supervision` ne bride plus
+l'éventail : le *répondre-de* est porté par la **revue de promotion de
+branche**, instruite par les gates et la vitrine. On ne supervise plus
+des agents en direct, on relit une preuve attachée à une branche.
 
-L'ordre à l'intérieur d'une passe suit le rang, puis le MoSCoW, puis la
-taille décroissante.
+Ce qui bride encore, et qui est **physique** :
 
-| Passe | Chantiers | Jours | Cumul | Capacités |
-|---|---|---:|---:|---|
-| **P1** | #872 (L), #870 (S), #694 (L) | 2.50 | 2.50 | C4.2, C7.1 |
-| **P2** | #696 (M), #832 (M), #798 (L) | 2.50 | 5.00 | C4.2, C7.1 |
-| **P3** | #864 (L), #841 (M), #842 (M) | 2.50 | 7.50 | C4.1, C4.2, C4.3 |
-| **P4** | #868 (S), #856 (S), #802 (L) | 2.00 | 9.50 | C10.1, C4.2, C5.2 |
-| **P5** | #803 (L), #797 (L), #834 (L) | 3.00 | 12.50 | C5.1, C5.2 |
-| **P6** | #576 (L), #780 (L), #847 (L) | 3.00 | 15.50 | C1.1, C1.3 |
-| **P7** | #848 (L), #850 (L), #581 (M) | 2.75 | 18.25 | C1.1 |
-| **P8** | #577 (L), #846 (M), #427 (L) | 2.75 | 21.00 | C1.1, C1.3, C7.2 |
-| **P9** | #515 (L), #579 (L), #718 (L) | 3.00 | 24.00 | C1.2, C9.1 |
-| **P10** | #578 (L), #762 (L), #779 (L) | 3.00 | 27.00 | C1.2, C3.1, C4.5 |
-| **P11** | #555 (L), #835 (L), #855 (L) | 3.00 | 30.00 | C1.5, C4.4, C4.5 |
-| **P12** | #845 (L), #867 (L), #432 (M) | 2.75 | 32.75 | C2.2, C4.1, C9.3 |
-| **P13** | #453 (M), #731 (M), #781 (M) | 2.25 | 35.00 | C3.1, C9.1 |
-| **P14** | #865 (M), #869 (M), #852 (S) | 2.00 | 37.00 | C2.1, C6.1, C6.2 |
-| **P15** | #592 (M), #866 (M), #871 (S) | 2.00 | 39.00 | C6.1, C6.2 |
-| **P16** | #354 (L), #425 (L), #429 (L) | 3.00 | 42.00 | C9.2, C9.4 |
-| **P17** | #355 (L), #556 (L), #583 (L) | 3.00 | 45.00 | C1.4, C5.3, C9.2 |
-| **P18** | #585 (L), #635 (L), #818 (L) | 3.00 | 48.00 | C2.3, C3.3, C5.3 |
-| **P19** | #820 (L), #823 (L), #824 (L) | 3.00 | 51.00 | C5.3 |
-| **P20** | #825 (L), #826 (L), #466 (M) | 2.75 | 53.75 | C5.3, C9.2 |
-| **P21** | #582 (M), #586 (M), #587 (M) | 2.25 | 56.00 | C1.4, C3.2, C3.3 |
-| **P22** | #591 (L), #588 (M), #590 (M) | 2.50 | 58.50 | C3.2, C3.3 |
-| **P23** | #805 (M), #821 (M), #822 (M) | 2.25 | 60.75 | C5.3, C8.1 |
-| **P24** | #806 (L), #807 (L), #810 (L) | 3.00 | 63.75 | C8.1, C8.2 |
-| **P25** | #808 (M), #809 (M), #811 (M) | 2.25 | 66.00 | C8.1, C8.2 |
-| **P26** | #812 (M), #815 (M), #816 (M) | 2.25 | 68.25 | C8.1, C8.2 |
-| **P27** | #817 (M), #827 (M), #854 (M) | 2.25 | 70.50 | C5.3, C8.2, C8.4 |
-| **P28** | #813 (L), #589 (S), #595 (S) | 2.00 | 72.50 | C3.2, C8.3, C8.4 |
+1. **Les dépendances** — une vague ne s'ouvre qu'une fois l'amont
+   fusionné.
+2. **Les conflits d'écriture** — deux agents dans le même domaine se
+   marchent dessus. Un agent par domaine et par créneau, chacun dans
+   son *worktree*.
+3. **La concurrence de l'hôte** — `min(16, CPU-2)` = **2** sur cette machine. Mesurée, pas supposée.
 
-Le harnais (`C7.1`, rang 1) occupe **P1**, **P2** : rien ne se
-**déclare** tenu avant lui, et la phase B du parcours Foyer exige un
-socle vert avant d'empiler la release.
+Résultat : **4 vagues**, **23 créneaux**, largeur
+maximale **10 agents simultanés** — contre 28
+passes en séquentiel supervisé.
+
+> ⚠️ **Le goulot n'est plus le plan, c'est l'hôte.** La largeur
+> demandée est 10 ; la machine en tient 2. Un
+> créneau large s'exécutera donc en plusieurs vagues réelles, ou
+> ailleurs — agents distants, ou hôte plus gros. C'est le premier
+> chiffre à caler avant de lancer l'expérimentation.
+
+### Vague 1
+
+| Créneau | Agents | Domaines |
+|---|---|---|
+| V1.1 | 10 — #872, #694, #798, #576, #515, #869, #781, #852, #805, #425 | `harnais`, `back/plateforme`, `front/composants`, `back/copropriete`, `iac`, `front/mobile-a11y`, `back/communaute`, `back/comptabilite`, `docs-vivante`, `meta` |
+| V1.2 | 10 — #870, #864, #841, #850, #432, #871, #585, #429, #635, #854 | `harnais`, `back/plateforme`, `front/composants`, `back/copropriete`, `iac`, `front/mobile-a11y`, `back/communaute`, `meta`, `back/comptabilite`, `docs-vivante` |
+| V1.3 | 6 — #842, #847, #835, #453, #556, #595 | `front/composants`, `back/copropriete`, `back/plateforme`, `iac`, `meta`, `docs-vivante` |
+| V1.4 | 4 — #868, #848, #762, #731 | `front/composants`, `back/copropriete`, `back/plateforme`, `iac` |
+| V1.5 | 3 — #856, #579, #354 | `front/composants`, `back/copropriete`, `iac` |
+| V1.6 | 2 — #803, #855 | `front/composants`, `back/copropriete` |
+| V1.7 | 1 — #802 | `front/composants` |
+| V1.8 | 1 — #797 | `front/composants` |
+| V1.9 | 1 — #834 | `front/composants` |
+| V1.10 | 1 — #867 | `front/composants` |
+
+### Vague 2
+
+| Créneau | Agents | Domaines |
+|---|---|---|
+| V2.1 | 8 — #696, #845, #780, #865, #718, #779, #807, #818 | `harnais`, `back/plateforme`, `back/copropriete`, `front/mobile-a11y`, `iac`, `back/communaute`, `docs-vivante`, `front/composants` |
+| V2.2 | 8 — #832, #577, #555, #866, #587, #808, #355, #820 | `harnais`, `back/copropriete`, `back/plateforme`, `front/mobile-a11y`, `back/communaute`, `docs-vivante`, `iac`, `front/composants` |
+| V2.3 | 6 — #581, #427, #586, #809, #823, #466 | `back/copropriete`, `harnais`, `back/communaute`, `docs-vivante`, `front/composants`, `iac` |
+| V2.4 | 4 — #846, #811, #824, #590 | `back/copropriete`, `docs-vivante`, `front/composants`, `back/communaute` |
+| V2.5 | 3 — #812, #583, #825 | `docs-vivante`, `back/copropriete`, `front/composants` |
+| V2.6 | 2 — #815, #826 | `docs-vivante`, `front/composants` |
+| V2.7 | 2 — #816, #821 | `docs-vivante`, `front/composants` |
+| V2.8 | 2 — #817, #822 | `docs-vivante`, `front/composants` |
+| V2.9 | 1 — #827 | `front/composants` |
+
+### Vague 3
+
+| Créneau | Agents | Domaines |
+|---|---|---|
+| V3.1 | 4 — #578, #592, #806, #591 | `back/copropriete`, `front/mobile-a11y`, `docs-vivante`, `back/communaute` |
+| V3.2 | 3 — #810, #582, #588 | `docs-vivante`, `back/copropriete`, `back/communaute` |
+| V3.3 | 1 — #589 | `back/communaute` |
+
+### Vague 4
+
+| Créneau | Agents | Domaines |
+|---|---|---|
+| V4.1 | 1 — #813 | `docs-vivante` |
+
+## Parallélisme maximal — par rapport à l'hôte
+
+Mesuré le 2026-09-12 sur `ecosolva`. Ce ne sont pas des ordres de
+grandeur : ce sont les chiffres de la machine qui orchestrerait.
+
+| Ressource | Mesure | Agents qu'elle permet |
+|---|---|---:|
+| CPU | 4 cœurs, charge 1.97 (~2.0 libres) | **2** |
+| RAM | 10 Go disponibles sur 14 | confortable |
+| Disque | 16 Go libres, 600 Mo par worktree | ~27 |
+| Build Rust | volume docker PARTAGÉ (rustbuild-target-koprogo) | **1 à la fois** |
+
+**Le plafond est le CPU, et il vaut 2** : Claude Code borne les agents concurrents à
+`min(16, CPU − 2)`, soit `min(16, 4 − 2)`. Le disque en
+permettrait ~27, la RAM aussi — ils ne servent à rien.
+
+Deux aggravations que la formule ne voit pas :
+
+- **L'hôte n'est pas dédié.** Il porte 31 conteneurs
+  pour 10 projets, dont la démo KoproGo. La
+  charge est déjà à 1.97 sur 4 cœurs :
+  la moitié de la machine est prise avant qu'un seul agent démarre.
+- **Le `target` Rust est un volume Docker partagé.** Deux agents qui
+  compilent en même temps se bloquent sur le verrou de `cargo`, quel
+  que soit le nombre de worktrees. Le parallélisme backend est donc
+  **de 1** tant que chaque agent n'a pas son propre `target`.
+
+### Le verdict, et il est inconfortable
+
+Le plan demande une largeur de **10**. L'hôte en tient
+**2**. L'expérimentation s'exécuterait donc à **un
+cinquième** de la largeur pour laquelle elle est conçue :
+~42 créneaux réels au lieu de 23.
+
+À 2 de front, le parallélisme n'apporte presque rien :
+le gain vient alors de la **suppression de l'attente humaine entre
+passes**, pas du parallélisme lui-même. C'est un vrai gain — mais ce
+n'est pas l'expérience qu'on voulait mener.
+
+**Pour tenir la largeur demandée**, trois voies, par coût croissant :
+
+| Voie | Ce qu'il faut | Ce que ça coûte |
+|---|---|---|
+| Hôte plus gros | ≥ 12 cœurs (`min(16, n−2) ≥ 10`) | une machine |
+| Agents distants | orchestration en nuage | facturation à l'usage |
+| Fan-out en CI | un job par story | temps de CI, pas de worktree |
+
+La troisième mérite d'être regardée en premier : elle ne demande pas de
+machine, elle isole naturellement les `target` Rust, et elle produit
+déjà les artefacts — gates et vitrine — que la revue de promotion
+attend. Le parallélisme y est borné par les *runners*, pas par cet hôte.
+
+## Le protocole — une branche, une preuve, une revue
+
+Chaque agent travaille dans un **worktree isolé** et livre une branche
+`story/<issue>`. La promotion vers `feature/dev` est le gate, et elle
+exige **trois preuves attachées à la branche** :
+
+| Preuve | Gate | Bloquant |
+|---|---|---|
+| Correctness | `e2e` sur la pile de recette | oui |
+| Les quatre classes | `unit` + `integration` + `bdd` | oui |
+| Valeur | **vitrine** — parcours filmé | non bloquant, **non facultatif** |
+
+Le parcours Foyer est explicite : la doc vivante est « une preuve, pas
+un verrou » — mais une story full-stack sans sa preuve de valeur **n'est
+pas terminée**. C'est elle qui rend la revue de promotion possible sans
+relire le diff ligne à ligne : le relecteur regarde le film et les
+gates, pas le code.
+
+## ⚠️ La précondition — le filet avant le saut
+
+**Le mécanisme choisi pour porter le répondre-de n'est pas
+opérationnel.** Au 2026-09-12 :
+
+| Gate | État | Cause |
+|---|---|---|
+| `e2e` | 🔴 | vise la démo via Traefik — #872 |
+| `doc-vivante` (vitrine) | 🔴 | `make docs-with-videos` — #872 |
+
+Lancer 84 chantiers en parallèle avant que la preuve existe reviendrait
+à produire 84 branches que **rien ne permet de relire**. Le parallélisme
+n'est pas risqué en soi : il l'est quand son filet n'est pas tendu.
+
+**V1 n'est donc pas une formalité, c'est ce qui rend le reste**
+**légitime.** L'ADR 0050 — décaler les ports, pile de recette jetable —
+est la condition d'existence de l'expérimentation, pas sa première
+étape parmi d'autres.
 
 ## Coût
 
 | Axe | Valeur | Ce que ça mesure |
 |---|---:|---|
 | Issues | 84 | le périmètre, intégral (ADR 0049) |
-| Passes | 28 | les tours de boucle supervisés |
+| Passes séquentielles | 28 | régime supervisé, 3 de front |
+| Créneaux multiagent | 23 | régime parallèle, revue à la promotion |
 | Jours | 72.50 | wall-clock **superviseur** |
 | Tours | 290 | coût **tokens** |
 

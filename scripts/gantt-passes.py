@@ -146,6 +146,165 @@ RANGS = {
 }
 
 
+NON_SIGNE = [
+    "signature_humaine:",
+    "  date: null",
+    "  nom: null",
+    "  role: null",
+    "  etat: NON SIGNÉ — en attente de validation du superviseur",
+]
+
+
+def signature_existante():
+    """Relit le bloc `signature_humaine` du livrable déjà écrit.
+
+    Même raison que pour `backlog-structure.py` : la signature est le seul
+    élément que le script n'a pas produit. L'écraser à chaque génération
+    obligerait le superviseur à re-valider un plan qu'il a déjà validé.
+    """
+    try:
+        with open(SORTIE, encoding="utf-8") as f:
+            lignes = f.read().split("\n")
+    except OSError:
+        return NON_SIGNE
+    if not lignes or lignes[0].strip() != "---":
+        return NON_SIGNE
+    bloc, dedans = [], False
+    for ligne in lignes[1:]:
+        if ligne.strip() == "---":
+            break
+        if ligne.startswith("signature_humaine:"):
+            dedans = True
+            bloc.append(ligne)
+        elif dedans and ligne.startswith("  "):
+            bloc.append(ligne)
+        elif dedans:
+            break
+    return bloc if bloc else NON_SIGNE
+
+
+# ── Domaines d'écriture — la vraie contrainte du parallélisme ─────────────
+#
+# Deux agents qui écrivent dans le même domaine entrent en conflit de fusion.
+# Le parallélisme utile n'est donc pas « combien d'agents » mais « combien de
+# domaines disjoints ». Dérivé de l'épopée, avec les exceptions qui comptent.
+DOMAINES_EPOPEE = {
+    "E1": "back/copropriete", "E2": "back/comptabilite",
+    "E3": "back/communaute", "E4": "back/plateforme",
+    "T1": "front/composants", "T2": "front/mobile-a11y",
+    "T3": "harnais", "T4": "docs-vivante", "T5": "iac", "T6": "front/composants",
+}
+# Exceptions : ce que l'épopée ne dit pas bien.
+DOMAINES_ISSUE = {
+    841: "front/composants", 868: "front/composants", 842: "front/composants",
+    798: "front/composants", 867: "front/composants", 871: "front/mobile-a11y",
+    781: "back/communaute", 427: "harnais", 432: "iac",
+    854: "docs-vivante", 595: "docs-vivante", 425: "meta", 429: "meta",
+    556: "meta",
+}
+
+# ── L'hôte, mesuré le 2026-09-12 sur `ecosolva` ──────────────────────────
+#
+# `[mesuré]`, pas supposé. À refaire sur toute machine qui orchestrerait.
+HOTE = {
+    "nom": "ecosolva",
+    "cpu": 4,
+    "charge_1min": 1.97,          # /proc/loadavg — déjà consommée
+    "ram_go": 14,
+    "ram_dispo_go": 10,
+    "disque_libre_go": 16,
+    "cout_worktree_mo": 600,      # mesuré sur le worktree kg-661
+    "conteneurs": 31,
+    "projets_heberges": 10,
+    "target_rust": "volume docker PARTAGÉ (rustbuild-target-koprogo)",
+}
+
+# Claude Code plafonne les agents concurrents à min(16, CPU - 2).
+CONCURRENCE_HOTE = min(16, HOTE["cpu"] - 2)
+
+
+def domaine(num, meta):
+    return DOMAINES_ISSUE.get(num, DOMAINES_EPOPEE.get(meta[num]["epopee"],
+                                                       "divers"))
+
+
+def levier(meta):
+    """Combien de chantiers chaque issue débloque, transitivement.
+
+    En régime séquentiel, l'ordre suit le rang : c'est la priorité métier.
+    En régime parallèle, ce qui minimise le temps total est de sortir d'abord
+    ce qui **tient une file** — sinon dix agents attendent qu'un seul finisse.
+    Le levier ordonne donc À L'INTÉRIEUR d'un rang, jamais contre lui.
+    """
+    aval = {}
+    for n, (ds, _) in DEPS.items():
+        for d in ds:
+            aval.setdefault(d, set()).add(n)
+
+    memo = {}
+
+    def compte(n, vus):
+        if n in memo:
+            return memo[n]
+        if n in vus:
+            return set()
+        vus = vus | {n}
+        acc = set()
+        for x in aval.get(n, ()):
+            acc.add(x)
+            acc |= compte(x, vus)
+        memo[n] = acc
+        return acc
+
+    return {n: len(compte(n, set())) for n in meta}
+
+
+def orchestrer_multiagent(passe_logique, meta):
+    """Le plan d'orchestration multiagent.
+
+    Le *répondre-de* ne se joue plus sur le nombre d'agents tenus de front,
+    mais sur la **revue de promotion de branche**, instruite par les gates et
+    la vitrine. Le plafond de supervision cesse donc de brider l'éventail.
+
+    Ce qui le bride encore, et qui est physique :
+
+    1. **Les dépendances** — une vague ne s'ouvre qu'une fois l'amont fusionné.
+    2. **Les conflits d'écriture** — deux agents dans le même domaine se
+       marchent dessus. Un agent par domaine et par créneau.
+    3. **La concurrence de l'hôte** — `min(16, CPU-2)`, mesurée.
+
+    Rend une liste de vagues ; chaque vague est une liste de créneaux ; chaque
+    créneau est une liste d'issues sans conflit entre elles.
+    """
+    vagues = {}
+    for num, p in passe_logique.items():
+        vagues.setdefault(p, []).append(num)
+
+    rang_de = {c: r for r, cs in RANGS.items() for c in cs}
+    poids_mos = {"Must": 0, "Should": 1, "Could": 2}
+    lev = levier(meta)
+    plan = []
+    for v in sorted(vagues):
+        restant = sorted(vagues[v],
+                         key=lambda n: (rang_de.get(meta[n]["cap"], 9),
+                                        -lev[n],
+                                        poids_mos.get(meta[n]["moscow"], 3),
+                                        -meta[n]["jours"], n))
+        creneaux = []
+        while restant:
+            pris, vus = [], set()
+            for n in list(restant):
+                d = domaine(n, meta)
+                if d in vus:
+                    continue
+                vus.add(d)
+                pris.append(n)
+                restant.remove(n)
+            creneaux.append(pris)
+        plan.append((v, creneaux))
+    return plan
+
+
 def charger_backlog():
     spec = importlib.util.spec_from_file_location(
         "bs", os.path.join(DEPOT, "scripts", "backlog-structure.py"))
@@ -251,11 +410,8 @@ def livrable(mod):
     w("projet: KoproGo")
     w("jalon: v0.1.0")
     w("genere_par: scripts/gantt-passes.py")
-    w("signature_humaine:")
-    w("  date: null")
-    w("  nom: null")
-    w("  role: null")
-    w("  etat: NON SIGNÉ — en attente de validation du superviseur")
+    for ligne in signature_existante():
+        w(ligne)
     w("---")
     w("")
     w("# Gantt de la v0.1.0 — en passes d'agent")
@@ -369,36 +525,154 @@ def livrable(mod):
         w(f"Aucune couche ne dépasse le plafond de {RATIO_SUPERVISION}.")
     w("")
 
-    # ── Le plan sous contrainte ──
-    plan = ordonnancer(passe, meta)
-    w("## Le plan exécutable — dépendances *et* plafond de supervision")
+    # ── Le plan multiagent ──
+    plan_seq = ordonnancer(passe, meta)
+    orch = orchestrer_multiagent(passe, meta)
+    n_creneaux = sum(len(cs) for _, cs in orch)
+    pic_dom = max((len(c) for _, cs in orch for c in cs), default=0)
+
+    w("## Le plan d'orchestration — multiagent, parallélisme maximal")
     w("")
-    w(f"À {RATIO_SUPERVISION} chantiers de front, la release demande")
-    w(f"**{len(plan)} passes**. C'est ce plan qui se pilote ; la couche")
-    w("topologique ci-dessus dit seulement ce qui *pourrait* être mené de")
-    w("front si la supervision était infinie.")
+    w("**Amendement du 2026-09-12.** Le `ratio_supervision` ne bride plus")
+    w("l'éventail : le *répondre-de* est porté par la **revue de promotion de")
+    w("branche**, instruite par les gates et la vitrine. On ne supervise plus")
+    w("des agents en direct, on relit une preuve attachée à une branche.")
     w("")
-    w("L'ordre à l'intérieur d'une passe suit le rang, puis le MoSCoW, puis la")
-    w("taille décroissante.")
+    w("Ce qui bride encore, et qui est **physique** :")
     w("")
-    w("| Passe | Chantiers | Jours | Cumul | Capacités |")
-    w("|---|---|---:|---:|---|")
-    cum = 0.0
-    for p, lot in plan:
-        j = sum(meta[n]["jours"] for n in lot)
-        cum += j
-        caps_lot = ", ".join(sorted({meta[n]["cap"] for n in lot}))
-        chantiers = ", ".join(f"#{n} ({meta[n]['taille']})" for n in lot)
-        w(f"| **P{p}** | {chantiers} | {j:.2f} | {cum:.2f} | {caps_lot} |")
+    w("1. **Les dépendances** — une vague ne s'ouvre qu'une fois l'amont")
+    w("   fusionné.")
+    w("2. **Les conflits d'écriture** — deux agents dans le même domaine se")
+    w("   marchent dessus. Un agent par domaine et par créneau, chacun dans")
+    w("   son *worktree*.")
+    w(f"3. **La concurrence de l'hôte** — `min(16, CPU-2)` = "
+      f"**{CONCURRENCE_HOTE}** sur cette machine. Mesurée, pas supposée.")
     w("")
-    premiers = [p for p, lot in plan
-                if any(meta[n]["cap"] == "C7.1" for n in lot)]
-    if premiers:
-        w("Le harnais (`C7.1`, rang 1) occupe "
-          + ", ".join(f"**P{p}**" for p in premiers) + " : rien ne se")
-        w("**déclare** tenu avant lui, et la phase B du parcours Foyer exige un")
-        w("socle vert avant d'empiler la release.")
+    w(f"Résultat : **{len(orch)} vagues**, **{n_creneaux} créneaux**, largeur")
+    w(f"maximale **{pic_dom} agents simultanés** — contre {len(plan_seq)}")
+    w("passes en séquentiel supervisé.")
+    w("")
+    w("> ⚠️ **Le goulot n'est plus le plan, c'est l'hôte.** La largeur")
+    w(f"> demandée est {pic_dom} ; la machine en tient {CONCURRENCE_HOTE}. Un")
+    w("> créneau large s'exécutera donc en plusieurs vagues réelles, ou")
+    w("> ailleurs — agents distants, ou hôte plus gros. C'est le premier")
+    w("> chiffre à caler avant de lancer l'expérimentation.")
+    w("")
+    for v, creneaux in orch:
+        w(f"### Vague {v}")
         w("")
+        w("| Créneau | Agents | Domaines |")
+        w("|---|---|---|")
+        for k, lot in enumerate(creneaux, 1):
+            doms = ", ".join(f"`{domaine(n, meta)}`" for n in lot)
+            ags = ", ".join(f"#{n}" for n in lot)
+            w(f"| V{v}.{k} | {len(lot)} — {ags} | {doms} |")
+        w("")
+
+    # ── Parallélisme maximal par rapport à l'hôte ──
+    coeurs_libres = HOTE["cpu"] - HOTE["charge_1min"]
+    par_disque = int(HOTE["disque_libre_go"] * 1024 / HOTE["cout_worktree_mo"])
+    cpu_pour_pic = pic_dom + 2
+    creneaux_reels = -(-len(meta) // max(CONCURRENCE_HOTE, 1))
+
+    w("## Parallélisme maximal — par rapport à l'hôte")
+    w("")
+    w(f"Mesuré le 2026-09-12 sur `{HOTE['nom']}`. Ce ne sont pas des ordres de")
+    w("grandeur : ce sont les chiffres de la machine qui orchestrerait.")
+    w("")
+    w("| Ressource | Mesure | Agents qu'elle permet |")
+    w("|---|---|---:|")
+    w(f"| CPU | {HOTE['cpu']} cœurs, charge {HOTE['charge_1min']} "
+      f"(~{coeurs_libres:.1f} libres) | **{CONCURRENCE_HOTE}** |")
+    w(f"| RAM | {HOTE['ram_dispo_go']} Go disponibles sur "
+      f"{HOTE['ram_go']} | confortable |")
+    w(f"| Disque | {HOTE['disque_libre_go']} Go libres, "
+      f"{HOTE['cout_worktree_mo']} Mo par worktree | ~{par_disque} |")
+    w(f"| Build Rust | {HOTE['target_rust']} | **1 à la fois** |")
+    w("")
+    w("**Le plafond est le CPU, et il vaut "
+      f"{CONCURRENCE_HOTE}** : Claude Code borne les agents concurrents à")
+    w(f"`min(16, CPU − 2)`, soit `min(16, {HOTE['cpu']} − 2)`. Le disque en")
+    w(f"permettrait ~{par_disque}, la RAM aussi — ils ne servent à rien.")
+    w("")
+    w("Deux aggravations que la formule ne voit pas :")
+    w("")
+    w(f"- **L'hôte n'est pas dédié.** Il porte {HOTE['conteneurs']} conteneurs")
+    w(f"  pour {HOTE['projets_heberges']} projets, dont la démo KoproGo. La")
+    w(f"  charge est déjà à {HOTE['charge_1min']} sur {HOTE['cpu']} cœurs :")
+    w("  la moitié de la machine est prise avant qu'un seul agent démarre.")
+    w("- **Le `target` Rust est un volume Docker partagé.** Deux agents qui")
+    w("  compilent en même temps se bloquent sur le verrou de `cargo`, quel")
+    w("  que soit le nombre de worktrees. Le parallélisme backend est donc")
+    w("  **de 1** tant que chaque agent n'a pas son propre `target`.")
+    w("")
+    w("### Le verdict, et il est inconfortable")
+    w("")
+    w(f"Le plan demande une largeur de **{pic_dom}**. L'hôte en tient")
+    w(f"**{CONCURRENCE_HOTE}**. L'expérimentation s'exécuterait donc à **un")
+    w(f"cinquième** de la largeur pour laquelle elle est conçue :")
+    w(f"~{creneaux_reels} créneaux réels au lieu de {n_creneaux}.")
+    w("")
+    w(f"À {CONCURRENCE_HOTE} de front, le parallélisme n'apporte presque rien :")
+    w(f"le gain vient alors de la **suppression de l'attente humaine entre")
+    w("passes**, pas du parallélisme lui-même. C'est un vrai gain — mais ce")
+    w("n'est pas l'expérience qu'on voulait mener.")
+    w("")
+    w("**Pour tenir la largeur demandée**, trois voies, par coût croissant :")
+    w("")
+    w("| Voie | Ce qu'il faut | Ce que ça coûte |")
+    w("|---|---|---|")
+    w(f"| Hôte plus gros | ≥ {cpu_pour_pic} cœurs (`min(16, n−2) ≥ "
+      f"{pic_dom}`) | une machine |")
+    w("| Agents distants | orchestration en nuage | facturation à l'usage |")
+    w("| Fan-out en CI | un job par story | temps de CI, pas de worktree |")
+    w("")
+    w("La troisième mérite d'être regardée en premier : elle ne demande pas de")
+    w("machine, elle isole naturellement les `target` Rust, et elle produit")
+    w("déjà les artefacts — gates et vitrine — que la revue de promotion")
+    w("attend. Le parallélisme y est borné par les *runners*, pas par cet hôte.")
+    w("")
+
+    # ── Le protocole de promotion ──
+    w("## Le protocole — une branche, une preuve, une revue")
+    w("")
+    w("Chaque agent travaille dans un **worktree isolé** et livre une branche")
+    w("`story/<issue>`. La promotion vers `feature/dev` est le gate, et elle")
+    w("exige **trois preuves attachées à la branche** :")
+    w("")
+    w("| Preuve | Gate | Bloquant |")
+    w("|---|---|---|")
+    w("| Correctness | `e2e` sur la pile de recette | oui |")
+    w("| Les quatre classes | `unit` + `integration` + `bdd` | oui |")
+    w("| Valeur | **vitrine** — parcours filmé | non bloquant, **non facultatif** |")
+    w("")
+    w("Le parcours Foyer est explicite : la doc vivante est « une preuve, pas")
+    w("un verrou » — mais une story full-stack sans sa preuve de valeur **n'est")
+    w("pas terminée**. C'est elle qui rend la revue de promotion possible sans")
+    w("relire le diff ligne à ligne : le relecteur regarde le film et les")
+    w("gates, pas le code.")
+    w("")
+
+    # ── La précondition ──
+    w("## ⚠️ La précondition — le filet avant le saut")
+    w("")
+    w("**Le mécanisme choisi pour porter le répondre-de n'est pas")
+    w("opérationnel.** Au 2026-09-12 :")
+    w("")
+    w("| Gate | État | Cause |")
+    w("|---|---|---|")
+    w("| `e2e` | 🔴 | vise la démo via Traefik — #872 |")
+    w("| `doc-vivante` (vitrine) | 🔴 | `make docs-with-videos` — #872 |")
+    w("")
+    w("Lancer 84 chantiers en parallèle avant que la preuve existe reviendrait")
+    w("à produire 84 branches que **rien ne permet de relire**. Le parallélisme")
+    w("n'est pas risqué en soi : il l'est quand son filet n'est pas tendu.")
+    w("")
+    w("**V1 n'est donc pas une formalité, c'est ce qui rend le reste**")
+    w("**légitime.** L'ADR 0050 — décaler les ports, pile de recette jetable —")
+    w("est la condition d'existence de l'expérimentation, pas sa première")
+    w("étape parmi d'autres.")
+    w("")
 
     # ── Coût ──
     tot_j = sum(meta[n]["jours"] for n in meta)
@@ -408,7 +682,8 @@ def livrable(mod):
     w("| Axe | Valeur | Ce que ça mesure |")
     w("|---|---:|---|")
     w(f"| Issues | {len(meta)} | le périmètre, intégral (ADR 0049) |")
-    w(f"| Passes | {len(plan)} | les tours de boucle supervisés |")
+    w(f"| Passes séquentielles | {len(plan_seq)} | régime supervisé, 3 de front |")
+    w(f"| Créneaux multiagent | {n_creneaux} | régime parallèle, revue à la promotion |")
     w(f"| Jours | {tot_j:.2f} | wall-clock **superviseur** |")
     w(f"| Tours | {tot_t} | coût **tokens** |")
     w("")
