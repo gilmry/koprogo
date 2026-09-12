@@ -13,7 +13,7 @@
 - **Archétype** : full-stack *(Rust hexagonal + Astro/Svelte 5 en îlots, PostgreSQL)*
 - **Substrat d'exécution** : conteneur — `~/bin/kcargo` pour Rust, jamais `cargo` sur l'hôte
 - **Démarré le** : 2026-09-12
-- **Dernière mise à jour** : 2026-09-12 (par : Claude — rangs 2 à 4 portés à « Agent IA Ready »)
+- **Dernière mise à jour** : 2026-09-12 (par : Claude — rangs 2 à 5 portés à « Agent IA Ready »)
 
 ## Répartition des rôles
 
@@ -34,9 +34,10 @@ appelle une signature et non une validation.
 
 - **Phase / étape** : Phase A · conception BMAD ciblée sur la release · étape 4
   (Validateur → backlog « Agent IA Ready »)
-- **Prochaine action attendue** : poursuivre l'étape 4 — rang 5, le **noyau
-  légal** (C1.1 et C1.3, 9 issues), puis rang 6 (les `Should`, 23 issues) et
-  rang 7 (les `Could`, 39). Les rangs 1 à 4 sont prêts ; restent 67 issues.
+- **Prochaine action attendue** : poursuivre l'étape 4 — rang 6 (les `Should`,
+  23 issues) puis rang 7 (les `Could`, 39). Les rangs 1 à 5 sont prêts ; restent
+  59 issues. **Mais voir d'abord l'arbitrage 🔴 sur le dialecte des stories** :
+  il change ce que le compteur mesure.
 - **La fabrication n'ouvre pas encore.** Le PO a choisi une signature unique
   **après** la préparation complète ; ni #872 (harnais, ADR 0050) ni #855 ni
   #802 n'entrent en fabrication avant. L'ADR 0050 attend, elle n'est pas
@@ -53,16 +54,16 @@ appelle une signature et non une validation.
   (`backend/tests/architecture.rs`), les dépendances croisées sont interdites.
 - **Chiffrage** : 73,25 j de wall-clock superviseur · 293 tours. **Bornes hautes
   de première passe**, à resserrer sur le réel par le CSI.
-- **Validateur** : ⏳ **en cours**. **17 issues sur 84** portent les huit
-  éléments d'une story prête, et 35 portent les quatre classes de tests
-  (`scripts/backlog-pret.py`, mesuré le 2026-09-12 après le rang 4). Le
+- **Validateur** : ⏳ **en cours**. **25 issues sur 84** portent les huit
+  éléments d'une story prête, et 40 portent les quatre classes de tests
+  (`scripts/backlog-pret.py`, mesuré le 2026-09-12 après le rang 5). Le
   livrable porte `NON SIGNÉ` — la signature vient après la préparation.
 
-> **Rangs 1 à 4 prêts.** C7.1 l'était (4/4) ; puis les sept issues de C4.1, C4.2
-> et C4.3, #856 (C10.1), et #803 / #834 (C5.2 / C5.1 — #802 et #797 l'étaient
-> déjà). Le contrôle est **de forme** : le script cherche des marqueurs, pas du
-> sens. Il l'écrit lui-même — « une borne haute de la préparation, jamais un
-> verdict ».
+> **Rangs 1 à 5 prêts.** C7.1 l'était (4/4) ; puis C4.1/C4.2/C4.3 (7), #856
+> (C10.1), #803 / #834 (C5.2 / C5.1 — #802 et #797 l'étaient déjà), et les huit
+> du noyau légal C1.1 / C1.3. Le contrôle est **de forme** : le script cherche
+> des marqueurs, pas du sens. Il l'écrit lui-même — « une borne haute de la
+> préparation, jamais un verdict ».
 
 > **84, et non 85.** Le backlog structuré a été généré à 85 issues ouvertes ;
 > #840 a été fermée le même jour, après la génération. Le document n'est pas
@@ -101,7 +102,7 @@ un défaut de structure. Seul l'ordre des capacités est repris.
 | 2 | C4.1 / C4.2 / C4.3 — identité, périmètre, RGPD | en cours (#845 à 1 route) |
 | 3 | C10.1 — arbitrage du groupe « Communauté » | ✅ tranché (ADR 0052) · story prête |
 | 4 | C5.2 puis C5.1 — contrat de tests, socle visuel | ✅ 4/4 stories prêtes |
-| 5 | C1.1 / C1.3 — le noyau légal | #840 fermée |
+| 5 | C1.1 / C1.3 — le noyau légal | ✅ 8/8 stories prêtes · #840 fermée |
 | 6 | les `Should`, parallélisables | |
 | 7 | les `Could` | |
 | 8 | G1 puis G2 — revue humaine signée, puis le tag | hors périmètre agent |
@@ -109,6 +110,22 @@ un défaut de structure. Seul l'ordre des capacités est repris.
 ## Arbitrages
 
 ### 🔴 En attente (le PO doit trancher une MODALITÉ)
+
+- **Point** : deux dialectes de story coexistent, et le compteur n'en lit qu'un
+  - **Preuve jointe** : **16 issues sur 84** portent `## Goal` + `Acceptance
+    Criteria (4 catégories)` + `Effort` + `Files` — le dialecte Maury d'origine.
+    Elles ont **la substance** d'une story prête (les quatre classes y sont, et
+    un effort), mais pas le vocabulaire que `scripts/backlog-pret.py` cherche
+    (« En tant que », « Étant donné », « Couche », « Taille »). Elles comptent
+    donc pour non prêtes. Trois d'entre elles (#576, #577, #581) ont été
+    traduites au rang 5 ; **13 restent**, toutes aux rangs 6 et 7.
+  - **Question de modalité** : A) traduire les 13 comme les trois autres ·
+    B) apprendre les deux dialectes au script · C) les laisser et assumer que le
+    compteur sous-estime.
+  - **Pourquoi ça ne se tranche pas seul** : l'option B **modifie l'instrument
+    de mesure** qui conditionne la signature du livrable. Faire monter un chiffre
+    en changeant sa définition est précisément ce qu'un registre doit rendre
+    impossible sans décision humaine.
 
 - **Point** : #694 — son rang contredit ce qu'elle dit d'elle-même
   - **Preuve jointe** : l'issue écrit « **non bloquant pour v0.1.0** (bêta
@@ -145,6 +162,13 @@ un défaut de structure. Seul l'ordre des capacités est repris.
 
 ## Journal (chronologie courte)
 
+- 2026-09-12 — **rang 5, le noyau légal, porté à « Agent IA Ready »** : #780,
+  #848, #850, #576, #577, #581 (C1.1) et #847, #846 (C1.3). 25/84. #840 étant
+  de C1.1, sa fermeture explique le 85 → 84.
+- 2026-09-12 — **deux dialectes de story découverts** : 16 issues portent les
+  quatre classes dans le vocabulaire Maury d'origine, que le compteur ne lit
+  pas. Inscrit en 🔴 — l'option « apprendre les deux dialectes » modifierait
+  l'instrument qui conditionne la signature.
 - 2026-09-12 — **rang 4 porté à « Agent IA Ready »** : #803 (C5.2) et #834
   (C5.1) ; #802 et #797 l'étaient déjà. Les deux stories partagent une même
   règle de séquencement — **celui qui touche un écran l'ancre et le traduit dans
