@@ -13,7 +13,7 @@
 - **Archétype** : full-stack *(Rust hexagonal + Astro/Svelte 5 en îlots, PostgreSQL)*
 - **Substrat d'exécution** : conteneur — `~/bin/kcargo` pour Rust, jamais `cargo` sur l'hôte
 - **Démarré le** : 2026-09-12
-- **Dernière mise à jour** : 2026-09-12 (par : Claude — arbitrage de découpage tranché par le PO)
+- **Dernière mise à jour** : 2026-09-12 (par : Claude — les cinq arbitrages 🔴 tranchés par le PO)
 
 ## Répartition des rôles
 
@@ -34,12 +34,16 @@ appelle une signature et non une validation.
 
 - **Phase / étape** : Phase A · conception BMAD ciblée sur la release · étape 4
   (Validateur → backlog « Agent IA Ready »)
-- **Prochaine action attendue** : achever l'étape 4 — porter les stories à
-  « Agent IA Ready » dans l'ordre des rangs. Le découpage est tranché (option A,
-  [ADR 0049](docs/adr/0049-perimetre-v0-1-0-integral.md)) ; ce qui manque n'est
-  plus une décision mais du travail de préparation. Le rang 1 (C7.1) est prêt
-  4/4 mais bloqué par l'arbitrage #872 : commencer par le rang 2
-  (C4.1 / C4.2 / C4.3).
+- **Prochaine action attendue** : exécuter [ADR 0050](docs/adr/0050-pile-de-recette-sur-le-vps-ports-decales.md)
+  — livrables 2, 3 et 5 de #872 : décaler les quatre ports, faire viser
+  `http://localhost:8090` à `make test-e2e` et `make docs-with-videos`,
+  corriger `docs/E2E_TESTING_GUIDE.rst`. C'est du **harnais**, que le parcours
+  place avant le métier ; ça rend `e2e` vert, donc `cap:C7.1` (rang 1) tenable,
+  donc la phase B franchissable.
+- **Après**, et pas avant : porter les stories à « Agent IA Ready ». Le PO a
+  choisi une signature unique **après** cette préparation — la fabrication des
+  fonctionnalités (#855, #802) n'ouvre donc pas tant que les stories ne sont
+  pas prêtes.
 - **Rôle à jouer** : `.foyer/pilote/roles/conception-bmad.md`
 
 ### Ce qui est déjà produit de la phase A
@@ -90,10 +94,10 @@ un défaut de structure. Seul l'ordre des capacités est repris.
 
 | Rang | Capacité | État |
 |---|---|---|
-| 1 | C7.1 — la recette peut se connecter et s'exécuter | 🔴 bloquée par #872 |
+| 1 | C7.1 — la recette peut se connecter et s'exécuter | débloquée — ADR 0050 à exécuter |
 | 2 | C4.1 / C4.2 / C4.3 — identité, périmètre, RGPD | en cours (#845 à 1 route) |
-| 3 | C10.1 — arbitrage du groupe « Communauté » | 🔴 arbitrage |
-| 4 | C5.2 puis C5.1 — contrat de tests, socle visuel | prêtes (#797, #802) |
+| 3 | C10.1 — arbitrage du groupe « Communauté » | ✅ tranché (ADR 0052) |
+| 4 | C5.2 puis C5.1 — contrat de tests, socle visuel | prêtes (#797, #802 débloquée) |
 | 5 | C1.1 / C1.3 — le noyau légal | #840 fermée |
 | 6 | les `Should`, parallélisables | |
 | 7 | les `Could` | |
@@ -103,51 +107,34 @@ un défaut de structure. Seul l'ordre des capacités est repris.
 
 ### 🔴 En attente (le PO doit trancher une MODALITÉ)
 
-- **Point** : #872 — pile de recette jetable sur le VPS
-  - **Preuve jointe** : la pile de dev revendiquait les conteneurs et le **volume
-    de données** de la démo ; fermé par `name:` explicite (commit `d35332de`),
-    garde `garde-piles-compose-distinctes`. Mais `make test-e2e` vise toujours
-    `api.koprogo.com`, et le port 80 de l'hôte est tenu par la démo.
-  - **Question de modalité** : monte-t-on la pile de recette sur cet hôte (quels
-    ports, quel réseau, quelle fenêtre) ou ailleurs ?
-  - **Options** : A) ports décalés sur le VPS · B) hôte séparé · C) en CI seulement.
-
-- **Point** : #855 — accès du notaire à un état daté
-  - **Destination déjà tranchée** le 2026-09-12 : lien signé à durée limitée.
-  - **Preuve jointe** : c'est la **dernière** route sans identité du produit
-    (`garde_identite_absente` : 30 → 1) ; la référence ne porte que 32 bits
-    d'aléa, sans expiration ni journal d'accès.
-  - **Questions de modalité restantes** : (1) usage unique ou relecture pendant
-    l'instruction de la vente ? (2) quel `subject_user_id` pour un notaire sans
-    compte, le champ étant aujourd'hui obligatoire ?
-
-- **Point** : #856 — le comptable voit-il un groupe « Communauté » réduit ?
-  - **Preuve jointe** : la remise de design le propose, un test `@security` de
-    `Navigation.test.ts` l'interdit. La revue tranche elle-même en faveur du test.
-  - **Question de modalité** : change-t-on la règle dans `permissions.ts` — avec
-    test mis à jour, commentaire et référence d'issue — ou la maquette ?
-  - **Borne** : tant que ce n'est pas tranché, la story #802 livre tout sauf ce point.
-
-- **Point** : signature du livrable BMAD
-  - **Preuve jointe** : `docs/BACKLOG_STRUCTURE_v0_1_0.md`, frontmatter
-    `etat: NON SIGNÉ`.
-  - **Question de modalité** : le découpage étant tranché, le verrou qui
-    suspendait cette question est levé. Reste : le PO signe-t-il **maintenant**
-    le livrable de structure (ce qu'il atteste : le classement et le chiffrage),
-    ou **après** que les stories soient portées à « Agent IA Ready » (ce qu'il
-    atteste alors : que la fabrication peut commencer) ?
+**Aucun.** Les cinq arbitrages ouverts ont été tranchés le 2026-09-12. Ce qui
+reste est du travail, pas une décision — et se lit dans « Position courante ».
 
 ### ✅ Tranchés
 
 | Point | Décision (modalité) | Par | Le | ADR |
 |---|---|---|---|---|
-| Accès notaire à l'état daté | lien signé à durée limitée, émis par le syndic, révocable, journalisé | Gilles Maury | 2026-09-12 | à écrire — #855 |
+| Accès notaire à l'état daté *(destination)* | lien signé à durée limitée, émis par le syndic, révocable, journalisé | Gilles Maury | 2026-09-12 | [ADR 0051](docs/adr/0051-lien-notaire-sept-jours-renouvelable.md) |
 | Mot de passe superadmin de la démo | `admin123` posé dans l'environnement, pour survivre à l'upsert du seed ; coût assumé : il est publié dans le dépôt | Gilles Maury | 2026-09-12 | #870 |
 | Porte du pilote Foyer | `release` — le produit tourne, on cadre un gros incrément | Gilles Maury | 2026-09-12 | ce registre |
 | **Découpage de la release v0.1.0** | **option A — périmètre intégral** : les 84 issues ouvertes restent au tag, aucun report en 0.2.0. `Must/Should/Could` ordonne l'exécution, ne retire rien | Gilles Maury | 2026-09-12 | [ADR 0049](docs/adr/0049-perimetre-v0-1-0-integral.md) |
+| **#872 — pile de recette** | **sur le VPS, ports décalés** : 8090 HTTP, 8091 dashboard, 15432 PG, 19000/19001 MinIO. La séparation `koprogo-dev` ≠ `koprogo` étant déjà commitée, il ne restait que des ports | Gilles Maury | 2026-09-12 | [ADR 0050](docs/adr/0050-pile-de-recette-sur-le-vps-ports-decales.md) |
+| **#855 — lien du notaire** | **sept jours, plusieurs lectures, renouvelable** par le syndic ; chaque consultation journalisée | Gilles Maury | 2026-09-12 | [ADR 0051](docs/adr/0051-lien-notaire-sept-jours-renouvelable.md) |
+| **#856 — « Communauté » et le comptable** | **la maquette est corrigée** ; `permissions.ts` et le test `@security` ne bougent pas. Débloque #802 intégralement | Gilles Maury | 2026-09-12 | [ADR 0052](docs/adr/0052-le-comptable-ne-voit-pas-communaute.md) |
+| **Signature du livrable BMAD** | **une seule signature, après** que les stories portent les huit éléments. Elle attestera que la fabrication peut commencer, pas seulement que le classement tient | Gilles Maury | 2026-09-12 | ce registre |
 
 ## Journal (chronologie courte)
 
+- 2026-09-12 — **les quatre arbitrages restants tranchés** : #872 recette sur
+  le VPS à ports décalés (ADR 0050), #855 lien notaire sept jours renouvelable
+  (ADR 0051), #856 la maquette cède au test `@security` (ADR 0052), signature
+  BMAD unique et différée. Plus aucun 🔴 ouvert.
+- 2026-09-12 — **une mesure a corrigé le registre** : `make test-e2e` ne « vise »
+  pas `api.koprogo.com` par configuration — il vise `http://localhost`, que
+  Traefik route vers la démo sur cet hôte. Et la raison décisive de ne pas
+  l'y laisser n'est pas la pollution : c'est que `make seed-reset` et
+  `make reset-db`, préconditions de toute recette reproductible, effaceraient
+  la démo.
 - 2026-09-12 — **découpage de la release tranché : option A**, périmètre
   intégral confirmé face à son chiffrage (ADR 0049). La décision du 2026-09-06
   n'est plus seulement héritée, elle est opposée à son coût.
