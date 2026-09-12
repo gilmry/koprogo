@@ -93,7 +93,24 @@ services:
       RUST_LOG: debug
       RUST_BACKTRACE: 1
       SQLX_OFFLINE: "true"
-      # WP-FE1 : dev/E2E sur http://localhost → cookie refresh sans flag
+      # ── Secrets de recette : EN DUR, et surtout PAS `${JWT_SECRET}` ────────
+      #
+      # Le backend refuse de démarrer sans `JWT_SECRET` : `validate_jwt_secret`
+      # (main.rs) exige 32 caractères au moins et rejette la valeur par défaut.
+      # Cette pile ne l'a jamais posé — personne ne l'avait vu, puisqu'elle
+      # n'avait jamais été lancée (#872).
+      #
+      # La tentation était d'écrire `${JWT_SECRET:-…}`. Il ne faut PAS : le
+      # `.env` de ce répertoire porte les secrets de la DÉMO — Compose le
+      # charge automatiquement — et la recette aurait hérité du secret de
+      # production. Un jeton forgé ici aurait alors valu là-bas, ce qui annule
+      # la séparation que toute cette pile cherche à établir.
+      #
+      # Ces deux valeurs sont donc jetables, publiques, et ne valent que pour
+      # une base jetable. Les réutiliser ailleurs serait une faute.
+      JWT_SECRET: recette-jetable-koprogo-dev-ne-jamais-utiliser-ailleurs
+      TOTP_ENCRYPTION_KEY: 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+      # WP-FE1 : dev/E2E sur http://localhost:8090 → cookie refresh sans flag
       # Secure (sinon le navigateur le rejette hors HTTPS). PROD = true.
       COOKIE_SECURE: "false"
       ENABLE_RATE_LIMITING: false
