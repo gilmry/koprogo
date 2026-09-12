@@ -13,7 +13,7 @@
 - **Archétype** : full-stack *(Rust hexagonal + Astro/Svelte 5 en îlots, PostgreSQL)*
 - **Substrat d'exécution** : conteneur — `~/bin/kcargo` pour Rust, jamais `cargo` sur l'hôte
 - **Démarré le** : 2026-09-12
-- **Dernière mise à jour** : 2026-09-12 (par : Claude — Gantt VALIDÉ, orchestration multiagent amendée)
+- **Dernière mise à jour** : 2026-09-12 (par : Claude — story habilitante posée, rang 0)
 
 ## Répartition des rôles
 
@@ -34,6 +34,19 @@ appelle une signature et non une validation.
 
 - **Phase / étape** : **Phase A close.** Livrable BMAD **SIGNÉ** le 2026-09-12
   par Gilles Maury. Passage à la **phase B — vérifier le socle avant d'ajouter**.
+- **⚠️ Une story habilitante bloque désormais le backlog.** `cap:C7.3`
+  (#873, #874) est le **rang 0** : elle livre « la capacité de boucler ». La
+  Méthode Foyer est catégorique — *« sur un projet existant sans ce harnais,
+  c'est une story de correction structurelle dédiée qui bloque le reste du
+  backlog tant qu'elle n'est pas fermée »*. Les vagues du fan-out n'ouvrent
+  pas avant.
+
+  - **#873** — la CI enregistre toutes les vidéos et **ne les téléverse nulle
+    part** : la vitrine n'existe pas comme artefact de branche, donc la revue
+    de promotion n'a rien à relire.
+  - **#874** — le fan-out **n'a jamais tourné** : permissions Actions à
+    `read`, secret absent, label absent, zéro run.
+
 - **Prochaine action attendue** : exécuter
   [ADR 0050](docs/adr/0050-pile-de-recette-sur-le-vps-ports-decales.md) —
   décaler les quatre ports, faire viser `http://localhost:8090` à
@@ -61,7 +74,9 @@ agents en direct — on relit une preuve attachée à une branche. Objectif :
 paralléliser au maximum, orchestration Claude Code multiagent.
 
 **Ce que le plan établit** : 4 vagues, 23 créneaux, largeur demandée
-**10 agents** — contre 28 passes en séquentiel supervisé. Les dépendances
+**10 agents** — contre 29 passes en séquentiel supervisé. Depuis le rang 0,
+le diagramme compte **six couches** : deux de barrière (l'habilitante, exécutée
+en session) puis les quatre du travail. Les dépendances
 ne sont pas le goulot : les chaînes ne font que quatre couches. Quatre
 issues tiennent chacune une file — **#803** en débloque 11, **#805** dix,
 **#797** et **#802** neuf chacune.
@@ -91,10 +106,16 @@ issues tiennent chacune une file — **#803** en débloque 11, **#805** dix,
   (`backend/tests/architecture.rs`), les dépendances croisées sont interdites.
 - **Chiffrage** : 73,25 j de wall-clock superviseur · 293 tours. **Bornes hautes
   de première passe**, à resserrer sur le réel par le CSI.
-- **Validateur** : ✅ **fait côté agent**. **84 issues sur 84** portent les huit
-  éléments d'une story prête, et **84 sur 84** portent les quatre classes de
+- **Validateur** : ✅ **fait côté agent**. **86 issues sur 86** portent les huit
+  éléments d'une story prête, et **86 sur 86** portent les quatre classes de
   tests (`scripts/backlog-pret.py`, mesuré le 2026-09-12). Le livrable porte
   **`SIGNÉ`** — Gilles Maury, 2026-09-12, Product Owner / superviseur.
+
+> **84 → 86.** Deux stories habilitantes ajoutées le même jour sur instruction
+> du PO. Le champ `ecart_depuis_signature` du livrable le trace : le périmètre
+> a bougé **sous** une signature qui attestait 84. La préparation reste close —
+> les deux nouvelles portent les huit éléments d'emblée. Si le PO conteste
+> l'ajout, c'est la signature qu'il reprend, pas ce champ.
 
 > **Ce que la signature atteste, et ce qu'elle n'atteste pas.** Sa `portee`
 > l'écrit dans le livrable : le classement, le chiffrage en bornes hautes, et la
@@ -183,6 +204,10 @@ un défaut de structure. Seul l'ordre des capacités est repris.
 
 ## Journal (chronologie courte)
 
+- 2026-09-12 — **story habilitante posée** : #873 (vitrine en artefact CI) et
+  #874 (fan-out prouvé) forment `cap:C7.3`, rang **0**, et bloquent le reste
+  du backlog. Le Gantt gagne une **barrière** : rien ne se fanne-out avant
+  qu'elle soit close. 86 issues, 73,75 j, 295 tours.
 - 2026-09-12 — **Gantt VALIDÉ avec amendement multiagent** : le répondre-de
   passe du direct à la revue de promotion de branche. Deux réserves mesurées
   et inscrites — le filet (gates + vitrine) est rouge, et l'hôte tient 2

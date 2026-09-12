@@ -51,6 +51,13 @@ RATIO_SUPERVISION = 3
 # Chaque entrée vient de ce que la story de l'issue DIT, pas d'une intuition.
 # La colonne de droite cite la raison ; sans raison écrite, pas de dépendance.
 DEPS = {
+    # Rang 0 — LA STORY HABILITANTE (Sprint 0). Elle livre « la capacité de
+    # boucler ». La Méthode Foyer : « sans elle, aucune autre story ne peut
+    # boucler » ; sur un projet existant, elle « bloque le reste du backlog
+    # tant qu'elle n'est pas fermée ». D'où la BARRIÈRE ci-dessous.
+    873: ([], "la vitrine devient un artefact de branche"),
+    874: ([873], "prouver le fan-out suppose une PR relisible, donc la vitrine"),
+
     # Rang 1 — le harnais. Rien ne se DÉCLARE tenu avant lui.
     872: ([], "pile de recette jetable — ADR 0050"),
     870: ([], "mot de passe de recette découplé"),
@@ -144,6 +151,7 @@ DEPS[815] = ([805, 835], "le prestataire reçoit deux liens pour un chantier")
 DEPS[817] = ([805, 835], "idem — le ticket va jusqu'au prestataire")
 
 RANGS = {
+    0: ["C7.3"],
     1: ["C7.1"], 2: ["C4.1", "C4.2", "C4.3"], 3: ["C10.1"],
     4: ["C5.2", "C5.1"], 5: ["C1.1", "C1.3"],
     6: ["C1.2", "C1.5", "C2.1", "C2.2", "C3.1", "C4.4", "C4.5",
@@ -206,6 +214,7 @@ DOMAINES_ISSUE = {
     841: "front/composants", 868: "front/composants", 842: "front/composants",
     798: "front/composants", 867: "front/composants", 871: "front/mobile-a11y",
     781: "back/communaute", 427: "harnais", 432: "iac",
+    873: "harnais", 874: "harnais",
     854: "docs-vivante", 595: "docs-vivante", 425: "meta", 429: "meta",
     556: "meta",
 }
@@ -346,19 +355,33 @@ def calculer(mod):
                        "dépendance) : " + ", ".join(f"#{n}" for n in sans_deps))
 
     # Couches topologiques : la passe au plus tôt.
-    passe, restant = {}, {n: list(DEPS.get(n, ([], ""))[0]) for n in meta}
-    p = 0
-    while restant:
-        p += 1
-        pret = [n for n, d in restant.items()
-                if all(x in passe or x not in meta for x in d)]
-        if not pret:
-            alertes.append("CYCLE dans le graphe : " +
-                           ", ".join(f"#{n}" for n in sorted(restant)))
-            break
-        for n in pret:
-            passe[n] = p
-            del restant[n]
+    #
+    # AVEC UNE BARRIÈRE. Les issues de C7.3 sont la story habilitante : elles
+    # ne sont pas « une dépendance de plus », elles précèdent TOUT. L'encoder
+    # par 84 arêtes vers #874 serait exact et illisible ; on le pose comme une
+    # barrière explicite, qui est ce que la méthode décrit.
+    habilitantes = {n for n in meta if meta[n]["cap"] in RANGS.get(0, [])}
+
+    def couches(sous_ensemble, depart):
+        res, restant = {}, {n: list(DEPS.get(n, ([], ""))[0])
+                            for n in sous_ensemble}
+        p = depart - 1
+        while restant:
+            p += 1
+            pret = [n for n, d in restant.items()
+                    if all(x in res or x not in restant for x in d)]
+            if not pret:
+                alertes.append("CYCLE dans le graphe : " +
+                               ", ".join(f"#{n}" for n in sorted(restant)))
+                break
+            for n in pret:
+                res[n] = p
+                del restant[n]
+        return res
+
+    passe = couches(habilitantes, 1)
+    barriere = max(passe.values(), default=0)
+    passe.update(couches(set(meta) - habilitantes, barriere + 1))
     return passe, meta, alertes
 
 
@@ -547,6 +570,10 @@ def livrable(mod):
     w("")
     w("Ce qui bride encore, et qui est **physique** :")
     w("")
+    w("0. **La story habilitante** — `C7.3` est une **barrière**, pas une")
+    w("   dépendance parmi d'autres. Tant qu'elle n'est pas close, le fan-out")
+    w("   n'a ni preuve à produire ni mécanisme prouvé. La Méthode Foyer :")
+    w("   « elle bloque le reste du backlog tant qu'elle n'est pas fermée ».")
     w("1. **Les dépendances** — une vague ne s'ouvre qu'une fois l'amont")
     w("   fusionné.")
     w("2. **Les conflits d'écriture** — deux agents dans le même domaine se")
@@ -565,9 +592,21 @@ def livrable(mod):
     w("> ailleurs — agents distants, ou hôte plus gros. C'est le premier")
     w("> chiffre à caler avant de lancer l'expérimentation.")
     w("")
+    hab_caps = RANGS.get(0, [])
     for v, creneaux in orch:
-        w(f"### Vague {v}")
+        dedans = [n for c in creneaux for n in c]
+        est_hab = all(meta[n]["cap"] in hab_caps for n in dedans)
+        titre = (f"### Vague {v} — **habilitation**" if est_hab
+                 else f"### Vague {v}")
+        w(titre)
         w("")
+        if est_hab:
+            w("> **Exécutée en session, pas par le fan-out.** Les habilitantes")
+            w("> sont toutes dans le domaine `harnais` : le fan-out les")
+            w("> sérialiserait sans gain. Et c'est un œuf et une poule — la")
+            w("> valeur du fan-out est que les gates et la vitrine instruisent")
+            w("> la revue, et ce sont précisément eux qu'on construit ici.")
+            w("")
         w("| Créneau | Agents | Domaines |")
         w("|---|---|---|")
         for k, lot in enumerate(creneaux, 1):

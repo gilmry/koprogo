@@ -148,6 +148,12 @@ CAPACITES = [
      {872: "L", 870: "S", 832: "M", 696: "M"}),
     ("C7.2", "T3", "La taxonomie des tests est la gate de release", "Should",
      {427: "L"}),
+    # Story habilitante (Sprint 0). La Méthode Foyer : « sans elle, aucune
+    # autre story ne peut boucler » — et sur un projet existant, « c'est une
+    # story de correction structurelle dédiée qui BLOQUE le reste du backlog
+    # tant qu'elle n'est pas fermée ». Ajoutée le 2026-09-12.
+    ("C7.3", "T3", "La boucle d'agents peut tourner", "Must",
+     {873: "S", 874: "M"}),
 
     ("C8.1", "T4", "Les six parcours par persona sont filmés", "Could",
      {805: "M", 806: "L", 807: "L", 808: "M", 809: "M", 815: "M", 816: "M"}),
@@ -451,6 +457,12 @@ def livrable(vivantes, classees):
     w("")
     w("| Rang | Capacités | Pourquoi ce rang |")
     w("|---|---|---|")
+    w("| **0** | **C7.3** | **Story habilitante.** Elle livre « la capacité de "
+      "boucler » : la vitrine devient un artefact de branche, et le fan-out "
+      "est prouvé sur une story réelle. Sans elle, le mécanisme de "
+      "*répondre-de* retenu — la revue de promotion instruite par les gates "
+      "et la vitrine — n'a pas de support. Elle **bloque le reste du "
+      "backlog**. |")
     w("| 1 | C7.1 | Sans harnais de recette qui s'exécute, aucune autre capacité "
       "ne peut être déclarée tenue. |")
     w("| 2 | C4.1, C4.2, C4.3 | Ce qui expose des données ou empêche d'exercer "

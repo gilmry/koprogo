@@ -7,7 +7,14 @@ signature_humaine:
   date: 2026-09-12
   nom: Gilles Maury
   role: Product Owner / superviseur
-  etat: SIGNÉ — 84/84 issues « Agent IA Ready », préparation close
+  etat: SIGNÉ — 86/86 issues « Agent IA Ready », préparation close
+  ecart_depuis_signature: >-
+    Signé le 2026-09-12 à 84 issues. Deux stories habilitantes (#873, #874)
+    ont été ajoutées le même jour SUR INSTRUCTION DU PO, formant la capacité
+    C7.3 et le rang 0. Le périmètre passe à 86, le chiffrage à 73,75 j / 295
+    tours. Les deux nouvelles portent les huit éléments : la préparation
+    reste close. Si le PO conteste cet ajout, c'est la signature qu'il faut
+    reprendre, pas ce champ.
   portee: >-
     Atteste le classement (exhaustif et exclusif), le chiffrage en bornes
     hautes de première passe, et que la préparation des stories est close.
@@ -20,7 +27,7 @@ signature_humaine:
 *Épopées et capacités. Généré par `scripts/backlog-structure.py` : ne pas
 éditer à la main, la prochaine génération écraserait la correction.*
 
-**84 issues ouvertes**, 10 épopées, 32 capacités. Classement exhaustif et exclusif : chaque issue appartient à exactement
+**86 issues ouvertes**, 10 épopées, 33 capacités. Classement exhaustif et exclusif : chaque issue appartient à exactement
 une capacité, et une issue non classée fait échouer la génération.
 
 ## Comment lire ce document
@@ -62,7 +69,7 @@ fabrication ; le Scrum Master de conception l'écrit sans détour :
 | Couche(s) | où le code atterrit, donc quelles gardes s'appliquent |
 | Taille + tours | le coût, sur les deux axes |
 
-**84 issues sur 84** portent les huit. Le relevé
+**86 issues sur 86** portent les huit. Le relevé
 d'origine, avant ce travail, donnait **zéro**.
 
 Le chiffre n'est pas écrit à la main : `scripts/backlog-pret.py` le relève
@@ -340,7 +347,7 @@ La cible est mobile-first et l'application est écrite desktop-first. L'écart n
 
 ## T3 — Harnais de recette
 
-`epic:recette` · 5 issues · 4.00 j · 16 tours
+`epic:recette` · 7 issues · 5.25 j · 21 tours
 
 Sprint 0 continué. Ce qui permet de BOUCLER : sans lui, aucune autre capacité ne peut être déclarée tenue.
 
@@ -362,6 +369,15 @@ Sprint 0 continué. Ce qui permet de BOUCLER : sans lui, aucune autre capacité 
 | Issue | Titre | Taille | Prête |
 |---|---|---|---|
 | [#427](https://github.com/gilmry/koprogo/issues/427) | Validation — taxonomie tests 4 catégories + revue humaine+Cowork comme gate r… | L | oui |
+
+### C7.3 — La boucle d'agents peut tourner
+
+**Must** · `cap:C7.3` · 2 issues · 1.25 j · 5 tours · **2/2 prêtes**
+
+| Issue | Titre | Taille | Prête |
+|---|---|---|---|
+| [#873](https://github.com/gilmry/koprogo/issues/873) | La vitrine n'est publiée nulle part : la CI enregistre les vidéos et ne télév… | S | oui |
+| [#874](https://github.com/gilmry/koprogo/issues/874) | Le fan-out CI n'a jamais tourné : trois réglages manquent et aucune passe ne … | M | oui |
 
 ## T4 — Documentation vivante multi-persona
 
@@ -479,11 +495,11 @@ Des questions ouvertes, pas des défauts. La Méthode Foyer les veut en RFC, dis
 | E4 — Plateforme | 10 | 9.00 | 36 |
 | T1 — Refonte UX | 14 | 13.25 | 53 |
 | T2 — Accessibilité et mobile | 5 | 3.50 | 14 |
-| T3 — Harnais de recette | 5 | 4.00 | 16 |
+| T3 — Harnais de recette | 7 | 5.25 | 21 |
 | T4 — Documentation vivante multi-persona | 14 | 11.25 | 45 |
 | T5 — Ops et infrastructure | 10 | 9.00 | 36 |
 | T6 — Arbitrages produit en attente | 1 | 0.50 | 2 |
-| **Total** | **84** | **72.50** | **290** |
+| **Total** | **86** | **73.75** | **295** |
 
 `S` = 0,5 j · `M` = 0,75 j · `L` = 1 j — wall-clock du superviseur, pas
 temps machine. Les tours mesurent l'autre axe, le coût en tokens.
@@ -497,6 +513,7 @@ départ falsifiable ; les publier comme un engagement serait une faute.
 
 | Rang | Capacités | Pourquoi ce rang |
 |---|---|---|
+| **0** | **C7.3** | **Story habilitante.** Elle livre « la capacité de boucler » : la vitrine devient un artefact de branche, et le fan-out est prouvé sur une story réelle. Sans elle, le mécanisme de *répondre-de* retenu — la revue de promotion instruite par les gates et la vitrine — n'a pas de support. Elle **bloque le reste du backlog**. |
 | 1 | C7.1 | Sans harnais de recette qui s'exécute, aucune autre capacité ne peut être déclarée tenue. |
 | 2 | C4.1, C4.2, C4.3 | Ce qui expose des données ou empêche d'exercer un droit. |
 | 3 | C10.1 | Un arbitrage qui borne C5.2 : le trancher tôt coûte une conversation, le trancher tard coûte un revirement. |
