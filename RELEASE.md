@@ -13,7 +13,7 @@
 - **Archétype** : full-stack *(Rust hexagonal + Astro/Svelte 5 en îlots, PostgreSQL)*
 - **Substrat d'exécution** : conteneur — `~/bin/kcargo` pour Rust, jamais `cargo` sur l'hôte
 - **Démarré le** : 2026-09-12
-- **Dernière mise à jour** : 2026-09-12 (par : Claude — ADR 0050 exécutée, #872)
+- **Dernière mise à jour** : 2026-09-12 (par : Claude — pile de recette LANCÉE, gate e2e mesuré)
 
 ## Répartition des rôles
 
@@ -82,11 +82,26 @@ appelle une signature et non une validation.
     décision reste bonne, la garde de ce dépôt ne peut simplement pas voir
     ces collisions-là.
 
-- **Prochaine action attendue** : **lancer la pile de recette** —
-  `docker compose up -d` sous le projet `koprogo-dev`, puis `make test-e2e`.
-  C'est le seul geste qui fasse passer le gate `e2e` de 🟠 à 🟢, et il n'a
-  jamais été fait. **Tier 1** : la démo tourne sur le même hôte, et
-  l'opération se fait avec le PO, pas sans lui.
+- **✅ La pile de recette tourne** (autorisée par le PO le 2026-09-12). Cinq
+  conteneurs `koprogo-dev-*` sur 8090 / 8091 / 15432 / 19000-19001. Isolation
+  vérifiée à chaque étape : les quatre conteneurs de la démo sont restés
+  identiques au caractère près et `api.koprogo.com` a répondu 200 tout du long.
+  `Host(localhost)` ne sert que nos deux conteneurs — contrôlé par l'API de
+  Traefik, pas supposé.
+
+- **Prochaine action attendue** : **instruire les 8 échecs restants** (#832).
+  Quatre sont #718 et se rejouent à volonté désormais. Les quatre autres —
+  `Dashboard`, `I18n`, `OwnerScreensJourney`, `story2-acp-organization`,
+  `role-assignment` — n'ont pas encore été départagés entre « cascade d'un 502 »
+  et « défaut réel ». Le parcours de référence, lui, **passe seul** (2/2 en
+  1 min) : son échec en campagne est une interaction, pas un défaut du parcours.
+
+- **À noter, sans conséquence aujourd'hui** : le Traefik de la recette voit les
+  **18 routeurs des projets voisins** de l'hôte (derniere-chance, elevia, n8n),
+  parce que `--providers.docker=true` regarde tout le socket. Ils sont tous
+  `disabled` faute d'entrypoint correspondant, et aucun ne matche
+  `Host(localhost)`. C'est la même famille que #731, et ça mériterait une
+  contrainte Traefik plutôt qu'une chance de plus.
 - **Le 🔴 sur les dialectes est éteint par le travail** : les 12 issues
   restantes ont été traduites au rang 7. L'instrument de mesure n'a pas été
   touché — c'est le travail qui a fait monter le chiffre, pas sa définition.
@@ -184,23 +199,38 @@ issues tiennent chacune une file — **#803** en débloque 11, **#805** dix,
 | `verify` structurel | 🟢 | `kcargo test --test architecture` + 15 gardes | 16 suites vertes |
 | `contrat` anti-drift | 🟢 | gate OpenAPI + `oasdiff` en CI | #765 fermée |
 | `unit` domaine | 🟢 | `kcargo test --lib` | 1989 tests |
-| `integration` | 🟢 | suites `e2e_*.rs` (testcontainers) | |
+| `integration` | 🔴 | suites `e2e_*.rs` (testcontainers) | `s3_storage_roundtrip` : le tag `minio/minio` n'est plus tirable — #877. **Était déclaré 🟢 à tort** |
 | `bdd` | 🟢 | suites `bdd_*.rs` | |
-| `e2e` parcours | 🟠 | `make test-e2e` | ne vise plus la démo (ADR 0050 exécutée) ; pile **jamais lancée** — #872 |
+| `e2e` parcours | 🟠 | `make test-e2e` | **s'exécute enfin** contre `localhost:8090` : 300 ✓ / 8 ✗ / 14 sautés, code 2. Dont 4 en 502 sous rafale — #718 |
 | `visuel` | ⚪ | — | pas de goldens |
-| `doc-vivante` | 🟠 | `make docs-with-videos` | vise 8090 ; le parcours filmait son échec, corrigé, **en attente de la CI** — #876 |
+| `doc-vivante` | 🟢 | `make vitrine` | parcours complet, 10 chapitres, 81 s, `interrompu: None` — prouvé en CI (run 34710066495) et en local (2/2) |
 | front typecheck | 🟢 | `npx svelte-check --threshold error` | 0 erreur |
 | front tests | 🟢 | `npx vitest run` | 659 tests, 120 fichiers |
 
-**Le socle n'est toujours pas vert, et le 🟠 dit exactement pourquoi.** Les
-deux causes nommées le 2026-09-12 sont levées *dans les fichiers* : la recette
-ne vise plus la démo, le parcours amorce son propre monde. Aucune des deux
-n'est **prouvée à l'exécution** — la pile de recette n'a jamais été lancée, et
-le parcours corrigé attend son run de CI.
+**Le socle n'est toujours pas vert, mais il est enfin MESURÉ.** La pile de
+recette a tourné pour la première fois de son existence le 2026-09-12, et
+chaque ligne du tableau ci-dessus repose désormais sur une exécution, plus sur
+une lecture de diff.
 
-Écrire 🟢 ici sur la foi d'un diff serait précisément la signature que la
-méthode distingue d'une validation. Le vert se pose quand `make test-e2e`
-rend 0 contre `http://localhost:8090`, pas avant.
+Ce que le premier passage a coûté, et qui est le vrai résultat de la journée :
+
+1. **Le backend ne démarrait pas** — `JWT_SECRET` absent de la pile de dev.
+2. **57 specs sur 106 échouaient** — `PLAYWRIGHT_API_BASE` retombait sur le
+   port 80 dans **93 fichiers**, donc sur le Traefik de la démo. Rien n'a été
+   écrit là-bas : le 80 rend un `301 → https://localhost` qui n'aboutit pas.
+   Ce n'était pas une garde, c'était une chance. C'en est une maintenant.
+3. **Le gate `integration` était déclaré 🟢 et ne l'était pas** — #877.
+
+Aucun de ces trois défauts n'était visible avant l'exécution. C'est la
+définition d'un gate jamais lancé : il ne dit rien, et son silence se lit
+comme un accord.
+
+Reste 8 échecs sur 322. Quatre sont **#718**, reproduite hors production pour
+la première fois — le backend ne meurt pas, il cesse de répondre sous rafale
+(0 redémarrage, aucune recompilation, routage vérifié vers nos seuls
+conteneurs). Les quatre autres sont à instruire un par un, et c'est #832.
+
+Le 🟢 se posera quand `make test-e2e` rendra 0. Pas avant.
 
 ## Périmètres / backlog
 
@@ -244,6 +274,13 @@ un défaut de structure. Seul l'ordre des capacités est repris.
 
 ## Journal (chronologie courte)
 
+- 2026-09-12 — **La pile de recette a tourné pour la première fois.** Trois
+  défauts que seule l'exécution pouvait montrer : `JWT_SECRET` absent
+  (`489a5473`), `PLAYWRIGHT_API_BASE` retombant sur le port 80 dans 93 fichiers
+  (`fc6251ad`, centralisé dans `helpers/adresses.ts` + garde), et le gate
+  `integration` déclaré vert alors qu'il est rouge (#877). Puis le gate :
+  300 ✓ / 8 ✗, dont 4 en 502 sous rafale — **#718 reproduite hors production
+  pour la première fois**.
 - 2026-09-12 — **ADR 0050 exécutée (`0e3036d8`), #872.** Quatre ports décalés,
   `RECETTE` nommée dans le Makefile, guide E2E corrigé, garde étendue aux
   ports et à toutes les paires de piles. Trois trouvailles au passage :
