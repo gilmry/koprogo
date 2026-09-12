@@ -1,7 +1,6 @@
 ---
 description: Amorce le pilote Foyer (lit le cœur, pose Q0, crée le registre)
 ---
----
 
 **Avant toute chose.** Si `.foyer/pilote/` est vide ou absent, la méthode n'est pas
 là et rien de ce qui suit ne peut fonctionner. Arrête-toi et dis-le :

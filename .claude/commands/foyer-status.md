@@ -1,7 +1,6 @@
 ---
 description: Restitue l'état Foyer (où on en est, gates, arbitrages en attente)
 ---
----
 
 **Avant toute chose.** Si `.foyer/pilote/` est vide ou absent, la méthode n'est pas
 là et rien de ce qui suit ne peut fonctionner. Arrête-toi et dis-le :

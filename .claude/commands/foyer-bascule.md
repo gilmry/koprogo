@@ -2,7 +2,6 @@
 description: Prépare un point irréversible et demande l'arbitrage de modalité au PO
 argument-hint: "[nom du point, ex. bascule-n2-medecins]"
 ---
----
 
 **Avant toute chose.** Si `.foyer/pilote/` est vide ou absent, la méthode n'est pas
 là et rien de ce qui suit ne peut fonctionner. Arrête-toi et dis-le :
