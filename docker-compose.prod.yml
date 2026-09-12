@@ -1,3 +1,12 @@
+# Pile de production.
+#
+# `name:` épingle le nom de projet que cette pile porte DÉJÀ : les conteneurs
+# en cours d'exécution sont étiquetés `com.docker.compose.project=koprogo`.
+# L'écrire ne change rien — le taire laissait la pile de développement, qui
+# déduisait le même nom du répertoire, revendiquer ces conteneurs et leur
+# volume de données (#872).
+name: koprogo
+
 # KoproGo - Déploiement auto-hébergé (build local, indépendant du registre GHCR)
 #
 # Usage:
