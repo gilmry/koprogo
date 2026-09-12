@@ -1071,6 +1071,36 @@ jobs:
           path: frontend/playwright-report/
           retention-days: 7
 
+      # La vitrine — la preuve de valeur, attachée à la branche.
+      #
+      # `playwright.config.ts:115` enregistre TOUTES les vidéos depuis
+      # toujours, et son commentaire le revendique : « DOCUMENTATION
+      # VIVANTE! ». Elles atterrissaient dans `test-results/` et repartaient
+      # avec le runner : produites à chaque run, téléversées nulle part.
+      #
+      # Or le répondre-de de ce dépôt est porté par la revue de promotion de
+      # branche, instruite par les gates ET la vitrine. Sans cet artefact, le
+      # relecteur n'a rien à regarder — le mécanisme n'a pas de support. Cf.
+      # #873 et docs/GANTT_PASSES_v0_1_0.md.
+      #
+      # On ne téléverse QUE les `video.webm`, pas `test-results/` entier :
+      # les traces et captures d'écran pèsent lourd et ne servent pas à
+      # juger la valeur.
+      - name: Upload vitrine (vidéos des parcours)
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: vitrine-videos
+          path: frontend/test-results/**/video.webm
+          # Un run sans vidéo n'est pas une faute : il arrive que tous les
+          # parcours soient ignorés. Échouer ici masquerait le vrai résultat
+          # du job derrière un artefact manquant.
+          if-no-files-found: warn
+          # Alignée sur le rapport ci-dessus. Des vidéos 1280x720 conservées
+          # longtemps remplissent le quota du dépôt sans que personne ne s'en
+          # aperçoive avant le blocage.
+          retention-days: 7
+
   build:
     name: Build
     runs-on: ubuntu-latest
