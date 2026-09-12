@@ -13,7 +13,7 @@
 - **Archétype** : full-stack *(Rust hexagonal + Astro/Svelte 5 en îlots, PostgreSQL)*
 - **Substrat d'exécution** : conteneur — `~/bin/kcargo` pour Rust, jamais `cargo` sur l'hôte
 - **Démarré le** : 2026-09-12
-- **Dernière mise à jour** : 2026-09-12 (par : Claude, sur demande de Gilles Maury)
+- **Dernière mise à jour** : 2026-09-12 (par : Claude — arbitrage de découpage tranché par le PO)
 
 ## Répartition des rôles
 
@@ -34,9 +34,12 @@ appelle une signature et non une validation.
 
 - **Phase / étape** : Phase A · conception BMAD ciblée sur la release · étape 4
   (Validateur → backlog « Agent IA Ready »)
-- **Prochaine action attendue** : faire valider le découpage de la release. Le
-  backlog est structuré et chiffré, il n'est **pas validé** — c'est un arbitrage
-  de PO, inscrit plus bas.
+- **Prochaine action attendue** : achever l'étape 4 — porter les stories à
+  « Agent IA Ready » dans l'ordre des rangs. Le découpage est tranché (option A,
+  [ADR 0049](docs/adr/0049-perimetre-v0-1-0-integral.md)) ; ce qui manque n'est
+  plus une décision mais du travail de préparation. Le rang 1 (C7.1) est prêt
+  4/4 mais bloqué par l'arbitrage #872 : commencer par le rang 2
+  (C4.1 / C4.2 / C4.3).
 - **Rôle à jouer** : `.foyer/pilote/roles/conception-bmad.md`
 
 ### Ce qui est déjà produit de la phase A
@@ -49,8 +52,14 @@ appelle une signature et non une validation.
   (`backend/tests/architecture.rs`), les dépendances croisées sont interdites.
 - **Chiffrage** : 73,25 j de wall-clock superviseur · 293 tours. **Bornes hautes
   de première passe**, à resserrer sur le réel par le CSI.
-- **Validateur** : ⚠️ **non fait**. 7 issues sur 85 portent les huit éléments
-  d'une story prête (`scripts/backlog-pret.py`). Le livrable porte `NON SIGNÉ`.
+- **Validateur** : ⚠️ **non fait**. **7 issues sur 84** portent les huit
+  éléments d'une story prête, et 25 portent les quatre classes de tests
+  (`scripts/backlog-pret.py`, mesuré le 2026-09-12). Le livrable porte
+  `NON SIGNÉ`.
+
+> **84, et non 85.** Le backlog structuré a été généré à 85 issues ouvertes ;
+> #840 a été fermée le même jour, après la génération. Le document n'est pas
+> faux, il est daté — il se régénère par `scripts/backlog-structure.py`.
 
 ## Gates (dernier statut — mesuré le 2026-09-12)
 
@@ -94,15 +103,6 @@ un défaut de structure. Seul l'ordre des capacités est repris.
 
 ### 🔴 En attente (le PO doit trancher une MODALITÉ)
 
-- **Point** : découpage de la release v0.1.0
-  - **Preuve jointe** : 85 issues classées en 32 capacités, exhaustif et exclusif,
-    chiffrées à 73,25 j / 293 tours (`docs/BACKLOG_STRUCTURE_v0_1_0.md`).
-  - **Question de modalité** : dans quel ordre et jusqu'où va la 0.1.0 ? La
-    décision du 2026-09-06 a mis les 85 au périmètre du tag ; rien ne l'a
-    réexaminée depuis que le chiffrage existe.
-  - **Options** : A) tenir les 85 · B) sortir les `Could` (T4 doc vivante, C5.3
-    maquettes, C9.2 IaC) vers 0.2.0 · C) ne garder que les `Must`.
-
 - **Point** : #872 — pile de recette jetable sur le VPS
   - **Preuve jointe** : la pile de dev revendiquait les conteneurs et le **volume
     de données** de la démo ; fermé par `name:` explicite (commit `d35332de`),
@@ -131,8 +131,11 @@ un défaut de structure. Seul l'ordre des capacités est repris.
 - **Point** : signature du livrable BMAD
   - **Preuve jointe** : `docs/BACKLOG_STRUCTURE_v0_1_0.md`, frontmatter
     `etat: NON SIGNÉ`.
-  - **Question de modalité** : le PO le relit-il maintenant, ou après l'arbitrage
-    de découpage ci-dessus ?
+  - **Question de modalité** : le découpage étant tranché, le verrou qui
+    suspendait cette question est levé. Reste : le PO signe-t-il **maintenant**
+    le livrable de structure (ce qu'il atteste : le classement et le chiffrage),
+    ou **après** que les stories soient portées à « Agent IA Ready » (ce qu'il
+    atteste alors : que la fabrication peut commencer) ?
 
 ### ✅ Tranchés
 
@@ -141,9 +144,13 @@ un défaut de structure. Seul l'ordre des capacités est repris.
 | Accès notaire à l'état daté | lien signé à durée limitée, émis par le syndic, révocable, journalisé | Gilles Maury | 2026-09-12 | à écrire — #855 |
 | Mot de passe superadmin de la démo | `admin123` posé dans l'environnement, pour survivre à l'upsert du seed ; coût assumé : il est publié dans le dépôt | Gilles Maury | 2026-09-12 | #870 |
 | Porte du pilote Foyer | `release` — le produit tourne, on cadre un gros incrément | Gilles Maury | 2026-09-12 | ce registre |
+| **Découpage de la release v0.1.0** | **option A — périmètre intégral** : les 84 issues ouvertes restent au tag, aucun report en 0.2.0. `Must/Should/Could` ordonne l'exécution, ne retire rien | Gilles Maury | 2026-09-12 | [ADR 0049](docs/adr/0049-perimetre-v0-1-0-integral.md) |
 
 ## Journal (chronologie courte)
 
+- 2026-09-12 — **découpage de la release tranché : option A**, périmètre
+  intégral confirmé face à son chiffrage (ADR 0049). La décision du 2026-09-06
+  n'est plus seulement héritée, elle est opposée à son coût.
 - 2026-09-12 — pilote Foyer installé : submodule `.foyer` épinglé à `f6fe69c`,
   quatre commandes dans `.claude/commands/`, ce registre créé.
 - 2026-09-12 — backlog restructuré par capacité (`1a14a8e4`), chiffré, et
