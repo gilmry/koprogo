@@ -13,7 +13,7 @@
 - **Archétype** : full-stack *(Rust hexagonal + Astro/Svelte 5 en îlots, PostgreSQL)*
 - **Substrat d'exécution** : conteneur — `~/bin/kcargo` pour Rust, jamais `cargo` sur l'hôte
 - **Démarré le** : 2026-09-12
-- **Dernière mise à jour** : 2026-09-12 (par : Claude — #876, la vitrine au moule Foyer)
+- **Dernière mise à jour** : 2026-09-12 (par : Claude — ADR 0050 exécutée, #872)
 
 ## Répartition des rôles
 
@@ -44,23 +44,49 @@ appelle une signature et non une validation.
   - **#873** — la CI enregistre toutes les vidéos et **ne les téléverse nulle
     part** : la vitrine n'existe pas comme artefact de branche, donc la revue
     de promotion n'a rien à relire.
-  - **#876** — la vitrine **ne suit pas le moule Foyer**. `kit-actix` en
-    donne le patron pour cette pile exacte : parcours partagé, cadence en
-    constante nommée, **narration incrustée** visible dans la vidéo,
-    **chapitres horodatés**, galerie autonome, invariant anti-dette.
-    KoproGo n'en a aucun des quatre — et `slow-down-tests.sh` **mute les
-    specs du gate** pour enregistrer, exactement l'anti-patron que le skill
-    nomme. Sans narration ni chapitres, arbitrer coûte un visionnage
-    complet : le modèle à arbitre unique s'effondre (#875).
+  - **#876** — la vitrine **ne suit pas le moule Foyer**. Les quatre éléments
+    sont livrés (parcours partagé, cadence nommée, narration incrustée,
+    chapitres, galerie, invariant anti-dette). **Mais elle filmait son propre
+    échec** : le run `34707123590` a rendu 307 specs vertes et une rouge — le
+    parcours de référence, sur « TestWorld not found ». L'artefact `vitrine`
+    s'est bien publié et téléchargé (93 Mo, 316 vidéos, galerie, chapitres) en
+    montrant un écran de connexion qui ne s'ouvre pas.
+
+    **Cause** : `playwright.config.ts` ne déclare **aucun `globalSetup`**. Le
+    `tests/e2e/global-setup.ts` existe, écrit un TestWorld de 500 lignes, et
+    rien ne l'exécute — les 307 autres specs ne s'en apercevaient pas, aucune
+    ne s'en sert. Corrigé par `597b3eeb` : le parcours amorce son monde
+    lui-même. **En attente de la preuve CI.**
   - **#874** — le fan-out **n'a jamais tourné** : permissions Actions à
     `read`, secret absent, label absent, zéro run.
 
-- **Prochaine action attendue** : exécuter
-  [ADR 0050](docs/adr/0050-pile-de-recette-sur-le-vps-ports-decales.md) —
-  décaler les quatre ports, faire viser `http://localhost:8090` à
-  `make test-e2e` et `make docs-with-videos`, corriger
-  `docs/E2E_TESTING_GUIDE.rst`. C'est le premier pas de la phase B : tant que
-  `e2e` est 🔴, le parcours interdit d'empiler la release.
+- **✅ ADR 0050 exécutée** (`0e3036d8`) — les quatre ports sont décalés
+  (8090 / 8091 / 15432 / 19000-19001), `make test-e2e` et
+  `make docs-with-videos` visent `$(RECETTE)` dont le défaut est
+  `http://localhost:8090`, et `docs/E2E_TESTING_GUIDE.rst` ne présente plus la
+  commande dangereuse comme la normale. `garde-piles-compose-distinctes`
+  interdit désormais qu'une pile suivie reprenne le nom, le conteneur ou le
+  **port** d'une autre — trois témoins de rougeur vérifiés.
+
+  Deux choses à en retenir, qui ne sont pas dans l'ADR :
+
+  - `PUBLIC_API_URL` du frontend valait `http://localhost/api/v1`. Lue par le
+    **navigateur**, elle aurait envoyé chaque appel de la recette à la démo
+    malgré le décalage, en silence.
+  - `docker-compose.mcp.yml`, suivi par git, ne posait **aucun `name:`** :
+    ses conteneurs héritaient du projet `koprogo`, et un `down` dessus aurait
+    emporté la démo. Le défaut de #872 était encore armé dans un troisième
+    fichier, invisible parce que la garde n'en connaissait que deux.
+  - L'ADR attribuait 5432/9000/9001 à la démo. Mesuré : ce sont
+    `elevia-postgres` et `derniere-chance-minio`, des projets **voisins**. La
+    décision reste bonne, la garde de ce dépôt ne peut simplement pas voir
+    ces collisions-là.
+
+- **Prochaine action attendue** : **lancer la pile de recette** —
+  `docker compose up -d` sous le projet `koprogo-dev`, puis `make test-e2e`.
+  C'est le seul geste qui fasse passer le gate `e2e` de 🟠 à 🟢, et il n'a
+  jamais été fait. **Tier 1** : la démo tourne sur le même hôte, et
+  l'opération se fait avec le PO, pas sans lui.
 - **Le 🔴 sur les dialectes est éteint par le travail** : les 12 issues
   restantes ont été traduites au rang 7. L'instrument de mesure n'a pas été
   touché — c'est le travail qui a fait monter le chiffre, pas sa définition.
@@ -160,15 +186,21 @@ issues tiennent chacune une file — **#803** en débloque 11, **#805** dix,
 | `unit` domaine | 🟢 | `kcargo test --lib` | 1989 tests |
 | `integration` | 🟢 | suites `e2e_*.rs` (testcontainers) | |
 | `bdd` | 🟢 | suites `bdd_*.rs` | |
-| `e2e` parcours | 🔴 | `make test-e2e` | **vise `api.koprogo.com` sur le VPS** — #872 |
+| `e2e` parcours | 🟠 | `make test-e2e` | ne vise plus la démo (ADR 0050 exécutée) ; pile **jamais lancée** — #872 |
 | `visuel` | ⚪ | — | pas de goldens |
-| `doc-vivante` | 🔴 | `make docs-with-videos` | bloqué par #872, non bloquant par nature |
+| `doc-vivante` | 🟠 | `make docs-with-videos` | vise 8090 ; le parcours filmait son échec, corrigé, **en attente de la CI** — #876 |
 | front typecheck | 🟢 | `npx svelte-check --threshold error` | 0 erreur |
-| front tests | 🟢 | `npx vitest run` | 652 tests, 119 fichiers |
+| front tests | 🟢 | `npx vitest run` | 659 tests, 120 fichiers |
 
-**Le socle n'est pas vert.** La phase B du parcours exige de partir d'un vert
-connu ; `e2e` est rouge et sa cause est nommée. Empiler la release avant de la
-corriger serait la déviation que le parcours interdit.
+**Le socle n'est toujours pas vert, et le 🟠 dit exactement pourquoi.** Les
+deux causes nommées le 2026-09-12 sont levées *dans les fichiers* : la recette
+ne vise plus la démo, le parcours amorce son propre monde. Aucune des deux
+n'est **prouvée à l'exécution** — la pile de recette n'a jamais été lancée, et
+le parcours corrigé attend son run de CI.
+
+Écrire 🟢 ici sur la foi d'un diff serait précisément la signature que la
+méthode distingue d'une validation. Le vert se pose quand `make test-e2e`
+rend 0 contre `http://localhost:8090`, pas avant.
 
 ## Périmètres / backlog
 
@@ -212,6 +244,16 @@ un défaut de structure. Seul l'ordre des capacités est repris.
 
 ## Journal (chronologie courte)
 
+- 2026-09-12 — **ADR 0050 exécutée (`0e3036d8`), #872.** Quatre ports décalés,
+  `RECETTE` nommée dans le Makefile, guide E2E corrigé, garde étendue aux
+  ports et à toutes les paires de piles. Trois trouvailles au passage :
+  `PUBLIC_API_URL` visait encore le 80, `docker-compose.mcp.yml` n'avait
+  toujours pas de `name:`, et les 5432/9000/9001 de l'hôte appartiennent à des
+  projets voisins, pas à la démo.
+- 2026-09-12 — **#876 corrigé (`597b3eeb`).** La vitrine se publiait et se
+  téléchargeait en filmant son propre échec : le parcours lisait un TestWorld
+  qu'aucun `globalSetup` n'écrit, la configuration n'en déclarant aucun. Le
+  parcours amorce désormais son monde. Preuve CI en attente.
 - 2026-09-12 — **#876 : la vitrine au moule Foyer.** #873 rend les vidéos
   téléchargeables, pas lisibles. `skills/documentation-vivante.md` pose quatre
   éléments non optionnels et `kit-actix` en donne le patron pour cette pile ;
