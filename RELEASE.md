@@ -13,7 +13,7 @@
 - **Archétype** : full-stack *(Rust hexagonal + Astro/Svelte 5 en îlots, PostgreSQL)*
 - **Substrat d'exécution** : conteneur — `~/bin/kcargo` pour Rust, jamais `cargo` sur l'hôte
 - **Démarré le** : 2026-09-12
-- **Dernière mise à jour** : 2026-09-12 (par : Claude — rang 2 porté à « Agent IA Ready »)
+- **Dernière mise à jour** : 2026-09-12 (par : Claude — rangs 2 et 3 portés à « Agent IA Ready »)
 
 ## Répartition des rôles
 
@@ -34,9 +34,9 @@ appelle une signature et non une validation.
 
 - **Phase / étape** : Phase A · conception BMAD ciblée sur la release · étape 4
   (Validateur → backlog « Agent IA Ready »)
-- **Prochaine action attendue** : poursuivre l'étape 4 — rang 3 (C10.1, dont
-  l'arbitrage est tranché par [ADR 0052](docs/adr/0052-le-comptable-ne-voit-pas-communaute.md)),
-  puis rang 4 (C5.2 puis C5.1). Les rangs 1 et 2 sont prêts.
+- **Prochaine action attendue** : poursuivre l'étape 4 — rang 4 (C5.2 puis
+  C5.1, 4 issues), puis rang 5 (C1.1 et C1.3, 9 issues). Les rangs 1 à 3 sont
+  prêts ; restent 69 issues à préparer.
 - **La fabrication n'ouvre pas encore.** Le PO a choisi une signature unique
   **après** la préparation complète ; ni #872 (harnais, ADR 0050) ni #855 ni
   #802 n'entrent en fabrication avant. L'ADR 0050 attend, elle n'est pas
@@ -53,15 +53,15 @@ appelle une signature et non une validation.
   (`backend/tests/architecture.rs`), les dépendances croisées sont interdites.
 - **Chiffrage** : 73,25 j de wall-clock superviseur · 293 tours. **Bornes hautes
   de première passe**, à resserrer sur le réel par le CSI.
-- **Validateur** : ⏳ **en cours**. **14 issues sur 84** portent les huit
-  éléments d'une story prête, et 32 portent les quatre classes de tests
-  (`scripts/backlog-pret.py`, mesuré le 2026-09-12 après le rang 2). Le
+- **Validateur** : ⏳ **en cours**. **15 issues sur 84** portent les huit
+  éléments d'une story prête, et 33 portent les quatre classes de tests
+  (`scripts/backlog-pret.py`, mesuré le 2026-09-12 après le rang 3). Le
   livrable porte `NON SIGNÉ` — la signature vient après la préparation.
 
-> **Rangs 1 et 2 prêts.** C7.1 l'était (4/4) ; les sept issues de C4.1, C4.2 et
-> C4.3 ont reçu leur story le 2026-09-12. Le contrôle est **de forme** : le
-> script cherche des marqueurs, pas du sens. Il l'écrit lui-même — « une borne
-> haute de la préparation, jamais un verdict ».
+> **Rangs 1, 2 et 3 prêts.** C7.1 l'était (4/4) ; les sept issues de C4.1, C4.2
+> et C4.3, puis #856 (C10.1), ont reçu leur story le 2026-09-12. Le contrôle est
+> **de forme** : le script cherche des marqueurs, pas du sens. Il l'écrit
+> lui-même — « une borne haute de la préparation, jamais un verdict ».
 
 > **84, et non 85.** Le backlog structuré a été généré à 85 issues ouvertes ;
 > #840 a été fermée le même jour, après la génération. Le document n'est pas
@@ -98,7 +98,7 @@ un défaut de structure. Seul l'ordre des capacités est repris.
 |---|---|---|
 | 1 | C7.1 — la recette peut se connecter et s'exécuter | débloquée — ADR 0050 à exécuter |
 | 2 | C4.1 / C4.2 / C4.3 — identité, périmètre, RGPD | en cours (#845 à 1 route) |
-| 3 | C10.1 — arbitrage du groupe « Communauté » | ✅ tranché (ADR 0052) |
+| 3 | C10.1 — arbitrage du groupe « Communauté » | ✅ tranché (ADR 0052) · story prête |
 | 4 | C5.2 puis C5.1 — contrat de tests, socle visuel | prêtes (#797, #802 débloquée) |
 | 5 | C1.1 / C1.3 — le noyau légal | #840 fermée |
 | 6 | les `Should`, parallélisables | |
@@ -144,6 +144,10 @@ un défaut de structure. Seul l'ordre des capacités est repris.
 
 ## Journal (chronologie courte)
 
+- 2026-09-12 — **rang 3 porté à « Agent IA Ready »** : #856 (C10.1). Sa story
+  exécute l'ADR 0052 et nomme la lecture qui concilie tout — l'accès
+  communautaire d'un comptable viendrait d'une **désignation** de community
+  manager (ADR 0046), jamais de son rôle. 15/84.
 - 2026-09-12 — **rang 2 porté à « Agent IA Ready »** : sept stories écrites
   sur #845, #864 (C4.1), #868, #841, #798, #694 (C4.2) et #842 (C4.3). La
   préparation passe de 7/84 à **14/84**, mesuré. #772 étant fermée, la
