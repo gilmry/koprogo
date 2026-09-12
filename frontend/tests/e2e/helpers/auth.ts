@@ -1110,3 +1110,138 @@ export async function uiLoginWithRetry(
       `${String(lastErr).slice(0, 200)}`,
   );
 }
+
+/**
+ * Provisionne les comptes d'un parcours de référence — SANS ouvrir de session.
+ *
+ * ── Pourquoi ce helper n'est pas `loginAsSyndicWithLinkedOwner` ───────────
+ *
+ * Les vingt helpers ci-dessus font DEUX choses en une : ils créent un monde
+ * *et* ils ouvrent une session dans le navigateur, par `injectAuth`. Pour les
+ * specs c'est exactement ce qu'il faut — la connexion n'est pas leur sujet et
+ * la sauter économise cinq secondes.
+ *
+ * Un parcours de référence est le cas contraire : **la connexion EST le
+ * sujet**. La vitrine doit montrer le syndic qui entre, puis se retirer, puis
+ * le copropriétaire qui entre à son tour. Une session déjà posée ne se
+ * contente pas d'être inutile ici, elle empêche le parcours : `injectAuth`
+ * passe par `page.addInitScript`, qui rejoue `koprogo_user` à CHAQUE
+ * document du contexte et survit donc à un `clearCookies`. Le parcours
+ * filmerait un utilisateur qu'il n'a pas connecté.
+ *
+ * D'où la séparation : ici on crée, on ne connecte pas. Le contexte est rendu
+ * anonyme avant de rendre la main, et c'est le parcours qui ouvre chaque
+ * session par l'interface — donc devant la caméra.
+ *
+ * ── Ce que ce helper remplace ─────────────────────────────────────────────
+ *
+ * Le parcours lisait ses identifiants dans le `TestWorld` de
+ * `global-setup.ts`. Or **rien ne câble ce global-setup** : `playwright.config.ts`
+ * ne déclare aucun `globalSetup`, et le fichier `.test-world.json` n'est donc
+ * jamais écrit. Les 307 autres specs ne s'en apercevaient pas — aucune ne
+ * l'appelle, toutes construisent leur monde elles-mêmes. Le parcours était le
+ * premier, et il échouait sur « TestWorld not found » en CI (#876).
+ */
+export async function provisionneComptesDuParcours(
+  page: Page,
+  prefix: string = "vitrine",
+): Promise<{
+  syndic: { email: string; motDePasse: string };
+  coproprietaire: { email: string; motDePasse: string };
+}> {
+  const horodatage = Date.now();
+  // Le même mot de passe que les helpers voisins : ces comptes sont jetables
+  // et vivent le temps d'une campagne.
+  const motDePasse = "test123456";
+  const emailSyndic = `${prefix}-syndic-${horodatage}@example.com`;
+  const emailCoproprietaire = `${prefix}-owner-${horodatage}@example.com`;
+
+  const adminToken = await adminLogin(page);
+
+  const orgResp = await page.request.post(`${API_BASE}/organizations`, {
+    data: {
+      name: `${prefix} Org ${horodatage}`,
+      slug: `${prefix}-${horodatage}`,
+      contact_email: emailSyndic,
+      subscription_plan: "professional",
+    },
+    headers: { Authorization: `Bearer ${adminToken}` },
+  });
+  const org = await expectOk(orgResp, "seed:org");
+
+  const acpId = await ensureAcp(page, org.id, adminToken, prefix);
+
+  const buildingResp = await page.request.post(`${API_BASE}/buildings`, {
+    data: {
+      name: `${prefix} Immeuble ${horodatage}`,
+      address: `${horodatage} Rue Test`,
+      city: "Brussels",
+      postal_code: "1000",
+      country: "Belgium",
+      total_units: 12,
+      total_tantiemes: 1000,
+      construction_year: 2010,
+      acp_id: acpId,
+    },
+    headers: { Authorization: `Bearer ${adminToken}` },
+  });
+  const building = await expectOk(buildingResp, "seed:building");
+
+  // Des lots conformes à l'acte de base : sans eux, tout calcul de charges
+  // rend 422 et le tableau de bord du syndic s'ouvre sur une erreur.
+  await seedConformantUnits(page, adminToken, acpId, building.id, 12, 1000);
+
+  const syndicResp = await page.request.post(`${API_BASE}/auth/register`, {
+    data: {
+      email: emailSyndic,
+      password: motDePasse,
+      first_name: "Sophie",
+      last_name: "Syndic",
+      role: "syndic",
+      organization_id: org.id,
+    },
+  });
+  await expectOk(syndicResp, "seed:syndic");
+
+  const coproResp = await page.request.post(`${API_BASE}/auth/register`, {
+    data: {
+      email: emailCoproprietaire,
+      password: motDePasse,
+      first_name: "Carine",
+      last_name: "Copropriétaire",
+      role: "owner",
+      organization_id: org.id,
+    },
+  });
+  const coproUser = await expectOk(coproResp, "seed:copro");
+  const coproUserId =
+    coproUser.user?.id || coproUser.id || coproUser.user_id || "";
+
+  // La fiche de copropriétaire, liée au compte : sans elle, `/owner` n'a
+  // aucun lot à montrer et le parcours démontrerait un écran vide.
+  const ficheResp = await page.request.post(`${API_BASE}/owners`, {
+    data: {
+      organization_id: org.id,
+      first_name: "Carine",
+      last_name: "Copropriétaire",
+      email: emailCoproprietaire,
+      address: "1 Rue Test",
+      city: "Brussels",
+      postal_code: "1000",
+      country: "Belgium",
+      user_id: coproUserId,
+    },
+    headers: { Authorization: `Bearer ${adminToken}` },
+  });
+  await expectOk(ficheResp, "seed:fiche-coproprietaire");
+
+  // Le contexte redevient anonyme : la première image du parcours doit être
+  // celle d'un visiteur non connecté, sans quoi la bascule d'acteur qu'il
+  // démontre ne serait qu'une affirmation.
+  await page.context().clearCookies();
+
+  return {
+    syndic: { email: emailSyndic, motDePasse },
+    coproprietaire: { email: emailCoproprietaire, motDePasse },
+  };
+}

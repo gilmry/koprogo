@@ -27,7 +27,12 @@ const parcours = perimetreMultiRole;
 test.describe(`Parcours de référence — ${parcours.titre}`, () => {
   test(`@happy ${parcours.slug} aboutit de bout en bout`, async ({ page }) => {
     test.setTimeout(180_000);
-    const scene = new Scene(page);
+    // Le parcours crée son propre monde. Il ne lit aucun état posé par un
+    // `globalSetup` — la configuration n'en déclare aucun, et compter dessus
+    // a produit un « TestWorld not found » renvoyant vers un setup que rien
+    // n'exécute (#876).
+    const comptes = await test.step("amorçage", () => parcours.amorcer(page));
+    const scene = new Scene(page, comptes);
 
     for (const etape of parcours.etapes) {
       await test.step(`${etape.acteur} · ${etape.id}`, async () => {

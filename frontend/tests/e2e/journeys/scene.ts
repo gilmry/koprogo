@@ -36,7 +36,7 @@ import {
   stepPause,
   waitForSpinner,
 } from "../helpers/video-pace";
-import type { Acteur } from "./parcours";
+import type { Acteur, Comptes } from "./parcours";
 
 /**
  * La cadence : une action, une seconde.
@@ -66,7 +66,15 @@ export class Scene {
   private debut: number | null = null;
   private acteurCourant: Acteur | null = null;
 
-  constructor(public readonly page: Page) {}
+  /**
+   * @param comptes ce que `parcours.amorcer()` a rendu. La scène ne crée
+   * aucun compte : elle ne sait que s'en servir, et dire clairement quand il
+   * en manque un.
+   */
+  constructor(
+    public readonly page: Page,
+    private readonly comptes: Comptes = {},
+  ) {}
 
   private async tempo(): Promise<void> {
     await this.page.waitForTimeout(CADENCE_MS);
@@ -127,18 +135,25 @@ export class Scene {
    * prouverait rien du cloisonnement, et la règle 9 l'interdit. Ici la bascule
    * est visible à l'écran, donc opposable.
    */
-  async devenir(
-    acteur: Acteur,
-    email: string,
-    motDePasse: string,
-  ): Promise<void> {
+  async devenir(acteur: Acteur): Promise<void> {
+    const compte = this.comptes[acteur];
+    if (!compte) {
+      throw new Error(
+        `Le parcours demande à devenir « ${acteur} », mais son amorçage n'a ` +
+          `pas rendu de compte pour ce rôle.\n\n` +
+          `Comptes disponibles : ${Object.keys(this.comptes).join(", ") || "aucun"}.\n\n` +
+          `C'est parcours.amorcer() qu'il faut compléter : la scène ne crée ` +
+          `aucun compte, et un parcours qui en inventerait un à la volée ` +
+          `filmerait un monde que le gate ne rejoue pas.`,
+      );
+    }
     if (this.acteurCourant !== null) {
       await this.raconter(
         `Le ${this.acteurCourant} se déconnecte. C'est au tour du ${acteur}.`,
       );
     }
     await this.raconter(`Connexion en tant que ${acteur}.`, acteur);
-    await humanLogin(this.page, email, motDePasse);
+    await humanLogin(this.page, compte.email, compte.motDePasse);
     this.acteurCourant = acteur;
     await stepPause(this.page);
   }

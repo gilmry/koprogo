@@ -22,7 +22,7 @@
  */
 import { expect } from "@playwright/test";
 import type { Parcours } from "./parcours";
-import { loadWorld } from "../helpers/test-world";
+import { provisionneComptesDuParcours } from "../helpers/auth";
 
 export const perimetreMultiRole: Parcours = {
   slug: "perimetre-multi-role",
@@ -30,6 +30,20 @@ export const perimetreMultiRole: Parcours = {
   propos:
     "Démontre que deux rôles se relaient sur la même copropriété et que " +
     "l'écran d'accueil de chacun reflète ce qu'il a le droit de voir.",
+
+  /**
+   * Une copropriété neuve, son syndic et un copropriétaire qui y détient un
+   * lot. Les comptes sont créés par API et **aucune session n'est ouverte** :
+   * les deux connexions sont le sujet du parcours, elles se jouent devant la
+   * caméra.
+   */
+  amorcer: async (page) => {
+    const comptes = await provisionneComptesDuParcours(page, "vitrine");
+    return {
+      syndic: comptes.syndic,
+      copropriétaire: comptes.coproprietaire,
+    };
+  },
 
   etapes: [
     {
@@ -49,12 +63,7 @@ export const perimetreMultiRole: Parcours = {
         "Le syndic se connecte. C'est le mandataire de l'ACP au sens de " +
         "l'Art. 3.89 : il convoque, préside et exécute.",
       action: async (scene) => {
-        const monde = loadWorld();
-        await scene.devenir(
-          "syndic",
-          monde.syndic.email,
-          monde.syndic.password,
-        );
+        await scene.devenir("syndic");
       },
       assertion: async (page) => {
         await expect(page).toHaveURL(/\/syndic/);
@@ -80,12 +89,7 @@ export const perimetreMultiRole: Parcours = {
         "Le syndic se retire. Un copropriétaire se connecte — titulaire " +
         "d'un droit réel, il vote, paie et consulte ses quotes-parts.",
       action: async (scene) => {
-        const monde = loadWorld();
-        await scene.devenir(
-          "copropriétaire",
-          monde.owner.email,
-          monde.owner.password,
-        );
+        await scene.devenir("copropriétaire");
       },
       assertion: async (page) => {
         await expect(page).toHaveURL(/\/owner/);

@@ -63,10 +63,14 @@ const contexte = await navigateur.newContext({
   locale: "fr-BE",
 });
 const page = await contexte.newPage();
-const scene = new Scene(page);
 
 let echec = null;
+let scene = new Scene(page);
 try {
+  // L'amorçage est DANS le try : s'il échoue, la vitrine doit le montrer
+  // plutôt que de s'interrompre sans vidéo. C'est l'amorçage qui a rendu la
+  // première vitrine muette, en CI, sur un monde que rien ne créait (#876).
+  scene = new Scene(page, await parcours.amorcer(page));
   await scene.raconter(parcours.propos);
   for (const etape of parcours.etapes) {
     await scene.raconter(etape.description, etape.acteur);

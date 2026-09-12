@@ -64,6 +64,17 @@ export interface Etape {
   readonly assertion?: (page: Page) => Promise<void>;
 }
 
+/**
+ * Les identifiants d'un acteur, pour la durée d'un parcours.
+ *
+ * Un parcours filme des connexions : il lui faut de vrais comptes, et c'est
+ * lui qui les demande. Les lire dans un état global posé ailleurs lui a déjà
+ * coûté un rouge — cf. `amorcer` ci-dessous.
+ */
+export type Comptes = Partial<
+  Record<Acteur, { email: string; motDePasse: string }>
+>;
+
 export interface Parcours {
   /** Identifiant de fichier et de vidéo. */
   readonly slug: string;
@@ -71,6 +82,29 @@ export interface Parcours {
   readonly titre: string;
   /** Ce que ce parcours démontre, et pour qui. */
   readonly propos: string;
+  /**
+   * Crée le monde dont le parcours a besoin et rend les comptes de ses
+   * acteurs. Appelé **une fois** par chaque harnais, avant la première étape.
+   *
+   * ── Pourquoi c'est le parcours qui amorce, et pas un `globalSetup` ──────
+   *
+   * La première version lisait ses identifiants dans le `TestWorld` écrit par
+   * `tests/e2e/global-setup.ts`. Ce fichier existe, il est complet, et **rien
+   * ne l'exécute** : `playwright.config.ts` ne déclare aucun `globalSetup`.
+   * Les 307 autres specs ne l'avaient jamais remarqué — aucune ne s'en sert,
+   * toutes construisent leur monde elles-mêmes.
+   *
+   * L'échec est parti en CI sous la forme « TestWorld not found. Run
+   * global-setup first » : un message qui demande de lancer un setup que la
+   * configuration ne connaît pas, donc une piste qui ne mène nulle part. Un
+   * parcours qui amorce lui-même ne peut pas dépendre d'un état que personne
+   * ne pose (#876).
+   *
+   * C'est aussi ce qui le rend rejouable par les DEUX harnais sans qu'ils
+   * partagent rien d'autre que ce fichier : le gate tourne sous Playwright,
+   * la vitrine sous un runner à elle.
+   */
+  readonly amorcer: (page: Page) => Promise<Comptes>;
   readonly etapes: readonly Etape[];
 }
 
