@@ -13,7 +13,7 @@
 - **Archétype** : full-stack *(Rust hexagonal + Astro/Svelte 5 en îlots, PostgreSQL)*
 - **Substrat d'exécution** : conteneur — `~/bin/kcargo` pour Rust, jamais `cargo` sur l'hôte
 - **Démarré le** : 2026-09-12
-- **Dernière mise à jour** : 2026-09-12 (par : Claude — **phase A close, livrable SIGNÉ**)
+- **Dernière mise à jour** : 2026-09-12 (par : Claude — Gantt en passes d'agent produit)
 
 ## Répartition des rôles
 
@@ -48,6 +48,24 @@ appelle une signature et non une validation.
   #802 n'entrent en fabrication avant. L'ADR 0050 attend, elle n'est pas
   perdue.
 - **Rôle à jouer** : `.foyer/pilote/roles/gate-runner.md`.
+
+### Le pilotage — Gantt en passes d'agent
+
+`docs/GANTT_PASSES_v0_1_0.md`, généré par `scripts/gantt-passes.py`
+(persona `chef-de-projet`). **NON SIGNÉ** — c'est un plan, il attend la
+validation du superviseur comme le backlog l'a attendue.
+
+Ce qu'il établit : **28 passes** à 3 chantiers de front, 72,50 j de
+wall-clock superviseur, 290 tours. Le harnais (`C7.1`) occupe P1 et P2.
+
+Son résultat le plus utile est contre-intuitif : **les dépendances ne sont
+pas le goulot.** Les chaînes ne font que quatre couches, et 39 chantiers
+seraient ouvrables dès la première. Ce qui borne la release, c'est la
+capacité à *répondre de* ce qui est produit — pas l'ordre des choses. Le
+`ratio_supervision` de 3 est un prior `[caler]`.
+
+Quatre issues tiennent chacune une file : **#803** (ancrages) en débloque 11,
+**#805** (cadre des parcours) 10, **#797** et **#802** neuf chacune.
 
 ### Ce qui est déjà produit de la phase A
 
@@ -151,6 +169,9 @@ un défaut de structure. Seul l'ordre des capacités est repris.
 
 ## Journal (chronologie courte)
 
+- 2026-09-12 — **Gantt en passes d'agent** produit et publié
+  (`docs/GANTT_PASSES_v0_1_0.md`, au sommaire Sphinx). 28 passes, 72,50 j.
+  Le plan reste **NON SIGNÉ**.
 - 2026-09-12 — **PHASE A CLOSE.** Livrable BMAD **signé** par Gilles Maury.
   #694 tranchée en **refus par défaut** (ADR 0053), ce qui rend la table
   d'association structurellement requise et périme sa mention « non bloquant ».
