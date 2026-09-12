@@ -1,0 +1,4 @@
+[submodule ".foyer"]
+	path = .foyer
+	url = https://github.com/gilmry/foyer.git
+	branch = main

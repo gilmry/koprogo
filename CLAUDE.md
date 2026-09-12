@@ -3,6 +3,14 @@
 > **Première lecture pour tout nouvel agent** (Claude Code, Cowork, agents distants) :
 > [`Maury/README.md`](Maury/README.md) — la méthode + positionnement.
 >
+> **Pilotage — LIRE AVANT D'AGIR** : [`RELEASE.md`](RELEASE.md), le registre d'état
+> Foyer. Source de vérité partagée PO ↔ dev : où on en est, quels gates sont rouges,
+> quels arbitrages 🔴 attendent une décision humaine. Se met à jour à chaque étape
+> conclusive, jamais après coup.
+> Commandes : `/foyer-status` (lecture) · `/foyer-next` (étape suivante) ·
+> `/foyer-bascule` (point irréversible). La méthode est le submodule `.foyer` ;
+> s'il est vide : `git submodule update --init --recursive`.
+>
 > **Garde-fous actifs** : [`.claude/AGENT_GUARDRAILS.md`](.claude/AGENT_GUARDRAILS.md)
 > **Règles non négociables** (injectées à chaque prompt) : [`.claude/rules/CRITICAL.md`](.claude/rules/CRITICAL.md)
 >
