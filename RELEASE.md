@@ -13,7 +13,7 @@
 - **Archétype** : full-stack *(Rust hexagonal + Astro/Svelte 5 en îlots, PostgreSQL)*
 - **Substrat d'exécution** : conteneur — `~/bin/kcargo` pour Rust, jamais `cargo` sur l'hôte
 - **Démarré le** : 2026-09-12
-- **Dernière mise à jour** : 2026-09-12 (par : Claude — rangs 2 à 6 portés à « Agent IA Ready »)
+- **Dernière mise à jour** : 2026-09-12 (par : Claude — rangs 2 à 7 portés à « Agent IA Ready »)
 
 ## Répartition des rôles
 
@@ -34,11 +34,14 @@ appelle une signature et non une validation.
 
 - **Phase / étape** : Phase A · conception BMAD ciblée sur la release · étape 4
   (Validateur → backlog « Agent IA Ready »)
-- **Prochaine action attendue** : poursuivre l'étape 4 — rang 7 (les `Could`,
-  39 issues) et les **3 issues sans rang** signalées ci-dessous. Les rangs 1 à 6
-  sont prêts ; restent 42 issues, dont **12 dans le dialecte Maury d'origine**
-  (arbitrage 🔴 en attente : les traduire, ou apprendre les deux dialectes au
-  compteur).
+- **Prochaine action attendue** : préparer les **3 dernières** (#578, #579,
+  #427) — leur périmètre est acquis ([ADR 0049](docs/adr/0049-perimetre-v0-1-0-integral.md)),
+  seul leur **rang** attend un arbitrage, et préparer leur story ne préjuge pas
+  de ce rang. Puis l'étape 4 est close et la **signature du livrable BMAD**
+  devient la prochaine étape — c'est la modalité que le PO a choisie.
+- **Le 🔴 sur les dialectes est éteint par le travail** : les 12 issues
+  restantes ont été traduites au rang 7. L'option « apprendre les deux dialectes
+  au compteur » n'a plus d'objet ; l'instrument de mesure n'a pas été touché.
 - **La fabrication n'ouvre pas encore.** Le PO a choisi une signature unique
   **après** la préparation complète ; ni #872 (harnais, ADR 0050) ni #855 ni
   #802 n'entrent en fabrication avant. L'ADR 0050 attend, elle n'est pas
@@ -55,16 +58,21 @@ appelle une signature et non une validation.
   (`backend/tests/architecture.rs`), les dépendances croisées sont interdites.
 - **Chiffrage** : 73,25 j de wall-clock superviseur · 293 tours. **Bornes hautes
   de première passe**, à resserrer sur le réel par le CSI.
-- **Validateur** : ⏳ **en cours**. **42 issues sur 84** — la moitié — portent
-  les huit éléments d'une story prête, et 56 portent les quatre classes de tests
-  (`scripts/backlog-pret.py`, mesuré le 2026-09-12 après le rang 6). Le
-  livrable porte `NON SIGNÉ` — la signature vient après la préparation.
+- **Validateur** : ⏳ **presque**. **81 issues sur 84** portent les huit
+  éléments d'une story prête, et **84 sur 84 — la totalité** portent les quatre
+  classes de tests (`scripts/backlog-pret.py`, mesuré le 2026-09-12 après le
+  rang 7). Le livrable porte `NON SIGNÉ` — la signature vient après la
+  préparation.
 
-> **Rangs 1 à 6 prêts.** C7.1 l'était (4/4) ; puis C4.1/C4.2/C4.3 (7), #856
-> (C10.1), #803 / #834 (C5.2 / C5.1 — #802 et #797 l'étaient déjà), les huit du
-> noyau légal C1.1 / C1.3, et les 17 `Should` du rang 6. Le contrôle est **de
-> forme** : le script cherche des marqueurs, pas du sens. Il l'écrit lui-même —
-> « une borne haute de la préparation, jamais un verdict ».
+> **Rangs 1 à 7 prêts.** Les trois restantes sont **exactement les orphelines
+> sans rang** — #578, #579 (C1.2) et #427 (C7.2) : elles ne sont pas bloquées
+> par un manque de travail, mais par l'arbitrage 🔴 sur leur ordonnancement.
+>
+> Le contrôle est **de forme** : le script cherche des marqueurs, pas du sens.
+> Il l'écrit lui-même — « une borne haute de la préparation, jamais un
+> verdict ». 81/84 mesure la couverture du gabarit, pas la qualité du contenu :
+> c'est la relecture humaine qui tranchera, et c'est ce que la signature
+> atteste.
 
 > **84, et non 85.** Le backlog structuré a été généré à 85 issues ouvertes ;
 > #840 a été fermée le même jour, après la génération. Le document n'est pas
@@ -105,7 +113,7 @@ un défaut de structure. Seul l'ordre des capacités est repris.
 | 4 | C5.2 puis C5.1 — contrat de tests, socle visuel | ✅ 4/4 stories prêtes |
 | 5 | C1.1 / C1.3 — le noyau légal | ✅ 8/8 stories prêtes · #840 fermée |
 | 6 | les `Should`, parallélisables | ✅ 17/17 stories prêtes |
-| 7 | les `Could` | |
+| 7 | les `Could` | ✅ 39/39 stories prêtes |
 | 8 | G1 puis G2 — revue humaine signée, puis le tag | hors périmètre agent |
 
 ## Arbitrages
@@ -132,13 +140,11 @@ un défaut de structure. Seul l'ordre des capacités est repris.
     donc pour non prêtes. Quatre ont été traduites depuis (#576, #577, #581 au
     rang 5, #592 au rang 6) ; **12 restent** : #578, #579, #582, #583, #585,
     #586, #587, #588, #589, #590, #591, #595.
-  - **Question de modalité** : A) traduire les 13 comme les trois autres ·
-    B) apprendre les deux dialectes au script · C) les laisser et assumer que le
-    compteur sous-estime.
-  - **Pourquoi ça ne se tranche pas seul** : l'option B **modifie l'instrument
-    de mesure** qui conditionne la signature du livrable. Faire monter un chiffre
-    en changeant sa définition est précisément ce qu'un registre doit rendre
-    impossible sans décision humaine.
+  - **✅ Éteint le 2026-09-12 par l'option A** : les 12 restantes ont été
+    traduites au fil du rang 7. L'instrument de mesure n'a **pas** été modifié —
+    c'est le travail qui a fait monter le chiffre, pas sa définition. L'option B
+    aurait fait passer le compteur de 25 à 38 sans qu'une seule story soit
+    préparée ; elle n'a plus d'objet.
 
 - **Point** : #694 — son rang contredit ce qu'elle dit d'elle-même
   - **Preuve jointe** : l'issue écrit « **non bloquant pour v0.1.0** (bêta
@@ -175,6 +181,10 @@ un défaut de structure. Seul l'ordre des capacités est repris.
 
 ## Journal (chronologie courte)
 
+- 2026-09-12 — **rang 7 porté à « Agent IA Ready »** : les 39 `Could`.
+  **81/84**, et **84/84 portent les quatre classes de tests**. Les 12 issues en
+  dialecte Maury ont été traduites plutôt que de modifier le compteur. Les 3
+  restantes sont les orphelines sans rang.
 - 2026-09-12 — **rang 6 porté à « Agent IA Ready »** : les 17 `Should` de
   C2.1, C2.2, C3.1, C4.4, C4.5, C6.1, C6.2, C9.1 et C9.3 (#855 l'était déjà).
   **42/84 — la moitié.** En les listant, découverte que le rang 6 en comptait
