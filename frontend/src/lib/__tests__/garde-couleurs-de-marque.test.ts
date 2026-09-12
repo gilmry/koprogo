@@ -127,9 +127,15 @@ describe("le vert de marque ne s'écrit qu'au bloc @theme", () => {
     // 2026-09-12, il annonçait `#0F766E`, un turquoise qui n'a jamais été la
     // marque. Le jour où quelqu'un branchera ce manifeste-là, il livrerait
     // cette couleur sans qu'aucun test ne bronche.
-    const config = readFileSync(join(process.cwd(), "astro.config.mjs"), "utf-8");
+    const config = readFileSync(
+      join(process.cwd(), "astro.config.mjs"),
+      "utf-8",
+    );
     const m = config.match(/theme_color:\s*"(#[0-9a-f]{6})"/i);
-    expect(m, "Aucun theme_color dans le manifeste d'astro.config.mjs").not.toBeNull();
+    expect(
+      m,
+      "Aucun theme_color dans le manifeste d'astro.config.mjs",
+    ).not.toBeNull();
     expect(m![1].toLowerCase()).toBe(VERT_ACTUEL);
   });
 
