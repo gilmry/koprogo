@@ -80,6 +80,57 @@ fn check_accountant_role(user: &AuthenticatedUser) -> Option<HttpResponse> {
     check_can_encode_invoices(user)
 }
 
+/// Cloisonne une dépense AVANT de la muter (#864).
+///
+/// ── Ce que ces quatre routes laissaient passer ────────────────────────────
+///
+/// `cancel_expense`, `mark_expense_overdue`, `reactivate_expense` et
+/// `unpay_expense` prenaient `AuthenticatedUser` et ne s'en servaient que
+/// pour journaliser. `get_expense`, dans ce même fichier, remonte pourtant
+/// `expense → building → acp → organization` depuis le hotfix #603.
+///
+/// ── Une différence avec `get_expense`, et elle est volontaire ─────────────
+///
+/// `get_expense` enchaîne des `if let Ok(...)` : quand l'immeuble ou l'ACP
+/// ne se résout pas, il ne refuse RIEN et sert la dépense. Sur une lecture
+/// c'est déjà une fuite ; sur une écriture ce serait un blanc-seing. Ici,
+/// une chaîne qui ne se résout pas REFUSE.
+///
+/// Rend `Some(réponse)` quand l'appel doit être refusé, `None` sinon.
+async fn verify_expense_org_access(
+    state: &web::Data<AppState>,
+    user: &AuthenticatedUser,
+    id: Uuid,
+) -> Option<HttpResponse> {
+    let expense = match state.expense_use_cases.get_expense(id).await {
+        Ok(Some(e)) => e,
+        Ok(None) => {
+            return Some(HttpResponse::NotFound().json(serde_json::json!({
+                "error": "Expense not found"
+            })))
+        }
+        Err(err) => {
+            return Some(HttpResponse::InternalServerError().json(serde_json::json!({
+                "error": err.to_string()
+            })))
+        }
+    };
+
+    let acp_id = match Uuid::parse_str(&expense.acp_id) {
+        Ok(id) => id,
+        Err(_) => {
+            return Some(HttpResponse::Forbidden().json(serde_json::json!({
+                "error": "Impossible de rattacher cette dépense à une ACP"
+            })))
+        }
+    };
+
+    match verify_acp_org_access(user, acp_id, &state.acp_use_cases).await {
+        Ok(()) => None,
+        Err(err) => Some(err.error_response()),
+    }
+}
+
 #[utoipa::path(
     post,
     path = "/expenses",
@@ -411,6 +462,11 @@ pub async fn mark_expense_overdue(
     user: AuthenticatedUser,
     id: web::Path<Uuid>,
 ) -> impl Responder {
+    // Cloisonnement AVANT la mutation (#864).
+    if let Some(refus) = verify_expense_org_access(&state, &user, *id).await {
+        return refus;
+    }
+
     match state.expense_use_cases.mark_as_overdue(*id).await {
         Ok(expense) => {
             AuditLogEntry::new(
@@ -447,6 +503,11 @@ pub async fn cancel_expense(
     user: AuthenticatedUser,
     id: web::Path<Uuid>,
 ) -> impl Responder {
+    // Cloisonnement AVANT la mutation (#864).
+    if let Some(refus) = verify_expense_org_access(&state, &user, *id).await {
+        return refus;
+    }
+
     match state.expense_use_cases.cancel_expense(*id).await {
         Ok(expense) => {
             AuditLogEntry::new(
@@ -483,6 +544,11 @@ pub async fn reactivate_expense(
     user: AuthenticatedUser,
     id: web::Path<Uuid>,
 ) -> impl Responder {
+    // Cloisonnement AVANT la mutation (#864).
+    if let Some(refus) = verify_expense_org_access(&state, &user, *id).await {
+        return refus;
+    }
+
     match state.expense_use_cases.reactivate_expense(*id).await {
         Ok(expense) => {
             AuditLogEntry::new(
@@ -519,6 +585,11 @@ pub async fn unpay_expense(
     user: AuthenticatedUser,
     id: web::Path<Uuid>,
 ) -> impl Responder {
+    // Cloisonnement AVANT la mutation (#864).
+    if let Some(refus) = verify_expense_org_access(&state, &user, *id).await {
+        return refus;
+    }
+
     match state.expense_use_cases.unpay_expense(*id).await {
         Ok(expense) => {
             AuditLogEntry::new(

@@ -14,9 +14,40 @@ use uuid::Uuid;
 #[post("/quotes")]
 pub async fn create_quote(
     data: web::Data<AppState>,
-    _auth: AuthenticatedUser,
+    auth: AuthenticatedUser,
     request: web::Json<CreateQuoteDto>,
 ) -> impl Responder {
+    // Cloisonnement AVANT la création (#864).
+    //
+    // L'identité était nommée `_auth` : le souligné disait explicitement
+    // qu'on ne s'en servait pas, et le cas d'usage ne la reçoit même pas —
+    // `create_quote(dto)` ne prend que le DTO. N'importe quel utilisateur
+    // authentifié pouvait donc demander un devis sur l'immeuble de n'importe
+    // quelle copropriété, en connaissant son UUID.
+    //
+    // Trois autres routes de ce fichier appellent déjà
+    // `verify_building_org_access` (lignes 82, 138, 479). La création,
+    // c'est-à-dire le seul geste qui INSCRIT quelque chose au patrimoine
+    // d'une ACP, ne l'appelait pas.
+    let building_id = match Uuid::parse_str(&request.building_id) {
+        Ok(id) => id,
+        Err(_) => {
+            return HttpResponse::BadRequest().json(serde_json::json!({
+                "error": "Invalid building_id format"
+            }))
+        }
+    };
+    if let Err(err) = verify_building_org_access(
+        &auth,
+        building_id,
+        &data.building_use_cases,
+        &data.acp_use_cases,
+    )
+    .await
+    {
+        return err.error_response();
+    }
+
     match data
         .quote_use_cases
         .create_quote(request.into_inner())

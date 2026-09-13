@@ -100,6 +100,20 @@ async fn la_lecture_inter_organisations_est_refusee() {
         format!("/api/v1/buildings/{}/polls/active", ctx.immeuble_b),
         format!("/api/v1/buildings/{}/quotes", ctx.immeuble_b),
         format!("/api/v1/buildings/{}/resource-bookings", ctx.immeuble_b),
+        // Celle-ci n'est pas imbriquée sous `/buildings/{id}` : l'immeuble
+        // arrive en PARAMÈTRE DE REQUÊTE (#864).
+        //
+        // `list_call_for_funds` a deux branches. Sans `building_id`, elle
+        // rendait les appels de fonds de l'organisation de l'appelant,
+        // correctement bornés. Avec, elle rendait `list_by_building(...)`
+        // sans aucun contrôle — c'est-à-dire QUI DOIT COMBIEN dans une
+        // copropriété qu'on ne gère pas.
+        //
+        // Le cloisonnement n'était pas absent du gestionnaire, il était
+        // absent d'UNE de ses branches. Les cliquets qui comptent des
+        // gestionnaires ne voient pas cette forme-là : la route a l'air
+        // gardée parce que son cas nominal l'est.
+        format!("/api/v1/call-for-funds?building_id={}", ctx.immeuble_b),
     ];
 
     for route in routes {
@@ -157,6 +171,27 @@ async fn lecriture_inter_organisations_est_refusee() {
                 "description": "Ne doit jamais être créé",
                 "poll_type": "SingleChoice",
                 "options": ["oui", "non"]
+            }),
+        ),
+        // `POST /quotes` n'est pas imbriquée sous `/buildings/{id}` :
+        // l'immeuble arrive dans le CORPS (#864).
+        //
+        // Le gestionnaire nommait son identité `_auth` — le souligné disant
+        // explicitement qu'on ne s'en servait pas — et le cas d'usage ne la
+        // reçoit même pas : `create_quote(dto)` ne prend que le DTO. Trois
+        // autres routes du même fichier appellent pourtant
+        // `verify_building_org_access`. Seule la création, c'est-à-dire le
+        // seul geste qui INSCRIT quelque chose au patrimoine d'une ACP, ne
+        // l'appelait pas.
+        (
+            "/api/v1/quotes".to_string(),
+            serde_json::json!({
+                "building_id": ctx.immeuble_b.to_string(),
+                "contractor_id": Uuid::new_v4().to_string(),
+                "project_title": "Devis intrus",
+                "project_description": "Ne doit jamais être demandé",
+                "work_category": "Plumbing",
+                "warranty_years": 2
             }),
         ),
     ];
@@ -528,6 +563,109 @@ async fn security_le_cycle_de_vie_du_budget_inter_organisations_est_refuse() {
             "PUT {uri} a changé le statut du budget de B ({:?} → {:?}) : le refus \
              HTTP est arrivé APRÈS la mutation.",
             statut_avant, relu.status
+        );
+    }
+}
+
+/// ÉCRITURE — l'assemblée générale d'une autre copropriété se pilote (#864).
+///
+/// ── Pourquoi l'AG mérite son propre test ──────────────────────────────────
+///
+/// Annuler, clôturer, reporter une assemblée ou en valider le quorum touche
+/// à l'Art. 3.87 : la tenue de l'assemblée, ses délais, et la validité de ce
+/// qui s'y vote. Une AG annulée par un tiers est une AG qui n'a pas eu lieu,
+/// et les décisions qu'elle aurait prises n'existent pas.
+///
+/// Les quatre routes prenaient `AuthenticatedUser` sans s'en servir pour
+/// décider, alors que `get_meeting` remonte la chaîne
+/// `meeting → building → acp → organization` depuis le hotfix #603. Le
+/// chemin existait ; les écritures ne l'empruntaient pas.
+///
+/// ── L'assertion porte sur l'ÉTAT ──────────────────────────────────────────
+///
+/// Annuler ne détruit pas : l'assemblée survit dans les deux cas. On relit
+/// donc son `status` après chaque appel, comme pour le budget. Un refus HTTP
+/// rendu APRÈS la mutation ne protège rien.
+#[actix_web::test]
+#[serial]
+async fn security_le_pilotage_dune_ag_inter_organisations_est_refuse() {
+    let contexte = preparer().await;
+    let app = test::init_service(
+        App::new()
+            .app_data(contexte.app_state.clone())
+            .configure(configure_routes),
+    )
+    .await;
+
+    let porteur = |req: test::TestRequest| {
+        req.insert_header((
+            header::AUTHORIZATION,
+            format!("Bearer {}", contexte.jeton_a),
+        ))
+    };
+
+    let ag_b = contexte
+        .app_state
+        .meeting_use_cases
+        .create_meeting(koprogo_api::application::dto::CreateMeetingRequest {
+            organization_id: contexte.org_b,
+            building_id: contexte.immeuble_b,
+            meeting_type: koprogo_api::domain::entities::MeetingType::Ordinary,
+            title: "AG ordinaire de B".to_string(),
+            description: None,
+            scheduled_date: chrono::Utc::now() + chrono::Duration::days(30),
+            location: "Chez B".to_string(),
+            is_second_convocation: false,
+        })
+        .await
+        .expect("assemblée de B");
+
+    let statut_avant = ag_b.status.clone();
+
+    let appels: Vec<(&str, Option<serde_json::Value>)> = vec![
+        ("/cancel", None),
+        (
+            "/complete",
+            Some(serde_json::json!({ "attendees_count": 12 })),
+        ),
+        (
+            "/reschedule",
+            Some(serde_json::json!({
+                "scheduled_date": (chrono::Utc::now() + chrono::Duration::days(60)).to_rfc3339()
+            })),
+        ),
+        (
+            "/validate-quorum",
+            Some(serde_json::json!({ "present_quotas": "600.00", "total_quotas": "1000.00" })),
+        ),
+    ];
+
+    for (suffixe, corps) in appels {
+        let uri = format!("/api/v1/meetings/{}{}", ag_b.id, suffixe);
+        let requete = match corps {
+            Some(json) => porteur(test::TestRequest::post().uri(&uri).set_json(&json)),
+            None => porteur(test::TestRequest::post().uri(&uri)),
+        };
+        let reponse = test::call_service(&app, requete.to_request()).await;
+
+        assert!(
+            est_un_refus(reponse.status().as_u16()),
+            "POST {uri} a été accepté depuis l'organisation A : statut {} (#864).              Le syndic de A pilote l'assemblée générale de B — Art. 3.87.",
+            reponse.status()
+        );
+
+        let relue = contexte
+            .app_state
+            .meeting_use_cases
+            .get_meeting(ag_b.id)
+            .await
+            .expect("lecture de l'AG de B")
+            .expect("l'AG de B existe toujours");
+        assert_eq!(
+            relue.status, statut_avant,
+            "POST {uri} a changé le statut de l'AG de B ({:?} → {:?}) : le refus \
+             HTTP est arrivé APRÈS la mutation.",
+            statut_avant, relue.status
         );
     }
 }

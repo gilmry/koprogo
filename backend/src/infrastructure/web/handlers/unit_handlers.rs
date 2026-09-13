@@ -2,7 +2,9 @@ use crate::application::dto::{
     CreateUnitDto, PageRequest, PageResponse, UnitResponseDto, UpdateUnitDto,
 };
 use crate::infrastructure::audit::{AuditEventType, AuditLogEntry};
-use crate::infrastructure::web::middleware::scope_guard::verify_acp_org_access;
+use crate::infrastructure::web::middleware::scope_guard::{
+    verify_acp_org_access, verify_building_org_access,
+};
 use crate::infrastructure::web::{AppState, AuthenticatedUser};
 use actix_web::{delete, get, post, put, web, HttpResponse, Responder, ResponseError};
 use uuid::Uuid;
@@ -514,6 +516,53 @@ pub async fn assign_owner(
     path: web::Path<(Uuid, Uuid)>,
 ) -> impl Responder {
     let (unit_id, owner_id) = path.into_inner();
+
+    // Cloisonnement AVANT l'affectation (#864).
+    //
+    // Le lot et le propriétaire partaient seuls au cas d'usage. Affecter un
+    // lot d'une autre copropriété à un propriétaire arbitraire change QUI
+    // détient QUOI — donc les quotités, donc les appels de fonds, donc le
+    // droit de vote en assemblée (Art. 3.87). Le journal d'audit enregistrait
+    // le geste comme régulier.
+    match state.unit_use_cases.get_unit(unit_id).await {
+        Ok(Some(unite)) => {
+            // Le lot ne porte pas d'ACP dans sa réponse — il porte son
+            // immeuble, qui porte l'ACP. On emprunte donc la même chaîne que
+            // partout ailleurs, via `verify_building_org_access`.
+            //
+            // Un immeuble illisible REFUSE : un lot qu'on ne sait pas
+            // rattacher est un lot dont on ne peut pas dire qu'il relève du
+            // mandat de l'appelant.
+            let building_id = match Uuid::parse_str(&unite.building_id) {
+                Ok(id) => id,
+                Err(_) => {
+                    return HttpResponse::Forbidden().json(serde_json::json!({
+                        "error": "Impossible de rattacher ce lot à un immeuble"
+                    }))
+                }
+            };
+            if let Err(err) = verify_building_org_access(
+                &user,
+                building_id,
+                &state.building_use_cases,
+                &state.acp_use_cases,
+            )
+            .await
+            {
+                return err.error_response();
+            }
+        }
+        Ok(None) => {
+            return HttpResponse::NotFound().json(serde_json::json!({
+                "error": "Unit not found"
+            }))
+        }
+        Err(err) => {
+            return HttpResponse::InternalServerError().json(serde_json::json!({
+                "error": err.to_string()
+            }))
+        }
+    }
 
     match state.unit_use_cases.assign_owner(unit_id, owner_id).await {
         Ok(unit) => {
