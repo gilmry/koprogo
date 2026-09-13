@@ -45,7 +45,7 @@ peut-être un `Should` qui s'ignore :
 - **#841** (rang 61, score 0.133) — touche « périmètre »
 - **#842** (rang 62, score 0.133) — touche « rgpd »
 - **#845** (rang 76, score 0.1) — touche « identité »
-- … et 5 autres
+- … et 6 autres
 
 ## Le classement
 
@@ -129,13 +129,13 @@ peut-être un `Should` qui s'ignore :
 | #845 | **0.1** | C4.1 | Must | 0 | 2 | 0.2 | 4 | touche « identité » |
 | #864 | **0.1** | C4.1 | Must | 0 | 2 | 0.2 | 4 | touche « identité » |
 | #870 | **0.1** | C7.1 | Must | 0 | 1 | 0.2 | 2 | aucun article, aucun marqueur d'irréversibilité |
-| #871 | **0.1** | C6.2 | Should | 0 | 1 | 0.2 | 2 | issue introuvable — palier plancher par défaut |
 | #876 | **0.1** | C7.3 | Must | 1 | 1 | 0.2 | 4 | aucun article, aucun marqueur d'irréversibilité |
 | #877 | **0.1** | C7.1 | Must | 0 | 1 | 0.2 | 2 | aucun article, aucun marqueur d'irréversibilité |
 | #432 | **0.067** | C9.3 | Should | 0 | 1 | 0.2 | 3 | aucun article, aucun marqueur d'irréversibilité |
 | #453 | **0.067** | C9.1 | Should | 0 | 1 | 0.2 | 3 | aucun article, aucun marqueur d'irréversibilité |
 | #731 | **0.067** | C9.1 | Should | 0 | 1 | 0.2 | 3 | aucun article, aucun marqueur d'irréversibilité |
 | #874 | **0.067** | C7.3 | Must | 0 | 1 | 0.2 | 3 | aucun article, aucun marqueur d'irréversibilité |
+| #880 | **0.067** | C7.1 | Must | 0 | 1 | 0.2 | 3 | aucun article, aucun marqueur d'irréversibilité |
 | #355 | **0.05** | C9.2 | Could | 0 | 1 | 0.2 | 4 | aucun article, aucun marqueur d'irréversibilité |
 | #718 | **0.05** | C9.1 | Should | 0 | 1 | 0.2 | 4 | aucun article, aucun marqueur d'irréversibilité |
 | #813 | **0.05** | C8.3 | Could | 0 | 1 | 0.2 | 4 | aucun article, aucun marqueur d'irréversibilité |

@@ -141,16 +141,26 @@ CAPACITES = [
 
     ("C6.1", "T2", "L'audit d'accessibilité voit les écrans authentifiés", "Should",
      {865: "M", 592: "M"}),
+    # #871 retirée le 2026-09-13 : fermée COMPLETED le 2026-09-13 à 05:03.
+    # Sa propre garde l'exigeait — « un backlog qui cite des tickets fermés
+    # cesse d'être lu ». Même geste que pour #840 le 2026-09-12.
     ("C6.2", "T2", "Le produit est utilisable à une largeur de téléphone", "Should",
-     {866: "M", 869: "M", 871: "S"}),
+     {866: "M", 869: "M"}),
 
     # #877 ajoutée le 2026-09-12, relevée en exécutant le Gantt : le gate
     # `integration` est rouge sur UN test, `s3_storage_roundtrip`, parce que
     # le tag `minio/minio:RELEASE.2025-02-28T09-55-16Z` n'est plus servi par
     # Docker Hub. Un verdict de CI qui dépend d'une décision de publication
     # tierce n'est pas un verdict — et le registre le déclarait 🟢.
+    # #880 ajoutée le 2026-09-13 : le banc de recette porte un backend en
+    # hot reload, et une recompilation en cours de campagne produit des
+    # échecs en masse qu'aucun artefact ne distingue d'une régression.
+    # Elle est de C7.1 par nature — « la recette peut s'EXÉCUTER » suppose
+    # qu'elle puisse s'exécuter de façon reproductible, ce que ce banc ne
+    # permet pas. Et elle conditionne #832 : départager « cascade d'un 502 »
+    # de « défaut réel » n'a pas de réponse stable sur un banc instable.
     ("C7.1", "T3", "La recette peut se connecter et s'exécuter", "Must",
-     {872: "L", 870: "S", 832: "M", 696: "M", 877: "S"}),
+     {872: "L", 870: "S", 832: "M", 696: "M", 877: "S", 880: "M"}),
     ("C7.2", "T3", "La taxonomie des tests est la gate de release", "Should",
      {427: "L"}),
     # Story habilitante (Sprint 0). La Méthode Foyer : « sans elle, aucune
