@@ -329,6 +329,41 @@ du défaut avec un témoin d'interruption (le minimum, déjà décrit dans #880)
 
 ## Journal (chronologie courte)
 
+- 2026-09-13 — **Les sept branches de V4.1 ont leur verdict de gates**, et il
+  se lit en deux colonnes — ce qui est le but du dispositif.
+
+  | Branche | Défaut du SOCLE | Défaut de l'AGENT |
+  |---|---|---|
+  | `story/872` | Integration (#877) | — |
+  | `story/425` | Integration (#877) | — |
+  | `story/798` | Integration (#877) | Frontend Check — Prettier, 2 fichiers |
+  | `story/576` | Integration (#877) | Unit Tests |
+  | `story/781` | Integration (#877) | `garde_taxonomie_des_tests` — tests sans leur catégorie |
+  | `story/805` | Integration (#877) | Unit Tests |
+  | `story/852` | Integration (#877) | Lint, Contract Types, Unit Tests |
+
+  **`Integration Tests` rouge sur les SEPT** : c'est #877, corrigé à 15h sur
+  `feature/dev` et absent du socle depuis lequel les agents ont branché. Pas
+  un seul agent n'y est pour quelque chose. C'est le quatrième défaut de la
+  vague, corrigé par `b094778d` — le `checkout` du job agent est désormais
+  épinglé à `feature/dev`.
+
+  **Deux branches sur sept sont propres** une fois le socle mis de côté.
+  Cinq portent des défauts réels, tous attrapés par des gardes du dépôt :
+  du code non formaté, des tests sans leur catégorie
+  `@happy/@negative/@edge/@security`, un contrat OpenAPI dérivé.
+
+  C'est exactement ce que le Gantt promettait — « le relecteur regarde le
+  film et les gates, pas le code » — et c'est la première fois que la
+  promesse est vérifiable sur du réel. Aucune de ces cinq branches n'aurait
+  été refusée par une relecture de diff : du code non formaté se lit très
+  bien.
+
+  ⚠️ **La vitrine manque encore.** Les gates ont été déclenchés à la main
+  (`gh workflow run ci.yml --ref story/<n>`), ce qui produit les tests mais
+  pas le parcours filmé. La preuve de VALEUR, non bloquante et non
+  facultative, n'est pas au rendez-vous de cette première vague.
+
 - 2026-09-13 — **LE GANTT TOURNE. Vague V4.1 déroulée en réel**, run
   `34776213266` : dix stories, deux agents simultanés (`max-parallel: 2`
   tenu, mesuré sur les horodatages), abonnement, Sonnet.
