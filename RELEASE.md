@@ -17,7 +17,8 @@
 - **Archétype** : full-stack *(Rust hexagonal + Astro/Svelte 5 en îlots, PostgreSQL)*
 - **Substrat d'exécution** : conteneur — `~/bin/kcargo` pour Rust, jamais `cargo` sur l'hôte
 - **Démarré le** : 2026-09-12
-- **Dernière mise à jour** : 2026-09-12 (par : Claude — pile de recette LANCÉE, gate e2e mesuré)
+- **Dernière mise à jour** : 2026-09-13 (par : Claude — #877 tranchée et corrigée,
+  fan-out débloqué, #879 relancée pour ses gates)
 
 ## Répartition des rôles
 
@@ -203,7 +204,7 @@ issues tiennent chacune une file — **#803** en débloque 11, **#805** dix,
 | `verify` structurel | 🟢 | `kcargo test --test architecture` + 15 gardes | 16 suites vertes |
 | `contrat` anti-drift | 🟢 | gate OpenAPI + `oasdiff` en CI | #765 fermée |
 | `unit` domaine | 🟢 | `kcargo test --lib` | 1989 tests |
-| `integration` | 🔴 | suites `e2e_*.rs` (testcontainers) | `s3_storage_roundtrip` : le tag `minio/minio` n'est plus tirable — #877. **Était déclaré 🟢 à tort** |
+| `integration` | 🔴 | suites `e2e_*.rs` (testcontainers) | `s3_storage_roundtrip` : tout `docker.io/minio/minio` a disparu — #877. **Correctif posé (`72d719e6`, quay.io), preuve PAS ENCORE prise.** Reste 🔴 tant qu'il n'a pas tourné |
 | `bdd` | 🟢 | suites `bdd_*.rs` | |
 | `e2e` parcours | 🟠 | `make test-e2e` | **s'exécute enfin** contre `localhost:8090` : 300 ✓ / 8 ✗ / 14 sautés, code 2. Dont 4 en 502 sous rafale — #718 |
 | `visuel` | ⚪ | — | pas de goldens |
@@ -275,8 +276,49 @@ un défaut de structure. Seul l'ordre des capacités est repris.
 | **#694 — accès d'un collaborateur à une ACP** | **refus par défaut**, accès explicite par table d'association. Rend #694 structurellement requise : sa mention « non bloquant » est périmée et son rang 2 confirmé | Gilles Maury | 2026-09-12 | [ADR 0053](docs/adr/0053-acces-acp-refus-par-defaut.md) |
 | **Rang des 3 orphelines** | C1.2 (#578, #579) et C7.2 (#427) rejoignent le **rang 6**, avec les autres `Should`. Leurs stories étaient déjà prêtes | Gilles Maury | 2026-09-12 | ce registre |
 | **Dialecte des stories** | **option A — traduire**, jamais modifier le compteur. Les 12 restantes traduites au rang 7 | Gilles Maury | 2026-09-12 | ce registre |
+| **#877 — l'image MinIO** | **quay.io, épinglé par tag, partout** — test d'intégration, trois composes et Helm. `:latest` retiré | Gilles Maury | 2026-09-13 | #877, `72d719e6` |
+| **Voie du fan-out** | **abonnement (`CLAUDE_CODE_OAUTH_TOKEN`), `max_parallel` à 2** pour la première vague. À monter une fois mesurée, pas avant | Gilles Maury | 2026-09-13 | ce registre |
+| **PR #879** | **relancer pour qu'elle ait ses gates** avant la revue. La chronométrer sans preuve mesurerait autre chose que ce que #875 cherche | Gilles Maury | 2026-09-13 | #875, run `34764114133` |
 
 ## Journal (chronologie courte)
+
+- 2026-09-13 — **#877 tranchée sur une preuve qui a corrigé son diagnostic.**
+  L'issue disait « l'éditeur a retiré CE tag ». Mesuré : c'est **tout**
+  `docker.io/minio/minio` qui a disparu, `:latest` compris, et `minio/mc`
+  avec. « Rafraîchir le tag » sortait donc de l'arbitrage — il n'y avait
+  plus rien à rafraîchir. Le PO a tranché **quay.io, épinglé par tag,
+  partout** (`72d719e6`).
+
+  **Ce que la recherche a trouvé au passage est plus grave que le gate.** La
+  DÉMO tourne sur `minio/minio:latest`, non tirable depuis. Elle ne
+  fonctionnait que par le cache d'images de cet hôte : un `compose pull`, un
+  `image prune` ou une reconstruction ailleurs, et le stockage objet ne
+  revenait pas. Rien ne l'aurait annoncé avant le redémarrage. Le correctif
+  ne déplace aucun bit, et c'est vérifié : `koprogo-minio` et
+  `quay.io/minio/minio:RELEASE.2025-09-07T16-13-09Z` portent le **même**
+  `sha256:14cea493d9a3`. Le `:latest` du cache ÉTAIT cette release.
+  ⚠️ **La protection ne prend effet qu'au prochain déploiement de la démo.**
+
+- 2026-09-13 — **les trois verrous de #874 sont tombés.**
+  `FANOUT_GITHUB_TOKEN` posé par le PO à 14:48 UTC,
+  `default_workflow_permissions` passé de `read` à `write`, label `agent`
+  présent. Le fan-out peut produire des branches instruites par leurs gates.
+  Voie retenue : **abonnement, `max_parallel` à 2**.
+
+- 2026-09-13 — **#879 relancée pour ses gates** (run `34764114133`,
+  `workflow_dispatch` sur `story/867`). Elle avait été poussée AVANT le
+  jeton : seul CodeQL s'était déclenché, ni `ci.yml` ni la vitrine. La
+  relire ainsi aurait chronométré une revue sur diff, c'est-à-dire
+  exactement ce que le modèle de promotion existe pour éviter.
+
+- 2026-09-13 — **l'hôte a redémarré à 14:14 UTC et la pile de recette n'en
+  est pas revenue.** Les cinq conteneurs `koprogo-dev-*` étaient en
+  `Exited (137)` ; la démo, elle, était remontée seule. Cause : la pile de
+  recette n'a pas de `restart:`, ce qui est cohérent avec « jetable » mais
+  n'était écrit nulle part. **Après chaque redémarrage du VPS, la recette
+  est à relever à la main** — `docker compose -p koprogo-dev up -d`.
+  Isolation revérifiée au relevé : les quatre conteneurs de la démo
+  identiques au caractère près, `api.koprogo.com` à 200.
 
 - 2026-09-12 — **La pile de recette a tourné pour la première fois.** Trois
   défauts que seule l'exécution pouvait montrer : `JWT_SECRET` absent
