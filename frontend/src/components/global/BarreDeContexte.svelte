@@ -1,5 +1,6 @@
 <script lang="ts">
   import { authStore } from "../../stores/auth";
+  import AcpSelector from "./AcpSelector.svelte";
   import BuildingSelector from "./BuildingSelector.svelte";
   import ContextBanner from "./ContextBanner.svelte";
 
@@ -31,6 +32,16 @@
    * Le contrôle avant l'indication : on choisit sa copropriété, puis on lit ce
    * qu'elle est. L'ordre inverse ferait lire un état avant d'avoir le moyen de
    * le changer.
+   *
+   * ── Story #798 — AcpSelector rejoint la barre, à GAUCHE de BuildingSelector ─
+   *
+   * Le périmètre PRINCIPAL est désormais l'ACP (la personne morale — numéro
+   * BCE, compte, AG, quotités), pas l'immeuble. `BuildingSelector` ne
+   * disparaît pas : il devient le filtre SECONDAIRE, à l'intérieur de l'ACP.
+   * Même raison de méthode que ci-dessus, littéralement : contrôle principal
+   * avant contrôle secondaire avant indication. `building-selector-bar` et
+   * `context-banner` ne bougent pas — `acp-selector-bar` est un NOUVEAU
+   * frère ajouté devant eux, jamais une réécriture des ancrages existants.
    */
   let user = $derived($authStore.user);
 </script>
@@ -49,6 +60,10 @@
     data-testid="barre-de-contexte"
     class="flex min-h-[56px] w-full flex-wrap items-center gap-x-4 gap-y-2 border-b border-border-soft bg-surface px-4 py-2 lg:px-6"
   >
+    <div data-testid="acp-selector-bar" class="min-w-[220px] flex-1">
+      <AcpSelector {user} />
+    </div>
+
     <div data-testid="building-selector-bar" class="min-w-[220px] flex-1">
       <BuildingSelector {user} />
     </div>
