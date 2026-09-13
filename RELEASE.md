@@ -17,8 +17,9 @@
 - **Archétype** : full-stack *(Rust hexagonal + Astro/Svelte 5 en îlots, PostgreSQL)*
 - **Substrat d'exécution** : conteneur — `~/bin/kcargo` pour Rust, jamais `cargo` sur l'hôte
 - **Démarré le** : 2026-09-12
-- **Dernière mise à jour** : 2026-09-13 (par : Claude — #877 tranchée et corrigée,
-  fan-out débloqué, #879 relancée pour ses gates)
+- **Dernière mise à jour** : 2026-09-13 (par : Claude — #864 relu : 40 → 32
+  non classées, 32 lacunes probables restent à corriger, session sans accès
+  cargo/docker)
 
 ## Répartition des rôles
 
@@ -433,6 +434,36 @@ du défaut avec un témoin d'interruption (le minimum, déjà décrit dans #880)
   cabinet A y approuve la facture du cabinet B. Le cliquet les compte **par
   accident**, parce que le nom du helper n'est dans aucun motif. Renommer
   l'un d'eux `verify_*` les sortirait du compte **sans les corriger**.
+
+- 2026-09-13 — **#864 : le relevé passe de 40 à 32 non classées, sans
+  correction de code.** Deuxième passe de lecture sur les 40 routes restantes
+  après le commit `61e77406`. Huit lues et inscrites aux exceptions —
+  `get_api_key` (cloisonné en SQL, jumeau exact de deux exceptions déjà
+  actées), les trois routes 2FA self-service (`enable_2fa`, `disable_2fa`,
+  `regenerate_backup_codes`, qui agissent sur `auth.user_id` et jamais sur un
+  tiers), et les quatre endpoints MCP (deux statiques par `include_str!`, un
+  SSE sans ressource ciblée, et `mcp_messages_endpoint` qui délègue le
+  cloisonnement à `dispatch_tool`, une fonction séparée que le motif textuel
+  ne voit pas).
+
+  **Les 32 qui restent ont aussi été lues, et ne sont pas des exceptions** —
+  ce sont des lacunes probables, classées par priorité pour la suite. Les plus
+  mécaniques : quatre transitions de facture (`update_invoice_draft`,
+  `submit_invoice_for_approval`, `approve_invoice`, `reject_invoice` — rôle
+  contrôlé, périmètre non, la catégorie la plus dangereuse déjà signalée le
+  même jour) et trois routes `unit_owner_handlers.rs`, pour lesquelles le
+  correctif existe déjà dans le même fichier et n'est simplement pas appelé.
+  La plus sévère : `issue_magic_link` peut émettre un lien d'accès **non
+  authentifié** vers une ressource hors du périmètre de l'émetteur.
+
+  **Aucune de ces 32 n'a été corrigée dans cette passe.** La session ne
+  disposait d'aucun accès à `cargo`/`docker`/l'équivalent conteneurisé — toute
+  commande au-delà de `git`/`grep`/`find`/`sed` était refusée sans humain
+  disponible pour l'approuver. Écrire les correctifs sans pouvoir démontrer le
+  rouge puis le vert aurait été exactement le code approximatif que la
+  discipline TDD de ce dépôt interdit. Reste à faire, dans une session outillée :
+  les 32 corrections (garde de périmètre + test `@negative` par route), puis
+  la baisse du compteur `SANS_DECISION_AU_2026_09_13`.
 
 - 2026-09-13 — **LE GATE `e2e` EST VERT.** `make test-e2e` rend
   **308 ✓ / 0 ✘ / 14 sautés, code 0**, sur la pile de recette, sans
