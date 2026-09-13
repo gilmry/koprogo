@@ -172,8 +172,18 @@ CAPACITES = [
     # qu'elle puisse s'exécuter de façon reproductible, ce que ce banc ne
     # permet pas. Et elle conditionne #832 : départager « cascade d'un 502 »
     # de « défaut réel » n'a pas de réponse stable sur un banc instable.
+    # #832 retirée le 2026-09-13 : FERMÉE sur mesure. Ses quinze specs sont
+    # vertes, et pas une n'a été touchée — la cause était unique (#718,
+    # bcrypt tenant le thread de travail) et elle produisait des 502 que
+    # l'issue lisait comme quinze défauts distincts.
+    #
+    # #877 RESTE, et c'est volontaire. Son correctif est vert en local
+    # (`storage_s3` rend `1 passed`, code 0), mais son premier critère de
+    # sortie dit « vert EN CI » — et la CI ne l'a pas vu, les commits
+    # n'étant pas poussés. Un critère écrit ne se déclare pas rempli parce
+    # qu'on en a rempli un voisin.
     ("C7.1", "T3", "La recette peut se connecter et s'exécuter", "Must",
-     {872: "L", 870: "S", 832: "M", 696: "M", 877: "S", 880: "M"}),
+     {872: "L", 870: "S", 696: "M", 877: "S", 880: "M"}),
     ("C7.2", "T3", "La taxonomie des tests est la gate de release", "Should",
      {427: "L"}),
     # Story habilitante (Sprint 0). La Méthode Foyer : « sans elle, aucune

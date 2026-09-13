@@ -54,7 +54,7 @@ Colonnes : couches 1 à 7. `█` = la capacité est ouvrable,
 capacité  rang moscow  1234567
 --------- ---- ------- -------
 C7.3         0 Must    ███····
-C7.1         1 Must    ···███·
+C7.1         1 Must    ···██··
 C4.1         2 Must    ···██··
 C4.2         2 Must    ···█···
 C4.3         2 Must    ···█···
@@ -116,7 +116,7 @@ un retard sur *n'importe laquelle* des amont décale l'aval.
 
 ## Ce que la largeur révèle
 
-**3 des 7 couches dépassent le plafond de 3** : L4 (41 chantiers), L5 (36 chantiers), L6 (9 chantiers).
+**3 des 7 couches dépassent le plafond de 3** : L4 (41 chantiers), L5 (36 chantiers), L6 (8 chantiers).
 
 C'est le résultat le plus utile du diagramme, et il est
 contre-intuitif : **les dépendances ne sont pas le goulot.** Les
@@ -236,7 +236,7 @@ passes en séquentiel supervisé.
 
 | Créneau | Agents | Domaines |
 |---|---|---|
-| V6.1 | 5 — #832, #578, #592, #806, #591 | `harnais`, `back/copropriete`, `front/mobile-a11y`, `docs-vivante`, `back/communaute` |
+| V6.1 | 4 — #578, #592, #806, #591 | `back/copropriete`, `front/mobile-a11y`, `docs-vivante`, `back/communaute` |
 | V6.2 | 3 — #810, #582, #588 | `docs-vivante`, `back/copropriete`, `back/communaute` |
 | V6.3 | 1 — #589 | `back/communaute` |
 
@@ -365,11 +365,11 @@ est la condition d'existence de l'expérimentation, pas sa première
 
 | Axe | Valeur | Ce que ça mesure |
 |---|---:|---|
-| Issues | 90 | le périmètre, intégral (ADR 0049) |
+| Issues | 89 | le périmètre, intégral (ADR 0049) |
 | Passes séquentielles | 30 | régime supervisé, 3 de front |
 | Créneaux multiagent | 26 | régime parallèle, revue à la promotion |
-| Jours | 77.00 | wall-clock **superviseur** |
-| Tours | 308 | coût **tokens** |
+| Jours | 76.25 | wall-clock **superviseur** |
+| Tours | 305 | coût **tokens** |
 
 L'abaque est formelle sur la lecture de ces deux dernières lignes : le
 **poste dominant est le superviseur, pas le modèle**. Optimiser les
@@ -410,7 +410,7 @@ supervision dans une seule.
 
 ## Alertes du générateur
 
-- Issues déclarées au graphe et absentes du backlog : #871
+- Issues déclarées au graphe et absentes du backlog : #832, #871
 - Issues du backlog absentes du graphe (traitées sans dépendance) : #877, #881, #882
 
 ---

@@ -54,7 +54,7 @@ signature_humaine:
 *Épopées et capacités. Généré par `scripts/backlog-structure.py` : ne pas
 éditer à la main, la prochaine génération écraserait la correction.*
 
-**90 issues ouvertes**, 10 épopées, 33 capacités. Classement exhaustif et exclusif : chaque issue appartient à exactement
+**89 issues ouvertes**, 10 épopées, 33 capacités. Classement exhaustif et exclusif : chaque issue appartient à exactement
 une capacité, et une issue non classée fait échouer la génération.
 
 ## Comment lire ce document
@@ -96,7 +96,7 @@ fabrication ; le Scrum Master de conception l'écrit sans détour :
 | Couche(s) | où le code atterrit, donc quelles gardes s'appliquent |
 | Taille + tours | le coût, sur les deux axes |
 
-**90 issues sur 90** portent les huit. Le relevé
+**89 issues sur 89** portent les huit. Le relevé
 d'origine, avant ce travail, donnait **zéro**.
 
 Le chiffre n'est pas écrit à la main : `scripts/backlog-pret.py` le relève
@@ -375,18 +375,17 @@ La cible est mobile-first et l'application est écrite desktop-first. L'écart n
 
 ## T3 — Harnais de recette
 
-`epic:recette` · 10 issues · 7.50 j · 30 tours
+`epic:recette` · 9 issues · 6.75 j · 27 tours
 
 Sprint 0 continué. Ce qui permet de BOUCLER : sans lui, aucune autre capacité ne peut être déclarée tenue.
 
 ### C7.1 — La recette peut se connecter et s'exécuter
 
-**Must** · `cap:C7.1` · 6 issues · 4.25 j · 17 tours · **6/6 prêtes**
+**Must** · `cap:C7.1` · 5 issues · 3.50 j · 14 tours · **5/5 prêtes**
 
 | Issue | Titre | Taille | Prête |
 |---|---|---|---|
 | [#696](https://github.com/gilmry/koprogo/issues/696) | Instabilité smoke suite Playwright CI : 109 échecs sur specs pré-existantes (… | M | oui |
-| [#832](https://github.com/gilmry/koprogo/issues/832) | Quinze specs Playwright échouent sans erreur d'identité : les ancrages existe… | M | oui |
 | [#870](https://github.com/gilmry/koprogo/issues/870) | La suite e2e ne peut plus se connecter à la démo : le repli admin123 est mort… | S | oui |
 | [#872](https://github.com/gilmry/koprogo/issues/872) | La pile de développement revendique les conteneurs de la démo : `docker compo… | L | oui |
 | [#877](https://github.com/gilmry/koprogo/issues/877) | L'image MinIO épinglée n'est plus tirable : le gate integration est rouge sur… | S | oui |
@@ -526,11 +525,11 @@ Des questions ouvertes, pas des défauts. La Méthode Foyer les veut en RFC, dis
 | E4 — Plateforme | 11 | 10.00 | 40 |
 | T1 — Refonte UX | 14 | 13.25 | 53 |
 | T2 — Accessibilité et mobile | 4 | 3.00 | 12 |
-| T3 — Harnais de recette | 10 | 7.50 | 30 |
+| T3 — Harnais de recette | 9 | 6.75 | 27 |
 | T4 — Documentation vivante multi-persona | 14 | 11.25 | 45 |
 | T5 — Ops et infrastructure | 10 | 9.00 | 36 |
 | T6 — Arbitrages produit en attente | 1 | 0.50 | 2 |
-| **Total** | **90** | **77.00** | **308** |
+| **Total** | **89** | **76.25** | **305** |
 
 `S` = 0,5 j · `M` = 0,75 j · `L` = 1 j — wall-clock du superviseur, pas
 temps machine. Les tours mesurent l'autre axe, le coût en tokens.
