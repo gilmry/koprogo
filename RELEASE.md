@@ -329,6 +329,22 @@ du défaut avec un témoin d'interruption (le minimum, déjà décrit dans #880)
 
 ## Journal (chronologie courte)
 
+- 2026-09-13 — **L'épinglage du `checkout` est prouvé PAR CONTRASTE**, et
+  c'est la mesure la plus propre de la journée sur le harnais :
+
+  | Vague | Socle | `Integration Tests` |
+  |---|---|---|
+  | V4.1 | `main` | 🔴 sur **7 branches sur 7** |
+  | V4.2 | `feature/dev` | ✅ sur `story/841` |
+
+  Même gate, même code de produit, deux socles. `story/841` ne porte plus que
+  **son propre** défaut — Prettier sur deux fichiers. Le bruit du socle a
+  disparu, et il ne reste que ce que la revue de promotion doit juger.
+
+  C'est la démonstration que le modèle tient : « le relecteur regarde le film
+  et les gates, pas le code » n'est vrai que si les gates parlent de la
+  branche. Pendant V4.1, ils parlaient d'autre chose.
+
 - 2026-09-13 — **Vague V4.2 déroulée**, run `34783546008`, lancée
   `--ref feature/dev` pour que ce soit la version CORRIGÉE du workflow qui
   s'exécute. Neuf stories, six branches :
