@@ -273,8 +273,22 @@ jobs:
             --jq '"# Issue #\(.number // "'"$NUM"'") — \(.title)\n\n\(.body)"' \
             > /tmp/story.md 2>/dev/null \
             || gh issue view "$NUM" --json body --jq .body > /tmp/story.md
-          if ! grep -q "Story Agent IA Ready" /tmp/story.md; then
-            echo "::error::#$NUM ne porte pas de story « Agent IA Ready »."
+          # Un SEUL instrument mesure « prêt » (#874).
+          #
+          # Cette étape cherchait le titre littéral « Story Agent IA Ready ».
+          # C'était une SECONDE définition, à côté de celle de
+          # `scripts/backlog-pret.py`, et les deux se sont contredites le
+          # 2026-09-13 : #877 porte les huit éléments — le script rendait
+          # 89/89 — sous les titres `## Récit` et `## Critères`, et cette
+          # ligne l'a refusée. Un agent n'a pas tourné pour un désaccord de
+          # vocabulaire entre deux instruments dont aucun ne savait que
+          # l'autre existait.
+          #
+          # Le remède n'était pas d'ajouter le titre à #877 : ce serait plier
+          # l'issue à l'instrument le plus grossier des deux. C'est de n'en
+          # avoir qu'un.
+          if ! python3 scripts/backlog-pret.py --issue "$NUM"; then
+            echo "::error::#$NUM ne porte pas les huit éléments d'une story prête."
             echo "La fabrication n'ouvre pas sans directive. Cf. règle 5."
             exit 1
           fi

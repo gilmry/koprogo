@@ -69,7 +69,48 @@ def manquants(corps):
     return [cle for cle, _, teste in CRITERES if not teste(corps)]
 
 
+def une_issue(numero: int) -> int:
+    """Mesure UNE issue, pour que le fan-out emploie CET instrument (#874).
+
+    ── Pourquoi ce mode existe ───────────────────────────────────────────────
+
+    `fanout-stories.yml` cherchait le titre littéral « Story Agent IA Ready »
+    dans le corps de l'issue, et refusait de lancer l'agent sans lui. C'était
+    une SECONDE définition de « prêt », à côté de celle de ce script, et les
+    deux se sont contredites le 2026-09-13 : #877 porte les huit éléments —
+    ce script rendait 89/89 — sous les titres `## Récit` et `## Critères`,
+    et le workflow l'a refusée.
+
+    Un agent n'a pas tourné pour un désaccord de vocabulaire entre deux
+    instruments dont aucun ne savait que l'autre existait. C'est le motif
+    dominant de ce dépôt, appliqué cette fois à la mesure elle-même.
+
+    Le remède n'est pas d'ajouter le titre à #877 : ce serait plier l'issue à
+    l'instrument le plus grossier des deux. C'est de n'avoir qu'un
+    instrument.
+
+    Rend 0 si l'issue porte les huit éléments, 1 sinon, et NOMME ce qui
+    manque — un refus qui ne dit pas quoi corriger se lit comme un caprice.
+    """
+    brut = subprocess.run(
+        ["gh", "issue", "view", str(numero), "--json", "number,title,body"],
+        capture_output=True, text=True, cwd=DEPOT, check=True).stdout
+    issue = json.loads(brut)
+    absents = manquants(issue.get("body") or "")
+    if not absents:
+        print(f"#{numero} porte les huit éléments.")
+        return 0
+    libelles = {cle: libelle for cle, libelle, _ in CRITERES}
+    print(f"#{numero} — éléments manquants :", file=sys.stderr)
+    for cle in absents:
+        print(f"  - {libelles[cle]}", file=sys.stderr)
+    return 1
+
+
 def main():
+    for i, arg in enumerate(sys.argv):
+        if arg == "--issue" and i + 1 < len(sys.argv):
+            return une_issue(int(sys.argv[i + 1]))
     detail = "--detail" in sys.argv
     issues = issues_ouvertes()
     total = len(issues)
