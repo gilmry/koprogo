@@ -3,6 +3,7 @@ use crate::application::dto::{
     ResolutionResponse, VoteResponse,
 };
 use crate::infrastructure::audit::{AuditEventType, AuditLogEntry};
+use crate::infrastructure::web::classification_erreurs::est_interdit;
 use crate::infrastructure::web::middleware::scope_guard::verify_acp_org_access;
 use crate::infrastructure::web::{AppState, AuthenticatedUser};
 use actix_web::{delete, get, post, put, web, HttpResponse, Responder, ResponseError};
@@ -328,6 +329,50 @@ pub async fn cast_vote(
         }
     };
 
+    // #850 — QUI vote est résolu depuis l'utilisateur authentifié, jamais
+    // repris tel quel du corps de la requête. `AuthenticatedUser` était
+    // présent dans cette signature depuis toujours, mais ne servait qu'à
+    // `require_organization()` et au journal d'audit : rien ne rapprochait
+    // son identité de `request.owner_id`. Même geste que #849
+    // (`poll_handlers.rs::cast_poll_vote`) : résoudre le copropriétaire, pas
+    // l'utilisateur.
+    let caller_owner_id = match state
+        .owner_use_cases
+        .find_owner_by_user_id(user.user_id)
+        .await
+    {
+        Ok(Some(owner)) => match Uuid::parse_str(&owner.id) {
+            Ok(id) => id,
+            Err(e) => {
+                return HttpResponse::InternalServerError().json(serde_json::json!({
+                    "error": format!("Identifiant de copropriétaire illisible : {}", e)
+                }));
+            }
+        },
+        Ok(None) => {
+            // Un utilisateur sans fiche de copropriétaire ne peut voter pour
+            // personne — ni pour lui-même (il n'a pas de lot), ni comme
+            // mandataire (aucune identité à opposer à `caller_owner_id`).
+            //
+            // Ceci ferme, pour l'instant, la question que #850 pose sans la
+            // trancher : le syndic doit-il pouvoir saisir des votes en séance ?
+            // Cette route ne le permet plus. Si l'usage l'exige, il faut une
+            // route dédiée, réservée au syndic, journalisée comme saisie pour
+            // compte de tiers et soumise à la limite des procurations — pas
+            // rouvrir celle-ci.
+            return HttpResponse::Forbidden().json(serde_json::json!({
+                "error": "Aucune fiche de copropriétaire n'est rattachée à ce compte : \
+                          voter à une assemblée est réservé aux copropriétaires.",
+                "kind": "owner_not_linked"
+            }));
+        }
+        Err(e) => {
+            return HttpResponse::InternalServerError().json(serde_json::json!({
+                "error": format!("Failed to resolve owner for user: {}", e)
+            }));
+        }
+    };
+
     match state
         .resolution_use_cases
         .cast_vote(
@@ -340,6 +385,7 @@ pub async fn cast_vote(
             // servir ressemblerait à un contrôle — c'est exactement ce que #850
             // reproche à cette route.
             request.proxy_owner_id,
+            caller_owner_id,
         )
         .await
     {
@@ -389,6 +435,13 @@ pub async fn cast_vote(
                     return crate::application::error::AppError::VotingRightSuspended { unit_id }
                         .error_response();
                 }
+            }
+
+            // #850 — usurpation d'identité ou de lot : 403, pas 400. Le préfixe
+            // `FORBIDDEN` posé côté cas d'usage est reconnu par `est_interdit`
+            // (déjà le lexique bilingue partagé par les autres gestionnaires).
+            if est_interdit(&err) {
+                return HttpResponse::Forbidden().json(serde_json::json!({"error": err}));
             }
 
             HttpResponse::BadRequest().json(serde_json::json!({"error": err}))

@@ -609,6 +609,10 @@ impl GovernanceWorld {
         // lit sur le lot. `get_voting_power` reste utile aux assertions du
         // scénario, qui vérifient le décompte final.
 
+        // #850 — l'appelant réel est celui qui dépose le bulletin : le
+        // mandataire s'il y en a un déclaré, sinon le titulaire lui-même.
+        let caller_owner_id = proxy_id.unwrap_or(owner_id);
+
         let result = uc
             .cast_vote(
                 resolution_id,
@@ -618,6 +622,7 @@ impl GovernanceWorld {
                 // #850 — `voting_power` n'est plus transmise : le cas d'usage
                 // relit la quotité sur le lot.
                 proxy_id,
+                caller_owner_id,
             )
             .await;
 
