@@ -8,15 +8,18 @@
 //! - `GET  /technical-specs/{id}`         — spec details
 //! - `GET  /technical-specs?acp_id={uuid}` — list specs for an ACP
 //!
-//! All routes are JWT-protected. Scope tightening (only members of the ACP
-//! may read the spec) is a Phase B follow-up tracked in the Story 3.8
-//! acceptance notes.
+//! All routes are JWT-protected. The two GET routes above took
+//! `AuthenticatedUser` without using it (`_user`) — the Phase B scope
+//! tightening promised in the Story 3.8 acceptance notes — and are now
+//! cloisonnées like `sign_technical_spec` (#882).
 
 use crate::application::error::AppError;
 use crate::domain::entities::{
     SemVer, SignatoryRole, TechnicalSpec, TechnicalSpecSignature, TechnicalSpecStatus,
 };
-use crate::infrastructure::web::middleware::scope_guard::verify_technical_spec_org_access;
+use crate::infrastructure::web::middleware::scope_guard::{
+    verify_acp_org_access, verify_technical_spec_org_access,
+};
 use crate::infrastructure::web::{AppState, AuthenticatedUser};
 use actix_web::{get, post, web, HttpResponse};
 use chrono::{DateTime, Utc};
@@ -390,10 +393,22 @@ pub async fn sign_technical_spec(
 #[get("/technical-specs/{id}")]
 pub async fn get_technical_spec(
     state: web::Data<AppState>,
-    _user: AuthenticatedUser,
+    user: AuthenticatedUser,
     path: web::Path<Uuid>,
 ) -> Result<HttpResponse, AppError> {
     let id = path.into_inner();
+
+    // Cloisonnement (#882) : l'identité était prise et jetée (`_user`), alors
+    // que `verify_technical_spec_org_access` est déjà appelé par
+    // `sign_technical_spec` pour cette même entité, dans ce même fichier.
+    verify_technical_spec_org_access(
+        &user,
+        id,
+        &state.technical_spec_use_cases,
+        &state.acp_use_cases,
+    )
+    .await?;
+
     let spec = state.technical_spec_use_cases.get(id).await?;
     Ok(HttpResponse::Ok().json(TechnicalSpecDto::from(spec)))
 }
@@ -416,10 +431,16 @@ pub async fn get_technical_spec(
 #[get("/technical-specs")]
 pub async fn list_technical_specs(
     state: web::Data<AppState>,
-    _user: AuthenticatedUser,
+    user: AuthenticatedUser,
     query: web::Query<ListTechnicalSpecsQuery>,
 ) -> Result<HttpResponse, AppError> {
     let acp_id = query.into_inner().acp_id;
+
+    // Cloisonnement (#882) : `acp_id` arrivait en paramètre de requête sans
+    // aucune vérification qu'il relève du mandat de l'appelant — même forme
+    // que `list_call_for_funds` sur `building_id` (#864).
+    verify_acp_org_access(&user, acp_id, &state.acp_use_cases).await?;
+
     let specs = state.technical_spec_use_cases.list_for_acp(acp_id).await?;
     let dtos: Vec<TechnicalSpecDto> = specs.into_iter().map(TechnicalSpecDto::from).collect();
     Ok(HttpResponse::Ok().json(dtos))

@@ -153,7 +153,7 @@ impl CallForFundsRepository for MockCffRepo {
     async fn delete(&self, id: Uuid) -> Result<bool, String> {
         Ok(self.store.lock().unwrap().remove(&id).is_some())
     }
-    async fn find_overdue(&self) -> Result<Vec<CallForFunds>, String> {
+    async fn find_overdue(&self, _organization_id: Uuid) -> Result<Vec<CallForFunds>, String> {
         Ok(vec![])
     }
 }

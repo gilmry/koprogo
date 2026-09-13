@@ -168,21 +168,46 @@ pub async fn list_organization_work_reports(
 #[get("/work-reports")]
 pub async fn list_work_reports_paginated(
     state: web::Data<AppState>,
-    _user: AuthenticatedUser,
+    user: AuthenticatedUser,
     page_request: web::Query<PageRequest>,
     filters: web::Query<WorkReportFilters>,
 ) -> impl Responder {
-    // Cette route ne prenait AUCUNE identité : ni `AuthenticatedUser`, ni
-    // jeton lu à la main. Le cliquet de #772 ne la voyait pas — il ne
-    // compte que les routes PRENANT une identité sans s'en servir.
-    // Cf. #845.
-    //
-    // Même remarque que pour les contrôles techniques : l'identité est exigée,
-    // le filtrage par périmètre de cette liste reste à décider.
+    // Cloisonnement (#882) : même défaut que les contrôles techniques
+    // (`list_technical_inspections_paginated`) — `organization_id` et
+    // `building_id` sont des paramètres CLIENT, et `organization_id` n'était
+    // même pas traduit en clause SQL. Un rapport de travaux porte le
+    // prestataire, le prix et parfois des photos d'un chantier : pas une
+    // donnée à laisser lire hors de son organisation.
+    let mut filters = filters.into_inner();
+
+    match filters.organization_id {
+        Some(org_id) => {
+            if let Err(e) = user.verify_org_access(org_id) {
+                return HttpResponse::Forbidden().json(serde_json::json!({"error": e}));
+            }
+        }
+        None => {
+            filters.organization_id = user.effective_org_filter();
+        }
+    }
+
+    if let Some(building_id) = filters.building_id {
+        if let Err(err) =
+            crate::infrastructure::web::middleware::scope_guard::verify_building_org_access(
+                &user,
+                building_id,
+                &state.building_use_cases,
+                &state.acp_use_cases,
+            )
+            .await
+        {
+            return err.error_response();
+        }
+    }
 
     match state
         .work_report_use_cases
-        .list_work_reports_paginated(&page_request.into_inner(), &filters.into_inner())
+        .list_work_reports_paginated(&page_request.into_inner(), &filters)
         .await
     {
         Ok(response) => HttpResponse::Ok().json(response),

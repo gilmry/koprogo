@@ -276,9 +276,19 @@ impl CallForFundsUseCases {
         self.call_for_funds_repository.update(&call_for_funds).await
     }
 
-    /// Get all overdue calls for funds
-    pub async fn get_overdue_calls(&self) -> Result<Vec<CallForFunds>, String> {
-        self.call_for_funds_repository.find_overdue().await
+    /// Get all overdue calls for funds, scoped to one organization.
+    ///
+    /// `organization_id` est obligatoire (#882) : sans lui, cette méthode
+    /// rendait les arriérés de TOUTE l'instance à qui l'appelait — sans
+    /// organisation, sans ACP, sans immeuble. La signature l'empêche
+    /// désormais d'être appelée sans périmètre.
+    pub async fn get_overdue_calls(
+        &self,
+        organization_id: Uuid,
+    ) -> Result<Vec<CallForFunds>, String> {
+        self.call_for_funds_repository
+            .find_overdue(organization_id)
+            .await
     }
 
     /// Delete a call for funds (only if not sent)
@@ -384,8 +394,15 @@ mod tests {
             Ok(self.store.lock().unwrap().remove(&id).is_some())
         }
 
-        async fn find_overdue(&self) -> Result<Vec<CallForFunds>, String> {
-            Ok(self.overdue.lock().unwrap().clone())
+        async fn find_overdue(&self, organization_id: Uuid) -> Result<Vec<CallForFunds>, String> {
+            Ok(self
+                .overdue
+                .lock()
+                .unwrap()
+                .iter()
+                .filter(|c| c.organization_id == organization_id)
+                .cloned()
+                .collect())
         }
     }
 
@@ -1058,17 +1075,16 @@ mod tests {
             .contains("Cannot delete a call for funds that has been sent"));
     }
 
-    // ── 5. Find overdue ───────────────────────────────────────────────
+    // ── 5. Find overdue (#882) ──────────────────────────────────────────
 
-    #[tokio::test]
-    async fn test_get_overdue_calls() {
+    fn cff_en_retard(organization_id: Uuid, titre: &str) -> CallForFunds {
         let call_date = Utc::now() - Duration::days(60);
         let due_date = Utc::now() - Duration::days(30);
-        let overdue_cff = CallForFunds::new(
+        CallForFunds::new(
             Uuid::new_v4(), // acp_id
-            Uuid::new_v4(),
-            Uuid::new_v4(),
-            "Overdue call".to_string(),
+            organization_id,
+            Uuid::new_v4(), // building_id
+            titre.to_string(),
             "Past due".to_string(),
             rust_decimal_macros::dec!(2_000),
             ContributionType::Regular,
@@ -1077,7 +1093,14 @@ mod tests {
             None,
             rust_decimal::Decimal::ZERO, // part fonds de réserve
         )
-        .unwrap();
+        .unwrap()
+    }
+
+    /// @happy — le syndic lit les arriérés de SA propre organisation.
+    #[tokio::test]
+    async fn happy_get_overdue_calls_rend_les_arrieres_de_lorganisation_appelante() {
+        let organisation_a = Uuid::new_v4();
+        let overdue_cff = cff_en_retard(organisation_a, "Overdue call");
 
         let cff_repo = Arc::new(MockCallForFundsRepo::with_overdue(
             vec![overdue_cff.clone()],
@@ -1086,11 +1109,63 @@ mod tests {
         let uo_repo = Arc::new(MockUnitOwnerRepo::new());
         let uc = make_use_cases(cff_repo, contrib_repo, uo_repo);
 
-        let result = uc.get_overdue_calls().await;
+        let result = uc.get_overdue_calls(organisation_a).await;
         assert!(result.is_ok());
         let overdue = result.unwrap();
         assert_eq!(overdue.len(), 1);
         assert_eq!(overdue[0].title, "Overdue call");
+    }
+
+    /// @security / @negative — les arriérés d'une AUTRE organisation ne
+    /// paraissent jamais dans la réponse. Avant #882, `get_overdue_calls`
+    /// ne prenait aucun paramètre : cette même liste contenait les arriérés
+    /// des DEUX organisations, quel que soit l'appelant.
+    #[tokio::test]
+    async fn security_get_overdue_calls_ne_rend_jamais_larrierage_dune_autre_organisation() {
+        let organisation_a = Uuid::new_v4();
+        let organisation_b = Uuid::new_v4();
+        let arriere_a = cff_en_retard(organisation_a, "Arriéré cabinet A");
+        let arriere_b = cff_en_retard(organisation_b, "Arriéré cabinet B");
+
+        let cff_repo = Arc::new(MockCallForFundsRepo::with_overdue(vec![
+            arriere_a.clone(),
+            arriere_b.clone(),
+        ]));
+        let contrib_repo = Arc::new(MockOwnerContributionRepo::new());
+        let uo_repo = Arc::new(MockUnitOwnerRepo::new());
+        let uc = make_use_cases(cff_repo, contrib_repo, uo_repo);
+
+        let result = uc.get_overdue_calls(organisation_a).await.unwrap();
+
+        assert_eq!(result.len(), 1);
+        assert!(
+            result.iter().all(|c| c.organization_id == organisation_a),
+            "la réponse au cabinet A contient un appel de fonds d'une autre organisation"
+        );
+        assert!(
+            !result.iter().any(|c| c.id == arriere_b.id),
+            "l'arriéré du cabinet B est visible depuis le cabinet A"
+        );
+    }
+
+    /// @edge — la méthode ne compile plus sans organisation : il n'existe
+    /// aucun moyen de l'appeler sans périmètre (la garantie que #882 demande
+    /// à la SIGNATURE, pas seulement au gestionnaire HTTP).
+    #[tokio::test]
+    async fn edge_get_overdue_calls_exige_une_organisation_a_lappel() {
+        let organisation = Uuid::new_v4();
+        let cff_repo = Arc::new(MockCallForFundsRepo::with_overdue(Vec::new()));
+        let contrib_repo = Arc::new(MockOwnerContributionRepo::new());
+        let uo_repo = Arc::new(MockUnitOwnerRepo::new());
+        let uc = make_use_cases(cff_repo, contrib_repo, uo_repo);
+
+        // La seule forme d'appel possible prend `organization_id` : le
+        // vérifier ici, c'est vérifier que le refactor de signature a bien eu
+        // lieu (un appel `uc.get_overdue_calls()` sans argument ne
+        // compilerait pas).
+        let result = uc.get_overdue_calls(organisation).await;
+        assert!(result.is_ok());
+        assert!(result.unwrap().is_empty());
     }
 
     // ── 6. List by building ───────────────────────────────────────────

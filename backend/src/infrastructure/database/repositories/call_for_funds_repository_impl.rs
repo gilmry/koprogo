@@ -200,7 +200,11 @@ impl CallForFundsRepository for PostgresCallForFundsRepository {
         Ok(result.rows_affected() > 0)
     }
 
-    async fn find_overdue(&self) -> Result<Vec<CallForFunds>, String> {
+    async fn find_overdue(&self, organization_id: Uuid) -> Result<Vec<CallForFunds>, String> {
+        // #882 : sans `organization_id`, cette requête rendait les arriérés de
+        // TOUTE l'instance. Le périmètre est l'ACP — comme `find_by_organization`
+        // ci-dessus, on remonte par `acps.organization_id` plutôt que par la
+        // colonne `call_for_funds.organization_id` dénormalisée.
         let rows = sqlx::query(
             r#"
             SELECT id, acp_id, organization_id, building_id, title, description,
@@ -211,9 +215,11 @@ impl CallForFundsRepository for PostgresCallForFundsRepository {
             FROM call_for_funds
             WHERE due_date < NOW()
               AND status NOT IN ('completed', 'cancelled')
+              AND acp_id IN (SELECT id FROM acps WHERE organization_id = $1)
             ORDER BY due_date ASC
             "#,
         )
+        .bind(organization_id)
         .fetch_all(&self.pool)
         .await
         .map_err(|e| format!("Database error: {}", e))?;

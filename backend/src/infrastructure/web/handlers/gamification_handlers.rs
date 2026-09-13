@@ -67,7 +67,7 @@ pub async fn create_achievement(
 #[get("/achievements/{id}")]
 pub async fn get_achievement(
     data: web::Data<AppState>,
-    _auth: AuthenticatedUser,
+    auth: AuthenticatedUser,
     id: web::Path<Uuid>,
 ) -> impl Responder {
     match data
@@ -75,7 +75,17 @@ pub async fn get_achievement(
         .get_achievement(id.into_inner())
         .await
     {
-        Ok(achievement) => HttpResponse::Ok().json(achievement),
+        Ok(achievement) => {
+            // Cloisonnement (#882) : l'identité était prise et jetée (`_auth`).
+            // `Achievement.organization_id` est obligatoire, et `list_achievements`
+            // juste au-dessus le vérifie déjà — la lecture par id ne le faisait
+            // pas, alors qu'un badge `is_secret` d'une autre organisation n'a
+            // pas à être lisible.
+            if let Err(e) = auth.verify_org_access(achievement.organization_id) {
+                return HttpResponse::Forbidden().json(serde_json::json!({"error": e}));
+            }
+            HttpResponse::Ok().json(achievement)
+        }
         Err(e) => HttpResponse::NotFound().json(serde_json::json!({"error": e})),
     }
 }
@@ -373,9 +383,16 @@ pub async fn create_challenge(
 #[get("/challenges/{id}")]
 pub async fn get_challenge(
     data: web::Data<AppState>,
-    _auth: AuthenticatedUser,
+    auth: AuthenticatedUser,
     id: web::Path<Uuid>,
 ) -> impl Responder {
+    // Cloisonnement (#882) : l'identité était prise et jetée (`_auth`), alors
+    // que `verify_challenge_org_access` est déjà appelé trois fois plus bas
+    // dans ce même fichier pour la même entité.
+    if let Err(err) = verify_challenge_org_access(&auth, *id, &data.challenge_use_cases).await {
+        return err.error_response();
+    }
+
     match data
         .challenge_use_cases
         .get_challenge(id.into_inner())

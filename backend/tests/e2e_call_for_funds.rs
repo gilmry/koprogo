@@ -475,3 +475,180 @@ async fn test_call_for_funds_unauthorized() {
         resp.status()
     );
 }
+
+// ── #882 — GET /call-for-funds/overdue ne rend plus l'instance entière ────
+
+/// Crée un appel de fonds déjà en retard (call_date et due_date passés, tous
+/// deux dans le passé, `due_date > call_date` comme l'exige le domaine),
+/// directement via le cas d'usage — hors HTTP, pour ne rien supposer du
+/// chemin d'écriture. Rend son id.
+async fn creer_appel_en_retard(
+    app_state: &actix_web::web::Data<koprogo_api::infrastructure::web::AppState>,
+    org_id: Uuid,
+    building_id: Uuid,
+    titre: &str,
+) -> Uuid {
+    let call_date = chrono::Utc::now() - chrono::Duration::days(60);
+    let due_date = chrono::Utc::now() - chrono::Duration::days(30);
+
+    let cff = app_state
+        .call_for_funds_use_cases
+        .create_call_for_funds(
+            org_id,
+            building_id,
+            titre.to_string(),
+            "Créé en retard pour un test #882".to_string(),
+            rust_decimal_macros::dec!(1000),
+            koprogo_api::domain::entities::ContributionType::Regular,
+            call_date,
+            due_date,
+            None,
+            None,
+            rust_decimal::Decimal::ZERO,
+        )
+        .await
+        .expect("précondition : création de l'appel en retard");
+    cff.id
+}
+
+/// @happy — le syndic lit les arriérés de SA propre organisation.
+#[actix_web::test]
+#[serial]
+async fn happy_overdue_calls_rend_les_arrieres_de_sa_propre_organisation() {
+    let (app_state, _container, org_id) = common::setup_test_db().await;
+    let (token, building_id, _owner_id, _unit_id) =
+        create_call_for_funds_fixtures(&app_state, org_id).await;
+
+    let id = creer_appel_en_retard(&app_state, org_id, building_id, "Arriéré de mon cabinet").await;
+
+    let app = test::init_service(
+        App::new()
+            .app_data(app_state.clone())
+            .configure(configure_routes),
+    )
+    .await;
+
+    let resp = test::call_service(
+        &app,
+        test::TestRequest::get()
+            .uri("/api/v1/call-for-funds/overdue")
+            .insert_header((header::AUTHORIZATION, format!("Bearer {}", token)))
+            .to_request(),
+    )
+    .await;
+
+    assert_eq!(resp.status().as_u16(), 200);
+    let body: serde_json::Value = test::read_body_json(resp).await;
+    let ids: Vec<String> = body
+        .as_array()
+        .expect("réponse en tableau")
+        .iter()
+        .map(|c| c["id"].as_str().unwrap().to_string())
+        .collect();
+    assert!(
+        ids.contains(&id.to_string()),
+        "l'appel en retard de sa propre organisation n'apparaît pas : {:?}",
+        ids
+    );
+}
+
+/// @security / @negative — les arriérés d'une AUTRE organisation ne
+/// paraissent jamais dans la réponse. Avant #882,
+/// `GET /call-for-funds/overdue` ne prenait aucun argument : cette liste
+/// contenait TOUS les arriérés de l'instance, tous cabinets confondus.
+#[actix_web::test]
+#[serial]
+async fn security_overdue_calls_ne_rend_jamais_larriere_dune_autre_organisation() {
+    let (app_state, _container, org_a) = common::setup_test_db().await;
+    let org_b = common::create_test_organization(&app_state).await;
+
+    let (token_a, building_a, _, _) = create_call_for_funds_fixtures(&app_state, org_a).await;
+    let (token_b, building_b, _, _) = create_call_for_funds_fixtures(&app_state, org_b).await;
+
+    let id_a = creer_appel_en_retard(&app_state, org_a, building_a, "Arriéré cabinet A").await;
+    let id_b = creer_appel_en_retard(&app_state, org_b, building_b, "Arriéré cabinet B").await;
+
+    let app = test::init_service(
+        App::new()
+            .app_data(app_state.clone())
+            .configure(configure_routes),
+    )
+    .await;
+
+    let resp = test::call_service(
+        &app,
+        test::TestRequest::get()
+            .uri("/api/v1/call-for-funds/overdue")
+            .insert_header((header::AUTHORIZATION, format!("Bearer {}", token_a)))
+            .to_request(),
+    )
+    .await;
+
+    assert_eq!(resp.status().as_u16(), 200);
+    let body: serde_json::Value = test::read_body_json(resp).await;
+    let ids: Vec<String> = body
+        .as_array()
+        .expect("réponse en tableau")
+        .iter()
+        .map(|c| c["id"].as_str().unwrap().to_string())
+        .collect();
+
+    assert!(
+        ids.contains(&id_a.to_string()),
+        "le cabinet A ne voit plus son propre arriéré : {:?}",
+        ids
+    );
+    assert!(
+        !ids.contains(&id_b.to_string()),
+        "FUITE INTER-ORGANISATIONS : le cabinet A voit l'arriéré du cabinet B : {:?}",
+        ids
+    );
+}
+
+/// @edge — un utilisateur SANS organisation n'est pas traité par défaut
+/// comme un superadministrateur : il ne reçoit ni la liste de l'instance
+/// entière, ni même une réponse vide qui laisserait croire à un périmètre
+/// vide plutôt qu'absent.
+#[actix_web::test]
+#[serial]
+async fn edge_overdue_calls_refuse_lutilisateur_sans_organisation() {
+    let (app_state, _container, _org_id) = common::setup_test_db().await;
+
+    let email = format!("sans-org-{}@example.com", Uuid::new_v4());
+    let login = app_state
+        .auth_use_cases
+        .register(koprogo_api::application::dto::RegisterRequest {
+            email,
+            password: "SecurePass123!".to_string(),
+            first_name: "Sans".to_string(),
+            last_name: "Organisation".to_string(),
+            role: "owner".to_string(),
+            organization_id: None,
+        })
+        .await
+        .expect("register sans organisation");
+
+    let app = test::init_service(
+        App::new()
+            .app_data(app_state.clone())
+            .configure(configure_routes),
+    )
+    .await;
+
+    let resp = test::call_service(
+        &app,
+        test::TestRequest::get()
+            .uri("/api/v1/call-for-funds/overdue")
+            .insert_header((header::AUTHORIZATION, format!("Bearer {}", login.token)))
+            .to_request(),
+    )
+    .await;
+
+    assert_eq!(
+        resp.status().as_u16(),
+        400,
+        "un utilisateur sans organisation ne doit ni voir l'instance entière \
+         ni recevoir une réponse 200, got: {}",
+        resp.status()
+    );
+}
