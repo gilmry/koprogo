@@ -642,6 +642,9 @@ claude-check: ## 🤖 Valider la config guardrails Claude Code (settings.json + 
 	@echo "$(GREEN)🤖 Maury entry doc present?$(NC)"
 	@test -f Maury/README.md && echo "  ✓ Maury/README.md" || echo "  $(YELLOW)✗ missing — créer pour devenir agent canonical entry$(NC)"
 
+test-guardrail-hooks: ## 🧪 Témoin Tier 1/Tier 2 (#429) : les hooks bloquent-ils vraiment ce qu'ils prétendent ?
+	@./scripts/test-guardrail-hooks.sh
+
 token-budget: ## 📊 Mesure budget tokens des artefacts agents (cible CLAUDE.md ≤5k)
 	@echo "$(GREEN)📊 Token budget snapshot$(NC)"
 	@for f in CLAUDE.md README.md Maury/Méthode\ Maury.md Maury/CHANGELOG.md Maury/README.md .claude/rules/CRITICAL.md .claude/AGENT_GUARDRAILS.md; do \
@@ -651,5 +654,5 @@ token-budget: ## 📊 Mesure budget tokens des artefacts agents (cible CLAUDE.md
 		fi; \
 	done
 
-ci-guardrails: claude-check secret-scan ## 🚦 CI guardrails seul (claude-check + secret-scan)
+ci-guardrails: claude-check secret-scan test-guardrail-hooks ## 🚦 CI guardrails seul (claude-check + secret-scan + témoin Tier 1/Tier 2)
 	@echo "$(GREEN)✅ Guardrails CI passed$(NC)"
