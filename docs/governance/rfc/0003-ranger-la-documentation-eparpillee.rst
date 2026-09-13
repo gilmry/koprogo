@@ -10,6 +10,23 @@ RFC 0003: Ranger la documentation éparpillée
 :Équipes: docs, gouvernance
 :Jalon: 0 (avant la release v0.1.0)
 
+.. note::
+   **Suivi d'exécution (#854, 2026-09-13).** Le tri fichier par fichier a
+   été appliqué. Correction au passage : la mesure « 0/29 référencé dans
+   index.rst » ci-dessous comptait les noms de fichiers **avec** extension
+   ``.md`` ; les entrées ``toctree`` de Sphinx s'écrivent **sans**
+   extension, donc ce grep ne pouvait jamais les trouver. Treize des
+   vingt-neuf fichiers étaient déjà publiés (``MULTI_OWNER_SUPPORT``,
+   ``GDPR_COMPLIANCE_CHECKLIST``, ``FRONTEND_COMPONENTS``, etc. figuraient
+   déjà dans le ``toctree`` racine) ; le nombre réel d'orphelins était donc
+   seize, pas vingt-neuf. Les trois questions de la section « Décision
+   attendue » restent ouvertes : la règle de tri n'a pas été rediscutée
+   (seulement appliquée), MyST s'est avéré déjà actif dans
+   ``docs/conf.py`` (donc déjà tranché en pratique, sans décision écrite),
+   et le sort des trois paires de dossiers en double n'a pas été touché,
+   sauf le cas ``ops/`` → ``operations/`` que ce RFC tranchait déjà en
+   passant — non fait ici, faute de mandat pour une fusion de dossiers.
+
 .. contents:: Table des matières
    :depth: 2
    :local:

@@ -319,6 +319,8 @@ Comprenez la gouvernance ASBL, les RFC/ADR et le processus de décision.
    governance/scrum/ceremonies
    governance/rfc/template
    governance/adr/0001-mcp-integration
+   governance/RELEASE_PROCESS
+   governance/AGENT_RECIPES
 
 💰 Modèle Économique
 --------------------
@@ -348,13 +350,11 @@ Documentation technique détaillée pour développeurs.
    PROJECT_STRUCTURE
    GIT_HOOKS
    ROLE_PERMISSIONS_MATRIX
-   MULTI_OWNER_SUPPORT
-   MULTI_ROLE_SUPPORT
    OWNER_MODEL_REFACTORING
-   RELEASE_PROCESS
-   PERFORMANCE_TUNING
-   DATABASE_ADMIN
-   INTEGRATION_GUIDES
+   backend/PERFORMANCE_TUNING
+   backend/DATABASE_ADMIN
+   backend/INTEGRATION_GUIDES
+   backend/JWT_REFRESH_TOKENS
 
 .. toctree::
    :maxdepth: 2
@@ -364,6 +364,9 @@ Documentation technique détaillée pour développeurs.
    user-guides/owner-guide
    user-guides/accountant-guide
    user-guides/board-member-guide
+   user-guides/BOARD_OF_DIRECTORS_GUIDE
+   user-guides/MULTI_OWNER_SUPPORT
+   user-guides/MULTI_ROLE_SUPPORT
 
 .. toctree::
    :maxdepth: 2
@@ -387,6 +390,7 @@ Historique des décisions d'architecture importantes.
    adr/0005-jwt-authentication
    adr/0006-agpl-license
    adr/0044-document-storage-strategy
+   adr/0054-refresh-token-cookie-httponly
 
 📊 GitHub Project Management
 -----------------------------
@@ -428,10 +432,9 @@ GDPR, comptabilité belge (PCMN), workflow de facturation et recouvrement.
    CONVOCATIONS_SYSTEM
    CONTRACTOR_QUOTES
    COMMUNITY_FEATURES
-   GDPR_COMPLIANCE_CHECKLIST
+   legal/GDPR_COMPLIANCE_CHECKLIST
    GDPR_IMPLEMENTATION_STATUS
-   GDPR_ADDITIONAL_RIGHTS
-   BOARD_OF_DIRECTORS_GUIDE
+   legal/GDPR_ADDITIONAL_RIGHTS
 
 💰 Finances & Performance
 --------------------------
@@ -454,9 +457,13 @@ Composants frontend, templates email et guide i18n.
 .. toctree::
    :maxdepth: 2
 
-   FRONTEND_COMPONENTS
-   EMAIL_TEMPLATES
-   I18N_GUIDE
+   frontend/FRONTEND_COMPONENTS
+   backend/EMAIL_TEMPLATES
+   frontend/I18N_GUIDE
+   frontend/ACCESSIBILITY
+   frontend/MIGRATION_SVELTE5_RUNES
+   frontend/TESTING_SVELTE5
+   frontend/TEST_COVERAGE_MATRIX
 
 Conformite Juridique
 ---------------------

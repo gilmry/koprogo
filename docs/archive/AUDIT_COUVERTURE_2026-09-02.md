@@ -1,3 +1,24 @@
+> **Archivé le 2026-09-13** (RFC 0003 / #854). Un audit est un relevé de
+> constats à traiter, pas un fichier permanent. Constats encore ouverts au
+> moment de l'archivage, à vérifier et transformer en issues GitHub
+> (l'agent qui archive ce fichier n'a pas le mandat de créer des issues) :
+>
+> - §1 — couverture OpenAPI 27 %, priorité `expense`/`budget`/`payment-reminder` ;
+>   `line_items` de facture saisis mais exposés par aucune route.
+> - §2 — `individual_member_use_cases` et `service_provider_use_cases` sans
+>   test.
+> - §5.2 — le numéro de registre des états datés (`ED-YYYY-NNN-…`) ne
+>   s'incrémente pas : compteur `AtomicU64` local au processus, remis à
+>   zéro à chaque redémarrage.
+> - §5.3 — une violation de règle métier (ex. budget négatif) s'affiche
+>   comme « Internal server error » au lieu d'une erreur de validation
+>   (`impl From<String> for AppError` rabat tout sur `Internal`).
+>
+> Résolu et verrouillé par test au moment de l'archivage, donc **pas**
+> matière à issue : §5.1 (délai Art. 3.94 en jours calendaires, tranché),
+> §5.4 (workflow de facture, huit transitions gardées par
+> `FinancialRegressions.spec.ts`), l'exception CrowdSec pour l'hôte (§4).
+
 # Audit de couverture — 2026-09-02
 
 Établi en marge du rapport de test « workflows financiers KoproGo » du

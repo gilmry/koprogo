@@ -568,7 +568,7 @@ Helpers existants (réutiliser, ne pas dupliquer)
 Pattern silent-refresh single-flight (frontend)
 ================================================
 
-(Voir aussi ``docs/JWT_REFRESH_TOKENS.md`` §"Amendment 2026-05-19".)
+(Voir aussi ``docs/backend/JWT_REFRESH_TOKENS.md`` §"Amendment 2026-05-19".)
 
 ``frontend/src/stores/auth.ts`` coalesce les appels concurrents à
 ``refreshAccessToken()`` via une promesse partagée au scope du module :
