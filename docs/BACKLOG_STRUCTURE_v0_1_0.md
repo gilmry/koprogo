@@ -27,7 +27,11 @@ signature_humaine:
     parce que fermée. Le périmètre passe à 88. #880 non plus n'a pas été
     décidée : elle a été SUBIE, en exécutant le Gantt — c'est la troisième
     fois de suite, et ça confirme que le périmètre grossit à mesure qu'on
-    mesure, pas à mesure qu'on réfléchit.
+    mesure, pas à mesure qu'on réfléchit. Puis #881 le même jour, relevée en
+    instruisant #864 : cinq transitions de dépense journalisent toutes
+    `ExpenseMarkedPaid`. Le périmètre passe à 89. Quatrième de suite trouvée
+    par l'exécution, et la troisième du même MOTIF — une capacité de
+    traçabilité écrite, présente à la revue, et inopérante.
   etat_a_la_derniere_generation: >-
     88 issues, 88/88 « Agent IA Ready », les trois vérificateurs à 0 le
     2026-09-13. La signature ci-dessus en atteste 87 : c'est elle qui est
