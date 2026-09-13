@@ -329,6 +329,49 @@ du défaut avec un témoin d'interruption (le minimum, déjà décrit dans #880)
 
 ## Journal (chronologie courte)
 
+- 2026-09-13 — **Le registre CSI se remplit, et le prior du Gantt est
+  CALIBRÉ pour la première fois.** 21 passes, dont 15 avec télémétrie fine
+  (V4.2 et V4.3, Sonnet). Le job « Récapitulatif » de la version corrigée du
+  workflow fonctionne — il ne fonctionnait pas dans celle de `main`.
+
+  | | Prior du Gantt | Mesuré (médiane) |
+  |---|---|---|
+  | cache lu / story | ~4 500 000 | **4 312 532** |
+  | sortie / story | ~80 000 | **45 256** |
+  | coût / story | ~2,70 $ | **1,86 $** |
+  | 84 stories, reprises ×1,5 | **340 $** | **234 $** |
+
+  **Le prior tient, et il était prudent dans le bon sens** — c'est ce qu'une
+  borne haute doit faire. L'écart vient surtout de la sortie, surestimée de
+  près du double.
+
+  La dispersion, elle, est le vrai enseignement : le coût va de **0 à 15 $**
+  et les tours de **14 à 233** selon la story. Une médiane par story est donc
+  un mauvais instrument de planification — c'est la TAILLE déclarée (S/M/L)
+  qu'il faudrait croiser, et le registre le permet désormais.
+
+  Le Gantt écrivait que ses chiffres sont « des bornes hautes de première
+  passe, à resserrer story après story sur le réel observé ». C'est la
+  première fois qu'on peut le faire.
+
+- 2026-09-13 — **Deux défauts dans MES scripts, trouvés par le fan-out.**
+  Quatre agents de V4.4 refusés sur « #868 ne porte pas les huit éléments ».
+  C'était faux : le script était mort sur
+  `FileNotFoundError: '/home/ubuntu/koprogo'`. **`DEPOT` valait le chemin de
+  mon poste** dans `backlog-pret.py` et `backlog-structure.py` ;
+  `gantt-passes.py` et `rice-produit.py` le dérivaient déjà. Deux sur quatre,
+  et rien ne signalait l'écart.
+
+  Le second défaut est le plus grave : **le workflow confondait une panne et
+  un verdict.** `if ! script` traite tous les codes non nuls pareil, si bien
+  que le harnais a prononcé un jugement sur quatre stories qu'il n'avait pas
+  pu lire. Le script rend désormais **2 pour « je n'ai PAS PU mesurer »**,
+  distinct de 1 pour « mesuré et incomplet », et le workflow dit alors
+  « corrigez l'instrument, pas l'issue ».
+
+  C'est la règle du registre — l'absence de mesure s'écrit `null`, jamais
+  `0` — portée aux codes de sortie.
+
 - 2026-09-13 — **L'épinglage du `checkout` est prouvé PAR CONTRASTE**, et
   c'est la mesure la plus propre de la journée sur le harnais :
 
