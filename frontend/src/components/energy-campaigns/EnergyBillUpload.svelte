@@ -1,6 +1,6 @@
 <script lang="ts">
   // Svelte 5 runes mode
-  import { _ } from '../../lib/i18n';
+  import { _ } from "../../lib/i18n";
   import {
     energyBillsApi,
     type UploadEnergyBillDto,
@@ -8,7 +8,12 @@
   } from "../../lib/api/energy-campaigns";
   import { withErrorHandling } from "../../lib/utils/error.utils";
 
-  let { campaignId, unitId, onuploaded, oncancel }: {
+  let {
+    campaignId,
+    unitId,
+    onuploaded,
+    oncancel,
+  }: {
     campaignId: string;
     unitId: string;
     onuploaded?: (upload: any) => void;
@@ -25,8 +30,12 @@
     consent_signature: "",
   });
   // Sync IDs with props (live values via $effect, not stale initial capture)
-  $effect(() => { if (campaignId && !formData.campaign_id) formData.campaign_id = campaignId; });
-  $effect(() => { if (unitId && !formData.unit_id) formData.unit_id = unitId; });
+  $effect(() => {
+    if (campaignId && !formData.campaign_id) formData.campaign_id = campaignId;
+  });
+  $effect(() => {
+    if (unitId && !formData.unit_id) formData.unit_id = unitId;
+  });
 
   let gdprConsent = $state(false);
   let loading = $state(false);
@@ -46,17 +55,32 @@
     error = "";
     success = false;
 
-    if (!gdprConsent) { error = $_("energy.upload.gdprRequired"); return; }
-    if (!formData.energy_type) { error = $_("energy.upload.typeRequired"); return; }
-    if (!formData.total_kwh || formData.total_kwh <= 0) { error = $_("energy.upload.consumptionRequired"); return; }
-    if (!formData.billing_period_start || !formData.billing_period_end) { error = $_("energy.upload.datesRequired"); return; }
-    if (formData.billing_period_end! <= formData.billing_period_start!) { error = $_("energy.upload.dateInvalid"); return; }
+    if (!gdprConsent) {
+      error = $_("energy.upload.gdprRequired");
+      return;
+    }
+    if (!formData.energy_type) {
+      error = $_("energy.upload.typeRequired");
+      return;
+    }
+    if (!formData.total_kwh || formData.total_kwh <= 0) {
+      error = $_("energy.upload.consumptionRequired");
+      return;
+    }
+    if (!formData.billing_period_start || !formData.billing_period_end) {
+      error = $_("energy.upload.datesRequired");
+      return;
+    }
+    if (formData.billing_period_end! <= formData.billing_period_start!) {
+      error = $_("energy.upload.dateInvalid");
+      return;
+    }
 
     formData.consent_signature = generateConsentSignature();
 
     await withErrorHandling({
       action: () => energyBillsApi.upload(formData as UploadEnergyBillDto),
-      setLoading: (v: boolean) => loading = v,
+      setLoading: (v: boolean) => (loading = v),
       errorMessage: $_("energy.upload.uploadError"),
       onSuccess: (upload) => {
         success = true;
@@ -102,20 +126,27 @@
     </div>
   {/if}
 
-  <form onsubmit={handleSubmit} class="space-y-6" data-testid="energy-bill-upload-form">
+  <form
+    onsubmit={handleSubmit}
+    class="space-y-6"
+    data-testid="energy-bill-upload-form"
+  >
     <!-- Energy Type -->
     <div>
       <label for="energy_type" class="block text-sm font-medium text-gray-700">
         {$_("energy.upload.energyType")} <span class="text-red-500">*</span>
       </label>
       <select
+        data-testid="energy-bill-type-select"
         id="energy_type"
         bind:value={formData.energy_type}
         required
         class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
       >
         <option value="">-- {$_("common.select")} --</option>
-        <option value={EnergyType.Electricity}>⚡ {$_("energy.electricity")}</option>
+        <option value={EnergyType.Electricity}
+          >⚡ {$_("energy.electricity")}</option
+        >
         <option value={EnergyType.Gas}>🔥 {$_("energy.gas")}</option>
         <option value={EnergyType.Heating}>🌡️ {$_("energy.heating")}</option>
       </select>
@@ -124,9 +155,11 @@
     <!-- Total kWh -->
     <div>
       <label for="total_kwh" class="block text-sm font-medium text-gray-700">
-        {$_("energy.upload.totalConsumption")} <span class="text-red-500">*</span>
+        {$_("energy.upload.totalConsumption")}
+        <span class="text-red-500">*</span>
       </label>
       <input
+        data-testid="energy-bill-kwh-input"
         type="number"
         id="total_kwh"
         bind:value={formData.total_kwh}
@@ -151,6 +184,7 @@
           {$_("energy.upload.periodStart")} <span class="text-red-500">*</span>
         </label>
         <input
+          data-testid="energy-bill-period-start-input"
           type="date"
           id="period_start"
           bind:value={formData.billing_period_start}
@@ -159,13 +193,11 @@
         />
       </div>
       <div>
-        <label
-          for="period_end"
-          class="block text-sm font-medium text-gray-700"
-        >
+        <label for="period_end" class="block text-sm font-medium text-gray-700">
           {$_("energy.upload.periodEnd")} <span class="text-red-500">*</span>
         </label>
         <input
+          data-testid="energy-bill-period-end-input"
           type="date"
           id="period_end"
           bind:value={formData.billing_period_end}
@@ -189,30 +221,38 @@
         </p>
         <ul class="list-disc list-inside space-y-1">
           <li>
-            ✅ <strong>{$_("energy.upload.gdprPoint1Title")}:</strong> {$_("energy.upload.gdprPoint1")}
+            ✅ <strong>{$_("energy.upload.gdprPoint1Title")}:</strong>
+            {$_("energy.upload.gdprPoint1")}
           </li>
           <li>
-            ✅ <strong>{$_("energy.upload.gdprPoint2Title")}:</strong> {$_("energy.upload.gdprPoint2")}
+            ✅ <strong>{$_("energy.upload.gdprPoint2Title")}:</strong>
+            {$_("energy.upload.gdprPoint2")}
           </li>
           <li>
-            ✅ <strong>{$_("energy.upload.gdprPoint3Title")}:</strong> {$_("energy.upload.gdprPoint3")}
+            ✅ <strong>{$_("energy.upload.gdprPoint3Title")}:</strong>
+            {$_("energy.upload.gdprPoint3")}
           </li>
           <li>
-            ✅ <strong>{$_("energy.upload.gdprPoint4Title")}:</strong> {$_("energy.upload.gdprPoint4")}
+            ✅ <strong>{$_("energy.upload.gdprPoint4Title")}:</strong>
+            {$_("energy.upload.gdprPoint4")}
           </li>
           <li>
-            ✅ <strong>{$_("energy.upload.gdprPoint5Title")}:</strong> {$_("energy.upload.gdprPoint5")}
+            ✅ <strong>{$_("energy.upload.gdprPoint5Title")}:</strong>
+            {$_("energy.upload.gdprPoint5")}
           </li>
           <li>
-            ✅ <strong>{$_("energy.upload.gdprPoint6Title")}:</strong> {$_("energy.upload.gdprPoint6")}
+            ✅ <strong>{$_("energy.upload.gdprPoint6Title")}:</strong>
+            {$_("energy.upload.gdprPoint6")}
           </li>
         </ul>
         <p class="mt-2">
-          <strong>{$_("energy.upload.dataUsage")}:</strong> {$_("energy.upload.dataUsageDetails")}
+          <strong>{$_("energy.upload.dataUsage")}:</strong>
+          {$_("energy.upload.dataUsageDetails")}
         </p>
       </div>
       <label class="flex items-start">
         <input
+          data-testid="energy-bill-gdpr-consent-checkbox"
           type="checkbox"
           bind:checked={gdprConsent}
           required
@@ -228,13 +268,15 @@
     <!-- Security Info -->
     <div class="p-3 bg-green-50 border border-green-200 rounded-md">
       <p class="text-xs text-green-800">
-        🔐 {$_("energy.upload.securityTitle")} {$_("energy.upload.securityDetails")}
+        🔐 {$_("energy.upload.securityTitle")}
+        {$_("energy.upload.securityDetails")}
       </p>
     </div>
 
     <!-- Submit Button -->
     <div class="flex justify-end space-x-3">
       <button
+        data-testid="energy-bill-cancel-button"
         type="button"
         onclick={() => oncancel?.()}
         class="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"

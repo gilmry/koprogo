@@ -22,9 +22,10 @@ import {
   loginAsAdmin,
   loginAsSyndic,
   loginAsSyndicWithBuilding,
+  uiLoginWithRetry,
 } from "../../helpers/auth";
 
-const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
+import { API_BASE } from "../../helpers/adresses";
 
 test.describe("Story 2.2 — BuildingSelector (top-left)", () => {
   test("@happy syndic sees selector, types query, selects a building", async ({
@@ -85,22 +86,28 @@ test.describe("Story 2.2 — BuildingSelector (top-left)", () => {
       },
     });
 
-    // Inject auth as owner.
-    await page.evaluate((email) => {
-      localStorage.setItem(
-        "koprogo_user",
-        JSON.stringify({
-          id: "injected-owner",
-          email,
-          first_name: "OwnerSel",
-          last_name: "Test",
-          role: "owner",
-          roles: [{ id: "r-owner", role: "owner", is_primary: true }],
-          active_role: { id: "r-owner", role: "owner", is_primary: true },
-        }),
-      );
-    }, ownerEmail);
-
+    // Connexion RÉELLE, pas une injection dans `localStorage`.
+    //
+    // Le test injectait un utilisateur factice dans `koprogo_user`. Ça ne
+    // pouvait pas marcher, et c'est une bonne nouvelle : `auth.ts:182` dit
+    // que cette clé est « un cache d'affichage NON sensible, jamais une
+    // preuve d'authentification », et qu'`init()` fait un silent-refresh via
+    // le cookie HttpOnly pour confirmer la session. Le cache injecté était
+    // donc écrasé par le VRAI utilisateur — le superadmin, dont le cookie
+    // était encore posé.
+    //
+    // L'instantané de page du run 34347631686 le montre sans ambiguïté :
+    // `/url: /superadmin` et un menu « Administration ». Le sélecteur
+    // s'affichait donc à bon droit, pour un superadmin.
+    //
+    // Autrement dit, cette assertion `@security` n'a jamais éprouvé ce
+    // qu'elle annonce : aucun copropriétaire n'était connecté. On ne peut pas
+    // changer de rôle en modifiant `localStorage`, et c'est exactement ce
+    // qu'on veut d'un produit.
+    //
+    // Le copropriétaire est créé plus haut avec un mot de passe : on s'en
+    // sert.
+    await uiLoginWithRetry(page, ownerEmail, "test123456", /\/owner/);
     await page.goto("/owner", { waitUntil: "networkidle" });
 
     // Le selector NE DOIT PAS apparaitre pour un owner (cf. AC @security).

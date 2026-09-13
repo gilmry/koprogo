@@ -344,7 +344,10 @@ async fn test_erase_user_data_success() {
         let erase_req = test::TestRequest::delete()
             .uri("/api/v1/gdpr/erase")
             .insert_header((header::AUTHORIZATION, format!("Bearer {}", token)))
-            .set_json(json!({}))
+            // L'auto-effacement exige le mot de passe : c'est la seule preuve
+            // que la demande vient bien de la personne concernée, et non d'un
+            // jeton volé. Un corps vide se voit refuser, à raison.
+            .set_json(json!({ "password": "TestPassword123!" }))
             .to_request();
 
         let erase_resp = test::call_service(&app, erase_req).await;

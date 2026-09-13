@@ -97,6 +97,43 @@ pub struct AcpResponseDto {
     pub updated_at: String,
 }
 
+/// Une ACP **avec ses métriques**, pour la table « Mes ACP » du syndic.
+///
+/// ── Pourquoi un DTO distinct ────────────────────────────────────────────
+///
+/// `AcpResponseDto` est servi partout : sélecteurs, listes déroulantes, fiches.
+/// Y ajouter quatre agrégats obligerait tous ces appelants à payer quatre
+/// sous-requêtes par ligne pour des nombres qu'ils n'affichent pas.
+///
+/// ── Ce que ces nombres disent, et pourquoi ils vont ensemble ───────────
+///
+/// `units_count` et `declared_units_total` mesurent des choses différentes —
+/// les lots effectivement encodés, et ceux déclarés à l'acte de base. Les
+/// afficher séparément était déjà source de confusion ailleurs dans le
+/// produit (« 0 lots au total » à côté de « 8 Lots »). Ensemble, ils disent
+/// l'écart.
+///
+/// `quota_sum` face à `total_tantiemes` dit la même chose côté quotités : tant
+/// que la somme n'atteint pas le total de l'acte, les appels de fonds portent
+/// sur une base incomplète.
+#[derive(Debug, Clone, Serialize, Deserialize, utoipa::ToSchema)]
+pub struct AcpAvecMetriquesDto {
+    #[serde(flatten)]
+    pub acp: AcpResponseDto,
+    /// Nombre de blocs rattachés à l'ACP.
+    pub buildings_count: i32,
+    /// Lots effectivement encodés, tous blocs confondus.
+    pub units_count: i32,
+    /// Lots déclarés à l'acte de base, sommés sur les blocs.
+    pub declared_units_total: i32,
+    /// Somme exacte des quotités générales.
+    ///
+    /// `Decimal` sérialisé en chaîne : une quotité est juridiquement
+    /// opposable, et la passer en `f64` introduirait une erreur de
+    /// représentation sur une valeur exacte (ADR-0007/0008).
+    pub quota_sum: String,
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

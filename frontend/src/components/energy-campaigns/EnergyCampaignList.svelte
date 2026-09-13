@@ -1,6 +1,6 @@
 <script lang="ts">
   // Svelte 5 runes mode
-  import { _ } from '../../lib/i18n';
+  import { _ } from "../../lib/i18n";
   import {
     energyCampaignsApi,
     type EnergyCampaign,
@@ -10,8 +10,12 @@
   import { formatDateShort } from "../../lib/utils/date.utils";
   import { withLoadingState } from "../../lib/utils/error.utils";
 
-  let { organizationId = undefined }: {
+  let {
+    organizationId = undefined,
+    showHeader = true,
+  }: {
     organizationId?: string | undefined;
+    showHeader?: boolean;
   } = $props();
 
   let campaigns: EnergyCampaign[] = $state([]);
@@ -25,9 +29,9 @@
   async function loadCampaigns() {
     await withLoadingState({
       action: () => energyCampaignsApi.list(organizationId),
-      setLoading: (v: boolean) => loading = v,
-      setError: (v: string) => error = v,
-      onSuccess: (data) => campaigns = data,
+      setLoading: (v: boolean) => (loading = v),
+      setError: (v: string) => (error = v),
+      onSuccess: (data) => (campaigns = data),
       errorMessage: $_("energy.campaign.loadError"),
     });
   }
@@ -60,10 +64,17 @@
 <div class="bg-white shadow-md rounded-lg" data-testid="energy-campaign-list">
   <div class="px-4 py-5 border-b border-gray-200 sm:px-6">
     <div class="flex items-center justify-between">
-      <h3 class="text-lg leading-6 font-medium text-gray-900">
-        📊 {$_("energy.campaign.groupBuying")}
-      </h3>
+      <!-- Masqué quand la page porte déjà un H1 identique ; le div vide
+         conserve l'alignement de la rangée en justify-between. -->
+      {#if showHeader}
+        <h3 class="text-lg leading-6 font-medium text-gray-900">
+          📊 {$_("energy.campaign.groupBuying")}
+        </h3>
+      {:else}
+        <div></div>
+      {/if}
       <a
+        data-testid="campaigns-create-link"
         href="/energy-campaigns/new"
         class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700"
       >
@@ -78,13 +89,16 @@
 
   {#if loading}
     <div class="p-8 text-center" data-testid="energy-campaign-list-loading">
-      <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+      <div
+        class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"
+      ></div>
       <p class="mt-2 text-sm text-gray-500">{$_("common.loading")}</p>
     </div>
   {:else if error}
     <div class="p-4 m-4 bg-red-50 border border-red-200 rounded-md">
       <p class="text-sm text-red-800">❌ {error}</p>
       <button
+        data-testid="campaigns-retry-button"
         onclick={loadCampaigns}
         class="mt-2 text-sm text-red-600 hover:text-red-800 underline"
       >
@@ -94,7 +108,7 @@
   {:else if campaigns.length === 0}
     <div class="p-8 text-center">
       <p class="text-gray-500">{$_("energy.campaign.noCampaigns")}</p>
-      <p class="mt-2 text-sm text-gray-400">
+      <p class="mt-2 text-sm text-muted">
         {$_("energy.campaign.emptyStateMessage")}
       </p>
     </div>
@@ -103,6 +117,7 @@
       {#each campaigns as campaign}
         <li class="hover:bg-gray-50" data-testid="energy-campaign-row">
           <a
+            data-testid="campaigns-detail-link"
             href="/energy-campaigns/detail?id={campaign.id}"
             class="block px-4 py-4 sm:px-6"
           >
@@ -125,21 +140,23 @@
                     </span>
                   {/if}
                 </div>
-                <div class="mt-2 flex items-center text-xs text-gray-400">
+                <div class="mt-2 flex items-center text-xs text-muted">
                   <span>
-                    {$_("energy.campaign.participationUntil")} {formatDateShort(campaign.deadline_participation)}
+                    {$_("energy.campaign.participationUntil")}
+                    {formatDateShort(campaign.deadline_participation)}
                   </span>
                   {#if campaign.offers_received.length > 0}
                     <span class="mx-2">•</span>
                     <span>
-                      💼 {campaign.offers_received.length} {$_("energy.campaign.offersReceivedLabel")}
+                      💼 {campaign.offers_received.length}
+                      {$_("energy.campaign.offersReceivedLabel")}
                     </span>
                   {/if}
                 </div>
               </div>
               <div class="ml-4">
                 <svg
-                  class="h-5 w-5 text-gray-400"
+                  class="h-5 w-5 text-muted"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"

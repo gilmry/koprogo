@@ -10,6 +10,12 @@
  * Duree video attendue : ~70-90 secondes (rythme humain, multi-role)
  */
 import { test, expect } from "@playwright/test";
+import { ADMIN_PASSWORD } from "../helpers/identifiants";
+import {
+  amorce,
+  aucuneErreurAffichee,
+  confirmerSiDemande,
+} from "../helpers/amorcage";
 import { selectOptionByName } from "../helpers/name-match";
 import {
   humanLogin,
@@ -23,7 +29,7 @@ import {
   PACE,
 } from "../helpers/video-pace";
 
-const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
+import { API_BASE } from "../helpers/adresses";
 
 test.describe("Scenario: Cycle de vie d'un ticket de maintenance", () => {
   test.setTimeout(180_000);
@@ -33,9 +39,9 @@ test.describe("Scenario: Cycle de vie d'un ticket de maintenance", () => {
   test.beforeAll(async ({ request }) => {
     // 1. Login admin
     const adminResp = await request.post(`${API_BASE}/auth/login`, {
-      data: { email: "admin@koprogo.com", password: "admin123" },
+      data: { email: "admin@koprogo.com", password: ADMIN_PASSWORD },
     });
-    const admin = await adminResp.json();
+    const admin = await amorce(adminResp, "POST /auth/login");
     const adminHeaders = { Authorization: `Bearer ${admin.token}` };
 
     // 2. Seed the world
@@ -52,7 +58,7 @@ test.describe("Scenario: Cycle de vie d'un ticket de maintenance", () => {
 
   test.afterAll(async ({ request }) => {
     const adminResp = await request.post(`${API_BASE}/auth/login`, {
-      data: { email: "admin@koprogo.com", password: "admin123" },
+      data: { email: "admin@koprogo.com", password: ADMIN_PASSWORD },
     });
     const admin = await adminResp.json();
     await request.delete(`${API_BASE}/seed/scenario/world`, {
@@ -72,7 +78,7 @@ test.describe("Scenario: Cycle de vie d'un ticket de maintenance", () => {
     // ============================================================
     // ETAPE 2 : Navigation vers Mes Tickets via le menu lateral
     // ============================================================
-    await humanClick(page, "nav-link-mes-tickets");
+    await humanClick(page, "nav-link-owner-tickets");
     await waitForSpinner(page);
     await page.waitForTimeout(PACE.AFTER_NAVIGATION);
 
@@ -82,7 +88,13 @@ test.describe("Scenario: Cycle de vie d'un ticket de maintenance", () => {
     // ============================================================
     // ETAPE 3 : Ouvrir le formulaire de creation de ticket
     // ============================================================
-    await humanClick(page, "tickets-create-btn");
+    // `owner-tickets-create-button`, pas `tickets-create-btn` : Charlie est
+    // sur `/owner/tickets`, et `tickets-create-btn` vit sur `/tickets`, la
+    // page du syndic. Deux ecrans, deux boutons, deux ancres — c'est
+    // exactement la regle « un nom par ecran » du guide de style.
+    await humanClick(page, "owner-tickets-create-button");
+    await confirmerSiDemande(page);
+    await aucuneErreurAffichee(page, "owner-tickets-create-button");
     await page.waitForTimeout(PACE.AFTER_NAVIGATION);
 
     await expect(page.getByTestId("ticket-create-form")).toBeVisible({
@@ -117,6 +129,8 @@ test.describe("Scenario: Cycle de vie d'un ticket de maintenance", () => {
     // ETAPE 5 : Soumettre le ticket
     // ============================================================
     await humanClick(page, "ticket-submit-btn");
+    await confirmerSiDemande(page);
+    await aucuneErreurAffichee(page, "ticket-submit-btn");
     await waitForSpinner(page);
     await page.waitForTimeout(PACE.AFTER_NAVIGATION);
 
@@ -126,7 +140,7 @@ test.describe("Scenario: Cycle de vie d'un ticket de maintenance", () => {
     await page.waitForLoadState("domcontentloaded");
     await page.waitForTimeout(PACE.AFTER_NAVIGATION);
 
-    await humanClick(page, "nav-link-mes-tickets");
+    await humanClick(page, "nav-link-owner-tickets");
     await waitForSpinner(page);
     await page.waitForTimeout(PACE.AFTER_NAVIGATION);
 

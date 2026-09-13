@@ -1,6 +1,6 @@
 <script lang="ts">
   // Svelte 5 runes mode
-  import { _ } from '../../lib/i18n';
+  import { _ } from "../../lib/i18n";
   import {
     notificationsApi,
     NotificationType,
@@ -21,12 +21,18 @@
 
   const notificationTypeLabels: Record<NotificationType, string> = {
     [NotificationType.ExpenseCreated]: $_("notifications.type_expense_created"),
-    [NotificationType.MeetingConvocation]: $_("notifications.type_meeting_convocation"),
-    [NotificationType.PaymentReceived]: $_("notifications.type_payment_received"),
+    [NotificationType.MeetingConvocation]: $_(
+      "notifications.type_meeting_convocation",
+    ),
+    [NotificationType.PaymentReceived]: $_(
+      "notifications.type_payment_received",
+    ),
     [NotificationType.TicketResolved]: $_("notifications.type_ticket_resolved"),
     [NotificationType.DocumentAdded]: $_("notifications.type_document_added"),
     [NotificationType.BoardMessage]: $_("notifications.type_board_message"),
-    [NotificationType.PaymentReminder]: $_("notifications.type_payment_reminder"),
+    [NotificationType.PaymentReminder]: $_(
+      "notifications.type_payment_reminder",
+    ),
     [NotificationType.BudgetApproved]: $_("notifications.type_budget_approved"),
     [NotificationType.ResolutionVote]: $_("notifications.type_resolution_vote"),
     [NotificationType.System]: $_("notifications.type_system"),
@@ -51,12 +57,13 @@
     field: "enabled" | "email_enabled" | "sms_enabled" | "push_enabled",
   ) {
     const updated = await withErrorHandling({
-      action: () => notificationsApi.updatePreference(
-        userId,
-        preference.notification_type,
-        { [field]: !(preference as any)[field] },
-      ),
-      setLoading: (v: boolean) => saving = v,
+      action: () =>
+        notificationsApi.updatePreference(
+          userId,
+          preference.notification_type,
+          { [field]: !(preference as any)[field] },
+        ),
+      setLoading: (v: boolean) => (saving = v),
       successMessage: $_("notifications.preference_updated"),
       errorMessage: $_("notifications.update_preference_failed"),
     });
@@ -103,8 +110,12 @@
           <div class="text-sm font-medium text-gray-700 text-center">
             {$_("notifications.email")}
           </div>
-          <div class="text-sm font-medium text-gray-700 text-center">{$_("notifications.sms")}</div>
-          <div class="text-sm font-medium text-gray-700 text-center">{$_("notifications.push")}</div>
+          <div class="text-sm font-medium text-gray-700 text-center">
+            {$_("notifications.sms")}
+          </div>
+          <div class="text-sm font-medium text-gray-700 text-center">
+            {$_("notifications.push")}
+          </div>
         </div>
 
         <!-- Preference Rows -->
@@ -122,6 +133,7 @@
             <div class="text-center">
               <label class="inline-flex items-center cursor-pointer">
                 <input
+                  data-testid="notification-enabled-checkbox"
                   type="checkbox"
                   checked={preference.enabled}
                   onchange={() => handleToggle(preference, "enabled")}
@@ -138,6 +150,7 @@
             <div class="text-center">
               <label class="inline-flex items-center cursor-pointer">
                 <input
+                  data-testid="notification-email-checkbox"
                   type="checkbox"
                   checked={preference.email_enabled}
                   onchange={() => handleToggle(preference, "email_enabled")}
@@ -154,6 +167,7 @@
             <div class="text-center">
               <label class="inline-flex items-center cursor-pointer">
                 <input
+                  data-testid="notification-sms-checkbox"
                   type="checkbox"
                   checked={preference.sms_enabled}
                   onchange={() => handleToggle(preference, "sms_enabled")}
@@ -170,6 +184,7 @@
             <div class="text-center">
               <label class="inline-flex items-center cursor-pointer">
                 <input
+                  data-testid="notification-push-checkbox"
                   type="checkbox"
                   checked={preference.push_enabled}
                   onchange={() => handleToggle(preference, "push_enabled")}

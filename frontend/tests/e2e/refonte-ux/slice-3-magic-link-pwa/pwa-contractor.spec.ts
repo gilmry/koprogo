@@ -34,7 +34,7 @@ import { adminLogin } from "../../helpers/auth";
 // dans un `test.describe()` il forcerait un nouveau worker (erreur Playwright).
 test.use({ ...devices["Pixel 7"] });
 
-const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
+import { API_BASE } from "../../helpers/adresses";
 const TEST_PASSWORD = process.env.PLAYWRIGHT_TEST_PASSWORD || "test123456";
 
 // ---------------------------------------------------------------------------

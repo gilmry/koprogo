@@ -1,5 +1,6 @@
 use crate::application::dto::PageRequest;
 use crate::application::ports::AuditLogFilters;
+use crate::infrastructure::web::classification_erreurs;
 use crate::infrastructure::web::{AppState, AuthenticatedUser};
 use actix_web::{delete, get, web, HttpRequest, HttpResponse, Responder};
 use serde::{Deserialize, Serialize};
@@ -105,7 +106,7 @@ pub async fn list_audit_logs(
     query: web::Query<AuditLogQuery>,
 ) -> impl Responder {
     // Only SuperAdmin can view audit logs
-    if auth.role != "superadmin" {
+    if !auth.is_superadmin() {
         return HttpResponse::Forbidden().json(serde_json::json!({
             "error": "Access denied. SuperAdmin role required."
         }));
@@ -218,7 +219,7 @@ pub async fn admin_export_user_data(
     path: web::Path<Uuid>,
 ) -> impl Responder {
     // Only SuperAdmin can perform admin exports
-    if auth.role != "superadmin" {
+    if !auth.is_superadmin() {
         return HttpResponse::Forbidden().json(serde_json::json!({
             "error": "Access denied. SuperAdmin role required."
         }));
@@ -303,7 +304,7 @@ pub async fn admin_export_user_data(
                 audit_logger.log(&audit_entry).await;
             });
 
-            if e.contains("not found") {
+            if classification_erreurs::est_introuvable(&e) {
                 HttpResponse::NotFound().json(serde_json::json!({
                     "error": e
                 }))
@@ -335,7 +336,7 @@ pub async fn admin_erase_user_data(
     path: web::Path<Uuid>,
 ) -> impl Responder {
     // Only SuperAdmin can perform admin erasures
-    if auth.role != "superadmin" {
+    if !auth.is_superadmin() {
         return HttpResponse::Forbidden().json(serde_json::json!({
             "error": "Access denied. SuperAdmin role required."
         }));
@@ -350,7 +351,7 @@ pub async fn admin_erase_user_data(
     // SuperAdmin can erase any user's data (no organization restriction)
     match data
         .gdpr_use_cases
-        .erase_user_data(target_user_id, auth.user_id, None)
+        .erase_user_data(target_user_id, auth.user_id, None, None)
         .await
     {
         Ok(erase_response) => {
@@ -423,7 +424,7 @@ pub async fn admin_erase_user_data(
                 audit_logger.log(&audit_entry).await;
             });
 
-            if e.contains("Unauthorized") {
+            if classification_erreurs::est_interdit(&e) {
                 HttpResponse::Forbidden().json(serde_json::json!({
                     "error": e
                 }))
@@ -436,7 +437,7 @@ pub async fn admin_erase_user_data(
                     "error": e,
                     "message": "Cannot erase data due to legal obligations. Please resolve pending issues before requesting erasure."
                 }))
-            } else if e.contains("not found") {
+            } else if classification_erreurs::est_introuvable(&e) {
                 HttpResponse::NotFound().json(serde_json::json!({
                     "error": e
                 }))

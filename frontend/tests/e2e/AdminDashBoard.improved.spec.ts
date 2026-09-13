@@ -21,6 +21,7 @@
 import { test, expect } from "@playwright/test";
 import type { Page } from "@playwright/test";
 import { loginAsAdmin } from "./helpers/auth";
+import { API_BASE } from "./helpers/adresses";
 
 // Les ancres d'URL tolerent le slash final : le build statique servi en
 // production redirige `/x` vers `/x/` (301), contrairement au serveur de
@@ -435,8 +436,6 @@ test.describe("Admin Dashboard - CRUD with Test IDs", () => {
       const buildingId = createdBuilding.id;
 
       // Verify building was created via API (paginated list may not show it on page 1)
-      const API_BASE =
-        process.env.PLAYWRIGHT_API_BASE ?? "http://localhost/api/v1";
       const token = await page.evaluate(() =>
         localStorage.getItem("koprogo_token"),
       );
@@ -508,8 +507,6 @@ test.describe("Admin Dashboard - CRUD with Test IDs", () => {
       page,
     }) => {
       const testData = generateTestData("Journey");
-      const API_BASE =
-        process.env.PLAYWRIGHT_API_BASE ?? "http://localhost/api/v1";
       let createdBuildingId: string | null = null;
 
       try {

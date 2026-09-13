@@ -1,47 +1,49 @@
 <script lang="ts">
-  import { createEventDispatcher, onMount } from 'svelte';
-  import { _ } from '../../lib/i18n';
-  import { budgetsApi, type CreateBudgetDto } from '../../lib/api/budgets';
-  import { api } from '../../lib/api';
-  import type { Building } from '../../lib/types';
-  import { withErrorHandling } from '../../lib/utils/error.utils';
-  import { formatCurrency } from '../../lib/utils/finance.utils';
+  import { createEventDispatcher, onMount } from "svelte";
+  import { _ } from "../../lib/i18n";
+  import { budgetsApi, type CreateBudgetDto } from "../../lib/api/budgets";
+  import { api } from "../../lib/api";
+  import type { Building } from "../../lib/types";
+  import { withErrorHandling } from "../../lib/utils/error.utils";
+  import { formatCurrency } from "../../lib/utils/finance.utils";
 
   const dispatch = createEventDispatcher();
 
   let buildings: Building[] = [];
   let loading = false;
-  let error = '';
+  let error = "";
 
-  let buildingId = '';
+  let buildingId = "";
   let fiscalYear = new Date().getFullYear();
   let ordinaryBudget = 0;
   let extraordinaryBudget = 0;
-  let notes = '';
+  let notes = "";
 
   $: totalBudget = ordinaryBudget + extraordinaryBudget;
   $: monthlyProvision = totalBudget > 0 ? totalBudget / 12 : 0;
 
   onMount(async () => {
     try {
-      const response = await api.get<{ data: Building[] }>('/buildings?page=1&per_page=100');
+      const response = await api.get<{ data: Building[] }>(
+        "/buildings?page=1&per_page=100",
+      );
       buildings = response.data || [];
     } catch (err) {
-      console.error('Error loading buildings:', err);
+      console.error("Error loading buildings:", err);
     }
   });
 
   async function handleSubmit() {
     if (!buildingId) {
-      error = $_('budgets.errors.selectBuilding');
+      error = $_("budgets.errors.selectBuilding");
       return;
     }
     if (totalBudget <= 0) {
-      error = $_('budgets.errors.totalBudgetMinimum');
+      error = $_("budgets.errors.totalBudgetMinimum");
       return;
     }
 
-    error = '';
+    error = "";
     await withErrorHandling({
       action: () => {
         const data: CreateBudgetDto = {
@@ -53,14 +55,18 @@
         };
         return budgetsApi.create(data);
       },
-      setLoading: (v) => loading = v,
-      errorMessage: $_('budgets.errors.creationFailed'),
-      onSuccess: (budget) => dispatch('created', budget),
+      setLoading: (v) => (loading = v),
+      errorMessage: $_("budgets.errors.creationFailed"),
+      onSuccess: (budget) => dispatch("created", budget),
     });
   }
 </script>
 
-<form on:submit|preventDefault={handleSubmit} class="space-y-6">
+<form
+  data-testid="budget-create-form"
+  on:submit|preventDefault={handleSubmit}
+  class="space-y-6"
+>
   {#if error}
     <div class="bg-red-50 border border-red-200 rounded-lg p-3">
       <p class="text-sm text-red-700">{error}</p>
@@ -68,7 +74,9 @@
   {/if}
 
   <div>
-    <label for="building" class="block text-sm font-medium text-gray-700 mb-1">{$_('budgets.building')}</label>
+    <label for="building" class="block text-sm font-medium text-gray-700 mb-1"
+      >{$_("budgets.building")}</label
+    >
     <select
       id="building"
       bind:value={buildingId}
@@ -76,15 +84,20 @@
       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
       required
     >
-      <option value="">-- {$_('common.select')} --</option>
+      <option value="">-- {$_("common.select")} --</option>
       {#each buildings as building}
-        <option value={building.id}>{building.name} - {building.address}</option>
+        <option value={building.id}>{building.name} - {building.address}</option
+        >
       {/each}
     </select>
   </div>
 
   <div>
-    <label for="fiscal-year" class="block text-sm font-medium text-gray-700 mb-1">{$_('budgets.fiscalYear')}</label>
+    <label
+      for="fiscal-year"
+      class="block text-sm font-medium text-gray-700 mb-1"
+      >{$_("budgets.fiscalYear")}</label
+    >
     <input
       id="fiscal-year"
       type="number"
@@ -99,8 +112,11 @@
 
   <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
     <div>
-      <label for="ordinary" class="block text-sm font-medium text-gray-700 mb-1">
-        {$_('budgets.ordinaryBudget')}
+      <label
+        for="ordinary"
+        class="block text-sm font-medium text-gray-700 mb-1"
+      >
+        {$_("budgets.ordinaryBudget")}
       </label>
       <input
         id="ordinary"
@@ -112,12 +128,17 @@
         class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
         required
       />
-      <p class="text-xs text-gray-500 mt-1">{$_('budgets.ordinaryBudgetHint')}</p>
+      <p class="text-xs text-gray-500 mt-1">
+        {$_("budgets.ordinaryBudgetHint")}
+      </p>
     </div>
 
     <div>
-      <label for="extraordinary" class="block text-sm font-medium text-gray-700 mb-1">
-        {$_('budgets.extraordinaryBudget')}
+      <label
+        for="extraordinary"
+        class="block text-sm font-medium text-gray-700 mb-1"
+      >
+        {$_("budgets.extraordinaryBudget")}
       </label>
       <input
         id="extraordinary"
@@ -129,41 +150,47 @@
         class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
         required
       />
-      <p class="text-xs text-gray-500 mt-1">{$_('budgets.extraordinaryBudgetHint')}</p>
+      <p class="text-xs text-gray-500 mt-1">
+        {$_("budgets.extraordinaryBudgetHint")}
+      </p>
     </div>
   </div>
 
   <!-- Summary -->
   <div class="bg-gray-50 rounded-lg p-4 space-y-2" data-testid="budget-summary">
     <div class="flex justify-between text-sm">
-      <span class="text-gray-600">{$_('budgets.totalBudget')}</span>
+      <span class="text-gray-600">{$_("budgets.totalBudget")}</span>
       <span class="font-bold text-gray-900">{formatCurrency(totalBudget)}</span>
     </div>
     <div class="flex justify-between text-sm">
-      <span class="text-gray-600">{$_('budgets.monthlyProvision')}</span>
-      <span class="font-medium text-primary-600">{formatCurrency(monthlyProvision)}</span>
+      <span class="text-gray-600">{$_("budgets.monthlyProvision")}</span>
+      <span class="font-medium text-primary-600"
+        >{formatCurrency(monthlyProvision)}</span
+      >
     </div>
   </div>
 
   <div>
-    <label for="notes" class="block text-sm font-medium text-gray-700 mb-1">{$_('budgets.notes')}</label>
+    <label for="notes" class="block text-sm font-medium text-gray-700 mb-1"
+      >{$_("budgets.notes")}</label
+    >
     <textarea
+      data-testid="budget-create-notes-textarea"
       id="notes"
       bind:value={notes}
       rows="3"
       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-      placeholder={$_('budgets.notesPlaceholder')}
-    ></textarea>
+      placeholder={$_("budgets.notesPlaceholder")}></textarea>
   </div>
 
   <div class="flex justify-end space-x-3">
     <button
       type="button"
-      on:click={() => dispatch('cancel')}
+      on:click={() => dispatch("cancel")}
       data-testid="budget-cancel-button"
       class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition"
     >
-      {$_('common.cancel')}
+      {$_("common.cancel")}
     </button>
     <button
       type="submit"
@@ -171,7 +198,7 @@
       data-testid="budget-submit-button"
       class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition disabled:opacity-50"
     >
-      {loading ? $_('common.creating') : $_('budgets.createBudget')}
+      {loading ? $_("common.creating") : $_("budgets.createBudget")}
     </button>
   </div>
 </form>

@@ -50,7 +50,7 @@ pub async fn list_processing_activities(
     data: web::Data<AppState>,
     auth: AuthenticatedUser,
 ) -> impl Responder {
-    if auth.role != "superadmin" {
+    if !auth.is_superadmin() {
         return HttpResponse::Forbidden().json(serde_json::json!({
             "error": "Access denied. SuperAdmin role required."
         }));
@@ -93,7 +93,7 @@ pub async fn list_sub_processors(
     data: web::Data<AppState>,
     auth: AuthenticatedUser,
 ) -> impl Responder {
-    if auth.role != "superadmin" {
+    if !auth.is_superadmin() {
         return HttpResponse::Forbidden().json(serde_json::json!({
             "error": "Access denied. SuperAdmin role required."
         }));

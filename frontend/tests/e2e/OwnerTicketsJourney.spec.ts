@@ -1,8 +1,8 @@
 import { test, expect } from "@playwright/test";
-import { loginAsSyndicWithLinkedOwner } from "./helpers/auth";
+import { loginAsSyndicWithLinkedOwner, uiLoginWithRetry } from "./helpers/auth";
 import { failOnPageErrors } from "./helpers/pageErrors";
 
-const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
+import { API_BASE } from "./helpers/adresses";
 
 test.describe("Copropriétaire — Tickets de maintenance, parcours de création rempli jusqu'au bout", () => {
   test.beforeEach(async ({ page }) => failOnPageErrors(page));
@@ -30,6 +30,13 @@ test.describe("Copropriétaire — Tickets de maintenance, parcours de création
       },
     );
     expect(linkResp.status()).toBe(201);
+
+    // BASCULER vers le copropriétaire : `loginAsSyndicWithLinkedOwner` laisse
+    // volontairement la session du SYNDIC en place. Ce test s'en remettait au
+    // « dernier register/login à avoir posé son cookie », une supposition que
+    // le `localStorage` du syndic contredisait. On bascule explicitement.
+    // Cf. la documentation de `OwnerContext` et #832.
+    await uiLoginWithRetry(page, ctx.ownerEmail, ctx.ownerPassword, /\/owner/);
 
     await page.goto("/owner/tickets", { waitUntil: "networkidle" });
 

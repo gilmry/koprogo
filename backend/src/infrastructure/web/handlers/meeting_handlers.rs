@@ -4,7 +4,9 @@ use crate::application::dto::{
     ValidateQuorumRequest,
 };
 use crate::infrastructure::audit::{AuditEventType, AuditLogEntry};
+use crate::infrastructure::web::classification_erreurs;
 use crate::infrastructure::web::middleware::scope_guard::verify_acp_org_access;
+use crate::infrastructure::web::middleware::scope_guard::verify_building_org_access;
 use crate::infrastructure::web::{AppState, AuthenticatedUser};
 use actix_web::{delete, get, post, put, web, HttpResponse, Responder, ResponseError};
 use uuid::Uuid;
@@ -76,6 +78,22 @@ pub async fn create_meeting(
         }
     };
     request.organization_id = organization_id;
+
+    // Isolation multi-tenant à l'ÉCRITURE (ADR-0045). L'affectation de
+    // `organization_id` depuis le jeton protège l'ESTAMPILLE, pas le
+    // RATTACHEMENT : elle empêche d'écrire au nom d'autrui, pas d'écrire dans
+    // le dossier d'autrui. L'immeuble visé doit relever d'une ACP confiée à ce
+    // syndic.
+    if let Err(err) = verify_building_org_access(
+        &user,
+        request.building_id,
+        &state.building_use_cases,
+        &state.acp_use_cases,
+    )
+    .await
+    {
+        return err.error_response();
+    }
 
     match state
         .meeting_use_cases
@@ -220,9 +238,30 @@ pub async fn list_meetings_by_building(
 #[put("/meetings/{id}")]
 pub async fn update_meeting(
     state: web::Data<AppState>,
+    user: AuthenticatedUser,
     id: web::Path<Uuid>,
     request: web::Json<UpdateMeetingRequest>,
 ) -> impl Responder {
+    // Aucune identité n'était exigée ici : ce gestionnaire ne prenait ni
+    // `AuthenticatedUser`, ni jeton lu à la main. N'importe qui pouvait donc
+    // modifier n'importe quelle assemblée générale sur simple connaissance de son identifiant.
+    //
+    // Le cliquet d'identité de #772 ne pouvait pas le voir : il compte les
+    // routes qui PRENNENT `AuthenticatedUser` sans s'en servir. Une route qui
+    // ne le prend pas du tout lui échappait entièrement. Cf. #845.
+    if let Err(err) =
+        crate::infrastructure::web::middleware::scope_guard::verify_meeting_org_access(
+            &user,
+            *id,
+            &state.meeting_use_cases,
+            &state.building_use_cases,
+            &state.acp_use_cases,
+        )
+        .await
+    {
+        return err.error_response();
+    }
+
     match state
         .meeting_use_cases
         .update_meeting(*id, request.into_inner())
@@ -240,7 +279,22 @@ pub async fn add_agenda_item(
     state: web::Data<AppState>,
     id: web::Path<Uuid>,
     request: web::Json<AddAgendaItemRequest>,
+    user: AuthenticatedUser,
 ) -> impl Responder {
+    // Route imbriquee non gardee au releve du 2026-09-06 (issue #772).
+    if let Err(err) =
+        crate::infrastructure::web::middleware::scope_guard::verify_meeting_org_access(
+            &user,
+            *id,
+            &state.meeting_use_cases,
+            &state.building_use_cases,
+            &state.acp_use_cases,
+        )
+        .await
+    {
+        return err.error_response();
+    }
+
     match state
         .meeting_use_cases
         .add_agenda_item(*id, request.into_inner())
@@ -259,9 +313,25 @@ pub async fn add_agenda_item(
 #[get("/meetings/{id}/completion-checklist")]
 pub async fn get_meeting_completion_checklist(
     state: web::Data<AppState>,
-    _user: AuthenticatedUser,
+    user: AuthenticatedUser,
     id: web::Path<Uuid>,
 ) -> impl Responder {
+    // Cloisonnement : la liste des conditions de clôture d'une AG dit où en est
+    // la copropriété — convocations envoyées, résolutions votées, PV rédigé.
+    // L'identité était prise puis ignorée — `_user` (#772).
+    if let Err(err) =
+        crate::infrastructure::web::middleware::scope_guard::verify_meeting_org_access(
+            &user,
+            *id,
+            &state.meeting_use_cases,
+            &state.building_use_cases,
+            &state.acp_use_cases,
+        )
+        .await
+    {
+        return err.error_response();
+    }
+
     let meeting_id = id.into_inner();
     match state
         .meeting_use_cases
@@ -278,7 +348,9 @@ pub async fn get_meeting_completion_checklist(
             "minutes_draft_exists": checklist.minutes_draft_exists,
             "missing": missing_json,
         })),
-        Err(err) if err.contains("not found") || err.contains("not configured") => {
+        Err(err)
+            if classification_erreurs::est_introuvable(&err) || err.contains("not configured") =>
+        {
             HttpResponse::NotFound().json(serde_json::json!({ "error": err }))
         }
         Err(err) => HttpResponse::BadRequest().json(serde_json::json!({ "error": err })),
@@ -335,8 +407,10 @@ pub async fn cancel_meeting(
 ) -> impl Responder {
     match state.meeting_use_cases.cancel_meeting(*id).await {
         Ok(meeting) => {
+            // `MeetingCancelled`, et non `MeetingCompleted` : une assemblée
+            // annulée n'a pas eu lieu. Cf. #780.
             AuditLogEntry::new(
-                AuditEventType::MeetingCompleted,
+                AuditEventType::MeetingCancelled,
                 Some(user.user_id),
                 user.organization_id,
             )
@@ -364,8 +438,10 @@ pub async fn reschedule_meeting(
         .await
     {
         Ok(meeting) => {
+            // `MeetingRescheduled`, et non `MeetingCompleted` : reporter une
+            // assemblée n'est pas la clôturer. Cf. #780.
             AuditLogEntry::new(
-                AuditEventType::MeetingCompleted,
+                AuditEventType::MeetingRescheduled,
                 Some(user.user_id),
                 user.organization_id,
             )
@@ -381,7 +457,31 @@ pub async fn reschedule_meeting(
 }
 
 #[delete("/meetings/{id}")]
-pub async fn delete_meeting(state: web::Data<AppState>, id: web::Path<Uuid>) -> impl Responder {
+pub async fn delete_meeting(
+    state: web::Data<AppState>,
+    user: AuthenticatedUser,
+    id: web::Path<Uuid>,
+) -> impl Responder {
+    // Aucune identité n'était exigée ici : ce gestionnaire ne prenait ni
+    // `AuthenticatedUser`, ni jeton lu à la main. N'importe qui pouvait donc
+    // supprimer n'importe quelle assemblée générale sur simple connaissance de son identifiant.
+    //
+    // Le cliquet d'identité de #772 ne pouvait pas le voir : il compte les
+    // routes qui PRENNENT `AuthenticatedUser` sans s'en servir. Une route qui
+    // ne le prend pas du tout lui échappait entièrement. Cf. #845.
+    if let Err(err) =
+        crate::infrastructure::web::middleware::scope_guard::verify_meeting_org_access(
+            &user,
+            *id,
+            &state.meeting_use_cases,
+            &state.building_use_cases,
+            &state.acp_use_cases,
+        )
+        .await
+    {
+        return err.error_response();
+    }
+
     match state.meeting_use_cases.delete_meeting(*id).await {
         Ok(true) => HttpResponse::NoContent().finish(),
         Ok(false) => HttpResponse::NotFound().json(serde_json::json!({
@@ -566,6 +666,7 @@ pub async fn export_meeting_minutes_pdf(
         use crate::domain::entities::{Resolution, Vote};
 
         let resolution_entity = Resolution {
+            prestataire_de_la_mission: None,
             id: resolution_dto.id,
             meeting_id: resolution_dto.meeting_id,
             title: resolution_dto.title,
@@ -661,6 +762,8 @@ pub async fn export_meeting_minutes_pdf(
 
     let meeting_entity = Meeting {
         id: meeting.id,
+        // L'assemblée relève de l'ACP de son immeuble (Art. 3.87, ADR-0045).
+        acp_id: building_acp_id,
         organization_id,
         building_id: meeting.building_id,
         meeting_type: meeting.meeting_type,

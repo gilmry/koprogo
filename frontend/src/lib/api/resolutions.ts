@@ -77,16 +77,36 @@ export const VoteChoice = {
   Abstention: "abstention" as const,
 } satisfies Record<string, VoteChoice>;
 
+/**
+ * Un bulletin, **tel que le serveur le sert**.
+ *
+ * Aligné sur `backend/src/application/dto/vote_dto.rs`. Cette interface
+ * déclarait `choice` et `created_at` là où l'API sert `vote_choice` et
+ * `voted_at` : le tableau « Voir les votes » lisait `undefined` deux fois et
+ * affichait deux colonnes vides — le SENS DU VOTE et sa date, sur l'écran qui
+ * montre qui a voté quoi en assemblée. Constaté en recette le 2026-09-06,
+ * issue #786.
+ *
+ * `owner_name` n'est pas servi : la colonne VOTANT retombait sur huit
+ * caractères d'UUID. Il est déclaré optionnel pour que l'appelant sache qu'il
+ * doit résoudre le nom, et non pour laisser croire qu'il arrive.
+ *
+ * `VoteResponse` n'est pas publié au contrat OpenAPI (issue #765) : sans lui,
+ * cette interface est écrite à la main et dérive sans que rien ne le signale.
+ */
 export interface Vote {
   id: string;
   resolution_id: string;
   owner_id: string;
+  unit_id: string;
+  /** Absent de la réponse serveur — à résoudre côté client. */
   owner_name?: string;
-  choice: VoteChoice;
-  voting_power: number;
+  vote_choice: VoteChoice;
+  /** Millièmes, sérialisés en chaîne (ADR-0008, Decimal exact). */
+  voting_power: number | string;
   proxy_owner_id?: string;
-  created_at: string;
-  updated_at: string;
+  is_proxy_vote: boolean;
+  voted_at: string;
 }
 
 export interface CreateResolutionDto {

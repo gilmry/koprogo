@@ -1,29 +1,31 @@
 <script lang="ts">
   // Svelte 5 runes mode
-  import { _ } from '../lib/i18n';
-  import { api } from '../lib/api';
-  import type { BoardDashboardResponse, DeadlineUrgency } from '../lib/types';
+  import { _ } from "../lib/i18n";
+  import { api } from "../lib/api";
+  import type { BoardDashboardResponse, DeadlineUrgency } from "../lib/types";
   import { formatDate } from "../lib/utils/date.utils";
   import { withErrorHandling } from "../lib/utils/error.utils";
 
-  let { buildingId = '' }: {
+  let {
+    buildingId = "",
+  }: {
     buildingId?: string;
   } = $props();
 
   let dashboard = $state<BoardDashboardResponse | null>(null);
   let loading = $state(true);
-  let error = $state('');
+  let error = $state("");
 
   $effect(() => {
     // If buildingId is not provided as prop, try to get it from URL
     let bid = buildingId;
     if (!bid) {
       const urlParams = new URLSearchParams(window.location.search);
-      bid = urlParams.get('building_id') || '';
+      bid = urlParams.get("building_id") || "";
     }
 
     if (!bid) {
-      error = $_('board.error.buildingIdMissing');
+      error = $_("board.error.buildingIdMissing");
       loading = false;
       return;
     }
@@ -33,100 +35,124 @@
 
   async function loadDashboard() {
     loading = true;
-    error = '';
+    error = "";
     const result = await withErrorHandling({
-      action: () => api.get<BoardDashboardResponse>(
-        `/board-members/dashboard?building_id=${buildingId}`
-      ),
-      errorMessage: $_('board.error.loadDashboard'),
+      action: () =>
+        api.get<BoardDashboardResponse>(
+          `/board-members/dashboard?building_id=${buildingId}`,
+        ),
+      errorMessage: $_("board.error.loadDashboard"),
     });
     if (result) {
       dashboard = result;
     } else {
-      error = $_('board.error.loadDashboard');
+      error = $_("board.error.loadDashboard");
     }
     loading = false;
   }
 
   function getUrgencyColor(urgency: DeadlineUrgency): string {
     switch (urgency) {
-      case 'critical':
-        return 'bg-red-100 text-red-800 border-red-300';
-      case 'high':
-        return 'bg-orange-100 text-orange-800 border-orange-300';
-      case 'medium':
-        return 'bg-yellow-100 text-yellow-800 border-yellow-300';
+      case "critical":
+        return "bg-red-100 text-red-800 border-red-300";
+      case "high":
+        return "bg-orange-100 text-orange-800 border-orange-300";
+      case "medium":
+        return "bg-yellow-100 text-yellow-800 border-yellow-300";
     }
   }
 
   function getUrgencyIcon(urgency: DeadlineUrgency): string {
     switch (urgency) {
-      case 'critical':
-        return '🔴';
-      case 'high':
-        return '🟠';
-      case 'medium':
-        return '🟡';
+      case "critical":
+        return "🔴";
+      case "high":
+        return "🟠";
+      case "medium":
+        return "🟡";
     }
   }
 
   function formatDaysRemaining(days: number): string {
-    if (days === 0) return $_('common.today');
-    if (days === 1) return $_('common.tomorrow');
-    if (days < 0) return `${$_('common.daysAgo', { values: { count: Math.abs(days) } })}`;
-    return `${$_('common.daysLeft', { values: { count: days } })}`;
+    if (days === 0) return $_("common.today");
+    if (days === 1) return $_("common.tomorrow");
+    if (days < 0)
+      return `${$_("common.daysAgo", { values: { count: Math.abs(days) } })}`;
+    return `${$_("common.daysLeft", { values: { count: days } })}`;
   }
 </script>
 
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8" data-testid="board-dashboard">
+<div
+  class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8"
+  data-testid="board-dashboard"
+>
   {#if loading}
     <div class="flex items-center justify-center min-h-screen">
       <div class="text-center">
-        <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
-        <p class="mt-4 text-gray-600">Chargement du tableau de bord...</p>
+        <div
+          class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"
+        ></div>
+        <p class="mt-4 text-gray-600">{$_("board.loadingDashboard")}</p>
       </div>
     </div>
   {:else if error}
-    <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded relative" role="alert">
-      <strong class="font-bold">Erreur :</strong>
+    <div
+      class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded relative"
+      role="alert"
+    >
+      <strong class="font-bold">{$_("common.errorLabel")}</strong>
       <span class="block sm:inline">{error}</span>
     </div>
   {:else if dashboard}
     <!-- Header -->
     <div class="mb-8">
-      <h1 class="text-3xl font-bold text-gray-900">{$_('board.title')}</h1>
-      <p class="mt-2 text-gray-600">{$_('board.subtitle')}</p>
+      <h1 class="text-3xl font-bold text-gray-900">{$_("board.title")}</h1>
+      <p class="mt-2 text-gray-600">{$_("board.subtitle")}</p>
     </div>
 
     <!-- My Mandate Section -->
     {#if dashboard.my_mandate}
       <div class="bg-white shadow rounded-lg p-6 mb-6">
-        <h2 class="text-xl font-semibold text-gray-900 mb-4">{$_('board.myMandate')}</h2>
+        <h2 class="text-xl font-semibold text-gray-900 mb-4">
+          {$_("board.myMandate")}
+        </h2>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
-            <p class="text-sm text-gray-500">{$_('board.mandate.position')}</p>
-            <p class="text-lg font-medium text-gray-900 capitalize">{dashboard.my_mandate.position}</p>
+            <p class="text-sm text-gray-500">{$_("board.mandate.position")}</p>
+            <p class="text-lg font-medium text-gray-900 capitalize">
+              {dashboard.my_mandate.position}
+            </p>
           </div>
           <div>
-            <p class="text-sm text-gray-500">{$_('board.mandate.startDate')}</p>
-            <p class="text-lg font-medium text-gray-900">{formatDate(dashboard.my_mandate.mandate_start)}</p>
+            <p class="text-sm text-gray-500">{$_("board.mandate.startDate")}</p>
+            <p class="text-lg font-medium text-gray-900">
+              {formatDate(dashboard.my_mandate.mandate_start)}
+            </p>
           </div>
           <div>
-            <p class="text-sm text-gray-500">{$_('board.mandate.endDate')}</p>
-            <p class="text-lg font-medium text-gray-900">{formatDate(dashboard.my_mandate.mandate_end)}</p>
+            <p class="text-sm text-gray-500">{$_("board.mandate.endDate")}</p>
+            <p class="text-lg font-medium text-gray-900">
+              {formatDate(dashboard.my_mandate.mandate_end)}
+            </p>
           </div>
         </div>
 
         {#if dashboard.my_mandate.expires_soon}
-          <div class="mt-4 bg-orange-50 border border-orange-200 rounded-md p-4">
+          <div
+            class="mt-4 bg-orange-50 border border-orange-200 rounded-md p-4"
+          >
             <div class="flex">
               <div class="flex-shrink-0">
                 <span class="text-2xl">⚠️</span>
               </div>
               <div class="ml-3">
-                <h3 class="text-sm font-medium text-orange-800">{$_('board.mandate.expiringWarning')}</h3>
+                <h3 class="text-sm font-medium text-orange-800">
+                  {$_("board.mandate.expiringWarning")}
+                </h3>
                 <p class="mt-1 text-sm text-orange-700">
-                  {$_('board.mandate.expiresSoon', { values: { days: dashboard.my_mandate.days_remaining } })}
+                  {$_("board.mandate.expiresSoon", {
+                    values: { days: dashboard.my_mandate.days_remaining },
+                  })}
                 </p>
               </div>
             </div>
@@ -134,7 +160,9 @@
         {:else}
           <div class="mt-4 flex items-center text-sm text-gray-600">
             <span class="text-green-500 mr-2">✓</span>
-            {$_('board.mandate.active', { values: { days: dashboard.my_mandate.days_remaining } })}
+            {$_("board.mandate.active", {
+              values: { days: dashboard.my_mandate.days_remaining },
+            })}
           </div>
         {/if}
       </div>
@@ -142,31 +170,45 @@
 
     <!-- Decision Statistics -->
     <div class="bg-white shadow rounded-lg p-6 mb-6">
-      <h2 class="text-xl font-semibold text-gray-900 mb-4">{$_('board.decisionStats')}</h2>
+      <h2 class="text-xl font-semibold text-gray-900 mb-4">
+        {$_("board.decisionStats")}
+      </h2>
       <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
         <div class="text-center">
-          <p class="text-3xl font-bold text-gray-900">{dashboard.decisions_stats.total_decisions}</p>
-          <p class="text-sm text-gray-500">{$_('board.stats.total')}</p>
+          <p class="text-3xl font-bold text-gray-900">
+            {dashboard.decisions_stats.total_decisions}
+          </p>
+          <p class="text-sm text-gray-500">{$_("board.stats.total")}</p>
         </div>
         <div class="text-center">
-          <p class="text-3xl font-bold text-blue-600">{dashboard.decisions_stats.pending}</p>
-          <p class="text-sm text-gray-500">{$_('board.stats.pending')}</p>
+          <p class="text-3xl font-bold text-blue-600">
+            {dashboard.decisions_stats.pending}
+          </p>
+          <p class="text-sm text-gray-500">{$_("board.stats.pending")}</p>
         </div>
         <div class="text-center">
-          <p class="text-3xl font-bold text-yellow-600">{dashboard.decisions_stats.in_progress}</p>
-          <p class="text-sm text-gray-500">{$_('board.stats.inProgress')}</p>
+          <p class="text-3xl font-bold text-yellow-600">
+            {dashboard.decisions_stats.in_progress}
+          </p>
+          <p class="text-sm text-gray-500">{$_("board.stats.inProgress")}</p>
         </div>
         <div class="text-center">
-          <p class="text-3xl font-bold text-green-600">{dashboard.decisions_stats.completed}</p>
-          <p class="text-sm text-gray-500">{$_('board.stats.completed')}</p>
+          <p class="text-3xl font-bold text-green-600">
+            {dashboard.decisions_stats.completed}
+          </p>
+          <p class="text-sm text-gray-500">{$_("board.stats.completed")}</p>
         </div>
         <div class="text-center">
-          <p class="text-3xl font-bold text-red-600">{dashboard.decisions_stats.overdue}</p>
-          <p class="text-sm text-gray-500">{$_('board.stats.overdue')}</p>
+          <p class="text-3xl font-bold text-red-600">
+            {dashboard.decisions_stats.overdue}
+          </p>
+          <p class="text-sm text-gray-500">{$_("board.stats.overdue")}</p>
         </div>
         <div class="text-center">
-          <p class="text-3xl font-bold text-gray-400">{dashboard.decisions_stats.cancelled}</p>
-          <p class="text-sm text-gray-500">{$_('board.stats.cancelled')}</p>
+          <p class="text-3xl font-bold text-muted">
+            {dashboard.decisions_stats.cancelled}
+          </p>
+          <p class="text-sm text-gray-500">{$_("board.stats.cancelled")}</p>
         </div>
       </div>
     </div>
@@ -175,7 +217,9 @@
     {#if dashboard.overdue_decisions.length > 0}
       <div class="bg-red-50 border border-red-200 shadow rounded-lg p-6 mb-6">
         <h2 class="text-xl font-semibold text-red-900 mb-4">
-          🚨 {$_('board.overdueDecisions', { values: { count: dashboard.overdue_decisions.length } })}
+          🚨 {$_("board.overdueDecisions", {
+            values: { count: dashboard.overdue_decisions.length },
+          })}
         </h2>
         <div class="space-y-3">
           {#each dashboard.overdue_decisions as decision}
@@ -184,11 +228,14 @@
               <p class="text-sm text-gray-600 mt-1">{decision.decision_text}</p>
               {#if decision.deadline}
                 <p class="text-sm text-red-600 mt-2">
-                  <strong>{$_('board.overdueDeadline')}:</strong> {formatDate(decision.deadline)}
+                  <strong>{$_("board.overdueDeadline")}:</strong>
+                  {formatDate(decision.deadline)}
                 </p>
               {/if}
               <div class="mt-2">
-                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                <span
+                  class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800"
+                >
                   {decision.status}
                 </span>
               </div>
@@ -197,12 +244,16 @@
         </div>
       </div>
     {:else}
-      <div class="bg-green-50 border border-green-200 shadow rounded-lg p-6 mb-6">
+      <div
+        class="bg-green-50 border border-green-200 shadow rounded-lg p-6 mb-6"
+      >
         <div class="flex items-center">
           <span class="text-2xl mr-3">✅</span>
           <div>
-            <h2 class="text-xl font-semibold text-green-900">{$_('board.noOverdueDecisions')}</h2>
-            <p class="text-sm text-green-700">{$_('board.excellentWork')}</p>
+            <h2 class="text-xl font-semibold text-green-900">
+              {$_("board.noOverdueDecisions")}
+            </h2>
+            <p class="text-sm text-green-700">{$_("board.excellentWork")}</p>
           </div>
         </div>
       </div>
@@ -212,24 +263,33 @@
     {#if dashboard.upcoming_deadlines.length > 0}
       <div class="bg-white shadow rounded-lg p-6">
         <h2 class="text-xl font-semibold text-gray-900 mb-4">
-          📅 {$_('board.upcomingDeadlines', { values: { count: dashboard.upcoming_deadlines.length } })}
+          📅 {$_("board.upcomingDeadlines", {
+            values: { count: dashboard.upcoming_deadlines.length },
+          })}
         </h2>
         <div class="space-y-3">
           {#each dashboard.upcoming_deadlines as alert}
             <div class="border {getUrgencyColor(alert.urgency)} rounded-md p-4">
               <div class="flex items-start">
-                <span class="text-2xl mr-3">{getUrgencyIcon(alert.urgency)}</span>
+                <span class="text-2xl mr-3"
+                  >{getUrgencyIcon(alert.urgency)}</span
+                >
                 <div class="flex-1">
                   <h3 class="font-medium text-gray-900">{alert.subject}</h3>
                   <p class="text-sm mt-1">
-                    <strong>{$_('board.deadline')}:</strong> {formatDate(alert.deadline)}
+                    <strong>{$_("board.deadline")}:</strong>
+                    {formatDate(alert.deadline)}
                   </p>
                   <p class="text-sm mt-1">
                     <strong>{formatDaysRemaining(alert.days_remaining)}</strong>
                   </p>
                 </div>
                 <div>
-                  <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium uppercase {getUrgencyColor(alert.urgency)}">
+                  <span
+                    class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium uppercase {getUrgencyColor(
+                      alert.urgency,
+                    )}"
+                  >
                     {alert.urgency}
                   </span>
                 </div>
@@ -243,8 +303,10 @@
         <div class="flex items-center">
           <span class="text-2xl mr-3">✨</span>
           <div>
-            <h2 class="text-xl font-semibold text-gray-900">{$_('board.noUpcomingDeadlines')}</h2>
-            <p class="text-sm text-gray-600">{$_('board.noUrgentDecisions')}</p>
+            <h2 class="text-xl font-semibold text-gray-900">
+              {$_("board.noUpcomingDeadlines")}
+            </h2>
+            <p class="text-sm text-gray-600">{$_("board.noUrgentDecisions")}</p>
           </div>
         </div>
       </div>

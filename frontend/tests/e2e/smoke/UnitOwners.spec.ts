@@ -1,7 +1,7 @@
 import { test, expect } from "@playwright/test";
 import { loginAsSyndicWithUnit } from "../helpers/auth";
 
-const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
+import { API_BASE } from "../helpers/adresses";
 
 test.describe("Unit Owners - Multi-Owner Support", () => {
   test("should display units page", async ({ page }) => {
@@ -10,7 +10,7 @@ test.describe("Unit Owners - Multi-Owner Support", () => {
 
     await expect(page.locator("body")).toBeVisible();
     await expect(
-      page.locator("main h1, main h2, [data-testid='units-list']").first(),
+      page.locator("[data-testid='units-list']").first(),
     ).toBeVisible({ timeout: 10000 });
   });
 
@@ -47,7 +47,10 @@ test.describe("Unit Owners - Multi-Owner Support", () => {
         headers: { Authorization: `Bearer ${token}` },
       },
     );
-    expect(assignResp.status()).toBe(201);
+    expect(
+      assignResp.status(),
+      `assignResp : ${await assignResp.text().catch(() => "<corps illisible>")}`,
+    ).toBe(201);
   });
 
   test("should list owners for a unit", async ({ page }) => {

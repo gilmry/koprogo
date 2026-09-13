@@ -1,6 +1,6 @@
 <script lang="ts">
   // Svelte 5 runes mode
-  import { _ } from '../../lib/i18n';
+  import { _ } from "../../lib/i18n";
   import {
     localExchangesApi,
     type OwnerCreditBalance,
@@ -13,7 +13,8 @@
   } from "../../lib/api/local-exchanges";
   import { withLoadingState } from "../../lib/utils/error.utils";
 
-  let { ownerId, buildingId }: { ownerId: string; buildingId: string } = $props();
+  let { ownerId, buildingId }: { ownerId: string; buildingId: string } =
+    $props();
 
   let balance = $state<OwnerCreditBalance | null>(null);
   let loading = $state(true);
@@ -22,9 +23,9 @@
   async function loadBalance() {
     await withLoadingState({
       action: () => localExchangesApi.getCreditBalance(ownerId, buildingId),
-      setLoading: (v) => loading = v,
-      setError: (v) => error = v,
-      onSuccess: (data) => balance = data,
+      setLoading: (v) => (loading = v),
+      setError: (v) => (error = v),
+      onSuccess: (data) => (balance = data),
       errorMessage: $_("exchanges.loadBalanceError"),
     });
   }
@@ -33,13 +34,15 @@
     loadBalance();
   });
 
-  let participationConfig = $derived(balance
-    ? participationLevelColors[balance.participation_level]
-    : null);
-  let participationLabel = $derived(balance
-    ? participationLevelLabels[balance.participation_level]
-    : null);
-  let balanceColor = $derived(balance ? getCreditStatusColor(balance.credit_status) : "");
+  let participationConfig = $derived(
+    balance ? participationLevelColors[balance.participation_level] : null,
+  );
+  let participationLabel = $derived(
+    balance ? participationLevelLabels[balance.participation_level] : null,
+  );
+  let balanceColor = $derived(
+    balance ? getCreditStatusColor(balance.credit_status) : "",
+  );
 </script>
 
 <div class="bg-white shadow rounded-lg p-6" data-testid="credit-balance">
@@ -50,7 +53,10 @@
       ></div>
     </div>
   {:else if error}
-    <div class="bg-red-50 border border-red-200 rounded-md p-4" data-testid="credit-balance-error">
+    <div
+      class="bg-red-50 border border-red-200 rounded-md p-4"
+      data-testid="credit-balance-error"
+    >
       <p class="text-red-800">❌ {error}</p>
     </div>
   {:else if balance}
@@ -68,8 +74,13 @@
       </div>
 
       <!-- Balance Display -->
-      <div class="text-center py-6 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg" data-testid="credit-balance-display">
-        <p class="text-sm font-medium text-gray-600 mb-1">{$_("exchanges.currentBalance")}</p>
+      <div
+        class="text-center py-6 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg"
+        data-testid="credit-balance-display"
+      >
+        <p class="text-sm font-medium text-gray-600 mb-1">
+          {$_("exchanges.currentBalance")}
+        </p>
         <p class="text-4xl font-bold {balanceColor}">
           {balance.balance > 0 ? "+" : ""}{balance.balance}
         </p>
@@ -82,11 +93,15 @@
       <div class="grid grid-cols-2 gap-4">
         <!-- Credits Earned -->
         <div class="bg-green-50 p-4 rounded-lg">
-          <p class="text-xs font-medium text-green-700 mb-1">{$_("exchanges.creditsEarned")}</p>
+          <p class="text-xs font-medium text-green-700 mb-1">
+            {$_("exchanges.creditsEarned")}
+          </p>
           <p class="text-2xl font-bold text-green-900">
             {balance.credits_earned}
           </p>
-          <p class="text-xs text-green-600 mt-1">{$_("exchanges.servicesProvided")}</p>
+          <p class="text-xs text-green-600 mt-1">
+            {$_("exchanges.servicesProvided")}
+          </p>
         </div>
 
         <!-- Credits Spent -->
@@ -97,27 +112,37 @@
           <p class="text-2xl font-bold text-orange-900">
             {balance.credits_spent}
           </p>
-          <p class="text-xs text-orange-600 mt-1">{$_("exchanges.servicesReceived")}</p>
+          <p class="text-xs text-orange-600 mt-1">
+            {$_("exchanges.servicesReceived")}
+          </p>
         </div>
 
         <!-- Total Exchanges -->
         <div class="bg-blue-50 p-4 rounded-lg">
-          <p class="text-xs font-medium text-blue-700 mb-1">{$_("exchanges.totalExchanges")}</p>
+          <p class="text-xs font-medium text-blue-700 mb-1">
+            {$_("exchanges.totalExchanges")}
+          </p>
           <p class="text-2xl font-bold text-blue-900">
             {balance.total_exchanges}
           </p>
-          <p class="text-xs text-blue-600 mt-1">{$_("exchanges.completedTransactions")}</p>
+          <p class="text-xs text-blue-600 mt-1">
+            {$_("exchanges.completedTransactions")}
+          </p>
         </div>
 
         <!-- Average Rating -->
         <div class="bg-yellow-50 p-4 rounded-lg">
-          <p class="text-xs font-medium text-yellow-700 mb-1">{$_("exchanges.averageRating")}</p>
+          <p class="text-xs font-medium text-yellow-700 mb-1">
+            {$_("exchanges.averageRating")}
+          </p>
           <p class="text-lg font-bold text-yellow-900">
             {balance.average_rating
               ? `${balance.average_rating.toFixed(1)} ⭐`
               : $_("exchanges.notRatedYet")}
           </p>
-          <p class="text-xs text-yellow-600 mt-1">{$_("exchanges.reputation")}</p>
+          <p class="text-xs text-yellow-600 mt-1">
+            {$_("exchanges.reputation")}
+          </p>
         </div>
       </div>
 
@@ -139,7 +164,9 @@
       </div>
 
       <!-- Legal Notice (Belgian SEL Context) -->
-      <div class="mt-4 p-3 bg-blue-50 border-l-4 border-blue-400 text-xs text-blue-800">
+      <div
+        class="mt-4 p-3 bg-blue-50 border-l-4 border-blue-400 text-xs text-blue-800"
+      >
         <p>
           {$_("exchanges.legalNoticeBelgian")}
         </p>

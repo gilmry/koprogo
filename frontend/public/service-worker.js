@@ -5,13 +5,24 @@ const CACHE_NAME = "koprogo-v1";
 const OFFLINE_CACHE = "koprogo-offline-v1";
 const API_CACHE = "koprogo-api-v1";
 
-// Assets to cache immediately
-const PRECACHE_ASSETS = [
-  "/",
-  "/dashboard",
-  "/buildings",
-  "/documents",
-  "/offline.html",
+// Ce sans quoi le mode hors ligne ne veut rien dire.
+//
+// Si l'un de ces deux-là manque, il vaut mieux que l'installation echoue :
+// un service worker installe sans page de repli laisse l'utilisateur devant
+// l'erreur du navigateur, ce qui est pire que pas de service worker du tout.
+const PRECACHE_ESSENTIEL = ["/", "/offline.html"];
+
+// Le confort : des pages et des icones qu'il est bon d'avoir en cache, et
+// dont l'absence ne doit RIEN empecher.
+//
+// Les barres obliques finales ne sont pas decoratives. Astro redirige
+// `/buildings` vers `/buildings/` en 301, et `Cache.put()` REFUSE toute
+// reponse obtenue par redirection. Sans elles, ces deux entrees faisaient
+// echouer l'installation entiere.
+const PRECACHE_CONFORT = [
+  "/dashboard/",
+  "/buildings/",
+  "/documents/",
   "/icons/icon-192x192.png",
   "/icons/icon-512x512.png",
 ];
@@ -28,12 +39,35 @@ const API_CACHE_PATTERNS = [
 self.addEventListener("install", (event) => {
   console.log("[Service Worker] Installing...");
 
+  // `cache.addAll` est ATOMIQUE : une seule ressource en echec rejette la
+  // promesse et annule TOUTE l'installation.
+  //
+  // C'est ce qui s'est passe de novembre 2025 au 2026-09-07. Deux icones du
+  // manifeste n'avaient jamais ete engendrees — le dossier `public/icons/` ne
+  // contenait qu'un README — et deux pages repondaient 301. Le cache
+  // `koprogo-v1` existait donc, vide, et aucun utilisateur n'a jamais eu
+  // d'application installee (#804).
+  //
+  // Le confort se precache donc UN PAR UN, chaque echec etant journalise sans
+  // interrompre les autres. L'essentiel garde son `addAll` : s'il manque, il
+  // faut echouer.
   event.waitUntil(
     caches
       .open(CACHE_NAME)
-      .then((cache) => {
-        console.log("[Service Worker] Precaching assets");
-        return cache.addAll(PRECACHE_ASSETS);
+      .then(async (cache) => {
+        await cache.addAll(PRECACHE_ESSENTIEL);
+
+        const resultats = await Promise.allSettled(
+          PRECACHE_CONFORT.map((url) => cache.add(url)),
+        );
+        resultats.forEach((r, i) => {
+          if (r.status === "rejected") {
+            console.warn(
+              `[Service Worker] Ressource optionnelle non mise en cache : ${PRECACHE_CONFORT[i]}`,
+              r.reason,
+            );
+          }
+        });
       })
       .then(() => self.skipWaiting()), // Activate immediately
   );

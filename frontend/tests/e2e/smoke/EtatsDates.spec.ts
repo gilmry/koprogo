@@ -10,7 +10,7 @@ import { loginAsSyndicWithUnit } from "../helpers/auth";
  * Mirrors workflows from backend/tests/e2e_etat_date.rs.
  */
 
-const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
+import { API_BASE } from "../helpers/adresses";
 
 async function setupWithUnitAndOwner(page: Page) {
   const ctx = await loginAsSyndicWithUnit(page, "etat");
@@ -56,9 +56,7 @@ test.describe("Etats Dates - Belgian Property Sales Document", () => {
 
     await expect(page.locator("body")).toBeVisible();
     await expect(
-      page
-        .locator("main h1, main h2, [data-testid='etats-dates-list']")
-        .first(),
+      page.locator("[data-testid='etats-dates-list']").first(),
     ).toBeVisible({ timeout: 10000 });
   });
 
@@ -79,7 +77,10 @@ test.describe("Etats Dates - Belgian Property Sales Document", () => {
       },
       headers: { Authorization: `Bearer ${token}` },
     });
-    expect(etatResp.status()).toBe(201);
+    expect(
+      etatResp.status(),
+      `etatResp : ${await etatResp.text().catch(() => "<corps illisible>")}`,
+    ).toBe(201);
 
     const etat = await etatResp.json();
     expect(etat.id).toBeTruthy();
@@ -91,7 +92,10 @@ test.describe("Etats Dates - Belgian Property Sales Document", () => {
       `${API_BASE}/etats-dates/${etat.id}`,
       { headers: { Authorization: `Bearer ${token}` } },
     );
-    expect(getResp.status()).toBe(200);
+    expect(
+      getResp.status(),
+      `getResp : ${await getResp.text().catch(() => "<corps illisible>")}`,
+    ).toBe(200);
     const retrieved = await getResp.json();
     expect(retrieved.id).toBe(etat.id);
   });
@@ -128,14 +132,20 @@ test.describe("Etats Dates - Belgian Property Sales Document", () => {
       headers: { Authorization: `Bearer ${token}` },
     });
 
-    expect(etatResp.status()).toBe(201);
+    expect(
+      etatResp.status(),
+      `etatResp : ${await etatResp.text().catch(() => "<corps illisible>")}`,
+    ).toBe(201);
     const etat = await etatResp.json();
 
     const progressResp = await page.request.put(
       `${API_BASE}/etats-dates/${etat.id}/mark-in-progress`,
       { headers: { Authorization: `Bearer ${token}` } },
     );
-    expect(progressResp.status()).toBe(200);
+    expect(
+      progressResp.status(),
+      `progressResp : ${await progressResp.text().catch(() => "<corps illisible>")}`,
+    ).toBe(200);
 
     const updated = await progressResp.json();
     expect(updated.status).toBe("in_progress"); // EtatDateStatus uses serde snake_case
@@ -160,7 +170,10 @@ test.describe("Etats Dates - Belgian Property Sales Document", () => {
       `${API_BASE}/etats-dates/overdue`,
       { headers: { Authorization: `Bearer ${token}` } },
     );
-    expect(overdueResp.status()).toBe(200);
+    expect(
+      overdueResp.status(),
+      `overdueResp : ${await overdueResp.text().catch(() => "<corps illisible>")}`,
+    ).toBe(200);
   });
 
   test("should require auth for etats-dates API", async ({ page }) => {

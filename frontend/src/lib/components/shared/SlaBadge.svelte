@@ -85,7 +85,9 @@
   );
 
   let testId = $derived(
-    idSuffix !== undefined ? `ticket-sla-badge-${idSuffix}` : "ticket-sla-badge",
+    idSuffix !== undefined
+      ? `ticket-sla-badge-${idSuffix}`
+      : "ticket-sla-badge",
   );
 
   let tooltipTestId = $derived(

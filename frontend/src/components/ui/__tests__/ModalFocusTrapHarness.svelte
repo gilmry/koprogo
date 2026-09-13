@@ -1,6 +1,6 @@
 <script lang="ts">
   // Test harness for Modal focus-trap specs (STORY-P7-803)
-  import Modal from '../Modal.svelte';
+  import Modal from "../Modal.svelte";
 
   let { isOpen = false }: { isOpen?: boolean } = $props();
 </script>

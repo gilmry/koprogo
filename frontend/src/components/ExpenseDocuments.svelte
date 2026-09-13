@@ -1,29 +1,35 @@
 <script lang="ts">
   // Svelte 5 runes mode
-  import { _ } from '../lib/i18n';
-  import { api } from '../lib/api';
-  import type { Document } from '../lib/types';
-  import Button from './ui/Button.svelte';
-  import { toast } from '../stores/toast';
-  import { formatDate } from '../lib/utils/date.utils';
-  import { withLoadingState, withErrorHandling } from '../lib/utils/error.utils';
+  import { _ } from "../lib/i18n";
+  import { api } from "../lib/api";
+  import type { Document } from "../lib/types";
+  import Button from "./ui/Button.svelte";
+  import { toast } from "../stores/toast";
+  import { formatDate } from "../lib/utils/date.utils";
+  import {
+    withLoadingState,
+    withErrorHandling,
+  } from "../lib/utils/error.utils";
 
-  let { expenseId, expenseStatus }: {
+  let {
+    expenseId,
+    expenseStatus,
+  }: {
     expenseId: string;
     expenseStatus: string;
   } = $props();
 
   let documents = $state<Document[]>([]);
   let loading = $state(true);
-  let error = $state('');
+  let error = $state("");
   let uploading = $state(false);
 
   // Upload form state
   let showUploadForm = $state(false);
   let uploadFile = $state<File | null>(null);
-  let uploadTitle = $state('');
-  let uploadDescription = $state('');
-  let uploadDocumentType = $state('Invoice');
+  let uploadTitle = $state("");
+  let uploadDescription = $state("");
+  let uploadDocumentType = $state("Invoice");
 
   $effect(() => {
     loadDocuments();
@@ -32,10 +38,12 @@
   async function loadDocuments() {
     await withLoadingState({
       action: () => api.get<Document[]>(`/expenses/${expenseId}/documents`),
-      setLoading: (v: boolean) => loading = v,
-      setError: (v: string) => error = v,
-      errorMessage: $_('documents.load_error'),
-      onSuccess: (data: Document[]) => { documents = data; },
+      setLoading: (v: boolean) => (loading = v),
+      setError: (v: string) => (error = v),
+      errorMessage: $_("documents.load_error"),
+      onSuccess: (data: Document[]) => {
+        documents = data;
+      },
     });
   }
 
@@ -48,13 +56,13 @@
 
   async function handleUpload() {
     if (!uploadFile || !uploadTitle) {
-      toast.error($_('documents.fill_required_fields'));
+      toast.error($_("documents.fill_required_fields"));
       return;
     }
 
     await withErrorHandling({
       action: async () => {
-        const userInfo = await api.get<any>('/auth/me');
+        const userInfo = await api.get<any>("/auth/me");
         const expenseResponse = await api.get<any>(`/expenses/${expenseId}`);
         const buildingId = expenseResponse.building_id;
 
@@ -64,24 +72,24 @@
           documentType: uploadDocumentType as any,
           title: uploadTitle,
           description: uploadDescription || undefined,
-          uploadedBy: userInfo.id
+          uploadedBy: userInfo.id,
         });
 
         await api.put(`/documents/${uploadedDoc.id}/link-expense`, {
-          expense_id: expenseId
+          expense_id: expenseId,
         });
 
         uploadFile = null;
-        uploadTitle = '';
-        uploadDescription = '';
-        uploadDocumentType = 'Invoice';
+        uploadTitle = "";
+        uploadDescription = "";
+        uploadDocumentType = "Invoice";
         showUploadForm = false;
 
         await loadDocuments();
       },
-      setLoading: (v: boolean) => uploading = v,
-      successMessage: $_('documents.uploaded'),
-      errorMessage: $_('documents.upload_error'),
+      setLoading: (v: boolean) => (uploading = v),
+      successMessage: $_("documents.uploaded"),
+      errorMessage: $_("documents.upload_error"),
     });
   }
 
@@ -90,42 +98,49 @@
       action: async () => {
         await api.download(`/documents/${documentId}/download`, title);
       },
-      errorMessage: $_('documents.download_error'),
+      errorMessage: $_("documents.download_error"),
     });
   }
 
   function getDocumentTypeLabel(type: string): string {
     const labels: Record<string, string> = {
-      'MeetingMinutes': $_('documents.type_minutes'),
-      'FinancialStatement': $_('documents.type_statement'),
-      'Invoice': $_('documents.type_invoice'),
-      'Contract': $_('documents.type_contract'),
-      'Regulation': $_('documents.type_regulation'),
-      'WorksQuote': $_('documents.type_quote'),
-      'Other': $_('documents.type_other')
+      MeetingMinutes: $_("documents.type_minutes"),
+      FinancialStatement: $_("documents.type_statement"),
+      Invoice: $_("documents.type_invoice"),
+      Contract: $_("documents.type_contract"),
+      Regulation: $_("documents.type_regulation"),
+      WorksQuote: $_("documents.type_quote"),
+      Other: $_("documents.type_other"),
     };
     return labels[type] || type;
   }
 
   function formatFileSize(bytes: number): string {
-    if (bytes < 1024) return bytes + ' B';
-    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
-    return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+    if (bytes < 1024) return bytes + " B";
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + " KB";
+    return (bytes / (1024 * 1024)).toFixed(1) + " MB";
   }
 </script>
 
 <div class="bg-white rounded-lg shadow p-6">
   <div class="flex justify-between items-center mb-4">
-    <h3 class="text-lg font-semibold text-gray-900">{$_('documents.linked_title')}</h3>
-    {#if expenseStatus !== 'Cancelled'}
-      <Button variant="primary" onclick={() => showUploadForm = !showUploadForm}>
-        {showUploadForm ? $_('common.cancel') : $_('documents.add_document')}
+    <h3 class="text-lg font-semibold text-gray-900">
+      {$_("documents.linked_title")}
+    </h3>
+    {#if expenseStatus !== "Cancelled"}
+      <Button
+        variant="primary"
+        onclick={() => (showUploadForm = !showUploadForm)}
+      >
+        {showUploadForm ? $_("common.cancel") : $_("documents.add_document")}
       </Button>
     {/if}
   </div>
 
   {#if error}
-    <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-4">
+    <div
+      class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-4"
+    >
       {error}
     </div>
   {/if}
@@ -133,11 +148,16 @@
   <!-- Upload Form -->
   {#if showUploadForm}
     <div class="bg-gray-50 rounded-lg p-4 mb-6">
-      <h4 class="font-medium text-gray-900 mb-4">{$_('documents.add_document')}</h4>
+      <h4 class="font-medium text-gray-900 mb-4">
+        {$_("documents.add_document")}
+      </h4>
       <div class="space-y-4">
         <div>
-          <label for="expense-doc-type" class="block text-sm font-medium text-gray-700 mb-1">
-            {$_('documents.type_label')} *
+          <label
+            for="expense-doc-type"
+            class="block text-sm font-medium text-gray-700 mb-1"
+          >
+            {$_("documents.type_label")} *
           </label>
           <select
             id="expense-doc-type"
@@ -145,47 +165,60 @@
             class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
             data-testid="document-type-select"
           >
-            <option value="Invoice">{$_('documents.type_invoice')}</option>
-            <option value="FinancialStatement">{$_('documents.type_statement')}</option>
-            <option value="MeetingMinutes">{$_('documents.type_minutes')}</option>
-            <option value="Contract">{$_('documents.type_contract')}</option>
-            <option value="Regulation">{$_('documents.type_regulation')}</option>
-            <option value="WorksQuote">{$_('documents.type_quote')}</option>
-            <option value="Other">{$_('documents.type_other')}</option>
+            <option value="Invoice">{$_("documents.type_invoice")}</option>
+            <option value="FinancialStatement"
+              >{$_("documents.type_statement")}</option
+            >
+            <option value="MeetingMinutes"
+              >{$_("documents.type_minutes")}</option
+            >
+            <option value="Contract">{$_("documents.type_contract")}</option>
+            <option value="Regulation">{$_("documents.type_regulation")}</option
+            >
+            <option value="WorksQuote">{$_("documents.type_quote")}</option>
+            <option value="Other">{$_("documents.type_other")}</option>
           </select>
         </div>
 
         <div>
-          <label for="expense-doc-title" class="block text-sm font-medium text-gray-700 mb-1">
-            {$_('common.title')} *
+          <label
+            for="expense-doc-title"
+            class="block text-sm font-medium text-gray-700 mb-1"
+          >
+            {$_("common.title")} *
           </label>
           <input
             id="expense-doc-title"
             type="text"
             bind:value={uploadTitle}
-            placeholder={$_('documents.title_placeholder')}
+            placeholder={$_("documents.title_placeholder")}
             class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
             data-testid="title-input"
           />
         </div>
 
         <div>
-          <label for="expense-doc-description" class="block text-sm font-medium text-gray-700 mb-1">
-            {$_('common.description')}
+          <label
+            for="expense-doc-description"
+            class="block text-sm font-medium text-gray-700 mb-1"
+          >
+            {$_("common.description")}
           </label>
           <textarea
             id="expense-doc-description"
             bind:value={uploadDescription}
             rows="3"
-            placeholder={$_('documents.description_placeholder')}
+            placeholder={$_("documents.description_placeholder")}
             class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-            data-testid="description-textarea"
-          ></textarea>
+            data-testid="description-textarea"></textarea>
         </div>
 
         <div>
-          <label for="expense-doc-file" class="block text-sm font-medium text-gray-700 mb-1">
-            {$_('documents.file_label')} *
+          <label
+            for="expense-doc-file"
+            class="block text-sm font-medium text-gray-700 mb-1"
+          >
+            {$_("documents.file_label")} *
           </label>
           <input
             id="expense-doc-file"
@@ -197,17 +230,33 @@
           />
           {#if uploadFile}
             <p class="text-sm text-gray-500 mt-1">
-              {$_('documents.file_selected', { values: { name: uploadFile.name, size: formatFileSize(uploadFile.size) } })}
+              {$_("documents.file_selected", {
+                values: {
+                  name: uploadFile.name,
+                  size: formatFileSize(uploadFile.size),
+                },
+              })}
             </p>
           {/if}
         </div>
 
         <div class="flex gap-2">
-          <Button variant="primary" onclick={handleUpload} disabled={uploading} data-testid="upload-button">
-            {uploading ? $_('documents.uploading') : $_('documents.add_document')}
+          <Button
+            variant="primary"
+            onclick={handleUpload}
+            disabled={uploading}
+            data-testid="upload-button"
+          >
+            {uploading
+              ? $_("documents.uploading")
+              : $_("documents.add_document")}
           </Button>
-          <Button variant="outline" onclick={() => showUploadForm = false} data-testid="cancel-button">
-            {$_('common.cancel')}
+          <Button
+            variant="outline"
+            onclick={() => (showUploadForm = false)}
+            data-testid="cancel-button"
+          >
+            {$_("common.cancel")}
           </Button>
         </div>
       </div>
@@ -217,23 +266,28 @@
   <!-- Documents List -->
   {#if loading}
     <div class="text-center text-gray-500 py-8">
-      <p>{$_('documents.loading')}</p>
+      <p>{$_("documents.loading")}</p>
     </div>
   {:else if documents.length === 0}
     <div class="text-center text-gray-500 py-8">
-      <p>{$_('documents.empty_state')}</p>
-      <p class="text-sm mt-2">{$_('documents.empty_help')}</p>
+      <p>{$_("documents.empty_state")}</p>
+      <p class="text-sm mt-2">{$_("documents.empty_help")}</p>
     </div>
   {:else}
-    <div class="space-y-3" data-testid="documents-list">
+    <div class="space-y-3" data-testid="expense-documents-list">
       {#each documents as doc (doc.id)}
-        <div class="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition" data-testid="document-row">
+        <div
+          class="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition"
+          data-testid="document-row"
+        >
           <div class="flex items-start justify-between">
             <div class="flex-1">
               <div class="flex items-center gap-2 mb-1">
                 <span class="text-2xl">📄</span>
                 <h4 class="font-medium text-gray-900">{doc.title}</h4>
-                <span class="text-xs px-2 py-1 rounded-full bg-blue-100 text-blue-800">
+                <span
+                  class="text-xs px-2 py-1 rounded-full bg-blue-100 text-blue-800"
+                >
                   {getDocumentTypeLabel(doc.document_type)}
                 </span>
               </div>
@@ -245,8 +299,12 @@
                 <span>💾 {formatFileSize(doc.file_size)}</span>
               </div>
             </div>
-            <Button variant="outline" onclick={() => handleDownload(doc.id, doc.title)} data-testid="download-button">
-              {$_('documents.download')}
+            <Button
+              variant="outline"
+              onclick={() => handleDownload(doc.id, doc.title)}
+              data-testid="download-button"
+            >
+              {$_("documents.download")}
             </Button>
           </div>
         </div>

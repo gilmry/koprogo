@@ -1,3 +1,16 @@
+//! Le pool de connexions à la base.
+//!
+//! Un second `create_pool` a longtemps vécu dans `src/db.rs`, plafonné à cinq
+//! connexions et sans réglage de délai. Il n'était déclaré dans aucun `mod`,
+//! donc jamais compilé ni appelé — mais il se lisait comme la configuration du
+//! pool, et quiconque cherchait à régler les connexions tombait dessus en
+//! premier. Supprimé (#720) : deux définitions du même nom, dont l'une inerte,
+//! sont plus trompeuses qu'un fichier manquant.
+//!
+//! Les réglages sont pilotés par l'environnement, avec des valeurs par défaut
+//! prudentes plutôt qu'optimales — un pool trop large sur un VPS partagé épuise
+//! les connexions du serveur avant celles de l'application.
+
 use sqlx::postgres::PgPoolOptions;
 use sqlx::{Pool, Postgres};
 use std::env;

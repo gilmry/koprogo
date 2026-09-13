@@ -3,9 +3,11 @@ import Layout from "../../layouts/Layout.astro";
 ---
 
 <Layout title="Mes Tickets">
-  <div class="container mx-auto px-4 py-8">
+  <div class="container mx-auto px-4 py-8" data-testid="owner-tickets">
     <div class="mb-6">
-      <h1 class="text-3xl font-bold text-gray-900">Mes Tickets de Maintenance</h1>
+      <h1 class="text-3xl font-bold text-gray-900">
+        Mes Tickets de Maintenance
+      </h1>
       <p class="mt-2 text-gray-600">
         Consultez et gerez vos demandes de maintenance
       </p>
@@ -16,6 +18,7 @@ import Layout from "../../layouts/Layout.astro";
     <!-- Create Ticket Button -->
     <div class="mb-6">
       <button
+        data-testid="owner-tickets-create-button"
         id="create-ticket-btn"
         disabled
         class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -53,8 +56,16 @@ import Layout from "../../layouts/Layout.astro";
   let currentOwnerId = "";
   let currentBuildingId = "";
 
-  function showPageToast(message: string, type: "success" | "error" | "warning" | "info" = "info") {
-    const colors = { success: "bg-green-600", error: "bg-red-600", warning: "bg-yellow-500", info: "bg-blue-600" };
+  function showPageToast(
+    message: string,
+    type: "success" | "error" | "warning" | "info" = "info",
+  ) {
+    const colors = {
+      success: "bg-green-600",
+      error: "bg-red-600",
+      warning: "bg-yellow-500",
+      info: "bg-blue-600",
+    };
     const el = document.createElement("div");
     el.className = `fixed top-4 right-4 z-50 px-4 py-3 rounded-lg shadow-lg text-white text-sm ${colors[type]}`;
     el.textContent = message;
@@ -63,18 +74,24 @@ import Layout from "../../layouts/Layout.astro";
   }
   let listComponent: any = null;
 
-  const selectorContainer = document.getElementById("building-selector-container");
+  const selectorContainer = document.getElementById(
+    "building-selector-container",
+  );
   const listContainer = document.getElementById("my-tickets-list");
   const modalContainer = document.getElementById("create-ticket-modal");
   let createModal: any = null;
 
   function mountList(buildingId: string) {
     currentBuildingId = buildingId;
-    const btn = document.getElementById("create-ticket-btn") as HTMLButtonElement | null;
+    const btn = document.getElementById(
+      "create-ticket-btn",
+    ) as HTMLButtonElement | null;
     if (btn) btn.disabled = !buildingId;
     if (!listContainer) return;
     if (listComponent) {
-      try { unmount(listComponent); } catch {}
+      try {
+        unmount(listComponent);
+      } catch {}
     }
     listContainer.innerHTML = "";
     listComponent = mount(TicketList as any, {
@@ -85,7 +102,9 @@ import Layout from "../../layouts/Layout.astro";
 
   function closeModal() {
     if (createModal) {
-      try { unmount(createModal); } catch {}
+      try {
+        unmount(createModal);
+      } catch {}
       createModal = null;
       if (modalContainer) modalContainer.innerHTML = "";
     }

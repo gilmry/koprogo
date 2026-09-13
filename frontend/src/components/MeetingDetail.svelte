@@ -5,6 +5,7 @@
   import type { Meeting, Building } from "../lib/types";
   import { authStore } from "../stores/auth";
   import Button from "./ui/Button.svelte";
+  import Modal from "./ui/Modal.svelte";
   import MeetingDocuments from "./MeetingDocuments.svelte";
   import ResolutionList from "./resolutions/ResolutionList.svelte";
   import ConvocationPanel from "./convocations/ConvocationPanel.svelte";
@@ -26,6 +27,25 @@
   let loading = true;
   let error = "";
   let meetingId: string = "";
+
+  // Les trois dialogues natifs remplacés par des modals du dépôt.
+  //
+  // `prompt()` et `confirm()` ne sont pas des composants : le navigateur peut
+  // les supprimer sans rien dire — Chrome le fait après un premier refus, et
+  // tout navigateur piloté le fait par défaut. `prompt()` rend alors `null`,
+  // et le `if (!valeur) return;` qui suit avale le clic EN SILENCE.
+  //
+  // C'est ce qu'a vu la recette 4 : « deux clics réels sur Reporter, aucun
+  // dialogue, aucun changement de date, aucun message » (#780, verrou 1). Le
+  // code était juste ; c'est le dialogue qui n'existait pas.
+  //
+  // S'y ajoute que ces boîtes ne sont ni traduisibles dans leur habillage, ni
+  // accessibles, ni atteignables par un test.
+  let showRescheduleModal = false;
+  let showCompleteModal = false;
+  let showCancelModal = false;
+  let rescheduleDate = "";
+  let attendeesInput = "";
   // Track H Story H3 — État courant des invariants Art. 3.87 §3-5 CC.
   let completionChecklist: MeetingCompletionChecklistResponse | null = null;
   $: canCompleteMeeting =
@@ -113,10 +133,7 @@
       return;
     }
 
-    const attendees = prompt($_("meetings.prompt_attendees"));
-    if (!attendees) return;
-
-    const attendeesCount = parseInt(attendees);
+    const attendeesCount = parseInt(attendeesInput);
     if (isNaN(attendeesCount) || attendeesCount < 0) {
       toast.error($_("meetings.invalid_number"));
       return;
@@ -127,6 +144,8 @@
         attendees_count: attendeesCount,
       });
       toast.success($_("meetings.marked_completed"));
+      showCompleteModal = false;
+      attendeesInput = "";
       await loadMeeting();
     } catch (err) {
       // Track H Story H3 — 422 narratif MEETING_NOT_COMPLETABLE → toast i18n
@@ -142,15 +161,12 @@
   const handleCancel = async () => {
     if (!meeting) return;
 
-    if (!confirm($_("meetings.confirm_cancel"))) {
-      return;
-    }
-
     await withErrorHandling({
       action: () => api.post(`/meetings/${meeting!.id}/cancel`, {}),
       successMessage: $_("meetings.cancelled_success"),
       errorMessage: $_("meetings.error_cancelling"),
       onSuccess: () => {
+        showCancelModal = false;
         loadMeeting();
       },
     });
@@ -159,10 +175,7 @@
   const handleReschedule = async () => {
     if (!meeting) return;
 
-    const newDate = prompt($_("meetings.prompt_new_date"));
-    if (!newDate) return;
-
-    const date = new Date(newDate);
+    const date = new Date(rescheduleDate);
     if (isNaN(date.getTime())) {
       toast.error($_("meetings.invalid_date_format"));
       return;
@@ -176,6 +189,8 @@
       successMessage: $_("meetings.rescheduled_success"),
       errorMessage: $_("meetings.error_rescheduling"),
       onSuccess: () => {
+        showRescheduleModal = false;
+        rescheduleDate = "";
         loadMeeting();
       },
     });
@@ -243,7 +258,8 @@
       <div class="flex items-center justify-between">
         <div class="flex items-center space-x-4">
           <button
-            on:click={handleGoBack}
+            onclick={handleGoBack}
+            data-testid="meeting-detail-back-button"
             class="text-gray-600 hover:text-gray-900"
           >
             {$_("common.back")}
@@ -255,7 +271,7 @@
             <div class="flex flex-col items-start">
               <Button
                 variant="primary"
-                on:click={handleComplete}
+                onclick={() => (showCompleteModal = true)}
                 disabled={!canCompleteMeeting}
                 aria-disabled={!canCompleteMeeting}
                 aria-describedby={!canCompleteMeeting
@@ -279,14 +295,14 @@
             </div>
             <Button
               variant="outline"
-              on:click={handleCancel}
+              onclick={() => (showCancelModal = true)}
               data-testid="meeting-cancel-btn"
             >
               {$_("common.cancel")}
             </Button>
             <Button
               variant="outline"
-              on:click={handleReschedule}
+              onclick={() => (showRescheduleModal = true)}
               data-testid="meeting-reschedule-btn"
             >
               {$_("meetings.reschedule")}
@@ -294,7 +310,7 @@
           {:else if canManage && meeting.status === "Cancelled"}
             <Button
               variant="primary"
-              on:click={handleReschedule}
+              onclick={() => (showRescheduleModal = true)}
               data-testid="meeting-reschedule-btn"
             >
               {$_("meetings.reschedule")}
@@ -349,6 +365,58 @@
                 {$_("meetings.upcoming")}
               </span>
             {/if}
+
+            <!--
+              Le délai de convocation, DIT avant qu'il ne soit trop tard.
+
+              Le serveur calcule et sert `date_limite_envoi_convocation`,
+              `convocation_encore_possible` et `jours_manquants_convocation`
+              depuis `delai_de_convocation.rs` (Art. 3.87 § 3). Le frontend les
+              déclarait dans son type `Meeting` — et aucun écran ne les
+              affichait.
+
+              Le syndic découvrait donc la règle des quinze jours au moment de
+              cliquer sur « Créer une convocation », dans un refus en anglais,
+              sans autre issue que de supprimer l'assemblée (#780, verrou 1).
+
+              Un refus qui arrive quand il ne reste plus qu'à le subir n'est pas
+              une garde, c'est une sanction.
+            -->
+            {#if meeting.status === "Scheduled" && meeting.convocation_encore_possible === true && meeting.date_limite_envoi_convocation}
+              <p
+                class="mt-2 text-sm text-gray-600"
+                data-testid="meeting-convocation-deadline"
+              >
+                {$_("meetings.convocationDeadline", {
+                  values: {
+                    date: formatDateTime(meeting.date_limite_envoi_convocation),
+                  },
+                })}
+              </p>
+            {:else if meeting.status === "Scheduled" && meeting.convocation_encore_possible === false}
+              <!--
+                Un avertissement, pas un blocage. L'urgence est prévue par le
+                texte lui-même (Art. 3.87 § 3), une assemblée peut être encodée
+                après coup, et une seconde convocation subit la date de l'échec
+                précédent. On informe, on ne décide pas à la place du syndic.
+              -->
+              <div
+                class="mt-2 rounded-md border border-amber-200 bg-amber-50 p-3"
+                data-testid="meeting-convocation-too-late"
+                role="status"
+              >
+                <p class="text-sm font-semibold text-amber-900">
+                  {$_("meetings.convocationTooLate", {
+                    values: {
+                      jours: meeting.jours_manquants_convocation ?? "?",
+                    },
+                  })}
+                </p>
+                <p class="mt-1 text-sm text-amber-800">
+                  {$_("meetings.convocationTooLateAction")}
+                </p>
+              </div>
+            {/if}
           </div>
 
           <div data-testid="meeting-info-location">
@@ -369,6 +437,7 @@
               </h3>
               <a
                 href="/building-detail?id={building.id}"
+                data-testid="meeting-detail-building-link"
                 class="text-lg text-primary-600 hover:text-primary-700 hover:underline"
               >
                 {building.name}
@@ -473,3 +542,109 @@
     </div>
   {/if}
 </div>
+
+<!--
+  Les trois modals qui remplacent `prompt()` et `confirm()`.
+
+  Ils vivent hors du `{#if meeting}` principal : leur ouverture ne dépend pas
+  du chargement, et les y enfermer les ferait disparaître à chaque
+  rafraîchissement.
+-->
+<Modal
+  isOpen={showRescheduleModal}
+  title={$_("meetings.rescheduleTitle")}
+  size="sm"
+  onclose={() => (showRescheduleModal = false)}
+>
+  <label class="block text-sm font-medium text-gray-700" for="reschedule-date">
+    {$_("meetings.newDateLabel")}
+  </label>
+  <input
+    id="reschedule-date"
+    type="date"
+    bind:value={rescheduleDate}
+    data-testid="meeting-reschedule-date-input"
+    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
+  />
+
+  {#snippet footer()}
+    <Button
+      variant="outline"
+      onclick={() => (showRescheduleModal = false)}
+      data-testid="meeting-reschedule-cancel"
+    >
+      {$_("common.cancel")}
+    </Button>
+    <Button
+      variant="primary"
+      onclick={handleReschedule}
+      disabled={!rescheduleDate}
+      data-testid="meeting-reschedule-submit"
+    >
+      {$_("meetings.reschedule")}
+    </Button>
+  {/snippet}
+</Modal>
+
+<Modal
+  isOpen={showCompleteModal}
+  title={$_("meetings.completeTitle")}
+  size="sm"
+  onclose={() => (showCompleteModal = false)}
+>
+  <label class="block text-sm font-medium text-gray-700" for="attendees-count">
+    {$_("meetings.attendeesLabel")}
+  </label>
+  <input
+    id="attendees-count"
+    type="number"
+    min="0"
+    bind:value={attendeesInput}
+    data-testid="meeting-complete-attendees-input"
+    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
+  />
+
+  {#snippet footer()}
+    <Button
+      variant="outline"
+      onclick={() => (showCompleteModal = false)}
+      data-testid="meeting-complete-cancel"
+    >
+      {$_("common.cancel")}
+    </Button>
+    <Button
+      variant="primary"
+      onclick={handleComplete}
+      disabled={attendeesInput === ""}
+      data-testid="meeting-complete-submit"
+    >
+      {$_("meetings.mark_completed")}
+    </Button>
+  {/snippet}
+</Modal>
+
+<Modal
+  isOpen={showCancelModal}
+  title={$_("meetings.cancelTitle")}
+  size="sm"
+  onclose={() => (showCancelModal = false)}
+>
+  <p class="text-sm text-gray-700">{$_("meetings.confirmCancelBody")}</p>
+
+  {#snippet footer()}
+    <Button
+      variant="outline"
+      onclick={() => (showCancelModal = false)}
+      data-testid="meeting-cancel-dismiss"
+    >
+      {$_("common.back")}
+    </Button>
+    <Button
+      variant="danger"
+      onclick={handleCancel}
+      data-testid="meeting-cancel-confirm"
+    >
+      {$_("meetings.cancelTitle")}
+    </Button>
+  {/snippet}
+</Modal>

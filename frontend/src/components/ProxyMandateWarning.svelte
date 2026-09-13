@@ -1,8 +1,11 @@
 <script lang="ts">
   // Svelte 5 runes mode
-  import { _ } from '../lib/i18n';
+  import { _ } from "../lib/i18n";
 
-  let { mandateCount = 0, totalDelegatedPct = 0 }: {
+  let {
+    mandateCount = 0,
+    totalDelegatedPct = 0,
+  }: {
     mandateCount?: number;
     totalDelegatedPct?: number;
   } = $props();
@@ -31,15 +34,21 @@
         />
       </svg>
       <div>
-        <p class="text-sm font-semibold text-red-800">{$_('proxy.limitReached')}</p>
+        <p class="text-sm font-semibold text-red-800">
+          {$_("proxy.limitReached")}
+        </p>
         {#if isAtLimit}
           <p class="text-xs text-red-700 mt-0.5">
-            {$_('proxy.mandateCount', { values: { count: mandateCount, max: MAX_MANDATES } })}
+            {$_("proxy.mandateCount", {
+              values: { count: mandateCount, max: MAX_MANDATES },
+            })}
           </p>
         {/if}
         {#if isQuotaExceeded}
           <p class="text-xs text-red-700 mt-0.5">
-            {$_('proxy.quotaExceeded', { values: { pct: totalDelegatedPct.toFixed(1), max: MAX_PCT } })}
+            {$_("proxy.quotaExceeded", {
+              values: { pct: totalDelegatedPct.toFixed(1), max: MAX_PCT },
+            })}
           </p>
         {/if}
       </div>
@@ -60,15 +69,21 @@
         />
       </svg>
       <div>
-        <p class="text-sm font-semibold text-amber-800">{$_('proxy.warning')}</p>
+        <p class="text-sm font-semibold text-amber-800">
+          {$_("proxy.warning")}
+        </p>
         {#if isNearLimit}
           <p class="text-xs text-amber-700 mt-0.5">
-            {$_('proxy.mandateNearLimit', { values: { count: mandateCount, max: MAX_MANDATES } })}
+            {$_("proxy.mandateNearLimit", {
+              values: { count: mandateCount, max: MAX_MANDATES },
+            })}
           </p>
         {/if}
         {#if isQuotaAtRisk && !isQuotaExceeded}
           <p class="text-xs text-amber-700 mt-0.5">
-            {$_('proxy.quotaAtRisk', { values: { pct: totalDelegatedPct.toFixed(1), max: MAX_PCT } })}
+            {$_("proxy.quotaAtRisk", {
+              values: { pct: totalDelegatedPct.toFixed(1), max: MAX_PCT },
+            })}
           </p>
         {/if}
       </div>

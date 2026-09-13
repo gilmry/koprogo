@@ -1,5 +1,5 @@
 ---
-import Layout from '../layouts/Layout.astro';
+import Layout from "../layouts/Layout.astro";
 ---
 
 <Layout title="Paramètres - KoproGo">
@@ -9,16 +9,32 @@ import Layout from '../layouts/Layout.astro';
 
       <div id="user-settings-panel">
         <!-- UserSettings Svelte component will be mounted here -->
-        <div class="flex items-center gap-2 text-gray-400 py-8 justify-center">
-          <div class="animate-spin w-6 h-6 border-2 border-gray-300 border-t-transparent rounded-full"></div>
+        <div class="flex items-center gap-2 text-muted py-8 justify-center">
+          <div
+            class="animate-spin w-6 h-6 border-2 border-gray-300 border-t-transparent rounded-full"
+          >
+          </div>
           <span class="text-sm">Chargement...</span>
         </div>
       </div>
 
       <div class="mt-6">
-        <a href="javascript:history.back()" class="inline-flex items-center text-primary-600 hover:text-primary-700">
-          <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+        <a
+          data-testid="settings-back-link"
+          href="javascript:history.back()"
+          class="inline-flex items-center text-primary-600 hover:text-primary-700"
+        >
+          <svg
+            class="w-5 h-5 mr-2"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
           </svg>
           Retour
         </a>

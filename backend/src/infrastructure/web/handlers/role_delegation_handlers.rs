@@ -75,7 +75,7 @@ fn caller_must_hold_role(user: &AuthenticatedUser, role: &UserRole) -> Result<()
         return Ok(());
     }
     // Superadmin shortcut — Story 3.1 helpers grant blanket authority.
-    if user.role == "superadmin" {
+    if user.is_superadmin() {
         return Ok(());
     }
     Err(AppError::Forbidden(format!(
@@ -152,7 +152,7 @@ pub async fn revoke_role_delegation(
         .role_delegation_use_cases
         .list_delegations_of(user.user_id)
         .await?;
-    let is_admin = user.role == "superadmin";
+    let is_admin = user.is_superadmin();
     let is_owner_of_delegation = existing.iter().any(|a| {
         a.id == id && (a.delegated_from_user_id == Some(user.user_id) || a.user_id == user.user_id)
     });

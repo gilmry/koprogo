@@ -1,20 +1,22 @@
 ---
+import CadreLegalSel from "../components/legal/CadreLegalSel.svelte";
 import Layout from "../layouts/Layout.astro";
+import EnTeteDePage from "../components/global/EnTeteDePage.svelte";
 ---
 
 <Layout title="SEL - Système d'Échange Local - KoproGo">
-  <div class="container mx-auto px-4 py-8">
+  <div class="container mx-auto px-4 py-8" data-testid="exchanges-list">
     <div class="mb-6">
       <div class="flex items-center justify-between mb-4">
         <div>
-          <h1 class="text-3xl font-bold text-gray-900">
-            🤝 SEL - Système d'Échange Local
-          </h1>
-          <p class="text-gray-600 mt-2">
-            Échangez services, objets et achats groupés avec vos voisins grâce à la monnaie temps (1 heure = 1 crédit).
-          </p>
+          <EnTeteDePage
+            client:load
+            titre="pages.exchanges.title"
+            description="pages.exchanges.description"
+          />
         </div>
         <a
+          data-testid="exchanges-create-link"
           href="/exchanges/new"
           class="px-6 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium"
         >
@@ -22,14 +24,15 @@ import Layout from "../layouts/Layout.astro";
         </a>
       </div>
 
-      <!-- Legal Notice (Belgian Context) -->
-      <div class="p-4 bg-blue-50 border-l-4 border-blue-400 rounded-md text-sm">
-        <p class="text-blue-800">
-          <strong>⚖️ Cadre légal belge:</strong> Les SEL sont légaux et reconnus en Belgique.
-          Non-taxables si non-commerciaux (troc). Monnaie temps: 1 heure = 1 crédit. Solde
-          négatif autorisé (modèle de confiance communautaire).
-        </p>
-      </div>
+      {
+        /*
+        Encart de cadre légal, composant unique. Il était écrit à la main ici,
+        en bleu, avec un émoji que les lecteurs d'écran annoncent — et son
+        texte était en français dans le source, donc identique dans les quatre
+        langues du produit.
+      */
+      }
+      <CadreLegalSel client:load />
     </div>
 
     <div id="building-selector-container" class="mb-6"></div>
@@ -53,14 +56,21 @@ import Layout from "../layouts/Layout.astro";
 
 <script>
   import { mount, unmount } from "svelte";
-  import { ExchangeList, CreditBalance, Leaderboard, SelStatistics } from "../components/local-exchanges";
+  import {
+    ExchangeList,
+    CreditBalance,
+    Leaderboard,
+    SelStatistics,
+  } from "../components/local-exchanges";
   import BuildingSelector from "../components/BuildingSelector.svelte";
   import { getMyOwner } from "../lib/api";
 
   // Resolve the real owner_id from the backend (user_id → owner_id via JWT org)
   let currentOwnerId = "";
 
-  const selectorContainer = document.getElementById("building-selector-container");
+  const selectorContainer = document.getElementById(
+    "building-selector-container",
+  );
   const balanceContainer = document.getElementById("credit-balance-container");
   const leaderboardContainer = document.getElementById("leaderboard-container");
   const statsContainer = document.getElementById("statistics-container");
@@ -70,7 +80,11 @@ import Layout from "../layouts/Layout.astro";
 
   function mountAll(buildingId: string) {
     // Cleanup previous
-    for (const c of mounted) { try { unmount(c); } catch {} }
+    for (const c of mounted) {
+      try {
+        unmount(c);
+      } catch {}
+    }
     mounted = [];
     if (balanceContainer) balanceContainer.innerHTML = "";
     if (leaderboardContainer) leaderboardContainer.innerHTML = "";
@@ -78,31 +92,44 @@ import Layout from "../layouts/Layout.astro";
     if (listContainer) listContainer.innerHTML = "";
 
     if (balanceContainer && currentOwnerId) {
-      mounted.push(mount(CreditBalance as any, {
-        target: balanceContainer,
-        props: { ownerId: currentOwnerId, buildingId },
-      }));
+      mounted.push(
+        mount(CreditBalance as any, {
+          target: balanceContainer,
+          props: { ownerId: currentOwnerId, buildingId },
+        }),
+      );
     }
 
     if (leaderboardContainer) {
-      mounted.push(mount(Leaderboard as any, {
-        target: leaderboardContainer,
-        props: { buildingId, limit: 10 },
-      }));
+      mounted.push(
+        mount(Leaderboard as any, {
+          target: leaderboardContainer,
+          props: { buildingId, limit: 10 },
+        }),
+      );
     }
 
     if (statsContainer) {
-      mounted.push(mount(SelStatistics as any, {
-        target: statsContainer,
-        props: { buildingId },
-      }));
+      mounted.push(
+        mount(SelStatistics as any, {
+          target: statsContainer,
+          props: { buildingId },
+        }),
+      );
     }
 
     if (listContainer) {
-      mounted.push(mount(ExchangeList as any, {
-        target: listContainer,
-        props: { buildingId, currentOwnerId, showOnlyAvailable: false, showFilters: true },
-      }));
+      mounted.push(
+        mount(ExchangeList as any, {
+          target: listContainer,
+          props: {
+            buildingId,
+            currentOwnerId,
+            showOnlyAvailable: false,
+            showFilters: true,
+          },
+        }),
+      );
     }
   }
 

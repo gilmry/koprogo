@@ -19,14 +19,83 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
 
   /* Retry on CI only */
-  retries: process.env.CI ? 2 : 0,
+  /**
+   * Une seule reprise en CI, plus deux.
+   *
+   * Une reprise sert à distinguer un aléa d'un défaut. Elle ne le fait que si
+   * elle réussit parfois. Mesuré sur les runs du 2026-09-07 et du 2026-09-08 :
+   * **40 reprises exécutées, zéro test « flaky »** — pas une seule n'a
+   * transformé un échec en réussite. Les durées sont identiques à la seconde
+   * près d'une tentative à l'autre (55,7 s / 56,8 s / 55,7 s), ce qui est la
+   * signature d'un échec déterministe.
+   *
+   * Ce qu'elles coûtaient : le temps qui a manqué à `chromium` pour finir ses
+   * 19 derniers tests avant son plafond. Une reprise qui n'apprend rien prend
+   * la place d'un test qu'on n'a pas mesuré.
+   *
+   * On en garde UNE plutôt que zéro : l'absence de flake sur deux runs ne
+   * prouve pas qu'il n'y en aura jamais, et un vrai aléa mérite encore d'être
+   * distingué d'un défaut. Si un « flaky » réapparaît, c'est le signal qu'il
+   * faut le corriger, pas remonter ce nombre.
+   */
+  retries: process.env.CI ? 1 : 0,
 
   /* Opt out of parallel tests on CI. */
   workers: process.env.CI ? 1 : undefined,
 
+  /**
+   * Plafond pour la suite ENTIÈRE, pas pour un test.
+   *
+   * Le 2026-09-07, ce job a tourné **2 h 43** sans rendre la main, contre
+   * 36 minutes au run précédent, et rien ne l'a arrêté : `ci.yml` ne portait
+   * aucun `timeout-minutes`, la limite GitHub par défaut étant de six heures.
+   *
+   * Le timeout par test (30 s par défaut) ne suffit pas à borner l'ensemble :
+   * avec `retries: 2` et 319 tests, une dégradation multiplie les exécutions
+   * sans qu'aucune ne dépasse individuellement sa limite. Un job qui traîne
+   * devient alors indiscernable d'un job mort — et il occupe un runner
+   * pendant ce temps.
+   *
+   * 70 minutes, soit un peu moins que le `timeout-minutes: 90` du job : la
+   * suite doit rendre la main d'elle-même, avec son rapport, plutôt que
+   * d'être fauchée par GitHub sans rien laisser à lire.
+   *
+   * ATTENTION — ce plafond s'applique à CHAQUE invocation de `playwright
+   * test`, pas au job. Or `ci.yml` en lance trois : `--project=chromium`,
+   * `--project=smoke`, `--project=scenarios`. Trois fois 70 minutes font 210
+   * minutes possibles sous un plafond de 90, et le garde-fou écrit ici ne
+   * peut structurellement pas jouer.
+   *
+   * C'est arrivé le 2026-09-08 : chromium 46 min, scenarios 40 min, GitHub a
+   * fauché le job à 90 min. Aucun rapport, aucun détail d'erreur pour onze
+   * scénarios en échec, aucune vidéo. La CI n'a rien pu dire.
+   *
+   * Chaque étape de `ci.yml` porte désormais son propre `--global-timeout`,
+   * dont la somme tient sous le plafond du job. Cette valeur-ci reste comme
+   * filet pour les exécutions locales et pour toute invocation qui n'en
+   * passerait pas.
+   */
+  globalTimeout: process.env.CI ? 70 * 60 * 1000 : undefined,
+
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
   reporter: [
-    ["html", { outputFolder: "playwright-report", open: "never" }],
+    [
+      "html",
+      {
+        // `PLAYWRIGHT_HTML_REPORT` plutôt qu'un chemin en dur.
+        //
+        // `ci.yml` lance Playwright trois fois, et chaque exécution ÉCRASE le
+        // rapport précédent : les captures d'écran et les traces de
+        // `chromium` étaient détruites par `smoke`, puis par `scenarios`.
+        // L'artefact téléversé ne contenait que le dernier.
+        //
+        // Laisser la variable décider permet à chaque invocation d'écrire
+        // dans son propre dossier. La valeur par défaut reste celle d'avant
+        // pour les exécutions locales.
+        outputFolder: process.env.PLAYWRIGHT_HTML_REPORT ?? "playwright-report",
+        open: "never",
+      },
+    ],
     ["json", { outputFile: "test-results/results.json" }],
     ["list"],
   ],
@@ -83,7 +152,16 @@ export default defineConfig({
       // role-delegation.spec.ts (C4) ✅ — même endpoint câblé sur
       // `RoleDelegationsPage.svelte`, dernière exclusion Phase C levée
       // (#617 clos, 8/8 sub-tasks).
-      testIgnore: [/scenarios\//, /smoke\//, /characterization\//],
+      // Chaque répertoire revendiqué AILLEURS doit être écarté ici, sinon
+      // le projet de bureau ramasse des specs qui ne le visent pas. C'est ce
+      // qui vient d'arriver à `mobile/` : ses sept tests ont tourné à
+      // 1280×720 contre la démo, où ils n'ont aucun sens, et ont fait rougir
+      // la CI d'un défaut inexistant.
+      //
+      // La liste est tenue par `garde-projets-playwright`, qui la recalcule
+      // depuis les `testDir` déclarés plutôt que de faire confiance à la
+      // mémoire du prochain qui ajoutera un répertoire.
+      testIgnore: [/scenarios\//, /smoke\//, /characterization\//, /mobile\//],
     },
 
     /**

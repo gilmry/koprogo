@@ -20,6 +20,8 @@
   import { listAcps } from "../../api/acps";
   import TechnicalSpecCreate from "./TechnicalSpecCreate.svelte";
 
+  import { _ } from "../../i18n";
+
   let specs = $state<TechnicalSpecDto[]>([]);
   let loading = $state<boolean>(true);
   let showForm = $state<boolean>(false);
@@ -34,9 +36,10 @@
         listAcps().catch(() => []),
       ]);
       specs = s;
-      acps = (a ?? []).map(
-        (x: { id: string; name: string }) => ({ id: x.id, name: x.name }),
-      );
+      acps = (a ?? []).map((x: { id: string; name: string }) => ({
+        id: x.id,
+        name: x.name,
+      }));
       if (acps.length > 0 && selectedAcpId === "") {
         selectedAcpId = acps[0].id;
       }
@@ -77,7 +80,9 @@
 
 <div class="flex flex-col gap-6">
   <header class="flex items-center justify-between">
-    <h1 class="text-2xl font-semibold text-gray-900">Fiches techniques</h1>
+    <h1 class="text-2xl font-semibold text-gray-900">
+      {$_("technicalSpecs.pageTitle")}
+    </h1>
     <button
       type="button"
       data-testid="tech-spec-new-button"
@@ -85,17 +90,17 @@
       onclick={() => (showForm = true)}
       disabled={loading || acps.length === 0}
     >
-      Nouvelle fiche technique
+      {$_("technicalSpecs.newSpec")}
     </button>
   </header>
 
   {#if loading}
     <p class="text-sm text-gray-500" role="status" aria-live="polite">
-      Chargement…
+      {$_("common.loading2")}
     </p>
   {:else if specs.length === 0}
     <p data-testid="tech-spec-list-empty" class="text-sm text-gray-500">
-      Aucune fiche technique pour le moment.
+      {$_("technicalSpecs.empty")}
     </p>
   {:else}
     <div class="overflow-x-auto">
@@ -109,31 +114,31 @@
               scope="col"
               class="px-3 py-2 text-left font-medium text-gray-700"
             >
-              Titre
+              {$_("common.title")}
             </th>
             <th
               scope="col"
               class="px-3 py-2 text-left font-medium text-gray-700"
             >
-              Version
+              {$_("technicalSpecs.version")}
             </th>
             <th
               scope="col"
               class="px-3 py-2 text-left font-medium text-gray-700"
             >
-              Status
+              {$_("common.status")}
             </th>
             <th
               scope="col"
               class="px-3 py-2 text-left font-medium text-gray-700"
             >
-              Créée le
+              {$_("common.createdOnShort")}
             </th>
             <th
               scope="col"
               class="px-3 py-2 text-right font-medium text-gray-700"
             >
-              Actions
+              {$_("common.actionColumn")}
             </th>
           </tr>
         </thead>
@@ -158,7 +163,7 @@
                   data-testid={`tech-spec-detail-link-${s.id}`}
                   class="text-xs text-blue-600 hover:underline"
                 >
-                  Détail
+                  {$_("technicalSpecs.detail")}
                 </a>
               </td>
             </tr>

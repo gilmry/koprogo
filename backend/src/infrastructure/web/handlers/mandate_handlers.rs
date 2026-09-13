@@ -231,6 +231,35 @@ pub async fn revoke_mandate(
 ) -> Result<HttpResponse, AppError> {
     require_syndic_or_superadmin(&user)?;
     let id = path.into_inner();
+
+    // Cloisonnement : révoquer le mandat d'un avocat, d'un notaire ou d'un
+    // architecte met fin à sa mission. `require_syndic_or_superadmin` ne
+    // vérifie que le RÔLE — un syndic de l'organisation A pouvait révoquer le
+    // mandat d'un professionnel de l'organisation B (#772).
+    //
+    // Le périmètre est porté par `MandateScope`, qui vise soit un immeuble,
+    // soit une ACP. On remonte donc par l'un ou par l'autre.
+    let mandate = state.mandate_use_cases.get(id).await?;
+    match mandate.scope {
+        crate::domain::entities::MandateScope::Building(building_id) => {
+            crate::infrastructure::web::middleware::scope_guard::verify_building_org_access(
+                &user,
+                building_id,
+                &state.building_use_cases,
+                &state.acp_use_cases,
+            )
+            .await?
+        }
+        crate::domain::entities::MandateScope::Acp(acp_id) => {
+            crate::infrastructure::web::middleware::scope_guard::verify_acp_org_access(
+                &user,
+                acp_id,
+                &state.acp_use_cases,
+            )
+            .await?
+        }
+    }
+
     state.mandate_use_cases.revoke(id).await?;
     Ok(HttpResponse::NoContent().finish())
 }

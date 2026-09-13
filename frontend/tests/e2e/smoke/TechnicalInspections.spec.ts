@@ -1,7 +1,7 @@
 import { test, expect } from "@playwright/test";
 import { loginAsSyndicWithBuilding } from "../helpers/auth";
 
-const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
+import { API_BASE } from "../helpers/adresses";
 
 async function setupSyndicWithBuilding(page: import("@playwright/test").Page) {
   const ctx = await loginAsSyndicWithBuilding(page, "inspection");
@@ -15,9 +15,7 @@ test.describe("Technical Inspections - Mandatory Compliance", () => {
 
     await expect(page.locator("body")).toBeVisible();
     await expect(
-      page
-        .locator("main h1, main h2, [data-testid='inspections-list']")
-        .first(),
+      page.locator("[data-testid='inspections-list']").first(),
     ).toBeVisible({ timeout: 10000 });
   });
 
@@ -41,7 +39,10 @@ test.describe("Technical Inspections - Mandatory Compliance", () => {
         headers: { Authorization: `Bearer ${token}` },
       },
     );
-    expect(inspResp.status()).toBe(201);
+    expect(
+      inspResp.status(),
+      `inspResp : ${await inspResp.text().catch(() => "<corps illisible>")}`,
+    ).toBe(201);
     const inspection = await inspResp.json();
     expect(inspection.building_id).toBe(buildingId);
   });

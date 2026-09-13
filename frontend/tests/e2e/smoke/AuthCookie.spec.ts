@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { ADMIN_PASSWORD } from "../helpers/identifiants";
 
 /**
  * WP-FE1 — JWT hors localStorage (vol de session XSS).
@@ -15,7 +16,6 @@ import { test, expect } from "@playwright/test";
  */
 
 const ADMIN_EMAIL = "admin@koprogo.com";
-const ADMIN_PASSWORD = "admin123";
 
 async function uiLogin(page: import("@playwright/test").Page) {
   await page.goto("/login", { waitUntil: "domcontentloaded" });

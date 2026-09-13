@@ -41,8 +41,17 @@ pub struct CastVoteRequest {
     pub owner_id: Uuid,
     pub unit_id: Uuid,
     pub vote_choice: VoteChoice,
-    /// Tantièmes/millièmes — Decimal exact (ADR-0008), sérialisé en string JSON.
-    pub voting_power: Decimal,
+    /// **Ignoré par le serveur depuis #850.**
+    ///
+    /// La puissance de vote d'un lot est sa quotité dans l'acte de base
+    /// (Art. 3.87 § 2 et § 8 CC) : elle n'est pas déclarative. Le serveur la
+    /// relit sur le lot et n'accorde aucune valeur à ce champ.
+    ///
+    /// Il reste accepté pour ne pas casser les appelants existants, et sera
+    /// retiré du contrat quand l'arbitrage de #850 — qui peut saisir un vote,
+    /// et pour qui — aura tranché le reste de la route.
+    #[serde(default)]
+    pub voting_power: Option<Decimal>,
     pub proxy_owner_id: Option<Uuid>,
 }
 

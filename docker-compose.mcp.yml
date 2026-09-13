@@ -1,6 +1,19 @@
 # Docker Compose for KoproGo MCP Stack
 version: '3.8'
 
+# Le MÊME défaut que #872, resté armé dans un troisième fichier.
+#
+# Sans `name:`, Compose déduit le nom de projet du répertoire — « koprogo » —
+# qui est celui de la pile DÉPLOYÉE. Les conteneurs créés ici portent donc le
+# label `com.docker.compose.project=koprogo`, et un
+# `docker compose -f docker-compose.mcp.yml down` supprimerait tout ce qui
+# porte ce label : la démo comprise. Les `container_name:` distincts ne
+# protègent de rien, c'est le LABEL que `down` regarde.
+#
+# Le port aussi est décalé : `127.0.0.1:5432` est tenu sur cet hôte par
+# `elevia-postgres`, un projet voisin. Mesuré, pas supposé (ADR 0050, #872).
+name: koprogo-mcp
+
 services:
   # PostgreSQL (shared with main stack)
   postgres:
@@ -11,7 +24,7 @@ services:
       POSTGRES_USER: koprogo
       POSTGRES_PASSWORD: koprogo123
     ports:
-      - "127.0.0.1:5432:5432"
+      - "127.0.0.1:25432:5432" # 5432 est tenu par elevia-postgres (ADR 0050)
     volumes:
       - postgres_mcp_data:/var/lib/postgresql/data
       - ./backend/migrations:/docker-entrypoint-initdb.d

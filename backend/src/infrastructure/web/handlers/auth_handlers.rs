@@ -78,6 +78,7 @@ pub async fn login(
 #[post("/auth/register")]
 pub async fn register(
     data: web::Data<AppState>,
+    req: HttpRequest,
     request: web::Json<RegisterRequest>,
 ) -> impl Responder {
     // Validate request
@@ -88,12 +89,43 @@ pub async fn register(
         }));
     }
 
+    // L'appelant est-il DÉJÀ authentifié ?
+    //
+    // `register` sert deux usages opposés : l'inscription de soi-même, où
+    // poser la session du nouveau compte est exactement ce qu'on veut, et la
+    // création d'un utilisateur par un administrateur, où c'est précisément ce
+    // qu'on ne veut pas. Un seul endpoint, un seul comportement, deux besoins
+    // contraires.
+    //
+    // Sans ce garde-fou, le cookie du compte créé écrase celui de l'appelant :
+    // un SuperAdmin qui crée trois utilisateurs se retrouve connecté en tant
+    // que le troisième, sans que rien à l'écran ne l'explique. Constaté en
+    // recette le 2026-09-04 (R1-4), où l'acte 1 demande justement de créer
+    // trois comptes d'affilée.
+    //
+    // Ce n'est pas une escalade de privilège — le compte créé est en général
+    // moins doté — mais une confusion de session, et rien ne garantit que le
+    // sens restera toujours favorable.
+    //
+    // La correction durable est de séparer les deux routes ; ce garde-fou
+    // ferme le défaut sans casser l'inscription publique en attendant.
+    let deja_authentifie = req
+        .headers()
+        .get(actix_web::http::header::AUTHORIZATION)
+        .is_some()
+        || req.cookie(REFRESH_COOKIE_NAME).is_some();
+
     match data.auth_use_cases.register(request.into_inner()).await {
         Ok(response) => {
-            let cookie = build_refresh_cookie(&response.refresh_token);
-            HttpResponse::Created()
-                .cookie(cookie)
-                .json(AuthBody::from(response))
+            if deja_authentifie {
+                // On rend le compte créé, sans toucher à la session en cours.
+                HttpResponse::Created().json(AuthBody::from(response))
+            } else {
+                let cookie = build_refresh_cookie(&response.refresh_token);
+                HttpResponse::Created()
+                    .cookie(cookie)
+                    .json(AuthBody::from(response))
+            }
         }
         Err(e) => HttpResponse::BadRequest().json(serde_json::json!({
             "error": e

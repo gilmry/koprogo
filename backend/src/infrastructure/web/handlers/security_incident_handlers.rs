@@ -116,7 +116,7 @@ pub async fn create_security_incident(
     auth: AuthenticatedUser,
     body: web::Json<CreateSecurityIncidentRequest>,
 ) -> impl Responder {
-    if auth.role != "superadmin" {
+    if !auth.is_superadmin() {
         return HttpResponse::Forbidden().json(serde_json::json!({
             "error": "Access denied. SuperAdmin role required."
         }));
@@ -171,7 +171,7 @@ pub async fn list_security_incidents(
     auth: AuthenticatedUser,
     query: web::Query<SecurityIncidentsQuery>,
 ) -> impl Responder {
-    if auth.role != "superadmin" {
+    if !auth.is_superadmin() {
         return HttpResponse::Forbidden().json(serde_json::json!({
             "error": "Access denied. SuperAdmin role required."
         }));
@@ -206,7 +206,7 @@ pub async fn list_overdue_incidents(
     data: web::Data<AppState>,
     auth: AuthenticatedUser,
 ) -> impl Responder {
-    if auth.role != "superadmin" {
+    if !auth.is_superadmin() {
         return HttpResponse::Forbidden().json(serde_json::json!({
             "error": "Access denied. SuperAdmin role required."
         }));
@@ -237,7 +237,7 @@ pub async fn get_security_incident(
     auth: AuthenticatedUser,
     path: web::Path<Uuid>,
 ) -> impl Responder {
-    if auth.role != "superadmin" {
+    if !auth.is_superadmin() {
         return HttpResponse::Forbidden().json(serde_json::json!({
             "error": "Access denied. SuperAdmin role required."
         }));
@@ -265,7 +265,7 @@ pub async fn report_incident_to_apd(
     path: web::Path<Uuid>,
     body: web::Json<ReportToApdRequest>,
 ) -> impl Responder {
-    if auth.role != "superadmin" {
+    if !auth.is_superadmin() {
         return HttpResponse::Forbidden().json(serde_json::json!({
             "error": "Access denied. SuperAdmin role required."
         }));

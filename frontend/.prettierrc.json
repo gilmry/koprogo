@@ -1,0 +1,9 @@
+{
+  "plugins": ["prettier-plugin-svelte", "prettier-plugin-astro"],
+  "overrides": [
+    {
+      "files": "*.md",
+      "options": { "embeddedLanguageFormatting": "off" }
+    }
+  ]
+}

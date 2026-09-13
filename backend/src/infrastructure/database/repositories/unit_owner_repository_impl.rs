@@ -4,7 +4,7 @@
 //! (domain + SQL NUMERIC(6,5) depuis migration `20260501000000`).
 
 use crate::application::ports::UnitOwnerRepository;
-use crate::domain::entities::{LotHolder, OwnershipType, UnitOwner};
+use crate::domain::entities::{ChargeDistribution, LotHolder, OwnershipType, UnitOwner};
 use async_trait::async_trait;
 use rust_decimal::Decimal;
 use sqlx::{PgPool, Row};
@@ -330,6 +330,45 @@ impl UnitOwnerRepository for PostgresUnitOwnerRepository {
             .into_iter()
             .map(|row| (row.unit_id, row.owner_id, row.ownership_percentage))
             .collect())
+    }
+
+    async fn find_active_quota_shares_by_building(
+        &self,
+        building_id: Uuid,
+    ) -> Result<Vec<(Uuid, Uuid, Decimal)>, String> {
+        // Le calcul est fait EN RUST, pas en SQL, pour passer par
+        // `ChargeDistribution::resolve_owner_quota` — la formule de l'Art. 3.84
+        // qui porte déjà ses gardes (base de tantièmes > 0, pourcentage dans
+        // [0,1]) et ses tests. Dupliquer la division en SQL serait une seconde
+        // source de vérité pour une règle légale.
+        let rows = sqlx::query!(
+            r#"
+            SELECT uo.unit_id, uo.owner_id, uo.ownership_percentage,
+                   u.quota AS unit_quota,
+                   b.total_tantiemes
+            FROM unit_owners uo
+            JOIN units u ON uo.unit_id = u.id
+            JOIN buildings b ON u.building_id = b.id
+            WHERE u.building_id = $1 AND uo.end_date IS NULL
+            "#,
+            building_id
+        )
+        .fetch_all(&self.pool)
+        .await
+        .map_err(|e| format!("Failed to find active quota shares by building: {}", e))?;
+
+        let mut parts = Vec::with_capacity(rows.len());
+        for row in rows {
+            let part = ChargeDistribution::resolve_owner_quota(
+                row.unit_quota,
+                Decimal::from(row.total_tantiemes),
+                row.ownership_percentage,
+            )
+            .map_err(|e| format!("Invalid quota share for unit {}: {}", row.unit_id, e))?;
+            parts.push((row.unit_id, row.owner_id, part));
+        }
+
+        Ok(parts)
     }
 
     async fn find_voting_holders_by_unit(&self, unit_id: Uuid) -> Result<Vec<LotHolder>, String> {

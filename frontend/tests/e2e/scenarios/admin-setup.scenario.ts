@@ -15,6 +15,8 @@
  * Duree video attendue : ~40-50 secondes (rythme humain)
  */
 import { test, expect } from "@playwright/test";
+import { ADMIN_PASSWORD } from "../helpers/identifiants";
+import { amorce } from "../helpers/amorcage";
 import {
   humanLogin,
   humanClick,
@@ -25,7 +27,7 @@ import {
   PACE,
 } from "../helpers/video-pace";
 
-const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
+import { API_BASE } from "../helpers/adresses";
 
 test.describe("Scenario: Le SuperAdmin explore la plateforme", () => {
   test.setTimeout(120_000);
@@ -35,9 +37,9 @@ test.describe("Scenario: Le SuperAdmin explore la plateforme", () => {
   test.beforeAll(async ({ request }) => {
     // 1. Login admin
     const adminResp = await request.post(`${API_BASE}/auth/login`, {
-      data: { email: "admin@koprogo.com", password: "admin123" },
+      data: { email: "admin@koprogo.com", password: ADMIN_PASSWORD },
     });
-    const admin = await adminResp.json();
+    const admin = await amorce(adminResp, "POST /auth/login");
     const adminHeaders = { Authorization: `Bearer ${admin.token}` };
 
     // 2. Seed the world (creates orgs, buildings, users — rich data for admin to explore)
@@ -54,7 +56,7 @@ test.describe("Scenario: Le SuperAdmin explore la plateforme", () => {
 
   test.afterAll(async ({ request }) => {
     const adminResp = await request.post(`${API_BASE}/auth/login`, {
-      data: { email: "admin@koprogo.com", password: "admin123" },
+      data: { email: "admin@koprogo.com", password: ADMIN_PASSWORD },
     });
     const admin = await adminResp.json();
     await request.delete(`${API_BASE}/seed/scenario/world`, {
@@ -68,13 +70,13 @@ test.describe("Scenario: Le SuperAdmin explore la plateforme", () => {
     // ============================================================
     // ETAPE 1 : Connexion (visible dans la video)
     // ============================================================
-    await humanLogin(page, "admin@koprogo.com", "admin123");
+    await humanLogin(page, "admin@koprogo.com", ADMIN_PASSWORD);
     await stepPause(page);
 
     // ============================================================
     // ETAPE 2 : Navigation vers les Organisations
     // ============================================================
-    await humanClick(page, "nav-link-organisations");
+    await humanClick(page, "nav-link-admin-organizations");
     await waitForSpinner(page);
     await page.waitForTimeout(PACE.AFTER_NAVIGATION);
 
@@ -93,7 +95,24 @@ test.describe("Scenario: Le SuperAdmin explore la plateforme", () => {
     // ============================================================
     // ETAPE 3 : Navigation vers les Immeubles
     // ============================================================
-    await humanClick(page, "nav-link-immeubles");
+    //
+    // Par le tableau de bord, pas par la barre laterale.
+    //
+    // `canSee` (permissions.ts) ne montre les menus METIER — gestion,
+    // compta, gouvernance, communaute, ticketing — a un superadmin QUE
+    // s'il a selectionne un immeuble (« mode in-context »). Sans
+    // selection, il est en mode plateforme et ne voit que le menu `admin`.
+    // `nav-link-buildings` n'existe donc pas dans son DOM, et le scenario
+    // attendait trente secondes un lien que la refonte a rendu
+    // conditionnel.
+    //
+    // Le chemin prevu est la tuile `admin-buildings-tile` du tableau de
+    // bord admin. On y retourne d'abord, ce qui est aussi le geste reel :
+    // un superadmin revient a son tableau de bord entre deux ecrans.
+    await humanClick(page, "nav-link-admin");
+    await waitForSpinner(page);
+    await page.waitForTimeout(PACE.AFTER_NAVIGATION);
+    await humanClick(page, "admin-buildings-tile");
     await waitForSpinner(page);
     await page.waitForTimeout(PACE.AFTER_NAVIGATION);
 
@@ -107,7 +126,7 @@ test.describe("Scenario: Le SuperAdmin explore la plateforme", () => {
     // ============================================================
     // ETAPE 4 : Navigation vers les Utilisateurs
     // ============================================================
-    await humanClick(page, "nav-link-utilisateurs");
+    await humanClick(page, "nav-link-admin-users");
     await waitForSpinner(page);
     await page.waitForTimeout(PACE.AFTER_NAVIGATION);
 

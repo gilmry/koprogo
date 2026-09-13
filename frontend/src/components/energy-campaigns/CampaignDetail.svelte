@@ -1,6 +1,7 @@
 <script lang="ts">
+  import Icone from "../ui/Icone.svelte";
   // Svelte 5 runes mode
-  import { _ } from '../../lib/i18n';
+  import { _ } from "../../lib/i18n";
   import {
     energyCampaignsApi,
     energyBillsApi,
@@ -14,17 +15,38 @@
   import ProviderOffersList from "./ProviderOffersList.svelte";
   import EnergyBillUpload from "./EnergyBillUpload.svelte";
   import { formatDateShort } from "../../lib/utils/date.utils";
-  import { withLoadingState, withErrorHandling } from "../../lib/utils/error.utils";
+  import ConfirmDialog from "../ui/ConfirmDialog.svelte";
+  import {
+    withLoadingState,
+    withErrorHandling,
+  } from "../../lib/utils/error.utils";
 
-  let { campaignId, currentUserId, currentUnitId = undefined, isAdmin = false }: {
+  let {
+    campaignId,
+    currentUserId,
+    currentUnitId = undefined,
+    isAdmin = false,
+  }: {
     campaignId: string;
     currentUserId: string;
     currentUnitId?: string | undefined;
     isAdmin?: boolean;
   } = $props();
 
-  let campaign: EnergyCampaign | null = $state(null);
-  let stats: CampaignStatistics | null = $state(null);
+  let campaign = $state<EnergyCampaign | null>(null);
+
+  // L'action en attente de confirmation.
+  //
+  // Ce composant est en mode RUNES : un `let` simple n'y serait PAS
+  // réactif, et l'écran ne se redessinerait jamais (#832).
+  //
+  // Le `confirm()` remplacé était un dialogue du NAVIGATEUR : un navigateur
+  // piloté le supprime, et l'action prend la forme exacte d'une panne (#844).
+  //
+  // Retirer un consentement est un droit RGPD : le geste doit aboutir.
+  let suppressionEnAttente = $state(false);
+  let cibleEnAttente = $state<string | null>(null);
+  let stats = $state<CampaignStatistics | null>(null);
   let myUploads: EnergyBillUploadType[] = $state([]);
   let loading = $state(true);
   let error = $state("");
@@ -50,8 +72,8 @@
         }
         return { campaignData, statsData, uploads };
       },
-      setLoading: (v) => loading = v,
-      setError: (v) => error = v,
+      setLoading: (v) => (loading = v),
+      setError: (v) => (error = v),
       onSuccess: ({ campaignData, statsData, uploads }) => {
         campaign = campaignData;
         stats = statsData;
@@ -111,8 +133,16 @@
     await loadData();
   }
 
-  async function withdrawConsent(uploadId: string) {
-    if (!confirm($_("energy.withdrawConsentConfirm"))) return;
+  function withdrawConsent(uploadId: string) {
+    cibleEnAttente = uploadId;
+    suppressionEnAttente = true;
+  }
+
+  async function executerLaction() {
+    suppressionEnAttente = false;
+    const uploadId = cibleEnAttente;
+    cibleEnAttente = null;
+    if (!uploadId) return;
     await withErrorHandling({
       action: () => energyBillsApi.withdrawConsent(uploadId),
       successMessage: $_("energy.withdrawConsentSuccess"),
@@ -130,9 +160,13 @@
     <p class="mt-4 text-gray-500">{$_("common.loading")}</p>
   </div>
 {:else if error}
-  <div class="p-4 bg-red-50 border border-red-200 rounded-md" data-testid="campaign-detail-error">
+  <div
+    class="p-4 bg-red-50 border border-red-200 rounded-md"
+    data-testid="campaign-detail-error"
+  >
     <p class="text-sm text-red-800">❌ {error}</p>
     <button
+      data-testid="campaign-retry-button"
       onclick={loadData}
       class="mt-2 text-sm text-red-600 hover:text-red-800 underline"
     >
@@ -142,7 +176,10 @@
 {:else if campaign}
   <div class="space-y-6" data-testid="campaign-detail">
     <!-- Header -->
-    <div class="bg-white shadow-md rounded-lg p-6" data-testid="campaign-detail-header">
+    <div
+      class="bg-white shadow-md rounded-lg p-6"
+      data-testid="campaign-detail-header"
+    >
       <div class="flex items-start justify-between">
         <div class="flex-1">
           <h2 class="text-2xl font-bold text-gray-900 mb-2">
@@ -151,6 +188,7 @@
           <CampaignStatusBadge status={campaign.status} />
         </div>
         <a
+          data-testid="campaign-back-link"
           href="/energy-campaigns"
           class="text-sm text-gray-600 hover:text-gray-800 underline"
         >
@@ -175,29 +213,37 @@
       <!-- Campaign Info -->
       <div class="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
         <div class="p-4 bg-blue-50 rounded-lg">
-          <div class="text-sm text-blue-600 font-medium">{$_("energy.campaign.deadlineParticipation")}</div>
+          <div class="text-sm text-blue-600 font-medium">
+            {$_("energy.campaign.deadlineParticipation")}
+          </div>
           <div class="text-lg text-blue-900">
             {formatDateShort(campaign.deadline_participation)}
           </div>
           {#if campaign.deadline_vote}
             <div class="text-xs text-blue-600 mt-1">
-              {$_("energy.campaign.voteUntil")} {formatDateShort(campaign.deadline_vote)}
+              {$_("energy.campaign.voteUntil")}
+              {formatDateShort(campaign.deadline_vote)}
             </div>
           {/if}
         </div>
         <div class="p-4 bg-green-50 rounded-lg">
-          <div class="text-sm text-green-600 font-medium">{$_("energy.campaign.participants")}</div>
+          <div class="text-sm text-green-600 font-medium">
+            {$_("energy.campaign.participants")}
+          </div>
           <div class="text-lg text-green-900">
             👥 {campaign.total_participants}
             {#if stats && !stats.k_anonymity_compliant}
               <span class="text-xs text-yellow-600">
-                (min. {stats.min_participants_required} {$_("common.required")})
+                (min. {stats.min_participants_required}
+                {$_("common.required")})
               </span>
             {/if}
           </div>
         </div>
         <div class="p-4 bg-purple-50 rounded-lg">
-          <div class="text-sm text-purple-600 font-medium">{$_("energy.campaign.offersReceived")}</div>
+          <div class="text-sm text-purple-600 font-medium">
+            {$_("energy.campaign.offersReceived")}
+          </div>
           <div class="text-lg text-purple-900">
             💼 {campaign.offers_received.length}
           </div>
@@ -217,7 +263,12 @@
               {$_("energy.campaign.kAnonymityNotMet")}
             </h3>
             <p class="mt-1 text-sm text-yellow-700">
-              {$_("energy.campaign.kAnonymityMessage", { values: { min: stats.min_participants_required, current: campaign.total_participants } })}
+              {$_("energy.campaign.kAnonymityMessage", {
+                values: {
+                  min: stats.min_participants_required,
+                  current: campaign.total_participants,
+                },
+              })}
             </p>
             <p class="mt-1 text-xs text-yellow-600">
               {$_("energy.campaign.gdprProtection")}
@@ -236,10 +287,13 @@
           </h3>
           {#if canUpload()}
             <button
+              data-testid="campaign-upload-toggle-button"
               onclick={() => (showUploadForm = !showUploadForm)}
               class="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-md hover:bg-indigo-700"
             >
-              {showUploadForm ? $_("common.cancel") : "➕ " + $_("energy.uploadBill")}
+              {showUploadForm
+                ? $_("common.cancel")
+                : "➕ " + $_("energy.uploadBill")}
             </button>
           {/if}
         </div>
@@ -286,7 +340,8 @@
                   aria-label={$_("energy.withdrawConsentTitle")}
                   title={$_("energy.withdrawConsentTitle")}
                 >
-                  🗑️ {$_("energy.withdraw")}
+                  <Icone nom="trash" taille={14} class="shrink-0" />
+                  {$_("energy.withdraw")}
                 </button>
               </div>
             {/each}
@@ -341,3 +396,16 @@
     {/if}
   </div>
 {/if}
+
+<!-- Le dialogue qui remplace un `confirm()` natif (#844). -->
+<ConfirmDialog
+  isOpen={suppressionEnAttente}
+  title={$_("common.confirm")}
+  message={$_("energy.withdrawConsentConfirm")}
+  variant="danger"
+  onconfirm={executerLaction}
+  oncancel={() => {
+    suppressionEnAttente = false;
+    cibleEnAttente = null;
+  }}
+/>

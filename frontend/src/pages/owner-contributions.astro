@@ -1,12 +1,17 @@
 ---
-import Layout from '../layouts/Layout.astro';
+import Layout from "../layouts/Layout.astro";
 ---
 
-<Layout title="Appels de fonds - KoproGo">
-  <div class="container mx-auto px-4 py-8">
+<Layout title="Contributions des copropriétaires - KoproGo">
+  <div class="container mx-auto px-4 py-8" data-testid="contributions-list">
     <div class="mb-6">
-      <h1 class="text-3xl font-bold text-gray-900">Gestion des Appels de Fonds</h1>
-      <p class="text-gray-600 mt-2">Créer et gérer les appels de fonds (revenus) de l'ACP</p>
+      <h1 class="text-3xl font-bold text-gray-900">
+        Contributions des copropriétaires
+      </h1>
+      <p class="text-gray-600 mt-2">
+        Suivre les quotes-parts individuelles issues des appels de fonds, et
+        enregistrer les paiements reçus
+      </p>
     </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -24,11 +29,11 @@ import Layout from '../layouts/Layout.astro';
 </Layout>
 
 <script>
-  import { mount } from 'svelte';
-  import OwnerContributionForm from '../components/OwnerContributionForm.svelte';
-  import OwnerContributionList from '../components/OwnerContributionList.svelte';
-  import { authStore } from '../stores/auth';
-  import { get } from 'svelte/store';
+  import { mount } from "svelte";
+  import OwnerContributionForm from "../components/OwnerContributionForm.svelte";
+  import OwnerContributionList from "../components/OwnerContributionList.svelte";
+  import { authStore } from "../stores/auth";
+  import { get } from "svelte/store";
 
   // localStorage.getItem('organizationId') est une clé qui n'a jamais existé
   // depuis la refonte JWT/cookie (WP-FE1) — organizationId était toujours
@@ -38,10 +43,11 @@ import Layout from '../layouts/Layout.astro';
   // `get(authStore)` course contre l'hydratation et lit un store encore vide.
   await authStore.init();
   const auth = get(authStore);
-  const organizationId = auth.user?.organizationId || auth.user?.activeRole?.organizationId || '';
+  const organizationId =
+    auth.user?.organizationId || auth.user?.activeRole?.organizationId || "";
 
   // Mount the form component using Svelte 5 API
-  const formContainer = document.getElementById('contribution-form-container');
+  const formContainer = document.getElementById("contribution-form-container");
   if (formContainer) {
     mount(OwnerContributionForm as any, {
       target: formContainer,
@@ -50,20 +56,20 @@ import Layout from '../layouts/Layout.astro';
         onSuccess: () => {
           // Reload the list when a new contribution is created
           window.location.reload();
-        }
-      }
+        },
+      },
     });
   }
 
   // Mount the list component using Svelte 5 API
-  const listContainer = document.getElementById('contribution-list-container');
+  const listContainer = document.getElementById("contribution-list-container");
   if (listContainer) {
     mount(OwnerContributionList as any, {
       target: listContainer,
       props: {
         organizationId,
-        ownerId: null // Show all contributions for the organization
-      }
+        ownerId: null, // Show all contributions for the organization
+      },
     });
   }
 </script>

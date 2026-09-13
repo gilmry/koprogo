@@ -38,6 +38,43 @@ export async function listAcps(): Promise<AcpResponseDto[]> {
 }
 
 /**
+ * Une ACP avec ses métriques agrégées.
+ *
+ * Le type n'est pas tiré de `components["schemas"]` parce que le DTO backend
+ * emploie `#[serde(flatten)]` sur l'ACP : `utoipa` ne le décrit pas comme une
+ * intersection dans le schéma généré. Le décrire ici, à la main, avec ce
+ * commentaire, vaut mieux qu'un `any` — mais c'est une dette à effacer quand
+ * le contrat OpenAPI couvrira ce cas.
+ */
+export interface AcpAvecMetriques extends AcpResponseDto {
+  /** Nombre de blocs rattachés à l'ACP. */
+  buildings_count: number;
+  /** Lots effectivement encodés, tous blocs confondus. */
+  units_count: number;
+  /** Lots déclarés à l'acte de base, sommés sur les blocs. */
+  declared_units_total: number;
+  /**
+   * Somme exacte des quotités, servie en CHAÎNE.
+   *
+   * Une quotité est juridiquement opposable : la convertir en `number` pour
+   * l'afficher introduirait une erreur de représentation sur une valeur
+   * exacte. On la compare et on l'affiche telle quelle.
+   */
+  quota_sum: string;
+}
+
+/**
+ * Les ACP du périmètre, avec leurs métriques.
+ *
+ * Route distincte de `listAcps` : les métriques coûtent quatre sous-requêtes
+ * par ligne côté serveur, et un sélecteur qui n'a besoin que des noms ne doit
+ * pas les payer.
+ */
+export async function listAcpsWithMetrics(): Promise<AcpAvecMetriques[]> {
+  return api.get<AcpAvecMetriques[]>("/acps/with-metrics");
+}
+
+/**
  * Crée une ACP (superadmin, ou admin dans son propre cabinet).
  */
 export async function createAcp(dto: CreateAcpDto): Promise<AcpResponseDto> {

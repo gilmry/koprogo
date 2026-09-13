@@ -1,11 +1,7 @@
 <script lang="ts">
   // Svelte 5 runes mode
-  import { _ } from '../../lib/i18n';
-  import {
-    ticketsApi,
-    TicketStatus,
-    type Ticket,
-  } from "../../lib/api/tickets";
+  import { _ } from "../../lib/i18n";
+  import { ticketsApi, TicketStatus, type Ticket } from "../../lib/api/tickets";
   import { formatDateTime } from "../../lib/utils/date.utils";
   import { isOverdue as checkOverdue } from "../../lib/utils/date.utils";
   import { withErrorHandling } from "../../lib/utils/error.utils";
@@ -77,57 +73,72 @@
     const contractorId = detail.contractorId;
     const result = await withErrorHandling({
       action: () => ticketsApi.assign(ticket.id, contractorId),
-      setLoading: (v: boolean) => actionLoading = v,
+      setLoading: (v: boolean) => (actionLoading = v),
       successMessage: $_("tickets.assigned_successfully"),
       errorMessage: $_("tickets.assign_failed"),
     });
-    if (result) { ticket = result; onupdated?.(ticket); }
+    if (result) {
+      ticket = result;
+      onupdated?.(ticket);
+    }
   }
 
   async function handleResolve() {
     const result = await withErrorHandling({
       action: () => ticketsApi.resolve(ticket.id),
-      setLoading: (v: boolean) => actionLoading = v,
+      setLoading: (v: boolean) => (actionLoading = v),
       successMessage: $_("tickets.marked_resolved"),
       errorMessage: $_("tickets.resolve_failed"),
     });
-    if (result) { ticket = result; onupdated?.(ticket); }
+    if (result) {
+      ticket = result;
+      onupdated?.(ticket);
+    }
   }
 
   async function handleClose() {
     const result = await withErrorHandling({
       action: () => ticketsApi.close(ticket.id),
-      setLoading: (v: boolean) => actionLoading = v,
+      setLoading: (v: boolean) => (actionLoading = v),
       successMessage: $_("tickets.closed"),
       errorMessage: $_("tickets.close_failed"),
     });
-    if (result) { ticket = result; onupdated?.(ticket); }
+    if (result) {
+      ticket = result;
+      onupdated?.(ticket);
+    }
   }
 
   async function handleCancel() {
     const result = await withErrorHandling({
       action: () => ticketsApi.cancel(ticket.id),
-      setLoading: (v: boolean) => actionLoading = v,
+      setLoading: (v: boolean) => (actionLoading = v),
       successMessage: $_("tickets.cancelled"),
       errorMessage: $_("tickets.cancel_failed"),
     });
-    if (result) { ticket = result; onupdated?.(ticket); }
+    if (result) {
+      ticket = result;
+      onupdated?.(ticket);
+    }
   }
 
   async function handleReopen() {
     const result = await withErrorHandling({
       action: () => ticketsApi.reopen(ticket.id),
-      setLoading: (v: boolean) => actionLoading = v,
+      setLoading: (v: boolean) => (actionLoading = v),
       successMessage: $_("tickets.reopened"),
       errorMessage: $_("tickets.reopen_failed"),
     });
-    if (result) { ticket = result; onupdated?.(ticket); }
+    if (result) {
+      ticket = result;
+      onupdated?.(ticket);
+    }
   }
 
   async function handleDelete() {
     const result = await withErrorHandling({
       action: () => ticketsApi.delete(ticket.id),
-      setLoading: (v: boolean) => actionLoading = v,
+      setLoading: (v: boolean) => (actionLoading = v),
       successMessage: $_("tickets.deleted"),
       errorMessage: $_("tickets.delete_failed"),
     });
@@ -136,13 +147,21 @@
   }
 </script>
 
-<div class="bg-white shadow rounded-lg overflow-hidden" data-testid="ticket-detail">
+<div
+  class="bg-white shadow rounded-lg overflow-hidden"
+  data-testid="ticket-detail"
+>
   <!-- Header -->
   <div class="px-6 py-4 border-b border-gray-200">
     <div class="flex items-start justify-between">
       <div class="flex-1">
         <div class="flex items-center space-x-3 mb-2">
-          <h1 class="text-2xl font-bold text-gray-900" data-testid="ticket-detail-title">{ticket.title}</h1>
+          <h1
+            class="text-2xl font-bold text-gray-900"
+            data-testid="ticket-detail-title"
+          >
+            {ticket.title}
+          </h1>
           {#if checkOverdue(ticket.due_date, ticket.status)}
             <span
               class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-800"
@@ -173,19 +192,33 @@
       <!-- Actions -->
       <div class="flex flex-col space-y-2">
         {#if canManage && ticket.status === TicketStatus.Open}
-          <Button onclick={() => (showAssignModal = true)} size="sm" data-testid="ticket-assign-btn">
+          <Button
+            onclick={() => (showAssignModal = true)}
+            size="sm"
+            data-testid="ticket-assign-btn"
+          >
             {$_("tickets.assign_to_contractor")}
           </Button>
         {/if}
 
         {#if (isContractor || canManage) && ticket.status === TicketStatus.InProgress}
-          <Button onclick={handleResolve} loading={actionLoading} size="sm" data-testid="ticket-resolve-btn">
+          <Button
+            onclick={handleResolve}
+            loading={actionLoading}
+            size="sm"
+            data-testid="ticket-resolve-btn"
+          >
             {$_("tickets.mark_resolved")}
           </Button>
         {/if}
 
         {#if canManage && ticket.status === TicketStatus.Resolved}
-          <Button onclick={handleClose} loading={actionLoading} size="sm" data-testid="ticket-close-btn">
+          <Button
+            onclick={handleClose}
+            loading={actionLoading}
+            size="sm"
+            data-testid="ticket-close-btn"
+          >
             {$_("tickets.close_ticket")}
           </Button>
         {/if}
@@ -233,21 +266,39 @@
   <div class="px-6 py-4 space-y-6">
     <!-- Description -->
     <div>
-      <h2 class="text-lg font-semibold text-gray-900 mb-2">{$_("tickets.description")}</h2>
-      <p class="text-gray-700 whitespace-pre-wrap" data-testid="ticket-detail-description">{ticket.description}</p>
+      <h2 class="text-lg font-semibold text-gray-900 mb-2">
+        {$_("tickets.description")}
+      </h2>
+      <p
+        class="text-gray-700 whitespace-pre-wrap"
+        data-testid="ticket-detail-description"
+      >
+        {ticket.description}
+      </p>
     </div>
 
     <!-- Metadata Grid -->
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6" data-testid="ticket-detail-metadata">
+    <div
+      class="grid grid-cols-1 md:grid-cols-2 gap-6"
+      data-testid="ticket-detail-metadata"
+    >
       <!-- Left column -->
       <div class="space-y-4">
         <div>
-          <dt class="text-sm font-medium text-gray-500">{$_("tickets.category")}</dt>
-          <dd class="mt-1 text-sm text-gray-900">{$_(`tickets.categories.${ticket.category.charAt(0).toLowerCase() + ticket.category.slice(1)}`)}</dd>
+          <dt class="text-sm font-medium text-gray-500">
+            {$_("tickets.category")}
+          </dt>
+          <dd class="mt-1 text-sm text-gray-900">
+            {$_(
+              `tickets.categories.${ticket.category.charAt(0).toLowerCase() + ticket.category.slice(1)}`,
+            )}
+          </dd>
         </div>
 
         <div>
-          <dt class="text-sm font-medium text-gray-500">{$_("tickets.requester")}</dt>
+          <dt class="text-sm font-medium text-gray-500">
+            {$_("tickets.requester")}
+          </dt>
           <dd class="mt-1 text-sm text-gray-900">
             {ticket.requester_name || $_("common.unknown")}
           </dd>
@@ -255,13 +306,17 @@
 
         {#if ticket.unit_number}
           <div>
-            <dt class="text-sm font-medium text-gray-500">{$_("tickets.unit")}</dt>
+            <dt class="text-sm font-medium text-gray-500">
+              {$_("tickets.unit")}
+            </dt>
             <dd class="mt-1 text-sm text-gray-900">{ticket.unit_number}</dd>
           </div>
         {/if}
 
         <div>
-          <dt class="text-sm font-medium text-gray-500">{$_("tickets.created_at")}</dt>
+          <dt class="text-sm font-medium text-gray-500">
+            {$_("tickets.created_at")}
+          </dt>
           <dd class="mt-1 text-sm text-gray-900">
             {formatDateTime(ticket.created_at)}
           </dd>
@@ -281,7 +336,9 @@
 
         {#if ticket.due_date}
           <div>
-            <dt class="text-sm font-medium text-gray-500">{$_("tickets.due_date")}</dt>
+            <dt class="text-sm font-medium text-gray-500">
+              {$_("tickets.due_date")}
+            </dt>
             <dd class="mt-1 text-sm text-gray-900">
               {formatDateTime(ticket.due_date)}
             </dd>
@@ -290,7 +347,9 @@
 
         {#if ticket.resolved_at}
           <div>
-            <dt class="text-sm font-medium text-gray-500">{$_("tickets.resolved_at")}</dt>
+            <dt class="text-sm font-medium text-gray-500">
+              {$_("tickets.resolved_at")}
+            </dt>
             <dd class="mt-1 text-sm text-gray-900">
               {formatDateTime(ticket.resolved_at)}
             </dd>
@@ -299,7 +358,9 @@
 
         {#if ticket.closed_at}
           <div>
-            <dt class="text-sm font-medium text-gray-500">{$_("tickets.closed_at")}</dt>
+            <dt class="text-sm font-medium text-gray-500">
+              {$_("tickets.closed_at")}
+            </dt>
             <dd class="mt-1 text-sm text-gray-900">
               {formatDateTime(ticket.closed_at)}
             </dd>
@@ -307,7 +368,9 @@
         {/if}
 
         <div>
-          <dt class="text-sm font-medium text-gray-500">{$_("tickets.last_updated")}</dt>
+          <dt class="text-sm font-medium text-gray-500">
+            {$_("tickets.last_updated")}
+          </dt>
           <dd class="mt-1 text-sm text-gray-900">
             {formatDateTime(ticket.updated_at)}
           </dd>

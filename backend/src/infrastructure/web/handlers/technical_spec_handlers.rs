@@ -16,6 +16,7 @@ use crate::application::error::AppError;
 use crate::domain::entities::{
     SemVer, SignatoryRole, TechnicalSpec, TechnicalSpecSignature, TechnicalSpecStatus,
 };
+use crate::infrastructure::web::middleware::scope_guard::verify_technical_spec_org_access;
 use crate::infrastructure::web::{AppState, AuthenticatedUser};
 use actix_web::{get, post, web, HttpResponse};
 use chrono::{DateTime, Utc};
@@ -229,6 +230,21 @@ pub async fn bump_technical_spec(
 ) -> Result<HttpResponse, AppError> {
     require_syndic_or_superadmin(&user)?;
     let prev_id = path.into_inner();
+
+    // Cloisonnement : cette fiche doit relever d'une ACP que cet utilisateur a
+    // le droit de voir. `require_syndic_or_superadmin` vérifie le RÔLE et rien
+    // d'autre — un syndic de l'organisation A y passait pour agir sur la fiche
+    // technique de l'organisation B (#772).
+    //
+    // Le périmètre est l'ACP et non l'immeuble : `TechnicalSpec.building_id`
+    // est optionnel, `acp_id` ne l'est pas.
+    verify_technical_spec_org_access(
+        &user,
+        prev_id,
+        &state.technical_spec_use_cases,
+        &state.acp_use_cases,
+    )
+    .await?;
     let payload = body.into_inner();
     let new_version = SemVer::from_str(&payload.version)?;
     let new_required = match payload.required_signatures {
@@ -274,6 +290,18 @@ pub async fn submit_technical_spec(
 ) -> Result<HttpResponse, AppError> {
     require_syndic_or_superadmin(&user)?;
     let id = path.into_inner();
+
+    // Cloisonnement : cette fiche doit relever d'une ACP que cet utilisateur a
+    // le droit de voir. `require_syndic_or_superadmin` ne vérifie que le RÔLE
+    // (#772). Périmètre = ACP, `building_id` étant optionnel sur l'entité.
+    verify_technical_spec_org_access(
+        &user,
+        id,
+        &state.technical_spec_use_cases,
+        &state.acp_use_cases,
+    )
+    .await?;
+
     let spec = state
         .technical_spec_use_cases
         .submit_for_signatures(id)
@@ -306,6 +334,36 @@ pub async fn sign_technical_spec(
     body: web::Json<SignTechnicalSpecRequest>,
 ) -> Result<HttpResponse, AppError> {
     let spec_id = path.into_inner();
+
+    // Cloisonnement : cette fiche doit relever d'une ACP que cet utilisateur a
+    // le droit de voir. `require_syndic_or_superadmin` vérifie le RÔLE et rien
+    // d'autre — un syndic de l'organisation A y passait pour agir sur la fiche
+    // technique de l'organisation B (#772).
+    //
+    // Le périmètre est l'ACP et non l'immeuble : `TechnicalSpec.building_id`
+    // est optionnel, `acp_id` ne l'est pas.
+    verify_technical_spec_org_access(
+        &user,
+        spec_id,
+        &state.technical_spec_use_cases,
+        &state.acp_use_cases,
+    )
+    .await?;
+
+    // Cloisonnement : cette fiche doit relever d'une ACP que cet utilisateur a
+    // le droit de voir. `require_syndic_or_superadmin` vérifie le RÔLE et rien
+    // d'autre — un syndic de l'organisation A y passait pour agir sur la fiche
+    // technique de l'organisation B (#772).
+    //
+    // Le périmètre est l'ACP et non l'immeuble : `TechnicalSpec.building_id`
+    // est optionnel, `acp_id` ne l'est pas.
+    verify_technical_spec_org_access(
+        &user,
+        spec_id,
+        &state.technical_spec_use_cases,
+        &state.acp_use_cases,
+    )
+    .await?;
     let payload = body.into_inner();
     let role = SignatoryRole::from_str(&payload.role)?;
 

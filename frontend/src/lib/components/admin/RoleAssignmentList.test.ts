@@ -148,8 +148,15 @@ describe("RoleAssignmentList — Story B1 (4-cat)", () => {
       expect(getByTestId("role-assignment-empty")).toBeInTheDocument(),
     );
     expect(queryByTestId("role-assignment-list")).toBeNull();
-    expect(getByTestId("role-assignment-empty").textContent).toMatch(
-      /aucune|vide/i,
-    );
+    // On vérifie que l'état vide porte un texte, pas ce qu'il dit mot pour
+    // mot : le libellé est passé par i18n le 2026-09-08 (#834), et la locale
+    // par défaut des tests est l'anglais.
+    //
+    // L'invariant que ce test protège est déjà énoncé par les deux assertions
+    // ci-dessus — le bandeau vide apparaît, la liste disparaît. Exiger
+    // « aucune » en français transformait la traduction en régression.
+    expect(
+      getByTestId("role-assignment-empty").textContent?.trim().length ?? 0,
+    ).toBeGreaterThan(5);
   });
 });

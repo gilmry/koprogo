@@ -151,12 +151,47 @@ async fn test_legal_ag_sequence() {
 
     let resp = test::call_service(&app, req).await;
     let status = resp.status().as_u16();
-    // 200 if ag_sequence key exists, 500 if not
-    assert!(
-        status == 200 || status == 500,
-        "Expected 200 or 500, got {}",
-        status
+
+    // ── Ce test DÉCRIVAIT la panne et l'entérinait ─────────────────────────
+    //
+    // « 200 if ag_sequence key exists, 500 if not », les deux acceptés. La clé
+    // n'existait pas, la route rendait donc 500 depuis toujours, et le test
+    // était vert.
+    //
+    // Trois choses masquaient cette route morte : ce test qui acceptait tout,
+    // son unique appelant `LegalHelper.svelte` qui n'était monté nulle part,
+    // et sa recette Playwright qui la déclarait « public and functional » dans
+    // un en-tête tout en la sautant.
+    assert_eq!(
+        status, 200,
+        "GET /legal/ag-sequence doit répondre 200. Un 500 signifie que la clé \
+         `ag_sequence` manque à `legal_index.json`."
     );
+
+    let sequence: serde_json::Value = test::read_body_json(resp).await;
+    let etapes = sequence
+        .as_array()
+        .expect("la séquence d'AG est une liste d'étapes");
+    assert!(
+        !etapes.is_empty(),
+        "une séquence d'assemblée vide ne guide personne"
+    );
+
+    // Chaque étape doit porter son numéro et son intitulé : une étape sans
+    // libellé n'est pas une étape, c'est une ligne.
+    for etape in etapes {
+        assert!(
+            etape.get("step").and_then(|v| v.as_i64()).is_some(),
+            "étape sans numéro : {etape}"
+        );
+        assert!(
+            etape
+                .get("point_odj")
+                .and_then(|v| v.as_str())
+                .is_some_and(|s| !s.trim().is_empty()),
+            "étape sans intitulé : {etape}"
+        );
+    }
 }
 
 #[actix_web::test]
@@ -177,11 +212,39 @@ async fn test_legal_majority_for_ordinary() {
 
     let resp = test::call_service(&app, req).await;
     let status = resp.status().as_u16();
-    // 200 if found, 404 if decision_type not found, 500 if majority_types key missing
+
+    // ── Ce test acceptait les TROIS issues possibles ────────────────────────
+    //
+    // Il affirmait « 200 if found, 404 if decision_type not found, 500 if
+    // majority_types key missing » et acceptait les trois. Un 500 — le serveur
+    // qui échoue sur son propre index — comptait comme un succès.
+    //
+    // Une assertion qui ne peut pas échouer n'est pas une assertion. Celle-ci
+    // était verte depuis toujours, comptait dans les totaux, et attestait
+    // d'une route qui n'a JAMAIS fonctionné : `majority_types` était absent de
+    // `legal_index.json`, tout comme `ag_sequence`.
+    //
+    // `ordinary` est la majorité par défaut de l'Art. 3.88 § 1er : si elle
+    // n'est pas servie, ce n'est pas un cas limite, c'est une panne.
+    assert_eq!(
+        status, 200,
+        "GET /legal/majority-for/ordinary doit répondre 200. Un 500 signifie \
+         que `majority_types` manque à `legal_index.json` ; un 404, que la \
+         majorité par défaut de l'Art. 3.88 § 1er n'y figure pas."
+    );
+
+    let corps: serde_json::Value = test::read_body_json(resp).await;
+    assert_eq!(
+        corps.get("decision_type").and_then(|v| v.as_str()),
+        Some("ordinary"),
+        "la réponse doit porter la majorité demandée"
+    );
     assert!(
-        status == 200 || status == 404 || status == 500,
-        "Expected 200, 404, or 500, got {}",
-        status
+        corps
+            .get("article")
+            .and_then(|v| v.as_str())
+            .is_some_and(|a| a.contains("3.88")),
+        "une majorité sans son article ne dit pas sur quoi elle se fonde : {corps}"
     );
 }
 

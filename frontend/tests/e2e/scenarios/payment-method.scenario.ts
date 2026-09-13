@@ -11,6 +11,12 @@
  * Duree video attendue : ~40-50 secondes (rythme humain)
  */
 import { test, expect } from "@playwright/test";
+import { ADMIN_PASSWORD } from "../helpers/identifiants";
+import {
+  amorce,
+  aucuneErreurAffichee,
+  confirmerSiDemande,
+} from "../helpers/amorcage";
 import {
   humanLogin,
   humanFill,
@@ -21,7 +27,7 @@ import {
   PACE,
 } from "../helpers/video-pace";
 
-const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
+import { API_BASE } from "../helpers/adresses";
 
 test.describe("Scenario: Gestion des moyens de paiement (Alice)", () => {
   test.setTimeout(120_000);
@@ -31,9 +37,9 @@ test.describe("Scenario: Gestion des moyens de paiement (Alice)", () => {
   test.beforeAll(async ({ request }) => {
     // 1. Login admin
     const adminResp = await request.post(`${API_BASE}/auth/login`, {
-      data: { email: "admin@koprogo.com", password: "admin123" },
+      data: { email: "admin@koprogo.com", password: ADMIN_PASSWORD },
     });
-    const admin = await adminResp.json();
+    const admin = await amorce(adminResp, "POST /auth/login");
     const adminHeaders = { Authorization: `Bearer ${admin.token}` };
 
     // 2. Seed the world
@@ -50,7 +56,7 @@ test.describe("Scenario: Gestion des moyens de paiement (Alice)", () => {
 
   test.afterAll(async ({ request }) => {
     const adminResp = await request.post(`${API_BASE}/auth/login`, {
-      data: { email: "admin@koprogo.com", password: "admin123" },
+      data: { email: "admin@koprogo.com", password: ADMIN_PASSWORD },
     });
     const admin = await adminResp.json();
     await request.delete(`${API_BASE}/seed/scenario/world`, {
@@ -70,7 +76,7 @@ test.describe("Scenario: Gestion des moyens de paiement (Alice)", () => {
     // ============================================================
     // ETAPE 2 : Navigation vers Moyens de paiement via le menu
     // ============================================================
-    await humanClick(page, "nav-link-moyens-paiement");
+    await humanClick(page, "nav-link-owner-payment-methods");
     await waitForSpinner(page);
     await page.waitForTimeout(PACE.AFTER_NAVIGATION);
 
@@ -92,6 +98,8 @@ test.describe("Scenario: Gestion des moyens de paiement (Alice)", () => {
     // ETAPE 4 : Cliquer sur "Ajouter un moyen de paiement"
     // ============================================================
     await humanClick(page, "add-payment-method-btn");
+    await confirmerSiDemande(page);
+    await aucuneErreurAffichee(page, "add-payment-method-btn");
     await page.waitForTimeout(PACE.AFTER_NAVIGATION);
 
     await expect(page.getByTestId("method-type-select")).toBeVisible({
@@ -108,11 +116,17 @@ test.describe("Scenario: Gestion des moyens de paiement (Alice)", () => {
     // Stripe Payment Method ID
     await humanFill(page, "stripe-id-input", "pm_test_alice_4242");
 
-    // Card Brand
-    await humanFill(page, "brand-input", "Visa");
-
-    // Last 4
-    await humanFill(page, "last4-input", "4242");
+    // Identifiant client Stripe.
+    //
+    // Le scénario remplissait auparavant `brand-input` et `last4-input` — la
+    // marque de la carte et ses quatre derniers chiffres. Ces champs
+    // n'existent plus dans `PaymentMethodAddModal.svelte`, qui porte
+    // désormais des identifiants Stripe. La recette attendait donc un écran
+    // disparu, et échouait sur `brand-input` introuvable.
+    //
+    // Conserver la marque dans le libellé (« Visa Alice ****4242 » plus haut)
+    // garde la vidéo lisible sans redemander un champ qui n'est plus là.
+    await humanFill(page, "stripe-customer-id-input", "cus_test_alice");
 
     await stepPause(page);
 
@@ -120,6 +134,8 @@ test.describe("Scenario: Gestion des moyens de paiement (Alice)", () => {
     // ETAPE 6 : Soumettre le formulaire
     // ============================================================
     await humanClick(page, "submit-btn");
+    await confirmerSiDemande(page);
+    await aucuneErreurAffichee(page, "submit-btn");
     await waitForSpinner(page);
     await page.waitForTimeout(PACE.AFTER_NAVIGATION);
 

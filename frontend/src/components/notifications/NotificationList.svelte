@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { _ } from "svelte-i18n";
   import { onMount } from "svelte";
   import {
     notificationsApi,
@@ -20,10 +21,11 @@
   async function loadNotifications() {
     loading = true;
     const result = await withErrorHandling({
-      action: () => filter === "unread"
-        ? notificationsApi.getUnread()
-        : notificationsApi.listMy(),
-      errorMessage: "Failed to load notifications",
+      action: () =>
+        filter === "unread"
+          ? notificationsApi.getUnread()
+          : notificationsApi.listMy(),
+      errorMessage: $_("notifications.loadError"),
     });
     if (result) notifications = result;
     loading = false;
@@ -32,8 +34,8 @@
   async function handleMarkAllRead() {
     await withErrorHandling({
       action: () => notificationStore.markAllAsRead(),
-      successMessage: "All notifications marked as read",
-      errorMessage: "Failed to mark all as read",
+      successMessage: $_("notifications.markAllReadSuccess"),
+      errorMessage: $_("notifications.markAllReadError"),
       onSuccess: () => loadNotifications(),
     });
   }
@@ -50,7 +52,7 @@
   <div class="px-6 py-4 border-b border-gray-200">
     <div class="flex items-center justify-between mb-4">
       <h2 class="text-xl font-semibold text-gray-900">
-        Notifications
+        {$_("notifications.title")}
         <span class="ml-2 text-sm text-gray-500">
           ({notifications.length})
         </span>
@@ -62,14 +64,15 @@
             class="text-sm text-blue-600 hover:text-blue-700 font-medium"
             data-testid="mark-all-read-button"
           >
-            Mark all read
+            {$_("notifications.markAllRead")}
           </button>
         {/if}
         <button
+          data-testid="notifications-retry-button"
           on:click={loadNotifications}
           class="px-3 py-1 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
         >
-          Refresh
+          {$_("notifications.refresh")}
         </button>
       </div>
     </div>
@@ -77,20 +80,22 @@
     <!-- Filter -->
     <div class="flex space-x-2">
       <button
+        data-testid="notifications-filter-all-button"
         on:click={() => (filter = "all")}
         class="px-4 py-2 text-sm font-medium rounded-md {filter === 'all'
           ? 'bg-blue-100 text-blue-700'
           : 'text-gray-600 hover:bg-gray-100'}"
       >
-        All
+        {$_("notifications.filterAll")}
       </button>
       <button
+        data-testid="notifications-filter-unread-button"
         on:click={() => (filter = "unread")}
         class="px-4 py-2 text-sm font-medium rounded-md {filter === 'unread'
           ? 'bg-blue-100 text-blue-700'
           : 'text-gray-600 hover:bg-gray-100'}"
       >
-        Unread
+        {$_("notifications.filterUnread")}
       </button>
     </div>
   </div>
@@ -103,12 +108,12 @@
           class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"
           data-testid="notification-list-spinner"
         ></div>
-        <p class="mt-4">Loading notifications...</p>
+        <p class="mt-4">{$_("notifications.loading")}</p>
       </div>
     {:else if notifications.length === 0}
       <div class="px-6 py-12 text-center text-gray-500">
         <svg
-          class="mx-auto h-16 w-16 text-gray-400"
+          class="mx-auto h-16 w-16 text-muted"
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"
@@ -121,17 +126,22 @@
           />
         </svg>
         <p class="mt-4 text-lg font-medium">
-          {filter === "unread" ? "No unread notifications" : "No notifications"}
+          {filter === "unread"
+            ? $_("notifications.emptyUnread")
+            : $_("notifications.emptyAll")}
         </p>
         <p class="mt-2 text-sm">
           {filter === "unread"
-            ? "All caught up! You're all set."
-            : "You don't have any notifications yet."}
+            ? $_("notifications.emptyUnreadHint")
+            : $_("notifications.emptyAllHint")}
         </p>
       </div>
     {:else}
       {#each notifications as notification (notification.id)}
-        <NotificationItem {notification} ondeleted={() => loadNotifications()} />
+        <NotificationItem
+          {notification}
+          ondeleted={() => loadNotifications()}
+        />
       {/each}
     {/if}
   </div>

@@ -45,20 +45,21 @@ impl ConvocationRepository for PostgresConvocationRepository {
         let row = sqlx::query!(
             r#"
             INSERT INTO convocations (
-                id, organization_id, building_id, meeting_id, meeting_type, meeting_date,
+                id, acp_id, organization_id, building_id, meeting_id, meeting_type, meeting_date,
                 status, minimum_send_date, actual_send_date, scheduled_send_date,
                 pdf_file_path, language, total_recipients, opened_count,
                 will_attend_count, will_not_attend_count, reminder_sent_at,
                 first_meeting_id, no_quorum_required, created_at, updated_at, created_by
             )
-            VALUES ($1, $2, $3, $4, $5::TEXT::convocation_type, $6, $7::TEXT::convocation_status, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22)
-            RETURNING id, organization_id, building_id, meeting_id, meeting_type::text AS "meeting_type!", meeting_date,
+            VALUES ($1, $2, $3, $4, $5, $6::TEXT::convocation_type, $7, $8::TEXT::convocation_status, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23)
+            RETURNING id, acp_id, organization_id, building_id, meeting_id, meeting_type::text AS "meeting_type!", meeting_date,
                       status::text AS "status!", minimum_send_date, actual_send_date, scheduled_send_date,
                       pdf_file_path, language, total_recipients, opened_count,
                       will_attend_count, will_not_attend_count, reminder_sent_at,
                       first_meeting_id, no_quorum_required, created_at, updated_at, created_by
             "#,
             convocation.id,
+            convocation.acp_id,
             convocation.organization_id,
             convocation.building_id,
             convocation.meeting_id,
@@ -87,6 +88,7 @@ impl ConvocationRepository for PostgresConvocationRepository {
 
         Ok(Convocation {
             id: row.id,
+            acp_id: row.acp_id,
             organization_id: row.organization_id,
             building_id: row.building_id,
             meeting_id: row.meeting_id,
@@ -114,7 +116,7 @@ impl ConvocationRepository for PostgresConvocationRepository {
     async fn find_by_id(&self, id: Uuid) -> Result<Option<Convocation>, String> {
         let row = sqlx::query!(
             r#"
-            SELECT id, organization_id, building_id, meeting_id, meeting_type::text AS "meeting_type!", meeting_date,
+            SELECT id, acp_id, organization_id, building_id, meeting_id, meeting_type::text AS "meeting_type!", meeting_date,
                    status::text AS "status!", minimum_send_date, actual_send_date, scheduled_send_date,
                    pdf_file_path, language, total_recipients, opened_count,
                    will_attend_count, will_not_attend_count, reminder_sent_at,
@@ -131,6 +133,7 @@ impl ConvocationRepository for PostgresConvocationRepository {
         match row {
             Some(row) => Ok(Some(Convocation {
                 id: row.id,
+                acp_id: row.acp_id,
                 organization_id: row.organization_id,
                 building_id: row.building_id,
                 meeting_id: row.meeting_id,
@@ -160,7 +163,7 @@ impl ConvocationRepository for PostgresConvocationRepository {
     async fn find_by_meeting_id(&self, meeting_id: Uuid) -> Result<Option<Convocation>, String> {
         let row = sqlx::query!(
             r#"
-            SELECT id, organization_id, building_id, meeting_id, meeting_type::text AS "meeting_type!", meeting_date,
+            SELECT id, acp_id, organization_id, building_id, meeting_id, meeting_type::text AS "meeting_type!", meeting_date,
                    status::text AS "status!", minimum_send_date, actual_send_date, scheduled_send_date,
                    pdf_file_path, language, total_recipients, opened_count,
                    will_attend_count, will_not_attend_count, reminder_sent_at,
@@ -177,6 +180,7 @@ impl ConvocationRepository for PostgresConvocationRepository {
         match row {
             Some(row) => Ok(Some(Convocation {
                 id: row.id,
+                acp_id: row.acp_id,
                 organization_id: row.organization_id,
                 building_id: row.building_id,
                 meeting_id: row.meeting_id,
@@ -206,7 +210,7 @@ impl ConvocationRepository for PostgresConvocationRepository {
     async fn find_by_building(&self, building_id: Uuid) -> Result<Vec<Convocation>, String> {
         let rows = sqlx::query!(
             r#"
-            SELECT id, organization_id, building_id, meeting_id, meeting_type::text AS "meeting_type!", meeting_date,
+            SELECT id, acp_id, organization_id, building_id, meeting_id, meeting_type::text AS "meeting_type!", meeting_date,
                    status::text AS "status!", minimum_send_date, actual_send_date, scheduled_send_date,
                    pdf_file_path, language, total_recipients, opened_count,
                    will_attend_count, will_not_attend_count, reminder_sent_at,
@@ -225,6 +229,7 @@ impl ConvocationRepository for PostgresConvocationRepository {
             .map(|row| {
                 Ok(Convocation {
                     id: row.id,
+                    acp_id: row.acp_id,
                     organization_id: row.organization_id,
                     building_id: row.building_id,
                     meeting_id: row.meeting_id,
@@ -257,13 +262,13 @@ impl ConvocationRepository for PostgresConvocationRepository {
     ) -> Result<Vec<Convocation>, String> {
         let rows = sqlx::query!(
             r#"
-            SELECT id, organization_id, building_id, meeting_id, meeting_type::text AS "meeting_type!", meeting_date,
+            SELECT id, acp_id, organization_id, building_id, meeting_id, meeting_type::text AS "meeting_type!", meeting_date,
                    status::text AS "status!", minimum_send_date, actual_send_date, scheduled_send_date,
                    pdf_file_path, language, total_recipients, opened_count,
                    will_attend_count, will_not_attend_count, reminder_sent_at,
                    first_meeting_id, no_quorum_required, created_at, updated_at, created_by
             FROM convocations
-            WHERE organization_id = $1
+            WHERE acp_id IN (SELECT id FROM acps WHERE organization_id = $1)
             ORDER BY meeting_date DESC
             "#,
             organization_id
@@ -276,6 +281,7 @@ impl ConvocationRepository for PostgresConvocationRepository {
             .map(|row| {
                 Ok(Convocation {
                     id: row.id,
+                    acp_id: row.acp_id,
                     organization_id: row.organization_id,
                     building_id: row.building_id,
                     meeting_id: row.meeting_id,
@@ -311,13 +317,13 @@ impl ConvocationRepository for PostgresConvocationRepository {
 
         let rows = sqlx::query!(
             r#"
-            SELECT id, organization_id, building_id, meeting_id, meeting_type::text AS "meeting_type!", meeting_date,
+            SELECT id, acp_id, organization_id, building_id, meeting_id, meeting_type::text AS "meeting_type!", meeting_date,
                    status::text AS "status!", minimum_send_date, actual_send_date, scheduled_send_date,
                    pdf_file_path, language, total_recipients, opened_count,
                    will_attend_count, will_not_attend_count, reminder_sent_at,
                    first_meeting_id, no_quorum_required, created_at, updated_at, created_by
             FROM convocations
-            WHERE organization_id = $1 AND status = $2::TEXT::convocation_status
+            WHERE acp_id IN (SELECT id FROM acps WHERE organization_id = $1) AND status = $2::TEXT::convocation_status
             ORDER BY meeting_date DESC
             "#,
             organization_id,
@@ -331,6 +337,7 @@ impl ConvocationRepository for PostgresConvocationRepository {
             .map(|row| {
                 Ok(Convocation {
                     id: row.id,
+                    acp_id: row.acp_id,
                     organization_id: row.organization_id,
                     building_id: row.building_id,
                     meeting_id: row.meeting_id,
@@ -360,7 +367,7 @@ impl ConvocationRepository for PostgresConvocationRepository {
     async fn find_pending_scheduled(&self, now: DateTime<Utc>) -> Result<Vec<Convocation>, String> {
         let rows = sqlx::query!(
             r#"
-            SELECT id, organization_id, building_id, meeting_id, meeting_type::text AS "meeting_type!", meeting_date,
+            SELECT id, acp_id, organization_id, building_id, meeting_id, meeting_type::text AS "meeting_type!", meeting_date,
                    status::text AS "status!", minimum_send_date, actual_send_date, scheduled_send_date,
                    pdf_file_path, language, total_recipients, opened_count,
                    will_attend_count, will_not_attend_count, reminder_sent_at,
@@ -381,6 +388,7 @@ impl ConvocationRepository for PostgresConvocationRepository {
             .map(|row| {
                 Ok(Convocation {
                     id: row.id,
+                    acp_id: row.acp_id,
                     organization_id: row.organization_id,
                     building_id: row.building_id,
                     meeting_id: row.meeting_id,
@@ -416,7 +424,7 @@ impl ConvocationRepository for PostgresConvocationRepository {
 
         let rows = sqlx::query!(
             r#"
-            SELECT id, organization_id, building_id, meeting_id, meeting_type::text AS "meeting_type!", meeting_date,
+            SELECT id, acp_id, organization_id, building_id, meeting_id, meeting_type::text AS "meeting_type!", meeting_date,
                    status::text AS "status!", minimum_send_date, actual_send_date, scheduled_send_date,
                    pdf_file_path, language, total_recipients, opened_count,
                    will_attend_count, will_not_attend_count, reminder_sent_at,
@@ -439,6 +447,7 @@ impl ConvocationRepository for PostgresConvocationRepository {
             .map(|row| {
                 Ok(Convocation {
                     id: row.id,
+                    acp_id: row.acp_id,
                     organization_id: row.organization_id,
                     building_id: row.building_id,
                     meeting_id: row.meeting_id,
@@ -478,7 +487,7 @@ impl ConvocationRepository for PostgresConvocationRepository {
                 will_attend_count = $15, will_not_attend_count = $16, reminder_sent_at = $17,
                 first_meeting_id = $18, no_quorum_required = $19, updated_at = $20
             WHERE id = $1
-            RETURNING id, organization_id, building_id, meeting_id, meeting_type::text AS "meeting_type!", meeting_date,
+            RETURNING id, acp_id, organization_id, building_id, meeting_id, meeting_type::text AS "meeting_type!", meeting_date,
                       status::text AS "status!", minimum_send_date, actual_send_date, scheduled_send_date,
                       pdf_file_path, language, total_recipients, opened_count,
                       will_attend_count, will_not_attend_count, reminder_sent_at,
@@ -511,6 +520,7 @@ impl ConvocationRepository for PostgresConvocationRepository {
 
         Ok(Convocation {
             id: row.id,
+            acp_id: row.acp_id,
             organization_id: row.organization_id,
             building_id: row.building_id,
             meeting_id: row.meeting_id,
@@ -577,7 +587,7 @@ impl ConvocationRepository for PostgresConvocationRepository {
             r#"
             SELECT COUNT(*) AS "count!"
             FROM convocations
-            WHERE organization_id = $1 AND status = $2::TEXT::convocation_status
+            WHERE acp_id IN (SELECT id FROM acps WHERE organization_id = $1) AND status = $2::TEXT::convocation_status
             "#,
             organization_id,
             status_str

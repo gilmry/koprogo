@@ -5,8 +5,9 @@ use crate::application::dto::{
 use crate::domain::entities::EtatDateStatus;
 use crate::infrastructure::audit::{AuditEventType, AuditLogEntry};
 use crate::infrastructure::web::handlers::conformity_response::try_build_conformity_response;
+use crate::infrastructure::web::middleware::scope_guard::verify_building_org_access;
 use crate::infrastructure::web::{AppState, AuthenticatedUser};
-use actix_web::{delete, get, post, put, web, HttpResponse, Responder};
+use actix_web::{delete, get, post, put, web, HttpResponse, Responder, ResponseError};
 use serde::Deserialize;
 use uuid::Uuid;
 
@@ -43,6 +44,22 @@ pub async fn create_etat_date(
         }
     };
     request.organization_id = organization_id;
+
+    // Isolation multi-tenant à l'ÉCRITURE : l'immeuble visé doit relever d'une
+    // ACP dont ce syndic a la gestion. L'affectation de `organization_id`
+    // ci-dessus protège le mauvais champ — elle empêche d'estampiller
+    // l'enregistrement au nom d'autrui, pas de le rattacher au patrimoine
+    // d'autrui (audit du 2026-09-02).
+    if let Err(err) = verify_building_org_access(
+        &user,
+        request.building_id,
+        &state.building_use_cases,
+        &state.acp_use_cases,
+    )
+    .await
+    {
+        return err.error_response();
+    }
 
     match state
         .etat_date_use_cases
@@ -172,7 +189,21 @@ pub async fn list_etats_dates(
 pub async fn list_etats_dates_by_unit(
     state: web::Data<AppState>,
     unit_id: web::Path<Uuid>,
+    user: AuthenticatedUser,
 ) -> impl Responder {
+    // Route imbriquee non gardee au releve du 2026-09-06 (issue #772).
+    if let Err(err) = crate::infrastructure::web::middleware::scope_guard::verify_unit_org_access(
+        &user,
+        *unit_id,
+        &state.unit_use_cases,
+        &state.building_use_cases,
+        &state.acp_use_cases,
+    )
+    .await
+    {
+        return err.error_response();
+    }
+
     match state.etat_date_use_cases.list_by_unit(*unit_id).await {
         Ok(etats) => HttpResponse::Ok().json(etats),
         Err(err) => HttpResponse::InternalServerError().json(serde_json::json!({
@@ -186,7 +217,23 @@ pub async fn list_etats_dates_by_unit(
 pub async fn list_etats_dates_by_building(
     state: web::Data<AppState>,
     building_id: web::Path<Uuid>,
+    user: AuthenticatedUser,
 ) -> impl Responder {
+    // Route imbriquee non gardee au releve du 2026-09-06 (issue #772) : elle
+    // servait une sous-collection d'un dossier d'ACP a quiconque connaissait
+    // un identifiant, sans demander d'identite.
+    if let Err(err) =
+        crate::infrastructure::web::middleware::scope_guard::verify_building_org_access(
+            &user,
+            *building_id,
+            &state.building_use_cases,
+            &state.acp_use_cases,
+        )
+        .await
+    {
+        return err.error_response();
+    }
+
     match state
         .etat_date_use_cases
         .list_by_building(*building_id)
@@ -423,6 +470,29 @@ pub async fn delete_etat_date(
     user: AuthenticatedUser,
     id: web::Path<Uuid>,
 ) -> impl Responder {
+    // Cloisonnement AVANT la suppression (#864).
+    //
+    // Un état daté est la pièce qu'un notaire réclame à la vente. L'effacer
+    // n'était soumis à aucun contrôle d'organisation, alors que le LIRE l'était
+    // déjà (`get_etat_date`, même fichier).
+    match state.etat_date_use_cases.get_etat_date(*id).await {
+        Ok(Some(etat_date)) => {
+            if let Err(err) = user.verify_org_access(etat_date.organization_id) {
+                return HttpResponse::Forbidden().json(serde_json::json!({ "error": err }));
+            }
+        }
+        Ok(None) => {
+            return HttpResponse::NotFound().json(serde_json::json!({
+                "error": "État daté not found"
+            }))
+        }
+        Err(err) => {
+            return HttpResponse::InternalServerError().json(serde_json::json!({
+                "error": err.to_string()
+            }))
+        }
+    }
+
     match state.etat_date_use_cases.delete_etat_date(*id).await {
         Ok(true) => {
             AuditLogEntry::new(

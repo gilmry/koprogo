@@ -8,7 +8,7 @@ import { loginAsSyndicWithBuilding } from "./helpers/auth";
  * Covers owner and syndic perspectives.
  */
 
-const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
+import { API_BASE } from "./helpers/adresses";
 
 test.describe("Tickets - Maintenance Requests", () => {
   test("should display tickets list page", async ({ page }) => {
@@ -17,7 +17,7 @@ test.describe("Tickets - Maintenance Requests", () => {
 
     await expect(page.locator("body")).toBeVisible();
     await expect(
-      page.locator("main h1, main h2, [data-testid='tickets-list']").first(),
+      page.locator("[data-testid='tickets-list']").first(),
     ).toBeVisible({ timeout: 10000 });
   });
 
@@ -127,9 +127,7 @@ test.describe("Tickets - Maintenance Requests", () => {
 
     await expect(page.locator("body")).toBeVisible();
     await expect(
-      page
-        .locator("main h1, main h2, [data-testid='work-reports-list']")
-        .first(),
+      page.locator("[data-testid='work-reports-list']").first(),
     ).toBeVisible({ timeout: 10000 });
   });
 });

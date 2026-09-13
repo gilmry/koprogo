@@ -1,10 +1,34 @@
+//! Relevés IoT et compteurs Linky.
+//!
+//! # Le périmètre de ces routes (#864)
+//!
+//! Huit routes de ce module portaient `let _ = auth; // Authentication
+//! required`. La ligne disait vrai et ne protégeait rien : l'extracteur refuse
+//! bien un appel anonyme, mais **l'immeuble est fourni par l'appelant**. Tout
+//! utilisateur authentifié lisait donc les relevés de n'importe quel immeuble
+//! du produit en connaissant son UUID.
+//!
+//! Une courbe de consommation électrique n'est pas une donnée neutre : elle dit
+//! quand le logement est occupé, et quand il ne l'est pas.
+//!
+//! Deux régimes s'appliquent désormais, selon ce que la route parcourt :
+//!
+//! - **route portant un `building_id`** → `verify_building_org_access`, qui
+//!   rattache l'immeuble à l'organisation de l'appelant ;
+//! - **balayage sans immeuble** (`needing-sync`, `expired-tokens`) → réservé au
+//!   superadministrateur, puisqu'il traverse toutes les organisations.
+//!
+//! Les routes d'écriture, elles, passaient déjà `organization_id` au cas
+//! d'usage : elles n'ont pas changé.
+
 use crate::application::dto::{
     ConfigureLinkyDeviceDto, CreateIoTReadingDto, QueryIoTReadingsDto, SyncLinkyDataDto,
 };
 use crate::domain::entities::{DeviceType, MetricType};
+use crate::infrastructure::web::middleware::scope_guard::verify_building_org_access;
 use crate::infrastructure::web::middleware::AuthenticatedUser;
 use crate::infrastructure::web::AppState;
-use actix_web::{error::ErrorBadRequest, web, HttpResponse, Result};
+use actix_web::{error::ErrorBadRequest, web, HttpResponse, ResponseError, Result};
 use chrono::{DateTime, Utc};
 use uuid::Uuid;
 
@@ -102,8 +126,20 @@ pub async fn query_iot_readings(
     query: web::Query<QueryIoTReadingsDto>,
     state: web::Data<AppState>,
 ) -> Result<HttpResponse> {
-    let _ = auth; // Authentication required
-    match state.iot_use_cases.query_readings(query.into_inner()).await {
+    // #864 — voir la note « Le périmètre de ces routes » en tête de module.
+    let requete = query.into_inner();
+    if let Err(err) = verify_building_org_access(
+        &auth,
+        requete.building_id,
+        &state.building_use_cases,
+        &state.acp_use_cases,
+    )
+    .await
+    {
+        return Ok(err.error_response());
+    }
+
+    match state.iot_use_cases.query_readings(requete).await {
         Ok(readings) => Ok(HttpResponse::Ok().json(readings)),
         Err(e) => Ok(HttpResponse::BadRequest().json(serde_json::json!({
             "error": e
@@ -120,8 +156,18 @@ pub async fn get_consumption_stats(
     query: web::Query<serde_json::Value>,
     state: web::Data<AppState>,
 ) -> Result<HttpResponse> {
-    let _ = auth; // Authentication required
+    // #864 — voir la note « Le périmètre de ces routes » en tête de module.
     let building_id = path.into_inner();
+    if let Err(err) = verify_building_org_access(
+        &auth,
+        building_id,
+        &state.building_use_cases,
+        &state.acp_use_cases,
+    )
+    .await
+    {
+        return Ok(err.error_response());
+    }
 
     let metric_type_str = query
         .get("metric_type")
@@ -168,8 +214,18 @@ pub async fn get_daily_aggregates(
     query: web::Query<serde_json::Value>,
     state: web::Data<AppState>,
 ) -> Result<HttpResponse> {
-    let _ = auth; // Authentication required
+    // #864 — voir la note « Le périmètre de ces routes » en tête de module.
     let building_id = path.into_inner();
+    if let Err(err) = verify_building_org_access(
+        &auth,
+        building_id,
+        &state.building_use_cases,
+        &state.acp_use_cases,
+    )
+    .await
+    {
+        return Ok(err.error_response());
+    }
 
     let device_type_str = query
         .get("device_type")
@@ -224,8 +280,18 @@ pub async fn get_monthly_aggregates(
     query: web::Query<serde_json::Value>,
     state: web::Data<AppState>,
 ) -> Result<HttpResponse> {
-    let _ = auth; // Authentication required
+    // #864 — voir la note « Le périmètre de ces routes » en tête de module.
     let building_id = path.into_inner();
+    if let Err(err) = verify_building_org_access(
+        &auth,
+        building_id,
+        &state.building_use_cases,
+        &state.acp_use_cases,
+    )
+    .await
+    {
+        return Ok(err.error_response());
+    }
 
     let device_type_str = query
         .get("device_type")
@@ -280,8 +346,18 @@ pub async fn detect_anomalies(
     query: web::Query<serde_json::Value>,
     state: web::Data<AppState>,
 ) -> Result<HttpResponse> {
-    let _ = auth; // Authentication required
+    // #864 — voir la note « Le périmètre de ces routes » en tête de module.
     let building_id = path.into_inner();
+    if let Err(err) = verify_building_org_access(
+        &auth,
+        building_id,
+        &state.building_use_cases,
+        &state.acp_use_cases,
+    )
+    .await
+    {
+        return Ok(err.error_response());
+    }
 
     let metric_type_str = query
         .get("metric_type")
@@ -364,8 +440,18 @@ pub async fn get_linky_device(
     path: web::Path<Uuid>,
     state: web::Data<AppState>,
 ) -> Result<HttpResponse> {
-    let _ = auth; // Authentication required
+    // #864 — voir la note « Le périmètre de ces routes » en tête de module.
     let building_id = path.into_inner();
+    if let Err(err) = verify_building_org_access(
+        &auth,
+        building_id,
+        &state.building_use_cases,
+        &state.acp_use_cases,
+    )
+    .await
+    {
+        return Ok(err.error_response());
+    }
 
     match state.linky_use_cases.get_linky_device(building_id).await {
         Ok(device) => Ok(HttpResponse::Ok().json(device)),
@@ -479,7 +565,12 @@ pub async fn find_devices_needing_sync(
     auth: AuthenticatedUser,
     state: web::Data<AppState>,
 ) -> Result<HttpResponse> {
-    let _ = auth; // Authentication required
+    // #864 — balayage inter-organisations : superadministrateur seulement.
+    if !auth.is_superadmin() {
+        return Ok(HttpResponse::Forbidden().json(serde_json::json!({
+            "error": "Accès refusé : ce relevé porte sur toutes les organisations."
+        })));
+    }
 
     match state.linky_use_cases.find_devices_needing_sync().await {
         Ok(devices) => Ok(HttpResponse::Ok().json(devices)),
@@ -496,7 +587,12 @@ pub async fn find_devices_with_expired_tokens(
     auth: AuthenticatedUser,
     state: web::Data<AppState>,
 ) -> Result<HttpResponse> {
-    let _ = auth; // Authentication required
+    // #864 — balayage inter-organisations : superadministrateur seulement.
+    if !auth.is_superadmin() {
+        return Ok(HttpResponse::Forbidden().json(serde_json::json!({
+            "error": "Accès refusé : ce relevé porte sur toutes les organisations."
+        })));
+    }
 
     match state
         .linky_use_cases

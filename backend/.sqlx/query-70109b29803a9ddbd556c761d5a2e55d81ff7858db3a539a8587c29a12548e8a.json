@@ -1,0 +1,95 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            SELECT\n                id, acp_id, organization_id, building_id, entry_date, description,\n                document_ref, journal_type, expense_id, contribution_id, created_at, updated_at, created_by\n            FROM journal_entries\n            WHERE id = $1 AND organization_id = $2\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "acp_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 2,
+        "name": "organization_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 3,
+        "name": "building_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 4,
+        "name": "entry_date",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 5,
+        "name": "description",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 6,
+        "name": "document_ref",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 7,
+        "name": "journal_type",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 8,
+        "name": "expense_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 9,
+        "name": "contribution_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 10,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 11,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 12,
+        "name": "created_by",
+        "type_info": "Uuid"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      true,
+      false,
+      true,
+      true,
+      true,
+      true,
+      true,
+      false,
+      false,
+      true
+    ]
+  },
+  "hash": "70109b29803a9ddbd556c761d5a2e55d81ff7858db3a539a8587c29a12548e8a"
+}

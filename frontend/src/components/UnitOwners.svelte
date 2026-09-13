@@ -1,4 +1,5 @@
 <script lang="ts">
+  import BoutonAction from "./ui/BoutonAction.svelte";
   // Svelte 5 runes mode
   import { _ } from "../lib/i18n";
   import { api } from "../lib/api";
@@ -80,12 +81,11 @@
   //   - `currentTotalPercentage` transmis aux modales d'ajout et d'edition,
   //     ou `1 - currentTotalPercentage` donnait NaN, cassant le calcul du
   //     pourcentage encore disponible et le garde-fou de depassement.
-  const pct = (v: string | number | null | undefined): number => {
-    const n = typeof v === "number" ? v : Number.parseFloat(String(v ?? ""));
-    return Number.isFinite(n) ? n : 0;
-  };
   let totalPercentage = $derived(
-    activeOwners.reduce((sum, uo) => sum + pct(uo.ownership_percentage), 0),
+    activeOwners.reduce(
+      (sum, uo) => sum + toNumber(uo.ownership_percentage),
+      0,
+    ),
   );
 
   function handleEditUnitOwner(unitOwner: UnitOwner & { owner?: Owner }) {
@@ -183,20 +183,24 @@
                   </p>
                 </div>
                 {#if canModifyOwnership}
-                  <button
+                  <!--
+                    L'émoji était annoncé en plus de l'`aria-label` : le
+                    bouton s'appelait « crayon Modifier la quotité ».
+                    Ancrages conservés.
+                  -->
+                  <BoutonAction
+                    nom="edit"
+                    ariaLabel={$_("units.edit_quota")}
+                    testId="edit-owner-button"
                     onclick={() => handleEditUnitOwner(unitOwner)}
-                    class="px-2 py-1.5 text-sm font-medium text-white bg-primary-600 rounded hover:bg-primary-700 transition"
-                    aria-label={$_("units.edit_quota")}
-                    title={$_("units.edit_quota")}
-                    data-testid="edit-owner-button">✏️</button
-                  >
-                  <button
+                  />
+                  <BoutonAction
+                    nom="trash"
+                    ton="danger"
+                    ariaLabel={$_("units.remove_owner")}
+                    testId="remove-owner-button"
                     onclick={() => handleDeleteClick(unitOwner)}
-                    class="px-2 py-1.5 text-sm font-medium text-white bg-red-600 rounded hover:bg-red-700 transition"
-                    aria-label={$_("units.remove_owner")}
-                    title={$_("units.remove_owner")}
-                    data-testid="remove-owner-button">🗑️</button
-                  >
+                  />
                 {/if}
               </div>
             </div>
@@ -204,7 +208,8 @@
         {/each}
         <div class="mt-2 p-3 bg-gray-50 border border-gray-200 rounded-lg">
           <div class="flex justify-between items-center">
-            <span class="font-semibold text-gray-700">Total</span><span
+            <span class="font-semibold text-gray-700">{$_("common.total")}</span
+            ><span
               class="text-xl font-bold"
               class:text-green-600={totalPercentage === 1}
               class:text-red-600={totalPercentage !== 1}
@@ -289,6 +294,7 @@
   <div class="fixed inset-0 z-50 overflow-y-auto">
     <div class="flex min-h-screen items-center justify-center p-4">
       <button
+        data-testid="unit-owners-modal-overlay-close-button"
         type="button"
         aria-label={$_("common.closeModal")}
         class="fixed inset-0 bg-black bg-opacity-50 transition-opacity cursor-default"

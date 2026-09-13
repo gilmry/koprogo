@@ -1,7 +1,7 @@
 import { test, expect } from "@playwright/test";
 import { loginAsSyndicWithBuilding } from "../helpers/auth";
 
-const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
+import { API_BASE } from "../helpers/adresses";
 
 async function setupSyndicWithBuilding(page: import("@playwright/test").Page) {
   const ctx = await loginAsSyndicWithBuilding(page, "workreport");
@@ -15,9 +15,7 @@ test.describe("Work Reports - Digital Maintenance Logbook", () => {
 
     await expect(page.locator("body")).toBeVisible();
     await expect(
-      page
-        .locator("main h1, main h2, [data-testid='work-reports-list']")
-        .first(),
+      page.locator("[data-testid='work-reports-list']").first(),
     ).toBeVisible({ timeout: 10000 });
   });
 
@@ -40,7 +38,10 @@ test.describe("Work Reports - Digital Maintenance Logbook", () => {
       },
       headers: { Authorization: `Bearer ${token}` },
     });
-    expect(reportResp.status()).toBe(201);
+    expect(
+      reportResp.status(),
+      `reportResp : ${await reportResp.text().catch(() => "<corps illisible>")}`,
+    ).toBe(201);
     const report = await reportResp.json();
     expect(report.building_id).toBe(buildingId);
   });

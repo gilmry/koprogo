@@ -7,9 +7,13 @@
     ExpertiseLevel,
   } from "../../lib/api/skills";
   import SkillOfferCard from "./SkillOfferCard.svelte";
+  import { _ } from "../../lib/i18n";
   import { withErrorHandling } from "../../lib/utils/error.utils";
 
-  let { buildingId, showFilters = true }: {
+  let {
+    buildingId,
+    showFilters = true,
+  }: {
     buildingId: string;
     showFilters?: boolean;
   } = $props();
@@ -29,7 +33,7 @@
     loading = true;
     const result = await withErrorHandling({
       action: () => skillsApi.listAvailableOffers(buildingId),
-      errorMessage: "Failed to load skill offers",
+      errorMessage: $_("skills.loadFailed"),
     });
     if (result) {
       offers = result;
@@ -50,7 +54,8 @@
         selectedCategory === "all" || offer.skill_category === selectedCategory;
 
       const matchesExpertise =
-        selectedExpertise === "all" || offer.expertise_level === selectedExpertise;
+        selectedExpertise === "all" ||
+        offer.expertise_level === selectedExpertise;
 
       return matchesSearch && matchesCategory && matchesExpertise;
     });
@@ -75,29 +80,37 @@
       <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
         <!-- Search -->
         <div>
-          <label for="search" class="block text-sm font-medium text-gray-700 mb-1">
-            Search
+          <label
+            for="search"
+            class="block text-sm font-medium text-gray-700 mb-1"
+          >
+            {$_("skills.searchLabel")}
           </label>
           <input
+            data-testid="skill-list-search-input"
             type="text"
             id="search"
             bind:value={searchQuery}
-            placeholder="Search skills..."
+            placeholder={$_("skills.searchPlaceholder")}
             class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
           />
         </div>
 
         <!-- Category Filter -->
         <div>
-          <label for="category" class="block text-sm font-medium text-gray-700 mb-1">
-            Category
+          <label
+            for="category"
+            class="block text-sm font-medium text-gray-700 mb-1"
+          >
+            {$_("skills.categoryLabel")}
           </label>
           <select
+            data-testid="skill-list-category-select"
             id="category"
             bind:value={selectedCategory}
             class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
           >
-            <option value="all">All Categories</option>
+            <option value="all">{$_("skills.allCategories")}</option>
             {#each Object.values(SkillCategory) as category}
               <option value={category}>{category}</option>
             {/each}
@@ -106,15 +119,19 @@
 
         <!-- Expertise Filter -->
         <div>
-          <label for="expertise" class="block text-sm font-medium text-gray-700 mb-1">
-            Expertise
+          <label
+            for="expertise"
+            class="block text-sm font-medium text-gray-700 mb-1"
+          >
+            {$_("skills.expertiseLabel")}
           </label>
           <select
+            data-testid="skill-list-expertise-select"
             id="expertise"
             bind:value={selectedExpertise}
             class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
           >
-            <option value="all">All Levels</option>
+            <option value="all">{$_("skills.allLevels")}</option>
             {#each Object.values(ExpertiseLevel) as level}
               <option value={level}>{level}</option>
             {/each}
@@ -126,11 +143,11 @@
 
   <!-- Offers Grid -->
   {#if loading}
-    <div class="text-center py-12 text-gray-500">Loading skill offers...</div>
+    <div class="text-center py-12 text-gray-500">{$_("skills.loading")}</div>
   {:else if filteredOffers.length === 0}
     <div class="bg-white shadow rounded-lg p-12 text-center">
       <p class="text-gray-500">
-        No skill offers found.
+        {$_("skills.empty")}
         {#if searchQuery || selectedCategory !== "all" || selectedExpertise !== "all"}
           Try adjusting your filters.
         {/if}

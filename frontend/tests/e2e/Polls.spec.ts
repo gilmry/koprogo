@@ -10,7 +10,7 @@ import { loginAsSyndicWithBuilding } from "./helpers/auth";
  * Mirrors workflows from backend/tests/e2e_polls.rs.
  */
 
-const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
+import { API_BASE } from "./helpers/adresses";
 
 /**
  * Helper: create a unit + owner + assignment in the building so that
@@ -28,7 +28,6 @@ async function ensureBuildingHasOwner(
   // Create a unit in the building
   const unitResp = await page.request.post(`${API_BASE}/units`, {
     data: {
-      organization_id: orgId,
       building_id: buildingId,
       unit_number: `P${ts}`,
       floor: 1,
@@ -74,7 +73,7 @@ test.describe("Polls - Board Decision Polling", () => {
 
     await expect(page.locator("body")).toBeVisible();
     await expect(
-      page.locator("main h1, main h2, [data-testid='polls-list']").first(),
+      page.locator("[data-testid='polls-list']").first(),
     ).toBeVisible({ timeout: 10000 });
   });
 

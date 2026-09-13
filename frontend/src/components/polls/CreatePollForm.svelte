@@ -1,4 +1,6 @@
 <script lang="ts">
+  import BoutonAction from "../ui/BoutonAction.svelte";
+  import CadreLegal from "../ui/CadreLegal.svelte";
   // Svelte 5 runes mode
   import { _ } from "svelte-i18n";
   import {
@@ -119,7 +121,7 @@
 
     const poll = await withErrorHandling({
       action: () => pollsApi.create(formData),
-      setLoading: (v: boolean) => loading = v,
+      setLoading: (v: boolean) => (loading = v),
       errorMessage: $_("polls.createForm.errors.creationFailed"),
       onSuccess: (created) => {
         success = true;
@@ -148,7 +150,10 @@
   </p>
 
   {#if success}
-    <div class="mb-4 p-4 bg-green-50 border border-green-200 rounded-md" data-testid="create-poll-success">
+    <div
+      class="mb-4 p-4 bg-green-50 border border-green-200 rounded-md"
+      data-testid="create-poll-success"
+    >
       <p class="text-sm text-green-800">
         ✅ {$_("polls.createForm.successMessage")}
       </p>
@@ -156,14 +161,24 @@
   {/if}
 
   {#if error}
-    <div class="mb-4 p-4 bg-red-50 border border-red-200 rounded-md" data-testid="create-poll-error">
+    <div
+      class="mb-4 p-4 bg-red-50 border border-red-200 rounded-md"
+      data-testid="create-poll-error"
+    >
       <p class="text-sm text-red-800">❌ {error}</p>
     </div>
   {/if}
 
-  <form onsubmit={handleSubmit} class="space-y-6" data-testid="create-poll-form">
+  <form
+    onsubmit={handleSubmit}
+    class="space-y-6"
+    data-testid="create-poll-form"
+  >
     <!-- Building Selector -->
-    <BuildingSelector bind:selectedBuildingId label={$_("polls.createForm.buildingLabel")} />
+    <BuildingSelector
+      bind:selectedBuildingId
+      label={$_("polls.createForm.buildingLabel")}
+    />
 
     <!-- Poll Type -->
     <div>
@@ -178,10 +193,18 @@
         class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
         data-testid="create-poll-type-select"
       >
-        <option value={PollType.YesNo}>👍👎 {$_("polls.createForm.typeYesNo")}</option>
-        <option value={PollType.MultipleChoice}>☑️ {$_("polls.createForm.typeMultiple")}</option>
-        <option value={PollType.Rating}>⭐ {$_("polls.createForm.typeRating")}</option>
-        <option value={PollType.OpenEnded}>💬 {$_("polls.createForm.typeOpenEnded")}</option>
+        <option value={PollType.YesNo}
+          >👍👎 {$_("polls.createForm.typeYesNo")}</option
+        >
+        <option value={PollType.MultipleChoice}
+          >☑️ {$_("polls.createForm.typeMultiple")}</option
+        >
+        <option value={PollType.Rating}
+          >⭐ {$_("polls.createForm.typeRating")}</option
+        >
+        <option value={PollType.OpenEnded}
+          >💬 {$_("polls.createForm.typeOpenEnded")}</option
+        >
       </select>
     </div>
 
@@ -212,8 +235,7 @@
         rows="3"
         placeholder={$_("polls.createForm.descriptionPlaceholder")}
         class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-        data-testid="create-poll-description-input"
-      ></textarea>
+        data-testid="create-poll-description-input"></textarea>
     </div>
 
     <!-- Options (for YesNo and MultipleChoice) -->
@@ -233,26 +255,28 @@
             <div class="flex items-center space-x-2">
               <span class="text-sm text-gray-500">{index + 1}.</span>
               <input
+                data-testid="poll-create-option-text-input"
                 type="text"
                 aria-label={`Option ${index + 1}`}
                 value={option.option_text}
                 readonly
                 class="flex-1 rounded-md border-gray-300 bg-gray-50"
               />
-              <button
-                type="button"
+              <!-- Bouton nu : cible d'environ 20 px. Ancrage conservé. -->
+              <BoutonAction
+                nom="trash"
+                ton="danger"
+                ariaLabel={$_("common.delete")}
+                testId="poll-create-option-remove-button"
                 onclick={() => removeOption(index)}
-                class="text-red-600 hover:text-red-800"
-                aria-label={$_("common.delete")}
-                title={$_("common.delete")}
-              >
-                🗑️
-              </button>
+              />
             </div>
           {/each}
         </div>
         <div class="flex items-center space-x-2">
-          <label for="create-poll-new-option" class="sr-only">{$_("polls.createForm.newOptionPlaceholder")}</label>
+          <label for="create-poll-new-option" class="sr-only"
+            >{$_("polls.createForm.newOptionPlaceholder")}</label
+          >
           <input
             id="create-poll-new-option"
             type="text"
@@ -287,8 +311,11 @@
         </span>
         <div class="grid grid-cols-2 gap-4">
           <div>
-            <label for="create-poll-min-rating" class="text-xs text-gray-500">{$_("polls.createForm.minRating")}</label>
+            <label for="create-poll-min-rating" class="text-xs text-gray-500"
+              >{$_("polls.createForm.minRating")}</label
+            >
             <input
+              data-testid="poll-create-min-rating-input"
               id="create-poll-min-rating"
               type="number"
               value="1"
@@ -299,8 +326,11 @@
             />
           </div>
           <div>
-            <label for="create-poll-max-rating" class="text-xs text-gray-500">{$_("polls.createForm.maxRating")}</label>
+            <label for="create-poll-max-rating" class="text-xs text-gray-500"
+              >{$_("polls.createForm.maxRating")}</label
+            >
             <input
+              data-testid="poll-create-max-rating-input"
               id="create-poll-max-rating"
               type="number"
               value="5"
@@ -380,15 +410,24 @@
       {/if}
     </div>
 
-    <!-- Legal Notice -->
-    <div class="p-4 bg-yellow-50 border border-yellow-200 rounded-md">
-      <h4 class="text-sm font-medium text-yellow-900 mb-2">
-        ⚖️ {$_("polls.createForm.legalFramework")}
-      </h4>
-      <p class="text-xs text-yellow-800">
-        <strong>{$_("polls.createForm.legalReference")}:</strong> {$_("polls.createForm.legalText")}
-      </p>
-    </div>
+    <!--
+      L'encart de cadre légal, composant unique.
+
+      Il était écrit à la main ici, en jaune, avec un émoji ⚖️ que les
+      lecteurs d'écran annoncent et dont le rendu change selon le système.
+      Cinq autres modules en avaient un, chacun de sa couleur.
+
+      Le composant apporte plus que la cohérence : le lien « Voir la règle → »
+      vers le registre. Un article cité sans moyen de le lire demande de
+      croire sur parole, ce qui est le contraire de ce que ces encarts
+      promettent.
+    -->
+    <CadreLegal
+      titre={$_("polls.createForm.legalFramework")}
+      corps={$_("polls.createForm.legalText")}
+      article={$_("polls.createForm.legalReference")}
+      testId="poll-create-cadre-legal"
+    />
 
     <!-- Submit Button -->
     <div class="flex justify-end space-x-3">

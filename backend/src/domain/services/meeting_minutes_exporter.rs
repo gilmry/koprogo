@@ -344,6 +344,7 @@ mod tests {
         let test_org_id = Uuid::new_v4();
 
         let meeting = Meeting {
+            acp_id: Uuid::new_v4(),
             id: Uuid::new_v4(),
             organization_id: test_org_id,
             building_id: building.id,
@@ -389,6 +390,7 @@ mod tests {
         ];
 
         let resolution = Resolution {
+            prestataire_de_la_mission: None,
             id: Uuid::new_v4(),
             meeting_id: meeting.id,
             title: "Approbation du budget 2025".to_string(),

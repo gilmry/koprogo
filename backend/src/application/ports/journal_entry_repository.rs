@@ -47,6 +47,17 @@ pub trait JournalEntryRepository: Send + Sync {
     /// Returns all entries that were auto-generated from this expense.
     async fn find_by_expense(&self, expense_id: Uuid) -> Result<Vec<JournalEntry>, String>;
 
+    /// Écritures rattachées à une quote-part de copropriétaire.
+    ///
+    /// Sert l'idempotence de l'écriture d'encaissement : une quote-part peut
+    /// être soldée par la voie interface (`mark-paid`) OU par la réussite d'un
+    /// paiement du module `/payments`. Sans ce contrôle, un même encaissement
+    /// débiterait la banque deux fois.
+    async fn find_by_contribution(
+        &self,
+        contribution_id: Uuid,
+    ) -> Result<Vec<JournalEntry>, String>;
+
     /// Find journal entries for a date range
     ///
     /// Useful for generating period reports (income statement).

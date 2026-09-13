@@ -1,22 +1,43 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
-  import { _ } from '../lib/i18n';
-  import { chat, listModels, saveChatToLocal, loadChatHistory, type Message, type ModelInfo, type ChatResponse } from '../lib/api/mcp';
+  import Icone from "./ui/Icone.svelte";
+  import { onMount } from "svelte";
+  import { _ } from "../lib/i18n";
+  import {
+    chat,
+    listModels,
+    saveChatToLocal,
+    loadChatHistory,
+    type Message,
+    type ModelInfo,
+    type ChatResponse,
+  } from "../lib/api/mcp";
 
   let messages: Message[] = [];
-  let inputMessage = '';
-  let selectedModel = 'llama3:8b-instruct-q4';
+  let inputMessage = "";
+  let selectedModel = "llama3:8b-instruct-q4";
   let models: ModelInfo[] = [];
   let isLoading = false;
-  let error = '';
+  let error = "";
   let lastResponse: ChatResponse | null = null;
 
   // Quick actions
   const quickActions = [
-    { label: 'Résumer PV', prompt: 'Résume le dernier procès-verbal de l\'assemblée générale en 3 points clés.' },
-    { label: 'Traduire FR→EN', prompt: 'Traduis le texte suivant en anglais:' },
-    { label: 'OCR Facture', prompt: 'Extrais les informations de cette facture (fournisseur, montant, date, numéro):' },
-    { label: 'Calculer Charges', prompt: 'Calcule la répartition des charges communes pour cette copropriété selon les quotes-parts:' },
+    {
+      label: "Résumer PV",
+      prompt:
+        "Résume le dernier procès-verbal de l'assemblée générale en 3 points clés.",
+    },
+    { label: "Traduire FR→EN", prompt: "Traduis le texte suivant en anglais:" },
+    {
+      label: "OCR Facture",
+      prompt:
+        "Extrais les informations de cette facture (fournisseur, montant, date, numéro):",
+    },
+    {
+      label: "Calculer Charges",
+      prompt:
+        "Calcule la répartition des charges communes pour cette copropriété selon les quotes-parts:",
+    },
   ];
 
   onMount(async () => {
@@ -24,8 +45,8 @@
     try {
       models = await listModels();
     } catch (e) {
-      console.error('Failed to load models:', e);
-      error = $_('mcp.error.modelLoadFailed');
+      console.error("Failed to load models:", e);
+      error = $_("mcp.error.modelLoadFailed");
     }
 
     // Load chat history from IndexedDB
@@ -36,33 +57,33 @@
         messages = last.messages || [];
       }
     } catch (e) {
-      console.error('Failed to load history:', e);
+      console.error("Failed to load history:", e);
     }
   });
 
   async function sendMessage() {
     if (!inputMessage.trim() || isLoading) return;
 
-    error = '';
+    error = "";
     const userMessage: Message = {
-      role: 'user',
+      role: "user",
       content: inputMessage.trim(),
     };
 
     messages = [...messages, userMessage];
-    inputMessage = '';
+    inputMessage = "";
     isLoading = true;
 
     try {
       const response = await chat({
         model: selectedModel,
         messages,
-        context: 'copro:demo',
+        context: "copro:demo",
         temperature: 0.7,
       });
 
       const assistantMessage: Message = {
-        role: 'assistant',
+        role: "assistant",
         content: response.content,
       };
 
@@ -70,27 +91,27 @@
       lastResponse = response;
 
       // Save to IndexedDB
-      await saveChatToLocal(messages, response, 'copro:demo');
+      await saveChatToLocal(messages, response, "copro:demo");
     } catch (e: any) {
-      error = e.message || $_('mcp.error.sendMessage');
-      console.error('Chat error:', e);
+      error = e.message || $_("mcp.error.sendMessage");
+      console.error("Chat error:", e);
     } finally {
       isLoading = false;
     }
   }
 
-  function useQuickAction(action: typeof quickActions[0]) {
+  function useQuickAction(action: (typeof quickActions)[0]) {
     inputMessage = action.prompt;
   }
 
   function clearChat() {
     messages = [];
     lastResponse = null;
-    error = '';
+    error = "";
   }
 
   function handleKeydown(event: KeyboardEvent) {
-    if (event.key === 'Enter' && !event.shiftKey) {
+    if (event.key === "Enter" && !event.shiftKey) {
       event.preventDefault();
       sendMessage();
     }
@@ -99,17 +120,29 @@
 
 <div class="mcp-chatbot">
   <div class="chatbot-header">
-    <h2>🤖 {$_('mcp.title')}</h2>
+    <h2>🤖 {$_("mcp.title")}</h2>
     <div class="header-controls">
-      <label for="mcp-model-select" class="sr-only">{$_('mcp.title')}</label>
-      <select id="mcp-model-select" bind:value={selectedModel} class="model-select">
+      <label for="mcp-model-select" class="sr-only">{$_("mcp.title")}</label>
+      <select
+        data-testid="mcp-model-select"
+        id="mcp-model-select"
+        bind:value={selectedModel}
+        class="model-select"
+      >
         {#each models as model}
           <option value={model.id}>
-            {model.name} {model.edge_compatible ? '🍓' : '☁️'}
+            {model.name}
+            {model.edge_compatible ? "🍓" : "☁️"}
           </option>
         {/each}
       </select>
-      <button on:click={clearChat} class="btn-clear">🗑️ {$_('common.clear')}</button>
+      <button
+        data-testid="chatbot-clear-button"
+        on:click={clearChat}
+        class="btn-clear"
+        ><Icone nom="trash" taille={14} class="shrink-0" />
+        {$_("common.clear")}</button
+      >
     </div>
   </div>
 
@@ -122,6 +155,7 @@
   <div class="quick-actions">
     {#each quickActions as action}
       <button
+        data-testid="chatbot-quick-action-button"
         on:click={() => useQuickAction(action)}
         class="quick-action-btn"
         disabled={isLoading}
@@ -134,17 +168,17 @@
   <div class="messages-container">
     {#if messages.length === 0}
       <div class="empty-state">
-        <p>💬 {$_('mcp.askQuestion')}</p>
-        <p class="text-muted">{$_('mcp.localOrCloud')}</p>
+        <p>💬 {$_("mcp.askQuestion")}</p>
+        <p class="text-muted">{$_("mcp.localOrCloud")}</p>
       </div>
     {/if}
 
     {#each messages as message, i}
       <div class="message message-{message.role}">
         <div class="message-avatar">
-          {#if message.role === 'user'}
+          {#if message.role === "user"}
             👤
-          {:else if message.role === 'assistant'}
+          {:else if message.role === "assistant"}
             🤖
           {:else}
             ⚙️
@@ -152,13 +186,19 @@
         </div>
         <div class="message-content">
           <div class="message-text">{message.content}</div>
-          {#if message.role === 'assistant' && i === messages.length - 1 && lastResponse}
+          {#if message.role === "assistant" && i === messages.length - 1 && lastResponse}
             <div class="message-meta">
               <span class="meta-item">
-                {lastResponse.execution_info.execution_type === 'edge' ? '🍓 Edge' : '☁️ Cloud'}
+                {lastResponse.execution_info.execution_type === "edge"
+                  ? "🍓 Edge"
+                  : "☁️ Cloud"}
               </span>
-              <span class="meta-item">⏱️ {lastResponse.execution_info.latency_ms}ms</span>
-              <span class="meta-item">🎫 {lastResponse.usage.total_tokens} tokens</span>
+              <span class="meta-item"
+                >⏱️ {lastResponse.execution_info.latency_ms}ms</span
+              >
+              <span class="meta-item"
+                >🎫 {lastResponse.usage.total_tokens} tokens</span
+              >
               <span class="meta-item">
                 🌱 {lastResponse.execution_info.co2_grams.toFixed(4)}g CO₂
               </span>
@@ -181,22 +221,26 @@
   </div>
 
   <div class="input-container">
-    <label for="mcp-input-message" class="sr-only">{$_('mcp.inputPlaceholder')}</label>
+    <label for="mcp-input-message" class="sr-only"
+      >{$_("mcp.inputPlaceholder")}</label
+    >
     <textarea
+      data-testid="mcp-input-message"
       id="mcp-input-message"
       bind:value={inputMessage}
       on:keydown={handleKeydown}
-      placeholder={$_('mcp.inputPlaceholder')}
+      placeholder={$_("mcp.inputPlaceholder")}
       rows="3"
       disabled={isLoading}
-      class="message-input"
-    ></textarea>
+      class="message-input"></textarea>
     <button
+      data-testid="chatbot-send-button"
       on:click={sendMessage}
       disabled={isLoading || !inputMessage.trim()}
       class="btn-send"
     >
-      {isLoading ? '⏳' : '📤'} {$_('mcp.send')}
+      {isLoading ? "⏳" : "📤"}
+      {$_("mcp.send")}
     </button>
   </div>
 </div>
@@ -413,7 +457,9 @@
   }
 
   @keyframes bounce {
-    0%, 80%, 100% {
+    0%,
+    80%,
+    100% {
       transform: scale(0);
     }
     40% {

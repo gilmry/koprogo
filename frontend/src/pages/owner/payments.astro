@@ -3,10 +3,12 @@ import Layout from "../../layouts/Layout.astro";
 ---
 
 <Layout title="Mes Paiements - KoproGo">
-  <div class="container mx-auto px-4 py-8">
+  <div class="container mx-auto px-4 py-8" data-testid="owner-payments">
     <div class="mb-6">
       <h1 class="text-3xl font-bold text-gray-900">Mes Paiements</h1>
-      <p class="mt-2 text-gray-600">Historique et statistiques de vos paiements</p>
+      <p class="mt-2 text-gray-600">
+        Historique et statistiques de vos paiements
+      </p>
     </div>
 
     <!-- Payment Statistics -->
@@ -20,6 +22,7 @@ import Layout from "../../layouts/Layout.astro";
     <!-- Manage Payment Methods Link -->
     <div class="mt-6 text-center">
       <a
+        data-testid="owner-payments-methods-link"
         href="/owner/payment-methods"
         class="inline-flex items-center text-blue-600 hover:text-blue-700 font-medium"
       >
@@ -34,7 +37,7 @@ import Layout from "../../layouts/Layout.astro";
             stroke-linejoin="round"
             stroke-width="2"
             d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"
-          />
+          ></path>
         </svg>
         Gerer mes moyens de paiement
       </a>

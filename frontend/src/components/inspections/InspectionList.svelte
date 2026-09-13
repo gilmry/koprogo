@@ -1,26 +1,59 @@
 <script lang="ts">
   // Svelte 5 runes mode
-  import { _ } from '../../lib/i18n';
-  import { inspectionsApi, inspectionTypeLabels, inspectionStatusLabels, inspectionFrequencyLabels } from "../../lib/api/inspections";
-  import type { TechnicalInspection, CreateInspectionDto } from "../../lib/api/inspections";
+  import { _ } from "../../lib/i18n";
+  import {
+    inspectionsApi,
+    inspectionTypeLabels,
+    inspectionStatusLabels,
+    inspectionFrequencyLabels,
+  } from "../../lib/api/inspections";
+  import type {
+    TechnicalInspection,
+    CreateInspectionDto,
+  } from "../../lib/api/inspections";
   import { InspectionType, InspectionStatus } from "../../lib/api/inspections";
   import { toast } from "../../stores/toast";
   import InspectionDetail from "./InspectionDetail.svelte";
   import { formatDate, formatDateShort } from "../../lib/utils/date.utils";
   import { formatCurrency } from "../../lib/utils/finance.utils";
   import { withErrorHandling } from "../../lib/utils/error.utils";
+  import ConfirmDialog from "../ui/ConfirmDialog.svelte";
 
-  let { buildingId, organizationId = "" }: {
+  let {
+    buildingId,
+    organizationId = "",
+    showHeader = true,
+  }: {
     buildingId: string;
     organizationId?: string;
+    // La page dédiée porte déjà un H1 identique ; l'en-tête interne y faisait
+    // doublon. Conservé par défaut pour la fiche immeuble, où le composant
+    // est une section parmi d'autres et a besoin de son étiquette.
+    showHeader?: boolean;
   } = $props();
 
   let inspections: TechnicalInspection[] = $state([]);
+
+  // L'action en attente de confirmation.
+  //
+  // Ce composant est en mode RUNES : un `let` simple n'y est PAS réactif.
+  // `svelte-check --fail-on-warnings` l'a dit — « is updated, but is not
+  // declared with $state(...) » — après que je l'avais pris pour du legacy.
+  // C'est très exactement le défaut de #832, attrapé cette fois par le
+  // barrage plutôt qu'en recette.
+  //
+  // Le `confirm()` remplacé était un dialogue du NAVIGATEUR : un navigateur
+  // piloté le supprime, et l'action prend la forme exacte d'une panne (#844).
+  //
+  // Même acte que sur la fiche de détail : le contrôle technique est une
+  // obligation datée.
+  let suppressionEnAttente = $state(false);
+  let cibleEnAttente = $state<string | null>(null);
   let loading = $state(true);
   let error = $state("");
   let showCreateForm = $state(false);
   let activeTab: "all" | "overdue" | "upcoming" = $state("all");
-  let selectedInspection: TechnicalInspection | null = $state(null);
+  let selectedInspection = $state<TechnicalInspection | null>(null);
   let detailOpen = $state(false);
 
   let form: Partial<CreateInspectionDto> = $state(resetForm());
@@ -90,8 +123,16 @@
     if (result) await loadInspections();
   }
 
-  async function deleteInspection(id: string) {
-    if (!confirm($_("inspections.deleteConfirm"))) return;
+  function deleteInspection(id: string) {
+    cibleEnAttente = id;
+    suppressionEnAttente = true;
+  }
+
+  async function executerSuppression() {
+    suppressionEnAttente = false;
+    const id = cibleEnAttente;
+    cibleEnAttente = null;
+    if (!id) return;
     const result = await withErrorHandling({
       action: () => inspectionsApi.delete(id),
       successMessage: $_("inspections.deleteSuccess"),
@@ -116,10 +157,14 @@
 
   function statusColor(status: string): string {
     switch (status) {
-      case "completed": return "bg-green-100 text-green-800";
-      case "failed": return "bg-red-100 text-red-800";
-      case "passed_with_remarks": return "bg-yellow-100 text-yellow-800";
-      default: return "bg-gray-100 text-gray-800";
+      case "completed":
+        return "bg-green-100 text-green-800";
+      case "failed":
+        return "bg-red-100 text-red-800";
+      case "passed_with_remarks":
+        return "bg-yellow-100 text-yellow-800";
+      default:
+        return "bg-gray-100 text-gray-800";
     }
   }
 
@@ -137,97 +182,214 @@
 
 <div class="space-y-4" data-testid="inspection-list">
   <div class="flex items-center justify-between">
-    <h2 class="text-lg font-semibold text-gray-800">{$_("inspections.title")}</h2>
+    <!-- Le div vide conserve l'alignement : la rangée est en
+         justify-between, sans lui le bouton d'action remonterait à gauche. -->
+    {#if showHeader}
+      <h2 class="text-lg font-semibold text-gray-800">
+        {$_("inspections.title")}
+      </h2>
+    {:else}
+      <div></div>
+    {/if}
     <button
       onclick={() => (showCreateForm = !showCreateForm)}
       class="px-3 py-1.5 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700"
       data-testid="create-inspection-button"
     >
-      {showCreateForm ? $_("common.cancel") : "+ " + $_("inspections.newInspection")}
+      {showCreateForm
+        ? $_("common.cancel")
+        : "+ " + $_("inspections.newInspection")}
     </button>
   </div>
 
   {#if showCreateForm}
     <div class="bg-white shadow rounded-lg p-4 border border-blue-200">
-      <h3 class="font-medium text-gray-800 mb-3">{$_("inspections.schedule")}</h3>
+      <h3 class="font-medium text-gray-800 mb-3">
+        {$_("inspections.schedule")}
+      </h3>
       <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
         <div>
-          <label for="insp-new-title" class="block text-sm text-gray-600 mb-1">{$_("inspections.title")} *</label>
-          <input id="insp-new-title" bind:value={form.title} class="w-full border rounded px-3 py-1.5 text-sm" placeholder={$_("inspections.titlePlaceholder")} />
+          <label for="insp-new-title" class="block text-sm text-gray-600 mb-1"
+            >{$_("inspections.title")} *</label
+          >
+          <input
+            data-testid="insp-new-title"
+            id="insp-new-title"
+            bind:value={form.title}
+            class="w-full border rounded px-3 py-1.5 text-sm"
+            placeholder={$_("inspections.titlePlaceholder")}
+          />
         </div>
         <div>
-          <label for="insp-new-type" class="block text-sm text-gray-600 mb-1">{$_("inspections.type")}</label>
-          <select id="insp-new-type" bind:value={form.inspection_type} class="w-full border rounded px-3 py-1.5 text-sm">
+          <label for="insp-new-type" class="block text-sm text-gray-600 mb-1"
+            >{$_("inspections.type")}</label
+          >
+          <select
+            data-testid="insp-new-type"
+            id="insp-new-type"
+            bind:value={form.inspection_type}
+            class="w-full border rounded px-3 py-1.5 text-sm"
+          >
             {#each Object.entries(inspectionTypeLabels) as [val, label]}
-              <option value={val}>{label} ({(inspectionFrequencyLabels as Record<string, string>)[val] || ""})</option>
+              <option value={val}
+                >{label} ({(
+                  inspectionFrequencyLabels as Record<string, string>
+                )[val] || ""})</option
+              >
             {/each}
           </select>
         </div>
         <div>
-          <label for="insp-new-inspector" class="block text-sm text-gray-600 mb-1">{$_("inspections.inspector")} *</label>
-          <input id="insp-new-inspector" bind:value={form.inspector_name} class="w-full border rounded px-3 py-1.5 text-sm" placeholder={$_("inspections.inspectorPlaceholder")} />
+          <label
+            for="insp-new-inspector"
+            class="block text-sm text-gray-600 mb-1"
+            >{$_("inspections.inspector")} *</label
+          >
+          <input
+            data-testid="insp-new-inspector"
+            id="insp-new-inspector"
+            bind:value={form.inspector_name}
+            class="w-full border rounded px-3 py-1.5 text-sm"
+            placeholder={$_("inspections.inspectorPlaceholder")}
+          />
         </div>
         <div>
-          <label for="insp-new-company" class="block text-sm text-gray-600 mb-1">{$_("inspections.company")}</label>
-          <input id="insp-new-company" bind:value={form.inspector_company} class="w-full border rounded px-3 py-1.5 text-sm" placeholder={$_("inspections.companyPlaceholder")} />
+          <label for="insp-new-company" class="block text-sm text-gray-600 mb-1"
+            >{$_("inspections.company")}</label
+          >
+          <input
+            data-testid="insp-new-company"
+            id="insp-new-company"
+            bind:value={form.inspector_company}
+            class="w-full border rounded px-3 py-1.5 text-sm"
+            placeholder={$_("inspections.companyPlaceholder")}
+          />
         </div>
         <div>
-          <label for="insp-new-date" class="block text-sm text-gray-600 mb-1">{$_("inspections.date")}</label>
-          <input id="insp-new-date" type="date" bind:value={form.inspection_date} class="w-full border rounded px-3 py-1.5 text-sm" />
+          <label for="insp-new-date" class="block text-sm text-gray-600 mb-1"
+            >{$_("inspections.date")}</label
+          >
+          <input
+            data-testid="insp-new-date"
+            id="insp-new-date"
+            type="date"
+            bind:value={form.inspection_date}
+            class="w-full border rounded px-3 py-1.5 text-sm"
+          />
         </div>
         <div>
-          <label for="insp-new-cost" class="block text-sm text-gray-600 mb-1">{$_("inspections.cost")}</label>
-          <input id="insp-new-cost" type="number" bind:value={form.cost} min="0" step="0.01" class="w-full border rounded px-3 py-1.5 text-sm" placeholder={$_("common.optional")} />
+          <label for="insp-new-cost" class="block text-sm text-gray-600 mb-1"
+            >{$_("inspections.cost")}</label
+          >
+          <input
+            data-testid="insp-new-cost"
+            id="insp-new-cost"
+            type="number"
+            bind:value={form.cost}
+            min="0"
+            step="0.01"
+            class="w-full border rounded px-3 py-1.5 text-sm"
+            placeholder={$_("common.optional")}
+          />
         </div>
         <div class="md:col-span-2">
-          <label for="insp-new-desc" class="block text-sm text-gray-600 mb-1">{$_("inspections.description")}</label>
-          <textarea id="insp-new-desc" bind:value={form.description} rows="2" class="w-full border rounded px-3 py-1.5 text-sm" placeholder={$_("inspections.descriptionPlaceholder")}></textarea>
+          <label for="insp-new-desc" class="block text-sm text-gray-600 mb-1"
+            >{$_("inspections.description")}</label
+          >
+          <textarea
+            data-testid="insp-new-desc"
+            id="insp-new-desc"
+            bind:value={form.description}
+            rows="2"
+            class="w-full border rounded px-3 py-1.5 text-sm"
+            placeholder={$_("inspections.descriptionPlaceholder")}></textarea>
         </div>
       </div>
       <div class="mt-3 flex gap-2">
-        <button onclick={createInspection} class="px-4 py-1.5 bg-green-600 text-white text-sm rounded hover:bg-green-700" data-testid="submit-inspection-button">{$_("common.create")}</button>
-        <button onclick={() => (showCreateForm = false)} class="px-4 py-1.5 bg-gray-200 text-gray-700 text-sm rounded hover:bg-gray-300">{$_("common.cancel")}</button>
+        <button
+          onclick={createInspection}
+          class="px-4 py-1.5 bg-green-600 text-white text-sm rounded hover:bg-green-700"
+          data-testid="submit-inspection-button">{$_("common.create")}</button
+        >
+        <button
+          data-testid="inspections-create-cancel-button"
+          onclick={() => (showCreateForm = false)}
+          class="px-4 py-1.5 bg-gray-200 text-gray-700 text-sm rounded hover:bg-gray-300"
+          >{$_("common.cancel")}</button
+        >
       </div>
     </div>
   {/if}
 
   <!-- Tabs -->
   <div class="flex gap-2 border-b border-gray-200">
-    <button onclick={() => switchTab("all")}
-      class="px-3 py-2 text-sm border-b-2 {activeTab === 'all' ? 'border-blue-500 text-blue-600 font-medium' : 'border-transparent text-gray-500 hover:text-gray-700'}">
+    <button
+      data-testid="inspections-tab-all-button"
+      onclick={() => switchTab("all")}
+      class="px-3 py-2 text-sm border-b-2 {activeTab === 'all'
+        ? 'border-blue-500 text-blue-600 font-medium'
+        : 'border-transparent text-gray-500 hover:text-gray-700'}"
+    >
       {$_("inspections.all")} ({inspections.length})
     </button>
-    <button onclick={() => switchTab("overdue")}
-      class="px-3 py-2 text-sm border-b-2 {activeTab === 'overdue' ? 'border-red-500 text-red-600 font-medium' : 'border-transparent text-gray-500 hover:text-gray-700'}">
-      {$_("inspections.overdue")} {#if overdueCount > 0}<span class="ml-1 bg-red-100 text-red-800 px-1.5 py-0.5 rounded-full text-xs">{overdueCount}</span>{/if}
+    <button
+      data-testid="inspections-tab-overdue-button"
+      onclick={() => switchTab("overdue")}
+      class="px-3 py-2 text-sm border-b-2 {activeTab === 'overdue'
+        ? 'border-red-500 text-red-600 font-medium'
+        : 'border-transparent text-gray-500 hover:text-gray-700'}"
+    >
+      {$_("inspections.overdue")}
+      {#if overdueCount > 0}<span
+          class="ml-1 bg-red-100 text-red-800 px-1.5 py-0.5 rounded-full text-xs"
+          >{overdueCount}</span
+        >{/if}
     </button>
-    <button onclick={() => switchTab("upcoming")}
-      class="px-3 py-2 text-sm border-b-2 {activeTab === 'upcoming' ? 'border-yellow-500 text-yellow-600 font-medium' : 'border-transparent text-gray-500 hover:text-gray-700'}">
+    <button
+      data-testid="inspections-tab-upcoming-button"
+      onclick={() => switchTab("upcoming")}
+      class="px-3 py-2 text-sm border-b-2 {activeTab === 'upcoming'
+        ? 'border-yellow-500 text-yellow-600 font-medium'
+        : 'border-transparent text-gray-500 hover:text-gray-700'}"
+    >
       {$_("inspections.upcoming")}
     </button>
   </div>
 
   {#if loading}
     <div class="text-center py-8 text-gray-500">
-      <div class="animate-spin inline-block w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full" data-testid="inspection-list-spinner"></div>
+      <div
+        class="animate-spin inline-block w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full"
+        data-testid="inspection-list-spinner"
+      ></div>
       <p class="mt-2 text-sm">{$_("common.loading")}</p>
     </div>
   {:else if error}
-    <div class="bg-red-50 border border-red-200 rounded-lg p-4 text-sm text-red-700">
+    <div
+      class="bg-red-50 border border-red-200 rounded-lg p-4 text-sm text-red-700"
+    >
       {error}
-      <button onclick={loadInspections} class="ml-2 underline">{$_("common.retry")}</button>
+      <button
+        data-testid="inspections-retry-button"
+        onclick={loadInspections}
+        class="ml-2 underline">{$_("common.retry")}</button
+      >
     </div>
   {:else if inspections.length === 0}
-    <div class="text-center py-8 text-gray-400 text-sm">
-      {activeTab === "overdue" ? $_("inspections.noOverdue") :
-       activeTab === "upcoming" ? $_("inspections.noUpcoming") :
-       $_("inspections.none")}
+    <div class="text-center py-8 text-muted text-sm">
+      {activeTab === "overdue"
+        ? $_("inspections.noOverdue")
+        : activeTab === "upcoming"
+          ? $_("inspections.noUpcoming")
+          : $_("inspections.none")}
     </div>
   {:else}
     <div class="space-y-3">
       {#each inspections as inspection}
         <div
-          class="bg-white shadow-sm rounded-lg p-4 border border-gray-200 hover:border-blue-300 transition-colors cursor-pointer {inspection.is_overdue ? 'border-l-4 border-l-red-500' : ''}"
+          class="bg-white shadow-sm rounded-lg p-4 border border-gray-200 hover:border-blue-300 transition-colors cursor-pointer {inspection.is_overdue
+            ? 'border-l-4 border-l-red-500'
+            : ''}"
           data-testid="inspection-row"
           onclick={() => openDetail(inspection)}
           onkeydown={(e) => e.key === "Enter" && openDetail(inspection)}
@@ -238,32 +400,64 @@
             <div class="flex-1">
               <div class="flex items-center gap-2 mb-1">
                 <h3 class="font-medium text-gray-800">{inspection.title}</h3>
-                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium {statusColor(inspection.status)}">
-                  {inspectionStatusLabels[inspection.status] || inspection.status}
+                <span
+                  class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium {statusColor(
+                    inspection.status,
+                  )}"
+                >
+                  {inspectionStatusLabels[inspection.status] ||
+                    inspection.status}
                 </span>
                 {#if inspection.is_overdue}
-                  <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                  <span
+                    class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800"
+                  >
                     {$_("inspections.overdue")}
                   </span>
                 {/if}
               </div>
               <p class="text-sm text-gray-600">
-                {inspectionTypeLabels[inspection.inspection_type] || inspection.inspection_type}
+                {inspectionTypeLabels[inspection.inspection_type] ||
+                  inspection.inspection_type}
                 - {inspection.inspector_name}
                 {#if inspection.inspector_company}({inspection.inspector_company}){/if}
               </p>
               {#if inspection.description}
-                <p class="text-sm text-gray-500 mt-1 line-clamp-2">{inspection.description}</p>
+                <p class="text-sm text-gray-500 mt-1 line-clamp-2">
+                  {inspection.description}
+                </p>
               {/if}
-              <div class="flex flex-wrap items-center gap-4 mt-2 text-xs text-gray-500">
-                <span>{$_("inspections.inspectionDate")}: {formatDate(inspection.inspection_date)}</span>
-                <span class="{inspection.days_until_due < 0 ? 'text-red-600 font-medium' : inspection.days_until_due < 30 ? 'text-yellow-600' : ''}">
-                  {$_("inspections.nextDue")}: {formatDate(inspection.next_due_date)}
-                  ({inspection.days_until_due > 0 ? `${$_("inspections.in")} ${inspection.days_until_due}${$_("inspections.days")}` : `${Math.abs(inspection.days_until_due)}${$_("inspections.daysOverdue")}`})
+              <div
+                class="flex flex-wrap items-center gap-4 mt-2 text-xs text-gray-500"
+              >
+                <span
+                  >{$_("inspections.inspectionDate")}: {formatDate(
+                    inspection.inspection_date,
+                  )}</span
+                >
+                <span
+                  class={inspection.days_until_due < 0
+                    ? "text-red-600 font-medium"
+                    : inspection.days_until_due < 30
+                      ? "text-yellow-600"
+                      : ""}
+                >
+                  {$_("inspections.nextDue")}: {formatDate(
+                    inspection.next_due_date,
+                  )}
+                  ({inspection.days_until_due > 0
+                    ? `${$_("inspections.in")} ${inspection.days_until_due}${$_("inspections.days")}`
+                    : `${Math.abs(inspection.days_until_due)}${$_("inspections.daysOverdue")}`})
                 </span>
                 {#if inspection.compliant !== null && inspection.compliant !== undefined}
-                  <span class="inline-flex items-center px-2 py-0.5 rounded-full {inspection.compliant ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}">
-                    {inspection.compliant ? $_("inspections.compliant") : $_("inspections.nonCompliant")}
+                  <span
+                    class="inline-flex items-center px-2 py-0.5 rounded-full {inspection.compliant
+                      ? 'bg-green-100 text-green-800'
+                      : 'bg-red-100 text-red-800'}"
+                  >
+                    {inspection.compliant
+                      ? $_("inspections.compliant")
+                      : $_("inspections.nonCompliant")}
                   </span>
                 {/if}
                 {#if inspection.cost}
@@ -271,19 +465,35 @@
                 {/if}
               </div>
               {#if inspection.defects_found}
-                <div class="mt-2 bg-yellow-50 border border-yellow-200 rounded px-2 py-1 text-xs text-yellow-800">
+                <div
+                  class="mt-2 bg-yellow-50 border border-yellow-200 rounded px-2 py-1 text-xs text-yellow-800"
+                >
                   {$_("inspections.defects")}: {inspection.defects_found}
                 </div>
               {/if}
             </div>
             <button
-              onclick={(e) => { e.stopPropagation(); deleteInspection(inspection.id); }}
+              onclick={(e) => {
+                e.stopPropagation();
+                deleteInspection(inspection.id);
+              }}
               class="text-red-400 hover:text-red-600 p-1"
               aria-label={$_("common.delete")}
               title={$_("common.delete")}
               data-testid="delete-inspection-button"
             >
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+              <svg
+                class="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                ><path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                /></svg
+              >
             </button>
           </div>
         </div>
@@ -301,3 +511,16 @@
     ondeleted={(id) => handleDetailDeleted(id)}
   />
 {/if}
+
+<!-- Le dialogue qui remplace un `confirm()` natif (#844). -->
+<ConfirmDialog
+  isOpen={suppressionEnAttente}
+  title={$_("common.confirm")}
+  message={$_("inspections.deleteConfirm")}
+  variant="danger"
+  onconfirm={executerSuppression}
+  oncancel={() => {
+    suppressionEnAttente = false;
+    cibleEnAttente = null;
+  }}
+/>

@@ -271,6 +271,7 @@ Découvrez le chemin vers 5 000 copropriétés et l'impact sociétal prévu.
    roadmap/jalons-atteints
    roadmap/jalons-a-venir
    ROADMAP_PAR_CAPACITES
+   GANTT_PASSES_v0_1_0
 
 🏗️ Architecture Technique
 -------------------------

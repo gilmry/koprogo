@@ -10,6 +10,63 @@ use uuid::Uuid;
 
 // ==================== Resolution Endpoints ====================
 
+/// Vérifie que l'appelant a un mandat sur l'ACP dont relève une AG.
+///
+/// **Pourquoi une fonction et pas une ligne recopiée.** La chaîne à remonter
+/// fait quatre sauts — AG → immeuble → ACP → organisation. Recopiée dans
+/// chaque gestionnaire, elle finit par manquer là où on n'y a pas pensé :
+/// c'est exactement ce qui est arrivé à `list_meeting_resolutions` et
+/// `list_resolution_votes`, qui rendaient 200 sur les données d'une autre
+/// copropriété pendant que l'accès direct à la même ressource rendait 403.
+///
+/// Constaté en recette le 2026-09-06 (RN-2) : un syndic concurrent lisait le
+/// sens du vote de copropriétaires nommés, avec leur poids. Le vote en AG est
+/// confidentiel et nominatif : c'est une violation de données, pas un simple
+/// écart de périmètre.
+///
+/// Le maillon absent est traité comme un refus. Une AG dont on ne retrouve ni
+/// l'immeuble ni l'ACP ne peut pas être autorisée « par défaut » : c'est
+/// précisément le cas où l'on ne sait pas à qui elle appartient.
+///
+/// Rend `None` quand l'accès est accordé, `Some(reponse)` quand il est refusé.
+/// Un `Result<(), HttpResponse>` dirait la même chose, mais clippy le refuse à
+/// juste titre : `HttpResponse` est volumineux, et le porter dans la variante
+/// d'erreur alourdirait chaque valeur de retour, y compris sur le chemin
+/// nominal.
+async fn verifier_mandat_sur_ag(
+    state: &web::Data<AppState>,
+    user: &AuthenticatedUser,
+    meeting_id: Uuid,
+) -> Option<HttpResponse> {
+    if user.is_superadmin() {
+        return None;
+    }
+    let introuvable = || {
+        HttpResponse::NotFound().json(serde_json::json!({
+            "error": "Meeting not found"
+        }))
+    };
+    let Ok(Some(meeting)) = state.meeting_use_cases.get_meeting(meeting_id).await else {
+        return Some(introuvable());
+    };
+    let Ok(Some(building)) = state
+        .building_use_cases
+        .get_building(meeting.building_id)
+        .await
+    else {
+        return Some(introuvable());
+    };
+    let Ok(acp_id) = Uuid::parse_str(&building.acp_id) else {
+        return Some(HttpResponse::InternalServerError().json(serde_json::json!({
+            "error": "Invalid building.acp_id format"
+        })));
+    };
+    verify_acp_org_access(user, acp_id, &state.acp_use_cases)
+        .await
+        .err()
+        .map(|err| err.error_response())
+}
+
 #[utoipa::path(
     post,
     path = "/meetings/{meeting_id}/resolutions",
@@ -157,8 +214,12 @@ pub async fn get_resolution(
 #[get("/meetings/{meeting_id}/resolutions")]
 pub async fn list_meeting_resolutions(
     state: web::Data<AppState>,
+    user: AuthenticatedUser,
     meeting_id: web::Path<Uuid>,
 ) -> impl Responder {
+    if let Some(refus) = verifier_mandat_sur_ag(&state, &user, *meeting_id).await {
+        return refus;
+    }
     match state
         .resolution_use_cases
         .get_meeting_resolutions(*meeting_id)
@@ -274,7 +335,10 @@ pub async fn cast_vote(
             request.owner_id,
             request.unit_id,
             request.vote_choice.clone(),
-            request.voting_power,
+            // `request.voting_power` n'est PAS transmis : le cas d'usage relit
+            // la quotité du lot. Accepter ici une puissance déclarée sans s'en
+            // servir ressemblerait à un contrôle — c'est exactement ce que #850
+            // reproche à cette route.
             request.proxy_owner_id,
         )
         .await
@@ -303,6 +367,30 @@ pub async fn cast_vote(
             .with_error(err.clone())
             .log();
 
+            // Le refus de l'Art. 3.87 § 1er porte son code, et repart en 422.
+            //
+            // `AppError::VotingRightSuspended` existe, avec son statut 422 et
+            // son payload `{code, unit_id}` que l'interface consomme pour dire
+            // au syndic QUEL lot est concerné. Le pont
+            // `From<VotingRightSuspendedError> for String` existe aussi, et son
+            // commentaire annonce un préfixe « parsable par le gate vote ».
+            //
+            // Les deux bouts étaient écrits. Personne ne les avait reliés : le
+            // refus repartait en 400 avec une chaîne plate, et le badge du
+            // frontend n'avait jamais rien à consommer. Mesuré en exerçant le
+            // scénario d'indivision de #848 pour la première fois.
+            //
+            // Classer par préfixe est ce que #762 veut faire disparaître. Ici
+            // le préfixe a été posé EXPRÈS comme pont vers `Result<_, String>`,
+            // et s'en passer suppose de typer l'erreur du cas d'usage — soit la
+            // migration des 1263 `Result<_, String>` de #555.
+            if let Some(reste) = err.strip_prefix("VOTING_RIGHT_SUSPENDED: unit ") {
+                if let Ok(unit_id) = uuid::Uuid::parse_str(reste.trim()) {
+                    return crate::application::error::AppError::VotingRightSuspended { unit_id }
+                        .error_response();
+                }
+            }
+
             HttpResponse::BadRequest().json(serde_json::json!({"error": err}))
         }
     }
@@ -325,8 +413,22 @@ pub async fn cast_vote(
 #[get("/resolutions/{resolution_id}/votes")]
 pub async fn list_resolution_votes(
     state: web::Data<AppState>,
+    user: AuthenticatedUser,
     resolution_id: web::Path<Uuid>,
 ) -> impl Responder {
+    // On remonte à l'AG par la résolution, puis on applique le même mandat.
+    let Ok(Some(resolution)) = state
+        .resolution_use_cases
+        .get_resolution(*resolution_id)
+        .await
+    else {
+        return HttpResponse::NotFound().json(serde_json::json!({
+            "error": "Resolution not found"
+        }));
+    };
+    if let Some(refus) = verifier_mandat_sur_ag(&state, &user, resolution.meeting_id).await {
+        return refus;
+    }
     match state
         .resolution_use_cases
         .get_resolution_votes(*resolution_id)
@@ -426,7 +528,10 @@ pub async fn close_voting(
     state: web::Data<AppState>,
     user: AuthenticatedUser,
     resolution_id: web::Path<Uuid>,
-    request: web::Json<CloseVotingRequest>,
+    // Corps accepté mais inutilisé : voir le commentaire du calcul ci-dessous.
+    // On le garde dans la signature pour continuer d'accepter les appelants
+    // qui envoient encore `total_voting_power`, sans jamais s'en servir.
+    _request: web::Json<CloseVotingRequest>,
 ) -> impl Responder {
     let organization_id = match user.require_organization() {
         Ok(org_id) => org_id,
@@ -435,9 +540,52 @@ pub async fn close_voting(
         }
     };
 
+    // Le dénominateur de la majorité est lu SUR L'IMMEUBLE, jamais reçu du
+    // client.
+    //
+    // `close_voting` le prenait dans le corps de la requête. Deux défauts d'un
+    // coup : le frontend envoyait `{}`, donc la désérialisation échouait en 400
+    // et le bouton « Clôturer le vote » paraissait inerte — rapporté trois fois
+    // en recette (R3-3, RN-8), et deuxième des trois verrous qui empêchent une
+    // AG d'aboutir (#780). Et surtout, un client qui aurait fourni un total
+    // erroné faisait proclamer une majorité qui n'existe pas.
+    //
+    // Les tantièmes de l'acte de base sont une donnée de l'immeuble. C'est là
+    // qu'on les prend.
+    let total_voting_power = {
+        let Ok(Some(resolution)) = state
+            .resolution_use_cases
+            .get_resolution(*resolution_id)
+            .await
+        else {
+            return HttpResponse::NotFound().json(serde_json::json!({
+                "error": "Resolution not found"
+            }));
+        };
+        let Ok(Some(meeting)) = state
+            .meeting_use_cases
+            .get_meeting(resolution.meeting_id)
+            .await
+        else {
+            return HttpResponse::NotFound().json(serde_json::json!({
+                "error": "Meeting not found"
+            }));
+        };
+        let Ok(Some(building)) = state
+            .building_use_cases
+            .get_building(meeting.building_id)
+            .await
+        else {
+            return HttpResponse::NotFound().json(serde_json::json!({
+                "error": "Building not found"
+            }));
+        };
+        rust_decimal::Decimal::from(building.total_tantiemes)
+    };
+
     match state
         .resolution_use_cases
-        .close_voting(*resolution_id, request.total_voting_power)
+        .close_voting(*resolution_id, total_voting_power)
         .await
     {
         Ok(resolution) => {
@@ -486,7 +634,24 @@ pub async fn close_voting(
 pub async fn get_meeting_vote_summary(
     state: web::Data<AppState>,
     meeting_id: web::Path<Uuid>,
+    user: AuthenticatedUser,
 ) -> impl Responder {
+    // Route imbriquee non gardee au releve du 2026-09-06 (issue #772). C'est
+    // par ce genre de route qu'un cabinet a lu les bulletins NOMINATIFS d'une
+    // autre copropriete (RN-2).
+    if let Err(err) =
+        crate::infrastructure::web::middleware::scope_guard::verify_meeting_org_access(
+            &user,
+            *meeting_id,
+            &state.meeting_use_cases,
+            &state.building_use_cases,
+            &state.acp_use_cases,
+        )
+        .await
+    {
+        return err.error_response();
+    }
+
     match state
         .resolution_use_cases
         .get_meeting_vote_summary(*meeting_id)

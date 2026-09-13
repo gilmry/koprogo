@@ -72,12 +72,62 @@ export interface RejectQuoteDto {
   decision_notes: string;
 }
 
+/**
+ * Réponse de `POST /quotes/compare`, telle que le serveur la sert.
+ *
+ * Le type déclarait auparavant `quotes`, `recommendation` et
+ * `complies_with_belgian_law`. **Aucun de ces trois champs n'est servi** :
+ * `QuoteComparisonResponseDto` (`quote_dto.rs:196`) rend `comparison_items`,
+ * `total_quotes`, les statistiques de prix et de durée, et
+ * `recommended_quote_id`.
+ *
+ * Conséquence, visible sur la capture d'écran du 2026-09-09 : la table de
+ * comparaison affichait ses colonnes et AUCUNE ligne, sous un bandeau rouge
+ * « minimum 3 devis requis » qui ne pouvait pas s'éteindre puisque
+ * `complies_with_belgian_law` valait toujours `undefined`. La comparaison de
+ * devis — une bonne pratique professionnelle belge au-dessus de 5 000 € —
+ * n'a jamais rien montré à personne.
+ */
 export interface QuoteComparison {
-  quotes: QuoteWithScore[];
-  recommendation: string;
-  complies_with_belgian_law: boolean;
+  project_title: string;
+  building_id: string;
+  total_quotes: number;
+  comparison_items: QuoteComparisonItem[];
+  min_price: string;
+  max_price: string;
+  avg_price: string;
+  min_duration_days: number;
+  max_duration_days: number;
+  avg_duration_days: number;
+  recommended_quote_id: string | null;
 }
 
+export interface QuoteComparisonItem {
+  quote: Quote;
+  /** `null` tant que le devis n'a pas été noté. */
+  score: QuoteScore | null;
+  /** 1, 2, 3… par score décroissant. */
+  rank: number;
+}
+
+export interface QuoteScore {
+  quote_id: string;
+  total_score: number;
+  price_score: number;
+  delay_score: number;
+  warranty_score: number;
+  reputation_score: number;
+}
+
+/**
+ * @deprecated Ne correspond à aucune réponse du serveur.
+ *
+ * Ce type mettait les notes à plat sur l'item (`item.price_score`) alors que
+ * `QuoteComparisonItemDto` les niche sous `score`, et déclarait `score:
+ * number` là où le serveur rend un objet — ou `null` tant que le devis n'est
+ * pas noté. Remplacé par `QuoteComparisonItem` ; conservé le temps de
+ * vérifier qu'aucun appelant ne subsiste.
+ */
 export interface QuoteWithScore {
   quote: Quote;
   score: number;

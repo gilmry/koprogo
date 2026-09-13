@@ -2,7 +2,7 @@ import { test, expect } from "@playwright/test";
 import type { Page } from "@playwright/test";
 import { loginAsSyndicWithBuilding, adminLogin } from "../helpers/auth";
 
-const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
+import { API_BASE } from "../helpers/adresses";
 
 async function setupAccountant(page: Page) {
   const ctx = await loginAsSyndicWithBuilding(page, "acct");
@@ -16,7 +16,7 @@ test.describe("Accounts - PCMN Belgian Chart of Accounts", () => {
 
     await expect(page.locator("body")).toBeVisible();
     await expect(
-      page.locator("main h1, main h2, [data-testid='accountant']").first(),
+      page.locator("[data-testid='accountant']").first(),
     ).toBeVisible({ timeout: 10000 });
   });
 
@@ -59,6 +59,9 @@ test.describe("Accounts - PCMN Belgian Chart of Accounts", () => {
     const findResp = await page.request.get(`${API_BASE}/accounts/code/612`, {
       headers: { Authorization: `Bearer ${token}` },
     });
-    expect(findResp.status()).toBe(200);
+    expect(
+      findResp.status(),
+      `findResp : ${await findResp.text().catch(() => "<corps illisible>")}`,
+    ).toBe(200);
   });
 });

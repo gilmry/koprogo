@@ -1,6 +1,7 @@
 import { test, expect } from "@playwright/test";
 import { ensureAcp } from "./helpers/auth";
 import { adminLogin } from "./helpers/auth";
+import { API_BASE } from "./helpers/adresses";
 
 /**
  * I18n (Internationalization) Tests
@@ -34,8 +35,6 @@ test.describe("I18n - Internationalization", () => {
   test("should handle Belgian characters in building names", async ({
     page,
   }) => {
-    const API_BASE =
-      process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
     const timestamp = Date.now();
 
     const adminToken = await adminLogin(page);
@@ -74,8 +73,6 @@ test.describe("I18n - Internationalization", () => {
   test("should handle Dutch building names (Flemish copropriété)", async ({
     page,
   }) => {
-    const API_BASE =
-      process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
     const timestamp = Date.now();
 
     const adminToken = await adminLogin(page);

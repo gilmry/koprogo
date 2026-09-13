@@ -15,6 +15,12 @@
  * Duree video attendue : ~50-70 secondes (rythme humain)
  */
 import { test, expect } from "@playwright/test";
+import { ADMIN_PASSWORD } from "../helpers/identifiants";
+import {
+  amorce,
+  aucuneErreurAffichee,
+  confirmerSiDemande,
+} from "../helpers/amorcage";
 import { selectOptionByName } from "../helpers/name-match";
 import {
   humanLogin,
@@ -26,7 +32,7 @@ import {
   PACE,
 } from "../helpers/video-pace";
 
-const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
+import { API_BASE } from "../helpers/adresses";
 
 test.describe("Scenario: Francois cree et soumet un budget annuel", () => {
   test.setTimeout(120_000);
@@ -36,9 +42,9 @@ test.describe("Scenario: Francois cree et soumet un budget annuel", () => {
   test.beforeAll(async ({ request }) => {
     // 1. Login admin
     const adminResp = await request.post(`${API_BASE}/auth/login`, {
-      data: { email: "admin@koprogo.com", password: "admin123" },
+      data: { email: "admin@koprogo.com", password: ADMIN_PASSWORD },
     });
-    const admin = await adminResp.json();
+    const admin = await amorce(adminResp, "POST /auth/login");
     const adminHeaders = { Authorization: `Bearer ${admin.token}` };
 
     // 2. Seed the world
@@ -55,7 +61,7 @@ test.describe("Scenario: Francois cree et soumet un budget annuel", () => {
 
   test.afterAll(async ({ request }) => {
     const adminResp = await request.post(`${API_BASE}/auth/login`, {
-      data: { email: "admin@koprogo.com", password: "admin123" },
+      data: { email: "admin@koprogo.com", password: ADMIN_PASSWORD },
     });
     const admin = await adminResp.json();
     await request.delete(`${API_BASE}/seed/scenario/world`, {
@@ -89,6 +95,8 @@ test.describe("Scenario: Francois cree et soumet un budget annuel", () => {
     // ETAPE 3 : Ouvrir le formulaire de creation
     // ============================================================
     await humanClick(page, "create-budget-button");
+    await confirmerSiDemande(page);
+    await aucuneErreurAffichee(page, "create-budget-button");
     await page.waitForTimeout(PACE.AFTER_NAVIGATION);
 
     await expect(page.getByTestId("budget-building-select")).toBeVisible({
@@ -151,6 +159,8 @@ test.describe("Scenario: Francois cree et soumet un budget annuel", () => {
     // ETAPE 6 : Soumettre le formulaire de creation
     // ============================================================
     await humanClick(page, "budget-submit-button");
+    await confirmerSiDemande(page);
+    await aucuneErreurAffichee(page, "création du budget 2026");
     await waitForSpinner(page);
     await page.waitForTimeout(PACE.AFTER_NAVIGATION);
 
@@ -163,7 +173,18 @@ test.describe("Scenario: Francois cree et soumet un budget annuel", () => {
       timeout: 15000,
     });
 
-    await expect(page.locator("text=2026")).toBeVisible({ timeout: 10000 });
+    // L'annee est cherchee DANS la ligne du budget, pas dans la page.
+    //
+    // `locator("text=2026")` resolvait deux elements et Playwright refusait en
+    // mode strict : la cellule du budget, et « © 2026 KoproGo » du pied de
+    // page. La capture montre pourtant le budget parfaitement affiche —
+    // 2026, Residence du Parc Royal, 60 000 €, Brouillon.
+    //
+    // C'est le meme piege que le `h1` de `notice-board` : une assertion posee
+    // sur la page entiere, la ou seule une partie est en cause.
+    await expect(page.getByTestId("budget-row").first()).toContainText("2026", {
+      timeout: 10000,
+    });
 
     await stepPause(page);
 
@@ -201,6 +222,8 @@ test.describe("Scenario: Francois cree et soumet un budget annuel", () => {
         page.on("dialog", (dialog) => dialog.accept());
 
         await humanClickLocator(page, submitButton);
+        await confirmerSiDemande(page);
+        await aucuneErreurAffichee(page, "submitButton");
         await waitForSpinner(page);
         await page.waitForTimeout(PACE.AFTER_NAVIGATION);
 

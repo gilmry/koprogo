@@ -8,10 +8,31 @@
 #     GitFlow dev → integration → staging → production, humain à chaque
 #     gate). Cf. règle #2 CRITICAL.md : prod reste sous contrôle humain.
 #
-# Pré-requis côté repo (à configurer hors fichier, dans Settings → Branches) :
-#   - Branch protection sur `feature/dev` avec required status checks
-#     (au minimum : ci.yml, security.yml). Sans cela, `--auto` merge
-#     immédiatement sans attendre la CI — ce qui contredit la politique.
+# ── Le défaut que ce workflow avait, et comment il est fermé (#659) ──────
+#
+# La version précédente confiait le gate à la branch protection : `gh pr merge
+# --auto` n'attend la CI que si des « required status checks » sont configurés
+# sur la branche. Le commentaire le disait explicitement, et c'est exactement
+# ce qui a manqué.
+#
+# Constaté le 2026-09-03 :
+#
+#     gh api repos/gilmry/koprogo/branches/feature%2Fdev/protection
+#     → {"checks": [], "strict": true}
+#
+# La protection existait, sa liste de contrôles requis était VIDE. `--auto`
+# fusionnait donc immédiatement, sans jamais attendre la CI — y compris pour un
+# bump majeur avec breaking change. La politique était juste ; son application
+# reposait sur un réglage invisible depuis le dépôt, que personne ne pouvait
+# vérifier en lisant ce fichier.
+#
+# Le workflow attend désormais lui-même la conclusion des vérifications, avant
+# d'activer la fusion. Il ne dépend plus d'un réglage qu'on ne voit pas.
+#
+# La branch protection reste souhaitable — elle protège aussi des pushes
+# humains — mais elle n'est plus le seul rempart.
+#
+# Pré-requis côté repo restants :
 #   - "Allow auto-merge" activé dans Settings → General.
 #   - Dependabot doit avoir les permissions write (Settings → Code security
 #     → Dependabot → Allow GitHub Actions to create and approve pull requests).
@@ -38,12 +59,52 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Enable auto-merge (squash, gated by branch protection)
+      # Le gate est ICI, et non dans un réglage de dépôt : on attend que les
+      # vérifications concluent, et on échoue si l'une d'elles échoue.
+      #
+      # `--watch` bloque jusqu'à la conclusion de toutes les vérifications ;
+      # `--fail-fast` sort dès le premier échec plutôt que d'attendre les
+      # autres. Sans `--required`, les vérifications non bloquantes comptent
+      # aussi — c'est voulu : sur une branche de développement, une couverture
+      # qui s'effondre mérite un regard humain avant fusion.
+      - name: Wait for CI to conclude
+        env:
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "Attente de la conclusion des vérifications…"
+          gh pr checks "$PR_URL" --watch --fail-fast --interval 30
+
+      - name: Enable auto-merge (squash)
         env:
           PR_URL: ${{ github.event.pull_request.html_url }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           UPDATE_TYPE: ${{ steps.meta.outputs.update-type }}
           DEP_NAMES: ${{ steps.meta.outputs.dependency-names }}
         run: |
-          echo "Dependabot bump: $UPDATE_TYPE on $DEP_NAMES"
+          echo "Dependabot bump: $UPDATE_TYPE on $DEP_NAMES — CI verte, fusion."
           gh pr merge --auto --squash "$PR_URL"
+
+      # Si la CI a échoué, l'étape précédente n'a pas tourné. On le dit dans la
+      # PR plutôt que de laisser un workflow rouge sans explication : c'est un
+      # humain qui devra trancher entre corriger le bump et le refuser.
+      - name: Signaler l'échec dans la PR
+        if: failure()
+        env:
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          UPDATE_TYPE: ${{ steps.meta.outputs.update-type }}
+          DEP_NAMES: ${{ steps.meta.outputs.dependency-names }}
+        run: |
+          gh pr comment "$PR_URL" --body "$(cat <<'BODY'
+          La CI n'est pas verte : la fusion automatique n'a pas été activée.
+
+          La politique auto-merge (décision du 2026-05-11) couvre tous les
+          types de bump **dès lors que la CI passe**. Elle ne couvre pas un
+          bump qui casse la CI, quel que soit son type — y compris un correctif
+          de sécurité.
+
+          Un humain doit trancher entre corriger le bump et le refuser.
+          BODY
+          )"
+

@@ -843,6 +843,25 @@ mod tests {
                 .collect())
         }
 
+        /// Même source que ci-dessus dans les tests : les fixtures posent
+        /// directement des quotes-parts déjà résolues.
+        async fn find_active_quota_shares_by_building(
+            &self,
+            _building_id: Uuid,
+        ) -> Result<Vec<(Uuid, Uuid, rust_decimal::Decimal)>, String> {
+            // Return 10 unique owners (unit_id, owner_id, ownership_percentage)
+            // This matches the old hardcoded total_eligible_voters = 10
+            Ok((0..10)
+                .map(|_| {
+                    (
+                        Uuid::new_v4(),
+                        Uuid::new_v4(),
+                        rust_decimal_macros::dec!(0.1),
+                    )
+                })
+                .collect())
+        }
+
         async fn find_voting_holders_by_unit(
             &self,
             _unit_id: Uuid,

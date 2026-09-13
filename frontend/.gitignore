@@ -29,6 +29,16 @@ playwright/.cache/
 # test-results/**/*.webm
 # test-results/**/*.png
 
+# La vitrine (preuve de valeur) est DÉRIVÉE, jamais stockée.
+#
+# Le skill `documentation-vivante.md` en fait un principe : « la doc n'est pas
+# "mise à jour", elle est dérivée du parcours rejoué ». Une vitrine committée
+# serait une doc écrite à part — exactement ce que l'invariant anti-dette
+# (`garde-parcours-partage.test.ts`) existe pour empêcher.
+#
+# Elle se régénère par `make vitrine` et se publie en artefact de CI. Cf. #876.
+tests/e2e/journeys/vitrine/
+
 # Logs
 npm-debug.log*
 yarn-debug.log*

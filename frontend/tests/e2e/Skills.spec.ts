@@ -1,7 +1,7 @@
 import { test, expect } from "@playwright/test";
 import { loginAsSyndicWithLinkedOwner } from "./helpers/auth";
 
-const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
+import { API_BASE } from "./helpers/adresses";
 
 async function setupOwnerWithBuilding(page: import("@playwright/test").Page) {
   const ctx = await loginAsSyndicWithLinkedOwner(page, "skill");
@@ -20,7 +20,7 @@ test.describe("Skills - Community Directory", () => {
 
     await expect(page.locator("body")).toBeVisible();
     await expect(
-      page.locator("main h1, main h2, [data-testid='skills-list']").first(),
+      page.locator("[data-testid='skills-list']").first(),
     ).toBeVisible({ timeout: 10000 });
   });
 

@@ -59,6 +59,11 @@ pub struct UserResponse {
     pub role: String,
     pub organization_id: Option<uuid::Uuid>,
     pub is_active: bool,
+    /// Date d'inscription. Absente jusqu'au 2026-08-30 : la page profil
+    /// lisait l'utilisateur depuis la réponse de connexion et affichait donc
+    /// « Membre depuis : - ». `UserResponse` de `user_use_cases` l'exposait
+    /// déjà, ce DTO-ci l'avait simplement oubliée.
+    pub created_at: chrono::DateTime<chrono::Utc>,
     pub roles: Vec<UserRoleSummary>,
     pub active_role: Option<UserRoleSummary>,
 }
@@ -77,4 +82,22 @@ pub struct Claims {
     pub role_id: Option<uuid::Uuid>,
     pub exp: i64, // expiration timestamp
     pub iat: i64, // issued at
+}
+
+impl Claims {
+    /// L'appelant est-il superadministrateur de la plateforme ?
+    ///
+    /// Même définition que `AuthenticatedUser::is_superadmin`, et pour la même
+    /// raison : la comparaison littérale `role == "superadmin"` était écrite à
+    /// la main en soixante-treize endroits. Une seule d'entre elles qui se
+    /// trompe de casse, ou qui survit au renommage du rôle, ouvre un accès
+    /// sans que rien ne le dise.
+    ///
+    /// C'est la faiblesse qui a produit #814 — `community-moderator` comparé à
+    /// `community.moderator`, un trait d'union contre un point — et #836, où
+    /// dix rôles sur quatorze étaient travestis en `owner` faute d'être
+    /// déclarés au même endroit.
+    pub fn is_superadmin(&self) -> bool {
+        self.role == "superadmin"
+    }
 }

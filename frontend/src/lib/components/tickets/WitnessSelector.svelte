@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { _ } from "../../i18n";
   // Story B5 (Phase B FE) — WitnessSelector (chip-input + autocomplete).
   //
   // Réutilisé par :
@@ -87,9 +88,7 @@
   }
 
   /** Au moins une suggestion = self → on affiche le warning helper. */
-  let selfInSuggestions = $derived(
-    suggestions.some((s) => isSelf(s.id)),
-  );
+  let selfInSuggestions = $derived(suggestions.some((s) => isSelf(s.id)));
 
   // ---------------------------------------------------------------------------
   // Handlers
@@ -114,7 +113,7 @@
       for="ticket-witness-search"
       class="block text-sm font-medium text-gray-700"
     >
-      Témoins
+      {$_("tickets.witnesses")}
     </label>
     <span
       data-testid="ticket-witness-count"
@@ -150,7 +149,7 @@
       class="text-xs text-orange-700"
       role="note"
     >
-      Vous ne pouvez pas vous lister comme témoin de votre propre plainte.
+      {$_("tickets.cannotBeOwnWitness")}
     </p>
   {/if}
 
@@ -163,14 +162,18 @@
     >
       {#each suggestions as s (s.id)}
         {@const disabledOpt = isSelf(s.id)}
-        <li role="option" aria-selected="false" class="border-b last:border-b-0">
+        <li
+          role="option"
+          aria-selected="false"
+          class="border-b last:border-b-0"
+        >
           <button
             type="button"
             data-testid={`ticket-witness-option-${s.id}`}
             onclick={() => addWitness(s.id)}
             disabled={disabledOpt}
             aria-disabled={disabledOpt}
-            class="block w-full px-3 py-2 text-left text-sm hover:bg-blue-50 focus-visible:bg-blue-50 disabled:cursor-not-allowed disabled:text-gray-400"
+            class="block w-full px-3 py-2 text-left text-sm hover:bg-blue-50 focus-visible:bg-blue-50 disabled:cursor-not-allowed disabled:text-muted"
           >
             {s.label}{disabledOpt ? " (vous-même)" : ""}
           </button>

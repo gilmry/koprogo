@@ -588,8 +588,10 @@ async fn test_regular_board_member_cannot_access_other_building() {
     // Create a meeting for Building A to elect board member
     let meeting_a_id = {
         sqlx::query_scalar::<_, Uuid>(
-            "INSERT INTO meetings (id, organization_id, building_id, meeting_type, title, location, scheduled_date, created_at, updated_at)
-             VALUES ($1, $2, $3, $4::meeting_type, $5, $6, $7, NOW(), NOW())
+            // L'ACP se deduit de l'immeuble : l'assemblee appartient a la
+            // copropriete, pas au syndic qui la convoque (ADR-0045).
+            "INSERT INTO meetings (id, acp_id, organization_id, building_id, meeting_type, title, location, scheduled_date, created_at, updated_at)
+             VALUES ($1, (SELECT acp_id FROM buildings WHERE id = $3), $2, $3, $4::meeting_type, $5, $6, $7, NOW(), NOW())
              RETURNING id"
         )
         .bind(Uuid::new_v4())

@@ -59,7 +59,7 @@ pub async fn list_organizations(
     state: web::Data<AppState>,
     user: AuthenticatedUser,
 ) -> impl Responder {
-    if user.role != "superadmin" {
+    if !user.is_superadmin() {
         return HttpResponse::Forbidden().json(serde_json::json!({
             "error": "Only SuperAdmin can access all organizations"
         }));
@@ -83,7 +83,7 @@ pub async fn create_organization(
     user: AuthenticatedUser,
     req: web::Json<CreateOrganizationRequest>,
 ) -> impl Responder {
-    if user.role != "superadmin" {
+    if !user.is_superadmin() {
         return HttpResponse::Forbidden().json(serde_json::json!({
             "error": "Only SuperAdmin can create organizations"
         }));
@@ -142,7 +142,7 @@ pub async fn update_organization(
     path: web::Path<Uuid>,
     req: web::Json<UpdateOrganizationRequest>,
 ) -> impl Responder {
-    if user.role != "superadmin" {
+    if !user.is_superadmin() {
         return HttpResponse::Forbidden().json(serde_json::json!({
             "error": "Only SuperAdmin can update organizations"
         }));
@@ -192,7 +192,7 @@ pub async fn activate_organization(
     user: AuthenticatedUser,
     path: web::Path<Uuid>,
 ) -> impl Responder {
-    if user.role != "superadmin" {
+    if !user.is_superadmin() {
         return HttpResponse::Forbidden().json(serde_json::json!({
             "error": "Only SuperAdmin can activate organizations"
         }));
@@ -219,7 +219,7 @@ pub async fn suspend_organization(
     user: AuthenticatedUser,
     path: web::Path<Uuid>,
 ) -> impl Responder {
-    if user.role != "superadmin" {
+    if !user.is_superadmin() {
         return HttpResponse::Forbidden().json(serde_json::json!({
             "error": "Only SuperAdmin can suspend organizations"
         }));
@@ -246,7 +246,7 @@ pub async fn delete_organization(
     user: AuthenticatedUser,
     path: web::Path<Uuid>,
 ) -> impl Responder {
-    if user.role != "superadmin" {
+    if !user.is_superadmin() {
         return HttpResponse::Forbidden().json(serde_json::json!({
             "error": "Only SuperAdmin can delete organizations"
         }));

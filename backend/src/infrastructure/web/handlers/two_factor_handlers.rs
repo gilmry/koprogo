@@ -1,6 +1,7 @@
 use crate::application::dto::{
     Disable2FADto, Enable2FADto, RegenerateBackupCodesDto, Verify2FADto,
 };
+use crate::infrastructure::web::classification_erreurs;
 use crate::infrastructure::web::middleware::AuthenticatedUser;
 use crate::infrastructure::web::AppState;
 use actix_web::{web, HttpResponse};
@@ -114,9 +115,11 @@ pub async fn enable_2fa(
                 "error": e
             }))
         }
-        Err(e) if e.contains("not found") => HttpResponse::BadRequest().json(serde_json::json!({
-            "error": "2FA setup not found. Please run setup first."
-        })),
+        Err(e) if classification_erreurs::est_introuvable(&e) => {
+            HttpResponse::BadRequest().json(serde_json::json!({
+                "error": "2FA setup not found. Please run setup first."
+            }))
+        }
         Err(e) => {
             log::error!("Failed to enable 2FA for user: {}", "internal error");
             let _ = e; // error details intentionally not logged (may contain sensitive data)

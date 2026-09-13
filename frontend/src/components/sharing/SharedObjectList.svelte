@@ -6,9 +6,13 @@
     ObjectCategory,
   } from "../../lib/api/sharing";
   import SharedObjectCard from "./SharedObjectCard.svelte";
+  import { _ } from "../../lib/i18n";
   import { withErrorHandling } from "../../lib/utils/error.utils";
 
-  let { buildingId, showFilters = true }: {
+  let {
+    buildingId,
+    showFilters = true,
+  }: {
     buildingId: string;
     showFilters?: boolean;
   } = $props();
@@ -27,10 +31,11 @@
   async function loadObjects() {
     loading = true;
     const result = await withErrorHandling({
-      action: () => selectedAvailability === "available-only"
-        ? sharingApi.listAvailableObjects(buildingId)
-        : sharingApi.listObjectsByBuilding(buildingId),
-      errorMessage: "Failed to load shared objects",
+      action: () =>
+        selectedAvailability === "available-only"
+          ? sharingApi.listAvailableObjects(buildingId)
+          : sharingApi.listObjectsByBuilding(buildingId),
+      errorMessage: $_("sharing.loadFailed"),
     });
     if (result) {
       objects = result;
@@ -73,10 +78,14 @@
       <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
         <!-- Search -->
         <div>
-          <label for="search" class="block text-sm font-medium text-gray-700 mb-1">
-            Search
+          <label
+            for="search"
+            class="block text-sm font-medium text-gray-700 mb-1"
+          >
+            {$_("common.search")}
           </label>
           <input
+            data-testid="shared-object-search-input"
             type="text"
             id="search"
             bind:value={searchQuery}
@@ -87,15 +96,19 @@
 
         <!-- Category Filter -->
         <div>
-          <label for="category" class="block text-sm font-medium text-gray-700 mb-1">
-            Category
+          <label
+            for="category"
+            class="block text-sm font-medium text-gray-700 mb-1"
+          >
+            {$_("sharing.categoryLabel")}
           </label>
           <select
+            data-testid="shared-object-category-select"
             id="category"
             bind:value={selectedCategory}
             class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
           >
-            <option value="all">All Categories</option>
+            <option value="all">{$_("sharing.allCategories")}</option>
             {#each Object.values(ObjectCategory) as category}
               <option value={category}>{category}</option>
             {/each}
@@ -104,17 +117,22 @@
 
         <!-- Availability Filter -->
         <div>
-          <label for="availability" class="block text-sm font-medium text-gray-700 mb-1">
-            Availability
+          <label
+            for="availability"
+            class="block text-sm font-medium text-gray-700 mb-1"
+          >
+            {$_("sharing.availability")}
           </label>
           <select
+            data-testid="shared-object-availability-select"
             id="availability"
             bind:value={selectedAvailability}
             onchange={loadObjects}
             class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
           >
-            <option value="available-only">Available Only</option>
-            <option value="all">All Objects</option>
+            <option value="available-only">{$_("sharing.availableOnly")}</option
+            >
+            <option value="all">{$_("sharing.allObjects")}</option>
           </select>
         </div>
       </div>
@@ -123,11 +141,11 @@
 
   <!-- Objects Grid -->
   {#if loading}
-    <div class="text-center py-12 text-gray-500">Loading shared objects...</div>
+    <div class="text-center py-12 text-gray-500">{$_("sharing.loading")}</div>
   {:else if filteredObjects.length === 0}
     <div class="bg-white shadow rounded-lg p-12 text-center">
       <p class="text-gray-500">
-        No shared objects found.
+        {$_("sharing.empty")}
         {#if searchQuery || selectedCategory !== "all"}
           Try adjusting your filters.
         {/if}
@@ -136,7 +154,10 @@
   {:else}
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
       {#each filteredObjects as object}
-        <SharedObjectCard {object} onClick={() => handleObjectClick(object.id)} />
+        <SharedObjectCard
+          {object}
+          onClick={() => handleObjectClick(object.id)}
+        />
       {/each}
     </div>
 

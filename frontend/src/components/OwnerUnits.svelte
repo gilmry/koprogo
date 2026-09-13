@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { formatTantiemes } from "../lib/utils/tantiemes";
   // Svelte 5 runes mode
   import { _ } from "../lib/i18n";
   import { api } from "../lib/api";
@@ -70,7 +71,7 @@
   let inactiveUnits = $derived(ownerUnits.filter((uo) => !uo.is_active));
 </script>
 
-<div class="space-y-4" data-testid="owner-units">
+<div class="space-y-4" data-testid="owner-units-inline">
   {#if error}<div
       class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded"
     >
@@ -108,9 +109,9 @@
                         {ownerUnit.unit.floor}
                       </p>
                       <p class="text-xs text-gray-500">
-                        {ownerUnit.unit.surface_area} m² • {Math.round(
+                        {ownerUnit.unit.surface_area} m² • {formatTantiemes(
                           ownerUnit.unit.quota,
-                        )}/1000èmes
+                        )}
                       </p>
                     </div>
                   </div>

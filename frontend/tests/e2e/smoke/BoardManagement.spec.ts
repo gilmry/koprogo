@@ -9,7 +9,7 @@ import { loginAsSyndicWithOwner, ensureAcp } from "../helpers/auth";
  * Mirrors workflows from backend/tests/e2e_board.rs.
  */
 
-const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
+import { API_BASE } from "../helpers/adresses";
 
 test.describe("Board Management - Conseil de Copropriété", () => {
   test("should display board dashboard page", async ({ page }) => {
@@ -72,7 +72,10 @@ test.describe("Board Management - Conseil de Copropriété", () => {
       },
       headers: { Authorization: `Bearer ${token}` },
     });
-    expect(electResp.status()).toBe(201);
+    expect(
+      electResp.status(),
+      `electResp : ${await electResp.text().catch(() => "<corps illisible>")}`,
+    ).toBe(201);
 
     const member = await electResp.json();
     expect(member.id).toBeTruthy();
@@ -83,7 +86,10 @@ test.describe("Board Management - Conseil de Copropriété", () => {
       `${API_BASE}/board-members/${member.id}`,
       { headers: { Authorization: `Bearer ${token}` } },
     );
-    expect(getResp.status()).toBe(200);
+    expect(
+      getResp.status(),
+      `getResp : ${await getResp.text().catch(() => "<corps illisible>")}`,
+    ).toBe(200);
     const retrieved = await getResp.json();
     expect(retrieved.id).toBe(member.id);
   });
@@ -142,7 +148,10 @@ test.describe("Board Management - Conseil de Copropriété", () => {
         headers: { Authorization: `Bearer ${token}` },
       },
     );
-    expect(decisionResp.status()).toBe(201);
+    expect(
+      decisionResp.status(),
+      `decisionResp : ${await decisionResp.text().catch(() => "<corps illisible>")}`,
+    ).toBe(201);
 
     const decision = await decisionResp.json();
     expect(decision.id).toBeTruthy();
@@ -154,7 +163,10 @@ test.describe("Board Management - Conseil de Copropriété", () => {
       `${API_BASE}/board-decisions/${decision.id}`,
       { headers: { Authorization: `Bearer ${token}` } },
     );
-    expect(getResp.status()).toBe(200);
+    expect(
+      getResp.status(),
+      `getResp : ${await getResp.text().catch(() => "<corps illisible>")}`,
+    ).toBe(200);
   });
 
   test("should list board decisions for building", async ({ page }) => {
@@ -182,7 +194,10 @@ test.describe("Board Management - Conseil de Copropriété", () => {
       `${API_BASE}/buildings/${buildingId}/board-members/stats`,
       { headers: { Authorization: `Bearer ${token}` } },
     );
-    expect(statsResp.status()).toBe(200);
+    expect(
+      statsResp.status(),
+      `statsResp : ${await statsResp.text().catch(() => "<corps illisible>")}`,
+    ).toBe(200);
   });
 
   test("should require auth for board management API", async ({ page }) => {

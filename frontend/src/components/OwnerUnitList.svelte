@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { formatTantiemes } from "../lib/utils/tantiemes";
   // Svelte 5 runes mode
   import { _ } from "../lib/i18n";
   import { api } from "../lib/api";
@@ -26,8 +27,9 @@
     for (const bid of buildingIds) {
       try {
         const b = await api.get<Building>(`/buildings/${bid}`);
+        // `$state` rend les objets réactifs en profondeur : l'affectation
+        // par clé suffit, la réaffectation à soi-même était sans effet.
         buildings[bid] = b;
-        buildings = buildings;
       } catch {
         /* skip */
       }
@@ -72,13 +74,12 @@
     if (!area) return "-";
     return `${area} m²`;
   }
-  function formatQuota(quota: number | null | undefined): string {
-    if (!quota && quota !== 0) return "-";
-    return `${quota}/1000`;
-  }
 </script>
 
-<div class="space-y-4">
+<!-- Ancre de la page « Mes lots » (/owner/units). Elle vivait sur
+     OwnerUnits.svelte, qui est la liste repliée dans le tableau des
+     copropriétaires côté syndic : le nom correspondait, pas l'écran. -->
+<div class="space-y-4" data-testid="owner-units">
   {#if buildingIds.length > 1}
     <div class="flex items-center gap-3">
       <label
@@ -87,6 +88,7 @@
         >{$_("owners.filter.by_building")}</label
       >
       <select
+        data-testid="owner-unit-building-filter-select"
         id="unit-building-filter"
         bind:value={selectedBuildingId}
         class="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500"
@@ -100,7 +102,7 @@
   {/if}
 
   {#if loading}
-    <div class="flex items-center justify-center gap-2 text-gray-400 py-8">
+    <div class="flex items-center justify-center gap-2 text-muted py-8">
       <div
         class="animate-spin w-5 h-5 border-2 border-primary-500 border-t-transparent rounded-full"
       ></div>
@@ -110,8 +112,10 @@
     <div
       class="bg-red-50 border border-red-200 rounded-lg p-4 text-sm text-red-700"
     >
-      {error}<button onclick={loadUnits} class="ml-2 underline"
-        >{$_("common.action.retry")}</button
+      {error}<button
+        data-testid="owner-unit-retry-button"
+        onclick={loadUnits}
+        class="ml-2 underline">{$_("common.action.retry")}</button
       >
     </div>
   {:else if units.length === 0}
@@ -142,7 +146,7 @@
       <div>
         <span class="text-gray-500">{$_("owners.summary.total_quota")}</span
         ><span class="ml-1 font-semibold text-gray-900"
-          >{units.reduce((sum, u) => sum + (u.quota || 0), 0)}/1000</span
+          >{units.reduce((sum, u) => sum + toNumber(u.quota), 0)}/1000</span
         >
       </div>
     </div>
@@ -163,7 +167,7 @@
                 >{getUnitTypeLabel(unit.unit_type)}</span
               >
             </div>
-            <span class="text-xs text-gray-400">{unit.id.slice(0, 8)}...</span>
+            <span class="text-xs text-muted">{unit.id.slice(0, 8)}...</span>
           </div>
           <h3 class="text-lg font-semibold text-gray-900 mb-2">
             {$_("common.unit")}
@@ -185,7 +189,7 @@
             <div class="flex justify-between">
               <dt class="text-gray-500">{$_("common.quota")}</dt>
               <dd class="font-medium text-gray-900">
-                {formatQuota(unit.quota)}
+                {formatTantiemes(unit.quota)}
               </dd>
             </div>
             {#if !selectedBuildingId && unit.building_id}<div
@@ -202,7 +206,7 @@
           </dl>
           {#if unit.owners && unit.owners.length > 0}
             <div class="mt-3 pt-3 border-t border-gray-100">
-              <p class="text-xs text-gray-400 uppercase tracking-wider mb-1">
+              <p class="text-xs text-muted uppercase tracking-wider mb-1">
                 {$_("common.owners")}
               </p>
               <ul class="space-y-1">

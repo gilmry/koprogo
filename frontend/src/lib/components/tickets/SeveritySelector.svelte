@@ -22,12 +22,7 @@
   import type { components } from "../../../types/api";
 
   // Set fermé re-exporté pour le composant + parent.
-  export const SEVERITY_VALUES = [
-    "low",
-    "normal",
-    "high",
-    "critical",
-  ] as const;
+  export const SEVERITY_VALUES = ["low", "normal", "high", "critical"] as const;
   type TicketSeverity = components["schemas"]["TicketSeverity"];
 
   let {

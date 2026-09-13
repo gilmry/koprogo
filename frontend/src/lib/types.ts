@@ -1,9 +1,38 @@
+import type { components } from "../types/api";
+
 // User roles in the SaaS platform
+/**
+ * Les rôles servis par le backend.
+ *
+ * **Cette liste doit couvrir `UserRole` de `domain/plateforme/user.rs`.** Elle
+ * n'en déclarait que quatre sur quatorze jusqu'au 2026-09-07, et
+ * `normalizeRole` (stores/auth.ts) rabattait silencieusement les dix autres
+ * sur `OWNER` par son `default`.
+ *
+ * Conséquence mesurée : un `contractor`, un `lawyer` ou un `warden` était
+ * traité par l'interface comme un copropriétaire, et le registre
+ * `ROLES_SANS_INTERFACE` ne pouvait jamais s'appliquer — le rôle était déjà
+ * écrasé quand `Navigation.svelte` le testait. Tout #814 était neutralisé, et
+ * `garde-roles` passait quand même parce qu'elle appelle `canSee()` avec la
+ * chaîne du backend, que la production ne lui transmet jamais telle quelle.
+ * Voir #836.
+ */
 export enum UserRole {
-  SUPERADMIN = "superadmin", // Platform administrator
-  SYNDIC = "syndic", // Property manager
-  ACCOUNTANT = "accountant", // Accountant
-  OWNER = "owner", // Co-owner
+  SUPERADMIN = "superadmin", // Administrateur de la plateforme
+  SYNDIC = "syndic", // Syndic
+  ACCOUNTANT = "accountant", // Comptable (générique)
+  ACCOUNTANT_ENCODEUR = "accountant.encodeur", // Saisie amont
+  ACCOUNTANT_EMETTEUR = "accountant.emetteur", // Sortie financière
+  OWNER = "owner", // Copropriétaire
+  BOARD_MEMBER = "board_member", // Membre du conseil de copropriété
+  CONTRACTOR = "contractor", // Prestataire externe (accès par lien magique)
+  COMMUNITY_MODERATOR = "community.moderator", // Modérateur communauté
+  LAWYER = "lawyer",
+  NOTARY = "notary",
+  AMO = "amo", // Assistant maître d'ouvrage
+  ARCHITECT = "architect",
+  BET = "bet", // Bureau d'études techniques
+  WARDEN = "warden", // Concierge
 }
 
 export interface UserRoleSummary {
@@ -113,18 +142,23 @@ export interface UnitOwner {
 }
 
 // Unit interface
-export interface Unit {
-  id: string;
-  building_id: string;
-  unit_number: string;
-  floor: number;
-  surface_area: number;
-  quota: number; // Quote-part en millièmes (déjà exprimée sur 1000, ex: 350 = 350/1000èmes)
-  unit_type: "Apartment" | "Parking" | "Cellar";
-  owner_id?: string; // Deprecated - use unit_owners instead
-  // Optional: populated owners list
+// Branché sur le contrat plutôt que recopié.
+//
+// La version manuscrite déclarait `quota: number`. Le backend le sérialise en
+// CHAÎNE (`Decimal`, ADR-0008), ce que le contrat dit désormais explicitement :
+// `quota: string`. Ce seul mensonge de type est la cause du défaut F14 du
+// rapport du 2026-09-01 — `units.reduce((s, u) => s + u.quota, 0)` compilait
+// sans broncher, alors que `+` concatène des chaînes : le total des tantièmes
+// affichait « NaN/1000èmes », et l'indicateur de conformité des quotités
+// comparait NaN, donc annonçait « quotités correctes » quel que soit
+// l'encodage réel.
+//
+// Avec le type importé, la même ligne ne compile plus.
+export type Unit = components["schemas"]["UnitResponseDto"] & {
+  // Enrichissement côté client : la liste des détenteurs, chargée séparément
+  // depuis `/unit-owners`. N'existe pas dans la réponse de `/units`.
   owners?: UnitOwner[];
-}
+};
 
 // Expense interface
 export interface Expense {
@@ -148,6 +182,19 @@ export interface Expense {
   supplier?: string;
   invoice_number?: string;
   created_at?: string;
+
+  // Decomposition HT/TVA. Ces champs etaient renvoyes par l'API mais absents
+  // de ce type : la fiche depense ne pouvait afficher que le TTC.
+  //
+  // Type `string | number` et non `number` : ce sont des `Decimal` cote Rust,
+  // serialises en CHAINE (ADR-0008). Les declarer `number` mentait sur le
+  // contenu reel et laissait passer les sommes `+` qui concatenent au lieu
+  // d'additionner. Passer par `toNumber()` avant tout calcul.
+  amount_excl_vat?: string | number | null;
+  vat_rate?: string | number | null;
+  vat_amount?: string | number | null;
+  amount_incl_vat?: string | number | null;
+  account_code?: string | null;
 }
 
 // Meeting interface
@@ -162,6 +209,22 @@ export interface Meeting {
   status: "Scheduled" | "Completed" | "Cancelled";
   agenda: string[]; // Liste des points à l'ordre du jour
   attendees_count?: number;
+
+  // ── Délai de convocation, Art. 3.87 § 3 ────────────────────────────────
+  //
+  // Servis par l'API pour que l'écran d'assemblée puisse dire, sans recalculer,
+  // jusqu'à quand la convocation peut partir.
+  //
+  // `convocation_encore_possible: false` n'interdit rien : l'urgence est prévue
+  // par le texte lui-même, une assemblée peut être encodée après coup, et une
+  // seconde convocation subit la date de l'échec précédent (#780).
+  /** Date limite d'envoi d'une convocation régulière. Absente si l'assemblée est passée. */
+  date_limite_envoi_convocation?: string | null;
+  /** Le délai de quinze jours peut-il encore être tenu ? */
+  convocation_encore_possible?: boolean;
+  /** De combien de jours reculer l'assemblée pour tenir le délai. */
+  jours_manquants_convocation?: number | null;
+
   created_at?: string;
   updated_at?: string;
 }
@@ -241,14 +304,20 @@ export const hasPermission = (
 ): boolean => {
   if (!user) return false;
 
-  const roleHierarchy = {
+  // Hiérarchie PARTIELLE, et assumée comme telle.
+  //
+  // Les dix autres rôles n'ordonnent pas : un prestataire n'est pas « moins »
+  // qu'un comptable, il est ailleurs. Un rôle absent de cette table vaut donc
+  // 0 et n'obtient rien — refus explicite, là où le `Record` complet aurait
+  // exigé d'inventer un rang pour chacun.
+  const roleHierarchy: Partial<Record<UserRole, number>> = {
     [UserRole.SUPERADMIN]: 4,
     [UserRole.SYNDIC]: 3,
     [UserRole.ACCOUNTANT]: 2,
     [UserRole.OWNER]: 1,
   };
 
-  return roleHierarchy[user.role] >= roleHierarchy[requiredRole];
+  return (roleHierarchy[user.role] ?? 0) >= (roleHierarchy[requiredRole] ?? 0);
 };
 
 export const canAccessBuilding = (

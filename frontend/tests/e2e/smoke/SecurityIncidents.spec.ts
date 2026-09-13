@@ -16,7 +16,7 @@ import { loginAsAdmin, loginAsSyndic } from "../helpers/auth";
  * Fix: backend should handle NULL org_id for superadmin (e.g., require org_id in request body).
  */
 
-const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
+import { API_BASE } from "../helpers/adresses";
 
 test.describe("Security Incidents - GDPR Art. 33 Breach Notification", () => {
   // Skipped: superadmin has no organization_id, causing NOT NULL violation
@@ -40,7 +40,10 @@ test.describe("Security Incidents - GDPR Art. 33 Breach Notification", () => {
       },
     );
 
-    expect(createResp.status()).toBe(201);
+    expect(
+      createResp.status(),
+      `createResp : ${await createResp.text().catch(() => "<corps illisible>")}`,
+    ).toBe(201);
     const incident = await createResp.json();
     expect(incident.title).toBe(`Test Breach ${timestamp}`);
     expect(incident.severity).toBe("high");
@@ -80,7 +83,10 @@ test.describe("Security Incidents - GDPR Art. 33 Breach Notification", () => {
       },
     );
 
-    expect(createResp.status()).toBe(201);
+    expect(
+      createResp.status(),
+      `createResp : ${await createResp.text().catch(() => "<corps illisible>")}`,
+    ).toBe(201);
     const created = await createResp.json();
 
     const getResp = await page.request.get(
@@ -147,7 +153,10 @@ test.describe("Security Incidents - GDPR Art. 33 Breach Notification", () => {
       },
     );
 
-    expect(createResp.status()).toBe(201);
+    expect(
+      createResp.status(),
+      `createResp : ${await createResp.text().catch(() => "<corps illisible>")}`,
+    ).toBe(201);
     const created = await createResp.json();
 
     const reportResp = await page.request.put(
@@ -162,6 +171,9 @@ test.describe("Security Incidents - GDPR Art. 33 Breach Notification", () => {
       },
     );
 
-    expect(reportResp.status()).toBe(200);
+    expect(
+      reportResp.status(),
+      `reportResp : ${await reportResp.text().catch(() => "<corps illisible>")}`,
+    ).toBe(200);
   });
 });

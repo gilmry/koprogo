@@ -107,6 +107,17 @@ pub struct GovernanceWorld {
     convocation_owner_ids: Vec<Uuid>,
     convocation_owner_emails: Vec<(Uuid, String)>,
     convocation_recipient_ids: Vec<(String, Uuid)>, // email -> recipient_id
+    /// Les copropriétaires du parcours « Résidence du Parc Royal », par prénom.
+    ///
+    /// Ce parcours nomme ses personnes — Alice, Emmanuel, Philippe, Jeanne —
+    /// parce que les règles qu'il éprouve dépendent de QUI fait quoi : le
+    /// syndic ne peut pas être mandataire, le locataire est informé sans
+    /// voter, et une procuration à soi-même n'existe pas.
+    parc_royal_owners: Vec<(String, Uuid, Decimal, Option<String>)>,
+    /// Le syndic du parcours, qui n'est pas copropriétaire.
+    parc_royal_syndic_user_id: Option<Uuid>,
+    /// Le locataire, notifié sans droit de vote (Art. 3.87 § 5, 6°).
+    parc_royal_tenant_id: Option<Uuid>,
     tracking_summary: Option<RecipientTrackingSummaryResponse>,
     convocation_meeting_id: Option<Uuid>,
     convocation_meeting_date: Option<chrono::DateTime<Utc>>,
@@ -249,6 +260,9 @@ impl GovernanceWorld {
             convocation_owner_ids: Vec::new(),
             convocation_owner_emails: Vec::new(),
             convocation_recipient_ids: Vec::new(),
+            parc_royal_owners: Vec::new(),
+            parc_royal_syndic_user_id: None,
+            parc_royal_tenant_id: None,
             tracking_summary: None,
             convocation_meeting_id: None,
             convocation_meeting_date: None,
@@ -425,6 +439,8 @@ impl GovernanceWorld {
             vote_repo,
             meeting_repo.clone(),
             Arc::new(PostgresUnitOwnerRepository::new(pool.clone())),
+            // #850 — la quotité du lot se lit sur l'acte de base.
+            Arc::new(PostgresUnitRepository::new(pool.clone())),
         );
         let quote_use_cases = QuoteUseCases::new(quote_repo);
         let building_use_cases = BuildingUseCases::new(building_repo.clone());
@@ -434,6 +450,8 @@ impl GovernanceWorld {
             owner_repo,
             building_repo,
             meeting_repo,
+            Arc::new(PostgresUnitOwnerRepository::new(pool.clone())),
+            user_repo.clone(),
         );
         let auth_use_cases = AuthUseCases::new(
             user_repo.clone(),
@@ -540,7 +558,9 @@ impl GovernanceWorld {
                 format!("Description for {}", title),
                 ResolutionType::Ordinary,
                 majority,
-                None,
+                // Point 0 : une resolution hors ordre du jour n'est pas
+                // votable (Art. 3.87 § 2 CC, #840).
+                Some(0),
             )
             .await;
         match result {
@@ -585,7 +605,9 @@ impl GovernanceWorld {
 
         let owner_id = self.get_owner_id(actual_voter);
         let unit_id = self.get_unit_id(actual_voter);
-        let voting_power = self.get_voting_power(actual_voter);
+        // #850 — la puissance de vote n'est plus transmise : le cas d'usage la
+        // lit sur le lot. `get_voting_power` reste utile aux assertions du
+        // scénario, qui vérifient le décompte final.
 
         let result = uc
             .cast_vote(
@@ -593,7 +615,8 @@ impl GovernanceWorld {
                 owner_id,
                 unit_id,
                 choice.clone(),
-                voting_power,
+                // #850 — `voting_power` n'est plus transmise : le cas d'usage
+                // relit la quotité sur le lot.
                 proxy_id,
             )
             .await;
@@ -651,8 +674,12 @@ async fn given_meeting_exists(world: &mut GovernanceWorld, title: String) {
     let org_id = world.org_id.unwrap();
 
     sqlx::query(
-        r#"INSERT INTO meetings (id, organization_id, building_id, meeting_type, title, scheduled_date, location, status, created_at, updated_at)
-           VALUES ($1, $2, $3, 'ordinary', $4, NOW() + interval '30 days', 'Salle AG', 'scheduled', NOW(), NOW())"#,
+        // Un point d'ordre du jour, sans quoi aucune resolution n'est votable :
+        // Art. 3.87 § 2 CC annule une decision portant sur un point absent, et
+        // `cast_vote` la refuse depuis #840. Ces scenarios votaient jusqu'ici
+        // sur des resolutions rattachees a rien.
+        r#"INSERT INTO meetings (id, acp_id, organization_id, building_id, meeting_type, title, scheduled_date, location, status, agenda, created_at, updated_at)
+             VALUES ($1, (SELECT acp_id FROM buildings WHERE id = $3), $2, $3, 'ordinary', $4, NOW() + interval '30 days', 'Salle AG', 'scheduled', '["Approbation des comptes"]'::jsonb, NOW(), NOW())"#,
     )
     .bind(meeting_id)
     .bind(org_id)
@@ -964,7 +991,9 @@ async fn when_create_resolution(world: &mut GovernanceWorld, step: &Step) {
             description,
             ResolutionType::Ordinary,
             majority,
-            None,
+            // Point 0 : une resolution hors ordre du jour n'est pas votable
+            // (Art. 3.87 § 2 CC, #840).
+            Some(0),
         )
         .await;
 
@@ -1299,8 +1328,8 @@ async fn given_meeting_in_n_days(world: &mut GovernanceWorld, _title: String, da
     let meeting_date = Utc::now() + ChronoDuration::days(days);
 
     sqlx::query(
-        r#"INSERT INTO meetings (id, organization_id, building_id, meeting_type, title, scheduled_date, location, status, created_at, updated_at)
-           VALUES ($1, $2, $3, 'ordinary', $4, $5, 'Salle AG', 'scheduled', NOW(), NOW())"#,
+        r#"INSERT INTO meetings (id, acp_id, organization_id, building_id, meeting_type, title, scheduled_date, location, status, agenda, created_at, updated_at)
+             VALUES ($1, (SELECT acp_id FROM buildings WHERE id = $3), $2, $3, 'ordinary', $4, $5, 'Salle AG', 'scheduled', '["Point unique"]'::jsonb, NOW(), NOW())"#,
     )
     .bind(meeting_id)
     .bind(org_id)
@@ -1430,7 +1459,7 @@ async fn given_sent_convocation_with_recipients(world: &mut GovernanceWorld) {
     let id = world.last_convocation_id.unwrap();
 
     let request = SendConvocationRequest {
-        recipient_owner_ids: world.convocation_owner_ids.clone(),
+        recipient_owner_ids: Some(world.convocation_owner_ids.clone()),
     };
     let result = uc.send_convocation(id, request).await;
     match result {
@@ -1509,8 +1538,8 @@ async fn given_n_convocations(world: &mut GovernanceWorld, count: i32) {
         let meeting_date = Utc::now() + ChronoDuration::days(20 + i as i64 * 5);
 
         sqlx::query(
-            r#"INSERT INTO meetings (id, organization_id, building_id, meeting_type, title, scheduled_date, location, status, created_at, updated_at)
-               VALUES ($1, $2, $3, 'ordinary', $4, $5, 'Salle AG', 'scheduled', NOW(), NOW())"#,
+            r#"INSERT INTO meetings (id, acp_id, organization_id, building_id, meeting_type, title, scheduled_date, location, status, agenda, created_at, updated_at)
+             VALUES ($1, (SELECT acp_id FROM buildings WHERE id = $3), $2, $3, 'ordinary', $4, $5, 'Salle AG', 'scheduled', '["Point unique"]'::jsonb, NOW(), NOW())"#,
         )
         .bind(meeting_id)
         .bind(org_id)
@@ -1648,7 +1677,7 @@ async fn when_send_convocation(world: &mut GovernanceWorld) {
     let id = world.last_convocation_id.unwrap();
 
     let request = SendConvocationRequest {
-        recipient_owner_ids: world.convocation_owner_ids.clone(),
+        recipient_owner_ids: Some(world.convocation_owner_ids.clone()),
     };
     let result = uc.send_convocation(id, request).await;
     match result {
@@ -6848,8 +6877,8 @@ async fn given_scheduled_ag_session(world: &mut GovernanceWorld) {
     let new_meeting_id = Uuid::new_v4();
     let building_id = world.building_id.unwrap();
     sqlx::query(
-        r#"INSERT INTO meetings (id, organization_id, building_id, meeting_type, title, scheduled_date, location, status, created_at, updated_at)
-           VALUES ($1, $2, $3, 'ordinary', 'Meeting for AG Session', NOW() + interval '10 days', 'Online', 'scheduled', NOW(), NOW())"#,
+        r#"INSERT INTO meetings (id, acp_id, organization_id, building_id, meeting_type, title, scheduled_date, location, status, agenda, created_at, updated_at)
+             VALUES ($1, (SELECT acp_id FROM buildings WHERE id = $3), $2, $3, 'ordinary', 'Meeting for AG Session', NOW() + interval '10 days', 'Online', 'scheduled', '["Point unique"]'::jsonb, NOW(), NOW())"#,
     )
     .bind(new_meeting_id)
     .bind(org_id)
@@ -7233,8 +7262,8 @@ async fn given_n_ag_sessions_in_org(world: &mut GovernanceWorld, count: usize) {
         // Create a unique meeting for each session
         let new_meeting_id = Uuid::new_v4();
         sqlx::query(
-            r#"INSERT INTO meetings (id, organization_id, building_id, meeting_type, title, scheduled_date, location, status, created_at, updated_at)
-               VALUES ($1, $2, $3, 'ordinary', $4, NOW() + interval '20 days', 'Online', 'scheduled', NOW(), NOW())"#,
+            r#"INSERT INTO meetings (id, acp_id, organization_id, building_id, meeting_type, title, scheduled_date, location, status, agenda, created_at, updated_at)
+             VALUES ($1, (SELECT acp_id FROM buildings WHERE id = $3), $2, $3, 'ordinary', $4, NOW() + interval '20 days', 'Online', 'scheduled', '["Point unique"]'::jsonb, NOW(), NOW())"#,
         )
         .bind(new_meeting_id)
         .bind(org_id)
@@ -7591,9 +7620,15 @@ async fn then_threshold_reached(world: &mut GovernanceWorld, expected: String) {
         .expect("No AGE request response");
     let expected_bool = expected == "true";
     assert_eq!(
-        resp.threshold_reached, expected_bool,
-        "threshold_reached mismatch: expected {}, got {}",
-        expected_bool, resp.threshold_reached
+        resp.threshold_reached,
+        expected_bool,
+        "Art. 3.87 § 2 : le seuil est d'un cinquième des QUOTITÉS, pas des \
+         copropriétaires. Cinq personnes détenant chacune 1 % ne l'atteignent \
+         pas ; une seule détenant 20 % suffit.\n\n\
+         Cumul actuel : {} %. `threshold_reached` attendu {expected_bool}, \
+         obtenu {}.",
+        resp.total_shares_pct * Decimal::from(100),
+        resp.threshold_reached
     );
 }
 
@@ -7899,30 +7934,10 @@ async fn then_submitted_to_syndic_at_set(world: &mut GovernanceWorld) {
         .expect("No AGE request response");
     assert!(
         resp.submitted_to_syndic_at.is_some(),
-        "submitted_to_syndic_at should be set"
+        "La soumission n'est pas horodatée. C'est elle qui fait courir le \
+         délai de réponse du syndic : sans date de départ, l'auto-convocation \
+         ne peut pas se déclencher, et les copropriétaires restent sans recours."
     );
-}
-
-#[then("syndic_deadline_at should be 15 days after submission")]
-async fn then_syndic_deadline_15_days(world: &mut GovernanceWorld) {
-    let resp = world
-        .last_age_request_response
-        .as_ref()
-        .expect("No AGE request response");
-    assert!(
-        resp.syndic_deadline_at.is_some(),
-        "syndic_deadline_at should be set"
-    );
-    if let (Some(submitted), Some(deadline)) =
-        (resp.submitted_to_syndic_at, resp.syndic_deadline_at)
-    {
-        let diff = deadline - submitted;
-        assert!(
-            diff.num_days() >= 14 && diff.num_days() <= 16,
-            "syndic_deadline_at should be ~15 days after submission, got {} days",
-            diff.num_days()
-        );
-    }
 }
 
 #[given("an open AGE request without enough shares")]
@@ -7987,7 +8002,9 @@ async fn then_syndic_response_at_set(world: &mut GovernanceWorld) {
         .expect("No AGE request response");
     assert!(
         resp.syndic_response_at.is_some(),
-        "syndic_response_at should be set"
+        "La réponse du syndic n'est pas horodatée : on ne peut pas montrer \
+         qu'elle est intervenue dans le délai de quinze jours, ni donc si \
+         l'auto-convocation était ouverte."
     );
 }
 
@@ -8207,8 +8224,9 @@ async fn given_gd_resolution_with_votes(world: &mut GovernanceWorld, p1: String,
     // Meeting
     let meeting_id = Uuid::new_v4();
     sqlx::query(
-        r#"INSERT INTO meetings (id, organization_id, building_id, meeting_type, title, scheduled_date, location, status, created_at, updated_at)
-           VALUES ($1, $2, $3, 'ordinary', 'GD vote meeting', NOW() + interval '30 days', 'Salle', 'scheduled', NOW(), NOW())"#,
+        // Ordre du jour non vide : Art. 3.87 § 2 CC, cf. #840.
+        r#"INSERT INTO meetings (id, acp_id, organization_id, building_id, meeting_type, title, scheduled_date, location, status, agenda, created_at, updated_at)
+             VALUES ($1, (SELECT acp_id FROM buildings WHERE id = $3), $2, $3, 'ordinary', 'GD vote meeting', NOW() + interval '30 days', 'Salle', 'scheduled', '["Point unique"]'::jsonb, NOW(), NOW())"#,
     )
     .bind(meeting_id)
     .bind(org_id)
@@ -8220,8 +8238,9 @@ async fn given_gd_resolution_with_votes(world: &mut GovernanceWorld, p1: String,
     // Resolution
     let resolution_id = Uuid::new_v4();
     sqlx::query(
-        r#"INSERT INTO resolutions (id, meeting_id, title, description, resolution_type, majority_required, status, created_at)
-           VALUES ($1, $2, 'GD resolution', 'desc', 'Ordinary', 'Simple', 'Pending', NOW())"#,
+        // Rattachée au point 0 : sans index, la résolution n'est pas votable.
+        r#"INSERT INTO resolutions (id, meeting_id, title, description, resolution_type, majority_required, status, agenda_item_index, created_at)
+           VALUES ($1, $2, 'GD resolution', 'desc', 'Ordinary', 'Simple', 'Pending', 0, NOW())"#,
     )
     .bind(resolution_id)
     .bind(meeting_id)
@@ -8343,6 +8362,7 @@ async fn when_gd_check_quorum(world: &mut GovernanceWorld, _threshold: u32) {
     let present = world.gd_quorum_present.unwrap();
 
     let mut meeting = Meeting::new(
+        Uuid::new_v4(), // acp_id (ADR-0045)
         world.org_id.unwrap(),
         world.building_id.unwrap(),
         koprogo_api::domain::entities::MeetingType::Ordinary,
@@ -8517,4 +8537,1315 @@ async fn main() {
     if had_failures {
         std::process::exit(1);
     }
+}
+
+// ===========================================================================
+// Parcours « Résidence du Parc Royal » — Art. 3.87 § 3, § 5 6°, § 7
+// ===========================================================================
+//
+// Douze scénarios de `convocations.feature` étaient SAUTÉS faute d'étapes :
+// écrits, lus en revue, cités comme couverture, et n'exécutant aucune
+// assertion. Un scénario sauté ne compte ni comme succès ni comme échec — il
+// ne se voit qu'en comptant les `?` dans un journal de sept cents lignes.
+//
+// C'est le motif dominant de ce produit sous sa forme la plus trompeuse : ici
+// ce n'est pas la capacité qui est inatteignable, c'est la PREUVE. Relevé au
+// 2026-09-06, issue #540.
+//
+// Le parcours nomme ses personnes, et ce n'est pas décoratif : les règles
+// qu'il éprouve dépendent de QUI fait quoi. Le syndic ne peut pas être
+// mandataire, le locataire est informé sans voter, et une procuration à
+// soi-même n'existe pas.
+
+/// Retrouve un copropriétaire du parcours par son prénom.
+fn parc_royal_owner(world: &GovernanceWorld, prenom: &str) -> (Uuid, Decimal) {
+    world
+        .parc_royal_owners
+        .iter()
+        .find(|(nom, _, _, _)| nom.starts_with(prenom))
+        .map(|(_, id, tantiemes, _)| (*id, *tantiemes))
+        .unwrap_or_else(|| {
+            panic!(
+                "« {prenom} » n'est pas un copropriétaire du parcours. Connus : {:?}",
+                world
+                    .parc_royal_owners
+                    .iter()
+                    .map(|(n, _, _, _)| n.as_str())
+                    .collect::<Vec<_>>()
+            )
+        })
+}
+
+#[given(regex = r#"^the building "([^"]*)" with (\d+) lots and (\d+) tantiemes$"#)]
+async fn given_parc_royal_building(
+    world: &mut GovernanceWorld,
+    nom: String,
+    lots: i32,
+    tantiemes: i32,
+) {
+    if world.pool.is_none() {
+        world.setup_database().await;
+    }
+    let pool = world.pool.as_ref().unwrap();
+    let org_id = world.org_id.unwrap();
+
+    let acp_id = Uuid::new_v4();
+    let court = org_id.simple().to_string();
+    sqlx::query(
+        r#"INSERT INTO acps (id, organization_id, name, slug, legal_status,
+                             address_street, address_postal_code, address_city,
+                             total_tantiemes, created_at, updated_at)
+           VALUES ($1, $2, $3, $4, 'copropriete_belge', 'Avenue du Parc 1',
+                   '1000', 'Bruxelles', $5, NOW(), NOW())"#,
+    )
+    .bind(acp_id)
+    .bind(org_id)
+    .bind(format!("ACP {nom}"))
+    .bind(format!("acp-parc-royal-{}", &court[..8]))
+    .bind(tantiemes)
+    .execute(pool)
+    .await
+    .expect("insert acp Parc Royal");
+
+    let building_id = Uuid::new_v4();
+    sqlx::query(
+        r#"INSERT INTO buildings (id, acp_id, name, address, city, postal_code, country,
+                                  total_units, total_tantiemes, created_at, updated_at)
+           VALUES ($1, $2, $3, 'Avenue du Parc 1', 'Bruxelles', '1000', 'Belgique',
+                   $4, $5, NOW(), NOW())"#,
+    )
+    .bind(building_id)
+    .bind(acp_id)
+    .bind(&nom)
+    .bind(lots)
+    .bind(tantiemes)
+    .execute(pool)
+    .await
+    .expect("insert building Parc Royal");
+
+    world.building_id = Some(building_id);
+    world.parc_royal_owners.clear();
+}
+
+#[given(regex = r#"^([A-Z][a-zé]+ [A-Z][a-zA-Z]+) is syndic of the building$"#)]
+async fn given_parc_royal_syndic(world: &mut GovernanceWorld, nom_complet: String) {
+    let pool = world.pool.as_ref().unwrap();
+    let org_id = world.org_id.unwrap();
+
+    let (prenom, nom) = nom_complet
+        .split_once(' ')
+        .unwrap_or((&nom_complet, "Syndic"));
+    let user_id = Uuid::new_v4();
+    sqlx::query(
+        r#"INSERT INTO users (id, email, password_hash, first_name, last_name, role,
+                              organization_id, is_active, created_at, updated_at)
+           VALUES ($1, $2, '$argon2id$v=19$m=19456,t=2,p=1$dummy', $3, $4, 'syndic',
+                   $5, true, NOW(), NOW())"#,
+    )
+    .bind(user_id)
+    .bind(format!("{}@syndic-parc.be", prenom.to_lowercase()))
+    .bind(prenom)
+    .bind(nom)
+    .bind(org_id)
+    .execute(pool)
+    .await
+    .expect("insert syndic");
+
+    world.parc_royal_syndic_user_id = Some(user_id);
+    world.created_by_user_id = Some(user_id);
+}
+
+#[given(regex = r#"^the AG Ordinaire \d+ is scheduled in (\d+) days$"#)]
+async fn given_parc_royal_ag(world: &mut GovernanceWorld, jours: i64) {
+    let pool = world.pool.as_ref().unwrap();
+    let org_id = world.org_id.unwrap();
+    let building_id = world.building_id.unwrap();
+
+    let meeting_id = Uuid::new_v4();
+    let date = Utc::now() + ChronoDuration::days(jours);
+    sqlx::query(
+        r#"INSERT INTO meetings (id, acp_id, organization_id, building_id, meeting_type,
+                                 title, scheduled_date, location, status, agenda, created_at, updated_at)
+           VALUES ($1, (SELECT acp_id FROM buildings WHERE id = $3), $2, $3, 'ordinary',
+                   'AG Ordinaire', $4, 'Salle des fetes', 'scheduled', '["Point unique"]'::jsonb, NOW(), NOW())"#,
+    )
+    .bind(meeting_id)
+    .bind(org_id)
+    .bind(building_id)
+    .bind(date)
+    .execute(pool)
+    .await
+    .expect("insert AG Parc Royal");
+
+    world.convocation_meeting_id = Some(meeting_id);
+    world.convocation_meeting_date = Some(date);
+    world.meeting_id = Some(meeting_id);
+}
+
+#[given("the following co-owners exist:")]
+async fn given_parc_royal_owners(world: &mut GovernanceWorld, step: &Step) {
+    let pool = world.pool.as_ref().unwrap();
+    let org_id = world.org_id.unwrap();
+    let building_id = world.building_id.unwrap();
+
+    world.parc_royal_owners.clear();
+    world.convocation_owner_ids.clear();
+    world.convocation_owner_emails.clear();
+
+    let table = step.table().expect("le tableau des copropriétaires manque");
+    let entetes: Vec<&str> = table.rows[0].iter().map(|s| s.trim()).collect();
+    let colonne = |nom: &str| entetes.iter().position(|e| *e == nom);
+    let (i_nom, i_tant) = (
+        colonne("name").expect("colonne name"),
+        colonne("tantiemes").expect("colonne tantiemes"),
+    );
+    let i_email = colonne("email");
+
+    for ligne in table.rows.iter().skip(1) {
+        let nom_complet = ligne[i_nom].trim().to_string();
+        let tantiemes: Decimal = ligne[i_tant].trim().parse().expect("tantièmes lisibles");
+
+        // « null » dans la colonne email n'est pas une adresse : c'est Jeanne
+        // Devos, 82 ans, qui reçoit un courrier recommandé. Art. 3.87 § 3
+        // impose de convoquer TOUS les copropriétaires, pas ceux qui ont une
+        // boîte aux lettres électronique.
+        let email = i_email
+            .map(|i| ligne[i].trim())
+            .filter(|e| !e.is_empty() && *e != "null")
+            .map(|e| e.to_string());
+
+        let (prenom, nom) = nom_complet.split_once(' ').unwrap_or((&nom_complet, ""));
+        let owner_id = Uuid::new_v4();
+        sqlx::query(
+            r#"INSERT INTO owners (id, organization_id, first_name, last_name, email, phone,
+                                   address, city, postal_code, country, created_at, updated_at)
+               VALUES ($1, $2, $3, $4, $5, '+32470000000', 'Avenue du Parc 1',
+                       'Bruxelles', '1000', 'Belgique', NOW(), NOW())"#,
+        )
+        .bind(owner_id)
+        .bind(org_id)
+        .bind(prenom)
+        .bind(nom)
+        .bind(
+            email
+                .clone()
+                .unwrap_or_else(|| format!("sans-email-{}@invalide.local", owner_id.simple())),
+        )
+        .execute(pool)
+        .await
+        .expect("insert copropriétaire du Parc Royal");
+
+        // Un lot porte ses tantièmes, et son détenteur le possède en entier.
+        let unit_id = Uuid::new_v4();
+        sqlx::query(
+            r#"INSERT INTO units (id, building_id, acp_id, unit_number, unit_type, floor,
+                                  surface_area, quota, created_at, updated_at)
+               VALUES ($1, $2, (SELECT acp_id FROM buildings WHERE id = $2), $3,
+                       'apartment', 1, 80.0, $4, NOW(), NOW())"#,
+        )
+        .bind(unit_id)
+        .bind(building_id)
+        .bind(format!("Lot-{prenom}"))
+        .bind(tantiemes)
+        .execute(pool)
+        .await
+        .expect("insert lot");
+
+        sqlx::query(
+            r#"INSERT INTO unit_owners (id, unit_id, owner_id, ownership_percentage,
+                                        is_primary_contact, start_date, created_at, updated_at)
+               VALUES ($1, $2, $3, 1.0, true, NOW(), NOW(), NOW())"#,
+        )
+        .bind(Uuid::new_v4())
+        .bind(unit_id)
+        .bind(owner_id)
+        .execute(pool)
+        .await
+        .expect("rattacher le lot à son propriétaire");
+
+        world
+            .parc_royal_owners
+            .push((nom_complet, owner_id, tantiemes, email.clone()));
+        world.convocation_owner_ids.push(owner_id);
+        world
+            .convocation_owner_emails
+            .push((owner_id, email.unwrap_or_default()));
+    }
+}
+
+/// Art. 3.87 § 5, 6° : le locataire est INFORMÉ de l'assemblée.
+///
+/// Il n'y vote pas — il n'est pas titulaire d'un droit réel — mais il peut
+/// adresser ses observations écrites au syndic. Le distinguer d'un
+/// copropriétaire est tout l'objet de cette étape : il n'entre ni dans
+/// `parc_royal_owners`, ni dans les destinataires votants.
+#[given(regex = r#"^([A-Z][a-z]+ [A-Z][a-z]+) is a tenant of lot [^\s]+ \([^)]*\)$"#)]
+async fn given_parc_royal_tenant(world: &mut GovernanceWorld, nom_complet: String) {
+    let pool = world.pool.as_ref().unwrap();
+    let org_id = world.org_id.unwrap();
+    let (prenom, nom) = nom_complet.split_once(' ').unwrap_or((&nom_complet, ""));
+
+    let tenant_id = Uuid::new_v4();
+    sqlx::query(
+        r#"INSERT INTO owners (id, organization_id, first_name, last_name, email, phone,
+                               address, city, postal_code, country, created_at, updated_at)
+           VALUES ($1, $2, $3, $4, $5, '+32470000001', 'Avenue du Parc 1',
+                   'Bruxelles', '1000', 'Belgique', NOW(), NOW())"#,
+    )
+    .bind(tenant_id)
+    .bind(org_id)
+    .bind(prenom)
+    .bind(nom)
+    .bind(format!("{}@locataire-parc.be", prenom.to_lowercase()))
+    .execute(pool)
+    .await
+    .expect("insert locataire");
+
+    world.parc_royal_tenant_id = Some(tenant_id);
+}
+
+#[when(regex = r#"^([A-Z][a-zé]+) creates a convocation for the AG in language "([^"]*)"$"#)]
+async fn when_parc_royal_creates_convocation(
+    world: &mut GovernanceWorld,
+    _prenom: String,
+    langue: String,
+) {
+    let uc = world.convocation_use_cases.as_ref().unwrap().clone();
+    let request = CreateConvocationRequest {
+        building_id: world.building_id.unwrap(),
+        meeting_id: world.convocation_meeting_id.unwrap(),
+        meeting_type: ConvocationType::Ordinary,
+        meeting_date: world.convocation_meeting_date.unwrap(),
+        language: langue,
+    };
+    match uc
+        .create_convocation(
+            world.org_id.unwrap(),
+            request,
+            world.created_by_user_id.unwrap(),
+        )
+        .await
+    {
+        Ok(resp) => {
+            world.last_convocation_id = Some(resp.id);
+            world.last_convocation_response = Some(resp);
+            world.operation_success = true;
+            world.operation_error = None;
+        }
+        Err(e) => {
+            world.operation_success = false;
+            world.operation_error = Some(e);
+        }
+    }
+}
+
+#[when(regex = r#"^([A-Z][a-zé]+) schedules the convocation for today$"#)]
+async fn when_parc_royal_schedules(world: &mut GovernanceWorld, _prenom: String) {
+    let uc = world.convocation_use_cases.as_ref().unwrap().clone();
+    let request = ScheduleConvocationRequest {
+        send_date: Utc::now(),
+    };
+    match uc
+        .schedule_convocation(world.last_convocation_id.unwrap(), request)
+        .await
+    {
+        Ok(resp) => {
+            world.last_convocation_response = Some(resp);
+            world.operation_success = true;
+            world.operation_error = None;
+        }
+        Err(e) => {
+            world.operation_success = false;
+            world.operation_error = Some(e);
+        }
+    }
+}
+
+#[when(regex = r#"^([A-Z][a-zé]+) sends the convocation$"#)]
+async fn when_parc_royal_sends(world: &mut GovernanceWorld, _prenom: String) {
+    let uc = world.convocation_use_cases.as_ref().unwrap().clone();
+    let id = world.last_convocation_id.unwrap();
+
+    // Art. 3.87 § 3 : TOUS les copropriétaires, y compris ceux qui n'ont pas
+    // d'adresse électronique. Jeanne Devos en fait partie.
+    let request = SendConvocationRequest {
+        recipient_owner_ids: Some(world.convocation_owner_ids.clone()),
+    };
+    match uc.send_convocation(id, request).await {
+        Ok(resp) => {
+            world.last_convocation_response = Some(resp);
+            world.operation_success = true;
+            world.operation_error = None;
+        }
+        Err(e) => {
+            world.operation_success = false;
+            world.operation_error = Some(e);
+        }
+    }
+
+    if world.operation_success {
+        let destinataires = uc.list_convocation_recipients(id).await.unwrap_or_default();
+        world.convocation_recipient_ids.clear();
+        for d in destinataires {
+            world
+                .convocation_recipient_ids
+                .push((d.email.clone(), d.id));
+        }
+    }
+}
+
+#[then(regex = r#"^total_recipients should be (\d+)$"#)]
+async fn then_total_recipients(world: &mut GovernanceWorld, attendu: usize) {
+    let resp = world
+        .last_convocation_response
+        .as_ref()
+        .expect("aucune convocation en mémoire");
+    assert_eq!(
+        resp.total_recipients as usize, attendu,
+        "Art. 3.87 § 3 : la convocation doit partir à TOUS les copropriétaires. \
+         {} destinataire(s) enregistré(s) pour {attendu} attendu(s).",
+        resp.total_recipients
+    );
+}
+
+#[then("a PDF convocation should be generated")]
+async fn then_pdf_generated(world: &mut GovernanceWorld) {
+    let resp = world
+        .last_convocation_response
+        .as_ref()
+        .expect("aucune convocation en mémoire");
+    assert!(
+        resp.pdf_file_path.is_some(),
+        "Aucun PDF n'a été produit pour la convocation. Art. 3.87 § 10 impose \
+         un écrit : sans document, il n'y a rien à opposer à un copropriétaire \
+         qui conteste avoir été convoqué."
+    );
+}
+
+#[then(regex = r#"^minimum_send_date should be meeting_date minus (\d+) days$"#)]
+async fn then_date_limite_denvoi(world: &mut GovernanceWorld, jours: i64) {
+    let resp = world
+        .last_convocation_response
+        .as_ref()
+        .expect("aucune convocation en mémoire");
+    let attendu = world.convocation_meeting_date.unwrap() - ChronoDuration::days(jours);
+    let ecart = (resp.minimum_send_date - attendu).num_seconds().abs();
+    assert!(
+        ecart < 2,
+        "Art. 3.87 § 3 : « la convocation est communiquée quinze jours au moins \
+         avant la date de l'assemblée ». Date limite calculée {}, attendue {attendu}.",
+        resp.minimum_send_date
+    );
+}
+
+/// Le socle des scénarios qui partent d'une convocation déjà envoyée.
+///
+/// Rejoue le parcours complet — immeuble, syndic, assemblée, copropriétaires,
+/// création, programmation, envoi — pour que les scénarios de procuration,
+/// de suivi et de courrier recommandé aient de quoi s'exercer.
+async fn envoyer_convocation_parc_royal(world: &mut GovernanceWorld) {
+    if world.pool.is_none() {
+        world.setup_database().await;
+    }
+    given_parc_royal_building(world, "Residence du Parc Royal".to_string(), 182, 10000).await;
+    given_parc_royal_syndic(world, "Francois Leroy".to_string()).await;
+    given_parc_royal_ag(world, 20).await;
+
+    // Les dix copropriétaires du parcours, avec leurs tantièmes réels.
+    // Jeanne Devos n'a PAS d'adresse électronique : elle reçoit un courrier
+    // recommandé, et l'Art. 3.87 § 3 impose de la convoquer comme les autres.
+    let personnes: [(&str, i64, Option<&str>); 10] = [
+        ("Alice Dubois", 450, Some("alice@residence-parc.be")),
+        ("Bob Janssen", 430, Some("bob@residence-parc.be")),
+        ("Charlie Martin", 660, Some("charlie@residence-parc.be")),
+        ("Diane Peeters", 580, Some("diane@residence-parc.be")),
+        ("Marcel Dupont", 450, Some("marcel@residence-parc.be")),
+        ("Nadia Benali", 320, Some("nadia@residence-parc.be")),
+        (
+            "Marguerite Lemaire",
+            380,
+            Some("marguerite@residence-parc.be"),
+        ),
+        ("Jeanne Devos", 290, None),
+        ("Emmanuel Claes", 1280, Some("emmanuel@residence-parc.be")),
+        (
+            "Philippe Vandermeulen",
+            1800,
+            Some("philippe@residence-parc.be"),
+        ),
+    ];
+
+    let pool = world.pool.as_ref().unwrap().clone();
+    let org_id = world.org_id.unwrap();
+    let building_id = world.building_id.unwrap();
+    world.parc_royal_owners.clear();
+    world.convocation_owner_ids.clear();
+    world.convocation_owner_emails.clear();
+
+    for (nom_complet, tantiemes, email) in personnes {
+        let (prenom, nom) = nom_complet.split_once(' ').unwrap();
+        let owner_id = Uuid::new_v4();
+        sqlx::query(
+            r#"INSERT INTO owners (id, organization_id, first_name, last_name, email, phone,
+                                   address, city, postal_code, country, created_at, updated_at)
+               VALUES ($1, $2, $3, $4, $5, '+32470000000', 'Avenue du Parc 1',
+                       'Bruxelles', '1000', 'Belgique', NOW(), NOW())"#,
+        )
+        .bind(owner_id)
+        .bind(org_id)
+        .bind(prenom)
+        .bind(nom)
+        .bind(
+            email
+                .map(|e| e.to_string())
+                .unwrap_or_else(|| format!("sans-email-{}@invalide.local", owner_id.simple())),
+        )
+        .execute(&pool)
+        .await
+        .expect("insert copropriétaire");
+
+        let unit_id = Uuid::new_v4();
+        sqlx::query(
+            r#"INSERT INTO units (id, building_id, acp_id, unit_number, unit_type, floor,
+                                  surface_area, quota, created_at, updated_at)
+               VALUES ($1, $2, (SELECT acp_id FROM buildings WHERE id = $2), $3,
+                       'apartment', 1, 80.0, $4, NOW(), NOW())"#,
+        )
+        .bind(unit_id)
+        .bind(building_id)
+        .bind(format!("Lot-{prenom}"))
+        .bind(Decimal::from(tantiemes))
+        .execute(&pool)
+        .await
+        .expect("insert lot");
+
+        sqlx::query(
+            r#"INSERT INTO unit_owners (id, unit_id, owner_id, ownership_percentage,
+                                        is_primary_contact, start_date, created_at, updated_at)
+               VALUES ($1, $2, $3, 1.0, true, NOW(), NOW(), NOW())"#,
+        )
+        .bind(Uuid::new_v4())
+        .bind(unit_id)
+        .bind(owner_id)
+        .execute(&pool)
+        .await
+        .expect("rattacher le lot");
+
+        world.parc_royal_owners.push((
+            nom_complet.to_string(),
+            owner_id,
+            Decimal::from(tantiemes),
+            email.map(|e| e.to_string()),
+        ));
+        world.convocation_owner_ids.push(owner_id);
+        world
+            .convocation_owner_emails
+            .push((owner_id, email.unwrap_or_default().to_string()));
+    }
+
+    when_parc_royal_creates_convocation(world, "Francois".to_string(), "FR".to_string()).await;
+    assert!(
+        world.operation_success,
+        "création de convocation : {:?}",
+        world.operation_error
+    );
+    when_parc_royal_schedules(world, "Francois".to_string()).await;
+    when_parc_royal_sends(world, "Francois".to_string()).await;
+    assert!(
+        world.operation_success,
+        "envoi de convocation : {:?}",
+        world.operation_error
+    );
+}
+
+#[given("a sent convocation for the Residence du Parc Royal")]
+async fn given_sent_convocation_parc_royal(world: &mut GovernanceWorld) {
+    envoyer_convocation_parc_royal(world).await;
+}
+
+#[given("a sent convocation with 10 recipients")]
+async fn given_sent_convocation_dix_destinataires(world: &mut GovernanceWorld) {
+    envoyer_convocation_parc_royal(world).await;
+    assert_eq!(
+        world.convocation_recipient_ids.len(),
+        10,
+        "Art. 3.87 § 3 : dix copropriétaires, dix destinataires. \
+         {} enregistré(s).",
+        world.convocation_recipient_ids.len()
+    );
+}
+
+/// Jeanne Devos n'a pas d'adresse électronique.
+///
+/// Le scénario le pose comme un fait du monde, pas comme une action : elle a
+/// 82 ans et vit d'une pension minimum. La règle qu'il éprouve est que
+/// l'Art. 3.87 § 3 ne connaît pas d'exception pour les gens sans courriel.
+#[given(regex = r#"^([A-Z][a-z]+ [A-Z][a-z]+) has no email address \([^)]*\)$"#)]
+async fn given_sans_adresse_electronique(world: &mut GovernanceWorld, nom_complet: String) {
+    let prenom = nom_complet.split(' ').next().unwrap();
+    let (owner_id, _) = parc_royal_owner(world, prenom);
+    let pool = world.pool.as_ref().unwrap();
+
+    let (email,): (String,) = sqlx::query_as("SELECT email FROM owners WHERE id = $1")
+        .bind(owner_id)
+        .fetch_one(pool)
+        .await
+        .expect("lire l'adresse");
+
+    assert!(
+        email.contains("invalide.local"),
+        "{nom_complet} devrait être sans adresse électronique utilisable, \
+         or son fiche porte « {email} ». Le scénario du courrier recommandé \
+         n'éprouverait alors rien."
+    );
+}
+
+/// Retrouve l'identifiant de destinataire d'un copropriétaire nommé.
+fn destinataire_de(world: &GovernanceWorld, prenom: &str) -> Uuid {
+    let (owner_id, _) = parc_royal_owner(world, prenom);
+    let email = world
+        .convocation_owner_emails
+        .iter()
+        .find(|(id, _)| *id == owner_id)
+        .map(|(_, e)| e.clone())
+        .unwrap_or_default();
+    world
+        .convocation_recipient_ids
+        .iter()
+        .find(|(e, _)| *e == email)
+        .map(|(_, id)| *id)
+        .unwrap_or_else(|| panic!("aucun destinataire pour {prenom} ({email})"))
+}
+
+#[when(regex = r#"^([A-Z][a-z]+) delegates his proxy to ([A-Z][a-z]+)$"#)]
+async fn when_delegue_procuration(
+    world: &mut GovernanceWorld,
+    mandant: String,
+    mandataire: String,
+) {
+    let uc = world.convocation_use_cases.as_ref().unwrap().clone();
+    let recipient_id = destinataire_de(world, &mandant);
+    let (proxy_owner_id, _) = parc_royal_owner(world, &mandataire);
+
+    match uc.set_recipient_proxy(recipient_id, proxy_owner_id).await {
+        Ok(resp) => {
+            world.last_recipient_response = Some(resp);
+            world.operation_success = true;
+            world.operation_error = None;
+        }
+        Err(e) => {
+            world.operation_success = false;
+            world.operation_error = Some(e);
+        }
+    }
+}
+
+/// La procuration à soi-même, refusée par `ConvocationRecipient::set_proxy`.
+///
+/// Ce n'est pas un caprice de validation : un mandat est un contrat entre deux
+/// personnes. S'en donner un à soi-même ne représente rien et fausserait le
+/// décompte, puisque le mandant est écarté du calcul au profit du mandataire.
+#[when(regex = r#"^([A-Z][a-z]+) tries to delegate his proxy to himself$"#)]
+async fn when_procuration_a_soi_meme(world: &mut GovernanceWorld, mandant: String) {
+    let uc = world.convocation_use_cases.as_ref().unwrap().clone();
+    let recipient_id = destinataire_de(world, &mandant);
+    let (owner_id, _) = parc_royal_owner(world, &mandant);
+
+    match uc.set_recipient_proxy(recipient_id, owner_id).await {
+        Ok(resp) => {
+            world.last_recipient_response = Some(resp);
+            world.operation_success = true;
+            world.operation_error = None;
+        }
+        Err(e) => {
+            world.operation_success = false;
+            world.operation_error = Some(e);
+        }
+    }
+}
+
+#[then(regex = r#"^proxy_owner_id should be set to ([A-Z][a-z]+)'s ID$"#)]
+async fn then_proxy_owner_id(world: &mut GovernanceWorld, mandataire: String) {
+    assert!(
+        world.operation_success,
+        "la procuration a été refusée : {:?}",
+        world.operation_error
+    );
+    let (attendu, _) = parc_royal_owner(world, &mandataire);
+    let resp = world
+        .last_recipient_response
+        .as_ref()
+        .expect("aucun destinataire en mémoire");
+    assert_eq!(
+        resp.proxy_owner_id,
+        Some(attendu),
+        "Art. 3.87 § 7 : le mandat doit désigner {mandataire}. \
+         Sans mandataire enregistré, ses voix ne s'ajoutent pas aux siennes \
+         et le décompte de l'assemblée est faux."
+    );
+}
+
+/// Retire les accents, pour comparer un message à un fragment de scénario.
+///
+/// Les fichiers `.feature` de ce dépôt sont écrits **sans accents** — « Rejet
+/// par Francois », « coproprietaires », « doit etre en statut Reached ». Les
+/// messages du domaine, eux, sont en français correct : ils s'adressent à un
+/// syndic, pas à un analyseur.
+///
+/// Comparer les deux sans précaution ferait échouer un scénario pour un accent
+/// circonflexe. Et les deux mauvaises réponses sont pires que le problème :
+/// retirer les accents des messages produits abîmerait ce que lit
+/// l'utilisateur, et relâcher la comparaison en `contains` partiel laisserait
+/// passer un message qui dit autre chose.
+///
+/// On normalise donc **les deux côtés**, et seulement sur les accents.
+fn sans_accents(s: &str) -> String {
+    s.chars()
+        .map(|c| match c {
+            'à' | 'â' | 'ä' => 'a',
+            'é' | 'è' | 'ê' | 'ë' => 'e',
+            'î' | 'ï' => 'i',
+            'ô' | 'ö' => 'o',
+            'ù' | 'û' | 'ü' => 'u',
+            'ç' => 'c',
+            'À' | 'Â' => 'A',
+            'É' | 'È' | 'Ê' => 'E',
+            autre => autre,
+        })
+        .collect()
+}
+
+#[then(regex = r#"^an error "([^"]*)" is returned$"#)]
+async fn then_erreur_attendue(world: &mut GovernanceWorld, message: String) {
+    assert!(
+        !world.operation_success,
+        "l'opération a RÉUSSI alors qu'elle devait être refusée avec « {message} »"
+    );
+    let erreur = world.operation_error.clone().unwrap_or_default();
+    assert!(
+        sans_accents(&erreur).contains(&sans_accents(&message)),
+        "message attendu « {message} », obtenu « {erreur} »"
+    );
+}
+
+#[when(regex = r#"^([A-Z][a-z]+) opens the convocation email$"#)]
+async fn when_ouvre_le_courriel(world: &mut GovernanceWorld, prenom: String) {
+    let uc = world.convocation_use_cases.as_ref().unwrap().clone();
+    let recipient_id = destinataire_de(world, &prenom);
+    match uc.mark_recipient_email_opened(recipient_id).await {
+        Ok(resp) => {
+            world.last_recipient_response = Some(resp);
+            world.operation_success = true;
+            world.operation_error = None;
+        }
+        Err(e) => {
+            world.operation_success = false;
+            world.operation_error = Some(e);
+        }
+    }
+}
+
+#[then(regex = r#"^email_opened_at should be recorded for ([A-Z][a-z]+)$"#)]
+async fn then_courriel_ouvert(world: &mut GovernanceWorld, _prenom: String) {
+    let resp = world
+        .last_recipient_response
+        .as_ref()
+        .expect("aucun destinataire en mémoire");
+    assert!(
+        resp.email_opened_at.is_some(),
+        "L'ouverture du courriel n'est pas horodatée. Le syndic ne peut alors \
+         pas montrer qui a reçu la convocation, ce qui est précisément ce \
+         qu'un copropriétaire conteste quand il attaque une assemblée."
+    );
+}
+
+#[when("the convocation is sent")]
+async fn when_la_convocation_est_envoyee(world: &mut GovernanceWorld) {
+    // Déjà envoyée par le `Given` : cette étape constate plutôt qu'elle n'agit.
+    assert!(
+        !world.convocation_recipient_ids.is_empty(),
+        "aucun destinataire enregistré : la convocation n'a pas été envoyée"
+    );
+}
+
+// ===========================================================================
+// Demande d'AGE par les copropriétaires — Art. 3.87 § 2
+// ===========================================================================
+//
+// Sept scénarios de `age_requests.feature` étaient SAUTÉS. Ils portent le
+// seuil du cinquième des quotités, et le parcours de Marcel les met en
+// situation avec une précision qui mérite d'être conservée : 4,5 % puis 9,0,
+// 15,6, **19,9** — si près — et enfin 25,7 % qui franchit la barre.
+//
+// Un test unitaire du seuil dirait la même chose en deux lignes. Ce qu'il ne
+// dirait pas, c'est qu'on peut approcher 20 % à un dixième de point sans
+// jamais l'atteindre, et qu'une demande à 19,9 % laisse cinq copropriétaires
+// sans recours.
+//
+// Voir #540.
+
+/// Les copropriétaires du parcours d'AGE, par prénom.
+fn age_owner_par_prenom(world: &GovernanceWorld, prenom: &str) -> Uuid {
+    world
+        .age_request_owner_ids
+        .iter()
+        .find(|(nom, _, _)| nom.starts_with(prenom))
+        .map(|(_, id, _)| *id)
+        .unwrap_or_else(|| {
+            panic!(
+                "« {prenom} » n'est pas un copropriétaire du parcours d'AGE. Connus : {:?}",
+                world
+                    .age_request_owner_ids
+                    .iter()
+                    .map(|(n, _, _)| n.as_str())
+                    .collect::<Vec<_>>()
+            )
+        })
+}
+
+#[given("the following owners exist with their tantiemes:")]
+async fn given_age_owners_avec_tantiemes(world: &mut GovernanceWorld, step: &Step) {
+    let pool = world.pool.as_ref().unwrap();
+    let org_id = world.org_id.unwrap();
+    world.age_request_owner_ids.clear();
+
+    let table = step.table().expect("le tableau des copropriétaires manque");
+    let entetes: Vec<&str> = table.rows[0].iter().map(|s| s.trim()).collect();
+    let i_nom = entetes
+        .iter()
+        .position(|e| *e == "name")
+        .expect("colonne name");
+    let i_part = entetes
+        .iter()
+        .position(|e| *e == "shares_pct")
+        .expect("colonne shares_pct");
+
+    for ligne in table.rows.iter().skip(1) {
+        let nom_complet = ligne[i_nom].trim().to_string();
+        let part: Decimal = ligne[i_part].trim().parse().expect("quote-part lisible");
+        let (prenom, nom) = nom_complet.split_once(' ').unwrap_or((&nom_complet, ""));
+
+        let owner_id = Uuid::new_v4();
+        sqlx::query(
+            r#"INSERT INTO owners (id, organization_id, first_name, last_name, email, phone,
+                                   address, city, postal_code, country, created_at, updated_at)
+               VALUES ($1, $2, $3, $4, $5, '+32470000000', 'Avenue du Parc 1',
+                       'Bruxelles', '1000', 'Belgique', NOW(), NOW())"#,
+        )
+        .bind(owner_id)
+        .bind(org_id)
+        .bind(prenom)
+        .bind(nom)
+        .bind(format!("{}@age-parc.be", prenom.to_lowercase()))
+        .execute(pool)
+        .await
+        .expect("insert copropriétaire du parcours AGE");
+
+        world
+            .age_request_owner_ids
+            .push((nom_complet, owner_id, part));
+    }
+}
+
+#[when(regex = r#"^([A-Z][a-z]+) creates an AGE request:$"#)]
+async fn when_prenom_cree_demande_age(world: &mut GovernanceWorld, step: &Step, prenom: String) {
+    let table = step.table.as_ref().expect("tableau attendu");
+    let mut titre = String::new();
+    let mut description = String::new();
+    for ligne in &table.rows {
+        match ligne[0].trim() {
+            "title" => titre = ligne[1].trim().to_string(),
+            "description" => description = ligne[1].trim().to_string(),
+            _ => {}
+        }
+    }
+
+    let uc = world.age_request_use_cases.as_ref().unwrap().clone();
+    let dto = CreateAgeRequestDto {
+        building_id: world.building_id.unwrap(),
+        title: titre,
+        description: if description.is_empty() {
+            None
+        } else {
+            Some(description)
+        },
+    };
+
+    match uc
+        .create(
+            world.org_id.unwrap(),
+            age_owner_par_prenom(world, &prenom),
+            dto,
+        )
+        .await
+    {
+        Ok(resp) => {
+            world.last_age_request_id = Some(resp.id);
+            world.last_age_request_response = Some(resp);
+            world.operation_success = true;
+            world.operation_error = None;
+        }
+        Err(e) => {
+            world.operation_success = false;
+            world.operation_error = Some(e);
+        }
+    }
+}
+
+#[when(regex = r#"^([A-Z][a-z]+) opens the request for signatures$"#)]
+async fn when_prenom_ouvre_les_signatures(world: &mut GovernanceWorld, prenom: String) {
+    let uc = world.age_request_use_cases.as_ref().unwrap().clone();
+    match uc
+        .open(
+            world.last_age_request_id.unwrap(),
+            world.org_id.unwrap(),
+            age_owner_par_prenom(world, &prenom),
+        )
+        .await
+    {
+        Ok(resp) => {
+            world.last_age_request_response = Some(resp);
+            world.operation_success = true;
+            world.operation_error = None;
+        }
+        Err(e) => {
+            world.operation_success = false;
+            world.operation_error = Some(e);
+        }
+    }
+}
+
+/// Une cosignature, avec sa quote-part.
+///
+/// Art. 3.87 § 2 : la demande doit réunir **un cinquième des quotités**. Ce
+/// n'est pas un cinquième des copropriétaires : cinq personnes détenant chacune
+/// 1 % ne l'atteignent pas, et une seule détenant 20 % suffit.
+#[when(regex = r#"^([A-Z][a-z]+) cosigns with shares ([\d.]+)$"#)]
+async fn when_prenom_cosigne(world: &mut GovernanceWorld, prenom: String, part: String) {
+    let uc = world.age_request_use_cases.as_ref().unwrap().clone();
+    let dto = AddCosignatoryDto {
+        owner_id: age_owner_par_prenom(world, &prenom),
+        shares_pct: part.parse().expect("quote-part lisible"),
+    };
+
+    match uc
+        .add_cosignatory(
+            world.last_age_request_id.unwrap(),
+            world.org_id.unwrap(),
+            dto,
+        )
+        .await
+    {
+        Ok(resp) => {
+            world.last_age_request_response = Some(resp);
+            world.operation_success = true;
+            world.operation_error = None;
+        }
+        Err(e) => {
+            world.operation_success = false;
+            world.operation_error = Some(e);
+        }
+    }
+}
+
+#[then(regex = r#"^total_shares_pct should be ([\d.]+)$"#)]
+async fn then_total_des_quotites(world: &mut GovernanceWorld, attendu: String) {
+    let attendu: Decimal = attendu.parse().expect("quote-part lisible");
+    let resp = world
+        .last_age_request_response
+        .as_ref()
+        .expect("aucune demande d'AGE en mémoire");
+    assert_eq!(
+        resp.total_shares_pct, attendu,
+        "Art. 3.87 § 2 : le cumul des quotités cosignataires doit être exact. \
+         Un centième de point sépare une demande recevable d'une demande qui \
+         ne l'est pas — la sixième cosignature du parcours fait passer de \
+         19,9 % à 25,7 %."
+    );
+}
+
+#[when(regex = r#"^([A-Z][a-z]+) submits the request to ([A-Z][a-z]+)$"#)]
+async fn when_prenom_soumet_au_syndic(
+    world: &mut GovernanceWorld,
+    initiateur: String,
+    _syndic: String,
+) {
+    let uc = world.age_request_use_cases.as_ref().unwrap().clone();
+    match uc
+        .submit_to_syndic(
+            world.last_age_request_id.unwrap(),
+            world.org_id.unwrap(),
+            age_owner_par_prenom(world, &initiateur),
+        )
+        .await
+    {
+        Ok(resp) => {
+            world.last_age_request_response = Some(resp);
+            world.operation_success = true;
+            world.operation_error = None;
+        }
+        Err(e) => {
+            world.operation_success = false;
+            world.operation_error = Some(e);
+        }
+    }
+}
+
+/// L'échéance de réponse du syndic, au jour près.
+///
+/// Cette étape remplace une version qui codait « 15 » en dur et tolérait un
+/// écart de 14 à 16 jours. La tolérance ne protégeait rien : `submit_to_syndic`
+/// capture `Utc::now()` UNE FOIS et s'en sert pour les deux champs, si bien que
+/// l'écart vaut exactement `Duration::days(15)`.
+///
+/// Elle masquait en revanche une erreur d'un jour, qui avance ou retarde
+/// l'auto-convocation d'autant — et l'auto-convocation est ce qui protège les
+/// copropriétaires d'un syndic qui laisserait passer le délai.
+///
+/// Le nombre vient désormais du scénario, ce qui l'empêche de diverger du
+/// feature file.
+#[then(regex = r#"^syndic_deadline_at should be (\d+) days after submission$"#)]
+async fn then_delai_du_syndic(world: &mut GovernanceWorld, jours: i64) {
+    let resp = world
+        .last_age_request_response
+        .as_ref()
+        .expect("aucune demande d'AGE en mémoire");
+    let soumis = resp
+        .submitted_to_syndic_at
+        .expect("soumission non horodatée");
+    let echeance = resp
+        .syndic_deadline_at
+        .expect("aucune échéance de réponse du syndic");
+    let ecart = (echeance - soumis).num_days();
+    assert_eq!(
+        ecart, jours,
+        "Le syndic dispose de {jours} jours pour répondre. Échéance calculée \\
+         à {ecart} jours de la soumission — un écart ici avance ou retarde \\
+         l'auto-convocation d'autant."
+    );
+}
+
+#[when(regex = r#"^([A-Z][a-z]+) accepts the request with notes "([^"]*)"$"#)]
+async fn when_syndic_accepte(world: &mut GovernanceWorld, _syndic: String, notes: String) {
+    let uc = world.age_request_use_cases.as_ref().unwrap().clone();
+    let dto = SyndicResponseDto {
+        accepted: true,
+        notes: Some(notes),
+    };
+    match uc
+        .syndic_response(
+            world.last_age_request_id.unwrap(),
+            world.org_id.unwrap(),
+            dto,
+        )
+        .await
+    {
+        Ok(resp) => {
+            world.last_age_request_response = Some(resp);
+            world.operation_success = true;
+            world.operation_error = None;
+        }
+        Err(e) => {
+            world.operation_success = false;
+            world.operation_error = Some(e);
+        }
+    }
+}
+
+/// Le refus sans motif, refusé.
+///
+/// Art. 3.87 § 2 : le syndic qui refuse doit dire pourquoi. Un refus muet ne
+/// laisse rien à contester — et ce sont cinq copropriétaires représentant
+/// 25,7 % des quotités qui ont signé. Le motif est ce qui rend le refus
+/// attaquable, donc ce qui rend le droit effectif.
+#[when(regex = r#"^([A-Z][a-z]+) tries to reject without providing a reason$"#)]
+async fn when_syndic_refuse_sans_motif(world: &mut GovernanceWorld, _syndic: String) {
+    let uc = world.age_request_use_cases.as_ref().unwrap().clone();
+    let dto = SyndicResponseDto {
+        accepted: false,
+        notes: None,
+    };
+    match uc
+        .syndic_response(
+            world.last_age_request_id.unwrap(),
+            world.org_id.unwrap(),
+            dto,
+        )
+        .await
+    {
+        Ok(resp) => {
+            world.last_age_request_response = Some(resp);
+            world.operation_success = true;
+            world.operation_error = None;
+        }
+        Err(e) => {
+            world.operation_success = false;
+            world.operation_error = Some(e);
+        }
+    }
+}
+
+#[when(regex = r#"^([A-Z][a-z]+) rejects with reason "([^"]*)"$"#)]
+async fn when_syndic_refuse_avec_motif(
+    world: &mut GovernanceWorld,
+    _syndic: String,
+    motif: String,
+) {
+    let uc = world.age_request_use_cases.as_ref().unwrap().clone();
+    let dto = SyndicResponseDto {
+        accepted: false,
+        notes: Some(motif),
+    };
+    match uc
+        .syndic_response(
+            world.last_age_request_id.unwrap(),
+            world.org_id.unwrap(),
+            dto,
+        )
+        .await
+    {
+        Ok(resp) => {
+            world.last_age_request_response = Some(resp);
+            world.operation_success = true;
+            world.operation_error = None;
+        }
+        Err(e) => {
+            world.operation_success = false;
+            world.operation_error = Some(e);
+        }
+    }
+}
+
+/// Monte le parcours d'AGE jusqu'à un état donné.
+///
+/// Les scénarios de retrait, d'expiration et de refus partent tous d'une
+/// demande déjà constituée. Les rejouer à la main dans chaque `Given`
+/// produirait cinq copies d'une même séquence — et cinq copies d'une même
+/// chose finissent par diverger, ce que cette journée a montré assez de fois.
+async fn monter_demande_age_parc_royal(
+    world: &mut GovernanceWorld,
+    cosignataires: &[(&str, &str)],
+) {
+    if world.pool.is_none() {
+        world.setup_database().await;
+    }
+    given_parc_royal_building(world, "Residence du Parc Royal".to_string(), 182, 10000).await;
+    given_parc_royal_syndic(world, "Francois Leroy".to_string()).await;
+
+    // Les cinq copropriétaires du parcours, avec leurs quotités réelles.
+    let pool = world.pool.as_ref().unwrap().clone();
+    let org_id = world.org_id.unwrap();
+    world.age_request_owner_ids.clear();
+    for (nom_complet, part) in [
+        ("Marcel Dupont", "0.045"),
+        ("Alice Dubois", "0.045"),
+        ("Charlie Martin", "0.066"),
+        ("Bob Janssen", "0.043"),
+        ("Diane Peeters", "0.058"),
+    ] {
+        let (prenom, nom) = nom_complet.split_once(' ').unwrap();
+        let owner_id = Uuid::new_v4();
+        sqlx::query(
+            r#"INSERT INTO owners (id, organization_id, first_name, last_name, email, phone,
+                                   address, city, postal_code, country, created_at, updated_at)
+               VALUES ($1, $2, $3, $4, $5, '+32470000000', 'Avenue du Parc 1',
+                       'Bruxelles', '1000', 'Belgique', NOW(), NOW())"#,
+        )
+        .bind(owner_id)
+        .bind(org_id)
+        .bind(prenom)
+        .bind(nom)
+        .bind(format!("{}@age-parc.be", prenom.to_lowercase()))
+        .execute(&pool)
+        .await
+        .expect("insert copropriétaire du parcours AGE");
+        world.age_request_owner_ids.push((
+            nom_complet.to_string(),
+            owner_id,
+            part.parse().unwrap(),
+        ));
+    }
+
+    let uc = world.age_request_use_cases.as_ref().unwrap().clone();
+    let marcel = age_owner_par_prenom(world, "Marcel");
+    let resp = uc
+        .create(
+            org_id,
+            marcel,
+            CreateAgeRequestDto {
+                building_id: world.building_id.unwrap(),
+                title: "Travaux urgents de renovation".to_string(),
+                description: Some("Toiture, facade, electricite des communs.".to_string()),
+            },
+        )
+        .await
+        .expect("création de la demande d'AGE");
+    world.last_age_request_id = Some(resp.id);
+
+    let ouverte = uc
+        .open(resp.id, org_id, marcel)
+        .await
+        .expect("ouverture aux signatures");
+    world.last_age_request_response = Some(ouverte);
+
+    for (prenom, part) in cosignataires {
+        let dto = AddCosignatoryDto {
+            owner_id: age_owner_par_prenom(world, prenom),
+            shares_pct: part.parse().expect("quote-part lisible"),
+        };
+        let r = uc
+            .add_cosignatory(resp.id, org_id, dto)
+            .await
+            .unwrap_or_else(|e| panic!("cosignature de {prenom} : {e}"));
+        world.last_age_request_response = Some(r);
+    }
+    world.operation_success = true;
+    world.operation_error = None;
+}
+
+#[given("an open AGE request created by Marcel")]
+async fn given_demande_age_ouverte_par_marcel(world: &mut GovernanceWorld) {
+    monter_demande_age_parc_royal(world, &[]).await;
+}
+
+#[given("an open AGE request by Marcel without cosignatories")]
+async fn given_demande_age_sans_cosignataire(world: &mut GovernanceWorld) {
+    monter_demande_age_parc_royal(world, &[]).await;
+}
+
+/// Neuf pour cent : la demande existe, le seuil n'est pas atteint.
+///
+/// C'est l'état où la soumission doit être refusée — un cinquième des quotités
+/// n'est pas réuni, et soumettre reviendrait à faire courir un délai que rien
+/// ne justifie.
+#[given("an open AGE request with Marcel (4.5%) and Alice (4.5%) = 9.0%")]
+async fn given_demande_age_a_neuf_pourcent(world: &mut GovernanceWorld) {
+    monter_demande_age_parc_royal(world, &[("Marcel", "0.045"), ("Alice", "0.045")]).await;
+}
+
+#[given(
+    "an AGE request with Marcel (4.5%), Alice (4.5%), Charlie (6.6%), Bob (4.3%), Diane (5.8%) as cosignatories"
+)]
+async fn given_demande_age_complete(world: &mut GovernanceWorld) {
+    monter_demande_age_parc_royal(
+        world,
+        &[
+            ("Marcel", "0.045"),
+            ("Alice", "0.045"),
+            ("Charlie", "0.066"),
+            ("Bob", "0.043"),
+            ("Diane", "0.058"),
+        ],
+    )
+    .await;
+}
+
+#[given(regex = r#"^the AGE request is in status "Reached" \(total 25\.7%\)$"#)]
+async fn given_demande_age_au_seuil(world: &mut GovernanceWorld) {
+    let resp = world
+        .last_age_request_response
+        .as_ref()
+        .expect("aucune demande d'AGE en mémoire");
+    assert!(
+        resp.threshold_reached,
+        "Le seuil devrait être atteint à 25,7 %, or `threshold_reached` est faux \
+         (cumul {}). Le scénario du retrait n'éprouverait alors rien.",
+        resp.total_shares_pct
+    );
+}
+
+#[given("a submitted AGE request by Marcel to Francois (status \"Submitted\")")]
+async fn given_demande_age_soumise(world: &mut GovernanceWorld) {
+    given_demande_age_complete(world).await;
+    let uc = world.age_request_use_cases.as_ref().unwrap().clone();
+    let resp = uc
+        .submit_to_syndic(
+            world.last_age_request_id.unwrap(),
+            world.org_id.unwrap(),
+            age_owner_par_prenom(world, "Marcel"),
+        )
+        .await
+        .expect("soumission au syndic");
+    world.last_age_request_response = Some(resp);
+}
+
+/// Le retrait d'une signature, et ce qu'il peut faire perdre.
+///
+/// Art. 3.87 § 2 : le seuil doit être atteint **au moment de la soumission**.
+/// Un cosignataire qui se rétracte fait donc retomber la demande sous la barre
+/// si son poids était décisif — c'est ce que le scénario éprouve en retirant
+/// Bob (21,4 %, encore au-dessus) puis Charlie (14,8 %, en dessous).
+#[when(regex = r#"^([A-Z][a-z]+) (?:also )?removes (?:his|her) signature$"#)]
+async fn when_retire_sa_signature(world: &mut GovernanceWorld, prenom: String) {
+    let uc = world.age_request_use_cases.as_ref().unwrap().clone();
+    match uc
+        .remove_cosignatory(
+            world.last_age_request_id.unwrap(),
+            age_owner_par_prenom(world, &prenom),
+            world.org_id.unwrap(),
+        )
+        .await
+    {
+        Ok(resp) => {
+            world.last_age_request_response = Some(resp);
+            world.operation_success = true;
+            world.operation_error = None;
+        }
+        Err(e) => {
+            world.operation_success = false;
+            world.operation_error = Some(e);
+        }
+    }
+}
+
+#[then("threshold_reached should still be true")]
+async fn then_seuil_toujours_atteint(world: &mut GovernanceWorld) {
+    let resp = world
+        .last_age_request_response
+        .as_ref()
+        .expect("aucune demande d'AGE en mémoire");
+    assert!(
+        resp.threshold_reached,
+        "Le retrait d'une signature a fait passer sous le seuil alors qu'il ne \\
+         devait pas : cumul {} %, seuil d'un cinquième.",
+        resp.total_shares_pct * Decimal::from(100)
+    );
+}
+
+#[when(regex = r#"^([A-Z][a-z]+) tries to submit to ([A-Z][a-z]+)$"#)]
+async fn when_tente_de_soumettre(world: &mut GovernanceWorld, initiateur: String, _syndic: String) {
+    when_prenom_soumet_au_syndic(world, initiateur, _syndic).await;
+}
+
+#[when(regex = r#"^([A-Z][a-z]+) tries to withdraw the request$"#)]
+async fn when_tente_de_retirer(world: &mut GovernanceWorld, prenom: String) {
+    let uc = world.age_request_use_cases.as_ref().unwrap().clone();
+    match uc
+        .withdraw(
+            world.last_age_request_id.unwrap(),
+            world.org_id.unwrap(),
+            age_owner_par_prenom(world, &prenom),
+        )
+        .await
+    {
+        Ok(resp) => {
+            world.last_age_request_response = Some(resp);
+            world.operation_success = true;
+            world.operation_error = None;
+        }
+        Err(e) => {
+            world.operation_success = false;
+            world.operation_error = Some(e);
+        }
+    }
+}
+
+#[when(regex = r#"^([A-Z][a-z]+) withdraws the request$"#)]
+async fn when_retire_la_demande(world: &mut GovernanceWorld, prenom: String) {
+    when_tente_de_retirer(world, prenom).await;
+    assert!(
+        world.operation_success,
+        "le retrait par l'initiateur a été refusé : {:?}",
+        world.operation_error
+    );
 }

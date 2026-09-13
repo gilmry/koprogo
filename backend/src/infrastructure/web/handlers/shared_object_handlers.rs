@@ -1,8 +1,9 @@
 use crate::application::dto::{BorrowObjectDto, CreateSharedObjectDto, UpdateSharedObjectDto};
 use crate::domain::entities::SharedObjectCategory;
 use crate::infrastructure::web::app_state::AppState;
+use crate::infrastructure::web::classification_erreurs;
 use crate::infrastructure::web::middleware::AuthenticatedUser;
-use actix_web::{delete, get, post, put, web, HttpResponse, Responder};
+use actix_web::{delete, get, post, put, web, HttpResponse, Responder, ResponseError};
 use uuid::Uuid;
 
 /// Create a new shared object
@@ -34,15 +35,38 @@ pub async fn create_shared_object(
 ///
 /// GET /shared-objects/:id
 #[get("/shared-objects/{id}")]
-pub async fn get_shared_object(data: web::Data<AppState>, id: web::Path<Uuid>) -> impl Responder {
+pub async fn get_shared_object(
+    data: web::Data<AppState>,
+    user: AuthenticatedUser,
+    id: web::Path<Uuid>,
+) -> impl Responder {
+    let identifiant = id.into_inner();
+
+    // Cette route ne prenait AUCUNE identité : n'importe qui pouvait la lire
+    // sur simple connaissance de l'identifiant. Le cliquet de #772 ne la
+    // voyait pas — il ne compte que les routes PRENANT une identité sans
+    // s'en servir. Cf. #845.
+    if let Err(err) =
+        crate::infrastructure::web::middleware::scope_guard::verify_shared_object_org_access(
+            &user,
+            identifiant,
+            &data.shared_object_use_cases,
+            &data.building_use_cases,
+            &data.acp_use_cases,
+        )
+        .await
+    {
+        return err.error_response();
+    }
+
     match data
         .shared_object_use_cases
-        .get_shared_object(id.into_inner())
+        .get_shared_object(identifiant)
         .await
     {
         Ok(object) => HttpResponse::Ok().json(object),
         Err(e) => {
-            if e.contains("not found") {
+            if classification_erreurs::est_introuvable(&e) {
                 HttpResponse::NotFound().json(serde_json::json!({"error": e}))
             } else {
                 HttpResponse::InternalServerError().json(serde_json::json!({"error": e}))
@@ -58,7 +82,23 @@ pub async fn get_shared_object(data: web::Data<AppState>, id: web::Path<Uuid>) -
 pub async fn list_building_objects(
     data: web::Data<AppState>,
     building_id: web::Path<Uuid>,
+    user: AuthenticatedUser,
 ) -> impl Responder {
+    // Route imbriquee non gardee au releve du 2026-09-06 (issue #772) : elle
+    // servait une sous-collection d'un dossier d'ACP a quiconque connaissait
+    // un identifiant, sans demander d'identite.
+    if let Err(err) =
+        crate::infrastructure::web::middleware::scope_guard::verify_building_org_access(
+            &user,
+            *building_id,
+            &data.building_use_cases,
+            &data.acp_use_cases,
+        )
+        .await
+    {
+        return err.error_response();
+    }
+
     match data
         .shared_object_use_cases
         .list_building_objects(building_id.into_inner())
@@ -76,7 +116,23 @@ pub async fn list_building_objects(
 pub async fn list_available_objects(
     data: web::Data<AppState>,
     building_id: web::Path<Uuid>,
+    user: AuthenticatedUser,
 ) -> impl Responder {
+    // Route imbriquee non gardee au releve du 2026-09-06 (issue #772) : elle
+    // servait une sous-collection d'un dossier d'ACP a quiconque connaissait
+    // un identifiant, sans demander d'identite.
+    if let Err(err) =
+        crate::infrastructure::web::middleware::scope_guard::verify_building_org_access(
+            &user,
+            *building_id,
+            &data.building_use_cases,
+            &data.acp_use_cases,
+        )
+        .await
+    {
+        return err.error_response();
+    }
+
     match data
         .shared_object_use_cases
         .list_available_objects(building_id.into_inner())
@@ -94,7 +150,23 @@ pub async fn list_available_objects(
 pub async fn list_borrowed_objects(
     data: web::Data<AppState>,
     building_id: web::Path<Uuid>,
+    user: AuthenticatedUser,
 ) -> impl Responder {
+    // Route imbriquee non gardee au releve du 2026-09-06 (issue #772) : elle
+    // servait une sous-collection d'un dossier d'ACP a quiconque connaissait
+    // un identifiant, sans demander d'identite.
+    if let Err(err) =
+        crate::infrastructure::web::middleware::scope_guard::verify_building_org_access(
+            &user,
+            *building_id,
+            &data.building_use_cases,
+            &data.acp_use_cases,
+        )
+        .await
+    {
+        return err.error_response();
+    }
+
     match data
         .shared_object_use_cases
         .list_borrowed_objects(building_id.into_inner())
@@ -112,7 +184,23 @@ pub async fn list_borrowed_objects(
 pub async fn list_overdue_objects(
     data: web::Data<AppState>,
     building_id: web::Path<Uuid>,
+    user: AuthenticatedUser,
 ) -> impl Responder {
+    // Route imbriquee non gardee au releve du 2026-09-06 (issue #772) : elle
+    // servait une sous-collection d'un dossier d'ACP a quiconque connaissait
+    // un identifiant, sans demander d'identite.
+    if let Err(err) =
+        crate::infrastructure::web::middleware::scope_guard::verify_building_org_access(
+            &user,
+            *building_id,
+            &data.building_use_cases,
+            &data.acp_use_cases,
+        )
+        .await
+    {
+        return err.error_response();
+    }
+
     match data
         .shared_object_use_cases
         .list_overdue_objects(building_id.into_inner())
@@ -130,7 +218,23 @@ pub async fn list_overdue_objects(
 pub async fn list_free_objects(
     data: web::Data<AppState>,
     building_id: web::Path<Uuid>,
+    user: AuthenticatedUser,
 ) -> impl Responder {
+    // Route imbriquee non gardee au releve du 2026-09-06 (issue #772) : elle
+    // servait une sous-collection d'un dossier d'ACP a quiconque connaissait
+    // un identifiant, sans demander d'identite.
+    if let Err(err) =
+        crate::infrastructure::web::middleware::scope_guard::verify_building_org_access(
+            &user,
+            *building_id,
+            &data.building_use_cases,
+            &data.acp_use_cases,
+        )
+        .await
+    {
+        return err.error_response();
+    }
+
     match data
         .shared_object_use_cases
         .list_free_objects(building_id.into_inner())
@@ -148,8 +252,23 @@ pub async fn list_free_objects(
 pub async fn list_objects_by_category(
     data: web::Data<AppState>,
     path: web::Path<(Uuid, String)>,
+    user: AuthenticatedUser,
 ) -> impl Responder {
     let (building_id, category_str) = path.into_inner();
+    // Route imbriquee non gardee au releve du 2026-09-06 (issue #772) : elle
+    // servait une sous-collection d'un dossier d'ACP a quiconque connaissait
+    // un identifiant, sans demander d'identite.
+    if let Err(err) =
+        crate::infrastructure::web::middleware::scope_guard::verify_building_org_access(
+            &user,
+            building_id,
+            &data.building_use_cases,
+            &data.acp_use_cases,
+        )
+        .await
+    {
+        return err.error_response();
+    }
 
     // Parse object category
     let category = match serde_json::from_str::<SharedObjectCategory>(&format!(
@@ -181,7 +300,21 @@ pub async fn list_objects_by_category(
 pub async fn list_owner_objects(
     data: web::Data<AppState>,
     owner_id: web::Path<Uuid>,
+    user: AuthenticatedUser,
 ) -> impl Responder {
+    // Route imbriquee non gardee au releve du 2026-09-06 (issue #772) : elle
+    // servait la situation financiere NOMINATIVE d'une personne a quiconque
+    // connaissait son identifiant.
+    if let Err(err) = crate::infrastructure::web::middleware::scope_guard::verify_owner_org_access(
+        &user,
+        *owner_id,
+        &data.owner_use_cases,
+    )
+    .await
+    {
+        return err.error_response();
+    }
+
     match data
         .shared_object_use_cases
         .list_owner_objects(owner_id.into_inner())
@@ -239,9 +372,9 @@ pub async fn update_shared_object(
     {
         Ok(object) => HttpResponse::Ok().json(object),
         Err(e) => {
-            if e.contains("Unauthorized") {
+            if classification_erreurs::est_interdit(&e) {
                 HttpResponse::Forbidden().json(serde_json::json!({"error": e}))
-            } else if e.contains("not found") {
+            } else if classification_erreurs::est_introuvable(&e) {
                 HttpResponse::NotFound().json(serde_json::json!({"error": e}))
             } else {
                 HttpResponse::BadRequest().json(serde_json::json!({"error": e}))
@@ -272,9 +405,9 @@ pub async fn mark_object_available(
     {
         Ok(object) => HttpResponse::Ok().json(object),
         Err(e) => {
-            if e.contains("Unauthorized") {
+            if classification_erreurs::est_interdit(&e) {
                 HttpResponse::Forbidden().json(serde_json::json!({"error": e}))
-            } else if e.contains("not found") {
+            } else if classification_erreurs::est_introuvable(&e) {
                 HttpResponse::NotFound().json(serde_json::json!({"error": e}))
             } else {
                 HttpResponse::BadRequest().json(serde_json::json!({"error": e}))
@@ -305,9 +438,9 @@ pub async fn mark_object_unavailable(
     {
         Ok(object) => HttpResponse::Ok().json(object),
         Err(e) => {
-            if e.contains("Unauthorized") {
+            if classification_erreurs::est_interdit(&e) {
                 HttpResponse::Forbidden().json(serde_json::json!({"error": e}))
-            } else if e.contains("not found") {
+            } else if classification_erreurs::est_introuvable(&e) {
                 HttpResponse::NotFound().json(serde_json::json!({"error": e}))
             } else {
                 HttpResponse::BadRequest().json(serde_json::json!({"error": e}))
@@ -341,7 +474,7 @@ pub async fn borrow_object(
         Err(e) => {
             if e.contains("Owner cannot borrow") {
                 HttpResponse::Forbidden().json(serde_json::json!({"error": e}))
-            } else if e.contains("not found") {
+            } else if classification_erreurs::est_introuvable(&e) {
                 HttpResponse::NotFound().json(serde_json::json!({"error": e}))
             } else {
                 HttpResponse::BadRequest().json(serde_json::json!({"error": e}))
@@ -374,7 +507,7 @@ pub async fn return_object(
         Err(e) => {
             if e.contains("Only borrower can return") {
                 HttpResponse::Forbidden().json(serde_json::json!({"error": e}))
-            } else if e.contains("not found") {
+            } else if classification_erreurs::est_introuvable(&e) {
                 HttpResponse::NotFound().json(serde_json::json!({"error": e}))
             } else {
                 HttpResponse::BadRequest().json(serde_json::json!({"error": e}))
@@ -405,9 +538,9 @@ pub async fn delete_shared_object(
     {
         Ok(_) => HttpResponse::NoContent().finish(),
         Err(e) => {
-            if e.contains("Unauthorized") {
+            if classification_erreurs::est_interdit(&e) {
                 HttpResponse::Forbidden().json(serde_json::json!({"error": e}))
-            } else if e.contains("not found") {
+            } else if classification_erreurs::est_introuvable(&e) {
                 HttpResponse::NotFound().json(serde_json::json!({"error": e}))
             } else {
                 HttpResponse::BadRequest().json(serde_json::json!({"error": e}))
@@ -423,7 +556,23 @@ pub async fn delete_shared_object(
 pub async fn get_object_statistics(
     data: web::Data<AppState>,
     building_id: web::Path<Uuid>,
+    user: AuthenticatedUser,
 ) -> impl Responder {
+    // Route imbriquee non gardee au releve du 2026-09-06 (issue #772) : elle
+    // servait une sous-collection d'un dossier d'ACP a quiconque connaissait
+    // un identifiant, sans demander d'identite.
+    if let Err(err) =
+        crate::infrastructure::web::middleware::scope_guard::verify_building_org_access(
+            &user,
+            *building_id,
+            &data.building_use_cases,
+            &data.acp_use_cases,
+        )
+        .await
+    {
+        return err.error_response();
+    }
+
     match data
         .shared_object_use_cases
         .get_object_statistics(building_id.into_inner())

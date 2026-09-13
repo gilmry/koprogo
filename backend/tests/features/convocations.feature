@@ -31,11 +31,18 @@ Feature: Automatic AG Convocations
     Then the convocation should be created
     And the minimum send date should be at least 15 days before the meeting
 
+  # Le message de refus est passé en français le 2026-09-07 (#780) : il cite
+  # l'article qui le fonde et nomme le recours, là où « Meeting date too soon »
+  # ne disait ni l'un ni l'autre à un syndic belge.
+  #
+  # Ce scénario vérifie donc l'INTENTION du message — l'article et le recours —
+  # et non plus sa formulation. Une assertion sur les mots exacts se serait
+  # cassée à la première reformulation, comme elle vient de le faire.
   Scenario: Reject convocation violating legal deadline
     Given a meeting "AG Last Minute" scheduled in 3 days exists
     When I try to create a convocation for an ordinary AG
     Then the creation should fail
-    And the error should mention "legal deadline" or "minimum"
+    And the error should mention "3.87" or "Reportez"
 
   # === SCHEDULING ===
 

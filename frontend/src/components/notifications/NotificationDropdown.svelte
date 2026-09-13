@@ -97,9 +97,12 @@
   <div
     class="px-4 py-3 border-b border-gray-200 flex items-center justify-between"
   >
-    <h3 class="text-lg font-semibold text-gray-900">{$_("notifications.title")}</h3>
+    <h3 class="text-lg font-semibold text-gray-900">
+      {$_("notifications.title")}
+    </h3>
     {#if notifications.length > 0}
       <button
+        data-testid="notifications-mark-all-read-button"
         onclick={handleMarkAllRead}
         class="text-sm text-blue-600 hover:text-blue-700 font-medium"
       >
@@ -120,7 +123,7 @@
     {:else if notifications.length === 0}
       <div class="px-4 py-8 text-center text-gray-500">
         <svg
-          class="mx-auto h-12 w-12 text-gray-400"
+          class="mx-auto h-12 w-12 text-muted"
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"
@@ -136,13 +139,14 @@
         <p class="mt-2">{$_("notifications.noNotifications")}</p>
       </div>
     {:else}
-      <ul class="divide-y divide-gray-100 list-none m-0 p-0" role="menu" aria-label="Notifications">
+      <ul
+        class="divide-y divide-gray-100 list-none m-0 p-0"
+        role="menu"
+        aria-label="Notifications"
+      >
         {#each notifications as notification (notification.id)}
           <li role="menuitem" tabindex="-1">
-            <NotificationItem
-              {notification}
-              onclick={() => onclose?.()}
-            />
+            <NotificationItem {notification} onclick={() => onclose?.()} />
           </li>
         {/each}
       </ul>
@@ -153,6 +157,7 @@
   {#if notifications.length > 0}
     <div class="px-4 py-3 border-t border-gray-200">
       <button
+        data-testid="notifications-view-all-button"
         onclick={handleViewAll}
         class="w-full text-center text-sm text-blue-600 hover:text-blue-700 font-medium"
       >

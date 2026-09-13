@@ -13,16 +13,14 @@
 // Note : par cohérence avec /syndic/mandates (Story B3), la page Astro reste
 // minimale — toute la logique vit côté Svelte 5 (state, fetch, validation).
 
-import Layout from '../../layouts/Layout.astro';
-import TicketCreatePageWrapper from '../../lib/components/tickets/TicketCreatePageWrapper.svelte';
+import Layout from "../../layouts/Layout.astro";
+import TicketCreatePageWrapper from "../../lib/components/tickets/TicketCreatePageWrapper.svelte";
 ---
 
 <Layout title="Nouveau ticket — KoproGo">
   <main class="container mx-auto px-4 py-8">
     <div class="mx-auto max-w-2xl">
-      <h1 class="mb-6 text-3xl font-bold text-gray-900">
-        Nouveau ticket
-      </h1>
+      <h1 class="mb-6 text-3xl font-bold text-gray-900">Nouveau ticket</h1>
       <TicketCreatePageWrapper client:load />
     </div>
   </main>

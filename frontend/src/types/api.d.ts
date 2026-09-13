@@ -258,6 +258,26 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/auth/logout": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Logout
+     * @description Révoque tous les refresh tokens de l'utilisateur (déconnexion serveur) et expire le cookie HttpOnly `koprogo_refresh` (WP-FE1).
+     */
+    post: operations["logout"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/auth/me": {
     parameters: {
       query?: never;
@@ -341,6 +361,23 @@ export interface paths {
     put?: never;
     /** Create a building */
     post: operations["create_building"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/buildings/{building_id}/expenses": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Lister les dépenses d'un immeuble */
+    get: operations["list_expenses_by_building"];
+    put?: never;
+    post?: never;
     delete?: never;
     options?: never;
     head?: never;
@@ -500,6 +537,23 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/buildings/{building_id}/units": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List the units of a building */
+    get: operations["list_units_by_building"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/buildings/{id}": {
     parameters: {
       query?: never;
@@ -547,6 +601,96 @@ export interface paths {
     get: operations["consume_magic_link"];
     put?: never;
     post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/call-for-funds": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List calls for funds, optionally filtered by building or status */
+    get: operations["list_call_for_funds"];
+    put?: never;
+    /** Create a collective call for funds (draft) */
+    post: operations["create_call_for_funds"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/call-for-funds/overdue": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List overdue calls for funds */
+    get: operations["get_overdue_calls"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/call-for-funds/{id}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get a single call for funds */
+    get: operations["get_call_for_funds"];
+    put?: never;
+    post?: never;
+    /** Delete a draft call for funds */
+    delete: operations["delete_call_for_funds"];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/call-for-funds/{id}/cancel": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /** Cancel a call for funds */
+    put: operations["cancel_call_for_funds"];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/call-for-funds/{id}/send": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Send a call for funds and generate individual contributions
+     * @description Ventile le montant total entre les coproprietaires ACTIFS du batiment, au prorata de leurs quotites. Les detentions sont lues dans `unit_owners` (routes `/unit-owners`), PAS dans le champ deprecie `units.owner_id` : un batiment dont les lots n'ont pas de detenteur actif enregistre la echoue avec « No active owners found for this building ».
+     */
+    post: operations["send_call_for_funds"];
     delete?: never;
     options?: never;
     head?: never;
@@ -658,6 +802,24 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/expenses": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Lister les dépenses de l'organisation */
+    get: operations["list_expenses"];
+    put?: never;
+    /** Créer une dépense */
+    post: operations["create_expense"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/expenses/{expense_id}/payments": {
     parameters: {
       query?: never;
@@ -686,6 +848,125 @@ export interface paths {
     get: operations["get_expense_total_paid"];
     put?: never;
     post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/expenses/{id}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Lire une dépense */
+    get: operations["get_expense"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/expenses/{id}/cancel": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Annuler une dépense */
+    post: operations["cancel_expense"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/expenses/{id}/export-quote-pdf": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Exporter un devis en PDF */
+    get: operations["export_work_quote_pdf"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/expenses/{id}/mark-overdue": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Marquer une dépense en retard */
+    post: operations["mark_expense_overdue"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/expenses/{id}/mark-paid": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /** Marquer une dépense comme payée */
+    put: operations["mark_expense_paid"];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/expenses/{id}/reactivate": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Réactiver une dépense annulée */
+    post: operations["reactivate_expense"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/expenses/{id}/unpay": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Annuler le paiement d'une dépense */
+    post: operations["unpay_expense"];
     delete?: never;
     options?: never;
     head?: never;
@@ -868,6 +1149,203 @@ export interface paths {
     put: operations["restrict_user_processing"];
     post?: never;
     delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/invoices/draft": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Créer une facture brouillon avec TVA */
+    post: operations["create_invoice_draft"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/invoices/pending": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Lister les factures en attente d'approbation */
+    get: operations["get_pending_invoices"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/invoices/{id}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Lire une facture */
+    get: operations["get_invoice"];
+    /** Modifier une facture brouillon ou rejetée */
+    put: operations["update_invoice_draft"];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/invoices/{id}/approve": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /** Approuver une facture */
+    put: operations["approve_invoice"];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/invoices/{id}/reject": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /** Rejeter une facture avec motif */
+    put: operations["reject_invoice"];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/invoices/{id}/submit": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /** Soumettre une facture pour validation */
+    put: operations["submit_invoice_for_approval"];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/journal-entries": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * List journal entries (paginated, filterable)
+     * @description **Access:** Accountant, SuperAdmin, Syndic
+     *
+     *     **Query Parameters:**
+     *     - `building_id`: Filter by building (optional)
+     *     - `journal_type`: Filter by journal type (ACH, VEN, FIN, ODS) (optional)
+     *     - `start_date`: Filter by start date (ISO 8601) (optional)
+     *     - `end_date`: Filter by end date (ISO 8601) (optional)
+     *     - `page`: Page number (default: 1)
+     *     - `per_page`: Items per page (default: 20, max: 100)
+     *
+     *     **Example:**
+     *     ```
+     *     GET /api/v1/journal-entries?journal_type=ACH&page=1&per_page=20
+     *     ```
+     */
+    get: operations["list_journal_entries"];
+    put?: never;
+    /**
+     * Create a manual journal entry (double-entry bookkeeping)
+     * @description **Access:** Accountant, SuperAdmin
+     *
+     *     **Noalyss-Inspired Features:**
+     *     - Journal types: ACH (Purchases), VEN (Sales), FIN (Financial), ODS (Miscellaneous)
+     *     - Double-entry validation (debits = credits)
+     *     - Multi-line entries with account codes
+     *
+     *     **Example:**
+     *     ```json
+     *     POST /api/v1/journal-entries
+     *     {
+     *       "building_id": "uuid",
+     *       "journal_type": "ACH",
+     *       "entry_date": "2025-01-01T00:00:00Z",
+     *       "description": "Achat fournitures",
+     *       "reference": "FA-2025-001",
+     *       "lines": [
+     *         {"account_code": "604", "debit": 100.0, "credit": 0.0, "description": "Fournitures"},
+     *         {"account_code": "440", "debit": 0.0, "credit": 100.0, "description": "Fournisseur X"}
+     *       ]
+     *     }
+     *     ```
+     */
+    post: operations["create_journal_entry"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/journal-entries/{id}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Get a single journal entry with its lines
+     * @description **Access:** Accountant, SuperAdmin, Syndic
+     *
+     *     **Example:**
+     *     ```
+     *     GET /api/v1/journal-entries/{id}
+     *     ```
+     */
+    get: operations["get_journal_entry"];
+    put?: never;
+    post?: never;
+    /**
+     * Delete a journal entry and its lines
+     * @description **Access:** Accountant, SuperAdmin
+     *
+     *     **Note:** Only manual entries (not auto-generated from expenses/contributions) can be deleted.
+     *
+     *     **Example:**
+     *     ```
+     *     DELETE /api/v1/journal-entries/{id}
+     *     ```
+     */
+    delete: operations["delete_journal_entry"];
     options?: never;
     head?: never;
     patch?: never;
@@ -1132,6 +1610,23 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/organizations/{organization_id}/payment-methods": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Lister les moyens de paiement d'une organisation */
+    get: operations["list_organization_payment_methods"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/organizations/{organization_id}/payments": {
     parameters: {
       query?: never;
@@ -1175,6 +1670,180 @@ export interface paths {
     };
     /** List users for an organization (syndic/accountant own org, superadmin any org) */
     get: operations["list_organization_users"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/owner-contributions": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List contributions of the organization, or of a single owner */
+    get: operations["get_contributions_by_owner"];
+    put?: never;
+    /** Create an owner contribution (quote-part) */
+    post: operations["create_contribution"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/owner-contributions/outstanding": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List unpaid contributions */
+    get: operations["get_outstanding_contributions"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/owner-contributions/{id}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get a single owner contribution */
+    get: operations["get_contribution"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/owner-contributions/{id}/mark-paid": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /**
+     * Record a payment against a contribution
+     * @description Voie SUPPORTEE pour solder une quote-part depuis l'interface. Un paiement du module `/payments` peut aussi la solder automatiquement : il suffit de lui passer `contribution_id`, et la quote-part bascule quand le paiement atteint `succeeded`.
+     */
+    put: operations["record_payment"];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/owners/{owner_id}/payment-methods": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Lister les moyens de paiement d'un copropriétaire */
+    get: operations["list_owner_payment_methods"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/owners/{owner_id}/payment-methods/active": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Lister les moyens de paiement actifs d'un copropriétaire */
+    get: operations["list_active_owner_payment_methods"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/owners/{owner_id}/payment-methods/count": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Compter les moyens de paiement actifs d'un copropriétaire */
+    get: operations["count_active_payment_methods"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/owners/{owner_id}/payment-methods/default": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Récupérer le moyen de paiement par défaut d'un copropriétaire */
+    get: operations["get_default_payment_method"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/owners/{owner_id}/payment-methods/has-active": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Indiquer si un copropriétaire a au moins un moyen de paiement actif */
+    get: operations["has_active_payment_methods"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/owners/{owner_id}/payment-methods/type/{method_type}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Lister les moyens de paiement d'un copropriétaire par type */
+    get: operations["list_payment_methods_by_type"];
     put?: never;
     post?: never;
     delete?: never;
@@ -1227,6 +1896,110 @@ export interface paths {
     /** Get total amount paid by an owner */
     get: operations["get_owner_total_paid"];
     put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/payment-methods": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Enregistrer un moyen de paiement pour un copropriétaire */
+    post: operations["create_payment_method"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/payment-methods/stripe/{stripe_payment_method_id}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Récupérer un moyen de paiement par son identifiant Stripe */
+    get: operations["get_payment_method_by_stripe_id"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/payment-methods/{id}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Récupérer un moyen de paiement */
+    get: operations["get_payment_method"];
+    /** Mettre à jour un moyen de paiement */
+    put: operations["update_payment_method"];
+    post?: never;
+    /** Supprimer un moyen de paiement */
+    delete: operations["delete_payment_method"];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/payment-methods/{id}/deactivate": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /** Désactiver un moyen de paiement */
+    put: operations["deactivate_payment_method"];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/payment-methods/{id}/reactivate": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /** Réactiver un moyen de paiement */
+    put: operations["reactivate_payment_method"];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/payment-methods/{id}/set-default": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /** Désigner un moyen de paiement comme moyen par défaut */
+    put: operations["set_payment_method_as_default"];
     post?: never;
     delete?: never;
     options?: never;
@@ -1561,6 +2334,113 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/portfolios": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List portfolios visible to the authenticated user (owned + shared) */
+    get: operations["list_portfolios"];
+    put?: never;
+    /** Create a portfolio */
+    post: operations["create_portfolio"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/portfolios/{id}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get a portfolio by id (owner OR shared) */
+    get: operations["get_portfolio"];
+    /** Update a portfolio (owner OR shared can_edit) */
+    put: operations["update_portfolio"];
+    post?: never;
+    /** Delete a portfolio (owner only) */
+    delete: operations["delete_portfolio"];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/portfolios/{id}/buildings": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List buildings of a portfolio (favorites first) */
+    get: operations["list_portfolio_buildings"];
+    put?: never;
+    /** Add a building to a portfolio (owner OR shared can_edit) */
+    post: operations["add_portfolio_building"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/portfolios/{id}/buildings/{building_id}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    /** Remove a building from a portfolio */
+    delete: operations["remove_portfolio_building"];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/portfolios/{id}/shares": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List shares of a portfolio (owner only) */
+    get: operations["list_portfolio_shares"];
+    put?: never;
+    /** Share a portfolio with another user (owner only) */
+    post: operations["share_portfolio"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/portfolios/{id}/shares/{user_id}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    /** Unshare a portfolio (owner only) */
+    delete: operations["unshare_portfolio"];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/resolutions/{id}": {
     parameters: {
       query?: never;
@@ -1779,6 +2659,23 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/tickets/assignable-users": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List users assignable to tickets */
+    get: operations["list_assignable_users"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/tickets/assigned-to-me": {
     parameters: {
       query?: never;
@@ -1966,6 +2863,23 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/tickets/{id}/send-work-order": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /** Send work order to contractor (magic link PWA) */
+    put: operations["send_work_order"];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/tickets/{id}/start-work": {
     parameters: {
       query?: never;
@@ -1995,6 +2909,63 @@ export interface paths {
     put?: never;
     /** Post a structured syndic response to a ticket (append-only) */
     post: operations["create_syndic_response"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/units": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List units visible to the authenticated user (paginated) */
+    get: operations["list_units"];
+    put?: never;
+    /** Create a unit (lot) inside a building */
+    post: operations["create_unit"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/units/{id}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get a single unit */
+    get: operations["get_unit"];
+    /**
+     * Update a unit
+     * @description N'accepte PAS `owner_id` : la relation lot/proprietaire vit dans `unit_owners` (routes `/unit-owners`), qui porte les quotites et les dates de detention. `units.owner_id` est deprecie depuis la migration `20250127000000_refactor_owners_multitenancy`. Un corps portant `owner_id` recevait auparavant un 200 en jetant le champ ; il recoit desormais un 400.
+     */
+    put: operations["update_unit"];
+    post?: never;
+    /** Delete a unit */
+    delete: operations["delete_unit"];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/units/{unit_id}/assign-owner/{owner_id}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /** Assign an owner to a unit */
+    put: operations["assign_owner"];
+    post?: never;
     delete?: never;
     options?: never;
     head?: never;
@@ -2102,11 +3073,20 @@ export interface components {
       total_tantiemes: number;
       updated_at: string;
     };
+    /** @description Ajout d'un building au portfolio. */
+    AddBuildingDto: {
+      building_id: string;
+      is_favorite?: boolean;
+    };
     /**
      * @description Statut d'approbation pour le workflow de validation
      * @enum {string}
      */
     ApprovalStatus: "draft" | "pending_approval" | "approved" | "rejected";
+    /** @description Approuver une facture (PendingApproval → Approved). */
+    ApproveInvoiceDto: {
+      approved_by_user_id: string;
+    };
     AssignRoleRequest: {
       /**
        * Format: uuid
@@ -2152,6 +3132,46 @@ export interface components {
       /** @description New SemVer. Must be strictly greater than the previous one. */
       version: string;
     };
+    /** @description Response containing call for funds details */
+    CallForFundsResponse: {
+      account_code?: string | null;
+      /**
+       * Format: uuid
+       * @description L'ACP propriétaire de la pièce (ADR-0045).
+       */
+      acp_id: string;
+      /** Format: uuid */
+      building_id: string;
+      /** Format: date-time */
+      call_date: string;
+      contribution_type: string;
+      /** Format: date-time */
+      created_at: string;
+      /** Format: uuid */
+      created_by?: string | null;
+      description: string;
+      /** Format: date-time */
+      due_date: string;
+      /** Format: uuid */
+      id: string;
+      is_overdue: boolean;
+      notes?: string | null;
+      /** Format: uuid */
+      organization_id: string;
+      /**
+       * @description Part affectée au fonds de réserve, communiquée avec l'appel
+       *     (Art. 3.86 § 3 al. 7). C'est ce que le copropriétaire ne récupérera pas
+       *     en vendant son lot : elle suit le lot, pas le vendeur.
+       */
+      reserve_fund_share: string;
+      /** Format: date-time */
+      sent_date?: string | null;
+      status: string;
+      title: string;
+      total_amount: string;
+      /** Format: date-time */
+      updated_at: string;
+    };
     /** @enum {string} */
     CampaignStatus:
       | "Draft"
@@ -2184,8 +3204,18 @@ export interface components {
       /** Format: uuid */
       unit_id: string;
       vote_choice: components["schemas"]["VoteChoice"];
-      /** @description Tantièmes/millièmes — Decimal exact (ADR-0008), sérialisé en string JSON. */
-      voting_power: string;
+      /**
+       * @description **Ignoré par le serveur depuis #850.**
+       *
+       *     La puissance de vote d'un lot est sa quotité dans l'acte de base
+       *     (Art. 3.87 § 2 et § 8 CC) : elle n'est pas déclarative. Le serveur la
+       *     relit sur le lot et n'accorde aucune valeur à ce champ.
+       *
+       *     Il reste accepté pour ne pas casser les appelants existants, et sera
+       *     retiré du contrat quand l'arbitrage de #850 — qui peut saisir un vote,
+       *     et pour qui — aura tranché le reste de la route.
+       */
+      voting_power?: string | null;
     };
     /**
      * @description Challenge status lifecycle
@@ -2203,8 +3233,22 @@ export interface components {
     };
     /** @description Request DTO for closing voting on a resolution */
     CloseVotingRequest: {
-      /** @description Total tantièmes du bâtiment — Decimal exact (ADR-0008), string JSON. */
-      total_voting_power: string;
+      /**
+       * @description Total des tantièmes de l'immeuble, **facultatif et ignoré**.
+       *
+       *     Ce champ était obligatoire, et le frontend envoyait `{}` : la requête
+       *     échouait donc à la désérialisation, en 400, avant même d'atteindre le
+       *     gestionnaire. Le bouton « Clôturer le vote » paraissait inerte, ce qui
+       *     a été rapporté trois fois en recette (R3-3, RN-8) et bloquait la
+       *     deuxième des trois conditions de clôture d'une AG.
+       *
+       *     Il est conservé pour ne pas casser les appelants existants, mais le
+       *     serveur ne s'en sert plus : le dénominateur de la majorité est
+       *     désormais lu sur l'immeuble. Le laisser fournir par le client
+       *     permettait de faire proclamer une majorité qui n'existe pas — signalé
+       *     dans l'issue #767.
+       */
+      total_voting_power?: string | null;
     };
     /** @description Response for successful consent recording */
     ConsentRecordedResponse: {
@@ -2247,6 +3291,22 @@ export interface components {
       /** Format: uuid */
       technical_spec_id: string;
     };
+    /**
+     * @description Payment method for contributions
+     * @enum {string}
+     */
+    ContributionPaymentMethod:
+      "bank_transfer" | "cash" | "check" | "domiciliation";
+    /**
+     * @description Payment status for contributions
+     * @enum {string}
+     */
+    ContributionPaymentStatus: "pending" | "paid" | "partial" | "cancelled";
+    /**
+     * @description Type of owner contribution
+     * @enum {string}
+     */
+    ContributionType: "regular" | "extraordinary" | "advance" | "adjustment";
     /**
      * @description Convocation status
      * @enum {string}
@@ -2301,6 +3361,28 @@ export interface components {
       /** Format: int32 */
       total_units: number;
     };
+    /** @description Request to create a new call for funds */
+    CreateCallForFundsRequest: {
+      account_code?: string | null;
+      /** Format: uuid */
+      building_id: string;
+      /** Format: date-time */
+      call_date: string;
+      contribution_type: string;
+      description: string;
+      /** Format: date-time */
+      due_date: string;
+      /**
+       * @description Part du montant appelé affectée au fonds de réserve.
+       *
+       *     Art. 3.86 § 3 al. 7 : le syndic doit la communiquer **lors de l'appel**.
+       *     Absente, elle vaut zéro — ce qui reste une communication explicite,
+       *     contrairement au silence d'avant.
+       */
+      reserve_fund_share?: string;
+      title: string;
+      total_amount: string;
+    };
     CreateContractorEvaluationRequest: {
       comment: string;
       /** Format: uuid */
@@ -2309,6 +3391,71 @@ export interface components {
       scores: components["schemas"]["EvaluationScoresDto"];
       /** Format: uuid */
       technical_spec_id: string;
+    };
+    CreateExpenseDto: {
+      /**
+       * @description Optional Belgian PCMN account code (e.g., "604001" for electricity)
+       *     Must reference an existing account in the organization's chart of accounts
+       */
+      account_code?: string | null;
+      /** @description Montant TTC (validé > 0 dans Expense::new). Decimal exact (cf. ADR-0007). */
+      amount: string;
+      /**
+       * @description Montant HT. Fourni avec `vat_rate`, la TVA est calculée et le TTC
+       *     déduit ; `amount` est alors ignoré au profit du calcul exact.
+       */
+      amount_excl_vat?: string | null;
+      building_id: string;
+      category: components["schemas"]["ExpenseCategory"];
+      description: string;
+      /** @description Échéance de règlement fournisseur (ISO 8601). */
+      due_date?: string | null;
+      expense_date: string;
+      invoice_number?: string | null;
+      /**
+       * @description Le détail de la facture, quand elle est saisie ligne par ligne.
+       *
+       *     Absent en saisie simple : la dépense ne porte alors que ses totaux.
+       */
+      line_items?: components["schemas"]["NouvelleLigneDeFactureDto"][] | null;
+      organization_id?: string;
+      supplier?: string | null;
+      /** @description Taux de TVA en POURCENTAGE (21.0 pour 21 %), validé 0..=100. */
+      vat_rate?: string | null;
+    };
+    /**
+     * @description Créer une facture brouillon avec gestion TVA.
+     *     Validation des montants > 0 et taux 0-100 effectuée dans `Expense::new_with_vat`.
+     */
+    CreateInvoiceDraftDto: {
+      /** @description Montant HT (validé > 0 dans `Expense::new_with_vat`). */
+      amount_excl_vat: string;
+      building_id: string;
+      category: components["schemas"]["ExpenseCategory"];
+      description: string;
+      due_date?: string | null;
+      invoice_date: string;
+      invoice_number?: string | null;
+      organization_id?: string;
+      supplier?: string | null;
+      /** @description Taux TVA en % (validé 0..=100 dans `Expense::new_with_vat`). */
+      vat_rate: string;
+    };
+    /**
+     * @description `deny_unknown_fields` : le rapport de test du 2026-09-01 (constat F16)
+     *     signalait `operation_date` et `reference` « non persistes ». Les noms
+     *     attendus sont `entry_date` et `document_ref` ; l'interface les envoie
+     *     correctement, mais un appelant qui se trompait recevait un 201 avec une
+     *     ecriture amputee de sa reference. Serde les rejette desormais.
+     */
+    CreateJournalEntryRequest: {
+      /** Format: uuid */
+      building_id?: string | null;
+      description: string;
+      document_ref?: string | null;
+      entry_date: string;
+      journal_type: string;
+      lines: components["schemas"]["JournalEntryLineRequest"][];
     };
     /** @description Create Notification Request */
     CreateNotificationRequest: {
@@ -2322,12 +3469,53 @@ export interface components {
       /** Format: uuid */
       user_id: string;
     };
-    /** @description Create payment request DTO */
+    /** @description DTO for creating a new owner contribution */
+    CreateOwnerContributionRequest: {
+      account_code?: string | null;
+      amount: string;
+      /** Format: date-time */
+      contribution_date: string;
+      contribution_type: components["schemas"]["ContributionType"];
+      description: string;
+      /** Format: uuid */
+      owner_id: string;
+      /** Format: uuid */
+      unit_id?: string | null;
+    };
+    /** @description Create payment method request DTO (from Stripe) */
+    CreatePaymentMethodRequest: {
+      display_label: string;
+      /** Format: date-time */
+      expires_at?: string | null;
+      is_default: boolean;
+      metadata?: string | null;
+      method_type: components["schemas"]["StoredPaymentMethodType"];
+      /** Format: uuid */
+      owner_id: string;
+      stripe_customer_id: string;
+      stripe_payment_method_id: string;
+    };
+    /**
+     * @description Create payment request DTO
+     *
+     *     `deny_unknown_fields` : un `POST /payments` portant `contribution_id`
+     *     repondait 201 en jetant le champ, laissant croire que la quote-part venait
+     *     d'etre soldee. Le champ existe desormais ; tout AUTRE champ inconnu
+     *     (`currency`, `stripe_payment_intent_id`, que le client TypeScript envoyait
+     *     sans qu'ils existent cote serveur) produit un 400 explicite plutot qu'une
+     *     perte silencieuse.
+     */
     CreatePaymentRequest: {
       /** Format: int64 */
       amount_cents: number;
       /** Format: uuid */
       building_id: string;
+      /**
+       * Format: uuid
+       * @description Quote-part soldee par ce paiement. La contribution ne passe a `paid`
+       *     qu'a la reussite du paiement, pas a sa creation.
+       */
+      contribution_id?: string | null;
       description?: string | null;
       /** Format: uuid */
       expense_id?: string | null;
@@ -2356,6 +3544,16 @@ export interface components {
       display_order: number;
       id?: string | null;
       option_text: string;
+    };
+    /**
+     * @description Création d'un portfolio.
+     *
+     *     `owner_user_id` est inféré côté handler depuis `AuthenticatedUser`
+     *     — pas exposé dans le body pour éviter toute escalade.
+     */
+    CreatePortfolioDto: {
+      description?: string | null;
+      name: string;
     };
     /** @description Request DTO for creating a resolution */
     CreateResolutionRequest: {
@@ -2416,6 +3614,43 @@ export interface components {
       unit_id?: string | null;
       /** @description Story 3.6 (FR31) — Up to 10 witness user_ids (no duplicates). */
       witnesses?: string[];
+    };
+    CreateUnitDto: {
+      /**
+       * @description Story H15 — FK vers `acps.id` (anciennement `organization_id`).
+       *     Le lot dérive son ACP de son building parent (cf. #602) ; le scoping
+       *     org se fait via `acps.organization_id`.
+       *
+       *     OPTIONNEL depuis 2026-08-27. Le champ était obligatoire, ce qui
+       *     contredisait la ligne au-dessus : si l'ACP se dérive du building, le
+       *     client n'a pas à la fournir. Deux conséquences mesurées :
+       *
+       *       1. Un `POST /units` sans `acp_id` était rejeté par serde AVANT
+       *          d'atteindre le handler, avec un corps en TEXTE BRUT
+       *          (« Json deserialize error: missing field `acp_id` »). Le garde-fou
+       *          `if dto.acp_id.is_empty()` du handler, qui rend un JSON propre,
+       *          était donc mort pour ce cas : il ne se déclenchait que sur une
+       *          chaîne vide explicite.
+       *
+       *       2. Tout appelant faisant `.json()` sur cette réponse recevait
+       *          « Unexpected token 'J' », un message qui ne dit rien du défaut.
+       *          C'est ce qui faisait échouer `02-ag-full-cycle` (gate de
+       *          caractérisation) et taire `seedConformantUnits` en `status=400`.
+       *
+       *     Absent ou vide, l'ACP est désormais lue sur le building parent, qui
+       *     est la source de vérité. Fournie, elle est utilisée telle quelle :
+       *     le comportement des appelants existants est inchangé.
+       */
+      acp_id?: string | null;
+      building_id: string;
+      /** Format: int32 */
+      floor?: number | null;
+      /** @description Quote-part en millièmes (Decimal exact, range 0.1..=1000 enforced en domain). */
+      quota: string;
+      /** Format: double */
+      surface_area: number;
+      unit_number: string;
+      unit_type: components["schemas"]["UnitType"];
     };
     /** @enum {string} */
     CreditStatus: "Positive" | "Balanced" | "Negative";
@@ -2488,11 +3723,53 @@ export interface components {
       | "Administration"
       | "Works"
       | "Other";
+    ExpenseResponseDto: {
+      /** @description Belgian PCMN account code if linked to chart of accounts */
+      account_code?: string | null;
+      /**
+       * @description ACP propriétaire de la charge — clé de rattachement patrimonial.
+       *     Suit la copropriété lors des passations de syndic.
+       */
+      acp_id: string;
+      amount: string;
+      /** @description Montant hors TVA. */
+      amount_excl_vat?: string | null;
+      /** @description Montant TVA comprise. */
+      amount_incl_vat?: string | null;
+      approval_status: components["schemas"]["ApprovalStatus"];
+      building_id: string;
+      category: components["schemas"]["ExpenseCategory"];
+      /** @description Contractor report reference for Works category (Issue #309) */
+      contractor_report_id?: string | null;
+      description: string;
+      /** @description Échéance de règlement fournisseur (ISO 8601). */
+      due_date?: string | null;
+      expense_date: string;
+      id: string;
+      invoice_number?: string | null;
+      payment_status: components["schemas"]["PaymentStatus"];
+      supplier?: string | null;
+      /** @description Montant de TVA. */
+      vat_amount?: string | null;
+      /** @description Taux de TVA en POURCENTAGE (21.0 pour 21 %). */
+      vat_rate?: string | null;
+    };
     /**
      * @description Expertise level for skill proficiency
      * @enum {string}
      */
     ExpertiseLevel: "Beginner" | "Intermediate" | "Advanced" | "Expert";
+    /** @description Request DTO for GDPR data erasure (Article 17) */
+    GdprEraseRequestDto: {
+      /** @description Optional confirmation token for security */
+      confirmation?: string | null;
+      /**
+       * @description Mot de passe de la personne qui demande l'effacement de ses propres
+       *     données. L'action est irréversible : deux `confirm()` côté navigateur
+       *     ne prouvent rien, et un appel direct à l'API les ignorait tout à fait.
+       */
+      password: string;
+    };
     GdprMarketingPreferenceRequest: {
       opt_out: boolean;
     };
@@ -2552,6 +3829,38 @@ export interface components {
        * @description Mandatory. Returning 422-like validation if missing.
        */
       valid_until: string;
+    };
+    JournalEntryLineRequest: {
+      account_code: string;
+      credit: string;
+      debit: string;
+      description: string;
+    };
+    JournalEntryLineResponse: {
+      account_code: string;
+      created_at: string;
+      credit: string;
+      debit: string;
+      description?: string | null;
+      id: string;
+      journal_entry_id: string;
+    };
+    JournalEntryResponse: {
+      building_id?: string | null;
+      contribution_id?: string | null;
+      created_at: string;
+      description?: string | null;
+      document_ref?: string | null;
+      entry_date: string;
+      expense_id?: string | null;
+      id: string;
+      journal_type?: string | null;
+      organization_id: string;
+      updated_at: string;
+    };
+    JournalEntryWithLinesResponse: {
+      entry: components["schemas"]["JournalEntryResponse"];
+      lines: components["schemas"]["JournalEntryLineResponse"][];
     };
     LoginRequest: {
       email: string;
@@ -2650,12 +3959,89 @@ export interface components {
       | "ResolutionVote"
       | "System";
     /**
+     * @description Une ligne de facture transmise **à la création** de la dépense.
+     *
+     *     Distincte de `CreateInvoiceLineItemDto`, qui exige un `expense_id` parce
+     *     qu'elle sert à ajouter une ligne à une facture déjà enregistrée. À la
+     *     création, la dépense n'a pas encore d'identifiant : le lien se fait après
+     *     coup, côté use-case.
+     *
+     *     Sans ce type, `InvoiceForm.svelte` envoyait `line_items` dans le corps et
+     *     serde les jetait en silence : la facture était créée avec ses totaux, et
+     *     le détail — description, quantité, prix unitaire, TVA de chaque ligne —
+     *     disparaissait sans le moindre avertissement. Un comptable saisissant une
+     *     facture ligne par ligne perdait son travail. Constaté le 2026-09-04.
+     */
+    NouvelleLigneDeFactureDto: {
+      description: string;
+      quantity: string;
+      unit_price: string;
+      vat_rate: string;
+    };
+    /**
      * @description Condition of shared object
      * @enum {string}
      */
     ObjectCondition: "Excellent" | "Good" | "Fair" | "Used";
+    /** @description DTO for owner contribution response */
+    OwnerContributionResponse: {
+      account_code?: string | null;
+      /**
+       * Format: uuid
+       * @description L'ACP propriétaire de la pièce (ADR-0045).
+       */
+      acp_id: string;
+      amount: string;
+      /** Format: date-time */
+      contribution_date: string;
+      contribution_type: components["schemas"]["ContributionType"];
+      /** Format: date-time */
+      created_at: string;
+      description: string;
+      /** Format: uuid */
+      id: string;
+      notes?: string | null;
+      /** Format: uuid */
+      organization_id: string;
+      /** Format: uuid */
+      owner_id: string;
+      /** Format: date-time */
+      payment_date?: string | null;
+      payment_method?:
+        null | components["schemas"]["ContributionPaymentMethod"];
+      payment_reference?: string | null;
+      payment_status: components["schemas"]["ContributionPaymentStatus"];
+      /** Format: uuid */
+      unit_id?: string | null;
+      /** Format: date-time */
+      updated_at: string;
+    };
     /** @enum {string} */
     ParticipationLevel: "New" | "Beginner" | "Active" | "Veteran" | "Expert";
+    /** @description Payment method response DTO */
+    PaymentMethodResponse: {
+      /** Format: date-time */
+      created_at: string;
+      display_label: string;
+      /** Format: date-time */
+      expires_at?: string | null;
+      /** Format: uuid */
+      id: string;
+      is_active: boolean;
+      is_default: boolean;
+      is_expired: boolean;
+      is_usable: boolean;
+      metadata?: string | null;
+      method_type: components["schemas"]["StoredPaymentMethodType"];
+      /** Format: uuid */
+      organization_id: string;
+      /** Format: uuid */
+      owner_id: string;
+      stripe_customer_id: string;
+      stripe_payment_method_id: string;
+      /** Format: date-time */
+      updated_at: string;
+    };
     /**
      * @description Payment method type (extensible for future methods)
      * @enum {string}
@@ -2670,6 +4056,28 @@ export interface components {
     PollStatus: "draft" | "active" | "closed" | "cancelled";
     /** @enum {string} */
     PollType: "yes_no" | "multiple_choice" | "rating" | "open_ended";
+    /** @description Building du portfolio (élément du listing trié favoris d'abord). */
+    PortfolioBuildingResponseDto: {
+      building_id: string;
+      is_favorite: boolean;
+      portfolio_id: string;
+    };
+    /** @description Réponse JSON pour un portfolio. */
+    PortfolioResponseDto: {
+      created_at: string;
+      description?: string | null;
+      id: string;
+      name: string;
+      owner_user_id: string;
+      updated_at: string;
+    };
+    /** @description Partage du portfolio. */
+    PortfolioShareResponseDto: {
+      can_edit: boolean;
+      portfolio_id: string;
+      shared_at: string;
+      shared_with_user_id: string;
+    };
     /** @enum {string} */
     QuoteStatus:
       | "Requested"
@@ -2685,6 +4093,13 @@ export interface components {
       consent_type: string;
       /** @description Optional policy version (e.g., "1.0", "1.1") */
       policy_version?: string | null;
+    };
+    /** @description DTO for recording a payment */
+    RecordPaymentRequest: {
+      /** Format: date-time */
+      payment_date: string;
+      payment_method: components["schemas"]["ContributionPaymentMethod"];
+      payment_reference?: string | null;
     };
     /**
      * @description Recurring pattern for repeated bookings
@@ -2705,6 +4120,11 @@ export interface components {
       organization_id?: string | null;
       password: string;
       role: string;
+    };
+    /** @description Rejeter une facture avec raison (PendingApproval → Rejected). */
+    RejectInvoiceDto: {
+      rejected_by_user_id: string;
+      rejection_reason: string;
     };
     /**
      * @description Niveau de relance de paiement
@@ -2764,6 +4184,18 @@ export interface components {
       /** Format: date-time */
       valid_until?: string | null;
     };
+    /** @description Request to send a call for funds (triggers automatic contribution generation) */
+    SendCallForFundsRequest: Record<string, never>;
+    /** @description Response after sending a call for funds */
+    SendCallForFundsResponse: {
+      call_for_funds: components["schemas"]["CallForFundsResponse"];
+      contributions_generated: number;
+    };
+    /** @description Partage du portfolio avec un autre utilisateur. */
+    SharePortfolioDto: {
+      can_edit?: boolean;
+      shared_with_user_id: string;
+    };
     /**
      * @description Category for shared objects
      * @enum {string}
@@ -2813,6 +4245,33 @@ export interface components {
      * @enum {string}
      */
     SortOrder: "asc" | "desc";
+    /**
+     * @description Type d'un moyen de paiement **enregistré**, c'est-à-dire d'un instrument
+     *     conservé chez Stripe et réutilisable.
+     *
+     *     Deux variantes seulement, et c'est correct : on ne peut pas « enregistrer »
+     *     du liquide, ni un virement manuel. Un instrument enregistré porte un
+     *     `stripe_payment_method_id` et un `stripe_customer_id` — l'entité l'exige.
+     *
+     *     **À ne pas confondre avec `payment::PaymentMethodType`**, qui décrit
+     *     comment un paiement a été REÇU et compte quatre variantes, dont le
+     *     virement manuel et l'espèce.
+     *
+     *     Les deux types portaient le même nom Rust ET le même nom de schéma. utoipa
+     *     n'en publie qu'un sous un nom donné : le contrat annonçait donc
+     *     `["card", "sepa_debit"]` partout, y compris pour le champ
+     *     `CreatePaymentRequest.payment_method_type` — interdisant à tout client
+     *     engendré depuis le contrat d'enregistrer un paiement en espèces ou par
+     *     virement, deux façons parfaitement ordinaires de payer ses charges.
+     *
+     *     D'où le nom de schéma distinct. Le doc-comment précédent affirmait
+     *     « aligned with Payment entity » alors qu'il en avait deux variantes sur
+     *     quatre. Voir #819.
+     * @enum {string}
+     */
+    StoredPaymentMethodType: "card" | "sepa_debit";
+    /** @description Soumettre une facture pour validation (Draft → PendingApproval). */
+    SubmitForApprovalDto: Record<string, never>;
     SwitchRoleRequest: {
       /** Format: uuid */
       role_id: string;
@@ -2914,6 +4373,27 @@ export interface components {
       | "failed"
       | "cancelled"
       | "refunded";
+    UnitResponseDto: {
+      building_id: string;
+      /** Format: int32 */
+      floor?: number | null;
+      id: string;
+      owner_id?: string | null;
+      quota: string;
+      /** Format: double */
+      surface_area: number;
+      unit_number: string;
+      unit_type: components["schemas"]["UnitType"];
+    };
+    /**
+     * @description Type de lot (appartement, cave, parking, etc.)
+     *
+     *     `Copy` parce que le décompte légal de l'Art. 3.89 § 5, 15° raisonne sur
+     *     des natures de lot, pas sur des lots : les cloner pour les compter serait
+     *     du bruit.
+     * @enum {string}
+     */
+    UnitType: "Apartment" | "Parking" | "Cellar" | "Commercial" | "Other";
     /**
      * @description Mise à jour d'une ACP (PATCH-like : tous les champs identitaires sont requis,
      *     par défaut on ré-envoie l'état complet via PUT — pattern Building).
@@ -2951,6 +4431,23 @@ export interface components {
       /** Format: int32 */
       total_units: number;
     };
+    /** @description Modifier une facture brouillon ou rejetée. */
+    UpdateInvoiceDraftDto: {
+      amount_excl_vat?: string | null;
+      category?: null | components["schemas"]["ExpenseCategory"];
+      description?: string | null;
+      due_date?: string | null;
+      invoice_date?: string | null;
+      invoice_number?: string | null;
+      supplier?: string | null;
+      vat_rate?: string | null;
+    };
+    /** @description Update payment method request DTO */
+    UpdatePaymentMethodRequest: {
+      display_label?: string | null;
+      is_default?: boolean | null;
+      metadata?: string | null;
+    };
     /** @description Update poll (only draft polls can be updated) */
     UpdatePollDto: {
       allow_multiple_votes?: boolean | null;
@@ -2960,6 +4457,11 @@ export interface components {
       options?: components["schemas"]["CreatePollOptionDto"][] | null;
       require_all_owners?: boolean | null;
       title?: string | null;
+    };
+    /** @description Mise à jour d'un portfolio (PUT — état complet). */
+    UpdatePortfolioDto: {
+      description?: string | null;
+      name: string;
     };
     /** @description Update Notification Preference Request */
     UpdatePreferenceRequest: {
@@ -2982,6 +4484,25 @@ export interface components {
       severity?: null | components["schemas"]["TicketSeverity"];
       title?: string | null;
       witnesses?: string[] | null;
+    };
+    /**
+     * @description `deny_unknown_fields` : un `PUT /units/{id}` portant `owner_id` repondait
+     *     200 en jetant le champ, laissant croire que le lot venait d'etre rattache a
+     *     un proprietaire. `units.owner_id` est DEPRECIE depuis la migration
+     *     `20250127000000_refactor_owners_multitenancy` — la relation vit dans
+     *     `unit_owners` (API `/unit-owners`), qui porte les quotites et les dates.
+     *     Le refus explicite renvoie desormais vers la bonne route au lieu de perdre
+     *     la donnee en silence.
+     */
+    UpdateUnitDto: {
+      /** Format: int32 */
+      floor: number;
+      /** @description Quote-part en millièmes (Decimal exact, range 0.1..=1000 enforced en domain). */
+      quota: string;
+      /** Format: double */
+      surface_area: number;
+      unit_number: string;
+      unit_type: components["schemas"]["UnitType"];
     };
     UserRoleAssignmentResponse: {
       /** Format: date-time */
@@ -3436,6 +4957,38 @@ export interface operations {
       };
     };
   };
+  logout: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Déconnecté, cookie expiré */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Access token absent ou invalide */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Internal Server Error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
   get_current_user: {
     parameters: {
       query?: never;
@@ -3659,6 +5212,47 @@ export interface operations {
       };
       /** @description Internal Server Error */
       500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  list_expenses_by_building: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        building_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Liste */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Non authentifié */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Immeuble hors de votre organisation */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Immeuble introuvable */
+      404: {
         headers: {
           [name: string]: unknown;
         };
@@ -3944,6 +5538,36 @@ export interface operations {
       };
     };
   };
+  list_units_by_building: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Building identifier */
+        building_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Units */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["UnitResponseDto"][];
+        };
+      };
+      /** @description Forbidden (building outside the user scope) */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
   get_building: {
     parameters: {
       query?: never;
@@ -4149,6 +5773,239 @@ export interface operations {
       };
     };
   };
+  list_call_for_funds: {
+    parameters: {
+      query?: {
+        /** @description Restrict to one building */
+        building_id?: string;
+        /** @description draft | sent | overdue | cancelled */
+        status?: string;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Calls for funds */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["CallForFundsResponse"][];
+        };
+      };
+      /** @description User does not belong to an organization */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  create_call_for_funds: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["CreateCallForFundsRequest"];
+      };
+    };
+    responses: {
+      /** @description Call for funds created */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["CallForFundsResponse"];
+        };
+      };
+      /** @description Validation error, or unknown field in the body */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description User does not belong to an organization */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  get_overdue_calls: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Overdue calls */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["CallForFundsResponse"][];
+        };
+      };
+      /** @description User does not belong to an organization */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  get_call_for_funds: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Call for funds identifier */
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Call for funds */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["CallForFundsResponse"];
+        };
+      };
+      /** @description Not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  delete_call_for_funds: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Call for funds identifier */
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Deleted */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Only a draft can be deleted */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  cancel_call_for_funds: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Call for funds identifier */
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Cancelled */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["CallForFundsResponse"];
+        };
+      };
+      /** @description Not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  send_call_for_funds: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Call for funds identifier */
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["SendCallForFundsRequest"];
+      };
+    };
+    responses: {
+      /** @description Sent, contributions generated */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["SendCallForFundsResponse"];
+        };
+      };
+      /** @description No active owners, or building not conformant */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
   record_consent: {
     parameters: {
       query?: never;
@@ -4331,6 +6188,74 @@ export interface operations {
       };
     };
   };
+  list_expenses: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Liste paginée */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Non authentifié */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  create_expense: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["CreateExpenseDto"];
+      };
+    };
+    responses: {
+      /** @description Dépense créée */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Requête invalide */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Non authentifié */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Rôle sans droit d'encodage */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
   list_expense_payments: {
     parameters: {
       query?: never;
@@ -4387,6 +6312,244 @@ export interface operations {
       };
     };
   };
+  get_expense: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Dépense */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Non authentifié */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Introuvable */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  cancel_expense: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Dépense annulée */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Non authentifié */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Introuvable */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  export_work_quote_pdf: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description PDF */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Non authentifié */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Introuvable */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  mark_expense_overdue: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Dépense mise à jour */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Non authentifié */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Introuvable */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  mark_expense_paid: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Dépense mise à jour */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Non authentifié */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Introuvable */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  reactivate_expense: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Dépense réactivée */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Non authentifié */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Introuvable */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  unpay_expense: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Dépense remise en attente */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Non authentifié */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Introuvable */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
   can_erase_user: {
     parameters: {
       query?: never;
@@ -4426,7 +6589,11 @@ export interface operations {
       path?: never;
       cookie?: never;
     };
-    requestBody?: never;
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["GdprEraseRequestDto"];
+      };
+    };
     responses: {
       /** @description User data anonymized */
       200: {
@@ -4689,6 +6856,453 @@ export interface operations {
       };
       /** @description Internal server error */
       500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  create_invoice_draft: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["CreateInvoiceDraftDto"];
+      };
+    };
+    responses: {
+      /** @description Brouillon créé */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Requête invalide */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Non authentifié */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Rôle sans droit d'encodage */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  get_pending_invoices: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Liste */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Non authentifié */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  get_invoice: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Facture */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Non authentifié */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Introuvable */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  update_invoice_draft: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["UpdateInvoiceDraftDto"];
+      };
+    };
+    responses: {
+      /** @description Brouillon modifié */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Requête invalide */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Non authentifié */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Introuvable */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  approve_invoice: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["ApproveInvoiceDto"];
+      };
+    };
+    responses: {
+      /** @description Facture approuvée */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Non authentifié */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Rôle sans droit d'approbation */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Introuvable */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  reject_invoice: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["RejectInvoiceDto"];
+      };
+    };
+    responses: {
+      /** @description Facture rejetée */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Motif manquant */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Non authentifié */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Introuvable */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  submit_invoice_for_approval: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["SubmitForApprovalDto"];
+      };
+    };
+    responses: {
+      /** @description Facture soumise */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Non authentifié */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Introuvable */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  list_journal_entries: {
+    parameters: {
+      query?: {
+        building_id?: string | null;
+        journal_type?: string | null;
+        start_date?: string | null;
+        end_date?: string | null;
+        page?: number | null;
+        per_page?: number | null;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Journal entries page */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["JournalEntryResponse"][];
+        };
+      };
+      /** @description User does not belong to an organization */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Forbidden (accountant, syndic or superadmin only) */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  create_journal_entry: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["CreateJournalEntryRequest"];
+      };
+    };
+    responses: {
+      /** @description Journal entry created */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["JournalEntryWithLinesResponse"];
+        };
+      };
+      /** @description Unbalanced entry, or unknown field in the body */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description User does not belong to an organization */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Forbidden (accountant or superadmin only) */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  get_journal_entry: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Journal entry identifier */
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Journal entry with lines */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["JournalEntryWithLinesResponse"];
+        };
+      };
+      /** @description User does not belong to an organization */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Forbidden */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Journal entry not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  delete_journal_entry: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Journal entry identifier */
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Journal entry deleted */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description User does not belong to an organization */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Forbidden (accountant or superadmin only) */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Journal entry not found */
+      404: {
         headers: {
           [name: string]: unknown;
         };
@@ -5323,6 +7937,29 @@ export interface operations {
       };
     };
   };
+  list_organization_payment_methods: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Identifiant de l'organisation */
+        organization_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Liste des moyens de paiement */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["PaymentMethodResponse"][];
+        };
+      };
+    };
+  };
   list_organization_payments: {
     parameters: {
       query?: never;
@@ -5407,6 +8044,322 @@ export interface operations {
       };
     };
   };
+  get_contributions_by_owner: {
+    parameters: {
+      query?: {
+        /** @description Restrict to one owner */
+        owner_id?: string;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Contributions */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["OwnerContributionResponse"][];
+        };
+      };
+      /** @description User does not belong to an organization */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  create_contribution: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["CreateOwnerContributionRequest"];
+      };
+    };
+    responses: {
+      /** @description Contribution created */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["OwnerContributionResponse"];
+        };
+      };
+      /** @description Validation error, or unknown field in the body */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description User does not belong to an organization */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  get_outstanding_contributions: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Outstanding contributions */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["OwnerContributionResponse"][];
+        };
+      };
+      /** @description User does not belong to an organization */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  get_contribution: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Contribution identifier */
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Contribution */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["OwnerContributionResponse"];
+        };
+      };
+      /** @description Contribution not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  record_payment: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Contribution identifier */
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["RecordPaymentRequest"];
+      };
+    };
+    responses: {
+      /** @description Payment recorded */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["OwnerContributionResponse"];
+        };
+      };
+      /** @description Already paid, or unknown field in the body */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Contribution not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  list_owner_payment_methods: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Identifiant du copropriétaire */
+        owner_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Liste des moyens de paiement */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["PaymentMethodResponse"][];
+        };
+      };
+    };
+  };
+  list_active_owner_payment_methods: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Identifiant du copropriétaire */
+        owner_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Liste des moyens actifs */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["PaymentMethodResponse"][];
+        };
+      };
+    };
+  };
+  count_active_payment_methods: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Identifiant du copropriétaire */
+        owner_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Nombre de moyens actifs */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  get_default_payment_method: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Identifiant du copropriétaire */
+        owner_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Moyen par défaut */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["PaymentMethodResponse"];
+        };
+      };
+      /** @description Aucun moyen par défaut */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  has_active_payment_methods: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Identifiant du copropriétaire */
+        owner_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Présence d'un moyen actif */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  list_payment_methods_by_type: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Identifiant du copropriétaire */
+        owner_id: string;
+        /** @description Type de moyen : card, sepa_debit, bancontact */
+        method_type: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Liste filtrée */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["PaymentMethodResponse"][];
+        };
+      };
+      /** @description Type de moyen inconnu */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
   list_owner_payments: {
     parameters: {
       query?: never;
@@ -5484,6 +8437,267 @@ export interface operations {
       };
       /** @description Internal server error */
       500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  create_payment_method: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["CreatePaymentMethodRequest"];
+      };
+    };
+    responses: {
+      /** @description Moyen de paiement créé */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["PaymentMethodResponse"];
+        };
+      };
+      /** @description Requête invalide — champs manquants ou moyen déjà enregistré */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description L'utilisateur n'appartient à aucune organisation */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  get_payment_method_by_stripe_id: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Identifiant Stripe */
+        stripe_payment_method_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Moyen de paiement */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["PaymentMethodResponse"];
+        };
+      };
+      /** @description Introuvable */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  get_payment_method: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Identifiant du moyen de paiement */
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Moyen de paiement */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["PaymentMethodResponse"];
+        };
+      };
+      /** @description Introuvable */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  update_payment_method: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Identifiant du moyen de paiement */
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["UpdatePaymentMethodRequest"];
+      };
+    };
+    responses: {
+      /** @description Moyen mis à jour */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["PaymentMethodResponse"];
+        };
+      };
+      /** @description Requête invalide */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Introuvable */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  delete_payment_method: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Identifiant du moyen de paiement */
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Moyen supprimé */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Introuvable */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  deactivate_payment_method: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Identifiant du moyen de paiement */
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Moyen désactivé */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["PaymentMethodResponse"];
+        };
+      };
+      /** @description Introuvable */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  reactivate_payment_method: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Identifiant du moyen de paiement */
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Moyen réactivé */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["PaymentMethodResponse"];
+        };
+      };
+      /** @description Introuvable */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  set_payment_method_as_default: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Identifiant du moyen de paiement */
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": unknown;
+      };
+    };
+    responses: {
+      /** @description Moyen désigné par défaut */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["PaymentMethodResponse"];
+        };
+      };
+      /** @description Introuvable */
+      404: {
         headers: {
           [name: string]: unknown;
         };
@@ -6371,6 +9585,435 @@ export interface operations {
       };
     };
   };
+  list_portfolios: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description List of portfolios */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["PortfolioResponseDto"][];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  create_portfolio: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["CreatePortfolioDto"];
+      };
+    };
+    responses: {
+      /** @description Portfolio created */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["PortfolioResponseDto"];
+        };
+      };
+      /** @description Validation error */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  get_portfolio: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Portfolio UUID */
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Portfolio found */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["PortfolioResponseDto"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  update_portfolio: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Portfolio UUID */
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["UpdatePortfolioDto"];
+      };
+    };
+    responses: {
+      /** @description Portfolio updated */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["PortfolioResponseDto"];
+        };
+      };
+      /** @description Validation error */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Forbidden */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  delete_portfolio: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Portfolio UUID */
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Portfolio deleted */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Forbidden */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  list_portfolio_buildings: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Portfolio UUID */
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description List of buildings */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["PortfolioBuildingResponseDto"][];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Portfolio not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  add_portfolio_building: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Portfolio UUID */
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["AddBuildingDto"];
+      };
+    };
+    responses: {
+      /** @description Building added */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["PortfolioBuildingResponseDto"];
+        };
+      };
+      /** @description Validation error */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Forbidden */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Portfolio or Building not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  remove_portfolio_building: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Portfolio UUID */
+        id: string;
+        /** @description Building UUID */
+        building_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Building removed */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Forbidden */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  list_portfolio_shares: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Portfolio UUID */
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description List of shares */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["PortfolioShareResponseDto"][];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  share_portfolio: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Portfolio UUID */
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["SharePortfolioDto"];
+      };
+    };
+    responses: {
+      /** @description Portfolio shared */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["PortfolioShareResponseDto"];
+        };
+      };
+      /** @description Validation error */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Forbidden */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Portfolio or User not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  unshare_portfolio: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Portfolio UUID */
+        id: string;
+        /** @description Shared user UUID */
+        user_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Unshared */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Forbidden */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Share not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
   get_resolution: {
     parameters: {
       query?: never;
@@ -6972,6 +10615,38 @@ export interface operations {
       };
     };
   };
+  list_assignable_users: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description List of assignable users */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Forbidden — only syndic/superadmin */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
   list_assigned_tickets: {
     parameters: {
       query?: never;
@@ -7410,6 +11085,41 @@ export interface operations {
       };
     };
   };
+  send_work_order: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Ticket ID */
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Work order sent */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Bad request */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
   start_work: {
     parameters: {
       query?: never;
@@ -7507,6 +11217,221 @@ export interface operations {
       };
       /** @description Ticket not found */
       404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  list_units: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Units page */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description User does not belong to an organization */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  create_unit: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["CreateUnitDto"];
+      };
+    };
+    responses: {
+      /** @description Unit created */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["UnitResponseDto"];
+        };
+      };
+      /** @description Validation error, or unknown field in the body */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Forbidden (superadmin only — structural data) */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Building not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  get_unit: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Unit identifier */
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Unit */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["UnitResponseDto"];
+        };
+      };
+      /** @description Unit not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  update_unit: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Unit identifier */
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["UpdateUnitDto"];
+      };
+    };
+    responses: {
+      /** @description Unit updated */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["UnitResponseDto"];
+        };
+      };
+      /** @description Validation error, or unknown field (e.g. `owner_id`) */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Forbidden (superadmin only — quotites are structural) */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Unit not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  delete_unit: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Unit identifier */
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Unit deleted */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Forbidden (superadmin only) */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Unit not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  assign_owner: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Unit identifier */
+        unit_id: string;
+        /** @description Owner identifier */
+        owner_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Owner assigned */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["UnitResponseDto"];
+        };
+      };
+      /** @description Assignment refused by the domain */
+      400: {
         headers: {
           [name: string]: unknown;
         };

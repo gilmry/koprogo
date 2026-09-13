@@ -14,6 +14,8 @@
   import ResolutionStatusBadge from "./ResolutionStatusBadge.svelte";
   import { formatDateTime } from "../../lib/utils/date.utils";
   import { withErrorHandling } from "../../lib/utils/error.utils";
+  import { toNumber } from "../../lib/utils/decimal.utils";
+  import ConfirmDialog from "../ui/ConfirmDialog.svelte";
 
   let {
     resolution,
@@ -26,6 +28,17 @@
   } = $props();
 
   let votes = $state<Vote[]>([]);
+
+  // L'action en attente de confirmation.
+  //
+  // Ce composant est en mode RUNES : un `let` simple n'y serait PAS
+  // réactif, et l'écran ne se redessinerait jamais (#832).
+  //
+  // Le `confirm()` remplacé était un dialogue du NAVIGATEUR : un navigateur
+  // piloté le supprime, et l'action prend la forme exacte d'une panne (#844).
+  //
+  // Clôturer un vote fige le résultat d'une résolution d'assemblée.
+  let suppressionEnAttente = $state(false);
   let loadingVotes = $state(false);
   let showVotes = $state(false);
 
@@ -42,7 +55,13 @@
   $effect(() => {
     (async () => {
       try {
-        const me = await api.get<{ id: string }>("/owners/me");
+        // `null` = l'utilisateur n'est pas copropriétaire. Cas normal pour un
+        // syndic ou un comptable, et non une erreur : la route rendait un 404
+        // qui polluait le parcours nominal (voir #766).
+        const me = await api.get<{ id: string } | null>("/owners/me");
+        if (!me?.id) {
+          return;
+        }
         myOwnerId = me.id;
         const ownerships = await api.get<Array<{ unit_id: string }>>(
           `/owners/${myOwnerId}/units`,
@@ -73,6 +92,26 @@
       meetingStatus === "Scheduled" &&
       isOwner,
   );
+
+  /**
+   * Le droit de CLORE le scrutin, distinct du droit d'y VOTER.
+   *
+   * Présider une assemblée n'est pas y participer. Un syndic qui n'est pas
+   * copropriétaire ne vote pas — Art. 3.87 § 6, les voix suivent les
+   * quotes-parts — mais c'est lui qui tient la séance et en proclame le
+   * résultat.
+   *
+   * Le bouton dépendait de `canVote`, donc de `isOwner` : un syndic non
+   * copropriétaire ne le voyait jamais, les résolutions restaient
+   * indéfiniment « en attente », et le plafonnement de l'Art. 3.87 § 7 —
+   * qui s'applique à la clôture — n'était jamais déclenché. Un invariant
+   * légal implémenté mais inatteignable. Constaté en recette le 2026-09-04.
+   */
+  let canCloseVoting = $derived(
+    isAdmin &&
+      resolution.status === ResolutionStatus.Pending &&
+      meetingStatus === "Scheduled",
+  );
   let isClosed = $derived(resolution.status !== ResolutionStatus.Pending);
   let votesPour = $derived(resolution.vote_count_pour ?? 0);
   let votesContre = $derived(resolution.vote_count_contre ?? 0);
@@ -87,10 +126,6 @@
   // s'affichait donc JAMAIS. Panne silencieuse sur un decompte de vote
   // d'AG (Art. 3.87). Detectee par `e2e_resolutions`, harnais qui n'avait
   // jamais ete execute.
-  const toNumber = (v: string | number | null | undefined): number => {
-    const n = typeof v === "number" ? v : Number.parseFloat(String(v ?? ""));
-    return Number.isFinite(n) ? n : 0;
-  };
   let totalVotingPower = $derived(
     toNumber(resolution.total_voting_power_pour) +
       toNumber(resolution.total_voting_power_contre) +
@@ -112,9 +147,38 @@
     }
   }
 
-  function getVotePercentage(count: number): number {
-    if (totalVotes === 0) return 0;
-    return (count / totalVotes) * 100;
+  // Les pourcentages viennent du SERVEUR, jamais d'un calcul local.
+  //
+  // Ils étaient calculés ici par `count / totalVotes`, c'est-à-dire par
+  // NOMBRE DE BULLETINS. L'Art. 3.87 § 6 compte des voix : « chaque
+  // copropriétaire dispose d'un nombre de voix correspondant à sa quote-part
+  // dans les parties communes ».
+  //
+  // Constaté en recette le 2026-09-06 (RN-3) : Alice 550 ‰ pour, Bob 250 ‰ et
+  // Claire 200 ‰ contre. L'écran affichait « Pour 1 vote (33,3 %) » et
+  // « Contre 2 votes (66,7 %) », barre rouge plus longue à l'appui, pendant
+  // que l'API renvoyait 55 % et 45 %. Une résolution ADOPTÉE était présentée
+  // comme rejetée, sur l'écran même où le syndic rédige son procès-verbal.
+  //
+  // Le backend avait été corrigé le 2026-09-04 ; le calcul existait en double
+  // et corriger l'un laissait l'autre faux, sans qu'aucun test ne le voie.
+  //
+  // ATTENTION aux dénominateurs, qui diffèrent À DESSEIN et ne somment donc
+  // pas à 100 : « pour » et « contre » se rapportent aux voix EXPRIMÉES, les
+  // abstentions en étant exclues par l'Art. 3.87 § 8 ; l'abstention se
+  // rapporte à TOUTES les voix présentes. Ne pas les ramener à une base
+  // commune sous prétexte que le total ne fait pas 100.
+  let partPour = $derived(resolution.pour_percentage ?? 0);
+  let partContre = $derived(resolution.contre_percentage ?? 0);
+  let partAbstention = $derived(resolution.abstention_percentage ?? 0);
+
+  /// Les millièmes retenus, tels que le serveur les compte — plafonnement de
+  /// l'Art. 3.87 § 7 compris depuis le 2026-09-06.
+  function millièmes(valeur: string | number | undefined): string {
+    const n = Number(valeur ?? 0);
+    return Number.isFinite(n)
+      ? n.toLocaleString("fr-BE", { maximumFractionDigits: 2 })
+      : "0";
   }
 
   async function loadVotes() {
@@ -160,8 +224,12 @@
     });
   }
 
-  async function handleCloseVoting() {
-    if (!confirm($_("resolutions.vote.closeConfirm"))) return;
+  function handleCloseVoting() {
+    suppressionEnAttente = true;
+  }
+
+  async function executerLaction() {
+    suppressionEnAttente = false;
 
     await withErrorHandling({
       action: () => resolutionsApi.closeVoting(resolution.id),
@@ -220,7 +288,7 @@
       {#if resolution.description}
         <p class="text-sm text-gray-600 mt-1">{resolution.description}</p>
       {/if}
-      <p class="text-xs text-gray-400 mt-1">
+      <p class="text-xs text-muted mt-1">
         {getMajorityLabel(resolution.majority_required)}
       </p>
     </div>
@@ -234,15 +302,15 @@
         >
         <span class="text-gray-600"
           >{votesPour}
-          {$_("resolutions.vote.votes", { values: { count: votesPour } })} ({getVotePercentage(
-            votesPour,
-          ).toFixed(1)}%)</span
+          {$_("resolutions.vote.votes", { values: { count: votesPour } })} · {millièmes(
+            resolution.total_voting_power_pour,
+          )} ‰ ({partPour.toFixed(1)}%)</span
         >
       </div>
       <div class="w-full bg-gray-100 rounded-full h-2.5">
         <div
           class="bg-green-500 h-2.5 rounded-full transition-all"
-          style="width: {getVotePercentage(votesPour)}%"
+          style="width: {partPour}%"
         ></div>
       </div>
     </div>
@@ -254,15 +322,15 @@
         >
         <span class="text-gray-600"
           >{votesContre}
-          {$_("resolutions.vote.votes", { values: { count: votesContre } })} ({getVotePercentage(
-            votesContre,
-          ).toFixed(1)}%)</span
+          {$_("resolutions.vote.votes", { values: { count: votesContre } })} · {millièmes(
+            resolution.total_voting_power_contre,
+          )} ‰ ({partContre.toFixed(1)}%)</span
         >
       </div>
       <div class="w-full bg-gray-100 rounded-full h-2.5">
         <div
           class="bg-red-500 h-2.5 rounded-full transition-all"
-          style="width: {getVotePercentage(votesContre)}%"
+          style="width: {partContre}%"
         ></div>
       </div>
     </div>
@@ -274,15 +342,16 @@
         >
         <span class="text-gray-600"
           >{votesAbstention}
-          {$_("resolutions.vote.votes", { values: { count: votesAbstention } })} ({getVotePercentage(
-            votesAbstention,
-          ).toFixed(1)}%)</span
+          {$_("resolutions.vote.votes", { values: { count: votesAbstention } })} ·
+          {millièmes(resolution.total_voting_power_abstention)} ‰ ({partAbstention.toFixed(
+            1,
+          )}%)</span
         >
       </div>
       <div class="w-full bg-gray-100 rounded-full h-2.5">
         <div
           class="bg-gray-400 h-2.5 rounded-full transition-all"
-          style="width: {getVotePercentage(votesAbstention)}%"
+          style="width: {partAbstention}%"
         ></div>
       </div>
     </div>
@@ -401,6 +470,7 @@
 
       <button
         onclick={handleVote}
+        data-testid="resolution-vote-submit-button"
         disabled={!voteChoice || submittingVote}
         class="w-full py-2 px-4 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
       >
@@ -416,6 +486,7 @@
   <div class="flex items-center gap-2">
     <button
       onclick={showVotes ? () => (showVotes = false) : loadVotes}
+      data-testid="resolution-votes-toggle-button"
       class="text-xs text-indigo-600 hover:text-indigo-800 underline"
       disabled={loadingVotes}
     >
@@ -428,7 +499,7 @@
       {/if}
     </button>
 
-    {#if isAdmin && canVote && totalVotes > 0}
+    {#if canCloseVoting && totalVotes > 0}
       <button
         onclick={handleCloseVoting}
         disabled={closingVoting}
@@ -444,53 +515,75 @@
 
   {#if showVotes && votes.length > 0}
     <div class="mt-3 border-t border-gray-100 pt-3">
-      <table class="w-full text-sm" data-testid="votes-table">
-        <thead>
-          <tr class="text-left text-xs text-gray-500 uppercase">
-            <th scope="col" class="pb-2">{$_("resolutions.vote.voter")}</th>
-            <th scope="col" class="pb-2">{$_("resolutions.vote.choice")}</th>
-            <th scope="col" class="pb-2 text-right"
-              >{$_("resolutions.vote.thousandths")}</th
-            >
-            <th scope="col" class="pb-2 text-right">{$_("common.date")}</th>
-          </tr>
-        </thead>
-        <tbody class="divide-y divide-gray-50">
-          {#each votes as vote}
-            <tr>
-              <td class="py-1.5">
-                <span class="text-gray-900"
-                  >{vote.owner_name || vote.owner_id.slice(0, 8)}</span
-                >
-                {#if vote.proxy_owner_id}
-                  <span class="text-xs text-gray-400 ml-1"
-                    >({$_("resolutions.vote.proxy")})</span
-                  >
-                {/if}
-              </td>
-              <td class="py-1.5">
-                <span
-                  class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium {getChoiceColor(
-                    vote.choice,
-                  )}"
-                >
-                  {getChoiceLabel(vote.choice)}
-                </span>
-              </td>
-              <td class="py-1.5 text-right text-gray-600"
-                >{vote.voting_power}</td
+      <!--
+        Cinq colonnes — votant, lot, choix, puissance, date — dans un panneau
+        déjà imbriqué. À 390 px elles se compriment jusqu'à l'illisible (#866).
+      -->
+      <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+      <div class="overflow-x-auto" tabindex="0" role="region">
+        <table class="min-w-[440px] w-full text-sm" data-testid="votes-table">
+          <thead>
+            <tr class="text-left text-xs text-gray-500 uppercase">
+              <th scope="col" class="pb-2">{$_("resolutions.vote.voter")}</th>
+              <th scope="col" class="pb-2">{$_("resolutions.vote.choice")}</th>
+              <th scope="col" class="pb-2 text-right"
+                >{$_("resolutions.vote.thousandths")}</th
               >
-              <td class="py-1.5 text-right text-xs text-gray-400"
-                >{formatDateTime(vote.created_at)}</td
-              >
+              <th scope="col" class="pb-2 text-right">{$_("common.date")}</th>
             </tr>
-          {/each}
-        </tbody>
-      </table>
+          </thead>
+          <tbody class="divide-y divide-gray-50">
+            {#each votes as vote}
+              <tr>
+                <td class="py-1.5">
+                  <!-- `owner_name` n'est pas servi par l'API. Afficher huit
+                     caractères d'UUID à un syndic ne l'aide en rien : on dit
+                     plutôt que le nom n'a pas pu être résolu. Le vrai
+                     correctif est d'enrichir le DTO — issues #786 et #765. -->
+                  <span class="text-gray-900"
+                    >{vote.owner_name ||
+                      $_("resolutions.vote.unknownOwner")}</span
+                  >
+                  {#if vote.proxy_owner_id}
+                    <span class="text-xs text-muted ml-1"
+                      >({$_("resolutions.vote.proxy")})</span
+                    >
+                  {/if}
+                </td>
+                <td class="py-1.5">
+                  <span
+                    class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium {getChoiceColor(
+                      vote.vote_choice,
+                    )}"
+                  >
+                    {getChoiceLabel(vote.vote_choice)}
+                  </span>
+                </td>
+                <td class="py-1.5 text-right text-gray-600"
+                  >{vote.voting_power}</td
+                >
+                <td class="py-1.5 text-right text-xs text-muted"
+                  >{formatDateTime(vote.voted_at)}</td
+                >
+              </tr>
+            {/each}
+          </tbody>
+        </table>
+      </div>
     </div>
   {:else if showVotes && votes.length === 0}
-    <p class="mt-3 text-xs text-gray-400 text-center">
+    <p class="mt-3 text-xs text-muted text-center">
       {$_("resolutions.vote.noVotes")}
     </p>
   {/if}
 </div>
+
+<!-- Le dialogue qui remplace un `confirm()` natif (#844). -->
+<ConfirmDialog
+  isOpen={suppressionEnAttente}
+  title={$_("common.confirm")}
+  message={$_("resolutions.vote.closeConfirm")}
+  variant="danger"
+  onconfirm={executerLaction}
+  oncancel={() => (suppressionEnAttente = false)}
+/>

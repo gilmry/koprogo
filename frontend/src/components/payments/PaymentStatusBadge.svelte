@@ -52,7 +52,9 @@
     },
   };
 
-  let config = $derived(statusConfig[status] || statusConfig[PaymentStatus.Pending]);
+  let config = $derived(
+    statusConfig[status] || statusConfig[PaymentStatus.Pending],
+  );
 </script>
 
 <span

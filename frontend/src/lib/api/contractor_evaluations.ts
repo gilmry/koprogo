@@ -73,12 +73,27 @@ export type ScoreDimension = (typeof SCORE_DIMENSIONS)[number];
 
 /** Libellés FR pour chaque dimension (i18n FR-first cf. CRITICAL.md §FR/NL/EN/DE
  *  — la i18n NL/EN/DE viendra avec Story B12+). */
-export const SCORE_DIMENSION_LABELS_FR: Record<ScoreDimension, string> = {
-  quality: "Qualité technique",
-  timeliness: "Respect des délais",
-  communication: "Communication",
-  cost_compliance: "Respect du budget",
-  overall: "Note globale",
+/**
+ * Clés i18n des cinq dimensions de notation.
+ *
+ * Cette table s'appelait `SCORE_DIMENSION_LABELS_FR` et portait les libellés
+ * français en dur. Son nom le disait — `_FR` — mais elle alimentait les deux
+ * écrans de prestataires sans que rien ne signale qu'un néerlandophone y
+ * lirait « Respect des délais ».
+ *
+ * Elle échappait au cliquet de #834, qui ne regarde que les gabarits : un
+ * libellé posé dans du TypeScript lui est invisible. C'était le seul cas du
+ * dépôt, vérifié — aucune autre table `*_LABELS*` n'existe.
+ *
+ * Elle porte désormais des CLÉS, que l'appelant résout. Le catalogue devient
+ * le seul endroit où un libellé s'écrit.
+ */
+export const SCORE_DIMENSION_KEYS: Record<ScoreDimension, string> = {
+  quality: "contractors.dimQuality",
+  timeliness: "contractors.dimTimeliness",
+  communication: "contractors.dimCommunication",
+  cost_compliance: "contractors.dimCostCompliance",
+  overall: "contractors.dimOverall",
 };
 
 // -----------------------------------------------------------------------------

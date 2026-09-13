@@ -37,7 +37,22 @@ impl ResourceBookingUseCases {
         self.owner_repo
             .find_by_user_id_and_organization(user_id, organization_id)
             .await?
-            .ok_or_else(|| "Owner not found for this user in the organization".to_string())
+            // Refus LÉGITIME, message illisible.
+            //
+            // Le partage d'objets, l'offre de compétence et la réservation
+            // engagent une personne nommée : ils supposent donc une fiche de
+            // copropriétaire. Un syndic n'en a pas, et c'est normal.
+            //
+            // Ce qui ne l'était pas, c'est le message. « Owner not found for
+            // this user in the organization » est en anglais, technique, et ne
+            // dit pas à l'utilisateur ce qu'il devrait faire. En recette le
+            // 2026-09-06 (RN-11), il a été lu comme une panne bloquant quatre
+            // modules, alors que la création d'ANNONCE par un syndic fonctionne
+            // — parce qu'un avis, lui, émane de la copropriété.
+            //
+            // Le vrai manque est ailleurs : le syndic agissant pour le compte
+            // de l'ACP, prévu par la story #588 et non implémenté.
+            .ok_or_else(|| crate::application::error::REFUS_RESERVE_AUX_COPROPRIETAIRES.to_string())
     }
 
     /// Create a new resource booking with conflict detection
@@ -952,7 +967,11 @@ mod tests {
             .cancel_booking(created.id, other_user, org_id)
             .await;
         assert!(result.is_err());
-        assert!(result.unwrap_err().contains("Owner not found"));
+        assert_eq!(
+            result.unwrap_err(),
+            crate::application::error::REFUS_RESERVE_AUX_COPROPRIETAIRES,
+            "le refus doit être celui, nommé, opposé à qui n'est pas copropriétaire"
+        );
     }
 
     #[tokio::test]
@@ -1034,6 +1053,10 @@ mod tests {
             .create_booking(Uuid::new_v4(), Uuid::new_v4(), dto)
             .await;
         assert!(result.is_err());
-        assert!(result.unwrap_err().contains("Owner not found"));
+        assert_eq!(
+            result.unwrap_err(),
+            crate::application::error::REFUS_RESERVE_AUX_COPROPRIETAIRES,
+            "le refus doit être celui, nommé, opposé à qui n'est pas copropriétaire"
+        );
     }
 }

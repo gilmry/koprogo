@@ -3,13 +3,13 @@
   let {
     id,
     label,
-    value = $bindable(''),
-    type = 'text',
-    placeholder = '',
+    value = $bindable(""),
+    type = "text",
+    placeholder = "",
     required = false,
     disabled = false,
-    error = '',
-    hint = '',
+    error = "",
+    hint = "",
     min = undefined,
     max = undefined,
     step = undefined,
@@ -19,7 +19,7 @@
     id: string;
     label: string;
     value?: string | number | null;
-    type?: 'text' | 'email' | 'password' | 'number' | 'tel' | 'url' | 'date';
+    type?: "text" | "email" | "password" | "number" | "tel" | "url" | "date";
     placeholder?: string;
     required?: boolean;
     disabled?: boolean;
@@ -34,7 +34,7 @@
 
   const handleInput = (e: Event) => {
     const target = e.target as HTMLInputElement;
-    if (type === 'number') {
+    if (type === "number") {
       value = target.valueAsNumber;
     } else {
       value = target.value;
@@ -64,14 +64,16 @@
     {...restProps}
     {value}
     oninput={handleInput}
-    aria-invalid={error ? 'true' : undefined}
+    aria-invalid={error ? "true" : undefined}
     aria-describedby={error ? `${id}-error` : hint ? `${id}-hint` : undefined}
     class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 disabled:bg-gray-100 disabled:cursor-not-allowed transition
       {error ? 'border-red-500' : 'border-gray-300'}"
   />
 
   {#if error}
-    <p id="{id}-error" class="mt-1 text-sm text-red-600" role="alert">{error}</p>
+    <p id="{id}-error" class="mt-1 text-sm text-red-600" role="alert">
+      {error}
+    </p>
   {/if}
 
   {#if hint && !error}

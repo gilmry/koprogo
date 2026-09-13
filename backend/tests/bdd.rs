@@ -88,10 +88,17 @@ pub struct BuildingWorld {
     last_invoice_id: Option<Uuid>,
     #[allow(dead_code)]
     last_invoice_status: Option<String>,
+    // ADR-0008 §A : un montant est `Decimal` de bout en bout, jusque dans le
+    // World d'un harnais de test. Ces deux champs étaient en `f64` — une TVA
+    // et un total de facture, soit exactement ce que l'ADR interdit.
+    //
+    // Ils avaient échappé au gate parce que `check-no-f64-money.sh` ne
+    // scannait que `backend/src`. Un test qui manipule l'argent autrement que
+    // le produit ne prouve pas le produit : il prouve autre chose (#443).
     #[allow(dead_code)]
-    last_invoice_vat_amount: Option<f64>,
+    last_invoice_vat_amount: Option<rust_decimal::Decimal>,
     #[allow(dead_code)]
-    last_invoice_total: Option<f64>,
+    last_invoice_total: Option<rust_decimal::Decimal>,
     #[allow(dead_code)]
     accountant_user_id: Option<Uuid>,
     #[allow(dead_code)]
@@ -269,7 +276,8 @@ impl BuildingWorld {
             Arc::new(PostgresBoardDecisionRepository::new(pool.clone()));
 
         let building_use_cases = BuildingUseCases::new(building_repo.clone());
-        let meeting_use_cases = MeetingUseCases::new(meeting_repo.clone());
+        let meeting_use_cases =
+            MeetingUseCases::new(meeting_repo.clone()).with_acp_resolution(building_repo.clone());
         // Hotfix #603 — BoardMemberUseCases needs acp_repository
         let acp_repo_for_board: std::sync::Arc<dyn koprogo_api::application::ports::AcpRepository> =
             Arc::new(PostgresAcpRepository::new(pool.clone()));
@@ -293,7 +301,8 @@ impl BuildingWorld {
             Arc::new(FileStorage::new(&storage_root).expect("storage"));
         let document_use_cases = DocumentUseCases::new(document_repo, storage.clone());
         let pcn_use_cases = PcnUseCases::new(expense_repo.clone());
-        let expense_use_cases = ExpenseUseCases::new(expense_repo);
+        let expense_use_cases =
+            ExpenseUseCases::new(expense_repo).with_acp_resolution(building_repo.clone());
         let gdpr_use_cases = GdprUseCases::new(gdpr_repo, user_repo.clone());
         let auth_use_cases = koprogo_api::application::use_cases::AuthUseCases::new(
             user_repo,
@@ -745,6 +754,10 @@ async fn given_create_expense(world: &mut BuildingWorld, amount: rust_decimal::D
         supplier: Some("Supplier".to_string()),
         invoice_number: Some("INV-BDD".to_string()),
         account_code: None,
+        amount_excl_vat: None,
+        vat_rate: None,
+        due_date: None,
+        line_items: None,
     };
     let res = uc.create_expense(dto).await.expect("create expense");
     world.last_expense_id = Some(Uuid::parse_str(&res.id).unwrap());
@@ -817,7 +830,7 @@ async fn when_register_and_login(world: &mut BuildingWorld) {
     let org = world.org_id.unwrap();
     let reg = RegisterRequest {
         email: email.clone(),
-        password: "Passw0rd!".to_string(),
+        password: MOT_DE_PASSE_DE_RECETTE.to_string(),
         first_name: "BDD".to_string(),
         last_name: "User".to_string(),
         role: "syndic".to_string(),
@@ -826,7 +839,7 @@ async fn when_register_and_login(world: &mut BuildingWorld) {
     let _ = auth.register(reg).await.expect("register");
     let login = LoginRequest {
         email: email.clone(),
-        password: "Passw0rd!".to_string(),
+        password: MOT_DE_PASSE_DE_RECETTE.to_string(),
     };
     let res = auth.login(login).await;
     match res {
@@ -1167,7 +1180,7 @@ async fn given_alice_owns_unit_first_building(world: &mut BuildingWorld) {
     let alice_email = format!("alice+{}@iso.test", Uuid::new_v4());
     let reg = RegisterRequest {
         email: alice_email.clone(),
-        password: "Passw0rd!".to_string(),
+        password: MOT_DE_PASSE_DE_RECETTE.to_string(),
         first_name: "Alice".to_string(),
         last_name: "Owner".to_string(),
         role: "owner".to_string(),
@@ -1177,7 +1190,7 @@ async fn given_alice_owns_unit_first_building(world: &mut BuildingWorld) {
     auth_uc.register(reg).await.expect("register Alice");
     let login = LoginRequest {
         email: alice_email.clone(),
-        password: "Passw0rd!".to_string(),
+        password: MOT_DE_PASSE_DE_RECETTE.to_string(),
     };
     let login_resp = auth_uc.login(login).await.expect("login Alice");
     let alice_user_id = login_resp.user.id;
@@ -1276,10 +1289,28 @@ async fn then_alice_no_other_buildings(world: &mut BuildingWorld) {
 // GDPR BDD Steps (Articles 15 & 17)
 // ============================================================================
 
+/// Le mot de passe des comptes fabriqués par les scénarios.
+///
+/// Il est devenu significatif le 2026-09-06 : `erase_user_data` exige
+/// désormais le mot de passe en clair (« Exige le mot de passe pour
+/// l'effacement RGPD »), pour qu'un jeton d'accès volé ne suffise pas à
+/// effacer un compte.
+///
+/// Un scénario sur douze enregistrait son utilisateur avec `Password123!`
+/// pendant que l'effacement présentait `Passw0rd!` : l'effacement échouait, et
+/// le message d'échec disait « Erasure should succeed » sans jamais nommer la
+/// cause. La suite BDD est restée rouge en CI du 2026-09-04 au 2026-09-06 pour
+/// cette seule ligne.
+///
+/// D'où la constante : deux littéraux qui doivent être égaux et qu'on écrit
+/// deux fois finissent par diverger. Même remède que
+/// `REFUS_RESERVE_AUX_COPROPRIETAIRES`.
+const MOT_DE_PASSE_DE_RECETTE: &str = "Passw0rd!";
+
 #[given("I am an authenticated user")]
 async fn given_authenticated_user(world: &mut BuildingWorld) {
     let email = format!("gdpr+{}@test.com", Uuid::new_v4());
-    let password = "Passw0rd!".to_string();
+    let password = MOT_DE_PASSE_DE_RECETTE.to_string();
     let reg = RegisterRequest {
         email: email.clone(),
         password: password.clone(),
@@ -1324,7 +1355,7 @@ async fn given_authenticated_user(world: &mut BuildingWorld) {
 async fn given_authenticated_user_with_data(world: &mut BuildingWorld) {
     // Register a user
     let email = format!("gdpr+{}@test.com", Uuid::new_v4());
-    let password = "Passw0rd!".to_string();
+    let password = MOT_DE_PASSE_DE_RECETTE.to_string();
     let reg = RegisterRequest {
         email: email.clone(),
         password: password.clone(),
@@ -1497,7 +1528,12 @@ async fn when_request_erase_data(world: &mut BuildingWorld) {
     let user_id = world.last_user_id.unwrap();
 
     let result = gdpr_uc
-        .erase_user_data(user_id, user_id, world.org_id)
+        .erase_user_data(
+            user_id,
+            user_id,
+            world.org_id,
+            Some(MOT_DE_PASSE_DE_RECETTE),
+        )
         .await;
 
     match result {
@@ -1612,8 +1648,8 @@ async fn given_active_legal_holds(world: &mut BuildingWorld) {
     // Create an unpaid expense on the building
     let expense_id = Uuid::new_v4();
     sqlx::query(
-        "INSERT INTO expenses (id, building_id, organization_id, category, description, amount, expense_date, payment_status, created_at, updated_at)
-         VALUES ($1, $2, $3, 'maintenance', 'Unpaid charge', 500.00, NOW(), 'pending', NOW(), NOW())",
+        "INSERT INTO expenses (id, acp_id, building_id, organization_id, category, description, amount, expense_date, payment_status, created_at, updated_at)
+             VALUES ($1, (SELECT acp_id FROM buildings WHERE id = $2), $2, $3, 'maintenance', 'Unpaid charge', 500.00, NOW(), 'pending', NOW(), NOW())",
     )
     .bind(expense_id)
     .bind(building_id)
@@ -1754,7 +1790,7 @@ async fn when_admin_erase_user_data(world: &mut BuildingWorld) {
     let target_user_id = world.multi_user_id.unwrap();
 
     let result = gdpr_uc
-        .erase_user_data(target_user_id, admin_id, None) // SuperAdmin, no org restriction
+        .erase_user_data(target_user_id, admin_id, None, None) // SuperAdmin, no org restriction
         .await;
 
     match result {
@@ -1863,7 +1899,16 @@ async fn when_elect_simple_board_member(world: &mut BuildingWorld, position: Str
 
     // Create a meeting to elect the member
     use koprogo_api::domain::entities::{Meeting, MeetingType};
+    // L'assemblée relève de l'ACP de son immeuble (Art. 3.87, ADR-0045), et on
+    // la résout comme la production : depuis l'immeuble, pas depuis
+    // l'organisation.
+    let acp_id: uuid::Uuid = sqlx::query_scalar("SELECT acp_id FROM buildings WHERE id = $1")
+        .bind(building_id)
+        .fetch_one(&pool)
+        .await
+        .expect("l'immeuble porte une ACP");
     let meeting = Meeting::new(
+        acp_id,
         org_id,
         building_id,
         MeetingType::Ordinary,
@@ -2033,7 +2078,14 @@ async fn given_meeting_occurred(world: &mut BuildingWorld) {
     let pool = world.pool.as_ref().expect("pool").clone();
 
     use koprogo_api::domain::entities::{Meeting, MeetingType};
+    // Même résolution que ci-dessus : l'ACP vient de l'immeuble.
+    let acp_id: uuid::Uuid = sqlx::query_scalar("SELECT acp_id FROM buildings WHERE id = $1")
+        .bind(building_id)
+        .fetch_one(&pool)
+        .await
+        .expect("l'immeuble porte une ACP");
     let meeting = Meeting::new(
+        acp_id,
         org_id,
         building_id,
         MeetingType::Ordinary,
@@ -2178,8 +2230,8 @@ async fn given_i_am_board_member(world: &mut BuildingWorld) {
     if world.last_meeting_id.is_none() {
         let meeting_id = Uuid::new_v4();
         sqlx::query(
-            "INSERT INTO meetings (id, organization_id, building_id, meeting_type, title, location, scheduled_date, created_at, updated_at)
-             VALUES ($1, $2, $3, $4::meeting_type, $5, $6, $7, NOW(), NOW())"
+            "INSERT INTO meetings (id, acp_id, organization_id, building_id, meeting_type, title, location, scheduled_date, created_at, updated_at)
+             VALUES ($1, (SELECT acp_id FROM buildings WHERE id = $3), $2, $3, $4::meeting_type, $5, $6, $7, NOW(), NOW())"
         )
         .bind(meeting_id)
         .bind(org_id)
@@ -2430,8 +2482,8 @@ async fn when_elect_board_member(
         let meeting_id = Uuid::new_v4();
 
         sqlx::query(
-            "INSERT INTO meetings (id, organization_id, building_id, meeting_type, title, location, scheduled_date, created_at, updated_at)
-             VALUES ($1, $2, $3, $4::meeting_type, $5, $6, $7, NOW(), NOW())"
+            "INSERT INTO meetings (id, acp_id, organization_id, building_id, meeting_type, title, location, scheduled_date, created_at, updated_at)
+             VALUES ($1, (SELECT acp_id FROM buildings WHERE id = $3), $2, $3, $4::meeting_type, $5, $6, $7, NOW(), NOW())"
         )
         .bind(meeting_id)
         .bind(org_id)
@@ -2535,8 +2587,8 @@ async fn given_meeting_for_building(
     let meeting_id = Uuid::new_v4();
 
     sqlx::query(
-        "INSERT INTO meetings (id, organization_id, building_id, meeting_type, title, location, scheduled_date, created_at, updated_at)
-         VALUES ($1, $2, $3, $4::meeting_type, $5, $6, $7, NOW(), NOW())"
+        "INSERT INTO meetings (id, acp_id, organization_id, building_id, meeting_type, title, location, scheduled_date, created_at, updated_at)
+             VALUES ($1, (SELECT acp_id FROM buildings WHERE id = $3), $2, $3, $4::meeting_type, $5, $6, $7, NOW(), NOW())"
     )
     .bind(meeting_id)
     .bind(org_id)
@@ -2921,8 +2973,8 @@ async fn given_new_general_assembly_meeting(world: &mut BuildingWorld) {
     let pool = world.pool.as_ref().expect("pool");
     let meeting_id = Uuid::new_v4();
     sqlx::query(
-        "INSERT INTO meetings (id, organization_id, building_id, meeting_type, title, location, scheduled_date, created_at, updated_at)
-         VALUES ($1, $2, $3, $4::meeting_type, $5, $6, $7, NOW(), NOW())"
+        "INSERT INTO meetings (id, acp_id, organization_id, building_id, meeting_type, title, location, scheduled_date, created_at, updated_at)
+             VALUES ($1, (SELECT acp_id FROM buildings WHERE id = $3), $2, $3, $4::meeting_type, $5, $6, $7, NOW(), NOW())"
     )
     .bind(meeting_id)
     .bind(org_id)
@@ -3036,8 +3088,8 @@ async fn given_n_expired_board_members(world: &mut BuildingWorld, count: usize) 
     // Create a meeting
     let meeting_id = Uuid::new_v4();
     sqlx::query(
-        "INSERT INTO meetings (id, organization_id, building_id, meeting_type, title, location, scheduled_date, created_at, updated_at)
-         VALUES ($1, $2, $3, 'ordinary'::meeting_type, $4, $5, $6, NOW(), NOW())"
+        "INSERT INTO meetings (id, acp_id, organization_id, building_id, meeting_type, title, location, scheduled_date, created_at, updated_at)
+             VALUES ($1, (SELECT acp_id FROM buildings WHERE id = $3), $2, $3, 'ordinary'::meeting_type, $4, $5, $6, NOW(), NOW())"
     )
     .bind(meeting_id).bind(org_id).bind(building_id)
     .bind("Old Election AG").bind("Hall")
@@ -3514,8 +3566,8 @@ async fn when_attempt_create_wrong_duration(world: &mut BuildingWorld, months: i
 
     let meeting_id = Uuid::new_v4();
     sqlx::query(
-        "INSERT INTO meetings (id, organization_id, building_id, meeting_type, title, location, scheduled_date, created_at, updated_at)
-         VALUES ($1, $2, $3, 'ordinary'::meeting_type, $4, $5, $6, NOW(), NOW())"
+        "INSERT INTO meetings (id, acp_id, organization_id, building_id, meeting_type, title, location, scheduled_date, created_at, updated_at)
+             VALUES ($1, (SELECT acp_id FROM buildings WHERE id = $3), $2, $3, 'ordinary'::meeting_type, $4, $5, $6, NOW(), NOW())"
     )
     .bind(meeting_id).bind(org_id).bind(building_id)
     .bind("Test Meeting").bind("Hall").bind(chrono::Utc::now())
@@ -3825,7 +3877,11 @@ async fn given_user_in_2_orgs(world: &mut BuildingWorld) {
         let auth_uc = world.auth_use_cases.as_ref().unwrap();
         let reg = RegisterRequest {
             email: format!("multiorg+{}@test.com", Uuid::new_v4()),
-            password: "Password123!".to_string(),
+            // Ce compte est effacé plus loin dans le même scénario, et
+            // l'effacement présente `MOT_DE_PASSE_DE_RECETTE`. Il enregistrait
+            // `Password123!` : l'effacement échouait pour cause de mot de
+            // passe faux, et l'assertion accusait l'effacement.
+            password: MOT_DE_PASSE_DE_RECETTE.to_string(),
             first_name: "Multi".to_string(),
             last_name: "Org".to_string(),
             role: "syndic".to_string(),

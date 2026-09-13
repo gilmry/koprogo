@@ -19,6 +19,8 @@
   } from "../../lib/api/acps";
   import { api } from "../../lib/api";
 
+  import { _ } from "../../lib/i18n";
+
   interface OrganizationOption {
     id: string;
     name: string;
@@ -187,10 +189,9 @@
 <div class="space-y-6" data-testid="admin-acps-page">
   <div class="flex items-center justify-between">
     <div>
-      <h1 class="text-2xl font-bold text-gray-900">Associations de Copropriétaires (ACP)</h1>
+      <h1 class="text-2xl font-bold text-gray-900">{$_("acps.pageTitle")}</h1>
       <p class="text-sm text-gray-600 mt-1">
-        Racine de l'arbre métier : 1 ACP regroupe N immeubles. Cabinet syndic
-        optionnel (auto-géré si vide).
+        {$_("acps.pageSubtitle")}
       </p>
     </div>
     <button
@@ -211,7 +212,9 @@
     >
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <label class="block">
-          <span class="text-sm font-medium text-gray-700">Nom *</span>
+          <span class="text-sm font-medium text-gray-700"
+            >{$_("common.name")} *</span
+          >
           <input
             type="text"
             bind:value={form.name}
@@ -223,21 +226,23 @@
         </label>
         <label class="block">
           <span class="text-sm font-medium text-gray-700">
-            Cabinet syndic (organisation, optionnel)
+            {$_("acps.managingAgentOptional")}
           </span>
           <select
             bind:value={form.organization_id}
             class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg"
             data-testid="acp-form-org-id"
           >
-            <option value={null}>Aucun — ACP auto-gérée</option>
+            <option value={null}>{$_("acps.selfManaged")}</option>
             {#each organizations as org (org.id)}
               <option value={org.id}>{org.name}</option>
             {/each}
           </select>
         </label>
         <label class="block">
-          <span class="text-sm font-medium text-gray-700">Rue *</span>
+          <span class="text-sm font-medium text-gray-700"
+            >{$_("common.street")} *</span
+          >
           <input
             type="text"
             bind:value={form.address_street}
@@ -247,7 +252,9 @@
           />
         </label>
         <label class="block">
-          <span class="text-sm font-medium text-gray-700">Code postal *</span>
+          <span class="text-sm font-medium text-gray-700"
+            >{$_("common.postalCode")} *</span
+          >
           <input
             type="text"
             bind:value={form.address_postal_code}
@@ -257,7 +264,9 @@
           />
         </label>
         <label class="block">
-          <span class="text-sm font-medium text-gray-700">Ville *</span>
+          <span class="text-sm font-medium text-gray-700"
+            >{$_("common.city")} *</span
+          >
           <input
             type="text"
             bind:value={form.address_city}
@@ -267,7 +276,9 @@
           />
         </label>
         <label class="block">
-          <span class="text-sm font-medium text-gray-700">Numéro BCE</span>
+          <span class="text-sm font-medium text-gray-700"
+            >{$_("common.enterpriseNumber")}</span
+          >
           <input
             type="text"
             bind:value={form.bce_number}
@@ -278,11 +289,12 @@
       </div>
       <div class="flex justify-end gap-2">
         <button
+          data-testid="acp-create-cancel-button"
           type="button"
           onclick={() => (showCreate = false)}
           class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700"
         >
-          Annuler
+          {$_("common.cancel")}
         </button>
         <button
           type="submit"
@@ -297,189 +309,235 @@
   {/if}
 
   {#if loading}
-    <p class="text-gray-500" data-testid="acps-loading">Chargement...</p>
+    <p class="text-gray-500" data-testid="acps-loading">
+      {$_("common.loading")}
+    </p>
   {:else if error}
     <p class="text-red-600" data-testid="acps-error">{error}</p>
   {:else if acps.length === 0}
     <p class="text-gray-500 italic" data-testid="acps-empty">
-      Aucune ACP. Créez-en une via le bouton ci-dessus.
+      {$_("acps.empty")}
     </p>
   {:else}
-    <table class="min-w-full divide-y divide-gray-200" data-testid="acps-table">
-      <thead class="bg-gray-50">
-        <tr>
-          <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Nom</th>
-          <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Slug</th>
-          <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Cabinet</th>
-          <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Adresse</th>
-          <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">BCE</th>
-          <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
-        </tr>
-      </thead>
-      <tbody class="bg-white divide-y divide-gray-200">
-        {#each acps as acp (acp.id)}
-          <tr data-testid="acp-row-{acp.id}">
-            <td class="px-4 py-2 text-sm font-medium text-gray-900">{acp.name}</td>
-            <td class="px-4 py-2 text-sm text-gray-500">{acp.slug}</td>
-            <td class="px-4 py-2 text-sm text-gray-500">
-              {organizationLabel(acp.organization_id)}
-            </td>
-            <td class="px-4 py-2 text-sm text-gray-500">
-              {acp.address_street}, {acp.address_postal_code} {acp.address_city}
-            </td>
-            <td class="px-4 py-2 text-sm text-gray-500">{acp.bce_number ?? "—"}</td>
-            <td class="px-4 py-2 text-sm text-right whitespace-nowrap">
-              <button
-                type="button"
-                onclick={() => startEdit(acp)}
-                class="text-primary-600 hover:text-primary-800 mr-3"
-                data-testid="acp-edit-{acp.id}"
-              >
-                Modifier
-              </button>
-              <button
-                type="button"
-                onclick={() => (confirmingArchiveId = acp.id)}
-                class="text-red-600 hover:text-red-800"
-                data-testid="acp-archive-{acp.id}"
-              >
-                Supprimer
-              </button>
-            </td>
+    <!--
+      Sept colonnes sans conteneur défilant : sur un téléphone, la table
+      sortait de l'écran (#866). `min-w` empêche les colonnes de se comprimer
+      jusqu'à l'illisible, et `tabindex` rend la zone atteignable au clavier
+      (WCAG 2.1.1) — Svelte le refuse sur un élément non interactif, axe-core
+      l'exige par `scrollable-region-focusable`, et c'est WCAG qui tranche.
+    -->
+    <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+    <div class="overflow-x-auto" tabindex="0" role="region">
+      <table
+        class="min-w-[560px] w-full divide-y divide-gray-200"
+        data-testid="acps-table"
+      >
+        <thead class="bg-gray-50">
+          <tr>
+            <th
+              class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase"
+              >{$_("common.name")}</th
+            >
+            <th
+              class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase"
+              >{$_("common.slug")}</th
+            >
+            <th
+              class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase"
+              >{$_("acps.managingAgent")}</th
+            >
+            <th
+              class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase"
+              >{$_("common.address")}</th
+            >
+            <th
+              class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase"
+              >BCE</th
+            >
+            <th
+              class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase"
+              >{$_("common.actions")}</th
+            >
           </tr>
-
-          {#if confirmingArchiveId === acp.id}
-            <tr class="bg-red-50" data-testid="acp-archive-confirm-{acp.id}">
-              <td colspan="6" class="px-4 py-3 text-sm">
-                <!-- Le backend nomme ce geste « archive » mais il exécute un
-                     DELETE : le libellé doit dire ce qui se passe vraiment. -->
-                <span class="text-red-800">
-                  Supprimer définitivement « {acp.name} » ? Cette action est
-                  irréversible. Une ACP portant encore des immeubles sera
-                  refusée.
-                </span>
-                <span class="ml-3 inline-flex gap-2">
-                  <button
-                    type="button"
-                    onclick={() => confirmArchive(acp.id)}
-                    disabled={archivingId === acp.id}
-                    class="px-3 py-1 bg-red-600 text-white rounded disabled:opacity-50"
-                    data-testid="acp-archive-confirm"
-                  >
-                    {archivingId === acp.id ? "Suppression..." : "Confirmer"}
-                  </button>
-                  <button
-                    type="button"
-                    onclick={() => (confirmingArchiveId = null)}
-                    class="px-3 py-1 border border-gray-300 rounded text-gray-700"
-                    data-testid="acp-archive-cancel"
-                  >
-                    Annuler
-                  </button>
-                </span>
+        </thead>
+        <tbody class="bg-white divide-y divide-gray-200">
+          {#each acps as acp (acp.id)}
+            <tr data-testid="acp-row-{acp.id}">
+              <td class="px-4 py-2 text-sm font-medium text-gray-900"
+                >{acp.name}</td
+              >
+              <td class="px-4 py-2 text-sm text-gray-500">{acp.slug}</td>
+              <td class="px-4 py-2 text-sm text-gray-500">
+                {organizationLabel(acp.organization_id)}
+              </td>
+              <td class="px-4 py-2 text-sm text-gray-500">
+                {acp.address_street}, {acp.address_postal_code}
+                {acp.address_city}
+              </td>
+              <td class="px-4 py-2 text-sm text-gray-500"
+                >{acp.bce_number ?? "—"}</td
+              >
+              <td class="px-4 py-2 text-sm text-right whitespace-nowrap">
+                <button
+                  type="button"
+                  onclick={() => startEdit(acp)}
+                  class="text-primary-600 hover:text-primary-800 mr-3"
+                  data-testid="acp-edit-{acp.id}"
+                >
+                  {$_("common.edit")}
+                </button>
+                <button
+                  type="button"
+                  onclick={() => (confirmingArchiveId = acp.id)}
+                  class="text-red-600 hover:text-red-800"
+                  data-testid="acp-archive-{acp.id}"
+                >
+                  {$_("common.delete")}
+                </button>
               </td>
             </tr>
-          {/if}
 
-          {#if editingId === acp.id && editForm}
-            <tr class="bg-gray-50">
-              <td colspan="6" class="px-4 py-4">
-                <form
-                  onsubmit={submitEdit}
-                  class="space-y-4"
-                  data-testid="acp-edit-form"
-                >
-                  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <label class="block">
-                      <span class="text-sm font-medium text-gray-700">Nom *</span>
-                      <input
-                        type="text"
-                        bind:value={editForm.name}
-                        required
-                        minlength="2"
-                        class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg"
-                        data-testid="acp-edit-name"
-                      />
-                    </label>
-                    <label class="block">
-                      <span class="text-sm font-medium text-gray-700">
-                        Cabinet syndic (vide = ACP auto-gérée)
-                      </span>
-                      <select
-                        bind:value={editForm.organization_id}
-                        class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg"
-                        data-testid="acp-edit-org-id"
-                      >
-                        <option value={null}>Aucun — ACP auto-gérée</option>
-                        {#each organizations as org (org.id)}
-                          <option value={org.id}>{org.name}</option>
-                        {/each}
-                      </select>
-                    </label>
-                    <label class="block">
-                      <span class="text-sm font-medium text-gray-700">Rue *</span>
-                      <input
-                        type="text"
-                        bind:value={editForm.address_street}
-                        required
-                        class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg"
-                        data-testid="acp-edit-street"
-                      />
-                    </label>
-                    <label class="block">
-                      <span class="text-sm font-medium text-gray-700">Code postal *</span>
-                      <input
-                        type="text"
-                        bind:value={editForm.address_postal_code}
-                        required
-                        class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg"
-                        data-testid="acp-edit-postal"
-                      />
-                    </label>
-                    <label class="block">
-                      <span class="text-sm font-medium text-gray-700">Ville *</span>
-                      <input
-                        type="text"
-                        bind:value={editForm.address_city}
-                        required
-                        class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg"
-                        data-testid="acp-edit-city"
-                      />
-                    </label>
-                    <label class="block">
-                      <span class="text-sm font-medium text-gray-700">Numéro BCE</span>
-                      <input
-                        type="text"
-                        bind:value={editForm.bce_number}
-                        class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg"
-                        data-testid="acp-edit-bce"
-                      />
-                    </label>
-                  </div>
-                  <div class="flex justify-end gap-2">
+            {#if confirmingArchiveId === acp.id}
+              <tr class="bg-red-50" data-testid="acp-archive-confirm-{acp.id}">
+                <td colspan="6" class="px-4 py-3 text-sm">
+                  <!-- Le backend nomme ce geste « archive » mais il exécute un
+                     DELETE : le libellé doit dire ce qui se passe vraiment. -->
+                  <span class="text-red-800">
+                    {$_("acps.deleteConfirm", { values: { nom: acp.name } })}
+                  </span>
+                  <span class="ml-3 inline-flex gap-2">
                     <button
                       type="button"
-                      onclick={cancelEdit}
-                      class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700"
-                      data-testid="acp-edit-cancel"
+                      onclick={() => confirmArchive(acp.id)}
+                      disabled={archivingId === acp.id}
+                      class="px-3 py-1 bg-red-600 text-white rounded disabled:opacity-50"
+                      data-testid="acp-archive-confirm"
                     >
-                      Annuler
+                      {archivingId === acp.id ? "Suppression..." : "Confirmer"}
                     </button>
                     <button
-                      type="submit"
-                      disabled={saving}
-                      class="px-4 py-2 bg-primary-600 text-white rounded-lg disabled:opacity-50"
-                      data-testid="acp-edit-submit"
+                      type="button"
+                      onclick={() => (confirmingArchiveId = null)}
+                      class="px-3 py-1 border border-gray-300 rounded text-gray-700"
+                      data-testid="acp-archive-cancel"
                     >
-                      {saving ? "Enregistrement..." : "Enregistrer"}
+                      {$_("common.cancel")}
                     </button>
-                  </div>
-                </form>
-              </td>
-            </tr>
-          {/if}
-        {/each}
-      </tbody>
-    </table>
+                  </span>
+                </td>
+              </tr>
+            {/if}
+
+            {#if editingId === acp.id && editForm}
+              <tr class="bg-gray-50">
+                <td colspan="6" class="px-4 py-4">
+                  <form
+                    onsubmit={submitEdit}
+                    class="space-y-4"
+                    data-testid="acp-edit-form"
+                  >
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <label class="block">
+                        <span class="text-sm font-medium text-gray-700"
+                          >{$_("common.name")} *</span
+                        >
+                        <input
+                          type="text"
+                          bind:value={editForm.name}
+                          required
+                          minlength="2"
+                          class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg"
+                          data-testid="acp-edit-name"
+                        />
+                      </label>
+                      <label class="block">
+                        <span class="text-sm font-medium text-gray-700">
+                          {$_("acps.managingAgentEmpty")}
+                        </span>
+                        <select
+                          bind:value={editForm.organization_id}
+                          class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg"
+                          data-testid="acp-edit-org-id"
+                        >
+                          <option value={null}>{$_("acps.selfManaged")}</option>
+                          {#each organizations as org (org.id)}
+                            <option value={org.id}>{org.name}</option>
+                          {/each}
+                        </select>
+                      </label>
+                      <label class="block">
+                        <span class="text-sm font-medium text-gray-700"
+                          >{$_("common.street")} *</span
+                        >
+                        <input
+                          type="text"
+                          bind:value={editForm.address_street}
+                          required
+                          class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg"
+                          data-testid="acp-edit-street"
+                        />
+                      </label>
+                      <label class="block">
+                        <span class="text-sm font-medium text-gray-700"
+                          >{$_("common.postalCode")} *</span
+                        >
+                        <input
+                          type="text"
+                          bind:value={editForm.address_postal_code}
+                          required
+                          class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg"
+                          data-testid="acp-edit-postal"
+                        />
+                      </label>
+                      <label class="block">
+                        <span class="text-sm font-medium text-gray-700"
+                          >{$_("common.city")} *</span
+                        >
+                        <input
+                          type="text"
+                          bind:value={editForm.address_city}
+                          required
+                          class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg"
+                          data-testid="acp-edit-city"
+                        />
+                      </label>
+                      <label class="block">
+                        <span class="text-sm font-medium text-gray-700"
+                          >{$_("common.enterpriseNumber")}</span
+                        >
+                        <input
+                          type="text"
+                          bind:value={editForm.bce_number}
+                          class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg"
+                          data-testid="acp-edit-bce"
+                        />
+                      </label>
+                    </div>
+                    <div class="flex justify-end gap-2">
+                      <button
+                        type="button"
+                        onclick={cancelEdit}
+                        class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700"
+                        data-testid="acp-edit-cancel"
+                      >
+                        {$_("common.cancel")}
+                      </button>
+                      <button
+                        type="submit"
+                        disabled={saving}
+                        class="px-4 py-2 bg-primary-600 text-white rounded-lg disabled:opacity-50"
+                        data-testid="acp-edit-submit"
+                      >
+                        {saving ? "Enregistrement..." : "Enregistrer"}
+                      </button>
+                    </div>
+                  </form>
+                </td>
+              </tr>
+            {/if}
+          {/each}
+        </tbody>
+      </table>
+    </div>
   {/if}
 </div>

@@ -9,6 +9,12 @@
  * Duree video attendue : ~70-90 secondes (rythme humain, multi-role)
  */
 import { test, expect } from "@playwright/test";
+import { ADMIN_PASSWORD } from "../helpers/identifiants";
+import {
+  amorce,
+  aucuneErreurAffichee,
+  confirmerSiDemande,
+} from "../helpers/amorcage";
 import { nameContains, selectOptionByName } from "../helpers/name-match";
 import {
   humanLogin,
@@ -21,7 +27,7 @@ import {
   PACE,
 } from "../helpers/video-pace";
 
-const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
+import { API_BASE } from "../helpers/adresses";
 
 test.describe("Scenario: Tableau d'affichage communautaire (multi-role)", () => {
   test.setTimeout(180_000);
@@ -31,9 +37,9 @@ test.describe("Scenario: Tableau d'affichage communautaire (multi-role)", () => 
   test.beforeAll(async ({ request }) => {
     // 1. Login admin
     const adminResp = await request.post(`${API_BASE}/auth/login`, {
-      data: { email: "admin@koprogo.com", password: "admin123" },
+      data: { email: "admin@koprogo.com", password: ADMIN_PASSWORD },
     });
-    const admin = await adminResp.json();
+    const admin = await amorce(adminResp, "POST /auth/login");
     const adminHeaders = { Authorization: `Bearer ${admin.token}` };
 
     // 2. Seed the world
@@ -51,21 +57,37 @@ test.describe("Scenario: Tableau d'affichage communautaire (multi-role)", () => 
     const syndicResp = await request.post(`${API_BASE}/auth/login`, {
       data: { email: "francois@syndic-leroy.be", password: "francois123" },
     });
-    const syndic = await syndicResp.json();
+    const syndic = await amorce(syndicResp, "POST /auth/login");
     const syndicHeaders = { Authorization: `Bearer ${syndic.token}` };
 
     // Get building ID for Residence du Parc
     const buildingsResp = await request.get(`${API_BASE}/buildings`, {
       headers: syndicHeaders,
     });
-    const buildings = await buildingsResp.json();
-    const building = Array.isArray(buildings)
-      ? buildings.find(
-          (b: any) => b.name && nameContains(b.name, "Résidence du Parc"),
-        )
-      : null;
+    const buildings = await amorce(buildingsResp, "GET /buildings");
+    // `GET /buildings` rend un `PageResponse` — `{ data, pagination }`,
+    // jamais un tableau nu. `Array.isArray` valait donc TOUJOURS faux,
+    // `building` TOUJOURS null, et le `if (building)` ci-dessous sautait
+    // l'amorçage entier sans rien dire. Le scénario échouait 150 lignes
+    // plus loin sur une liste vide, en accusant l'affichage.
+    const listeImmeubles = Array.isArray(buildings)
+      ? buildings
+      : (buildings?.data ?? []);
+    const building = listeImmeubles.find(
+      (b: any) => b.name && nameContains(b.name, "Résidence du Parc"),
+    );
 
-    if (building) {
+    if (!building) {
+      throw new Error(
+        `Amorçage : immeuble introuvable parmi ${listeImmeubles.length} ` +
+          `renvoyé(s) par GET /buildings : ` +
+          `${listeImmeubles.map((b: any) => b.name).join(", ") || "(aucun)"}. ` +
+          `Sans lui, aucune donnée n'est créée et le scénario échouera ` +
+          `plus loin sur une liste vide.`,
+      );
+    }
+
+    {
       const notice1Resp = await request.post(`${API_BASE}/notices`, {
         data: {
           building_id: building.id,
@@ -78,10 +100,14 @@ test.describe("Scenario: Tableau d'affichage communautaire (multi-role)", () => 
         },
         headers: syndicHeaders,
       });
-      const notice1 = await notice1Resp.json();
-      await request.post(`${API_BASE}/notices/${notice1.id}/publish`, {
-        headers: syndicHeaders,
-      });
+      const notice1 = await amorce(notice1Resp, "POST /notices");
+      const reponseAmorce1 = await request.post(
+        `${API_BASE}/notices/${notice1.id}/publish`,
+        {
+          headers: syndicHeaders,
+        },
+      );
+      await amorce(reponseAmorce1, "POST /notices/{notice1.id}/publish");
 
       const notice2Resp = await request.post(`${API_BASE}/notices`, {
         data: {
@@ -100,16 +126,20 @@ test.describe("Scenario: Tableau d'affichage communautaire (multi-role)", () => 
         },
         headers: syndicHeaders,
       });
-      const notice2 = await notice2Resp.json();
-      await request.post(`${API_BASE}/notices/${notice2.id}/publish`, {
-        headers: syndicHeaders,
-      });
+      const notice2 = await amorce(notice2Resp, "POST /notices");
+      const reponseAmorce2 = await request.post(
+        `${API_BASE}/notices/${notice2.id}/publish`,
+        {
+          headers: syndicHeaders,
+        },
+      );
+      await amorce(reponseAmorce2, "POST /notices/{notice2.id}/publish");
     }
   });
 
   test.afterAll(async ({ request }) => {
     const adminResp = await request.post(`${API_BASE}/auth/login`, {
-      data: { email: "admin@koprogo.com", password: "admin123" },
+      data: { email: "admin@koprogo.com", password: ADMIN_PASSWORD },
     });
     const admin = await adminResp.json();
     await request.delete(`${API_BASE}/seed/scenario/world`, {
@@ -124,7 +154,7 @@ test.describe("Scenario: Tableau d'affichage communautaire (multi-role)", () => 
     await humanLogin(page, "francois@syndic-leroy.be", "francois123");
     await stepPause(page);
 
-    await humanClick(page, "nav-link-annonces");
+    await humanClick(page, "nav-link-notices");
     await waitForSpinner(page);
     await page.waitForTimeout(PACE.AFTER_NAVIGATION);
 
@@ -161,6 +191,8 @@ test.describe("Scenario: Tableau d'affichage communautaire (multi-role)", () => 
     // ETAPE 3 : Francois cree une nouvelle annonce via le formulaire
     // ============================================================
     await humanClick(page, "notices-create-btn");
+    await confirmerSiDemande(page);
+    await aucuneErreurAffichee(page, "notices-create-btn");
     await page.waitForTimeout(PACE.AFTER_NAVIGATION);
 
     await expect(page.getByTestId("notice-create-modal")).toBeVisible({
@@ -186,6 +218,8 @@ test.describe("Scenario: Tableau d'affichage communautaire (multi-role)", () => 
 
     // Soumettre l'annonce
     await humanClick(page, "notice-submit-btn");
+    await confirmerSiDemande(page);
+    await aucuneErreurAffichee(page, "notice-submit-btn");
     await waitForSpinner(page);
     await page.waitForTimeout(PACE.AFTER_NAVIGATION);
 
@@ -200,7 +234,7 @@ test.describe("Scenario: Tableau d'affichage communautaire (multi-role)", () => 
     await stepPause(page);
 
     // Naviguer vers les annonces (community section, shared nav)
-    await humanClick(page, "nav-link-annonces");
+    await humanClick(page, "nav-link-notices");
     await waitForSpinner(page);
     await page.waitForTimeout(PACE.AFTER_NAVIGATION);
 
@@ -265,7 +299,17 @@ test.describe("Scenario: Tableau d'affichage communautaire (multi-role)", () => 
       timeout: 15000,
     });
 
-    await expect(page.locator("h1")).toContainText("Barbecue de quartier");
+    // Le `h1` est cherche DANS le detail de l'annonce, pas dans la page.
+    //
+    // `locator("h1")` resolvait quatre elements et Playwright refusait en mode
+    // strict : trois venaient de la barre d'outils de developpement d'Astro
+    // (« Audit », « No accessibility or performance issues detected »,
+    // « Settings »). Elle est desormais retiree sous Playwright, mais porter
+    // l'assertion sur le conteneur reste plus juste : c'est le titre de CETTE
+    // annonce qu'on verifie, pas le premier titre de la page.
+    await expect(page.getByTestId("notice-detail").locator("h1")).toContainText(
+      "Barbecue de quartier",
+    );
     await stepPause(page);
 
     // ============================================================

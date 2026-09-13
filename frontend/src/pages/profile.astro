@@ -1,9 +1,9 @@
 ---
-import Layout from '../layouts/Layout.astro';
+import Layout from "../layouts/Layout.astro";
 ---
 
 <Layout title="Mon Profil - KoproGo">
-  <div class="container mx-auto px-4 py-8">
+  <div class="container mx-auto px-4 py-8" data-testid="owner-profile">
     <div class="max-w-4xl mx-auto">
       <h1 class="text-3xl font-bold text-gray-900 mb-6">Mon Profil</h1>
       <div id="profile-container"></div>
@@ -12,10 +12,10 @@ import Layout from '../layouts/Layout.astro';
 </Layout>
 
 <script>
-  import { mount } from 'svelte';
-  import ProfilePanel from '../components/ProfilePanel.svelte';
+  import { mount } from "svelte";
+  import ProfilePanel from "../components/ProfilePanel.svelte";
 
-  const container = document.getElementById('profile-container');
+  const container = document.getElementById("profile-container");
   if (container) {
     mount(ProfilePanel as any, { target: container });
   }

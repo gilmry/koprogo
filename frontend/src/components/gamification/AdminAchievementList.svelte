@@ -1,28 +1,41 @@
 <script lang="ts">
   // Svelte 5 runes mode
-  import { _ } from '../../lib/i18n';
+  import { _ } from "../../lib/i18n";
   import {
     gamificationApi,
     type Achievement,
     AchievementCategory,
     AchievementTier,
-  } from '../../lib/api/gamification';
-  import AchievementForm from './AchievementForm.svelte';
-  import { withLoadingState, withErrorHandling } from "../../lib/utils/error.utils";
+  } from "../../lib/api/gamification";
+  import AchievementForm from "./AchievementForm.svelte";
+  import ConfirmDialog from "../ui/ConfirmDialog.svelte";
+  import {
+    withLoadingState,
+    withErrorHandling,
+  } from "../../lib/utils/error.utils";
 
   let { organizationId }: { organizationId: string } = $props();
 
   let achievements = $state<Achievement[]>([]);
+
+  // Le haut fait en attente de suppression, ou `null`.
+  //
+  // Le `confirm()` remplacé interpolait le NOM du haut fait, ce qu'un dialogue
+  // du navigateur ne sait montrer qu'en texte brut — et qu'un navigateur
+  // piloté supprime entièrement (#844).
+  let hautFaitEnAttente = $state<Achievement | null>(null);
   let loading = $state(true);
-  let error = $state('');
+  let error = $state("");
   let showForm = $state(false);
   let editingAchievement = $state<Achievement | null>(null);
-  let categoryFilter = $state<AchievementCategory | 'all'>('all');
+  let categoryFilter = $state<AchievementCategory | "all">("all");
 
-  let filteredAchievements = $derived(achievements.filter(a => {
-    if (categoryFilter === 'all') return true;
-    return a.category === categoryFilter;
-  }));
+  let filteredAchievements = $derived(
+    achievements.filter((a) => {
+      if (categoryFilter === "all") return true;
+      return a.category === categoryFilter;
+    }),
+  );
 
   $effect(() => {
     loadData();
@@ -35,10 +48,10 @@
     }
     await withLoadingState({
       action: () => gamificationApi.listAchievements(organizationId),
-      setLoading: (v: boolean) => loading = v,
-      setError: (v: string) => error = v,
-      onSuccess: (data) => achievements = data,
-      errorMessage: $_('common.load_error'),
+      setLoading: (v: boolean) => (loading = v),
+      setError: (v: string) => (error = v),
+      onSuccess: (data) => (achievements = data),
+      errorMessage: $_("common.load_error"),
     });
   }
 
@@ -52,12 +65,18 @@
     showForm = true;
   }
 
-  async function handleDelete(achievement: Achievement) {
-    if (!confirm($_('gamification.confirm_delete', { values: { name: achievement.name } }))) return;
+  function handleDelete(achievement: Achievement) {
+    hautFaitEnAttente = achievement;
+  }
+
+  async function executerLaSuppression() {
+    const achievement = hautFaitEnAttente;
+    hautFaitEnAttente = null;
+    if (!achievement) return;
     await withErrorHandling({
       action: () => gamificationApi.deleteAchievement(achievement.id),
-      successMessage: $_('gamification.delete_success'),
-      errorMessage: $_('gamification.delete_error'),
+      successMessage: $_("gamification.delete_success"),
+      errorMessage: $_("gamification.delete_error"),
       onSuccess: () => loadData(),
     });
   }
@@ -75,24 +94,30 @@
 
   function getTierColor(tier: AchievementTier): string {
     switch (tier) {
-      case AchievementTier.Bronze: return 'bg-orange-100 text-orange-800';
-      case AchievementTier.Silver: return 'bg-gray-100 text-gray-700';
-      case AchievementTier.Gold: return 'bg-yellow-100 text-yellow-800';
-      case AchievementTier.Platinum: return 'bg-cyan-100 text-cyan-800';
-      case AchievementTier.Diamond: return 'bg-purple-100 text-purple-800';
-      default: return 'bg-gray-100 text-gray-700';
+      case AchievementTier.Bronze:
+        return "bg-orange-100 text-orange-800";
+      case AchievementTier.Silver:
+        return "bg-gray-100 text-gray-700";
+      case AchievementTier.Gold:
+        return "bg-yellow-100 text-yellow-800";
+      case AchievementTier.Platinum:
+        return "bg-cyan-100 text-cyan-800";
+      case AchievementTier.Diamond:
+        return "bg-purple-100 text-purple-800";
+      default:
+        return "bg-gray-100 text-gray-700";
     }
   }
 
   const categoryLabels: Record<AchievementCategory, string> = {
-    [AchievementCategory.Community]: $_('gamification.cat_community'),
-    [AchievementCategory.Sel]: $_('gamification.cat_sel'),
-    [AchievementCategory.Booking]: $_('gamification.cat_booking'),
-    [AchievementCategory.Sharing]: $_('gamification.cat_sharing'),
-    [AchievementCategory.Skills]: $_('gamification.cat_skills'),
-    [AchievementCategory.Notice]: $_('gamification.cat_notice'),
-    [AchievementCategory.Governance]: $_('gamification.cat_governance'),
-    [AchievementCategory.Milestone]: $_('gamification.cat_milestone'),
+    [AchievementCategory.Community]: $_("gamification.cat_community"),
+    [AchievementCategory.Sel]: $_("gamification.cat_sel"),
+    [AchievementCategory.Booking]: $_("gamification.cat_booking"),
+    [AchievementCategory.Sharing]: $_("gamification.cat_sharing"),
+    [AchievementCategory.Skills]: $_("gamification.cat_skills"),
+    [AchievementCategory.Notice]: $_("gamification.cat_notice"),
+    [AchievementCategory.Governance]: $_("gamification.cat_governance"),
+    [AchievementCategory.Milestone]: $_("gamification.cat_milestone"),
   };
 </script>
 
@@ -100,13 +125,21 @@
   <div class="px-4 py-5 border-b border-gray-200 sm:px-6">
     <div class="flex items-center justify-between">
       <div>
-        <h3 class="text-lg leading-6 font-medium text-gray-900">{$_('gamification.management_title')}</h3>
-        <p class="mt-1 text-sm text-gray-500">{$_('gamification.achievement_count', { values: { count: achievements.length } })}</p>
+        <h3 class="text-lg leading-6 font-medium text-gray-900">
+          {$_("gamification.management_title")}
+        </h3>
+        <p class="mt-1 text-sm text-gray-500">
+          {$_("gamification.achievement_count", {
+            values: { count: achievements.length },
+          })}
+        </p>
       </div>
-      <button onclick={handleCreate}
+      <button
+        onclick={handleCreate}
         data-testid="achievement-create-btn"
-        class="px-4 py-2 text-sm font-medium text-white bg-amber-600 rounded-md hover:bg-amber-700">
-        + {$_('common.new')}
+        class="px-4 py-2 text-sm font-medium text-white bg-amber-600 rounded-md hover:bg-amber-700"
+      >
+        + {$_("common.new")}
       </button>
     </div>
   </div>
@@ -114,7 +147,8 @@
   {#if showForm}
     <div class="p-4 bg-amber-50 border-b border-amber-200">
       <h4 class="text-sm font-medium text-amber-800 mb-3">
-        {editingAchievement ? $_('common.edit') : $_('common.create')} {$_('gamification.achievement_singular')}
+        {editingAchievement ? $_("common.edit") : $_("common.create")}
+        {$_("gamification.achievement_singular")}
       </h4>
       <AchievementForm
         {organizationId}
@@ -128,17 +162,27 @@
   <!-- Category filters -->
   <div class="px-4 py-3 bg-gray-50 border-b border-gray-200">
     <div class="flex flex-wrap gap-1">
-      <button onclick={() => categoryFilter = 'all'}
+      <button
+        data-testid="admin-achievement-all-filter-button"
+        onclick={() => (categoryFilter = "all")}
         class="px-2 py-1 rounded text-xs font-medium transition-colors
-          {categoryFilter === 'all' ? 'bg-amber-600 text-white' : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'}">
-        {$_('common.all')} ({achievements.length})
+          {categoryFilter === 'all'
+          ? 'bg-amber-600 text-white'
+          : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'}"
+      >
+        {$_("common.all")} ({achievements.length})
       </button>
       {#each Object.values(AchievementCategory) as cat}
-        {@const count = achievements.filter(a => a.category === cat).length}
+        {@const count = achievements.filter((a) => a.category === cat).length}
         {#if count > 0}
-          <button onclick={() => categoryFilter = cat}
+          <button
+            data-testid="admin-achievement-category-filter-button"
+            onclick={() => (categoryFilter = cat)}
             class="px-2 py-1 rounded text-xs font-medium transition-colors
-              {categoryFilter === cat ? 'bg-amber-600 text-white' : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'}">
+              {categoryFilter === cat
+              ? 'bg-amber-600 text-white'
+              : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'}"
+          >
             {categoryLabels[cat]} ({count})
           </button>
         {/if}
@@ -148,19 +192,33 @@
 
   {#if loading}
     <div class="p-8 text-center" data-testid="admin-achievement-loading">
-      <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-amber-600"></div>
-      <p class="mt-2 text-sm text-gray-500">{$_('common.loading')}</p>
+      <div
+        class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-amber-600"
+      ></div>
+      <p class="mt-2 text-sm text-gray-500">{$_("common.loading")}</p>
     </div>
   {:else if error}
-    <div class="p-4 m-4 bg-red-50 border border-red-200 rounded-md" data-testid="admin-achievement-error">
+    <div
+      class="p-4 m-4 bg-red-50 border border-red-200 rounded-md"
+      data-testid="admin-achievement-error"
+    >
       <p class="text-sm text-red-800">{error}</p>
-      <button onclick={loadData} class="mt-2 text-sm text-red-600 hover:text-red-800 underline">{$_('common.retry')}</button>
+      <button
+        data-testid="admin-achievement-retry-button"
+        onclick={loadData}
+        class="mt-2 text-sm text-red-600 hover:text-red-800 underline"
+        >{$_("common.retry")}</button
+      >
     </div>
   {:else if filteredAchievements.length === 0}
     <div class="p-8 text-center">
-      <p class="text-gray-500">{$_('gamification.no_achievements')}</p>
-      <button onclick={handleCreate} class="mt-2 text-sm text-amber-600 hover:text-amber-800 underline">
-        {$_('gamification.create_first')}
+      <p class="text-gray-500">{$_("gamification.no_achievements")}</p>
+      <button
+        data-testid="admin-achievement-create-button"
+        onclick={handleCreate}
+        class="mt-2 text-sm text-amber-600 hover:text-amber-800 underline"
+      >
+        {$_("gamification.create_first")}
       </button>
     </div>
   {:else}
@@ -168,12 +226,36 @@
       <table class="min-w-full divide-y divide-gray-200">
         <thead class="bg-gray-50">
           <tr>
-            <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{$_('gamification.achievement_singular')}</th>
-            <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{$_('gamification.category')}</th>
-            <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{$_('gamification.tier')}</th>
-            <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{$_('gamification.points')}</th>
-            <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{$_('gamification.flags')}</th>
-            <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">{$_('common.actions')}</th>
+            <th
+              scope="col"
+              class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase"
+              >{$_("gamification.achievement_singular")}</th
+            >
+            <th
+              scope="col"
+              class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase"
+              >{$_("gamification.category")}</th
+            >
+            <th
+              scope="col"
+              class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase"
+              >{$_("gamification.tier")}</th
+            >
+            <th
+              scope="col"
+              class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase"
+              >{$_("gamification.points")}</th
+            >
+            <th
+              scope="col"
+              class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase"
+              >{$_("gamification.flags")}</th
+            >
+            <th
+              scope="col"
+              class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase"
+              >{$_("common.actions")}</th
+            >
           </tr>
         </thead>
         <tbody class="bg-white divide-y divide-gray-200">
@@ -181,45 +263,67 @@
             <tr class="hover:bg-gray-50" data-testid="admin-achievement-row">
               <td class="px-4 py-3">
                 <div class="flex items-center gap-2">
-                  <span class="text-lg">{achievement.icon || '🏅'}</span>
+                  <span class="text-lg">{achievement.icon || "🏅"}</span>
                   <div>
-                    <p class="text-sm font-medium text-gray-900">{achievement.name}</p>
+                    <p class="text-sm font-medium text-gray-900">
+                      {achievement.name}
+                    </p>
                     {#if achievement.description}
-                      <p class="text-xs text-gray-500 truncate max-w-xs">{achievement.description}</p>
+                      <p class="text-xs text-gray-500 truncate max-w-xs">
+                        {achievement.description}
+                      </p>
                     {/if}
                   </div>
                 </div>
               </td>
               <td class="px-4 py-3">
-                <span class="text-xs text-gray-600">{categoryLabels[achievement.category]}</span>
+                <span class="text-xs text-gray-600"
+                  >{categoryLabels[achievement.category]}</span
+                >
               </td>
               <td class="px-4 py-3">
-                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium {getTierColor(achievement.tier)}">
+                <span
+                  class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium {getTierColor(
+                    achievement.tier,
+                  )}"
+                >
                   {achievement.tier}
                 </span>
               </td>
-              <td class="px-4 py-3 text-sm text-gray-900">{achievement.points_value}</td>
+              <td class="px-4 py-3 text-sm text-gray-900"
+                >{achievement.points_value}</td
+              >
               <td class="px-4 py-3">
                 <div class="flex gap-1">
                   {#if achievement.is_secret}
-                    <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs bg-gray-800 text-white">{$_('gamification.secret')}</span>
+                    <span
+                      class="inline-flex items-center px-1.5 py-0.5 rounded text-xs bg-gray-800 text-white"
+                      >{$_("gamification.secret")}</span
+                    >
                   {/if}
                   {#if achievement.is_repeatable}
-                    <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs bg-purple-100 text-purple-800">{$_('gamification.repeatable')}</span>
+                    <span
+                      class="inline-flex items-center px-1.5 py-0.5 rounded text-xs bg-purple-100 text-purple-800"
+                      >{$_("gamification.repeatable")}</span
+                    >
                   {/if}
                 </div>
               </td>
               <td class="px-4 py-3 text-right">
                 <div class="flex justify-end gap-1">
-                  <button onclick={() => handleEdit(achievement)}
+                  <button
+                    onclick={() => handleEdit(achievement)}
                     data-testid="achievement-edit-btn"
-                    class="px-2 py-1 text-xs text-blue-600 hover:bg-blue-50 rounded">
-                    {$_('common.edit')}
+                    class="px-2 py-1 text-xs text-blue-600 hover:bg-blue-50 rounded"
+                  >
+                    {$_("common.edit")}
                   </button>
-                  <button onclick={() => handleDelete(achievement)}
+                  <button
+                    onclick={() => handleDelete(achievement)}
                     data-testid="achievement-delete-btn"
-                    class="px-2 py-1 text-xs text-red-600 hover:bg-red-50 rounded">
-                    {$_('common.delete')}
+                    class="px-2 py-1 text-xs text-red-600 hover:bg-red-50 rounded"
+                  >
+                    {$_("common.delete")}
                   </button>
                 </div>
               </td>
@@ -230,3 +334,17 @@
     </div>
   {/if}
 </div>
+
+<!-- Le dialogue qui remplace un `confirm()` natif (#844). -->
+<ConfirmDialog
+  isOpen={hautFaitEnAttente !== null}
+  title={$_("common.confirm")}
+  message={hautFaitEnAttente
+    ? $_("gamification.confirm_delete", {
+        values: { name: hautFaitEnAttente.name },
+      })
+    : ""}
+  variant="danger"
+  onconfirm={executerLaSuppression}
+  oncancel={() => (hautFaitEnAttente = null)}
+/>

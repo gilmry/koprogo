@@ -1,0 +1,3 @@
+DROP INDEX IF EXISTS idx_budgets_acp_id;
+ALTER TABLE budgets DROP CONSTRAINT IF EXISTS fk_budgets_acp;
+ALTER TABLE budgets DROP COLUMN IF EXISTS acp_id;

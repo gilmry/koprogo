@@ -6,9 +6,10 @@
  * on the actual feature being tested.
  */
 import { test } from "@playwright/test";
+import { ADMIN_PASSWORD } from "./identifiants";
 import type { APIRequestContext, Page } from "@playwright/test";
 
-const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
+import { API_BASE } from "./adresses";
 
 // ---------------------------------------------------------------------------
 // Connexion admin mutualisée (anti-429)
@@ -118,7 +119,7 @@ export async function performAdminLogin(
 
   for (let attempt = 1; attempt <= MAX_TRIES; attempt++) {
     const resp = await api.post(`${API_BASE}/auth/login`, {
-      data: { email: "admin@koprogo.com", password: "admin123" },
+      data: { email: "admin@koprogo.com", password: ADMIN_PASSWORD },
     });
     lastStatus = resp.status();
 
@@ -198,6 +199,19 @@ interface SyndicWithOwnerContext extends SyndicContext {
 interface OwnerContext extends SyndicContext {
   ownerId: string;
   ownerToken: string; // JWT for the owner user account
+  /**
+   * Identifiants du compte copropriétaire, pour les tests qui doivent AGIR
+   * en son nom.
+   *
+   * Ce helper laisse volontairement la session du syndic en place. Un test
+   * qui se dit « en tant que propriétaire lié » doit donc basculer
+   * explicitement, avec `uiLoginWithRetry(page, ownerEmail, ownerPassword,
+   * /\/owner/)`. Sans cette bascule il POSTe en tant que syndic, et le
+   * serveur refuse à raison : les modules communautaires engagent une
+   * personne nommée, pas la copropriété.
+   */
+  ownerEmail: string;
+  ownerPassword: string;
 }
 
 /**
@@ -292,6 +306,32 @@ export async function loginAsSyndic(
     headers: { Authorization: `Bearer ${adminToken}` },
   });
   const org = await expectOk(orgResp, "seed:org");
+
+  // Le cookie de l'ADMINISTRATEUR doit partir avant qu'on enregistre le syndic.
+  //
+  // ── Pourquoi ────────────────────────────────────────────────────────────
+  //
+  // `adminLogin` ci-dessus a posé un `koprogo_refresh` pour l'administrateur
+  // dans le pot à biscuits du contexte. `page.request` le partage, si bien que
+  // le `POST /auth/register` qui suit part AVEC ce cookie — alors même qu'il
+  // n'a pas d'en-tête `Authorization`.
+  //
+  // Depuis #769, le serveur ne pose pas de session quand l'appelant en a déjà
+  // une : c'est le correctif qui empêche un SuperAdmin créant trois comptes de
+  // se retrouver dans la peau du troisième. Conséquence ici : le syndic
+  // n'obtient PAS son cookie, et `injectAuth` — qui compte dessus pour son
+  // rafraîchissement silencieux — travaille avec celui de l'administrateur.
+  //
+  // Les jetons de rafraîchissement étant à usage unique
+  // (`auth_use_cases.rs:344`, rotation à chaque appel), la seconde navigation
+  // d'un parcours présente un jeton déjà révoqué : plus de jeton d'accès, et
+  // l'écriture qui suit rend 401. C'est #828, et cela touchait les quatre
+  // parcours les plus longs de la suite.
+  //
+  // Effacer le cookie rend `deja_authentifie` faux, donc le syndic reçoit bien
+  // le sien. Le jeton d'administrateur reste disponible dans `adminToken` pour
+  // les appels de préparation, qui le passent en en-tête.
+  await page.context().clearCookies();
 
   // Register syndic
   const regResp = await page.request.post(`${API_BASE}/auth/register`, {
@@ -551,6 +591,22 @@ export async function loginAsSyndicWithMeeting(
   });
   const meeting = await expectOk(meetingResp, "seed:meeting");
 
+  // Un point d'ordre du jour, sans quoi aucune résolution de cette assemblée
+  // ne sera votable.
+  //
+  // Art. 3.87 § 2 CC annule une décision portant sur un point absent de
+  // l'ordre du jour, et `cast_vote` la refuse depuis #840. Le semis créait des
+  // assemblées à l'ordre du jour VIDE : toute recette qui y votait exerçait le
+  // cas que l'article annule.
+  const pointResp = await page.request.post(
+    `${API_BASE}/meetings/${meeting.id}/agenda`,
+    {
+      data: { item: "Approbation des comptes" },
+      headers: { Authorization: `Bearer ${ctx.token}` },
+    },
+  );
+  await expectOk(pointResp, "seed:agenda");
+
   return { ...ctx, meetingId: meeting.id };
 }
 
@@ -619,7 +675,13 @@ export async function loginAsSyndicWithLinkedOwner(
   const timestamp = Date.now();
   const ownerEmail = `owner-linked-${timestamp}@test.com`;
 
-  // Register an owner user account
+  // Ici on n'efface PAS les cookies, et c'est voulu.
+  //
+  // Ce helper enregistre un COMPTE de coproprietaire tout en continuant de
+  // naviguer en tant que syndic. Le garde-fou de #769 joue donc en notre
+  // faveur : l'enregistrement ne pose pas de session, et celle du syndic
+  // survit. C'est exactement le cas d'usage que ce garde-fou protege — un
+  // administrateur qui cree des comptes sans changer d'identite.
   const regResp = await page.request.post(`${API_BASE}/auth/register`, {
     data: {
       email: ownerEmail,
@@ -652,7 +714,13 @@ export async function loginAsSyndicWithLinkedOwner(
   });
   const owner = await expectOk(ownerResp, "seed:owner");
 
-  return { ...ctx, ownerId: owner.id, ownerToken };
+  return {
+    ...ctx,
+    ownerId: owner.id,
+    ownerToken,
+    ownerEmail,
+    ownerPassword: "test123456",
+  };
 }
 
 /**
@@ -677,8 +745,21 @@ export async function loginAsAdmin(
   // (11 echecs sur refonte-ux/fix-admin-buttons-acp, tous en redirection
   // vers /login alors que les tests visaient des boutons Svelte 5).
   //
-  // `loginAsSyndic` n'a pas ce probleme : son POST /auth/register passe par
-  // `page.request` et depose bien le cookie du syndic dans le contexte.
+  // ATTENTION — cette derniere phrase a cesse d'etre vraie le 2026-09-06.
+  //
+  // Elle disait : « `loginAsSyndic` n'a pas ce probleme : son POST
+  // /auth/register passe par `page.request` et depose bien le cookie du syndic
+  // dans le contexte. »
+  //
+  // Depuis #769, le serveur ne pose PAS de session quand l'appelant en a deja
+  // une — et l'appelant en a une, puisque `adminLogin` vient de s'executer sur
+  // le meme contexte. Le syndic n'obtenait donc plus son cookie, et les quatre
+  // parcours les plus longs de la suite tombaient en 401 (#828).
+  //
+  // `loginAsSyndic` efface desormais le cookie de l'administrateur avant
+  // d'enregistrer le syndic. Le commentaire est corrige ici plutot que retire :
+  // une hypothese qui a ete fausse merite d'etre nommee, sans quoi quelqu'un la
+  // reformulera.
   const token = await performAdminLogin(page);
   // Une connexion reelle vient d'avoir lieu : autant en faire profiter le
   // cache partage plutot que d'en consommer une de plus juste apres.
@@ -740,6 +821,11 @@ async function registerScopedUser(
     headers: { Authorization: `Bearer ${adminToken}` },
   });
   const org = await expectOk(orgResp, "seed:org");
+
+  // Même raison que dans `loginAsSyndic` : le cookie de l'administrateur ferait
+  // croire au serveur que l'appelant a déjà une session, et le compte créé
+  // n'obtiendrait pas la sienne (#769, #828).
+  await page.context().clearCookies();
 
   const regResp = await page.request.post(`${API_BASE}/auth/register`, {
     data: {
@@ -820,6 +906,52 @@ export async function loginAsAccountantEmetteur(
   prefix: string = "accountant-emetteur",
 ): Promise<AuthContext> {
   return registerScopedUser(page, prefix, "accountant");
+}
+
+/**
+ * Comptable émetteur, AVEC un immeuble et son ACP.
+ *
+ * ── Pourquoi ce helper existe ─────────────────────────────────────────────
+ *
+ * Les écrans comptables lisent le périmètre d'immeuble, et le frontend est une
+ * application Astro MULTI-PAGE : le `$state` de module du store repart à zéro à
+ * chaque navigation. Naviguer directement vers `/journal-entries` donnait donc
+ * un périmètre nul, et l'écran affichait à juste titre « sélectionnez un
+ * immeuble » — le formulaire et la liste n'existaient pas.
+ *
+ * Le serveur refuse pour la même raison une écriture manuelle sans immeuble :
+ * une pièce comptable qui ne désigne pas sa copropriété n'est imputable à
+ * personne (#770). Les deux refus sont justes ; ce qui manquait, c'était un
+ * immeuble à désigner.
+ *
+ * Naviguez ensuite avec `?buildingId=${buildingId}` : le store réhydrate
+ * depuis l'URL en faisant VALIDER l'immeuble par le serveur (#841).
+ */
+export async function loginAsAccountantAvecImmeuble(
+  page: Page,
+  prefix: string = "accountant-immeuble",
+): Promise<AuthContext & { buildingId: string; acpId: string }> {
+  const ctx = await registerScopedUser(page, prefix, "accountant");
+  const timestamp = Date.now();
+  const acpId = await ensureAcp(page, ctx.orgId, ctx.adminToken, prefix);
+
+  const buildingResp = await page.request.post(`${API_BASE}/buildings`, {
+    data: {
+      name: `${prefix} Building ${timestamp}`,
+      address: `${timestamp} Rue Test`,
+      city: "Brussels",
+      postal_code: "1000",
+      country: "Belgium",
+      total_units: 4,
+      total_tantiemes: 1000,
+      construction_year: 2010,
+      acp_id: acpId,
+    },
+    headers: { Authorization: `Bearer ${ctx.adminToken}` },
+  });
+  const building = await expectOk(buildingResp, "seed:building");
+
+  return { ...ctx, buildingId: building.id, acpId };
 }
 
 /**
@@ -956,8 +1088,160 @@ export async function uiLoginWithRetry(
     }
   }
 
+  // Le message dit ce qu'on a OBSERVE, pas ce qu'on suppose.
+  //
+  // Il annoncait « rate limit /auth/login probable ». C'etait une conjecture,
+  // et elle a tenu lieu d'explication pendant des semaines. La trace du run
+  // 34377060293 la dement : les quatre `POST /auth/login` ont rendu 200. La
+  // connexion REUSSISSAIT ; c'est l'URL attendue qui ne venait jamais, parce
+  // qu'un notaire n'a pas de tableau de bord et atterrit sur `/`
+  // (`guards.ts:129` — « seuls quatre roles ont un tableau de bord a eux »).
+  //
+  // Une aide qui nomme une cause qu'elle n'a pas mesuree envoie chaque
+  // lecteur au mauvais endroit. On donne donc l'URL finale, qui suffit a
+  // trancher.
+  const urlFinale = page.url();
   throw new Error(
-    `uiLoginWithRetry: echec apres ${MAX_TRIES} tentatives pour ${email} ` +
-      `(rate limit /auth/login probable) — ${String(lastErr).slice(0, 200)}`,
+    `uiLoginWithRetry: echec apres ${MAX_TRIES} tentatives pour ${email}.\n` +
+      `URL au moment de l'echec : ${urlFinale}\n` +
+      `Motif attendu : ${urlPattern}\n` +
+      `Si la connexion a reussi mais que l'URL ne correspond pas, c'est le ` +
+      `MOTIF qu'il faut corriger, pas la connexion.\n` +
+      `${String(lastErr).slice(0, 200)}`,
   );
+}
+
+/**
+ * Provisionne les comptes d'un parcours de référence — SANS ouvrir de session.
+ *
+ * ── Pourquoi ce helper n'est pas `loginAsSyndicWithLinkedOwner` ───────────
+ *
+ * Les vingt helpers ci-dessus font DEUX choses en une : ils créent un monde
+ * *et* ils ouvrent une session dans le navigateur, par `injectAuth`. Pour les
+ * specs c'est exactement ce qu'il faut — la connexion n'est pas leur sujet et
+ * la sauter économise cinq secondes.
+ *
+ * Un parcours de référence est le cas contraire : **la connexion EST le
+ * sujet**. La vitrine doit montrer le syndic qui entre, puis se retirer, puis
+ * le copropriétaire qui entre à son tour. Une session déjà posée ne se
+ * contente pas d'être inutile ici, elle empêche le parcours : `injectAuth`
+ * passe par `page.addInitScript`, qui rejoue `koprogo_user` à CHAQUE
+ * document du contexte et survit donc à un `clearCookies`. Le parcours
+ * filmerait un utilisateur qu'il n'a pas connecté.
+ *
+ * D'où la séparation : ici on crée, on ne connecte pas. Le contexte est rendu
+ * anonyme avant de rendre la main, et c'est le parcours qui ouvre chaque
+ * session par l'interface — donc devant la caméra.
+ *
+ * ── Ce que ce helper remplace ─────────────────────────────────────────────
+ *
+ * Le parcours lisait ses identifiants dans le `TestWorld` de
+ * `global-setup.ts`. Or **rien ne câble ce global-setup** : `playwright.config.ts`
+ * ne déclare aucun `globalSetup`, et le fichier `.test-world.json` n'est donc
+ * jamais écrit. Les 307 autres specs ne s'en apercevaient pas — aucune ne
+ * l'appelle, toutes construisent leur monde elles-mêmes. Le parcours était le
+ * premier, et il échouait sur « TestWorld not found » en CI (#876).
+ */
+export async function provisionneComptesDuParcours(
+  page: Page,
+  prefix: string = "vitrine",
+): Promise<{
+  syndic: { email: string; motDePasse: string };
+  coproprietaire: { email: string; motDePasse: string };
+}> {
+  const horodatage = Date.now();
+  // Le même mot de passe que les helpers voisins : ces comptes sont jetables
+  // et vivent le temps d'une campagne.
+  const motDePasse = "test123456";
+  const emailSyndic = `${prefix}-syndic-${horodatage}@example.com`;
+  const emailCoproprietaire = `${prefix}-owner-${horodatage}@example.com`;
+
+  const adminToken = await adminLogin(page);
+
+  const orgResp = await page.request.post(`${API_BASE}/organizations`, {
+    data: {
+      name: `${prefix} Org ${horodatage}`,
+      slug: `${prefix}-${horodatage}`,
+      contact_email: emailSyndic,
+      subscription_plan: "professional",
+    },
+    headers: { Authorization: `Bearer ${adminToken}` },
+  });
+  const org = await expectOk(orgResp, "seed:org");
+
+  const acpId = await ensureAcp(page, org.id, adminToken, prefix);
+
+  const buildingResp = await page.request.post(`${API_BASE}/buildings`, {
+    data: {
+      name: `${prefix} Immeuble ${horodatage}`,
+      address: `${horodatage} Rue Test`,
+      city: "Brussels",
+      postal_code: "1000",
+      country: "Belgium",
+      total_units: 12,
+      total_tantiemes: 1000,
+      construction_year: 2010,
+      acp_id: acpId,
+    },
+    headers: { Authorization: `Bearer ${adminToken}` },
+  });
+  const building = await expectOk(buildingResp, "seed:building");
+
+  // Des lots conformes à l'acte de base : sans eux, tout calcul de charges
+  // rend 422 et le tableau de bord du syndic s'ouvre sur une erreur.
+  await seedConformantUnits(page, adminToken, acpId, building.id, 12, 1000);
+
+  const syndicResp = await page.request.post(`${API_BASE}/auth/register`, {
+    data: {
+      email: emailSyndic,
+      password: motDePasse,
+      first_name: "Sophie",
+      last_name: "Syndic",
+      role: "syndic",
+      organization_id: org.id,
+    },
+  });
+  await expectOk(syndicResp, "seed:syndic");
+
+  const coproResp = await page.request.post(`${API_BASE}/auth/register`, {
+    data: {
+      email: emailCoproprietaire,
+      password: motDePasse,
+      first_name: "Carine",
+      last_name: "Copropriétaire",
+      role: "owner",
+      organization_id: org.id,
+    },
+  });
+  const coproUser = await expectOk(coproResp, "seed:copro");
+  const coproUserId =
+    coproUser.user?.id || coproUser.id || coproUser.user_id || "";
+
+  // La fiche de copropriétaire, liée au compte : sans elle, `/owner` n'a
+  // aucun lot à montrer et le parcours démontrerait un écran vide.
+  const ficheResp = await page.request.post(`${API_BASE}/owners`, {
+    data: {
+      organization_id: org.id,
+      first_name: "Carine",
+      last_name: "Copropriétaire",
+      email: emailCoproprietaire,
+      address: "1 Rue Test",
+      city: "Brussels",
+      postal_code: "1000",
+      country: "Belgium",
+      user_id: coproUserId,
+    },
+    headers: { Authorization: `Bearer ${adminToken}` },
+  });
+  await expectOk(ficheResp, "seed:fiche-coproprietaire");
+
+  // Le contexte redevient anonyme : la première image du parcours doit être
+  // celle d'un visiteur non connecté, sans quoi la bascule d'acteur qu'il
+  // démontre ne serait qu'une affirmation.
+  await page.context().clearCookies();
+
+  return {
+    syndic: { email: emailSyndic, motDePasse },
+    coproprietaire: { email: emailCoproprietaire, motDePasse },
+  };
 }

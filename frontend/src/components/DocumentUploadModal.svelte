@@ -1,9 +1,14 @@
 <script lang="ts">
   // Svelte 5 runes mode
-  import { _ } from '../lib/i18n';
-  import type { Building, DocumentType, DocumentUploadPayload, User } from '../lib/types';
-  import { DOCUMENT_TYPE_OPTIONS as DOCUMENT_TYPES } from '../lib/types';
-  import { api } from '../lib/api';
+  import { _ } from "../lib/i18n";
+  import type {
+    Building,
+    DocumentType,
+    DocumentUploadPayload,
+    User,
+  } from "../lib/types";
+  import { DOCUMENT_TYPE_OPTIONS as DOCUMENT_TYPES } from "../lib/types";
+  import { api } from "../lib/api";
 
   let {
     open = $bindable(false),
@@ -21,10 +26,10 @@
     onuploaded?: () => void;
   } = $props();
 
-  let buildingId = $state('');
+  let buildingId = $state("");
   let documentType = $state<DocumentType>(DOCUMENT_TYPES[0].value);
-  let title = $state('');
-  let description = $state('');
+  let title = $state("");
+  let description = $state("");
   let file = $state<File | null>(null);
   let error = $state<string | null>(null);
   let submitting = $state(false);
@@ -37,19 +42,23 @@
   });
 
   $effect(() => {
-    if (buildings.length > 0 && buildingId && !buildings.some((b) => b.id === buildingId)) {
+    if (
+      buildings.length > 0 &&
+      buildingId &&
+      !buildings.some((b) => b.id === buildingId)
+    ) {
       buildingId = buildings[0].id;
     }
   });
 
   function resetForm() {
-    title = '';
-    description = '';
+    title = "";
+    description = "";
     file = null;
     error = null;
     submitting = false;
     if (fileInput) {
-      fileInput.value = '';
+      fileInput.value = "";
     }
   }
 
@@ -69,22 +78,22 @@
     error = null;
 
     if (!user) {
-      error = $_('documents.userNotAuthenticated');
+      error = $_("documents.userNotAuthenticated");
       return;
     }
 
     if (!file) {
-      error = $_('documents.selectFile');
+      error = $_("documents.selectFile");
       return;
     }
 
     if (!buildingId) {
-      error = $_('documents.selectBuilding');
+      error = $_("documents.selectBuilding");
       return;
     }
 
     if (!title.trim()) {
-      error = $_('documents.titleRequired');
+      error = $_("documents.titleRequired");
       return;
     }
 
@@ -104,8 +113,8 @@
       onuploaded();
       handleClose();
     } catch (err) {
-      console.error('Upload failed', err);
-      error = err instanceof Error ? err.message : $_('documents.uploadFailed');
+      console.error("Upload failed", err);
+      error = err instanceof Error ? err.message : $_("documents.uploadFailed");
     } finally {
       submitting = false;
     }
@@ -113,20 +122,34 @@
 </script>
 
 {#if open}
-  <div class="fixed inset-0 z-50 flex items-center justify-center bg-gray-900 bg-opacity-40 p-4">
+  <div
+    class="fixed inset-0 z-50 flex items-center justify-center bg-gray-900 bg-opacity-40 p-4"
+  >
     <div class="bg-white rounded-2xl shadow-xl max-w-xl w-full">
-      <form onsubmit={(e: Event) => { e.preventDefault(); submit(e); }} class="flex flex-col">
+      <form
+        data-testid="document-upload-form"
+        onsubmit={(e: Event) => {
+          e.preventDefault();
+          submit(e);
+        }}
+        class="flex flex-col"
+      >
         <div class="px-6 py-4 border-b border-gray-200">
           <div class="flex items-start justify-between">
             <div>
-              <h2 class="text-xl font-semibold text-gray-900">{$_('documents.newDocument')}</h2>
-              <p class="text-sm text-gray-500">{$_('documents.uploadDescription')}</p>
+              <h2 class="text-xl font-semibold text-gray-900">
+                {$_("documents.newDocument")}
+              </h2>
+              <p class="text-sm text-gray-500">
+                {$_("documents.uploadDescription")}
+              </p>
             </div>
             <button
+              data-testid="document-upload-close-button"
               type="button"
-              class="text-gray-400 hover:text-gray-600"
+              class="text-muted hover:text-gray-600"
               onclick={handleClose}
-              aria-label={$_('common.close')}
+              aria-label={$_("common.close")}
             >
               ✕
             </button>
@@ -135,27 +158,41 @@
 
         <div class="px-6 py-4 space-y-4">
           <div>
-            <label for="doc-upload-building" class="block text-sm font-medium text-gray-700 mb-1">{$_('documents.building')}</label>
+            <label
+              for="doc-upload-building"
+              class="block text-sm font-medium text-gray-700 mb-1"
+              >{$_("documents.building")}</label
+            >
             {#if loadingBuildings}
-              <p class="text-sm text-gray-500">{$_('documents.loadingBuildings')}</p>
+              <p class="text-sm text-gray-500">
+                {$_("documents.loadingBuildings")}
+              </p>
             {:else if buildings.length === 0}
-              <p class="text-sm text-red-500">{$_('documents.noBuildings')}</p>
+              <p class="text-sm text-red-500">{$_("documents.noBuildings")}</p>
             {:else}
               <select
+                data-testid="doc-upload-building"
                 id="doc-upload-building"
                 class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500"
                 bind:value={buildingId}
               >
                 {#each buildings as building}
-                  <option value={building.id}>{building.name} · {building.city}</option>
+                  <option value={building.id}
+                    >{building.name} · {building.city}</option
+                  >
                 {/each}
               </select>
             {/if}
           </div>
 
           <div>
-            <label for="doc-upload-type" class="block text-sm font-medium text-gray-700 mb-1">{$_('documents.documentType')}</label>
+            <label
+              for="doc-upload-type"
+              class="block text-sm font-medium text-gray-700 mb-1"
+              >{$_("documents.documentType")}</label
+            >
             <select
+              data-testid="doc-upload-type"
               id="doc-upload-type"
               class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500"
               bind:value={documentType}
@@ -167,8 +204,13 @@
           </div>
 
           <div>
-            <label for="doc-upload-title" class="block text-sm font-medium text-gray-700 mb-1">{$_('documents.title')}</label>
+            <label
+              for="doc-upload-title"
+              class="block text-sm font-medium text-gray-700 mb-1"
+              >{$_("documents.title")}</label
+            >
             <input
+              data-testid="doc-upload-title"
               id="doc-upload-title"
               type="text"
               class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500"
@@ -179,8 +221,13 @@
           </div>
 
           <div>
-            <label for="doc-upload-description" class="block text-sm font-medium text-gray-700 mb-1">{$_('documents.description')}</label>
+            <label
+              for="doc-upload-description"
+              class="block text-sm font-medium text-gray-700 mb-1"
+              >{$_("documents.description")}</label
+            >
             <textarea
+              data-testid="doc-upload-description"
               id="doc-upload-description"
               class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500"
               rows={3}
@@ -190,9 +237,12 @@
           </div>
 
           <div>
-            <span class="block text-sm font-medium text-gray-700 mb-1">{$_('documents.file')}</span>
+            <span class="block text-sm font-medium text-gray-700 mb-1"
+              >{$_("documents.file")}</span
+            >
             <div class="flex items-center gap-3">
               <input
+                data-testid="document-upload-file-input"
                 type="file"
                 class="hidden"
                 bind:this={fileInput}
@@ -200,22 +250,27 @@
                 onchange={handleFileChange}
               />
               <button
+                data-testid="document-upload-browse-button"
                 type="button"
                 class="px-3 py-2 rounded-lg border border-gray-300 text-sm font-medium text-gray-700 hover:bg-gray-100 transition"
                 onclick={() => fileInput?.click()}
                 disabled={submitting}
               >
-                {$_('documents.selectFile')}
+                {$_("documents.selectFile")}
               </button>
               <span class="text-sm text-gray-600">
-                {file ? file.name : $_('documents.noFileSelected')}
+                {file ? file.name : $_("documents.noFileSelected")}
               </span>
             </div>
-            <p class="text-xs text-gray-500 mt-1">{$_('documents.maxFileSize')}</p>
+            <p class="text-xs text-gray-500 mt-1">
+              {$_("documents.maxFileSize")}
+            </p>
           </div>
 
           {#if error}
-            <div class="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+            <div
+              class="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700"
+            >
               {error}
             </div>
           {/if}
@@ -223,19 +278,21 @@
 
         <div class="px-6 py-4 bg-gray-50 rounded-b-2xl flex justify-end gap-3">
           <button
+            data-testid="document-upload-cancel-button"
             type="button"
             class="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-100 transition"
             onclick={handleClose}
             disabled={submitting}
           >
-            {$_('common.cancel')}
+            {$_("common.cancel")}
           </button>
           <button
+            data-testid="document-upload-submit-button"
             type="submit"
             class="px-4 py-2 rounded-lg bg-primary-600 text-white hover:bg-primary-700 transition disabled:opacity-60"
             disabled={submitting || loadingBuildings || buildings.length === 0}
           >
-            {submitting ? $_('documents.uploading') : $_('documents.upload')}
+            {submitting ? $_("documents.uploading") : $_("documents.upload")}
           </button>
         </div>
       </form>

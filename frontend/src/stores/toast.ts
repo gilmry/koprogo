@@ -7,6 +7,15 @@ export interface ToastMessage {
   message: string;
   type: ToastType;
   duration?: number;
+  /**
+   * Seconde ligne, plus discrète : le détail servi par le serveur.
+   *
+   * Le backend nomme le champ fautif de ses réponses 400 (« missing field
+   * `acp_id` »), et cette information n'atteignait pas l'écran. Le titre
+   * reste le libellé de l'appelant, en français ; le détail s'ajoute
+   * dessous, sans le remplacer. Voir l'issue #782.
+   */
+  details?: string;
 }
 
 function createToastStore() {
@@ -15,13 +24,24 @@ function createToastStore() {
 
   return {
     subscribe,
-    show: (message: string, type: ToastType = "info", duration = 5000) => {
+    show: (
+      message: string,
+      type: ToastType = "info",
+      duration = 5000,
+      details?: string,
+    ) => {
       // STORY-P7-402: dedupe identical toasts (same message + type) to avoid
       // cascades when several parallel API calls fail with the same error.
+      //
+      // Le DÉTAIL entre dans la clé de déduplication : deux erreurs de
+      // validation sur des champs différents portent souvent le même titre
+      // générique (« Invalid request body ») et seraient sinon fusionnées en
+      // un seul message, ce qui masquerait le second champ fautif.
       let reusedId: number | null = null;
       update((toasts) => {
         const existing = toasts.find(
-          (t) => t.message === message && t.type === type,
+          (t) =>
+            t.message === message && t.type === type && t.details === details,
         );
         if (existing) {
           reusedId = existing.id;
@@ -31,7 +51,7 @@ function createToastStore() {
       if (reusedId !== null) return reusedId;
 
       const id = nextId++;
-      const toast: ToastMessage = { id, message, type, duration };
+      const toast: ToastMessage = { id, message, type, duration, details };
 
       update((toasts) => [...toasts, toast]);
 
@@ -46,8 +66,8 @@ function createToastStore() {
     success: function (message: string, duration = 5000) {
       return this.show(message, "success", duration);
     },
-    error: function (message: string, duration = 7000) {
-      return this.show(message, "error", duration);
+    error: function (message: string, duration = 7000, details?: string) {
+      return this.show(message, "error", duration, details);
     },
     info: function (message: string, duration = 5000) {
       return this.show(message, "info", duration);

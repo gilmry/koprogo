@@ -1,0 +1,31 @@
+---
+import Layout from "../layouts/Layout.astro";
+import RegistreDesRegles from "../components/legal/RegistreDesRegles.svelte";
+
+/**
+ * Le registre des règles de droit belge, lisible.
+ *
+ * ── Pourquoi cette page existe ────────────────────────────────────────────
+ *
+ * `CadreLegal` offre un lien « Voir la règle → » à côté de chaque encart. Sans
+ * cette page, ce lien mènerait nulle part — et j'ai failli le livrer tel quel.
+ * C'est le défaut dominant de ce périmètre, sous sa forme la plus bête :
+ * proposer une capacité qui n'existe pas.
+ *
+ * Pire : l'hébergement rend **200** pour n'importe quelle URL, donc le lien
+ * mort aurait rendu la page d'accueil avec un code de succès. Ni
+ * l'utilisateur ni la supervision n'auraient rien vu.
+ *
+ * Un article cité sans moyen de le lire demande de croire sur parole. C'est le
+ * contraire de ce que ces encarts promettent, et de ce qui distingue ce
+ * produit : il ne dit pas seulement quoi faire, il dit sur quel fondement.
+ *
+ * Les données viennent de `/legal/rules`, route publique et déjà servie.
+ */
+---
+
+<Layout title="Règles légales — KoproGo" showNav={true}>
+  <div class="container mx-auto max-w-4xl px-4 py-10">
+    <RegistreDesRegles client:load />
+  </div>
+</Layout>

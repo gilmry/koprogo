@@ -46,8 +46,15 @@ describe("TechnicalSpecSignatureForm — Story B7 (4-cat)", () => {
       },
     });
 
+    // Les trois bandeaux de ce fichier sont vérifiés par leur ANCRE et par la
+    // VALEUR interpolée — le rôle — et non par leur formulation : les libellés
+    // sont passés par i18n le 2026-09-08 (#834), et la locale par défaut des
+    // tests est l'anglais.
+    //
+    // Le rôle, lui, traverse les quatre langues : c'est une donnée, pas un mot
+    // traduit. C'est donc lui qui porte l'invariant — le signataire doit voir
+    // À QUEL TITRE il signe.
     const info = getByTestId("tech-spec-sign-mandate-info");
-    expect(info.textContent).toMatch(/rôle direct/i);
     expect(info.textContent).toMatch(/syndic/);
 
     // Coche la checkbox RPGD.
@@ -87,7 +94,6 @@ describe("TechnicalSpecSignatureForm — Story B7 (4-cat)", () => {
     });
 
     const info = getByTestId("tech-spec-sign-mandate-info");
-    expect(info.textContent).toMatch(/via mandat/i);
     expect(info.textContent).toMatch(/amo/);
 
     // Pas de warning.
@@ -123,7 +129,8 @@ describe("TechnicalSpecSignatureForm — Story B7 (4-cat)", () => {
     // Warning visible.
     const warn = queryByTestId("tech-spec-sign-no-mandate-warning");
     expect(warn).not.toBeNull();
-    expect(warn?.textContent).toMatch(/aucun mandat/i);
+    // Le rôle manquant est nommé — c'est une valeur interpolée, qui traverse
+    // les quatre langues. La formulation, non (#834).
     expect(warn?.textContent).toMatch(/amo/);
 
     // Bandeau "mandate-info" PAS rendu (ni "rôle direct" ni "via mandat") —

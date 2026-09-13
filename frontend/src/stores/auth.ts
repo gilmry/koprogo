@@ -34,23 +34,52 @@ let refreshTimer: number | null = null;
 // Cf. issue #550 (≥ 12 Playwright fails sur ce pattern API-create→UI-list).
 let inflightRefresh: Promise<boolean> | null = null;
 
+/**
+ * Convertit le rôle servi par le backend en `UserRole`, **sans jamais le
+ * remplacer par un autre**.
+ *
+ * ── Ce que faisait ce code ─────────────────────────────────────────────────
+ *
+ * Il ne connaissait que quatre rôles et terminait par `default: return
+ * UserRole.OWNER`. Les dix autres — `board_member`, `contractor`,
+ * `community.moderator`, les deux sous-rôles comptables, et les cinq métiers
+ * externes — devenaient tous `owner`. Mesuré : l'entrée
+ * `{ role: "board_member" }` ressortait en `{ role: "owner" }`, dans le rôle
+ * actif comme dans `roles[]`.
+ *
+ * Deux conséquences, l'une visible et l'autre pas.
+ *
+ * **Une élévation de rôle côté client.** Un prestataire ou un concierge se
+ * voyait proposer « Mes lots » et « Communauté ». Le serveur refusait chaque
+ * route, donc le cloisonnement tenait — mais l'interface offrait ce que #814
+ * voulait précisément refuser.
+ *
+ * **La neutralisation de #814.** `ROLES_SANS_INTERFACE` ne pouvait jamais
+ * s'appliquer : le rôle était déjà écrasé lorsque `Navigation.svelte` le
+ * testait. Et `garde-roles` passait quand même, parce qu'elle appelle
+ * `canSee()` avec la chaîne du backend — celle que la production ne lui
+ * transmet jamais telle quelle. Une garde qui éprouve un chemin que le produit
+ * n'emprunte pas.
+ *
+ * ── Ce qu'il fait maintenant ───────────────────────────────────────────────
+ *
+ * `UserRole` déclare les quatorze rôles servis. Un rôle connu est conservé
+ * tel quel. Un rôle **inconnu** — donc ajouté côté serveur sans être déclaré
+ * ici — est renvoyé tel quel plutôt que travesti : `canSee()` le refusera
+ * (fail-closed) et l'utilisateur verra une explication, au lieu d'hériter
+ * silencieusement des droits d'un copropriétaire.
+ *
+ * Suivi en #836.
+ */
+const ROLES_CONNUS: ReadonlySet<string> = new Set(Object.values(UserRole));
+
 const normalizeRole = (role: string | undefined | null): UserRole => {
-  switch (role) {
-    case UserRole.SUPERADMIN:
-    case "superadmin":
-      return UserRole.SUPERADMIN;
-    case UserRole.SYNDIC:
-    case "syndic":
-      return UserRole.SYNDIC;
-    case UserRole.ACCOUNTANT:
-    case "accountant":
-      return UserRole.ACCOUNTANT;
-    case UserRole.OWNER:
-    case "owner":
-      return UserRole.OWNER;
-    default:
-      return UserRole.OWNER;
+  if (typeof role === "string" && ROLES_CONNUS.has(role)) {
+    return role as UserRole;
   }
+  // Rôle absent ou inconnu : on ne le remplace PAS par un rôle réel. La chaîne
+  // brute (ou la chaîne vide) traverse jusqu'à `canSee`, qui échoue fermé.
+  return (role ?? "") as UserRole;
 };
 
 const mapRoleSummaryFromAny = (role: any): UserRoleSummary => {

@@ -15,7 +15,7 @@
 import { test, expect } from "@playwright/test";
 import { loginAsAdmin, ensureAcp } from "../../helpers/auth";
 
-const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
+import { API_BASE } from "../../helpers/adresses";
 
 test.describe("Track H Story H1 — ConformityBanner display", () => {
   test("@happy admin sees ConformityBanner on non-conformant building (basis 1000)", async ({

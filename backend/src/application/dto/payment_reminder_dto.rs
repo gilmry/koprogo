@@ -32,6 +32,9 @@ pub struct CreatePaymentReminderDto {
 #[derive(Debug, Serialize, Clone)]
 pub struct PaymentReminderResponseDto {
     pub id: String,
+    /// L'ACP créancière de la somme réclamée (Art. 3.86 § 3, ADR-0045).
+    pub acp_id: String,
+    /// Le syndic qui relance. Trace d'auteur, pas un droit d'accès.
     pub organization_id: String,
     pub expense_id: String,
     pub owner_id: String,
@@ -61,6 +64,7 @@ impl From<PaymentReminder> for PaymentReminderResponseDto {
     fn from(reminder: PaymentReminder) -> Self {
         Self {
             id: reminder.id.to_string(),
+            acp_id: reminder.acp_id.to_string(),
             organization_id: reminder.organization_id.to_string(),
             expense_id: reminder.expense_id.to_string(),
             owner_id: reminder.owner_id.to_string(),

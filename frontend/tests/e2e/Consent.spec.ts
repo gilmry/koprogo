@@ -13,7 +13,7 @@ import { adminLogin } from "./helpers/auth";
  * To enable: add <ConsentModal client:load /> to Layout.astro or login.astro.
  */
 
-const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
+import { API_BASE } from "./helpers/adresses";
 
 test.describe("Consent - Privacy Policy Consent Modal", () => {
   // All UI tests skipped: ConsentModal is not rendered in any page layout

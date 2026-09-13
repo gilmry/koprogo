@@ -1,6 +1,6 @@
 <script lang="ts">
   // Svelte 5 runes mode
-  import { _ } from '../../lib/i18n';
+  import { _ } from "../../lib/i18n";
   import {
     energyCampaignsApi,
     type ProviderOffer,
@@ -8,7 +8,11 @@
   import { formatDateShort } from "../../lib/utils/date.utils";
   import { withLoadingState } from "../../lib/utils/error.utils";
 
-  let { campaignId, selectedOfferId = undefined, canSelect = false }: {
+  let {
+    campaignId,
+    selectedOfferId = undefined,
+    canSelect = false,
+  }: {
     campaignId: string;
     selectedOfferId?: string | undefined;
     canSelect?: boolean;
@@ -17,7 +21,7 @@
   let offers: ProviderOffer[] = $state([]);
   let loading = $state(true);
   let error = $state("");
-  let bestOffer: ProviderOffer | null = $state(null);
+  let bestOffer = $state<ProviderOffer | null>(null);
 
   $effect(() => {
     loadOffers();
@@ -26,13 +30,15 @@
   async function loadOffers() {
     await withLoadingState({
       action: () => energyCampaignsApi.listOffers(campaignId),
-      setLoading: (v: boolean) => loading = v,
-      setError: (v: string) => error = v,
+      setLoading: (v: boolean) => (loading = v),
+      setError: (v: string) => (error = v),
       onSuccess: (data) => {
         offers = data;
         if (offers.length > 0) {
           bestOffer = offers.reduce((best, current) =>
-            current.estimated_savings_pct > best.estimated_savings_pct ? current : best
+            current.estimated_savings_pct > best.estimated_savings_pct
+              ? current
+              : best,
           );
         }
       },
@@ -98,6 +104,7 @@
     <div class="p-4 m-4 bg-red-50 border border-red-200 rounded-md">
       <p class="text-sm text-red-800">❌ {error}</p>
       <button
+        data-testid="provider-offers-retry-button"
         onclick={loadOffers}
         class="mt-2 text-sm text-red-600 hover:text-red-800 underline"
       >
@@ -107,7 +114,7 @@
   {:else if offers.length === 0}
     <div class="p-8 text-center">
       <p class="text-gray-500">{$_("energy.offer.noOffers")}</p>
-      <p class="mt-2 text-sm text-gray-400">
+      <p class="mt-2 text-sm text-muted">
         {$_("energy.offer.emptyStateMessage")}
       </p>
     </div>
@@ -133,7 +140,10 @@
               </p>
             </div>
             {#if offer.id === selectedOfferId}
-              <span class="text-green-600 text-xl" title={$_("energy.offer.selected")}>
+              <span
+                class="text-green-600 text-xl"
+                title={$_("energy.offer.selected")}
+              >
                 ✅
               </span>
             {:else if offer.id === bestOffer?.id}
@@ -184,17 +194,21 @@
 
           <!-- Contract Duration -->
           <div class="text-sm text-gray-700 mb-2">
-            📅 {$_("energy.offer.duration")} {offer.contract_duration_months} {$_("common.months")}
+            📅 {$_("energy.offer.duration")}
+            {offer.contract_duration_months}
+            {$_("common.months")}
           </div>
 
           <!-- Estimated Savings -->
           <div class="text-sm font-medium text-green-600 mb-2">
-            💸 {$_("energy.offer.estimatedSavings")} {offer.estimated_savings_pct.toFixed(1)}%
+            💸 {$_("energy.offer.estimatedSavings")}
+            {offer.estimated_savings_pct.toFixed(1)}%
           </div>
 
           <!-- Valid Until -->
           <div class="text-xs text-gray-500 mb-3">
-            {$_("energy.offer.validUntil")} {formatDateShort(offer.offer_valid_until)}
+            {$_("energy.offer.validUntil")}
+            {formatDateShort(offer.offer_valid_until)}
           </div>
 
           <!-- Selection Button (Admin only) -->
@@ -269,13 +283,16 @@
                     {/if}
                   </td>
                   <td class="px-4 py-2 text-sm text-gray-900">
-                    {offer.price_kwh_electricity != null ? formatPrice(offer.price_kwh_electricity) : "-"}
+                    {offer.price_kwh_electricity != null
+                      ? formatPrice(offer.price_kwh_electricity)
+                      : "-"}
                   </td>
                   <td class="px-4 py-2 text-sm text-gray-900">
                     {offer.fixed_monthly_fee.toFixed(2)} €/mois
                   </td>
                   <td class="px-4 py-2 text-sm text-gray-900">
-                    {offer.contract_duration_months} {$_("common.months")}
+                    {offer.contract_duration_months}
+                    {$_("common.months")}
                   </td>
                   <td class="px-4 py-2 text-sm text-gray-900">
                     {offer.green_energy_pct}%

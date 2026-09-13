@@ -1,7 +1,7 @@
 import { test, expect } from "@playwright/test";
 import { loginAsAdmin, adminLogin } from "../helpers/auth";
 
-const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
+import { API_BASE } from "../helpers/adresses";
 
 test.describe("Organizations - SuperAdmin Management", () => {
   test("should display admin organizations page", async ({ page }) => {
@@ -10,9 +10,7 @@ test.describe("Organizations - SuperAdmin Management", () => {
 
     await expect(page.locator("body")).toBeVisible();
     await expect(
-      page
-        .locator("main h1, main h2, [data-testid='organizations-list']")
-        .first(),
+      page.locator("[data-testid='organizations-list']").first(),
     ).toBeVisible({ timeout: 10000 });
   });
 
@@ -40,7 +38,10 @@ test.describe("Organizations - SuperAdmin Management", () => {
       },
       headers: { Authorization: `Bearer ${adminToken}` },
     });
-    expect(createResp.status()).toBe(201);
+    expect(
+      createResp.status(),
+      `createResp : ${await createResp.text().catch(() => "<corps illisible>")}`,
+    ).toBe(201);
     const org = await createResp.json();
     expect(org.name).toBe(`New Org ${timestamp}`);
   });
@@ -76,6 +77,9 @@ test.describe("Organizations - SuperAdmin Management", () => {
     const listResp = await page.request.get(`${API_BASE}/organizations`, {
       headers: { Authorization: `Bearer ${userData.token}` },
     });
-    expect(listResp.status()).toBe(403);
+    expect(
+      listResp.status(),
+      `listResp : ${await listResp.text().catch(() => "<corps illisible>")}`,
+    ).toBe(403);
   });
 });

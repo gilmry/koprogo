@@ -1,6 +1,7 @@
 <script lang="ts">
+  import { SvelteSet } from "svelte/reactivity";
   // Svelte 5 runes mode
-  import { _ } from '../../lib/i18n';
+  import { _ } from "../../lib/i18n";
   import {
     pollsApi,
     type Poll,
@@ -15,6 +16,7 @@
   import PollStatusBadge from "./PollStatusBadge.svelte";
   import PollTypeBadge from "./PollTypeBadge.svelte";
   import PollResults from "./PollResults.svelte";
+  import ConfirmDialog from "../ui/ConfirmDialog.svelte";
 
   let {
     pollId,
@@ -23,16 +25,31 @@
   } = $props();
 
   // Reactively compute isAdmin from auth store
-  let isAdmin = $derived($authStore.user?.role === UserRole.SYNDIC || $authStore.user?.role === UserRole.SUPERADMIN);
+  let isAdmin = $derived(
+    $authStore.user?.role === UserRole.SYNDIC ||
+      $authStore.user?.role === UserRole.SUPERADMIN,
+  );
 
-  let poll: Poll | null = $state(null);
-  let results: PollResultsType | null = $state(null);
+  let poll = $state<Poll | null>(null);
+  let results = $state<PollResultsType | null>(null);
   let loading = $state(true);
   let error = $state("");
 
-  let selectedOptionId: string | null = $state(null);
-  let selectedOptions: Set<string> = $state(new Set());
-  let ratingValue: number | null = $state(null);
+  /// L'action en attente de confirmation, ou `null`.
+  ///
+  /// Les trois `confirm()` remplacés étaient des dialogues du NAVIGATEUR : un
+  /// navigateur piloté les supprime, et l'action prend alors la forme exacte
+  /// d'une panne — aucun dialogue, aucune requête, aucun message (#844).
+  ///
+  /// Publier un sondage l'ouvre aux votes, le clôturer fige ses résultats,
+  /// l'annuler le retire : trois actes qui engagent la communauté.
+  let actionEnAttente = $state<"publier" | "cloturer" | "annuler" | null>(null);
+
+  let selectedOptionId = $state<string | null>(null);
+  // Même défaut que UnitList : un Set natif n'est pas rendu réactif par
+  // `$state`, et la réaffectation à soi-même ne déclenche rien en mode runes.
+  let selectedOptions = new SvelteSet<string>();
+  let ratingValue = $state<number | null>(null);
   let openEndedText = $state("");
   let votingInProgress = $state(false);
   let votingError = $state("");
@@ -52,7 +69,10 @@
     });
     if (loaded) {
       poll = loaded;
-      if (poll.status === PollStatus.Closed || poll.status === PollStatus.Active) {
+      if (
+        poll.status === PollStatus.Closed ||
+        poll.status === PollStatus.Active
+      ) {
         try {
           results = await pollsApi.getResults(pollId);
         } catch {
@@ -75,7 +95,10 @@
     try {
       let voteData: any = { poll_id: poll.id };
 
-      if (poll.poll_type === PollType.YesNo || poll.poll_type === PollType.MultipleChoice) {
+      if (
+        poll.poll_type === PollType.YesNo ||
+        poll.poll_type === PollType.MultipleChoice
+      ) {
         if (poll.allow_multiple_votes) {
           if (selectedOptions.size === 0) {
             throw new Error($_("polls.detail.selectAtLeastOne"));
@@ -110,7 +133,11 @@
       }, 3000);
     } catch (err: any) {
       const msg = err.message || "";
-      if (msg.includes("already voted") || msg.includes("déjà voté") || msg.includes("duplicate")) {
+      if (
+        msg.includes("already voted") ||
+        msg.includes("déjà voté") ||
+        msg.includes("duplicate")
+      ) {
         hasVoted = true;
         votingError = $_("polls.detail.alreadyVoted");
       } else {
@@ -121,16 +148,21 @@
     }
   }
 
-  async function handlePublish() {
-    if (!poll || !confirm($_("polls.detail.publishConfirm"))) {
-      return;
-    }
+  function handlePublish() {
+    if (!poll) return;
+    actionEnAttente = "publier";
+  }
+
+  async function executer_publier() {
+    actionEnAttente = null;
+    if (!poll) return;
 
     const result = await withErrorHandling({
-      action: () => pollsApi.publish(poll!.id, {
-        starts_at: poll!.starts_at,
-        ends_at: poll!.ends_at,
-      }),
+      action: () =>
+        pollsApi.publish(poll!.id, {
+          starts_at: poll!.starts_at,
+          ends_at: poll!.ends_at,
+        }),
       successMessage: $_("polls.detail.publishSuccess"),
       errorMessage: $_("polls.detail.publishError"),
     });
@@ -139,10 +171,14 @@
     }
   }
 
-  async function handleClose() {
-    if (!poll || !confirm($_("polls.detail.closeConfirm"))) {
-      return;
-    }
+  function handleClose() {
+    if (!poll) return;
+    actionEnAttente = "cloturer";
+  }
+
+  async function executer_cloturer() {
+    actionEnAttente = null;
+    if (!poll) return;
 
     const result = await withErrorHandling({
       action: () => pollsApi.close(poll!.id),
@@ -155,10 +191,14 @@
     }
   }
 
-  async function handleCancel() {
-    if (!poll || !confirm($_("polls.detail.cancelConfirm"))) {
-      return;
-    }
+  function handleCancel() {
+    if (!poll) return;
+    actionEnAttente = "annuler";
+  }
+
+  async function executer_annuler() {
+    actionEnAttente = null;
+    if (!poll) return;
 
     const result = await withErrorHandling({
       action: () => pollsApi.cancel(poll!.id),
@@ -176,7 +216,6 @@
     } else {
       selectedOptions.add(optionId);
     }
-    selectedOptions = selectedOptions;
   }
 
   function calculateParticipationRate(p: Poll): number {
@@ -200,6 +239,7 @@
   <div class="p-4 bg-red-50 border border-red-200 rounded-md">
     <p class="text-sm text-red-800">❌ {error}</p>
     <button
+      data-testid="poll-detail-retry-button"
       onclick={loadPoll}
       class="mt-2 text-sm text-red-600 hover:text-red-800 underline"
     >
@@ -219,7 +259,7 @@
               <span
                 class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-200 text-gray-700"
               >
-                🔒 Anonyme
+                {$_("polls.anonymous")}
               </span>
             {/if}
           </div>
@@ -233,24 +273,33 @@
           <!-- Metadata -->
           <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
             <div class="p-3 bg-blue-50 rounded-lg">
-              <div class="text-xs text-blue-600 font-medium">{$_("polls.detail.period")}</div>
+              <div class="text-xs text-blue-600 font-medium">
+                {$_("polls.detail.period")}
+              </div>
               <div class="text-sm text-blue-900">
                 {#if poll.starts_at && poll.ends_at}
-                  {formatDateTime(poll.starts_at)} → {formatDateTime(poll.ends_at)}
+                  {formatDateTime(poll.starts_at)} → {formatDateTime(
+                    poll.ends_at,
+                  )}
                 {:else}
                   {$_("polls.detail.notDefined")}
                 {/if}
               </div>
             </div>
             <div class="p-3 bg-green-50 rounded-lg">
-              <div class="text-xs text-green-600 font-medium">{$_("polls.detail.participation")}</div>
+              <div class="text-xs text-green-600 font-medium">
+                {$_("polls.detail.participation")}
+              </div>
               <div class="text-sm text-green-900">
-                {poll.total_votes_cast}/{poll.total_eligible_voters} {$_("polls.detail.votes")}
+                {poll.total_votes_cast}/{poll.total_eligible_voters}
+                {$_("polls.detail.votes")}
                 ({calculateParticipationRate(poll).toFixed(1)}%)
               </div>
             </div>
             <div class="p-3 bg-purple-50 rounded-lg">
-              <div class="text-xs text-purple-600 font-medium">{$_("common.created")}</div>
+              <div class="text-xs text-purple-600 font-medium">
+                {$_("common.created")}
+              </div>
               <div class="text-sm text-purple-900">
                 {formatDateTime(poll.created_at)}
               </div>
@@ -258,6 +307,7 @@
           </div>
         </div>
         <a
+          data-testid="poll-detail-back-link"
           href="/polls"
           class="text-sm text-gray-600 hover:text-gray-800 underline ml-4"
         >
@@ -267,7 +317,9 @@
 
       <!-- Admin Actions -->
       {#if isAdmin}
-        <div class="mt-4 flex items-center space-x-3 pt-4 border-t border-gray-200">
+        <div
+          class="mt-4 flex items-center space-x-3 pt-4 border-t border-gray-200"
+        >
           {#if poll.status === PollStatus.Draft}
             <button
               onclick={handlePublish}
@@ -301,8 +353,13 @@
 
     <!-- Voting Section -->
     {#if canVote()}
-      <div class="bg-white shadow-md rounded-lg p-6" data-testid="poll-voting-section">
-        <h3 class="text-lg font-medium text-gray-900 mb-4">🗳️ {$_("polls.detail.yourVote")}</h3>
+      <div
+        class="bg-white shadow-md rounded-lg p-6"
+        data-testid="poll-voting-section"
+      >
+        <h3 class="text-lg font-medium text-gray-900 mb-4">
+          🗳️ {$_("polls.detail.yourVote")}
+        </h3>
 
         {#if votingSuccess}
           <div class="mb-4 p-4 bg-green-50 border border-green-200 rounded-md">
@@ -322,12 +379,23 @@
         {#if poll.poll_type === PollType.YesNo || poll.poll_type === PollType.MultipleChoice}
           <div class="space-y-3">
             {#each poll.options as option}
-              <label class="flex items-center p-3 border-2 rounded-lg cursor-pointer hover:bg-gray-50 {(poll.allow_multiple_votes ? selectedOptions.has(option.id) : selectedOptionId === option.id) ? 'border-indigo-500 bg-indigo-50' : 'border-gray-200'}">
+              <label
+                class="flex items-center p-3 border-2 rounded-lg cursor-pointer hover:bg-gray-50 {(
+                  poll.allow_multiple_votes
+                    ? selectedOptions.has(option.id)
+                    : selectedOptionId === option.id
+                )
+                  ? 'border-indigo-500 bg-indigo-50'
+                  : 'border-gray-200'}"
+              >
                 <input
+                  data-testid="poll-detail-option-input"
                   type={poll.allow_multiple_votes ? "checkbox" : "radio"}
                   name="poll_option"
                   value={option.id}
-                  checked={poll.allow_multiple_votes ? selectedOptions.has(option.id) : selectedOptionId === option.id}
+                  checked={poll.allow_multiple_votes
+                    ? selectedOptions.has(option.id)
+                    : selectedOptionId === option.id}
                   onchange={() => {
                     if (poll!.allow_multiple_votes) {
                       toggleMultipleOption(option.id);
@@ -349,9 +417,13 @@
               {#each Array(5) as _, i}
                 {@const value = i + 1}
                 <button
+                  data-testid="poll-detail-rating-button"
                   type="button"
                   onclick={() => (ratingValue = value)}
-                  class="text-4xl transition-all {ratingValue !== null && ratingValue >= value ? 'text-yellow-400' : 'text-gray-300'} hover:text-yellow-300"
+                  class="text-4xl transition-all {ratingValue !== null &&
+                  ratingValue >= value
+                    ? 'text-yellow-400'
+                    : 'text-muted'} hover:text-yellow-300"
                 >
                   ⭐
                 </button>
@@ -365,8 +437,11 @@
           </div>
         {:else if poll.poll_type === PollType.OpenEnded}
           <div>
-            <label for="poll-open-ended-response" class="sr-only">Votre réponse</label>
+            <label for="poll-open-ended-response" class="sr-only"
+              >{$_("polls.yourAnswer")}</label
+            >
             <textarea
+              data-testid="poll-detail-open-ended-textarea"
               id="poll-open-ended-response"
               bind:value={openEndedText}
               rows="5"
@@ -374,7 +449,7 @@
               class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
             ></textarea>
             <p class="mt-1 text-xs text-gray-500">
-              Partagez votre avis, suggestions ou commentaires.
+              {$_("polls.shareOpinion")}
             </p>
           </div>
         {/if}
@@ -433,3 +508,23 @@
     {/if}
   </div>
 {/if}
+
+<!-- Le dialogue qui remplace trois `confirm()` natifs (#844). -->
+<ConfirmDialog
+  isOpen={actionEnAttente !== null}
+  title={$_("common.confirm")}
+  message={actionEnAttente === "publier"
+    ? $_("polls.detail.publishConfirm")
+    : actionEnAttente === "cloturer"
+      ? $_("polls.detail.closeConfirm")
+      : actionEnAttente === "annuler"
+        ? $_("polls.detail.cancelConfirm")
+        : ""}
+  variant={actionEnAttente === "annuler" ? "danger" : "primary"}
+  onconfirm={() => {
+    if (actionEnAttente === "publier") executer_publier();
+    else if (actionEnAttente === "cloturer") executer_cloturer();
+    else if (actionEnAttente === "annuler") executer_annuler();
+  }}
+  oncancel={() => (actionEnAttente = null)}
+/>

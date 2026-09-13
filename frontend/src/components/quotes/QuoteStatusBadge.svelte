@@ -1,20 +1,28 @@
 <script lang="ts">
   // Svelte 5 runes mode
-  import { _ } from '../../lib/i18n';
+  import { _ } from "../../lib/i18n";
   import { QuoteStatus } from "../../lib/api/quotes";
 
   let { status }: { status: QuoteStatus } = $props();
 
   function getStatusLabel(status: QuoteStatus): string {
     switch (status) {
-      case QuoteStatus.Requested: return $_("quotes.status.requested");
-      case QuoteStatus.Received: return $_("quotes.status.received");
-      case QuoteStatus.UnderReview: return $_("quotes.status.underReview");
-      case QuoteStatus.Accepted: return $_("quotes.status.accepted");
-      case QuoteStatus.Rejected: return $_("quotes.status.rejected");
-      case QuoteStatus.Expired: return $_("quotes.status.expired");
-      case QuoteStatus.Withdrawn: return $_("quotes.status.withdrawn");
-      default: return status;
+      case QuoteStatus.Requested:
+        return $_("quotes.status.requested");
+      case QuoteStatus.Received:
+        return $_("quotes.status.received");
+      case QuoteStatus.UnderReview:
+        return $_("quotes.status.underReview");
+      case QuoteStatus.Accepted:
+        return $_("quotes.status.accepted");
+      case QuoteStatus.Rejected:
+        return $_("quotes.status.rejected");
+      case QuoteStatus.Expired:
+        return $_("quotes.status.expired");
+      case QuoteStatus.Withdrawn:
+        return $_("quotes.status.withdrawn");
+      default:
+        return status;
     }
   }
 
@@ -59,7 +67,9 @@
     },
   };
 
-  let config = $derived(statusConfig[status] || statusConfig[QuoteStatus.Requested]);
+  let config = $derived(
+    statusConfig[status] || statusConfig[QuoteStatus.Requested],
+  );
 </script>
 
 <span

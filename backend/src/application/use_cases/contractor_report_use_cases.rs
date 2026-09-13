@@ -251,6 +251,9 @@ impl ContractorReportUseCases {
                             building_id: quote.building_id,
                             owner_id: quote.contractor_id,
                             expense_id: None,
+                            // Paiement SORTANT vers un prestataire : il ne
+                            // solde aucune quote-part de coproprietaire.
+                            contribution_id: None,
                             amount_cents,
                             payment_method_type: PaymentMethodType::BankTransfer,
                             payment_method_id: None,

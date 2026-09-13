@@ -37,10 +37,21 @@ pub trait ResolutionRepository: Send + Sync {
     ) -> Result<(), String>;
 
     /// Close voting on a resolution and set final status
+    ///
+    /// `voix_plafonnees` consigne les écarts de l'Art. 3.87 § 7 al. 4 : pour
+    /// chaque votant ramené au poids des autres, ce dont il disposait et ce
+    /// qui lui a été retenu. `None` quand personne n'a été plafonné, ce qui
+    /// est le cas ordinaire.
+    ///
+    /// Le paramètre est dans cette signature et non dans une méthode à part :
+    /// clore un vote et consigner comment il a été décompté est un seul acte.
+    /// Les séparer laisserait exister un état où la résolution est close sans
+    /// que son décompte soit justifiable.
     async fn close_voting(
         &self,
         resolution_id: Uuid,
         final_status: ResolutionStatus,
+        voix_plafonnees: Option<serde_json::Value>,
     ) -> Result<(), String>;
 
     /// Get vote summary for all resolutions in a meeting

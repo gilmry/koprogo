@@ -81,22 +81,19 @@ Génère automatiquement `docs/e2e-videos.rst` en listant toutes les vidéos `.w
 
 **Appelé automatiquement par `copy-videos.sh`** - pas besoin de l'exécuter manuellement.
 
-### `slow-down-tests.sh` ⭐ (Nouveau - Vidéos plus lisibles)
+### `slow-down-tests.sh` — RETIRÉ le 2026-09-12
 
-Ajoute automatiquement des pauses (délai configurable) entre chaque action dans les tests pour créer des vidéos plus faciles à suivre.
+Il modifiait les fichiers de test du gate pour y insérer des pauses, puis
+`restore-test-speed.sh` les remettait. C'est l'anti-patron que la Méthode
+Foyer nomme explicitement :
 
-**Usage :**
-```bash
-# Ralentir avec 1 seconde entre chaque action
-bash .claude/scripts/slow-down-tests.sh 1000
+> « La mélanger au gate E2E (le rendre lent et bloquant) […] c'est lui confier
+> la responsabilité qu'on ne peut pas lui confier (le verdict) — et ça finira
+> coupé du pipeline. »
 
-# OU via make (recommandé)
-make test-e2e-slow
-```
+Remplacé par un **harnais séparé** qui ne touche à aucun fichier du gate :
+`frontend/tests/e2e/journeys/` (`make vitrine`). Cf. #876.
 
-**Ce que ça fait :**
-- Ajoute `await page.waitForTimeout(1000)` après chaque `click()`, `fill()`, `goto()`, etc.
-- Créé des vidéos beaucoup plus faciles à suivre pour la documentation
 
 ### `restore-test-speed.sh` ⭐ (Nouveau)
 

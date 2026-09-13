@@ -20,10 +20,11 @@
  * SOURCE : docs/maury/refonte-ux-multi-role-acp/stories.md §2 Story 0.1
  */
 import { test, expect } from "@playwright/test";
+import { ADMIN_PASSWORD } from "../helpers/identifiants";
 import { setupContainerApiUrl } from "../helpers/video-pace";
 import { ensureAcp } from "../helpers/auth";
 
-const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
+import { API_BASE } from "../helpers/adresses";
 
 test.describe("Characterization 02 — AG Full Cycle (multi-rôle)", () => {
   test.beforeEach(async ({ page }) => {
@@ -42,7 +43,7 @@ test.describe("Characterization 02 — AG Full Cycle (multi-rôle)", () => {
 
     // ---- SETUP : admin crée org + building (préconditions hors caractérisation)
     const adminLoginResp = await page.request.post(`${API_BASE}/auth/login`, {
-      data: { email: "admin@koprogo.com", password: "admin123" },
+      data: { email: "admin@koprogo.com", password: ADMIN_PASSWORD },
     });
     const { token: adminToken } = await adminLoginResp.json();
 
@@ -125,6 +126,17 @@ test.describe("Characterization 02 — AG Full Cycle (multi-rôle)", () => {
     expect(meetingResp.ok()).toBeTruthy();
     const meeting = await meetingResp.json();
 
+    // Un point d'ordre du jour : une résolution qui n'y est rattachée à aucun
+    // point n'est pas votable (Art. 3.87 § 2 CC, #840).
+    const pointResp = await page.request.post(
+      `${API_BASE}/meetings/${meeting.id}/agenda`,
+      {
+        data: { item: "Budget annuel" },
+        headers: { Authorization: `Bearer ${syndicToken}` },
+      },
+    );
+    expect(pointResp.ok()).toBeTruthy();
+
     // Résolution
     const resolutionResp = await page.request.post(
       `${API_BASE}/meetings/${meeting.id}/resolutions`,
@@ -135,6 +147,7 @@ test.describe("Characterization 02 — AG Full Cycle (multi-rôle)", () => {
           description: "Budget annuel — caractérisation",
           resolution_type: "ordinary",
           majority_required: "absolute",
+          agenda_item_index: 0,
         },
         headers: { Authorization: `Bearer ${syndicToken}` },
       },
@@ -182,7 +195,6 @@ test.describe("Characterization 02 — AG Full Cycle (multi-rôle)", () => {
     // Préparer le vote (1 unit + 1 owner record + vote) avant la clôture
     const unitResp = await page.request.post(`${API_BASE}/units`, {
       data: {
-        organization_id: org.id,
         building_id: building.id,
         unit_number: `AG${timestamp}`,
         floor: 1,

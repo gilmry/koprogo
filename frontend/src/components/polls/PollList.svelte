@@ -1,6 +1,6 @@
 <script lang="ts">
   // Svelte 5 runes mode
-  import { _ } from '../../lib/i18n';
+  import { _ } from "../../lib/i18n";
   import {
     pollsApi,
     type Poll,
@@ -39,8 +39,8 @@
           return await pollsApi.list({ building_id: buildingId });
         }
       },
-      setLoading: (v: boolean) => loading = v,
-      setError: (v: string | null) => error = v ?? "",
+      setLoading: (v: boolean) => (loading = v),
+      setError: (v: string | null) => (error = v ?? ""),
       onSuccess: (data) => {
         polls = data;
         applyFilters();
@@ -96,7 +96,11 @@
   {#if !showOnlyActive}
     <div class="px-4 py-3 bg-gray-50 border-b border-gray-200">
       <div class="flex items-center space-x-4">
-        <label for="poll-status-filter" class="text-sm font-medium text-gray-700">{$_("common.status")}:</label>
+        <label
+          for="poll-status-filter"
+          class="text-sm font-medium text-gray-700"
+          >{$_("common.status")}:</label
+        >
         <select
           id="poll-status-filter"
           bind:value={statusFilter}
@@ -107,7 +111,9 @@
           <option value={PollStatus.Draft}>{$_("polls.list.draft")}</option>
           <option value={PollStatus.Active}>{$_("polls.list.active")}</option>
           <option value={PollStatus.Closed}>{$_("polls.list.closed")}</option>
-          <option value={PollStatus.Cancelled}>{$_("polls.list.cancelled")}</option>
+          <option value={PollStatus.Cancelled}
+            >{$_("polls.list.cancelled")}</option
+          >
         </select>
       </div>
     </div>
@@ -124,6 +130,7 @@
     <div class="p-4 m-4 bg-red-50 border border-red-200 rounded-md">
       <p class="text-sm text-red-800">❌ {error}</p>
       <button
+        data-testid="poll-list-retry-button"
         onclick={loadPolls}
         class="mt-2 text-sm text-red-600 hover:text-red-800 underline"
       >
@@ -131,17 +138,26 @@
       </button>
     </div>
   {:else if filteredPolls.length === 0}
+    <!-- Deux états distincts. Avant, « Sondage non trouvé » et « Aucun
+         sondage créé » s'affichaient ensemble et sans condition : le premier
+         se lit comme un 404, le second comme un état vide, et les voir côte à
+         côte laissait croire à une erreur. -->
     <div class="p-8 text-center">
-      <p class="text-gray-500">{$_("polls.list.notFound")}</p>
-      <p class="mt-2 text-sm text-gray-400">
-        {$_("polls.list.emptyMessage")}
+      <p class="text-gray-500">
+        {polls.length === 0
+          ? $_("polls.list.emptyMessage")
+          : $_("polls.list.noneMatchFilter")}
       </p>
     </div>
   {:else}
     <ul class="divide-y divide-gray-200">
       {#each filteredPolls as poll}
         <li class="hover:bg-gray-50" data-testid="poll-card">
-          <a href="/polls/detail?id={poll.id}" class="block px-4 py-4 sm:px-6">
+          <a
+            data-testid="poll-list-detail-link"
+            href="/polls/detail?id={poll.id}"
+            class="block px-4 py-4 sm:px-6"
+          >
             <div class="flex items-center justify-between">
               <div class="flex-1 min-w-0">
                 <div class="flex items-center space-x-3 mb-2">
@@ -176,7 +192,9 @@
                     )}"
                   >
                     📊 {poll.total_votes_cast}/{poll.total_eligible_voters}
-                    {$_("polls.list.votes")} ({calculateParticipationRate(poll).toFixed(1)}%)
+                    {$_("polls.list.votes")} ({calculateParticipationRate(
+                      poll,
+                    ).toFixed(1)}%)
                   </span>
 
                   <!-- Dates -->
@@ -191,15 +209,18 @@
 
                   <!-- Created by -->
                   <span class="mx-2">•</span>
-                  <span class="text-xs text-gray-400">
-                    {$_("polls.list.createdOn")} {formatDateShort(poll.created_at)}
+                  <span class="text-xs text-muted">
+                    {$_("polls.list.createdOn")}
+                    {formatDateShort(poll.created_at)}
                   </span>
                 </div>
 
                 <!-- Options preview (for multiple choice) -->
                 {#if poll.poll_type === PollType.MultipleChoice && poll.options.length > 0}
                   <div class="mt-2 flex items-center space-x-2">
-                    <span class="text-xs text-gray-500">{$_("polls.list.options")}:</span>
+                    <span class="text-xs text-gray-500"
+                      >{$_("polls.list.options")}:</span
+                    >
                     {#each poll.options.slice(0, 3) as option}
                       <span
                         class="inline-flex items-center px-2 py-0.5 rounded text-xs bg-gray-100 text-gray-700"
@@ -208,8 +229,9 @@
                       </span>
                     {/each}
                     {#if poll.options.length > 3}
-                      <span class="text-xs text-gray-400">
-                        +{poll.options.length - 3} {$_("polls.list.others")}
+                      <span class="text-xs text-muted">
+                        +{poll.options.length - 3}
+                        {$_("polls.list.others")}
                       </span>
                     {/if}
                   </div>
@@ -219,7 +241,7 @@
               <!-- Arrow -->
               <div class="ml-4">
                 <svg
-                  class="h-5 w-5 text-gray-400"
+                  class="h-5 w-5 text-muted"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"

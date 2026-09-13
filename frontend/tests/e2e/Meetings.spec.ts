@@ -15,7 +15,7 @@ import { loginAsSyndicWithBuilding } from "./helpers/auth";
  * déjà révoqué → 401 → cascade page rouge / h1 caché).
  */
 
-const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
+import { API_BASE } from "./helpers/adresses";
 
 test.describe("Meetings - General Assembly", () => {
   test("should display meetings list page", async ({ page }) => {
@@ -24,7 +24,7 @@ test.describe("Meetings - General Assembly", () => {
 
     await expect(page.locator("body")).toBeVisible();
     await expect(
-      page.locator("main h1, main h2, [data-testid='meetings-list']").first(),
+      page.locator("[data-testid='meetings-list']").first(),
     ).toBeVisible({ timeout: 10000 });
   });
 
@@ -90,9 +90,7 @@ test.describe("Meetings - General Assembly", () => {
 
     await expect(page.locator("body")).toBeVisible();
     await expect(
-      page
-        .locator("main h1, main h2, [data-testid='convocations-list']")
-        .first(),
+      page.locator("[data-testid='convocations-list']").first(),
     ).toBeVisible({ timeout: 10000 });
   });
 
@@ -102,7 +100,7 @@ test.describe("Meetings - General Assembly", () => {
 
     await expect(page.locator("body")).toBeVisible();
     await expect(
-      page.locator("main h1, main h2, [data-testid='polls-list']").first(),
+      page.locator("[data-testid='polls-list']").first(),
     ).toBeVisible({ timeout: 10000 });
   });
 });

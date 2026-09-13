@@ -38,7 +38,7 @@ pub async fn create_owner(
 
     // For SuperAdmin: allow specifying organization_id in DTO
     // For others: override with their JWT organization_id
-    let organization_id = if user.role == "superadmin" {
+    let organization_id = if user.is_superadmin() {
         // SuperAdmin can specify organization_id or it defaults to empty string
         if dto.organization_id.is_empty() {
             return HttpResponse::BadRequest().json(serde_json::json!({
@@ -112,7 +112,7 @@ pub async fn list_owners(
     page_request: web::Query<PageRequest>,
 ) -> impl Responder {
     // SuperAdmin can see all owners, others only see their organization's owners
-    let organization_id = if user.role == "superadmin" {
+    let organization_id = if user.is_superadmin() {
         None // SuperAdmin sees all organizations
     } else {
         user.organization_id // Other roles see only their organization
@@ -153,9 +153,24 @@ pub async fn get_my_owner(state: web::Data<AppState>, user: AuthenticatedUser) -
 
     match result {
         Ok(Some(owner)) => HttpResponse::Ok().json(owner),
-        Ok(None) => HttpResponse::NotFound().json(serde_json::json!({
-            "error": "No owner record linked to this user"
-        })),
+        // Pas de fiche de copropriétaire : c'est un ÉTAT NORMAL, pas une
+        // erreur. Un syndic ou un comptable n'est pas copropriétaire de
+        // l'immeuble qu'il gère.
+        //
+        // Cette route rendait 404 dans ce cas. Conséquence mesurée au
+        // navigateur le 2026-09-06 : chaque page communautaire visitée par un
+        // syndic émettait un 404 sur le parcours nominal. Or c'est
+        // exactement ce que `crowdsecurity/http-probing` compte pour
+        // identifier un scanner — le testeur de recette a été banni 4 h sur
+        // douze 404 du même genre (issue #766).
+        //
+        // Une application qui produit des 404 en fonctionnement normal
+        // apprend à son propre pare-feu à la prendre pour une attaque.
+        //
+        // On rend donc 200 avec un corps nul. Les appelants distinguent déjà
+        // l'absence de fiche : `ResolutionVotePanel` en tire `isOwner`, et
+        // l'absence de `myOwnerId` y a le même effet qu'avant.
+        Ok(None) => HttpResponse::Ok().json(serde_json::Value::Null),
         Err(err) => HttpResponse::InternalServerError().json(serde_json::json!({
             "error": err
         })),
@@ -202,7 +217,7 @@ pub async fn update_owner(
     }
 
     // SuperAdmin can update any owner, others need organization check
-    let user_organization_id = if user.role != "superadmin" {
+    let user_organization_id = if !user.is_superadmin() {
         match user.require_organization() {
             Ok(org_id) => Some(org_id),
             Err(e) => {
@@ -287,7 +302,7 @@ pub async fn link_owner_to_user(
     dto: web::Json<LinkOwnerUserDto>,
 ) -> impl Responder {
     // Only SuperAdmin can link users to owners
-    if user.role != "superadmin" {
+    if !user.is_superadmin() {
         return HttpResponse::Forbidden().json(serde_json::json!({
             "error": "Only SuperAdmin can link users to owners"
         }));
@@ -629,6 +644,7 @@ pub async fn export_owner_statement_pdf(
 
             Some(Expense {
                 id: exp_id,
+                acp_id: Uuid::parse_str(&e.acp_id).ok()?,
                 organization_id,
                 building_id: bldg_id,
                 category: e.category.clone(),

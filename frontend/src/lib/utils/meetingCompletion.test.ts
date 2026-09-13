@@ -175,3 +175,33 @@ describe("meetingCompletion — 4-cat (Track H Story H3)", () => {
     expect(extractMeetingCompletionPayload(broken)).toBeNull();
   });
 });
+
+/**
+ * Régression #782 — même trou que pour la conformité.
+ *
+ * `MeetingDetail.svelte:134` appelle `showMeetingCompletionToast(err)` dans un
+ * `catch`. Sur un vrai 422 serveur, cela rendait TOUJOURS `false`, parce que
+ * l'exception levée par `apiFetch` était une `Error` nue. Le seul cas où ce
+ * code fonctionnait était la ligne 104 du même fichier, où le composant
+ * fabrique lui-même l'objet sans passer par le réseau.
+ *
+ * Les cas ci-dessus fabriquent aussi leur objet : ils passaient pendant que la
+ * fonctionnalité était morte. Celui-ci passe l'erreur telle qu'elle arrive.
+ */
+describe("les conditions de clôture d'AG avec une ApiError réelle (#782)", () => {
+  it("reconnaît le 422 tel que apiFetch le lève", async () => {
+    const { ApiError } = await import("../api");
+    const corps = {
+      error: "L'assemblée ne peut pas être clôturée",
+      kind: "meeting_not_completable",
+      details: {
+        code: "MEETING_NOT_COMPLETABLE",
+        meeting_id: "4b36bdc8-afe3-4fba-a1ff-f0bc79b5cc0c",
+        missing: ["ConvocationsNotSent", "MinutesDraftMissing"],
+      },
+    };
+    const erreur = new ApiError(corps.error, 422, corps.details, corps);
+
+    expect(isMeetingCompletionError(erreur)).toBe(true);
+  });
+});

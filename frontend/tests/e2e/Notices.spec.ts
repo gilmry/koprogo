@@ -1,7 +1,7 @@
 import { test, expect } from "@playwright/test";
 import { loginAsSyndicWithBuilding } from "./helpers/auth";
 
-const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
+import { API_BASE } from "./helpers/adresses";
 
 async function setupSyndicWithBuilding(page: import("@playwright/test").Page) {
   const ctx = await loginAsSyndicWithBuilding(page, "notice");
@@ -15,7 +15,7 @@ test.describe("Notices - Community Board", () => {
 
     await expect(page.locator("body")).toBeVisible();
     await expect(
-      page.locator("main h1, main h2, [data-testid='notices-list']").first(),
+      page.locator("[data-testid='notices-list']").first(),
     ).toBeVisible({ timeout: 10000 });
   });
 

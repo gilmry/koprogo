@@ -12,7 +12,7 @@ import { loginAsSyndic, ensureAcp } from "./helpers/auth";
  * l'ancien UI-login local. Cf. Meetings.spec.ts pour détails.
  */
 
-const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
+import { API_BASE } from "./helpers/adresses";
 
 test.describe("Buildings - List and Detail", () => {
   test("should display buildings list page", async ({ page }) => {
@@ -23,7 +23,7 @@ test.describe("Buildings - List and Detail", () => {
     await expect(page.locator("body")).toBeVisible();
     // Look for buildings heading or table
     await expect(
-      page.locator("main h1, main h2, [data-testid='buildings-list']").first(),
+      page.locator("[data-testid='buildings-list']").first(),
     ).toBeVisible({ timeout: 10000 });
   });
 

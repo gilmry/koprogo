@@ -20,6 +20,7 @@
   //   syndic-response-form-error
 
   import { toast } from "../../../stores/toast";
+  import { _ } from "../../i18n";
   import {
     respondToTicket,
     SYNDIC_RESPONSE_ACTIONS,
@@ -83,9 +84,7 @@
   );
 
   let counterClasses = $derived(
-    tooShort || tooLong
-      ? "text-red-600 font-semibold"
-      : "text-gray-500",
+    tooShort || tooLong ? "text-red-600 font-semibold" : "text-gray-500",
   );
 
   let counterLabel = $derived(
@@ -127,7 +126,7 @@
         action_proposed: actionProposed === "" ? null : actionProposed,
       };
       const created = await onRespond(ticketId, req);
-      toast.success("Réponse postée.");
+      toast.success($_("tickets.responsePosted"));
       onCreated?.(created);
       // Reset (append-only — pas de "draft" persistant).
       body = "";
@@ -151,10 +150,11 @@
     id="syndic-response-form-title"
     class="mb-3 text-base font-semibold text-gray-900"
   >
-    Répondre au ticket
+    {$_("tickets.respondTitle")}
   </h3>
 
   <form
+    data-testid="syndic-response-form"
     class="space-y-3"
     onsubmit={(e: SubmitEvent) => {
       e.preventDefault();
@@ -167,7 +167,7 @@
         for="syndic-response-body-textarea"
         class="block text-sm font-medium text-gray-700"
       >
-        Message
+        {$_("magicLink.message")}
       </label>
       <textarea
         id="syndic-response-body-textarea"
@@ -179,8 +179,7 @@
         placeholder="Détaillez votre réponse au copropriétaire…"
         class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus-visible:outline-2 focus-visible:outline-offset-2"
         aria-describedby="syndic-response-body-counter"
-        aria-invalid={tooShort || tooLong ? "true" : "false"}
-      ></textarea>
+        aria-invalid={tooShort || tooLong ? "true" : "false"}></textarea>
       <p
         id="syndic-response-body-counter"
         data-testid="syndic-response-body-counter"
@@ -197,7 +196,7 @@
         for="syndic-response-action-proposed-select"
         class="block text-sm font-medium text-gray-700"
       >
-        Action proposée (optionnel)
+        {$_("tickets.proposedAction")}
       </label>
       <select
         id="syndic-response-action-proposed-select"
@@ -205,7 +204,7 @@
         bind:value={actionProposed}
         class="mt-1 min-h-[44px] w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus-visible:outline-2 focus-visible:outline-offset-2"
       >
-        <option value="">— Aucune action —</option>
+        <option value="">{$_("tickets.noAction")}</option>
         {#each SYNDIC_RESPONSE_ACTIONS as a (a)}
           <option value={a}>{actionLabel(a)}</option>
         {/each}

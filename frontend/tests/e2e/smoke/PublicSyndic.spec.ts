@@ -1,14 +1,17 @@
 import { test, expect } from "@playwright/test";
 import { ensureAcp, adminLogin } from "../helpers/auth";
 
-const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
+import { API_BASE } from "../helpers/adresses";
 
 test.describe("Public Syndic Info - Belgian Legal Requirement", () => {
   test("should return 404 for non-existent building slug", async ({ page }) => {
     const resp = await page.request.get(
       `${API_BASE}/public/buildings/immeuble-inexistant-00000/syndic`,
     );
-    expect(resp.status()).toBe(404);
+    expect(
+      resp.status(),
+      `resp : ${await resp.text().catch(() => "<corps illisible>")}`,
+    ).toBe(404);
   });
 
   test("should expose public syndic info without auth", async ({ page }) => {
@@ -51,7 +54,10 @@ test.describe("Public Syndic Info - Belgian Legal Requirement", () => {
       const resp = await page.request.get(
         `${API_BASE}/public/buildings/${slug}/syndic`,
       );
-      expect(resp.status()).toBe(200);
+      expect(
+        resp.status(),
+        `resp : ${await resp.text().catch(() => "<corps illisible>")}`,
+      ).toBe(200);
     } else {
       // Building has no slug yet (syndic info not configured)
       expect(true).toBeTruthy();

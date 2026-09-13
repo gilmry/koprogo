@@ -130,7 +130,25 @@ async fn create_test_fixtures(
         .await
         .expect("Failed to create meeting");
 
-    // 3 bis. Valider le quorum AVANT toute resolution.
+    // 3 bis. UN POINT D'ORDRE DU JOUR, avant toute resolution.
+    //
+    // Art. 3.87 § 2 CC : une decision portant sur un point absent de l'ordre du
+    // jour est nulle, et `cast_vote` refuse donc de mettre aux voix une
+    // resolution qui n'y est pas rattachee (#840). Ces tests votaient jusqu'ici
+    // sur des resolutions rattachees a rien — le cas exact que l'article
+    // annule.
+    app_state
+        .meeting_use_cases
+        .add_agenda_item(
+            meeting.id,
+            AddAgendaItemRequest {
+                item: "Approbation des comptes".to_string(),
+            },
+        )
+        .await
+        .expect("Failed to add agenda item");
+
+    // 3 ter. Valider le quorum AVANT toute resolution.
     //
     // `Resolution::create` passe par `Meeting::check_quorum_for_voting()`
     // (Art. 3.87 §5 CC) : sans quorum valide, la creation est refusee avec
@@ -323,7 +341,8 @@ async fn test_create_resolution_success() {
             "title": "Approve Annual Budget",
             "description": "Vote to approve the budget for next fiscal year",
             "resolution_type": "ordinary",
-            "majority_required": "absolute"
+            "majority_required": "absolute",
+            "agenda_item_index": 0
         }))
         .to_request();
 
@@ -360,7 +379,8 @@ async fn test_create_resolution_without_auth_fails() {
             "title": "Test Resolution",
             "description": "Should fail without auth",
             "resolution_type": "ordinary",
-            "majority_required": "absolute"
+            "majority_required": "absolute",
+            "agenda_item_index": 0
         }))
         .to_request();
 
@@ -391,7 +411,8 @@ async fn test_get_resolution_success() {
             "title": "Test Get Resolution",
             "description": "Resolution for testing GET endpoint",
             "resolution_type": "ordinary",
-            "majority_required": "absolute"
+            "majority_required": "absolute",
+            "agenda_item_index": 0
         }))
         .to_request();
 
@@ -514,7 +535,8 @@ async fn test_delete_resolution_success() {
             "title": "Resolution to Delete",
             "description": "This resolution will be deleted",
             "resolution_type": "ordinary",
-            "majority_required": "absolute"
+            "majority_required": "absolute",
+            "agenda_item_index": 0
         }))
         .to_request();
 
@@ -566,7 +588,8 @@ async fn test_cast_vote_pour_success() {
             "title": "Resolution for Voting",
             "description": "Test vote casting",
             "resolution_type": "ordinary",
-            "majority_required": "absolute"
+            "majority_required": "absolute",
+            "agenda_item_index": 0
         }))
         .to_request();
 
@@ -621,7 +644,8 @@ async fn test_cast_vote_contre_and_abstention() {
             "title": "Resolution with Mixed Votes",
             "description": "Testing Contre and Abstention",
             "resolution_type": "ordinary",
-            "majority_required": "absolute"
+            "majority_required": "absolute",
+            "agenda_item_index": 0
         }))
         .to_request();
 
@@ -690,7 +714,8 @@ async fn test_list_resolution_votes() {
             "title": "Resolution with Multiple Votes",
             "description": "Test vote listing",
             "resolution_type": "ordinary",
-            "majority_required": "absolute"
+            "majority_required": "absolute",
+            "agenda_item_index": 0
         }))
         .to_request();
 
@@ -754,7 +779,8 @@ async fn test_change_vote_success() {
             "title": "Resolution for Vote Change",
             "description": "Test changing vote",
             "resolution_type": "ordinary",
-            "majority_required": "absolute"
+            "majority_required": "absolute",
+            "agenda_item_index": 0
         }))
         .to_request();
 
@@ -823,7 +849,8 @@ async fn test_close_voting_simple_majority() {
             "title": "Resolution with Simple Majority",
             "description": "50% + 1 of votes cast",
             "resolution_type": "ordinary",
-            "majority_required": "absolute"
+            "majority_required": "absolute",
+            "agenda_item_index": 0
         }))
         .to_request();
 
@@ -871,15 +898,29 @@ async fn test_close_voting_simple_majority() {
     assert_eq!(close_resp.status(), 200, "Should close voting successfully");
 
     let closed_resolution: serde_json::Value = test::read_body_json(close_resp).await;
+
+    // Art. 3.87 § 7 al. 4 — le majoritaire ne décide pas seul.
+    //
+    // Ce test attendait « adopted » : 60 % pour contre 40 % contre. C'était
+    // compter les voix brutes. Le copropriétaire à 60 % pèse plus que tous les
+    // autres présents réunis, ses voix sont donc ramenées à 40 %. Le décompte
+    // devient 40 contre 40, et la majorité absolue de l'Art. 3.88 § 1er n'est
+    // pas atteinte.
+    //
+    // C'est très exactement l'effet recherché par le législateur. Un test qui
+    // exigerait « adopted » ici demanderait au logiciel d'ignorer la règle.
     assert_eq!(
-        closed_resolution["status"], "adopted",
-        "Should be Adopted with Simple majority (60% Pour > 40% Contre)"
+        closed_resolution["status"], "rejected",
+        "le majoritaire est plafonné à la somme des autres : 40 contre 40, pas de majorité"
     );
+
+    // Le nombre de votants ne change pas : c'est le poids qui est réduit, pas
+    // le droit de voter.
     assert_eq!(closed_resolution["vote_count_pour"], 1);
     assert_eq!(closed_resolution["vote_count_contre"], 1);
     assert_decimal_field(
         &closed_resolution["total_voting_power_pour"],
-        rust_decimal_macros::dec!(0.6),
+        rust_decimal_macros::dec!(0.4),
     );
 }
 
@@ -909,7 +950,8 @@ async fn test_close_voting_absolute_majority() {
             "title": "Resolution with Absolute Majority",
             "description": "50% + 1 of all possible votes",
             "resolution_type": "extraordinary",
-            "majority_required": "absolute"
+            "majority_required": "absolute",
+            "agenda_item_index": 0
         }))
         .to_request();
 
@@ -1145,7 +1187,8 @@ async fn test_complete_voting_lifecycle() {
             "title": "Complete Lifecycle Resolution",
             "description": "Testing full voting workflow",
             "resolution_type": "ordinary",
-            "majority_required": "absolute"
+            "majority_required": "absolute",
+            "agenda_item_index": 0
         }))
         .to_request();
 
@@ -1220,9 +1263,21 @@ async fn test_complete_voting_lifecycle() {
     let closed: serde_json::Value = test::read_body_json(close_resp).await;
     assert_eq!(closed["status"], "adopted");
     assert_eq!(closed["vote_count_pour"], 2);
+
+    // Art. 3.87 § 7 al. 4 — le plafond s'applique même quand tout le monde est
+    // d'accord.
+    //
+    // Les deux copropriétaires votent « pour ». Le majoritaire pèse pourtant
+    // 0,6 contre 0,4, ses voix sont donc ramenées à 0,4 et le décompte retenu
+    // vaut 0,8 et non 1,0. La règle porte sur le nombre de voix qu'une
+    // personne peut exprimer, pas sur l'issue du vote : la subordonner au
+    // résultat reviendrait à ne l'appliquer que lorsqu'elle dérange.
+    //
+    // La résolution reste adoptée, l'unanimité des présents n'étant pas
+    // affectée dans son sens.
     assert_decimal_field(
         &closed["total_voting_power_pour"],
-        rust_decimal_macros::dec!(1.0),
+        rust_decimal_macros::dec!(0.8),
     );
 
     // 7. Get meeting vote summary
@@ -1234,4 +1289,184 @@ async fn test_complete_voting_lifecycle() {
     let summary_resp = test::call_service(&app, summary_req).await;
     let summary: serde_json::Value = test::read_body_json(summary_resp).await;
     assert!(!summary.as_array().unwrap().is_empty());
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// Recette 3 du 2026-09-06 — RN-2 : les sous-collections ignoraient le
+// cloisonnement.
+//
+// Un syndic d'une autre organisation obtenait 200 sur
+// `/meetings/{id}/resolutions` et `/resolutions/{id}/votes`, alors que les
+// mêmes ressources en accès direct rendaient bien 403. Le garde était posé
+// sur la résolution d'une ressource unique, jamais sur les listes imbriquées,
+// qui ne prenaient même pas `AuthenticatedUser` en paramètre.
+//
+// Ce qui fuyait n'était pas anodin : le sens du vote de copropriétaires
+// nommés, avec leur poids. Le vote en assemblée est confidentiel et nominatif.
+//
+// Ces deux tests lisent depuis une organisation étrangère, réellement créée —
+// un UUID inventé violerait la clé étrangère et le test échouerait dans sa
+// préparation, sans rien prouver.
+//
+// Voir issue #772 : 73 autres routes imbriquées restent sans identité.
+// ─────────────────────────────────────────────────────────────────────────
+
+#[actix_web::test]
+#[serial]
+async fn security_les_resolutions_dune_ag_ne_fuient_pas_vers_une_autre_organisation() {
+    let (app_state, _container, org_a) = setup_app().await;
+    let (_token_a, _org, _building, meeting_id, _o1, _o2, _u1) =
+        create_test_fixtures(&app_state, org_a).await;
+
+    // Un syndic d'une organisation étrangère.
+    let org_b = common::create_test_organization(&app_state).await;
+    let token_b = common::register_and_login_with_role(&app_state, org_b, "syndic").await;
+
+    let app = test::init_service(
+        App::new()
+            .app_data(app_state.clone())
+            .configure(configure_routes),
+    )
+    .await;
+
+    let req = test::TestRequest::get()
+        .uri(&format!("/api/v1/meetings/{}/resolutions", meeting_id))
+        .insert_header((header::AUTHORIZATION, format!("Bearer {}", token_b)))
+        .to_request();
+
+    let resp = test::call_service(&app, req).await;
+    assert_ne!(
+        resp.status(),
+        200,
+        "la liste des résolutions d'une AG d'une autre copropriété ne doit pas \
+         être lisible : c'est ce qui fuyait avant le 2026-09-06"
+    );
+}
+
+#[actix_web::test]
+#[serial]
+async fn security_les_votes_dune_resolution_ne_fuient_pas_vers_une_autre_organisation() {
+    let (app_state, _container, org_a) = setup_app().await;
+    let (token_a, _org, _building, meeting_id, _o1, _o2, _u1) =
+        create_test_fixtures(&app_state, org_a).await;
+
+    let app = test::init_service(
+        App::new()
+            .app_data(app_state.clone())
+            .configure(configure_routes),
+    )
+    .await;
+
+    // L'organisation propriétaire crée une résolution.
+    let req = test::TestRequest::post()
+        .uri(&format!("/api/v1/meetings/{}/resolutions", meeting_id))
+        .insert_header((header::AUTHORIZATION, format!("Bearer {}", token_a)))
+        .set_json(json!({
+            "meeting_id": meeting_id.to_string(),
+            "title": "Résolution confidentielle",
+            "description": "Son décompte ne regarde pas les autres cabinets",
+            "resolution_type": "ordinary",
+            "majority_required": "absolute",
+            "agenda_item_index": 0
+        }))
+        .to_request();
+    let resp = test::call_service(&app, req).await;
+    let cree = resp.status().is_success();
+    let resolution_id = if cree {
+        let body: serde_json::Value = test::read_body_json(resp).await;
+        body["id"].as_str().map(|s| s.to_string())
+    } else {
+        None
+    };
+
+    // Sans résolution créée, le test ne prouverait rien : on le dit plutôt que
+    // de le laisser passer au vert par défaut.
+    let resolution_id = resolution_id.expect(
+        "la résolution doit être créée pour que le cloisonnement de ses votes \
+         soit vérifiable",
+    );
+
+    let org_b = common::create_test_organization(&app_state).await;
+    let token_b = common::register_and_login_with_role(&app_state, org_b, "syndic").await;
+
+    let req = test::TestRequest::get()
+        .uri(&format!("/api/v1/resolutions/{}/votes", resolution_id))
+        .insert_header((header::AUTHORIZATION, format!("Bearer {}", token_b)))
+        .to_request();
+
+    let resp = test::call_service(&app, req).await;
+    assert_ne!(
+        resp.status(),
+        200,
+        "les bulletins nominatifs d'une résolution d'une autre copropriété ne \
+         doivent pas être lisibles"
+    );
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// Régression R3-3 / RN-8, rapportée trois fois : « Clôturer le vote » sans
+// effet.
+//
+// `CloseVotingRequest.total_voting_power` était OBLIGATOIRE et le frontend
+// envoyait `{}` : la requête échouait à la désérialisation, en 400, avant
+// d'atteindre le gestionnaire. Rien ne se passait à l'écran, et c'était le
+// deuxième des trois verrous empêchant une AG d'aboutir (#780).
+//
+// Le total est désormais lu sur l'immeuble, jamais reçu du client — un total
+// fourni par l'appelant permettait de faire proclamer une majorité qui
+// n'existe pas (#767).
+//
+// Ce test envoie exactement ce que le frontend envoie : un objet vide.
+// ─────────────────────────────────────────────────────────────────────────
+
+#[actix_web::test]
+#[serial]
+async fn test_cloturer_le_vote_accepte_un_corps_vide_comme_le_frontend() {
+    let (app_state, _container, org_id) = setup_app().await;
+    let (token, _org, _building, meeting_id, _o1, _o2, _u1) =
+        create_test_fixtures(&app_state, org_id).await;
+
+    let app = test::init_service(
+        App::new()
+            .app_data(app_state.clone())
+            .configure(configure_routes),
+    )
+    .await;
+
+    let req = test::TestRequest::post()
+        .uri(&format!("/api/v1/meetings/{}/resolutions", meeting_id))
+        .insert_header((header::AUTHORIZATION, format!("Bearer {}", token)))
+        .set_json(json!({
+            "meeting_id": meeting_id.to_string(),
+            "title": "Résolution à clôturer",
+            "description": "Contrôle du corps vide sur la clôture",
+            "resolution_type": "ordinary",
+            "majority_required": "absolute",
+            "agenda_item_index": 0
+        }))
+        .to_request();
+    let resp = test::call_service(&app, req).await;
+    assert_eq!(resp.status(), 201, "la résolution doit être créée");
+    let cree: serde_json::Value = test::read_body_json(resp).await;
+    let resolution_id = cree["id"].as_str().expect("identifiant rendu").to_string();
+
+    // Exactement le corps que `resolutionsApi.closeVoting` envoie.
+    let req = test::TestRequest::put()
+        .uri(&format!("/api/v1/resolutions/{}/close", resolution_id))
+        .insert_header((header::AUTHORIZATION, format!("Bearer {}", token)))
+        .set_json(json!({}))
+        .to_request();
+    let resp = test::call_service(&app, req).await;
+
+    assert_ne!(
+        resp.status(),
+        400,
+        "un corps vide ne doit plus être refusé à la désérialisation : c'est \
+         ce qui rendait le bouton « Clôturer le vote » inerte"
+    );
+    assert!(
+        resp.status().is_success(),
+        "la clôture doit aboutir, statut obtenu : {}",
+        resp.status()
+    );
 }

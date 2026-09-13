@@ -26,6 +26,7 @@
   } from "../../api/role_assignments";
   import ExpirationBadge from "../shared/ExpirationBadge.svelte";
   import { expirationStatus } from "../../utils/dateBadge";
+  import { _ } from "../../i18n";
 
   let {
     organizationId = undefined,
@@ -67,8 +68,7 @@
       );
       assignments = items ?? [];
     } catch (err) {
-      loadError =
-        err instanceof Error ? err.message : "Erreur de chargement.";
+      loadError = err instanceof Error ? err.message : "Erreur de chargement.";
       assignments = [];
     } finally {
       loading = false;
@@ -98,7 +98,7 @@
       id="role-assignment-list-title"
       class="text-lg font-semibold text-gray-900"
     >
-      Assignations de rôles
+      {$_("roles.assignmentsTitle")}
     </h2>
   </header>
 
@@ -108,7 +108,7 @@
       class="text-sm text-gray-500"
       aria-live="polite"
     >
-      Chargement…
+      {$_("common.loading2")}
     </p>
   {:else if loadError}
     <p
@@ -123,7 +123,7 @@
       data-testid="role-assignment-empty"
       class="text-sm text-gray-500 italic p-4 border border-dashed border-gray-300 rounded-lg"
     >
-      Aucune assignation pour le moment.
+      {$_("roles.assignmentsEmpty")}
     </p>
   {:else}
     <div class="overflow-x-auto">
@@ -131,33 +131,33 @@
         data-testid="role-assignment-list"
         class="min-w-full divide-y divide-gray-200 text-sm"
       >
-        <caption class="sr-only">Liste des assignations de rôles actives</caption>
+        <caption class="sr-only">{$_("roles.assignmentsCaption")}</caption>
         <thead class="bg-gray-50">
           <tr>
             <th
               scope="col"
               class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-              >Utilisateur</th
+              >{$_("common.user")}</th
             >
             <th
               scope="col"
               class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-              >Rôle</th
+              >{$_("common.role")}</th
             >
             <th
               scope="col"
               class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-              >Organisation</th
+              >{$_("common.organization")}</th
             >
             <th
               scope="col"
               class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-              >Expire</th
+              >{$_("roles.expiresOn")}</th
             >
             <th
               scope="col"
               class="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"
-              >Actions</th
+              >{$_("common.actionColumn")}</th
             >
           </tr>
         </thead>
@@ -188,7 +188,7 @@
                     />
                   </span>
                 {:else}
-                  <span class="text-gray-400" aria-label="Permanent">∞</span>
+                  <span class="text-muted" aria-label="Permanent">∞</span>
                 {/if}
               </td>
               <td class="px-3 py-2 text-right">

@@ -1,9 +1,10 @@
-﻿use crate::application::dto::{
+use crate::application::dto::{
     CreateBudgetRequest, PageRequest, PageResponse, UpdateBudgetRequest,
 };
 use crate::domain::entities::BudgetStatus;
 use crate::infrastructure::audit::{AuditEventType, AuditLogEntry};
 use crate::infrastructure::web::middleware::scope_guard::verify_acp_org_access;
+use crate::infrastructure::web::middleware::scope_guard::verify_building_org_access;
 use crate::infrastructure::web::{AppState, AuthenticatedUser};
 use actix_web::{delete, get, post, put, web, HttpResponse, Responder, ResponseError};
 use uuid::Uuid;
@@ -25,6 +26,22 @@ pub async fn create_budget(
         }
     };
     request.organization_id = organization_id;
+
+    // Isolation multi-tenant à l'ÉCRITURE : l'immeuble visé doit relever d'une
+    // ACP dont ce syndic a la gestion. L'affectation de `organization_id`
+    // ci-dessus protège le mauvais champ — elle empêche d'estampiller
+    // l'enregistrement au nom d'autrui, pas de le rattacher au patrimoine
+    // d'autrui (audit du 2026-09-02).
+    if let Err(err) = verify_building_org_access(
+        &user,
+        request.building_id,
+        &state.building_use_cases,
+        &state.acp_use_cases,
+    )
+    .await
+    {
+        return err.error_response();
+    }
 
     match state
         .budget_use_cases
@@ -554,6 +571,35 @@ pub async fn delete_budget(
     user: AuthenticatedUser,
     id: web::Path<Uuid>,
 ) -> impl Responder {
+    // Cloisonnement AVANT la suppression (#864).
+    //
+    // `AuthenticatedUser` était pris à la signature et ne servait qu'à
+    // journaliser QUI avait supprimé, après coup. N'importe quel utilisateur
+    // authentifié pouvait donc effacer le budget de n'importe quelle
+    // copropriété — y compris d'un autre cabinet — en connaissant son UUID, et
+    // le journal d'audit enregistrait fidèlement le geste.
+    //
+    // Le contrôle existe dans ce fichier depuis toujours : `get_budget` le fait
+    // trois cents lignes plus haut. Il manquait ici, sur l'opération
+    // irréversible.
+    match state.budget_use_cases.get_budget(*id).await {
+        Ok(Some(budget)) => {
+            if let Err(e) = user.verify_org_access(budget.organization_id) {
+                return HttpResponse::Forbidden().json(serde_json::json!({ "error": e }));
+            }
+        }
+        Ok(None) => {
+            return HttpResponse::NotFound().json(serde_json::json!({
+                "error": "Budget not found"
+            }))
+        }
+        Err(err) => {
+            return HttpResponse::InternalServerError().json(serde_json::json!({
+                "error": err.to_string()
+            }))
+        }
+    }
+
     match state.budget_use_cases.delete_budget(*id).await {
         Ok(true) => {
             AuditLogEntry::new(

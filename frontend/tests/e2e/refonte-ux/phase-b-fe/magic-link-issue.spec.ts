@@ -34,7 +34,7 @@ import { devices } from "@playwright/test";
 // cache et epuise le seau (constate : « adminLogin failed: 429 »).
 import { adminLogin } from "../../helpers/auth";
 
-const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
+import { API_BASE } from "../../helpers/adresses";
 const TEST_PASSWORD = process.env.PLAYWRIGHT_TEST_PASSWORD || "test123456";
 
 // ---------------------------------------------------------------------------
@@ -183,6 +183,21 @@ async function uiLoginSyndic(
 // ---------------------------------------------------------------------------
 
 test.describe("Story B2 — Magic Link issue (Phase B FE)", () => {
+  // Le SERVICE WORKER doit être bloqué pour que l'interception ci-dessous
+  // s'applique.
+  //
+  // `public/service-worker.js:118` intercepte TOUT `/api/` et refait le
+  // `fetch` lui-même. La requête part alors du service worker, pas de la
+  // page, et `page.route` ne la voit pas : le stub de
+  // `/organizations/{id}/tickets` n'a aucun effet.
+  //
+  // Ce test PASSE aujourd'hui. C'est précisément ce qui inquiète : il annonce
+  // éprouver la branche @negative « autocomplete vide » et exerce en réalité
+  // la liste réelle, que le seed remplit. S'il devient rouge une fois le stub
+  // effectif, ce sera une bonne nouvelle — la preuve qu'il testait autre
+  // chose que ce qu'il dit.
+  test.use({ serviceWorkers: "block" });
+
   test("@happy syndic émet → écran issued affiche URL `/c?t=<token>` + contractor PWA s'ouvre", async ({
     page,
     request,

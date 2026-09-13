@@ -3,8 +3,11 @@ use crate::application::dto::{
 };
 use crate::domain::entities::UnitOwner;
 use crate::infrastructure::audit::{AuditEventType, AuditLogEntry};
+use crate::infrastructure::web::middleware::scope_guard::{
+    verify_owner_org_access, verify_unit_org_access,
+};
 use crate::infrastructure::web::{AppState, AuthenticatedUser};
-use actix_web::{delete, get, post, put, web, HttpResponse, Responder};
+use actix_web::{delete, get, post, put, web, HttpResponse, Responder, ResponseError};
 use chrono::{DateTime, Utc};
 use uuid::Uuid;
 use validator::Validate;
@@ -135,6 +138,28 @@ pub async fn remove_owner_from_unit(
         }
     };
 
+    // Cloisonnement AVANT la suppression (#864).
+    //
+    // `check_unit_ownership_permission` plus haut vérifie le RÔLE : seuls un
+    // syndic ou un superadministrateur peuvent toucher aux titularités. Il ne
+    // vérifie pas l'ORGANISATION — un syndic du cabinet A pouvait donc détacher
+    // un copropriétaire d'un lot du cabinet B.
+    //
+    // Deux contrôles distincts, qu'il est facile de confondre : « ce rôle a le
+    // droit de faire ce geste » ne dit rien de « sur cet objet-ci ». Les deux
+    // routes voisines de ce fichier appellent déjà cette garde.
+    if let Err(err) = verify_unit_org_access(
+        &user,
+        unit_id,
+        &state.unit_use_cases,
+        &state.building_use_cases,
+        &state.acp_use_cases,
+    )
+    .await
+    {
+        return err.error_response();
+    }
+
     // Call use case
     match state
         .unit_owner_use_cases
@@ -260,7 +285,7 @@ pub async fn update_unit_owner(
 #[get("/units/{unit_id}/owners")]
 pub async fn get_unit_owners(
     state: web::Data<AppState>,
-    _user: AuthenticatedUser,
+    user: AuthenticatedUser,
     unit_id: web::Path<String>,
 ) -> impl Responder {
     // Parse UUID
@@ -272,6 +297,23 @@ pub async fn get_unit_owners(
             }))
         }
     };
+
+    // Cloisonnement : le lot visé doit relever d'une ACP que cet utilisateur a
+    // le droit de voir. Ces routes disent QUI DÉTIENT QUOI, nominativement —
+    // la donnée la plus sensible du produit après les montants.
+    //
+    // L'identité était prise puis ignorée — `_user` (#772).
+    if let Err(err) = verify_unit_org_access(
+        &user,
+        unit_id,
+        &state.unit_use_cases,
+        &state.building_use_cases,
+        &state.acp_use_cases,
+    )
+    .await
+    {
+        return err.error_response();
+    }
 
     // Call use case
     match state.unit_owner_use_cases.get_unit_owners(unit_id).await {
@@ -289,7 +331,7 @@ pub async fn get_unit_owners(
 #[get("/owners/{owner_id}/units")]
 pub async fn get_owner_units(
     state: web::Data<AppState>,
-    _user: AuthenticatedUser,
+    user: AuthenticatedUser,
     owner_id: web::Path<String>,
 ) -> impl Responder {
     // Parse UUID
@@ -301,6 +343,13 @@ pub async fn get_owner_units(
             }))
         }
     };
+
+    // Cloisonnement : le copropriétaire visé doit relever d'une organisation
+    // que cet utilisateur a le droit de voir. Lister ses lots hors de son ACP,
+    // c'est apprendre le patrimoine d'un tiers (#772).
+    if let Err(err) = verify_owner_org_access(&user, owner_id, &state.owner_use_cases).await {
+        return err.error_response();
+    }
 
     // Call use case
     match state.unit_owner_use_cases.get_owner_units(owner_id).await {
@@ -318,7 +367,7 @@ pub async fn get_owner_units(
 #[get("/units/{unit_id}/owners/history")]
 pub async fn get_unit_ownership_history(
     state: web::Data<AppState>,
-    _user: AuthenticatedUser,
+    user: AuthenticatedUser,
     unit_id: web::Path<String>,
 ) -> impl Responder {
     // Parse UUID
@@ -330,6 +379,23 @@ pub async fn get_unit_ownership_history(
             }))
         }
     };
+
+    // Cloisonnement : le lot visé doit relever d'une ACP que cet utilisateur a
+    // le droit de voir. Ces routes disent QUI DÉTIENT QUOI, nominativement —
+    // la donnée la plus sensible du produit après les montants.
+    //
+    // L'identité était prise puis ignorée — `_user` (#772).
+    if let Err(err) = verify_unit_org_access(
+        &user,
+        unit_id,
+        &state.unit_use_cases,
+        &state.building_use_cases,
+        &state.acp_use_cases,
+    )
+    .await
+    {
+        return err.error_response();
+    }
 
     // Call use case
     match state
@@ -351,7 +417,7 @@ pub async fn get_unit_ownership_history(
 #[get("/owners/{owner_id}/units/history")]
 pub async fn get_owner_ownership_history(
     state: web::Data<AppState>,
-    _user: AuthenticatedUser,
+    user: AuthenticatedUser,
     owner_id: web::Path<String>,
 ) -> impl Responder {
     // Parse UUID
@@ -363,6 +429,13 @@ pub async fn get_owner_ownership_history(
             }))
         }
     };
+
+    // Cloisonnement : le copropriétaire visé doit relever d'une organisation
+    // que cet utilisateur a le droit de voir. Lister ses lots hors de son ACP,
+    // c'est apprendre le patrimoine d'un tiers (#772).
+    if let Err(err) = verify_owner_org_access(&user, owner_id, &state.owner_use_cases).await {
+        return err.error_response();
+    }
 
     // Call use case
     match state
@@ -465,7 +538,7 @@ pub async fn transfer_ownership(
 #[get("/units/{unit_id}/owners/total-percentage")]
 pub async fn get_total_ownership_percentage(
     state: web::Data<AppState>,
-    _user: AuthenticatedUser,
+    user: AuthenticatedUser,
     unit_id: web::Path<String>,
 ) -> impl Responder {
     // Parse UUID
@@ -477,6 +550,23 @@ pub async fn get_total_ownership_percentage(
             }))
         }
     };
+
+    // Cloisonnement : le lot visé doit relever d'une ACP que cet utilisateur a
+    // le droit de voir. Ces routes disent QUI DÉTIENT QUOI, nominativement —
+    // la donnée la plus sensible du produit après les montants.
+    //
+    // L'identité était prise puis ignorée — `_user` (#772).
+    if let Err(err) = verify_unit_org_access(
+        &user,
+        unit_id,
+        &state.unit_use_cases,
+        &state.building_use_cases,
+        &state.acp_use_cases,
+    )
+    .await
+    {
+        return err.error_response();
+    }
 
     // Call use case
     match state

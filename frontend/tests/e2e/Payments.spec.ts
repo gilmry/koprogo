@@ -12,7 +12,7 @@ import {
  * Mirrors workflows from backend/tests/e2e_payments.rs.
  */
 
-const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
+import { API_BASE } from "./helpers/adresses";
 
 test.describe("Payments - Stripe & SEPA", () => {
   test("should display owner payments page", async ({ page }) => {

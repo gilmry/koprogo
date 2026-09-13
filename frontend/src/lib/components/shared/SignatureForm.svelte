@@ -71,9 +71,7 @@
   // Derivations
   // ---------------------------------------------------------------------------
 
-  let submitDisabled = $derived(
-    submitting || !confirmed || externallyDisabled,
-  );
+  let submitDisabled = $derived(submitting || !confirmed || externallyDisabled);
 
   let checkboxTestId = $derived(
     checkboxTestIdOverride !== undefined

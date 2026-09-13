@@ -322,7 +322,7 @@
               >
                 {d.delegated_from_user_id
                   ? labelUser(d.delegated_from_user_id)
-                  : ($_("common.dash") || "—")}
+                  : $_("common.dash") || "—"}
               </td>
               <td class="px-3 py-2">
                 {#if d.valid_until}
@@ -381,6 +381,7 @@
         </p>
         <div class="flex justify-end gap-2">
           <button
+            data-testid="role-delegation-action-button"
             type="button"
             class="min-h-[44px] px-3 py-1 text-sm border border-gray-300 rounded text-gray-700"
             onclick={cancelRevoke}

@@ -3,8 +3,12 @@ use crate::application::dto::{
 };
 use crate::domain::entities::{AchievementCategory, ChallengeStatus};
 use crate::infrastructure::web::app_state::AppState;
+use crate::infrastructure::web::classification_erreurs;
+use crate::infrastructure::web::middleware::scope_guard::{
+    verify_building_org_access, verify_challenge_org_access,
+};
 use crate::infrastructure::web::middleware::AuthenticatedUser;
-use actix_web::{delete, get, post, put, web, HttpResponse, Responder};
+use actix_web::{delete, get, post, put, web, HttpResponse, Responder, ResponseError};
 use serde::Deserialize;
 use uuid::Uuid;
 
@@ -38,7 +42,7 @@ pub async fn create_achievement(
     auth: AuthenticatedUser,
     request: web::Json<CreateAchievementDto>,
 ) -> impl Responder {
-    if auth.role != "superadmin" && auth.role != "syndic" {
+    if !auth.is_superadmin() && auth.role != "syndic" {
         return HttpResponse::Forbidden().json(serde_json::json!({
             "error": "Only superadmin or syndic can create achievements"
         }));
@@ -178,7 +182,7 @@ pub async fn update_achievement(
     id: web::Path<Uuid>,
     request: web::Json<UpdateAchievementDto>,
 ) -> impl Responder {
-    if auth.role != "superadmin" && auth.role != "syndic" {
+    if !auth.is_superadmin() && auth.role != "syndic" {
         return HttpResponse::Forbidden().json(serde_json::json!({
             "error": "Only superadmin or syndic can update achievements"
         }));
@@ -189,7 +193,7 @@ pub async fn update_achievement(
         .await
     {
         Ok(achievement) => HttpResponse::Ok().json(achievement),
-        Err(e) if e.contains("not found") => {
+        Err(e) if classification_erreurs::est_introuvable(&e) => {
             HttpResponse::NotFound().json(serde_json::json!({"error": e}))
         }
         Err(e) => HttpResponse::BadRequest().json(serde_json::json!({"error": e})),
@@ -209,7 +213,7 @@ pub async fn delete_achievement(
     auth: AuthenticatedUser,
     id: web::Path<Uuid>,
 ) -> impl Responder {
-    if auth.role != "superadmin" && auth.role != "syndic" {
+    if !auth.is_superadmin() && auth.role != "syndic" {
         return HttpResponse::Forbidden().json(serde_json::json!({
             "error": "Only superadmin or syndic can delete achievements"
         }));
@@ -259,7 +263,7 @@ pub async fn award_achievement(
         .await
     {
         Ok(user_achievement) => HttpResponse::Created().json(user_achievement),
-        Err(e) if e.contains("not found") => {
+        Err(e) if classification_erreurs::est_introuvable(&e) => {
             HttpResponse::NotFound().json(serde_json::json!({"error": e}))
         }
         Err(e) => HttpResponse::BadRequest().json(serde_json::json!({"error": e})),
@@ -344,7 +348,7 @@ pub async fn create_challenge(
     auth: AuthenticatedUser,
     request: web::Json<CreateChallengeDto>,
 ) -> impl Responder {
-    if auth.role != "superadmin" && auth.role != "syndic" {
+    if !auth.is_superadmin() && auth.role != "syndic" {
         return HttpResponse::Forbidden().json(serde_json::json!({
             "error": "Only superadmin or syndic can create challenges"
         }));
@@ -451,9 +455,22 @@ pub async fn list_challenges_by_status(
 #[get("/buildings/{building_id}/challenges")]
 pub async fn list_building_challenges(
     data: web::Data<AppState>,
-    _auth: AuthenticatedUser,
+    auth: AuthenticatedUser,
     building_id: web::Path<Uuid>,
 ) -> impl Responder {
+    // Cloisonnement : l'immeuble visé doit relever d'une ACP que cet
+    // utilisateur a le droit de voir (#772).
+    if let Err(err) = verify_building_org_access(
+        &auth,
+        *building_id,
+        &data.building_use_cases,
+        &data.acp_use_cases,
+    )
+    .await
+    {
+        return err.error_response();
+    }
+
     match data
         .challenge_use_cases
         .list_building_challenges(building_id.into_inner())
@@ -504,7 +521,7 @@ pub async fn update_challenge(
     id: web::Path<Uuid>,
     request: web::Json<UpdateChallengeDto>,
 ) -> impl Responder {
-    if auth.role != "superadmin" && auth.role != "syndic" {
+    if !auth.is_superadmin() && auth.role != "syndic" {
         return HttpResponse::Forbidden().json(serde_json::json!({
             "error": "Only superadmin or syndic can update challenges"
         }));
@@ -515,7 +532,7 @@ pub async fn update_challenge(
         .await
     {
         Ok(challenge) => HttpResponse::Ok().json(challenge),
-        Err(e) if e.contains("not found") => {
+        Err(e) if classification_erreurs::est_introuvable(&e) => {
             HttpResponse::NotFound().json(serde_json::json!({"error": e}))
         }
         Err(e) => HttpResponse::BadRequest().json(serde_json::json!({"error": e})),
@@ -536,7 +553,7 @@ pub async fn activate_challenge(
     auth: AuthenticatedUser,
     id: web::Path<Uuid>,
 ) -> impl Responder {
-    if auth.role != "superadmin" && auth.role != "syndic" {
+    if !auth.is_superadmin() && auth.role != "syndic" {
         return HttpResponse::Forbidden().json(serde_json::json!({
             "error": "Only superadmin or syndic can activate challenges"
         }));
@@ -547,7 +564,7 @@ pub async fn activate_challenge(
         .await
     {
         Ok(challenge) => HttpResponse::Ok().json(challenge),
-        Err(e) if e.contains("not found") => {
+        Err(e) if classification_erreurs::est_introuvable(&e) => {
             HttpResponse::NotFound().json(serde_json::json!({"error": e}))
         }
         Err(e) => HttpResponse::BadRequest().json(serde_json::json!({"error": e})),
@@ -568,7 +585,7 @@ pub async fn complete_challenge(
     auth: AuthenticatedUser,
     id: web::Path<Uuid>,
 ) -> impl Responder {
-    if auth.role != "superadmin" && auth.role != "syndic" {
+    if !auth.is_superadmin() && auth.role != "syndic" {
         return HttpResponse::Forbidden().json(serde_json::json!({
             "error": "Only superadmin or syndic can complete challenges"
         }));
@@ -579,7 +596,7 @@ pub async fn complete_challenge(
         .await
     {
         Ok(challenge) => HttpResponse::Ok().json(challenge),
-        Err(e) if e.contains("not found") => {
+        Err(e) if classification_erreurs::est_introuvable(&e) => {
             HttpResponse::NotFound().json(serde_json::json!({"error": e}))
         }
         Err(e) => HttpResponse::BadRequest().json(serde_json::json!({"error": e})),
@@ -600,7 +617,7 @@ pub async fn cancel_challenge(
     auth: AuthenticatedUser,
     id: web::Path<Uuid>,
 ) -> impl Responder {
-    if auth.role != "superadmin" && auth.role != "syndic" {
+    if !auth.is_superadmin() && auth.role != "syndic" {
         return HttpResponse::Forbidden().json(serde_json::json!({
             "error": "Only superadmin or syndic can cancel challenges"
         }));
@@ -611,7 +628,7 @@ pub async fn cancel_challenge(
         .await
     {
         Ok(challenge) => HttpResponse::Ok().json(challenge),
-        Err(e) if e.contains("not found") => {
+        Err(e) if classification_erreurs::est_introuvable(&e) => {
             HttpResponse::NotFound().json(serde_json::json!({"error": e}))
         }
         Err(e) => HttpResponse::BadRequest().json(serde_json::json!({"error": e})),
@@ -631,7 +648,7 @@ pub async fn delete_challenge(
     auth: AuthenticatedUser,
     id: web::Path<Uuid>,
 ) -> impl Responder {
-    if auth.role != "superadmin" && auth.role != "syndic" {
+    if !auth.is_superadmin() && auth.role != "syndic" {
         return HttpResponse::Forbidden().json(serde_json::json!({
             "error": "Only superadmin or syndic can delete challenges"
         }));
@@ -663,6 +680,16 @@ pub async fn get_challenge_progress(
     auth: AuthenticatedUser,
     challenge_id: web::Path<Uuid>,
 ) -> impl Responder {
+    // Cloisonnement : ce défi doit relever d'une organisation que cet
+    // utilisateur a le droit de voir. Le périmètre est l'ORGANISATION —
+    // `Challenge.building_id` est optionnel, « None = organization-wide »
+    // (#772).
+    if let Err(err) =
+        verify_challenge_org_access(&auth, *challenge_id, &data.challenge_use_cases).await
+    {
+        return err.error_response();
+    }
+
     match data
         .challenge_use_cases
         .get_challenge_progress(auth.user_id, challenge_id.into_inner())
@@ -682,9 +709,19 @@ pub async fn get_challenge_progress(
 #[get("/challenges/{challenge_id}/all-progress")]
 pub async fn list_challenge_progress(
     data: web::Data<AppState>,
-    _auth: AuthenticatedUser,
+    auth: AuthenticatedUser,
     challenge_id: web::Path<Uuid>,
 ) -> impl Responder {
+    // Cloisonnement : ce défi doit relever d'une organisation que cet
+    // utilisateur a le droit de voir. Le périmètre est l'ORGANISATION —
+    // `Challenge.building_id` est optionnel, « None = organization-wide »
+    // (#772).
+    if let Err(err) =
+        verify_challenge_org_access(&auth, *challenge_id, &data.challenge_use_cases).await
+    {
+        return err.error_response();
+    }
+
     match data
         .challenge_use_cases
         .list_challenge_progress(challenge_id.into_inner())
@@ -739,13 +776,23 @@ pub async fn increment_progress(
     challenge_id: web::Path<Uuid>,
     request: web::Json<IncrementProgressRequest>,
 ) -> impl Responder {
+    // Cloisonnement : ce défi doit relever d'une organisation que cet
+    // utilisateur a le droit de voir. Le périmètre est l'ORGANISATION —
+    // `Challenge.building_id` est optionnel, « None = organization-wide »
+    // (#772).
+    if let Err(err) =
+        verify_challenge_org_access(&auth, *challenge_id, &data.challenge_use_cases).await
+    {
+        return err.error_response();
+    }
+
     match data
         .challenge_use_cases
         .increment_progress(auth.user_id, challenge_id.into_inner(), request.increment)
         .await
     {
         Ok(progress) => HttpResponse::Ok().json(progress),
-        Err(e) if e.contains("not found") => {
+        Err(e) if classification_erreurs::est_introuvable(&e) => {
             HttpResponse::NotFound().json(serde_json::json!({"error": e}))
         }
         Err(e) => HttpResponse::BadRequest().json(serde_json::json!({"error": e})),

@@ -10,7 +10,7 @@ import { loginAsSyndicWithLinkedOwner } from "./helpers/auth";
  * Mirrors workflows from backend/tests/e2e_local_exchange.rs.
  */
 
-const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
+import { API_BASE } from "./helpers/adresses";
 
 test.describe("Local Exchanges - SEL Community System", () => {
   test("should display exchanges page", async ({ page }) => {
@@ -19,7 +19,7 @@ test.describe("Local Exchanges - SEL Community System", () => {
 
     await expect(page.locator("body")).toBeVisible();
     await expect(
-      page.locator("main h1, main h2, [data-testid='exchanges-list']").first(),
+      page.locator("[data-testid='exchanges-list']").first(),
     ).toBeVisible({ timeout: 10000 });
   });
 

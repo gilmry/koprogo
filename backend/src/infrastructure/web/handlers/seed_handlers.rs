@@ -28,7 +28,7 @@ pub async fn seed_demo_data(data: web::Data<AppState>, req: HttpRequest) -> impl
     match data.auth_use_cases.verify_token(token) {
         Ok(claims) => {
             // Only SuperAdmin can seed data
-            if claims.role != "superadmin" {
+            if !claims.is_superadmin() {
                 return HttpResponse::Forbidden().json(serde_json::json!({
                     "error": "Only SuperAdmin can seed demo data"
                 }));
@@ -77,7 +77,7 @@ pub async fn clear_demo_data(data: web::Data<AppState>, req: HttpRequest) -> imp
 
     match data.auth_use_cases.verify_token(token) {
         Ok(claims) => {
-            if claims.role != "superadmin" {
+            if !claims.is_superadmin() {
                 return HttpResponse::Forbidden().json(serde_json::json!({
                     "error": "Only SuperAdmin can clear demo data"
                 }));
@@ -124,7 +124,7 @@ pub async fn seed_scenario_world(data: web::Data<AppState>, req: HttpRequest) ->
 
     match data.auth_use_cases.verify_token(token) {
         Ok(claims) => {
-            if claims.role != "superadmin" {
+            if !claims.is_superadmin() {
                 return HttpResponse::Forbidden().json(serde_json::json!({
                     "error": "Only SuperAdmin can seed scenario world"
                 }));
@@ -172,7 +172,7 @@ pub async fn clear_scenario_world(data: web::Data<AppState>, req: HttpRequest) -
 
     match data.auth_use_cases.verify_token(token) {
         Ok(claims) => {
-            if claims.role != "superadmin" {
+            if !claims.is_superadmin() {
                 return HttpResponse::Forbidden().json(serde_json::json!({
                     "error": "Only SuperAdmin can clear scenario world"
                 }));
@@ -223,7 +223,7 @@ pub async fn clear_scenario_world(data: web::Data<AppState>, req: HttpRequest) -
 //
 //     match data.auth_use_cases.verify_token(token) {
 //         Ok(claims) => {
-//             if claims.role != "superadmin" {
+//             if !claims.is_superadmin() {
 //                 return HttpResponse::Forbidden().json(serde_json::json!({
 //                     "error": "Only SuperAdmin can seed realistic data"
 //                 }));

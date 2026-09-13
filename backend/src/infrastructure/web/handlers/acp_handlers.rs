@@ -128,6 +128,34 @@ pub async fn list_acps(state: web::Data<AppState>, user: AuthenticatedUser) -> i
 
 #[utoipa::path(
     get,
+    path = "/acps/with-metrics",
+    tag = "Acps",
+    summary = "Les ACP du périmètre, avec leurs métriques agrégées",
+    description = "Sert la table « Mes ACP » du tableau de bord syndic : nombre \
+                   de blocs, lots encodés et déclarés, somme des quotités. \
+                   Séparée de `GET /acps` parce que les métriques coûtent \
+                   quatre sous-requêtes par ligne : un sélecteur qui n'a besoin \
+                   que des noms ne doit pas les payer.",
+    responses(
+        (status = 200, description = "Liste des ACP avec métriques"),
+        (status = 401, description = "Non authentifié"),
+    ),
+    security(("bearer_auth" = []))
+)]
+#[get("/acps/with-metrics")]
+pub async fn list_acps_with_metrics(
+    state: web::Data<AppState>,
+    user: AuthenticatedUser,
+) -> impl Responder {
+    let caller = caller_from_user(&user);
+    match state.acp_use_cases.list_acps_with_metrics(&caller).await {
+        Ok(list) => HttpResponse::Ok().json(list),
+        Err(err) => err.error_response(),
+    }
+}
+
+#[utoipa::path(
+    get,
     path = "/acps/{id}",
     tag = "Acps",
     summary = "Get an ACP by id (scope-guarded)",

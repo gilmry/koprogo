@@ -9,7 +9,7 @@ import { adminLogin, uiLoginWithRetry } from "./helpers/auth";
  * units, tickets, payments, and payment methods.
  */
 
-const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
+import { API_BASE } from "./helpers/adresses";
 
 async function registerAndLoginAsOwner(page: Page): Promise<{
   token: string;
@@ -70,7 +70,7 @@ test.describe("Owner Dashboard - Main Portal", () => {
 
     await expect(page.locator("body")).toBeVisible();
     await expect(
-      page.locator("main h1, main h2, [data-testid='owner-dashboard']").first(),
+      page.locator("[data-testid='owner-dashboard']").first(),
     ).toBeVisible({ timeout: 10000 });
   });
 
@@ -80,7 +80,7 @@ test.describe("Owner Dashboard - Main Portal", () => {
 
     await expect(page.locator("body")).toBeVisible();
     await expect(
-      page.locator("main h1, main h2, [data-testid='owner-profile']").first(),
+      page.locator("[data-testid='owner-profile']").first(),
     ).toBeVisible({ timeout: 10000 });
   });
 
@@ -90,7 +90,7 @@ test.describe("Owner Dashboard - Main Portal", () => {
 
     await expect(page.locator("body")).toBeVisible();
     await expect(
-      page.locator("main h1, main h2, [data-testid='owner-documents']").first(),
+      page.locator("[data-testid='owner-documents']").first(),
     ).toBeVisible({ timeout: 10000 });
   });
 
@@ -100,7 +100,7 @@ test.describe("Owner Dashboard - Main Portal", () => {
 
     await expect(page.locator("body")).toBeVisible();
     await expect(
-      page.locator("main h1, main h2, [data-testid='owner-expenses']").first(),
+      page.locator("[data-testid='owner-expenses']").first(),
     ).toBeVisible({ timeout: 10000 });
   });
 
@@ -110,7 +110,7 @@ test.describe("Owner Dashboard - Main Portal", () => {
 
     await expect(page.locator("body")).toBeVisible();
     await expect(
-      page.locator("main h1, main h2, [data-testid='owner-tickets']").first(),
+      page.locator("[data-testid='owner-tickets']").first(),
     ).toBeVisible({ timeout: 10000 });
   });
 });
@@ -122,7 +122,7 @@ test.describe("Owner Dashboard - Payments", () => {
 
     await expect(page.locator("body")).toBeVisible();
     await expect(
-      page.locator("main h1, main h2, [data-testid='owner-payments']").first(),
+      page.locator("[data-testid='owner-payments']").first(),
     ).toBeVisible({ timeout: 10000 });
   });
 
@@ -132,9 +132,7 @@ test.describe("Owner Dashboard - Payments", () => {
 
     await expect(page.locator("body")).toBeVisible();
     await expect(
-      page
-        .locator("main h1, main h2, [data-testid='owner-payment-methods']")
-        .first(),
+      page.locator("[data-testid='owner-payment-methods']").first(),
     ).toBeVisible({ timeout: 10000 });
   });
 });
@@ -144,14 +142,24 @@ test.describe("Owner Dashboard - Navigation", () => {
     await registerAndLoginAsOwner(page);
     await page.goto("/owner");
 
-    // Check that navigation sidebar is visible
-    const sidebar = page.locator("nav, [data-testid='sidebar'], aside");
-    if (await sidebar.first().isVisible()) {
-      await expect(sidebar.first()).toBeVisible();
-    }
-
-    // Page should load without errors
-    await expect(page.locator("body")).toBeVisible();
+    // La barre latérale est visible — affirmé, pas supposé.
+    //
+    // Ce test disait auparavant :
+    //
+    //   const sidebar = page.locator("nav, [data-testid='sidebar'], aside");
+    //   if (await sidebar.first().isVisible()) {
+    //     await expect(sidebar.first()).toBeVisible();
+    //   }
+    //
+    // Une assertion sous condition de ce qu'elle assert : si la barre n'était
+    // pas visible, le test ne vérifiait RIEN et passait. Et l'ancrage cité,
+    // `sidebar`, n'existe pas — c'est `sidebar-desktop` (#830).
+    //
+    // La barre latérale ne s'affiche qu'au-dessus de `lg`. Le viewport par
+    // défaut de Playwright (1280×720) y est, mais on le pose explicitement
+    // plutôt que d'en dépendre.
+    await page.setViewportSize({ width: 1280, height: 720 });
+    await expect(page.getByTestId("sidebar-desktop")).toBeVisible();
   });
 
   test("should display owner units page", async ({ page }) => {
@@ -160,7 +168,7 @@ test.describe("Owner Dashboard - Navigation", () => {
 
     await expect(page.locator("body")).toBeVisible();
     await expect(
-      page.locator("main h1, main h2, [data-testid='owner-units']").first(),
+      page.locator("[data-testid='owner-units']").first(),
     ).toBeVisible({ timeout: 10000 });
   });
 
@@ -170,7 +178,7 @@ test.describe("Owner Dashboard - Navigation", () => {
 
     await expect(page.locator("body")).toBeVisible();
     await expect(
-      page.locator("main h1, main h2, [data-testid='owner-contact']").first(),
+      page.locator("[data-testid='owner-contact']").first(),
     ).toBeVisible({ timeout: 10000 });
   });
 });

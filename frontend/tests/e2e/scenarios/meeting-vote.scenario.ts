@@ -11,6 +11,12 @@
  * Duree video attendue : ~90-120 secondes (rythme humain, multi-role)
  */
 import { test, expect } from "@playwright/test";
+import { ADMIN_PASSWORD } from "../helpers/identifiants";
+import {
+  amorce,
+  aucuneErreurAffichee,
+  confirmerSiDemande,
+} from "../helpers/amorcage";
 import {
   humanLogin,
   humanClick,
@@ -21,7 +27,7 @@ import {
   PACE,
 } from "../helpers/video-pace";
 
-const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
+import { API_BASE } from "../helpers/adresses";
 
 test.describe("Scenario: Vote multi-role sur une resolution en AG", () => {
   test.setTimeout(180_000);
@@ -31,9 +37,9 @@ test.describe("Scenario: Vote multi-role sur une resolution en AG", () => {
   test.beforeAll(async ({ request }) => {
     // 1. Login admin
     const adminResp = await request.post(`${API_BASE}/auth/login`, {
-      data: { email: "admin@koprogo.com", password: "admin123" },
+      data: { email: "admin@koprogo.com", password: ADMIN_PASSWORD },
     });
-    const admin = await adminResp.json();
+    const admin = await amorce(adminResp, "POST /auth/login");
     const adminHeaders = { Authorization: `Bearer ${admin.token}` };
 
     // 2. Seed the world (creates meeting + resolution)
@@ -50,7 +56,7 @@ test.describe("Scenario: Vote multi-role sur une resolution en AG", () => {
 
   test.afterAll(async ({ request }) => {
     const adminResp = await request.post(`${API_BASE}/auth/login`, {
-      data: { email: "admin@koprogo.com", password: "admin123" },
+      data: { email: "admin@koprogo.com", password: ADMIN_PASSWORD },
     });
     const admin = await adminResp.json();
     await request.delete(`${API_BASE}/seed/scenario/world`, {
@@ -68,7 +74,7 @@ test.describe("Scenario: Vote multi-role sur une resolution en AG", () => {
     await stepPause(page);
 
     // Navigation vers les Assemblees
-    await humanClick(page, "nav-link-assemblees");
+    await humanClick(page, "nav-link-meetings");
     await waitForSpinner(page);
     await page.waitForTimeout(PACE.AFTER_NAVIGATION);
 
@@ -110,8 +116,19 @@ test.describe("Scenario: Vote multi-role sur une resolution en AG", () => {
     await humanLogin(page, "alice@residence-parc.be", "alice123");
     await stepPause(page);
 
-    // Alice navigue vers les assemblees
-    await humanClick(page, "nav-link-assemblees");
+    // Alice navigue vers les assemblees par SA TUILE, pas par la barre
+    // laterale.
+    //
+    // `canSee` (permissions.ts) ne donne au coproprietaire que les menus
+    // `communaute` et `mes-lots` : ni `/meetings` ni `/convocations` n'y
+    // figurent. `nav-link-meetings` n'existe donc pas dans son DOM, et le
+    // scenario attendait trente secondes un lien reserve au syndic.
+    //
+    // Le chemin prevu existe : `guards.ts:42` ouvre `/meetings` au role
+    // OWNER, et `OwnerDashboard.svelte` porte la tuile
+    // `owner-quick-meetings`. C'est par la qu'un coproprietaire rejoint son
+    // assemblee.
+    await humanClick(page, "owner-quick-meetings");
     await waitForSpinner(page);
     await page.waitForTimeout(PACE.AFTER_NAVIGATION);
 
@@ -148,6 +165,8 @@ test.describe("Scenario: Vote multi-role sur une resolution en AG", () => {
     await voteBtnPour.scrollIntoViewIfNeeded();
     await page.waitForTimeout(PACE.BEFORE_CLICK);
     await humanClickLocator(page, voteBtnPour);
+    await confirmerSiDemande(page);
+    await aucuneErreurAffichee(page, "choix « Pour » d'Alice");
     await page.waitForTimeout(PACE.AFTER_CLICK);
 
     // Saisir le pouvoir de vote (tantiemes/milliemes)
@@ -160,12 +179,27 @@ test.describe("Scenario: Vote multi-role sur une resolution en AG", () => {
     await votingPowerInput.fill("150");
     await page.waitForTimeout(PACE.AFTER_TYPE);
 
-    // Soumettre le vote
-    const submitVoteBtn = resolutionItem2
-      .locator("button")
-      .filter({ hasText: /vote/i })
-      .last();
+    // Soumettre le vote, par son ancre.
+    //
+    // Le scenario prenait `.locator("button").filter({ hasText: /vote/i })
+    // .last()`. La carte de resolution contient DEUX boutons dont le texte
+    // correspond : « Soumettre le vote » et « Voir les votes (0) ». Le second
+    // vient apres dans le DOM (`ResolutionVotePanel.svelte:487` contre 471),
+    // donc `.last()` choisissait le mauvais.
+    //
+    // Resultat : le scenario depliait la liste des votes au lieu de voter.
+    // Aucune erreur, aucun toast, et « Total : 0 vote » sur la capture — puis
+    // un echec cent lignes plus loin sur le bouton de cloture, absent parce
+    // qu'aucun vote n'avait ete emis.
+    //
+    // Chercher un bouton par son texte est un pari sur la langue ; ici il
+    // etait meme ambigu DANS la langue choisie.
+    const submitVoteBtn = resolutionItem2.locator(
+      '[data-testid="resolution-vote-submit-button"]',
+    );
     await humanClickLocator(page, submitVoteBtn);
+    await confirmerSiDemande(page);
+    await aucuneErreurAffichee(page, "soumission du vote d'Alice");
     await waitForSpinner(page);
     await page.waitForTimeout(PACE.AFTER_NAVIGATION);
 
@@ -184,7 +218,7 @@ test.describe("Scenario: Vote multi-role sur une resolution en AG", () => {
     await stepPause(page);
 
     // Re-naviguer vers l'AG
-    await humanClick(page, "nav-link-assemblees");
+    await humanClick(page, "nav-link-meetings");
     await waitForSpinner(page);
     await page.waitForTimeout(PACE.AFTER_NAVIGATION);
 
@@ -222,6 +256,8 @@ test.describe("Scenario: Vote multi-role sur une resolution en AG", () => {
     page.on("dialog", (dialog) => dialog.accept());
 
     await humanClickLocator(page, closeBtn);
+    await confirmerSiDemande(page);
+    await aucuneErreurAffichee(page, "closeBtn");
     await waitForSpinner(page);
     await page.waitForTimeout(PACE.AFTER_NAVIGATION);
 

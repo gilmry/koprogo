@@ -77,7 +77,9 @@
   );
 
   let testId = $derived(
-    idSuffix !== undefined ? `expiration-badge-${idSuffix}` : "expiration-badge",
+    idSuffix !== undefined
+      ? `expiration-badge-${idSuffix}`
+      : "expiration-badge",
   );
 </script>
 

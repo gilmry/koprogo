@@ -21,37 +21,43 @@ impl PostgresAuditLogRepository {
         format!("{:?}", event_type)
     }
 
-    /// Convert string from database to AuditEventType
+    /// Relit le type d'évènement écrit en base.
+    ///
+    /// ── Ce que cette fonction a longtemps fait ────────────────────────────
+    ///
+    /// L'écriture emploie `format!("{:?}")`, donc les **223** variantes de
+    /// `AuditEventType` arrivent correctement en base. La relecture, elle,
+    /// était une table de correspondance écrite à la main : **29 arms**, et
+    /// un repli
+    ///
+    ///     _ => AuditEventType::UnauthorizedAccess, // Default fallback
+    ///
+    /// **194 types d'évènements sur 223 se relisaient donc en accès non
+    /// autorisé.** Une élection au conseil de copropriété, un rapport généré,
+    /// un partefeuille partagé : tous ressortaient du registre comme des
+    /// alertes de sécurité.
+    ///
+    /// Le registre d'audit n'est pas décoratif — l'Art. 3.89 § 5 7° impose au
+    /// syndic de tenir le dossier de la copropriété. Un registre qui invente
+    /// des alertes est pire qu'un registre vide : il fait chercher des
+    /// intrusions qui n'ont pas eu lieu, et noie celles qui en sont.
+    ///
+    /// ── Pourquoi serde plutôt qu'une table ────────────────────────────────
+    ///
+    /// `AuditEventType` dérive `Deserialize`, et ses variantes sont toutes
+    /// sans charge utile : leur forme sérialisée est leur nom, exactement ce
+    /// que `{:?}` écrit. La correspondance devient donc **totale par
+    /// construction**, et une variante ajoutée demain se relit sans que
+    /// personne ait à penser à cette fonction. C'est ce défaut d'attention
+    /// qui a produit l'écart, deux fois : la table ne suivait plus depuis
+    /// longtemps, et j'y ai moi-même ajouté deux lignes à la main avant de
+    /// compter le reste.
+    ///
+    /// Un type vraiment inconnu — ligne ancienne, ou écrite par une version
+    /// plus récente — se lit `UnknownLegacyEvent`, pas comme autre chose.
     fn string_to_event_type(s: &str) -> AuditEventType {
-        match s {
-            "UserLogin" => AuditEventType::UserLogin,
-            "UserLogout" => AuditEventType::UserLogout,
-            "UserRegistration" => AuditEventType::UserRegistration,
-            "TokenRefresh" => AuditEventType::TokenRefresh,
-            "AuthenticationFailed" => AuditEventType::AuthenticationFailed,
-            "BuildingCreated" => AuditEventType::BuildingCreated,
-            "BuildingUpdated" => AuditEventType::BuildingUpdated,
-            "BuildingDeleted" => AuditEventType::BuildingDeleted,
-            "UnitCreated" => AuditEventType::UnitCreated,
-            "UnitAssignedToOwner" => AuditEventType::UnitAssignedToOwner,
-            "OwnerCreated" => AuditEventType::OwnerCreated,
-            "OwnerUpdated" => AuditEventType::OwnerUpdated,
-            "ExpenseCreated" => AuditEventType::ExpenseCreated,
-            "ExpenseMarkedPaid" => AuditEventType::ExpenseMarkedPaid,
-            "MeetingCreated" => AuditEventType::MeetingCreated,
-            "MeetingCompleted" => AuditEventType::MeetingCompleted,
-            "DocumentUploaded" => AuditEventType::DocumentUploaded,
-            "DocumentDeleted" => AuditEventType::DocumentDeleted,
-            "UnauthorizedAccess" => AuditEventType::UnauthorizedAccess,
-            "RateLimitExceeded" => AuditEventType::RateLimitExceeded,
-            "InvalidToken" => AuditEventType::InvalidToken,
-            "GdprDataExported" => AuditEventType::GdprDataExported,
-            "GdprDataExportFailed" => AuditEventType::GdprDataExportFailed,
-            "GdprDataErased" => AuditEventType::GdprDataErased,
-            "GdprDataErasureFailed" => AuditEventType::GdprDataErasureFailed,
-            "GdprErasureCheckRequested" => AuditEventType::GdprErasureCheckRequested,
-            _ => AuditEventType::UnauthorizedAccess, // Default fallback
-        }
+        serde_json::from_value(serde_json::Value::String(s.to_string()))
+            .unwrap_or(AuditEventType::UnknownLegacyEvent)
     }
 
     /// Map database row to AuditLogEntry
@@ -449,5 +455,92 @@ impl AuditLogRepository for PostgresAuditLogRepository {
             .map_err(|e| format!("Database error: {}", e))?;
 
         Ok(row.get("count"))
+    }
+}
+
+#[cfg(test)]
+mod tests_relecture_du_type_devenement {
+    use super::*;
+
+    /// Toutes les variantes de `AuditEventType`, extraites du fichier source.
+    ///
+    /// Les LIRE plutôt que les recopier est le point de ce test : une liste
+    /// écrite à la main est exactement ce qui a dérivé — la table de
+    /// correspondance couvrait 29 variantes sur 223, et personne ne l'a vu
+    /// parce que rien ne comparait les deux listes.
+    fn variantes_declarees() -> Vec<String> {
+        let source = include_str!("../../audit.rs");
+        let debut = source
+            .find("pub enum AuditEventType")
+            .expect("énumération AuditEventType introuvable dans audit.rs");
+        let bloc = &source[debut..];
+        let fin = bloc.find("\n}").expect("fin de l'énumération introuvable");
+        bloc[..fin]
+            .lines()
+            .map(str::trim)
+            .filter(|l| {
+                l.ends_with(',')
+                    && !l.starts_with("//")
+                    && !l.contains(' ')
+                    && l.chars().next().is_some_and(char::is_uppercase)
+            })
+            .map(|l| l.trim_end_matches(',').to_string())
+            .collect()
+    }
+
+    #[test]
+    fn happy_le_registre_relit_toutes_les_variantes_pour_ce_quelles_sont() {
+        let variantes = variantes_declarees();
+        assert!(
+            variantes.len() > 200,
+            "seulement {} variantes extraites : l'extraction ne lit plus \
+             l'énumération. Vérifiez avant de vous réjouir.",
+            variantes.len()
+        );
+
+        let mut travesties = Vec::new();
+        for nom in &variantes {
+            let relu = PostgresAuditLogRepository::string_to_event_type(nom);
+            let ecrit = PostgresAuditLogRepository::event_type_to_string(&relu);
+            if &ecrit != nom {
+                travesties.push(format!("{nom} se relit {ecrit}"));
+            }
+        }
+
+        assert!(
+            travesties.is_empty(),
+            "{} types d'évènements sur {} ne se relisent pas pour ce qu'ils \
+             sont.\n\n\
+             Le registre d'audit est un document de la copropriété \
+             (Art. 3.89 § 5 7°). Un type travesti à la relecture y invente \
+             des évènements qui n'ont pas eu lieu.\n\n{}",
+            travesties.len(),
+            variantes.len(),
+            travesties.join("\n")
+        );
+    }
+
+    /// Le défaut historique, nommé : le repli fabriquait des alertes.
+    #[test]
+    fn security_un_type_inconnu_ne_se_deguise_pas_en_acces_non_autorise() {
+        let relu = PostgresAuditLogRepository::string_to_event_type("EvenementDunFuturLointain");
+        assert_eq!(
+            relu,
+            AuditEventType::UnknownLegacyEvent,
+            "un type inconnu doit se lire inconnu. Le repli était \
+             `UnauthorizedAccess` : 194 types sur 223 ressortaient du \
+             registre en alertes de sécurité, et une élection au conseil de \
+             copropriété se lisait comme une intrusion."
+        );
+        assert_ne!(relu, AuditEventType::UnauthorizedAccess);
+    }
+
+    /// Une variante ajoutée demain n'a pas besoin qu'on pense à la relecture.
+    #[test]
+    fn happy_une_variante_recente_se_relit_sans_table_a_tenir() {
+        for nom in ["MeetingCancelled", "MeetingRescheduled", "PortfolioShared"] {
+            let relu = PostgresAuditLogRepository::string_to_event_type(nom);
+            assert_eq!(PostgresAuditLogRepository::event_type_to_string(&relu), nom);
+        }
     }
 }

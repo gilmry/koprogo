@@ -436,6 +436,7 @@ mod tests {
     fn make_meeting(org_id: Uuid) -> Meeting {
         let future_date = Utc::now() + Duration::days(30);
         Meeting::new(
+            Uuid::new_v4(), // acp_id
             org_id,
             Uuid::new_v4(),
             MeetingType::Ordinary,
