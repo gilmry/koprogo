@@ -212,8 +212,31 @@ jobs:
       matrix:
         entree: ${{ fromJson(needs.plan.outputs.matrice) }}
     steps:
+      # ── `ref:` n'est pas décoratif (#874) ─────────────────────────────
+      #
+      # Sans lui, `actions/checkout` prend la référence qui a DÉCLENCHÉ le
+      # workflow. Pour un `workflow_dispatch`, c'est la branche PAR DÉFAUT
+      # — `main` — et pas la base vers laquelle les PR sont ouvertes.
+      #
+      # Mesuré sur la vague V4.1 du 2026-09-13 (run 34776213266) : les sept
+      # branches produites portent toutes `11e1dfd9` pour parent, c'est-à-
+      # dire le sommet de `main`, alors que `gh pr create --base feature/dev`
+      # les proposait à `feature/dev`. Leurs gates ont donc mesuré un socle
+      # vieux de plusieurs jours :
+      #
+      #   story/798  Integration Tests 🔴 — #877, corrigé sur feature/dev
+      #                                     le jour même, absent de main
+      #
+      # Un agent recevait ainsi un verdict rouge pour un défaut qu'il n'avait
+      # pas introduit, sur du code qu'il n'avait pas écrit. C'est exactement
+      # ce que la revue de promotion doit pouvoir exclure.
+      #
+      # `feature/dev` est écrite en dur, et c'est volontaire : c'est la base
+      # que `gh pr create --base feature/dev` vise trois cents lignes plus
+      # bas. Les deux doivent bouger ensemble ou pas du tout.
       - uses: actions/checkout@v7
         with:
+          ref: feature/dev
           fetch-depth: 0
 
       - name: Ouvrir la branche
