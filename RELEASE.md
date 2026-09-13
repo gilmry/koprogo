@@ -329,6 +329,55 @@ du défaut avec un témoin d'interruption (le minimum, déjà décrit dans #880)
 
 ## Journal (chronologie courte)
 
+- 2026-09-13 — **Vague V4.2 déroulée**, run `34783546008`, lancée
+  `--ref feature/dev` pour que ce soit la version CORRIGÉE du workflow qui
+  s'exécute. Neuf stories, six branches :
+
+  | Story | Produit |
+  |---|---|
+  | #635 | 15 fichiers, 1558 l. |
+  | #850 | 3 fichiers, 470 l. |
+  | #429 | 5 fichiers, 360 l. |
+  | #432 | 2 fichiers, 273 l. |
+  | #841 | 3 fichiers, 215 l. |
+  | #864 | 2 fichiers, 93 l. — **par-dessus le travail de la session** |
+  | #870, #585, #854 | aucun changement |
+
+  **#864 est le cas intéressant** : l'agent a branché sur `feature/dev`, donc
+  sur le cliquet à 73 et ses 33 exceptions que je venais de poser, et il l'a
+  étendu de 61 lignes. Le fan-out capitalise au lieu de refaire — c'est
+  exactement ce que l'épinglage du `checkout` devait rendre possible.
+
+  **Des deux correctifs, un seul marche, et c'est mesuré :**
+
+  | | Verdict |
+  |---|---|
+  | `checkout` épinglé | ✅ `story/841` part de `1d261413`, sommet de `feature/dev` |
+  | jeton dédié | ❌ **aucun run `ci.yml` sur push**, malgré « Jeton dédié présent » au journal |
+
+  Les réglages Actions sont permissifs (`allowed_actions=all`,
+  `default_workflow_permissions=write`). Le secret existe et le workflow
+  l'utilise. **Le jeton ne réveille donc pas les workflows**, ce qui est le
+  comportement du `GITHUB_TOKEN`, pas celui d'un PAT. Sa valeur ne peut pas
+  être relue par un agent : c'est au PO de vérifier son type.
+
+- 2026-09-13 — **🔴 `main` est bloqué par des défauts que seul `main` peut
+  recevoir.** La protection de `main` exige **neuf** contrôles verts —
+  protection classique, plus large que le ruleset. Deux sont rouges :
+
+  | Requis | Cause | Corrigé sur `feature/dev` |
+  |---|---|---|
+  | `Integration Tests (API)` | #877 | `72d719e6` |
+  | `Playwright E2E Tests` | #718 | `40eb8edd` |
+
+  La PR #890, qui promeut le seul fichier de workflow, ne peut pas les
+  porter. Deux sorties : `--admin`, qui contourne les contrôles que `main` a
+  précisément pour empêcher ça, ou **promouvoir la branche entière** — PR
+  #894 — où les deux deviennent verts *parce qu'ils sont réparés*.
+
+  #894 est ouverte et **non fusionnée** : elle dépasse ce qui a été validé,
+  et la promotion vers `main` reste un geste humain.
+
 - 2026-09-13 — **Les sept branches de V4.1 ont leur verdict de gates**, et il
   se lit en deux colonnes — ce qui est le but du dispositif.
 
