@@ -329,6 +329,36 @@ du défaut avec un témoin d'interruption (le minimum, déjà décrit dans #880)
 
 ## Journal (chronologie courte)
 
+- 2026-09-13 — **#864 : le cliquet CLASSE, et le relevé passe de 95 à 73.**
+  Vingt-deux routes cloisonnées dans la journée. Les dix transitions d'état
+  (budget, état daté), puis les quatre POST d'assemblée — annuler, clôturer,
+  reporter, valider le quorum, c'est-à-dire l'Art. 3.87 — les quatre
+  transitions de dépense, `assign_owner`, et `create_quote` dont l'identité
+  était nommée `_auth`.
+
+  **Deux d'une forme que ni l'issue ni le cliquet ne cherchaient** :
+  `list_call_for_funds` et `get_contributions_by_owner` cloisonnaient
+  correctement dans leur branche nominale et **pas du tout** dans leur
+  branche filtrée. Un paramètre facultatif — `building_id`, `owner_id` —
+  contournait le chemin protégé, et les deux fois sur la même donnée : qui
+  doit combien. Aucun cliquet qui compte des *gestionnaires* ne voit cette
+  forme-là.
+
+  Le cliquet porte désormais **33 exceptions, chacune lue, chacune avec sa
+  raison écrite**, et un second compteur : **40 routes ni corrigées ni
+  lues**, qui ne peut que descendre. Un troisième test garde la liste
+  honnête — une exception qui ne correspond plus à rien fait rougir.
+
+  Témoin de rougeur, gardes retirées : `POST /meetings/{id}/cancel` rend
+  **200 OK** au syndic d'une autre organisation, et annule son AG.
+
+  **Une catégorie manquait à l'énoncé de l'issue, et c'est la plus
+  dangereuse** : « rôle contrôlé, périmètre NON ». `check_syndic_role`,
+  `check_accountant_role`, `check_unit_ownership_permission` — un syndic du
+  cabinet A y approuve la facture du cabinet B. Le cliquet les compte **par
+  accident**, parce que le nom du helper n'est dans aucun motif. Renommer
+  l'un d'eux `verify_*` les sortirait du compte **sans les corriger**.
+
 - 2026-09-13 — **LE GATE `e2e` EST VERT.** `make test-e2e` rend
   **308 ✓ / 0 ✘ / 14 sautés, code 0**, sur la pile de recette, sans
   redémarrage du backend pendant. C'est le même chiffre que la CI, ce qui
