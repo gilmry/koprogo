@@ -783,6 +783,12 @@ pub async fn export_meeting_minutes_pdf(
         is_second_convocation: false,
         minutes_document_id: None,
         minutes_sent_at: None,
+        // Le PV n'a pas besoin de la modalité de tenue de l'AG : cette
+        // reconstruction ne sert qu'à générer le document, pas à refléter
+        // l'entité persistée (cf. `PostgresMeetingRepository` pour la source
+        // de vérité de `mode`/`videoconf_url`).
+        mode: crate::domain::entities::MeetingMode::InPerson,
+        videoconf_url: None,
     };
 
     // 5. Generate PDF

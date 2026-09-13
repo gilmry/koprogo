@@ -92,8 +92,8 @@ pub use fonds_de_reserve::{DotationInsuffisante, StatutFondsReserve};
 pub use majorites::{majorite_pour_modifier_les_quotes_parts, NatureDeDecision};
 pub use mandate::{Mandate, MandateKind, MandateScope, MAX_MANDATE_DURATION_DAYS};
 pub use meeting::{
-    Meeting, MeetingCompletionChecklist, MeetingNotCompletableError, MeetingStatus, MeetingType,
-    MissingInvariant,
+    Meeting, MeetingCompletionChecklist, MeetingMode, MeetingModeError, MeetingNotCompletableError,
+    MeetingStatus, MeetingType, MissingInvariant,
 };
 pub use mention_numero_entreprise::{
     verifier_les_documents, DocumentProduit, MentionNumeroEntreprise,

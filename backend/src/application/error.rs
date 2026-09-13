@@ -274,6 +274,15 @@ pub enum AppError {
         "Droit de vote suspendu : lot démembré/indivis sans représentant unique (Art. 3.87 §1 CC)"
     )]
     VotingRightSuspended { unit_id: uuid::Uuid },
+
+    /// Story 4.1 — `Meeting::set_mode()` a échoué : mode distanciel/hybride
+    /// annoncé sans URL de visioconférence configurée. 422 + payload
+    /// `MEETING_MODE_REQUIRES_VIDEOCONF` (FE guide la saisie du champ
+    /// manquant plutôt que de laisser échouer la convocation plus tard).
+    #[error(
+        "Configuration de visioconférence manquante pour ce mode de réunion (Art. 3.87 §1er CC)"
+    )]
+    MeetingModeRequiresVideoconf { mode: String },
 }
 
 impl AppError {
@@ -294,6 +303,7 @@ impl AppError {
             AppError::AcpNotConformant { .. } => "acp_not_conformant",
             AppError::ReserveFundInsufficient { .. } => "reserve_fund_insufficient",
             AppError::VotingRightSuspended { .. } => "voting_right_suspended",
+            AppError::MeetingModeRequiresVideoconf { .. } => "meeting_mode_requires_videoconf",
             AppError::RateLimited => "rate_limited",
             AppError::Database(_) => "database",
             AppError::Crypto(_) => "crypto",
@@ -352,7 +362,8 @@ impl ResponseError for AppError {
             | AppError::MeetingNotCompletable { .. }
             | AppError::AcpNotConformant { .. }
             | AppError::ReserveFundInsufficient { .. }
-            | AppError::VotingRightSuspended { .. } => StatusCode::UNPROCESSABLE_ENTITY,
+            | AppError::VotingRightSuspended { .. }
+            | AppError::MeetingModeRequiresVideoconf { .. } => StatusCode::UNPROCESSABLE_ENTITY,
             AppError::RateLimited => StatusCode::TOO_MANY_REQUESTS,
             AppError::Database(_) | AppError::Crypto(_) | AppError::Internal(_) => {
                 StatusCode::INTERNAL_SERVER_ERROR
@@ -424,6 +435,12 @@ impl ResponseError for AppError {
             AppError::VotingRightSuspended { unit_id } => Some(json!({
                 "code": "VOTING_RIGHT_SUSPENDED",
                 "unit_id": unit_id,
+            })),
+            // Story 4.1 — payload narratif `MEETING_MODE_REQUIRES_VIDEOCONF`
+            // (422). Le FE consomme `details.code` pour focus le champ URL.
+            AppError::MeetingModeRequiresVideoconf { mode } => Some(json!({
+                "code": "MEETING_MODE_REQUIRES_VIDEOCONF",
+                "mode": mode,
             })),
             // Track H Story H3 — payload narratif pour `MeetingNotCompletable`
             // (422) : le FE consomme `details.code == "MEETING_NOT_COMPLETABLE"`
@@ -835,6 +852,24 @@ impl From<crate::domain::entities::MeetingNotCompletableError> for String {
             err.meeting_id,
             serde_json::to_string(&missing_json).unwrap_or_else(|_| "[]".to_string())
         )
+    }
+}
+
+// ============================================================================
+// Story 4.1 — bridge From<MeetingModeError> (mode hybride/distanciel)
+// ============================================================================
+
+impl From<crate::domain::entities::MeetingModeError> for AppError {
+    /// Story 4.1 — `Meeting::set_mode()` refusé (mode remote/hybrid sans
+    /// URL de visioconférence) → 422 + payload `MEETING_MODE_REQUIRES_VIDEOCONF`.
+    fn from(err: crate::domain::entities::MeetingModeError) -> Self {
+        match err {
+            crate::domain::entities::MeetingModeError::VideoconfUrlRequired { mode } => {
+                AppError::MeetingModeRequiresVideoconf {
+                    mode: mode.to_db_str().to_string(),
+                }
+            }
+        }
     }
 }
 
@@ -1309,6 +1344,53 @@ mod tests {
         // bcrypt failures are server-side issues, not auth failures.
         let e = AppError::Crypto("hash format invalid".into());
         assert_eq!(e.status_code(), StatusCode::INTERNAL_SERVER_ERROR);
+    }
+
+    // ------------------------------------------------------------------------
+    // Story 4.1 — MeetingModeRequiresVideoconf 4-cat
+    // ------------------------------------------------------------------------
+
+    #[test]
+    fn happy_meeting_mode_requires_videoconf_maps_to_422() {
+        let e = AppError::MeetingModeRequiresVideoconf {
+            mode: "hybrid".to_string(),
+        };
+        assert_eq!(e.status_code(), StatusCode::UNPROCESSABLE_ENTITY);
+        assert_eq!(e.kind(), "meeting_mode_requires_videoconf");
+    }
+
+    #[test]
+    fn happy_from_meeting_mode_domain_error_preserves_mode() {
+        use crate::domain::entities::{MeetingMode, MeetingModeError};
+
+        let app_err: AppError = MeetingModeError::VideoconfUrlRequired {
+            mode: MeetingMode::Remote,
+        }
+        .into();
+        match app_err {
+            AppError::MeetingModeRequiresVideoconf { mode } => assert_eq!(mode, "remote"),
+            other => panic!("expected MeetingModeRequiresVideoconf, got {:?}", other),
+        }
+    }
+
+    #[test]
+    fn edge_meeting_mode_requires_videoconf_payload_carries_code() {
+        let e = AppError::MeetingModeRequiresVideoconf {
+            mode: "hybrid".to_string(),
+        };
+        let body = e.error_response();
+        assert_eq!(body.status(), StatusCode::UNPROCESSABLE_ENTITY);
+    }
+
+    #[test]
+    fn security_meeting_mode_requires_videoconf_does_not_expose_meeting_id() {
+        // Contrairement à MeetingNotCompletable, cette erreur porte sur une
+        // configuration pas encore persistée : aucun meeting_id à exposer.
+        let e = AppError::MeetingModeRequiresVideoconf {
+            mode: "remote".to_string(),
+        };
+        let s = format!("{}", e);
+        assert!(!s.contains("meeting_id"));
     }
 
     #[test]
