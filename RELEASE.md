@@ -94,24 +94,28 @@ appelle une signature et non une validation.
   `Host(localhost)` ne sert que nos deux conteneurs — contrôlé par l'API de
   Traefik, pas supposé.
 
-- **Prochaine action attendue** : **rejouer la campagne avec le correctif de
-  #718**, pour savoir ce qui reste quand les 502 ne masquent plus rien.
+- **Prochaine action attendue** : **le socle est vert. Reste à le POUSSER, et
+  ce n'est pas du ressort de l'agent.**
 
-  La campagne propre du 2026-09-13 a rendu **298 ✓ / 10 ✘**, et les dix sont
-  des 502 causés par `bcrypt` tenant le thread de travail. Le correctif
-  (`40eb8edd`) sort `hash` et `verify` du worker. Ce que la campagne rendra
-  ensuite est **inconnu** : il peut ne rester aucun échec, ou des défauts que
-  les 502 recouvraient. On ne le saura qu'en mesurant.
+  Trois campagnes du 2026-09-13, même code produit sauf le correctif de #718 :
 
-  Deux arbitrages ouverts avant d'aller plus loin :
+  | Campagne | Résultat | Ce qui la distingue |
+  |---|---|---|
+  | contaminée | 213 ✓ / 95 ✘ | deux recompilations pendant — #880 |
+  | propre | 298 ✓ / 10 ✘ | dix 502, aucun défaut produit |
+  | après #718 | **308 ✓ / 0 ✘ — code 0** | `bcrypt` sorti du thread de travail |
 
-  - **🔴 `ACTIX_WORKERS: 1` sur la démo.** Le correctif retire le blocage, il
-    ne rend pas un worker unique défendable. Un produit fait pour des
-    assemblées générales verra des dizaines de connexions dans la même
-    minute.
-  - **🔴 Le banc de recette est en hot reload** (#880). Il reste
-    non reproductible tant que quelqu'un édite du Rust, et le fan-out y fera
-    tourner N agents qui en écrivent.
+  Les quatre specs qu'on s'apprêtait à instruire une par une — `AgeRequests`,
+  `Convocations`, `Gdpr:430`, `FinancialRegressions F3` — sont vertes **sans
+  qu'aucune n'ait été touchée**. C'est la réponse de #832 : il n'y avait rien
+  à instruire, il y avait une cause unique à trouver.
+
+  Deux arbitrages restent ouverts, et les deux sont posés plus bas en 🔴 :
+  `ACTIX_WORKERS: 1` sur la démo, et le banc de recette en hot reload (#880).
+
+  ⚠️ **Les commits sont locaux.** Pousser `feature/dev` déclenche le
+  déploiement du VPS — c'est un geste humain, et le lot contient le correctif
+  qui règle aussi les 502 de `api.koprogo.com`.
 
 - **À noter, sans conséquence aujourd'hui** : le Traefik de la recette voit les
   **18 routeurs des projets voisins** de l'hôte (derniere-chance, elevia, n8n),
@@ -218,13 +222,22 @@ issues tiennent chacune une file — **#803** en débloque 11, **#805** dix,
 | `unit` domaine | 🟢 | `kcargo test --lib` | 1989 tests |
 | `integration` | 🟢 | suites `e2e_*.rs` (testcontainers) | #877 fermée : `storage_s3` rend `1 passed`, code 0, contre `quay.io`. **Mesuré le 2026-09-13**, pas déduit |
 | `bdd` | 🟢 | suites `bdd_*.rs` | |
-| `e2e` parcours | 🟠 | `make test-e2e` | **298 ✓ / 10 ✘ / 14 sautés**, code 2, campagne propre du 2026-09-13 (aucun redémarrage pendant). **Les DIX échecs sont des 502** — tous #718, aucun défaut produit. En CI : **308 ✓ / 0 ✘** |
+| `e2e` parcours | 🟢 | `make test-e2e` | **308 ✓ / 0 ✘ / 14 sautés — CODE 0**, le 2026-09-13 après le correctif de #718 (`40eb8edd`). Aucun redémarrage pendant (`SIGTERM` 4 avant, 4 après). Même chiffre qu'en CI |
 | `visuel` | ⚪ | — | pas de goldens |
 | `doc-vivante` | 🟢 | `make vitrine` | parcours complet, 10 chapitres, 81 s, `interrompu: None` — prouvé en CI (run 34710066495) et en local (2/2) |
 | front typecheck | 🟢 | `npx svelte-check --threshold error` | 0 erreur |
 | front tests | 🟢 | `npx vitest run` | 659 tests, 120 fichiers |
 
-**Le socle n'est toujours pas vert, mais il est enfin MESURÉ.** La pile de
+**Le socle est vert le 2026-09-13**, `plancher migrations` et `visuel` mis à
+part, qui restent ⚪ faute de gate. Il l'est sur des exécutions, pas sur des
+lectures de diff : chaque 🟢 du tableau ci-dessus porte un code de sortie.
+
+Le dernier à céder aura été `e2e`, et il n'a pas cédé parce qu'on a réparé
+dix specs — il a cédé parce qu'on a trouvé **une** cause à ses dix échecs.
+C'est la leçon de la journée, et elle vaut d'être écrite : instruire dix
+symptômes un par un aurait coûté des jours et n'aurait rien réparé.
+
+**Ce que le premier passage a coûté, et qui reste vrai.** La pile de
 recette a tourné pour la première fois de son existence le 2026-09-12, et
 chaque ligne du tableau ci-dessus repose désormais sur une exécution, plus sur
 une lecture de diff.
@@ -315,6 +328,24 @@ du défaut avec un témoin d'interruption (le minimum, déjà décrit dans #880)
 | **PR #879** | **relancer pour qu'elle ait ses gates** avant la revue. La chronométrer sans preuve mesurerait autre chose que ce que #875 cherche | Gilles Maury | 2026-09-13 | #875, run `34764114133` |
 
 ## Journal (chronologie courte)
+
+- 2026-09-13 — **LE GATE `e2e` EST VERT.** `make test-e2e` rend
+  **308 ✓ / 0 ✘ / 14 sautés, code 0**, sur la pile de recette, sans
+  redémarrage du backend pendant. C'est le même chiffre que la CI, ce qui
+  clôt l'écart entre les deux bancs — il venait entièrement de #718.
+
+  Trois campagnes, même code sauf un correctif :
+
+  | Campagne | Résultat |
+  |---|---|
+  | contaminée (deux recompilations pendant) | 213 ✓ / 95 ✘ |
+  | propre | 298 ✓ / 10 ✘ — **dix 502** |
+  | après `40eb8edd` | **308 ✓ / 0 ✘ — code 0** |
+
+  La latence de `register` n'a PAS bougé — médiane 1,66 s contre 1,69 s — et
+  c'est la preuve que le correctif ne triche pas : le coût bcrypt est
+  intact, c'est la file d'attente qui a disparu. Le maximum tombe de 3,84 s
+  à 2,63 s, et plus aucun appel ne dépasse 3 s.
 
 - 2026-09-13 — **#718 EXPLIQUÉ, et corrigé.** C'est le résultat de la
   journée.
