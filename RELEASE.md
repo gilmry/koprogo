@@ -329,6 +329,46 @@ du défaut avec un témoin d'interruption (le minimum, déjà décrit dans #880)
 
 ## Journal (chronologie courte)
 
+- 2026-09-13 — **LE GANTT TOURNE. Vague V4.1 déroulée en réel**, run
+  `34776213266` : dix stories, deux agents simultanés (`max-parallel: 2`
+  tenu, mesuré sur les horodatages), abonnement, Sonnet.
+
+  | Story | Domaine | Produit |
+  |---|---|---|
+  | #872 | harnais | 4 fichiers, 176 l. — **le livrable 4 qui manquait** : le refus explicite d'un hôte non amorcé |
+  | #798 | front/composants | 10 fichiers, 977 l. |
+  | #576 | back/copropriete | 14 fichiers, 919 l. |
+  | #781 | back/communaute | 18 fichiers, 752 l. |
+  | #805 | docs-vivante | 9 fichiers, 953 l. |
+  | #425 | meta | 1 fichier, 345 l. |
+  | #852 | back/comptabilite | 5 fichiers, 196 l. |
+  | #694, #515, #869 | — | **aucun changement**, 26 à 30 s chacun |
+
+  Sept PR en brouillon, #883 à #889.
+
+  **Trois défauts que seule l'exécution pouvait montrer :**
+
+  1. **Le fan-out a tourné avec une version périmée de lui-même.**
+     `workflow_dispatch` exécute le fichier de la branche PAR DÉFAUT, et
+     `main` portait un `fanout-stories.yml` antérieur de **238 lignes**,
+     sans aucune mention de `FANOUT_GITHUB_TOKEN`. Les sept branches sont
+     donc parties avec le `GITHUB_TOKEN` — zéro gate, zéro vitrine —
+     pendant que le corps des PR annonçait « les gates partent seuls ».
+     C'est le motif dominant du dépôt sous une forme nouvelle : un
+     dispositif corrigé, présent, et inopérant parce que **ce n'est pas
+     cette copie-là qui s'exécute**. Promotion validée par le PO et en
+     cours (PR #890). Gates déclenchés à la main entre-temps.
+  2. **Trois agents sur dix n'ont rien produit**, et on ne sait pas
+     pourquoi : leur rapport part au résumé d'étape, que l'API GitHub
+     n'expose pas. C'est un trou du dispositif, pas une conclusion.
+  3. **Le registre CSI n'a reçu aucune ligne.** Le job « Récapitulatif »
+     n'existe pas dans la version de `main`. Dix passes réelles, télémétrie
+     perdue — pour la deuxième fois, après le run `34739504910`.
+
+- 2026-09-13 — **`feature/dev` poussée après les seize gardes vertes.** Le
+  barrage est passé, les images `sha-69b915f7` sont publiées : le correctif
+  de #718 et le passage de MinIO sur quay.io partent en production.
+
 - 2026-09-13 — **#864 : le cliquet CLASSE, et le relevé passe de 95 à 73.**
   Vingt-deux routes cloisonnées dans la journée. Les dix transitions d'état
   (budget, état daté), puis les quatre POST d'assemblée — annuler, clôturer,
