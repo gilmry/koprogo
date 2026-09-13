@@ -94,21 +94,24 @@ appelle une signature et non une validation.
   `Host(localhost)` ne sert que nos deux conteneurs — contrôlé par l'API de
   Traefik, pas supposé.
 
-- **Prochaine action attendue** : **trancher #880 avant de croire une
-  campagne de plus.** Le 2026-09-13 a montré que l'écart entre les deux bancs
-  est plus grand que l'écart qu'on cherchait à mesurer :
+- **Prochaine action attendue** : **rejouer la campagne avec le correctif de
+  #718**, pour savoir ce qui reste quand les 502 ne masquent plus rien.
 
-  | Banc | Même code, même jour |
-  |---|---|
-  | CI (runner dédié) | **308 ✓ / 0 ✘** |
-  | pile de recette (cet hôte) | 12 ✘ avant contamination, puis 83 de plus |
+  La campagne propre du 2026-09-13 a rendu **298 ✓ / 10 ✘**, et les dix sont
+  des 502 causés par `bcrypt` tenant le thread de travail. Le correctif
+  (`40eb8edd`) sort `hash` et `verify` du worker. Ce que la campagne rendra
+  ensuite est **inconnu** : il peut ne rester aucun échec, ou des défauts que
+  les 502 recouvraient. On ne le saura qu'en mesurant.
 
-  Tant que le banc n'est pas stable, #832 ne peut pas distinguer « défaut
-  réel » de « propriété du banc » — et c'est exactement la question qu'il
-  pose. Les quatre échecs instruits jusqu'ici (`AgeRequests`,
-  `LocalExchanges`, `Notifications` ×3) **passent tous en isolation**,
-  20 ✓ / 0 ✘, et passent en CI. Ils n'ont pas de cause produit identifiée à
-  ce jour : ce sont des interactions, la famille de #718.
+  Deux arbitrages ouverts avant d'aller plus loin :
+
+  - **🔴 `ACTIX_WORKERS: 1` sur la démo.** Le correctif retire le blocage, il
+    ne rend pas un worker unique défendable. Un produit fait pour des
+    assemblées générales verra des dizaines de connexions dans la même
+    minute.
+  - **🔴 Le banc de recette est en hot reload** (#880). Il reste
+    non reproductible tant que quelqu'un édite du Rust, et le fan-out y fera
+    tourner N agents qui en écrivent.
 
 - **À noter, sans conséquence aujourd'hui** : le Traefik de la recette voit les
   **18 routeurs des projets voisins** de l'hôte (derniere-chance, elevia, n8n),
@@ -215,7 +218,7 @@ issues tiennent chacune une file — **#803** en débloque 11, **#805** dix,
 | `unit` domaine | 🟢 | `kcargo test --lib` | 1989 tests |
 | `integration` | 🟢 | suites `e2e_*.rs` (testcontainers) | #877 fermée : `storage_s3` rend `1 passed`, code 0, contre `quay.io`. **Mesuré le 2026-09-13**, pas déduit |
 | `bdd` | 🟢 | suites `bdd_*.rs` | |
-| `e2e` parcours | 🟠 | `make test-e2e` | **s'exécute enfin** contre `localhost:8090` : 300 ✓ / 8 ✗ / 14 sautés, code 2. Dont 4 en 502 sous rafale — #718 |
+| `e2e` parcours | 🟠 | `make test-e2e` | **298 ✓ / 10 ✘ / 14 sautés**, code 2, campagne propre du 2026-09-13 (aucun redémarrage pendant). **Les DIX échecs sont des 502** — tous #718, aucun défaut produit. En CI : **308 ✓ / 0 ✘** |
 | `visuel` | ⚪ | — | pas de goldens |
 | `doc-vivante` | 🟢 | `make vitrine` | parcours complet, 10 chapitres, 81 s, `interrompu: None` — prouvé en CI (run 34710066495) et en local (2/2) |
 | front typecheck | 🟢 | `npx svelte-check --threshold error` | 0 erreur |
@@ -267,7 +270,25 @@ un défaut de structure. Seul l'ordre des capacités est repris.
 
 ### 🔴 En attente (le PO doit trancher une MODALITÉ)
 
-**Aucun.** Tous les arbitrages ouverts ont été tranchés le 2026-09-12.
+**`ACTIX_WORKERS: 1` sur la démo** — posé le 2026-09-13, avec sa preuve.
+
+`docker-compose.prod.yml:101` pose `ACTIX_WORKERS: ${ACTIX_WORKERS:-1}`. La
+mesure de #718 établit que `hash`/`verify` bloquaient le worker 1,69 s en
+médiane : avec un seul worker, **une connexion bloquait toute l'API**. Le
+correctif `40eb8edd` retire le blocage ; il ne rend pas un worker unique
+défendable pour un produit où des dizaines de copropriétaires se connectent
+dans la même minute d'une AG.
+
+Ce n'est pas à l'agent de trancher : c'est un arbitrage de dimensionnement,
+avec un coût en RAM sur un VPS qui porte trente conteneurs.
+
+**Le banc de mesure de la recette** — posé le 2026-09-13, #880.
+
+Le backend de la recette tourne sous `cargo-watch`. Toute édition de Rust
+pendant une campagne la coupe, et rien dans les artefacts ne le dit. L'ADR
+0050 a choisi une pile unique ; en changer se pose au PO. Trois voies : un
+banc à binaire figé, la sérialisation explicite de l'accès, ou l'acceptation
+du défaut avec un témoin d'interruption (le minimum, déjà décrit dans #880).
 
 ### ✅ Tranchés
 
@@ -290,6 +311,45 @@ un défaut de structure. Seul l'ordre des capacités est repris.
 | **PR #879** | **relancer pour qu'elle ait ses gates** avant la revue. La chronométrer sans preuve mesurerait autre chose que ce que #875 cherche | Gilles Maury | 2026-09-13 | #875, run `34764114133` |
 
 ## Journal (chronologie courte)
+
+- 2026-09-13 — **#718 EXPLIQUÉ, et corrigé.** C'est le résultat de la
+  journée.
+
+  La campagne propre a rendu **298 ✓ / 10 ✘ / 14 sautés**, sans un seul
+  redémarrage du backend pendant (`SIGTERM` à 2 avant comme après). **Les dix
+  échecs sont des 502, sans exception** — huit portent littéralement
+  `seed:org: HTTP 502 — Bad Gateway`. Aucun n'est un défaut produit.
+
+  La cause tient en deux lignes. `auth_use_cases.rs:141` et `:79` appelaient
+  `hash` et `verify` **synchrones, dans des `async fn`, sans
+  `spawn_blocking`**. Relevé sur 161 643 lignes de journal :
+
+  | Route | Appels > 1 s |
+  |---|---:|
+  | `POST /auth/register` | **722** — médiane 1,69 s, p90 2,02 s, max 3,84 s |
+  | `POST /auth/login` | **281** |
+
+  Pendant ces 1,7 s le thread de travail Actix ne rend la main à rien. Avec
+  deux workers, deux inscriptions simultanées consomment toute la capacité ;
+  la troisième requête attend et Traefik rend 502.
+
+  ⚠️ **La démo tourne avec `ACTIX_WORKERS: 1`** (`docker-compose.prod.yml:101`).
+  UNE connexion y bloque toute l'API pendant 1,7 s. Sur un produit fait pour
+  des assemblées générales, le seuil est franchi au premier usage réel. Le
+  correctif ne touche pas ce réglage : **il reste à trancher, et c'est une
+  modalité du PO.**
+
+  Corrigé par `40eb8edd`, avec un témoin **déterministe** plutôt que
+  chronométré : sur un runtime `current_thread`, une tâche témoin qui
+  `yield_now()` ne progresse que si le hachage libère le thread. Blocage
+  réarmé → FAILED ; correctif → 12 passed. Un test chronométré aurait
+  clignoté sur un hôte à trente conteneurs, et un test qui clignote finit
+  désactivé — c'est ainsi que ce blocage a survécu.
+
+- 2026-09-13 — **#832 est répondu, et la réponse tient en une ligne.** La
+  question était de départager « cascade d'un 502 » et « défaut réel » pour
+  chaque spec rouge. Les dix sont du premier type. Il n'y a pas de défaut
+  réel à instruire dans ce lot.
 
 - 2026-09-13 — **#879 relancée : les gates disent en vingt minutes ce que la
   relecture du diff n'aurait pas vu.** Run `34764114133`. La branche
