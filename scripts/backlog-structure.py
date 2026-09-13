@@ -46,7 +46,23 @@ _spec = importlib.util.spec_from_file_location(
 _pret = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(_pret)
 
-DEPOT = "/home/ubuntu/koprogo"
+# Le dépôt, DÉRIVÉ du chemin de ce script et jamais écrit en dur.
+#
+# Il valait `/home/ubuntu/koprogo` — le poste d'une seule personne. Tant que
+# ces scripts ne tournaient que là, personne ne l'a vu. Le 2026-09-13, le
+# fan-out a appelé `backlog-pret.py --issue` depuis un runner GitHub, et le
+# script est mort sur :
+#
+#     FileNotFoundError: [Errno 2] No such file or directory: '/home/ubuntu/koprogo'
+#
+# Pire que la panne : le workflow testait `if ! python3 ...` et a donc
+# annoncé « #868 ne porte pas les huit éléments » — un VERDICT — là où le
+# script n'avait rien pu mesurer. Quatre agents refusés sur un diagnostic
+# faux.
+#
+# `gantt-passes.py` et `rice-produit.py` dérivaient déjà leur chemin. Les
+# deux autres non, et rien ne le signalait.
+DEPOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 JALON = "release:0.1.0"
 
 # ── Les épopées ───────────────────────────────────────────────────────────

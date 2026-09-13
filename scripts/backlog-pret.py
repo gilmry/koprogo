@@ -22,11 +22,28 @@ Usage :
     python3 scripts/backlog-pret.py --detail   # + ce qui manque, issue par issue
 """
 import json
+import os
 import re
 import subprocess
 import sys
 
-DEPOT = "/home/ubuntu/koprogo"
+# Le dépôt, DÉRIVÉ du chemin de ce script et jamais écrit en dur.
+#
+# Il valait `/home/ubuntu/koprogo` — le poste d'une seule personne. Tant que
+# ces scripts ne tournaient que là, personne ne l'a vu. Le 2026-09-13, le
+# fan-out a appelé `backlog-pret.py --issue` depuis un runner GitHub, et le
+# script est mort sur :
+#
+#     FileNotFoundError: [Errno 2] No such file or directory: '/home/ubuntu/koprogo'
+#
+# Pire que la panne : le workflow testait `if ! python3 ...` et a donc
+# annoncé « #868 ne porte pas les huit éléments » — un VERDICT — là où le
+# script n'avait rien pu mesurer. Quatre agents refusés sur un diagnostic
+# faux.
+#
+# `gantt-passes.py` et `rice-produit.py` dérivaient déjà leur chemin. Les
+# deux autres non, et rien ne le signalait.
+DEPOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 JALON = "release:0.1.0"
 
 # Les huit éléments du gabarit `bmad/livrables/epics-stories.template.md`.
@@ -92,10 +109,24 @@ def une_issue(numero: int) -> int:
     Rend 0 si l'issue porte les huit éléments, 1 sinon, et NOMME ce qui
     manque — un refus qui ne dit pas quoi corriger se lit comme un caprice.
     """
-    brut = subprocess.run(
-        ["gh", "issue", "view", str(numero), "--json", "number,title,body"],
-        capture_output=True, text=True, cwd=DEPOT, check=True).stdout
-    issue = json.loads(brut)
+    # Code 2 = « je n'ai PAS PU mesurer », distinct de 1 = « mesuré, et il
+    # manque quelque chose ».
+    #
+    # Sans cette distinction, un appelant qui écrit `if ! script` confond une
+    # panne avec un verdict. C'est arrivé le 2026-09-13 : `DEPOT` pointait
+    # vers un chemin absent du runner, le script est mort, et le fan-out a
+    # annoncé « #868 ne porte pas les huit éléments » à quatre agents dont
+    # les issues étaient prêtes. L'absence de mesure s'écrit `null`, pas
+    # `zéro` — ici elle s'écrit 2, pas 1.
+    try:
+        rendu = subprocess.run(
+            ["gh", "issue", "view", str(numero), "--json", "number,title,body"],
+            capture_output=True, text=True, cwd=DEPOT, check=True)
+    except (OSError, subprocess.CalledProcessError) as e:
+        print(f"#{numero} n'a PAS PU être mesurée : {e}", file=sys.stderr)
+        print("Ce n'est pas un verdict sur la story.", file=sys.stderr)
+        return 2
+    issue = json.loads(rendu.stdout)
     absents = manquants(issue.get("body") or "")
     if not absents:
         print(f"#{numero} porte les huit éléments.")

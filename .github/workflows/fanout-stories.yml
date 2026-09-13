@@ -287,7 +287,23 @@ jobs:
           # Le remède n'était pas d'ajouter le titre à #877 : ce serait plier
           # l'issue à l'instrument le plus grossier des deux. C'est de n'en
           # avoir qu'un.
-          if ! python3 scripts/backlog-pret.py --issue "$NUM"; then
+          # Un plantage n'est PAS un verdict.
+          #
+          # `if ! script` confondait les deux, et le 2026-09-13 quatre agents
+          # ont été refusés sur « ne porte pas les huit éléments » alors que
+          # le script était mort sur un chemin absent du runner. Le script
+          # rend désormais 2 pour « pas pu mesurer », 1 pour « mesuré et
+          # incomplet ».
+          set +e
+          python3 scripts/backlog-pret.py --issue "$NUM"
+          PRET=$?
+          set -e
+          if [ "$PRET" -eq 2 ]; then
+            echo "::error::Impossible de MESURER #$NUM — ce n'est pas un verdict"
+            echo "sur la story. Corrigez l'instrument, pas l'issue."
+            exit 1
+          fi
+          if [ "$PRET" -ne 0 ]; then
             echo "::error::#$NUM ne porte pas les huit éléments d'une story prête."
             echo "La fabrication n'ouvre pas sans directive. Cf. règle 5."
             exit 1
