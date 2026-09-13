@@ -31,7 +31,13 @@ signature_humaine:
     instruisant #864 : cinq transitions de dépense journalisent toutes
     `ExpenseMarkedPaid`. Le périmètre passe à 89. Quatrième de suite trouvée
     par l'exécution, et la troisième du même MOTIF — une capacité de
-    traçabilité écrite, présente à la revue, et inopérante.
+    traçabilité écrite, présente à la revue, et inopérante. Puis #882, encore
+    le même jour et encore en instruisant #864 : dix-huit routes jettent
+    explicitement leur identité (`_user: AuthenticatedUser`), dont deux
+    listent les arriérés de toute l'instance — `get_overdue_calls()` ne prend
+    aucun argument. Le périmètre passe à 90. Cinq issues trouvées en une
+    journée d'exécution, zéro en réfléchissant : c'est la mesure la plus utile
+    que cette journée produise sur la méthode elle-même.
   etat_a_la_derniere_generation: >-
     88 issues, 88/88 « Agent IA Ready », les trois vérificateurs à 0 le
     2026-09-13. La signature ci-dessus en atteste 87 : c'est elle qui est
@@ -48,7 +54,7 @@ signature_humaine:
 *Épopées et capacités. Généré par `scripts/backlog-structure.py` : ne pas
 éditer à la main, la prochaine génération écraserait la correction.*
 
-**89 issues ouvertes**, 10 épopées, 33 capacités. Classement exhaustif et exclusif : chaque issue appartient à exactement
+**90 issues ouvertes**, 10 épopées, 33 capacités. Classement exhaustif et exclusif : chaque issue appartient à exactement
 une capacité, et une issue non classée fait échouer la génération.
 
 ## Comment lire ce document
@@ -90,7 +96,7 @@ fabrication ; le Scrum Master de conception l'écrit sans détour :
 | Couche(s) | où le code atterrit, donc quelles gardes s'appliquent |
 | Taille + tours | le coût, sur les deux axes |
 
-**89 issues sur 89** portent les huit. Le relevé
+**90 issues sur 90** portent les huit. Le relevé
 d'origine, avant ce travail, donnait **zéro**.
 
 Le chiffre n'est pas écrit à la main : `scripts/backlog-pret.py` le relève
@@ -252,18 +258,19 @@ Connaît `copropriete`. SEL, sondages, objets partagés, énergie : la partie du
 
 ## E4 — Plateforme — identité, périmètre, droits
 
-`epic:plateforme` · 10 issues · 9.00 j · 36 tours
+`epic:plateforme` · 11 issues · 10.00 j · 40 tours
 
 Ne dépend de rien. Qui est l'appelant, ce qu'il a le droit de voir, et ce qu'il peut exiger qu'on efface.
 
 ### C4.1 — Toute route décide de l'identité qu'elle reçoit
 
-**Must** · `cap:C4.1` · 2 issues · 2.00 j · 8 tours · **2/2 prêtes**
+**Must** · `cap:C4.1` · 3 issues · 3.00 j · 12 tours · **3/3 prêtes**
 
 | Issue | Titre | Taille | Prête |
 |---|---|---|---|
 | [#845](https://github.com/gilmry/koprogo/issues/845) | Trente routes ne vérifient aucune identité : modifier ou supprimer une assemb… | L | oui |
 | [#864](https://github.com/gilmry/koprogo/issues/864) | 87 routes prennent une identité sans s'en servir pour décider : supprimer le … | L | oui |
+| [#882](https://github.com/gilmry/koprogo/issues/882) | Dix-huit routes jettent explicitement leur identité — dont deux qui listent l… | L | oui |
 
 ### C4.2 — Le périmètre est l'ACP, et il survit à la navigation
 
@@ -516,14 +523,14 @@ Des questions ouvertes, pas des défauts. La Méthode Foyer les veut en RFC, dis
 | E1 — Copropriété | 14 | 12.75 | 51 |
 | E2 — Comptabilité | 3 | 2.50 | 10 |
 | E3 — Économie circulaire | 9 | 7.25 | 29 |
-| E4 — Plateforme | 10 | 9.00 | 36 |
+| E4 — Plateforme | 11 | 10.00 | 40 |
 | T1 — Refonte UX | 14 | 13.25 | 53 |
 | T2 — Accessibilité et mobile | 4 | 3.00 | 12 |
 | T3 — Harnais de recette | 10 | 7.50 | 30 |
 | T4 — Documentation vivante multi-persona | 14 | 11.25 | 45 |
 | T5 — Ops et infrastructure | 10 | 9.00 | 36 |
 | T6 — Arbitrages produit en attente | 1 | 0.50 | 2 |
-| **Total** | **89** | **76.00** | **304** |
+| **Total** | **90** | **77.00** | **308** |
 
 `S` = 0,5 j · `M` = 0,75 j · `L` = 1 j — wall-clock du superviseur, pas
 temps machine. Les tours mesurent l'autre axe, le coût en tokens.

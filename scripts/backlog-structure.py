@@ -126,8 +126,15 @@ CAPACITES = [
     ("C3.3", "E3", "Une ACP active les modules qu'elle veut", "Could",
      {585: "L", 586: "M", 590: "M", 591: "L"}),
 
+    # #882 ajoutée le 2026-09-13, relevée en instruisant #864 : dix-huit
+    # gestionnaires écrivent `_user: AuthenticatedUser`, c'est-à-dire qu'ils
+    # DÉCLARENT ne pas se servir de l'identité reçue. Le motif est exact, là
+    # où celui de #864 est un plafond textuel. Deux de ces routes listent les
+    # arriérés de l'instance entière — `get_overdue_calls()` ne prend AUCUN
+    # argument — ce qui en fait une fuite de donnée personnelle financière et
+    # non un simple défaut de cloisonnement.
     ("C4.1", "E4", "Toute route décide de l'identité qu'elle reçoit", "Must",
-     {864: "L", 845: "L"}),
+     {864: "L", 845: "L", 882: "L"}),
     ("C4.2", "E4", "Le périmètre est l'ACP, et il survit à la navigation", "Must",
      {694: "L", 798: "L", 841: "M", 868: "S"}),
     ("C4.3", "E4", "Les droits RGPD sont exerçables depuis l'interface", "Must",

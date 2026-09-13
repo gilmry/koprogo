@@ -39,13 +39,13 @@ peut-être un `Should` qui s'ignore :
 
 - **#847** (rang 48, score 0.15) — cite Art. 3.89
 - **#848** (rang 49, score 0.15) — cite Art. 3.87
-- **#581** (rang 52, score 0.133) — touche « acp »
-- **#696** (rang 56, score 0.133) — touche « périmètre »
-- **#832** (rang 61, score 0.133) — touche « identité »
-- **#841** (rang 62, score 0.133) — touche « périmètre »
-- **#842** (rang 63, score 0.133) — touche « rgpd »
-- **#880** (rang 66, score 0.133) — aucun article, aucun marqueur d'irréversibilité
-- … et 6 autres
+- **#882** (rang 51, score 0.15) — cite Art. 3.89
+- **#581** (rang 53, score 0.133) — touche « acp »
+- **#696** (rang 57, score 0.133) — touche « périmètre »
+- **#832** (rang 62, score 0.133) — touche « identité »
+- **#841** (rang 63, score 0.133) — touche « périmètre »
+- **#842** (rang 64, score 0.133) — touche « rgpd »
+- … et 7 autres
 
 ## Le classement
 
@@ -101,6 +101,7 @@ peut-être un `Should` qui s'ignore :
 | #847 | **0.15** | C1.3 | Must | 0 | 3 | 0.2 | 4 | cite Art. 3.89 |
 | #848 | **0.15** | C1.1 | Must | 0 | 3 | 0.2 | 4 | cite Art. 3.87 |
 | #867 | **0.15** | C2.2 | Should | 0 | 3 | 0.2 | 4 | cite Art. 3.86 |
+| #882 | **0.15** | C4.1 | Must | 0 | 3 | 0.2 | 4 | cite Art. 3.89 |
 | #466 | **0.133** | C9.2 | Could | 0 | 2 | 0.2 | 3 | touche « identité » |
 | #581 | **0.133** | C1.1 | Must | 0 | 2 | 0.2 | 3 | touche « acp » |
 | #588 | **0.133** | C3.2 | Could | 0 | 2 | 0.2 | 3 | touche « acp » |
