@@ -411,3 +411,126 @@ async fn security_le_balayage_iot_est_reserve_au_superadministrateur() {
         );
     }
 }
+
+/// ÉCRITURE — le cycle de vie d'un budget se pilote hors périmètre (#864).
+///
+/// ── Pourquoi ce test existe séparément de la suppression ──────────────────
+///
+/// `security_la_suppression_inter_organisations_est_refusee` couvre
+/// `DELETE /budgets/{id}`, corrigé le 2026-09-11. Elle ne couvre **aucune**
+/// des cinq transitions d'état, qui portaient exactement le même défaut et
+/// que rien n'avait relu :
+///
+/// ```text
+/// PUT /budgets/{id}           update_budget
+/// PUT /budgets/{id}/submit    submit_budget
+/// PUT /budgets/{id}/approve   approve_budget
+/// PUT /budgets/{id}/reject    reject_budget
+/// PUT /budgets/{id}/archive   archive_budget
+/// ```
+///
+/// Les cinq prenaient `AuthenticatedUser` et ne s'en servaient que pour
+/// **journaliser après coup**, dans le même fichier où `get_budget` cloisonne
+/// correctement depuis toujours. C'est le motif de #864 dans sa forme pure :
+/// une route qui A L'AIR gardée.
+///
+/// ── Ce que l'assertion porte, et pourquoi ce n'est pas le code HTTP ───────
+///
+/// Approuver n'est pas détruire : l'objet survit dans les deux cas. Un test
+/// qui n'assertait que le statut passerait sur un handler qui mute PUIS
+/// refuse. On relit donc **l'état du budget après coup** : son `status` doit
+/// être celui d'avant l'appel.
+///
+/// Un budget approuvé hors périmètre n'est pas un détail comptable. Un budget
+/// approuvé engage les appels de fonds de l'exercice.
+#[actix_web::test]
+#[serial]
+async fn security_le_cycle_de_vie_du_budget_inter_organisations_est_refuse() {
+    let contexte = preparer().await;
+    let app = test::init_service(
+        App::new()
+            .app_data(contexte.app_state.clone())
+            .configure(configure_routes),
+    )
+    .await;
+
+    let porteur = |req: test::TestRequest| {
+        req.insert_header((
+            header::AUTHORIZATION,
+            format!("Bearer {}", contexte.jeton_a),
+        ))
+    };
+
+    // Un budget bien à B, créé hors HTTP pour ne rien supposer du chemin
+    // d'écriture.
+    let budget_b = contexte
+        .app_state
+        .budget_use_cases
+        .create_budget(koprogo_api::application::dto::CreateBudgetRequest {
+            organization_id: contexte.org_b,
+            building_id: contexte.immeuble_b,
+            fiscal_year: 2027,
+            ordinary_budget: rust_decimal_macros::dec!(42000),
+            extraordinary_budget: rust_decimal_macros::dec!(0),
+            notes: None,
+        })
+        .await
+        .expect("budget de B");
+
+    let statut_avant = budget_b.status.clone();
+
+    // Chaque transition, avec sa charge utile minimale valide. Une charge
+    // invalide rendrait 400 et le test passerait pour une mauvaise raison —
+    // le refus doit venir du cloisonnement, pas de la validation.
+    let faux_meeting = Uuid::new_v4();
+    let appels: Vec<(&str, Option<serde_json::Value>)> = vec![
+        (
+            "",
+            Some(serde_json::json!({ "ordinary_budget": "99999.00" })),
+        ),
+        ("/submit", None),
+        (
+            "/approve",
+            Some(serde_json::json!({ "meeting_id": faux_meeting.to_string() })),
+        ),
+        (
+            "/reject",
+            Some(serde_json::json!({ "reason": "aucune" })),
+        ),
+        ("/archive", None),
+    ];
+
+    for (suffixe, corps) in appels {
+        let uri = format!("/api/v1/budgets/{}{}", budget_b.id, suffixe);
+        let requete = match corps {
+            Some(json) => porteur(test::TestRequest::put().uri(&uri).set_json(&json)),
+            None => porteur(test::TestRequest::put().uri(&uri)),
+        };
+        let reponse = test::call_service(&app, requete.to_request()).await;
+
+        assert!(
+            est_un_refus(reponse.status().as_u16()),
+            "PUT {uri} a été accepté depuis l'organisation A : statut {} (#864). \
+             `AuthenticatedUser` était pris sans servir à décider, et le journal \
+             d'audit aurait enregistré la transition comme régulière.",
+            reponse.status()
+        );
+
+        // Le statut doit être INTACT. Un refus rendu après la mutation ne
+        // protège rien, et c'est précisément ce que le défaut faisait bien :
+        // il journalisait fidèlement un geste illégitime.
+        let relu = contexte
+            .app_state
+            .budget_use_cases
+            .get_budget(budget_b.id)
+            .await
+            .expect("lecture du budget de B")
+            .expect("le budget de B existe toujours");
+        assert_eq!(
+            relu.status, statut_avant,
+            "PUT {uri} a changé le statut du budget de B ({:?} → {:?}) : le refus \
+             HTTP est arrivé APRÈS la mutation.",
+            statut_avant, relu.status
+        );
+    }
+}

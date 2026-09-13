@@ -27,6 +27,45 @@ fn default_per_page() -> i64 {
     10
 }
 
+/// Cloisonne un état daté AVANT de le muter (#864).
+///
+/// ── Ce que ces cinq routes laissaient passer ──────────────────────────────
+///
+/// `mark_in_progress`, `mark_generated`, `mark_delivered`,
+/// `update_financial_data` et `update_additional_data` prenaient
+/// `AuthenticatedUser` et ne s'en servaient que pour journaliser après coup.
+/// `get_etat_date`, dans ce même fichier, cloisonne correctement : le
+/// contrôle existait, il manquait sur les écritures.
+///
+/// ── Pourquoi c'est plus lourd qu'un budget ────────────────────────────────
+///
+/// L'état daté est une pièce **légale** : Art. 3.89 § 5, l'information que le
+/// syndic doit au notaire lors d'une mutation. Marquer « délivré » un état
+/// daté d'un autre cabinet fait courir les délais sur un dossier qu'on ne
+/// gère pas ; en altérer les données financières fausse le décompte des
+/// arriérés que l'acquéreur reprend.
+///
+/// Rend `Some(réponse)` quand l'appel doit être refusé, `None` sinon.
+async fn cloisonner_etat_date(
+    state: &web::Data<AppState>,
+    user: &AuthenticatedUser,
+    id: Uuid,
+) -> Option<HttpResponse> {
+    match state.etat_date_use_cases.get_etat_date(id).await {
+        Ok(Some(etat_date)) => match user.verify_org_access(etat_date.organization_id) {
+            Ok(()) => None,
+            Err(err) => Some(HttpResponse::Forbidden().json(serde_json::json!({ "error": err }))),
+        },
+        Ok(None) => Some(HttpResponse::NotFound().json(serde_json::json!({
+            "error": "État daté not found"
+        }))),
+        Err(err) => Some(HttpResponse::InternalServerError().json(serde_json::json!({
+            "error": err
+        }))),
+    }
+}
+
+
 /// Create a new état daté request
 #[post("/etats-dates")]
 pub async fn create_etat_date(
@@ -253,6 +292,11 @@ pub async fn mark_in_progress(
     user: AuthenticatedUser,
     id: web::Path<Uuid>,
 ) -> impl Responder {
+    // Cloisonnement AVANT la mutation (#864).
+    if let Some(refus) = cloisonner_etat_date(&state, &user, *id).await {
+        return refus;
+    }
+
     match state.etat_date_use_cases.mark_in_progress(*id).await {
         Ok(etat_date) => {
             AuditLogEntry::new(
@@ -279,6 +323,11 @@ pub async fn mark_generated(
     id: web::Path<Uuid>,
     pdf_path: web::Json<serde_json::Value>,
 ) -> impl Responder {
+    // Cloisonnement AVANT la mutation (#864).
+    if let Some(refus) = cloisonner_etat_date(&state, &user, *id).await {
+        return refus;
+    }
+
     let pdf_file_path = match pdf_path.get("pdf_file_path") {
         Some(serde_json::Value::String(path)) => path.clone(),
         _ => {
@@ -317,6 +366,11 @@ pub async fn mark_delivered(
     user: AuthenticatedUser,
     id: web::Path<Uuid>,
 ) -> impl Responder {
+    // Cloisonnement AVANT la mutation (#864).
+    if let Some(refus) = cloisonner_etat_date(&state, &user, *id).await {
+        return refus;
+    }
+
     match state.etat_date_use_cases.mark_delivered(*id).await {
         Ok(etat_date) => {
             AuditLogEntry::new(
@@ -343,6 +397,11 @@ pub async fn update_financial_data(
     id: web::Path<Uuid>,
     request: web::Json<UpdateEtatDateFinancialRequest>,
 ) -> impl Responder {
+    // Cloisonnement AVANT la mutation (#864).
+    if let Some(refus) = cloisonner_etat_date(&state, &user, *id).await {
+        return refus;
+    }
+
     match state
         .etat_date_use_cases
         .update_financial_data(*id, request.into_inner())
@@ -373,6 +432,11 @@ pub async fn update_additional_data(
     id: web::Path<Uuid>,
     request: web::Json<UpdateEtatDateAdditionalDataRequest>,
 ) -> impl Responder {
+    // Cloisonnement AVANT la mutation (#864).
+    if let Some(refus) = cloisonner_etat_date(&state, &user, *id).await {
+        return refus;
+    }
+
     match state
         .etat_date_use_cases
         .update_additional_data(*id, request.into_inner())

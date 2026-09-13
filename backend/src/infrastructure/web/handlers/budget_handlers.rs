@@ -9,6 +9,47 @@ use crate::infrastructure::web::{AppState, AuthenticatedUser};
 use actix_web::{delete, get, post, put, web, HttpResponse, Responder, ResponseError};
 use uuid::Uuid;
 
+/// Cloisonne un budget AVANT de le muter (#864).
+///
+/// ── Le défaut que ce garde ferme ──────────────────────────────────────────
+///
+/// Les cinq transitions d'état du budget prenaient `AuthenticatedUser` et ne
+/// s'en servaient que pour **journaliser après coup**. N'importe quel
+/// utilisateur authentifié pouvait donc approuver, rejeter, archiver ou
+/// modifier le budget de n'importe quelle copropriété — y compris d'un autre
+/// cabinet — en connaissant son UUID, et le journal d'audit enregistrait la
+/// transition comme régulière.
+///
+/// Le contrôle existait déjà dans ce fichier : `get_budget` et
+/// `get_budget_variance` le font. Il manquait sur les opérations qui
+/// **engagent** : un budget approuvé porte les appels de fonds de l'exercice.
+///
+/// ── Pourquoi un helper, et pas la ligne recopiée cinq fois ────────────────
+///
+/// Recopié, il se perd à la sixième transition. Nommé, il se voit dans la
+/// signature de chaque handler, et son absence se lit.
+///
+/// Rend `Some(réponse)` quand l'appel doit être refusé, `None` quand il peut
+/// continuer — le même idiome que `check_syndic_role` ailleurs dans ce dépôt.
+async fn cloisonner_budget(
+    state: &web::Data<AppState>,
+    user: &AuthenticatedUser,
+    id: Uuid,
+) -> Option<HttpResponse> {
+    match state.budget_use_cases.get_budget(id).await {
+        Ok(Some(budget)) => match user.verify_org_access(budget.organization_id) {
+            Ok(()) => None,
+            Err(e) => Some(HttpResponse::Forbidden().json(serde_json::json!({ "error": e }))),
+        },
+        Ok(None) => Some(HttpResponse::NotFound().json(serde_json::json!({
+            "error": "Budget not found"
+        }))),
+        Err(err) => Some(HttpResponse::InternalServerError().json(serde_json::json!({
+            "error": err.to_string()
+        }))),
+    }
+}
+
 /// Create a new budget
 #[post("/budgets")]
 pub async fn create_budget(
@@ -358,6 +399,11 @@ pub async fn update_budget(
     id: web::Path<Uuid>,
     request: web::Json<UpdateBudgetRequest>,
 ) -> impl Responder {
+    // Cloisonnement AVANT la transition (#864).
+    if let Some(refus) = cloisonner_budget(&state, &user, *id).await {
+        return refus;
+    }
+
     match state
         .budget_use_cases
         .update_budget(*id, request.into_inner())
@@ -387,6 +433,11 @@ pub async fn submit_budget(
     user: AuthenticatedUser,
     id: web::Path<Uuid>,
 ) -> impl Responder {
+    // Cloisonnement AVANT la transition (#864).
+    if let Some(refus) = cloisonner_budget(&state, &user, *id).await {
+        return refus;
+    }
+
     match state.budget_use_cases.submit_for_approval(*id).await {
         Ok(budget) => {
             AuditLogEntry::new(
@@ -413,6 +464,11 @@ pub async fn approve_budget(
     id: web::Path<Uuid>,
     payload: web::Json<serde_json::Value>,
 ) -> impl Responder {
+    // Cloisonnement AVANT la transition (#864).
+    if let Some(refus) = cloisonner_budget(&state, &user, *id).await {
+        return refus;
+    }
+
     let meeting_id = match payload.get("meeting_id") {
         Some(serde_json::Value::String(id_str)) => match Uuid::parse_str(id_str) {
             Ok(uuid) => uuid,
@@ -456,6 +512,11 @@ pub async fn reject_budget(
     id: web::Path<Uuid>,
     payload: web::Json<serde_json::Value>,
 ) -> impl Responder {
+    // Cloisonnement AVANT la transition (#864).
+    if let Some(refus) = cloisonner_budget(&state, &user, *id).await {
+        return refus;
+    }
+
     let reason = payload
         .get("reason")
         .and_then(|v| v.as_str())
@@ -486,6 +547,11 @@ pub async fn archive_budget(
     user: AuthenticatedUser,
     id: web::Path<Uuid>,
 ) -> impl Responder {
+    // Cloisonnement AVANT la transition (#864).
+    if let Some(refus) = cloisonner_budget(&state, &user, *id).await {
+        return refus;
+    }
+
     match state.budget_use_cases.archive_budget(*id).await {
         Ok(budget) => {
             AuditLogEntry::new(
