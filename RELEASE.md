@@ -10,6 +10,10 @@
 
 - **Porte active** : `release`
 - **Parcours** : `.foyer/pilote/journeys/planification-release.md`
+- **Reprise par une session neuve** :
+  [lettre de mission du 2026-09-13](docs/plans/2026-09-13-lettre-de-mission-reprise.md)
+  — où travailler, ce qui bloque, et les sept pièges qui coûtent des heures
+  quand on les redécouvre
 - **Archétype** : full-stack *(Rust hexagonal + Astro/Svelte 5 en îlots, PostgreSQL)*
 - **Substrat d'exécution** : conteneur — `~/bin/kcargo` pour Rust, jamais `cargo` sur l'hôte
 - **Démarré le** : 2026-09-12
