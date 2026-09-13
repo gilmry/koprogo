@@ -272,8 +272,12 @@ un défaut de structure. Seul l'ordre des capacités est repris.
 
 **`ACTIX_WORKERS: 1` sur la démo** — posé le 2026-09-13, avec sa preuve.
 
-`docker-compose.prod.yml:101` pose `ACTIX_WORKERS: ${ACTIX_WORKERS:-1}`. La
-mesure de #718 établit que `hash`/`verify` bloquaient le worker 1,69 s en
+`docker-compose.prod.yml:101` pose `ACTIX_WORKERS: ${ACTIX_WORKERS:-1}`, et
+ce n'est pas qu'une valeur par défaut dans un fichier : vérifié sur le
+conteneur qui tourne, `docker inspect koprogo-backend` rend bien
+`ACTIX_WORKERS=1`. Mesuré, pas supposé.
+
+La mesure de #718 établit que `hash`/`verify` bloquaient le worker 1,69 s en
 médiane : avec un seul worker, **une connexion bloquait toute l'API**. Le
 correctif `40eb8edd` retire le blocage ; il ne rend pas un worker unique
 défendable pour un produit où des dizaines de copropriétaires se connectent
