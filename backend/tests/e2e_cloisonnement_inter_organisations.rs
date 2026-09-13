@@ -493,10 +493,7 @@ async fn security_le_cycle_de_vie_du_budget_inter_organisations_est_refuse() {
             "/approve",
             Some(serde_json::json!({ "meeting_id": faux_meeting.to_string() })),
         ),
-        (
-            "/reject",
-            Some(serde_json::json!({ "reason": "aucune" })),
-        ),
+        ("/reject", Some(serde_json::json!({ "reason": "aucune" }))),
         ("/archive", None),
     ];
 

@@ -56,10 +56,28 @@ const DECISION: [&str; 9] = [
     ".role ==",
 ];
 
-/// Mesuré le 2026-09-12, après l'isolement des huit routes IoT de #864.
+/// Mesuré le 2026-09-13, après le cloisonnement des dix transitions d'état
+/// du budget et de l'état daté (#864).
 ///
 /// Relevé, jamais estimé. Il ne peut que descendre.
-const SANS_DECISION_AU_2026_09_12: usize = 95;
+///
+/// ── 95 → 85, et par quoi ──────────────────────────────────────────────────
+///
+/// Par le TRAVAIL, pas par la définition. Les dix routes sorties du compte
+/// sont les cinq `PUT /budgets/{id}/*` et les cinq `PUT /etats-dates/{id}/*`,
+/// qui prenaient `AuthenticatedUser` sans s'en servir pour décider. Le test
+/// `security_le_cycle_de_vie_du_budget_inter_organisations_est_refuse` le
+/// démontre : sans le correctif, `PUT /budgets/{id}` rend **200 OK** au
+/// syndic d'une autre organisation.
+///
+/// La liste `DECISION` n'a pas été touchée. Elle a failli l'être : les
+/// helpers posés s'appelaient d'abord `cloisonner_*`, que le détecteur ne
+/// connaît pas, et le compteur est resté à 95 alors que dix trous étaient
+/// bouchés. Allonger la liste aurait fait tomber le chiffre par une
+/// modification de l'instrument. Les helpers ont été renommés `verify_*` —
+/// l'idiome que ce dépôt emploie déjà partout ailleurs — et le compteur a
+/// suivi le travail.
+const SANS_DECISION_AU_2026_09_13: usize = 85;
 
 /// Les handlers qui prennent `AuthenticatedUser` sans trace de décision.
 fn sans_decision() -> BTreeMap<String, String> {
@@ -150,9 +168,9 @@ fn la_dette_didentite_sans_decision_ne_grossit_pas() {
         .collect();
 
     assert!(
-        n <= SANS_DECISION_AU_2026_09_12,
+        n <= SANS_DECISION_AU_2026_09_13,
         "{n} routes prennent `AuthenticatedUser` sans trace de décision, contre \
-         {SANS_DECISION_AU_2026_09_12} mesurées le 2026-09-12.\n\n\
+         {SANS_DECISION_AU_2026_09_13} mesurées le 2026-09-13.\n\n\
          Une route qui prend une identité et ne s'en sert que pour journaliser \
          A L'AIR gardée : elle passe la revue, elle passe les autres gardes, et \
          elle laisse passer le geste.\n\n\

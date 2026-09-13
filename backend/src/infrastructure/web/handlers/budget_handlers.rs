@@ -11,6 +11,22 @@ use uuid::Uuid;
 
 /// Cloisonne un budget AVANT de le muter (#864).
 ///
+/// ── Pourquoi `verify_` et pas un nom français ─────────────────────────────
+///
+/// Ce helper s'appelait `cloisonner_*` à sa première écriture. Le cliquet de
+/// #864 est resté à 95 : son détecteur cherche les idiomes par lesquels CE
+/// dépôt refuse un accès — `verify_`, `scope_guard`, `Forbidden`,
+/// `require_organization` — et `cloisonner_` n'en est pas un. Dix trous
+/// venaient d'être bouchés, et l'instrument ne le voyait pas.
+///
+/// Deux sorties possibles : allonger la liste du détecteur, ou porter le nom
+/// que le dépôt emploie déjà (`verify_org_access`, `verify_acp_org_access`,
+/// `verify_building_org_access`). La première aurait fait tomber le compteur
+/// de dix par une modification de sa DÉFINITION, ce qui est précisément le
+/// geste que la méthode interdit. La seconde corrige une incohérence de
+/// nommage que je venais d'introduire, et la dette tombe à 85 parce que le
+/// travail a été fait.
+///
 /// ── Le défaut que ce garde ferme ──────────────────────────────────────────
 ///
 /// Les cinq transitions d'état du budget prenaient `AuthenticatedUser` et ne
@@ -31,7 +47,7 @@ use uuid::Uuid;
 ///
 /// Rend `Some(réponse)` quand l'appel doit être refusé, `None` quand il peut
 /// continuer — le même idiome que `check_syndic_role` ailleurs dans ce dépôt.
-async fn cloisonner_budget(
+async fn verify_budget_org_access(
     state: &web::Data<AppState>,
     user: &AuthenticatedUser,
     id: Uuid,
@@ -400,7 +416,7 @@ pub async fn update_budget(
     request: web::Json<UpdateBudgetRequest>,
 ) -> impl Responder {
     // Cloisonnement AVANT la transition (#864).
-    if let Some(refus) = cloisonner_budget(&state, &user, *id).await {
+    if let Some(refus) = verify_budget_org_access(&state, &user, *id).await {
         return refus;
     }
 
@@ -434,7 +450,7 @@ pub async fn submit_budget(
     id: web::Path<Uuid>,
 ) -> impl Responder {
     // Cloisonnement AVANT la transition (#864).
-    if let Some(refus) = cloisonner_budget(&state, &user, *id).await {
+    if let Some(refus) = verify_budget_org_access(&state, &user, *id).await {
         return refus;
     }
 
@@ -465,7 +481,7 @@ pub async fn approve_budget(
     payload: web::Json<serde_json::Value>,
 ) -> impl Responder {
     // Cloisonnement AVANT la transition (#864).
-    if let Some(refus) = cloisonner_budget(&state, &user, *id).await {
+    if let Some(refus) = verify_budget_org_access(&state, &user, *id).await {
         return refus;
     }
 
@@ -513,7 +529,7 @@ pub async fn reject_budget(
     payload: web::Json<serde_json::Value>,
 ) -> impl Responder {
     // Cloisonnement AVANT la transition (#864).
-    if let Some(refus) = cloisonner_budget(&state, &user, *id).await {
+    if let Some(refus) = verify_budget_org_access(&state, &user, *id).await {
         return refus;
     }
 
@@ -548,7 +564,7 @@ pub async fn archive_budget(
     id: web::Path<Uuid>,
 ) -> impl Responder {
     // Cloisonnement AVANT la transition (#864).
-    if let Some(refus) = cloisonner_budget(&state, &user, *id).await {
+    if let Some(refus) = verify_budget_org_access(&state, &user, *id).await {
         return refus;
     }
 

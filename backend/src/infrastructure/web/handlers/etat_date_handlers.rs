@@ -29,6 +29,22 @@ fn default_per_page() -> i64 {
 
 /// Cloisonne un état daté AVANT de le muter (#864).
 ///
+/// ── Pourquoi `verify_` et pas un nom français ─────────────────────────────
+///
+/// Ce helper s'appelait `cloisonner_*` à sa première écriture. Le cliquet de
+/// #864 est resté à 95 : son détecteur cherche les idiomes par lesquels CE
+/// dépôt refuse un accès — `verify_`, `scope_guard`, `Forbidden`,
+/// `require_organization` — et `cloisonner_` n'en est pas un. Dix trous
+/// venaient d'être bouchés, et l'instrument ne le voyait pas.
+///
+/// Deux sorties possibles : allonger la liste du détecteur, ou porter le nom
+/// que le dépôt emploie déjà (`verify_org_access`, `verify_acp_org_access`,
+/// `verify_building_org_access`). La première aurait fait tomber le compteur
+/// de dix par une modification de sa DÉFINITION, ce qui est précisément le
+/// geste que la méthode interdit. La seconde corrige une incohérence de
+/// nommage que je venais d'introduire, et la dette tombe à 85 parce que le
+/// travail a été fait.
+///
 /// ── Ce que ces cinq routes laissaient passer ──────────────────────────────
 ///
 /// `mark_in_progress`, `mark_generated`, `mark_delivered`,
@@ -46,7 +62,7 @@ fn default_per_page() -> i64 {
 /// arriérés que l'acquéreur reprend.
 ///
 /// Rend `Some(réponse)` quand l'appel doit être refusé, `None` sinon.
-async fn cloisonner_etat_date(
+async fn verify_etat_date_org_access(
     state: &web::Data<AppState>,
     user: &AuthenticatedUser,
     id: Uuid,
@@ -64,7 +80,6 @@ async fn cloisonner_etat_date(
         }))),
     }
 }
-
 
 /// Create a new état daté request
 #[post("/etats-dates")]
@@ -293,7 +308,7 @@ pub async fn mark_in_progress(
     id: web::Path<Uuid>,
 ) -> impl Responder {
     // Cloisonnement AVANT la mutation (#864).
-    if let Some(refus) = cloisonner_etat_date(&state, &user, *id).await {
+    if let Some(refus) = verify_etat_date_org_access(&state, &user, *id).await {
         return refus;
     }
 
@@ -324,7 +339,7 @@ pub async fn mark_generated(
     pdf_path: web::Json<serde_json::Value>,
 ) -> impl Responder {
     // Cloisonnement AVANT la mutation (#864).
-    if let Some(refus) = cloisonner_etat_date(&state, &user, *id).await {
+    if let Some(refus) = verify_etat_date_org_access(&state, &user, *id).await {
         return refus;
     }
 
@@ -367,7 +382,7 @@ pub async fn mark_delivered(
     id: web::Path<Uuid>,
 ) -> impl Responder {
     // Cloisonnement AVANT la mutation (#864).
-    if let Some(refus) = cloisonner_etat_date(&state, &user, *id).await {
+    if let Some(refus) = verify_etat_date_org_access(&state, &user, *id).await {
         return refus;
     }
 
@@ -398,7 +413,7 @@ pub async fn update_financial_data(
     request: web::Json<UpdateEtatDateFinancialRequest>,
 ) -> impl Responder {
     // Cloisonnement AVANT la mutation (#864).
-    if let Some(refus) = cloisonner_etat_date(&state, &user, *id).await {
+    if let Some(refus) = verify_etat_date_org_access(&state, &user, *id).await {
         return refus;
     }
 
@@ -433,7 +448,7 @@ pub async fn update_additional_data(
     request: web::Json<UpdateEtatDateAdditionalDataRequest>,
 ) -> impl Responder {
     // Cloisonnement AVANT la mutation (#864).
-    if let Some(refus) = cloisonner_etat_date(&state, &user, *id).await {
+    if let Some(refus) = verify_etat_date_org_access(&state, &user, *id).await {
         return refus;
     }
 
