@@ -54,12 +54,10 @@ test.describe("Owner Contributions - Payment Tracking", () => {
       {
         data: {
           owner_id: ownerId,
-          // `unit_id` est OBLIGATOIRE en pratique, malgré son `Option<Uuid>`
-          // dans le DTO : `resoudre_lacp_creanciere` refuse `None` avec
-          // « Impossible de déterminer l'ACP créancière : la quote-part doit
-          // porter un lot ». Le lot porte son ACP depuis l'acte de base
-          // (Story H15, ADR-0045), et une quote-part due à personne n'est pas
-          // une quote-part.
+          // `unit_id` est obligatoire, et le DTO le dit désormais (Issue
+          // #852) : le lot porte son ACP depuis l'acte de base (Story H15,
+          // ADR-0045), et une quote-part due à personne n'est pas une
+          // quote-part.
           unit_id: unitId,
           description: `Provision T2 2026 ${timestamp}`,
           amount: 800.0,
@@ -111,12 +109,10 @@ test.describe("Owner Contributions - Payment Tracking", () => {
       {
         data: {
           owner_id: ownerId,
-          // `unit_id` est OBLIGATOIRE en pratique, malgré son `Option<Uuid>`
-          // dans le DTO : `resoudre_lacp_creanciere` refuse `None` avec
-          // « Impossible de déterminer l'ACP créancière : la quote-part doit
-          // porter un lot ». Le lot porte son ACP depuis l'acte de base
-          // (Story H15, ADR-0045), et une quote-part due à personne n'est pas
-          // une quote-part.
+          // `unit_id` est obligatoire, et le DTO le dit désormais (Issue
+          // #852) : le lot porte son ACP depuis l'acte de base (Story H15,
+          // ADR-0045), et une quote-part due à personne n'est pas une
+          // quote-part.
           unit_id: unitId,
           description: `Provision T3 2026 ${timestamp}`,
           amount: 600.0,

@@ -137,6 +137,89 @@ async fn test_owner_contributions_create() {
     assert_eq!(resp.status().as_u16(), 201);
 }
 
+// @negative — Issue #852 : unit_id est désormais obligatoire dans le DTO
+// (`Option<Uuid>` mentait sur le contrat réel). L'omettre doit produire un
+// 422 de validation de contrat, pas un 400 opaque au milieu du use case.
+#[actix_web::test]
+#[serial]
+async fn test_owner_contributions_create_missing_unit_id_returns_422() {
+    let (app_state, _container, org_id) = common::setup_test_db().await;
+    let (token, owner_id, _unit_id, _building_id) =
+        create_contribution_fixtures(&app_state, org_id).await;
+
+    let app = test::init_service(
+        App::new()
+            .app_data(app_state.clone())
+            .configure(configure_routes),
+    )
+    .await;
+
+    let contribution_date = chrono::Utc::now().to_rfc3339();
+
+    let req = test::TestRequest::post()
+        .uri("/api/v1/owner-contributions")
+        .insert_header(header::ContentType::json())
+        .insert_header((header::AUTHORIZATION, format!("Bearer {}", token)))
+        .set_json(json!({
+            "owner_id": owner_id.to_string(),
+            // unit_id volontairement absent
+            "description": "Appel sans lot",
+            "amount": 250.00,
+            "contribution_type": "regular",
+            "contribution_date": contribution_date
+        }))
+        .to_request();
+
+    let resp = test::call_service(&app, req).await;
+
+    assert_eq!(
+        resp.status().as_u16(),
+        422,
+        "Expected 422 when unit_id is missing, got: {}",
+        resp.status()
+    );
+    let body: serde_json::Value = test::read_body_json(resp).await;
+    assert!(
+        body["details"]
+            .as_str()
+            .unwrap_or_default()
+            .contains("unit_id"),
+        "le refus doit nommer le champ manquant : {body}"
+    );
+}
+
+// @edge — un JSON réellement mal formé (pas seulement un champ manquant)
+// reste un 400 : seule la non-conformité au schéma devient un 422.
+#[actix_web::test]
+#[serial]
+async fn test_owner_contributions_create_malformed_json_stays_400() {
+    let (app_state, _container, org_id) = common::setup_test_db().await;
+    let token = common::register_and_login(&app_state, org_id).await;
+
+    let app = test::init_service(
+        App::new()
+            .app_data(app_state.clone())
+            .configure(configure_routes),
+    )
+    .await;
+
+    let req = test::TestRequest::post()
+        .uri("/api/v1/owner-contributions")
+        .insert_header(header::ContentType::json())
+        .insert_header((header::AUTHORIZATION, format!("Bearer {}", token)))
+        .set_payload("{ ceci n'est pas du JSON")
+        .to_request();
+
+    let resp = test::call_service(&app, req).await;
+
+    assert_eq!(
+        resp.status().as_u16(),
+        400,
+        "Expected 400 for genuinely malformed JSON, got: {}",
+        resp.status()
+    );
+}
+
 #[actix_web::test]
 #[serial]
 async fn test_owner_contributions_get() {

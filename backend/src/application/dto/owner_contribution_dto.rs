@@ -11,7 +11,11 @@ use crate::domain::entities::{
 #[serde(deny_unknown_fields)]
 pub struct CreateOwnerContributionRequest {
     pub owner_id: Uuid,
-    pub unit_id: Option<Uuid>,
+    /// Obligatoire : c'est le lot qui porte l'ACP créancière (Story H15,
+    /// ADR-0045). `resoudre_lacp_creanciere` refuse déjà `None` en use case —
+    /// Issue #852 aligne la signature sur ce que le code a toujours exigé,
+    /// pour qu'un client suivant le contrat n'essuie plus un 400 opaque.
+    pub unit_id: Uuid,
     pub description: String,
     pub amount: rust_decimal::Decimal,
     pub contribution_type: ContributionType,
