@@ -94,12 +94,21 @@ appelle une signature et non une validation.
   `Host(localhost)` ne sert que nos deux conteneurs — contrôlé par l'API de
   Traefik, pas supposé.
 
-- **Prochaine action attendue** : **instruire les 8 échecs restants** (#832).
-  Quatre sont #718 et se rejouent à volonté désormais. Les quatre autres —
-  `Dashboard`, `I18n`, `OwnerScreensJourney`, `story2-acp-organization`,
-  `role-assignment` — n'ont pas encore été départagés entre « cascade d'un 502 »
-  et « défaut réel ». Le parcours de référence, lui, **passe seul** (2/2 en
-  1 min) : son échec en campagne est une interaction, pas un défaut du parcours.
+- **Prochaine action attendue** : **trancher #880 avant de croire une
+  campagne de plus.** Le 2026-09-13 a montré que l'écart entre les deux bancs
+  est plus grand que l'écart qu'on cherchait à mesurer :
+
+  | Banc | Même code, même jour |
+  |---|---|
+  | CI (runner dédié) | **308 ✓ / 0 ✘** |
+  | pile de recette (cet hôte) | 12 ✘ avant contamination, puis 83 de plus |
+
+  Tant que le banc n'est pas stable, #832 ne peut pas distinguer « défaut
+  réel » de « propriété du banc » — et c'est exactement la question qu'il
+  pose. Les quatre échecs instruits jusqu'ici (`AgeRequests`,
+  `LocalExchanges`, `Notifications` ×3) **passent tous en isolation**,
+  20 ✓ / 0 ✘, et passent en CI. Ils n'ont pas de cause produit identifiée à
+  ce jour : ce sont des interactions, la famille de #718.
 
 - **À noter, sans conséquence aujourd'hui** : le Traefik de la recette voit les
   **18 routeurs des projets voisins** de l'hôte (derniere-chance, elevia, n8n),
@@ -204,7 +213,7 @@ issues tiennent chacune une file — **#803** en débloque 11, **#805** dix,
 | `verify` structurel | 🟢 | `kcargo test --test architecture` + 15 gardes | 16 suites vertes |
 | `contrat` anti-drift | 🟢 | gate OpenAPI + `oasdiff` en CI | #765 fermée |
 | `unit` domaine | 🟢 | `kcargo test --lib` | 1989 tests |
-| `integration` | 🔴 | suites `e2e_*.rs` (testcontainers) | `s3_storage_roundtrip` : tout `docker.io/minio/minio` a disparu — #877. **Correctif posé (`72d719e6`, quay.io), preuve PAS ENCORE prise.** Reste 🔴 tant qu'il n'a pas tourné |
+| `integration` | 🟢 | suites `e2e_*.rs` (testcontainers) | #877 fermée : `storage_s3` rend `1 passed`, code 0, contre `quay.io`. **Mesuré le 2026-09-13**, pas déduit |
 | `bdd` | 🟢 | suites `bdd_*.rs` | |
 | `e2e` parcours | 🟠 | `make test-e2e` | **s'exécute enfin** contre `localhost:8090` : 300 ✓ / 8 ✗ / 14 sautés, code 2. Dont 4 en 502 sous rafale — #718 |
 | `visuel` | ⚪ | — | pas de goldens |
@@ -281,6 +290,86 @@ un défaut de structure. Seul l'ordre des capacités est repris.
 | **PR #879** | **relancer pour qu'elle ait ses gates** avant la revue. La chronométrer sans preuve mesurerait autre chose que ce que #875 cherche | Gilles Maury | 2026-09-13 | #875, run `34764114133` |
 
 ## Journal (chronologie courte)
+
+- 2026-09-13 — **#879 relancée : les gates disent en vingt minutes ce que la
+  relecture du diff n'aurait pas vu.** Run `34764114133`. La branche
+  `story/867` n'apporte qu'un fichier : `backend/tests/e2e_stats_owner_dues.rs`,
+  412 lignes. Verdict :
+
+  | Gate | Résultat |
+  |---|---|
+  | Unit Tests | 🔴 `chaque_harnais_est_execute_quelque_part` |
+  | Integration Tests | 🔴 #877 (corrigé sur `feature/dev`, pas sur cette branche) |
+  | Playwright E2E | 🟢 **308 ✓ / 0 ✘** |
+  | vitrine | 🟢 artefact de 79 Mo, publié |
+  | lint, BDD, contrat, front | 🟢 |
+
+  Le message du garde se suffit à lui-même :
+
+  > Ces harnais ne sont cités par AUCUN workflow, donc ne s'exécutent jamais :
+  > `e2e_stats_owner_dues`. Ils compilent, ils passent en local, et la CI
+  > reste verte sans les avoir vus.
+
+  **L'agent a livré un harnais dormant.** C'est le motif dominant du dépôt,
+  reproduit par la première passe de fan-out, et c'est un garde du dépôt qui
+  l'a arrêté. Sans le jeton, la PR aurait été relue sur son diff et ce défaut
+  serait passé : un fichier de test qui compile et que rien n'exécute ne se
+  voit pas à la lecture.
+
+  ⚠️ **Le résultat le plus utile du run n'est pas là.** La campagne Playwright
+  passe à **308 ✓ / 0 ✘** en CI, sur le même code qui rendait 12 échecs sur
+  la pile de recette de cet hôte. L'écart n'est pas dans le produit, il est
+  dans le banc : quatre cœurs, trente conteneurs, et un backend en hot
+  reload. C'est la matière de #718 et de #880.
+
+- 2026-09-13 — **#877 est VERT, mesuré.** `kcargo test --test storage_s3` :
+  `1 passed`, code 0, contre `quay.io/minio/minio`.
+
+- 2026-09-13 — **#864 : dix transitions d'état cloisonnées, cliquet 95 → 85.**
+  Les cinq `PUT /budgets/{id}/*` et les cinq `PUT /etats-dates/{id}/*`
+  prenaient `AuthenticatedUser` sans s'en servir pour décider, dans des
+  fichiers où la LECTURE cloisonne correctement depuis toujours. Le test est
+  rouge sans le correctif, et c'est démontré : handler remis dans son état
+  d'avant, `PUT /budgets/{id}` rend **200 OK** au syndic d'une autre
+  organisation.
+
+  **Le compteur n'a pas bougé au premier essai**, et c'est le fait
+  intéressant. Les helpers s'appelaient `cloisonner_*`, que le détecteur ne
+  connaît pas : dix trous bouchés, instrument aveugle. Allonger `DECISION`
+  aurait fait tomber le chiffre par une modification de sa définition. Les
+  helpers portent désormais `verify_*`, l'idiome que le dépôt emploie déjà
+  — le compteur suit le travail, pas le barème.
+
+- 2026-09-13 — **#880 ouverte : le gate e2e mesure contre un backend en hot
+  reload.** Découvert en le subissant. Deux éditions de fichiers Rust
+  pendant une campagne ont déclenché deux recompilations (`cargo-watch`,
+  `Dockerfile.dev:71`), coupant le service à 14:54:29 puis 14:59:02.
+  Résultat : **213 ✓ / 95 ✘**, dont **83 échecs ayant visé un backend mort**.
+  Aucun artefact ne distingue les deux populations ; le code de sortie vaut 2
+  dans les deux cas. Ce n'est pas l'étourderie qui compte, c'est que le banc
+  est unique et que le fan-out y fera tourner N agents qui écrivent du Rust.
+
+  Deux défauts d'outillage trouvés en enquêtant, tous deux corrigés :
+
+  - le **rapport JSON** de Playwright avait son chemin en dur : l'exécution
+    ciblée lancée pour instruire les échecs a effacé les messages d'erreur
+    qu'elle servait à expliquer (`5ce48d93`). Le rapport HTML, lui, était
+    paramétré depuis #873 — pour exactement cette raison ;
+  - **`make seed-reset` annonçait ✅ sur un refus de l'API** (`0713da2b`).
+    `{"error":"Scenario world already exists"}` et « ✅ Seed world reset » sur
+    deux lignes consécutives, code de sortie 0 — le `| head -c 200` rendait
+    le statut de `head`. Une précondition de recette qui ment fait démarrer
+    la campagne suivante sur un état inconnu. `seed-clear` ajoutée, témoin de
+    rougeur vérifié.
+
+- 2026-09-13 — **le gate `doc-vivante` mérite une nuance qu'il n'avait pas.**
+  Le *parcours* (vitrine) est bien vert et son artefact fait 79 Mo. Mais les
+  douze `.scenario.ts` du même job rendent **10 ✓ / 2 ✘**
+  (`meeting-vote`, `sel-exchange`) et le job reste `success` : l'étape porte
+  `continue-on-error: true` depuis une décision du 2026-06-15, assortie d'une
+  condition de retrait — « toutes les sub-tasks C-Scen DONE et 0 flake sur
+  3 runs » — que personne n'a rouverte depuis. Une concession datée qu'on
+  ne réexamine pas devient un gate qui ne dit plus ce qu'on croit.
 
 - 2026-09-13 — **#877 tranchée sur une preuve qui a corrigé son diagnostic.**
   L'issue disait « l'éditeur a retiré CE tag ». Mesuré : c'est **tout**
