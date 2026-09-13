@@ -82,6 +82,18 @@ appelle une signature et non une validation.
     décision reste bonne, la garde de ce dépôt ne peut simplement pas voir
     ces collisions-là.
 
+- **✅ #872, livrable 4 fermé** — `garde-identifiants-de-recette.test.ts`
+  (#870) ne s'arrêtait que sur « aucun identifiant choisi ». Le cas restant,
+  nommé par #872, est l'inverse et plus dangereux : un identifiant qui
+  **fonctionne** contre un hôte distant enchaînerait écritures,
+  `seed-reset`, `reset-db` sur des données vivantes sans qu'aucun message ne
+  l'ait jamais demandé. `verifieLesIdentifiants()` exige désormais une
+  seconde variable disjointe, `KOPROGO_CONFIRME_HOTE_DISTANT`, avant de
+  laisser passer un hôte distant — que l'identifiant soit correct ou non.
+  Deux tests `@happy` existants ont été adaptés (pas supprimés, cf.
+  commentaire dans le fichier) pour exiger ce second choix ; le guide E2E
+  documente la variable.
+
 - **✅ La pile de recette tourne** (autorisée par le PO le 2026-09-12). Cinq
   conteneurs `koprogo-dev-*` sur 8090 / 8091 / 15432 / 19000-19001. Isolation
   vérifiée à chaque étape : les quatre conteneurs de la démo sont restés
@@ -274,6 +286,15 @@ un défaut de structure. Seul l'ordre des capacités est repris.
 
 ## Journal (chronologie courte)
 
+- 2026-09-13 — **#872, dernier livrable (4) fermé côté agent.** Le garde
+  d'identifiants (#870) laissait passer un hôte distant dès qu'un mot de
+  passe — n'importe lequel — était choisi. Exigence supplémentaire :
+  `KOPROGO_CONFIRME_HOTE_DISTANT`, une confirmation disjointe de
+  l'identifiant, pour le cas que le garde ne peut pas juger sans se
+  connecter — un mot de passe qui fonctionne. Guide E2E mis à jour. **Non
+  exécuté par l'agent** : les commandes `docker compose` de vérification ont
+  été refusées par le mode de permission de la session ; à faire tourner
+  humainement (`cd frontend && npm run test -- garde-identifiants`).
 - 2026-09-12 — **La pile de recette a tourné pour la première fois.** Trois
   défauts que seule l'exécution pouvait montrer : `JWT_SECRET` absent
   (`489a5473`), `PLAYWRIGHT_API_BASE` retombant sur le port 80 dans 93 fichiers
