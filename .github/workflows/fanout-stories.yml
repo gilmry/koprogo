@@ -221,11 +221,19 @@ jobs:
       # Mesuré sur la vague V4.1 du 2026-09-13 (run 34776213266) : les sept
       # branches produites portent toutes `11e1dfd9` pour parent, c'est-à-
       # dire le sommet de `main`, alors que `gh pr create --base feature/dev`
-      # les proposait à `feature/dev`. Leurs gates ont donc mesuré un socle
-      # vieux de plusieurs jours :
+      # les proposait à `feature/dev`.
       #
-      #   story/798  Integration Tests 🔴 — #877, corrigé sur feature/dev
-      #                                     le jour même, absent de main
+      # Le socle n'était pas VIEUX — `main` datait du matin même (07:03,
+      # promotion PR #764) — il était DÉCALÉ de treize heures. Et ces treize
+      # heures portaient précisément les correctifs dont les agents avaient
+      # besoin :
+      #
+      #   story/798  Integration Tests 🔴 — #877, corrigé à 15h sur
+      #                                     feature/dev, absent de main
+      #
+      # C'est ce qui rend l'épinglage nécessaire plutôt que prudent : une
+      # branche par défaut est TOUJOURS en retard sur la branche de travail,
+      # c'est sa fonction. Treize heures ont suffi.
       #
       # Un agent recevait ainsi un verdict rouge pour un défaut qu'il n'avait
       # pas introduit, sur du code qu'il n'avait pas écrit. C'est exactement
