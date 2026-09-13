@@ -220,11 +220,11 @@ issues tiennent chacune une file — **#803** en débloque 11, **#805** dix,
 | `verify` structurel | 🟢 | `kcargo test --test architecture` + 15 gardes | 16 suites vertes |
 | `contrat` anti-drift | 🟢 | gate OpenAPI + `oasdiff` en CI | #765 fermée |
 | `unit` domaine | 🟢 | `kcargo test --lib` | 1989 tests |
-| `integration` | 🟢 | suites `e2e_*.rs` (testcontainers) | #877 fermée : `storage_s3` rend `1 passed`, code 0, contre `quay.io`. **Mesuré le 2026-09-13**, pas déduit |
+| `integration` | 🟢 | suites `e2e_*.rs` (testcontainers) | `storage_s3` rend `1 passed`, code 0, contre `quay.io`. **Mesuré en local le 2026-09-13**. ⚠️ #877 reste OUVERTE : son premier critère dit « vert EN CI », et la CI ne l'a pas vu — les commits ne sont pas poussés |
 | `bdd` | 🟢 | suites `bdd_*.rs` | |
 | `e2e` parcours | 🟢 | `make test-e2e` | **308 ✓ / 0 ✘ / 14 sautés — CODE 0**, le 2026-09-13 après le correctif de #718 (`40eb8edd`). Aucun redémarrage pendant (`SIGTERM` 4 avant, 4 après). Même chiffre qu'en CI |
 | `visuel` | ⚪ | — | pas de goldens |
-| `doc-vivante` | 🟢 | `make vitrine` | parcours complet, 10 chapitres, 81 s, `interrompu: None` — prouvé en CI (run 34710066495) et en local (2/2) |
+| `doc-vivante` | 🟢 | `make vitrine` | le PARCOURS : complet, 10 chapitres, 81 s, `interrompu: None`, artefact de 79 Mo publié (run 34764114133). ⚠️ Les douze `.scenario.ts` du même job rendent **10 ✓ / 2 ✘** et ne peuvent PAS rougir le job : `continue-on-error: true` depuis le 2026-06-15, avec une condition de retrait jamais rouverte |
 | front typecheck | 🟢 | `npx svelte-check --threshold error` | 0 erreur |
 | front tests | 🟢 | `npx vitest run` | 659 tests, 120 fichiers |
 
