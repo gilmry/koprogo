@@ -17,8 +17,9 @@
 # qui porte le *répondre-de*, instruit par les gates et la vitrine — c'est la
 # modalité que le PO a choisie le 2026-09-12.
 #
-# `ci.yml` se déclenche déjà sur `story/**` : les gates partent donc seuls sur
-# chaque branche produite ici. Ce workflow n'a pas à les rejouer.
+# `ci.yml` se déclenche sur `story/**`, ce workflow n'a donc pas à rejouer les
+# gates — MAIS encore faut-il que le push déclenche quelque chose. Cf. le
+# troisième secret plus bas : avec le `GITHUB_TOKEN`, il ne déclenche rien.
 #
 # ── Ce que ça coûte, et c'est un choix ────────────────────────────────────
 #
@@ -35,6 +36,25 @@
 #     vague réelle, pas un engagement.
 #
 # Les deux secrets se posent à la main. Un secret ne se crée pas par un agent.
+#
+# ── Un TROISIÈME secret, et sans lui rien n'est évalué ────────────────────
+#
+#   FANOUT_GITHUB_TOKEN — un PAT (ou un jeton d'App GitHub) avec
+#     `contents: write` et `pull_requests: write`.
+#
+# Sans lui, la branche est poussée avec le `GITHUB_TOKEN`, et **GitHub ne
+# déclenche aucun workflow sur un événement issu de ce jeton**. Mesuré sur la
+# première passe réelle (run 34739504910, 2026-09-13) : branche `story/867`
+# poussée, PR #879 ouverte, et `ci.yml` n'a jamais tourné — zéro run sur la
+# branche, seul CodeQL sur la PR.
+#
+# L'en-tête ci-dessus affirmait « les gates partent donc seuls sur chaque
+# branche produite ici ». C'était faux, et seule l'exécution pouvait le dire.
+#
+# Le workflow continue de fonctionner sans ce secret, mais il le DIT : un
+# avertissement au journal, et un encadré en tête de chaque PR expliquant
+# qu'il n'y a rien à regarder. Un harnais qui produit des branches que rien
+# n'évalue doit le déclarer, pas le laisser deviner.
 
 name: Fan-out stories (agents)
 
@@ -315,20 +335,75 @@ jobs:
           Refs: #${NUM}
           EOF
 
+      # ── Le jeton décide si un gate verra un jour cette branche ──────────
+      #
+      # GitHub NE DÉCLENCHE AUCUN workflow sur un événement produit par le
+      # `GITHUB_TOKEN` — garde-fou anti-boucle, documenté, et fatal ici.
+      #
+      # Mesuré sur la première passe réelle, run 34739504910 du 2026-09-13 :
+      # la branche `story/867` a été poussée et la PR #879 ouverte, et
+      # `ci.yml` n'a JAMAIS tourné. Zéro run sur la branche, seul CodeQL sur
+      # la PR — parce que CodeQL n'est pas déclenché par ce jeton.
+      #
+      # Le modèle entier repose sur l'inverse : « le relecteur regarde le
+      # film et les gates, pas le code ». Sans gates ni vitrine, la promotion
+      # redevient une relecture de diff ligne à ligne, c'est-à-dire ce que ce
+      # workflow existe pour éviter.
+      #
+      # `FANOUT_GITHUB_TOKEN` — un PAT ou un jeton d'App GitHub, portée
+      # `contents: write` + `pull_requests: write` — lève la restriction.
+      # C'est le même remède que pour l'auto-merge Dependabot, qui gèle la
+      # démo pour exactement la même raison.
+      - name: Choisir le jeton qui pousse
+        if: ${{ steps.commit.outputs.vide == 'false' }}
+        id: jeton
+        env:
+          DEDIE: ${{ secrets.FANOUT_GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [ -n "${DEDIE}" ]; then
+            echo "gate=oui" >> "$GITHUB_OUTPUT"
+            echo "::notice::Jeton dédié présent — les gates partiront sur la branche."
+          else
+            echo "gate=non" >> "$GITHUB_OUTPUT"
+            echo "::warning::FANOUT_GITHUB_TOKEN absent. La branche sera poussée avec le GITHUB_TOKEN, et AUCUN workflow ne se déclenchera dessus : ni ci.yml, ni la vitrine. La PR produite ne sera instruite par rien, et le dira."
+          fi
+
       - name: Pousser et ouvrir la PR en brouillon
         if: ${{ steps.commit.outputs.vide == 'false' }}
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ secrets.FANOUT_GITHUB_TOKEN || github.token }}
+          AVEC_GATES: ${{ steps.jeton.outputs.gate }}
           BRANCHE: ${{ matrix.entree.branche }}
           NUM: ${{ matrix.entree.issue }}
           CLE: ${{ matrix.entree.cle }}
           DOM: ${{ matrix.entree.domaine }}
         run: |
           set -euo pipefail
+          # L'URL porte le jeton : `git push` n'utilise pas GH_TOKEN tout seul.
+          git remote set-url origin \
+            "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
           git push -u origin "$BRANCHE"
           if gh pr view "$BRANCHE" >/dev/null 2>&1; then
             echo "::notice::PR déjà ouverte pour $BRANCHE."
             exit 0
+          fi
+          if [ "$AVEC_GATES" = "non" ]; then
+            AVERTISSEMENT=$(cat <<'AVT'
+          > ⚠️ **Aucun gate ne tournera sur cette branche, et aucune vitrine
+          > ne sera produite.** Elle a été poussée avec le `GITHUB_TOKEN`, et
+          > GitHub ne déclenche aucun workflow sur un événement issu de ce
+          > jeton. Les deux premières cases ci-dessus ne peuvent donc pas être
+          > cochées : il n'y a rien à regarder.
+          >
+          > La promotion se ferait alors sur une relecture de diff ligne à
+          > ligne — exactement ce que ce harnais existe pour éviter. Poser le
+          > secret `FANOUT_GITHUB_TOKEN` (PAT ou App GitHub) lève la
+          > restriction.
+          AVT
+            )
+          else
+            AVERTISSEMENT=""
           fi
           cat > /tmp/pr.md <<EOF
           Produit par le **fan-out CI**, créneau \`${CLE}\`, domaine \`${DOM}\`.
@@ -338,10 +413,12 @@ jobs:
           Cette PR est en **brouillon** et le reste jusqu'à la revue humaine.
           Le *répondre-de* est porté par la **promotion**, instruite par :
 
-          - [ ] les **gates** de \`ci.yml\`, qui partent seuls sur \`story/**\`
+          - [ ] les **gates** de \`ci.yml\`
           - [ ] la **vitrine** — parcours filmé, preuve de valeur
           - [ ] la relecture des assertions : aucune supprimée pour faire
                 passer un test
+
+          ${AVERTISSEMENT}
 
           ## Ce que l'agent n'a pas vérifié
 
