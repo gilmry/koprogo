@@ -3696,6 +3696,8 @@
       "hourlyRate": "Hourly rate (credits)",
       "hourlyRateHelp": "Leave 0 to offer for free",
       "hourlyRatePlaceholder": "0 = free",
+      "ownerProfileRequiredMessage": "Offering a skill commits a named person, not the co-ownership. Your account has no owner record in this organization.",
+      "ownerProfileRequiredTitle": "Reserved for owners",
       "skillName": "Skill name",
       "skillNamePlaceholder": "Plumbing, gardening, maths tutoring...",
       "skillNameRequired": "Skill name is required",

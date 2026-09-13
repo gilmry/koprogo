@@ -130,6 +130,68 @@ async fn test_shared_objects_create() {
     assert_eq!(body["is_borrowed"], false);
 }
 
+/// Issue #781 (RN-11, recette 4 du 2026-09-06) — @negative + @security.
+///
+/// Un syndic SANS fiche de copropriétaire ne peut pas partager d'objet : le
+/// refus est LÉGITIME (prêter un objet engage une personne, pas la
+/// copropriété), mais doit être un 403 lisible, pas un 400 générique.
+#[actix_web::test]
+#[serial]
+async fn test_shared_objects_create_by_syndic_without_owner_profile_is_forbidden() {
+    let (app_state, _container, org_id) = common::setup_test_db().await;
+    // Syndic authentifié, SANS ligne dans `owners` — le cas de la recette.
+    let token = common::register_and_login_with_role(&app_state, org_id, "syndic").await;
+
+    let app = test::init_service(
+        App::new()
+            .app_data(app_state.clone())
+            .configure(configure_routes),
+    )
+    .await;
+
+    let building_id = create_building_for_shared_objects(
+        &app_state,
+        org_id,
+        "Shared Objects Syndic Sans Fiche Building",
+    )
+    .await;
+
+    let req = test::TestRequest::post()
+        .uri("/api/v1/shared-objects")
+        .insert_header(header::ContentType::json())
+        .insert_header((header::AUTHORIZATION, format!("Bearer {}", token)))
+        .set_json(json!({
+            "building_id": building_id,
+            "object_category": "Tools",
+            "object_name": "Perceuse",
+            "description": "Perceuse Bosch, bon état.",
+            "condition": "Good",
+            "is_available": true,
+            "borrowing_duration_days": 3
+        }))
+        .to_request();
+
+    let resp = test::call_service(&app, req).await;
+    assert_eq!(
+        resp.status(),
+        403,
+        "Le refus opposé à un syndic sans fiche de copropriétaire doit être \
+         un 403 (règle métier), pas un 400 (saisie invalide)"
+    );
+
+    let body: serde_json::Value = test::read_body_json(resp).await;
+    assert_eq!(
+        body["kind"], "owner_profile_required",
+        "kind stable requis pour la traduction frontend (#781)"
+    );
+    let message = body["error"].as_str().unwrap_or_default();
+    assert!(
+        !message.to_lowercase().contains("owner not found"),
+        "le message ne doit plus être le libellé technique anglais : {}",
+        message
+    );
+}
+
 #[actix_web::test]
 #[serial]
 async fn test_shared_objects_get() {

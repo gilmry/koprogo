@@ -834,6 +834,51 @@ mod tests {
         assert!(!resp.is_pinned);
     }
 
+    /// Issue #781 (RN-11, recette 4 du 2026-09-06) — @happy, preuve de
+    /// non-régression.
+    ///
+    /// Un syndic SANS fiche de copropriétaire peut créer une annonce : un
+    /// avis émane de la copropriété, pas d'une personne nommée — à la
+    /// différence de skill/shared_object/resource_booking, `create_notice`
+    /// ne résout aucun `Owner` et n'a même pas de dépendance vers
+    /// `OwnerRepository`. C'est la preuve, vérifiée en recette le
+    /// 2026-09-06, que le refus des trois autres modules n'est pas une
+    /// panne générale du produit.
+    #[tokio::test]
+    async fn happy_syndic_sans_fiche_coproprietaire_peut_creer_une_annonce() {
+        let user_id = Uuid::new_v4(); // syndic, aucune fiche `owners` liée
+        let org_id = Uuid::new_v4();
+        let building_id = Uuid::new_v4();
+        let mut syndic = make_user(user_id);
+        syndic.role = UserRole::Syndic;
+
+        let uc = NoticeUseCases::new(
+            Arc::new(MockNoticeRepo::new()),
+            Arc::new(MockUserRepo::with_user(syndic)),
+        );
+
+        let dto = CreateNoticeDto {
+            building_id,
+            notice_type: NoticeType::Announcement,
+            category: NoticeCategory::General,
+            title: "Entretien des communs".to_string(),
+            content: "Les communs seront entretenus la semaine prochaine.".to_string(),
+            event_date: None,
+            event_location: None,
+            contact_info: None,
+            expires_at: None,
+        };
+
+        let result = uc.create_notice(user_id, org_id, dto).await;
+        assert!(
+            result.is_ok(),
+            "un syndic sans fiche de copropriétaire doit pouvoir créer une \
+             annonce : {:?}",
+            result.err()
+        );
+        assert_eq!(result.unwrap().author_id, user_id);
+    }
+
     #[tokio::test]
     async fn test_get_notice_success() {
         let user_id = Uuid::new_v4();

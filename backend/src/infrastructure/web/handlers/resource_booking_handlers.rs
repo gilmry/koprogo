@@ -50,8 +50,21 @@ pub async fn create_booking(
     {
         Ok(booking) => HttpResponse::Created().json(booking),
         Err(e) => {
+            // Issue #781 — le refus "pas de fiche de copropriétaire" est un
+            // 403 (règle métier : réserver engage une personne, pas encore
+            // la copropriété — cf. story #588 non implémentée), jamais un
+            // 400. Le `kind` laisse le frontend router vers un message
+            // traduit dans les quatre locales sans dépendre du libellé
+            // français.
             if e.contains("conflicts with") {
                 HttpResponse::Conflict().json(serde_json::json!({"error": e}))
+            } else if classification_erreurs::est_refus_owner_requis(&e) {
+                HttpResponse::Forbidden().json(serde_json::json!({
+                    "error": e,
+                    "kind": "owner_profile_required",
+                }))
+            } else if classification_erreurs::est_interdit(&e) {
+                HttpResponse::Forbidden().json(serde_json::json!({"error": e}))
             } else if classification_erreurs::est_introuvable(&e) {
                 HttpResponse::NotFound().json(serde_json::json!({"error": e}))
             } else {

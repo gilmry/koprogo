@@ -3696,6 +3696,8 @@
       "hourlyRate": "Tarif horaire (crédits)",
       "hourlyRateHelp": "Laissez 0 pour proposer gratuitement",
       "hourlyRatePlaceholder": "0 = gratuit",
+      "ownerProfileRequiredMessage": "Proposer une compétence engage une personne, pas la copropriété. Votre compte n'a pas de fiche de copropriétaire dans cette organisation.",
+      "ownerProfileRequiredTitle": "Réservé aux copropriétaires",
       "skillName": "Nom de la compétence",
       "skillNamePlaceholder": "Plomberie, jardinage, cours de maths...",
       "skillNameRequired": "Le nom de la compétence est obligatoire",

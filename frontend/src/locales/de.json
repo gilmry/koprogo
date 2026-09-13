@@ -3696,6 +3696,8 @@
       "hourlyRate": "Stundensatz (Credits)",
       "hourlyRateHelp": "Lassen Sie 0 für ein kostenloses Angebot",
       "hourlyRatePlaceholder": "0 = kostenlos",
+      "ownerProfileRequiredMessage": "Eine Fähigkeit anzubieten verpflichtet eine namentlich genannte Person, nicht die Eigentümergemeinschaft. Ihr Konto hat kein Eigentümerprofil in dieser Organisation.",
+      "ownerProfileRequiredTitle": "Nur für Miteigentümer",
       "skillName": "Name der Fähigkeit",
       "skillNamePlaceholder": "Sanitärinstallation, Gartenarbeit, Mathematikunterricht...",
       "skillNameRequired": "Der Name der Fähigkeit ist erforderlich",

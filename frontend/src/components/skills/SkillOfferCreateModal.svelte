@@ -8,7 +8,7 @@
     ExpertiseLevel,
   } from "../../lib/api/skills";
   import { toast } from "../../stores/toast";
-  import { withErrorHandling } from "../../lib/utils/error.utils";
+  import { showOwnerProfileRequiredToast } from "../../lib/utils/ownerProfileRequired";
 
   let {
     isOpen = false,
@@ -52,16 +52,25 @@
     if (certificationInput.trim()) {
       payload.certifications = certificationInput.trim();
     }
-    const result = await withErrorHandling({
-      action: () => skillsApi.createOffer(payload),
-      setLoading: (v: boolean) => (submitting = v),
-      successMessage: $_("skills.createModal.createSuccess"),
-      errorMessage: $_("skills.createModal.createError"),
-    });
-    if (result) {
+
+    // Issue #781 — `silent: true` désactive le toast générique 403
+    // d'`apiFetch` ("Accès refusé...") pour ce refus précis, afin de rendre
+    // à la place le message traduit `owner_profile_required` (un syndic
+    // sans fiche de copropriétaire ne peut pas proposer de compétence — le
+    // refus est légitime, seul le libellé change).
+    submitting = true;
+    try {
+      await skillsApi.createOffer(payload, { silent: true });
+      toast.success($_("skills.createModal.createSuccess"));
       resetForm();
       onSuccess();
       onClose();
+    } catch (err) {
+      if (!showOwnerProfileRequiredToast(err)) {
+        toast.error($_("skills.createModal.createError"));
+      }
+    } finally {
+      submitting = false;
     }
   }
 

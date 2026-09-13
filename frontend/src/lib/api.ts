@@ -277,7 +277,7 @@ export const api = {
   post: <T = any>(
     endpoint: string,
     data?: any,
-    options?: RequestInit,
+    options?: ApiFetchOptions,
   ): Promise<T> => {
     return apiFetch<T>(endpoint, {
       ...options,
