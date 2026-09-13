@@ -23,6 +23,7 @@ pub mod energy_campaign_use_cases;
 pub mod etat_date_use_cases;
 pub mod expense_use_cases;
 pub mod financial_report_use_cases;
+pub mod fund_use_cases;
 pub mod gamification_use_cases;
 pub mod gdpr_art30_use_cases;
 pub mod gdpr_use_cases;
@@ -89,6 +90,7 @@ pub use energy_campaign_use_cases::{CampaignStats, EnergyCampaignUseCases};
 pub use etat_date_use_cases::EtatDateUseCases;
 pub use expense_use_cases::ExpenseUseCases;
 pub use financial_report_use_cases::FinancialReportUseCases;
+pub use fund_use_cases::FundUseCases;
 pub use gamification_use_cases::{
     AchievementUseCases, ChallengeUseCases, GamificationStatsUseCases,
 };

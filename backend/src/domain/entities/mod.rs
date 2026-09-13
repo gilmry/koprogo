@@ -103,6 +103,8 @@ pub use crate::domain::comptabilite::expense;
 pub use crate::domain::comptabilite::expense::{
     ApprovalStatus, Expense, ExpenseCategory, PaymentStatus,
 };
+pub use crate::domain::comptabilite::fund;
+pub use crate::domain::comptabilite::fund::{Fund, FundError, FundKind, FundReassignment};
 pub use crate::domain::comptabilite::invoice_line_item;
 pub use crate::domain::comptabilite::invoice_line_item::InvoiceLineItem;
 pub use crate::domain::comptabilite::journal_entry;
