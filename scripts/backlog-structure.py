@@ -99,8 +99,14 @@ CAPACITES = [
      {780: "L", 848: "L", 850: "L", 576: "L", 577: "L", 581: "M"}),
     ("C1.2", "E1", "Le procès-verbal fait foi", "Should",
      {578: "L", 579: "L"}),
+    # #881 ajoutée le 2026-09-13, relevée en instruisant #864 : cinq
+    # transitions de dépense journalisent toutes `ExpenseMarkedPaid`. Le
+    # registre affirme un paiement là où la dépense a été annulée ou
+    # dé-payée. Elle est de C1.3 par définition — « le registre atteste ce
+    # qu'il DÉCLARE » — et c'est le même défaut que #780 a corrigé pour les
+    # assemblées, dont le commentaire dans `audit.rs` le disait déjà.
     ("C1.3", "E1", "Le registre légal atteste ce qu'il déclare", "Must",
-     {847: "L", 846: "M"}),
+     {847: "L", 846: "M", 881: "S"}),
     ("C1.4", "E1", "Les organes de contrôle existent", "Could",
      {582: "M", 583: "L"}),
     ("C1.5", "E1", "L'état daté a un destinataire identifié", "Should",

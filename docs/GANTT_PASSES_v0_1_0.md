@@ -116,7 +116,7 @@ un retard sur *n'importe laquelle* des amont décale l'aval.
 
 ## Ce que la largeur révèle
 
-**3 des 7 couches dépassent le plafond de 3** : L4 (39 chantiers), L5 (36 chantiers), L6 (9 chantiers).
+**3 des 7 couches dépassent le plafond de 3** : L4 (40 chantiers), L5 (36 chantiers), L6 (9 chantiers).
 
 C'est le résultat le plus utile du diagramme, et il est
 contre-intuitif : **les dépendances ne sont pas le goulot.** Les
@@ -211,9 +211,9 @@ passes en séquentiel supervisé.
 | V4.2 | 9 — #870, #864, #841, #850, #432, #585, #429, #635, #854 | `harnais`, `back/plateforme`, `front/composants`, `back/copropriete`, `iac`, `back/communaute`, `meta`, `back/comptabilite`, `docs-vivante` |
 | V4.3 | 7 — #877, #842, #847, #835, #453, #556, #595 | `harnais`, `front/composants`, `back/copropriete`, `back/plateforme`, `iac`, `meta`, `docs-vivante` |
 | V4.4 | 4 — #868, #848, #762, #731 | `front/composants`, `back/copropriete`, `back/plateforme`, `iac` |
-| V4.5 | 3 — #856, #579, #354 | `front/composants`, `back/copropriete`, `iac` |
-| V4.6 | 2 — #803, #855 | `front/composants`, `back/copropriete` |
-| V4.7 | 1 — #802 | `front/composants` |
+| V4.5 | 3 — #856, #881, #354 | `front/composants`, `back/copropriete`, `iac` |
+| V4.6 | 2 — #803, #579 | `front/composants`, `back/copropriete` |
+| V4.7 | 2 — #802, #855 | `front/composants`, `back/copropriete` |
 | V4.8 | 1 — #797 | `front/composants` |
 | V4.9 | 1 — #834 | `front/composants` |
 | V4.10 | 1 — #867 | `front/composants` |
@@ -278,7 +278,7 @@ Deux aggravations que la formule ne voit pas :
 Le plan demande une largeur de **10**. L'hôte en tient
 **2**. L'expérimentation s'exécuterait donc à **un
 cinquième** de la largeur pour laquelle elle est conçue :
-~44 créneaux réels au lieu de 26.
+~45 créneaux réels au lieu de 26.
 
 À 2 de front, le parallélisme n'apporte presque rien :
 le gain vient alors de la **suppression de l'attente humaine entre
@@ -365,11 +365,11 @@ est la condition d'existence de l'expérimentation, pas sa première
 
 | Axe | Valeur | Ce que ça mesure |
 |---|---:|---|
-| Issues | 88 | le périmètre, intégral (ADR 0049) |
+| Issues | 89 | le périmètre, intégral (ADR 0049) |
 | Passes séquentielles | 30 | régime supervisé, 3 de front |
 | Créneaux multiagent | 26 | régime parallèle, revue à la promotion |
-| Jours | 75.50 | wall-clock **superviseur** |
-| Tours | 302 | coût **tokens** |
+| Jours | 76.00 | wall-clock **superviseur** |
+| Tours | 304 | coût **tokens** |
 
 L'abaque est formelle sur la lecture de ces deux dernières lignes : le
 **poste dominant est le superviseur, pas le modèle**. Optimiser les
@@ -385,7 +385,7 @@ les publier comme un engagement serait une faute.
 
 ## Cadre de delivery
 
-Largeur maximale *possible* : **39 chantiers simultanés**. Largeur
+Largeur maximale *possible* : **40 chantiers simultanés**. Largeur
 *retenue* : **3**.
 
 Cela tient dans **une seule équipe** : Scrum suffit, et Nexus serait
@@ -411,7 +411,7 @@ supervision dans une seule.
 ## Alertes du générateur
 
 - Issues déclarées au graphe et absentes du backlog : #871
-- Issues du backlog absentes du graphe (traitées sans dépendance) : #877
+- Issues du backlog absentes du graphe (traitées sans dépendance) : #877, #881
 
 ---
 

@@ -37,14 +37,14 @@ elles débloquent beaucoup, ou portent un article :
 `Must` qui ne débloque rien et ne porte aucun article est
 peut-être un `Should` qui s'ignore :
 
-- **#847** (rang 47, score 0.15) — cite Art. 3.89
-- **#848** (rang 48, score 0.15) — cite Art. 3.87
-- **#581** (rang 51, score 0.133) — touche « acp »
-- **#696** (rang 55, score 0.133) — touche « périmètre »
-- **#832** (rang 60, score 0.133) — touche « identité »
-- **#841** (rang 61, score 0.133) — touche « périmètre »
-- **#842** (rang 62, score 0.133) — touche « rgpd »
-- **#845** (rang 76, score 0.1) — touche « identité »
+- **#847** (rang 48, score 0.15) — cite Art. 3.89
+- **#848** (rang 49, score 0.15) — cite Art. 3.87
+- **#581** (rang 52, score 0.133) — touche « acp »
+- **#696** (rang 56, score 0.133) — touche « périmètre »
+- **#832** (rang 61, score 0.133) — touche « identité »
+- **#841** (rang 62, score 0.133) — touche « périmètre »
+- **#842** (rang 63, score 0.133) — touche « rgpd »
+- **#880** (rang 66, score 0.133) — aucun article, aucun marqueur d'irréversibilité
 - … et 6 autres
 
 ## Le classement
@@ -56,7 +56,7 @@ peut-être un `Should` qui s'ignore :
 | #802 | **1.0** | C5.2 | Must | 9 | 2 | 0.2 | 4 | touche « périmètre » |
 | #780 | **0.9** | C1.1 | Must | 5 | 3 | 0.2 | 4 | cite Art. 3.87 |
 | #585 | **0.7** | C3.3 | Could | 6 | 2 | 0.2 | 4 | touche « acp » |
-| #872 | **0.55** | C7.1 | Must | 10 | 1 | 0.2 | 4 | aucun article, aucun marqueur d'irréversibilité |
+| #872 | **0.6** | C7.1 | Must | 11 | 1 | 0.2 | 4 | aucun article, aucun marqueur d'irréversibilité |
 | #797 | **0.5** | C5.1 | Should | 9 | 1 | 0.2 | 4 | aucun article, aucun marqueur d'irréversibilité |
 | #579 | **0.45** | C1.2 | Should | 2 | 3 | 0.2 | 4 | étiquette legal-compliance, sans article cité |
 | #587 | **0.4** | C3.2 | Could | 2 | 2 | 0.2 | 3 | touche « acp » |
@@ -68,6 +68,7 @@ peut-être un `Should` qui s'ignore :
 | #850 | **0.3** | C1.1 | Must | 1 | 3 | 0.2 | 4 | cite Art. 3.87 |
 | #855 | **0.3** | C1.5 | Should | 1 | 3 | 0.2 | 4 | cite Art. 3.94 |
 | #873 | **0.3** | C7.3 | Must | 2 | 1 | 0.2 | 2 | aucun article, aucun marqueur d'irréversibilité |
+| #881 | **0.3** | C1.3 | Must | 0 | 3 | 0.2 | 2 | cite Art. 3.89 |
 | #586 | **0.267** | C3.3 | Could | 1 | 2 | 0.2 | 3 | touche « acp » |
 | #808 | **0.267** | C8.1 | Could | 1 | 2 | 0.2 | 3 | touche « périmètre » |
 | #809 | **0.267** | C8.1 | Could | 1 | 2 | 0.2 | 3 | touche « acp » |
@@ -115,6 +116,7 @@ peut-être un `Should` qui s'ignore :
 | #842 | **0.133** | C4.3 | Must | 0 | 2 | 0.2 | 3 | touche « rgpd » |
 | #866 | **0.133** | C6.2 | Should | 0 | 2 | 0.2 | 3 | touche « acp » |
 | #869 | **0.133** | C6.2 | Should | 1 | 1 | 0.2 | 3 | aucun article, aucun marqueur d'irréversibilité |
+| #880 | **0.133** | C7.1 | Must | 1 | 1 | 0.2 | 3 | aucun article, aucun marqueur d'irréversibilité |
 | #354 | **0.1** | C9.2 | Could | 1 | 1 | 0.2 | 4 | aucun article, aucun marqueur d'irréversibilité |
 | #425 | **0.1** | C9.4 | Could | 0 | 2 | 0.2 | 4 | touche « migration » |
 | #427 | **0.1** | C7.2 | Should | 0 | 2 | 0.2 | 4 | touche « périmètre » |
@@ -135,7 +137,6 @@ peut-être un `Should` qui s'ignore :
 | #453 | **0.067** | C9.1 | Should | 0 | 1 | 0.2 | 3 | aucun article, aucun marqueur d'irréversibilité |
 | #731 | **0.067** | C9.1 | Should | 0 | 1 | 0.2 | 3 | aucun article, aucun marqueur d'irréversibilité |
 | #874 | **0.067** | C7.3 | Must | 0 | 1 | 0.2 | 3 | aucun article, aucun marqueur d'irréversibilité |
-| #880 | **0.067** | C7.1 | Must | 0 | 1 | 0.2 | 3 | aucun article, aucun marqueur d'irréversibilité |
 | #355 | **0.05** | C9.2 | Could | 0 | 1 | 0.2 | 4 | aucun article, aucun marqueur d'irréversibilité |
 | #718 | **0.05** | C9.1 | Should | 0 | 1 | 0.2 | 4 | aucun article, aucun marqueur d'irréversibilité |
 | #813 | **0.05** | C8.3 | Could | 0 | 1 | 0.2 | 4 | aucun article, aucun marqueur d'irréversibilité |

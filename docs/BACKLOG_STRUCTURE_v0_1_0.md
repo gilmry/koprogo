@@ -44,7 +44,7 @@ signature_humaine:
 *Épopées et capacités. Généré par `scripts/backlog-structure.py` : ne pas
 éditer à la main, la prochaine génération écraserait la correction.*
 
-**88 issues ouvertes**, 10 épopées, 33 capacités. Classement exhaustif et exclusif : chaque issue appartient à exactement
+**89 issues ouvertes**, 10 épopées, 33 capacités. Classement exhaustif et exclusif : chaque issue appartient à exactement
 une capacité, et une issue non classée fait échouer la génération.
 
 ## Comment lire ce document
@@ -86,7 +86,7 @@ fabrication ; le Scrum Master de conception l'écrit sans détour :
 | Couche(s) | où le code atterrit, donc quelles gardes s'appliquent |
 | Taille + tours | le coût, sur les deux axes |
 
-**88 issues sur 88** portent les huit. Le relevé
+**89 issues sur 89** portent les huit. Le relevé
 d'origine, avant ce travail, donnait **zéro**.
 
 Le chiffre n'est pas écrit à la main : `scripts/backlog-pret.py` le relève
@@ -127,7 +127,7 @@ silence — y sont. Le backlog n'est pas bloqué à ce titre.
 
 ## E1 — Copropriété — le jumeau juridique
 
-`epic:copropriete` · 13 issues · 12.25 j · 49 tours
+`epic:copropriete` · 14 issues · 12.75 j · 51 tours
 
 Le contexte borné qui ne dépend de rien : ce que la loi belge dit d'une assemblée, d'un lot, d'une voix. Une erreur ici n'est pas un défaut d'affichage, c'est une décision annulable.
 
@@ -155,12 +155,13 @@ Le contexte borné qui ne dépend de rien : ce que la loi belge dit d'une assemb
 
 ### C1.3 — Le registre légal atteste ce qu'il déclare
 
-**Must** · `cap:C1.3` · 2 issues · 1.75 j · 7 tours · **2/2 prêtes**
+**Must** · `cap:C1.3` · 3 issues · 2.25 j · 9 tours · **3/3 prêtes**
 
 | Issue | Titre | Taille | Prête |
 |---|---|---|---|
 | [#846](https://github.com/gilmry/koprogo/issues/846) | Onze tables et une vue existent en base et ne sont lues par aucun code, dont … | M | oui |
 | [#847](https://github.com/gilmry/koprogo/issues/847) | Le registre légal atteste des obligations que ses tests ne vérifient pas : l'… | L | oui |
+| [#881](https://github.com/gilmry/koprogo/issues/881) | Cinq transitions de dépense journalisent toutes ExpenseMarkedPaid : le regist… | S | oui |
 
 ### C1.4 — Les organes de contrôle existent
 
@@ -508,7 +509,7 @@ Des questions ouvertes, pas des défauts. La Méthode Foyer les veut en RFC, dis
 
 | Épopée | Issues | Jours | Tours |
 |---|---:|---:|---:|
-| E1 — Copropriété | 13 | 12.25 | 49 |
+| E1 — Copropriété | 14 | 12.75 | 51 |
 | E2 — Comptabilité | 3 | 2.50 | 10 |
 | E3 — Économie circulaire | 9 | 7.25 | 29 |
 | E4 — Plateforme | 10 | 9.00 | 36 |
@@ -518,7 +519,7 @@ Des questions ouvertes, pas des défauts. La Méthode Foyer les veut en RFC, dis
 | T4 — Documentation vivante multi-persona | 14 | 11.25 | 45 |
 | T5 — Ops et infrastructure | 10 | 9.00 | 36 |
 | T6 — Arbitrages produit en attente | 1 | 0.50 | 2 |
-| **Total** | **88** | **75.50** | **302** |
+| **Total** | **89** | **76.00** | **304** |
 
 `S` = 0,5 j · `M` = 0,75 j · `L` = 1 j — wall-clock du superviseur, pas
 temps machine. Les tours mesurent l'autre axe, le coût en tokens.
