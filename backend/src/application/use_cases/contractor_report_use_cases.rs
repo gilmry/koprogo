@@ -3,11 +3,12 @@ use crate::application::dto::contractor_report_dto::{
     RequestCorrectionsDto, UpdateContractorReportDto,
 };
 use crate::application::dto::payment_dto::CreatePaymentRequest;
+use crate::application::error::AppError;
 use crate::application::ports::contractor_report_repository::ContractorReportRepository;
 use crate::application::ports::quote_repository::QuoteRepository;
-use crate::application::use_cases::PaymentUseCases;
+use crate::application::use_cases::{MagicLinkUseCases, PaymentUseCases};
 use crate::domain::entities::contractor_report::{ContractorReport, ContractorReportStatus};
-use crate::domain::entities::PaymentMethodType;
+use crate::domain::entities::{MagicLinkScopeKind, PaymentMethodType};
 use chrono::{Duration, Utc};
 use std::sync::Arc;
 use uuid::Uuid;
@@ -19,6 +20,10 @@ pub struct ContractorReportUseCases {
     pub repo: Arc<dyn ContractorReportRepository>,
     pub quote_repo: Option<Arc<dyn QuoteRepository>>,
     pub payment_use_cases: Option<Arc<PaymentUseCases>>,
+    /// #835 — émission/résolution des liens magiques unifiés (scope
+    /// `ContractorReport`). `None` seulement en test unitaire pur (mocks qui
+    /// n'exercent pas `generate_magic_link`).
+    pub magic_link_use_cases: Option<Arc<MagicLinkUseCases>>,
 }
 
 impl ContractorReportUseCases {
@@ -27,6 +32,7 @@ impl ContractorReportUseCases {
             repo,
             quote_repo: None,
             payment_use_cases: None,
+            magic_link_use_cases: None,
         }
     }
 
@@ -37,6 +43,13 @@ impl ContractorReportUseCases {
     ) -> Self {
         self.quote_repo = Some(quote_repo);
         self.payment_use_cases = Some(payment_use_cases);
+        self
+    }
+
+    /// #835 — branche le système générique de liens magiques (absorption du
+    /// second système qui stockait un token brut sur `contractor_reports`).
+    pub fn with_magic_link_support(mut self, magic_link_use_cases: Arc<MagicLinkUseCases>) -> Self {
+        self.magic_link_use_cases = Some(magic_link_use_cases);
         self
     }
 
@@ -324,46 +337,124 @@ impl ContractorReportUseCases {
         Ok(ContractorReportResponseDto::from(&saved))
     }
 
-    /// Génère un magic link JWT 72h pour l'accès PWA corps de métier (B16-2)
+    /// Génère un lien magique pour l'accès PWA corps de métier (B16-2).
+    ///
+    /// #835 — délègue au système générique (`MagicLinkUseCases`, scope
+    /// `ContractorReport`) au lieu d'écrire un token brut dans
+    /// `contractor_reports.magic_token_hash`. Le prestataire reçoit désormais
+    /// UN lien `/c?t=...`, celui que sait déjà lire `MagicLinkContractorPage`,
+    /// au lieu d'un second format (`/contractor/?token=...`) menant à une
+    /// page distincte. Cf. issue #835 — deux systèmes de liens magiques
+    /// parallèles pour un même chantier.
+    ///
+    /// `subject_user_id` : le prestataire n'a souvent PAS de compte (#815 —
+    /// la voie nominale est le lien, pas le compte). `contractor_user_id` est
+    /// alors `None` et on utilise `Uuid::nil()`, un sentinel accepté par
+    /// `MagicLink::issue` (seule contrainte : différer de `issued_by`) — le
+    /// token brut, pas l'identité du sujet, est ce qui autorise l'accès ici.
     pub async fn generate_magic_link(
         &self,
         report_id: Uuid,
         organization_id: Uuid,
+        issued_by: Uuid,
         base_url: &str,
-    ) -> Result<MagicLinkResponseDto, String> {
-        let mut report = self
+    ) -> Result<MagicLinkResponseDto, AppError> {
+        let report = self
             .repo
             .find_by_id(report_id)
-            .await?
-            .ok_or_else(|| format!("Rapport {} introuvable", report_id))?;
+            .await
+            .map_err(AppError::Internal)?
+            .ok_or_else(|| AppError::NotFound(format!("contractor_report {}", report_id)))?;
 
         if report.organization_id != organization_id {
-            return Err("Accès refusé".to_string());
+            return Err(AppError::Forbidden("Accès refusé".to_string()));
         }
 
-        // Génère un token sécurisé (UUID v4 = 122 bits d'entropie)
-        let raw_token = Uuid::new_v4().to_string();
-        // En production on hasherait avec SHA-256 ou bcrypt ; ici on stocke le raw
-        // (suffisant pour 72h, UUID non prédictible)
-        let token_hash = raw_token.clone();
-        let expires_at = Utc::now() + Duration::hours(MAGIC_LINK_VALIDITY_HOURS);
+        let magic_link_use_cases = self
+            .magic_link_use_cases
+            .as_ref()
+            .ok_or_else(|| AppError::Internal("MagicLinkUseCases non configuré".to_string()))?;
 
-        report.magic_token_hash = Some(token_hash);
-        report.magic_token_expires_at = Some(expires_at);
-        report.updated_at = Utc::now();
+        let subject_user_id = report.contractor_user_id.unwrap_or(Uuid::nil());
+        let issued = magic_link_use_cases
+            .issue(
+                subject_user_id,
+                MagicLinkScopeKind::ContractorReport,
+                report_id,
+                issued_by,
+                Duration::hours(MAGIC_LINK_VALIDITY_HOURS).num_seconds(),
+            )
+            .await?;
 
-        self.repo.update(&report).await?;
-
-        let magic_link = format!(
-            "{}/contractor/?token={}",
-            base_url.trim_end_matches('/'),
-            raw_token
-        );
+        let magic_link = format!("{}/c?t={}", base_url.trim_end_matches('/'), issued.token);
 
         Ok(MagicLinkResponseDto {
             magic_link,
-            expires_at,
+            expires_at: issued.expires_at,
         })
+    }
+
+    /// Lecture du rapport pour l'écran unifié lien magique (#835). L'autorisation
+    /// est déjà assurée en amont par la résolution du jeton (scope cloisonné,
+    /// cf. `MagicLinkUseCases::ensure_scope`) — pas de filtre organisation ici,
+    /// l'appelant est anonyme par nature (c'est le principe même du lien).
+    pub async fn get_via_magic_link(
+        &self,
+        report_id: Uuid,
+    ) -> Result<ContractorReportResponseDto, AppError> {
+        let report = self
+            .repo
+            .find_by_id(report_id)
+            .await
+            .map_err(AppError::Internal)?
+            .ok_or_else(|| AppError::NotFound(format!("contractor_report {}", report_id)))?;
+        Ok(ContractorReportResponseDto::from(&report))
+    }
+
+    /// Applique les champs du brouillon puis soumet, en un seul aller-retour —
+    /// c'est l'action « respond » du lien magique unifié (#835). Contrairement
+    /// à `submit_by_token` (système B, retiré), les champs soumis (compte-rendu,
+    /// date, pièces) sont réellement persistés avant la transition d'état :
+    /// l'ancien endpoint les ignorait silencieusement (le corps de la requête
+    /// n'était jamais lu), ce qui rendait la soumission systématiquement en
+    /// échec faute de `compte_rendu` déjà enregistré par ailleurs.
+    pub async fn respond_via_magic_link(
+        &self,
+        report_id: Uuid,
+        dto: UpdateContractorReportDto,
+    ) -> Result<ContractorReportResponseDto, AppError> {
+        let mut report = self
+            .repo
+            .find_by_id(report_id)
+            .await
+            .map_err(AppError::Internal)?
+            .ok_or_else(|| AppError::NotFound(format!("contractor_report {}", report_id)))?;
+
+        if let Some(date) = dto.work_date {
+            report.work_date = Some(date);
+        }
+        if let Some(cr) = dto.compte_rendu {
+            report.compte_rendu = Some(cr);
+        }
+        if let Some(photos) = dto.photos_before {
+            report.photos_before = photos;
+        }
+        if let Some(photos) = dto.photos_after {
+            report.photos_after = photos;
+        }
+        if let Some(parts) = dto.parts_replaced {
+            report.parts_replaced = parts.into_iter().map(Into::into).collect();
+        }
+        report.updated_at = Utc::now();
+
+        report.submit().map_err(AppError::Validation)?;
+
+        let saved = self
+            .repo
+            .update(&report)
+            .await
+            .map_err(AppError::Internal)?;
+        Ok(ContractorReportResponseDto::from(&saved))
     }
 
     /// Supprime un rapport (Draft seulement)
@@ -555,7 +646,12 @@ mod tests {
 
     #[tokio::test]
     async fn test_generate_magic_link_success() {
+        // #835 — la génération délègue désormais au système générique de
+        // liens magiques et produit une URL `/c?t=...`, celle que sait déjà
+        // rendre `MagicLinkContractorPage`, au lieu de `/contractor/?token=`
+        // (second système, absorbé).
         let org_id = Uuid::new_v4();
+        let issued_by = Uuid::new_v4();
         let report = make_draft_report(org_id);
         let report_id = report.id;
 
@@ -565,18 +661,256 @@ mod tests {
             .expect_find_by_id()
             .withf(move |id| *id == report_id)
             .returning(move |_| Ok(Some(report_for_find.clone())));
+
+        let uc = ContractorReportUseCases::new(Arc::new(mock_repo))
+            .with_magic_link_support(new_magic_link_use_cases());
+
+        let result = uc
+            .generate_magic_link(report_id, org_id, issued_by, "https://app.koprogo.be")
+            .await;
+        assert!(result.is_ok(), "{:?}", result.err());
+        let link_dto = result.unwrap();
+        assert!(
+            link_dto
+                .magic_link
+                .starts_with("https://app.koprogo.be/c?t="),
+            "unexpected magic_link: {}",
+            link_dto.magic_link
+        );
+        assert!(link_dto.expires_at > Utc::now());
+    }
+
+    // ========================================================================
+    // #835 — liens magiques unifiés (scope ContractorReport)
+    // ========================================================================
+
+    /// Dépôt en mémoire pour `MagicLinkRepository`, suffisant pour exercer
+    /// `generate_magic_link` / `get_via_magic_link` / `respond_via_magic_link`
+    /// sans DB réelle.
+    #[derive(Default)]
+    struct InMemoryMagicLinkRepo {
+        rows: std::sync::Mutex<Vec<crate::domain::entities::MagicLink>>,
+    }
+
+    #[async_trait]
+    impl crate::application::ports::MagicLinkRepository for InMemoryMagicLinkRepo {
+        async fn save(&self, link: &crate::domain::entities::MagicLink) -> Result<(), AppError> {
+            self.rows.lock().unwrap().push(link.clone());
+            Ok(())
+        }
+
+        async fn find_by_token_hash(
+            &self,
+            token_hash: &str,
+        ) -> Result<Option<crate::domain::entities::MagicLink>, AppError> {
+            Ok(self
+                .rows
+                .lock()
+                .unwrap()
+                .iter()
+                .find(|l| l.token_hash == token_hash)
+                .cloned())
+        }
+
+        async fn mark_consumed(&self, id: Uuid) -> Result<(), AppError> {
+            let mut rows = self.rows.lock().unwrap();
+            if let Some(row) = rows.iter_mut().find(|l| l.id == id) {
+                row.consumed_at = Some(Utc::now());
+            }
+            Ok(())
+        }
+    }
+
+    fn new_magic_link_use_cases() -> Arc<MagicLinkUseCases> {
+        let repo: Arc<dyn crate::application::ports::MagicLinkRepository> =
+            Arc::new(InMemoryMagicLinkRepo::default());
+        Arc::new(MagicLinkUseCases::new(repo))
+    }
+
+    // ---- @happy --------------------------------------------------------------
+
+    #[tokio::test]
+    async fn happy_generate_magic_link_uses_nil_subject_when_contractor_has_no_account() {
+        // #815 — le prestataire n'a souvent PAS de compte : contractor_user_id
+        // est None et ne doit pas empêcher l'émission.
+        let org_id = Uuid::new_v4();
+        let issued_by = Uuid::new_v4();
+        let report = make_draft_report(org_id);
+        assert!(report.contractor_user_id.is_none());
+        let report_id = report.id;
+
+        let mut mock_repo = MockContractorReportRepo::new();
+        mock_repo
+            .expect_find_by_id()
+            .returning(move |_| Ok(Some(report.clone())));
+
+        let uc = ContractorReportUseCases::new(Arc::new(mock_repo))
+            .with_magic_link_support(new_magic_link_use_cases());
+
+        let result = uc
+            .generate_magic_link(report_id, org_id, issued_by, "https://app.koprogo.be")
+            .await;
+        assert!(result.is_ok(), "{:?}", result.err());
+    }
+
+    #[tokio::test]
+    async fn happy_get_via_magic_link_returns_report_dto() {
+        let org_id = Uuid::new_v4();
+        let report = make_draft_report(org_id);
+        let report_id = report.id;
+
+        let mut mock_repo = MockContractorReportRepo::new();
+        mock_repo
+            .expect_find_by_id()
+            .returning(move |_| Ok(Some(report.clone())));
+
+        let uc = ContractorReportUseCases::new(Arc::new(mock_repo));
+        let dto = uc.get_via_magic_link(report_id).await.unwrap();
+        assert_eq!(dto.id, report_id);
+        assert_eq!(dto.contractor_name, "Martin Plomberie SPRL");
+    }
+
+    #[tokio::test]
+    async fn happy_respond_via_magic_link_applies_fields_then_submits() {
+        let org_id = Uuid::new_v4();
+        let mut report = make_draft_report(org_id);
+        report.compte_rendu = None; // le brouillon n'a encore rien — tout vient du respond
+        let report_id = report.id;
+
+        let mut mock_repo = MockContractorReportRepo::new();
+        mock_repo
+            .expect_find_by_id()
+            .returning(move |_| Ok(Some(report.clone())));
         mock_repo.expect_update().returning(|r| Ok(r.clone()));
 
         let uc = ContractorReportUseCases::new(Arc::new(mock_repo));
+        let dto = UpdateContractorReportDto {
+            work_date: Some(Utc::now()),
+            compte_rendu: Some("Remplacement du joint défectueux.".to_string()),
+            photos_before: None,
+            photos_after: None,
+            parts_replaced: None,
+        };
 
-        let result = uc
-            .generate_magic_link(report_id, org_id, "https://app.koprogo.be")
-            .await;
-        assert!(result.is_ok());
-        let link_dto = result.unwrap();
-        assert!(link_dto
-            .magic_link
-            .starts_with("https://app.koprogo.be/contractor/?token="));
-        assert!(link_dto.expires_at > Utc::now());
+        let result = uc.respond_via_magic_link(report_id, dto).await.unwrap();
+        assert_eq!(result.status, "submitted");
+        assert_eq!(
+            result.compte_rendu.as_deref(),
+            Some("Remplacement du joint défectueux.")
+        );
+    }
+
+    // ---- @edge -----------------------------------------------------------------
+
+    #[tokio::test]
+    async fn edge_respond_via_magic_link_on_terminal_state_is_rejected() {
+        let org_id = Uuid::new_v4();
+        let mut report = make_draft_report(org_id);
+        report.status = ContractorReportStatus::Validated; // état terminal
+        let report_id = report.id;
+
+        let mut mock_repo = MockContractorReportRepo::new();
+        mock_repo
+            .expect_find_by_id()
+            .returning(move |_| Ok(Some(report.clone())));
+
+        let uc = ContractorReportUseCases::new(Arc::new(mock_repo));
+        let dto = UpdateContractorReportDto {
+            work_date: None,
+            compte_rendu: Some("Tentative de re-soumission".to_string()),
+            photos_before: None,
+            photos_after: None,
+            parts_replaced: None,
+        };
+
+        let err = uc.respond_via_magic_link(report_id, dto).await.unwrap_err();
+        assert!(matches!(err, AppError::Validation(_)));
+    }
+
+    // ---- @security ---------------------------------------------------------------
+
+    #[tokio::test]
+    async fn security_generate_magic_link_rejects_foreign_organization() {
+        let org_id = Uuid::new_v4();
+        let other_org_id = Uuid::new_v4();
+        let report = make_draft_report(org_id);
+        let report_id = report.id;
+
+        let mut mock_repo = MockContractorReportRepo::new();
+        mock_repo
+            .expect_find_by_id()
+            .returning(move |_| Ok(Some(report.clone())));
+
+        let uc = ContractorReportUseCases::new(Arc::new(mock_repo))
+            .with_magic_link_support(new_magic_link_use_cases());
+
+        let err = uc
+            .generate_magic_link(
+                report_id,
+                other_org_id,
+                Uuid::new_v4(),
+                "https://app.koprogo.be",
+            )
+            .await
+            .unwrap_err();
+        assert!(matches!(err, AppError::Forbidden(_)));
+    }
+
+    // ---- @negative ---------------------------------------------------------------
+
+    #[tokio::test]
+    async fn negative_generate_magic_link_without_support_configured_is_internal_error() {
+        let org_id = Uuid::new_v4();
+        let report = make_draft_report(org_id);
+        let report_id = report.id;
+
+        let mut mock_repo = MockContractorReportRepo::new();
+        mock_repo
+            .expect_find_by_id()
+            .returning(move |_| Ok(Some(report.clone())));
+
+        // Pas de `.with_magic_link_support(...)` — configuration incomplète.
+        let uc = ContractorReportUseCases::new(Arc::new(mock_repo));
+
+        let err = uc
+            .generate_magic_link(report_id, org_id, Uuid::new_v4(), "https://app.koprogo.be")
+            .await
+            .unwrap_err();
+        assert!(matches!(err, AppError::Internal(_)));
+    }
+
+    #[tokio::test]
+    async fn negative_get_via_magic_link_unknown_report_returns_not_found() {
+        let mut mock_repo = MockContractorReportRepo::new();
+        mock_repo.expect_find_by_id().returning(|_| Ok(None));
+
+        let uc = ContractorReportUseCases::new(Arc::new(mock_repo));
+        let err = uc.get_via_magic_link(Uuid::new_v4()).await.unwrap_err();
+        assert!(matches!(err, AppError::NotFound(_)));
+    }
+
+    #[tokio::test]
+    async fn negative_respond_via_magic_link_without_compte_rendu_fails_validation() {
+        let org_id = Uuid::new_v4();
+        let mut report = make_draft_report(org_id);
+        report.compte_rendu = None;
+        let report_id = report.id;
+
+        let mut mock_repo = MockContractorReportRepo::new();
+        mock_repo
+            .expect_find_by_id()
+            .returning(move |_| Ok(Some(report.clone())));
+
+        let uc = ContractorReportUseCases::new(Arc::new(mock_repo));
+        let dto = UpdateContractorReportDto {
+            work_date: None,
+            compte_rendu: None,
+            photos_before: None,
+            photos_after: None,
+            parts_replaced: None,
+        };
+
+        let err = uc.respond_via_magic_link(report_id, dto).await.unwrap_err();
+        assert!(matches!(err, AppError::Validation(_)));
     }
 }

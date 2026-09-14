@@ -2,6 +2,7 @@ use crate::application::dto::contractor_report_dto::{
     CreateContractorReportDto, GenerateMagicLinkDto, RejectReportDto, RequestCorrectionsDto,
     UpdateContractorReportDto,
 };
+use crate::application::error::AppError;
 use crate::infrastructure::web::classification_erreurs;
 use crate::infrastructure::web::{AppState, AuthenticatedUser};
 use actix_web::{delete, get, post, put, web, HttpRequest, HttpResponse, Responder};
@@ -245,19 +246,20 @@ pub async fn reject_contractor_report(
 }
 
 /// POST /contractor-reports/magic-link — Génère un magic link pour le corps de métier
+///
+/// #835 — délègue désormais au système générique de liens magiques (scope
+/// `ContractorReport`) : réponse HTTP inchangée (`MagicLinkResponseDto`), mais
+/// l'URL produite est `/c?t=...` au lieu de `/contractor/?token=...`.
 #[post("/contractor-reports/magic-link")]
 pub async fn generate_magic_link(
     state: web::Data<AppState>,
     user: AuthenticatedUser,
     req: HttpRequest,
     body: web::Json<GenerateMagicLinkDto>,
-) -> impl Responder {
-    let organization_id = match user.require_organization() {
-        Ok(id) => id,
-        Err(e) => {
-            return HttpResponse::Unauthorized().json(serde_json::json!({"error": e.to_string()}))
-        }
-    };
+) -> Result<HttpResponse, AppError> {
+    let organization_id = user
+        .require_organization()
+        .map_err(|e| AppError::Forbidden(e.to_string()))?;
 
     // Déduire la base URL depuis la requête (drop connection_info avant l'await)
     let base_url = {
@@ -265,14 +267,12 @@ pub async fn generate_magic_link(
         format!("{}://{}", connection_info.scheme(), connection_info.host())
     };
 
-    match state
+    let response = state
         .contractor_report_use_cases
-        .generate_magic_link(body.report_id, organization_id, &base_url)
-        .await
-    {
-        Ok(r) => HttpResponse::Ok().json(r),
-        Err(e) => HttpResponse::BadRequest().json(serde_json::json!({"error": e})),
-    }
+        .generate_magic_link(body.report_id, organization_id, user.user_id, &base_url)
+        .await?;
+
+    Ok(HttpResponse::Ok().json(response))
 }
 
 /// DELETE /contractor-reports/:id — Supprimer un rapport (Draft seulement)

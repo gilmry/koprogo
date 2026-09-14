@@ -197,6 +197,7 @@ use utoipa_swagger_ui::SwaggerUi;
         // MagicLink (Story 3.2 — FR6 INV-13 INV-17)
         crate::infrastructure::web::handlers::magic_link_handlers::issue_magic_link,
         crate::infrastructure::web::handlers::magic_link_handlers::consume_magic_link,
+        crate::infrastructure::web::handlers::magic_link_handlers::respond_magic_link,
         // Mandate (Story 3.4 — FR7 INV-14)
         crate::infrastructure::web::handlers::mandate_handlers::issue_mandate,
         crate::infrastructure::web::handlers::mandate_handlers::list_mandates,

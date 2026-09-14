@@ -4132,7 +4132,18 @@
     "validity": "Validity period",
     "copyNow": "This link will never be shown again. Copy it now and send it to its recipient.",
     "copy": "Copy",
-    "issueAnother": "Issue another link"
+    "issueAnother": "Issue another link",
+    "crTitle": "Intervention report",
+    "crActionVerb": "Submit the report",
+    "crWorkDate": "Intervention date",
+    "crCompteRendu": "Report",
+    "crCompteRenduPlaceholder": "Describe the work carried out…",
+    "crParts": "Replaced parts",
+    "crAddPart": "Add a part",
+    "crPartName": "Part name",
+    "crPartReference": "Reference",
+    "crPartQuantity": "Quantity",
+    "crRemovePart": "Remove this part"
   },
   "technicalSpecs": {
     "submittedForSignature": "Specification submitted for signature.",

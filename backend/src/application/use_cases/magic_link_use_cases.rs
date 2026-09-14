@@ -113,6 +113,54 @@ impl MagicLinkUseCases {
         consumed.consume();
         Ok(consumed)
     }
+
+    /// Resolve a token WITHOUT consuming it — for scopes whose workflow spans
+    /// several round-trips after the first `GET /c/{token}` (#835 @edge).
+    ///
+    /// `ContractorReport` is the first such scope: a prestataire opens the
+    /// link (which consumes it via [`Self::validate_and_consume`] as an audit
+    /// marker of "first redemption"), then edits a draft and submits later —
+    /// possibly offline, possibly the next day. Gating that later write on
+    /// `consumed_at` would make the very first view burn the only chance to
+    /// ever submit, which is incompatible with the offline requirement this
+    /// scope must keep (cf. system B being absorbed, which only ever checked
+    /// TTL). So `peek` checks hash lookup + expiry only, and deliberately
+    /// ignores `consumed_at`. Scope cloisonnement is enforced separately by
+    /// [`Self::ensure_scope`] at the call site — a token's `scope_kind` is
+    /// fixed at issuance and never reinterpreted.
+    pub async fn peek(&self, clear_token: &str) -> Result<MagicLink, AppError> {
+        if clear_token.trim().is_empty() {
+            return Err(AppError::MagicLinkInvalid);
+        }
+
+        let token_hash = MagicLink::hash_token(clear_token);
+        let link = self
+            .repo
+            .find_by_token_hash(&token_hash)
+            .await?
+            .ok_or(AppError::MagicLinkInvalid)?;
+
+        if link.is_expired() {
+            return Err(AppError::MagicLinkExpired);
+        }
+
+        Ok(link)
+    }
+
+    /// Enforce that a resolved link matches the scope the caller expects.
+    ///
+    /// Returns the same uniform `MagicLinkInvalid` as an unknown token — a
+    /// link issued for `Quote` must not distinguishably fail as "wrong scope"
+    /// (anti-enumeration, same rationale as `validate_and_consume`'s uniform
+    /// "unknown token" error), and must not open a `ContractorReport` (#835
+    /// @security — élargir un scope est le moyen le plus simple de
+    /// transformer un lien ciblé en passe-partout).
+    pub fn ensure_scope(link: &MagicLink, expected: MagicLinkScopeKind) -> Result<(), AppError> {
+        if link.scope_kind != expected {
+            return Err(AppError::MagicLinkInvalid);
+        }
+        Ok(())
+    }
 }
 
 // ============================================================================
@@ -280,7 +328,134 @@ mod tests {
         assert!(matches!(err, AppError::Validation(_)));
     }
 
-    // ---- @negative ---------------------------------------------------------
+    // ---- @happy (peek / ensure_scope — #835) --------------------------------
+
+    #[tokio::test]
+    async fn happy_peek_resolves_valid_token_without_consuming() {
+        let (repo, uc) = use_cases();
+        let issued = uc
+            .issue(
+                Uuid::new_v4(),
+                MagicLinkScopeKind::ContractorReport,
+                Uuid::new_v4(),
+                Uuid::new_v4(),
+                3600,
+            )
+            .await
+            .unwrap();
+
+        let peeked = uc.peek(&issued.token).await.unwrap();
+        assert!(!peeked.is_consumed());
+
+        // Peeking again must still work — unlike validate_and_consume, it is
+        // repeatable (cf. #835 @edge — offline draft round-trips).
+        let peeked_again = uc.peek(&issued.token).await.unwrap();
+        assert!(!peeked_again.is_consumed());
+        assert_eq!(
+            repo.rows.lock().unwrap().len(),
+            1,
+            "peek must not create/consume rows"
+        );
+    }
+
+    #[tokio::test]
+    async fn happy_peek_still_resolves_after_the_link_was_consumed_elsewhere() {
+        // The initial GET /c/{token} DOES consume the link (audit marker of
+        // first redemption). A later write action (submit) must still be able
+        // to `peek` the same token — this is the crux of #835 @edge.
+        let (_repo, uc) = use_cases();
+        let issued = uc
+            .issue(
+                Uuid::new_v4(),
+                MagicLinkScopeKind::ContractorReport,
+                Uuid::new_v4(),
+                Uuid::new_v4(),
+                3600,
+            )
+            .await
+            .unwrap();
+
+        uc.validate_and_consume(&issued.token).await.unwrap();
+
+        let peeked = uc.peek(&issued.token).await.unwrap();
+        assert!(
+            peeked.is_consumed(),
+            "consumed flag is preserved, informational only"
+        );
+    }
+
+    #[tokio::test]
+    async fn happy_ensure_scope_accepts_matching_kind() {
+        let (subject, issuer, scope) = (Uuid::new_v4(), Uuid::new_v4(), Uuid::new_v4());
+        let (link, _) = MagicLink::issue(
+            subject,
+            MagicLinkScopeKind::ContractorReport,
+            scope,
+            issuer,
+            Duration::hours(1),
+        )
+        .unwrap();
+        assert!(
+            MagicLinkUseCases::ensure_scope(&link, MagicLinkScopeKind::ContractorReport).is_ok()
+        );
+    }
+
+    // ---- @edge (peek — #835) ------------------------------------------------
+
+    #[tokio::test]
+    async fn edge_peek_at_exact_expiry_boundary_matches_validate_and_consume() {
+        let repo = Arc::new(InMemoryRepo::default());
+        let (mut link, clear) = MagicLink::issue(
+            Uuid::new_v4(),
+            MagicLinkScopeKind::ContractorReport,
+            Uuid::new_v4(),
+            Uuid::new_v4(),
+            Duration::hours(1),
+        )
+        .unwrap();
+        link.expires_at = Utc::now() - Duration::seconds(1);
+        repo.rows.lock().unwrap().push(link);
+
+        let uc = MagicLinkUseCases::new(repo as Arc<dyn MagicLinkRepository>);
+        let err = uc.peek(&clear).await.unwrap_err();
+        assert!(matches!(err, AppError::MagicLinkExpired));
+    }
+
+    // ---- @security (peek / ensure_scope — #835) -----------------------------
+
+    #[tokio::test]
+    async fn security_peek_forged_token_returns_invalid() {
+        let (_repo, uc) = use_cases();
+        let err = uc.peek("forged-not-in-db").await.unwrap_err();
+        assert!(matches!(err, AppError::MagicLinkInvalid));
+    }
+
+    #[test]
+    fn security_ensure_scope_rejects_mismatched_kind_uniformly() {
+        let (subject, issuer, scope) = (Uuid::new_v4(), Uuid::new_v4(), Uuid::new_v4());
+        let (link, _) = MagicLink::issue(
+            subject,
+            MagicLinkScopeKind::Quote,
+            scope,
+            issuer,
+            Duration::hours(1),
+        )
+        .unwrap();
+        let err = MagicLinkUseCases::ensure_scope(&link, MagicLinkScopeKind::ContractorReport)
+            .unwrap_err();
+        // Uniform with "unknown token" — never a distinguishable "wrong scope"
+        // error that would help an attacker probe which scope a token holds.
+        assert!(matches!(err, AppError::MagicLinkInvalid));
+    }
+
+    // ---- @negative (peek — #835) ---------------------------------------------
+
+    #[tokio::test]
+    async fn negative_peek_empty_token_returns_invalid_without_db_lookup() {
+        let (_repo, uc) = use_cases();
+        let err = uc.peek("   ").await.unwrap_err();
+        assert!(matches!(err, AppError::MagicLinkInvalid));
+    }
 
     #[tokio::test]
     async fn negative_expired_link_returns_magic_link_expired() {

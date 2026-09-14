@@ -127,6 +127,9 @@ pub struct OperationsWorld {
 
     // Contractor Report tracking (BC16)
     contractor_report_use_cases: Option<Arc<ContractorReportUseCases>>,
+    // #835 — résolution du lien magique unifié (scope ContractorReport),
+    // utilisée par les steps qui simulent l'accès `GET /c/{token}`.
+    magic_link_use_cases: Option<Arc<koprogo_api::application::use_cases::MagicLinkUseCases>>,
     last_report_id: Option<Uuid>,
     last_report_status: Option<String>,
     last_report_contractor_name: Option<String>,
@@ -234,6 +237,7 @@ impl OperationsWorld {
             inspection_deleted: false,
 
             contractor_report_use_cases: None,
+            magic_link_use_cases: None,
             last_report_id: None,
             last_report_status: None,
             last_report_contractor_name: None,
@@ -358,7 +362,20 @@ impl OperationsWorld {
             EnergyBillUploadUseCases::new(energy_bill_repo.clone(), energy_campaign_repo.clone());
         let energy_campaign_use_cases =
             EnergyCampaignUseCases::new(energy_campaign_repo, energy_bill_repo, building_repo);
-        let contractor_report_use_cases = ContractorReportUseCases::new(contractor_report_repo);
+        let magic_link_repo_for_reports: Arc<
+            dyn koprogo_api::application::ports::MagicLinkRepository,
+        > = Arc::new(
+            koprogo_api::infrastructure::database::repositories::PostgresMagicLinkRepository::new(
+                pool.clone(),
+            ),
+        );
+        let magic_link_use_cases_arc =
+            Arc::new(koprogo_api::application::use_cases::MagicLinkUseCases::new(
+                magic_link_repo_for_reports,
+            ));
+        // #835 — absorbe le second système de liens magiques (scope ContractorReport).
+        let contractor_report_use_cases = ContractorReportUseCases::new(contractor_report_repo)
+            .with_magic_link_support(magic_link_use_cases_arc.clone());
 
         self.ticket_use_cases = Some(Arc::new(ticket_use_cases));
         self.notification_use_cases = Some(Arc::new(notification_use_cases));
@@ -368,6 +385,7 @@ impl OperationsWorld {
         self.energy_campaign_use_cases = Some(Arc::new(energy_campaign_use_cases));
         self.energy_bill_use_cases = Some(Arc::new(energy_bill_use_cases));
         self.contractor_report_use_cases = Some(Arc::new(contractor_report_use_cases));
+        self.magic_link_use_cases = Some(magic_link_use_cases_arc);
         self._container = Some(postgres_container);
         self.org_id = Some(org_id);
     }
@@ -4321,16 +4339,20 @@ async fn when_generate_magic_link(world: &mut OperationsWorld) {
     let uc = world.contractor_report_use_cases.as_ref().unwrap().clone();
     let report_id = world.last_report_id.expect("No report ID stored");
     let org_id = world.org_id.unwrap();
+    // #835 — issuer distinct du sujet (souvent `Uuid::nil()`, prestataire sans
+    // compte) : n'importe quel utilisateur authentifié de cette session BDD.
+    let issued_by = world.authenticated_user_id.unwrap_or_else(Uuid::new_v4);
 
     match uc
-        .generate_magic_link(report_id, org_id, "https://koprogo.be")
+        .generate_magic_link(report_id, org_id, issued_by, "https://koprogo.be")
         .await
     {
         Ok(resp) => {
-            // Extract token from magic_link URL (format: {base_url}/contractor/?token={token})
+            // #835 — format unifié : {base_url}/c?t={token} (absorbe l'ancien
+            // format {base_url}/contractor/?token={token}).
             let token = resp
                 .magic_link
-                .split("?token=")
+                .split("/c?t=")
                 .nth(1)
                 .unwrap_or("")
                 .to_string();
@@ -4341,7 +4363,7 @@ async fn when_generate_magic_link(world: &mut OperationsWorld) {
         }
         Err(e) => {
             world.operation_success = false;
-            world.operation_error = Some(e);
+            world.operation_error = Some(e.to_string());
         }
     }
 }
@@ -4386,16 +4408,28 @@ async fn given_report_with_valid_magic_link(world: &mut OperationsWorld) {
     assert!(world.operation_success, "Failed to generate magic link");
 }
 
+/// #835 — reproduit `GET /c/{token}` : résolution via le système générique
+/// (`MagicLinkUseCases::validate_and_consume`) puis lecture du rapport par
+/// `scope_id`, au lieu de l'ancien `ContractorReportUseCases::get_by_token`
+/// qui interrogeait `contractor_reports.magic_token_hash` — colonne que
+/// `generate_magic_link` ne remplit plus depuis l'absorption du second
+/// système de liens magiques.
 #[when("the contractor accesses the report via magic link")]
 async fn when_contractor_accesses_via_magic_link(world: &mut OperationsWorld) {
-    let uc = world.contractor_report_use_cases.as_ref().unwrap().clone();
+    let magic_link_uc = world.magic_link_use_cases.as_ref().unwrap().clone();
+    let report_uc = world.contractor_report_use_cases.as_ref().unwrap().clone();
     let token = world
         .magic_link_token
         .as_ref()
         .expect("No magic link token")
         .clone();
 
-    match uc.get_by_token(&token).await {
+    let resolved = match magic_link_uc.validate_and_consume(&token).await {
+        Ok(link) => report_uc.get_via_magic_link(link.scope_id).await,
+        Err(e) => Err(e),
+    };
+
+    match resolved {
         Ok(report) => {
             world.last_report_id = Some(report.id);
             world.last_report_status = Some(report.status.clone());
@@ -4405,7 +4439,7 @@ async fn when_contractor_accesses_via_magic_link(world: &mut OperationsWorld) {
         }
         Err(e) => {
             world.operation_success = false;
-            world.operation_error = Some(e);
+            world.operation_error = Some(e.to_string());
         }
     }
 }
@@ -4422,7 +4456,8 @@ async fn then_report_details_returned(world: &mut OperationsWorld) {
 
 #[then("no authentication should be required")]
 async fn then_no_auth_required(world: &mut OperationsWorld) {
-    // The get_by_token use case doesn't require org_id / authenticated user
+    // #835 — `validate_and_consume` + `get_via_magic_link` don't require
+    // org_id / authenticated user: the token itself is the identity.
     assert!(
         world.operation_success,
         "Access via magic link failed: {:?}",
@@ -4432,7 +4467,10 @@ async fn then_no_auth_required(world: &mut OperationsWorld) {
 
 #[given("a contractor report with an expired magic link exists")]
 async fn given_report_with_expired_magic_link(world: &mut OperationsWorld) {
-    // Create report then manually set an expired token via SQL
+    // #835 — émet un lien réel via le système générique puis l'expire
+    // directement dans `magic_links` (la table que la résolution interroge
+    // désormais), au lieu d'écrire dans l'ancienne colonne
+    // `contractor_reports.magic_token_hash` que plus rien ne lit.
     let contractor = world
         .contractor_name_store
         .clone()
@@ -4440,41 +4478,42 @@ async fn given_report_with_expired_magic_link(world: &mut OperationsWorld) {
     create_report_helper(world, &contractor, world.last_ticket_id_for_report).await;
     assert!(world.operation_success, "Failed to create report");
 
-    let expired_token = format!("expired-token-{}", Uuid::new_v4());
-    let report_id = world.last_report_id.unwrap();
+    when_generate_magic_link(world).await;
+    assert!(world.operation_success, "Failed to generate magic link");
+    let token = world
+        .magic_link_token
+        .clone()
+        .expect("magic link token was issued");
+
+    let token_hash = koprogo_api::domain::entities::MagicLink::hash_token(&token);
     let pool = world.pool.as_ref().unwrap();
 
     sqlx::query(
-        r#"UPDATE contractor_reports
-           SET magic_token_hash = $1, magic_token_expires_at = NOW() - interval '1 hour'
-           WHERE id = $2"#,
+        r#"UPDATE magic_links SET expires_at = NOW() - interval '1 hour' WHERE token_hash = $1"#,
     )
-    .bind(&expired_token)
-    .bind(report_id)
+    .bind(&token_hash)
     .execute(pool)
     .await
-    .expect("set expired token");
-
-    world.magic_link_token = Some(expired_token);
+    .expect("expire the magic link");
 }
 
 #[when("the contractor tries to access via the expired magic link")]
 async fn when_contractor_tries_expired_magic_link(world: &mut OperationsWorld) {
-    let uc = world.contractor_report_use_cases.as_ref().unwrap().clone();
+    let magic_link_uc = world.magic_link_use_cases.as_ref().unwrap().clone();
     let token = world
         .magic_link_token
         .as_ref()
         .expect("No token stored")
         .clone();
 
-    match uc.get_by_token(&token).await {
+    match magic_link_uc.validate_and_consume(&token).await {
         Ok(_) => {
             world.operation_success = true;
             world.operation_error = None;
         }
         Err(e) => {
             world.operation_success = false;
-            world.operation_error = Some(e);
+            world.operation_error = Some(e.to_string());
         }
     }
 }

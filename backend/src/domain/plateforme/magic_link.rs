@@ -34,6 +34,9 @@ pub enum MagicLinkScopeKind {
     Quote,
     Invoice,
     ContractorEvaluation,
+    /// Rapport d'intervention prestataire (#835 — absorbe le second système de
+    /// liens magiques qui existait en parallèle, cf. `ContractorReportUseCases`).
+    ContractorReport,
 }
 
 impl std::fmt::Display for MagicLinkScopeKind {
@@ -43,6 +46,7 @@ impl std::fmt::Display for MagicLinkScopeKind {
             MagicLinkScopeKind::Quote => write!(f, "quote"),
             MagicLinkScopeKind::Invoice => write!(f, "invoice"),
             MagicLinkScopeKind::ContractorEvaluation => write!(f, "contractor_evaluation"),
+            MagicLinkScopeKind::ContractorReport => write!(f, "contractor_report"),
         }
     }
 }
@@ -56,6 +60,7 @@ impl std::str::FromStr for MagicLinkScopeKind {
             "quote" => Ok(MagicLinkScopeKind::Quote),
             "invoice" => Ok(MagicLinkScopeKind::Invoice),
             "contractor_evaluation" => Ok(MagicLinkScopeKind::ContractorEvaluation),
+            "contractor_report" => Ok(MagicLinkScopeKind::ContractorReport),
             other => Err(AppError::Validation(format!(
                 "Invalid magic link scope_kind: {}",
                 other
@@ -248,11 +253,25 @@ mod tests {
             MagicLinkScopeKind::Quote,
             MagicLinkScopeKind::Invoice,
             MagicLinkScopeKind::ContractorEvaluation,
+            // #835 — le rapport d'intervention rejoint les scopes couverts par
+            // le système générique (absorption du second système de liens).
+            MagicLinkScopeKind::ContractorReport,
         ] {
             let s = kind.to_string();
             let parsed = MagicLinkScopeKind::from_str(&s).expect("roundtrip");
             assert_eq!(parsed, kind);
         }
+    }
+
+    #[test]
+    fn happy_contractor_report_scope_kind_string_is_stable() {
+        // Le nom de chaîne est un contrat d'API (utilisé côté front, cf.
+        // MAGIC_LINK_SCOPE_KINDS) — le figer protège contre un renommage
+        // accidentel de variante qui casserait silencieusement l'émission.
+        assert_eq!(
+            MagicLinkScopeKind::ContractorReport.to_string(),
+            "contractor_report"
+        );
     }
 
     // ------------------------------------------------------------------------
@@ -353,6 +372,24 @@ mod tests {
         assert_ne!(clear, link.token_hash);
         // And re-hashing the clear token reproduces the stored hash.
         assert_eq!(MagicLink::hash_token(&clear), link.token_hash);
+    }
+
+    #[test]
+    fn security_contractor_report_link_keeps_its_own_scope_kind() {
+        // Cloisonnement (#835 @security) : un lien émis pour un rapport reste
+        // scopé `ContractorReport` — c'est cette valeur, fixée à l'émission et
+        // jamais réinterprétée, qui empêche un lien Devis d'ouvrir un rapport.
+        let (subject, issuer, scope) = fixture_pair();
+        let (link, _) = MagicLink::issue(
+            subject,
+            MagicLinkScopeKind::ContractorReport,
+            scope,
+            issuer,
+            Duration::hours(72),
+        )
+        .unwrap();
+        assert_eq!(link.scope_kind, MagicLinkScopeKind::ContractorReport);
+        assert_ne!(link.scope_kind, MagicLinkScopeKind::Quote);
     }
 
     #[test]

@@ -453,7 +453,9 @@ async fn main() -> std::io::Result<()> {
         AgSessionUseCases::new(ag_session_repo.clone(), meeting_repo.clone());
     let age_request_use_cases = AgeRequestUseCases::new(age_request_repo.clone());
     let contractor_report_use_cases = ContractorReportUseCases::new(contractor_report_repo.clone())
-        .with_payment_support(quote_repo.clone(), payment_use_cases_arc.clone());
+        .with_payment_support(quote_repo.clone(), payment_use_cases_arc.clone())
+        // #835 — absorbe le second système de liens magiques (scope ContractorReport).
+        .with_magic_link_support(Arc::new(MagicLinkUseCases::new(magic_link_repo.clone())));
     // Story 3.2 — MagicLink use cases (public-access tokens for contractors/tiers).
     let magic_link_use_cases = MagicLinkUseCases::new(magic_link_repo.clone());
     // Story 3.4 — Mandate use cases (juridical delegation tracker).

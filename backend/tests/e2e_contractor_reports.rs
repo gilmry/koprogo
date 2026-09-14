@@ -397,27 +397,128 @@ async fn test_contractor_reports_access_via_magic_link() {
     assert_eq!(gen_resp.status(), 200);
     let gen_body: serde_json::Value = test::read_body_json(gen_resp).await;
 
-    // Extract token from magic link URL (format: {base_url}/contractor/?token={token})
+    // #835 — le lien émis est désormais unifié : format {base_url}/c?t={token},
+    // consommé par le même écran/API que les autres scopes (Ticket, Quote...).
     let magic_link = gen_body["magic_link"].as_str().unwrap();
-    let token_part = magic_link
-        .split("?token=")
-        .last()
-        .unwrap_or("invalid-token");
+    assert!(
+        magic_link.contains("/c?t="),
+        "expected unified /c?t= link, got: {}",
+        magic_link
+    );
+    let token_part = magic_link.split("/c?t=").last().unwrap_or("invalid-token");
 
     // Access via magic link — no auth required
     let req = test::TestRequest::get()
-        .uri(&format!("/api/v1/contractor/token/{}", token_part))
+        .uri(&format!("/api/v1/c/{}", token_part))
         .to_request();
 
     let resp = test::call_service(&app, req).await;
     assert_eq!(
         resp.status(),
         200,
-        "Should access contractor report via magic link without auth"
+        "Should access contractor report via the unified magic link without auth"
     );
 
     let body: serde_json::Value = test::read_body_json(resp).await;
-    assert_eq!(body["id"], report_id);
+    assert_eq!(body["scope_kind"], "contractor_report");
+    assert_eq!(body["scope"]["id"], report_id);
+}
+
+#[actix_web::test]
+#[serial]
+async fn test_contractor_reports_respond_via_unified_magic_link() {
+    // #835 — le second système (`/contractor/?token=`, `/contractor-reports/magic/{token}`)
+    // est retiré du chemin d'émission : ce test couvre le nouveau round-trip
+    // complet lecture (GET /c/{token}) puis écriture (POST /c/{token}/respond).
+    let (app_state, _container, org_id) = common::setup_test_db().await;
+    let (token, user_id) = setup_contractor_user_token(&app_state, org_id).await;
+    let app = test::init_service(
+        App::new()
+            .app_data(app_state.clone())
+            .configure(configure_routes),
+    )
+    .await;
+
+    let building_id = create_contractor_test_building(&app_state, org_id).await;
+    let ticket_id = create_contractor_test_ticket(&app_state, org_id, building_id, user_id).await;
+
+    let create_req = test::TestRequest::post()
+        .uri("/api/v1/contractor-reports")
+        .insert_header((header::AUTHORIZATION, format!("Bearer {}", token)))
+        .set_json(json!({
+            "building_id": building_id.to_string(),
+            "contractor_name": "Toiture Meunier SPRL",
+            "ticket_id": ticket_id.to_string()
+        }))
+        .to_request();
+    let create_resp = test::call_service(&app, create_req).await;
+    assert_eq!(create_resp.status(), 201);
+    let created: serde_json::Value = test::read_body_json(create_resp).await;
+    let report_id = created["id"].as_str().unwrap().to_string();
+    let report_uuid = Uuid::parse_str(&report_id).unwrap();
+
+    let gen_req = test::TestRequest::post()
+        .uri("/api/v1/contractor-reports/magic-link")
+        .insert_header((header::AUTHORIZATION, format!("Bearer {}", token)))
+        .set_json(json!({ "report_id": report_uuid.to_string() }))
+        .to_request();
+    let gen_resp = test::call_service(&app, gen_req).await;
+    assert_eq!(gen_resp.status(), 200);
+    let gen_body: serde_json::Value = test::read_body_json(gen_resp).await;
+    let magic_link = gen_body["magic_link"].as_str().unwrap();
+    let clear_token = magic_link.split("/c?t=").last().unwrap().to_string();
+
+    // First GET consumes the link as an audit marker.
+    let view_req = test::TestRequest::get()
+        .uri(&format!("/api/v1/c/{}", clear_token))
+        .to_request();
+    let view_resp = test::call_service(&app, view_req).await;
+    assert_eq!(view_resp.status(), 200);
+
+    // The later respond must still work with the SAME token — this is the
+    // offline-friendly guarantee (#835 @edge): viewing doesn't burn the only
+    // chance to submit.
+    let respond_req = test::TestRequest::post()
+        .uri(&format!("/api/v1/c/{}/respond", clear_token))
+        .set_json(json!({
+            "compte_rendu": "Remplacement de la gouttière défectueuse.",
+        }))
+        .to_request();
+    let respond_resp = test::call_service(&app, respond_req).await;
+    assert_eq!(
+        respond_resp.status(),
+        200,
+        "respond should succeed with the already-viewed token"
+    );
+    let respond_body: serde_json::Value = test::read_body_json(respond_resp).await;
+    assert_eq!(respond_body["status"], "submitted");
+    assert_eq!(
+        respond_body["compte_rendu"],
+        "Remplacement de la gouttière défectueuse."
+    );
+
+    // @security — a link issued for a DIFFERENT scope must not open this report.
+    let ticket_link = app_state
+        .magic_link_use_cases
+        .issue(
+            Uuid::new_v4(),
+            koprogo_api::domain::entities::MagicLinkScopeKind::Ticket,
+            ticket_id,
+            user_id,
+            3600,
+        )
+        .await
+        .expect("issue a Ticket-scoped link");
+    let cross_scope_req = test::TestRequest::post()
+        .uri(&format!("/api/v1/c/{}/respond", ticket_link.token))
+        .set_json(json!({ "compte_rendu": "Ne devrait jamais s'appliquer." }))
+        .to_request();
+    let cross_scope_resp = test::call_service(&app, cross_scope_req).await;
+    assert_eq!(
+        cross_scope_resp.status(),
+        403,
+        "a Ticket-scoped link must not be usable to respond to a contractor report"
+    );
 }
 
 #[actix_web::test]

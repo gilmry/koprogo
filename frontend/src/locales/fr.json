@@ -4132,7 +4132,18 @@
     "validity": "Durée de validité",
     "copyNow": "Ce lien ne sera plus jamais affiché. Copiez-le maintenant et transmettez-le à son destinataire.",
     "copy": "Copier",
-    "issueAnother": "Émettre un nouveau lien"
+    "issueAnother": "Émettre un nouveau lien",
+    "crTitle": "Rapport d'intervention",
+    "crActionVerb": "Soumettre le rapport",
+    "crWorkDate": "Date d'intervention",
+    "crCompteRendu": "Compte-rendu",
+    "crCompteRenduPlaceholder": "Décrivez les travaux réalisés…",
+    "crParts": "Pièces remplacées",
+    "crAddPart": "Ajouter une pièce",
+    "crPartName": "Nom de la pièce",
+    "crPartReference": "Référence",
+    "crPartQuantity": "Quantité",
+    "crRemovePart": "Retirer cette pièce"
   },
   "technicalSpecs": {
     "submittedForSignature": "Fiche soumise pour signatures.",

@@ -4132,7 +4132,18 @@
     "validity": "Gültigkeitsdauer",
     "copyNow": "Dieser Link wird nie wieder angezeigt. Kopieren Sie ihn jetzt und senden Sie ihn an den Empfänger.",
     "copy": "Kopieren",
-    "issueAnother": "Weiteren Link erstellen"
+    "issueAnother": "Weiteren Link erstellen",
+    "crTitle": "Einsatzbericht",
+    "crActionVerb": "Bericht einreichen",
+    "crWorkDate": "Datum des Einsatzes",
+    "crCompteRendu": "Bericht",
+    "crCompteRenduPlaceholder": "Beschreiben Sie die durchgeführten Arbeiten…",
+    "crParts": "Ausgetauschte Teile",
+    "crAddPart": "Teil hinzufügen",
+    "crPartName": "Name des Teils",
+    "crPartReference": "Referenz",
+    "crPartQuantity": "Menge",
+    "crRemovePart": "Dieses Teil entfernen"
   },
   "technicalSpecs": {
     "submittedForSignature": "Datenblatt zur Unterschrift eingereicht.",

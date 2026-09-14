@@ -713,10 +713,12 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig) {
             .service(delete_contractor_report) // DELETE /contractor-reports/{id}
             .service(get_contractor_report) // GET /contractor-reports/{id} — LAST (parameterized)
             // Generic MagicLinks (Story 3.2 — FR6 INV-13 INV-17)
-            // POST /magic-links : syndic/superadmin issues a link
-            // GET  /c/{token}   : PUBLIC (no auth) — validate + consume + resolve scope
+            // POST /magic-links       : syndic/superadmin issues a link
+            // GET  /c/{token}         : PUBLIC (no auth) — validate + consume + resolve scope
+            // POST /c/{token}/respond : PUBLIC (no auth) — write action (#835, ContractorReport)
             .service(issue_magic_link)
             .service(consume_magic_link)
+            .service(respond_magic_link)
             // Mandates (Story 3.4 — FR7 INV-14)
             // POST   /mandates              : syndic/superadmin issues a mandate
             // GET    /mandates?subject=<u>  : list active mandates for a subject
