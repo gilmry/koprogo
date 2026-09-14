@@ -1,0 +1,79 @@
+---
+- name: Verify
+  hosts: all
+  become: true
+  tasks:
+    # @happy — every hardening control is actually installed+enabled, not
+    # just templated to disk.
+    - name: Check kernel hardening sysctl file was deployed
+      ansible.builtin.stat:
+        path: /etc/sysctl.d/99-koprogo-hardening.conf
+      register: sysctl_file
+
+    - name: Assert kernel hardening file exists
+      ansible.builtin.assert:
+        that:
+          - sysctl_file.stat.exists
+        fail_msg: "sysctl hardening file missing — A.8.9 kernel control not deployed"
+
+    - name: Read live sysctl value for rp_filter (IP spoofing protection)
+      ansible.builtin.command: sysctl -n net.ipv4.conf.all.rp_filter
+      register: rp_filter
+      changed_when: false
+
+    - name: Assert rp_filter was actually applied to the running kernel (not just templated)
+      ansible.builtin.assert:
+        that:
+          - rp_filter.stdout | trim == "1"
+        fail_msg: "net.ipv4.conf.all.rp_filter is not 1 at runtime — `sysctl -p` did not take effect"
+
+    - name: Check fail2ban service is enabled and running
+      ansible.builtin.systemd:
+        name: fail2ban
+      register: fail2ban_status
+
+    - name: Assert fail2ban is active (not just installed)
+      ansible.builtin.assert:
+        that:
+          - fail2ban_status.status.ActiveState == "active"
+          - fail2ban_status.status.UnitFileState == "enabled"
+        fail_msg: "fail2ban is installed but not active+enabled — A.8.7 control is dormant"
+
+    - name: Check auditd service is enabled and running
+      ansible.builtin.systemd:
+        name: auditd
+      register: auditd_status
+
+    - name: Assert auditd is active
+      ansible.builtin.assert:
+        that:
+          - auditd_status.status.ActiveState == "active"
+        fail_msg: "auditd is not active — A.12.4 file/command audit trail is not being collected"
+
+    - name: Check hardened sshd_config was deployed
+      ansible.builtin.stat:
+        path: /etc/ssh/sshd_config
+      register: sshd_config
+
+    - name: Slurp sshd_config content
+      ansible.builtin.slurp:
+        src: /etc/ssh/sshd_config
+      register: sshd_config_content
+
+    - name: Assert sshd_config forbids root login and password auth
+      ansible.builtin.assert:
+        that:
+          - "'PermitRootLogin no' in (sshd_config_content.content | b64decode)"
+          - "'PasswordAuthentication no' in (sshd_config_content.content | b64decode)"
+        fail_msg: "hardened sshd_config was overwritten or never applied — A.8.9 SSH control not in effect"
+
+    - name: Check AIDE database was initialized
+      ansible.builtin.stat:
+        path: /var/lib/aide/aide.db
+      register: aide_db
+
+    - name: Assert AIDE database exists
+      ansible.builtin.assert:
+        that:
+          - aide_db.stat.exists
+        fail_msg: "AIDE database not initialized — A.12.4 file integrity monitoring has no baseline"
