@@ -503,6 +503,13 @@
 </div>
 
 {#if selectedInspection}
+  <!--
+    #868 — `InspectionDetail` reste monté PAR-DESSUS cette liste, dont les
+    lignes gardent chacune leur propre bouton de suppression. Les deux
+    portaient `delete-inspection-button` : cibler cet ancre pendant qu'un
+    détail est ouvert atteignait la ligne ET le panneau. `InspectionDetail`
+    porte maintenant `inspection-detail-delete-button`.
+  -->
   <InspectionDetail
     isOpen={detailOpen}
     inspection={selectedInspection}

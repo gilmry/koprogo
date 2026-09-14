@@ -232,7 +232,7 @@
             <button
               onclick={handleDelete}
               class="px-3 py-1.5 text-sm text-red-600 border border-red-300 rounded-lg hover:bg-red-50 transition"
-              data-testid="delete-inspection-button"
+              data-testid="inspection-detail-delete-button"
             >
               {$_("common.delete")}
             </button>
