@@ -358,17 +358,50 @@ jobs:
           set -e
           [ $CODE -ne 0 ] && echo "::warning::Agent sorti en code $CODE."
 
+          # Le rapport de l'agent va au JOURNAL, pas seulement au résumé
+          # d'étape (#874).
+          #
+          # Il n'allait qu'au `$GITHUB_STEP_SUMMARY`, que l'API REST de GitHub
+          # n'expose pas. Conséquence mesurée sur les vagues V4.1 à V4.4 :
+          # **dix agents sur trente n'ont produit aucun changement**, et il
+          # était impossible de savoir pourquoi sans ouvrir chaque page à la
+          # main. Un tiers des passes muettes, et le dispositif n'en disait
+          # rien.
+          #
+          # Le prompt demande pourtant explicitement : « Si la story te paraît
+          # fausse ou infaisable, ARRÊTE-TOI et explique pourquoi ». L'agent
+          # répondait donc ; c'est nous qui jetions sa réponse.
+          #
+          # Un harnais qui produit un silence doit dire ce que ce silence
+          # contenait. Le rapport part désormais aux deux endroits, et il est
+          # AUSSI joint en artefact pour que le persona CSI puisse le lire
+          # sans scraper des pages HTML.
           python3 -c "
-          import json
+          import json, sys
           try:
               d = json.load(open('/tmp/agent.json'))
           except Exception as e:
-              print('### Sortie illisible\n\n\`%s\`' % e)
+              sys.stdout.write('### Sortie illisible\n\n\`%s\`\n' % e)
           else:
               r = d.get('result') or d.get('text') or ''
-              print('### Ce que l agent rapporte\n')
-              print(str(r)[:4000])
-          " >> "$GITHUB_STEP_SUMMARY" || true
+              sys.stdout.write('### Ce que l agent rapporte\n\n')
+              sys.stdout.write(str(r)[:4000] + '\n')
+          " | tee /tmp/rapport-agent.md | tee -a "$GITHUB_STEP_SUMMARY" || true
+
+          echo "──────── RAPPORT DE L'AGENT #$NUM ────────"
+          cat /tmp/rapport-agent.md
+          echo "──────── fin du rapport ────────"
+
+      - name: Joindre le rapport de l'agent
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: rapport-${{ matrix.entree.issue }}
+          path: |
+            /tmp/rapport-agent.md
+            /tmp/agent.json
+          if-no-files-found: warn
+          retention-days: 30
 
       # ── La matière première du CSI ──────────────────────────────────────
       #
@@ -460,7 +493,18 @@ jobs:
           set -euo pipefail
           if [ -z "$(git status --porcelain)" ]; then
             echo "vide=true" >> "$GITHUB_OUTPUT"
-            echo "::warning::Aucun changement produit pour #$NUM."
+            # Un silence doit dire ce qu'il contient (#874).
+            #
+            # Cet avertissement était seul : « Aucun changement produit ». Sur
+            # les vagues V4.1 à V4.4, dix agents sur trente sont passés par
+            # ici, et l'annotation ne disait rien de plus. On savait qu'ils
+            # s'étaient tus, jamais pourquoi.
+            #
+            # Le prompt leur demande pourtant de s'arrêter en EXPLIQUANT. La
+            # réponse existait ; elle partait au résumé d'étape et personne ne
+            # pouvait la lire depuis l'API.
+            PREMIERES=$(head -c 400 /tmp/rapport-agent.md 2>/dev/null | tr '\n' ' ')
+            echo "::warning::Aucun changement produit pour #$NUM — ${PREMIERES:-rapport illisible}"
             exit 0
           fi
           echo "vide=false" >> "$GITHUB_OUTPUT"
