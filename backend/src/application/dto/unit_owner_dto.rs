@@ -95,3 +95,19 @@ pub struct TransferOwnershipDto {
     #[validate(length(min = 1))]
     pub to_owner_id: String,
 }
+
+/// DTO for designating the voting representative of a unit (#848, Art. 3.87 §1 CC).
+#[derive(Debug, Deserialize, Validate)]
+pub struct DesignateVotingRepresentativeDto {
+    #[validate(length(min = 1))]
+    pub owner_id: String,
+}
+
+/// Response DTO for a voting representative designation (#848).
+#[derive(Debug, Serialize)]
+pub struct VotingRepresentativeResponseDto {
+    pub unit_id: String,
+    pub owner_id: String,
+    pub unit_owner_id: String,
+    pub is_voting_representative: bool,
+}

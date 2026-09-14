@@ -402,4 +402,37 @@ impl UnitOwnerRepository for PostgresUnitOwnerRepository {
             })
             .collect()
     }
+
+    async fn is_voting_representative(&self, unit_owner_id: Uuid) -> Result<bool, String> {
+        // Story #848 — runtime query (comme `find_voting_holders_by_unit`) :
+        // évite de régénérer le cache `.sqlx` pour une colonne ajoutée par la
+        // migration 20260621000000.
+        let row = sqlx::query(r#"SELECT is_voting_representative FROM unit_owners WHERE id = $1"#)
+            .bind(unit_owner_id)
+            .fetch_optional(&self.pool)
+            .await
+            .map_err(|e| format!("Failed to read is_voting_representative: {}", e))?;
+
+        let Some(row) = row else {
+            return Err(format!("unit_owner {} not found", unit_owner_id));
+        };
+        row.try_get("is_voting_representative")
+            .map_err(|e| format!("is_voting_representative read error: {}", e))
+    }
+
+    async fn set_voting_representative(&self, unit_owner_id: Uuid) -> Result<(), String> {
+        let result = sqlx::query(
+            r#"UPDATE unit_owners SET is_voting_representative = true, updated_at = now()
+               WHERE id = $1"#,
+        )
+        .bind(unit_owner_id)
+        .execute(&self.pool)
+        .await
+        .map_err(|e| format!("Failed to set voting representative: {}", e))?;
+
+        if result.rows_affected() == 0 {
+            return Err(format!("unit_owner {} not found", unit_owner_id));
+        }
+        Ok(())
+    }
 }

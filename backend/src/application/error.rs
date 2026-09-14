@@ -770,6 +770,38 @@ impl From<crate::domain::entities::VotingRightSuspendedError> for String {
 }
 
 // ============================================================================
+// Story #848 — bridge From<VotingRightError> (désignation du représentant)
+// ============================================================================
+
+impl From<crate::domain::entities::VotingRightError> for AppError {
+    /// #848 (Art. 3.87 §1 CC) — refus de désignation. Le contrôle dormant
+    /// `assert_single_voting_representative` (jusqu'ici démontré par
+    /// `tests/bdd_voting_right.rs` mais appelé par aucun code de production)
+    /// est désormais câblé dans `UnitOwnerUseCases::designate_voting_representative`.
+    ///
+    /// `MultipleRepresentatives` → 409 : un second représentant pour le même
+    /// lot est un CONFLIT avec l'état existant, pas une entrée invalide.
+    /// `UnknownOwnershipType` ne devrait pas survenir sur ce chemin (la valeur
+    /// vient d'une colonne déjà contrainte par le CHECK SQL) — narré en
+    /// interne plutôt que masqué.
+    fn from(err: crate::domain::entities::VotingRightError) -> Self {
+        use crate::domain::entities::VotingRightError;
+        match err {
+            VotingRightError::MultipleRepresentatives { unit_id, count } => {
+                AppError::Conflict(format!(
+                    "Le lot {unit_id} a déjà {count} représentant(s) de vote désigné(s) \
+                     après cette désignation : un seul est autorisé (Art. 3.87 §1 CC). \
+                     Retirez d'abord la désignation en place."
+                ))
+            }
+            VotingRightError::UnknownOwnershipType(s) => {
+                AppError::Internal(format!("Type de titularité inconnu : {s}"))
+            }
+        }
+    }
+}
+
+// ============================================================================
 // Track H Story H3 — bridges From<MeetingNotCompletableError>
 // ============================================================================
 

@@ -265,6 +265,14 @@ impl UnitOwnerRepository for MockUnitOwnerRepo {
     ) -> Result<Vec<koprogo_api::domain::entities::LotHolder>, String> {
         Ok(vec![])
     }
+
+    async fn is_voting_representative(&self, _unit_owner_id: Uuid) -> Result<bool, String> {
+        Ok(false)
+    }
+
+    async fn set_voting_representative(&self, _unit_owner_id: Uuid) -> Result<(), String> {
+        Ok(())
+    }
 }
 
 // ============================================================================

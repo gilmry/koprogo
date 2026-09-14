@@ -107,6 +107,7 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig) {
             .service(get_owner_ownership_history)
             .service(transfer_ownership)
             .service(get_total_ownership_percentage)
+            .service(designate_voting_representative)
             .service(export_ownership_contract_pdf) // PDF Export (Issue #47)
             // Expenses
             .service(create_expense)
