@@ -329,6 +329,36 @@ du défaut avec un témoin d'interruption (le minimum, déjà décrit dans #880)
 
 ## Journal (chronologie courte)
 
+- 2026-09-14 — **Six branches d'agent passent TOUS les gates.** C'est le
+  premier résultat du fan-out directement promouvable, et il vaut d'être lu
+  comme tel : la revue n'a plus à ouvrir un diff pour savoir si une branche
+  mérite d'être regardée.
+
+  | Branche | PR | Volume |
+  |---|---|---|
+  | `story/864` | #892 | 2 fichiers, 93 l. |
+  | `story/432` | #895 | 2 fichiers, 273 l. |
+  | `story/429` | #896 | 5 fichiers, 360 l. |
+  | `story/847` | #899 | 1 fichier, 289 l. |
+  | `story/453` | #901 | 3 fichiers, 406 l. |
+  | `story/595` | #902 | 3 fichiers, 102 l. |
+
+  Bilan sur les vingt branches produites : **6 toutes vertes**, 11 avec au
+  moins un gate rouge, 3 en cours. Les rouges se répartissent en deux
+  familles que la revue n'a pas à démêler elle-même — les sept de V4.1
+  portent un `Integration Tests` qui n'est pas le leur (socle `main`,
+  corrigé depuis), les autres portent leurs propres défauts : Prettier,
+  tests sans catégorie, contrat OpenAPI dérivé, BDD.
+
+  **Le modèle de promotion tient.** « Le relecteur regarde le film et les
+  gates, pas le code » : sur six branches il n'a rien à lire, et sur les
+  autres le gate nomme le défaut.
+
+  ⚠️ Ce qui manque toujours : **la vitrine**. Les gates ont été déclenchés à
+  la main faute de jeton opérant, ce qui produit les tests mais pas le
+  parcours filmé. La preuve de VALEUR — non bloquante et non facultative —
+  n'est au rendez-vous d'aucune de ces vingt branches.
+
 - 2026-09-14 — **Le silence des agents était de la VARIANCE, pas un jugement
   sur la story.** C'est le résultat le plus important sur le harnais, et il
   contredit ce qu'on supposait.
