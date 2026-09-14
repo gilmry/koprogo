@@ -329,6 +329,40 @@ du défaut avec un témoin d'interruption (le minimum, déjà décrit dans #880)
 
 ## Journal (chronologie courte)
 
+- 2026-09-14 — **Le silence des agents était de la VARIANCE, pas un jugement
+  sur la story.** C'est le résultat le plus important sur le harnais, et il
+  contredit ce qu'on supposait.
+
+  V4.4 a été lancée deux fois, même prompt, mêmes issues, à une heure
+  d'intervalle :
+
+  | Story | run `34789291390` | run `34793052029` |
+  |---|---|---|
+  | #868 | rien | **8 fichiers, 484 l.** |
+  | #848 | rien | **17 fichiers, 920 l.** |
+  | #731 | rien | **3 fichiers, 200 l.** |
+  | #835 | rien | rien |
+
+  Trois agents sur quatre qui s'étaient tus ont produit du travail
+  substantiel à la seconde tentative, **sans qu'une ligne du prompt ni de la
+  story ne change**.
+
+  On en tirait jusqu'ici la conclusion inverse — « l'agent juge la story
+  infaisable et s'arrête, comme le prompt le lui demande ». C'est faux au
+  moins trois fois sur quatre. Le bon réflexe devant un silence n'est donc
+  pas d'aller relire l'issue, c'est de **rejouer la passe**.
+
+  Conséquence pour le CSI : un taux de passes muettes de 10 sur 30 n'est pas
+  un taux de stories mal écrites, c'est un taux de reprise. Le Gantt
+  provisionnait justement un facteur **×1,5 pour les reprises** ; il avait
+  raison de le faire, et pour une raison qu'il n'avait pas anticipée.
+
+  Corrigé au passage (`c4b3382d`) : le rapport de l'agent partait au seul
+  `$GITHUB_STEP_SUMMARY`, que l'API REST n'expose pas — il fallait ouvrir
+  trente pages à la main. Il va désormais au journal, à un artefact
+  `rapport-<issue>`, et les 400 premiers caractères sont collés dans
+  l'avertissement de silence lui-même.
+
 - 2026-09-13 — **Le registre CSI se remplit, et le prior du Gantt est
   CALIBRÉ pour la première fois.** 21 passes, dont 15 avec télémétrie fine
   (V4.2 et V4.3, Sonnet). Le job « Récapitulatif » de la version corrigée du
