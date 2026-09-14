@@ -332,11 +332,131 @@ async fn test_journal_entries_unbalanced_fails() {
         .to_request();
 
     let resp = test::call_service(&app, req).await;
-    let status = resp.status().as_u16();
-    assert!(
-        status == 400 || status == 422 || status == 500,
-        "Unbalanced journal entry should be rejected (400/422/500), got {}",
-        status
+    // #762 : avant cette story, ce statut se décidait en cherchant
+    // "unbalanced" dans le message d'erreur — d'où le triple `400/422/500`
+    // ci-dessus, qui acceptait déjà le 500 comme un résultat correct par
+    // prudence. L'erreur est maintenant typée (`AppError::Validation`) :
+    // le code est déterministe, et 500 n'est plus une réponse acceptable
+    // pour une écriture déséquilibrée.
+    assert_eq!(
+        resp.status(),
+        400,
+        "Unbalanced journal entry is a client input error, deduced from the \
+         error's TYPE — never a 500 by accident"
+    );
+}
+
+#[actix_web::test]
+#[serial]
+async fn test_journal_entries_missing_building_is_a_validation_error_not_a_500() {
+    // #762 @negative — cas constaté le 2026-09-04 : une écriture manuelle
+    // sans immeuble déclenche le refus « Impossible de déterminer l'ACP :
+    // une écriture manuelle doit désigner un immeuble ». Ce message français
+    // ne correspondait à aucun motif anglais cherché par le gestionnaire, et
+    // la saisie incomplète ressortait en 500. Le gestionnaire décide
+    // maintenant par le TYPE de l'erreur (`AppError::Validation` → 400),
+    // jamais par le contenu du message.
+    let (app_state, _container, org_id) = common::setup_test_db().await;
+    let token = common::register_and_login(&app_state, org_id).await;
+    seed_accounts_for_journal_entries(&app_state, org_id).await;
+
+    let app = test::init_service(
+        App::new()
+            .app_data(app_state.clone())
+            .configure(configure_routes),
+    )
+    .await;
+
+    let entry_date = Utc::now().to_rfc3339();
+
+    let req = test::TestRequest::post()
+        .uri("/api/v1/journal-entries")
+        .insert_header((header::AUTHORIZATION, format!("Bearer {}", token)))
+        .set_json(json!({
+            "journal_type": "ODS",
+            "entry_date": entry_date,
+            "description": "Régularisation sans immeuble désigné",
+            "lines": [
+                {
+                    "account_code": "6100",
+                    "debit": 100.0,
+                    "credit": 0.0,
+                    "description": "Débit"
+                },
+                {
+                    "account_code": "4400",
+                    "debit": 0.0,
+                    "credit": 100.0,
+                    "description": "Crédit"
+                }
+            ]
+        }))
+        .to_request();
+
+    let resp = test::call_service(&app, req).await;
+    assert_eq!(
+        resp.status(),
+        400,
+        "a manual entry that designates no building is an incomplete client \
+         input, not a server failure — regardless of the message's language"
+    );
+
+    let body: serde_json::Value = test::read_body_json(resp).await;
+    assert_eq!(
+        body["kind"], "validation",
+        "the HTTP status is deduced from AppError's `kind`, not from reading \
+         the (French) message"
+    );
+}
+
+#[actix_web::test]
+#[serial]
+async fn test_journal_entries_single_line_is_a_validation_error_not_a_500() {
+    // #762 @edge — avant cette story, seuls `unbalanced`, `foreign key`,
+    // `violates`, l'introuvable et le message ACP étaient reconnus par le
+    // gestionnaire ; une écriture à une seule ligne n'y figurait pas et
+    // ressortait donc en 500 par défaut. Le défaut par défaut était le
+    // mauvais sens : un type d'erreur jamais explicitement recensé doit
+    // rester une erreur de saisie, pas une panne supposée.
+    let (app_state, _container, org_id) = common::setup_test_db().await;
+    let token = common::register_and_login(&app_state, org_id).await;
+    seed_accounts_for_journal_entries(&app_state, org_id).await;
+    let building_id = common::create_test_building(&app_state, org_id).await;
+
+    let app = test::init_service(
+        App::new()
+            .app_data(app_state.clone())
+            .configure(configure_routes),
+    )
+    .await;
+
+    let entry_date = Utc::now().to_rfc3339();
+
+    let req = test::TestRequest::post()
+        .uri("/api/v1/journal-entries")
+        .insert_header((header::AUTHORIZATION, format!("Bearer {}", token)))
+        .set_json(json!({
+            "building_id": building_id.to_string(),
+            "journal_type": "ODS",
+            "entry_date": entry_date,
+            "description": "Une seule ligne, sans contrepartie",
+            "lines": [
+                {
+                    "account_code": "6100",
+                    "debit": 100.0,
+                    "credit": 0.0,
+                    "description": "Débit seul"
+                }
+            ]
+        }))
+        .to_request();
+
+    let resp = test::call_service(&app, req).await;
+    assert_eq!(
+        resp.status(),
+        400,
+        "an error type never explicitly listed in the handler must not fall \
+         back to 500 by default"
     );
 }
 

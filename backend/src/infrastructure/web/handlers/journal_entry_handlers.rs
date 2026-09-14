@@ -10,7 +10,6 @@
 // API endpoints for manual journal entry creation and management
 
 use crate::infrastructure::audit::{AuditEventType, AuditLogEntry};
-use crate::infrastructure::web::classification_erreurs;
 use crate::infrastructure::web::middleware::scope_guard::verify_building_org_access;
 use crate::infrastructure::web::{AppState, AuthenticatedUser};
 use actix_web::ResponseError;
@@ -117,9 +116,10 @@ pub struct ListJournalEntriesQuery {
     request_body = CreateJournalEntryRequest,
     responses(
         (status = 201, description = "Journal entry created", body = JournalEntryWithLinesResponse),
-        (status = 400, description = "Unbalanced entry, or unknown field in the body"),
+        (status = 400, description = "Unbalanced entry, missing building, unknown field in the body"),
         (status = 401, description = "User does not belong to an organization"),
         (status = 403, description = "Forbidden (accountant or superadmin only)"),
+        (status = 404, description = "Designated building does not exist"),
     ),
     security(("bearer_auth" = []))
 )]
@@ -244,36 +244,27 @@ pub async fn create_journal_entry(
                 "entity_type": "journal_entry",
                 "journal_type": &req.journal_type
             }))
-            .with_error(err.clone())
+            .with_error(err.to_string())
             .log();
 
-            // Return 400 for business rule violations, 500 for unexpected errors
+            // #762 : le code HTTP se déduit du TYPE de `err` (`AppError`),
+            // jamais d'une sous-chaîne de son message. Ce gestionnaire
+            // cherchait auparavant les motifs "unbalanced", "foreign key" et
+            // "violates" dans le texte — tout message qui ne correspondait
+            // à aucun motif tombait en 500. C'est ainsi qu'une écriture sans
+            // immeuble, dont le refus est en français (« Impossible de
+            // déterminer l'ACP… »), ressortait en panne serveur le
+            // 2026-09-04 : une saisie incomplète, pas une panne.
             //
-            // « Impossible de déterminer l'ACP » est une saisie incomplète,
-            // pas une panne : une écriture manuelle doit désigner l'immeuble
-            // dont on déduit l'ACP (ADR-0045). Sans ce cas, la requête
-            // ressortait en 500 et laissait croire à un défaut du serveur.
-            //
-            // « Immeuble introuvable » a été retiré de cette liste : le
-            // lexique bilingue de `classification_erreurs` le couvre
-            // désormais, comme il couvrira le prochain message français sans
-            // qu'on ait à revenir ici. C'était tout l'objet de #762 — un
-            // lexique dispersé sur cent dix-huit sites ne se corrige jamais
-            // entièrement, on corrige celui qui a fait mal.
-            if err.contains("unbalanced")
-                || err.contains("foreign key")
-                || err.contains("violates")
-                || classification_erreurs::est_introuvable(&err)
-                || err.contains("Impossible de déterminer l'ACP")
-            {
-                HttpResponse::BadRequest().json(serde_json::json!({
-                    "error": err
-                }))
-            } else {
-                HttpResponse::InternalServerError().json(serde_json::json!({
-                    "error": err
-                }))
-            }
+            // `AppError::error_response()` fait ce travail une fois pour
+            // toutes les erreurs applicatives (voir application/error.rs) :
+            // `Validation` → 400, `NotFound` → 404, `Internal`/`Database` →
+            // 500 avec message masqué (jamais de contrainte SQL ni de nom de
+            // table renvoyé au client). Un message français ou un type
+            // d'erreur jamais vu ici n'a plus besoin d'être ajouté à une
+            // liste : le compilateur oblige déjà chaque variante d'`AppError`
+            // à choisir son code dans `status_code()`.
+            err.error_response()
         }
     }
 }
