@@ -56,7 +56,12 @@ use std::fs;
 use std::path::Path;
 
 /// Occurrences de `.contains("` dans les gestionnaires. **Ne doit que BAISSER.**
-const DETTE_AU_2026_09_07: usize = 39;
+///
+/// 39 → 35 : `journal_entry_handlers.rs::create_journal_entry` (#762) est
+/// passé de quatre motifs cherchés dans le message (`unbalanced`, `foreign
+/// key`, `violates`, le message ACP français) à un classement par le TYPE
+/// de l'erreur (`AppError`). Zéro occurrence dans ce fichier désormais.
+const DETTE_AU_2026_09_07: usize = 35;
 
 fn compter(repertoire: &Path) -> (usize, Vec<String>) {
     let mut total = 0;
