@@ -42,6 +42,7 @@ bcrypt = "0.19"
 jsonwebtoken = { version = "11.0", default-features = false, features = ["aws_lc_rs"] }
 hex = "0.4"
 sha2 = "0.10"
+hmac = "0.12"
 md5 = "0.8"
 
 # Two-Factor Authentication (2FA)
@@ -112,6 +113,9 @@ criterion = { version = "0.8", features = ["async_tokio", "html_reports"] }
 # Test utilities
 serial_test = "4.0"
 fake = { version = "5.1", features = ["derive", "chrono", "uuid"] }
+
+# HTTP mocking (Story 4.4 — signature providers integration tests)
+wiremock = "0.6"
 [[bench]]
 name = "load_tests"
 harness = false
@@ -194,3 +198,8 @@ harness = false
 [[test]]
 name = "bdd_portfolio"
 harness = false
+
+# Story 4.4 - ElectronicSignatureProvider port + 3 adapters (mocks wiremock)
+[[test]]
+name = "signature_providers_test"
+path = "tests/integration/signature_providers_test.rs"
