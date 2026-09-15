@@ -275,22 +275,30 @@ jobs:
           ref: feature/dev
           fetch-depth: 0
 
-      - name: Ouvrir la branche
-        env:
-          BRANCHE: ${{ matrix.entree.branche }}
-        run: |
-          set -euo pipefail
-          git config user.name "koprogo-agent"
-          git config user.email "noreply@koprogo.com"
-          if git ls-remote --exit-code --heads origin "$BRANCHE" >/dev/null 2>&1
-          then
-            echo "::warning::$BRANCHE existe déjà — reprise sur place."
-            git fetch origin "$BRANCHE"
-            git checkout "$BRANCHE"
-          else
-            git checkout -b "$BRANCHE"
-          fi
-
+      # ── L'ORDRE COMPTE : mesurer AVANT de changer de branche (#874) ────
+      #
+      # Cette étape venait APRÈS « Ouvrir la branche », et c'était un piège.
+      #
+      # Sur une reprise, `git checkout "$BRANCHE"` bascule sur une branche
+      # d'agent créée lors d'une vague précédente — donc sur un instantané du
+      # dépôt d'avant les correctifs. Les SCRIPTS de cet instantané sont
+      # périmés, et le harnais se mesurait donc avec ses propres instruments
+      # d'hier.
+      #
+      # Constaté sur V4.10, run 35021168580 :
+      #
+      #     File ".../scripts/backlog-pret.py", line 61, in issues_ouvertes
+      #     FileNotFoundError: No such file or directory: '/home/ubuntu/koprogo'
+      #
+      # `story/867` datait de la première vague, quand `DEPOT` était encore
+      # codé en dur et que `--issue` n'existait pas. Le script y a donc pris
+      # le chemin de `main()` et est mort — et le workflow a conclu « #867 ne
+      # porte pas les huit éléments », ce qui est faux : mesurée depuis
+      # `feature/dev`, elle les porte.
+      #
+      # La règle générale : **tout ce qui MESURE doit tourner sur
+      # `feature/dev`**, jamais sur la branche mesurée. Une branche peut
+      # contenir du code faux ; c'est même pour ça qu'on la mesure.
       - name: Récupérer la story depuis l'issue
         env:
           GH_TOKEN: ${{ github.token }}
@@ -337,6 +345,22 @@ jobs:
             exit 1
           fi
           wc -c /tmp/story.md
+
+      - name: Ouvrir la branche
+        env:
+          BRANCHE: ${{ matrix.entree.branche }}
+        run: |
+          set -euo pipefail
+          git config user.name "koprogo-agent"
+          git config user.email "noreply@koprogo.com"
+          if git ls-remote --exit-code --heads origin "$BRANCHE" >/dev/null 2>&1
+          then
+            echo "::warning::$BRANCHE existe déjà — reprise sur place."
+            git fetch origin "$BRANCHE"
+            git checkout "$BRANCHE"
+          else
+            git checkout -b "$BRANCHE"
+          fi
 
       - name: Installer Claude Code
         run: npm install -g @anthropic-ai/claude-code
