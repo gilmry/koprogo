@@ -18,6 +18,7 @@ pub mod contractor_report_repository;
 pub mod convocation_recipient_repository;
 pub mod convocation_repository;
 pub mod document_repository;
+pub mod electronic_signature_provider;
 pub mod energy_bill_upload_repository;
 pub mod energy_campaign_repository;
 pub mod etat_date_repository;
@@ -92,6 +93,10 @@ pub use convocation_recipient_repository::{
 };
 pub use convocation_repository::ConvocationRepository;
 pub use document_repository::DocumentRepository;
+pub use electronic_signature_provider::{
+    ElectronicSignatureProvider, ElectronicSignatureProviderRegistry, SignatureProviderError,
+    SignatureRequest, SignatureRequestAck,
+};
 pub use energy_bill_upload_repository::EnergyBillUploadRepository;
 pub use energy_campaign_repository::EnergyCampaignRepository;
 pub use etat_date_repository::EtatDateRepository;
