@@ -11,6 +11,80 @@ use crate::infrastructure::web::{AppState, AuthenticatedUser};
 use actix_web::{delete, get, post, put, web, HttpResponse, Responder, ResponseError};
 use uuid::Uuid;
 
+/// Cloisonne une assemblée AVANT de la muter (#864).
+///
+/// ── Ce que ces quatre routes laissaient passer ────────────────────────────
+///
+/// `cancel_meeting`, `complete_meeting`, `reschedule_meeting` et
+/// `validate_meeting_quorum` prenaient `AuthenticatedUser` et ne s'en
+/// servaient que pour journaliser après coup. `get_meeting`, dans ce même
+/// fichier, remonte pourtant la chaîne `meeting → building → acp →
+/// organization` depuis le hotfix #603 : le chemin existait, il n'était pas
+/// emprunté par les écritures.
+///
+/// ── Pourquoi une assemblée n'est pas un enregistrement comme un autre ─────
+///
+/// Annuler l'AG d'une autre copropriété, la reporter, ou en valider le
+/// quorum touche à l'Art. 3.87 : la tenue de l'assemblée, ses délais, et la
+/// validité de ce qui s'y vote. Une AG annulée par un tiers est une AG qui
+/// n'a pas eu lieu, et les décisions qu'elle aurait prises n'existent pas.
+///
+/// Rend `Some(réponse)` quand l'appel doit être refusé, `None` sinon.
+async fn verify_meeting_org_access(
+    state: &web::Data<AppState>,
+    user: &AuthenticatedUser,
+    id: Uuid,
+) -> Option<HttpResponse> {
+    let meeting = match state.meeting_use_cases.get_meeting(id).await {
+        Ok(Some(m)) => m,
+        Ok(None) => {
+            return Some(HttpResponse::NotFound().json(serde_json::json!({
+                "error": "Meeting not found"
+            })))
+        }
+        Err(err) => {
+            return Some(HttpResponse::InternalServerError().json(serde_json::json!({
+                "error": err.to_string()
+            })))
+        }
+    };
+
+    // Même chaîne que `get_meeting` : l'assemblée ne porte pas d'organisation,
+    // elle porte un immeuble, qui porte une ACP, qui porte l'organisation.
+    let building = match state
+        .building_use_cases
+        .get_building(meeting.building_id)
+        .await
+    {
+        Ok(Some(b)) => b,
+        // Pas d'immeuble résoluble : on REFUSE, on ne laisse pas passer.
+        //
+        // `get_meeting` fait l'inverse — son `if let Ok(Some(building))`
+        // laisse filer la lecture quand l'immeuble est introuvable. Sur une
+        // lecture c'est une fuite ; sur une écriture ce serait un blanc-seing,
+        // et l'asymétrie est volontaire.
+        _ => {
+            return Some(HttpResponse::Forbidden().json(serde_json::json!({
+                "error": "Impossible de rattacher cette assemblée à une ACP"
+            })))
+        }
+    };
+
+    let acp_id = match Uuid::parse_str(&building.acp_id) {
+        Ok(id) => id,
+        Err(_) => {
+            return Some(HttpResponse::InternalServerError().json(serde_json::json!({
+                "error": "Invalid building.acp_id format"
+            })))
+        }
+    };
+
+    match verify_acp_org_access(user, acp_id, &state.acp_use_cases).await {
+        Ok(()) => None,
+        Err(err) => Some(err.error_response()),
+    }
+}
+
 /// POST /meetings/{id}/validate-quorum — Art. 3.87 §5 CC
 /// Validates quorum (>50% millièmes présents + procurations).
 /// If quorum not reached, automatically schedules a 2nd convocation 15 days later.
@@ -23,6 +97,11 @@ pub async fn validate_meeting_quorum(
 ) -> impl Responder {
     let meeting_id = id.into_inner();
     let req = request.into_inner();
+
+    // Cloisonnement AVANT la mutation (#864).
+    if let Some(refus) = verify_meeting_org_access(&state, &user, meeting_id).await {
+        return refus;
+    }
 
     match state
         .meeting_use_cases
@@ -364,6 +443,11 @@ pub async fn complete_meeting(
     id: web::Path<Uuid>,
     request: web::Json<CompleteMeetingRequest>,
 ) -> impl Responder {
+    // Cloisonnement AVANT la mutation (#864).
+    if let Some(refus) = verify_meeting_org_access(&state, &user, *id).await {
+        return refus;
+    }
+
     match state
         .meeting_use_cases
         .complete_meeting(*id, request.into_inner())
@@ -405,6 +489,11 @@ pub async fn cancel_meeting(
     user: AuthenticatedUser,
     id: web::Path<Uuid>,
 ) -> impl Responder {
+    // Cloisonnement AVANT la mutation (#864).
+    if let Some(refus) = verify_meeting_org_access(&state, &user, *id).await {
+        return refus;
+    }
+
     match state.meeting_use_cases.cancel_meeting(*id).await {
         Ok(meeting) => {
             // `MeetingCancelled`, et non `MeetingCompleted` : une assemblée
@@ -432,6 +521,11 @@ pub async fn reschedule_meeting(
     id: web::Path<Uuid>,
     request: web::Json<RescheduleMeetingRequest>,
 ) -> impl Responder {
+    // Cloisonnement AVANT la mutation (#864).
+    if let Some(refus) = verify_meeting_org_access(&state, &user, *id).await {
+        return refus;
+    }
+
     match state
         .meeting_use_cases
         .reschedule_meeting(*id, request.scheduled_date)

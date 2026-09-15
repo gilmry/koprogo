@@ -197,6 +197,33 @@ pub async fn list_call_for_funds(
             }
         };
 
+        // Cloisonnement du FILTRE (#864).
+        //
+        // Ce gestionnaire a deux branches, et une seule cloisonnait. Sans
+        // `building_id`, il rendait `list_by_organization(user.organization_id)`,
+        // correctement borné. AVEC `building_id`, il rendait
+        // `list_by_building(building_id)` — sans aucun contrôle.
+        //
+        // Passer un immeuble d'un autre cabinet en paramètre de requête
+        // suffisait donc à lire ses appels de fonds, c'est-à-dire QUI DOIT
+        // COMBIEN dans une copropriété qu'on ne gère pas.
+        //
+        // C'est une forme que le relevé de #864 ne cherchait pas : le
+        // cloisonnement n'est pas ABSENT du gestionnaire, il est absent d'UNE
+        // de ses branches. Un paramètre facultatif contourne le chemin
+        // protégé, et la route a l'air gardée parce que son cas nominal
+        // l'est.
+        if let Err(err) = verify_building_org_access(
+            &user,
+            building_id,
+            &state.building_use_cases,
+            &state.acp_use_cases,
+        )
+        .await
+        {
+            return err.error_response();
+        }
+
         match state
             .call_for_funds_use_cases
             .list_by_building(building_id)

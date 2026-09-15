@@ -22,11 +22,28 @@ Usage :
     python3 scripts/backlog-pret.py --detail   # + ce qui manque, issue par issue
 """
 import json
+import os
 import re
 import subprocess
 import sys
 
-DEPOT = "/home/ubuntu/koprogo"
+# Le dépôt, DÉRIVÉ du chemin de ce script et jamais écrit en dur.
+#
+# Il valait `/home/ubuntu/koprogo` — le poste d'une seule personne. Tant que
+# ces scripts ne tournaient que là, personne ne l'a vu. Le 2026-09-13, le
+# fan-out a appelé `backlog-pret.py --issue` depuis un runner GitHub, et le
+# script est mort sur :
+#
+#     FileNotFoundError: [Errno 2] No such file or directory: '/home/ubuntu/koprogo'
+#
+# Pire que la panne : le workflow testait `if ! python3 ...` et a donc
+# annoncé « #868 ne porte pas les huit éléments » — un VERDICT — là où le
+# script n'avait rien pu mesurer. Quatre agents refusés sur un diagnostic
+# faux.
+#
+# `gantt-passes.py` et `rice-produit.py` dérivaient déjà leur chemin. Les
+# deux autres non, et rien ne le signalait.
+DEPOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 JALON = "release:0.1.0"
 
 # Les huit éléments du gabarit `bmad/livrables/epics-stories.template.md`.
@@ -69,7 +86,62 @@ def manquants(corps):
     return [cle for cle, _, teste in CRITERES if not teste(corps)]
 
 
+def une_issue(numero: int) -> int:
+    """Mesure UNE issue, pour que le fan-out emploie CET instrument (#874).
+
+    ── Pourquoi ce mode existe ───────────────────────────────────────────────
+
+    `fanout-stories.yml` cherchait le titre littéral « Story Agent IA Ready »
+    dans le corps de l'issue, et refusait de lancer l'agent sans lui. C'était
+    une SECONDE définition de « prêt », à côté de celle de ce script, et les
+    deux se sont contredites le 2026-09-13 : #877 porte les huit éléments —
+    ce script rendait 89/89 — sous les titres `## Récit` et `## Critères`,
+    et le workflow l'a refusée.
+
+    Un agent n'a pas tourné pour un désaccord de vocabulaire entre deux
+    instruments dont aucun ne savait que l'autre existait. C'est le motif
+    dominant de ce dépôt, appliqué cette fois à la mesure elle-même.
+
+    Le remède n'est pas d'ajouter le titre à #877 : ce serait plier l'issue à
+    l'instrument le plus grossier des deux. C'est de n'avoir qu'un
+    instrument.
+
+    Rend 0 si l'issue porte les huit éléments, 1 sinon, et NOMME ce qui
+    manque — un refus qui ne dit pas quoi corriger se lit comme un caprice.
+    """
+    # Code 2 = « je n'ai PAS PU mesurer », distinct de 1 = « mesuré, et il
+    # manque quelque chose ».
+    #
+    # Sans cette distinction, un appelant qui écrit `if ! script` confond une
+    # panne avec un verdict. C'est arrivé le 2026-09-13 : `DEPOT` pointait
+    # vers un chemin absent du runner, le script est mort, et le fan-out a
+    # annoncé « #868 ne porte pas les huit éléments » à quatre agents dont
+    # les issues étaient prêtes. L'absence de mesure s'écrit `null`, pas
+    # `zéro` — ici elle s'écrit 2, pas 1.
+    try:
+        rendu = subprocess.run(
+            ["gh", "issue", "view", str(numero), "--json", "number,title,body"],
+            capture_output=True, text=True, cwd=DEPOT, check=True)
+    except (OSError, subprocess.CalledProcessError) as e:
+        print(f"#{numero} n'a PAS PU être mesurée : {e}", file=sys.stderr)
+        print("Ce n'est pas un verdict sur la story.", file=sys.stderr)
+        return 2
+    issue = json.loads(rendu.stdout)
+    absents = manquants(issue.get("body") or "")
+    if not absents:
+        print(f"#{numero} porte les huit éléments.")
+        return 0
+    libelles = {cle: libelle for cle, libelle, _ in CRITERES}
+    print(f"#{numero} — éléments manquants :", file=sys.stderr)
+    for cle in absents:
+        print(f"  - {libelles[cle]}", file=sys.stderr)
+    return 1
+
+
 def main():
+    for i, arg in enumerate(sys.argv):
+        if arg == "--issue" and i + 1 < len(sys.argv):
+            return une_issue(int(sys.argv[i + 1]))
     detail = "--detail" in sys.argv
     issues = issues_ouvertes()
     total = len(issues)

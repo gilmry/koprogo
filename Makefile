@@ -32,6 +32,7 @@ RECETTE ?= http://localhost:8090
 # Couleurs pour output
 GREEN  := \033[0;32m
 YELLOW := \033[1;33m
+RED    := \033[0;31m
 NC     := \033[0m # No Color
 
 help: ## 📖 Afficher cette aide
@@ -250,13 +251,47 @@ reset-db: ## ⚠️  Reset DB (SUPPRIME TOUTES LES DONNÉES)
 seed: ## 🌱 Seed DB avec données de test
 	cd backend && cargo run --bin seed
 
-seed-reset: ## 🔄 Reset le scénario world via API (idempotent)
+# `seed-reset` — annonçait ✅ quoi qu'il arrive.
+#
+# Le 2026-09-13, l'API a rendu
+# `{"error":"Scenario world already exists. Please clear it first..."}`
+# et la cible a affiché « ✅ Seed world reset » à la ligne suivante. Le
+# `| head -c 200` rendait par-dessus le marché le code de sortie de `head`,
+# jamais celui de `curl`.
+#
+# Une précondition de recette qui ment sur son propre résultat est pire
+# qu'absente : la campagne qui la suit démarre sur un état inconnu en croyant
+# partir d'un état connu. Et l'en-tête disait « idempotent », ce qu'elle
+# n'est pas — c'est ce mot qui rendait le ✅ crédible.
+seed-reset: ## 🔄 Reset le scénario world via API (échoue si l'API refuse)
 	@TOKEN=$$(curl -s -X POST $(RECETTE)/api/v1/auth/login \
 		-H 'Content-Type: application/json' \
 		-d '{"email":"admin@koprogo.com","password":"admin123"}' | python3 -c "import sys,json; print(json.load(sys.stdin).get('token',''))"); \
-	curl -s -X POST $(RECETTE)/api/v1/seed/scenario/world \
-		-H "Authorization: Bearer $$TOKEN" | head -c 200; \
+	if [ -z "$$TOKEN" ]; then \
+		echo "$(RED)✗ seed-reset : authentification refusée sur $(RECETTE)$(NC)"; \
+		exit 1; \
+	fi; \
+	REPONSE=$$(curl -s -X POST $(RECETTE)/api/v1/seed/scenario/world \
+		-H "Authorization: Bearer $$TOKEN"); \
+	echo "$$REPONSE" | head -c 200; \
+	if echo "$$REPONSE" | grep -q '"error"'; then \
+		echo "\n$(RED)✗ seed-reset : l'API a REFUSÉ. Le monde n'est pas dans l'état attendu.$(NC)"; \
+		echo "$(YELLOW)  Vider d'abord : make seed-clear$(NC)"; \
+		exit 1; \
+	fi; \
 	echo "\n$(GREEN)✅ Seed world reset$(NC)"
+
+seed-clear: ## 🧹 Vide le scénario world (précondition de seed-reset)
+	@TOKEN=$$(curl -s -X POST $(RECETTE)/api/v1/auth/login \
+		-H 'Content-Type: application/json' \
+		-d '{"email":"admin@koprogo.com","password":"admin123"}' | python3 -c "import sys,json; print(json.load(sys.stdin).get('token',''))"); \
+	if [ -z "$$TOKEN" ]; then \
+		echo "$(RED)✗ seed-clear : authentification refusée sur $(RECETTE)$(NC)"; \
+		exit 1; \
+	fi; \
+	curl -s -X DELETE $(RECETTE)/api/v1/seed/scenario/world \
+		-H "Authorization: Bearer $$TOKEN" | head -c 200; \
+	echo "\n$(GREEN)✅ Seed world vidé$(NC)"
 
 ##
 ## 🔌 OpenAPI / Type generation

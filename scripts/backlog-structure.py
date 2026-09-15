@@ -46,7 +46,23 @@ _spec = importlib.util.spec_from_file_location(
 _pret = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(_pret)
 
-DEPOT = "/home/ubuntu/koprogo"
+# Le dépôt, DÉRIVÉ du chemin de ce script et jamais écrit en dur.
+#
+# Il valait `/home/ubuntu/koprogo` — le poste d'une seule personne. Tant que
+# ces scripts ne tournaient que là, personne ne l'a vu. Le 2026-09-13, le
+# fan-out a appelé `backlog-pret.py --issue` depuis un runner GitHub, et le
+# script est mort sur :
+#
+#     FileNotFoundError: [Errno 2] No such file or directory: '/home/ubuntu/koprogo'
+#
+# Pire que la panne : le workflow testait `if ! python3 ...` et a donc
+# annoncé « #868 ne porte pas les huit éléments » — un VERDICT — là où le
+# script n'avait rien pu mesurer. Quatre agents refusés sur un diagnostic
+# faux.
+#
+# `gantt-passes.py` et `rice-produit.py` dérivaient déjà leur chemin. Les
+# deux autres non, et rien ne le signalait.
+DEPOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 JALON = "release:0.1.0"
 
 # ── Les épopées ───────────────────────────────────────────────────────────
@@ -99,8 +115,14 @@ CAPACITES = [
      {780: "L", 848: "L", 850: "L", 576: "L", 577: "L", 581: "M"}),
     ("C1.2", "E1", "Le procès-verbal fait foi", "Should",
      {578: "L", 579: "L"}),
+    # #881 ajoutée le 2026-09-13, relevée en instruisant #864 : cinq
+    # transitions de dépense journalisent toutes `ExpenseMarkedPaid`. Le
+    # registre affirme un paiement là où la dépense a été annulée ou
+    # dé-payée. Elle est de C1.3 par définition — « le registre atteste ce
+    # qu'il DÉCLARE » — et c'est le même défaut que #780 a corrigé pour les
+    # assemblées, dont le commentaire dans `audit.rs` le disait déjà.
     ("C1.3", "E1", "Le registre légal atteste ce qu'il déclare", "Must",
-     {847: "L", 846: "M"}),
+     {847: "L", 846: "M", 881: "S"}),
     ("C1.4", "E1", "Les organes de contrôle existent", "Could",
      {582: "M", 583: "L"}),
     ("C1.5", "E1", "L'état daté a un destinataire identifié", "Should",
@@ -120,8 +142,15 @@ CAPACITES = [
     ("C3.3", "E3", "Une ACP active les modules qu'elle veut", "Could",
      {585: "L", 586: "M", 590: "M", 591: "L"}),
 
+    # #882 ajoutée le 2026-09-13, relevée en instruisant #864 : dix-huit
+    # gestionnaires écrivent `_user: AuthenticatedUser`, c'est-à-dire qu'ils
+    # DÉCLARENT ne pas se servir de l'identité reçue. Le motif est exact, là
+    # où celui de #864 est un plafond textuel. Deux de ces routes listent les
+    # arriérés de l'instance entière — `get_overdue_calls()` ne prend AUCUN
+    # argument — ce qui en fait une fuite de donnée personnelle financière et
+    # non un simple défaut de cloisonnement.
     ("C4.1", "E4", "Toute route décide de l'identité qu'elle reçoit", "Must",
-     {864: "L", 845: "L"}),
+     {864: "L", 845: "L", 882: "L"}),
     ("C4.2", "E4", "Le périmètre est l'ACP, et il survit à la navigation", "Must",
      {694: "L", 798: "L", 841: "M", 868: "S"}),
     ("C4.3", "E4", "Les droits RGPD sont exerçables depuis l'interface", "Must",
@@ -141,16 +170,36 @@ CAPACITES = [
 
     ("C6.1", "T2", "L'audit d'accessibilité voit les écrans authentifiés", "Should",
      {865: "M", 592: "M"}),
+    # #871 retirée le 2026-09-13 : fermée COMPLETED le 2026-09-13 à 05:03.
+    # Sa propre garde l'exigeait — « un backlog qui cite des tickets fermés
+    # cesse d'être lu ». Même geste que pour #840 le 2026-09-12.
     ("C6.2", "T2", "Le produit est utilisable à une largeur de téléphone", "Should",
-     {866: "M", 869: "M", 871: "S"}),
+     {866: "M", 869: "M"}),
 
     # #877 ajoutée le 2026-09-12, relevée en exécutant le Gantt : le gate
     # `integration` est rouge sur UN test, `s3_storage_roundtrip`, parce que
     # le tag `minio/minio:RELEASE.2025-02-28T09-55-16Z` n'est plus servi par
     # Docker Hub. Un verdict de CI qui dépend d'une décision de publication
     # tierce n'est pas un verdict — et le registre le déclarait 🟢.
+    # #880 ajoutée le 2026-09-13 : le banc de recette porte un backend en
+    # hot reload, et une recompilation en cours de campagne produit des
+    # échecs en masse qu'aucun artefact ne distingue d'une régression.
+    # Elle est de C7.1 par nature — « la recette peut s'EXÉCUTER » suppose
+    # qu'elle puisse s'exécuter de façon reproductible, ce que ce banc ne
+    # permet pas. Et elle conditionne #832 : départager « cascade d'un 502 »
+    # de « défaut réel » n'a pas de réponse stable sur un banc instable.
+    # #832 retirée le 2026-09-13 : FERMÉE sur mesure. Ses quinze specs sont
+    # vertes, et pas une n'a été touchée — la cause était unique (#718,
+    # bcrypt tenant le thread de travail) et elle produisait des 502 que
+    # l'issue lisait comme quinze défauts distincts.
+    #
+    # #877 RESTE, et c'est volontaire. Son correctif est vert en local
+    # (`storage_s3` rend `1 passed`, code 0), mais son premier critère de
+    # sortie dit « vert EN CI » — et la CI ne l'a pas vu, les commits
+    # n'étant pas poussés. Un critère écrit ne se déclare pas rempli parce
+    # qu'on en a rempli un voisin.
     ("C7.1", "T3", "La recette peut se connecter et s'exécuter", "Must",
-     {872: "L", 870: "S", 832: "M", 696: "M", 877: "S"}),
+     {872: "L", 870: "S", 696: "M", 877: "S", 880: "M"}),
     ("C7.2", "T3", "La taxonomie des tests est la gate de release", "Should",
      {427: "L"}),
     # Story habilitante (Sprint 0). La Méthode Foyer : « sans elle, aucune

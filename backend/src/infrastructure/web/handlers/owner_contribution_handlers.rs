@@ -1,7 +1,9 @@
 use crate::application::dto::{
     CreateOwnerContributionRequest, OwnerContributionResponse, RecordPaymentRequest,
 };
-use crate::infrastructure::web::middleware::scope_guard::verify_contribution_org_access;
+use crate::infrastructure::web::middleware::scope_guard::{
+    verify_contribution_org_access, verify_owner_org_access,
+};
 use crate::infrastructure::web::{AppState, AuthenticatedUser};
 use actix_web::{get, post, put, web, HttpResponse, ResponseError};
 use uuid::Uuid;
@@ -135,6 +137,26 @@ pub async fn get_contributions_by_owner(
                     .json(serde_json::json!({ "error": "Invalid owner_id format" }))
             }
         };
+
+        // Cloisonnement du FILTRE (#864).
+        //
+        // Ce gestionnaire a deux branches, et une seule cloisonnait. Sans
+        // `owner_id`, il rendait `get_contributions_by_organization(...)`,
+        // correctement borné. AVEC `owner_id`, il rendait
+        // `get_contributions_by_owner(owner_id)` — sans aucun contrôle.
+        //
+        // C'est la DEUXIÈME occurrence de cette forme, après
+        // `list_call_for_funds` (même correctif, même jour). Ce n'est donc
+        // pas un oubli isolé : un paramètre facultatif qui contourne le
+        // chemin protégé est un MOTIF, et il vise les deux fois la même
+        // donnée — qui doit combien.
+        //
+        // Aucun cliquet ne voit cette forme : le cloisonnement n'est pas
+        // absent du gestionnaire, il est absent d'UNE de ses branches, et la
+        // route a l'air gardée parce que son cas nominal l'est.
+        if let Err(err) = verify_owner_org_access(&user, owner_id, &state.owner_use_cases).await {
+            return err.error_response();
+        }
 
         match state
             .owner_contribution_use_cases

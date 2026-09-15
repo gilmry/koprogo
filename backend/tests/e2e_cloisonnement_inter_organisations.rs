@@ -100,6 +100,20 @@ async fn la_lecture_inter_organisations_est_refusee() {
         format!("/api/v1/buildings/{}/polls/active", ctx.immeuble_b),
         format!("/api/v1/buildings/{}/quotes", ctx.immeuble_b),
         format!("/api/v1/buildings/{}/resource-bookings", ctx.immeuble_b),
+        // Celle-ci n'est pas imbriquée sous `/buildings/{id}` : l'immeuble
+        // arrive en PARAMÈTRE DE REQUÊTE (#864).
+        //
+        // `list_call_for_funds` a deux branches. Sans `building_id`, elle
+        // rendait les appels de fonds de l'organisation de l'appelant,
+        // correctement bornés. Avec, elle rendait `list_by_building(...)`
+        // sans aucun contrôle — c'est-à-dire QUI DOIT COMBIEN dans une
+        // copropriété qu'on ne gère pas.
+        //
+        // Le cloisonnement n'était pas absent du gestionnaire, il était
+        // absent d'UNE de ses branches. Les cliquets qui comptent des
+        // gestionnaires ne voient pas cette forme-là : la route a l'air
+        // gardée parce que son cas nominal l'est.
+        format!("/api/v1/call-for-funds?building_id={}", ctx.immeuble_b),
     ];
 
     for route in routes {
@@ -157,6 +171,27 @@ async fn lecriture_inter_organisations_est_refusee() {
                 "description": "Ne doit jamais être créé",
                 "poll_type": "SingleChoice",
                 "options": ["oui", "non"]
+            }),
+        ),
+        // `POST /quotes` n'est pas imbriquée sous `/buildings/{id}` :
+        // l'immeuble arrive dans le CORPS (#864).
+        //
+        // Le gestionnaire nommait son identité `_auth` — le souligné disant
+        // explicitement qu'on ne s'en servait pas — et le cas d'usage ne la
+        // reçoit même pas : `create_quote(dto)` ne prend que le DTO. Trois
+        // autres routes du même fichier appellent pourtant
+        // `verify_building_org_access`. Seule la création, c'est-à-dire le
+        // seul geste qui INSCRIT quelque chose au patrimoine d'une ACP, ne
+        // l'appelait pas.
+        (
+            "/api/v1/quotes".to_string(),
+            serde_json::json!({
+                "building_id": ctx.immeuble_b.to_string(),
+                "contractor_id": Uuid::new_v4().to_string(),
+                "project_title": "Devis intrus",
+                "project_description": "Ne doit jamais être demandé",
+                "work_category": "Plumbing",
+                "warranty_years": 2
             }),
         ),
     ];
@@ -408,6 +443,229 @@ async fn security_le_balayage_iot_est_reserve_au_superadministrateur() {
              Cette route ne porte pas d'immeuble : elle parcourt les appareils \
              de TOUTES les organisations. Un 2xx ici livre au premier cabinet \
              venu la liste des installations de ses concurrents (#864)."
+        );
+    }
+}
+
+/// ÉCRITURE — le cycle de vie d'un budget se pilote hors périmètre (#864).
+///
+/// ── Pourquoi ce test existe séparément de la suppression ──────────────────
+///
+/// `security_la_suppression_inter_organisations_est_refusee` couvre
+/// `DELETE /budgets/{id}`, corrigé le 2026-09-11. Elle ne couvre **aucune**
+/// des cinq transitions d'état, qui portaient exactement le même défaut et
+/// que rien n'avait relu :
+///
+/// ```text
+/// PUT /budgets/{id}           update_budget
+/// PUT /budgets/{id}/submit    submit_budget
+/// PUT /budgets/{id}/approve   approve_budget
+/// PUT /budgets/{id}/reject    reject_budget
+/// PUT /budgets/{id}/archive   archive_budget
+/// ```
+///
+/// Les cinq prenaient `AuthenticatedUser` et ne s'en servaient que pour
+/// **journaliser après coup**, dans le même fichier où `get_budget` cloisonne
+/// correctement depuis toujours. C'est le motif de #864 dans sa forme pure :
+/// une route qui A L'AIR gardée.
+///
+/// ── Ce que l'assertion porte, et pourquoi ce n'est pas le code HTTP ───────
+///
+/// Approuver n'est pas détruire : l'objet survit dans les deux cas. Un test
+/// qui n'assertait que le statut passerait sur un handler qui mute PUIS
+/// refuse. On relit donc **l'état du budget après coup** : son `status` doit
+/// être celui d'avant l'appel.
+///
+/// Un budget approuvé hors périmètre n'est pas un détail comptable. Un budget
+/// approuvé engage les appels de fonds de l'exercice.
+#[actix_web::test]
+#[serial]
+async fn security_le_cycle_de_vie_du_budget_inter_organisations_est_refuse() {
+    let contexte = preparer().await;
+    let app = test::init_service(
+        App::new()
+            .app_data(contexte.app_state.clone())
+            .configure(configure_routes),
+    )
+    .await;
+
+    let porteur = |req: test::TestRequest| {
+        req.insert_header((
+            header::AUTHORIZATION,
+            format!("Bearer {}", contexte.jeton_a),
+        ))
+    };
+
+    // Un budget bien à B, créé hors HTTP pour ne rien supposer du chemin
+    // d'écriture.
+    let budget_b = contexte
+        .app_state
+        .budget_use_cases
+        .create_budget(koprogo_api::application::dto::CreateBudgetRequest {
+            organization_id: contexte.org_b,
+            building_id: contexte.immeuble_b,
+            fiscal_year: 2027,
+            ordinary_budget: rust_decimal_macros::dec!(42000),
+            extraordinary_budget: rust_decimal_macros::dec!(0),
+            notes: None,
+        })
+        .await
+        .expect("budget de B");
+
+    let statut_avant = budget_b.status.clone();
+
+    // Chaque transition, avec sa charge utile minimale valide. Une charge
+    // invalide rendrait 400 et le test passerait pour une mauvaise raison —
+    // le refus doit venir du cloisonnement, pas de la validation.
+    let faux_meeting = Uuid::new_v4();
+    let appels: Vec<(&str, Option<serde_json::Value>)> = vec![
+        (
+            "",
+            Some(serde_json::json!({ "ordinary_budget": "99999.00" })),
+        ),
+        ("/submit", None),
+        (
+            "/approve",
+            Some(serde_json::json!({ "meeting_id": faux_meeting.to_string() })),
+        ),
+        ("/reject", Some(serde_json::json!({ "reason": "aucune" }))),
+        ("/archive", None),
+    ];
+
+    for (suffixe, corps) in appels {
+        let uri = format!("/api/v1/budgets/{}{}", budget_b.id, suffixe);
+        let requete = match corps {
+            Some(json) => porteur(test::TestRequest::put().uri(&uri).set_json(&json)),
+            None => porteur(test::TestRequest::put().uri(&uri)),
+        };
+        let reponse = test::call_service(&app, requete.to_request()).await;
+
+        assert!(
+            est_un_refus(reponse.status().as_u16()),
+            "PUT {uri} a été accepté depuis l'organisation A : statut {} (#864). \
+             `AuthenticatedUser` était pris sans servir à décider, et le journal \
+             d'audit aurait enregistré la transition comme régulière.",
+            reponse.status()
+        );
+
+        // Le statut doit être INTACT. Un refus rendu après la mutation ne
+        // protège rien, et c'est précisément ce que le défaut faisait bien :
+        // il journalisait fidèlement un geste illégitime.
+        let relu = contexte
+            .app_state
+            .budget_use_cases
+            .get_budget(budget_b.id)
+            .await
+            .expect("lecture du budget de B")
+            .expect("le budget de B existe toujours");
+        assert_eq!(
+            relu.status, statut_avant,
+            "PUT {uri} a changé le statut du budget de B ({:?} → {:?}) : le refus \
+             HTTP est arrivé APRÈS la mutation.",
+            statut_avant, relu.status
+        );
+    }
+}
+
+/// ÉCRITURE — l'assemblée générale d'une autre copropriété se pilote (#864).
+///
+/// ── Pourquoi l'AG mérite son propre test ──────────────────────────────────
+///
+/// Annuler, clôturer, reporter une assemblée ou en valider le quorum touche
+/// à l'Art. 3.87 : la tenue de l'assemblée, ses délais, et la validité de ce
+/// qui s'y vote. Une AG annulée par un tiers est une AG qui n'a pas eu lieu,
+/// et les décisions qu'elle aurait prises n'existent pas.
+///
+/// Les quatre routes prenaient `AuthenticatedUser` sans s'en servir pour
+/// décider, alors que `get_meeting` remonte la chaîne
+/// `meeting → building → acp → organization` depuis le hotfix #603. Le
+/// chemin existait ; les écritures ne l'empruntaient pas.
+///
+/// ── L'assertion porte sur l'ÉTAT ──────────────────────────────────────────
+///
+/// Annuler ne détruit pas : l'assemblée survit dans les deux cas. On relit
+/// donc son `status` après chaque appel, comme pour le budget. Un refus HTTP
+/// rendu APRÈS la mutation ne protège rien.
+#[actix_web::test]
+#[serial]
+async fn security_le_pilotage_dune_ag_inter_organisations_est_refuse() {
+    let contexte = preparer().await;
+    let app = test::init_service(
+        App::new()
+            .app_data(contexte.app_state.clone())
+            .configure(configure_routes),
+    )
+    .await;
+
+    let porteur = |req: test::TestRequest| {
+        req.insert_header((
+            header::AUTHORIZATION,
+            format!("Bearer {}", contexte.jeton_a),
+        ))
+    };
+
+    let ag_b = contexte
+        .app_state
+        .meeting_use_cases
+        .create_meeting(koprogo_api::application::dto::CreateMeetingRequest {
+            organization_id: contexte.org_b,
+            building_id: contexte.immeuble_b,
+            meeting_type: koprogo_api::domain::entities::MeetingType::Ordinary,
+            title: "AG ordinaire de B".to_string(),
+            description: None,
+            scheduled_date: chrono::Utc::now() + chrono::Duration::days(30),
+            location: "Chez B".to_string(),
+            is_second_convocation: false,
+        })
+        .await
+        .expect("assemblée de B");
+
+    let statut_avant = ag_b.status.clone();
+
+    let appels: Vec<(&str, Option<serde_json::Value>)> = vec![
+        ("/cancel", None),
+        (
+            "/complete",
+            Some(serde_json::json!({ "attendees_count": 12 })),
+        ),
+        (
+            "/reschedule",
+            Some(serde_json::json!({
+                "scheduled_date": (chrono::Utc::now() + chrono::Duration::days(60)).to_rfc3339()
+            })),
+        ),
+        (
+            "/validate-quorum",
+            Some(serde_json::json!({ "present_quotas": "600.00", "total_quotas": "1000.00" })),
+        ),
+    ];
+
+    for (suffixe, corps) in appels {
+        let uri = format!("/api/v1/meetings/{}{}", ag_b.id, suffixe);
+        let requete = match corps {
+            Some(json) => porteur(test::TestRequest::post().uri(&uri).set_json(&json)),
+            None => porteur(test::TestRequest::post().uri(&uri)),
+        };
+        let reponse = test::call_service(&app, requete.to_request()).await;
+
+        assert!(
+            est_un_refus(reponse.status().as_u16()),
+            "POST {uri} a été accepté depuis l'organisation A : statut {} (#864).              Le syndic de A pilote l'assemblée générale de B — Art. 3.87.",
+            reponse.status()
+        );
+
+        let relue = contexte
+            .app_state
+            .meeting_use_cases
+            .get_meeting(ag_b.id)
+            .await
+            .expect("lecture de l'AG de B")
+            .expect("l'AG de B existe toujours");
+        assert_eq!(
+            relue.status, statut_avant,
+            "POST {uri} a changé le statut de l'AG de B ({:?} → {:?}) : le refus \
+             HTTP est arrivé APRÈS la mutation.",
+            statut_avant, relue.status
         );
     }
 }

@@ -12,6 +12,57 @@ use jsonwebtoken::{encode, EncodingKey, Header};
 use std::sync::Arc;
 use uuid::Uuid;
 
+// ── bcrypt est du CPU bloquant, et il ne doit pas tenir un worker (#718) ───
+//
+// `hash` et `verify` coûtent ~1,7 s de CPU à `DEFAULT_COST` sur l'hôte
+// `ecosolva` — mesuré le 2026-09-13 sur 722 appels : médiane 1,69 s,
+// p90 2,02 s, max 3,84 s.
+//
+// Appelés SYNCHRONEMENT dans un `async fn`, ils ne rendent la main à rien
+// pendant ce temps : ni à une autre requête du même worker, ni à la boucle
+// d'événements. Avec `ACTIX_WORKERS` à 2, deux inscriptions simultanées
+// consomment toute la capacité d'accueil pendant deux secondes ; la
+// troisième requête attend, Traefik n'obtient pas de réponse, et rend 502.
+//
+// C'est le mécanisme de #718, et il est pire en production : la démo tourne
+// avec `ACTIX_WORKERS: 1`. UNE connexion y bloque toute l'API.
+//
+// ── Ce que ce correctif ne fait PAS ────────────────────────────────────────
+//
+// Il ne baisse pas le coût bcrypt. La lenteur de bcrypt n'est pas le défaut,
+// c'est sa raison d'être : elle est ce qui protège les empreintes stockées.
+// Le défaut est de la subir sur un thread qui doit rester disponible.
+//
+// Il ne remplace pas non plus la révision d'`ACTIX_WORKERS: 1`, qui reste
+// indéfendable une fois ce blocage retiré — il déplaçait seulement le seuil.
+//
+// L'idiome est déjà employé dans ce dépôt : `infrastructure/email.rs:248`
+// enveloppe l'envoi SMTP de la même façon. Il n'avait pas été appliqué à
+// l'endroit où il compte le plus.
+
+/// Hache un mot de passe hors des threads de travail Actix (#718).
+async fn hacher_hors_worker(mot_de_passe: String) -> Result<String, String> {
+    tokio::task::spawn_blocking(move || hash(&mot_de_passe, DEFAULT_COST))
+        .await
+        .map_err(|e| format!("Hachage interrompu : {e}"))?
+        .map_err(|e| format!("Failed to hash password: {e}"))
+}
+
+/// Vérifie un mot de passe hors des threads de travail Actix (#718).
+///
+/// Rend `AppError` et non `BcryptError` à dessein. Un `spawn_blocking`
+/// interrompu n'est PAS une empreinte invalide, et `BcryptError` n'a aucune
+/// variante pour le dire — sa seule variante à message porte un
+/// `&'static str`. Le forcer dans `InvalidHash` ferait rendre « identifiants
+/// invalides » sur un incident de runtime, et enverrait l'utilisateur
+/// chercher un défaut de mot de passe qui n'existe pas.
+async fn verifier_hors_worker(mot_de_passe: String, empreinte: String) -> Result<bool, AppError> {
+    tokio::task::spawn_blocking(move || verify(&mot_de_passe, &empreinte))
+        .await
+        .map_err(|e| AppError::Internal(format!("Vérification du mot de passe interrompue : {e}")))?
+        .map_err(AppError::from)
+}
+
 pub struct AuthUseCases {
     user_repo: Arc<dyn UserRepository>,
     refresh_token_repo: Arc<dyn RefreshTokenRepository>,
@@ -76,7 +127,9 @@ impl AuthUseCases {
             return Err(AppError::AccountDeactivated);
         }
 
-        let is_valid = verify(&request.password, &user.password_hash)?;
+        // Hors worker : bcrypt bloque ~1,7 s (#718).
+        let is_valid =
+            verifier_hors_worker(request.password.clone(), user.password_hash.clone()).await?;
 
         if !is_valid {
             // Audit failed password verification
@@ -138,8 +191,8 @@ impl AuthUseCases {
             .parse()
             .map_err(|e| format!("Invalid role: {}", e))?;
 
-        let password_hash = hash(&request.password, DEFAULT_COST)
-            .map_err(|e| format!("Failed to hash password: {}", e))?;
+        // Hors worker : bcrypt bloque ~1,7 s (#718).
+        let password_hash = hacher_hors_worker(request.password.clone()).await?;
 
         let user = User::new(
             request.email,
@@ -925,5 +978,86 @@ mod tests {
         let result = uc.revoke_all_refresh_tokens(user_id).await;
         assert!(result.is_ok());
         assert_eq!(result.unwrap(), 3);
+    }
+    // ── 12. bcrypt ne tient pas un thread de travail (#718) ──────────────
+
+    /// Témoin de rougeur pour #718, et il est DÉTERMINISTE.
+    ///
+    /// ── Pourquoi pas un chronomètre ───────────────────────────────────────
+    ///
+    /// La tentation était de mesurer que N hachages concurrents durent moins
+    /// que N fois un hachage seul. Sur un hôte qui porte trente conteneurs,
+    /// une telle assertion clignote, et un test qui clignote finit désactivé
+    /// — c'est ainsi que le blocage a survécu jusqu'ici.
+    ///
+    /// ── Ce que ce test exploite ───────────────────────────────────────────
+    ///
+    /// Un runtime `current_thread` n'a QU'UN seul thread pour les tâches
+    /// asynchrones. Une tâche témoin qui rend la main (`yield_now`) ne
+    /// progresse donc que si le hachage libère ce thread.
+    ///
+    /// - `hash()` appelé directement : le thread est tenu pendant ~1,7 s, la
+    ///   témoin n'est jamais replanifiée, le compteur reste à **0**.
+    /// - `hacher_hors_worker()` : le hachage part sur le pool bloquant, le
+    ///   `.await` rend la main, la témoin tourne, le compteur est **> 0**.
+    ///
+    /// Aucune durée n'est assertée. Le test dit « la boucle a-t-elle
+    /// avancé », pas « a-t-elle avancé assez vite ».
+    #[tokio::test(flavor = "current_thread")]
+    async fn le_hachage_ne_retient_pas_la_boucle_devenements() {
+        use std::sync::atomic::{AtomicUsize, Ordering};
+        use std::sync::Arc as StdArc;
+
+        let tours = StdArc::new(AtomicUsize::new(0));
+        let compteur = tours.clone();
+
+        let temoin = tokio::spawn(async move {
+            // Borne haute : sans elle, un correctif régressé ferait pendre le
+            // test au lieu de le faire échouer, et un test pendu se lit comme
+            // une lenteur d'infrastructure.
+            for _ in 0..100_000 {
+                compteur.fetch_add(1, Ordering::Relaxed);
+                tokio::task::yield_now().await;
+            }
+        });
+
+        let empreinte = hacher_hors_worker("mot-de-passe-temoin".to_string())
+            .await
+            .expect("le hachage doit réussir");
+
+        let avances = tours.load(Ordering::Relaxed);
+        temoin.abort();
+
+        assert!(
+            avances > 0,
+            "La tâche témoin n'a pas avancé d'un seul tour pendant le hachage : \
+             bcrypt tient le thread de travail (#718). Sur un runtime à un \
+             thread, c'est exactement ce qui fait rendre 502 à Traefik quand \
+             une deuxième requête arrive."
+        );
+
+        // Et la vérification aussi, par le même chemin.
+        let compteur2 = StdArc::new(AtomicUsize::new(0));
+        let c2 = compteur2.clone();
+        let temoin2 = tokio::spawn(async move {
+            for _ in 0..100_000 {
+                c2.fetch_add(1, Ordering::Relaxed);
+                tokio::task::yield_now().await;
+            }
+        });
+
+        let valide = verifier_hors_worker("mot-de-passe-temoin".to_string(), empreinte)
+            .await
+            .expect("la vérification doit réussir");
+        let avances2 = compteur2.load(Ordering::Relaxed);
+        temoin2.abort();
+
+        assert!(valide, "l'empreinte fraîchement produite doit se vérifier");
+        assert!(
+            avances2 > 0,
+            "La tâche témoin n'a pas avancé pendant la vérification : \
+             `verify` tient le thread de travail (#718). Le login est le \
+             chemin le plus chaud du produit."
+        );
     }
 }

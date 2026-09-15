@@ -93,7 +93,9 @@ minio:
   # Pinned to a specific MinIO release tag (was `:latest` — forbidden by
   # CRITICAL.md). Follow-up: replace tag with digest pin via
   # `docker manifest inspect minio/minio:RELEASE.2025-04-22T17-06-50Z`.
-  image: minio/minio:RELEASE.2025-09-07T16-13-09Z
+  # Registre : quay.io, PAS docker.io (#877). Le dépôt `docker.io/minio/minio`
+  # a disparu entièrement, `:latest` compris. Même release, autre registre.
+  image: quay.io/minio/minio:RELEASE.2025-09-07T16-13-09Z
   storage: 20Gi
   storageClass: ""
   bucket: koprogo-documents

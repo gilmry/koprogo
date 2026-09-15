@@ -174,7 +174,26 @@ services:
 
   # MinIO for local S3-compatible storage
   minio:
-    image: minio/minio:latest
+  # ── Registre : quay.io, PAS docker.io (#877) ─────────────────────────────
+  #
+  # `docker.io/minio/minio` a disparu ENTIÈREMENT le 2026-09 — `:latest`
+  # compris, pas seulement un tag épinglé. Mesuré le 2026-09-13 :
+  #
+  #   minio/minio:latest            ÉCHEC (404, « repository does not exist »)
+  #   quay.io/minio/minio:REL…      OK
+  #
+  # Cette pile ne tournait donc que grâce au cache d'images de l'hôte. Un
+  # `docker compose pull`, un `docker image prune`, ou une reconstruction
+  # ailleurs, et le stockage objet ne revenait pas. Rien ne l'aurait annoncé
+  # avant le redémarrage.
+  #
+  # Le tag épinglé est la release EXACTE que le cache servait déjà
+  # (`minio --version` dans le conteneur) : ce changement ne déplace aucun
+  # bit, il nomme seulement un registre qui répond encore.
+  #
+  # `:latest` est retiré volontairement. Il a masqué le défaut : une image
+  # non tirable et un cache tiède se ressemblent tant qu'on ne tire pas.
+    image: quay.io/minio/minio:RELEASE.2025-09-07T16-13-09Z
     container_name: koprogo-dev-minio
     command: server /data --console-address :9001
     environment:
@@ -199,7 +218,9 @@ services:
       - koprogo-network
 
   minio-bootstrap:
-    image: minio/mc:latest
+  # Même raison que pour `minio` ci-dessus (#877). Release identique à celle
+  # que le cache servait — `mc --version` dans le conteneur.
+    image: quay.io/minio/mc:RELEASE.2025-08-13T08-35-41Z
     container_name: koprogo-dev-minio-bootstrap
     depends_on:
       minio:

@@ -64,7 +64,29 @@ DEPS = {
     # Rang 1 — le harnais. Rien ne se DÉCLARE tenu avant lui.
     872: ([], "pile de recette jetable — ADR 0050"),
     870: ([], "mot de passe de recette découplé"),
-    832: ([872], "rejouer les 15 specs exige une pile rejouable"),
+    # ── Dépendance CORRIGÉE le 2026-09-13, contredite par une passe réelle ──
+    #
+    # Le document dit que ce graphe est une hypothèse falsifiable, « à
+    # corriger dès qu'une passe réelle la contredit ». En voici une.
+    #
+    # #832 demande de départager, pour chaque spec rouge, « cascade d'un 502 »
+    # et « défaut réel ». Mesuré le 2026-09-13, même code, même jour :
+    #
+    #     CI, runner dédié            308 ✓ / 0 ✘
+    #     pile de recette, cet hôte    12 ✘, puis 83 de plus après coupure
+    #
+    # Et les quatre échecs instruits passent tous en isolation (20 ✓). La
+    # question de #832 n'a donc pas de réponse STABLE tant que le banc
+    # produit ses propres 502 — c'est #880. « Pile rejouable » (#872) était
+    # nécessaire et ne suffit pas : une pile peut se rejouer et ne pas être
+    # reproductible.
+    #
+    # Cette arête ne vient pas de ce que la story dit d'elle-même, ce qui est
+    # la règle du fichier. Elle vient d'une mesure, et c'est le seul motif
+    # admis pour passer outre : le graphe cède au réel, jamais l'inverse.
+    832: ([872, 880], "départager 502 et défaut réel exige un banc "
+                      "reproductible, pas seulement rejouable — mesuré"),
+    880: ([872], "le banc doit exister avant qu'on puisse le rendre honnête"),
     696: ([872], "idem — instabilité smoke"),
 
     # Rang 2 — identité et périmètre.

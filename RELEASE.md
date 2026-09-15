@@ -10,10 +10,15 @@
 
 - **Porte active** : `release`
 - **Parcours** : `.foyer/pilote/journeys/planification-release.md`
+- **Reprise par une session neuve** :
+  [lettre de mission du 2026-09-13](docs/plans/2026-09-13-lettre-de-mission-reprise.md)
+  — où travailler, ce qui bloque, et les sept pièges qui coûtent des heures
+  quand on les redécouvre
 - **Archétype** : full-stack *(Rust hexagonal + Astro/Svelte 5 en îlots, PostgreSQL)*
 - **Substrat d'exécution** : conteneur — `~/bin/kcargo` pour Rust, jamais `cargo` sur l'hôte
 - **Démarré le** : 2026-09-12
-- **Dernière mise à jour** : 2026-09-12 (par : Claude — pile de recette LANCÉE, gate e2e mesuré)
+- **Dernière mise à jour** : 2026-09-13 (par : Claude — #877 tranchée et corrigée,
+  fan-out débloqué, #879 relancée pour ses gates)
 
 ## Répartition des rôles
 
@@ -89,12 +94,28 @@ appelle une signature et non une validation.
   `Host(localhost)` ne sert que nos deux conteneurs — contrôlé par l'API de
   Traefik, pas supposé.
 
-- **Prochaine action attendue** : **instruire les 8 échecs restants** (#832).
-  Quatre sont #718 et se rejouent à volonté désormais. Les quatre autres —
-  `Dashboard`, `I18n`, `OwnerScreensJourney`, `story2-acp-organization`,
-  `role-assignment` — n'ont pas encore été départagés entre « cascade d'un 502 »
-  et « défaut réel ». Le parcours de référence, lui, **passe seul** (2/2 en
-  1 min) : son échec en campagne est une interaction, pas un défaut du parcours.
+- **Prochaine action attendue** : **le socle est vert. Reste à le POUSSER, et
+  ce n'est pas du ressort de l'agent.**
+
+  Trois campagnes du 2026-09-13, même code produit sauf le correctif de #718 :
+
+  | Campagne | Résultat | Ce qui la distingue |
+  |---|---|---|
+  | contaminée | 213 ✓ / 95 ✘ | deux recompilations pendant — #880 |
+  | propre | 298 ✓ / 10 ✘ | dix 502, aucun défaut produit |
+  | après #718 | **308 ✓ / 0 ✘ — code 0** | `bcrypt` sorti du thread de travail |
+
+  Les quatre specs qu'on s'apprêtait à instruire une par une — `AgeRequests`,
+  `Convocations`, `Gdpr:430`, `FinancialRegressions F3` — sont vertes **sans
+  qu'aucune n'ait été touchée**. C'est la réponse de #832 : il n'y avait rien
+  à instruire, il y avait une cause unique à trouver.
+
+  Deux arbitrages restent ouverts, et les deux sont posés plus bas en 🔴 :
+  `ACTIX_WORKERS: 1` sur la démo, et le banc de recette en hot reload (#880).
+
+  ⚠️ **Les commits sont locaux.** Pousser `feature/dev` déclenche le
+  déploiement du VPS — c'est un geste humain, et le lot contient le correctif
+  qui règle aussi les 502 de `api.koprogo.com`.
 
 - **À noter, sans conséquence aujourd'hui** : le Traefik de la recette voit les
   **18 routeurs des projets voisins** de l'hôte (derniere-chance, elevia, n8n),
@@ -199,15 +220,24 @@ issues tiennent chacune une file — **#803** en débloque 11, **#805** dix,
 | `verify` structurel | 🟢 | `kcargo test --test architecture` + 15 gardes | 16 suites vertes |
 | `contrat` anti-drift | 🟢 | gate OpenAPI + `oasdiff` en CI | #765 fermée |
 | `unit` domaine | 🟢 | `kcargo test --lib` | 1989 tests |
-| `integration` | 🔴 | suites `e2e_*.rs` (testcontainers) | `s3_storage_roundtrip` : le tag `minio/minio` n'est plus tirable — #877. **Était déclaré 🟢 à tort** |
+| `integration` | 🟢 | suites `e2e_*.rs` (testcontainers) | `storage_s3` rend `1 passed`, code 0, contre `quay.io`. **Mesuré en local le 2026-09-13**. ⚠️ #877 reste OUVERTE : son premier critère dit « vert EN CI », et la CI ne l'a pas vu — les commits ne sont pas poussés |
 | `bdd` | 🟢 | suites `bdd_*.rs` | |
-| `e2e` parcours | 🟠 | `make test-e2e` | **s'exécute enfin** contre `localhost:8090` : 300 ✓ / 8 ✗ / 14 sautés, code 2. Dont 4 en 502 sous rafale — #718 |
+| `e2e` parcours | 🟢 | `make test-e2e` | **308 ✓ / 0 ✘ / 14 sautés — CODE 0**, le 2026-09-13 après le correctif de #718 (`40eb8edd`). Aucun redémarrage pendant (`SIGTERM` 4 avant, 4 après). Même chiffre qu'en CI |
 | `visuel` | ⚪ | — | pas de goldens |
-| `doc-vivante` | 🟢 | `make vitrine` | parcours complet, 10 chapitres, 81 s, `interrompu: None` — prouvé en CI (run 34710066495) et en local (2/2) |
+| `doc-vivante` | 🟢 | `make vitrine` | le PARCOURS : complet, 10 chapitres, 81 s, `interrompu: None`, artefact de 79 Mo publié (run 34764114133). ⚠️ Les douze `.scenario.ts` du même job rendent **10 ✓ / 2 ✘** et ne peuvent PAS rougir le job : `continue-on-error: true` depuis le 2026-06-15, avec une condition de retrait jamais rouverte |
 | front typecheck | 🟢 | `npx svelte-check --threshold error` | 0 erreur |
 | front tests | 🟢 | `npx vitest run` | 659 tests, 120 fichiers |
 
-**Le socle n'est toujours pas vert, mais il est enfin MESURÉ.** La pile de
+**Le socle est vert le 2026-09-13**, `plancher migrations` et `visuel` mis à
+part, qui restent ⚪ faute de gate. Il l'est sur des exécutions, pas sur des
+lectures de diff : chaque 🟢 du tableau ci-dessus porte un code de sortie.
+
+Le dernier à céder aura été `e2e`, et il n'a pas cédé parce qu'on a réparé
+dix specs — il a cédé parce qu'on a trouvé **une** cause à ses dix échecs.
+C'est la leçon de la journée, et elle vaut d'être écrite : instruire dix
+symptômes un par un aurait coûté des jours et n'aurait rien réparé.
+
+**Ce que le premier passage a coûté, et qui reste vrai.** La pile de
 recette a tourné pour la première fois de son existence le 2026-09-12, et
 chaque ligne du tableau ci-dessus repose désormais sur une exécution, plus sur
 une lecture de diff.
@@ -253,7 +283,29 @@ un défaut de structure. Seul l'ordre des capacités est repris.
 
 ### 🔴 En attente (le PO doit trancher une MODALITÉ)
 
-**Aucun.** Tous les arbitrages ouverts ont été tranchés le 2026-09-12.
+**`ACTIX_WORKERS: 1` sur la démo** — posé le 2026-09-13, avec sa preuve.
+
+`docker-compose.prod.yml:101` pose `ACTIX_WORKERS: ${ACTIX_WORKERS:-1}`, et
+ce n'est pas qu'une valeur par défaut dans un fichier : vérifié sur le
+conteneur qui tourne, `docker inspect koprogo-backend` rend bien
+`ACTIX_WORKERS=1`. Mesuré, pas supposé.
+
+La mesure de #718 établit que `hash`/`verify` bloquaient le worker 1,69 s en
+médiane : avec un seul worker, **une connexion bloquait toute l'API**. Le
+correctif `40eb8edd` retire le blocage ; il ne rend pas un worker unique
+défendable pour un produit où des dizaines de copropriétaires se connectent
+dans la même minute d'une AG.
+
+Ce n'est pas à l'agent de trancher : c'est un arbitrage de dimensionnement,
+avec un coût en RAM sur un VPS qui porte trente conteneurs.
+
+**Le banc de mesure de la recette** — posé le 2026-09-13, #880.
+
+Le backend de la recette tourne sous `cargo-watch`. Toute édition de Rust
+pendant une campagne la coupe, et rien dans les artefacts ne le dit. L'ADR
+0050 a choisi une pile unique ; en changer se pose au PO. Trois voies : un
+banc à binaire figé, la sérialisation explicite de l'accès, ou l'acceptation
+du défaut avec un témoin d'interruption (le minimum, déjà décrit dans #880).
 
 ### ✅ Tranchés
 
@@ -271,8 +323,463 @@ un défaut de structure. Seul l'ordre des capacités est repris.
 | **#694 — accès d'un collaborateur à une ACP** | **refus par défaut**, accès explicite par table d'association. Rend #694 structurellement requise : sa mention « non bloquant » est périmée et son rang 2 confirmé | Gilles Maury | 2026-09-12 | [ADR 0053](docs/adr/0053-acces-acp-refus-par-defaut.md) |
 | **Rang des 3 orphelines** | C1.2 (#578, #579) et C7.2 (#427) rejoignent le **rang 6**, avec les autres `Should`. Leurs stories étaient déjà prêtes | Gilles Maury | 2026-09-12 | ce registre |
 | **Dialecte des stories** | **option A — traduire**, jamais modifier le compteur. Les 12 restantes traduites au rang 7 | Gilles Maury | 2026-09-12 | ce registre |
+| **#877 — l'image MinIO** | **quay.io, épinglé par tag, partout** — test d'intégration, trois composes et Helm. `:latest` retiré | Gilles Maury | 2026-09-13 | #877, `72d719e6` |
+| **Voie du fan-out** | **abonnement (`CLAUDE_CODE_OAUTH_TOKEN`), `max_parallel` à 2** pour la première vague. À monter une fois mesurée, pas avant | Gilles Maury | 2026-09-13 | ce registre |
+| **PR #879** | **relancer pour qu'elle ait ses gates** avant la revue. La chronométrer sans preuve mesurerait autre chose que ce que #875 cherche | Gilles Maury | 2026-09-13 | #875, run `34764114133` |
 
 ## Journal (chronologie courte)
+
+- 2026-09-14 — **Six branches d'agent passent TOUS les gates.** C'est le
+  premier résultat du fan-out directement promouvable, et il vaut d'être lu
+  comme tel : la revue n'a plus à ouvrir un diff pour savoir si une branche
+  mérite d'être regardée.
+
+  | Branche | PR | Volume |
+  |---|---|---|
+  | `story/864` | #892 | 2 fichiers, 93 l. |
+  | `story/432` | #895 | 2 fichiers, 273 l. |
+  | `story/429` | #896 | 5 fichiers, 360 l. |
+  | `story/847` | #899 | 1 fichier, 289 l. |
+  | `story/453` | #901 | 3 fichiers, 406 l. |
+  | `story/595` | #902 | 3 fichiers, 102 l. |
+
+  Bilan sur les vingt branches produites : **6 toutes vertes**, 11 avec au
+  moins un gate rouge, 3 en cours. Les rouges se répartissent en deux
+  familles que la revue n'a pas à démêler elle-même — les sept de V4.1
+  portent un `Integration Tests` qui n'est pas le leur (socle `main`,
+  corrigé depuis), les autres portent leurs propres défauts : Prettier,
+  tests sans catégorie, contrat OpenAPI dérivé, BDD.
+
+  **Le modèle de promotion tient.** « Le relecteur regarde le film et les
+  gates, pas le code » : sur six branches il n'a rien à lire, et sur les
+  autres le gate nomme le défaut.
+
+  ⚠️ Ce qui manque toujours : **la vitrine**. Les gates ont été déclenchés à
+  la main faute de jeton opérant, ce qui produit les tests mais pas le
+  parcours filmé. La preuve de VALEUR — non bloquante et non facultative —
+  n'est au rendez-vous d'aucune de ces vingt branches.
+
+- 2026-09-14 — **Le silence des agents était de la VARIANCE, pas un jugement
+  sur la story.** C'est le résultat le plus important sur le harnais, et il
+  contredit ce qu'on supposait.
+
+  V4.4 a été lancée deux fois, même prompt, mêmes issues, à une heure
+  d'intervalle :
+
+  | Story | run `34789291390` | run `34793052029` |
+  |---|---|---|
+  | #868 | rien | **8 fichiers, 484 l.** |
+  | #848 | rien | **17 fichiers, 920 l.** |
+  | #731 | rien | **3 fichiers, 200 l.** |
+  | #835 | rien | rien |
+
+  Trois agents sur quatre qui s'étaient tus ont produit du travail
+  substantiel à la seconde tentative, **sans qu'une ligne du prompt ni de la
+  story ne change**.
+
+  On en tirait jusqu'ici la conclusion inverse — « l'agent juge la story
+  infaisable et s'arrête, comme le prompt le lui demande ». C'est faux au
+  moins trois fois sur quatre. Le bon réflexe devant un silence n'est donc
+  pas d'aller relire l'issue, c'est de **rejouer la passe**.
+
+  Conséquence pour le CSI : un taux de passes muettes de 10 sur 30 n'est pas
+  un taux de stories mal écrites, c'est un taux de reprise. Le Gantt
+  provisionnait justement un facteur **×1,5 pour les reprises** ; il avait
+  raison de le faire, et pour une raison qu'il n'avait pas anticipée.
+
+  Corrigé au passage (`c4b3382d`) : le rapport de l'agent partait au seul
+  `$GITHUB_STEP_SUMMARY`, que l'API REST n'expose pas — il fallait ouvrir
+  trente pages à la main. Il va désormais au journal, à un artefact
+  `rapport-<issue>`, et les 400 premiers caractères sont collés dans
+  l'avertissement de silence lui-même.
+
+- 2026-09-13 — **Le registre CSI se remplit, et le prior du Gantt est
+  CALIBRÉ pour la première fois.** 21 passes, dont 15 avec télémétrie fine
+  (V4.2 et V4.3, Sonnet). Le job « Récapitulatif » de la version corrigée du
+  workflow fonctionne — il ne fonctionnait pas dans celle de `main`.
+
+  | | Prior du Gantt | Mesuré (médiane) |
+  |---|---|---|
+  | cache lu / story | ~4 500 000 | **4 312 532** |
+  | sortie / story | ~80 000 | **45 256** |
+  | coût / story | ~2,70 $ | **1,86 $** |
+  | 84 stories, reprises ×1,5 | **340 $** | **234 $** |
+
+  **Le prior tient, et il était prudent dans le bon sens** — c'est ce qu'une
+  borne haute doit faire. L'écart vient surtout de la sortie, surestimée de
+  près du double.
+
+  La dispersion, elle, est le vrai enseignement : le coût va de **0 à 15 $**
+  et les tours de **14 à 233** selon la story. Une médiane par story est donc
+  un mauvais instrument de planification — c'est la TAILLE déclarée (S/M/L)
+  qu'il faudrait croiser, et le registre le permet désormais.
+
+  Le Gantt écrivait que ses chiffres sont « des bornes hautes de première
+  passe, à resserrer story après story sur le réel observé ». C'est la
+  première fois qu'on peut le faire.
+
+- 2026-09-13 — **Deux défauts dans MES scripts, trouvés par le fan-out.**
+  Quatre agents de V4.4 refusés sur « #868 ne porte pas les huit éléments ».
+  C'était faux : le script était mort sur
+  `FileNotFoundError: '/home/ubuntu/koprogo'`. **`DEPOT` valait le chemin de
+  mon poste** dans `backlog-pret.py` et `backlog-structure.py` ;
+  `gantt-passes.py` et `rice-produit.py` le dérivaient déjà. Deux sur quatre,
+  et rien ne signalait l'écart.
+
+  Le second défaut est le plus grave : **le workflow confondait une panne et
+  un verdict.** `if ! script` traite tous les codes non nuls pareil, si bien
+  que le harnais a prononcé un jugement sur quatre stories qu'il n'avait pas
+  pu lire. Le script rend désormais **2 pour « je n'ai PAS PU mesurer »**,
+  distinct de 1 pour « mesuré et incomplet », et le workflow dit alors
+  « corrigez l'instrument, pas l'issue ».
+
+  C'est la règle du registre — l'absence de mesure s'écrit `null`, jamais
+  `0` — portée aux codes de sortie.
+
+- 2026-09-13 — **L'épinglage du `checkout` est prouvé PAR CONTRASTE**, et
+  c'est la mesure la plus propre de la journée sur le harnais :
+
+  | Vague | Socle | `Integration Tests` |
+  |---|---|---|
+  | V4.1 | `main` | 🔴 sur **7 branches sur 7** |
+  | V4.2 | `feature/dev` | ✅ sur `story/841` |
+
+  Même gate, même code de produit, deux socles. `story/841` ne porte plus que
+  **son propre** défaut — Prettier sur deux fichiers. Le bruit du socle a
+  disparu, et il ne reste que ce que la revue de promotion doit juger.
+
+  C'est la démonstration que le modèle tient : « le relecteur regarde le film
+  et les gates, pas le code » n'est vrai que si les gates parlent de la
+  branche. Pendant V4.1, ils parlaient d'autre chose.
+
+- 2026-09-13 — **Vague V4.2 déroulée**, run `34783546008`, lancée
+  `--ref feature/dev` pour que ce soit la version CORRIGÉE du workflow qui
+  s'exécute. Neuf stories, six branches :
+
+  | Story | Produit |
+  |---|---|
+  | #635 | 15 fichiers, 1558 l. |
+  | #850 | 3 fichiers, 470 l. |
+  | #429 | 5 fichiers, 360 l. |
+  | #432 | 2 fichiers, 273 l. |
+  | #841 | 3 fichiers, 215 l. |
+  | #864 | 2 fichiers, 93 l. — **par-dessus le travail de la session** |
+  | #870, #585, #854 | aucun changement |
+
+  **#864 est le cas intéressant** : l'agent a branché sur `feature/dev`, donc
+  sur le cliquet à 73 et ses 33 exceptions que je venais de poser, et il l'a
+  étendu de 61 lignes. Le fan-out capitalise au lieu de refaire — c'est
+  exactement ce que l'épinglage du `checkout` devait rendre possible.
+
+  **Des deux correctifs, un seul marche, et c'est mesuré :**
+
+  | | Verdict |
+  |---|---|
+  | `checkout` épinglé | ✅ `story/841` part de `1d261413`, sommet de `feature/dev` |
+  | jeton dédié | ❌ **aucun run `ci.yml` sur push**, malgré « Jeton dédié présent » au journal |
+
+  Les réglages Actions sont permissifs (`allowed_actions=all`,
+  `default_workflow_permissions=write`). Le secret existe et le workflow
+  l'utilise. **Le jeton ne réveille donc pas les workflows**, ce qui est le
+  comportement du `GITHUB_TOKEN`, pas celui d'un PAT. Sa valeur ne peut pas
+  être relue par un agent : c'est au PO de vérifier son type.
+
+- 2026-09-13 — **🔴 `main` est bloqué par des défauts que seul `main` peut
+  recevoir.** La protection de `main` exige **neuf** contrôles verts —
+  protection classique, plus large que le ruleset. Deux sont rouges :
+
+  | Requis | Cause | Corrigé sur `feature/dev` |
+  |---|---|---|
+  | `Integration Tests (API)` | #877 | `72d719e6` |
+  | `Playwright E2E Tests` | #718 | `40eb8edd` |
+
+  La PR #890, qui promeut le seul fichier de workflow, ne peut pas les
+  porter. Deux sorties : `--admin`, qui contourne les contrôles que `main` a
+  précisément pour empêcher ça, ou **promouvoir la branche entière** — PR
+  #894 — où les deux deviennent verts *parce qu'ils sont réparés*.
+
+  #894 est ouverte et **non fusionnée** : elle dépasse ce qui a été validé,
+  et la promotion vers `main` reste un geste humain.
+
+- 2026-09-13 — **Les sept branches de V4.1 ont leur verdict de gates**, et il
+  se lit en deux colonnes — ce qui est le but du dispositif.
+
+  | Branche | Défaut du SOCLE | Défaut de l'AGENT |
+  |---|---|---|
+  | `story/872` | Integration (#877) | — |
+  | `story/425` | Integration (#877) | — |
+  | `story/798` | Integration (#877) | Frontend Check — Prettier, 2 fichiers |
+  | `story/576` | Integration (#877) | Unit Tests |
+  | `story/781` | Integration (#877) | `garde_taxonomie_des_tests` — tests sans leur catégorie |
+  | `story/805` | Integration (#877) | Unit Tests |
+  | `story/852` | Integration (#877) | Lint, Contract Types, Unit Tests |
+
+  **`Integration Tests` rouge sur les SEPT** : c'est #877, corrigé à 15h sur
+  `feature/dev` et absent du socle depuis lequel les agents ont branché. Pas
+  un seul agent n'y est pour quelque chose. C'est le quatrième défaut de la
+  vague, corrigé par `b094778d` — le `checkout` du job agent est désormais
+  épinglé à `feature/dev`.
+
+  **Deux branches sur sept sont propres** une fois le socle mis de côté.
+  Cinq portent des défauts réels, tous attrapés par des gardes du dépôt :
+  du code non formaté, des tests sans leur catégorie
+  `@happy/@negative/@edge/@security`, un contrat OpenAPI dérivé.
+
+  C'est exactement ce que le Gantt promettait — « le relecteur regarde le
+  film et les gates, pas le code » — et c'est la première fois que la
+  promesse est vérifiable sur du réel. Aucune de ces cinq branches n'aurait
+  été refusée par une relecture de diff : du code non formaté se lit très
+  bien.
+
+  ⚠️ **La vitrine manque encore.** Les gates ont été déclenchés à la main
+  (`gh workflow run ci.yml --ref story/<n>`), ce qui produit les tests mais
+  pas le parcours filmé. La preuve de VALEUR, non bloquante et non
+  facultative, n'est pas au rendez-vous de cette première vague.
+
+- 2026-09-13 — **LE GANTT TOURNE. Vague V4.1 déroulée en réel**, run
+  `34776213266` : dix stories, deux agents simultanés (`max-parallel: 2`
+  tenu, mesuré sur les horodatages), abonnement, Sonnet.
+
+  | Story | Domaine | Produit |
+  |---|---|---|
+  | #872 | harnais | 4 fichiers, 176 l. — **le livrable 4 qui manquait** : le refus explicite d'un hôte non amorcé |
+  | #798 | front/composants | 10 fichiers, 977 l. |
+  | #576 | back/copropriete | 14 fichiers, 919 l. |
+  | #781 | back/communaute | 18 fichiers, 752 l. |
+  | #805 | docs-vivante | 9 fichiers, 953 l. |
+  | #425 | meta | 1 fichier, 345 l. |
+  | #852 | back/comptabilite | 5 fichiers, 196 l. |
+  | #694, #515, #869 | — | **aucun changement**, 26 à 30 s chacun |
+
+  Sept PR en brouillon, #883 à #889.
+
+  **Trois défauts que seule l'exécution pouvait montrer :**
+
+  1. **Le fan-out a tourné avec une version périmée de lui-même.**
+     `workflow_dispatch` exécute le fichier de la branche PAR DÉFAUT, et
+     `main` portait un `fanout-stories.yml` antérieur de **238 lignes**,
+     sans aucune mention de `FANOUT_GITHUB_TOKEN`. Les sept branches sont
+     donc parties avec le `GITHUB_TOKEN` — zéro gate, zéro vitrine —
+     pendant que le corps des PR annonçait « les gates partent seuls ».
+     C'est le motif dominant du dépôt sous une forme nouvelle : un
+     dispositif corrigé, présent, et inopérant parce que **ce n'est pas
+     cette copie-là qui s'exécute**. Promotion validée par le PO et en
+     cours (PR #890). Gates déclenchés à la main entre-temps.
+  2. **Trois agents sur dix n'ont rien produit**, et on ne sait pas
+     pourquoi : leur rapport part au résumé d'étape, que l'API GitHub
+     n'expose pas. C'est un trou du dispositif, pas une conclusion.
+  3. **Le registre CSI n'a reçu aucune ligne.** Le job « Récapitulatif »
+     n'existe pas dans la version de `main`. Dix passes réelles, télémétrie
+     perdue — pour la deuxième fois, après le run `34739504910`.
+
+- 2026-09-13 — **`feature/dev` poussée après les seize gardes vertes.** Le
+  barrage est passé, les images `sha-69b915f7` sont publiées : le correctif
+  de #718 et le passage de MinIO sur quay.io partent en production.
+
+- 2026-09-13 — **#864 : le cliquet CLASSE, et le relevé passe de 95 à 73.**
+  Vingt-deux routes cloisonnées dans la journée. Les dix transitions d'état
+  (budget, état daté), puis les quatre POST d'assemblée — annuler, clôturer,
+  reporter, valider le quorum, c'est-à-dire l'Art. 3.87 — les quatre
+  transitions de dépense, `assign_owner`, et `create_quote` dont l'identité
+  était nommée `_auth`.
+
+  **Deux d'une forme que ni l'issue ni le cliquet ne cherchaient** :
+  `list_call_for_funds` et `get_contributions_by_owner` cloisonnaient
+  correctement dans leur branche nominale et **pas du tout** dans leur
+  branche filtrée. Un paramètre facultatif — `building_id`, `owner_id` —
+  contournait le chemin protégé, et les deux fois sur la même donnée : qui
+  doit combien. Aucun cliquet qui compte des *gestionnaires* ne voit cette
+  forme-là.
+
+  Le cliquet porte désormais **33 exceptions, chacune lue, chacune avec sa
+  raison écrite**, et un second compteur : **40 routes ni corrigées ni
+  lues**, qui ne peut que descendre. Un troisième test garde la liste
+  honnête — une exception qui ne correspond plus à rien fait rougir.
+
+  Témoin de rougeur, gardes retirées : `POST /meetings/{id}/cancel` rend
+  **200 OK** au syndic d'une autre organisation, et annule son AG.
+
+  **Une catégorie manquait à l'énoncé de l'issue, et c'est la plus
+  dangereuse** : « rôle contrôlé, périmètre NON ». `check_syndic_role`,
+  `check_accountant_role`, `check_unit_ownership_permission` — un syndic du
+  cabinet A y approuve la facture du cabinet B. Le cliquet les compte **par
+  accident**, parce que le nom du helper n'est dans aucun motif. Renommer
+  l'un d'eux `verify_*` les sortirait du compte **sans les corriger**.
+
+- 2026-09-13 — **LE GATE `e2e` EST VERT.** `make test-e2e` rend
+  **308 ✓ / 0 ✘ / 14 sautés, code 0**, sur la pile de recette, sans
+  redémarrage du backend pendant. C'est le même chiffre que la CI, ce qui
+  clôt l'écart entre les deux bancs — il venait entièrement de #718.
+
+  Trois campagnes, même code sauf un correctif :
+
+  | Campagne | Résultat |
+  |---|---|
+  | contaminée (deux recompilations pendant) | 213 ✓ / 95 ✘ |
+  | propre | 298 ✓ / 10 ✘ — **dix 502** |
+  | après `40eb8edd` | **308 ✓ / 0 ✘ — code 0** |
+
+  La latence de `register` n'a PAS bougé — médiane 1,66 s contre 1,69 s — et
+  c'est la preuve que le correctif ne triche pas : le coût bcrypt est
+  intact, c'est la file d'attente qui a disparu. Le maximum tombe de 3,84 s
+  à 2,63 s, et plus aucun appel ne dépasse 3 s.
+
+- 2026-09-13 — **#718 EXPLIQUÉ, et corrigé.** C'est le résultat de la
+  journée.
+
+  La campagne propre a rendu **298 ✓ / 10 ✘ / 14 sautés**, sans un seul
+  redémarrage du backend pendant (`SIGTERM` à 2 avant comme après). **Les dix
+  échecs sont des 502, sans exception** — huit portent littéralement
+  `seed:org: HTTP 502 — Bad Gateway`. Aucun n'est un défaut produit.
+
+  La cause tient en deux lignes. `auth_use_cases.rs:141` et `:79` appelaient
+  `hash` et `verify` **synchrones, dans des `async fn`, sans
+  `spawn_blocking`**. Relevé sur 161 643 lignes de journal :
+
+  | Route | Appels > 1 s |
+  |---|---:|
+  | `POST /auth/register` | **722** — médiane 1,69 s, p90 2,02 s, max 3,84 s |
+  | `POST /auth/login` | **281** |
+
+  Pendant ces 1,7 s le thread de travail Actix ne rend la main à rien. Avec
+  deux workers, deux inscriptions simultanées consomment toute la capacité ;
+  la troisième requête attend et Traefik rend 502.
+
+  ⚠️ **La démo tourne avec `ACTIX_WORKERS: 1`** (`docker-compose.prod.yml:101`).
+  UNE connexion y bloque toute l'API pendant 1,7 s. Sur un produit fait pour
+  des assemblées générales, le seuil est franchi au premier usage réel. Le
+  correctif ne touche pas ce réglage : **il reste à trancher, et c'est une
+  modalité du PO.**
+
+  Corrigé par `40eb8edd`, avec un témoin **déterministe** plutôt que
+  chronométré : sur un runtime `current_thread`, une tâche témoin qui
+  `yield_now()` ne progresse que si le hachage libère le thread. Blocage
+  réarmé → FAILED ; correctif → 12 passed. Un test chronométré aurait
+  clignoté sur un hôte à trente conteneurs, et un test qui clignote finit
+  désactivé — c'est ainsi que ce blocage a survécu.
+
+- 2026-09-13 — **#832 est répondu, et la réponse tient en une ligne.** La
+  question était de départager « cascade d'un 502 » et « défaut réel » pour
+  chaque spec rouge. Les dix sont du premier type. Il n'y a pas de défaut
+  réel à instruire dans ce lot.
+
+- 2026-09-13 — **#879 relancée : les gates disent en vingt minutes ce que la
+  relecture du diff n'aurait pas vu.** Run `34764114133`. La branche
+  `story/867` n'apporte qu'un fichier : `backend/tests/e2e_stats_owner_dues.rs`,
+  412 lignes. Verdict :
+
+  | Gate | Résultat |
+  |---|---|
+  | Unit Tests | 🔴 `chaque_harnais_est_execute_quelque_part` |
+  | Integration Tests | 🔴 #877 (corrigé sur `feature/dev`, pas sur cette branche) |
+  | Playwright E2E | 🟢 **308 ✓ / 0 ✘** |
+  | vitrine | 🟢 artefact de 79 Mo, publié |
+  | lint, BDD, contrat, front | 🟢 |
+
+  Le message du garde se suffit à lui-même :
+
+  > Ces harnais ne sont cités par AUCUN workflow, donc ne s'exécutent jamais :
+  > `e2e_stats_owner_dues`. Ils compilent, ils passent en local, et la CI
+  > reste verte sans les avoir vus.
+
+  **L'agent a livré un harnais dormant.** C'est le motif dominant du dépôt,
+  reproduit par la première passe de fan-out, et c'est un garde du dépôt qui
+  l'a arrêté. Sans le jeton, la PR aurait été relue sur son diff et ce défaut
+  serait passé : un fichier de test qui compile et que rien n'exécute ne se
+  voit pas à la lecture.
+
+  ⚠️ **Le résultat le plus utile du run n'est pas là.** La campagne Playwright
+  passe à **308 ✓ / 0 ✘** en CI, sur le même code qui rendait 12 échecs sur
+  la pile de recette de cet hôte. L'écart n'est pas dans le produit, il est
+  dans le banc : quatre cœurs, trente conteneurs, et un backend en hot
+  reload. C'est la matière de #718 et de #880.
+
+- 2026-09-13 — **#877 est VERT, mesuré.** `kcargo test --test storage_s3` :
+  `1 passed`, code 0, contre `quay.io/minio/minio`.
+
+- 2026-09-13 — **#864 : dix transitions d'état cloisonnées, cliquet 95 → 85.**
+  Les cinq `PUT /budgets/{id}/*` et les cinq `PUT /etats-dates/{id}/*`
+  prenaient `AuthenticatedUser` sans s'en servir pour décider, dans des
+  fichiers où la LECTURE cloisonne correctement depuis toujours. Le test est
+  rouge sans le correctif, et c'est démontré : handler remis dans son état
+  d'avant, `PUT /budgets/{id}` rend **200 OK** au syndic d'une autre
+  organisation.
+
+  **Le compteur n'a pas bougé au premier essai**, et c'est le fait
+  intéressant. Les helpers s'appelaient `cloisonner_*`, que le détecteur ne
+  connaît pas : dix trous bouchés, instrument aveugle. Allonger `DECISION`
+  aurait fait tomber le chiffre par une modification de sa définition. Les
+  helpers portent désormais `verify_*`, l'idiome que le dépôt emploie déjà
+  — le compteur suit le travail, pas le barème.
+
+- 2026-09-13 — **#880 ouverte : le gate e2e mesure contre un backend en hot
+  reload.** Découvert en le subissant. Deux éditions de fichiers Rust
+  pendant une campagne ont déclenché deux recompilations (`cargo-watch`,
+  `Dockerfile.dev:71`), coupant le service à 14:54:29 puis 14:59:02.
+  Résultat : **213 ✓ / 95 ✘**, dont **83 échecs ayant visé un backend mort**.
+  Aucun artefact ne distingue les deux populations ; le code de sortie vaut 2
+  dans les deux cas. Ce n'est pas l'étourderie qui compte, c'est que le banc
+  est unique et que le fan-out y fera tourner N agents qui écrivent du Rust.
+
+  Deux défauts d'outillage trouvés en enquêtant, tous deux corrigés :
+
+  - le **rapport JSON** de Playwright avait son chemin en dur : l'exécution
+    ciblée lancée pour instruire les échecs a effacé les messages d'erreur
+    qu'elle servait à expliquer (`5ce48d93`). Le rapport HTML, lui, était
+    paramétré depuis #873 — pour exactement cette raison ;
+  - **`make seed-reset` annonçait ✅ sur un refus de l'API** (`0713da2b`).
+    `{"error":"Scenario world already exists"}` et « ✅ Seed world reset » sur
+    deux lignes consécutives, code de sortie 0 — le `| head -c 200` rendait
+    le statut de `head`. Une précondition de recette qui ment fait démarrer
+    la campagne suivante sur un état inconnu. `seed-clear` ajoutée, témoin de
+    rougeur vérifié.
+
+- 2026-09-13 — **le gate `doc-vivante` mérite une nuance qu'il n'avait pas.**
+  Le *parcours* (vitrine) est bien vert et son artefact fait 79 Mo. Mais les
+  douze `.scenario.ts` du même job rendent **10 ✓ / 2 ✘**
+  (`meeting-vote`, `sel-exchange`) et le job reste `success` : l'étape porte
+  `continue-on-error: true` depuis une décision du 2026-06-15, assortie d'une
+  condition de retrait — « toutes les sub-tasks C-Scen DONE et 0 flake sur
+  3 runs » — que personne n'a rouverte depuis. Une concession datée qu'on
+  ne réexamine pas devient un gate qui ne dit plus ce qu'on croit.
+
+- 2026-09-13 — **#877 tranchée sur une preuve qui a corrigé son diagnostic.**
+  L'issue disait « l'éditeur a retiré CE tag ». Mesuré : c'est **tout**
+  `docker.io/minio/minio` qui a disparu, `:latest` compris, et `minio/mc`
+  avec. « Rafraîchir le tag » sortait donc de l'arbitrage — il n'y avait
+  plus rien à rafraîchir. Le PO a tranché **quay.io, épinglé par tag,
+  partout** (`72d719e6`).
+
+  **Ce que la recherche a trouvé au passage est plus grave que le gate.** La
+  DÉMO tourne sur `minio/minio:latest`, non tirable depuis. Elle ne
+  fonctionnait que par le cache d'images de cet hôte : un `compose pull`, un
+  `image prune` ou une reconstruction ailleurs, et le stockage objet ne
+  revenait pas. Rien ne l'aurait annoncé avant le redémarrage. Le correctif
+  ne déplace aucun bit, et c'est vérifié : `koprogo-minio` et
+  `quay.io/minio/minio:RELEASE.2025-09-07T16-13-09Z` portent le **même**
+  `sha256:14cea493d9a3`. Le `:latest` du cache ÉTAIT cette release.
+  ⚠️ **La protection ne prend effet qu'au prochain déploiement de la démo.**
+
+- 2026-09-13 — **les trois verrous de #874 sont tombés.**
+  `FANOUT_GITHUB_TOKEN` posé par le PO à 14:48 UTC,
+  `default_workflow_permissions` passé de `read` à `write`, label `agent`
+  présent. Le fan-out peut produire des branches instruites par leurs gates.
+  Voie retenue : **abonnement, `max_parallel` à 2**.
+
+- 2026-09-13 — **#879 relancée pour ses gates** (run `34764114133`,
+  `workflow_dispatch` sur `story/867`). Elle avait été poussée AVANT le
+  jeton : seul CodeQL s'était déclenché, ni `ci.yml` ni la vitrine. La
+  relire ainsi aurait chronométré une revue sur diff, c'est-à-dire
+  exactement ce que le modèle de promotion existe pour éviter.
+
+- 2026-09-13 — **l'hôte a redémarré à 14:14 UTC et la pile de recette n'en
+  est pas revenue.** Les cinq conteneurs `koprogo-dev-*` étaient en
+  `Exited (137)` ; la démo, elle, était remontée seule. Cause : la pile de
+  recette n'a pas de `restart:`, ce qui est cohérent avec « jetable » mais
+  n'était écrit nulle part. **Après chaque redémarrage du VPS, la recette
+  est à relever à la main** — `docker compose -p koprogo-dev up -d`.
+  Isolation revérifiée au relevé : les quatre conteneurs de la démo
+  identiques au caractère près, `api.koprogo.com` à 200.
 
 - 2026-09-12 — **La pile de recette a tourné pour la première fois.** Trois
   défauts que seule l'exécution pouvait montrer : `JWT_SECRET` absent

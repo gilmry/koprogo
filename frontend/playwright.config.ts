@@ -96,7 +96,24 @@ export default defineConfig({
         open: "never",
       },
     ],
-    ["json", { outputFile: "test-results/results.json" }],
+    [
+      "json",
+      {
+        // Même raison que `PLAYWRIGHT_HTML_REPORT` ci-dessus, et le même
+        // défaut : le chemin était EN DUR, donc toute exécution suivante
+        // écrasait le rapport de la précédente.
+        //
+        // Constaté le 2026-09-13 : une campagne complète avait échoué sur
+        // douze spécifications ; un `playwright test` ciblé sur trois
+        // fichiers, lancé pour les instruire, a effacé les messages d'erreur
+        // qu'il servait à expliquer. Le rapport HTML, lui, avait survécu —
+        // il était paramétré depuis #873.
+        //
+        // Une mesure qu'on ne peut relire qu'une fois n'est pas une mesure.
+        outputFile:
+          process.env.PLAYWRIGHT_JSON_REPORT ?? "test-results/results.json",
+      },
+    ],
     ["list"],
   ],
 

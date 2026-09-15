@@ -99,7 +99,7 @@ les issues à ne pas laisser traîner : chacune tient une file.
 | `#805` | C8.1 | 4 | **10** |
 | `#797` | C5.1 | 4 | **9** |
 | `#802` | C5.2 | 4 | **9** |
-| `#872` | C7.1 | 4 | **5** |
+| `#872` | C7.1 | 4 | **6** |
 | `#780` | C1.1 | 5 | **4** |
 
 **Concours** — ce qui attend plusieurs chemins. Ce sont les points où
@@ -116,7 +116,7 @@ un retard sur *n'importe laquelle* des amont décale l'aval.
 
 ## Ce que la largeur révèle
 
-**3 des 7 couches dépassent le plafond de 3** : L4 (39 chantiers), L5 (36 chantiers), L6 (8 chantiers).
+**3 des 7 couches dépassent le plafond de 3** : L4 (41 chantiers), L5 (36 chantiers), L6 (8 chantiers).
 
 C'est le résultat le plus utile du diagramme, et il est
 contre-intuitif : **les dépendances ne sont pas le goulot.** Les
@@ -158,7 +158,7 @@ Ce qui bride encore, et qui est **physique** :
 3. **La concurrence de l'hôte** — `min(16, CPU-2)` = **2** sur cette machine. Mesurée, pas supposée.
 
 Résultat : **7 vagues**, **26 créneaux**, largeur
-maximale **10 agents simultanés** — contre 29
+maximale **10 agents simultanés** — contre 30
 passes en séquentiel supervisé.
 
 > ⚠️ **Le goulot n'est plus le plan, c'est l'hôte.** La largeur
@@ -208,12 +208,12 @@ passes en séquentiel supervisé.
 | Créneau | Agents | Domaines |
 |---|---|---|
 | V4.1 | 10 — #872, #694, #798, #576, #515, #869, #781, #852, #805, #425 | `harnais`, `back/plateforme`, `front/composants`, `back/copropriete`, `iac`, `front/mobile-a11y`, `back/communaute`, `back/comptabilite`, `docs-vivante`, `meta` |
-| V4.2 | 10 — #870, #864, #841, #850, #432, #871, #585, #429, #635, #854 | `harnais`, `back/plateforme`, `front/composants`, `back/copropriete`, `iac`, `front/mobile-a11y`, `back/communaute`, `meta`, `back/comptabilite`, `docs-vivante` |
-| V4.3 | 6 — #842, #847, #835, #453, #556, #595 | `front/composants`, `back/copropriete`, `back/plateforme`, `iac`, `meta`, `docs-vivante` |
-| V4.4 | 4 — #868, #848, #762, #731 | `front/composants`, `back/copropriete`, `back/plateforme`, `iac` |
-| V4.5 | 3 — #856, #579, #354 | `front/composants`, `back/copropriete`, `iac` |
-| V4.6 | 2 — #803, #855 | `front/composants`, `back/copropriete` |
-| V4.7 | 1 — #802 | `front/composants` |
+| V4.2 | 9 — #870, #864, #841, #850, #432, #585, #429, #635, #854 | `harnais`, `back/plateforme`, `front/composants`, `back/copropriete`, `iac`, `back/communaute`, `meta`, `back/comptabilite`, `docs-vivante` |
+| V4.3 | 7 — #877, #882, #842, #847, #453, #556, #595 | `harnais`, `back/plateforme`, `front/composants`, `back/copropriete`, `iac`, `meta`, `docs-vivante` |
+| V4.4 | 4 — #868, #848, #835, #731 | `front/composants`, `back/copropriete`, `back/plateforme`, `iac` |
+| V4.5 | 4 — #856, #881, #762, #354 | `front/composants`, `back/copropriete`, `back/plateforme`, `iac` |
+| V4.6 | 2 — #803, #579 | `front/composants`, `back/copropriete` |
+| V4.7 | 2 — #802, #855 | `front/composants`, `back/copropriete` |
 | V4.8 | 1 — #797 | `front/composants` |
 | V4.9 | 1 — #834 | `front/composants` |
 | V4.10 | 1 — #867 | `front/composants` |
@@ -222,8 +222,8 @@ passes en séquentiel supervisé.
 
 | Créneau | Agents | Domaines |
 |---|---|---|
-| V5.1 | 8 — #696, #845, #780, #865, #718, #779, #807, #818 | `harnais`, `back/plateforme`, `back/copropriete`, `front/mobile-a11y`, `iac`, `back/communaute`, `docs-vivante`, `front/composants` |
-| V5.2 | 8 — #832, #577, #555, #866, #587, #808, #355, #820 | `harnais`, `back/copropriete`, `back/plateforme`, `front/mobile-a11y`, `back/communaute`, `docs-vivante`, `iac`, `front/composants` |
+| V5.1 | 8 — #880, #845, #780, #865, #718, #779, #807, #818 | `harnais`, `back/plateforme`, `back/copropriete`, `front/mobile-a11y`, `iac`, `back/communaute`, `docs-vivante`, `front/composants` |
+| V5.2 | 8 — #696, #577, #555, #866, #587, #808, #355, #820 | `harnais`, `back/copropriete`, `back/plateforme`, `front/mobile-a11y`, `back/communaute`, `docs-vivante`, `iac`, `front/composants` |
 | V5.3 | 6 — #581, #427, #586, #809, #823, #466 | `back/copropriete`, `harnais`, `back/communaute`, `docs-vivante`, `front/composants`, `iac` |
 | V5.4 | 4 — #846, #811, #824, #590 | `back/copropriete`, `docs-vivante`, `front/composants`, `back/communaute` |
 | V5.5 | 3 — #812, #583, #825 | `docs-vivante`, `back/copropriete`, `front/composants` |
@@ -278,7 +278,7 @@ Deux aggravations que la formule ne voit pas :
 Le plan demande une largeur de **10**. L'hôte en tient
 **2**. L'expérimentation s'exécuterait donc à **un
 cinquième** de la largeur pour laquelle elle est conçue :
-~44 créneaux réels au lieu de 26.
+~45 créneaux réels au lieu de 26.
 
 À 2 de front, le parallélisme n'apporte presque rien :
 le gain vient alors de la **suppression de l'attente humaine entre
@@ -365,11 +365,11 @@ est la condition d'existence de l'expérimentation, pas sa première
 
 | Axe | Valeur | Ce que ça mesure |
 |---|---:|---|
-| Issues | 87 | le périmètre, intégral (ADR 0049) |
-| Passes séquentielles | 29 | régime supervisé, 3 de front |
+| Issues | 89 | le périmètre, intégral (ADR 0049) |
+| Passes séquentielles | 30 | régime supervisé, 3 de front |
 | Créneaux multiagent | 26 | régime parallèle, revue à la promotion |
-| Jours | 74.75 | wall-clock **superviseur** |
-| Tours | 299 | coût **tokens** |
+| Jours | 76.25 | wall-clock **superviseur** |
+| Tours | 305 | coût **tokens** |
 
 L'abaque est formelle sur la lecture de ces deux dernières lignes : le
 **poste dominant est le superviseur, pas le modèle**. Optimiser les
@@ -385,7 +385,7 @@ les publier comme un engagement serait une faute.
 
 ## Cadre de delivery
 
-Largeur maximale *possible* : **39 chantiers simultanés**. Largeur
+Largeur maximale *possible* : **41 chantiers simultanés**. Largeur
 *retenue* : **3**.
 
 Cela tient dans **une seule équipe** : Scrum suffit, et Nexus serait
@@ -407,6 +407,11 @@ supervision dans une seule.
 - **Le réordonnancement.** Le Gantt se réévalue à chaque jalon, à mesure
   que le parallélisme réel se découvre. Celui-ci est la première passe
   du plan, pas le plan définitif.
+
+## Alertes du générateur
+
+- Issues déclarées au graphe et absentes du backlog : #832, #871
+- Issues du backlog absentes du graphe (traitées sans dépendance) : #877, #881, #882
 
 ---
 

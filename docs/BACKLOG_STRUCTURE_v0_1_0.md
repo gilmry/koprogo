@@ -21,6 +21,27 @@ signature_humaine:
     en exécutant le Gantt. Un périmètre qui grossit quand on exécute est un
     périmètre qui devient honnête — c'est le même mouvement que le banc
     mobile du 2026-09-11, et il faut s'attendre à ce qu'il continue.
+    Puis, le 2026-09-13 : #880 ajoutée (le gate e2e mesure contre un backend
+    en hot reload, une recompilation en cours de campagne produisant 83
+    échecs qu'aucun artefact ne distingue d'une régression) et #871 retirée
+    parce que fermée. Le périmètre passe à 88. #880 non plus n'a pas été
+    décidée : elle a été SUBIE, en exécutant le Gantt — c'est la troisième
+    fois de suite, et ça confirme que le périmètre grossit à mesure qu'on
+    mesure, pas à mesure qu'on réfléchit. Puis #881 le même jour, relevée en
+    instruisant #864 : cinq transitions de dépense journalisent toutes
+    `ExpenseMarkedPaid`. Le périmètre passe à 89. Quatrième de suite trouvée
+    par l'exécution, et la troisième du même MOTIF — une capacité de
+    traçabilité écrite, présente à la revue, et inopérante. Puis #882, encore
+    le même jour et encore en instruisant #864 : dix-huit routes jettent
+    explicitement leur identité (`_user: AuthenticatedUser`), dont deux
+    listent les arriérés de toute l'instance — `get_overdue_calls()` ne prend
+    aucun argument. Le périmètre passe à 90. Cinq issues trouvées en une
+    journée d'exécution, zéro en réfléchissant : c'est la mesure la plus utile
+    que cette journée produise sur la méthode elle-même.
+  etat_a_la_derniere_generation: >-
+    88 issues, 88/88 « Agent IA Ready », les trois vérificateurs à 0 le
+    2026-09-13. La signature ci-dessus en atteste 87 : c'est elle qui est
+    datée, pas ce document.
   portee: >-
     Atteste le classement (exhaustif et exclusif), le chiffrage en bornes
     hautes de première passe, et que la préparation des stories est close.
@@ -33,7 +54,7 @@ signature_humaine:
 *Épopées et capacités. Généré par `scripts/backlog-structure.py` : ne pas
 éditer à la main, la prochaine génération écraserait la correction.*
 
-**88 issues ouvertes**, 10 épopées, 33 capacités. Classement exhaustif et exclusif : chaque issue appartient à exactement
+**89 issues ouvertes**, 10 épopées, 33 capacités. Classement exhaustif et exclusif : chaque issue appartient à exactement
 une capacité, et une issue non classée fait échouer la génération.
 
 ## Comment lire ce document
@@ -75,7 +96,7 @@ fabrication ; le Scrum Master de conception l'écrit sans détour :
 | Couche(s) | où le code atterrit, donc quelles gardes s'appliquent |
 | Taille + tours | le coût, sur les deux axes |
 
-**87 issues sur 88** portent les huit. Le relevé
+**89 issues sur 89** portent les huit. Le relevé
 d'origine, avant ce travail, donnait **zéro**.
 
 Le chiffre n'est pas écrit à la main : `scripts/backlog-pret.py` le relève
@@ -116,7 +137,7 @@ silence — y sont. Le backlog n'est pas bloqué à ce titre.
 
 ## E1 — Copropriété — le jumeau juridique
 
-`epic:copropriete` · 13 issues · 12.25 j · 49 tours
+`epic:copropriete` · 14 issues · 12.75 j · 51 tours
 
 Le contexte borné qui ne dépend de rien : ce que la loi belge dit d'une assemblée, d'un lot, d'une voix. Une erreur ici n'est pas un défaut d'affichage, c'est une décision annulable.
 
@@ -144,12 +165,13 @@ Le contexte borné qui ne dépend de rien : ce que la loi belge dit d'une assemb
 
 ### C1.3 — Le registre légal atteste ce qu'il déclare
 
-**Must** · `cap:C1.3` · 2 issues · 1.75 j · 7 tours · **2/2 prêtes**
+**Must** · `cap:C1.3` · 3 issues · 2.25 j · 9 tours · **3/3 prêtes**
 
 | Issue | Titre | Taille | Prête |
 |---|---|---|---|
 | [#846](https://github.com/gilmry/koprogo/issues/846) | Onze tables et une vue existent en base et ne sont lues par aucun code, dont … | M | oui |
 | [#847](https://github.com/gilmry/koprogo/issues/847) | Le registre légal atteste des obligations que ses tests ne vérifient pas : l'… | L | oui |
+| [#881](https://github.com/gilmry/koprogo/issues/881) | Cinq transitions de dépense journalisent toutes ExpenseMarkedPaid : le regist… | S | oui |
 
 ### C1.4 — Les organes de contrôle existent
 
@@ -236,18 +258,19 @@ Connaît `copropriete`. SEL, sondages, objets partagés, énergie : la partie du
 
 ## E4 — Plateforme — identité, périmètre, droits
 
-`epic:plateforme` · 10 issues · 9.00 j · 36 tours
+`epic:plateforme` · 11 issues · 10.00 j · 40 tours
 
 Ne dépend de rien. Qui est l'appelant, ce qu'il a le droit de voir, et ce qu'il peut exiger qu'on efface.
 
 ### C4.1 — Toute route décide de l'identité qu'elle reçoit
 
-**Must** · `cap:C4.1` · 2 issues · 2.00 j · 8 tours · **2/2 prêtes**
+**Must** · `cap:C4.1` · 3 issues · 3.00 j · 12 tours · **3/3 prêtes**
 
 | Issue | Titre | Taille | Prête |
 |---|---|---|---|
 | [#845](https://github.com/gilmry/koprogo/issues/845) | Trente routes ne vérifient aucune identité : modifier ou supprimer une assemb… | L | oui |
 | [#864](https://github.com/gilmry/koprogo/issues/864) | 87 routes prennent une identité sans s'en servir pour décider : supprimer le … | L | oui |
+| [#882](https://github.com/gilmry/koprogo/issues/882) | Dix-huit routes jettent explicitement leur identité — dont deux qui listent l… | L | oui |
 
 ### C4.2 — Le périmètre est l'ACP, et il survit à la navigation
 
@@ -328,7 +351,7 @@ Ne livre aucune capacité métier : elle rend les autres atteignables. BMAD la r
 
 ## T2 — Accessibilité et mobile
 
-`epic:accessibilite` · 5 issues · 3.50 j · 14 tours
+`epic:accessibilite` · 4 issues · 3.00 j · 12 tours
 
 La cible est mobile-first et l'application est écrite desktop-first. L'écart n'est pas cosmétique : il rend des capacités inatteignables.
 
@@ -343,13 +366,12 @@ La cible est mobile-first et l'application est écrite desktop-first. L'écart n
 
 ### C6.2 — Le produit est utilisable à une largeur de téléphone
 
-**Should** · `cap:C6.2` · 3 issues · 2.00 j · 8 tours · **3/3 prêtes**
+**Should** · `cap:C6.2` · 2 issues · 1.50 j · 6 tours · **2/2 prêtes**
 
 | Issue | Titre | Taille | Prête |
 |---|---|---|---|
 | [#866](https://github.com/gilmry/koprogo/issues/866) | Six tableaux illisibles sur téléphone, dont trois qui coupent leurs colonnes … | M | oui |
 | [#869](https://github.com/gilmry/koprogo/issues/869) | Aucune spec Playwright ne s'exécute à une largeur de téléphone, alors que tou… | M | oui |
-| [#871](https://github.com/gilmry/koprogo/issues/871) | Quatre défauts d'affichage relevés au banc mobile : NaN €, « Failed to fetch … | S | oui |
 
 ## T3 — Harnais de recette
 
@@ -359,15 +381,15 @@ Sprint 0 continué. Ce qui permet de BOUCLER : sans lui, aucune autre capacité 
 
 ### C7.1 — La recette peut se connecter et s'exécuter
 
-**Must** · `cap:C7.1` · 5 issues · 3.50 j · 14 tours · **4/5 prêtes**
+**Must** · `cap:C7.1` · 5 issues · 3.50 j · 14 tours · **5/5 prêtes**
 
 | Issue | Titre | Taille | Prête |
 |---|---|---|---|
 | [#696](https://github.com/gilmry/koprogo/issues/696) | Instabilité smoke suite Playwright CI : 109 échecs sur specs pré-existantes (… | M | oui |
-| [#832](https://github.com/gilmry/koprogo/issues/832) | Quinze specs Playwright échouent sans erreur d'identité : les ancrages existe… | M | oui |
 | [#870](https://github.com/gilmry/koprogo/issues/870) | La suite e2e ne peut plus se connecter à la démo : le repli admin123 est mort… | S | oui |
 | [#872](https://github.com/gilmry/koprogo/issues/872) | La pile de développement revendique les conteneurs de la démo : `docker compo… | L | oui |
-| [#877](https://github.com/gilmry/koprogo/issues/877) | L'image MinIO épinglée n'est plus tirable : le gate integration est rouge sur… | S | manque 4/8 |
+| [#877](https://github.com/gilmry/koprogo/issues/877) | L'image MinIO épinglée n'est plus tirable : le gate integration est rouge sur… | S | oui |
+| [#880](https://github.com/gilmry/koprogo/issues/880) | Le gate e2e mesure contre un backend en hot reload : une recompilation en cou… | M | oui |
 
 ### C7.2 — La taxonomie des tests est la gate de release
 
@@ -497,17 +519,17 @@ Des questions ouvertes, pas des défauts. La Méthode Foyer les veut en RFC, dis
 
 | Épopée | Issues | Jours | Tours |
 |---|---:|---:|---:|
-| E1 — Copropriété | 13 | 12.25 | 49 |
+| E1 — Copropriété | 14 | 12.75 | 51 |
 | E2 — Comptabilité | 3 | 2.50 | 10 |
 | E3 — Économie circulaire | 9 | 7.25 | 29 |
-| E4 — Plateforme | 10 | 9.00 | 36 |
+| E4 — Plateforme | 11 | 10.00 | 40 |
 | T1 — Refonte UX | 14 | 13.25 | 53 |
-| T2 — Accessibilité et mobile | 5 | 3.50 | 14 |
+| T2 — Accessibilité et mobile | 4 | 3.00 | 12 |
 | T3 — Harnais de recette | 9 | 6.75 | 27 |
 | T4 — Documentation vivante multi-persona | 14 | 11.25 | 45 |
 | T5 — Ops et infrastructure | 10 | 9.00 | 36 |
 | T6 — Arbitrages produit en attente | 1 | 0.50 | 2 |
-| **Total** | **88** | **75.25** | **301** |
+| **Total** | **89** | **76.25** | **305** |
 
 `S` = 0,5 j · `M` = 0,75 j · `L` = 1 j — wall-clock du superviseur, pas
 temps machine. Les tours mesurent l'autre axe, le coût en tokens.

@@ -56,10 +56,40 @@ const DECISION: [&str; 9] = [
     ".role ==",
 ];
 
-/// Mesuré le 2026-09-12, après l'isolement des huit routes IoT de #864.
+/// Mesuré le 2026-09-13, après le cloisonnement de vingt-deux routes (#864).
 ///
 /// Relevé, jamais estimé. Il ne peut que descendre.
-const SANS_DECISION_AU_2026_09_12: usize = 95;
+///
+/// ── 95 → 85 → 73, et par quoi ─────────────────────────────────────────────
+///
+/// Par le TRAVAIL, pas par la définition.
+///
+/// **95 → 85** : les cinq `PUT /budgets/{id}/*` et les cinq
+/// `PUT /etats-dates/{id}/*`, qui prenaient `AuthenticatedUser` sans s'en
+/// servir pour décider. Le test
+/// `security_le_cycle_de_vie_du_budget_inter_organisations_est_refuse` le
+/// démontre : sans le correctif, `PUT /budgets/{id}` rend **200 OK** au
+/// syndic d'une autre organisation.
+///
+/// **85 → 73** : les quatre POST d'assemblée (annuler, clôturer, reporter,
+/// valider le quorum — Art. 3.87), les quatre transitions de dépense,
+/// `assign_owner`, `create_quote` dont l'identité était nommée `_auth`, et
+/// **deux d'une forme que le relevé ne cherchait pas** :
+/// `list_call_for_funds` et `get_contributions_by_owner`. Ces deux-là
+/// cloisonnaient correctement dans leur branche nominale et **pas du tout**
+/// dans leur branche filtrée. Un paramètre facultatif — `building_id`,
+/// `owner_id` — contournait le chemin protégé, et les deux fois sur la même
+/// donnée : qui doit combien. Aucun cliquet qui compte des GESTIONNAIRES ne
+/// voit cette forme-là.
+///
+/// La liste `DECISION` n'a pas été touchée. Elle a failli l'être : les
+/// helpers posés s'appelaient d'abord `cloisonner_*`, que le détecteur ne
+/// connaît pas, et le compteur est resté à 95 alors que dix trous étaient
+/// bouchés. Allonger la liste aurait fait tomber le chiffre par une
+/// modification de l'instrument. Les helpers ont été renommés `verify_*` —
+/// l'idiome que ce dépôt emploie déjà partout ailleurs — et le compteur a
+/// suivi le travail.
+const SANS_DECISION_AU_2026_09_13: usize = 73;
 
 /// Les handlers qui prennent `AuthenticatedUser` sans trace de décision.
 fn sans_decision() -> BTreeMap<String, String> {
@@ -102,6 +132,250 @@ fn sans_decision() -> BTreeMap<String, String> {
         }
     }
     trouves
+}
+
+/// Les exceptions JUSTIFIÉES — ce que la LECTURE a établi (#864).
+///
+/// ── Pourquoi cette liste, et pourquoi elle n'est pas cosmétique ───────────
+///
+/// L'issue la réclame : « Il aurait sa liste d'exceptions justifiées :
+/// certaines routes n'ont légitimement rien à cloisonner. » Sans elle, le
+/// cliquet ne fait que COMPTER, et un compte ne distingue pas une route qui
+/// cloisonne autrement d'une route qui ne cloisonne pas du tout.
+///
+/// Ce n'est pas une nuance de vocabulaire. Le relevé contient une catégorie
+/// que l'énoncé de l'issue ne prévoyait pas et qui est la plus trompeuse :
+/// des routes qui contrôlent le RÔLE et jamais le PÉRIMÈTRE —
+/// `check_syndic_role`, `check_accountant_role`,
+/// `check_unit_ownership_permission`. Un syndic du cabinet A y approuve la
+/// facture du cabinet B. Le cliquet les compte, mais **par accident** :
+/// parce que le nom du helper n'est dans aucun motif, pas parce qu'il aurait
+/// compris qu'il manque le cloisonnement. Renommer un jour l'un de ces
+/// helpers `verify_*` les ferait sortir du compte **sans les corriger**.
+///
+/// D'où deux listes et non une : ce qui est EXCEPTÉ est écrit, et tout le
+/// reste est du travail à faire. Un nombre qui descend ne dit plus « moins de
+/// routes », il dit « plus de routes lues ».
+///
+/// ── Ce qu'une entrée atteste ──────────────────────────────────────────────
+///
+/// Que le gestionnaire a été LU, et pour les cas délégués, que le cas d'usage
+/// appelé a été lu aussi. Jamais que le détecteur s'est tu.
+const EXCEPTIONS: &[(&str, &str)] = &[
+    // ── Cloisonnée par un chemin que le motif textuel ne voit pas ──────────
+    (
+        "api_key_handlers.rs::revoke_api_key",
+        "UPDATE ... WHERE id = $1 AND organization_id = $2 — le cloisonnement \
+         est dans la clause SQL, qu'aucun motif ne lit",
+    ),
+    (
+        "api_key_handlers.rs::list_api_keys",
+        "SELECT ... WHERE organization_id = $1 — idem",
+    ),
+    (
+        "local_exchange_handlers.rs::delete_exchange",
+        "le cas d'usage refuse : `if exchange.provider_id != owner_id`, lu \
+         dans local_exchange_use_cases.rs:372",
+    ),
+    (
+        "document_handlers.rs::list_documents",
+        "`user.organization_id` passé au cas d'usage, qui borne la requête",
+    ),
+    (
+        "budget_handlers.rs::list_budgets",
+        "`organization_id` ET `building_id` passés au cas d'usage : le filtre \
+         facultatif ne remplace pas le bornage, il s'y ajoute",
+    ),
+    (
+        "expense_handlers.rs::list_expenses",
+        "`user.organization_id` passé au cas d'usage",
+    ),
+    (
+        "etat_date_handlers.rs::list_etats_dates",
+        "`user.organization_id` passé au cas d'usage",
+    ),
+    (
+        "meeting_handlers.rs::list_meetings",
+        "`user.organization_id` passé au cas d'usage",
+    ),
+    (
+        "iot_handlers.rs::create_iot_reading",
+        "`organization_id` passé au cas d'usage — corrigé par 46ee956a",
+    ),
+    (
+        "iot_handlers.rs::delete_linky_device",
+        "`organization_id` passé au cas d'usage — corrigé par 46ee956a",
+    ),
+    (
+        "iot_handlers.rs::toggle_linky_sync",
+        "`organization_id` passé au cas d'usage — corrigé par 46ee956a",
+    ),
+    // ── La route ne sert que son appelant : rien à cloisonner ──────────────
+    (
+        "notification_handlers.rs::list_my_notifications",
+        "`list_user_notifications(user.user_id)` — l'appelant ne peut lire \
+         que les siennes",
+    ),
+    (
+        "notification_handlers.rs::get_user_preferences",
+        "`get_user_preferences(user.user_id)` — idem",
+    ),
+    (
+        "ticket_handlers.rs::list_my_tickets",
+        "`list_my_tickets(user.user_id)` — idem",
+    ),
+    (
+        "owner_handlers.rs::get_my_owner",
+        "`find_owner_by_user_id(user.user_id)` — la route EST « moi »",
+    ),
+    (
+        "resolution_handlers.rs::list_meeting_resolutions",
+        "appelle `verifier_mandat_sur_ag`, un garde REEL de ce depot que le \
+         detecteur ne connait pas parce qu'il porte un nom francais. Meme \
+         angle mort que `cloisonner_*` le 2026-09-13 : la liste DECISION dit \
+         les idiomes du depot, et le depot en a deux dialectes",
+    ),
+    (
+        "resolution_handlers.rs::list_resolution_votes",
+        "remonte a l'AG par la resolution puis applique le meme \
+         `verifier_mandat_sur_ag`",
+    ),
+    (
+        "energy_campaign_handlers.rs::list_campaigns",
+        "`get_campaigns_by_organization(org_id)` — l'organisation vient du \
+         jeton, jamais de la requete",
+    ),
+    (
+        "energy_bill_upload_handlers.rs::get_my_uploads",
+        "`get_my_uploads(user.user_id)` — la route EST « mes televersements »",
+    ),
+    (
+        "notification_handlers.rs::list_unread_notifications",
+        "`list_unread_notifications(user.user_id)`",
+    ),
+    (
+        "notification_handlers.rs::get_notification_stats",
+        "`get_user_stats(user.user_id)`",
+    ),
+    (
+        "notification_handlers.rs::get_preference",
+        "la preference est cherchee pour `user.user_id`",
+    ),
+    (
+        "ticket_handlers.rs::list_assigned_tickets",
+        "`list_assigned_tickets(user.user_id)`",
+    ),
+    (
+        "consent_handlers.rs::get_consent_status",
+        "`get_consent_status(auth.user_id)` — le consentement de l'appelant",
+    ),
+    (
+        "marketplace_handlers.rs::create_service_provider",
+        "l'organisation vient du jeton (`user.organization_id`) et est \
+         passee au cas d'usage : le prestataire naît dans le perimetre de \
+         l'appelant, jamais ailleurs",
+    ),
+    (
+        "dashboard_handlers.rs::get_recent_transactions",
+        "`user.organization_id` exige puis borne la requete",
+    ),
+    (
+        "two_factor_handlers.rs::setup_2fa",
+        "`auth.organization_id` exige, puis passe au cas d'usage",
+    ),
+    (
+        "auth_handlers.rs::switch_role",
+        "le cas d'usage refuse : `if target_role.user_id != user.id` \
+         (auth_use_cases.rs:271). On ne prend pas le role d'un autre",
+    ),
+    (
+        "auth_handlers.rs::logout",
+        "`revoke_all_refresh_tokens(user.user_id)` — on ne deconnecte que soi",
+    ),
+    (
+        "gamification_handlers.rs::get_user_achievements",
+        "`get_user_achievements(auth.user_id)`",
+    ),
+    (
+        "gamification_handlers.rs::get_recent_achievements",
+        "`get_recent_achievements(auth.user_id, limit)`",
+    ),
+    (
+        "gamification_handlers.rs::list_user_active_challenges",
+        "`list_user_active_progress(auth.user_id)`",
+    ),
+    (
+        "gamification_handlers.rs::award_achievement",
+        "décerne à `auth.user_id`, jamais à un tiers. L'intégrité du jeu est \
+         un autre sujet ; le cloisonnement inter-organisations n'est pas en \
+         cause",
+    ),
+];
+
+/// Mesuré le 2026-09-13. Relevé, jamais estimé.
+///
+/// Ce nombre descend de deux façons, et une seule est du travail de sécurité :
+/// en CORRIGEANT une route (elle sort du relevé), ou en la LISANT et en
+/// l'inscrivant aux exceptions (elle sort du non-classé). Les deux sont du
+/// travail ; aucune ne touche à la définition de l'instrument.
+const NON_CLASSEES_AU_2026_09_13: usize = 40;
+
+#[test]
+fn chaque_exception_est_encore_dans_le_releve() {
+    // Une exception qui ne correspond plus à rien est pire qu'absente : elle
+    // laisse croire qu'une route a été lue et jugée sans danger, alors que
+    // c'est une AUTRE route qui porte ce nom, ou qu'elle a disparu.
+    //
+    // Et le cas le plus vicieux : si quelqu'un ajoute un `verify_` à une
+    // route exceptée, elle sort du relevé, l'exception devient muette, et
+    // plus rien ne signale que la justification écrite ici est périmée.
+    let releve = sans_decision();
+    let orphelines: Vec<&str> = EXCEPTIONS
+        .iter()
+        .map(|(r, _)| *r)
+        .filter(|r| !releve.contains_key(*r))
+        .collect();
+
+    assert!(
+        orphelines.is_empty(),
+        "Ces exceptions ne correspondent à aucune route du relevé :\n{}\n\n\
+         Soit la route a été renommée ou supprimée, soit elle porte désormais \
+         un marqueur de décision et n'a plus besoin d'exception. Dans les deux \
+         cas, retirez l'entrée : une justification qui ne justifie plus rien \
+         se lit comme un accord.",
+        orphelines
+            .iter()
+            .map(|r| format!("  {r}"))
+            .collect::<Vec<_>>()
+            .join("\n")
+    );
+}
+
+#[test]
+fn le_nombre_de_routes_non_lues_ne_grossit_pas() {
+    let releve = sans_decision();
+    let exceptees: std::collections::BTreeSet<&str> = EXCEPTIONS.iter().map(|(r, _)| *r).collect();
+    let non_classees: Vec<&String> = releve
+        .keys()
+        .filter(|r| !exceptees.contains(r.as_str()))
+        .collect();
+    let n = non_classees.len();
+
+    assert!(
+        n <= NON_CLASSEES_AU_2026_09_13,
+        "{n} routes du relevé n'ont été NI corrigées NI lues, contre \
+         {NON_CLASSEES_AU_2026_09_13} le 2026-09-13.\n\n\
+         `@edge` de #864 : « chacune est classée cloisonnée, légitimement non \
+         cloisonnée avec sa raison écrite, ou corrigée. Aucune n'est déclarée \
+         traitée sans lecture. »\n\n\
+         Les dix premières à lire :\n{}",
+        non_classees
+            .iter()
+            .take(10)
+            .map(|r| format!("  {r}"))
+            .collect::<Vec<_>>()
+            .join("\n")
+    );
 }
 
 #[test]
@@ -150,9 +424,9 @@ fn la_dette_didentite_sans_decision_ne_grossit_pas() {
         .collect();
 
     assert!(
-        n <= SANS_DECISION_AU_2026_09_12,
+        n <= SANS_DECISION_AU_2026_09_13,
         "{n} routes prennent `AuthenticatedUser` sans trace de décision, contre \
-         {SANS_DECISION_AU_2026_09_12} mesurées le 2026-09-12.\n\n\
+         {SANS_DECISION_AU_2026_09_13} mesurées le 2026-09-13.\n\n\
          Une route qui prend une identité et ne s'en sert que pour journaliser \
          A L'AIR gardée : elle passe la revue, elle passe les autres gardes, et \
          elle laisse passer le geste.\n\n\
