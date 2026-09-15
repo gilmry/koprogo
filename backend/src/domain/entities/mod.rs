@@ -49,8 +49,8 @@ pub use crate::domain::copropriete::mandate::{
 };
 pub use crate::domain::copropriete::meeting;
 pub use crate::domain::copropriete::meeting::{
-    Meeting, MeetingCompletionChecklist, MeetingNotCompletableError, MeetingStatus, MeetingType,
-    MissingInvariant,
+    Meeting, MeetingCompletionChecklist, MeetingMode, MeetingModeError, MeetingNotCompletableError,
+    MeetingStatus, MeetingType, MissingInvariant,
 };
 pub use crate::domain::copropriete::poll;
 pub use crate::domain::copropriete::poll::{Poll, PollOption, PollStatus, PollType};

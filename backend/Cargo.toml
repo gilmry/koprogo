@@ -194,3 +194,8 @@ harness = false
 [[test]]
 name = "bdd_portfolio"
 harness = false
+
+# Story 4.1 - Meeting.mode hybrid + quorum agrégé Decimal (Art. 3.87 §1er/§5 CC)
+[[test]]
+name = "bdd_meeting_hybrid_quorum"
+harness = false
