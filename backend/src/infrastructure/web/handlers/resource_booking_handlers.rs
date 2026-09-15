@@ -761,9 +761,24 @@ pub struct CheckConflictsQuery {
 #[get("/resource-bookings/check-conflicts")]
 pub async fn check_conflicts(
     data: web::Data<AppState>,
-    _auth: AuthenticatedUser,
+    auth: AuthenticatedUser,
     query: web::Query<CheckConflictsQuery>,
 ) -> impl Responder {
+    // Cloisonnement (#882) : `building_id` arrive en paramètre de requête sans
+    // aucune vérification. Une réservation dit qui a réservé la salle ou le
+    // parking visiteur, et QUAND — la même donnée que `verify_booking_org_access`
+    // protège déjà pour les réservations existantes de ce fichier.
+    if let Err(err) = verify_building_org_access(
+        &auth,
+        query.building_id,
+        &data.building_use_cases,
+        &data.acp_use_cases,
+    )
+    .await
+    {
+        return err.error_response();
+    }
+
     // Parse resource_type
     let resource_type: ResourceType =
         match serde_json::from_str(&format!("\"{}\"", query.resource_type)) {

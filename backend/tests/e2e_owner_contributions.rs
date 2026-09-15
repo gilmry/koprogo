@@ -496,6 +496,115 @@ async fn test_owner_contributions_outstanding_missing_owner_id() {
     );
 }
 
+/// #882 — @security / @negative : `owner_id` d'une AUTRE organisation est
+/// refusé. Avant #882, `_user` était pris et jeté : n'importe quel
+/// utilisateur authentifié lisait les arriérés de n'importe quel
+/// copropriétaire, dans n'importe quelle organisation, en connaissant son
+/// seul UUID.
+#[actix_web::test]
+#[serial]
+async fn security_outstanding_contributions_refuse_un_owner_id_dune_autre_organisation() {
+    let (app_state, _container, org_a) = common::setup_test_db().await;
+    let org_b = common::create_test_organization(&app_state).await;
+
+    let (token_a, _owner_a, _unit_a, _building_a) =
+        create_contribution_fixtures(&app_state, org_a).await;
+    let (_token_b, owner_b, unit_b, _building_b) =
+        create_contribution_fixtures(&app_state, org_b).await;
+
+    // Une contribution impayée bien réelle chez B, pour que le refus ne
+    // tienne pas simplement à l'absence de données.
+    app_state
+        .owner_contribution_use_cases
+        .create_contribution(
+            org_b,
+            owner_b,
+            Some(unit_b),
+            "Contribution de B".to_string(),
+            rust_decimal_macros::dec!(200.00),
+            koprogo_api::domain::entities::ContributionType::Regular,
+            chrono::Utc::now(),
+            None,
+        )
+        .await
+        .expect("précondition : contribution de B");
+
+    let app = test::init_service(
+        App::new()
+            .app_data(app_state.clone())
+            .configure(configure_routes),
+    )
+    .await;
+
+    // Le syndic de A demande les arriérés du copropriétaire de B.
+    let req = test::TestRequest::get()
+        .uri(&format!(
+            "/api/v1/owner-contributions/outstanding?owner_id={}",
+            owner_b
+        ))
+        .insert_header((header::AUTHORIZATION, format!("Bearer {}", token_a)))
+        .to_request();
+
+    let resp = test::call_service(&app, req).await;
+    let statut = resp.status().as_u16();
+
+    assert!(
+        statut == 403 || statut == 404,
+        "FUITE INTER-ORGANISATIONS : le cabinet A a lu les arriérés d'un \
+         copropriétaire du cabinet B, statut {}",
+        statut
+    );
+}
+
+/// #882 — @edge : un utilisateur SANS organisation n'est pas traité par
+/// défaut comme un superadministrateur.
+#[actix_web::test]
+#[serial]
+async fn edge_outstanding_contributions_refuse_lutilisateur_sans_organisation() {
+    let (app_state, _container, org_id) = common::setup_test_db().await;
+    let (_token, owner_id, _unit_id, _building_id) =
+        create_contribution_fixtures(&app_state, org_id).await;
+
+    let email = format!("sans-org-{}@example.com", Uuid::new_v4());
+    let login = app_state
+        .auth_use_cases
+        .register(koprogo_api::application::dto::RegisterRequest {
+            email,
+            password: "SecurePass123!".to_string(),
+            first_name: "Sans".to_string(),
+            last_name: "Organisation".to_string(),
+            role: "owner".to_string(),
+            organization_id: None,
+        })
+        .await
+        .expect("register sans organisation");
+
+    let app = test::init_service(
+        App::new()
+            .app_data(app_state.clone())
+            .configure(configure_routes),
+    )
+    .await;
+
+    let req = test::TestRequest::get()
+        .uri(&format!(
+            "/api/v1/owner-contributions/outstanding?owner_id={}",
+            owner_id
+        ))
+        .insert_header((header::AUTHORIZATION, format!("Bearer {}", login.token)))
+        .to_request();
+
+    let resp = test::call_service(&app, req).await;
+
+    assert_eq!(
+        resp.status().as_u16(),
+        403,
+        "un utilisateur sans organisation ne doit pas être traité comme un \
+         superadministrateur par défaut, got: {}",
+        resp.status()
+    );
+}
+
 #[actix_web::test]
 #[serial]
 async fn test_owner_contributions_unauthorized() {

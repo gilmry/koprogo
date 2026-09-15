@@ -1915,6 +1915,12 @@ pub async fn mcp_info_endpoint() -> HttpResponse {
 /// Returns a Markdown document that AI clients (like Claude Desktop) can fetch
 /// to understand KoproGo context, available tools, and Belgian legal rules.
 /// Issue #263
+///
+/// Cloisonnement (#882) : classée LÉGITIME. `_claims` n'est jamais utilisé
+/// parce que le corps servi est `include_str!("../../mcp_system_prompt.md")`
+/// — un fichier statique compilé dans le binaire, identique pour tout
+/// appelant. Il n'y a pas d'organisation à cloisonner ici ; l'identité reste
+/// exigée pour fermer la route aux appelants anonymes.
 #[get("/mcp/system-prompt")]
 pub async fn mcp_system_prompt_endpoint(
     _claims: AuthenticatedUser,
@@ -1930,6 +1936,10 @@ pub async fn mcp_system_prompt_endpoint(
 /// Returns a comprehensive index of Belgian legal rules, GDPR articles,
 /// and KoproGo-specific compliance rules. Embedded as static JSON.
 /// Issue #262
+///
+/// Cloisonnement (#882) : classée LÉGITIME, même raison que
+/// `mcp_system_prompt_endpoint` juste au-dessus — `include_str!("../../legal_index.json")`
+/// est un index légal statique, identique pour tout appelant.
 #[get("/mcp/legal-index")]
 pub async fn mcp_legal_index_endpoint(
     _claims: AuthenticatedUser,

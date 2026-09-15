@@ -154,6 +154,16 @@ impl TechnicalInspectionRepository for PostgresTechnicalInspectionRepository {
         let mut where_clauses = vec![];
         let mut bind_count = 0;
 
+        // #882 : `organization_id` était un champ du filtre, mais jamais
+        // traduit en clause SQL — le fournir n'avait donc aucun effet, et
+        // l'absence en avait moins encore : la liste rendait TOUS les
+        // contrôles techniques de l'instance.
+        #[allow(unused_variables)]
+        if let Some(organization_id) = filters.organization_id {
+            bind_count += 1;
+            where_clauses.push(format!("organization_id = ${}", bind_count));
+        }
+
         #[allow(unused_variables)]
         if let Some(building_id) = filters.building_id {
             bind_count += 1;
@@ -185,6 +195,9 @@ impl TechnicalInspectionRepository for PostgresTechnicalInspectionRepository {
         );
         let mut count_query = sqlx::query_scalar::<_, i64>(&count_query);
 
+        if let Some(organization_id) = filters.organization_id {
+            count_query = count_query.bind(organization_id);
+        }
         if let Some(building_id) = filters.building_id {
             count_query = count_query.bind(building_id);
         }
@@ -223,6 +236,9 @@ impl TechnicalInspectionRepository for PostgresTechnicalInspectionRepository {
 
         let mut select_query = sqlx::query(&select_query);
 
+        if let Some(organization_id) = filters.organization_id {
+            select_query = select_query.bind(organization_id);
+        }
         if let Some(building_id) = filters.building_id {
             select_query = select_query.bind(building_id);
         }

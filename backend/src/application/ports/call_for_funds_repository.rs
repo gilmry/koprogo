@@ -25,6 +25,10 @@ pub trait CallForFundsRepository: Send + Sync {
     /// Delete a call for funds
     async fn delete(&self, id: Uuid) -> Result<bool, String>;
 
-    /// Find overdue calls for funds (past due date, not completed/cancelled)
-    async fn find_overdue(&self) -> Result<Vec<CallForFunds>, String>;
+    /// Find overdue calls for funds (past due date, not completed/cancelled),
+    /// scoped to one organization.
+    ///
+    /// `organization_id` est obligatoire depuis #882 : sans lui, cette
+    /// méthode rendait les arriérés de TOUTE l'instance à qui la lisait.
+    async fn find_overdue(&self, organization_id: Uuid) -> Result<Vec<CallForFunds>, String>;
 }

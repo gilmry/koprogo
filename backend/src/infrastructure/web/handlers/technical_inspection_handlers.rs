@@ -3,6 +3,7 @@ use crate::application::dto::{
     PageRequest, TechnicalInspectionFilters, UpdateTechnicalInspectionDto,
 };
 use crate::infrastructure::audit::{AuditEventType, AuditLogEntry};
+use crate::infrastructure::web::middleware::scope_guard::verify_building_org_access;
 use crate::infrastructure::web::{AppState, AuthenticatedUser};
 use actix_web::{delete, get, post, put, web, HttpResponse, Responder, ResponseError};
 use uuid::Uuid;
@@ -152,24 +153,48 @@ pub async fn list_organization_technical_inspections(
 #[get("/technical-inspections")]
 pub async fn list_technical_inspections_paginated(
     state: web::Data<AppState>,
-    _user: AuthenticatedUser,
+    user: AuthenticatedUser,
     page_request: web::Query<PageRequest>,
     filters: web::Query<TechnicalInspectionFilters>,
 ) -> impl Responder {
-    // Cette route ne prenait AUCUNE identité : ni `AuthenticatedUser`, ni
-    // jeton lu à la main. Le cliquet de #772 ne la voyait pas — il ne
-    // compte que les routes PRENANT une identité sans s'en servir.
-    // Cf. #845.
-    //
-    // L'identité est EXIGÉE mais pas encore employée à filtrer : la liste
-    // paginée ne porte pas de périmètre, et l'y ajouter demande de savoir si
-    // elle doit être bornée par organisation ou par immeuble. Exiger un jeton
-    // ferme la porte anonyme sans préjuger de ce filtrage — la dette de
-    // lecture imbriquée reste suivie par `garde_lecture`.
+    // Cloisonnement (#882) : `organization_id` ET `building_id` sont des
+    // paramètres de requête CLIENT, transmis tels quels au filtre — et le
+    // filtre lui-même ne traduisait pas `organization_id` en clause SQL.
+    // Un `organization_id` arbitraire suffisait donc à lire les contrôles
+    // techniques d'une autre organisation, sans même que le filtrage
+    // n'échoue silencieusement.
+    let mut filters = filters.into_inner();
+
+    match filters.organization_id {
+        Some(org_id) => {
+            if let Err(e) = user.verify_org_access(org_id) {
+                return HttpResponse::Forbidden().json(serde_json::json!({"error": e}));
+            }
+        }
+        None => {
+            // Non fourni : borné à l'organisation de l'appelant. `None` pour
+            // un superadministrateur, qui voit alors toute l'instance —
+            // c'est le rôle qui l'y autorise, pas l'absence de filtre.
+            filters.organization_id = user.effective_org_filter();
+        }
+    }
+
+    if let Some(building_id) = filters.building_id {
+        if let Err(err) = verify_building_org_access(
+            &user,
+            building_id,
+            &state.building_use_cases,
+            &state.acp_use_cases,
+        )
+        .await
+        {
+            return err.error_response();
+        }
+    }
 
     match state
         .technical_inspection_use_cases
-        .list_technical_inspections_paginated(&page_request.into_inner(), &filters.into_inner())
+        .list_technical_inspections_paginated(&page_request.into_inner(), &filters)
         .await
     {
         Ok(response) => HttpResponse::Ok().json(response),

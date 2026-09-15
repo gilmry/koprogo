@@ -134,6 +134,15 @@ impl WorkReportRepository for PostgresWorkReportRepository {
         let mut where_clauses = vec![];
         let mut bind_count = 0;
 
+        // #882 : `organization_id` était un champ du filtre, jamais traduit en
+        // clause SQL — la liste rendait TOUS les rapports de travaux de
+        // l'instance, quel que soit le filtre fourni.
+        #[allow(unused_variables)]
+        if let Some(organization_id) = filters.organization_id {
+            bind_count += 1;
+            where_clauses.push(format!("organization_id = ${}", bind_count));
+        }
+
         #[allow(unused_variables)]
         if let Some(building_id) = filters.building_id {
             bind_count += 1;
@@ -156,6 +165,9 @@ impl WorkReportRepository for PostgresWorkReportRepository {
         let count_query = format!("SELECT COUNT(*) FROM work_reports {}", where_clause);
         let mut count_query = sqlx::query_scalar::<_, i64>(&count_query);
 
+        if let Some(organization_id) = filters.organization_id {
+            count_query = count_query.bind(organization_id);
+        }
         if let Some(building_id) = filters.building_id {
             count_query = count_query.bind(building_id);
         }
@@ -189,6 +201,9 @@ impl WorkReportRepository for PostgresWorkReportRepository {
 
         let mut select_query = sqlx::query(&select_query);
 
+        if let Some(organization_id) = filters.organization_id {
+            select_query = select_query.bind(organization_id);
+        }
         if let Some(building_id) = filters.building_id {
             select_query = select_query.bind(building_id);
         }

@@ -278,9 +278,30 @@ pub async fn list_call_for_funds(
 #[get("/call-for-funds/overdue")]
 pub async fn get_overdue_calls(
     state: web::Data<AppState>,
-    _user: AuthenticatedUser,
+    user: AuthenticatedUser,
 ) -> HttpResponse {
-    match state.call_for_funds_use_cases.get_overdue_calls().await {
+    // Cloisonnement (#882) : cette route rendait TOUS les appels de fonds en
+    // retard de l'INSTANCE ENTIÈRE à n'importe quel utilisateur authentifié —
+    // aucun argument, aucune organisation, aucune ACP. C'est une donnée
+    // personnelle à caractère financier (qui doit combien) sur une instance
+    // mutualisée entre plusieurs cabinets syndics.
+    //
+    // `get_overdue_calls` ne peut désormais plus être appelée sans
+    // organisation : le défaut est corrigé à la SIGNATURE du cas d'usage, pas
+    // seulement ici.
+    let organization_id = match user.organization_id {
+        Some(org_id) => org_id,
+        None => {
+            return HttpResponse::BadRequest()
+                .json(serde_json::json!({ "error": "Organization ID required" }))
+        }
+    };
+
+    match state
+        .call_for_funds_use_cases
+        .get_overdue_calls(organization_id)
+        .await
+    {
         Ok(calls) => {
             let responses: Vec<CallForFundsResponse> = calls.into_iter().map(Into::into).collect();
             HttpResponse::Ok().json(responses)

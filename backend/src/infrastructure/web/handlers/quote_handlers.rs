@@ -135,6 +135,14 @@ pub async fn list_building_quotes(
 
 /// GET /api/v1/contractors/:contractor_id/quotes
 /// List all quotes for a contractor
+///
+/// Cloisonnement (#882) : classée, non corrigée. `list_by_contractor` rend
+/// TOUS les devis soumis par ce prestataire, toutes ACP confondues — la même
+/// donnée (prix, projet) que `list_building_quotes` protège déjà par
+/// immeuble. La clé de cette route est le PRESTATAIRE, pas un immeuble ou une
+/// ACP : aucun garde de ce fichier ne s'y applique directement, il faudrait
+/// soit filtrer côté repository par les ACP visibles de l'appelant, soit
+/// restreindre la route au superadministrateur ou au prestataire lui-même.
 #[get("/contractors/{contractor_id}/quotes")]
 pub async fn list_contractor_quotes(
     data: web::Data<AppState>,
@@ -393,9 +401,36 @@ pub async fn withdraw_quote(
 #[post("/quotes/compare")]
 pub async fn compare_quotes(
     data: web::Data<AppState>,
-    _auth: AuthenticatedUser,
+    auth: AuthenticatedUser,
     request: web::Json<QuoteComparisonRequestDto>,
 ) -> impl Responder {
+    // Cloisonnement (#882) : chaque devis comparé doit relever d'une ACP que
+    // cet utilisateur a le droit de voir. Le cas d'usage vérifie seulement que
+    // les devis partagent le même immeuble — une cohérence métier, pas un
+    // périmètre — donc lire la concurrence d'une autre copropriété suffisait
+    // à obtenir ses prix et prestataires, en connaissant trois UUID de devis.
+    for id_str in &request.quote_ids {
+        let quote_id = match Uuid::parse_str(id_str) {
+            Ok(id) => id,
+            Err(_) => {
+                return HttpResponse::BadRequest().json(serde_json::json!({
+                    "error": format!("Invalid quote_id format: {}", id_str)
+                }))
+            }
+        };
+        if let Err(err) = verify_quote_org_access(
+            &auth,
+            quote_id,
+            &data.quote_use_cases,
+            &data.building_use_cases,
+            &data.acp_use_cases,
+        )
+        .await
+        {
+            return err.error_response();
+        }
+    }
+
     match data
         .quote_use_cases
         .compare_quotes(request.into_inner())

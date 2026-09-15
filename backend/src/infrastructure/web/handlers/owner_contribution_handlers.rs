@@ -309,7 +309,7 @@ pub async fn get_contributions_by_owner(
 #[get("/owner-contributions/outstanding")]
 pub async fn get_outstanding_contributions(
     state: web::Data<AppState>,
-    _user: AuthenticatedUser,
+    user: AuthenticatedUser,
     query: web::Query<std::collections::HashMap<String, String>>,
 ) -> HttpResponse {
     let owner_id = match query.get("owner_id") {
@@ -325,6 +325,14 @@ pub async fn get_outstanding_contributions(
                 .json(serde_json::json!({ "error": "owner_id is required" }))
         }
     };
+
+    // Cloisonnement (#882) : `owner_id` arrivait en paramètre de requête sans
+    // aucune vérification — n'importe quel utilisateur authentifié pouvait
+    // lire les arriérés d'un copropriétaire quelconque, dans n'importe quelle
+    // organisation, en connaissant son seul UUID.
+    if let Err(err) = verify_owner_org_access(&user, owner_id, &state.owner_use_cases).await {
+        return err.error_response();
+    }
 
     match state
         .owner_contribution_use_cases
