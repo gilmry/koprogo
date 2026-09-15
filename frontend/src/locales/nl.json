@@ -4137,7 +4137,18 @@
     "validity": "Geldigheidsduur",
     "copyNow": "Deze link wordt nooit meer getoond. Kopieer hem nu en bezorg hem aan de ontvanger.",
     "copy": "Kopiëren",
-    "issueAnother": "Nieuwe link aanmaken"
+    "issueAnother": "Nieuwe link aanmaken",
+    "crTitle": "Interventieverslag",
+    "crActionVerb": "Verslag indienen",
+    "crWorkDate": "Datum van interventie",
+    "crCompteRendu": "Verslag",
+    "crCompteRenduPlaceholder": "Beschrijf de uitgevoerde werken…",
+    "crParts": "Vervangen onderdelen",
+    "crAddPart": "Onderdeel toevoegen",
+    "crPartName": "Naam van het onderdeel",
+    "crPartReference": "Referentie",
+    "crPartQuantity": "Aantal",
+    "crRemovePart": "Dit onderdeel verwijderen"
   },
   "technicalSpecs": {
     "submittedForSignature": "Fiche ingediend ter ondertekening.",

@@ -405,3 +405,166 @@ describe("MagicLinkContractorPage — Story 3.3", () => {
     });
   });
 });
+
+// ---------------------------------------------------------------------------
+// #835 — scope "contractor_report" : le rapport d'intervention rejoint cet
+// écran unique, absorbant le second système de liens magiques parallèle
+// (`/contractor/?token=`, page distincte avec JS inline non testé).
+// ---------------------------------------------------------------------------
+
+describe("MagicLinkContractorPage — contractor_report scope (#835)", () => {
+  const reportProps = {
+    token: "tok-report-456",
+    scopeKind: "contractor_report" as const,
+    scope: {
+      id: "report-1",
+      contractor_name: "Toiture Meunier SPRL",
+      status: "draft",
+    },
+  };
+
+  it("@happy views the report then submits work_date/compte_rendu/parts via /c/{token}/respond", async () => {
+    fetchMock.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      json: async () => ({ id: "report-1", status: "submitted" }),
+    } as unknown as Response);
+
+    const { getByTestId } = render(MagicLinkContractorPage, {
+      props: reportProps,
+    });
+
+    await waitFor(() =>
+      expect(getByTestId("pwa-screen-1-summary")).toBeInTheDocument(),
+    );
+    (getByTestId("pwa-summary-next") as HTMLButtonElement).click();
+    await waitFor(() =>
+      expect(getByTestId("pwa-screen-2-action")).toBeInTheDocument(),
+    );
+
+    const workDate = getByTestId("pwa-cr-work-date-input") as HTMLInputElement;
+    workDate.value = "2026-09-10";
+    workDate.dispatchEvent(new Event("input", { bubbles: true }));
+
+    const compteRendu = getByTestId(
+      "pwa-cr-compte-rendu-input",
+    ) as HTMLTextAreaElement;
+    compteRendu.value = "Remplacement du joint défectueux.";
+    compteRendu.dispatchEvent(new Event("input", { bubbles: true }));
+
+    (getByTestId("pwa-cr-add-part") as HTMLButtonElement).click();
+    await waitFor(() =>
+      expect(getByTestId("pwa-cr-part-name-0")).toBeInTheDocument(),
+    );
+    const partName = getByTestId("pwa-cr-part-name-0") as HTMLInputElement;
+    partName.value = "Joint torique";
+    partName.dispatchEvent(new Event("input", { bubbles: true }));
+
+    const submitBtn = getByTestId("pwa-action-submit") as HTMLButtonElement;
+    await waitFor(() => expect(submitBtn.disabled).toBe(false));
+    submitBtn.click();
+
+    await waitFor(() =>
+      expect(getByTestId("pwa-screen-3-confirm")).toBeInTheDocument(),
+    );
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const [calledUrl, calledInit] = fetchMock.mock.calls[0] as [
+      string,
+      RequestInit,
+    ];
+    expect(calledUrl).toContain("/c/tok-report-456/respond");
+    const body = JSON.parse(calledInit.body as string);
+    expect(body.compte_rendu).toBe("Remplacement du joint défectueux.");
+    expect(body.work_date).toContain("2026-09-10");
+    expect(body.parts_replaced).toEqual([
+      { name: "Joint torique", reference: null, quantity: 1, photo_document_id: null },
+    ]);
+  });
+
+  it("@edge offline draft (work date + compte-rendu) survives a remount, unifying the offline capability the absorbed system had", async () => {
+    idbHelper.seedDraft(reportProps.token, {
+      workDate: "2026-09-11",
+      compteRendu: "Brouillon rédigé hors ligne",
+      parts: [],
+    });
+
+    const { getByTestId } = render(MagicLinkContractorPage, {
+      props: reportProps,
+    });
+
+    await waitFor(() =>
+      expect(getByTestId("pwa-screen-1-summary")).toBeInTheDocument(),
+    );
+    (getByTestId("pwa-summary-next") as HTMLButtonElement).click();
+
+    await waitFor(() => {
+      const textarea = getByTestId(
+        "pwa-cr-compte-rendu-input",
+      ) as HTMLTextAreaElement;
+      expect(textarea.value).toBe("Brouillon rédigé hors ligne");
+    });
+    const workDate = getByTestId("pwa-cr-work-date-input") as HTMLInputElement;
+    expect(workDate.value).toBe("2026-09-11");
+  });
+
+  it("@security a report scope never renders the generic message/amount fields (scope cloisonnement on screen)", async () => {
+    const { getByTestId, queryByTestId } = render(MagicLinkContractorPage, {
+      props: reportProps,
+    });
+
+    await waitFor(() =>
+      expect(getByTestId("pwa-screen-1-summary")).toBeInTheDocument(),
+    );
+    (getByTestId("pwa-summary-next") as HTMLButtonElement).click();
+    await waitFor(() =>
+      expect(getByTestId("pwa-cr-compte-rendu-input")).toBeInTheDocument(),
+    );
+
+    expect(queryByTestId("pwa-action-message-input")).toBeNull();
+    expect(queryByTestId("pwa-action-amount-input")).toBeNull();
+  });
+
+  it("@negative backend rejects a cross-scope link (403) and the error is shown explicitly, never silently", async () => {
+    fetchMock.mockResolvedValueOnce({
+      ok: false,
+      status: 403,
+      json: async () => ({
+        error: "Lien invalide",
+        kind: "magic_link_invalid",
+      }),
+    } as unknown as Response);
+
+    const { getByTestId, queryByTestId } = render(MagicLinkContractorPage, {
+      props: reportProps,
+    });
+
+    await waitFor(() =>
+      expect(getByTestId("pwa-screen-1-summary")).toBeInTheDocument(),
+    );
+    (getByTestId("pwa-summary-next") as HTMLButtonElement).click();
+    await waitFor(() =>
+      expect(getByTestId("pwa-cr-work-date-input")).toBeInTheDocument(),
+    );
+
+    const workDate = getByTestId("pwa-cr-work-date-input") as HTMLInputElement;
+    workDate.value = "2026-09-10";
+    workDate.dispatchEvent(new Event("input", { bubbles: true }));
+    const compteRendu = getByTestId(
+      "pwa-cr-compte-rendu-input",
+    ) as HTMLTextAreaElement;
+    compteRendu.value = "Tentative sur un lien du mauvais périmètre.";
+    compteRendu.dispatchEvent(new Event("input", { bubbles: true }));
+
+    const submitBtn = getByTestId("pwa-action-submit") as HTMLButtonElement;
+    await waitFor(() => expect(submitBtn.disabled).toBe(false));
+    submitBtn.click();
+
+    await waitFor(() =>
+      expect(getByTestId("pwa-action-error")).toHaveTextContent(
+        /Lien invalide/,
+      ),
+    );
+    expect(queryByTestId("pwa-screen-3-confirm")).toBeNull();
+  });
+});

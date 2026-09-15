@@ -89,6 +89,10 @@ const PUBLIQUES: &[(&str, &str)] = &[
         "coordonnées du syndic, que l'Art. 3.89 rend publiques",
     ),
     ("/c/{token}", "lien magique : le jeton EST l'identité"),
+    (
+        "/c/{token}/respond",
+        "lien magique : action d'écriture liée au même jeton que la lecture (#835)",
+    ),
     ("/contractor/token/{token}", "lien magique du prestataire"),
     (
         "/contractor/token/{token}/submit",

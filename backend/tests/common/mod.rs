@@ -425,7 +425,19 @@ pub async fn setup_test_db() -> (
     let age_request_repo = Arc::new(PostgresAgeRequestRepository::new(pool.clone()));
     let age_request_use_cases = AgeRequestUseCases::new(age_request_repo);
     let contractor_report_repo = Arc::new(PostgresContractorReportRepository::new(pool.clone()));
-    let contractor_report_use_cases = ContractorReportUseCases::new(contractor_report_repo);
+    let magic_link_repo_for_reports: Arc<dyn koprogo_api::application::ports::MagicLinkRepository> =
+        Arc::new(
+            koprogo_api::infrastructure::database::repositories::PostgresMagicLinkRepository::new(
+                pool.clone(),
+            ),
+        );
+    let contractor_report_use_cases = ContractorReportUseCases::new(contractor_report_repo)
+        // #835 — absorbe le second système de liens magiques (scope ContractorReport).
+        .with_magic_link_support(Arc::new(
+            koprogo_api::application::use_cases::MagicLinkUseCases::new(
+                magic_link_repo_for_reports,
+            ),
+        ));
     let service_provider_repo = Arc::new(PostgresServiceProviderRepository::new(pool.clone()));
     let service_provider_use_cases = ServiceProviderUseCases::new(service_provider_repo);
     let individual_member_repo = Arc::new(

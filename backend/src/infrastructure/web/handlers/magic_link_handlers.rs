@@ -7,7 +7,9 @@
 //!   (`/c/<token>`). IP-based rate-limiting is enforced by Traefik for all
 //!   routes — no extra guard needed here.
 
+use crate::application::dto::contractor_report_dto::UpdateContractorReportDto;
 use crate::application::error::AppError;
+use crate::application::use_cases::MagicLinkUseCases;
 use crate::domain::entities::MagicLinkScopeKind;
 use crate::infrastructure::web::{AppState, AuthenticatedUser};
 use actix_web::{get, post, web, HttpResponse};
@@ -146,9 +148,7 @@ pub async fn consume_magic_link(
                 None => return Err(AppError::NotFound(format!("ticket {}", link.scope_id))),
             }
         }
-        MagicLinkScopeKind::Quote
-        | MagicLinkScopeKind::Invoice
-        | MagicLinkScopeKind::ContractorEvaluation => {
+        MagicLinkScopeKind::Quote | MagicLinkScopeKind::Invoice => {
             // Follow-up: wire dedicated public DTOs for these scopes.
             // For now return the scope identifier so the front-end can
             // render a minimal "received" view.
@@ -157,6 +157,21 @@ pub async fn consume_magic_link(
                 "note": "Scope payload resolution pending follow-up",
             })
         }
+        MagicLinkScopeKind::ContractorEvaluation => {
+            serde_json::json!({
+                "scope_id": link.scope_id,
+                "note": "Scope payload resolution pending follow-up",
+            })
+        }
+        MagicLinkScopeKind::ContractorReport => {
+            // #835 — le rapport d'intervention rejoint l'écran unifié : même
+            // page, même paramètre `t`, plus de second système parallèle.
+            let dto = state
+                .contractor_report_use_cases
+                .get_via_magic_link(link.scope_id)
+                .await?;
+            serde_json::to_value(&dto).map_err(|e| AppError::Internal(e.to_string()))?
+        }
     };
 
     Ok(HttpResponse::Ok().json(PublicScopePayload {
@@ -164,4 +179,47 @@ pub async fn consume_magic_link(
         scope_id: link.scope_id,
         scope: scope_json,
     }))
+}
+
+// ---------------------------------------------------------------------------
+// POST /c/{token}/respond — PUBLIC (no auth) — write action bound to the same
+// token as the GET above. #835.
+// ---------------------------------------------------------------------------
+
+/// Only `ContractorReport` has a real "respond" action today: view the ticket
+/// via the other four scopes is already implemented (`GET /c/{token}`), but
+/// writing back for them has no use case yet — that's an existing gap this
+/// route doesn't attempt to close, only to name explicitly rather than 404.
+#[utoipa::path(
+    post,
+    path = "/c/{token}/respond",
+    tag = "MagicLink",
+    summary = "Public write action for a magic link (currently: ContractorReport submit)",
+    responses(
+        (status = 200, description = "Report updated and submitted"),
+        (status = 400, description = "Unsupported scope for this link, or validation error"),
+        (status = 403, description = "Invalid / expired token"),
+    ),
+)]
+#[post("/c/{token}/respond")]
+pub async fn respond_magic_link(
+    state: web::Data<AppState>,
+    path: web::Path<String>,
+    body: web::Json<UpdateContractorReportDto>,
+) -> Result<HttpResponse, AppError> {
+    let token = path.into_inner();
+
+    // Non-consuming lookup — the initial `GET /c/{token}` already consumed
+    // the token as an audit marker; this write may happen much later
+    // (offline draft, cf. #835 @edge), so it must not be re-gated on
+    // `consumed_at`. Cloisonnement is enforced right below via `ensure_scope`.
+    let link = state.magic_link_use_cases.peek(&token).await?;
+    MagicLinkUseCases::ensure_scope(&link, MagicLinkScopeKind::ContractorReport)?;
+
+    let updated = state
+        .contractor_report_use_cases
+        .respond_via_magic_link(link.scope_id, body.into_inner())
+        .await?;
+
+    Ok(HttpResponse::Ok().json(updated))
 }
