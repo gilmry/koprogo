@@ -91,6 +91,14 @@ pub struct CallForFunds {
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
     pub created_by: Option<Uuid>,
+
+    /// Le fonds alimenté par cet appel (roulement/réserve/affecté).
+    ///
+    /// Issue #635 — posé après construction (à l'image de `created_by`),
+    /// jamais comme argument de constructeur : aucune des dizaines de sites
+    /// d'appel existants de `CallForFunds::new` n'a besoin de connaître le
+    /// fonds au moment de la création de l'appel.
+    pub fund_id: Option<Uuid>,
 }
 
 /// Domain-typed validation error for calls for funds (appel de fonds).
@@ -210,7 +218,14 @@ impl CallForFunds {
             created_at: Utc::now(),
             updated_at: Utc::now(),
             created_by: None,
+            fund_id: None,
         })
+    }
+
+    /// Rattache cet appel au fonds qu'il alimente (issue #635).
+    pub fn attach_to_fund(&mut self, fund_id: Uuid) {
+        self.fund_id = Some(fund_id);
+        self.updated_at = Utc::now();
     }
 
     /// Mark as sent to owners
@@ -401,6 +416,32 @@ mod tests {
             call.unwrap_err(),
             CallForFundsError::DueDateNotAfterCallDate
         ));
+    }
+
+    /// Issue #635 — rattachement d'un appel au fonds qu'il alimente.
+    #[test]
+    fn happy_attach_to_fund_rattache_lappel_au_fonds() {
+        let call_date = Utc::now();
+        let due_date = call_date + chrono::Duration::days(30);
+        let mut call = CallForFunds::new(
+            Uuid::new_v4(),
+            Uuid::new_v4(),
+            Uuid::new_v4(),
+            "Provision travaux".to_string(),
+            "Alimente le fonds affecté toiture".to_string(),
+            rust_decimal_macros::dec!(1000),
+            ContributionType::Regular,
+            call_date,
+            due_date,
+            None,
+            Decimal::ZERO,
+        )
+        .unwrap();
+        assert_eq!(call.fund_id, None);
+
+        let fund_id = Uuid::new_v4();
+        call.attach_to_fund(fund_id);
+        assert_eq!(call.fund_id, Some(fund_id));
     }
 
     #[test]

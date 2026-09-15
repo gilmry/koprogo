@@ -642,6 +642,16 @@ impl From<crate::domain::entities::CallForFundsError> for AppError {
     }
 }
 
+impl From<crate::domain::entities::FundError> for AppError {
+    /// Issue #635 — un fonds malformé (nom vide, objet/objectif hors fonds
+    /// affecté, majorité insuffisante à la création, dépense hors objet,
+    /// réaffectation non adoptée par l'AG) est une erreur d'entrée client →
+    /// 400 validation, **jamais** 500 Internal.
+    fn from(e: crate::domain::entities::FundError) -> Self {
+        AppError::Validation(e.to_string())
+    }
+}
+
 impl From<crate::domain::entities::WorkReportError> for AppError {
     /// Un coût de travaux négatif est une erreur d'entrée client → 400
     /// validation, **jamais** 500 Internal. Reprend l'invariant que portait

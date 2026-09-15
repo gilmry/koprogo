@@ -16,6 +16,7 @@ pub mod call_for_funds;
 pub mod charge_distribution;
 pub mod etat_date;
 pub mod expense;
+pub mod fund;
 pub mod invoice_line_item;
 pub mod journal_entry;
 pub mod owner_contribution;
@@ -33,6 +34,7 @@ pub use call_for_funds::{CallForFunds, CallForFundsError, CallForFundsStatus};
 pub use charge_distribution::{ChargeDistribution, ChargeDistributionError, DistributionCriteria};
 pub use etat_date::{EtatDate, EtatDateError, EtatDateLanguage, EtatDateStatus};
 pub use expense::{ApprovalStatus, Expense, ExpenseCategory, PaymentStatus};
+pub use fund::{Fund, FundError, FundKind, FundReassignment};
 pub use invoice_line_item::InvoiceLineItem;
 pub use journal_entry::{JournalEntry, JournalEntryError, JournalEntryLine};
 pub use owner_contribution::{

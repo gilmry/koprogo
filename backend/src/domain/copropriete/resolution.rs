@@ -30,6 +30,30 @@ pub enum MajorityType {
     Unanimity,
 }
 
+impl MajorityType {
+    /// Rang de sévérité croissant du seuil — Art. 3.88 §1 : absolue < deux
+    /// tiers < quatre cinquièmes < unanimité.
+    fn rang(&self) -> u8 {
+        match self {
+            MajorityType::Absolute => 0,
+            MajorityType::TwoThirds => 1,
+            MajorityType::FourFifths => 2,
+            MajorityType::Unanimity => 3,
+        }
+    }
+
+    /// La majorité obtenue (`self`) satisfait-elle au moins le seuil
+    /// `requise` ?
+    ///
+    /// Une majorité plus exigeante que celle requise satisfait toujours le
+    /// seuil — une AG qui vote à l'unanimité un fonds affecté n'a pas voté
+    /// « moins » que les deux tiers requis. Introduit pour la story #635
+    /// (création d'un fonds affecté — Art. 3.88, gros travaux — 2/3).
+    pub fn satisfait(&self, requise: &MajorityType) -> bool {
+        self.rang() >= requise.rang()
+    }
+}
+
 /// Statut d'une résolution
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, utoipa::ToSchema)]
 #[serde(rename_all = "snake_case")]
@@ -804,6 +828,37 @@ mod tests {
         assert_eq!(resolution.vote_count_contre, 2);
         assert_eq!(resolution.pour_percentage(), 55.0);
         assert_eq!(resolution.contre_percentage(), 45.0);
+    }
+
+    // ===== MajorityType::satisfait (issue #635) =====
+
+    /// @happy — la majorité obtenue égale exactement le seuil requis.
+    #[test]
+    fn happy_deux_tiers_satisfait_deux_tiers() {
+        assert!(MajorityType::TwoThirds.satisfait(&MajorityType::TwoThirds));
+    }
+
+    /// @edge — une majorité plus exigeante que celle requise satisfait
+    /// toujours le seuil (l'unanimité n'est pas « moins » que les 2/3).
+    #[test]
+    fn edge_unanimite_satisfait_deux_tiers() {
+        assert!(MajorityType::Unanimity.satisfait(&MajorityType::TwoThirds));
+        assert!(MajorityType::FourFifths.satisfait(&MajorityType::TwoThirds));
+    }
+
+    /// @security — la majorité simple (absolue) ne satisfait PAS un seuil de
+    /// deux tiers : contourner le seuil qualifié par un vote simple doit être
+    /// détectable.
+    #[test]
+    fn security_majorite_absolue_ne_satisfait_pas_deux_tiers() {
+        assert!(!MajorityType::Absolute.satisfait(&MajorityType::TwoThirds));
+    }
+
+    /// @negative — un seuil non atteint reste non atteint quel que soit le
+    /// sens de comparaison (pas de panic, résultat booléen stable).
+    #[test]
+    fn negative_quatre_cinquiemes_ne_satisfait_pas_unanimite() {
+        assert!(!MajorityType::FourFifths.satisfait(&MajorityType::Unanimity));
     }
 
     /// Une résolution sans aucun vote ne divise pas par zéro.
