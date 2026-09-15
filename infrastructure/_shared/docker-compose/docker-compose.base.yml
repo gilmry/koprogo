@@ -89,7 +89,10 @@ services:
     container_name: koprogo-backend
     restart: unless-stopped
     environment:
-      DATABASE_URL: postgresql://koprogo:${POSTGRES_PASSWORD:-koprogo123}@postgres:5432/koprogo_db
+      # `koprogo-postgres`, pas `postgres` — même raison que `koprogo-minio`
+      # ci-dessous (#731) : le container_name est unique sur l'hôte quel que
+      # soit le réseau, l'alias de service par défaut ne l'est pas.
+      DATABASE_URL: postgresql://koprogo:${POSTGRES_PASSWORD:-koprogo123}@koprogo-postgres:5432/koprogo_db
       SERVER_HOST: 0.0.0.0
       SERVER_PORT: 8080
       RUST_LOG: ${RUST_LOG:-warn}
@@ -104,7 +107,12 @@ services:
       UPLOAD_DIR: ${UPLOAD_DIR:-/app/uploads}
       S3_BUCKET: ${S3_BUCKET:-koprogo-documents}
       S3_REGION: ${S3_REGION:-eu-west-0}
-      S3_ENDPOINT: ${S3_ENDPOINT:-http://minio:9000}
+      # `koprogo-minio`, pas `minio` (#731, même fix que docker-compose.prod.yml
+      # / c8f5789b) : ce service se nomme `minio` mais son container_name est
+      # `koprogo-minio` — c'est ce dernier qui reste résolvable sans ambiguïté
+      # si ce conteneur rejoint un jour un réseau partagé avec d'autres
+      # projets, comme `ecosolva-web` l'a fait pour docker-compose.prod.yml.
+      S3_ENDPOINT: ${S3_ENDPOINT:-http://koprogo-minio:9000}
       S3_ACCESS_KEY: ${S3_ACCESS_KEY:-koprogo}
       S3_SECRET_KEY: ${S3_SECRET_KEY:-koprogo123}
       S3_FORCE_PATH_STYLE: ${S3_FORCE_PATH_STYLE:-true}
@@ -234,7 +242,8 @@ services:
         condition: service_healthy
     environment:
       S3_BUCKET: ${S3_BUCKET:-koprogo-documents}
-      S3_ENDPOINT: ${S3_ENDPOINT:-http://minio:9000}
+      # `koprogo-minio`, pas `minio` — même raison qu'au-dessus (#731).
+      S3_ENDPOINT: ${S3_ENDPOINT:-http://koprogo-minio:9000}
       S3_ACCESS_KEY: ${S3_ACCESS_KEY:-koprogo}
       S3_SECRET_KEY: ${S3_SECRET_KEY:-koprogo123}
     entrypoint: ["/bin/sh", "-c"]
