@@ -97,9 +97,20 @@ test-bdd: ## 🥒 Tests BDD/Cucumber (backend)
 	@echo "$(GREEN)🥒 Tests BDD...$(NC)"
 	cd backend && SQLX_OFFLINE=true cargo test --test bdd --test bdd_governance --test bdd_financial --test bdd_operations --test bdd_community
 
-test-e2e: ## 🌐 Tests E2E Playwright (frontend + backend)
+test-e2e: ## 🌐 Tests E2E Playwright (frontend + backend), encadrés du témoin d'interruption backend (#880)
 	@echo "$(GREEN)🌐 Tests E2E...$(NC)"
-	cd frontend && PLAYWRIGHT_BASE_URL=$(RECETTE) PLAYWRIGHT_API_BASE=$(RECETTE)/api/v1 npm run test:e2e
+	@# La pile de recette tourne sous cargo-watch (backend/Dockerfile.dev:71) :
+	@# une recompilation en cours de campagne coupe le backend ~90s, et sans
+	@# témoin les échecs qu'elle cause sont indiscernables d'une régression
+	@# (issue #880 : 83 des 95 échecs du 2026-09-13). e2e-guarded.sh encadre
+	@# la commande réelle d'une surveillance d'empreinte du process backend ;
+	@# exit 75 (EX_TEMPFAIL) signifie « non mesuré », pas « rouge ».
+	KOPROGO_E2E_ARTIFACT_DIR=frontend/test-results \
+	bash scripts/e2e-guarded.sh -- bash -c 'cd frontend && PLAYWRIGHT_BASE_URL=$(RECETTE) PLAYWRIGHT_API_BASE=$(RECETTE)/api/v1 npm run test:e2e'
+
+e2e-guard-test: ## 🧪 Tests 4-cat du témoin d'interruption backend e2e (#880)
+	@bash ./scripts/e2e-backend-watch.test.sh
+	@bash ./scripts/e2e-guarded.test.sh
 
 codegen: ## 🎬 Playwright codegen interactif (DEVICE=mobile pour iPhone 13)
 	@echo "$(GREEN)🎬 Playwright codegen ($(YELLOW)DEVICE=$(DEVICE)$(GREEN))...$(NC)"
