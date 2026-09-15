@@ -269,17 +269,31 @@ un message qui parle d'identifiants là où le défaut est de configuration.
 
    export KOPROGO_SUPERADMIN_EMAIL=...
    export KOPROGO_SUPERADMIN_PASSWORD=...
+   export KOPROGO_CONFIRME_HOTE_DISTANT=1
    PLAYWRIGHT_BASE_URL=https://koprogo.com npm run test:e2e
 
-Sans ces variables, la suite **s'arrête avant la première requête** et nomme
-celle qui manque (``tests/e2e/helpers/identifiants.ts``). C'est délibéré : le
-2026-09-10, le ``401`` muet a coûté une demi-journée d'enquête sur un défaut
-produit qui n'existait pas (#870).
+Sans les deux premières variables, la suite **s'arrête avant la première
+requête** et nomme celle qui manque (``tests/e2e/helpers/identifiants.ts``).
+C'est délibéré : le 2026-09-10, le ``401`` muet a coûté une demi-journée
+d'enquête sur un défaut produit qui n'existait pas (#870).
 
 Le garde regarde si la variable est **posée**, pas ce qu'elle contient. Choisir
 une valeur faible en connaissance de cause est une décision d'exploitation, et
 le serveur l'avertit déjà de son côté au démarrage. Ce qu'il refuse, c'est de
 partir vers un hôte distant sans que personne n'ait choisi.
+
+.. danger::
+
+   **La troisième variable existe pour le cas inverse et plus dangereux
+   (#872) : un identifiant qui FONCTIONNE.** Elle se nomme
+   ``KOPROGO_CONFIRME_HOTE_DISTANT``.
+
+   Un mot de passe correct contre un hôte distant ne rend aucun ``401`` — il
+   laisse la campagne enchaîner ses écritures, son ``seed-reset``, son
+   ``reset-db``, sur des données vivantes. Le garde ne peut pas savoir si le
+   mot de passe est correct sans l'essayer, et l'essayer est justement
+   l'action qu'il doit empêcher. Il exige donc une confirmation *séparée* de
+   l'identifiant, que ce dernier soit correct ou non.
 
 .. warning::
 

@@ -43,25 +43,89 @@ import { verifieLesIdentifiants } from "../../../tests/e2e/helpers/identifiants"
  * Le danger est de **ne pas avoir choisi**. Choisir `admin123` sciemment est
  * une décision d'exploitation — le serveur la signale déjà de son côté, et ce
  * n'est pas à ce fichier d'en juger.
+ *
+ * ── #872 a rouvert ce fichier : le mot de passe juste est le cas dangereux ──
+ *
+ * Les deux tests `@happy` ci-dessous affirmaient qu'un identifiant SEUL
+ * suffisait à laisser passer un hôte distant. C'était vrai, et c'est
+ * exactement le trou que #872 a nommé : un identifiant qui FONCTIONNE contre
+ * un hôte distant enchaîne la campagne — écritures, `seed-reset`, `reset-db`
+ * — sur des données vivantes, sans qu'aucun message ne l'ait jamais demandé.
+ * Le garde ne peut pas savoir si le mot de passe est correct sans l'essayer,
+ * et l'essayer EST l'action à empêcher.
+ *
+ * Ces deux tests sont donc ADAPTÉS, pas supprimés : ils exigent désormais
+ * AUSSI `KOPROGO_CONFIRME_HOTE_DISTANT`, une variable disjointe de
+ * l'identifiant. Leur intention d'origine — « un choix explicite passe » —
+ * reste vraie, seul le nombre de choix exigés change.
  */
 
 /** Le cas dangereux : la variable n'est pas posée du tout. */
 const AUCUN_CHOIX = undefined;
 
+/** Le consentement explicite requis en plus de l'identifiant (#872). */
+const CONSENTEMENT_DONNE = "1";
+
 describe("les identifiants de recette refusent l'hôte distant au repli", () => {
-  it("@happy — laisse passer un hôte distant quand un mot de passe est choisi", () => {
+  it("@happy — laisse passer un hôte distant quand un mot de passe ET un consentement sont choisis", () => {
     expect(() =>
-      verifieLesIdentifiants("https://koprogo.com", "un-vrai-secret"),
+      verifieLesIdentifiants(
+        "https://koprogo.com",
+        "un-vrai-secret",
+        CONSENTEMENT_DONNE,
+      ),
     ).not.toThrow();
   });
 
-  it("@happy — laisse passer même si le choix EST le repli du seed", () => {
+  it("@happy — laisse passer même si le choix EST le repli du seed, consentement donné", () => {
     // C'est le cas de la démo depuis le 2026-09-12 : l'exploitant a posé
     // `admin123` dans l'environnement pour que l'upsert cesse de l'effacer.
     // La valeur est faible, et c'est son affaire ; le serveur l'avertit
-    // lui-même au démarrage. Ce garde n'a pas à refuser un choix explicite.
+    // lui-même au démarrage. Ce garde n'a pas à refuser un choix explicite —
+    // à condition que le SECOND choix, le consentement, soit lui aussi posé.
     expect(() =>
-      verifieLesIdentifiants("https://koprogo.com", "admin123"),
+      verifieLesIdentifiants(
+        "https://koprogo.com",
+        "admin123",
+        CONSENTEMENT_DONNE,
+      ),
+    ).not.toThrow();
+  });
+
+  it("@security — un identifiant qui semble réel, SANS consentement, s'arrête net", () => {
+    // Le cœur de #872 : ce n'est pas le mot de passe faux qui est
+    // dangereux, c'est le mot de passe juste. Le garde ne peut pas
+    // distinguer les deux sans se connecter — donc il exige le consentement
+    // dans tous les cas où un identifiant est posé.
+    expect(() =>
+      verifieLesIdentifiants(
+        "https://koprogo.com",
+        "un-vrai-secret",
+        AUCUN_CHOIX,
+      ),
+    ).toThrow(/KOPROGO_CONFIRME_HOTE_DISTANT/);
+  });
+
+  it("@negative — un consentement vide ne compte pas comme un choix", () => {
+    // `export KOPROGO_CONFIRME_HOTE_DISTANT=` est la même illusion que pour
+    // le mot de passe : la variable existe dans l'environnement, vide.
+    expect(() =>
+      verifieLesIdentifiants("https://koprogo.com", "un-vrai-secret", ""),
+    ).toThrow(/KOPROGO_CONFIRME_HOTE_DISTANT/);
+  });
+
+  it("@edge — le consentement n'est jamais requis contre un hôte local", () => {
+    // Sans ce test, on pourrait croire qu'il faut désormais exporter
+    // `KOPROGO_CONFIRME_HOTE_DISTANT` même en local. La CI ne le pose pas.
+    expect(() =>
+      verifieLesIdentifiants(undefined, AUCUN_CHOIX, AUCUN_CHOIX),
+    ).not.toThrow();
+    expect(() =>
+      verifieLesIdentifiants(
+        "http://localhost:8090",
+        "peu-importe",
+        AUCUN_CHOIX,
+      ),
     ).not.toThrow();
   });
 
@@ -129,18 +193,34 @@ describe("les identifiants de recette refusent l'hôte distant au repli", () => 
   });
 
   it("@security — n'imprime jamais la valeur du mot de passe", () => {
+    // Un mot de passe SEUL, sans consentement, déclenche désormais le garde
+    // de #872 (ci-dessus) — mais son message ne doit toujours citer aucune
+    // valeur, seulement le nom des variables.
     let message = "";
     try {
       verifieLesIdentifiants("https://koprogo.com", "S3cret-De-Prod");
     } catch (e) {
       message = (e as Error).message;
     }
-    // Un vrai mot de passe ne déclenche rien, donc rien à fuiter ici…
+    expect(message).not.toContain("S3cret-De-Prod");
+    expect(message).toContain("KOPROGO_CONFIRME_HOTE_DISTANT");
+
+    // Avec le consentement AUSSI posé, plus rien à fuiter : ça passe.
+    message = "";
+    try {
+      verifieLesIdentifiants(
+        "https://koprogo.com",
+        "S3cret-De-Prod",
+        CONSENTEMENT_DONNE,
+      );
+    } catch (e) {
+      message = (e as Error).message;
+    }
     expect(message).toBe("");
 
-    // …et sur le cas qui DÉCLENCHE, le message nomme la variable sans jamais
-    // citer une valeur : une erreur atterrit dans les journaux de CI, qui se
-    // conservent.
+    // …et sur le cas qui DÉCLENCHE au premier palier (pas d'identifiant du
+    // tout), le message nomme la variable sans jamais citer une valeur :
+    // une erreur atterrit dans les journaux de CI, qui se conservent.
     try {
       verifieLesIdentifiants("https://koprogo.com", AUCUN_CHOIX);
     } catch (e) {
