@@ -63,6 +63,41 @@ Lancer les tests
    # Harnais séparé — il ne rend aucun verdict et ne touche pas au gate.
    make vitrine
 
+Le témoin d'interruption backend (#880)
+----------------------------------------
+
+Le backend de la pile de recette tourne sous ``cargo-watch``
+(``backend/Dockerfile.dev:71``) : une édition de fichier Rust pendant une
+campagne recompile et coupe le service ~90s. Sans témoin, ces échecs sont
+indiscernables d'une régression — 83 des 95 échecs du 2026-09-13 visaient un
+backend mort (cf. issue #880).
+
+``make test-e2e`` encadre désormais la commande Playwright réelle de
+``scripts/e2e-guarded.sh``, qui surveille l'empreinte (PID + heure de
+démarrage) du process backend pendant toute la campagne
+(``scripts/e2e-backend-watch.sh``) :
+
+.. code-block:: text
+
+   exit <code Playwright>   aucun redémarrage détecté — verdict inchangé
+   exit 75 (EX_TEMPFAIL)    backend redémarré pendant la campagne :
+                            campagne NON MESURÉE, quel qu'ait été le résultat
+                            brut — voir frontend/test-results/campaign-verdict.json
+                            et frontend/test-results/backend-restarts.jsonl
+
+Si l'empreinte est indisponible (pas de démon Docker, banc distant), le
+code de sortie de la commande encadrée est transmis tel quel, mais
+``campaign-verdict.json`` porte ``"monitoring": "unavailable"`` et
+``"backend_restarts": null`` — jamais un zéro silencieux qui prétendrait
+avoir vérifié.
+
+Tests du témoin lui-même (4 catégories, sans docker réel — fixtures
+rejouant une séquence d'empreintes) :
+
+.. code-block:: bash
+
+   make e2e-guard-test
+
 📹 Enregistrer de Nouveaux Tests
 =================================
 
