@@ -349,6 +349,34 @@ du défaut avec un témoin d'interruption (le minimum, déjà décrit dans #880)
   le signal était binaire (« a-t-il ouvert le diff ») : il devient une
   profondeur.
 
+  **Ce que l'ordre protège, c'est l'ATTENTION.** Précision du PO, et elle
+  change le sens de la décision :
+
+  - **le *code smell* se voit dans la preuve de valeur.** Un parcours qui
+    demande sept clics là où trois suffiraient dit une responsabilité mal
+    placée ; une capacité qu'on ne sait pas filmer sans l'expliquer dit
+    qu'elle n'a pas de frontière. La vitrine n'est pas qu'une preuve de
+    valeur, c'est **le premier détecteur de conception** — et il opère sur ce
+    que le produit FAIT, pas sur ce qu'il est écrit ;
+  - **l'expertise se réserve au non-trivial** : la frontière, l'invariant,
+    l'arbitrage, et le non-dit. Aucune de ces quatre questions ne se lit dans
+    un diff. Les vingt-sept branches de la vague 4 le confirment : tous leurs
+    défauts ont été trouvés par des gardes, aucun n'exigeait un œil humain ;
+  - **avec une pyramide exigeante et une boucle courte, le modèle se corrige
+    seul.** `garde_taxonomie_des_tests` a refusé `story/781`,
+    `garde_harnais_executes` a refusé `story/867` — sans humain, et en
+    nommant le geste correctif.
+
+  D'où la règle qui en découle, et qui est exigeante :
+
+  > **Chaque garde ajoutée déplace une question du rang 7 vers le rang 1.**
+  > Et un défaut trouvé en lisant le diff est une garde MANQUANTE : il ne
+  > suffit pas de le corriger, il faut poser le cliquet qui empêchera le
+  > suivant.
+
+  Sans quoi le rang 7 se repeuple, et l'expertise retourne faire le travail
+  des machines.
+
   ⚠️ **Le rang 1 est inatteignable aujourd'hui** : aucune des 27 branches
   d'agent n'a de vitrine, leurs gates ayant été déclenchés à la main. Corrigé
   le 2026-09-15 ; `story/579` est la première dont les gates partent seuls.
