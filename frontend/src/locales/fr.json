@@ -1084,6 +1084,7 @@
       "cancellationFailed": "Erreur lors de l'annulation de la convocation",
       "creationFailed": "Erreur lors de la création de la convocation",
       "deletionFailed": "Erreur lors de la suppression de la convocation",
+      "loadingEligibleRecipientsFailed": "Erreur lors du chargement des destinataires éligibles",
       "loadingFailed": "Erreur lors du chargement des convocations",
       "loadingRecipientsFailed": "Erreur lors du chargement des destinataires",
       "remindersSendingFailed": "Erreur lors de l'envoi des rappels",
@@ -1135,6 +1136,14 @@
       "scheduledSendDate": "Date d'envoi planifiée (format AAAA-MM-JJ) :"
     },
     "proxy": "Procuration",
+    "recipientSelector": {
+      "title": "Destinataires de la convocation",
+      "selectAll": "Tout sélectionner",
+      "selectNone": "Tout désélectionner",
+      "selectedCount": "{count, plural, one {# destinataire sélectionné} other {# destinataires sélectionnés}}",
+      "noneSelectedWarning": "Sélectionnez au moins un destinataire avant d'envoyer la convocation.",
+      "noEligibleOwners": "Aucun copropriétaire actif n'est rattaché à cet immeuble : rattachez des copropriétaires à leurs lots avant de convoquer."
+    },
     "recipients": "Destinataires",
     "schedule": "Planifier",
     "send": "Envoyer",

@@ -156,6 +156,7 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig) {
             .service(list_building_convocations)
             .service(list_organization_convocations)
             .service(list_convocation_recipients)
+            .service(list_eligible_convocation_recipients) // GET /buildings/{id}/eligible-convocation-recipients (#780 verrou 1)
             .service(get_convocation_tracking_summary)
             .service(mark_recipient_email_opened)
             .service(update_recipient_attendance)

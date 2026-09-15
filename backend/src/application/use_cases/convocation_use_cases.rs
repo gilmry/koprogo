@@ -1,7 +1,9 @@
 use crate::application::dto::{
     ConvocationRecipientResponse, ConvocationResponse, CreateConvocationRequest,
-    RecipientTrackingSummaryResponse, ScheduleConvocationRequest, SendConvocationRequest,
+    EligibleRecipientResponse, RecipientTrackingSummaryResponse, ScheduleConvocationRequest,
+    SendConvocationRequest,
 };
+use crate::application::error::AppError;
 use crate::application::ports::{
     BuildingRepository, ConvocationRecipientRepository, ConvocationRepository, MeetingRepository,
     OwnerRepository, UserRepository,
@@ -83,6 +85,56 @@ impl ConvocationUseCases {
         let created = self.convocation_repository.create(&convocation).await?;
 
         Ok(ConvocationResponse::from(created))
+    }
+
+    /// Identifiants des copropriétaires actifs d'un immeuble, dédupliqués.
+    ///
+    /// Partagé par `send_convocation` (destinataires par défaut) et
+    /// `list_eligible_recipients` (écran de sélection, #780 verrou 1 / #784) :
+    /// la question « qui peut recevoir cette convocation ? » ne doit être
+    /// répondue qu'à un seul endroit.
+    async fn active_owner_ids(&self, building_id: Uuid) -> Result<Vec<Uuid>, String> {
+        let detenteurs = self
+            .unit_owner_repository
+            .find_active_by_building(building_id)
+            .await?;
+        // Un copropriétaire détenant plusieurs lots ne doit être convoqué
+        // qu'une fois.
+        let mut vus = std::collections::BTreeSet::new();
+        Ok(detenteurs
+            .into_iter()
+            .filter_map(|(_unit_id, owner_id, _quota)| vus.insert(owner_id).then_some(owner_id))
+            .collect())
+    }
+
+    /// Les copropriétaires qu'une convocation pour cet immeuble toucherait.
+    ///
+    /// Avant cet écran, « 0 destinataire » était un libellé sans contrôle
+    /// pour le constituer : le syndic découvrait qui avait été convoqué APRÈS
+    /// l'envoi, jamais avant (#780 verrou 1). `send_convocation` déduit déjà
+    /// cette même liste par défaut ; l'exposer en lecture permet de la
+    /// montrer et de la corriger avant que l'envoi ne fasse courir le délai
+    /// légal de l'Art. 3.87 § 3.
+    pub async fn list_eligible_recipients(
+        &self,
+        building_id: Uuid,
+    ) -> Result<Vec<EligibleRecipientResponse>, AppError> {
+        let owner_ids = self.active_owner_ids(building_id).await?;
+        let mut destinataires = Vec::with_capacity(owner_ids.len());
+        for owner_id in owner_ids {
+            let owner = self
+                .owner_repository
+                .find_by_id(owner_id)
+                .await?
+                .ok_or_else(|| AppError::NotFound(format!("Owner {}", owner_id)))?;
+            destinataires.push(EligibleRecipientResponse {
+                owner_id: owner.id,
+                full_name: format!("{} {}", owner.first_name, owner.last_name),
+                email: owner.email,
+            });
+        }
+        destinataires.sort_by(|a, b| a.full_name.cmp(&b.full_name));
+        Ok(destinataires)
     }
 
     /// Get convocation by ID
@@ -167,6 +219,19 @@ impl ConvocationUseCases {
         id: Uuid,
         request: SendConvocationRequest,
     ) -> Result<ConvocationResponse, String> {
+        // Une sélection explicitement vide est un choix, pas une absence de
+        // choix : `None` (ancien client, champ jamais rempli) déduit tous les
+        // copropriétaires actifs par défaut, mais `Some(vec![])` dit que le
+        // syndic a vu l'écran de sélection et n'a coché personne. Confondre
+        // les deux ferait ignorer silencieusement un renoncement délibéré et
+        // convoquer tout le monde quand même — pire que le défaut d'origine,
+        // qui au moins ne décidait rien à la place du syndic (#780, @negative).
+        if matches!(&request.recipient_owner_ids, Some(ids) if ids.is_empty()) {
+            return Err(
+                "Sélectionnez au moins un destinataire avant d'envoyer la convocation.".to_string(),
+            );
+        }
+
         let mut convocation = self
             .convocation_repository
             .find_by_id(id)
@@ -198,31 +263,12 @@ impl ConvocationUseCases {
         ConvocationExporter::save_to_file(&pdf_bytes, &pdf_file_path)
             .map_err(|e| format!("Failed to save PDF: {}", e))?;
 
-        // Les destinataires : ceux qu'on nous donne, ou tous les
-        // copropriétaires actifs de l'immeuble.
-        //
-        // L'interface n'offre aujourd'hui aucun moyen de constituer cette
-        // liste — « Destinataires 0 » est un libellé, pas un contrôle — et
-        // envoyait donc un corps vide. Plutôt que d'exiger d'elle ce qu'elle
-        // ne peut pas fournir, on déduit : convoquer une assemblée, c'est par
-        // défaut convoquer tout le monde.
+        // Les destinataires : ceux qu'on nous donne (liste non vide, déjà
+        // vérifié plus haut), ou — champ absent, ancien client — tous les
+        // copropriétaires actifs de l'immeuble par défaut.
         let destinataires: Vec<Uuid> = match &request.recipient_owner_ids {
-            Some(ids) if !ids.is_empty() => ids.clone(),
-            _ => {
-                let detenteurs = self
-                    .unit_owner_repository
-                    .find_active_by_building(convocation.building_id)
-                    .await?;
-                // Un copropriétaire détenant plusieurs lots ne doit être
-                // convoqué qu'une fois.
-                let mut vus = std::collections::BTreeSet::new();
-                detenteurs
-                    .into_iter()
-                    .filter_map(|(_unit_id, owner_id, _quota)| {
-                        vus.insert(owner_id).then_some(owner_id)
-                    })
-                    .collect()
-            }
+            Some(ids) => ids.clone(),
+            None => self.active_owner_ids(convocation.building_id).await?,
         };
 
         // Convoquer personne n'est pas convoquer.
@@ -1432,5 +1478,182 @@ mod tests {
         let result = uc.set_recipient_proxy(recipient_id, proxy_owner_id).await;
 
         assert!(result.is_ok(), "reçu : {:?}", result.err());
+    }
+
+    // ---------------------------------------------------------------------------
+    // list_eligible_recipients — écran de sélection des destinataires
+    // (#780 verrou 1, #784). `make_use_cases` fabrique un `unit_owner_repo`
+    // aux identifiants aléatoires non réutilisables ici : ces tests
+    // construisent `ConvocationUseCases` directement pour maîtriser la
+    // correspondance entre détenteurs et fiches copropriétaire.
+    // ---------------------------------------------------------------------------
+
+    fn make_owner(id: Uuid, first_name: &str, last_name: &str, email: &str) -> Owner {
+        Owner {
+            id,
+            organization_id: Uuid::new_v4(),
+            user_id: None,
+            first_name: first_name.to_string(),
+            last_name: last_name.to_string(),
+            email: email.to_string(),
+            phone: None,
+            address: "1 Rue du Test".to_string(),
+            city: "Bruxelles".to_string(),
+            postal_code: "1000".to_string(),
+            country: "Belgium".to_string(),
+            created_at: Utc::now(),
+            updated_at: Utc::now(),
+        }
+    }
+
+    /// @happy — deux lots détenus par deux copropriétaires distincts (l'un
+    /// possédant un lot supplémentaire) rendent deux destinataires, triés par
+    /// nom, sans doublon.
+    #[tokio::test]
+    async fn list_eligible_recipients_dedup_et_trie_par_nom() {
+        let building_id = Uuid::new_v4();
+        let zoe_id = Uuid::new_v4();
+        let adam_id = Uuid::new_v4();
+
+        let mut unit_owner_repo = MockUnitOwnerRepo::new();
+        unit_owner_repo
+            .expect_find_active_by_building()
+            .returning(move |_| {
+                Ok(vec![
+                    (Uuid::new_v4(), zoe_id, rust_decimal::Decimal::from(500)),
+                    (Uuid::new_v4(), adam_id, rust_decimal::Decimal::from(300)),
+                    // Même copropriétaire, second lot : ne doit compter qu'une fois.
+                    (Uuid::new_v4(), zoe_id, rust_decimal::Decimal::from(200)),
+                ])
+            });
+
+        let mut owner_repo = MockOwnerRepo::new();
+        owner_repo.expect_find_by_id().returning(move |id| {
+            if id == zoe_id {
+                Ok(Some(make_owner(zoe_id, "Zoé", "Dupont", "zoe@example.be")))
+            } else if id == adam_id {
+                Ok(Some(make_owner(
+                    adam_id,
+                    "Adam",
+                    "Peeters",
+                    "adam@example.be",
+                )))
+            } else {
+                Ok(None)
+            }
+        });
+
+        let uc = ConvocationUseCases::new(
+            Arc::new(MockConvRepo::new()),
+            Arc::new(MockRecipientRepo::new()),
+            Arc::new(owner_repo),
+            Arc::new(MockBuildingRepo::new()),
+            Arc::new(MockMeetingRepo::new()),
+            Arc::new(unit_owner_repo),
+            Arc::new(MockUserRepo::new()),
+        );
+
+        let result = uc.list_eligible_recipients(building_id).await;
+
+        assert!(result.is_ok(), "reçu : {:?}", result.err());
+        let destinataires = result.unwrap();
+        assert_eq!(destinataires.len(), 2, "Zoé ne doit compter qu'une fois");
+        assert_eq!(destinataires[0].full_name, "Adam Peeters");
+        assert_eq!(destinataires[1].full_name, "Zoé Dupont");
+        assert_eq!(destinataires[1].email, "zoe@example.be");
+    }
+
+    /// @edge — un immeuble sans aucun lot attribué rend une liste vide, pas
+    /// une erreur : c'est un état légitime (immeuble neuf, lots pas encore
+    /// attribués), pas une panne.
+    #[tokio::test]
+    async fn list_eligible_recipients_immeuble_sans_lots_rend_liste_vide() {
+        let mut unit_owner_repo = MockUnitOwnerRepo::new();
+        unit_owner_repo
+            .expect_find_active_by_building()
+            .returning(|_| Ok(vec![]));
+
+        let uc = ConvocationUseCases::new(
+            Arc::new(MockConvRepo::new()),
+            Arc::new(MockRecipientRepo::new()),
+            Arc::new(MockOwnerRepo::new()),
+            Arc::new(MockBuildingRepo::new()),
+            Arc::new(MockMeetingRepo::new()),
+            Arc::new(unit_owner_repo),
+            Arc::new(MockUserRepo::new()),
+        );
+
+        let result = uc.list_eligible_recipients(Uuid::new_v4()).await;
+
+        assert!(result.is_ok(), "reçu : {:?}", result.err());
+        assert!(result.unwrap().is_empty());
+    }
+
+    /// @negative — un détenteur actif dont la fiche copropriétaire a disparu
+    /// (incohérence de données) doit produire une erreur typée et nommée,
+    /// jamais un panic ni un destinataire fantôme silencieusement ignoré.
+    #[tokio::test]
+    async fn list_eligible_recipients_fiche_coproprietaire_introuvable_est_une_erreur() {
+        let owner_id = Uuid::new_v4();
+        let mut unit_owner_repo = MockUnitOwnerRepo::new();
+        unit_owner_repo
+            .expect_find_active_by_building()
+            .returning(move |_| {
+                Ok(vec![(
+                    Uuid::new_v4(),
+                    owner_id,
+                    rust_decimal::Decimal::from(1000),
+                )])
+            });
+
+        let mut owner_repo = MockOwnerRepo::new();
+        owner_repo.expect_find_by_id().returning(|_| Ok(None));
+
+        let uc = ConvocationUseCases::new(
+            Arc::new(MockConvRepo::new()),
+            Arc::new(MockRecipientRepo::new()),
+            Arc::new(owner_repo),
+            Arc::new(MockBuildingRepo::new()),
+            Arc::new(MockMeetingRepo::new()),
+            Arc::new(unit_owner_repo),
+            Arc::new(MockUserRepo::new()),
+        );
+
+        let result = uc.list_eligible_recipients(Uuid::new_v4()).await;
+
+        assert!(result.is_err());
+        assert!(matches!(result.unwrap_err(), AppError::NotFound(_)));
+    }
+
+    /// @negative — une sélection explicitement vide (`Some(vec![])`, ce que
+    /// rend l'écran de sélection quand le syndic décoche tout le monde) doit
+    /// être refusée EXPLICITEMENT, pas silencieusement remplacée par « tout
+    /// le monde par défaut ». Confondre les deux ignorerait un renoncement
+    /// délibéré (#780, DoD @negative).
+    #[tokio::test]
+    async fn send_convocation_avec_selection_explicitement_vide_est_refuse() {
+        let uc = make_use_cases(
+            MockConvRepo::new(),
+            MockRecipientRepo::new(),
+            MockOwnerRepo::new(),
+            MockBuildingRepo::new(),
+            MockMeetingRepo::new(),
+        );
+
+        let result = uc
+            .send_convocation(
+                Uuid::new_v4(),
+                SendConvocationRequest {
+                    recipient_owner_ids: Some(vec![]),
+                },
+            )
+            .await;
+
+        assert!(result.is_err());
+        let erreur = result.unwrap_err();
+        assert!(
+            erreur.contains("destinataire"),
+            "le refus doit nommer ce qui manque, reçu : {erreur}"
+        );
     }
 }

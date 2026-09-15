@@ -1084,6 +1084,7 @@
       "cancellationFailed": "Fout bij het annuleren van de oproeping",
       "creationFailed": "Fout bij het aanmaken van de oproeping",
       "deletionFailed": "Fout bij het verwijderen van de oproeping",
+      "loadingEligibleRecipientsFailed": "Fout bij het laden van de in aanmerking komende ontvangers",
       "loadingFailed": "Fout bij het laden van oproepingen",
       "loadingRecipientsFailed": "Fout bij het laden van ontvangers",
       "remindersSendingFailed": "Fout bij het verzenden van herinneringen",
@@ -1135,6 +1136,14 @@
       "scheduledSendDate": "Geplande verzenddatum (formaat JJJJ-MM-DD):"
     },
     "proxy": "Volmacht",
+    "recipientSelector": {
+      "title": "Ontvangers van de oproeping",
+      "selectAll": "Alles selecteren",
+      "selectNone": "Alles deselecteren",
+      "selectedCount": "{count, plural, one {# ontvanger geselecteerd} other {# ontvangers geselecteerd}}",
+      "noneSelectedWarning": "Selecteer minstens één ontvanger voordat u de oproeping verstuurt.",
+      "noEligibleOwners": "Geen enkele actieve mede-eigenaar is aan dit gebouw gekoppeld: koppel mede-eigenaars aan hun kavels voordat u de vergadering bijeenroept."
+    },
     "recipients": "Ontvangers",
     "schedule": "Plannen",
     "send": "Verzenden",

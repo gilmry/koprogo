@@ -2,6 +2,7 @@ use crate::application::dto::{
     CreateConvocationRequest, ScheduleConvocationRequest, ScheduleSecondConvocationRequest,
     SendConvocationRequest, SetProxyRequest, UpdateAttendanceRequest,
 };
+use crate::application::error::AppError;
 use crate::infrastructure::audit::{AuditEventType, AuditLogEntry};
 use crate::infrastructure::web::middleware::scope_guard::verify_building_org_access;
 use crate::infrastructure::web::{AppState, AuthenticatedUser};
@@ -10,6 +11,19 @@ use actix_web::{delete, get, post, put, web, HttpResponse, Responder};
 use uuid::Uuid;
 
 // ==================== Convocation CRUD Endpoints ====================
+
+/// Envoyer une convocation fait courir le délai légal de l'Art. 3.87 §3 CC
+/// pour tous les copropriétaires : c'est un acte du syndic, jamais celui d'un
+/// copropriétaire membre de la même organisation. Relevé en écrivant le
+/// parcours multi-rôle complet du cycle d'AG (#780).
+fn require_syndic_or_superadmin(user: &AuthenticatedUser) -> Result<(), AppError> {
+    match user.role.as_str() {
+        "syndic" | "superadmin" => Ok(()),
+        _ => Err(AppError::Forbidden(
+            "Seul le syndic peut envoyer une convocation".to_string(),
+        )),
+    }
+}
 
 #[post("/convocations")]
 pub async fn create_convocation(
@@ -255,6 +269,10 @@ pub async fn send_convocation(
         }
     };
 
+    if let Err(err) = require_syndic_or_superadmin(&user) {
+        return err.error_response();
+    }
+
     // PDF generation now happens in the use case layer
     match state
         .convocation_use_cases
@@ -336,6 +354,38 @@ pub async fn list_convocation_recipients(
     {
         Ok(recipients) => HttpResponse::Ok().json(recipients),
         Err(err) => HttpResponse::InternalServerError().json(serde_json::json!({"error": err})),
+    }
+}
+
+/// Les copropriétaires qu'une convocation pour cet immeuble toucherait.
+///
+/// Sert l'écran de sélection des destinataires (#780 verrou 1, #784) : le
+/// syndic doit pouvoir voir et choisir AVANT d'envoyer, pas seulement
+/// constater après coup que « 0 destinataire » était resté un libellé.
+#[get("/buildings/{building_id}/eligible-convocation-recipients")]
+pub async fn list_eligible_convocation_recipients(
+    state: web::Data<AppState>,
+    user: AuthenticatedUser,
+    building_id: web::Path<Uuid>,
+) -> impl Responder {
+    if let Err(err) = verify_building_org_access(
+        &user,
+        *building_id,
+        &state.building_use_cases,
+        &state.acp_use_cases,
+    )
+    .await
+    {
+        return err.error_response();
+    }
+
+    match state
+        .convocation_use_cases
+        .list_eligible_recipients(*building_id)
+        .await
+    {
+        Ok(destinataires) => HttpResponse::Ok().json(destinataires),
+        Err(err) => err.error_response(),
     }
 }
 
