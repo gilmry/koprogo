@@ -1084,6 +1084,7 @@
       "cancellationFailed": "Error cancelling convocation",
       "creationFailed": "Error creating convocation",
       "deletionFailed": "Error deleting convocation",
+      "loadingEligibleRecipientsFailed": "Error loading eligible recipients",
       "loadingFailed": "Error loading convocations",
       "loadingRecipientsFailed": "Error loading recipients",
       "remindersSendingFailed": "Error sending reminders",
@@ -1135,6 +1136,14 @@
       "scheduledSendDate": "Scheduled send date (format YYYY-MM-DD):"
     },
     "proxy": "Proxy",
+    "recipientSelector": {
+      "title": "Convocation recipients",
+      "selectAll": "Select all",
+      "selectNone": "Deselect all",
+      "selectedCount": "{count, plural, one {# recipient selected} other {# recipients selected}}",
+      "noneSelectedWarning": "Select at least one recipient before sending the convocation.",
+      "noEligibleOwners": "No active co-owner is attached to this building: attach co-owners to their units before convening the meeting."
+    },
     "recipients": "Recipients",
     "schedule": "Schedule",
     "send": "Send",

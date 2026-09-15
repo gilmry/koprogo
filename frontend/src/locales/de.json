@@ -1084,6 +1084,7 @@
       "cancellationFailed": "Fehler beim Stornieren der Einberufung",
       "creationFailed": "Fehler beim Erstellen der Einberufung",
       "deletionFailed": "Fehler beim Löschen der Einberufung",
+      "loadingEligibleRecipientsFailed": "Fehler beim Laden der berechtigten Empfänger",
       "loadingFailed": "Fehler beim Laden der Einberufungen",
       "loadingRecipientsFailed": "Fehler beim Laden der Empfänger",
       "remindersSendingFailed": "Fehler beim Senden der Erinnerungen",
@@ -1135,6 +1136,14 @@
       "scheduledSendDate": "Geplantes Versanddatum (Format JJJJ-MM-TT):"
     },
     "proxy": "Vollmacht",
+    "recipientSelector": {
+      "title": "Empfänger der Einberufung",
+      "selectAll": "Alle auswählen",
+      "selectNone": "Alle abwählen",
+      "selectedCount": "{count, plural, one {# Empfänger ausgewählt} other {# Empfänger ausgewählt}}",
+      "noneSelectedWarning": "Wählen Sie mindestens einen Empfänger aus, bevor Sie die Einberufung versenden.",
+      "noEligibleOwners": "Diesem Gebäude ist kein aktiver Miteigentümer zugeordnet: Weisen Sie Miteigentümer ihren Einheiten zu, bevor Sie die Versammlung einberufen."
+    },
     "recipients": "Empfänger",
     "schedule": "Planen",
     "send": "Senden",

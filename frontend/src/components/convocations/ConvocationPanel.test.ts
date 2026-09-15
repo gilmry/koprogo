@@ -40,6 +40,8 @@ vi.mock("../../stores/auth", () => ({
 
 const getByMeetingId = vi.fn();
 const create = vi.fn();
+const send = vi.fn();
+const getEligibleRecipients = vi.fn();
 
 vi.mock("../../lib/api/convocations", async () => {
   const actual = await vi.importActual<
@@ -50,7 +52,9 @@ vi.mock("../../lib/api/convocations", async () => {
     convocationsApi: {
       getByMeetingId: (...args: any[]) => getByMeetingId(...args),
       create: (...args: any[]) => create(...args),
-      send: vi.fn(),
+      send: (...args: any[]) => send(...args),
+      getEligibleRecipients: (...args: any[]) =>
+        getEligibleRecipients(...args),
       cancel: vi.fn(),
       sendReminders: vi.fn(),
       delete: vi.fn(),
@@ -135,10 +139,21 @@ const baseConvocation = {
   updated_at: "2026-08-01T10:00:00Z",
 };
 
+const draftConvocation = {
+  ...baseConvocation,
+  status: ConvocationStatus.Draft,
+  total_recipients: 0,
+  opened_count: 0,
+  will_attend_count: 0,
+};
+
 describe("ConvocationPanel", () => {
   beforeEach(() => {
     getByMeetingId.mockReset();
     create.mockReset();
+    send.mockReset();
+    getEligibleRecipients.mockReset();
+    getEligibleRecipients.mockResolvedValue([]);
     mockAuthState.set({
       user: null,
       isAuthenticated: false,
@@ -225,5 +240,88 @@ describe("ConvocationPanel", () => {
       await screen.findByText("500 internal server error"),
     ).toBeInTheDocument();
     expect(screen.getByText("common.retry")).toBeInTheDocument();
+  });
+
+  // #780 verrou 1 — écran de sélection des destinataires. Avant ces tests,
+  // rien n'exerçait le chemin Draft/Scheduled + envoi : « 0 destinataire »
+  // était un libellé, jamais un contrôle.
+
+  it("@happy — le syndic choisit les destinataires puis envoie la convocation", async () => {
+    getByMeetingId.mockResolvedValue(draftConvocation);
+    getEligibleRecipients.mockResolvedValue([
+      { owner_id: "o1", full_name: "Alice Dupont", email: "alice@test.be" },
+      { owner_id: "o2", full_name: "Bob Peeters", email: "bob@test.be" },
+    ]);
+    send.mockResolvedValue({
+      ...draftConvocation,
+      status: ConvocationStatus.Sent,
+    });
+    mockAuthState.set({
+      user: syndicUser,
+      isAuthenticated: true,
+      isLoading: false,
+      token: "t",
+    });
+
+    render(ConvocationPanel, { props: { meetingId: "m1" } });
+
+    await screen.findByTestId("convocation-recipient-selector-checkbox-o1");
+    const sendBtn = screen.getByTestId("convocation-btn-send");
+    expect(sendBtn).not.toBeDisabled();
+
+    // « Envoyer » ouvre une confirmation (#844, ex-`confirm()` natif) ; la
+    // requête ne part qu'à sa validation.
+    await fireEvent.click(sendBtn);
+    await fireEvent.click(await screen.findByTestId("confirm-dialog-confirm"));
+
+    expect(send).toHaveBeenCalledWith("c1", ["o1", "o2"]);
+  });
+
+  it("@negative — décocher tous les destinataires désactive l'envoi et avertit", async () => {
+    getByMeetingId.mockResolvedValue(draftConvocation);
+    getEligibleRecipients.mockResolvedValue([
+      { owner_id: "o1", full_name: "Alice Dupont", email: "alice@test.be" },
+    ]);
+    mockAuthState.set({
+      user: syndicUser,
+      isAuthenticated: true,
+      isLoading: false,
+      token: "t",
+    });
+
+    render(ConvocationPanel, { props: { meetingId: "m1" } });
+
+    const checkbox = await screen.findByTestId(
+      "convocation-recipient-selector-checkbox-o1",
+    );
+    await fireEvent.click(checkbox); // décoche l'unique destinataire
+
+    expect(
+      await screen.findByText(
+        "convocations.recipientSelector.noneSelectedWarning",
+      ),
+    ).toBeInTheDocument();
+    expect(screen.getByTestId("convocation-btn-send")).toBeDisabled();
+  });
+
+  it("@edge — immeuble sans copropriétaire éligible : l'envoi reste ouvert par défaut", async () => {
+    getByMeetingId.mockResolvedValue(draftConvocation);
+    getEligibleRecipients.mockResolvedValue([]);
+    mockAuthState.set({
+      user: syndicUser,
+      isAuthenticated: true,
+      isLoading: false,
+      token: "t",
+    });
+
+    render(ConvocationPanel, { props: { meetingId: "m1" } });
+
+    expect(
+      await screen.findByTestId("convocation-recipient-selector-empty"),
+    ).toBeInTheDocument();
+    // Aucune liste à choisir : le champ reste `null` côté client, et c'est
+    // le serveur qui refusera explicitement au moment de l'envoi (backend
+    // `send_convocation`), pas l'UI qui décide à sa place ici.
+    expect(screen.getByTestId("convocation-btn-send")).not.toBeDisabled();
   });
 });

@@ -2,6 +2,7 @@ use crate::application::dto::{
     CastVoteRequest, ChangeVoteRequest, CloseVotingRequest, CreateResolutionRequest,
     ResolutionResponse, VoteResponse,
 };
+use crate::application::error::AppError;
 use crate::infrastructure::audit::{AuditEventType, AuditLogEntry};
 use crate::infrastructure::web::classification_erreurs::est_interdit;
 use crate::infrastructure::web::middleware::scope_guard::verify_acp_org_access;
@@ -10,6 +11,17 @@ use actix_web::{delete, get, post, put, web, HttpResponse, Responder, ResponseEr
 use uuid::Uuid;
 
 // ==================== Resolution Endpoints ====================
+
+/// Clôturer un scrutin proclame une majorité opposable (Art. 3.87 §4 CC) :
+/// c'est un acte du syndic, jamais celui d'un copropriétaire qui vote.
+fn require_syndic_or_superadmin(user: &AuthenticatedUser) -> Result<(), AppError> {
+    match user.role.as_str() {
+        "syndic" | "superadmin" => Ok(()),
+        _ => Err(AppError::Forbidden(
+            "Seul le syndic peut clôturer le vote d'une résolution".to_string(),
+        )),
+    }
+}
 
 /// Vérifie que l'appelant a un mandat sur l'ACP dont relève une AG.
 ///
@@ -593,6 +605,16 @@ pub async fn close_voting(
         }
     };
 
+    // Clôturer un vote proclame une majorité opposable (Art. 3.87 §4 CC) :
+    // c'est un geste du syndic, jamais d'un copropriétaire — même membre de
+    // la même organisation. Ce handler ne vérifiait ni le rôle ni le mandat
+    // sur l'AG : n'importe quel utilisateur authentifié de l'organisation
+    // pouvait clôturer la résolution de n'importe quelle AG qu'elle gère.
+    // Relevé en écrivant le parcours multi-rôle complet du cycle d'AG (#780).
+    if let Err(err) = require_syndic_or_superadmin(&user) {
+        return err.error_response();
+    }
+
     // Le dénominateur de la majorité est lu SUR L'IMMEUBLE, jamais reçu du
     // client.
     //
@@ -615,6 +637,9 @@ pub async fn close_voting(
                 "error": "Resolution not found"
             }));
         };
+        if let Some(refus) = verifier_mandat_sur_ag(&state, &user, resolution.meeting_id).await {
+            return refus;
+        }
         let Ok(Some(meeting)) = state
             .meeting_use_cases
             .get_meeting(resolution.meeting_id)
