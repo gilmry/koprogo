@@ -325,3 +325,122 @@ describe("Navigation a11y", () => {
     expect(labelled).toBe(true);
   });
 });
+
+// ===========================================================================
+// Icônes (#797) — remise « Design tokens / Icons », section Navigation.
+//
+// Gherkin de la story : « Étant donné la barre de navigation d'un syndic /
+// Quand je relève les icônes de ses entrées de menu / Alors aucune icône
+// n'apparaît deux fois / Et aucune n'est un émoji. »
+//
+// `garde-icones-uniques.test.ts` vérifie que le JEU d'icônes (lib/icones.ts)
+// ne définit pas deux noms au même tracé. Il ne peut pas voir si DEUX
+// ENTRÉES DE MENU DIFFÉRENTES réclament, par erreur de copier-coller, le
+// même nom d'icône — c'est exactement la forme du défaut d'origine (📊 pour
+// tableau de bord ET budgets ET sondages). D'où un rendu réel, ici.
+//
+// @edge (#a8a29e/#c4c0bb jamais en texte, chevron compris) n'est pas
+// dupliqué ici : `garde-neutres-de-trait.test.ts` le couvre déjà pour
+// TOUTE la source, Navigation.svelte inclus — le refaire localement
+// n'ajouterait aucun signal.
+// ===========================================================================
+
+/** Émojis pictographiques et symboles divers — même motif que les gardes globales. */
+const EMOJI = /[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{2B00}-\u{2BFF}]/gu;
+
+async function rendreSidebarSyndic() {
+  setAuth(makeUser(UserRole.SYNDIC));
+  setBuilding(makeBuilding());
+  const { container } = render(Navigation);
+  await screen.findByTestId("navigation-menu-gestion");
+  const sidebar = container.querySelector('[data-testid="sidebar-desktop"]');
+  if (!sidebar) throw new Error("sidebar-desktop introuvable");
+  return sidebar;
+}
+
+describe("Navigation icônes (#797) @happy", () => {
+  it("chaque icône rendue est un <svg> 24x24, stroke=currentColor, aria-hidden", async () => {
+    const sidebar = await rendreSidebarSyndic();
+    const icones = Array.from(sidebar.querySelectorAll("svg"));
+
+    // Vérification d'aveuglement : sans elle, un sélecteur cassé rendrait
+    // la liste vide et chaque assertion suivante passerait par vacuité.
+    expect(icones.length).toBeGreaterThan(10);
+
+    for (const svg of icones) {
+      expect(svg.getAttribute("viewBox")).toBe("0 0 24 24");
+      expect(svg.getAttribute("fill")).toBe("none");
+      expect(svg.getAttribute("stroke")).toBe("currentColor");
+      expect(svg.getAttribute("aria-hidden")).toBe("true");
+    }
+  });
+});
+
+describe("Navigation icônes (#797) @negative", () => {
+  it("aucune icône n'est réemployée entre deux entrées, et aucune n'est un émoji", async () => {
+    const sidebar = await rendreSidebarSyndic();
+
+    // Aucun émoji dans le texte rendu de la sidebar (⚙️ notamment).
+    const emojisTrouves = sidebar.textContent?.match(EMOJI) ?? [];
+    expect(
+      emojisTrouves.join(", "),
+      `${emojisTrouves.length} émoji(s) dans la navigation du syndic : ` +
+        `${emojisTrouves.join(", ")}. Un émoji n'est pas un système ` +
+        "d'icônes : il est annoncé par les lecteurs d'écran et ne rend pas " +
+        'pareil selon le système. Employez `<Icone nom="…" />`.',
+    ).toBe("");
+
+    // Aucune icône réemployée entre deux liens de destinations différentes.
+    const liens = Array.from(sidebar.querySelectorAll("a[href]"));
+    const parEmpreinte = new Map<string, string[]>();
+    for (const lien of liens) {
+      const svg = lien.querySelector("svg");
+      if (!svg) continue;
+      const empreinte = Array.from(svg.querySelectorAll("path"))
+        .map((p) => p.getAttribute("d"))
+        .join("|");
+      const href = lien.getAttribute("href") ?? "(sans href)";
+      parEmpreinte.set(empreinte, [
+        ...(parEmpreinte.get(empreinte) ?? []),
+        href,
+      ]);
+    }
+
+    const collisions = [...parEmpreinte.values()]
+      .filter((hrefs) => hrefs.length > 1)
+      .map((hrefs) => `  ${hrefs.join(" = ")}`);
+
+    expect(
+      collisions.join("\n"),
+      "Ces entrées de la navigation du syndic partagent la même icône :\n" +
+        collisions.join("\n") +
+        "\n\nDeux destinations qui portent le même signe ne se distinguent " +
+        "plus que par leur libellé — l'icône cesse d'informer.",
+    ).toBe("");
+  });
+});
+
+describe("Navigation icônes (#797) @security", () => {
+  it("aucune icône n'est annoncée : le nom accessible tient au lien qui l'entoure", async () => {
+    const sidebar = await rendreSidebarSyndic();
+    const svgs = Array.from(sidebar.querySelectorAll("svg"));
+    expect(svgs.length).toBeGreaterThan(10);
+
+    for (const svg of svgs) {
+      // Décorative : aria-hidden retire l'icône de l'arbre d'accessibilité,
+      // focusable="false" l'exclut du parcours clavier (IE/Edge historique
+      // rendait les <svg> focusables par défaut).
+      expect(svg.getAttribute("aria-hidden")).toBe("true");
+      expect(svg.getAttribute("focusable")).toBe("false");
+      // Une icône bavarde masquerait le libellé réel du lien : elle ne doit
+      // porter ni nom accessible, ni rôle d'image.
+      expect(svg.hasAttribute("aria-label")).toBe(false);
+      expect(svg.hasAttribute("aria-labelledby")).toBe(false);
+      expect(svg.getAttribute("role")).not.toBe("img");
+    }
+
+    // Le nom accessible réel vit sur le lien englobant.
+    const lienBudgets = sidebar.querySelector('a[href="/budgets"]');
+    expect(lienBudgets?.textContent?.trim().length).toBeGreaterThan(0);
+  });
+});

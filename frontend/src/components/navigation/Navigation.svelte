@@ -780,7 +780,8 @@
             href="/settings"
             class="flex items-center gap-2 px-2 py-1 text-xs text-gray-600 hover:bg-gray-50 rounded-lg transition-colors"
           >
-            ⚙️ {$_("navigation.settings")}
+            <Icone nom="settings" taille={17} class="shrink-0" />
+            {$_("navigation.settings")}
           </a>
           <a
             data-testid="nav-gdpr-link"
@@ -1084,7 +1085,8 @@
           onclick={handleNavClick}
           class="flex items-center gap-2 px-2 py-1.5 text-xs text-gray-600 hover:bg-gray-50 rounded-lg transition-colors"
         >
-          ⚙️ {$_("navigation.settings")}
+          <Icone nom="settings" taille={17} class="shrink-0" />
+          {$_("navigation.settings")}
         </a>
         <a
           data-testid="nav-drawer-gdpr-link"
