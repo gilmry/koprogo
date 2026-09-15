@@ -1,3 +1,27 @@
+> **Archivé le 2026-09-13** (RFC 0003 / #854). Confronté à
+> `backend/src/domain/copropriete/registre_legal.rs` — le registre
+> exécutable des 30 obligations du chapitre copropriété (RFC-0002), apparu
+> après cet audit et qui en couvre désormais une bonne partie avec un test
+> par obligation :
+>
+> - **Constats couverts depuis** (fermer si les issues correspondantes
+>   existent déjà) : validation du quorum (Art. 3.87 § 5), limite des
+>   procurations (Art. 3.87 § 7), lien agenda-résolutions (Art. 3.87 § 2),
+>   distribution du PV sous 30 jours (Art. 3.87 § 12), signatures du PV
+>   (Art. 3.87 § 10), majorité par nature de décision (Art. 3.88).
+> - **Constats hors périmètre du registre** (le registre ne couvre que le
+>   chapitre copropriété du Code civil, pas le RGPD, la PCMN ni la sécurité
+>   infra) — **encore à vérifier et, si valides, à ouvrir en issues** :
+>   workflow de 2e convocation, fenêtre temporelle de vote, snapshot des
+>   tantièmes en début d'AG, 3 devis obligatoires >5000€, l'intégralité du
+>   §2 RGPD (politique de confidentialité, cookies, notification de
+>   violation Art. 33, DPA sous-traitants, chiffrement au repos, MFA pour
+>   l'effacement), et le §4 sécurité technique (scan Trivy/Grype, gestion
+>   de secrets, test de pénétration tiers).
+> - Ce fichier lui-même illustre le problème qu'il documente : resté en
+>   prose, il s'est périmé sans que rien ne le relie au code (cf.
+>   commentaire de tête de `registre_legal.rs`).
+
 # Audit de Conformite Juridique - KoproGo
 
 **Date**: 2026-02-28

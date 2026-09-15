@@ -22,6 +22,10 @@ Guide complet pour déployer KoproGo sur OVH Public Cloud avec Terraform, Ansibl
    terraform-ansible
    gitops
    troubleshooting
+   K3S_GITOPS_DEPLOYMENT
+   K3S_QUICKSTART
+   RUNBOOK_VPS_PRODUCTION
+   PRODUCTION_MIGRATION_RECOVERY
 
 ----
 

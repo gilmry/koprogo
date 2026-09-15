@@ -132,8 +132,9 @@ Les traductions sont dans ``frontend/src/locales/`` et chargées via ``svelte-i1
    import { getAccessToken } from "./accessToken";
    headers.set("Authorization", `Bearer ${getAccessToken()}`);
 
-Voir ``docs/JWT_REFRESH_TOKENS.md`` §"Amendment 2026-05-19" pour le
-détail backend + tests 4-cat (``backend/tests/e2e_auth.rs`` +
+Voir l'ADR-0054 (``docs/adr/0054-refresh-token-cookie-httponly.md``) pour la
+décision et ``docs/backend/JWT_REFRESH_TOKENS.md`` §"Amendment 2026-05-19"
+pour le détail backend + tests 4-cat (``backend/tests/e2e_auth.rs`` +
 ``frontend/tests/e2e/smoke/AuthCookie.spec.ts``).
 
 **Rôles Utilisateurs** :

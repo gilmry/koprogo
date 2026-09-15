@@ -4,6 +4,12 @@
 **Status:** ✅ COMPLETE
 **Date:** 2024-12-02
 
+> **Décision vs guide (RFC 0003 / #854).** Le choix de sécurité tranché par ce
+> document — refresh token en cookie `HttpOnly` plutôt que Bearer/localStorage
+> — est enregistré dans [ADR-0054](../adr/0054-refresh-token-cookie-httponly.md).
+> Ce fichier reste le mode d'emploi : cycle de vie des tokens, endpoints,
+> implémentation client, dépannage.
+
 ---
 
 ## Overview

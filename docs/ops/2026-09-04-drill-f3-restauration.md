@@ -44,7 +44,7 @@ manqué, pas l'outil.
 
 ### Ce que le runbook décrit, et ce qui existe
 
-`docs/RUNBOOK_VPS_PRODUCTION.md` décrit des sauvegardes chiffrées GPG
+`docs/deployment/RUNBOOK_VPS_PRODUCTION.md` décrit des sauvegardes chiffrées GPG
 synchronisées vers S3, par un cron du rôle `backup`.
 
 Sur ecosolva, **rien de tout cela n'est déployé** :

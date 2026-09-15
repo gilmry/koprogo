@@ -1,3 +1,11 @@
+> **Archivé le 2026-09-13** (RFC 0003 / #854). Cette analyse a produit
+> [ADR-0045](../adr/0045-comptabilite-appartient-a-lacp.md) (§1 « Le modèle
+> métier », modèle ACP/mandat tranché) et, indirectement,
+> [ADR-0046](../adr/0046-lacp-porte-le-perimetre-communautaire.md). Le
+> « chemin de résorption » (§4) et l'état d'avancement (§5) restent du
+> travail non terminé, suivi par l'issue #779 et ses voisines — pas par ce
+> fichier. Ne pas remettre à jour ce document : ouvrir ou consulter #779.
+
 # Recentrer le modèle sur l'ACP
 
 Analyse d'écart établie le 2026-09-02, après démonstration en conditions

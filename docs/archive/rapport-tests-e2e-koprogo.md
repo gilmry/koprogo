@@ -1,3 +1,10 @@
+> **Archivé le 2026-09-13** (RFC 0003 / #854). Recette manuelle du 22 mars
+> 2026 ; cinq campagnes l'ont suivie depuis. Les 8 bugs et le GAP
+> architectural listés ici ont déjà été convertis en issues GitHub à
+> l'époque — voir `docs/cowork/archive/prompt-sync-github-docs.md` pour le
+> détail de cette conversion. Ne pas rouvrir de nouvelles issues depuis ce
+> fichier sans vérifier d'abord si elles existent déjà.
+
 # KOPROGO — Rapport de Tests E2E Manuels
 
 **Gestion de Copropriété SaaS — Belgique**

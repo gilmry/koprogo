@@ -322,6 +322,12 @@ docs: ## 📚 Générer docs Rust (cargo doc)
 	@echo "$(GREEN)📚 Génération docs Rust...$(NC)"
 	cd backend && SQLX_OFFLINE=true cargo doc --no-deps --open
 
+docs-guard: ## 🚧 Refuser tout markdown non listé à la racine de docs/ (#854)
+	@bash ./scripts/check-docs-root-orphans.sh
+
+docs-guard-test: ## 🧪 Tests 4-cat du garde-fou docs-guard (#854)
+	@bash ./scripts/check-docs-root-orphans.test.sh
+
 docs-sphinx: ## 📖 Build docs Sphinx
 	@echo "$(GREEN)📖 Build docs Sphinx...$(NC)"
 	@if [ ! -d docs/.venv ]; then \

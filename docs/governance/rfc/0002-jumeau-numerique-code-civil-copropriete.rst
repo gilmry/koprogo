@@ -291,8 +291,9 @@ Alternatives écartées
 =====================
 
 - **Documenter la conformité à part** (un fichier d'audit relu à la main).
-  C'est l'état actuel : ``docs/AUDIT_CONFORMITE_JURIDIQUE.md`` existe et se
-  périme dès que le code bouge, parce que rien ne les relie.
+  C'était l'état de fait : ``docs/archive/AUDIT_CONFORMITE_JURIDIQUE.md``
+  (archivé depuis, #854) existait et se périmait dès que le code bougeait,
+  parce que rien ne les reliait.
 - **Un moteur de règles configurable.** Séduisant, mais la loi n'est pas
   paramétrique : ses règles ont des exceptions rédigées en prose. Un moteur
   générique déplacerait la complexité dans une configuration que personne ne

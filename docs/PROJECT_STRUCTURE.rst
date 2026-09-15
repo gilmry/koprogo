@@ -510,8 +510,8 @@ Documentation Structure
    ├── BELGIAN_ACCOUNTING_PCMN.rst
    ├── INVOICE_WORKFLOW.rst
    ├── PAYMENT_RECOVERY_WORKFLOW.rst
-   ├── MULTI_OWNER_SUPPORT.md
-   ├── MULTI_ROLE_SUPPORT.md
+   ├── user-guides/MULTI_OWNER_SUPPORT.md
+   ├── user-guides/MULTI_ROLE_SUPPORT.md
    ├── GIT_HOOKS.rst
    ├── conf.py
    ├── index.rst

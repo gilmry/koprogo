@@ -553,7 +553,7 @@ export interface PaymentReminder {
 - PCMN: `/docs/BELGIAN_ACCOUNTING_PCMN.rst`
 - Invoice Workflow: `/docs/INVOICE_WORKFLOW.rst`
 - Payment Recovery: `/docs/PAYMENT_RECOVERY_WORKFLOW.rst`
-- Multi-Owner: `/docs/MULTI_OWNER_SUPPORT.md`
+- Multi-Owner: `/docs/user-guides/MULTI_OWNER_SUPPORT.md`
 
 ---
 
