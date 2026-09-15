@@ -103,6 +103,16 @@ Closes #
 - [ ] Audit logging ajouté (si applicable)
 - [ ] Tests de sécurité effectués
 
+### Gouvernance Agent (Tier 1/Tier 2)
+
+<!-- cf. .claude/rules/CRITICAL.md §11 — à cocher seulement si cette PR inclut
+     du travail d'agent IA Tier 2 (lecture, diagnostic, proposition, reporting) -->
+
+- [ ] Cette PR inclut du travail d'agent IA Tier 2
+- [ ] Si coché ci-dessus : journal daté ajouté dans `docs/agent-activity/`
+      (cf. [`docs/agent-activity/README.md`](../docs/agent-activity/README.md)) —
+      sinon, demander la mise à jour avant merge
+
 ### CI/CD
 
 - [ ] GitHub Actions CI passe
