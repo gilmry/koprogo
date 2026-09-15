@@ -242,8 +242,36 @@ jobs:
       # `feature/dev` est écrite en dur, et c'est volontaire : c'est la base
       # que `gh pr create --base feature/dev` vise trois cents lignes plus
       # bas. Les deux doivent bouger ensemble ou pas du tout.
+      # ── `token:` — SANS LUI, LE PAT NE SERT À RIEN (#874) ──────────────
+      #
+      # `actions/checkout` persiste ses identifiants dans la configuration
+      # git du dépôt, sous forme d'un en-tête HTTP :
+      #
+      #     http.https://github.com/.extraheader =
+      #         AUTHORIZATION: basic <base64 x-access-token:GITHUB_TOKEN>
+      #
+      # Cet en-tête **prime sur les identifiants écrits dans l'URL du
+      # remote**. L'étape de poussée faisait donc, en toute bonne foi :
+      #
+      #     git remote set-url origin "https://x-access-token:$PAT@github.com/..."
+      #     git push -u origin "$BRANCHE"
+      #
+      # ...et git authentifiait avec le GITHUB_TOKEN de l'en-tête, jamais
+      # avec le PAT. GitHub ne déclenche aucun workflow sur un événement issu
+      # du GITHUB_TOKEN : d'où vingt-six branches sans gates, alors que le
+      # journal annonçait « Jeton dédié présent ».
+      #
+      # Le secret était bon — PAT à portée fine sur `gilmry/koprogo`, avec
+      # Contents, Issues, Pull requests et Workflows en écriture, vérifié le
+      # 2026-09-15. Le défaut n'a jamais été le jeton, il était dans la
+      # manière de s'en servir : on le posait à l'endroit que git regarde en
+      # DERNIER.
+      #
+      # Le poser ici le rend valable pour TOUTES les opérations git du job,
+      # poussée comprise, et rend le `set-url` inutile.
       - uses: actions/checkout@v7
         with:
+          token: ${{ secrets.FANOUT_GITHUB_TOKEN || github.token }}
           ref: feature/dev
           fetch-depth: 0
 
@@ -566,9 +594,17 @@ jobs:
           DOM: ${{ matrix.entree.domaine }}
         run: |
           set -euo pipefail
-          # L'URL porte le jeton : `git push` n'utilise pas GH_TOKEN tout seul.
-          git remote set-url origin \
-            "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          # Plus de `git remote set-url` : il ne servait à rien.
+          #
+          # L'en-tête `http.extraheader` posé par `actions/checkout` prime sur
+          # les identifiants de l'URL. Le PAT écrit ici était donc ignoré, et
+          # git poussait avec le GITHUB_TOKEN — qui ne réveille aucun
+          # workflow. Le jeton est désormais passé à `checkout` lui-même, une
+          # centaine de lignes plus haut, ce qui le rend valable pour toutes
+          # les opérations git du job.
+          #
+          # Témoin : si cette poussée ne déclenche toujours rien, c'est le
+          # jeton qu'il faut mettre en cause, plus le chemin.
           git push -u origin "$BRANCHE"
           if gh pr view "$BRANCHE" >/dev/null 2>&1; then
             echo "::notice::PR déjà ouverte pour $BRANCHE."
