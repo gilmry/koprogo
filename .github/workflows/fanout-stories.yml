@@ -484,6 +484,87 @@ jobs:
           path: /tmp/telemetrie/
           retention-days: 90
 
+      # ── La matière première du CSI ──────────────────────────────────────
+      #
+      # `claude -p --output-format json` rend `num_turns`, `usage`,
+      # `total_cost_usd` et `duration_ms`. La première passe réelle les a
+      # produits puis JETÉS : seul `result` partait au résumé, et il n'est
+      # resté du run 34739504910 que la durée du job — 11 min 22 s.
+      #
+      # Le persona `csi-engineer` de la Méthode Foyer tient « la télémétrie
+      # (tours, tokens, wall-clock par story) » pour objectiver l'écart au
+      # prior. Le Gantt annonce 74,75 j et 299 tours en **bornes hautes de
+      # première passe**, à resserrer sur le réel. Sans ces lignes, il n'y a
+      # pas de réel — juste le prior qui se recopie.
+      #
+      # Un artefact par story, rassemblés en UNE écriture par le
+      # récapitulatif : plusieurs agents committant le même fichier en
+      # parallèle se marcheraient dessus.
+      - name: Relever la télémétrie de la passe
+        if: ${{ always() }}
+        env:
+          NUM: ${{ matrix.entree.issue }}
+          CLE: ${{ matrix.entree.cle }}
+          CAP: ${{ matrix.entree.capacite }}
+          DOM: ${{ matrix.entree.domaine }}
+          TAILLE: ${{ matrix.entree.taille }}
+          MODELE: ${{ inputs.modele }}
+          FACT: ${{ inputs.facturation }}
+          RUN: ${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/telemetrie
+          python3 - <<'PYEOF' > "/tmp/telemetrie/passe-${NUM}.json"
+          import json, os
+
+          # L'absence de mesure se dit `null`. Un zéro se confondrait avec
+          # « mesuré à zéro », et c'est précisément ce qu'un prior ne doit
+          # jamais pouvoir imiter.
+          d = {}
+          try:
+              d = json.load(open("/tmp/agent.json"))
+          except Exception:
+              pass
+          u = d.get("usage") or {}
+
+          def entier(x):
+              return x if isinstance(x, int) else None
+
+          print(json.dumps({
+              "issue": int(os.environ["NUM"]),
+              "creneau": os.environ["CLE"],
+              "capacite": os.environ["CAP"],
+              "domaine": os.environ["DOM"],
+              "taille_estimee": os.environ["TAILLE"],
+              "modele": os.environ["MODELE"],
+              "facturation": os.environ["FACT"],
+              "run": os.environ["RUN"],
+              "tours_mesures": entier(d.get("num_turns")),
+              "duree_agent_ms": entier(d.get("duration_ms")),
+              "cout_usd": d.get("total_cost_usd"),
+              "tokens_entree": entier(u.get("input_tokens")),
+              "tokens_sortie": entier(u.get("output_tokens")),
+              "tokens_cache_lu": entier(u.get("cache_read_input_tokens")),
+              "sortie_lisible": bool(d),
+          }, ensure_ascii=False))
+          PYEOF
+          cat "/tmp/telemetrie/passe-${NUM}.json"
+          {
+            echo "### Télémétrie de la passe"
+            echo ""
+            echo '```json'
+            cat "/tmp/telemetrie/passe-${NUM}.json"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Déposer la télémétrie
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: telemetrie-${{ matrix.entree.issue }}
+          path: /tmp/telemetrie/
+          retention-days: 90
+
       - name: Committer si l'agent a produit quelque chose
         id: commit
         env:
