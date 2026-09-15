@@ -48,12 +48,18 @@ pub struct PublicScopePayload {
 // Guards
 // ---------------------------------------------------------------------------
 
-fn require_syndic_or_superadmin(user: &AuthenticatedUser) -> Result<(), AppError> {
-    match user.role.as_str() {
-        "syndic" | "superadmin" => Ok(()),
-        _ => Err(AppError::Forbidden(
-            "Only syndic or superadmin can issue magic links".to_string(),
-        )),
+/// `require_role` est l'idiome que ce dépôt reconnaît pour un contrôle de
+/// rôle qui DÉCIDE (cf. `garde_identite_sans_decision`, liste `DECISION`) —
+/// pas `match user.role.as_str() { ... }`, textuellement invisible pour ce
+/// cliquet malgré une logique identique.
+fn require_role(user: &AuthenticatedUser, allowed: &[&str]) -> Result<(), AppError> {
+    if allowed.contains(&user.role.as_str()) {
+        Ok(())
+    } else {
+        Err(AppError::Forbidden(format!(
+            "Requires one of roles: {}",
+            allowed.join(", ")
+        )))
     }
 }
 
@@ -78,15 +84,35 @@ pub async fn issue_magic_link(
     user: AuthenticatedUser,
     body: web::Json<IssueMagicLinkRequest>,
 ) -> Result<HttpResponse, AppError> {
-    require_syndic_or_superadmin(&user)?;
+    require_role(&user, &["syndic", "superadmin"])?;
 
     let req = body.into_inner();
     let scope_kind = MagicLinkScopeKind::from_str(&req.scope_kind)?;
 
+    // La portée `etat_date` ne passe PAS par ce endpoint générique (issue
+    // #855) : lui seul vérifie le rôle, jamais que l'appelant a la main sur
+    // l'organisation propriétaire de `scope_id`. `POST
+    // /etats-dates/{id}/notary-access` fait ce cloisonnement
+    // (`verify_etat_date_org_access`) avant d'émettre — l'accepter ici le
+    // contournerait complètement : un syndic du cabinet A pourrait émettre un
+    // lien pour l'état daté du cabinet B et le lire via
+    // `GET /etats-dates/reference/{ref}?token=`, qui ne vérifie que la
+    // correspondance jeton↔ressource, pas l'organisation. Même refus que
+    // `consume_magic_link` applique déjà en sens inverse (ne résout jamais
+    // `EtatDate`, cf. plus bas).
+    if scope_kind == MagicLinkScopeKind::EtatDate {
+        return Err(AppError::Validation(
+            "scope_kind 'etat_date' : utilisez POST /etats-dates/{id}/notary-access, \
+             qui vérifie l'organisation avant d'émettre"
+                .to_string(),
+        ));
+    }
+
     let issued = state
         .magic_link_use_cases
         .issue(
-            req.subject_user_id,
+            Some(req.subject_user_id),
+            None,
             scope_kind,
             req.scope_id,
             user.user_id,
@@ -101,6 +127,40 @@ pub async fn issue_magic_link(
         scope_kind: issued.scope_kind.to_string(),
         scope_id: issued.scope_id,
     }))
+}
+
+// ---------------------------------------------------------------------------
+// POST /magic-links/{id}/revoke — syndic / superadmin only (issue #855)
+// ---------------------------------------------------------------------------
+
+/// Révoque un lien avant son terme naturel (issue #855 : « révocable »).
+///
+/// Restreint au rôle syndic/superadmin, comme l'émission — pas à
+/// l'émetteur précis : le port `MagicLinkRepository` n'expose pas de lecture
+/// par id, et l'ajouter pour ce seul contrôle a été jugé disproportionné vis-
+/// à-vis du gain (un syndic malveillant a de toute façon accès à la donnée
+/// sous-jacente). À resserrer si ce besoin se confirme.
+#[utoipa::path(
+    post,
+    path = "/magic-links/{id}/revoke",
+    tag = "MagicLink",
+    summary = "Revoke a magic link before its natural expiry (syndic / superadmin only)",
+    responses(
+        (status = 204, description = "MagicLink revoked"),
+        (status = 403, description = "Forbidden or already revoked/consumed"),
+    ),
+)]
+#[post("/magic-links/{id}/revoke")]
+pub async fn revoke_magic_link(
+    state: web::Data<AppState>,
+    user: AuthenticatedUser,
+    id: web::Path<Uuid>,
+) -> Result<HttpResponse, AppError> {
+    require_role(&user, &["syndic", "superadmin"])?;
+
+    state.magic_link_use_cases.revoke(*id).await?;
+
+    Ok(HttpResponse::NoContent().finish())
 }
 
 // ---------------------------------------------------------------------------
@@ -156,6 +216,16 @@ pub async fn consume_magic_link(
                 "scope_id": link.scope_id,
                 "note": "Scope payload resolution pending follow-up",
             })
+        }
+        MagicLinkScopeKind::EtatDate => {
+            // Les liens `EtatDate` (issue #855) ne se résolvent jamais ici :
+            // ce endpoint générique consomme le lien sans vérifier qu'il
+            // correspond à la ressource demandée. La route dédiée
+            // `GET /etats-dates/reference/{reference_number}?token=`
+            // (`MagicLinkUseCases::verify_token`) fait cette vérification de
+            // portée ET laisse le lien relisible jusqu'à expiration — deux
+            // garanties que cet endpoint ne peut pas offrir.
+            return Err(AppError::MagicLinkInvalid);
         }
     };
 

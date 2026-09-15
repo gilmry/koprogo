@@ -2,6 +2,7 @@
 pub mod scope_guard;
 pub use scope_guard::{AcpScope, ScopeGuard, ScopeGuardError};
 
+use crate::application::error::AppError;
 use crate::infrastructure::web::app_state::AppState;
 use actix_web::{
     body::MessageBody,
@@ -225,6 +226,53 @@ impl GdprRateLimitState {
 
         *count += 1;
         Ok(())
+    }
+}
+
+/// Limite les tentatives sur une route sensible non authentifiée classiquement
+/// (issue #855, critère `@security`).
+///
+/// `GET /etats-dates/reference/{reference_number}` exige désormais un jeton,
+/// mais le numéro de référence lui-même ne porte que 32 bits d'aléa
+/// (`EtatDate::generate_reference_number`) — un balayage non borné pourrait
+/// encore tenter de deviner un couple (référence, jeton) valide. Une révision
+/// en mémoire suffit : l'objectif n'est pas de résister à un botnet distribué
+/// (Traefik le fait en amont pour toutes les routes), mais de rendre un
+/// balayage coûteux même depuis une seule IP, et que la garantie soit
+/// vérifiable par un test unitaire sans dépendre de l'infrastructure de
+/// déploiement.
+///
+/// Réutilise `GdprRateLimitState`, qui n'a de « GDPR » que le nom : la logique
+/// de fenêtre glissante est générique.
+#[derive(Clone)]
+pub struct NotaryAccessRateLimiter {
+    state: GdprRateLimitState,
+}
+
+impl NotaryAccessRateLimiter {
+    pub fn new(max_requests: usize, window_duration: Duration) -> Self {
+        Self {
+            state: GdprRateLimitState::new(GdprRateLimitConfig {
+                max_requests,
+                window_duration,
+            }),
+        }
+    }
+
+    /// `key` est typiquement l'IP de l'appelant. Renvoie
+    /// `AppError::RateLimited` (429) au-delà du seuil.
+    pub fn check(&self, key: &str) -> Result<(), AppError> {
+        self.state
+            .check_rate_limit(key)
+            .map_err(|_| AppError::RateLimited)
+    }
+}
+
+impl Default for NotaryAccessRateLimiter {
+    fn default() -> Self {
+        // 20 tentatives / minute : large pour un notaire qui recharge sa
+        // page, serré pour un balayage automatisé des références.
+        Self::new(20, Duration::from_secs(60))
     }
 }
 

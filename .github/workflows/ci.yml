@@ -536,6 +536,7 @@ jobs:
             --test e2e_owner_contributions --test e2e_organization_users \
             --test e2e_individual_members --test e2e_gdpr_art30 \
             --test e2e_gamification --test e2e_etat_date \
+            --test e2e_etat_date_notary_access \
             --test e2e_contractor_reports --test e2e_call_for_funds \
             --test e2e_work_reports --test e2e_units --test e2e_two_factor \
             --test e2e_technical_inspections

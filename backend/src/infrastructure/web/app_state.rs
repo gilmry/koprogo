@@ -24,6 +24,7 @@ use crate::infrastructure::database::repositories::{
 };
 use crate::infrastructure::email::EmailService;
 use crate::infrastructure::pool::DbPool;
+use crate::infrastructure::web::middleware::NotaryAccessRateLimiter;
 use std::sync::Arc;
 
 pub struct AppState {
@@ -111,6 +112,12 @@ pub struct AppState {
     /// Story 3.9 — ContractorEvaluation (append-only, gated by an approved
     /// TechnicalSpec) (FR34 FR35 INV-21 INV-24).
     pub contractor_evaluation_use_cases: Arc<ContractorEvaluationUseCases>,
+    /// Issue #855 — limite les tentatives sur `GET
+    /// /etats-dates/reference/{reference_number}`, seule route dont
+    /// l'identifiant public (la référence) porte un aléa faible (32 bits).
+    /// Pas un paramètre de construction : c'est un état interne au process,
+    /// sans dépendance externe, comme `GdprRateLimitState`.
+    pub notary_access_rate_limiter: Arc<NotaryAccessRateLimiter>,
 }
 
 impl AppState {
@@ -263,6 +270,7 @@ impl AppState {
             syndic_response_use_cases: Arc::new(syndic_response_use_cases),
             technical_spec_use_cases: Arc::new(technical_spec_use_cases),
             contractor_evaluation_use_cases: Arc::new(contractor_evaluation_use_cases),
+            notary_access_rate_limiter: Arc::new(NotaryAccessRateLimiter::default()),
         }
     }
 }

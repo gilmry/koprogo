@@ -196,7 +196,11 @@ use utoipa_swagger_ui::SwaggerUi;
         crate::infrastructure::web::handlers::contractor_evaluation_handlers::list_contractor_evaluations,
         // MagicLink (Story 3.2 — FR6 INV-13 INV-17)
         crate::infrastructure::web::handlers::magic_link_handlers::issue_magic_link,
+        crate::infrastructure::web::handlers::magic_link_handlers::revoke_magic_link,
         crate::infrastructure::web::handlers::magic_link_handlers::consume_magic_link,
+        // Notary access to états datés (issue #855, ADR 0048)
+        crate::infrastructure::web::handlers::etat_date_handlers::get_by_reference_number,
+        crate::infrastructure::web::handlers::etat_date_handlers::issue_etat_date_notary_link,
         // Mandate (Story 3.4 — FR7 INV-14)
         crate::infrastructure::web::handlers::mandate_handlers::issue_mandate,
         crate::infrastructure::web::handlers::mandate_handlers::list_mandates,
