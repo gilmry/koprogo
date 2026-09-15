@@ -63,6 +63,20 @@ pub fn est_interdit(message: &str) -> bool {
         || m.contains("only the")
 }
 
+/// L'erreur est-elle PRÉCISÉMENT le refus opposé à qui n'a pas de fiche de
+/// copropriétaire (skill/shared_object/resource_booking `resolve_owner()`) ?
+///
+/// Issue #781 — ce refus est déjà reconnu par `est_interdit` (403), mais par
+/// mot-clé générique. Un `kind` stable, distinct des autres 403, permet au
+/// frontend de router vers un message traduit dans les quatre locales sans
+/// dépendre du libellé français — cf. `REFUS_RESERVE_AUX_COPROPRIETAIRES`,
+/// dont le commentaire documente pourquoi une comparaison de libellé est
+/// fragile pour les TESTS ; ici c'est le même risque, côté frontend, qu'un
+/// `kind` stable évite.
+pub fn est_refus_owner_requis(message: &str) -> bool {
+    message == crate::application::error::REFUS_RESERVE_AUX_COPROPRIETAIRES
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -98,5 +112,42 @@ mod tests {
             "Cette action est réservée aux copropriétaires : elle engage une personne"
         ));
         assert!(!est_interdit("Poll not found"));
+    }
+
+    // ------------------------------------------------------------------------
+    // Issue #781 — est_refus_owner_requis (kind stable pour le frontend)
+    // ------------------------------------------------------------------------
+
+    #[test]
+    fn happy_le_refus_owner_requis_est_reconnu() {
+        assert!(est_refus_owner_requis(
+            crate::application::error::REFUS_RESERVE_AUX_COPROPRIETAIRES
+        ));
+    }
+
+    #[test]
+    fn edge_un_prefixe_ou_suffixe_ne_suffit_pas() {
+        // La comparaison est stricte : un message qui ne fait que CONTENIR le
+        // refus (ex. concaténé à un contexte) n'est pas CE refus précis — le
+        // kind ne doit s'attacher qu'à une correspondance exacte.
+        assert!(!est_refus_owner_requis(&format!(
+            "{} (contexte additionnel)",
+            crate::application::error::REFUS_RESERVE_AUX_COPROPRIETAIRES
+        )));
+    }
+
+    #[test]
+    fn negative_un_autre_refus_de_droit_ne_declenche_pas_ce_kind() {
+        // `est_interdit` reconnaît aussi ce message (403 générique) — mais il
+        // ne s'agit PAS du refus "owner requis" : les deux fonctions doivent
+        // pouvoir diverger.
+        let autre = "Unauthorized: only owner can update skill";
+        assert!(est_interdit(autre));
+        assert!(!est_refus_owner_requis(autre));
+    }
+
+    #[test]
+    fn security_un_message_vide_nest_jamais_pris_pour_ce_refus() {
+        assert!(!est_refus_owner_requis(""));
     }
 }

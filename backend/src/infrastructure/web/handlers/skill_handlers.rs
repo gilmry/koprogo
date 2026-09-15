@@ -27,7 +27,25 @@ pub async fn create_skill(
         .await
     {
         Ok(skill) => HttpResponse::Created().json(skill),
-        Err(e) => HttpResponse::BadRequest().json(serde_json::json!({"error": e})),
+        Err(e) => {
+            // Issue #781 — ce refus est un 403 (règle métier : offrir une
+            // compétence engage une personne, pas la copropriété), jamais un
+            // 400 (qui suggérerait une saisie invalide côté client). Le
+            // `kind` laisse le frontend router vers un message traduit dans
+            // les quatre locales sans dépendre du libellé français.
+            if classification_erreurs::est_refus_owner_requis(&e) {
+                HttpResponse::Forbidden().json(serde_json::json!({
+                    "error": e,
+                    "kind": "owner_profile_required",
+                }))
+            } else if classification_erreurs::est_interdit(&e) {
+                HttpResponse::Forbidden().json(serde_json::json!({"error": e}))
+            } else if classification_erreurs::est_introuvable(&e) {
+                HttpResponse::NotFound().json(serde_json::json!({"error": e}))
+            } else {
+                HttpResponse::BadRequest().json(serde_json::json!({"error": e}))
+            }
+        }
     }
 }
 

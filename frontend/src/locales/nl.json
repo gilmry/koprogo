@@ -3699,6 +3699,8 @@
       "hourlyRate": "Uurtarief (credits)",
       "hourlyRateHelp": "Laat op 0 voor gratis aanbod",
       "hourlyRatePlaceholder": "0 = gratis",
+      "ownerProfileRequiredMessage": "Een vaardigheid aanbieden verbindt een met naam genoemde persoon, niet de mede-eigendom. Uw account heeft geen eigenaarsprofiel in deze organisatie.",
+      "ownerProfileRequiredTitle": "Voorbehouden aan mede-eigenaars",
       "skillName": "Naam van de vaardigheid",
       "skillNamePlaceholder": "Loodgieterij, tuinieren, wiskundeles...",
       "skillNameRequired": "De naam van de vaardigheid is verplicht",
