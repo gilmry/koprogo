@@ -322,6 +322,37 @@ du défaut avec un témoin d'interruption (le minimum, déjà décrit dans #880)
 
 ## Journal (chronologie courte)
 
+- 2026-09-15 — **Le correctif du rapport porte ses fruits le jour même, et
+  il révèle un DEUXIÈME type de silence.**
+
+  Hier, on avait établi que le silence d'un agent était de la variance —
+  rejouer la passe produisait du travail. Aujourd'hui, les rapports enfin
+  lisibles montrent autre chose :
+
+  > **#802** — « Le travail demandé est déjà fait et fusionné dans `main`.
+  > Je m'arrête plutôt que de produire un doublon. » *(avec ses preuves,
+  > dont `docs/refonte/CONTRAT_DE_TESTS.md`, commit `39e97277`)*
+  >
+  > **#803** — « Tout est déjà en place — je m'arrête ici plutôt que de
+  > refaire ou dupliquer ce travail. »
+
+  Il y a donc **deux silences**, et ils n'appellent pas le même geste :
+
+  | Silence | Ce qu'il faut faire |
+  |---|---|
+  | variance | **rejouer la passe** |
+  | « déjà fait » | **vérifier, puis fermer l'issue** |
+
+  ⚠️ **Et le second est une AFFIRMATION, pas un constat.** Vérifié pour
+  #802 : le fichier cité existe et son commit porte bien `(#802)`. Mais
+  l'issue s'intitule « adapter les tests sans en supprimer les règles
+  produit qu'ils encodent » — écrire le contrat en est UN livrable, adapter
+  les tests en est un autre. L'agent a peut-être conclu trop vite, et ce
+  n'est pas à lui d'en juger.
+
+  Les deux issues restent donc **ouvertes**. « Déjà fait » est exactement le
+  genre de verdict que la revue de promotion doit trancher, pas le harnais.
+
 - 2026-09-15 — **LE HARNAIS EST COMPLET. Les gates partent seuls.** Mesuré
   sur `story/579`, première branche poussée après le correctif :
 
