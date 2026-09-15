@@ -126,7 +126,7 @@ async fn test_notices_create() {
 /// générale des modules communautaires.
 #[actix_web::test]
 #[serial]
-async fn test_notices_create_by_syndic_without_owner_profile_succeeds() {
+async fn happy_notices_create_by_syndic_without_owner_profile_succeeds() {
     let (app_state, _container, org_id) = common::setup_test_db().await;
     // Syndic authentifié, SANS ligne dans `owners`.
     let token = common::register_and_login_with_role(&app_state, org_id, "syndic").await;

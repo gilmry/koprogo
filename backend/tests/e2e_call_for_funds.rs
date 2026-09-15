@@ -563,7 +563,7 @@ async fn security_overdue_calls_ne_rend_jamais_larriere_dune_autre_organisation(
     let org_b = common::create_test_organization(&app_state).await;
 
     let (token_a, building_a, _, _) = create_call_for_funds_fixtures(&app_state, org_a).await;
-    let (token_b, building_b, _, _) = create_call_for_funds_fixtures(&app_state, org_b).await;
+    let (_token_b, building_b, _, _) = create_call_for_funds_fixtures(&app_state, org_b).await;
 
     let id_a = creer_appel_en_retard(&app_state, org_a, building_a, "Arriéré cabinet A").await;
     let id_b = creer_appel_en_retard(&app_state, org_b, building_b, "Arriéré cabinet B").await;

@@ -130,7 +130,7 @@ async fn test_skills_create() {
 /// français porté par `Result<_, String>` (#555, #762).
 #[actix_web::test]
 #[serial]
-async fn test_skills_create_by_syndic_without_owner_profile_is_forbidden() {
+async fn security_skills_create_by_syndic_without_owner_profile_is_forbidden() {
     let (app_state, _container, org_id) = common::setup_test_db().await;
     // Syndic authentifié, SANS ligne dans `owners` — le cas de la recette.
     let token = common::register_and_login_with_role(&app_state, org_id, "syndic").await;
@@ -209,7 +209,7 @@ async fn test_skills_create_by_syndic_without_owner_profile_is_forbidden() {
 /// refus porte sur l'absence de fiche, pas sur le rôle syndic.
 #[actix_web::test]
 #[serial]
-async fn test_skills_create_by_syndic_who_is_also_owner_succeeds() {
+async fn happy_skills_create_by_syndic_who_is_also_owner_succeeds() {
     let (app_state, _container, org_id) = common::setup_test_db().await;
     let email = format!("syndic-owner-{}@example.com", Uuid::new_v4());
     let reg = koprogo_api::application::dto::RegisterRequest {

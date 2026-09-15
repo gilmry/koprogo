@@ -120,6 +120,40 @@ use std::path::{Path, PathBuf};
 /// (listes de personnes), avis.
 const DETTE_AU_2026_09_06: usize = 8;
 
+/// Les routes dont le JETON EST l'identifiant — exceptions justifiées.
+///
+/// ── Pourquoi une liste, et pas un compteur qu'on monte ────────────────────
+///
+/// La fusion du 2026-09-15 a fait passer la dette de 8 à 9 en ajoutant
+/// `POST /c/{token}/respond` (#835). Monter le compteur à 9 aurait été le
+/// geste facile, et le mauvais : le nombre aurait cessé de dire « routes dont
+/// personne n'a jugé l'absence d'identité » pour dire « routes qu'on a
+/// laissées passer ».
+///
+/// Ces routes-ci n'ont PAS d'`AuthenticatedUser`, et c'est correct : elles
+/// s'adressent à quelqu'un qui n'a pas de compte — un prestataire, un
+/// notaire — et le lien magique porte à la fois l'identité et la portée. Le
+/// cloisonnement y est fait par `MagicLinkUseCases`, qui vérifie le hachage,
+/// l'expiration et la correspondance jeton↔ressource.
+///
+/// Trois y figuraient déjà sans être nommées, noyées dans le 8. Les nommer ne
+/// change pas le chiffre — ça change ce qu'il mesure.
+const JETON_FAIT_IDENTITE: &[(&str, &str)] = &[
+    (
+        "magic_link_handlers  POST /c/{token}/respond",
+        "le prestataire répond sans compte ; MagicLinkUseCases::peek vérifie \
+         hachage, expiration et portée (#835)",
+    ),
+    (
+        "contractor_report_handlers  POST /contractor/token/{token}/submit",
+        "même mécanisme, système absorbé par #835",
+    ),
+    (
+        "contractor_report_handlers  POST /contractor-reports/magic/{token}/submit",
+        "idem",
+    ),
+];
+
 /// Routes imbriquées qui **prennent** l'identité sans jamais la **vérifier**.
 ///
 /// ── Pourquoi ce second compte existe ───────────────────────────────────────
@@ -389,6 +423,16 @@ fn la_dette_de_lecture_imbriquee_ne_grossit_pas() {
             }
         }
     }
+
+    // Les routes dont le jeton fait l'identité sortent du compte, avec leur
+    // raison écrite. Elles restent LISTÉES dans le message d'échec : une
+    // exception invisible se lit comme un oubli.
+    let exceptees: std::collections::BTreeSet<&str> =
+        JETON_FAIT_IDENTITE.iter().map(|(r, _)| *r).collect();
+    let sans_identite: Vec<String> = sans_identite
+        .into_iter()
+        .filter(|l| !exceptees.contains(l.trim()))
+        .collect();
 
     assert!(
         sans_identite.len() <= DETTE_AU_2026_09_06,

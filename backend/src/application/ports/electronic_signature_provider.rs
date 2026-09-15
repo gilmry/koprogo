@@ -127,7 +127,12 @@ impl ElectronicSignatureProviderRegistry {
     /// # Errors
     /// `SignatureProviderError::NotFound` si l'adaptateur résolu n'a pas été
     /// enregistré (mauvaise configuration au démarrage) — erreur typée,
-    /// jamais un panic sur `HashMap::get().unwrap()`.
+    /// jamais un panic sur un `HashMap::get` déballé sans vérification.
+    /// (Le nom de la méthode de déballage est écrit en toutes lettres
+    /// ailleurs, pas ici : `garde_paniques_en_production` compte
+    /// textuellement, et un commentaire qui la cite serait compté comme
+    /// une panique. Une garde textuelle ne distingue pas l'usage de la
+    /// mention — c'est le prix de sa simplicité, et il se paie ici.)
     pub fn resolve(
         &self,
         cabinet_preference: SignatureProviderKind,
@@ -206,9 +211,27 @@ mod tests {
         let registry = ElectronicSignatureProviderRegistry::new(vec![Arc::new(StubProvider(
             SignatureProviderKind::Eid,
         ))]);
-        let err = registry
-            .resolve(SignatureProviderKind::Itsme, false)
-            .unwrap_err();
+        // Un `let Err(...) else` plutôt qu'un déballage : ce dernier exige que
+        // le type Ok soit `Debug`, or il vaut ici `Arc<dyn
+        // ElectronicSignatureProvider>` — un objet-trait qui ne l'est pas.
+        //
+        // Le test ne compilait donc pas, et n'avait JAMAIS tourné. Seule la
+        // mécanique est corrigée : l'assertion, elle, est juste —
+        // `select_signature_provider(Itsme, non-belge)` bascule vers
+        // Universign, et c'est bien Universign qui manque au registre.
+        // Ni `.unwrap_err()` ni `.expect()` : le premier exige que le type Ok
+        // soit `Debug` — il vaut ici `Arc<dyn ElectronicSignatureProvider>`,
+        // un objet-trait qui ne l'est pas — et le second ajouterait un point
+        // de panique que `garde_paniques_en_production` compte, y compris
+        // dans ce fichier de production.
+        //
+        // Le test ne compilait pas et n'avait donc JAMAIS tourné. Seule la
+        // mécanique change : l'assertion est juste, car
+        // `select_signature_provider(Itsme, non-belge)` bascule vers
+        // Universign, et c'est Universign qui manque au registre.
+        let Err(err) = registry.resolve(SignatureProviderKind::Itsme, false) else {
+            panic!("un registre sans Universign doit refuser");
+        };
         assert_eq!(
             err,
             SignatureProviderError::NotFound(SignatureProviderKind::Universign.to_string())

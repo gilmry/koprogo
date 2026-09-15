@@ -20,14 +20,24 @@ use uuid::Uuid;
 /// la syntaxe JSON et le Content-Type (comportement inchangé, 400 en cas de
 /// souci) ; c'est seulement la conversion vers le type précis qui distingue
 /// le 422 de validation.
+/// `Box<HttpResponse>` et non `HttpResponse` : clippy refuse un variant
+/// `Err` de 128 octets (`result_large_err`), et il a raison — chaque appel
+/// déplacerait la réponse entière sur la pile, y compris sur le chemin
+/// nominal où elle n'existe pas.
+///
+/// L'alternative aurait été de désactiver la règle. Elle vaut mieux qu'un
+/// `allow` : le coût réel est un déréférencement sur le chemin d'ERREUR,
+/// c'est-à-dire là où la performance n'a jamais compté.
+type RefusDeValidation = Box<HttpResponse>;
+
 fn parse_create_contribution_request(
     body: serde_json::Value,
-) -> Result<CreateOwnerContributionRequest, HttpResponse> {
+) -> Result<CreateOwnerContributionRequest, RefusDeValidation> {
     serde_json::from_value(body).map_err(|e| {
-        HttpResponse::UnprocessableEntity().json(serde_json::json!({
+        Box::new(HttpResponse::UnprocessableEntity().json(serde_json::json!({
             "error": "Validation error: the request body does not match the schema",
             "details": e.to_string(),
-        }))
+        })))
     })
 }
 
@@ -64,7 +74,7 @@ pub async fn create_contribution(
 
     let req = match parse_create_contribution_request(body.into_inner()) {
         Ok(req) => req,
-        Err(response) => return response,
+        Err(response) => return *response,
     };
 
     match state

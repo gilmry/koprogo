@@ -137,7 +137,7 @@ async fn test_shared_objects_create() {
 /// copropriété), mais doit être un 403 lisible, pas un 400 générique.
 #[actix_web::test]
 #[serial]
-async fn test_shared_objects_create_by_syndic_without_owner_profile_is_forbidden() {
+async fn security_shared_objects_create_by_syndic_without_owner_profile_is_forbidden() {
     let (app_state, _container, org_id) = common::setup_test_db().await;
     // Syndic authentifié, SANS ligne dans `owners` — le cas de la recette.
     let token = common::register_and_login_with_role(&app_state, org_id, "syndic").await;

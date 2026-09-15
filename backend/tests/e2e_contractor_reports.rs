@@ -426,7 +426,7 @@ async fn test_contractor_reports_access_via_magic_link() {
 
 #[actix_web::test]
 #[serial]
-async fn test_contractor_reports_respond_via_unified_magic_link() {
+async fn happy_contractor_reports_respond_via_unified_magic_link() {
     // #835 — le second système (`/contractor/?token=`, `/contractor-reports/magic/{token}`)
     // est retiré du chemin d'émission : ce test couvre le nouveau round-trip
     // complet lecture (GET /c/{token}) puis écriture (POST /c/{token}/respond).

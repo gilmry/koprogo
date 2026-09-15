@@ -142,7 +142,7 @@ async fn test_owner_contributions_create() {
 // 422 de validation de contrat, pas un 400 opaque au milieu du use case.
 #[actix_web::test]
 #[serial]
-async fn test_owner_contributions_create_missing_unit_id_returns_422() {
+async fn negative_owner_contributions_create_missing_unit_id_returns_422() {
     let (app_state, _container, org_id) = common::setup_test_db().await;
     let (token, owner_id, _unit_id, _building_id) =
         create_contribution_fixtures(&app_state, org_id).await;
@@ -192,7 +192,7 @@ async fn test_owner_contributions_create_missing_unit_id_returns_422() {
 // reste un 400 : seule la non-conformité au schéma devient un 422.
 #[actix_web::test]
 #[serial]
-async fn test_owner_contributions_create_malformed_json_stays_400() {
+async fn negative_owner_contributions_create_malformed_json_stays_400() {
     let (app_state, _container, org_id) = common::setup_test_db().await;
     let token = common::register_and_login(&app_state, org_id).await;
 

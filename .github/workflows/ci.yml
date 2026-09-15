@@ -180,6 +180,9 @@ jobs:
             --test garde_ordre_des_routes \
             --test garde_harnais_executes \
             --test garde_identite_sans_decision \
+            --test garde_audit_des_transitions \
+            --test garde_documentation_personas \
+            --test garde_identite_jetee \
             --test garde_paniques_en_production \
             --test garde_perimetre_wbs \
             --test garde_schema_mort \
@@ -278,6 +281,7 @@ jobs:
             --test bdd_operations --test bdd_community \
             --test bdd_acp --test bdd_building_conformity \
             --test bdd_list_buildings_role_based --test bdd_meeting_complete \
+            --test bdd_meeting_hybrid_quorum \
             --test bdd_portfolio --test bdd_validate_before_compute \
             --test bdd_voting_right --test bdd_iot
 
@@ -494,7 +498,7 @@ jobs:
           cargo test --no-fail-fast \
             --test e2e --test e2e_ag_sessions --test e2e_buildings \
             --test e2e_convocations --test e2e_gdpr --test e2e_payments \
-            --test e2e_api_keys
+            --test e2e_api_keys --test e2e_stats_owner_dues
           # Lot 2 — 13 harnais supplémentaires, 130 tests, mesurés verts le
           # 2026-08-26. Aucun n'avait jamais été exécuté, ni en CI ni en local.
           # Leur première exécution a mis au jour deux défauts produit :

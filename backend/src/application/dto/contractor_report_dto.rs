@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 /// Création d'un rapport par le corps de métier (via magic link ou syndic)
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, utoipa::ToSchema)]
 pub struct CreateContractorReportDto {
     pub building_id: Uuid,
     pub contractor_name: String,
@@ -14,7 +14,13 @@ pub struct CreateContractorReportDto {
 }
 
 /// Mise à jour du brouillon (photos, pièces, compte-rendu)
-#[derive(Debug, Deserialize)]
+///
+/// `ToSchema` est requis depuis la fusion du 2026-09-15 : `magic_link_handlers`
+/// expose ce DTO dans un `#[utoipa::path]`, et utoipa exige alors qu'il sache
+/// se décrire. Les deux branches étaient justes séparément — l'une ajoutait le
+/// handler, l'autre le DTO — et leur rencontre a produit l'incohérence. C'est
+/// le genre de défaut qu'aucune des deux revues n'aurait pu voir.
+#[derive(Debug, Deserialize, utoipa::ToSchema)]
 pub struct UpdateContractorReportDto {
     pub work_date: Option<DateTime<Utc>>,
     pub compte_rendu: Option<String>,
@@ -23,7 +29,7 @@ pub struct UpdateContractorReportDto {
     pub parts_replaced: Option<Vec<ReplacedPartDto>>,
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize, utoipa::ToSchema)]
 pub struct ReplacedPartDto {
     pub name: String,
     pub reference: Option<String>,
@@ -54,19 +60,19 @@ impl From<&ReplacedPart> for ReplacedPartDto {
 }
 
 /// Demande de corrections par le CdC
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, utoipa::ToSchema)]
 pub struct RequestCorrectionsDto {
     pub comments: String,
 }
 
 /// Rejet par le CdC
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, utoipa::ToSchema)]
 pub struct RejectReportDto {
     pub comments: String,
 }
 
 /// Génération du magic link (syndic → corps de métier)
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, utoipa::ToSchema)]
 pub struct GenerateMagicLinkDto {
     pub report_id: Uuid,
 }

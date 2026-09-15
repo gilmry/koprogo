@@ -348,7 +348,7 @@ async fn test_journal_entries_unbalanced_fails() {
 
 #[actix_web::test]
 #[serial]
-async fn test_journal_entries_missing_building_is_a_validation_error_not_a_500() {
+async fn negative_journal_entries_missing_building_is_a_validation_error_not_a_500() {
     // #762 @negative — cas constaté le 2026-09-04 : une écriture manuelle
     // sans immeuble déclenche le refus « Impossible de déterminer l'ACP :
     // une écriture manuelle doit désigner un immeuble ». Ce message français
@@ -411,7 +411,7 @@ async fn test_journal_entries_missing_building_is_a_validation_error_not_a_500()
 
 #[actix_web::test]
 #[serial]
-async fn test_journal_entries_single_line_is_a_validation_error_not_a_500() {
+async fn negative_journal_entries_single_line_is_a_validation_error_not_a_500() {
     // #762 @edge — avant cette story, seuls `unbalanced`, `foreign key`,
     // `violates`, l'introuvable et le message ACP étaient reconnus par le
     // gestionnaire ; une écriture à une seule ligne n'y figurait pas et

@@ -944,8 +944,8 @@ mod tests {
     /// variante qui affiche son contenu tel quel (`Validation`, `Conflict`,
     /// `NotFound`), ce qui exposerait le nom de la contrainte et de la table.
     #[tokio::test]
-    async fn test_762_echec_de_depot_ne_devient_pas_une_validation_qui_exposerait_le_message_brut()
-    {
+    async fn negative_762_echec_de_depot_ne_devient_pas_une_validation_qui_exposerait_le_message_brut(
+    ) {
         let uc = make_use_cases(MockJournalEntryRepository::qui_echoue_comme_la_base());
         let org_id = Uuid::new_v4();
 

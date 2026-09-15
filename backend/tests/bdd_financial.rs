@@ -2498,7 +2498,13 @@ async fn given_sent_overdue_call(world: &mut FinancialWorld) {
 #[when("I list overdue calls for funds")]
 async fn when_list_overdue_calls(world: &mut FinancialWorld) {
     let uc = world.call_for_funds_use_cases.as_ref().unwrap().clone();
-    let result = uc.get_overdue_calls().await.expect("get overdue");
+    // `get_overdue_calls` prend désormais l'organisation (#882) : sans elle,
+    // elle rendait les appels de fonds en retard de TOUTE l'instance à
+    // n'importe quel utilisateur authentifié.
+    let result = uc
+        .get_overdue_calls(world.org_id.expect("org du monde BDD"))
+        .await
+        .expect("get overdue");
     world.call_for_funds_list_count = result.len();
 }
 
