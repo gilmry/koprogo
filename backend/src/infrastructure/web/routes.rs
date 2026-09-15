@@ -473,6 +473,7 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig) {
             .service(list_expired)
             .service(get_stats)
             .service(get_by_reference_number)
+            .service(issue_etat_date_notary_link) // POST /etats-dates/{id}/notary-access (issue #855)
             .service(list_etats_dates_by_unit)
             .service(list_etats_dates_by_building)
             .service(get_etat_date)
@@ -716,6 +717,7 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig) {
             // POST /magic-links : syndic/superadmin issues a link
             // GET  /c/{token}   : PUBLIC (no auth) — validate + consume + resolve scope
             .service(issue_magic_link)
+            .service(revoke_magic_link) // POST /magic-links/{id}/revoke (issue #855)
             .service(consume_magic_link)
             // Mandates (Story 3.4 — FR7 INV-14)
             // POST   /mandates              : syndic/superadmin issues a mandate

@@ -61,9 +61,20 @@ use std::path::{Path, PathBuf};
 ///   pas un secret, et derrière elle il y a les dettes d'un copropriétaire
 ///   nommé.
 ///
-/// Reste donc **une** route non gardée, et elle a une issue : l'identité
-/// notaire est à créer (#845, ADR 0048).
-const DETTE_AU_2026_09_10: usize = 1;
+/// ── Fermée le 2026-09-15 (issue #855) ───────────────────────────────────
+///
+/// Le rôle notaire dédié a été écarté (décision du 2026-09-12) : le syndic
+/// émet à la place un lien signé, à durée limitée, lié à UN état daté,
+/// révocable et journalisé — le mécanisme générique `magic_link.rs` (Story
+/// 3.2), pas un troisième système de liens (cf. #835). `GET
+/// /etats-dates/reference/{reference_number}` vérifie désormais ce jeton
+/// (`MagicLinkUseCases::verify_token`) avant de servir la moindre donnée.
+///
+/// **Zéro route restante.** Ce chiffre est désormais une interdiction, pas un
+/// cliquet vers une décision en attente : toute route future qui l'augmente
+/// doit soit prendre `AuthenticatedUser`, soit vérifier un jeton, soit
+/// rejoindre `PUBLIQUES` avec sa raison écrite.
+const DETTE_AU_2026_09_10: usize = 0;
 
 /// Les routes publiques, et pourquoi.
 ///

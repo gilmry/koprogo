@@ -215,6 +215,14 @@ pub enum AuditEventType {
     EtatDateFinancialUpdate,
     EtatDateAdditionalDataUpdate,
     EtatDateDeleted,
+    /// Le syndic émet un lien notaire (issue #855, ADR 0048) — journalisé à
+    /// l'émission ET à chaque lecture (`EtatDateNotaryAccess`), pour que le
+    /// suivi ne dépende pas d'un seul des deux événements.
+    EtatDateNotaryLinkIssued,
+    /// Un notaire a ouvert un état daté via un lien signé (issue #855). Sans
+    /// `user_id` (le notaire n'a pas de compte) — l'émetteur du lien est
+    /// tracé dans `metadata`.
+    EtatDateNotaryAccess,
 
     // Budget events (Annual budget management)
     BudgetCreated,

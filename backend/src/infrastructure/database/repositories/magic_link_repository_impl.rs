@@ -28,20 +28,22 @@ impl MagicLinkRepository for PostgresMagicLinkRepository {
         sqlx::query(
             r#"
             INSERT INTO magic_links (
-                id, token_hash, subject_user_id, scope_kind, scope_id,
-                issued_by, expires_at, consumed_at, created_at, updated_at
+                id, token_hash, subject_user_id, recipient_label, scope_kind, scope_id,
+                issued_by, expires_at, consumed_at, single_use, created_at, updated_at
             )
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
             "#,
         )
         .bind(link.id)
         .bind(&link.token_hash)
         .bind(link.subject_user_id)
+        .bind(&link.recipient_label)
         .bind(link.scope_kind.to_string())
         .bind(link.scope_id)
         .bind(link.issued_by)
         .bind(link.expires_at)
         .bind(link.consumed_at)
+        .bind(link.single_use)
         .bind(link.created_at)
         .bind(link.updated_at)
         .execute(&self.pool)
@@ -54,8 +56,8 @@ impl MagicLinkRepository for PostgresMagicLinkRepository {
     async fn find_by_token_hash(&self, token_hash: &str) -> Result<Option<MagicLink>, AppError> {
         let row = sqlx::query(
             r#"
-            SELECT id, token_hash, subject_user_id, scope_kind, scope_id,
-                   issued_by, expires_at, consumed_at, created_at, updated_at
+            SELECT id, token_hash, subject_user_id, recipient_label, scope_kind, scope_id,
+                   issued_by, expires_at, consumed_at, single_use, created_at, updated_at
             FROM magic_links
             WHERE token_hash = $1
             "#,
@@ -74,11 +76,13 @@ impl MagicLinkRepository for PostgresMagicLinkRepository {
                     id: row.get("id"),
                     token_hash: row.get("token_hash"),
                     subject_user_id: row.get("subject_user_id"),
+                    recipient_label: row.get("recipient_label"),
                     scope_kind,
                     scope_id: row.get("scope_id"),
                     issued_by: row.get("issued_by"),
                     expires_at: row.get("expires_at"),
                     consumed_at: row.get("consumed_at"),
+                    single_use: row.get("single_use"),
                     created_at: row.get("created_at"),
                     updated_at: row.get("updated_at"),
                 }))

@@ -2,13 +2,14 @@ use crate::application::dto::{
     CreateEtatDateRequest, PageRequest, PageResponse, UpdateEtatDateAdditionalDataRequest,
     UpdateEtatDateFinancialRequest,
 };
-use crate::domain::entities::EtatDateStatus;
+use crate::application::error::AppError;
+use crate::domain::entities::{EtatDateStatus, MagicLinkScopeKind};
 use crate::infrastructure::audit::{AuditEventType, AuditLogEntry};
 use crate::infrastructure::web::handlers::conformity_response::try_build_conformity_response;
 use crate::infrastructure::web::middleware::scope_guard::verify_building_org_access;
 use crate::infrastructure::web::{AppState, AuthenticatedUser};
-use actix_web::{delete, get, post, put, web, HttpResponse, Responder, ResponseError};
-use serde::Deserialize;
+use actix_web::{delete, get, post, put, web, HttpRequest, HttpResponse, Responder, ResponseError};
+use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 #[derive(Debug, Deserialize)]
@@ -175,25 +176,149 @@ pub async fn get_etat_date(
     }
 }
 
-/// Get état daté by reference number
+#[derive(Debug, Deserialize)]
+pub struct GetByReferenceQuery {
+    pub token: Option<String>,
+}
+
+/// Get état daté by reference number — derrière un jeton notaire (issue #855).
+///
+/// Jusqu'au 2026-09-15, cette route ne vérifiait aucune identité : la
+/// référence, encodée par `EtatDate::generate_reference_number`, circule dans
+/// des courriels et des dossiers de vente — ce n'est pas un secret (ADR
+/// 0048). Ce qu'elle sert est la situation financière nominative d'un
+/// copropriétaire (arriérés, quote-parts) : c'est elle qui doit être gardée,
+/// pas l'identifiant.
+///
+/// Le syndic émet le jeton via `POST /etats-dates/{id}/notary-access`
+/// (`?token=` en query ici). Le refus est **uniforme**, référence inconnue ou
+/// jeton invalide/expiré/révoqué/lié à un autre état daté : distinguer les
+/// cas confirmerait à l'appelant qu'une référence donnée existe (cf.
+/// `MagicLinkUseCases::verify_token`).
+#[utoipa::path(
+    get,
+    path = "/etats-dates/reference/{reference_number}",
+    tag = "EtatDate",
+    summary = "Get état daté by reference number — requires a notary access token (issue #855)",
+    responses(
+        (status = 200, description = "État daté"),
+        (status = 403, description = "Jeton absent, invalide, expiré, révoqué ou lié à une autre référence"),
+        (status = 429, description = "Trop de tentatives"),
+    ),
+)]
 #[get("/etats-dates/reference/{reference_number}")]
 pub async fn get_by_reference_number(
     state: web::Data<AppState>,
     reference_number: web::Path<String>,
-) -> impl Responder {
-    match state
+    query: web::Query<GetByReferenceQuery>,
+    req: HttpRequest,
+) -> Result<HttpResponse, AppError> {
+    let client_key = req
+        .connection_info()
+        .realip_remote_addr()
+        .unwrap_or("unknown")
+        .to_string();
+    state.notary_access_rate_limiter.check(&client_key)?;
+
+    // Refus uniforme dès ce point : une référence inconnue ne doit pas se
+    // distinguer d'un jeton invalide côté client (voir doc ci-dessus).
+    let etat_date = state
         .etat_date_use_cases
         .get_by_reference_number(&reference_number)
         .await
-    {
-        Ok(Some(etat_date)) => HttpResponse::Ok().json(etat_date),
-        Ok(None) => HttpResponse::NotFound().json(serde_json::json!({
-            "error": "État daté not found"
-        })),
-        Err(err) => HttpResponse::InternalServerError().json(serde_json::json!({
-            "error": err
-        })),
+        .map_err(AppError::Internal)?
+        .ok_or(AppError::MagicLinkInvalid)?;
+
+    let token = query.token.clone().unwrap_or_default();
+    let link = state
+        .magic_link_use_cases
+        .verify_token(&token, MagicLinkScopeKind::EtatDate, etat_date.id)
+        .await?;
+
+    AuditLogEntry::new(
+        AuditEventType::EtatDateNotaryAccess,
+        None,
+        Some(etat_date.organization_id),
+    )
+    .with_resource("EtatDate", etat_date.id)
+    .with_metadata(serde_json::json!({
+        "issued_by": link.issued_by,
+        "recipient_label": link.recipient_label,
+    }))
+    .log();
+
+    Ok(HttpResponse::Ok().json(etat_date))
+}
+
+/// Émet un lien d'accès notaire pour CET état daté (issue #855, ADR 0048).
+///
+/// Le syndic choisit la durée et déclare l'identité du notaire, qui n'a pas
+/// de compte KoproGo (sous-question 2 de l'issue). Le jeton clair n'est
+/// renvoyé qu'une fois, jamais journalisé ni relu depuis la base — même
+/// garantie que le mécanisme générique (`domain/plateforme/magic_link.rs`).
+#[derive(Debug, Deserialize, utoipa::ToSchema)]
+pub struct IssueNotaryAccessRequest {
+    /// Identité déclarative du notaire (ex. "Me Dupont <dupont@notaire.be>").
+    pub notary_label: String,
+    pub expires_in_seconds: i64,
+}
+
+#[derive(Debug, Serialize, utoipa::ToSchema)]
+pub struct NotaryAccessResponse {
+    pub token: String,
+    pub expires_at: chrono::DateTime<chrono::Utc>,
+}
+
+#[utoipa::path(
+    post,
+    path = "/etats-dates/{id}/notary-access",
+    tag = "EtatDate",
+    summary = "Issue a notary access token for this état daté (syndic only, issue #855)",
+    responses(
+        (status = 201, description = "Token issued"),
+        (status = 400, description = "Validation error"),
+        (status = 403, description = "Forbidden — out of organization scope"),
+    ),
+)]
+#[post("/etats-dates/{id}/notary-access")]
+pub async fn issue_etat_date_notary_link(
+    state: web::Data<AppState>,
+    user: AuthenticatedUser,
+    id: web::Path<Uuid>,
+    body: web::Json<IssueNotaryAccessRequest>,
+) -> Result<HttpResponse, AppError> {
+    // Cloisonnement AVANT émission — même discipline que les routes de
+    // mutation de ce fichier (#864) : émettre un lien pour l'état daté d'une
+    // autre organisation équivaudrait à une fuite directe.
+    if let Some(refus) = verify_etat_date_org_access(&state, &user, *id).await {
+        return Ok(refus);
     }
+
+    let label = body.notary_label.trim().to_string();
+    let issued = state
+        .magic_link_use_cases
+        .issue(
+            None,
+            Some(label),
+            MagicLinkScopeKind::EtatDate,
+            *id,
+            user.user_id,
+            body.expires_in_seconds,
+        )
+        .await?;
+
+    AuditLogEntry::new(
+        AuditEventType::EtatDateNotaryLinkIssued,
+        Some(user.user_id),
+        user.organization_id,
+    )
+    .with_resource("EtatDate", *id)
+    .log();
+
+    Ok(HttpResponse::Created().json(NotaryAccessResponse {
+        token: issued.token,
+        expires_at: issued.expires_at,
+    }))
 }
 
 /// List états datés paginated
