@@ -3609,9 +3609,12 @@
     "clear": "Clear selection",
     "favorite": "Add to favorites",
     "forbidden": "Access denied",
+    "noAcps": "No ACP in your portfolio",
     "noBuildings": "No building in your scope",
     "portfolios": "portfolios",
+    "searchAcpPlaceholder": "Search for an ACP…",
     "searchPlaceholder": "Search for a building…",
+    "selectAcp": "Select an ACP",
     "selectBuilding": "Select a building",
     "unfavorite": "Remove from favorites"
   },
