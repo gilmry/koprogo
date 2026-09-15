@@ -25,11 +25,36 @@
 //! actes (3.99) — n'y figurent pas, et l'ADR-0010 diffère les associations
 //! partielles en v0.2.0.
 //!
+//! ## Citer un test n'est pas l'attester (#847)
+//!
+//! Le registre a longtemps confondu deux choses : qu'un test EXISTE, et qu'il
+//! ATTESTE l'obligation qu'on lui fait porter. L'Art. 3.89 § 1er citait un
+//! test qui vérifie qu'un mandat de trente jours est en cours — rien sur le
+//! plafond de trois ans que l'article impose, et le plafond n'existait pas
+//! non plus. Le test existait, passait, et n'avait aucun rapport avec la
+//! règle. Corrigé : voir `syndic_mandate.rs`.
+//!
+//! La relecture des trente invariants qui a suivi a trouvé un second cas —
+//! l'Art. 3.87 § 6 — sans plafond légal à implémenter cette fois, mais sans
+//! test qui vérifie la CORRESPONDANCE que l'article exige. Plutôt que de le
+//! laisser attesté par un test adjacent, `atteste_par` porte `None` et
+//! `non_couverte` dit pourquoi. **Une obligation sans test véritable est une
+//! obligation non couverte, jamais une obligation attestée par approximation.**
+//! Le sixième contrôle, `security_une_obligation_est_attestee_ou_dit_pourquoi_elle_ne_lest_pas`,
+//! rend ce choix obligatoire : un invariant ne peut plus citer un test ET
+//! rester silencieux sur ce que ce test ne couvre pas.
+//!
+//! Il ne juge toujours pas si un test attesté ATTESTE bien — ce jugement reste
+//! humain — mais il borne l'écart : le registre ne peut plus prétendre une
+//! couverture qu'il n'a pas, ni la laisser dans un commentaire que le rapport
+//! ignore.
+//!
 //! ## Comment il sert
 //!
 //! Le rapport de conformité se génère depuis cette liste et s'adresse à un
 //! juriste, pas à un développeur : il répond à « que dit la loi, et où le code
-//! y répond ? », dans l'ordre des articles.
+//! y répond ? », dans l'ordre des articles. Une obligation non couverte y
+//! apparaît comme telle, jamais comme une ligne ordinaire.
 //!
 //! Voir RFC-0002 et le lot J8 du WBS.
 
@@ -42,8 +67,22 @@ pub struct InvariantLegal {
     pub obligation: &'static str,
     /// Le fichier du domaine qui le porte, relatif à `src/`.
     pub porte_par: &'static str,
-    /// Un test qui le nomme, pour qu'on puisse aller le lire.
-    pub atteste_par: &'static str,
+    /// Un test qui ATTESTE l'obligation — pas seulement qui existe.
+    ///
+    /// `None` quand aucun test du dépôt ne vérifie réellement l'énoncé de
+    /// l'obligation (#847) : dans ce cas, `non_couverte` dit pourquoi.
+    /// `Some` et `non_couverte: Some(_)` en même temps sont contradictoires,
+    /// et `chaque_invariant_designe_un_test_qui_existe` puis le contrôle
+    /// dédié le refusent.
+    pub atteste_par: Option<&'static str>,
+    /// Pourquoi l'obligation n'est PAS couverte, quand `atteste_par` est
+    /// `None`.
+    ///
+    /// Ce n'est pas une case de confort : une obligation ne peut pas rester
+    /// silencieuse sur son absence de preuve. Le message doit dire ce que le
+    /// test le plus proche vérifie réellement (pour qu'on comprenne l'écart)
+    /// et, si le correctif est déjà suivi ailleurs, par quelle issue.
+    pub non_couverte: Option<&'static str>,
     /// Le délai que l'article impose, en jours, quand il en impose un.
     ///
     /// ── Pourquoi il vit ICI et pas dans l'interface ────────────────────
@@ -79,56 +118,74 @@ pub const REGISTRE: &[InvariantLegal] = &[
         // Citait `acp::tests::is_conformant` — une MÉTHODE de production, pas
         // un test. La garde l'acceptait parce qu'elle cherchait le nom par
         // simple sous-chaîne dans le module (#847).
-        atteste_par: "acp::tests::happy_acp_conformant_base_1000_mono_bloc",
+        atteste_par: Some("acp::tests::happy_acp_conformant_base_1000_mono_bloc"),
+        non_couverte: None,
         delai_jours: None,
     },
     InvariantLegal {
         article: "Art. 3.85 § 3, 3°",
         obligation: "Le ROI fixe la période annuelle de quinze jours de l'AG ordinaire.",
         porte_par: "domain/copropriete/fenetre_ag_ordinaire.rs",
-        atteste_par: "fenetre_ag_ordinaire::tests::happy_la_periode_dure_quinze_jours_bornes_comprises",
+        atteste_par: Some(
+            "fenetre_ag_ordinaire::tests::happy_la_periode_dure_quinze_jours_bornes_comprises",
+        ),
+        non_couverte: None,
         delai_jours: Some(crate::domain::copropriete::fenetre_ag_ordinaire::FenetreAgOrdinaire::DUREE_JOURS),
     },
     InvariantLegal {
         article: "Art. 3.86 § 1er",
         obligation: "La personnalité juridique tient à deux conditions cumulatives ; sans transcription, l'ACP ne peut s'en prévaloir mais un tiers le peut.",
         porte_par: "domain/copropriete/personnalite_juridique.rs",
-        atteste_par: "personnalite_juridique::tests::security_sans_transcription_la_protection_ne_joue_que_dans_un_sens",
+        atteste_par: Some(
+            "personnalite_juridique::tests::security_sans_transcription_la_protection_ne_joue_que_dans_un_sens",
+        ),
+        non_couverte: None,
         delai_jours: None,
     },
     InvariantLegal {
         article: "Art. 3.86 § 1er al. 4",
         obligation: "Tous les documents émanant de l'ACP mentionnent son numéro d'entreprise.",
         porte_par: "domain/copropriete/mention_numero_entreprise.rs",
-        atteste_par: "mention_numero_entreprise::tests::security_un_seul_oubli_parmi_cinq_est_releve",
+        atteste_par: Some(
+            "mention_numero_entreprise::tests::security_un_seul_oubli_parmi_cinq_est_releve",
+        ),
+        non_couverte: None,
         delai_jours: None,
     },
     InvariantLegal {
         article: "Art. 3.86 § 3",
         obligation: "Comptes distincts pour le fonds de roulement et le fonds de réserve, ouverts au nom de l'ACP.",
         porte_par: "domain/copropriete/comptes_de_lacp.rs",
-        atteste_par: "comptes_de_lacp::tests::security_un_compte_unique_pour_les_deux_fonds_est_signale",
+        atteste_par: Some(
+            "comptes_de_lacp::tests::security_un_compte_unique_pour_les_deux_fonds_est_signale",
+        ),
+        non_couverte: None,
         delai_jours: None,
     },
     InvariantLegal {
         article: "Art. 3.86 § 3 al. 4",
         obligation: "Fonds de réserve exigible cinq ans après la réception provisoire ; contribution annuelle d'au moins 5 % des charges ordinaires de l'exercice précédent.",
         porte_par: "domain/copropriete/fonds_de_reserve.rs",
-        atteste_par: "fonds_de_reserve::tests::happy_passe_cinq_ans_le_plancher_sapplique",
+        atteste_par: Some("fonds_de_reserve::tests::happy_passe_cinq_ans_le_plancher_sapplique"),
+        non_couverte: None,
         delai_jours: None,
     },
     InvariantLegal {
         article: "Art. 3.86 § 3 al. 7",
         obligation: "Le syndic communique, lors de l'appel de fonds, la part affectée au fonds de réserve.",
         porte_par: "domain/comptabilite/call_for_funds.rs",
-        atteste_par: "call_for_funds::tests_art_3_86_fonds_de_reserve::happy_lappel_porte_la_part_affectee_au_fonds_de_reserve",
+        atteste_par: Some(
+            "call_for_funds::tests_art_3_86_fonds_de_reserve::happy_lappel_porte_la_part_affectee_au_fonds_de_reserve",
+        ),
+        non_couverte: None,
         delai_jours: None,
     },
     InvariantLegal {
         article: "Art. 3.86 § 3 al. 8",
         obligation: "En cas d'usufruit, les titulaires de droits réels sont solidairement tenus des charges.",
         porte_par: "domain/copropriete/solidarite.rs",
-        atteste_par: "solidarite::tests::happy_lusufruit_rend_les_deux_titulaires_tenus_du_tout",
+        atteste_par: Some("solidarite::tests::happy_lusufruit_rend_les_deux_titulaires_tenus_du_tout"),
+        non_couverte: None,
         delai_jours: None,
     },
     // L'Art. 3.87 § 2 porte DEUX obligations distinctes, et le registre n'en
@@ -138,22 +195,28 @@ pub const REGISTRE: &[InvariantLegal] = &[
         article: "Art. 3.87 § 2 (convocation sur requête)",
         obligation: "AG sur requête d'un cinquième des parts ; convocation sous trente jours, à défaut de quoi un cosignataire convoque lui-même.",
         porte_par: "domain/copropriete/requete_ag.rs",
-        atteste_par: "requete_ag::tests::happy_le_cosignataire_recupere_le_pouvoir_de_convoquer",
+        atteste_par: Some("requete_ag::tests::happy_le_cosignataire_recupere_le_pouvoir_de_convoquer"),
+        non_couverte: None,
         delai_jours: Some(crate::domain::copropriete::requete_ag::DELAI_CONVOCATION_JOURS),
     },
     InvariantLegal {
         article: "Art. 3.87 § 2 (ordre du jour)",
         obligation: "Une décision portant sur un point absent de l'ordre du jour est nulle : une résolution non rattachée à un point ne peut être mise aux voix.",
         porte_par: "application/use_cases/resolution_use_cases.rs",
-        atteste_par:
+        atteste_par: Some(
             "resolution_use_cases::tests::security_vote_refuse_sur_resolution_hors_ordre_du_jour",
+        ),
+        non_couverte: None,
         delai_jours: None,
     },
     InvariantLegal {
         article: "Art. 3.87 § 3",
         obligation: "Convocation par recommandé, sauf accord individuel, explicite et écrit du destinataire.",
         porte_par: "domain/copropriete/envoi_convocation.rs",
-        atteste_par: "envoi_convocation::tests::security_un_courriel_sans_accord_rend_la_convocation_irreguliere",
+        atteste_par: Some(
+            "envoi_convocation::tests::security_un_courriel_sans_accord_rend_la_convocation_irreguliere",
+        ),
+        non_couverte: None,
         delai_jours: None,
     },
     InvariantLegal {
@@ -162,7 +225,8 @@ pub const REGISTRE: &[InvariantLegal] = &[
         porte_par: "domain/copropriete/ag_session.rs",
         // Citait `ag_session::tests::quorum` : le mot « quorum » apparaît des
         // dizaines de fois dans ce module, et la garde s'en satisfaisait.
-        atteste_par: "ag_session::tests::test_quotas_alone_do_not_carry_the_quorum",
+        atteste_par: Some("ag_session::tests::test_quotas_alone_do_not_carry_the_quorum"),
+        non_couverte: None,
         delai_jours: None,
     },
     InvariantLegal {
@@ -170,60 +234,90 @@ pub const REGISTRE: &[InvariantLegal] = &[
         obligation: "Chaque copropriétaire dispose d'un nombre de voix correspondant à sa quote-part.",
         porte_par: "domain/copropriete/vote.rs",
         // Citait `vote::tests` — le module de tests ENTIER, pas un test. La
-        // garde cherchait « tests » et trouvait `mod tests` (#847).
+        // garde cherchait « tests » et trouvait `mod tests` (#847). Corrigé
+        // une première fois vers `test_create_vote_excessive_voting_power_fails`,
+        // qui vérifie qu'une voix SUPÉRIEURE au maximum est refusée : un
+        // plafond, pas la CORRESPONDANCE entre le nombre de voix et la
+        // quote-part que l'article exige.
         //
-        // ⚠ ATTESTATION ADJACENTE, ET C'EST ASSUMÉ. Le test vérifie qu'une
-        // voix SUPÉRIEURE au maximum est refusée : c'est un plafond, pas la
-        // CORRESPONDANCE entre le nombre de voix et la quote-part que
-        // l'article exige. Aucun test du dépôt n'atteste aujourd'hui que la
-        // voix d'un copropriétaire ÉGALE sa quote-part.
+        // La relecture des trente invariants (#847) a confirmé qu'AUCUN test
+        // du dépôt n'atteste que la voix d'un copropriétaire ÉGALE sa
+        // quote-part : `Vote::new` accepte `voting_power` tel quel depuis
+        // l'appelant et ne le compare à aucune quotité. La déclarer attestée
+        // par un test adjacent — même en le disant en commentaire — c'est
+        // exactement le défaut que #847 dénonce : le rapport de conformité,
+        // lui, ne lisait pas ce commentaire et affichait une ligne ordinaire.
         //
-        // Le noter ici plutôt que de laisser croire à une couverture pleine :
-        // c'est la leçon de #847, où trois invariants attestaient sur une
-        // sous-chaîne et un sur un test sans rapport.
-        atteste_par: "vote::tests::test_create_vote_excessive_voting_power_fails",
+        // Elle est donc déclarée NON COUVERTE, structurellement, pas en
+        // prose. Le correctif — enforcer la correspondance dans `vote.rs` ou
+        // au use case qui l'appelle — est hors périmètre de #847, qui relit
+        // et qualifie ; il est suivi en #850.
+        atteste_par: None,
+        non_couverte: Some(
+            "aucun test n'atteste que le nombre de voix ÉGALE la quote-part du \
+             copropriétaire ; le test le plus proche, \
+             `test_create_vote_excessive_voting_power_fails`, ne vérifie qu'un \
+             plafond. `Vote::new` accepte `voting_power` depuis l'appelant sans \
+             le comparer à aucune quotité. Correctif suivi en #850.",
+        ),
         delai_jours: None,
     },
     InvariantLegal {
         article: "Art. 3.87 § 7",
         obligation: "Trois procurations au plus, sauf sous 10 % des voix ; nul ne pèse plus que les autres réunis ; le syndic n'est pas mandataire.",
         porte_par: "domain/copropriete/procurations.rs",
-        atteste_par: "procurations::tests::negative_quatre_procurations_au_dessus_de_dix_pourcents_sont_refusees",
+        atteste_par: Some(
+            "procurations::tests::negative_quatre_procurations_au_dessus_de_dix_pourcents_sont_refusees",
+        ),
+        non_couverte: None,
         delai_jours: None,
     },
     InvariantLegal {
         article: "Art. 3.87 § 8",
         obligation: "Majorité absolue des présents ; abstentions, blancs et nuls exclus du calcul.",
         porte_par: "domain/copropriete/resolution.rs",
-        atteste_par: "resolution::tests::test_absolute_majority_abstentions_excluded",
+        atteste_par: Some("resolution::tests::test_absolute_majority_abstentions_excluded"),
+        non_couverte: None,
         delai_jours: None,
     },
     InvariantLegal {
         article: "Art. 3.87 § 9",
         obligation: "Le prestataire de l'ACP ne participe ni aux délibérations ni au vote sur sa propre mission.",
         porte_par: "domain/copropriete/conflit_dinterets.rs",
-        atteste_par: "conflit_dinterets::tests::security_donner_procuration_ne_contourne_pas_la_regle",
+        atteste_par: Some(
+            "conflit_dinterets::tests::security_donner_procuration_ne_contourne_pas_la_regle",
+        ),
+        non_couverte: None,
         delai_jours: None,
     },
     InvariantLegal {
         article: "Art. 3.87 § 10",
         obligation: "Le PV est signé par le président copropriétaire, le secrétaire désigné à l'ouverture, et les copropriétaires encore présents.",
         porte_par: "domain/copropriete/signatures_pv.rs",
-        atteste_par: "signatures_pv::tests::security_un_president_non_coproprietaire_vicie_le_pv",
+        atteste_par: Some(
+            "signatures_pv::tests::security_un_president_non_coproprietaire_vicie_le_pv",
+        ),
+        non_couverte: None,
         delai_jours: None,
     },
     InvariantLegal {
         article: "Art. 3.87 § 12",
         obligation: "Le PV est consigné au registre et transmis à chaque destinataire dans les trente jours.",
         porte_par: "domain/copropriete/consignation_pv.rs",
-        atteste_par: "consignation_pv::tests::security_un_seul_destinataire_oublie_suffit_a_faire_defaut",
+        atteste_par: Some(
+            "consignation_pv::tests::security_un_seul_destinataire_oublie_suffit_a_faire_defaut",
+        ),
+        non_couverte: None,
         delai_jours: Some(crate::domain::copropriete::consignation_pv::DELAI_JOURS),
     },
     InvariantLegal {
         article: "Art. 3.88",
         obligation: "Chaque nature de décision porte la majorité que la loi lui attache ; les quotités exigent l'unanimité, sauf porte du § 3 al. 2.",
         porte_par: "domain/copropriete/majorites.rs",
-        atteste_par: "majorites::tests::security_les_charges_et_les_quotes_parts_nont_pas_la_meme_majorite",
+        atteste_par: Some(
+            "majorites::tests::security_les_charges_et_les_quotes_parts_nont_pas_la_meme_majorite",
+        ),
+        non_couverte: None,
         delai_jours: None,
     },
     InvariantLegal {
@@ -235,15 +329,20 @@ pub const REGISTRE: &[InvariantLegal] = &[
         // trente jours est en cours, et ne dit RIEN d'un plafond de trois ans.
         // Le plafond n'existait pas non plus. L'invariant se déclarait attesté
         // par une preuve sans rapport (#847).
-        atteste_par:
+        atteste_par: Some(
             "syndic_mandate::tests::security_un_mandat_de_plus_de_trois_ans_est_expire_de_plein_droit",
+        ),
+        non_couverte: None,
         delai_jours: Some(crate::domain::copropriete::syndic_mandate::DUREE_MAXIMALE_JOURS),
     },
     InvariantLegal {
         article: "Art. 3.89 § 5, 5°",
         obligation: "Le relevé des dettes est fourni au notaire dans les trente jours de sa demande.",
         porte_par: "domain/copropriete/releve_notaire.rs",
-        atteste_par: "releve_notaire::tests::negative_passe_trente_jours_sans_releve_le_syndic_est_en_defaut",
+        atteste_par: Some(
+            "releve_notaire::tests::negative_passe_trente_jours_sans_releve_le_syndic_est_en_defaut",
+        ),
+        non_couverte: None,
         delai_jours: Some(crate::domain::copropriete::releve_notaire::DELAI_JOURS),
     },
     InvariantLegal {
@@ -254,57 +353,72 @@ pub const REGISTRE: &[InvariantLegal] = &[
         // l'ensemble des pièces. C'est vrai, et ça ne dit rien du DÉLAI, qui
         // n'existait alors nulle part dans le module (#847). Celui-ci éprouve
         // l'échéance des trente jours et le défaut qui suit son dépassement.
-        atteste_par:
+        atteste_par: Some(
             "dossier_de_gestion::tests::negative_passe_trente_jours_sans_remise_le_syndic_sortant_est_en_defaut",
+        ),
+        non_couverte: None,
         delai_jours: Some(crate::domain::services::dossier_de_gestion::DELAI_PASSATION_JOURS),
     },
     InvariantLegal {
         article: "Art. 3.89 § 5, 12°",
         obligation: "Un rapport d'évaluation des contrats de fournitures régulières est soumis à chaque assemblée générale ordinaire.",
         porte_par: "domain/copropriete/evaluation_des_contrats.rs",
-        atteste_par: "evaluation_des_contrats::tests::security_un_contrat_oublie_est_signale_nominativement",
+        atteste_par: Some(
+            "evaluation_des_contrats::tests::security_un_contrat_oublie_est_signale_nominativement",
+        ),
+        non_couverte: None,
         delai_jours: None,
     },
     InvariantLegal {
         article: "Art. 3.89 § 5, 13°",
         obligation: "Tout contrat entre l'ACP et le syndic ou ses proches exige l'autorisation préalable de l'AG.",
         porte_par: "domain/copropriete/contrat_lie.rs",
-        atteste_par: "contrat_lie::tests::security_une_autorisation_posterieure_ne_regularise_rien",
+        atteste_par: Some("contrat_lie::tests::security_une_autorisation_posterieure_ne_regularise_rien"),
+        non_couverte: None,
         delai_jours: None,
     },
     InvariantLegal {
         article: "Art. 3.89 § 5, 15°",
         obligation: "Comptabilité simplifiée autorisée sous vingt lots, caves, garages et parkings exclus du décompte.",
         porte_par: "domain/comptabilite/regime_comptable.rs",
-        atteste_par: "regime_comptable::tests::happy_caves_et_parkings_sortent_du_decompte",
+        atteste_par: Some("regime_comptable::tests::happy_caves_et_parkings_sortent_du_decompte"),
+        non_couverte: None,
         delai_jours: None,
     },
     InvariantLegal {
         article: "Art. 3.89 § 9",
         obligation: "Le syndic n'est ni membre du conseil de copropriété ni commissaire aux comptes de la même ACP.",
         porte_par: "domain/copropriete/commissaire_aux_comptes.rs",
-        atteste_par: "commissaire_aux_comptes::tests::security_le_syndic_ne_peut_pas_controler_ses_propres_comptes",
+        atteste_par: Some(
+            "commissaire_aux_comptes::tests::security_le_syndic_ne_peut_pas_controler_ses_propres_comptes",
+        ),
+        non_couverte: None,
         delai_jours: None,
     },
     InvariantLegal {
         article: "Art. 3.90",
         obligation: "Conseil de copropriété obligatoire dès vingt lots ; membres titulaires d'un droit réel votant ; mandat jusqu'à la prochaine AGO.",
         porte_par: "domain/copropriete/conseil_de_copropriete.rs",
-        atteste_par: "conseil_de_copropriete::tests::edge_dix_neuf_lots_rendent_le_conseil_facultatif",
+        atteste_par: Some("conseil_de_copropriete::tests::edge_dix_neuf_lots_rendent_le_conseil_facultatif"),
+        non_couverte: None,
         delai_jours: None,
     },
     InvariantLegal {
         article: "Art. 3.91",
         obligation: "L'AG désigne annuellement un commissaire aux comptes ou un collège, copropriétaires ou non.",
         porte_par: "domain/copropriete/commissaire_aux_comptes.rs",
-        atteste_par: "commissaire_aux_comptes::tests::security_une_designation_ne_se_reconduit_pas_tacitement",
+        atteste_par: Some(
+            "commissaire_aux_comptes::tests::security_une_designation_ne_se_reconduit_pas_tacitement",
+        ),
+        non_couverte: None,
         delai_jours: None,
     },
     InvariantLegal {
         article: "Art. 3.94 § 1er et § 2",
         obligation: "État daté sous quinze jours calendaires (demande simple) ou trente (notaire, recommandé).",
         porte_par: "domain/comptabilite/etat_date.rs",
-        atteste_par: "etat_date::tests::test_delai_art_3_94_se_compte_en_jours_calendaires",
+        atteste_par: Some("etat_date::tests::test_delai_art_3_94_se_compte_en_jours_calendaires"),
+        non_couverte: None,
         delai_jours: None,
     },
     InvariantLegal {
@@ -315,7 +429,8 @@ pub const REGISTRE: &[InvariantLegal] = &[
         // qui atteste le calcul du DÉLAI de libération, pas ce que le notaire
         // RETIENT. Le délai relève du même module, mais pas de la même
         // obligation. Relevé le 2026-09-08 (#847).
-        atteste_par: "arrieres_mutation::tests::security_oublier_les_frais_de_recuperation_ampute_la_retenue",
+        atteste_par: Some("arrieres_mutation::tests::security_oublier_les_frais_de_recuperation_ampute_la_retenue"),
+        non_couverte: None,
         delai_jours: None,
     },
 ];
@@ -324,12 +439,16 @@ pub const REGISTRE: &[InvariantLegal] = &[
 pub const OBLIGATIONS_RECENSEES: usize = 30;
 
 /// Rend le registre lisible par un juriste, dans l'ordre des articles.
+///
+/// Une obligation `non_couverte` s'affiche comme telle — jamais comme une
+/// ligne ordinaire portant un test — pour que le lecteur ne prenne pas une
+/// absence de preuve pour une couverture.
 pub fn rapport_de_conformite() -> String {
     let mut lignes = vec![
         "# Conformité au Code civil, Livre 3, chapitre « copropriété »".to_string(),
         String::new(),
         format!(
-            "{} invariants portés par le domaine, chacun attesté par un test qui cite son article.",
+            "{} invariants portés par le domaine, chacun attesté par un test qui cite son article, ou déclaré non couvert en disant pourquoi.",
             REGISTRE.len()
         ),
         String::new(),
@@ -337,9 +456,14 @@ pub fn rapport_de_conformite() -> String {
         "|---|---|---|---|".to_string(),
     ];
     for invariant in REGISTRE {
+        let atteste = match (invariant.atteste_par, invariant.non_couverte) {
+            (Some(test), _) => format!("`{test}`"),
+            (None, Some(raison)) => format!("⚠️ **NON COUVERT** — {raison}"),
+            (None, None) => "⚠️ **NON COUVERT**".to_string(),
+        };
         lignes.push(format!(
-            "| {} | {} | `{}` | `{}` |",
-            invariant.article, invariant.obligation, invariant.porte_par, invariant.atteste_par
+            "| {} | {} | `{}` | {} |",
+            invariant.article, invariant.obligation, invariant.porte_par, atteste
         ));
     }
     lignes.join("\n")
@@ -380,6 +504,11 @@ mod tests {
     /// affirmer une couverture qui n'existe plus — exactement ce qu'un
     /// document en prose fait, et qu'on veut éviter ici.
     ///
+    /// Ne porte que sur les invariants `atteste_par: Some(_)` : un invariant
+    /// `non_couverte` n'a, par construction, aucun test à vérifier ici — c'est
+    /// le contrôle `security_une_obligation_est_attestee_ou_dit_pourquoi_elle_ne_lest_pas`
+    /// qui garde CE choix.
+    ///
     /// ── Ce que cette garde acceptait avant le 2026-09-08 ──────────────────
     ///
     /// Elle prenait le dernier segment du chemin et faisait un
@@ -410,16 +539,15 @@ mod tests {
         let mut introuvables = Vec::new();
 
         for invariant in REGISTRE {
+            let Some(atteste_par) = invariant.atteste_par else {
+                continue; // non couvert : rien à vérifier ici, par construction
+            };
             let chemin = racine_src().join("src").join(invariant.porte_par);
             let Ok(source) = std::fs::read_to_string(&chemin) else {
                 continue; // couvert par le test précédent
             };
             // On cherche le dernier segment : `module::tests::nom_du_test`.
-            let nom = invariant
-                .atteste_par
-                .rsplit("::")
-                .next()
-                .unwrap_or(invariant.atteste_par);
+            let nom = atteste_par.rsplit("::").next().unwrap_or(atteste_par);
             // `fn <nom>` — et non le nom seul, qui matcherait une méthode de
             // production, un mot courant, ou `mod tests`.
             let declaration = format!("fn {nom}(");
@@ -444,7 +572,7 @@ mod tests {
                 }
             };
             if !est_un_test {
-                introuvables.push(format!("{} → {}", invariant.article, invariant.atteste_par));
+                introuvables.push(format!("{} → {}", invariant.article, atteste_par));
             }
         }
 
@@ -455,6 +583,76 @@ mod tests {
              une intention. Le nom doit désigner une `fn` annotée `#[test]`, \
              pas une méthode de production ni un module.",
             introuvables.join("\n  ")
+        );
+    }
+
+    /// Le sixième contrôle : citer un test et l'attester ne sont pas la même
+    /// chose, et le registre ne peut plus confondre les deux (#847).
+    ///
+    /// ── Ce que ce contrôle NE fait PAS ──────────────────────────────────────
+    ///
+    /// Il ne juge pas si un test ATTESTE réellement son obligation : c'est un
+    /// jugement sur le sens d'un énoncé légal, pas un calcul. La piste du
+    /// mot-clé partagé a été essayée et rejetée en relisant les trente
+    /// invariants un par un : un bon nom de test dit l'obligation SANS en
+    /// reprendre les mots —
+    ///
+    /// ```text
+    /// « Le PV est signé par le président copropriétaire »
+    ///   → security_un_president_non_coproprietaire_vicie_le_pv
+    /// ```
+    ///
+    /// — et un mot-clé obligatoire aurait rejeté cette attestation juste tout
+    /// en laissant passer une correspondance fortuite. Ce jugement reste
+    /// humain, et le restera : `atteste_par` est rempli ou vidé par une
+    /// personne qui a lu le test et l'article, pas par une regex.
+    ///
+    /// ── Ce qu'il BORNE ──────────────────────────────────────────────────────
+    ///
+    /// Une fois ce jugement humain posé, il ne peut plus rester tacite. Une
+    /// obligation cite un test **et rien d'autre** (couverture affirmée), ou
+    /// elle ne cite aucun test **et dit pourquoi** (couverture refusée) — les
+    /// deux à la fois sont contradictoires, aucun des deux est un silence que
+    /// ce registre ne peut plus se permettre.
+    ///
+    /// C'est exactement ce qui manquait à l'Art. 3.87 § 6 avant #847 : un
+    /// commentaire disait « ATTESTATION ADJACENTE, ASSUMÉE », et
+    /// `rapport_de_conformite()` — ce que lit le juriste — affichait pourtant
+    /// une ligne ordinaire, indiscernable d'une obligation pleinement
+    /// couverte. Le jugement existait déjà ; il n'était structurel nulle part.
+    #[test]
+    fn security_une_obligation_est_attestee_ou_dit_pourquoi_elle_ne_lest_pas() {
+        let mut fautifs = Vec::new();
+
+        for invariant in REGISTRE {
+            match (invariant.atteste_par, invariant.non_couverte) {
+                (Some(_), None) => {} // attestée : rien à ajouter
+                (None, Some(raison)) if !raison.trim().is_empty() => {} // non couverte, justifiée
+                (Some(test), Some(_)) => fautifs.push(format!(
+                    "{} → cite un test ({test}) ET une raison de non-couverture : \
+                     c'est contradictoire, il faut choisir",
+                    invariant.article
+                )),
+                (None, None) => fautifs.push(format!(
+                    "{} → ni test ni raison : une obligation ne peut rester tacite \
+                     sur sa couverture",
+                    invariant.article
+                )),
+                (None, Some(_)) => fautifs.push(format!(
+                    "{} → déclarée non couverte avec une raison vide",
+                    invariant.article
+                )),
+            }
+        }
+
+        assert!(
+            fautifs.is_empty(),
+            "des obligations ne sont ni honnêtement attestées ni honnêtement \
+             déclarées non couvertes :\n  {}\n\n\
+             `atteste_par` XOR `non_couverte` : citer un test ne suffit plus, \
+             il faut l'assumer sans réserve, ou renoncer à la couverture et \
+             dire pourquoi (#847).",
+            fautifs.join("\n  ")
         );
     }
 
@@ -476,7 +674,9 @@ mod tests {
     ///
     /// Le RFC-0002 recensait vingt-neuf obligations computables. Le registre
     /// en porte autant : c'est le solde à la clôture du lot J7, et il sert de
-    /// plancher.
+    /// plancher. Ce plancher compte les obligations RECENSÉES, attestées ou
+    /// non — déclarer l'une d'elles non couverte (#847) ne la retire pas du
+    /// registre, elle continue d'apparaître au juriste, marquée comme telle.
     #[test]
     fn la_couverture_ne_recule_pas() {
         assert!(
@@ -587,6 +787,43 @@ mod tests {
             assert!(
                 rapport.contains(invariant.article),
                 "{} absent du rapport",
+                invariant.article
+            );
+        }
+    }
+
+    /// @edge — une obligation non couverte se lit comme telle dans le
+    /// rapport, jamais comme une ligne ordinaire portant un test.
+    ///
+    /// C'est le point précis que #847 corrige : avant, l'Art. 3.87 § 6
+    /// apparaissait au juriste exactement comme n'importe quelle obligation
+    /// pleinement attestée. Un registre qui préfère un taux de couverture
+    /// élevé à un taux exact ne sert plus à rien.
+    #[test]
+    fn edge_une_obligation_non_couverte_est_marquee_dans_le_rapport() {
+        let rapport = rapport_de_conformite();
+        let non_couvertes: Vec<&InvariantLegal> = REGISTRE
+            .iter()
+            .filter(|i| i.atteste_par.is_none())
+            .collect();
+
+        assert!(
+            !non_couvertes.is_empty(),
+            "ce test suppose qu'au moins une obligation est déclarée non \
+             couverte (Art. 3.87 § 6 au moment de l'écriture) ; si elle a été \
+             couverte depuis, remplacez cette obligation par une autre \
+             non_couverte, ou par une preuve que le rapport marque encore une \
+             absence de test le cas échéant"
+        );
+
+        for invariant in non_couvertes {
+            let ligne = rapport
+                .lines()
+                .find(|l| l.contains(invariant.article))
+                .unwrap_or_else(|| panic!("{} absent du rapport", invariant.article));
+            assert!(
+                ligne.contains("NON COUVERT"),
+                "{} n'est pas attestée mais le rapport ne le signale pas : {ligne}",
                 invariant.article
             );
         }
