@@ -386,3 +386,214 @@ describe("Navigation a11y", () => {
     expect(labelled).toBe(true);
   });
 });
+
+// ===========================================================================
+// Icônes (#797) — remise « Design tokens / Icons », section Navigation.
+//
+// Gherkin de la story : « Étant donné la barre de navigation d'un syndic /
+// Quand je relève les icônes de ses entrées de menu / Alors aucune icône
+// n'apparaît deux fois / Et aucune n'est un émoji. »
+//
+// `garde-icones-uniques.test.ts` vérifie que le JEU d'icônes (lib/icones.ts)
+// ne définit pas deux noms au même tracé. Il ne peut pas voir si DEUX
+// ENTRÉES DE MENU DIFFÉRENTES réclament, par erreur de copier-coller, le
+// même nom d'icône — c'est exactement la forme du défaut d'origine (📊 pour
+// tableau de bord ET budgets ET sondages). D'où un rendu réel, ici.
+//
+// Le Gherkin ne cite que le syndic, mais un rendu réel ne voit QUE les
+// entrées visibles pour le rôle qu'il joue. Deux collisions concrètes se
+// cachaient dans des combinaisons de menus que le syndic ne peut pas
+// atteindre — `/admin/gdpr` + `/settings/gdpr` (superadmin sans immeuble),
+// `/documents` + `/owner/documents` (membre du conseil, seul rôle à voir
+// `gouvernance` ET `mes-lots`). D'où les deux rendus supplémentaires
+// ci-dessous, en plus de celui du syndic.
+//
+// @edge (#a8a29e/#c4c0bb jamais en texte, chevron compris) n'est pas
+// dupliqué ici : `garde-neutres-de-trait.test.ts` le couvre déjà pour
+// TOUTE la source, Navigation.svelte inclus — le refaire localement
+// n'ajouterait aucun signal.
+// ===========================================================================
+
+/** Émojis pictographiques et symboles divers — même motif que les gardes globales. */
+const EMOJI = /[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{2B00}-\u{2BFF}]/gu;
+
+async function rendreSidebarSyndic() {
+  setAuth(makeUser(UserRole.SYNDIC));
+  setBuilding(makeBuilding());
+  const { container } = render(Navigation);
+  await screen.findByTestId("navigation-menu-gestion");
+  const sidebar = container.querySelector('[data-testid="sidebar-desktop"]');
+  if (!sidebar) throw new Error("sidebar-desktop introuvable");
+  return sidebar;
+}
+
+/**
+ * Superadmin SANS immeuble sélectionné : la sidebar affiche le menu admin
+ * (`navigation-menu-admin`) ET le pied de sidebar (profil, réglages, RGPD,
+ * déconnexion), qui sont rendus dans le même `<aside data-testid="sidebar-
+ * desktop">` — cf. Navigation.svelte, où le bloc `<nav aria-label="Menus
+ * principaux">` et la `<div data-testid="sidebar-user-section">` sont
+ * frères dans la même aside. Une icône réemployée entre les deux ne se
+ * verrait donc PAS dans `rendreSidebarSyndic`, qui ne rend jamais le menu
+ * admin.
+ */
+async function rendreSidebarAdminSansImmeuble() {
+  setAuth(makeUser(UserRole.SUPERADMIN));
+  const { container } = render(Navigation);
+  await screen.findByTestId("navigation-menu-admin");
+  const sidebar = container.querySelector('[data-testid="sidebar-desktop"]');
+  if (!sidebar) throw new Error("sidebar-desktop introuvable");
+  return sidebar;
+}
+
+/**
+ * Membre du conseil : le seul rôle qui voit `gouvernance` ET `mes-lots` à la
+ * fois (`BOARD_MENUS` dans `permissions.ts` — la charge de conseil s'ajoute à
+ * la qualité de copropriétaire, elle ne la remplace pas). `/documents`
+ * (gouvernance) et `/owner/documents` (mes-lots) sont deux destinations
+ * distinctes que ni `rendreSidebarSyndic` (jamais mes-lots) ni
+ * `rendreSidebarAdminSansImmeuble` (jamais gouvernance/mes-lots) ne peuvent
+ * voir apparaître ensemble.
+ */
+async function rendreSidebarMembreDuConseil() {
+  setAuth(makeUser(UserRole.BOARD_MEMBER));
+  setBuilding(makeBuilding());
+  const { container } = render(Navigation);
+  await screen.findByTestId("navigation-menu-gouvernance");
+  const sidebar = container.querySelector('[data-testid="sidebar-desktop"]');
+  if (!sidebar) throw new Error("sidebar-desktop introuvable");
+  return sidebar;
+}
+
+/**
+ * Aucune icône réemployée entre deux liens de destinations différentes,
+ * dans le sous-arbre donné.
+ */
+function collisionsIcones(racine: Element): string[] {
+  const liens = Array.from(racine.querySelectorAll("a[href]"));
+  const parEmpreinte = new Map<string, string[]>();
+  for (const lien of liens) {
+    const svg = lien.querySelector("svg");
+    if (!svg) continue;
+    const empreinte = Array.from(svg.querySelectorAll("path"))
+      .map((p) => p.getAttribute("d"))
+      .join("|");
+    const href = lien.getAttribute("href") ?? "(sans href)";
+    parEmpreinte.set(empreinte, [...(parEmpreinte.get(empreinte) ?? []), href]);
+  }
+
+  return [...parEmpreinte.values()]
+    .filter((hrefs) => hrefs.length > 1)
+    .map((hrefs) => `  ${hrefs.join(" = ")}`);
+}
+
+describe("Navigation icônes (#797) @happy", () => {
+  it("chaque icône rendue est un <svg> 24x24, stroke=currentColor, aria-hidden", async () => {
+    const sidebar = await rendreSidebarSyndic();
+    const icones = Array.from(sidebar.querySelectorAll("svg"));
+
+    // Vérification d'aveuglement : sans elle, un sélecteur cassé rendrait
+    // la liste vide et chaque assertion suivante passerait par vacuité.
+    expect(icones.length).toBeGreaterThan(10);
+
+    for (const svg of icones) {
+      expect(svg.getAttribute("viewBox")).toBe("0 0 24 24");
+      expect(svg.getAttribute("fill")).toBe("none");
+      expect(svg.getAttribute("stroke")).toBe("currentColor");
+      expect(svg.getAttribute("aria-hidden")).toBe("true");
+    }
+  });
+});
+
+describe("Navigation icônes (#797) @negative", () => {
+  it("aucune icône n'est réemployée entre deux entrées, et aucune n'est un émoji", async () => {
+    const sidebar = await rendreSidebarSyndic();
+
+    // Aucun émoji dans le texte rendu de la sidebar (⚙️ notamment).
+    const emojisTrouves = sidebar.textContent?.match(EMOJI) ?? [];
+    expect(
+      emojisTrouves.join(", "),
+      `${emojisTrouves.length} émoji(s) dans la navigation du syndic : ` +
+        `${emojisTrouves.join(", ")}. Un émoji n'est pas un système ` +
+        "d'icônes : il est annoncé par les lecteurs d'écran et ne rend pas " +
+        'pareil selon le système. Employez `<Icone nom="…" />`.',
+    ).toBe("");
+
+    // Aucune icône réemployée entre deux liens de destinations différentes.
+    const collisions = collisionsIcones(sidebar);
+
+    expect(
+      collisions.join("\n"),
+      "Ces entrées de la navigation du syndic partagent la même icône :\n" +
+        collisions.join("\n") +
+        "\n\nDeux destinations qui portent le même signe ne se distinguent " +
+        "plus que par leur libellé — l'icône cesse d'informer.",
+    ).toBe("");
+  });
+
+  it("aucune icône n'est réemployée entre le menu admin et le pied de sidebar (superadmin sans immeuble)", async () => {
+    // Défaut réel trouvé en relisant le composant : `/admin/gdpr` (menu admin)
+    // et `/settings/gdpr` (pied de sidebar, TOUJOURS rendu) portaient toutes
+    // les deux l'icône `gdpr`. `rendreSidebarSyndic` ne peut pas voir cette
+    // collision : le syndic n'a jamais le menu admin.
+    const sidebar = await rendreSidebarAdminSansImmeuble();
+    const collisions = collisionsIcones(sidebar);
+
+    expect(
+      collisions.join("\n"),
+      "Ces entrées de la navigation admin partagent la même icône :\n" +
+        collisions.join("\n") +
+        "\n\nDeux destinations qui portent le même signe ne se distinguent " +
+        "plus que par leur libellé — l'icône cesse d'informer.",
+    ).toBe("");
+  });
+
+  it("aucune icône n'est réemployée entre gouvernance et mes-lots (membre du conseil)", async () => {
+    // Second défaut réel, même forme : `/documents` (gouvernance) et
+    // `/owner/documents` (mes-lots) portaient toutes les deux l'icône
+    // `documents`. Seul un `board_member` voit les deux menus ensemble.
+    const sidebar = await rendreSidebarMembreDuConseil();
+
+    // Vérification d'aveuglement : sans elle, une régression de `canSee` qui
+    // masquerait `mes-lots` pour le conseil ferait disparaître le défaut EN
+    // MÊME TEMPS que le menu — la garde passerait au vert sans avoir rien vu.
+    expect(
+      sidebar.querySelector('[data-testid="navigation-menu-mes-lots"]'),
+    ).not.toBeNull();
+
+    const collisions = collisionsIcones(sidebar);
+
+    expect(
+      collisions.join("\n"),
+      "Ces entrées de la navigation du conseil partagent la même icône :\n" +
+        collisions.join("\n") +
+        "\n\nDeux destinations qui portent le même signe ne se distinguent " +
+        "plus que par leur libellé — l'icône cesse d'informer.",
+    ).toBe("");
+  });
+});
+
+describe("Navigation icônes (#797) @security", () => {
+  it("aucune icône n'est annoncée : le nom accessible tient au lien qui l'entoure", async () => {
+    const sidebar = await rendreSidebarSyndic();
+    const svgs = Array.from(sidebar.querySelectorAll("svg"));
+    expect(svgs.length).toBeGreaterThan(10);
+
+    for (const svg of svgs) {
+      // Décorative : aria-hidden retire l'icône de l'arbre d'accessibilité,
+      // focusable="false" l'exclut du parcours clavier (IE/Edge historique
+      // rendait les <svg> focusables par défaut).
+      expect(svg.getAttribute("aria-hidden")).toBe("true");
+      expect(svg.getAttribute("focusable")).toBe("false");
+      // Une icône bavarde masquerait le libellé réel du lien : elle ne doit
+      // porter ni nom accessible, ni rôle d'image.
+      expect(svg.hasAttribute("aria-label")).toBe(false);
+      expect(svg.hasAttribute("aria-labelledby")).toBe(false);
+      expect(svg.getAttribute("role")).not.toBe("img");
+    }
+
+    // Le nom accessible réel vit sur le lien englobant.
+    const lienBudgets = sidebar.querySelector('a[href="/budgets"]');
+    expect(lienBudgets?.textContent?.trim().length).toBeGreaterThan(0);
+  });
+});

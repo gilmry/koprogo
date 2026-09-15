@@ -115,6 +115,15 @@ export const ICONES: Record<string, Icone> = {
     "M13 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V9z",
     "M13 3v6h6",
   ],
+  // Distincte de `documents` (menu gouvernance, "/documents" : PV, contrats
+  // de l'ACP). Celle-ci porte "/owner/documents" — le classeur personnel du
+  // copropriétaire. Un `board_member` voit les DEUX menus à la fois
+  // (`gouvernance` ET `mes-lots`, cf. `BOARD_MENUS` dans permissions.ts) :
+  // leur donner le même tracé rouvrirait la collision que cette refonte
+  // ferme.
+  myDocuments: [
+    "M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z",
+  ],
 
   // ── Interventions ─────────────────────────────────────────────────────
   tickets: [
@@ -218,6 +227,16 @@ export const ICONES: Record<string, Icone> = {
 
   // ── Compte et service ─────────────────────────────────────────────────
   profile: ["M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8z", "M5 21a7 7 0 0 1 14 0"],
+  // Distincte de `profile` (pied de sidebar, "/profile" : TOUJOURS rendu,
+  // quel que soit le rôle). Celle-ci porte "/owner/profile", l'entrée du
+  // menu mes-lots. Owner, community.moderator et board_member voient les
+  // deux à la fois : leur donner le même tracé rouvrirait la collision que
+  // cette refonte ferme. Même motif que `myDocuments` / `myTickets`.
+  myProfile: [
+    "M4 4h16v16H4z",
+    "M9 10a2 2 0 1 0 4 0 2 2 0 0 0-4 0z",
+    "M7 17a4 4 0 0 1 10 0",
+  ],
   settings: [
     "M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7z",
     "M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-2.9 1.2V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-2.9-1.2l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0-1.2-2.9H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.2-2.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 2.9-1.2V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 2.9 1.2l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0 1.2 2.9H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z",
@@ -232,6 +251,12 @@ export const ICONES: Record<string, Icone> = {
     "M13.7 21a2 2 0 0 1-3.4 0",
   ],
   search: ["M11 4a7 7 0 1 0 0 14 7 7 0 0 0 0-14z", "M20 20l-4.5-4.5"],
+  // Distincte de `gdpr` (menu admin, "/admin/gdpr" : conformité RGPD de
+  // l'organisation). Celle-ci porte le lien personnel "/settings/gdpr" — mes
+  // propres données. Les deux liens sont rendus dans la MÊME sidebar pour un
+  // superadmin sans immeuble sélectionné : leur donner le même tracé
+  // rouvrirait la collision que cette refonte ferme.
+  gdprData: ["M6 11h12v10H6z", "M8 11V7a4 4 0 0 1 8 0v4", "M12 15v3"],
 
   // ── Actions de ligne ──────────────────────────────────────────────────
   //
