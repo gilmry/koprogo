@@ -322,6 +322,41 @@ du défaut avec un témoin d'interruption (le minimum, déjà décrit dans #880)
 
 ## Journal (chronologie courte)
 
+- 2026-09-15 — **LE HARNAIS EST COMPLET. Les gates partent seuls.** Mesuré
+  sur `story/579`, première branche poussée après le correctif :
+
+  ```
+  gh run list --branch story/579
+  push  in_progress  CI Pipeline      ← déclenché SEUL
+  ```
+
+  Vingt-six branches l'avaient précédée sans jamais y arriver.
+
+  **Le jeton du PO n'a jamais été en cause.** Vérifié sur sa page : PAT à
+  portée fine, `gilmry/koprogo`, Contents + Issues + Pull requests +
+  **Workflows** en écriture. Le défaut était le CÂBLAGE.
+
+  `actions/checkout` persiste ses identifiants dans un en-tête HTTP —
+  `http.https://github.com/.extraheader` — et **cet en-tête prime sur les
+  identifiants écrits dans l'URL du remote**. L'étape de poussée faisait
+  pourtant `git remote set-url origin "https://x-access-token:$PAT@..."`,
+  si bien que git authentifiait avec le `GITHUB_TOKEN` du checkout. Le
+  journal annonçait « Jeton dédié présent » : c'était vrai, et inutile — le
+  jeton était présent, il n'était pas EMPLOYÉ.
+
+  Le jeton passe désormais à `checkout` par `token:`.
+
+  **C'est la troisième fois de cette campagne qu'un dispositif correct est
+  inopérant par un détail de câblage**, après « ce n'est pas cette copie-là
+  qui s'exécute » et « deux instruments mesurent la même chose ». Le motif
+  est stable, et il mérite d'être nommé comme tel : **ce qui manque n'est
+  jamais l'intention, c'est le fil.**
+
+  Conséquence pour la revue de promotion : la **vitrine** va enfin être
+  produite. Elle manquait aux vingt-six branches précédentes, et c'est la
+  preuve de VALEUR — non bloquante, non facultative — sans laquelle le
+  relecteur doit rouvrir le diff.
+
 - 2026-09-15 — **Les deux promotions sont fusionnées.** `main` est à
   `b073fe98` et l'écart avec `feature/dev` est de **zéro commit**. Elle
   porte donc les correctifs qui la bloquaient elle-même — #877 et #718 — et
