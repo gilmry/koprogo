@@ -1,0 +1,33 @@
+---
+# Molecule scenario for the `hardening` role (#354 WP-E2). Chosen first per
+# the story's @edge ordering: irreversible-side-effect roles (security,
+# hardening, backup, vault) before amenity roles.
+#
+# Image is pinned to a specific tag, not `:latest` (CRITICAL.md red line).
+# A full digest pin is intentionally left to the CI runner's image cache
+# policy — geerlingguy's systemd-capable Ubuntu image is rebuilt per Ubuntu
+# point release, not per commit, so a version tag is the meaningful pin here.
+dependency:
+  name: galaxy
+driver:
+  name: docker
+platforms:
+  - name: koprogo-hardening-instance
+    image: "docker.io/geerlingguy/docker-ubuntu2204-ansible:0.17.1"
+    privileged: true
+    pre_build_image: true
+    cgroupns_mode: host
+    command: ""
+    volumes:
+      - /sys/fs/cgroup:/sys/fs/cgroup:rw
+provisioner:
+  name: ansible
+  playbooks:
+    converge: converge.yml
+    verify: verify.yml
+  inventory:
+    host_vars:
+      koprogo-hardening-instance:
+        ansible_python_interpreter: /usr/bin/python3
+verifier:
+  name: ansible
