@@ -14,7 +14,8 @@ use koprogo_api::infrastructure::storage::{
     FileStorage, S3Storage, S3StorageConfig, StorageProvider,
 };
 use koprogo_api::infrastructure::web::{
-    configure_routes, AppState, GdprRateLimit, GdprRateLimitConfig, SecurityHeaders,
+    configure_routes, AppState, ConcurrencyLimitConfig, GdprRateLimit, GdprRateLimitConfig,
+    RequestConcurrencyLimit, SecurityHeaders,
 };
 use koprogo_api::infrastructure::LinkyApiClientImpl;
 use std::env;
@@ -627,6 +628,13 @@ async fn main() -> std::io::Result<()> {
     };
     let gdpr_rate_limit = GdprRateLimit::new(gdpr_rate_limit_config);
 
+    // Load-shedding sous rafale (issue #718) : refuse en 429 explicite
+    // au-delà de `max_concurrent` requêtes en vol, plutôt que de laisser le
+    // pool sqlx faire attendre jusqu'à `acquire_timeout` (30s) et finir en
+    // 502 en amont. Cf. commentaire de `RequestConcurrencyLimit` pour le
+    // détail du raisonnement et ses limites.
+    let request_concurrency_limit = RequestConcurrencyLimit::new(ConcurrencyLimitConfig::default());
+
     HttpServer::new(move || {
         // Configure CORS with allowed origins from environment
         let mut cors = Cors::default();
@@ -675,6 +683,7 @@ async fn main() -> std::io::Result<()> {
                 .into()
             }))
             .wrap(gdpr_rate_limit.clone())
+            .wrap(request_concurrency_limit.clone())
             .wrap(cors)
             .wrap(SecurityHeaders) // Security headers for all responses
             .wrap(middleware::Logger::default())
