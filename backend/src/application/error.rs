@@ -283,6 +283,24 @@ pub enum AppError {
         "Configuration de visioconférence manquante pour ce mode de réunion (Art. 3.87 §1er CC)"
     )]
     MeetingModeRequiresVideoconf { mode: String },
+
+    /// #845 / ADR 0051 — lien notaire inconnu, forgé, ou scopé sur un autre
+    /// état daté. Uniforme avec "jeton inconnu" (anti-énumération, même
+    /// rationale que `MagicLinkInvalid`) : un jeton qui ouvre l'état daté A
+    /// ne doit pas distinguablement échouer sur l'état daté B. Returns 403.
+    #[error("Lien notaire invalide")]
+    NotaryLinkInvalid,
+
+    /// #845 / ADR 0051 — le lien notaire a dépassé ses sept jours de
+    /// validité. Le syndic peut le renouveler. Returns 403.
+    #[error("Lien notaire expiré, demandez-en le renouvellement au syndic")]
+    NotaryLinkExpired,
+
+    /// #845 / ADR 0051 — le syndic a révoqué le lien avant terme. Un lien
+    /// révoqué ne se renouvelle pas : il faut en émettre un nouveau.
+    /// Returns 403.
+    #[error("Lien notaire révoqué")]
+    NotaryLinkRevoked,
 }
 
 impl AppError {
@@ -326,6 +344,9 @@ impl AppError {
             AppError::TechnicalSpecRequired => "technical_spec_required",
             AppError::EvaluatorIsContractor => "evaluator_is_contractor",
             AppError::BuildingNotConformant { .. } => "building_not_conformant",
+            AppError::NotaryLinkInvalid => "notary_link_invalid",
+            AppError::NotaryLinkExpired => "notary_link_expired",
+            AppError::NotaryLinkRevoked => "notary_link_revoked",
         }
     }
 }
@@ -349,7 +370,10 @@ impl ResponseError for AppError {
             | AppError::DelegationChainNotAllowed
             | AppError::TicketImmutable
             | AppError::ResponseImmutable
-            | AppError::SignatoryNotAuthorized => StatusCode::FORBIDDEN,
+            | AppError::SignatoryNotAuthorized
+            | AppError::NotaryLinkInvalid
+            | AppError::NotaryLinkExpired
+            | AppError::NotaryLinkRevoked => StatusCode::FORBIDDEN,
             AppError::NotFound(_) | AppError::MandateNotFound => StatusCode::NOT_FOUND,
             AppError::Conflict(_)
             | AppError::RoleAlreadyAssigned { .. }
@@ -916,6 +940,27 @@ impl From<crate::domain::entities::MeetingModeError> for AppError {
 }
 
 // ============================================================================
+// #845 / ADR 0051 — bridge From<LienNotaireError> (lien notaire)
+// ============================================================================
+
+impl From<crate::domain::entities::LienNotaireError> for AppError {
+    /// Un lien notaire malformé à l'émission (`etat_date_id`/`emis_par` nil)
+    /// est une erreur d'entrée serveur — ces UUID viennent du chemin de la
+    /// requête et de `AuthenticatedUser`, jamais du client → 400 validation.
+    /// `DejaRevoque` est un refus métier (renouveler un lien mort) → 409
+    /// Conflict, distinct des 403 `NotaryLink*` qui sanctionnent la LECTURE.
+    fn from(err: crate::domain::entities::LienNotaireError) -> Self {
+        use crate::domain::entities::LienNotaireError;
+        match err {
+            LienNotaireError::EtatDateIdNul | LienNotaireError::EmisParNul => {
+                AppError::Validation(err.to_string())
+            }
+            LienNotaireError::DejaRevoque => AppError::Conflict(err.to_string()),
+        }
+    }
+}
+
+// ============================================================================
 // Tests — taxonomie 4 catégories obligatoire (cf. CRITICAL.md règle #3, #427)
 // ============================================================================
 
@@ -1445,5 +1490,55 @@ mod tests {
             "Display should include detail: {}",
             s
         );
+    }
+
+    // ------------------------------------------------------------------------
+    // #845 / ADR 0051 — NotaryLink* mapping (4-cat)
+    // ------------------------------------------------------------------------
+
+    #[test]
+    fn happy_notary_link_invalid_maps_to_403() {
+        let e = AppError::NotaryLinkInvalid;
+        assert_eq!(e.status_code(), StatusCode::FORBIDDEN);
+        assert_eq!(e.kind(), "notary_link_invalid");
+    }
+
+    #[test]
+    fn edge_notary_link_expired_maps_to_403_not_410() {
+        // Le dépôt n'emploie jamais 410 Gone pour un jeton expiré (cf.
+        // MagicLinkExpired) : cohérence d'idiome plutôt qu'invention locale.
+        let e = AppError::NotaryLinkExpired;
+        assert_eq!(e.status_code(), StatusCode::FORBIDDEN);
+        assert_eq!(e.kind(), "notary_link_expired");
+    }
+
+    #[test]
+    fn security_notary_link_revoked_maps_to_403_and_does_not_leak_who_revoked() {
+        let e = AppError::NotaryLinkRevoked;
+        assert_eq!(e.status_code(), StatusCode::FORBIDDEN);
+        let s = format!("{}", e);
+        assert!(!s.contains("user_id"));
+    }
+
+    #[test]
+    fn negative_domain_deja_revoque_maps_to_409_not_403() {
+        // Renouveler un lien mort est un CONFLIT avec l'état existant (même
+        // acte que l'émission), pas un refus de lecture — distinct des trois
+        // 403 NotaryLink* qui sanctionnent une lecture.
+        use crate::domain::entities::LienNotaireError;
+        let e: AppError = LienNotaireError::DejaRevoque.into();
+        assert_eq!(e.status_code(), StatusCode::CONFLICT);
+    }
+
+    #[test]
+    fn negative_domain_nil_ids_map_to_400_validation() {
+        use crate::domain::entities::LienNotaireError;
+        for err in [
+            LienNotaireError::EtatDateIdNul,
+            LienNotaireError::EmisParNul,
+        ] {
+            let e: AppError = err.into();
+            assert_eq!(e.status_code(), StatusCode::BAD_REQUEST);
+        }
     }
 }

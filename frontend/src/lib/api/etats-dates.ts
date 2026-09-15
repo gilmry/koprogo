@@ -107,8 +107,13 @@ export const etatsDatesApi = {
     return api.get(`/etats-dates/${id}`);
   },
 
-  async getByReference(referenceNumber: string): Promise<EtatDate> {
-    return api.get(`/etats-dates/reference/${referenceNumber}`);
+  // #845 / ADR 0051 : la route exige désormais un lien notaire signé — sans
+  // `token`, le backend répond 403 (le jeton EST l'identité, il n'y a plus
+  // de lecture "nue" par référence). Émis via `POST /etats-dates/{id}/notary-link`.
+  async getByReference(referenceNumber: string, token: string): Promise<EtatDate> {
+    return api.get(
+      `/etats-dates/reference/${referenceNumber}?token=${encodeURIComponent(token)}`,
+    );
   },
 
   async list(

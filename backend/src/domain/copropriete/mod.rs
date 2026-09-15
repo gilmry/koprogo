@@ -43,6 +43,7 @@ pub mod envoi_convocation;
 pub mod evaluation_des_contrats;
 pub mod fenetre_ag_ordinaire;
 pub mod fonds_de_reserve;
+pub mod lien_notaire;
 pub mod majorites;
 pub mod mandate;
 pub mod meeting;
@@ -89,6 +90,7 @@ pub use envoi_convocation::{envoi_regulier, AccordAutreMoyen, EnvoiIrregulier, M
 pub use evaluation_des_contrats::{verifier_exercice, ContratDeLacp, RapportDevaluation};
 pub use fenetre_ag_ordinaire::{FenetreAgOrdinaire, FenetreInvalide};
 pub use fonds_de_reserve::{DotationInsuffisante, StatutFondsReserve};
+pub use lien_notaire::{LienNotaire, LienNotaireError, DUREE_JOURS as DUREE_LIEN_NOTAIRE_JOURS};
 pub use majorites::{majorite_pour_modifier_les_quotes_parts, NatureDeDecision};
 pub use mandate::{Mandate, MandateKind, MandateScope, MAX_MANDATE_DURATION_DAYS};
 pub use meeting::{
