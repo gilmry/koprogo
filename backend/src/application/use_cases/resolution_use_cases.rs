@@ -752,6 +752,14 @@ mod tests {
                 .cloned()
                 .unwrap_or_default())
         }
+
+        async fn is_voting_representative(&self, _unit_owner_id: Uuid) -> Result<bool, String> {
+            Ok(false)
+        }
+
+        async fn set_voting_representative(&self, _unit_owner_id: Uuid) -> Result<(), String> {
+            Ok(())
+        }
     }
 
     // Mock repositories for testing

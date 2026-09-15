@@ -36,7 +36,6 @@ use std::path::Path;
 /// demande de justifier, dans le commit, pourquoi une garantie neuve n'est
 /// appliquée nulle part.
 const DORMANTS_AU_2026_09_08: &[&str] = &[
-    "assert_single_voting_representative",
     "can_access_building",
     "can_add_building",
     "can_add_user",

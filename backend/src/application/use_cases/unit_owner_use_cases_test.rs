@@ -1,24 +1,33 @@
 use super::*;
+use crate::application::error::AppError;
 use crate::application::ports::{OwnerRepository, UnitOwnerRepository, UnitRepository};
 use crate::domain::entities::unit::UnitType;
 use crate::domain::entities::{Owner, Unit, UnitOwner};
 use async_trait::async_trait;
 use rust_decimal::Decimal;
 use rust_decimal_macros::dec;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::sync::{Arc, Mutex};
 use uuid::Uuid;
 
 // Mock UnitOwnerRepository
+//
+// Story #848 — `representatives` fait ce que `UnitOwner` (entité de
+// persistance) ne fait pas : porter `is_voting_representative`. Le champ vit
+// en base par ligne `unit_owners` (migration 20260621000000) mais pas sur
+// l'entité, qui reste volontairement réduite (cf. commentaire domaine). Le
+// mock a donc besoin de son propre état pour ce flag, à côté du store.
 #[derive(Clone)]
 struct MockUnitOwnerRepository {
     unit_owners: Arc<Mutex<HashMap<Uuid, UnitOwner>>>,
+    representatives: Arc<Mutex<HashSet<Uuid>>>,
 }
 
 impl MockUnitOwnerRepository {
     fn new() -> Self {
         Self {
             unit_owners: Arc::new(Mutex::new(HashMap::new())),
+            representatives: Arc::new(Mutex::new(HashSet::new())),
         }
     }
 }
@@ -129,9 +138,29 @@ impl UnitOwnerRepository for MockUnitOwnerRepository {
 
     async fn find_voting_holders_by_unit(
         &self,
-        _unit_id: Uuid,
+        unit_id: Uuid,
     ) -> Result<Vec<crate::domain::entities::LotHolder>, String> {
-        Ok(vec![])
+        use crate::domain::entities::{LotHolder, OwnershipType};
+        let store = self.unit_owners.lock().unwrap();
+        let reps = self.representatives.lock().unwrap();
+        Ok(store
+            .values()
+            .filter(|uo| uo.unit_id == unit_id && uo.end_date.is_none())
+            .map(|uo| LotHolder::new(OwnershipType::default(), reps.contains(&uo.id)))
+            .collect())
+    }
+
+    async fn is_voting_representative(&self, unit_owner_id: Uuid) -> Result<bool, String> {
+        Ok(self
+            .representatives
+            .lock()
+            .unwrap()
+            .contains(&unit_owner_id))
+    }
+
+    async fn set_voting_representative(&self, unit_owner_id: Uuid) -> Result<(), String> {
+        self.representatives.lock().unwrap().insert(unit_owner_id);
+        Ok(())
     }
 }
 
@@ -874,4 +903,130 @@ async fn test_ownership_history() {
 
     assert_eq!(active_count, 1);
     assert_eq!(ended_count, 1);
+}
+
+// TESTS: designate_voting_representative (#848, Art. 3.87 §1 CC)
+//
+// Un lot à deux titulaires actifs — couple, succession, le cas le plus
+// ordinaire d'une copropriété belge — voit son vote SUSPENDU
+// (`voting_right_status`) tant qu'aucun d'eux n'est désigné représentant.
+// Ces tests couvrent la désignation qui lève cette suspension.
+
+/// @happy — deux titulaires actifs, suspendu avant désignation, actif après.
+#[tokio::test]
+async fn happy_designate_voting_representative_lifts_suspension() {
+    let (use_cases, uo_repo, unit_repo, owner_repo) = setup();
+
+    let org_id = Uuid::new_v4();
+    let building_id = Uuid::new_v4();
+    let unit = create_test_unit(org_id, building_id);
+    let alice = create_test_owner(org_id);
+    let mut bertrand = create_test_owner(org_id);
+    bertrand.id = Uuid::new_v4();
+    bertrand.email = "bertrand@example.com".to_string();
+
+    unit_repo.add_unit(unit.clone());
+    owner_repo.add_owner(alice.clone());
+    owner_repo.add_owner(bertrand.clone());
+
+    use_cases
+        .add_owner_to_unit(unit.id, alice.id, dec!(0.5), true)
+        .await
+        .unwrap();
+    use_cases
+        .add_owner_to_unit(unit.id, bertrand.id, dec!(0.5), false)
+        .await
+        .unwrap();
+
+    let holders_before = uo_repo.find_voting_holders_by_unit(unit.id).await.unwrap();
+    assert_eq!(
+        crate::domain::entities::voting_right_status(&holders_before),
+        crate::domain::entities::VotingRightStatus::Suspended,
+        "deux titulaires actifs sans représentant : le vote doit être suspendu (Art. 3.87 §1 CC)"
+    );
+
+    let result = use_cases
+        .designate_voting_representative(unit.id, alice.id)
+        .await;
+    assert!(result.is_ok(), "{result:?}");
+    let designated = result.unwrap();
+    assert_eq!(designated.owner_id, alice.id);
+    assert_eq!(designated.unit_id, unit.id);
+
+    let holders_after = uo_repo.find_voting_holders_by_unit(unit.id).await.unwrap();
+    assert_eq!(
+        crate::domain::entities::voting_right_status(&holders_after),
+        crate::domain::entities::VotingRightStatus::Active,
+        "la désignation d'un représentant doit lever la suspension"
+    );
+}
+
+/// @negative — l'owner visé n'a aucune titularité active sur ce lot : erreur
+/// typée (`AppError::NotFound`), jamais un panic, jamais une désignation
+/// fantôme.
+#[tokio::test]
+async fn negative_designate_voting_representative_requires_active_ownership() {
+    let (use_cases, _uo_repo, unit_repo, owner_repo) = setup();
+
+    let org_id = Uuid::new_v4();
+    let building_id = Uuid::new_v4();
+    let unit = create_test_unit(org_id, building_id);
+    let stranger = create_test_owner(org_id);
+
+    unit_repo.add_unit(unit.clone());
+    owner_repo.add_owner(stranger.clone());
+    // `stranger` n'est jamais rattaché à `unit` : aucune titularité active.
+
+    let result = use_cases
+        .designate_voting_representative(unit.id, stranger.id)
+        .await;
+
+    assert!(matches!(result, Err(AppError::NotFound(_))), "{result:?}");
+}
+
+/// @edge — un second représentant pour le même lot est refusé par
+/// `assert_single_voting_representative` (Art. 3.87 §1 : représentant
+/// UNIQUE) ; redésigner celui déjà en place reste un no-op, pas un conflit
+/// contre lui-même.
+#[tokio::test]
+async fn edge_designate_second_voting_representative_rejected() {
+    let (use_cases, _uo_repo, unit_repo, owner_repo) = setup();
+
+    let org_id = Uuid::new_v4();
+    let building_id = Uuid::new_v4();
+    let unit = create_test_unit(org_id, building_id);
+    let alice = create_test_owner(org_id);
+    let mut bertrand = create_test_owner(org_id);
+    bertrand.id = Uuid::new_v4();
+    bertrand.email = "bertrand-edge@example.com".to_string();
+
+    unit_repo.add_unit(unit.clone());
+    owner_repo.add_owner(alice.clone());
+    owner_repo.add_owner(bertrand.clone());
+
+    use_cases
+        .add_owner_to_unit(unit.id, alice.id, dec!(0.5), true)
+        .await
+        .unwrap();
+    use_cases
+        .add_owner_to_unit(unit.id, bertrand.id, dec!(0.5), false)
+        .await
+        .unwrap();
+
+    use_cases
+        .designate_voting_representative(unit.id, alice.id)
+        .await
+        .unwrap();
+
+    let result = use_cases
+        .designate_voting_representative(unit.id, bertrand.id)
+        .await;
+    assert!(matches!(result, Err(AppError::Conflict(_))), "{result:?}");
+
+    // Redésigner Alice, déjà en place, ne doit pas se heurter à la règle du
+    // représentant unique contre elle-même.
+    let idempotent = use_cases
+        .designate_voting_representative(unit.id, alice.id)
+        .await;
+    assert!(idempotent.is_ok(), "{idempotent:?}");
 }

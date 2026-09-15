@@ -722,6 +722,8 @@ mod tests {
             async fn find_active_by_building(&self, building_id: Uuid) -> Result<Vec<(Uuid, Uuid, rust_decimal::Decimal)>, String>;
             async fn find_active_quota_shares_by_building(&self, building_id: Uuid) -> Result<Vec<(Uuid, Uuid, rust_decimal::Decimal)>, String>;
             async fn find_voting_holders_by_unit(&self, unit_id: Uuid) -> Result<Vec<crate::domain::copropriete::LotHolder>, String>;
+            async fn is_voting_representative(&self, unit_owner_id: Uuid) -> Result<bool, String>;
+            async fn set_voting_representative(&self, unit_owner_id: Uuid) -> Result<(), String>;
         }
     }
 

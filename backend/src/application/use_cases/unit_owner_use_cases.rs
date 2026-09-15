@@ -1,14 +1,13 @@
+use crate::application::error::AppError;
 use crate::application::ports::{OwnerRepository, UnitOwnerRepository, UnitRepository};
-use crate::domain::entities::UnitOwner;
+use crate::domain::entities::{
+    assert_single_voting_representative, LotHolder, OwnershipType, UnitOwner,
+};
 use chrono::Utc;
 use rust_decimal::Decimal;
 use rust_decimal_macros::dec;
 use std::sync::Arc;
 use uuid::Uuid;
-
-#[cfg(test)]
-#[path = "unit_owner_use_cases_test.rs"]
-mod unit_owner_use_cases_test;
 
 pub struct UnitOwnerUseCases {
     unit_owner_repository: Arc<dyn UnitOwnerRepository>,
@@ -303,6 +302,73 @@ impl UnitOwnerUseCases {
             .await
     }
 
+    /// Désigne `owner_id` comme représentant de vote unique du lot `unit_id`
+    /// (Art. 3.87 §1 CC, #848). Un lot à plusieurs titulaires actifs (couple,
+    /// succession — le cas le plus ordinaire) voit son vote SUSPENDU tant
+    /// qu'aucun d'eux n'est désigné ; cette méthode livre la désignation qui
+    /// lève cette suspension (`voting_right_status` redevient `Active`).
+    ///
+    /// Idempotent : redésigner le représentant déjà en place est un no-op, pas
+    /// une seconde désignation.
+    ///
+    /// Refuse (`AppError::Conflict`, via `VotingRightError::MultipleRepresentatives`)
+    /// si un AUTRE titulaire du lot est déjà désigné : l'Art. 3.87 §1 prévoit
+    /// un représentant UNIQUE. C'est le contrôle dormant nommé par #848 —
+    /// `assert_single_voting_representative` — appelé ici pour la première
+    /// fois en production, sur l'état PROSPECTIF (les titulaires actuels plus
+    /// la désignation qui vient), avant toute écriture.
+    pub async fn designate_voting_representative(
+        &self,
+        unit_id: Uuid,
+        owner_id: Uuid,
+    ) -> Result<UnitOwner, AppError> {
+        // La désignation ne peut porter que sur une titularité ACTIVE de CE
+        // lot : ni un rattachement clos, ni un autre lot que celui visé par la
+        // route (cf. handler — `verify_unit_org_access` filtre déjà le
+        // cloisonnement organisation, ceci filtre la cohérence des données).
+        let target = self
+            .unit_owner_repository
+            .find_active_by_unit_and_owner(unit_id, owner_id)
+            .await
+            .map_err(AppError::from)?
+            .ok_or_else(|| {
+                AppError::NotFound(format!(
+                    "Aucune titularité active de l'owner {owner_id} sur le lot {unit_id}"
+                ))
+            })?;
+
+        if self
+            .unit_owner_repository
+            .is_voting_representative(target.id)
+            .await
+            .map_err(AppError::from)?
+        {
+            // Déjà désigné : rien à écrire, rien à contrôler à nouveau.
+            return Ok(target);
+        }
+
+        // État prospectif = titulaires actuels (aucun n'est le représentant
+        // visé, on vient de le vérifier) + la désignation qui vient. Le type
+        // de titularité du titulaire ajouté n'entre pas dans le calcul
+        // d'`assert_single_voting_representative` (il ne compte que
+        // `is_voting_representative`) : `FullOwner` par défaut n'introduit
+        // aucun biais.
+        let mut prospective: Vec<LotHolder> = self
+            .unit_owner_repository
+            .find_voting_holders_by_unit(unit_id)
+            .await
+            .map_err(AppError::from)?;
+        prospective.push(LotHolder::new(OwnershipType::default(), true));
+        assert_single_voting_representative(unit_id, &prospective).map_err(AppError::from)?;
+
+        self.unit_owner_repository
+            .set_voting_representative(target.id)
+            .await
+            .map_err(AppError::from)?;
+
+        Ok(target)
+    }
+
     // Helper method to unset all primary contacts for a unit
     async fn unset_all_primary_contacts(&self, unit_id: Uuid) -> Result<(), String> {
         let current_owners = self
@@ -320,3 +386,15 @@ impl UnitOwnerUseCases {
         Ok(())
     }
 }
+
+// Déclaré en BAS de fichier, pas en haut : la garde `garde_controles_dormants`
+// coupe chaque fichier à la première occurrence textuelle de l'attribut
+// cfg(test), et ne scanne que ce qui précède pour trouver les appels de
+// production. Cet attribut en tête de fichier aurait fait disparaître TOUT
+// l'`impl UnitOwnerUseCases` ci-dessus — donc l'appel de
+// `assert_single_voting_representative` (#848) — de son scan, malgré un appel
+// bien réel. Repéré en écrivant cette story ; aucun autre fichier de
+// `use_cases/` ne déclare son module de test de cette façon en tête.
+#[cfg(test)]
+#[path = "unit_owner_use_cases_test.rs"]
+mod unit_owner_use_cases_test;
