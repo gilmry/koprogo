@@ -322,6 +322,55 @@ du défaut avec un témoin d'interruption (le minimum, déjà décrit dans #880)
 
 ## Journal (chronologie courte)
 
+- 2026-09-15 — **Les vagues 5 à 7 ne peuvent PAS s'ouvrir, et ce n'est pas
+  une prudence : c'est la règle du Gantt, vérifiée.**
+
+  Le plan écrit : « une vague ne s'ouvre qu'une fois l'amont **fusionné** ».
+  Mesuré sur la table de dépendances de `gantt-passes.py` : **les vingt-deux
+  stories des vagues 5 à 7 attendent toutes une story de la vague 4**, sans
+  une seule exception.
+
+  ```
+  #880 attend [872]      #818 attend [797, 802, 803]
+  #718 attend [872]      #820 attend [797, 802, 803]
+  #845 attend [855]      #823 attend [797, 802, 803]
+  #581 attend [576]      #427 attend [872]       … 22 sur 22
+  ```
+
+  Et l'état de la vague 4 : **27 PR ouvertes, 0 fusionnée.**
+
+  Le déroulé du Gantt est donc allé jusqu'à son butoir. Ce qui l'arrête
+  n'est pas un défaut du harnais — c'est le **gate humain** que le plan
+  prévoit : la revue de promotion. Sept branches l'attendent, toutes gates
+  verts.
+
+- 2026-09-15 — **Sixième défaut du harnais : la reprise ressuscitait les
+  instruments périmés.**
+
+  V4.10 a refusé #867 sur « ne porte pas les huit éléments ». Mesurée depuis
+  `feature/dev`, elle les porte. Le journal donne la vraie cause :
+
+  ```
+  File ".../scripts/backlog-pret.py", line 61, in issues_ouvertes
+  FileNotFoundError: No such file or directory: '/home/ubuntu/koprogo'
+  ```
+
+  Ligne 61, dans `issues_ouvertes` — le chemin de `main()`, pas celui de
+  `--issue`. Le script exécuté n'était donc pas celui de `feature/dev` :
+  l'étape « Ouvrir la branche » venait AVANT la mesure, et `story/867`
+  datait de la première vague, quand `DEPOT` était encore codé en dur.
+
+  **Le harnais se mesurait avec ses propres instruments d'hier.**
+
+  Règle désormais écrite dans le fichier : *tout ce qui MESURE tourne sur
+  `feature/dev`, jamais sur la branche mesurée. Une branche peut contenir du
+  code faux — c'est même pour ça qu'on la mesure.*
+
+  Quatrième défaut de la même famille, après « ce n'est pas cette copie-là
+  qui s'exécute », « deux instruments mesurent la même chose » et « le jeton
+  est posé là où git regarde en dernier ». Le dispositif était juste à
+  chaque fois ; le fil était mal branché.
+
 - 2026-09-15 — **Le correctif du rapport porte ses fruits le jour même, et
   il révèle un DEUXIÈME type de silence.**
 
