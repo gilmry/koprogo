@@ -1,6 +1,6 @@
 {
   "genere_le": "2026-09-06",
-  "commentaire": "Contrat gele AVANT la refonte UX. Voir garde-data-testid.test.ts. — 2026-09-08 : `document-list` retiré, il désignait DEUX écrans à la fois (la page /documents et les pièces jointes d'une assemblée). Un nom par écran : `documents-list`, `meeting-documents-list`, `expense-documents-list`. `buildings-list` est passée du contenu au conteneur, `buildings-rows` et `buildings-empty` la remplacent à l'intérieur. Cf. #832.",
+  "commentaire": "Contrat gele AVANT la refonte UX. Voir garde-data-testid.test.ts. — 2026-09-08 : `document-list` retiré, il désignait DEUX écrans à la fois (la page /documents et les pièces jointes d'une assemblée). Un nom par écran : `documents-list`, `meeting-documents-list`, `expense-documents-list`. `buildings-list` est passée du contenu au conteneur, `buildings-rows` et `buildings-empty` la remplacent à l'intérieur. Cf. #832. — 2026-09-14 (#868) : trois ancrages désignaient chacun DEUX composants co-montables sur le même écran (strict-mode violation potentielle) : `building-selector-empty` (ancien `components/BuildingSelector.svelte` renommé `page-building-selector-empty`, la barre de contexte garde `building-selector-empty`), `delete-inspection-button` (le panneau `InspectionDetail` renommé `inspection-detail-delete-button`, la ligne de `InspectionList` garde `delete-inspection-button`), `cancel-button` (le formulaire d'upload de `ExpenseDocuments` renommé `expense-documents-cancel-button`, `ExpenseDetail` garde `cancel-button`). Voir `garde-testid-partages.test.ts` pour la classification complète des ancrages partagés.",
   "litteraux": [
     "accept-quote-button",
     "accountant",
@@ -596,6 +596,7 @@
     "exchanges-list",
     "expense-card",
     "expense-detail-building-link",
+    "expense-documents-cancel-button",
     "expense-documents-list",
     "expense-form-cancel-button",
     "expense-modal-close-button",
@@ -704,6 +705,7 @@
     "insp-result",
     "insp-status",
     "insp-title",
+    "inspection-detail-delete-button",
     "inspection-edit-cancel-button",
     "inspection-list",
     "inspection-list-spinner",
@@ -1044,6 +1046,7 @@
     "owner-units-inline",
     "owner-units-see-all",
     "owners-back-link",
+    "page-building-selector-empty",
     "pagination-mobile-next-button",
     "pagination-mobile-previous-button",
     "pagination-next-button",
