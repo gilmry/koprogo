@@ -538,7 +538,15 @@ mod tests_relecture_du_type_devenement {
     /// Une variante ajoutée demain n'a pas besoin qu'on pense à la relecture.
     #[test]
     fn happy_une_variante_recente_se_relit_sans_table_a_tenir() {
-        for nom in ["MeetingCancelled", "MeetingRescheduled", "PortfolioShared"] {
+        for nom in [
+            "MeetingCancelled",
+            "MeetingRescheduled",
+            "PortfolioShared",
+            "ExpenseMarkedOverdue",
+            "ExpenseCancelled",
+            "ExpenseReactivated",
+            "ExpenseUnpaid",
+        ] {
             let relu = PostgresAuditLogRepository::string_to_event_type(nom);
             assert_eq!(PostgresAuditLogRepository::event_type_to_string(&relu), nom);
         }

@@ -32,6 +32,24 @@ pub enum AuditEventType {
     OwnerUpdated,
     ExpenseCreated,
     ExpenseMarkedPaid,
+    /// La dépense est marquée en retard : elle n'est PAS payée.
+    ///
+    /// Distincte de `ExpenseMarkedPaid`. `mark_expense_overdue` journalisait
+    /// `ExpenseMarkedPaid` — même défaut que `MeetingCancelled` ci-dessous,
+    /// une transition qui recopie l'évènement de la transition voisine.
+    /// Constaté en instruisant #881.
+    ExpenseMarkedOverdue,
+    /// La dépense est annulée : elle N'A PAS été payée, et ne le sera plus
+    /// sur cette écriture. Voir `ExpenseMarkedOverdue`. #881.
+    ExpenseCancelled,
+    /// Une dépense annulée redevient active : elle n'est toujours pas payée.
+    /// Voir `ExpenseMarkedOverdue`. #881.
+    ExpenseReactivated,
+    /// Un paiement enregistré est défait : le paiement n'a plus lieu. Le
+    /// défaut d'origine (#881) journalisait `ExpenseMarkedPaid` sur ce
+    /// geste précis — le registre affirmait l'inverse de ce qui venait de se
+    /// passer.
+    ExpenseUnpaid,
     InvoiceUpdated,
     InvoiceSubmitted,
     InvoiceApproved,
