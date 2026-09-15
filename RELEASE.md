@@ -337,6 +337,56 @@ du défaut avec un témoin d'interruption (le minimum, déjà décrit dans #880)
 
 ## Journal (chronologie courte)
 
+- 2026-09-15 — **La barrière de la vague 4 est levée : 28 branches d'agent
+  fusionnées dans `feature/dev`, sur ordre du PO.** Le barrage est passé —
+  compilation, unitaires, **dix-neuf** gardes — et les images sont publiées.
+
+  **2088 tests unitaires**, contre 1989 avant la fusion.
+
+  ── Ce que les gardes ont attrapé, et qu'aucune revue n'aurait vu ──
+
+  | Garde | Ce qu'elle a trouvé |
+  |---|---|
+  | `garde_harnais_executes` | **cinq harnais que rien n'exécute**, dont `garde_identite_jetee` (#882) et `garde_audit_des_transitions` (#881) |
+  | `garde_lecture` | dette 8 → 9 ; la 9ᵉ est un lien magique où le JETON EST l'identifiant |
+  | `garde_paniques` | 39 → 43 ; **une était un COMMENTAIRE** citant `.unwrap()` |
+  | `garde_taxonomie` | 1779 → 1789 ; onze tests renommés, retombe à **1778** |
+
+  Le premier mérite d'être relevé pour ce qu'il dit de la méthode : **les
+  agents ont créé des gardes que rien n'exécute**, c'est-à-dire le défaut
+  même que `garde_harnais_executes` dénonce, reproduit par ceux qui le
+  corrigeaient. Un cliquet dormant naît par défaut ; il faut une garde pour
+  l'empêcher, et elle a servi.
+
+  Trois cliquets ont reçu une **liste d'exceptions justifiées** plutôt qu'un
+  compteur monté — `garde_identite_sans_decision`, `garde_lecture`,
+  `garde_paniques_en_production`. Le nombre continue de dire « ce que
+  personne n'a jugé », pas « ce qu'on a laissé passer ».
+
+  ── Deux incohérences INTER-BRANCHES, invisibles séparément ──
+
+  `UpdateContractorReportDto` sans `ToSchema` : une branche ajoutait le
+  handler utoipa, l'autre le DTO. Chacune juste, leur rencontre fausse.
+  Et `get_overdue_calls` devenu faillible au périmètre — le correctif de
+  #882 — dont un test BDD n'avait pas suivi.
+
+  C'est le risque propre au fan-out, et aucune revue de branche ne peut le
+  voir : il n'apparaît qu'à la jonction.
+
+  ── Une branche N'EST PAS fusionnée, et c'est délibéré ──
+
+  `story/855` (lien notaire) est structurellement entrelacée avec #835, qui
+  a absorbé un second système de liens magiques : elle exige un champ
+  `single_use`, un handler `revoke`, des routes. Le greffage partiel a été
+  tenté et le compilateur l'a refusé. Elle sera **reproduite** sur la
+  nouvelle base — même geste que pour une passe muette. Une branche qui
+  conflit structurellement se refait, elle ne se recoud pas.
+
+- 2026-09-15 — **La vague 5 est ouverte.** Ses vingt-deux stories
+  attendaient toutes une story de la vague 4 ; la barrière est levée.
+  `story/880` est la première, et **ses gates sont partis seuls** — 745
+  lignes pour la campagne qui déclare ses propres interruptions.
+
 - 2026-09-15 — **Décision du PO : relire les promotions à l'ENVERS de la
   pyramide des tests** — #913.
 
