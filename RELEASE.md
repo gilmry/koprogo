@@ -17,8 +17,8 @@
 - **Archétype** : full-stack *(Rust hexagonal + Astro/Svelte 5 en îlots, PostgreSQL)*
 - **Substrat d'exécution** : conteneur — `~/bin/kcargo` pour Rust, jamais `cargo` sur l'hôte
 - **Démarré le** : 2026-09-12
-- **Dernière mise à jour** : 2026-09-13 (par : Claude — #877 tranchée et corrigée,
-  fan-out débloqué, #879 relancée pour ses gates)
+- **Dernière mise à jour** : 2026-09-15 (par : Claude — le Gantt DÉROULÉ,
+  cinq créneaux, 26 branches d'agent, socle vert et promu sur `main`)
 
 ## Répartition des rôles
 
@@ -94,28 +94,21 @@ appelle une signature et non une validation.
   `Host(localhost)` ne sert que nos deux conteneurs — contrôlé par l'API de
   Traefik, pas supposé.
 
-- **Prochaine action attendue** : **le socle est vert. Reste à le POUSSER, et
-  ce n'est pas du ressort de l'agent.**
+- **Prochaine action attendue** : **relire les sept branches vertes et
+  chronométrer** (#875). Tout le reste est débloqué.
 
-  Trois campagnes du 2026-09-13, même code produit sauf le correctif de #718 :
+  Les deux promotions sont **fusionnées** : `main` porte les correctifs et
+  `feature/dev` n'a plus un seul commit d'avance. `main` connaît désormais le
+  jeton du fan-out et l'épinglage du `checkout`.
 
-  | Campagne | Résultat | Ce qui la distingue |
-  |---|---|---|
-  | contaminée | 213 ✓ / 95 ✘ | deux recompilations pendant — #880 |
-  | propre | 298 ✓ / 10 ✘ | dix 502, aucun défaut produit |
-  | après #718 | **308 ✓ / 0 ✘ — code 0** | `bcrypt` sorti du thread de travail |
+  | Gate | État |
+  |---|---|
+  | `integration` | 🟢 mesuré, et vert en CI sur `main` |
+  | `e2e` parcours | 🟢 308 ✓ / 0 ✘, code 0 |
 
-  Les quatre specs qu'on s'apprêtait à instruire une par une — `AgeRequests`,
-  `Convocations`, `Gdpr:430`, `FinancialRegressions F3` — sont vertes **sans
-  qu'aucune n'ait été touchée**. C'est la réponse de #832 : il n'y avait rien
-  à instruire, il y avait une cause unique à trouver.
-
-  Deux arbitrages restent ouverts, et les deux sont posés plus bas en 🔴 :
-  `ACTIX_WORKERS: 1` sur la démo, et le banc de recette en hot reload (#880).
-
-  ⚠️ **Les commits sont locaux.** Pousser `feature/dev` déclenche le
-  déploiement du VPS — c'est un geste humain, et le lot contient le correctif
-  qui règle aussi les 502 de `api.koprogo.com`.
+  Il reste **trois 🔴, tous du ressort du PO** : `ACTIX_WORKERS: 1` sur la
+  démo, le banc de recette en hot reload (#880), et le type du jeton
+  `FANOUT_GITHUB_TOKEN`.
 
 - **À noter, sans conséquence aujourd'hui** : le Traefik de la recette voit les
   **18 routeurs des projets voisins** de l'hôte (derniere-chance, elevia, n8n),
@@ -328,6 +321,38 @@ du défaut avec un témoin d'interruption (le minimum, déjà décrit dans #880)
 | **PR #879** | **relancer pour qu'elle ait ses gates** avant la revue. La chronométrer sans preuve mesurerait autre chose que ce que #875 cherche | Gilles Maury | 2026-09-13 | #875, run `34764114133` |
 
 ## Journal (chronologie courte)
+
+- 2026-09-15 — **Les deux promotions sont fusionnées.** `main` est à
+  `b073fe98` et l'écart avec `feature/dev` est de **zéro commit**. Elle
+  porte donc les correctifs qui la bloquaient elle-même — #877 et #718 — et
+  ses neuf contrôles requis sont passés verts *parce qu'ils sont réparés*,
+  pas parce qu'on les a contournés.
+
+  Conséquence immédiate pour le harnais : le `fanout-stories.yml` de la
+  branche par défaut connaît enfin `FANOUT_GITHUB_TOKEN` (8 occurrences) et
+  l'épinglage `ref: feature/dev` (2 occurrences). Le premier défaut de la
+  vague V4.1 — « ce n'est pas cette copie-là qui s'exécute » — est éteint.
+
+- 2026-09-15 — **État du fan-out après cinq créneaux** : V4.1 à V4.5, **26
+  PR d'agent ouvertes**.
+
+  | Verdict | Nombre |
+  |---|---:|
+  | tous gates verts | **7** |
+  | au moins un gate rouge | 14 |
+  | gates pas encore déclenchés | 5 |
+
+  Les quatorze rouges se lisent en deux familles, et la revue n'a pas à les
+  démêler :
+
+  - **le socle et rien d'autre** — `story/872`, `story/425` : un
+    `Integration Tests` hérité de `main`, corrigé depuis ;
+  - **leur propre défaut** — Prettier (`731`, `868`, `841`, `798`), tests
+    sans catégorie ou unitaires rouges (`576`, `781`, `805`, `867`),
+    contrat OpenAPI dérivé (`852`, `635`), BDD (`882`, `635`).
+
+  Aucun de ces défauts n'aurait été refusé par une relecture de diff : du
+  code non formaté se lit très bien, et un test sans catégorie aussi.
 
 - 2026-09-14 — **Six branches d'agent passent TOUS les gates.** C'est le
   premier résultat du fan-out directement promouvable, et il vaut d'être lu
