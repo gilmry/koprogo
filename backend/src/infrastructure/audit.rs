@@ -234,6 +234,12 @@ pub enum AuditEventType {
     EtatDateAdditionalDataUpdate,
     EtatDateDeleted,
 
+    // Notary link events (#845 — ADR 0048, ADR 0051)
+    NotaryLinkIssued,
+    NotaryLinkConsulted,
+    NotaryLinkRenewed,
+    NotaryLinkRevoked,
+
     // Budget events (Annual budget management)
     BudgetCreated,
     BudgetUpdated,
