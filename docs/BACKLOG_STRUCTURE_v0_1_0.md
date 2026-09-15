@@ -54,7 +54,7 @@ signature_humaine:
 *Épopées et capacités. Généré par `scripts/backlog-structure.py` : ne pas
 éditer à la main, la prochaine génération écraserait la correction.*
 
-**89 issues ouvertes**, 10 épopées, 33 capacités. Classement exhaustif et exclusif : chaque issue appartient à exactement
+**90 issues ouvertes**, 10 épopées, 33 capacités. Classement exhaustif et exclusif : chaque issue appartient à exactement
 une capacité, et une issue non classée fait échouer la génération.
 
 ## Comment lire ce document
@@ -96,7 +96,7 @@ fabrication ; le Scrum Master de conception l'écrit sans détour :
 | Couche(s) | où le code atterrit, donc quelles gardes s'appliquent |
 | Taille + tours | le coût, sur les deux axes |
 
-**89 issues sur 89** portent les huit. Le relevé
+**90 issues sur 90** portent les huit. Le relevé
 d'origine, avant ce travail, donnait **zéro**.
 
 Le chiffre n'est pas écrit à la main : `scripts/backlog-pret.py` le relève
@@ -375,7 +375,7 @@ La cible est mobile-first et l'application est écrite desktop-first. L'écart n
 
 ## T3 — Harnais de recette
 
-`epic:recette` · 9 issues · 6.75 j · 27 tours
+`epic:recette` · 10 issues · 7.25 j · 29 tours
 
 Sprint 0 continué. Ce qui permet de BOUCLER : sans lui, aucune autre capacité ne peut être déclarée tenue.
 
@@ -393,11 +393,12 @@ Sprint 0 continué. Ce qui permet de BOUCLER : sans lui, aucune autre capacité 
 
 ### C7.2 — La taxonomie des tests est la gate de release
 
-**Should** · `cap:C7.2` · 1 issues · 1.00 j · 4 tours · **1/1 prêtes**
+**Should** · `cap:C7.2` · 2 issues · 1.50 j · 6 tours · **2/2 prêtes**
 
 | Issue | Titre | Taille | Prête |
 |---|---|---|---|
 | [#427](https://github.com/gilmry/koprogo/issues/427) | Validation — taxonomie tests 4 catégories + revue humaine+Cowork comme gate r… | L | oui |
+| [#913](https://github.com/gilmry/koprogo/issues/913) | Relire une promotion à l'envers de la pyramide : la vitrine d'abord, les test… | S | oui |
 
 ### C7.3 — La boucle d'agents peut tourner
 
@@ -525,11 +526,11 @@ Des questions ouvertes, pas des défauts. La Méthode Foyer les veut en RFC, dis
 | E4 — Plateforme | 11 | 10.00 | 40 |
 | T1 — Refonte UX | 14 | 13.25 | 53 |
 | T2 — Accessibilité et mobile | 4 | 3.00 | 12 |
-| T3 — Harnais de recette | 9 | 6.75 | 27 |
+| T3 — Harnais de recette | 10 | 7.25 | 29 |
 | T4 — Documentation vivante multi-persona | 14 | 11.25 | 45 |
 | T5 — Ops et infrastructure | 10 | 9.00 | 36 |
 | T6 — Arbitrages produit en attente | 1 | 0.50 | 2 |
-| **Total** | **89** | **76.25** | **305** |
+| **Total** | **90** | **76.75** | **307** |
 
 `S` = 0,5 j · `M` = 0,75 j · `L` = 1 j — wall-clock du superviseur, pas
 temps machine. Les tours mesurent l'autre axe, le coût en tokens.

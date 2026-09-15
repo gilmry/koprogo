@@ -322,6 +322,40 @@ du défaut avec un témoin d'interruption (le minimum, déjà décrit dans #880)
 
 ## Journal (chronologie courte)
 
+- 2026-09-15 — **Décision du PO : relire les promotions à l'ENVERS de la
+  pyramide des tests** — #913.
+
+  La vitrine d'abord, puis chaque couche en descendant, et seulement si la
+  précédente laisse un doute.
+
+  ```
+     vitrine (doc-vivante)     ← on commence ICI
+          e2e parcours
+            bdd
+         integration
+        unit · contrat
+           plancher            ← on finit ici, si on y arrive
+  ```
+
+  La pyramide est un guide de **construction** — beaucoup d'unitaires en bas
+  parce que le rapport coût/couverture l'impose. Elle n'a jamais prétendu
+  dire dans quel ordre on **relit**, et pour relire l'ordre inverse est le
+  bon : seule la couche haute répond à la question d'une promotion, qui
+  n'est pas « le code est-il correct » mais « la chose demandée est-elle là ».
+
+  **Le rang atteint devient une mesure.** Une branche relue au rang 1 coûte
+  une minute ; une branche relue au rang 7 — le diff — coûte une heure et dit
+  que le harnais n'a pas fait son travail. C'est le prolongement de #875, où
+  le signal était binaire (« a-t-il ouvert le diff ») : il devient une
+  profondeur.
+
+  ⚠️ **Le rang 1 est inatteignable aujourd'hui** : aucune des 27 branches
+  d'agent n'a de vitrine, leurs gates ayant été déclenchés à la main. Corrigé
+  le 2026-09-15 ; `story/579` est la première dont les gates partent seuls.
+  C'est ce qui rend le protocole nécessaire MAINTENANT — sans lui, la vitrine
+  resterait ce qu'elle a été pendant vingt-sept branches : un artefact que
+  personne n'ouvre.
+
 - 2026-09-15 — **Les vagues 5 à 7 ne peuvent PAS s'ouvrir, et ce n'est pas
   une prudence : c'est la règle du Gantt, vérifiée.**
 
