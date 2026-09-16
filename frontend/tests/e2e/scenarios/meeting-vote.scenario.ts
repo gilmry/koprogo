@@ -194,8 +194,11 @@ test.describe("Scenario: Vote multi-role sur une resolution en AG", () => {
     //
     // Chercher un bouton par son texte est un pari sur la langue ; ici il
     // etait meme ambigu DANS la langue choisie.
+    // Story 4.2 — renommé `vote-cast-submit` (le champ `auth_method` devenu
+    // obligatoire ne change rien ici : `voteAuthMethod` vaut `presence` par
+    // défaut, cohérent avec cette AG physique).
     const submitVoteBtn = resolutionItem2.locator(
-      '[data-testid="resolution-vote-submit-button"]',
+      '[data-testid="vote-cast-submit"]',
     );
     await humanClickLocator(page, submitVoteBtn);
     await confirmerSiDemande(page);

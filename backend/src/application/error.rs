@@ -283,6 +283,26 @@ pub enum AppError {
         "Configuration de visioconférence manquante pour ce mode de réunion (Art. 3.87 §1er CC)"
     )]
     MeetingModeRequiresVideoconf { mode: String },
+
+    /// Story 4.2 (#48) — `auth_method` absent du bulletin de vote. Un vote ne
+    /// peut pas être enregistré sans savoir comment le votant a été
+    /// authentifié : ni preuve ni contestation ne sont alors possibles.
+    /// Retourne 422 + payload `VOTE_AUTH_METHOD_REQUIRED`.
+    #[error("La méthode d'authentification du vote est obligatoire")]
+    VoteAuthMethodRequired,
+
+    /// Story 4.2 (#48) — Art. 3.87 §1er, §4 CC : le mode de l'AG (remote ou
+    /// hybrid) exige une méthode qui engage réellement le votant (itsme/eID),
+    /// ou une procuration en bonne et due forme. `presence` ne fait
+    /// qu'affirmer une présence que la modalité distancielle ne permet
+    /// justement pas de vérifier — c'est exactement la fraude que
+    /// l'authentification forte doit rendre impossible. Retourne 403 +
+    /// payload `VOTE_AUTH_INSUFFICIENT`.
+    #[error(
+        "Authentification insuffisante pour un vote en mode {mode} : {auth_method} n'engage pas \
+         le votant (Art. 3.87 §1er, §4 CC)"
+    )]
+    VoteAuthInsufficient { mode: String, auth_method: String },
 }
 
 impl AppError {
@@ -304,6 +324,8 @@ impl AppError {
             AppError::ReserveFundInsufficient { .. } => "reserve_fund_insufficient",
             AppError::VotingRightSuspended { .. } => "voting_right_suspended",
             AppError::MeetingModeRequiresVideoconf { .. } => "meeting_mode_requires_videoconf",
+            AppError::VoteAuthMethodRequired => "vote_auth_method_required",
+            AppError::VoteAuthInsufficient { .. } => "vote_auth_insufficient",
             AppError::RateLimited => "rate_limited",
             AppError::Database(_) => "database",
             AppError::Crypto(_) => "crypto",
@@ -349,7 +371,8 @@ impl ResponseError for AppError {
             | AppError::DelegationChainNotAllowed
             | AppError::TicketImmutable
             | AppError::ResponseImmutable
-            | AppError::SignatoryNotAuthorized => StatusCode::FORBIDDEN,
+            | AppError::SignatoryNotAuthorized
+            | AppError::VoteAuthInsufficient { .. } => StatusCode::FORBIDDEN,
             AppError::NotFound(_) | AppError::MandateNotFound => StatusCode::NOT_FOUND,
             AppError::Conflict(_)
             | AppError::RoleAlreadyAssigned { .. }
@@ -363,7 +386,8 @@ impl ResponseError for AppError {
             | AppError::AcpNotConformant { .. }
             | AppError::ReserveFundInsufficient { .. }
             | AppError::VotingRightSuspended { .. }
-            | AppError::MeetingModeRequiresVideoconf { .. } => StatusCode::UNPROCESSABLE_ENTITY,
+            | AppError::MeetingModeRequiresVideoconf { .. }
+            | AppError::VoteAuthMethodRequired => StatusCode::UNPROCESSABLE_ENTITY,
             AppError::RateLimited => StatusCode::TOO_MANY_REQUESTS,
             AppError::Database(_) | AppError::Crypto(_) | AppError::Internal(_) => {
                 StatusCode::INTERNAL_SERVER_ERROR
@@ -441,6 +465,13 @@ impl ResponseError for AppError {
             AppError::MeetingModeRequiresVideoconf { mode } => Some(json!({
                 "code": "MEETING_MODE_REQUIRES_VIDEOCONF",
                 "mode": mode,
+            })),
+            // Story 4.2 — payload narratif `VOTE_AUTH_INSUFFICIENT` (403).
+            // Le FE consomme `details.code` pour orienter vers itsme/eID.
+            AppError::VoteAuthInsufficient { mode, auth_method } => Some(json!({
+                "code": "VOTE_AUTH_INSUFFICIENT",
+                "mode": mode,
+                "auth_method": auth_method,
             })),
             // Track H Story H3 — payload narratif pour `MeetingNotCompletable`
             // (422) : le FE consomme `details.code == "MEETING_NOT_COMPLETABLE"`
@@ -911,6 +942,43 @@ impl From<crate::domain::entities::MeetingModeError> for AppError {
                     mode: mode.to_db_str().to_string(),
                 }
             }
+        }
+    }
+}
+
+// ============================================================================
+// Story 4.2 — bridges From<VoteAuthError> (auth_method du vote distant, #48)
+// ============================================================================
+
+impl From<crate::domain::entities::VoteAuthError> for AppError {
+    /// Story 4.2 — `assert_vote_auth_sufficient` refusé : `Missing` → 422
+    /// (`VOTE_AUTH_METHOD_REQUIRED`), `Insufficient` → 403
+    /// (`VOTE_AUTH_INSUFFICIENT`).
+    fn from(err: crate::domain::entities::VoteAuthError) -> Self {
+        use crate::domain::entities::VoteAuthError;
+        match err {
+            VoteAuthError::Missing => AppError::VoteAuthMethodRequired,
+            VoteAuthError::Insufficient { mode, auth_method } => AppError::VoteAuthInsufficient {
+                mode: mode.to_db_str().to_string(),
+                auth_method: auth_method.to_db_str().to_string(),
+            },
+        }
+    }
+}
+
+impl From<crate::domain::entities::VoteAuthError> for String {
+    /// Bridge legacy `Result<_, String>` pour `cast_vote` (cohérence avec
+    /// `VotingRightSuspendedError`). Préfixe parsable par le handler
+    /// (`resolution_handlers.rs::cast_vote`).
+    fn from(err: crate::domain::entities::VoteAuthError) -> Self {
+        use crate::domain::entities::VoteAuthError;
+        match err {
+            VoteAuthError::Missing => "VOTE_AUTH_METHOD_REQUIRED".to_string(),
+            VoteAuthError::Insufficient { mode, auth_method } => format!(
+                "VOTE_AUTH_INSUFFICIENT:{}:{}",
+                mode.to_db_str(),
+                auth_method.to_db_str()
+            ),
         }
     }
 }
@@ -1433,6 +1501,65 @@ mod tests {
         };
         let s = format!("{}", e);
         assert!(!s.contains("meeting_id"));
+    }
+
+    // ------------------------------------------------------------------------
+    // Story 4.2 — VoteAuthMethodRequired / VoteAuthInsufficient (#48)
+    // ------------------------------------------------------------------------
+
+    #[test]
+    fn negative_vote_auth_method_required_maps_to_422() {
+        let e = AppError::VoteAuthMethodRequired;
+        assert_eq!(e.status_code(), StatusCode::UNPROCESSABLE_ENTITY);
+        assert_eq!(e.kind(), "vote_auth_method_required");
+    }
+
+    #[test]
+    fn security_vote_auth_insufficient_maps_to_403() {
+        let e = AppError::VoteAuthInsufficient {
+            mode: "remote".to_string(),
+            auth_method: "presence".to_string(),
+        };
+        assert_eq!(e.status_code(), StatusCode::FORBIDDEN);
+        assert_eq!(e.kind(), "vote_auth_insufficient");
+    }
+
+    #[test]
+    fn happy_from_vote_auth_error_missing_maps_to_required() {
+        use crate::domain::entities::VoteAuthError;
+        let app_err: AppError = VoteAuthError::Missing.into();
+        assert!(matches!(app_err, AppError::VoteAuthMethodRequired));
+    }
+
+    #[test]
+    fn happy_from_vote_auth_error_insufficient_preserves_fields() {
+        use crate::domain::entities::{MeetingMode, VoteAuthError, VoteAuthMethod};
+        let app_err: AppError = VoteAuthError::Insufficient {
+            mode: MeetingMode::Hybrid,
+            auth_method: VoteAuthMethod::Presence,
+        }
+        .into();
+        match app_err {
+            AppError::VoteAuthInsufficient { mode, auth_method } => {
+                assert_eq!(mode, "hybrid");
+                assert_eq!(auth_method, "presence");
+            }
+            other => panic!("expected VoteAuthInsufficient, got {:?}", other),
+        }
+    }
+
+    #[test]
+    fn edge_vote_auth_error_string_bridge_is_parsable() {
+        use crate::domain::entities::{MeetingMode, VoteAuthError, VoteAuthMethod};
+        let s: String = VoteAuthError::Missing.into();
+        assert_eq!(s, "VOTE_AUTH_METHOD_REQUIRED");
+
+        let s: String = VoteAuthError::Insufficient {
+            mode: MeetingMode::Remote,
+            auth_method: VoteAuthMethod::Itsme,
+        }
+        .into();
+        assert_eq!(s, "VOTE_AUTH_INSUFFICIENT:remote:itsme");
     }
 
     #[test]

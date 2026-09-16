@@ -2,8 +2,8 @@ use crate::application::ports::{
     MeetingRepository, ResolutionRepository, UnitOwnerRepository, UnitRepository, VoteRepository,
 };
 use crate::domain::entities::{
-    assert_voting_right_active, MajorityType, Resolution, ResolutionStatus, ResolutionType, Vote,
-    VoteChoice,
+    assert_vote_auth_sufficient, assert_voting_right_active, MajorityType, Resolution,
+    ResolutionStatus, ResolutionType, Vote, VoteAuthMethod, VoteChoice,
 };
 use std::sync::Arc;
 use uuid::Uuid;
@@ -191,6 +191,10 @@ impl ResolutionUseCases {
     /// client envoie ; c'est précisément ce que ce cas d'usage vérifie
     /// désormais contre `caller_owner_id`, plutôt que de les transmettre les
     /// yeux fermés.
+    ///
+    /// `auth_method` (Story 4.2, #48) est validé contre la modalité de l'AG :
+    /// absent → 422 (`VOTE_AUTH_METHOD_REQUIRED`), insuffisant pour un mode
+    /// remote/hybrid → 403 (`VOTE_AUTH_INSUFFICIENT`).
     #[allow(clippy::too_many_arguments)]
     pub async fn cast_vote(
         &self,
@@ -199,6 +203,7 @@ impl ResolutionUseCases {
         unit_id: Uuid,
         vote_choice: VoteChoice,
         proxy_owner_id: Option<Uuid>,
+        auth_method: Option<VoteAuthMethod>,
         caller_owner_id: Uuid,
     ) -> Result<Vote, String> {
         // Check if resolution exists and is pending
@@ -401,14 +406,24 @@ impl ResolutionUseCases {
                 .await?;
         }
 
+        // Story 4.2 (#48) — Art. 3.87 §1er, §4 CC : un vote distant/hybride
+        // exige une méthode qui engage réellement le votant (itsme/eID), ou
+        // une procuration en bonne et due forme ; une méthode qui ne fait
+        // qu'affirmer une présence ne suffit pas à distance. `auth_method`
+        // est par ailleurs toujours requis : un vote sans méthode déclarée
+        // n'est pas exploitable en cas de contestation.
+        let auth_method =
+            assert_vote_auth_sufficient(meeting.mode, auth_method, proxy_owner_id.is_some())?;
+
         // Create and save the vote
-        let vote = Vote::new(
+        let vote = Vote::new_with_auth_method(
             resolution_id,
             owner_id,
             unit_id,
             vote_choice.clone(),
             voting_power,
             proxy_owner_id,
+            auth_method,
         )?;
 
         let created_vote = self.vote_repository.create(&vote).await?;
@@ -712,7 +727,8 @@ mod tests {
         VoteRepository,
     };
     use crate::domain::entities::{
-        LotHolder, Meeting, MeetingType, OwnershipType, Unit, UnitOwner, UnitType, VoteChoice,
+        LotHolder, Meeting, MeetingMode, MeetingType, OwnershipType, Unit, UnitOwner, UnitType,
+        VoteChoice,
     };
     use async_trait::async_trait;
     use chrono::Utc;
@@ -1813,6 +1829,7 @@ mod tests {
                 unit_id,
                 VoteChoice::Pour,
                 None,
+                Some(VoteAuthMethod::Presence),
                 // #850 — vote pour soi-même : l'appelant EST l'owner_id.
                 owner_id,
             )
@@ -1861,6 +1878,7 @@ mod tests {
                 lot_etranger,
                 VoteChoice::Pour,
                 None,
+                Some(VoteAuthMethod::Presence),
                 owner_id,
             )
             .await
@@ -1904,6 +1922,7 @@ mod tests {
                 Uuid::new_v4(),
                 VoteChoice::Pour,
                 None,
+                Some(VoteAuthMethod::Presence),
                 owner_id,
             )
             .await
@@ -1983,6 +2002,7 @@ mod tests {
                 unit_id,
                 VoteChoice::Pour,
                 None,
+                Some(VoteAuthMethod::Presence),
                 owner_id,
             )
             .await;
@@ -2074,6 +2094,7 @@ mod tests {
                 unit_id,
                 VoteChoice::Pour,
                 None,
+                Some(VoteAuthMethod::Presence),
                 owner_id,
             )
             .await;
@@ -2087,6 +2108,7 @@ mod tests {
                 unit_id,
                 VoteChoice::Contre,
                 None,
+                Some(VoteAuthMethod::Presence),
                 owner_id,
             )
             .await;
@@ -2168,6 +2190,7 @@ mod tests {
                     unit_id,
                     VoteChoice::Pour, // 100 millièmes chacun = 300 total
                     Some(mandataire_id),
+                    Some(VoteAuthMethod::Proxy),
                     // #850 — le mandataire déclaré EST l'appelant.
                     mandataire_id,
                 )
@@ -2190,6 +2213,7 @@ mod tests {
                 unit_id_4,
                 VoteChoice::Pour,
                 Some(mandataire_id),
+                Some(VoteAuthMethod::Proxy),
                 mandataire_id,
             )
             .await;
@@ -2276,6 +2300,7 @@ mod tests {
                     unit_id,
                     VoteChoice::Pour,
                     Some(mandataire_id),
+                    Some(VoteAuthMethod::Proxy),
                     mandataire_id,
                 )
                 .await;
@@ -2295,6 +2320,7 @@ mod tests {
                 unit_victime,
                 VoteChoice::Pour,
                 None,
+                Some(VoteAuthMethod::Presence),
                 // L'appelant réel reste le mandataire, quoi que dise le corps
                 // de la requête.
                 mandataire_id,
@@ -2385,6 +2411,7 @@ mod tests {
                     Uuid::new_v4(),
                     VoteChoice::Pour,
                     None,
+                    Some(VoteAuthMethod::Presence),
                     owner_id,
                 )
                 .await;
@@ -2407,6 +2434,7 @@ mod tests {
                     petit_lot,
                     VoteChoice::Pour,
                     Some(mandataire_id),
+                    Some(VoteAuthMethod::Proxy),
                     mandataire_id,
                 )
                 .await;
@@ -2486,6 +2514,7 @@ mod tests {
                 Uuid::new_v4(),
                 VoteChoice::Pour,
                 None,
+                Some(VoteAuthMethod::Presence),
                 owner_id,
             )
             .await
@@ -2535,6 +2564,7 @@ mod tests {
                 Uuid::new_v4(),
                 VoteChoice::Pour,
                 None,
+                Some(VoteAuthMethod::Presence),
                 owner_id,
             )
             .await
@@ -2611,6 +2641,237 @@ mod tests {
         resolution
     }
 
+    /// Story 4.2 — même montage que `meeting_with_quorum_and_resolution`,
+    /// mais l'AG est tenue en mode `Remote` (Art. 3.87 §1er CC) : c'est cette
+    /// modalité qui déclenche l'exigence d'authentification forte.
+    async fn meeting_with_quorum_and_resolution_remote(
+        resolution_repo: &Arc<MockResolutionRepository>,
+        meeting_repo: &Arc<MockMeetingRepository>,
+        unit_repo: &Arc<MockUnitRepository>,
+    ) -> Resolution {
+        let meeting_id = Uuid::new_v4();
+        let building_id = Uuid::new_v4();
+        unit_repo.pose_defaut(building_id, dec!(100));
+        let mut meeting = Meeting::new(
+            Uuid::new_v4(), // acp_id
+            Uuid::new_v4(),
+            building_id,
+            MeetingType::Ordinary,
+            "AGO distancielle".to_string(),
+            None,
+            Utc::now() + chrono::Duration::days(30),
+            "Visioconférence".to_string(),
+        )
+        .unwrap();
+        meeting.id = meeting_id;
+        meeting
+            .set_mode(
+                MeetingMode::Remote,
+                Some("https://visio.example/ago".to_string()),
+            )
+            .unwrap();
+        meeting
+            .validate_quorum(
+                rust_decimal_macros::dec!(600),
+                rust_decimal_macros::dec!(1000),
+            )
+            .unwrap();
+        meeting
+            .add_agenda_item("Approbation des comptes".to_string())
+            .unwrap();
+        meeting_repo.create(&meeting).await.unwrap();
+
+        let mut resolution = Resolution::new(
+            meeting_id,
+            "R".to_string(),
+            "D".to_string(),
+            ResolutionType::Ordinary,
+            MajorityType::Absolute,
+            Some(0),
+        )
+        .unwrap();
+        resolution.status = ResolutionStatus::Pending;
+        resolution_repo.create(&resolution).await.unwrap();
+        resolution
+    }
+
+    // ------------------------------------------------------------------------
+    // Story 4.2 — `cast_vote` × `auth_method` (Art. 3.87 §1er, §4 CC, #48)
+    // ------------------------------------------------------------------------
+
+    /// @happy — un vote distant authentifié par itsme est enregistré avec
+    /// `auth_method = itsme`.
+    #[tokio::test]
+    async fn happy_vote_distant_avec_itsme_est_enregistre() {
+        let resolution_repo = Arc::new(MockResolutionRepository::new());
+        let vote_repo = Arc::new(MockVoteRepository::new());
+        let meeting_repo = Arc::new(MockMeetingRepository::new());
+        let unit_repo = Arc::new(MockUnitRepository::new());
+        let resolution =
+            meeting_with_quorum_and_resolution_remote(&resolution_repo, &meeting_repo, &unit_repo)
+                .await;
+        let use_cases = ResolutionUseCases::new(
+            resolution_repo.clone(),
+            vote_repo,
+            meeting_repo,
+            Arc::new(MockUnitOwnerRepository::new()),
+            unit_repo,
+        );
+
+        let owner_id = Uuid::new_v4();
+        let unit_id = Uuid::new_v4();
+        let vote = use_cases
+            .cast_vote(
+                resolution.id,
+                owner_id,
+                unit_id,
+                VoteChoice::Pour,
+                None,
+                Some(VoteAuthMethod::Itsme),
+                owner_id,
+            )
+            .await
+            .expect("un vote itsme sur une AG distancielle doit aboutir");
+
+        assert_eq!(vote.auth_method, VoteAuthMethod::Itsme);
+    }
+
+    /// @edge — un vote distant par procuration en bonne et due forme est
+    /// autorisé (Art. 3.87 §4) : la procuration elle-même reste régie par ses
+    /// propres conditions (limite de trois mandats), pas par cette garde.
+    #[tokio::test]
+    async fn edge_vote_distant_par_procuration_est_autorise() {
+        let resolution_repo = Arc::new(MockResolutionRepository::new());
+        let vote_repo = Arc::new(MockVoteRepository::new());
+        let meeting_repo = Arc::new(MockMeetingRepository::new());
+        let unit_repo = Arc::new(MockUnitRepository::new());
+        let resolution =
+            meeting_with_quorum_and_resolution_remote(&resolution_repo, &meeting_repo, &unit_repo)
+                .await;
+        let use_cases = ResolutionUseCases::new(
+            resolution_repo.clone(),
+            vote_repo,
+            meeting_repo,
+            Arc::new(MockUnitOwnerRepository::new()),
+            unit_repo,
+        );
+
+        let mandant_id = Uuid::new_v4();
+        let mandataire_id = Uuid::new_v4();
+        let unit_id = Uuid::new_v4();
+        let vote = use_cases
+            .cast_vote(
+                resolution.id,
+                mandant_id,
+                unit_id,
+                VoteChoice::Pour,
+                Some(mandataire_id),
+                Some(VoteAuthMethod::Proxy),
+                mandataire_id,
+            )
+            .await
+            .expect("une procuration réelle doit être autorisée à distance");
+
+        assert_eq!(vote.auth_method, VoteAuthMethod::Proxy);
+    }
+
+    /// @security — déclarer `presence` pour un vote distant est exactement la
+    /// fraude que l'authentification forte doit rendre impossible (#48) :
+    /// refusé en 403 typé `VOTE_AUTH_INSUFFICIENT`, pas silencieusement
+    /// accepté.
+    #[tokio::test]
+    async fn security_vote_distant_avec_presence_est_refuse_403() {
+        let resolution_repo = Arc::new(MockResolutionRepository::new());
+        let vote_repo = Arc::new(MockVoteRepository::new());
+        let meeting_repo = Arc::new(MockMeetingRepository::new());
+        let unit_repo = Arc::new(MockUnitRepository::new());
+        let resolution =
+            meeting_with_quorum_and_resolution_remote(&resolution_repo, &meeting_repo, &unit_repo)
+                .await;
+        let use_cases = ResolutionUseCases::new(
+            resolution_repo.clone(),
+            vote_repo,
+            meeting_repo,
+            Arc::new(MockUnitOwnerRepository::new()),
+            unit_repo,
+        );
+
+        let owner_id = Uuid::new_v4();
+        let unit_id = Uuid::new_v4();
+        let erreur = use_cases
+            .cast_vote(
+                resolution.id,
+                owner_id,
+                unit_id,
+                VoteChoice::Pour,
+                None,
+                Some(VoteAuthMethod::Presence),
+                owner_id,
+            )
+            .await
+            .expect_err("presence ne doit pas suffire à distance");
+
+        assert_eq!(
+            erreur, "VOTE_AUTH_INSUFFICIENT:remote:presence",
+            "le refus doit être typé, parsable par le handler : {erreur}"
+        );
+        let app_err: crate::application::error::AppError =
+            crate::domain::entities::VoteAuthError::Insufficient {
+                mode: MeetingMode::Remote,
+                auth_method: VoteAuthMethod::Presence,
+            }
+            .into();
+        assert_eq!(
+            app_err.status_code(),
+            actix_web::http::StatusCode::FORBIDDEN
+        );
+    }
+
+    /// @negative — un vote sans `auth_method` est refusé en 422 typé
+    /// `VOTE_AUTH_METHOD_REQUIRED`, quel que soit le mode de l'AG.
+    #[tokio::test]
+    async fn negative_vote_sans_auth_method_est_refuse_422() {
+        let resolution_repo = Arc::new(MockResolutionRepository::new());
+        let vote_repo = Arc::new(MockVoteRepository::new());
+        let meeting_repo = Arc::new(MockMeetingRepository::new());
+        let unit_repo = Arc::new(MockUnitRepository::new());
+        let resolution =
+            meeting_with_quorum_and_resolution(&resolution_repo, &meeting_repo, &unit_repo).await;
+        let use_cases = ResolutionUseCases::new(
+            resolution_repo.clone(),
+            vote_repo,
+            meeting_repo,
+            Arc::new(MockUnitOwnerRepository::new()),
+            unit_repo,
+        );
+
+        let owner_id = Uuid::new_v4();
+        let unit_id = Uuid::new_v4();
+        let erreur = use_cases
+            .cast_vote(
+                resolution.id,
+                owner_id,
+                unit_id,
+                VoteChoice::Pour,
+                None,
+                None,
+                owner_id,
+            )
+            .await
+            .expect_err("un vote sans auth_method ne peut pas être enregistré");
+
+        assert_eq!(
+            erreur, "VOTE_AUTH_METHOD_REQUIRED",
+            "le refus doit être typé, parsable par le handler : {erreur}"
+        );
+        let app_err: crate::application::error::AppError =
+            crate::domain::entities::VoteAuthError::Missing.into();
+        assert_eq!(
+            app_err.status_code(),
+            actix_web::http::StatusCode::UNPROCESSABLE_ENTITY
+        );
+    }
+
     /// @security — une résolution hors ordre du jour ne peut pas être mise aux
     /// voix (Art. 3.87 § 2 CC).
     ///
@@ -2657,6 +2918,7 @@ mod tests {
                 unit_id,
                 VoteChoice::Pour,
                 None,
+                Some(VoteAuthMethod::Presence),
                 owner_id,
             )
             .await
@@ -2714,6 +2976,7 @@ mod tests {
                 unit_id,
                 VoteChoice::Pour,
                 None,
+                Some(VoteAuthMethod::Presence),
                 owner_id,
             )
             .await
@@ -2768,6 +3031,7 @@ mod tests {
                 unit_id,
                 VoteChoice::Pour,
                 None,
+                Some(VoteAuthMethod::Presence),
                 owner_id,
             )
             .await
@@ -2817,6 +3081,7 @@ mod tests {
                 unit_id,
                 VoteChoice::Pour,
                 None,
+                Some(VoteAuthMethod::Presence),
                 owner_id,
             )
             .await
@@ -2865,6 +3130,7 @@ mod tests {
                 unit_id,
                 VoteChoice::Pour,
                 None,
+                Some(VoteAuthMethod::Presence),
                 owner_id,
             )
             .await;
@@ -2905,7 +3171,8 @@ mod tests {
                 victime_id, // le vote prétend être émis par la victime…
                 unit_id,
                 VoteChoice::Pour,
-                None,         // … sans que l'attaquant se déclare son mandataire.
+                None, // … sans que l'attaquant se déclare son mandataire.
+                Some(VoteAuthMethod::Presence),
                 attaquant_id, // … alors que l'appelant réel est un tiers.
             )
             .await;
@@ -2960,6 +3227,7 @@ mod tests {
                 Uuid::new_v4(),
                 VoteChoice::Pour,
                 Some(quelquun_dautre), // déclare un mandataire qui n'est pas l'appelant
+                Some(VoteAuthMethod::Presence),
                 appelant_id,
             )
             .await;
@@ -3003,6 +3271,7 @@ mod tests {
                 unit_id,
                 VoteChoice::Pour,
                 None,
+                Some(VoteAuthMethod::Presence),
                 owner_id,
             )
             .await;

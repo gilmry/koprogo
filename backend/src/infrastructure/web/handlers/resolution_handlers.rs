@@ -385,6 +385,7 @@ pub async fn cast_vote(
             // servir ressemblerait à un contrôle — c'est exactement ce que #850
             // reproche à cette route.
             request.proxy_owner_id,
+            request.auth_method,
             caller_owner_id,
         )
         .await
@@ -434,6 +435,26 @@ pub async fn cast_vote(
                 if let Ok(unit_id) = uuid::Uuid::parse_str(reste.trim()) {
                     return crate::application::error::AppError::VotingRightSuspended { unit_id }
                         .error_response();
+                }
+            }
+
+            // Story 4.2 (#48) — `auth_method` absent (422) ou insuffisant pour
+            // le mode distanciel de l'AG (403). Même geste que
+            // VOTING_RIGHT_SUSPENDED ci-dessus : le préfixe posé côté cas
+            // d'usage (`application/error.rs::From<VoteAuthError> for String`)
+            // est reconnu ici pour reconstruire l'erreur typée.
+            if err == "VOTE_AUTH_METHOD_REQUIRED" {
+                return crate::application::error::AppError::VoteAuthMethodRequired
+                    .error_response();
+            }
+            if let Some(reste) = err.strip_prefix("VOTE_AUTH_INSUFFICIENT:") {
+                let mut parts = reste.splitn(2, ':');
+                if let (Some(mode), Some(auth_method)) = (parts.next(), parts.next()) {
+                    return crate::application::error::AppError::VoteAuthInsufficient {
+                        mode: mode.to_string(),
+                        auth_method: auth_method.to_string(),
+                    }
+                    .error_response();
                 }
             }
 

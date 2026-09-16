@@ -1,5 +1,5 @@
 use crate::application::ports::VoteRepository;
-use crate::domain::entities::{Vote, VoteChoice};
+use crate::domain::entities::{Vote, VoteAuthMethod, VoteChoice};
 use crate::infrastructure::database::pool::DbPool;
 use async_trait::async_trait;
 use rust_decimal::Decimal;
@@ -13,6 +13,33 @@ pub struct PostgresVoteRepository {
 impl PostgresVoteRepository {
     pub fn new(pool: DbPool) -> Self {
         Self { pool }
+    }
+
+    /// Story 4.2 — reconstruction d'un `Vote` à partir d'une ligne, factorisée
+    /// pour ne pas répéter le décodage `auth_method` (et son erreur possible,
+    /// une valeur en base qui ne correspondrait à aucune variante connue) à
+    /// chaque requête `SELECT`.
+    fn vote_from_row(row: sqlx::postgres::PgRow) -> Result<Vote, String> {
+        let vote_choice_str: String = row.get("vote_choice");
+        let vote_choice = match vote_choice_str.as_str() {
+            "Contre" => VoteChoice::Contre,
+            "Abstention" => VoteChoice::Abstention,
+            _ => VoteChoice::Pour,
+        };
+        let auth_method_str: String = row.get("auth_method");
+        let auth_method = VoteAuthMethod::from_db_string(&auth_method_str)?;
+
+        Ok(Vote {
+            id: row.get("id"),
+            resolution_id: row.get("resolution_id"),
+            owner_id: row.get("owner_id"),
+            unit_id: row.get("unit_id"),
+            vote_choice,
+            voting_power: row.get("voting_power"),
+            proxy_owner_id: row.get("proxy_owner_id"),
+            voted_at: row.get("voted_at"),
+            auth_method,
+        })
     }
 }
 
@@ -29,9 +56,9 @@ impl VoteRepository for PostgresVoteRepository {
             r#"
             INSERT INTO votes (
                 id, resolution_id, owner_id, unit_id, vote_choice,
-                voting_power, proxy_owner_id, voted_at
+                voting_power, proxy_owner_id, voted_at, auth_method
             )
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
             "#,
         )
         .bind(vote.id)
@@ -42,6 +69,7 @@ impl VoteRepository for PostgresVoteRepository {
         .bind(vote.voting_power)
         .bind(vote.proxy_owner_id)
         .bind(vote.voted_at)
+        .bind(vote.auth_method.to_db_str())
         .execute(&self.pool)
         .await
         .map_err(|e| format!("Database error creating vote: {}", e))?;
@@ -53,7 +81,7 @@ impl VoteRepository for PostgresVoteRepository {
         let row = sqlx::query(
             r#"
             SELECT id, resolution_id, owner_id, unit_id, vote_choice,
-                   voting_power, proxy_owner_id, voted_at
+                   voting_power, proxy_owner_id, voted_at, auth_method
             FROM votes
             WHERE id = $1
             "#,
@@ -63,32 +91,14 @@ impl VoteRepository for PostgresVoteRepository {
         .await
         .map_err(|e| format!("Database error finding vote: {}", e))?;
 
-        Ok(row.map(|row| {
-            let vote_choice_str: String = row.get("vote_choice");
-            let vote_choice = match vote_choice_str.as_str() {
-                "Contre" => VoteChoice::Contre,
-                "Abstention" => VoteChoice::Abstention,
-                _ => VoteChoice::Pour,
-            };
-
-            Vote {
-                id: row.get("id"),
-                resolution_id: row.get("resolution_id"),
-                owner_id: row.get("owner_id"),
-                unit_id: row.get("unit_id"),
-                vote_choice,
-                voting_power: row.get("voting_power"),
-                proxy_owner_id: row.get("proxy_owner_id"),
-                voted_at: row.get("voted_at"),
-            }
-        }))
+        row.map(Self::vote_from_row).transpose()
     }
 
     async fn find_by_resolution_id(&self, resolution_id: Uuid) -> Result<Vec<Vote>, String> {
         let rows = sqlx::query(
             r#"
             SELECT id, resolution_id, owner_id, unit_id, vote_choice,
-                   voting_power, proxy_owner_id, voted_at
+                   voting_power, proxy_owner_id, voted_at, auth_method
             FROM votes
             WHERE resolution_id = $1
             ORDER BY voted_at ASC
@@ -99,35 +109,14 @@ impl VoteRepository for PostgresVoteRepository {
         .await
         .map_err(|e| format!("Database error finding votes by resolution: {}", e))?;
 
-        Ok(rows
-            .into_iter()
-            .map(|row| {
-                let vote_choice_str: String = row.get("vote_choice");
-                let vote_choice = match vote_choice_str.as_str() {
-                    "Contre" => VoteChoice::Contre,
-                    "Abstention" => VoteChoice::Abstention,
-                    _ => VoteChoice::Pour,
-                };
-
-                Vote {
-                    id: row.get("id"),
-                    resolution_id: row.get("resolution_id"),
-                    owner_id: row.get("owner_id"),
-                    unit_id: row.get("unit_id"),
-                    vote_choice,
-                    voting_power: row.get("voting_power"),
-                    proxy_owner_id: row.get("proxy_owner_id"),
-                    voted_at: row.get("voted_at"),
-                }
-            })
-            .collect())
+        rows.into_iter().map(Self::vote_from_row).collect()
     }
 
     async fn find_by_owner_id(&self, owner_id: Uuid) -> Result<Vec<Vote>, String> {
         let rows = sqlx::query(
             r#"
             SELECT id, resolution_id, owner_id, unit_id, vote_choice,
-                   voting_power, proxy_owner_id, voted_at
+                   voting_power, proxy_owner_id, voted_at, auth_method
             FROM votes
             WHERE owner_id = $1
             ORDER BY voted_at DESC
@@ -138,28 +127,7 @@ impl VoteRepository for PostgresVoteRepository {
         .await
         .map_err(|e| format!("Database error finding votes by owner: {}", e))?;
 
-        Ok(rows
-            .into_iter()
-            .map(|row| {
-                let vote_choice_str: String = row.get("vote_choice");
-                let vote_choice = match vote_choice_str.as_str() {
-                    "Contre" => VoteChoice::Contre,
-                    "Abstention" => VoteChoice::Abstention,
-                    _ => VoteChoice::Pour,
-                };
-
-                Vote {
-                    id: row.get("id"),
-                    resolution_id: row.get("resolution_id"),
-                    owner_id: row.get("owner_id"),
-                    unit_id: row.get("unit_id"),
-                    vote_choice,
-                    voting_power: row.get("voting_power"),
-                    proxy_owner_id: row.get("proxy_owner_id"),
-                    voted_at: row.get("voted_at"),
-                }
-            })
-            .collect())
+        rows.into_iter().map(Self::vote_from_row).collect()
     }
 
     async fn find_by_resolution_and_unit(
@@ -170,7 +138,7 @@ impl VoteRepository for PostgresVoteRepository {
         let row = sqlx::query(
             r#"
             SELECT id, resolution_id, owner_id, unit_id, vote_choice,
-                   voting_power, proxy_owner_id, voted_at
+                   voting_power, proxy_owner_id, voted_at, auth_method
             FROM votes
             WHERE resolution_id = $1 AND unit_id = $2
             "#,
@@ -181,25 +149,7 @@ impl VoteRepository for PostgresVoteRepository {
         .await
         .map_err(|e| format!("Database error finding vote by resolution and unit: {}", e))?;
 
-        Ok(row.map(|row| {
-            let vote_choice_str: String = row.get("vote_choice");
-            let vote_choice = match vote_choice_str.as_str() {
-                "Contre" => VoteChoice::Contre,
-                "Abstention" => VoteChoice::Abstention,
-                _ => VoteChoice::Pour,
-            };
-
-            Vote {
-                id: row.get("id"),
-                resolution_id: row.get("resolution_id"),
-                owner_id: row.get("owner_id"),
-                unit_id: row.get("unit_id"),
-                vote_choice,
-                voting_power: row.get("voting_power"),
-                proxy_owner_id: row.get("proxy_owner_id"),
-                voted_at: row.get("voted_at"),
-            }
-        }))
+        row.map(Self::vote_from_row).transpose()
     }
 
     async fn has_voted(&self, resolution_id: Uuid, unit_id: Uuid) -> Result<bool, String> {
@@ -228,7 +178,7 @@ impl VoteRepository for PostgresVoteRepository {
             r#"
             UPDATE votes
             SET resolution_id = $2, owner_id = $3, unit_id = $4, vote_choice = $5,
-                voting_power = $6, proxy_owner_id = $7, voted_at = $8
+                voting_power = $6, proxy_owner_id = $7, voted_at = $8, auth_method = $9
             WHERE id = $1
             "#,
         )
@@ -240,6 +190,7 @@ impl VoteRepository for PostgresVoteRepository {
         .bind(vote.voting_power)
         .bind(vote.proxy_owner_id)
         .bind(vote.voted_at)
+        .bind(vote.auth_method.to_db_str())
         .execute(&self.pool)
         .await
         .map_err(|e| format!("Database error updating vote: {}", e))?;

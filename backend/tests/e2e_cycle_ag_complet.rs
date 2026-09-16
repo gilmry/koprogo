@@ -281,7 +281,8 @@ async fn happy_le_cycle_dune_ag_va_de_la_convocation_a_la_cloture() {
                     .set_json(json!({
                         "owner_id": owner_id,
                         "unit_id": unit_id,
-                        "vote_choice": "pour"
+                        "vote_choice": "pour",
+                        "auth_method": "presence"
                     })),
             )
             .to_request(),
