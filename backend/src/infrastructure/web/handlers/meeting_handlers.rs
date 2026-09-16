@@ -777,6 +777,7 @@ pub async fn export_meeting_minutes_pdf(
             voted_at: resolution_dto.voted_at,
             created_at: resolution_dto.created_at,
             agenda_item_index: None,
+            kind: crate::domain::entities::ResolutionKind::Standard,
         };
 
         let votes: Vec<Vote> = votes_dto

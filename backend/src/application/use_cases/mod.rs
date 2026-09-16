@@ -28,6 +28,7 @@ pub mod fund_use_cases;
 pub mod gamification_use_cases;
 pub mod gdpr_art30_use_cases;
 pub mod gdpr_use_cases;
+pub mod generate_ago_resolutions_use_case;
 pub mod individual_member_use_cases;
 pub mod iot_use_cases;
 pub mod journal_entry_use_cases;
@@ -99,6 +100,7 @@ pub use gamification_use_cases::{
 };
 pub use gdpr_art30_use_cases::GdprArt30UseCases;
 pub use gdpr_use_cases::GdprUseCases;
+pub use generate_ago_resolutions_use_case::GenerateAgoResolutionsUseCase;
 pub use individual_member_use_cases::IndividualMemberUseCases;
 pub use iot_use_cases::{IoTUseCases, LinkyUseCases};
 pub use journal_entry_use_cases::JournalEntryUseCases;
