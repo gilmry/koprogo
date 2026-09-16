@@ -36,7 +36,7 @@
 
 use std::collections::BTreeSet;
 use std::fs;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 /// Les paires à tenir ensemble : (fichier Rust, énum, nom de la contrainte).
 ///
@@ -107,10 +107,6 @@ fn valeurs_contrainte(nom_contrainte: &str) -> BTreeSet<String> {
         let sql = fs::read_to_string(&chemin).unwrap_or_default();
         // La contrainte peut être nommée explicitement, ou déduite par
         // Postgres du nom de colonne dans un CREATE TABLE.
-        let colonne = nom_contrainte
-            .trim_start_matches(|c: char| c.is_alphanumeric() || c == '_')
-            .to_string();
-        let _ = colonne;
         let pertinent = sql.contains(nom_contrainte)
             || (nom_contrainte.ends_with("_check") && sql.contains("scope_kind      VARCHAR"));
         if !pertinent {
