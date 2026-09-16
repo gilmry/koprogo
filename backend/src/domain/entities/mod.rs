@@ -43,6 +43,10 @@ pub use crate::domain::copropriete::convocation_recipient::{
 };
 pub use crate::domain::copropriete::document;
 pub use crate::domain::copropriete::document::{Document, DocumentType};
+pub use crate::domain::copropriete::lien_notaire;
+pub use crate::domain::copropriete::lien_notaire::{
+    LienNotaire, LienNotaireError, DUREE_JOURS as DUREE_LIEN_NOTAIRE_JOURS,
+};
 pub use crate::domain::copropriete::mandate;
 pub use crate::domain::copropriete::mandate::{
     Mandate, MandateKind, MandateScope, MAX_MANDATE_DURATION_DAYS,

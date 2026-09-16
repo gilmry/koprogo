@@ -409,6 +409,15 @@ async fn setup_test_db() -> (
     let magic_link_use_cases =
         koprogo_api::application::use_cases::MagicLinkUseCases::new(magic_link_repo);
 
+    let lien_notaire_repo: Arc<dyn koprogo_api::application::ports::LienNotaireRepository> =
+        Arc::new(
+            koprogo_api::infrastructure::database::repositories::PostgresLienNotaireRepository::new(
+                pool.clone(),
+            ),
+        );
+    let lien_notaire_use_cases =
+        koprogo_api::application::use_cases::LienNotaireUseCases::new(lien_notaire_repo);
+
     let mandate_repo: Arc<dyn koprogo_api::application::ports::MandateRepository> = Arc::new(
         koprogo_api::infrastructure::database::repositories::PostgresMandateRepository::new(
             pool.clone(),
@@ -534,6 +543,7 @@ async fn setup_test_db() -> (
         boinc_use_cases,
         user_use_cases,
         magic_link_use_cases,
+        lien_notaire_use_cases,
         mandate_use_cases,
         role_delegation_use_cases,
         syndic_response_use_cases,

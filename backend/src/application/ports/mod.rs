@@ -30,6 +30,7 @@ pub mod grid_participation_port;
 pub mod individual_member_repository;
 pub mod iot_repository;
 pub mod journal_entry_repository;
+pub mod lien_notaire_repository;
 pub mod linky_api_client;
 pub mod local_exchange_repository;
 pub mod magic_link_repository;
@@ -111,6 +112,7 @@ pub use grid_participation_port::{
 pub use individual_member_repository::IndividualMemberRepository;
 pub use iot_repository::IoTRepository;
 pub use journal_entry_repository::JournalEntryRepository;
+pub use lien_notaire_repository::LienNotaireRepository;
 pub use linky_api_client::{
     ConsumptionDataPoint, LinkyApiClient, LinkyApiError, OAuth2TokenResponse, PowerDataPoint,
 };

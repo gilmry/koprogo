@@ -219,6 +219,14 @@ async fn main() -> std::io::Result<()> {
     // Story 3.2 — generic MagicLink for public-access tokens (contractor / tiers).
     let magic_link_repo: Arc<dyn koprogo_api::application::ports::MagicLinkRepository> =
         Arc::new(PostgresMagicLinkRepository::new(pool.clone()));
+    // #845 / ADR 0051 — notary link (signed, renewable, revocable access to
+    // a single état daté).
+    let lien_notaire_repo: Arc<dyn koprogo_api::application::ports::LienNotaireRepository> =
+        Arc::new(
+            koprogo_api::infrastructure::database::repositories::PostgresLienNotaireRepository::new(
+                pool.clone(),
+            ),
+        );
     // Story 3.4 — Mandate (delegation to external professionals).
     let mandate_repo: Arc<dyn koprogo_api::application::ports::MandateRepository> = Arc::new(
         koprogo_api::infrastructure::database::repositories::PostgresMandateRepository::new(
@@ -458,6 +466,9 @@ async fn main() -> std::io::Result<()> {
         .with_magic_link_support(Arc::new(MagicLinkUseCases::new(magic_link_repo.clone())));
     // Story 3.2 — MagicLink use cases (public-access tokens for contractors/tiers).
     let magic_link_use_cases = MagicLinkUseCases::new(magic_link_repo.clone());
+    // #845 / ADR 0051 — notary link use cases.
+    let lien_notaire_use_cases =
+        koprogo_api::application::use_cases::LienNotaireUseCases::new(lien_notaire_repo.clone());
     // Story 3.4 — Mandate use cases (juridical delegation tracker).
     let mandate_use_cases =
         koprogo_api::application::use_cases::MandateUseCases::new(mandate_repo.clone());
@@ -600,6 +611,7 @@ async fn main() -> std::io::Result<()> {
         boinc_use_cases,
         user_use_cases,
         magic_link_use_cases,
+        lien_notaire_use_cases,
         mandate_use_cases,
         role_delegation_use_cases,
         syndic_response_use_cases,

@@ -175,24 +175,163 @@ pub async fn get_etat_date(
     }
 }
 
-/// Get état daté by reference number
+#[derive(Debug, Deserialize)]
+pub struct NotaryLinkTokenQuery {
+    pub token: Option<String>,
+}
+
+/// Get état daté by reference number — **derrière un lien notaire** (#845,
+/// ADR 0048, ADR 0051).
+///
+/// ── Ce que cette route servait avant ──────────────────────────────────────
+///
+/// Aucune identité : ni `AuthenticatedUser`, ni jeton lu à la main. Un état
+/// daté porte les dettes d'un copropriétaire nommé, et sa référence n'est pas
+/// un secret — elle circule dans des courriels, des dossiers de vente. Le
+/// seul obstacle pour lire n'importe quel état daté était de connaître une
+/// référence devinable. Dernière des 30 routes nues relevées par
+/// `garde_identite_absente` (#845).
+///
+/// ── Ce qu'elle sert maintenant ────────────────────────────────────────────
+///
+/// Le notaire présente `?token=<jeton>`, émis par le syndic via
+/// `POST /etats-dates/{id}/notary-link`. `verify_token` (ci-dessous) vérifie
+/// que ce jeton précis ouvre CET état daté, n'est ni expiré ni révoqué. Le
+/// jeton EST l'identité — même idiome que `/c/{token}` (liens magiques),
+/// mais multi-lecture et révocable/renouvelable (ADR 0051), donc gardé
+/// nommément plutôt que rejoint la liste `PUBLIQUES` de la garde.
 #[get("/etats-dates/reference/{reference_number}")]
 pub async fn get_by_reference_number(
     state: web::Data<AppState>,
     reference_number: web::Path<String>,
+    query: web::Query<NotaryLinkTokenQuery>,
 ) -> impl Responder {
-    match state
+    let etat_date = match state
         .etat_date_use_cases
         .get_by_reference_number(&reference_number)
         .await
     {
-        Ok(Some(etat_date)) => HttpResponse::Ok().json(etat_date),
-        Ok(None) => HttpResponse::NotFound().json(serde_json::json!({
-            "error": "État daté not found"
-        })),
-        Err(err) => HttpResponse::InternalServerError().json(serde_json::json!({
-            "error": err
-        })),
+        Ok(Some(etat_date)) => etat_date,
+        Ok(None) => {
+            return HttpResponse::NotFound().json(serde_json::json!({
+                "error": "État daté not found"
+            }))
+        }
+        Err(err) => {
+            return HttpResponse::InternalServerError().json(serde_json::json!({
+                "error": err
+            }))
+        }
+    };
+
+    let token = query.token.clone().unwrap_or_default();
+    let lien = match state
+        .lien_notaire_use_cases
+        .verify_token(etat_date.id, &token)
+        .await
+    {
+        Ok(lien) => lien,
+        Err(err) => return err.error_response(),
+    };
+
+    // Consultation anonyme : le lecteur est un notaire sans compte
+    // KoproGo, donc `user_id: None` — la traçabilité passe par
+    // `lien_notaire_id` (cf. ADR 0051, question laissée ouverte sur le
+    // `subject_user_id` d'un notaire sans compte).
+    AuditLogEntry::new(
+        AuditEventType::NotaryLinkConsulted,
+        None,
+        Some(etat_date.organization_id),
+    )
+    .with_resource("EtatDate", etat_date.id)
+    .with_metadata(serde_json::json!({ "lien_notaire_id": lien.id }))
+    .log();
+
+    HttpResponse::Ok().json(etat_date)
+}
+
+/// Émettre un lien notaire pour un état daté (#845 — ADR 0051).
+///
+/// Cloisonné comme les autres écritures de ce fichier (#864) : le syndic doit
+/// avoir la gestion de l'ACP dont relève l'état daté.
+#[post("/etats-dates/{id}/notary-link")]
+pub async fn issue_notary_link(
+    state: web::Data<AppState>,
+    user: AuthenticatedUser,
+    id: web::Path<Uuid>,
+) -> impl Responder {
+    if let Some(refus) = verify_etat_date_org_access(&state, &user, *id).await {
+        return refus;
+    }
+
+    match state.lien_notaire_use_cases.issue(*id, user.user_id).await {
+        Ok(issued) => {
+            AuditLogEntry::new(
+                AuditEventType::NotaryLinkIssued,
+                Some(user.user_id),
+                user.organization_id,
+            )
+            .with_resource("EtatDate", *id)
+            .log();
+
+            HttpResponse::Created().json(issued)
+        }
+        Err(err) => err.error_response(),
+    }
+}
+
+/// Renouveler le lien notaire actif d'un état daté — sept jours de plus à
+/// partir de maintenant, même jeton (#845 — ADR 0051).
+#[put("/etats-dates/{id}/notary-link/renew")]
+pub async fn renew_notary_link(
+    state: web::Data<AppState>,
+    user: AuthenticatedUser,
+    id: web::Path<Uuid>,
+) -> impl Responder {
+    if let Some(refus) = verify_etat_date_org_access(&state, &user, *id).await {
+        return refus;
+    }
+
+    match state.lien_notaire_use_cases.renew(*id).await {
+        Ok(status) => {
+            AuditLogEntry::new(
+                AuditEventType::NotaryLinkRenewed,
+                Some(user.user_id),
+                user.organization_id,
+            )
+            .with_resource("EtatDate", *id)
+            .log();
+
+            HttpResponse::Ok().json(status)
+        }
+        Err(err) => err.error_response(),
+    }
+}
+
+/// Révoquer le lien notaire actif d'un état daté avant terme (#845 — ADR 0051).
+#[delete("/etats-dates/{id}/notary-link")]
+pub async fn revoke_notary_link(
+    state: web::Data<AppState>,
+    user: AuthenticatedUser,
+    id: web::Path<Uuid>,
+) -> impl Responder {
+    if let Some(refus) = verify_etat_date_org_access(&state, &user, *id).await {
+        return refus;
+    }
+
+    match state.lien_notaire_use_cases.revoke(*id, user.user_id).await {
+        Ok(()) => {
+            AuditLogEntry::new(
+                AuditEventType::NotaryLinkRevoked,
+                Some(user.user_id),
+                user.organization_id,
+            )
+            .with_resource("EtatDate", *id)
+            .log();
+
+            HttpResponse::NoContent().finish()
+        }
+        Err(err) => err.error_response(),
     }
 }
 

@@ -9,14 +9,15 @@ use crate::application::use_cases::{
     ConvocationUseCases, DashboardUseCases, DocumentUseCases, EnergyBillUploadUseCases,
     EnergyCampaignUseCases, EtatDateUseCases, ExpenseUseCases, FinancialReportUseCases,
     GamificationStatsUseCases, GdprArt30UseCases, GdprUseCases, IndividualMemberUseCases,
-    IoTUseCases, JournalEntryUseCases, LinkyUseCases, LocalExchangeUseCases, MagicLinkUseCases,
-    MandateUseCases, MeetingUseCases, NoticeUseCases, NotificationUseCases, OrganizationUseCases,
-    OwnerContributionUseCases, OwnerUseCases, PaymentMethodUseCases, PaymentReminderUseCases,
-    PaymentUseCases, PcnUseCases, PollUseCases, PortfolioUseCases, QuoteUseCases,
-    ResolutionUseCases, ResourceBookingUseCases, RoleDelegationUseCases, SecurityIncidentUseCases,
-    ServiceProviderUseCases, SharedObjectUseCases, SkillUseCases, StatsUseCases,
-    SyndicResponseUseCases, TechnicalInspectionUseCases, TechnicalSpecUseCases, TicketUseCases,
-    TwoFactorUseCases, UnitOwnerUseCases, UnitUseCases, UserUseCases, WorkReportUseCases,
+    IoTUseCases, JournalEntryUseCases, LienNotaireUseCases, LinkyUseCases, LocalExchangeUseCases,
+    MagicLinkUseCases, MandateUseCases, MeetingUseCases, NoticeUseCases, NotificationUseCases,
+    OrganizationUseCases, OwnerContributionUseCases, OwnerUseCases, PaymentMethodUseCases,
+    PaymentReminderUseCases, PaymentUseCases, PcnUseCases, PollUseCases, PortfolioUseCases,
+    QuoteUseCases, ResolutionUseCases, ResourceBookingUseCases, RoleDelegationUseCases,
+    SecurityIncidentUseCases, ServiceProviderUseCases, SharedObjectUseCases, SkillUseCases,
+    StatsUseCases, SyndicResponseUseCases, TechnicalInspectionUseCases, TechnicalSpecUseCases,
+    TicketUseCases, TwoFactorUseCases, UnitOwnerUseCases, UnitUseCases, UserUseCases,
+    WorkReportUseCases,
 };
 use crate::infrastructure::audit_logger::AuditLogger;
 use crate::infrastructure::database::repositories::{
@@ -95,6 +96,9 @@ pub struct AppState {
     pub user_use_cases: Arc<UserUseCases>,
     /// Story 3.2 — generic MagicLink (public-access tokens for contractors / tiers).
     pub magic_link_use_cases: Arc<MagicLinkUseCases>,
+    /// #845 / ADR 0051 — notary link (signed, renewable, revocable access to
+    /// a single état daté via `GET /etats-dates/reference/{reference_number}`).
+    pub lien_notaire_use_cases: Arc<LienNotaireUseCases>,
     /// Story 3.4 — Mandate (delegation to external professionals: notaire,
     /// avocat, AMO, architecte, BET, gardien) with bounded validity.
     pub mandate_use_cases: Arc<MandateUseCases>,
@@ -182,6 +186,7 @@ impl AppState {
         boinc_use_cases: BoincUseCases,
         user_use_cases: UserUseCases,
         magic_link_use_cases: MagicLinkUseCases,
+        lien_notaire_use_cases: LienNotaireUseCases,
         mandate_use_cases: MandateUseCases,
         role_delegation_use_cases: RoleDelegationUseCases,
         syndic_response_use_cases: SyndicResponseUseCases<
@@ -258,6 +263,7 @@ impl AppState {
             boinc_use_cases: Arc::new(boinc_use_cases),
             user_use_cases: Arc::new(user_use_cases),
             magic_link_use_cases: Arc::new(magic_link_use_cases),
+            lien_notaire_use_cases: Arc::new(lien_notaire_use_cases),
             mandate_use_cases: Arc::new(mandate_use_cases),
             role_delegation_use_cases: Arc::new(role_delegation_use_cases),
             syndic_response_use_cases: Arc::new(syndic_response_use_cases),

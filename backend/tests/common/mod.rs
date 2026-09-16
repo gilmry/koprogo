@@ -467,6 +467,15 @@ pub async fn setup_test_db() -> (
     let magic_link_use_cases =
         koprogo_api::application::use_cases::MagicLinkUseCases::new(magic_link_repo);
 
+    let lien_notaire_repo: Arc<dyn koprogo_api::application::ports::LienNotaireRepository> =
+        Arc::new(
+            koprogo_api::infrastructure::database::repositories::PostgresLienNotaireRepository::new(
+                pool.clone(),
+            ),
+        );
+    let lien_notaire_use_cases =
+        koprogo_api::application::use_cases::LienNotaireUseCases::new(lien_notaire_repo);
+
     let mandate_repo: Arc<dyn koprogo_api::application::ports::MandateRepository> = Arc::new(
         koprogo_api::infrastructure::database::repositories::PostgresMandateRepository::new(
             pool.clone(),
@@ -592,6 +601,7 @@ pub async fn setup_test_db() -> (
         boinc_use_cases,
         user_use_cases,
         magic_link_use_cases,
+        lien_notaire_use_cases,
         mandate_use_cases,
         role_delegation_use_cases,
         syndic_response_use_cases,
@@ -738,6 +748,31 @@ pub async fn create_test_building(
         .await
         .expect("create_test_building: create_building use case failed");
     Uuid::parse_str(&building.id).expect("create_test_building: identifiant illisible")
+}
+
+/// Crée un lot rattaché à `building_id`. Nécessaire pour toute pièce qui
+/// porte une FK vers `units(id)` (état daté, etc.) — un `Uuid::new_v4()`
+/// inventé y échoue à l'insertion en base (violation de contrainte).
+#[allow(dead_code)]
+pub async fn create_test_unit(
+    app_state: &actix_web::web::Data<AppState>,
+    building_id: Uuid,
+) -> Uuid {
+    let dto = koprogo_api::application::dto::CreateUnitDto {
+        acp_id: None,
+        building_id: building_id.to_string(),
+        unit_number: format!("E2E-{}", Uuid::new_v4().simple()),
+        unit_type: koprogo_api::domain::entities::UnitType::Apartment,
+        floor: Some(1),
+        surface_area: 75.0,
+        quota: rust_decimal::Decimal::from(1000),
+    };
+    let unit = app_state
+        .unit_use_cases
+        .create_unit(dto)
+        .await
+        .expect("create_test_unit: create_unit use case failed");
+    Uuid::parse_str(&unit.id).expect("create_test_unit: identifiant illisible")
 }
 
 /// Helper to register a user and get a JWT token
