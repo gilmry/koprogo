@@ -26,7 +26,8 @@ use koprogo_api::application::use_cases::{
 };
 use koprogo_api::domain::entities::{
     AttendanceStatus, ConvocationStatus, ConvocationType, EtatDateLanguage, MajorityType,
-    Organization, ResolutionStatus, ResolutionType, SubscriptionPlan, User, UserRole, VoteChoice,
+    Organization, ResolutionStatus, ResolutionType, SubscriptionPlan, User, UserRole,
+    VoteAuthMethod, VoteChoice,
 };
 use koprogo_api::infrastructure::database::{
     create_pool, PostgresAgSessionRepository, PostgresAgeRequestRepository,
@@ -90,6 +91,8 @@ pub struct GovernanceWorld {
     last_vote_choice: Option<VoteChoice>,
     last_vote_power: Option<Decimal>,
     last_vote_proxy_id: Option<Uuid>,
+    // Story 4.2 (#48) — méthode d'authentification du dernier bulletin.
+    last_vote_auth_method: Option<VoteAuthMethod>,
 
     // Operation results
     operation_success: bool,
@@ -249,6 +252,7 @@ impl GovernanceWorld {
             last_vote_choice: None,
             last_vote_power: None,
             last_vote_proxy_id: None,
+            last_vote_auth_method: None,
             operation_success: false,
             operation_error: None,
             resolution_count: 0,
@@ -613,6 +617,15 @@ impl GovernanceWorld {
         // mandataire s'il y en a un déclaré, sinon le titulaire lui-même.
         let caller_owner_id = proxy_id.unwrap_or(owner_id);
 
+        // Story 4.2 — ces scénarios tiennent une AG en présentiel (aucun
+        // `set_mode` n'y est exercé) : `presence` pour un vote direct,
+        // `proxy` quand le bulletin porte effectivement un mandataire.
+        let auth_method = Some(if proxy_id.is_some() {
+            VoteAuthMethod::Proxy
+        } else {
+            VoteAuthMethod::Presence
+        });
+
         let result = uc
             .cast_vote(
                 resolution_id,
@@ -622,6 +635,7 @@ impl GovernanceWorld {
                 // #850 — `voting_power` n'est plus transmise : le cas d'usage
                 // relit la quotité sur le lot.
                 proxy_id,
+                auth_method,
                 caller_owner_id,
             )
             .await;
@@ -632,6 +646,59 @@ impl GovernanceWorld {
                 self.last_vote_choice = Some(vote.vote_choice);
                 self.last_vote_power = Some(vote.voting_power);
                 self.last_vote_proxy_id = vote.proxy_owner_id;
+                self.last_vote_auth_method = Some(vote.auth_method);
+                self.operation_success = true;
+                self.operation_error = None;
+            }
+            Err(e) => {
+                self.operation_success = false;
+                self.operation_error = Some(e);
+            }
+        }
+    }
+
+    /// Story 4.2 (#48) — variante de `cast_vote_helper` qui pose explicitement
+    /// `auth_method` au lieu de le déduire de la présence d'une procuration.
+    /// C'est précisément ce que ces scénarios éprouvent : la validation de
+    /// `auth_method` contre la modalité de l'AG (Art. 3.87 §1er, §4 CC).
+    async fn cast_vote_with_auth_method_helper(
+        &mut self,
+        voter_name: &str,
+        choice: VoteChoice,
+        proxy_name: Option<&str>,
+        auth_method: Option<VoteAuthMethod>,
+    ) {
+        let uc = self.resolution_use_cases.as_ref().unwrap().clone();
+        let resolution_id = self.last_resolution_id.unwrap();
+
+        let (actual_voter, proxy_id) = match proxy_name {
+            Some(_) => (voter_name, proxy_name.map(|n| self.get_owner_id(n))),
+            None => (voter_name, None),
+        };
+
+        let owner_id = self.get_owner_id(actual_voter);
+        let unit_id = self.get_unit_id(actual_voter);
+        let caller_owner_id = proxy_id.unwrap_or(owner_id);
+
+        let result = uc
+            .cast_vote(
+                resolution_id,
+                owner_id,
+                unit_id,
+                choice.clone(),
+                proxy_id,
+                auth_method,
+                caller_owner_id,
+            )
+            .await;
+
+        match result {
+            Ok(vote) => {
+                self.last_vote_id = Some(vote.id);
+                self.last_vote_choice = Some(vote.vote_choice);
+                self.last_vote_power = Some(vote.voting_power);
+                self.last_vote_proxy_id = vote.proxy_owner_id;
+                self.last_vote_auth_method = Some(vote.auth_method);
                 self.operation_success = true;
                 self.operation_error = None;
             }
@@ -649,6 +716,19 @@ fn parse_vote_choice(s: &str) -> VoteChoice {
         "Contre" => VoteChoice::Contre,
         "Abstention" => VoteChoice::Abstention,
         _ => panic!("Unknown vote choice: {}", s),
+    }
+}
+
+/// Story 4.2 (#48) — `VoteAuthMethod::from_db_string` refuse la casse
+/// capitalisée que Gherkin préfère lisible ; ce parseur est celui du feature
+/// file, pas celui de la base.
+fn parse_vote_auth_method(s: &str) -> VoteAuthMethod {
+    match s {
+        "presence" => VoteAuthMethod::Presence,
+        "proxy" => VoteAuthMethod::Proxy,
+        "itsme" => VoteAuthMethod::Itsme,
+        "eid" => VoteAuthMethod::Eid,
+        _ => panic!("Unknown vote auth method: {}", s),
     }
 }
 
@@ -695,6 +775,23 @@ async fn given_meeting_exists(world: &mut GovernanceWorld, title: String) {
     .expect("insert meeting");
 
     world.meeting_id = Some(meeting_id);
+}
+
+/// Story 4.2 (#48) — bascule l'AG en mode distanciel (Art. 3.87 §1er CC).
+/// C'est cette modalité qui déclenche l'exigence d'authentification forte
+/// sur `cast_vote` (`assert_vote_auth_sufficient`).
+#[given("the meeting is held remotely")]
+async fn given_meeting_held_remotely(world: &mut GovernanceWorld) {
+    let pool = world.pool.as_ref().unwrap();
+    let meeting_id = world.meeting_id.unwrap();
+
+    sqlx::query(
+        r#"UPDATE meetings SET mode = 'remote', videoconf_url = 'https://visio.example/ago' WHERE id = $1"#,
+    )
+    .bind(meeting_id)
+    .execute(pool)
+    .await
+    .expect("update meeting to remote mode");
 }
 
 #[given(regex = r#"^an owner "([^"]*)" with (\d+) voting power \(tantiemes\) exists$"#)]
@@ -1058,6 +1155,89 @@ async fn when_vote_proxy(
     world
         .cast_vote_helper(&actual_owner, vote_choice, Some(&proxy_holder))
         .await;
+}
+
+// ------------------------------------------------------------------------
+// Story 4.2 (#48) — `auth_method` du vote distant (Art. 3.87 §1er, §4 CC).
+// ------------------------------------------------------------------------
+
+#[when(regex = r#"^"(\w+)" votes "(Pour|Contre|Abstention)" using "(presence|proxy|itsme|eid)"$"#)]
+async fn when_owner_votes_using_auth_method(
+    world: &mut GovernanceWorld,
+    name: String,
+    choice: String,
+    auth_method: String,
+) {
+    let vote_choice = parse_vote_choice(&choice);
+    let auth_method = parse_vote_auth_method(&auth_method);
+    world
+        .cast_vote_with_auth_method_helper(&name, vote_choice, None, Some(auth_method))
+        .await;
+}
+
+#[when(
+    regex = r#"^"(\w+)" votes "(Pour|Contre|Abstention)" as proxy for "(\w+)" using "(presence|proxy|itsme|eid)"$"#
+)]
+async fn when_owner_votes_proxy_using_auth_method(
+    world: &mut GovernanceWorld,
+    proxy_holder: String,
+    choice: String,
+    actual_owner: String,
+    auth_method: String,
+) {
+    let vote_choice = parse_vote_choice(&choice);
+    let auth_method = parse_vote_auth_method(&auth_method);
+    world
+        .cast_vote_with_auth_method_helper(
+            &actual_owner,
+            vote_choice,
+            Some(&proxy_holder),
+            Some(auth_method),
+        )
+        .await;
+}
+
+#[when(regex = r#"^"(\w+)" votes "(Pour|Contre|Abstention)" without an authentication method$"#)]
+async fn when_owner_votes_without_auth_method(
+    world: &mut GovernanceWorld,
+    name: String,
+    choice: String,
+) {
+    let vote_choice = parse_vote_choice(&choice);
+    world
+        .cast_vote_with_auth_method_helper(&name, vote_choice, None, None)
+        .await;
+}
+
+#[then(regex = r#"^the vote should be recorded with auth method "(presence|proxy|itsme|eid)"$"#)]
+async fn then_vote_recorded_with_auth_method(world: &mut GovernanceWorld, auth_method: String) {
+    let attendu = parse_vote_auth_method(&auth_method);
+    assert!(
+        world.operation_success,
+        "le vote devait aboutir, refus : {:?}",
+        world.operation_error
+    );
+    assert_eq!(
+        world.last_vote_auth_method,
+        Some(attendu),
+        "le bulletin enregistré ne porte pas la méthode d'authentification attendue"
+    );
+}
+
+#[then(regex = r#"^the vote should be rejected with error "([^"]*)"$"#)]
+async fn then_vote_rejected_with_error(world: &mut GovernanceWorld, code: String) {
+    assert!(
+        !world.operation_success,
+        "le vote devait être refusé, mais il a abouti"
+    );
+    let erreur = world
+        .operation_error
+        .as_ref()
+        .expect("un refus doit porter une erreur");
+    assert!(
+        erreur.contains(&code),
+        "le refus doit porter le code {code}, got: {erreur}"
+    );
 }
 
 #[when("I close voting on the resolution")]
@@ -8531,6 +8711,7 @@ async fn main() {
         "tests/features/ag_sessions.feature",
         "tests/features/age_requests.feature",
         "tests/features/governance_decimal.feature",
+        "tests/features/vote_remote_auth.feature",
     ];
     let mut had_failures = false;
     for f in features {

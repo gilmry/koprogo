@@ -605,7 +605,8 @@ async fn test_cast_vote_pour_success() {
             "owner_id": owner1_id.to_string(),
             "unit_id": unit1_id.to_string(),
             "vote_choice": "pour",
-            "voting_power": 0.4 // 400 milliemes (40%)
+            "voting_power": 0.4, // 400 milliemes (40%)
+            "auth_method": "presence"
         }))
         .to_request();
 
@@ -661,7 +662,8 @@ async fn test_cast_vote_contre_and_abstention() {
             "owner_id": owner1_id.to_string(),
             "unit_id": unit1_id.to_string(),
             "vote_choice": "contre",
-            "voting_power": 0.4
+            "voting_power": 0.4,
+            "auth_method": "presence"
         }))
         .to_request();
 
@@ -678,7 +680,8 @@ async fn test_cast_vote_contre_and_abstention() {
             "owner_id": owner2_id.to_string(),
             "unit_id": unit2_id.to_string(),
             "vote_choice": "abstention",
-            "voting_power": 0.6
+            "voting_power": 0.6,
+            "auth_method": "presence"
         }))
         .to_request();
 
@@ -735,7 +738,8 @@ async fn test_list_resolution_votes() {
                 "owner_id": owner_id.to_string(),
                 "unit_id": unit_id.to_string(),
                 "vote_choice": choice,
-                "voting_power": power
+                "voting_power": power,
+                "auth_method": "presence"
             }))
             .to_request();
 
@@ -796,7 +800,8 @@ async fn test_change_vote_success() {
             "owner_id": owner1_id.to_string(),
             "unit_id": unit1_id.to_string(),
             "vote_choice": "pour",
-            "voting_power": 0.4
+            "voting_power": 0.4,
+            "auth_method": "presence"
         }))
         .to_request();
 
@@ -866,7 +871,8 @@ async fn test_close_voting_simple_majority() {
             "owner_id": owner1_id.to_string(),
             "unit_id": unit1_id.to_string(),
             "vote_choice": "contre",
-            "voting_power": 0.4
+            "voting_power": 0.4,
+            "auth_method": "presence"
         }))
         .to_request();
 
@@ -879,7 +885,8 @@ async fn test_close_voting_simple_majority() {
             "owner_id": owner2_id.to_string(),
             "unit_id": unit2_id.to_string(),
             "vote_choice": "pour",
-            "voting_power": 0.6
+            "voting_power": 0.6,
+            "auth_method": "presence"
         }))
         .to_request();
 
@@ -967,7 +974,8 @@ async fn test_close_voting_absolute_majority() {
             "owner_id": owner2_id.to_string(),
             "unit_id": unit2_id.to_string(),
             "vote_choice": "pour",
-            "voting_power": 0.6
+            "voting_power": 0.6,
+            "auth_method": "presence"
         }))
         .to_request();
 
@@ -1034,7 +1042,8 @@ async fn test_close_voting_qualified_majority() {
             "owner_id": owner1_id.to_string(),
             "unit_id": unit1_id.to_string(),
             "vote_choice": "contre",
-            "voting_power": 0.4
+            "voting_power": 0.4,
+            "auth_method": "presence"
         }))
         .to_request();
 
@@ -1047,7 +1056,8 @@ async fn test_close_voting_qualified_majority() {
             "owner_id": owner2_id.to_string(),
             "unit_id": unit2_id.to_string(),
             "vote_choice": "pour",
-            "voting_power": 0.6
+            "voting_power": 0.6,
+            "auth_method": "presence"
         }))
         .to_request();
 
@@ -1119,7 +1129,8 @@ async fn test_get_meeting_vote_summary() {
                     "owner_id": owner_id.to_string(),
                     "unit_id": unit_id.to_string(),
                     "vote_choice": choice,
-                    "voting_power": power
+                    "voting_power": power,
+                    "auth_method": "presence"
                 }))
                 .to_request();
 
@@ -1205,7 +1216,8 @@ async fn test_complete_voting_lifecycle() {
             "owner_id": owner1_id.to_string(),
             "unit_id": unit1_id.to_string(),
             "vote_choice": "contre",
-            "voting_power": 0.4
+            "voting_power": 0.4,
+            "auth_method": "presence"
         }))
         .to_request();
 
@@ -1234,7 +1246,8 @@ async fn test_complete_voting_lifecycle() {
             "owner_id": owner2_id.to_string(),
             "unit_id": unit2_id.to_string(),
             "vote_choice": "pour",
-            "voting_power": 0.6
+            "voting_power": 0.6,
+            "auth_method": "presence"
         }))
         .to_request();
 

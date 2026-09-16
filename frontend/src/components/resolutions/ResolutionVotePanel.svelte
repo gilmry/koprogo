@@ -6,6 +6,7 @@
     type Resolution,
     type Vote,
     VoteChoice,
+    VoteAuthMethod,
     ResolutionStatus,
     MajorityType,
   } from "../../lib/api/resolutions";
@@ -45,6 +46,10 @@
   let voteChoice = $state<VoteChoice | null>(null);
   let votingPower = $state(1);
   let proxyOwnerId = $state("");
+  // Story 4.2 (#48) — `presence` par défaut : c'est la modalité la plus
+  // courante (AG physique), et le serveur refuse quoi qu'il arrive une AG
+  // distancielle/hybride qui la recevrait (Art. 3.87 §1er, §4 CC).
+  let voteAuthMethod = $state<VoteAuthMethod>(VoteAuthMethod.Presence);
   let submittingVote = $state(false);
   let closingVoting = $state(false);
 
@@ -212,6 +217,7 @@
           choice: voteChoice!,
           voting_power: votingPower,
           proxy_owner_id: proxyOwnerId || undefined,
+          auth_method: voteAuthMethod,
         }),
       setLoading: (v: boolean) => (submittingVote = v),
       successMessage: $_("resolutions.vote.success"),
@@ -468,9 +474,63 @@
         </div>
       </div>
 
+      <div class="mb-3">
+        <label
+          for="auth-method-{resolution.id}"
+          class="block text-xs font-medium text-gray-700 mb-1"
+        >
+          {$_("resolutions.vote.authMethodLabel")}
+        </label>
+        <select
+          id="auth-method-{resolution.id}"
+          bind:value={voteAuthMethod}
+          class="w-full px-2 py-1.5 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 mb-2"
+          data-testid="vote-auth-method-select"
+        >
+          <option value={VoteAuthMethod.Presence}
+            >{$_("resolutions.vote.authPresence")}</option
+          >
+          <option value={VoteAuthMethod.Proxy}
+            >{$_("resolutions.vote.authProxy")}</option
+          >
+          <option value={VoteAuthMethod.Itsme}
+            >{$_("resolutions.vote.authItsme")}</option
+          >
+          <option value={VoteAuthMethod.Eid}
+            >{$_("resolutions.vote.authEid")}</option
+          >
+        </select>
+        <div class="flex gap-2">
+          <button
+            type="button"
+            onclick={() => (voteAuthMethod = VoteAuthMethod.Itsme)}
+            class="flex-1 py-1.5 px-3 rounded-lg text-xs font-medium border-2 transition-colors
+              {voteAuthMethod === VoteAuthMethod.Itsme
+              ? 'bg-indigo-600 text-white border-indigo-600'
+              : 'bg-white text-indigo-700 border-indigo-300 hover:bg-indigo-50'}"
+            disabled={submittingVote}
+            data-testid="vote-itsme-button"
+          >
+            {$_("resolutions.vote.authItsme")}
+          </button>
+          <button
+            type="button"
+            onclick={() => (voteAuthMethod = VoteAuthMethod.Eid)}
+            class="flex-1 py-1.5 px-3 rounded-lg text-xs font-medium border-2 transition-colors
+              {voteAuthMethod === VoteAuthMethod.Eid
+              ? 'bg-indigo-600 text-white border-indigo-600'
+              : 'bg-white text-indigo-700 border-indigo-300 hover:bg-indigo-50'}"
+            disabled={submittingVote}
+            data-testid="vote-eid-button"
+          >
+            {$_("resolutions.vote.authEid")}
+          </button>
+        </div>
+      </div>
+
       <button
         onclick={handleVote}
-        data-testid="resolution-vote-submit-button"
+        data-testid="vote-cast-submit"
         disabled={!voteChoice || submittingVote}
         class="w-full py-2 px-4 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
       >

@@ -53,6 +53,15 @@ impl MeetingMode {
     fn requires_videoconf_url(&self) -> bool {
         matches!(self, Self::Remote | Self::Hybrid)
     }
+
+    /// Story 4.2 — Art. 3.87 §1er CC : un vote émis à distance doit pouvoir
+    /// être rattaché de façon fiable à son auteur, ce qu'une AG physique
+    /// garantit déjà par la présence elle-même. Même ensemble de modes que
+    /// `requires_videoconf_url` : c'est la même bascule distancielle qui
+    /// déclenche les deux exigences.
+    pub fn requires_strong_vote_auth(&self) -> bool {
+        self.requires_videoconf_url()
+    }
 }
 
 /// Story 4.1 — `Meeting::set_mode()` a refusé un mode distanciel/hybride
