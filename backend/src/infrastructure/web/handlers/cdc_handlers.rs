@@ -41,6 +41,20 @@ async fn owner_id_of(
 }
 
 /// Émet une alerte du conseil de copropriété à destination de la prochaine AG.
+#[utoipa::path(
+    post,
+    path = "/buildings/{building_id}/cdc/alerts",
+    tag = "Cdc",
+    summary = "Émettre une alerte du conseil de copropriété",
+    params(("building_id" = Uuid, Path, description = "UUID de l'immeuble")),
+    request_body = CreateBoardAlertDto,
+    responses(
+        (status = 201, description = "Alerte émise", body = crate::application::dto::BoardAlertResponseDto),
+        (status = 403, description = "Hors mandat ou hors portée"),
+        (status = 422, description = "Sévérité ou AG cible invalide"),
+    ),
+    security(("bearer_auth" = []))
+)]
 #[post("/buildings/{building_id}/cdc/alerts")]
 pub async fn create_cdc_alert(
     state: web::Data<AppState>,
@@ -85,6 +99,19 @@ pub async fn create_cdc_alert(
 }
 
 /// Liste les alertes du conseil visibles à une AG donnée.
+#[utoipa::path(
+    get,
+    path = "/meetings/{meeting_id}/cdc/alerts",
+    tag = "Cdc",
+    summary = "Alertes du conseil rattachées à une AG",
+    params(("meeting_id" = Uuid, Path, description = "UUID de l'assemblée")),
+    responses(
+        (status = 200, description = "Alertes de l'AG", body = Vec<crate::application::dto::BoardAlertResponseDto>),
+        (status = 403, description = "Hors portée (cloisonnement #882)"),
+        (status = 404, description = "Assemblée introuvable"),
+    ),
+    security(("bearer_auth" = []))
+)]
 #[get("/meetings/{meeting_id}/cdc/alerts")]
 pub async fn list_cdc_alerts_for_meeting(
     state: web::Data<AppState>,
@@ -156,6 +183,20 @@ pub async fn list_cdc_alerts_for_meeting(
 }
 
 /// Élit les membres du conseil de copropriété à l'issue d'une AG clôturée.
+#[utoipa::path(
+    post,
+    path = "/buildings/{building_id}/cdc/elections",
+    tag = "Cdc",
+    summary = "Élire les membres du conseil de copropriété",
+    params(("building_id" = Uuid, Path, description = "UUID de l'immeuble")),
+    request_body = ElectCdcMembersDto,
+    responses(
+        (status = 201, description = "Membres élus", body = Vec<crate::application::dto::BoardMemberResponseDto>),
+        (status = 403, description = "Hors portée"),
+        (status = 422, description = "Quorum non atteint ou candidature invalide"),
+    ),
+    security(("bearer_auth" = []))
+)]
 #[post("/buildings/{building_id}/cdc/elections")]
 pub async fn elect_cdc_members(
     state: web::Data<AppState>,

@@ -49,7 +49,7 @@ pub async fn list_acp_modules(
     {
         Ok(modules) => HttpResponse::Ok().json(EnabledModulesResponseDto {
             acp_id: acp_id.to_string(),
-            modules: modules.iter().map(|m| m.to_string()).collect(),
+            modules,
         }),
         Err(err) => err.error_response(),
     }

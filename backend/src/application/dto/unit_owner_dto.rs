@@ -97,14 +97,14 @@ pub struct TransferOwnershipDto {
 }
 
 /// DTO for designating the voting representative of a unit (#848, Art. 3.87 §1 CC).
-#[derive(Debug, Deserialize, Validate)]
+#[derive(Debug, Deserialize, Validate, utoipa::ToSchema)]
 pub struct DesignateVotingRepresentativeDto {
     #[validate(length(min = 1))]
     pub owner_id: String,
 }
 
 /// Response DTO for a voting representative designation (#848).
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, utoipa::ToSchema)]
 pub struct VotingRepresentativeResponseDto {
     pub unit_id: String,
     pub owner_id: String,

@@ -130,7 +130,7 @@ pub struct SendConvocationRequest {
 /// de présence, de procuration). Celui-ci décrit un copropriétaire ÉLIGIBLE,
 /// avant tout envoi — la question posée est « qui pourrait recevoir ceci ? »,
 /// pas « qui l'a reçu ? ».
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, utoipa::ToSchema)]
 pub struct EligibleRecipientResponse {
     pub owner_id: Uuid,
     pub full_name: String,

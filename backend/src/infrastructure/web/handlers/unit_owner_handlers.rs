@@ -592,6 +592,20 @@ pub async fn get_total_ownership_percentage(
 /// ordinaire d'une copropriété belge) a son vote SUSPENDU jusqu'à cette
 /// désignation. Refuse un second représentant tant qu'un premier est en place
 /// (409, `assert_single_voting_representative`).
+#[utoipa::path(
+    post,
+    path = "/units/{unit_id}/voting-representative",
+    tag = "UnitOwners",
+    summary = "Désigner le représentant de vote d'un lot (Art. 3.87 §1er)",
+    params(("unit_id" = String, Path, description = "UUID du lot")),
+    request_body = DesignateVotingRepresentativeDto,
+    responses(
+        (status = 200, description = "Représentant désigné", body = crate::application::dto::unit_owner_dto::VotingRepresentativeResponseDto),
+        (status = 400, description = "Identifiant invalide"),
+        (status = 403, description = "Hors mandat sur ce lot"),
+    ),
+    security(("bearer_auth" = []))
+)]
 #[post("/units/{unit_id}/voting-representative")]
 pub async fn designate_voting_representative(
     state: web::Data<AppState>,

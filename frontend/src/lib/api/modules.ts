@@ -1,20 +1,27 @@
 // Client API des modules ACP (activation/désactivation par capacité).
 //
-// ADR-0015 (modularité par capacité). Story 5.1 (#585, backend) introduit la
-// table `acp_enabled_modules`, l'entité domaine, le middleware `ModuleGuard`
-// et l'endpoint ci-dessous — **mais n'est pas encore mergée** au moment où
-// cette Story 5.2 (#586, UI) est écrite. Ni migration, ni handler, ni schéma
-// OpenAPI n'existent pour l'instant.
+// ADR-0015 (modularité par capacité). Story 5.1 (#585, backend) apporte la
+// table `acp_enabled_modules`, l'entité domaine et l'endpoint ci-dessous.
 //
-// Cette dette est volontaire et documentée (comme `AcpAvecMetriques` dans
-// `acps.ts` pour une raison différente) : `ModuleName` et le DTO de réponse
-// sont donc définis ici à la main plutôt qu'importés de `types/api.d.ts`.
-// À remplacer par les types générés dès que Story 5.1 enregistre son handler
-// dans `infrastructure/openapi.rs`.
+// ── La dette écrite en tête de ce fichier est SOLDÉE (2026-09-16) ─────────
 //
-// Endpoint attendu (architecture.md §6.1) :
-//   GET /acps/{id}/modules → { acp_id, modules: ModuleName[] }
-//   (scope guard — visible seulement pour les utilisateurs de cette ACP)
+// Cette Story 5.2 (#586, UI) avait été écrite avant que #585 n'existe, et
+// tenait donc `ModuleName` et le DTO de réponse à la main, faute de types
+// générés. #585 étant livrée et ses handlers enregistrés dans
+// `infrastructure/openapi.rs`, les deux viennent maintenant de `api.d.ts`,
+// c'est-à-dire de la source Rust.
+//
+// `MODULE_NAMES` reste écrit ici, parce qu'un type TypeScript s'efface à la
+// compilation et qu'`isKnownModule` a besoin d'une liste à l'exécution. Mais
+// il ne peut plus diverger en silence : `VERIFICATION_EXHAUSTIVITE` ci-dessous
+// ne compile que si la liste couvre exactement l'énumération Rust.
+//
+// Endpoints (architecture.md §6.1) :
+//   GET /acps/{id}/modules                   → { acp_id, modules }
+//   PUT /acps/{id}/modules/{module}/enable   → 204
+//   PUT /acps/{id}/modules/{module}/disable  → 204
+
+import type { components } from "../../types/api";
 
 import { api } from "../api";
 
@@ -32,9 +39,27 @@ export const MODULE_NAMES = [
   "governance",
   "maintenance",
   "portfolio",
-] as const;
+] as const satisfies readonly ModuleName[];
 
-export type ModuleName = (typeof MODULE_NAMES)[number];
+/**
+ * Empêche `MODULE_NAMES` d'OUBLIER une variante.
+ *
+ * `satisfies` ci-dessus interdit d'y mettre un nom qui n'existe pas côté
+ * Rust ; il n'interdit pas d'en omettre un. Cette constante ferme l'autre
+ * sens : le type est `never` dès qu'une variante de `ModuleName` n'apparaît
+ * pas dans la liste, et le fichier cesse alors de compiler.
+ *
+ * C'est l'équivalent TypeScript de `garde_enum_contre_contrainte` côté Rust,
+ * qui tient l'énumération et la contrainte SQL alignées dans les deux sens.
+ */
+type VariantesOubliees = Exclude<ModuleName, (typeof MODULE_NAMES)[number]>;
+const _VERIFICATION_EXHAUSTIVITE: VariantesOubliees extends never
+  ? true
+  : never = true;
+void _VERIFICATION_EXHAUSTIVITE;
+
+/** Nom de module, repris de la source Rust via `api.d.ts` (enum `Module`). */
+export type ModuleName = components["schemas"]["Module"];
 
 /** Vérifie qu'un nom de module (typiquement une prop `string`) est connu. */
 export function isKnownModule(name: string): name is ModuleName {
@@ -55,11 +80,9 @@ export class UnknownModuleError extends Error {
   }
 }
 
-/** DTO de réponse temporaire — cf. dette documentée en tête de fichier. */
-export interface EnabledModulesResponseDto {
-  acp_id: string;
-  modules: ModuleName[];
-}
+/** Réponse de `GET /acps/{id}/modules`, reprise de la source Rust. */
+export type EnabledModulesResponseDto =
+  components["schemas"]["EnabledModulesResponseDto"];
 
 /**
  * Liste les modules activés pour une ACP donnée.

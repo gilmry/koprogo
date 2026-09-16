@@ -254,6 +254,19 @@ pub async fn get_by_reference_number(
 ///
 /// Cloisonné comme les autres écritures de ce fichier (#864) : le syndic doit
 /// avoir la gestion de l'ACP dont relève l'état daté.
+#[utoipa::path(
+    post,
+    path = "/etats-dates/{id}/notary-link",
+    tag = "EtatsDates",
+    summary = "Émettre un lien notaire pour un état daté",
+    params(("id" = Uuid, Path, description = "UUID de l'état daté")),
+    responses(
+        (status = 201, description = "Lien émis — le jeton en clair n'est rendu QU'ICI", body = crate::application::use_cases::lien_notaire_use_cases::IssuedLienNotaireDto),
+        (status = 403, description = "Hors portée"),
+        (status = 404, description = "État daté introuvable"),
+    ),
+    security(("bearer_auth" = []))
+)]
 #[post("/etats-dates/{id}/notary-link")]
 pub async fn issue_notary_link(
     state: web::Data<AppState>,
@@ -282,6 +295,19 @@ pub async fn issue_notary_link(
 
 /// Renouveler le lien notaire actif d'un état daté — sept jours de plus à
 /// partir de maintenant, même jeton (#845 — ADR 0051).
+#[utoipa::path(
+    put,
+    path = "/etats-dates/{id}/notary-link/renew",
+    tag = "EtatsDates",
+    summary = "Prolonger un lien notaire existant",
+    params(("id" = Uuid, Path, description = "UUID de l'état daté")),
+    responses(
+        (status = 200, description = "Lien prolongé", body = crate::application::use_cases::lien_notaire_use_cases::LienNotaireStatusDto),
+        (status = 403, description = "Hors portée"),
+        (status = 404, description = "Lien introuvable"),
+    ),
+    security(("bearer_auth" = []))
+)]
 #[put("/etats-dates/{id}/notary-link/renew")]
 pub async fn renew_notary_link(
     state: web::Data<AppState>,
@@ -309,6 +335,19 @@ pub async fn renew_notary_link(
 }
 
 /// Révoquer le lien notaire actif d'un état daté avant terme (#845 — ADR 0051).
+#[utoipa::path(
+    delete,
+    path = "/etats-dates/{id}/notary-link",
+    tag = "EtatsDates",
+    summary = "Révoquer un lien notaire",
+    params(("id" = Uuid, Path, description = "UUID de l'état daté")),
+    responses(
+        (status = 204, description = "Lien révoqué"),
+        (status = 403, description = "Hors portée"),
+        (status = 404, description = "Lien introuvable"),
+    ),
+    security(("bearer_auth" = []))
+)]
 #[delete("/etats-dates/{id}/notary-link")]
 pub async fn revoke_notary_link(
     state: web::Data<AppState>,

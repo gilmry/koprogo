@@ -20,7 +20,7 @@ use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use uuid::Uuid;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, utoipa::ToSchema)]
 pub struct IssuedLienNotaireDto {
     pub id: Uuid,
     /// Jeton clair — à renvoyer au syndic UNE FOIS, jamais persisté ailleurs.
@@ -28,7 +28,7 @@ pub struct IssuedLienNotaireDto {
     pub expires_at: DateTime<Utc>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, utoipa::ToSchema)]
 pub struct LienNotaireStatusDto {
     pub id: Uuid,
     pub expires_at: DateTime<Utc>,

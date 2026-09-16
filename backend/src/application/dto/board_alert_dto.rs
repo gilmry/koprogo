@@ -10,7 +10,7 @@ use validator::Validate;
 ///
 /// `target_meeting_id` est fourni par l'appelant plutôt que résolu
 /// automatiquement — cf. `CdcUseCases::create_alert` pour la justification.
-#[derive(Debug, Serialize, Deserialize, Validate, Clone)]
+#[derive(Debug, Serialize, Deserialize, Validate, Clone, utoipa::ToSchema)]
 pub struct CreateBoardAlertDto {
     #[validate(length(min = 1, message = "Alert text cannot be empty"))]
     pub text: String,
@@ -22,7 +22,7 @@ pub struct CreateBoardAlertDto {
 }
 
 /// DTO pour la réponse API d'une alerte du conseil.
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, utoipa::ToSchema)]
 pub struct BoardAlertResponseDto {
     pub id: String,
     pub building_id: String,
@@ -34,7 +34,7 @@ pub struct BoardAlertResponseDto {
 }
 
 /// Un candidat à élire au conseil de copropriété.
-#[derive(Debug, Serialize, Deserialize, Validate, Clone)]
+#[derive(Debug, Serialize, Deserialize, Validate, Clone, utoipa::ToSchema)]
 pub struct CdcCandidateDto {
     pub owner_id: String,
     pub position: String, // "president", "treasurer" ou "member"
@@ -48,7 +48,7 @@ pub struct CdcCandidateDto {
 /// L'AG référencée par `meeting_id` doit être `Completed` : sa clôture
 /// prouve déjà le quorum double (Art. 3.87 §5 CC) via
 /// `Meeting::assert_can_complete`. Cf. `CdcUseCases::elect_members`.
-#[derive(Debug, Serialize, Deserialize, Validate, Clone)]
+#[derive(Debug, Serialize, Deserialize, Validate, Clone, utoipa::ToSchema)]
 pub struct ElectCdcMembersDto {
     pub meeting_id: String,
     #[validate(length(min = 1, message = "At least one candidate is required"))]

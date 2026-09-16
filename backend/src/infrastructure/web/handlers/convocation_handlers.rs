@@ -362,6 +362,18 @@ pub async fn list_convocation_recipients(
 /// Sert l'écran de sélection des destinataires (#780 verrou 1, #784) : le
 /// syndic doit pouvoir voir et choisir AVANT d'envoyer, pas seulement
 /// constater après coup que « 0 destinataire » était resté un libellé.
+#[utoipa::path(
+    get,
+    path = "/buildings/{building_id}/eligible-convocation-recipients",
+    tag = "Convocations",
+    summary = "Copropriétaires éligibles à une convocation",
+    params(("building_id" = Uuid, Path, description = "UUID de l'immeuble")),
+    responses(
+        (status = 200, description = "Destinataires éligibles", body = Vec<crate::application::dto::convocation_dto::EligibleRecipientResponse>),
+        (status = 403, description = "Hors portée"),
+    ),
+    security(("bearer_auth" = []))
+)]
 #[get("/buildings/{building_id}/eligible-convocation-recipients")]
 pub async fn list_eligible_convocation_recipients(
     state: web::Data<AppState>,

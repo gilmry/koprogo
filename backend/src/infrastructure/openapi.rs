@@ -71,6 +71,17 @@ use utoipa_swagger_ui::SwaggerUi;
         crate::infrastructure::web::handlers::acp_module_handlers::list_acp_modules,
         crate::infrastructure::web::handlers::acp_module_handlers::enable_acp_module,
         crate::infrastructure::web::handlers::acp_module_handlers::disable_acp_module,
+        // Huit routes arrivées par les branches d'agents sans annotation
+        // (#732 : une route hors spec est invisible au gate anti-drift, qui
+        // compare deux fichiers qui l'ignorent tous les deux).
+        crate::infrastructure::web::handlers::cdc_handlers::create_cdc_alert,
+        crate::infrastructure::web::handlers::cdc_handlers::list_cdc_alerts_for_meeting,
+        crate::infrastructure::web::handlers::cdc_handlers::elect_cdc_members,
+        crate::infrastructure::web::handlers::convocation_handlers::list_eligible_convocation_recipients,
+        crate::infrastructure::web::handlers::etat_date_handlers::issue_notary_link,
+        crate::infrastructure::web::handlers::etat_date_handlers::renew_notary_link,
+        crate::infrastructure::web::handlers::etat_date_handlers::revoke_notary_link,
+        crate::infrastructure::web::handlers::unit_owner_handlers::designate_voting_representative,
         // Auth
         crate::infrastructure::web::handlers::auth_handlers::login,
         crate::infrastructure::web::handlers::auth_handlers::register,
@@ -337,6 +348,16 @@ use utoipa_swagger_ui::SwaggerUi;
         crate::application::dto::acp_dto::UpdateAcpDto,
         crate::application::dto::acp_dto::AcpResponseDto,
         crate::application::dto::module_dto::EnabledModulesResponseDto,
+        crate::application::dto::board_alert_dto::CreateBoardAlertDto,
+        crate::application::dto::board_alert_dto::BoardAlertResponseDto,
+        crate::application::dto::board_alert_dto::CdcCandidateDto,
+        crate::application::dto::board_alert_dto::ElectCdcMembersDto,
+        crate::application::dto::board_member_dto::BoardMemberResponseDto,
+        crate::application::dto::convocation_dto::EligibleRecipientResponse,
+        crate::application::dto::unit_owner_dto::DesignateVotingRepresentativeDto,
+        crate::application::dto::unit_owner_dto::VotingRepresentativeResponseDto,
+        crate::application::use_cases::lien_notaire_use_cases::IssuedLienNotaireDto,
+        crate::application::use_cases::lien_notaire_use_cases::LienNotaireStatusDto,
         crate::domain::entities::acp::AcpLegalStatus,
         // Pagination primitives — referenced by query params on list endpoints
         crate::application::dto::pagination::SortOrder,
