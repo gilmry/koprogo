@@ -48,7 +48,12 @@ import { adminLogin } from "../helpers/auth";
 import { API_BASE } from "../helpers/adresses";
 
 async function assertOk<T = any>(
-  resp: { status: () => number; ok: () => boolean; text: () => Promise<string>; json: () => Promise<any> },
+  resp: {
+    status: () => number;
+    ok: () => boolean;
+    text: () => Promise<string>;
+    json: () => Promise<any>;
+  },
   label: string,
 ): Promise<T> {
   if (!resp.ok()) {
@@ -83,7 +88,12 @@ async function creerAcpAvecLotMinoritaire(
 
   const buildingResp = await api.post(`${API_BASE}/buildings`, {
     data: {
-      name: `${nom} — immeuble`,
+      // L'horodatage est INDISPENSABLE ici, comme sur l'ACP juste au-dessus.
+      // `buildings.slug` est unique GLOBALEMENT et le backend le dérive du
+      // nom : sans lui, « Les Erables — immeuble » produit le même slug à
+      // chaque campagne, et ce parcours échoue dès la deuxième exécution sur
+      // `buildings_slug_key`. Mesuré le 2026-09-16 — 4 échecs de ce seul fait.
+      name: `${nom} — immeuble ${horodatage}`,
       address: `${horodatage} Rue Test`,
       city: "Brussels",
       postal_code: "1000",
@@ -565,7 +575,10 @@ export const coproprietaire: Parcours = {
         // qu'aucun immeuble n'est choisi.
         await scene.choisir("building-selector", mondeSeme.buildingErablesId);
         await scene.cliquer("create-offer-button");
-        await scene.saisir("skill-create-name-input", "Petits travaux de plomberie");
+        await scene.saisir(
+          "skill-create-name-input",
+          "Petits travaux de plomberie",
+        );
         await scene.saisir(
           "skill-create-description-textarea",
           "Dépannage robinetterie, sur rendez-vous.",
@@ -573,9 +586,9 @@ export const coproprietaire: Parcours = {
         await scene.cliquer("submit-skill-offer-button");
       },
       assertion: async (page) => {
-        await expect(
-          page.getByTestId("skill-offer-create-form"),
-        ).toHaveCount(0);
+        await expect(page.getByTestId("skill-offer-create-form")).toHaveCount(
+          0,
+        );
       },
     },
   ],
