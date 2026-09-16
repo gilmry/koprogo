@@ -219,22 +219,22 @@ issues tiennent chacune une file — **#803** en débloque 11, **#805** dix,
 > #840 a été fermée le même jour, après la génération. Le document n'est pas
 > faux, il est daté — il se régénère par `scripts/backlog-structure.py`.
 
-## Gates (dernier statut — mesuré le 2026-09-12)
+## Gates (dernier statut — mesuré le 2026-09-16)
 
 | Gate | Statut | Commande | Note |
 |---|---|---|---|
 | `plancher` secrets | 🟢 | `.claude/hooks/stop-leak-scan.sh` | bloquant, 3 hooks sur 8 bloquent vraiment |
-| `plancher` migrations | ⚪ | — | réversibilité `down.sql` jamais vérifiée par un gate |
+| `plancher` migrations | 🟡 | `kcargo test --test garde_versions_de_migration` | **Passe de ⚪ à 🟡 le 2026-09-16.** Un gate existe enfin, né d'un vrai dégât (#939) : deux migrations au même horodatage faisaient échouer TOUTE base neuve en 23505. Il vérifie désormais la collision de version (dur) et le nombre de montantes sans `.down.sql` (cliquet à **93 sur 138**, mesuré). Reste 🟡 et non 🟢 : la réversibilité elle-même n'est toujours pas *exécutée*, seulement l'existence du fichier |
 | `verify` structurel | 🟢 | `kcargo test --test architecture` + 15 gardes | 16 suites vertes |
 | `contrat` anti-drift | 🟢 | gate OpenAPI + `oasdiff` en CI | #765 fermée |
 | `unit` domaine | 🟢 | `kcargo test --lib` | 1989 tests |
 | `integration` | 🟢 | suites `e2e_*.rs` (testcontainers) | `storage_s3` rend `1 passed`, code 0, contre `quay.io`. **Mesuré en local le 2026-09-13**. ⚠️ #877 reste OUVERTE : son premier critère dit « vert EN CI », et la CI ne l'a pas vu — les commits ne sont pas poussés |
-| `bdd` | 🟢 | suites `bdd_*.rs` | |
+| `bdd` | 🟢 | suites `bdd_*.rs` | `bdd_acp` remesuré le 2026-09-16 : **17 scénarios / 78 étapes, code 0**. Était rouge à 17 sur 17 avant #939, sans que personne le sache — le vert du 2026-09-12 datait d'avant la fusion qui a créé la collision |
 | `e2e` parcours | 🟢 | `make test-e2e` | **308 ✓ / 0 ✘ / 14 sautés — CODE 0**, le 2026-09-13 après le correctif de #718 (`40eb8edd`). Aucun redémarrage pendant (`SIGTERM` 4 avant, 4 après). Même chiffre qu'en CI |
 | `visuel` | ⚪ | — | pas de goldens |
 | `doc-vivante` | 🟢 | `make vitrine` | le PARCOURS : complet, 10 chapitres, 81 s, `interrompu: None`, artefact de 79 Mo publié (run 34764114133). ⚠️ Les douze `.scenario.ts` du même job rendent **10 ✓ / 2 ✘** et ne peuvent PAS rougir le job : `continue-on-error: true` depuis le 2026-06-15, avec une condition de retrait jamais rouverte |
 | front typecheck | 🟢 | `npx svelte-check --threshold error` | 0 erreur |
-| front tests | 🟢 | `npx vitest run` | 659 tests, 120 fichiers |
+| front tests | 🟢 | `npx vitest run` | **756 tests, 131 fichiers, 0 échec** le 2026-09-16 |
 
 **Le socle est vert le 2026-09-13**, `plancher migrations` et `visuel` mis à
 part, qui restent ⚪ faute de gate. Il l'est sur des exécutions, pas sur des
@@ -351,6 +351,38 @@ du défaut avec un témoin d'interruption (le minimum, déjà décrit dans #880)
 | **PR #879** | **relancer pour qu'elle ait ses gates** avant la revue. La chronométrer sans preuve mesurerait autre chose que ce que #875 cherche | Gilles Maury | 2026-09-13 | #875, run `34764114133` |
 
 ## Journal (chronologie courte)
+
+- 2026-09-16 — **Deux défauts que seule la jonction pouvait produire, et que
+  les gates ne pouvaient pas voir.**
+
+  Le premier : deux migrations au même horodatage (#939), venues de deux
+  passes d'agent différentes. sqlx indexe sur la version, pas sur le nom —
+  **toute base neuve échouait en 23505**, donc toute l'intégration, toute la
+  BDD, et tout déploiement partant de zéro. Les bases en service ne le
+  voyaient pas : elles avaient enregistré la version avant que la collision
+  n'existe. `bdd_acp` mesuré à **17 échecs sur 17** avant, **17 succès / 78
+  étapes** après. C'est le cas d'école de « un gate jamais relancé ne dit
+  rien » : le vert du 2026-09-12 était sincère, il était simplement plus vieux
+  que le défaut.
+
+  Le second : la Story 5.1 (#585), planifiée en vague V4.2, dont l'agent n'a
+  **rien produit**. Sa moitié frontend (#586) était, elle, en production, et
+  appelait deux routes qui n'existaient nulle part. Le registre de modules par
+  ACP est désormais livré — table, entité, port, cas d'usage, adaptateur,
+  trois handlers au schéma OpenAPI, dix tests. Le middleware `ModuleGuard`
+  n'y est pas et #585 reste donc ouverte : brancher l'application des modules
+  sur des routes existantes est un changement de comportement qui se vérifie
+  par une campagne e2e, pas par un compilateur. Le dire plutôt que de livrer
+  un garde inerte.
+
+  J'avais d'abord posé le second en 🔴 comme un arbitrage pour le PO. C'était
+  un mauvais cadrage, retiré le jour même : la spec existait, complète, depuis
+  le début. Il n'y avait rien à trancher, seulement du travail à faire.
+
+  Deux cliquets en sortent : `garde_versions_de_migration` (collision de
+  version, et montantes sans `.down.sql` à 93 sur 138) et la paire
+  `Module` / `acp_enabled_modules_module_check` inscrite dans
+  `garde_enum_contre_contrainte`.
 
 - 2026-09-16 — **LES SEPT VAGUES DU GANTT SONT DÉROULÉES.** V4.1 à V7.1,
   vingt-trois créneaux, **tous en succès**. Le plan n'est plus un document :
