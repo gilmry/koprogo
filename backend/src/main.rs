@@ -14,7 +14,8 @@ use koprogo_api::infrastructure::storage::{
     FileStorage, S3Storage, S3StorageConfig, StorageProvider,
 };
 use koprogo_api::infrastructure::web::{
-    configure_routes, AppState, GdprRateLimit, GdprRateLimitConfig, SecurityHeaders,
+    configure_routes, AppState, CommunityAccessGuard, GdprRateLimit, GdprRateLimitConfig,
+    SecurityHeaders,
 };
 use koprogo_api::infrastructure::LinkyApiClientImpl;
 use std::env;
@@ -675,6 +676,7 @@ async fn main() -> std::io::Result<()> {
                 .into()
             }))
             .wrap(gdpr_rate_limit.clone())
+            .wrap(CommunityAccessGuard::new()) // Story 5.5 — comptable exclu de /community/* (ADR 0052, INV-6)
             .wrap(cors)
             .wrap(SecurityHeaders) // Security headers for all responses
             .wrap(middleware::Logger::default())

@@ -158,6 +158,19 @@ impl UserRole {
             UserRole::SuperAdmin | UserRole::Syndic | UserRole::CommunityModerator
         )
     }
+
+    /// Casquette comptable — générique ou sous-rôle encodeur/émetteur.
+    ///
+    /// Story 5.5 (FR28/FR30, INV-6) : le comptable est un prestataire, pas un
+    /// copropriétaire. `community_access_guard` s'appuie sur ce prédicat pour
+    /// exclure les DEUX sous-rôles des routes communautaires — sauf cumul
+    /// d'un rôle `Owner` distinct (cf. ADR 0052).
+    pub fn is_accountant(&self) -> bool {
+        matches!(
+            self,
+            UserRole::Accountant | UserRole::AccountantEncodeur | UserRole::AccountantEmetteur
+        )
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Validate)]
@@ -424,6 +437,15 @@ mod tests {
     }
 
     #[test]
+    fn happy_accountant_subroles_are_accountant() {
+        // Story 5.5 (FR28/FR30, INV-6) : les 3 variantes comptables sont
+        // reconnues — c'est ce prédicat que community_access_guard exploite.
+        assert!(UserRole::Accountant.is_accountant());
+        assert!(UserRole::AccountantEncodeur.is_accountant());
+        assert!(UserRole::AccountantEmetteur.is_accountant());
+    }
+
+    #[test]
     fn happy_display_round_trip() {
         for role in [
             UserRole::SuperAdmin,
@@ -465,6 +487,19 @@ mod tests {
             UserRole::from_str("CoMmUnItY.MoDeRaToR").unwrap(),
             UserRole::CommunityModerator
         );
+    }
+
+    #[test]
+    fn edge_accountant_role_from_str_roundtrip_is_still_accountant() {
+        // Story 5.5 : le prédicat tient après un aller-retour parsing —
+        // le middleware le reçoit toujours via UserRole déjà parsé, jamais
+        // via la chaîne brute, mais la garantie doit être robuste au trim/case.
+        assert!(UserRole::from_str("accountant.encodeur")
+            .unwrap()
+            .is_accountant());
+        assert!(UserRole::from_str("  ACCOUNTANT.EMETTEUR  ")
+            .unwrap()
+            .is_accountant());
     }
 
     #[test]
@@ -532,6 +567,33 @@ mod tests {
         assert!(!UserRole::CommunityModerator.can_emit_expenses());
         assert!(!UserRole::CommunityModerator.can_encode_invoices());
         assert!(!UserRole::CommunityModerator.can_create_call_for_funds());
+    }
+
+    #[test]
+    fn security_non_accountant_roles_are_not_flagged_as_accountant() {
+        // INV-6 : le prédicat ne doit pas sur-détecter — un syndic ou un
+        // owner n'est pas un comptable, même s'il porte des pouvoirs
+        // financiers étendus (cf. can_emit_expenses pour Syndic ci-dessus).
+        for role in [
+            UserRole::SuperAdmin,
+            UserRole::Syndic,
+            UserRole::BoardMember,
+            UserRole::Contractor,
+            UserRole::Owner,
+            UserRole::CommunityModerator,
+            UserRole::Lawyer,
+            UserRole::Notary,
+            UserRole::Amo,
+            UserRole::Architect,
+            UserRole::Bet,
+            UserRole::Warden,
+        ] {
+            assert!(
+                !role.is_accountant(),
+                "{} should not be flagged as accountant",
+                role
+            );
+        }
     }
 
     #[test]
