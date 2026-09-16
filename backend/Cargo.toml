@@ -141,6 +141,10 @@ name = "bdd_community"
 harness = false
 
 [[test]]
+name = "bdd_community_accountant_forbidden"
+harness = false
+
+[[test]]
 name = "bdd_iot"
 harness = false
 

@@ -2,6 +2,11 @@
 pub mod scope_guard;
 pub use scope_guard::{AcpScope, ScopeGuard, ScopeGuardError};
 
+// Story 5.5 — middleware community_access_guard (comptable exclu de
+// /community/* sauf cumul owner, cf. ADR 0052 / INV-6).
+pub mod community_access_guard;
+pub use community_access_guard::CommunityAccessGuard;
+
 use crate::infrastructure::web::app_state::AppState;
 use actix_web::{
     body::MessageBody,
