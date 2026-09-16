@@ -678,6 +678,94 @@ Critères non-fonctionnels
    réel reste piloté par ArgoCD avec sync auto activé seulement sur
    ``staging``/``integration``/``dev`` (pas sur ``production``)
 
+Écart constaté entre cette RFC et l'implémentation mergée (2026-09-16)
+========================================================================
+
+.. warning::
+   **Cette section documente un écart de fait, pas une décision.** Elle bloque
+   le passage de cette RFC en ``Accepted`` tant qu'un humain n'a pas tranché
+   lequel des deux modèles ci-dessous est la référence.
+
+Constat
+-------
+
+Cette RFC (statut ``Draft`` depuis 2026-05-01) documente et retient
+**l'alternative F** (« hybride symétrique app/infra », cascades C1/C2/C3,
+``main`` = snapshot post-release, tag commun ``v<X>.<Y>.<Z>`` posé
+simultanément sur ``production`` et ``infra-prod``).
+
+Or les 5 workflows GitHub Actions suivants — déjà mergés dans ``feature/dev``
+(visibles sur ``story/466`` au 2026-09-16) — référencent explicitement une
+**alternative D — « release train + back-sync »**, distincte de l'alternative
+F :
+
+- ``.github/workflows/promote-infra-dev-to-integration.yml``
+- ``.github/workflows/promote-infra-integration-to-staging.yml`` (déclenché
+  par un tag ``infra-rc-v*``, mécanisme absent de cette RFC)
+- ``.github/workflows/promote-infra-staging-to-prod.yml`` (``workflow_dispatch``
+  manuel uniquement)
+- ``.github/workflows/backsync-infra-prod.yml`` (back-sync ``infra-prod →
+  infra-staging, infra-integration, main`` — pas de back-sync vers les
+  branches ``staging``/``integration`` applicatives, contrairement à la
+  cascade C1 de cette RFC)
+
+Problème : dans la table « Alternatives Considérées » de **cette même RFC**,
+la lettre **D** désigne autre chose — « 2 repos (apps / infra) », rejetée
+(cf. ligne 448). Les commentaires des workflows mergés n'utilisent donc pas
+la nomenclature de cette RFC ; soit une décision ultérieure et distincte a
+été prise (probablement en commentaire sur l'issue #466, non retrouvé ici —
+accès `gh` indisponible dans cette session), soit l'implémentation a dérivé
+du texte écrit sans mise à jour de la RFC. Dans les deux cas, la RFC telle
+qu'écrite ici ne décrit **pas** ce qui tourne réellement sur les branches
+``infra-*``.
+
+Pourquoi ne pas trancher ici
+-----------------------------
+
+Le critère de sortie de l'issue #466 est explicite : *« Un humain
+(mainteneur) aura signé la décision (label ``accepted``) »*. Choisir entre
+« la RFC a raison, corriger les workflows » et « les workflows ont raison,
+réécrire la RFC pour documenter le modèle D réellement en place » est
+précisément la décision de topologie que #466 réserve à l'arbitrage humain
+(cf. CLAUDE.md règle #5 — itération sur les directives, pas sur le code ;
+règle #11 — Tier 1/2). Réécrire unilatéralement cette RFC pour la faire
+correspondre au code déjà mergé reviendrait à acter la décision sans
+signature humaine.
+
+Ce qui reste correct et non affecté par cet écart
+---------------------------------------------------
+
+- Les 4 branches ``infra-*`` existent (``infra-dev``, ``infra-integration``,
+  ``infra-staging``, ``infra-prod``), alignées avec la contrainte de base des
+  deux modèles (F et D).
+- Le refactor ApplicationSet (generator ``koprogo-infra`` → branches
+  ``infra-*``, distinct du generator ``koprogo-app``) est en place et conforme
+  à ce que **les deux** modèles (F et D) demandent.
+- ``ci-infra.yml`` valide (kustomize + helm template + kubeconform +
+  ApplicationSet render + smoke test cluster kind) sans dépendre du choix
+  F/D.
+- Aucune mutation de ``production``/``infra-prod`` n'est autonome dans les
+  deux modèles : ``promote-infra-staging-to-prod.yml`` est
+  ``workflow_dispatch`` uniquement (déclenché par un humain), et
+  ``release-tag.yml`` documente explicitement le Tier 1 humain pour le tag +
+  la release GitHub.
+
+Actions demandées au mainteneur
+---------------------------------
+
+1. Confirmer sur l'issue #466 lequel des deux modèles (F documenté ici, ou D
+   « release train + back-sync » déjà implémenté) est la décision réelle.
+2. Si D : réécrire le corps de cette RFC (résumé, cascades, plan
+   d'implémentation) pour refléter le modèle réellement en place, puis passer
+   le statut à ``Accepted`` avec label GitHub correspondant.
+3. Si F : ouvrir une PR corrective sur les 4 workflows ``promote-*``/
+   ``backsync-*`` pour aligner leur implémentation (et leurs commentaires) sur
+   les cascades C1/C2/C3 décrites ici.
+4. Dans les deux cas, mettre à jour la table « Plan d'Implémentation » /
+   « Jalons » ci-dessus : PR-2 (branches infra-*), une bonne partie de PR-3
+   (ApplicationSet) et PR-4 (``ci-infra.yml``) sont déjà faites, ce que ce
+   document ne reflétait plus.
+
 Processus Revue RFC
 ===================
 
