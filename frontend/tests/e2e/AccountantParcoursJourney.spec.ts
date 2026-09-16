@@ -376,7 +376,10 @@ test.describe("Comptable — parcours documenté (docs/personas/accountant.md, #
     const expenseResp = await page.request.post(`${API_BASE}/expenses`, {
       data: {
         building_id: buildingId,
-        category: "Common",
+        // « Common » n'est pas une variante d'ExpenseCategory — le serveur
+        // rendait 400 « unknown variant ». Le libellé de la dépense dit
+        // « Nettoyage parties communes » : la variante est `Cleaning`.
+        category: "Cleaning",
         description: `Nettoyage parties communes ${Date.now()}`,
         amount: 300.0,
         expense_date: new Date().toISOString(),

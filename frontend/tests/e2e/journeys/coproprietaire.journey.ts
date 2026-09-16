@@ -233,25 +233,6 @@ export const coproprietaire: Parcours = {
       200, // 20 % des tantièmes
     );
 
-    // Montants volontairement ronds et très supérieurs à la quote-part
-    // réelle du copropriétaire (144 € et 90 €) : si l'écran affichait un
-    // jour le montant PRORATÉ, la différence avec ces totaux serait
-    // immédiatement visible sans recalcul.
-    await creerChargeEnAttente(
-      api,
-      adminToken,
-      acpErables.buildingId,
-      "Entretien toiture",
-      1200,
-    );
-    await creerChargeEnAttente(
-      api,
-      adminToken,
-      acpGlycines.buildingId,
-      "Ravalement façade",
-      450,
-    );
-
     const syndicResp = await api.post(`${API_BASE}/auth/register`, {
       data: {
         email: emailSyndic,
@@ -264,6 +245,34 @@ export const coproprietaire: Parcours = {
     });
     const syndic = await assertOk<{ token: string }>(syndicResp, "seed:syndic");
     const syndicToken = syndic.token;
+
+    // Amorcées avec le jeton du SYNDIC, pas celui de l'admin global.
+    //
+    // `POST /expenses` exige que l'appelant appartienne à une organisation,
+    // et l'admin global n'appartient à aucune : il rendait
+    // « 401 User does not belong to an organization » (5 échecs e2e le
+    // 2026-09-16). Le durcissement est du bon côté — c'est l'amorçage qui
+    // empruntait une identité qui n'a pas à pouvoir faire ça. Le syndic est
+    // donc inscrit juste au-dessus, avant d'être utilisé.
+    //
+    // Montants volontairement ronds et très supérieurs à la quote-part
+    // réelle du copropriétaire (144 € et 90 €) : si l'écran affichait un
+    // jour le montant PRORATÉ, la différence avec ces totaux serait
+    // immédiatement visible sans recalcul.
+    await creerChargeEnAttente(
+      api,
+      syndicToken,
+      acpErables.buildingId,
+      "Entretien toiture",
+      1200,
+    );
+    await creerChargeEnAttente(
+      api,
+      syndicToken,
+      acpGlycines.buildingId,
+      "Ravalement façade",
+      450,
+    );
 
     const ownerUserResp = await api.post(`${API_BASE}/auth/register`, {
       data: {

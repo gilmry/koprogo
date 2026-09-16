@@ -314,7 +314,10 @@
         <p class="text-3xl font-bold text-gray-900">
           {stats.pending_expenses_count}
         </p>
-        <p class="text-sm text-orange-600 mt-1">
+        <!-- orange-700 et non orange-600 : sur fond blanc, orange-600
+             plafonne à ~3,5:1 alors que WCAG 2.1 AA exige 4,5:1 pour du
+             texte normal. axe-core le relevait en « serious » sur /syndic. -->
+        <p class="text-sm text-orange-700 mt-1">
           {formatCurrency(stats.pending_expenses_amount)}
         </p>
       </a>
