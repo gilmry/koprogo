@@ -77,6 +77,9 @@ test.describe("Polls - Board Decision Polling", () => {
     ).toBeVisible({ timeout: 10000 });
   });
 
+  // Fixme: data-testid supprimés par la migration Svelte 5 runes (commit
+  // 087949c, 2026-04-12) — cf. 09e791b « mark 9 admin+polls tests as
+  // fixme ». Suivi : ré-ajouter les testid ou migrer vers getByRole/getByText.
   test.fixme("should create a YesNo poll and retrieve it", async ({ page }) => {
     const { token, buildingId, adminToken, orgId } =
       await loginAsSyndicWithBuilding(page, "poll");
@@ -118,6 +121,7 @@ test.describe("Polls - Board Decision Polling", () => {
     expect(retrieved.id).toBe(poll.id);
   });
 
+  // Fixme: même cause que ci-dessus (data-testid perdus, migration runes).
   test.fixme("should publish a poll (Draft → Active)", async ({ page }) => {
     const { token, buildingId, adminToken, orgId } =
       await loginAsSyndicWithBuilding(page, "poll");
@@ -180,6 +184,7 @@ test.describe("Polls - Board Decision Polling", () => {
     expect(Array.isArray(data.polls)).toBeTruthy();
   });
 
+  // Fixme: même cause que ci-dessus (data-testid perdus, migration runes).
   test.fixme("should get poll results", async ({ page }) => {
     const { token, buildingId, adminToken, orgId } =
       await loginAsSyndicWithBuilding(page, "poll");
