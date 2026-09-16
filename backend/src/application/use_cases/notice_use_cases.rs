@@ -19,9 +19,11 @@ impl NoticeUseCases {
         }
     }
 
-    /// Check if user has building admin privileges (admin, superadmin, or syndic)
+    /// Check if user has building admin privileges (admin, superadmin, syndic,
+    /// or `community.moderator` — Story 5.3 #587, ce dernier rôle existe
+    /// précisément pour porter cette capacité sans être syndic).
     fn is_building_admin(role: &str) -> bool {
-        role == "admin" || role == "superadmin" || role == "syndic"
+        role == "admin" || role == "superadmin" || role == "syndic" || role == "community.moderator"
     }
 
     /// Resolve user_id to display name via user lookup
@@ -240,13 +242,17 @@ impl NoticeUseCases {
     /// Archive a notice (Published/Expired → Archived)
     ///
     /// # Authorization
-    /// - Only author or building admin can archive
+    /// - Author archives their own notice : self-service, no reason needed.
+    /// - Building admin (syndic, `community.moderator`, admin, superadmin)
+    ///   archiving SOMEONE ELSE's notice : MODÉRATION — a reason is
+    ///   mandatory (audit trail). Story 5.3 (#587), INV-4.
     pub async fn archive_notice(
         &self,
         notice_id: Uuid,
         user_id: Uuid,
         _organization_id: Uuid,
         actor_role: &str,
+        reason: Option<String>,
     ) -> Result<NoticeResponseDto, String> {
         let mut notice = self
             .notice_repo
@@ -262,6 +268,13 @@ impl NoticeUseCases {
             return Err(
                 "Unauthorized: only author or building admin can archive notice".to_string(),
             );
+        }
+
+        // Modération d'un contenu d'autrui : motif obligatoire (audit).
+        if !is_author && is_admin {
+            reason
+                .filter(|r| !r.trim().is_empty())
+                .ok_or_else(|| crate::application::error::MOTIF_MODERATION_REQUIS.to_string())?;
         }
 
         // Archive (domain validates state transition)
@@ -967,7 +980,9 @@ mod tests {
             Arc::new(MockUserRepo::with_user(user)),
         );
 
-        let result = uc.archive_notice(notice_id, user_id, org_id, "owner").await;
+        let result = uc
+            .archive_notice(notice_id, user_id, org_id, "owner", None)
+            .await;
         assert!(result.is_ok());
         let resp = result.unwrap();
         assert_eq!(resp.status, NoticeStatus::Archived);
@@ -989,9 +1004,18 @@ mod tests {
             Arc::new(MockUserRepo::with_user(admin_user)),
         );
 
-        // Admin (not the author) can archive
+        // Admin (not the author) can archive — Story 5.3 (#587) ajoute un
+        // motif obligatoire dès qu'on modère le contenu d'autrui (audit) :
+        // l'assertion "l'admin peut archiver" reste vraie, elle exige
+        // maintenant ce motif en plus, comme n'importe quelle modération.
         let result = uc
-            .archive_notice(notice_id, admin_id, org_id, "admin")
+            .archive_notice(
+                notice_id,
+                admin_id,
+                org_id,
+                "admin",
+                Some("Contenu obsolète signalé".to_string()),
+            )
             .await;
         assert!(result.is_ok());
         assert_eq!(result.unwrap().status, NoticeStatus::Archived);
@@ -1012,12 +1036,89 @@ mod tests {
         );
 
         let result = uc
-            .archive_notice(notice_id, other_user_id, org_id, "owner")
+            .archive_notice(notice_id, other_user_id, org_id, "owner", None)
             .await;
         assert!(result.is_err());
         assert!(result
             .unwrap_err()
             .contains("Unauthorized: only author or building admin can archive notice"));
+    }
+
+    // ------------------------------------------------------------------------
+    // Story 5.3 (#587), INV-4 — Syndic = community.moderator sur les annonces
+    // ------------------------------------------------------------------------
+
+    #[tokio::test]
+    async fn negative_moderation_dune_annonce_sans_motif_est_refusee() {
+        let author_id = Uuid::new_v4();
+        let syndic_id = Uuid::new_v4();
+        let org_id = Uuid::new_v4();
+        let building_id = Uuid::new_v4();
+        let notice = make_published_notice(building_id, author_id);
+        let notice_id = notice.id;
+
+        let uc = NoticeUseCases::new(
+            Arc::new(MockNoticeRepo::with_notice(notice)),
+            Arc::new(MockUserRepo::new()),
+        );
+
+        let result = uc
+            .archive_notice(notice_id, syndic_id, org_id, "syndic", None)
+            .await;
+        assert!(result.is_err());
+        assert_eq!(
+            result.unwrap_err(),
+            crate::application::error::MOTIF_MODERATION_REQUIS
+        );
+
+        let result_blank = uc
+            .archive_notice(
+                notice_id,
+                syndic_id,
+                org_id,
+                "syndic",
+                Some("   ".to_string()),
+            )
+            .await;
+        assert!(result_blank.is_err());
+        assert_eq!(
+            result_blank.unwrap_err(),
+            crate::application::error::MOTIF_MODERATION_REQUIS
+        );
+    }
+
+    #[tokio::test]
+    async fn happy_community_moderator_archive_avec_motif() {
+        // Story 3.1 a introduit `UserRole::CommunityModerator` précisément
+        // pour porter cette capacité sans être syndic : `is_building_admin`
+        // doit le reconnaître au même titre que "syndic".
+        let author_id = Uuid::new_v4();
+        let moderator_id = Uuid::new_v4();
+        let org_id = Uuid::new_v4();
+        let building_id = Uuid::new_v4();
+        let notice = make_published_notice(building_id, author_id);
+        let notice_id = notice.id;
+
+        let uc = NoticeUseCases::new(
+            Arc::new(MockNoticeRepo::with_notice(notice)),
+            Arc::new(MockUserRepo::new()),
+        );
+
+        let result = uc
+            .archive_notice(
+                notice_id,
+                moderator_id,
+                org_id,
+                "community.moderator",
+                Some("Annonce en doublon".to_string()),
+            )
+            .await;
+        assert!(
+            result.is_ok(),
+            "un community.moderator doit pouvoir archiver avec motif : {:?}",
+            result.err()
+        );
+        assert_eq!(result.unwrap().status, NoticeStatus::Archived);
     }
 
     #[tokio::test]

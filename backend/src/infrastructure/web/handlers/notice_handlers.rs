@@ -1,4 +1,6 @@
-use crate::application::dto::{CreateNoticeDto, SetExpirationDto, UpdateNoticeDto};
+use crate::application::dto::{
+    ArchiveNoticeDto, CreateNoticeDto, SetExpirationDto, UpdateNoticeDto,
+};
 use crate::domain::entities::{NoticeCategory, NoticeStatus, NoticeType};
 use crate::infrastructure::web::app_state::AppState;
 use crate::infrastructure::web::classification_erreurs;
@@ -416,6 +418,13 @@ pub async fn archive_notice(
     data: web::Data<AppState>,
     auth: AuthenticatedUser,
     id: web::Path<Uuid>,
+    // Corps optionnel : l'auteur qui archive sa propre annonce n'a rien à
+    // motiver et peut continuer à appeler cette route sans corps JSON. Un
+    // corps MALFORMÉ tombe aussi dans `None` (limite connue d'`Option<Json<T>>`,
+    // cf. `quote_handlers::submit_quote`) — sans risque ici : ça retombe sur
+    // "pas de motif fourni", refusé en 422 pour un modérateur, sans effet pour
+    // l'auteur qui n'en a pas besoin.
+    body: Option<web::Json<ArchiveNoticeDto>>,
 ) -> impl Responder {
     let org_id = match auth.require_organization() {
         Ok(id) => id,
@@ -423,14 +432,17 @@ pub async fn archive_notice(
             return HttpResponse::Unauthorized().json(serde_json::json!({"error": e.to_string()}))
         }
     };
+    let reason = body.and_then(|b| b.into_inner().reason);
     match data
         .notice_use_cases
-        .archive_notice(id.into_inner(), auth.user_id, org_id, &auth.role)
+        .archive_notice(id.into_inner(), auth.user_id, org_id, &auth.role, reason)
         .await
     {
         Ok(notice) => HttpResponse::Ok().json(notice),
         Err(e) => {
-            if classification_erreurs::est_interdit(&e) {
+            if classification_erreurs::est_motif_manquant(&e) {
+                HttpResponse::UnprocessableEntity().json(serde_json::json!({"error": e}))
+            } else if classification_erreurs::est_interdit(&e) {
                 HttpResponse::Forbidden().json(serde_json::json!({"error": e}))
             } else if classification_erreurs::est_introuvable(&e) {
                 HttpResponse::NotFound().json(serde_json::json!({"error": e}))

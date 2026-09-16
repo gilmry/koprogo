@@ -38,6 +38,16 @@ pub struct SetExpirationDto {
     pub expires_at: Option<DateTime<Utc>>,
 }
 
+/// DTO for archiving a notice.
+///
+/// `reason` est ignoré quand l'auteur archive sa propre annonce, mais devient
+/// obligatoire pour une modération par un tiers (syndic / `community.moderator`
+/// / admin) — Story 5.3 (#587), INV-4.
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct ArchiveNoticeDto {
+    pub reason: Option<String>,
+}
+
 /// Complete notice response with author information
 #[derive(Debug, Serialize, Clone)]
 pub struct NoticeResponseDto {

@@ -669,8 +669,14 @@ pub async fn cast_poll_vote(
             // Un utilisateur sans fiche de copropriétaire n'est pas un
             // copropriétaire : le dire, plutôt que de le laisser buter sur une
             // autorisation qui ne le nommera pas.
+            //
+            // Story 5.3 (#587), INV-4 — c'est ICI, avant tout appel à
+            // `cast_vote`, que le syndic pur (sans lot) est bloqué : voir la
+            // doc de `PollUseCases::cast_vote` pour pourquoi ce refus ne peut
+            // pas vivre dans le use case lui-même (double sens de `None`,
+            // partagé avec le vote anonyme du Scénario 8 `polls.feature`).
             return HttpResponse::Forbidden().json(serde_json::json!({
-                "error": "Aucune fiche de copropriétaire n'est rattachée à ce compte :                           le vote à une consultation est réservé aux copropriétaires.",
+                "error": crate::application::error::REFUS_VOTE_RESERVE_AUX_COPROPRIETAIRES,
                 "kind": "owner_not_linked"
             }));
         }

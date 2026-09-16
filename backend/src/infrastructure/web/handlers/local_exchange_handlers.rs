@@ -1,8 +1,9 @@
 use crate::application::dto::{
-    CancelExchangeDto, CompleteExchangeDto, CreateLocalExchangeDto, RateExchangeDto,
-    RequestExchangeDto,
+    CancelExchangeDto, CompleteExchangeDto, CreateLocalExchangeDto, DeleteExchangeDto,
+    RateExchangeDto, RequestExchangeDto,
 };
 use crate::domain::entities::ExchangeType;
+use crate::infrastructure::web::classification_erreurs;
 use crate::infrastructure::web::middleware::scope_guard::{
     verify_building_org_access, verify_exchange_org_access, verify_owner_org_access,
 };
@@ -24,7 +25,20 @@ pub async fn create_exchange(
         .await
     {
         Ok(exchange) => HttpResponse::Created().json(exchange),
-        Err(e) => HttpResponse::BadRequest().json(serde_json::json!({"error": e})),
+        Err(e) => {
+            // Story 5.3 (#587), INV-4 : ce refus (fiche copropriétaire
+            // absente — cas notamment d'un syndic pur) est un 403, jamais un
+            // 400 générique. Même classification que shared_object_handlers,
+            // pour que le frontend n'ait pas deux comportements différents
+            // pour le même refus selon le module.
+            if classification_erreurs::est_refus_owner_requis(&e)
+                || classification_erreurs::est_interdit(&e)
+            {
+                HttpResponse::Forbidden().json(serde_json::json!({"error": e}))
+            } else {
+                HttpResponse::BadRequest().json(serde_json::json!({"error": e}))
+            }
+        }
     }
 }
 
@@ -364,11 +378,26 @@ pub async fn cancel_exchange(
 
     match data
         .local_exchange_use_cases
-        .cancel_exchange(id.into_inner(), auth.user_id, request.into_inner())
+        .cancel_exchange(
+            id.into_inner(),
+            auth.user_id,
+            &auth.role,
+            request.into_inner(),
+        )
         .await
     {
         Ok(exchange) => HttpResponse::Ok().json(exchange),
-        Err(e) => HttpResponse::BadRequest().json(serde_json::json!({"error": e})),
+        Err(e) => {
+            if classification_erreurs::est_motif_manquant(&e) {
+                HttpResponse::UnprocessableEntity().json(serde_json::json!({"error": e}))
+            } else if classification_erreurs::est_interdit(&e) {
+                HttpResponse::Forbidden().json(serde_json::json!({"error": e}))
+            } else if classification_erreurs::est_introuvable(&e) {
+                HttpResponse::NotFound().json(serde_json::json!({"error": e}))
+            } else {
+                HttpResponse::BadRequest().json(serde_json::json!({"error": e}))
+            }
+        }
     }
 }
 
@@ -447,20 +476,39 @@ pub async fn rate_requester(
 }
 
 /// DELETE /api/v1/exchanges/:id
-/// Delete an exchange (only provider, not completed)
+/// Delete an exchange (provider, or community moderator with a reason)
 #[delete("/exchanges/{id}")]
 pub async fn delete_exchange(
     data: web::Data<AppState>,
     auth: AuthenticatedUser,
     id: web::Path<Uuid>,
+    // Corps optionnel : le provider qui supprime sa propre offre n'a rien à
+    // motiver et peut continuer à appeler cette route sans corps JSON. Un
+    // corps MALFORMÉ tombe aussi dans `None` (limite connue d'`Option<Json<T>>`,
+    // cf. `quote_handlers::submit_quote`) — sans risque ici : ça retombe sur
+    // "pas de motif fourni", refusé en 422 pour un modérateur, sans effet pour
+    // le provider qui n'en a pas besoin.
+    body: Option<web::Json<DeleteExchangeDto>>,
 ) -> impl Responder {
+    let reason = body.and_then(|b| b.into_inner().reason);
+
     match data
         .local_exchange_use_cases
-        .delete_exchange(id.into_inner(), auth.user_id)
+        .delete_exchange(id.into_inner(), auth.user_id, &auth.role, reason)
         .await
     {
         Ok(_) => HttpResponse::NoContent().finish(),
-        Err(e) => HttpResponse::BadRequest().json(serde_json::json!({"error": e})),
+        Err(e) => {
+            if classification_erreurs::est_motif_manquant(&e) {
+                HttpResponse::UnprocessableEntity().json(serde_json::json!({"error": e}))
+            } else if classification_erreurs::est_interdit(&e) {
+                HttpResponse::Forbidden().json(serde_json::json!({"error": e}))
+            } else if classification_erreurs::est_introuvable(&e) {
+                HttpResponse::NotFound().json(serde_json::json!({"error": e}))
+            } else {
+                HttpResponse::BadRequest().json(serde_json::json!({"error": e}))
+            }
+        }
     }
 }
 
