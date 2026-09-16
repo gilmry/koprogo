@@ -337,6 +337,44 @@ du défaut avec un témoin d'interruption (le minimum, déjà décrit dans #880)
 
 ## Journal (chronologie courte)
 
+- 2026-09-16 — **LES SEPT VAGUES DU GANTT SONT DÉROULÉES.** V4.1 à V7.1,
+  vingt-trois créneaux, **tous en succès**. Le plan n'est plus un document :
+  il s'est exécuté.
+
+  | Vague | Créneaux | Branches |
+  |---|---:|---:|
+  | 4 | 10 | 28 (fusionnées) |
+  | 5 | 9 | 17 |
+  | 6 | 3 | 4 |
+  | 7 | 1 | 1 |
+
+- 2026-09-16 — **Dix-sept branches jugées rouges pour des défauts qui
+  n'étaient pas les leurs**, et c'est le piège de la vague 4 dans l'autre
+  sens.
+
+  Les dix-sept branches de la vague 5 avaient toutes leurs gates rouges. La
+  cause était commune, et elle était dans le SOCLE :
+
+  | Gate requis | Cause réelle |
+  |---|---|
+  | `Frontend Check & Build` | **neuf** fichiers non formatés laissés par la fusion |
+  | `Contract Types Check` | `openapi.json` et `api.d.ts` n'avaient pas suivi les routes annotées |
+
+  Là-bas les branches partaient d'un socle **périmé**, ici d'un socle
+  **cassé**. Dans les deux cas le gate parlait d'autre chose que de la
+  branche, et le modèle de promotion s'effondre exactement là — « le
+  relecteur regarde le film et les gates » suppose que les gates parlent de
+  ce qu'il relit.
+
+  **La règle qui en sort** : il ne suffit pas que le socle soit À JOUR, il
+  faut qu'il soit VERT. Une fusion de vingt-huit branches ne l'est pas par
+  construction — seul le mesurer le dit, et personne ne l'avait mesuré
+  entre la fusion et la vague suivante.
+
+  Gain au passage : la couverture OpenAPI a **baissé de 15 routes**
+  (425 → 410). La fusion a annoté plus qu'elle n'a ajouté. Le cliquet est
+  verrouillé à 410, comme le script le réclamait lui-même.
+
 - 2026-09-15 — **La barrière de la vague 4 est levée : 28 branches d'agent
   fusionnées dans `feature/dev`, sur ordre du PO.** Le barrage est passé —
   compilation, unitaires, **dix-neuf** gardes — et les images sont publiées.
