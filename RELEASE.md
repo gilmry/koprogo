@@ -291,6 +291,35 @@ un défaut de structure. Seul l'ordre des capacités est repris.
 
 ### 🔴 En attente (le PO doit trancher une MODALITÉ)
 
+**Story 5.7 fusionnée sans son backend** — posé le 2026-09-16, avec sa preuve.
+Détail complet et options en **#937**.
+
+L'assistant d'embarquement appelle deux routes qui n'existent pas :
+`GET /acps/{id}/modules` et `PUT /acps/{id}/modules/{module}/enable`. Mesuré
+sur `feature/dev` : aucune occurrence de `modules` dans
+`backend/src/infrastructure/web/`, aucune table, aucun cas d'usage.
+
+Ses tests unitaires sont verts **parce qu'**ils bouchonnent `api.get` et
+`api.put` — ils vérifient la moitié livrée contre un double de la moitié
+absente. Le store est fail-closed et documenté comme tel
+(`frontend/src/stores/enabled_modules.svelte.ts:23`) : le 404 n'affiche pas
+d'erreur, il fait disparaître ce que `ModuleGate` entoure. Portée bornée
+aujourd'hui à l'étape « modules » de l'assistant, qui est le seul usage.
+
+Deux options, toutes deux du ressort du PO parce qu'elles engagent le
+périmètre de la v0.1.0 : livrer la moitié manquante (il faut alors décider qui
+active un module et quelles clés sont valides — décisions produit), ou retirer
+la moitié livrée et rendre la story entière au backlog.
+
+En attendant, le cliquet de `garde-chemins-api` **reste à 46** et la garde
+reste rouge. Le relever inscrirait le trou dans la ligne de base.
+
+À noter, et à traiter à part : la garde **sous-compte**. Elle ne signale que
+`/acps/{x}/modules`, pas la route `enable`, dont le gabarit porte deux
+interpolations. Le trou est d'une route de plus que ce que l'instrument
+annonce.
+
+
 **`ACTIX_WORKERS: 1` sur la démo** — posé le 2026-09-13, avec sa preuve.
 
 `docker-compose.prod.yml:101` pose `ACTIX_WORKERS: ${ACTIX_WORKERS:-1}`, et
