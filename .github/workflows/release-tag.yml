@@ -8,9 +8,11 @@ name: Release Tag (manual)
 # The workflow:
 #   1. Verifies the requested version matches backend/Cargo.toml `version = ...`
 #   2. Verifies the tag does not already exist
-#   3. Creates an annotated git tag pointing at the current HEAD of main
-#   4. Pushes the tag (which triggers docker-build-push.yml's `tags: v*.*.*` filter)
-#   5. Drafts a GitHub Release with auto-generated changelog (NOT published — human edits + publishes)
+#   3. Verifies docs/maury/releases/<version>/human-review-report.md exists and
+#      its `verdict:` frontmatter is GO (#427 C7.2 — no tag on a NO-GO report)
+#   4. Creates an annotated git tag pointing at the current HEAD of main
+#   5. Pushes the tag (which triggers docker-build-push.yml's `tags: v*.*.*` filter)
+#   6. Drafts a GitHub Release with auto-generated changelog (NOT published — human edits + publishes)
 
 on:
   workflow_dispatch:
@@ -61,6 +63,30 @@ jobs:
             echo "::error::Tag ${{ inputs.version }} already exists"
             exit 1
           fi
+
+      # #427 C7.2 : "aucune release taguée sur un rapport concluant NO-GO".
+      # Défense en profondeur pour le gate humain — le hook local
+      # PreToolUse Bash(git tag:*) ne voit que les tentatives d'un agent ;
+      # ce step voit tout tag créé par ce workflow, y compris humain.
+      - name: Verify signed human review report concludes GO
+        run: |
+          report="docs/maury/releases/${{ inputs.version }}/human-review-report.md"
+          if [ ! -f "$report" ]; then
+            echo "::error::$report introuvable. Pas de tag sans revue humaine signée (#427 C7.2)."
+            echo "::error::Copier docs/templates/HUMAN_REVIEW_REPORT.template.md vers ce chemin, faire la revue, et signer verdict: GO."
+            exit 1
+          fi
+          verdict=$(grep -m1 -E '^verdict:[[:space:]]*(GO|GO_CONDITIONAL|NO_GO)[[:space:]]*$' "$report" | awk '{print $2}')
+          case "$verdict" in
+            GO)
+              echo "Revue humaine signée GO : $report" ;;
+            GO_CONDITIONAL)
+              echo "::error::$report conclut GO_CONDITIONAL. Les conditions doivent être closes et le verdict repassé à GO avant de taguer."
+              exit 1 ;;
+            NO_GO|"")
+              echo "::error::$report conclut NO_GO (ou verdict absent/malformé). Pas de tag sur un NO-GO (#427 C7.2)."
+              exit 1 ;;
+          esac
 
       - name: Create annotated tag
         env:
