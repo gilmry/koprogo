@@ -103,7 +103,12 @@ const syndicUser = {
   last_name: "Ndic",
   role: UserRole.SYNDIC,
   roles: [
-    { id: "r-1", role: UserRole.SYNDIC, organizationId: "org-1", isPrimary: true },
+    {
+      id: "r-1",
+      role: UserRole.SYNDIC,
+      organizationId: "org-1",
+      isPrimary: true,
+    },
   ],
 };
 
@@ -114,7 +119,12 @@ const ownerUser = {
   last_name: "Ner",
   role: UserRole.OWNER,
   roles: [
-    { id: "r-2", role: UserRole.OWNER, organizationId: "org-1", isPrimary: true },
+    {
+      id: "r-2",
+      role: UserRole.OWNER,
+      organizationId: "org-1",
+      isPrimary: true,
+    },
   ],
 };
 
@@ -180,7 +190,9 @@ describe("AcpSelector @happy", () => {
   });
 
   it("le clic sur un résultat pose currentAcp et les écrans se rendent sur ce périmètre", async () => {
-    mockedListAcps.mockResolvedValue([makeAcp({ id: "acp-click", name: "Cliquée" })]);
+    mockedListAcps.mockResolvedValue([
+      makeAcp({ id: "acp-click", name: "Cliquée" }),
+    ]);
 
     render(AcpSelector, { props: { user: syndicUser } });
     const input = await screen.findByTestId("acp-selector-input");
@@ -229,10 +241,14 @@ describe("AcpSelector @edge — n:n via les lots, pas 1:1", () => {
     render(AcpSelector, { props: { user: syndicUser } });
     const input = await screen.findByTestId("acp-selector-input");
     await fireEvent.focus(input);
-    const result = await screen.findByTestId("acp-selector-result-acp-principale");
+    const result = await screen.findByTestId(
+      "acp-selector-result-acp-principale",
+    );
     await fireEvent.click(result);
 
-    await waitFor(() => expect(getScope().selectedAcpId).toBe("acp-principale"));
+    await waitFor(() =>
+      expect(getScope().selectedAcpId).toBe("acp-principale"),
+    );
     // Aucun immeuble n'est déduit : le filtre reste à "tous les blocs".
     expect(getScope().selectedBuildingId).toBeNull();
   });
@@ -258,7 +274,9 @@ describe("AcpSelector @edge — n:n via les lots, pas 1:1", () => {
     render(AcpSelector, { props: { user: syndicUser } });
     const input = await screen.findByTestId("acp-selector-input");
     await fireEvent.focus(input);
-    const result = await screen.findByTestId("acp-selector-result-acp-nouvelle");
+    const result = await screen.findByTestId(
+      "acp-selector-result-acp-nouvelle",
+    );
     await fireEvent.click(result);
 
     await waitFor(() => expect(getScope().selectedAcpId).toBe("acp-nouvelle"));
@@ -280,7 +298,9 @@ describe("AcpSelector @edge — n:n via les lots, pas 1:1", () => {
     await waitFor(() => {
       expect(screen.queryByTestId("acp-selector-result-acp-0")).toBeTruthy();
     });
-    expect(screen.queryByTestId("acp-selector-result-acp-19")).toBeInTheDocument();
+    expect(
+      screen.queryByTestId("acp-selector-result-acp-19"),
+    ).toBeInTheDocument();
     expect(screen.queryByTestId("acp-selector-result-acp-20")).toBeNull();
   });
 });
@@ -329,7 +349,9 @@ describe("AcpSelector @security", () => {
 
 describe("AcpSelector @negative", () => {
   it("shows empty state when no ACP matches the query", async () => {
-    mockedListAcps.mockResolvedValue([makeAcp({ id: "acp-a", name: "ACP Alpha" })]);
+    mockedListAcps.mockResolvedValue([
+      makeAcp({ id: "acp-a", name: "ACP Alpha" }),
+    ]);
 
     render(AcpSelector, { props: { user: syndicUser } });
     const input = await screen.findByTestId("acp-selector-input");
@@ -368,7 +390,9 @@ describe("AcpSelector a11y (WCAG 2.1 AA baseline)", () => {
   });
 
   it("results listbox has role=listbox + each result role=option", async () => {
-    mockedListAcps.mockResolvedValue([makeAcp({ id: "acp-a11y", name: "A11y" })]);
+    mockedListAcps.mockResolvedValue([
+      makeAcp({ id: "acp-a11y", name: "A11y" }),
+    ]);
 
     render(AcpSelector, { props: { user: syndicUser } });
     const input = await screen.findByTestId("acp-selector-input");

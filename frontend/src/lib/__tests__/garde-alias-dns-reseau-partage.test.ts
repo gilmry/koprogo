@@ -87,7 +87,10 @@ function alertesAlias(source: string): string[] {
 
 describe("aucun alias DNS générique dans les composes de prod (#731)", () => {
   it("@happy — koprogo-backend adresse koprogo-minio, le container_name unique sur l'hôte", () => {
-    const source = readFileSync(join(RACINE, "docker-compose.prod.yml"), "utf-8");
+    const source = readFileSync(
+      join(RACINE, "docker-compose.prod.yml"),
+      "utf-8",
+    );
     expect(
       source,
       "S3_ENDPOINT doit rester sur koprogo-minio (fix c8f5789b) : c'est le " +
@@ -168,9 +171,9 @@ describe("aucun alias DNS générique dans les composes de prod (#731)", () => {
     }
     // Le détecteur discrimine vraiment : il alerte sur le générique...
     expect(alertesAlias("http://minio:9000")).toEqual(["minio"]);
-    expect(
-      alertesAlias("postgresql://u:p@postgres:5432/db"),
-    ).toEqual(["postgres"]);
+    expect(alertesAlias("postgresql://u:p@postgres:5432/db")).toEqual([
+      "postgres",
+    ]);
     // ... et se tait sur le préfixé, qui est le correctif attendu.
     expect(alertesAlias("http://koprogo-minio:9000")).toEqual([]);
     expect(alertesAlias("postgresql://u:p@koprogo-postgres:5432/db")).toEqual(

@@ -16,13 +16,7 @@
 // `BarreDeContexte` monte le global.
 
 import { describe, it, expect, vi, afterEach } from "vitest";
-import {
-  render,
-  screen,
-  fireEvent,
-  waitFor,
-  cleanup,
-} from "../test-helpers";
+import { render, screen, fireEvent, waitFor, cleanup } from "../test-helpers";
 import PageBuildingSelector from "./BuildingSelector.svelte";
 import GlobalBuildingSelector from "./global/BuildingSelector.svelte";
 import { resetScope } from "../stores/scope.svelte";
@@ -127,9 +121,7 @@ describe("#868 — building-selector-empty ne désigne plus deux composants @neg
   it("exactement un noeud répond à building-selector-empty", async () => {
     await monteLesDeuxEnEtatVide();
 
-    expect(screen.queryAllByTestId("building-selector-empty")).toHaveLength(
-      1,
-    );
+    expect(screen.queryAllByTestId("building-selector-empty")).toHaveLength(1);
   });
 });
 
@@ -155,9 +147,9 @@ describe("#868 — les deux ancres cohabitent sans collision @edge", () => {
   it("les deux data-testid distincts résolvent chacun un seul noeud simultanément", async () => {
     await monteLesDeuxEnEtatVide();
 
-    expect(screen.queryAllByTestId("page-building-selector-empty")).toHaveLength(
-      1,
-    );
+    expect(
+      screen.queryAllByTestId("page-building-selector-empty"),
+    ).toHaveLength(1);
     expect(screen.queryAllByTestId("building-selector-empty")).toHaveLength(1);
   });
 });

@@ -105,32 +105,50 @@ const CLASSIFICATION: Record<string, Classification> = {
       "État de chargement générique. `TicketList` et `TicketStatistics` sont co-montés sur pages/tickets.astro : une recette doit scoper par conteneur (ex. le panneau stats) plutôt que cibler `loading-spinner` nu sur cette page. `InvoiceList.svelte` n'est mounté nulle part (code mort) — aucun risque d'exécution, seule la chaîne de caractères existe encore.",
   },
   "cancel-button": {
-    fichiers: ["components/ExpenseDetail.svelte", "components/InvoiceForm.svelte"],
+    fichiers: [
+      "components/ExpenseDetail.svelte",
+      "components/InvoiceForm.svelte",
+    ],
     raison:
       "Deux formulaires distincts, jamais co-montés (InvoiceForm vit dans ExpenseList, pas dans ExpenseDetail). Le troisième porteur, ExpenseDocuments (co-monté DANS ExpenseDetail), a été renommé `expense-documents-cancel-button` — c'était le vrai doublon (#868).",
   },
   "mark-paid-button": {
-    fichiers: ["components/ExpenseDetail.svelte", "components/InvoiceWorkflow.svelte"],
+    fichiers: [
+      "components/ExpenseDetail.svelte",
+      "components/InvoiceWorkflow.svelte",
+    ],
     raison:
       "pages/expense-detail.astro et pages/invoice-workflow.astro sont deux routes distinctes, jamais rendues ensemble.",
   },
   "status-badge": {
-    fichiers: ["components/ExpenseDetail.svelte", "components/ExpenseList.svelte"],
+    fichiers: [
+      "components/ExpenseDetail.svelte",
+      "components/ExpenseList.svelte",
+    ],
     raison:
       "pages/expense-detail.astro (détail) et pages/expenses.astro / BuildingDetail.svelte (liste) sont des routes distinctes.",
   },
   "refresh-button": {
-    fichiers: ["components/InvoiceList.svelte", "components/InvoiceWorkflow.svelte"],
+    fichiers: [
+      "components/InvoiceList.svelte",
+      "components/InvoiceWorkflow.svelte",
+    ],
     raison:
       "InvoiceList.svelte n'est importé par aucune page (code mort) ; seul InvoiceWorkflow est vivant sur pages/invoice-workflow.astro.",
   },
   "payment-status-filter": {
-    fichiers: ["components/InvoiceWorkflow.svelte", "components/payments/PaymentList.svelte"],
+    fichiers: [
+      "components/InvoiceWorkflow.svelte",
+      "components/payments/PaymentList.svelte",
+    ],
     raison:
       "pages/invoice-workflow.astro et pages/owner/payments.astro sont deux routes distinctes.",
   },
   "meeting-status-badge": {
-    fichiers: ["components/MeetingDetail.svelte", "components/MeetingList.svelte"],
+    fichiers: [
+      "components/MeetingDetail.svelte",
+      "components/MeetingList.svelte",
+    ],
     raison:
       "pages/meeting-detail.astro (détail) et pages/meetings.astro / BuildingDetail.svelte (liste) sont des routes distinctes.",
   },
@@ -151,21 +169,33 @@ const CLASSIFICATION: Record<string, Classification> = {
       "TicketCreateModal ne vit que sur pages/tickets.astro et pages/owner/tickets.astro ; TicketDetail ne vit que sur pages/ticket-detail.astro. Jamais co-montés.",
   },
   "ticket-overdue-badge": {
-    fichiers: ["components/tickets/TicketDetail.svelte", "components/tickets/TicketList.svelte"],
+    fichiers: [
+      "components/tickets/TicketDetail.svelte",
+      "components/tickets/TicketList.svelte",
+    ],
     raison:
       "Même raison que ticket-cancel-btn : pages/ticket-detail.astro vs pages/tickets.astro, routes distinctes.",
   },
   "user-name": {
-    fichiers: ["components/UserListAdmin.svelte", "components/admin/AdminGdprPanel.svelte"],
+    fichiers: [
+      "components/UserListAdmin.svelte",
+      "components/admin/AdminGdprPanel.svelte",
+    ],
     raison:
       "pages/admin/users.astro et pages/admin/gdpr.astro sont deux routes distinctes.",
   },
   "user-email": {
-    fichiers: ["components/UserListAdmin.svelte", "components/admin/AdminGdprPanel.svelte"],
+    fichiers: [
+      "components/UserListAdmin.svelte",
+      "components/admin/AdminGdprPanel.svelte",
+    ],
     raison: "Même raison que user-name.",
   },
   "contractor-report-form": {
-    fichiers: ["pages/contractor-report/index.astro", "pages/contractor/index.astro"],
+    fichiers: [
+      "pages/contractor-report/index.astro",
+      "pages/contractor/index.astro",
+    ],
     raison: "Deux routes distinctes, jamais rendues ensemble.",
   },
 };
@@ -177,7 +207,9 @@ describe("les ancrages partagés entre plusieurs fichiers sont classés (#868)",
   );
 
   it("ne mesure aucun doublon qui ne soit pas classé", () => {
-    const nonClasses = [...doublons.keys()].filter((id) => !(id in CLASSIFICATION));
+    const nonClasses = [...doublons.keys()].filter(
+      (id) => !(id in CLASSIFICATION),
+    );
 
     expect(
       nonClasses,

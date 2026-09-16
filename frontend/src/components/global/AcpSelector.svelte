@@ -34,11 +34,7 @@
   import { _ } from "../../lib/i18n";
   import type { User } from "../../lib/types";
   import { UserRole } from "../../lib/types";
-  import {
-    scope,
-    setAcp,
-    setBuilding,
-  } from "../../stores/scope.svelte";
+  import { scope, setAcp, setBuilding } from "../../stores/scope.svelte";
   import { listAcps, type AcpResponseDto } from "../../lib/api/acps";
 
   interface Props {
@@ -174,7 +170,10 @@
 </script>
 
 {#if visible}
-  <div class="acp-selector relative w-full max-w-md" data-testid="acp-selector-root">
+  <div
+    class="acp-selector relative w-full max-w-md"
+    data-testid="acp-selector-root"
+  >
     {#if scope.scopeError === "forbidden"}
       <div
         data-testid="acp-selector-403"

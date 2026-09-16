@@ -68,9 +68,7 @@ describe("@edge les trois branches — URL, puis défaut, puis nul", () => {
 
   it("sans URL et plusieurs ACP : rien n'est deviné, le périmètre reste nul", async () => {
     poserLurl("");
-    const acps = vi
-      .fn()
-      .mockResolvedValue([{ id: "acp-7" }, { id: "acp-9" }]);
+    const acps = vi.fn().mockResolvedValue([{ id: "acp-7" }, { id: "acp-9" }]);
 
     await resoudrePerimetreAuChargement({ building: vi.fn(), acps });
 

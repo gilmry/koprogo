@@ -103,7 +103,11 @@
   });
 
   /** Pièce remplacée (rapport d'intervention). */
-  type ReplacedPartDraft = { name: string; reference: string; quantity: number };
+  type ReplacedPartDraft = {
+    name: string;
+    reference: string;
+    quantity: number;
+  };
 
   /**
    * Brouillon dédié au rapport d'intervention (#835) — champs distincts du
@@ -611,8 +615,7 @@
               bind:value={crDraft.compteRendu}
               required
               aria-required="true"
-              placeholder={$_("magicLink.crCompteRenduPlaceholder")}
-            ></textarea>
+              placeholder={$_("magicLink.crCompteRenduPlaceholder")}></textarea>
           </div>
 
           <div>

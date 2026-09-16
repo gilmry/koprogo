@@ -478,7 +478,12 @@ describe("MagicLinkContractorPage — contractor_report scope (#835)", () => {
     expect(body.compte_rendu).toBe("Remplacement du joint défectueux.");
     expect(body.work_date).toContain("2026-09-10");
     expect(body.parts_replaced).toEqual([
-      { name: "Joint torique", reference: null, quantity: 1, photo_document_id: null },
+      {
+        name: "Joint torique",
+        reference: null,
+        quantity: 1,
+        photo_document_id: null,
+      },
     ]);
   });
 
